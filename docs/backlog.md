@@ -23,10 +23,10 @@ the detail behind it.
 
 ## Rule format gaps (what the Skip Grenade build couldn't express)
 
-- Triggers: champion stun (Defibrillating Blast's "stun → max Bolt Charge"); slide / airborne
-  qualifiers (Tempest Strike is modelled as any melee); an air move (Ascension is modelled as a
-  class ability cast); blocking / reflecting attacks (Arc Staff's guard grants Bolt Charge per
-  reflected attack).
+- Triggers: champion stun (Defibrillating Blast's "stun → max Bolt Charge"); a slide qualifier
+  (Tempest Strike is modelled as any melee); airborne grenade and melee actions (Ballistic Slam) —
+  only the class ability has an airborne use (`class:air`, ADRs D26); blocking / reflecting attacks
+  (Arc Staff's guard grants Bolt Charge per reflected attack).
 - Damage sources: a specific ability or an ability's element (Skip Grenade vs any grenade, "Arc
   grenades"), "this weapon" for weapon perks, "matches your super's element" (Harmonic Siphon).
 - Conditions: "target lacks a debuff"; "target has any of" (Dielectric counts Jolt only, Photonic
@@ -66,7 +66,9 @@ the detail behind it.
   jolted kill gives way to Dielectric's, Compendium Arc#51). The build check warns, `explain` annotates
   the bullet and a loop report counts it under **Wasted per cycle** (the creator's loop: 7×, and 3
   Bolt Charge maxes per cycle instead of the 6 v1 showed when both fired). Granularity is the whole
-  rule, not one outcome.
+  rule, not one outcome. The loop graph routes both arrows through a "Doesn't stack" node, but only
+  for rules on the **same trigger**: rules whose triggers differ yet match one event (a `kill via any`
+  rule and a `kill via type:arc` one, on an Arc kill) each keep a direct arrow.
 - **Multi-target actions — done** (ADRs D22). The player says how many enemies an action hits or kills
   (`grenade:kill:3`, `kinetic:hit:5`); each enemy cascades on its own, and `damage/kill … atLeast: N`
   triggers express "hitting three separate targets" (One For All) and multi-kill perks. The web

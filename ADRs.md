@@ -133,7 +133,12 @@ The granularity is the whole rule, not one outcome: an outcome that does stack n
 of its own. Only rules matching the same event interact, and a rule gives way when any listed
 element's rule matched that event, even if that rule itself gave way — so in a chain where A
 lists B and B lists C, only C applies (a circle, which would apply none of them, is rejected
-when parsing). Without the listed element equipped, the rule applies as usual.
+when parsing). Without the listed element equipped, the rule applies as usual. The loop graph shows
+it too: where the rule and the one it gives way to lead from the same trigger to the same node, both
+arrows go into a "Doesn't stack" node and only the partner's arrow leaves it
+(`Kill Jolted target →[Tempest Strike, Dielectric] Doesn't stack →[Dielectric] Gain Bolt Charge`). The
+graph is static, so it pairs only rules on the same trigger — an approximation of the same-event rule —
+and the node is not a step (loop length, "N steps" and loop order ignore it).
 
 ## D24 — The designed loop is the product
 
@@ -157,3 +162,33 @@ in the browser (owner decision, for now): a loop is kept by exporting it or copy
 **Consequence.** No API host or database yet (D19); a saved library could come back later
 (per-browser storage, or a backend to sync it — [docs/backlog.md](docs/backlog.md)). The first
 visit downloads the .NET runtime (≈ 3 MB, then cached).
+
+## D26 — Airborne class ability use (`class:air`)
+
+**Context.** Ascension (Compendium Arc#48), the creator's alternative to Flow State, is an air move
+that spends the class ability charge: it jolts nearby enemies, makes you Amplified and sets off the
+equipped class ability's effects. v1 had no air-move trigger, so Ascension fired on every dodge,
+ground ones included. **Decision.** The class ability action carries an airborne flag: token
+`class:air` (`UseClassAbility(Airborne: true)`), event `AbilityCast(ClassAbility, Airborne: true)`.
+It is still a class ability cast — the charge is spent — so every `abilityCast: classAbility` rule
+fires on it too (the dodge's own effects per the Compendium; the class-ability mods and perks by the
+same reading). The trigger `{ abilityCast: { ability: classAbility, airborne: true } }` fires only on
+the airborne use; `airborne` on a grenade, melee or super is a parse error, since there is no airborne
+action for them. `class:air` always parses (CLI, loop files, share links), but `play` and the web
+palette offer it only when an equipped rule has an airborne trigger: without one it fires exactly what
+`class` fires, and a second identical choice would only clutter the menu. **Consequence.** Ascension's
+rule uses the airborne trigger, and any other airborne class-ability move is the same flag; the graph's
+"Use class ability" action reaches both triggers. Airborne grenade and melee actions (Ballistic Slam)
+and slide qualifiers (Tempest Strike) are not expressible yet ([docs/backlog.md](docs/backlog.md)).
+
+## D27 — A buff armed afresh replaces its stacks (`restart`)
+
+**Context.** Slice counts the next 5 hits after each class ability use (Compendium Weapon Perks#198),
+but its dodge rule added a stack, so dodges alone stacked Slice to 5 and ended it ("Melee first"
+reported "Slice maxed"). **Decision.** `applyBuff` takes `restart: true`: the stacks given replace the
+active ones and the duration restarts as usual; a restart that doesn't raise the stacks derives no
+`BuffGained`, and the trace reads "Slice ×1 (8s, restarts)" with the caveat "restarted (was ×N)". It is
+a flag on the outcome, not on the glossary status, because the same buff is armed afresh by one rule
+(the dodge) and stacked by another (each sever). **Consequence.** "Melee first" no longer maxes Slice;
+the creator's loop is unchanged. A buff armed at 0 stacks is still a gap (Slice severs 4 times per
+window instead of 5, [docs/backlog.md](docs/backlog.md)).

@@ -15,7 +15,8 @@ with another loop.
 
 > **Try it:** https://joancomasfdz.github.io/destiny-loopsmith/ — the web loop designer
 > (runs entirely in your browser). Status: working prototype on authored rules for one build
-> ([Skip Grenade Hunter](builds/skip-grenade-hunter/)); a Compendium snapshot parser is next
+> ([Skip Grenade Hunter](builds/skip-grenade-hunter/), plus the creator's own
+> [Ascension variant](builds/skip-grenade-hunter-ascension/)); a Compendium snapshot parser is next
 > (see [Roadmap](#roadmap) and [docs/backlog.md](docs/backlog.md)).
 
 ## Quick start
@@ -48,8 +49,8 @@ dotnet run --project src/Loopsmith.Cli -- graph    builds/skip-grenade-hunter/bu
 | `play` | Interactive: pick the next action by number or token, see what fires and what's available now. Every action becomes a step of the loop you design: `u` undo, `n <note>`, `d <description>`, `a` analyse it so far; `--save <file.loop.yaml>` writes it on quit (`w` saves now), `--name` names it |
 | `loop` | A designed loop (`*.loop.yaml`) run back to back from a fresh spawn (`--cycles N`, default 10): does it repeat, where it breaks, kills / pickups / maxed stacks, what fired, what was wasted (rules that don't stack), buff uptime, unknowns and chance bullets. `--trace` adds every step of cycle 1 |
 | `compare` | Two designed loops side by side (they may use different builds), one row per metric, the better value marked ✓ |
-| `loops` | Discovered loops: cycles in the cause → effect graph, ability-energy loops first |
-| `graph` | A Mermaid flowchart of the graph, with loop edges drawn thick. It renders on GitHub and at mermaid.live |
+| `loops` | Discovered loops: cycles in the cause → effect graph, ability-energy loops first. Where a rule gives way to one it doesn't stack with, the loop passes a "Doesn't stack" node (not counted as a step) |
+| `graph` | A Mermaid flowchart of the graph, with loop edges drawn thick; the arrows of rules that don't stack meet in a "Doesn't stack" rhombus, and only the rule that applies leaves it. It renders on GitHub and at mermaid.live |
 | `validate` | The build checked against the rule catalog (unknown elements, wrong slots, inert elements, rules that don't stack) |
 
 Every command takes `--rules <dir>` (default: the nearest `rules/` above the build or loop file, then the
@@ -63,7 +64,7 @@ option.
 [original note](builds/skip-grenade-hunter/note.txt):
 
 ```text
-Class ability -> +?% melee energy [Gambler's Dodge] + +12% grenade energy [Bomber] + Reaper (10s) [Reaper] + +1 Slice (8s) [Slice]
+Class ability -> +?% melee energy [Gambler's Dodge] + +12% grenade energy [Bomber] + Reaper (10s) [Reaper] + Slice ×1 (8s, restarts) [Slice]
 Grenade damage -> Jolt target [Spark of Shock] + +1 Bolt Charge and +4.2% grenade energy [Shinobu's Vow]
 Kill Jolted target -> +1 Bolt Charge (doesn't stack with Dielectric) [Tempest Strike] + Amplified [Flow State] + Ionic Trace [Shock and Clear] + +1 Bolt Charge [Dielectric]
 Pick up Ionic Trace -> +1 Bolt Charge [Spark of Discharge] + +1 Armor Charge [Elemental Charge] (chance) + +11.3% grenade and melee energy and +13.5% class ability energy [Ionic Trace]
@@ -93,9 +94,10 @@ simulated — abilities are always available, and energy outcomes are explanatio
 ([ADRs D21](ADRs.md)). The loop graph renders on GitHub:
 [builds/skip-grenade-hunter/loop-graph.md](builds/skip-grenade-hunter/loop-graph.md).
 
-Action tokens: `grenade|melee|super[:hit|kill[:N]]`, `class`, `kinetic|energy|power[:hit|kill[:N]]`,
+Action tokens: `grenade|melee|super[:hit|kill[:N]]`, `class[:air]`, `kinetic|energy|power[:hit|kill[:N]]`,
 `pickup:<id>`, `wait[:<seconds>]` — `N` is how many enemies that one action hits or kills (1..20, default 1):
-`grenade:kill:3`, `kinetic:hit:5` ([ADRs D22](ADRs.md)).
+`grenade:kill:3`, `kinetic:hit:5` ([ADRs D22](ADRs.md)); `class:air` is the class ability used in the air,
+like Ascension's air move ([ADRs D26](ADRs.md)).
 
 ## How it works
 
@@ -118,7 +120,8 @@ build.yaml ───┼─ parse → validate ──────┼─ simulate 
 Rule and build file format and the exact engine semantics: [docs/rule-format.md](docs/rule-format.md).
 Designed loops — the `.loop.yaml` format, share links, analysis and comparison metrics:
 [docs/loop-format.md](docs/loop-format.md). Example loops:
-[builds/skip-grenade-hunter/loops/](builds/skip-grenade-hunter/loops/).
+[builds/skip-grenade-hunter/loops/](builds/skip-grenade-hunter/loops/) and
+[builds/skip-grenade-hunter-ascension/loops/](builds/skip-grenade-hunter-ascension/loops/).
 Design proposal (requirements, data sources, architecture, roadmap, risks):
 [docs/design/loopsmith-design-v0.3.html](docs/design/loopsmith-design-v0.3.html) — the original plan;
 what later decisions superseded is listed at its top.
@@ -132,7 +135,8 @@ src/Loopsmith.Cli/       host: argv → Orchestration shell → effects
 src/Loopsmith.Web/       host: Blazor WebAssembly loop designer (Designer, Compare)
 tests/Loopsmith.Core.Tests/   unit, golden and architecture tests
 rules/                   authored causality (glossary, keywords, hunter, exotics, armor sets, mods, artifact, weapon perks)
-builds/<slug>/           build.yaml, the original note, note-map, discrepancies, scenario.txt, loop-graph.md, loops/*.loop.yaml
+builds/<slug>/           build.yaml, discrepancies, loop-graph.md, loops/*.loop.yaml (+ the original note, note-map and
+                         scenario.txt where the user wrote a note): skip-grenade-hunter and its Ascension variant
 docs/                    rule format, loop format, hosting, backlog, design proposal
 tools/compendium/        Destiny Data Compendium download: sheet_dump.py + Docker/Python scripts
 tools/web/               prepare-pages.sh — readies a published site for GitHub Pages
