@@ -136,7 +136,7 @@ A kill hits too, so a kill action also fires `damage … atLeast`. `via` default
 
 **Outcomes (`then`)** — exactly one key each. The energy outcomes (`grantEnergy`, `convertStacksToEnergy`,
 `resetCooldown`) are **explanations**: ability energy isn't simulated (ADRs D21), so they show in the trace
-and count in a loop's "energy refunded per cycle", but change no state.
+with their certainty and caveats, but change no state and aren't added up anywhere.
 
 | YAML | Domain `Outcome` |
 |---|---|
@@ -154,6 +154,42 @@ and count in a loop's "energy refunded per cycle", but change no state.
 
 Statuses in `applyBuff`/`removeBuff`/`has`/`lacks` must be glossary `buff`s; in
 `debuffTarget`/`targetHas` glossary `debuff`s; `spawn`/`pickUp` glossary pickups; `summon` glossary summons.
+
+**Rules that don't stack (`doesNotStackWith`)** — optional, a list of element ids. When the game says
+two elements' grants don't stack, say it on the rule of the side that gives nothing (ADRs D23):
+
+```yaml
+  - id: tempest-strike                  # rules/hunter/arc.yaml — Compendium Arc#51
+    rules:
+      - on: { kill: { via: any, targetHas: [jolt] } }
+        then:
+          - { applyBuff: { status: bolt-charge, stacks: 1 } }
+        doesNotStackWith: [dielectric]  # Dielectric's x1 on the same kill is the one you get
+        reason: "Killing a jolted enemy gives you a stack of Bolt Charge."
+```
+
+* When, on the same event, a rule of a listed element also fires (its trigger matches and its
+  guards hold), this rule **gives nothing**: it is reported as fired with no outcomes, naming the
+  element it gave way to (`FiredRule.NotStackedWith`). The trace shows the bullet as
+  `doesn't stack with Dielectric [Tempest Strike]`. It gives way even if that element's rule itself
+  gave way to a third one.
+* Without a listed element equipped, or on an event no rule of it matches, the rule applies as usual.
+* With both equipped, the build check warns (`explain`, `validate`, the web) —
+  `'Tempest Strike': +1 Bolt Charge on "Kill Jolted target" doesn't stack with 'Dielectric' — with both equipped, it is wasted.` —
+  `explain` annotates the bullet (`+1 Bolt Charge (doesn't stack with Dielectric) [Tempest Strike]`),
+  and a loop's analysis counts it as **wasted** ([loop-format.md](loop-format.md)).
+* The whole rule gives way, not one outcome: an outcome that does stack goes in a rule of its own.
+
+Parse errors are checked over the whole catalog once every file is read, and reported at the
+element's `file:line`:
+
+* `'<id>': doesNotStackWith '<x>' is not an element of the rules`
+* `'<id>': doesNotStackWith names its own element`
+* a `doesNotStackWith` that leads back to its own element — two elements naming each other, or a
+  longer circle (A → B → C → A): every rule in it would give way and none would apply. An error at
+  each element of the circle: `'<a>': doesNotStackWith '<b>' leads back to '<a>', so none of those rules would apply; say it only on the side that gives nothing`
+
+An empty list is an error at its own line: `rule.doesNotStackWith must list at least one element`.
 
 ### Passives
 
@@ -226,11 +262,13 @@ stats: { weapons: 47, class: 104, grenade: 145, super: 27, melee: 79 }   # any s
   enemies of `grenade:kill:3` — each fire.
 * **Stacked mods:** an element equipped N times fires its rules once; `PerModCount` picks the
   N-th value (last value if N is larger).
+* **Rules that don't stack** (`doesNotStackWith`, ADRs D23): of the rules one event fires, a rule
+  that lists another firing rule's element gives way — it is reported with no outcomes and
+  `NotStackedWith` = that element's name, and its outcomes take no part in the phase order.
 * **Energy is explained, not simulated** (ADRs D21): `grantEnergy` / `convertStacksToEnergy` /
-  `resetCooldown` are applied with their certainty and recorded as an `EnergyRefund` (fraction of one
-  charge: `Fraction(v)` → v for the copies equipped; `full` and `resetCooldown` → 1 = 100 %;
-  `convertStacksToEnergy` → per stack × the stacks it consumed — the stacks *are* consumed). No gauge
-  changes. An `Unknown` amount stays `?` (counted as an unknown refund, never 0). Chunk energy scalars,
-  base cooldowns and `extraCharges` are parsed but not used.
+  `resetCooldown` are applied with their certainty and a caveat (`×3 stacks` for the stacks a
+  conversion consumed — the stacks *are* consumed; `amount unknown`) and change no state: no gauge,
+  no refund total. An `Unknown` amount stays `?` (never 0) and counts in a loop report's unknown
+  values. Chunk energy scalars, base cooldowns and `extraCharges` are parsed but not used.
 * `chance: true` rules still fire (deterministic v1) and are marked *chance* in the trace — on every
   enemy of a multi-target action, so orb and trace counts are an upper bound.

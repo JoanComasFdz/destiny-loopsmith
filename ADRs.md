@@ -88,13 +88,15 @@ breaks in cycle 2"). **Decision (product owner).** Don't track ability energy an
 restrict a trigger: grenade, melee, super and class ability can always be used.
 `grantEnergy`, `resetCooldown` and the energy part of `convertStacksToEnergy` stay in the
 rules and the traces *as explanation* ("+12% grenade energy [Bomber]") — applied with their
-certainty, recorded as an `EnergyRefund`, changing no state (`convertStacksToEnergy` still
-consumes its stacks). Chunk scalars, base cooldowns and `extraCharges` are parsed and kept
-but not used. **Consequence.** A loop is "repeatable" when its steps can be played back to
-back (only a missing pickup or an empty weapon slot breaks a cycle); the analysis shows the
-**energy refunded per cycle** per ability (known amounts summed, `?` refunds counted) so
-the player judges whether that covers the abilities the loop uses. Revisit with the
-Compendium's cooldowns and a time model.
+certainty and caveat ("amount unknown", "×2 stacks"), changing no state
+(`convertStacksToEnergy` still consumes its stacks). Chunk scalars, base cooldowns and
+`extraCharges` are parsed and kept but not used. A later decision of the owner went further:
+exact energy, refund and cooldown totals aren't wanted at all — the build crafter needs to see
+what works together and what is wasted (D23) — so a loop no longer adds up what its rules
+refund. **Consequence.** A loop is "repeatable" when its steps can be played back to
+back (only a missing pickup or an empty weapon slot breaks a cycle); the analysis reports
+outcomes, what fired, what was wasted and buff uptime, with no energy figures. Revisit only if
+the owner asks for a time model (the Compendium's cooldowns would feed it).
 
 ## D22 — Player-declared target counts
 
@@ -108,3 +110,25 @@ kill — each cascading fully, so later hits see the debuffs earlier ones applie
 (`Trigger.DamageMultiple` / `KillMultiple`, each with only its own data). **Consequence.**
 Kills per cycle count every target; chance-based perks still fire on every enemy (D15,
 marked *(chance)*), so counts stay an upper bound. Strikes and summons hit one enemy.
+
+## D23 — Rules that don't stack give way and are reported as wasted
+
+**Context.** The Compendium (Arc#51) says Tempest Strike's x1 Bolt Charge on a jolted kill
+doesn't stack with Dielectric's. v1 fired both, so the Skip Grenade loops gained one Bolt
+Charge too many per jolted kill (6 maxes per cycle instead of 3). Beyond the numbers, the
+build crafter needs to see wasted potential: a slot spent on a grant the game throws away.
+**Decision.** A rule-level `doesNotStackWith: [<element-id>, …]`, declared on the side that
+gives nothing. When a rule of a listed element fires on the same event, the declaring rule
+gives way: it is reported as fired with no outcomes, naming that element
+(`FiredRule.NotStackedWith`; the trace reads "doesn't stack with Dielectric [Tempest Strike]").
+With both elements equipped the build check warns ("… with both equipped, it is wasted") and
+`explain` annotates the bullet; a loop report lists **Wasted per cycle** per (element,
+partner), counted neither as fired nor as a chance bullet, and a comparison judges fewer as
+better. Parsing rejects an id that isn't an element of the rules, the rule's own element, an
+empty list, and a `doesNotStackWith` that leads back to its own element, directly or through a
+longer circle (none of those rules would apply). **Consequence.**
+The granularity is the whole rule, not one outcome: an outcome that does stack needs a rule
+of its own. Only rules matching the same event interact, and a rule gives way when any listed
+element's rule matched that event, even if that rule itself gave way — so in a chain where A
+lists B and B lists C, only C applies (a circle, which would apply none of them, is rejected
+when parsing). Without the listed element equipped, the rule applies as usual.

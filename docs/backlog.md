@@ -31,10 +31,6 @@ the detail behind it.
   Flare Sever only); a guard on a stack count (Bolt Charge discharges on the next ability hit *at*
   x10, modelled as discharging on reaching x10); "while a kind of mod is equipped" (an Orb of Power
   gives Armor Charge only with an Armor Charge mod equipped).
-- **Non-stacking grants between elements**: the Compendium says Tempest Strike's x1 Bolt Charge on a
-  jolted kill does not stack with Dielectric's. v1 fires both, so the Skip Grenade loops gain one
-  stack too many per jolted kill (the creator's loop: 6 Bolt Charge maxes per cycle instead of 3,
-  grenade refund +~372.9% instead of +~207.9%).
 - Numbers: hit/kill counters and progress meters across actions (Spark of Discharge ≈ 3 kills per
   trace, To Shreds' 6 weapon hits, Amplified's intrinsic kill counter), amounts that scale with
   stats (Gambler's Dodge: 1% melee per Melee stat; Combination Blow's class refund needs 70 Class
@@ -54,9 +50,16 @@ the detail behind it.
 - **No ability-energy model — a decision, not a gap** (ADRs D21). Energy is mainly time (cooldowns
   scaled by stats), which the step engine can't simulate; the earlier refunds-only model had no
   passive recharge, so `wait` restored nothing, loops looked *less* sustainable than in game and steps
-  were blocked that are fine in game. Now abilities are always available, energy outcomes are
-  explanations and a loop reports the **energy refunded per cycle** per ability. Revisit once the
-  Compendium's base cooldowns and chunk scalars are in and there is a time model.
+  were blocked that are fine in game. Now abilities are always available and energy outcomes are
+  explanations only — no refund totals either: the owner doesn't want exact energy, refund or
+  cooldown maths; the analysis shows what works together and what is wasted. Revisit only if a time
+  model is wanted (the Compendium's base cooldowns and chunk scalars would feed it).
+- **Rules that don't stack — done** (ADRs D23). `doesNotStackWith: [<element>]` on a rule makes it give
+  nothing when a listed element's rule fires on the same event (Tempest Strike's Bolt Charge on a
+  jolted kill gives way to Dielectric's, Compendium Arc#51). The build check warns, `explain` annotates
+  the bullet and a loop report counts it under **Wasted per cycle** (the creator's loop: 7×, and 3
+  Bolt Charge maxes per cycle instead of the 6 v1 showed when both fired). Granularity is the whole
+  rule, not one outcome.
 - **Multi-target actions — done** (ADRs D22). The player says how many enemies an action hits or kills
   (`grenade:kill:3`, `kinetic:hit:5`); each enemy cascades on its own, and `damage/kill … atLeast: N`
   triggers express "hitting three separate targets" (One For All) and multi-kill perks. The web

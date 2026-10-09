@@ -194,7 +194,7 @@ public static class LoopDesigning
             : Optional.Some(new BuildIssue(Severity.Info, $"Loop designed against catalog {designed}; replaying with {current}.")));
     }
 
-    /// <summary>The report as styled lines (verdict, steady state: kills, pickups, energy refunded, what fired, uptime).</summary>
+    /// <summary>The report as styled lines (verdict, steady state: kills, pickups, what fired, what was wasted, uptime).</summary>
     public static ImmutableArray<StyledLine> RenderLoopReport(LoopReport report) =>
         LoopReportRendering.RenderLoopReport(report);
 

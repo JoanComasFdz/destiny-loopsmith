@@ -72,35 +72,37 @@ spawn (no buffs, an undebuffed pack, nothing on the ground), up to `maxCycles` (
 Cycle *n* starts from the state cycle *n − 1* ended in (buffs, debuffs and pickups carry over).
 
 **Ability energy isn't simulated** (ADRs D21): abilities are always available, so a cycle breaks only
-on a step that can't happen at all — a pickup that isn't on the ground, a weapon slot that's empty. What
-the rules give back is reported as **energy refunded per cycle**, for the player to weigh against the
-abilities the loop uses.
+on a step that can't happen at all — a pickup that isn't on the ground, a weapon slot that's empty.
+Energy outcomes show in the trace as explanations (`+11.3% grenade and melee energy [Ionic Trace]`) and
+aren't added up: the analysis shows what works together and what is **wasted** (rules that don't stack),
+not exact energy totals.
 
 | Field | Meaning |
 |---|---|
 | `Cycles` | each cycle's resolutions and the first blocked step (if any) |
 | `CompletedCycles` | cycles finished before any step was blocked (nothing to pick up, no weapon in that slot) |
 | repeatable (`IsRepeatable`) | `CompletedCycles == MaxCycles` — every step can be played again and again |
-| `Refunds` | steady state, per ability (grenade, melee, class ability, super): the energy the rules refunded — known and approximate amounts summed as a fraction of a charge (`full` / `resetCooldown` = 100 %, `convertStacksToEnergy` = per stack × stacks consumed), plus how many refunds were unknown (`?`). Shown `+46% (+3 unknown)`, `+~150%` when part of it is approximate, `0%` for none |
-| `Sources` | how many times each element fired — **steady state** = the last completed cycle (cycle 1 if none completed) |
+| `Sources` | how many times each element fired — **steady state** = the last completed cycle (cycle 1 if none completed). A rule that gave way (`doesNotStackWith`) isn't counted as fired |
+| `Wasted` | steady state: how many times an element's rule gave nothing because a rule of an element it doesn't stack with fired on the same event (`doesNotStackWith`, [rule format](rule-format.md)), per (element, partner): `7× Tempest Strike doesn't stack with Dielectric`; `nothing — everything that fired stacked` when empty. `CountWasted()` sums it |
 | `Outcomes` | steady-state counts: `Kills` (targets of the kill actions + killing strikes), `<Pickup> spawned`, `<Status> maxed` |
 | `Uptime` | steady state: after how many of the cycle's steps each buff was active |
 | `UnknownValues` | steady-state outcomes whose value is unknown (`?`) and therefore not applied — the real loop is stronger |
-| `ChanceRules` | steady-state bullets marked *(chance)* — fired in v1, not guaranteed in game |
+| `ChanceRules` | steady-state bullets marked *(chance)* — fired in v1, not guaranteed in game (a rule that gave way isn't counted) |
 
 v1 decisions the table above leaves open (`Simulation.LoopRunning`, `Domain.LoopReportArithmetic`):
 
 * A cycle with a blocked step is still **played to its end** (a blocked step changes nothing) and
   is the last cycle run; `Blocked` is its first blocked step (`StepIndex` 0-based).
-* When no cycle completed, cycle 1 is the steady state for **every** metric, refunds included.
-* A loop **without steps** runs no cycle: 0 completed, not repeatable, every refund `0%`,
+* When no cycle completed, cycle 1 is the steady state for **every** metric, `Wasted` included.
+* A loop **without steps** runs no cycle: 0 completed, not repeatable, nothing fired or wasted,
   `Outcomes = [Kills 0]`. `maxCycles` below 1 runs one cycle.
 * `Kills` = the targets of the kill actions that were performed (not blocked) — `grenade:kill:3` is
   3 — + applied `strikeTarget … hit: kill`.
   `<Pickup> spawned` sums `spawn` counts (auto-collected pickups included). `<Status> maxed` counts
   each `StacksMaxed` event once, however many rules reacted to it.
-* Order: `Sources` most fired first; `Outcomes` = `Kills`, then spawned, then maxed (first
-  appearance); `Uptime` longest first (ties in the order the buffs were gained).
+* Order: `Sources` most fired first; `Wasted` most first (ties in order of first appearance);
+  `Outcomes` = `Kills`, then spawned, then maxed (first appearance); `Uptime` longest first (ties in
+  the order the buffs were gained).
 
 ## Comparison (`LoopComparison`)
 
@@ -111,18 +113,18 @@ values and which side is better (`Advantage.Left/Right/None`):
 |---|---|
 | Steps per cycle | — (shown, not judged) |
 | Repeatable cycles (`10+` when repeatable) | more |
-| Grenade / melee / class ability / super energy refunded per cycle | more (the summed amount; on a tie, more unknown refunds) |
 | Kills per cycle | more |
 | `<Pickup> spawned` per cycle (union of both reports' pickups) | more |
 | `<Status> maxed` per cycle | more |
+| Wasted per cycle (doesn't stack) — `CountWasted()` | fewer |
 | `<Buff>` uptime (union of both reports' buffs) | higher |
 | Unknown values | fewer |
 | Chance bullets | fewer |
 
 v1 decisions: on equal completed cycles a repeatable loop beats one that broke; uptime is judged
 as the fraction of the cycle's steps (shown `5/7`; a buff a report lacks is `0/<steps>`, a loop
-without steps shows `—`); outcome rows keep the order Kills → spawned → maxed over the union;
-refunds print as in the report (`+46% (+3 unknown)`). `ComparisonRendering` marks the better value ✓.
+without steps shows `—`); outcome rows keep the order Kills → spawned → maxed over the union, then
+the wasted row, then uptime. `ComparisonRendering` marks the better value ✓.
 
 ## CLI
 

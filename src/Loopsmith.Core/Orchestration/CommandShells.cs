@@ -88,7 +88,7 @@ public static class CommandShells
 
     // ── pure planning ───────────────────────────────────────────────────────────
 
-    /// <summary>Build summary, the report (verdict, steady state with the energy refunded), the steps and, optionally, the trace of cycle 1.</summary>
+    /// <summary>Build summary, the report (verdict, steady state: what fired, what was wasted), the steps and, optionally, the trace of cycle 1.</summary>
     public static ImmutableArray<Effect> PlanLoopReport(DesignSession session, int maxCycles, Optional<TraceOptions> trace)
     {
         var report = LoopDesigning.AnalyzeDesign(session, maxCycles);

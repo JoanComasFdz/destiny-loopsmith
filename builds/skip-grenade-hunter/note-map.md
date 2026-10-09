@@ -10,12 +10,15 @@ The scenarios assume the build in `build.yaml` and the rules as of the Compendiu
 (see `discrepancies.md`). The expected sets were derived by running the spec's v1 semantics over the
 authored rules: phase order, depth ≤ 5, a rule never re-firing on an
 identical event up its own causal chain, the target's debuffs snapshotted when each event is
-emitted, `UseClassAbility` emitting only `AbilityCast(classAbility)`, and non-stacking statuses
-that only refresh.
+emitted, `UseClassAbility` emitting only `AbilityCast(classAbility)`, non-stacking statuses
+that only refresh, and a rule with `doesNotStackWith` giving way when a listed element fires on the
+same event.
 
 Conventions:
 
 - **fired** = the element's rule matched and its guards held.
+- **gives way** = the rule fired but gave nothing: it doesn't stack with another element's rule on the
+  same event (`doesNotStackWith`). It still counts as fired; the trace shows "doesn't stack with …".
 - *(chance)* = the rule is `chance: true`. It still fires in v1, but the trace marks it as chance.
 - **passive** = an always-on modifier that was applied, not a rule firing.
 - Keyword elements (`bolt-charge`, `jolt`, `ionic-trace`, `orb-of-power`, `unraveling-rounds`)
@@ -129,7 +132,7 @@ This is the title and has no trigger.
     - `to-shreds` *(chance)* → Unravel
   - On `Killed(Weapon energy arc)` (target `[jolt, sever, unravel]`):
     - `flow-state` → Amplified
-    - `tempest-strike` → +1 Bolt Charge
+    - `tempest-strike` gives way to `dielectric`: no Bolt Charge (they don't stack, row 26)
     - `harmonic-siphon` *(chance)* → Orb
     - `dielectric` → +1 Bolt Charge (no orb: the Tablet of Ruin version doesn't make one)
     - `photonic-flare` → Blind (an Arc kill of a severed target)
@@ -144,15 +147,17 @@ This is the title and has no trigger.
 - **Scenario 5b: minimal, the spec's own example.**
   - Start: fresh.
   - Action: `CastAbility(Grenade, kill)`. Spark of Shock jolts on the hit, so the kill sees `[jolt]`.
-  - On `Killed(Ability grenade arc)`: **flow-state, tempest-strike, luminopotent-4pc, dielectric**.
+  - On `Killed(Ability grenade arc)`: **flow-state, tempest-strike, luminopotent-4pc, dielectric**
+    (`tempest-strike` gives way to `dielectric`).
   - Cascade: `ionic-trace`, `spark-of-discharge`, `elemental-charge`, `shinobus-vow`, `bolt-charge`, and the passive `spark-of-frequency`.
   - Must NOT fire: `harmonic-siphon` (not a weapon kill), `photonic-flare` (no sever).
 - **Not reproduced:**
   - "amplified [tempest strike]". The Compendium and Clarity say Tempest Strike gives Bolt Charge on jolted kills; only Flow State gives Amplified (discrepancies row 1).
   - "orb of power [dielectric]". The Tablet of Ruin's Dielectric makes no orbs (row 14).
   - "blind if severed [photonic flare]" is reproduced only for Arc kills: the Compendium's trigger is an Arc kill of a severed target, jolted or not (row 17).
-  - Tempest Strike's and Dielectric's +1 Bolt Charge both fire; in game they don't stack (row 26).
 - **Harmonic Siphon:** fires on Arc weapon kills whether or not the target is jolted (row 6).
+- **Tempest Strike's Bolt Charge** doesn't stack with Dielectric's (Compendium, row 26): its rule says
+  `doesNotStackWith: [dielectric]`, so it gives way, and the build check flags it as wasted.
 
 ## Line 6: "Amplified -> increased bolt charge [spark of frequency] + Linear, Fusion Rifles and Heat weapons increased handling, reload and vent [Luminopotent Mask 2 piece bonus] + Kills wirh jolt or jolted enemies produce ionic trace [Luminopotent Mask 4 piece bonus]"
 
@@ -226,10 +231,10 @@ This is the title and has no trigger.
     - `shinobus-vow` → New Tricks, `~40%` grenade energy, heal `?` for you and allies
 - **Depth 2:**
   - On `Damaged(Keyword bolt-charge)`: `defibrillating-blast` → Jolt + heal `?` (~55 HP per the Compendium).
-  - On `Killed(Keyword bolt-charge)` (target `[jolt]`, applied by Defibrillating Blast): `tempest-strike`, `flow-state`, `luminopotent-4pc`, `dielectric`.
+  - On `Killed(Keyword bolt-charge)` (target `[jolt]`, applied by Defibrillating Blast): `tempest-strike` (gives way to `dielectric`), `flow-state`, `luminopotent-4pc`, `dielectric`.
 - **Depth 3:**
   - On `BuffGained(bolt-charge)`: `shinobus-vow`, `bolt-charge`. The passive `spark-of-frequency` applies because Flashover made you Amplified.
   - The new Ionic Trace's `PickedUp(ionic-trace)` is identical to the root event, so `ionic-trace`, `spark-of-discharge` and `elemental-charge` must NOT fire on it again (no re-firing up the causal chain). They already fired at depth 0.
 - **Fired:** **bolt-charge, flashover, shinobus-vow, defibrillating-blast, tempest-strike, flow-state, luminopotent-4pc, dielectric, ionic-trace, spark-of-discharge, elemental-charge**, plus the passive spark-of-frequency.
-- **End state:** `new-tricks`, `amplified`, Bolt Charge rebuilt to 4. The loop closes.
+- **End state:** `new-tricks`, `amplified`, Bolt Charge rebuilt to 2 (Dielectric's stack, doubled by Spark of Frequency). The loop closes.
 - **Reproduced.** The jolt and heal happen on the Bolt Charge strike's damage, one step after the max-stacks event, through the cascade (discrepancies row 13). In game the discharge waits for your next ability hit at x10 (row 23). The next throw consumes New Tricks: `CastAbility(Grenade)` while `new-tricks` → `shinobus-vow` removes it.

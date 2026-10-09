@@ -37,7 +37,7 @@ public static class CliArguments
                                                               every action becomes a step of the loop you design
           loopsmith loop     <file.loop.yaml> [--cycles <n>] [--trace] [--why] [--caveats]
                                                               run a designed loop back to back: does it repeat,
-                                                              what does it refund?
+                                                              what's wasted?
           loopsmith compare  <a.loop.yaml> <b.loop.yaml> [--cycles <n>]   two designed loops side by side
           loopsmith loops    <build.yaml> [--limit <n>]       discovered loops (cycles that come back around)
           loopsmith graph    <build.yaml> [--loops-only] [--limit <n>]   Mermaid flowchart of the loop graph
@@ -61,7 +61,7 @@ public static class CliArguments
           grenade|melee|super[:hit|kill[:N]]  class  kinetic|energy|power[:hit|kill[:N]]  pickup:<id>  wait[:<seconds>]
           (without :kill the hit only damages; N = enemies hit or killed in that one action, 1..20, default 1:
            grenade:kill:3 kills three, kinetic:hit:5 shoots five)
-          Abilities are always available: ability energy isn't simulated, refunds are explained.
+          Abilities are always available: ability energy isn't simulated, energy outcomes are explained.
         """;
 
     public static Result<CliInvocation, string> ParseArguments(ImmutableArray<string> args)
