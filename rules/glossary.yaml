@@ -1,0 +1,59 @@
+# Keyword vocabulary (docs/rule-format.md § Glossary).
+#
+# Engine semantics: a status WITHOUT maxStacks does not stack (re-applying only refreshes it, stacks
+# stay 1), so every stacking status carries maxStacks: bolt-charge, armor-charge, combination-blow,
+# slice. Durations appear only where a source states them; omitted duration = the status never
+# expires on its own in v1 (no source gives a number; "?" is never 0).
+# Clarity 2.0625 has no entries for statuses/verbs at all: the values below come from
+# mentions inside other Clarity entries or from the creator's video, as commented.
+
+statuses:
+  # ---------------------------------------------------------------- buffs (on the player)
+
+  # maxStacks 10 per the creator ("we're gaining back those 10 stacks of bolt charge").
+  # Clarity gives NO maximum; it only says New Tricks pays out "Upon reaching x10 Bolt Charge".
+  - { id: bolt-charge, name: Bolt Charge, kind: buff, affinity: arc, maxStacks: 10 }
+
+  # Duration varies by source and is not stated anywhere.
+  - { id: amplified, name: Amplified, kind: buff, affinity: arc }
+
+  # Base maximum 3 per Clarity "Charged Up" (2577472338): "from 3 to 4|5|6 with 1|2|3 Mods".
+  # Decay (1 stack / 10 s with passive mods, per Clarity "Time Dilation") is not modelled.
+  - { id: armor-charge, name: Armor Charge, kind: buff, affinity: neutral, maxStacks: 3 }
+
+  # Duration depends on the source (Clarity mentions 5 s, 10 s, 2-20 s); not stated for To Shreds.
+  - { id: woven-mail, name: Woven Mail, kind: buff, affinity: strand }
+
+  # Duration depends on the source (Clarity: 11 s Facet of Bravery, 8 s Thread of Propagation);
+  # not stated for Unraveling Orbs.
+  - { id: unraveling-rounds, name: Unraveling Rounds, kind: buff, affinity: strand }
+
+  # Combination Blow melee damage stacks. maxStacks 3 per the creator
+  # ("combination blow times three stacks"); Clarity has no melee-ability entries.
+  - { id: combination-blow, name: Combination Blow, kind: buff, affinity: arc, maxStacks: 3 }
+
+  # Shinobu's Vow: the next thrown Skip Grenade is enhanced. Lasts until that grenade is thrown.
+  - { id: new-tricks, name: New Tricks, kind: buff, affinity: arc }
+
+  # Slice weapon perk window. Clarity 923806249: 8 s (9 s enhanced), "Reaching 5 stacks
+  # immediately removes the buff".
+  - { id: slice, name: Slice, kind: buff, affinity: strand, maxStacks: 5, duration: 8s }
+
+  # Reaper armed: "The next Weapon Kill within 10 seconds of using your Class Ability" (Clarity 40751621).
+  - { id: reaper, name: Reaper, kind: buff, affinity: neutral, duration: 10s }
+
+  # ---------------------------------------------------------------- debuffs (on the target)
+  # No source states a duration for any of these. The note's "5s sever" is a note-only number
+  # (and may mean the Slice window, which Clarity gives as 8 s), so it is not encoded.
+  - { id: jolt, name: Jolt, kind: debuff, affinity: arc }
+  - { id: sever, name: Sever, kind: debuff, affinity: strand }
+  - { id: unravel, name: Unravel, kind: debuff, affinity: strand }
+  - { id: blind, name: Blind, kind: debuff, affinity: arc }
+
+pickups:
+  # "you don't need to go pick them up ... They literally come to you." (creator)
+  - { id: ionic-trace, name: Ionic Trace, affinity: arc, collectsAutomatically: true }
+  - { id: orb-of-power, name: Orb of Power, affinity: neutral, collectsAutomatically: false }
+
+summons:
+  - { id: threadling, name: Threadling, damageType: strand }

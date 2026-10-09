@@ -1,0 +1,16 @@
+# Strand keyword elements: rules that are active in every build (kind: keyword).
+elements:
+  - id: unraveling-rounds
+    name: Unraveling Rounds
+    kind: keyword
+    affinity: strand
+    # Clarity only mentions how other perks grant Unraveling Rounds (Facet of Bravery, Thread of
+    # Propagation), never what the buff does, so this is authored.
+    description: "Strand weapon buff: while active, your Strand weapon hits Unravel targets."
+    rules:
+      - on: { damage: { via: weapon:strand } }
+        when: [ { has: unraveling-rounds } ]
+        then:
+          - { debuffTarget: unravel }
+        reason: "With Unraveling Rounds up, your Strand weapon's hits unravel enemies."
+    passives: []

@@ -1,0 +1,16 @@
+# Build output
+bin/
+obj/
+*.user
+.vs/
+.idea/
+TestResults/
+
+# Verify snapshot diffs (keep *.verified.*)
+*.received.*
+
+# Private data snapshots — never commit (licensing: see README "Data sources")
+snapshots/
+
+# Creator video transcripts are third-party content — keep them local, link the video instead
+builds/*/transcript.txt

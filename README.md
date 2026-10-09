@@ -1,0 +1,148 @@
+# Loopsmith
+
+**See what your Destiny 2 build actually does.**
+
+DIM shows what you have equipped. Loopsmith takes a build (class, subclass, abilities,
+aspects, fragments, exotic, armor set, mods, artifact perks, weapons and perks) and
+explains its **gameplay loop**. For each trigger (dodge, grenade kill, pick up an orb,
+max Bolt Charge) it shows every outcome that fires, which element caused it, what that
+unlocks next, and where the loop closes back on itself.
+
+> Status: **initial CLI prototype.** Engine, CLI and the first build
+> ([Skip Grenade Hunter](builds/skip-grenade-hunter/)) work end to end on authored rules.
+> Manifest / Compendium ingestion comes next (see [Roadmap](#roadmap)).
+
+## Quick start
+
+Requires the .NET 10 SDK.
+
+```bash
+dotnet build Loopsmith.slnx
+dotnet run --project src/Loopsmith.Cli -- explain  builds/skip-grenade-hunter/build.yaml
+dotnet run --project src/Loopsmith.Cli -- simulate builds/skip-grenade-hunter/build.yaml \
+    --scenario builds/skip-grenade-hunter/scenario.txt --state
+dotnet run --project src/Loopsmith.Cli -- play     builds/skip-grenade-hunter/build.yaml --save my.loop.yaml
+dotnet run --project src/Loopsmith.Cli -- loop     builds/skip-grenade-hunter/loops/infinite-skip-grenades.loop.yaml
+dotnet run --project src/Loopsmith.Cli -- compare  builds/skip-grenade-hunter/loops/infinite-skip-grenades.loop.yaml \
+    builds/skip-grenade-hunter/loops/melee-first.loop.yaml
+dotnet run --project src/Loopsmith.Cli -- loops    builds/skip-grenade-hunter/build.yaml
+dotnet run --project src/Loopsmith.Cli -- graph    builds/skip-grenade-hunter/build.yaml --loops-only > loop.mmd
+```
+
+| Command | What you get |
+|---|---|
+| `explain` | Every trigger in the build → the outcomes it fires `[source]`, in the same shape as a hand-written build note (`--tree` for an aligned tree) |
+| `simulate` | A sequence of actions (`--actions grenade:kill,class,energy:kill` or `--scenario file`), one block per step: the event → outcomes `[source]`, cascades indented `↳`, then energy bars, buffs, target debuffs and ground pickups (`--state`). `--why` shows the reason text; `--caveats` shows the unknowns |
+| `play` | Interactive: pick the next action by number or token, see what fires and what's available now. Every action becomes a step of the loop you design: `u` undo, `n <note>`, `d <description>`, `a` analyse it so far; `--save <file.loop.yaml>` writes it on quit (`w` saves now), `--name` names it |
+| `loop` | A designed loop (`*.loop.yaml`) run back to back from a fresh spawn (`--cycles N`, default 10): does it sustain, where it breaks, energy after every cycle and net per cycle, kills / pickups / maxed stacks, what fired, buff uptime, unknowns and chance bullets. `--trace` adds every step of cycle 1 |
+| `compare` | Two designed loops side by side (they may use different builds), one row per metric, the better value marked ✓ |
+| `loops` | Discovered loops: cycles in the cause → effect graph, ability-energy loops first |
+| `graph` | A Mermaid flowchart of the graph, with loop edges drawn thick. It renders on GitHub and at mermaid.live |
+| `validate` | The build checked against the rule catalog (unknown elements, wrong slots, inert elements) |
+
+### What it looks like
+
+`explain` on the [Skip Grenade Hunter](builds/skip-grenade-hunter/), compare with the
+[original note](builds/skip-grenade-hunter/note.txt):
+
+```text
+Class ability -> +?% melee energy [Gambler's Dodge] + +12% grenade energy [Bomber] + Reaper (10s) [Reaper] + +1 Slice (8s) [Slice]
+Grenade damage -> Jolt target [Spark of Shock] + +1 Bolt Charge and +4.2% grenade energy [Shinobu's Vow]
+Kill Jolted target -> +1 Bolt Charge [Tempest Strike] + Amplified [Flow State] + Ionic Trace [Shock and Clear] + +1 Bolt Charge [Dielectric] + Orb of Power and heals you [Dielectric] (chance)
+Pick up Ionic Trace -> +1 Bolt Charge [Spark of Discharge] + +1 Armor Charge [Elemental Charge] (chance) + +~15% grenade, melee and class ability energy [Ionic Trace]
+Max Bolt Charge -> New Tricks and +~40% grenade energy and heals you and allies [Shinobu's Vow] + Amplified [Flashover] + consumes Bolt Charge and Bolt Charge strike (kills) [Bolt Charge]
+While Amplified -> +1 Bolt Charge per gain [Spark of Frequency] + linear-fusion-rifle/fusion-rifle/heat-weapon: +handling, +reload, +vent [Luminopotent 2-Piece Bonus]
+```
+
+`simulate` / `play`: one step, cascades indented, then the state:
+
+```text
+#2 Grenade (kill)
+  Grenade hit → Jolt target [Spark of Shock] + +1 Bolt Charge and +4.2% grenade energy* [Shinobu's Vow]
+    ↳ Bolt Charge ×1 → +?% grenade energy [Shinobu's Vow]
+  Grenade kill on Jolted target → +1 Bolt Charge [Tempest Strike] + Amplified [Flow State] + … + Ionic Trace [Shock and Clear]
+    ↳ Picked up Ionic Trace → +1 Bolt Charge [Spark of Discharge] + +~15% grenade, melee and class ability energy* [Ionic Trace]
+  Grenade       ▰▰▰▰▰▰▱▱▱▱ 1.19/2
+  Buffs         Reaper 10s · Slice ×1 8s · Bolt Charge ×6 · Amplified · Armor Charge ×1
+  Target        Jolt
+```
+
+`?` = unknown (never applied as 0) · `~` = approximate · `*` = chunk energy scalar assumed 1× ·
+`(chance)` = fires in v1 but isn't guaranteed in game. The loop graph renders on GitHub:
+[builds/skip-grenade-hunter/loop-graph.md](builds/skip-grenade-hunter/loop-graph.md).
+
+Action tokens: `grenade[:kill]`, `melee[:kill]`, `super[:kill]`, `class`,
+`kinetic|energy|power[:kill]`, `pickup:<id>`, `wait[:<seconds>]`.
+
+## How it works
+
+```
+rules/*.yaml ─┐                         ┌─ explain   (static: trigger → outcomes)
+build.yaml ───┼─ parse → validate ──────┼─ simulate  (pure state machine: (state, action) → (state, fired))
+              │   (railway, typestate)  └─ loops / graph (cycles in the cause → effect graph)
+```
+
+* Every build element is "an element with rules": `on` trigger → `then` outcomes (+ always-on
+  passives). Edges aren't stored; an edge appears when an outcome (a buff, an orb, a debuff,
+  energy) matches another rule's trigger. Loops come from that cascade.
+* Outcomes of one event apply in phase order (debuff → empower → damage → spawn → refund),
+  then derived events cascade depth-first (depth ≤ 5; a rule never re-fires on an identical
+  event up its own causal chain).
+* Every number is a `GameValue` with provenance. **Unknown stays unknown**: a "?" is shown,
+  never applied as 0.
+
+Rule and build file format and the exact engine semantics: [docs/rule-format.md](docs/rule-format.md).
+Designed loops — the `.loop.yaml` format, share links, analysis and comparison metrics:
+[docs/loop-format.md](docs/loop-format.md). Example loops:
+[builds/skip-grenade-hunter/loops/](builds/skip-grenade-hunter/loops/).
+Design proposal (requirements, data sources, architecture, roadmap, risks):
+[docs/design/loopsmith-design-v0.3.html](docs/design/loopsmith-design-v0.3.html).
+Coding conventions (binding): [CONVENTIONS.md](CONVENTIONS.md) · decisions: [ADRs.md](ADRs.md).
+
+## Repository layout
+
+```
+src/Loopsmith.Core/      one project, slices = folders (kernel: Domain, Functional, Phrasing, Causality)
+src/Loopsmith.Cli/       host: argv → Orchestration shell → effects
+tests/Loopsmith.Core.Tests/   unit, golden and architecture tests
+rules/                   authored causality (glossary, keywords, class, exotics, mods, artifact, perks)
+builds/<slug>/           build.yaml, the original note, note-map, discrepancies, sources, loops/*.loop.yaml
+docs/                    rule format, design proposal
+tools/compendium/        sheet_dump.py — Destiny Data Compendium snapshot tool
+.claude/                 cloud-session hook + project subagents
+```
+
+## Data sources
+
+| Source | Gives | Status |
+|---|---|---|
+| Authored rules (`rules/`) | Causality: what fires on what | ✅ used by the engine |
+| [Clarity](https://github.com/Database-Clarity/Live-Clarity-Database) | Hash-keyed descriptions with numbers (mods, fragments, aspects, exotic perks, weapon traits) | Used to author the first build (v2.0625); ingestion slice next |
+| Destiny Data Compendium | Abilities, cooldowns, chunk energy scalars, artifact perks, statuses | Snapshot via `tools/compendium/sheet_dump.py`; parser next |
+| Bungie manifest | Identity (hashes), names, icons | Next (needs an API key) |
+
+**Getting a Compendium snapshot** (run locally; `docs.google.com` isn't reachable from the
+cloud environment):
+
+```bash
+docker run --rm -v "$PWD":/w -w /w -u "$(id -u):$(id -g)" -e HOME=/tmp -e PIP_DISABLE_PIP_VERSION_CHECK=1 python:3.12-slim \
+  sh -c 'pip install -q --user --no-warn-script-location requests beautifulsoup4 && python tools/compendium/sheet_dump.py "https://docs.google.com/spreadsheets/d/1WaxvbLx7UoSZaBqdFr1u32F2uWVLo-CJunJB4nlGUE4/edit" snapshots/compendium/$(date +%F)'
+```
+
+**Licensing.** The Compendium is one person's donation-supported work. Keep snapshots
+private, out of any public repo (`snapshots/` is gitignored), never served as raw text,
+and credit it. Check Clarity's partnerships page before a public site. Bungie API use
+falls under Bungie's API terms. Creator video transcripts are third-party content: keep them
+locally as `builds/<slug>/transcript.txt` (gitignored) and link the video instead.
+
+## Roadmap
+
+1. ✅ Skeleton: kernel, slices, architecture tests, CI.
+2. ✅ Rules for the first build; simulation (match, guard, phase order, cascade, energy scalar); CLI.
+3. ✅ Golden test: the engine reproduces the build note.
+4. Ingest: Compendium snapshot parsers (tab registry) + Clarity enrichment + coverage report (FR-7, FR-9).
+5. Manifest join (names → hashes, icons), catalog versions (FR-8).
+6. Rule drafting from the Compendium's "On X:" phrasing (FR-10).
+7. API host, then the UI (DIM-like builder + step picker + trace).
+
+Destiny 2 is a trademark of Bungie. Loopsmith is a fan project, not affiliated with Bungie.

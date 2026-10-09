@@ -1,0 +1,129 @@
+@* The designed loop: one card per step with what it fired (TraceRenderer.RenderResolution — the CLI's wording). *@
+@{
+    var build = Session.Build;
+    var glossary = build.Catalog.Glossary;
+    var steps = Session.Design.Steps;
+}
+<section class="timeline" aria-label="Loop timeline">
+    <article class="step-card spawn @(IsSelected(0) ? "selected" : "")" data-step="0" tabindex="0"
+             @onclick="() => SelectStep(0)" @onkeydown="e => SelectStepByKey(e, 0)">
+        <header class="step-head">
+            <span class="step-no">#0</span>
+            <span class="step-title">Fresh spawn</span>
+            <span class="step-meta muted">start of every cycle</span>
+        </header>
+        @if (IsSelected(0) && !steps.IsEmpty)
+        {
+            <div class="step-actions" @onclick:stopPropagation="true">
+                <button class="btn small" @onclick="() => BranchFromStep(0)">Branch from here</button>
+                <span class="muted">drops all @steps.Length steps</span>
+            </div>
+        }
+    </article>
+
+    @for (var i = 0; i < steps.Length && i < Session.Resolutions.Length; i++)
+    {
+        var index = i;
+        var number = i + 1;
+        var step = steps[index];
+        var resolution = Session.Resolutions[index];
+        var blocked = resolution.Blocked.IsSome();
+        <article class="step-card @(IsSelected(number) ? "selected" : "") @(blocked ? "blocked" : "") @(number == steps.Length ? "last" : "")"
+                 id="step-@number" data-step="@number" tabindex="0"
+                 @onclick="() => SelectStep(number)" @onkeydown="e => SelectStepByKey(e, number)">
+            <header class="step-head">
+                <span class="step-no">#@number</span>
+                <span class="step-title">@glossary.DescribeAction(step.Action, build.Build)</span>
+                <code class="token">@step.Action.ToActionToken()</code>
+                @if (blocked)
+                {
+                    <span class="badge blocked" title="@resolution.Blocked.UnwrapOr("")">Blocked</span>
+                }
+            </header>
+            <div class="step-body">
+                <StyledLines Lines="@RenderStepLines(resolution)" IndentBase="1" />
+            </div>
+            <div class="step-note" @onclick:stopPropagation="true">
+                <input class="note-input" placeholder="Add a note…" aria-label="@($"Note for step {number}")"
+                       value="@step.Note.UnwrapOr("")" @onchange="e => AnnotateStep(index, e)" />
+            </div>
+            @if (IsSelected(number) && number < steps.Length)
+            {
+                <div class="step-actions" @onclick:stopPropagation="true">
+                    <button class="btn small" @onclick="() => BranchFromStep(number)">Branch from here</button>
+                    <span class="muted">keeps #1–#@number, drops @(steps.Length - number) later step@(steps.Length - number == 1 ? "" : "s")</span>
+                </div>
+            }
+        </article>
+    }
+
+    @if (steps.IsEmpty)
+    {
+        <p class="timeline-empty">Pick a trigger to start the loop. Each step shows everything it fires, which element caused it, and what it unlocks next.</p>
+    }
+</section>
+
+@code {
+    private readonly Dictionary<object, ImmutableArray<StyledLine>> renderedSteps = new(ReferenceEqualityComparer.Instance);
+    private TraceOptions renderedWith = new(false, false, false);
+
+    [Parameter, EditorRequired]
+    public DesignSession Session { get; set; } = null!;
+
+    [Parameter]
+    public Optional<int> Selected { get; set; } = Optional.None<int>();
+
+    [Parameter]
+    public TraceOptions Options { get; set; } = new(false, false, false);
+
+    [Parameter]
+    public EventCallback<int> OnSelect { get; set; }
+
+    [Parameter]
+    public EventCallback<int> OnBranch { get; set; }
+
+    [Parameter]
+    public EventCallback<(int Index, string Note)> OnAnnotate { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        if (renderedWith != Options)
+        {
+            renderedSteps.Clear();
+            renderedWith = Options;
+        }
+
+        var current = Session.Resolutions.Cast<object>().ToHashSet(ReferenceEqualityComparer.Instance);
+        foreach (var stale in renderedSteps.Keys.Where(key => !current.Contains(key)).ToList())
+        {
+            renderedSteps.Remove(stale);
+        }
+    }
+
+    /// <summary>The step's lines without its header (the card draws its own); cached per resolution.</summary>
+    private ImmutableArray<StyledLine> RenderStepLines(Resolution resolution)
+    {
+        if (!renderedSteps.TryGetValue(resolution, out var lines))
+        {
+            lines = [.. TraceRenderer.RenderResolution(Session.Build, resolution, Options with { ShowState = false }).Skip(1)];
+            renderedSteps[resolution] = lines;
+        }
+
+        return lines;
+    }
+
+    private bool IsSelected(int number) =>
+        Selected.Match(some => some.Value == number, _ => false);
+
+    private Task SelectStep(int number) =>
+        OnSelect.InvokeAsync(number);
+
+    private Task SelectStepByKey(KeyboardEventArgs e, int number) =>
+        e.Key is "Enter" or " " ? OnSelect.InvokeAsync(number) : Task.CompletedTask;
+
+    private Task BranchFromStep(int number) =>
+        OnBranch.InvokeAsync(number);
+
+    private Task AnnotateStep(int index, ChangeEventArgs e) =>
+        OnAnnotate.InvokeAsync((index, e.Value?.ToString() ?? ""));
+}

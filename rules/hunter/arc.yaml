@@ -1,0 +1,209 @@
+# Arc Hunter: abilities, aspects, fragments.
+#
+# Clarity 2.0625 has no entries for Supers, Grenades or Melee abilities, so Arc Staff, Skip Grenade
+# and Combination Blow are creator claims; chunk scalars and cooldowns are unknown ("?").
+# v1 limits that shape these rules (see builds/skip-grenade-hunter/discrepancies.md):
+#  - an ability damage source cannot name a specific ability or its damage type ("Arc grenades",
+#    "Skip Grenade drones" -> `grenade`);
+#  - no movement qualifiers ("while sliding", "while airborne").
+elements:
+  # ================================================================ abilities
+
+  - id: arc-staff
+    name: Arc Staff
+    kind: super
+    affinity: arc
+    class: hunter
+    ability: { kind: super, charges: 1, chunkScalar: "?", baseCooldown: "?" }
+    description: "Roaming Arc super: wield a staff of Arc Light for a while."
+    source:
+      creator: "https://www.youtube.com/watch?v=zvd6sNS463E"
+      quote: "So arc staff would probably be the play there."
+    rules: []
+    passives: []
+
+  - id: skip-grenade
+    name: Skip Grenade
+    kind: grenade
+    affinity: arc
+    class: hunter
+    ability: { kind: grenade, charges: 1, chunkScalar: "?", baseCooldown: "?" }
+    description: "Arc grenade that splits on impact into seekers (drones) that chase nearby enemies. Its interactions in this build come from Shinobu's Vow."
+    source:
+      creator: "https://www.youtube.com/watch?v=zvd6sNS463E"
+      quote: "Of course, you're going to use skip grenade."
+    rules: []
+    passives: []
+
+  - id: combination-blow
+    name: Combination Blow
+    kind: melee
+    affinity: arc
+    class: hunter
+    ability: { kind: melee, charges: 1, chunkScalar: "?", baseCooldown: "?" }
+    description: "Arc punch. Defeating a target with it refunds your class ability and grants a melee damage buff that stacks up to x3."
+    source:
+      creator: "https://www.youtube.com/watch?v=zvd6sNS463E"
+      quote: "combination blow times three stacks that you can build"
+    rules:
+      # The class-ability refund is implied by the creator ("my melee won't kill something, so it
+      # doesn't refund my dodge"); no source gives the amount.
+      - on: { kill: { via: melee } }
+        then:
+          - { applyBuff: combination-blow }
+          - { grantEnergy: { to: classAbility, amount: "?" } }
+        reason: "Killing something with Combination Blow stacks up its melee damage buff (up to x3) and gives your dodge back."
+    passives:
+      - effect: { modifyDamage: { against: melee, change: "?" } }
+        when: [ { has: combination-blow } ]
+        reason: "Each Combination Blow stack makes your next melee hit harder."
+
+  - id: gamblers-dodge
+    name: Gambler's Dodge
+    kind: classAbility
+    affinity: arc
+    class: hunter
+    # Clarity has 6 Gambler's Dodge hashes with identical text (one per subclass) and does not say
+    # which is Arc; 426473317 is the most recently uploaded. Resolve via the manifest later.
+    hash: 426473317
+    ability: { kind: classAbility, charges: 1, chunkScalar: "?", baseCooldown: "?" }
+    description: "Ground dodge. Grants 1% fixed melee energy per Melee stat point (max 100% at 100 Melee), doubled within 15 m of an enemy (max 200%). Not affected by chunk energy scalars."
+    source: clarity/426473317@2.0625
+    rules:
+      # The refund scales with the Melee stat (79 Melee near an enemy = 158%, a full charge), but a
+      # rule amount cannot depend on a stat in v1, so it is "?" rather than a build-specific number.
+      - on: { abilityCast: classAbility }
+        then:
+          - { grantEnergy: { to: melee, amount: "?" } }
+        reason: "Dodging near enemies refunds melee energy - 1% per Melee stat point, doubled within 15 m - so with enough Melee your punch comes straight back."
+    passives: []
+
+  # ================================================================ aspects
+  # fragmentSlots omitted: no source in hand states them.
+
+  - id: tempest-strike
+    name: Tempest Strike
+    kind: aspect
+    affinity: arc
+    class: hunter
+    hash: 4194622037
+    description: "Killing Jolted enemies grants x1 Bolt Charge. Charged melee while sliding launches a 22 m Arc uppercut that Jolts all enemies hit and grants 75% damage resistance against combatants for 4 s. Consumes and benefits from Combination Blow."
+    source: clarity/4194622037@2.0625
+    rules:
+      - on: { kill: { via: any, targetHas: [jolt] } }
+        then:
+          - { applyBuff: { status: bolt-charge, stacks: 1 } }
+        reason: "Killing a jolted enemy gives you a stack of Bolt Charge."
+      # "while sliding" is not expressible: any melee hit counts. The 4 s damage resistance after
+      # the cast is not modelled (no timed-resistance outcome).
+      - on: { damage: { via: melee } }
+        then:
+          - { debuffTarget: jolt }
+        reason: "Slide into your charged melee and the Arc uppercut jolts every enemy it hits."
+    passives: []
+
+  - id: flow-state
+    name: Flow State
+    kind: aspect
+    affinity: arc
+    class: hunter
+    hash: 4194622036
+    description: "Killing a Jolted enemy grants Amplified. While Amplified: 200% faster base class ability regeneration, 66% damage resistance during the dodge animation, +50 Reload Speed and 20% shorter reload animation."
+    source: clarity/4194622036@2.0625
+    rules:
+      - on: { kill: { via: any, targetHas: [jolt] } }
+        then:
+          - { applyBuff: amplified }
+        reason: "Killing a jolted enemy makes you Amplified."
+    # The Amplified benefits are not encoded: v1 has no passive for ability regeneration rate,
+    # cannot scope resistance to "during the dodge animation", and modifyWeaponStats has no
+    # "all weapons" archetype.
+    passives: []
+
+  - id: ascension
+    name: Ascension
+    kind: aspect
+    affinity: arc
+    class: hunter
+    hash: 4194622039
+    description: "Casting [Air Move] with full class ability energy consumes the charge and launches you upward, damaging and Jolting enemies within 10 m and granting Amplified to you and nearby allies. Triggers your dodge's effects; damage scales up to +65% at 200 Class."
+    source: clarity/4194622039@2.0625
+    rules:
+      # No air-move trigger in v1: modelled as a class ability cast (Ascension spends the class
+      # ability charge and triggers the dodge's effects). Not part of the skip-grenade build.
+      - on: { abilityCast: classAbility }
+        then:
+          - { debuffTarget: jolt }
+          - { applyBuff: amplified }
+        reason: "Air-casting your class ability launches you up, jolting enemies within 10 m and making you Amplified."
+    passives: []
+
+  # ================================================================ fragments
+
+  - id: spark-of-resistance
+    name: Spark of Resistance
+    kind: fragment
+    affinity: arc
+    class: hunter
+    hash: 1727069366
+    description: "Grants 25% [PvP 10%] damage resistance while within 15 m of 3+ enemies; lingers 2 s."
+    source: clarity/1727069366@2.0625
+    rules: []
+    passives:
+      # The "3+ enemies within 15 m" condition is not expressible; v1's target is "the pack in
+      # front of you", so it is treated as always surrounded.
+      - effect: { resistDamage: "25% [10%]" }
+        reason: "When you're surrounded by three or more enemies you take 25% less damage."
+
+  - id: spark-of-frequency
+    name: Spark of Frequency
+    kind: fragment
+    affinity: arc
+    class: hunter
+    hash: 1727069361
+    # The melee-hit reload buff (15 Stability, 50 Reload, 0.8x reload duration for 5.25 s) is not
+    # modelled (it is not part of any loop, and would need an extra glossary buff).
+    description: "Melee hits grant 15 Stability, 50 Reload Speed and a 0.8x reload duration for 5.25 s. While Amplified, (almost) all Bolt Charge sources grant an additional stack."
+    source: clarity/1727069361@2.0625
+    rules: []
+    passives:
+      - effect: { extraStacks: { status: bolt-charge, extra: 1 } }
+        when: [ { has: amplified } ]
+        reason: "While you're Amplified, almost every Bolt Charge source gives you one extra stack."
+
+  - id: spark-of-shock
+    name: Spark of Shock
+    kind: fragment
+    affinity: arc
+    class: hunter
+    hash: 1727069364
+    description: "Arc grenades apply Jolt on hit."
+    source: clarity/1727069364@2.0625
+    rules:
+      # "Arc grenades": v1 cannot type an ability source; on the Arc subclass every grenade is Arc.
+      - on: { damage: { via: grenade } }
+        then:
+          - { debuffTarget: jolt }
+        reason: "Your Arc grenades jolt everything they hit."
+    passives: []
+
+  - id: spark-of-discharge
+    name: Spark of Discharge
+    kind: fragment
+    affinity: arc
+    class: hunter
+    hash: 1727069362
+    description: "Collecting Ionic Traces grants a stack of Bolt Charge. Multiple Arc weapon kills spawn an Ionic Trace (progress per kill: minors 34%, elites 67%, minibosses and bosses 100%)."
+    source: clarity/1727069362@2.0625
+    rules:
+      - on: { pickUp: ionic-trace }
+        then:
+          - { applyBuff: { status: bolt-charge, stacks: 1 } }
+        reason: "Every Ionic Trace you collect gives you a Bolt Charge stack."
+      # Progress-based (about 3 minor kills per trace); v1 has no counters, so it is marked chance.
+      - on: { kill: { via: weapon:arc } }
+        then:
+          - { spawn: ionic-trace }
+        chance: true
+        reason: "Rack up Arc weapon kills and every few of them drop an Ionic Trace (one per boss kill)."
+    passives: []

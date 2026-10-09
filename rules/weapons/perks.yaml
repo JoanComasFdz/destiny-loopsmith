@@ -1,0 +1,49 @@
+# Weapon perks (traits).
+# v1 limit: a perk's rule cannot say "this weapon". Both perks here sit on a Strand weapon in the
+# skip-grenade build (Festival Flight), so they are written against `weapon:strand`.
+elements:
+  - id: slice
+    name: Slice
+    kind: weaponPerk
+    affinity: strand
+    hash: 923806249           # enhanced: 3422796781 (9 s window)
+    description: "Using your class ability (even with the weapon stowed) grants 'Slice' for 8 s. While active, damaging non-Severed targets Severs them, grants a stack and refreshes the duration. Reaching 5 stacks removes the buff. A severing hit that kills does not trigger it."
+    source: clarity/923806249@2.0625
+    rules:
+      # The initial grant counts as 1 stack in v1, so a window gives 4 severs before the 5-stack cap
+      # (Clarity does not say whether the grant itself is a stack).
+      - on: { abilityCast: classAbility }
+        then:
+          - { applyBuff: { status: slice, stacks: 1, duration: 8s } }
+        reason: "Dodging arms Slice for 8 seconds, even while the weapon is stowed."
+      # Not expressible: "non-Severed targets only" (no target-lacks guard) and "not if the
+      # severing hit kills" (the damage event precedes the kill).
+      - on: { damage: { via: weapon:strand } }
+        when: [ { has: slice } ]
+        then:
+          - { debuffTarget: sever }
+          - { applyBuff: { status: slice, stacks: 1, duration: 8s } }
+        reason: "While Slice is up, every enemy you hit gets severed and the Slice timer refreshes."
+      - on: { stacksMaxed: slice }
+        then:
+          - { removeBuff: slice }
+        reason: "After 5 Slice stacks the buff ends."
+    passives: []
+
+  # Clarity: a WEAPON TRAIT (base + enhanced), not an armor mod. The note credits it on strand
+  # weapon kills; which weapon carries it is inferred (Festival Flight).
+  - id: attrition-orbs
+    name: Attrition Orbs
+    kind: weaponPerk
+    affinity: neutral
+    hash: 243981275           # enhanced: 984655331 (1.1% super energy)
+    description: "Scoring multiple hits within 5 s of each other spawns an Orb of Power (0.8% super energy). Hits needed depend on the weapon (Rocket Launchers 2, Heavy GLs 3, Wave-Frame GLs 4, others 55% of magazine rounded down + 1). Counter persists through stow."
+    source: clarity/243981275@2.0625
+    rules:
+      # Hit-count based, not kill based; v1 has no counters -> chance.
+      - on: { damage: { via: weapon:strand } }
+        then:
+          - { spawn: orb-of-power }
+        chance: true
+        reason: "Keep landing hits with this weapon and every few hits it drops an Orb of Power."
+    passives: []

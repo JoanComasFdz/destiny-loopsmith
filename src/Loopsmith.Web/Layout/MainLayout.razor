@@ -1,0 +1,65 @@
+@inherits LayoutComponentBase
+@inject Workbench Workbench
+
+<div class="app-shell">
+    <header class="topbar">
+        <a class="brand" href="" aria-label="Loopsmith — designer">
+            <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 5a11 11 0 1 1-10.4 7.4" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" /><path d="M3.5 8.5l2.4 4.1 4.3-2.1" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" /><circle cx="16" cy="16" r="3.2" fill="var(--solar)" /></svg>
+            <span class="brand-name">Loopsmith</span>
+        </a>
+        <nav class="tabs" aria-label="Screens">
+            <NavLink class="tab" href="" Match="NavLinkMatch.All">Designer</NavLink>
+            <NavLink class="tab" href="library">Library</NavLink>
+            <NavLink class="tab" href="compare">Compare</NavLink>
+        </nav>
+        @if (Workbench.Startup is Result<LoopsmithBundle, string>.Ok started)
+        {
+            <span class="catalog-tag" title="Rule catalog version this app was built with">@started.Value.Catalog.Version</span>
+        }
+    </header>
+
+    <main class="content">
+        @switch (Workbench.Startup)
+        {
+            case Result<LoopsmithBundle, string>.Ok ok:
+                <CascadingValue Value="ok.Value" IsFixed="true">
+                    <ErrorBoundary @ref="errorBoundary">
+                        <ChildContent>@Body</ChildContent>
+                        <ErrorContent Context="exception">
+                            <section class="panel failure" role="alert">
+                                <h1>Something broke on this screen</h1>
+                                <pre class="failure-text">@exception.Message</pre>
+                                <button class="btn" @onclick="RecoverScreen">Try again</button>
+                            </section>
+                        </ErrorContent>
+                    </ErrorBoundary>
+                </CascadingValue>
+                break;
+            case Result<LoopsmithBundle, string>.Error failed:
+                <section class="panel failure" role="alert">
+                    <h1>Loopsmith could not start</h1>
+                    <p class="muted">The rules bundled with this version of the app did not load. Nothing can be simulated without them.</p>
+                    <pre class="failure-text">@failed.Failure</pre>
+                </section>
+                break;
+        }
+    </main>
+
+    <footer class="footer">
+        <span>Destiny 2 is a trademark of Bungie. Loopsmith is a fan project, not affiliated with Bungie.</span>
+        @if (!Workbench.ShareLinksWork)
+        {
+            <span class="tone-warning"> · Share links failed their self-check in this browser.</span>
+        }
+    </footer>
+</div>
+
+@code {
+    private ErrorBoundary? errorBoundary;
+
+    protected override void OnParametersSet() =>
+        errorBoundary?.Recover();
+
+    private void RecoverScreen() =>
+        errorBoundary?.Recover();
+}
