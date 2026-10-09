@@ -135,13 +135,10 @@ tools/web/               prepare-pages.sh — readies a published site for GitHu
 | Destiny Data Compendium | Abilities, cooldowns, chunk energy scalars, artifact perks, statuses | Snapshot via `tools/compendium/sheet_dump.py`; parser next |
 | Bungie manifest | Identity (hashes), names, icons | Next (needs an API key) |
 
-**Getting a Compendium snapshot** (run locally; `docs.google.com` isn't reachable from the
-cloud environment):
-
-```bash
-docker run --rm -v "$PWD":/w -w /w -u "$(id -u):$(id -g)" -e HOME=/tmp -e PIP_DISABLE_PIP_VERSION_CHECK=1 python:3.12-slim \
-  sh -c 'pip install -q --user --no-warn-script-location requests beautifulsoup4 && python tools/compendium/sheet_dump.py "https://docs.google.com/spreadsheets/d/1WaxvbLx7UoSZaBqdFr1u32F2uWVLo-CJunJB4nlGUE4/edit" snapshots/compendium/$(date +%F)'
-```
+**Getting a Compendium snapshot:** run `tools/compendium/get-compendium.ps1` (Windows) or
+`get-compendium.sh` locally and hand the resulting zip to a session — see
+[tools/compendium/README.md](tools/compendium/README.md). (`docs.google.com` isn't reachable from
+the cloud environment unless it's added to its allowed domains.)
 
 **Licensing.** The Compendium is one person's donation-supported work. Keep snapshots
 private, out of any public repo (`snapshots/` is gitignored), never served as raw text,

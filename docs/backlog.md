@@ -5,10 +5,10 @@ the detail behind it.
 
 ## Data
 
-- **Compendium snapshot** (next) — the tooling is in the repo (`tools/compendium/sheet_dump.py`;
-  the docker command is in the README, plain `python3` + `pip install requests beautifulsoup4`
-  works too). A cloud session can run it once `docs.google.com` is added to the environment's
-  allowed domains (or run it locally and hand the folder over). The raw snapshot is only needed
+- **Compendium snapshot** (next) — run `tools/compendium/get-compendium.ps1` (Windows) or
+  `.sh` locally and hand the zip to a session ([tools/compendium/README.md](../tools/compendium/README.md));
+  a cloud session can also run `sheet_dump.py` itself once `docs.google.com` is in the
+  environment's allowed domains. The raw snapshot is only needed
   while ingesting: its numbers go into `rules/` with `compendium/<date>/<tab>#<row>` provenance;
   the snapshot itself stays private (`snapshots/` is gitignored). Unlocks ability cooldowns,
   chunk energy scalars, artifact perk numbers and the status glossary — most of today's `?`.
