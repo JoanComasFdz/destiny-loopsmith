@@ -1,13 +1,15 @@
-# Luminopotent armor set (Core portal playlist). Clarity has no armor-set entries at all.
+# Luminopotent armor set (Solo/Fireteam Ops). Clarity has no armor-set entries; both bonuses are in
+# the Compendium snapshot of 2026-10-09 (Armor Perks tab).
 elements:
-  # User's note only ("Luminopotent Mask 2 piece bonus"); the video covers only the 4-piece and
-  # gives neither the name nor the numbers of this bonus, so it is authored with "?" values.
-  # The note lists it under "Amplified ->", hence the guard.
+  # Previously authored from the user's note ("Luminopotent Mask 2 piece bonus": handling, reload
+  # and vent while Amplified). The Compendium names it Ionic Overclock and lists only Handling and
+  # Reload Speed, both "+?"; vent is the note's alone and is not encoded (see discrepancies.md).
   - id: luminopotent-2pc
-    name: Luminopotent 2-Piece Bonus
+    name: Ionic Overclock
     kind: armorSetBonus
     affinity: arc
-    description: "Per the build note: while Amplified, Linear Fusion Rifles, Fusion Rifles and Heat weapons get increased handling, reload and vent speed."
+    description: "Luminopotent 2-piece bonus: while Amplified, Fusion Rifles, Linear Fusion Rifles and Heat weapons get +? Handling and +? Reload Speed."
+    source: "compendium/2026-10-09/Armor Perks#57"
     rules: []
     passives:
       - effect:
@@ -16,20 +18,18 @@ elements:
             changes:
               - { stat: handling, change: "?" }
               - { stat: reload, change: "?" }
-              - { stat: vent, change: "?" }
         when: [ { has: amplified } ]
-        reason: "While you're Amplified, linear fusions, fusions and heat weapons handle, reload and vent faster."
+        reason: "While you're Amplified, linear fusions, fusions and heat weapons handle and reload faster."
 
-  # The note files this under "Amplified ->"; the creator reads the bonus text, which has no
-  # Amplified condition, and found no cooldown in testing -> encoded unconditional.
+  # The note files this under "Amplified ->"; the bonus itself has no Amplified condition and no
+  # cooldown (Compendium, and the creator found none in testing) -> encoded unconditional.
+  # Previously a creator claim: "Final blows with Jolt or against Jolted combatants create ionic traces."
   - id: luminopotent-4pc
     name: Shock and Clear
     kind: armorSetBonus
     affinity: arc
-    description: "Luminopotent 4-piece bonus: final blows with Jolt or against Jolted combatants create Ionic Traces (no cooldown in the creator's testing)."
-    source:
-      creator: "https://www.youtube.com/watch?v=zvd6sNS463E"
-      quote: "Final blows with Jolt or against Jolted combatants create ionic traces."
+    description: "Luminopotent 4-piece bonus: a Jolt kill or a kill of a Jolted enemy creates an Ionic Trace (no cooldown stated; none in the creator's testing)."
+    source: "compendium/2026-10-09/Armor Perks#58"
     rules:
       # "with Jolt" kills are covered too: Jolt only chains off a jolted pack, and v1's target is that pack.
       - on: { kill: { via: any, targetHas: [jolt] } }

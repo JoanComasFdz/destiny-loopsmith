@@ -542,6 +542,215 @@ public sealed class RuleCatalogParsingTests
         Assert.Contains("hunter/arc.yaml:10: spawn.pickup: unknown pickup 'tangle'", message);
     }
 
+    // ── Airborne class ability use and restarting buffs ──────────────────────────────────
+
+    private static SourceText ToAirMoveFile(string trigger, string buff = "{ applyBuff: amplified }") =>
+        ToElementsFile("hunter/arc.yaml", """
+            elements:
+              - id: ascension
+                name: Ascension
+                kind: aspect
+                affinity: arc
+                rules:
+                  - on: TRIGGER
+                    then: [ BUFF ]
+            """.Replace("TRIGGER", trigger).Replace("BUFF", buff));
+
+    [Fact]
+    public void Parses_an_airborne_class_ability_trigger_and_a_restarting_buff()
+    {
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog(
+            [Glossary, ToAirMoveFile("{ abilityCast: { ability: classAbility, airborne: true } }", "{ applyBuff: { status: bolt-charge, restart: true } }")]));
+
+        var rule = catalog.Elements[ElementId.From("ascension")].Rules[0];
+        Assert.Equal(new Trigger.AbilityCast(AbilityKind.ClassAbility, Airborne: true), rule.On);
+        Assert.Equal(new Outcome.ApplyBuff(ToStatus("bolt-charge"), Optional.None<Seconds>(), StackCount.From(1), Restarts: true), rule.Then[0]);
+    }
+
+    [Fact]
+    public void The_map_form_of_a_cast_trigger_without_airborne_is_the_plain_trigger()
+    {
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToAirMoveFile("{ abilityCast: { ability: grenade } }")]));
+
+        Assert.Equal(new Trigger.AbilityCast(AbilityKind.Grenade), catalog.Elements[ElementId.From("ascension")].Rules[0].On);
+    }
+
+    [Fact]
+    public void Only_a_class_ability_can_be_airborne()
+    {
+        var message = ParseInvalidCatalog(Glossary, ToAirMoveFile("{ abilityCast: { ability: grenade, airborne: true } }"));
+
+        Assert.Contains("only a classAbility can be airborne", message);
+        Assert.StartsWith("hunter/arc.yaml:", message);
+    }
+
+    // ── Rules that don't stack ───────────────────────────────────────────────────────────
+
+    /// <summary>Tempest Strike (line 2) gives way to <paramref name="partner"/>; Dielectric (line 11) adds <paramref name="dielectricSays"/>.</summary>
+    private static SourceText ToStackingFile(string partner, string dielectricSays = "") =>
+        ToElementsFile("hunter/arc.yaml", """
+            elements:
+              - id: tempest-strike
+                name: Tempest Strike
+                kind: aspect
+                affinity: arc
+                rules:
+                  - on: { abilityCast: grenade }
+                    then: [ { applyBuff: bolt-charge } ]
+                    doesNotStackWith: PARTNER
+                    reason: "Jolted kills give Bolt Charge."
+              - id: dielectric
+                name: Dielectric
+                kind: artifactPerk
+                affinity: arc
+                rules:
+                  - on: { abilityCast: grenade }
+                    then: [ { applyBuff: bolt-charge } ]
+                    DIELECTRIC
+            """.Replace("PARTNER", partner).Replace("DIELECTRIC", dielectricSays));
+
+    [Fact]
+    public void Parses_the_elements_a_rule_does_not_stack_with()
+    {
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToStackingFile("[dielectric]")]));
+
+        Assert.Equal([ElementId.From("dielectric")], catalog.Elements[ElementId.From("tempest-strike")].Rules[0].DoesNotStackWith);
+        Assert.Empty(catalog.Elements[ElementId.From("dielectric")].Rules[0].DoesNotStackWith);
+    }
+
+    [Fact]
+    public void Does_not_stack_with_an_unknown_element_is_an_error()
+    {
+        var message = ParseInvalidCatalog(Glossary, ToStackingFile("[dielectrik]"));
+
+        Assert.Equal("hunter/arc.yaml:2: 'tempest-strike': doesNotStackWith 'dielectrik' is not an element of the rules", message);
+    }
+
+    [Fact]
+    public void Does_not_stack_with_its_own_element_is_an_error()
+    {
+        var message = ParseInvalidCatalog(Glossary, ToStackingFile("[tempest-strike]"));
+
+        Assert.Equal("hunter/arc.yaml:2: 'tempest-strike': doesNotStackWith names its own element", message);
+    }
+
+    [Fact]
+    public void Two_elements_that_each_give_way_to_the_other_are_an_error_at_both()
+    {
+        var message = ParseInvalidCatalog(Glossary, ToStackingFile("[dielectric]", "doesNotStackWith: [tempest-strike]"));
+
+        Assert.Equal(
+            "hunter/arc.yaml:2: 'tempest-strike': doesNotStackWith 'dielectric' leads back to 'tempest-strike', so none of those rules would apply; say it only on the side that gives nothing\n"
+            + "hunter/arc.yaml:11: 'dielectric': doesNotStackWith 'tempest-strike' leads back to 'dielectric', so none of those rules would apply; say it only on the side that gives nothing",
+            message);
+    }
+
+    [Fact]
+    public void A_longer_circle_of_elements_giving_way_is_an_error_at_each_of_them()
+    {
+        var bomber = ToElementsFile("mods/armor.yaml", """
+            elements:
+              - id: bomber
+                name: Bomber
+                kind: armorMod
+                affinity: neutral
+                rules:
+                  - on: { abilityCast: grenade }
+                    then: [ { applyBuff: bolt-charge } ]
+                    doesNotStackWith: [tempest-strike]
+            """);
+
+        var message = ParseInvalidCatalog(Glossary, ToStackingFile("[dielectric]", "doesNotStackWith: [bomber]"), bomber);
+
+        Assert.Equal(
+            [
+                "hunter/arc.yaml:2: 'tempest-strike': doesNotStackWith 'dielectric' leads back to 'tempest-strike', so none of those rules would apply; say it only on the side that gives nothing",
+                "hunter/arc.yaml:11: 'dielectric': doesNotStackWith 'bomber' leads back to 'dielectric', so none of those rules would apply; say it only on the side that gives nothing",
+                "mods/armor.yaml:2: 'bomber': doesNotStackWith 'tempest-strike' leads back to 'bomber', so none of those rules would apply; say it only on the side that gives nothing",
+            ],
+            message.Split('\n'));
+    }
+
+    [Fact]
+    public void A_chain_of_elements_giving_way_without_a_circle_parses()
+    {
+        var bomber = ToElementsFile("mods/armor.yaml", """
+            elements:
+              - id: bomber
+                name: Bomber
+                kind: armorMod
+                affinity: neutral
+                rules:
+                  - on: { abilityCast: grenade }
+                    then: [ { applyBuff: bolt-charge } ]
+            """);
+
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToStackingFile("[dielectric]", "doesNotStackWith: [bomber]"), bomber]));
+
+        Assert.Equal([ElementId.From("bomber")], catalog.Elements[ElementId.From("dielectric")].Rules[0].DoesNotStackWith);
+    }
+
+    [Fact]
+    public void Does_not_stack_with_nothing_is_an_error()
+    {
+        var message = ParseInvalidCatalog(Glossary, ToStackingFile("[]"));
+
+        Assert.Contains("must list at least one element", message);
+        Assert.StartsWith("hunter/arc.yaml:9: ", message);
+    }
+
+    // ── Multi-target triggers: "hit / kill at least N enemies in one action" (ADRs D22) ──────
+
+    private const string OneForAllYaml = """
+        elements:
+          - id: one-for-all
+            name: One For All
+            kind: weaponPerk
+            affinity: kinetic
+            rules:
+              - on: { damage: { via: weapon, atLeast: 3 } }
+                then: [ { applyBuff: amplified } ]
+                reason: "Hitting three separate targets within a short time grants increased damage."
+              - on: { kill: { via: grenade, atLeast: 2 } }
+                then: [ { spawn: orb-of-power } ]
+              - on: { kill: { atLeast: 1 } }
+                then: [ { applyBuff: amplified } ]
+        """;
+
+    [Fact]
+    public void Parses_hit_and_kill_at_least_N_triggers()
+    {
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToElementsFile("weapons/perks.yaml", OneForAllYaml)]));
+
+        var rules = catalog.Elements[ElementId.From("one-for-all")].Rules;
+        Assert.Equal(new Trigger.DamageMultiple(new DamageSource.AnyWeapon(), TargetCount.From(3)), rules[0].On);
+        Assert.Equal(new Trigger.KillMultiple(new DamageSource.AbilityOf(AbilityKind.Grenade), TargetCount.From(2)), rules[1].On);
+        Assert.Equal(new Trigger.KillMultiple(new DamageSource.AnySource(), TargetCount.One), rules[2].On);
+    }
+
+    [Theory]
+    [InlineData("kill: { via: weapon, atLeast: 2, tier: champion }", "hunter/arc.yaml:7: kill cannot combine 'atLeast' and 'tier'")]
+    [InlineData("kill: { via: weapon, atLeast: 2, targetHas: [jolt] }", "hunter/arc.yaml:7: kill cannot combine 'atLeast' and 'targetHas'")]
+    [InlineData("damage: { via: weapon, atLeast: 2, targetHas: [jolt] }", "hunter/arc.yaml:7: damage cannot combine 'atLeast' and 'targetHas'")]
+    [InlineData("damage: { via: weapon, atLeast: 0 }", "hunter/arc.yaml:7: damage.atLeast: '0' is not a whole number ≥ 1")]
+    [InlineData("damage: { via: weapon, atLeast: 21 }", "hunter/arc.yaml:7: damage.atLeast: Target count must be within 1..20")]
+    [InlineData("kill: { atLeast: lots }", "hunter/arc.yaml:7: kill.atLeast: 'lots' is not a whole number ≥ 1")]
+    public void At_least_is_a_count_of_1_to_20_and_stands_alone(string trigger, string expected)
+    {
+        var message = ParseInvalidCatalog(Glossary, ToElementsFile("hunter/arc.yaml", $$"""
+            elements:
+              - id: one-for-all
+                name: One For All
+                kind: weaponPerk
+                affinity: kinetic
+                rules:
+                  - on: { {{trigger}} }
+                    then: [ { spawn: orb-of-power } ]
+            """));
+
+        Assert.Equal(expected, message);
+    }
+
     [Fact]
     public void Tier_and_target_has_together_is_an_error()
     {

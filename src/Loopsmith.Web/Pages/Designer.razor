@@ -64,7 +64,6 @@
             </div>
             <div class="toolbar-group">
                 <button class="btn primary" @onclick="AnalyzeLoop" data-action="analyze">Analyze</button>
-                <button class="btn" @onclick="SaveToLibraryAsync" data-action="save">Save to library</button>
                 <button class="btn" @onclick="ExportLoopAsync" data-action="export">Export</button>
                 <button class="btn" @onclick="CopyShareLinkAsync" data-action="share">Copy share link</button>
                 <button class="btn" @onclick="OpenImportDialog" data-action="import">Import loop</button>
@@ -85,14 +84,14 @@
                     <h2>Loop <span class="muted">· @stepCount step@(stepCount == 1 ? "" : "s")</span></h2>
                     <div class="timeline-toggles">
                         <label class="toggle" title="Show each rule's reason text"><input type="checkbox" checked="@traceOptions.ShowReasons" @onchange="ToggleReasons" /> why</label>
-                        <label class="toggle" title="Show the caveats of unknown or assumed values"><input type="checkbox" checked="@traceOptions.ShowCaveats" @onchange="ToggleCaveats" /> caveats</label>
+                        <label class="toggle" title="Show each outcome's caveats: unknown amounts, stacks consumed, extra stacks, refreshed buffs, where a pickup lands"><input type="checkbox" checked="@traceOptions.ShowCaveats" @onchange="ToggleCaveats" /> caveats</label>
                     </div>
                 </div>
                 <LoopTimeline Session="session" Selected="Workbench.SelectedStep" Options="traceOptions"
                               OnSelect="SelectStep" OnBranch="BranchFromStep" OnAnnotate="AnnotateStep" />
             </div>
             <aside class="col-side">
-                <TriggerPalette Options="LoopDesigning.ListTriggerOptions(session)" OnPick="AppendTrigger"
+                <TriggerPalette Build="session.Build" Options="LoopDesigning.ListTriggerOptions(session)" OnPick="AppendTrigger"
                                 Caption="@(stepCount == 0 ? "from a fresh spawn" : $"after #{stepCount}")"
                                 Hint="@DescribePaletteHint(shown.Number, stepCount)" />
                 <StatePanel Build="session.Build" State="shown.State" Passives="shown.Passives" Caption="@shown.Caption" />
@@ -106,6 +105,11 @@
             <Modal Title="Import a loop" OnClose="CloseDialog">
                 <p class="muted">A <code>.loop.yaml</code> carries its own build, so it replays here as it was designed. It replaces the loop on screen.</p>
                 <ImportLoopForm Problem="importProblem" OnImport="ImportLoop" OnUnreadable="ShowImportProblem" />
+                @if (!Bundle.Loops.IsEmpty)
+                {
+                    <h3 class="section-label">Or open an example loop</h3>
+                    <ExampleLoopList Loops="Bundle.Loops" OnOpen="OpenExampleLoop" />
+                }
             </Modal>
             break;
         case DesignerDialog.ShareLink:
@@ -129,7 +133,7 @@ else
     <section class="chooser">
         <div class="chooser-intro">
             <h1>Design a build's gameplay loop</h1>
-            <p class="muted">Pick a build, then pick triggers — dodge, throw a grenade and kill, shoot, pick up an orb. Each step shows everything it fires, which element caused it, and what it unlocks next. The loop you design is the thing you save, share and compare.</p>
+            <p class="muted">Pick a build, then pick triggers — dodge, throw a grenade and kill, shoot, pick up an orb. Each step shows everything it fires, which element caused it, and what it unlocks next. The loop you design is the thing you export, share and compare.</p>
         </div>
         <div class="build-cards">
             @foreach (var build in Bundle.Builds)
@@ -183,7 +187,7 @@ else
             </div>
         }
         <p class="chooser-more muted">
-            Or <button class="btn link" @onclick="OpenImportDialog">import a loop</button>, or open one from the <a href="library">library</a>.
+            Or <button class="btn link" @onclick="OpenImportDialog">import a loop</button> (a <code>.loop.yaml</code> file or its YAML).
         </p>
     </section>
 
@@ -218,8 +222,6 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        status = Workbench.PendingStatus.UnwrapOr("");
-        Workbench.PendingStatus = Optional.None<string>();
         Navigation.LocationChanged += OpenSharedLoopOnNavigation;
         await OpenSharedLoopAsync(Navigation.Uri);
     }
@@ -241,13 +243,13 @@ else
     private void OpenFreshDesign(Result<DesignSession, string> fresh)
     {
         fresh.Match(
-            ok => OpenDesign(ok.Value, Optional.None<string>(), $"New loop for {ok.Value.Build.Build.Name}."),
+            ok => OpenDesign(ok.Value, $"New loop for {ok.Value.Build.Build.Name}."),
             error => ShowNotice(error.Failure));
     }
 
-    private Unit OpenDesign(DesignSession session, Optional<string> savedId, string message)
+    private Unit OpenDesign(DesignSession session, string message)
     {
-        Workbench.OpenSession(session, savedId);
+        Workbench.OpenSession(session);
         Workbench.Notice = Optional.None<string>();
         report = Optional.None<LoopReport>();
         status = message + DescribeCatalogMismatch(session);
@@ -260,8 +262,9 @@ else
 
     private void OpenExampleLoop(BundledLoop example)
     {
+        dialog = DesignerDialog.None;
         example.Opened.Match(
-            ok => OpenDesign(ok.Value, Optional.None<string>(), $"Opened the example “{ok.Value.Design.Name}”."),
+            ok => OpenDesign(ok.Value, $"Opened the example “{ok.Value.Design.Name}”."),
             error => ShowNotice(error.Failure));
     }
 
@@ -311,7 +314,7 @@ else
         var imported = ShareLinkCoding.DecodeLoopPayload(some.Value)                             // pure
             .Bind(file => LoopDesigning.ImportLoop(Bundle.Catalog, new SourceText("shared.loop.yaml", file)));
         imported.Match(
-            ok => OpenDesign(ok.Value, Optional.None<string>(), $"Opened the shared loop “{ok.Value.Design.Name}”."),
+            ok => OpenDesign(ok.Value, $"Opened the shared loop “{ok.Value.Design.Name}”."),
             error => ShowNotice($"Couldn't open the shared loop:{Environment.NewLine}{error.Failure}"));
         await Browser.ClearLocationHashAsync();                                                  // impure
     }
@@ -325,8 +328,8 @@ else
 
     // ── editing the loop ────────────────────────────────────────────────────────
 
-    private void AppendTrigger(TriggerOption option) =>
-        EditSession(session => LoopDesigning.AppendStep(session, option.Action, Optional.None<string>()), scrollToEnd: true);
+    private void AppendTrigger(PlayerAction action) =>
+        EditSession(session => LoopDesigning.AppendStep(session, action, Optional.None<string>()), scrollToEnd: true);
 
     private void UndoLastStep() =>
         EditSession(LoopDesigning.RemoveLastStep, scrollToEnd: false);
@@ -385,7 +388,7 @@ else
     private void ToggleCaveats(ChangeEventArgs e) =>
         traceOptions = traceOptions with { ShowCaveats = e.Value is true };
 
-    // ── toolbar: analyze, save, export, share, import ───────────────────────────
+    // ── toolbar: analyze, export, share, import ─────────────────────────────────
 
     private void AnalyzeLoop()
     {
@@ -396,28 +399,6 @@ else
         }
     }
 
-    private async Task SaveToLibraryAsync()
-    {
-        if (Workbench.Session is not Optional<DesignSession>.Some open)
-        {
-            return;
-        }
-
-        await LibraryStoring.LoadLibraryAsync(Workbench, Browser);                               // impure
-        var freshId = Guid.NewGuid().ToString("n");                                              // impure
-        var savedAt = DateTimeOffset.UtcNow;                                                     // impure
-
-        var id = Workbench.SavedId.UnwrapOr(freshId);                                            // pure
-        var saved = LibraryListing.ToSavedLoop(open.Value, id, savedAt);                         // pure
-        var library = LoopLibrary.SaveLoop(Workbench.Library, saved);                            // pure
-
-        var stored = await LibraryStoring.StoreLibraryAsync(Workbench, Browser, library);        // impure
-        Workbench.SavedId = Optional.Some(id);
-        status = stored
-            ? $"Saved “{saved.Name}” to the library."
-            : "This browser refused to store the library (private mode or storage full?).";
-    }
-
     private async Task ExportLoopAsync()
     {
         if (Workbench.Session is not Optional<DesignSession>.Some open)
@@ -426,7 +407,7 @@ else
         }
 
         var file = LoopDesigning.ExportLoop(open.Value);                                         // pure
-        var fileName = LoopLibrary.ToLoopFileName(open.Value.Design.Name);                       // pure
+        var fileName = LoopFileNaming.ToLoopFileName(open.Value.Design.Name);                    // pure
         await Browser.DownloadTextAsync(fileName, file);                                         // impure
         status = $"Exported {fileName}.";
     }
@@ -462,7 +443,7 @@ else
             ok =>
             {
                 dialog = DesignerDialog.None;
-                return OpenDesign(ok.Value, Optional.None<string>(), $"Imported “{ok.Value.Design.Name}”.");
+                return OpenDesign(ok.Value, $"Imported “{ok.Value.Design.Name}”.");
             },
             error =>
             {
@@ -489,7 +470,7 @@ else
 
         var steps = open.Value.Design.Steps.Length;
         var confirmed = await Browser.ConfirmAsync(                                              // impure
-            $"{question} The current loop's {steps} step{(steps == 1 ? "" : "s")} will be discarded — save it to the library first to keep it.");
+            $"{question} The current loop's {steps} step{(steps == 1 ? "" : "s")} will be discarded — export it or copy its share link first to keep it.");
         return confirmed;
     }
 

@@ -1,9 +1,7 @@
+using System.Collections.Immutable;
 using Loopsmith.Core.Functional;
 
 namespace Loopsmith.Core.Domain;
-
-/// <summary>A signed change of ability energy, in charges (an <see cref="EnergyAmount"/> is never negative).</summary>
-public sealed record EnergyDelta(decimal Grenade, decimal Melee, decimal ClassAbility, decimal Super);
 
 /// <summary>
 /// Pure value arithmetic over a <see cref="LoopReport"/>, defined once for every view of it
@@ -11,8 +9,11 @@ public sealed record EnergyDelta(decimal Grenade, decimal Melee, decimal ClassAb
 /// </summary>
 public static class LoopReportArithmetic
 {
-    /// <summary>Every requested cycle completed: the loop feeds itself.</summary>
-    public static bool IsSustainable(this LoopReport report) =>
+    /// <summary>
+    /// Every requested cycle completed back to back. Ability energy isn't simulated (ADRs D21), so a cycle only breaks
+    /// on a step that can't happen at all (nothing to pick up, no weapon in that slot).
+    /// </summary>
+    public static bool IsRepeatable(this LoopReport report) =>
         report.CompletedCycles > 0 && report.CompletedCycles == report.MaxCycles;
 
     /// <summary>The steady state: the last completed cycle, cycle 1 when none completed, none for an empty loop.</summary>
@@ -21,23 +22,9 @@ public static class LoopReportArithmetic
             ? Optional.None<CycleRun>()
             : Optional.Some(report.Cycles[Math.Max(report.CompletedCycles, 1) - 1]);
 
-    /// <summary>
-    /// Net energy per cycle at the steady state: energy at the end of the steady cycle minus energy at the end of
-    /// the cycle before it (minus <see cref="LoopReport.EnergyAtStart"/> when it is cycle 1). Zero for an empty loop.
-    /// </summary>
-    public static EnergyDelta ComputeNetEnergy(this LoopReport report) =>
-        report.FindSteadyCycle().Match(
-            steady => SubtractEnergy(
-                steady.Value.EnergyAtEnd,
-                steady.Value.Number >= 2 ? report.Cycles[steady.Value.Number - 2].EnergyAtEnd : report.EnergyAtStart),
-            _ => new EnergyDelta(0m, 0m, 0m, 0m));
-
-    public static EnergyDelta SubtractEnergy(EnergySnapshot after, EnergySnapshot before) =>
-        new(
-            after.Grenade.Value - before.Grenade.Value,
-            after.Melee.Value - before.Melee.Value,
-            after.ClassAbility.Value - before.ClassAbility.Value,
-            after.Super.Value - before.Super.Value);
+    /// <summary>Every time a rule gave nothing in one cycle because it doesn't stack (0 when everything stacked).</summary>
+    public static int CountWasted(this LoopReport report) =>
+        report.Wasted.Sum(tally => tally.Count);
 
     /// <summary>The fraction of the cycle's steps a buff was active after (0 for a loop without steps).</summary>
     public static decimal ComputeUptimeRatio(this BuffUptime uptime) =>

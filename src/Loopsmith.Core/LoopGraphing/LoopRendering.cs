@@ -24,7 +24,8 @@ public static class LoopRendering
         var kind = loop.RefundsEnergy
             ? "ability loop — refunds " + string.Join(", ", loop.NodeKeys.Where(k => nodes[k].Kind == NodeKind.Energy).Select(k => nodes[k].Label.ToLowerInvariant()))
             : "buff loop";
-        yield return StyledText.ToLine(0, $"Loop {number}".ToSpan(Tone.Strong), $" · {kind} · {loop.Edges.Length} steps".ToSpan(Tone.Muted));
+        var steps = loop.Edges.Count(edge => nodes[edge.To].Kind != NodeKind.Filter);   // a "doesn't stack" node is not a step
+        yield return StyledText.ToLine(0, $"Loop {number}".ToSpan(Tone.Strong), $" · {kind} · {steps} steps".ToSpan(Tone.Muted));
         var spans = loop.Edges.SelectMany((edge, index) => (ImmutableArray<StyledSpan>)
             [
                 .. index == 0 ? [nodes[edge.From].Label.ToSpan(nodes[edge.From].Affinity.ToTone())] : ImmutableArray<StyledSpan>.Empty,
@@ -35,8 +36,9 @@ public static class LoopRendering
     }
 
     /// <summary>
-    /// Mermaid flowchart (renders on GitHub and mermaid.live). Loop edges are thick; player edges dotted;
-    /// "requires debuff" edges dashed. Colours follow the design proposal's element palette.
+    /// Mermaid flowchart (renders on GitHub and mermaid.live). Loop edges are thick and pink; the other player edges
+    /// and the "requires debuff" edges are dotted (the latter labelled with their source). Colours follow the design
+    /// proposal's element palette.
     /// </summary>
     public static string RenderMermaid(LoopGraph graph, ImmutableArray<Loop> loops, bool loopsOnly)
     {
@@ -63,6 +65,7 @@ public static class LoopRendering
             {
                 NodeKind.Energy => $"([\"{label}\"])",
                 NodeKind.Action => $"[/\"{label}\"/]",
+                NodeKind.Filter => $"{{\"{label}\"}}",
                 _ => $"(\"{label}\")",
             };
             text.AppendLine($"  {ids[node.Key]}{shape}:::{node.Affinity.ToString().ToLowerInvariant()}");

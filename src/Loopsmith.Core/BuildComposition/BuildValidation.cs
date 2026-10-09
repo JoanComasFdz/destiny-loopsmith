@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
+using Loopsmith.Core.Phrasing;
 
 namespace Loopsmith.Core.BuildComposition;
 
@@ -25,6 +26,7 @@ public static class BuildValidation
             .Concat(CheckAspects(build, catalog))
             .Concat(CheckFragmentSlots(build, catalog))
             .Concat(CheckInertElements(elements.Select(e => e.Element)))
+            .Concat(CheckNotStacking(catalog, elements.Select(e => e.Element).Concat(ListKeywordElements(catalog).Select(e => e.Element))))
             .Concat(CheckPinnedCatalog(build, catalog))
             .ToImmutableArray();
 
@@ -86,7 +88,7 @@ public static class BuildValidation
                 : new[] { new BuildIssue(Severity.Blocking, $"'{element.Name}' belongs to another class, not {build.Class}.") },
             .. IsSubclassCompatible(build.Subclass, element)
                 ? []
-                : new[] { new BuildIssue(Severity.Blocking, $"'{element.Name}' ({element.Affinity}) does not fit a {build.Subclass} subclass.") },
+                : new[] { new BuildIssue(Severity.Blocking, $"'{element.Name}' ({element.Affinity}) does not fit the {build.Subclass} subclass.") },
         ];
         return new ResolvedSlot(slot, Optional.Some(element), issues);
     }
@@ -138,6 +140,22 @@ public static class BuildValidation
             .DistinctBy(e => e.Id)
             .Where(e => e.Rules.IsEmpty && e.Passives.IsEmpty)
             .Select(e => new BuildIssue(Severity.Warning, $"'{e.Name}' has no authored rules yet — it is inert in the trace."));
+
+    /// <summary>
+    /// A rule that doesn't stack with another equipped element gives nothing when both fire: wasted potential the
+    /// build crafter should see before playing it.
+    /// </summary>
+    private static IEnumerable<BuildIssue> CheckNotStacking(RuleCatalog catalog, IEnumerable<BuildElement> elements)
+    {
+        var distinct = elements.DistinctBy(e => e.Id).ToImmutableArray();
+        return distinct.SelectMany(element => element.Rules
+            .SelectMany(rule => distinct
+                .Where(partner => partner.Id != element.Id && rule.DoesNotStackWith.Contains(partner.Id))
+                .Select(partner => new BuildIssue(
+                    Severity.Warning,
+                    $"'{element.Name}': {catalog.Glossary.DescribeOutcomes(rule.Then.Select(o => new OutcomeMention(o, 1)))} on "
+                    + $"\"{catalog.Glossary.DescribeTrigger(rule.On)}\" doesn't stack with '{partner.Name}' — with both equipped, it is wasted."))));
+    }
 
     private static IEnumerable<BuildIssue> CheckPinnedCatalog(Build build, RuleCatalog catalog) =>
         build.PinnedCatalog.Match(

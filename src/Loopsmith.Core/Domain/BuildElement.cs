@@ -3,10 +3,16 @@ using Loopsmith.Core.Functional;
 
 namespace Loopsmith.Core.Domain;
 
-/// <summary>Cost model of an ability, straight from the Compendium (e.g. Threaded Spike: 145.2 s · 0.8x).</summary>
+/// <summary>
+/// Cost model of an ability, straight from the Compendium (e.g. Threaded Spike: 145.2 s · 0.8x). Parsed and kept as
+/// data; the engine doesn't use it while ability energy isn't simulated (ADRs D21).
+/// </summary>
 public sealed record AbilityProfile(AbilityKind Kind, int Charges, GameValue ChunkScalar, GameValue BaseCooldownSeconds);
 
-/// <summary>An aspect, fragment, mod, exotic perk, weapon trait or keyword: all "an element with rules".</summary>
+/// <summary>
+/// An ability, aspect, fragment, exotic, armor-set bonus, mod, artifact perk, weapon trait or keyword: all "an element
+/// with rules".
+/// </summary>
 public sealed record BuildElement(
     ElementId Id,
     string Name,

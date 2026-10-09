@@ -96,12 +96,14 @@ public static class DomainPhrasing
 
     public static string DescribeTrigger(this KeywordGlossary glossary, Trigger trigger) =>
         trigger.Match(
-            cast => DescribeCast(cast.Kind),
+            cast => DescribeCast(cast.Kind, cast.Airborne),
             killAny => DescribeKill(glossary, killAny.Via, []),
             killOfTier => $"{DescribeKill(glossary, killOfTier.Via, [])} ({killOfTier.Tier})",
             killDebuffed => DescribeKill(glossary, killDebuffed.Via, killDebuffed.TargetHas),
+            killMultiple => DescribeMultiKill(glossary, killMultiple.Via, killMultiple.AtLeast),
             damage => DescribeDamage(glossary, damage.Via, []),
             damageDebuffed => DescribeDamage(glossary, damageDebuffed.Via, damageDebuffed.TargetHas),
+            damageMultiple => DescribeMultiHit(glossary, damageMultiple.Via, damageMultiple.AtLeast),
             pickUp => $"Pick up {glossary.DescribePickup(pickUp.Pickup)}",
             buffGained => $"Gain {glossary.DescribeStatus(buffGained.Status)}",
             stacksMaxed => $"Max {glossary.DescribeStatus(stacksMaxed.Status)}");
@@ -129,12 +131,31 @@ public static class DomainPhrasing
         };
     }
 
+    /// <summary>"Kill 2+ with grenade", "Kill 3+ enemies" (any source).</summary>
+    private static string DescribeMultiKill(KeywordGlossary glossary, DamageSource via, TargetCount atLeast) =>
+        via is DamageSource.AnySource
+            ? $"Kill {atLeast.Value}+ enemies"
+            : $"Kill {atLeast.Value}+ with {glossary.DescribeDamageSource(via)}";
+
+    /// <summary>"Hit 3+ enemies with weapon", "Hit 3+ enemies" (any source).</summary>
+    private static string DescribeMultiHit(KeywordGlossary glossary, DamageSource via, TargetCount atLeast) =>
+        via is DamageSource.AnySource
+            ? $"Hit {atLeast.Value}+ enemies"
+            : $"Hit {atLeast.Value}+ enemies with {glossary.DescribeDamageSource(via)}";
+
     private static string DescribeTargetPhrase(KeywordGlossary glossary, ImmutableArray<StatusId> targetHas) =>
         targetHas.IsEmpty
             ? "target"
             : string.Join(" + ", targetHas.Select(glossary.DescribeDebuffedAdjective)) + " target";
 
     /// <summary>The ability-cast trigger as a player says it ("Grenade thrown"; the action itself is "Throw grenade").</summary>
+    private static string DescribeCast(AbilityKind kind, bool airborne) =>
+        (kind, airborne) switch
+        {
+            (AbilityKind.ClassAbility, true) => "Class ability in the air",
+            _ => DescribeCast(kind),
+        };
+
     private static string DescribeCast(AbilityKind kind) =>
         kind switch
         {
@@ -185,25 +206,25 @@ public static class DomainPhrasing
     public static string DescribeOutcomes(this KeywordGlossary glossary, IEnumerable<OutcomeMention> mentions)
     {
         var phrases = mentions
-            .Select(mention => (Outcome: NarrowOutcomeToCopies(mention.Outcome, mention.Copies), mention.Marker))
-            .Select(x => new OutcomePhrase(
-                glossary.DescribeOutcome(x.Outcome) + x.Marker,
-                x.Outcome is Outcome.GrantEnergy { Amount: EnergyGrant.Fraction fraction } grant
-                    ? Optional.Some(new EnergyPhrase(fraction.Amount.FormatPercent(), x.Marker, grant.To))
+            .Select(mention => NarrowOutcomeToCopies(mention.Outcome, mention.Copies))
+            .Select(outcome => new OutcomePhrase(
+                glossary.DescribeOutcome(outcome),
+                outcome is Outcome.GrantEnergy { Amount: EnergyGrant.Fraction fraction } grant
+                    ? Optional.Some(new EnergyPhrase(fraction.Amount.FormatPercent(), grant.To))
                     : Optional.None<EnergyPhrase>()))
             .ToImmutableArray();
         var merged = phrases.Aggregate(ImmutableArray<OutcomePhrase>.Empty, MergeEnergyPhrase);
         return string.Join(" and ", merged.Select(DescribeMergedPhrase));
     }
 
-    private sealed record EnergyPhrase(string Amount, string Marker, AbilityKind Ability);
+    private sealed record EnergyPhrase(string Amount, AbilityKind Ability);
 
     private sealed record OutcomePhrase(string Text, Optional<EnergyPhrase> Energy, ImmutableArray<AbilityKind> MergedAbilities = default);
 
     private static ImmutableArray<OutcomePhrase> MergeEnergyPhrase(ImmutableArray<OutcomePhrase> merged, OutcomePhrase next)
     {
         var canMerge = !merged.IsEmpty
-            && merged[^1].Energy.Bind(last => next.Energy.Map(n => n.Amount == last.Amount && n.Marker == last.Marker)).UnwrapOr(false);
+            && merged[^1].Energy.Bind(last => next.Energy.Map(n => n.Amount == last.Amount)).UnwrapOr(false);
         if (!canMerge)
         {
             return merged.Add(next with { MergedAbilities = next.Energy.Match(e => [e.Value.Ability], _ => ImmutableArray<AbilityKind>.Empty) });
@@ -217,7 +238,7 @@ public static class DomainPhrasing
     private static string DescribeMergedPhrase(OutcomePhrase phrase) =>
         phrase.Energy.Match(
             energy => phrase.MergedAbilities.Length > 1
-                ? $"+{energy.Value.Amount} {string.Join(", ", phrase.MergedAbilities[..^1].Select(DescribeAbility))} and {phrase.MergedAbilities[^1].DescribeAbility()} energy{energy.Value.Marker}"
+                ? $"+{energy.Value.Amount} {string.Join(", ", phrase.MergedAbilities[..^1].Select(DescribeAbility))} and {phrase.MergedAbilities[^1].DescribeAbility()} energy"
                 : phrase.Text,
             _ => phrase.Text);
 
@@ -235,8 +256,16 @@ public static class DomainPhrasing
     private static string DescribeBuff(KeywordGlossary glossary, Outcome.ApplyBuff apply)
     {
         var name = glossary.DescribeStatus(apply.Status);
-        var duration = apply.Duration.Match(d => $" ({d.Value.FormatSeconds()})", _ => "");
-        return glossary.IsStacking(apply.Status) ? $"+{apply.Stacks.Value} {name}{duration}" : $"{name}{duration}";
+        var notes = new[] { apply.Duration.Match(d => d.Value.FormatSeconds(), _ => ""), apply.Restarts ? "restarts" : "" }
+            .Where(note => note.Length > 0)
+            .ToImmutableArray();
+        var suffix = notes.IsEmpty ? "" : $" ({string.Join(", ", notes)})";
+        return (glossary.IsStacking(apply.Status), apply.Restarts) switch
+        {
+            (true, true) => $"{name} ×{apply.Stacks.Value}{suffix}",
+            (true, false) => $"+{apply.Stacks.Value} {name}{suffix}",
+            _ => $"{name}{suffix}",
+        };
     }
 
     public static string DescribePassive(this KeywordGlossary glossary, Passive passive) =>
@@ -252,31 +281,60 @@ public static class DomainPhrasing
 
     public static string DescribeEvent(this KeywordGlossary glossary, GameEvent gameEvent, Build build) =>
         gameEvent.Match(
-            cast => DescribeCast(cast.Kind),
+            cast => DescribeCast(cast.Kind, cast.Airborne),
             damaged => $"{glossary.DescribeOrigin(damaged.Origin, build)} hit{DescribeOnTarget(DescribeTargetPhrase(glossary, damaged.TargetHas))}",
             killed => $"{glossary.DescribeOrigin(killed.Origin, build)} kill{DescribeOnTarget(DescribeTargetPhrase(glossary, killed.TargetHas))}",
+            struck => $"{glossary.DescribeOrigin(struck.Origin, build)} {(struck.Hit == HitOutcome.Kill ? "killed" : "hit")} {DescribeEnemies(struck.Targets)}",
             pickedUp => $"Picked up {glossary.DescribePickup(pickedUp.Pickup)}",
             gained => glossary.IsStacking(gained.Status)
                 ? $"{glossary.DescribeStatus(gained.Status)} ×{gained.Stacks.Value}"
                 : $"{glossary.DescribeStatus(gained.Status)} gained",
             maxed => $"Max {glossary.DescribeStatus(maxed.Status)}");
 
+    /// <summary>"Grenade (kill)", "Grenade (kill 3)", "Festival Flight (hit 5)", "Class ability", "Pick up Orb of Power".</summary>
     public static string DescribeAction(this KeywordGlossary glossary, PlayerAction action, Build build) =>
         action.Match(
-            cast => $"{Capitalize(cast.Kind.ToAbilityKind().DescribeAbility())} ({(cast.Hit == HitOutcome.Kill ? "kill" : "hit")})",
-            _ => "Class ability",
-            fire => $"{DescribeWeapon(build, fire.Slot, fire.Slot.ToString())} ({(fire.Hit == HitOutcome.Kill ? "kill" : "hit")})",
+            cast => $"{Capitalize(cast.Kind.ToAbilityKind().DescribeAbility())} ({DescribeHit(cast.Hit, cast.Targets)})",
+            use => use.Airborne ? "Class ability (in the air)" : "Class ability",
+            fire => $"{DescribeWeapon(build, fire.Slot, fire.Slot.ToString())} ({DescribeHit(fire.Hit, fire.Targets)})",
             collect => $"Pick up {glossary.DescribePickup(collect.Pickup)}",
             wait => $"Wait {wait.Duration.FormatSeconds()}");
 
-    /// <summary>The token the CLI accepts for an action: <c>grenade:kill</c>, <c>class</c>, <c>kinetic:kill</c>, <c>pickup:orb-of-power</c>, <c>wait:5</c>.</summary>
+    /// <summary>"kill", "hit", and with more than one target "kill 3", "hit 5".</summary>
+    private static string DescribeHit(HitOutcome hit, TargetCount targets) =>
+        (hit == HitOutcome.Kill ? "kill" : "hit") + (targets.Value > 1 ? $" {targets.Value}" : "");
+
+    /// <summary>"1 enemy", "3 enemies".</summary>
+    private static string DescribeEnemies(TargetCount targets) =>
+        targets.Value == 1 ? "1 enemy" : $"{targets.Value} enemies";
+
+    /// <summary>
+    /// The action's token, the same everywhere (CLI, loop files, the web): <c>grenade:kill</c>, <c>grenade:kill:3</c>,
+    /// <c>class</c>, <c>kinetic</c>, <c>kinetic:hit:5</c>, <c>pickup:orb-of-power</c>, <c>wait:5</c>. The target count is
+    /// written only when it is more than one, so one-target tokens read as before and every token round-trips.
+    /// </summary>
     public static string ToActionToken(this PlayerAction action) =>
         action.Match(
-            cast => $"{cast.Kind.ToString().ToLowerInvariant()}{(cast.Hit == HitOutcome.Kill ? ":kill" : "")}",
-            _ => "class",
-            fire => $"{fire.Slot.ToString().ToLowerInvariant()}{(fire.Hit == HitOutcome.Kill ? ":kill" : "")}",
+            cast => cast.Kind.ToString().ToLowerInvariant() + ToHitSuffix(cast.Hit, cast.Targets),
+            use => use.Airborne ? "class:air" : "class",
+            fire => fire.Slot.ToString().ToLowerInvariant() + ToHitSuffix(fire.Hit, fire.Targets),
             collect => $"pickup:{collect.Pickup}",
             wait => $"wait:{wait.Duration.Value.ToString(LosslessDecimal, Invariant)}");
+
+    private static string ToHitSuffix(HitOutcome hit, TargetCount targets) =>
+        (hit, targets.Value) switch
+        {
+            (HitOutcome.Kill, 1) => ":kill",
+            (HitOutcome.Kill, var count) => $":kill:{count.ToString(Invariant)}",
+            (_, 1) => "",
+            (_, var count) => $":hit:{count.ToString(Invariant)}",
+        };
+
+    // ── loop analysis ──────────────────────────────────────────────────────────
+
+    /// <summary>"Tempest Strike doesn't stack with Dielectric" — a rule that gave nothing (<see cref="WastedTally"/>).</summary>
+    public static string DescribeWasted(this WastedTally wasted) =>
+        $"{wasted.SourceName} doesn't stack with {wasted.PartnerName}";
 
     /// <summary>Every significant digit of a decimal, no trailing zeros: tokens round-trip (<c>wait:2.25</c>).</summary>
     private const string LosslessDecimal = "0.############################";

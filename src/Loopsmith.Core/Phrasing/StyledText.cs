@@ -3,15 +3,15 @@ using Loopsmith.Core.Domain;
 
 namespace Loopsmith.Core.Phrasing;
 
-/// <summary>How a span should look. The CLI host maps tones to colours; tests read the plain text.</summary>
+/// <summary>How a span should look. The hosts map tones to colours (CLI: ANSI escapes, web: CSS classes); tests read the plain text.</summary>
 public enum Tone { Plain, Muted, Strong, Warning, Kinetic, Arc, Solar, Void, Stasis, Strand, Prismatic }
 
 public sealed record StyledSpan(string Text, Tone Tone);
 
 public sealed record StyledLine(int Indent, ImmutableArray<StyledSpan> Spans);
 
-/// <summary>An outcome to describe, the copies of its element equipped, and a certainty marker ("*" or "").</summary>
-public sealed record OutcomeMention(Outcome Outcome, int Copies, string Marker);
+/// <summary>An outcome to describe and the copies of its element equipped.</summary>
+public sealed record OutcomeMention(Outcome Outcome, int Copies);
 
 public static class StyledText
 {

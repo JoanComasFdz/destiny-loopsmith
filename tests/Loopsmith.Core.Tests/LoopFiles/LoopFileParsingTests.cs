@@ -44,7 +44,7 @@ public sealed class LoopFileParsingTests
         Assert.Equal(Optional.Some("Dodge to arm Slice and Reaper, skip grenade into the pack, then shoot.\n"), design.Description);
         Assert.Equal(Optional.Some(CatalogVersion.From("authored-e4426d03166b")), design.Catalog);
         Assert.Equal(
-            [new PlayerAction.UseClassAbility(), new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Kill), new PlayerAction.CollectPickups(PickupId.From("orb-of-power"))],
+            [new PlayerAction.UseClassAbility(), new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Kill, TargetCount.One), new PlayerAction.CollectPickups(PickupId.From("orb-of-power"))],
             design.Steps.Select(step => step.Action));
         Assert.Equal([Optional.Some("Arm Slice + Reaper"), Optional.None<string>(), Optional.None<string>()], design.Steps.Select(step => step.Note));
         Assert.Equal("name: Skip Grenade Hunter\nclass: hunter\n...", design.Build.Text);   // the example has no final line break
@@ -79,9 +79,9 @@ public sealed class LoopFileParsingTests
 
         Assert.Equal(
             [
-                new PlayerAction.CastAbility(OffensiveAbility.Melee, HitOutcome.Damage),
-                new PlayerAction.CastAbility(OffensiveAbility.Super, HitOutcome.Kill),
-                new PlayerAction.FireWeapon(WeaponSlot.Power, HitOutcome.Kill),
+                new PlayerAction.CastAbility(OffensiveAbility.Melee, HitOutcome.Damage, TargetCount.One),
+                new PlayerAction.CastAbility(OffensiveAbility.Super, HitOutcome.Kill, TargetCount.One),
+                new PlayerAction.FireWeapon(WeaponSlot.Power, HitOutcome.Kill, TargetCount.One),
                 new PlayerAction.Wait(Seconds.From(2.25m)),
                 new PlayerAction.Wait(Seconds.From(5m)),
             ],
@@ -102,6 +102,47 @@ public sealed class LoopFileParsingTests
 
         Assert.Contains($"{LoopPath}:2: unknown key 'autor' in loop file", error);
         Assert.Contains($"{LoopPath}:5: unknown key 'notes' in step 1", error);
+    }
+
+    [Fact]
+    public void Ability_and_weapon_tokens_may_say_how_many_enemies_they_hit_or_kill()
+    {
+        var design = ParseValidLoop("""
+            loop: Targets
+            steps:
+              - do: grenade:kill:3
+              - do: kinetic:hit:5
+              - do: energy:kill:2
+              - do: super:hit
+              - do: melee:kill:1
+              - do: power:hit:20
+            build: x
+            """);
+
+        Assert.Equal(
+            [
+                new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Kill, TargetCount.From(3)),
+                new PlayerAction.FireWeapon(WeaponSlot.Kinetic, HitOutcome.Damage, TargetCount.From(5)),
+                new PlayerAction.FireWeapon(WeaponSlot.Energy, HitOutcome.Kill, TargetCount.From(2)),
+                new PlayerAction.CastAbility(OffensiveAbility.Super, HitOutcome.Damage, TargetCount.One),
+                new PlayerAction.CastAbility(OffensiveAbility.Melee, HitOutcome.Kill, TargetCount.One),
+                new PlayerAction.FireWeapon(WeaponSlot.Power, HitOutcome.Damage, TargetCount.Most),
+            ],
+            design.Steps.Select(step => step.Action));
+    }
+
+    [Theory]
+    [InlineData("grenade:kill:0", "Invalid target count in 'grenade:kill:0'")]
+    [InlineData("grenade:kill:21", "Invalid target count in 'grenade:kill:21'")]
+    [InlineData("kinetic:hit:many", "Invalid target count in 'kinetic:hit:many'")]
+    [InlineData("grenade:3", "Unknown action 'grenade:3'")]
+    [InlineData("class:kill:2", "Unknown action 'class:kill:2'")]
+    [InlineData("energy:kill:2:3", "Unknown action 'energy:kill:2:3'")]
+    public void A_target_count_is_a_whole_number_from_1_to_20_after_hit_or_kill(string token, string expected)
+    {
+        var error = ParseInvalidLoop($"loop: L\nsteps:\n  - do: {token}\nbuild: x\n");
+
+        Assert.Contains($"{LoopPath}:3: step 1.do: {expected}", error);
     }
 
     [Fact]

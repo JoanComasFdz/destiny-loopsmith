@@ -17,7 +17,7 @@ public static class EventCascading
 
     /// <summary>
     /// Match → guard → order by phase → apply → cascade every derived event (depth-first).
-    /// <paramref name="ancestry"/> holds the (rule, event) pairs already fired up this causal chain: a rule
+    /// Each level passes down the (rule, event) pairs already fired up this causal chain (<c>ancestry</c>): a rule
     /// never re-fires on an identical event caused by itself (loops terminate), while sibling
     /// occurrences — two orbs picked up, two traces spawned — each fire.
     /// </summary>
@@ -60,10 +60,16 @@ public static class EventCascading
 
     private sealed record Applied(Step Step, AppliedOutcome Outcome);
 
+    /// <summary>
+    /// Rules that don't stack (<see cref="Rule.DoesNotStackWith"/>) give way to the other element's rule on the same
+    /// event: they are reported as fired, with no outcomes, naming the element they gave way to.
+    /// </summary>
     private static AppliedMatches ApplyMatches(
         ValidatedBuild build, GameState state, ImmutableArray<RuleMatch> matches, GameEvent gameEvent, int depth, int eventIndex)
     {
+        var givenWay = matches.Select(match => FindStackingPartner(match, matches)).ToImmutableArray();
         var steps = matches
+            .Where((_, matchIndex) => !givenWay[matchIndex].IsSome())
             .SelectMany((match, matchIndex) => match.Rule.Then.Select(outcome => (match, outcome, matchIndex)))
             .Select((x, order) => new Step(x.match, x.outcome, x.outcome.ResolvePhase(), order))
             .OrderBy(step => step.Phase)
@@ -78,19 +84,28 @@ public static class EventCascading
         });
 
         var fired = matches
-            .Select(match => ToFiredRule(match, result.Applied, gameEvent, depth, eventIndex))
+            .Select((match, matchIndex) => ToFiredRule(match, result.Applied, gameEvent, depth, eventIndex, givenWay[matchIndex]))
             .OrderBy(rule => rule.Outcomes.Select(o => o.Outcome.ResolvePhase()).DefaultIfEmpty(Phase.Refund).Min())
             .ToImmutableArray();
         return new AppliedMatches(result.State, fired, result.Derived);
     }
 
-    private static FiredRule ToFiredRule(RuleMatch match, ImmutableArray<Applied> applied, GameEvent gameEvent, int depth, int eventIndex)
+    /// <summary>The name of another element matching the same event that this rule doesn't stack with, if any.</summary>
+    private static Optional<string> FindStackingPartner(RuleMatch match, ImmutableArray<RuleMatch> matches) =>
+        matches
+            .Where(other => other.Equipped.Element.Id != match.Equipped.Element.Id)
+            .Where(other => match.Rule.DoesNotStackWith.Contains(other.Equipped.Element.Id))
+            .Select(other => Optional.Some(other.Equipped.Element.Name))
+            .FindFirstSome();
+
+    private static FiredRule ToFiredRule(
+        RuleMatch match, ImmutableArray<Applied> applied, GameEvent gameEvent, int depth, int eventIndex, Optional<string> notStackedWith)
     {
         var element = match.Equipped.Element;
         var outcomes = applied.Where(a => a.Step.Match == match).Select(a => a.Outcome).ToImmutableArray();
         return new FiredRule(
             element.Id, element.Name, element.Kind, element.Affinity, gameEvent, outcomes,
-            match.Rule.Reason, match.Rule.Likelihood, depth, eventIndex);
+            match.Rule.Reason, match.Rule.Likelihood, depth, eventIndex, notStackedWith);
     }
 
     private static string ToFiredKey(RuleMatch match, GameEvent gameEvent) =>
@@ -99,9 +114,10 @@ public static class EventCascading
     /// <summary>Deterministic identity of an event (records holding arrays don't compare by content).</summary>
     public static string ToEventKey(GameEvent gameEvent) =>
         gameEvent.Match(
-            cast => $"cast:{cast.Kind}",
+            cast => $"cast:{cast.Kind}" + (cast.Airborne ? ":air" : ""),
             damaged => $"damage:{ToOriginKey(damaged.Origin)}:{damaged.Tier}:{string.Join(",", damaged.TargetHas.Order())}",
             killed => $"kill:{ToOriginKey(killed.Origin)}:{killed.Tier}:{string.Join(",", killed.TargetHas.Order())}",
+            struck => $"targets:{ToOriginKey(struck.Origin)}:{struck.Targets.Value}:{struck.Hit}",
             pickedUp => $"pickup:{pickedUp.Pickup}",
             gained => $"gain:{gained.Status}:{gained.Stacks}",
             maxed => $"max:{maxed.Status}");

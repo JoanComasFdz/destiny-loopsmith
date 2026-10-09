@@ -3,8 +3,8 @@ loop: Melee first
 description: |-
   Open with the melee instead of the dodge: slide-melee to jolt the pack, then skip grenade and
   Arc weapon into it, grab the orbs and dodge last to refill the melee. Gambler's Dodge's melee
-  refill is unknown ("?") in the rules, so in v1 the melee comes back only through Ionic Traces.
-catalog: authored-e4426d03166b
+  refill depends on the Melee stat, so the rules give it as unknown ("?").
+catalog: authored-ffea6e3fc30f
 steps:
   - do: melee:kill
     note: 'Combination Blow: Tempest Strike jolts, Impact Induction refunds grenade energy'
@@ -15,7 +15,7 @@ steps:
   - do: pickup:orb-of-power
     note: 'Orbs: Armor Charge and Unraveling Rounds'
   - do: class
-    note: Gambler's Dodge to refill the melee (amount unknown, so not applied)
+    note: Gambler's Dodge to refill the melee (the amount depends on the Melee stat)
 build: |
   # Skip Grenade Hunter - Plunderthabooty's Arc Hunter "infinite skip grenade" build.
   # See note.txt (the user's explanation), transcript.txt (the video), note-map.md (golden trace

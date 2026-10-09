@@ -11,7 +11,8 @@ namespace Loopsmith.Core.Orchestration;
 
 /// <summary>
 /// Interactive design of a loop: the host reads a line, <see cref="PlaySessions.StepPlay"/> answers. Every action
-/// played becomes a step of <see cref="Design"/>, which is written to <see cref="SavePath"/> on quit (and on <c>w</c>).
+/// played becomes a step of <see cref="Design"/>, which is written to <see cref="SavePath"/> on quit when it has steps,
+/// and on <c>w</c>.
 /// </summary>
 public sealed record PlaySession(
     DesignSession Design,
@@ -26,7 +27,7 @@ public sealed record PlayTurn(PlaySession Session, ImmutableArray<Effect> Effect
 public static class PlaySessions
 {
     private const string Commands =
-        "number or action token · u undo · n <note> · d <description> · a analyse · w save · e explain · s state · r reset · q quit";
+        "number or action token (grenade:kill:3 = kill 3) · u undo · n <note> · d <description> · a analyse · w save · e explain · s state · r reset · q quit";
 
     public static Result<PlaySession, string> StartPlay(PlayRequest request)
     {
@@ -56,7 +57,9 @@ public static class PlaySessions
     [
         new Effect.WriteLines(BuildExplaining.RenderBuildSummary(session.Design.Build)),
         new Effect.WriteLines([DescribeDesign(session)]),
-        new Effect.WriteLines([StyledText.ToLine(0, "Fresh spawn — all abilities charged.".ToSpan(Tone.Strong))]),
+        new Effect.WriteLines([StyledText.ToLine(0,
+            "Fresh spawn".ToSpan(Tone.Strong),
+            " — abilities are always available (ability energy isn't simulated).".ToSpan(Tone.Muted))]),
         new Effect.WriteLines(TraceRenderer.RenderState(session.Design.Build, session.Design.Current, [])),
         .. PlanPrompt(session),
     ];
@@ -91,9 +94,7 @@ public static class PlaySessions
         return command switch
         {
             "q" or "quit" or "exit" => QuitPlay(session),
-            "w" or "write" or "save" => session.SavePath.Match(
-                path => new PlayTurn(session, [], Optional.Some(path.Value)),
-                _ => Answer(session, [new Effect.ShowFailure("No file to save to: start play with --save <file.loop.yaml>.")])),
+            "w" or "write" or "save" => SaveNow(session),
             "r" or "reset" => ResetDesign(session),
             "u" or "undo" => UndoStep(session),
             "n" or "note" => AnnotateLastStep(session, argument),
@@ -177,6 +178,15 @@ public static class PlaySessions
     /// <summary>A description typed on one line: <c>\n</c> starts a new line.</summary>
     private static Optional<string> ToDescription(string text) =>
         ToOptionalText(text).Map(description => description.Replace("\\n", "\n", StringComparison.Ordinal));
+
+    /// <summary>Saving now, like quitting, never overwrites a loop file with an empty design.</summary>
+    private static PlayTurn SaveNow(PlaySession session) =>
+        (session.SavePath, session.Design.Design.Steps.IsEmpty) switch
+        {
+            (Optional<string>.None, _) => Answer(session, [new Effect.ShowFailure("No file to save to: start play with --save <file.loop.yaml>.")]),
+            (_, true) => Answer(session, [new Effect.WriteLines([StyledText.ToLine(0, "No steps designed — nothing saved.".ToSpan(Tone.Muted))])]),
+            _ => new PlayTurn(session, [], session.SavePath),
+        };
 
     /// <summary>Quitting saves the design when there is one: an empty design never overwrites a loop file.</summary>
     private static PlayTurn QuitPlay(PlaySession session)

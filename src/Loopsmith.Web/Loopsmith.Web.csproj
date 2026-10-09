@@ -5,7 +5,7 @@
     <RootNamespace>Loopsmith.Web</RootNamespace>
     <AssemblyName>Loopsmith.Web</AssemblyName>
     <OverrideHtmlAssetPlaceholders>true</OverrideHtmlAssetPlaceholders>
-    <!-- Smaller first load: no time-zone database (saved dates are shown in UTC). -->
+    <!-- Smaller first load: no time-zone database (the app shows no local times). -->
     <BlazorEnableTimeZoneSupport>false</BlazorEnableTimeZoneSupport>
     <LoopsmithRoot>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)../../'))</LoopsmithRoot>
   </PropertyGroup>
@@ -21,7 +21,7 @@
   </ItemGroup>
 
   <!-- Blazor trims only framework assemblies by default. The core is mostly generated code (Dunet matchers,
-       Vogen converters) the app never calls and it uses no reflection, so trim it too (1.3 MB -> see report). -->
+       Vogen converters) the app never calls and it uses no reflection, so trim it too (1.3 MB -> 516 KB when added). -->
   <ItemGroup>
     <TrimmableAssembly Include="Loopsmith.Core" />
   </ItemGroup>

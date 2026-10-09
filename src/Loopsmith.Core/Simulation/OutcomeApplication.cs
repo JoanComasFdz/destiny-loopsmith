@@ -12,8 +12,8 @@ public static class OutcomeApplication
 {
     public static Application ApplyOutcome(ValidatedBuild build, GameState state, Outcome outcome, int copies) =>
         outcome.Match(
-            grantEnergy => GrantEnergy(build, state, outcome, grantEnergy, copies),
-            convert => ConvertStacksToEnergy(build, state, outcome, convert, copies),
+            grantEnergy => AnnotateEnergy(state, outcome, ResolveGrant(grantEnergy.Amount, copies), 1),
+            convert => ConvertStacksToEnergy(state, outcome, convert, copies),
             applyBuff => ApplyBuff(build, state, outcome, applyBuff),
             removeBuff => RemoveBuff(state, outcome, removeBuff),
             debuffTarget => DebuffTarget(build, state, outcome, debuffTarget),
@@ -22,15 +22,16 @@ public static class OutcomeApplication
             strikeTarget => StrikeTarget(build, state, outcome, strikeTarget),
             modifyDamage => AnnotateValue(state, outcome, modifyDamage.Change, copies),
             restoreHealth => AnnotateValue(state, outcome, restoreHealth.Amount, copies),
-            resetCooldown => ResetCooldown(state, outcome, resetCooldown));
+            resetCooldown => KeepUnchanged(state, outcome, Certainty.Known, ""));
 
-    private static Application GrantEnergy(ValidatedBuild build, GameState state, Outcome outcome, Outcome.GrantEnergy grant, int copies) =>
-        grant.Amount.Match(
-            fraction => AddEnergy(build, state, outcome, grant.To, fraction.Amount.ResolveForCopies(copies), 1),
-            _ => FillGauge(state, outcome, grant.To));
+    /// <summary><c>full</c> is one whole charge (known); a fraction is resolved for the copies equipped.</summary>
+    private static Certainty ResolveGrant(EnergyGrant grant, int copies) =>
+        grant.Match(
+            fraction => fraction.Amount.ResolveForCopies(copies).Certainty,
+            _ => Certainty.Known);
 
-    private static Application ConvertStacksToEnergy(
-        ValidatedBuild build, GameState state, Outcome outcome, Outcome.ConvertStacksToEnergy convert, int copies)
+    /// <summary>The stacks are consumed (a real state change); the energy they convert into is explanation only.</summary>
+    private static Application ConvertStacksToEnergy(GameState state, Outcome outcome, Outcome.ConvertStacksToEnergy convert, int copies)
     {
         var stacks = state.ReadStacks(convert.Consumed);
         var consumed = state.DropBuff(convert.Consumed);
@@ -39,40 +40,19 @@ public static class OutcomeApplication
             return KeepUnchanged(state, outcome, Certainty.Known, "no stacks to consume");
         }
 
-        var perStack = convert.PerStack.ResolveForCopies(copies);
-        return AddEnergy(build, consumed, outcome, convert.To, perStack, stacks);
+        var perStack = convert.PerStack.ResolveForCopies(copies).Certainty;
+        return AnnotateEnergy(consumed, outcome, perStack, stacks);
     }
 
-    private static Application AddEnergy(
-        ValidatedBuild build, GameState state, Outcome outcome, AbilityKind to, ResolvedValue amount, int multiplier)
+    /// <summary>
+    /// Explains an energy grant without changing any gauge — ability energy isn't simulated (ADRs D21). An unknown
+    /// amount stays unknown (counted, never applied as a number).
+    /// </summary>
+    private static Application AnnotateEnergy(GameState state, Outcome outcome, Certainty certainty, int stacks)
     {
-        var scalar = ResolveChunkScalar(build, to);
-        var gauge = state.ReadGauge(to);
-        var stackNote = multiplier > 1 ? $"×{multiplier} stacks" : "";
-        return amount.Value.Match(
-            known =>
-            {
-                var gained = known.Value * multiplier * scalar.Value.UnwrapOr(1m);
-                var next = state.SetEnergy(to, gauge.Energy.Value + gained);
-                var certainty = amount.Certainty.CombineCertainty(scalar.Certainty);
-                var caveat = JoinCaveats(stackNote, scalar.Certainty == Certainty.Assumed ? "chunk scalar unknown → 1× assumed" : "");
-                return new Application(next, new AppliedOutcome(outcome, certainty, caveat), []);
-            },
-            _ => new Application(
-                state,
-                new AppliedOutcome(outcome, Certainty.Unknown, JoinCaveats(stackNote, "amount unknown — not applied")),
-                []));
+        var caveat = JoinCaveats(stacks > 1 ? $"×{stacks} stacks" : "", certainty == Certainty.Unknown ? "amount unknown" : "");
+        return new Application(state, ToApplied(outcome, certainty, caveat), []);
     }
-
-    private static Application FillGauge(GameState state, Outcome outcome, AbilityKind to)
-    {
-        var gauge = state.ReadGauge(to);
-        var next = state.SetEnergy(to, gauge.MaxCharges);
-        return new Application(next, new AppliedOutcome(outcome, Certainty.Known, Optional.None<string>()), []);
-    }
-
-    private static Application ResetCooldown(GameState state, Outcome outcome, Outcome.ResetCooldown reset) =>
-        FillGauge(state, outcome, reset.Which);
 
     private static Application ApplyBuff(ValidatedBuild build, GameState state, Outcome outcome, Outcome.ApplyBuff apply)
     {
@@ -80,9 +60,10 @@ public static class OutcomeApplication
         var bonus = SumExtraStacks(build, state, apply.Status);
         var existing = state.ReadStacks(apply.Status);
         var wasActive = state.HasBuff(apply.Status);
+        var kept = apply.Restarts ? 0 : existing;
         var maxStacks = definition.Bind(d => d.MaxStacks).Map(max => max.Value);
         var stacks = maxStacks.Match(
-            max => Math.Min(max.Value, existing + apply.Stacks.Value + bonus.Extra),
+            max => Math.Min(max.Value, kept + apply.Stacks.Value + bonus.Extra),
             _ => 1);
         var duration = apply.Duration.IsSome() ? apply.Duration : definition.Bind(d => d.Duration);
         var next = state.PutBuff(new ActiveStatus(apply.Status, StackCount.From(stacks), duration));
@@ -92,22 +73,23 @@ public static class OutcomeApplication
         var maxed = maxStacks.Match(max => max.Value > 1 && stacks == max.Value && existing < max.Value, _ => false)
             ? ImmutableArray.Create<PendingEvent>(new PendingEvent.Ready(new GameEvent.StacksMaxed(apply.Status)))
             : [];
+        var refreshed = apply.Restarts ? $"restarted (was ×{existing})" : "already active — refreshed";
         var caveat = JoinCaveats(
             bonus.Extra > 0 ? $"+{bonus.Extra} from {string.Join(", ", bonus.Sources)}" : "",
-            gained.IsEmpty ? "already active — refreshed" : "");
-        return new Application(next, new AppliedOutcome(outcome, Certainty.Known, caveat), gained.AddRange(maxed));
+            gained.IsEmpty ? refreshed : "");
+        return new Application(next, ToApplied(outcome, Certainty.Known, caveat), gained.AddRange(maxed));
     }
 
     private static Application RemoveBuff(GameState state, Outcome outcome, Outcome.RemoveBuff remove) =>
         state.HasBuff(remove.Status)
-            ? new Application(state.DropBuff(remove.Status), new AppliedOutcome(outcome, Certainty.Known, Optional.None<string>()), [])
+            ? new Application(state.DropBuff(remove.Status), ToApplied(outcome, Certainty.Known, Optional.None<string>()), [])
             : KeepUnchanged(state, outcome, Certainty.Known, "was not active");
 
     private static Application DebuffTarget(ValidatedBuild build, GameState state, Outcome outcome, Outcome.DebuffTarget debuff)
     {
         var duration = debuff.Duration.IsSome() ? debuff.Duration : build.Catalog.Glossary.FindStatus(debuff.Status).Bind(d => d.Duration);
         var next = state.PutDebuff(new ActiveStatus(debuff.Status, StackCount.From(1), duration));
-        return new Application(next, new AppliedOutcome(outcome, Certainty.Known, Optional.None<string>()), []);
+        return new Application(next, ToApplied(outcome, Certainty.Known, Optional.None<string>()), []);
     }
 
     private static Application Spawn(ValidatedBuild build, GameState state, Outcome outcome, Outcome.Spawn spawn)
@@ -115,18 +97,18 @@ public static class OutcomeApplication
         if (build.Catalog.Glossary.IsCollectedAutomatically(spawn.Pickup))
         {
             var pickedUp = Enumerable.Repeat<PendingEvent>(new PendingEvent.Ready(new GameEvent.PickedUp(spawn.Pickup)), spawn.Count);
-            return new Application(state, new AppliedOutcome(outcome, Certainty.Known, "tracks to you"), pickedUp.ToImmutableArray());
+            return new Application(state, ToApplied(outcome, Certainty.Known, "tracks to you"), pickedUp.ToImmutableArray());
         }
 
         var next = state.AddPickups(spawn.Pickup, spawn.Count);
-        return new Application(next, new AppliedOutcome(outcome, Certainty.Known, "on the ground"), []);
+        return new Application(next, ToApplied(outcome, Certainty.Known, "on the ground"), []);
     }
 
     private static Application SpawnSummon(ValidatedBuild build, GameState state, Outcome outcome, Outcome.SpawnSummon summon)
     {
         var type = build.Catalog.Glossary.ResolveSummonDamageType(summon.Summon);
         var hits = Enumerable.Repeat<PendingEvent>(new PendingEvent.HitTarget(new DamageOrigin.Summoned(summon.Summon, type)), summon.Count);
-        return new Application(state, new AppliedOutcome(outcome, Certainty.Known, Optional.None<string>()), hits.ToImmutableArray());
+        return new Application(state, ToApplied(outcome, Certainty.Known, Optional.None<string>()), hits.ToImmutableArray());
     }
 
     private static Application StrikeTarget(ValidatedBuild build, GameState state, Outcome outcome, Outcome.StrikeTarget strike)
@@ -135,7 +117,7 @@ public static class OutcomeApplication
         var origin = new DamageOrigin.Keyword(strike.Via, type);
         var hit = ImmutableArray.Create<PendingEvent>(new PendingEvent.HitTarget(origin));
         var events = strike.Hit == HitOutcome.Kill ? hit.Add(new PendingEvent.KillTarget(origin)) : hit;
-        return new Application(state, new AppliedOutcome(outcome, Certainty.Known, Optional.None<string>()), events);
+        return new Application(state, ToApplied(outcome, Certainty.Known, Optional.None<string>()), events);
     }
 
     private static Application AnnotateValue(GameState state, Outcome outcome, GameValue value, int copies)
@@ -146,15 +128,10 @@ public static class OutcomeApplication
     }
 
     private static Application KeepUnchanged(GameState state, Outcome outcome, Certainty certainty, string caveat) =>
-        new(state, new AppliedOutcome(outcome, certainty, JoinCaveats(caveat)), []);
+        new(state, ToApplied(outcome, certainty, JoinCaveats(caveat)), []);
 
-    private static ResolvedValue ResolveChunkScalar(ValidatedBuild build, AbilityKind kind)
-    {
-        var resolved = build.FindAbilityProfile(kind)
-            .Map(p => p.ChunkScalar.ResolveForCopies(1))
-            .UnwrapOr(new ResolvedValue(Optional.None<decimal>(), Certainty.Unknown));
-        return resolved.Value.IsSome() ? resolved : new ResolvedValue(Optional.Some(1m), Certainty.Assumed);
-    }
+    private static AppliedOutcome ToApplied(Outcome outcome, Certainty certainty, Optional<string> caveat) =>
+        new(outcome, certainty, caveat);
 
     private sealed record StackBonus(int Extra, ImmutableArray<string> Sources);
 

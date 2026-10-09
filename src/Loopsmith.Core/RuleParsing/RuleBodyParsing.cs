@@ -11,10 +11,10 @@ namespace Loopsmith.Core.RuleParsing;
 /// <summary>An element's <c>rules</c> (on → when → then) and <c>passives</c>, with every id checked against the glossary.</summary>
 internal static class RuleBodyParsing
 {
-    private static readonly ImmutableArray<string> RuleKeys = ["on", "when", "then", "chance", "reason"];
+    private static readonly ImmutableArray<string> RuleKeys = ["on", "when", "then", "chance", "reason", "doesNotStackWith"];
     private static readonly ImmutableArray<string> PassiveRuleKeys = ["effect", "when", "reason"];
-    private static readonly ImmutableArray<string> KillKeys = ["via", "tier", "targetHas"];
-    private static readonly ImmutableArray<string> DamageKeys = ["via", "targetHas"];
+    private static readonly ImmutableArray<string> KillKeys = ["via", "tier", "targetHas", "atLeast"];
+    private static readonly ImmutableArray<string> DamageKeys = ["via", "targetHas", "atLeast"];
 
     private static readonly ImmutableArray<string> TriggerNames =
         ["abilityCast", "kill", "damage", "pickUp", "buffGained", "stacksMaxed"];
@@ -38,8 +38,9 @@ internal static class RuleBodyParsing
             map.ReadRequired("then", then => ReadOutcomes(scope, then)),
             map.ReadOrDefault("chance", ReadBoolean, false),
             map.ReadOptional("reason", YamlReading.ToText),
-            (_, on, when, then, chance, reason) =>
-                new Rule(on, when, then, reason, chance ? Likelihood.Chance : Likelihood.Always)));
+            map.ReadOrDefault("doesNotStackWith", ReadElementList, []),
+            (_, on, when, then, chance, reason, doesNotStackWith) =>
+                new Rule(on, when, then, reason, chance ? Likelihood.Chance : Likelihood.Always, doesNotStackWith)));
 
     internal static Result<PassiveRule, Errors> ReadPassiveRule(ReferenceScope scope, YamlValue value) =>
         value.ToMap().Bind(map => Combine(
@@ -54,7 +55,7 @@ internal static class RuleBodyParsing
     private static Result<Trigger, Errors> ReadTrigger(ReferenceScope scope, YamlValue value) =>
         value.ToSingleEntry().Bind(entry => entry.Key switch
         {
-            "abilityCast" => ReadVocabularyWord<AbilityKind>(entry.Value).Map(Trigger (kind) => new Trigger.AbilityCast(kind)),
+            "abilityCast" => ReadAbilityCastTrigger(entry.Value),
             "kill" => ReadKillTrigger(scope, entry.Value),
             "damage" => ReadDamageTrigger(scope, entry.Value),
             "pickUp" => scope.ReadPickup(entry.Value).Map(Trigger (pickup) => new Trigger.PickUp(pickup)),
@@ -63,42 +64,91 @@ internal static class RuleBodyParsing
             _ => entry.Value.FailAt<Trigger>(DescribeUnknown("trigger", entry.Key, TriggerNames)),
         });
 
+    /// <summary>
+    /// <c>{ abilityCast: grenade }</c>, or <c>{ abilityCast: { ability: classAbility, airborne: true } }</c> for casts made
+    /// in the air only (an air move that spends the class ability, like Ascension). A plain cast trigger matches both.
+    /// </summary>
+    private static Result<Trigger, Errors> ReadAbilityCastTrigger(YamlValue value) =>
+        value.Node is YamlScalarNode
+            ? ReadVocabularyWord<AbilityKind>(value).Map(Trigger (kind) => new Trigger.AbilityCast(kind))
+            : value.ToMap().Bind(map => Combine(
+                    map.CheckKeys(["ability", "airborne"]),
+                    map.ReadRequired("ability", ReadVocabularyWord<AbilityKind>),
+                    map.ReadOrDefault("airborne", ReadBoolean, false),
+                    (_, kind, airborne) => (kind, airborne))
+                .Bind(cast => cast.airborne && cast.kind != AbilityKind.ClassAbility
+                    ? map.FailAtKey<Trigger>("airborne", $"{map.Label}: only a classAbility can be airborne (there is no airborne {GameNotationParsing.ToVocabularyWord(cast.kind)} action)")
+                    : Succeed<Trigger>(new Trigger.AbilityCast(cast.kind, cast.airborne))));
+
     private static Result<Trigger, Errors> ReadKillTrigger(ReferenceScope scope, YamlValue value) =>
         value.ToMap().Bind(map => Combine(
                 map.CheckKeys(KillKeys),
                 map.ReadOrDefault("via", scope.ReadDamageSource, new DamageSource.AnySource()),
                 map.ReadOptional("tier", ReadVocabularyWord<EnemyTier>),
                 map.ReadOptional("targetHas", targetHas => ReadDebuffList(scope, targetHas)),
-                (_, via, tier, targetHas) => (via, tier, targetHas))
-            .Bind(kill => ToKillTrigger(map, kill.via, kill.tier, kill.targetHas)));
+                map.ReadOptional("atLeast", ReadTargetCount),
+                (_, via, tier, targetHas, atLeast) => (via, tier, targetHas, atLeast))
+            .Bind(kill => Combine(
+                CheckAtLeastStandsAlone(map, kill.atLeast, ("tier", kill.tier.IsSome()), ("targetHas", kill.targetHas.IsSome())),
+                ToKillTrigger(map, kill.via, kill.tier, kill.targetHas, kill.atLeast),
+                (_, trigger) => trigger)));
 
-    /// <summary>A kill is "of a tier" or "of a debuffed target", never both (not representable).</summary>
+    /// <summary>A kill is "of a tier", "of a debuffed target" or "of at least N in one action" — never two (not representable).</summary>
     private static Result<Trigger, Errors> ToKillTrigger(
         YamlMap map,
         DamageSource via,
         Optional<EnemyTier> tier,
-        Optional<ImmutableArray<StatusId>> targetHas) =>
-        tier.Match(
-            someTier => targetHas.IsSome()
-                ? map.FailAtKey<Trigger>("tier", $"{map.Label} cannot combine 'tier' and 'targetHas'")
-                : Succeed<Trigger>(new Trigger.KillOfTier(via, someTier.Value)),
-            _ => targetHas.Match(
-                someStatuses => Succeed<Trigger>(new Trigger.KillDebuffed(via, someStatuses.Value)),
-                _ => Succeed<Trigger>(new Trigger.KillAny(via))));
+        Optional<ImmutableArray<StatusId>> targetHas,
+        Optional<TargetCount> atLeast) =>
+        atLeast.Match(
+            someCount => Succeed<Trigger>(new Trigger.KillMultiple(via, someCount.Value)),
+            _ => tier.Match(
+                someTier => targetHas.IsSome()
+                    ? map.FailAtKey<Trigger>("tier", $"{map.Label} cannot combine 'tier' and 'targetHas'")
+                    : Succeed<Trigger>(new Trigger.KillOfTier(via, someTier.Value)),
+                _ => targetHas.Match(
+                    someStatuses => Succeed<Trigger>(new Trigger.KillDebuffed(via, someStatuses.Value)),
+                    _ => Succeed<Trigger>(new Trigger.KillAny(via)))));
 
     private static Result<Trigger, Errors> ReadDamageTrigger(ReferenceScope scope, YamlValue value) =>
         value.ToMap().Bind(map => Combine(
-            map.CheckKeys(DamageKeys),
-            map.ReadOrDefault("via", scope.ReadDamageSource, new DamageSource.AnySource()),
-            map.ReadOptional("targetHas", targetHas => ReadDebuffList(scope, targetHas)),
-            (_, via, targetHas) => targetHas.Match<Trigger>(
-                some => new Trigger.DamageDebuffed(via, some.Value),
-                _ => new Trigger.Damage(via))));
+                map.CheckKeys(DamageKeys),
+                map.ReadOrDefault("via", scope.ReadDamageSource, new DamageSource.AnySource()),
+                map.ReadOptional("targetHas", targetHas => ReadDebuffList(scope, targetHas)),
+                map.ReadOptional("atLeast", ReadTargetCount),
+                (_, via, targetHas, atLeast) => (via, targetHas, atLeast))
+            .Bind(damage => Combine(
+                CheckAtLeastStandsAlone(map, damage.atLeast, ("targetHas", damage.targetHas.IsSome())),
+                Succeed(damage.atLeast.Match<Trigger>(
+                    someCount => new Trigger.DamageMultiple(damage.via, someCount.Value),
+                    _ => damage.targetHas.Match<Trigger>(
+                        someStatuses => new Trigger.DamageDebuffed(damage.via, someStatuses.Value),
+                        _ => new Trigger.Damage(damage.via)))),
+                (_, trigger) => trigger)));
+
+    /// <summary>
+    /// <c>atLeast</c> ("N enemies in one action", ADRs D22) is a trigger of its own: it can't be combined with a tier or a
+    /// target debuff (one error per combined key, at that key).
+    /// </summary>
+    private static Result<Unit, Errors> CheckAtLeastStandsAlone(YamlMap map, Optional<TargetCount> atLeast, params (string Key, bool IsPresent)[] others) =>
+        atLeast.IsSome()
+            ? others
+                .Where(other => other.IsPresent)
+                .Select(other => map.FailAtKey<Unit>(other.Key, $"{map.Label} cannot combine 'atLeast' and '{other.Key}'"))
+                .CollectAll()
+                .Map(Unit (_) => new Unit.Value())
+            : Succeed<Unit>(new Unit.Value());
 
     private static Result<ImmutableArray<StatusId>, Errors> ReadDebuffList(ReferenceScope scope, YamlValue value) =>
         value.ReadEach(value.Label, scope.ReadDebuff).Bind(statuses => statuses.IsEmpty
             ? value.FailAt<ImmutableArray<StatusId>>($"{value.Label} must list at least one debuff")
             : Succeed(statuses));
+
+    /// <summary>Element ids (<c>doesNotStackWith</c>); whether they exist is checked once every file is parsed.</summary>
+    private static Result<ImmutableArray<ElementId>, Errors> ReadElementList(YamlValue value) =>
+        value.ReadEach(value.Label, ReadElementId).Bind(ids => ids.IsEmpty
+            ? value.FailAt<ImmutableArray<ElementId>>($"{value.Label} must list at least one element")
+            : Succeed(ids));
 
     // ── Conditions (when) ────────────────────────────────────────────────────────────────
 
@@ -162,16 +212,17 @@ internal static class RuleBodyParsing
             map.ReadRequired("perStack", ReadGameValue),
             Outcome (_, consumed, to, perStack) => new Outcome.ConvertStacksToEnergy(consumed, to, perStack)));
 
-    /// <summary><c>{ applyBuff: amplified }</c> or <c>{ applyBuff: { status, stacks = 1, duration } }</c>.</summary>
+    /// <summary><c>{ applyBuff: amplified }</c> or <c>{ applyBuff: { status, stacks = 1, duration, restart = false } }</c>.</summary>
     private static Result<Outcome, Errors> ReadApplyBuff(ReferenceScope scope, YamlValue value) =>
         value.Node is YamlScalarNode
             ? scope.ReadBuff(value).Map(Outcome (status) => new Outcome.ApplyBuff(status, Optional.None<Seconds>(), OneStack))
             : value.ToMap().Bind(map => Combine(
-                map.CheckKeys(["status", "stacks", "duration"]),
+                map.CheckKeys(["status", "stacks", "duration", "restart"]),
                 map.ReadRequired("status", scope.ReadBuff),
                 map.ReadOrDefault("duration", ReadDuration, Optional.None<Seconds>()),
                 map.ReadOrDefault("stacks", ReadStackCount, OneStack),
-                Outcome (_, status, duration, stacks) => new Outcome.ApplyBuff(status, duration, stacks)));
+                map.ReadOrDefault("restart", ReadBoolean, false),
+                Outcome (_, status, duration, stacks, restarts) => new Outcome.ApplyBuff(status, duration, stacks, restarts)));
 
     /// <summary><c>{ debuffTarget: jolt }</c> or <c>{ debuffTarget: { status, duration } }</c>.</summary>
     private static Result<Outcome, Errors> ReadDebuffTarget(ReferenceScope scope, YamlValue value) =>

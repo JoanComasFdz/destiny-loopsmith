@@ -6,15 +6,13 @@ using Loopsmith.Core.Phrasing;
 
 namespace Loopsmith.Core.TraceRendering;
 
-/// <summary>A <see cref="LoopReport"/> as styled lines: does the loop sustain, where it breaks, energy per cycle, steady state.</summary>
+/// <summary>
+/// A <see cref="LoopReport"/> as styled lines: does the loop repeat back to back, where it breaks, then the steady state
+/// (kills, pickups, what fired, what was wasted, buff uptime, caveats).
+/// </summary>
 public static class LoopReportRendering
 {
     private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
-
-    private static readonly ImmutableArray<string> EnergyColumns = ["Grenade", "Melee", "Class", "Super"];
-
-    private const int LabelWidth = 18;
-    private const int ColumnWidth = 9;
 
     public static ImmutableArray<StyledLine> RenderLoopReport(LoopReport report) =>
         report.Cycles.IsEmpty
@@ -23,8 +21,8 @@ public static class LoopReportRendering
             [
                 .. RenderHeading(report),
                 RenderVerdict(report),
-                Blank,
-                .. RenderEnergy(report),
+                StyledText.ToLine(1,
+                    "Ability energy isn't simulated: abilities are always available.".ToSpan(Tone.Muted)),
                 Blank,
                 .. RenderSteadyState(report),
             ];
@@ -44,11 +42,11 @@ public static class LoopReportRendering
 
     private static StyledLine RenderVerdict(LoopReport report)
     {
-        if (report.IsSustainable())
+        if (report.IsRepeatable())
         {
             return StyledText.ToLine(1,
-                "✓ Sustainable".ToSpan(Tone.Strong),
-                $" — all {DescribeCount(report.MaxCycles, "cycle")} completed, the loop feeds itself".ToSpan(Tone.Plain));
+                "✓ Repeatable".ToSpan(Tone.Strong),
+                $" — all {DescribeCount(report.MaxCycles, "cycle")} completed back to back".ToSpan(Tone.Plain));
         }
 
         var broken = report.Cycles.Where(cycle => cycle.Blocked.IsSome()).ToImmutableArray();
@@ -63,35 +61,19 @@ public static class LoopReportRendering
             $" {report.CompletedCycles} of {DescribeCount(report.MaxCycles, "cycle")} completed.".ToSpan(Tone.Plain));
     }
 
-    private static ImmutableArray<StyledLine> RenderEnergy(LoopReport report)
+    /// <summary>One line per rule that gave nothing because it doesn't stack: "4× Tempest Strike doesn't stack with Dielectric".</summary>
+    private static ImmutableArray<StyledLine> RenderWasted(LoopReport report)
     {
-        var header = StyledText.ToLine(0,
-            Pad("Energy (charges)", LabelWidth + 2).ToSpan(Tone.Strong),
-            JoinColumns(EnergyColumns).ToSpan(Tone.Muted));
-        var start = RenderEnergyRow("Fresh spawn", ListCharges(report.EnergyAtStart), Tone.Plain);
-        var cycles = report.Cycles.Select(cycle => RenderEnergyRow(
-            $"After cycle {cycle.Number}{(cycle.Blocked.IsSome() ? " ✗" : "")}",
-            ListCharges(cycle.EnergyAtEnd),
-            cycle.Blocked.IsSome() ? Tone.Warning : Tone.Plain));
-        var net = report.ComputeNetEnergy();
-        var netRow = RenderEnergyRow(
-            "Net per cycle",
-            [FormatSigned(net.Grenade), FormatSigned(net.Melee), FormatSigned(net.ClassAbility), FormatSigned(net.Super)],
-            Tone.Strong);
-        return [header, start, .. cycles, netRow];
+        var countWidth = report.Wasted.Select(w => w.Count.ToString(Invariant).Length).DefaultIfEmpty(1).Max();
+        var lines = report.Wasted.Select(wasted => StyledText.ToLine(2,
+            $"{wasted.Count.ToString(Invariant).PadLeft(countWidth)}× ".ToSpan(Tone.Muted),
+            wasted.DescribeWasted().ToSpan(Tone.Warning)));
+        return
+        [
+            StyledText.ToLine(1, "Wasted per cycle ".ToSpan(Tone.Strong), "(rules that gave nothing: they don't stack)".ToSpan(Tone.Muted)),
+            .. report.Wasted.IsEmpty ? [StyledText.ToLine(2, "nothing — everything that fired stacked".ToSpan(Tone.Muted))] : lines,
+        ];
     }
-
-    private static StyledLine RenderEnergyRow(string label, ImmutableArray<string> values, Tone tone) =>
-        StyledText.ToLine(1,
-            Pad(label, LabelWidth).ToSpan(Tone.Muted),
-            JoinColumns(values).ToSpan(tone));
-
-    /// <summary>Fixed-width columns, the last one unpadded (no trailing spaces).</summary>
-    private static string JoinColumns(ImmutableArray<string> values) =>
-        string.Concat(values.Select((value, index) => index < values.Length - 1 ? Pad(value, ColumnWidth) : value));
-
-    private static ImmutableArray<string> ListCharges(EnergySnapshot energy) =>
-        [FormatCharges(energy.Grenade), FormatCharges(energy.Melee), FormatCharges(energy.ClassAbility), FormatCharges(energy.Super)];
 
     private static ImmutableArray<StyledLine> RenderSteadyState(LoopReport report)
     {
@@ -115,6 +97,7 @@ public static class LoopReportRendering
             .. outcomes,
             StyledText.ToLine(1, "Fired per cycle".ToSpan(Tone.Strong)),
             .. report.Sources.IsEmpty ? [StyledText.ToLine(2, "nothing".ToSpan(Tone.Muted))] : sources,
+            .. RenderWasted(report),
             StyledText.ToLine(1, "Buff uptime ".ToSpan(Tone.Strong), "(active after how many of the cycle's steps)".ToSpan(Tone.Muted)),
             .. report.Uptime.IsEmpty ? [StyledText.ToLine(2, "no buffs".ToSpan(Tone.Muted))] : uptime,
             RenderCaveat(report.UnknownValues, "?", "unknown value not applied", "unknown values not applied", " — the real loop is stronger"),
@@ -150,16 +133,6 @@ public static class LoopReportRendering
             (count == 0 ? "" : consequence).ToSpan(Tone.Muted));
 
     private static string DescribeCount(int count, string noun) => count == 1 ? $"1 {noun}" : $"{count} {noun}s";
-
-    private static string FormatCharges(EnergyAmount amount) => amount.Value.ToString("0.##", Invariant);
-
-    private static string FormatSigned(decimal charges) =>
-        charges switch
-        {
-            > 0m => "+" + charges.ToString("0.##", Invariant),
-            < 0m => charges.ToString("0.##", Invariant),
-            _ => "0",
-        };
 
     private static string Pad(string text, int width) => text.PadRight(width);
 }

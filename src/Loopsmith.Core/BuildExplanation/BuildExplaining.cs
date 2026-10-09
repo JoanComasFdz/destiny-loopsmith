@@ -38,12 +38,12 @@ public static class BuildExplaining
                 Order: order,
                 Affinity: ReadTriggerAffinity(build, x.Rule.On),
                 Item: new ExplanationItem(
-                    glossary.DescribeOutcomes(x.Rule.Then.Select(o => new OutcomeMention(o, x.Count, ""))),
+                    glossary.DescribeOutcomes(x.Rule.Then.Select(o => new OutcomeMention(o, x.Count))),
                     x.Element.Name,
                     x.Element.Kind,
                     x.Element.Affinity,
                     x.Rule.Likelihood,
-                    x.Rule.When.IsEmpty ? Optional.None<string>() : Optional.Some(glossary.DescribeConditions(x.Rule.When)),
+                    DescribeRuleCondition(build, x.Rule),
                     x.Rule.Reason)));
         var passiveItems = build.Equipped
             .SelectMany(equipped => equipped.Element.Passives.Select(passive => (equipped.Element, Passive: passive)))
@@ -116,6 +116,17 @@ public static class BuildExplaining
         ];
     }
 
+    /// <summary>The rule's guards, plus "doesn't stack with X" for each equipped element it gives way to.</summary>
+    private static Optional<string> DescribeRuleCondition(ValidatedBuild build, Rule rule)
+    {
+        var guards = rule.When.IsEmpty ? [] : new[] { build.Catalog.Glossary.DescribeConditions(rule.When) };
+        var partners = build.Equipped
+            .Where(equipped => rule.DoesNotStackWith.Contains(equipped.Element.Id))
+            .Select(equipped => $"doesn't stack with {equipped.Element.Name}");
+        var parts = guards.Concat(partners).ToImmutableArray();
+        return parts.IsEmpty ? Optional.None<string>() : Optional.Some(string.Join("; ", parts));
+    }
+
     private static StyledLine RenderNoteLine(ExplanationGroup group)
     {
         var bullets = group.Items.SelectMany((item, index) => (ImmutableArray<StyledSpan>)
@@ -149,35 +160,39 @@ public static class BuildExplaining
 
     private static int RankTrigger(Trigger trigger) =>
         trigger.Match(
-            cast => cast.Kind switch
+            abilityCast: cast => cast.Kind switch
             {
                 AbilityKind.ClassAbility => 0,
                 AbilityKind.Grenade => 1,
                 AbilityKind.Melee => 2,
                 _ => 3,
             },
-            _ => 20,
-            _ => 21,
-            _ => 22,
-            _ => 10,
-            _ => 11,
-            _ => 30,
-            _ => 40,
-            _ => 50);
+            killAny: _ => 20,
+            killOfTier: _ => 21,
+            killDebuffed: _ => 22,
+            killMultiple: _ => 23,
+            damage: _ => 10,
+            damageDebuffed: _ => 11,
+            damageMultiple: _ => 12,
+            pickUp: _ => 30,
+            buffGained: _ => 40,
+            stacksMaxed: _ => 50);
 
     private static Affinity ReadTriggerAffinity(ValidatedBuild build, Trigger trigger)
     {
         var glossary = build.Catalog.Glossary;
         var statuses = trigger.Match(
-            _ => ImmutableArray<StatusId>.Empty,
-            _ => [],
-            _ => [],
-            killDebuffed => killDebuffed.TargetHas,
-            _ => [],
-            damageDebuffed => damageDebuffed.TargetHas,
-            _ => [],
-            buffGained => [buffGained.Status],
-            stacksMaxed => [stacksMaxed.Status]);
+            abilityCast: _ => ImmutableArray<StatusId>.Empty,
+            killAny: _ => [],
+            killOfTier: _ => [],
+            killDebuffed: killDebuffed => killDebuffed.TargetHas,
+            killMultiple: _ => [],
+            damage: _ => [],
+            damageDebuffed: damageDebuffed => damageDebuffed.TargetHas,
+            damageMultiple: _ => [],
+            pickUp: _ => [],
+            buffGained: buffGained => [buffGained.Status],
+            stacksMaxed: stacksMaxed => [stacksMaxed.Status]);
         var pickup = trigger is Trigger.PickUp pickUp && glossary.Pickups.TryGetValue(pickUp.Pickup, out var definition)
             ? definition.Affinity
             : Affinity.Neutral;

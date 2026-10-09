@@ -12,29 +12,58 @@ public static class ActionTokenParsing
 {
     private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
 
+    public const string Grammar =
+        "grenade|melee|super[:hit|kill[:N]], class[:air], kinetic|energy|power[:hit|kill[:N]], pickup:<id>, wait[:<seconds>]";
+
+    /// <summary>
+    /// <c>grenade</c>, <c>grenade:kill</c>, <c>grenade:kill:3</c>, <c>kinetic:hit:5</c>, <c>class</c>, <c>class:air</c> (an air move
+    /// that spends the class ability, like Ascension),
+    /// <c>pickup:orb-of-power</c>, <c>wait:2.5</c>. Without <c>:kill</c> the hit only damages; without a count it hits
+    /// one enemy. The count is validated here, at the boundary (<see cref="TargetCount"/>: 1..20).
+    /// </summary>
     public static Result<PlayerAction, string> ParseActionToken(string token)
     {
         var parts = token.Trim().ToLowerInvariant().Split(':');
-        var hit = parts.Length > 1 && parts[1] == "kill" ? HitOutcome.Kill : HitOutcome.Damage;
-        var hitSuffixIsValid = parts.Length == 1 || (parts.Length == 2 && parts[1] is "kill" or "hit");
         return parts[0] switch
         {
-            "grenade" when hitSuffixIsValid => Ok(new PlayerAction.CastAbility(OffensiveAbility.Grenade, hit)),
-            "melee" when hitSuffixIsValid => Ok(new PlayerAction.CastAbility(OffensiveAbility.Melee, hit)),
-            "super" when hitSuffixIsValid => Ok(new PlayerAction.CastAbility(OffensiveAbility.Super, hit)),
+            "grenade" => ParseAimedAction(token, parts, (hit, targets) => new PlayerAction.CastAbility(OffensiveAbility.Grenade, hit, targets)),
+            "melee" => ParseAimedAction(token, parts, (hit, targets) => new PlayerAction.CastAbility(OffensiveAbility.Melee, hit, targets)),
+            "super" => ParseAimedAction(token, parts, (hit, targets) => new PlayerAction.CastAbility(OffensiveAbility.Super, hit, targets)),
             "class" when parts.Length == 1 => Ok(new PlayerAction.UseClassAbility()),
-            "kinetic" when hitSuffixIsValid => Ok(new PlayerAction.FireWeapon(WeaponSlot.Kinetic, hit)),
-            "energy" when hitSuffixIsValid => Ok(new PlayerAction.FireWeapon(WeaponSlot.Energy, hit)),
-            "power" when hitSuffixIsValid => Ok(new PlayerAction.FireWeapon(WeaponSlot.Power, hit)),
+            "class" when parts.Length == 2 && parts[1] == "air" => Ok(new PlayerAction.UseClassAbility(Airborne: true)),
+            "kinetic" => ParseAimedAction(token, parts, (hit, targets) => new PlayerAction.FireWeapon(WeaponSlot.Kinetic, hit, targets)),
+            "energy" => ParseAimedAction(token, parts, (hit, targets) => new PlayerAction.FireWeapon(WeaponSlot.Energy, hit, targets)),
+            "power" => ParseAimedAction(token, parts, (hit, targets) => new PlayerAction.FireWeapon(WeaponSlot.Power, hit, targets)),
             "pickup" when parts.Length == 2 && PickupId.TryFrom(parts[1], out var pickup) => Ok(new PlayerAction.CollectPickups(pickup)),
             "wait" when parts.Length == 1 => Ok(new PlayerAction.Wait(Seconds.From(5m))),
             "wait" when parts.Length == 2
                 && decimal.TryParse(parts[1].TrimEnd('s'), NumberStyles.Number, Invariant, out var seconds)
                 && seconds > 0m => Ok(new PlayerAction.Wait(Seconds.From(seconds))),
-            _ => new Result<PlayerAction, string>.Error(
-                $"Unknown action '{token}'. Use grenade[:kill], melee[:kill], super[:kill], class, kinetic|energy|power[:kill], pickup:<id>, wait[:<seconds>]."),
+            _ => FailUnknown(token),
+        };
+    }
+
+    /// <summary>The <c>[:hit|kill[:N]]</c> suffix of an ability or weapon token.</summary>
+    private static Result<PlayerAction, string> ParseAimedAction(
+        string token, string[] parts, Func<HitOutcome, TargetCount, PlayerAction> create) =>
+        (parts.Length, parts.Length > 1 ? parts[1] : "") switch
+        {
+            (1, _) => Ok(create(HitOutcome.Damage, TargetCount.One)),
+            (2 or 3, "hit" or "kill") => ParseTargetCount(token, parts)
+                .Map(targets => create(parts[1] == "kill" ? HitOutcome.Kill : HitOutcome.Damage, targets)),
+            _ => FailUnknown(token),
         };
 
-        static Result<PlayerAction, string> Ok(PlayerAction action) => new Result<PlayerAction, string>.Ok(action);
-    }
+    private static Result<TargetCount, string> ParseTargetCount(string token, string[] parts) =>
+        parts.Length == 2
+            ? new Result<TargetCount, string>.Ok(TargetCount.One)
+            : int.TryParse(parts[2], NumberStyles.None, Invariant, out var count) && TargetCount.TryFrom(count, out var targets)
+                ? new Result<TargetCount, string>.Ok(targets)
+                : new Result<TargetCount, string>.Error(
+                    $"Invalid target count in '{token}': use a whole number from 1 to {TargetCount.Maximum} (enemies hit or killed).");
+
+    private static Result<PlayerAction, string> Ok(PlayerAction action) => new Result<PlayerAction, string>.Ok(action);
+
+    private static Result<PlayerAction, string> FailUnknown(string token) =>
+        new Result<PlayerAction, string>.Error($"Unknown action '{token}'. Use {Grammar} (N = enemies hit or killed, 1..{TargetCount.Maximum}).");
 }

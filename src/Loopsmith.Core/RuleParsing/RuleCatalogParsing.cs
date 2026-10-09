@@ -15,10 +15,11 @@ public static class RuleCatalogParsing
 {
     /// <summary>
     /// Parses the glossary, then every elements file against it; checks every status, pickup and summon
-    /// reference (and whether a buff or a debuff belongs in that position) and that element ids are
-    /// unique across files. Every problem of the file set is reported at once, one
-    /// <c>file:line: message</c> per line. If the glossary itself is missing or broken, the element files
-    /// are still parsed for their own errors, but references are not checked against it.
+    /// reference (and whether a buff or a debuff belongs in that position), that element ids are
+    /// unique across files and that <c>doesNotStackWith</c> names other elements without leading back to its own
+    /// (ADRs D23). Every problem of the file set is reported at once, one <c>file:line: message</c> per line. If the
+    /// glossary itself is missing or broken, the element files are still parsed for their own errors, but references
+    /// are not checked against it.
     /// </summary>
     /// <param name="files">Every rule file, with its path relative to the rules root (<c>glossary.yaml</c>, <c>keywords/arc.yaml</c>).</param>
     public static Result<RuleCatalog, string> ParseCatalog(ImmutableArray<SourceText> files)
@@ -31,12 +32,11 @@ public static class RuleCatalogParsing
             .Select(file => ElementParsing.ReadElementsFile(file, scope))
             .ToImmutableArray();
         var fileErrors = FailIfAny(elementFiles.SelectMany(file => file.Errors).ToImmutableArray());
-        var elements = LocatedCollections.ToUniqueDictionary(
-            elementFiles.SelectMany(file => file.Elements),
-            element => element.Id,
-            "element");
+        var located = elementFiles.SelectMany(file => file.Elements).ToImmutableArray();
+        var elements = LocatedCollections.ToUniqueDictionary(located, element => element.Id, "element");
+        var stacking = ReferenceChecking.CheckStackingReferences(located);
         var version = ComputeCatalogVersion(ordered);
-        return Combine(glossary, fileErrors, elements, (vocabulary, _, byId) => new RuleCatalog(version, vocabulary, byId))
+        return Combine(glossary, fileErrors, elements, stacking, (vocabulary, _, byId, _) => new RuleCatalog(version, vocabulary, byId))
             .MapError(FormatErrors);
     }
 

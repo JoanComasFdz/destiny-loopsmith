@@ -3,19 +3,20 @@ loop: Infinite skip grenades
 description: |-
   The creator's loop: dodge to arm Slice and Reaper, skip grenade into the pack, clean up with
   the Strand and Arc weapons, grab the orbs, skip grenade again. Every jolted kill feeds Bolt
-  Charge and Ionic Traces back into grenade energy, so the grenade comes back before you need it.
-catalog: authored-e4426d03166b
+  Charge and Ionic Traces, which give grenade energy back. Tempest Strike's Bolt Charge on those
+  kills doesn't stack with Dielectric's, so the analysis lists it as wasted.
+catalog: authored-ffea6e3fc30f
 steps:
   - do: class
     note: "Gambler's Dodge: arms Slice and Reaper; Bomber refunds grenade energy"
   - do: grenade:kill
-    note: 'Skip grenade into the pack: Spark of Shock jolts, the jolted kill gives Amplified, Bolt Charge and Ionic Traces'
+    note: 'Skip grenade into the pack: Spark of Shock jolts, the jolted kill gives Amplified, Bolt Charge and an Ionic Trace'
   - do: kinetic:kill
-    note: 'Festival Flight: Slice severs, Reaper and Attrition Orbs drop orbs, To Shreds unravels'
+    note: 'Festival Flight: Slice severs, Reaper and Attrition Orbs drop orbs, To Shreds gives Woven Mail (and unravels once the pack is severed)'
   - do: energy:kill
-    note: 'Arc weapon on the jolted pack: Spark of Discharge traces, Harmonic Siphon and Dielectric orbs'
+    note: 'Arc weapon on the jolted pack: Spark of Discharge traces, Harmonic Siphon orb'
   - do: pickup:orb-of-power
-    note: "Grab the orbs: Grenade Kickstart's Armor Charge and Unraveling Rounds"
+    note: 'Grab the orbs: Armor Charge for Grenade Kickstart, and Unraveling Rounds'
   - do: grenade:kill
     note: 'Second skip grenade: Kickstart spends Armor Charge; max Bolt Charge strikes and refunds the grenade'
 build: |

@@ -11,7 +11,7 @@ public static class TriggerMatching
 {
     public static bool IsTriggeredBy(this Trigger trigger, GameEvent gameEvent) =>
         trigger.Match(
-            abilityCast => gameEvent is GameEvent.AbilityCast cast && cast.Kind == abilityCast.Kind,
+            abilityCast => gameEvent is GameEvent.AbilityCast cast && cast.Kind == abilityCast.Kind && (cast.Airborne || !abilityCast.Airborne),
             killAny => gameEvent is GameEvent.Killed killed && killAny.Via.IsMatchedBy(killed.Origin),
             killOfTier => gameEvent is GameEvent.Killed killed
                 && killOfTier.Via.IsMatchedBy(killed.Origin)
@@ -19,10 +19,16 @@ public static class TriggerMatching
             killDebuffed => gameEvent is GameEvent.Killed killed
                 && killDebuffed.Via.IsMatchedBy(killed.Origin)
                 && HasEveryStatus(killed.TargetHas, killDebuffed.TargetHas),
+            killMultiple => gameEvent is GameEvent.TargetsHit { Hit: HitOutcome.Kill } struck
+                && killMultiple.Via.IsMatchedBy(struck.Origin)
+                && struck.Targets.Value >= killMultiple.AtLeast.Value,
             damage => gameEvent is GameEvent.Damaged damaged && damage.Via.IsMatchedBy(damaged.Origin),
             damageDebuffed => gameEvent is GameEvent.Damaged damaged
                 && damageDebuffed.Via.IsMatchedBy(damaged.Origin)
                 && HasEveryStatus(damaged.TargetHas, damageDebuffed.TargetHas),
+            damageMultiple => gameEvent is GameEvent.TargetsHit struck   // a kill hits too
+                && damageMultiple.Via.IsMatchedBy(struck.Origin)
+                && struck.Targets.Value >= damageMultiple.AtLeast.Value,
             pickUp => gameEvent is GameEvent.PickedUp pickedUp && pickedUp.Pickup == pickUp.Pickup,
             buffGained => gameEvent is GameEvent.BuffGained gained && gained.Status == buffGained.Status,
             stacksMaxed => gameEvent is GameEvent.StacksMaxed maxed && maxed.Status == stacksMaxed.Status);
@@ -41,15 +47,17 @@ public static class TriggerMatching
     /// <summary>The statuses a trigger needs on the target (empty when it doesn't care).</summary>
     public static ImmutableArray<StatusId> ListRequiredTargetStatuses(this Trigger trigger) =>
         trigger.Match(
-            _ => ImmutableArray<StatusId>.Empty,
-            _ => ImmutableArray<StatusId>.Empty,
-            _ => ImmutableArray<StatusId>.Empty,
-            killDebuffed => killDebuffed.TargetHas,
-            _ => ImmutableArray<StatusId>.Empty,
-            damageDebuffed => damageDebuffed.TargetHas,
-            _ => ImmutableArray<StatusId>.Empty,
-            _ => ImmutableArray<StatusId>.Empty,
-            _ => ImmutableArray<StatusId>.Empty);
+            abilityCast: _ => ImmutableArray<StatusId>.Empty,
+            killAny: _ => ImmutableArray<StatusId>.Empty,
+            killOfTier: _ => ImmutableArray<StatusId>.Empty,
+            killDebuffed: killDebuffed => killDebuffed.TargetHas,
+            killMultiple: _ => ImmutableArray<StatusId>.Empty,
+            damage: _ => ImmutableArray<StatusId>.Empty,
+            damageDebuffed: damageDebuffed => damageDebuffed.TargetHas,
+            damageMultiple: _ => ImmutableArray<StatusId>.Empty,
+            pickUp: _ => ImmutableArray<StatusId>.Empty,
+            buffGained: _ => ImmutableArray<StatusId>.Empty,
+            stacksMaxed: _ => ImmutableArray<StatusId>.Empty);
 
     public static DamageType ReadDamageType(this DamageOrigin origin) =>
         origin.Match(

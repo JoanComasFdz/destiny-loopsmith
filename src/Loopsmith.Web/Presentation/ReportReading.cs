@@ -1,36 +1,24 @@
 using System.Collections.Immutable;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
+using Loopsmith.Core.Phrasing;
 
 namespace Loopsmith.Web.Presentation;
-
-public sealed record EnergyChange(AbilityKind Kind, decimal Charges);
 
 /// <summary>The first step a run could not perform, and in which cycle (<see cref="BlockedStep.StepIndex"/> is 0-based).</summary>
 public sealed record CycleBlock(int Cycle, BlockedStep Step);
 
 /// <summary>
-/// Pure readings of a <see cref="LoopReport"/> for display. The arithmetic itself (sustainable, steady cycle, net
-/// energy, uptime) is the core's <see cref="LoopReportArithmetic"/>; this only lays it out.
+/// Pure readings of a <see cref="LoopReport"/> for display. The arithmetic itself (repeatable, steady cycle, wasted,
+/// uptime) is the core's <see cref="LoopReportArithmetic"/> and its wording the core's Phrasing; this only lays it out.
 /// </summary>
 public static class ReportReading
 {
-    /// <summary>"10+" when the loop sustained every requested cycle, else the cycles it completed.</summary>
-    public static string DescribeSustainedCycles(LoopReport report) =>
-        report.IsSustainable() ? $"{report.MaxCycles}+" : $"{report.CompletedCycles}";
-
-    /// <summary>The core's net energy per cycle, one entry per ability.</summary>
-    public static ImmutableArray<EnergyChange> ListNetEnergy(LoopReport report)
-    {
-        var net = report.ComputeNetEnergy();
-        return
-        [
-            new EnergyChange(AbilityKind.Grenade, net.Grenade),
-            new EnergyChange(AbilityKind.Melee, net.Melee),
-            new EnergyChange(AbilityKind.ClassAbility, net.ClassAbility),
-            new EnergyChange(AbilityKind.Super, net.Super),
-        ];
-    }
+    /// <summary>"Repeatable · 10+ cycles", or "Repeats 3/10 cycles" when a step could not be played again.</summary>
+    public static string DescribeRepeatability(LoopReport report) =>
+        report.IsRepeatable()
+            ? $"Repeatable · {report.MaxCycles}+ cycles"
+            : $"Repeats {report.CompletedCycles}/{report.MaxCycles} cycles";
 
     public static Optional<CycleBlock> FindFirstBlock(LoopReport report) =>
         report.Cycles

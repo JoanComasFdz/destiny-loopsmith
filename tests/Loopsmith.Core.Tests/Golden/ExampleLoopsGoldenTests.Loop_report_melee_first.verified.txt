@@ -1,60 +1,57 @@
 ﻿Melee first  Skip Grenade Hunter
   5 steps per cycle, played back to back from a fresh spawn for up to 10 cycles
-  ✗ Breaks in cycle 2 at step 1 (melee:kill): Not enough Melee energy — nothing happens. 1 of 10 cycles completed.
+  ✓ Repeatable — all 10 cycles completed back to back
+  Ability energy isn't simulated: abilities are always available.
 
-Energy (charges)    Grenade  Melee    Class    Super
-  Fresh spawn       2        1        1        0
-  After cycle 1     2        0.9      0        0
-  After cycle 2 ✗   2        1        0.75     0
-  Net per cycle     0        -0.1     -1       0
-
-Steady state (cycle 1, the last completed)
+Steady state (cycle 10, the last completed)
   Kills                 6
   Ionic Trace spawned   7
-  Orb of Power spawned  7
+  Orb of Power spawned  2
   Bolt Charge maxed     3
   Fired per cycle
-    22× Shinobu's Vow
-    12× Dielectric
-     7× Tempest Strike
+    18× Shinobu's Vow
+    16× Bolt Charge
      7× Spark of Discharge
-     7× Unraveling Orbs
-     7× Orb of Power
      6× Flow State
+     6× Dielectric
      6× Shock and Clear
      6× Elemental Charge
      6× Ionic Trace
+     3× Jolt
      3× Flashover
-     3× Bolt Charge
      3× Defibrillating Blast
-     2× Jolt
+     2× Reaper
+     2× Unraveling Orbs
+     2× Orb of Power
+     1× Tempest Strike
      1× Impact Induction
      1× Combination Blow
      1× Grenade Kickstart
      1× Spark of Shock
      1× Harmonic Siphon
-     1× Reaper
      1× Slice
      1× Gambler's Dodge
      1× Bomber
+  Wasted per cycle (rules that gave nothing: they don't stack)
+    6× Tempest Strike doesn't stack with Dielectric
   Buff uptime (active after how many of the cycle's steps)
     Combination Blow   5/5 steps
-    Bolt Charge        5/5 steps
     Amplified          5/5 steps
+    Unraveling Rounds  5/5 steps
+    Slice              5/5 steps
+    New Tricks         5/5 steps
     Armor Charge       5/5 steps
-    New Tricks         4/5 steps
-    Unraveling Rounds  2/5 steps
-    Reaper             1/5 steps
-    Slice              1/5 steps
-  ? 40 unknown values not applied — the real loop is stronger
-  (chance) 14 bullets fired in v1 but not guaranteed in game
+    Bolt Charge        5/5 steps
+    Reaper             3/5 steps
+  ? 24 unknown values not applied — the real loop is stronger
+  (chance) 8 bullets fired in v1 but not guaranteed in game
 
 Steps
   Open with the melee instead of the dodge: slide-melee to jolt the pack, then skip grenade and
   Arc weapon into it, grab the orbs and dodge last to refill the melee. Gambler's Dodge's melee
-  refill is unknown ("?") in the rules, so in v1 the melee comes back only through Ionic Traces.
+  refill depends on the Melee stat, so the rules give it as unknown ("?").
   1. melee:kill           Combination Blow: Tempest Strike jolts, Impact Induction refunds grenade energy
   2. grenade:kill         Skip grenade into the jolted pack: Bolt Charge, Amplified and Ionic Traces
   3. energy:kill          Arc weapon kill: Spark of Discharge traces, Harmonic Siphon orb
   4. pickup:orb-of-power  Orbs: Armor Charge and Unraveling Rounds
-  5. class                Gambler's Dodge to refill the melee (amount unknown, so not applied)
+  5. class                Gambler's Dodge to refill the melee (the amount depends on the Melee stat)

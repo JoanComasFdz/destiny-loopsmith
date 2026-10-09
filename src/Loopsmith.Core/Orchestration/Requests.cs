@@ -22,5 +22,5 @@ public sealed record LoopRequest(string LoopPath, Optional<string> RulesDirector
 /// <summary>Two loop files side by side (the rules are located from the first one).</summary>
 public sealed record CompareRequest(string LeftPath, string RightPath, Optional<string> RulesDirectory, int MaxCycles);
 
-/// <summary>Interactive design of a loop: <see cref="SavePath"/> receives the loop file on quit (and on <c>w</c>).</summary>
+/// <summary>Interactive design of a loop: <see cref="SavePath"/> receives the loop file on quit when it has steps, and on <c>w</c>.</summary>
 public sealed record PlayRequest(LoadRequest Load, TraceOptions Options, Optional<string> SavePath, Optional<string> LoopName);
