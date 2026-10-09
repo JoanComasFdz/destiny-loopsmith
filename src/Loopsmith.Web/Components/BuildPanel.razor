@@ -1,6 +1,6 @@
 @* DIM-like build sheet: what is equipped, coloured by element, plus the validation issues. *@
 @{
-    var sheet = BuildSheetShaping.ShapeSheet(Build);
+    var sheet = BuildSheetShaping.ShapeSheet(Build, Issues);
 }
 <section class="panel build-panel @ToneStyling.ToAffinityClass(sheet.Subclass)" aria-label="Build">
     <header class="build-head">
@@ -104,6 +104,10 @@
 @code {
     [Parameter, EditorRequired]
     public ValidatedBuild Build { get; set; } = null!;
+
+    /// <summary>What to list under Validation (the design's issues, see <c>LoopDesigning.ListDesignIssues</c>).</summary>
+    [Parameter, EditorRequired]
+    public ImmutableArray<BuildIssue> Issues { get; set; }
 
     private RenderFragment RenderTiles(string label, ImmutableArray<ElementTile> tiles) => __builder =>
     {
