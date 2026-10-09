@@ -1,0 +1,20 @@
+@* Renders the core's styled lines (TraceRenderer, BuildExplaining) with one CSS class per Tone — same wording as the CLI. *@
+<div class="slines @(Preformatted ? "pre" : "")">
+    @foreach (var line in Lines)
+    {
+        <div class="sline" style="--indent:@(Math.Max(line.Indent - IndentBase, 0))">@foreach (var span in line.Spans){<span class="@ToneStyling.ToToneClass(span.Tone)">@span.Text</span>}</div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public ImmutableArray<StyledLine> Lines { get; set; }
+
+    /// <summary>Indent level drawn flush left (the timeline's step bodies start at indent 1).</summary>
+    [Parameter]
+    public int IndentBase { get; set; }
+
+    /// <summary>Keep the renderer's alignment (tree style pads columns with spaces).</summary>
+    [Parameter]
+    public bool Preformatted { get; set; }
+}
