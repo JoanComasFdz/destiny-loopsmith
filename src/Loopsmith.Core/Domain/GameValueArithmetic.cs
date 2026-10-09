@@ -24,9 +24,6 @@ public static class GameValueArithmetic
             ? new GameValue.Known(perModCount.Values[Math.Clamp(copies, 1, perModCount.Values.Length) - 1])
             : value;
 
-    public static Certainty CombineCertainty(this Certainty left, Certainty right) =>
-        (Certainty)Math.Max((int)left, (int)right);
-
     public static DamageType ToDamageType(this Affinity affinity) =>
         affinity switch
         {

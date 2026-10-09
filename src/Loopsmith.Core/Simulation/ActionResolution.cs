@@ -9,22 +9,12 @@ public static class ActionResolution
 {
     public static readonly Seconds DefaultWait = Seconds.From(5m);
 
-    private static readonly ImmutableArray<AbilityKind> AbilityOrder =
-        [AbilityKind.Grenade, AbilityKind.Melee, AbilityKind.ClassAbility, AbilityKind.Super];
-
-    /// <summary>Fresh spawn: grenade, melee and class ability charged; super empty.</summary>
-    public static GameState CreateInitialState(ValidatedBuild build)
-    {
-        AbilityGauge CreateGauge(AbilityKind kind)
-        {
-            var max = CountMaxCharges(build, kind);
-            return new AbilityGauge(kind, EnergyAmount.From(kind == AbilityKind.Super ? 0m : max), max);
-        }
-
-        var gauges = new AbilityGauges(
-            CreateGauge(AbilityKind.Grenade), CreateGauge(AbilityKind.Melee), CreateGauge(AbilityKind.ClassAbility), CreateGauge(AbilityKind.Super));
-        return new GameState(0, Seconds.From(0m), gauges, [], new TargetState(EnemyTier.Minor, []), []);
-    }
+    /// <summary>
+    /// Fresh spawn: no buffs, an undebuffed pack, nothing on the ground. There is no ability energy to fill —
+    /// abilities are always available (ADRs D21).
+    /// </summary>
+    public static GameState CreateInitialState() =>
+        new(0, Seconds.From(0m), [], new TargetState(EnemyTier.Minor, []), []);
 
     public static Resolution ResolveAction(ValidatedBuild build, GameState state, PlayerAction action)
     {
@@ -49,22 +39,23 @@ public static class ActionResolution
         return result.Resolutions;
     }
 
+    /// <summary>
+    /// Every ability (always — no energy model, ADRs D21), every equipped weapon, the pickups on the ground and a wait.
+    /// Abilities and weapons are listed against one enemy; a host may set any <see cref="TargetCount"/>.
+    /// </summary>
     public static ImmutableArray<PlayerAction> ListAvailableActions(ValidatedBuild build, GameState state)
     {
         var offensive = new[] { OffensiveAbility.Grenade, OffensiveAbility.Melee, OffensiveAbility.Super }
-            .Where(kind => HasCharge(state, kind.ToAbilityKind()))
             .SelectMany(kind => new PlayerAction[]
             {
-                new PlayerAction.CastAbility(kind, HitOutcome.Kill),
-                new PlayerAction.CastAbility(kind, HitOutcome.Damage),
+                new PlayerAction.CastAbility(kind, HitOutcome.Kill, TargetCount.One),
+                new PlayerAction.CastAbility(kind, HitOutcome.Damage, TargetCount.One),
             });
-        var classAbility = HasCharge(state, AbilityKind.ClassAbility)
-            ? new PlayerAction[] { new PlayerAction.UseClassAbility() }
-            : [];
+        var classAbility = new PlayerAction[] { new PlayerAction.UseClassAbility() };
         var weapons = build.Build.Weapons.SelectMany(weapon => new PlayerAction[]
         {
-            new PlayerAction.FireWeapon(weapon.Slot, HitOutcome.Kill),
-            new PlayerAction.FireWeapon(weapon.Slot, HitOutcome.Damage),
+            new PlayerAction.FireWeapon(weapon.Slot, HitOutcome.Kill, TargetCount.One),
+            new PlayerAction.FireWeapon(weapon.Slot, HitOutcome.Damage, TargetCount.One),
         });
         var pickups = state.Pickups.Where(p => p.Count > 0).Select(p => (PlayerAction)new PlayerAction.CollectPickups(p.Pickup));
         var wait = new PlayerAction[] { new PlayerAction.Wait(DefaultWait) };
@@ -95,46 +86,40 @@ public static class ActionResolution
             _ => UseClassAbility(state),
             fire => FireWeapon(build, state, fire),
             collect => CollectPickups(state, collect),
-            wait => Wait(build, state, wait));
+            wait => Wait(state, wait));
 
+    /// <summary>Never blocked: casting, then the strike on every target (ADRs D21, D22).</summary>
     private static Opening CastAbility(ValidatedBuild build, GameState state, PlayerAction.CastAbility cast)
     {
         var kind = cast.Kind.ToAbilityKind();
-        if (!HasCharge(state, kind))
-        {
-            return BlockAction(state, $"Not enough {kind} energy — nothing happens.");
-        }
-
-        var paid = SpendCharge(state, kind);
         var origin = new DamageOrigin.Ability(kind, build.Build.Subclass.ToDamageType());
-        var events = ImmutableArray.Create<PendingEvent>(
-            new PendingEvent.Ready(new GameEvent.AbilityCast(kind)),
-            new PendingEvent.HitTarget(origin));
-        return new Opening(paid, cast.Hit == HitOutcome.Kill ? events.Add(new PendingEvent.KillTarget(origin)) : events, []);
+        var strike = ListStrikeEvents(origin, cast.Hit, cast.Targets);
+        return new Opening(state, [new PendingEvent.Ready(new GameEvent.AbilityCast(kind)), .. strike], []);
     }
 
-    private static Opening UseClassAbility(GameState state)
-    {
-        if (!HasCharge(state, AbilityKind.ClassAbility))
-        {
-            return BlockAction(state, "Not enough ClassAbility energy — nothing happens.");
-        }
-
-        var paid = SpendCharge(state, AbilityKind.ClassAbility);
-        return new Opening(paid, [new PendingEvent.Ready(new GameEvent.AbilityCast(AbilityKind.ClassAbility))], []);
-    }
+    private static Opening UseClassAbility(GameState state) =>
+        new(state, [new PendingEvent.Ready(new GameEvent.AbilityCast(AbilityKind.ClassAbility))], []);
 
     private static Opening FireWeapon(ValidatedBuild build, GameState state, PlayerAction.FireWeapon fire)
     {
         var weapon = build.Build.Weapons.Select(w => w.Slot == fire.Slot ? Optional.Some(w) : Optional.None<WeaponLoadout>()).FindFirstSome();
         return weapon.Match(
-            some =>
-            {
-                var origin = new DamageOrigin.Weapon(fire.Slot, some.Value.Type);
-                var hit = ImmutableArray.Create<PendingEvent>(new PendingEvent.HitTarget(origin));
-                return new Opening(state, fire.Hit == HitOutcome.Kill ? hit.Add(new PendingEvent.KillTarget(origin)) : hit, []);
-            },
+            some => new Opening(state, ListStrikeEvents(new DamageOrigin.Weapon(fire.Slot, some.Value.Type), fire.Hit, fire.Targets), []),
             _ => BlockAction(state, $"No weapon in the {fire.Slot} slot — nothing happens."));
+    }
+
+    /// <summary>
+    /// One action against N enemies (ADRs D22): N per-enemy hits, then N kills for a kill — each cascades fully, so
+    /// later hits see the debuffs earlier ones applied — then one <see cref="GameEvent.TargetsHit"/> for the
+    /// multi-target triggers ("hit 3+ enemies").
+    /// </summary>
+    private static ImmutableArray<PendingEvent> ListStrikeEvents(DamageOrigin origin, HitOutcome hit, TargetCount targets)
+    {
+        var hits = Enumerable.Repeat<PendingEvent>(new PendingEvent.HitTarget(origin), targets.Value);
+        var kills = hit == HitOutcome.Kill
+            ? Enumerable.Repeat<PendingEvent>(new PendingEvent.KillTarget(origin), targets.Value)
+            : [];
+        return [.. hits, .. kills, new PendingEvent.Ready(new GameEvent.TargetsHit(origin, targets, hit))];
     }
 
     private static Opening CollectPickups(GameState state, PlayerAction.CollectPickups collect)
@@ -149,7 +134,8 @@ public static class ActionResolution
         return new Opening(state.ClearPickups(collect.Pickup), events.ToImmutableArray(), []);
     }
 
-    private static Opening Wait(ValidatedBuild build, GameState state, PlayerAction.Wait wait)
+    /// <summary>Time passes: timed buffs and debuffs expire. Nothing recharges — ability energy isn't simulated (ADRs D21).</summary>
+    private static Opening Wait(GameState state, PlayerAction.Wait wait)
     {
         var elapsed = wait.Duration.Value;
         var aged = state with
@@ -158,20 +144,7 @@ public static class ActionResolution
             Buffs = AgeStatuses(state.Buffs, elapsed),
             Target = state.Target with { Debuffs = AgeStatuses(state.Target.Debuffs, elapsed) },
         };
-        var regen = AbilityOrder
-            .Where(kind => kind != AbilityKind.Super)
-            .Select(kind => (Kind: kind, Cooldown: ReadBaseCooldown(build, kind)))
-            .ToImmutableArray();
-        var regenerated = regen
-            .Where(x => x.Cooldown.Value.IsSome())
-            .Aggregate(aged, (acc, x) => acc.SetEnergy(
-                x.Kind,
-                acc.ReadGauge(x.Kind).Energy.Value + (elapsed / x.Cooldown.Value.UnwrapOr(1m))));
-        var unknown = regen.Where(x => !x.Cooldown.Value.IsSome()).Select(x => x.Kind.ToString()).ToImmutableArray();
-        var notes = unknown.IsEmpty
-            ? ImmutableArray<string>.Empty
-            : [$"Base cooldown unknown for {string.Join(", ", unknown)} — no passive regen applied (import the Compendium)."];
-        return new Opening(regenerated, [], notes);
+        return new Opening(aged, [], []);
     }
 
     private static ImmutableArray<ActiveStatus> AgeStatuses(ImmutableArray<ActiveStatus> statuses, decimal elapsed) =>
@@ -183,34 +156,4 @@ public static class ActionResolution
                 _ => Optional.Some(status)))
             .SelectMany(kept => kept.Match(some => new[] { some.Value }, _ => []))
             .ToImmutableArray();
-
-    private static ResolvedValue ReadBaseCooldown(ValidatedBuild build, AbilityKind kind)
-    {
-        var resolved = build.FindAbilityProfile(kind)
-            .Map(p => p.BaseCooldownSeconds.ResolveForCopies(1))
-            .UnwrapOr(new ResolvedValue(Optional.None<decimal>(), Certainty.Unknown));
-        return resolved.Value.Match(some => some.Value > 0m, _ => false)
-            ? resolved
-            : new ResolvedValue(Optional.None<decimal>(), Certainty.Unknown);
-    }
-
-    private static int CountMaxCharges(ValidatedBuild build, AbilityKind kind)
-    {
-        var baseCharges = build.Equipped
-            .Select(e => e.Element.Ability)
-            .Select(ability => ability.Match(some => some.Value.Kind == kind ? some.Value.Charges : 0, _ => 0))
-            .DefaultIfEmpty(0)
-            .Max();
-        var extra = build.Equipped
-            .SelectMany(e => e.Element.Passives)
-            .Where(p => p.When.IsEmpty)
-            .Sum(p => p.Modifier is Passive.ExtraCharges charges && charges.Ability == kind ? charges.Extra : 0);
-        return Math.Max(1, baseCharges) + extra;
-    }
-
-    private static bool HasCharge(GameState state, AbilityKind kind) =>
-        state.ReadGauge(kind).Energy.Value >= 1m;
-
-    private static GameState SpendCharge(GameState state, AbilityKind kind) =>
-        state.SetEnergy(kind, state.ReadGauge(kind).Energy.Value - 1m);
 }

@@ -51,8 +51,8 @@ public enum StatKind { Weapons, Health, Class, Grenade, Super, Melee }
 /// <summary>Deterministic v1: a <see cref="Chance"/> rule still fires, but the trace marks it as "chance".</summary>
 public enum Likelihood { Always, Chance }
 
-/// <summary>How much we trust a number that was applied to the state.</summary>
-public enum Certainty { Known, Approximate, Assumed, Unknown }
+/// <summary>How much we trust a number an outcome carries ("~" = approximate, "?" = unknown, never applied).</summary>
+public enum Certainty { Known, Approximate, Unknown }
 
 /// <summary>Only the distinctions the app branches on (see CONVENTIONS.md).</summary>
 public enum Severity { Blocking, Warning, Info }

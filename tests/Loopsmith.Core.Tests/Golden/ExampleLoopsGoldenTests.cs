@@ -58,22 +58,22 @@ public class ExampleLoopsGoldenTests
     }
 
     [Fact]
-    public void The_creators_loop_sustains()
+    public void The_creators_loop_repeats_and_its_rules_give_more_than_a_grenade_back()
     {
         var report = AnalyzeLoop(SkipGrenadesPath);
 
-        Assert.True(report.IsSustainable());
-        Assert.True(report.ComputeNetEnergy().Grenade >= 0m);
+        Assert.True(report.IsRepeatable());
+        Assert.True(report.Refunds.Grenade.Amount >= 2m, $"grenade refund {report.Refunds.Grenade}");   // two grenades a cycle
     }
 
     [Fact]
-    public void Melee_first_breaks_on_the_melee_of_cycle_2()
+    public void Melee_first_repeats_too_energy_no_longer_breaks_it()
     {
         var report = AnalyzeLoop(MeleeFirstPath);
 
-        Assert.Equal(1, report.CompletedCycles);
-        var blocked = Assert.IsType<Optional<BlockedStep>.Some>(report.Cycles[1].Blocked).Value;
-        Assert.Equal(new PlayerAction.CastAbility(OffensiveAbility.Melee, HitOutcome.Kill), blocked.Action);
+        Assert.True(report.IsRepeatable());
+        Assert.True(report.Refunds.Melee.Amount > 0m);
+        Assert.True(report.Refunds.Melee.UnknownCount > 0);   // Gambler's Dodge's melee refill is "?"
     }
 
     [Fact]
@@ -82,7 +82,7 @@ public class ExampleLoopsGoldenTests
         var started = LoopDesigning.StartDesign(Catalog, ReadRepoFile(BuildPath), "Round trip")
             .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
         var designed = LoopDesigning.AppendStep(started, new PlayerAction.UseClassAbility(), Optional.Some("dodge: \"arm\" # everything"));
-        designed = LoopDesigning.AppendStep(designed, new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Kill), Optional.None<string>());
+        designed = LoopDesigning.AppendStep(designed, new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Kill, TargetCount.One), Optional.None<string>());
         designed = LoopDesigning.AppendStep(designed, new PlayerAction.Wait(Seconds.From(1.5m)), Optional.None<string>());
         designed = LoopDesigning.RenameDesign(designed, "Round trip: test", Optional.Some("Joan"), Optional.Some("Line one\n  indented line two\n"));
 

@@ -23,7 +23,7 @@ public class SkipGrenadeHunterGoldenTests
 
     private static readonly ValidatedBuild Build = RepoFiles.LoadBuild(BuildPath);
 
-    private static GameState Fresh => ActionResolution.CreateInitialState(Build);
+    private static GameState Fresh => ActionResolution.CreateInitialState();
 
     // ── note line 1: Class ability ──────────────────────────────────────────────
     [Fact]
@@ -37,7 +37,7 @@ public class SkipGrenadeHunterGoldenTests
     {
         var afterDodge = Resolve(Fresh, new PlayerAction.UseClassAbility()).State;
 
-        var resolution = Resolve(afterDodge, new PlayerAction.FireWeapon(WeaponSlot.Kinetic, HitOutcome.Kill));
+        var resolution = Resolve(afterDodge, new PlayerAction.FireWeapon(WeaponSlot.Kinetic, HitOutcome.Kill, TargetCount.One));
 
         AssertFires(resolution, must: ["slice", "attrition-orbs", "reaper", "strand-siphon", "to-shreds"], mustNot: ["horde-shuttle"]);
         Assert.DoesNotContain(resolution.Fired, f => f.Source.Value == "to-shreds" && f.Trigger is GameEvent.Damaged);
@@ -48,7 +48,7 @@ public class SkipGrenadeHunterGoldenTests
     {
         var start = WithTarget(WithBuffs(Fresh, ("slice", 1), ("reaper", 1)), "sever", "unravel");
 
-        var resolution = Resolve(start, new PlayerAction.FireWeapon(WeaponSlot.Kinetic, HitOutcome.Kill));
+        var resolution = Resolve(start, new PlayerAction.FireWeapon(WeaponSlot.Kinetic, HitOutcome.Kill, TargetCount.One));
 
         AssertFires(resolution, must: ["to-shreds", "horde-shuttle", "slice", "attrition-orbs", "reaper", "strand-siphon"]);
     }
@@ -56,20 +56,20 @@ public class SkipGrenadeHunterGoldenTests
     // ── note line 3: Arc grenade ────────────────────────────────────────────────
     [Fact]
     public void Line3_arc_grenade_hit() =>
-        AssertFires(Resolve(Fresh, new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Damage)),
+        AssertFires(Resolve(Fresh, new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Damage, TargetCount.One)),
             must: ["spark-of-shock", "shinobus-vow"], mustNot: ["jolt"]);
 
     // ── note line 4: Slide + melee ──────────────────────────────────────────────
     [Fact]
     public void Line4_melee_hit() =>
-        AssertFires(Resolve(Fresh, new PlayerAction.CastAbility(OffensiveAbility.Melee, HitOutcome.Damage)),
+        AssertFires(Resolve(Fresh, new PlayerAction.CastAbility(OffensiveAbility.Melee, HitOutcome.Damage, TargetCount.One)),
             must: ["tempest-strike", "impact-induction"]);
 
     // ── note line 5: Kill jolted target ─────────────────────────────────────────
     [Fact]
     public void Line5a_arc_weapon_kill_on_a_jolted_severed_pack()
     {
-        var resolution = Resolve(WithTarget(Fresh, "jolt", "sever"), new PlayerAction.FireWeapon(WeaponSlot.Energy, HitOutcome.Kill));
+        var resolution = Resolve(WithTarget(Fresh, "jolt", "sever"), new PlayerAction.FireWeapon(WeaponSlot.Energy, HitOutcome.Kill, TargetCount.One));
 
         AssertFires(resolution, must:
         [
@@ -81,7 +81,7 @@ public class SkipGrenadeHunterGoldenTests
 
     [Fact]
     public void Line5b_grenade_kill_is_a_jolted_kill() =>
-        AssertFires(Resolve(Fresh, new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Kill)),
+        AssertFires(Resolve(Fresh, new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Kill, TargetCount.One)),
             must: ["flow-state", "tempest-strike", "luminopotent-4pc", "dielectric", "ionic-trace", "spark-of-discharge", "elemental-charge", "shinobus-vow"],
             mustNot: ["harmonic-siphon", "photonic-flare"]);
 
@@ -89,7 +89,7 @@ public class SkipGrenadeHunterGoldenTests
     [Fact]
     public void Line6_while_amplified_bolt_charge_gains_an_extra_stack()
     {
-        var resolution = Resolve(WithBuffs(Fresh, ("amplified", 1)), new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Damage));
+        var resolution = Resolve(WithBuffs(Fresh, ("amplified", 1)), new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Damage, TargetCount.One));
 
         AssertFires(resolution, must: ["spark-of-shock", "shinobus-vow"]);
         Assert.Equal(2, ReadStacks(resolution.State, "bolt-charge"));
@@ -106,7 +106,7 @@ public class SkipGrenadeHunterGoldenTests
     [Fact]
     public void Line7b_grenade_kickstart_spends_armor_charge_on_the_next_grenade()
     {
-        var resolution = Resolve(WithBuffs(Fresh, ("armor-charge", 2)), new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Damage));
+        var resolution = Resolve(WithBuffs(Fresh, ("armor-charge", 2)), new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Damage, TargetCount.One));
 
         AssertFires(resolution, must: ["grenade-kickstart", "spark-of-shock", "shinobus-vow"]);
         Assert.Equal(0, ReadStacks(resolution.State, "armor-charge"));
@@ -115,13 +115,13 @@ public class SkipGrenadeHunterGoldenTests
     // ── note line 8: Weapon kill ────────────────────────────────────────────────
     [Fact]
     public void Line8a_arc_weapon_kill_makes_an_ionic_trace() =>
-        AssertFires(Resolve(Fresh, new PlayerAction.FireWeapon(WeaponSlot.Energy, HitOutcome.Kill)),
+        AssertFires(Resolve(Fresh, new PlayerAction.FireWeapon(WeaponSlot.Energy, HitOutcome.Kill, TargetCount.One)),
             must: ["spark-of-discharge", "harmonic-siphon", "ionic-trace", "elemental-charge", "shinobus-vow"]);
 
     [Fact]
     public void Line8b_strand_weapon_kill_does_not()
     {
-        var resolution = Resolve(Fresh, new PlayerAction.FireWeapon(WeaponSlot.Kinetic, HitOutcome.Kill));
+        var resolution = Resolve(Fresh, new PlayerAction.FireWeapon(WeaponSlot.Kinetic, HitOutcome.Kill, TargetCount.One));
 
         Assert.Equal(["attrition-orbs", "strand-siphon"], ListSources(resolution).Order());
     }

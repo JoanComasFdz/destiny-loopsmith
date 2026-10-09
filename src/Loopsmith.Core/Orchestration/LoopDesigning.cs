@@ -14,14 +14,16 @@ namespace Loopsmith.Core.Orchestration;
 
 public enum TriggerGroup { Ability, Weapon, Pickup, Time }
 
-/// <summary>A trigger the designer can pick next. Unavailable ones say why; <see cref="IsNew"/> marks what the last step unlocked.</summary>
+/// <summary>
+/// A trigger the designer can pick next — every option listed can be played (abilities are always available, ADRs D21).
+/// <see cref="IsNew"/> marks what the last step unlocked (a pickup that just landed). Abilities and weapons are listed
+/// against one enemy; <see cref="LoopDesigning.SetTargetCount"/> aims them at more.
+/// </summary>
 public sealed record TriggerOption(
     PlayerAction Action,
     string Token,
     string Label,
     TriggerGroup Group,
-    bool IsAvailable,
-    Optional<string> Unavailable,
     bool IsNew);
 
 /// <summary>
@@ -54,7 +56,7 @@ public static class LoopDesigning
 
     public static DesignSession CreateSession(ValidatedBuild build, LoopDesign design)
     {
-        var initial = ActionResolution.CreateInitialState(build);
+        var initial = ActionResolution.CreateInitialState();
         var actions = design.Steps.Select(step => step.Action).ToImmutableArray();
         var resolutions = ActionResolution.ResolveSequence(build, initial, actions);
         var current = resolutions.IsEmpty ? initial : resolutions[^1].State;
@@ -89,15 +91,17 @@ public static class LoopDesigning
             ? session
             : session with { Design = session.Design with { Steps = session.Design.Steps.SetItem(index, session.Design.Steps[index] with { Note = note }) } };
 
-    /// <summary>Every trigger the build offers right now, grouped; unavailable ones carry the reason.</summary>
+    /// <summary>
+    /// Every trigger the build offers right now, grouped: every ability (always available — ADRs D21), every weapon,
+    /// the pickups on the ground, a wait. <see cref="TriggerOption.IsNew"/> marks what the last step made available.
+    /// </summary>
     public static ImmutableArray<TriggerOption> ListTriggerOptions(DesignSession session)
     {
         var build = session.Build;
         var glossary = build.Catalog.Glossary;
-        var available = ActionResolution.ListAvailableActions(build, session.Current);
         var previous = session.Resolutions.Length switch
         {
-            0 => available,
+            0 => [],
             1 => ActionResolution.ListAvailableActions(build, session.Initial),
             _ => session.Resolutions[^2].NowAvailable,
         };
@@ -108,9 +112,7 @@ public static class LoopDesigning
                 candidate.Action.ToActionToken(),
                 glossary.DescribeAction(candidate.Action, build.Build),
                 candidate.Group,
-                available.Contains(candidate.Action),
-                available.Contains(candidate.Action) ? Optional.None<string>() : Optional.Some(DescribeUnavailable(session.Current, candidate.Action)),
-                available.Contains(candidate.Action) && !previous.Contains(candidate.Action) && !session.Resolutions.IsEmpty))
+                !previous.Contains(candidate.Action) && !session.Resolutions.IsEmpty))
             .ToImmutableArray();
     }
 
@@ -118,11 +120,11 @@ public static class LoopDesigning
     {
         var hits = new[] { HitOutcome.Kill, HitOutcome.Damage };
         var abilities = new[] { OffensiveAbility.Grenade, OffensiveAbility.Melee }
-            .SelectMany(kind => hits.Select(hit => ((PlayerAction)new PlayerAction.CastAbility(kind, hit), TriggerGroup.Ability)))
+            .SelectMany(kind => hits.Select(hit => ((PlayerAction)new PlayerAction.CastAbility(kind, hit, TargetCount.One), TriggerGroup.Ability)))
             .Append(((PlayerAction)new PlayerAction.UseClassAbility(), TriggerGroup.Ability))
-            .Concat(hits.Select(hit => ((PlayerAction)new PlayerAction.CastAbility(OffensiveAbility.Super, hit), TriggerGroup.Ability)));
+            .Concat(hits.Select(hit => ((PlayerAction)new PlayerAction.CastAbility(OffensiveAbility.Super, hit, TargetCount.One), TriggerGroup.Ability)));
         var weapons = build.Build.Weapons
-            .SelectMany(weapon => hits.Select(hit => ((PlayerAction)new PlayerAction.FireWeapon(weapon.Slot, hit), TriggerGroup.Weapon)));
+            .SelectMany(weapon => hits.Select(hit => ((PlayerAction)new PlayerAction.FireWeapon(weapon.Slot, hit, TargetCount.One), TriggerGroup.Weapon)));
         var pickups = state.Pickups
             .Where(p => p.Count > 0)
             .Select(p => ((PlayerAction)new PlayerAction.CollectPickups(p.Pickup), TriggerGroup.Pickup));
@@ -130,18 +132,27 @@ public static class LoopDesigning
         return [.. abilities, .. weapons, .. pickups, .. wait];
     }
 
-    private static string DescribeUnavailable(GameState state, PlayerAction action)
-    {
-        var kind = action switch
+    /// <summary>How many enemies an ability or weapon action hits (or kills); none for the class ability, pickups and waits.</summary>
+    public static Optional<TargetCount> ReadTargetCount(PlayerAction action) =>
+        action switch
         {
-            PlayerAction.CastAbility cast => Optional.Some(cast.Kind.ToAbilityKind()),
-            PlayerAction.UseClassAbility => Optional.Some(AbilityKind.ClassAbility),
-            _ => Optional.None<AbilityKind>(),
+            PlayerAction.CastAbility cast => Optional.Some(cast.Targets),
+            PlayerAction.FireWeapon fire => Optional.Some(fire.Targets),
+            _ => Optional.None<TargetCount>(),
         };
-        return kind
-            .Map(k => $"needs a full charge ({state.ReadGauge(k).Energy.Value:0.##}/1)")
-            .UnwrapOr("not available now");
-    }
+
+    /// <summary>
+    /// The same ability or weapon action against <paramref name="targets"/> enemies ("kill 3 with the grenade"); the
+    /// class ability, pickups and waits have no targets and come back unchanged. Hosts validate a typed count with
+    /// <c>TargetCount.TryFrom</c> (1..20).
+    /// </summary>
+    public static PlayerAction SetTargetCount(PlayerAction action, TargetCount targets) =>
+        action switch
+        {
+            PlayerAction.CastAbility cast => cast with { Targets = targets },
+            PlayerAction.FireWeapon fire => fire with { Targets = targets },
+            _ => action,
+        };
 
     // ── export, import, analyse, compare (LoopFiles, Simulation.LoopRunning, ReportComparison) ──
 
@@ -183,7 +194,7 @@ public static class LoopDesigning
             : Optional.Some(new BuildIssue(Severity.Info, $"Loop designed against catalog {designed}; replaying with {current}.")));
     }
 
-    /// <summary>The report as styled lines (verdict, energy per cycle, steady state).</summary>
+    /// <summary>The report as styled lines (verdict, steady state: kills, pickups, energy refunded, what fired, uptime).</summary>
     public static ImmutableArray<StyledLine> RenderLoopReport(LoopReport report) =>
         LoopReportRendering.RenderLoopReport(report);
 

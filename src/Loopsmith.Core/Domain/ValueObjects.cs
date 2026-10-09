@@ -62,12 +62,19 @@ public readonly partial struct Seconds
         value >= 0m ? Validation.Ok : Validation.Invalid("Seconds must not be negative");
 }
 
-/// <summary>Ability energy measured in charges: 0.5 = half a charge, 2 = two full charges.</summary>
-[ValueObject<decimal>]
-public readonly partial struct EnergyAmount
+/// <summary>
+/// How many enemies one action hits (or kills), 1..20. The player says it — the engine can't know how many enemies a
+/// grenade or a burst of fire catches (ADRs D22).
+/// </summary>
+[ValueObject<int>]
+[Instance("One", 1)]
+[Instance("Most", Maximum)]
+public readonly partial struct TargetCount
 {
-    private static Validation Validate(decimal value) =>
-        value >= 0m ? Validation.Ok : Validation.Invalid("Energy must not be negative");
+    public const int Maximum = 20;
+
+    private static Validation Validate(int value) =>
+        value is >= 1 and <= Maximum ? Validation.Ok : Validation.Invalid($"Target count must be within 1..{Maximum}");
 }
 
 [ValueObject<int>]

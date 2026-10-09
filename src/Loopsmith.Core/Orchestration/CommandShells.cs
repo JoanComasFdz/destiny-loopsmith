@@ -88,7 +88,7 @@ public static class CommandShells
 
     // ── pure planning ───────────────────────────────────────────────────────────
 
-    /// <summary>Build summary, the report (verdict, energy per cycle, steady state), the steps and, optionally, the trace of cycle 1.</summary>
+    /// <summary>Build summary, the report (verdict, steady state with the energy refunded), the steps and, optionally, the trace of cycle 1.</summary>
     public static ImmutableArray<Effect> PlanLoopReport(DesignSession session, int maxCycles, Optional<TraceOptions> trace)
     {
         var report = LoopDesigning.AnalyzeDesign(session, maxCycles);
@@ -151,7 +151,7 @@ public static class CommandShells
 
     public static ImmutableArray<Effect> PlanSimulation(ValidatedBuild build, ImmutableArray<PlayerAction> actions, TraceOptions options)
     {
-        var initial = ActionResolution.CreateInitialState(build);
+        var initial = ActionResolution.CreateInitialState();
         var resolutions = ActionResolution.ResolveSequence(build, initial, actions);
         var trace = TraceRenderer.RenderSequence(build, initial, resolutions, options);
         return [new Effect.WriteLines(BuildExplaining.RenderBuildSummary(build)), new Effect.WriteLines(trace)];

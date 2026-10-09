@@ -15,8 +15,10 @@ public sealed class LoopFileWritingTests
     private static readonly ImmutableArray<LoopStep> SomeSteps =
     [
         new(new PlayerAction.UseClassAbility(), Optional.Some("Arm Slice + Reaper")),
-        new(new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Kill), Optional.None<string>()),
-        new(new PlayerAction.FireWeapon(WeaponSlot.Kinetic, HitOutcome.Damage), Optional.None<string>()),
+        new(new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Kill, TargetCount.One), Optional.None<string>()),
+        new(new PlayerAction.FireWeapon(WeaponSlot.Kinetic, HitOutcome.Damage, TargetCount.One), Optional.None<string>()),
+        new(new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Kill, TargetCount.From(3)), Optional.Some("three in the pack")),
+        new(new PlayerAction.FireWeapon(WeaponSlot.Energy, HitOutcome.Damage, TargetCount.From(5)), Optional.None<string>()),
         new(new PlayerAction.CollectPickups(PickupId.From("orb-of-power")), Optional.Some("grab them all")),
         new(new PlayerAction.Wait(Seconds.From(2.25m)), Optional.None<string>()),
     ];
@@ -54,6 +56,9 @@ public sealed class LoopFileWritingTests
                 note: Arm Slice + Reaper
               - do: grenade:kill
               - do: kinetic
+              - do: grenade:kill:3
+                note: three in the pack
+              - do: energy:hit:5
               - do: pickup:orb-of-power
                 note: grab them all
               - do: wait:2.25
