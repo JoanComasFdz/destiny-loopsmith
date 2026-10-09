@@ -18,6 +18,12 @@ public sealed class ForbiddenApiTests
     /// </summary>
     private static readonly string[] InMemoryTextReaders = ["System.IO.StringReader", "System.IO.TextReader"];
 
+    /// <summary>
+    /// In-memory text writers do no I/O either; YamlDotNet's <c>Emitter</c> only writes to a <c>TextWriter</c>, so the
+    /// YAML writing slice may collect its output in a <c>StringWriter</c>.
+    /// </summary>
+    private static readonly string[] InMemoryTextWriters = ["System.IO.StringWriter", "System.IO.TextWriter"];
+
     public static TheoryData<string> KernelSlices => Slices.ToTheoryData(Slices.Kernel);
 
     [Theory]
@@ -46,7 +52,8 @@ public sealed class ForbiddenApiTests
 
         Violations.AssertNone(
             $"Only '{Slices.SourceFetching}' may use {SystemIO} or {SystemNetHttp} "
-                + $"(the YAML parsing slices may use {string.Join("/", InMemoryTextReaders)}).",
+                + $"(the YAML parsing slices may use {string.Join("/", InMemoryTextReaders)}, "
+                + $"the YAML writing slice {string.Join("/", InMemoryTextWriters)}).",
             violations);
     }
 
@@ -71,6 +78,6 @@ public sealed class ForbiddenApiTests
     }
 
     private static bool IsAllowedInMemoryReader(Mono.Cecil.TypeDefinition type, TypeDependency dependency) =>
-        Slices.YamlParsers.Contains(CoreAssembly.FindSlice(type) ?? "")
-        && InMemoryTextReaders.Contains(dependency.FullName);
+        (Slices.YamlParsers.Contains(CoreAssembly.FindSlice(type) ?? "") && InMemoryTextReaders.Contains(dependency.FullName))
+        || (Slices.YamlWriters.Contains(CoreAssembly.FindSlice(type) ?? "") && InMemoryTextWriters.Contains(dependency.FullName));
 }

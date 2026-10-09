@@ -276,7 +276,10 @@ public static class DomainPhrasing
             _ => "class",
             fire => $"{fire.Slot.ToString().ToLowerInvariant()}{(fire.Hit == HitOutcome.Kill ? ":kill" : "")}",
             collect => $"pickup:{collect.Pickup}",
-            wait => $"wait:{wait.Duration.Value.ToString("0.#", Invariant)}");
+            wait => $"wait:{wait.Duration.Value.ToString(LosslessDecimal, Invariant)}");
+
+    /// <summary>Every significant digit of a decimal, no trailing zeros: tokens round-trip (<c>wait:2.25</c>).</summary>
+    private const string LosslessDecimal = "0.############################";
 
     public static string Capitalize(string text) =>
         text.Length == 0 ? text : char.ToUpperInvariant(text[0]) + text[1..];

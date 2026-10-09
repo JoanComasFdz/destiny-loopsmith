@@ -26,6 +26,8 @@ internal static class Slices
     public const string BuildExplanation = "BuildExplanation";
     public const string LoopGraphing = "LoopGraphing";
     public const string TraceRendering = "TraceRendering";
+    public const string LoopFiles = "LoopFiles";
+    public const string ReportComparison = "ReportComparison";
 
     public const string Orchestration = "Orchestration";
 
@@ -34,7 +36,7 @@ internal static class Slices
 
     /// <summary>Pure feature slices.</summary>
     public static readonly ImmutableArray<string> Features =
-        [RuleParsing, BuildParsing, BuildComposition, Simulation, BuildExplanation, LoopGraphing, TraceRendering];
+        [RuleParsing, BuildParsing, BuildComposition, Simulation, BuildExplanation, LoopGraphing, TraceRendering, LoopFiles, ReportComparison];
 
     /// <summary>Every known slice, kernel included.</summary>
     public static readonly ImmutableArray<string> All = [.. Kernel, SourceFetching, .. Features, Orchestration];
@@ -42,8 +44,11 @@ internal static class Slices
     /// <summary>Slices that must depend only on the kernel and themselves: the feature slices and the impure boundary.</summary>
     public static readonly ImmutableArray<string> KernelOnly = [SourceFetching, .. Features];
 
-    /// <summary>The only slices allowed to reference YamlDotNet.</summary>
-    public static readonly ImmutableArray<string> YamlParsers = [RuleParsing, BuildParsing];
+    /// <summary>The only slices allowed to reference YamlDotNet (LoopFiles both reads and writes loop files).</summary>
+    public static readonly ImmutableArray<string> YamlParsers = [RuleParsing, BuildParsing, LoopFiles];
+
+    /// <summary>The only slice that emits YAML: it may build the text in memory with a <c>StringWriter</c>.</summary>
+    public static readonly ImmutableArray<string> YamlWriters = [LoopFiles];
 
     /// <summary>
     /// What each slice may depend on besides itself. Inside the kernel: Functional depends on nothing,

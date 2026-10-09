@@ -21,7 +21,10 @@ dotnet build Loopsmith.slnx
 dotnet run --project src/Loopsmith.Cli -- explain  builds/skip-grenade-hunter/build.yaml
 dotnet run --project src/Loopsmith.Cli -- simulate builds/skip-grenade-hunter/build.yaml \
     --scenario builds/skip-grenade-hunter/scenario.txt --state
-dotnet run --project src/Loopsmith.Cli -- play     builds/skip-grenade-hunter/build.yaml
+dotnet run --project src/Loopsmith.Cli -- play     builds/skip-grenade-hunter/build.yaml --save my.loop.yaml
+dotnet run --project src/Loopsmith.Cli -- loop     builds/skip-grenade-hunter/loops/infinite-skip-grenades.loop.yaml
+dotnet run --project src/Loopsmith.Cli -- compare  builds/skip-grenade-hunter/loops/infinite-skip-grenades.loop.yaml \
+    builds/skip-grenade-hunter/loops/melee-first.loop.yaml
 dotnet run --project src/Loopsmith.Cli -- loops    builds/skip-grenade-hunter/build.yaml
 dotnet run --project src/Loopsmith.Cli -- graph    builds/skip-grenade-hunter/build.yaml --loops-only > loop.mmd
 ```
@@ -30,7 +33,9 @@ dotnet run --project src/Loopsmith.Cli -- graph    builds/skip-grenade-hunter/bu
 |---|---|
 | `explain` | Every trigger in the build → the outcomes it fires `[source]`, in the same shape as a hand-written build note (`--tree` for an aligned tree) |
 | `simulate` | A sequence of actions (`--actions grenade:kill,class,energy:kill` or `--scenario file`), one block per step: the event → outcomes `[source]`, cascades indented `↳`, then energy bars, buffs, target debuffs and ground pickups (`--state`). `--why` shows the reason text; `--caveats` shows the unknowns |
-| `play` | Interactive: pick the next action by number or token, see what fires and what's available now |
+| `play` | Interactive: pick the next action by number or token, see what fires and what's available now. Every action becomes a step of the loop you design: `u` undo, `n <note>`, `d <description>`, `a` analyse it so far; `--save <file.loop.yaml>` writes it on quit (`w` saves now), `--name` names it |
+| `loop` | A designed loop (`*.loop.yaml`) run back to back from a fresh spawn (`--cycles N`, default 10): does it sustain, where it breaks, energy after every cycle and net per cycle, kills / pickups / maxed stacks, what fired, buff uptime, unknowns and chance bullets. `--trace` adds every step of cycle 1 |
+| `compare` | Two designed loops side by side (they may use different builds), one row per metric, the better value marked ✓ |
 | `loops` | Discovered loops: cycles in the cause → effect graph, ability-energy loops first |
 | `graph` | A Mermaid flowchart of the graph, with loop edges drawn thick. It renders on GitHub and at mermaid.live |
 | `validate` | The build checked against the rule catalog (unknown elements, wrong slots, inert elements) |
@@ -87,6 +92,9 @@ build.yaml ───┼─ parse → validate ──────┼─ simulate 
   never applied as 0.
 
 Rule and build file format and the exact engine semantics: [docs/rule-format.md](docs/rule-format.md).
+Designed loops — the `.loop.yaml` format, share links, analysis and comparison metrics:
+[docs/loop-format.md](docs/loop-format.md). Example loops:
+[builds/skip-grenade-hunter/loops/](builds/skip-grenade-hunter/loops/).
 Design proposal (requirements, data sources, architecture, roadmap, risks):
 [docs/design/loopsmith-design-v0.3.html](docs/design/loopsmith-design-v0.3.html).
 Coding conventions (binding): [CONVENTIONS.md](CONVENTIONS.md) · decisions: [ADRs.md](ADRs.md).
@@ -98,7 +106,7 @@ src/Loopsmith.Core/      one project, slices = folders (kernel: Domain, Function
 src/Loopsmith.Cli/       host: argv → Orchestration shell → effects
 tests/Loopsmith.Core.Tests/   unit, golden and architecture tests
 rules/                   authored causality (glossary, keywords, class, exotics, mods, artifact, perks)
-builds/<slug>/           build.yaml, the original note, note-map, discrepancies, sources
+builds/<slug>/           build.yaml, the original note, note-map, discrepancies, sources, loops/*.loop.yaml
 docs/                    rule format, design proposal
 tools/compendium/        sheet_dump.py — Destiny Data Compendium snapshot tool
 .claude/                 cloud-session hook + project subagents

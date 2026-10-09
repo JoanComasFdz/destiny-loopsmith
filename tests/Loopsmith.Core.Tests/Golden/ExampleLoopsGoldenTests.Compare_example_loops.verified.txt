@@ -1,0 +1,25 @@
+﻿Infinite skip grenades  vs  Melee first
+                                       Infinite skip grenades   Melee first
+  Build                                Skip Grenade Hunter      Skip Grenade Hunter
+  Steps per cycle                      6                        5
+  Sustained cycles                     10+ ✓                    1
+  Net grenade energy per cycle         0                        0
+  Net melee energy per cycle           0 ✓                      -0.1
+  Net class ability energy per cycle   0 ✓                      -1
+  Net super energy per cycle           0                        0
+  Kills per cycle                      10 ✓                     6
+  Ionic Trace spawned per cycle        11 ✓                     7
+  Orb of Power spawned per cycle       14 ✓                     7
+  Bolt Charge maxed per cycle          6 ✓                      3
+  Amplified uptime                     6/6                      5/5
+  Woven Mail uptime                    6/6 ✓                    0/5
+  Unraveling Rounds uptime             6/6 ✓                    2/5
+  New Tricks uptime                    6/6 ✓                    4/5
+  Bolt Charge uptime                   6/6                      5/5
+  Armor Charge uptime                  6/6                      5/5
+  Slice uptime                         6/6 ✓                    1/5
+  Reaper uptime                        2/6 ✓                    1/5
+  Combination Blow uptime              0/6                      5/5 ✓
+  Unknown values                       69                       40 ✓
+  Chance bullets                       26                       14 ✓
+✓ better: Infinite skip grenades on 12 metrics · Melee first on 3 metrics · 6 even or not judged

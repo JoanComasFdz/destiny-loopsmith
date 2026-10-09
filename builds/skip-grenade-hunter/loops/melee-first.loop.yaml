@@ -1,0 +1,67 @@
+# Loopsmith loop v1
+loop: Melee first
+description: |-
+  Open with the melee instead of the dodge: slide-melee to jolt the pack, then skip grenade and
+  Arc weapon into it, grab the orbs and dodge last to refill the melee. Gambler's Dodge's melee
+  refill is unknown ("?") in the rules, so in v1 the melee comes back only through Ionic Traces.
+catalog: authored-e4426d03166b
+steps:
+  - do: melee:kill
+    note: 'Combination Blow: Tempest Strike jolts, Impact Induction refunds grenade energy'
+  - do: grenade:kill
+    note: 'Skip grenade into the jolted pack: Bolt Charge, Amplified and Ionic Traces'
+  - do: energy:kill
+    note: 'Arc weapon kill: Spark of Discharge traces, Harmonic Siphon orb'
+  - do: pickup:orb-of-power
+    note: 'Orbs: Armor Charge and Unraveling Rounds'
+  - do: class
+    note: Gambler's Dodge to refill the melee (amount unknown, so not applied)
+build: |
+  # Skip Grenade Hunter - Plunderthabooty's Arc Hunter "infinite skip grenade" build.
+  # See note.txt (the user's explanation), transcript.txt (the video), note-map.md (golden trace
+  # expectations) and discrepancies.md (where the sources disagree and what was encoded).
+  name: Skip Grenade Hunter
+  author: Plunderthabooty
+  source: https://www.youtube.com/watch?v=zvd6sNS463E
+  class: hunter
+  subclass: arc
+  # The video says "take whatever super you like" and suggests Arc Staff; the super's element matters
+  # for Harmonic Siphon (Arc weapon kills).
+  super: arc-staff
+  grenade: skip-grenade
+  melee: combination-blow
+  classAbility: gamblers-dodge
+  # Ascension is the creator's alternative to Flow State.
+  aspects: [tempest-strike, flow-state]
+  fragments: [spark-of-resistance, spark-of-frequency, spark-of-shock, spark-of-discharge]
+  exoticArmor: shinobus-vow
+  armorSetBonuses: [luminopotent-2pc, luminopotent-4pc]
+  # Elemental Charge x2 (boots) and Grenade Kickstart x2 (gauntlets) per the video; the rest per the note.
+  armorMods:
+    - elemental-charge
+    - elemental-charge
+    - grenade-kickstart
+    - grenade-kickstart
+    - bomber
+    - reaper
+    - harmonic-siphon
+    - strand-siphon
+    - impact-induction
+  artifactPerks:
+    - defibrillating-blast
+    - flashover
+    - dielectric
+    - to-shreds
+    - horde-shuttle
+    - unraveling-orbs
+    - photonic-flare
+  weapons:
+    # Slice per the video. Attrition Orbs placement is INFERRED: the note credits it on strand weapon
+    # kills, Clarity says it is a weapon trait, and Festival Flight is the only Strand weapon named.
+    # Archetype omitted: no source names it.
+    - { slot: kinetic, name: Festival Flight, type: strand, perks: [slice, attrition-orbs] }
+    # Placeholder: neither source names the energy weapon, but Spark of Discharge and Harmonic
+    # Siphon need Arc weapon kills to do anything.
+    - { slot: energy, name: Any Arc weapon, type: arc, perks: [] }
+  # Health is not given in the video. (It also says "a 100 class ability" once; 104 is the stated stat.)
+  stats: { weapons: 47, class: 104, grenade: 145, super: 27, melee: 79 }
