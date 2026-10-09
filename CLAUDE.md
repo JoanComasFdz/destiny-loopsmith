@@ -33,7 +33,8 @@ repos (Microsoft's download hosts are blocked by the network policy) and restore
   `Orchestration`).
 - `src/Loopsmith.Cli/` — host only: argv → shell → execute effects.
 - `src/Loopsmith.Web/` — Blazor WebAssembly loop designer (host only; calls
-  `Orchestration.LoopDesigning`). Deployed to GitHub Pages by `.github/workflows/pages.yml`
+  `Orchestration.LoopDesigning`). Deployed to GitHub Pages by `.github/workflows/pages.yml`;
+  every PR gets a preview at `…/pr-preview/pr-<n>/` (`pr-preview.yml`)
   ([docs/hosting.md](docs/hosting.md)).
 - **The product is the designed loop**: `*.loop.yaml`, self-contained (embeds its build) —
   format, share links, analysis and comparison in [docs/loop-format.md](docs/loop-format.md).
