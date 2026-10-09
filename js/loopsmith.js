@@ -1,5 +1,5 @@
-// Loopsmith web host — the only browser side effects the app needs: download, clipboard, storage, URL hash.
-// Called from Hosting/BrowserInterop.cs. No app logic lives here.
+// Loopsmith web host — the only browser side effects the app needs: download, clipboard, confirm, URL hash.
+// Called from Hosting/BrowserInterop.cs. No app logic lives here, and nothing is stored in the browser.
 window.loopsmith = {
   downloadText(fileName, text, mimeType) {
     const blob = new Blob([text], { type: mimeType || "text/plain" });
@@ -34,23 +34,6 @@ window.loopsmith = {
       const copied = document.execCommand("copy");
       area.remove();
       return copied;
-    } catch (_) {
-      return false;
-    }
-  },
-
-  readStorage(key) {
-    try {
-      return window.localStorage.getItem(key);
-    } catch (_) {
-      return null;
-    }
-  },
-
-  writeStorage(key, value) {
-    try {
-      window.localStorage.setItem(key, value);
-      return true;
     } catch (_) {
       return false;
     }
