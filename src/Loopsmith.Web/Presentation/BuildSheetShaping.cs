@@ -31,12 +31,15 @@ public sealed record BuildSheet(
     ImmutableArray<StatRow> Stats,
     ImmutableArray<BuildIssue> Issues);
 
-/// <summary>Pure: a validated build → its sheet. Names and colours come from the catalog; nothing is inferred.</summary>
+/// <summary>
+/// Pure: a validated build → its sheet. Names and colours come from the catalog; nothing is inferred. The issues are
+/// the design's (<c>LoopDesigning.ListDesignIssues</c>: the build's own plus a catalog mismatch).
+/// </summary>
 public static class BuildSheetShaping
 {
     public const int MaxStat = 200;
 
-    public static BuildSheet ShapeSheet(ValidatedBuild build)
+    public static BuildSheet ShapeSheet(ValidatedBuild build, ImmutableArray<BuildIssue> issues)
     {
         var b = build.Build;
         var catalog = build.Catalog;
@@ -67,7 +70,7 @@ public static class BuildSheetShaping
                 new StatRow("Super", ReadStat(b.Stats.Super)),
                 new StatRow("Melee", ReadStat(b.Stats.Melee)),
             ],
-            build.Issues);
+            issues);
     }
 
     private static ImmutableArray<ElementTile> DescribeElements(RuleCatalog catalog, ImmutableArray<ElementId> ids) =>

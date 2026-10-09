@@ -49,7 +49,7 @@ else
         {
             var isPicked = picked.Contains(entry.Id);
             var isCurrent = Workbench.SavedId.Match(id => id.Value == entry.Id, _ => false);
-            <article class="panel library-item @(isPicked ? "selected" : "")" data-id="@entry.Id">
+            <article class="panel library-item @(isPicked ? "selected" : "")" data-id="@entry.Id" data-origin="@entry.Origin">
                 <label class="pick" title="Select for comparison">
                     <input type="checkbox" checked="@isPicked" disabled="@(!isPicked && picked.Length >= 2)"
                            @onchange="() => ToggleComparePick(entry.Id)" aria-label="@($"Select {entry.Name} for comparison")" />
@@ -140,8 +140,10 @@ else
             ok =>
             {
                 var savedId = entry.Origin == LibraryOrigin.Saved ? Optional.Some(entry.Id) : Optional.None<string>();
+                var mismatch = LoopDesigning.FindCatalogMismatch(ok.Value).Match(issue => $" {issue.Value.Message}", _ => "");
                 Workbench.OpenSession(ok.Value, savedId);
                 Workbench.Notice = Optional.None<string>();
+                Workbench.PendingStatus = Optional.Some($"Opened “{ok.Value.Design.Name}” from the library.{mismatch}");
                 Navigation.NavigateTo("");                                                       // impure
                 return new Unit.Value();
             },

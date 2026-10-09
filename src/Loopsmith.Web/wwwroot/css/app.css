@@ -553,6 +553,17 @@ textarea { resize: vertical; }
 .build-card-sub { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
 .build-card-go { margin-top: 8px; color: var(--aff, var(--arc)); font-weight: 700; font-size: 13px; }
 .chooser-more { margin: 0; }
+.chooser-heading { margin-top: 6px; font-size: 13px; color: var(--muted); }
+.build-card.example { --aff: var(--solar); }
+.build-card-text {
+    margin-top: 4px;
+    color: var(--muted);
+    font-size: 13px;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
 
 /* modal */
 .modal-backdrop {
@@ -583,6 +594,10 @@ textarea { resize: vertical; }
 .share-url { padding: 9px; }
 
 /* analysis */
+.label-note { margin-left: 8px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--dim); }
+.report-text { margin-top: 14px; }
+.report-text summary { cursor: pointer; color: var(--muted); font-size: 12px; }
+.report-text .slines { margin-top: 8px; padding: 10px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; }
 .analysis-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
 .analysis-name { font-size: 17px; font-weight: 750; }
 .energy-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }

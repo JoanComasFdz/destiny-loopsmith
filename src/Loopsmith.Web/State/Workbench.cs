@@ -28,6 +28,9 @@ public sealed class Workbench(Result<LoopsmithBundle, string> startup, bool shar
     /// <summary>A message for the designer's banner (an import that failed, a link that could not be opened).</summary>
     public Optional<string> Notice { get; set; } = Optional.None<string>();
 
+    /// <summary>A confirmation for the designer to show when it opens next (set by another screen, e.g. the library).</summary>
+    public Optional<string> PendingStatus { get; set; } = Optional.None<string>();
+
     public ImmutableArray<SavedLoop> Library { get; set; } = [];
 
     public bool IsLibraryLoaded { get; set; }

@@ -60,7 +60,7 @@ else
             {
                 @if (comparison.Value.Rows.IsEmpty)
                 {
-                    <p class="notice">The comparison returned no metrics — loop comparison is not available in this version of the engine yet.</p>
+                    <p class="notice">The comparison returned no metrics.</p>
                 }
                 else
                 {
@@ -85,6 +85,10 @@ else
                             </tbody>
                         </table>
                     </div>
+                    <details class="report-text">
+                        <summary>The comparison as text (same as <code>loopsmith compare</code>)</summary>
+                        <StyledLines Lines="@LoopDesigning.RenderLoopComparison(comparison.Value)" Preformatted="true" />
+                    </details>
                 }
             }
             else
@@ -163,13 +167,13 @@ else
                     @if (side.Report is Optional<LoopReport>.Some report)
                     {
                         <p>
-                            @if (ReportReading.IsSustainable(report.Value))
+                            @if (report.Value.IsSustainable())
                             {
-                                <span class="badge ok">Sustainable</span>
+                                <span class="badge ok">Sustainable · @ReportReading.DescribeSustainedCycles(report.Value) cycles</span>
                             }
                             else
                             {
-                                <span class="badge warn">Sustains @report.Value.CompletedCycles/@report.Value.MaxCycles</span>
+                                <span class="badge warn">Sustains @ReportReading.DescribeSustainedCycles(report.Value)/@report.Value.MaxCycles cycles</span>
                             }
                         </p>
                     }
