@@ -8,7 +8,7 @@ namespace Loopsmith.Core.Domain;
 [Union]
 public partial record Trigger
 {
-    partial record AbilityCast(AbilityKind Kind);
+    partial record AbilityCast(AbilityKind Kind, bool Airborne = false);   // airborne: only casts made in the air
     partial record KillAny(DamageSource Via);
     partial record KillOfTier(DamageSource Via, EnemyTier Tier);
     partial record KillDebuffed(DamageSource Via, ImmutableArray<StatusId> TargetHas);
@@ -47,7 +47,7 @@ public partial record Outcome
 {
     partial record GrantEnergy(AbilityKind To, EnergyGrant Amount);
     partial record ConvertStacksToEnergy(StatusId Consumed, AbilityKind To, GameValue PerStack);
-    partial record ApplyBuff(StatusId Status, Optional<Seconds> Duration, StackCount Stacks);
+    partial record ApplyBuff(StatusId Status, Optional<Seconds> Duration, StackCount Stacks, bool Restarts = false);   // Restarts: replaces the active stacks (re-arming Slice)
     partial record RemoveBuff(StatusId Status);
     partial record DebuffTarget(StatusId Status, Optional<Seconds> Duration);
     partial record Spawn(PickupId Pickup, int Count);

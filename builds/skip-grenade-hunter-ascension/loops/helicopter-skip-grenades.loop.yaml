@@ -1,0 +1,74 @@
+# Loopsmith loop v1
+loop: Helicopter skip grenades
+description: |-
+  The creator's variant with Ascension instead of Flow State ("it is fun to helicopter up into the air and
+  throw those skip grenades down"): the air move jolts the pack and makes you Amplified before the
+  skip grenade lands, then the same clean-up as the original loop. Without Flow State, jolted kills give
+  no Amplified; Ascension and Flashover (max Bolt Charge) keep it up.
+catalog: authored-ffea6e3fc30f
+steps:
+  - do: class:air
+    note: "Ascension: helicopter up, jolting the pack and making you Amplified; the dodge's effects fire too (Slice, Reaper, Bomber)"
+  - do: grenade:kill
+    note: 'Skip grenade down into the jolted pack: Bolt Charge (+1 more per gain while Amplified) and an Ionic Trace'
+  - do: kinetic:kill
+    note: 'Festival Flight: Slice severs, Reaper and Attrition Orbs drop orbs, To Shreds gives Woven Mail; max Bolt Charge strikes'
+  - do: energy:kill
+    note: 'Arc weapon on the jolted pack: Spark of Discharge traces, Harmonic Siphon orb'
+  - do: pickup:orb-of-power
+    note: 'Grab the orbs: Armor Charge for Grenade Kickstart, and Unraveling Rounds'
+  - do: grenade:kill
+    note: 'Second skip grenade: Kickstart spends Armor Charge; max Bolt Charge strikes again'
+build: |
+  # Skip Grenade Hunter (Ascension) - the creator's own variant of builds/skip-grenade-hunter: the same
+  # build with Ascension instead of Flow State. The video: "Your second aspect is up to you. You either
+  # take flow state or ascension." and "If you like ascension here, go ahead and take it. It's just
+  # another source of jolt." Everything else is unchanged; its sources, note-map and discrepancies are
+  # the parent build's. This build's own differences are in discrepancies.md.
+  name: Skip Grenade Hunter (Ascension)
+  author: Plunderthabooty
+  source: https://www.youtube.com/watch?v=zvd6sNS463E
+  class: hunter
+  subclass: arc
+  # The video says "take whatever super you like" and suggests Arc Staff; the super's element matters
+  # for Harmonic Siphon (Arc weapon kills).
+  super: arc-staff
+  grenade: skip-grenade
+  melee: combination-blow
+  classAbility: gamblers-dodge
+  # Ascension replaces Flow State (the creator's alternative): no Amplified on jolted kills; the air
+  # move (`class:air`) jolts and Amplifies instead.
+  aspects: [tempest-strike, ascension]
+  fragments: [spark-of-resistance, spark-of-frequency, spark-of-shock, spark-of-discharge]
+  exoticArmor: shinobus-vow
+  armorSetBonuses: [luminopotent-2pc, luminopotent-4pc]
+  # Elemental Charge x2 (boots) and Grenade Kickstart x2 (gauntlets) per the video; the rest per the note.
+  armorMods:
+    - elemental-charge
+    - elemental-charge
+    - grenade-kickstart
+    - grenade-kickstart
+    - bomber
+    - reaper
+    - harmonic-siphon
+    - strand-siphon
+    - impact-induction
+  artifactPerks:
+    - defibrillating-blast
+    - flashover
+    - dielectric
+    - to-shreds
+    - horde-shuttle
+    - unraveling-orbs
+    - photonic-flare
+  weapons:
+    # Slice per the video. Attrition Orbs placement is INFERRED: the note credits it on strand weapon
+    # kills, the Compendium and Clarity say it is a weapon trait, and Festival Flight is the only Strand
+    # weapon named.
+    # Archetype omitted: no source names it.
+    - { slot: kinetic, name: Festival Flight, type: strand, perks: [slice, attrition-orbs] }
+    # Placeholder: neither source names the energy weapon, but Harmonic Siphon's orbs and Spark of
+    # Discharge's Ionic Traces need Arc weapon kills.
+    - { slot: energy, name: Any Arc weapon, type: arc, perks: [] }
+  # Health is not given in the video. (It also says "a 100 class ability" once; 104 is the stated stat.)
+  stats: { weapons: 47, class: 104, grenade: 145, super: 27, melee: 79 }

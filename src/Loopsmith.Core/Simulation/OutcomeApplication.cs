@@ -60,9 +60,10 @@ public static class OutcomeApplication
         var bonus = SumExtraStacks(build, state, apply.Status);
         var existing = state.ReadStacks(apply.Status);
         var wasActive = state.HasBuff(apply.Status);
+        var kept = apply.Restarts ? 0 : existing;
         var maxStacks = definition.Bind(d => d.MaxStacks).Map(max => max.Value);
         var stacks = maxStacks.Match(
-            max => Math.Min(max.Value, existing + apply.Stacks.Value + bonus.Extra),
+            max => Math.Min(max.Value, kept + apply.Stacks.Value + bonus.Extra),
             _ => 1);
         var duration = apply.Duration.IsSome() ? apply.Duration : definition.Bind(d => d.Duration);
         var next = state.PutBuff(new ActiveStatus(apply.Status, StackCount.From(stacks), duration));
@@ -72,9 +73,10 @@ public static class OutcomeApplication
         var maxed = maxStacks.Match(max => max.Value > 1 && stacks == max.Value && existing < max.Value, _ => false)
             ? ImmutableArray.Create<PendingEvent>(new PendingEvent.Ready(new GameEvent.StacksMaxed(apply.Status)))
             : [];
+        var refreshed = apply.Restarts ? $"restarted (was ×{existing})" : "already active — refreshed";
         var caveat = JoinCaveats(
             bonus.Extra > 0 ? $"+{bonus.Extra} from {string.Join(", ", bonus.Sources)}" : "",
-            gained.IsEmpty ? "already active — refreshed" : "");
+            gained.IsEmpty ? refreshed : "");
         return new Application(next, ToApplied(outcome, Certainty.Known, caveat), gained.AddRange(maxed));
     }
 

@@ -121,7 +121,7 @@ public static class LoopDesigning
         var hits = new[] { HitOutcome.Kill, HitOutcome.Damage };
         var abilities = new[] { OffensiveAbility.Grenade, OffensiveAbility.Melee }
             .SelectMany(kind => hits.Select(hit => ((PlayerAction)new PlayerAction.CastAbility(kind, hit, TargetCount.One), TriggerGroup.Ability)))
-            .Append(((PlayerAction)new PlayerAction.UseClassAbility(), TriggerGroup.Ability))
+            .Concat(ActionResolution.ListClassAbilityActions(build).Select(use => (use, TriggerGroup.Ability)))
             .Concat(hits.Select(hit => ((PlayerAction)new PlayerAction.CastAbility(OffensiveAbility.Super, hit, TargetCount.One), TriggerGroup.Ability)));
         var weapons = build.Build.Weapons
             .SelectMany(weapon => hits.Select(hit => ((PlayerAction)new PlayerAction.FireWeapon(weapon.Slot, hit, TargetCount.One), TriggerGroup.Weapon)));

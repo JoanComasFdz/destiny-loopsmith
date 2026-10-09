@@ -96,7 +96,7 @@ public static class DomainPhrasing
 
     public static string DescribeTrigger(this KeywordGlossary glossary, Trigger trigger) =>
         trigger.Match(
-            cast => DescribeCast(cast.Kind),
+            cast => DescribeCast(cast.Kind, cast.Airborne),
             killAny => DescribeKill(glossary, killAny.Via, []),
             killOfTier => $"{DescribeKill(glossary, killOfTier.Via, [])} ({killOfTier.Tier})",
             killDebuffed => DescribeKill(glossary, killDebuffed.Via, killDebuffed.TargetHas),
@@ -149,6 +149,13 @@ public static class DomainPhrasing
             : string.Join(" + ", targetHas.Select(glossary.DescribeDebuffedAdjective)) + " target";
 
     /// <summary>The ability-cast trigger as a player says it ("Grenade thrown"; the action itself is "Throw grenade").</summary>
+    private static string DescribeCast(AbilityKind kind, bool airborne) =>
+        (kind, airborne) switch
+        {
+            (AbilityKind.ClassAbility, true) => "Class ability in the air",
+            _ => DescribeCast(kind),
+        };
+
     private static string DescribeCast(AbilityKind kind) =>
         kind switch
         {
@@ -249,8 +256,16 @@ public static class DomainPhrasing
     private static string DescribeBuff(KeywordGlossary glossary, Outcome.ApplyBuff apply)
     {
         var name = glossary.DescribeStatus(apply.Status);
-        var duration = apply.Duration.Match(d => $" ({d.Value.FormatSeconds()})", _ => "");
-        return glossary.IsStacking(apply.Status) ? $"+{apply.Stacks.Value} {name}{duration}" : $"{name}{duration}";
+        var notes = new[] { apply.Duration.Match(d => d.Value.FormatSeconds(), _ => ""), apply.Restarts ? "restarts" : "" }
+            .Where(note => note.Length > 0)
+            .ToImmutableArray();
+        var suffix = notes.IsEmpty ? "" : $" ({string.Join(", ", notes)})";
+        return (glossary.IsStacking(apply.Status), apply.Restarts) switch
+        {
+            (true, true) => $"{name} ×{apply.Stacks.Value}{suffix}",
+            (true, false) => $"+{apply.Stacks.Value} {name}{suffix}",
+            _ => $"{name}{suffix}",
+        };
     }
 
     public static string DescribePassive(this KeywordGlossary glossary, Passive passive) =>
@@ -266,7 +281,7 @@ public static class DomainPhrasing
 
     public static string DescribeEvent(this KeywordGlossary glossary, GameEvent gameEvent, Build build) =>
         gameEvent.Match(
-            cast => DescribeCast(cast.Kind),
+            cast => DescribeCast(cast.Kind, cast.Airborne),
             damaged => $"{glossary.DescribeOrigin(damaged.Origin, build)} hit{DescribeOnTarget(DescribeTargetPhrase(glossary, damaged.TargetHas))}",
             killed => $"{glossary.DescribeOrigin(killed.Origin, build)} kill{DescribeOnTarget(DescribeTargetPhrase(glossary, killed.TargetHas))}",
             struck => $"{glossary.DescribeOrigin(struck.Origin, build)} {(struck.Hit == HitOutcome.Kill ? "killed" : "hit")} {DescribeEnemies(struck.Targets)}",
@@ -280,7 +295,7 @@ public static class DomainPhrasing
     public static string DescribeAction(this KeywordGlossary glossary, PlayerAction action, Build build) =>
         action.Match(
             cast => $"{Capitalize(cast.Kind.ToAbilityKind().DescribeAbility())} ({DescribeHit(cast.Hit, cast.Targets)})",
-            _ => "Class ability",
+            use => use.Airborne ? "Class ability (in the air)" : "Class ability",
             fire => $"{DescribeWeapon(build, fire.Slot, fire.Slot.ToString())} ({DescribeHit(fire.Hit, fire.Targets)})",
             collect => $"Pick up {glossary.DescribePickup(collect.Pickup)}",
             wait => $"Wait {wait.Duration.FormatSeconds()}");
@@ -301,7 +316,7 @@ public static class DomainPhrasing
     public static string ToActionToken(this PlayerAction action) =>
         action.Match(
             cast => cast.Kind.ToString().ToLowerInvariant() + ToHitSuffix(cast.Hit, cast.Targets),
-            _ => "class",
+            use => use.Airborne ? "class:air" : "class",
             fire => fire.Slot.ToString().ToLowerInvariant() + ToHitSuffix(fire.Hit, fire.Targets),
             collect => $"pickup:{collect.Pickup}",
             wait => $"wait:{wait.Duration.Value.ToString(LosslessDecimal, Invariant)}");

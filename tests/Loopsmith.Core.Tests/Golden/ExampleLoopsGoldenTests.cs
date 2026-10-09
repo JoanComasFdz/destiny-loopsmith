@@ -2,6 +2,7 @@ using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 using Loopsmith.Core.Orchestration;
 using Loopsmith.Core.Phrasing;
+using Loopsmith.Core.Simulation;
 using Loopsmith.Core.SourceFetching;
 using Loopsmith.Core.Tests.Support;
 using Loopsmith.Core.TraceRendering;
@@ -17,6 +18,7 @@ public class ExampleLoopsGoldenTests
 {
     private const string SkipGrenadesPath = "builds/skip-grenade-hunter/loops/infinite-skip-grenades.loop.yaml";
     private const string MeleeFirstPath = "builds/skip-grenade-hunter/loops/melee-first.loop.yaml";
+    private const string HelicopterPath = "builds/skip-grenade-hunter-ascension/loops/helicopter-skip-grenades.loop.yaml";
     private const string BuildPath = "builds/skip-grenade-hunter/build.yaml";
 
     private static readonly RuleCatalog Catalog = LoadCatalog();
@@ -37,6 +39,7 @@ public class ExampleLoopsGoldenTests
     [Theory]
     [InlineData(SkipGrenadesPath)]
     [InlineData(MeleeFirstPath)]
+    [InlineData(HelicopterPath)]
     public void Import_then_export_gives_back_the_file_byte_for_byte(string path)
     {
         var file = ReadRepoFile(path);
@@ -49,6 +52,7 @@ public class ExampleLoopsGoldenTests
     [Theory]
     [InlineData(SkipGrenadesPath)]
     [InlineData(MeleeFirstPath)]
+    [InlineData(HelicopterPath)]
     public void Example_loops_have_a_description_and_a_note_on_every_step(string path)
     {
         var design = ImportLoop(path).Design;
@@ -66,6 +70,31 @@ public class ExampleLoopsGoldenTests
         var wasted = Assert.Single(report.Wasted);   // jolted kills: Tempest Strike's x1 doesn't stack with Dielectric's
         Assert.Equal(("tempest-strike", "Dielectric"), (wasted.Source.Value, wasted.PartnerName));
         Assert.True(wasted.Count > 0);
+    }
+
+    [Fact]
+    public void The_ascension_variant_repeats_and_its_air_move_jolts_and_amplifies()
+    {
+        var session = ImportLoop(HelicopterPath);
+        var report = LoopDesigning.AnalyzeDesign(session, LoopDesigning.DefaultMaxCycles);
+
+        Assert.True(report.IsRepeatable());
+        var airMove = session.Resolutions[0];
+        Assert.Equal(new PlayerAction.UseClassAbility(Airborne: true), airMove.Action);
+        Assert.Contains(airMove.Fired, rule => rule.Source.Value == "ascension");
+        Assert.Contains(airMove.Fired, rule => rule.Source.Value == "gamblers-dodge");   // the dodge's effects fire too
+        Assert.Contains(airMove.State.Buffs, buff => buff.Status.Value == "amplified");
+        Assert.Contains(airMove.State.Target.Debuffs, debuff => debuff.Status.Value == "jolt");
+    }
+
+    [Fact]
+    public void Slice_restarts_on_every_dodge_so_dodges_alone_never_max_it()
+    {
+        var report = AnalyzeLoop(MeleeFirstPath);   // one dodge per cycle, no Strand weapon
+
+        Assert.DoesNotContain(report.Outcomes, tally => tally.Label == "Slice maxed");
+        Assert.All(report.FindSteadyCycle().Match(cycle => cycle.Value.Resolutions, _ => []),
+            resolution => Assert.True(resolution.State.ReadStacks(StatusId.From("slice")) <= 1));
     }
 
     [Fact]

@@ -24,6 +24,56 @@ public class ActionResolutionTests
     private static readonly BuildElement Yielder =
         Element("yielder", ElementKind.Fragment, [On(new Trigger.AbilityCast(AbilityKind.Grenade), Buff("bolt-charge")).NotStackingWith("giver")]);
 
+    private static readonly PlayerAction Dodge = new PlayerAction.UseClassAbility();
+
+    private static readonly PlayerAction AirMove = new PlayerAction.UseClassAbility(Airborne: true);
+
+    private static readonly BuildElement AirOnly = Element("air-only", ElementKind.Fragment,
+        [On(new Trigger.AbilityCast(AbilityKind.ClassAbility, Airborne: true), Buff("amplified"))]);
+
+    private static readonly BuildElement AnyUse = Element("any-use", ElementKind.Fragment,
+        [On(new Trigger.AbilityCast(AbilityKind.ClassAbility), Buff("bolt-charge"))]);
+
+    [Fact]
+    public void An_airborne_trigger_fires_only_on_the_air_move_and_a_plain_one_on_both()
+    {
+        var build = ValidateBuild([AirOnly, AnyUse]);
+
+        var dodge = ResolveOnce(build, Dodge);
+        var airMove = ResolveOnce(build, AirMove);
+
+        Assert.Equal(["any-use"], dodge.Fired.Select(f => f.Source.Value));
+        Assert.Equal(["air-only", "any-use"], airMove.Fired.Select(f => f.Source.Value).Order());
+        Assert.Contains("Class ability in the air → Amplified [Air Only]", DescribeTrace(build, airMove));
+    }
+
+    [Fact]
+    public void The_air_move_is_offered_only_when_an_equipped_rule_needs_it()
+    {
+        var initial = ActionResolution.CreateInitialState();
+
+        Assert.Contains(AirMove, ActionResolution.ListAvailableActions(ValidateBuild([AirOnly]), initial));
+        Assert.DoesNotContain(AirMove, ActionResolution.ListAvailableActions(ValidateBuild([AnyUse]), initial));
+    }
+
+    [Fact]
+    public void A_restarting_buff_replaces_its_stacks_instead_of_adding()
+    {
+        var armer = Element("armer", ElementKind.Fragment,
+            [On(new Trigger.AbilityCast(AbilityKind.ClassAbility), new Outcome.ApplyBuff(Status("bolt-charge"), Optional.None<Seconds>(), StackCount.From(1), Restarts: true))]);
+        var charger = Element("charger", ElementKind.Fragment, [On(new Trigger.AbilityCast(AbilityKind.Grenade), Buff("bolt-charge", 2))]);
+        var build = ValidateBuild([armer, charger]);
+
+        var armed = ResolveOnce(build, Dodge);
+        var charged = ActionResolution.ResolveAction(build, armed.State, GrenadeKill);
+        var rearmed = ActionResolution.ResolveAction(build, charged.State, Dodge);
+
+        Assert.Equal(3, charged.State.ReadStacks(Status("bolt-charge")));
+        Assert.Equal(1, rearmed.State.ReadStacks(Status("bolt-charge")));
+        Assert.Equal(Optional.Some("restarted (was ×3)"), rearmed.Fired.Single(f => f.Source.Value == "armer").Outcomes.Single().Caveat);
+        Assert.Contains("Bolt Charge ×1 (restarts) [Armer]", DescribeTrace(build, rearmed));
+    }
+
     [Fact]
     public void A_rule_that_does_not_stack_gives_way_to_the_other_elements_rule_on_the_same_event()
     {

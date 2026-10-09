@@ -8,7 +8,6 @@ Steady state (cycle 10, the last completed)
   Ionic Trace spawned   7
   Orb of Power spawned  2
   Bolt Charge maxed     3
-  Slice maxed           1
   Fired per cycle
     18× Shinobu's Vow
     16× Bolt Charge
@@ -24,13 +23,13 @@ Steady state (cycle 10, the last completed)
      2× Reaper
      2× Unraveling Orbs
      2× Orb of Power
-     2× Slice
      1× Tempest Strike
      1× Impact Induction
      1× Combination Blow
      1× Grenade Kickstart
      1× Spark of Shock
      1× Harmonic Siphon
+     1× Slice
      1× Gambler's Dodge
      1× Bomber
   Wasted per cycle (rules that gave nothing: they don't stack)
@@ -39,10 +38,10 @@ Steady state (cycle 10, the last completed)
     Combination Blow   5/5 steps
     Amplified          5/5 steps
     Unraveling Rounds  5/5 steps
+    Slice              5/5 steps
     New Tricks         5/5 steps
     Armor Charge       5/5 steps
     Bolt Charge        5/5 steps
-    Slice              4/5 steps
     Reaper             3/5 steps
   ? 24 unknown values not applied — the real loop is stronger
   (chance) 8 bullets fired in v1 but not guaranteed in game

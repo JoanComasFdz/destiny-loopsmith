@@ -11,7 +11,7 @@ public static class TriggerMatching
 {
     public static bool IsTriggeredBy(this Trigger trigger, GameEvent gameEvent) =>
         trigger.Match(
-            abilityCast => gameEvent is GameEvent.AbilityCast cast && cast.Kind == abilityCast.Kind,
+            abilityCast => gameEvent is GameEvent.AbilityCast cast && cast.Kind == abilityCast.Kind && (cast.Airborne || !abilityCast.Airborne),
             killAny => gameEvent is GameEvent.Killed killed && killAny.Via.IsMatchedBy(killed.Origin),
             killOfTier => gameEvent is GameEvent.Killed killed
                 && killOfTier.Via.IsMatchedBy(killed.Origin)

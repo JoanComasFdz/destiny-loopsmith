@@ -3,7 +3,7 @@
   Target        none
   Ground        none
 #1 Class ability
-  Class ability → Reaper (10s) [Reaper] + +1 Slice (8s) [Slice] + +?% melee energy [Gambler's Dodge] + +12% grenade energy [Bomber]
+  Class ability → Reaper (10s) [Reaper] + Slice ×1 (8s, restarts) [Slice] + +?% melee energy [Gambler's Dodge] + +12% grenade energy [Bomber]
   Buffs         Reaper 10s · Slice ×1 8s
   Target        none
   Ground        none
