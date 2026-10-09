@@ -6,28 +6,32 @@ travel inside the link (`#loop=…`), so any static host works.
 
 ## GitHub Pages (default)
 
-`.github/workflows/pages.yml` tests the engine, publishes the app, rewrites `<base href>` to
-`/<repo>/`, adds `404.html` (deep-link fallback) and `.nojekyll` (Pages would otherwise hide
-`_framework/`), and deploys.
+The site is served from the **`gh-pages` branch**:
+
+| What | Where | Workflow |
+|---|---|---|
+| `main` — the live app | `https://<owner>.github.io/<repo>/` | `.github/workflows/pages.yml` (push to `main`) |
+| every open pull request — its dev preview | `https://<owner>.github.io/<repo>/pr-preview/pr-<number>/` | `.github/workflows/pr-preview.yml` (PR opened / updated; removed when closed) |
+
+Both workflows test the engine, publish the app and run `tools/web/prepare-pages.sh`, which sets
+`<base href>` to where the copy is served, adds `.nojekyll` (Pages would otherwise hide
+`_framework/`) and, for the main site, a `404.html` deep-link fallback that also sends deep links
+inside a preview (`…/pr-preview/pr-7/library`) back to that preview's start page. The main deploy
+never touches `pr-preview/`; previews never touch the root. The preview workflow comments the
+link on the pull request. Pull requests from forks get no preview (no write access).
 
 One-time setup:
 
-1. **Settings → Pages → Build and deployment → Source: GitHub Actions.**
-2. Merge to `main` (the workflow deploys from `main`; it can also be started from the
-   Actions tab with *Run workflow*).
-3. The site appears at `https://<owner>.github.io/<repo>/`, e.g.
-   `https://joancomasfdz.github.io/destiny-loopsmith/`.
+1. Merge to `main` once so `pages.yml` creates the `gh-pages` branch with the app at its root.
+2. **Settings → Pages → Build and deployment → Source: "Deploy from a branch"**, branch
+   **`gh-pages`**, folder **`/ (root)`**. (The "GitHub Actions" source can't host previews.)
+3. If a deploy fails with a permission error: **Settings → Actions → General → Workflow
+   permissions → "Read and write permissions"**.
 
-Things to know:
+The site is public on the internet (the repository is public). It contains the authored rules
+(numbers taken from Clarity) but no Compendium data and no transcripts.
 
-* **Private repositories** can publish Pages only on a paid plan (GitHub Pro, Team or
-  Enterprise). On the free plan, the Pages settings won't offer it for a private repo.
-* A Pages site is **public on the internet** even when the repository is private (only
-  Enterprise Cloud can restrict access). The site contains the authored rules (with numbers
-  taken from Clarity) but no Compendium data and no transcripts. Check Clarity's
-  partnerships page before sharing the URL widely.
-
-## Alternatives (private repo on the free plan)
+## Alternatives
 
 * **Cloudflare Pages / Netlify:** free for private repositories. Build in GitHub Actions with
   the same publish + prepare steps (use base href `/` on a root domain) and deploy the

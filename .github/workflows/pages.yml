@@ -1,8 +1,8 @@
 name: Deploy web app
 
-# Publishes src/Loopsmith.Web (Blazor WebAssembly) to GitHub Pages.
-# One-time setup: Settings → Pages → Build and deployment → Source: "GitHub Actions".
-# See docs/hosting.md.
+# Publishes src/Loopsmith.Web (Blazor WebAssembly) to the root of the gh-pages branch.
+# PR previews live next to it under pr-preview/ (see pr-preview.yml) and are left untouched.
+# One-time setup (docs/hosting.md): Settings → Pages → Source: "Deploy from a branch", gh-pages, / (root).
 
 on:
   push:
@@ -10,16 +10,14 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
-  group: pages
-  cancel-in-progress: true
+  group: gh-pages
+  cancel-in-progress: false
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -30,26 +28,12 @@ jobs:
         run: dotnet test -c Release
       - name: Publish the web app
         run: dotnet publish src/Loopsmith.Web -c Release -o publish
-      - name: Prepare for GitHub Pages (sub-path, SPA fallback, no Jekyll)
-        run: |
-          site=publish/wwwroot
-          repo="${GITHUB_REPOSITORY#*/}"
-          sed -i -E "s|<base href=\"[^\"]*\" ?/?>|<base href=\"/${repo}/\" />|" "$site/index.html"
-          grep -q "<base href=\"/${repo}/\"" "$site/index.html"
-          rm -f "$site/index.html.br" "$site/index.html.gz"
-          cp "$site/index.html" "$site/404.html"
-          touch "$site/.nojekyll"
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+      - name: Prepare for GitHub Pages
+        run: tools/web/prepare-pages.sh publish/wwwroot "/${GITHUB_REPOSITORY#*/}/" --root
+      - name: Deploy to gh-pages (keeping PR previews)
+        uses: JamesIves/github-pages-deploy-action@fa24774553152dd7873cd16ebd8d959b010c5445 # v4.9.0
         with:
-          path: publish/wwwroot
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+          branch: gh-pages
+          folder: publish/wwwroot
+          clean-exclude: pr-preview/
+          force: false
