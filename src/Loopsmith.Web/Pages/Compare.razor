@@ -1,0 +1,201 @@
+@page "/compare"
+@inject Workbench Workbench
+@inject BrowserInterop Browser
+
+<PageTitle>Compare · Loopsmith</PageTitle>
+
+@{
+    var entries = LibraryListing.ListEntries(Bundle, Workbench.Library);
+    var choices = EntryComparing.ListChoices(Workbench.Session, entries);
+}
+<section class="page-head">
+    <div>
+        <h1>Compare loops</h1>
+        <p class="muted">Each loop is played back to back for @LoopDesigning.DefaultMaxCycles cycles from a fresh spawn, then measured. The loops may use different builds.</p>
+    </div>
+</section>
+
+@if (!Workbench.IsLibraryLoaded)
+{
+    <p class="muted">Reading the library…</p>
+}
+else if (choices.Length < 1)
+{
+    <section class="panel empty-state">
+        <h2>Nothing to compare yet</h2>
+        <p class="muted">Design a loop and save it to the library, or open one, then come back here.</p>
+        <a class="btn primary" href="">Open the designer</a>
+    </section>
+}
+else
+{
+    <div class="compare-pickers">
+        <label class="field">
+            <span class="field-label">Left</span>
+            <select value="@leftId" @onchange="PickLeft" aria-label="Left loop" data-side="left">
+                @foreach (var choice in choices)
+                {
+                    <option value="@choice.Id">@choice.Label</option>
+                }
+            </select>
+        </label>
+        <span class="versus" aria-hidden="true">vs</span>
+        <label class="field">
+            <span class="field-label">Right</span>
+            <select value="@rightId" @onchange="PickRight" aria-label="Right loop" data-side="right">
+                @foreach (var choice in choices)
+                {
+                    <option value="@choice.Id">@choice.Label</option>
+                }
+            </select>
+        </label>
+    </div>
+
+    @if (view is Optional<ComparisonView>.Some compared)
+    {
+        var left = compared.Value.Left;
+        var right = compared.Value.Right;
+        <section class="panel comparison" aria-label="Comparison">
+            @if (compared.Value.Comparison is Optional<LoopComparison>.Some comparison)
+            {
+                @if (comparison.Value.Rows.IsEmpty)
+                {
+                    <p class="notice">The comparison returned no metrics — loop comparison is not available in this version of the engine yet.</p>
+                }
+                else
+                {
+                    <div class="table-wrap">
+                        <table class="data-table compare-table">
+                            <thead>
+                                <tr>
+                                    <th>Metric</th>
+                                    <th>@comparison.Value.Left.LoopName</th>
+                                    <th>@comparison.Value.Right.LoopName</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var row in comparison.Value.Rows)
+                                {
+                                    <tr>
+                                        <td>@row.Metric</td>
+                                        <td class="@(row.Better == Advantage.Left ? "better" : "")">@row.Left</td>
+                                        <td class="@(row.Better == Advantage.Right ? "better" : "")">@row.Right</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            }
+            else
+            {
+                <p class="notice warn">Both loops must open before they can be compared.</p>
+            }
+        </section>
+
+        <div class="compare-columns">
+            @RenderSide(left, "Left")
+            @RenderSide(right, "Right")
+        </div>
+    }
+}
+
+@code {
+    private string leftId = "";
+    private string rightId = "";
+    private Optional<ComparisonView> view = Optional.None<ComparisonView>();
+
+    [CascadingParameter]
+    public LoopsmithBundle Bundle { get; set; } = null!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LibraryStoring.LoadLibraryAsync(Workbench, Browser);                               // impure
+
+        var entries = LibraryListing.ListEntries(Bundle, Workbench.Library);                     // pure
+        var choices = EntryComparing.ListChoices(Workbench.Session, entries);                    // pure
+        var preferred = Workbench.CompareIds.Where(id => choices.Any(choice => choice.Id == id))
+            .Concat(choices.Select(choice => choice.Id))
+            .Distinct()
+            .ToImmutableArray();
+        leftId = preferred.FirstOrDefault("");
+        rightId = preferred.Length > 1 ? preferred[1] : leftId;
+        CompareChoices();
+    }
+
+    private void PickLeft(ChangeEventArgs e)
+    {
+        leftId = e.Value?.ToString() ?? "";
+        CompareChoices();
+    }
+
+    private void PickRight(ChangeEventArgs e)
+    {
+        rightId = e.Value?.ToString() ?? "";
+        CompareChoices();
+    }
+
+    private void CompareChoices()
+    {
+        if (leftId.Length == 0 || rightId.Length == 0)
+        {
+            view = Optional.None<ComparisonView>();
+            return;
+        }
+
+        var entries = LibraryListing.ListEntries(Bundle, Workbench.Library);                     // pure
+        view = Optional.Some(EntryComparing.CompareEntries(Bundle, Workbench.Session, entries, leftId, rightId)); // pure
+    }
+
+    private static RenderFragment RenderSide(ComparedLoop side, string label) => __builder =>
+    {
+        <section class="panel compare-side" aria-label="@label">
+            @switch (side.Design)
+            {
+                case Result<DesignSession, string>.Ok opened:
+                    var session = opened.Value;
+                    var glossary = session.Build.Catalog.Glossary;
+                    <header class="panel-head">
+                        <h2>@session.Design.Name</h2>
+                        <span class="panel-caption">@label</span>
+                    </header>
+                    <p class="muted">@session.Build.Build.Name · @session.Build.Build.Class · @session.Build.Build.Subclass</p>
+                    @if (side.Report is Optional<LoopReport>.Some report)
+                    {
+                        <p>
+                            @if (ReportReading.IsSustainable(report.Value))
+                            {
+                                <span class="badge ok">Sustainable</span>
+                            }
+                            else
+                            {
+                                <span class="badge warn">Sustains @report.Value.CompletedCycles/@report.Value.MaxCycles</span>
+                            }
+                        </p>
+                    }
+                    <ol class="step-list">
+                        @foreach (var step in session.Design.Steps)
+                        {
+                            <li>
+                                <span class="step-list-title">@glossary.DescribeAction(step.Action, session.Build.Build)</span>
+                                <code class="token">@step.Action.ToActionToken()</code>
+                                @if (step.Note is Optional<string>.Some note)
+                                {
+                                    <span class="step-list-note">@note.Value</span>
+                                }
+                            </li>
+                        }
+                    </ol>
+                    @if (session.Design.Steps.IsEmpty)
+                    {
+                        <p class="muted">No steps.</p>
+                    }
+                    break;
+                case Result<DesignSession, string>.Error failed:
+                    <header class="panel-head"><h2>Cannot open</h2><span class="panel-caption">@label</span></header>
+                    <pre class="entry-problem">@failed.Failure</pre>
+                    break;
+            }
+        </section>
+    };
+}

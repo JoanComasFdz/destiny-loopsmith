@@ -1,0 +1,155 @@
+@* DIM-like build sheet: what is equipped, coloured by element, plus the validation issues. *@
+@{
+    var sheet = BuildSheetShaping.ShapeSheet(Build);
+}
+<section class="panel build-panel @ToneStyling.ToAffinityClass(sheet.Subclass)" aria-label="Build">
+    <header class="build-head">
+        <div class="build-emblem" aria-hidden="true">@sheet.Subclass.ToString()[..1]</div>
+        <div class="build-title">
+            <div class="build-name">@sheet.Name</div>
+            <div class="build-sub">@sheet.Class · <span class="accent">@sheet.Subclass</span></div>
+            @if (sheet.Author.IsSome() || sheet.SourceUrl.IsSome())
+            {
+                <div class="build-src">
+                    @if (sheet.Author is Optional<string>.Some by)
+                    {
+                        <span>@by.Value</span>
+                    }
+                    @if (sheet.SourceUrl is Optional<string>.Some url && IsWebLink(url.Value))
+                    {
+                        <a href="@url.Value" target="_blank" rel="noopener noreferrer">source ↗</a>
+                    }
+                </div>
+            }
+        </div>
+    </header>
+
+    <h3 class="section-label">Abilities</h3>
+    <div class="tile-grid abilities">
+        @foreach (var ability in sheet.Abilities)
+        {
+            <div class="tile @ToneStyling.ToAffinityClass(ability.Element.Affinity)" title="@DescribeTooltip(ability.Element)">
+                <span class="tile-kind">@ability.Slot</span>
+                <span class="tile-name">@ability.Element.Name</span>
+            </div>
+        }
+    </div>
+
+    @RenderTiles("Aspects", sheet.Aspects)
+    @RenderTiles("Fragments", sheet.Fragments)
+
+    @if (sheet.Exotic is Optional<ElementTile>.Some exotic)
+    {
+        <h3 class="section-label">Exotic</h3>
+        <div class="tile exotic @ToneStyling.ToAffinityClass(exotic.Value.Affinity)" title="@DescribeTooltip(exotic.Value)">
+            <span class="tile-name">@exotic.Value.Name</span>
+        </div>
+    }
+
+    @RenderTiles("Armor set", sheet.ArmorSet)
+    @RenderChips("Mods", sheet.Mods)
+    @RenderChips("Artifact", sheet.Artifact)
+
+    @if (!sheet.Weapons.IsEmpty)
+    {
+        <h3 class="section-label">Weapons</h3>
+        @foreach (var weapon in sheet.Weapons)
+        {
+            <div class="weapon @ToneStyling.ToAffinityClass(weapon.Type)">
+                <div class="weapon-head">
+                    <span class="weapon-slot">@weapon.Slot</span>
+                    <span class="weapon-name">@weapon.Name</span>
+                    <span class="weapon-type">@weapon.Type@(weapon.Archetype is Optional<string>.Some archetype ? $" · {archetype.Value}" : "")</span>
+                </div>
+                @if (!weapon.Perks.IsEmpty)
+                {
+                    <div class="chips">
+                        @foreach (var perk in weapon.Perks)
+                        {
+                            <span class="chip @ToneStyling.ToAffinityClass(perk.Affinity)" title="@DescribeTooltip(perk)">@perk.Name</span>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    }
+
+    <h3 class="section-label">Stats</h3>
+    <div class="stats">
+        @foreach (var stat in sheet.Stats)
+        {
+            <div class="stat">
+                <span class="stat-name">@stat.Name</span>
+                <span class="stat-bar"><span style="width:@ToPercent(stat.Value)%"></span></span>
+                <span class="stat-value">@(stat.Value is Optional<int>.Some value ? value.Value.ToString(System.Globalization.CultureInfo.InvariantCulture) : "?")</span>
+            </div>
+        }
+    </div>
+
+    @if (!sheet.Issues.IsEmpty)
+    {
+        <h3 class="section-label">Validation</h3>
+        <ul class="issues">
+            @foreach (var issue in sheet.Issues)
+            {
+                <li class="issue @(issue.Severity == Severity.Warning ? "warning" : "info")">
+                    <span class="issue-mark">@(issue.Severity == Severity.Warning ? "!" : "i")</span>
+                    <span>@issue.Message</span>
+                </li>
+            }
+        </ul>
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired]
+    public ValidatedBuild Build { get; set; } = null!;
+
+    private RenderFragment RenderTiles(string label, ImmutableArray<ElementTile> tiles) => __builder =>
+    {
+        if (tiles.IsEmpty)
+        {
+            return;
+        }
+
+        <h3 class="section-label">@label</h3>
+        <div class="tile-grid">
+            @foreach (var tile in tiles)
+            {
+                <div class="tile @ToneStyling.ToAffinityClass(tile.Affinity)" title="@DescribeTooltip(tile)">
+                    <span class="tile-name">@tile.Name</span>
+                    @if (tile.Copies > 1)
+                    {
+                        <span class="tile-count">×@tile.Copies</span>
+                    }
+                </div>
+            }
+        </div>
+    };
+
+    private RenderFragment RenderChips(string label, ImmutableArray<ElementTile> tiles) => __builder =>
+    {
+        if (tiles.IsEmpty)
+        {
+            return;
+        }
+
+        <h3 class="section-label">@label</h3>
+        <div class="chips">
+            @foreach (var tile in tiles)
+            {
+                <span class="chip @ToneStyling.ToAffinityClass(tile.Affinity)" title="@DescribeTooltip(tile)">@tile.Name@(tile.Copies > 1 ? $" ×{tile.Copies}" : "")</span>
+            }
+        </div>
+    };
+
+    private static string DescribeTooltip(ElementTile tile) =>
+        tile.Description.Match(description => $"{tile.Name} — {description.Value}", _ => tile.Name);
+
+    private static string ToPercent(Optional<int> value) =>
+        value.Match(v => (100m * Math.Clamp(v.Value, 0, BuildSheetShaping.MaxStat) / BuildSheetShaping.MaxStat), _ => 0m)
+            .ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
+
+    private static bool IsWebLink(string url) =>
+        url.StartsWith("https://", StringComparison.OrdinalIgnoreCase) || url.StartsWith("http://", StringComparison.OrdinalIgnoreCase);
+}

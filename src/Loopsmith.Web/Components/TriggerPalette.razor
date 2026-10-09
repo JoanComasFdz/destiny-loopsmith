@@ -1,0 +1,72 @@
+@* The next triggers the build offers (LoopDesigning.ListTriggerOptions), grouped; hit and kill side by side. *@
+<section class="panel palette" aria-label="Next trigger">
+    <header class="panel-head">
+        <h2>Next trigger</h2>
+        <span class="panel-caption">@Caption</span>
+    </header>
+    @if (Hint.Length > 0)
+    {
+        <p class="palette-hint">@Hint</p>
+    }
+    @foreach (var group in TriggerPaletteShaping.ShapePalette(Options))
+    {
+        <h3 class="section-label">@group.Heading</h3>
+        <div class="trigger-list">
+            @foreach (var choice in group.Choices)
+            {
+                var reasons = choice.Buttons
+                    .Select(button => button.Option.Unavailable.UnwrapOr(""))
+                    .Where(reason => reason.Length > 0)
+                    .Distinct()
+                    .ToImmutableArray();
+                <div class="trigger-row @(choice.Buttons.All(b => !b.Option.IsAvailable) ? "unavailable" : "")">
+                    @if (choice.Buttons.Length > 1)
+                    {
+                        <span class="trigger-title">@choice.Title</span>
+                    }
+                    <div class="trigger-buttons">
+                        @foreach (var button in choice.Buttons)
+                        {
+                            var option = button.Option;
+                            <button class="trigger @(choice.Buttons.Length > 1 ? "half" : "whole") @(option.IsAvailable ? "" : "off")"
+                                    disabled="@(!option.IsAvailable)"
+                                    data-token="@option.Token"
+                                    title="@DescribeTooltip(option)"
+                                    @onclick="() => PickTrigger(option)">
+                                <span class="trigger-caption">@button.Caption</span>
+                                @if (option.IsNew)
+                                {
+                                    <span class="badge new" title="Unlocked by the last step">new</span>
+                                }
+                            </button>
+                        }
+                    </div>
+                    @foreach (var reason in reasons)
+                    {
+                        <span class="trigger-reason">@reason</span>
+                    }
+                </div>
+            }
+        </div>
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired]
+    public ImmutableArray<TriggerOption> Options { get; set; }
+
+    [Parameter]
+    public string Caption { get; set; } = "";
+
+    [Parameter]
+    public string Hint { get; set; } = "";
+
+    [Parameter]
+    public EventCallback<TriggerOption> OnPick { get; set; }
+
+    private Task PickTrigger(TriggerOption option) =>
+        OnPick.InvokeAsync(option);
+
+    private static string DescribeTooltip(TriggerOption option) =>
+        option.Unavailable.Match(reason => $"{option.Label} — {reason.Value}", _ => $"{option.Label}  ({option.Token})");
+}

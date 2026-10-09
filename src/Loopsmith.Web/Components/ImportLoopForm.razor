@@ -1,0 +1,45 @@
+@* Import a .loop.yaml: pick a file or paste the YAML. The host decides what importing means (OnImport). *@
+<div class="import-form">
+    <label class="field">
+        <span class="field-label">From a file</span>
+        <InputFile OnChange="ReadPickedFileAsync" accept=".yaml,.yml,text/yaml" class="file-input" />
+    </label>
+    <label class="field">
+        <span class="field-label">Or paste the loop YAML</span>
+        <textarea class="code-input" rows="10" spellcheck="false" placeholder="loop: My loop&#10;steps:&#10;  - do: class&#10;build: |&#10;  name: …"
+                  @bind="pasted" @bind:event="oninput"></textarea>
+    </label>
+    @if (Problem is Optional<string>.Some problem)
+    {
+        <pre class="failure-text" role="alert">@problem.Value</pre>
+    }
+    <div class="form-actions">
+        <button class="btn primary" disabled="@(pasted.Trim().Length == 0)" @onclick="ImportPastedAsync">Import pasted YAML</button>
+    </div>
+</div>
+
+@code {
+    private string pasted = "";
+
+    [Parameter]
+    public Optional<string> Problem { get; set; } = Optional.None<string>();
+
+    [Parameter]
+    public EventCallback<SourceText> OnImport { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnUnreadable { get; set; }
+
+    private async Task ReadPickedFileAsync(InputFileChangeEventArgs e)
+    {
+        var text = await BrowserInterop.ReadPickedFileAsync(e.File);                            // impure
+
+        var imported = text.Map(value => new SourceText(e.File.Name, value));                  // pure
+        await imported.Match(
+            ok => OnImport.InvokeAsync(ok.Value),                                               // impure
+            error => OnUnreadable.InvokeAsync(error.Failure));                                  // impure
+    }
+
+    private Task ImportPastedAsync() =>
+        OnImport.InvokeAsync(new SourceText("pasted.loop.yaml", pasted));
+}

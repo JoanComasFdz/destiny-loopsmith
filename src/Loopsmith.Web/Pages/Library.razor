@@ -1,0 +1,221 @@
+@page "/library"
+@inject Workbench Workbench
+@inject BrowserInterop Browser
+@inject NavigationManager Navigation
+
+<PageTitle>Library · Loopsmith</PageTitle>
+
+@{
+    var entries = LibraryListing.ListEntries(Bundle, Workbench.Library);
+    var picked = Workbench.CompareIds.Where(id => entries.Any(entry => entry.Id == id)).ToImmutableArray();
+}
+<section class="page-head">
+    <div>
+        <h1>Library</h1>
+        <p class="muted">Loops saved in this browser and the example loops that ship with the app. Tick two to compare them.</p>
+    </div>
+    <div class="toolbar-group">
+        <button class="btn primary" disabled="@(picked.Length != 2)" @onclick="CompareSelected" data-action="compare">
+            Compare selected (@picked.Length/2)
+        </button>
+    </div>
+</section>
+
+@if (Workbench.LibraryProblem is Optional<string>.Some problem)
+{
+    <div class="banner warn" role="alert"><pre class="banner-text">@problem.Value</pre></div>
+}
+@if (status.Length > 0)
+{
+    <p class="status" role="status" data-testid="status">@status</p>
+}
+
+@if (!Workbench.IsLibraryLoaded)
+{
+    <p class="muted">Reading the library…</p>
+}
+else if (entries.IsEmpty)
+{
+    <section class="panel empty-state">
+        <h2>No loops yet</h2>
+        <p class="muted">Design a loop, then use <strong>Save to library</strong> in the designer. Saved loops stay in this browser.</p>
+        <a class="btn primary" href="">Open the designer</a>
+    </section>
+}
+else
+{
+    <div class="library-list">
+        @foreach (var entry in entries)
+        {
+            var isPicked = picked.Contains(entry.Id);
+            var isCurrent = Workbench.SavedId.Match(id => id.Value == entry.Id, _ => false);
+            <article class="panel library-item @(isPicked ? "selected" : "")" data-id="@entry.Id">
+                <label class="pick" title="Select for comparison">
+                    <input type="checkbox" checked="@isPicked" disabled="@(!isPicked && picked.Length >= 2)"
+                           @onchange="() => ToggleComparePick(entry.Id)" aria-label="@($"Select {entry.Name} for comparison")" />
+                </label>
+                <div class="library-main">
+                    @if (renamingId == entry.Id)
+                    {
+                        <div class="rename-row">
+                            <input class="rename-input" @bind="renameText" aria-label="New name" />
+                            <button class="btn small primary" @onclick="() => RenameEntryAsync(entry)">Rename</button>
+                            <button class="btn small ghost" @onclick="CancelRename">Cancel</button>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="library-name">
+                            @entry.Name
+                            @if (entry.Origin == LibraryOrigin.Bundled)
+                            {
+                                <span class="badge">example</span>
+                            }
+                            @if (isCurrent)
+                            {
+                                <span class="badge new">open</span>
+                            }
+                        </div>
+                    }
+                    <div class="library-meta muted">
+                        @entry.BuildName · @entry.Steps step@(entry.Steps == 1 ? "" : "s")
+                        @if (entry.SavedAt is Optional<DateTimeOffset>.Some savedAt)
+                        {
+                            <span> · saved @savedAt.Value.ToString("yyyy-MM-dd HH:mm", System.Globalization.CultureInfo.InvariantCulture) UTC</span>
+                        }
+                    </div>
+                    @if (entry.Problem is Optional<string>.Some entryProblem)
+                    {
+                        <pre class="entry-problem">@entryProblem.Value</pre>
+                    }
+                    @if (openProblems.TryGetValue(entry.Id, out var openProblem))
+                    {
+                        <pre class="entry-problem" role="alert">@openProblem</pre>
+                    }
+                </div>
+                <div class="library-actions">
+                    <button class="btn small primary" @onclick="() => OpenEntry(entry)" data-action="open">Open</button>
+                    @if (entry.Origin == LibraryOrigin.Saved)
+                    {
+                        <button class="btn small" @onclick="() => StartRename(entry)" data-action="rename">Rename</button>
+                    }
+                    <button class="btn small" @onclick="() => ExportEntryAsync(entry)" data-action="export">Export</button>
+                    <button class="btn small" @onclick="() => CopyEntryLinkAsync(entry)" data-action="share">Copy link</button>
+                    @if (entry.Origin == LibraryOrigin.Saved)
+                    {
+                        <button class="btn small danger" @onclick="() => DeleteEntryAsync(entry)" data-action="delete">Delete</button>
+                    }
+                </div>
+            </article>
+        }
+    </div>
+}
+
+@if (shareUrl.Length > 0)
+{
+    <Modal Title="Share link" OnClose="CloseShareLink">
+        <p class="@(shareCopied ? "tone-strong" : "tone-warning")">@(shareCopied ? "Copied to the clipboard." : "Could not copy automatically — copy the link below.")</p>
+        <input class="code-input share-url" readonly value="@shareUrl" aria-label="Share link" />
+    </Modal>
+}
+
+@code {
+    private readonly Dictionary<string, string> openProblems = [];
+    private string status = "";
+    private string renamingId = "";
+    private string renameText = "";
+    private string shareUrl = "";
+    private bool shareCopied;
+
+    [CascadingParameter]
+    public LoopsmithBundle Bundle { get; set; } = null!;
+
+    protected override async Task OnInitializedAsync() =>
+        await LibraryStoring.LoadLibraryAsync(Workbench, Browser);                               // impure
+
+    private void OpenEntry(LibraryEntry entry)
+    {
+        var opened = LibraryListing.OpenEntry(Bundle.Catalog, entry);                            // pure
+        opened.Match(
+            ok =>
+            {
+                var savedId = entry.Origin == LibraryOrigin.Saved ? Optional.Some(entry.Id) : Optional.None<string>();
+                Workbench.OpenSession(ok.Value, savedId);
+                Workbench.Notice = Optional.None<string>();
+                Navigation.NavigateTo("");                                                       // impure
+                return new Unit.Value();
+            },
+            error =>
+            {
+                openProblems[entry.Id] = $"Cannot open this loop: {error.Failure}";
+                return new Unit.Value();
+            });
+    }
+
+    private void StartRename(LibraryEntry entry)
+    {
+        renamingId = entry.Id;
+        renameText = entry.Name;
+    }
+
+    private void CancelRename() =>
+        renamingId = "";
+
+    private async Task RenameEntryAsync(LibraryEntry entry)
+    {
+        var name = renameText.Trim();
+        var saved = LoopLibrary.FindLoop(Workbench.Library, entry.Id);                           // pure
+        if (name.Length == 0 || saved is not Optional<SavedLoop>.Some loop)
+        {
+            renamingId = "";
+            return;
+        }
+
+        var renamed = LibraryListing.RenameSavedLoop(Bundle.Catalog, loop.Value, name);          // pure
+        var library = LoopLibrary.SaveLoop(Workbench.Library, renamed);                         // pure
+        var stored = await LibraryStoring.StoreLibraryAsync(Workbench, Browser, library);        // impure
+        renamingId = "";
+        status = stored ? $"Renamed to “{name}”." : "This browser refused to store the library.";
+    }
+
+    private async Task DeleteEntryAsync(LibraryEntry entry)
+    {
+        var confirmed = await Browser.ConfirmAsync($"Delete “{entry.Name}” from this browser's library?"); // impure
+        if (!confirmed)
+        {
+            return;
+        }
+
+        var library = LoopLibrary.DeleteLoop(Workbench.Library, entry.Id);                       // pure
+        var stored = await LibraryStoring.StoreLibraryAsync(Workbench, Browser, library);        // impure
+        Workbench.CompareIds = Workbench.CompareIds.Remove(entry.Id);
+        Workbench.SavedId = Workbench.SavedId.Match(id => id.Value == entry.Id, _ => false) ? Optional.None<string>() : Workbench.SavedId;
+        status = stored ? $"Deleted “{entry.Name}”." : "This browser refused to store the library.";
+    }
+
+    private async Task ExportEntryAsync(LibraryEntry entry)
+    {
+        var fileName = LoopLibrary.ToLoopFileName(entry.Name);                                   // pure
+        await Browser.DownloadTextAsync(fileName, entry.LoopFile);                               // impure
+        status = $"Exported {fileName}.";
+    }
+
+    private async Task CopyEntryLinkAsync(LibraryEntry entry)
+    {
+        var url = ShareLinkCoding.ToShareUrl(Navigation.BaseUri, entry.LoopFile);                // pure
+        var copied = await Browser.CopyTextAsync(url);                                           // impure
+        shareUrl = url;
+        shareCopied = copied;
+    }
+
+    private void CloseShareLink() =>
+        shareUrl = "";
+
+    private void ToggleComparePick(string id) =>
+        Workbench.CompareIds = Workbench.CompareIds.Contains(id)
+            ? Workbench.CompareIds.Remove(id)
+            : Workbench.CompareIds.Add(id);
+
+    private void CompareSelected() =>
+        Navigation.NavigateTo("compare");                                                        // impure
+}

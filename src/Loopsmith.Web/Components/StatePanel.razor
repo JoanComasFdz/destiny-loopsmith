@@ -1,0 +1,89 @@
+@* The game state at one point of the loop: energy per ability, buffs, target debuffs, ground pickups, active passives. *@
+@{
+    var glossary = Build.Catalog.Glossary;
+    var tone = ToneStyling.ToAffinityClass(Build.Build.Subclass);
+    var buffs = StateShaping.ShapeStatuses(glossary, State.Buffs);
+    var debuffs = StateShaping.ShapeStatuses(glossary, State.Target.Debuffs);
+    var pickups = StateShaping.ShapePickups(glossary, State.Pickups);
+    var passives = StateShaping.ListConditionalPassives(Passives);
+}
+<section class="panel state-panel" aria-label="State">
+    <header class="panel-head">
+        <h2>State</h2>
+        <span class="panel-caption">@Caption</span>
+    </header>
+
+    <div class="gauges @tone">
+        @foreach (var gauge in StateShaping.ShapeGauges(State))
+        {
+            <div class="gauge" title="@($"{gauge.Label}: {gauge.Charges} charges")">
+                <span class="gauge-label">@gauge.Label</span>
+                <span class="gauge-bar">
+                    @foreach (var segment in gauge.Segments)
+                    {
+                        <span class="gauge-seg @(segment >= 1m ? "full" : "")"><span style="width:@ToPercent(segment)%"></span></span>
+                    }
+                </span>
+                <span class="gauge-value">@gauge.Charges</span>
+            </div>
+        }
+    </div>
+
+    <div class="state-row">
+        <span class="state-label">Buffs</span>
+        @RenderChips(buffs)
+    </div>
+    <div class="state-row">
+        <span class="state-label">Target</span>
+        @RenderChips(debuffs)
+    </div>
+    <div class="state-row">
+        <span class="state-label">Ground</span>
+        @RenderChips(pickups)
+    </div>
+    @if (!passives.IsEmpty)
+    {
+        <div class="state-row">
+            <span class="state-label">Active</span>
+            <ul class="passives">
+                @foreach (var passive in passives)
+                {
+                    <li>@glossary.DescribePassive(passive.Passive.Modifier) <span class="muted">[</span><span class="@ToneStyling.ToToneClass(passive.Affinity.ToTone())">@passive.SourceName</span><span class="muted">]</span></li>
+                }
+            </ul>
+        </div>
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired]
+    public ValidatedBuild Build { get; set; } = null!;
+
+    [Parameter, EditorRequired]
+    public GameState State { get; set; } = null!;
+
+    [Parameter]
+    public ImmutableArray<ActivePassive> Passives { get; set; } = [];
+
+    [Parameter]
+    public string Caption { get; set; } = "";
+
+    private static RenderFragment RenderChips(ImmutableArray<StateChip> chips) => __builder =>
+    {
+        if (chips.IsEmpty)
+        {
+            <span class="chips"><span class="muted">none</span></span>
+            return;
+        }
+
+        <span class="chips">
+            @foreach (var chip in chips)
+            {
+                <span class="chip @ToneStyling.ToAffinityClass(chip.Affinity)">@chip.Text</span>
+            }
+        </span>
+    };
+
+    private static string ToPercent(decimal fill) =>
+        (fill * 100m).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
+}

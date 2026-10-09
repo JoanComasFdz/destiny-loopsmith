@@ -1,0 +1,27 @@
+@* A dialog over the page. Closing is the host's decision (OnClose). *@
+<div class="modal-backdrop" @onclick="CloseModal">
+    <section class="modal @Size" role="dialog" aria-modal="true" aria-label="@Title" @onclick:stopPropagation="true">
+        <header class="modal-head">
+            <h2>@Title</h2>
+            <button class="btn ghost icon" title="Close" aria-label="Close" @onclick="CloseModal">✕</button>
+        </header>
+        <div class="modal-body">@ChildContent</div>
+    </section>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public string Title { get; set; } = "";
+
+    [Parameter]
+    public string Size { get; set; } = "";
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    private Task CloseModal() =>
+        OnClose.InvokeAsync();
+}

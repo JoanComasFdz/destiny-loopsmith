@@ -1,0 +1,157 @@
+@* A LoopReport (LoopDesigning.AnalyzeDesign): the loop played back to back, cycle after cycle. *@
+@{
+    var sustainable = ReportReading.IsSustainable(Report);
+    var net = ReportReading.ReadNetEnergyPerCycle(Report);
+    var block = ReportReading.FindFirstBlock(Report);
+    var sources = ReportReading.ListTopSources(Report, 10);
+    var topFired = sources.IsEmpty ? 0 : sources.Max(source => source.Fired);
+}
+<div class="analysis">
+    <div class="analysis-head">
+        <div>
+            <div class="analysis-name">@Report.LoopName</div>
+            <div class="muted">@Report.BuildName · @Report.StepCount step@(Report.StepCount == 1 ? "" : "s") per cycle</div>
+        </div>
+        @if (sustainable)
+        {
+            <span class="badge big ok" data-testid="sustainable">Sustainable · @Report.MaxCycles/@Report.MaxCycles cycles</span>
+        }
+        else
+        {
+            <span class="badge big warn" data-testid="sustained">Sustains @Report.CompletedCycles/@Report.MaxCycles cycles</span>
+        }
+    </div>
+
+    @if (Report.Cycles.IsEmpty)
+    {
+        <p class="notice">
+            @(Report.StepCount == 0
+                ? "Add steps to the loop, then analyze it."
+                : "The analysis returned no cycles — loop analysis is not available in this version of the engine yet.")
+        </p>
+    }
+
+    @if (block is Optional<CycleBlock>.Some blocked)
+    {
+        <p class="notice warn">
+            Cycle @blocked.Value.Cycle stops at step #@(blocked.Value.Step.StepIndex + 1)
+            <code class="token">@blocked.Value.Step.Action.ToActionToken()</code>: @blocked.Value.Step.Reason
+        </p>
+    }
+
+    <h3 class="section-label">Net energy per cycle</h3>
+    @if (net is Optional<ImmutableArray<EnergyChange>>.Some changes)
+    {
+        <div class="energy-tiles">
+            @foreach (var change in changes.Value)
+            {
+                <div class="energy-tile @(change.Charges > 0 ? "gain" : change.Charges < 0 ? "loss" : "")">
+                    <span class="energy-kind">@StateShaping.DescribeAbilityLabel(change.Kind)</span>
+                    <span class="energy-value">@StateShaping.FormatSignedCharges(change.Charges)</span>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <p class="muted">Needs at least one completed cycle.</p>
+    }
+
+    <div class="analysis-grid">
+        <div>
+            <h3 class="section-label">Per cycle</h3>
+            @if (Report.Outcomes.IsEmpty)
+            {
+                <p class="muted">Nothing counted.</p>
+            }
+            else
+            {
+                <ul class="tallies">
+                    @foreach (var tally in Report.Outcomes)
+                    {
+                        <li><span>@tally.Label</span><strong>@tally.Count</strong></li>
+                    }
+                </ul>
+            }
+            <ul class="tallies caveats">
+                <li title="Outcomes whose value is unknown (?) are shown but not applied — the real loop is stronger.">
+                    <span>Unknown values (?) not applied</span><strong>@Report.UnknownValues</strong>
+                </li>
+                <li title="Bullets marked (chance) fire in the simulation but are not guaranteed in game.">
+                    <span>Chance bullets</span><strong>@Report.ChanceRules</strong>
+                </li>
+            </ul>
+        </div>
+        <div>
+            <h3 class="section-label">Buff uptime</h3>
+            @if (Report.Uptime.IsEmpty)
+            {
+                <p class="muted">No buffs measured.</p>
+            }
+            @foreach (var uptime in Report.Uptime)
+            {
+                <div class="meter @ToneStyling.ToAffinityClass(uptime.Affinity)" title="@($"active after {uptime.StepsActive} of {uptime.Steps} steps")">
+                    <span class="meter-label">@uptime.Name</span>
+                    <span class="meter-bar"><span style="width:@ToPercent(ReportReading.ToRatio(uptime.StepsActive, uptime.Steps))%"></span></span>
+                    <span class="meter-value">@uptime.StepsActive/@uptime.Steps</span>
+                </div>
+            }
+        </div>
+        <div>
+            <h3 class="section-label">Top sources</h3>
+            @if (sources.IsEmpty)
+            {
+                <p class="muted">Nothing fired.</p>
+            }
+            @foreach (var source in sources)
+            {
+                <div class="meter @ToneStyling.ToAffinityClass(source.Affinity)">
+                    <span class="meter-label">@source.SourceName</span>
+                    <span class="meter-bar"><span style="width:@ToPercent(ReportReading.ToRatio(source.Fired, topFired))%"></span></span>
+                    <span class="meter-value">×@source.Fired</span>
+                </div>
+            }
+        </div>
+    </div>
+
+    @if (!Report.Cycles.IsEmpty)
+    {
+        <h3 class="section-label">Energy at the end of each cycle</h3>
+        <div class="table-wrap">
+            <table class="data-table">
+                <thead>
+                    <tr><th>Cycle</th><th>Grenade</th><th>Melee</th><th>Class</th><th>Super</th><th></th></tr>
+                </thead>
+                <tbody>
+                    <tr class="muted">
+                        <td>spawn</td>
+                        <td>@StateShaping.FormatCharges(Report.EnergyAtStart.Grenade.Value)</td>
+                        <td>@StateShaping.FormatCharges(Report.EnergyAtStart.Melee.Value)</td>
+                        <td>@StateShaping.FormatCharges(Report.EnergyAtStart.ClassAbility.Value)</td>
+                        <td>@StateShaping.FormatCharges(Report.EnergyAtStart.Super.Value)</td>
+                        <td></td>
+                    </tr>
+                    @foreach (var cycle in Report.Cycles)
+                    {
+                        <tr class="@(cycle.Blocked.IsSome() ? "blocked" : "")">
+                            <td>@cycle.Number</td>
+                            <td>@StateShaping.FormatCharges(cycle.EnergyAtEnd.Grenade.Value)</td>
+                            <td>@StateShaping.FormatCharges(cycle.EnergyAtEnd.Melee.Value)</td>
+                            <td>@StateShaping.FormatCharges(cycle.EnergyAtEnd.ClassAbility.Value)</td>
+                            <td>@StateShaping.FormatCharges(cycle.EnergyAtEnd.Super.Value)</td>
+                            <td>@(cycle.Blocked.IsSome() ? "blocked" : "")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public LoopReport Report { get; set; } = null!;
+
+    private static string ToPercent(decimal ratio) =>
+        (ratio * 100m).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
+}
