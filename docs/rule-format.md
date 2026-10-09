@@ -352,6 +352,13 @@ stats: { weapons: 47, class: 104, grenade: 145, super: 27, melee: 79 }   # any s
 
 ## Engine semantics (what an author can rely on)
 
+> **Being reworked (ADRs D28 — not a simulator).** The engine below still counts stacks up to
+> `maxStacks` (and raises `StacksMaxed` by itself), runs a step clock that `wait` advances and lets
+> timed statuses expire. D28 replaces that: stacks and durations become facts shown with the outcome,
+> a status stays until a rule removes or consumes it, and the player declares thresholds such as
+> "Bolt Charge at max". The inventory is in [backlog.md](backlog.md#not-a-simulator-adrs-d28); author
+> rules for the trigger the source states (`stacksMaxed: bolt-charge`), never to make a count come out.
+
 * **Player actions → events.** `UseClassAbility` emits only `AbilityCast(classAbility)` — airborne
   for `class:air` (an air move that spends the charge), which every `abilityCast: classAbility` rule
   matches too; only the `airborne: true` rules tell the two apart.

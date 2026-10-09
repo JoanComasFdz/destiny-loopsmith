@@ -84,6 +84,13 @@ is written `grenade`, `wait` as `wait:5`). Labels read "Grenade (kill 3)", "Fest
 
 ## Analysis (`LoopReport`)
 
+> **Being reworked (ADRs D28 — not a simulator).** Today's report counts: cycles completed out of
+> `maxCycles`, kills, pickups spawned, stacks maxed, firings and buff uptime per cycle. D28 replaces those
+> with causal answers — does the loop close, where does it break, what each element sets off (or never
+> does), what is wasted, which buffs it turns on and who consumes them — and `wait` with steps where the
+> player declares a state (`max:<status>`, `end:<status>`). Inventory and plan:
+> [backlog.md](backlog.md#not-a-simulator-adrs-d28).
+
 Running a loop = playing its steps **back to back, cycle after cycle**, starting from a fresh
 spawn (no buffs, an undebuffed pack, nothing on the ground), up to `maxCycles` (default 10;
 CLI `--cycles <n>`). Cycle *n* starts from the state cycle *n − 1* ended in (buffs, debuffs and

@@ -14,7 +14,7 @@ in a rule turns into a confidently wrong trace, so you are precise and never gue
 1. Read `docs/rule-format.md` in full. It is the specification for every key, trigger, damage source,
    condition, outcome, passive, number and duration, for `doesNotStackWith`, and for the engine semantics
    (event cascade, phase order, stacked mods, target counts). Use only constructs it defines.
-2. Read ADRs D21–D23 in `ADRs.md`: they shape what a rule means (see "Engine model" below).
+2. Read ADRs D21–D23 and D28 in `ADRs.md`: they shape what a rule means (see "Engine model" below).
 3. Read `rules/glossary.yaml` and grep `rules/` for the element's id and name. Extend or correct an
    existing entry. Never add a duplicate.
 4. Gather every source you were given and rank them. The Compendium snapshot lives in
@@ -54,9 +54,10 @@ also mention it in the rule's `reason`. Something that only a creator says becom
   `rules/glossary.yaml` with the right `kind`. Player effects are `buff`. Target effects are `debuff`.
   `applyBuff`/`removeBuff`/`has`/`lacks` take buffs. `debuffTarget`/`targetHas` take debuffs. Add missing
   entries, with `maxStacks`/`duration` only when a source states them (a status without `maxStacks`
-  doesn't stack: applying it again only refreshes it).
+  doesn't stack: applying it again only refreshes it). Both are facts shown to the player (D28).
 - **Model faithfully.** Write one rule per trigger. Use `when` guards for "while X" / "if you have X".
-  Use `chance: true` for "chance to" / "occasionally" and for progress counters the engine can't count.
+  Use `chance: true` for "chance to" / "occasionally" and for progress counters ("after 6 hits", "2 kills
+  in 3 s"): the engine never counts (D28), so keep the counter's numbers in `reason` or a comment.
   Each `reason` is a short paraphrase of the source sentence the rule encodes. Ids are kebab-case slugs.
   Keys are camelCase. Put the element in the file the format prescribes (`rules/<class>/<subclass>.yaml`
   for abilities, aspects and fragments, `rules/exotics/armor.yaml`, `rules/armor-sets/*.yaml`,
@@ -67,8 +68,13 @@ also mention it in the rule's `reason`. Something that only a creator says becom
   include the source text (paraphrased for the Compendium) and leave a YAML comment where the rule would go.
 - Touch only `rules/**` and the build's `discrepancies.md`. Never edit `src/`, tests or `build.yaml`.
 
-## Engine model (ADRs D21–D23)
+## Engine model (ADRs D21–D23, D28)
 
+- **Not a simulator (D28).** Loopsmith shows cause and effect; it never counts stacks, runs a clock or
+  adds up energy. Write a threshold as the trigger the source states (`stacksMaxed: bolt-charge` for "at
+  x10"): reaching it is the player's declaration, not a count. Durations, stack caps and amounts are
+  facts the player reads. Never add a rule or key whose only job is to make a count or a timer come out
+  right (D27's `restart` is being removed for that reason).
 - **No ability-energy model (D21).** Abilities are always available; nothing is gated by energy.
   `grantEnergy`, `convertStacksToEnergy` and `resetCooldown` are shown in traces as explanations ("+12%
   grenade energy [Bomber]") and never added up, but author them faithfully all the same — they are what

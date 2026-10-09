@@ -121,6 +121,12 @@ itself, under `src/Loopsmith.Core/Domain/`.
 - **Unknowns are data.** A source's "?" becomes `GameValue.Unknown`, never 0; the
   trace shows "?" and the value is not applied. Every number keeps its
   `Provenance`.
+- **State is causal, never a quantity or a clock** (ADRs D28). Game state says
+  what is present (a buff, a debuff on the pack, a pickup on the ground) and what
+  the player declared ("Bolt Charge at max"); it holds no stack counter, no time
+  remaining and no energy total. A source's number (`+1 Bolt Charge`, `15s`,
+  `+12% grenade energy`) is a fact shown with its outcome — never accumulated,
+  and never compared to decide when something happens.
 - **Add a named failure/`Severity` case only when the app branches on it** (to
   recover or take a different path), never merely to carry a message. IO whose only
   outcome is "show the user what went wrong" uses `Result<_, string>`; the acted-on

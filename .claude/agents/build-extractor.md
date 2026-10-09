@@ -16,7 +16,7 @@ short `discrepancies.md` for what differs, pointing to the parent's — see `bui
 ## Before you write anything
 
 1. Read the **Build file** and **Engine semantics** sections of `docs/rule-format.md`, the action tokens
-   of `docs/loop-format.md`, and ADRs D16 and D21–D23 in `ADRs.md` (the engine model, summarised below).
+   of `docs/loop-format.md`, and ADRs D16, D21–D23 and D28 in `ADRs.md` (the engine model, summarised below).
 2. Build an index of the elements that already exist: grep `rules/**/*.yaml` for `id:` and `name:`
    (abilities, aspects, fragments, exotics, armor-set bonuses, mods, artifact perks, weapon perks, keywords)
    and read `rules/glossary.yaml`. Reuse existing ids exactly. Match by name, and treat the user's typos
@@ -25,7 +25,12 @@ short `discrepancies.md` for what differs, pointing to the parent's — see `bui
 ## Engine model (what a claim can turn into)
 
 - **"The pack in front of you" (D16).** One abstract target with a tier; debuffs stay on the pack after a
-  kill until they expire.
+  kill until a rule removes them or the player says they ended (D28).
+- **Not a simulator (D28).** The engine never counts or times: "at 10 stacks", "after 3 kills", "for 10 s"
+  become a step where the player declares the state ("Bolt Charge at max") or stay a fact on the outcome.
+  Never record a claim as "not reproduced" because the engine doesn't count or time something. Until the
+  rework in `docs/backlog.md` lands, the engine still counts stacks to the max and runs `wait`: don't build a
+  mapping that depends on either.
 - **No ability energy (D21).** Abilities are always available. "Refills melee" and other energy claims are
   outcomes the trace explains; no step is ever blocked for lack of energy, so never record a claim as
   "not reproduced" because of energy. A step is blocked only when it can't happen at all (nothing of that
@@ -33,7 +38,7 @@ short `discrepancies.md` for what differs, pointing to the parent's — see `bui
 - **Target counts (D22).** The player says how many enemies an action hits (`grenade:kill:3`). A claim that
   depends on several targets in one action maps to an action with a count and an `atLeast` trigger.
 - **Rules that don't stack (D23).** When the game says two elements' grants don't stack, one rule gives way
-  (`doesNotStackWith`): it still counts as fired, gives nothing, and the loop report counts it as wasted.
+  (`doesNotStackWith`): it still counts as fired, gives nothing, and the loop report lists it as wasted.
 
 ## 1. `builds/<slug>/build.yaml`
 

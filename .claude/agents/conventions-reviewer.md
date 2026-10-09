@@ -74,6 +74,10 @@ edit files.
    any catch-all, or a catch that swallows an exception.
 6. **Calls.** Prefer static direct calls. Flag interfaces and delegates introduced for "testability" or
    DI. Flag any third-party FP library.
+7. **State is causal, not a simulation** (CONVENTIONS.md, Domain modelling; ADRs D28). Flag code that adds
+   stacks toward a maximum, raises a threshold event (`StacksMaxed`) because a count reached it, counts a
+   duration down or advances a clock, adds up energy, refunds or cooldowns, or branches on a source's number
+   to decide when something happens. Numbers are shown as facts; the player declares thresholds.
 
 ## Report
 

@@ -47,6 +47,9 @@ distributions we don't have; marking them keeps the loop honest without hiding i
 
 ## D16 — Target model: "the pack in front of you"
 
+*D28 replaces the expiry: a debuff will stay until a rule removes it or the player declares it
+ended — nothing runs out on time. The single-pack model stays.*
+
 **Open question answered:** one abstract target with a tier and the debuffs spread
 across the pack. Debuffs stay after a kill until they expire (`wait`). This matches
 how add-clear builds are explained ("everything is jolted"); single-target nuance is
@@ -82,6 +85,10 @@ xunit.v3 3.2.2. Revisit when the owner decides.
 
 ## D21 — No ability-energy model (for now)
 
+*D28 generalises this decision: nothing is counted or timed, not only energy. "Repeatable … back
+to back" and "buff uptime" below become causal answers (does the loop close, which buffs it turns on
+and what consumes them), and the "×2 stacks" caveat goes with stack counting.*
+
 **Context.** Ability energy in game is mainly time: base cooldowns scaled by stats, with rule
 refunds on top. The step-based engine (D12) has no real clock, most cooldowns and chunk
 scalars are still `?`, and a partial model (refunds only, no recharge) made loops look
@@ -102,6 +109,9 @@ the owner asks for a time model (the Compendium's cooldowns would feed it).
 
 ## D22 — Player-declared target counts
 
+*Still holds under D28: a count the player states about one action is a declaration, not a
+simulation. Only the Consequence's "Kills per cycle" total goes (D28 drops per-cycle counts).*
+
 **Context.** The engine can't know how many enemies a grenade or a burst of fire catches,
 yet perks depend on it ("hitting three separate targets…" — One For All, multi-kill perks).
 **Decision.** The player says it: an ability or weapon action carries a `TargetCount`
@@ -114,6 +124,10 @@ Kills per cycle count every target; chance-based perks still fire on every enemy
 marked *(chance)*), so counts stay an upper bound. Strikes and summons hit one enemy.
 
 ## D23 — Rules that don't stack give way and are reported as wasted
+
+*Still holds under D28 — it is the "what doesn't work together" half of the product. What changes is
+the report: **Wasted** lists each pair and the steps where it happens instead of counting per cycle, and
+the "6 maxes per cycle instead of 3" in the Context was the stack counting D28 removes.*
 
 **Context.** The Compendium (Arc#51) says Tempest Strike's x1 Bolt Charge on a jolted kill
 doesn't stack with Dielectric's. v1 fired both, so the Skip Grenade loops gained one Bolt
@@ -182,6 +196,10 @@ rule uses the airborne trigger, and any other airborne class-ability move is the
 and slide qualifiers (Tempest Strike) are not expressible yet ([docs/backlog.md](docs/backlog.md)).
 
 ## D27 — A buff armed afresh replaces its stacks (`restart`)
+
+*To be superseded by D28: its only purpose was stack arithmetic (dodges counting Slice to 5). Without
+stack counting a re-armed buff is simply active, so `restart` goes; Slice ends when the player declares
+it ("Slice at max" — the 5 severs are done) or ends it.*
 
 **Context.** Slice counts the next 5 hits after each class ability use (Compendium Weapon Perks#198),
 but its dodge rule added a stack, so dodges alone stacked Slice to 5 and ended it ("Melee first"
