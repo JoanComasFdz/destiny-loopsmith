@@ -115,7 +115,7 @@ Coding conventions (binding): [CONVENTIONS.md](CONVENTIONS.md) · decisions: [AD
 ```
 src/Loopsmith.Core/      one project, slices = folders (kernel: Domain, Functional, Phrasing, Causality)
 src/Loopsmith.Cli/       host: argv → Orchestration shell → effects
-src/Loopsmith.Web/       host: Blazor WebAssembly loop designer (Designer, Library, Compare)
+src/Loopsmith.Web/       host: Blazor WebAssembly loop designer (Designer, Compare)
 tests/Loopsmith.Core.Tests/   unit, golden and architecture tests
 rules/                   authored causality (glossary, keywords, class, exotics, mods, artifact, perks)
 builds/<slug>/           build.yaml, the original note, note-map, discrepancies, loops/*.loop.yaml

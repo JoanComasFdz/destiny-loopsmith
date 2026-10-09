@@ -16,7 +16,7 @@ The site is served from the **`gh-pages` branch**:
 Both workflows test the engine, publish the app and run `tools/web/prepare-pages.sh`, which sets
 `<base href>` to where the copy is served, adds `.nojekyll` (Pages would otherwise hide
 `_framework/`) and, for the main site, a `404.html` deep-link fallback that also sends deep links
-inside a preview (`…/pr-preview/pr-7/library`) back to that preview's start page. The main deploy
+inside a preview (`…/pr-preview/pr-7/compare`) back to that preview's start page. The main deploy
 never touches `pr-preview/`; previews never touch the root. The preview workflow comments the
 link on the pull request. Pull requests from forks get no preview (no write access).
 

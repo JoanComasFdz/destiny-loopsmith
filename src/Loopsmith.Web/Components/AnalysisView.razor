@@ -36,33 +36,15 @@
         </p>
     }
 
-    <h3 class="section-label">
-        Net energy per cycle
-        @if (steady is Optional<CycleRun>.Some steadyCycle)
-        {
-            <span class="label-note">steady state = cycle @steadyCycle.Value.Number</span>
-        }
-    </h3>
-    @if (steady.IsSome())
-    {
-        <div class="energy-tiles">
-            @foreach (var change in ReportReading.ListNetEnergy(Report))
-            {
-                <div class="energy-tile @(change.Charges > 0 ? "gain" : change.Charges < 0 ? "loss" : "")">
-                    <span class="energy-kind">@StateShaping.DescribeAbilityLabel(change.Kind)</span>
-                    <span class="energy-value">@StateShaping.FormatSignedCharges(change.Charges)</span>
-                </div>
-            }
-        </div>
-    }
-    else
-    {
-        <p class="muted">No cycle was run.</p>
-    }
-
     <div class="analysis-grid">
         <div>
-            <h3 class="section-label">Per cycle</h3>
+            <h3 class="section-label">
+                Per cycle
+                @if (steady is Optional<CycleRun>.Some steadyCycle)
+                {
+                    <span class="label-note">steady state = cycle @steadyCycle.Value.Number</span>
+                }
+            </h3>
             @if (Report.Outcomes.IsEmpty)
             {
                 <p class="muted">Nothing counted.</p>
@@ -116,39 +98,6 @@
             }
         </div>
     </div>
-
-    @if (!Report.Cycles.IsEmpty)
-    {
-        <h3 class="section-label">Energy at the end of each cycle</h3>
-        <div class="table-wrap">
-            <table class="data-table">
-                <thead>
-                    <tr><th>Cycle</th><th>Grenade</th><th>Melee</th><th>Class</th><th>Super</th><th></th></tr>
-                </thead>
-                <tbody>
-                    <tr class="muted">
-                        <td>spawn</td>
-                        <td>@StateShaping.FormatCharges(Report.EnergyAtStart.Grenade.Value)</td>
-                        <td>@StateShaping.FormatCharges(Report.EnergyAtStart.Melee.Value)</td>
-                        <td>@StateShaping.FormatCharges(Report.EnergyAtStart.ClassAbility.Value)</td>
-                        <td>@StateShaping.FormatCharges(Report.EnergyAtStart.Super.Value)</td>
-                        <td></td>
-                    </tr>
-                    @foreach (var cycle in Report.Cycles)
-                    {
-                        <tr class="@(cycle.Blocked.IsSome() ? "blocked" : "")">
-                            <td>@cycle.Number</td>
-                            <td>@StateShaping.FormatCharges(cycle.EnergyAtEnd.Grenade.Value)</td>
-                            <td>@StateShaping.FormatCharges(cycle.EnergyAtEnd.Melee.Value)</td>
-                            <td>@StateShaping.FormatCharges(cycle.EnergyAtEnd.ClassAbility.Value)</td>
-                            <td>@StateShaping.FormatCharges(cycle.EnergyAtEnd.Super.Value)</td>
-                            <td>@(cycle.Blocked.IsSome() ? "blocked" : "")</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    }
 
     <details class="report-text">
         <summary>The report as text (same as <code>loopsmith loop</code>)</summary>

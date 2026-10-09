@@ -7,12 +7,18 @@ namespace Loopsmith.Web.Presentation;
 /// <summary>One button of the palette: the option it appends and its short caption ("hit", "kill").</summary>
 public sealed record TriggerButton(TriggerOption Option, string Caption);
 
-/// <summary>A row of the palette: one trigger, or the hit / kill pair of the same ability or weapon.</summary>
-public sealed record TriggerChoice(string Title, ImmutableArray<TriggerButton> Buttons);
+/// <summary>
+/// A row of the palette: one trigger, or the hit / kill pair of the same ability or weapon. <see cref="Key"/> names
+/// the row ("cast:Grenade", "fire:Kinetic", "class", …) and stays the same from one step to the next.
+/// </summary>
+public sealed record TriggerChoice(string Key, string Title, ImmutableArray<TriggerButton> Buttons);
 
 public sealed record TriggerSection(TriggerGroup Group, string Heading, ImmutableArray<TriggerChoice> Choices);
 
-/// <summary>Pure: <see cref="LoopDesigning.ListTriggerOptions"/> → palette sections with hit/kill pairs side by side.</summary>
+/// <summary>
+/// Pure: <see cref="LoopDesigning.ListTriggerOptions"/> → palette sections with hit/kill pairs side by side. Every
+/// option is offered as pickable: the palette does not gate abilities on energy.
+/// </summary>
 public static class TriggerPaletteShaping
 {
     public static ImmutableArray<TriggerSection> ShapePalette(ImmutableArray<TriggerOption> options) =>
@@ -27,10 +33,10 @@ public static class TriggerPaletteShaping
     [
         .. options
             .GroupBy(option => ToPairKey(option.Action))
-            .Select(pair => pair.OrderBy(option => ReadHitOrder(option.Action)).ToImmutableArray())
-            .Select(pair => pair.Length == 1
-                ? new TriggerChoice(pair[0].Label, [new TriggerButton(pair[0], pair[0].Label)])
-                : new TriggerChoice(ReadTitle(pair[0].Label), [.. pair.Select(option => new TriggerButton(option, ReadQualifier(option.Label)))])),
+            .Select(pair => (pair.Key, Options: pair.OrderBy(option => ReadHitOrder(option.Action)).ToImmutableArray()))
+            .Select(pair => pair.Options.Length == 1
+                ? new TriggerChoice(pair.Key, pair.Options[0].Label, [new TriggerButton(pair.Options[0], pair.Options[0].Label)])
+                : new TriggerChoice(pair.Key, ReadTitle(pair.Options[0].Label), [.. pair.Options.Select(option => new TriggerButton(option, ReadQualifier(option.Label)))])),
     ];
 
     private static string DescribeGroup(TriggerGroup group) =>

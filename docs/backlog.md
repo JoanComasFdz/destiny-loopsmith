@@ -56,9 +56,10 @@ the detail behind it.
 - **First visit downloads ≈ 2.5 MB** (the .NET runtime as WebAssembly + the engine; cached
   afterwards). The `wasm-tools` workload would shrink it; it can't be installed in cloud
   sessions, but the deploy workflows on GitHub's runners could install it.
-- **"Save to library" is per browser.** Saved loops live in that browser's storage (other
-  devices don't see them; clearing site data deletes them). Export / share links work
-  everywhere; syncing a library across devices would need a backend.
+- **No saved library (for now).** The app stores nothing in the browser: a loop is kept by
+  exporting its `.loop.yaml` or copying its share link, and loops imported on the Compare
+  screen last until the tab closes. A library could come back later (per-browser storage, or
+  a backend to sync it across devices).
 
 ## Housekeeping
 

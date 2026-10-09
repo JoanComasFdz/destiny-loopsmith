@@ -1,7 +1,6 @@
-@* The game state at one point of the loop: energy per ability, buffs, target debuffs, ground pickups, active passives. *@
+@* The game state at one point of the loop: buffs, target debuffs, ground pickups, active passives. *@
 @{
     var glossary = Build.Catalog.Glossary;
-    var tone = ToneStyling.ToAffinityClass(Build.Build.Subclass);
     var buffs = StateShaping.ShapeStatuses(glossary, State.Buffs);
     var debuffs = StateShaping.ShapeStatuses(glossary, State.Target.Debuffs);
     var pickups = StateShaping.ShapePickups(glossary, State.Pickups);
@@ -12,22 +11,6 @@
         <h2>State</h2>
         <span class="panel-caption">@Caption</span>
     </header>
-
-    <div class="gauges @tone">
-        @foreach (var gauge in StateShaping.ShapeGauges(State))
-        {
-            <div class="gauge" title="@($"{gauge.Label}: {gauge.Charges} charges")">
-                <span class="gauge-label">@gauge.Label</span>
-                <span class="gauge-bar">
-                    @foreach (var segment in gauge.Segments)
-                    {
-                        <span class="gauge-seg @(segment >= 1m ? "full" : "")"><span style="width:@ToPercent(segment)%"></span></span>
-                    }
-                </span>
-                <span class="gauge-value">@gauge.Charges</span>
-            </div>
-        }
-    </div>
 
     <div class="state-row">
         <span class="state-label">Buffs</span>
@@ -83,7 +66,4 @@
             }
         </span>
     };
-
-    private static string ToPercent(decimal fill) =>
-        (fill * 100m).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
 }

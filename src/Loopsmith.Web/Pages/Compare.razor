@@ -1,60 +1,44 @@
 @page "/compare"
 @inject Workbench Workbench
-@inject BrowserInterop Browser
 
 <PageTitle>Compare · Loopsmith</PageTitle>
 
 @{
-    var entries = LibraryListing.ListEntries(Bundle, Workbench.Library);
-    var choices = EntryComparing.ListChoices(Workbench.Session, entries);
+    var choices = ComparisonPicking.ListChoices(Bundle, Workbench.Session, Workbench.ImportedLoops);
 }
 <section class="page-head">
     <div>
         <h1>Compare loops</h1>
-        <p class="muted">Each loop is played back to back for @LoopDesigning.DefaultMaxCycles cycles from a fresh spawn, then measured. The loops may use different builds.</p>
+        <p class="muted">Pick a loop for each side — the one in the designer, an example, or a <code>.loop.yaml</code> you import. Each loop is played back to back for @LoopDesigning.DefaultMaxCycles cycles from a fresh spawn, then measured. The loops may use different builds.</p>
     </div>
 </section>
 
-@if (!Workbench.IsLibraryLoaded)
+@if (status.Length > 0)
 {
-    <p class="muted">Reading the library…</p>
+    <p class="status" role="status" data-testid="status">@status</p>
 }
-else if (choices.Length < 1)
+
+@if (Workbench.ComparePicks is not Optional<ComparisonPicks>.Some { Value: var picks })
 {
     <section class="panel empty-state">
         <h2>Nothing to compare yet</h2>
-        <p class="muted">Design a loop and save it to the library, or open one, then come back here.</p>
-        <a class="btn primary" href="">Open the designer</a>
+        <p class="muted">Import a <code>.loop.yaml</code>, or design a loop first.</p>
+        <div class="toolbar-group">
+            <button class="btn primary" @onclick="() => OpenImportDialog(CompareSide.Left)" data-action="import-left">Import a .loop.yaml</button>
+            <a class="btn" href="">Open the designer</a>
+        </div>
     </section>
 }
 else
 {
     <div class="compare-pickers">
-        <label class="field">
-            <span class="field-label">Left</span>
-            <select value="@leftId" @onchange="PickLeft" aria-label="Left loop" data-side="left">
-                @foreach (var choice in choices)
-                {
-                    <option value="@choice.Id">@choice.Label</option>
-                }
-            </select>
-        </label>
+        @RenderPicker(choices, picks.LeftId, CompareSide.Left)
         <span class="versus" aria-hidden="true">vs</span>
-        <label class="field">
-            <span class="field-label">Right</span>
-            <select value="@rightId" @onchange="PickRight" aria-label="Right loop" data-side="right">
-                @foreach (var choice in choices)
-                {
-                    <option value="@choice.Id">@choice.Label</option>
-                }
-            </select>
-        </label>
+        @RenderPicker(choices, picks.RightId, CompareSide.Right)
     </div>
 
     @if (view is Optional<ComparisonView>.Some compared)
     {
-        var left = compared.Value.Left;
-        var right = compared.Value.Right;
         <section class="panel comparison" aria-label="Comparison">
             @if (compared.Value.Comparison is Optional<LoopComparison>.Some comparison)
             {
@@ -98,58 +82,123 @@ else
         </section>
 
         <div class="compare-columns">
-            @RenderSide(left, "Left")
-            @RenderSide(right, "Right")
+            @RenderSide(compared.Value.Left, "Left")
+            @RenderSide(compared.Value.Right, "Right")
         </div>
     }
 }
 
+@if (importSide is Optional<CompareSide>.Some side)
+{
+    <Modal Title="@($"Import a loop · {DescribeSide(side.Value)}")" OnClose="CloseImportDialog">
+        <p class="muted">A <code>.loop.yaml</code> carries its own build, so it replays here as it was designed. It stays on this screen until you close the tab — nothing is stored.</p>
+        <ImportLoopForm Problem="importProblem" OnImport="ImportLoop" OnUnreadable="ShowImportProblem" />
+    </Modal>
+}
+
 @code {
-    private string leftId = "";
-    private string rightId = "";
+    private enum CompareSide { Left, Right }
+
     private Optional<ComparisonView> view = Optional.None<ComparisonView>();
+    private Optional<CompareSide> importSide = Optional.None<CompareSide>();
+    private Optional<string> importProblem = Optional.None<string>();
+    private string status = "";
 
     [CascadingParameter]
     public LoopsmithBundle Bundle { get; set; } = null!;
 
-    protected override async Task OnInitializedAsync()
-    {
-        await LibraryStoring.LoadLibraryAsync(Workbench, Browser);                               // impure
+    protected override void OnInitialized() =>
+        CompareLoops(Workbench.ComparePicks);
 
-        var entries = LibraryListing.ListEntries(Bundle, Workbench.Library);                     // pure
-        var choices = EntryComparing.ListChoices(Workbench.Session, entries);                    // pure
-        var preferred = Workbench.CompareIds.Where(id => choices.Any(choice => choice.Id == id))
-            .Concat(choices.Select(choice => choice.Id))
-            .Distinct()
-            .ToImmutableArray();
-        leftId = preferred.FirstOrDefault("");
-        rightId = preferred.Length > 1 ? preferred[1] : leftId;
-        CompareChoices();
+    private void PickLoop(CompareSide side, ChangeEventArgs e)
+    {
+        var id = e.Value?.ToString() ?? "";
+        status = "";
+        CompareLoops(Workbench.ComparePicks.Map(picks => SetSide(picks, side, id)));
     }
 
-    private void PickLeft(ChangeEventArgs e)
+    /// <summary>Keeps the picks that are still offered (see <see cref="ComparisonPicking.PickIds"/>) and compares them.</summary>
+    private void CompareLoops(Optional<ComparisonPicks> wanted)
     {
-        leftId = e.Value?.ToString() ?? "";
-        CompareChoices();
+        var choices = ComparisonPicking.ListChoices(Bundle, Workbench.Session, Workbench.ImportedLoops); // pure
+        var picks = ComparisonPicking.PickIds(choices, wanted);                                       // pure
+        Workbench.ComparePicks = picks;
+        view = picks.Map(picked => ComparisonPicking.CompareChoices(choices, picked));                // pure
     }
 
-    private void PickRight(ChangeEventArgs e)
+    private void OpenImportDialog(CompareSide side)
     {
-        rightId = e.Value?.ToString() ?? "";
-        CompareChoices();
+        importProblem = Optional.None<string>();
+        importSide = Optional.Some(side);
     }
 
-    private void CompareChoices()
+    private void ImportLoop(SourceText file)
     {
-        if (leftId.Length == 0 || rightId.Length == 0)
+        var imported = LoopDesigning.ImportLoop(Bundle.Catalog, file);                               // pure
+        imported.Match(
+            ok => KeepImportedLoop(ok.Value),
+            error =>
+            {
+                importProblem = Optional.Some(error.Failure);
+                return new Unit.Value();
+            });
+    }
+
+    private Unit KeepImportedLoop(DesignSession session)
+    {
+        var side = importSide.UnwrapOr(CompareSide.Left);
+        var (loops, id) = ComparisonPicking.AddImportedLoop(Workbench.ImportedLoops, session);        // pure
+        Workbench.ImportedLoops = loops;
+        importSide = Optional.None<CompareSide>();
+        status = $"Imported “{session.Design.Name}” for the {DescribeSide(side).ToLowerInvariant()} side.";
+        var wanted = Workbench.ComparePicks
+            .Map(picks => SetSide(picks, side, id))
+            .UnwrapOr(new ComparisonPicks(id, id));
+        CompareLoops(Optional.Some(wanted));
+        return new Unit.Value();
+    }
+
+    private void ShowImportProblem(string problem) =>
+        importProblem = Optional.Some(problem);
+
+    private void CloseImportDialog() =>
+        importSide = Optional.None<CompareSide>();
+
+    private static ComparisonPicks SetSide(ComparisonPicks picks, CompareSide side, string id) =>
+        side == CompareSide.Left ? picks with { LeftId = id } : picks with { RightId = id };
+
+    private static string DescribeSide(CompareSide side) =>
+        side == CompareSide.Left ? "Left" : "Right";
+
+    private static string DescribeOrigin(ChoiceOrigin origin) =>
+        origin switch
         {
-            view = Optional.None<ComparisonView>();
-            return;
-        }
+            ChoiceOrigin.Current => "In the designer",
+            ChoiceOrigin.Example => "Example loops",
+            _ => "Imported this session",
+        };
 
-        var entries = LibraryListing.ListEntries(Bundle, Workbench.Library);                     // pure
-        view = Optional.Some(EntryComparing.CompareEntries(Bundle, Workbench.Session, entries, leftId, rightId)); // pure
-    }
+    private RenderFragment RenderPicker(ImmutableArray<ComparisonChoice> choices, string pickedId, CompareSide side) => __builder =>
+    {
+        var label = DescribeSide(side);
+        <div class="compare-picker" data-side="@label.ToLowerInvariant()">
+            <label class="field">
+                <span class="field-label">@label</span>
+                <select value="@pickedId" @onchange="e => PickLoop(side, e)" aria-label="@($"{label} loop")">
+                    @foreach (var group in choices.GroupBy(choice => choice.Origin))
+                    {
+                        <optgroup label="@DescribeOrigin(group.Key)">
+                            @foreach (var choice in group)
+                            {
+                                <option value="@choice.Id">@choice.Label</option>
+                            }
+                        </optgroup>
+                    }
+                </select>
+            </label>
+            <button class="btn" @onclick="() => OpenImportDialog(side)" data-action="@($"import-{label.ToLowerInvariant()}")">Import a .loop.yaml</button>
+        </div>
+    };
 
     private static RenderFragment RenderSide(ComparedLoop side, string label) => __builder =>
     {

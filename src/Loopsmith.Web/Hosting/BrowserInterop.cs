@@ -5,8 +5,9 @@ using Microsoft.JSInterop;
 namespace Loopsmith.Web.Hosting;
 
 /// <summary>
-/// Impure: every browser side effect the web host performs (download, clipboard, localStorage, confirm,
-/// URL hash, reading a picked file). Components call these on their own lines, never nested in a pure call.
+/// Impure: every browser side effect the web host performs (download, clipboard, confirm, URL hash, reading a
+/// picked file). Nothing is stored in the browser. Components call these on their own lines, never nested in a
+/// pure call.
 /// </summary>
 public sealed class BrowserInterop(IJSRuntime js)
 {
@@ -17,15 +18,6 @@ public sealed class BrowserInterop(IJSRuntime js)
 
     public ValueTask<bool> CopyTextAsync(string text) =>
         js.InvokeAsync<bool>("loopsmith.copyText", text);
-
-    public async ValueTask<Optional<string>> ReadStorageAsync(string key)
-    {
-        var value = await js.InvokeAsync<string?>("loopsmith.readStorage", key);   // impure
-        return Optional.FromNullable(value);                                         // pure
-    }
-
-    public ValueTask<bool> WriteStorageAsync(string key, string value) =>
-        js.InvokeAsync<bool>("loopsmith.writeStorage", key, value);
 
     public ValueTask<bool> ConfirmAsync(string message) =>
         js.InvokeAsync<bool>("loopsmith.confirmAction", message);

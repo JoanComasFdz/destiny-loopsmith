@@ -1,4 +1,5 @@
-@* The next triggers the build offers (LoopDesigning.ListTriggerOptions), grouped; hit and kill side by side. *@
+@* The next triggers the build offers (LoopDesigning.ListTriggerOptions), grouped; hit and kill side by side.
+   Every trigger is pickable — the palette does not gate abilities on energy. *@
 <section class="panel palette" aria-label="Next trigger">
     <header class="panel-head">
         <h2>Next trigger</h2>
@@ -14,13 +15,9 @@
         <div class="trigger-list">
             @foreach (var choice in group.Choices)
             {
-                var reasons = choice.Buttons
-                    .Select(button => button.Option.Unavailable.UnwrapOr(""))
-                    .Where(reason => reason.Length > 0)
-                    .Distinct()
-                    .ToImmutableArray();
-                <div class="trigger-row @(choice.Buttons.All(b => !b.Option.IsAvailable) ? "unavailable" : "")">
-                    @if (choice.Buttons.Length > 1)
+                var isPair = choice.Buttons.Length > 1;
+                <div class="trigger-row @(isPair ? "pair" : "single")" data-choice="@choice.Key">
+                    @if (isPair)
                     {
                         <span class="trigger-title">@choice.Title</span>
                     }
@@ -28,10 +25,9 @@
                         @foreach (var button in choice.Buttons)
                         {
                             var option = button.Option;
-                            <button class="trigger @(choice.Buttons.Length > 1 ? "half" : "whole") @(option.IsAvailable ? "" : "off")"
-                                    disabled="@(!option.IsAvailable)"
+                            <button class="trigger @(isPair ? "half" : "whole")"
                                     data-token="@option.Token"
-                                    title="@DescribeTooltip(option)"
+                                    title="@($"{option.Label}  ({option.Token})")"
                                     @onclick="() => PickTrigger(option)">
                                 <span class="trigger-caption">@button.Caption</span>
                                 @if (option.IsNew)
@@ -41,10 +37,6 @@
                             </button>
                         }
                     </div>
-                    @foreach (var reason in reasons)
-                    {
-                        <span class="trigger-reason">@reason</span>
-                    }
                 </div>
             }
         </div>
@@ -66,7 +58,4 @@
 
     private Task PickTrigger(TriggerOption option) =>
         OnPick.InvokeAsync(option);
-
-    private static string DescribeTooltip(TriggerOption option) =>
-        option.Unavailable.Match(reason => $"{option.Label} — {reason.Value}", _ => $"{option.Label}  ({option.Token})");
 }
