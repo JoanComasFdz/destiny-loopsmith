@@ -35,6 +35,37 @@ dotnet run --project src/Loopsmith.Cli -- graph    builds/skip-grenade-hunter/bu
 | `graph` | A Mermaid flowchart of the graph, with loop edges drawn thick. It renders on GitHub and at mermaid.live |
 | `validate` | The build checked against the rule catalog (unknown elements, wrong slots, inert elements) |
 
+### What it looks like
+
+`explain` on the [Skip Grenade Hunter](builds/skip-grenade-hunter/), compare with the
+[original note](builds/skip-grenade-hunter/note.txt):
+
+```text
+Class ability -> +?% melee energy [Gambler's Dodge] + +12% grenade energy [Bomber] + Reaper (10s) [Reaper] + +1 Slice (8s) [Slice]
+Grenade damage -> Jolt target [Spark of Shock] + +1 Bolt Charge and +4.2% grenade energy [Shinobu's Vow]
+Kill Jolted target -> +1 Bolt Charge [Tempest Strike] + Amplified [Flow State] + Ionic Trace [Shock and Clear] + +1 Bolt Charge [Dielectric] + Orb of Power and heals you [Dielectric] (chance)
+Pick up Ionic Trace -> +1 Bolt Charge [Spark of Discharge] + +1 Armor Charge [Elemental Charge] (chance) + +~15% grenade, melee and class ability energy [Ionic Trace]
+Max Bolt Charge -> New Tricks and +~40% grenade energy and heals you and allies [Shinobu's Vow] + Amplified [Flashover] + consumes Bolt Charge and Bolt Charge strike (kills) [Bolt Charge]
+While Amplified -> +1 Bolt Charge per gain [Spark of Frequency] + linear-fusion-rifle/fusion-rifle/heat-weapon: +handling, +reload, +vent [Luminopotent 2-Piece Bonus]
+```
+
+`simulate` / `play`: one step, cascades indented, then the state:
+
+```text
+#2 Grenade (kill)
+  Grenade hit → Jolt target [Spark of Shock] + +1 Bolt Charge and +4.2% grenade energy* [Shinobu's Vow]
+    ↳ Bolt Charge ×1 → +?% grenade energy [Shinobu's Vow]
+  Grenade kill on Jolted target → +1 Bolt Charge [Tempest Strike] + Amplified [Flow State] + … + Ionic Trace [Shock and Clear]
+    ↳ Picked up Ionic Trace → +1 Bolt Charge [Spark of Discharge] + +~15% grenade, melee and class ability energy* [Ionic Trace]
+  Grenade       ▰▰▰▰▰▰▱▱▱▱ 1.19/2
+  Buffs         Reaper 10s · Slice ×1 8s · Bolt Charge ×6 · Amplified · Armor Charge ×1
+  Target        Jolt
+```
+
+`?` = unknown (never applied as 0) · `~` = approximate · `*` = chunk energy scalar assumed 1× ·
+`(chance)` = fires in v1 but isn't guaranteed in game. The loop graph renders on GitHub:
+[builds/skip-grenade-hunter/loop-graph.md](builds/skip-grenade-hunter/loop-graph.md).
+
 Action tokens: `grenade[:kill]`, `melee[:kill]`, `super[:kill]`, `class`,
 `kinetic|energy|power[:kill]`, `pickup:<id>`, `wait[:<seconds>]`.
 

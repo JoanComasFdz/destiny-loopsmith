@@ -35,7 +35,7 @@ public static class LoopGraphBuilding
 
         var abilityKinds = new[] { AbilityKind.Grenade, AbilityKind.Melee, AbilityKind.ClassAbility, AbilityKind.Super };
         var energyNodes = abilityKinds.Select(k => new GraphNode(ToEnergyKey(k), $"{DomainPhrasing.Capitalize(k.DescribeAbility())} energy", NodeKind.Energy, subclassAffinity));
-        var castNodes = abilityKinds.Select(k => new GraphNode(ToCastKey(k), k == AbilityKind.ClassAbility ? "Use class ability" : $"Throw {k.DescribeAbility()}", NodeKind.Action, subclassAffinity));
+        var castNodes = abilityKinds.Select(k => new GraphNode(ToCastKey(k), DescribeCastAction(k), NodeKind.Action, subclassAffinity));
         var weaponNodes = build.Build.Weapons.Select(w => new GraphNode(ToWeaponKey(w.Slot), $"Shoot {w.Name}", NodeKind.Action, w.Type.ToAffinity()));
 
         // Which trigger nodes does a concrete event reach?
@@ -55,7 +55,7 @@ public static class LoopGraphBuilding
                     .Select(to => new RawEdge(ToWeaponKey(w.Slot), to, You, EdgeKind.Player))));
 
         var ruleEdges = rules.SelectMany(r => r.Rule.Then.SelectMany(outcome =>
-            ListOutcomeEdges(build, r.Key, r.Element.Name, outcome, appliedDebuffs, Reach, rules.Select(x => (x.Key, x.Rule.On)))));
+            ListOutcomeEdges(build, r.Key, DescribeEdgeSource(glossary, r.Element, r.Rule), outcome, appliedDebuffs, Reach, rules.Select(x => (x.Key, x.Rule.On)))));
 
         var edges = playerEdges.Concat(ruleEdges)
             .GroupBy(e => (e.From, e.To, e.Kind))
@@ -102,6 +102,21 @@ public static class LoopGraphBuilding
             _ => [],
             reset => LinkToEnergy(reset.Which));
     }
+
+    private static string DescribeCastAction(AbilityKind kind) =>
+        kind switch
+        {
+            AbilityKind.Grenade => "Throw grenade",
+            AbilityKind.Melee => "Melee",
+            AbilityKind.ClassAbility => "Use class ability",
+            _ => "Cast super",
+        };
+
+    /// <summary>"Grenade Kickstart (while Armor Charge)" — a conditional link must not look unconditional.</summary>
+    private static string DescribeEdgeSource(KeywordGlossary glossary, BuildElement element, Rule rule) =>
+        element.Name
+        + (rule.When.IsEmpty ? "" : $" ({glossary.DescribeConditions(rule.When)})")
+        + (rule.Likelihood == Likelihood.Chance ? " (chance)" : "");
 
     private static IEnumerable<GameEvent> ListBuffEvents(KeywordGlossary glossary, StatusId status)
     {

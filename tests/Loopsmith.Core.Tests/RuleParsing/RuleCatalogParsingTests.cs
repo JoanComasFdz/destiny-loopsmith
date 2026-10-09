@@ -327,21 +327,21 @@ public sealed class RuleCatalogParsingTests
 
         Assert.Equal(5, passives.Length);
 
-        Assert.Equal(new Passive.ExtraStacks(ToStatus("bolt-charge"), StackCount.From(1)), passives[0].Effect);
+        Assert.Equal(new Passive.ExtraStacks(ToStatus("bolt-charge"), StackCount.From(1)), passives[0].Modifier);
         Assert.Equal<Condition>([new Condition.HasBuff(ToStatus("amplified"))], passives[0].When);
         Assert.Equal(Optional.Some("While Amplified, Bolt Charge sources grant one extra stack."), passives[0].Reason);
 
-        Assert.Equal(new Passive.ExtraCharges(AbilityKind.Grenade, 1), passives[1].Effect);
+        Assert.Equal(new Passive.ExtraCharges(AbilityKind.Grenade, 1), passives[1].Modifier);
         Assert.Empty(passives[1].When);
         Assert.Equal(Optional.None<string>(), passives[1].Reason);
 
-        var modifyDamage = Assert.IsType<Passive.ModifyDamage>(passives[2].Effect);
+        var modifyDamage = Assert.IsType<Passive.ModifyDamage>(passives[2].Modifier);
         Assert.Equal(new DamageSource.SummonOf(SummonId.From("threadling")), modifyDamage.Against);
         Assert.Equal([0.12m, 0.17m, 0.20m], Assert.IsType<GameValue.PerModCount>(modifyDamage.Change).Values);
 
-        Assert.Equal(new Passive.ResistDamage(new GameValue.Known(0.25m)), passives[3].Effect);
+        Assert.Equal(new Passive.ResistDamage(new GameValue.Known(0.25m)), passives[3].Modifier);
 
-        var weaponStats = Assert.IsType<Passive.ModifyWeaponStats>(passives[4].Effect);
+        var weaponStats = Assert.IsType<Passive.ModifyWeaponStats>(passives[4].Modifier);
         Assert.Equal(["fusion-rifle"], weaponStats.Archetypes);
         Assert.Equal([new WeaponStatChange("handling", new GameValue.Unknown())], weaponStats.Changes);
     }

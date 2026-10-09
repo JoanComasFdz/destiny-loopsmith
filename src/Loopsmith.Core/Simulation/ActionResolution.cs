@@ -195,7 +195,7 @@ public static class ActionResolution
         var extra = build.Equipped
             .SelectMany(e => e.Element.Passives)
             .Where(p => p.When.IsEmpty)
-            .Sum(p => p.Effect is Passive.ExtraCharges charges && charges.Ability == kind ? charges.Extra : 0);
+            .Sum(p => p.Modifier is Passive.ExtraCharges charges && charges.Ability == kind ? charges.Extra : 0);
         return Math.Max(1, baseCharges) + extra;
     }
 

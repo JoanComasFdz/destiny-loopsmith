@@ -163,7 +163,7 @@ public static class OutcomeApplication
         var bonuses = build.Equipped
             .SelectMany(e => e.Element.Passives.Select(p => (e.Element.Name, Passive: p)))
             .Where(x => x.Passive.When.IsSatisfiedBy(state))
-            .Select(x => (x.Name, Extra: x.Passive.Effect is Passive.ExtraStacks extra && extra.Status == status ? extra.Extra.Value : 0))
+            .Select(x => (x.Name, Extra: x.Passive.Modifier is Passive.ExtraStacks extra && extra.Status == status ? extra.Extra.Value : 0))
             .Where(x => x.Extra > 0)
             .ToImmutableArray();
         return new StackBonus(bonuses.Sum(x => x.Extra), bonuses.Select(x => x.Name).ToImmutableArray());

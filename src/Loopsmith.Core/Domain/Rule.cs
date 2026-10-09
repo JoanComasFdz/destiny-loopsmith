@@ -75,4 +75,4 @@ public partial record Passive
     partial record ModifyWeaponStats(ImmutableArray<string> Archetypes, ImmutableArray<WeaponStatChange> Changes);
 }
 
-public sealed record PassiveRule(Passive Effect, ImmutableArray<Condition> When, Optional<string> Reason);
+public sealed record PassiveRule(Passive Modifier, ImmutableArray<Condition> When, Optional<string> Reason);

@@ -31,14 +31,14 @@ public static class BuildExplaining
     {
         var glossary = build.Catalog.Glossary;
         var ruleItems = build.Equipped
-            .SelectMany(equipped => equipped.Element.Rules.Select(rule => (equipped.Element, Rule: rule)))
+            .SelectMany(equipped => equipped.Element.Rules.Select(rule => (equipped.Element, equipped.Count, Rule: rule)))
             .Select((x, order) => (
                 Heading: glossary.DescribeTrigger(x.Rule.On),
                 Rank: RankTrigger(x.Rule.On),
                 Order: order,
                 Affinity: ReadTriggerAffinity(build, x.Rule.On),
                 Item: new ExplanationItem(
-                    string.Join(" and ", x.Rule.Then.Select(glossary.DescribeOutcome)),
+                    glossary.DescribeOutcomes(x.Rule.Then.Select(o => new OutcomeMention(o, x.Count, ""))),
                     x.Element.Name,
                     x.Element.Kind,
                     x.Element.Affinity,
@@ -53,7 +53,7 @@ public static class BuildExplaining
                 Order: 10_000 + order,
                 Affinity: x.Passive.When.Select(c => ReadConditionAffinity(glossary, c)).FirstOrDefault(Affinity.Neutral),
                 Item: new ExplanationItem(
-                    glossary.DescribePassive(x.Passive.Effect),
+                    glossary.DescribePassive(x.Passive.Modifier),
                     x.Element.Name,
                     x.Element.Kind,
                     x.Element.Affinity,

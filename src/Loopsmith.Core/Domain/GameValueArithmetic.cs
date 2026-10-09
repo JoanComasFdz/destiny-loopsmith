@@ -18,6 +18,12 @@ public static class GameValueArithmetic
             approximate => new ResolvedValue(Optional.Some(approximate.Value), Certainty.Approximate),
             _ => new ResolvedValue(Optional.None<decimal>(), Certainty.Unknown));
 
+    /// <summary>The same value narrowed to <paramref name="copies"/> equipped copies (PerModCount → that copy's Known value).</summary>
+    public static GameValue NarrowToCopies(this GameValue value, int copies) =>
+        value is GameValue.PerModCount perModCount
+            ? new GameValue.Known(perModCount.Values[Math.Clamp(copies, 1, perModCount.Values.Length) - 1])
+            : value;
+
     public static Certainty CombineCertainty(this Certainty left, Certainty right) =>
         (Certainty)Math.Max((int)left, (int)right);
 

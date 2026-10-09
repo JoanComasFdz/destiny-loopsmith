@@ -96,7 +96,7 @@ public static class DomainPhrasing
 
     public static string DescribeTrigger(this KeywordGlossary glossary, Trigger trigger) =>
         trigger.Match(
-            cast => cast.Kind == AbilityKind.ClassAbility ? "Class ability" : $"Cast {cast.Kind.DescribeAbility()}",
+            cast => DescribeCast(cast.Kind),
             killAny => DescribeKill(glossary, killAny.Via, []),
             killOfTier => $"{DescribeKill(glossary, killOfTier.Via, [])} ({killOfTier.Tier})",
             killDebuffed => DescribeKill(glossary, killDebuffed.Via, killDebuffed.TargetHas),
@@ -134,6 +134,16 @@ public static class DomainPhrasing
             ? "target"
             : string.Join(" + ", targetHas.Select(glossary.DescribeDebuffedAdjective)) + " target";
 
+    /// <summary>The ability-cast trigger as a player says it ("Grenade thrown"; the action itself is "Throw grenade").</summary>
+    private static string DescribeCast(AbilityKind kind) =>
+        kind switch
+        {
+            AbilityKind.Grenade => "Grenade thrown",
+            AbilityKind.Melee => "Melee swung",
+            AbilityKind.ClassAbility => "Class ability",
+            _ => "Super cast",
+        };
+
     private static string DescribeOnTarget(string target) => target == "target" ? "" : $" on {target}";
 
     private static string DescribeWeapon(Build build, WeaponSlot slot, string fallback) =>
@@ -158,7 +168,7 @@ public static class DomainPhrasing
                 _ => $"refills {grant.To.DescribeAbility()}"),
             convert => $"spends {glossary.DescribeStatus(convert.Consumed)} → +{convert.PerStack.FormatPercent()} {convert.To.DescribeAbility()} energy each",
             apply => DescribeBuff(glossary, apply),
-            remove => $"ends {glossary.DescribeStatus(remove.Status)}",
+            remove => $"consumes {glossary.DescribeStatus(remove.Status)}",
             debuff => $"{glossary.DescribeStatus(debuff.Status)} target" + debuff.Duration.Match(d => $" ({d.Value.FormatSeconds()})", _ => ""),
             spawn => (spawn.Count > 1 ? $"{spawn.Count}× " : "") + glossary.DescribePickup(spawn.Pickup),
             summon => (summon.Count > 1 ? $"{summon.Count}× " : "") + glossary.DescribeSummon(summon.Summon),
@@ -167,6 +177,60 @@ public static class DomainPhrasing
             heal => (heal.IncludesAllies ? "heals you and allies" : "heals you")
                 + (heal.Amount is GameValue.Unknown ? "" : $" {heal.Amount.FormatPercent()}"),
             reset => $"refills {reset.Which.DescribeAbility()}");
+
+    /// <summary>
+    /// Several outcomes of one rule as one phrase, with values narrowed to the copies equipped and
+    /// same-amount energy grants merged: "+~15% grenade, melee and class ability energy".
+    /// </summary>
+    public static string DescribeOutcomes(this KeywordGlossary glossary, IEnumerable<OutcomeMention> mentions)
+    {
+        var phrases = mentions
+            .Select(mention => (Outcome: NarrowOutcomeToCopies(mention.Outcome, mention.Copies), mention.Marker))
+            .Select(x => new OutcomePhrase(
+                glossary.DescribeOutcome(x.Outcome) + x.Marker,
+                x.Outcome is Outcome.GrantEnergy { Amount: EnergyGrant.Fraction fraction } grant
+                    ? Optional.Some(new EnergyPhrase(fraction.Amount.FormatPercent(), x.Marker, grant.To))
+                    : Optional.None<EnergyPhrase>()))
+            .ToImmutableArray();
+        var merged = phrases.Aggregate(ImmutableArray<OutcomePhrase>.Empty, MergeEnergyPhrase);
+        return string.Join(" and ", merged.Select(DescribeMergedPhrase));
+    }
+
+    private sealed record EnergyPhrase(string Amount, string Marker, AbilityKind Ability);
+
+    private sealed record OutcomePhrase(string Text, Optional<EnergyPhrase> Energy, ImmutableArray<AbilityKind> MergedAbilities = default);
+
+    private static ImmutableArray<OutcomePhrase> MergeEnergyPhrase(ImmutableArray<OutcomePhrase> merged, OutcomePhrase next)
+    {
+        var canMerge = !merged.IsEmpty
+            && merged[^1].Energy.Bind(last => next.Energy.Map(n => n.Amount == last.Amount && n.Marker == last.Marker)).UnwrapOr(false);
+        if (!canMerge)
+        {
+            return merged.Add(next with { MergedAbilities = next.Energy.Match(e => [e.Value.Ability], _ => ImmutableArray<AbilityKind>.Empty) });
+        }
+
+        var last = merged[^1];
+        var abilities = last.MergedAbilities.AddRange(next.Energy.Match(e => [e.Value.Ability], _ => ImmutableArray<AbilityKind>.Empty));
+        return merged.SetItem(merged.Length - 1, last with { MergedAbilities = abilities });
+    }
+
+    private static string DescribeMergedPhrase(OutcomePhrase phrase) =>
+        phrase.Energy.Match(
+            energy => phrase.MergedAbilities.Length > 1
+                ? $"+{energy.Value.Amount} {string.Join(", ", phrase.MergedAbilities[..^1].Select(DescribeAbility))} and {phrase.MergedAbilities[^1].DescribeAbility()} energy{energy.Value.Marker}"
+                : phrase.Text,
+            _ => phrase.Text);
+
+    private static Outcome NarrowOutcomeToCopies(Outcome outcome, int copies) =>
+        outcome switch
+        {
+            Outcome.GrantEnergy { Amount: EnergyGrant.Fraction fraction } grant =>
+                grant with { Amount = new EnergyGrant.Fraction(fraction.Amount.NarrowToCopies(copies)) },
+            Outcome.ConvertStacksToEnergy convert => convert with { PerStack = convert.PerStack.NarrowToCopies(copies) },
+            Outcome.ModifyDamage modify => modify with { Change = modify.Change.NarrowToCopies(copies) },
+            Outcome.RestoreHealth heal => heal with { Amount = heal.Amount.NarrowToCopies(copies) },
+            _ => outcome,
+        };
 
     private static string DescribeBuff(KeywordGlossary glossary, Outcome.ApplyBuff apply)
     {
@@ -188,7 +252,7 @@ public static class DomainPhrasing
 
     public static string DescribeEvent(this KeywordGlossary glossary, GameEvent gameEvent, Build build) =>
         gameEvent.Match(
-            cast => cast.Kind == AbilityKind.ClassAbility ? "Class ability" : $"Cast {cast.Kind.DescribeAbility()}",
+            cast => DescribeCast(cast.Kind),
             damaged => $"{glossary.DescribeOrigin(damaged.Origin, build)} hit{DescribeOnTarget(DescribeTargetPhrase(glossary, damaged.TargetHas))}",
             killed => $"{glossary.DescribeOrigin(killed.Origin, build)} kill{DescribeOnTarget(DescribeTargetPhrase(glossary, killed.TargetHas))}",
             pickedUp => $"Picked up {glossary.DescribePickup(pickedUp.Pickup)}",

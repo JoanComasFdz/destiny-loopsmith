@@ -54,16 +54,20 @@ public static class StateReading
         state.Target.Debuffs.Any(debuff => debuff.Status == status);
 
     public static GameState PutBuff(this GameState state, ActiveStatus buff) =>
-        state with { Buffs = state.Buffs.RemoveAll(b => b.Status == buff.Status).Add(buff) };
+        state with { Buffs = ReplaceOrAppend(state.Buffs, buff) };
 
     public static GameState DropBuff(this GameState state, StatusId status) =>
         state with { Buffs = state.Buffs.RemoveAll(b => b.Status == status) };
 
     public static GameState PutDebuff(this GameState state, ActiveStatus debuff) =>
-        state with
-        {
-            Target = state.Target with { Debuffs = state.Target.Debuffs.RemoveAll(d => d.Status == debuff.Status).Add(debuff) },
-        };
+        state with { Target = state.Target with { Debuffs = ReplaceOrAppend(state.Target.Debuffs, debuff) } };
+
+    /// <summary>Refreshing a status keeps its place, so traces list statuses in the order they were gained.</summary>
+    private static ImmutableArray<ActiveStatus> ReplaceOrAppend(ImmutableArray<ActiveStatus> statuses, ActiveStatus status)
+    {
+        var index = statuses.Select(s => s.Status).ToImmutableArray().IndexOf(status.Status);
+        return index < 0 ? statuses.Add(status) : statuses.SetItem(index, status);
+    }
 
     public static int CountPickups(this GameState state, PickupId pickup) =>
         state.Pickups.Where(p => p.Pickup == pickup).Sum(p => p.Count);
