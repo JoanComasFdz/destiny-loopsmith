@@ -36,7 +36,7 @@ flowchart LR
 ```
 
 ```text
-20 loops found (showing 6; --limit to change)
+26 loops found (showing 6; --limit to change)
 Loop 1 · ability loop — refunds grenade energy · 3 steps
   Throw grenade → Grenade damage →[Shinobu's Vow] Grenade energy → ↺
 Loop 2 · ability loop — refunds grenade energy · 3 steps

@@ -3,9 +3,9 @@ loop: Melee first
 description: |-
   Open with the melee instead of the dodge: slide-melee to jolt the pack, then skip grenade and
   Arc weapon into it, grab the orbs and dodge last to refill the melee. Gambler's Dodge's melee
-  refill is unknown ("?") in the rules, so the known melee refund comes only from Ionic Traces
-  and the dodge counts as one unknown refund.
-catalog: authored-e4426d03166b
+  refill is unknown ("?") in the rules, so the known melee refund comes from Ionic Traces and
+  Bolt Charge gains, and the dodge counts as one unknown refund.
+catalog: authored-e709c86cfb21
 steps:
   - do: melee:kill
     note: 'Combination Blow: Tempest Strike jolts, Impact Induction refunds grenade energy'

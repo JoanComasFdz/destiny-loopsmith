@@ -3,13 +3,13 @@
   Build                                     Skip Grenade Hunter        Skip Grenade Hunter
   Steps per cycle                           6                          5
   Repeatable cycles                         10+                        10+
-  Grenade energy refunded per cycle         +~410.4% (+32 unknown) ✓   +~278.2% (+21 unknown)
-  Melee energy refunded per cycle           +~150% (+1 unknown) ✓      +~90% (+1 unknown)
-  Class ability energy refunded per cycle   +~150% ✓                   +~90% (+1 unknown)
-  Super energy refunded per cycle           0% (+14 unknown) ✓         0% (+9 unknown)
+  Grenade energy refunded per cycle         +~372.9% (+32 unknown) ✓   +~255.7% (+21 unknown)
+  Melee energy refunded per cycle           +187.5% (+1 unknown) ✓     +117.5% (+1 unknown)
+  Class ability energy refunded per cycle   +135%                      +181% ✓
+  Super energy refunded per cycle           0% (+4 unknown) ✓          0% (+2 unknown)
   Kills per cycle                           10 ✓                       7
   Ionic Trace spawned per cycle             11 ✓                       8
-  Orb of Power spawned per cycle            14 ✓                       9
+  Orb of Power spawned per cycle            4 ✓                        2
   Bolt Charge maxed per cycle               6 ✓                        4
   Slice maxed per cycle                     0                          1 ✓
   Amplified uptime                          6/6                        5/5
@@ -21,6 +21,6 @@
   Slice uptime                              6/6 ✓                      4/5
   Reaper uptime                             2/6                        3/5 ✓
   Combination Blow uptime                   0/6                        5/5 ✓
-  Unknown values                            69                         47 ✓
-  Chance bullets                            26                         15 ✓
-✓ better: Infinite skip grenades on 10 metrics · Melee first on 5 metrics · 7 even or not judged
+  Unknown values                            59                         33 ✓
+  Chance bullets                            18                         8 ✓
+✓ better: Infinite skip grenades on 9 metrics · Melee first on 6 metrics · 7 even or not judged

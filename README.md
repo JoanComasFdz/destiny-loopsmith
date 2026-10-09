@@ -10,7 +10,7 @@ unlocks next, and where the loop closes back on itself.
 
 **The product is the loop you design**: pick triggers one by one, and the result is a
 `*.loop.yaml` you can save, share as a link, replay, analyse ("repeats 10+ cycles, its rules
-refund +~410% grenade energy per cycle") and compare with another loop.
+refund +~372.9% grenade energy per cycle") and compare with another loop.
 
 > **Try it:** https://joancomasfdz.github.io/destiny-loopsmith/ — the web loop designer
 > (runs entirely in your browser). Status: working prototype on authored rules for one build
@@ -59,10 +59,11 @@ dotnet run --project src/Loopsmith.Cli -- graph    builds/skip-grenade-hunter/bu
 ```text
 Class ability -> +?% melee energy [Gambler's Dodge] + +12% grenade energy [Bomber] + Reaper (10s) [Reaper] + +1 Slice (8s) [Slice]
 Grenade damage -> Jolt target [Spark of Shock] + +1 Bolt Charge and +4.2% grenade energy [Shinobu's Vow]
-Kill Jolted target -> +1 Bolt Charge [Tempest Strike] + Amplified [Flow State] + Ionic Trace [Shock and Clear] + +1 Bolt Charge [Dielectric] + Orb of Power and heals you [Dielectric] (chance)
-Pick up Ionic Trace -> +1 Bolt Charge [Spark of Discharge] + +1 Armor Charge [Elemental Charge] (chance) + +~15% grenade, melee and class ability energy [Ionic Trace]
-Max Bolt Charge -> New Tricks and +~40% grenade energy and heals you and allies [Shinobu's Vow] + Amplified [Flashover] + consumes Bolt Charge and Bolt Charge strike (kills) [Bolt Charge]
-While Amplified -> +1 Bolt Charge per gain [Spark of Frequency] + linear-fusion-rifle/fusion-rifle/heat-weapon: +handling, +reload, +vent [Luminopotent 2-Piece Bonus]
+Kill Jolted target -> +1 Bolt Charge [Tempest Strike] + Amplified [Flow State] + Ionic Trace [Shock and Clear] + +1 Bolt Charge [Dielectric]
+Pick up Ionic Trace -> +1 Bolt Charge [Spark of Discharge] + +1 Armor Charge [Elemental Charge] (chance) + +11.3% grenade and melee energy and +13.5% class ability energy [Ionic Trace]
+Gain Bolt Charge -> +?% grenade energy [Shinobu's Vow] + +2.5% melee energy [Bolt Charge]
+Max Bolt Charge -> New Tricks and +~40% grenade energy and heals you and allies [Shinobu's Vow] + Amplified (15s) [Flashover] + consumes Bolt Charge and Bolt Charge strike (kills) [Bolt Charge]
+While Amplified -> +1 Bolt Charge per gain [Spark of Frequency] + linear-fusion-rifle/fusion-rifle/heat-weapon: +handling, +reload [Ionic Overclock]
 ```
 
 `simulate` / `play`: one step, cascades indented, then the state:
@@ -70,11 +71,14 @@ While Amplified -> +1 Bolt Charge per gain [Spark of Frequency] + linear-fusion-
 ```text
 #2 Grenade (kill)
   Grenade hit → Jolt target [Spark of Shock] + +1 Bolt Charge and +4.2% grenade energy [Shinobu's Vow]
-    ↳ Bolt Charge ×1 → +?% grenade energy [Shinobu's Vow]
-  Grenade kill on Jolted target → +1 Bolt Charge [Tempest Strike] + Amplified [Flow State] + … + Ionic Trace [Shock and Clear]
-    ↳ Picked up Ionic Trace → +1 Bolt Charge [Spark of Discharge] + +~15% grenade, melee and class ability energy [Ionic Trace]
-  Buffs         Reaper 10s · Slice ×1 8s · Bolt Charge ×6 · Amplified · Armor Charge ×1
-  Target        Jolt
+    ↳ Bolt Charge ×1 → +?% grenade energy [Shinobu's Vow] + +2.5% melee energy [Bolt Charge]
+  Grenade kill on Jolted target → +1 Bolt Charge [Tempest Strike] + Amplified [Flow State] + +1 Bolt Charge [Dielectric] + Ionic Trace [Shock and Clear]
+    ↳ Bolt Charge ×2 → +?% grenade energy [Shinobu's Vow] + +2.5% melee energy [Bolt Charge]
+    ↳ Bolt Charge ×4 → +?% grenade energy [Shinobu's Vow] + +2.5% melee energy [Bolt Charge]
+    ↳ Picked up Ionic Trace → +1 Bolt Charge [Spark of Discharge] + +1 Armor Charge [Elemental Charge] (chance) + +11.3% grenade and melee energy and +13.5% class ability energy [Ionic Trace]
+      ↳ Bolt Charge ×6 → +?% grenade energy [Shinobu's Vow] + +2.5% melee energy [Bolt Charge]
+  Buffs         Reaper 10s · Slice ×1 8s · Bolt Charge ×6 · Amplified 15s · Armor Charge ×1
+  Target        Jolt 10s
 ```
 
 `?` = unknown (never applied as 0) · `~` = approximate ·

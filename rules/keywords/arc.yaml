@@ -1,35 +1,44 @@
 # Arc keyword elements: rules that are active in every build (kind: keyword).
-# Clarity 2.0625 has no status/verb entries, so these are creator claims or authored.
+# Clarity 2.0625 has no status/verb entries; the numbers come from the Arc tab's glossary rows of the
+# Compendium snapshot of 2026-10-09. The creator's claims they replace are kept in comments.
 elements:
   - id: bolt-charge
     name: Bolt Charge
     kind: keyword
     affinity: arc
-    description: "Stacking Arc buff. At maximum stacks it discharges as a lightning strike on your target and the stacks reset."
-    source:
-      creator: "https://www.youtube.com/watch?v=zvd6sNS463E"
-      quote: "I call down six bolt charge lightning strikes."
+    description: "Stacking Arc buff; each stack gained grants 2.5% melee energy. At x10, your next ability hit or unpowered melee hit discharges an Arc bolt on that enemy (675 [PvP 66] damage: bolt plus ground splash) and the stacks reset."
+    # Previously a creator claim: "I call down six bolt charge lightning strikes."
+    source: compendium/2026-10-09/Arc#5
     rules:
       # v1 simplification (per the engine design): the discharge happens as soon as the stacks max
-      # out, and the strike is assumed to finish the pack in front of you (hit: kill).
+      # out, and the strike is assumed to finish the pack in front of you (hit: kill). In game it
+      # waits for the next ability hit or unpowered melee hit at x10 (a guard on a stack count is not
+      # expressible).
       - on: { stacksMaxed: bolt-charge }
         then:
           - { removeBuff: bolt-charge }
           - { strikeTarget: { via: bolt-charge, hit: kill } }
         reason: "Max out Bolt Charge and it calls down a lightning strike on your target, using up the stacks."
+      # 2.5% per stack gained (also past x10). v1 grants it once per gain event, so the extra stack a
+      # gain gets from Spark of Frequency while Amplified is not counted: a lower bound (format gap:
+      # energy per stack gained). Not encoded: the weapon-hit counter that also grants stacks.
+      - on: { buffGained: bolt-charge }
+        then:
+          - { grantEnergy: { to: melee, amount: "2.5%" } }
+        reason: "Every Bolt Charge stack you gain gives you 2.5% melee energy."
     passives: []
 
   - id: jolt
     name: Jolt
     kind: keyword
     affinity: arc
-    description: "Arc debuff. Damaging a Jolted target chains lightning to nearby enemies."
-    source:
-      creator: "https://www.youtube.com/watch?v=zvd6sNS463E"
-      quote: "everything that's being zapped by that jolt going out"
+    description: "Arc debuff, 10 s [PvP 5 s]. Once a Jolted target has taken 115 [45] damage it chains lightning to every enemy within 12 m for 119 [51] damage, at most every 0.8 s."
+    # Previously a creator claim: "everything that's being zapped by that jolt going out".
+    source: compendium/2026-10-09/Arc#8
     rules:
       # Authored on weapon and ability damage only, NOT keyword damage: otherwise the jolt chain
-      # (itself keyword damage) would re-trigger Jolt and feed itself.
+      # (itself keyword damage) would re-trigger Jolt and feed itself. The 115-damage threshold and
+      # the 0.8 s cooldown are not modelled: every hit chains.
       - on: { damage: { via: weapon, targetHas: [jolt] } }
         then:
           - { strikeTarget: { via: jolt, hit: damage } }
@@ -44,18 +53,16 @@ elements:
     name: Ionic Trace
     kind: keyword
     affinity: arc
-    # Clarity states NO base value for an Ionic Trace pickup; its only figure is the TOTAL with
-    # Fallen Sunstar (Ionic Conductor 1376049785: grenade 25% | melee 25% | class 30%).
-    # "15% to all three" is the creator's number, hence approximate.
-    description: "Arc pickup that tracks to you. Collecting it grants ability energy to grenade, melee and class ability."
-    source:
-      creator: "https://www.youtube.com/watch?v=zvd6sNS463E"
-      quote: "ionic traces gives you 15% ability energy to all three abilities"
+    # Previously a creator claim, encoded "~15%": "ionic traces gives you 15% ability energy to all
+    # three abilities". Clarity has no base value (only the total with Fallen Sunstar, 1376049785:
+    # grenade 25% | melee 25% | class 30%). The Compendium's Armor Perks#114 repeats the base values.
+    description: "Arc pickup that homes in on you at 6 m/s. Collecting it grants 11.25% grenade and melee energy and 13.5% class ability energy. Allies don't get your traces."
+    source: compendium/2026-10-09/Arc#6
     rules:
       - on: { pickUp: ionic-trace }
         then:
-          - { grantEnergy: { to: grenade, amount: "~15%" } }
-          - { grantEnergy: { to: melee, amount: "~15%" } }
-          - { grantEnergy: { to: classAbility, amount: "~15%" } }
-        reason: "Every Ionic Trace you collect gives a slice of energy to all three abilities, not just one."
+          - { grantEnergy: { to: grenade, amount: "11.25%" } }
+          - { grantEnergy: { to: melee, amount: "11.25%" } }
+          - { grantEnergy: { to: classAbility, amount: "13.5%" } }
+        reason: "Every Ionic Trace you collect gives energy to all three abilities, not just one: 11.25% grenade and melee, 13.5% class ability."
     passives: []

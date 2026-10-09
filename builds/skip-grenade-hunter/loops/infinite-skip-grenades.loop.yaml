@@ -5,7 +5,7 @@ description: |-
   the Strand and Arc weapons, grab the orbs, skip grenade again. Every jolted kill feeds Bolt
   Charge and Ionic Traces back into grenade energy: the rules refund more than the two grenades
   a cycle throws (ability energy isn't simulated, so the analysis adds the refunds up).
-catalog: authored-e4426d03166b
+catalog: authored-e709c86cfb21
 steps:
   - do: class
     note: "Gambler's Dodge: arms Slice and Reaper; Bomber refunds grenade energy"
@@ -14,7 +14,7 @@ steps:
   - do: kinetic:kill
     note: 'Festival Flight: Slice severs, Reaper and Attrition Orbs drop orbs, To Shreds unravels'
   - do: energy:kill
-    note: 'Arc weapon on the jolted pack: Spark of Discharge traces, Harmonic Siphon and Dielectric orbs'
+    note: 'Arc weapon on the jolted pack: Spark of Discharge traces, Harmonic Siphon orb'
   - do: pickup:orb-of-power
     note: "Grab the orbs: Grenade Kickstart's Armor Charge and Unraveling Rounds"
   - do: grenade:kill

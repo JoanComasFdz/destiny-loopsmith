@@ -1,6 +1,8 @@
-# Armor mods. Values are Clarity PvE values; "a|b|c" per-copy values are PerModCount.
-# Several mods have two Clarity hashes with identical text (original + newer plug copy); the most
-# recently updated one is used and the other is noted. Resolve against the manifest later.
+# Armor mods. Values are PvE values from the Compendium snapshot of 2026-10-09 (Armor Mods tab),
+# which agrees with Clarity 2.0625 except where noted; "a|b|c" per-copy values are PerModCount.
+# Hashes are Clarity's. Several mods have two Clarity hashes with identical text (original + newer
+# plug copy); the most recently updated one is used and the other is noted. Resolve against the
+# manifest later.
 #
 # v1 has no counters/progress meters, so "2 kills within ? s", "activation progress" and similar
 # repeat-to-proc conditions are encoded as `chance: true` (fires, but marked "not every time").
@@ -11,7 +13,8 @@ elements:
     affinity: neutral
     hash: 3712696020          # also 2996369932 (identical text)
     description: "Collecting Elemental Pickups or destroying Tangles grants 1 Armor Charge at 100% activation progress. Progress per Ionic Trace with 1|2|3 mods: 34%|50%|50% (Firesprites, Void Breaches, Tangles 50%|50%|100%; Stasis Shards 25%|34%|50%)."
-    source: clarity/3712696020@2.0625
+    # Previously clarity/3712696020@2.0625, which says the same.
+    source: "compendium/2026-10-09/Armor Mods#4"
     rules:
       # Progress-based (with 2 copies: every 2nd Ionic Trace); no outcome takes a progress value.
       - on: { pickUp: ionic-trace }
@@ -26,8 +29,9 @@ elements:
     kind: armorMod
     affinity: neutral
     hash: 4182064480          # also 1924584408 (identical text)
-    description: "When a grenade charge is fully consumed while you have Armor Charge: consumes all Armor Charge and grants grenade energy. Each mod and each Armor Charge stack counts as one 'charge'; energy with 2|3|...|9 charges: 16.2% | 21.7% | 28.4% | 34.4% | 38.4% | 41.3% | 43.4% | 45% (PvE). Affected by chunk energy scalars."
-    source: clarity/4182064480@2.0625
+    description: "When a grenade charge is used while you have Armor Charge: consumes all Armor Charge and grants grenade energy. Each mod and each Armor Charge stack counts as one 'charge'; energy with 2|3|...|9 charges: 16.2% | 21.7% | 28.4% | 34.4% | 38.4% | 41.3% | 43.4% | 45% (PvE). Affected by chunk energy scalars."
+    # Previously clarity/4182064480@2.0625, which has the same table (and the 2..9 indexing).
+    source: "compendium/2026-10-09/Armor Mods#8"
     rules:
       # The refund is indexed by (mods + stacks), not linear per stack, so perStack is "?".
       # With 2 mods: 1|2|3 Armor Charge -> 21.7%|28.4%|34.4% of a charge.
@@ -44,7 +48,8 @@ elements:
     affinity: neutral
     hash: 4188291233
     description: "Class ability use grants grenade energy: 12% | 17% | 20% with 1|2|3 mods (PvP 6% | 8.5% | 10%). Affected by chunk energy scalars."
-    source: clarity/4188291233@2.0625
+    # Previously clarity/4188291233@2.0625, which says the same.
+    source: "compendium/2026-10-09/Armor Mods#3"
     rules:
       - on: { abilityCast: classAbility }
         then:
@@ -57,8 +62,9 @@ elements:
     kind: armorMod
     affinity: neutral
     hash: 40751621            # also 4149682173 (identical text)
-    description: "The next weapon kill within 10 s of using your class ability spawns an Orb of Power (0.8%|1.1%|1.25%|1.5% super energy with 1|2|3|4 mods). 10|5|1|1? s cooldown between activations with 1|2|3 mods."
-    source: clarity/40751621@2.0625
+    description: "The next weapon kill within 10 s of using your class ability spawns an Orb of Power (0.8%|1.1%|1.25%|1.5% super energy with 1|2|3|4 mods). 10|5|1 s cooldown between orbs with 1|2|3 mods."
+    # Previously clarity/40751621@2.0625, which says the same (with a fourth "1?" s cooldown).
+    source: "compendium/2026-10-09/Armor Mods#14"
     rules:
       - on: { abilityCast: classAbility }
         then:
@@ -78,8 +84,10 @@ elements:
     kind: armorMod
     affinity: neutral
     hash: 3832366019
-    description: "Spawns an Orb of Power after 2 kills within ? s of each other with a weapon matching your Super's element (kills within 1 s of an activation don't count). Orbs grant 2.5%|3.25%|4.4% super energy with 1|2|3 mods."
-    source: clarity/3832366019@2.0625
+    description: "Spawns an Orb of Power after 2 kills within 3 s of each other with a weapon matching your Super's element (kills within 1 s of an orb don't count). Orbs grant 2.5%|3.75%|4.4% super energy with 1|2|3 mods."
+    # The Compendium's generic Siphon row (mod-element matching weapon kills). Previously
+    # clarity/3832366019@2.0625, which had "within ? s" and 3.25% for 2 mods.
+    source: "compendium/2026-10-09/Armor Mods#11"
     rules:
       # "matching your Super element" cannot be expressed; written for an Arc super (this build:
       # Arc Staff). Two kills needed -> chance.
@@ -95,8 +103,10 @@ elements:
     kind: armorMod
     affinity: strand
     hash: 3926119246          # also 3279257734 (identical text)
-    description: "Spawns an Orb of Power after 2 kills within ? s of each other with a Strand weapon (kills within 1 s of an activation don't count). Orbs grant 2.5%|3.25%|4.4% super energy with 1|2|3 mods."
-    source: clarity/3926119246@2.0625
+    description: "Spawns an Orb of Power after 2 kills within 3 s of each other with a Strand weapon (kills within 1 s of an orb don't count). Orbs grant 2.5%|3.75%|4.4% super energy with 1|2|3 mods."
+    # The Compendium's generic Siphon row. Previously clarity/3926119246@2.0625, which had
+    # "within ? s" and 3.25% for 2 mods.
+    source: "compendium/2026-10-09/Armor Mods#11"
     rules:
       - on: { kill: { via: weapon:strand } }
         then:
@@ -110,8 +120,9 @@ elements:
     kind: armorMod
     affinity: neutral
     hash: 377010989           # also 1153260021 (identical text)
-    description: "Dealing elemental melee damage grants grenade energy: 12% | 17% | 20% with 1|2|3 mods (PvP 6% | 8.5% | 10%). 7 s cooldown. Affected by chunk energy scalars."
-    source: clarity/377010989@2.0625
+    description: "Dealing powered melee damage grants grenade energy: 12% | 17% | 20% with 1|2|3 mods (PvP 6% | 8.5% | 10%). 7 s cooldown. Affected by chunk energy scalars."
+    # Previously clarity/377010989@2.0625 ("elemental melee damage"; same numbers).
+    source: "compendium/2026-10-09/Armor Mods#10"
     rules:
       # The 7 s cooldown is not modelled.
       - on: { damage: { via: melee } }

@@ -6,30 +6,30 @@
 Steady state (cycle 10, the last completed)
   Kills                 7
   Ionic Trace spawned   8
-  Orb of Power spawned  9
+  Orb of Power spawned  2
   Bolt Charge maxed     4
   Slice maxed           1
   Energy refunded per cycle (what the rules give back; not applied to any gauge)
-    Grenade        +~278.2% (+21 unknown)
-    Melee          +~90% (+1 unknown)
-    Class ability  +~90% (+1 unknown)
-    Super          0% (+9 unknown)
+    Grenade        +~255.7% (+21 unknown)
+    Melee          +117.5% (+1 unknown)
+    Class ability  +181%
+    Super          0% (+2 unknown)
   Fired per cycle
     26× Shinobu's Vow
-    14× Dielectric
-     9× Unraveling Orbs
-     9× Orb of Power
+    24× Bolt Charge
      8× Tempest Strike
      7× Flow State
+     7× Dielectric
      7× Shock and Clear
      7× Spark of Discharge
      6× Elemental Charge
      6× Ionic Trace
      4× Flashover
-     4× Bolt Charge
      4× Defibrillating Blast
      3× Jolt
      2× Reaper
+     2× Unraveling Orbs
+     2× Orb of Power
      2× Slice
      1× Impact Induction
      1× Combination Blow
@@ -47,14 +47,14 @@ Steady state (cycle 10, the last completed)
     Bolt Charge        5/5 steps
     Slice              4/5 steps
     Reaper             3/5 steps
-  ? 47 unknown values not applied — the real loop is stronger
-  (chance) 15 bullets fired in v1 but not guaranteed in game
+  ? 33 unknown values not applied — the real loop is stronger
+  (chance) 8 bullets fired in v1 but not guaranteed in game
 
 Steps
   Open with the melee instead of the dodge: slide-melee to jolt the pack, then skip grenade and
   Arc weapon into it, grab the orbs and dodge last to refill the melee. Gambler's Dodge's melee
-  refill is unknown ("?") in the rules, so the known melee refund comes only from Ionic Traces
-  and the dodge counts as one unknown refund.
+  refill is unknown ("?") in the rules, so the known melee refund comes from Ionic Traces and
+  Bolt Charge gains, and the dodge counts as one unknown refund.
   1. melee:kill           Combination Blow: Tempest Strike jolts, Impact Induction refunds grenade energy
   2. grenade:kill         Skip grenade into the jolted pack: Bolt Charge, Amplified and Ionic Traces
   3. energy:kill          Arc weapon kill: Spark of Discharge traces, Harmonic Siphon orb

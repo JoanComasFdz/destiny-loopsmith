@@ -1,17 +1,19 @@
-# Seasonal artifact perks used by the skip-grenade build ("Tablet of Ruin" per the creator).
-# Clarity has no artifact entries: everything here is the creator's reading of the perk text or the
-# user's note. No values are known except Flashover's 50% (see there).
+# Seasonal artifact perks used by the skip-grenade build: the Tablet of Ruin (Heresy) artifact, as
+# the creator says. Clarity has no artifact entries; the numbers come from the Compendium snapshot
+# of 2026-10-09 (Artifact Perks tab, Tablet of Ruin section: each perk's name sits in the row above
+# the cited description row). The creator's and the note's readings they replace are kept in
+# comments; where they disagree, see builds/skip-grenade-hunter/discrepancies.md.
 elements:
   - id: defibrillating-blast
     name: Defibrillating Blast
     kind: artifactPerk
     affinity: arc
-    description: "Stunning a Champion grants max Bolt Charge. Damaging targets with Bolt Charge bolts Jolts them and heals you."
-    source:
-      creator: "https://www.youtube.com/watch?v=zvd6sNS463E"
-      quote: "damaging targets with bolt charge bolts jolts them and heals you"
+    description: "Stunning a Champion grants x10 Bolt Charge. The splash of a Bolt Charge discharge Jolts what it hits, and each discharge restores ~55 HP and starts critical health regeneration (not shields)."
+    # Previously a creator claim: "damaging targets with bolt charge bolts jolts them and heals you".
+    source: "compendium/2026-10-09/Artifact Perks#45"
     rules:
-      # "Stunning a Champion grants max Bolt Charge" is not encoded: v1 has no stun trigger.
+      # "Stunning a Champion grants x10 Bolt Charge" is not encoded: v1 has no stun trigger.
+      # The heal is ~55 HP: restoreHealth amounts are percentages, so it stays "?".
       - on: { damage: { via: keyword:bolt-charge } }
         then:
           - { debuffTarget: jolt }
@@ -23,19 +25,16 @@ elements:
     name: Flashover
     kind: artifactPerk
     affinity: arc
-    # +50% is from Clarity, not the video: Symmetry's Revolution frame (4185339856) says Bolt Charge
-    # damage "can be further compounded by the Flashover Artifact Mod from the Tablet of Ruin,
-    # which adds a multiplicative 50%".
-    description: "Bolt Charge lightning bolts deal more damage (multiplicative 50% per Clarity's Revolution entry). Per the build note, maxing Bolt Charge also makes you Amplified."
-    source:
-      creator: "https://www.youtube.com/watch?v=zvd6sNS463E"
-      quote: "flashover, but lightning bolts deal more damage"
+    description: "Reaching x10 Bolt Charge makes you Amplified for 15 s. Bolt Charge discharges deal 50% more damage against combatants (675 -> 1014)."
+    # Previously a creator claim ("flashover, but lightning bolts deal more damage"), with the +50%
+    # from Clarity's Revolution frame (4185339856: "adds a multiplicative 50%") and the Amplified
+    # rule from the user's note ("Max bolt charge -> amplified [flashover]"). The Compendium has both.
+    source: "compendium/2026-10-09/Artifact Perks#43"
     rules:
-      # User's note only ("Max bolt charge -> amplified [flashover]"); the video doesn't mention it.
       - on: { stacksMaxed: bolt-charge }
         then:
-          - { applyBuff: amplified }
-        reason: "Maxing out Bolt Charge makes you Amplified."
+          - { applyBuff: { status: amplified, duration: 15s } }
+        reason: "Maxing out Bolt Charge makes you Amplified for 15 seconds."
     passives:
       - effect: { modifyDamage: { against: keyword:bolt-charge, change: "+50%" } }
         reason: "Bolt Charge lightning strikes hit 50% harder."
@@ -44,55 +43,55 @@ elements:
     name: Dielectric
     kind: artifactPerk
     affinity: arc
-    description: "Defeating Arc-debuffed targets grants more Bolt Charge. Rapidly defeating Arc-debuffed targets spawns Orbs of Power and heals a small portion of your health."
-    source:
-      creator: "https://www.youtube.com/watch?v=zvd6sNS463E"
-      quote: "Defeating arc debuff targets grants more bolt charge."
+    # Tablet of Ruin's Dielectric only grants Bolt Charge. The orbs and healing on rapid Arc-debuffed
+    # kills that the creator reads out (and the note's "orb of power [dielectric]") belong to the
+    # Encrypted Data Disk's version (Artifact Perks#7); the Compendium says this one does neither,
+    # so that rule is gone. Previously a creator claim: "Defeating arc debuff targets grants more
+    # bolt charge."
+    description: "Defeating an Arc-debuffed enemy grants x1 Bolt Charge (Tablet of Ruin version: no orbs or healing on rapid kills)."
+    source: "compendium/2026-10-09/Artifact Perks#41"
     rules:
-      # "Arc debuff" = Jolt here (Blind also counts, but targetHas is all-of, and a second rule
-      # for Blind would double-fire on targets that are both). Stack count not stated -> 1.
+      # "Arc-debuffed" = Jolt here (Blind also counts, but targetHas is all-of, and a second rule
+      # for Blind would double-fire on targets that are both). Tempest Strike's x1 doesn't stack with
+      # this one in game (Arc#51), which v1 can't express (see tempest-strike).
       - on: { kill: { via: any, targetHas: [jolt] } }
         then:
           - { applyBuff: bolt-charge }
-        reason: "Killing an Arc-debuffed (jolted) enemy gives you extra Bolt Charge."
-      - on: { kill: { via: any, targetHas: [jolt] } }
-        then:
-          - { spawn: orb-of-power }
-          - { restoreHealth: { amount: "?" } }
-        chance: true
-        reason: "Rapidly killing jolted enemies drops Orbs of Power and heals you a little."
+        reason: "Killing an Arc-debuffed (jolted) enemy gives you a stack of Bolt Charge."
     passives: []
 
   - id: to-shreds
     name: To Shreds
     kind: artifactPerk
     affinity: strand
-    description: "Dealing sustained damage to Severed targets Unravels them. Defeating Severed targets creates a Woven Mail hotspot."
-    source:
-      creator: "https://www.youtube.com/watch?v=zvd6sNS463E"
-      quote: "Dealing sustained damage to severed targets unravels them"
+    description: "6 weapon damage instances against Severed enemies Unravel them. A Severed enemy's death releases 3 healing pulses, 2 s apart, each restoring 15 HP and granting Woven Mail for 10 s to you and allies nearby."
+    # Previously a creator claim: "Dealing sustained damage to severed targets unravels them".
+    source: "compendium/2026-10-09/Artifact Perks#51"
     rules:
-      # "sustained": v1 has no damage-over-time threshold, so any damage to a severed target counts.
-      - on: { damage: { via: any, targetHas: [sever] } }
+      # Count-based (6 weapon damage instances); v1 has no counters, so it is marked chance.
+      - on: { damage: { via: weapon, targetHas: [sever] } }
         then:
           - { debuffTarget: unravel }
-        reason: "Keep damaging a severed enemy and it gets unraveled."
-      # The hotspot is simplified to granting Woven Mail directly (you stand in it to get it).
+        chance: true
+        reason: "Keep shooting a severed enemy and it gets unraveled."
+      # The pulses are simplified to one grant: you stand in them to get it. The heal is 15 HP per
+      # pulse: restoreHealth amounts are percentages, so it stays "?".
       - on: { kill: { via: any, targetHas: [sever] } }
         then:
-          - { applyBuff: woven-mail }
-        reason: "Killing a severed enemy leaves a Woven Mail hotspot behind."
+          - { applyBuff: { status: woven-mail, duration: 10s } }
+          - { restoreHealth: { amount: "?", allies: true } }
+        reason: "Killing a severed enemy leaves healing pulses behind that give you and your allies Woven Mail."
     passives: []
 
   - id: horde-shuttle
     name: Horde Shuttle
     kind: artifactPerk
     affinity: strand
-    description: "Damaging Unraveled targets with a weapon occasionally spawns a Threadling. Those Threadlings Sever the targets they damage."
-    source:
-      creator: "https://www.youtube.com/watch?v=zvd6sNS463E"
-      quote: "Damaging unraveled targets with a weapon occasionally spawns a threadling."
+    description: "Weapon damage worth 10% of an Unraveled enemy's health and shields spawns a Threadling (0.5 s cooldown). Those Threadlings Sever what they damage."
+    # Previously a creator claim: "Damaging unraveled targets with a weapon occasionally spawns a threadling."
+    source: "compendium/2026-10-09/Artifact Perks#45"
     rules:
+      # Damage-threshold based; v1 has no counters, so it is marked chance.
       - on: { damage: { via: weapon, targetHas: [unravel] } }
         then:
           - { summon: threadling }
@@ -108,27 +107,31 @@ elements:
     name: Unraveling Orbs
     kind: artifactPerk
     affinity: strand
-    description: "Picking up an Orb of Power gives your Strand weapons Unraveling Rounds."
-    source:
-      creator: "https://www.youtube.com/watch?v=zvd6sNS463E"
-      quote: "we pick up an orb of power. Strand weapons gain unraveling rounds."
+    description: "Picking up an Orb of Power (or throwing a Tangle) gives your Strand weapons Unraveling Rounds for 14 s."
+    # Previously a creator claim: "we pick up an orb of power. Strand weapons gain unraveling rounds."
+    source: "compendium/2026-10-09/Artifact Perks#45"
     rules:
       - on: { pickUp: orb-of-power }
         then:
-          - { applyBuff: unraveling-rounds }
-        reason: "Grabbing an Orb of Power loads your Strand weapons with Unraveling Rounds."
+          - { applyBuff: { status: unraveling-rounds, duration: 14s } }
+        reason: "Grabbing an Orb of Power loads your Strand weapons with Unraveling Rounds for 14 seconds."
     passives: []
 
-  # User's note only ("Kill jolted target -> ... blind if severed [photonic flare]"); the video and
-  # Clarity never mention it. Affinity arc because Blind is an Arc debuff.
+  # Previously authored from the user's note ("Kill jolted target -> ... blind if severed [photonic
+  # flare]"). The Compendium's trigger is different: a kill of a Severed (or Exhausted) enemy with
+  # Arc damage, jolted or not.
   - id: photonic-flare
     name: Photonic Flare
     kind: artifactPerk
     affinity: arc
-    description: "Per the build note: killing a Jolted target that is also Severed Blinds nearby enemies."
+    description: "Killing a Severed or Exhausted enemy with Arc damage triggers a blinding burst within about 5 m (about 6 s cooldown)."
+    source: "compendium/2026-10-09/Artifact Perks#47"
     rules:
-      - on: { kill: { via: any, targetHas: [jolt, sever] } }
+      # "Exhausted" is not in the glossary and nothing in this build applies it, so only Severed is
+      # encoded (a second rule would double-fire on targets with both). The ~6 s cooldown is not
+      # modelled.
+      - on: { kill: { via: type:arc, targetHas: [sever] } }
         then:
           - { debuffTarget: blind }
-        reason: "Killing an enemy that's both jolted and severed blinds the enemies around it."
+        reason: "Killing a severed enemy with Arc damage blinds the enemies around it."
     passives: []

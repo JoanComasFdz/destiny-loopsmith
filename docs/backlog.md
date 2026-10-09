@@ -5,13 +5,14 @@ the detail behind it.
 
 ## Data
 
-- **Compendium snapshot** (next) — run `tools/compendium/get-compendium.ps1` (Windows) or
-  `.sh` locally and hand the zip to a session ([tools/compendium/README.md](../tools/compendium/README.md));
-  a cloud session can also run `sheet_dump.py` itself once `docs.google.com` is in the
-  environment's allowed domains. The raw snapshot is only needed
-  while ingesting: its numbers go into `rules/` with `compendium/<date>/<tab>#<row>` provenance;
-  the snapshot itself stays private (`snapshots/` is gitignored). Unlocks ability cooldowns,
-  chunk energy scalars, artifact perk numbers and the status glossary — most of today's `?`.
+- **Compendium snapshot** — the 2026-10-09 snapshot was ingested **by hand** for the Skip Grenade
+  build's rules (`compendium/2026-10-09/<tab>#<row>` provenance; what changed is listed in
+  [builds/skip-grenade-hunter/discrepancies.md](../builds/skip-grenade-hunter/discrepancies.md)).
+  Next: a parser slice instead of hand copying. To refresh, run `tools/compendium/get-compendium.ps1`
+  (Windows) or `.sh` locally and hand the zip to a session
+  ([tools/compendium/README.md](../tools/compendium/README.md)); a cloud session can also run
+  `sheet_dump.py` itself once `docs.google.com` is in the environment's allowed domains. The raw
+  snapshot is only needed while ingesting; it stays private (`snapshots/` is gitignored).
 - **Clarity ingestion slice** — Clarity is reachable (git clone); its layout is described in
   the design proposal §03. Today its numbers were copied into the rules by hand (v2.0625).
 - **Bungie manifest** (later, not needed for loop design) — hashes, official names and icons.
@@ -22,14 +23,29 @@ the detail behind it.
 ## Rule format gaps (what the Skip Grenade build couldn't express)
 
 - Triggers: champion stun (Defibrillating Blast's "stun → max Bolt Charge"); slide / airborne
-  qualifiers (Tempest Strike is modelled as any melee).
+  qualifiers (Tempest Strike is modelled as any melee); blocking / reflecting attacks (Arc Staff's
+  guard grants Bolt Charge per reflected attack).
 - Damage sources: a specific ability (Skip Grenade vs any grenade), "this weapon" for weapon
   perks, "matches your super's element" (Harmonic Siphon).
-- Conditions: "target lacks a debuff"; "target has any of" (Dielectric counts Jolt only).
+- Conditions: "target lacks a debuff"; "target has any of" (Dielectric counts Jolt only, Photonic
+  Flare Sever only); a guard on a stack count (Bolt Charge discharges on the next ability hit *at*
+  x10, modelled as discharging on reaching x10); "while a kind of mod is equipped" (an Orb of Power
+  gives Armor Charge only with an Armor Charge mod equipped).
+- **Non-stacking grants between elements**: the Compendium says Tempest Strike's x1 Bolt Charge on a
+  jolted kill does not stack with Dielectric's. v1 fires both, so the Skip Grenade loops gain one
+  stack too many per jolted kill (the creator's loop: 6 Bolt Charge maxes per cycle instead of 3,
+  grenade refund +~372.9% instead of +~207.9%).
 - Numbers: hit/kill counters and progress meters across actions (Spark of Discharge ≈ 3 kills per
-  trace), amounts that scale with stats (Gambler's Dodge: 1% melee per Melee stat), a flag for
-  refunds not affected by chunk energy scalars (Shinobu's Vow) — the last two matter once energy is
-  simulated again. (*Within one action* counts are done: `damage/kill … atLeast: N`, see below.)
+  trace, To Shreds' 6 weapon hits, Amplified's intrinsic kill counter), amounts that scale with
+  stats (Gambler's Dodge: 1% melee per Melee stat; Combination Blow's class refund needs 70 Class
+  to fill a dodge), a flag for refunds not affected by chunk energy scalars (Shinobu's Vow) — the
+  last two matter once energy is simulated again. (*Within one action* counts are done:
+  `damage/kill … atLeast: N`, see below.)
+- Numbers: **health in HP** — `restoreHealth` amounts read as percentages, so HP heals stay `?`
+  (Combination Blow 100 → 40 HP, Defibrillating Blast ~55 HP, To Shreds 15 HP per pulse, orbs 0.7 HP
+  per Health point); **energy per stack gained** — a gain of 2 stacks grants once (Bolt Charge's 2.5%
+  melee per stack misses Spark of Frequency's extra stack); **values by stack count** (Combination
+  Blow +133% / +266% / +400% melee damage); a buff armed at 0 stacks (Slice severs 5 times, v1 4).
 - Passives: ability regeneration and timed damage resistance (Flow State, Tempest Strike),
   an "all weapons" archetype; rule cooldowns.
 

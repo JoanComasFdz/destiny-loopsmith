@@ -7,24 +7,27 @@ elements:
     class: hunter
     # 1053737370 is the armor item; Clarity keys the exotic perk "New Tricks" as 3907299874.
     hash: 1053737370
-    description: "New Tricks: an extra Skip Grenade charge; drones chase enemies much more aggressively. Drone hits grant 4.2% [PvP 1.4%] grenade energy and x1 Bolt Charge (2-3 hits per drone). Gaining Bolt Charge gives ?% grenade energy per stack. Upon reaching x10 Bolt Charge: ~40% grenade energy, heal allies within ? m for ? HP, and 'New Tricks' adds 2 seekers to the next Skip Grenade's first bounce. Energy is not affected by chunk energy scalars."
-    source: clarity/3907299874@2.0625
+    description: "New Tricks: an extra Skip Grenade charge; seekers chase enemies much more aggressively. Every Skip Grenade hit (each impact and explosion counts) grants 4.2% [PvP 1.4%] grenade energy and x1 Bolt Charge. Gaining Bolt Charge gives ?% Skip Grenade energy per stack. Upon reaching x10 Bolt Charge: ~40% grenade energy, ? HP to you and allies within ? m, and the next Skip Grenade is enhanced (one extra bounce, 5 extra seekers on the 1st and 2nd bounce). Per Clarity the energy ignores chunk energy scalars."
+    # Previously clarity/3907299874@2.0625 (the New Tricks perk). It has the same numbers but
+    # describes the enhanced grenade as 2 extra seekers on the first bounce.
+    source: "compendium/2026-10-09/Exotic Armors#78"
     rules:
-      # "Drone hits": v1 cannot name Skip Grenade specifically, so any grenade damage counts.
+      # "Skip Grenade hits": v1 cannot name Skip Grenade specifically, so any grenade damage counts.
+      # A seeker hits up to 3 times (2 impacts + 1 explosion, Arc#36); v1 emits one hit per enemy.
       - on: { damage: { via: grenade } }
         then:
           - { applyBuff: { status: bolt-charge, stacks: 1 } }
           - { grantEnergy: { to: grenade, amount: "4.2% [1.4%]" } }
-        reason: "Every Skip Grenade drone hit gives you a Bolt Charge stack and a little grenade energy back."
+        reason: "Every Skip Grenade hit gives you a Bolt Charge stack and a little grenade energy back."
       - on: { buffGained: bolt-charge }
         then:
           - { grantEnergy: { to: grenade, amount: "?" } }
         reason: "Gaining Bolt Charge from any source feeds energy back into your Skip Grenade."
-      # Clarity writes the energy as "40?%" (unverified 40%); the spec spells that "40%?".
+      # The Compendium writes "~40%" (Clarity "40?%"): approximate either way.
       - on: { stacksMaxed: bolt-charge }
         then:
           - { applyBuff: new-tricks }
-          - { grantEnergy: { to: grenade, amount: "40%?" } }
+          - { grantEnergy: { to: grenade, amount: "~40%" } }
           - { restoreHealth: { amount: "?", allies: true } }
         reason: "Hitting 10 Bolt Charge refunds a big chunk of grenade energy, heals you and nearby allies, and readies an enhanced Skip Grenade (New Tricks)."
       - on: { abilityCast: grenade }

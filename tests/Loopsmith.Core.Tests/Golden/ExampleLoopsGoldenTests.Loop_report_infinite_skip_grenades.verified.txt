@@ -6,31 +6,31 @@
 Steady state (cycle 10, the last completed)
   Kills                 10
   Ionic Trace spawned   11
-  Orb of Power spawned  14
+  Orb of Power spawned  4
   Bolt Charge maxed     6
   Energy refunded per cycle (what the rules give back; not applied to any gauge)
-    Grenade        +~410.4% (+32 unknown)
-    Melee          +~150% (+1 unknown)
-    Class ability  +~150%
-    Super          0% (+14 unknown)
+    Grenade        +~372.9% (+32 unknown)
+    Melee          +187.5% (+1 unknown)
+    Class ability  +135%
+    Super          0% (+4 unknown)
   Fired per cycle
     40× Shinobu's Vow
-    26× To Shreds
-    20× Dielectric
-    14× Unraveling Orbs
-    14× Orb of Power
+    36× Bolt Charge
+    12× To Shreds
     11× Spark of Discharge
-    10× Photonic Flare
     10× Tempest Strike
     10× Flow State
+    10× Dielectric
     10× Shock and Clear
     10× Elemental Charge
     10× Ionic Trace
+     9× Photonic Flare
      6× Flashover
-     6× Bolt Charge
      6× Defibrillating Blast
      4× Jolt
      4× Horde Shuttle
+     4× Unraveling Orbs
+     4× Orb of Power
      2× Reaper
      2× Slice
      2× Grenade Kickstart
@@ -50,8 +50,8 @@ Steady state (cycle 10, the last completed)
     Armor Charge       6/6 steps
     Slice              6/6 steps
     Reaper             2/6 steps
-  ? 69 unknown values not applied — the real loop is stronger
-  (chance) 26 bullets fired in v1 but not guaranteed in game
+  ? 59 unknown values not applied — the real loop is stronger
+  (chance) 18 bullets fired in v1 but not guaranteed in game
 
 Steps
   The creator's loop: dodge to arm Slice and Reaper, skip grenade into the pack, clean up with
@@ -61,6 +61,6 @@ Steps
   1. class                Gambler's Dodge: arms Slice and Reaper; Bomber refunds grenade energy
   2. grenade:kill         Skip grenade into the pack: Spark of Shock jolts, the jolted kill gives Amplified, Bolt Charge and Ionic Traces
   3. kinetic:kill         Festival Flight: Slice severs, Reaper and Attrition Orbs drop orbs, To Shreds unravels
-  4. energy:kill          Arc weapon on the jolted pack: Spark of Discharge traces, Harmonic Siphon and Dielectric orbs
+  4. energy:kill          Arc weapon on the jolted pack: Spark of Discharge traces, Harmonic Siphon orb
   5. pickup:orb-of-power  Grab the orbs: Grenade Kickstart's Armor Charge and Unraveling Rounds
   6. grenade:kill         Second skip grenade: Kickstart spends Armor Charge; max Bolt Charge strikes and refunds the grenade
