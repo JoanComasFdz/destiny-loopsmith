@@ -56,7 +56,8 @@ Steady state (cycle 10, the last completed)
 Steps
   The creator's loop: dodge to arm Slice and Reaper, skip grenade into the pack, clean up with
   the Strand and Arc weapons, grab the orbs, skip grenade again. Every jolted kill feeds Bolt
-  Charge and Ionic Traces back into grenade energy, so the grenade comes back before you need it.
+  Charge and Ionic Traces back into grenade energy: the rules refund more than the two grenades
+  a cycle throws (ability energy isn't simulated, so the analysis adds the refunds up).
   1. class                Gambler's Dodge: arms Slice and Reaper; Bomber refunds grenade energy
   2. grenade:kill         Skip grenade into the pack: Spark of Shock jolts, the jolted kill gives Amplified, Bolt Charge and Ionic Traces
   3. kinetic:kill         Festival Flight: Slice severs, Reaper and Attrition Orbs drop orbs, To Shreds unravels

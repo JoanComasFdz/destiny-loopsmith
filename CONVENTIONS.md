@@ -114,7 +114,7 @@ itself, under `src/Loopsmith.Core/Domain/`.
   `Trigger.KillOfTier(Via, Tier)` — not `Kill(via, Tier?, TargetHas?)`). Prefer a
   data-carrying case over a flat "tag + optionals" shape.
 - **Value objects via Vogen** (`ElementId`, `StatusId`, `PickupId`, `SummonId`,
-  `ItemHash`, `CatalogVersion`, `Seconds`, `EnergyAmount`, `StackCount`,
+  `ItemHash`, `CatalogVersion`, `Seconds`, `TargetCount`, `StackCount`,
   `StatValue`, `SnapshotDate`), constructed and validated **at the boundary**
   (`TryFrom` in the parsing slices) — once inside the pure core a value object is
   known-valid.
