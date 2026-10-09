@@ -41,6 +41,11 @@ internal static class YamlReading
         {
             return Fail<YamlValue>(ToErrorsAt(file.Path, exception.Start.Line, $"invalid YAML: {exception.Message}"));
         }
+        catch (InvalidOperationException exception)
+        {
+            // YamlDotNet throws this (not YamlException) on an unclosed flow collection followed by a key line.
+            return Fail<YamlValue>(ToErrorsAt(file.Path, 1, $"invalid YAML (check for an unclosed [ or {{): {exception.Message}"));
+        }
     }
 
     private static Result<YamlValue, Errors> ToSingleDocument(string path, YamlStream stream, string label) =>

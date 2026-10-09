@@ -132,8 +132,8 @@ docker run --rm -v "$PWD":/w -w /w -u "$(id -u):$(id -g)" -e HOME=/tmp -e PIP_DI
 **Licensing.** The Compendium is one person's donation-supported work. Keep snapshots
 private, out of any public repo (`snapshots/` is gitignored), never served as raw text,
 and credit it. Check Clarity's partnerships page before a public site. Bungie API use
-falls under Bungie's API terms. `builds/*/transcript.txt` is a creator's video transcript
-kept for reference in this private repo; remove it before making the repo public.
+falls under Bungie's API terms. Creator video transcripts are third-party content: keep them
+locally as `builds/<slug>/transcript.txt` (gitignored) and link the video instead.
 
 ## Roadmap
 

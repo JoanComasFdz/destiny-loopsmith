@@ -16,8 +16,8 @@ itself, under `src/Loopsmith.Core/Domain/`.
 - **Vertical Slice Architecture is the top-level driver.** Group by *feature*,
   never by kind. A behaviour change touches one slice, not a layer. The slices
   live under `src/Loopsmith.Core/` (`SourceFetching`, `RuleParsing`,
-  `BuildParsing`, `BuildComposition`, `Simulation`, `BuildExplanation`,
-  `LoopGraphing`, `TraceRendering`, `Orchestration`).
+  `BuildParsing`, `LoopFiles`, `BuildComposition`, `Simulation`, `BuildExplanation`,
+  `LoopGraphing`, `TraceRendering`, `ReportComparison`, `Orchestration`).
 - **Feature slices depend only on the shared kernel** (`Domain` / `Functional` /
   `Phrasing` / `Causality`) — never sideways on each other. The only cross-slice
   dependency is `Orchestration` → every slice. An **architecture test** enforces
@@ -39,7 +39,10 @@ itself, under `src/Loopsmith.Core/Domain/`.
   primitives' generic `Map`/`Bind`).
 - **The host owns no logic.** `Loopsmith.Cli` maps argv in, calls an
   `Orchestration` shell, and executes the returned effects (console I/O lives
-  only in the host). A future `Loopsmith.Api` host does the same with HTTP.
+  only in the host). `Loopsmith.Web` (Blazor WebAssembly) holds UI state and
+  calls the same pure `Orchestration` API (`LoopDesigning`); browser side effects
+  (storage, clipboard, downloads, URL) live in its `Hosting/BrowserInterop`. A
+  future `Loopsmith.Api` host does the same with HTTP.
 
 ## Functional design
 

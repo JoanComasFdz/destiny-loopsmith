@@ -1,8 +1,8 @@
 # Skip Grenade Hunter: where the sources disagree
 
 Sources, in priority order: **Clarity** 2.0625 (commit 039cfbc, 2026-10-08), then the user's
-**note** (`note.txt`), then the creator's **video** (`transcript.txt`,
-https://www.youtube.com/watch?v=zvd6sNS463E). Clarity has no entries for abilities, armor set
+**note** (`note.txt`), then the creator's **video** (https://www.youtube.com/watch?v=zvd6sNS463E;
+its transcript is kept locally, not in git). Clarity has no entries for abilities, armor set
 bonuses, artifact perks or statuses, so for those the note and the video are all there is.
 
 Number rules: Clarity numbers are used as given. A number only the video gives is approximate

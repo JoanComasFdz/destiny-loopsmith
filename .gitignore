@@ -11,3 +11,6 @@ TestResults/
 
 # Private data snapshots — never commit (licensing: see README "Data sources")
 snapshots/
+
+# Creator video transcripts are third-party content — keep them local, link the video instead
+builds/*/transcript.txt

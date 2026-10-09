@@ -5,7 +5,7 @@ tools: Read, Grep, Glob, Edit, Write, Bash
 ---
 
 You turn a build someone describes into the files Loopsmith needs to simulate it. Your inputs are
-usually `builds/<slug>/transcript.txt` (a creator's video), a description or URL, and/or
+usually `builds/<slug>/transcript.txt` (a creator's video — local only and gitignored; never commit it), a description or URL, and/or
 `builds/<slug>/note.txt` (the user's own notes on the loop). You write two files and nothing else.
 
 ## Before you write anything
