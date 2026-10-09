@@ -2,7 +2,10 @@
 
 Destiny 2 build-loop engine: compose a build (DIM-like), then step through its gameplay
 loop and see every outcome each trigger fires, which element caused it, and what it
-unlocks next. .NET 10 / C# 14, CLI host first, API later.
+unlocks next. **The product is the loop the user designs** (`*.loop.yaml`: save, share,
+replay, analyse, compare). .NET 10 / C# 14. The main UI is the Blazor WebAssembly designer,
+live at https://joancomasfdz.github.io/destiny-loopsmith/; the CLI is the scripting/test host.
+Open items: [docs/backlog.md](docs/backlog.md).
 
 ## Binding rules
 - **[CONVENTIONS.md](CONVENTIONS.md) is binding and wins over everything** (vertical
@@ -47,6 +50,32 @@ repos (Microsoft's download hosts are blocked by the network policy) and restore
   roadmap, risks).
 - `tools/compendium/sheet_dump.py` — dumps the Destiny Data Compendium sheet (run locally;
   see README).
+
+## How we work
+- **Branch → PR → merge.** Never push to `main` directly. Every PR runs CI and gets a web
+  preview at `…/pr-preview/pr-<n>/` (link commented on the PR); merging redeploys the live site.
+  The owner merges; open PRs only when asked.
+- **`gh-pages` is generated** by `pages.yml` and `pr-preview.yml` (ruleset: no deletion, no
+  force push). Don't commit to it except a deliberate cleanup; never add "require PR/status
+  checks" rules to it (the workflows push straight to it).
+- **Verify web changes in a browser, not just tests:** `dotnet publish src/Loopsmith.Web -c Release -o <dir>`,
+  `tools/web/prepare-pages.sh <dir>/wwwroot /destiny-loopsmith/ --root`, serve the parent of a
+  `destiny-loopsmith/` copy with `python3 -m http.server`, drive it with Playwright using the
+  pre-installed Chromium (`/opt/pw-browsers`; never `playwright install`), check the console.
+- **Snapshot tests (Verify):** review `*.received.txt`, then rename to `*.verified.txt`.
+  Verify.XunitV3 stays on 32.0.1 (33.x needs a licence decision — ADRs D20).
+- **Parallel subagents:** define the contract first (Domain types + a doc), then give each
+  agent its own git worktree (`git worktree add /home/user/wt/<name> -b wt/<name>`) and a
+  disjoint set of folders; merge their branches back and run the full suite.
+- **Cloud-session limits:** the network policy blocks bungie.net, docs.google.com, youtube.com,
+  github.io, light.gg, d2foundry.gg and destinyitemmanager.com (NuGet, PyPI,
+  raw.githubusercontent.com and git clones from github.com work). Repository settings and
+  deleting remote branches aren't possible from a session — ask the owner. If the clone is
+  single-branch, after `git push -u` of a new branch run
+  `git config --add remote.origin.fetch '+refs/heads/<b>:refs/remotes/origin/<b>' && git fetch`
+  so the branch tracks its remote.
+- **History rewrites** (e.g. purging a file): rewrite only `c1074e8..<branch>` — the root
+  commit is GitHub-signed and must keep its hash, or `main` loses its shared history.
 
 ## Project subagents (`.claude/agents/`)
 - `rule-author` — Compendium/Clarity/guide text → rules YAML (provenance, no invented numbers).

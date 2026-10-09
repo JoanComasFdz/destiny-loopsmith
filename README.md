@@ -8,13 +8,24 @@ explains its **gameplay loop**. For each trigger (dodge, grenade kill, pick up a
 max Bolt Charge) it shows every outcome that fires, which element caused it, what that
 unlocks next, and where the loop closes back on itself.
 
-> Status: **initial CLI prototype.** Engine, CLI and the first build
-> ([Skip Grenade Hunter](builds/skip-grenade-hunter/)) work end to end on authored rules.
-> Manifest / Compendium ingestion comes next (see [Roadmap](#roadmap)).
+**The product is the loop you design**: pick triggers one by one, and the result is a
+`*.loop.yaml` you can save, share as a link, replay, analyse ("sustains 10+ cycles") and
+compare with another loop.
+
+> **Try it:** https://joancomasfdz.github.io/destiny-loopsmith/ — the web loop designer
+> (runs entirely in your browser). Status: working prototype on authored rules for one build
+> ([Skip Grenade Hunter](builds/skip-grenade-hunter/)); Compendium / manifest ingestion is
+> next (see [Roadmap](#roadmap) and [docs/backlog.md](docs/backlog.md)).
 
 ## Quick start
 
-Requires the .NET 10 SDK.
+Online: open the link above. Locally (requires the .NET 10 SDK):
+
+```bash
+dotnet run --project src/Loopsmith.Web     # the web loop designer, http://localhost:5xxx
+```
+
+The CLI does the same from a terminal (and is what the golden tests drive):
 
 ```bash
 dotnet build Loopsmith.slnx
@@ -104,11 +115,14 @@ Coding conventions (binding): [CONVENTIONS.md](CONVENTIONS.md) · decisions: [AD
 ```
 src/Loopsmith.Core/      one project, slices = folders (kernel: Domain, Functional, Phrasing, Causality)
 src/Loopsmith.Cli/       host: argv → Orchestration shell → effects
+src/Loopsmith.Web/       host: Blazor WebAssembly loop designer (Designer, Library, Compare)
 tests/Loopsmith.Core.Tests/   unit, golden and architecture tests
 rules/                   authored causality (glossary, keywords, class, exotics, mods, artifact, perks)
-builds/<slug>/           build.yaml, the original note, note-map, discrepancies, sources, loops/*.loop.yaml
-docs/                    rule format, design proposal
+builds/<slug>/           build.yaml, the original note, note-map, discrepancies, loops/*.loop.yaml
+docs/                    rule format, loop format, hosting, backlog, design proposal
 tools/compendium/        sheet_dump.py — Destiny Data Compendium snapshot tool
+tools/web/               prepare-pages.sh — readies a published site for GitHub Pages
+.github/workflows/       CI, Pages deploy (main), PR previews
 .claude/                 cloud-session hook + project subagents
 ```
 
@@ -135,14 +149,27 @@ and credit it. Check Clarity's partnerships page before a public site. Bungie AP
 falls under Bungie's API terms. Creator video transcripts are third-party content: keep them
 locally as `builds/<slug>/transcript.txt` (gitignored) and link the video instead.
 
+## Development workflow
+
+1. Branch from `main`, commit, open a pull request.
+2. CI runs the full test suite, and the **PR preview** workflow publishes that branch's web app
+   to `https://joancomasfdz.github.io/destiny-loopsmith/pr-preview/pr-<number>/` (the link is
+   commented on the PR, updated on every push, removed when the PR closes).
+3. Merge → the **Deploy web app** workflow republishes the live site.
+
+`gh-pages` is the built site, owned by those workflows; a ruleset blocks its deletion and
+force pushes. Details: [docs/hosting.md](docs/hosting.md).
+
 ## Roadmap
 
 1. ✅ Skeleton: kernel, slices, architecture tests, CI.
 2. ✅ Rules for the first build; simulation (match, guard, phase order, cascade, energy scalar); CLI.
 3. ✅ Golden test: the engine reproduces the build note.
-4. Ingest: Compendium snapshot parsers (tab registry) + Clarity enrichment + coverage report (FR-7, FR-9).
-5. Manifest join (names → hashes, icons), catalog versions (FR-8).
-6. Rule drafting from the Compendium's "On X:" phrasing (FR-10).
-7. API host, then the UI (DIM-like builder + step picker + trace).
+4. ✅ Designed loops as the product: `.loop.yaml`, share links, analysis, comparison.
+5. ✅ Web loop designer (Blazor WebAssembly) on GitHub Pages, with a preview per pull request.
+6. Ingest: Compendium snapshot parsers (tab registry) + Clarity enrichment + coverage report (FR-7, FR-9).
+7. Manifest join (names → hashes, icons), catalog versions (FR-8).
+8. Rule drafting from the Compendium's "On X:" phrasing (FR-10).
+9. More builds; richer rules (see the expressiveness gaps in [docs/backlog.md](docs/backlog.md)).
 
 Destiny 2 is a trademark of Bungie. Loopsmith is a fan project, not affiliated with Bungie.
