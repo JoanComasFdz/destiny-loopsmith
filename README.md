@@ -9,9 +9,15 @@ max Bolt Charge) it shows every outcome that fires, which element caused it, wha
 unlocks next, and where the loop closes back on itself.
 
 **The product is the loop you design**: pick triggers one by one, and the result is a
-`*.loop.yaml` you can save, share as a link, replay, analyse ("repeats 10+ cycles, 7 kills per
-cycle; Tempest Strike's Bolt Charge is wasted 7×: it doesn't stack with Dielectric's") and compare
-with another loop.
+`*.loop.yaml` you can save, share as a link, replay, analyse (what each step sets off, which
+elements take part, what's wasted: "Tempest Strike's Bolt Charge doesn't stack with Dielectric's")
+and compare with another loop.
+
+**It is not a combat simulator** ([ADRs D28](ADRs.md)). Enemy counts, positions, shields, aim and
+above all time make exact numbers impossible, so Loopsmith doesn't calculate them: "+12% grenade
+energy" or "Amplified (15 s)" are shown as facts, never added up or counted down. When a loop
+depends on a threshold ("repeat until Combination Blow ×3, then punch the big enemy"), you declare
+it, and Loopsmith shows what it sets off.
 
 > **Try it:** https://joancomasfdz.github.io/destiny-loopsmith/ — the web loop designer
 > (runs entirely in your browser). Status: working prototype on authored rules for one build

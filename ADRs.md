@@ -18,7 +18,7 @@ D13+ were decided while building the prototype (the CLI first, then the web desi
 | D9 | Typestate: Simulation accepts only `ValidatedBuild` | "Simulate before validation" does not compile / is caught by the architecture test |
 | D10 | Vogen value objects validated at the boundary | Inside the core every value is known-valid |
 | D11 | Railway (ROP) for ingest and simulate; `Severity` only where the app branches | Short-circuit on first blocking error, no app-state object |
-| D12 | Step-based time in v1; builds pin `CatalogVersion` | Matches how players think; patches don't silently change saved builds |
+| D12 | Step-based time in v1; builds pin `CatalogVersion` | Matches how players think; patches don't silently change saved builds (time: superseded by D28 — no time at all) |
 
 ## D13 — Authored `ElementId` slugs until the manifest join exists
 
@@ -192,3 +192,28 @@ a flag on the outcome, not on the glossary status, because the same buff is arme
 (the dodge) and stacked by another (each sever). **Consequence.** "Melee first" no longer maxes Slice;
 the creator's loop is unchanged. A buff armed at 0 stacks is still a gap (Slice severs 4 times per
 window instead of 5, [docs/backlog.md](docs/backlog.md)).
+
+## D28 — Loopsmith explains cause and effect; it doesn't simulate quantities or time
+
+**Context.** Combat has too many variables to calculate: how many enemies and which, where they
+stand, shields, whether the player hits, whether a grenade lands — and almost everything in the
+sandbox runs on time (cooldowns, durations, decay). Exact numbers are impossible, yet the engine
+had started to count anyway: stacks up to a maximum (Bolt Charge reaching x10 fires New Tricks by
+itself), buff durations and a clock (`wait`), buff uptime, "Bolt Charge maxed per cycle", "kills per
+cycle", Slice's re-arming arithmetic (D27). **Decision (product owner).** Loopsmith is not a
+simulator. It explains cause and effect: for each trigger, every outcome it fires, which element
+caused it, what that unlocks next, and what doesn't work together (wasted potential, D23). Numbers
+from the sources are **facts shown with the outcome** ("+12% grenade energy", "Amplified (15 s)",
+"up to ×3", "reduces the cooldown by 2 s"); the engine never accumulates them or decides anything
+from them. The engine never decides **when** a threshold is reached — stacks at 3 or at max, a buff
+running out, energy full, a cooldown over. The **player declares** such states in the loop ("repeat
+until Combination Blow ×3, then punch the big enemy"; "Combination Blow ×3 → One-Two Punch shotgun →
+melee"; "Bolt Charge at max"), and the engine shows what the declared state sets off. Boolean causal
+state stays (a buff is active, the target is jolted, an orb is on the ground); it ends when a rule
+consumes it or the player declares it, never by time. Counts the player states about one action stay
+(D22: "this grenade kills 3"). **Consequence.** The parts of the engine, the analysis and the UI that
+count or time things are reworked into causal information or player declarations — the inventory is
+in [docs/backlog.md](docs/backlog.md) ("Not a simulator"). As that lands, it supersedes D12's step
+time, the uptime and per-cycle counts of D21/D23's reports and D27's restart arithmetic. Rule-format
+gaps that are only about counting or timing (several hits per enemy, a buff armed at 0 stacks, rule
+cooldowns, buff decay…) are non-goals, not gaps.

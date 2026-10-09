@@ -3,8 +3,11 @@
 Destiny 2 build-loop engine: compose a build (DIM-like), then step through its gameplay
 loop and see every outcome each trigger fires, which element caused it, and what it
 unlocks next. **The product is the loop the user designs** (`*.loop.yaml`: save, share,
-replay, analyse, compare). .NET 10 / C# 14. The main UI is the Blazor WebAssembly designer,
-live at https://joancomasfdz.github.io/destiny-loopsmith/; the CLI is the scripting/test host.
+replay, analyse, compare). It is **not a simulator** ([ADRs.md](ADRs.md) D28): it explains cause and
+effect and what doesn't work together; numbers are facts shown with an outcome, never accumulated or
+timed, and thresholds ("Combination Blow ×3", "Bolt Charge at max") are declared by the player.
+.NET 10 / C# 14. The main UI is the Blazor WebAssembly designer, live at
+https://joancomasfdz.github.io/destiny-loopsmith/; the CLI is the scripting/test host.
 Open items: [docs/backlog.md](docs/backlog.md).
 
 ## Binding rules
@@ -16,6 +19,9 @@ Open items: [docs/backlog.md](docs/backlog.md).
 - The architecture tests (`tests/Loopsmith.Core.Tests/Architecture/`) guard slice
   boundaries, that only `SourceFetching` touches files (and only to read), and that the hosts
   call only `Orchestration` and the kernel — never weaken them to make code fit; fix the code.
+- **Not a simulator** (ADRs D28): never add code that counts stacks toward a maximum, lets a
+  buff expire, runs a clock, or adds up energy or cooldowns. Show a source's number as a fact; let
+  the player declare when a threshold is reached.
 - **Unknown is data**: never invent a game number. Use `"?"` in YAML; the engine shows
   "?" and doesn't apply it.
 - Never commit Compendium snapshots (`snapshots/` is gitignored — licensing, see README).
