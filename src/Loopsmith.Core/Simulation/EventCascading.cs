@@ -102,6 +102,7 @@ public static class EventCascading
             cast => $"cast:{cast.Kind}",
             damaged => $"damage:{ToOriginKey(damaged.Origin)}:{damaged.Tier}:{string.Join(",", damaged.TargetHas.Order())}",
             killed => $"kill:{ToOriginKey(killed.Origin)}:{killed.Tier}:{string.Join(",", killed.TargetHas.Order())}",
+            struck => $"targets:{ToOriginKey(struck.Origin)}:{struck.Targets.Value}:{struck.Hit}",
             pickedUp => $"pickup:{pickedUp.Pickup}",
             gained => $"gain:{gained.Status}:{gained.Stacks}",
             maxed => $"max:{maxed.Status}");

@@ -51,6 +51,7 @@ public static class LoopGraphBuilding
             })
             .Concat(build.Build.Weapons.SelectMany(w =>
                 ListHitEvents(new DamageOrigin.Weapon(w.Slot, w.Type), appliedDebuffs)
+                    .Concat(ListVolleyEvents(new DamageOrigin.Weapon(w.Slot, w.Type)))
                     .SelectMany(Reach)
                     .Select(to => new RawEdge(ToWeaponKey(w.Slot), to, You, EdgeKind.Player))));
 
@@ -135,10 +136,21 @@ public static class LoopGraphBuilding
             yield break;
         }
 
-        foreach (var hit in ListHitEvents(new DamageOrigin.Ability(kind, subclass), debuffs))
+        var origin = new DamageOrigin.Ability(kind, subclass);
+        foreach (var hit in ListHitEvents(origin, debuffs).Concat(ListVolleyEvents(origin)))
         {
             yield return hit;
         }
+    }
+
+    /// <summary>
+    /// Optimistic: a player action may hit (or kill) as many enemies as the player says, so it can reach every
+    /// "hit / kill at least N in one action" trigger. Strikes and summons hit one enemy and never do.
+    /// </summary>
+    private static IEnumerable<GameEvent> ListVolleyEvents(DamageOrigin origin)
+    {
+        yield return new GameEvent.TargetsHit(origin, TargetCount.Most, HitOutcome.Damage);
+        yield return new GameEvent.TargetsHit(origin, TargetCount.Most, HitOutcome.Kill);
     }
 
     /// <summary>Optimistic: the target may carry any debuff some rule can apply, and every tier.</summary>

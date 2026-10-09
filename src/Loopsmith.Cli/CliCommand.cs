@@ -36,7 +36,8 @@ public static class CliArguments
                                                               interactive: pick the next action, see what fires;
                                                               every action becomes a step of the loop you design
           loopsmith loop     <file.loop.yaml> [--cycles <n>] [--trace] [--why] [--caveats]
-                                                              run a designed loop back to back: does it sustain?
+                                                              run a designed loop back to back: does it repeat,
+                                                              what does it refund?
           loopsmith compare  <a.loop.yaml> <b.loop.yaml> [--cycles <n>]   two designed loops side by side
           loopsmith loops    <build.yaml> [--limit <n>]       discovered loops (cycles that come back around)
           loopsmith graph    <build.yaml> [--loops-only] [--limit <n>]   Mermaid flowchart of the loop graph
@@ -44,7 +45,7 @@ public static class CliArguments
 
         Options:
           --rules <dir>   rules directory (default: nearest rules/ above the build or loop file, then the current directory)
-          --cycles <n>    cycles to run a loop for (default 10); a loop that completes all of them is sustainable
+          --cycles <n>    cycles to run a loop for (default 10); a loop that completes all of them is repeatable
           --trace         also print every step of the loop's first cycle
           --save <file>   play: write the designed loop when you quit (w saves at any time)
           --name <name>   play: the designed loop's name (default: "<build name> loop")
@@ -57,8 +58,10 @@ public static class CliArguments
           e explain · s state · r reset · q quit (saves when --save is given)
 
         Actions:
-          grenade[:kill]  melee[:kill]  super[:kill]  class  kinetic|energy|power[:kill]  pickup:<id>  wait[:<seconds>]
-          (without :kill the hit only damages)
+          grenade|melee|super[:hit|kill[:N]]  class  kinetic|energy|power[:hit|kill[:N]]  pickup:<id>  wait[:<seconds>]
+          (without :kill the hit only damages; N = enemies hit or killed in that one action, 1..20, default 1:
+           grenade:kill:3 kills three, kinetic:hit:5 shoots five)
+          Abilities are always available: ability energy isn't simulated, refunds are explained.
         """;
 
     public static Result<CliInvocation, string> ParseArguments(ImmutableArray<string> args)

@@ -542,6 +542,58 @@ public sealed class RuleCatalogParsingTests
         Assert.Contains("hunter/arc.yaml:10: spawn.pickup: unknown pickup 'tangle'", message);
     }
 
+    // ── Multi-target triggers: "hit / kill at least N enemies in one action" (ADRs D22) ──────
+
+    private const string OneForAllYaml = """
+        elements:
+          - id: one-for-all
+            name: One For All
+            kind: weaponPerk
+            affinity: kinetic
+            rules:
+              - on: { damage: { via: weapon, atLeast: 3 } }
+                then: [ { applyBuff: amplified } ]
+                reason: "Hitting three separate targets within a short time grants increased damage."
+              - on: { kill: { via: grenade, atLeast: 2 } }
+                then: [ { spawn: orb-of-power } ]
+              - on: { kill: { atLeast: 1 } }
+                then: [ { applyBuff: amplified } ]
+        """;
+
+    [Fact]
+    public void Parses_hit_and_kill_at_least_N_triggers()
+    {
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToElementsFile("weapons/perks.yaml", OneForAllYaml)]));
+
+        var rules = catalog.Elements[ElementId.From("one-for-all")].Rules;
+        Assert.Equal(new Trigger.DamageMultiple(new DamageSource.AnyWeapon(), TargetCount.From(3)), rules[0].On);
+        Assert.Equal(new Trigger.KillMultiple(new DamageSource.AbilityOf(AbilityKind.Grenade), TargetCount.From(2)), rules[1].On);
+        Assert.Equal(new Trigger.KillMultiple(new DamageSource.AnySource(), TargetCount.One), rules[2].On);
+    }
+
+    [Theory]
+    [InlineData("kill: { via: weapon, atLeast: 2, tier: champion }", "hunter/arc.yaml:7: kill cannot combine 'atLeast' and 'tier'")]
+    [InlineData("kill: { via: weapon, atLeast: 2, targetHas: [jolt] }", "hunter/arc.yaml:7: kill cannot combine 'atLeast' and 'targetHas'")]
+    [InlineData("damage: { via: weapon, atLeast: 2, targetHas: [jolt] }", "hunter/arc.yaml:7: damage cannot combine 'atLeast' and 'targetHas'")]
+    [InlineData("damage: { via: weapon, atLeast: 0 }", "hunter/arc.yaml:7: damage.atLeast: '0' is not a whole number ≥ 1")]
+    [InlineData("damage: { via: weapon, atLeast: 21 }", "hunter/arc.yaml:7: damage.atLeast: Target count must be within 1..20")]
+    [InlineData("kill: { atLeast: lots }", "hunter/arc.yaml:7: kill.atLeast: 'lots' is not a whole number ≥ 1")]
+    public void At_least_is_a_count_of_1_to_20_and_stands_alone(string trigger, string expected)
+    {
+        var message = ParseInvalidCatalog(Glossary, ToElementsFile("hunter/arc.yaml", $$"""
+            elements:
+              - id: one-for-all
+                name: One For All
+                kind: weaponPerk
+                affinity: kinetic
+                rules:
+                  - on: { {{trigger}} }
+                    then: [ { spawn: orb-of-power } ]
+            """));
+
+        Assert.Equal(expected, message);
+    }
+
     [Fact]
     public void Tier_and_target_has_together_is_an_error()
     {

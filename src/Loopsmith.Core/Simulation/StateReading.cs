@@ -7,40 +7,6 @@ namespace Loopsmith.Core.Simulation;
 /// <summary>Pure reads and immutable updates over <see cref="GameState"/>.</summary>
 public static class StateReading
 {
-    public static AbilityGauge ReadGauge(this GameState state, AbilityKind kind) =>
-        kind switch
-        {
-            AbilityKind.Grenade => state.Abilities.Grenade,
-            AbilityKind.Melee => state.Abilities.Melee,
-            AbilityKind.ClassAbility => state.Abilities.ClassAbility,
-            _ => state.Abilities.Super,
-        };
-
-    public static GameState ReplaceGauge(this GameState state, AbilityGauge gauge) =>
-        state with
-        {
-            Abilities = gauge.Kind switch
-            {
-                AbilityKind.Grenade => state.Abilities with { Grenade = gauge },
-                AbilityKind.Melee => state.Abilities with { Melee = gauge },
-                AbilityKind.ClassAbility => state.Abilities with { ClassAbility = gauge },
-                _ => state.Abilities with { Super = gauge },
-            },
-        };
-
-    /// <summary>The cost model of the equipped ability of that kind (super, grenade, melee, class ability).</summary>
-    public static Optional<AbilityProfile> FindAbilityProfile(this ValidatedBuild build, AbilityKind kind) =>
-        build.Equipped
-            .Select(e => e.Element.Ability.Bind(p => p.Kind == kind ? Optional.Some(p) : Optional.None<AbilityProfile>()))
-            .FindFirstSome();
-
-    public static GameState SetEnergy(this GameState state, AbilityKind kind, decimal charges)
-    {
-        var gauge = state.ReadGauge(kind);
-        var clamped = Math.Clamp(charges, 0m, gauge.MaxCharges);
-        return state.ReplaceGauge(gauge with { Energy = EnergyAmount.From(clamped) });
-    }
-
     public static Optional<ActiveStatus> FindBuff(this GameState state, StatusId status) =>
         Optional.FromNullable(state.Buffs.FirstOrDefault(buff => buff.Status == status));
 

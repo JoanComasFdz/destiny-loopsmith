@@ -60,6 +60,7 @@ occurrences — two orbs picked up fired the pickup rule once.
 
 ## D18 — Unknown energy is not applied; unknown chunk scalar is assumed 1× and flagged
 
+*Superseded by D21: ability energy is no longer simulated, so chunk scalars aren't used.*
 An unknown amount stays "?" and doesn't change the state. An unknown chunk energy
 scalar is assumed 1× (`Certainty.Assumed`, marked `*`), because the amount itself is
 known and the scalar only rescales it — the trace says so until the Compendium
@@ -76,3 +77,34 @@ the engine against real build notes.
 33.x requires xunit.v3 4.x and gates the build on a SponsorCheck licence property —
 a licensing decision for the owner. 32.0.1 predates SponsorCheck and works with
 xunit.v3 3.2.2. Revisit when the owner decides.
+
+## D21 — No ability-energy model (for now)
+
+**Context.** Ability energy in game is mainly time: base cooldowns scaled by stats, with rule
+refunds on top. The step-based engine (D12) has no real clock, most cooldowns and chunk
+scalars are still `?`, and a partial model (refunds only, no recharge) made loops look
+*less* sustainable than they are and blocked steps that are fine in game ("melee-first
+breaks in cycle 2"). **Decision (product owner).** Don't track ability energy and never
+restrict a trigger: grenade, melee, super and class ability can always be used.
+`grantEnergy`, `resetCooldown` and the energy part of `convertStacksToEnergy` stay in the
+rules and the traces *as explanation* ("+12% grenade energy [Bomber]") — applied with their
+certainty, recorded as an `EnergyRefund`, changing no state (`convertStacksToEnergy` still
+consumes its stacks). Chunk scalars, base cooldowns and `extraCharges` are parsed and kept
+but not used. **Consequence.** A loop is "repeatable" when its steps can be played back to
+back (only a missing pickup or an empty weapon slot breaks a cycle); the analysis shows the
+**energy refunded per cycle** per ability (known amounts summed, `?` refunds counted) so
+the player judges whether that covers the abilities the loop uses. Revisit with the
+Compendium's cooldowns and a time model.
+
+## D22 — Player-declared target counts
+
+**Context.** The engine can't know how many enemies a grenade or a burst of fire catches,
+yet perks depend on it ("hitting three separate targets…" — One For All, multi-kill perks).
+**Decision.** The player says it: an ability or weapon action carries a `TargetCount`
+(Vogen, 1..20, validated at the boundary; tokens `grenade:kill:3`, `kinetic:hit:5`, default
+1). An action against N enemies emits N per-enemy `Damaged` events, then N `Killed` for a
+kill — each cascading fully, so later hits see the debuffs earlier ones applied (D16's pack)
+— then one `TargetsHit` event per action for the new triggers `damage/kill … atLeast: N`
+(`Trigger.DamageMultiple` / `KillMultiple`, each with only its own data). **Consequence.**
+Kills per cycle count every target; chance-based perks still fire on every enemy (D15,
+marked *(chance)*), so counts stay an upper bound. Strikes and summons hit one enemy.

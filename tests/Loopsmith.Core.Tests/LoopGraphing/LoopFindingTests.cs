@@ -26,6 +26,27 @@ public class LoopFindingTests
     }
 
     [Fact]
+    public void Multi_target_triggers_are_reached_by_the_player_actions_that_can_hit_many()
+    {
+        // One For All on the rifle; a grenade that refunds itself when it kills two (both inline examples).
+        var oneForAll = Element("one-for-all", ElementKind.Fragment,
+            [On(new Trigger.DamageMultiple(new DamageSource.AnyWeapon(), TargetCount.From(3)), Buff("amplified"))]);
+        var multikill = Element("multikill", ElementKind.Fragment,
+            [On(new Trigger.KillMultiple(new DamageSource.AbilityOf(AbilityKind.Grenade), TargetCount.From(2)), Energy(AbilityKind.Grenade, new GameValue.Known(0.2m)))]);
+        var strike = Element("strike", ElementKind.Fragment,
+            [On(new Trigger.BuffGained(Status("amplified")), new Outcome.StrikeTarget(Status("jolt"), HitOutcome.Kill))]);
+        var build = ValidateBuild([oneForAll, multikill, strike]);
+
+        var graph = LoopGraphBuilding.BuildLoopGraph(build);
+        var loops = LoopFinding.FindLoops(graph);
+
+        Assert.Contains(graph.Edges, e => e.From == "w:Energy" && e.To == "t:Hit 3+ enemies with weapon" && e.Kind == EdgeKind.Player);
+        Assert.DoesNotContain(graph.Edges, e => e.From == "a:Grenade" && e.To == "t:Hit 3+ enemies with weapon");
+        Assert.DoesNotContain(graph.Edges, e => e.From == "t:Gain Amplified" && e.To == "t:Kill 2+ with grenade");   // strikes hit one enemy
+        Assert.Contains(loops, loop => loop.NodeKeys.SequenceEqual(["a:Grenade", "t:Kill 2+ with grenade", "e:Grenade"]));
+    }
+
+    [Fact]
     public void Debuff_prerequisites_are_edges_but_not_loop_steps()
     {
         var shock = Element("shock", ElementKind.Fragment,

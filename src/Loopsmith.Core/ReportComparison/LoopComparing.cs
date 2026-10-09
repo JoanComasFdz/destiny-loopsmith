@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.Globalization;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
+using Loopsmith.Core.Phrasing;
 
 namespace Loopsmith.Core.ReportComparison;
 
@@ -17,16 +18,12 @@ public static class LoopComparing
 
     public static LoopComparison CompareLoops(LoopReport left, LoopReport right)
     {
-        var leftNet = left.ComputeNetEnergy();
-        var rightNet = right.ComputeNetEnergy();
         ImmutableArray<ComparisonRow> rows =
         [
             CreateRow("Steps per cycle", left.StepCount, right.StepCount, Better.Unjudged),
-            CompareSustain(left, right),
-            CompareEnergy("grenade", leftNet.Grenade, rightNet.Grenade),
-            CompareEnergy("melee", leftNet.Melee, rightNet.Melee),
-            CompareEnergy("class ability", leftNet.ClassAbility, rightNet.ClassAbility),
-            CompareEnergy("super", leftNet.Super, rightNet.Super),
+            CompareRepeats(left, right),
+            .. LoopReportArithmetic.AbilityOrder.Select(ability =>
+                CompareRefunds(ability, left.Refunds.ReadRefund(ability), right.Refunds.ReadRefund(ability))),
             .. CompareOutcomes(left, right),
             .. CompareUptime(left, right),
             CreateRow("Unknown values", left.UnknownValues, right.UnknownValues, Better.Lower),
@@ -35,33 +32,38 @@ public static class LoopComparing
         return new LoopComparison(left, right, rows);
     }
 
-    /// <summary>More completed cycles is better; on a tie a sustainable loop beats one that broke.</summary>
-    private static ComparisonRow CompareSustain(LoopReport left, LoopReport right)
+    /// <summary>More completed cycles is better; on a tie a repeatable loop beats one that broke.</summary>
+    private static ComparisonRow CompareRepeats(LoopReport left, LoopReport right)
     {
         var byCycles = JudgeAdvantage(left.CompletedCycles, right.CompletedCycles, Better.Higher);
-        var bySustain = JudgeAdvantage(left.IsSustainable() ? 1 : 0, right.IsSustainable() ? 1 : 0, Better.Higher);
+        var byRepeat = JudgeAdvantage(left.IsRepeatable() ? 1 : 0, right.IsRepeatable() ? 1 : 0, Better.Higher);
         return new ComparisonRow(
-            "Sustained cycles",
-            FormatSustain(left),
-            FormatSustain(right),
-            byCycles == Advantage.None ? bySustain : byCycles);
+            "Repeatable cycles",
+            FormatRepeats(left),
+            FormatRepeats(right),
+            byCycles == Advantage.None ? byRepeat : byCycles);
     }
 
-    public static string FormatSustain(LoopReport report) =>
-        report.IsSustainable()
+    /// <summary>"10+" when every requested cycle completed, else the cycles completed.</summary>
+    public static string FormatRepeats(LoopReport report) =>
+        report.IsRepeatable()
             ? $"{report.MaxCycles}+"
             : report.CompletedCycles.ToString(Invariant);
 
-    private static ComparisonRow CompareEnergy(string ability, decimal left, decimal right) =>
-        new($"Net {ability} energy per cycle", FormatSignedCharges(left), FormatSignedCharges(right), JudgeAdvantage(left, right, Better.Higher));
-
-    public static string FormatSignedCharges(decimal charges) =>
-        charges switch
-        {
-            > 0m => "+" + charges.ToString("0.##", Invariant),
-            < 0m => charges.ToString("0.##", Invariant),
-            _ => "0",
-        };
+    /// <summary>
+    /// More energy refunded is better: the known (and approximate) amount first; on a tie, more refunds of unknown size
+    /// (each gives back something).
+    /// </summary>
+    private static ComparisonRow CompareRefunds(AbilityKind ability, RefundTally left, RefundTally right)
+    {
+        var byAmount = JudgeAdvantage(left.Amount, right.Amount, Better.Higher);
+        var byUnknown = JudgeAdvantage(left.UnknownCount, right.UnknownCount, Better.Higher);
+        return new ComparisonRow(
+            $"{DomainPhrasing.Capitalize(ability.DescribeAbility())} energy refunded per cycle",
+            left.DescribeRefund(),
+            right.DescribeRefund(),
+            byAmount == Advantage.None ? byUnknown : byAmount);
+    }
 
     /// <summary>Kills, then every pickup spawned, then every status maxed — union of both reports, missing counts as 0.</summary>
     private static IEnumerable<ComparisonRow> CompareOutcomes(LoopReport left, LoopReport right) =>

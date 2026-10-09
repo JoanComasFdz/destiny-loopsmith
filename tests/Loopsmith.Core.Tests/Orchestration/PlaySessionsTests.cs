@@ -40,6 +40,18 @@ public sealed class PlaySessionsTests
     }
 
     [Fact]
+    public void Abilities_never_run_out_and_tokens_may_aim_at_several_enemies()
+    {
+        var session = PlayAll(StartPlay(Optional.None<string>()), "grenade:kill", "grenade:kill:3", "grenade:kill", "kinetic:hit:5");
+
+        Assert.Equal(
+            ["grenade:kill", "grenade:kill:3", "grenade:kill", "kinetic:hit:5"],
+            session.Design.Design.Steps.Select(step => step.Action.ToActionToken()));
+        Assert.All(session.Design.Resolutions, resolution => Assert.False(resolution.Blocked.IsSome()));
+        Assert.All(session.Design.Resolutions, resolution => Assert.NotEmpty(resolution.Fired));
+    }
+
+    [Fact]
     public void Undo_note_and_describe_edit_the_design()
     {
         var session = PlayAll(StartPlay(Optional.None<string>(), Optional.Some("Mine")),

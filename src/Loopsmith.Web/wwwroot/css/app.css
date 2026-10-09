@@ -485,6 +485,8 @@ textarea { resize: vertical; }
 .trigger-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
 .trigger-title { flex: 1 1 0; min-width: 0; font-weight: 650; font-size: 13px; overflow-wrap: anywhere; }
 .trigger-buttons { display: flex; gap: 4px; }
+.target-count { display: inline-flex; align-items: center; gap: 2px; color: var(--muted); font-size: 12px; font-weight: 700; }
+.target-count select { padding: 4px 4px 4px 6px; min-height: 30px; font-family: var(--mono); font-size: 13px; }
 .trigger-row.single .trigger-buttons { flex: 1 1 100%; }
 .trigger {
     display: inline-flex;
@@ -592,6 +594,12 @@ textarea { resize: vertical; }
 .report-text .slines { margin-top: 8px; padding: 10px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; }
 .analysis-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
 .analysis-name { font-size: 17px; font-weight: 750; }
+.energy-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.energy-tile { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 8px 10px; border-radius: 6px; background: var(--panel-2); border: 1px solid var(--line); }
+.energy-kind { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.energy-value { font-family: var(--mono); font-size: 15px; font-weight: 700; color: var(--muted); }
+.energy-tile.gain .energy-value { color: var(--ok); }
+.refund-note { margin: 6px 0 0; font-size: 12px; }
 .analysis-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
 .tallies { list-style: none; margin: 0 0 8px; padding: 0; display: flex; flex-direction: column; gap: 3px; font-size: 13px; }
 .tallies li { display: flex; justify-content: space-between; gap: 10px; padding: 3px 0; border-bottom: 1px solid rgba(38, 48, 70, .6); }
@@ -665,6 +673,7 @@ textarea { resize: vertical; }
     .toolbar, .toolbar-group { width: 100%; }
     .toolbar-group .btn { flex: 1 1 auto; }
     .analysis-grid { grid-template-columns: minmax(0, 1fr); }
+    .energy-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .compare-columns { grid-template-columns: minmax(0, 1fr); }
     .versus { display: none; }
     .sline { padding-left: calc(var(--indent, 0) * .75em + 1em); text-indent: -1em; }

@@ -3,7 +3,8 @@ loop: Infinite skip grenades
 description: |-
   The creator's loop: dodge to arm Slice and Reaper, skip grenade into the pack, clean up with
   the Strand and Arc weapons, grab the orbs, skip grenade again. Every jolted kill feeds Bolt
-  Charge and Ionic Traces back into grenade energy, so the grenade comes back before you need it.
+  Charge and Ionic Traces back into grenade energy: the rules refund more than the two grenades
+  a cycle throws (ability energy isn't simulated, so the analysis adds the refunds up).
 catalog: authored-e4426d03166b
 steps:
   - do: class

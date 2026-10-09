@@ -26,7 +26,7 @@ public sealed record PlayTurn(PlaySession Session, ImmutableArray<Effect> Effect
 public static class PlaySessions
 {
     private const string Commands =
-        "number or action token · u undo · n <note> · d <description> · a analyse · w save · e explain · s state · r reset · q quit";
+        "number or action token (grenade:kill:3 = kill 3) · u undo · n <note> · d <description> · a analyse · w save · e explain · s state · r reset · q quit";
 
     public static Result<PlaySession, string> StartPlay(PlayRequest request)
     {
@@ -56,7 +56,9 @@ public static class PlaySessions
     [
         new Effect.WriteLines(BuildExplaining.RenderBuildSummary(session.Design.Build)),
         new Effect.WriteLines([DescribeDesign(session)]),
-        new Effect.WriteLines([StyledText.ToLine(0, "Fresh spawn — all abilities charged.".ToSpan(Tone.Strong))]),
+        new Effect.WriteLines([StyledText.ToLine(0,
+            "Fresh spawn".ToSpan(Tone.Strong),
+            " — abilities are always available (ability energy isn't simulated).".ToSpan(Tone.Muted))]),
         new Effect.WriteLines(TraceRenderer.RenderState(session.Design.Build, session.Design.Current, [])),
         .. PlanPrompt(session),
     ];

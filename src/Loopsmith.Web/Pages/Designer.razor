@@ -91,7 +91,7 @@
                               OnSelect="SelectStep" OnBranch="BranchFromStep" OnAnnotate="AnnotateStep" />
             </div>
             <aside class="col-side">
-                <TriggerPalette Options="LoopDesigning.ListTriggerOptions(session)" OnPick="AppendTrigger"
+                <TriggerPalette Build="session.Build" Options="LoopDesigning.ListTriggerOptions(session)" OnPick="AppendTrigger"
                                 Caption="@(stepCount == 0 ? "from a fresh spawn" : $"after #{stepCount}")"
                                 Hint="@DescribePaletteHint(shown.Number, stepCount)" />
                 <StatePanel Build="session.Build" State="shown.State" Passives="shown.Passives" Caption="@shown.Caption" />
@@ -328,8 +328,8 @@ else
 
     // ── editing the loop ────────────────────────────────────────────────────────
 
-    private void AppendTrigger(TriggerOption option) =>
-        EditSession(session => LoopDesigning.AppendStep(session, option.Action, Optional.None<string>()), scrollToEnd: true);
+    private void AppendTrigger(PlayerAction action) =>
+        EditSession(session => LoopDesigning.AppendStep(session, action, Optional.None<string>()), scrollToEnd: true);
 
     private void UndoLastStep() =>
         EditSession(LoopDesigning.RemoveLastStep, scrollToEnd: false);

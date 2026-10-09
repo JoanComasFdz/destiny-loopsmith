@@ -1,17 +1,19 @@
 using System.Collections.Immutable;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
+using Loopsmith.Core.Phrasing;
 using Loopsmith.Core.Simulation;
+using Loopsmith.Core.TraceRendering;
 using static Loopsmith.Core.Tests.Support.TestCatalog;
 
 namespace Loopsmith.Core.Tests.Simulation;
 
 public class ActionResolutionTests
 {
-    private static readonly PlayerAction GrenadeKill = new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Kill);
+    private static readonly PlayerAction GrenadeKill = new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Kill, TargetCount.One);
 
     private static Resolution ResolveOnce(ValidatedBuild build, PlayerAction action) =>
-        ActionResolution.ResolveAction(build, ActionResolution.CreateInitialState(build), action);
+        ActionResolution.ResolveAction(build, ActionResolution.CreateInitialState(), action);
 
     [Fact]
     public void Kill_sees_the_debuff_its_own_hit_applied()
@@ -78,7 +80,24 @@ public class ActionResolutionTests
     }
 
     [Fact]
-    public void Unknown_amounts_are_never_applied_as_zero_or_anything_else()
+    public void Energy_refunds_are_explained_with_their_amount_but_change_no_state()
+    {
+        var refund = Element("refund", ElementKind.Fragment,
+            [On(new Trigger.AbilityCast(AbilityKind.Grenade), Energy(AbilityKind.Grenade, new GameValue.Known(0.25m)), new Outcome.ResetCooldown(AbilityKind.Melee))]);
+        var build = ValidateBuild([refund]);
+        var initial = ActionResolution.CreateInitialState();
+
+        var resolution = ActionResolution.ResolveAction(build, initial, GrenadeKill);
+
+        var outcomes = resolution.Fired.Single().Outcomes;
+        Assert.Equal(Certainty.Known, outcomes[0].Certainty);
+        Assert.Equal(Optional.Some(new EnergyRefund(AbilityKind.Grenade, new ResolvedValue(Optional.Some(0.25m), Certainty.Known))), outcomes[0].Refund);
+        Assert.Equal(Optional.Some(new EnergyRefund(AbilityKind.Melee, new ResolvedValue(Optional.Some(1m), Certainty.Known))), outcomes[1].Refund);
+        Assert.Equal(initial with { Step = 1 }, resolution.State with { Target = initial.Target });
+    }
+
+    [Fact]
+    public void Unknown_refunds_stay_unknown_never_zero()
     {
         var refund = Element("refund", ElementKind.Fragment,
             [On(new Trigger.AbilityCast(AbilityKind.Grenade), Energy(AbilityKind.Grenade, new GameValue.Unknown()))]);
@@ -88,24 +107,11 @@ public class ActionResolutionTests
 
         var applied = resolution.Fired.Single().Outcomes.Single();
         Assert.Equal(Certainty.Unknown, applied.Certainty);
-        Assert.Equal(0m, resolution.State.Abilities.Grenade.Energy.Value);
+        Assert.Equal(Optional.Some(new EnergyRefund(AbilityKind.Grenade, new ResolvedValue(Optional.None<decimal>(), Certainty.Unknown))), applied.Refund);
     }
 
     [Fact]
-    public void Unknown_chunk_scalar_is_assumed_1x_and_flagged()
-    {
-        var refund = Element("refund", ElementKind.Fragment,
-            [On(new Trigger.AbilityCast(AbilityKind.Grenade), Energy(AbilityKind.Grenade, new GameValue.Known(0.25m)))]);
-        var build = ValidateBuild([refund]);
-
-        var resolution = ResolveOnce(build, GrenadeKill);
-
-        Assert.Equal(Certainty.Assumed, resolution.Fired.Single().Outcomes.Single().Certainty);
-        Assert.Equal(0.25m, resolution.State.Abilities.Grenade.Energy.Value);
-    }
-
-    [Fact]
-    public void Known_chunk_scalar_scales_energy_by_ability_cost()
+    public void Refunds_resolve_for_the_copies_equipped_and_ignore_chunk_scalars()
     {
         var grenade = Element("test-grenade", ElementKind.Grenade, [],
             ability: Optional.Some(Profile(AbilityKind.Grenade, chunkScalar: new GameValue.Known(0.5m))));
@@ -115,8 +121,26 @@ public class ActionResolutionTests
 
         var resolution = ResolveOnce(build, GrenadeKill);
 
-        Assert.Equal(0.10m, resolution.State.Abilities.Grenade.Energy.Value);
-        Assert.Equal(Certainty.Known, resolution.Fired.Single().Outcomes.Single().Certainty);
+        var applied = resolution.Fired.Single().Outcomes.Single();
+        Assert.Equal(Certainty.Known, applied.Certainty);
+        Assert.Equal(Optional.Some(0.20m), applied.Refund.Bind(refund => refund.Amount.Value));
+    }
+
+    [Fact]
+    public void Converting_stacks_consumes_them_and_refunds_per_stack_times_stacks()
+    {
+        var charger = Element("charger", ElementKind.Fragment, [On(new Trigger.AbilityCast(AbilityKind.ClassAbility), Buff("bolt-charge", 2))]);
+        var kickstart = Element("kickstart", ElementKind.ArmorMod,
+            [On(new Trigger.AbilityCast(AbilityKind.Grenade), new Outcome.ConvertStacksToEnergy(Status("bolt-charge"), AbilityKind.Grenade, new GameValue.Approximate(0.1m)))]);
+        var build = ValidateBuild([charger], [kickstart]);
+
+        var charged = ResolveOnce(build, new PlayerAction.UseClassAbility());
+        var thrown = ActionResolution.ResolveAction(build, charged.State, GrenadeKill);
+
+        var applied = thrown.Fired.Single(f => f.Source.Value == "kickstart").Outcomes.Single();
+        Assert.DoesNotContain(thrown.State.Buffs, b => b.Status == Status("bolt-charge"));
+        Assert.Equal(Optional.Some(new EnergyRefund(AbilityKind.Grenade, new ResolvedValue(Optional.Some(0.2m), Certainty.Approximate))), applied.Refund);
+        Assert.Equal(Optional.Some("×2 stacks"), applied.Caveat);
     }
 
     [Fact]
@@ -165,16 +189,134 @@ public class ActionResolutionTests
     }
 
     [Fact]
-    public void Casting_without_energy_does_nothing_and_says_so()
+    public void Abilities_can_always_be_used_there_is_no_energy_to_run_out_of()
+    {
+        var counter = Element("counter", ElementKind.Fragment, [On(new Trigger.AbilityCast(AbilityKind.Grenade), Buff("bolt-charge"))]);
+        var build = ValidateBuild([counter]);
+        var actions = ImmutableArray.Create(GrenadeKill, GrenadeKill, GrenadeKill, new PlayerAction.UseClassAbility(), new PlayerAction.UseClassAbility());
+
+        var resolutions = ActionResolution.ResolveSequence(build, ActionResolution.CreateInitialState(), actions);
+
+        Assert.All(resolutions, resolution => Assert.False(resolution.Blocked.IsSome()));
+        Assert.All(resolutions, resolution => Assert.Empty(resolution.Notes));
+        Assert.Equal(3, resolutions[^1].State.Buffs.Single(b => b.Status == Status("bolt-charge")).Stacks.Value);
+        Assert.Contains(GrenadeKill, resolutions[^1].NowAvailable);
+        Assert.Contains(new PlayerAction.UseClassAbility(), resolutions[^1].NowAvailable);
+    }
+
+    [Fact]
+    public void Only_a_missing_pickup_or_an_empty_weapon_slot_blocks_a_step()
     {
         var build = ValidateBuild([]);
 
-        var first = ResolveOnce(build, GrenadeKill);
-        var second = ActionResolution.ResolveAction(build, first.State, GrenadeKill);
+        var noOrb = ResolveOnce(build, new PlayerAction.CollectPickups(Pickup("orb-of-power")));
+        var noPowerWeapon = ResolveOnce(build, new PlayerAction.FireWeapon(WeaponSlot.Power, HitOutcome.Kill, TargetCount.One));
 
-        Assert.Empty(second.Fired);
-        Assert.Contains(second.Notes, n => n.Contains("Not enough"));
-        Assert.DoesNotContain(second.NowAvailable, a => a is PlayerAction.CastAbility { Kind: OffensiveAbility.Grenade });
+        Assert.Contains("No orb-of-power on the ground", Assert.IsType<Optional<string>.Some>(noOrb.Blocked).Value);
+        Assert.Contains("No weapon in the Power slot", Assert.IsType<Optional<string>.Some>(noPowerWeapon.Blocked).Value);
+    }
+
+    // ── N targets (ADRs D22) ───────────────────────────────────────────────────────
+
+    /// <summary>One For All: "hitting three separate targets … grants increased damage" — inline, not from the rules.</summary>
+    private static readonly BuildElement OneForAll = Element("one-for-all", ElementKind.Fragment,   // a weapon perk in game; the test catalog equips fragments
+        [On(new Trigger.DamageMultiple(new DamageSource.AnyWeapon(), TargetCount.From(3)), Buff("amplified"))]);
+
+    private static PlayerAction RifleAt(HitOutcome hit, int targets) =>
+        new PlayerAction.FireWeapon(WeaponSlot.Energy, hit, TargetCount.From(targets));
+
+    [Fact]
+    public void An_action_against_N_enemies_hits_each_then_kills_each_then_counts_them_once()
+    {
+        var probe = Element("probe", ElementKind.Fragment,
+        [
+            On(new Trigger.AbilityCast(AbilityKind.Grenade), Buff("amplified")),
+            On(new Trigger.Damage(new DamageSource.AnySource()), Buff("amplified")),
+            On(new Trigger.KillAny(new DamageSource.AnySource()), Buff("amplified")),
+            On(new Trigger.DamageMultiple(new DamageSource.AnySource(), TargetCount.One), Buff("amplified")),
+        ]);
+        var build = ValidateBuild([probe]);
+
+        var resolution = ResolveOnce(build, new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Kill, TargetCount.From(3)));
+
+        Assert.Equal(
+            ["cast", "damage", "damage", "damage", "kill", "kill", "kill", "3 targets Kill"],
+            resolution.Fired.Select(fired => fired.Trigger switch
+            {
+                GameEvent.AbilityCast => "cast",
+                GameEvent.Damaged => "damage",
+                GameEvent.Killed => "kill",
+                GameEvent.TargetsHit struck => $"{struck.Targets.Value} targets {struck.Hit}",
+                _ => "other",
+            }));
+        Assert.All(resolution.Fired, fired => Assert.Equal(0, fired.Depth));
+    }
+
+    [Fact]
+    public void Kill_actions_count_every_target_in_the_label_and_the_token()
+    {
+        var build = ValidateBuild([]);
+        var killThree = new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Kill, TargetCount.From(3));
+        var hitFive = new PlayerAction.FireWeapon(WeaponSlot.Energy, HitOutcome.Damage, TargetCount.From(5));
+
+        Assert.Equal("Grenade (kill 3)", build.Catalog.Glossary.DescribeAction(killThree, build.Build));
+        Assert.Equal("Test Rifle (hit 5)", build.Catalog.Glossary.DescribeAction(hitFive, build.Build));
+        Assert.Equal("Grenade (kill)", build.Catalog.Glossary.DescribeAction(GrenadeKill, build.Build));
+        Assert.Equal(["grenade:kill:3", "energy:hit:5", "grenade:kill"], new PlayerAction[] { killThree, hitFive, GrenadeKill }.Select(a => a.ToActionToken()));
+    }
+
+    [Fact]
+    public void Each_enemy_cascades_fully_so_later_hits_see_earlier_debuffs()
+    {
+        var shock = Element("shock", ElementKind.Fragment,
+            [On(new Trigger.Damage(new DamageSource.AbilityOf(AbilityKind.Grenade)), new Outcome.DebuffTarget(Status("jolt"), Optional.None<Seconds>()))]);
+        var flow = Element("flow", ElementKind.Fragment,
+            [On(new Trigger.KillDebuffed(new DamageSource.AnySource(), [Status("jolt")]), Buff("bolt-charge"))]);
+        var build = ValidateBuild([shock, flow]);
+
+        var resolution = ResolveOnce(build, new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Kill, TargetCount.From(3)));
+
+        Assert.Equal(3, resolution.Fired.Count(f => f.Source.Value == "shock"));
+        Assert.Equal(3, resolution.Fired.Count(f => f.Source.Value == "flow"));
+        Assert.Equal(3, resolution.State.Buffs.Single(b => b.Status == Status("bolt-charge")).Stacks.Value);
+    }
+
+    [Fact]
+    public void A_hit_at_least_N_trigger_fires_once_per_action_that_hits_enough_enemies()
+    {
+        var build = ValidateBuild([OneForAll]);
+
+        var two = ResolveOnce(build, RifleAt(HitOutcome.Damage, 2));
+        var three = ResolveOnce(build, RifleAt(HitOutcome.Damage, 3));
+        var fiveKills = ResolveOnce(build, RifleAt(HitOutcome.Kill, 5));
+        var grenade = ResolveOnce(build, new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Damage, TargetCount.From(3)));
+
+        Assert.DoesNotContain(two.Fired, f => f.Source.Value == "one-for-all");
+        var fired = Assert.Single(three.Fired, f => f.Source.Value == "one-for-all");
+        Assert.Equal(new GameEvent.TargetsHit(new DamageOrigin.Weapon(WeaponSlot.Energy, DamageType.Arc), TargetCount.From(3), HitOutcome.Damage), fired.Trigger);
+        Assert.Single(fiveKills.Fired, f => f.Source.Value == "one-for-all");   // a kill hits too
+        Assert.DoesNotContain(grenade.Fired, f => f.Source.Value == "one-for-all");   // not a weapon
+        Assert.Equal("Hit 3+ enemies with weapon", build.Catalog.Glossary.DescribeTrigger(OneForAll.Rules[0].On));
+        Assert.Contains(
+            "  Test Rifle hit 3 enemies → Amplified [One For All]",
+            TraceRenderer.RenderResolution(build, three, new TraceOptions(false, false, false)).Select(line => line.ToPlainText()));
+    }
+
+    [Fact]
+    public void A_kill_at_least_N_trigger_needs_a_kill_action()
+    {
+        var multikill = Element("multikill", ElementKind.Fragment,
+            [On(new Trigger.KillMultiple(new DamageSource.AbilityOf(AbilityKind.Grenade), TargetCount.From(2)), new Outcome.Spawn(Pickup("orb-of-power"), 1))]);
+        var build = ValidateBuild([multikill]);
+
+        var hitTwo = ResolveOnce(build, new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Damage, TargetCount.From(2)));
+        var killOne = ResolveOnce(build, GrenadeKill);
+        var killTwo = ResolveOnce(build, new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Kill, TargetCount.From(2)));
+
+        Assert.Empty(hitTwo.Fired);
+        Assert.Empty(killOne.Fired);
+        Assert.Single(killTwo.Fired);
+        Assert.Equal(1, killTwo.State.CountPickups(Pickup("orb-of-power")));
     }
 
     [Fact]
@@ -183,10 +325,10 @@ public class ActionResolutionTests
         var shock = Element("shock", ElementKind.Fragment,
             [On(new Trigger.Damage(new DamageSource.AnySource()), new Outcome.DebuffTarget(Status("jolt"), Optional.None<Seconds>()), Buff("bolt-charge"))]);
         var build = ValidateBuild([shock]);
-        var actions = ImmutableArray.Create<PlayerAction>(GrenadeKill, new PlayerAction.FireWeapon(WeaponSlot.Energy, HitOutcome.Kill));
+        var actions = ImmutableArray.Create<PlayerAction>(GrenadeKill, new PlayerAction.FireWeapon(WeaponSlot.Energy, HitOutcome.Kill, TargetCount.One));
 
-        var first = ActionResolution.ResolveSequence(build, ActionResolution.CreateInitialState(build), actions);
-        var second = ActionResolution.ResolveSequence(build, ActionResolution.CreateInitialState(build), actions);
+        var first = ActionResolution.ResolveSequence(build, ActionResolution.CreateInitialState(), actions);
+        var second = ActionResolution.ResolveSequence(build, ActionResolution.CreateInitialState(), actions);
 
         Assert.Equal(
             first.SelectMany(r => r.Fired).Select(f => $"{f.Source}@{f.Depth}"),

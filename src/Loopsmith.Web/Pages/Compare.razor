@@ -216,14 +216,7 @@ else
                     @if (side.Report is Optional<LoopReport>.Some report)
                     {
                         <p>
-                            @if (report.Value.IsSustainable())
-                            {
-                                <span class="badge ok">Sustainable · @ReportReading.DescribeSustainedCycles(report.Value) cycles</span>
-                            }
-                            else
-                            {
-                                <span class="badge warn">Sustains @ReportReading.DescribeSustainedCycles(report.Value)/@report.Value.MaxCycles cycles</span>
-                            }
+                            <span class="badge @(report.Value.IsRepeatable() ? "ok" : "warn")" data-testid="repeatable">@ReportReading.DescribeRepeatability(report.Value)</span>
                         </p>
                     }
                     <ol class="step-list">

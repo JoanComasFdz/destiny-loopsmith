@@ -1,5 +1,5 @@
 @* The next triggers the build offers (LoopDesigning.ListTriggerOptions), grouped; hit and kill side by side.
-   Every trigger is pickable — the palette does not gate abilities on energy. *@
+   Every trigger is pickable. A hit / kill pair has a target count: how many enemies that one action catches. *@
 <section class="panel palette" aria-label="Next trigger">
     <header class="panel-head">
         <h2>Next trigger</h2>
@@ -9,7 +9,7 @@
     {
         <p class="palette-hint">@Hint</p>
     }
-    @foreach (var group in TriggerPaletteShaping.ShapePalette(Options))
+    @foreach (var group in TriggerPaletteShaping.ShapePalette(Options, counts, Build))
     {
         <h3 class="section-label">@group.Heading</h3>
         <div class="trigger-list">
@@ -21,16 +21,28 @@
                     {
                         <span class="trigger-title">@choice.Title</span>
                     }
+                    @if (choice.Targets is Optional<TargetCount>.Some targets)
+                    {
+                        <label class="target-count" title="How many enemies one hit or kill catches">
+                            <span class="target-count-sign" aria-hidden="true">×</span>
+                            <select value="@targets.Value.Value" @onchange="e => PickTargetCount(choice.Key, e)"
+                                    aria-label="@($"{choice.Title}: enemies per hit or kill")">
+                                @foreach (var count in TriggerPaletteShaping.TargetCountChoices)
+                                {
+                                    <option value="@count">@count</option>
+                                }
+                            </select>
+                        </label>
+                    }
                     <div class="trigger-buttons">
                         @foreach (var button in choice.Buttons)
                         {
-                            var option = button.Option;
                             <button class="trigger @(isPair ? "half" : "whole")"
-                                    data-token="@option.Token"
-                                    title="@($"{option.Label}  ({option.Token})")"
-                                    @onclick="() => PickTrigger(option)">
+                                    data-token="@button.Token"
+                                    title="@($"{button.Label}  ({button.Token})")"
+                                    @onclick="() => PickTrigger(button.Action)">
                                 <span class="trigger-caption">@button.Caption</span>
-                                @if (option.IsNew)
+                                @if (button.IsNew)
                                 {
                                     <span class="badge new" title="Unlocked by the last step">new</span>
                                 }
@@ -44,6 +56,11 @@
 </section>
 
 @code {
+    private ImmutableDictionary<string, TargetCount> counts = ImmutableDictionary<string, TargetCount>.Empty;
+
+    [Parameter, EditorRequired]
+    public ValidatedBuild Build { get; set; } = null!;
+
     [Parameter, EditorRequired]
     public ImmutableArray<TriggerOption> Options { get; set; }
 
@@ -53,9 +70,16 @@
     [Parameter]
     public string Hint { get; set; } = "";
 
+    /// <summary>The action to append: the picked option aimed at its row's target count.</summary>
     [Parameter]
-    public EventCallback<TriggerOption> OnPick { get; set; }
+    public EventCallback<PlayerAction> OnPick { get; set; }
 
-    private Task PickTrigger(TriggerOption option) =>
-        OnPick.InvokeAsync(option);
+    private Task PickTrigger(PlayerAction action) =>
+        OnPick.InvokeAsync(action);
+
+    private void PickTargetCount(string key, ChangeEventArgs e)
+    {
+        var picked = TriggerPaletteShaping.ParseTargetCount(e.Value?.ToString());
+        counts = picked.Match(count => counts.SetItem(key, count.Value), _ => counts.Remove(key));
+    }
 }
