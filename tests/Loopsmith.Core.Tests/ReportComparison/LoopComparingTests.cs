@@ -9,10 +9,6 @@ namespace Loopsmith.Core.Tests.ReportComparison;
 /// <summary>The rows and advantage rules of docs/loop-format.md "Comparison", on hand-built reports.</summary>
 public sealed class LoopComparingTests
 {
-    private static readonly RefundTally Nothing = new(0m, false, 0);
-
-    private static readonly EnergyRefunds NoRefunds = new(Nothing, Nothing, Nothing, Nothing);
-
     /// <summary>A report that ran <paramref name="cycles"/> cycles (all completed by default); the ones after <paramref name="completed"/> are blocked.</summary>
     private static LoopReport CreateReport(
         string name,
@@ -20,7 +16,7 @@ public sealed class LoopComparingTests
         int completed = 10,
         int maxCycles = 10,
         int? cycles = null,
-        EnergyRefunds? refunds = null,
+        ImmutableArray<WastedTally> wasted = default,
         ImmutableArray<OutcomeTally> outcomes = default,
         ImmutableArray<BuffUptime> uptime = default,
         int unknown = 0,
@@ -32,7 +28,7 @@ public sealed class LoopComparingTests
                 [],
                 index < completed ? Optional.None<BlockedStep>() : Optional.Some(new BlockedStep(0, new PlayerAction.CollectPickups(PickupId.From("orb-of-power")), "blocked"))))
             .ToImmutableArray();
-        return new LoopReport(name, $"{name} build", steps, runs, completed, maxCycles, refunds ?? NoRefunds, [],
+        return new LoopReport(name, $"{name} build", steps, runs, completed, maxCycles, [], wasted.IsDefault ? [] : wasted,
             outcomes.IsDefault ? [new OutcomeTally("Kills", 0)] : outcomes, uptime.IsDefault ? [] : uptime, unknown, chance);
     }
 
@@ -60,9 +56,8 @@ public sealed class LoopComparingTests
         Assert.Equal(
             [
                 "Steps per cycle", "Repeatable cycles",
-                "Grenade energy refunded per cycle", "Melee energy refunded per cycle",
-                "Class ability energy refunded per cycle", "Super energy refunded per cycle",
                 "Kills per cycle", "Orb of Power spawned per cycle", "Ionic Trace spawned per cycle", "Bolt Charge maxed per cycle",
+                "Wasted per cycle (doesn't stack)",
                 "Amplified uptime", "Bolt Charge uptime",
                 "Unknown values", "Chance bullets",
             ],
@@ -108,25 +103,18 @@ public sealed class LoopComparingTests
     }
 
     [Fact]
-    public void More_energy_refunded_wins_then_more_refunds_of_unknown_size()
+    public void Less_wasted_wins_counting_every_rule_that_did_not_stack()
     {
-        var left = CreateReport("L", refunds: new EnergyRefunds(new(0.46m, false, 3), new(0.15m, true, 0), Nothing, new(0m, false, 2)));
-        var right = CreateReport("R", refunds: new EnergyRefunds(new(1.2m, false, 0), new(0.15m, true, 1), Nothing, new(0m, false, 5)));
+        static WastedTally Waste(string source, string partner, int count) =>
+            new(ElementId.From(source), DomainPhrasing.Capitalize(source), Affinity.Arc, partner, count);
+        var left = CreateReport("L", wasted: [Waste("tempest-strike", "Dielectric", 4), Waste("other", "Bomber", 1)]);
+        var right = CreateReport("R");
 
         var comparison = Compare(left, right);
 
         Assert.Equal(
-            new ComparisonRow("Grenade energy refunded per cycle", "+46% (+3 unknown)", "+120%", Advantage.Right),
-            FindRow(comparison, "Grenade energy refunded per cycle"));
-        Assert.Equal(
-            new ComparisonRow("Melee energy refunded per cycle", "+~15%", "+~15% (+1 unknown)", Advantage.Right),
-            FindRow(comparison, "Melee energy refunded per cycle"));
-        Assert.Equal(
-            new ComparisonRow("Class ability energy refunded per cycle", "0%", "0%", Advantage.None),
-            FindRow(comparison, "Class ability energy refunded per cycle"));
-        Assert.Equal(
-            new ComparisonRow("Super energy refunded per cycle", "0% (+2 unknown)", "0% (+5 unknown)", Advantage.Right),
-            FindRow(comparison, "Super energy refunded per cycle"));
+            new ComparisonRow("Wasted per cycle (doesn't stack)", "5", "0", Advantage.Right),
+            FindRow(comparison, "Wasted per cycle (doesn't stack)"));
     }
 
     [Fact]
@@ -151,7 +139,7 @@ public sealed class LoopComparingTests
     [Fact]
     public void Comparing_with_an_empty_loop_does_not_crash()
     {
-        var empty = new LoopReport("Empty", "B", 0, [], 0, 10, NoRefunds, [], [new OutcomeTally("Kills", 0)], [], 0, 0);
+        var empty = new LoopReport("Empty", "B", 0, [], 0, 10, [], [], [new OutcomeTally("Kills", 0)], [], 0, 0);
 
         var comparison = Compare(CreateReport("L", uptime: [ToUptime("amplified", 2, 4)]), empty);
 

@@ -31,8 +31,6 @@ public class LoopRunningTests
 
     private static readonly PlayerAction PowerKill = new PlayerAction.FireWeapon(WeaponSlot.Power, HitOutcome.Kill, TargetCount.One);
 
-    private static readonly RefundTally Nothing = new(0m, false, 0);
-
     [Fact]
     public void Abilities_never_run_out_so_a_loop_of_them_repeats_every_cycle()
     {
@@ -42,7 +40,7 @@ public class LoopRunningTests
         Assert.Equal(10, report.CompletedCycles);
         Assert.True(report.IsRepeatable());
         Assert.All(report.Cycles, cycle => Assert.False(cycle.Blocked.IsSome()));
-        Assert.Equal(new EnergyRefunds(Nothing, Nothing, Nothing, Nothing), report.Refunds);
+        Assert.Empty(report.Wasted);
         Assert.Equal(("Test loop", "Test build", 4), (report.LoopName, report.BuildName, report.StepCount));
     }
 
@@ -93,21 +91,17 @@ public class LoopRunningTests
     }
 
     [Fact]
-    public void Refunds_are_tallied_per_ability_in_the_steady_cycle_known_summed_unknown_counted()
+    public void Rules_that_do_not_stack_are_tallied_as_wasted_and_not_as_fired()
     {
-        var refunds = Element("refunds", ElementKind.Fragment,
-        [
-            On(new Trigger.AbilityCast(AbilityKind.Grenade), Energy(AbilityKind.Grenade, new GameValue.Known(0.25m))),
-            On(new Trigger.Damage(new DamageSource.AbilityOf(AbilityKind.Grenade)), Energy(AbilityKind.Grenade, new GameValue.Approximate(0.15m))),
-            On(new Trigger.KillAny(new DamageSource.AnySource()), Energy(AbilityKind.Melee, new GameValue.Unknown()), new Outcome.ResetCooldown(AbilityKind.ClassAbility)),
-        ]);
+        var giver = Element("giver", ElementKind.Fragment, [On(new Trigger.AbilityCast(AbilityKind.Grenade), Buff("bolt-charge"))]);
+        var yielder = Element("yielder", ElementKind.Fragment,
+            [On(new Trigger.AbilityCast(AbilityKind.Grenade), Buff("bolt-charge")).NotStackingWith("giver")]);
 
-        var report = RunLoop(ValidateBuild([refunds]), GrenadeKill, GrenadeKill);
+        var report = RunLoop(ValidateBuild([yielder, giver]), GrenadeKill, GrenadeKill);
 
-        Assert.Equal(
-            new EnergyRefunds(new RefundTally(0.8m, true, 0), new RefundTally(0m, false, 2), new RefundTally(2m, false, 0), Nothing),
-            report.Refunds);
-        Assert.Equal(2, report.UnknownValues);
+        Assert.Equal([new WastedTally(yielder.Id, "Yielder", Affinity.Arc, "Giver", 2)], report.Wasted);
+        Assert.Equal(2, report.CountWasted());
+        Assert.Equal([("giver", 2)], report.Sources.Select(s => (s.Source.Value, s.Fired)));
     }
 
     [Fact]
@@ -121,7 +115,6 @@ public class LoopRunningTests
         Assert.Equal(0, report.CompletedCycles);
         Assert.Equal(1, report.FindSteadyCycle().Match(cycle => cycle.Value.Number, _ => 0));
         Assert.Equal([("counter", 1)], report.Sources.Select(s => (s.Source.Value, s.Fired)));
-        Assert.Equal(new RefundTally(0.5m, false, 0), report.Refunds.Grenade);
     }
 
     [Fact]
@@ -168,7 +161,6 @@ public class LoopRunningTests
         Assert.True(report.IsRepeatable());
         Assert.Equal([new BuffUptime(Status("amplified"), "Amplified", Affinity.Arc, 2, 4)], report.Uptime);
         Assert.Equal(0.5m, report.Uptime[0].ComputeUptimeRatio());
-        Assert.Equal(new RefundTally(1m, false, 0), report.Refunds.ClassAbility);   // "full" counts as 100%
     }
 
     [Fact]
@@ -176,7 +168,7 @@ public class LoopRunningTests
     {
         var risky = Element("risky", ElementKind.Fragment,
         [
-            new Rule(new Trigger.AbilityCast(AbilityKind.Grenade), [], [Energy(AbilityKind.Melee, new GameValue.Unknown())], Optional.None<string>(), Likelihood.Chance),
+            new Rule(new Trigger.AbilityCast(AbilityKind.Grenade), [], [Energy(AbilityKind.Melee, new GameValue.Unknown())], Optional.None<string>(), Likelihood.Chance, []),
             On(new Trigger.Damage(new DamageSource.AbilityOf(AbilityKind.Grenade)), new Outcome.RestoreHealth(new GameValue.Unknown(), false)),
         ]);
 
@@ -211,7 +203,7 @@ public class LoopRunningTests
         Assert.Equal((0, 10, 0), (report.CompletedCycles, report.MaxCycles, report.StepCount));
         Assert.False(report.IsRepeatable());
         Assert.False(report.FindSteadyCycle().IsSome());
-        Assert.Equal(new EnergyRefunds(Nothing, Nothing, Nothing, Nothing), report.Refunds);
+        Assert.Empty(report.Wasted);
         Assert.Empty(report.Sources);
         Assert.Empty(report.Uptime);
         Assert.Contains("no steps", LoopReportRendering.RenderLoopReport(report).ToPlainText());

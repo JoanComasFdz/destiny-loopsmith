@@ -30,7 +30,7 @@ public static class LoopRunning
         var cycles = actions.IsEmpty ? [] : RunCycles(build, initial, actions, cycleLimit);
         var completed = cycles.Count(cycle => !cycle.Blocked.IsSome());
         var steady = cycles.IsEmpty ? [] : cycles[Math.Max(completed, 1) - 1].Resolutions;
-        var fired = steady.SelectMany(resolution => resolution.Fired).ToImmutableArray();
+        var fired = steady.SelectMany(resolution => resolution.Fired).Where(rule => !rule.NotStackedWith.IsSome()).ToImmutableArray();
         return new LoopReport(
             loopName,
             build.Build.Name,
@@ -38,8 +38,8 @@ public static class LoopRunning
             cycles,
             completed,
             cycleLimit,
-            LoopReportArithmetic.SumRefunds(ListRefunds(fired)),
             TallySources(fired),
+            TallyWasted(steady),
             TallyOutcomes(build, steady),
             MeasureUptime(build, steady),
             fired.SelectMany(rule => rule.Outcomes).Count(outcome => outcome.Certainty == Certainty.Unknown),
@@ -74,18 +74,29 @@ public static class LoopRunning
         return new CycleRun(number, resolutions, blocked);
     }
 
-    /// <summary>Every energy refund the rules granted, in the order they fired (explanation only, ADRs D21).</summary>
-    private static IEnumerable<EnergyRefund> ListRefunds(ImmutableArray<FiredRule> fired) =>
-        fired
-            .SelectMany(rule => rule.Outcomes)
-            .SelectMany(outcome => outcome.Refund.Match(refund => new[] { refund.Value }, _ => []));
-
     /// <summary>How many bullets each element fired, most first (ties in order of first appearance).</summary>
     private static ImmutableArray<SourceTally> TallySources(ImmutableArray<FiredRule> fired) =>
         fired
             .GroupBy(rule => rule.Source)
             .Select((group, order) => (Tally: new SourceTally(group.Key, group.First().SourceName, group.First().Affinity, group.Count()), Order: order))
             .OrderByDescending(x => x.Tally.Fired)
+            .ThenBy(x => x.Order)
+            .Select(x => x.Tally)
+            .ToImmutableArray();
+
+    /// <summary>
+    /// How often each element's rule gave nothing because it doesn't stack with another's, per partner, most first
+    /// (ties in order of first appearance).
+    /// </summary>
+    private static ImmutableArray<WastedTally> TallyWasted(ImmutableArray<Resolution> cycle) =>
+        cycle
+            .SelectMany(resolution => resolution.Fired)
+            .SelectMany(rule => rule.NotStackedWith.Match(partner => new[] { (Rule: rule, Partner: partner.Value) }, _ => []))
+            .GroupBy(x => (x.Rule.Source, x.Partner))
+            .Select((group, order) => (
+                Tally: new WastedTally(group.Key.Source, group.First().Rule.SourceName, group.First().Rule.Affinity, group.Key.Partner, group.Count()),
+                Order: order))
+            .OrderByDescending(x => x.Tally.Count)
             .ThenBy(x => x.Order)
             .Select(x => x.Tally)
             .ToImmutableArray();

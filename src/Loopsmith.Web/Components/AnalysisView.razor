@@ -32,19 +32,22 @@
     @if (steady is Optional<CycleRun>.Some steadyCycle)
     {
         <h3 class="section-label">
-            Energy refunded per cycle
-            <span class="label-note">steady state = cycle @steadyCycle.Value.Number</span>
+            Wasted per cycle
+            <span class="label-note">steady state = cycle @steadyCycle.Value.Number · rules that gave nothing because they don't stack</span>
         </h3>
-        <div class="energy-tiles" data-testid="refunds">
-            @foreach (var tile in ReportReading.ShapeRefunds(Report))
-            {
-                <div class="energy-tile @(tile.IsRefunded ? "gain" : "")">
-                    <span class="energy-kind">@tile.Ability</span>
-                    <span class="energy-value">@tile.Refund</span>
-                </div>
-            }
-        </div>
-        <p class="refund-note muted">What the rules give back each cycle, to weigh against the abilities the loop uses — ability energy itself isn't simulated.</p>
+        @if (Report.Wasted.IsEmpty)
+        {
+            <p class="muted" data-testid="wasted">Nothing wasted — everything that fired stacked.</p>
+        }
+        else
+        {
+            <ul class="tallies wasted" data-testid="wasted">
+                @foreach (var wasted in Report.Wasted)
+                {
+                    <li><span>@wasted.DescribeWasted()</span><strong>×@wasted.Count</strong></li>
+                }
+            </ul>
+        }
     }
 
     <div class="analysis-grid">

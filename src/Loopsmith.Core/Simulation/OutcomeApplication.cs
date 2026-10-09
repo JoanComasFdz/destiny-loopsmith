@@ -10,11 +10,9 @@ public sealed record Application(GameState State, AppliedOutcome Applied, Immuta
 
 public static class OutcomeApplication
 {
-    private static readonly ResolvedValue FullCharge = new(Optional.Some(1m), Certainty.Known);
-
     public static Application ApplyOutcome(ValidatedBuild build, GameState state, Outcome outcome, int copies) =>
         outcome.Match(
-            grantEnergy => AnnotateRefund(state, outcome, grantEnergy.To, ResolveGrant(grantEnergy.Amount, copies), 1),
+            grantEnergy => AnnotateEnergy(state, outcome, ResolveGrant(grantEnergy.Amount, copies), 1),
             convert => ConvertStacksToEnergy(state, outcome, convert, copies),
             applyBuff => ApplyBuff(build, state, outcome, applyBuff),
             removeBuff => RemoveBuff(state, outcome, removeBuff),
@@ -24,13 +22,13 @@ public static class OutcomeApplication
             strikeTarget => StrikeTarget(build, state, outcome, strikeTarget),
             modifyDamage => AnnotateValue(state, outcome, modifyDamage.Change, copies),
             restoreHealth => AnnotateValue(state, outcome, restoreHealth.Amount, copies),
-            resetCooldown => AnnotateRefund(state, outcome, resetCooldown.Which, FullCharge, 1));
+            resetCooldown => KeepUnchanged(state, outcome, Certainty.Known, ""));
 
-    /// <summary><c>full</c> is one whole charge (100 %); a fraction is resolved for the copies equipped.</summary>
-    private static ResolvedValue ResolveGrant(EnergyGrant grant, int copies) =>
+    /// <summary><c>full</c> is one whole charge (known); a fraction is resolved for the copies equipped.</summary>
+    private static Certainty ResolveGrant(EnergyGrant grant, int copies) =>
         grant.Match(
-            fraction => fraction.Amount.ResolveForCopies(copies),
-            _ => FullCharge);
+            fraction => fraction.Amount.ResolveForCopies(copies).Certainty,
+            _ => Certainty.Known);
 
     /// <summary>The stacks are consumed (a real state change); the energy they convert into is explanation only.</summary>
     private static Application ConvertStacksToEnergy(GameState state, Outcome outcome, Outcome.ConvertStacksToEnergy convert, int copies)
@@ -42,20 +40,18 @@ public static class OutcomeApplication
             return KeepUnchanged(state, outcome, Certainty.Known, "no stacks to consume");
         }
 
-        var perStack = convert.PerStack.ResolveForCopies(copies);
-        return AnnotateRefund(consumed, outcome, convert.To, perStack, stacks);
+        var perStack = convert.PerStack.ResolveForCopies(copies).Certainty;
+        return AnnotateEnergy(consumed, outcome, perStack, stacks);
     }
 
     /// <summary>
-    /// Records the energy an outcome refunds without changing any gauge — ability energy isn't simulated (ADRs D21).
-    /// An unknown amount stays unknown (counted, never applied as a number).
+    /// Explains an energy grant without changing any gauge — ability energy isn't simulated (ADRs D21). An unknown
+    /// amount stays unknown (counted, never applied as a number).
     /// </summary>
-    private static Application AnnotateRefund(GameState state, Outcome outcome, AbilityKind to, ResolvedValue amount, int stacks)
+    private static Application AnnotateEnergy(GameState state, Outcome outcome, Certainty certainty, int stacks)
     {
-        var total = new ResolvedValue(amount.Value.Map(value => value * stacks), amount.Certainty);
-        var caveat = JoinCaveats(stacks > 1 ? $"×{stacks} stacks" : "", amount.Value.IsSome() ? "" : "amount unknown");
-        var refund = Optional.Some(new EnergyRefund(to, total));
-        return new Application(state, new AppliedOutcome(outcome, amount.Certainty, caveat, refund), []);
+        var caveat = JoinCaveats(stacks > 1 ? $"×{stacks} stacks" : "", certainty == Certainty.Unknown ? "amount unknown" : "");
+        return new Application(state, ToApplied(outcome, certainty, caveat), []);
     }
 
     private static Application ApplyBuff(ValidatedBuild build, GameState state, Outcome outcome, Outcome.ApplyBuff apply)
@@ -132,9 +128,8 @@ public static class OutcomeApplication
     private static Application KeepUnchanged(GameState state, Outcome outcome, Certainty certainty, string caveat) =>
         new(state, ToApplied(outcome, certainty, JoinCaveats(caveat)), []);
 
-    /// <summary>An outcome that refunds no energy.</summary>
     private static AppliedOutcome ToApplied(Outcome outcome, Certainty certainty, Optional<string> caveat) =>
-        new(outcome, certainty, caveat, Optional.None<EnergyRefund>());
+        new(outcome, certainty, caveat);
 
     private sealed record StackBonus(int Extra, ImmutableArray<string> Sources);
 

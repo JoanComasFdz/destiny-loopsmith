@@ -8,7 +8,7 @@ namespace Loopsmith.Core.TraceRendering;
 
 /// <summary>
 /// A <see cref="LoopReport"/> as styled lines: does the loop repeat back to back, where it breaks, then the steady state
-/// (kills, pickups, energy refunded, what fired, buff uptime, caveats).
+/// (kills, pickups, what fired, what was wasted, buff uptime, caveats).
 /// </summary>
 public static class LoopReportRendering
 {
@@ -22,7 +22,7 @@ public static class LoopReportRendering
                 .. RenderHeading(report),
                 RenderVerdict(report),
                 StyledText.ToLine(1,
-                    "Ability energy isn't simulated: abilities are always available, refunds are counted below.".ToSpan(Tone.Muted)),
+                    "Ability energy isn't simulated: abilities are always available.".ToSpan(Tone.Muted)),
                 Blank,
                 .. RenderSteadyState(report),
             ];
@@ -61,22 +61,17 @@ public static class LoopReportRendering
             $" {report.CompletedCycles} of {DescribeCount(report.MaxCycles, "cycle")} completed.".ToSpan(Tone.Plain));
     }
 
-    /// <summary>One line per ability: "+46% (+3 unknown)" — what the rules refunded in the steady cycle.</summary>
-    private static ImmutableArray<StyledLine> RenderRefunds(LoopReport report)
+    /// <summary>One line per rule that gave nothing because it doesn't stack: "4× Tempest Strike doesn't stack with Dielectric".</summary>
+    private static ImmutableArray<StyledLine> RenderWasted(LoopReport report)
     {
-        var labels = LoopReportArithmetic.AbilityOrder.Select(ability => DomainPhrasing.Capitalize(ability.DescribeAbility())).ToImmutableArray();
-        var width = labels.Max(label => label.Length) + 2;
+        var countWidth = report.Wasted.Select(w => w.Count.ToString(Invariant).Length).DefaultIfEmpty(1).Max();
+        var lines = report.Wasted.Select(wasted => StyledText.ToLine(2,
+            $"{wasted.Count.ToString(Invariant).PadLeft(countWidth)}× ".ToSpan(Tone.Muted),
+            wasted.DescribeWasted().ToSpan(Tone.Warning)));
         return
         [
-            StyledText.ToLine(1, "Energy refunded per cycle ".ToSpan(Tone.Strong), "(what the rules give back; not applied to any gauge)".ToSpan(Tone.Muted)),
-            .. LoopReportArithmetic.AbilityOrder.Select((ability, index) =>
-            {
-                var refund = report.Refunds.ReadRefund(ability);
-                var isEmpty = refund.Amount == 0m && refund.UnknownCount == 0;
-                return StyledText.ToLine(2,
-                    Pad(labels[index], width).ToSpan(Tone.Muted),
-                    refund.DescribeRefund().ToSpan(isEmpty ? Tone.Muted : Tone.Strong));
-            }),
+            StyledText.ToLine(1, "Wasted per cycle ".ToSpan(Tone.Strong), "(rules that gave nothing: they don't stack)".ToSpan(Tone.Muted)),
+            .. report.Wasted.IsEmpty ? [StyledText.ToLine(2, "nothing — everything that fired stacked".ToSpan(Tone.Muted))] : lines,
         ];
     }
 
@@ -100,9 +95,9 @@ public static class LoopReportRendering
         [
             StyledText.ToLine(0, "Steady state ".ToSpan(Tone.Strong), $"({basis})".ToSpan(Tone.Muted)),
             .. outcomes,
-            .. RenderRefunds(report),
             StyledText.ToLine(1, "Fired per cycle".ToSpan(Tone.Strong)),
             .. report.Sources.IsEmpty ? [StyledText.ToLine(2, "nothing".ToSpan(Tone.Muted))] : sources,
+            .. RenderWasted(report),
             StyledText.ToLine(1, "Buff uptime ".ToSpan(Tone.Strong), "(active after how many of the cycle's steps)".ToSpan(Tone.Muted)),
             .. report.Uptime.IsEmpty ? [StyledText.ToLine(2, "no buffs".ToSpan(Tone.Muted))] : uptime,
             RenderCaveat(report.UnknownValues, "?", "unknown value not applied", "unknown values not applied", " — the real loop is stronger"),

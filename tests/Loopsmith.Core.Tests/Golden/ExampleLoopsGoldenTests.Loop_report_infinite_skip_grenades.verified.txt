@@ -1,36 +1,30 @@
 ﻿Infinite skip grenades  Skip Grenade Hunter
   6 steps per cycle, played back to back from a fresh spawn for up to 10 cycles
   ✓ Repeatable — all 10 cycles completed back to back
-  Ability energy isn't simulated: abilities are always available, refunds are counted below.
+  Ability energy isn't simulated: abilities are always available.
 
 Steady state (cycle 10, the last completed)
-  Kills                 10
-  Ionic Trace spawned   11
+  Kills                 7
+  Ionic Trace spawned   8
   Orb of Power spawned  4
-  Bolt Charge maxed     6
-  Energy refunded per cycle (what the rules give back; not applied to any gauge)
-    Grenade        +~372.9% (+32 unknown)
-    Melee          +187.5% (+1 unknown)
-    Class ability  +135%
-    Super          0% (+4 unknown)
+  Bolt Charge maxed     3
   Fired per cycle
-    40× Shinobu's Vow
-    36× Bolt Charge
-    12× To Shreds
-    11× Spark of Discharge
-    10× Tempest Strike
-    10× Flow State
-    10× Dielectric
-    10× Shock and Clear
-    10× Elemental Charge
-    10× Ionic Trace
-     9× Photonic Flare
-     6× Flashover
-     6× Defibrillating Blast
+    22× Shinobu's Vow
+    18× Bolt Charge
+     9× To Shreds
+     7× Flow State
+     7× Dielectric
+     7× Shock and Clear
+     7× Spark of Discharge
+     6× Photonic Flare
+     6× Elemental Charge
+     6× Ionic Trace
      4× Jolt
      4× Horde Shuttle
      4× Unraveling Orbs
      4× Orb of Power
+     3× Flashover
+     3× Defibrillating Blast
      2× Reaper
      2× Slice
      2× Grenade Kickstart
@@ -41,23 +35,25 @@ Steady state (cycle 10, the last completed)
      1× Attrition Orbs
      1× Strand Siphon
      1× Harmonic Siphon
+  Wasted per cycle (rules that gave nothing: they don't stack)
+    7× Tempest Strike doesn't stack with Dielectric
   Buff uptime (active after how many of the cycle's steps)
     Amplified          6/6 steps
     Woven Mail         6/6 steps
     Unraveling Rounds  6/6 steps
-    New Tricks         6/6 steps
-    Bolt Charge        6/6 steps
     Armor Charge       6/6 steps
+    Bolt Charge        6/6 steps
     Slice              6/6 steps
+    New Tricks         5/6 steps
     Reaper             2/6 steps
-  ? 59 unknown values not applied — the real loop is stronger
-  (chance) 18 bullets fired in v1 but not guaranteed in game
+  ? 35 unknown values not applied — the real loop is stronger
+  (chance) 14 bullets fired in v1 but not guaranteed in game
 
 Steps
   The creator's loop: dodge to arm Slice and Reaper, skip grenade into the pack, clean up with
   the Strand and Arc weapons, grab the orbs, skip grenade again. Every jolted kill feeds Bolt
-  Charge and Ionic Traces back into grenade energy: the rules refund more than the two grenades
-  a cycle throws (ability energy isn't simulated, so the analysis adds the refunds up).
+  Charge and Ionic Traces, which give grenade energy back. Tempest Strike's Bolt Charge on those
+  kills doesn't stack with Dielectric's, so the analysis lists it as wasted.
   1. class                Gambler's Dodge: arms Slice and Reaper; Bomber refunds grenade energy
   2. grenade:kill         Skip grenade into the pack: Spark of Shock jolts, the jolted kill gives Amplified, Bolt Charge and Ionic Traces
   3. kinetic:kill         Festival Flight: Slice severs, Reaper and Attrition Orbs drop orbs, To Shreds unravels

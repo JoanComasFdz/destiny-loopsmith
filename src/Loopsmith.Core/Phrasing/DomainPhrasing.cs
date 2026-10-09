@@ -317,17 +317,9 @@ public static class DomainPhrasing
 
     // ── loop analysis ──────────────────────────────────────────────────────────
 
-    /// <summary>
-    /// Energy refunded in a cycle: "+46%", "+~46%" when part of it is approximate, "0%", and the refunds of unknown
-    /// size appended: "+46% (+3 unknown)".
-    /// </summary>
-    public static string DescribeRefund(this RefundTally refund)
-    {
-        var sign = refund.Amount > 0m ? "+" : "";
-        var approximate = refund.IsApproximate && refund.Amount != 0m ? "~" : "";
-        var unknown = refund.UnknownCount > 0 ? $" (+{refund.UnknownCount.ToString(Invariant)} unknown)" : "";
-        return sign + approximate + FormatPercentNumber(refund.Amount) + unknown;
-    }
+    /// <summary>"Tempest Strike doesn't stack with Dielectric" — a rule that gave nothing (<see cref="WastedTally"/>).</summary>
+    public static string DescribeWasted(this WastedTally wasted) =>
+        $"{wasted.SourceName} doesn't stack with {wasted.PartnerName}";
 
     /// <summary>Every significant digit of a decimal, no trailing zeros: tokens round-trip (<c>wait:2.25</c>).</summary>
     private const string LosslessDecimal = "0.############################";

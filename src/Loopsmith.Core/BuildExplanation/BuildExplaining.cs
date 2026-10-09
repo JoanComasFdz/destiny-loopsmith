@@ -43,7 +43,7 @@ public static class BuildExplaining
                     x.Element.Kind,
                     x.Element.Affinity,
                     x.Rule.Likelihood,
-                    x.Rule.When.IsEmpty ? Optional.None<string>() : Optional.Some(glossary.DescribeConditions(x.Rule.When)),
+                    DescribeRuleCondition(build, x.Rule),
                     x.Rule.Reason)));
         var passiveItems = build.Equipped
             .SelectMany(equipped => equipped.Element.Passives.Select(passive => (equipped.Element, Passive: passive)))
@@ -114,6 +114,17 @@ public static class BuildExplaining
             RenderRow("Stats", string.Join(" · ", stats)),
             .. issues,
         ];
+    }
+
+    /// <summary>The rule's guards, plus "doesn't stack with X" for each equipped element it gives way to.</summary>
+    private static Optional<string> DescribeRuleCondition(ValidatedBuild build, Rule rule)
+    {
+        var guards = rule.When.IsEmpty ? [] : new[] { build.Catalog.Glossary.DescribeConditions(rule.When) };
+        var partners = build.Equipped
+            .Where(equipped => rule.DoesNotStackWith.Contains(equipped.Element.Id))
+            .Select(equipped => $"doesn't stack with {equipped.Element.Name}");
+        var parts = guards.Concat(partners).ToImmutableArray();
+        return parts.IsEmpty ? Optional.None<string>() : Optional.Some(string.Join("; ", parts));
     }
 
     private static StyledLine RenderNoteLine(ExplanationGroup group)

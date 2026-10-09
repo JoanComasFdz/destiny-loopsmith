@@ -27,10 +27,14 @@ public static class TestCatalog
         ImmutableDictionary<SummonId, SummonDefinition>.Empty);
 
     public static Rule On(Trigger trigger, params Outcome[] then) =>
-        new(trigger, [], [.. then], Optional.None<string>(), Likelihood.Always);
+        new(trigger, [], [.. then], Optional.None<string>(), Likelihood.Always, []);
 
     public static Rule OnWhen(Trigger trigger, Condition condition, params Outcome[] then) =>
-        new(trigger, [condition], [.. then], Optional.None<string>(), Likelihood.Always);
+        new(trigger, [condition], [.. then], Optional.None<string>(), Likelihood.Always, []);
+
+    /// <summary>A rule that gives way to <paramref name="partner"/>'s rules on the same event.</summary>
+    public static Rule NotStackingWith(this Rule rule, string partner) =>
+        rule with { DoesNotStackWith = [ElementId.From(partner)] };
 
     public static Outcome Buff(string status, int stacks = 1) =>
         new Outcome.ApplyBuff(Status(status), Optional.None<Seconds>(), StackCount.From(stacks));

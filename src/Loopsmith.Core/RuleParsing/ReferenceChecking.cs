@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 using static Loopsmith.Core.RuleParsing.ResultAccumulation;
@@ -12,9 +13,50 @@ namespace Loopsmith.Core.RuleParsing;
 /// </summary>
 internal sealed record ReferenceScope(Optional<KeywordGlossary> Glossary);
 
-/// <summary>Ids used in rules, checked against the glossary and against the kind their position needs.</summary>
+/// <summary>
+/// Ids used in rules, checked against the glossary and against the kind their position needs — and the element ids
+/// of <c>doesNotStackWith</c>, checked against the whole catalog.
+/// </summary>
 internal static class ReferenceChecking
 {
+    /// <summary>
+    /// <c>doesNotStackWith</c> names other elements of the catalog, never the rule's own element, and never both
+    /// ways round (each would give way to the other and neither would apply). Errors are reported at the element.
+    /// </summary>
+    internal static Result<Unit, Errors> CheckStackingReferences(ImmutableArray<Located<BuildElement>> elements)
+    {
+        var ids = elements.Select(element => element.Value.Id).ToImmutableHashSet();
+        var pairs = elements
+            .SelectMany(element => element.Value.Rules
+                .SelectMany(rule => rule.DoesNotStackWith)
+                .Distinct()
+                .Select(other => (Element: element, Other: other)))
+            .ToImmutableArray();
+        var declared = pairs.Select(pair => (pair.Element.Value.Id, pair.Other)).ToImmutableHashSet();
+        var errors = pairs.SelectMany(pair => DescribeStackingProblem(pair.Element, pair.Other, ids, declared)).ToImmutableArray();
+        return errors.IsEmpty ? Succeed<Unit>(new Unit.Value()) : Fail<Unit>(errors);
+    }
+
+    private static IEnumerable<ParseError> DescribeStackingProblem(
+        Located<BuildElement> element,
+        ElementId other,
+        ImmutableHashSet<ElementId> ids,
+        ImmutableHashSet<(ElementId, ElementId)> declared)
+    {
+        var id = element.Value.Id;
+        var problem = (other == id, ids.Contains(other), declared.Contains((other, id))) switch
+        {
+            (true, _, _) => Optional.Some($"'{id}': doesNotStackWith names its own element"),
+            (_, false, _) => Optional.Some($"'{id}': doesNotStackWith '{other}' is not an element of the rules"),
+            (_, _, true) => Optional.Some(
+                $"'{id}' and '{other}' each say they don't stack with the other; say it only on the side that gives nothing"),
+            _ => Optional.None<string>(),
+        };
+        return problem.Match(
+            some => new[] { new ParseError(element.Path, Optional.Some(element.Line), some.Value) },
+            _ => []);
+    }
+
     /// <summary>Any glossary status (keyword damage: <c>strikeTarget.via</c>, <c>keyword:&lt;status&gt;</c>).</summary>
     internal static Result<StatusId, Errors> ReadStatus(this ReferenceScope scope, YamlValue value) =>
         ValueReading.ReadStatusId(value).Bind(id => scope.CheckStatus(value, id, Optional.None<KeywordKind>()));

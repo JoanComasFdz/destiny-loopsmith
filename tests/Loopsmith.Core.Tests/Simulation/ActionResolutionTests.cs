@@ -15,6 +15,54 @@ public class ActionResolutionTests
     private static Resolution ResolveOnce(ValidatedBuild build, PlayerAction action) =>
         ActionResolution.ResolveAction(build, ActionResolution.CreateInitialState(), action);
 
+    private static string DescribeTrace(ValidatedBuild build, Resolution resolution) =>
+        string.Join("\n", TraceRenderer.RenderResolution(build, resolution, new TraceOptions(false, false, false)).Select(line => line.ToPlainText()));
+
+    private static readonly BuildElement Giver =
+        Element("giver", ElementKind.Fragment, [On(new Trigger.AbilityCast(AbilityKind.Grenade), Buff("bolt-charge"))]);
+
+    private static readonly BuildElement Yielder =
+        Element("yielder", ElementKind.Fragment, [On(new Trigger.AbilityCast(AbilityKind.Grenade), Buff("bolt-charge")).NotStackingWith("giver")]);
+
+    [Fact]
+    public void A_rule_that_does_not_stack_gives_way_to_the_other_elements_rule_on_the_same_event()
+    {
+        var build = ValidateBuild([Yielder, Giver]);
+
+        var resolution = ResolveOnce(build, GrenadeKill);
+
+        var yielded = resolution.Fired.Single(f => f.Source.Value == "yielder");
+        Assert.Equal(Optional.Some("Giver"), yielded.NotStackedWith);
+        Assert.Empty(yielded.Outcomes);
+        Assert.Equal(1, resolution.State.Buffs.Single(b => b.Status == Status("bolt-charge")).Stacks.Value);
+        Assert.Contains("+1 Bolt Charge [Giver] + doesn't stack with Giver [Yielder]", DescribeTrace(build, resolution));
+    }
+
+    [Fact]
+    public void Without_the_other_element_a_rule_that_does_not_stack_applies_as_usual()
+    {
+        var build = ValidateBuild([Yielder]);
+
+        var resolution = ResolveOnce(build, GrenadeKill);
+
+        var fired = resolution.Fired.Single(f => f.Source.Value == "yielder");
+        Assert.False(fired.NotStackedWith.IsSome());
+        Assert.Single(fired.Outcomes);
+        Assert.Equal(1, resolution.State.Buffs.Single(b => b.Status == Status("bolt-charge")).Stacks.Value);
+    }
+
+    [Fact]
+    public void The_build_check_warns_that_a_rule_which_does_not_stack_is_wasted()
+    {
+        var both = ValidateBuild([Yielder, Giver]);
+        var alone = ValidateBuild([Yielder]);
+
+        var warning = Assert.Single(both.Issues, issue => issue.Message.Contains("doesn't stack"));
+        Assert.Equal(Severity.Warning, warning.Severity);
+        Assert.Equal("'Yielder': +1 Bolt Charge on \"Grenade thrown\" doesn't stack with 'Giver' — with both equipped, it is wasted.", warning.Message);
+        Assert.DoesNotContain(alone.Issues, issue => issue.Message.Contains("doesn't stack"));
+    }
+
     [Fact]
     public void Kill_sees_the_debuff_its_own_hit_applied()
     {
@@ -90,9 +138,8 @@ public class ActionResolutionTests
         var resolution = ActionResolution.ResolveAction(build, initial, GrenadeKill);
 
         var outcomes = resolution.Fired.Single().Outcomes;
-        Assert.Equal(Certainty.Known, outcomes[0].Certainty);
-        Assert.Equal(Optional.Some(new EnergyRefund(AbilityKind.Grenade, new ResolvedValue(Optional.Some(0.25m), Certainty.Known))), outcomes[0].Refund);
-        Assert.Equal(Optional.Some(new EnergyRefund(AbilityKind.Melee, new ResolvedValue(Optional.Some(1m), Certainty.Known))), outcomes[1].Refund);
+        Assert.Equal([Certainty.Known, Certainty.Known], outcomes.Select(o => o.Certainty));
+        Assert.All(outcomes, outcome => Assert.False(outcome.Caveat.IsSome()));
         Assert.Equal(initial with { Step = 1 }, resolution.State with { Target = initial.Target });
     }
 
@@ -107,7 +154,7 @@ public class ActionResolutionTests
 
         var applied = resolution.Fired.Single().Outcomes.Single();
         Assert.Equal(Certainty.Unknown, applied.Certainty);
-        Assert.Equal(Optional.Some(new EnergyRefund(AbilityKind.Grenade, new ResolvedValue(Optional.None<decimal>(), Certainty.Unknown))), applied.Refund);
+        Assert.Equal(Optional.Some("amount unknown"), applied.Caveat);
     }
 
     [Fact]
@@ -123,7 +170,7 @@ public class ActionResolutionTests
 
         var applied = resolution.Fired.Single().Outcomes.Single();
         Assert.Equal(Certainty.Known, applied.Certainty);
-        Assert.Equal(Optional.Some(0.20m), applied.Refund.Bind(refund => refund.Amount.Value));
+        Assert.Contains("+20% grenade energy", DescribeTrace(build, resolution));
     }
 
     [Fact]
@@ -139,7 +186,7 @@ public class ActionResolutionTests
 
         var applied = thrown.Fired.Single(f => f.Source.Value == "kickstart").Outcomes.Single();
         Assert.DoesNotContain(thrown.State.Buffs, b => b.Status == Status("bolt-charge"));
-        Assert.Equal(Optional.Some(new EnergyRefund(AbilityKind.Grenade, new ResolvedValue(Optional.Some(0.2m), Certainty.Approximate))), applied.Refund);
+        Assert.Equal(Certainty.Approximate, applied.Certainty);
         Assert.Equal(Optional.Some("×2 stacks"), applied.Caveat);
     }
 

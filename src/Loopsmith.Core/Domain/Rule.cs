@@ -58,13 +58,18 @@ public partial record Outcome
     partial record ResetCooldown(AbilityKind Which);
 }
 
-/// <summary>"When <see cref="On"/> happens and every <see cref="When"/> holds, then <see cref="Then"/>."</summary>
+/// <summary>
+/// "When <see cref="On"/> happens and every <see cref="When"/> holds, then <see cref="Then"/>."
+/// <see cref="DoesNotStackWith"/>: when a rule of one of these elements fires on the same event, this rule gives
+/// nothing — the game doesn't stack the two (Tempest Strike's Bolt Charge with Dielectric's).
+/// </summary>
 public sealed record Rule(
     Trigger On,
     ImmutableArray<Condition> When,
     ImmutableArray<Outcome> Then,
     Optional<string> Reason,
-    Likelihood Likelihood);
+    Likelihood Likelihood,
+    ImmutableArray<ElementId> DoesNotStackWith);
 
 public sealed record WeaponStatChange(string Stat, GameValue Change);
 

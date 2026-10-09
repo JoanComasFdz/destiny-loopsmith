@@ -46,18 +46,14 @@ public partial record GameEvent
     partial record StacksMaxed(StatusId Status);
 }
 
-/// <summary>
-/// Ability energy an outcome refunded, as a fraction of one charge (0.12 = 12 %, 1 = a full charge). Explanation only:
-/// no gauge changes (ADRs D21). An unknown amount ("?") has no value.
-/// </summary>
-public sealed record EnergyRefund(AbilityKind Ability, ResolvedValue Amount);
-
-/// <summary>An outcome as it was applied, with how far to trust it and the energy it refunded (energy outcomes only).</summary>
-public sealed record AppliedOutcome(Outcome Outcome, Certainty Certainty, Optional<string> Caveat, Optional<EnergyRefund> Refund);
+/// <summary>An outcome as it was applied, with how far to trust it (an energy grant only explains — ADRs D21).</summary>
+public sealed record AppliedOutcome(Outcome Outcome, Certainty Certainty, Optional<string> Caveat);
 
 /// <summary>
 /// One bullet of a build note: source → trigger → outcomes (reason), at cascade depth.
 /// <see cref="EventIndex"/> numbers the events of a step, so bullets of the same event can be grouped.
+/// <see cref="NotStackedWith"/> names the element this rule gave way to (<see cref="Rule.DoesNotStackWith"/>): it
+/// matched, but applied nothing, so <see cref="Outcomes"/> is empty.
 /// </summary>
 public sealed record FiredRule(
     ElementId Source,
@@ -69,7 +65,8 @@ public sealed record FiredRule(
     Optional<string> Reason,
     Likelihood Likelihood,
     int Depth,
-    int EventIndex);
+    int EventIndex,
+    Optional<string> NotStackedWith);
 
 /// <summary>A passive whose conditions hold in the current state (shown next to the state, not as a bullet).</summary>
 public sealed record ActivePassive(ElementId Source, string SourceName, Affinity Affinity, PassiveRule Passive);

@@ -170,14 +170,16 @@ public static class TraceRenderer
         var glossary = build.Catalog.Glossary;
         var copies = build.Equipped.Where(e => e.Element.Id == rule.Source).Select(e => e.Count).DefaultIfEmpty(1).First();
         ImmutableArray<StyledSpan> joiner = isContinuation ? [" + ".ToSpan(Tone.Muted)] : [];
-        var outcomes = rule.Outcomes.IsEmpty
-            ? "(no effect)"
-            : glossary.DescribeOutcomes(rule.Outcomes.Select(o => new OutcomeMention(o.Outcome, copies)));
+        var outcomes = rule.NotStackedWith.Match(
+            partner => $"doesn't stack with {partner.Value}".ToSpan(Tone.Warning),
+            _ => (rule.Outcomes.IsEmpty
+                ? "(no effect)"
+                : glossary.DescribeOutcomes(rule.Outcomes.Select(o => new OutcomeMention(o.Outcome, copies)))).ToSpan(Tone.Plain));
         ImmutableArray<StyledSpan> chance = rule.Likelihood == Likelihood.Chance ? [" (chance)".ToSpan(Tone.Muted)] : [];
         return
         [
             .. joiner,
-            outcomes.ToSpan(Tone.Plain),
+            outcomes,
             " [".ToSpan(Tone.Muted),
             rule.SourceName.ToSpan(rule.Affinity.ToTone()),
             "]".ToSpan(Tone.Muted),

@@ -105,12 +105,12 @@ elements:
     # Previously clarity/4194622037@2.0625, which agrees; the Compendium adds the Dielectric note.
     source: compendium/2026-10-09/Arc#51
     rules:
-      # Not expressible: the Compendium says this x1 does not stack with Dielectric's x1 on the same
-      # kill. v1 can't stop two elements' grants from stacking, so with Dielectric equipped a jolted
-      # kill gives one stack too many (see discrepancies.md and the backlog's format gaps).
+      # The Compendium says this x1 does not stack with Dielectric's x1 on the same kill: with
+      # Dielectric equipped, this rule gives nothing (and the build check flags it as wasted).
       - on: { kill: { via: any, targetHas: [jolt] } }
         then:
           - { applyBuff: { status: bolt-charge, stacks: 1 } }
+        doesNotStackWith: [dielectric]
         reason: "Killing a jolted enemy gives you a stack of Bolt Charge."
       # "while sliding" is not expressible: any melee hit counts. The ~4 s damage resistance after
       # the cast is not modelled (no timed-resistance outcome).

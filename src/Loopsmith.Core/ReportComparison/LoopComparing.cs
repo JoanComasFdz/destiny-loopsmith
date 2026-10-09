@@ -22,9 +22,8 @@ public static class LoopComparing
         [
             CreateRow("Steps per cycle", left.StepCount, right.StepCount, Better.Unjudged),
             CompareRepeats(left, right),
-            .. LoopReportArithmetic.AbilityOrder.Select(ability =>
-                CompareRefunds(ability, left.Refunds.ReadRefund(ability), right.Refunds.ReadRefund(ability))),
             .. CompareOutcomes(left, right),
+            CreateRow("Wasted per cycle (doesn't stack)", left.CountWasted(), right.CountWasted(), Better.Lower),
             .. CompareUptime(left, right),
             CreateRow("Unknown values", left.UnknownValues, right.UnknownValues, Better.Lower),
             CreateRow("Chance bullets", left.ChanceRules, right.ChanceRules, Better.Lower),
@@ -49,21 +48,6 @@ public static class LoopComparing
         report.IsRepeatable()
             ? $"{report.MaxCycles}+"
             : report.CompletedCycles.ToString(Invariant);
-
-    /// <summary>
-    /// More energy refunded is better: the known (and approximate) amount first; on a tie, more refunds of unknown size
-    /// (each gives back something).
-    /// </summary>
-    private static ComparisonRow CompareRefunds(AbilityKind ability, RefundTally left, RefundTally right)
-    {
-        var byAmount = JudgeAdvantage(left.Amount, right.Amount, Better.Higher);
-        var byUnknown = JudgeAdvantage(left.UnknownCount, right.UnknownCount, Better.Higher);
-        return new ComparisonRow(
-            $"{DomainPhrasing.Capitalize(ability.DescribeAbility())} energy refunded per cycle",
-            left.DescribeRefund(),
-            right.DescribeRefund(),
-            byAmount == Advantage.None ? byUnknown : byAmount);
-    }
 
     /// <summary>Kills, then every pickup spawned, then every status maxed — union of both reports, missing counts as 0.</summary>
     private static IEnumerable<ComparisonRow> CompareOutcomes(LoopReport left, LoopReport right) =>

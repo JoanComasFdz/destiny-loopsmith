@@ -11,7 +11,7 @@ namespace Loopsmith.Core.RuleParsing;
 /// <summary>An element's <c>rules</c> (on → when → then) and <c>passives</c>, with every id checked against the glossary.</summary>
 internal static class RuleBodyParsing
 {
-    private static readonly ImmutableArray<string> RuleKeys = ["on", "when", "then", "chance", "reason"];
+    private static readonly ImmutableArray<string> RuleKeys = ["on", "when", "then", "chance", "reason", "doesNotStackWith"];
     private static readonly ImmutableArray<string> PassiveRuleKeys = ["effect", "when", "reason"];
     private static readonly ImmutableArray<string> KillKeys = ["via", "tier", "targetHas", "atLeast"];
     private static readonly ImmutableArray<string> DamageKeys = ["via", "targetHas", "atLeast"];
@@ -38,8 +38,9 @@ internal static class RuleBodyParsing
             map.ReadRequired("then", then => ReadOutcomes(scope, then)),
             map.ReadOrDefault("chance", ReadBoolean, false),
             map.ReadOptional("reason", YamlReading.ToText),
-            (_, on, when, then, chance, reason) =>
-                new Rule(on, when, then, reason, chance ? Likelihood.Chance : Likelihood.Always)));
+            map.ReadOrDefault("doesNotStackWith", ReadElementList, []),
+            (_, on, when, then, chance, reason, doesNotStackWith) =>
+                new Rule(on, when, then, reason, chance ? Likelihood.Chance : Likelihood.Always, doesNotStackWith)));
 
     internal static Result<PassiveRule, Errors> ReadPassiveRule(ReferenceScope scope, YamlValue value) =>
         value.ToMap().Bind(map => Combine(
@@ -126,6 +127,12 @@ internal static class RuleBodyParsing
         value.ReadEach(value.Label, scope.ReadDebuff).Bind(statuses => statuses.IsEmpty
             ? value.FailAt<ImmutableArray<StatusId>>($"{value.Label} must list at least one debuff")
             : Succeed(statuses));
+
+    /// <summary>Element ids (<c>doesNotStackWith</c>); whether they exist is checked once every file is parsed.</summary>
+    private static Result<ImmutableArray<ElementId>, Errors> ReadElementList(YamlValue value) =>
+        value.ReadEach(value.Label, ReadElementId).Bind(ids => ids.IsEmpty
+            ? value.FailAt<ImmutableArray<ElementId>>($"{value.Label} must list at least one element")
+            : Succeed(ids));
 
     // ── Conditions (when) ────────────────────────────────────────────────────────────────
 

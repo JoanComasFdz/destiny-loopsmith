@@ -14,7 +14,7 @@ Melee kill -> +1 Combination Blow and +100% class ability energy and heals you [
 Kill target with Arc weapon -> Ionic Trace [Spark of Discharge] (chance) + Orb of Power [Harmonic Siphon] (chance)
 Kill target with weapon -> consumes Reaper and Orb of Power (while Reaper) [Reaper]
 Kill target with Strand weapon -> Orb of Power [Strand Siphon] (chance)
-Kill Jolted target -> +1 Bolt Charge [Tempest Strike] + Amplified [Flow State] + Ionic Trace [Shock and Clear] + +1 Bolt Charge [Dielectric]
+Kill Jolted target -> +1 Bolt Charge (doesn't stack with Dielectric) [Tempest Strike] + Amplified [Flow State] + Ionic Trace [Shock and Clear] + +1 Bolt Charge [Dielectric]
 Kill Severed target -> Woven Mail (10s) and heals you and allies [To Shreds]
 Arc kill on Severed target -> Blind target [Photonic Flare]
 Pick up Ionic Trace -> +1 Bolt Charge [Spark of Discharge] + +1 Armor Charge [Elemental Charge] (chance) + +11.3% grenade and melee energy and +13.5% class ability energy [Ionic Trace]

@@ -542,6 +542,76 @@ public sealed class RuleCatalogParsingTests
         Assert.Contains("hunter/arc.yaml:10: spawn.pickup: unknown pickup 'tangle'", message);
     }
 
+    // ── Rules that don't stack ───────────────────────────────────────────────────────────
+
+    /// <summary>Tempest Strike (line 2) gives way to <paramref name="partner"/>; Dielectric (line 11) adds <paramref name="dielectricSays"/>.</summary>
+    private static SourceText ToStackingFile(string partner, string dielectricSays = "") =>
+        ToElementsFile("hunter/arc.yaml", """
+            elements:
+              - id: tempest-strike
+                name: Tempest Strike
+                kind: aspect
+                affinity: arc
+                rules:
+                  - on: { abilityCast: grenade }
+                    then: [ { applyBuff: bolt-charge } ]
+                    doesNotStackWith: PARTNER
+                    reason: "Jolted kills give Bolt Charge."
+              - id: dielectric
+                name: Dielectric
+                kind: artifactPerk
+                affinity: arc
+                rules:
+                  - on: { abilityCast: grenade }
+                    then: [ { applyBuff: bolt-charge } ]
+                    DIELECTRIC
+            """.Replace("PARTNER", partner).Replace("DIELECTRIC", dielectricSays));
+
+    [Fact]
+    public void Parses_the_elements_a_rule_does_not_stack_with()
+    {
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToStackingFile("[dielectric]")]));
+
+        Assert.Equal([ElementId.From("dielectric")], catalog.Elements[ElementId.From("tempest-strike")].Rules[0].DoesNotStackWith);
+        Assert.Empty(catalog.Elements[ElementId.From("dielectric")].Rules[0].DoesNotStackWith);
+    }
+
+    [Fact]
+    public void Does_not_stack_with_an_unknown_element_is_an_error()
+    {
+        var message = ParseInvalidCatalog(Glossary, ToStackingFile("[dielectrik]"));
+
+        Assert.Equal("hunter/arc.yaml:2: 'tempest-strike': doesNotStackWith 'dielectrik' is not an element of the rules", message);
+    }
+
+    [Fact]
+    public void Does_not_stack_with_its_own_element_is_an_error()
+    {
+        var message = ParseInvalidCatalog(Glossary, ToStackingFile("[tempest-strike]"));
+
+        Assert.Equal("hunter/arc.yaml:2: 'tempest-strike': doesNotStackWith names its own element", message);
+    }
+
+    [Fact]
+    public void Two_elements_that_each_give_way_to_the_other_are_an_error_at_both()
+    {
+        var message = ParseInvalidCatalog(Glossary, ToStackingFile("[dielectric]", "doesNotStackWith: [tempest-strike]"));
+
+        Assert.Equal(
+            "hunter/arc.yaml:2: 'tempest-strike' and 'dielectric' each say they don't stack with the other; say it only on the side that gives nothing\n"
+            + "hunter/arc.yaml:11: 'dielectric' and 'tempest-strike' each say they don't stack with the other; say it only on the side that gives nothing",
+            message);
+    }
+
+    [Fact]
+    public void Does_not_stack_with_nothing_is_an_error()
+    {
+        var message = ParseInvalidCatalog(Glossary, ToStackingFile("[]"));
+
+        Assert.Contains("must list at least one element", message);
+        Assert.StartsWith("hunter/arc.yaml:9: ", message);
+    }
+
     // ── Multi-target triggers: "hit / kill at least N enemies in one action" (ADRs D22) ──────
 
     private const string OneForAllYaml = """

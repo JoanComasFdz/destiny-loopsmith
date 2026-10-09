@@ -58,22 +58,22 @@ public class ExampleLoopsGoldenTests
     }
 
     [Fact]
-    public void The_creators_loop_repeats_and_its_rules_give_more_than_a_grenade_back()
+    public void The_creators_loop_repeats_and_wastes_tempest_strikes_bolt_charge()
     {
         var report = AnalyzeLoop(SkipGrenadesPath);
 
         Assert.True(report.IsRepeatable());
-        Assert.True(report.Refunds.Grenade.Amount >= 2m, $"grenade refund {report.Refunds.Grenade}");   // two grenades a cycle
+        var wasted = Assert.Single(report.Wasted);   // jolted kills: Tempest Strike's x1 doesn't stack with Dielectric's
+        Assert.Equal(("tempest-strike", "Dielectric"), (wasted.Source.Value, wasted.PartnerName));
+        Assert.True(wasted.Count > 0);
     }
 
     [Fact]
-    public void Melee_first_repeats_too_energy_no_longer_breaks_it()
+    public void Melee_first_repeats_too_energy_never_breaks_a_loop()
     {
         var report = AnalyzeLoop(MeleeFirstPath);
 
         Assert.True(report.IsRepeatable());
-        Assert.True(report.Refunds.Melee.Amount > 0m);
-        Assert.True(report.Refunds.Melee.UnknownCount > 0);   // Gambler's Dodge's melee refill is "?"
     }
 
     [Fact]

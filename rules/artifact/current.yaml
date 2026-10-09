@@ -53,7 +53,7 @@ elements:
     rules:
       # "Arc-debuffed" = Jolt here (Blind also counts, but targetHas is all-of, and a second rule
       # for Blind would double-fire on targets that are both). Tempest Strike's x1 doesn't stack with
-      # this one in game (Arc#51), which v1 can't express (see tempest-strike).
+      # this one in game (Arc#51): tempest-strike's rule says so (doesNotStackWith).
       - on: { kill: { via: any, targetHas: [jolt] } }
         then:
           - { applyBuff: bolt-charge }
