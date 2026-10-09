@@ -167,7 +167,7 @@ else
                     @if (side.Report is Optional<LoopReport>.Some report)
                     {
                         <p>
-                            @if (report.Value.IsSustainable())
+                            @if (report.Value.IsRepeatable())
                             {
                                 <span class="badge ok">Sustainable · @ReportReading.DescribeSustainedCycles(report.Value) cycles</span>
                             }

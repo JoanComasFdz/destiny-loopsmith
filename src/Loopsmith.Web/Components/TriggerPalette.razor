@@ -14,12 +14,7 @@
         <div class="trigger-list">
             @foreach (var choice in group.Choices)
             {
-                var reasons = choice.Buttons
-                    .Select(button => button.Option.Unavailable.UnwrapOr(""))
-                    .Where(reason => reason.Length > 0)
-                    .Distinct()
-                    .ToImmutableArray();
-                <div class="trigger-row @(choice.Buttons.All(b => !b.Option.IsAvailable) ? "unavailable" : "")">
+                <div class="trigger-row">
                     @if (choice.Buttons.Length > 1)
                     {
                         <span class="trigger-title">@choice.Title</span>
@@ -28,8 +23,7 @@
                         @foreach (var button in choice.Buttons)
                         {
                             var option = button.Option;
-                            <button class="trigger @(choice.Buttons.Length > 1 ? "half" : "whole") @(option.IsAvailable ? "" : "off")"
-                                    disabled="@(!option.IsAvailable)"
+                            <button class="trigger @(choice.Buttons.Length > 1 ? "half" : "whole")"
                                     data-token="@option.Token"
                                     title="@DescribeTooltip(option)"
                                     @onclick="() => PickTrigger(option)">
@@ -41,10 +35,6 @@
                             </button>
                         }
                     </div>
-                    @foreach (var reason in reasons)
-                    {
-                        <span class="trigger-reason">@reason</span>
-                    }
                 </div>
             }
         </div>
@@ -68,5 +58,5 @@
         OnPick.InvokeAsync(option);
 
     private static string DescribeTooltip(TriggerOption option) =>
-        option.Unavailable.Match(reason => $"{option.Label} — {reason.Value}", _ => $"{option.Label}  ({option.Token})");
+        $"{option.Label}  ({option.Token})";
 }
