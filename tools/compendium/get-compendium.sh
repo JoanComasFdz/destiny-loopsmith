@@ -16,7 +16,15 @@ args=("$sheet" "$name")
 [ "${1:-}" = "--images" ] || args+=("--no-images")
 
 cd "$here"
+use_docker=false
 if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
+  if docker image inspect python:3.12-slim >/dev/null 2>&1 || docker pull -q python:3.12-slim >/dev/null 2>&1; then
+    use_docker=true
+  else
+    echo "Docker can't download python:3.12-slim (network or proxy settings?) - using local Python instead."
+  fi
+fi
+if [ "$use_docker" = true ]; then
   echo "Running sheet_dump.py in Docker (python:3.12-slim)..."
   docker run --rm -v "$here":/w -w /w -u "$(id -u):$(id -g)" -e HOME=/tmp -e PIP_DISABLE_PIP_VERSION_CHECK=1 python:3.12-slim \
     sh -c "pip install -q --user --no-warn-script-location requests beautifulsoup4 && python sheet_dump.py ${args[*]}"

@@ -25,6 +25,14 @@ try {
         docker info *> $null
         $dockerRunning = ($LASTEXITCODE -eq 0)
         if (-not $dockerRunning) { Write-Host "Docker is installed but not running - using Python instead (or start Docker Desktop and re-run)." }
+        else {
+            docker image inspect python:3.12-slim *> $null
+            if ($LASTEXITCODE -ne 0) { docker pull -q python:3.12-slim *> $null }
+            if ($LASTEXITCODE -ne 0) {
+                $dockerRunning = $false
+                Write-Host "Docker can't download python:3.12-slim (network or proxy settings?) - using Python instead."
+            }
+        }
     }
     if ($dockerRunning) {
         Write-Host "Running sheet_dump.py in Docker (python:3.12-slim)..."
