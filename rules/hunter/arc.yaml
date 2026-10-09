@@ -151,10 +151,11 @@ elements:
     # Previously clarity/4194622039@2.0625, which says the same without the damage figure.
     source: compendium/2026-10-09/Arc#48
     rules:
-      # No air-move trigger in v1: modelled as a class ability cast (Ascension spends the class
-      # ability charge and triggers the dodge's effects), so with it equipped a ground dodge fires
-      # this rule too. Not part of the skip-grenade build (the creator's alternative to Flow State).
-      - on: { abilityCast: classAbility }
+      # The air move (`class:air`) spends the class ability charge, so it is a class ability cast:
+      # the dodge's own effects (and every other class ability rule) fire too, as the Compendium
+      # says. This rule fires only on that airborne use, never on a ground dodge. Used by the
+      # skip-grenade-hunter-ascension build (the creator's alternative to Flow State).
+      - on: { abilityCast: { ability: classAbility, airborne: true } }
         then:
           - { debuffTarget: jolt }
           - { applyBuff: amplified }

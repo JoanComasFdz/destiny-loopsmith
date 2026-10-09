@@ -38,12 +38,12 @@ Steady state (cycle 10, the last completed)
   Wasted per cycle (rules that gave nothing: they don't stack)
     7× Tempest Strike doesn't stack with Dielectric
   Buff uptime (active after how many of the cycle's steps)
+    Slice              6/6 steps
     Amplified          6/6 steps
     Woven Mail         6/6 steps
     Unraveling Rounds  6/6 steps
     Armor Charge       6/6 steps
     Bolt Charge        6/6 steps
-    Slice              6/6 steps
     New Tricks         5/6 steps
     Reaper             2/6 steps
   ? 35 unknown values not applied — the real loop is stronger

@@ -9,7 +9,7 @@ All ids are kebab-case slugs (lower-case letters, digits, inner hyphens: `shinob
 Keys are camelCase, and so are the closed vocabulary words (`classAbility`, `exoticArmor`).
 Unknown keys, unknown ids and unknown statuses are **parse errors** — all errors of a file
 set are reported together, each with `file:line`
-(`hunter/arc.yaml:8: unknown key 'stack' in applyBuff (allowed: status, stacks, duration)`).
+(`hunter/arc.yaml:8: unknown key 'stack' in applyBuff (allowed: status, stacks, duration, restart)`).
 A key whose value is empty, `~` or `null` counts as omitted.
 
 ## Files
@@ -149,6 +149,7 @@ traces with `--why`; `doesNotStackWith` is [below](#rules-that-dont-stack).
 | YAML | Domain `Trigger` |
 |---|---|
 | `{ abilityCast: grenade }` (`grenade\|melee\|classAbility\|super`) | `AbilityCast(kind)` |
+| `{ abilityCast: { ability: classAbility, airborne: true } }` — only the class ability used in the air | `AbilityCast(classAbility, Airborne: true)` |
 | `{ kill: { via: <source> } }` | `KillAny(via)` |
 | `{ kill: { via: <source>, tier: champion } }` (`minor\|major\|boss\|champion`) | `KillOfTier(via, tier)` |
 | `{ kill: { via: <source>, targetHas: [jolt, sever] } }` | `KillDebuffed(via, statuses)` |
@@ -159,6 +160,13 @@ traces with `--why`; `doesNotStackWith` is [below](#rules-that-dont-stack).
 | `{ pickUp: ionic-trace }` | `PickUp(pickup)` |
 | `{ buffGained: bolt-charge }` | `BuffGained(status)` |
 | `{ stacksMaxed: bolt-charge }` | `StacksMaxed(status)` |
+
+An **airborne** class ability use is an air move that spends the class ability charge (Ascension's,
+played as `class:air`, [loop-format.md](loop-format.md#action-tokens)). It is still a class ability
+cast, so the plain `abilityCast: classAbility` rules fire on it too (the Compendium, Arc#48: the air
+move sets off the equipped class ability's effects); the airborne trigger never fires on a ground use
+(ADRs D26). The map form without `airborne` (or with `airborne: false`) is the plain trigger.
+`airborne: true` on another ability is an error (`abilityCast: only a classAbility can be airborne (there is no airborne grenade action)`).
 
 `via` defaults to `any`. `targetHas` lists one or more debuffs, and the target must have all of them.
 `tier` and `targetHas` together is an error (`kill cannot combine 'tier' and 'targetHas'`), and so is
@@ -196,6 +204,7 @@ must hold, checked against the state when the event is processed.
 | `{ grantEnergy: { to: grenade, amount: "15%" } }` / `amount: full` | `GrantEnergy(to, Fraction(v) \| Full)` |
 | `{ convertStacksToEnergy: { consumed: armor-charge, to: grenade, perStack: "?" } }` | `ConvertStacksToEnergy` |
 | `{ applyBuff: { status: bolt-charge, stacks: 1, duration: 10s } }` / `{ applyBuff: amplified }` | `ApplyBuff` (stacks default 1) |
+| `{ applyBuff: { status: slice, stacks: 1, duration: 8s, restart: true } }` (`restart` default false) | `ApplyBuff` with `Restarts` |
 | `{ removeBuff: new-tricks }` | `RemoveBuff` |
 | `{ debuffTarget: { status: jolt, duration: 4s } }` / `{ debuffTarget: jolt }` | `DebuffTarget` |
 | `{ spawn: { pickup: orb-of-power, count: 1 } }` / `{ spawn: orb-of-power }` | `Spawn` (count default 1) |
@@ -209,6 +218,14 @@ Statuses in `applyBuff`/`removeBuff`/`convertStacksToEnergy.consumed`/`has`/`lac
 must be glossary `buff`s; in `debuffTarget`/`targetHas` glossary `debuff`s
 (`'jolt' is a debuff, but this position needs a buff`); `strikeTarget.via` and `keyword:` take either.
 `spawn`/`pickUp` name glossary pickups, `summon`/`summon:` glossary summons.
+
+**`restart: true`** (`applyBuff`) replaces the active stacks instead of adding to them — for a buff that
+each trigger arms afresh, so repeating the trigger doesn't build it up: every class ability use arms
+Slice for the next 5 hits anew (Compendium Weapon Perks#198), so a second dodge sets Slice back to ×1
+(ADRs D27). The stacks given (plus any `extraStacks`) are the new count, and the duration restarts as
+usual. `explain` and the trace read `Slice ×1 (8s, restarts)` (an adding grant reads `+1 Slice (8s)`);
+when the buff was already active and the restart doesn't raise its stacks, the caveat reads
+`restarted (was ×2)`.
 
 Only `applyBuff`, `removeBuff`, `debuffTarget`, `spawn`, `summon`, `strikeTarget` and the stacks
 `convertStacksToEnergy` consumes change a run. The energy outcomes (`grantEnergy`, the energy of
@@ -241,6 +258,12 @@ two elements' grants don't stack, say it on the rule of the side that gives noth
   `'Tempest Strike': +1 Bolt Charge on "Kill Jolted target" doesn't stack with 'Dielectric' — with both equipped, it is wasted.` —
   `explain` annotates the bullet (`+1 Bolt Charge (doesn't stack with Dielectric) [Tempest Strike]`),
   and a loop's analysis counts it as **wasted** ([loop-format.md](loop-format.md)).
+* In the loop graph (`graph`, `loops`), where this rule and the rule it gives way to lead from the same
+  trigger to the same node, both arrows go into a **Doesn't stack** node and only the partner's arrow
+  leaves it (`Kill Jolted target →[Tempest Strike, Dielectric] Doesn't stack →[Dielectric] Gain Bolt Charge`);
+  rules of other elements on that trigger and target keep their direct arrow. The graph is static, so it
+  pairs only rules with the *same trigger* — an approximation of the engine's same-event rule. The node
+  isn't a step: a loop's length limit, its "N steps" and the loop order don't count it.
 * The whole rule gives way, not one outcome: an outcome that does stack goes in a rule of its own.
 
 Parse errors are checked over the whole catalog once every file is read, and reported at the
@@ -329,7 +352,9 @@ stats: { weapons: 47, class: 104, grenade: 145, super: 27, melee: 79 }   # any s
 
 ## Engine semantics (what an author can rely on)
 
-* **Player actions → events.** `UseClassAbility` emits only `AbilityCast(classAbility)`.
+* **Player actions → events.** `UseClassAbility` emits only `AbilityCast(classAbility)` — airborne
+  for `class:air` (an air move that spends the charge), which every `abilityCast: classAbility` rule
+  matches too; only the `airborne: true` rules tell the two apart.
   `CastAbility(k, hit, N)` (grenade, melee, super) emits `AbilityCast(k)`, then N
   `Damaged(Ability(k, subclass damage type))` — one per enemy — then N `Killed(…)` if `hit = kill`,
   then one `TargetsHit(origin, N, hit)` for the `atLeast` triggers. `FireWeapon(slot, hit, N)` emits
@@ -346,13 +371,14 @@ stats: { weapons: 47, class: 104, grenade: 145, super: 27, melee: 79 }   # any s
   v1 target model (ADRs D16): "the pack in front of you", always `minor` — debuffs stay on the pack after
   a kill until they expire.
 * **Statuses.** `applyBuff` adds `stacks` (plus any `extraStacks`) up to `maxStacks`, or only refreshes
-  a status without `maxStacks`; `debuffTarget` refreshes a debuff already on the pack. The duration is
-  the outcome's, else the glossary's; re-applying restarts it.
+  a status without `maxStacks`; with `restart: true` those stacks replace the active ones instead.
+  `debuffTarget` refreshes a debuff already on the pack. The duration is the outcome's, else the
+  glossary's; re-applying restarts it.
 * **Derived events:** `applyBuff` → `BuffGained(status, newStacks)` when the buff wasn't active or gained
-  stacks (not on a plain refresh); reaching `maxStacks` from below → `StacksMaxed(status)`. `spawn` of a
-  `collectsAutomatically` pickup → one `PickedUp` per pickup immediately, otherwise they land on the
-  ground. `summon` → one `Damaged(Summoned(…))` per summon. `strikeTarget` → `Damaged(Keyword(…))`
-  (+ `Killed` if `hit: kill`). `debuffTarget`, `removeBuff` and the explanation outcomes derive no event.
+  stacks (not on a plain refresh, nor on a restart that keeps or lowers the stacks); reaching `maxStacks`
+  from below → `StacksMaxed(status)`. `spawn` of a `collectsAutomatically` pickup → one `PickedUp` per
+  pickup immediately, otherwise they land on the ground. `summon` → one `Damaged(Summoned(…))` per
+  summon. `strikeTarget` → `Damaged(Keyword(…))` (+ `Killed` if `hit: kill`). `debuffTarget`, `removeBuff` and the explanation outcomes derive no event.
 * **Guards** (`when`) are checked against the state as it is when the event is processed, before any
   outcome of that event applies.
 * **Phase order** of the outcomes fired by one event: Debuff → Empower (`applyBuff`,

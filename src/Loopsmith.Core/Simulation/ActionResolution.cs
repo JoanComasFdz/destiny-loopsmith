@@ -51,7 +51,7 @@ public static class ActionResolution
                 new PlayerAction.CastAbility(kind, HitOutcome.Kill, TargetCount.One),
                 new PlayerAction.CastAbility(kind, HitOutcome.Damage, TargetCount.One),
             });
-        var classAbility = new PlayerAction[] { new PlayerAction.UseClassAbility() };
+        var classAbility = ListClassAbilityActions(build);
         var weapons = build.Build.Weapons.SelectMany(weapon => new PlayerAction[]
         {
             new PlayerAction.FireWeapon(weapon.Slot, HitOutcome.Kill, TargetCount.One),
@@ -83,7 +83,7 @@ public static class ActionResolution
     private static Opening OpenAction(ValidatedBuild build, GameState state, PlayerAction action) =>
         action.Match(
             cast => CastAbility(build, state, cast),
-            _ => UseClassAbility(state),
+            use => UseClassAbility(state, use.Airborne),
             fire => FireWeapon(build, state, fire),
             collect => CollectPickups(state, collect),
             wait => Wait(state, wait));
@@ -97,8 +97,15 @@ public static class ActionResolution
         return new Opening(state, [new PendingEvent.Ready(new GameEvent.AbilityCast(kind)), .. strike], []);
     }
 
-    private static Opening UseClassAbility(GameState state) =>
-        new(state, [new PendingEvent.Ready(new GameEvent.AbilityCast(AbilityKind.ClassAbility))], []);
+    /// <summary>On the ground or in the air, the class ability is cast: every class ability rule fires either way.</summary>
+    private static Opening UseClassAbility(GameState state, bool airborne) =>
+        new(state, [new PendingEvent.Ready(new GameEvent.AbilityCast(AbilityKind.ClassAbility, airborne))], []);
+
+    /// <summary>The class ability, plus its airborne use when an equipped rule reacts only to that (Ascension).</summary>
+    public static ImmutableArray<PlayerAction> ListClassAbilityActions(ValidatedBuild build) =>
+        build.Equipped.Any(equipped => equipped.Element.Rules.Any(rule => rule.On is Trigger.AbilityCast { Airborne: true }))
+            ? [new PlayerAction.UseClassAbility(), new PlayerAction.UseClassAbility(Airborne: true)]
+            : [new PlayerAction.UseClassAbility()];
 
     private static Opening FireWeapon(ValidatedBuild build, GameState state, PlayerAction.FireWeapon fire)
     {

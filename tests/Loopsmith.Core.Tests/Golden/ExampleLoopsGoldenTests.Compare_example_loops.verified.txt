@@ -7,17 +7,16 @@
   Ionic Trace spawned per cycle      8 ✓                      7
   Orb of Power spawned per cycle     4 ✓                      2
   Bolt Charge maxed per cycle        3                        3
-  Slice maxed per cycle              0                        1 ✓
   Wasted per cycle (doesn't stack)   7                        6 ✓
+  Slice uptime                       6/6                      5/5
   Amplified uptime                   6/6                      5/5
   Woven Mail uptime                  6/6 ✓                    0/5
   Unraveling Rounds uptime           6/6                      5/5
   Armor Charge uptime                6/6                      5/5
   Bolt Charge uptime                 6/6                      5/5
-  Slice uptime                       6/6 ✓                    4/5
   New Tricks uptime                  5/6                      5/5 ✓
   Reaper uptime                      2/6                      3/5 ✓
   Combination Blow uptime            0/6                      5/5 ✓
   Unknown values                     35                       24 ✓
   Chance bullets                     14                       8 ✓
-✓ better: Infinite skip grenades on 5 metrics · Melee first on 7 metrics · 7 even or not judged
+✓ better: Infinite skip grenades on 4 metrics · Melee first on 6 metrics · 8 even or not judged

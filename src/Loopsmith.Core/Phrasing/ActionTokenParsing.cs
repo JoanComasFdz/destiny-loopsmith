@@ -13,10 +13,11 @@ public static class ActionTokenParsing
     private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
 
     public const string Grammar =
-        "grenade|melee|super[:hit|kill[:N]], class, kinetic|energy|power[:hit|kill[:N]], pickup:<id>, wait[:<seconds>]";
+        "grenade|melee|super[:hit|kill[:N]], class[:air], kinetic|energy|power[:hit|kill[:N]], pickup:<id>, wait[:<seconds>]";
 
     /// <summary>
-    /// <c>grenade</c>, <c>grenade:kill</c>, <c>grenade:kill:3</c>, <c>kinetic:hit:5</c>, <c>class</c>,
+    /// <c>grenade</c>, <c>grenade:kill</c>, <c>grenade:kill:3</c>, <c>kinetic:hit:5</c>, <c>class</c>, <c>class:air</c> (an air move
+    /// that spends the class ability, like Ascension),
     /// <c>pickup:orb-of-power</c>, <c>wait:2.5</c>. Without <c>:kill</c> the hit only damages; without a count it hits
     /// one enemy. The count is validated here, at the boundary (<see cref="TargetCount"/>: 1..20).
     /// </summary>
@@ -29,6 +30,7 @@ public static class ActionTokenParsing
             "melee" => ParseAimedAction(token, parts, (hit, targets) => new PlayerAction.CastAbility(OffensiveAbility.Melee, hit, targets)),
             "super" => ParseAimedAction(token, parts, (hit, targets) => new PlayerAction.CastAbility(OffensiveAbility.Super, hit, targets)),
             "class" when parts.Length == 1 => Ok(new PlayerAction.UseClassAbility()),
+            "class" when parts.Length == 2 && parts[1] == "air" => Ok(new PlayerAction.UseClassAbility(Airborne: true)),
             "kinetic" => ParseAimedAction(token, parts, (hit, targets) => new PlayerAction.FireWeapon(WeaponSlot.Kinetic, hit, targets)),
             "energy" => ParseAimedAction(token, parts, (hit, targets) => new PlayerAction.FireWeapon(WeaponSlot.Energy, hit, targets)),
             "power" => ParseAimedAction(token, parts, (hit, targets) => new PlayerAction.FireWeapon(WeaponSlot.Power, hit, targets)),

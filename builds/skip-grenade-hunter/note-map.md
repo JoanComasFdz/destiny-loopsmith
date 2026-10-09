@@ -7,17 +7,18 @@ Each line of `note.txt` is listed with:
 - the element ids whose rules should fire, at the root event or through the cascade.
 
 The scenarios assume the build in `build.yaml` and the rules as of the Compendium 2026-10-09 pass
-(see `discrepancies.md`; catalog `authored-061e68a8ce4e`). The expected sets follow the spec's v1
-semantics over the authored rules: phase order, depth ≤ 5, a rule never re-firing on an
-identical event up its own causal chain, the target's debuffs snapshotted when each event is
-emitted, `UseClassAbility` emitting only `AbilityCast(classAbility)`, non-stacking statuses
-that only refresh, and a rule with `doesNotStackWith` giving way when a listed element fires on the
-same event. Every scenario below was checked against the engine's real output: the rules each event
-fires are listed in the order the trace prints them (phase order; a rule that gives way comes last),
-and each **Fired** set in the order the elements first fire. `SkipGrenadeHunterGoldenTests.cs` has one
-test per scenario: it asserts elements that must fire (part of the Fired set) and some that must not,
-and, for a few scenarios, more: 8b's whole fired set, the active passives in 5a and 6, Bolt Charge ×2 in 6,
-Armor Charge used up in 7b, New Tricks and Amplified at the end of 10.
+(see `discrepancies.md`; catalog `authored-ffea6e3fc30f`, where every dodge re-arms Slice). The
+expected sets follow the spec's v1 semantics over the authored rules: phase order, depth ≤ 5, a rule
+never re-firing on an identical event up its own causal chain, the target's debuffs snapshotted
+when each event is emitted, `UseClassAbility` emitting only `AbilityCast(classAbility)` (the ground
+dodge, `class`), non-stacking statuses that only refresh, and a rule with `doesNotStackWith` giving
+way when a listed element fires on the same event. Every scenario below was checked against the
+engine's real output: the rules each event fires are listed in the order the trace prints them (phase
+order; a rule that gives way comes last), and each **Fired** set in the order the elements first
+fire. `SkipGrenadeHunterGoldenTests.cs` has one test per scenario: it asserts elements that must fire
+(part of the Fired set) and some that must not, and, for a few scenarios, more: 8b's whole fired set,
+the active passives in 5a and 6, Bolt Charge ×2 in 6, Armor Charge used up in 7b, New Tricks and
+Amplified at the end of 10.
 
 Conventions:
 
@@ -60,11 +61,12 @@ This is the title and has no trigger.
 - **Scenario 1:** fresh start, then `UseClassAbility`.
 - **Fired (depth 0):**
   - `reaper`: Reaper buff, 10 s
-  - `slice`: Slice buff, 8 s, 1 stack
+  - `slice`: Slice ×1 for 8 s, restarting (the trace reads "Slice ×1 (8s, restarts)")
   - `gamblers-dodge`: melee energy `?`
   - `bomber`: grenade energy 12% (1 copy)
 - **Nothing cascades.** `BuffGained(slice)` and `BuffGained(reaper)` match no rule.
 - **End state:** buffs `reaper` (10 s), `slice: 1` (8 s).
+- **Dodging again** restarts Slice instead of stacking it: every class ability use arms the next 5 hits afresh (Compendium, row 10). `class, kinetic:kill, class` ends with `slice: 1`, not 3, and the caveat reads "restarted (was ×2)".
 - **Reproduced:** "reduced greaned cooldown [bomber]" is Bomber's 12% grenade energy (one copy; 17% / 20% with two or three).
 - **Reproduced differently:**
   - **"5s sever on strand weapon":** the dodge only arms Slice, using the 8 s window (Compendium and Clarity). The sever happens on the next Strand weapon hit (line 2) and lasts 10 s (Compendium; 5 s is the PvP figure). The note's 5 s isn't encoded (row 10).

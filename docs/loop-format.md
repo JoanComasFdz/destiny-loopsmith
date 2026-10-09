@@ -54,12 +54,16 @@ build: |                                # required — the build file's full tex
 Same tokens everywhere: CLI `--actions a,b,…` and `--scenario <file>` (one token per line or
 comma-separated; `#` starts a comment), `play`, loop files and web share links:
 
-`grenade|melee|super[:hit|kill[:N]]` · `class` · `kinetic|energy|power[:hit|kill[:N]]` ·
+`grenade|melee|super[:hit|kill[:N]]` · `class[:air]` · `kinetic|energy|power[:hit|kill[:N]]` ·
 `pickup:<pickup-id>` · `wait[:<seconds>]` — without `:kill` the hit only damages.
 
 `N` is how many enemies that one action hits (or kills), 1..20, default 1 — the player says it, the engine
 can't know (ADRs D22): `grenade:kill:3` kills three, `kinetic:hit:5` shoots five, `energy:kill:2` kills two.
-A count needs `:hit` or `:kill` before it (`grenade:3` is an error), and `class` takes no suffix.
+A count needs `:hit` or `:kill` before it (`grenade:3` is an error), and `class` takes no count.
+`class:air` is the class ability used in the air — an air move that spends its charge, like Ascension's:
+it fires every class ability rule plus the ones with an airborne trigger
+([rule-format.md](rule-format.md#rules)). It always reads (CLI, loop files, share links), but `play` and
+the web designer offer it only when an equipped rule has an airborne trigger.
 `wait` is 5 s; `wait:2.5` (or `wait:2.5s`) any time above 0. Tokens are read case-insensitively.
 `pickup:<id>` is any kebab-case id: one that isn't on the ground when played is a blocked step.
 Errors read `Unknown action '<token>'. Use …` or `Invalid target count in '<token>': use a whole number from 1 to 20 …`.
@@ -68,7 +72,7 @@ Written tokens are lower-case and carry the count only when it is more than one 
 `kinetic`), so every loop file written before counts existed reads and writes back unchanged; they keep
 every digit of a wait (`wait:2.25`). Every token written reads back as the same action (`grenade:hit`
 is written `grenade`, `wait` as `wait:5`). Labels read "Grenade (kill 3)", "Festival Flight (hit 5)",
-"Wait 5s" (a weapon by its build name).
+"Class ability (in the air)", "Wait 5s" (a weapon by its build name).
 
 ## Sharing
 
@@ -156,7 +160,7 @@ even; a count a report lacks is 0; uptime is judged as the fraction of the cycle
 a buff a report lacks is `0/<steps>`, a loop without steps shows `—`); outcome rows keep the order
 Kills → spawned → maxed over the union (left report's first), then the wasted row, then uptime.
 `ComparisonRendering` marks the better value ✓ and ends with a tally:
-`✓ better: <left> on 5 metrics · <right> on 7 metrics · 7 even or not judged`.
+`✓ better: <left> on 4 metrics · <right> on 6 metrics · 8 even or not judged`.
 
 ## CLI
 

@@ -1,5 +1,6 @@
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.LoopGraphing;
+using Loopsmith.Core.Phrasing;
 using static Loopsmith.Core.Tests.Support.TestCatalog;
 
 namespace Loopsmith.Core.Tests.LoopGraphing;
@@ -23,6 +24,31 @@ public class LoopFindingTests
         var loop = Assert.Single(loops);
         Assert.True(loop.RefundsEnergy);
         Assert.Equal(["a:Grenade", "t:Grenade damage", "t:Gain Bolt Charge", "e:Grenade"], loop.NodeKeys);
+    }
+
+    [Fact]
+    public void Rules_that_do_not_stack_meet_in_a_filter_node_and_only_one_arrow_leaves_it()
+    {
+        // Two elements give Bolt Charge on grenade damage, but "yielder" doesn't stack with "giver"; a third stacks.
+        var giver = Element("giver", ElementKind.Fragment, [On(new Trigger.Damage(new DamageSource.AbilityOf(AbilityKind.Grenade)), Buff("bolt-charge"))]);
+        var yielder = Element("yielder", ElementKind.Fragment,
+            [On(new Trigger.Damage(new DamageSource.AbilityOf(AbilityKind.Grenade)), Buff("bolt-charge")).NotStackingWith("giver")]);
+        var stacker = Element("stacker", ElementKind.Fragment, [On(new Trigger.Damage(new DamageSource.AbilityOf(AbilityKind.Grenade)), Buff("bolt-charge"))]);
+        var vow = Element("vow", ElementKind.Fragment, [On(new Trigger.BuffGained(Status("bolt-charge")), Energy(AbilityKind.Grenade, new GameValue.Unknown()))]);
+        var build = ValidateBuild([giver, yielder, stacker, vow]);
+
+        var graph = LoopGraphBuilding.BuildLoopGraph(build);
+        var loops = LoopFinding.FindLoops(graph);
+
+        var filter = Assert.Single(graph.Nodes, node => node.Kind == NodeKind.Filter);
+        Assert.Equal("Doesn't stack", filter.Label);
+        var into = Assert.Single(graph.Edges, edge => edge.To == filter.Key);
+        Assert.Equal(("t:Grenade damage", "Giver, Yielder"), (into.From, string.Join(", ", into.Sources.Order())));
+        var outOf = Assert.Single(graph.Edges, edge => edge.From == filter.Key);
+        Assert.Equal(("t:Gain Bolt Charge", "Giver"), (outOf.To, string.Join(", ", outOf.Sources)));
+        Assert.Contains(graph.Edges, edge => edge.From == "t:Grenade damage" && edge.To == "t:Gain Bolt Charge" && edge.Sources.SequenceEqual(["Stacker"]));
+        Assert.Contains(loops, loop => loop.NodeKeys.Contains(filter.Key));
+        Assert.Contains("Doesn't stack →[Giver] Gain Bolt Charge", LoopRendering.RenderLoops(graph, loops, 10).ToPlainText());
     }
 
     [Fact]

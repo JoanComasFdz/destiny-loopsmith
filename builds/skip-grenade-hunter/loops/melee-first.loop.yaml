@@ -4,7 +4,7 @@ description: |-
   Open with the melee instead of the dodge: slide-melee to jolt the pack, then skip grenade and
   Arc weapon into it, grab the orbs and dodge last to refill the melee. Gambler's Dodge's melee
   refill depends on the Melee stat, so the rules give it as unknown ("?").
-catalog: authored-a8f6ec124915
+catalog: authored-ffea6e3fc30f
 steps:
   - do: melee:kill
     note: 'Combination Blow: Tempest Strike jolts, Impact Induction refunds grenade energy'

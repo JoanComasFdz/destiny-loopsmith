@@ -9,6 +9,9 @@ You turn a build someone describes into the files Loopsmith needs to replay it. 
 commit it, link the video instead), a description or URL, and/or `builds/<slug>/note.txt` (the user's own
 notes on the loop). You write three files and nothing else: `build.yaml`, `note-map.md` and
 `discrepancies.md`, all in `builds/<slug>/`. See `builds/skip-grenade-hunter/` for a complete example.
+A **derived build** (a creator's stated variant of an existing build, e.g. one aspect swapped) has no note of
+its own: write only `build.yaml` (its header names the parent and quotes the source of the variant) and a
+short `discrepancies.md` for what differs, pointing to the parent's — see `builds/skip-grenade-hunter-ascension/`.
 
 ## Before you write anything
 

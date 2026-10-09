@@ -542,6 +542,48 @@ public sealed class RuleCatalogParsingTests
         Assert.Contains("hunter/arc.yaml:10: spawn.pickup: unknown pickup 'tangle'", message);
     }
 
+    // ── Airborne class ability use and restarting buffs ──────────────────────────────────
+
+    private static SourceText ToAirMoveFile(string trigger, string buff = "{ applyBuff: amplified }") =>
+        ToElementsFile("hunter/arc.yaml", """
+            elements:
+              - id: ascension
+                name: Ascension
+                kind: aspect
+                affinity: arc
+                rules:
+                  - on: TRIGGER
+                    then: [ BUFF ]
+            """.Replace("TRIGGER", trigger).Replace("BUFF", buff));
+
+    [Fact]
+    public void Parses_an_airborne_class_ability_trigger_and_a_restarting_buff()
+    {
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog(
+            [Glossary, ToAirMoveFile("{ abilityCast: { ability: classAbility, airborne: true } }", "{ applyBuff: { status: bolt-charge, restart: true } }")]));
+
+        var rule = catalog.Elements[ElementId.From("ascension")].Rules[0];
+        Assert.Equal(new Trigger.AbilityCast(AbilityKind.ClassAbility, Airborne: true), rule.On);
+        Assert.Equal(new Outcome.ApplyBuff(ToStatus("bolt-charge"), Optional.None<Seconds>(), StackCount.From(1), Restarts: true), rule.Then[0]);
+    }
+
+    [Fact]
+    public void The_map_form_of_a_cast_trigger_without_airborne_is_the_plain_trigger()
+    {
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToAirMoveFile("{ abilityCast: { ability: grenade } }")]));
+
+        Assert.Equal(new Trigger.AbilityCast(AbilityKind.Grenade), catalog.Elements[ElementId.From("ascension")].Rules[0].On);
+    }
+
+    [Fact]
+    public void Only_a_class_ability_can_be_airborne()
+    {
+        var message = ParseInvalidCatalog(Glossary, ToAirMoveFile("{ abilityCast: { ability: grenade, airborne: true } }"));
+
+        Assert.Contains("only a classAbility can be airborne", message);
+        Assert.StartsWith("hunter/arc.yaml:", message);
+    }
+
     // ── Rules that don't stack ───────────────────────────────────────────────────────────
 
     /// <summary>Tempest Strike (line 2) gives way to <paramref name="partner"/>; Dielectric (line 11) adds <paramref name="dielectricSays"/>.</summary>

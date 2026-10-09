@@ -24,7 +24,8 @@ public static class LoopRendering
         var kind = loop.RefundsEnergy
             ? "ability loop — refunds " + string.Join(", ", loop.NodeKeys.Where(k => nodes[k].Kind == NodeKind.Energy).Select(k => nodes[k].Label.ToLowerInvariant()))
             : "buff loop";
-        yield return StyledText.ToLine(0, $"Loop {number}".ToSpan(Tone.Strong), $" · {kind} · {loop.Edges.Length} steps".ToSpan(Tone.Muted));
+        var steps = loop.Edges.Count(edge => nodes[edge.To].Kind != NodeKind.Filter);   // a "doesn't stack" node is not a step
+        yield return StyledText.ToLine(0, $"Loop {number}".ToSpan(Tone.Strong), $" · {kind} · {steps} steps".ToSpan(Tone.Muted));
         var spans = loop.Edges.SelectMany((edge, index) => (ImmutableArray<StyledSpan>)
             [
                 .. index == 0 ? [nodes[edge.From].Label.ToSpan(nodes[edge.From].Affinity.ToTone())] : ImmutableArray<StyledSpan>.Empty,
@@ -64,6 +65,7 @@ public static class LoopRendering
             {
                 NodeKind.Energy => $"([\"{label}\"])",
                 NodeKind.Action => $"[/\"{label}\"/]",
+                NodeKind.Filter => $"{{\"{label}\"}}",
                 _ => $"(\"{label}\")",
             };
             text.AppendLine($"  {ids[node.Key]}{shape}:::{node.Affinity.ToString().ToLowerInvariant()}");

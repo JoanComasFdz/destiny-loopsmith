@@ -27,7 +27,7 @@ public sealed record GameState(
 public partial record PlayerAction
 {
     partial record CastAbility(OffensiveAbility Kind, HitOutcome Hit, TargetCount Targets);
-    partial record UseClassAbility();
+    partial record UseClassAbility(bool Airborne = false);   // airborne: an air move that spends the charge (Ascension)
     partial record FireWeapon(WeaponSlot Slot, HitOutcome Hit, TargetCount Targets);
     partial record CollectPickups(PickupId Pickup);
     partial record Wait(Seconds Duration);
@@ -37,7 +37,7 @@ public partial record PlayerAction
 [Union]
 public partial record GameEvent
 {
-    partial record AbilityCast(AbilityKind Kind);
+    partial record AbilityCast(AbilityKind Kind, bool Airborne = false);
     partial record Damaged(DamageOrigin Origin, EnemyTier Tier, ImmutableArray<StatusId> TargetHas);
     partial record Killed(DamageOrigin Origin, EnemyTier Tier, ImmutableArray<StatusId> TargetHas);
     partial record TargetsHit(DamageOrigin Origin, TargetCount Targets, HitOutcome Hit);   // once per action, after its per-enemy events

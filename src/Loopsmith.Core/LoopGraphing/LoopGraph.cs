@@ -3,7 +3,8 @@ using Loopsmith.Core.Domain;
 
 namespace Loopsmith.Core.LoopGraphing;
 
-public enum NodeKind { Trigger, Energy, Action }
+/// <summary><see cref="Filter"/>: "doesn't stack" — the arrows of rules that don't stack meet there, and only one leaves.</summary>
+public enum NodeKind { Trigger, Energy, Action, Filter }
 
 public enum EdgeKind
 {

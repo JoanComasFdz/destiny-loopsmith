@@ -14,10 +14,12 @@ elements:
     rules:
       # The initial grant counts as 1 stack in v1, so a window gives 4 severs before the 5-stack cap;
       # the Compendium says 5 severs. A buff granted at 0 stacks is not expressible (format gap).
+      # Every class ability use arms "the next 5" hits afresh, so a new dodge restarts Slice instead
+      # of adding a stack.
       - on: { abilityCast: classAbility }
         then:
-          - { applyBuff: { status: slice, stacks: 1, duration: 8s } }
-        reason: "Dodging arms Slice for 8 seconds, even while the weapon is stowed."
+          - { applyBuff: { status: slice, stacks: 1, duration: 8s, restart: true } }
+        reason: "Dodging arms Slice for 8 seconds, even while the weapon is stowed; dodging again starts a fresh window."
       # Not expressible: "non-Severed targets only" (no target-lacks guard) and "not if the
       # severing hit kills" (the damage event precedes the kill).
       - on: { damage: { via: weapon:strand } }

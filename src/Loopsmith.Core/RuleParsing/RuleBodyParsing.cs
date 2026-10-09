@@ -55,7 +55,7 @@ internal static class RuleBodyParsing
     private static Result<Trigger, Errors> ReadTrigger(ReferenceScope scope, YamlValue value) =>
         value.ToSingleEntry().Bind(entry => entry.Key switch
         {
-            "abilityCast" => ReadVocabularyWord<AbilityKind>(entry.Value).Map(Trigger (kind) => new Trigger.AbilityCast(kind)),
+            "abilityCast" => ReadAbilityCastTrigger(entry.Value),
             "kill" => ReadKillTrigger(scope, entry.Value),
             "damage" => ReadDamageTrigger(scope, entry.Value),
             "pickUp" => scope.ReadPickup(entry.Value).Map(Trigger (pickup) => new Trigger.PickUp(pickup)),
@@ -63,6 +63,22 @@ internal static class RuleBodyParsing
             "stacksMaxed" => scope.ReadBuff(entry.Value).Map(Trigger (status) => new Trigger.StacksMaxed(status)),
             _ => entry.Value.FailAt<Trigger>(DescribeUnknown("trigger", entry.Key, TriggerNames)),
         });
+
+    /// <summary>
+    /// <c>{ abilityCast: grenade }</c>, or <c>{ abilityCast: { ability: classAbility, airborne: true } }</c> for casts made
+    /// in the air only (an air move that spends the class ability, like Ascension). A plain cast trigger matches both.
+    /// </summary>
+    private static Result<Trigger, Errors> ReadAbilityCastTrigger(YamlValue value) =>
+        value.Node is YamlScalarNode
+            ? ReadVocabularyWord<AbilityKind>(value).Map(Trigger (kind) => new Trigger.AbilityCast(kind))
+            : value.ToMap().Bind(map => Combine(
+                    map.CheckKeys(["ability", "airborne"]),
+                    map.ReadRequired("ability", ReadVocabularyWord<AbilityKind>),
+                    map.ReadOrDefault("airborne", ReadBoolean, false),
+                    (_, kind, airborne) => (kind, airborne))
+                .Bind(cast => cast.airborne && cast.kind != AbilityKind.ClassAbility
+                    ? map.FailAtKey<Trigger>("airborne", $"{map.Label}: only a classAbility can be airborne (there is no airborne {GameNotationParsing.ToVocabularyWord(cast.kind)} action)")
+                    : Succeed<Trigger>(new Trigger.AbilityCast(cast.kind, cast.airborne))));
 
     private static Result<Trigger, Errors> ReadKillTrigger(ReferenceScope scope, YamlValue value) =>
         value.ToMap().Bind(map => Combine(
@@ -196,16 +212,17 @@ internal static class RuleBodyParsing
             map.ReadRequired("perStack", ReadGameValue),
             Outcome (_, consumed, to, perStack) => new Outcome.ConvertStacksToEnergy(consumed, to, perStack)));
 
-    /// <summary><c>{ applyBuff: amplified }</c> or <c>{ applyBuff: { status, stacks = 1, duration } }</c>.</summary>
+    /// <summary><c>{ applyBuff: amplified }</c> or <c>{ applyBuff: { status, stacks = 1, duration, restart = false } }</c>.</summary>
     private static Result<Outcome, Errors> ReadApplyBuff(ReferenceScope scope, YamlValue value) =>
         value.Node is YamlScalarNode
             ? scope.ReadBuff(value).Map(Outcome (status) => new Outcome.ApplyBuff(status, Optional.None<Seconds>(), OneStack))
             : value.ToMap().Bind(map => Combine(
-                map.CheckKeys(["status", "stacks", "duration"]),
+                map.CheckKeys(["status", "stacks", "duration", "restart"]),
                 map.ReadRequired("status", scope.ReadBuff),
                 map.ReadOrDefault("duration", ReadDuration, Optional.None<Seconds>()),
                 map.ReadOrDefault("stacks", ReadStackCount, OneStack),
-                Outcome (_, status, duration, stacks) => new Outcome.ApplyBuff(status, duration, stacks)));
+                map.ReadOrDefault("restart", ReadBoolean, false),
+                Outcome (_, status, duration, stacks, restarts) => new Outcome.ApplyBuff(status, duration, stacks, restarts)));
 
     /// <summary><c>{ debuffTarget: jolt }</c> or <c>{ debuffTarget: { status, duration } }</c>.</summary>
     private static Result<Outcome, Errors> ReadDebuffTarget(ReferenceScope scope, YamlValue value) =>

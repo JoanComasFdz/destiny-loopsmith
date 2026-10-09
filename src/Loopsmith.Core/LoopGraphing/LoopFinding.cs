@@ -17,11 +17,12 @@ public static class LoopFinding
             .ToImmutableDictionary(g => g.Key, g => g.OrderBy(e => order.GetValueOrDefault(e.To)).ToImmutableArray());
         var energyKeys = graph.Nodes.Where(n => n.Kind == NodeKind.Energy).Select(n => n.Key).ToImmutableHashSet();
         var actionKeys = graph.Nodes.Where(n => n.Kind == NodeKind.Action).Select(n => n.Key).ToImmutableHashSet();
+        var filterKeys = graph.Nodes.Where(n => n.Kind == NodeKind.Filter).Select(n => n.Key).ToImmutableHashSet();
 
         var found = graph.Nodes
             .Select(n => n.Key)
             .Aggregate(ImmutableArray<ImmutableArray<GraphEdge>>.Empty, (acc, start) =>
-                acc.Length >= MaxLoops ? acc : acc.AddRange(SearchCycles(start, start, order[start], [], [start], outgoing, order, MaxLoops - acc.Length)));
+                acc.Length >= MaxLoops ? acc : acc.AddRange(SearchCycles(start, start, order[start], [], [start], outgoing, order, filterKeys, MaxLoops - acc.Length)));
 
         return found
             .Select(edges => RotateToAction(edges, actionKeys))
@@ -30,7 +31,7 @@ public static class LoopFinding
                 edges,
                 edges.Any(e => energyKeys.Contains(e.From))))
             .OrderByDescending(loop => loop.RefundsEnergy)
-            .ThenBy(loop => loop.Edges.Length)
+            .ThenBy(loop => loop.Edges.Count(edge => !filterKeys.Contains(edge.To)))   // steps: a "doesn't stack" node is not one
             .ThenBy(loop => string.Join(">", loop.NodeKeys), StringComparer.Ordinal)
             .ToImmutableArray();
     }
@@ -42,7 +43,10 @@ public static class LoopFinding
         return [.. edges.Skip(start), .. edges.Take(start)];
     }
 
-    /// <summary>Cycles through <paramref name="start"/> whose other nodes all come later in node order (each cycle once).</summary>
+    /// <summary>
+    /// Cycles through <paramref name="start"/> whose other nodes all come later in node order (each cycle once), up to
+    /// <see cref="MaxLoopLength"/> steps; passing a "doesn't stack" node is not a step.
+    /// </summary>
     private static ImmutableArray<ImmutableArray<GraphEdge>> SearchCycles(
         string start,
         string current,
@@ -51,9 +55,10 @@ public static class LoopFinding
         ImmutableHashSet<string> visited,
         ImmutableDictionary<string, ImmutableArray<GraphEdge>> outgoing,
         ImmutableDictionary<string, int> order,
+        ImmutableHashSet<string> filterKeys,
         int budget)
     {
-        if (budget <= 0 || path.Length >= MaxLoopLength)
+        if (budget <= 0 || path.Count(edge => !filterKeys.Contains(edge.To)) >= MaxLoopLength)
         {
             return [];
         }
@@ -72,7 +77,7 @@ public static class LoopFinding
             }
 
             return !visited.Contains(edge.To) && order.GetValueOrDefault(edge.To) > startOrder
-                ? acc.AddRange(SearchCycles(start, edge.To, startOrder, path.Add(edge), visited.Add(edge.To), outgoing, order, remaining))
+                ? acc.AddRange(SearchCycles(start, edge.To, startOrder, path.Add(edge), visited.Add(edge.To), outgoing, order, filterKeys, remaining))
                 : acc;
         });
     }

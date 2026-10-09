@@ -114,7 +114,7 @@ public static class EventCascading
     /// <summary>Deterministic identity of an event (records holding arrays don't compare by content).</summary>
     public static string ToEventKey(GameEvent gameEvent) =>
         gameEvent.Match(
-            cast => $"cast:{cast.Kind}",
+            cast => $"cast:{cast.Kind}" + (cast.Airborne ? ":air" : ""),
             damaged => $"damage:{ToOriginKey(damaged.Origin)}:{damaged.Tier}:{string.Join(",", damaged.TargetHas.Order())}",
             killed => $"kill:{ToOriginKey(killed.Origin)}:{killed.Tier}:{string.Join(",", killed.TargetHas.Order())}",
             struck => $"targets:{ToOriginKey(struck.Origin)}:{struck.Targets.Value}:{struck.Hit}",
