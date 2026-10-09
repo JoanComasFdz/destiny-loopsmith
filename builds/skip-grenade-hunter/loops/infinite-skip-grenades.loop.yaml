@@ -5,7 +5,7 @@ description: |-
   the Strand and Arc weapons, grab the orbs, skip grenade again. Every jolted kill feeds Bolt
   Charge and Ionic Traces, which give grenade energy back. Tempest Strike's Bolt Charge on those
   kills doesn't stack with Dielectric's, so the analysis lists it as wasted.
-catalog: authored-061e68a8ce4e
+catalog: authored-a8f6ec124915
 steps:
   - do: class
     note: "Gambler's Dodge: arms Slice and Reaper; Bomber refunds grenade energy"

@@ -28,7 +28,9 @@ elements:
         then:
           - { applyBuff: { status: bolt-charge, stacks: 1 } }
         reason: "Every Arc Staff kill gives you a stack of Bolt Charge."
-      # Not expressible: x1 Bolt Charge per attack reflected while guarding (no block/reflect trigger).
+      # Not expressible: x1 Bolt Charge per attack reflected while guarding (no block/reflect trigger),
+      # and the Blind from the airborne heavy attack and Palm Strike (a rule can't name one of the
+      # super's attacks; "super damage -> Blind" would blind on every light attack too).
     # The super's damage resistance is not modelled (no "while in your super" condition).
     passives: []
 
@@ -145,11 +147,13 @@ elements:
     affinity: arc
     class: hunter
     hash: 4194622039
-    description: "Casting [Air Move] with full class ability energy consumes the charge and launches you upward, damaging and Jolting enemies within 10 m and granting Amplified to you and nearby allies. Triggers your dodge's effects; damage scales up to +65% at 200 Class."
-    source: clarity/4194622039@2.0625
+    description: "While airborne with a class ability charge, [Air Move] spends the charge on an upward Arc Staff twirl: up to 181 damage and Jolt to enemies within 10 m, Amplified for you and allies within 10 m, and your dodge's effects trigger. Damage scales with Class above 100, up to +65% at 200."
+    # Previously clarity/4194622039@2.0625, which says the same without the damage figure.
+    source: compendium/2026-10-09/Arc#48
     rules:
       # No air-move trigger in v1: modelled as a class ability cast (Ascension spends the class
-      # ability charge and triggers the dodge's effects). Not part of the skip-grenade build.
+      # ability charge and triggers the dodge's effects), so with it equipped a ground dodge fires
+      # this rule too. Not part of the skip-grenade build (the creator's alternative to Flow State).
       - on: { abilityCast: classAbility }
         then:
           - { debuffTarget: jolt }
@@ -182,7 +186,8 @@ elements:
     class: hunter
     hash: 1727069361
     # The melee-hit reload buff (15 Stability, 50 Reload, 0.8x reload duration for 5.25 s) is not
-    # modelled (it is not part of any loop, and would need an extra glossary buff).
+    # modelled: it is not part of any loop, and it would need its own glossary buff plus an "all
+    # weapons" archetype, which modifyWeaponStats doesn't have (the same gap as Flow State's).
     description: "Melee hits grant 15 Stability, 50 Reload Speed and a 0.8x reload duration for 5.25 s. While Amplified, (almost) all Bolt Charge sources grant an additional stack."
     # Previously clarity/1727069361@2.0625, which says the same.
     source: compendium/2026-10-09/Arc#16

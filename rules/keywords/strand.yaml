@@ -1,4 +1,5 @@
-# Strand keyword elements: rules that are active in every build (kind: keyword).
+# Strand keyword elements: rules that are active in every build (kind: keyword). Numbers from the
+# Strand tab's glossary rows of the Compendium snapshot of 2026-10-09.
 elements:
   - id: unraveling-rounds
     name: Unraveling Rounds
@@ -15,3 +16,22 @@ elements:
           - { debuffTarget: unravel }
         reason: "With Unraveling Rounds up, your Strand weapon's hits unravel enemies."
     passives: []
+
+  - id: woven-mail
+    name: Woven Mail
+    kind: keyword
+    affinity: strand
+    # Its duration (10 s) is in the glossary. Not encoded: Guardians' precision hits and melee
+    # bypassing the resistance (no PvP attacker model).
+    description: "Strand buff: 45% [PvP 25%] damage resistance for 10 s. Guardians' precision hits and melee ignore it. Casting any Super removes it."
+    source: compendium/2026-10-09/Strand#7
+    rules:
+      - on: { abilityCast: super }
+        when: [ { has: woven-mail } ]
+        then:
+          - { removeBuff: woven-mail }
+        reason: "Casting a Super takes your Woven Mail away."
+    passives:
+      - effect: { resistDamage: "45% [25%]" }
+        when: [ { has: woven-mail } ]
+        reason: "While you have Woven Mail you take 45% less damage."

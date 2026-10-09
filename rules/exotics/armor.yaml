@@ -19,6 +19,8 @@ elements:
           - { applyBuff: { status: bolt-charge, stacks: 1 } }
           - { grantEnergy: { to: grenade, amount: "4.2% [1.4%]" } }
         reason: "Every Skip Grenade hit gives you a Bolt Charge stack and a little grenade energy back."
+      # The source gives it per stack gained ("?%" in both Compendium and Clarity); v1 grants once per
+      # gain event, so a 2-stack gain (Spark of Frequency while Amplified) counts once.
       - on: { buffGained: bolt-charge }
         then:
           - { grantEnergy: { to: grenade, amount: "?" } }

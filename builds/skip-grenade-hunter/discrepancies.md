@@ -10,9 +10,10 @@ Sources, in priority order:
 3. The creator's **video** (https://www.youtube.com/watch?v=zvd6sNS463E; its transcript is kept
    locally, not in git).
 
-Clarity has no entries for abilities, armor set bonuses, artifact perks or statuses. The Compendium
-covers all of them, so since the 2026-10-09 pass every rule of the build has game data behind it
-except the build choices themselves (super, energy weapon, stats).
+Clarity has no entries for grenades, melees, supers, armor set bonuses, artifact perks or statuses
+(of the abilities it covers only class abilities, such as Gambler's Dodge). The Compendium covers
+all of them, so since the 2026-10-09 pass every rule of the build has game data behind it except the
+build choices themselves (super, energy weapon, stats).
 
 Number rules: game-data numbers are used as given, and a value the source marks as approximate
 (`~40%`, `4?`) stays approximate. A number only the video gives is approximate (`~`). Anything else
@@ -58,9 +59,10 @@ both, so no row goes against the order any more.
 | 30 | Other status durations | "5s sever" (row 10) | — | Jolt 10 s (Arc#8), Sever 10 s (Strand#8), Blind 10 s against combatants (Arc#7), Woven Mail 10 s (Strand#7; also To Shreds), Unraveling Rounds 14 s from Unraveling Orbs (Artifact Perks#45), Combination Blow 20 s (Arc#41) | Glossary or rule durations as listed | Game data. They matter only with `wait` steps |
 | 31 | Skip Grenade hits per seeker | — | — | Compendium Arc#36: 4 seekers, each hitting twice on impact and then exploding; Exotic Armors#78: every impact and explosion counts as a Shinobu's Vow hit (Clarity: 2-3 hits per drone) | One grenade hit per enemy, as the engine emits | v1 can't count several hits on one enemy within one action, so Shinobu's 4.2% and x1 Bolt Charge per hit are undercounted per grenade |
 | 32 | Health from Orbs of Power | — | — | Compendium Game Mechanics#119: an orb restores 0.7 HP per Health point (70 HP at 100) | Not encoded | Depends on a stat, is in HP, and the build gives no Health stat |
+| 33 | Woven Mail's own effects | "woven mail [to schreds]" (no effect named) | "that woven [mail] hot spot" | Compendium Strand#7: 45% [PvP 25%] damage resistance for 10 s; casting any Super removes it | New `woven-mail` keyword: Super cast while you have Woven Mail → Woven Mail removed; while Woven Mail: `resistDamage: "45% [25%]"` | New from game data. The removal matters for buff uptime in a loop that casts the Super (the example loops don't). Amplified's own effects (Compendium Arc#4: 15% damage resistance against combatants, mobility and handling, and the intrinsic Arc-kill counter) stay unencoded: the counter spans several actions and the rest changes no loop (glossary comment) |
 
-**Count: 32 rows.** Game data settles or corrects the note and the video in rows 1–23 and 28; rows
-26, 27 and 29–32 are new findings from the Compendium; rows 24 and 25 are build choices only the
+**Count: 33 rows.** Game data settles or corrects the note and the video in rows 1–23 and 28; rows
+26, 27 and 29–33 are new findings from the Compendium; rows 24 and 25 are build choices only the
 video supports.
 
 ## Compendium 2026-10-09: values changed or confirmed
@@ -96,6 +98,8 @@ Clarity hash or a creator quote) is kept in a YAML comment next to it.
 | glossary `sever` | no duration | 10 s (PvP 5 s) | `duration: 10s` | Strand#8 |
 | glossary `blind` | no duration | 10 s against combatants | `duration: 10s` | Arc#7 |
 | glossary `woven-mail` | no duration | 10 s, 45% damage resistance | `duration: 10s` | Strand#7 |
+| `woven-mail` (keyword) | no element (the resistance noted as not modelled) | 45% [25%] damage resistance; removed by casting any Super | new element: Super cast → Woven Mail removed; `resistDamage: "45% [25%]"` while active (row 33) | Strand#7 |
+| `ascension` (not in the build; the creator's alternative to Flow State) | source `clarity/4194622039@2.0625` | the same effect, plus up to 181 damage | source moved to the Compendium, description adds the damage; rule unchanged | Arc#48 |
 
 ### Confirmed unchanged (source now the Compendium)
 
