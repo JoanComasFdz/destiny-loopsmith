@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Loopsmith.Core.BuildComposition;
+using Loopsmith.Core.BuildExplanation;
 using Loopsmith.Core.BuildParsing;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
@@ -193,6 +194,14 @@ public static class LoopDesigning
             ? Optional.None<BuildIssue>()
             : Optional.Some(new BuildIssue(Severity.Info, $"Loop designed against catalog {designed}; replaying with {current}.")));
     }
+
+    /// <summary>What one step fired, worded like the CLI's trace, without its "#n action" header (the host draws its own).</summary>
+    public static ImmutableArray<StyledLine> RenderStepOutcomes(DesignSession session, Resolution resolution, TraceOptions options) =>
+        [.. TraceRenderer.RenderResolution(session.Build, resolution, options).Skip(1)];
+
+    /// <summary>The static view of a build: every trigger and what it sets off, as a build note or an aligned tree.</summary>
+    public static ImmutableArray<StyledLine> ExplainBuild(ValidatedBuild build, ExplanationStyle style) =>
+        BuildExplaining.RenderExplanation(BuildExplaining.ExplainBuild(build), style);
 
     /// <summary>The report as styled lines (verdict, steady state: kills, pickups, what fired, what was wasted, uptime).</summary>
     public static ImmutableArray<StyledLine> RenderLoopReport(LoopReport report) =>

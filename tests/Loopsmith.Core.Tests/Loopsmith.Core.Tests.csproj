@@ -13,6 +13,9 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Loopsmith.Core\Loopsmith.Core.csproj" />
+    <!-- Built first, not referenced: HostBoundaryTests reads their assemblies from their own bin folders. -->
+    <ProjectReference Include="..\..\src\Loopsmith.Cli\Loopsmith.Cli.csproj" ReferenceOutputAssembly="false" SkipGetTargetFrameworkProperties="true" />
+    <ProjectReference Include="..\..\src\Loopsmith.Web\Loopsmith.Web.csproj" ReferenceOutputAssembly="false" SkipGetTargetFrameworkProperties="true" />
   </ItemGroup>
   <ItemGroup>
     <Using Include="Xunit" />

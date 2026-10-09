@@ -107,19 +107,18 @@ public sealed class PlaySessionsTests
     }
 
     [Fact]
-    public void Write_saves_the_loop_file_and_it_imports_back()
+    public void Write_asks_the_host_to_save_a_loop_file_that_imports_back()
     {
-        var path = Path.Combine(Path.GetTempPath(), $"loopsmith-{Guid.NewGuid():N}", "loops", "saved.loop.yaml");
-        var session = PlayAll(StartPlay(Optional.Some(path), Optional.Some("Saved: loop")), "class", "n dodge", "grenade:kill");
+        var session = PlayAll(StartPlay(Optional.Some("loops/saved.loop.yaml"), Optional.Some("Saved: loop")), "class", "n dodge", "grenade:kill");
 
         var (_, effects) = PlaySessions.StepPlay(session, "w");
 
-        Assert.DoesNotContain(effects, effect => effect is Effect.ShowFailure);
-        var text = File.ReadAllText(path);
-        var design = LoopFileParsing.ParseLoopFile(new SourceText(path, text)).Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
+        var save = Assert.IsType<Effect.SaveFile>(Assert.Single(effects, effect => effect is Effect.SaveFile));
+        Assert.Equal("loops/saved.loop.yaml", save.Path);
+        Assert.Contains("✓ Saved 'Saved: loop' (2 steps) to loops/saved.loop.yaml", save.Saved.ToPlainText());
+        var design = LoopFileParsing.ParseLoopFile(new SourceText(save.Path, save.Text)).Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
         Assert.Equal("Saved: loop", design.Name);
         Assert.Equal(["class", "grenade:kill"], design.Steps.Select(step => step.Action.ToActionToken()));
-        Directory.Delete(Path.GetDirectoryName(Path.GetDirectoryName(path)!)!, recursive: true);
     }
 
     [Fact]
