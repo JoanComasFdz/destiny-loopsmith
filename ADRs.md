@@ -3,7 +3,7 @@
 Each ADR explains **why**; [`CONVENTIONS.md`](./CONVENTIONS.md) says **what** and wins
 on any conflict. D1–D12 come from the design proposal
 ([`docs/design/loopsmith-design-v0.3.html`](docs/design/loopsmith-design-v0.3.html), §04);
-D13+ were decided while building the CLI prototype.
+D13+ were decided while building the prototype (the CLI first, then the web designer).
 
 | # | Decision | Why |
 |---|---|---|
@@ -60,7 +60,8 @@ occurrences — two orbs picked up fired the pickup rule once.
 
 ## D18 — Unknown energy is not applied; unknown chunk scalar is assumed 1× and flagged
 
-*Superseded by D21: ability energy is no longer simulated, so chunk scalars aren't used.*
+*Superseded by D21: ability energy is no longer simulated, so chunk scalars aren't used
+(`Certainty.Assumed` no longer exists).*
 An unknown amount stays "?" and doesn't change the state. An unknown chunk energy
 scalar is assumed 1× (`Certainty.Assumed`, marked `*`), because the amount itself is
 known and the scalar only rescales it — the trace says so until the Compendium
@@ -70,7 +71,8 @@ snapshot provides the real scalar.
 
 The proposal's API host comes later; shells return `Effect`s that any host executes,
 so the CLI and the API share every line of logic. The CLI is the fastest way to check
-the engine against real build notes.
+the engine against real build notes. *Since D25 the main UI is the web designer; the CLI stays
+the scripting and golden-test host.*
 
 ## D20 — Verify.XunitV3 pinned to 32.0.1
 
@@ -132,3 +134,26 @@ of its own. Only rules matching the same event interact, and a rule gives way wh
 element's rule matched that event, even if that rule itself gave way — so in a chain where A
 lists B and B lists C, only C applies (a circle, which would apply none of them, is rejected
 when parsing). Without the listed element equipped, the rule applies as usual.
+
+## D24 — The designed loop is the product
+
+**Context.** The proposal's product was a simulation API (FR-3, FR-4): a step or a sequence in, a
+trace out, nothing kept. **Decision.** The loop a player designs, trigger by trigger, is
+first-class data: a self-contained `*.loop.yaml` that embeds its build file's text, so it replays
+anywhere that has the rule catalog, travels as a file or a share link, runs back to back into a
+`LoopReport` and compares with another loop (`LoopComparison`). `Orchestration.LoopDesigning` is
+the API behind both hosts (the web calls it directly, the CLI through its shells). **Consequence.**
+Two slices, `LoopFiles` and `ReportComparison`; a loop designed against another catalog version
+replays with an Info note, not an error. Format and metrics: [docs/loop-format.md](docs/loop-format.md).
+
+## D25 — The web designer runs in the browser, as static files
+
+**Context.** The designer needs the same engine as the CLI and should be shareable with a link.
+**Decision.** `Loopsmith.Web` is a Blazor WebAssembly host: the C# core runs in the browser
+(rules, builds and example loops are embedded), so there is no server and any static host works —
+GitHub Pages, with a preview per pull request ([docs/hosting.md](docs/hosting.md)). Like the CLI
+it owns no game logic. Shared loops travel in the URL fragment (`#loop=…`). The app stores nothing
+in the browser (owner decision, for now): a loop is kept by exporting it or copying its link.
+**Consequence.** No API host or database yet (D19); a saved library could come back later
+(per-browser storage, or a backend to sync it — [docs/backlog.md](docs/backlog.md)). The first
+visit downloads the .NET runtime (≈ 3 MB, then cached).
