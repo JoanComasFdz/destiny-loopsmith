@@ -1,0 +1,73 @@
+﻿Infinite skip grenades  Skip Grenade Hunter
+  6 steps per cycle, played back to back from a fresh spawn for up to 10 cycles
+  ✓ Sustainable — all 10 cycles completed, the loop feeds itself
+
+Energy (charges)    Grenade  Melee    Class    Super
+  Fresh spawn       2        1        1        0
+  After cycle 1     1.74     1        1        0
+  After cycle 2     1.74     1        1        0
+  After cycle 3     1.74     1        1        0
+  After cycle 4     1.74     1        1        0
+  After cycle 5     1.74     1        1        0
+  After cycle 6     1.74     1        1        0
+  After cycle 7     1.74     1        1        0
+  After cycle 8     1.74     1        1        0
+  After cycle 9     1.74     1        1        0
+  After cycle 10    1.74     1        1        0
+  Net per cycle     0        0        0        0
+
+Steady state (cycle 10, the last completed)
+  Kills                 10
+  Ionic Trace spawned   11
+  Orb of Power spawned  14
+  Bolt Charge maxed     6
+  Fired per cycle
+    40× Shinobu's Vow
+    26× To Shreds
+    20× Dielectric
+    14× Unraveling Orbs
+    14× Orb of Power
+    11× Spark of Discharge
+    10× Photonic Flare
+    10× Tempest Strike
+    10× Flow State
+    10× Shock and Clear
+    10× Elemental Charge
+    10× Ionic Trace
+     6× Flashover
+     6× Bolt Charge
+     6× Defibrillating Blast
+     4× Jolt
+     4× Horde Shuttle
+     2× Reaper
+     2× Slice
+     2× Grenade Kickstart
+     2× Spark of Shock
+     1× Gambler's Dodge
+     1× Bomber
+     1× Unraveling Rounds
+     1× Attrition Orbs
+     1× Strand Siphon
+     1× Harmonic Siphon
+  Buff uptime (active after how many of the cycle's steps)
+    Amplified          6/6 steps
+    Woven Mail         6/6 steps
+    Unraveling Rounds  6/6 steps
+    New Tricks         6/6 steps
+    Bolt Charge        6/6 steps
+    Armor Charge       6/6 steps
+    Slice              6/6 steps
+    Reaper             2/6 steps
+  ? 69 unknown values not applied — the real loop is stronger
+  (chance) 26 bullets fired in v1 but not guaranteed in game
+
+Steps
+  The creator's loop: dodge to arm Slice and Reaper, skip grenade into the pack, clean up with
+  the Strand and Arc weapons, grab the orbs, skip grenade again. Every jolted kill feeds Bolt
+  Charge and Ionic Traces back into grenade energy, so the grenade comes back before you need it.
+  1. class                Gambler's Dodge: arms Slice and Reaper; Bomber refunds grenade energy
+  2. grenade:kill         Skip grenade into the pack: Spark of Shock jolts, the jolted kill gives Amplified, Bolt Charge and Ionic Traces
+  3. kinetic:kill         Festival Flight: Slice severs, Reaper and Attrition Orbs drop orbs, To Shreds unravels
+  4. energy:kill          Arc weapon on the jolted pack: Spark of Discharge traces, Harmonic Siphon and Dielectric orbs
+  5. pickup:orb-of-power  Grab the orbs: Grenade Kickstart's Armor Charge and Unraveling Rounds
+  6. grenade:kill         Second skip grenade: Kickstart spends Armor Charge; max Bolt Charge strikes and refunds the grenade
