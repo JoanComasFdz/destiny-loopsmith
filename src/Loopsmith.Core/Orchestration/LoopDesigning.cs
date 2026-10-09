@@ -3,9 +3,12 @@ using Loopsmith.Core.BuildComposition;
 using Loopsmith.Core.BuildParsing;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
+using Loopsmith.Core.LoopFiles;
 using Loopsmith.Core.Phrasing;
+using Loopsmith.Core.ReportComparison;
 using Loopsmith.Core.RuleParsing;
 using Loopsmith.Core.Simulation;
+using Loopsmith.Core.TraceRendering;
 
 namespace Loopsmith.Core.Orchestration;
 
@@ -140,24 +143,53 @@ public static class LoopDesigning
             .UnwrapOr("not available now");
     }
 
-    // ── implemented by the loop slices (LoopFiles, Simulation.LoopRunning, LoopComparison) ──
+    // ── export, import, analyse, compare (LoopFiles, Simulation.LoopRunning, ReportComparison) ──
 
     /// <summary>The design as a <c>.loop.yaml</c> file (docs/loop-format.md).</summary>
     public static string ExportLoop(DesignSession session) =>
-        $"# TODO(loop slices): export not implemented yet\nloop: {session.Design.Name}\n";
+        LoopFileWriting.WriteLoopFile(session.Design);
 
-    /// <summary>Parse a <c>.loop.yaml</c>, validate its embedded build against the catalog, replay its steps.</summary>
+    /// <summary>
+    /// Parse a <c>.loop.yaml</c>, validate its embedded build against the catalog, replay its steps. A loop designed
+    /// against another catalog still imports (see <see cref="ListDesignIssues"/>); an invalid embedded build or an
+    /// unknown action token is an error.
+    /// </summary>
     public static Result<DesignSession, string> ImportLoop(RuleCatalog catalog, SourceText loopFile) =>
-        new Result<DesignSession, string>.Error($"Importing loops is not implemented yet ({loopFile.Path}, catalog {catalog.Version}).");
+        LoopFileParsing.ParseLoopFile(loopFile)
+            .Bind(design => BuildFileParsing.ParseBuildFile(design.Build)
+                .Bind(build => BuildValidation.ValidateBuild(build, catalog))
+                .Map(validated => CreateSession(validated, design)));
 
     /// <summary>Run the design up to <paramref name="maxCycles"/> times back to back and measure it.</summary>
     public static LoopReport AnalyzeDesign(DesignSession session, int maxCycles) =>
-        new(session.Design.Name, session.Build.Build.Name, session.Design.Steps.Length,
-            new EnergySnapshot(EnergyAmount.From(0m), EnergyAmount.From(0m), EnergyAmount.From(0m), EnergyAmount.From(0m)),
-            [], 0, maxCycles, [], [], [], 0, 0);
+        LoopRunning.RunLoop(session.Build, session.Design, maxCycles);
 
     public static LoopComparison CompareLoops(LoopReport left, LoopReport right) =>
-        new(left, right, []);
+        LoopComparing.CompareLoops(left, right);
+
+    /// <summary>
+    /// The build's own validation issues (warnings, info) plus, as Info, a loop designed against a catalog other
+    /// than the one it is replayed with.
+    /// </summary>
+    public static ImmutableArray<BuildIssue> ListDesignIssues(DesignSession session) =>
+        [.. session.Build.Issues, .. FindCatalogMismatch(session).Match(issue => [issue.Value], _ => ImmutableArray<BuildIssue>.Empty)];
+
+    /// <summary>Info when the loop was designed against another catalog version than the one replaying it.</summary>
+    public static Optional<BuildIssue> FindCatalogMismatch(DesignSession session)
+    {
+        var current = session.Build.Catalog.Version;
+        return session.Design.Catalog.Bind(designed => designed == current
+            ? Optional.None<BuildIssue>()
+            : Optional.Some(new BuildIssue(Severity.Info, $"Loop designed against catalog {designed}; replaying with {current}.")));
+    }
+
+    /// <summary>The report as styled lines (verdict, energy per cycle, steady state).</summary>
+    public static ImmutableArray<StyledLine> RenderLoopReport(LoopReport report) =>
+        LoopReportRendering.RenderLoopReport(report);
+
+    /// <summary>The comparison as a two-column table, the better value of each row marked ✓.</summary>
+    public static ImmutableArray<StyledLine> RenderLoopComparison(LoopComparison comparison) =>
+        ComparisonRendering.RenderComparison(comparison);
 }
 
 /// <summary>Parse the rule catalog once (the web host reads the rule files from embedded resources).</summary>

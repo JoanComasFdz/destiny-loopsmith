@@ -60,6 +60,26 @@ public static class FileSourceFetching
         }
     }
 
+    /// <summary>Writes (or replaces) a UTF-8 text file, creating its folder if needed.</summary>
+    public static Result<Unit, string> WriteTextFile(string path, string text)
+    {
+        try
+        {
+            var directory = Path.GetDirectoryName(Path.GetFullPath(path));
+            if (!string.IsNullOrEmpty(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            File.WriteAllText(path, text);
+            return new Result<Unit, string>.Ok(new Unit.Value());
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            return new Result<Unit, string>.Error($"Cannot write '{path}': {exception.Message}");
+        }
+    }
+
     /// <summary>Reads the file when a path is given; no path is not an error.</summary>
     public static Result<Optional<SourceText>, string> ReadOptionalTextFile(Optional<string> path) =>
         path.Match(

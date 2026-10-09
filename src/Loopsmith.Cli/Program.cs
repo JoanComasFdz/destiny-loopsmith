@@ -24,6 +24,8 @@ static int RunCommand(CliCommand command, bool useColor) =>
         simulate => RunShell(() => CommandShells.RunSimulate(simulate.Request), useColor),
         play => RunPlay(play, useColor),
         graph => RunShell(() => CommandShells.RunGraph(graph.Request), useColor),
+        loop => RunShell(() => CommandShells.RunLoop(loop.Request), useColor),
+        compare => RunShell(() => CommandShells.RunCompare(compare.Request), useColor),
         _ => WriteUsage());
 
 static int RunShell(Func<ImmutableArray<Effect>> shell, bool useColor)
@@ -35,7 +37,7 @@ static int RunShell(Func<ImmutableArray<Effect>> shell, bool useColor)
 
 static int RunPlay(CliCommand.Play play, bool useColor)
 {
-    var started = PlaySessions.StartPlay(play.Request, play.Options);                       // impure
+    var started = PlaySessions.StartPlay(play.Request);                                     // impure
 
     var exitCode = started.Match(
         ok => RunPlayLoop(ok.Value, useColor),                                               // impure
@@ -46,22 +48,18 @@ static int RunPlay(CliCommand.Play play, bool useColor)
 static int RunPlayLoop(PlaySession session, bool useColor)
 {
     var opening = PlaySessions.PlanOpening(session);                                         // pure
-    ExecuteEffects(opening, useColor);                                                       // impure
+    var exitCode = ExecuteEffects(opening, useColor);                                        // impure
     while (!session.IsOver)
     {
         Console.Write("> ");                                                                 // impure
         var input = Console.ReadLine();                                                      // impure
-        if (input is null)
-        {
-            break;
-        }
-
-        var (next, effects) = PlaySessions.AdvancePlay(session, input);                      // pure
-        ExecuteEffects(effects, useColor);                                                   // impure
+        var line = input ?? "quit";                                                          // pure: end of input quits
+        var (next, effects) = PlaySessions.StepPlay(session, line);                          // impure
+        exitCode = ExecuteEffects(effects, useColor);                                        // impure: the last turn (quit + save) decides
         session = next;
     }
 
-    return 0;
+    return exitCode;
 }
 
 static int ExecuteEffects(ImmutableArray<Effect> effects, bool useColor) =>

@@ -61,7 +61,80 @@ public static class CommandShells
         return effects;
     }
 
+    public static ImmutableArray<Effect> RunLoop(LoopRequest request)
+    {
+        var ruleFiles = FileSourceFetching.ReadRuleFilesFor(request.RulesDirectory, request.LoopPath); // impure
+        var loopFile = FileSourceFetching.ReadTextFile(request.LoopPath);                             // impure
+
+        var effects = ruleFiles                                                                      // pure
+            .Bind(CatalogLoading.ParseCatalog)
+            .Bind(catalog => loopFile.Bind(file => LoopDesigning.ImportLoop(catalog, file)))
+            .Match(ok => PlanLoopReport(ok.Value, request.MaxCycles, request.Trace), error => [new Effect.ShowFailure(error.Failure)]);
+        return effects;
+    }
+
+    public static ImmutableArray<Effect> RunCompare(CompareRequest request)
+    {
+        var ruleFiles = FileSourceFetching.ReadRuleFilesFor(request.RulesDirectory, request.LeftPath); // impure
+        var left = FileSourceFetching.ReadTextFile(request.LeftPath);                                 // impure
+        var right = FileSourceFetching.ReadTextFile(request.RightPath);                               // impure
+
+        var effects = ruleFiles                                                                      // pure
+            .Bind(CatalogLoading.ParseCatalog)
+            .Bind(catalog => ImportBoth(catalog, left, right))
+            .Match(ok => PlanComparison(ok.Value.Left, ok.Value.Right, request.MaxCycles), error => [new Effect.ShowFailure(error.Failure)]);
+        return effects;
+    }
+
     // ── pure planning ───────────────────────────────────────────────────────────
+
+    /// <summary>Build summary, the report (verdict, energy per cycle, steady state), the steps and, optionally, the trace of cycle 1.</summary>
+    public static ImmutableArray<Effect> PlanLoopReport(DesignSession session, int maxCycles, Optional<TraceOptions> trace)
+    {
+        var report = LoopDesigning.AnalyzeDesign(session, maxCycles);
+        var blank = new Effect.WriteLines([StyledText.ToLine(0, "".ToSpan())]);
+        var traceEffects = trace.Match(
+            options => ImmutableArray.Create<Effect>(
+                blank,
+                new Effect.WriteLines([StyledText.ToLine(0, "Cycle 1, step by step".ToSpan(Tone.Strong))]),
+                new Effect.WriteLines(TraceRenderer.RenderSequence(
+                    session.Build,
+                    session.Initial,
+                    report.Cycles.IsEmpty ? [] : report.Cycles[0].Resolutions,
+                    options.Value))),
+            _ => []);
+        return
+        [
+            new Effect.WriteLines(BuildExplaining.RenderBuildSummary(session.Build)),
+            .. PlanCatalogNotes([session]),
+            blank,
+            new Effect.WriteLines(LoopDesigning.RenderLoopReport(report)),
+            blank,
+            new Effect.WriteLines(LoopReportRendering.RenderLoopDesign(session.Design)),
+            .. traceEffects,
+        ];
+    }
+
+    public static ImmutableArray<Effect> PlanComparison(DesignSession left, DesignSession right, int maxCycles)
+    {
+        var comparison = LoopDesigning.CompareLoops(LoopDesigning.AnalyzeDesign(left, maxCycles), LoopDesigning.AnalyzeDesign(right, maxCycles));
+        return [.. PlanCatalogNotes([left, right]), new Effect.WriteLines(LoopDesigning.RenderLoopComparison(comparison))];
+    }
+
+    private static ImmutableArray<Effect> PlanCatalogNotes(ImmutableArray<DesignSession> sessions) =>
+        sessions
+            .SelectMany(session => LoopDesigning.FindCatalogMismatch(session).Match(
+                issue => new Effect[] { new Effect.WriteLines([StyledText.ToLine(1, $"i {session.Design.Name}: {issue.Value.Message}".ToSpan(Tone.Muted))]) },
+                _ => []))
+            .ToImmutableArray();
+
+    private static Result<(DesignSession Left, DesignSession Right), string> ImportBoth(
+        RuleCatalog catalog, Result<SourceText, string> left, Result<SourceText, string> right) =>
+        new[] { left, right }
+            .Select(file => file.Bind(f => LoopDesigning.ImportLoop(catalog, f)))
+            .CombineAll()
+            .Map(sessions => (sessions[0], sessions[1]))
+            .MapError(errors => string.Join(Environment.NewLine, errors));
 
     public static ImmutableArray<Effect> PlanExplain(ValidatedBuild build, ExplanationStyle style)
     {
