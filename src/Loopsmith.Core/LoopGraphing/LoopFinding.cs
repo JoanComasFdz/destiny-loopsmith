@@ -16,6 +16,7 @@ public static class LoopFinding
             .GroupBy(e => e.From)
             .ToImmutableDictionary(g => g.Key, g => g.OrderBy(e => order.GetValueOrDefault(e.To)).ToImmutableArray());
         var energyKeys = graph.Nodes.Where(n => n.Kind == NodeKind.Energy).Select(n => n.Key).ToImmutableHashSet();
+        var actionKeys = graph.Nodes.Where(n => n.Kind == NodeKind.Action).Select(n => n.Key).ToImmutableHashSet();
 
         var found = new List<ImmutableArray<GraphEdge>>();
         foreach (var start in graph.Nodes.Select(n => n.Key))
@@ -28,6 +29,7 @@ public static class LoopFinding
         }
 
         return found
+            .Select(edges => RotateToAction(edges, actionKeys))
             .Select(edges => new Loop(
                 edges.Select(e => e.From).ToImmutableArray(),
                 edges,
@@ -36,6 +38,13 @@ public static class LoopFinding
             .ThenBy(loop => loop.Edges.Length)
             .ThenBy(loop => string.Join(">", loop.NodeKeys), StringComparer.Ordinal)
             .ToImmutableArray();
+    }
+
+    /// <summary>Start a loop where the player acts ("Throw grenade → …"), so it reads like a rotation.</summary>
+    private static ImmutableArray<GraphEdge> RotateToAction(ImmutableArray<GraphEdge> edges, ImmutableHashSet<string> actionKeys)
+    {
+        var start = edges.Select((edge, index) => (edge, index)).FirstOrDefault(x => actionKeys.Contains(x.edge.From)).index;
+        return [.. edges.Skip(start), .. edges.Take(start)];
     }
 
     private static void SearchCycles(

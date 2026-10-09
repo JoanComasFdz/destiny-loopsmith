@@ -80,7 +80,7 @@ public static class BuildValidation
             {
                 slot.Accepts.Contains(element.Kind)
                     ? null
-                    : new BuildIssue(Severity.Blocking, $"'{element.Name}' is a {element.Kind}, not a {slot.SlotName}."),
+                    : new BuildIssue(Severity.Blocking, $"'{element.Name}' ({element.Kind}) can't go in the {slot.SlotName} slot."),
                 element.Class.Match(c => c.Value == build.Class, _ => true)
                     ? null
                     : new BuildIssue(Severity.Blocking, $"'{element.Name}' belongs to another class, not {build.Class}."),
