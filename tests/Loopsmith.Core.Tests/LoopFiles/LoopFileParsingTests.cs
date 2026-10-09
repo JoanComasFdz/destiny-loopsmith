@@ -1,0 +1,159 @@
+using Loopsmith.Core.Domain;
+using Loopsmith.Core.Functional;
+using Loopsmith.Core.LoopFiles;
+using static Loopsmith.Core.Tests.RuleParsing.ParsingAssertions;
+
+namespace Loopsmith.Core.Tests.LoopFiles;
+
+public sealed class LoopFileParsingTests
+{
+    private const string LoopPath = "builds/x/loops/test.loop.yaml";
+
+    /// <summary>The example of docs/loop-format.md, verbatim.</summary>
+    private const string SpecExampleYaml = """
+        # Loopsmith loop v1
+        loop: Infinite skip grenades            # required — the loop's name
+        author: Joan                            # optional
+        description: |                          # optional, free text
+          Dodge to arm Slice and Reaper, skip grenade into the pack, then shoot.
+        catalog: authored-e4426d03166b          # optional — catalog version it was designed against
+        steps:                                  # required (may be empty), in order
+          - do: class                           # an action token (below)
+            note: Arm Slice + Reaper            # optional
+          - do: grenade:kill
+          - do: pickup:orb-of-power
+        build: |                                # required — the build file's full text (docs/rule-format.md)
+          name: Skip Grenade Hunter
+          class: hunter
+          ...
+        """;
+
+    private static LoopDesign ParseValidLoop(string yaml) =>
+        AssertOk(LoopFileParsing.ParseLoopFile(new SourceText(LoopPath, yaml)));
+
+    private static string ParseInvalidLoop(string yaml) =>
+        AssertError(LoopFileParsing.ParseLoopFile(new SourceText(LoopPath, yaml)));
+
+    [Fact]
+    public void Parses_the_spec_example()
+    {
+        var design = ParseValidLoop(SpecExampleYaml);
+
+        Assert.Equal("Infinite skip grenades", design.Name);
+        Assert.Equal(Optional.Some("Joan"), design.Author);
+        Assert.Equal(Optional.Some("Dodge to arm Slice and Reaper, skip grenade into the pack, then shoot.\n"), design.Description);
+        Assert.Equal(Optional.Some(CatalogVersion.From("authored-e4426d03166b")), design.Catalog);
+        Assert.Equal(
+            [new PlayerAction.UseClassAbility(), new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Kill), new PlayerAction.CollectPickups(PickupId.From("orb-of-power"))],
+            design.Steps.Select(step => step.Action));
+        Assert.Equal([Optional.Some("Arm Slice + Reaper"), Optional.None<string>(), Optional.None<string>()], design.Steps.Select(step => step.Note));
+        Assert.Equal("name: Skip Grenade Hunter\nclass: hunter\n...", design.Build.Text);   // the example has no final line break
+        Assert.Equal(LoopPath + "#build", design.Build.Path);
+    }
+
+    [Fact]
+    public void Optional_keys_may_be_omitted_and_steps_may_be_empty()
+    {
+        var design = ParseValidLoop("loop: Empty\nsteps: []\nbuild: \"name: X\"\n");
+
+        Assert.Equal(Optional.None<string>(), design.Author);
+        Assert.Equal(Optional.None<string>(), design.Description);
+        Assert.Equal(Optional.None<CatalogVersion>(), design.Catalog);
+        Assert.Empty(design.Steps);
+        Assert.Equal("name: X", design.Build.Text);
+    }
+
+    [Fact]
+    public void Action_tokens_are_read_with_the_shared_grammar()
+    {
+        var design = ParseValidLoop("""
+            loop: Tokens
+            steps:
+              - do: melee
+              - do: SUPER:KILL
+              - do: power:kill
+              - do: wait:2.25
+              - do: wait
+            build: x
+            """);
+
+        Assert.Equal(
+            [
+                new PlayerAction.CastAbility(OffensiveAbility.Melee, HitOutcome.Damage),
+                new PlayerAction.CastAbility(OffensiveAbility.Super, HitOutcome.Kill),
+                new PlayerAction.FireWeapon(WeaponSlot.Power, HitOutcome.Kill),
+                new PlayerAction.Wait(Seconds.From(2.25m)),
+                new PlayerAction.Wait(Seconds.From(5m)),
+            ],
+            design.Steps.Select(step => step.Action));
+    }
+
+    [Fact]
+    public void Unknown_keys_are_errors_at_their_line()
+    {
+        var error = ParseInvalidLoop("""
+            loop: Typo
+            autor: Joan
+            steps:
+              - do: class
+                notes: oops
+            build: x
+            """);
+
+        Assert.Contains($"{LoopPath}:2: unknown key 'autor' in loop file", error);
+        Assert.Contains($"{LoopPath}:5: unknown key 'notes' in step 1", error);
+    }
+
+    [Fact]
+    public void Unknown_action_tokens_are_errors_at_their_line()
+    {
+        var error = ParseInvalidLoop("""
+            loop: Bad token
+            steps:
+              - do: class
+              - do: grenade:explode
+              - do: dance
+            build: x
+            """);
+
+        Assert.Contains($"{LoopPath}:4: step 2.do: Unknown action 'grenade:explode'", error);
+        Assert.Contains($"{LoopPath}:5: step 3.do: Unknown action 'dance'", error);
+    }
+
+    [Fact]
+    public void Missing_required_keys_are_all_reported()
+    {
+        var error = ParseInvalidLoop("author: Joan\n");
+
+        Assert.Contains($"{LoopPath}:1: loop file is missing 'loop'", error);
+        Assert.Contains($"{LoopPath}:1: loop file is missing 'steps'", error);
+        Assert.Contains($"{LoopPath}:1: loop file is missing 'build'", error);
+    }
+
+    [Fact]
+    public void A_step_needs_an_action()
+    {
+        var error = ParseInvalidLoop("loop: L\nsteps:\n  - note: no action\nbuild: x\n");
+
+        Assert.Contains($"{LoopPath}:3: step 1 is missing 'do'", error);
+    }
+
+    [Theory]
+    [InlineData("loop: L\nsteps: class\nbuild: x\n", "2: loop file.steps must be a list")]
+    [InlineData("loop: L\nsteps:\n  - class\nbuild: x\n", "3: step 1 must be a mapping")]
+    [InlineData("loop: L\nsteps: []\nbuild:\n  name: X\n", "4: loop file.build must be a single value")]
+    [InlineData("loop: [a, b]\nsteps: []\nbuild: x\n", "1: loop file.loop must be a single value")]
+    [InlineData("loop: L\ncatalog: ' '\nsteps: []\nbuild: x\n", "2: loop file.catalog: Catalog version must not be empty")]
+    [InlineData("- loop: L\n", "1: loop file must be a mapping")]
+    [InlineData("", "1: the file is empty")]
+    [InlineData("loop: L\nsteps: [\nbuild: x\n", "invalid YAML")]
+    [InlineData("loop: L\nsteps: [\n", "invalid YAML")]
+    [InlineData("loop: A\nloop: B\nsteps: []\nbuild: x\n", "invalid YAML")]
+    public void Malformed_files_are_located_errors(string yaml, string expected)
+    {
+        var error = ParseInvalidLoop(yaml);
+
+        Assert.StartsWith(LoopPath + ":", error);
+        Assert.Contains(expected, error);
+    }
+}
