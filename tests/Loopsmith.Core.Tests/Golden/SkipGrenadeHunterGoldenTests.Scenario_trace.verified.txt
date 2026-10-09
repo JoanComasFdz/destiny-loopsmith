@@ -1,32 +1,20 @@
 ﻿Fresh spawn
-  Grenade       ▰▰▰▰▰▰▰▰▰▰ 2/2
-  Melee         ▰▰▰▰▰▰▰▰▰▰ 1/1
-  Class ability ▰▰▰▰▰▰▰▰▰▰ 1/1
-  Super         ▱▱▱▱▱▱▱▱▱▱ 0/1
   Buffs         none
   Target        none
   Ground        none
 #1 Class ability
-  Class ability → Reaper (10s) [Reaper] + +1 Slice (8s) [Slice] + +?% melee energy [Gambler's Dodge] + +12% grenade energy* [Bomber]
-  Grenade       ▰▰▰▰▰▰▰▰▰▰ 2/2
-  Melee         ▰▰▰▰▰▰▰▰▰▰ 1/1
-  Class ability ▱▱▱▱▱▱▱▱▱▱ 0/1
-  Super         ▱▱▱▱▱▱▱▱▱▱ 0/1
+  Class ability → Reaper (10s) [Reaper] + +1 Slice (8s) [Slice] + +?% melee energy [Gambler's Dodge] + +12% grenade energy [Bomber]
   Buffs         Reaper 10s · Slice ×1 8s
   Target        none
   Ground        none
 #2 Grenade (kill)
-  Grenade hit → Jolt target [Spark of Shock] + +1 Bolt Charge and +4.2% grenade energy* [Shinobu's Vow]
+  Grenade hit → Jolt target [Spark of Shock] + +1 Bolt Charge and +4.2% grenade energy [Shinobu's Vow]
     ↳ Bolt Charge ×1 → +?% grenade energy [Shinobu's Vow]
   Grenade kill on Jolted target → +1 Bolt Charge [Tempest Strike] + Amplified [Flow State] + +1 Bolt Charge [Dielectric] + Ionic Trace [Shock and Clear] + Orb of Power and heals you [Dielectric] (chance)
     ↳ Bolt Charge ×2 → +?% grenade energy [Shinobu's Vow]
     ↳ Bolt Charge ×4 → +?% grenade energy [Shinobu's Vow]
-    ↳ Picked up Ionic Trace → +1 Bolt Charge [Spark of Discharge] + +1 Armor Charge [Elemental Charge] (chance) + +~15% grenade, melee and class ability energy* [Ionic Trace]
+    ↳ Picked up Ionic Trace → +1 Bolt Charge [Spark of Discharge] + +1 Armor Charge [Elemental Charge] (chance) + +~15% grenade, melee and class ability energy [Ionic Trace]
       ↳ Bolt Charge ×6 → +?% grenade energy [Shinobu's Vow]
-  Grenade       ▰▰▰▰▰▰▱▱▱▱ 1.19/2
-  Melee         ▰▰▰▰▰▰▰▰▰▰ 1/1
-  Class ability ▰▰▱▱▱▱▱▱▱▱ 0.15/1
-  Super         ▱▱▱▱▱▱▱▱▱▱ 0/1
   Buffs         Reaper 10s · Slice ×1 8s · Bolt Charge ×6 · Amplified · Armor Charge ×1
   Target        Jolt
   Ground        1× Orb of Power
@@ -38,19 +26,15 @@
   Festival Flight kill on Jolted + Severed + Unraveled target → Blind target [Photonic Flare] + +1 Bolt Charge [Tempest Strike] + Amplified [Flow State] + consumes Reaper and Orb of Power [Reaper] + +1 Bolt Charge [Dielectric] + Woven Mail [To Shreds] + Ionic Trace [Shock and Clear] + Orb of Power [Strand Siphon] (chance) + Orb of Power and heals you [Dielectric] (chance)
     ↳ Bolt Charge ×8 → +?% grenade energy [Shinobu's Vow]
     ↳ Bolt Charge ×10 → +?% grenade energy [Shinobu's Vow]
-    ↳ Max Bolt Charge → New Tricks and +~40% grenade energy* and heals you and allies [Shinobu's Vow] + Amplified [Flashover] + consumes Bolt Charge and Bolt Charge strike (kills) [Bolt Charge]
+    ↳ Max Bolt Charge → New Tricks and +~40% grenade energy and heals you and allies [Shinobu's Vow] + Amplified [Flashover] + consumes Bolt Charge and Bolt Charge strike (kills) [Bolt Charge]
       ↳ Bolt Charge hit on Jolted + Severed + Unraveled + Blinded target → Jolt target and heals you [Defibrillating Blast] + Unravel target [To Shreds]
       ↳ Bolt Charge kill on Jolted + Severed + Unraveled + Blinded target → Blind target [Photonic Flare] + +1 Bolt Charge [Tempest Strike] + Amplified [Flow State] + +1 Bolt Charge [Dielectric] + Woven Mail [To Shreds] + Ionic Trace [Shock and Clear] + Orb of Power and heals you [Dielectric] (chance)
         ↳ Bolt Charge ×2 → +?% grenade energy [Shinobu's Vow]
         ↳ Bolt Charge ×4 → +?% grenade energy [Shinobu's Vow]
-        ↳ Picked up Ionic Trace → +1 Bolt Charge [Spark of Discharge] + +1 Armor Charge [Elemental Charge] (chance) + +~15% grenade, melee and class ability energy* [Ionic Trace]
+        ↳ Picked up Ionic Trace → +1 Bolt Charge [Spark of Discharge] + +1 Armor Charge [Elemental Charge] (chance) + +~15% grenade, melee and class ability energy [Ionic Trace]
           ↳ Bolt Charge ×6 → +?% grenade energy [Shinobu's Vow]
-    ↳ Picked up Ionic Trace → +1 Bolt Charge [Spark of Discharge] + +1 Armor Charge [Elemental Charge] (chance) + +~15% grenade, melee and class ability energy* [Ionic Trace]
+    ↳ Picked up Ionic Trace → +1 Bolt Charge [Spark of Discharge] + +1 Armor Charge [Elemental Charge] (chance) + +~15% grenade, melee and class ability energy [Ionic Trace]
       ↳ Bolt Charge ×8 → +?% grenade energy [Shinobu's Vow]
-  Grenade       ▰▰▰▰▰▰▰▰▰▱ 1.89/2
-  Melee         ▰▰▰▰▰▰▰▰▰▰ 1/1
-  Class ability ▰▰▰▰▰▱▱▱▱▱ 0.45/1
-  Super         ▱▱▱▱▱▱▱▱▱▱ 0/1
   Buffs         Slice ×2 8s · Amplified · Armor Charge ×3 · Woven Mail · New Tricks · Bolt Charge ×8
   Target        Jolt · Sever · Unravel · Blind
   Ground        6× Orb of Power
@@ -58,33 +42,25 @@
   Active      linear-fusion-rifle/fusion-rifle/heat-weapon: +handling, +reload, +vent [Luminopotent 2-Piece Bonus]
 #4 Pick up Orb of Power
   Picked up Orb of Power ×6 → Unraveling Rounds [Unraveling Orbs] + +1 Armor Charge and +?% super energy [Orb of Power]
-  Grenade       ▰▰▰▰▰▰▰▰▰▱ 1.89/2
-  Melee         ▰▰▰▰▰▰▰▰▰▰ 1/1
-  Class ability ▰▰▰▰▰▱▱▱▱▱ 0.45/1
-  Super         ▱▱▱▱▱▱▱▱▱▱ 0/1
   Buffs         Slice ×2 8s · Amplified · Armor Charge ×3 · Woven Mail · New Tricks · Bolt Charge ×8 · Unraveling Rounds
   Target        Jolt · Sever · Unravel · Blind
   Ground        none
   Active      +1 Bolt Charge per gain [Spark of Frequency]
   Active      linear-fusion-rifle/fusion-rifle/heat-weapon: +handling, +reload, +vent [Luminopotent 2-Piece Bonus]
 #5 Melee (kill)
-  Melee hit on Jolted + Severed + Unraveled + Blinded target → Jolt target [Tempest Strike] + Unravel target [To Shreds] + Jolt strike [Jolt] + +12% grenade energy* [Impact Induction]
+  Melee hit on Jolted + Severed + Unraveled + Blinded target → Jolt target [Tempest Strike] + Unravel target [To Shreds] + Jolt strike [Jolt] + +12% grenade energy [Impact Induction]
     ↳ Jolt hit on Jolted + Severed + Unraveled + Blinded target → Unravel target [To Shreds]
   Melee kill on Jolted + Severed + Unraveled + Blinded target → Blind target [Photonic Flare] + +1 Combination Blow and +?% class ability energy [Combination Blow] + +1 Bolt Charge [Tempest Strike] + Amplified [Flow State] + +1 Bolt Charge [Dielectric] + Woven Mail [To Shreds] + Ionic Trace [Shock and Clear] + Orb of Power and heals you [Dielectric] (chance)
     ↳ Bolt Charge ×10 → +?% grenade energy [Shinobu's Vow]
-    ↳ Max Bolt Charge → New Tricks and +~40% grenade energy* and heals you and allies [Shinobu's Vow] + Amplified [Flashover] + consumes Bolt Charge and Bolt Charge strike (kills) [Bolt Charge]
+    ↳ Max Bolt Charge → New Tricks and +~40% grenade energy and heals you and allies [Shinobu's Vow] + Amplified [Flashover] + consumes Bolt Charge and Bolt Charge strike (kills) [Bolt Charge]
       ↳ Bolt Charge hit on Jolted + Severed + Unraveled + Blinded target → Jolt target and heals you [Defibrillating Blast] + Unravel target [To Shreds]
       ↳ Bolt Charge kill on Jolted + Severed + Unraveled + Blinded target → Blind target [Photonic Flare] + +1 Bolt Charge [Tempest Strike] + Amplified [Flow State] + +1 Bolt Charge [Dielectric] + Woven Mail [To Shreds] + Ionic Trace [Shock and Clear] + Orb of Power and heals you [Dielectric] (chance)
         ↳ Bolt Charge ×2 → +?% grenade energy [Shinobu's Vow]
         ↳ Bolt Charge ×4 → +?% grenade energy [Shinobu's Vow]
-        ↳ Picked up Ionic Trace → +1 Bolt Charge [Spark of Discharge] + +1 Armor Charge [Elemental Charge] (chance) + +~15% grenade, melee and class ability energy* [Ionic Trace]
+        ↳ Picked up Ionic Trace → +1 Bolt Charge [Spark of Discharge] + +1 Armor Charge [Elemental Charge] (chance) + +~15% grenade, melee and class ability energy [Ionic Trace]
           ↳ Bolt Charge ×6 → +?% grenade energy [Shinobu's Vow]
-    ↳ Picked up Ionic Trace → +1 Bolt Charge [Spark of Discharge] + +1 Armor Charge [Elemental Charge] (chance) + +~15% grenade, melee and class ability energy* [Ionic Trace]
+    ↳ Picked up Ionic Trace → +1 Bolt Charge [Spark of Discharge] + +1 Armor Charge [Elemental Charge] (chance) + +~15% grenade, melee and class ability energy [Ionic Trace]
       ↳ Bolt Charge ×8 → +?% grenade energy [Shinobu's Vow]
-  Grenade       ▰▰▰▰▰▰▰▰▰▰ 2/2
-  Melee         ▰▰▰▱▱▱▱▱▱▱ 0.3/1
-  Class ability ▰▰▰▰▰▰▰▰▱▱ 0.75/1
-  Super         ▱▱▱▱▱▱▱▱▱▱ 0/1
   Buffs         Slice ×2 8s · Amplified · Armor Charge ×3 · Woven Mail · New Tricks · Unraveling Rounds · Combination Blow ×1 · Bolt Charge ×8
   Target        Jolt · Sever · Unravel · Blind
   Ground        2× Orb of Power
@@ -93,32 +69,28 @@
   Active      linear-fusion-rifle/fusion-rifle/heat-weapon: +handling, +reload, +vent [Luminopotent 2-Piece Bonus]
 #6 Grenade (kill)
   Grenade thrown → consumes New Tricks [Shinobu's Vow] + spends Armor Charge → +?% grenade energy each [Grenade Kickstart]
-  Grenade hit on Jolted + Severed + Unraveled + Blinded target → Jolt target [Spark of Shock] + Unravel target [To Shreds] + +1 Bolt Charge and +4.2% grenade energy* [Shinobu's Vow] + Jolt strike [Jolt]
+  Grenade hit on Jolted + Severed + Unraveled + Blinded target → Jolt target [Spark of Shock] + Unravel target [To Shreds] + +1 Bolt Charge and +4.2% grenade energy [Shinobu's Vow] + Jolt strike [Jolt]
     ↳ Bolt Charge ×10 → +?% grenade energy [Shinobu's Vow]
-    ↳ Max Bolt Charge → New Tricks and +~40% grenade energy* and heals you and allies [Shinobu's Vow] + Amplified [Flashover] + consumes Bolt Charge and Bolt Charge strike (kills) [Bolt Charge]
+    ↳ Max Bolt Charge → New Tricks and +~40% grenade energy and heals you and allies [Shinobu's Vow] + Amplified [Flashover] + consumes Bolt Charge and Bolt Charge strike (kills) [Bolt Charge]
       ↳ Bolt Charge hit on Jolted + Severed + Unraveled + Blinded target → Jolt target and heals you [Defibrillating Blast] + Unravel target [To Shreds]
       ↳ Bolt Charge kill on Jolted + Severed + Unraveled + Blinded target → Blind target [Photonic Flare] + +1 Bolt Charge [Tempest Strike] + Amplified [Flow State] + +1 Bolt Charge [Dielectric] + Woven Mail [To Shreds] + Ionic Trace [Shock and Clear] + Orb of Power and heals you [Dielectric] (chance)
         ↳ Bolt Charge ×2 → +?% grenade energy [Shinobu's Vow]
         ↳ Bolt Charge ×4 → +?% grenade energy [Shinobu's Vow]
-        ↳ Picked up Ionic Trace → +1 Bolt Charge [Spark of Discharge] + +1 Armor Charge [Elemental Charge] (chance) + +~15% grenade, melee and class ability energy* [Ionic Trace]
+        ↳ Picked up Ionic Trace → +1 Bolt Charge [Spark of Discharge] + +1 Armor Charge [Elemental Charge] (chance) + +~15% grenade, melee and class ability energy [Ionic Trace]
           ↳ Bolt Charge ×6 → +?% grenade energy [Shinobu's Vow]
     ↳ Jolt hit on Jolted + Severed + Unraveled + Blinded target → Unravel target [To Shreds]
   Grenade kill on Jolted + Severed + Unraveled + Blinded target → Blind target [Photonic Flare] + +1 Bolt Charge [Tempest Strike] + Amplified [Flow State] + +1 Bolt Charge [Dielectric] + Woven Mail [To Shreds] + Ionic Trace [Shock and Clear] + Orb of Power and heals you [Dielectric] (chance)
     ↳ Bolt Charge ×8 → +?% grenade energy [Shinobu's Vow]
     ↳ Bolt Charge ×10 → +?% grenade energy [Shinobu's Vow]
-    ↳ Max Bolt Charge → New Tricks and +~40% grenade energy* and heals you and allies [Shinobu's Vow] + Amplified [Flashover] + consumes Bolt Charge and Bolt Charge strike (kills) [Bolt Charge]
+    ↳ Max Bolt Charge → New Tricks and +~40% grenade energy and heals you and allies [Shinobu's Vow] + Amplified [Flashover] + consumes Bolt Charge and Bolt Charge strike (kills) [Bolt Charge]
       ↳ Bolt Charge hit on Jolted + Severed + Unraveled + Blinded target → Jolt target and heals you [Defibrillating Blast] + Unravel target [To Shreds]
       ↳ Bolt Charge kill on Jolted + Severed + Unraveled + Blinded target → Blind target [Photonic Flare] + +1 Bolt Charge [Tempest Strike] + Amplified [Flow State] + +1 Bolt Charge [Dielectric] + Woven Mail [To Shreds] + Ionic Trace [Shock and Clear] + Orb of Power and heals you [Dielectric] (chance)
         ↳ Bolt Charge ×2 → +?% grenade energy [Shinobu's Vow]
         ↳ Bolt Charge ×4 → +?% grenade energy [Shinobu's Vow]
-        ↳ Picked up Ionic Trace → +1 Bolt Charge [Spark of Discharge] + +1 Armor Charge [Elemental Charge] (chance) + +~15% grenade, melee and class ability energy* [Ionic Trace]
+        ↳ Picked up Ionic Trace → +1 Bolt Charge [Spark of Discharge] + +1 Armor Charge [Elemental Charge] (chance) + +~15% grenade, melee and class ability energy [Ionic Trace]
           ↳ Bolt Charge ×6 → +?% grenade energy [Shinobu's Vow]
-    ↳ Picked up Ionic Trace → +1 Bolt Charge [Spark of Discharge] + +1 Armor Charge [Elemental Charge] (chance) + +~15% grenade, melee and class ability energy* [Ionic Trace]
+    ↳ Picked up Ionic Trace → +1 Bolt Charge [Spark of Discharge] + +1 Armor Charge [Elemental Charge] (chance) + +~15% grenade, melee and class ability energy [Ionic Trace]
       ↳ Bolt Charge ×8 → +?% grenade energy [Shinobu's Vow]
-  Grenade       ▰▰▰▰▰▰▰▰▰▰ 2/2
-  Melee         ▰▰▰▰▰▰▰▰▱▱ 0.75/1
-  Class ability ▰▰▰▰▰▰▰▰▰▰ 1/1
-  Super         ▱▱▱▱▱▱▱▱▱▱ 0/1
   Buffs         Slice ×2 8s · Amplified · Woven Mail · Unraveling Rounds · Combination Blow ×1 · New Tricks · Armor Charge ×3 · Bolt Charge ×8
   Target        Jolt · Sever · Unravel · Blind
   Ground        5× Orb of Power
@@ -131,30 +103,25 @@
     ↳ Jolt hit on Jolted + Severed + Unraveled + Blinded target → Unravel target [To Shreds]
   Any Arc weapon kill on Jolted + Severed + Unraveled + Blinded target → Blind target [Photonic Flare] + +1 Bolt Charge [Tempest Strike] + Amplified [Flow State] + +1 Bolt Charge [Dielectric] + Woven Mail [To Shreds] + Ionic Trace [Spark of Discharge] (chance) + Ionic Trace [Shock and Clear] + Orb of Power [Harmonic Siphon] (chance) + Orb of Power and heals you [Dielectric] (chance)
     ↳ Bolt Charge ×10 → +?% grenade energy [Shinobu's Vow]
-    ↳ Max Bolt Charge → New Tricks and +~40% grenade energy* and heals you and allies [Shinobu's Vow] + Amplified [Flashover] + consumes Bolt Charge and Bolt Charge strike (kills) [Bolt Charge]
+    ↳ Max Bolt Charge → New Tricks and +~40% grenade energy and heals you and allies [Shinobu's Vow] + Amplified [Flashover] + consumes Bolt Charge and Bolt Charge strike (kills) [Bolt Charge]
       ↳ Bolt Charge hit on Jolted + Severed + Unraveled + Blinded target → Jolt target and heals you [Defibrillating Blast] + Unravel target [To Shreds]
       ↳ Bolt Charge kill on Jolted + Severed + Unraveled + Blinded target → Blind target [Photonic Flare] + +1 Bolt Charge [Tempest Strike] + Amplified [Flow State] + +1 Bolt Charge [Dielectric] + Woven Mail [To Shreds] + Ionic Trace [Shock and Clear] + Orb of Power and heals you [Dielectric] (chance)
         ↳ Bolt Charge ×2 → +?% grenade energy [Shinobu's Vow]
         ↳ Bolt Charge ×4 → +?% grenade energy [Shinobu's Vow]
-        ↳ Picked up Ionic Trace → +1 Bolt Charge [Spark of Discharge] + +1 Armor Charge [Elemental Charge] (chance) + +~15% grenade, melee and class ability energy* [Ionic Trace]
+        ↳ Picked up Ionic Trace → +1 Bolt Charge [Spark of Discharge] + +1 Armor Charge [Elemental Charge] (chance) + +~15% grenade, melee and class ability energy [Ionic Trace]
           ↳ Bolt Charge ×6 → +?% grenade energy [Shinobu's Vow]
-    ↳ Picked up Ionic Trace → +1 Bolt Charge [Spark of Discharge] + +1 Armor Charge [Elemental Charge] (chance) + +~15% grenade, melee and class ability energy* [Ionic Trace]
+    ↳ Picked up Ionic Trace → +1 Bolt Charge [Spark of Discharge] + +1 Armor Charge [Elemental Charge] (chance) + +~15% grenade, melee and class ability energy [Ionic Trace]
       ↳ Bolt Charge ×8 → +?% grenade energy [Shinobu's Vow]
-    ↳ Picked up Ionic Trace → +1 Bolt Charge [Spark of Discharge] + +1 Armor Charge [Elemental Charge] (chance) + +~15% grenade, melee and class ability energy* [Ionic Trace]
+    ↳ Picked up Ionic Trace → +1 Bolt Charge [Spark of Discharge] + +1 Armor Charge [Elemental Charge] (chance) + +~15% grenade, melee and class ability energy [Ionic Trace]
       ↳ Bolt Charge ×10 → +?% grenade energy [Shinobu's Vow]
-      ↳ Max Bolt Charge → New Tricks and +~40% grenade energy* and heals you and allies [Shinobu's Vow] + Amplified [Flashover] + consumes Bolt Charge and Bolt Charge strike (kills) [Bolt Charge]
+      ↳ Max Bolt Charge → New Tricks and +~40% grenade energy and heals you and allies [Shinobu's Vow] + Amplified [Flashover] + consumes Bolt Charge and Bolt Charge strike (kills) [Bolt Charge]
         ↳ Bolt Charge hit on Jolted + Severed + Unraveled + Blinded target → Jolt target and heals you [Defibrillating Blast] + Unravel target [To Shreds]
         ↳ Bolt Charge kill on Jolted + Severed + Unraveled + Blinded target → Blind target [Photonic Flare] + +1 Bolt Charge [Tempest Strike] + Amplified [Flow State] + +1 Bolt Charge [Dielectric] + Woven Mail [To Shreds] + Ionic Trace [Shock and Clear] + Orb of Power and heals you [Dielectric] (chance)
           ↳ Bolt Charge ×2 → +?% grenade energy [Shinobu's Vow]
           ↳ Bolt Charge ×4 → +?% grenade energy [Shinobu's Vow]
-  Grenade       ▰▰▰▰▰▰▰▰▰▰ 2/2
-  Melee         ▰▰▰▰▰▰▰▰▰▰ 1/1
-  Class ability ▰▰▰▰▰▰▰▰▰▰ 1/1
-  Super         ▱▱▱▱▱▱▱▱▱▱ 0/1
   Buffs         Slice ×2 8s · Amplified · Woven Mail · Unraveling Rounds · Combination Blow ×1 · New Tricks · Armor Charge ×3 · Bolt Charge ×4
   Target        Jolt · Sever · Unravel · Blind
   Ground        9× Orb of Power
   Active      +?% melee damage [Combination Blow]
   Active      +1 Bolt Charge per gain [Spark of Frequency]
   Active      linear-fusion-rifle/fusion-rifle/heat-weapon: +handling, +reload, +vent [Luminopotent 2-Piece Bonus]
-* chunk energy scalar unknown — 1× assumed (import the Compendium for real values)

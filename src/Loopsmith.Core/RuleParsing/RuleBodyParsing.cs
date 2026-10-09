@@ -13,8 +13,8 @@ internal static class RuleBodyParsing
 {
     private static readonly ImmutableArray<string> RuleKeys = ["on", "when", "then", "chance", "reason"];
     private static readonly ImmutableArray<string> PassiveRuleKeys = ["effect", "when", "reason"];
-    private static readonly ImmutableArray<string> KillKeys = ["via", "tier", "targetHas"];
-    private static readonly ImmutableArray<string> DamageKeys = ["via", "targetHas"];
+    private static readonly ImmutableArray<string> KillKeys = ["via", "tier", "targetHas", "atLeast"];
+    private static readonly ImmutableArray<string> DamageKeys = ["via", "targetHas", "atLeast"];
 
     private static readonly ImmutableArray<string> TriggerNames =
         ["abilityCast", "kill", "damage", "pickUp", "buffGained", "stacksMaxed"];
@@ -69,31 +69,58 @@ internal static class RuleBodyParsing
                 map.ReadOrDefault("via", scope.ReadDamageSource, new DamageSource.AnySource()),
                 map.ReadOptional("tier", ReadVocabularyWord<EnemyTier>),
                 map.ReadOptional("targetHas", targetHas => ReadDebuffList(scope, targetHas)),
-                (_, via, tier, targetHas) => (via, tier, targetHas))
-            .Bind(kill => ToKillTrigger(map, kill.via, kill.tier, kill.targetHas)));
+                map.ReadOptional("atLeast", ReadTargetCount),
+                (_, via, tier, targetHas, atLeast) => (via, tier, targetHas, atLeast))
+            .Bind(kill => Combine(
+                CheckAtLeastStandsAlone(map, kill.atLeast, ("tier", kill.tier.IsSome()), ("targetHas", kill.targetHas.IsSome())),
+                ToKillTrigger(map, kill.via, kill.tier, kill.targetHas, kill.atLeast),
+                (_, trigger) => trigger)));
 
-    /// <summary>A kill is "of a tier" or "of a debuffed target", never both (not representable).</summary>
+    /// <summary>A kill is "of a tier", "of a debuffed target" or "of at least N in one action" — never two (not representable).</summary>
     private static Result<Trigger, Errors> ToKillTrigger(
         YamlMap map,
         DamageSource via,
         Optional<EnemyTier> tier,
-        Optional<ImmutableArray<StatusId>> targetHas) =>
-        tier.Match(
-            someTier => targetHas.IsSome()
-                ? map.FailAtKey<Trigger>("tier", $"{map.Label} cannot combine 'tier' and 'targetHas'")
-                : Succeed<Trigger>(new Trigger.KillOfTier(via, someTier.Value)),
-            _ => targetHas.Match(
-                someStatuses => Succeed<Trigger>(new Trigger.KillDebuffed(via, someStatuses.Value)),
-                _ => Succeed<Trigger>(new Trigger.KillAny(via))));
+        Optional<ImmutableArray<StatusId>> targetHas,
+        Optional<TargetCount> atLeast) =>
+        atLeast.Match(
+            someCount => Succeed<Trigger>(new Trigger.KillMultiple(via, someCount.Value)),
+            _ => tier.Match(
+                someTier => targetHas.IsSome()
+                    ? map.FailAtKey<Trigger>("tier", $"{map.Label} cannot combine 'tier' and 'targetHas'")
+                    : Succeed<Trigger>(new Trigger.KillOfTier(via, someTier.Value)),
+                _ => targetHas.Match(
+                    someStatuses => Succeed<Trigger>(new Trigger.KillDebuffed(via, someStatuses.Value)),
+                    _ => Succeed<Trigger>(new Trigger.KillAny(via)))));
 
     private static Result<Trigger, Errors> ReadDamageTrigger(ReferenceScope scope, YamlValue value) =>
         value.ToMap().Bind(map => Combine(
-            map.CheckKeys(DamageKeys),
-            map.ReadOrDefault("via", scope.ReadDamageSource, new DamageSource.AnySource()),
-            map.ReadOptional("targetHas", targetHas => ReadDebuffList(scope, targetHas)),
-            (_, via, targetHas) => targetHas.Match<Trigger>(
-                some => new Trigger.DamageDebuffed(via, some.Value),
-                _ => new Trigger.Damage(via))));
+                map.CheckKeys(DamageKeys),
+                map.ReadOrDefault("via", scope.ReadDamageSource, new DamageSource.AnySource()),
+                map.ReadOptional("targetHas", targetHas => ReadDebuffList(scope, targetHas)),
+                map.ReadOptional("atLeast", ReadTargetCount),
+                (_, via, targetHas, atLeast) => (via, targetHas, atLeast))
+            .Bind(damage => Combine(
+                CheckAtLeastStandsAlone(map, damage.atLeast, ("targetHas", damage.targetHas.IsSome())),
+                Succeed(damage.atLeast.Match<Trigger>(
+                    someCount => new Trigger.DamageMultiple(damage.via, someCount.Value),
+                    _ => damage.targetHas.Match<Trigger>(
+                        someStatuses => new Trigger.DamageDebuffed(damage.via, someStatuses.Value),
+                        _ => new Trigger.Damage(damage.via)))),
+                (_, trigger) => trigger)));
+
+    /// <summary>
+    /// <c>atLeast</c> ("N enemies in one action", ADRs D22) is a trigger of its own: it can't be combined with a tier or a
+    /// target debuff (one error per combined key, at that key).
+    /// </summary>
+    private static Result<Unit, Errors> CheckAtLeastStandsAlone(YamlMap map, Optional<TargetCount> atLeast, params (string Key, bool IsPresent)[] others) =>
+        atLeast.IsSome()
+            ? others
+                .Where(other => other.IsPresent)
+                .Select(other => map.FailAtKey<Unit>(other.Key, $"{map.Label} cannot combine 'atLeast' and '{other.Key}'"))
+                .CollectAll()
+                .Map(Unit (_) => new Unit.Value())
+            : Succeed<Unit>(new Unit.Value());
 
     private static Result<ImmutableArray<StatusId>, Errors> ReadDebuffList(ReferenceScope scope, YamlValue value) =>
         value.ReadEach(value.Label, scope.ReadDebuff).Bind(statuses => statuses.IsEmpty

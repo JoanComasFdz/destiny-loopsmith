@@ -7,7 +7,8 @@ namespace Loopsmith.Core.Simulation;
 
 /// <summary>
 /// Runs a designed loop back to back, cycle after cycle, from a fresh spawn and measures it
-/// (docs/loop-format.md, "Analysis"). Pure: same build + steps ⇒ same report.
+/// (docs/loop-format.md, "Analysis"). Pure: same build + steps ⇒ same report. Ability energy isn't simulated
+/// (ADRs D21): a cycle only breaks on a step that can't happen at all, and the refunds are tallied, not applied.
 /// </summary>
 public static class LoopRunning
 {
@@ -24,7 +25,7 @@ public static class LoopRunning
     public static LoopReport RunLoop(ValidatedBuild build, string loopName, ImmutableArray<LoopStep> steps, int maxCycles)
     {
         var cycleLimit = Math.Max(1, maxCycles);
-        var initial = ActionResolution.CreateInitialState(build);
+        var initial = ActionResolution.CreateInitialState();
         var actions = steps.Select(step => step.Action).ToImmutableArray();
         var cycles = actions.IsEmpty ? [] : RunCycles(build, initial, actions, cycleLimit);
         var completed = cycles.Count(cycle => !cycle.Blocked.IsSome());
@@ -34,10 +35,10 @@ public static class LoopRunning
             loopName,
             build.Build.Name,
             steps.Length,
-            ToSnapshot(initial),
             cycles,
             completed,
             cycleLimit,
+            LoopReportArithmetic.SumRefunds(ListRefunds(fired)),
             TallySources(fired),
             TallyOutcomes(build, steady),
             MeasureUptime(build, steady),
@@ -70,11 +71,14 @@ public static class LoopRunning
         var blocked = resolutions
             .Select((resolution, index) => resolution.Blocked.Map(reason => new BlockedStep(index, resolution.Action, reason)))
             .FindFirstSome();
-        return new CycleRun(number, resolutions, blocked, ToSnapshot(resolutions[^1].State));
+        return new CycleRun(number, resolutions, blocked);
     }
 
-    public static EnergySnapshot ToSnapshot(GameState state) =>
-        new(state.Abilities.Grenade.Energy, state.Abilities.Melee.Energy, state.Abilities.ClassAbility.Energy, state.Abilities.Super.Energy);
+    /// <summary>Every energy refund the rules granted, in the order they fired (explanation only, ADRs D21).</summary>
+    private static IEnumerable<EnergyRefund> ListRefunds(ImmutableArray<FiredRule> fired) =>
+        fired
+            .SelectMany(rule => rule.Outcomes)
+            .SelectMany(outcome => outcome.Refund.Match(refund => new[] { refund.Value }, _ => []));
 
     /// <summary>How many bullets each element fired, most first (ties in order of first appearance).</summary>
     private static ImmutableArray<SourceTally> TallySources(ImmutableArray<FiredRule> fired) =>
@@ -87,7 +91,7 @@ public static class LoopRunning
             .ToImmutableArray();
 
     /// <summary>
-    /// <c>Kills</c> (kill actions performed + killing strikes), then <c>&lt;Pickup&gt; spawned</c> and
+    /// <c>Kills</c> (the targets of the kill actions performed + killing strikes), then <c>&lt;Pickup&gt; spawned</c> and
     /// <c>&lt;Status&gt; maxed</c>, each in order of first appearance. A status counts as maxed once per
     /// <c>StacksMaxed</c> event a rule reacted to.
     /// </summary>
@@ -95,7 +99,7 @@ public static class LoopRunning
     {
         var glossary = build.Catalog.Glossary;
         var applied = cycle.SelectMany(r => r.Fired).SelectMany(rule => rule.Outcomes).Select(o => o.Outcome).ToImmutableArray();
-        var killActions = cycle.Count(r => !r.Blocked.IsSome() && IsKillAction(r.Action));
+        var killActions = cycle.Where(r => !r.Blocked.IsSome()).Sum(r => CountKills(r.Action));
         var killingStrikes = applied.Count(outcome => outcome is Outcome.StrikeTarget { Hit: HitOutcome.Kill });
         var spawned = applied
             .OfType<Outcome.Spawn>()
@@ -111,12 +115,13 @@ public static class LoopRunning
         return [new OutcomeTally(KillsLabel, killActions + killingStrikes), .. spawned, .. maxed];
     }
 
-    private static bool IsKillAction(PlayerAction action) =>
+    /// <summary>A kill action kills every one of its targets (ADRs D22).</summary>
+    private static int CountKills(PlayerAction action) =>
         action switch
         {
-            PlayerAction.CastAbility cast => cast.Hit == HitOutcome.Kill,
-            PlayerAction.FireWeapon fire => fire.Hit == HitOutcome.Kill,
-            _ => false,
+            PlayerAction.CastAbility { Hit: HitOutcome.Kill } cast => cast.Targets.Value,
+            PlayerAction.FireWeapon { Hit: HitOutcome.Kill } fire => fire.Targets.Value,
+            _ => 0,
         };
 
     /// <summary>After how many of the cycle's steps each buff was active, longest first (ties in order gained).</summary>

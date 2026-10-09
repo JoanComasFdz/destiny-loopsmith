@@ -1,9 +1,7 @@
+using System.Collections.Immutable;
 using Loopsmith.Core.Functional;
 
 namespace Loopsmith.Core.Domain;
-
-/// <summary>A signed change of ability energy, in charges (an <see cref="EnergyAmount"/> is never negative).</summary>
-public sealed record EnergyDelta(decimal Grenade, decimal Melee, decimal ClassAbility, decimal Super);
 
 /// <summary>
 /// Pure value arithmetic over a <see cref="LoopReport"/>, defined once for every view of it
@@ -11,8 +9,15 @@ public sealed record EnergyDelta(decimal Grenade, decimal Melee, decimal ClassAb
 /// </summary>
 public static class LoopReportArithmetic
 {
-    /// <summary>Every requested cycle completed: the loop feeds itself.</summary>
-    public static bool IsSustainable(this LoopReport report) =>
+    /// <summary>The abilities in the order every view lists them.</summary>
+    public static readonly ImmutableArray<AbilityKind> AbilityOrder =
+        [AbilityKind.Grenade, AbilityKind.Melee, AbilityKind.ClassAbility, AbilityKind.Super];
+
+    /// <summary>
+    /// Every requested cycle completed back to back. Ability energy isn't simulated (ADRs D21), so a cycle only breaks
+    /// on a step that can't happen at all (nothing to pick up, no weapon in that slot).
+    /// </summary>
+    public static bool IsRepeatable(this LoopReport report) =>
         report.CompletedCycles > 0 && report.CompletedCycles == report.MaxCycles;
 
     /// <summary>The steady state: the last completed cycle, cycle 1 when none completed, none for an empty loop.</summary>
@@ -21,23 +26,32 @@ public static class LoopReportArithmetic
             ? Optional.None<CycleRun>()
             : Optional.Some(report.Cycles[Math.Max(report.CompletedCycles, 1) - 1]);
 
-    /// <summary>
-    /// Net energy per cycle at the steady state: energy at the end of the steady cycle minus energy at the end of
-    /// the cycle before it (minus <see cref="LoopReport.EnergyAtStart"/> when it is cycle 1). Zero for an empty loop.
-    /// </summary>
-    public static EnergyDelta ComputeNetEnergy(this LoopReport report) =>
-        report.FindSteadyCycle().Match(
-            steady => SubtractEnergy(
-                steady.Value.EnergyAtEnd,
-                steady.Value.Number >= 2 ? report.Cycles[steady.Value.Number - 2].EnergyAtEnd : report.EnergyAtStart),
-            _ => new EnergyDelta(0m, 0m, 0m, 0m));
+    public static RefundTally ReadRefund(this EnergyRefunds refunds, AbilityKind ability) =>
+        ability switch
+        {
+            AbilityKind.Grenade => refunds.Grenade,
+            AbilityKind.Melee => refunds.Melee,
+            AbilityKind.ClassAbility => refunds.ClassAbility,
+            _ => refunds.Super,
+        };
 
-    public static EnergyDelta SubtractEnergy(EnergySnapshot after, EnergySnapshot before) =>
-        new(
-            after.Grenade.Value - before.Grenade.Value,
-            after.Melee.Value - before.Melee.Value,
-            after.ClassAbility.Value - before.ClassAbility.Value,
-            after.Super.Value - before.Super.Value);
+    /// <summary>
+    /// The energy the <paramref name="refunds"/> granted, per ability: known and approximate amounts summed, unknown
+    /// ones counted. No refund at all is <c>0</c> with nothing unknown.
+    /// </summary>
+    public static EnergyRefunds SumRefunds(IEnumerable<EnergyRefund> refunds)
+    {
+        var all = refunds.ToImmutableArray();
+        RefundTally SumFor(AbilityKind ability)
+        {
+            var mine = all.Where(refund => refund.Ability == ability).ToImmutableArray();
+            var known = mine.SelectMany(refund => refund.Amount.Value.Match(some => new[] { some.Value }, _ => [])).Sum();
+            var approximate = mine.Any(refund => refund.Amount.Certainty == Certainty.Approximate && refund.Amount.Value.IsSome());
+            return new RefundTally(known, approximate, mine.Count(refund => !refund.Amount.Value.IsSome()));
+        }
+
+        return new EnergyRefunds(SumFor(AbilityKind.Grenade), SumFor(AbilityKind.Melee), SumFor(AbilityKind.ClassAbility), SumFor(AbilityKind.Super));
+    }
 
     /// <summary>The fraction of the cycle's steps a buff was active after (0 for a loop without steps).</summary>
     public static decimal ComputeUptimeRatio(this BuffUptime uptime) =>

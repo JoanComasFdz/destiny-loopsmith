@@ -3,7 +3,7 @@
 #   tools/web/prepare-pages.sh <site-dir> <base-path> [--root]
 # <base-path> is where the site is served, e.g. /destiny-loopsmith/ or /destiny-loopsmith/pr-preview/pr-7/.
 # --root marks the main site: its 404.html is GitHub Pages' fallback for the whole domain path, so it also
-# sends deep links inside a PR preview (…/pr-preview/pr-7/library) back to that preview's start page.
+# sends deep links inside a PR preview (…/pr-preview/pr-7/compare) back to that preview's start page.
 set -euo pipefail
 
 site="$1"

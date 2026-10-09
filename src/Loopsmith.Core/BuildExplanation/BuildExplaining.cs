@@ -38,7 +38,7 @@ public static class BuildExplaining
                 Order: order,
                 Affinity: ReadTriggerAffinity(build, x.Rule.On),
                 Item: new ExplanationItem(
-                    glossary.DescribeOutcomes(x.Rule.Then.Select(o => new OutcomeMention(o, x.Count, ""))),
+                    glossary.DescribeOutcomes(x.Rule.Then.Select(o => new OutcomeMention(o, x.Count))),
                     x.Element.Name,
                     x.Element.Kind,
                     x.Element.Affinity,
@@ -149,35 +149,39 @@ public static class BuildExplaining
 
     private static int RankTrigger(Trigger trigger) =>
         trigger.Match(
-            cast => cast.Kind switch
+            abilityCast: cast => cast.Kind switch
             {
                 AbilityKind.ClassAbility => 0,
                 AbilityKind.Grenade => 1,
                 AbilityKind.Melee => 2,
                 _ => 3,
             },
-            _ => 20,
-            _ => 21,
-            _ => 22,
-            _ => 10,
-            _ => 11,
-            _ => 30,
-            _ => 40,
-            _ => 50);
+            killAny: _ => 20,
+            killOfTier: _ => 21,
+            killDebuffed: _ => 22,
+            killMultiple: _ => 23,
+            damage: _ => 10,
+            damageDebuffed: _ => 11,
+            damageMultiple: _ => 12,
+            pickUp: _ => 30,
+            buffGained: _ => 40,
+            stacksMaxed: _ => 50);
 
     private static Affinity ReadTriggerAffinity(ValidatedBuild build, Trigger trigger)
     {
         var glossary = build.Catalog.Glossary;
         var statuses = trigger.Match(
-            _ => ImmutableArray<StatusId>.Empty,
-            _ => [],
-            _ => [],
-            killDebuffed => killDebuffed.TargetHas,
-            _ => [],
-            damageDebuffed => damageDebuffed.TargetHas,
-            _ => [],
-            buffGained => [buffGained.Status],
-            stacksMaxed => [stacksMaxed.Status]);
+            abilityCast: _ => ImmutableArray<StatusId>.Empty,
+            killAny: _ => [],
+            killOfTier: _ => [],
+            killDebuffed: killDebuffed => killDebuffed.TargetHas,
+            killMultiple: _ => [],
+            damage: _ => [],
+            damageDebuffed: damageDebuffed => damageDebuffed.TargetHas,
+            damageMultiple: _ => [],
+            pickUp: _ => [],
+            buffGained: buffGained => [buffGained.Status],
+            stacksMaxed: stacksMaxed => [stacksMaxed.Status]);
         var pickup = trigger is Trigger.PickUp pickUp && glossary.Pickups.TryGetValue(pickUp.Pickup, out var definition)
             ? definition.Affinity
             : Affinity.Neutral;

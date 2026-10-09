@@ -1,5 +1,5 @@
 # Skip Grenade Hunter — one engagement, as the video plays it.
-# Tokens: grenade[:kill] melee[:kill] super[:kill] class kinetic|energy|power[:kill] pickup:<id> wait[:<s>]
+# Tokens: grenade|melee|super[:hit|kill[:N]] class kinetic|energy|power[:hit|kill[:N]] pickup:<id> wait[:<s>]  (N = enemies, default 1)
 class                 # Gambler's Dodge: arms Slice + Reaper, Bomber refunds grenade
 grenade:kill          # skip grenade: Spark of Shock jolts, Shinobu's Bolt Charge, jolted kill → Amplified + Ionic Traces
 kinetic:kill          # Festival Flight: Slice severs, Reaper's orb, To Shreds' Woven Mail

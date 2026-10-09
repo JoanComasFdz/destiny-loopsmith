@@ -10,8 +10,8 @@ public sealed record StyledSpan(string Text, Tone Tone);
 
 public sealed record StyledLine(int Indent, ImmutableArray<StyledSpan> Spans);
 
-/// <summary>An outcome to describe, the copies of its element equipped, and a certainty marker ("*" or "").</summary>
-public sealed record OutcomeMention(Outcome Outcome, int Copies, string Marker);
+/// <summary>An outcome to describe and the copies of its element equipped.</summary>
+public sealed record OutcomeMention(Outcome Outcome, int Copies);
 
 public static class StyledText
 {

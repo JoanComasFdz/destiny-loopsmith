@@ -5,7 +5,7 @@
     <RootNamespace>Loopsmith.Web</RootNamespace>
     <AssemblyName>Loopsmith.Web</AssemblyName>
     <OverrideHtmlAssetPlaceholders>true</OverrideHtmlAssetPlaceholders>
-    <!-- Smaller first load: no time-zone database (saved dates are shown in UTC). -->
+    <!-- Smaller first load: no time-zone database (the app shows no local times). -->
     <BlazorEnableTimeZoneSupport>false</BlazorEnableTimeZoneSupport>
     <LoopsmithRoot>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)../../'))</LoopsmithRoot>
   </PropertyGroup>

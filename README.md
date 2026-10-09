@@ -9,8 +9,8 @@ max Bolt Charge) it shows every outcome that fires, which element caused it, wha
 unlocks next, and where the loop closes back on itself.
 
 **The product is the loop you design**: pick triggers one by one, and the result is a
-`*.loop.yaml` you can save, share as a link, replay, analyse ("sustains 10+ cycles") and
-compare with another loop.
+`*.loop.yaml` you can save, share as a link, replay, analyse ("repeats 10+ cycles, its rules
+refund +~410% grenade energy per cycle") and compare with another loop.
 
 > **Try it:** https://joancomasfdz.github.io/destiny-loopsmith/ — the web loop designer
 > (runs entirely in your browser). Status: working prototype on authored rules for one build
@@ -43,9 +43,9 @@ dotnet run --project src/Loopsmith.Cli -- graph    builds/skip-grenade-hunter/bu
 | Command | What you get |
 |---|---|
 | `explain` | Every trigger in the build → the outcomes it fires `[source]`, in the same shape as a hand-written build note (`--tree` for an aligned tree) |
-| `simulate` | A sequence of actions (`--actions grenade:kill,class,energy:kill` or `--scenario file`), one block per step: the event → outcomes `[source]`, cascades indented `↳`, then energy bars, buffs, target debuffs and ground pickups (`--state`). `--why` shows the reason text; `--caveats` shows the unknowns |
+| `simulate` | A sequence of actions (`--actions grenade:kill:3,class,energy:kill` or `--scenario file`), one block per step: the event → outcomes `[source]`, cascades indented `↳`, then buffs, target debuffs and ground pickups (`--state`). `--why` shows the reason text; `--caveats` shows the unknowns |
 | `play` | Interactive: pick the next action by number or token, see what fires and what's available now. Every action becomes a step of the loop you design: `u` undo, `n <note>`, `d <description>`, `a` analyse it so far; `--save <file.loop.yaml>` writes it on quit (`w` saves now), `--name` names it |
-| `loop` | A designed loop (`*.loop.yaml`) run back to back from a fresh spawn (`--cycles N`, default 10): does it sustain, where it breaks, energy after every cycle and net per cycle, kills / pickups / maxed stacks, what fired, buff uptime, unknowns and chance bullets. `--trace` adds every step of cycle 1 |
+| `loop` | A designed loop (`*.loop.yaml`) run back to back from a fresh spawn (`--cycles N`, default 10): does it repeat, where it breaks, kills / pickups / maxed stacks, the energy its rules refund per ability, what fired, buff uptime, unknowns and chance bullets. `--trace` adds every step of cycle 1 |
 | `compare` | Two designed loops side by side (they may use different builds), one row per metric, the better value marked ✓ |
 | `loops` | Discovered loops: cycles in the cause → effect graph, ability-energy loops first |
 | `graph` | A Mermaid flowchart of the graph, with loop edges drawn thick. It renders on GitHub and at mermaid.live |
@@ -69,21 +69,23 @@ While Amplified -> +1 Bolt Charge per gain [Spark of Frequency] + linear-fusion-
 
 ```text
 #2 Grenade (kill)
-  Grenade hit → Jolt target [Spark of Shock] + +1 Bolt Charge and +4.2% grenade energy* [Shinobu's Vow]
+  Grenade hit → Jolt target [Spark of Shock] + +1 Bolt Charge and +4.2% grenade energy [Shinobu's Vow]
     ↳ Bolt Charge ×1 → +?% grenade energy [Shinobu's Vow]
   Grenade kill on Jolted target → +1 Bolt Charge [Tempest Strike] + Amplified [Flow State] + … + Ionic Trace [Shock and Clear]
-    ↳ Picked up Ionic Trace → +1 Bolt Charge [Spark of Discharge] + +~15% grenade, melee and class ability energy* [Ionic Trace]
-  Grenade       ▰▰▰▰▰▰▱▱▱▱ 1.19/2
+    ↳ Picked up Ionic Trace → +1 Bolt Charge [Spark of Discharge] + +~15% grenade, melee and class ability energy [Ionic Trace]
   Buffs         Reaper 10s · Slice ×1 8s · Bolt Charge ×6 · Amplified · Armor Charge ×1
   Target        Jolt
 ```
 
-`?` = unknown (never applied as 0) · `~` = approximate · `*` = chunk energy scalar assumed 1× ·
-`(chance)` = fires in v1 but isn't guaranteed in game. The loop graph renders on GitHub:
+`?` = unknown (never applied as 0) · `~` = approximate ·
+`(chance)` = fires in v1 but isn't guaranteed in game. Ability energy isn't simulated — abilities are
+always available, and energy outcomes are explanations ([ADRs D21](ADRs.md)); `loop` adds up what the
+rules refund per cycle. The loop graph renders on GitHub:
 [builds/skip-grenade-hunter/loop-graph.md](builds/skip-grenade-hunter/loop-graph.md).
 
-Action tokens: `grenade[:kill]`, `melee[:kill]`, `super[:kill]`, `class`,
-`kinetic|energy|power[:kill]`, `pickup:<id>`, `wait[:<seconds>]`.
+Action tokens: `grenade|melee|super[:hit|kill[:N]]`, `class`, `kinetic|energy|power[:hit|kill[:N]]`,
+`pickup:<id>`, `wait[:<seconds>]` — `N` is how many enemies that one action hits or kills (1..20, default 1):
+`grenade:kill:3`, `kinetic:hit:5` ([ADRs D22](ADRs.md)).
 
 ## How it works
 
@@ -115,7 +117,7 @@ Coding conventions (binding): [CONVENTIONS.md](CONVENTIONS.md) · decisions: [AD
 ```
 src/Loopsmith.Core/      one project, slices = folders (kernel: Domain, Functional, Phrasing, Causality)
 src/Loopsmith.Cli/       host: argv → Orchestration shell → effects
-src/Loopsmith.Web/       host: Blazor WebAssembly loop designer (Designer, Library, Compare)
+src/Loopsmith.Web/       host: Blazor WebAssembly loop designer (Designer, Compare)
 tests/Loopsmith.Core.Tests/   unit, golden and architecture tests
 rules/                   authored causality (glossary, keywords, class, exotics, mods, artifact, perks)
 builds/<slug>/           build.yaml, the original note, note-map, discrepancies, loops/*.loop.yaml

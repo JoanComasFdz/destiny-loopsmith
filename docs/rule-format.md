@@ -56,7 +56,7 @@ elements:
     class: hunter             # optional: hunter|titan|warlock
     hash: 1727069364          # optional manifest hash (from Clarity until the manifest join exists)
     fragmentSlots: 2          # optional, aspects only
-    ability: { kind: grenade, charges: 1, chunkScalar: "?", baseCooldown: "?" }   # optional, abilities only
+    ability: { kind: grenade, charges: 1, chunkScalar: "?", baseCooldown: "?" }   # optional, abilities only (kept, not used by the engine — ADRs D21)
     description: "Your Arc grenades jolt targets."
     source: clarity/1727069364@2.0625      # see Provenance; omitted → authored at file:line
     rules: [ … ]
@@ -108,11 +108,16 @@ rules:
 | `{ kill: { via: <source>, targetHas: [jolt, sever] } }` | `KillDebuffed(via, statuses)` |
 | `{ damage: { via: <source> } }` | `Damage(via)` |
 | `{ damage: { via: <source>, targetHas: [sever] } }` | `DamageDebuffed(via, statuses)` |
+| `{ damage: { via: weapon, atLeast: 3 } }` — hit at least N enemies with `via` in one action | `DamageMultiple(via, atLeast)` |
+| `{ kill: { via: grenade, atLeast: 2 } }` — kill at least N enemies with `via` in one action | `KillMultiple(via, atLeast)` |
 | `{ pickUp: ionic-trace }` | `PickUp(pickup)` |
 | `{ buffGained: bolt-charge }` | `BuffGained(status)` |
 | `{ stacksMaxed: bolt-charge }` | `StacksMaxed(status)` |
 
-`tier` and `targetHas` together is an error (not representable). `via` defaults to `any`.
+`tier` and `targetHas` together is an error (not representable), and so is `atLeast` with either of
+them. `atLeast` is a whole number 1..20 (`TargetCount`, ADRs D22): the player says how many enemies an
+action hits ("One For All: hitting three separate targets…" → `{ damage: { via: weapon, atLeast: 3 } }`).
+A kill hits too, so a kill action also fires `damage … atLeast`. `via` defaults to `any`.
 
 **Damage sources (`via`, `against`)**:
 
@@ -129,7 +134,9 @@ rules:
 
 **Conditions (`when`)**: `{ has: <status> }` · `{ lacks: <status> }` · `{ targetHas: <status> }`.
 
-**Outcomes (`then`)** — exactly one key each:
+**Outcomes (`then`)** — exactly one key each. The energy outcomes (`grantEnergy`, `convertStacksToEnergy`,
+`resetCooldown`) are **explanations**: ability energy isn't simulated (ADRs D21), so they show in the trace
+and count in a loop's "energy refunded per cycle", but change no state.
 
 | YAML | Domain `Outcome` |
 |---|---|
@@ -160,7 +167,7 @@ passives:
 | YAML `effect` | Domain `Passive` |
 |---|---|
 | `{ extraStacks: { status, extra } }` | `ExtraStacks` |
-| `{ extraCharges: { ability: grenade, extra: 1 } }` | `ExtraCharges` |
+| `{ extraCharges: { ability: grenade, extra: 1 } }` | `ExtraCharges` (shown, not used — no energy model) |
 | `{ modifyDamage: { against, change } }` | `ModifyDamage` |
 | `{ resistDamage: "25%" }` | `ResistDamage` |
 | `{ modifyWeaponStats: { archetypes: [fusion-rifle], changes: [ { stat: handling, change: "?" } ] } }` | `ModifyWeaponStats` |
@@ -192,14 +199,18 @@ stats: { weapons: 47, class: 104, grenade: 145, super: 27, melee: 79 }   # any s
 ## Engine semantics (what an author can rely on)
 
 * **Player actions → events.** `UseClassAbility` emits only `AbilityCast(classAbility)`.
-  `CastAbility(k, hit)` (grenade, melee, super) emits `AbilityCast(k)`, then
-  `Damaged(Ability(k, subclass damage type))`, then `Killed(…)` if `hit = kill`.
-  `FireWeapon(slot, hit)` emits `Damaged(Weapon(slot, type))` then `Killed` if a kill.
+  `CastAbility(k, hit, N)` (grenade, melee, super) emits `AbilityCast(k)`, then N
+  `Damaged(Ability(k, subclass damage type))` — one per enemy — then N `Killed(…)` if `hit = kill`,
+  then one `TargetsHit(origin, N, hit)` for the `atLeast` triggers. `FireWeapon(slot, hit, N)` emits
+  N `Damaged(Weapon(slot, type))`, N `Killed` if a kill, then `TargetsHit`. N (the target count, 1..20)
+  is the player's: the engine can't know how many enemies a hit catches (ADRs D22).
   `CollectPickups(p)` emits one `PickedUp(p)` per pickup on the ground. `Wait(s)` advances
-  the clock and expires timed buffs/debuffs.
+  the clock and expires timed buffs/debuffs — nothing recharges.
+* **Nothing is gated by energy** (ADRs D21): abilities can always be used. An action is blocked
+  only when it can't happen at all — nothing of that pickup on the ground, no weapon in that slot.
 * Each event **fully cascades** before the next one of the same action is emitted, so a kill
   sees the debuffs its own hit applied (grenade hit → Spark of Shock jolts → the kill counts as
-  "kill jolted target").
+  "kill jolted target"), and the second enemy's hit sees what the first one's applied.
 * **Kill/damage target statuses** are a snapshot of the target's debuffs when the event is emitted.
   v1 target model: "the pack in front of you" — debuffs stay on the pack after a kill until they expire.
 * **Derived events:** `applyBuff` → `BuffGained(status, newStacks)`; reaching `maxStacks` →
@@ -211,9 +222,15 @@ stats: { weapons: 47, class: 104, grenade: 145, super: 27, melee: 79 }   # any s
   `removeBuff`, `modifyDamage`) → Damage (`strikeTarget`, `summon`) → Spawn → Refund
   (energy, health, cooldowns) → cascade the derived events (depth + 1).
 * **Termination:** cascade depth ≤ 5, and a rule never re-fires on an identical event up its own causal
-  chain (A → B → A stops). Sibling occurrences — two orbs picked up, two traces spawned — each fire.
+  chain (A → B → A stops). Sibling occurrences — two orbs picked up, two traces spawned, the three
+  enemies of `grenade:kill:3` — each fire.
 * **Stacked mods:** an element equipped N times fires its rules once; `PerModCount` picks the
   N-th value (last value if N is larger).
-* **Energy:** `Fraction(v)` adds `v × chunk scalar` charges (unknown scalar → 1× *assumed*, flagged);
-  an `Unknown` amount is shown as `?` and not applied. `full` tops the gauge up to its max charges.
-* `chance: true` rules still fire (deterministic v1) and are marked *chance* in the trace.
+* **Energy is explained, not simulated** (ADRs D21): `grantEnergy` / `convertStacksToEnergy` /
+  `resetCooldown` are applied with their certainty and recorded as an `EnergyRefund` (fraction of one
+  charge: `Fraction(v)` → v for the copies equipped; `full` and `resetCooldown` → 1 = 100 %;
+  `convertStacksToEnergy` → per stack × the stacks it consumed — the stacks *are* consumed). No gauge
+  changes. An `Unknown` amount stays `?` (counted as an unknown refund, never 0). Chunk energy scalars,
+  base cooldowns and `extraCharges` are parsed but not used.
+* `chance: true` rules still fire (deterministic v1) and are marked *chance* in the trace — on every
+  enemy of a multi-target action, so orb and trace counts are an upper bound.

@@ -1,26 +1,18 @@
 ﻿Infinite skip grenades  Skip Grenade Hunter
   6 steps per cycle, played back to back from a fresh spawn for up to 10 cycles
-  ✓ Sustainable — all 10 cycles completed, the loop feeds itself
-
-Energy (charges)    Grenade  Melee    Class    Super
-  Fresh spawn       2        1        1        0
-  After cycle 1     1.74     1        1        0
-  After cycle 2     1.74     1        1        0
-  After cycle 3     1.74     1        1        0
-  After cycle 4     1.74     1        1        0
-  After cycle 5     1.74     1        1        0
-  After cycle 6     1.74     1        1        0
-  After cycle 7     1.74     1        1        0
-  After cycle 8     1.74     1        1        0
-  After cycle 9     1.74     1        1        0
-  After cycle 10    1.74     1        1        0
-  Net per cycle     0        0        0        0
+  ✓ Repeatable — all 10 cycles completed back to back
+  Ability energy isn't simulated: abilities are always available, refunds are counted below.
 
 Steady state (cycle 10, the last completed)
   Kills                 10
   Ionic Trace spawned   11
   Orb of Power spawned  14
   Bolt Charge maxed     6
+  Energy refunded per cycle (what the rules give back; not applied to any gauge)
+    Grenade        +~410.4% (+32 unknown)
+    Melee          +~150% (+1 unknown)
+    Class ability  +~150%
+    Super          0% (+14 unknown)
   Fired per cycle
     40× Shinobu's Vow
     26× To Shreds
@@ -64,7 +56,8 @@ Steady state (cycle 10, the last completed)
 Steps
   The creator's loop: dodge to arm Slice and Reaper, skip grenade into the pack, clean up with
   the Strand and Arc weapons, grab the orbs, skip grenade again. Every jolted kill feeds Bolt
-  Charge and Ionic Traces back into grenade energy, so the grenade comes back before you need it.
+  Charge and Ionic Traces back into grenade energy: the rules refund more than the two grenades
+  a cycle throws (ability energy isn't simulated, so the analysis adds the refunds up).
   1. class                Gambler's Dodge: arms Slice and Reaper; Bomber refunds grenade energy
   2. grenade:kill         Skip grenade into the pack: Spark of Shock jolts, the jolted kill gives Amplified, Bolt Charge and Ionic Traces
   3. kinetic:kill         Festival Flight: Slice severs, Reaper and Attrition Orbs drop orbs, To Shreds unravels

@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Globalization;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Phrasing;
 
@@ -10,8 +9,6 @@ public sealed record TraceOptions(bool ShowState, bool ShowReasons, bool ShowCav
 /// <summary>Renders simulation steps the way build notes read: event → outcome [source] + outcome [source].</summary>
 public static class TraceRenderer
 {
-    private const int BarWidth = 10;
-
     public static ImmutableArray<StyledLine> RenderSequence(
         ValidatedBuild build, GameState initial, ImmutableArray<Resolution> resolutions, TraceOptions options)
     {
@@ -19,10 +16,7 @@ public static class TraceRenderer
             ? [StyledText.ToLine(0, "Fresh spawn".ToSpan(Tone.Strong)), .. RenderState(build, initial, [])]
             : ImmutableArray<StyledLine>.Empty;
         var steps = resolutions.SelectMany(resolution => RenderResolution(build, resolution, options));
-        var legend = resolutions.SelectMany(r => r.Fired).SelectMany(f => f.Outcomes).Any(o => o.Certainty == Certainty.Assumed)
-            ? [StyledText.ToLine(0, "* chunk energy scalar unknown — 1× assumed (import the Compendium for real values)".ToSpan(Tone.Muted))]
-            : ImmutableArray<StyledLine>.Empty;
-        return [.. opening, .. steps, .. legend];
+        return [.. opening, .. steps];
     }
 
     public static ImmutableArray<StyledLine> RenderResolution(ValidatedBuild build, Resolution resolution, TraceOptions options)
@@ -40,15 +34,10 @@ public static class TraceRenderer
         return [header, .. fired, .. nothing, .. notes, .. state];
     }
 
+    /// <summary>Buffs, target debuffs, ground pickups and active passives — no energy bars: abilities are always available (ADRs D21).</summary>
     public static ImmutableArray<StyledLine> RenderState(ValidatedBuild build, GameState state, ImmutableArray<ActivePassive> passives)
     {
         var glossary = build.Catalog.Glossary;
-        var tone = build.Build.Subclass.ToAffinity().ToTone();
-        var all = ImmutableArray.Create(state.Abilities.Grenade, state.Abilities.Melee, state.Abilities.ClassAbility, state.Abilities.Super);
-        var gauges = all.Select(gauge => StyledText.ToLine(1,
-            $"{DomainPhrasing.Capitalize(gauge.Kind.DescribeAbility()),-14}".ToSpan(Tone.Muted),
-            RenderBar(gauge).ToSpan(tone),
-            $" {FormatCharges(gauge.Energy.Value)}/{gauge.MaxCharges}".ToSpan(Tone.Plain)));
         var buffs = state.Buffs.IsEmpty
             ? "none".ToSpan(Tone.Muted).ToSingleSpanList()
             : JoinSpans(state.Buffs.Select(buff => DescribeActiveStatus(glossary, buff).ToSpan(glossary.ReadStatusAffinity(buff.Status).ToTone())));
@@ -67,7 +56,6 @@ public static class TraceRenderer
                 " [".ToSpan(Tone.Muted), p.SourceName.ToSpan(p.Affinity.ToTone()), "]".ToSpan(Tone.Muted)));
         return
         [
-            .. gauges,
             new StyledLine(1, ["Buffs         ".ToSpan(Tone.Muted), .. buffs]),
             new StyledLine(1, ["Target        ".ToSpan(Tone.Muted), .. debuffs]),
             new StyledLine(1, ["Ground        ".ToSpan(Tone.Muted), .. pickups]),
@@ -184,7 +172,7 @@ public static class TraceRenderer
         ImmutableArray<StyledSpan> joiner = isContinuation ? [" + ".ToSpan(Tone.Muted)] : [];
         var outcomes = rule.Outcomes.IsEmpty
             ? "(no effect)"
-            : glossary.DescribeOutcomes(rule.Outcomes.Select(o => new OutcomeMention(o.Outcome, copies, ToCertaintyMarker(o.Certainty))));
+            : glossary.DescribeOutcomes(rule.Outcomes.Select(o => new OutcomeMention(o.Outcome, copies)));
         ImmutableArray<StyledSpan> chance = rule.Likelihood == Likelihood.Chance ? [" (chance)".ToSpan(Tone.Muted)] : [];
         return
         [
@@ -196,19 +184,6 @@ public static class TraceRenderer
             .. chance,
         ];
     }
-
-    private static string ToCertaintyMarker(Certainty certainty) =>
-        certainty == Certainty.Assumed ? "*" : "";
-
-    private static string RenderBar(AbilityGauge gauge)
-    {
-        var ratio = gauge.MaxCharges == 0 ? 0m : gauge.Energy.Value / gauge.MaxCharges;
-        var filled = (int)Math.Round(ratio * BarWidth, MidpointRounding.AwayFromZero);
-        return new string('▰', filled) + new string('▱', BarWidth - filled);
-    }
-
-    private static string FormatCharges(decimal charges) =>
-        charges.ToString("0.##", CultureInfo.InvariantCulture);
 
     private static string DescribeActiveStatus(KeywordGlossary glossary, ActiveStatus status)
     {
