@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Loopsmith.Cli/Loopsmith.Cli.csproj" />
+    <Project Path="src/Loopsmith.Core/Loopsmith.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Loopsmith.Core.Tests/Loopsmith.Core.Tests.csproj" />
+  </Folder>
+</Solution>

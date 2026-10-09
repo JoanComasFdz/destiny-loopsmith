@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Loopsmith.Cli</RootNamespace>
+    <AssemblyName>loopsmith</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Loopsmith.Core\Loopsmith.Core.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>Loopsmith.Core</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Dunet" PrivateAssets="all" />
+    <PackageReference Include="Vogen" PrivateAssets="all" />
+    <PackageReference Include="YamlDotNet" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Loopsmith.Core.Tests" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,1180 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Loopsmith — Destiny 2 Build Loop Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0d13; --panel:#111620; --panel2:#161c29; --line:#263046; --line2:#33405c;
+  --text:#e7eaf0; --muted:#8a94a8; --dim:#5d6780;
+  --arc:#6fe3ff; --solar:#ff9a3c; --void:#b07cff; --strand:#4ee28a; --stasis:#5aa0ff; --prism:#ff5fa2;
+  --warn:#ffcf5a; --bad:#ff6b6b; --ok:#4ee28a;
+  --head:'Barlow Condensed',system-ui,sans-serif; --body:'Inter',system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.6 var(--body);
+  background-image:radial-gradient(1200px 500px at 85% -10%,rgba(111,227,255,.08),transparent 60%),radial-gradient(900px 400px at -10% 10%,rgba(176,124,255,.07),transparent 60%);}
+a{color:var(--arc);text-decoration:none} a:hover{text-decoration:underline}
+nav{position:sticky;top:0;z-index:10;background:rgba(10,13,19,.85);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+nav .in{max-width:1120px;margin:0 auto;padding:10px 16px;display:flex;gap:18px;overflow-x:auto;white-space:nowrap}
+nav a{color:var(--muted);font:600 13px/1 var(--head);letter-spacing:.08em;text-transform:uppercase}
+nav a:hover{color:var(--text);text-decoration:none}
+main{max-width:1120px;margin:0 auto;padding:0 16px 80px}
+header.hero{padding:64px 0 36px}
+.kicker{font:600 13px var(--head);letter-spacing:.2em;text-transform:uppercase;color:var(--arc)}
+h1{font:700 clamp(40px,7vw,72px)/.95 var(--head);margin:10px 0 14px;letter-spacing:.01em}
+h1 span{background:linear-gradient(90deg,var(--arc),var(--void) 55%,var(--prism));-webkit-background-clip:text;background-clip:text;color:transparent}
+.lede{font-size:18px;color:#c4cad6;max-width:760px}
+section{padding:44px 0 8px;border-top:1px solid var(--line);margin-top:28px}
+h2{font:700 34px/1 var(--head);margin:0 0 6px;letter-spacing:.01em}
+h2 .n{color:var(--dim);margin-right:10px}
+h3{font:600 20px var(--head);letter-spacing:.04em;margin:26px 0 8px;text-transform:uppercase;color:#cfd5e2}
+.sub{color:var(--muted);margin:0 0 22px;max-width:780px}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.g4{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+.card h4{margin:0 0 6px;font:600 17px var(--head);letter-spacing:.05em;text-transform:uppercase}
+.card p{margin:0;color:#c0c7d4}
+.card.accent{border-left:3px solid var(--c,var(--arc))}
+.tldr .card .big{font:700 30px var(--head);color:var(--c,var(--arc));line-height:1}
+.callout{border:1px solid var(--line2);border-left:4px solid var(--warn);background:linear-gradient(90deg,rgba(255,207,90,.07),transparent);padding:14px 18px;border-radius:10px;margin:18px 0}
+.callout.bad{border-left-color:var(--bad);background:linear-gradient(90deg,rgba(255,107,107,.08),transparent)}
+.callout.good{border-left-color:var(--ok);background:linear-gradient(90deg,rgba(78,226,138,.07),transparent)}
+.callout b{color:var(--text)}
+.fig{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin:16px 0;overflow-x:auto}
+.fig svg{display:block;width:100%;min-width:720px;height:auto}
+.fig figcaption{color:var(--muted);font-size:13px;margin-top:8px;padding:0 4px}
+pre{background:#0c1018;border:1px solid var(--line);border-radius:10px;padding:14px 16px;overflow-x:auto;font:13px/1.55 var(--mono);color:#d5dbe6;margin:10px 0}
+code{font-family:var(--mono);font-size:.92em}
+:not(pre)>code{background:var(--panel2);border:1px solid var(--line);padding:1px 6px;border-radius:5px}
+.k{color:var(--void)} .t{color:var(--arc)} .s{color:var(--strand)} .c{color:var(--dim)} .nn{color:var(--solar)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:600 13px var(--head);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.tag{display:inline-block;font:600 11px var(--head);letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:99px;border:1px solid currentColor}
+.tag.ok{color:var(--ok)} .tag.bad{color:var(--bad)} .tag.part{color:var(--warn)}
+.cov{display:grid;grid-template-columns:minmax(150px,240px) 1fr 74px;gap:8px 12px;align-items:center;font-size:14px}
+.bar{height:12px;background:var(--panel2);border-radius:99px;overflow:hidden;border:1px solid var(--line)}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--stasis),var(--arc));border-radius:99px}
+.bar.zero{border-color:rgba(255,107,107,.5);background:repeating-linear-gradient(45deg,rgba(255,107,107,.12) 0 6px,transparent 6px 12px)}
+.num{font-family:var(--mono);color:var(--muted);text-align:right}
+.steps{display:flex;flex-wrap:wrap;gap:0;counter-reset:s}
+.step{flex:1 1 140px;position:relative;background:var(--panel);border:1px solid var(--line);padding:14px 14px 14px 16px;margin:4px 14px 4px 0;border-radius:10px}
+.step:not(:last-child)::after{content:"";position:absolute;right:-12px;top:50%;width:10px;height:10px;border-top:2px solid var(--arc);border-right:2px solid var(--arc);transform:translateY(-50%) rotate(45deg)}
+.step::before{counter-increment:s;content:counter(s,decimal-leading-zero);font:700 13px var(--head);color:var(--arc);letter-spacing:.1em;display:block}
+.step b{display:block;font:600 16px var(--head);letter-spacing:.03em}
+.step span{color:var(--muted);font-size:13px}
+.phases{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.phase{font:600 13px var(--head);letter-spacing:.06em;text-transform:uppercase;padding:6px 12px;border-radius:8px;background:var(--panel2);border:1px solid var(--line);color:var(--c)}
+.phase+.arrow{color:var(--dim)}
+ul.clean{margin:6px 0;padding-left:18px} ul.clean li{margin:4px 0;color:#c8ceda}
+.req td:first-child{font-family:var(--mono);color:var(--arc);white-space:nowrap}
+.pill{font:500 12px var(--mono);padding:2px 7px;border-radius:5px;background:var(--panel2);border:1px solid var(--line)}
+.get{color:var(--strand)} .post{color:var(--solar)}
+/* demo */
+.demo{display:grid;grid-template-columns:300px 1fr;gap:14px}
+@media (max-width:820px){.demo{grid-template-columns:1fr}}
+.meters .m{margin:8px 0}
+.meters label{display:flex;justify-content:space-between;font:600 13px var(--head);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.meter{height:10px;background:var(--panel2);border-radius:99px;border:1px solid var(--line);overflow:hidden}
+.meter i{display:block;height:100%;transition:width .35s ease;background:var(--c)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;min-height:28px}
+.chip{font:600 12px var(--head);letter-spacing:.06em;text-transform:uppercase;padding:3px 9px;border-radius:99px;border:1px solid var(--c);color:var(--c);background:rgba(255,255,255,.02)}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.actions button{font:600 14px var(--head);letter-spacing:.06em;text-transform:uppercase;color:var(--text);background:var(--panel2);border:1px solid var(--line2);padding:9px 14px;border-radius:9px;cursor:pointer;transition:.15s}
+.actions button:hover:not(:disabled){border-color:var(--arc);box-shadow:0 0 0 3px rgba(111,227,255,.12)}
+.actions button:disabled{opacity:.35;cursor:not-allowed}
+.actions button.ghost{background:transparent;color:var(--muted)}
+.log{background:#0c1018;border:1px solid var(--line);border-radius:10px;padding:12px 14px;height:430px;overflow-y:auto;font:13px/1.55 var(--mono)}
+.log .ev{margin-bottom:12px;animation:fade .3s ease}
+.log .hd{color:var(--arc);font-weight:500}
+.log .ln{padding-left:18px;color:#d0d6e2}
+.log .ln.d1{padding-left:36px;color:#aeb6c6}
+.log .src{color:var(--void)}
+.log .nx{padding-left:18px;color:var(--strand);margin-top:2px}
+.log .warn{color:var(--warn);padding-left:18px}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+footer{color:var(--dim);font-size:13px;padding:30px 0;border-top:1px solid var(--line);margin-top:40px}
+/* svg */
+svg text{font-family:var(--body)}
+svg text:not([fill]){fill:var(--text)}
+svg .ttl{font:600 15px var(--head);letter-spacing:.05em;text-transform:uppercase}
+svg .sm{font-size:11.5px;fill:var(--muted)}
+svg .mono, svg .mono text{font-family:var(--mono);font-size:12px;white-space:pre}
+svg .box{fill:var(--panel2);stroke:var(--line2);stroke-width:1.3}
+svg .edge{stroke:var(--dim);stroke-width:1.5;fill:none}
+svg .edge.hl{stroke:var(--arc)}
+svg .dash{stroke-dasharray:5 4}
+</style>
+</head>
+<body>
+
+<nav><div class="in">
+  <a href="#problem">Problem</a><a href="#goals">Goals</a><a href="#data">Data</a><a href="#arch">Architecture</a><a href="#conventions">Conventions</a>
+  <a href="#flow">Data flow</a><a href="#model">Domain model</a><a href="#engine">Engine</a><a href="#demo">Demo</a>
+  <a href="#api">API</a><a href="#stack">Stack</a><a href="#roadmap">Roadmap</a><a href="#risks">Risks</a>
+</div></nav>
+
+<main>
+<header class="hero">
+  <div class="kicker">Design proposal · .NET 10 / C# 14 · v0.3</div>
+  <h1>Loopsmith<br><span>see what your build actually does</span></h1>
+  <p class="lede">A Destiny 2 build tool that goes beyond DIM: compose a build, then step through its gameplay loop — dodge, punch, pick up orb — and see every effect each action fires, which element caused it, and what it unlocks next.</p>
+
+  <div class="grid g4 tldr" style="margin-top:28px">
+    <div class="card accent" style="--c:var(--bad)"><div class="big">0</div><p>databases encode <b>causality</b> (“melee kill → invisible”). That layer is the product.</p></div>
+    <div class="card accent" style="--c:var(--warn)"><div class="big">22</div><p>Compendium tabs fill Clarity's gaps: <b>abilities, cooldowns, chunk scalars, artifact perks, statuses</b>.</p></div>
+    <div class="card accent" style="--c:var(--arc)"><div class="big">4</div><p>sources: Manifest (identity) · Compendium (mechanics) · Clarity (cross-check) · your rules YAML (causality).</p></div>
+    <div class="card accent" style="--c:var(--strand)"><div class="big">pure</div><p>core: impure → pure → impure sandwich, effects as data, vertical slices.</p></div>
+  </div>
+</header>
+
+<!-- ============ PROBLEM ============ -->
+<section id="problem">
+  <h2><span class="n">01</span>Problem statement</h2>
+  <p class="sub">Build guides (Mactics, Plunderthebooty) explain loops as <b>trigger → effects → why</b>. Players re-derive this by hand in notes. Existing tools show <i>what is equipped</i>, never <i>what happens when you play it</i>.</p>
+
+  <figure class="fig">
+    <svg viewBox="0 0 960 360" role="img" aria-label="A note about a melee kill turned into a trigger graph">
+      <defs><marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="#5d6780"/></marker>
+      <marker id="a1h" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="#6fe3ff"/></marker></defs>
+      <rect x="10" y="20" width="300" height="320" rx="10" fill="#0c1018" stroke="#263046"/>
+      <text x="26" y="46" class="sm">YOUR NOTES (prose)</text>
+      <g class="mono">
+        <text x="26" y="78" fill="#6fe3ff">Melee red bar =&gt;</text>
+        <text x="38" y="102">Invisible (Assassin's Cowl)</text>
+        <text x="38" y="124">Super energy (Hands On)</text>
+        <text x="38" y="146">Dodge refill (Combination Blow)</text>
+        <text x="38" y="168">Grenade energy (Impact Ind.)</text>
+        <text x="38" y="190">Orb (Heavy Handed)</text>
+        <text x="38" y="212">Blind if jolted (Lethal Current)</text>
+        <text x="26" y="246" fill="#6fe3ff">Get orbs =&gt;</text>
+        <text x="38" y="270">Refund abilities</text>
+      </g>
+      <text x="26" y="318" class="sm">Readable, but not computable.</text>
+      <path d="M322 180 H372" class="edge" stroke-width="3" marker-end="url(#a1)"/>
+      <text x="347" y="168" class="sm" text-anchor="middle">is a</text>
+      <text x="347" y="200" class="sm" text-anchor="middle">graph</text>
+
+      <rect x="390" y="150" width="170" height="54" rx="10" fill="rgba(111,227,255,.1)" stroke="#6fe3ff" stroke-width="1.6"/>
+      <text x="475" y="173" class="ttl" text-anchor="middle" fill="#6fe3ff">Melee kill</text>
+      <text x="475" y="192" class="sm" text-anchor="middle">trigger · red bar</text>
+
+      <g>
+        <path d="M560 177 C600 177,600 37,640 37" class="edge hl" marker-end="url(#a1h)"/>
+        <path d="M560 177 C600 177,600 81,640 81" class="edge hl" marker-end="url(#a1h)"/>
+        <path d="M560 177 C600 177,600 125,640 125" class="edge hl" marker-end="url(#a1h)"/>
+        <path d="M560 177 C600 177,600 169,640 169" class="edge hl" marker-end="url(#a1h)"/>
+        <path d="M560 177 C600 177,600 213,640 213" class="edge hl" marker-end="url(#a1h)"/>
+        <path d="M560 177 C600 177,600 257,640 257" class="edge hl" marker-end="url(#a1h)"/>
+      </g>
+      <g>
+        <rect x="640" y="20" width="300" height="34" rx="8" class="box"/><text x="654" style="font-size:13.5px" y="42">Invisible + heal</text><text x="926" y="42" class="sm" text-anchor="end">Assassin's Cowl</text>
+        <rect x="640" y="64" width="300" height="34" rx="8" class="box"/><text x="654" style="font-size:13.5px" y="86">+ Super energy</text><text x="926" y="86" class="sm" text-anchor="end">Hands On</text>
+        <rect x="640" y="108" width="300" height="34" rx="8" class="box"/><text x="654" style="font-size:13.5px" y="130">Refill dodge, +melee dmg</text><text x="926" y="130" class="sm" text-anchor="end">Combination Blow</text>
+        <rect x="640" y="152" width="300" height="34" rx="8" class="box"/><text x="654" style="font-size:13.5px" y="174">+ Grenade energy</text><text x="926" y="174" class="sm" text-anchor="end">Impact Induction</text>
+        <rect x="640" y="196" width="300" height="34" rx="8" class="box" style="stroke:#ff9a3c"/><text x="654" style="font-size:13.5px" y="218">Spawn Orb of Power</text><text x="926" y="218" class="sm" text-anchor="end">Heavy Handed</text>
+        <rect x="640" y="240" width="300" height="34" rx="8" class="box"/><text x="654" style="font-size:13.5px" y="262">Blind (if target Jolted)</text><text x="926" y="262" class="sm" text-anchor="end">Lethal Current</text>
+      </g>
+      <path d="M640 222 C600 240,560 270,560 292" class="edge dash" style="stroke:#ff9a3c" marker-end="url(#a1)"/>
+      <rect x="390" y="296" width="200" height="44" rx="10" fill="rgba(255,154,60,.1)" stroke="#ff9a3c" stroke-width="1.6"/>
+      <text x="490" y="316" class="ttl" text-anchor="middle" fill="#ff9a3c">Orb pickup</text>
+      <text x="490" y="332" class="sm" text-anchor="middle">outcome becomes the next trigger</text>
+      <text x="690" y="312" class="sm">Edges form when an outcome matches</text>
+      <text x="690" y="328" class="sm">another rule's trigger — that cascade</text>
+      <text x="690" y="344" class="sm">is what the engine computes.</text>
+    </svg>
+    <figcaption>Every line in a build note is an edge: <b>trigger → effect (source element)</b>. Some effects (orbs, buffs, debuffs) are triggers for other rules — that's how loops emerge.</figcaption>
+  </figure>
+
+  <div class="grid g3">
+    <div class="card accent" style="--c:var(--bad)"><h4>Gap 1 · No causality data</h4><p>Bungie and Clarity describe items in prose. Nothing machine-readable says “this fires when that happens”.</p></div>
+    <div class="card accent" style="--c:var(--warn)"><h4>Gap 2 · Scattered sources</h4><p>Clarity has hashes but no abilities, artifact perks or cooldowns. The Compendium has them — as spreadsheet prose with no hashes.</p></div>
+    <div class="card accent" style="--c:var(--void)"><h4>Gap 3 · Non-linear math</h4><p>Energy refunds scale with ability cost (chunk energy scalar); effect order changes damage results.</p></div>
+  </div>
+</section>
+
+<!-- ============ GOALS / REQUIREMENTS ============ -->
+<section id="goals">
+  <h2><span class="n">02</span>Goals &amp; requirements</h2>
+  <p class="sub">Backend first, in C# / .NET 10. UI comes later and just renders what the API returns.</p>
+
+  <div class="grid g2">
+    <div class="card accent" style="--c:var(--strand)"><h4>In scope (v1)</h4>
+      <ul class="clean">
+        <li>Compose builds like DIM: class, subclass, abilities, aspects, fragments, armor mods, artifact mods, exotics, weapons + perks</li>
+        <li>Step-by-step simulation: user picks the next action, engine returns effects + what's now available</li>
+        <li>Every effect explained: source element + reason text</li>
+        <li>Local copy of all game data, refreshed on patch</li>
+      </ul>
+    </div>
+    <div class="card accent" style="--c:var(--dim)"><h4>Out of scope (v1)</h4>
+      <ul class="clean">
+        <li>Frame-accurate real-time / DPS simulation</li>
+        <li>PvP, enemy AI, positioning</li>
+        <li>Bungie OAuth inventory import (later)</li>
+        <li>The UI itself</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Functional</h3>
+  <div class="card" style="padding:4px 8px">
+  <table class="req">
+    <tr><th>ID</th><th>Requirement</th></tr>
+    <tr><td>FR-1</td><td>Browse catalog by class, element and kind (aspect, fragment, mod, exotic, weapon perk…).</td></tr>
+    <tr><td>FR-2</td><td>Create / save / share a build. Validate: aspect-granted fragment slots, armor energy, one exotic armor, one exotic weapon.</td></tr>
+    <tr><td>FR-3</td><td>Simulate one action against a state: returns new state, ordered fired rules, available next actions.</td></tr>
+    <tr><td>FR-4</td><td>Simulate a sequence (a whole loop) and return the full trace.</td></tr>
+    <tr><td>FR-5</td><td>Resolve cascades: effects that are triggers fire further rules (bounded depth).</td></tr>
+    <tr><td>FR-6</td><td>Each fired rule carries source element, trigger, effects and human-readable reason.</td></tr>
+    <tr><td>FR-7</td><td>Coverage report: items with no authored rules, Compendium names that don't resolve to a hash, and rule numbers that disagree with the Compendium.</td></tr>
+    <tr><td>FR-8</td><td>Builds pin a catalog version, so old builds still replay after a patch.</td></tr>
+    <tr><td>FR-9</td><td>Ingest a dated Compendium snapshot (your script's per-tab output); every number keeps its provenance and certainty (known / approximate / unknown).</td></tr>
+    <tr><td>FR-10</td><td>Generate draft rules from the Compendium's “On X:” phrasing for a human to confirm.</td></tr>
+  </table></div>
+
+  <h3>Non-functional</h3>
+  <div class="grid g4">
+    <div class="card"><h4>Deterministic</h4><p>Same build + state + action ⇒ same output. Golden tests from real notes.</p></div>
+    <div class="card"><h4>Fast</h4><p>&lt; 50 ms per step; catalog snapshot cached in memory.</p></div>
+    <div class="card"><h4>Fresh</h4><p>Auto-ingest when the Bungie manifest version changes.</p></div>
+    <div class="card"><h4>Auditable</h4><p>Rules live in git; every number traceable to a Compendium tab/row, a Clarity hash or a rule file.</p></div>
+    <div class="card"><h4>Enforced</h4><p>Architecture tests in CI guard slice boundaries and restricted constructors.</p></div>
+  </div>
+</section>
+
+<!-- ============ DATA ============ -->
+<section id="data">
+  <h2><span class="n">03</span>Data sources — what's actually there</h2>
+  <p class="sub">Checked against the elements in two real build notes: <b>Clarity</b> (v2.0625, cloned 2026-10-09) and your <b>Destiny Data Compendium snapshot</b> (22 tabs, 2026-10-09). Names were matched with aliases (<code>Hands-On</code> = “Hands On”, <code>Spark of Shock</code> = “Shock”, <code>Facet of Purpose</code> = “Purpose”).</p>
+
+  <div class="grid g2">
+    <div class="card">
+      <h4 style="margin-bottom:12px">Clarity · 1,719 entries · keyed by hash</h4>
+      <div class="cov">
+        <span>Armor mods</span><div class="bar"><i style="width:51%"></i></div><span class="num">235</span>
+        <span>Weapon traits (+ enhanced)</span><div class="bar"><i style="width:100%"></i></div><span class="num">458</span>
+        <span>Exotic weapon frames / catalysts</span><div class="bar"><i style="width:76%"></i></div><span class="num">347</span>
+        <span>Exotic armor perks*</span><div class="bar"><i style="width:30%"></i></div><span class="num">138</span>
+        <span>Fragments &amp; facets</span><div class="bar"><i style="width:22%"></i></div><span class="num">99</span>
+        <span>Aspects</span><div class="bar"><i style="width:13%"></i></div><span class="num">60</span>
+        <span>Class abilities</span><div class="bar"><i style="width:9%"></i></div><span class="num">42</span>
+        <span style="color:var(--bad)">Grenades · melees · supers</span><div class="bar zero"></div><span class="num" style="color:var(--bad)">0</span>
+        <span style="color:var(--bad)">Artifact perks</span><div class="bar zero"></div><span class="num" style="color:var(--bad)">0</span>
+        <span style="color:var(--bad)">Statuses · cooldowns · chunk scalars</span><div class="bar zero"></div><span class="num" style="color:var(--bad)">0</span>
+      </div>
+      <p style="color:var(--muted);font-size:13px;margin:10px 0 0">* exotics keyed by perk name (“Vanishing Execution”, “Panic Response”), not item name.</p>
+    </div>
+    <div class="card">
+      <h4 style="margin-bottom:12px">Compendium · 22 tabs · no hashes</h4>
+      <div class="cov">
+        <span>Weapon traits · mods · origins</span><div class="bar"><i style="width:100%"></i></div><span class="num">≈377</span>
+        <span>Exotic weapons</span><div class="bar"><i style="width:39%"></i></div><span class="num">≈147</span>
+        <span>Artifact perks (7 artifacts)</span><div class="bar"><i style="width:38%"></i></div><span class="num">≈145</span>
+        <span>Exotic armor (item + perk name)</span><div class="bar"><i style="width:37%"></i></div><span class="num">≈138</span>
+        <span>Fragments &amp; facets</span><div class="bar"><i style="width:27%"></i></div><span class="num">≈100</span>
+        <span>Grenades · melees · supers</span><div class="bar"><i style="width:25%"></i></div><span class="num">≈95</span>
+        <span>Base cooldowns · chunk scalars</span><div class="bar"><i style="width:25%"></i></div><span class="num">94 · 74</span>
+        <span>Armor mods (with energy cost)</span><div class="bar"><i style="width:19%"></i></div><span class="num">≈70</span>
+        <span>Statuses (glossary)</span><div class="bar"><i style="width:10%"></i></div><span class="num">36</span>
+        <span style="color:var(--warn)">Causality, as “On X:” phrasing</span><div class="bar"><i style="width:55%;background:var(--warn)"></i></div><span class="num" style="color:var(--warn)">55%</span>
+      </div>
+      <p style="color:var(--muted);font-size:13px;margin:10px 0 0">≈ = rows parsed from the spreadsheet layout; Prismatic repeats some aspects. Plus the Game Mechanics tab (energy rules, stats, combatant tiers) and 6 “OLD” tabs.</p>
+    </div>
+  </div>
+
+  <h3>Checked against real notes</h3>
+  <div class="card" style="padding:4px 8px">
+  <table>
+    <tr><th>Element</th><th>Kind</th><th>Clarity</th><th>Compendium</th></tr>
+    <tr><td>Hands-On, Heavy Handed, Firepower, Bomber, Dynamo, Distribution, Impact Induction, Focusing Strike, Reaper, Recuperation, Powerful Attraction</td><td>Armor mods</td><td><span class="tag ok">yes</span></td><td><span class="tag ok">yes</span> + energy cost, 1|2|3-mod values</td></tr>
+    <tr><td>Spark of Shock · Facets of Bravery, Purpose, Dawn</td><td>Fragments / facets</td><td><span class="tag ok">yes</span></td><td><span class="tag ok">yes</span> + stat changes</td></tr>
+    <tr><td>Stylish Executioner, Threaded Specter, Lethal Current</td><td>Aspects</td><td><span class="tag ok">yes</span></td><td><span class="tag ok">yes</span></td></tr>
+    <tr><td>Combination Blow, Threaded Spike</td><td>Melees</td><td><span class="tag bad">no</span></td><td><span class="tag ok">yes</span> + cooldown, chunk scalar</td></tr>
+    <tr><td>Gambler's Dodge</td><td>Class ability</td><td><span class="tag ok">yes</span></td><td><span class="tag ok">yes</span> 56 s · 0.8x chunk</td></tr>
+    <tr><td>Assassin's Cowl, Radiant Dance Machines</td><td>Exotic armor</td><td><span class="tag part">by perk name</span></td><td><span class="tag ok">yes</span> item + perk</td></tr>
+    <tr><td>Barrow-Dyad, Tractor Cannon</td><td>Exotic weapons</td><td><span class="tag part">by perk name</span></td><td><span class="tag ok">yes</span></td></tr>
+    <tr><td>One-Two Punch</td><td>Weapon trait</td><td><span class="tag ok">yes</span></td><td><span class="tag ok">yes</span></td></tr>
+    <tr><td>Jolted, Blind, Invisibility, Unravel, Radiant, Restoration…</td><td>Statuses</td><td><span class="tag bad">no</span></td><td><span class="tag ok">yes</span> glossary</td></tr>
+  </table></div>
+
+  <div class="callout good"><b>Verdict:</b> the <b>Bungie Manifest</b> gives identity (hashes). The <b>Compendium</b> becomes the primary mechanics source: it covers everything Clarity lacks (abilities, cooldowns, chunk scalars, artifact perks, statuses). <b>Clarity</b> is a hash-keyed cross-check. <b>Causality</b> is still authored by you — but 55% of Compendium descriptions already say it as “On Class Ability Usage: …”, so rules can be <b>drafted</b> from them.</div>
+
+  <h3>The Compendium snapshot, tab by tab</h3>
+  <div class="card" style="padding:4px 8px">
+  <table>
+    <tr><th>Tabs</th><th>Content</th><th>Feeds</th></tr>
+    <tr><td>Arc · Solar · Void · Stasis · Strand · Prismatic</td><td>Glossary (statuses), fragments / facets + stat changes, grenades, melees, supers, aspects — per class</td><td>Elements, <code>StatusEffect</code> vocabulary, cooldowns</td></tr>
+    <tr><td>Class Abilities</td><td>Dodges, barricades, rifts + base cooldown + chunk scalar; class passives</td><td>Elements, energy model</td></tr>
+    <tr><td>Armor Mods</td><td>Grid by slot: name, <code>[n Energy]</code>, per-mod-count values; raid / activity mods</td><td>Elements, build validation</td></tr>
+    <tr><td>Artifact Perks</td><td>7 artifacts (Renegades → Deep), 3-column grid</td><td>Elements (per season)</td></tr>
+    <tr><td>Exotic Armors · Exotic Class · Exotic Weapons</td><td>Item name <i>and</i> perk name, mechanics notes</td><td>Elements, Clarity join</td></tr>
+    <tr><td>Weapon Perks · Armor Perks</td><td>Traits (↑ enhanced), weapon mods, origin traits, armor set bonuses</td><td>Elements</td></tr>
+    <tr><td>Game Mechanics</td><td>Chunk energy rules, super energy per combatant tier, orb values, armor charge, stats</td><td><code>Simulation</code> constants</td></tr>
+    <tr><td>Landing · 6× OLD</td><td>Index, legacy sandbox</td><td>ignored in v1</td></tr>
+  </table></div>
+
+  <h3>Notation the parsers must understand</h3>
+  <div class="card" style="padding:4px 8px">
+  <table>
+    <tr><th>Pattern</th><th>Meaning</th><th>Example</th></tr>
+    <tr><td><code>x [y]</code></td><td>PvE value, [PvP value]</td><td>Melee 300% [20%] increased damage</td></tr>
+    <tr><td><code>a | b | c</code></td><td>Value per mod count / tier</td><td>Bomber: 12% | 17% | 20%</td></tr>
+    <tr><td><code>[n Energy]</code></td><td>Armor mod energy cost</td><td>Dynamo [3 Energy]</td></tr>
+    <tr><td><code>Base Cooldown · Chunk Scalar</code></td><td>Ability cost model</td><td>Threaded Spike: 145.2 s · 0.8x</td></tr>
+    <tr><td><code>±10 Stat</code></td><td>Fragment stat change</td><td>Purpose: −10 Class</td></tr>
+    <tr><td><code>On … : / While … :</code></td><td>Trigger heading → draft rule</td><td>On Class Ability Usage:</td></tr>
+    <tr><td><code>↑</code></td><td>Enhanced perk value</td><td>12 ↑10 pellets</td></tr>
+    <tr><td><code>?</code></td><td>Unknown / unverified — ≈29% of descriptions contain one</td><td>Tier 1: 1%? | ?% | ?%</td></tr>
+  </table></div>
+
+  <div class="grid g3" style="margin-top:14px">
+    <div class="card accent" style="--c:var(--warn)"><h4>No hashes</h4><p>Join to the manifest by <b>name</b>, scoped by kind and class, with an alias table in git. Anything that doesn't resolve lands in a report — never guessed.</p></div>
+    <div class="card accent" style="--c:var(--void)"><h4>Positional layout</h4><p>It's a spreadsheet render: grids, merged cells, class columns. One parser per tab, each with golden tests on the parsed output.</p></div>
+    <div class="card accent" style="--c:var(--arc)"><h4>Unknowns are data</h4><p>A <code>?</code> becomes <code>GameValue.Unknown</code>, never 0. The trace shows “unknown”, and Clarity can fill the gap.</p></div>
+  </div>
+
+  <h3>Getting a local copy</h3>
+<pre><span class="c"># 1. Bungie Manifest — free API key from bungie.net/en/Application</span>
+curl -H "X-API-Key: $BUNGIE_KEY" https://www.bungie.net/Platform/Destiny2/Manifest/
+<span class="c">#    Response.version → cache key; jsonWorldComponentContentPaths.en.&lt;Table&gt; → per-table JSON
+#    DestinyInventoryItemDefinition, DestinySandboxPerkDefinition, DestinyPlugSetDefinition, DestinyArtifactDefinition</span>
+
+<span class="c"># 2. Compendium — your snapshot script; ingest its per-tab output, not the viewer HTML
+#    TABS manifest: 01_Landing.md, 02_Weapon_Perks.md, … (22 tabs) + images/ folder
+#    keep snapshots dated: snapshots/compendium/2026-10-09/</span>
+
+<span class="c"># 3. Clarity — clone; refresh with git pull</span>
+git clone --depth 1 https://github.com/Database-Clarity/Live-Clarity-Database
+<span class="c">#    descriptions/clarity.json → { "&lt;hash&gt;": { name, type, descriptions.en[] } }</span></pre>
+  <p style="color:var(--muted);font-size:14px">Icons: display Bungie's official icons from the manifest (by hash). The Compendium images stay local as a reference.</p>
+
+  <div class="callout bad"><b>Licensing:</b> the Compendium is one person's donation-supported work. Keep the snapshot private — out of any public repo, never served as raw text — and credit it. Clarity's README points to its partnerships page for data usage; check it before a public site. Bungie API use falls under Bungie's API terms.</div>
+</section>
+
+<!-- ============ ARCHITECTURE ============ -->
+<section id="arch">
+  <h2><span class="n">04</span>Architecture — vertical slices</h2>
+  <p class="sub">Group by <b>feature</b>, never by kind: a behaviour change touches one slice, not a layer. Feature slices depend only on the shared kernel; only <code>Orchestration</code> sees every slice. One project — slices are folders.</p>
+
+  <figure class="fig">
+    <svg viewBox="0 0 960 690" role="img" aria-label="Vertical slice architecture with shared kernel">
+      <defs><marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="#8a94a8"/></marker></defs>
+
+      <rect x="280" y="14" width="400" height="52" rx="10" class="box"/>
+      <text x="480" y="37" class="ttl" text-anchor="middle">Loopsmith.Api — host</text>
+      <text x="480" y="55" class="sm" text-anchor="middle">endpoints · DI · BackgroundService · no logic</text>
+      <path d="M480 66 V90" class="edge" marker-end="url(#a2)"/>
+
+      <rect x="180" y="92" width="600" height="58" rx="10" fill="rgba(111,227,255,.08)" stroke="#6fe3ff" stroke-width="1.6"/>
+      <text x="480" y="116" class="ttl" text-anchor="middle" fill="#6fe3ff">Orchestration</text>
+      <text x="480" y="136" class="sm" text-anchor="middle">railways IngestCatalog · SimulateStep · impure → pure → impure · executes Effect DU</text>
+      <path d="M480 150 V176" class="edge" marker-end="url(#a2)"/>
+      <text x="492" y="168" class="sm">depends on every slice (the only exception)</text>
+
+      <text x="40" y="192" class="sm" style="letter-spacing:.15em">IMPURE BOUNDARY SLICES</text>
+      <rect x="40" y="200" width="430" height="54" rx="10" class="box dash" style="stroke:#ff9a3c"/>
+      <text x="255" y="222" class="ttl" text-anchor="middle" fill="#ff9a3c">SourceFetching</text>
+      <text x="255" y="242" class="sm" text-anchor="middle">Bungie HTTP · Compendium snapshot · clarity.json · rules/*.yaml</text>
+      <rect x="490" y="200" width="430" height="54" rx="10" class="box dash" style="stroke:#ff9a3c"/>
+      <text x="705" y="222" class="ttl" text-anchor="middle" fill="#ff9a3c">Persistence</text>
+      <text x="705" y="242" class="sm" text-anchor="middle">EF Core / Postgres · catalog vN · builds</text>
+
+      <text x="40" y="282" class="sm" style="letter-spacing:.15em">PURE FEATURE SLICES · INGEST</text>
+      <rect x="40" y="290" width="280" height="54" rx="10" class="box"/>
+      <text x="180" y="312" class="ttl" text-anchor="middle">ManifestParsing</text>
+      <text x="180" y="332" class="sm" text-anchor="middle">manifest JSON → elements with hashes</text>
+      <rect x="340" y="290" width="280" height="54" rx="10" class="box" style="stroke:#ffcf5a"/>
+      <text x="480" y="312" class="ttl" text-anchor="middle" fill="#ffcf5a">CompendiumParsing</text>
+      <text x="480" y="332" class="sm" text-anchor="middle">tab-parser registry → entries · GameValues</text>
+      <rect x="640" y="290" width="280" height="54" rx="10" class="box"/>
+      <text x="780" y="312" class="ttl" text-anchor="middle">ClarityEnrichment</text>
+      <text x="780" y="332" class="sm" text-anchor="middle">hash-keyed numbers · cross-check</text>
+      <path d="M320 317 H340" stroke="#ff6b6b" stroke-width="1.5" stroke-dasharray="3 3"/>
+      <text x="330" y="304" text-anchor="middle" style="fill:#ff6b6b;font-size:15px;font-weight:600">✗</text>
+
+      <rect x="40" y="356" width="280" height="54" rx="10" class="box"/>
+      <text x="180" y="378" class="ttl" text-anchor="middle">RuleParsing</text>
+      <text x="180" y="398" class="sm" text-anchor="middle">YAML → Rule DUs · vocab check</text>
+      <rect x="340" y="356" width="280" height="54" rx="10" class="box" style="stroke:#ffcf5a"/>
+      <text x="480" y="378" class="ttl" text-anchor="middle" fill="#ffcf5a">RuleDrafting</text>
+      <text x="480" y="398" class="sm" text-anchor="middle">“On X:” phrasing → draft YAML</text>
+      <rect x="640" y="356" width="280" height="54" rx="10" class="box"/>
+      <text x="780" y="378" class="ttl" text-anchor="middle">CatalogPublishing</text>
+      <text x="780" y="398" class="sm" text-anchor="middle">name → hash join · coverage</text>
+
+      <text x="40" y="438" class="sm" style="letter-spacing:.15em">PURE FEATURE SLICES · RUNTIME</text>
+      <rect x="40" y="446" width="280" height="54" rx="10" class="box"/>
+      <text x="180" y="468" class="ttl" text-anchor="middle">CatalogBrowsing</text>
+      <text x="180" y="488" class="sm" text-anchor="middle">filter · look up elements</text>
+      <rect x="340" y="446" width="280" height="54" rx="10" class="box"/>
+      <text x="480" y="468" class="ttl" text-anchor="middle">BuildComposition</text>
+      <text x="480" y="488" class="sm" text-anchor="middle">validate → ValidatedBuild (typestate)</text>
+      <rect x="640" y="446" width="280" height="54" rx="10" class="box" style="stroke:#6fe3ff"/>
+      <text x="780" y="468" class="ttl" text-anchor="middle" fill="#6fe3ff">Simulation</text>
+      <text x="780" y="488" class="sm" text-anchor="middle">ResolveAction · cascade · phases</text>
+
+      <path d="M480 500 V566" class="edge" marker-end="url(#a2)"/>
+      <text x="492" y="538" class="sm">every slice depends only on the kernel</text>
+
+      <rect x="20" y="568" width="920" height="102" rx="12" fill="rgba(255,95,162,.06)" stroke="#ff5fa2"/>
+      <text x="40" y="588" class="sm" style="letter-spacing:.15em">SHARED KERNEL</text>
+      <rect x="40" y="598" width="430" height="58" rx="10" class="box"/>
+      <text x="255" y="621" class="ttl" text-anchor="middle" fill="#ff5fa2">Domain</text>
+      <text x="255" y="641" class="sm" text-anchor="middle">records · Dunet DUs · Vogen value objects · GameValue · Provenance</text>
+      <rect x="490" y="598" width="430" height="58" rx="10" class="box"/>
+      <text x="705" y="621" class="ttl" text-anchor="middle" fill="#ff5fa2">Functional</text>
+      <text x="705" y="641" class="sm" text-anchor="middle">Optional · Result · Unit · Map / Bind / Match</text>
+    </svg>
+    <figcaption>Dashed orange = the only slices that touch the outside world. Yellow = new for the Compendium. Red ✗ = a sideways slice → slice dependency, which is forbidden: <code>CompendiumParsing</code> never sees manifest hashes — the name join happens in <code>CatalogPublishing</code>.</figcaption>
+  </figure>
+
+  <h3>Compendium parsing — a registry, not a switch</h3>
+<pre><span class="c">// CompendiumParsing/TabParsers.cs — adding a tab = one file + one registry line</span>
+public static class TabParsers
+{
+    public static readonly ImmutableDictionary&lt;string, Func&lt;CompendiumTab, Result&lt;ImmutableArray&lt;CompendiumEntry&gt;, string&gt;&gt;&gt; Registry =
+        new Dictionary&lt;string, Func&lt;CompendiumTab, Result&lt;ImmutableArray&lt;CompendiumEntry&gt;, string&gt;&gt;&gt;
+        {
+            ["Arc"]            = SubclassTabParsing.ParseSubclassTab,
+            ["Solar"]          = SubclassTabParsing.ParseSubclassTab,
+            <span class="c">// … Void, Stasis, Strand, Prismatic</span>
+            ["Class Abilities"] = ClassAbilityTabParsing.ParseClassAbilityTab,
+            ["Armor Mods"]     = ArmorModGridParsing.ParseArmorModGrid,
+            ["Artifact Perks"] = ArtifactGridParsing.ParseArtifactGrid,
+            ["Exotic Armors"]  = ExoticArmorTabParsing.ParseExoticArmorTab,
+            ["Game Mechanics"] = MechanicsTabParsing.ParseMechanicsTab,
+        }.ToImmutableDictionary();
+}
+
+<span class="c">// Shared notation parsing — pure, one function per pattern</span>
+public static Optional&lt;AbilityCost&gt; ParseAbilityCost(string cell) =&gt; …   <span class="c">// "Base Cooldown: 145.2 seconds / Chunk Scalar: 0.8x"</span>
+public static GameValue ParseGameValue(string text) =&gt; …                  <span class="c">// "12% | 17% | 20%", "300% [20%]", "?%"</span>
+public static Optional&lt;ArmorEnergy&gt; ParseEnergyCost(string cell) =&gt; …     <span class="c">// "[3 Energy]"</span></pre>
+  <p style="color:var(--muted);font-size:14px">Unregistered tabs are reported, not silently skipped. That's how the next Compendium layout change shows up — as a failing golden test, not a wrong number in a trace.</p>
+
+  <h3>Dependency rules</h3>
+  <div class="card" style="padding:4px 8px">
+  <table>
+    <tr><th>Rule</th><th>Enforced by</th></tr>
+    <tr><td>Feature slices depend only on <code>Domain</code> + <code>Functional</code> — never sideways</td><td>architecture test</td></tr>
+    <tr><td><code>Orchestration</code> may depend on every slice</td><td>the only allowed exception</td></tr>
+    <tr><td><code>Domain</code> depends on nothing: no slice, no <code>System.IO</code>, no EF Core</td><td>architecture test</td></tr>
+    <tr><td>Only <code>SourceFetching</code> / <code>Persistence</code> use <code>System.Net.Http</code>, <code>System.IO</code>, EF Core</td><td>architecture test</td></tr>
+    <tr><td>Only <code>BuildComposition</code> constructs <code>ValidatedBuild</code></td><td>architecture test</td></tr>
+    <tr><td>Only <code>CatalogPublishing</code> constructs <code>PublishedCatalog</code> and resolves names → hashes</td><td>architecture test</td></tr>
+    <tr><td><code>RuleDrafting</code> output is never loaded as rules — only <code>rules/*.yaml</code> is</td><td>architecture test</td></tr>
+  </table></div>
+
+  <h3>Key decisions</h3>
+  <div class="card" style="padding:4px 8px">
+  <table>
+    <tr><th>#</th><th>Decision</th><th>Why</th></tr>
+    <tr><td>D1</td><td>Bungie manifest hash is every element's identity (<code>ItemHash</code>)</td><td>Stable, complete, shared by Clarity and DIM</td></tr>
+    <tr><td>D2</td><td>Compendium is the primary mechanics source; Clarity the cross-check</td><td>Compendium covers abilities, cooldowns, chunk scalars, artifact, statuses; Clarity has hashes</td></tr>
+    <tr><td>D3</td><td>Compendium joined by name, scoped by kind + class, alias table in git</td><td>It has no hashes; unresolved names are reported, never guessed</td></tr>
+    <tr><td>D4</td><td>Causality authored as YAML; drafts generated from “On X:” phrasing</td><td>55% of descriptions already state the trigger; a human confirms every rule</td></tr>
+    <tr><td>D5</td><td>Every number is a <code>GameValue</code> with <code>Provenance</code></td><td>≈29% of descriptions contain a <code>?</code>; unknown ≠ 0; every number traceable</td></tr>
+    <tr><td>D6</td><td>Vertical slices as folders, guarded by architecture tests</td><td>One change = one slice; boundaries can't silently rot</td></tr>
+    <tr><td>D7</td><td>Strict impure → pure → impure; effects as data</td><td>Pure core is deterministic, replayable, testable without infrastructure</td></tr>
+    <tr><td>D8</td><td>Closed vocabulary as Dunet DUs; behaviour in static functions; no interfaces</td><td>Exhaustive <code>Match</code>; the compiler lists every place to update</td></tr>
+    <tr><td>D9</td><td>Typestate: <code>Simulation</code> accepts only <code>ValidatedBuild</code></td><td>“Simulate before validation” does not compile</td></tr>
+    <tr><td>D10</td><td>Vogen value objects validated at the boundary</td><td>Inside the core every value is known-valid</td></tr>
+    <tr><td>D11</td><td>Railway (ROP) for ingest and simulate; <code>Severity</code> only where the app branches</td><td>Short-circuit on first blocking error, no app-state object</td></tr>
+    <tr><td>D12</td><td>Step-based time in v1; builds pin <code>CatalogVersion</code></td><td>Matches how players think; patches don't silently change saved builds</td></tr>
+  </table></div>
+
+  <div class="callout good"><b>Extending without editing:</b> a new build element is one YAML entry. A new Compendium tab is one parser file plus one registry line. A new trigger kind is one DU case, and the compiler flags every <code>Match</code> that must handle it. There is no dispatch <code>switch</code> to grow.</div>
+</section>
+
+<!-- ============ CONVENTIONS ============ -->
+<section id="conventions">
+  <h2><span class="n">05</span>Coding conventions (binding)</h2>
+  <p class="sub">Requirements, not suggestions — they win over anything else in this proposal. They live in <code>CONVENTIONS.md</code>; the <i>why</i> goes in <code>ADRs.md</code>, which explains but never overrides.</p>
+
+  <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr))">
+    <div class="card accent" style="--c:var(--arc)"><h4>Architecture</h4>
+      <ul class="clean">
+        <li>Vertical slices: group by feature, never by kind</li>
+        <li>Slices depend only on the kernel (<code>Domain</code>, <code>Functional</code>); <code>Orchestration</code> → all</li>
+        <li><code>Domain</code> = data + pure value arithmetic only; no <code>System.IO</code>, no slice dependency</li>
+        <li>Architecture tests enforce every boundary in CI</li>
+      </ul>
+    </div>
+    <div class="card accent" style="--c:var(--strand)"><h4>Functional design</h4>
+      <ul class="clean">
+        <li>Strict <b>impure → pure → impure</b> sandwich: read first, compute, write last</li>
+        <li>A statement is pure <i>or</i> impure — never nested on one line</li>
+        <li><b>Effects as data</b>: pure code returns an <code>Effect</code> DU, the shell executes it</li>
+        <li>Own <code>Optional</code> / <code>Result</code> / <code>Unit</code> (Dunet) — no third-party FP library, no null-as-absence, no exceptions as control flow</li>
+        <li>Railway for flows · typestate where order matters · pure state machine only for genuinely multi-state things (<code>GameState</code>)</li>
+      </ul>
+    </div>
+    <div class="card accent" style="--c:var(--void)"><h4>Domain modelling</h4>
+      <ul class="clean">
+        <li>Data ⟂ behaviour: records hold data; logic lives in static / extension functions</li>
+        <li>Every function name has a verb (<code>Is</code>/<code>Has</code>/<code>Can</code>, <code>Parse</code>/<code>ToX</code>/<code>FromX</code> allowed)</li>
+        <li>Immutable records everywhere; DUs via Dunet, never inheritance</li>
+        <li>Illegal states unrepresentable: data-carrying cases, not tag + optionals</li>
+        <li>Value objects via Vogen, validated at the boundary</li>
+        <li>Named failure / <code>Severity</code> only where the app branches on it</li>
+      </ul>
+    </div>
+    <div class="card accent" style="--c:var(--solar)"><h4>API gotchas</h4>
+      <ul class="clean">
+        <li>Static direct calls over interfaces / delegates</li>
+        <li>Dunet has no static factories: <code>new Result&lt;T, F&gt;.Ok(x)</code>, <code>Optional.Some(x)</code>, <code>Optional.None&lt;T&gt;()</code></li>
+        <li><code>Match&lt;T&gt;(…)</code> needs the explicit type argument when branches return different types</li>
+        <li>Catch foreseeable exceptions at the boundary → <code>Result</code>; let unrecoverable ones bubble</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>The sandwich, in code</h3>
+<pre><span class="c">// Orchestration/IngestionShell.cs — read top to bottom: impure, pure, impure</span>
+public static async Task RunIngest(HttpClient http, LoopsmithDb db, string rulesDirectory, CancellationToken ct)
+{
+    var sources = await SourceFetching.FetchSources(http, rulesDirectory, ct);   <span class="c">// impure: read</span>
+
+    var effects = IngestionPlanning.PlanIngest(sources);                          <span class="c">// pure: ROP → Effect[]</span>
+
+    await EffectExecution.ExecuteEffects(db, effects, ct);                        <span class="c">// impure: write</span>
+}
+
+<span class="c">// Orchestration/StepSimulation.cs</span>
+public static async Task&lt;Result&lt;Resolution, string&gt;&gt; SimulateStep(LoopsmithDb db, SimulateRequest request, CancellationToken ct)
+{
+    var catalog = await Persistence.LoadCatalogSnapshot(db, request.CatalogVersion, ct);   <span class="c">// impure</span>
+    var build   = await Persistence.LoadBuild(db, request.BuildId, ct);                    <span class="c">// impure</span>
+
+    var resolution = catalog                                                               <span class="c">// pure</span>
+        .Bind(c =&gt; build.Bind(b =&gt; BuildValidation.ValidateBuild(b, c)))
+        .Map(validated =&gt; ActionResolution.ResolveAction(validated, request.State, request.Action));
+
+    return resolution;
+}
+
+<span class="c">// Loopsmith.Api — the host only maps HTTP in and out</span>
+app.MapPost("/api/simulate", async (SimulateRequest request, LoopsmithDb db, CancellationToken ct) =&gt;
+{
+    var resolution = await StepSimulation.SimulateStep(db, request, ct);          <span class="c">// impure</span>
+    var response   = resolution.Match&lt;IResult&gt;(                                   <span class="c">// pure</span>
+        ok    =&gt; TypedResults.Ok(ResolutionMapping.ToResponse(ok)),
+        error =&gt; TypedResults.Problem(error, statusCode: 400));
+    return response;
+});
+
+<span class="c">// ✗ never: pure ToResponse nested inside an impure write on one line
+// await http.Response.WriteAsJsonAsync(ResolutionMapping.ToResponse(resolution));</span></pre>
+
+  <h3>Naming — functions are actions</h3>
+  <div class="card" style="padding:4px 8px">
+  <table>
+    <tr><th>✗ Noun (a thing)</th><th>✓ Verb (an action)</th><th>Slice</th></tr>
+    <tr><td><code>Phase(outcome)</code></td><td><code>ResolvePhase(outcome)</code></td><td>Simulation</td></tr>
+    <tr><td><code>Cascade(…)</code></td><td><code>CascadeOutcomes(…)</code></td><td>Simulation</td></tr>
+    <tr><td><code>EnergyScale(…)</code></td><td><code>ScaleEnergyByCost(…)</code></td><td>Simulation</td></tr>
+    <tr><td><code>Triggered(rule, e)</code></td><td><code>IsTriggeredBy(rule, e)</code></td><td>Simulation</td></tr>
+    <tr><td><code>Rules(yaml)</code></td><td><code>ParseRuleFile(yaml)</code></td><td>RuleParsing</td></tr>
+    <tr><td><code>Coverage(catalog)</code></td><td><code>ComputeCoverage(catalog)</code></td><td>CatalogPublishing</td></tr>
+  </table></div>
+
+  <div class="callout"><b>Naming clash resolved:</b> the game's consequences (energy, buffs, orbs, debuffs) are called <code>Outcome</code>. <code>Effect</code> is reserved for side effects described as data: <code>PersistCatalog</code>, <code>WriteCoverageReport</code>, <code>ShowIngestFailure</code>.</div>
+
+  <h3>Severity — only where the app branches</h3>
+  <div class="card" style="padding:4px 8px">
+  <table>
+    <tr><th>Severity</th><th>What the app does</th><th>Example</th></tr>
+    <tr><td><span class="tag bad">Blocking</span></td><td>Failure track — no <code>ValidatedBuild</code>, nothing simulated</td><td>Armor energy exceeded · more fragments than aspect slots · two exotic armor pieces</td></tr>
+    <tr><td><span class="tag part">Warning</span></td><td>Simulates; element shown as inert in the trace</td><td>Element has no authored rules yet</td></tr>
+    <tr><td><span class="tag ok">Info</span></td><td>Shown only</td><td>Artifact mod belongs to a previous season</td></tr>
+  </table></div>
+  <p style="color:var(--muted);font-size:14px">IO whose only outcome is “tell the user” — unreachable Bungie API, unreadable YAML — is plain <code>Result&lt;_, string&gt;</code>.</p>
+</section>
+
+<!-- ============ DATA FLOW ============ -->
+<section id="flow">
+  <h2><span class="n">06</span>Data flow</h2>
+  <p class="sub">Both flows have the same shape: read everything first, compute on a railway, write at the end. The first blocking error switches to the failure track and skips the rest.</p>
+
+  <figure class="fig">
+    <svg viewBox="0 0 960 420" role="img" aria-label="Impure pure impure sandwich for ingest and simulate">
+      <defs><marker id="a6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="#8a94a8"/></marker></defs>
+      <rect x="10" y="36" width="290" height="374" rx="12" fill="rgba(255,154,60,.05)" stroke="#ff9a3c" stroke-dasharray="5 4"/>
+      <rect x="335" y="36" width="290" height="374" rx="12" fill="rgba(111,227,255,.05)" stroke="#6fe3ff"/>
+      <rect x="660" y="36" width="290" height="374" rx="12" fill="rgba(255,154,60,.05)" stroke="#ff9a3c" stroke-dasharray="5 4"/>
+      <text x="155" y="24" class="ttl" text-anchor="middle" fill="#ff9a3c">① Impure · read</text>
+      <text x="480" y="24" class="ttl" text-anchor="middle" fill="#6fe3ff">② Pure · compute</text>
+      <text x="805" y="24" class="ttl" text-anchor="middle" fill="#ff9a3c">③ Impure · write</text>
+
+      <text x="26" y="58" class="sm" style="letter-spacing:.12em">INGEST · new manifest or snapshot</text>
+      <rect x="26" y="68" width="258" height="28" rx="7" class="box"/><text x="40" y="87" class="mono">FetchManifest</text>
+      <rect x="26" y="102" width="258" height="28" rx="7" class="box" style="stroke:#ffcf5a"/><text x="40" y="121" class="mono">ReadCompendiumSnapshot</text>
+      <rect x="26" y="136" width="258" height="28" rx="7" class="box"/><text x="40" y="155" class="mono">ReadClarityFile</text>
+      <rect x="26" y="170" width="258" height="28" rx="7" class="box"/><text x="40" y="189" class="mono">ReadRuleFiles</text>
+      <path d="M284 133 H349" class="edge" marker-end="url(#a6)"/>
+      <rect x="351" y="62" width="258" height="152" rx="8" class="box" style="stroke:#6fe3ff"/>
+      <text x="365" y="84" class="mono">ParseManifest(sources)</text>
+      <text x="365" y="102" class="mono" fill="#ffcf5a">  .Bind(ParseCompendium)</text>
+      <text x="365" y="120" class="mono" fill="#ffcf5a">  .Bind(ResolveNamesToHashes)</text>
+      <text x="365" y="138" class="mono">  .Bind(EnrichWithClarity)</text>
+      <text x="365" y="156" class="mono">  .Bind(AttachRules)</text>
+      <text x="365" y="174" class="mono">  .Map(PlanCatalogEffects)</text>
+      <text x="365" y="200" class="mono" fill="#4ee28a">⇒ Effect[]</text>
+      <text x="480" y="232" class="sm" text-anchor="middle" style="fill:#ff6b6b">failure track → [ShowIngestFailure]</text>
+      <path d="M609 133 H674" class="edge" marker-end="url(#a6)"/>
+      <rect x="676" y="68" width="258" height="28" rx="7" class="box"/><text x="690" y="87" class="mono">PersistCatalog</text>
+      <rect x="676" y="102" width="258" height="28" rx="7" class="box"/><text x="690" y="121" class="mono">WriteCoverageReport</text>
+      <rect x="676" y="136" width="258" height="28" rx="7" class="box" style="stroke:#ffcf5a"/><text x="690" y="155" class="mono">WriteRuleDrafts</text>
+      <rect x="676" y="170" width="258" height="28" rx="7" class="box" style="stroke:#ff6b6b"/><text x="690" y="189" class="mono">ShowIngestFailure</text>
+      <text x="690" y="220" class="sm">coverage = unresolved names + elements</text>
+      <text x="690" y="236" class="sm">without rules + rule/Compendium mismatches</text>
+
+      <path d="M10 256 H950" stroke="#263046"/>
+
+      <text x="26" y="278" class="sm" style="letter-spacing:.12em">SIMULATE · per request</text>
+      <rect x="26" y="288" width="258" height="30" rx="7" class="box"/><text x="40" y="308" class="mono">LoadCatalogSnapshot</text>
+      <rect x="26" y="324" width="258" height="30" rx="7" class="box"/><text x="40" y="344" class="mono">LoadBuild</text>
+      <text x="40" y="378" class="sm">Persistence slice</text>
+      <path d="M284 336 H349" class="edge" marker-end="url(#a6)"/>
+      <rect x="351" y="280" width="258" height="104" rx="8" class="box" style="stroke:#6fe3ff"/>
+      <text x="365" y="302" class="mono">ValidateBuild(build, catalog)</text>
+      <text x="365" y="322" class="mono">  ⇒ ValidatedBuild</text>
+      <text x="365" y="342" class="mono">  .Map(ResolveAction)</text>
+      <text x="365" y="366" class="mono" fill="#4ee28a">⇒ Result&lt;Resolution, string&gt;</text>
+      <path d="M609 336 H674" class="edge" marker-end="url(#a6)"/>
+      <rect x="676" y="288" width="258" height="30" rx="7" class="box"/><text x="690" y="308" class="mono">200 · Resolution</text>
+      <rect x="676" y="324" width="258" height="30" rx="7" class="box" style="stroke:#ff6b6b"/><text x="690" y="344" class="mono">400 · blocking issues</text>
+      <text x="690" y="378" class="sm">host maps Result → HTTP</text>
+    </svg>
+    <figcaption>Columns ① and ③ are the only places with I/O. Column ② is a railway of <code>Result</code>-returning steps; nothing in it can touch a database, file or network.</figcaption>
+  </figure>
+
+  <h3>Simulate one step — who calls whom</h3>
+  <figure class="fig">
+    <svg viewBox="0 0 960 400" role="img" aria-label="Sequence diagram of a simulate request">
+      <defs>
+        <marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="#c4cad6"/></marker>
+        <marker id="a3b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="#4ee28a"/></marker>
+        <marker id="a3o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="#ff9a3c"/></marker>
+      </defs>
+      <rect x="30" y="10" width="160" height="40" rx="8" class="box"/><text x="110" y="35" class="ttl" text-anchor="middle">Client</text>
+      <rect x="260" y="10" width="160" height="40" rx="8" class="box"/><text x="340" y="35" class="ttl" text-anchor="middle">Api · host</text>
+      <rect x="510" y="10" width="160" height="40" rx="8" fill="rgba(111,227,255,.08)" stroke="#6fe3ff"/><text x="590" y="35" class="ttl" text-anchor="middle" fill="#6fe3ff">Orchestration</text>
+      <rect x="760" y="10" width="160" height="40" rx="8" class="box dash" style="stroke:#ff9a3c"/><text x="840" y="35" class="ttl" text-anchor="middle" fill="#ff9a3c">Persistence</text>
+      <g stroke="#33405c" stroke-dasharray="4 5"><path d="M110 50V392"/><path d="M340 50V392"/><path d="M590 50V392"/><path d="M840 50V392"/></g>
+
+      <path d="M110 86H336" stroke="#c4cad6" stroke-width="1.5" marker-end="url(#a3)"/>
+      <text x="223" y="78" class="mono" text-anchor="middle">POST /api/simulate</text>
+      <text x="223" y="102" class="sm" text-anchor="middle">{ buildId, catalogVersion, state, action }</text>
+
+      <path d="M340 134H586" stroke="#c4cad6" stroke-width="1.5" marker-end="url(#a3)"/>
+      <text x="465" y="126" class="mono" text-anchor="middle">SimulateStep(db, request)</text>
+
+      <path d="M590 174H836" stroke="#ff9a3c" stroke-width="1.5" marker-end="url(#a3o)"/>
+      <text x="715" y="166" class="mono" text-anchor="middle">LoadCatalogSnapshot · LoadBuild</text>
+      <path d="M840 210H594" stroke="#4ee28a" stroke-width="1.5" class="dash" marker-end="url(#a3b)"/>
+      <text x="715" y="202" class="sm" text-anchor="middle">Result&lt;PublishedCatalog&gt; · Result&lt;Build&gt;</text>
+
+      <rect x="470" y="232" width="240" height="66" rx="10" fill="rgba(111,227,255,.1)" stroke="#6fe3ff"/>
+      <text x="590" y="256" class="mono" text-anchor="middle">ValidateBuild → ResolveAction</text>
+      <text x="590" y="276" class="sm" text-anchor="middle">pure · BuildComposition + Simulation</text>
+      <text x="590" y="290" class="sm" text-anchor="middle">cascade ≤ 5 deep</text>
+
+      <path d="M590 330H344" stroke="#4ee28a" stroke-width="1.5" class="dash" marker-end="url(#a3b)"/>
+      <text x="465" y="322" class="sm" text-anchor="middle">Result&lt;Resolution, string&gt;</text>
+
+      <path d="M340 370H114" stroke="#4ee28a" stroke-width="1.5" class="dash" marker-end="url(#a3b)"/>
+      <text x="225" y="362" class="sm" text-anchor="middle">200 Resolution · 400 blocking issues</text>
+    </svg>
+    <figcaption>The host owns no logic. <code>Orchestration</code> owns the sandwich; the orange call is the only I/O. <code>Resolution</code> = new <code>GameState</code> + ordered <code>FiredRule[]</code> + <code>NowAvailable[]</code>.</figcaption>
+  </figure>
+</section>
+
+<!-- ============ DOMAIN MODEL ============ -->
+<section id="model">
+  <h2><span class="n">07</span>Domain model</h2>
+  <p class="sub">An aspect, fragment, mod, exotic perk and weapon trait all have the <b>same shape</b>: an element with rules. “Kill with Threaded Spike → Unraveling rounds” (fragment) and “Melee kill → Super energy” (mod) are structurally identical. Records hold data; behaviour is static functions in the slices.</p>
+
+  <figure class="fig">
+    <svg viewBox="0 0 960 540" role="img" aria-label="Domain model">
+      <defs><marker id="a4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="#8a94a8"/></marker></defs>
+      <rect x="20" y="20" width="280" height="236" rx="10" class="box"/>
+      <rect x="20" y="20" width="280" height="34" rx="10" fill="#1d2536"/><text x="36" y="43" class="ttl">Build → ValidatedBuild</text>
+      <g class="mono"><text x="36" y="76">CatalogVersion</text><text x="36" y="96">Class · Subclass · Super</text><text x="36" y="116">Grenade · Melee · ClassAbility</text>
+      <text x="36" y="136">Aspects : AspectPair</text><text x="36" y="156">Fragments[≤ slots]</text><text x="36" y="176">ArmorMods[] · ArtifactMods[]</text>
+      <text x="36" y="196">ExoticArmor</text><text x="36" y="216">Weapons : WeaponLoadout</text><text x="36" y="240" fill="#8a94a8">+ Warnings (on ValidatedBuild)</text></g>
+
+      <rect x="340" y="20" width="290" height="176" rx="10" class="box" style="stroke:#6fe3ff"/>
+      <rect x="340" y="20" width="290" height="34" rx="10" fill="rgba(111,227,255,.12)"/><text x="356" y="43" class="ttl" fill="#6fe3ff">BuildElement</text>
+      <g class="mono"><text x="356" y="76">Hash : ItemHash</text><text x="356" y="96">Name</text><text x="356" y="116">Kind : ElementKind</text>
+      <text x="356" y="136">EnergyCost : Optional&lt;ArmorEnergy&gt;</text><text x="356" y="156">FragmentSlots : Optional&lt;int&gt;</text><text x="356" y="176">Rules : ImmutableArray&lt;Rule&gt;</text></g>
+
+      <rect x="670" y="20" width="270" height="176" rx="10" class="box" style="stroke:#ff5fa2"/>
+      <rect x="670" y="20" width="270" height="34" rx="10" fill="rgba(255,95,162,.12)"/><text x="686" y="43" class="ttl" fill="#ff5fa2">Rule</text>
+      <g class="mono"><text x="686" y="76">On     : Trigger</text><text x="686" y="96">When   : Condition[]</text><text x="686" y="116">Then   : Outcome[]</text>
+      <text x="686" y="136">Reason : Optional&lt;string&gt;</text><text x="686" y="160" fill="#8a94a8">// your "why" column</text></g>
+      <path d="M300 100H338" class="edge" marker-end="url(#a4)"/><text x="319" y="92" class="sm" text-anchor="middle">*</text>
+      <path d="M630 100H668" class="edge" marker-end="url(#a4)"/><text x="649" y="92" class="sm" text-anchor="middle">1..*</text>
+
+      <rect x="540" y="250" width="190" height="270" rx="10" class="box"/>
+      <rect x="540" y="250" width="190" height="34" rx="10" fill="#1d2536"/><text x="556" y="273" class="ttl">Trigger «union»</text>
+      <g class="mono"><text x="556" y="306">AbilityCast</text><text x="556" y="326">KillAny</text><text x="556" y="346">KillOfTier</text>
+      <text x="556" y="366">KillDebuffed</text><text x="556" y="386">Damage</text><text x="556" y="406">PickUp</text><text x="556" y="426">BuffGained</text>
+      <text x="556" y="446">NearTarget</text><text x="556" y="466">HitCount</text><text x="556" y="500" fill="#8a94a8">Dunet DU</text></g>
+
+      <rect x="750" y="250" width="190" height="270" rx="10" class="box"/>
+      <rect x="750" y="250" width="190" height="34" rx="10" fill="#1d2536"/><text x="766" y="273" class="ttl">Outcome «union»</text>
+      <g class="mono"><text x="766" y="306">GrantEnergy</text><text x="766" y="326">ApplyBuff</text><text x="766" y="346">DebuffTarget</text>
+      <text x="766" y="366">Spawn</text><text x="766" y="386">ModifyDamage</text><text x="766" y="406">RestoreHealth</text><text x="766" y="426">ResetCooldown</text>
+      <text x="766" y="466" fill="#ffcf5a">phase via</text><text x="766" y="484" fill="#ffcf5a">ResolvePhase</text><text x="766" y="508" fill="#8a94a8">Dunet DU</text></g>
+      <path d="M760 196 L660 248" class="edge" marker-end="url(#a4)"/>
+      <path d="M860 196 L850 248" class="edge" marker-end="url(#a4)"/>
+
+      <rect x="20" y="300" width="260" height="190" rx="10" class="box" style="stroke:#4ee28a"/>
+      <rect x="20" y="300" width="260" height="34" rx="10" fill="rgba(78,226,138,.12)"/><text x="36" y="323" class="ttl" fill="#4ee28a">GameState</text>
+      <g class="mono"><text x="36" y="356">Energy : EnergyFraction ×4</text><text x="36" y="376">Buffs : ActiveBuff[]</text><text x="36" y="396">Target : tier + statuses</text>
+      <text x="36" y="416">GroundPickups[]</text><text x="36" y="436">Health · Clock</text><text x="36" y="466" fill="#8a94a8">immutable · pure state machine</text></g>
+
+      <rect x="300" y="300" width="220" height="190" rx="10" class="box" style="stroke:#ffcf5a"/>
+      <rect x="300" y="300" width="220" height="34" rx="10" fill="rgba(255,207,90,.12)"/><text x="316" y="323" class="ttl" fill="#ffcf5a">FiredRule</text>
+      <g class="mono"><text x="316" y="356">Source : ItemHash</text><text x="316" y="376">Trigger</text><text x="316" y="396">Outcomes[]</text>
+      <text x="316" y="416">Reason</text><text x="316" y="436">Depth</text><text x="316" y="466" fill="#8a94a8">= one bullet in notes</text></g>
+      <path d="M410 300 V198" class="edge dash" marker-end="url(#a4)"/><text x="418" y="252" class="sm">source</text>
+    </svg>
+    <figcaption>Graph edges are never stored. <code>Simulation</code> discovers them at runtime when an <code>Outcome</code> (status, pickup, energy) matches another <code>Rule</code>'s <code>Trigger</code>.</figcaption>
+  </figure>
+
+  <h3>C# sketch</h3>
+<pre><span class="c">// ── Domain/ValueObjects.cs — Vogen; validated once, at the boundary ──</span>
+[ValueObject&lt;uint&gt;]   public readonly partial struct ItemHash;
+[ValueObject&lt;string&gt;] public readonly partial struct CatalogVersion;      <span class="c">// manifest version + rules git SHA</span>
+[ValueObject&lt;float&gt;]  public readonly partial struct Meters;
+[ValueObject&lt;float&gt;]  public readonly partial struct Seconds;
+[ValueObject&lt;float&gt;]  public readonly partial struct EnergyFraction
+{
+    private static Validation Validate(float value) =&gt;
+        value is &gt;= 0f and &lt;= 1f ? Validation.Ok : Validation.Invalid("Energy must be within 0..1");
+}
+[ValueObject&lt;decimal&gt;] public readonly partial struct ChunkScalar;     <span class="c">// 0.5x … 1x</span>
+[ValueObject&lt;DateOnly&gt;] public readonly partial struct SnapshotDate;   <span class="c">// Compendium snapshot</span>
+
+<span class="c">// ── Domain/GameValue.cs — a Compendium "?" is data, never 0 ──</span>
+[Union]
+public partial record GameValue
+{
+    partial record Known(decimal Value);
+    partial record PerModCount(ImmutableArray&lt;decimal&gt; Values);   <span class="c">// "12% | 17% | 20%"</span>
+    partial record Approximate(decimal Value);                      <span class="c">// "~25%", "1%?"</span>
+    partial record Unknown();                                       <span class="c">// "?%"</span>
+}
+public sealed record PveAndPvp(GameValue Pve, Optional&lt;GameValue&gt; Pvp);       <span class="c">// "300% [20%]"</span>
+
+<span class="c">// ── Domain/Provenance.cs — where every number came from ──</span>
+[Union]
+public partial record Provenance
+{
+    partial record Compendium(SnapshotDate Snapshot, string Tab, int Row);
+    partial record Clarity(ItemHash Hash, string ClarityVersion);
+    partial record Authored(string RuleFile, int Line);
+}
+public sealed record Sourced&lt;T&gt;(T Value, Provenance Source);
+
+<span class="c">// ── Domain/AbilityCost.cs — straight from the Compendium ──</span>
+public sealed record AbilityCost(Seconds BaseCooldown, ChunkScalar Scalar);   <span class="c">// Threaded Spike: 145.2 s · 0.8x</span>
+
+<span class="c">// ── Domain/BuildElement.cs — data only, no methods ──</span>
+public sealed record BuildElement(ItemHash Hash, string Name, ElementKind Kind,
+    ImmutableArray&lt;Rule&gt; Rules, Optional&lt;ArmorEnergy&gt; EnergyCost, Optional&lt;int&gt; FragmentSlots);
+
+public sealed record Rule(Trigger On, ImmutableArray&lt;Condition&gt; When,
+    ImmutableArray&lt;Outcome&gt; Then, Optional&lt;string&gt; Reason);
+
+<span class="c">// ── Domain/Trigger.cs — each case carries exactly its own data ──
+// not Kill(via, Tier?, TargetHas?) — that's "tag + optionals"</span>
+[Union]
+public partial record Trigger
+{
+    partial record AbilityCast(AbilityKind Kind);
+    partial record KillAny(DamageSource Via);
+    partial record KillOfTier(DamageSource Via, EnemyTier Tier);
+    partial record KillDebuffed(DamageSource Via, ImmutableArray&lt;StatusEffect&gt; TargetHas);
+    partial record Damage(DamageSource Via);
+    partial record PickUp(PickupKind Kind);
+    partial record BuffGained(StatusEffect Status);
+    partial record NearTarget(Meters Within);
+    partial record HitCount(DamageSource Via, int Count);
+}
+
+<span class="c">// ── Domain/Outcome.cs — what happens in the game ──</span>
+[Union]
+public partial record Outcome
+{
+    partial record GrantEnergy(AbilityKind To, EnergyGrant Amount);
+    partial record ApplyBuff(StatusEffect Status, Seconds Duration, int Stacks);
+    partial record DebuffTarget(StatusEffect Status, Seconds Duration);
+    partial record Spawn(PickupKind Kind, int Count);
+    partial record ModifyDamage(DamageSource Against, DamageMultiplier Multiplier);
+    partial record RestoreHealth(HealthFraction Amount);
+    partial record ResetCooldown(AbilityKind Which);
+}
+
+<span class="c">// ── Simulation/OutcomePhasing.cs — behaviour as a static function, exhaustive Match ──</span>
+public static class OutcomePhasing
+{
+    public static Phase ResolvePhase(this Outcome outcome) =&gt; outcome.Match(
+        grantEnergy:   _ =&gt; Phase.Refund,
+        applyBuff:     _ =&gt; Phase.Empower,
+        debuffTarget:  _ =&gt; Phase.Debuff,
+        spawn:         _ =&gt; Phase.Spawn,
+        modifyDamage:  _ =&gt; Phase.Empower,
+        restoreHealth: _ =&gt; Phase.Refund,
+        resetCooldown: _ =&gt; Phase.Refund);
+}
+
+<span class="c">// ── Typestate: only BuildComposition constructs it (architecture test) ──</span>
+public sealed record ValidatedBuild(Build Build, CatalogVersion CatalogVersion, ImmutableArray&lt;BuildIssue&gt; Warnings);
+public sealed record BuildIssue(Severity Severity, string Message);
+public enum Severity { Blocking, Warning, Info }
+
+<span class="c">// BuildComposition/BuildValidation.cs — Blocking issues = failure track</span>
+public static Result&lt;ValidatedBuild, string&gt; ValidateBuild(Build build, PublishedCatalog catalog) =&gt; …
+
+<span class="c">// ── Orchestration/Effect.cs — side effects as data, executed by the shell ──</span>
+[Union]
+public partial record Effect
+{
+    partial record PersistCatalog(PublishedCatalog Catalog);
+    partial record WriteCoverageReport(CoverageReport Report);
+    partial record WriteRuleDrafts(ImmutableArray&lt;RuleDraft&gt; Drafts);
+    partial record ShowIngestFailure(string Message);
+}</pre>
+
+  <h3>Authoring a rule (YAML, keyed by manifest hash)</h3>
+<pre><span class="t">- hash</span>: <span class="nn">0000000000</span>          <span class="c"># resolved from the manifest by name</span>
+  <span class="t">name</span>: Stylish Executioner
+  <span class="t">kind</span>: Aspect
+  <span class="t">source</span>: compendium/2026-10-09/Prismatic#54     <span class="c"># provenance, shown in the trace</span>
+  <span class="t">rules</span>:
+    - <span class="t">on</span>:   { <span class="t">killDebuffed</span>: { <span class="t">via</span>: Any, <span class="t">targetHas</span>: [AnyElementalDebuff] } }
+      <span class="t">then</span>:
+        - { <span class="t">applyBuff</span>: { <span class="t">status</span>: Invisibility, <span class="t">duration</span>: 8s, <span class="t">stacks</span>: 1 } }
+        - { <span class="t">applyBuff</span>: { <span class="t">status</span>: Truesight,    <span class="t">duration</span>: 4s, <span class="t">stacks</span>: 1 } }
+      <span class="t">reason</span>: <span class="s">"Killing a debuffed enemy grants Invisibility and Truesight."</span>
+    - <span class="t">on</span>:   { <span class="t">damage</span>: { <span class="t">via</span>: Melee } }
+      <span class="t">when</span>: [ { <span class="t">has</span>: Invisibility } ]
+      <span class="t">then</span>:
+        - { <span class="t">modifyDamage</span>: { <span class="t">against</span>: Melee, <span class="t">multiplier</span>: 4.0 } }   <span class="c"># 300% increased [PvP 20%]</span>
+        - { <span class="t">debuffTarget</span>: { <span class="t">status</span>: Weaken, <span class="t">duration</span>: 5s } }
+      <span class="t">reason</span>: <span class="s">"Melee while invisible deals 300% more damage and weakens."</span></pre>
+  <p style="color:var(--muted);font-size:14px"><code>RuleParsing.ParseRuleFile</code> turns this text into <code>Result&lt;RuleSet, string&gt;</code>; the YAML DTOs never leave that slice. It also checks every status against the Compendium glossary — <code>Truesight</code> isn't one of its 36 entries, so it is flagged for the vocabulary instead of silently accepted. <code>RuleDrafting</code> would have produced most of this entry from the Compendium text; you confirm the numbers and the trigger.</p>
+</section>
+
+<!-- ============ ENGINE ============ -->
+<section id="engine">
+  <h2><span class="n">08</span>Simulation engine</h2>
+  <p class="sub">The app flow around it is a railway. <code>GameState</code> itself is the one genuinely multi-state thing (buffs, stacks, cooldowns, pickups), so it's a <b>pure state machine</b>: <code>(state, event) → (state, fired)</code>, feeding new events back in, bounded.</p>
+
+  <figure class="fig">
+    <svg viewBox="0 0 960 270" role="img" aria-label="Resolve loop">
+      <defs><marker id="a5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="#8a94a8"/></marker>
+      <marker id="a5h" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="#6fe3ff"/></marker></defs>
+      <rect x="10" y="100" width="130" height="62" rx="10" fill="rgba(111,227,255,.08)" stroke="#6fe3ff"/><text x="75" y="126" class="ttl" text-anchor="middle" fill="#6fe3ff">Event</text><text x="75" y="146" class="sm" text-anchor="middle">action or cascaded</text>
+      <rect x="170" y="100" width="130" height="62" rx="10" class="box"/><text x="235" y="126" class="ttl" text-anchor="middle">Match</text><text x="235" y="146" class="sm" text-anchor="middle">IsTriggeredBy</text>
+      <rect x="330" y="100" width="130" height="62" rx="10" class="box"/><text x="395" y="126" class="ttl" text-anchor="middle">Guard</text><text x="395" y="146" class="sm" text-anchor="middle">When[] vs state</text>
+      <rect x="490" y="100" width="130" height="62" rx="10" class="box" style="stroke:#ffcf5a"/><text x="555" y="126" class="ttl" text-anchor="middle" fill="#ffcf5a">Order</text><text x="555" y="146" class="sm" text-anchor="middle">ResolvePhase</text>
+      <rect x="650" y="100" width="130" height="62" rx="10" class="box"/><text x="715" y="126" class="ttl" text-anchor="middle">Apply</text><text x="715" y="146" class="sm" text-anchor="middle">→ new state</text>
+      <path d="M140 131H168" class="edge" marker-end="url(#a5)"/><path d="M300 131H328" class="edge" marker-end="url(#a5)"/>
+      <path d="M460 131H488" class="edge" marker-end="url(#a5)"/><path d="M620 131H648" class="edge" marker-end="url(#a5)"/>
+      <path d="M780 131H810" class="edge" marker-end="url(#a5)"/>
+      <path d="M870 91 L929 131 L870 171 L811 131 Z" class="box" style="stroke:#6fe3ff"/>
+      <text x="870" y="128" text-anchor="middle" style="font-size:12px">new</text><text x="870" y="143" text-anchor="middle" style="font-size:12px">events?</text>
+      <path d="M870 91 V30 H75 V98" class="edge hl" marker-end="url(#a5h)"/>
+      <text x="470" y="22" class="sm" text-anchor="middle">yes → loop · depth &lt; 5 · each (rule, event) fires once per tick</text>
+      <path d="M870 171 V196" class="edge" marker-end="url(#a5)"/>
+      <rect x="790" y="198" width="160" height="56" rx="10" class="box" style="stroke:#4ee28a"/><text x="870" y="222" class="ttl" text-anchor="middle" fill="#4ee28a">Emit</text><text x="870" y="241" class="sm" text-anchor="middle">FiredRule[] + NowAvailable</text>
+      <text x="40" y="230" class="sm">Example: Melee kill → Heavy Handed spawns Orb → Powerful Attraction collects it</text>
+      <text x="40" y="248" class="sm">→ PickUp(Orb) fires Recuperation, Purpose, Surge stacks (3 levels deep).</text>
+    </svg>
+  </figure>
+
+<pre><span class="c">// Simulation/ActionResolution.cs — pure: no I/O, no clock, no randomness</span>
+public static class ActionResolution
+{
+    public static Resolution ResolveAction(ValidatedBuild build, GameState state, PlayerAction action)
+    {
+        var firstEvent = action.ToGameEvent();
+        var cascade    = CascadeOutcomes(build, state, firstEvent, depth: 0);
+        var available  = ListAvailableActions(build, cascade.State);
+        return new Resolution(cascade.State, cascade.Fired, available);
+    }
+
+    private static CascadeResult CascadeOutcomes(ValidatedBuild build, GameState state, GameEvent gameEvent, int depth) =&gt; …
+}</pre>
+
+  <h3>Phase order inside a tick</h3>
+  <div class="phases">
+    <span class="phase" style="--c:var(--void)">1 · Debuff</span><span class="arrow">→</span>
+    <span class="phase" style="--c:var(--solar)">2 · Empower</span><span class="arrow">→</span>
+    <span class="phase" style="--c:var(--bad)">3 · Damage</span><span class="arrow">→</span>
+    <span class="phase" style="--c:var(--strand)">4 · Spawn</span><span class="arrow">→</span>
+    <span class="phase" style="--c:var(--arc)">5 · Refund</span><span class="arrow">→</span>
+    <span class="phase" style="--c:var(--prism)">6 · Cascade</span>
+  </div>
+
+  <div class="grid g3" style="margin-top:14px">
+    <div class="card accent" style="--c:var(--warn)"><h4>Order isn't commutative</h4><p>Tractor Cannon's debuff must land before One-Two Punch's melee bonus is counted. Sort by <code>ResolvePhase</code>, never by equip order.</p></div>
+    <div class="card accent" style="--c:var(--arc)"><h4>Energy isn't additive</h4><p>Chunk scalars come from the Compendium: Lightning Grenade 0.5x, Threaded Spike 0.8x, Combination Blow 1x. So 3× Bomber's 20% is only 10% on Lightning Grenade — <code>ScaleEnergyByCost</code>.</p></div>
+    <div class="card accent" style="--c:var(--prism)"><h4>Loops must terminate</h4><p>Self-feeding chains (Combination Blow) need a depth cap and per-tick dedupe of <code>(rule, event)</code> pairs.</p></div>
+  </div>
+</section>
+
+<!-- ============ DEMO ============ -->
+<section id="demo">
+  <h2><span class="n">09</span>Try it — what the API output feels like</h2>
+  <p class="sub">The Arc Hunter <b>Assassin's Cowl</b> loop from your notes, running in this page. Values are illustrative; the real engine takes them from the Compendium snapshot (e.g. Combination Blow 58.1 s · 1x chunk) and applies the chunk energy scalar.</p>
+
+  <div class="demo">
+    <div class="card">
+      <h4>Game state</h4>
+      <div class="meters">
+        <div class="m"><label><span>Grenade</span><span id="vg"></span></label><div class="meter"><i id="mg" style="--c:var(--arc)"></i></div></div>
+        <div class="m"><label><span>Melee</span><span id="vm"></span></label><div class="meter"><i id="mm" style="--c:var(--arc)"></i></div></div>
+        <div class="m"><label><span>Dodge</span><span id="vc"></span></label><div class="meter"><i id="mc" style="--c:var(--arc)"></i></div></div>
+        <div class="m"><label><span>Super</span><span id="vs"></span></label><div class="meter"><i id="ms" style="--c:var(--warn)"></i></div></div>
+      </div>
+      <div class="chips" id="chips"></div>
+      <p style="color:var(--muted);font-size:13px;margin:12px 0 0">Build: Arc Hunter · Combination Blow · Lethal Current · Spark of Shock · Assassin's Cowl · Hands-On · Heavy Handed · Firepower · Dynamo · Distribution · Bomber ×2 · Impact Induction · shotgun w/ One-Two Punch</p>
+    </div>
+    <div>
+      <div class="actions" id="actions"></div>
+      <div class="log" id="log"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ API ============ -->
+<section id="api">
+  <h2><span class="n">10</span>API surface</h2>
+  <div class="card" style="padding:4px 8px">
+  <table>
+    <tr><th>Endpoint</th><th>Purpose</th></tr>
+    <tr><td><span class="pill get">GET</span> <code>/api/catalog/elements?class=&amp;element=&amp;kind=</code></td><td>Browse aspects, fragments, mods, exotics, perks</td></tr>
+    <tr><td><span class="pill get">GET</span> <code>/api/catalog/elements/{hash}</code></td><td>One element with rules, Compendium + Clarity text, provenance per number</td></tr>
+    <tr><td><span class="pill post">POST</span> <code>/api/builds</code></td><td>Create build → validation errors or <code>buildId</code></td></tr>
+    <tr><td><span class="pill get">GET</span> <code>/api/builds/{id}</code></td><td>Load build (pinned catalog version)</td></tr>
+    <tr><td><span class="pill get">GET</span> <code>/api/builds/{id}/initial-state</code></td><td>Starting <code>GameState</code> + first available actions</td></tr>
+    <tr><td><span class="pill post">POST</span> <code>/api/simulate</code></td><td>One step: <code>{buildId, state, action}</code> → state, fired rules, next actions</td></tr>
+    <tr><td><span class="pill post">POST</span> <code>/api/simulate/sequence</code></td><td>Whole loop: action list → full trace</td></tr>
+    <tr><td><span class="pill get">GET</span> <code>/api/admin/coverage</code></td><td>Items without rules · unresolved Compendium names · number mismatches</td></tr>
+    <tr><td><span class="pill get">GET</span> <code>/api/admin/rule-drafts</code></td><td>Draft rules generated from the Compendium, awaiting review</td></tr>
+  </table></div>
+
+<pre><span class="c">// POST /api/simulate → 200</span>
+{
+  <span class="t">"state"</span>: { <span class="t">"energy"</span>: { <span class="t">"melee"</span>: <span class="nn">0</span>, <span class="t">"classAbility"</span>: <span class="nn">1</span>, … }, <span class="t">"buffs"</span>: [ { <span class="t">"status"</span>: <span class="s">"Invisible"</span>, <span class="t">"remaining"</span>: <span class="s">"6s"</span> } ], <span class="t">"pickups"</span>: [<span class="s">"OrbOfPower"</span>] },
+  <span class="t">"fired"</span>: [
+    { <span class="t">"source"</span>: <span class="s">"Assassin's Cowl"</span>,   <span class="t">"trigger"</span>: <span class="s">"Kill(Melee)"</span>,      <span class="t">"outcomes"</span>: [<span class="s">"ApplyBuff(Invisible)"</span>, <span class="s">"RestoreHealth"</span>], <span class="t">"depth"</span>: <span class="nn">0</span> },
+    { <span class="t">"source"</span>: <span class="s">"Heavy Handed"</span>,      <span class="t">"trigger"</span>: <span class="s">"Kill(Melee)"</span>,      <span class="t">"outcomes"</span>: [<span class="s">"Spawn(OrbOfPower)"</span>],             <span class="t">"depth"</span>: <span class="nn">0</span> },
+    { <span class="t">"source"</span>: <span class="s">"Combination Blow"</span>,  <span class="t">"trigger"</span>: <span class="s">"Kill(Melee)"</span>,      <span class="t">"outcomes"</span>: [<span class="s">"ResetCooldown(ClassAbility)"</span>],   <span class="t">"depth"</span>: <span class="nn">0</span> }
+  ],
+  <span class="t">"nowAvailable"</span>: [<span class="s">"Dodge"</span>, <span class="s">"PickUp(OrbOfPower)"</span>, <span class="s">"Wait"</span>]
+}</pre>
+</section>
+
+<!-- ============ STACK ============ -->
+<section id="stack">
+  <h2><span class="n">11</span>Tech stack &amp; solution layout</h2>
+  <div class="grid g2">
+    <div class="card">
+      <h4>.NET 10 / C# 14</h4>
+      <ul class="clean">
+        <li>ASP.NET Core minimal APIs — host only: endpoints, DI, <code>BackgroundService</code> for manifest sync</li>
+        <li><b>Dunet</b> for every DU; <b>Vogen</b> for every value object</li>
+        <li>Own <code>Optional</code> / <code>Result</code> / <code>Unit</code> in <code>Functional/</code> — <b>no third-party FP library</b></li>
+        <li>EF Core 10 + Npgsql, used only inside <code>Persistence</code> (Vogen-generated converters)</li>
+        <li>YamlDotNet / System.Text.Json / Markdig (Compendium tabs) only in the parsing slices; their exceptions wrapped once into <code>Result&lt;_, string&gt;</code></li>
+        <li>xUnit + Verify (snapshot tests of traces)</li>
+        <li>ArchUnitNET or NetArchTest for the architecture tests</li>
+        <li>Built-in OpenAPI; optional .NET Aspire for local Postgres</li>
+      </ul>
+    </div>
+<pre style="margin:0">CONVENTIONS.md            <span class="c">binding — wins over everything</span>
+ADRs.md                   <span class="c">the why — never overrides</span>
+src/
+  Loopsmith.Core/         <span class="c">one project, slices = folders</span>
+    Domain/               <span class="c">records · DUs · value objects</span>
+    Functional/           <span class="c">Optional · Result · Unit</span>
+    SourceFetching/       <span class="c">impure: HTTP, files</span>
+    Persistence/          <span class="c">impure: EF Core</span>
+    ManifestParsing/
+    CompendiumParsing/    <span class="c">tab-parser registry</span>
+      Tabs/               <span class="c">one parser per tab</span>
+    ClarityEnrichment/
+    RuleParsing/
+    RuleDrafting/         <span class="c">"On X:" → draft YAML</span>
+    CatalogPublishing/    <span class="c">name join · PublishedCatalog</span>
+    CatalogBrowsing/
+    BuildComposition/     <span class="c">sole ctor of ValidatedBuild</span>
+    Simulation/           <span class="c">ResolveAction · phases</span>
+    Orchestration/        <span class="c">railways · Effect DU · shells</span>
+  Loopsmith.Api/          <span class="c">host: endpoints, DI only</span>
+rules/
+  aliases.yaml          <span class="c">"Shock" → Spark of Shock …</span>
+  hunter/arc.yaml
+  mods/armor.yaml
+  artifact/&lt;season&gt;.yaml
+snapshots/              <span class="c">gitignored · private</span>
+  compendium/2026-10-09/
+tests/
+  Loopsmith.Core.Tests/
+    Architecture/SliceBoundaryTests.cs
+    CompendiumParsing/golden/arc-tab.verified.txt
+    Simulation/golden/arc-cowl-loop.verified.txt</pre>
+  </div>
+  <div class="callout good"><b>Golden tests from your notes:</b> encode a note as an action sequence plus the expected fired bullets. If <code>Melee(RedBar)</code> doesn't produce exactly what Mactics explained, the test fails. Because the core is pure, these tests need no database, no HTTP, no mocks.</div>
+</section>
+
+<!-- ============ ROADMAP ============ -->
+<section id="roadmap">
+  <h2><span class="n">12</span>Roadmap — thin vertical slices</h2>
+  <div class="steps">
+    <div class="step"><b>Skeleton</b><span>Kernel, slice folders, architecture tests green.</span></div>
+    <div class="step"><b>Ingest</b><span>Manifest + Compendium + Clarity → Postgres. Name-join report clean.</span></div>
+    <div class="step"><b>12 rules</b><span>Draft from the Compendium, confirm the Arc Cowl build.</span></div>
+    <div class="step"><b>Simulation</b><span>Match, guard, phase order, cascade, energy scalar.</span></div>
+    <div class="step"><b>API</b><span><code>/simulate</code> + <code>/builds</code>.</span></div>
+    <div class="step"><b>Golden test</b><span>Melee kill = your bullets. Ship slice 1.</span></div>
+  </div>
+  <h3>Then</h3>
+  <div class="grid g4">
+    <div class="card"><h4>Coverage</h4><p>Confirm drafts for the rest; drive by the coverage report.</p></div>
+    <div class="card"><h4>UI</h4><p>Builder + step picker + trace rendered as your bullets.</p></div>
+    <div class="card"><h4>Import</h4><p>Bungie OAuth / DIM loadout links.</p></div>
+    <div class="card accent" style="--c:var(--prism)"><h4>Loop discovery</h4><p>Search the action graph for cycles that end with full energy. Something DIM can't do.</p></div>
+  </div>
+</section>
+
+<!-- ============ RISKS ============ -->
+<section id="risks">
+  <h2><span class="n">13</span>Risks &amp; open questions</h2>
+  <div class="card" style="padding:4px 8px">
+  <table>
+    <tr><th>Risk</th><th>Impact</th><th>Mitigation</th></tr>
+    <tr><td>Rule authoring effort</td><td><span class="tag part">med</span></td><td>Drafts from Compendium phrasing; start with one build; coverage report as backlog</td></tr>
+    <tr><td>Compendium layout changes break positional parsers</td><td><span class="tag part">med</span></td><td>One parser per tab; golden tests on parsed output; unregistered tabs reported; dated snapshots diffed</td></tr>
+    <tr><td>Name join ambiguity (no hashes)</td><td><span class="tag part">med</span></td><td>Match scoped by kind + class; alias table in git; unresolved names reported, never guessed</td></tr>
+    <tr><td>Unknown values (≈29% of descriptions contain a <code>?</code>)</td><td><span class="tag part">med</span></td><td><code>GameValue.Unknown</code> shown as “unknown” in traces; Clarity as fallback; never treated as 0</td></tr>
+    <tr><td>Seasonal churn (artifact, sandbox changes)</td><td><span class="tag part">high</span></td><td>Pin catalog version; per-season artifact YAML; diff on manifest change</td></tr>
+    <tr><td>Source numbers are prose, not fields</td><td><span class="tag part">med</span></td><td>Shared notation parsers (<code>a | b | c</code>, <code>[PvP]</code>, cooldown, energy); coverage report flags rule numbers that disagree</td></tr>
+    <tr><td>Serialization friction (Dunet / Vogen with EF Core, STJ, YamlDotNet)</td><td><span class="tag part">med</span></td><td>DTOs only at the boundary, parsed into domain types in the parsing slices; Vogen-generated converters for EF Core and STJ</td></tr>
+    <tr><td>Data licensing (Compendium / Clarity)</td><td><span class="tag bad">blocking for public</span></td><td>Compendium snapshot stays private and gitignored, never served raw; credit it; check Clarity partnerships page</td></tr>
+    <tr><td>Time model too coarse</td><td><span class="tag ok">low</span></td><td>Step-based + explicit “wait n s” first; clock already in <code>GameState</code></td></tr>
+  </table></div>
+
+  <h3>Open questions</h3>
+  <ul class="clean">
+    <li>Does the client hold <code>GameState</code> between steps, or does the API keep a simulation session?</li>
+    <li>How abstract is the enemy? (Proposal: one target with tier + statuses, plus “nearby adds” count.)</li>
+    <li>Do rules need probabilities (e.g. “sometimes spawns”) or only deterministic outcomes in v1?</li>
+    <li>Public site, or personal tool first? Decides how soon licensing matters.</li>
+    <li>Use the 6 “OLD” Compendium tabs to build historical catalog versions, or ignore them?</li>
+  </ul>
+</section>
+
+<footer>Loopsmith design proposal v0.3 · coding conventions from CONVENTIONS.md (binding) · based on the Destiny Data Compendium snapshot of 2026-10-09 and Live-Clarity-Database v2.0625 (1,719 entries) · Destiny 2 is a trademark of Bungie. Values in the demo are illustrative.</footer>
+
+</main>
+
+<script>
+(() => {
+  const clamp = v => Math.max(0, Math.min(100, Math.round(v)));
+  let S, step;
+  const reset = () => { S = {g:100,m:100,c:100,s:0,inv:0,cb:0,lc:false,jolt:false,orbs:0,otp:false}; step = 0; logEl.innerHTML=''; addInfo('Fresh spawn. All abilities charged. Pick the first trigger.'); render(); };
+
+  const logEl = document.getElementById('log');
+  const actEl = document.getElementById('actions');
+
+  const ACTIONS = [
+    {id:'grenade', label:'Grenade', can:()=>S.g>=100, run(){
+      S.g=0; const out=[['Kills red bars','Arc grenade',0]];
+      S.s+=4; out.push(['+ Super energy','Hands-On',0]);
+      S.orbs++; out.push(['Spawn Orb of Power','Firepower',0]);
+      S.jolt=true; out.push(['Targets Jolted','Spark of Shock',0]);
+      return out; }},
+    {id:'dodge', label:'Dodge near enemy', can:()=>S.c>=100, run(){
+      S.c=0; const out=[];
+      S.s+=5; out.push(['+ Super energy','Dynamo',0]);
+      S.g+=10; S.m+=10; out.push(['+ All ability energy','Distribution',0]);
+      S.g+=20; out.push(['+ Grenade energy ×2','Bomber',0]);
+      S.lc=true; out.push(['Next melee Jolts + aftershock','Lethal Current',0]);
+      return out; }},
+    {id:'melee', label:'Melee red bar', can:()=>S.m>=100, run(){
+      S.m=0; const out=[];
+      if (S.otp){ out.push(['Empowered melee damage','One-Two Punch',0]); S.otp=false; }
+      S.inv=2; out.push(['Invisible + heal','Assassin\'s Cowl',0]);
+      S.s+=5; out.push(['+ Super energy','Hands-On',0]);
+      S.cb=Math.min(3,S.cb+1); out.push([`Combination Blow ×${S.cb}: +melee dmg, heal`,'Combination Blow',0]);
+      S.c=100; out.push(['↳ Dodge fully refilled → Dodge available','Combination Blow',1]);
+      S.g+=10; out.push(['+ Grenade energy','Impact Induction',0]);
+      S.orbs++; out.push(['Spawn Orb of Power','Heavy Handed',0]);
+      out.push([`↳ ${S.orbs} orb(s) on ground → Pick up available`,'cascade',1]);
+      if (S.lc){ out.push(['Melee Jolts + aftershock','Lethal Current',0]);
+        if (S.jolt) out.push(['↳ Target was Jolted → Blinded','Lethal Current',1]);
+        S.lc=false; }
+      return out; }},
+    {id:'orbs', label:'Pick up orbs', can:()=>S.orbs>0, run(){
+      const n=S.orbs; S.orbs=0; const out=[];
+      S.s+=5*n; out.push([`+ Super energy (${n} orb${n>1?'s':''})`,'Orb of Power',0]);
+      S.g+=8*n; S.m+=8*n; S.c+=8*n; out.push(['Refund ability energy','orb pickup mods',0]);
+      return out; }},
+    {id:'shotgun', label:'Shotgun heavy target', can:()=>true, run(){
+      S.otp=true; return [['Next melee empowered','One-Two Punch',0]]; }},
+    {id:'wait', label:'Wait 5 s', can:()=>true, run(){
+      S.g+=15; S.m+=20; S.c+=25; return [['Base cooldown regen','stats',0]]; }},
+  ];
+
+  function tick(a){
+    step++;
+    const out=a.run();
+    if (a.id!=='melee' && S.inv>0) S.inv--;
+    if (a.id==='wait'){ S.inv=0; S.jolt=false; }
+    S.g=clamp(S.g); S.m=clamp(S.m); S.c=clamp(S.c); S.s=clamp(S.s);
+    const ev=document.createElement('div'); ev.className='ev';
+    ev.innerHTML=`<div class="hd">#${step} ${a.label} ⇒</div>`+
+      out.map(([e,src,d])=>`<div class="ln ${d?'d1':''}">${e} <span class="src">(${src})</span></div>`).join('')+
+      `<div class="nx">next: ${ACTIONS.filter(x=>x.can()&&x.id!=='wait').map(x=>x.label).join(' · ')||'— wait for cooldowns'}</div>`;
+    logEl.appendChild(ev); logEl.scrollTop = logEl.scrollHeight;
+    render();
+  }
+  function addInfo(t){ const d=document.createElement('div'); d.className='ev'; d.innerHTML=`<div class="warn" style="padding-left:0">${t}</div>`; logEl.appendChild(d); }
+
+  function render(){
+    for (const [k,id] of [['g','g'],['m','m'],['c','c'],['s','s']]){
+      document.getElementById('m'+id).style.width=S[k]+'%';
+      document.getElementById('v'+id).textContent=S[k]+'%';
+    }
+    const chips=[];
+    if (S.inv>0) chips.push(['Invisible','--void']);
+    if (S.cb>0) chips.push([`Combination Blow ×${S.cb}`,'--solar']);
+    if (S.lc) chips.push(['Lethal Current primed','--arc']);
+    if (S.otp) chips.push(['One-Two Punch','--prism']);
+    if (S.jolt) chips.push(['Target Jolted','--arc']);
+    if (S.orbs>0) chips.push([`${S.orbs} orb${S.orbs>1?'s':''} on ground`,'--strand']);
+    document.getElementById('chips').innerHTML=chips.map(([t,c])=>`<span class="chip" style="--c:var(${c})">${t}</span>`).join('')||'<span style="color:var(--dim);font-size:13px">no active buffs</span>';
+    actEl.innerHTML='';
+    for (const a of ACTIONS){ const b=document.createElement('button'); b.textContent=a.label; b.disabled=!a.can(); b.onclick=()=>tick(a); actEl.appendChild(b); }
+    const r=document.createElement('button'); r.textContent='Reset'; r.className='ghost'; r.onclick=reset; actEl.appendChild(r);
+  }
+  reset();
+})();
+</script>
+</body>
+</html>

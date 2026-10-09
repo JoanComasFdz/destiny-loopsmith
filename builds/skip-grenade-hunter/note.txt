@@ -1,0 +1,21 @@
+# Skipp nade build
+
+Class ability -> refills melee [gamblers doge] + 5s sever on strand weapon [Weapon perk slice] + next weapon kill produces orb of power [reaper] + reduced greaned cooldown [bomber]
+
+Kill with strand weapon -> sever [slice] + orb of power [attrition orbs, strand siphon] + orb of power [reaper] + unravels targets AND woven mail [to schreds] + spawns threadling if severed [horde shuttle]
+
+Arc grenade  -> jolt [spark of shock] + Bolt Charge [shinobu's vow] + skip grenade energy [shinobu's vow]
+
+Slide + melee -> jolt [tempest strike] + reduced grenade cooldown [impact induction]
+
+Kill jolted target -> amplified [flow state, tempest strike] + orb of power [harmonic siphon] + orb of power [dielectric] + blind if severed [photonic flare]
+
+Amplified -> increased bolt charge [spark of frequency] + Linear, Fusion Rifles and Heat weapons increased handling, reload and vent [Luminopotent Mask 2 piece bonus] + Kills wirh jolt or jolted enemies produce ionic trace [Luminopotent Mask 4 piece bonus] 
+
+Orb of power -> 2x armor charge [grenade kickstart] + strand unraveling rounds [unraveling orbs]
+
+Weapon kill -> ionic trace [spark of discharge] + when strand weapon with severe: 
+
+Ionic trace -> bolt charge [spark of discharge] + armor charge [elemental charge] + skip grenade energy [shinobu's vow]
+
+Max bolt charge -> amplified [flashover] + jolts AND heal [defibrilating blast] + heal allies [shinobu's vow] + enhanced next skip grenade [shinobu's vow]

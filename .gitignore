@@ -1,0 +1,13 @@
+# Build output
+bin/
+obj/
+*.user
+.vs/
+.idea/
+TestResults/
+
+# Verify snapshot diffs (keep *.verified.*)
+*.received.*
+
+# Private data snapshots — never commit (licensing: see README "Data sources")
+snapshots/
