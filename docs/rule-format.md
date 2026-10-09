@@ -72,6 +72,11 @@ elements:
 | `{ creator: <url>, quote: "<what they said>" }` | `Provenance.CreatorClaim(url, quote)` |
 | omitted | `Provenance.Authored(file, line)` |
 
+Compendium rows: `<date>` is the snapshot folder (`snapshots/compendium/<date>/`), `<tab>` the tab name
+as `INDEX.md` lists it (`Arc`, `Class Abilities`, `Artifact Perks` — quote the YAML value when it has a
+space: `source: "compendium/2026-10-09/Class Abilities#5"`), and `<row>` the 1-based record number in that
+tab's `NN_<Tab>.csv`, which is the spreadsheet's row. Archived `OLD …` tabs are never a source.
+
 ### Numbers (`GameValue`)
 
 | Text | Domain | Note |

@@ -34,8 +34,10 @@ a rule with `source: { creator: <url>, quote: "<their words>" }`. It is never pr
 - **Never invent numbers.** An unknown value is `"?"` / `"?%"` (`GameValue.Unknown`, never 0).
   Approximate values are `"~25%"` or `"25%?"`. A per-copy mod value is `"12% | 17% | 20%"`. An unknown
   duration is omitted or `"?s"`. Do not fill gaps from memory or by analogy with similar perks.
-- **Record provenance on every element** (`source:`): `compendium/<date>/<Tab>#<row>`,
-  `clarity/<hash>@<version>`, or a creator claim. Leave `source` out only for modelling you introduced
+- **Record provenance on every element** (`source:`): `compendium/<date>/<Tab>#<row>` (`<Tab>` as
+  `INDEX.md` names it, quoted in YAML when it has a space; `<row>` = the 1-based record number in
+  `NN_<Tab>.csv` — count it with a script kept outside the snapshot folder, run with `python3 -I`;
+  never an `OLD …` tab), `clarity/<hash>@<version>`, or a creator claim. Leave `source` out only for modelling you introduced
   yourself (it then defaults to the file and line). Add `hash:` when Clarity gives it.
 - **Keep the glossary in sync.** Every status, pickup and summon you reference must exist in
   `rules/glossary.yaml` with the right `kind`. Player effects are `buff`. Target effects are `debuff`.

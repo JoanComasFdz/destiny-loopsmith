@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Downloads EVERYTHING from the Destiny Data Compendium (all tabs + images + offline viewer) with Docker,
 # into tools/compendium/compendium-<date>/ (gitignored — keep it private, never commit it).
-# If Docker can't download images (e.g. "no such host" behind a corporate proxy), set the proxy in
-# Docker Desktop → Settings → Resources → Proxies, or use get-compendium.sh, which falls back to Python.
+# Not zipped: zip the folder yourself to hand it to a session. If Docker can't pull its image
+# ("lookup registry-1.docker.io: no such host"), see "Troubleshooting" in README.md.
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"
 

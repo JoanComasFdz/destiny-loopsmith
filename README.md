@@ -127,7 +127,7 @@ tests/Loopsmith.Core.Tests/   unit, golden and architecture tests
 rules/                   authored causality (glossary, keywords, class, exotics, mods, artifact, perks)
 builds/<slug>/           build.yaml, the original note, note-map, discrepancies, loops/*.loop.yaml
 docs/                    rule format, loop format, hosting, backlog, design proposal
-tools/compendium/        sheet_dump.py — Destiny Data Compendium snapshot tool
+tools/compendium/        Destiny Data Compendium download: sheet_dump.py + Docker/Python scripts
 tools/web/               prepare-pages.sh — readies a published site for GitHub Pages
 .github/workflows/       CI, Pages deploy (main), PR previews
 .claude/                 cloud-session hook + project subagents
@@ -139,7 +139,7 @@ tools/web/               prepare-pages.sh — readies a published site for GitHu
 |---|---|---|
 | Authored rules (`rules/`) | Causality: what fires on what | ✅ used by the engine |
 | [Clarity](https://github.com/Database-Clarity/Live-Clarity-Database) | Hash-keyed descriptions with numbers (mods, fragments, aspects, exotic perks, weapon traits) | Used to author the first build (v2.0625); ingestion slice next |
-| Destiny Data Compendium | Abilities, cooldowns, chunk energy scalars, artifact perks, statuses | Snapshot via `tools/compendium/sheet_dump.py`; parser next |
+| Destiny Data Compendium | Abilities, cooldowns, chunk energy scalars, artifact perks, statuses | The 2026-10-09 snapshot's numbers are in the first build's rules (by hand, `compendium/<date>/<tab>#<row>` sources); parser next |
 | Bungie manifest | Identity (hashes), names, icons | Next (needs an API key) |
 
 **Getting a Compendium snapshot:** run `tools/compendium/get-compendium.ps1` (Windows) or

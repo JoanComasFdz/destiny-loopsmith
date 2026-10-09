@@ -48,12 +48,17 @@ repos (Microsoft's download hosts are blocked by the network policy) and restore
   are third-party content: keep them local as `transcript.txt` (gitignored), never commit them.
 - `docs/design/loopsmith-design-v0.3.html` — the design proposal (requirements FR-1…FR-10,
   roadmap, risks).
-- `tools/compendium/sheet_dump.py` — dumps the Destiny Data Compendium sheet (run locally;
-  see README).
+- `tools/compendium/` — Destiny Data Compendium download (`sheet_dump.py`, run by the owner with
+  `get-compendium-docker.sh` / `get-compendium.ps1`; see its README). A session gets the snapshot as an
+  uploaded archive, unzipped into `snapshots/compendium/<date>/`: gitignored, so **a new session
+  doesn't have it** — ask for it. Cite rows as `compendium/<date>/<Tab>#<row>`
+  ([docs/rule-format.md](docs/rule-format.md), Provenance); paraphrase, never copy its text.
 
 ## How we work
-- **Branch → PR → merge.** Never push to `main` directly. Every PR runs CI and gets a web
-  preview at `…/pr-preview/pr-<n>/` (link commented on the PR); merging redeploys the live site.
+- **Branch → PR → merge.** Never push to `main` directly. One branch per piece of work, started
+  from the latest `main` and named for that work — don't keep stacking unrelated work on an
+  unmerged branch. Every PR runs CI and gets a web preview at `…/pr-preview/pr-<n>/` (link
+  commented on the PR); merging redeploys the live site.
   The owner merges; open PRs only when asked.
 - **`gh-pages` is generated** by `pages.yml` and `pr-preview.yml` (ruleset: no deletion, no
   force push). Don't commit to it except a deliberate cleanup; never add "require PR/status
