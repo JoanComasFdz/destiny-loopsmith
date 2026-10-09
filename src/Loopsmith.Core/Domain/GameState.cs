@@ -70,11 +70,15 @@ public sealed record FiredRule(
 /// <summary>A passive whose conditions hold in the current state (shown next to the state, not as a bullet).</summary>
 public sealed record ActivePassive(ElementId Source, string SourceName, Affinity Affinity, PassiveRule Passive);
 
-/// <summary>Result of one step: new state, ordered fired rules, and what the player can do now.</summary>
+/// <summary>
+/// Result of one step: new state, ordered fired rules, and what the player can do now.
+/// <see cref="Blocked"/> holds the reason when the action could not be performed at all.
+/// </summary>
 public sealed record Resolution(
     PlayerAction Action,
     GameState State,
     ImmutableArray<FiredRule> Fired,
     ImmutableArray<ActivePassive> ActivePassives,
     ImmutableArray<PlayerAction> NowAvailable,
-    ImmutableArray<string> Notes);
+    ImmutableArray<string> Notes,
+    Optional<string> Blocked);

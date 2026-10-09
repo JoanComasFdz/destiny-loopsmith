@@ -34,7 +34,7 @@ public static class ActionResolution
         var finished = opening.Events.Aggregate(seed, (acc, pending) => EventCascading.CascadeEvent(build, acc, pending, 0));
         var passives = ListActivePassives(build, finished.State);
         var available = ListAvailableActions(build, finished.State);
-        return new Resolution(action, finished.State, finished.Fired, passives, available, finished.Notes);
+        return new Resolution(action, finished.State, finished.Fired, passives, available, finished.Notes, opening.Blocked);
     }
 
     /// <summary>Resolves a whole loop (FR-4): each action starts from the previous resolution's state.</summary>
@@ -78,7 +78,16 @@ public static class ActionResolution
             .Select(x => new ActivePassive(x.Element.Id, x.Element.Name, x.Element.Affinity, x.Passive))
             .ToImmutableArray();
 
-    private sealed record Opening(GameState State, ImmutableArray<PendingEvent> Events, ImmutableArray<string> Notes);
+    private sealed record Opening(GameState State, ImmutableArray<PendingEvent> Events, ImmutableArray<string> Notes, Optional<string> Blocked)
+    {
+        public Opening(GameState state, ImmutableArray<PendingEvent> events, ImmutableArray<string> notes)
+            : this(state, events, notes, Optional.None<string>())
+        {
+        }
+    }
+
+    private static Opening BlockAction(GameState state, string reason) =>
+        new(state, [], [reason], Optional.Some(reason));
 
     private static Opening OpenAction(ValidatedBuild build, GameState state, PlayerAction action) =>
         action.Match(
@@ -93,7 +102,7 @@ public static class ActionResolution
         var kind = cast.Kind.ToAbilityKind();
         if (!HasCharge(state, kind))
         {
-            return new Opening(state, [], [$"Not enough {kind} energy — nothing happens."]);
+            return BlockAction(state, $"Not enough {kind} energy — nothing happens.");
         }
 
         var paid = SpendCharge(state, kind);
@@ -108,7 +117,7 @@ public static class ActionResolution
     {
         if (!HasCharge(state, AbilityKind.ClassAbility))
         {
-            return new Opening(state, [], ["Not enough ClassAbility energy — nothing happens."]);
+            return BlockAction(state, "Not enough ClassAbility energy — nothing happens.");
         }
 
         var paid = SpendCharge(state, AbilityKind.ClassAbility);
@@ -125,7 +134,7 @@ public static class ActionResolution
                 var hit = ImmutableArray.Create<PendingEvent>(new PendingEvent.HitTarget(origin));
                 return new Opening(state, fire.Hit == HitOutcome.Kill ? hit.Add(new PendingEvent.KillTarget(origin)) : hit, []);
             },
-            _ => new Opening(state, [], [$"No weapon in the {fire.Slot} slot — nothing happens."]));
+            _ => BlockAction(state, $"No weapon in the {fire.Slot} slot — nothing happens."));
     }
 
     private static Opening CollectPickups(GameState state, PlayerAction.CollectPickups collect)
@@ -133,7 +142,7 @@ public static class ActionResolution
         var count = state.CountPickups(collect.Pickup);
         if (count == 0)
         {
-            return new Opening(state, [], [$"No {collect.Pickup} on the ground — nothing happens."]);
+            return BlockAction(state, $"No {collect.Pickup} on the ground — nothing happens.");
         }
 
         var events = Enumerable.Repeat<PendingEvent>(new PendingEvent.Ready(new GameEvent.PickedUp(collect.Pickup)), count);

@@ -2,9 +2,12 @@ using System.Globalization;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 
-namespace Loopsmith.Core.Orchestration;
+namespace Loopsmith.Core.Phrasing;
 
-/// <summary>Input boundary for player actions typed on the command line or in <c>play</c> (inverse of <c>ToActionToken</c>).</summary>
+/// <summary>
+/// Kernel: the textual form of a player action, read back (inverse of <c>DomainPhrasing.ToActionToken</c>).
+/// Shared by the CLI, the loop-file parser and the web host, so all accept exactly the same tokens.
+/// </summary>
 public static class ActionTokenParsing
 {
     private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
