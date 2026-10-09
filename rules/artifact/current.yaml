@@ -1,0 +1,134 @@
+# Seasonal artifact perks used by the skip-grenade build ("Tablet of Ruin" per the creator).
+# Clarity has no artifact entries: everything here is the creator's reading of the perk text or the
+# user's note. No values are known except Flashover's 50% (see there).
+elements:
+  - id: defibrillating-blast
+    name: Defibrillating Blast
+    kind: artifactPerk
+    affinity: arc
+    description: "Stunning a Champion grants max Bolt Charge. Damaging targets with Bolt Charge bolts Jolts them and heals you."
+    source:
+      creator: "https://www.youtube.com/watch?v=zvd6sNS463E"
+      quote: "damaging targets with bolt charge bolts jolts them and heals you"
+    rules:
+      # "Stunning a Champion grants max Bolt Charge" is not encoded: v1 has no stun trigger.
+      - on: { damage: { via: keyword:bolt-charge } }
+        then:
+          - { debuffTarget: jolt }
+          - { restoreHealth: { amount: "?" } }
+        reason: "Every Bolt Charge lightning strike jolts what it hits and heals you."
+    passives: []
+
+  - id: flashover
+    name: Flashover
+    kind: artifactPerk
+    affinity: arc
+    # +50% is from Clarity, not the video: Symmetry's Revolution frame (4185339856) says Bolt Charge
+    # damage "can be further compounded by the Flashover Artifact Mod from the Tablet of Ruin,
+    # which adds a multiplicative 50%".
+    description: "Bolt Charge lightning bolts deal more damage (multiplicative 50% per Clarity's Revolution entry). Per the build note, maxing Bolt Charge also makes you Amplified."
+    source:
+      creator: "https://www.youtube.com/watch?v=zvd6sNS463E"
+      quote: "flashover, but lightning bolts deal more damage"
+    rules:
+      # User's note only ("Max bolt charge -> amplified [flashover]"); the video doesn't mention it.
+      - on: { stacksMaxed: bolt-charge }
+        then:
+          - { applyBuff: amplified }
+        reason: "Maxing out Bolt Charge makes you Amplified."
+    passives:
+      - effect: { modifyDamage: { against: keyword:bolt-charge, change: "+50%" } }
+        reason: "Bolt Charge lightning strikes hit 50% harder."
+
+  - id: dielectric
+    name: Dielectric
+    kind: artifactPerk
+    affinity: arc
+    description: "Defeating Arc-debuffed targets grants more Bolt Charge. Rapidly defeating Arc-debuffed targets spawns Orbs of Power and heals a small portion of your health."
+    source:
+      creator: "https://www.youtube.com/watch?v=zvd6sNS463E"
+      quote: "Defeating arc debuff targets grants more bolt charge."
+    rules:
+      # "Arc debuff" = Jolt here (Blind also counts, but targetHas is all-of, and a second rule
+      # for Blind would double-fire on targets that are both). Stack count not stated -> 1.
+      - on: { kill: { via: any, targetHas: [jolt] } }
+        then:
+          - { applyBuff: bolt-charge }
+        reason: "Killing an Arc-debuffed (jolted) enemy gives you extra Bolt Charge."
+      - on: { kill: { via: any, targetHas: [jolt] } }
+        then:
+          - { spawn: orb-of-power }
+          - { restoreHealth: { amount: "?" } }
+        chance: true
+        reason: "Rapidly killing jolted enemies drops Orbs of Power and heals you a little."
+    passives: []
+
+  - id: to-shreds
+    name: To Shreds
+    kind: artifactPerk
+    affinity: strand
+    description: "Dealing sustained damage to Severed targets Unravels them. Defeating Severed targets creates a Woven Mail hotspot."
+    source:
+      creator: "https://www.youtube.com/watch?v=zvd6sNS463E"
+      quote: "Dealing sustained damage to severed targets unravels them"
+    rules:
+      # "sustained": v1 has no damage-over-time threshold, so any damage to a severed target counts.
+      - on: { damage: { via: any, targetHas: [sever] } }
+        then:
+          - { debuffTarget: unravel }
+        reason: "Keep damaging a severed enemy and it gets unraveled."
+      # The hotspot is simplified to granting Woven Mail directly (you stand in it to get it).
+      - on: { kill: { via: any, targetHas: [sever] } }
+        then:
+          - { applyBuff: woven-mail }
+        reason: "Killing a severed enemy leaves a Woven Mail hotspot behind."
+    passives: []
+
+  - id: horde-shuttle
+    name: Horde Shuttle
+    kind: artifactPerk
+    affinity: strand
+    description: "Damaging Unraveled targets with a weapon occasionally spawns a Threadling. Those Threadlings Sever the targets they damage."
+    source:
+      creator: "https://www.youtube.com/watch?v=zvd6sNS463E"
+      quote: "Damaging unraveled targets with a weapon occasionally spawns a threadling."
+    rules:
+      - on: { damage: { via: weapon, targetHas: [unravel] } }
+        then:
+          - { summon: threadling }
+        chance: true
+        reason: "Shooting unraveled enemies every so often spawns a Threadling."
+      - on: { damage: { via: summon:threadling } }
+        then:
+          - { debuffTarget: sever }
+        reason: "Those Threadlings sever whatever they hit."
+    passives: []
+
+  - id: unraveling-orbs
+    name: Unraveling Orbs
+    kind: artifactPerk
+    affinity: strand
+    description: "Picking up an Orb of Power gives your Strand weapons Unraveling Rounds."
+    source:
+      creator: "https://www.youtube.com/watch?v=zvd6sNS463E"
+      quote: "we pick up an orb of power. Strand weapons gain unraveling rounds."
+    rules:
+      - on: { pickUp: orb-of-power }
+        then:
+          - { applyBuff: unraveling-rounds }
+        reason: "Grabbing an Orb of Power loads your Strand weapons with Unraveling Rounds."
+    passives: []
+
+  # User's note only ("Kill jolted target -> ... blind if severed [photonic flare]"); the video and
+  # Clarity never mention it. Affinity arc because Blind is an Arc debuff.
+  - id: photonic-flare
+    name: Photonic Flare
+    kind: artifactPerk
+    affinity: arc
+    description: "Per the build note: killing a Jolted target that is also Severed Blinds nearby enemies."
+    rules:
+      - on: { kill: { via: any, targetHas: [jolt, sever] } }
+        then:
+          - { debuffTarget: blind }
+        reason: "Killing an enemy that's both jolted and severed blinds the enemies around it."
+    passives: []

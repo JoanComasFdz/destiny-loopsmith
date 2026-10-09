@@ -1,0 +1,61 @@
+# Arc keyword elements: rules that are active in every build (kind: keyword).
+# Clarity 2.0625 has no status/verb entries, so these are creator claims or authored.
+elements:
+  - id: bolt-charge
+    name: Bolt Charge
+    kind: keyword
+    affinity: arc
+    description: "Stacking Arc buff. At maximum stacks it discharges as a lightning strike on your target and the stacks reset."
+    source:
+      creator: "https://www.youtube.com/watch?v=zvd6sNS463E"
+      quote: "I call down six bolt charge lightning strikes."
+    rules:
+      # v1 simplification (per the engine design): the discharge happens as soon as the stacks max
+      # out, and the strike is assumed to finish the pack in front of you (hit: kill).
+      - on: { stacksMaxed: bolt-charge }
+        then:
+          - { removeBuff: bolt-charge }
+          - { strikeTarget: { via: bolt-charge, hit: kill } }
+        reason: "Max out Bolt Charge and it calls down a lightning strike on your target, using up the stacks."
+    passives: []
+
+  - id: jolt
+    name: Jolt
+    kind: keyword
+    affinity: arc
+    description: "Arc debuff. Damaging a Jolted target chains lightning to nearby enemies."
+    source:
+      creator: "https://www.youtube.com/watch?v=zvd6sNS463E"
+      quote: "everything that's being zapped by that jolt going out"
+    rules:
+      # Authored on weapon and ability damage only, NOT keyword damage: otherwise the jolt chain
+      # (itself keyword damage) would re-trigger Jolt and feed itself.
+      - on: { damage: { via: weapon, targetHas: [jolt] } }
+        then:
+          - { strikeTarget: { via: jolt, hit: damage } }
+        reason: "Shooting a jolted enemy makes the jolt chain lightning into the enemies around it."
+      - on: { damage: { via: ability, targetHas: [jolt] } }
+        then:
+          - { strikeTarget: { via: jolt, hit: damage } }
+        reason: "Hitting a jolted enemy with an ability makes the jolt chain lightning into the enemies around it."
+    passives: []
+
+  - id: ionic-trace
+    name: Ionic Trace
+    kind: keyword
+    affinity: arc
+    # Clarity states NO base value for an Ionic Trace pickup; its only figure is the TOTAL with
+    # Fallen Sunstar (Ionic Conductor 1376049785: grenade 25% | melee 25% | class 30%).
+    # "15% to all three" is the creator's number, hence approximate.
+    description: "Arc pickup that tracks to you. Collecting it grants ability energy to grenade, melee and class ability."
+    source:
+      creator: "https://www.youtube.com/watch?v=zvd6sNS463E"
+      quote: "ionic traces gives you 15% ability energy to all three abilities"
+    rules:
+      - on: { pickUp: ionic-trace }
+        then:
+          - { grantEnergy: { to: grenade, amount: "~15%" } }
+          - { grantEnergy: { to: melee, amount: "~15%" } }
+          - { grantEnergy: { to: classAbility, amount: "~15%" } }
+        reason: "Every Ionic Trace you collect gives a slice of energy to all three abilities, not just one."
+    passives: []
