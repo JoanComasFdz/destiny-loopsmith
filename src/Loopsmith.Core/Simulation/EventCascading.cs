@@ -5,8 +5,8 @@ using Loopsmith.Core.Functional;
 
 namespace Loopsmith.Core.Simulation;
 
-/// <summary>Accumulator of one step: state so far, bullets so far, (rule, event) pairs already fired.</summary>
-public sealed record Cascade(GameState State, ImmutableArray<FiredRule> Fired, ImmutableHashSet<string> FiredKeys, ImmutableArray<string> Notes);
+/// <summary>Accumulator of one step: state so far, bullets so far, notes.</summary>
+public sealed record Cascade(GameState State, ImmutableArray<FiredRule> Fired, ImmutableArray<string> Notes);
 
 /// <summary>A rule that matched an event, with the element (and copy count) it belongs to.</summary>
 public sealed record RuleMatch(EquippedElement Equipped, int RuleIndex, Rule Rule);
@@ -15,8 +15,16 @@ public static class EventCascading
 {
     public const int MaxCascadeDepth = 5;
 
-    /// <summary>Match → guard → order by phase → apply → cascade every derived event (depth-first).</summary>
-    public static Cascade CascadeEvent(ValidatedBuild build, Cascade cascade, PendingEvent pending, int depth)
+    /// <summary>
+    /// Match → guard → order by phase → apply → cascade every derived event (depth-first).
+    /// <paramref name="ancestry"/> holds the (rule, event) pairs already fired up this causal chain: a rule
+    /// never re-fires on an identical event caused by itself (loops terminate), while sibling
+    /// occurrences — two orbs picked up, two traces spawned — each fire.
+    /// </summary>
+    public static Cascade CascadeEvent(ValidatedBuild build, Cascade cascade, PendingEvent pending, int depth) =>
+        CascadeEvent(build, cascade, pending, depth, ImmutableHashSet<string>.Empty);
+
+    private static Cascade CascadeEvent(ValidatedBuild build, Cascade cascade, PendingEvent pending, int depth, ImmutableHashSet<string> ancestry)
     {
         var gameEvent = ToGameEvent(pending, cascade.State);
         if (depth > MaxCascadeDepth)
@@ -24,16 +32,11 @@ public static class EventCascading
             return cascade with { Notes = cascade.Notes.Add($"Cascade stopped at depth {MaxCascadeDepth} before: {ToEventKey(gameEvent)}") };
         }
 
-        var matches = FindMatchingRules(build, cascade, gameEvent);
-        var keys = matches.Select(match => ToFiredKey(match, gameEvent));
+        var matches = FindMatchingRules(build, cascade.State, gameEvent, ancestry);
+        var lineage = ancestry.Union(matches.Select(match => ToFiredKey(match, gameEvent)));
         var applied = ApplyMatches(build, cascade.State, matches, gameEvent, depth);
-        var advanced = cascade with
-        {
-            State = applied.State,
-            Fired = cascade.Fired.AddRange(applied.Fired),
-            FiredKeys = cascade.FiredKeys.Union(keys),
-        };
-        return applied.Derived.Aggregate(advanced, (acc, derived) => CascadeEvent(build, acc, derived, depth + 1));
+        var advanced = cascade with { State = applied.State, Fired = cascade.Fired.AddRange(applied.Fired) };
+        return applied.Derived.Aggregate(advanced, (acc, derived) => CascadeEvent(build, acc, derived, depth + 1, lineage));
     }
 
     public static GameEvent ToGameEvent(PendingEvent pending, GameState state) =>
@@ -42,12 +45,13 @@ public static class EventCascading
             hit => (GameEvent)new GameEvent.Damaged(hit.Origin, state.Target.Tier, state.ListTargetStatuses()),
             kill => new GameEvent.Killed(kill.Origin, state.Target.Tier, state.ListTargetStatuses()));
 
-    public static ImmutableArray<RuleMatch> FindMatchingRules(ValidatedBuild build, Cascade cascade, GameEvent gameEvent) =>
+    public static ImmutableArray<RuleMatch> FindMatchingRules(
+        ValidatedBuild build, GameState state, GameEvent gameEvent, ImmutableHashSet<string> ancestry) =>
         build.Equipped
             .SelectMany(equipped => equipped.Element.Rules.Select((rule, index) => new RuleMatch(equipped, index, rule)))
             .Where(match => match.Rule.On.IsTriggeredBy(gameEvent))
-            .Where(match => match.Rule.When.IsSatisfiedBy(cascade.State))
-            .Where(match => !cascade.FiredKeys.Contains(ToFiredKey(match, gameEvent)))
+            .Where(match => match.Rule.When.IsSatisfiedBy(state))
+            .Where(match => !ancestry.Contains(ToFiredKey(match, gameEvent)))
             .ToImmutableArray();
 
     private sealed record AppliedMatches(GameState State, ImmutableArray<FiredRule> Fired, ImmutableArray<PendingEvent> Derived);

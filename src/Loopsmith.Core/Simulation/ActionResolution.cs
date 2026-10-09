@@ -25,7 +25,7 @@ public static class ActionResolution
     {
         var stepped = state with { Step = state.Step + 1 };
         var opening = OpenAction(build, stepped, action);
-        var seed = new Cascade(opening.State, [], ImmutableHashSet<string>.Empty, opening.Notes);
+        var seed = new Cascade(opening.State, [], opening.Notes);
         var finished = opening.Events.Aggregate(seed, (acc, pending) => EventCascading.CascadeEvent(build, acc, pending, 0));
         var passives = ListActivePassives(build, finished.State);
         var available = ListAvailableActions(build, finished.State);

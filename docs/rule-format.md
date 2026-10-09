@@ -41,6 +41,7 @@ summons:
 ```
 
 `kind`: `buff` (on the player) · `debuff` (on the target). `maxStacks`, `duration` optional.
+A status **without `maxStacks` does not stack**: applying it again only refreshes it.
 `affinity`: `neutral|kinetic|arc|solar|void|stasis|strand|prismatic`.
 
 ## Elements
@@ -190,7 +191,8 @@ stats: { weapons: 47, class: 104, grenade: 145, super: 27, melee: 79 }   # any s
 
 ## Engine semantics (what an author can rely on)
 
-* **Player actions → events.** `CastAbility(k, hit)` emits `AbilityCast(k)`, then
+* **Player actions → events.** `UseClassAbility` emits only `AbilityCast(classAbility)`.
+  `CastAbility(k, hit)` (grenade, melee, super) emits `AbilityCast(k)`, then
   `Damaged(Ability(k, subclass damage type))`, then `Killed(…)` if `hit = kill`.
   `FireWeapon(slot, hit)` emits `Damaged(Weapon(slot, type))` then `Killed` if a kill.
   `CollectPickups(p)` emits one `PickedUp(p)` per pickup on the ground. `Wait(s)` advances
@@ -208,7 +210,8 @@ stats: { weapons: 47, class: 104, grenade: 145, super: 27, melee: 79 }   # any s
 * **Phase order** of the outcomes fired by one event: Debuff → Empower (`applyBuff`,
   `removeBuff`, `modifyDamage`) → Damage (`strikeTarget`, `summon`) → Spawn → Refund
   (energy, health, cooldowns) → cascade the derived events (depth + 1).
-* **Termination:** cascade depth ≤ 5; each (rule, event) pair fires at most once per step.
+* **Termination:** cascade depth ≤ 5, and a rule never re-fires on an identical event up its own causal
+  chain (A → B → A stops). Sibling occurrences — two orbs picked up, two traces spawned — each fire.
 * **Stacked mods:** an element equipped N times fires its rules once; `PerModCount` picks the
   N-th value (last value if N is larger).
 * **Energy:** `Fraction(v)` adds `v × chunk scalar` charges (unknown scalar → 1× *assumed*, flagged);

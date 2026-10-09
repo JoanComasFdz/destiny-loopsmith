@@ -4,7 +4,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Dunet" PrivateAssets="all" />
-    <PackageReference Include="Vogen" PrivateAssets="all" />
+    <PackageReference Include="Vogen" />
     <PackageReference Include="YamlDotNet" />
   </ItemGroup>
   <ItemGroup>
