@@ -30,6 +30,7 @@
   Ground        3× Orb of Power
   Active      +1 Bolt Charge per gain [Spark of Frequency]
   Active      linear-fusion-rifle/fusion-rifle/heat-weapon: +handling, +reload [Ionic Overclock]
+  Active      45% damage resistance [Woven Mail]
 #4 Pick up Orb of Power
   Picked up Orb of Power ×3 → Unraveling Rounds (14s) [Unraveling Orbs] + +1 Armor Charge and +?% super energy [Orb of Power]
   Buffs         Slice ×2 8s · Bolt Charge ×9 · Amplified 15s · Armor Charge ×3 · Woven Mail 10s · Unraveling Rounds 14s
@@ -37,6 +38,7 @@
   Ground        none
   Active      +1 Bolt Charge per gain [Spark of Frequency]
   Active      linear-fusion-rifle/fusion-rifle/heat-weapon: +handling, +reload [Ionic Overclock]
+  Active      45% damage resistance [Woven Mail]
 #5 Melee (kill)
   Melee hit on Jolted + Severed target → Jolt target [Tempest Strike] + Jolt strike [Jolt] + +12% grenade energy [Impact Induction]
   Melee kill on Jolted + Severed target → Blind target [Photonic Flare] + +1 Combination Blow and +100% class ability energy and heals you [Combination Blow] + Amplified [Flow State] + +1 Bolt Charge [Dielectric] + Woven Mail (10s) and heals you and allies [To Shreds] + Ionic Trace [Shock and Clear] + doesn't stack with Dielectric [Tempest Strike]
@@ -55,6 +57,7 @@
   Active      +?% melee damage [Combination Blow]
   Active      +1 Bolt Charge per gain [Spark of Frequency]
   Active      linear-fusion-rifle/fusion-rifle/heat-weapon: +handling, +reload [Ionic Overclock]
+  Active      45% damage resistance [Woven Mail]
 #6 Grenade (kill)
   Grenade thrown → consumes New Tricks [Shinobu's Vow] + spends Armor Charge → +?% grenade energy each [Grenade Kickstart]
   Grenade hit on Jolted + Severed + Blinded target → Jolt target [Spark of Shock] + +1 Bolt Charge and +4.2% grenade energy [Shinobu's Vow] + Jolt strike [Jolt]
@@ -75,6 +78,7 @@
   Active      +?% melee damage [Combination Blow]
   Active      +1 Bolt Charge per gain [Spark of Frequency]
   Active      linear-fusion-rifle/fusion-rifle/heat-weapon: +handling, +reload [Ionic Overclock]
+  Active      45% damage resistance [Woven Mail]
 #7 Any Arc weapon (kill)
   Any Arc weapon hit on Jolted + Severed + Blinded target → Unravel target [To Shreds] (chance) + Jolt strike [Jolt]
   Any Arc weapon kill on Jolted + Severed + Blinded + Unraveled target → Blind target [Photonic Flare] + Amplified [Flow State] + +1 Bolt Charge [Dielectric] + Woven Mail (10s) and heals you and allies [To Shreds] + Ionic Trace [Spark of Discharge] (chance) + Ionic Trace [Shock and Clear] + Orb of Power [Harmonic Siphon] (chance) + doesn't stack with Dielectric [Tempest Strike]
@@ -93,3 +97,4 @@
   Active      +?% melee damage [Combination Blow]
   Active      +1 Bolt Charge per gain [Spark of Frequency]
   Active      linear-fusion-rifle/fusion-rifle/heat-weapon: +handling, +reload [Ionic Overclock]
+  Active      45% damage resistance [Woven Mail]

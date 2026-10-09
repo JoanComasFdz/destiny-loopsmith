@@ -1,5 +1,6 @@
 ﻿Class ability -> +?% melee energy [Gambler's Dodge] + +12% grenade energy [Bomber] + Reaper (10s) [Reaper] + +1 Slice (8s) [Slice]
 Grenade thrown -> consumes New Tricks (while New Tricks) [Shinobu's Vow] + spends Armor Charge → +?% grenade energy each (while Armor Charge) [Grenade Kickstart]
+Super cast -> consumes Woven Mail (while Woven Mail) [Woven Mail]
 Melee damage -> Jolt target [Tempest Strike] + +12% grenade energy [Impact Induction]
 Grenade damage -> Jolt target [Spark of Shock] + +1 Bolt Charge and +4.2% grenade energy [Shinobu's Vow]
 Bolt Charge damage -> Jolt target and heals you [Defibrillating Blast]
@@ -24,4 +25,5 @@ Max Bolt Charge -> New Tricks and +~40% grenade energy and heals you and allies 
 Max Slice -> consumes Slice [Slice]
 While Combination Blow -> +?% melee damage [Combination Blow]
 While Amplified -> +1 Bolt Charge per gain [Spark of Frequency] + linear-fusion-rifle/fusion-rifle/heat-weapon: +handling, +reload [Ionic Overclock]
+While Woven Mail -> 45% damage resistance [Woven Mail]
 Always -> 25% damage resistance [Spark of Resistance] + +1 grenade charge [Shinobu's Vow] + +50% Bolt Charge damage [Flashover]

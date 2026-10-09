@@ -4,8 +4,10 @@
 # plug copy); the most recently updated one is used and the other is noted. Resolve against the
 # manifest later.
 #
-# v1 has no counters/progress meters, so "2 kills within ? s", "activation progress" and similar
-# repeat-to-proc conditions are encoded as `chance: true` (fires, but marked "not every time").
+# v1 has no counters/progress meters across actions, so "2 kills within 3 s", "activation progress"
+# and similar repeat-to-proc conditions are encoded as `chance: true` (fires, but marked "not every
+# time"). `kill … atLeast: N` only counts kills within one action, so it would miss kills spread
+# over several shots.
 elements:
   - id: elemental-charge
     name: Elemental Charge
