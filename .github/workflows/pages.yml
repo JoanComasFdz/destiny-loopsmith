@@ -1,0 +1,55 @@
+name: Deploy web app
+
+# Publishes src/Loopsmith.Web (Blazor WebAssembly) to GitHub Pages.
+# One-time setup: Settings → Pages → Build and deployment → Source: "GitHub Actions".
+# See docs/hosting.md.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - name: Test the engine before publishing it
+        run: dotnet test -c Release
+      - name: Publish the web app
+        run: dotnet publish src/Loopsmith.Web -c Release -o publish
+      - name: Prepare for GitHub Pages (sub-path, SPA fallback, no Jekyll)
+        run: |
+          site=publish/wwwroot
+          repo="${GITHUB_REPOSITORY#*/}"
+          sed -i -E "s|<base href=\"[^\"]*\" ?/?>|<base href=\"/${repo}/\" />|" "$site/index.html"
+          grep -q "<base href=\"/${repo}/\"" "$site/index.html"
+          rm -f "$site/index.html.br" "$site/index.html.gz"
+          cp "$site/index.html" "$site/404.html"
+          touch "$site/.nojekyll"
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: publish/wwwroot
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
