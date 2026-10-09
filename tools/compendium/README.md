@@ -23,7 +23,8 @@ It prints the path of `compendium-<date>.zip` — send that zip to the Loopsmith
 ## Linux / macOS / WSL
 
 ```bash
-tools/compendium/get-compendium.sh            # or --images
+tools/compendium/get-compendium.sh            # tabs only, zipped (Docker or Python); --images for images
+tools/compendium/get-compendium-docker.sh     # everything (tabs + images + viewer) via Docker, not zipped
 ```
 
 ## In a cloud session
