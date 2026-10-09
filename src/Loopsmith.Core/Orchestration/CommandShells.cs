@@ -138,9 +138,8 @@ public static class CommandShells
 
     public static ImmutableArray<Effect> PlanExplain(ValidatedBuild build, ExplanationStyle style)
     {
-        var groups = BuildExplaining.ExplainBuild(build);
         var summary = BuildExplaining.RenderBuildSummary(build);
-        var explanation = BuildExplaining.RenderExplanation(groups, style);
+        var explanation = LoopDesigning.ExplainBuild(build, style);
         return
         [
             new Effect.WriteLines(summary),

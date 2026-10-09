@@ -1,4 +1,4 @@
-@* The designed loop: one card per step with what it fired (TraceRenderer.RenderResolution — the CLI's wording). *@
+@* The designed loop: one card per step with what it fired (LoopDesigning.RenderStepOutcomes — the CLI's wording). *@
 @{
     var build = Session.Build;
     var glossary = build.Catalog.Glossary;
@@ -105,7 +105,7 @@
     {
         if (!renderedSteps.TryGetValue(resolution, out var lines))
         {
-            lines = [.. TraceRenderer.RenderResolution(Session.Build, resolution, Options with { ShowState = false }).Skip(1)];
+            lines = LoopDesigning.RenderStepOutcomes(Session, resolution, Options with { ShowState = false });
             renderedSteps[resolution] = lines;
         }
 

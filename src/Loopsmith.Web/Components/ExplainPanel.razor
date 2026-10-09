@@ -1,4 +1,4 @@
-@* "What this build does": every trigger and what it sets off, without simulating (BuildExplaining — the CLI's explain). *@
+@* "What this build does": every trigger and what it sets off, without simulating (LoopDesigning.ExplainBuild — the CLI's explain). *@
 <details class="panel explain-panel">
     <summary>
         <span class="explain-title">What this build does</span>
@@ -33,8 +33,7 @@
     {
         if (!rendered.TryGetValue(style, out var lines))
         {
-            var groups = BuildExplaining.ExplainBuild(Build);
-            lines = BuildExplaining.RenderExplanation(groups, style);
+            lines = LoopDesigning.ExplainBuild(Build, style);
             rendered[style] = lines;
         }
 

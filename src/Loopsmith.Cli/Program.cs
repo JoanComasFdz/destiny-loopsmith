@@ -1,9 +1,10 @@
 using System.Collections.Immutable;
 using System.Text;
 using Loopsmith.Cli;
+using Loopsmith.Core.Functional;
 using Loopsmith.Core.Orchestration;
 
-// Host only: map argv in, call an Orchestration shell, write its effects out.
+// Host only: map argv in, call an Orchestration shell, execute its effects (console and file I/O).
 Console.OutputEncoding = Encoding.UTF8;                                                     // impure
 
 var invocation = CliArguments.ParseArguments([.. args]);                                    // pure
@@ -90,7 +91,38 @@ static int ExecuteEffect(Effect effect, bool useColor) =>
         {
             Console.Error.WriteLine(failure.Message);                                        // impure
             return 1;
-        });
+        },
+        save => SaveFile(save, useColor));                                                   // impure
+
+static int SaveFile(Effect.SaveFile save, bool useColor)
+{
+    var written = WriteTextFile(save.Path, save.Text);                                       // impure
+    var outcome = written.Match(                                                             // pure
+        _ => (Effect)new Effect.WriteLines(save.Saved),
+        error => new Effect.ShowFailure(error.Failure));
+    var code = ExecuteEffect(outcome, useColor);                                             // impure
+    return code;
+}
+
+/// <summary>Writes (or replaces) a UTF-8 text file, creating its folder if needed.</summary>
+static Result<Unit, string> WriteTextFile(string path, string text)
+{
+    try
+    {
+        var directory = Path.GetDirectoryName(Path.GetFullPath(path));
+        if (!string.IsNullOrEmpty(directory))
+        {
+            Directory.CreateDirectory(directory);                                            // impure
+        }
+
+        File.WriteAllText(path, text);                                                       // impure
+        return new Result<Unit, string>.Ok(new Unit.Value());
+    }
+    catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+    {
+        return new Result<Unit, string>.Error($"Cannot write '{path}': {exception.Message}");
+    }
+}
 
 static int WriteUsage()
 {

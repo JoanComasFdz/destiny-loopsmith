@@ -11,8 +11,8 @@ namespace Loopsmith.Core.Orchestration;
 
 /// <summary>
 /// Interactive design of a loop: the host reads a line, <see cref="PlaySessions.StepPlay"/> answers. Every action
-/// played becomes a step of <see cref="Design"/>, which is written to <see cref="SavePath"/> on quit when it has steps,
-/// and on <c>w</c>.
+/// played becomes a step of <see cref="Design"/>, which is saved to <see cref="SavePath"/> (an
+/// <see cref="Effect.SaveFile"/> the host executes) on quit or on <c>w</c>, once it has steps.
 /// </summary>
 public sealed record PlaySession(
     DesignSession Design,
@@ -64,27 +64,19 @@ public static class PlaySessions
         .. PlanPrompt(session),
     ];
 
-    /// <summary>Impure shell: answer one line of input and, when it asks for it, write the loop file.</summary>
+    /// <summary>Pure: answer one line of input; when it asks for a save, the loop file is an <see cref="Effect.SaveFile"/>.</summary>
     public static (PlaySession Session, ImmutableArray<Effect> Effects) StepPlay(PlaySession session, string input)
     {
-        var turn = PlanTurn(session, input);                                                                   // pure
-        var saved = turn.SaveTo.Match(path => SaveDesign(turn.Session.Design, path.Value), _ => []);          // impure
-
-        var effects = turn.Effects.AddRange(saved);                                                          // pure
-        return (turn.Session, effects);
+        var turn = PlanTurn(session, input);
+        var saved = turn.SaveTo.Match(path => ImmutableArray.Create(PlanSave(turn.Session.Design, path.Value)), _ => []);
+        return (turn.Session, turn.Effects.AddRange(saved));
     }
 
-    private static ImmutableArray<Effect> SaveDesign(DesignSession design, string path)
-    {
-        var text = LoopDesigning.ExportLoop(design);                                                         // pure
-        var written = FileSourceFetching.WriteTextFile(path, text);                                         // impure
-
-        var effects = written.Match(                                                                         // pure
-            _ => ImmutableArray.Create<Effect>(new Effect.WriteLines([StyledText.ToLine(0,
-                $"✓ Saved '{design.Design.Name}' ({design.Design.Steps.Length} steps) to {path}".ToSpan(Tone.Strong))])),
-            error => [new Effect.ShowFailure(error.Failure)]);
-        return effects;
-    }
+    private static Effect PlanSave(DesignSession design, string path) =>
+        new Effect.SaveFile(
+            path,
+            LoopDesigning.ExportLoop(design),
+            [StyledText.ToLine(0, $"✓ Saved '{design.Design.Name}' ({design.Design.Steps.Length} steps) to {path}".ToSpan(Tone.Strong))]);
 
     /// <summary>Pure: one line of input → next session, what to show, and whether to save.</summary>
     public static PlayTurn PlanTurn(PlaySession session, string input)

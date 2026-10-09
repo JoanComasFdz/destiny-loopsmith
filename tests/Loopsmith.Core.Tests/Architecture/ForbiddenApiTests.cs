@@ -57,6 +57,38 @@ public sealed class ForbiddenApiTests
             violations);
     }
 
+    /// <summary>File-system members that change something; SourceFetching may only read.</summary>
+    private static readonly string[] FileSystemTypes =
+        ["System.IO.File", "System.IO.Directory", "System.IO.FileInfo", "System.IO.DirectoryInfo", "System.IO.FileSystemInfo"];
+
+    private static readonly string[] WritingVerbs = ["Write", "Append", "Create", "Delete", "Move", "Copy", "Replace", "Set", "Encrypt", "Decrypt"];
+
+    private static readonly string[] WritingTypes = ["System.IO.FileStream", "System.IO.StreamWriter"];
+
+    [Fact]
+    public void SourceFetching_only_reads_the_file_system()
+    {
+        var violations =
+            from type in CoreAssembly.FindTypesInSlice(Slices.SourceFetching)
+            from method in type.Methods
+            where method.HasBody
+            from instruction in method.Body.Instructions
+            let called = instruction.Operand as Mono.Cecil.MethodReference
+            where called is not null && IsWriting(called)
+            select $"{CoreAssembly.FindOutermost(type).FullName} -> {called.DeclaringType.FullName}.{called.Name}";
+
+        Violations.AssertNone(
+            $"'{Slices.SourceFetching}' only reads; writing files is the host's job (Effect.SaveFile).",
+            violations);
+    }
+
+    private static bool IsWriting(Mono.Cecil.MethodReference called)
+    {
+        var declaring = called.DeclaringType.FullName;
+        return WritingTypes.Contains(declaring)
+            || (FileSystemTypes.Contains(declaring) && WritingVerbs.Any(verb => called.Name.StartsWith(verb, StringComparison.Ordinal)));
+    }
+
     [Fact]
     public void No_core_type_uses_the_console()
     {

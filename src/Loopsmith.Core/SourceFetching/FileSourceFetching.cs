@@ -5,8 +5,8 @@ using Loopsmith.Core.Functional;
 namespace Loopsmith.Core.SourceFetching;
 
 /// <summary>
-/// Impure boundary: the only slice that touches the file system. Foreseeable I/O failures become
-/// <c>Result&lt;_, string&gt;</c>; anything unrecoverable bubbles.
+/// Impure boundary: the only slice that touches the file system, and it only reads — writing is the host's job
+/// (<c>Effect.SaveFile</c>). Foreseeable I/O failures become <c>Result&lt;_, string&gt;</c>; anything unrecoverable bubbles.
 /// </summary>
 public static class FileSourceFetching
 {
@@ -57,26 +57,6 @@ public static class FileSourceFetching
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
             return new Result<SourceText, string>.Error($"Cannot read '{path}': {exception.Message}");
-        }
-    }
-
-    /// <summary>Writes (or replaces) a UTF-8 text file, creating its folder if needed.</summary>
-    public static Result<Unit, string> WriteTextFile(string path, string text)
-    {
-        try
-        {
-            var directory = Path.GetDirectoryName(Path.GetFullPath(path));
-            if (!string.IsNullOrEmpty(directory))
-            {
-                Directory.CreateDirectory(directory);
-            }
-
-            File.WriteAllText(path, text);
-            return new Result<Unit, string>.Ok(new Unit.Value());
-        }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
-        {
-            return new Result<Unit, string>.Error($"Cannot write '{path}': {exception.Message}");
         }
     }
 

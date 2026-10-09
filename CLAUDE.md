@@ -14,7 +14,8 @@ Open items: [docs/backlog.md](docs/backlog.md).
   objects at the boundary, own Optional/Result/Unit, no exceptions as control flow).
   [ADRs.md](ADRs.md) explains why and never overrides.
 - The architecture tests (`tests/Loopsmith.Core.Tests/Architecture/`) guard slice
-  boundaries — never weaken them to make code fit; fix the code.
+  boundaries, that only `SourceFetching` touches files (and only to read), and that the hosts
+  call only `Orchestration` and the kernel — never weaken them to make code fit; fix the code.
 - **Unknown is data**: never invent a game number. Use `"?"` in YAML; the engine shows
   "?" and doesn't apply it.
 - Never commit Compendium snapshots (`snapshots/` is gitignored — licensing, see README).
