@@ -1,0 +1,20 @@
+# Orb of Power: base pickup behaviour, active in every build (kind: keyword).
+elements:
+  - id: orb-of-power
+    name: Orb of Power
+    kind: keyword
+    affinity: neutral
+    # Super energy per orb depends on what spawned it (Clarity: Siphons 2.5%|3.25%|4.4% with
+    # 1|2|3 mods, Reaper 0.8%|1.1%|1.25%|1.5%, Attrition Orbs 0.8%); a pickup carries no
+    # per-source value in v1, so the amount is "?".
+    # Armor Charge on pickup is base behaviour (the armor-charge system): Clarity never states it
+    # directly but implies it - "Powerful Friends" (2175577211): "Allies within 18 meters receive
+    # 1 Armor Charge on Orb of Power Pickup"; no armor mod in this build grants it. Authored.
+    description: "Picking up an Orb of Power grants Super energy (amount depends on what spawned it) and 1 stack of Armor Charge."
+    rules:
+      - on: { pickUp: orb-of-power }
+        then:
+          - { applyBuff: { status: armor-charge, stacks: 1 } }
+          - { grantEnergy: { to: super, amount: "?" } }
+        reason: "Grabbing an Orb of Power charges your Super a little and gives you an Armor Charge."
+    passives: []
