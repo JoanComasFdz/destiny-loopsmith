@@ -94,9 +94,7 @@ public static class PlaySessions
         return command switch
         {
             "q" or "quit" or "exit" => QuitPlay(session),
-            "w" or "write" or "save" => session.SavePath.Match(
-                path => new PlayTurn(session, [], Optional.Some(path.Value)),
-                _ => Answer(session, [new Effect.ShowFailure("No file to save to: start play with --save <file.loop.yaml>.")])),
+            "w" or "write" or "save" => SaveNow(session),
             "r" or "reset" => ResetDesign(session),
             "u" or "undo" => UndoStep(session),
             "n" or "note" => AnnotateLastStep(session, argument),
@@ -180,6 +178,15 @@ public static class PlaySessions
     /// <summary>A description typed on one line: <c>\n</c> starts a new line.</summary>
     private static Optional<string> ToDescription(string text) =>
         ToOptionalText(text).Map(description => description.Replace("\\n", "\n", StringComparison.Ordinal));
+
+    /// <summary>Saving now, like quitting, never overwrites a loop file with an empty design.</summary>
+    private static PlayTurn SaveNow(PlaySession session) =>
+        (session.SavePath, session.Design.Design.Steps.IsEmpty) switch
+        {
+            (Optional<string>.None, _) => Answer(session, [new Effect.ShowFailure("No file to save to: start play with --save <file.loop.yaml>.")]),
+            (_, true) => Answer(session, [new Effect.WriteLines([StyledText.ToLine(0, "No steps designed — nothing saved.".ToSpan(Tone.Muted))])]),
+            _ => new PlayTurn(session, [], session.SavePath),
+        };
 
     /// <summary>Quitting saves the design when there is one: an empty design never overwrites a loop file.</summary>
     private static PlayTurn QuitPlay(PlaySession session)

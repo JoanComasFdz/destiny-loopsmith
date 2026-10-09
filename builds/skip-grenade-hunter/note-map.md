@@ -272,5 +272,6 @@ covers them:
 - **`skip-grenade`:** no rules of its own, so the build check warns that it is inert; its interactions come from Shinobu's Vow and the fragments.
 - **`unraveling-rounds` (keyword):** while Unraveling Rounds is up (line 7), Strand weapon hits unravel the target. In the creator's loop it fires from cycle 2 on, on the Festival Flight shot.
 - **`jolt` (keyword):** a weapon or ability hit on a jolted target chains lightning (`strikeTarget` via Jolt, damage only). Seen in scenario 5a.
-- **Passives:** `spark-of-resistance` (25% damage resistance, always on), `shinobus-vow` (+1 grenade charge, shown but not used: no energy model), `flashover` (+50% Bolt Charge damage), `combination-blow` (melee damage `?` while it has stacks, row 28).
+- **`woven-mail` (keyword):** casting the Super while Woven Mail is up removes it (row 33). No scenario or example loop casts the Super.
+- **Passives:** `spark-of-resistance` (25% damage resistance, always on), `woven-mail` (45% damage resistance while Woven Mail is up, i.e. after every To Shreds kill), `shinobus-vow` (+1 grenade charge, shown but not used: no energy model), `flashover` (+50% Bolt Charge damage), `combination-blow` (melee damage `?` while it has stacks, row 28).
 - **The build check** also notes that the aspects' fragment slots are unknown, so the fragment count isn't checked.

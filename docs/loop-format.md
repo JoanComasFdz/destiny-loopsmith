@@ -175,5 +175,5 @@ In `play` (the loop is named `<build name> loop` unless `--name` says otherwise)
 becomes a step: type its number in the list or a token (with a count, `grenade:kill:3`, to aim at
 several enemies). `u` undoes the last step, `n <note>` notes it, `d <text>` sets the description
 (`\n` = new line), `a` analyses the loop so far, `e` explains the build, `s` shows the state, `r`
-starts over. `w` saves now — whatever is designed, even no steps — and `q` saves on quit unless no
-step was designed, so quitting straight away never overwrites a loop file. Saving needs `--save`.
+starts over. `w` saves now and `q` saves on quit, both only once a step is designed ("No steps
+designed — nothing saved."), so an empty design never overwrites a loop file. Saving needs `--save`.

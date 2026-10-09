@@ -17,8 +17,9 @@ the detail behind it.
   the design proposal §03. Today its numbers were copied into the rules by hand (v2.0625).
 - **Bungie manifest** (later, not needed for loop design) — hashes, official names and icons.
   Worth it for a DIM-like look (item icons), importing builds from DIM links / loadouts (they
-  use hashes) and noticing game patches. Needs `www.bungie.net` allowed and a free API key as an
-  environment secret.
+  use hashes) and noticing game patches. The `BUNGIE_API_KEY` environment secret exists;
+  `www.bungie.net` is reachable from a session but answered a 500 error page (2026-10-09, no key),
+  so check manifest access with the key in a new session first.
 
 ## Rule format gaps (what the Skip Grenade build couldn't express)
 

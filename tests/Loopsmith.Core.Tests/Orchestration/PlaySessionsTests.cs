@@ -95,6 +95,18 @@ public sealed class PlaySessionsTests
     }
 
     [Fact]
+    public void Writing_an_empty_design_saves_nothing()
+    {
+        var empty = PlaySessions.PlanTurn(StartPlay(Optional.Some("x.loop.yaml")), "w");
+        var designed = PlaySessions.PlanTurn(PlayAll(StartPlay(Optional.Some("x.loop.yaml")), "class"), "w");
+
+        Assert.False(empty.SaveTo.IsSome());
+        Assert.False(empty.Session.IsOver);
+        Assert.Contains(empty.Effects, effect => effect is Effect.WriteLines lines && lines.Lines.ToPlainText().Contains("nothing saved"));
+        Assert.Equal(Optional.Some("x.loop.yaml"), designed.SaveTo);
+    }
+
+    [Fact]
     public void Write_saves_the_loop_file_and_it_imports_back()
     {
         var path = Path.Combine(Path.GetTempPath(), $"loopsmith-{Guid.NewGuid():N}", "loops", "saved.loop.yaml");

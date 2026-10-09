@@ -320,7 +320,7 @@ stats: { weapons: 47, class: 104, grenade: 145, super: 27, melee: 79 }   # any s
 | `Unknown <slot> '<id>' — no such element in the rule catalog.` | Blocking |
 | `'<name>' (<Kind>) can't go in the <slot> slot.` — each slot takes its own kind; a weapon's `perks` take `weaponPerk` or `exoticWeapon`; a `keyword` element goes in no slot | Blocking |
 | `'<name>' belongs to another class, not <Class>.` — the element's `class` isn't the build's | Blocking |
-| `'<name>' (<Affinity>) does not fit a <Subclass> subclass.` — a super, grenade, melee, aspect or fragment of another affinity; neutral and kinetic ones fit any, and Prismatic takes any | Blocking |
+| `'<name>' (<Affinity>) does not fit the <Subclass> subclass.` — a super, grenade, melee, aspect or fragment of another affinity; neutral and kinetic ones fit any, and Prismatic takes any | Blocking |
 | `<n> aspects equipped; at most 2.` · `'<name>' is equipped <n> times; aspects and fragments are unique.` · `<n> fragments equipped; the aspects grant <m> slots.` | Blocking |
 | `Fragment slots unknown for <aspects> — fragment count not checked.` | Info |
 | `'<name>' has no authored rules yet — it is inert in the trace.` | Warning |

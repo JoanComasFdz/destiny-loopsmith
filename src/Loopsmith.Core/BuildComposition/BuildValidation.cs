@@ -88,7 +88,7 @@ public static class BuildValidation
                 : new[] { new BuildIssue(Severity.Blocking, $"'{element.Name}' belongs to another class, not {build.Class}.") },
             .. IsSubclassCompatible(build.Subclass, element)
                 ? []
-                : new[] { new BuildIssue(Severity.Blocking, $"'{element.Name}' ({element.Affinity}) does not fit a {build.Subclass} subclass.") },
+                : new[] { new BuildIssue(Severity.Blocking, $"'{element.Name}' ({element.Affinity}) does not fit the {build.Subclass} subclass.") },
         ];
         return new ResolvedSlot(slot, Optional.Some(element), issues);
     }

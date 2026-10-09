@@ -78,9 +78,11 @@ repos (Microsoft's download hosts are blocked by the network policy) and restore
 - **Parallel subagents:** define the contract first (Domain types + a doc), then give each
   agent its own git worktree (`git worktree add /home/user/wt/<name> -b wt/<name>`) and a
   disjoint set of folders; merge their branches back and run the full suite.
-- **Cloud-session limits:** the network policy blocks bungie.net, docs.google.com, youtube.com,
+- **Cloud-session limits:** the network policy blocks docs.google.com, youtube.com,
   github.io, light.gg, d2foundry.gg and destinyitemmanager.com (NuGet, PyPI,
-  raw.githubusercontent.com and git clones from github.com work). Repository settings and
+  raw.githubusercontent.com and git clones from github.com work). bungie.net is reachable but
+  answered its own 500 error page to every request (2026-10-09, without an API key); the
+  `BUNGIE_API_KEY` secret only reaches sessions started after it was added. Repository settings and
   deleting remote branches aren't possible from a session — ask the owner. If the clone is
   single-branch, after `git push -u` of a new branch run
   `git config --add remote.origin.fetch '+refs/heads/<b>:refs/remotes/origin/<b>' && git fetch`
