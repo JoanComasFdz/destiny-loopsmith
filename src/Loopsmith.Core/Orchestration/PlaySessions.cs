@@ -11,7 +11,8 @@ namespace Loopsmith.Core.Orchestration;
 
 /// <summary>
 /// Interactive design of a loop: the host reads a line, <see cref="PlaySessions.StepPlay"/> answers. Every action
-/// played becomes a step of <see cref="Design"/>, which is written to <see cref="SavePath"/> on quit (and on <c>w</c>).
+/// played becomes a step of <see cref="Design"/>, which is written to <see cref="SavePath"/> on quit when it has steps,
+/// and on <c>w</c>.
 /// </summary>
 public sealed record PlaySession(
     DesignSession Design,

@@ -21,7 +21,7 @@
   </ItemGroup>
 
   <!-- Blazor trims only framework assemblies by default. The core is mostly generated code (Dunet matchers,
-       Vogen converters) the app never calls and it uses no reflection, so trim it too (1.3 MB -> see report). -->
+       Vogen converters) the app never calls and it uses no reflection, so trim it too (1.3 MB -> 516 KB when added). -->
   <ItemGroup>
     <TrimmableAssembly Include="Loopsmith.Core" />
   </ItemGroup>

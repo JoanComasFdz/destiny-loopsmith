@@ -1,5 +1,6 @@
 # Downloads the Destiny Data Compendium (a view-only public Google Sheet) into a dated folder
-# next to this script and zips it, ready to hand to a Loopsmith session.
+# next to this script and zips it, ready to hand to a Loopsmith session: compendium-<date>\ and
+# compendium-<date>.zip (both gitignored).
 #
 #   powershell -ExecutionPolicy Bypass -File .\get-compendium.ps1              # tabs only (small)
 #   powershell -ExecutionPolicy Bypass -File .\get-compendium.ps1 -WithImages  # also the sheet's images

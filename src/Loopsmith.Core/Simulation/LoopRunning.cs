@@ -8,7 +8,8 @@ namespace Loopsmith.Core.Simulation;
 /// <summary>
 /// Runs a designed loop back to back, cycle after cycle, from a fresh spawn and measures it
 /// (docs/loop-format.md, "Analysis"). Pure: same build + steps ⇒ same report. Ability energy isn't simulated
-/// (ADRs D21): a cycle only breaks on a step that can't happen at all, and the refunds are tallied, not applied.
+/// (ADRs D21): a cycle only breaks on a step that can't happen at all, and energy outcomes are never added up —
+/// the report counts what fired, what was wasted (rules that don't stack, D23) and buff uptime.
 /// </summary>
 public static class LoopRunning
 {

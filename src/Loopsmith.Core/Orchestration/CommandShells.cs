@@ -166,7 +166,7 @@ public static class CommandShells
             : [new Effect.WriteLines(LoopRendering.RenderLoops(graph, loops, request.Limit))];
     }
 
-    /// <summary>Actions from <c>--actions</c> tokens, else from a scenario file (one token per line or comma separated, # comments).</summary>
+    /// <summary>The <c>--actions</c> tokens, then those of a scenario file (one token per line or comma separated, # comments); none is an error.</summary>
     public static Result<ImmutableArray<PlayerAction>, string> ParseActions(ImmutableArray<string> tokens, Optional<string> scenario)
     {
         var fromScenario = scenario.Match(

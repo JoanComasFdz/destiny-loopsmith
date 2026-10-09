@@ -2,7 +2,8 @@ using Vogen;
 
 namespace Loopsmith.Core.Domain;
 
-// Value objects — validated once, at the boundary (RuleParsing / BuildParsing).
+// Value objects — validated once, at the boundary (RuleParsing / BuildParsing / LoopFiles, and action tokens in
+// Phrasing.ActionTokenParsing).
 // Inside the pure core a value object is known-valid.
 
 /// <summary>Stable authored identity of a build element: a kebab-case slug ("shinobus-vow").</summary>

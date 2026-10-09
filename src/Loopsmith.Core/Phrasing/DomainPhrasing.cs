@@ -294,9 +294,9 @@ public static class DomainPhrasing
         targets.Value == 1 ? "1 enemy" : $"{targets.Value} enemies";
 
     /// <summary>
-    /// The token the CLI accepts for an action: <c>grenade:kill</c>, <c>grenade:kill:3</c>, <c>class</c>,
-    /// <c>kinetic</c>, <c>kinetic:hit:5</c>, <c>pickup:orb-of-power</c>, <c>wait:5</c>. The target count is written only
-    /// when it is more than one, so one-target tokens read as before and every token round-trips.
+    /// The action's token, the same everywhere (CLI, loop files, the web): <c>grenade:kill</c>, <c>grenade:kill:3</c>,
+    /// <c>class</c>, <c>kinetic</c>, <c>kinetic:hit:5</c>, <c>pickup:orb-of-power</c>, <c>wait:5</c>. The target count is
+    /// written only when it is more than one, so one-target tokens read as before and every token round-trips.
     /// </summary>
     public static string ToActionToken(this PlayerAction action) =>
         action.Match(

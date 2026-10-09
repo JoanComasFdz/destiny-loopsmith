@@ -35,8 +35,9 @@ public static class LoopRendering
     }
 
     /// <summary>
-    /// Mermaid flowchart (renders on GitHub and mermaid.live). Loop edges are thick; player edges dotted;
-    /// "requires debuff" edges dashed. Colours follow the design proposal's element palette.
+    /// Mermaid flowchart (renders on GitHub and mermaid.live). Loop edges are thick and pink; the other player edges
+    /// and the "requires debuff" edges are dotted (the latter labelled with their source). Colours follow the design
+    /// proposal's element palette.
     /// </summary>
     public static string RenderMermaid(LoopGraph graph, ImmutableArray<Loop> loops, bool loopsOnly)
     {

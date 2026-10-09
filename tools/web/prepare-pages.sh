@@ -2,8 +2,9 @@
 # Prepares a published Blazor WebAssembly site (dotnet publish …/wwwroot) for GitHub Pages.
 #   tools/web/prepare-pages.sh <site-dir> <base-path> [--root]
 # <base-path> is where the site is served, e.g. /destiny-loopsmith/ or /destiny-loopsmith/pr-preview/pr-7/.
-# --root marks the main site: its 404.html is GitHub Pages' fallback for the whole domain path, so it also
-# sends deep links inside a PR preview (…/pr-preview/pr-7/compare) back to that preview's start page.
+# --root marks the main site: it gets a 404.html (a copy of index.html) as GitHub Pages' fallback for the whole
+# domain path, so a deep link of the main site (…/destiny-loopsmith/compare) loads the app, and a deep link inside
+# a PR preview (…/pr-preview/pr-7/compare) is sent back to that preview's start page. A preview gets no 404.html.
 set -euo pipefail
 
 site="$1"

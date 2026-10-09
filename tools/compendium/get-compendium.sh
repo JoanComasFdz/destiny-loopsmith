@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Downloads the Destiny Data Compendium (a view-only public Google Sheet) into a dated folder
-# next to this script and zips it, ready to hand to a Loopsmith session.
+# next to this script and zips it, ready to hand to a Loopsmith session: compendium-<date>/ and
+# compendium-<date>.zip (both gitignored).
 #
 #   tools/compendium/get-compendium.sh            # tabs only (small)
 #   tools/compendium/get-compendium.sh --images   # also the sheet's images

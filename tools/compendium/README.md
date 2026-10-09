@@ -1,9 +1,13 @@
 # Destiny Data Compendium snapshot
 
 `sheet_dump.py` downloads every tab of the (view-only, public) Destiny Data Compendium Google
-Sheet into a folder: one `.md` + `.csv` per tab, `tabs.json`, `INDEX.md`, an offline
-`viewer.html` and the raw HTML. Loopsmith ingests the numbers from it (cooldowns, chunk energy
-scalars, artifact perks, statuses) into `rules/` with `compendium/<date>/<tab>#<row>` provenance.
+Sheet into a folder: one `NN_<Tab>.md` + `.csv` per tab, `INDEX.md`, `README.md`, `tabs.json`, an
+offline `viewer.html`, Google's raw HTML (`raw/`) and CSV export (`gviz/`), and the images unless
+`--no-images`. Rule authors read it and write its numbers by hand into `rules/` (statuses,
+abilities, aspects, fragments, mods, exotics, artifact perks), citing each row as
+`compendium/<date>/<Tab>#<row>` ([docs/rule-format.md](../../docs/rule-format.md), Provenance) and
+paraphrasing, never copying, its text. Ability cooldowns and chunk energy scalars are recorded but
+not used by the engine (ADRs D21).
 
 **Keep it private.** The Compendium is one person's donation-supported work: the raw snapshot is
 never committed (`snapshots/` and `tools/compendium/compendium-*` are gitignored) and never served.
@@ -43,8 +47,14 @@ Windows, or run `tailscale set --accept-dns=false`.
 
 ## In a cloud session
 
-Unzip into `snapshots/compendium/<date>/` (gitignored; `7z x` extracts a `.7z` — `apt-get install
-7zip` if it's missing). The snapshot is never in git, so **every new session starts without it**:
-upload the archive again when a session needs it. A session can also download it itself
-once `docs.google.com` is in the environment's allowed domains:
-`python3 tools/compendium/sheet_dump.py <sheet URL> snapshots/compendium/<date> --no-images`.
+Unzip it so the tab files sit directly in `snapshots/compendium/<date>/` (gitignored): the zip made by
+`get-compendium.*` holds a `compendium-<date>/` folder, whose contents go there. `7z x` extracts a
+`.7z` (`apt-get install 7zip` if it's missing). The snapshot is never in git, so **every new session
+starts without it**: upload the archive again when a session needs it. A session can also download it
+itself once `docs.google.com` is in the environment's allowed domains (the sheet URL is in
+`get-compendium.sh`):
+
+```bash
+pip install requests beautifulsoup4
+python3 tools/compendium/sheet_dump.py <sheet URL> snapshots/compendium/<date> --no-images
+```

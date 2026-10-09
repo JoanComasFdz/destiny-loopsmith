@@ -9,7 +9,10 @@ namespace Loopsmith.Core.Domain;
 /// </summary>
 public sealed record AbilityProfile(AbilityKind Kind, int Charges, GameValue ChunkScalar, GameValue BaseCooldownSeconds);
 
-/// <summary>An aspect, fragment, mod, exotic perk, weapon trait or keyword: all "an element with rules".</summary>
+/// <summary>
+/// An ability, aspect, fragment, exotic, armor-set bonus, mod, artifact perk, weapon trait or keyword: all "an element
+/// with rules".
+/// </summary>
 public sealed record BuildElement(
     ElementId Id,
     string Name,

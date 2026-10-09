@@ -47,7 +47,14 @@ public static class CliArguments
           --rules <dir>   rules directory (default: nearest rules/ above the build or loop file, then the current directory)
           --cycles <n>    cycles to run a loop for (default 10); a loop that completes all of them is repeatable
           --trace         also print every step of the loop's first cycle
-          --save <file>   play: write the designed loop when you quit (w saves at any time)
+          --scenario <f>  simulate: action tokens from a file, played after any --actions (one per line or comma
+                          separated, # comments); give --actions, --scenario or both
+          --state         simulate: show buffs, target debuffs and pickups after every step
+          --why           traces: also show each fired rule's reason
+          --caveats       traces: also show each outcome's caveats (amount unknown, ×3 stacks, already active — refreshed, …)
+          --verbose       --why and --caveats
+          --limit <n>     loops/graph: how many loops to show (default 10)
+          --save <file>   play: write the designed loop when you quit, if it has steps (w saves at any time)
           --name <name>   play: the designed loop's name (default: "<build name> loop")
           --no-color      plain output (also when NO_COLOR is set or output is redirected)
 
@@ -55,7 +62,7 @@ public static class CliArguments
           <number> or <action>  play it (and add it to the loop)    u  undo the last step
           n <note>              note on the last step               d <text>  loop description (\n = new line)
           a                     analyse the loop so far             w  save now
-          e explain · s state · r reset · q quit (saves when --save is given)
+          e explain · s state · r reset · q quit (saves when --save is given and the loop has steps)
 
         Actions:
           grenade|melee|super[:hit|kill[:N]]  class  kinetic|energy|power[:hit|kill[:N]]  pickup:<id>  wait[:<seconds>]

@@ -17,7 +17,7 @@ public static class EventCascading
 
     /// <summary>
     /// Match → guard → order by phase → apply → cascade every derived event (depth-first).
-    /// <paramref name="ancestry"/> holds the (rule, event) pairs already fired up this causal chain: a rule
+    /// Each level passes down the (rule, event) pairs already fired up this causal chain (<c>ancestry</c>): a rule
     /// never re-fires on an identical event caused by itself (loops terminate), while sibling
     /// occurrences — two orbs picked up, two traces spawned — each fire.
     /// </summary>
