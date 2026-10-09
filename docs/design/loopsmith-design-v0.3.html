@@ -133,6 +133,8 @@ svg .dash{stroke-dasharray:5 4}
     <div class="card accent" style="--c:var(--arc)"><div class="big">4</div><p>sources: Manifest (identity) · Compendium (mechanics) · Clarity (cross-check) · your rules YAML (causality).</p></div>
     <div class="card accent" style="--c:var(--strand)"><div class="big">pure</div><p>core: impure → pure → impure sandwich, effects as data, vertical slices.</p></div>
   </div>
+
+  <div class="callout"><b>Status (added later):</b> this is the original proposal, kept as written. Decisions taken while building the prototype supersede parts of it — see <a href="../../ADRs.md">ADRs.md</a>: the product is the loop a player designs, a self-contained <code>.loop.yaml</code> (D24); the hosts are a CLI (D19) and a Blazor WebAssembly designer that runs in the browser — no API or database yet (D25); ability energy isn't simulated, so the energy state, chunk scalars and cooldowns aren't used (D21, superseding D18); elements are keyed by slugs until the manifest join (D13); the kernel adds <code>Phrasing</code> and <code>Causality</code> (D14); rule dedupe is per causal chain, not per tick (D17); chance and the enemy model are answered (D15, D16); multi-target actions take a player-declared count (D22). The slices that exist today are listed in <a href="../../CONVENTIONS.md">CONVENTIONS.md</a>.</div>
 </header>
 
 <!-- ============ PROBLEM ============ -->

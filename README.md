@@ -15,18 +15,18 @@ with another loop.
 
 > **Try it:** https://joancomasfdz.github.io/destiny-loopsmith/ — the web loop designer
 > (runs entirely in your browser). Status: working prototype on authored rules for one build
-> ([Skip Grenade Hunter](builds/skip-grenade-hunter/)); Compendium / manifest ingestion is
-> next (see [Roadmap](#roadmap) and [docs/backlog.md](docs/backlog.md)).
+> ([Skip Grenade Hunter](builds/skip-grenade-hunter/)); a Compendium snapshot parser is next
+> (see [Roadmap](#roadmap) and [docs/backlog.md](docs/backlog.md)).
 
 ## Quick start
 
 Online: open the link above. Locally (requires the .NET 10 SDK):
 
 ```bash
-dotnet run --project src/Loopsmith.Web     # the web loop designer, http://localhost:5xxx
+dotnet run --project src/Loopsmith.Web     # the web loop designer, http://localhost:5000
 ```
 
-The CLI does the same from a terminal (and is what the golden tests drive):
+The CLI does the same from a terminal (the golden tests snapshot the same text it prints):
 
 ```bash
 dotnet build Loopsmith.slnx
@@ -51,6 +51,11 @@ dotnet run --project src/Loopsmith.Cli -- graph    builds/skip-grenade-hunter/bu
 | `loops` | Discovered loops: cycles in the cause → effect graph, ability-energy loops first |
 | `graph` | A Mermaid flowchart of the graph, with loop edges drawn thick. It renders on GitHub and at mermaid.live |
 | `validate` | The build checked against the rule catalog (unknown elements, wrong slots, inert elements, rules that don't stack) |
+
+Every command takes `--rules <dir>` (default: the nearest `rules/` above the build or loop file, then the
+current directory) and `--no-color` (also when `NO_COLOR` is set or the output is redirected); `loops` and
+`graph` show `--limit <n>` loops (default 10); `--verbose` is `--why --caveats`. `--help` lists every
+option.
 
 ### What it looks like
 
@@ -95,9 +100,10 @@ Action tokens: `grenade|melee|super[:hit|kill[:N]]`, `class`, `kinetic|energy|po
 ## How it works
 
 ```
-rules/*.yaml ─┐                         ┌─ explain   (static: trigger → outcomes)
-build.yaml ───┼─ parse → validate ──────┼─ simulate  (pure state machine: (state, action) → (state, fired))
-              │   (railway, typestate)  └─ loops / graph (cycles in the cause → effect graph)
+rules/*.yaml ─┐                         ┌─ explain          (static: trigger → outcomes)
+build.yaml ───┼─ parse → validate ──────┼─ simulate / play  (pure state machine: (state, action) → (state, fired))
+*.loop.yaml ──┘   (railway, typestate)  ├─ loop / compare   (a designed loop's steps, cycle after cycle → report)
+                                        └─ loops / graph    (cycles in the cause → effect graph)
 ```
 
 * Every build element is "an element with rules": `on` trigger → `then` outcomes (+ always-on
@@ -114,7 +120,8 @@ Designed loops — the `.loop.yaml` format, share links, analysis and comparison
 [docs/loop-format.md](docs/loop-format.md). Example loops:
 [builds/skip-grenade-hunter/loops/](builds/skip-grenade-hunter/loops/).
 Design proposal (requirements, data sources, architecture, roadmap, risks):
-[docs/design/loopsmith-design-v0.3.html](docs/design/loopsmith-design-v0.3.html).
+[docs/design/loopsmith-design-v0.3.html](docs/design/loopsmith-design-v0.3.html) — the original plan;
+what later decisions superseded is listed at its top.
 Coding conventions (binding): [CONVENTIONS.md](CONVENTIONS.md) · decisions: [ADRs.md](ADRs.md).
 
 ## Repository layout
@@ -124,8 +131,8 @@ src/Loopsmith.Core/      one project, slices = folders (kernel: Domain, Function
 src/Loopsmith.Cli/       host: argv → Orchestration shell → effects
 src/Loopsmith.Web/       host: Blazor WebAssembly loop designer (Designer, Compare)
 tests/Loopsmith.Core.Tests/   unit, golden and architecture tests
-rules/                   authored causality (glossary, keywords, class, exotics, mods, artifact, perks)
-builds/<slug>/           build.yaml, the original note, note-map, discrepancies, loops/*.loop.yaml
+rules/                   authored causality (glossary, keywords, hunter, exotics, armor sets, mods, artifact, weapon perks)
+builds/<slug>/           build.yaml, the original note, note-map, discrepancies, scenario.txt, loop-graph.md, loops/*.loop.yaml
 docs/                    rule format, loop format, hosting, backlog, design proposal
 tools/compendium/        Destiny Data Compendium download: sheet_dump.py + Docker/Python scripts
 tools/web/               prepare-pages.sh — readies a published site for GitHub Pages
@@ -140,7 +147,7 @@ tools/web/               prepare-pages.sh — readies a published site for GitHu
 | Authored rules (`rules/`) | Causality: what fires on what | ✅ used by the engine |
 | [Clarity](https://github.com/Database-Clarity/Live-Clarity-Database) | Hash-keyed descriptions with numbers (mods, fragments, aspects, exotic perks, weapon traits) | Used to author the first build (v2.0625); ingestion slice next |
 | Destiny Data Compendium | Abilities, cooldowns, chunk energy scalars, artifact perks, statuses | The 2026-10-09 snapshot's numbers are in the first build's rules (by hand, `compendium/<date>/<tab>#<row>` sources); parser next |
-| Bungie manifest | Identity (hashes), names, icons | Next (needs an API key) |
+| Bungie manifest | Identity (hashes), names, icons | Later: not needed for loop design; needs an API key (not used anywhere yet) |
 
 **Getting a Compendium snapshot:** run `tools/compendium/get-compendium.ps1` (Windows) or
 `get-compendium.sh` locally and hand the resulting zip to a session — see
@@ -158,7 +165,8 @@ locally as `builds/<slug>/transcript.txt` (gitignored) and link the video instea
 1. Branch from `main`, commit, open a pull request.
 2. CI runs the full test suite, and the **PR preview** workflow publishes that branch's web app
    to `https://joancomasfdz.github.io/destiny-loopsmith/pr-preview/pr-<number>/` (the link is
-   commented on the PR, updated on every push, removed when the PR closes).
+   commented on the PR, updated on every push, removed when the PR closes; pull requests from
+   forks get no preview).
 3. Merge → the **Deploy web app** workflow republishes the live site.
 
 `gh-pages` is the built site, owned by those workflows; a ruleset blocks its deletion and
@@ -167,10 +175,11 @@ force pushes. Details: [docs/hosting.md](docs/hosting.md).
 ## Roadmap
 
 1. ✅ Skeleton: kernel, slices, architecture tests, CI.
-2. ✅ Rules for the first build; simulation (match, guard, phase order, cascade, energy scalar); CLI.
+2. ✅ Rules for the first build; simulation (match, guard, phase order, cascade); CLI. (The ability-energy
+   model with chunk scalars was dropped later: [ADRs D21](ADRs.md).)
 3. ✅ Golden test: the engine reproduces the build note.
-4. ✅ Designed loops as the product: `.loop.yaml`, share links, analysis, comparison.
-5. ✅ Web loop designer (Blazor WebAssembly) on GitHub Pages, with a preview per pull request.
+4. ✅ Designed loops as the product: `.loop.yaml`, share links, analysis, comparison ([ADRs D24](ADRs.md)).
+5. ✅ Web loop designer (Blazor WebAssembly) on GitHub Pages, with a preview per pull request ([ADRs D25](ADRs.md)).
 6. Ingest: Compendium snapshot parsers (tab registry) + Clarity enrichment + coverage report (FR-7, FR-9).
 7. Manifest join (names → hashes, icons), catalog versions (FR-8).
 8. Rule drafting from the Compendium's "On X:" phrasing (FR-10).
