@@ -26,7 +26,8 @@ public sealed record GameState(
 [Union]
 public partial record PlayerAction
 {
-    partial record CastAbility(AbilityKind Kind, HitOutcome Hit);
+    partial record CastAbility(OffensiveAbility Kind, HitOutcome Hit);
+    partial record UseClassAbility();
     partial record FireWeapon(WeaponSlot Slot, HitOutcome Hit);
     partial record CollectPickups(PickupId Pickup);
     partial record Wait(Seconds Duration);
@@ -59,10 +60,14 @@ public sealed record FiredRule(
     Likelihood Likelihood,
     int Depth);
 
+/// <summary>A passive whose conditions hold in the current state (shown next to the state, not as a bullet).</summary>
+public sealed record ActivePassive(ElementId Source, string SourceName, Affinity Affinity, PassiveRule Passive);
+
 /// <summary>Result of one step: new state, ordered fired rules, and what the player can do now.</summary>
 public sealed record Resolution(
     PlayerAction Action,
     GameState State,
     ImmutableArray<FiredRule> Fired,
+    ImmutableArray<ActivePassive> ActivePassives,
     ImmutableArray<PlayerAction> NowAvailable,
     ImmutableArray<string> Notes);

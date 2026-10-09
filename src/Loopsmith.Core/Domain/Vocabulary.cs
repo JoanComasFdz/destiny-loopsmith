@@ -14,6 +14,9 @@ public enum Affinity { Neutral, Kinetic, Arc, Solar, Void, Stasis, Strand, Prism
 
 public enum AbilityKind { Grenade, Melee, ClassAbility, Super }
 
+/// <summary>Abilities that hit something (a class ability is used, not aimed — see <c>PlayerAction.UseClassAbility</c>).</summary>
+public enum OffensiveAbility { Grenade, Melee, Super }
+
 public enum ElementKind
 {
     Keyword,        // core statuses/pickups whose rules are always active (Bolt Charge, Ionic Trace…)

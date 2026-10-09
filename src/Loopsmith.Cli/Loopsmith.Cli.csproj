@@ -5,6 +5,9 @@
     <AssemblyName>loopsmith</AssemblyName>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Dunet" PrivateAssets="all" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\Loopsmith.Core\Loopsmith.Core.csproj" />
   </ItemGroup>
 </Project>
