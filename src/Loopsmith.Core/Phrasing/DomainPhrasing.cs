@@ -58,8 +58,6 @@ public static class DomainPhrasing
         var name = glossary.DescribeStatus(status);
         return name switch
         {
-            "Freeze" => "Frozen",
-            "Slow" => "Slowed",
             _ when name.Contains(' ') => name,
             _ when name.EndsWith('e') => name + "d",
             _ when name.EndsWith("ed", StringComparison.Ordinal) => name,
@@ -89,7 +87,7 @@ public static class DomainPhrasing
 
     public static string DescribeOrigin(this KeywordGlossary glossary, DamageOrigin origin, Build build) =>
         origin.Match(
-            weapon => build.Weapons.FirstOrDefault(w => w.Slot == weapon.Slot)?.Name ?? $"{weapon.Type} weapon",
+            weapon => DescribeWeapon(build, weapon.Slot, $"{weapon.Type} weapon"),
             ability => Capitalize(ability.Kind.DescribeAbility()),
             keyword => glossary.DescribeStatus(keyword.Status),
             summoned => glossary.DescribeSummon(summoned.Summon));
@@ -114,9 +112,9 @@ public static class DomainPhrasing
         return via switch
         {
             DamageSource.AnySource => $"Kill {target}",
-            DamageSource.AbilityOf ability => $"{Capitalize(ability.Kind.DescribeAbility())} kill{OnTarget(target)}",
-            DamageSource.OfType type => $"{type.Type} kill{OnTarget(target)}",
-            DamageSource.KeywordOf keyword => $"{glossary.DescribeStatus(keyword.Status)} kill{OnTarget(target)}",
+            DamageSource.AbilityOf ability => $"{Capitalize(ability.Kind.DescribeAbility())} kill{DescribeOnTarget(target)}",
+            DamageSource.OfType type => $"{type.Type} kill{DescribeOnTarget(target)}",
+            DamageSource.KeywordOf keyword => $"{glossary.DescribeStatus(keyword.Status)} kill{DescribeOnTarget(target)}",
             _ => $"Kill {target} with {glossary.DescribeDamageSource(via)}",
         };
     }
@@ -127,7 +125,7 @@ public static class DomainPhrasing
         return via switch
         {
             DamageSource.AnySource => $"Damage {target}",
-            _ => $"{Capitalize(glossary.DescribeDamageSource(via))} damage{OnTarget(target)}",
+            _ => $"{Capitalize(glossary.DescribeDamageSource(via))} damage{DescribeOnTarget(target)}",
         };
     }
 
@@ -136,7 +134,13 @@ public static class DomainPhrasing
             ? "target"
             : string.Join(" + ", targetHas.Select(glossary.DescribeDebuffedAdjective)) + " target";
 
-    private static string OnTarget(string target) => target == "target" ? "" : $" on {target}";
+    private static string DescribeOnTarget(string target) => target == "target" ? "" : $" on {target}";
+
+    private static string DescribeWeapon(Build build, WeaponSlot slot, string fallback) =>
+        build.Weapons
+            .Select(w => w.Slot == slot ? Optional.Some(w.Name) : Optional.None<string>())
+            .FindFirstSome()
+            .UnwrapOr(fallback);
 
     public static string DescribeCondition(this KeywordGlossary glossary, Condition condition) =>
         condition.Match(
@@ -185,8 +189,8 @@ public static class DomainPhrasing
     public static string DescribeEvent(this KeywordGlossary glossary, GameEvent gameEvent, Build build) =>
         gameEvent.Match(
             cast => cast.Kind == AbilityKind.ClassAbility ? "Class ability" : $"Cast {cast.Kind.DescribeAbility()}",
-            damaged => $"{glossary.DescribeOrigin(damaged.Origin, build)} hit{OnTarget(DescribeTargetPhrase(glossary, damaged.TargetHas))}",
-            killed => $"{glossary.DescribeOrigin(killed.Origin, build)} kill{OnTarget(DescribeTargetPhrase(glossary, killed.TargetHas))}",
+            damaged => $"{glossary.DescribeOrigin(damaged.Origin, build)} hit{DescribeOnTarget(DescribeTargetPhrase(glossary, damaged.TargetHas))}",
+            killed => $"{glossary.DescribeOrigin(killed.Origin, build)} kill{DescribeOnTarget(DescribeTargetPhrase(glossary, killed.TargetHas))}",
             pickedUp => $"Picked up {glossary.DescribePickup(pickedUp.Pickup)}",
             gained => glossary.IsStacking(gained.Status)
                 ? $"{glossary.DescribeStatus(gained.Status)} ×{gained.Stacks.Value}"
@@ -197,7 +201,7 @@ public static class DomainPhrasing
         action.Match(
             cast => $"{Capitalize(cast.Kind.ToAbilityKind().DescribeAbility())} ({(cast.Hit == HitOutcome.Kill ? "kill" : "hit")})",
             _ => "Class ability",
-            fire => $"{build.Weapons.FirstOrDefault(w => w.Slot == fire.Slot)?.Name ?? fire.Slot.ToString()} ({(fire.Hit == HitOutcome.Kill ? "kill" : "hit")})",
+            fire => $"{DescribeWeapon(build, fire.Slot, fire.Slot.ToString())} ({(fire.Hit == HitOutcome.Kill ? "kill" : "hit")})",
             collect => $"Pick up {glossary.DescribePickup(collect.Pickup)}",
             wait => $"Wait {wait.Duration.FormatSeconds()}");
 
@@ -209,32 +213,6 @@ public static class DomainPhrasing
             fire => $"{fire.Slot.ToString().ToLowerInvariant()}{(fire.Hit == HitOutcome.Kill ? ":kill" : "")}",
             collect => $"pickup:{collect.Pickup}",
             wait => $"wait:{wait.Duration.Value.ToString("0.#", Invariant)}");
-
-    public static Result<PlayerAction, string> ParseActionToken(string token)
-    {
-        var parts = token.Trim().ToLowerInvariant().Split(':');
-        var hit = parts.Length > 1 && parts[1] == "kill" ? HitOutcome.Kill : HitOutcome.Damage;
-        var hitSuffixIsValid = parts.Length == 1 || (parts.Length == 2 && parts[1] is "kill" or "hit");
-        return parts[0] switch
-        {
-            "grenade" when hitSuffixIsValid => Ok(new PlayerAction.CastAbility(OffensiveAbility.Grenade, hit)),
-            "melee" when hitSuffixIsValid => Ok(new PlayerAction.CastAbility(OffensiveAbility.Melee, hit)),
-            "super" when hitSuffixIsValid => Ok(new PlayerAction.CastAbility(OffensiveAbility.Super, hit)),
-            "class" when parts.Length == 1 => Ok(new PlayerAction.UseClassAbility()),
-            "kinetic" when hitSuffixIsValid => Ok(new PlayerAction.FireWeapon(WeaponSlot.Kinetic, hit)),
-            "energy" when hitSuffixIsValid => Ok(new PlayerAction.FireWeapon(WeaponSlot.Energy, hit)),
-            "power" when hitSuffixIsValid => Ok(new PlayerAction.FireWeapon(WeaponSlot.Power, hit)),
-            "pickup" when parts.Length == 2 && PickupId.TryFrom(parts[1], out var pickup) => Ok(new PlayerAction.CollectPickups(pickup)),
-            "wait" when parts.Length == 1 => Ok(new PlayerAction.Wait(Seconds.From(5m))),
-            "wait" when parts.Length == 2
-                && decimal.TryParse(parts[1].TrimEnd('s'), NumberStyles.Number, Invariant, out var seconds)
-                && seconds > 0m => Ok(new PlayerAction.Wait(Seconds.From(seconds))),
-            _ => new Result<PlayerAction, string>.Error(
-                $"Unknown action '{token}'. Use grenade[:kill], melee[:kill], super[:kill], class, kinetic|energy|power[:kill], pickup:<id>, wait[:<seconds>]."),
-        };
-
-        static Result<PlayerAction, string> Ok(PlayerAction action) => new Result<PlayerAction, string>.Ok(action);
-    }
 
     public static string Capitalize(string text) =>
         text.Length == 0 ? text : char.ToUpperInvariant(text[0]) + text[1..];

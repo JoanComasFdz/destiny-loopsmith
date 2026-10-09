@@ -5,8 +5,8 @@ using Loopsmith.Core.Functional;
 
 namespace Loopsmith.Core.Simulation;
 
-/// <summary>Accumulator of one step: state so far, bullets so far, notes.</summary>
-public sealed record Cascade(GameState State, ImmutableArray<FiredRule> Fired, ImmutableArray<string> Notes);
+/// <summary>Accumulator of one step: state so far, bullets so far, notes, events processed so far.</summary>
+public sealed record Cascade(GameState State, ImmutableArray<FiredRule> Fired, ImmutableArray<string> Notes, int EventCount);
 
 /// <summary>A rule that matched an event, with the element (and copy count) it belongs to.</summary>
 public sealed record RuleMatch(EquippedElement Equipped, int RuleIndex, Rule Rule);
@@ -34,8 +34,8 @@ public static class EventCascading
 
         var matches = FindMatchingRules(build, cascade.State, gameEvent, ancestry);
         var lineage = ancestry.Union(matches.Select(match => ToFiredKey(match, gameEvent)));
-        var applied = ApplyMatches(build, cascade.State, matches, gameEvent, depth);
-        var advanced = cascade with { State = applied.State, Fired = cascade.Fired.AddRange(applied.Fired) };
+        var applied = ApplyMatches(build, cascade.State, matches, gameEvent, depth, cascade.EventCount);
+        var advanced = cascade with { State = applied.State, Fired = cascade.Fired.AddRange(applied.Fired), EventCount = cascade.EventCount + 1 };
         return applied.Derived.Aggregate(advanced, (acc, derived) => CascadeEvent(build, acc, derived, depth + 1, lineage));
     }
 
@@ -61,7 +61,7 @@ public static class EventCascading
     private sealed record Applied(Step Step, AppliedOutcome Outcome);
 
     private static AppliedMatches ApplyMatches(
-        ValidatedBuild build, GameState state, ImmutableArray<RuleMatch> matches, GameEvent gameEvent, int depth)
+        ValidatedBuild build, GameState state, ImmutableArray<RuleMatch> matches, GameEvent gameEvent, int depth, int eventIndex)
     {
         var steps = matches
             .SelectMany((match, matchIndex) => match.Rule.Then.Select(outcome => (match, outcome, matchIndex)))
@@ -78,19 +78,19 @@ public static class EventCascading
         });
 
         var fired = matches
-            .Select(match => ToFiredRule(match, result.Applied, gameEvent, depth))
+            .Select(match => ToFiredRule(match, result.Applied, gameEvent, depth, eventIndex))
             .OrderBy(rule => rule.Outcomes.Select(o => o.Outcome.ResolvePhase()).DefaultIfEmpty(Phase.Refund).Min())
             .ToImmutableArray();
         return new AppliedMatches(result.State, fired, result.Derived);
     }
 
-    private static FiredRule ToFiredRule(RuleMatch match, ImmutableArray<Applied> applied, GameEvent gameEvent, int depth)
+    private static FiredRule ToFiredRule(RuleMatch match, ImmutableArray<Applied> applied, GameEvent gameEvent, int depth, int eventIndex)
     {
         var element = match.Equipped.Element;
         var outcomes = applied.Where(a => a.Step.Match == match).Select(a => a.Outcome).ToImmutableArray();
         return new FiredRule(
             element.Id, element.Name, element.Kind, element.Affinity, gameEvent, outcomes,
-            match.Rule.Reason, match.Rule.Likelihood, depth);
+            match.Rule.Reason, match.Rule.Likelihood, depth, eventIndex);
     }
 
     private static string ToFiredKey(RuleMatch match, GameEvent gameEvent) =>

@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Loopsmith.Core.Causality;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 
@@ -35,7 +36,7 @@ public static class OutcomeApplication
         var consumed = state.DropBuff(convert.Consumed);
         if (stacks == 0)
         {
-            return Unchanged(state, outcome, Certainty.Known, "no stacks to consume");
+            return KeepUnchanged(state, outcome, Certainty.Known, "no stacks to consume");
         }
 
         var perStack = convert.PerStack.ResolveForCopies(copies);
@@ -75,7 +76,7 @@ public static class OutcomeApplication
 
     private static Application ApplyBuff(ValidatedBuild build, GameState state, Outcome outcome, Outcome.ApplyBuff apply)
     {
-        var definition = FindStatus(build, apply.Status);
+        var definition = build.Catalog.Glossary.FindStatus(apply.Status);
         var bonus = SumExtraStacks(build, state, apply.Status);
         var existing = state.ReadStacks(apply.Status);
         var wasActive = state.HasBuff(apply.Status);
@@ -100,21 +101,18 @@ public static class OutcomeApplication
     private static Application RemoveBuff(GameState state, Outcome outcome, Outcome.RemoveBuff remove) =>
         state.HasBuff(remove.Status)
             ? new Application(state.DropBuff(remove.Status), new AppliedOutcome(outcome, Certainty.Known, Optional.None<string>()), [])
-            : Unchanged(state, outcome, Certainty.Known, "was not active");
+            : KeepUnchanged(state, outcome, Certainty.Known, "was not active");
 
     private static Application DebuffTarget(ValidatedBuild build, GameState state, Outcome outcome, Outcome.DebuffTarget debuff)
     {
-        var duration = debuff.Duration.IsSome() ? debuff.Duration : FindStatus(build, debuff.Status).Bind(d => d.Duration);
+        var duration = debuff.Duration.IsSome() ? debuff.Duration : build.Catalog.Glossary.FindStatus(debuff.Status).Bind(d => d.Duration);
         var next = state.PutDebuff(new ActiveStatus(debuff.Status, StackCount.From(1), duration));
         return new Application(next, new AppliedOutcome(outcome, Certainty.Known, Optional.None<string>()), []);
     }
 
     private static Application Spawn(ValidatedBuild build, GameState state, Outcome outcome, Outcome.Spawn spawn)
     {
-        var collects = Optional.FromNullable(build.Catalog.Glossary.Pickups.GetValueOrDefault(spawn.Pickup))
-            .Map(p => p.CollectsAutomatically)
-            .UnwrapOr(false);
-        if (collects)
+        if (build.Catalog.Glossary.IsCollectedAutomatically(spawn.Pickup))
         {
             var pickedUp = Enumerable.Repeat<PendingEvent>(new PendingEvent.Ready(new GameEvent.PickedUp(spawn.Pickup)), spawn.Count);
             return new Application(state, new AppliedOutcome(outcome, Certainty.Known, "tracks to you"), pickedUp.ToImmutableArray());
@@ -126,16 +124,14 @@ public static class OutcomeApplication
 
     private static Application SpawnSummon(ValidatedBuild build, GameState state, Outcome outcome, Outcome.SpawnSummon summon)
     {
-        var type = Optional.FromNullable(build.Catalog.Glossary.Summons.GetValueOrDefault(summon.Summon))
-            .Map(s => s.DamageType)
-            .UnwrapOr(DamageType.Kinetic);
+        var type = build.Catalog.Glossary.ResolveSummonDamageType(summon.Summon);
         var hits = Enumerable.Repeat<PendingEvent>(new PendingEvent.HitTarget(new DamageOrigin.Summoned(summon.Summon, type)), summon.Count);
         return new Application(state, new AppliedOutcome(outcome, Certainty.Known, Optional.None<string>()), hits.ToImmutableArray());
     }
 
     private static Application StrikeTarget(ValidatedBuild build, GameState state, Outcome outcome, Outcome.StrikeTarget strike)
     {
-        var type = FindStatus(build, strike.Via).Map(s => s.Affinity.ToDamageType()).UnwrapOr(DamageType.Kinetic);
+        var type = build.Catalog.Glossary.ResolveStrikeDamageType(strike.Via);
         var origin = new DamageOrigin.Keyword(strike.Via, type);
         var hit = ImmutableArray.Create<PendingEvent>(new PendingEvent.HitTarget(origin));
         var events = strike.Hit == HitOutcome.Kill ? hit.Add(new PendingEvent.KillTarget(origin)) : hit;
@@ -146,26 +142,19 @@ public static class OutcomeApplication
     {
         var resolved = value.ResolveForCopies(copies);
         var caveat = resolved.Certainty == Certainty.Unknown ? "value unknown" : "";
-        return Unchanged(state, outcome, resolved.Certainty, caveat);
+        return KeepUnchanged(state, outcome, resolved.Certainty, caveat);
     }
 
-    private static Application Unchanged(GameState state, Outcome outcome, Certainty certainty, string caveat) =>
+    private static Application KeepUnchanged(GameState state, Outcome outcome, Certainty certainty, string caveat) =>
         new(state, new AppliedOutcome(outcome, certainty, JoinCaveats(caveat)), []);
 
     private static ResolvedValue ResolveChunkScalar(ValidatedBuild build, AbilityKind kind)
     {
-        var profile = build.Equipped
-            .Select(e => e.Element.Ability)
-            .Select(ability => ability.Match(some => some.Value.Kind == kind ? some.Value : null, _ => null))
-            .FirstOrDefault(p => p is not null);
-        var resolved = Optional.FromNullable(profile)
+        var resolved = build.FindAbilityProfile(kind)
             .Map(p => p.ChunkScalar.ResolveForCopies(1))
             .UnwrapOr(new ResolvedValue(Optional.None<decimal>(), Certainty.Unknown));
         return resolved.Value.IsSome() ? resolved : new ResolvedValue(Optional.Some(1m), Certainty.Assumed);
     }
-
-    private static Optional<StatusDefinition> FindStatus(ValidatedBuild build, StatusId status) =>
-        Optional.FromNullable(build.Catalog.Glossary.Statuses.GetValueOrDefault(status));
 
     private sealed record StackBonus(int Extra, ImmutableArray<string> Sources);
 

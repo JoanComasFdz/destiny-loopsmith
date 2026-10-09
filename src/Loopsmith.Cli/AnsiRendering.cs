@@ -21,17 +21,17 @@ public static class AnsiRendering
         tone switch
         {
             Tone.Strong => "\u001b[1m",
-            Tone.Muted => Rgb(0x8a, 0x94, 0xa8),
-            Tone.Warning => Rgb(0xff, 0xcf, 0x5a),
-            Tone.Arc => Rgb(0x6f, 0xe3, 0xff),
-            Tone.Solar => Rgb(0xff, 0x9a, 0x3c),
-            Tone.Void => Rgb(0xb0, 0x7c, 0xff),
-            Tone.Stasis => Rgb(0x5a, 0xa0, 0xff),
-            Tone.Strand => Rgb(0x4e, 0xe2, 0x8a),
-            Tone.Prismatic => Rgb(0xff, 0x5f, 0xa2),
-            Tone.Kinetic => Rgb(0xe7, 0xea, 0xf0),
+            Tone.Muted => ToRgbEscape(0x8a, 0x94, 0xa8),
+            Tone.Warning => ToRgbEscape(0xff, 0xcf, 0x5a),
+            Tone.Arc => ToRgbEscape(0x6f, 0xe3, 0xff),
+            Tone.Solar => ToRgbEscape(0xff, 0x9a, 0x3c),
+            Tone.Void => ToRgbEscape(0xb0, 0x7c, 0xff),
+            Tone.Stasis => ToRgbEscape(0x5a, 0xa0, 0xff),
+            Tone.Strand => ToRgbEscape(0x4e, 0xe2, 0x8a),
+            Tone.Prismatic => ToRgbEscape(0xff, 0x5f, 0xa2),
+            Tone.Kinetic => ToRgbEscape(0xe7, 0xea, 0xf0),
             _ => "",
         };
 
-    private static string Rgb(int r, int g, int b) => $"\u001b[38;2;{r};{g};{b}m";
+    private static string ToRgbEscape(int r, int g, int b) => $"\u001b[38;2;{r};{g};{b}m";
 }

@@ -48,6 +48,10 @@ public static class OptionalExtensions
             _ => true,
             _ => false);
 
+    /// <summary>The first present value of a sequence of optionals, if any.</summary>
+    public static Optional<T> FindFirstSome<T>(this IEnumerable<Optional<T>> optionals) =>
+        optionals.Aggregate(Optional.None<T>(), (found, next) => found.IsSome() ? found : next);
+
     public static Result<T, TFailure> ToResult<T, TFailure>(this Optional<T> optional, Func<TFailure> failure) =>
         optional.Match<Result<T, TFailure>>(
             some => new Result<T, TFailure>.Ok(some.Value),

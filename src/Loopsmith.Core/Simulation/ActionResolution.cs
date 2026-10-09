@@ -9,15 +9,20 @@ public static class ActionResolution
 {
     public static readonly Seconds DefaultWait = Seconds.From(5m);
 
-    private static readonly AbilityKind[] AbilityOrder = [AbilityKind.Grenade, AbilityKind.Melee, AbilityKind.ClassAbility, AbilityKind.Super];
+    private static readonly ImmutableArray<AbilityKind> AbilityOrder =
+        [AbilityKind.Grenade, AbilityKind.Melee, AbilityKind.ClassAbility, AbilityKind.Super];
 
     /// <summary>Fresh spawn: grenade, melee and class ability charged; super empty.</summary>
     public static GameState CreateInitialState(ValidatedBuild build)
     {
-        var gauges = AbilityOrder
-            .Select(kind => (Kind: kind, Max: CountMaxCharges(build, kind)))
-            .Select(x => new AbilityGauge(x.Kind, EnergyAmount.From(x.Kind == AbilityKind.Super ? 0m : x.Max), x.Max))
-            .ToImmutableArray();
+        AbilityGauge CreateGauge(AbilityKind kind)
+        {
+            var max = CountMaxCharges(build, kind);
+            return new AbilityGauge(kind, EnergyAmount.From(kind == AbilityKind.Super ? 0m : max), max);
+        }
+
+        var gauges = new AbilityGauges(
+            CreateGauge(AbilityKind.Grenade), CreateGauge(AbilityKind.Melee), CreateGauge(AbilityKind.ClassAbility), CreateGauge(AbilityKind.Super));
         return new GameState(0, Seconds.From(0m), gauges, [], new TargetState(EnemyTier.Minor, []), []);
     }
 
@@ -25,7 +30,7 @@ public static class ActionResolution
     {
         var stepped = state with { Step = state.Step + 1 };
         var opening = OpenAction(build, stepped, action);
-        var seed = new Cascade(opening.State, [], opening.Notes);
+        var seed = new Cascade(opening.State, [], opening.Notes, 0);
         var finished = opening.Events.Aggregate(seed, (acc, pending) => EventCascading.CascadeEvent(build, acc, pending, 0));
         var passives = ListActivePassives(build, finished.State);
         var available = ListAvailableActions(build, finished.State);
@@ -112,7 +117,7 @@ public static class ActionResolution
 
     private static Opening FireWeapon(ValidatedBuild build, GameState state, PlayerAction.FireWeapon fire)
     {
-        var weapon = Optional.FromNullable(build.Build.Weapons.FirstOrDefault(w => w.Slot == fire.Slot));
+        var weapon = build.Build.Weapons.Select(w => w.Slot == fire.Slot ? Optional.Some(w) : Optional.None<WeaponLoadout>()).FindFirstSome();
         return weapon.Match(
             some =>
             {
@@ -172,11 +177,7 @@ public static class ActionResolution
 
     private static ResolvedValue ReadBaseCooldown(ValidatedBuild build, AbilityKind kind)
     {
-        var profile = build.Equipped
-            .Select(e => e.Element.Ability)
-            .Select(ability => ability.Match(some => some.Value.Kind == kind ? some.Value : null, _ => null))
-            .FirstOrDefault(p => p is not null);
-        var resolved = Optional.FromNullable(profile)
+        var resolved = build.FindAbilityProfile(kind)
             .Map(p => p.BaseCooldownSeconds.ResolveForCopies(1))
             .UnwrapOr(new ResolvedValue(Optional.None<decimal>(), Certainty.Unknown));
         return resolved.Value.Match(some => some.Value > 0m, _ => false)

@@ -12,7 +12,7 @@ public sealed record ExplanationItem(
     ElementKind SourceKind,
     Affinity Affinity,
     Likelihood Likelihood,
-    string Condition,
+    Optional<string> Condition,
     Optional<string> Reason);
 
 /// <summary>A trigger ("Kill Jolted target") and everything in the build it sets off.</summary>
@@ -43,7 +43,7 @@ public static class BuildExplaining
                     x.Element.Kind,
                     x.Element.Affinity,
                     x.Rule.Likelihood,
-                    glossary.DescribeConditions(x.Rule.When),
+                    x.Rule.When.IsEmpty ? Optional.None<string>() : Optional.Some(glossary.DescribeConditions(x.Rule.When)),
                     x.Rule.Reason)));
         var passiveItems = build.Equipped
             .SelectMany(equipped => equipped.Element.Passives.Select(passive => (equipped.Element, Passive: passive)))
@@ -58,7 +58,7 @@ public static class BuildExplaining
                     x.Element.Kind,
                     x.Element.Affinity,
                     Likelihood.Always,
-                    "",
+                    Optional.None<string>(),
                     x.Passive.Reason)));
         return ruleItems.Concat(passiveItems)
             .GroupBy(x => x.Heading)
@@ -81,16 +81,16 @@ public static class BuildExplaining
     public static ImmutableArray<StyledLine> RenderBuildSummary(ValidatedBuild build)
     {
         var b = build.Build;
-        var tone = build.Equipped.Select(e => e.Element).FirstOrDefault(e => e.Kind == ElementKind.Super)?.Affinity.ToTone() ?? Tone.Plain;
-        string NameOf(ElementId id) => build.Catalog.Elements.TryGetValue(id, out var e) ? e.Name : id.Value;
-        string NamesOf(IEnumerable<ElementId> ids) => string.Join(", ", ids
+        var tone = b.Subclass.ToAffinity().ToTone();
+        string DescribeElement(ElementId id) => build.Catalog.Elements.TryGetValue(id, out var e) ? e.Name : id.Value;
+        string DescribeElements(IEnumerable<ElementId> ids) => string.Join(", ", ids
             .GroupBy(id => id)
-            .Select(g => g.Count() > 1 ? $"{NameOf(g.Key)} ×{g.Count()}" : NameOf(g.Key)));
-        StyledLine Row(string label, string value) => StyledText.ToLine(1, $"{label,-10}".ToSpan(Tone.Muted), value.ToSpan(Tone.Plain));
+            .Select(g => g.Count() > 1 ? $"{DescribeElement(g.Key)} ×{g.Count()}" : DescribeElement(g.Key)));
+        StyledLine RenderRow(string label, string value) => StyledText.ToLine(1, $"{label,-10}".ToSpan(Tone.Muted), value.ToSpan(Tone.Plain));
 
         var source = b.Author.Match(a => a.Value, _ => "") + b.SourceUrl.Match(u => $"  {u.Value}", _ => "");
         var weapons = b.Weapons.Select(w =>
-            $"{w.Name} ({w.Type}{w.Archetype.Match(a => $" {a.Value}", _ => "")})" + (w.Perks.IsEmpty ? "" : $": {NamesOf(w.Perks)}"));
+            $"{w.Name} ({w.Type}{w.Archetype.Match(a => $" {a.Value}", _ => "")})" + (w.Perks.IsEmpty ? "" : $": {DescribeElements(w.Perks)}"));
         var stats = new (string Name, Optional<StatValue> Value)[]
             {
                 ("Weapons", b.Stats.Weapons), ("Health", b.Stats.Health), ("Class", b.Stats.Class),
@@ -103,39 +103,38 @@ public static class BuildExplaining
         [
             StyledText.ToLine(0, b.Name.ToSpan(Tone.Strong), $"  {b.Class} · {b.Subclass}".ToSpan(tone)),
             .. source.Length > 0 ? [StyledText.ToLine(1, source.Trim().ToSpan(Tone.Muted))] : ImmutableArray<StyledLine>.Empty,
-            Row("Abilities", $"{NameOf(b.Abilities.Super)} · {NameOf(b.Abilities.Grenade)} · {NameOf(b.Abilities.Melee)} · {NameOf(b.Abilities.ClassAbility)}"),
-            Row("Aspects", NamesOf(b.Aspects)),
-            Row("Fragments", NamesOf(b.Fragments)),
-            Row("Exotic", b.ExoticArmor.Match(e => NameOf(e.Value), _ => "—")),
-            .. b.ArmorSetBonuses.IsEmpty ? ImmutableArray<StyledLine>.Empty : [Row("Set", NamesOf(b.ArmorSetBonuses))],
-            Row("Mods", NamesOf(b.ArmorMods)),
-            Row("Artifact", NamesOf(b.ArtifactPerks)),
-            Row("Weapons", string.Join(" · ", weapons)),
-            Row("Stats", string.Join(" · ", stats)),
+            RenderRow("Abilities", $"{DescribeElement(b.Abilities.Super)} · {DescribeElement(b.Abilities.Grenade)} · {DescribeElement(b.Abilities.Melee)} · {DescribeElement(b.Abilities.ClassAbility)}"),
+            RenderRow("Aspects", DescribeElements(b.Aspects)),
+            RenderRow("Fragments", DescribeElements(b.Fragments)),
+            RenderRow("Exotic", b.ExoticArmor.Match(e => DescribeElement(e.Value), _ => "—")),
+            .. b.ArmorSetBonuses.IsEmpty ? ImmutableArray<StyledLine>.Empty : [RenderRow("Set", DescribeElements(b.ArmorSetBonuses))],
+            RenderRow("Mods", DescribeElements(b.ArmorMods)),
+            RenderRow("Artifact", DescribeElements(b.ArtifactPerks)),
+            RenderRow("Weapons", string.Join(" · ", weapons)),
+            RenderRow("Stats", string.Join(" · ", stats)),
             .. issues,
         ];
     }
 
     private static StyledLine RenderNoteLine(ExplanationGroup group)
     {
-        var bullets = group.Items.SelectMany((item, index) => new[]
-            {
-                index > 0 ? " + ".ToSpan(Tone.Muted) : null,
+        var bullets = group.Items.SelectMany((item, index) => (ImmutableArray<StyledSpan>)
+            [
+                .. index > 0 ? [" + ".ToSpan(Tone.Muted)] : ImmutableArray<StyledSpan>.Empty,
                 item.Outcomes.ToSpan(Tone.Plain),
-                item.Condition.Length > 0 ? $" ({item.Condition})".ToSpan(Tone.Muted) : null,
+                .. item.Condition.Match(c => [$" ({c.Value})".ToSpan(Tone.Muted)], _ => ImmutableArray<StyledSpan>.Empty),
                 " [".ToSpan(Tone.Muted),
                 item.SourceName.ToSpan(item.Affinity.ToTone()),
                 "]".ToSpan(Tone.Muted),
-                item.Likelihood == Likelihood.Chance ? " (chance)".ToSpan(Tone.Muted) : null,
-            }
-            .OfType<StyledSpan>());
+                .. item.Likelihood == Likelihood.Chance ? [" (chance)".ToSpan(Tone.Muted)] : ImmutableArray<StyledSpan>.Empty,
+            ]);
         return new StyledLine(0, [group.Heading.ToSpan(Tone.Strong), " -> ".ToSpan(Tone.Muted), .. bullets]);
     }
 
     private static IEnumerable<StyledLine> RenderTree(ExplanationGroup group)
     {
         var texts = group.Items
-            .Select(item => item.Outcomes + (item.Condition.Length > 0 ? $" ({item.Condition})" : "") + (item.Likelihood == Likelihood.Chance ? " (chance)" : ""))
+            .Select(item => item.Outcomes + item.Condition.Match(c => $" ({c.Value})", _ => "") + (item.Likelihood == Likelihood.Chance ? " (chance)" : ""))
             .ToImmutableArray();
         var width = texts.Max(text => text.Length);
         var header = StyledText.ToLine(0, group.Heading.ToSpan(group.Affinity == Affinity.Neutral ? Tone.Strong : group.Affinity.ToTone()));

@@ -43,8 +43,9 @@ public static class TraceRenderer
     public static ImmutableArray<StyledLine> RenderState(ValidatedBuild build, GameState state, ImmutableArray<ActivePassive> passives)
     {
         var glossary = build.Catalog.Glossary;
-        var tone = ToSubclassTone(build.Build.Subclass);
-        var gauges = state.Abilities.Select(gauge => StyledText.ToLine(1,
+        var tone = build.Build.Subclass.ToAffinity().ToTone();
+        var all = ImmutableArray.Create(state.Abilities.Grenade, state.Abilities.Melee, state.Abilities.ClassAbility, state.Abilities.Super);
+        var gauges = all.Select(gauge => StyledText.ToLine(1,
             $"{DomainPhrasing.Capitalize(gauge.Kind.DescribeAbility()),-14}".ToSpan(Tone.Muted),
             RenderBar(gauge).ToSpan(tone),
             $" {FormatCharges(gauge.Energy.Value)}/{gauge.MaxCharges}".ToSpan(Tone.Plain)));
@@ -106,7 +107,7 @@ public static class TraceRenderer
     }
 
     private static bool IsSameEvent(FiredRule left, FiredRule right) =>
-        left.Depth == right.Depth && ReferenceEquals(left.Trigger, right.Trigger);
+        left.EventIndex == right.EventIndex;
 
     private static IEnumerable<StyledLine> RenderGroup(ValidatedBuild build, ImmutableArray<FiredRule> group, TraceOptions options)
     {
@@ -149,11 +150,11 @@ public static class TraceRenderer
 
     private static IEnumerable<StyledSpan> RenderFiredRule(KeywordGlossary glossary, FiredRule rule, bool isContinuation)
     {
-        var joiner = isContinuation ? new[] { " + ".ToSpan(Tone.Muted) } : [];
+        ImmutableArray<StyledSpan> joiner = isContinuation ? [" + ".ToSpan(Tone.Muted)] : [];
         var outcomes = rule.Outcomes.IsEmpty
             ? "(no effect)"
             : string.Join(" and ", rule.Outcomes.Select(o => glossary.DescribeOutcome(o.Outcome) + ToCertaintyMarker(o.Certainty)));
-        var chance = rule.Likelihood == Likelihood.Chance ? new[] { " (chance)".ToSpan(Tone.Muted) } : [];
+        ImmutableArray<StyledSpan> chance = rule.Likelihood == Likelihood.Chance ? [" (chance)".ToSpan(Tone.Muted)] : [];
         return
         [
             .. joiner,
@@ -190,15 +191,4 @@ public static class TraceRenderer
 
     private static ImmutableArray<StyledSpan> JoinSpans(IEnumerable<StyledSpan> spans) =>
         spans.SelectMany((span, index) => index == 0 ? new[] { span } : [" · ".ToSpan(Tone.Muted), span]).ToImmutableArray();
-
-    private static Tone ToSubclassTone(Subclass subclass) =>
-        subclass switch
-        {
-            Subclass.Arc => Tone.Arc,
-            Subclass.Solar => Tone.Solar,
-            Subclass.Void => Tone.Void,
-            Subclass.Stasis => Tone.Stasis,
-            Subclass.Strand => Tone.Strand,
-            _ => Tone.Prismatic,
-        };
 }

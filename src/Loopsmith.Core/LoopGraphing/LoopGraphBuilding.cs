@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Loopsmith.Core.Causality;
 using Loopsmith.Core.Domain;
+using Loopsmith.Core.Functional;
 using Loopsmith.Core.Phrasing;
 
 namespace Loopsmith.Core.LoopGraphing;
@@ -30,12 +31,12 @@ public static class LoopGraphBuilding
             .Distinct()
             .ToImmutableArray();
         var subclass = build.Build.Subclass.ToDamageType();
-        var subclassAffinity = Enum.Parse<Affinity>(build.Build.Subclass.ToString());
+        var subclassAffinity = build.Build.Subclass.ToAffinity();
 
         var abilityKinds = new[] { AbilityKind.Grenade, AbilityKind.Melee, AbilityKind.ClassAbility, AbilityKind.Super };
         var energyNodes = abilityKinds.Select(k => new GraphNode(ToEnergyKey(k), $"{DomainPhrasing.Capitalize(k.DescribeAbility())} energy", NodeKind.Energy, subclassAffinity));
         var castNodes = abilityKinds.Select(k => new GraphNode(ToCastKey(k), k == AbilityKind.ClassAbility ? "Use class ability" : $"Throw {k.DescribeAbility()}", NodeKind.Action, subclassAffinity));
-        var weaponNodes = build.Build.Weapons.Select(w => new GraphNode(ToWeaponKey(w.Slot), $"Shoot {w.Name}", NodeKind.Action, Enum.Parse<Affinity>(w.Type.ToString())));
+        var weaponNodes = build.Build.Weapons.Select(w => new GraphNode(ToWeaponKey(w.Slot), $"Shoot {w.Name}", NodeKind.Action, w.Type.ToAffinity()));
 
         // Which trigger nodes does a concrete event reach?
         IEnumerable<string> Reach(GameEvent gameEvent) =>
@@ -77,35 +78,35 @@ public static class LoopGraphBuilding
         IEnumerable<(string Key, Trigger On)> triggers)
     {
         var glossary = build.Catalog.Glossary;
-        IEnumerable<RawEdge> To(IEnumerable<GameEvent> events) =>
+        IEnumerable<RawEdge> LinkToTriggers(IEnumerable<GameEvent> events) =>
             events.SelectMany(reach).Distinct().Select(to => new RawEdge(from, to, source, EdgeKind.Rule));
-        RawEdge[] ToEnergy(AbilityKind kind) => [new RawEdge(from, ToEnergyKey(kind), source, EdgeKind.Rule)];
+        RawEdge[] LinkToEnergy(AbilityKind kind) => [new RawEdge(from, ToEnergyKey(kind), source, EdgeKind.Rule)];
 
         return outcome.Match(
-            grant => ToEnergy(grant.To),
-            convert => ToEnergy(convert.To),
-            apply => To(ListBuffEvents(glossary, apply.Status)),
+            grant => LinkToEnergy(grant.To),
+            convert => LinkToEnergy(convert.To),
+            apply => LinkToTriggers(ListBuffEvents(glossary, apply.Status)),
             _ => [],
             debuff => triggers
                 .Where(t => t.On.ListRequiredTargetStatuses().Contains(debuff.Status))
                 .Select(t => new RawEdge(from, t.Key, source, EdgeKind.Enables)),
-            spawn => To([new GameEvent.PickedUp(spawn.Pickup)]),
-            summon => To(ListHitEvents(
-                new DamageOrigin.Summoned(summon.Summon, glossary.Summons.TryGetValue(summon.Summon, out var s) ? s.DamageType : DamageType.Kinetic),
+            spawn => LinkToTriggers([new GameEvent.PickedUp(spawn.Pickup)]),
+            summon => LinkToTriggers(ListHitEvents(
+                new DamageOrigin.Summoned(summon.Summon, glossary.ResolveSummonDamageType(summon.Summon)),
                 appliedDebuffs)),
-            strike => To(ListHitEvents(
-                new DamageOrigin.Keyword(strike.Via, glossary.ReadStatusAffinity(strike.Via).ToDamageType()),
+            strike => LinkToTriggers(ListHitEvents(
+                new DamageOrigin.Keyword(strike.Via, glossary.ResolveStrikeDamageType(strike.Via)),
                 appliedDebuffs,
                 strike.Hit == HitOutcome.Kill)),
             _ => [],
             _ => [],
-            reset => ToEnergy(reset.Which));
+            reset => LinkToEnergy(reset.Which));
     }
 
     private static IEnumerable<GameEvent> ListBuffEvents(KeywordGlossary glossary, StatusId status)
     {
         yield return new GameEvent.BuffGained(status, StackCount.From(1));
-        if (glossary.IsStacking(status))
+        if (glossary.CanReachMaxStacks(status))
         {
             yield return new GameEvent.StacksMaxed(status);
         }
@@ -141,24 +142,21 @@ public static class LoopGraphBuilding
     private static Affinity ReadTriggerAffinity(ValidatedBuild build, Trigger trigger)
     {
         var glossary = build.Catalog.Glossary;
-        var status = trigger.Match(
-            _ => (StatusId?)null,
-            _ => null,
-            _ => null,
-            killDebuffed => killDebuffed.TargetHas.FirstOrDefault(),
-            _ => null,
-            damageDebuffed => damageDebuffed.TargetHas.FirstOrDefault(),
-            _ => null,
-            buffGained => buffGained.Status,
-            stacksMaxed => stacksMaxed.Status);
-        if (status is { } s)
-        {
-            return glossary.ReadStatusAffinity(s);
-        }
-
-        return trigger is Trigger.PickUp pickUp && glossary.Pickups.TryGetValue(pickUp.Pickup, out var pickup)
-            ? pickup.Affinity
-            : Enum.Parse<Affinity>(build.Build.Subclass.ToString());
+        var status = trigger.ListRequiredTargetStatuses()
+            .Select(Optional.Some)
+            .Append(trigger switch
+            {
+                Trigger.BuffGained gained => Optional.Some(gained.Status),
+                Trigger.StacksMaxed maxed => Optional.Some(maxed.Status),
+                _ => Optional.None<StatusId>(),
+            })
+            .FindFirstSome();
+        var pickup = trigger is Trigger.PickUp pickUp && glossary.Pickups.TryGetValue(pickUp.Pickup, out var definition)
+            ? Optional.Some(definition.Affinity)
+            : Optional.None<Affinity>();
+        return status
+            .Map(glossary.ReadStatusAffinity)
+            .UnwrapOr(pickup.UnwrapOr(build.Build.Subclass.ToAffinity()));
     }
 
     private static string ToTriggerKey(KeywordGlossary glossary, Trigger trigger) => "t:" + glossary.DescribeTrigger(trigger);

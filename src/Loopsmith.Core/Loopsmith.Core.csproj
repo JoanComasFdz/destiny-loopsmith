@@ -3,7 +3,7 @@
     <RootNamespace>Loopsmith.Core</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Dunet" PrivateAssets="all" />
+    <PackageReference Include="Dunet" />
     <PackageReference Include="Vogen" />
     <PackageReference Include="YamlDotNet" />
   </ItemGroup>

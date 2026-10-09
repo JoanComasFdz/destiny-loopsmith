@@ -57,7 +57,7 @@ public static class PlaySessions
 
         var action = int.TryParse(command, out var number) && number >= 1 && number <= session.Available.Length
             ? new Result<PlayerAction, string>.Ok(session.Available[number - 1])
-            : DomainPhrasing.ParseActionToken(command);
+            : ActionTokenParsing.ParseActionToken(command);
         return action.Match<(PlaySession, ImmutableArray<Effect>)>(
             ok =>
             {

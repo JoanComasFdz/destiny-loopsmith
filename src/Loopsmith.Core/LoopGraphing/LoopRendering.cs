@@ -25,13 +25,12 @@ public static class LoopRendering
             ? "ability loop — refunds " + string.Join(", ", loop.NodeKeys.Where(k => nodes[k].Kind == NodeKind.Energy).Select(k => nodes[k].Label.ToLowerInvariant()))
             : "buff loop";
         yield return StyledText.ToLine(0, $"Loop {number}".ToSpan(Tone.Strong), $" · {kind} · {loop.Edges.Length} steps".ToSpan(Tone.Muted));
-        var spans = loop.Edges.SelectMany((edge, index) => new[]
-            {
-                index == 0 ? nodes[edge.From].Label.ToSpan(nodes[edge.From].Affinity.ToTone()) : null,
+        var spans = loop.Edges.SelectMany((edge, index) => (ImmutableArray<StyledSpan>)
+            [
+                .. index == 0 ? [nodes[edge.From].Label.ToSpan(nodes[edge.From].Affinity.ToTone())] : ImmutableArray<StyledSpan>.Empty,
                 edge.Kind == EdgeKind.Player ? " → ".ToSpan(Tone.Muted) : $" →[{string.Join(", ", edge.Sources)}] ".ToSpan(Tone.Muted),
                 index == loop.Edges.Length - 1 ? "↺".ToSpan(Tone.Strong) : nodes[edge.To].Label.ToSpan(nodes[edge.To].Affinity.ToTone()),
-            }
-            .OfType<StyledSpan>());
+            ]);
         yield return new StyledLine(1, [.. spans]);
     }
 
@@ -97,7 +96,7 @@ public static class LoopRendering
         return text.ToString();
     }
 
-    private static readonly (Affinity Affinity, string Color)[] Palette =
+    private static readonly ImmutableArray<(Affinity Affinity, string Color)> Palette =
     [
         (Affinity.Neutral, "#8a94a8"), (Affinity.Kinetic, "#e7eaf0"), (Affinity.Arc, "#6fe3ff"), (Affinity.Solar, "#ff9a3c"),
         (Affinity.Void, "#b07cff"), (Affinity.Stasis, "#5aa0ff"), (Affinity.Strand, "#4ee28a"), (Affinity.Prismatic, "#ff5fa2"),

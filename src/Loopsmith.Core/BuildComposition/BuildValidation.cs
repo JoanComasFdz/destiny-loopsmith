@@ -41,27 +41,27 @@ public static class BuildValidation
 
     private static ImmutableArray<Slot> ListSlots(Build build)
     {
-        static Slot Single(ElementId id, string name, params ElementKind[] accepts) => new(id, name, [.. accepts]);
-        static IEnumerable<Slot> Many(IEnumerable<ElementId> ids, string name, params ElementKind[] accepts) =>
+        static Slot CreateSlot(ElementId id, string name, params ElementKind[] accepts) => new(id, name, [.. accepts]);
+        static IEnumerable<Slot> CreateSlots(IEnumerable<ElementId> ids, string name, params ElementKind[] accepts) =>
             ids.Select(id => new Slot(id, name, [.. accepts]));
 
         var exotic = build.ExoticArmor.Match(
-            some => new[] { Single(some.Value, "exotic armor", ElementKind.ExoticArmor) },
+            some => new[] { CreateSlot(some.Value, "exotic armor", ElementKind.ExoticArmor) },
             _ => []);
         var weaponPerks = build.Weapons.SelectMany(w =>
-            Many(w.Perks, $"{w.Name} perk", ElementKind.WeaponPerk, ElementKind.ExoticWeapon));
+            CreateSlots(w.Perks, $"{w.Name} perk", ElementKind.WeaponPerk, ElementKind.ExoticWeapon));
         return
         [
-            Single(build.Abilities.Super, "super", ElementKind.Super),
-            Single(build.Abilities.Grenade, "grenade", ElementKind.Grenade),
-            Single(build.Abilities.Melee, "melee", ElementKind.Melee),
-            Single(build.Abilities.ClassAbility, "class ability", ElementKind.ClassAbility),
-            .. Many(build.Aspects, "aspect", ElementKind.Aspect),
-            .. Many(build.Fragments, "fragment", ElementKind.Fragment),
+            CreateSlot(build.Abilities.Super, "super", ElementKind.Super),
+            CreateSlot(build.Abilities.Grenade, "grenade", ElementKind.Grenade),
+            CreateSlot(build.Abilities.Melee, "melee", ElementKind.Melee),
+            CreateSlot(build.Abilities.ClassAbility, "class ability", ElementKind.ClassAbility),
+            .. CreateSlots(build.Aspects, "aspect", ElementKind.Aspect),
+            .. CreateSlots(build.Fragments, "fragment", ElementKind.Fragment),
             .. exotic,
-            .. Many(build.ArmorSetBonuses, "armor set bonus", ElementKind.ArmorSetBonus),
-            .. Many(build.ArmorMods, "armor mod", ElementKind.ArmorMod),
-            .. Many(build.ArtifactPerks, "artifact perk", ElementKind.ArtifactPerk),
+            .. CreateSlots(build.ArmorSetBonuses, "armor set bonus", ElementKind.ArmorSetBonus),
+            .. CreateSlots(build.ArmorMods, "armor mod", ElementKind.ArmorMod),
+            .. CreateSlots(build.ArtifactPerks, "artifact perk", ElementKind.ArtifactPerk),
             .. weaponPerks,
         ];
     }
@@ -76,20 +76,18 @@ public static class BuildValidation
                 [new BuildIssue(Severity.Blocking, $"Unknown {slot.SlotName} '{slot.Id}' — no such element in the rule catalog.")]);
         }
 
-        var issues = new[]
-            {
-                slot.Accepts.Contains(element.Kind)
-                    ? null
-                    : new BuildIssue(Severity.Blocking, $"'{element.Name}' ({element.Kind}) can't go in the {slot.SlotName} slot."),
-                element.Class.Match(c => c.Value == build.Class, _ => true)
-                    ? null
-                    : new BuildIssue(Severity.Blocking, $"'{element.Name}' belongs to another class, not {build.Class}."),
-                IsSubclassCompatible(build.Subclass, element)
-                    ? null
-                    : new BuildIssue(Severity.Blocking, $"'{element.Name}' ({element.Affinity}) does not fit a {build.Subclass} subclass."),
-            }
-            .OfType<BuildIssue>()
-            .ToImmutableArray();
+        ImmutableArray<BuildIssue> issues =
+        [
+            .. slot.Accepts.Contains(element.Kind)
+                ? []
+                : new[] { new BuildIssue(Severity.Blocking, $"'{element.Name}' ({element.Kind}) can't go in the {slot.SlotName} slot.") },
+            .. element.Class.Match(c => c.Value == build.Class, _ => true)
+                ? []
+                : new[] { new BuildIssue(Severity.Blocking, $"'{element.Name}' belongs to another class, not {build.Class}.") },
+            .. IsSubclassCompatible(build.Subclass, element)
+                ? []
+                : new[] { new BuildIssue(Severity.Blocking, $"'{element.Name}' ({element.Affinity}) does not fit a {build.Subclass} subclass.") },
+        ];
         return new ResolvedSlot(slot, Optional.Some(element), issues);
     }
 
@@ -98,7 +96,7 @@ public static class BuildValidation
         var isSubclassBound = element.Kind is ElementKind.Super or ElementKind.Grenade or ElementKind.Melee
             or ElementKind.Aspect or ElementKind.Fragment;
         var isNeutral = element.Affinity is Affinity.Neutral or Affinity.Kinetic;
-        return !isSubclassBound || isNeutral || subclass == Subclass.Prismatic || element.Affinity.ToString() == subclass.ToString();
+        return !isSubclassBound || isNeutral || subclass == Subclass.Prismatic || element.Affinity == subclass.ToAffinity();
     }
 
     private static IEnumerable<BuildIssue> CheckAspects(Build build, RuleCatalog catalog)

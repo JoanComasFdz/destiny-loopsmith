@@ -13,8 +13,7 @@ public static class BuildLoading
 {
     public static Result<ValidatedBuild, string> LoadValidatedBuild(LoadRequest request)
     {
-        var rulesDirectory = LocateRulesDirectory(request);                                           // impure
-        var ruleFiles = rulesDirectory.Bind(FileSourceFetching.ReadRuleFiles);                         // impure
+        var ruleFiles = FileSourceFetching.ReadRuleFilesFor(request.RulesDirectory, request.BuildPath); // impure
         var buildFile = FileSourceFetching.ReadTextFile(request.BuildPath);                           // impure
 
         var validated = ComposeValidatedBuild(ruleFiles, buildFile);                                  // pure
@@ -29,12 +28,4 @@ public static class BuildLoading
             .Bind(catalog => buildFile
                 .Bind(BuildFileParsing.ParseBuildFile)
                 .Bind(build => BuildValidation.ValidateBuild(build, catalog)));
-
-    private static Result<string, string> LocateRulesDirectory(LoadRequest request)
-    {
-        var found = request.RulesDirectory.IsSome()
-            ? request.RulesDirectory
-            : FileSourceFetching.FindRulesDirectoryFor(request.BuildPath);
-        return found.ToResult(() => "No rules directory found (a 'rules/' folder with glossary.yaml above the build or the current directory). Use --rules <dir>.");
-    }
 }

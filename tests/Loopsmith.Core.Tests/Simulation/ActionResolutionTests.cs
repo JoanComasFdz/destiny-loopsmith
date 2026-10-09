@@ -88,7 +88,7 @@ public class ActionResolutionTests
 
         var applied = resolution.Fired.Single().Outcomes.Single();
         Assert.Equal(Certainty.Unknown, applied.Certainty);
-        Assert.Equal(0m, resolution.State.Abilities.Single(a => a.Kind == AbilityKind.Grenade).Energy.Value);
+        Assert.Equal(0m, resolution.State.Abilities.Grenade.Energy.Value);
     }
 
     [Fact]
@@ -101,7 +101,7 @@ public class ActionResolutionTests
         var resolution = ResolveOnce(build, GrenadeKill);
 
         Assert.Equal(Certainty.Assumed, resolution.Fired.Single().Outcomes.Single().Certainty);
-        Assert.Equal(0.25m, resolution.State.Abilities.Single(a => a.Kind == AbilityKind.Grenade).Energy.Value);
+        Assert.Equal(0.25m, resolution.State.Abilities.Grenade.Energy.Value);
     }
 
     [Fact]
@@ -115,7 +115,7 @@ public class ActionResolutionTests
 
         var resolution = ResolveOnce(build, GrenadeKill);
 
-        Assert.Equal(0.10m, resolution.State.Abilities.Single(a => a.Kind == AbilityKind.Grenade).Energy.Value);
+        Assert.Equal(0.10m, resolution.State.Abilities.Grenade.Energy.Value);
         Assert.Equal(Certainty.Known, resolution.Fired.Single().Outcomes.Single().Certainty);
     }
 

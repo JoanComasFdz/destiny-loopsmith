@@ -12,17 +12,34 @@ public static class FileSourceFetching
 {
     public const string GlossaryFileName = "glossary.yaml";
 
+    /// <summary>Rules for a build: the explicit directory, else the nearest <c>rules/</c> above the build file or the current directory.</summary>
+    public static Result<ImmutableArray<SourceText>, string> ReadRuleFilesFor(Optional<string> rulesDirectory, string buildPath)
+    {
+        var located = rulesDirectory.IsSome() ? rulesDirectory : FindRulesDirectoryFor(buildPath);
+        return located.Match(
+            some => ReadRuleFiles(some.Value),
+            _ => new Result<ImmutableArray<SourceText>, string>.Error(
+                "No rules directory found (a 'rules/' folder with glossary.yaml above the build or the current directory). Use --rules <dir>."));
+    }
+
     public static Result<ImmutableArray<SourceText>, string> ReadRuleFiles(string rulesDirectory)
     {
         try
         {
             var root = Path.GetFullPath(rulesDirectory);
-            var files = Directory.EnumerateFiles(root, "*.*", SearchOption.AllDirectories)
+            var paths = Directory.EnumerateFiles(root, "*.*", SearchOption.AllDirectories)
                 .Where(path => path.EndsWith(".yaml", StringComparison.OrdinalIgnoreCase) || path.EndsWith(".yml", StringComparison.OrdinalIgnoreCase))
-                .Select(path => new SourceText(Path.GetRelativePath(root, path).Replace('\\', '/'), File.ReadAllText(path)))
-                .OrderBy(file => file.Path, StringComparer.Ordinal)
+                .Order(StringComparer.Ordinal)
                 .ToImmutableArray();
-            return new Result<ImmutableArray<SourceText>, string>.Ok(files);
+            var files = ImmutableArray.CreateBuilder<SourceText>();
+            foreach (var path in paths)
+            {
+                var text = File.ReadAllText(path);
+                var relative = Path.GetRelativePath(root, path).Replace('\\', '/');
+                files.Add(new SourceText(relative, text));
+            }
+
+            return new Result<ImmutableArray<SourceText>, string>.Ok([.. files.OrderBy(file => file.Path, StringComparer.Ordinal)]);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
@@ -34,13 +51,20 @@ public static class FileSourceFetching
     {
         try
         {
-            return new Result<SourceText, string>.Ok(new SourceText(path, File.ReadAllText(path)));
+            var text = File.ReadAllText(path);
+            return new Result<SourceText, string>.Ok(new SourceText(path, text));
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
             return new Result<SourceText, string>.Error($"Cannot read '{path}': {exception.Message}");
         }
     }
+
+    /// <summary>Reads the file when a path is given; no path is not an error.</summary>
+    public static Result<Optional<SourceText>, string> ReadOptionalTextFile(Optional<string> path) =>
+        path.Match(
+            some => ReadTextFile(some.Value).Map(Optional.Some),
+            _ => new Result<Optional<SourceText>, string>.Ok(Optional.None<SourceText>()));
 
     /// <summary>Nearest <c>rules/</c> folder (containing glossary.yaml) at or above any of the start directories.</summary>
     public static Optional<string> FindRulesDirectory(ImmutableArray<string> startDirectories)
@@ -63,10 +87,10 @@ public static class FileSourceFetching
         return Optional.None<string>();
     }
 
-    /// <summary>Rules for a build: the nearest <c>rules/</c> above the build file, else above the current directory.</summary>
     public static Optional<string> FindRulesDirectoryFor(string buildPath)
     {
         var buildDirectory = Path.GetDirectoryName(Path.GetFullPath(buildPath)) ?? ".";
-        return FindRulesDirectory([buildDirectory, Directory.GetCurrentDirectory()]);
+        var currentDirectory = Directory.GetCurrentDirectory();
+        return FindRulesDirectory([buildDirectory, currentDirectory]);
     }
 }

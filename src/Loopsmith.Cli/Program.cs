@@ -4,12 +4,13 @@ using Loopsmith.Cli;
 using Loopsmith.Core.Orchestration;
 
 // Host only: map argv in, call an Orchestration shell, write its effects out.
-Console.OutputEncoding = Encoding.UTF8;
+Console.OutputEncoding = Encoding.UTF8;                                                     // impure
 
 var invocation = CliArguments.ParseArguments([.. args]);                                    // pure
-var useColor = invocation.Match(ok => !ok.Value.NoColor, _ => false)
-    && Environment.GetEnvironmentVariable("NO_COLOR") is null
-    && !Console.IsOutputRedirected;                                                         // impure
+var noColorFlag = invocation.Match(ok => ok.Value.NoColor, _ => true);                      // pure
+var noColorEnvironment = Environment.GetEnvironmentVariable("NO_COLOR");                    // impure
+var isRedirected = Console.IsOutputRedirected;                                              // impure
+var useColor = !noColorFlag && noColorEnvironment is null && !isRedirected;                 // pure
 
 var exitCode = invocation.Match(
     ok => RunCommand(ok.Value.Command, useColor),                                           // impure
@@ -18,12 +19,19 @@ return exitCode;
 
 static int RunCommand(CliCommand command, bool useColor) =>
     command.Match(
-        explain => ExecuteEffects(CommandShells.RunExplain(explain.Request), useColor),
-        validate => ExecuteEffects(CommandShells.RunValidate(validate.Request), useColor),
-        simulate => ExecuteEffects(CommandShells.RunSimulate(simulate.Request), useColor),
+        explain => RunShell(() => CommandShells.RunExplain(explain.Request), useColor),
+        validate => RunShell(() => CommandShells.RunValidate(validate.Request), useColor),
+        simulate => RunShell(() => CommandShells.RunSimulate(simulate.Request), useColor),
         play => RunPlay(play, useColor),
-        graph => ExecuteEffects(CommandShells.RunGraph(graph.Request), useColor),
+        graph => RunShell(() => CommandShells.RunGraph(graph.Request), useColor),
         _ => WriteUsage());
+
+static int RunShell(Func<ImmutableArray<Effect>> shell, bool useColor)
+{
+    var effects = shell();                                                                   // impure
+    var code = ExecuteEffects(effects, useColor);                                            // impure
+    return code;
+}
 
 static int RunPlay(CliCommand.Play play, bool useColor)
 {
@@ -56,37 +64,35 @@ static int RunPlayLoop(PlaySession session, bool useColor)
     return 0;
 }
 
-static int ExecuteEffects(ImmutableArray<Effect> effects, bool useColor)
-{
-    var failed = false;
-    foreach (var effect in effects)
+static int ExecuteEffects(ImmutableArray<Effect> effects, bool useColor) =>
+    effects.Aggregate(0, (exit, effect) =>
     {
-        effect.Match(
-            lines =>
-            {
-                foreach (var line in lines.Lines)
-                {
-                    var text = AnsiRendering.ToTerminalText(line, useColor);                 // pure
-                    Console.WriteLine(text);                                                 // impure
-                }
+        var code = ExecuteEffect(effect, useColor);                                          // impure
+        return Math.Max(exit, code);
+    });
 
-                return 0;
-            },
-            text =>
+static int ExecuteEffect(Effect effect, bool useColor) =>
+    effect.Match(
+        lines =>
+        {
+            foreach (var line in lines.Lines)
             {
-                Console.Write(text.Text);                                                    // impure
-                return 0;
-            },
-            failure =>
-            {
-                failed = true;
-                Console.Error.WriteLine(failure.Message);                                    // impure
-                return 1;
-            });
-    }
+                var text = AnsiRendering.ToTerminalText(line, useColor);                     // pure
+                Console.WriteLine(text);                                                     // impure
+            }
 
-    return failed ? 1 : 0;
-}
+            return 0;
+        },
+        text =>
+        {
+            Console.Write(text.Text);                                                        // impure
+            return 0;
+        },
+        failure =>
+        {
+            Console.Error.WriteLine(failure.Message);                                        // impure
+            return 1;
+        });
 
 static int WriteUsage()
 {

@@ -8,10 +8,31 @@ namespace Loopsmith.Core.Simulation;
 public static class StateReading
 {
     public static AbilityGauge ReadGauge(this GameState state, AbilityKind kind) =>
-        state.Abilities.First(gauge => gauge.Kind == kind);
+        kind switch
+        {
+            AbilityKind.Grenade => state.Abilities.Grenade,
+            AbilityKind.Melee => state.Abilities.Melee,
+            AbilityKind.ClassAbility => state.Abilities.ClassAbility,
+            _ => state.Abilities.Super,
+        };
 
     public static GameState ReplaceGauge(this GameState state, AbilityGauge gauge) =>
-        state with { Abilities = state.Abilities.Select(g => g.Kind == gauge.Kind ? gauge : g).ToImmutableArray() };
+        state with
+        {
+            Abilities = gauge.Kind switch
+            {
+                AbilityKind.Grenade => state.Abilities with { Grenade = gauge },
+                AbilityKind.Melee => state.Abilities with { Melee = gauge },
+                AbilityKind.ClassAbility => state.Abilities with { ClassAbility = gauge },
+                _ => state.Abilities with { Super = gauge },
+            },
+        };
+
+    /// <summary>The cost model of the equipped ability of that kind (super, grenade, melee, class ability).</summary>
+    public static Optional<AbilityProfile> FindAbilityProfile(this ValidatedBuild build, AbilityKind kind) =>
+        build.Equipped
+            .Select(e => e.Element.Ability.Bind(p => p.Kind == kind ? Optional.Some(p) : Optional.None<AbilityProfile>()))
+            .FindFirstSome();
 
     public static GameState SetEnergy(this GameState state, AbilityKind kind, decimal charges)
     {

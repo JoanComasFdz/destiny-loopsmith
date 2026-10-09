@@ -41,13 +41,11 @@ public static class CommandShells
     public static ImmutableArray<Effect> RunSimulate(SimulateRequest request)
     {
         var build = BuildLoading.LoadValidatedBuild(request.Load);                                   // impure
-        var scenario = request.ScenarioPath.Match(
-            path => FileSourceFetching.ReadTextFile(path.Value).Map(file => Optional.Some(file.Text)), // impure
-            _ => new Result<Optional<string>, string>.Ok(Optional.None<string>()));
+        var scenario = FileSourceFetching.ReadOptionalTextFile(request.ScenarioPath);               // impure
 
         var effects = build                                                                          // pure
             .Bind(validated => scenario
-                .Bind(text => ParseActions(request.ActionTokens, text))
+                .Bind(file => ParseActions(request.ActionTokens, file.Map(f => f.Text)))
                 .Map(actions => PlanSimulation(validated, actions, request.Options)))
             .Match(ok => ok.Value, error => [new Effect.ShowFailure(error.Failure)]);
         return effects;
@@ -111,7 +109,7 @@ public static class CommandShells
         }
 
         return all
-            .Select(DomainPhrasing.ParseActionToken)
+            .Select(ActionTokenParsing.ParseActionToken)
             .CombineAll()
             .MapError(errors => string.Join(Environment.NewLine, errors));
     }

@@ -18,15 +18,10 @@ public static class LoopFinding
         var energyKeys = graph.Nodes.Where(n => n.Kind == NodeKind.Energy).Select(n => n.Key).ToImmutableHashSet();
         var actionKeys = graph.Nodes.Where(n => n.Kind == NodeKind.Action).Select(n => n.Key).ToImmutableHashSet();
 
-        var found = new List<ImmutableArray<GraphEdge>>();
-        foreach (var start in graph.Nodes.Select(n => n.Key))
-        {
-            SearchCycles(start, start, order[start], [], [start], outgoing, order, found);
-            if (found.Count >= MaxLoops)
-            {
-                break;
-            }
-        }
+        var found = graph.Nodes
+            .Select(n => n.Key)
+            .Aggregate(ImmutableArray<ImmutableArray<GraphEdge>>.Empty, (acc, start) =>
+                acc.Length >= MaxLoops ? acc : acc.AddRange(SearchCycles(start, start, order[start], [], [start], outgoing, order, MaxLoops - acc.Length)));
 
         return found
             .Select(edges => RotateToAction(edges, actionKeys))
@@ -47,7 +42,8 @@ public static class LoopFinding
         return [.. edges.Skip(start), .. edges.Take(start)];
     }
 
-    private static void SearchCycles(
+    /// <summary>Cycles through <paramref name="start"/> whose other nodes all come later in node order (each cycle once).</summary>
+    private static ImmutableArray<ImmutableArray<GraphEdge>> SearchCycles(
         string start,
         string current,
         int startOrder,
@@ -55,23 +51,29 @@ public static class LoopFinding
         ImmutableHashSet<string> visited,
         ImmutableDictionary<string, ImmutableArray<GraphEdge>> outgoing,
         ImmutableDictionary<string, int> order,
-        List<ImmutableArray<GraphEdge>> found)
+        int budget)
     {
-        if (found.Count >= MaxLoops || path.Length >= MaxLoopLength)
+        if (budget <= 0 || path.Length >= MaxLoopLength)
         {
-            return;
+            return [];
         }
 
-        foreach (var edge in outgoing.GetValueOrDefault(current, []))
+        return outgoing.GetValueOrDefault(current, []).Aggregate(ImmutableArray<ImmutableArray<GraphEdge>>.Empty, (acc, edge) =>
         {
+            var remaining = budget - acc.Length;
+            if (remaining <= 0)
+            {
+                return acc;
+            }
+
             if (edge.To == start)
             {
-                found.Add(path.Add(edge));
+                return acc.Add(path.Add(edge));
             }
-            else if (!visited.Contains(edge.To) && order.GetValueOrDefault(edge.To) > startOrder)
-            {
-                SearchCycles(start, edge.To, startOrder, path.Add(edge), visited.Add(edge.To), outgoing, order, found);
-            }
-        }
+
+            return !visited.Contains(edge.To) && order.GetValueOrDefault(edge.To) > startOrder
+                ? acc.AddRange(SearchCycles(start, edge.To, startOrder, path.Add(edge), visited.Add(edge.To), outgoing, order, remaining))
+                : acc;
+        });
     }
 }

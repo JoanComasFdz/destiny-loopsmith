@@ -6,6 +6,9 @@ namespace Loopsmith.Core.Domain;
 
 public sealed record AbilityGauge(AbilityKind Kind, EnergyAmount Energy, int MaxCharges);
 
+/// <summary>Exactly one gauge per ability — a missing or duplicate gauge is not representable.</summary>
+public sealed record AbilityGauges(AbilityGauge Grenade, AbilityGauge Melee, AbilityGauge ClassAbility, AbilityGauge Super);
+
 public sealed record ActiveStatus(StatusId Status, StackCount Stacks, Optional<Seconds> Remaining);
 
 /// <summary>v1 enemy model: "the pack in front of you" — one tier plus the debuffs spread across it.</summary>
@@ -17,7 +20,7 @@ public sealed record GroundPickup(PickupId Pickup, int Count);
 public sealed record GameState(
     int Step,
     Seconds Clock,
-    ImmutableArray<AbilityGauge> Abilities,
+    AbilityGauges Abilities,
     ImmutableArray<ActiveStatus> Buffs,
     TargetState Target,
     ImmutableArray<GroundPickup> Pickups);
@@ -48,7 +51,10 @@ public partial record GameEvent
 /// <summary>An outcome as it was applied, with how far to trust it.</summary>
 public sealed record AppliedOutcome(Outcome Outcome, Certainty Certainty, Optional<string> Caveat);
 
-/// <summary>One bullet of a build note: source → trigger → outcomes (reason), at cascade depth.</summary>
+/// <summary>
+/// One bullet of a build note: source → trigger → outcomes (reason), at cascade depth.
+/// <see cref="EventIndex"/> numbers the events of a step, so bullets of the same event can be grouped.
+/// </summary>
 public sealed record FiredRule(
     ElementId Source,
     string SourceName,
@@ -58,7 +64,8 @@ public sealed record FiredRule(
     ImmutableArray<AppliedOutcome> Outcomes,
     Optional<string> Reason,
     Likelihood Likelihood,
-    int Depth);
+    int Depth,
+    int EventIndex);
 
 /// <summary>A passive whose conditions hold in the current state (shown next to the state, not as a bullet).</summary>
 public sealed record ActivePassive(ElementId Source, string SourceName, Affinity Affinity, PassiveRule Passive);

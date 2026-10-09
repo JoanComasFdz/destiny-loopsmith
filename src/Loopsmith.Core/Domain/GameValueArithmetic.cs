@@ -43,6 +43,28 @@ public static class GameValueArithmetic
             _ => DamageType.Kinetic,   // Prismatic: per-ability type is not modelled in v1
         };
 
+    public static Affinity ToAffinity(this Subclass subclass) =>
+        subclass switch
+        {
+            Subclass.Arc => Affinity.Arc,
+            Subclass.Solar => Affinity.Solar,
+            Subclass.Void => Affinity.Void,
+            Subclass.Stasis => Affinity.Stasis,
+            Subclass.Strand => Affinity.Strand,
+            _ => Affinity.Prismatic,
+        };
+
+    public static Affinity ToAffinity(this DamageType type) =>
+        type switch
+        {
+            DamageType.Arc => Affinity.Arc,
+            DamageType.Solar => Affinity.Solar,
+            DamageType.Void => Affinity.Void,
+            DamageType.Stasis => Affinity.Stasis,
+            DamageType.Strand => Affinity.Strand,
+            _ => Affinity.Kinetic,
+        };
+
     public static AbilityKind ToAbilityKind(this OffensiveAbility ability) =>
         ability switch
         {
