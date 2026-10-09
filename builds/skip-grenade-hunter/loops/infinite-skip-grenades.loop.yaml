@@ -10,13 +10,13 @@ steps:
   - do: class
     note: "Gambler's Dodge: arms Slice and Reaper; Bomber refunds grenade energy"
   - do: grenade:kill
-    note: 'Skip grenade into the pack: Spark of Shock jolts, the jolted kill gives Amplified, Bolt Charge and Ionic Traces'
+    note: 'Skip grenade into the pack: Spark of Shock jolts, the jolted kill gives Amplified, Bolt Charge and an Ionic Trace'
   - do: kinetic:kill
-    note: 'Festival Flight: Slice severs, Reaper and Attrition Orbs drop orbs, To Shreds unravels'
+    note: 'Festival Flight: Slice severs, Reaper and Attrition Orbs drop orbs, To Shreds gives Woven Mail (and unravels once the pack is severed)'
   - do: energy:kill
     note: 'Arc weapon on the jolted pack: Spark of Discharge traces, Harmonic Siphon orb'
   - do: pickup:orb-of-power
-    note: "Grab the orbs: Grenade Kickstart's Armor Charge and Unraveling Rounds"
+    note: 'Grab the orbs: Armor Charge for Grenade Kickstart, and Unraveling Rounds'
   - do: grenade:kill
     note: 'Second skip grenade: Kickstart spends Armor Charge; max Bolt Charge strikes and refunds the grenade'
 build: |
