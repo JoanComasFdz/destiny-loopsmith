@@ -58,8 +58,8 @@ public static class ChainShaping
     /// <summary>Half the height of the notch.</summary>
     private const int Half = 6;
 
-    /// <summary>Half the height of the slot: a little wider than a line.</summary>
-    private const int SlotHalf = 5;
+    /// <summary>Half the height of the slot: the line (1.6px) plus a small margin on each side.</summary>
+    private const double SlotHalf = 2.5;
 
     private const int CardRadius = 5;
 
