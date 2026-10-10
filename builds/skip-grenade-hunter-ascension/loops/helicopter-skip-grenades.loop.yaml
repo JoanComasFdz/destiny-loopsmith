@@ -5,7 +5,7 @@ description: |-
   throw those skip grenades down"): the air move jolts the pack and makes you Amplified before the
   skip grenade lands, then the same clean-up as the original loop. Without Flow State, jolted kills give
   no Amplified: Ascension and Flashover (when you declare Bolt Charge at max) make you Amplified.
-catalog: authored-db8af7224008
+catalog: authored-a6996a0f88c9
 steps:
   - do: pack:new
     note: 'The next group of enemies: a new pack, nothing on it yet'
@@ -70,7 +70,7 @@ build: |
     # kills, the Compendium and Clarity say it is a weapon trait, and Festival Flight is the only Strand
     # weapon named.
     # Archetype omitted: no source names it.
-    - { slot: kinetic, name: Festival Flight, type: strand, perks: [slice, attrition-orbs] }
+    - { slot: kinetic, name: Festival Flight, type: strand, perks: [slice, attrition-orbs], hash: 4019651319 }
     # Placeholder: neither source names the energy weapon, but Harmonic Siphon's orbs and Spark of
     # Discharge's Ionic Traces need Arc weapon kills.
     - { slot: energy, name: Any Arc weapon, type: arc, perks: [] }

@@ -1,6 +1,7 @@
 @* A DIM build as a preview card (DIM offers no embeddable one: its share page only has a stock link image): the
-   loadout's name, class and subclass, what the rule catalog recognised by hash — abilities, aspects, fragments, exotic,
-   mods — and how much it left out. "Start designing" opens it in the designer; the link opens the share in DIM. *@
+   loadout's name, class and subclass, and the loadout the way DIM shows it — subclass, artifact, weapons, armor with
+   its mods — with what the rules don't know dimmed. "Start designing" opens it in the designer; the link opens the
+   share in DIM. *@
 @{
     var sheet = BuildSheetShaping.ShapeSheet(Session.Build, []);
     var leftOut = Session.Build.Build.LeftOut;
@@ -15,31 +16,20 @@
         }
     </header>
     <div class="dim-card-title">
-        <div class="build-emblem" aria-hidden="true">@sheet.Subclass.ToString()[..1]</div>
+        @if (sheet.SubclassIcon is Optional<string>.Some subclassIcon)
+        {
+            <img class="build-emblem-icon" src="@subclassIcon.Value" alt="" width="40" height="40" />
+        }
+        else
+        {
+            <div class="build-emblem" aria-hidden="true">@sheet.Subclass.ToString()[..1]</div>
+        }
         <div>
             <div class="dim-card-name">@sheet.Name</div>
             <div class="build-sub">@sheet.Class · <span class="accent">@sheet.Subclass</span></div>
         </div>
     </div>
-    <div class="dim-card-abilities">
-        @foreach (var ability in sheet.Abilities)
-        {
-            <div class="tile @ToneStyling.ToAffinityClass(ability.Element.Affinity)" title="@ability.Element.Description.UnwrapOr(ability.Element.Name)">
-                <span class="tile-kind">@ability.Slot</span>
-                <span class="tile-name">@ability.Element.Name</span>
-            </div>
-        }
-    </div>
-    @RenderRow("Aspects", sheet.Aspects)
-    @RenderRow("Fragments", sheet.Fragments)
-    @if (sheet.Exotic is Optional<ElementTile>.Some exotic)
-    {
-        <div class="dim-card-row">
-            <span class="dim-card-label">Exotic</span>
-            <span class="chip exotic">@exotic.Value.Name</span>
-        </div>
-    }
-    @RenderRow("Mods", sheet.Mods)
+    <LoadoutPanel Build="Session.Build" Compact="true" />
     <footer class="dim-card-foot">
         <span class="dim-card-left-out muted">@(leftOut.IsEmpty ? "" : $"Not in Loopsmith yet: {leftOut.DescribeLeftOut()}")</span>
         <button class="btn dim-card-go" @onclick="() => OnStart.InvokeAsync(Session)" data-action="dim-card-start">Start designing →</button>
@@ -52,22 +42,4 @@
 
     [Parameter]
     public EventCallback<DesignSession> OnStart { get; set; }
-
-    private RenderFragment RenderRow(string label, ImmutableArray<ElementTile> tiles) => __builder =>
-    {
-        if (tiles.IsEmpty)
-        {
-            return;
-        }
-
-        <div class="dim-card-row">
-            <span class="dim-card-label">@label</span>
-            <div class="chips">
-                @foreach (var tile in tiles)
-                {
-                    <span class="chip @ToneStyling.ToAffinityClass(tile.Affinity)">@tile.Name@(tile.Copies > 1 ? $" ×{tile.Copies}" : "")</span>
-                }
-            </div>
-        </div>
-    };
 }

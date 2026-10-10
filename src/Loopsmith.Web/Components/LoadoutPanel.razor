@@ -1,0 +1,176 @@
+@* A build laid out the way DIM shows a loadout: the subclass with its super, abilities, aspects and fragments; the
+   artifact perks; the weapons; each armor piece with the mods of its slot; the general mods. Icons are Bungie's (from
+   the manifest excerpt); a square without one shows its initials. What the rules don't know is dimmed. *@
+@{
+    var view = LoadoutShaping.ShapeLoadout(Build);
+}
+<div class="loadout @(Compact ? "compact" : "")" data-testid="loadout">
+    <div class="loadout-row">
+        <section class="loadout-box subclass-box" aria-label="Subclass">
+            <h4 class="loadout-label">Subclass</h4>
+            <div class="subclass-body">
+                <div class="subclass-emblem">
+                    @if (view.Subclass.Subclass is Optional<IconTile>.Some subclassItem)
+                    {
+                        @RenderTile(subclassItem.Value, "subclass-icon")
+                    }
+                    @RenderTile(view.Subclass.Super, "super-icon")
+                </div>
+                <div class="icon-grid">
+                    @foreach (var tile in view.Subclass.Abilities)
+                    {
+                        @RenderTile(tile, "")
+                    }
+                    @foreach (var tile in view.Subclass.Aspects)
+                    {
+                        @RenderTile(tile, "aspect")
+                    }
+                    @foreach (var tile in view.Subclass.Fragments)
+                    {
+                        @RenderTile(tile, "fragment")
+                    }
+                </div>
+            </div>
+        </section>
+        @if (!view.Artifact.IsEmpty)
+        {
+            <section class="loadout-box artifact-box" aria-label="Artifact">
+                <h4 class="loadout-label">Artifact</h4>
+                <div class="icon-grid">
+                    @foreach (var tile in view.Artifact)
+                    {
+                        @RenderTile(tile, "artifact-perk")
+                    }
+                </div>
+            </section>
+        }
+    </div>
+
+    @if (!view.Weapons.IsEmpty)
+    {
+        <section class="loadout-box" aria-label="Weapons">
+            <h4 class="loadout-label">Weapons</h4>
+            <div class="weapon-row">
+                @foreach (var weapon in view.Weapons)
+                {
+                    <div class="weapon-item" title="@DescribeWeapon(weapon)">
+                        <div class="weapon-icon">
+                            @RenderTile(weapon.Weapon, "item")
+                            @if (weapon.DamageIcon is Optional<string>.Some damage)
+                            {
+                                <img class="damage-icon" src="@damage.Value" alt="@weapon.Type" loading="lazy" />
+                            }
+                        </div>
+                        <span class="weapon-item-name">@weapon.Weapon.Name</span>
+                        @if (!weapon.Perks.IsEmpty)
+                        {
+                            <div class="icon-grid perks">
+                                @foreach (var perk in weapon.Perks)
+                                {
+                                    @RenderTile(perk, "perk")
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </section>
+    }
+
+    @if (!view.Armor.IsEmpty || !view.GeneralMods.IsEmpty)
+    {
+        <section class="loadout-box" aria-label="Armor">
+            <h4 class="loadout-label">Armor</h4>
+            <div class="armor-row">
+                @foreach (var piece in view.Armor)
+                {
+                    <div class="armor-piece" data-slot="@piece.Slot">
+                        @if (piece.Piece is Optional<IconTile>.Some item)
+                        {
+                            @RenderTile(item.Value, "item")
+                        }
+                        else
+                        {
+                            <span class="icon-tile empty" title="@LoadoutShaping.DescribeSlot(piece.Slot): no piece named">@LoadoutShaping.DescribeSlot(piece.Slot)</span>
+                        }
+                        <div class="icon-grid mods">
+                            @foreach (var mod in piece.Mods)
+                            {
+                                @RenderTile(mod, "mod")
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+            @if (!view.GeneralMods.IsEmpty)
+            {
+                <div class="general-mods">
+                    <span class="loadout-sublabel">General mods</span>
+                    <div class="icon-grid">
+                        @foreach (var mod in view.GeneralMods)
+                        {
+                            @RenderTile(mod, "mod")
+                        }
+                    </div>
+                </div>
+            }
+        </section>
+    }
+
+    @if (!view.SetBonuses.IsEmpty)
+    {
+        <div class="set-bonuses">
+            <span class="loadout-sublabel">Armor set</span>
+            <div class="chips">
+                @foreach (var bonus in view.SetBonuses)
+                {
+                    <span class="chip @ToneStyling.ToAffinityClass(bonus.Affinity)" title="@DescribeTooltip(bonus)">@bonus.Name</span>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public ValidatedBuild Build { get; set; } = null!;
+
+    /// <summary>The preview card's size: smaller squares.</summary>
+    [Parameter]
+    public bool Compact { get; set; }
+
+    private RenderFragment RenderTile(IconTile tile, string kind) => __builder =>
+    {
+        <span class="icon-tile @kind @ToneStyling.ToAffinityClass(tile.Affinity) @DescribeTier(tile) @(tile.InRules ? "" : "out")"
+              title="@DescribeTooltip(tile)" aria-label="@tile.Name">
+            @if (tile.Icon is Optional<string>.Some icon)
+            {
+                <img src="@icon.Value" alt="" loading="lazy" />
+            }
+            else
+            {
+                <span class="icon-initials">@ToInitials(tile.Name)</span>
+            }
+            @if (tile.Copies > 1)
+            {
+                <span class="icon-count">×@tile.Copies</span>
+            }
+        </span>
+    };
+
+    private static string DescribeTier(IconTile tile) =>
+        tile.Tier.Match(tier => tier.Value == ItemTier.Exotic ? "exotic" : tier.Value == ItemTier.Legendary ? "legendary" : "", _ => "");
+
+    private static string DescribeTooltip(IconTile tile) =>
+        (tile.Copies > 1 ? $"{tile.Name} ×{tile.Copies}" : tile.Name)
+        + tile.Description.Match(description => $" — {description.Value}", _ => "");
+
+    private static string DescribeWeapon(WeaponView weapon) =>
+        $"{weapon.Weapon.Name} — {weapon.Slot} · {weapon.Type}{weapon.Archetype.Match(archetype => $" · {archetype.Value}", _ => "")}";
+
+    /// <summary>"SoR" for Spark of Resistance: what a square without an icon shows.</summary>
+    private static string ToInitials(string name) =>
+        name == DomainPhrasing.Unknown
+            ? name
+            : string.Concat(name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(3).Select(word => char.ToUpperInvariant(word[0])));
+}

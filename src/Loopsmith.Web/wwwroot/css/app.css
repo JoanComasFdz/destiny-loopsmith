@@ -362,6 +362,7 @@ textarea { resize: vertical; }
 /* build panel */
 .build-panel { border-top: 3px solid var(--aff); }
 .build-head { display: flex; align-items: center; gap: 10px; }
+.build-emblem-icon { flex: none; width: 40px; height: 40px; }
 .build-emblem {
     flex: none;
     width: 40px;
@@ -607,21 +608,64 @@ textarea { resize: vertical; }
 .dim-card-link:hover { color: var(--text); text-decoration: underline; }
 .dim-card-title { display: flex; align-items: center; gap: 10px; }
 .dim-card-name { font-size: 18px; font-weight: 750; }
-.dim-card-abilities { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
-.dim-card-row { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 8px; align-items: baseline; }
-.dim-card-label { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
 .chip.exotic { border-color: color-mix(in srgb, var(--exotic) 55%, transparent); color: var(--exotic); }
 .dim-card-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-top: 4px; }
 .dim-card-left-out { font-size: 12px; }
 .btn.dim-card-go { padding: 9px 16px; font-weight: 750; color: var(--on-dim-brand); background: var(--dim-brand); border-color: var(--dim-brand); }
 .btn.dim-card-go:hover:not(:disabled) { border-color: var(--text); }
-@media (max-width: 520px) {
-    .dim-card-abilities { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .dim-card-row { grid-template-columns: minmax(0, 1fr); gap: 4px; }
-}
 .chooser-sep { color: var(--dim); }
 .file-link { position: relative; cursor: pointer; }
 .file-link input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
+
+/* a build the way DIM shows a loadout: icon squares (Bungie's icons), rarity frames, dimmed when not in the rules */
+.loadout { --tile: 44px; --mod-tile: 32px; display: flex; flex-direction: column; gap: 10px; }
+.loadout.compact { --tile: 38px; --mod-tile: 28px; }
+.loadout-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.loadout-box { padding: 8px 10px 10px; border: 1px solid var(--line); border-radius: 6px; background: rgba(0, 0, 0, .25); min-width: 0; }
+.loadout-label { margin: 0 0 6px; font-size: 13px; font-weight: 700; color: var(--text); }
+.loadout-sublabel { display: block; margin: 8px 0 4px; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.subclass-body { display: flex; align-items: flex-start; gap: 10px; }
+.subclass-emblem { display: flex; flex-direction: column; align-items: center; gap: 6px; flex: none; }
+.icon-grid { display: grid; grid-template-columns: repeat(3, var(--tile)); gap: 4px; }
+.artifact-box .icon-grid { grid-template-columns: repeat(3, var(--tile)); }
+.icon-tile {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--tile);
+    height: var(--tile);
+    border: 1px solid rgba(255, 255, 255, .28);
+    background: color-mix(in srgb, var(--aff, var(--line)) 14%, #1c2230);
+    overflow: hidden;
+    flex: none;
+}
+.icon-tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.icon-tile.legendary { border-color: #8a5bb0; }
+.icon-tile.exotic { border-color: var(--exotic); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--exotic) 45%, transparent); }
+.icon-tile.out { opacity: .55; filter: grayscale(.6); border-style: dashed; }
+.icon-tile.out:hover { opacity: .9; }
+.icon-tile.empty { border-style: dashed; color: var(--dim); font-size: 9px; text-align: center; background: transparent; }
+.icon-initials { font-size: 11px; font-weight: 750; color: var(--aff, var(--text)); letter-spacing: .02em; }
+.icon-count { position: absolute; right: 1px; bottom: 0; padding: 0 2px; font-size: 10px; font-weight: 750; color: #fff; background: rgba(0, 0, 0, .7); }
+.icon-tile.subclass-icon { width: calc(var(--tile) * 1.6); height: calc(var(--tile) * 1.6); border: 0; background: none; }
+.icon-tile.super-icon { width: calc(var(--tile) * 1.2); height: calc(var(--tile) * 1.2); }
+.icon-tile.aspect, .icon-tile.fragment { border-color: color-mix(in srgb, var(--aff) 55%, rgba(255, 255, 255, .2)); }
+.weapon-row { display: flex; flex-wrap: wrap; gap: 12px; }
+.weapon-item { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; width: calc(var(--tile) * 2.4); }
+.weapon-icon { position: relative; }
+.weapon-icon .icon-tile { width: calc(var(--tile) * 1.3); height: calc(var(--tile) * 1.3); }
+.damage-icon { position: absolute; right: -6px; bottom: -6px; width: 18px; height: 18px; }
+.weapon-item-name { font-size: 11px; color: var(--muted); line-height: 1.2; }
+.icon-grid.perks { grid-template-columns: repeat(3, var(--mod-tile)); }
+.icon-grid.perks .icon-tile { width: var(--mod-tile); height: var(--mod-tile); }
+.armor-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.armor-piece { display: flex; gap: 4px; align-items: flex-start; }
+.armor-piece > .icon-tile { width: calc(var(--tile) * 1.15); height: calc(var(--tile) * 1.15); }
+.icon-grid.mods { grid-template-columns: repeat(2, var(--mod-tile)); }
+.icon-grid.mods .icon-tile, .general-mods .icon-tile { width: var(--mod-tile); height: var(--mod-tile); }
+.general-mods .icon-grid { grid-template-columns: repeat(auto-fill, var(--mod-tile)); }
+.set-bonuses .loadout-sublabel { margin-top: 0; }
 
 /* what a DIM loadout had that the build leaves out */
 .left-out-note { margin: 0 0 6px; font-size: 12px; }

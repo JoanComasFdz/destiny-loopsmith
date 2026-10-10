@@ -98,6 +98,7 @@ public static class BuildFileWriting
         .. ToEntry("type", ToVocabularyWord(weapon.Type)),
         .. weapon.Archetype.Match(archetype => ToEntry("archetype", archetype.Value), _ => []),
         .. ToListEntry("perks", weapon.Perks),
+        .. weapon.Hash.Match(hash => ToEntry("hash", hash.Value.Value.ToString(CultureInfo.InvariantCulture)), _ => []),
         new MappingEnd(),
     ];
 

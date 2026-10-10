@@ -58,7 +58,7 @@ public static class LoopDesigning
     /// <summary>The comment a build from a DIM link starts with: where it came from and what <c>leftOut</c> means.</summary>
     public const string DimBuildNote =
         "Composed by Loopsmith from the DIM loadout at source. leftOut: what the loadout has that the rule catalog\n"
-        + "doesn't know yet, by manifest hash (weapons always, until Loopsmith reads the Bungie manifest).";
+        + "doesn't know yet, by manifest hash.";
 
     /// <summary>Pasted text → the DIM link it is: a dim.gg share (DIM's Share button) or a link that carries its loadout.</summary>
     public static Result<DimLink, string> ReadDimLink(string text) =>

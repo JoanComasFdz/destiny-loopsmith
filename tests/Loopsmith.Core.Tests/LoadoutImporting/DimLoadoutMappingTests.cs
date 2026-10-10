@@ -147,8 +147,16 @@ public sealed class DimLoadoutMappingTests
         Assert.Equal(
             ["harmonic-siphon", "strand-siphon", "grenade-kickstart", "grenade-kickstart", "impact-induction", "elemental-charge", "elemental-charge", "bomber", "reaper"],
             build.ArmorMods.Select(id => id.Value));
-        Assert.Empty(build.Weapons);
-        Assert.Contains(build.LeftOut, item => item == new LeftOutItem(LoadoutPart.Item, ItemHash.From(4019651319u)));   // Festival Flight: a weapon
+        Assert.Equal(
+            [
+                (WeaponSlot.Kinetic, "Festival Flight", DamageType.Strand, "grenade-launcher", 4019651319u),
+                (WeaponSlot.Power, "Thunderlord", DamageType.Arc, "machine-gun", 3325463374u),
+                (WeaponSlot.Energy, "Crisis Inverted", DamageType.Arc, "hand-cannon", 2888266564u),
+            ],
+            build.Weapons.Select(weapon => (weapon.Slot, weapon.Name, weapon.Type, weapon.Archetype.UnwrapOr(""), weapon.Hash.Map(hash => hash.Value).UnwrapOr(0u))));
+        Assert.All(build.Weapons, weapon => Assert.Empty(weapon.Perks));                                                      // a loadout carries no perks
+        Assert.DoesNotContain(build.LeftOut, item => item.Hash == ItemHash.From(4019651319u));
+        Assert.Contains(build.LeftOut, item => item == new LeftOutItem(LoadoutPart.Item, ItemHash.From(593554567u)));         // Luminopotent Mask
         Assert.Contains(build.LeftOut, item => item == new LeftOutItem(LoadoutPart.SubclassPlug, ItemHash.From(95544328u))); // Triple Jump
     }
 

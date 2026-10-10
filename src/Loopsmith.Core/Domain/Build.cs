@@ -13,7 +13,14 @@ public sealed record AbilityLoadout(
     Optional<ElementId> Melee,
     Optional<ElementId> ClassAbility);
 
-public sealed record WeaponLoadout(WeaponSlot Slot, string Name, DamageType Type, Optional<string> Archetype, ImmutableArray<ElementId> Perks);
+/// <summary>An equipped weapon; <see cref="Hash"/> is its manifest item when known (a DIM loadout's, or written in the build file).</summary>
+public sealed record WeaponLoadout(
+    WeaponSlot Slot,
+    string Name,
+    DamageType Type,
+    Optional<string> Archetype,
+    ImmutableArray<ElementId> Perks,
+    Optional<ItemHash> Hash);
 
 public sealed record StatLine(
     Optional<StatValue> Weapons,

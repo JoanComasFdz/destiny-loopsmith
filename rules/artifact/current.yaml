@@ -3,11 +3,16 @@
 # of 2026-10-09 (Artifact Perks tab, Tablet of Ruin section: each perk's name sits in the row above
 # the cited description row). Where the creator or the note disagrees, see
 # builds/skip-grenade-hunter/discrepancies.md.
+# Hashes: the Bungie manifest (244213.26.06.29.2000-1-bnet.65864), joined by exact name among its
+# artifact perks (ADRs D12); two hashes are two copies with the same icon. Horde Shuttle has none:
+# the manifest has two artifact perks of that name with different icons, so which one this is stays
+# unresolved until a source says.
 elements:
   - id: defibrillating-blast
     name: Defibrillating Blast
     kind: artifactPerk
     affinity: arc
+    hash: 1319563986
     description: "Stunning a Champion grants x10 Bolt Charge. The splash of a Bolt Charge discharge Jolts what it hits, and each discharge restores ~55 HP and starts critical health regeneration (not shields)."
     source: "compendium/2026-10-09/Artifact Perks#45"
     rules:
@@ -24,6 +29,7 @@ elements:
     name: Flashover
     kind: artifactPerk
     affinity: arc
+    hash: 2596646298
     description: "Reaching x10 Bolt Charge makes you Amplified for 15 s. Bolt Charge discharges deal 50% more damage against combatants (675 -> 1014)."
     source: "compendium/2026-10-09/Artifact Perks#43"
     rules:
@@ -39,6 +45,7 @@ elements:
     name: Dielectric
     kind: artifactPerk
     affinity: arc
+    hash: [3585856470, 2903198438]
     # Tablet of Ruin's Dielectric only grants Bolt Charge. The orbs and healing on rapid Arc-debuffed
     # kills that the creator reads out (and the note's "orb of power [dielectric]") belong to the
     # Encrypted Data Disk's version (Artifact Perks#7); the Compendium says this one does neither,
@@ -59,6 +66,7 @@ elements:
     name: To Shreds
     kind: artifactPerk
     affinity: strand
+    hash: 1319563985
     description: "6 weapon damage instances against Severed enemies Unravel them. A Severed enemy's death releases 3 healing pulses, 2 s apart, each restoring 15 HP and granting Woven Mail for 10 s to you and allies nearby."
     source: "compendium/2026-10-09/Artifact Perks#51"
     rules:
@@ -102,6 +110,7 @@ elements:
     name: Unraveling Orbs
     kind: artifactPerk
     affinity: strand
+    hash: [521275122, 3585856464]
     description: "Picking up an Orb of Power (or throwing a Tangle) gives your Strand weapons Unraveling Rounds for 14 s."
     source: "compendium/2026-10-09/Artifact Perks#45"
     rules:
@@ -117,6 +126,7 @@ elements:
     name: Photonic Flare
     kind: artifactPerk
     affinity: arc
+    hash: 3585856465
     description: "Killing a Severed or Exhausted enemy with Arc damage triggers a blinding burst within about 5 m (about 6 s cooldown)."
     source: "compendium/2026-10-09/Artifact Perks#47"
     rules:

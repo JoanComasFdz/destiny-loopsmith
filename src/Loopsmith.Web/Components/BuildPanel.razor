@@ -4,7 +4,14 @@
 }
 <section class="panel build-panel @ToneStyling.ToAffinityClass(sheet.Subclass)" aria-label="Build">
     <header class="build-head">
-        <div class="build-emblem" aria-hidden="true">@sheet.Subclass.ToString()[..1]</div>
+        @if (sheet.SubclassIcon is Optional<string>.Some subclassIcon)
+        {
+            <img class="build-emblem-icon" src="@subclassIcon.Value" alt="" width="40" height="40" />
+        }
+        else
+        {
+            <div class="build-emblem" aria-hidden="true">@sheet.Subclass.ToString()[..1]</div>
+        }
         <div class="build-title">
             <div class="build-name">@sheet.Name</div>
             <div class="build-sub">@sheet.Class · <span class="accent">@sheet.Subclass</span></div>
@@ -24,55 +31,7 @@
         </div>
     </header>
 
-    <h3 class="section-label">Abilities</h3>
-    <div class="tile-grid abilities">
-        @foreach (var ability in sheet.Abilities)
-        {
-            <div class="tile @ToneStyling.ToAffinityClass(ability.Element.Affinity)" title="@DescribeTooltip(ability.Element)">
-                <span class="tile-kind">@ability.Slot</span>
-                <span class="tile-name">@ability.Element.Name</span>
-            </div>
-        }
-    </div>
-
-    @RenderTiles("Aspects", sheet.Aspects)
-    @RenderTiles("Fragments", sheet.Fragments)
-
-    @if (sheet.Exotic is Optional<ElementTile>.Some exotic)
-    {
-        <h3 class="section-label">Exotic</h3>
-        <div class="tile exotic @ToneStyling.ToAffinityClass(exotic.Value.Affinity)" title="@DescribeTooltip(exotic.Value)">
-            <span class="tile-name">@exotic.Value.Name</span>
-        </div>
-    }
-
-    @RenderTiles("Armor set", sheet.ArmorSet)
-    @RenderChips("Mods", sheet.Mods)
-    @RenderChips("Artifact", sheet.Artifact)
-
-    @if (!sheet.Weapons.IsEmpty)
-    {
-        <h3 class="section-label">Weapons</h3>
-        @foreach (var weapon in sheet.Weapons)
-        {
-            <div class="weapon @ToneStyling.ToAffinityClass(weapon.Type)">
-                <div class="weapon-head">
-                    <span class="weapon-slot">@weapon.Slot</span>
-                    <span class="weapon-name">@weapon.Name</span>
-                    <span class="weapon-type">@weapon.Type@(weapon.Archetype is Optional<string>.Some archetype ? $" · {archetype.Value}" : "")</span>
-                </div>
-                @if (!weapon.Perks.IsEmpty)
-                {
-                    <div class="chips">
-                        @foreach (var perk in weapon.Perks)
-                        {
-                            <span class="chip @ToneStyling.ToAffinityClass(perk.Affinity)" title="@DescribeTooltip(perk)">@perk.Name</span>
-                        }
-                    </div>
-                }
-            </div>
-        }
-    }
+    <LoadoutPanel Build="Build" />
 
     <h3 class="section-label">Stats</h3>
     <div class="stats">
@@ -89,15 +48,15 @@
     @if (!sheet.LeftOut.IsEmpty)
     {
         <h3 class="section-label">Not in Loopsmith yet</h3>
-        <p class="left-out-note muted">The DIM loadout has these, but no rule knows their hash yet, so the build leaves them out. Each opens on light.gg.</p>
+        <p class="left-out-note muted">The DIM loadout has these, but no rule knows them yet, so the build leaves them out (they show dimmed above). Each opens on light.gg.</p>
         @foreach (var group in sheet.LeftOut)
         {
             <div class="left-out" data-testid="left-out">
                 <span class="left-out-label">@group.Label</span>
                 <div class="chips">
-                    @foreach (var hash in group.Hashes)
+                    @foreach (var entry in group.Entries)
                     {
-                        <a class="chip left-out-hash" href="@ToLookupUrl(hash)" target="_blank" rel="noopener noreferrer" title="Look up @hash.Value on light.gg">@hash.Value ↗</a>
+                        <a class="chip left-out-hash" href="@ToLookupUrl(entry.Hash)" target="_blank" rel="noopener noreferrer" title="@entry.Name (@entry.Hash.Value) on light.gg">@entry.Name@(entry.Copies > 1 ? $" ×{entry.Copies}" : "") ↗</a>
                     }
                 </div>
             </div>
@@ -126,47 +85,6 @@
     /// <summary>What to list under Validation (the design's issues, see <c>LoopDesigning.ListDesignIssues</c>).</summary>
     [Parameter, EditorRequired]
     public ImmutableArray<BuildIssue> Issues { get; set; }
-
-    private RenderFragment RenderTiles(string label, ImmutableArray<ElementTile> tiles) => __builder =>
-    {
-        if (tiles.IsEmpty)
-        {
-            return;
-        }
-
-        <h3 class="section-label">@label</h3>
-        <div class="tile-grid">
-            @foreach (var tile in tiles)
-            {
-                <div class="tile @ToneStyling.ToAffinityClass(tile.Affinity)" title="@DescribeTooltip(tile)">
-                    <span class="tile-name">@tile.Name</span>
-                    @if (tile.Copies > 1)
-                    {
-                        <span class="tile-count">×@tile.Copies</span>
-                    }
-                </div>
-            }
-        </div>
-    };
-
-    private RenderFragment RenderChips(string label, ImmutableArray<ElementTile> tiles) => __builder =>
-    {
-        if (tiles.IsEmpty)
-        {
-            return;
-        }
-
-        <h3 class="section-label">@label</h3>
-        <div class="chips">
-            @foreach (var tile in tiles)
-            {
-                <span class="chip @ToneStyling.ToAffinityClass(tile.Affinity)" title="@DescribeTooltip(tile)">@tile.Name@(tile.Copies > 1 ? $" ×{tile.Copies}" : "")</span>
-            }
-        </div>
-    };
-
-    private static string DescribeTooltip(ElementTile tile) =>
-        tile.Description.Match(description => $"{tile.Name} — {description.Value}", _ => tile.Name);
 
     private static string ToPercent(Optional<int> value) =>
         value.Match(v => (100m * Math.Clamp(v.Value, 0, BuildSheetShaping.MaxStat) / BuildSheetShaping.MaxStat), _ => 0m)
