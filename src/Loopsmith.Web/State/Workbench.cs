@@ -22,8 +22,11 @@ public sealed class Workbench(Result<LoopsmithBundle, string> startup, bool shar
     /// <summary>The selected timeline card: 0 = fresh spawn, k = step #k. None = follow the end of the loop.</summary>
     public Optional<int> SelectedStep { get; set; } = Optional.None<int>();
 
-    /// <summary>A message for the designer's banner (an import that failed, a link that could not be opened).</summary>
+    /// <summary>A message for the banner (an import that failed, a link that could not be opened).</summary>
     public Optional<string> Notice { get; set; } = Optional.None<string>();
+
+    /// <summary>The designer's status line: what was just opened or exported (it survives going from Home to the designer).</summary>
+    public string Status { get; set; } = "";
 
     /// <summary>Loops imported on the Compare screen (kept until the tab closes).</summary>
     public ImmutableArray<ImportedLoop> ImportedLoops { get; set; } = [];

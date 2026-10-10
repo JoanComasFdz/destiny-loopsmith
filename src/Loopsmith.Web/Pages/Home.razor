@@ -1,0 +1,226 @@
+@page "/"
+@implements IDisposable
+@inject Workbench Workbench
+@inject BrowserInterop Browser
+@inject NavigationManager Navigation
+
+@* The start screen (the logo leads here): continue the open loop, start one from a build, open an example or import a
+   loop. Opening anything goes to the designer. A share link (…/#loop=) lands here and opens its loop the same way. *@
+
+<PageTitle>Loopsmith</PageTitle>
+
+<NoticeBanner />
+
+<section class="chooser">
+    <div class="chooser-intro">
+        <h1>Design a build's gameplay loop</h1>
+        <p class="muted">Pick a build, then pick triggers — dodge, throw a grenade and kill, shoot, pick up an orb. Each step shows everything it fires, which element caused it, and what it unlocks next. The loop you design is the thing you export, share and compare.</p>
+    </div>
+
+    @if (Workbench.Session is Optional<DesignSession>.Some { Value: var open })
+    {
+        var steps = open.Design.Steps.Length;
+        <div class="build-cards">
+            <a class="build-card continue" href="designer" data-testid="continue">
+                <span class="build-card-sub">Your loop</span>
+                <span class="build-card-name">@open.Design.Name</span>
+                <span class="build-card-sub">@open.Build.Build.Name · @steps step@(steps == 1 ? "" : "s")</span>
+                <span class="build-card-go">Continue designing →</span>
+            </a>
+        </div>
+    }
+
+    <h2 class="chooser-heading">Start from a build</h2>
+    <div class="build-cards">
+        @foreach (var build in Bundle.Builds)
+        {
+            <button class="build-card @DescribeBuildAffinity(build)" data-slug="@build.Slug" @onclick="() => OpenFreshDesignAsync(build.Fresh)">
+                @if (build.Fresh is Result<DesignSession, string>.Ok fresh)
+                {
+                    var b = fresh.Value.Build.Build;
+                    <span class="build-card-name">@b.Name</span>
+                    <span class="build-card-sub">@b.Class · @b.Subclass@(b.Author is Optional<string>.Some by ? $" · {by.Value}" : "")</span>
+                    <span class="build-card-go">Start designing →</span>
+                }
+                else
+                {
+                    <span class="build-card-name">@build.Slug</span>
+                    <span class="build-card-sub tone-warning">This bundled build does not validate.</span>
+                }
+            </button>
+        }
+        <label class="build-card import" title="Start from your own build.yaml (docs/rule-format.md)">
+            <span class="build-card-name">Import build.yaml</span>
+            <span class="build-card-sub">Your own build, checked against the rule catalog</span>
+            <InputFile OnChange="ImportBuildAsync" accept=".yaml,.yml" />
+        </label>
+    </div>
+
+    @if (!Bundle.Loops.IsEmpty)
+    {
+        <h2 class="chooser-heading">Example loops</h2>
+        <div class="build-cards">
+            @foreach (var example in Bundle.Loops)
+            {
+                <button class="build-card example" data-example="@example.File.Path" @onclick="() => OpenExampleLoopAsync(example)">
+                    @if (example.Opened is Result<DesignSession, string>.Ok loop)
+                    {
+                        var design = loop.Value.Design;
+                        <span class="build-card-name">@design.Name</span>
+                        <span class="build-card-sub">@loop.Value.Build.Build.Name · @design.Steps.Length steps</span>
+                        @if (design.Description is Optional<string>.Some description)
+                        {
+                            <span class="build-card-text">@description.Value</span>
+                        }
+                        <span class="build-card-go">Open loop →</span>
+                    }
+                    else
+                    {
+                        <span class="build-card-name">@example.File.Path.Split('/')[^1]</span>
+                        <span class="build-card-sub tone-warning">This example loop does not import.</span>
+                    }
+                </button>
+            }
+        </div>
+    }
+    <p class="chooser-more muted">
+        Or <button class="btn link" @onclick="OpenImportDialog">import a loop</button> (a <code>.loop.yaml</code> file or its YAML).
+    </p>
+</section>
+
+@if (importing)
+{
+    <Modal Title="Import a loop" OnClose="CloseImportDialog">
+        <ImportLoopForm Problem="importProblem" OnImport="ImportLoopAsync" OnUnreadable="ShowImportProblem" />
+    </Modal>
+}
+
+@code {
+    private bool importing;
+    private Optional<string> importProblem = Optional.None<string>();
+
+    [CascadingParameter]
+    public LoopsmithBundle Bundle { get; set; } = null!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Navigation.LocationChanged += OpenSharedLoopOnNavigation;
+        await OpenSharedLoopAsync(Navigation.Uri);
+    }
+
+    public void Dispose() =>
+        Navigation.LocationChanged -= OpenSharedLoopOnNavigation;
+
+    private async Task OpenFreshDesignAsync(Result<DesignSession, string> fresh)
+    {
+        var proceed = await DiscardConfirming.ConfirmDiscardAsync(Workbench, Browser, "Start a new loop?"); // impure
+        if (proceed)
+        {
+            fresh.Match(
+                ok => OpenDesign(ok.Value, $"New loop for {ok.Value.Build.Build.Name}."),
+                error => ShowNotice(error.Failure));
+        }
+    }
+
+    private async Task OpenExampleLoopAsync(BundledLoop example)
+    {
+        var proceed = await DiscardConfirming.ConfirmDiscardAsync(Workbench, Browser, "Open this example?"); // impure
+        if (proceed)
+        {
+            example.Opened.Match(
+                ok => OpenDesign(ok.Value, $"Opened the example “{ok.Value.Design.Name}”."),
+                error => ShowNotice(error.Failure));
+        }
+    }
+
+    private async Task ImportBuildAsync(InputFileChangeEventArgs e)
+    {
+        var proceed = await DiscardConfirming.ConfirmDiscardAsync(Workbench, Browser, "Start a new loop from this build?"); // impure
+        if (!proceed)
+        {
+            return;
+        }
+
+        var text = await BrowserInterop.ReadPickedFileAsync(e.File);                             // impure
+
+        var started = text.Bind(value => BundleComposing.StartNamedDesign(Bundle.Catalog, new SourceText(e.File.Name, value))); // pure
+        started.Match(
+            ok => OpenDesign(ok.Value, $"New loop for {ok.Value.Build.Build.Name}."),
+            error => ShowNotice(error.Failure));
+    }
+
+    private void OpenImportDialog()
+    {
+        importProblem = Optional.None<string>();
+        importing = true;
+    }
+
+    private void CloseImportDialog() =>
+        importing = false;
+
+    private void ShowImportProblem(string problem) =>
+        importProblem = Optional.Some(problem);
+
+    private async Task ImportLoopAsync(SourceText file)
+    {
+        var imported = LoopDesigning.ImportLoop(Bundle.Catalog, file);                           // pure
+        if (imported is Result<DesignSession, string>.Error error)
+        {
+            importProblem = Optional.Some(error.Failure);
+            return;
+        }
+
+        var proceed = await DiscardConfirming.ConfirmDiscardAsync(Workbench, Browser, "Open this loop?"); // impure
+        if (proceed && imported is Result<DesignSession, string>.Ok ok)
+        {
+            importing = false;
+            OpenDesign(ok.Value, $"Imported “{ok.Value.Design.Name}”.");
+        }
+    }
+
+    private async Task OpenSharedLoopAsync(string uri)
+    {
+        var payload = ShareLinkCoding.ReadLoopPayload(uri);                                      // pure
+        if (payload is not Optional<string>.Some some)
+        {
+            return;
+        }
+
+        var imported = ShareLinkCoding.DecodeLoopPayload(some.Value)                             // pure
+            .Bind(file => LoopDesigning.ImportLoop(Bundle.Catalog, new SourceText("shared.loop.yaml", file)));
+        await Browser.ClearLocationHashAsync();                                                  // impure
+        imported.Match(
+            ok => OpenDesign(ok.Value, $"Opened the shared loop “{ok.Value.Design.Name}”."),
+            error => ShowNotice($"Couldn't open the shared loop:{Environment.NewLine}{error.Failure}"));
+    }
+
+    private void OpenSharedLoopOnNavigation(object? sender, LocationChangedEventArgs e) =>
+        _ = InvokeAsync(async () =>
+        {
+            await OpenSharedLoopAsync(e.Location);                                               // impure
+            StateHasChanged();
+        });
+
+    /// <summary>The design becomes the open one and the designer shows it.</summary>
+    private Unit OpenDesign(DesignSession session, string message)
+    {
+        Workbench.OpenSession(session);
+        Workbench.Notice = Optional.None<string>();
+        Workbench.Status = message + DescribeCatalogMismatch(session);
+        Navigation.NavigateTo("designer");                                                        // impure
+        return new Unit.Value();
+    }
+
+    private Unit ShowNotice(string message)
+    {
+        Workbench.Notice = Optional.Some(message);
+        return new Unit.Value();
+    }
+
+    /// <summary>" (Loop designed against catalog …; replaying with ….)" when the loop came from another catalog.</summary>
+    private static string DescribeCatalogMismatch(DesignSession session) =>
+        LoopDesigning.FindCatalogMismatch(session).Match(issue => $" {issue.Value.Message}", _ => "");
+
+    private static string DescribeBuildAffinity(BundledBuild build) =>
+        build.Fresh.Match(ok => ToneStyling.ToAffinityClass(ok.Value.Build.Build.Subclass), _ => "");
+}

@@ -200,7 +200,7 @@ Coding conventions (binding): [CONVENTIONS.md](CONVENTIONS.md) · decisions: [AD
 ```
 src/Loopsmith.Core/      one project, slices = folders (kernel: Domain, Functional, Phrasing, Causality)
 src/Loopsmith.Cli/       host: argv → Orchestration shell → effects
-src/Loopsmith.Web/       host: Blazor WebAssembly loop designer (Designer, Compare)
+src/Loopsmith.Web/       host: Blazor WebAssembly loop designer (Home, Designer, Compare)
 tests/Loopsmith.Core.Tests/   unit, golden and architecture tests
 rules/                   authored causality (glossary, keywords, hunter, exotics, armor sets, mods, artifact, weapon perks)
 builds/<slug>/           build.yaml, discrepancies, loop-graph.md, loops/*.loop.yaml (+ the original note, note-map and

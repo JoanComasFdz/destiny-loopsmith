@@ -540,6 +540,7 @@ textarea { resize: vertical; }
 }
 .build-card:hover { border-color: var(--aff, var(--arc)); box-shadow: 0 0 20px color-mix(in srgb, var(--aff, var(--arc)) 18%, transparent); }
 .build-card.import { border-style: dashed; border-left-style: dashed; background: var(--panel); }
+.build-card.continue { --aff: var(--arc); text-decoration: none; }
 .build-card-name { font-size: 17px; font-weight: 750; }
 .build-card-sub { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
 .build-card-go { margin-top: 8px; color: var(--aff, var(--arc)); font-weight: 700; font-size: 13px; }

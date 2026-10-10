@@ -1,18 +1,11 @@
-@page "/"
-@implements IDisposable
+@page "/designer"
 @inject Workbench Workbench
 @inject BrowserInterop Browser
 @inject NavigationManager Navigation
 
 <PageTitle>@DescribePageTitle() · Loopsmith</PageTitle>
 
-@if (Workbench.Notice is Optional<string>.Some notice)
-{
-    <div class="banner warn" role="alert" data-testid="notice">
-        <pre class="banner-text">@notice.Value</pre>
-        <button class="btn ghost icon" title="Dismiss" aria-label="Dismiss" @onclick="DismissNotice">✕</button>
-    </div>
-}
+<NoticeBanner />
 
 @if (Workbench.Session is Optional<DesignSession>.Some { Value: var session })
 {
@@ -69,9 +62,9 @@
                 <button class="btn" @onclick="OpenImportDialog" data-action="import">Import loop</button>
             </div>
         </div>
-        @if (status.Length > 0)
+        @if (Workbench.Status.Length > 0)
         {
-            <p class="status" role="status" data-testid="status">@status</p>
+            <p class="status" role="status" data-testid="status">@Workbench.Status</p>
         }
 
         <div class="designer-grid">
@@ -128,76 +121,6 @@
             break;
     }
 }
-else
-{
-    <section class="chooser">
-        <div class="chooser-intro">
-            <h1>Design a build's gameplay loop</h1>
-            <p class="muted">Pick a build, then pick triggers — dodge, throw a grenade and kill, shoot, pick up an orb. Each step shows everything it fires, which element caused it, and what it unlocks next. The loop you design is the thing you export, share and compare.</p>
-        </div>
-        <div class="build-cards">
-            @foreach (var build in Bundle.Builds)
-            {
-                <button class="build-card @DescribeBuildAffinity(build)" data-slug="@build.Slug" @onclick="() => OpenFreshDesign(build.Fresh)">
-                    @if (build.Fresh is Result<DesignSession, string>.Ok fresh)
-                    {
-                        var b = fresh.Value.Build.Build;
-                        <span class="build-card-name">@b.Name</span>
-                        <span class="build-card-sub">@b.Class · @b.Subclass@(b.Author is Optional<string>.Some by ? $" · {by.Value}" : "")</span>
-                        <span class="build-card-go">Start designing →</span>
-                    }
-                    else
-                    {
-                        <span class="build-card-name">@build.Slug</span>
-                        <span class="build-card-sub tone-warning">This bundled build does not validate.</span>
-                    }
-                </button>
-            }
-            <label class="build-card import" title="Start from your own build.yaml (docs/rule-format.md)">
-                <span class="build-card-name">Import build.yaml</span>
-                <span class="build-card-sub">Your own build, checked against the rule catalog</span>
-                <InputFile OnChange="ImportBuildAsync" accept=".yaml,.yml" />
-            </label>
-        </div>
-        @if (!Bundle.Loops.IsEmpty)
-        {
-            <h2 class="chooser-heading">Example loops</h2>
-            <div class="build-cards">
-                @foreach (var example in Bundle.Loops)
-                {
-                    <button class="build-card example" data-example="@example.File.Path" @onclick="() => OpenExampleLoop(example)">
-                        @if (example.Opened is Result<DesignSession, string>.Ok loop)
-                        {
-                            var design = loop.Value.Design;
-                            <span class="build-card-name">@design.Name</span>
-                            <span class="build-card-sub">@loop.Value.Build.Build.Name · @design.Steps.Length steps</span>
-                            @if (design.Description is Optional<string>.Some description)
-                            {
-                                <span class="build-card-text">@description.Value</span>
-                            }
-                            <span class="build-card-go">Open loop →</span>
-                        }
-                        else
-                        {
-                            <span class="build-card-name">@example.File.Path.Split('/')[^1]</span>
-                            <span class="build-card-sub tone-warning">This example loop does not import.</span>
-                        }
-                    </button>
-                }
-            </div>
-        }
-        <p class="chooser-more muted">
-            Or <button class="btn link" @onclick="OpenImportDialog">import a loop</button> (a <code>.loop.yaml</code> file or its YAML).
-        </p>
-    </section>
-
-    @if (dialog == DesignerDialog.ImportLoop)
-    {
-        <Modal Title="Import a loop" OnClose="CloseDialog">
-            <ImportLoopForm Problem="importProblem" OnImport="ImportLoop" OnUnreadable="ShowImportProblem" />
-        </Modal>
-    }
-}
 
 @code {
     private const string CustomSlug = "custom";
@@ -212,7 +135,6 @@ else
     private Optional<LoopReport> report = Optional.None<LoopReport>();
     private string shareUrl = "";
     private bool shareCopied;
-    private string status = "";
     private int pickerVersion;
     private Optional<int> scrollToStep = Optional.None<int>();
     private ElementReference shareInput;
@@ -220,10 +142,13 @@ else
     [CascadingParameter]
     public LoopsmithBundle Bundle { get; set; } = null!;
 
-    protected override async Task OnInitializedAsync()
+    /// <summary>The designer shows the open loop; with none open, Home is where one is picked.</summary>
+    protected override void OnInitialized()
     {
-        Navigation.LocationChanged += OpenSharedLoopOnNavigation;
-        await OpenSharedLoopAsync(Navigation.Uri);
+        if (!Workbench.Session.IsSome())
+        {
+            Navigation.NavigateTo("", replace: true);                                            // impure
+        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -234,9 +159,6 @@ else
             await Browser.RevealElementAsync($"step-{step.Value}");                              // impure
         }
     }
-
-    public void Dispose() =>
-        Navigation.LocationChanged -= OpenSharedLoopOnNavigation;
 
     // ── opening a design ────────────────────────────────────────────────────────
 
@@ -252,7 +174,7 @@ else
         Workbench.OpenSession(session);
         Workbench.Notice = Optional.None<string>();
         report = Optional.None<LoopReport>();
-        status = message + DescribeCatalogMismatch(session);
+        Workbench.Status = message + DescribeCatalogMismatch(session);
         return new Unit.Value();
     }
 
@@ -271,7 +193,7 @@ else
     private Unit ShowNotice(string message)
     {
         Workbench.Notice = Optional.Some(message);
-        status = "";
+        Workbench.Status = "";
         return new Unit.Value();
     }
 
@@ -279,7 +201,7 @@ else
     {
         var slug = e.Value?.ToString() ?? "";                                                   // pure
         var picked = Optional.FromNullable(Bundle.Builds.FirstOrDefault(build => build.Slug == slug)); // pure
-        var proceed = await ConfirmDiscardAsync("Switch build?");                                // impure
+        var proceed = await DiscardConfirming.ConfirmDiscardAsync(Workbench, Browser, "Switch build?"); // impure
         if (!proceed || picked is not Optional<BundledBuild>.Some build)
         {
             pickerVersion++;
@@ -291,7 +213,7 @@ else
 
     private async Task ImportBuildAsync(InputFileChangeEventArgs e)
     {
-        var proceed = await ConfirmDiscardAsync("Start a new loop from this build?");             // impure
+        var proceed = await DiscardConfirming.ConfirmDiscardAsync(Workbench, Browser, "Start a new loop from this build?"); // impure
         if (!proceed)
         {
             return;
@@ -303,29 +225,6 @@ else
         OpenFreshDesign(started);
     }
 
-    private async Task OpenSharedLoopAsync(string uri)
-    {
-        var payload = ShareLinkCoding.ReadLoopPayload(uri);                                      // pure
-        if (payload is not Optional<string>.Some some)
-        {
-            return;
-        }
-
-        var imported = ShareLinkCoding.DecodeLoopPayload(some.Value)                             // pure
-            .Bind(file => LoopDesigning.ImportLoop(Bundle.Catalog, new SourceText("shared.loop.yaml", file)));
-        imported.Match(
-            ok => OpenDesign(ok.Value, $"Opened the shared loop “{ok.Value.Design.Name}”."),
-            error => ShowNotice($"Couldn't open the shared loop:{Environment.NewLine}{error.Failure}"));
-        await Browser.ClearLocationHashAsync();                                                  // impure
-    }
-
-    private void OpenSharedLoopOnNavigation(object? sender, LocationChangedEventArgs e) =>
-        _ = InvokeAsync(async () =>
-        {
-            await OpenSharedLoopAsync(e.Location);                                               // impure
-            StateHasChanged();
-        });
-
     // ── editing the loop ────────────────────────────────────────────────────────
 
     private void AppendTrigger(PlayerAction action) =>
@@ -336,7 +235,7 @@ else
 
     private async Task ResetLoopAsync(DesignSession session)
     {
-        var proceed = await ConfirmDiscardAsync("Reset the loop?");                              // impure
+        var proceed = await DiscardConfirming.ConfirmDiscardAsync(Workbench, Browser, "Reset the loop?"); // impure
         if (proceed)
         {
             EditSession(current => LoopDesigning.TruncateSteps(current, 0), scrollToEnd: false);
@@ -378,7 +277,7 @@ else
         Workbench.Session = Optional.Some(next);
         Workbench.SelectedStep = keepSelection ? Workbench.SelectedStep : Optional.None<int>();
         report = Optional.None<LoopReport>();
-        status = "";
+        Workbench.Status = "";
         scrollToStep = scrollToEnd ? Optional.Some(next.Design.Steps.Length) : Optional.None<int>();
     }
 
@@ -409,7 +308,7 @@ else
         var file = LoopDesigning.ExportLoop(open.Value);                                         // pure
         var fileName = LoopFileNaming.ToLoopFileName(open.Value.Design.Name);                    // pure
         await Browser.DownloadTextAsync(fileName, file);                                         // impure
-        status = $"Exported {fileName}.";
+        Workbench.Status = $"Exported {fileName}.";
     }
 
     private async Task CopyShareLinkAsync()
@@ -458,22 +357,6 @@ else
     private void CloseDialog() =>
         dialog = DesignerDialog.None;
 
-    private void DismissNotice() =>
-        Workbench.Notice = Optional.None<string>();
-
-    private async Task<bool> ConfirmDiscardAsync(string question)
-    {
-        if (Workbench.Session is not Optional<DesignSession>.Some { Value.Design.Steps.Length: > 0 } open)
-        {
-            return true;
-        }
-
-        var steps = open.Value.Design.Steps.Length;
-        var confirmed = await Browser.ConfirmAsync(                                              // impure
-            $"{question} The current loop's {steps} step{(steps == 1 ? "" : "s")} will be discarded — export it or copy its share link first to keep it.");
-        return confirmed;
-    }
-
     // ── reading for display ─────────────────────────────────────────────────────
 
     /// <summary>The state the right column shows: after the selected card, else after the last step.</summary>
@@ -499,9 +382,6 @@ else
 
     private static string DescribeBuildOption(BundledBuild build) =>
         build.Fresh.Match(ok => ok.Value.Build.Build.Name, _ => $"{build.Slug} (invalid)");
-
-    private static string DescribeBuildAffinity(BundledBuild build) =>
-        build.Fresh.Match(ok => ToneStyling.ToAffinityClass(ok.Value.Build.Build.Subclass), _ => "");
 
     private string DescribePageTitle() =>
         Workbench.Session.Match(open => open.Value.Design.Name, _ => "Designer");

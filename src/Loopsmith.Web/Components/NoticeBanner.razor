@@ -1,0 +1,15 @@
+@* The banner for Workbench.Notice: an import that failed, a link that could not be opened. Dismissing it clears it. *@
+@inject Workbench Workbench
+
+@if (Workbench.Notice is Optional<string>.Some notice)
+{
+    <div class="banner warn" role="alert" data-testid="notice">
+        <pre class="banner-text">@notice.Value</pre>
+        <button class="btn ghost icon" title="Dismiss" aria-label="Dismiss" @onclick="DismissNotice">✕</button>
+    </div>
+}
+
+@code {
+    private void DismissNotice() =>
+        Workbench.Notice = Optional.None<string>();
+}
