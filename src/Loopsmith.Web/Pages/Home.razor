@@ -118,8 +118,6 @@
 }
 
 @code {
-    private const string DimLinkProblem = "That DIM link carries no loadout.";
-
     private bool importing;
     private string dimLink = "";
     private bool readingDimLink;
@@ -194,13 +192,7 @@
 
         readingDimLink = true;
         dimProblem = Optional.None<string>();
-        var request = link.Match(shared => Optional.Some(LoopDesigning.ToDimShareRequestUrl(shared)), _ => Optional.None<string>()); // pure
-        var carried = link.Match(_ => Optional.None<string>(), inline => Optional.Some(inline.Loadout));                         // pure
-        var loadout = carried.ToResult(() => DimLinkProblem);                                    // pure
-        if (request is Optional<string>.Some url)
-        {
-            loadout = await DimLoadouts.FetchSharedLoadoutAsync(url.Value);                      // impure
-        }
+        var loadout = await ReadLoadoutAsync(link);                                              // impure
         readingDimLink = false;
 
         var started = loadout.Bind(json => LoopDesigning.StartDimDesign(Bundle.Catalog, link, json)); // pure
@@ -208,6 +200,19 @@
             ok => OpenDesign(ok.Value, $"New loop for {ok.Value.Build.Build.Name}, from the DIM link."),
             error => ShowDimProblem(error.Failure));
     }
+
+    /// <summary>The link's loadout: DIM's answer for a dim.gg share, or the JSON a link carries.</summary>
+    private Task<Result<string, string>> ReadLoadoutAsync(DimLink link) =>
+        link.Match(FetchSharedLoadoutAsync, ReadCarriedLoadoutAsync);
+
+    private Task<Result<string, string>> FetchSharedLoadoutAsync(DimLink.Shared shared)
+    {
+        var url = LoopDesigning.ToDimShareRequestUrl(shared);                                    // pure
+        return DimLoadouts.FetchSharedLoadoutAsync(url);                                         // impure
+    }
+
+    private static Task<Result<string, string>> ReadCarriedLoadoutAsync(DimLink.Inline inline) =>
+        Task.FromResult<Result<string, string>>(new Result<string, string>.Ok(inline.Loadout));  // pure
 
     private async Task OpenDimBuildAsync(DesignSession session)
     {

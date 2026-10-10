@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
+using Loopsmith.Core.Orchestration;
 using Loopsmith.Core.Phrasing;
 
 namespace Loopsmith.Web.Presentation;
@@ -88,11 +89,10 @@ public static class BuildSheetShaping
             : new ElementTile(id.Value, Affinity.Neutral, copies, Optional.None<string>());
 
     /// <summary>"dim.gg/2jguuoq": a dim.gg share without its scheme and name, short enough for a card; "Open in DIM" otherwise.</summary>
-    public static string DescribeShareLink(string link)
-    {
-        var parts = link.Split("://", 2)[^1].Split('/', StringSplitOptions.RemoveEmptyEntries);
-        return parts.Length >= 2 && parts[0] == "dim.gg" ? $"dim.gg/{parts[1]}" : "Open in DIM";
-    }
+    public static string DescribeShareLink(string link) =>
+        LoopDesigning.ReadDimLink(link) is Result<DimLink, string>.Ok { Value: DimLink.Shared shared }
+            ? $"dim.gg/{shared.ShareId.Value}"
+            : "Open in DIM";
 
     /// <summary>An ability the build gives as "?": a tile that says so (unknown is data, ADRs D1).</summary>
     private static ElementTile DescribeAbility(RuleCatalog catalog, Optional<ElementId> id) =>

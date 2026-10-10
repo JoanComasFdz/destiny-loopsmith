@@ -4,15 +4,14 @@
 @{
     var sheet = BuildSheetShaping.ShapeSheet(Session.Build, []);
     var leftOut = Session.Build.Build.LeftOut;
-    var link = sheet.SourceUrl.UnwrapOr("");
 }
 <article class="dim-card @ToneStyling.ToAffinityClass(sheet.Subclass)" data-testid="dim-card">
     <header class="dim-card-head">
         <img class="dim-card-logo" src="images/dim-logo.svg" alt="" width="22" height="22" />
         <span class="dim-card-kind">DIM build</span>
-        @if (link.Length > 0)
+        @if (sheet.SourceUrl is Optional<string>.Some link)
         {
-            <a class="dim-card-link" href="@link" target="_blank" rel="noopener noreferrer" title="Open this build in DIM">@BuildSheetShaping.DescribeShareLink(link) ↗</a>
+            <a class="dim-card-link" href="@link.Value" target="_blank" rel="noopener noreferrer" title="Open this build in DIM">@BuildSheetShaping.DescribeShareLink(link.Value) ↗</a>
         }
     </header>
     <div class="dim-card-title">
