@@ -18,6 +18,8 @@ elements:
     kind: super
     affinity: arc
     class: hunter
+    # The manifest's hash (244213.26.06.29.2000-1-bnet.65864: the one super of that name).
+    hash: 3769507633
     # Tier 2 super, 556 s. Supers have no chunk energy scalar (Game Mechanics#12), so chunkScalar
     # stays "?" rather than a made-up 1.
     ability: { kind: super, charges: 1, chunkScalar: "?", baseCooldown: 556 }

@@ -31,6 +31,13 @@ public static class BuildFileWriting
         return EmitYaml(events);
     }
 
+    /// <summary>One weapon entry as the build file writes it, <c>{ slot: kinetic, name: …, roll: ["?", 243981275] }</c> (no line break).</summary>
+    internal static string WriteWeapon(WeaponLoadout weapon)
+    {
+        ImmutableArray<ParsingEvent> events = [new StreamStart(), new DocumentStart(), .. ToWeaponEvents(weapon), new DocumentEnd(true), new StreamEnd()];
+        return EmitYaml(events).TrimEnd('\n');
+    }
+
     /// <summary>Keys in the order of the format: identity, class and subclass, abilities, the lists, weapons, stats.</summary>
     private static ImmutableArray<ParsingEvent> ListEvents(Build build, ImmutableArray<string> notes) =>
     [
@@ -98,8 +105,24 @@ public static class BuildFileWriting
         .. ToEntry("type", ToVocabularyWord(weapon.Type)),
         .. weapon.Archetype.Match(archetype => ToEntry("archetype", archetype.Value), _ => []),
         .. ToListEntry("perks", weapon.Perks),
+        .. weapon.Hash.Match(hash => ToEntry("hash", hash.Value.Value.ToString(CultureInfo.InvariantCulture)), _ => []),
+        .. ToRollEntry(weapon.Roll),
         new MappingEnd(),
     ];
+
+    /// <summary><c>roll: ["?", 243981275]</c>: each trait column's pick in column order, <c>"?"</c> for none; nothing when empty.</summary>
+    private static ImmutableArray<ParsingEvent> ToRollEntry(ImmutableArray<Optional<ItemHash>> roll) =>
+        roll.IsEmpty
+            ? []
+            :
+            [
+                ToKey("roll"),
+                new SequenceStart(null, null, true, SequenceStyle.Flow),
+                .. roll.Select(pick => pick.Match(
+                    hash => (ParsingEvent)ToValue(hash.Value.Value.ToString(CultureInfo.InvariantCulture)),
+                    _ => new Scalar(null, null, DomainPhrasing.Unknown, ScalarStyle.DoubleQuoted, false, true))),
+                new SequenceEnd(),
+            ];
 
     private static ImmutableArray<ParsingEvent> ToStatsEntry(StatLine stats)
     {

@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Dunet;
 using Loopsmith.Core.Functional;
 
 namespace Loopsmith.Core.Domain;
@@ -13,7 +14,33 @@ public sealed record AbilityLoadout(
     Optional<ElementId> Melee,
     Optional<ElementId> ClassAbility);
 
-public sealed record WeaponLoadout(WeaponSlot Slot, string Name, DamageType Type, Optional<string> Archetype, ImmutableArray<ElementId> Perks);
+/// <summary>
+/// An equipped weapon. <see cref="Perks"/> are named by catalog id; <see cref="Hash"/> is its manifest item when known (a
+/// DIM loadout's, or written in the build file); <see cref="Roll"/> is the perk picked in each of its trait columns, by
+/// manifest hash, in column order (none: not picked, "?" in the build file).
+/// </summary>
+public sealed record WeaponLoadout(
+    WeaponSlot Slot,
+    string Name,
+    DamageType Type,
+    Optional<string> Archetype,
+    ImmutableArray<ElementId> Perks,
+    Optional<ItemHash> Hash,
+    ImmutableArray<Optional<ItemHash>> Roll);
+
+/// <summary>
+/// One perk of a weapon as its build holds it (<c>BuildComposition.WeaponRolling.ListPerkSlots</c>): a perk the build
+/// names that is in no trait column the manifest excerpt gives; a column that doesn't roll, with its one perk; or a
+/// column that rolls, with what it rolls with and the perk there — the roll's pick, else the perk the build names in
+/// it — or none ("?"). A column holds one perk.
+/// </summary>
+[Union]
+public partial record WeaponPerkSlot
+{
+    partial record Named(ElementId Perk);
+    partial record Fixed(int Column, ItemHash Perk);
+    partial record Rolling(int Column, ImmutableArray<ItemHash> Options, Optional<ItemHash> Perk);
+}
 
 public sealed record StatLine(
     Optional<StatValue> Weapons,

@@ -7,8 +7,8 @@ namespace Loopsmith.Core.LoadoutImporting;
 /// <summary>
 /// Pure: a DIM loadout → a <see cref="Build"/> of what the rule catalog recognises by manifest hash, and the rest left
 /// out (<see cref="Build.LeftOut"/>). Nothing is guessed (ADRs D12): an ability the catalog has no hash for is "?", an
-/// item it doesn't know is listed, not matched by name. Weapons need the manifest (their slot, name and damage type), so
-/// every weapon is left out until the manifest join.
+/// item it doesn't know is listed, not matched by name. A weapon is equipped when the manifest excerpt knows its slot,
+/// name and damage type (without perks: a loadout doesn't carry them); any other weapon is left out.
 /// </summary>
 public static class DimLoadoutMapping
 {
@@ -54,8 +54,15 @@ public static class DimLoadoutMapping
         var perks = loadout.ArtifactPerks.Select(hash => Recognise(byHash, LoadoutPart.ArtifactPerk, hash)).ToImmutableArray();
         var recognised = plugs.Concat(items).Concat(mods).Concat(perks).ToImmutableArray();
         var placed = recognised.SelectMany(entry => ToSome(entry.Element).Select(element => (entry.Part, element, entry.Hash))).ToImmutableArray();
+        var weapons = items
+            .Where(entry => !entry.Element.IsSome())
+            .SelectMany(entry => ToSome(ReadWeapon(catalog.Manifest, entry.Hash)))
+            .GroupBy(weapon => weapon.Slot)
+            .Select(slot => slot.First())
+            .ToImmutableArray();
         var leftOut = recognised
             .Where(entry => !entry.Element.IsSome() || !IsPlaceable(entry.Part, entry.Element))
+            .Where(entry => !weapons.Any(weapon => weapon.Hash == Optional.Some(entry.Hash)))
             .Select(entry => new LeftOutItem(entry.Part, entry.Hash))
             .ToImmutableArray();
 
@@ -77,7 +84,7 @@ public static class DimLoadoutMapping
             [],
             ListAll(placed, LoadoutPart.ArmorMod, ElementKind.ArmorMod),
             ListAll(placed, LoadoutPart.ArtifactPerk, ElementKind.ArtifactPerk),
-            [],
+            weapons,
             new StatLine(
                 Optional.None<StatValue>(),
                 Optional.None<StatValue>(),
@@ -86,6 +93,23 @@ public static class DimLoadoutMapping
                 Optional.None<StatValue>(),
                 Optional.None<StatValue>()),
             leftOut));
+    }
+
+    /// <summary>
+    /// A weapon the manifest excerpt knows — its slot, name, damage type and archetype ("Grenade Launcher" →
+    /// <c>grenade-launcher</c>) — with no perks: a DIM loadout names the weapon, not the perks it rolled.
+    /// </summary>
+    private static Optional<WeaponLoadout> ReadWeapon(ManifestExcerpt manifest, ItemHash hash) =>
+        manifest.FindItem(hash).Bind(item => item.Kind is ManifestKind.Weapon { DamageType: Optional<DamageType>.Some type } weapon
+            ? Optional.Some(new WeaponLoadout(weapon.Slot, item.Name, type.Value, ToArchetype(item.Type), [], Optional.Some(hash), []))
+            : Optional.None<WeaponLoadout>());
+
+    private static Optional<string> ToArchetype(string type)
+    {
+        var words = new string([.. type.ToLowerInvariant().Select(c => char.IsAsciiLetterOrDigit(c) ? c : ' ')])
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var slug = string.Join('-', words);
+        return ElementId.IsSlug(slug) ? Optional.Some(slug) : Optional.None<string>();
     }
 
     private sealed record Recognition(LoadoutPart Part, ItemHash Hash, Optional<BuildElement> Element);

@@ -86,7 +86,8 @@ public static class TestCatalog
         var catalog = new RuleCatalog(
             CatalogVersion.From("test"),
             Glossary,
-            abilities.Concat(fragments).Concat(allMods).ToImmutableDictionary(e => e.Id));
+            abilities.Concat(fragments).Concat(allMods).ToImmutableDictionary(e => e.Id),
+            new ManifestExcerpt(Optional.None<string>(), ImmutableDictionary<DamageType, string>.Empty, ImmutableDictionary<ItemHash, ManifestItem>.Empty));
         var build = new Build(
             "Test build",
             Optional.None<string>(),
@@ -101,7 +102,7 @@ public static class TestCatalog
             [],
             modOrder.IsDefault ? allMods.Select(m => m.Id).ToImmutableArray() : modOrder,
             [],
-            [new WeaponLoadout(WeaponSlot.Energy, "Test Rifle", DamageType.Arc, Optional.None<string>(), [])],
+            [new WeaponLoadout(WeaponSlot.Energy, "Test Rifle", DamageType.Arc, Optional.None<string>(), [], Optional.None<ItemHash>(), [])],
             new StatLine(Optional.None<StatValue>(), Optional.None<StatValue>(), Optional.None<StatValue>(),
                 Optional.None<StatValue>(), Optional.None<StatValue>(), Optional.None<StatValue>()),
             []);

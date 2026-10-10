@@ -41,8 +41,8 @@ weapons:
   # Slice per the video. Attrition Orbs placement is INFERRED: the note credits it on strand weapon
   # kills, the Compendium and Clarity say it is a weapon trait, and Festival Flight is the only Strand
   # weapon named.
-  # Archetype omitted: no source names it.
-  - { slot: kinetic, name: Festival Flight, type: strand, perks: [slice, attrition-orbs] }
+  # Archetype omitted: no source names it. The hash is the manifest's (rules/manifest.yaml), for its icon.
+  - { slot: kinetic, name: Festival Flight, type: strand, perks: [slice, attrition-orbs], hash: 4019651319 }
   # Placeholder: neither source names the energy weapon, but Harmonic Siphon's orbs and Spark of
   # Discharge's Ionic Traces need Arc weapon kills.
   - { slot: energy, name: Any Arc weapon, type: arc, perks: [] }

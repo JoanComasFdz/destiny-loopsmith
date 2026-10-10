@@ -480,6 +480,57 @@ public sealed class RuleCatalogParsingTests
     }
 
     [Fact]
+    public void The_manifest_excerpt_names_items_with_their_icon_slot_and_damage_type()
+    {
+        var manifest = new SourceText("manifest.yaml", """
+            version: "244213.26.06.29.2000-1-bnet.65864"
+            damageTypes:
+              - { type: strand, icon: /common/strand.png }
+            items:
+              - { hash: 4019651319, name: "Festival Flight", kind: weapon, type: "Grenade Launcher", tier: legendary, slot: kinetic, damageType: strand, traits: [[923806249, 3422796781], [243981275]], icon: /common/ff.jpg }
+              - { hash: 3325463374, name: "Thunderlord", kind: weapon, type: "Machine Gun", tier: exotic, slot: power, damageType: arc, traits: [[1419069769], [2779035018]] }
+              - { hash: 3832366019, name: "Harmonic Siphon", kind: armorMod, type: "Helmet Armor Mod", slot: helmet }
+              - { hash: 1435557120, name: "Grenade Mod", kind: armorMod, type: "General Armor Mod" }
+            """);
+
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, manifest]));
+        var items = catalog.Manifest.Items;
+
+        Assert.Equal(Optional.Some("244213.26.06.29.2000-1-bnet.65864"), catalog.Manifest.Version);
+        Assert.Equal("/common/strand.png", catalog.Manifest.DamageTypeIcons[DamageType.Strand]);
+        var flight = items[ItemHash.From(4019651319u)];
+        var flightKind = Assert.IsType<ManifestKind.Weapon>(flight.Kind);
+        var thunderlord = Assert.IsType<ManifestKind.Weapon>(items[ItemHash.From(3325463374u)].Kind);
+        Assert.Equal(
+            (WeaponSlot.Kinetic, Optional.Some(DamageType.Strand), Optional.Some(ItemTier.Legendary), Optional.Some("/common/ff.jpg")),
+            (flightKind.Slot, flightKind.DamageType, flight.Tier, flight.Icon));
+        Assert.Equal([[923806249u, 3422796781u], [243981275u]], flightKind.Traits.Select(column => column.Options.Select(hash => hash.Value)));
+        Assert.Equal([[1419069769u], [2779035018u]], thunderlord.Traits.Select(column => column.Options.Select(hash => hash.Value)));
+        Assert.Equal(Optional.Some(ArmorSlot.Helmet), items[ItemHash.From(3832366019u)].ReadArmorSlot());
+        Assert.Equal(new ManifestKind.ArmorMod(Optional.None<ArmorSlot>()), items[ItemHash.From(1435557120u)].Kind);
+        Assert.Empty(AssertOk(RuleCatalogParsing.ParseCatalog([Glossary])).Manifest.Items);
+    }
+
+    [Fact]
+    public void A_manifest_slot_belongs_to_weapons_armor_and_armor_mods_and_a_damage_type_to_weapons()
+    {
+        var message = ParseInvalidCatalog(Glossary, new SourceText("manifest.yaml", """
+            items:
+              - { hash: 146194908, name: "Skip Grenade", kind: grenade, type: "Arc Grenade", slot: arms }
+              - { hash: 593554567, name: "Luminopotent Mask", kind: armor, type: "Helmet" }
+              - { hash: 3832366019, name: "Harmonic Siphon", kind: armorMod, type: "Helmet Armor Mod", damageType: arc }
+              - { hash: 1053737370, name: "Shinobu's Vow", kind: armor, type: "Gauntlets", slot: arms, traits: [[1]] }
+              - { hash: 4019651319, name: "Festival Flight", kind: weapon, type: "Grenade Launcher", slot: kinetic, traits: [[923806249], []] }
+            """));
+
+        Assert.Contains("slot is only allowed on a weapon, armor or an armor mod, not on a grenade", message);
+        Assert.Contains("is missing 'slot'", message);
+        Assert.Contains("damageType is only allowed on a weapon, not on a armorMod", message);
+        Assert.Contains("traits is only allowed on a weapon, not on a armor", message);
+        Assert.Contains("a trait column needs at least one perk hash", message);
+    }
+
+    [Fact]
     public void A_manifest_hash_is_never_0()
     {
         var message = ParseInvalidCatalog(Glossary, ToElementsFile("mods.yaml", """

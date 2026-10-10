@@ -27,8 +27,9 @@ public static class RuleCatalogParsing
         var ordered = files.OrderBy(file => file.Path, StringComparer.Ordinal).ToImmutableArray();
         var glossary = ReadTheGlossary(ordered);
         var scope = new ReferenceScope(glossary.Match(ok => Optional.Some(ok.Value), _ => Optional.None<KeywordGlossary>()));
+        var manifest = ReadTheManifest(ordered);
         var elementFiles = ordered
-            .Where(file => !IsGlossary(file))
+            .Where(file => !IsGlossary(file) && !IsManifest(file))
             .Select(file => ElementParsing.ReadElementsFile(file, scope))
             .ToImmutableArray();
         var fileErrors = FailIfAny(elementFiles.SelectMany(file => file.Errors).ToImmutableArray());
@@ -37,7 +38,7 @@ public static class RuleCatalogParsing
         var stacking = ReferenceChecking.CheckStackingReferences(located);
         var hashes = ReferenceChecking.CheckUniqueHashes(located);
         var version = ComputeCatalogVersion(ordered);
-        return Combine(glossary, fileErrors, elements, stacking, hashes, (vocabulary, _, byId, _, _) => new RuleCatalog(version, vocabulary, byId))
+        return Combine(glossary, fileErrors, elements, stacking, hashes, manifest, (vocabulary, _, byId, _, _, excerpt) => new RuleCatalog(version, vocabulary, byId, excerpt))
             .MapError(FormatErrors);
     }
 
@@ -63,6 +64,19 @@ public static class RuleCatalogParsing
 
     private static bool IsGlossary(SourceText file) =>
         file.Path == GlossaryParsing.GlossaryPath;
+
+    private static bool IsManifest(SourceText file) =>
+        file.Path == ManifestParsing.ManifestPath;
+
+    /// <summary>The manifest excerpt, if the rules root has one (it is optional: without it nothing has a name or icon from the manifest).</summary>
+    private static Result<ManifestExcerpt, Errors> ReadTheManifest(ImmutableArray<SourceText> ordered) =>
+        ordered.Where(IsManifest).ToImmutableArray() switch
+        {
+            [] => Succeed(ManifestParsing.NoManifest),
+            [var manifest] => ManifestParsing.ReadManifest(manifest),
+            var several => Fail<ManifestExcerpt>(
+                [new ParseError(ManifestParsing.ManifestPath, Optional.None<long>(), $"given {several.Length} times: the rules root has at most one manifest.yaml")]),
+        };
 
     private static Result<KeywordGlossary, Errors> ReadTheGlossary(ImmutableArray<SourceText> ordered) =>
         ordered.Where(IsGlossary).ToImmutableArray() switch

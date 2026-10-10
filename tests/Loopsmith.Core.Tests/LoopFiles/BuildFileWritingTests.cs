@@ -10,6 +10,16 @@ namespace Loopsmith.Core.Tests.LoopFiles;
 /// <summary>Writing build files (a build from a DIM link), and the round trip: the written file reads back as the same build.</summary>
 public sealed class BuildFileWritingTests
 {
+    private static readonly Build MinimalBuild = ParseBuild(new SourceText("minimal.yaml", """
+        name: Bare Hunter
+        class: hunter
+        subclass: arc
+        super: "?"
+        grenade: "?"
+        melee: "?"
+        classAbility: "?"
+        """));
+
     [Theory]
     [InlineData("builds/skip-grenade-hunter/build.yaml")]
     [InlineData("builds/skip-grenade-hunter-ascension/build.yaml")]
@@ -20,6 +30,18 @@ public sealed class BuildFileWritingTests
         var written = BuildFileWriting.WriteBuildFile(build, []);
 
         Assert.Equal(written, BuildFileWriting.WriteBuildFile(ParseBuild(new SourceText("written.yaml", written)), []));
+    }
+
+    [Fact]
+    public void A_weapon_roll_is_written_with_a_question_mark_for_a_column_not_picked()
+    {
+        var weapon = new WeaponLoadout(WeaponSlot.Kinetic, "Festival Flight", DamageType.Strand, Optional.None<string>(), [], Optional.Some(ItemHash.From(4019651319u)),
+            [Optional.None<ItemHash>(), Optional.Some(ItemHash.From(243981275u))]);
+
+        var written = BuildFileWriting.WriteBuildFile(MinimalBuild with { Weapons = [weapon] }, []);
+
+        Assert.Contains("- {slot: kinetic, name: Festival Flight, type: strand, perks: [], hash: 4019651319, roll: [\"?\", 243981275]}\n", written, StringComparison.Ordinal);
+        Assert.Equal(weapon.Roll, Assert.Single(ParseBuild(new SourceText("written.yaml", written)).Weapons).Roll);
     }
 
     [Fact]

@@ -1,0 +1,301 @@
+@* A build laid out the way DIM shows a loadout: the subclass with its super, abilities, aspects and fragments; the
+   artifact perks; the weapons; each armor piece with the mods of its slot; the general mods. Icons are Bungie's (from
+   the manifest excerpt); a square without one shows its initials. What the rules don't know is dimmed. *@
+@{
+    var view = LoadoutShaping.ShapeLoadout(Build);
+}
+<div class="loadout @(Compact ? "compact" : "")" data-testid="loadout">
+    <div class="loadout-row">
+        <section class="loadout-box subclass-box" aria-label="Subclass">
+            <h4 class="loadout-label">Subclass</h4>
+            <div class="subclass-body">
+                <div class="subclass-emblem">
+                    @if (view.Subclass.Subclass is Optional<IconTile>.Some subclassItem)
+                    {
+                        @RenderTile(subclassItem.Value, "subclass-icon")
+                    }
+                    @RenderTile(view.Subclass.Super, "super-icon")
+                </div>
+                <div class="icon-grid">
+                    @foreach (var tile in view.Subclass.Abilities)
+                    {
+                        @RenderTile(tile, "")
+                    }
+                    @foreach (var tile in view.Subclass.Aspects)
+                    {
+                        @RenderTile(tile, "aspect")
+                    }
+                    @foreach (var tile in view.Subclass.Fragments)
+                    {
+                        @RenderTile(tile, "fragment")
+                    }
+                </div>
+            </div>
+        </section>
+        @if (!view.Artifact.IsEmpty)
+        {
+            <section class="loadout-box artifact-box" aria-label="Artifact">
+                <h4 class="loadout-label">Artifact</h4>
+                <div class="icon-grid">
+                    @foreach (var tile in view.Artifact)
+                    {
+                        @RenderTile(tile, "artifact-perk")
+                    }
+                </div>
+            </section>
+        }
+    </div>
+
+    @if (!view.Weapons.IsEmpty)
+    {
+        <section class="loadout-box" aria-label="Weapons">
+            <h4 class="loadout-label">Weapons</h4>
+            <ol class="weapon-list">
+                @foreach (var weapon in view.Weapons)
+                {
+                    <li class="weapon-line" data-slot="@weapon.Slot" title="@DescribeWeapon(weapon)">
+                        <div class="weapon-icon">
+                            @RenderTile(weapon.Weapon, "item")
+                            @if (weapon.DamageIcon is Optional<string>.Some damage)
+                            {
+                                <img class="damage-icon" src="@damage.Value" alt="@weapon.Type" loading="lazy" />
+                            }
+                        </div>
+                        <div class="weapon-text">
+                            <span class="weapon-line-name">@weapon.Weapon.Name</span>
+                            <span class="weapon-line-sub">@weapon.Slot.DescribeWeaponSlot()@(weapon.Archetype is Optional<string>.Some archetype ? $" · {DomainPhrasing.DescribeArchetype(archetype.Value)}" : "")</span>
+                        </div>
+                        <div class="weapon-perks" aria-label="Perks">
+                            @foreach (var square in weapon.Perks)
+                            {
+                                @if (CanPick && square is PerkSquare.Pickable pickable)
+                                {
+                                    <button type="button" class="perk-slot @(IsOpen(weapon.Index, pickable.Column) ? "open" : "")" data-column="@pickable.Column"
+                                            aria-expanded="@(IsOpen(weapon.Index, pickable.Column) ? "true" : "false")"
+                                            title="@DescribePickTitle(weapon, pickable)" @onclick="() => TogglePicker(weapon.Index, pickable.Column)">
+                                        @RenderPerk(square)
+                                    </button>
+                                }
+                                else
+                                {
+                                    @RenderPerk(square)
+                                }
+                            }
+                        </div>
+                    </li>
+                    @if (FindOpenColumn(weapon) is Optional<PerkSquare.Pickable>.Some open)
+                    {
+                        <li class="perk-picker-row">
+                            <div class="perk-picker" role="dialog" tabindex="-1" data-testid="perk-picker" data-weapon="@weapon.Index" data-column="@open.Value.Column"
+                                 aria-label="@($"Pick {weapon.Weapon.Name}'s perk, column {open.Value.Column + 1}")" @ref="pickerElement" @onkeydown="ClosePickerOnEscape">
+                                <div class="perk-picker-head">
+                                    <span class="perk-picker-title">@weapon.Weapon.Name · column @(open.Value.Column + 1)</span>
+                                    <button type="button" class="btn ghost icon" title="Close" aria-label="Close" data-action="perk-picker-close" @onclick="ClosePicker">✕</button>
+                                </div>
+                                <div class="perk-options">
+                                    @foreach (var option in open.Value.Options)
+                                    {
+                                        var picked = open.Value.Perk.Map(perk => perk.Hash) == Optional.Some(option.Hash);
+                                        <button type="button" class="perk-option @(picked ? "picked" : "") @(option.Tile.InRules ? "in-rules" : "")"
+                                                data-hash="@option.Hash.Value" aria-pressed="@(picked ? "true" : "false")"
+                                                title="@DescribeTooltip(option.Tile)" @onclick="() => PickPerkAsync(weapon.Index, open.Value.Column, Optional.Some(option.Hash))">
+                                            @RenderTile(option.Tile, "perk")
+                                            <span class="perk-option-text">
+                                                <span class="perk-option-name">@option.Tile.Name</span>
+                                                <span class="perk-option-type">@DescribeOption(option)</span>
+                                            </span>
+                                        </button>
+                                    }
+                                </div>
+                                <div class="perk-picker-foot">
+                                    <span class="muted">@PickerNote</span>
+                                    @if (open.Value.Perk.IsSome())
+                                    {
+                                        <button type="button" class="btn" data-action="perk-clear" @onclick="() => PickPerkAsync(weapon.Index, open.Value.Column, Optional.None<ItemHash>())">Clear (?)</button>
+                                    }
+                                </div>
+                            </div>
+                        </li>
+                    }
+                }
+            </ol>
+        </section>
+    }
+
+    @if (!view.Armor.IsEmpty || !view.GeneralMods.IsEmpty)
+    {
+        <section class="loadout-box" aria-label="Armor">
+            <h4 class="loadout-label">Armor</h4>
+            <div class="armor-row">
+                @foreach (var piece in view.Armor)
+                {
+                    <div class="armor-piece" data-slot="@piece.Slot">
+                        @if (piece.Piece is Optional<IconTile>.Some item)
+                        {
+                            @RenderTile(item.Value, "item")
+                        }
+                        else
+                        {
+                            <span class="icon-tile empty" title="@piece.Slot.DescribeArmorSlot(): no piece named">@piece.Slot.DescribeArmorSlot()</span>
+                        }
+                        <div class="icon-grid mods">
+                            @foreach (var mod in piece.Mods)
+                            {
+                                @RenderTile(mod, "mod")
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+            @if (!view.GeneralMods.IsEmpty)
+            {
+                <div class="general-mods">
+                    <span class="loadout-sublabel">General mods</span>
+                    <div class="icon-grid">
+                        @foreach (var mod in view.GeneralMods)
+                        {
+                            @RenderTile(mod, "mod")
+                        }
+                    </div>
+                </div>
+            }
+        </section>
+    }
+
+    @if (!view.SetBonuses.IsEmpty)
+    {
+        <div class="set-bonuses">
+            <span class="loadout-sublabel">Armor set</span>
+            <div class="chips">
+                @foreach (var bonus in view.SetBonuses)
+                {
+                    <span class="chip @ToneStyling.ToAffinityClass(bonus.Affinity)" title="@DescribeTooltip(bonus)">@bonus.Name</span>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public ValidatedBuild Build { get; set; } = null!;
+
+    /// <summary>The preview card's size: smaller squares.</summary>
+    [Parameter]
+    public bool Compact { get; set; }
+
+    /// <summary>Set by the designer: a weapon's perk squares then open a picker of what each column rolls with. Unset (the Home card): read-only.</summary>
+    [Parameter]
+    public EventCallback<PerkPick> OnPickPerk { get; set; }
+
+    private const string PickerNote = "Green: the rules know it, so it sets things off in the loop; the rest only shows on the weapon.";
+
+    private sealed record OpenPicker(int Weapon, int Column);
+
+    private Optional<OpenPicker> picker = Optional.None<OpenPicker>();
+    private bool focusPicker;
+    private ElementReference pickerElement;
+
+    private bool CanPick => OnPickPerk.HasDelegate;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (focusPicker && picker.IsSome())
+        {
+            focusPicker = false;
+            await pickerElement.FocusAsync(preventScroll: true);                                 // impure
+        }
+    }
+
+    private bool IsOpen(int weapon, int column) =>
+        picker == Optional.Some(new OpenPicker(weapon, column));
+
+    private Optional<PerkSquare.Pickable> FindOpenColumn(WeaponView weapon) =>
+        picker.Bind(open => open.Weapon == weapon.Index
+            ? weapon.Perks.OfType<PerkSquare.Pickable>().Where(column => column.Column == open.Column).Select(Optional.Some).FindFirstSome()
+            : Optional.None<PerkSquare.Pickable>());
+
+    private void TogglePicker(int weapon, int column)
+    {
+        picker = IsOpen(weapon, column) ? Optional.None<OpenPicker>() : Optional.Some(new OpenPicker(weapon, column));
+        focusPicker = picker.IsSome();
+    }
+
+    private void ClosePicker() =>
+        picker = Optional.None<OpenPicker>();
+
+    private void ClosePickerOnEscape(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape")
+        {
+            ClosePicker();
+        }
+    }
+
+    private async Task PickPerkAsync(int weapon, int column, Optional<ItemHash> perk)
+    {
+        ClosePicker();
+        await OnPickPerk.InvokeAsync(new PerkPick(weapon, column, perk));                        // impure
+    }
+
+    private RenderFragment RenderPerk(PerkSquare square) => __builder =>
+    {
+        @switch (square)
+        {
+            case PerkSquare.Shown shown:
+                @RenderTile(shown.Perk, "perk")
+                break;
+            case PerkSquare.Pickable { Perk: Optional<PickedPerk>.Some held }:
+                @RenderTile(held.Value.Tile, "perk")
+                break;
+            default:
+                <span class="icon-tile perk empty-perk" title="@(CanPick ? PickPerk : MissingPerk)" aria-label="Perk not picked">?</span>
+                break;
+        }
+    };
+
+    private static string DescribePickTitle(WeaponView weapon, PerkSquare.Pickable column) =>
+        $"{weapon.Weapon.Name}, column {column.Column + 1}: {column.Perk.Match(perk => perk.Value.Tile.Name, _ => DomainPhrasing.Unknown)} — pick a perk";
+
+    private static string DescribeOption(PerkOption option) =>
+        string.Join(" · ", new[] { option.Type.UnwrapOr(""), option.Tile.InRules ? "in the rules" : "" }.Where(part => part.Length > 0));
+
+    private RenderFragment RenderTile(IconTile tile, string kind) => __builder =>
+    {
+        <span class="icon-tile @kind @ToneStyling.ToAffinityClass(tile.Affinity) @DescribeTier(tile) @(tile.InRules ? "" : "out")"
+              title="@DescribeTooltip(tile)" aria-label="@tile.Name">
+            @if (tile.Icon is Optional<string>.Some icon)
+            {
+                <img src="@icon.Value" alt="" loading="lazy" />
+            }
+            else
+            {
+                <span class="icon-initials">@ToInitials(tile.Name)</span>
+            }
+            @if (tile.Copies > 1)
+            {
+                <span class="icon-count">×@tile.Copies</span>
+            }
+        </span>
+    };
+
+    private static string DescribeTier(IconTile tile) =>
+        tile.Tier.Match(tier => tier.Value == ItemTier.Exotic ? "exotic" : tier.Value == ItemTier.Legendary ? "legendary" : "", _ => "");
+
+    private static string DescribeTooltip(IconTile tile) =>
+        (tile.Copies > 1 ? $"{tile.Name} ×{tile.Copies}" : tile.Name)
+        + tile.Description.Match(description => $" — {description.Value}", _ => "");
+
+    private static string DescribeWeapon(WeaponView weapon) =>
+        $"{weapon.Weapon.Name} — {weapon.Slot.DescribeWeaponSlot()} · {weapon.Type}{weapon.Archetype.Match(archetype => $" · {DomainPhrasing.DescribeArchetype(archetype.Value)}", _ => "")}";
+
+    private const string MissingPerk = "Perk not picked: a DIM link carries the weapon, not its roll. Pick it in the designer.";
+
+    private const string PickPerk = "Perk not picked: pick what this column rolled with.";
+
+    /// <summary>"SoR" for Spark of Resistance: what a square without an icon shows.</summary>
+    private static string ToInitials(string name) =>
+        name == DomainPhrasing.Unknown
+            ? name
+            : string.Concat(name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(3).Select(word => char.ToUpperInvariant(word[0])));
+}
