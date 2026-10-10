@@ -1,7 +1,6 @@
 using System.Collections.Immutable;
 using System.Globalization;
 using Loopsmith.Core.Domain;
-using Loopsmith.Core.Functional;
 using Loopsmith.Core.Phrasing;
 
 namespace Loopsmith.Core.ReportComparison;
@@ -29,7 +28,7 @@ public static class ComparisonRendering
             RenderOrder("A", left, nameWidth),
             RenderOrder("B", right, nameWidth),
             StyledText.ToLine(0, "".ToSpan()),
-            .. comparison.Triggers.SelectMany(trigger => RenderTrigger(trigger, left, right, labelWidth)),
+            .. comparison.Triggers.SelectMany(trigger => RenderTrigger(trigger, labelWidth)),
         ];
     }
 
@@ -42,43 +41,40 @@ public static class ComparisonRendering
             $"   ({report.BuildName})".ToSpan(Tone.Muted));
 
     /// <summary>The trigger's step in each loop, then where its needs come from there and what fires in only one of them.</summary>
-    private static ImmutableArray<StyledLine> RenderTrigger(TriggerComparison trigger, LoopReport left, LoopReport right, int labelWidth)
+    private static ImmutableArray<StyledLine> RenderTrigger(TriggerComparison trigger, int labelWidth)
     {
         var label = trigger.Label.PadRight(labelWidth).ToSpan(Tone.Strong);
-        return (trigger.Left, trigger.Right) switch
-        {
-            (Optional<StepAnalysis>.Some l, Optional<StepAnalysis>.Some r) => RenderBoth(trigger, label, l.Value, r.Value, left, right),
-            (Optional<StepAnalysis>.Some l, _) => [new StyledLine(0, [label, $"only in A (#{Number(l.Value)})".ToSpan(Tone.Muted)])],
-            (_, Optional<StepAnalysis>.Some r) => [new StyledLine(0, [label, $"only in B (#{Number(r.Value)})".ToSpan(Tone.Muted)])],
-            _ => [],
-        };
+        return trigger.Placement.Match(
+            both => RenderBoth(label, both),
+            left => [new StyledLine(0, [label, $"only in A (#{FormatStepNumber(left.Step.Step)})".ToSpan(Tone.Muted)])],
+            right => [new StyledLine(0, [label, $"only in B (#{FormatStepNumber(right.Step.Step)})".ToSpan(Tone.Muted)])]);
     }
 
-    private static ImmutableArray<StyledLine> RenderBoth(
-        TriggerComparison trigger, StyledSpan label, StepAnalysis left, StepAnalysis right, LoopReport leftReport, LoopReport rightReport)
+    private static ImmutableArray<StyledLine> RenderBoth(StyledSpan label, TriggerPlacement.InBoth both)
     {
-        var same = trigger.OnlyLeft.IsEmpty && trigger.OnlyRight.IsEmpty;
+        var same = both.OnlyLeft.IsEmpty && both.OnlyRight.IsEmpty;
+        var steps = $"A #{FormatStepNumber(both.Left.Step)} · B #{FormatStepNumber(both.Right.Step)}{(same ? ": sets off the same" : "")}";
         return
         [
-            new StyledLine(0, [label, $"A #{Number(left)} · B #{Number(right)}{(same ? ": sets off the same" : "")}".ToSpan(Tone.Plain)]),
-            .. RenderNeeds("A", left, leftReport),
-            .. RenderNeeds("B", right, rightReport),
-            .. trigger.OnlyLeft.IsEmpty ? [] : new[] { RenderField("only in A", DescribeMentions(trigger.OnlyLeft).ToSpan(Tone.Warning)) },
-            .. trigger.OnlyRight.IsEmpty ? [] : new[] { RenderField("only in B", DescribeMentions(trigger.OnlyRight).ToSpan(Tone.Warning)) },
+            new StyledLine(0, [label, steps.ToSpan(Tone.Plain)]),
+            .. RenderNeeds("A", both.Left),
+            .. RenderNeeds("B", both.Right),
+            .. both.OnlyLeft.IsEmpty ? [] : new[] { RenderField("only in A", DescribeMentions(both.OnlyLeft).ToSpan(Tone.Warning)) },
+            .. both.OnlyRight.IsEmpty ? [] : new[] { RenderField("only in B", DescribeMentions(both.OnlyRight).ToSpan(Tone.Warning)) },
         ];
     }
 
     /// <summary>"A needs  Reaper ← #1", and "(differs on A's first pass)" when its first pass does something else there.</summary>
-    private static ImmutableArray<StyledLine> RenderNeeds(string side, StepAnalysis step, LoopReport report)
+    private static ImmutableArray<StyledLine> RenderNeeds(string side, PlacedStep placed)
     {
-        var differs = report.FirstPassDifferences.Any(difference => difference.StepIndex == step.StepIndex);
-        if (step.Needs.IsEmpty && !differs)
+        if (placed.Step.Needs.IsEmpty && !placed.DiffersOnFirstPass)
         {
             return [];
         }
 
-        var needs = step.Needs.IsEmpty ? "nothing from earlier steps" : string.Join(" · ", step.Needs.Select(need => need.DescribeNeedBriefly()));
-        return [RenderField($"{side} needs", needs.ToSpan(Tone.Plain), (differs ? $" (differs on {side}'s first pass)" : "").ToSpan(Tone.Muted))];
+        var needs = placed.Step.Needs.IsEmpty ? "nothing from earlier steps" : string.Join(" · ", placed.Step.Needs.Select(need => need.DescribeNeedBriefly()));
+        var firstPass = placed.DiffersOnFirstPass ? $" (differs on {side}'s first pass)" : "";
+        return [RenderField($"{side} needs", needs.ToSpan(Tone.Plain), firstPass.ToSpan(Tone.Muted))];
     }
 
     private static StyledLine RenderField(string name, params ImmutableArray<StyledSpan> spans) =>
@@ -87,5 +83,5 @@ public static class ComparisonRendering
     private static string DescribeMentions(ImmutableArray<ElementMention> mentions) =>
         string.Join(" · ", mentions.Select(mention => mention.DescribeMention()));
 
-    private static string Number(StepAnalysis step) => (step.StepIndex + 1).ToString(Invariant);
+    private static string FormatStepNumber(StepAnalysis step) => (step.StepIndex + 1).ToString(Invariant);
 }

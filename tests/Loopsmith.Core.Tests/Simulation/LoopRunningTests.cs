@@ -44,6 +44,7 @@ public class LoopRunningTests
         var report = RunLoop(ValidateBuild([]), GrenadeKill, GrenadeKill, Dodge, GrenadeKill);
 
         Assert.Equal(new LoopVerdict.Repeats(Optional.None<BlockedStep>()), report.Verdict);
+        Assert.True(report.FirstPassRepeats);
         Assert.Same(report.FirstPass, report.RepeatingPass);
         Assert.Empty(report.FirstPassDifferences);
         Assert.Equal([0, 1, 2, 3], report.Steps.Select(step => step.StepIndex));
@@ -77,6 +78,7 @@ public class LoopRunningTests
         Assert.Equal("Orb of Power ← previous pass #2 [Spawner]", need.DescribeNeed());
         Assert.Equal([Mention("collector")], report.Steps[0].SetsOff);
         Assert.Equal(0, report.RepeatingPass.Start.Step);   // each pass numbers its steps from #1
+        Assert.False(report.FirstPassRepeats);
 
         var difference = Assert.Single(report.FirstPassDifferences);
         Assert.Equal((0, true), (difference.StepIndex, difference.BlockedOnFirstPass.IsSome()));

@@ -96,11 +96,10 @@ public static class CommandShells
     {
         var report = LoopDesigning.AnalyzeDesign(session);
         var blank = new Effect.WriteLines([StyledText.ToLine(0, "".ToSpan())]);
-        var repeats = report.RepeatingPass != report.FirstPass;
         var traceEffects = trace.Match(
-            options => repeats
-                ? [.. PlanPassTrace(session, "First pass, step by step", report.FirstPass, options.Value), .. PlanPassTrace(session, "Repeating pass, step by step", report.RepeatingPass, options.Value)]
-                : PlanPassTrace(session, "First pass, step by step", report.FirstPass, options.Value),
+            options => report.FirstPassRepeats
+                ? PlanPassTrace(session, "First pass, step by step", report.FirstPass, options.Value)
+                : [.. PlanPassTrace(session, "First pass, step by step", report.FirstPass, options.Value), .. PlanPassTrace(session, "Repeating pass, step by step", report.RepeatingPass, options.Value)],
             _ => []);
         return
         [

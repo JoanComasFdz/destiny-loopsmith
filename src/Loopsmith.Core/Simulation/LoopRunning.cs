@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Dunet;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 using Loopsmith.Core.Phrasing;
@@ -11,7 +12,7 @@ namespace Loopsmith.Core.Simulation;
 /// way an earlier pass started; the state is only what is present and declared (ADRs D1), so this settles within a few
 /// passes. Nothing is counted: each step says what it needs and which step provided it, what it sets off, what is wasted.
 /// </summary>
-public static class LoopRunning
+public static partial class LoopRunning
 {
     /// <summary>A safety cap on the passes played, never reached by a loop whose state settles.</summary>
     private const int MaxPasses = 16;
@@ -28,7 +29,7 @@ public static class LoopRunning
         if (actions.IsEmpty)
         {
             var empty = new LoopPass(initial, []);
-            return new LoopReport(loopName, build.Build.Name, labels, new LoopVerdict.NoSteps(), empty, empty, [], []);
+            return new LoopReport(loopName, build.Build.Name, labels, new LoopVerdict.NoSteps(), empty, empty, true, [], []);
         }
 
         var runs = RunPasses(build, initial, actions);
@@ -38,7 +39,7 @@ public static class LoopRunning
         var firstAnalysed = AnalyzePass(build, first, Optional.None<LoopPass>(), labels);
         var differences = runs.RepeatingIndex == 0 ? [] : ListDifferences(firstAnalysed, analysed);
         var verdict = JudgeVerdict(firstAnalysed, analysed);
-        return new LoopReport(loopName, build.Build.Name, labels, verdict, first, repeating, analysed, differences);
+        return new LoopReport(loopName, build.Build.Name, labels, verdict, first, repeating, runs.RepeatingIndex == 0, analysed, differences);
     }
 
     private sealed record PassRuns(ImmutableArray<LoopPass> Passes, int RepeatingIndex);
@@ -118,9 +119,17 @@ public static class LoopRunning
     // ── needs ───────────────────────────────────────────────────────────────────
 
     /// <summary>A thing a step can need: a buff on you, a debuff on the pack, a pickup on the ground, a declared maximum.</summary>
-    private sealed record Need(NeedKind Kind, string Id);
+    [Union]
+    internal partial record Need
+    {
+        partial record Buff(StatusId Status);
 
-    private enum NeedKind { Buff, Debuff, Pickup, AtMax }
+        partial record Debuff(StatusId Status);
+
+        partial record GroundPickup(PickupId Pickup);
+
+        partial record DeclaredMax(StatusId Status);
+    }
 
     /// <summary>
     /// What the step uses that was already there when it began — so an earlier step provided it — and that step. What
@@ -148,10 +157,10 @@ public static class LoopRunning
             ? []
             : resolution.Action switch
             {
-                PlayerAction.CollectPickups collect => [new Need(NeedKind.Pickup, collect.Pickup.Value)],
-                PlayerAction.Declare { Declaration: StateDeclaration.ReachMax max } => [new Need(NeedKind.Buff, max.Status.Value)],
+                PlayerAction.CollectPickups collect => [new Need.GroundPickup(collect.Pickup)],
+                PlayerAction.Declare { Declaration: StateDeclaration.ReachMax max } => [new Need.Buff(max.Status)],
                 PlayerAction.Declare { Declaration: StateDeclaration.EndStatus end } =>
-                    [new Need(before.HasBuff(end.Status) ? NeedKind.Buff : NeedKind.Debuff, end.Status.Value)],
+                    [before.HasBuff(end.Status) ? new Need.Buff(end.Status) : new Need.Debuff(end.Status)],
                 _ => Array.Empty<Need>(),
             };
         var fromRules = resolution.Fired
@@ -179,29 +188,27 @@ public static class LoopRunning
             _ => [],
         };
         var guards = rule.When.SelectMany(condition => condition.Match(
-            has => new[] { new Need(NeedKind.Buff, has.Status.Value) },
+            has => new Need[] { new Need.Buff(has.Status) },
             _ => [],
-            targetHas => [new Need(NeedKind.Debuff, targetHas.Status.Value)],
-            atMax => [new Need(NeedKind.AtMax, atMax.Status.Value)]));
+            targetHas => [new Need.Debuff(targetHas.Status)],
+            atMax => [new Need.DeclaredMax(atMax.Status)]));
         var consumed = rule.Outcomes
             .Where(applied => !applied.Caveat.IsSome())
             .SelectMany(applied => applied.Outcome switch
             {
-                Outcome.RemoveBuff remove => [new Need(NeedKind.Buff, remove.Status.Value)],
-                Outcome.ConvertStacksToEnergy convert => [new Need(NeedKind.Buff, convert.Consumed.Value)],
+                Outcome.RemoveBuff remove => [new Need.Buff(remove.Status)],
+                Outcome.ConvertStacksToEnergy convert => [new Need.Buff(convert.Consumed)],
                 _ => Array.Empty<Need>(),
             });
-        return onTarget.Select(status => new Need(NeedKind.Debuff, status.Value)).Concat(guards).Concat(consumed);
+        return onTarget.Select(status => (Need)new Need.Debuff(status)).Concat(guards).Concat(consumed);
     }
 
     private static bool IsPresent(GameState state, Need need) =>
-        need.Kind switch
-        {
-            NeedKind.Buff => state.HasBuff(StatusId.From(need.Id)),
-            NeedKind.Debuff => state.TargetHas(StatusId.From(need.Id)),
-            NeedKind.Pickup => state.HasPickup(PickupId.From(need.Id)),
-            _ => state.IsAtMax(StatusId.From(need.Id)),
-        };
+        need.Match(
+            buff => state.HasBuff(buff.Status),
+            debuff => state.TargetHas(debuff.Status),
+            pickup => state.HasPickup(pickup.Pickup),
+            declared => state.IsAtMax(declared.Status));
 
     /// <summary>A step that provided a need, and whether a rule that always fires provided it there.</summary>
     private sealed record Provision(NeedProvider Provider, bool IsCertain);
@@ -252,9 +259,9 @@ public static class LoopRunning
     /// <summary>The elements whose applied outcomes provided the need at that step (none for a declared maximum).</summary>
     private static Optional<ImmutableArray<ElementMention>> FindProvidingElements(Resolution resolution, Need need)
     {
-        if (need.Kind == NeedKind.AtMax)
+        if (need is Need.DeclaredMax declared)
         {
-            return !resolution.Blocked.IsSome() && resolution.Action is PlayerAction.Declare { Declaration: StateDeclaration.ReachMax max } && max.Status.Value == need.Id
+            return !resolution.Blocked.IsSome() && resolution.Action is PlayerAction.Declare { Declaration: StateDeclaration.ReachMax max } && max.Status == declared.Status
                 ? Optional.Some(ImmutableArray<ElementMention>.Empty)
                 : Optional.None<ImmutableArray<ElementMention>>();
         }
@@ -268,26 +275,27 @@ public static class LoopRunning
     }
 
     private static bool IsProvidedBy(Outcome outcome, Need need) =>
-        (need.Kind, outcome) switch
+        (need, outcome) switch
         {
-            (NeedKind.Buff, Outcome.ApplyBuff apply) => apply.Status.Value == need.Id,
-            (NeedKind.Debuff, Outcome.DebuffTarget debuff) => debuff.Status.Value == need.Id,
-            (NeedKind.Pickup, Outcome.Spawn spawn) => spawn.Pickup.Value == need.Id,
+            (Need.Buff buff, Outcome.ApplyBuff apply) => apply.Status == buff.Status,
+            (Need.Debuff debuff, Outcome.DebuffTarget applied) => applied.Status == debuff.Status,
+            (Need.GroundPickup pickup, Outcome.Spawn spawn) => spawn.Pickup == pickup.Pickup,
             _ => false,
         };
 
     private static string DescribeNeed(KeywordGlossary glossary, Need need) =>
-        need.Kind switch
-        {
-            NeedKind.Pickup => glossary.DescribePickup(PickupId.From(need.Id)),
-            NeedKind.AtMax => $"{glossary.DescribeStatus(StatusId.From(need.Id))} at max",
-            _ => glossary.DescribeStatus(StatusId.From(need.Id)),
-        };
+        need.Match(
+            buff => glossary.DescribeStatus(buff.Status),
+            debuff => glossary.DescribeStatus(debuff.Status),
+            pickup => glossary.DescribePickup(pickup.Pickup),
+            declared => $"{glossary.DescribeStatus(declared.Status)} at max");
 
     private static Affinity ReadNeedAffinity(KeywordGlossary glossary, Need need) =>
-        need.Kind == NeedKind.Pickup
-            ? glossary.Pickups.TryGetValue(PickupId.From(need.Id), out var pickup) ? pickup.Affinity : Affinity.Neutral
-            : glossary.ReadStatusAffinity(StatusId.From(need.Id));
+        need.Match(
+            buff => glossary.ReadStatusAffinity(buff.Status),
+            debuff => glossary.ReadStatusAffinity(debuff.Status),
+            pickup => glossary.Pickups.TryGetValue(pickup.Pickup, out var definition) ? definition.Affinity : Affinity.Neutral,
+            declared => glossary.ReadStatusAffinity(declared.Status));
 
     // ── verdict and the first pass ──────────────────────────────────────────────
 

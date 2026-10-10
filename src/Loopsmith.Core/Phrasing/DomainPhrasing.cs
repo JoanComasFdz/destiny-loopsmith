@@ -270,7 +270,7 @@ public static class DomainPhrasing
         glossary.Statuses.TryGetValue(status, out var definition)
             ? string.Join(" · ", new[]
                 {
-                    definition.MaxStacks.Match(max => max.Value.Value > 1 ? $"up to x{max.Value.Value}" : "", _ => ""),
+                    definition.MaxStacks.Match(max => $"up to x{max.Value.Value}", _ => ""),
                     definition.Duration.Match(duration => duration.Value.FormatSeconds(), _ => ""),
                 }.Where(fact => fact.Length > 0))
             : "";

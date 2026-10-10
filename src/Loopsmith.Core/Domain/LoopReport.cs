@@ -66,9 +66,9 @@ public sealed record LoopPass(GameState Start, ImmutableArray<Resolution> Resolu
 
 /// <summary>
 /// A designed loop analysed by its order of triggers (ADRs D2): played from a fresh spawn (<see cref="FirstPass"/>), then
-/// again from where it ended until a pass starts the way an earlier one did (<see cref="RepeatingPass"/>). For each
-/// step of the repeating pass: what it needs and which step provided it, what it sets off, what is wasted there. No
-/// totals and no counts (ADRs D1).
+/// again from where it ended until a pass starts the way an earlier one did (<see cref="RepeatingPass"/>; the same pass
+/// as the first when <see cref="FirstPassRepeats"/>). For each step of the repeating pass: what it needs and which step
+/// provided it, what it sets off, what is wasted there. No totals and no counts (ADRs D1).
 /// </summary>
 public sealed record LoopReport(
     string LoopName,
@@ -77,19 +77,30 @@ public sealed record LoopReport(
     LoopVerdict Verdict,
     LoopPass FirstPass,
     LoopPass RepeatingPass,
+    bool FirstPassRepeats,
     ImmutableArray<StepAnalysis> Steps,
     ImmutableArray<PassDifference> FirstPassDifferences);
 
+/// <summary>A trigger's step in one loop, and whether that loop's first pass does something else there.</summary>
+public sealed record PlacedStep(StepAnalysis Step, bool DiffersOnFirstPass);
+
+/// <summary>Where a trigger sits in the two loops of a comparison.</summary>
+[Union]
+public partial record TriggerPlacement
+{
+    /// <summary>Both loops have it; <c>OnlyLeft</c> and <c>OnlyRight</c> are the elements it sets off in only one of them.</summary>
+    partial record InBoth(PlacedStep Left, PlacedStep Right, ImmutableArray<ElementMention> OnlyLeft, ImmutableArray<ElementMention> OnlyRight);
+
+    partial record OnlyInLeft(PlacedStep Step);
+
+    partial record OnlyInRight(PlacedStep Step);
+}
+
 /// <summary>
-/// One trigger of two loops, matched by occurrence (A's first grenade kill with B's first grenade kill): its step in
-/// each loop and how its place changes what it does.
+/// One trigger of two loops, matched by occurrence (A's first grenade kill with B's first grenade kill), and where it
+/// sits in each.
 /// </summary>
-public sealed record TriggerComparison(
-    string Label,
-    Optional<StepAnalysis> Left,
-    Optional<StepAnalysis> Right,
-    ImmutableArray<ElementMention> OnlyLeft,
-    ImmutableArray<ElementMention> OnlyRight);
+public sealed record TriggerComparison(string Label, TriggerPlacement Placement);
 
 /// <summary>Two loops' orders side by side (they may use different builds); nothing is scored.</summary>
 public sealed record LoopComparison(LoopReport Left, LoopReport Right, ImmutableArray<TriggerComparison> Triggers);

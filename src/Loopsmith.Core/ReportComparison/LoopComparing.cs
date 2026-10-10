@@ -15,13 +15,14 @@ public static class LoopComparing
     {
         var leftSteps = ListOccurrences(left.Steps);
         var rightSteps = ListOccurrences(right.Steps);
-        var matched = leftSteps.Select(step => CompareTrigger(
+        var matched = leftSteps.Select(step => new TriggerComparison(
             step.Step.Label,
-            Optional.Some(step.Step),
-            FindOccurrence(rightSteps, step.Key)));
+            FindOccurrence(rightSteps, step.Key).Match(
+                other => CompareBoth(PlaceStep(left, step.Step), PlaceStep(right, other.Value)),
+                _ => new TriggerPlacement.OnlyInLeft(PlaceStep(left, step.Step)))));
         var rightOnly = rightSteps
             .Where(step => !leftSteps.Any(other => other.Key == step.Key))
-            .Select(step => CompareTrigger(step.Step.Label, Optional.None<StepAnalysis>(), Optional.Some(step.Step)));
+            .Select(step => new TriggerComparison(step.Step.Label, new TriggerPlacement.OnlyInRight(PlaceStep(right, step.Step))));
         return new LoopComparison(left, right, [.. matched, .. rightOnly]);
     }
 
@@ -35,16 +36,14 @@ public static class LoopComparing
     private static Optional<StepAnalysis> FindOccurrence(ImmutableArray<(string Key, StepAnalysis Step)> steps, string key) =>
         steps.Select(step => step.Key == key ? Optional.Some(step.Step) : Optional.None<StepAnalysis>()).FindFirstSome();
 
-    private static TriggerComparison CompareTrigger(string label, Optional<StepAnalysis> left, Optional<StepAnalysis> right)
-    {
-        var leftSetOff = left.Match(step => step.Value.SetsOff, _ => []);
-        var rightSetOff = right.Match(step => step.Value.SetsOff, _ => []);
-        var bothPresent = left.IsSome() && right.IsSome();
-        return new TriggerComparison(
-            label,
+    private static PlacedStep PlaceStep(LoopReport report, StepAnalysis step) =>
+        new(step, report.FirstPassDifferences.Any(difference => difference.StepIndex == step.StepIndex));
+
+    /// <summary>A trigger both loops have, and the elements it sets off in only one of them.</summary>
+    private static TriggerPlacement CompareBoth(PlacedStep left, PlacedStep right) =>
+        new TriggerPlacement.InBoth(
             left,
             right,
-            bothPresent ? [.. leftSetOff.Where(element => !rightSetOff.Any(other => other.Source == element.Source))] : [],
-            bothPresent ? [.. rightSetOff.Where(element => !leftSetOff.Any(other => other.Source == element.Source))] : []);
-    }
+            [.. left.Step.SetsOff.Where(element => !right.Step.SetsOff.Any(other => other.Source == element.Source))],
+            [.. right.Step.SetsOff.Where(element => !left.Step.SetsOff.Any(other => other.Source == element.Source))]);
 }

@@ -27,7 +27,12 @@ public sealed class LoopComparingTests
     private static LoopReport RunLoop(string name, params PlayerAction[] actions) =>
         LoopRunning.RunLoop(Build, name, [.. actions.Select(action => new LoopStep(action, Optional.None<string>()))]);
 
-    private static int ReadStep(Optional<StepAnalysis> step) => step.Match(some => some.Value.StepIndex, _ => -1);
+    /// <summary>The trigger's step index in each loop, -1 where that loop doesn't have it.</summary>
+    private static (int Left, int Right) ReadSteps(TriggerComparison trigger) =>
+        trigger.Placement.Match(
+            both => (both.Left.Step.StepIndex, both.Right.Step.StepIndex),
+            left => (left.Step.Step.StepIndex, -1),
+            right => (-1, right.Step.Step.StepIndex));
 
     [Fact]
     public void Triggers_are_matched_by_occurrence_left_first_then_what_only_the_right_has()
@@ -40,7 +45,7 @@ public sealed class LoopComparingTests
         Assert.Same(left, comparison.Left);
         Assert.Equal(
             [(0, 1), (1, 0), (2, -1), (-1, 2)],
-            comparison.Triggers.Select(trigger => (ReadStep(trigger.Left), ReadStep(trigger.Right))));
+            comparison.Triggers.Select(ReadSteps));
         Assert.Equal([left.StepLabels[0], left.StepLabels[1], left.StepLabels[2], right.StepLabels[2]], comparison.Triggers.Select(t => t.Label));
     }
 
@@ -50,9 +55,9 @@ public sealed class LoopComparingTests
         var dodgeFirst = RunLoop("Dodge first", Dodge, GrenadeKill, AmplifiedEnds);
         var grenadeFirst = RunLoop("Grenade first", GrenadeKill, Dodge, AmplifiedEnds);
 
-        var grenade = LoopComparing.CompareLoops(dodgeFirst, grenadeFirst).Triggers[1];
+        var grenade = Assert.IsType<TriggerPlacement.InBoth>(LoopComparing.CompareLoops(dodgeFirst, grenadeFirst).Triggers[1].Placement);
 
-        Assert.Equal((1, 0), (ReadStep(grenade.Left), ReadStep(grenade.Right)));
+        Assert.Equal((1, 0), (grenade.Left.Step.StepIndex, grenade.Right.Step.StepIndex));
         Assert.Equal(["Guarded"], grenade.OnlyLeft.Select(mention => mention.Name));
         Assert.Empty(grenade.OnlyRight);
         Assert.Equal(["Amplified ← #1"], dodgeFirst.Steps[1].Needs.Select(need => need.DescribeNeedBriefly()));
@@ -65,9 +70,18 @@ public sealed class LoopComparingTests
         var comparison = LoopComparing.CompareLoops(RunLoop("A", GrenadeKill), LoopRunning.RunLoop(Build, "Empty", []));
 
         var trigger = Assert.Single(comparison.Triggers);
-        Assert.Equal((0, -1), (ReadStep(trigger.Left), ReadStep(trigger.Right)));
-        Assert.Empty(trigger.OnlyLeft);
-        Assert.Empty(trigger.OnlyRight);
+        Assert.Equal(0, Assert.IsType<TriggerPlacement.OnlyInLeft>(trigger.Placement).Step.Step.StepIndex);
+    }
+
+    [Fact]
+    public void A_side_is_marked_where_its_first_pass_does_something_else()
+    {
+        var dodgeFirst = RunLoop("Dodge first", Dodge, GrenadeKill);
+        var grenadeFirst = RunLoop("Grenade first", GrenadeKill, Dodge);   // a fresh spawn's grenade isn't amplified yet
+
+        var grenade = Assert.IsType<TriggerPlacement.InBoth>(LoopComparing.CompareLoops(dodgeFirst, grenadeFirst).Triggers[1].Placement);
+
+        Assert.Equal((false, true), (grenade.Left.DiffersOnFirstPass, grenade.Right.DiffersOnFirstPass));
     }
 
     [Fact]

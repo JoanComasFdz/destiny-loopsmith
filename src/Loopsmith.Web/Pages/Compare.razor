@@ -62,8 +62,21 @@ else
                             {
                                 <tr>
                                     <td>@trigger.Label</td>
-                                    <td>@RenderStepCell(trigger.Left, trigger.OnlyLeft, leftReport)</td>
-                                    <td>@RenderStepCell(trigger.Right, trigger.OnlyRight, rightReport)</td>
+                                    @switch (trigger.Placement)
+                                    {
+                                        case TriggerPlacement.InBoth both:
+                                            <td>@RenderStepCell(both.Left, both.OnlyLeft)</td>
+                                            <td>@RenderStepCell(both.Right, both.OnlyRight)</td>
+                                            break;
+                                        case TriggerPlacement.OnlyInLeft left:
+                                            <td>@RenderStepCell(left.Step, ImmutableArray<ElementMention>.Empty)</td>
+                                            <td><span class="muted">not in this loop</span></td>
+                                            break;
+                                        case TriggerPlacement.OnlyInRight right:
+                                            <td><span class="muted">not in this loop</span></td>
+                                            <td>@RenderStepCell(right.Step, ImmutableArray<ElementMention>.Empty)</td>
+                                            break;
+                                    }
                                 </tr>
                             }
                         </tbody>
@@ -210,14 +223,9 @@ else
     };
 
     /// <summary>A trigger's step in one loop: its number, where its needs come from, what fires only there.</summary>
-    private static RenderFragment RenderStepCell(Optional<StepAnalysis> step, ImmutableArray<ElementMention> onlyHere, LoopReport report) => __builder =>
+    private static RenderFragment RenderStepCell(PlacedStep placed, ImmutableArray<ElementMention> onlyHere) => __builder =>
     {
-        if (step is not Optional<StepAnalysis>.Some { Value: var analysed })
-        {
-            <span class="muted">not in this loop</span>
-            return;
-        }
-
+        var analysed = placed.Step;
         <div class="compare-cell">
             <span class="muted">#@(analysed.StepIndex + 1)</span>
             @if (analysed.Blocked is Optional<string>.Some blocked)
@@ -241,7 +249,7 @@ else
             {
                 <span class="tone-warning">only here: @string.Join(", ", onlyHere.Select(element => element.DescribeMention()))</span>
             }
-            @if (report.FirstPassDifferences.Any(difference => difference.StepIndex == analysed.StepIndex))
+            @if (placed.DiffersOnFirstPass)
             {
                 <span class="muted">differs on the first pass</span>
             }
