@@ -9,8 +9,9 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
 The engine, the loop analysis and the hosts still count and time in places the design doesn't. Two
 mechanisms are at the core of it: `OutcomeApplication.ApplyBuff` adds stacks up to `maxStacks` and
 raises `StacksMaxed` by itself (driving Shinobu's Vow, Flashover, the Bolt Charge strike and Slice's
-end), and `wait` advances a clock (`GameState.Clock`, `ActiveStatus.Remaining`, `AgeStatuses`) that
-expires statuses. The work, contract first (Domain types, then the slices):
+end), and a `wait` step (`PlayerAction.Wait`, `GameState.Clock`, `ActiveStatus.Remaining`,
+`AgeStatuses`) times statuses out — it has no place in the design and goes entirely. The work, contract
+first (Domain types, then the slices):
 
 - **State** (`Domain/GameState.cs`): buffs present plus "declared at max" (`ActiveBuff(Status,
   bool AtMax)` or an optional declaration), debuffs and ground pickups present or not; no `Stacks`,
@@ -18,7 +19,7 @@ expires statuses. The work, contract first (Domain types, then the slices):
   no integer but `Step`, so a counter or clock can't come back.
 - **Declared states** (D3): `PlayerAction.Declare` with `max:<status>` and `end:<status>` (tokens,
   labels and blocking messages as in [loop-format.md](loop-format.md#action-tokens)); `StacksMaxed`
-  only from `max:`; the `atMax` condition and its parse check; `wait` becomes an unknown action.
+  only from `max:`; the `atMax` condition and its parse check.
 - **Outcomes**: `ApplyBuff` makes the buff present and raises `BuffGained(status)` (no count; cascade
   key `gain:<status>`); remove `restart`; `convertStacksToEnergy` consumes the buff; `extraStacks` only
   adds its caveat; caveats "×N stacks", "restarted (was ×N)" and "refreshed" go; one `pickup` step picks

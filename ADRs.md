@@ -52,14 +52,14 @@ how many, how often, how long or when.
   "up to x10", "reduces the cooldown by 2 s"). They are never added up, counted down or compared to
   decide what happens.
 * **State is what is present**: a buff on you, a debuff on the pack, a pickup on the ground — and
-  what the player declared (D3). No stack counter, no clock, no energy gauge, no health.
+  what the player declared (D3). Nothing in it is counted or timed: no stacks, energy or health.
 * **The player declares what only play can decide**: that a threshold is reached ("Bolt Charge at
   max", "Combination Blow ×3"), that a buff has ended (D3), how many enemies one action hits (D4).
   The engine shows what the declared state sets off.
 * A loop is judged by its **order of triggers** (D2): whether each step gets what it needs from the
   steps before it, and whether the order can be repeated.
 
-**Consequence.** Abilities are always available (D5); nothing expires on time; a status ends when
+**Consequence.** Abilities are always available (D5); a status ends when
 a rule consumes or removes it, or when the player declares it ended. The format has no keys for
 counters, cooldowns or decay, and a source's "after 6 hits" or "for 10 s" is a fact in the
 description, never a mechanism. No damage or health model either: damage and healing outcomes are
@@ -99,7 +99,7 @@ Nothing else reaches a maximum or ends a status: an `applyBuff` makes the buff p
 grant ("+1 Bolt Charge"), but never counts. **Consequence.** `stacksMaxed` fires only on a declaration;
 a rule that waits for the next hit at the maximum uses the `atMax` condition (Bolt Charge discharges
 on the next ability hit at x10). The cap and the duration are facts the player reads when deciding
-to declare. There is no step that lets time pass (`wait` is an unknown action). Format: [docs/loop-format.md](docs/loop-format.md#action-tokens)
+to declare. Format: [docs/loop-format.md](docs/loop-format.md#action-tokens)
 and [docs/rule-format.md](docs/rule-format.md).
 
 ### D4 — The player declares how many enemies an action hits

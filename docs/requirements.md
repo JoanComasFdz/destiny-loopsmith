@@ -21,7 +21,7 @@ whether a grenade lands — and almost everything runs on time (cooldowns, durat
 | Loopsmith does | Loopsmith doesn't |
 |---|---|
 | Show a source's number as a fact with its outcome: "+12% grenade energy", "Amplified (15s)", "up to x10" | Add numbers up, count stacks to a maximum, or count a duration down |
-| Keep **what is present**: a buff on you, a debuff on the pack, a pickup on the ground | Keep a clock, an energy gauge, health, or enemy counts |
+| Keep **what is present**: a buff on you, a debuff on the pack, a pickup on the ground | Track time, energy, health or enemy counts |
 | Let the **player declare** what only play decides: "Bolt Charge at max", "Amplified ends", "this grenade kills 3" | Decide when a threshold is reached or a buff runs out |
 | Judge a loop by its **order of triggers**: does each step get what it needs from the steps before it, can the order be repeated | Score a loop by kills, uptime, damage or energy per cycle |
 
