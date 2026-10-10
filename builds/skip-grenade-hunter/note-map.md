@@ -309,11 +309,12 @@ Its steps, with the note lines they play:
 8. `energy:kill`: line 8a (Spark of Discharge, Harmonic Siphon).
 
 The example loops declare Bolt Charge at max the same way, right before a skip grenade, so the throw
-spends New Tricks and its hit discharges Bolt Charge:
+spends New Tricks and its hit discharges Bolt Charge. Each starts with `pack:new`: every pass meets the
+next group of enemies, so its first hit isn't credited with the last group's debuffs (ADRs D7):
 
-- **Infinite skip grenades** (the creator's loop): `class`, `grenade:kill`, `kinetic:kill`, `energy:kill`, `pickup:orb-of-power`, `max:bolt-charge`, `grenade:kill`.
-- **Melee first**: `melee:kill`, `max:bolt-charge`, `grenade:kill`, `energy:kill`, `pickup:orb-of-power`, `class`.
-- **Helicopter skip grenades** ([the Ascension variant](../skip-grenade-hunter-ascension/discrepancies.md)): Infinite skip grenades with `class:air` at #1.
+- **Infinite skip grenades** (the creator's loop): `pack:new`, `class`, `grenade:kill`, `kinetic:kill`, `energy:kill`, `pickup:orb-of-power`, `max:bolt-charge`, `grenade:kill`.
+- **Melee first**: `pack:new`, `melee:kill`, `max:bolt-charge`, `grenade:kill`, `energy:kill`, `pickup:orb-of-power`, `class`.
+- **Helicopter skip grenades** ([the Ascension variant](../skip-grenade-hunter-ascension/discrepancies.md)): Infinite skip grenades with `class:air` at #2.
 
 ## What the build does that the note doesn't mention
 
@@ -322,7 +323,7 @@ covers them:
 
 - **`arc-staff`:** a Super kill → +1 Bolt Charge (`super:kill`; row 25). No scenario, scenario step or example loop uses the Super.
 - **`skip-grenade`:** no rules of its own, so the build check warns that it is inert; its interactions come from Shinobu's Vow and the fragments.
-- **`unraveling-rounds` (keyword):** while Unraveling Rounds is on you (line 7), Strand weapon hits unravel the target. In the creator's loop it fires on the Festival Flight shot (#3) of the repeating pass: the Orb picked up at #5 of the pass before gave it.
+- **`unraveling-rounds` (keyword):** while Unraveling Rounds is on you (line 7), Strand weapon hits unravel the target. In the creator's loop it fires on the Festival Flight shot (#4) of the repeating pass: the Orb picked up at #6 of the pass before gave it.
 - **`jolt` (keyword):** a weapon or ability hit on a jolted target chains lightning (`strikeTarget` via Jolt, damage only). Seen in scenario 5a.
 - **`woven-mail` (keyword):** casting the Super while Woven Mail is on you removes it (row 33). No scenario or example loop casts the Super.
 - **Passives:** `spark-of-resistance` (25% damage resistance, always on), `woven-mail` (45% damage resistance while Woven Mail is on you, from the first To Shreds kill), `shinobus-vow` (+1 grenade charge, a fact shown, ADRs D5), `flashover` (+50% Bolt Charge damage), `combination-blow` (melee damage `?` while Combination Blow is on you, row 28).
