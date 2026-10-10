@@ -154,12 +154,21 @@ file (comments say where it came from), so the loop
 embeds, exports, shares and replays it like any other ([rule-format.md](rule-format.md#build-file-buildsbuildbuildyaml)).
 The designer shows the build the way DIM shows a loadout — the subclass with its super, abilities,
 aspects and fragments, the artifact perks, the weapons (kinetic, energy, heavy) with their element and
-their selected perks — the ones the build names, else an exotic's fixed ones from the manifest, and a "?"
-for each trait column still unknown — each armor piece with the mods
+one perk per trait column the manifest excerpt gives — the build's pick (`roll`), else the perk it names
+in that column, else the one perk a column that doesn't roll has (an exotic's), else "?" — each armor piece with the mods
 of its slot (the slot the manifest gives the mod; other mods are general) — with Bungie's icons from the
 manifest excerpt; what the rules don't know sits where DIM would show it, dimmed. It also lists the
 left-out items under **Not in Loopsmith yet**, by their manifest name, each a link to its light.gg page; the build check adds `Unknown (?): …` and `Left out of the build: …` as info. A loadout for
 another class than its subclass's is an error, and so is text that isn't a loadout.
+
+**Picking a weapon's perks.** A DIM link carries the weapon, not its roll, so the designer lets you pick
+it: click a perk square (a column that rolls) and choose among what the manifest says that column rolls
+with (enhanced versions included; the ones the rules know are marked), or **Clear** it back to "?". The
+pick goes into the embedded build's weapon entry as `roll` ([rule-format.md](rule-format.md#build-file-buildsbuildbuildyaml)) —
+only that entry is rewritten, so the build file's comments stay — and the steps replay with the new
+build: a perk the rules know now sets things off; one they don't is shown, dimmed, and said so under
+Validation. Hand-written builds pick the same way; a perk they name in `perks` sits in its column and
+gives way to a pick there. The Home cards stay read-only.
 
 **Shared DIM builds on Home.** A share can ship with the app as `builds/<slug>/dim-loadout.json` —
 its link and the loadout as DIM's share page carries it (the page's "Open Loadout in DIM" link holds

@@ -83,9 +83,13 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
 - **A build picker** over the catalog instead of build files (FR-1).
 - **A preview card for a pasted link**: Home draws a DIM build card for the shares it ships with; a pasted
   link that carries its loadout could show the same card before "Start designing".
-- **DIM builds' weapons have no perks** (a loadout names the weapon, not its roll), so their perk rules
-  never fire; a "pick the perks" step after the import could fill that. The designer has no way to edit a
-  build either: changing it means a new DIM link or build file.
+- **Editing the rest of a build in the designer**: a weapon's perks can be picked (column by column, from
+  the manifest excerpt's trait columns), nothing else can; changing the subclass, mods or armor means a new
+  DIM link or build file.
+- **A weapon's roll from Bungie**: a DIM link never carries one, so it is picked by hand; reading the
+  equipped character's weapons by Bungie name (their sockets are public) needs a Bungie API key (owner).
+- **Enhanced perks**: the catalog knows a perk by its base hash (Slice, not its enhanced version, whose
+  numbers differ), so picking an enhanced perk sets nothing off until the rules author it.
 
 ## Owner items
 

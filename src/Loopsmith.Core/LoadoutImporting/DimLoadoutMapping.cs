@@ -101,7 +101,7 @@ public static class DimLoadoutMapping
     /// </summary>
     private static Optional<WeaponLoadout> ReadWeapon(ManifestExcerpt manifest, ItemHash hash) =>
         manifest.FindItem(hash).Bind(item => item.Kind is ManifestKind.Weapon { DamageType: Optional<DamageType>.Some type } weapon
-            ? Optional.Some(new WeaponLoadout(weapon.Slot, item.Name, type.Value, ToArchetype(item.Type), [], Optional.Some(hash)))
+            ? Optional.Some(new WeaponLoadout(weapon.Slot, item.Name, type.Value, ToArchetype(item.Type), [], Optional.Some(hash), []))
             : Optional.None<WeaponLoadout>());
 
     private static Optional<string> ToArchetype(string type)

@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Loopsmith.Core.Functional;
 
 namespace Loopsmith.Core.Domain;
@@ -28,6 +29,22 @@ public static class ManifestReading
             .SelectMany(definition => definition.Hashes)
             .Select(hash => catalog.Manifest.FindItem(hash))
             .FindFirstSome();
+
+    /// <summary>A weapon's trait columns: its manifest item's, when the build gives its hash and the excerpt has them; else none.</summary>
+    public static ImmutableArray<TraitColumn> ListTraitColumns(this ManifestExcerpt manifest, WeaponLoadout weapon) =>
+        weapon.Hash
+            .Bind(hash => manifest.FindItem(hash))
+            .Match(item => item.Value.Kind is ManifestKind.Weapon kind ? kind.Traits : [], _ => ImmutableArray<TraitColumn>.Empty);
+
+    /// <summary>The one of an element's hashes that is a perk of this trait column (Slice's, in Festival Flight's first), if any.</summary>
+    public static Optional<ItemHash> FindColumnHash(this RuleCatalog catalog, ElementId id, TraitColumn column) =>
+        catalog.Elements.TryGetValue(id, out var element)
+            ? element.Hashes.Where(column.Options.Contains).Select(Optional.Some).FindFirstSome()
+            : Optional.None<ItemHash>();
+
+    /// <summary>True when one of an element's hashes is a perk of this trait column.</summary>
+    public static bool IsInColumn(this RuleCatalog catalog, ElementId id, TraitColumn column) =>
+        catalog.FindColumnHash(id, column).IsSome();
 
     /// <summary>The armor slot of an armor piece, or of a mod that only fits it; none for anything else (a general mod).</summary>
     public static Optional<ArmorSlot> ReadArmorSlot(this ManifestItem item) =>

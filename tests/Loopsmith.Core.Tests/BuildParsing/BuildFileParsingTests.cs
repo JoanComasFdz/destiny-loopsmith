@@ -202,6 +202,24 @@ public sealed class BuildFileParsingTests
     }
 
     [Fact]
+    public void A_weapon_roll_is_a_hash_or_a_question_mark_per_trait_column()
+    {
+        var build = ParseValidBuild(MinimalYaml + """
+
+            weapons:
+              - { slot: kinetic, name: Festival Flight, type: strand, hash: 4019651319, roll: ["?", 243981275] }
+            """);
+        var message = ParseInvalidBuild(MinimalYaml + """
+
+            weapons:
+              - { slot: kinetic, name: Festival Flight, type: strand, roll: [slice] }
+            """);
+
+        Assert.Equal([Optional.None<ItemHash>(), Optional.Some(ItemHash.From(243981275u))], Assert.Single(build.Weapons).Roll);
+        Assert.Contains("'slice' is not a manifest hash", message);
+    }
+
+    [Fact]
     public void A_left_out_list_takes_manifest_hashes_by_part()
     {
         var message = ParseInvalidBuild(MinimalYaml + """

@@ -31,7 +31,7 @@
         </div>
     </header>
 
-    <LoadoutPanel Build="Build" />
+    <LoadoutPanel Build="Build" OnPickPerk="OnPickPerk" />
 
     <h3 class="section-label">Stats</h3>
     <div class="stats">
@@ -85,6 +85,10 @@
     /// <summary>What to list under Validation (the design's issues, see <c>LoopDesigning.ListDesignIssues</c>).</summary>
     [Parameter, EditorRequired]
     public ImmutableArray<BuildIssue> Issues { get; set; }
+
+    /// <summary>A perk picked in the loadout (the designer applies it to the design).</summary>
+    [Parameter]
+    public EventCallback<PerkPick> OnPickPerk { get; set; }
 
     private static string ToPercent(Optional<int> value) =>
         value.Match(v => (100m * Math.Clamp(v.Value, 0, BuildSheetShaping.MaxStat) / BuildSheetShaping.MaxStat), _ => 0m)
