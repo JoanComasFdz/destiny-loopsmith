@@ -24,7 +24,8 @@ public static class TestCatalog
             new PickupDefinition(Pickup("ionic-trace"), "Ionic Trace", Affinity.Arc, true),
             new PickupDefinition(Pickup("orb-of-power"), "Orb of Power", Affinity.Neutral, false),
         }.ToImmutableDictionary(p => p.Id),
-        ImmutableDictionary<SummonId, SummonDefinition>.Empty);
+        ImmutableDictionary<SummonId, SummonDefinition>.Empty,
+        []);
 
     public static Rule On(Trigger trigger, params Outcome[] then) =>
         new(trigger, [], [.. then], Optional.None<string>(), Likelihood.Always, []);

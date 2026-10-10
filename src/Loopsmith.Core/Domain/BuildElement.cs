@@ -45,7 +45,14 @@ public sealed record SummonDefinition(SummonId Id, string Name, DamageType Damag
 public sealed record KeywordGlossary(
     ImmutableDictionary<StatusId, StatusDefinition> Statuses,
     ImmutableDictionary<PickupId, PickupDefinition> Pickups,
-    ImmutableDictionary<SummonId, SummonDefinition> Summons);
+    ImmutableDictionary<SummonId, SummonDefinition> Summons,
+    ImmutableArray<SubclassDefinition> Subclasses);
+
+/// <summary>
+/// A subclass item of the manifest (Arcstrider: the Arc Hunter subclass), so a DIM loadout's subclass is recognised by
+/// its hash (ADRs D27). Only the subclasses whose hashes a source gives are listed.
+/// </summary>
+public sealed record SubclassDefinition(GuardianClass Class, Subclass Subclass, string Name, ImmutableArray<ItemHash> Hashes);
 
 /// <summary>
 /// Every authored element plus the keyword glossary. Keyword elements are active in every build.

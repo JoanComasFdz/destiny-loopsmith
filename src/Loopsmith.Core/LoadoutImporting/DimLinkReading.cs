@@ -22,13 +22,13 @@ public static partial class DimLinkReading
     public static Result<DimLink, string> ReadDimLink(string text)
     {
         var trimmed = text.Trim();
-        var share = SharePattern().Match(trimmed);
-        if (share.Success)
+        var share = CreateSharePattern().Match(trimmed);
+        if (share.Success && DimShareId.TryFrom(share.Groups["id"].Value) is { IsSuccess: true } id)
         {
             var link = trimmed.StartsWith("http", StringComparison.OrdinalIgnoreCase) ? trimmed
                 : trimmed.StartsWith("dim.gg/", StringComparison.Ordinal) ? "https://" + trimmed
                 : ShareHost + trimmed;
-            return new Result<DimLink, string>.Ok(new DimLink.Shared(share.Groups["id"].Value, link));
+            return new Result<DimLink, string>.Ok(new DimLink.Shared(id.ValueObject, link));
         }
 
         return ReadInlineLoadout(trimmed)
@@ -36,9 +36,16 @@ public static partial class DimLinkReading
             .ToResult(() => NotADimLink);
     }
 
+    /// <summary>
+    /// The link of a saved DIM share (<c>builds/&lt;slug&gt;/dim-loadout.json</c>: <c>{ "link": …, "loadout": … }</c>, the
+    /// loadout as DIM's share page carries it), so a share ships with the app and opens without asking DIM.
+    /// </summary>
+    public static Result<DimLink, string> ReadSavedLink(string json) =>
+        DimLoadoutParsing.ParseSavedLink(json).Bind(ReadDimLink);
+
     /// <summary>The address a host asks for a dim.gg share's loadout.</summary>
-    public static string ToShareRequestUrl(string shareId) =>
-        $"{ShareApi}?shareId={Uri.EscapeDataString(shareId)}";
+    public static string ToShareRequestUrl(DimShareId shareId) =>
+        $"{ShareApi}?shareId={Uri.EscapeDataString(shareId.Value)}";
 
     /// <summary>
     /// The <c>loadout</c> query value of an http(s) link whose path ends in <c>/loadouts</c>, decoded as a browser does
@@ -58,11 +65,10 @@ public static partial class DimLinkReading
                 .Select(parameter => parameter.Split('=', 2))
                 .Where(pair => pair.Length == 2 && pair[0] == "loadout" && pair[1].Length > 0)
                 .Select(pair => Optional.Some(Uri.UnescapeDataString(pair[1].Replace('+', ' '))))
-                .DefaultIfEmpty(Optional.None<string>())
-                .First();
+                .FindFirstSome();
     }
 
     /// <summary>DIM's own pattern: an optional <c>https://dim.gg/</c>, an id of 7+ lowercase letters and digits, anything after a slash.</summary>
     [GeneratedRegex(@"^(?:(?:https?://)?dim\.gg/)?(?<id>[a-z0-9]{7,})(?:/.*)?$")]
-    private static partial Regex SharePattern();
+    private static partial Regex CreateSharePattern();
 }

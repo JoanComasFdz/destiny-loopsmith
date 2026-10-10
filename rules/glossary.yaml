@@ -1,4 +1,4 @@
-# Keyword vocabulary (docs/rule-format.md § Glossary).
+# Keyword vocabulary and subclass items (docs/rule-format.md § Glossary).
 #
 # Semantics: maxStacks (>= 2) means the status stacks, up to that cap (a fact shown with the buff,
 # "up to x10"), and can be declared at max (`max:<status>`, ADRs D3). A status without it doesn't
@@ -86,3 +86,20 @@ pickups:
 
 summons:
   - { id: threadling, name: Threadling, damageType: strand }
+
+# ---------------------------------------------------------------- subclass items
+# The manifest hash of each subclass item, so a DIM loadout's subclass is recognised (ADRs D27,
+# docs/loop-format.md "Starting from a DIM link"). The nine Light subclasses, as DIM's own source
+# lists them (src/app/loadout-drawer/loadout-utils.ts, `oldToNewItems`, DIM commit d7c02e5); the
+# owner's DIM loadout names Arcstrider as 2328211300. Stasis, Strand and Prismatic wait on the
+# manifest join (requirements FR-13).
+subclasses:
+  - { class: hunter,  subclass: arc,   name: Arcstrider,   hash: 2328211300 }
+  - { class: titan,   subclass: arc,   name: Striker,      hash: 2932390016 }
+  - { class: warlock, subclass: arc,   name: Stormcaller,  hash: 3168997075 }
+  - { class: hunter,  subclass: solar, name: Gunslinger,   hash: 2240888816 }
+  - { class: titan,   subclass: solar, name: Sunbreaker,   hash: 2550323932 }
+  - { class: warlock, subclass: solar, name: Dawnblade,    hash: 3941205951 }
+  - { class: hunter,  subclass: void,  name: Nightstalker, hash: 2453351420 }
+  - { class: titan,   subclass: void,  name: Sentinel,     hash: 2842471112 }
+  - { class: warlock, subclass: void,  name: Voidwalker,   hash: 2849050827 }

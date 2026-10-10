@@ -77,6 +77,8 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   `.loop.yaml` or copying its share link, and loops imported on the Compare screen last until the tab
   closes. A library would need per-browser storage, or a backend to sync it across devices.
 - **A build picker** over the catalog instead of build files (FR-1).
+- **A preview card for a pasted link**: Home draws a DIM build card for the shares it ships with; a pasted
+  link that carries its loadout could show the same card before "Start designing".
 - **DIM links without the manifest** (FR-14) open only Arc, Solar and Void builds and leave every weapon
   out, so a DIM build has no weapon triggers yet; a "pick the weapons" step after the import could fill
   the gap before the manifest join. The designer has no way to edit a build either: changing it means

@@ -34,7 +34,7 @@ public sealed class DimLoadoutFetching(HttpClient http, string apiKey)
                 ? new Result<string, string>.Ok(text)
                 : new Result<string, string>.Error(DescribeRefusal((int)response.StatusCode));
         }
-        catch (HttpRequestException exception)
+        catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException)
         {
             return new Result<string, string>.Error($"Couldn't reach DIM to read the shared loadout ({exception.Message}). Check your connection and try again.");
         }

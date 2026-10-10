@@ -141,18 +141,36 @@ the build holds what the catalog recognises by hash, and nothing is guessed:
 
 | From the loadout | Becomes |
 |---|---|
-| the subclass item | `class` and `subclass` — the nine Light subclasses (DIM's own table); a Stasis, Strand or Prismatic loadout, or one without a subclass, can't start a build yet |
+| the subclass item | `class` and `subclass` — the glossary's `subclasses` ([rule-format.md](rule-format.md#glossary-rulesglossaryyaml): the nine Light ones so far, whose hashes DIM's source lists); a Stasis, Strand or Prismatic loadout, or one without a subclass, can't start a build yet |
 | the subclass's plugs, in socket order | the super, grenade, melee and class ability, aspects and fragments the catalog has a hash for; an ability it has none for is `"?"` |
 | the other equipped items (and the Loadout Optimizer's exotic) | `exoticArmor` |
 | `parameters.mods` (repeats are stacked copies) | `armorMods` |
 | `parameters.artifactUnlocks` | `artifactPerks` |
 | anything else — every weapon (its slot, name and damage type need the manifest), legendary armor, a jump, a hash no element has | `leftOut`, by hash and where the loadout listed it |
 
-The build is written as an ordinary build file (comments say where it came from), so the loop
+The loadout's name becomes the build's, without Destiny's icon glyphs (DIM draws them with its own
+font: "Arc  - Skipp grenade" reads "Arc - Skipp grenade"). The build is written as an ordinary build
+file (comments say where it came from), so the loop
 embeds, exports, shares and replays it like any other ([rule-format.md](rule-format.md#build-file-buildsbuildbuildyaml)).
 The designer lists the left-out hashes under **Not in Loopsmith yet**, each a link to its light.gg
 page; the build check adds `Unknown (?): …` and `Left out of the build: …` as info. A loadout for
 another class than its subclass's is an error, and so is text that isn't a loadout.
+
+**Shared DIM builds on Home.** A share can ship with the app as `builds/<slug>/dim-loadout.json` —
+its link and the loadout as DIM's share page carries it (the page's "Open Loadout in DIM" link holds
+it as `?loadout=` JSON; item instance ids left out):
+
+```json
+{ "link": "https://dim.gg/2jguuoq/Arc-Skipp-grenade", "loadout": { "name": "…", "classType": 1, "equipped": [ … ], "parameters": { "mods": [ … ] } } }
+```
+
+Home shows each one as a card — DIM offers no embeddable preview (its share page has only a stock
+link image) — with the build's name, class and subclass, what the catalog recognised (abilities,
+aspects, fragments, exotic, mods) and how much it left out; "Start designing" opens it like a pasted
+link, without asking DIM. The owner's own Skip Grenade build is the first
+([builds/skip-grenade-hunter/dim-loadout.json](../builds/skip-grenade-hunter/dim-loadout.json); how it
+differs from the hand-written `build.yaml` is in that build's discrepancies). The hand-written builds
+stay on Home as links, with "import a build.yaml" and "import a loop".
 
 ## Sharing
 

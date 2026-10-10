@@ -27,12 +27,13 @@
   </ItemGroup>
 
   <!-- Bundled data, read at startup as SourceTexts. Logical names always use forward slashes:
-       rules/<path>, builds/<slug>/build.yaml, builds/<slug>/loops/<name>.loop.yaml (folder optional). -->
+       rules/<path>, builds/<slug>/build.yaml, builds/<slug>/dim-loadout.json (a saved DIM share),
+       builds/<slug>/loops/<name>.loop.yaml (folder optional). -->
   <ItemGroup>
     <EmbeddedResource Include="$(LoopsmithRoot)rules/**/*.yaml"
                       LogicalName="$([System.String]::Copy('rules/%(RecursiveDir)%(Filename)%(Extension)').Replace('\', '/'))"
                       Link="data/rules/%(RecursiveDir)%(Filename)%(Extension)" />
-    <EmbeddedResource Include="$(LoopsmithRoot)builds/*/build.yaml;$(LoopsmithRoot)builds/*/loops/*.loop.yaml"
+    <EmbeddedResource Include="$(LoopsmithRoot)builds/*/build.yaml;$(LoopsmithRoot)builds/*/dim-loadout.json;$(LoopsmithRoot)builds/*/loops/*.loop.yaml"
                       LogicalName="$([System.String]::Copy('builds/%(RecursiveDir)%(Filename)%(Extension)').Replace('\', '/'))"
                       Link="data/builds/%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>

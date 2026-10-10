@@ -1,0 +1,67 @@
+{
+  "link": "https://dim.gg/2jguuoq/Arc-Skipp-grenade",
+  "loadout": {
+    "id": "2jguuoq",
+    "name": "Arc \ue143 - Skipp grenade",
+    "classType": 1,
+    "equipped": [
+      {
+        "hash": 4019651319
+      },
+      {
+        "hash": 3325463374
+      },
+      {
+        "hash": 2328211300,
+        "socketOverrides": {
+          "0": 426473317,
+          "1": 95544328,
+          "2": 3769507632,
+          "3": 2716335211,
+          "4": 146194908,
+          "5": 4194622036,
+          "6": 4194622037,
+          "7": 1727069366,
+          "8": 1727069361,
+          "9": 1727069364,
+          "10": 1727069362
+        }
+      },
+      {
+        "hash": 593554567
+      },
+      {
+        "hash": 2883433250
+      },
+      {
+        "hash": 1047792392
+      },
+      {
+        "hash": 2107326067
+      },
+      {
+        "hash": 1611241895
+      },
+      {
+        "hash": 2888266564
+      }
+    ],
+    "unequipped": [
+      {
+        "hash": 2149683300,
+        "craftedDate": 1673044362
+      }
+    ],
+    "notes": "Artifact: TABLET OF RUIN\n- Dielectric           -> Create elemental pickups\n- Unraveling Orbs      -> Orb of Power or Tangle grant unraveling rounds\n- Flashover            -> Max bolt charge gives amplified + Lightning deals more damage\n- Horde Shuttle        -> Kill unraveled enemy spawns threadling which severs\n- Photonic Flare       -> Kill exhausted/severed with arc blinds (Exhausted -> Overload round or Jolt)\n- To shreds            -> Damaging severed enemies unravels\n- Defibrilating Blast  -> Damage with bolt charge jotls and heals you + Stun a champion gives max Bolt Charge\n\nSources:\n- Plunder https://www.youtube.com/watch?v=zvd6sNS463E",
+    "parameters": {
+      "mods": [1435557120, 3832366019, 3926119246, 856936828, 1435557120, 4182064480, 4182064480, 377010989, 1435557120, 2577472338, 1293710444, 3719981603, 1435557120, 3712696020, 3712696020, 4087056174, 1435557120, 4188291233, 40751621, 11126525, 3122197216, 3122197216],
+      "modsByBucket": {
+        "14239492": [4248210736, 959073698],
+        "20886954": [4248210736, 3403650696],
+        "1585787867": [4248210736, 2227552940],
+        "3448274439": [1694958158, 3912040564],
+        "3551918588": [1694958158, 896011918]
+      }
+    }
+  }
+}

@@ -79,6 +79,12 @@ public static class LoopDesigning
             .Bind(file => StartDesign(catalog, file, "New loop"))
             .Map(session => RenameDesign(session, $"{session.Build.Build.Name} loop", session.Design.Author, session.Design.Description));
 
+    /// <summary>A new design for a saved DIM share (<c>{ "link": …, "loadout": … }</c>): the same as pasting its link.</summary>
+    public static Result<DesignSession, string> StartSavedDimDesign(RuleCatalog catalog, SourceText savedShare) =>
+        DimLinkReading.ReadSavedLink(savedShare.Text)
+            .MapError(error => $"{savedShare.Path}: {error}")
+            .Bind(link => StartDimDesign(catalog, link, savedShare.Text));
+
     /// <summary>True when a build's source is a DIM link (the designer calls it one).</summary>
     public static bool IsDimLink(string url) =>
         DimLinkReading.ReadDimLink(url) is Result<DimLink, string>.Ok;

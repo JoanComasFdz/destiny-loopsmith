@@ -49,7 +49,10 @@ internal static class Slices
     /// <summary>The only slices allowed to reference YamlDotNet (LoopFiles both reads and writes loop files).</summary>
     public static readonly ImmutableArray<string> YamlParsers = [RuleParsing, BuildParsing, LoopFiles];
 
-    /// <summary>The only slice that emits YAML: it may build the text in memory with a <c>StringWriter</c>.</summary>
+    /// <summary>
+    /// The only slice that emits YAML — loop files and the build files they embed (a build from a DIM link) — so it may
+    /// build the text in memory with a <c>StringWriter</c>.
+    /// </summary>
     public static readonly ImmutableArray<string> YamlWriters = [LoopFiles];
 
     /// <summary>

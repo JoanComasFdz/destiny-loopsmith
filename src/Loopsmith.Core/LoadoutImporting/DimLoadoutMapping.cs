@@ -23,17 +23,20 @@ public static class DimLoadoutMapping
         var byHash = catalog.Elements.Values
             .SelectMany(element => element.Hashes.Select(hash => (Hash: hash, Element: element)))
             .ToImmutableDictionary(entry => entry.Hash, entry => entry.Element);
+        var subclassByHash = catalog.Glossary.Subclasses
+            .SelectMany(subclass => subclass.Hashes.Select(hash => (Hash: hash, Subclass: subclass)))
+            .ToImmutableDictionary(entry => entry.Hash, entry => entry.Subclass);
         var subclasses = loadout.Equipped
-            .Where(item => DimSubclasses.ByHash.ContainsKey(item.Hash.Value))
-            .Select(item => (Item: item, Subclass: DimSubclasses.ByHash[item.Hash.Value]))
+            .Where(item => subclassByHash.ContainsKey(item.Hash))
+            .Select(item => (Item: item, Subclass: subclassByHash[item.Hash]))
             .ToImmutableArray();
         if (subclasses.IsEmpty)
         {
-            return new Result<Build, string>.Error(DescribeMissingSubclass(loadout));
+            return new Result<Build, string>.Error(DescribeMissingSubclass(catalog, loadout));
         }
 
         var (subclassItem, subclass) = subclasses[0];
-        if (loadout.ClassType.Match(type => ToClassType(subclass.Class) != type.Value && type.Value is >= 0 and <= 2, _ => false))
+        if (loadout.Class.Match(guardianClass => guardianClass.Value != subclass.Class, _ => false))
         {
             return new Result<Build, string>.Error(
                 $"The DIM loadout is for another class than its subclass ({subclass.Name}, a {subclass.Class} subclass).");
@@ -41,7 +44,7 @@ public static class DimLoadoutMapping
 
         var plugs = subclassItem.Plugs.Select(hash => Recognise(byHash, LoadoutPart.SubclassPlug, hash)).ToImmutableArray();
         var items = loadout.Equipped
-            .Where(item => item != subclassItem && !DimSubclasses.ByHash.ContainsKey(item.Hash.Value))
+            .Where(item => !subclassByHash.ContainsKey(item.Hash))
             .Select(item => item.Hash)
             .Concat(loadout.ExoticArmor.Match(exotic => new[] { exotic.Value }, _ => []))
             .Distinct()
@@ -57,7 +60,7 @@ public static class DimLoadoutMapping
             .ToImmutableArray();
 
         return new Result<Build, string>.Ok(new Build(
-            loadout.Name.Trim().Length == 0 ? DefaultName : loadout.Name.Trim(),
+            loadout.Name.UnwrapOr(DefaultName),
             Optional.None<string>(),
             Optional.Some(link),
             Optional.None<CatalogVersion>(),
@@ -116,20 +119,23 @@ public static class DimLoadoutMapping
         ImmutableArray<(LoadoutPart Part, BuildElement Element, ItemHash Hash)> placed, LoadoutPart part, ElementKind kind) =>
         [.. placed.Where(entry => entry.Part == part && entry.Element.Kind == kind).Select(entry => entry.Element.Id)];
 
-    /// <summary>DIM's <c>DestinyClass</c>: Titan 0, Hunter 1, Warlock 2 (3 = any class).</summary>
-    private static int ToClassType(GuardianClass guardianClass) =>
-        guardianClass switch
-        {
-            GuardianClass.Titan => 0,
-            GuardianClass.Hunter => 1,
-            _ => 2,
-        };
-
-    private static string DescribeMissingSubclass(DimLoadout loadout) =>
+    private static string DescribeMissingSubclass(RuleCatalog catalog, DimLoadout loadout) =>
         loadout.Equipped.IsEmpty
             ? "The DIM loadout has no equipped items, so there is no subclass to start from."
-            : "Loopsmith can't tell this DIM loadout's subclass: it recognises the Arc, Solar and Void subclasses so far "
-              + "(Stasis, Strand and Prismatic need the Bungie manifest, which Loopsmith doesn't read yet).";
+            : "Loopsmith can't tell this DIM loadout's subclass: the rule catalog knows the subclass hashes of "
+              + $"{DescribeSubclasses(catalog)} so far (the others need the Bungie manifest, which Loopsmith doesn't read yet).";
+
+    /// <summary>"Arc, Solar and Void": the subclasses the glossary has a hash for, in vocabulary order.</summary>
+    private static string DescribeSubclasses(RuleCatalog catalog)
+    {
+        var known = catalog.Glossary.Subclasses.Select(subclass => subclass.Subclass).Distinct().Order().Select(subclass => subclass.ToString()).ToImmutableArray();
+        return known.Length switch
+        {
+            0 => "no subclass",
+            1 => known[0],
+            _ => $"{string.Join(", ", known[..^1])} and {known[^1]}",
+        };
+    }
 
     private static IEnumerable<T> ToSome<T>(Optional<T> optional) =>
         optional.Match(some => new[] { some.Value }, _ => []);

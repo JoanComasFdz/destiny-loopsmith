@@ -17,13 +17,13 @@ public sealed class DimLinkReadingTests
     {
         var shared = Assert.IsType<DimLink.Shared>(Read(text));
 
-        Assert.Equal(("4j5nz4q", link), (shared.ShareId, shared.Link));
+        Assert.Equal(("4j5nz4q", link), (shared.ShareId.Value, shared.Link));
     }
 
     [Fact]
     public void A_share_id_is_asked_for_at_the_DIM_API()
     {
-        Assert.Equal("https://api.destinyitemmanager.com/loadout_share?shareId=4j5nz4q", DimLinkReading.ToShareRequestUrl("4j5nz4q"));
+        Assert.Equal("https://api.destinyitemmanager.com/loadout_share?shareId=4j5nz4q", DimLinkReading.ToShareRequestUrl(DimShareId.From("4j5nz4q")));
     }
 
     [Fact]

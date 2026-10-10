@@ -52,6 +52,8 @@ pickups:
   - { id: orb-of-power, name: Orb of Power, affinity: neutral, collectsAutomatically: false }
 summons:
   - { id: threadling, name: Threadling, damageType: strand }
+subclasses:
+  - { class: hunter, subclass: arc, name: Arcstrider, hash: 2328211300 }
 ```
 
 Each section is optional; ids are unique within a section. All keys shown are required except a
@@ -71,6 +73,10 @@ status's `maxStacks` (a whole number ≥ 2) and `duration`.
 * `collectsAutomatically: true` — collected the moment it spawns (Ionic Traces track to you);
   `false` — it lands on the ground until a `pickup:<id>` step ([loop-format.md](loop-format.md)).
 * `damageType` (summons): `kinetic|arc|solar|void|stasis|strand`.
+* `subclasses`: the manifest hash of each subclass item a source gives (one number or a list of
+  copies), so a DIM loadout's subclass is recognised
+  ([loop-format.md](loop-format.md#starting-from-a-dim-link)); a hash names one subclass (`hash 1002 of the
+  subclass 'Stormcaller' is already on 'Striker'`). A manifest hash is never 0, here or on an element.
 
 ## Elements
 

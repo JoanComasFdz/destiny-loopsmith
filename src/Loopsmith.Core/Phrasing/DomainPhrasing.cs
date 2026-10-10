@@ -46,6 +46,16 @@ public static class DomainPhrasing
             _ => "artifact perk",
         };
 
+    /// <summary>The heading for a part's left-out hashes: "Items", "Subclass plugs", "Armor mods", "Artifact perks".</summary>
+    public static string DescribeLoadoutParts(this LoadoutPart part) =>
+        part switch
+        {
+            LoadoutPart.Item => "Items",
+            LoadoutPart.SubclassPlug => "Subclass plugs",
+            LoadoutPart.ArmorMod => "Armor mods",
+            _ => "Artifact perks",
+        };
+
     /// <summary>"3 items, 1 subclass plug, 2 armor mods": what a DIM loadout had that its build leaves out.</summary>
     public static string DescribeLeftOut(this ImmutableArray<LeftOutItem> leftOut) =>
         string.Join(", ", leftOut

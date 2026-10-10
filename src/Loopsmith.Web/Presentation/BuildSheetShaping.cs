@@ -75,7 +75,7 @@ public static class BuildSheetShaping
                 new StatRow("Super", ReadStat(b.Stats.Super)),
                 new StatRow("Melee", ReadStat(b.Stats.Melee)),
             ],
-            [.. b.LeftOut.GroupBy(item => item.Part).OrderBy(group => group.Key).Select(group => new LeftOutGroup(DescribeLeftOutGroup(group.Key), [.. group.Select(item => item.Hash)]))],
+            [.. b.LeftOut.GroupBy(item => item.Part).OrderBy(group => group.Key).Select(group => new LeftOutGroup(group.Key.DescribeLoadoutParts(), [.. group.Select(item => item.Hash)]))],
             issues);
     }
 
@@ -87,20 +87,18 @@ public static class BuildSheetShaping
             ? new ElementTile(element.Name, element.Affinity, copies, element.Description)
             : new ElementTile(id.Value, Affinity.Neutral, copies, Optional.None<string>());
 
+    /// <summary>"dim.gg/2jguuoq": a dim.gg share without its scheme and name, short enough for a card; "Open in DIM" otherwise.</summary>
+    public static string DescribeShareLink(string link)
+    {
+        var parts = link.Split("://", 2)[^1].Split('/', StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length >= 2 && parts[0] == "dim.gg" ? $"dim.gg/{parts[1]}" : "Open in DIM";
+    }
+
     /// <summary>An ability the build gives as "?": a tile that says so (unknown is data, ADRs D1).</summary>
     private static ElementTile DescribeAbility(RuleCatalog catalog, Optional<ElementId> id) =>
         id.Match(
             known => DescribeElement(catalog, known.Value, 1),
             _ => new ElementTile(DomainPhrasing.Unknown, Affinity.Neutral, 1, Optional.Some("Not known: the DIM link's ability isn't in the rule catalog yet, so it sets nothing off.")));
-
-    private static string DescribeLeftOutGroup(LoadoutPart part) =>
-        part switch
-        {
-            LoadoutPart.Item => "Items",
-            LoadoutPart.SubclassPlug => "Subclass plugs",
-            LoadoutPart.ArmorMod => "Armor mods",
-            _ => "Artifact perks",
-        };
 
     private static Optional<int> ReadStat(Optional<StatValue> value) =>
         value.Map(stat => stat.Value);

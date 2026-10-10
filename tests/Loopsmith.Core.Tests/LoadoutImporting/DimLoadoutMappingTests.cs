@@ -109,7 +109,7 @@ public sealed class DimLoadoutMappingTests
     [Fact]
     public void A_DIM_loadout_starts_a_design_whose_build_file_keeps_what_was_left_out()
     {
-        var link = new DimLink.Shared("4j5nz4q", Link);
+        var link = new DimLink.Shared(DimShareId.From("4j5nz4q"), Link);
 
         var session = LoopDesigning.StartDimDesign(Catalog, link, SkipGrenadeLoadout)
             .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
@@ -123,6 +123,33 @@ public sealed class DimLoadoutMappingTests
         Assert.Contains(session.Build.Issues, issue => issue.Message.StartsWith("Left out of the build: 1 item, 4 subclass plugs, 1 armor mod, 1 artifact perk", StringComparison.Ordinal));
         Assert.Contains(session.Build.Issues, issue => issue.Message.StartsWith("Unknown (?): super, grenade, melee", StringComparison.Ordinal));
         Assert.True(LoopDesigning.IsDimLink(reopened.Build.Build.SourceUrl.UnwrapOr("")));
+    }
+
+    /// <summary>The owner's own Skip Grenade build, saved from its dim.gg share page (builds/skip-grenade-hunter/dim-loadout.json).</summary>
+    [Fact]
+    public void The_owners_shared_build_opens_with_its_name_link_and_what_the_rules_know()
+    {
+        const string path = "builds/skip-grenade-hunter/dim-loadout.json";
+        var saved = new SourceText(path, File.ReadAllText(RepoFiles.ToPath(path)));
+
+        var session = LoopDesigning.StartSavedDimDesign(Catalog, saved)
+            .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
+        var build = session.Build.Build;
+
+        Assert.Equal(("Arc - Skipp grenade", GuardianClass.Hunter, Subclass.Arc), (build.Name, build.Class, build.Subclass));
+        Assert.Equal(Optional.Some("https://dim.gg/2jguuoq/Arc-Skipp-grenade"), build.SourceUrl);
+        Assert.Equal(
+            new AbilityLoadout(ElementId.From("gathering-storm"), ElementId.From("skip-grenade"), ElementId.From("combination-blow"), ElementId.From("gamblers-dodge")),
+            build.Abilities);
+        Assert.Equal(["flow-state", "tempest-strike"], build.Aspects.Select(id => id.Value));
+        Assert.Equal(Optional.Some(ElementId.From("shinobus-vow")), build.ExoticArmor);
+        Assert.Equal(["spark-of-resistance", "spark-of-frequency", "spark-of-shock", "spark-of-discharge"], build.Fragments.Select(id => id.Value));
+        Assert.Equal(
+            ["harmonic-siphon", "strand-siphon", "grenade-kickstart", "grenade-kickstart", "impact-induction", "elemental-charge", "elemental-charge", "bomber", "reaper"],
+            build.ArmorMods.Select(id => id.Value));
+        Assert.Empty(build.Weapons);
+        Assert.Contains(build.LeftOut, item => item == new LeftOutItem(LoadoutPart.Item, ItemHash.From(4019651319u)));   // Festival Flight: a weapon
+        Assert.Contains(build.LeftOut, item => item == new LeftOutItem(LoadoutPart.SubclassPlug, ItemHash.From(95544328u))); // Triple Jump
     }
 
     private static Build MapLoadout(string json) =>

@@ -7,7 +7,7 @@ namespace Loopsmith.Core.Domain;
 public partial record DimLink
 {
     /// <summary><c>dim.gg/&lt;id&gt;</c>: the loadout is on DIM's servers; a host asks DIM for it and hands the answer back.</summary>
-    partial record Shared(string ShareId, string Link);
+    partial record Shared(DimShareId ShareId, string Link);
 
     /// <summary><c>…/loadouts?loadout=&lt;JSON&gt;</c> (D2ArmorPicker, guardian.report): the loadout is in the link itself.</summary>
     partial record Inline(string Loadout, string Link);

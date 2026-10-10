@@ -4,7 +4,7 @@ description: |-
   Open with the melee instead of the dodge: slide-melee to jolt the pack, then skip grenade and
   Arc weapon into it, grab the orbs and dodge last to refill the melee. Gambler's Dodge's melee
   refill depends on the Melee stat, so the rules give it as unknown ("?").
-catalog: authored-18c48908d45f
+catalog: authored-db8af7224008
 steps:
   - do: pack:new
     note: 'The next group of enemies: a new pack, nothing on it yet'

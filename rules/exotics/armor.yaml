@@ -5,8 +5,11 @@ elements:
     kind: exoticArmor
     affinity: arc
     class: hunter
-    # 1053737370 is the armor item; Clarity keys the exotic perk "New Tricks" as 3907299874.
-    hash: 1053737370
+    # The armor item's manifest hashes: light.gg (2026-10-10) lists three versions of Shinobu's Vow.
+    # 1053737370 is the Armor 2.0 one, which light.gg flags as a duplicate in the Bungie API (it is
+    # also the item Clarity's "New Tricks" entry, 3907299874, names); the owner's DIM loadout equips
+    # 1611241895. A DIM loadout's Shinobu's Vow is recognised whichever copy it names.
+    hash: [1053737370, 1611241895, 1786557270]
     description: "New Tricks: an extra Skip Grenade charge; seekers chase enemies much more aggressively. Every Skip Grenade hit (each impact and explosion counts) grants 4.2% [PvP 1.4%] grenade energy and x1 Bolt Charge. Gaining Bolt Charge gives ?% Skip Grenade energy per stack. Upon reaching x10 Bolt Charge: ~40% grenade energy, ? HP to you and allies within ? m, and the next Skip Grenade is enhanced (one extra bounce, 5 extra seekers on the 1st and 2nd bounce). Per Clarity the energy ignores chunk energy scalars."
     source: "compendium/2026-10-09/Exotic Armors#78"
     rules:

@@ -10,12 +10,13 @@ namespace Loopsmith.Core.LoadoutImporting;
 internal sealed record DimLoadoutItem(ItemHash Hash, ImmutableArray<ItemHash> Plugs);
 
 /// <summary>
-/// What Loopsmith reads of a DIM loadout (DIM's API type <c>Loadout</c>): its name, class, equipped items, armor mods,
-/// artifact perks and the exotic the Loadout Optimizer was asked for. Unequipped items are only carried, not worn.
+/// What Loopsmith reads of a DIM loadout (DIM's API type <c>Loadout</c>): its name, class (none for "any class"),
+/// equipped items, armor mods, artifact perks and the exotic the Loadout Optimizer was asked for. Unequipped items are
+/// only carried, not worn.
 /// </summary>
 internal sealed record DimLoadout(
-    string Name,
-    Optional<int> ClassType,
+    Optional<string> Name,
+    Optional<GuardianClass> Class,
     ImmutableArray<DimLoadoutItem> Equipped,
     ImmutableArray<ItemHash> Mods,
     ImmutableArray<ItemHash> ArtifactPerks,
@@ -28,6 +29,11 @@ internal static class DimLoadoutParsing
 
     internal static Result<DimLoadout, string> ParseLoadout(string json) =>
         ParseDocument(json).Bind(ReadLoadout);
+
+    /// <summary>The <c>link</c> of a saved DIM share (<c>{ "link": "https://dim.gg/…", "loadout": … }</c>).</summary>
+    internal static Result<string, string> ParseSavedLink(string json) =>
+        ParseDocument(json).Bind(root => FindProperty(root, "link").Bind(ReadText)
+            .ToResult(() => $"{Unreadable}: a saved DIM share needs its \"link\"."));
 
     /// <summary>The slice boundary: System.Text.Json's exception for text that isn't JSON becomes an error here, once.</summary>
     private static Result<JsonElement, string> ParseDocument(string json)
@@ -54,8 +60,8 @@ internal static class DimLoadoutParsing
         var parameters = FindProperty(loadout, "parameters");
         var artifact = parameters.Bind(p => FindProperty(p, "artifactUnlocks"));
         return new Result<DimLoadout, string>.Ok(new DimLoadout(
-            FindProperty(loadout, "name").Bind(ReadText).UnwrapOr(""),
-            FindProperty(loadout, "classType").Bind(ReadInteger),
+            FindProperty(loadout, "name").Bind(ReadText).Bind(ReadName),
+            FindProperty(loadout, "classType").Bind(ReadInteger).Bind(ToGuardianClass),
             [.. ListItems(FindProperty(loadout, "equipped")).Select(ReadItem).SelectMany(ToSome)],
             ReadHashes(parameters.Bind(p => FindProperty(p, "mods"))),
             ReadHashes(artifact.Bind(a => FindProperty(a, "unlockedItemHashes"))),
@@ -91,14 +97,35 @@ internal static class DimLoadoutParsing
             ? Optional.Some(value)
             : Optional.None<JsonElement>();
 
-    /// <summary>A manifest hash: a positive number, or the same number as text (DIM writes some hashes as strings).</summary>
+    /// <summary>A manifest hash: a number, or the same number as text (DIM writes some hashes as strings).</summary>
     private static Optional<ItemHash> ReadHash(JsonElement value) =>
         value.ValueKind switch
         {
-            JsonValueKind.Number when value.TryGetUInt32(out var hash) && hash > 0 => ToItemHash(hash),
-            JsonValueKind.String when uint.TryParse(value.GetString(), NumberStyles.None, CultureInfo.InvariantCulture, out var hash) && hash > 0 => ToItemHash(hash),
+            JsonValueKind.Number when value.TryGetUInt32(out var hash) => ToItemHash(hash),
+            JsonValueKind.String when uint.TryParse(value.GetString(), NumberStyles.None, CultureInfo.InvariantCulture, out var hash) => ToItemHash(hash),
             _ => Optional.None<ItemHash>(),
         };
+
+    /// <summary>DIM's <c>DestinyClass</c>: Titan 0, Hunter 1, Warlock 2; 3 ("any class") or anything else is none.</summary>
+    private static Optional<GuardianClass> ToGuardianClass(int classType) =>
+        classType switch
+        {
+            0 => Optional.Some(GuardianClass.Titan),
+            1 => Optional.Some(GuardianClass.Hunter),
+            2 => Optional.Some(GuardianClass.Warlock),
+            _ => Optional.None<GuardianClass>(),
+        };
+
+    /// <summary>
+    /// The loadout's name as Loopsmith shows it: Destiny's icon glyphs (private-use characters DIM's font draws, such
+    /// as the Arc symbol in "Arc  - Skipp grenade") are dropped and spaces collapsed; a blank name is none.
+    /// </summary>
+    private static Optional<string> ReadName(string name)
+    {
+        var kept = name.Where(c => c is < '\uE000' or > '\uF8FF').ToArray();
+        var cleaned = string.Join(' ', new string(kept).Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+        return cleaned.Length == 0 ? Optional.None<string>() : Optional.Some(cleaned);
+    }
 
     private static Optional<ItemHash> ToItemHash(uint hash) =>
         ItemHash.TryFrom(hash) is { IsSuccess: true } outcome ? Optional.Some(outcome.ValueObject) : Optional.None<ItemHash>();

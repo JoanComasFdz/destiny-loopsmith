@@ -16,8 +16,9 @@ itself, under `src/Loopsmith.Core/Domain/`.
 - **Vertical Slice Architecture is the top-level driver.** Group by *feature*,
   never by kind. A behaviour change touches one slice, not a layer. The slices
   live under `src/Loopsmith.Core/` (`SourceFetching`, `RuleParsing`,
-  `BuildParsing`, `LoopFiles`, `BuildComposition`, `Simulation` (plays steps
-  against the state), `BuildExplanation`, `LoopGraphing`, `TraceRendering`,
+  `BuildParsing`, `LoopFiles` (reads and writes loop files, and writes the build
+  files they embed), `BuildComposition`, `Simulation` (plays steps against the
+  state), `BuildExplanation`, `LoopGraphing`, `TraceRendering`,
   `ReportComparison`, `LoadoutImporting` (a DIM link → a build), `Orchestration`).
 - **Feature slices depend only on the shared kernel** (`Domain` / `Functional` /
   `Phrasing` / `Causality`) — never sideways on each other. The only cross-slice

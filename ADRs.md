@@ -310,13 +310,17 @@ decision for the owner. 32.0.1 predates SponsorCheck and works with xunit.v3 3.2
 Loadouts page carrying the loadout as JSON (D2ArmorPicker, guardian.report). A loadout names its
 items only by manifest hash, and the manifest isn't read yet (D14): the catalog has hashes for most
 aspects, fragments, mods and exotics it holds, none for supers, grenades, melees or weapons. **Decision.**
-`LoadoutImporting` (pure) reads the link and maps the loadout by hash: the subclass from DIM's own
-table of the nine Light subclass hashes, every other item to the catalog element with that hash. An
+`LoadoutImporting` (pure) reads the link and maps the loadout by hash: the subclass from the glossary's
+`subclasses` (the nine Light ones so far, whose hashes DIM's own source lists), every other item to the
+catalog element with that hash. An
 ability the catalog has no hash for is `"?"` in the build (D13: unknown is data, never guessed —
 D12), and every item it doesn't recognise goes in the build's `leftOut` by hash, so whoever opens
 the loop sees what is missing. The build is written as an ordinary `build.yaml`, so a loop from a
 DIM link exports, shares and replays like any other. The web host fetches a dim.gg share with the
-app's DIM API key; links that carry their loadout need nothing. **Consequence.** A Stasis, Strand or
+app's DIM API key; links that carry their loadout need nothing, and a share saved with the app
+(`builds/<slug>/dim-loadout.json`: its link and the loadout as DIM's share page carries it) opens
+without asking DIM. DIM offers no embeddable preview of a share (its page has only a stock link
+image), so Home draws its own card of what the catalog recognised. **Consequence.** A Stasis, Strand or
 Prismatic loadout can't start a build yet, and weapons are always left out, until the manifest join
 (requirements FR-13); dim.gg links work once the owner registers Loopsmith with DIM's API
 ([docs/hosting.md](docs/hosting.md), "DIM links").

@@ -15,8 +15,9 @@ var files = EmbeddedDataReading.ReadEmbeddedFiles(typeof(App).Assembly);        
 var startup = files.Bind(BundleComposing.ComposeBundle);                                   // pure
 var shareLinksWork = ShareLinkCoding.CheckRoundTrip();                                     // pure
 var workbench = new Workbench(startup, shareLinksWork);                                    // pure
-var dimApiKey = builder.Configuration["DimApiKey"] ?? "";                                   // impure (wwwroot/appsettings.json)
-var dimLoadouts = new DimLoadoutFetching(new HttpClient(), dimApiKey.Trim());              // impure
+var configuredKey = builder.Configuration["DimApiKey"];                                    // impure (wwwroot/appsettings.json)
+var dimApiKey = (configuredKey ?? "").Trim();                                              // pure
+var dimLoadouts = new DimLoadoutFetching(new HttpClient(), dimApiKey);                     // impure
 
 builder.Services.AddSingleton(workbench);                                                  // impure
 builder.Services.AddSingleton<BrowserInterop>();                                           // impure

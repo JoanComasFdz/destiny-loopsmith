@@ -9,6 +9,8 @@
     --text: #e7eaf0;
     --muted: #8a94a8;
     --dim: #5d6780;
+    --dim-brand: #f37321;     /* DIM's orange, for what comes from DIM */
+    --on-dim-brand: #1a0f05;  /* text on DIM's orange */
     --arc: #6fe3ff;
     --solar: #ff9a3c;
     --void: #b07cff;
@@ -553,14 +555,13 @@ textarea { resize: vertical; }
 
 /* start from a DIM link */
 .dim-start {
-    --dim: #f37321;
     display: flex;
     flex-direction: column;
     gap: 14px;
     padding: 20px;
-    border: 1px solid color-mix(in srgb, var(--dim) 45%, var(--line));
+    border: 1px solid color-mix(in srgb, var(--dim-brand) 45%, var(--line));
     border-radius: var(--radius);
-    background: linear-gradient(160deg, color-mix(in srgb, var(--dim) 10%, var(--panel)), var(--panel) 60%);
+    background: linear-gradient(160deg, color-mix(in srgb, var(--dim-brand) 10%, var(--panel)), var(--panel) 60%);
 }
 .dim-field { display: flex; align-items: flex-start; gap: 16px; }
 .dim-logo { flex: none; width: 64px; height: 64px; margin-top: 2px; }
@@ -575,10 +576,10 @@ textarea { resize: vertical; }
     border: 1px solid var(--line-2);
     border-radius: var(--radius);
 }
-.dim-link:focus { outline: none; border-color: var(--dim); box-shadow: 0 0 0 3px color-mix(in srgb, var(--dim) 25%, transparent); }
+.dim-link:focus { outline: none; border-color: var(--dim-brand); box-shadow: 0 0 0 3px color-mix(in srgb, var(--dim-brand) 25%, transparent); }
 .dim-help { margin: 0; font-size: 13px; }
-.dim-go { align-self: stretch; padding: 14px 18px; font-size: 16px; font-weight: 750; color: #fff; background: var(--dim); border-color: var(--dim); }
-.dim-go:hover:not(:disabled) { border-color: #fff; }
+.btn.dim-go { align-self: stretch; padding: 14px 18px; font-size: 16px; font-weight: 750; color: var(--on-dim-brand); background: var(--dim-brand); border-color: var(--dim-brand); }
+.btn.dim-go:hover:not(:disabled) { border-color: var(--text); }
 .dim-problem { margin: 0; padding: 10px 12px; border: 1px solid color-mix(in srgb, var(--warn) 50%, transparent); border-radius: 6px; color: var(--warn); background: color-mix(in srgb, var(--warn) 7%, transparent); }
 @media (max-width: 520px) {
     .dim-start { padding: 14px; }
@@ -586,6 +587,41 @@ textarea { resize: vertical; }
     .dim-logo { width: 44px; height: 44px; }
     .dim-label { font-size: 17px; }
 }
+
+/* a DIM build as a preview card (Home) */
+.dim-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr)); gap: 12px; }
+.dim-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px 16px 16px;
+    border: 1px solid var(--line);
+    border-top: 3px solid var(--aff, var(--line-2));
+    border-radius: var(--radius);
+    background: linear-gradient(170deg, color-mix(in srgb, var(--aff, var(--line)) 10%, var(--panel)), var(--panel) 50%);
+}
+.dim-card-head { display: flex; align-items: center; gap: 8px; }
+.dim-card-logo { flex: none; }
+.dim-card-kind { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--dim-brand); }
+.dim-card-link { margin-left: auto; font-family: var(--mono); font-size: 12px; color: var(--muted); text-decoration: none; }
+.dim-card-link:hover { color: var(--text); text-decoration: underline; }
+.dim-card-title { display: flex; align-items: center; gap: 10px; }
+.dim-card-name { font-size: 18px; font-weight: 750; }
+.dim-card-abilities { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.dim-card-row { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 8px; align-items: baseline; }
+.dim-card-label { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.chip.exotic { border-color: color-mix(in srgb, var(--exotic) 55%, transparent); color: var(--exotic); }
+.dim-card-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-top: 4px; }
+.dim-card-left-out { font-size: 12px; }
+.btn.dim-card-go { padding: 9px 16px; font-weight: 750; color: var(--on-dim-brand); background: var(--dim-brand); border-color: var(--dim-brand); }
+.btn.dim-card-go:hover:not(:disabled) { border-color: var(--text); }
+@media (max-width: 520px) {
+    .dim-card-abilities { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .dim-card-row { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+}
+.chooser-sep { color: var(--dim); }
+.file-link { position: relative; cursor: pointer; }
+.file-link input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
 
 /* what a DIM loadout had that the build leaves out */
 .left-out-note { margin: 0 0 6px; font-size: 12px; }
