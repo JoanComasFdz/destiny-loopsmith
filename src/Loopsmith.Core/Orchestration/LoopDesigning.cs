@@ -5,6 +5,7 @@ using Loopsmith.Core.BuildParsing;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 using Loopsmith.Core.LoadoutImporting;
+using Loopsmith.Core.ManifestJoining;
 using Loopsmith.Core.LoopFiles;
 using Loopsmith.Core.Phrasing;
 using Loopsmith.Core.ReportComparison;
@@ -84,6 +85,45 @@ public static class LoopDesigning
         DimLinkReading.ReadSavedLink(savedShare.Text)
             .MapError(error => $"{savedShare.Path}: {error}")
             .Bind(link => StartDimDesign(catalog, link, savedShare.Text));
+
+    // ── Bungie's full manifest, for what the excerpt lacks (ManifestJoining) ──────────
+
+    /// <summary>The hashes a DIM loadout wears that the catalog's manifest excerpt lacks (what the full manifest is read for).</summary>
+    public static Result<ImmutableArray<ItemHash>, string> ListUnknownLoadoutHashes(RuleCatalog catalog, string loadoutJson) =>
+        DimLoadoutMapping.ListLoadoutHashes(loadoutJson).Map(hashes => (ImmutableArray<ItemHash>)[.. hashes.Distinct().Where(hash => !catalog.Manifest.Items.ContainsKey(hash))]);
+
+    /// <summary>The hashes an open design's build names that the excerpt lacks (its weapons, picks, what it left out).</summary>
+    public static ImmutableArray<ItemHash> ListUnknownHashes(DesignSession session) =>
+        session.Build.Catalog.Manifest.ListUnknownHashes(session.Build.Build);
+
+    /// <summary>Each manifest component's path on bungie.net: the index's, else the pinned content id's.</summary>
+    public static ImmutableDictionary<ManifestTable, string> ChooseManifestPaths(Optional<string> indexJson, string pinnedContentId) =>
+        ManifestTransport.ChoosePaths(indexJson, pinnedContentId);
+
+    public static string ToManifestComponentName(ManifestTable table) =>
+        ManifestTransport.ToComponentName(table);
+
+    public static ManifestJoinStep StartManifestJoin(IEnumerable<ItemHash> hashes) =>
+        ManifestJoin.StartJoin(hashes);
+
+    public static ManifestJoinStep ContinueManifestJoin(ManifestJoinProgress progress, ManifestAnswer answer) =>
+        ManifestJoin.ContinueJoin(progress, answer);
+
+    /// <summary>What the host is asked for, per component (an empty list: the whole component).</summary>
+    public static ImmutableDictionary<string, ImmutableArray<uint>> ToManifestRequest(ManifestQuery query) =>
+        ManifestTransport.ToEntryRequest(query);
+
+    public static ManifestAnswer ReadManifestAnswer(string entriesJson, string plugsJson) =>
+        ManifestTransport.ReadAnswer(entriesJson, plugsJson);
+
+    /// <summary>The catalog with a joined part of the full manifest added to its excerpt (what it had stays).</summary>
+    public static RuleCatalog AddManifest(RuleCatalog catalog, ManifestExcerpt joined) =>
+        catalog with { Manifest = catalog.Manifest.AddExcerpt(joined) };
+
+    /// <summary>The design with its build validated again against a catalog (one with more of the manifest), its steps replayed.</summary>
+    public static Result<DesignSession, string> UseCatalog(DesignSession session, RuleCatalog catalog) =>
+        BuildValidation.ValidateBuild(session.Build.Build, catalog)
+            .Map(validated => CreateSession(validated, session.Design));
 
     /// <summary>True when a build's source is a DIM link (the designer calls it one).</summary>
     public static bool IsDimLink(string url) =>

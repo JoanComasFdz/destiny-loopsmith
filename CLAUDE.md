@@ -44,7 +44,8 @@ repos (Microsoft's download hosts are blocked by the network policy) and restore
 - `src/Loopsmith.Core/` — kernel (`Domain`, `Functional`, `Phrasing`, `Causality`) and
   slices (`SourceFetching`, `RuleParsing`, `BuildParsing`, `LoopFiles`, `BuildComposition`,
   `Simulation`, `BuildExplanation`, `LoopGraphing`, `TraceRendering`, `ReportComparison`,
-  `LoadoutImporting` (a DIM link → a build, by manifest hash), `Orchestration`).
+  `LoadoutImporting` (a DIM link → a build, by manifest hash), `ManifestJoining` (Bungie's full manifest,
+  read in the browser, → the excerpt of what a DIM link's other items need), `Orchestration`).
 - `src/Loopsmith.Cli/` — host only: argv → shell → execute effects.
 - `src/Loopsmith.Web/` — Blazor WebAssembly loop designer (host only; calls
   `Orchestration.LoopDesigning`). Deployed to GitHub Pages by `.github/workflows/pages.yml`;

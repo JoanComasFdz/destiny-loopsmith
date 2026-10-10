@@ -19,7 +19,8 @@ itself, under `src/Loopsmith.Core/Domain/`.
   `BuildParsing`, `LoopFiles` (reads and writes loop files, and writes the build
   files they embed), `BuildComposition`, `Simulation` (plays steps against the
   state), `BuildExplanation`, `LoopGraphing`, `TraceRendering`,
-  `ReportComparison`, `LoadoutImporting` (a DIM link → a build), `Orchestration`).
+  `ReportComparison`, `LoadoutImporting` (a DIM link → a build), `ManifestJoining` (Bungie's full
+  manifest → the excerpt some hashes need), `Orchestration`).
 - **Feature slices depend only on the shared kernel** (`Domain` / `Functional` /
   `Phrasing` / `Causality`) — never sideways on each other. The only cross-slice
   dependency is `Orchestration` → every slice. An **architecture test** enforces

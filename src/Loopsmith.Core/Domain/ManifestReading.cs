@@ -87,6 +87,24 @@ public static class ManifestReading
     public static IEnumerable<SetPerk> ListActivePerks(this WornSet worn) =>
         worn.Set.Perks.Where(perk => perk.Pieces.Value <= worn.Pieces.Value);
 
+    /// <summary>The excerpt with another's items and sets added (a joined part of the full manifest); what it has already stays.</summary>
+    public static ManifestExcerpt AddExcerpt(this ManifestExcerpt excerpt, ManifestExcerpt more) =>
+        excerpt with
+        {
+            Items = more.Items.Where(entry => !excerpt.Items.ContainsKey(entry.Key)).Aggregate(excerpt.Items, (items, entry) => items.Add(entry.Key, entry.Value)),
+            ArmorSets = more.ArmorSets.Where(entry => !excerpt.ArmorSets.ContainsKey(entry.Key)).Aggregate(excerpt.ArmorSets, (sets, entry) => sets.Add(entry.Key, entry.Value)),
+        };
+
+    /// <summary>The hashes a build names that the excerpt lacks: its weapons, their roll picks, what it left out.</summary>
+    public static ImmutableArray<ItemHash> ListUnknownHashes(this ManifestExcerpt excerpt, Build build) =>
+    [
+        .. build.Weapons.SelectMany(weapon => weapon.Hash.Match(hash => new[] { hash.Value }, _ => [])
+                .Concat(weapon.Roll.SelectMany(pick => pick.Match(hash => new[] { hash.Value }, _ => []))))
+            .Concat(build.LeftOut.Select(item => item.Hash))
+            .Distinct()
+            .Where(hash => !excerpt.Items.ContainsKey(hash)),
+    ];
+
     /// <summary>The armor slot of an armor piece, or of a mod that only fits it; none for anything else (a general mod).</summary>
     public static Optional<ArmorSlot> ReadArmorSlot(this ManifestItem item) =>
         item.Kind switch

@@ -18,6 +18,12 @@ python3 -I tools/manifest/extract_manifest.py /tmp/manifest "$(cat /tmp/manifest
 dotnet test                                             # the catalog version changes: re-pin the example loops
 ```
 
+The web app reads the same components in the browser for hashes the excerpt lacks
+(`src/Loopsmith.Core/ManifestJoining`, the same reading in C#); `ManifestContentId` in
+`src/Loopsmith.Web/wwwroot/appsettings.json` is the content id it falls back to — set it to the one
+`get-manifest.sh` prints. To check that the two readings agree, run the tests with the download:
+`LOOPSMITH_MANIFEST_DIR=/tmp/manifest dotnet test --filter ManifestJoin`.
+
 `get-manifest.sh` reads the manifest index from `https://www.bungie.net/Platform/Destiny2/Manifest/` (with
 `$BUNGIE_API_KEY` as `X-API-Key` when set). A cloud session got bungie.net's 500 error page for the index
 (2026-10-10) but could download the component files; give their content id and version instead

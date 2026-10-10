@@ -59,6 +59,17 @@ set, a dim.gg link says Loopsmith can't open it yet. One-time setup (the owner):
    registered origin. PR previews share that origin, so they open dim.gg links too; a local run
    (`localhost`) doesn't, unless the key is registered for that origin.
 
+## Bungie's manifest
+
+For a DIM link's items the bundled excerpt (`rules/manifest.yaml`) lacks, the browser reads Bungie's full
+manifest ([ADRs D14](../ADRs.md)): it downloads seven English component files from bungie.net (~9 MB
+compressed, the item table most of it; public, cross-origin, cached by the browser for hours — the app stores
+nothing itself), indexes them in the page (`wwwroot/js/manifest.js`), and Core reads the entries it needs.
+Their paths come from the manifest index (`https://www.bungie.net/Platform/Destiny2/Manifest/`, sent with
+`BungieApiKey` when set in `wwwroot/appsettings.json`); when the index doesn't answer, from
+`ManifestContentId` there — the content id of the manifest the excerpt was made from. Update it when you
+regenerate the excerpt (`tools/manifest/get-manifest.sh` prints it).
+
 ## Alternatives
 
 * **Cloudflare Pages / Netlify:** free for private repositories. Build in GitHub Actions with

@@ -15,6 +15,16 @@ public static class DimLoadoutMapping
 {
     private const string DefaultName = "DIM loadout";
 
+    /// <summary>Every hash the loadout wears: its equipped items and their plugs, its mods and artifact perks, the optimizer's exotic.</summary>
+    public static Result<ImmutableArray<ItemHash>, string> ListLoadoutHashes(string loadoutJson) =>
+        DimLoadoutParsing.ParseLoadout(loadoutJson).Map(loadout => (ImmutableArray<ItemHash>)
+        [
+            .. loadout.Equipped.SelectMany(item => item.Plugs.Prepend(item.Hash)),
+            .. loadout.Mods,
+            .. loadout.ArtifactPerks,
+            .. loadout.ExoticArmor.Match(exotic => new[] { exotic.Value }, _ => []),
+        ]);
+
     /// <summary>The loadout JSON as a build named after the loadout, with <paramref name="link"/> as its source.</summary>
     public static Result<Build, string> MapLoadout(RuleCatalog catalog, string link, string loadoutJson) =>
         DimLoadoutParsing.ParseLoadout(loadoutJson).Bind(loadout => MapLoadout(catalog, link, loadout));

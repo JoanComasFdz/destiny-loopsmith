@@ -136,7 +136,9 @@ DIM itself opens:
 * **A link that carries its loadout** — DIM's Loadouts page with the loadout as JSON in `?loadout=`
   (D2ArmorPicker, guardian.report): read in the browser, nothing is fetched.
 
-Anything else is `That isn't a DIM link …`. The loadout's items are named only by manifest hash, so
+Anything else is `That isn't a DIM link …`. Items the manifest excerpt lacks are read from Bungie's full
+manifest first (the button says so; a few seconds the first time — [hosting.md](hosting.md#bungies-manifest)),
+and the same happens when a shared loop names them. The loadout's items are named only by manifest hash, so
 the build holds what the catalog recognises by hash, and nothing is guessed:
 
 | From the loadout | Becomes |

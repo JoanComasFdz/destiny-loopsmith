@@ -21,7 +21,7 @@ founding one: every other decision follows from it.
 | D11 | The Compendium is the primary mechanics source; Clarity the cross-check | The Compendium covers abilities, artifact perks and statuses; Clarity has hashes |
 | D12 | The Compendium is joined by name, scoped by kind + class, alias table in git | It has no hashes; unresolved names are reported, never guessed |
 | D13 | Every number is a `GameValue` with `Provenance`; unknown stays `?` | ≈29% of descriptions contain a "?"; unknown ≠ 0; every number traceable |
-| D14 | Authored slugs as ids, the manifest hash as the long-term identity | The manifest isn't reachable yet; slugs keep build files stable when hashes arrive |
+| D14 | Authored slugs as ids, the manifest hash as the long-term identity; a generated excerpt, and the full manifest in the browser for the rest | Slugs keep build files stable; the excerpt makes the bundled builds work offline |
 | D15 | Builds and loops pin a catalog version | A rules change never silently changes a saved build or loop |
 | D16 | Vertical slices as folders, guarded by architecture tests | One change = one slice; boundaries can't silently rot |
 | D17 | Strict impure → pure → impure; effects as data | The pure core is deterministic, replayable, testable without infrastructure |
@@ -222,11 +222,15 @@ hash is the long-term identity (stable, shared by Clarity and DIM). What the man
 hashes Loopsmith names — official name, type, description, icon, rarity, slot, damage type, a weapon's trait
 columns and the perks each rolls with, intrinsic perks, an exotic's catalyst, armor sets and their perks — is a
 generated excerpt in
-the rules (`rules/manifest.yaml`, `tools/manifest/`), so the app shows builds the way DIM does without
-downloading the manifest. **Consequence.** Builds reference slugs; the manifest join adds hashes without
-changing build files; a DIM loadout is read by hash (D27), and a weapon's roll is picked by hash among its
-columns' perks (a build's `roll`). A hash outside the excerpt has no name or icon
-until the app reads the manifest itself (open: [docs/backlog.md](docs/backlog.md)).
+the rules (`rules/manifest.yaml`, `tools/manifest/`), so the app shows the bundled builds the way DIM does
+without downloading the manifest. For a hash outside it (a pasted DIM link's other items), the web app reads
+Bungie's full manifest in the browser, the way DIM does: the component files download from bungie.net (public,
+cross-origin; the browser's HTTP cache keeps them — the app itself stores nothing, D25), the page indexes
+their entries by hash, and `ManifestJoining` (pure) reads the entries it needs, the same way the extractor
+does, into an excerpt added to the catalog's. **Consequence.** Builds reference slugs; the manifest join adds
+hashes without changing build files; a DIM loadout is read by hash (D27), and a weapon's roll is picked by
+hash among its columns' perks (a build's `roll`). The first link with unknown items costs a ~9 MB download
+and a few seconds; the CLI knows only the excerpt.
 
 ### D15 — Builds and loops pin a catalog version
 
@@ -328,7 +332,8 @@ DIM link exports, shares and replays like any other. The web host fetches a dim.
 app's DIM API key; links that carry their loadout need nothing, and a share saved with the app
 (`builds/<slug>/dim-loadout.json`: its link and the loadout as DIM's share page carries it) opens
 without asking DIM. DIM offers no embeddable preview of a share (its page has only a stock link
-image), so Home draws its own card of what the catalog recognised. **Consequence.** A Stasis, Strand or
-Prismatic loadout can't start a build yet, and a weapon outside the excerpt is left out, until the app
-reads the manifest itself (requirements FR-13); dim.gg links work once the owner registers Loopsmith with DIM's API
+image), so Home draws its own card of what the catalog recognised. Items the manifest excerpt lacks are
+read from Bungie's full manifest first (D14), so the link's weapons, armor sets and left-out items have their
+names. **Consequence.** A Stasis, Strand or Prismatic loadout can't start a build yet (the glossary has the
+Light subclasses only); dim.gg links work once the owner registers Loopsmith with DIM's API
 ([docs/hosting.md](docs/hosting.md), "DIM links").
