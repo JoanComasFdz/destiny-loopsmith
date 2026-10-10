@@ -90,14 +90,17 @@ version: "244213.26.06.29.2000-1-bnet.65864"
 damageTypes:
   - { type: strand, icon: /common/destiny2_content/icons/DestinyDamageTypeDefinition_….png }
 items:
-  - { hash: 4019651319, name: "Festival Flight", kind: weapon, type: "Grenade Launcher", tier: legendary, slot: kinetic, damageType: strand, icon: /common/…/e3d2….jpg }
+  - { hash: 4019651319, name: "Festival Flight", kind: weapon, type: "Grenade Launcher", tier: legendary, slot: kinetic, damageType: strand, traits: 2, icon: /common/…/e3d2….jpg }
+  - { hash: 3325463374, name: "Thunderlord", kind: weapon, type: "Machine Gun", tier: exotic, slot: power, damageType: arc, traits: 2, fixedTraits: [1419069769, 2779035018], icon: … }
   - { hash: 3832366019, name: "Harmonic Siphon", kind: armorMod, type: "Helmet Armor Mod", tier: basic, slot: helmet, icon: /common/…/c917….png }
 ```
 
 * `kind`: `subclass|super|grenade|melee|classAbility|movement|aspect|fragment|weapon|weaponPerk|armor|armorMod|artifactPerk|other`.
 * `slot`: a weapon's `kinetic|energy|power` and armor's `helmet|arms|chest|legs|classItem` (both required);
-  an armor mod's armor slot (none: a general mod). `damageType` belongs to weapons. Either key on anything
-  else is an error (`slot is only allowed on a weapon, armor or an armor mod, not on a grenade`).
+  an armor mod's armor slot (none: a general mod). `damageType` belongs to weapons, and so do `traits` (how
+  many trait columns its roll selects: the "frames" sockets of its perks) and `fixedTraits` (the perks of
+  the columns that don't roll, an exotic's — written as items too). These keys on anything else are an
+  error (`slot is only allowed on a weapon, armor or an armor mod, not on a grenade`).
 * `tier`: `basic|common|rare|legendary|exotic`. `icon` is a bungie.net path (the app prefixes
   `https://www.bungie.net`). A hash appears once. The file is optional: without it nothing has an icon.
 

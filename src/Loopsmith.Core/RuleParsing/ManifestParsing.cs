@@ -22,7 +22,10 @@ internal static class ManifestParsing
 
     private static readonly ImmutableArray<string> ManifestKeys = ["version", "damageTypes", "items"];
     private static readonly ImmutableArray<string> DamageTypeKeys = ["type", "icon"];
-    private static readonly ImmutableArray<string> ItemKeys = ["hash", "name", "kind", "type", "tier", "slot", "damageType", "icon"];
+    private static readonly ImmutableArray<string> ItemKeys = ["hash", "name", "kind", "type", "tier", "slot", "damageType", "traits", "fixedTraits", "icon"];
+
+    /// <summary>The keys only a weapon has.</summary>
+    private static readonly ImmutableArray<string> WeaponOnlyKeys = ["damageType", "traits", "fixedTraits"];
 
     internal static Result<ManifestExcerpt, Errors> ReadManifest(SourceText file) =>
         YamlReading.LoadDocument(file, "manifest")
@@ -55,9 +58,10 @@ internal static class ManifestParsing
     }
 
     /// <summary>
-    /// <c>{ hash, name, kind, type, tier?, slot?, damageType?, icon? }</c>. A weapon needs its <c>slot</c> (a weapon slot) and
-    /// may have a <c>damageType</c>; armor needs its <c>slot</c> (an armor slot); an armor mod may have one (none: a general
-    /// mod). Anywhere else both are errors.
+    /// <c>{ hash, name, kind, type, tier?, slot?, damageType?, traits?, fixedTraits?, icon? }</c>. A weapon needs its <c>slot</c>
+    /// (a weapon slot) and may have a <c>damageType</c>, <c>traits</c> (its trait columns) and <c>fixedTraits</c> (hashes);
+    /// armor needs its <c>slot</c> (an armor slot); an armor mod may have one (none: a general mod). Anywhere else these
+    /// keys are errors.
     /// </summary>
     private static Result<Located<ManifestItem>, Errors> ReadItem(YamlValue value) =>
         value.ToMap().Bind(map => Combine(
@@ -76,12 +80,14 @@ internal static class ManifestParsing
             KindWord.Weapon => Combine(
                 map.ReadRequired("slot", ReadVocabularyWord<WeaponSlot>),
                 map.ReadOptional("damageType", ReadVocabularyWord<DamageType>),
-                (slot, damageType) => (ManifestKind)new ManifestKind.Weapon(slot, damageType)),
-            KindWord.Armor => CheckNoDamageType(map, word).Bind(_ => map.ReadRequired("slot", ReadVocabularyWord<ArmorSlot>)
+                map.ReadOptional("traits", ReadNonNegativeInteger),
+                map.ReadOrDefault("fixedTraits", hashes => hashes.ReadEach("fixed trait", ReadItemHash), []),
+                (slot, damageType, traits, fixedTraits) => (ManifestKind)new ManifestKind.Weapon(slot, damageType, traits, fixedTraits)),
+            KindWord.Armor => CheckWeaponOnlyKeys(map, word).Bind(_ => map.ReadRequired("slot", ReadVocabularyWord<ArmorSlot>)
                 .Map(slot => (ManifestKind)new ManifestKind.Armor(slot))),
-            KindWord.ArmorMod => CheckNoDamageType(map, word).Bind(_ => map.ReadOptional("slot", ReadVocabularyWord<ArmorSlot>)
+            KindWord.ArmorMod => CheckWeaponOnlyKeys(map, word).Bind(_ => map.ReadOptional("slot", ReadVocabularyWord<ArmorSlot>)
                 .Map(slot => (ManifestKind)new ManifestKind.ArmorMod(slot))),
-            _ => CheckNoDamageType(map, word).Bind(_ => CheckNoSlot(map, word)).Map(_ => ToSlotlessKind(word)),
+            _ => CheckWeaponOnlyKeys(map, word).Bind(_ => CheckNoSlot(map, word)).Map(_ => ToSlotlessKind(word)),
         };
 
     private static ManifestKind ToSlotlessKind(KindWord word) =>
@@ -105,8 +111,10 @@ internal static class ManifestParsing
             ? map.FailAtKey<Unit>("slot", $"slot is only allowed on a weapon, armor or an armor mod, not on a {GameNotationParsing.ToVocabularyWord(word)}")
             : Succeed<Unit>(new Unit.Value());
 
-    private static Result<Unit, Errors> CheckNoDamageType(YamlMap map, KindWord word) =>
-        map.FindValue("damageType").IsSome()
-            ? map.FailAtKey<Unit>("damageType", $"damageType is only allowed on a weapon, not on a {GameNotationParsing.ToVocabularyWord(word)}")
-            : Succeed<Unit>(new Unit.Value());
+    private static Result<Unit, Errors> CheckWeaponOnlyKeys(YamlMap map, KindWord word) =>
+        WeaponOnlyKeys.Where(key => map.FindValue(key).IsSome()).ToImmutableArray() switch
+        {
+            [] => Succeed<Unit>(new Unit.Value()),
+            [var key, ..] => map.FailAtKey<Unit>(key, $"{key} is only allowed on a weapon, not on a {GameNotationParsing.ToVocabularyWord(word)}"),
+        };
 }

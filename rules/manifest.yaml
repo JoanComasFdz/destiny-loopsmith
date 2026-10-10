@@ -28,6 +28,7 @@ items:
   - { hash: 1293710444, name: "Harmonic Resistance", kind: armorMod, type: "Chest Armor Mod", tier: basic, slot: chest, icon: /common/destiny2_content/icons/d49402a3d5f41621f00d5a09e1fba1fc.png }
   - { hash: 1319563985, name: "To Shreds", kind: artifactPerk, type: "Artifact Perk", tier: legendary, icon: /common/destiny2_content/icons/db9994e38f3019475db3dd46162400fb.png }
   - { hash: 1319563986, name: "Defibrillating Blast", kind: artifactPerk, type: "Artifact Perk", tier: legendary, icon: /common/destiny2_content/icons/432d57ccbac460b2effe218c7b43de75.png }
+  - { hash: 1419069769, name: "Lightning Rounds", kind: weaponPerk, type: "Trait", tier: legendary, icon: /common/destiny2_content/icons/c968c0de1d01c6bfc13fc4d08d6cb312.png }
   - { hash: 1435557120, name: "Grenade Mod", kind: armorMod, type: "General Armor Mod", tier: basic, icon: /common/destiny2_content/icons/774854aa449ce8053f708b88d10d35c5.png }
   - { hash: 1611241895, name: "Shinobu's Vow", kind: armor, type: "Gauntlets", tier: exotic, slot: arms, icon: /common/destiny2_content/icons/8ea4e6ce75fcf446b699029aab9d6060.jpg }
   - { hash: 1727069361, name: "Spark of Frequency", kind: fragment, type: "Arc Fragment", icon: /common/destiny2_content/icons/4979f2f84c3da353c19815106267beb9.jpg }
@@ -45,18 +46,19 @@ items:
   - { hash: 2596646298, name: "Flashover", kind: artifactPerk, type: "Artifact Perk", tier: legendary, icon: /common/destiny2_content/icons/39fa68afce49ce18debf66cca98d568c.png }
   - { hash: 2711519340, name: "Gambler's Dodge", kind: classAbility, type: "Class Ability", tier: basic, icon: /common/destiny2_content/icons/f4190b3803b5ab33c08838dc8e22bf60.png }
   - { hash: 2716335211, name: "Combination Blow", kind: melee, type: "Arc Melee", icon: /common/destiny2_content/icons/a7ff3045c06a03649199c6b8e185d7a3.jpg }
+  - { hash: 2779035018, name: "Feeding Frenzy", kind: weaponPerk, type: "Trait", tier: basic, icon: /common/destiny2_content/icons/89d7e65f5ebe8d291ea96f128765921d.png }
   - { hash: 2816982785, name: "Gambler's Dodge", kind: classAbility, type: "Class Ability", tier: basic, icon: /common/destiny2_content/icons/06f00a7fbe80686a21c95d53e1506ed1.jpg }
   - { hash: 2842471112, name: "Sentinel", kind: subclass, type: "Titan Subclass", tier: basic, icon: /common/destiny2_content/icons/32b112a9460e6f0e2b9ee15dc53fe1c1.png }
   - { hash: 2849050827, name: "Voidwalker", kind: subclass, type: "Warlock Subclass", tier: basic, icon: /common/destiny2_content/icons/32b112a9460e6f0e2b9ee15dc53fe1c1.png }
   - { hash: 2883433250, name: "Luminopotent Cuirass", kind: armor, type: "Chest Armor", tier: legendary, slot: chest, icon: /common/destiny2_content/icons/f8684accf31f6180323fe833345eedbb.jpg }
-  - { hash: 2888266564, name: "Crisis Inverted", kind: weapon, type: "Hand Cannon", tier: legendary, slot: energy, damageType: arc, icon: /common/destiny2_content/icons/c1c24e84da1dd184662b3a16711ab7aa.jpg }
+  - { hash: 2888266564, name: "Crisis Inverted", kind: weapon, type: "Hand Cannon", tier: legendary, slot: energy, damageType: arc, traits: 2, icon: /common/destiny2_content/icons/c1c24e84da1dd184662b3a16711ab7aa.jpg }
   - { hash: 2903198438, name: "Dielectric", kind: artifactPerk, type: "Artifact Perk", tier: legendary, icon: /common/destiny2_content/icons/2ba8a6fb47d9a36d8e5651bad5a86752.png }
   - { hash: 2932390016, name: "Striker", kind: subclass, type: "Titan Subclass", tier: basic, icon: /common/destiny2_content/icons/949af7a61d60a8e6071282daafa9e6e9.png }
   - { hash: 2996369932, name: "Elemental Charge", kind: armorMod, type: "Leg Armor Mod", tier: legendary, slot: legs, icon: /common/destiny2_content/icons/437c1aed014547ef1553fdfec50a2310.png }
   - { hash: 3122197216, name: "Balanced Tuning", kind: armorMod, type: "General Armor Mod", tier: basic, icon: /common/destiny2_content/icons/32759b0ce261d185ac8a06b7dc9cafb4.png }
   - { hash: 3168997075, name: "Stormcaller", kind: subclass, type: "Warlock Subclass", tier: basic, icon: /common/destiny2_content/icons/949af7a61d60a8e6071282daafa9e6e9.png }
   - { hash: 3279257734, name: "Strand Siphon", kind: armorMod, type: "Helmet Armor Mod", tier: basic, slot: helmet, icon: /common/destiny2_content/icons/ce1edf40f2713ae8cacb4d08bf9cb1f1.png }
-  - { hash: 3325463374, name: "Thunderlord", kind: weapon, type: "Machine Gun", tier: exotic, slot: power, damageType: arc, icon: /common/destiny2_content/icons/4a08027f7b5752f84d183ecc61682c3e.jpg }
+  - { hash: 3325463374, name: "Thunderlord", kind: weapon, type: "Machine Gun", tier: exotic, slot: power, damageType: arc, traits: 2, fixedTraits: [1419069769, 2779035018], icon: /common/destiny2_content/icons/4a08027f7b5752f84d183ecc61682c3e.jpg }
   - { hash: 3585856464, name: "Unraveling Orbs", kind: artifactPerk, type: "Artifact Perk", tier: legendary, icon: /common/destiny2_content/icons/14a1ddccf719d767162b94f3ff81db23.png }
   - { hash: 3585856465, name: "Photonic Flare", kind: artifactPerk, type: "Artifact Perk", tier: legendary, icon: /common/destiny2_content/icons/888d22f5f20d5e4c5b7e9d3bdb15384b.png }
   - { hash: 3585856470, name: "Dielectric", kind: artifactPerk, type: "Artifact Perk", tier: legendary, icon: /common/destiny2_content/icons/2ba8a6fb47d9a36d8e5651bad5a86752.png }
@@ -69,7 +71,7 @@ items:
   - { hash: 3926119246, name: "Strand Siphon", kind: armorMod, type: "Helmet Armor Mod", tier: basic, slot: helmet, icon: /common/destiny2_content/icons/ce1edf40f2713ae8cacb4d08bf9cb1f1.png }
   - { hash: 3933525367, name: "Gambler's Dodge", kind: classAbility, type: "Class Ability", tier: basic, icon: /common/destiny2_content/icons/5bb832a0d1719210c76442528d9ca1ac.png }
   - { hash: 3941205951, name: "Dawnblade", kind: subclass, type: "Warlock Subclass", tier: basic, icon: /common/destiny2_content/icons/fedcb91b7ab0584c12f0e9fec730702b.png }
-  - { hash: 4019651319, name: "Festival Flight", kind: weapon, type: "Grenade Launcher", tier: legendary, slot: kinetic, damageType: strand, icon: /common/destiny2_content/icons/e3d2241387a0f536fbd52a80f522d3f4.jpg }
+  - { hash: 4019651319, name: "Festival Flight", kind: weapon, type: "Grenade Launcher", tier: legendary, slot: kinetic, damageType: strand, traits: 2, icon: /common/destiny2_content/icons/e3d2241387a0f536fbd52a80f522d3f4.jpg }
   - { hash: 4087056174, name: "Recuperation", kind: armorMod, type: "Leg Armor Mod", tier: basic, slot: legs, icon: /common/destiny2_content/icons/db7f4f4f8c9ec48b5303cf5a2f8dc662.png }
   - { hash: 4149682173, name: "Reaper", kind: armorMod, type: "Class Item Armor Mod", tier: basic, slot: classItem, icon: /common/destiny2_content/icons/f1fba3ecacb97239cb2f8422dd8c7a03.png }
   - { hash: 4182064480, name: "Grenade Kickstart", kind: armorMod, type: "Arms Armor Mod", tier: basic, slot: arms, icon: /common/destiny2_content/icons/ec798418c7f516ed308a9dfc91aff036.png }

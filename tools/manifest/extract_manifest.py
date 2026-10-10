@@ -4,14 +4,17 @@
     python3 -I tools/manifest/extract_manifest.py <manifest-dir> <version> [<repo-root>]
 
 <manifest-dir> holds the English JSON components get-manifest.sh downloads:
-DestinyInventoryItemLiteDefinition.json, DestinyInventoryBucketDefinition.json and
-DestinyDamageTypeDefinition.json. <version> is the manifest's version string (written into the file).
+DestinyInventoryItemDefinition.json, DestinyInventoryBucketDefinition.json, DestinyDamageTypeDefinition.json,
+DestinySocketTypeDefinition.json and DestinySocketCategoryDefinition.json. <version> is the manifest's
+version string (written into the file).
 
 The excerpt holds every hash Loopsmith names: each `hash:` in rules/ (elements and the glossary's
 subclasses) and every hash in the saved DIM shares (builds/*/dim-loadout.json). For each: its name,
-kind, type, icon, tier and, for weapons, armor and armor mods, its slot and damage type. A hash the
-manifest doesn't have is reported, not written. The output is sorted and stable, so a rerun on the
-same manifest changes nothing.
+kind, type, icon, tier and, for weapons, armor and armor mods, its slot and damage type. A weapon also
+gets its number of trait columns (`traits`: the "frames" sockets among its weapon perks) and the
+perks of the columns that don't roll (`fixedTraits`: an exotic's), which are written as items too. A
+hash the manifest doesn't have is reported, not written. The output is sorted and stable, so a rerun
+on the same manifest changes nothing.
 """
 
 import json
@@ -81,7 +84,20 @@ def classify(item, buckets):
     return "other", None
 
 
-def to_entry(item_hash, item, buckets):
+def read_traits(item, socket_types, perk_category):
+    """(columns, fixed): how many trait ("frames") sockets the weapon's perks have, and the perks of those that don't roll."""
+    sockets = item.get("sockets", {})
+    entries = sockets.get("socketEntries", [])
+    indexes = [i for category in sockets.get("socketCategories", []) if category.get("socketCategoryHash") == perk_category
+               for i in category.get("socketIndexes", [])]
+    traits = [entries[i] for i in indexes if i < len(entries)
+              and "frames" in [w.get("categoryIdentifier") for w in socket_types.get(str(entries[i].get("socketTypeHash")), {}).get("plugWhitelist", [])]]
+    fixed = [entry["singleInitialItemHash"] for entry in traits
+             if not entry.get("randomizedPlugSetHash") and entry.get("singleInitialItemHash")]
+    return (len(traits), fixed) if sockets else (None, [])
+
+
+def to_entry(item_hash, item, buckets, socket_types, perk_category):
     display = item.get("displayProperties", {})
     kind, slot = classify(item, buckets)
     fields = [
@@ -98,6 +114,12 @@ def to_entry(item_hash, item, buckets):
     damage = DAMAGE_TYPES.get(item.get("defaultDamageType"))
     if kind == "weapon" and damage:
         fields.append(("damageType", damage))
+    if kind == "weapon":
+        columns, fixed = read_traits(item, socket_types, perk_category)
+        if columns is not None:
+            fields.append(("traits", str(columns)))
+        if fixed:
+            fields.append(("fixedTraits", "[" + ", ".join(str(h) for h in fixed) + "]"))
     if display.get("icon"):
         fields.append(("icon", display["icon"]))
     return "  - { " + ", ".join(f"{key}: {value}" for key, value in fields) + " }"
@@ -109,11 +131,17 @@ def main():
     source = pathlib.Path(sys.argv[1])
     version = sys.argv[2]
     root = pathlib.Path(sys.argv[3] if len(sys.argv) == 4 else ".")
-    items = read_json(source / "DestinyInventoryItemLiteDefinition.json")
+    items = read_json(source / "DestinyInventoryItemDefinition.json")
     buckets = read_json(source / "DestinyInventoryBucketDefinition.json")
     damage_types = read_json(source / "DestinyDamageTypeDefinition.json")
+    socket_types = read_json(source / "DestinySocketTypeDefinition.json")
+    perk_category = next(int(h) for h, c in read_json(source / "DestinySocketCategoryDefinition.json").items()
+                         if c.get("displayProperties", {}).get("name") == "WEAPON PERKS")
 
-    wanted = sorted(list_rule_hashes(root) | list_share_hashes(root))
+    named = list_rule_hashes(root) | list_share_hashes(root)
+    fixed = {h for n in named if str(n) in items and classify(items[str(n)], buckets)[0] == "weapon"
+             for h in read_traits(items[str(n)], socket_types, perk_category)[1]}
+    wanted = sorted(named | fixed)
     missing = [h for h in wanted if str(h) not in items]
     lines = [
         "# Loopsmith's excerpt of the Bungie manifest (docs/rule-format.md, \"Manifest\"): names, icons, slots and",
@@ -128,7 +156,7 @@ def main():
         if name and icon:
             lines.append(f"  - {{ type: {name}, icon: {icon} }}")
     lines.append("items:")
-    lines.extend(to_entry(h, items[str(h)], buckets) for h in wanted if str(h) in items)
+    lines.extend(to_entry(h, items[str(h)], buckets, socket_types, perk_category) for h in wanted if str(h) in items)
     (root / "rules" / "manifest.yaml").write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(f"wrote {len(wanted) - len(missing)} items to rules/manifest.yaml")
     for h in missing:

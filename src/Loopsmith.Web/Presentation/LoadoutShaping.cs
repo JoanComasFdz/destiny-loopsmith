@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Globalization;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 using Loopsmith.Core.Phrasing;
@@ -28,8 +27,9 @@ public sealed record SubclassView(
     ImmutableArray<IconTile> Fragments);
 
 /// <summary>
-/// A weapon: its tile, slot, archetype, damage type (and that type's icon), the perks the build gives it, and how many of
-/// its two selected perks the build doesn't name (a DIM loadout names the weapon, not its roll).
+/// A weapon: its tile, slot, archetype, damage type (and that type's icon), its selected perks — the ones the build names,
+/// else the ones that don't roll (an exotic's, from the manifest) — and how many of its trait columns stay unknown (a
+/// DIM loadout names the weapon, not its roll; none when the excerpt doesn't give the columns).
 /// </summary>
 public sealed record WeaponView(
     IconTile Weapon,
@@ -66,9 +66,6 @@ public static class LoadoutShaping
 {
     private const string IconHost = "https://www.bungie.net";
 
-    /// <summary>A weapon's selected perks: the two trait columns of its roll.</summary>
-    private const int SelectedPerks = 2;
-
     private static readonly ImmutableArray<ArmorSlot> ArmorSlots = [ArmorSlot.Helmet, ArmorSlot.Arms, ArmorSlot.Chest, ArmorSlot.Legs, ArmorSlot.ClassItem];
 
     private sealed record LeftOutEntry(LoadoutPart Part, Optional<ManifestItem> Item, ItemHash Hash);
@@ -82,11 +79,11 @@ public static class LoadoutShaping
         var mods = b.ArmorMods
             .Select(id => (Tile: DescribeElement(catalog, id), Slot: catalog.FindElementItem(id).Bind(item => item.ReadArmorSlot())))
             .Concat(leftOut.Where(entry => entry.Part == LoadoutPart.ArmorMod)
-                .Select(entry => (Tile: DescribeLeftOut(entry), Slot: entry.Item.Bind(item => item.ReadArmorSlot()))))
+                .Select(entry => (Tile: DescribeLeftOut(catalog, entry), Slot: entry.Item.Bind(item => item.ReadArmorSlot()))))
             .ToImmutableArray();
         var pieces = leftOut
             .Where(entry => entry.Part == LoadoutPart.Item && IsKind<ManifestKind.Armor>(entry.Item))
-            .Select(entry => (Slot: entry.Item.Bind(item => item.ReadArmorSlot()), Tile: DescribeLeftOut(entry)))
+            .Select(entry => (Slot: entry.Item.Bind(item => item.ReadArmorSlot()), Tile: DescribeLeftOut(catalog, entry)))
             .Concat(ToSome(b.ExoticArmor).Select(id => (Slot: catalog.FindElementItem(id).Bind(item => item.ReadArmorSlot()), Tile: DescribeElement(catalog, id))))
             .ToImmutableArray();
 
@@ -95,17 +92,17 @@ public static class LoadoutShaping
             DescribeAbility<ManifestKind.Super>(catalog, b.Abilities.Super, plugs),
             [
                 DescribeAbility<ManifestKind.ClassAbility>(catalog, b.Abilities.ClassAbility, plugs),
-                .. DescribeLeftOutPlugs<ManifestKind.Movement>(plugs),
+                .. DescribeLeftOutPlugs<ManifestKind.Movement>(catalog, plugs),
                 DescribeAbility<ManifestKind.Melee>(catalog, b.Abilities.Melee, plugs),
                 DescribeAbility<ManifestKind.Grenade>(catalog, b.Abilities.Grenade, plugs),
             ],
-            [.. b.Aspects.Select(id => DescribeElement(catalog, id)), .. DescribeLeftOutPlugs<ManifestKind.Aspect>(plugs)],
-            [.. b.Fragments.Select(id => DescribeElement(catalog, id)), .. DescribeLeftOutPlugs<ManifestKind.Fragment>(plugs)]);
+            [.. b.Aspects.Select(id => DescribeElement(catalog, id)), .. DescribeLeftOutPlugs<ManifestKind.Aspect>(catalog, plugs)],
+            [.. b.Fragments.Select(id => DescribeElement(catalog, id)), .. DescribeLeftOutPlugs<ManifestKind.Fragment>(catalog, plugs)]);
         return new LoadoutView(
             subclass,
             [
                 .. b.ArtifactPerks.Select(id => DescribeElement(catalog, id)),
-                .. leftOut.Where(entry => entry.Part == LoadoutPart.ArtifactPerk).Select(DescribeLeftOut),
+                .. leftOut.Where(entry => entry.Part == LoadoutPart.ArtifactPerk).Select(entry => DescribeLeftOut(catalog, entry)),
             ],
             [.. b.Weapons.OrderBy(weapon => weapon.Slot).Select(weapon => DescribeWeapon(catalog, weapon))],
             [
@@ -134,15 +131,18 @@ public static class LoadoutShaping
                 _ => new IconTile(element.Name, Optional.None<string>(), element.Affinity, Optional.None<ItemTier>(), true, element.Description, 1))
             : new IconTile(id.Value, Optional.None<string>(), Affinity.Neutral, Optional.None<ItemTier>(), true, Optional.None<string>(), 1);
 
+    private static IconTile DescribeUnknownHash(RuleCatalog catalog, ItemHash hash) =>
+        new(catalog.Manifest.DescribeItemHash(hash), Optional.None<string>(), Affinity.Neutral, Optional.None<ItemTier>(), false,
+            Optional.Some("Not in Loopsmith's rules or its manifest excerpt yet."), 1);
+
     private static IconTile DescribeItem(ManifestItem item, string name, bool inRules, Optional<string> description, Affinity affinity) =>
         new(name, item.Icon.Map(ToIconUrl), affinity, item.Tier, inRules, description, 1);
 
     /// <summary>A hash the build left out: the manifest's name and icon when the excerpt has it, else just the hash.</summary>
-    private static IconTile DescribeLeftOut(LeftOutEntry entry) =>
+    private static IconTile DescribeLeftOut(RuleCatalog catalog, LeftOutEntry entry) =>
         entry.Item.Match(
             known => DescribeItem(known.Value, known.Value.Name, false, Optional.Some("Not in Loopsmith's rules yet: left out of the build."), ToAffinity(known.Value)),
-            _ => new IconTile(entry.Hash.Value.ToString(CultureInfo.InvariantCulture), Optional.None<string>(), Affinity.Neutral, Optional.None<ItemTier>(), false,
-                Optional.Some("Not in Loopsmith's rules or its manifest excerpt yet."), 1));
+            _ => DescribeUnknownHash(catalog, entry.Hash));
 
     /// <summary>
     /// An ability slot: its element; or, when the build has "?", the left-out subclass plug of that kind the manifest
@@ -152,15 +152,15 @@ public static class LoadoutShaping
         where TKind : ManifestKind =>
         ability.Match(
             known => DescribeElement(catalog, known.Value),
-            _ => DescribeLeftOutPlugs<TKind>(plugs)
+            _ => DescribeLeftOutPlugs<TKind>(catalog, plugs)
                 .Select(Optional.Some)
                 .FindFirstSome()
                 .UnwrapOr(new IconTile(DomainPhrasing.Unknown, Optional.None<string>(), Affinity.Neutral, Optional.None<ItemTier>(), false,
                     Optional.Some("Not known: not in the rule catalog yet, so it sets nothing off."), 1)));
 
-    private static IEnumerable<IconTile> DescribeLeftOutPlugs<TKind>(ImmutableArray<LeftOutEntry> plugs)
+    private static IEnumerable<IconTile> DescribeLeftOutPlugs<TKind>(RuleCatalog catalog, ImmutableArray<LeftOutEntry> plugs)
         where TKind : ManifestKind =>
-        plugs.Where(entry => IsKind<TKind>(entry.Item)).Select(DescribeLeftOut);
+        plugs.Where(entry => IsKind<TKind>(entry.Item)).Select(entry => DescribeLeftOut(catalog, entry));
 
     private static WeaponView DescribeWeapon(RuleCatalog catalog, WeaponLoadout weapon)
     {
@@ -169,15 +169,25 @@ public static class LoadoutShaping
             known => DescribeItem(known.Value, weapon.Name, true, Optional.None<string>(), weapon.Type.ToAffinity()),
             _ => new IconTile(weapon.Name, Optional.None<string>(), weapon.Type.ToAffinity(), Optional.None<ItemTier>(), true, Optional.None<string>(), 1));
         var damageIcon = catalog.Manifest.DamageTypeIcons.TryGetValue(weapon.Type, out var icon) ? Optional.Some(ToIconUrl(icon)) : Optional.None<string>();
+        var kind = item.Bind(known => known.Kind is ManifestKind.Weapon weaponKind ? Optional.Some(weaponKind) : Optional.None<ManifestKind.Weapon>());
+        var named = weapon.Perks.Select(id => DescribeElement(catalog, id)).ToImmutableArray();
+        var fixedTraits = kind.Match(some => some.Value.FixedTraits.Select(hash => DescribeTrait(catalog, hash)).ToImmutableArray(), _ => []);
+        var perks = named.IsEmpty ? fixedTraits : named;
         return new WeaponView(
             tile,
             weapon.Slot,
             weapon.Archetype,
             weapon.Type,
             damageIcon,
-            [.. weapon.Perks.Select(id => DescribeElement(catalog, id))],
-            Math.Max(SelectedPerks - weapon.Perks.Length, 0));
+            perks,
+            kind.Bind(weaponKind => weaponKind.Traits).Match(columns => Math.Max(columns.Value - perks.Length, 0), _ => 0));
     }
+
+    /// <summary>A perk of a weapon's roll by hash: its catalog element when the rules have it, else the manifest's (dimmed).</summary>
+    private static IconTile DescribeTrait(RuleCatalog catalog, ItemHash hash) =>
+        catalog.FindElementByHash(hash).Match(
+            element => DescribeElement(catalog, element.Value.Id),
+            _ => DescribeLeftOut(catalog, new LeftOutEntry(LoadoutPart.Item, catalog.Manifest.FindItem(hash), hash)));
 
     private static bool IsKind<TKind>(Optional<ManifestItem> item)
         where TKind : ManifestKind =>

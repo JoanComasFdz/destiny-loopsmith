@@ -6,8 +6,9 @@ namespace Loopsmith.Core.Domain;
 
 /// <summary>
 /// What an item of the Bungie manifest is, as Loopsmith shows it (the manifest's own item types, grouped). A weapon has
-/// its slot and damage type, armor its slot, an armor mod the slot it only fits (none: a general mod); nothing else has
-/// a slot.
+/// its slot, damage type, number of trait columns (the perks a roll selects; none when the excerpt doesn't say) and the
+/// perks of the columns that don't roll (an exotic's); armor its slot; an armor mod the slot it only fits (none: a
+/// general mod). Nothing else has a slot.
 /// </summary>
 [Union]
 public partial record ManifestKind
@@ -20,7 +21,7 @@ public partial record ManifestKind
     partial record Movement();
     partial record Aspect();
     partial record Fragment();
-    partial record Weapon(WeaponSlot Slot, Optional<DamageType> DamageType);
+    partial record Weapon(WeaponSlot Slot, Optional<DamageType> DamageType, Optional<int> Traits, ImmutableArray<ItemHash> FixedTraits);
     partial record WeaponPerk();
     partial record Armor(ArmorSlot Slot);
     partial record ArmorMod(Optional<ArmorSlot> Slot);
