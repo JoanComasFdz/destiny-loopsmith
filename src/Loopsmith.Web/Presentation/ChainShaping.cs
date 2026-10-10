@@ -73,6 +73,9 @@ public static class ChainShaping
 
     private const int ArrowLength = 6;
 
+    /// <summary>The radius of a hop where a stroke crosses another line.</summary>
+    private const double Hop = 3.5;
+
     private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
 
     /// <summary>The links of one loop to draw: those within a pass.</summary>
@@ -92,8 +95,11 @@ public static class ChainShaping
             .Select((compared, index) => (compared.Link.From, Lane: lanes[index]))
             .GroupBy(x => x.From)
             .ToImmutableDictionary(group => group.Key, group => group.Max(x => x.Lane));
+        var verticals = links
+            .Select((compared, index) => new Vertical(ReadLaneX(edge, lanes[index]), ReadEgress(compared.Link.From), ReadIngress(compared.Link.To)))
+            .ToImmutableArray();
         var lines = links
-            .Select((compared, index) => ShapeLine(compared, lanes[index], lanes[index] == outermost[compared.Link.From], edge))
+            .Select((compared, index) => ShapeLine(compared, lanes[index], lanes[index] == outermost[compared.Link.From], edge, verticals))
             .ToImmutableArray();
         var arrowheads = links
             .Select(compared => compared.Link.To)
@@ -135,16 +141,42 @@ public static class ChainShaping
 
     private static int ReadLaneX(int edge, int lane) => edge - Inset - lane * LaneWidth;
 
-    private static ChainLine ShapeLine(ComparedLink compared, int lane, bool isOutermost, int edge)
+    /// <summary>The straight vertical part of a drawn link: its lane and the ys between its two corners.</summary>
+    private sealed record Vertical(int X, int Egress, int Ingress);
+
+    /// <summary>
+    /// A link's path: out of the slot (left), down its lane, into the notch (right). Where one of its two horizontal strokes
+    /// crosses another link's vertical, the stroke hops over it: the vertical — a line from an earlier step passing by —
+    /// stays straight, and the hop sits by the step whose stroke it is.
+    /// </summary>
+    private static ChainLine ShapeLine(ComparedLink compared, int lane, bool isOutermost, int edge, ImmutableArray<Vertical> verticals)
     {
         var x = ReadLaneX(edge, lane);
         var egress = ReadEgress(compared.Link.From);
         var ingress = ReadIngress(compared.Link.To);
-        var path = string.Create(Invariant,
-            $"M {edge + Depth} {egress} H {x + Radius} Q {x} {egress} {x} {egress + Radius} V {ingress - Radius} Q {x} {ingress} {x + Radius} {ingress} H {edge + Depth - 1 - ArrowLength}");
+        var start = edge + Depth;
+        var end = edge + Depth - 1 - ArrowLength;
+        var outward = ListCrossings(verticals, x, start, egress).OrderDescending()
+            .Select(crossing => string.Create(Invariant, $"H {crossing + Hop} A {Hop} {Hop} 0 0 0 {crossing - Hop} {egress} "));
+        var inward = ListCrossings(verticals, x, end, ingress).Order()
+            .Select(crossing => string.Create(Invariant, $"H {crossing - Hop} A {Hop} {Hop} 0 0 1 {crossing + Hop} {ingress} "));
+        var path = string.Create(Invariant, $"M {start} {egress} {string.Concat(outward)}H {x + Radius} Q {x} {egress} {x} {egress + Radius} ")
+            + string.Create(Invariant, $"V {ingress - Radius} Q {x} {ingress} {x + Radius} {ingress} {string.Concat(inward)}H {end}");
         var junction = isOutermost ? Optional.None<ChainPoint>() : Optional.Some(new ChainPoint(x, egress));
         return new ChainLine(compared.Link, lane, path, junction, compared.OnlyHere, compared.Link.DescribeLink());
     }
+
+    /// <summary>
+    /// The lanes a horizontal stroke at <paramref name="y"/>, between its lane and <paramref name="reach"/>, crosses: a
+    /// vertical strictly between the two whose straight part passes <paramref name="y"/>. A vertical that starts or ends
+    /// at that y is the stroke's own split or merge, not a crossing.
+    /// </summary>
+    private static IEnumerable<int> ListCrossings(ImmutableArray<Vertical> verticals, int lane, int reach, int y) =>
+        verticals
+            .Where(vertical => vertical.X > lane && vertical.X < reach)
+            .Where(vertical => vertical.Egress + Radius < y && y < vertical.Ingress - Radius)
+            .Select(vertical => vertical.X)
+            .Distinct();
 
     private static string ShapeArrowhead(int edge, int ingress)
     {
