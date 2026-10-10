@@ -41,7 +41,7 @@ first (Domain types, then the slices):
   `restart`; reword the counting comments in `rules/glossary.yaml`, `keywords/arc.yaml`,
   `weapons/perks.yaml`, `mods/armor.yaml`, `hunter/arc.yaml`; `max:bolt-charge` steps in the example
   loops and `scenario.txt` as [note-map.md](../builds/skip-grenade-hunter/note-map.md) describes; the
-  goldens.
+  goldens; `LoopFileParsingTests.SpecExampleYaml`, which copies loop-format.md's example.
 - Later: rename the `Simulation` slice (it plays steps; it simulates nothing).
 
 ## Data
