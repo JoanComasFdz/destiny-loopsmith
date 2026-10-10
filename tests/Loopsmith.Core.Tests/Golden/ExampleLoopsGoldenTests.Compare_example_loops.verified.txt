@@ -1,22 +1,23 @@
-﻿Infinite skip grenades  vs  Melee first
-                                     Infinite skip grenades   Melee first
-  Build                              Skip Grenade Hunter      Skip Grenade Hunter
-  Steps per cycle                    6                        5
-  Repeatable cycles                  10+                      10+
-  Kills per cycle                    7 ✓                      6
-  Ionic Trace spawned per cycle      8 ✓                      7
-  Orb of Power spawned per cycle     4 ✓                      2
-  Bolt Charge maxed per cycle        3                        3
-  Wasted per cycle (doesn't stack)   7                        6 ✓
-  Slice uptime                       6/6                      5/5
-  Amplified uptime                   6/6                      5/5
-  Woven Mail uptime                  6/6 ✓                    0/5
-  Unraveling Rounds uptime           6/6                      5/5
-  Armor Charge uptime                6/6                      5/5
-  Bolt Charge uptime                 6/6                      5/5
-  New Tricks uptime                  5/6                      5/5 ✓
-  Reaper uptime                      2/6                      3/5 ✓
-  Combination Blow uptime            0/6                      5/5 ✓
-  Unknown values                     35                       24 ✓
-  Chance bullets                     14                       8 ✓
-✓ better: Infinite skip grenades on 4 metrics · Melee first on 6 metrics · 8 even or not judged
+﻿A  Infinite skip grenades   Class ability → Grenade (kill) → Festival Flight (kill) → Any Arc weapon (kill) → Pick up Orb of Power → Bolt Charge at max → Grenade (kill)   ✓ Repeats   (Skip Grenade Hunter)
+B  Melee first              Melee (kill) → Bolt Charge at max → Grenade (kill) → Any Arc weapon (kill) → Pick up Orb of Power → Class ability   ✓ Repeats   (Skip Grenade Hunter)
+
+Class ability           A #1 · B #6: sets off the same
+Grenade (kill)          A #2 · B #3
+   A needs     Armor Charge ← previous pass #5 · Jolt ← previous pass #7 · Sever ← previous pass #4 (differs on A's first pass)
+   B needs     New Tricks ← #2 · Armor Charge ← previous pass #5 · Bolt Charge at max ← #2 · Bolt Charge ← #1 · Jolt ← #1
+   only in A   Photonic Flare · To Shreds
+   only in B   Defibrillating Blast
+Festival Flight (kill)  only in A (#3)
+Any Arc weapon (kill)   A #4 · B #4
+   A needs     Sever ← #3 · Unravel ← #3 · Jolt ← #2 (differs on A's first pass)
+   B needs     Jolt ← #3 · Reaper ← previous pass #6 (differs on B's first pass)
+   only in A   To Shreds · Horde Shuttle · Photonic Flare
+   only in B   Reaper
+Pick up Orb of Power    A #5 · B #5: sets off the same
+   A needs     Orb of Power ← #3
+   B needs     Orb of Power ← #4
+Bolt Charge at max      A #6 · B #2: sets off the same
+   A needs     Bolt Charge ← #4
+   B needs     Bolt Charge ← #1
+Grenade (kill)          only in A (#7)
+Melee (kill)            only in B (#1)

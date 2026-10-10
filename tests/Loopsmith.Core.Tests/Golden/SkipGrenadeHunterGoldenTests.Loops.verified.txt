@@ -1,21 +1,21 @@
-﻿26 loops found (showing 10; --limit to change)
-Loop 1 · ability loop — refunds grenade energy · 3 steps
+﻿32 loops found (showing 10; --limit to change)
+Loop 1 · ability loop — gives grenade energy back · 3 steps
   Throw grenade → Grenade damage →[Shinobu's Vow] Grenade energy → ↺
-Loop 2 · ability loop — refunds grenade energy · 3 steps
+Loop 2 · ability loop — gives grenade energy back · 3 steps
   Throw grenade → Grenade thrown →[Grenade Kickstart (while Armor Charge)] Grenade energy → ↺
-Loop 3 · ability loop — refunds grenade energy · 4 steps
+Loop 3 · ability loop — gives grenade energy back · 4 steps
   Throw grenade → Grenade damage →[Shinobu's Vow] Gain Bolt Charge →[Shinobu's Vow] Grenade energy → ↺
-Loop 4 · ability loop — refunds grenade energy · 4 steps
-  Throw grenade → Grenade damage →[Shinobu's Vow] Max Bolt Charge →[Shinobu's Vow] Grenade energy → ↺
-Loop 5 · ability loop — refunds grenade energy · 4 steps
+Loop 4 · ability loop — gives grenade energy back · 4 steps
   Throw grenade → Kill Jolted target →[Tempest Strike, Dielectric] Doesn't stack →[Dielectric] Gain Bolt Charge →[Shinobu's Vow] Grenade energy → ↺
-Loop 6 · ability loop — refunds grenade energy · 4 steps
-  Throw grenade → Kill Jolted target →[Tempest Strike, Dielectric] Doesn't stack →[Dielectric] Max Bolt Charge →[Shinobu's Vow] Grenade energy → ↺
-Loop 7 · ability loop — refunds grenade energy · 4 steps
+Loop 5 · ability loop — gives grenade energy back · 4 steps
   Throw grenade → Kill Jolted target →[Shock and Clear] Pick up Ionic Trace →[Ionic Trace] Grenade energy → ↺
-Loop 8 · ability loop — refunds melee energy · 4 steps
+Loop 6 · ability loop — gives melee energy back · 4 steps
   Melee → Kill Jolted target →[Tempest Strike, Dielectric] Doesn't stack →[Dielectric] Gain Bolt Charge →[Bolt Charge] Melee energy → ↺
-Loop 9 · ability loop — refunds melee energy · 4 steps
+Loop 7 · ability loop — gives melee energy back · 4 steps
   Melee → Kill Jolted target →[Shock and Clear] Pick up Ionic Trace →[Ionic Trace] Melee energy → ↺
-Loop 10 · ability loop — refunds grenade energy · 5 steps
-  Throw grenade → Kill Jolted target →[Shock and Clear] Pick up Ionic Trace →[Spark of Discharge] Gain Bolt Charge →[Shinobu's Vow] Grenade energy → ↺
+Loop 8 · ability loop — gives grenade energy back · 5 steps
+  Throw grenade → Ability damage →[Bolt Charge (while Bolt Charge at max)] Kill Jolted target →[Tempest Strike, Dielectric] Doesn't stack →[Dielectric] Gain Bolt Charge →[Shinobu's Vow] Grenade energy → ↺
+Loop 9 · ability loop — gives grenade energy back · 5 steps
+  Throw grenade → Ability damage →[Bolt Charge (while Bolt Charge at max)] Kill Jolted target →[Shock and Clear] Pick up Ionic Trace →[Ionic Trace] Grenade energy → ↺
+Loop 10 · ability loop — gives grenade energy back · 5 steps
+  Throw grenade → Grenade damage →[Shinobu's Vow] Gain Bolt Charge →[you declare] Max Bolt Charge →[Shinobu's Vow] Grenade energy → ↺

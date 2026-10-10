@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 using Loopsmith.Core.Orchestration;
@@ -34,7 +35,7 @@ public class ExampleLoopsGoldenTests
         LoopDesigning.ImportLoop(Catalog, ReadRepoFile(path)).Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
 
     private static LoopReport AnalyzeLoop(string path) =>
-        LoopDesigning.AnalyzeDesign(ImportLoop(path), LoopDesigning.DefaultMaxCycles);
+        LoopDesigning.AnalyzeDesign(ImportLoop(path));
 
     [Theory]
     [InlineData(SkipGrenadesPath)]
@@ -66,35 +67,35 @@ public class ExampleLoopsGoldenTests
     {
         var report = AnalyzeLoop(SkipGrenadesPath);
 
-        Assert.True(report.IsRepeatable());
-        var wasted = Assert.Single(report.Wasted);   // jolted kills: Tempest Strike's x1 doesn't stack with Dielectric's
-        Assert.Equal(("tempest-strike", "Dielectric"), (wasted.Source.Value, wasted.PartnerName));
-        Assert.True(wasted.Count > 0);
+        Assert.Equal(new LoopVerdict.Repeats(Optional.None<BlockedStep>()), report.Verdict);
+        var wasted = report.Steps.SelectMany(step => step.Wasted).ToImmutableArray();   // jolted kills: Tempest Strike's Bolt Charge doesn't stack with Dielectric's
+        Assert.NotEmpty(wasted);
+        Assert.All(wasted, mention => Assert.Equal(("tempest-strike", "Dielectric"), (mention.Source.Source.Value, mention.PartnerName)));
     }
 
     [Fact]
     public void The_ascension_variant_repeats_and_its_air_move_jolts_and_amplifies()
     {
         var session = ImportLoop(HelicopterPath);
-        var report = LoopDesigning.AnalyzeDesign(session, LoopDesigning.DefaultMaxCycles);
+        var report = LoopDesigning.AnalyzeDesign(session);
 
-        Assert.True(report.IsRepeatable());
+        Assert.IsType<LoopVerdict.Repeats>(report.Verdict);
         var airMove = session.Resolutions[0];
         Assert.Equal(new PlayerAction.UseClassAbility(Airborne: true), airMove.Action);
         Assert.Contains(airMove.Fired, rule => rule.Source.Value == "ascension");
         Assert.Contains(airMove.Fired, rule => rule.Source.Value == "gamblers-dodge");   // the dodge's effects fire too
         Assert.Contains(airMove.State.Buffs, buff => buff.Status.Value == "amplified");
-        Assert.Contains(airMove.State.Target.Debuffs, debuff => debuff.Status.Value == "jolt");
+        Assert.Contains(airMove.State.Target.Debuffs, debuff => debuff.Value == "jolt");
     }
 
     [Fact]
-    public void Slice_restarts_on_every_dodge_so_dodges_alone_never_max_it()
+    public void Slice_is_never_at_max_until_the_player_declares_it()
     {
-        var report = AnalyzeLoop(MeleeFirstPath);   // one dodge per cycle, no Strand weapon
+        var report = AnalyzeLoop(MeleeFirstPath);   // one dodge per pass, no Strand weapon, no max:slice
 
-        Assert.DoesNotContain(report.Outcomes, tally => tally.Label == "Slice maxed");
-        Assert.All(report.FindSteadyCycle().Match(cycle => cycle.Value.Resolutions, _ => []),
-            resolution => Assert.True(resolution.State.ReadStacks(StatusId.From("slice")) <= 1));
+        var resolutions = report.FirstPass.Resolutions.AddRange(report.RepeatingPass.Resolutions);
+        Assert.DoesNotContain(resolutions.SelectMany(r => r.Fired), rule => rule.Trigger is GameEvent.StacksMaxed { Status.Value: "slice" });
+        Assert.All(resolutions, resolution => Assert.False(resolution.State.Buffs.Any(b => b.Status.Value == "slice" && b.AtMax)));
     }
 
     [Fact]
@@ -102,7 +103,7 @@ public class ExampleLoopsGoldenTests
     {
         var report = AnalyzeLoop(MeleeFirstPath);
 
-        Assert.True(report.IsRepeatable());
+        Assert.IsType<LoopVerdict.Repeats>(report.Verdict);
     }
 
     [Fact]
@@ -112,7 +113,7 @@ public class ExampleLoopsGoldenTests
             .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
         var designed = LoopDesigning.AppendStep(started, new PlayerAction.UseClassAbility(), Optional.Some("dodge: \"arm\" # everything"));
         designed = LoopDesigning.AppendStep(designed, new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Kill, TargetCount.One), Optional.None<string>());
-        designed = LoopDesigning.AppendStep(designed, new PlayerAction.Wait(Seconds.From(1.5m)), Optional.None<string>());
+        designed = LoopDesigning.AppendStep(designed, new PlayerAction.Declare(new StateDeclaration.ReachMax(StatusId.From("bolt-charge"))), Optional.None<string>());
         designed = LoopDesigning.RenameDesign(designed, "Round trip: test", Optional.Some("Joan"), Optional.Some("Line one\n  indented line two\n"));
 
         var imported = LoopDesigning.ImportLoop(Catalog, new SourceText("x.loop.yaml", LoopDesigning.ExportLoop(designed)))
@@ -185,7 +186,7 @@ public class ExampleLoopsGoldenTests
     private static Task VerifyLoopReport(string path)
     {
         var session = ImportLoop(path);
-        var report = LoopDesigning.AnalyzeDesign(session, LoopDesigning.DefaultMaxCycles);
+        var report = LoopDesigning.AnalyzeDesign(session);
         var lines = LoopDesigning.RenderLoopReport(report)
             .Add(StyledText.ToLine(0, "".ToSpan()))
             .AddRange(LoopReportRendering.RenderLoopDesign(session.Design));

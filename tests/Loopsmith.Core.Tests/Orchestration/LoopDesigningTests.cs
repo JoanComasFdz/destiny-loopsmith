@@ -26,7 +26,7 @@ public sealed class LoopDesigningTests
         var options = LoopDesigning.ListTriggerOptions(session);
 
         Assert.Equal(
-            ["grenade:kill", "grenade", "melee:kill", "melee", "class", "super:kill", "super", "energy:kill", "energy", "wait:5"],
+            ["grenade:kill", "grenade", "melee:kill", "melee", "class", "super:kill", "super", "energy:kill", "energy"],
             options.Select(option => option.Token));
         Assert.All(options, option => Assert.False(option.IsNew));
         Assert.Equal("Grenade (kill)", options[0].Label);
@@ -67,13 +67,13 @@ public sealed class LoopDesigningTests
     }
 
     [Fact]
-    public void An_aimed_step_kills_every_target_in_the_analysis()
+    public void An_aimed_step_keeps_its_target_count_in_the_analysis_and_the_file()
     {
         var session = AppendSteps(StartDesign(ValidateBuild([])), LoopDesigning.SetTargetCount(GrenadeKill, TargetCount.From(3)), RifleKill);
 
-        var report = LoopDesigning.AnalyzeDesign(session, 2);
+        var report = LoopDesigning.AnalyzeDesign(session);
 
-        Assert.Equal(new OutcomeTally("Kills", 4), report.Outcomes[0]);
+        Assert.Equal(["grenade:kill:3", "energy:kill"], report.Steps.Select(step => step.Token));
         Assert.Contains("  - do: grenade:kill:3\n", LoopDesigning.ExportLoop(session));
     }
 }

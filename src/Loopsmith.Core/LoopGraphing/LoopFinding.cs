@@ -2,7 +2,10 @@ using System.Collections.Immutable;
 
 namespace Loopsmith.Core.LoopGraphing;
 
-/// <summary>Elementary-cycle search over Rule + Player edges (Enables edges are prerequisites, not steps).</summary>
+/// <summary>
+/// Elementary-cycle search over Rule, Player and Declared edges — a max you declare is a link like an action you take
+/// (ADRs D3); Enables edges are prerequisites, not steps.
+/// </summary>
 public static class LoopFinding
 {
     public const int MaxLoopLength = 8;
@@ -30,7 +33,7 @@ public static class LoopFinding
                 edges.Select(e => e.From).ToImmutableArray(),
                 edges,
                 edges.Any(e => energyKeys.Contains(e.From))))
-            .OrderByDescending(loop => loop.RefundsEnergy)
+            .OrderByDescending(loop => loop.GivesEnergyBack)
             .ThenBy(loop => loop.Edges.Count(edge => !filterKeys.Contains(edge.To)))   // steps: a "doesn't stack" node is not one
             .ThenBy(loop => string.Join(">", loop.NodeKeys), StringComparer.Ordinal)
             .ToImmutableArray();

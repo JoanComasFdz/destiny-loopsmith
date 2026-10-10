@@ -557,14 +557,52 @@ public sealed class RuleCatalogParsingTests
             """.Replace("TRIGGER", trigger).Replace("BUFF", buff));
 
     [Fact]
-    public void Parses_an_airborne_class_ability_trigger_and_a_restarting_buff()
+    public void Parses_an_airborne_class_ability_trigger()
     {
         var catalog = AssertOk(RuleCatalogParsing.ParseCatalog(
-            [Glossary, ToAirMoveFile("{ abilityCast: { ability: classAbility, airborne: true } }", "{ applyBuff: { status: bolt-charge, restart: true } }")]));
+            [Glossary, ToAirMoveFile("{ abilityCast: { ability: classAbility, airborne: true } }", "{ applyBuff: { status: bolt-charge } }")]));
 
         var rule = catalog.Elements[ElementId.From("ascension")].Rules[0];
         Assert.Equal(new Trigger.AbilityCast(AbilityKind.ClassAbility, Airborne: true), rule.On);
-        Assert.Equal(new Outcome.ApplyBuff(ToStatus("bolt-charge"), Optional.None<Seconds>(), StackCount.From(1), Restarts: true), rule.Then[0]);
+        Assert.Equal(new Outcome.ApplyBuff(ToStatus("bolt-charge"), Optional.None<Seconds>(), StackCount.From(1)), rule.Then[0]);
+    }
+
+    [Fact]
+    public void Parses_an_atMax_condition_on_a_status_that_stacks()
+    {
+        var file = ToElementsFile("keywords/arc.yaml", """
+            elements:
+              - id: bolt-charge
+                name: Bolt Charge
+                kind: keyword
+                affinity: arc
+                rules:
+                  - on: { damage: { via: ability } }
+                    when: [ { atMax: bolt-charge } ]
+                    then: [ { removeBuff: bolt-charge } ]
+            """);
+
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, file]));
+
+        Assert.Equal([new Condition.AtMax(ToStatus("bolt-charge"))], catalog.Elements[ElementId.From("bolt-charge")].Rules[0].When);
+    }
+
+    [Theory]
+    [InlineData("{ on: { stacksMaxed: amplified }, then: [ { removeBuff: amplified } ] }", "'amplified' doesn't stack (no maxStacks), so it is never at max")]
+    [InlineData("{ on: { abilityCast: grenade }, when: [ { atMax: amplified } ], then: [ { removeBuff: amplified } ] }", "'amplified' doesn't stack (no maxStacks), so it is never at max")]
+    [InlineData("{ on: { abilityCast: grenade }, then: [ { applyBuff: { status: amplified, restart: true } } ] }", "unknown key 'restart' in applyBuff (allowed: status, stacks, duration)")]
+    public void Only_a_status_that_stacks_can_be_at_max_and_a_grant_has_no_restart(string rule, string expected)
+    {
+        var file = ToElementsFile("hunter/arc.yaml", $$"""
+            elements:
+              - id: probe
+                name: Probe
+                kind: fragment
+                affinity: arc
+                rules: [ {{rule}} ]
+            """);
+
+        Assert.Contains(expected, ParseInvalidCatalog(Glossary, file));
     }
 
     [Fact]
@@ -817,7 +855,7 @@ public sealed class RuleCatalogParsingTests
             """));
 
         Assert.Contains("glossary.yaml:2: status.kind: 'curse' is not one of: buff, debuff", message);
-        Assert.Contains("glossary.yaml:2: status.maxStacks: '0' is not a whole number ≥ 1", message);
+        Assert.Contains("glossary.yaml:2: status.maxStacks: '0' is not a whole number ≥ 2", message);
         Assert.Contains("glossary.yaml:4: pickup is missing 'collectsAutomatically'", message);
         Assert.Contains("glossary.yaml:6: summon.id: 'Threadling' is not a kebab-case summon id", message);
         Assert.Contains("glossary.yaml:6: summon.damageType: 'prismatic' is not one of: kinetic, arc, solar, void, stasis, strand", message);

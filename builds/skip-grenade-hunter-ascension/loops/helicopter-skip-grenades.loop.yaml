@@ -4,21 +4,23 @@ description: |-
   The creator's variant with Ascension instead of Flow State ("it is fun to helicopter up into the air and
   throw those skip grenades down"): the air move jolts the pack and makes you Amplified before the
   skip grenade lands, then the same clean-up as the original loop. Without Flow State, jolted kills give
-  no Amplified; Ascension and Flashover (max Bolt Charge) keep it up.
-catalog: authored-1cb8a41c41cc
+  no Amplified: Ascension and Flashover (when you declare Bolt Charge at max) make you Amplified.
+catalog: authored-e707a3336348
 steps:
   - do: class:air
     note: "Ascension: helicopter up, jolting the pack and making you Amplified; the dodge's effects fire too (Slice, Reaper, Bomber)"
   - do: grenade:kill
     note: 'Skip grenade down into the jolted pack: Bolt Charge (+1 more per gain while Amplified) and an Ionic Trace'
   - do: kinetic:kill
-    note: 'Festival Flight: Slice severs, Reaper and Attrition Orbs drop orbs, To Shreds gives Woven Mail; max Bolt Charge strikes'
+    note: 'Festival Flight: Slice severs, Reaper and Attrition Orbs drop orbs, To Shreds gives Woven Mail'
   - do: energy:kill
     note: 'Arc weapon on the jolted pack: Spark of Discharge traces, Harmonic Siphon orb'
   - do: pickup:orb-of-power
     note: 'Grab the orbs: Armor Charge for Grenade Kickstart, and Unraveling Rounds'
+  - do: max:bolt-charge
+    note: Bolt Charge at x10 — Shinobu's Vow and Flashover
   - do: grenade:kill
-    note: 'Second skip grenade: Kickstart spends Armor Charge; max Bolt Charge strikes again'
+    note: 'Second skip grenade: Kickstart spends Armor Charge, and its hit discharges Bolt Charge'
 build: |
   # Skip Grenade Hunter (Ascension) - the creator's own variant of builds/skip-grenade-hunter: the same
   # build with Ascension instead of Flow State. The video: "Your second aspect is up to you. You either

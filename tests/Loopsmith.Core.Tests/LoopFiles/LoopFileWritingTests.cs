@@ -20,7 +20,7 @@ public sealed class LoopFileWritingTests
         new(new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Kill, TargetCount.From(3)), Optional.Some("three in the pack")),
         new(new PlayerAction.FireWeapon(WeaponSlot.Energy, HitOutcome.Damage, TargetCount.From(5)), Optional.None<string>()),
         new(new PlayerAction.CollectPickups(PickupId.From("orb-of-power")), Optional.Some("grab them all")),
-        new(new PlayerAction.Wait(Seconds.From(2.25m)), Optional.None<string>()),
+        new(new PlayerAction.Declare(new StateDeclaration.ReachMax(StatusId.From("bolt-charge"))), Optional.None<string>()),
     ];
 
     private static LoopDesign CreateDesign(
@@ -61,7 +61,7 @@ public sealed class LoopFileWritingTests
               - do: energy:hit:5
               - do: pickup:orb-of-power
                 note: grab them all
-              - do: wait:2.25
+              - do: max:bolt-charge
             build: |
               # my build
               name: Skip Grenade Hunter   # inline comment
@@ -160,7 +160,7 @@ public sealed class LoopFileWritingTests
         "ab Z09 \n\n  \t#:-'\"|>{}[],&*!%@`~?\\/." + "é✓—" + "\r" + (char)0x85 + (char)0x2028 + (char)0xFEFF + (char)1;
 
     private static readonly ImmutableArray<string> Tokens =
-        ["class", "class:air", "grenade", "grenade:kill", "melee:kill", "super", "kinetic:kill", "energy", "power:kill", "pickup:orb-of-power", "wait:5", "wait:0.5"];
+        ["class", "class:air", "grenade", "grenade:kill", "melee:kill", "super", "kinetic:kill", "energy", "power:kill", "pickup:orb-of-power", "max:bolt-charge", "end:jolt"];
 
     private static LoopDesign CreateRandomDesign(Random random)
     {

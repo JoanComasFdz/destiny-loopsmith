@@ -46,7 +46,7 @@ public class SkipGrenadeHunterGoldenTests
     [Fact]
     public void Line2b_strand_kill_on_a_severed_and_unraveled_pack()
     {
-        var start = WithTarget(WithBuffs(Fresh, ("slice", 1), ("reaper", 1)), "sever", "unravel");
+        var start = WithTarget(WithBuffs(Fresh, "slice", "reaper"), "sever", "unravel");
 
         var resolution = Resolve(start, new PlayerAction.FireWeapon(WeaponSlot.Kinetic, HitOutcome.Kill, TargetCount.One));
 
@@ -87,12 +87,14 @@ public class SkipGrenadeHunterGoldenTests
 
     // ── note line 6: Amplified ──────────────────────────────────────────────────
     [Fact]
-    public void Line6_while_amplified_bolt_charge_gains_an_extra_stack()
+    public void Line6_while_amplified_a_bolt_charge_grant_names_the_extra_stack()
     {
-        var resolution = Resolve(WithBuffs(Fresh, ("amplified", 1)), new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Damage, TargetCount.One));
+        var resolution = Resolve(WithBuffs(Fresh, "amplified"), new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Damage, TargetCount.One));
 
-        AssertFires(resolution, must: ["spark-of-shock", "shinobus-vow"]);
-        Assert.Equal(2, ReadStacks(resolution.State, "bolt-charge"));
+        AssertFires(resolution, must: ["spark-of-shock", "shinobus-vow", "bolt-charge"]);
+        var grant = resolution.Fired.SelectMany(f => f.Outcomes).Single(o => o.Outcome is Outcome.ApplyBuff { Status.Value: "bolt-charge" });
+        Assert.Equal(Optional.Some("+1 from Spark of Frequency"), grant.Caveat);
+        Assert.True(HasBuff(resolution.State, "bolt-charge"));
         Assert.Contains(resolution.ActivePassives, p => p.Source.Value == "spark-of-frequency");
         Assert.Contains(resolution.ActivePassives, p => p.Source.Value == "luminopotent-2pc");
     }
@@ -100,16 +102,16 @@ public class SkipGrenadeHunterGoldenTests
     // ── note line 7: Orb of power ───────────────────────────────────────────────
     [Fact]
     public void Line7a_orb_pickup() =>
-        AssertFires(Resolve(WithGround(Fresh, ("orb-of-power", 1)), new PlayerAction.CollectPickups(PickupId.From("orb-of-power"))),
+        AssertFires(Resolve(WithGround(Fresh, "orb-of-power"), new PlayerAction.CollectPickups(PickupId.From("orb-of-power"))),
             must: ["orb-of-power", "unraveling-orbs"]);
 
     [Fact]
     public void Line7b_grenade_kickstart_spends_armor_charge_on_the_next_grenade()
     {
-        var resolution = Resolve(WithBuffs(Fresh, ("armor-charge", 2)), new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Damage, TargetCount.One));
+        var resolution = Resolve(WithBuffs(Fresh, "armor-charge"), new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Damage, TargetCount.One));
 
-        AssertFires(resolution, must: ["grenade-kickstart", "spark-of-shock", "shinobus-vow"]);
-        Assert.Equal(0, ReadStacks(resolution.State, "armor-charge"));
+        AssertFires(resolution, must: ["grenade-kickstart", "spark-of-shock", "shinobus-vow", "bolt-charge"]);
+        Assert.False(HasBuff(resolution.State, "armor-charge"));
     }
 
     // ── note line 8: Weapon kill ────────────────────────────────────────────────
@@ -129,24 +131,39 @@ public class SkipGrenadeHunterGoldenTests
     // ── note line 9: Ionic trace ────────────────────────────────────────────────
     [Fact]
     public void Line9_ionic_trace_pickup() =>
-        AssertFires(Resolve(WithGround(Fresh, ("ionic-trace", 1)), new PlayerAction.CollectPickups(PickupId.From("ionic-trace"))),
+        AssertFires(Resolve(WithGround(Fresh, "ionic-trace"), new PlayerAction.CollectPickups(PickupId.From("ionic-trace"))),
             must: ["ionic-trace", "spark-of-discharge", "elemental-charge", "shinobus-vow"]);
 
     // ── note line 10: Max bolt charge ───────────────────────────────────────────
-    [Fact]
-    public void Line10_max_bolt_charge_closes_the_loop()
-    {
-        var start = WithGround(WithBuffs(Fresh, ("bolt-charge", 9)), ("ionic-trace", 1));
+    private static readonly PlayerAction MaxBoltCharge = new PlayerAction.Declare(new StateDeclaration.ReachMax(StatusId.From("bolt-charge")));
 
-        var resolution = Resolve(start, new PlayerAction.CollectPickups(PickupId.From("ionic-trace")));
+    [Fact]
+    public void Line10a_declaring_bolt_charge_at_max_fires_shinobus_vow_and_flashover()
+    {
+        var resolution = Resolve(WithBuffs(Fresh, "bolt-charge"), MaxBoltCharge);
+
+        AssertFires(resolution, must: ["shinobus-vow", "flashover"], mustNot: ["bolt-charge", "defibrillating-blast"]);
+        Assert.Equal(
+            [new ActiveBuff(StatusId.From("bolt-charge"), AtMax: true), new ActiveBuff(StatusId.From("new-tricks"), false), new ActiveBuff(StatusId.From("amplified"), false)],
+            resolution.State.Buffs);
+        Assert.Equal(Optional.Some("Bolt Charge isn't active — nothing to declare at max."), Resolve(Fresh, MaxBoltCharge).Blocked);
+    }
+
+    [Fact]
+    public void Line10b_the_next_skip_grenade_hit_discharges_bolt_charge()
+    {
+        var declared = Resolve(WithBuffs(Fresh, "bolt-charge"), MaxBoltCharge).State;
+
+        var resolution = Resolve(declared, new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Kill, TargetCount.One));
 
         AssertFires(resolution, must:
         [
-            "bolt-charge", "flashover", "shinobus-vow", "defibrillating-blast", "tempest-strike", "flow-state",
-            "luminopotent-4pc", "dielectric", "ionic-trace", "spark-of-discharge", "elemental-charge",
-        ]);
-        Assert.True(resolution.State.Buffs.Any(b => b.Status.Value == "new-tricks"));
-        Assert.True(resolution.State.Buffs.Any(b => b.Status.Value == "amplified"));
+            "shinobus-vow", "spark-of-shock", "bolt-charge", "defibrillating-blast", "flow-state", "dielectric",
+            "luminopotent-4pc", "tempest-strike", "spark-of-discharge", "elemental-charge", "ionic-trace",
+        ], mustNot: ["harmonic-siphon", "photonic-flare"]);
+        Assert.Single(resolution.Fired, f => f.Source.Value == "bolt-charge" && f.Outcomes.Any(o => o.Outcome is Outcome.StrikeTarget));
+        Assert.False(HasBuff(resolution.State, "new-tricks"));
+        Assert.Contains(new ActiveBuff(StatusId.From("bolt-charge"), AtMax: false), resolution.State.Buffs);
     }
 
     // ── loop discovery: the build's headline loop must be found ─────────────────
@@ -156,7 +173,7 @@ public class SkipGrenadeHunterGoldenTests
         var graph = LoopGraphBuilding.BuildLoopGraph(Build);
         var loops = LoopFinding.FindLoops(graph);
 
-        Assert.Contains(loops, loop => loop.RefundsEnergy
+        Assert.Contains(loops, loop => loop.GivesEnergyBack
             && loop.NodeKeys.Contains("a:Grenade")
             && loop.NodeKeys.Contains("e:Grenade")
             && loop.Edges.Any(e => e.Sources.Contains("Shinobu's Vow")));
@@ -207,24 +224,15 @@ public class SkipGrenadeHunterGoldenTests
             $"missing: [{string.Join(", ", missing)}] unexpected: [{string.Join(", ", unexpected)}] fired: [{string.Join(", ", fired)}]");
     }
 
-    private static int ReadStacks(GameState state, string status) =>
-        state.Buffs.FirstOrDefault(b => b.Status.Value == status)?.Stacks.Value ?? 0;
+    private static bool HasBuff(GameState state, string status) =>
+        state.Buffs.Any(b => b.Status.Value == status);
 
-    private static GameState WithBuffs(GameState state, params (string Status, int Stacks)[] buffs) =>
-        state with
-        {
-            Buffs = state.Buffs.AddRange(buffs.Select(b => new ActiveStatus(StatusId.From(b.Status), StackCount.From(b.Stacks), Optional.None<Seconds>()))),
-        };
+    private static GameState WithBuffs(GameState state, params string[] buffs) =>
+        state with { Buffs = state.Buffs.AddRange(buffs.Select(b => new ActiveBuff(StatusId.From(b), AtMax: false))) };
 
     private static GameState WithTarget(GameState state, params string[] debuffs) =>
-        state with
-        {
-            Target = state.Target with
-            {
-                Debuffs = debuffs.Select(d => new ActiveStatus(StatusId.From(d), StackCount.From(1), Optional.None<Seconds>())).ToImmutableArray(),
-            },
-        };
+        state with { Target = state.Target with { Debuffs = [.. debuffs.Select(StatusId.From)] } };
 
-    private static GameState WithGround(GameState state, params (string Pickup, int Count)[] pickups) =>
-        state with { Pickups = pickups.Select(p => new GroundPickup(PickupId.From(p.Pickup), p.Count)).ToImmutableArray() };
+    private static GameState WithGround(GameState state, params string[] pickups) =>
+        state with { Pickups = [.. pickups.Select(PickupId.From)] };
 }

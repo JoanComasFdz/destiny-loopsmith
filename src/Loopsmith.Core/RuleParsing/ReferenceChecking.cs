@@ -80,6 +80,17 @@ internal static class ReferenceChecking
     internal static Result<StatusId, Errors> ReadBuff(this ReferenceScope scope, YamlValue value) =>
         ValueReading.ReadStatusId(value).Bind(id => scope.CheckStatus(value, id, Optional.Some(KeywordKind.Buff)));
 
+    /// <summary>
+    /// A buff that stacks (<c>stacksMaxed</c>, <c>atMax</c>): only a status with <c>maxStacks</c> can be declared at its
+    /// maximum (ADRs D3).
+    /// </summary>
+    internal static Result<StatusId, Errors> ReadStackingBuff(this ReferenceScope scope, YamlValue value) =>
+        scope.ReadBuff(value).Bind(id => scope.Glossary.Match(
+            glossary => glossary.Value.IsStacking(id)
+                ? Succeed(id)
+                : value.FailAt<StatusId>($"{value.Label}: '{id}' doesn't stack (no maxStacks), so it is never at max"),
+            _ => Succeed(id)));
+
     /// <summary>A status that lives on the target (<c>debuffTarget</c>, <c>targetHas</c>).</summary>
     internal static Result<StatusId, Errors> ReadDebuff(this ReferenceScope scope, YamlValue value) =>
         ValueReading.ReadStatusId(value).Bind(id => scope.CheckStatus(value, id, Optional.Some(KeywordKind.Debuff)));

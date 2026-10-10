@@ -10,87 +10,57 @@ public sealed record Application(GameState State, AppliedOutcome Applied, Immuta
 
 public static class OutcomeApplication
 {
-    public static Application ApplyOutcome(ValidatedBuild build, GameState state, Outcome outcome, int copies) =>
+    /// <summary>
+    /// What an outcome changes in the state (a buff, a debuff or a pickup becomes present or goes) and the events it sets
+    /// off. Numbers are facts shown with their certainty, never added up (ADRs D1).
+    /// </summary>
+    public static Application ApplyOutcome(ValidatedBuild build, GameState state, Outcome outcome) =>
         outcome.Match(
-            grantEnergy => AnnotateEnergy(state, outcome, ResolveGrant(grantEnergy.Amount, copies), 1),
-            convert => ConvertStacksToEnergy(state, outcome, convert, copies),
+            grantEnergy => AnnotateFact(state, outcome, ReadGrantCertainty(grantEnergy.Amount), "amount unknown"),
+            convert => ConvertStacksToEnergy(state, outcome, convert),
             applyBuff => ApplyBuff(build, state, outcome, applyBuff),
             removeBuff => RemoveBuff(state, outcome, removeBuff),
-            debuffTarget => DebuffTarget(build, state, outcome, debuffTarget),
+            debuffTarget => new Application(state.PutDebuff(debuffTarget.Status), ToApplied(outcome, Certainty.Known, Optional.None<string>()), []),
             spawn => Spawn(build, state, outcome, spawn),
             spawnSummon => SpawnSummon(build, state, outcome, spawnSummon),
             strikeTarget => StrikeTarget(build, state, outcome, strikeTarget),
-            modifyDamage => AnnotateValue(state, outcome, modifyDamage.Change, copies),
-            restoreHealth => AnnotateValue(state, outcome, restoreHealth.Amount, copies),
-            resetCooldown => KeepUnchanged(state, outcome, Certainty.Known, ""));
+            modifyDamage => AnnotateFact(state, outcome, modifyDamage.Change.ReadCertainty(), "value unknown"),
+            restoreHealth => AnnotateFact(state, outcome, restoreHealth.Amount.ReadCertainty(), "value unknown"),
+            resetCooldown => KeepUnchanged(state, outcome, ""));
 
-    /// <summary><c>full</c> is one whole charge (known); a fraction is resolved for the copies equipped.</summary>
-    private static Certainty ResolveGrant(EnergyGrant grant, int copies) =>
+    /// <summary><c>full</c> is one whole charge (known); a fraction is as certain as its value.</summary>
+    private static Certainty ReadGrantCertainty(EnergyGrant grant) =>
         grant.Match(
-            fraction => fraction.Amount.ResolveForCopies(copies).Certainty,
+            fraction => fraction.Amount.ReadCertainty(),
             _ => Certainty.Known);
 
-    /// <summary>The stacks are consumed (a real state change); the energy they convert into is explanation only.</summary>
-    private static Application ConvertStacksToEnergy(GameState state, Outcome outcome, Outcome.ConvertStacksToEnergy convert, int copies)
-    {
-        var stacks = state.ReadStacks(convert.Consumed);
-        var consumed = state.DropBuff(convert.Consumed);
-        if (stacks == 0)
-        {
-            return KeepUnchanged(state, outcome, Certainty.Known, "no stacks to consume");
-        }
-
-        var perStack = convert.PerStack.ResolveForCopies(copies).Certainty;
-        return AnnotateEnergy(consumed, outcome, perStack, stacks);
-    }
+    /// <summary>The buff is consumed when it is present (a real state change); the energy it converts into is a fact.</summary>
+    private static Application ConvertStacksToEnergy(GameState state, Outcome outcome, Outcome.ConvertStacksToEnergy convert) =>
+        state.HasBuff(convert.Consumed)
+            ? AnnotateFact(state.DropBuff(convert.Consumed), outcome, convert.PerStack.ReadCertainty(), "amount unknown")
+            : KeepUnchanged(state, outcome, "nothing to consume");
 
     /// <summary>
-    /// Explains an energy grant without changing any gauge — ability energy isn't simulated (ADRs D5). An unknown
-    /// amount stays unknown (counted, never applied as a number).
+    /// Makes the buff present. A grant of a status that stacks always raises <see cref="GameEvent.BuffGained"/> and keeps
+    /// a declared maximum (the cap is a fact); a status that doesn't stack raises it only when it wasn't active. Extra
+    /// stacks from passives (Spark of Frequency) are named in the caveat, never added (ADRs D1).
     /// </summary>
-    private static Application AnnotateEnergy(GameState state, Outcome outcome, Certainty certainty, int stacks)
-    {
-        var caveat = JoinCaveats(stacks > 1 ? $"×{stacks} stacks" : "", certainty == Certainty.Unknown ? "amount unknown" : "");
-        return new Application(state, ToApplied(outcome, certainty, caveat), []);
-    }
-
     private static Application ApplyBuff(ValidatedBuild build, GameState state, Outcome outcome, Outcome.ApplyBuff apply)
     {
-        var definition = build.Catalog.Glossary.FindStatus(apply.Status);
-        var bonus = SumExtraStacks(build, state, apply.Status);
-        var existing = state.ReadStacks(apply.Status);
+        var stacking = build.Catalog.Glossary.IsStacking(apply.Status);
         var wasActive = state.HasBuff(apply.Status);
-        var kept = apply.Restarts ? 0 : existing;
-        var maxStacks = definition.Bind(d => d.MaxStacks).Map(max => max.Value);
-        var stacks = maxStacks.Match(
-            max => Math.Min(max.Value, kept + apply.Stacks.Value + bonus.Extra),
-            _ => 1);
-        var duration = apply.Duration.IsSome() ? apply.Duration : definition.Bind(d => d.Duration);
-        var next = state.PutBuff(new ActiveStatus(apply.Status, StackCount.From(stacks), duration));
-        var gained = !wasActive || stacks > existing
-            ? ImmutableArray.Create<PendingEvent>(new PendingEvent.Ready(new GameEvent.BuffGained(apply.Status, StackCount.From(stacks))))
+        var next = state.PutBuff(apply.Status);
+        var gained = stacking || !wasActive
+            ? ImmutableArray.Create<PendingEvent>(new PendingEvent.Ready(new GameEvent.BuffGained(apply.Status)))
             : [];
-        var maxed = maxStacks.Match(max => max.Value > 1 && stacks == max.Value && existing < max.Value, _ => false)
-            ? ImmutableArray.Create<PendingEvent>(new PendingEvent.Ready(new GameEvent.StacksMaxed(apply.Status)))
-            : [];
-        var refreshed = apply.Restarts ? $"restarted (was ×{existing})" : "already active — refreshed";
-        var caveat = JoinCaveats(
-            bonus.Extra > 0 ? $"+{bonus.Extra} from {string.Join(", ", bonus.Sources)}" : "",
-            gained.IsEmpty ? refreshed : "");
-        return new Application(next, ToApplied(outcome, Certainty.Known, caveat), gained.AddRange(maxed));
+        var caveat = JoinCaveats(DescribeExtraStacks(build, state, apply.Status), gained.IsEmpty ? "already active" : "");
+        return new Application(next, ToApplied(outcome, Certainty.Known, caveat), gained);
     }
 
     private static Application RemoveBuff(GameState state, Outcome outcome, Outcome.RemoveBuff remove) =>
         state.HasBuff(remove.Status)
             ? new Application(state.DropBuff(remove.Status), ToApplied(outcome, Certainty.Known, Optional.None<string>()), [])
-            : KeepUnchanged(state, outcome, Certainty.Known, "was not active");
-
-    private static Application DebuffTarget(ValidatedBuild build, GameState state, Outcome outcome, Outcome.DebuffTarget debuff)
-    {
-        var duration = debuff.Duration.IsSome() ? debuff.Duration : build.Catalog.Glossary.FindStatus(debuff.Status).Bind(d => d.Duration);
-        var next = state.PutDebuff(new ActiveStatus(debuff.Status, StackCount.From(1), duration));
-        return new Application(next, ToApplied(outcome, Certainty.Known, Optional.None<string>()), []);
-    }
+            : KeepUnchanged(state, outcome, "was not active");
 
     private static Application Spawn(ValidatedBuild build, GameState state, Outcome outcome, Outcome.Spawn spawn)
     {
@@ -100,8 +70,7 @@ public static class OutcomeApplication
             return new Application(state, ToApplied(outcome, Certainty.Known, "tracks to you"), pickedUp.ToImmutableArray());
         }
 
-        var next = state.AddPickups(spawn.Pickup, spawn.Count);
-        return new Application(next, ToApplied(outcome, Certainty.Known, "on the ground"), []);
+        return new Application(state.PutPickup(spawn.Pickup), ToApplied(outcome, Certainty.Known, "on the ground"), []);
     }
 
     private static Application SpawnSummon(ValidatedBuild build, GameState state, Outcome outcome, Outcome.SpawnSummon summon)
@@ -120,31 +89,25 @@ public static class OutcomeApplication
         return new Application(state, ToApplied(outcome, Certainty.Known, Optional.None<string>()), events);
     }
 
-    private static Application AnnotateValue(GameState state, Outcome outcome, GameValue value, int copies)
-    {
-        var resolved = value.ResolveForCopies(copies);
-        var caveat = resolved.Certainty == Certainty.Unknown ? "value unknown" : "";
-        return KeepUnchanged(state, outcome, resolved.Certainty, caveat);
-    }
+    /// <summary>A fact shown with its certainty; <paramref name="unknownCaveat"/> marks it when the value is unknown.</summary>
+    private static Application AnnotateFact(GameState state, Outcome outcome, Certainty certainty, string unknownCaveat) =>
+        new(state, ToApplied(outcome, certainty, JoinCaveats(certainty == Certainty.Unknown ? unknownCaveat : "")), []);
 
-    private static Application KeepUnchanged(GameState state, Outcome outcome, Certainty certainty, string caveat) =>
-        new(state, ToApplied(outcome, certainty, JoinCaveats(caveat)), []);
+    /// <summary>An outcome that changes nothing, with the reason when there is one ("was not active").</summary>
+    private static Application KeepUnchanged(GameState state, Outcome outcome, string caveat) =>
+        new(state, ToApplied(outcome, Certainty.Known, JoinCaveats(caveat)), []);
 
     private static AppliedOutcome ToApplied(Outcome outcome, Certainty certainty, Optional<string> caveat) =>
         new(outcome, certainty, caveat);
 
-    private sealed record StackBonus(int Extra, ImmutableArray<string> Sources);
-
-    private static StackBonus SumExtraStacks(ValidatedBuild build, GameState state, StatusId status)
-    {
-        var bonuses = build.Equipped
+    /// <summary>"+1 from Spark of Frequency": the passives whose extra stacks apply to this grant now.</summary>
+    private static string DescribeExtraStacks(ValidatedBuild build, GameState state, StatusId status) =>
+        string.Join(", ", build.Equipped
             .SelectMany(e => e.Element.Passives.Select(p => (e.Element.Name, Passive: p)))
             .Where(x => x.Passive.When.IsSatisfiedBy(state))
-            .Select(x => (x.Name, Extra: x.Passive.Modifier is Passive.ExtraStacks extra && extra.Status == status ? extra.Extra.Value : 0))
-            .Where(x => x.Extra > 0)
-            .ToImmutableArray();
-        return new StackBonus(bonuses.Sum(x => x.Extra), bonuses.Select(x => x.Name).ToImmutableArray());
-    }
+            .SelectMany(x => x.Passive.Modifier is Passive.ExtraStacks extra && extra.Status == status
+                ? new[] { $"+{extra.Extra.Value} from {x.Name}" }
+                : []));
 
     private static Optional<string> JoinCaveats(params string[] caveats)
     {

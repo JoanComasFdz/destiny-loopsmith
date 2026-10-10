@@ -1,13 +1,14 @@
 # Arc Hunter: abilities, aspects, fragments.
 #
 # Numbers from the Destiny Data Compendium snapshot of 2026-10-09 (source: compendium/2026-10-09/
-# <Tab>#<row>); where Clarity 2.0625 was the previous source, its hash stays and the old source is
-# noted in a comment. Ability energy amounts are base values: chunk energy scalars and stats are
-# not applied (ADRs D5), and chunkScalar / baseCooldown are recorded but unused.
-# v1 limits that shape these rules (see builds/skip-grenade-hunter/discrepancies.md):
+# <Tab>#<row>); hashes are Clarity 2.0625's. Ability energy amounts are base values: chunk energy
+# scalars and stats are not applied, and chunkScalar / baseCooldown are facts recorded from the
+# Compendium that change nothing (ADRs D5).
+# Format gaps that shape these rules (see builds/skip-grenade-hunter/discrepancies.md):
 #  - an ability damage source cannot name a specific ability or its damage type ("Arc grenades",
 #    "Skip Grenade drones" -> `grenade`);
-#  - no movement qualifiers ("while sliding", "while airborne").
+#  - no movement qualifiers such as "while sliding". The one airborne action is the class ability's
+#    air move (`class:air`, ADRs D9), which Ascension reacts to.
 elements:
   # ================================================================ abilities
 
@@ -20,8 +21,6 @@ elements:
     # stays "?" rather than a made-up 1.
     ability: { kind: super, charges: 1, chunkScalar: "?", baseCooldown: 556 }
     description: "Roaming Arc super: a staff of Arc Light with 90% [PvP 53%] damage resistance for 20 s base. Kills grant x1 Bolt Charge; guarding reflects attacks, each for x1 Bolt Charge."
-    # Previously a creator claim (the choice of super is in build.yaml): "So arc staff would
-    # probably be the play there."
     source: compendium/2026-10-09/Arc#44
     rules:
       - on: { kill: { via: super } }
@@ -31,7 +30,7 @@ elements:
       # Not expressible: x1 Bolt Charge per attack reflected while guarding (no block/reflect trigger),
       # and the Blind from the airborne heavy attack and Palm Strike (a rule can't name one of the
       # super's attacks; "super damage -> Blind" would blind on every light attack too).
-    # The super's damage resistance is not modelled (no "while in your super" condition).
+    # Not expressible: the super's damage resistance (no "while in your super" condition).
     passives: []
 
   - id: skip-grenade
@@ -41,7 +40,6 @@ elements:
     class: hunter
     ability: { kind: grenade, charges: 1, chunkScalar: 0.75, baseCooldown: 151.5 }
     description: "Arc grenade that splits on impact into 4 seekers that chase enemies within 6 m; each seeker hits twice on impact, then explodes. Its interactions in this build come from Shinobu's Vow."
-    # Previously a creator claim: "Of course, you're going to use skip grenade."
     source: compendium/2026-10-09/Arc#36
     rules: []
     passives: []
@@ -53,13 +51,12 @@ elements:
     class: hunter
     ability: { kind: melee, charges: 1, chunkScalar: 1, baseCooldown: 58.1 }
     description: "Arc punch. A melee kill grants 100% class ability energy, heals you and adds a Combination Blow stack (20 s, up to x3). Melee damage +133% / +266% / +400% [PvP 23% / 51.3% / 86%] at x1 / x2 / x3; the kill heal drops from 100 HP to 80 / 60 / 40 HP as stacks build."
-    # Previously a creator claim: "combination blow times three stacks that you can build".
     source: compendium/2026-10-09/Arc#41
     rules:
       # 100% is a base chunk gain: the Compendium adds that 70 Class is needed for it to refill
       # Gambler's Dodge completely (the build has 104). The heal is in HP and depends on the stacks
-      # (100, then 80 / 60 / 40 HP): restoreHealth amounts are percentages and a rule can't read a
-      # stack count, so it stays "?".
+      # (100, then 80 / 60 / 40 HP): restoreHealth amounts are percentages and an amount can't vary
+      # with the stack level, so it stays "?".
       - on: { kill: { via: melee } }
         then:
           - { applyBuff: combination-blow }
@@ -67,8 +64,8 @@ elements:
           - { restoreHealth: { amount: "?" } }
         reason: "A Combination Blow kill gives your class ability back in full, heals you and stacks its melee damage buff (up to x3)."
     passives:
-      # +133% / +266% / +400% [PvP 23% / 51.3% / 86%] at x1 / x2 / x3: the bonus depends on the stack
-      # count, which a passive can't read, so it stays "?".
+      # +133% / +266% / +400% [PvP 23% / 51.3% / 86%] at x1 / x2 / x3: the bonus varies with the
+      # stack level and a passive's value can't, so it stays "?".
       - effect: { modifyDamage: { against: melee, change: "?" } }
         when: [ { has: combination-blow } ]
         reason: "Each Combination Blow stack makes your melee hits much harder."
@@ -83,11 +80,10 @@ elements:
     hash: 426473317
     ability: { kind: classAbility, charges: 1, chunkScalar: 0.8, baseCooldown: 56 }
     description: "Ground dodge. Grants 1% [PvP 0.35%] melee energy per Melee stat point (max 100% at 100 Melee), doubled within 15 m of an enemy. No chunk or stat scalar applies to that energy."
-    # Previously clarity/426473317@2.0625, which says the same.
     source: "compendium/2026-10-09/Class Abilities#5"
     rules:
       # The refund scales with the Melee stat (79 Melee near an enemy = 158%, a full charge), but a
-      # rule amount cannot depend on a stat in v1, so it is "?" rather than a build-specific number.
+      # rule amount cannot depend on a stat, so it is "?" rather than a build-specific number.
       - on: { abilityCast: classAbility }
         then:
           - { grantEnergy: { to: melee, amount: "?" } }
@@ -104,7 +100,6 @@ elements:
     class: hunter
     hash: 4194622037
     description: "Killing Jolted enemies grants x1 Bolt Charge (does not stack with Dielectric's). Charged melee while sliding sends a 22 m Arc wave along the ground that Jolts enemies hit and grants 75% damage resistance against combatants for about 4 s. Can trigger and benefits from Combination Blow."
-    # Previously clarity/4194622037@2.0625, which agrees; the Compendium adds the Dielectric note.
     source: compendium/2026-10-09/Arc#51
     rules:
       # The Compendium says this x1 does not stack with Dielectric's x1 on the same kill: with
@@ -114,8 +109,9 @@ elements:
           - { applyBuff: { status: bolt-charge, stacks: 1 } }
         doesNotStackWith: [dielectric]
         reason: "Killing a jolted enemy gives you a stack of Bolt Charge."
-      # "while sliding" is not expressible: any melee hit counts. The ~4 s damage resistance after
-      # the cast is not modelled (no timed-resistance outcome).
+      # Not expressible: "while sliding" (no movement qualifier), so any melee hit counts. The
+      # damage resistance after the cast (75%, about 4 s) is a fact in the description; no rule
+      # reacts to it.
       - on: { damage: { via: melee } }
         then:
           - { debuffTarget: jolt }
@@ -129,16 +125,15 @@ elements:
     class: hunter
     hash: 4194622036
     description: "Killing a Jolted enemy grants Amplified. While Amplified: 200% faster base class ability regeneration, 66% [PvP 32%] damage resistance during the dodge animation, +50 Reload Speed and a 0.8x reload duration."
-    # Previously clarity/4194622036@2.0625, which says the same.
     source: compendium/2026-10-09/Arc#49
     rules:
       - on: { kill: { via: any, targetHas: [jolt] } }
         then:
           - { applyBuff: amplified }
         reason: "Killing a jolted enemy makes you Amplified."
-    # The Amplified benefits are not encoded: v1 has no passive for ability regeneration rate,
-    # cannot scope resistance to "during the dodge animation", and modifyWeaponStats has no
-    # "all weapons" archetype.
+    # Not expressible: the Amplified benefits. There is no passive for ability regeneration rate
+    # (energy outcomes are facts, ADRs D5), resistance can't be scoped to "during the dodge
+    # animation", and modifyWeaponStats has no "all weapons" archetype.
     passives: []
 
   - id: ascension
@@ -148,7 +143,6 @@ elements:
     class: hunter
     hash: 4194622039
     description: "While airborne with a class ability charge, [Air Move] spends the charge on an upward Arc Staff twirl: up to 181 damage and Jolt to enemies within 10 m, Amplified for you and allies within 10 m, and your dodge's effects trigger. Damage scales with Class above 100, up to +65% at 200."
-    # Previously clarity/4194622039@2.0625, which says the same without the damage figure.
     source: compendium/2026-10-09/Arc#48
     rules:
       # The air move (`class:air`) spends the class ability charge, so it is a class ability cast:
@@ -171,12 +165,11 @@ elements:
     class: hunter
     hash: 1727069366
     description: "Grants 25% [PvP 10%] damage resistance while within 15 m of 3+ enemies; lingers 2 s."
-    # Previously clarity/1727069366@2.0625, which says the same.
     source: compendium/2026-10-09/Arc#23
     rules: []
     passives:
-      # The "3+ enemies within 15 m" condition is not expressible; v1's target is "the pack in
-      # front of you", so it is treated as always surrounded.
+      # Not expressible: the "3+ enemies within 15 m" condition. The target is the pack in front of
+      # you (ADRs D7), so you are treated as always surrounded.
       - effect: { resistDamage: "25% [10%]" }
         reason: "When you're surrounded by three or more enemies you take 25% less damage."
 
@@ -187,10 +180,9 @@ elements:
     class: hunter
     hash: 1727069361
     # The melee-hit reload buff (15 Stability, 50 Reload, 0.8x reload duration for 5.25 s) is not
-    # modelled: it is not part of any loop, and it would need its own glossary buff plus an "all
+    # encoded: it is not part of any loop, and it would need its own glossary buff plus an "all
     # weapons" archetype, which modifyWeaponStats doesn't have (the same gap as Flow State's).
     description: "Melee hits grant 15 Stability, 50 Reload Speed and a 0.8x reload duration for 5.25 s. While Amplified, (almost) all Bolt Charge sources grant an additional stack."
-    # Previously clarity/1727069361@2.0625, which says the same.
     source: compendium/2026-10-09/Arc#16
     rules: []
     passives:
@@ -205,10 +197,9 @@ elements:
     class: hunter
     hash: 1727069364
     description: "Arc grenades apply Jolt on hit."
-    # Previously clarity/1727069364@2.0625, which says the same.
     source: compendium/2026-10-09/Arc#24
     rules:
-      # "Arc grenades": v1 cannot type an ability source; on the Arc subclass every grenade is Arc.
+      # "Arc grenades": an ability source can't be typed; on the Arc subclass every grenade is Arc.
       - on: { damage: { via: grenade } }
         then:
           - { debuffTarget: jolt }
@@ -222,14 +213,14 @@ elements:
     class: hunter
     hash: 1727069362
     description: "Collecting Ionic Traces grants a stack of Bolt Charge. Multiple Arc weapon kills spawn an Ionic Trace (progress per kill: minors 34%, elites and Guardians 67%, minibosses and bosses 100%)."
-    # Previously clarity/1727069362@2.0625, which says the same.
     source: compendium/2026-10-09/Arc#13
     rules:
       - on: { pickUp: ionic-trace }
         then:
           - { applyBuff: { status: bolt-charge, stacks: 1 } }
         reason: "Every Ionic Trace you collect gives you a Bolt Charge stack."
-      # Progress-based (about 3 minor kills per trace); v1 has no counters, so it is marked chance.
+      # Progress the game doesn't show as a stacking status (about 3 minor kills per trace), so it
+      # is a chance rule (ADRs D8).
       - on: { kill: { via: weapon:arc } }
         then:
           - { spawn: ionic-trace }

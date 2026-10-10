@@ -8,19 +8,18 @@ elements:
     # 1053737370 is the armor item; Clarity keys the exotic perk "New Tricks" as 3907299874.
     hash: 1053737370
     description: "New Tricks: an extra Skip Grenade charge; seekers chase enemies much more aggressively. Every Skip Grenade hit (each impact and explosion counts) grants 4.2% [PvP 1.4%] grenade energy and x1 Bolt Charge. Gaining Bolt Charge gives ?% Skip Grenade energy per stack. Upon reaching x10 Bolt Charge: ~40% grenade energy, ? HP to you and allies within ? m, and the next Skip Grenade is enhanced (one extra bounce, 5 extra seekers on the 1st and 2nd bounce). Per Clarity the energy ignores chunk energy scalars."
-    # Previously clarity/3907299874@2.0625 (the New Tricks perk). It has the same numbers but
-    # describes the enhanced grenade as 2 extra seekers on the first bounce.
     source: "compendium/2026-10-09/Exotic Armors#78"
     rules:
-      # "Skip Grenade hits": v1 cannot name Skip Grenade specifically, so any grenade damage counts.
-      # A seeker hits up to 3 times (2 impacts + 1 explosion, Arc#36); v1 emits one hit per enemy.
+      # Not expressible: "Skip Grenade hits" (a rule can't name one ability), so any grenade damage
+      # counts. A seeker hits up to 3 times (2 impacts + 1 explosion, Arc#36), a fact in the
+      # description: a grenade action hits each enemy once, and that hit sets off the same rules.
       - on: { damage: { via: grenade } }
         then:
           - { applyBuff: { status: bolt-charge, stacks: 1 } }
           - { grantEnergy: { to: grenade, amount: "4.2% [1.4%]" } }
         reason: "Every Skip Grenade hit gives you a Bolt Charge stack and a little grenade energy back."
-      # The source gives it per stack gained ("?%" in both Compendium and Clarity); v1 grants once per
-      # gain event, so a 2-stack gain (Spark of Frequency while Amplified) counts once.
+      # The source gives it per stack gained ("?%" in both Compendium and Clarity): a fact shown on
+      # every Bolt Charge gain.
       - on: { buffGained: bolt-charge }
         then:
           - { grantEnergy: { to: grenade, amount: "?" } }

@@ -49,7 +49,7 @@ internal static class GlossaryParsing
             map.ReadRequired("name", ReadName),
             map.ReadRequired("kind", ReadVocabularyWord<KeywordKind>),
             map.ReadRequired("affinity", ReadVocabularyWord<Affinity>),
-            map.ReadOptional("maxStacks", ReadStackCount),
+            map.ReadOptional("maxStacks", ReadMaxStacks),
             map.ReadOrDefault("duration", ReadDuration, Optional.None<Seconds>()),
             (_, id, name, kind, affinity, maxStacks, duration) =>
                 map.ToLocated(new StatusDefinition(id, name, kind, affinity, maxStacks, duration))));

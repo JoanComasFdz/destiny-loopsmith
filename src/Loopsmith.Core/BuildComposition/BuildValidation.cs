@@ -161,7 +161,7 @@ public static class BuildValidation
         build.PinnedCatalog.Match(
             pinned => pinned.Value == catalog.Version
                 ? []
-                : new[] { new BuildIssue(Severity.Info, $"Build pinned catalog {pinned.Value}; simulating with {catalog.Version}.") },
+                : new[] { new BuildIssue(Severity.Info, $"Build pinned catalog {pinned.Value}; using {catalog.Version}.") },
             _ => []);
 
     private static ImmutableArray<EquippedElement> GroupCopies(IEnumerable<BuildElement> elements) =>

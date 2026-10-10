@@ -44,7 +44,7 @@ public class ActionResolutionTests
 
         Assert.Equal(["any-use"], dodge.Fired.Select(f => f.Source.Value));
         Assert.Equal(["air-only", "any-use"], airMove.Fired.Select(f => f.Source.Value).Order());
-        Assert.Contains("Class ability in the air → Amplified [Air Only]", DescribeTrace(build, airMove));
+        Assert.Contains("Class ability in the air → Amplified (10s) [Air Only]", DescribeTrace(build, airMove));
     }
 
     [Fact]
@@ -56,22 +56,122 @@ public class ActionResolutionTests
         Assert.DoesNotContain(AirMove, ActionResolution.ListAvailableActions(ValidateBuild([AnyUse]), initial));
     }
 
+    /// <summary>Reacts to every Bolt Charge grant, so the trace shows each <see cref="GameEvent.BuffGained"/>.</summary>
+    private static readonly BuildElement GainWatcher = Element("gain-watcher", ElementKind.Fragment,
+        [On(new Trigger.BuffGained(Status("bolt-charge")), Energy(AbilityKind.Melee, new GameValue.Known(0.025m)))]);
+
+    private static PlayerAction DeclareMax(string status) => new PlayerAction.Declare(new StateDeclaration.ReachMax(Status(status)));
+
+    private static PlayerAction DeclareEnd(string status) => new PlayerAction.Declare(new StateDeclaration.EndStatus(Status(status)));
+
     [Fact]
-    public void A_restarting_buff_replaces_its_stacks_instead_of_adding()
+    public void A_grant_of_a_stacking_buff_raises_BuffGained_every_time_and_never_counts_to_a_maximum()
     {
-        var armer = Element("armer", ElementKind.Fragment,
-            [On(new Trigger.AbilityCast(AbilityKind.ClassAbility), new Outcome.ApplyBuff(Status("bolt-charge"), Optional.None<Seconds>(), StackCount.From(1), Restarts: true))]);
         var charger = Element("charger", ElementKind.Fragment, [On(new Trigger.AbilityCast(AbilityKind.Grenade), Buff("bolt-charge", 2))]);
-        var build = ValidateBuild([armer, charger]);
+        var maxed = Element("maxed", ElementKind.Fragment, [On(new Trigger.StacksMaxed(Status("bolt-charge")), Buff("amplified"))]);
+        var build = ValidateBuild([charger, maxed, GainWatcher]);
+        var actions = ImmutableArray.Create(GrenadeKill, GrenadeKill, GrenadeKill);
 
-        var armed = ResolveOnce(build, Dodge);
-        var charged = ActionResolution.ResolveAction(build, armed.State, GrenadeKill);
-        var rearmed = ActionResolution.ResolveAction(build, charged.State, Dodge);
+        var resolutions = ActionResolution.ResolveSequence(build, ActionResolution.CreateInitialState(), actions);
 
-        Assert.Equal(3, charged.State.ReadStacks(Status("bolt-charge")));
-        Assert.Equal(1, rearmed.State.ReadStacks(Status("bolt-charge")));
-        Assert.Equal(Optional.Some("restarted (was ×3)"), rearmed.Fired.Single(f => f.Source.Value == "armer").Outcomes.Single().Caveat);
-        Assert.Contains("Bolt Charge ×1 (restarts) [Armer]", DescribeTrace(build, rearmed));
+        Assert.All(resolutions, resolution => Assert.Single(resolution.Fired, f => f.Trigger is GameEvent.BuffGained));
+        Assert.Equal([new ActiveBuff(Status("bolt-charge"), AtMax: false)], resolutions[^1].State.Buffs);
+        Assert.DoesNotContain(resolutions.SelectMany(r => r.Fired), f => f.Source.Value == "maxed");
+        Assert.Contains("+2 Bolt Charge [Charger]", DescribeTrace(build, resolutions[^1]));
+    }
+
+    [Fact]
+    public void Declaring_a_buff_at_max_raises_StacksMaxed_and_the_atMax_guard_holds_until_it_is_consumed()
+    {
+        var charger = Element("charger", ElementKind.Fragment, [On(new Trigger.AbilityCast(AbilityKind.ClassAbility), Buff("bolt-charge"))]);
+        var maxed = Element("maxed", ElementKind.Fragment, [On(new Trigger.StacksMaxed(Status("bolt-charge")), Buff("amplified"))]);
+        var discharge = Element("discharge", ElementKind.Fragment,
+            [OnWhen(new Trigger.Damage(new DamageSource.AnyAbility()), new Condition.AtMax(Status("bolt-charge")),
+                new Outcome.RemoveBuff(Status("bolt-charge")), new Outcome.StrikeTarget(Status("bolt-charge"), HitOutcome.Damage))]);
+        var build = ValidateBuild([charger, maxed, discharge]);
+
+        var charged = ResolveOnce(build, Dodge);
+        var declared = ActionResolution.ResolveAction(build, charged.State, DeclareMax("bolt-charge"));
+        var thrown = ActionResolution.ResolveAction(build, declared.State, GrenadeKill);
+
+        Assert.False(declared.Blocked.IsSome());
+        Assert.Equal([new GameEvent.StacksMaxed(Status("bolt-charge"))], declared.Fired.Select(f => f.Trigger));
+        Assert.Contains(new ActiveBuff(Status("bolt-charge"), AtMax: true), declared.State.Buffs);
+        Assert.Single(thrown.Fired, f => f.Source.Value == "discharge");
+        Assert.DoesNotContain(thrown.State.Buffs, b => b.Status == Status("bolt-charge"));
+        Assert.Equal("Bolt Charge at max", build.Catalog.Glossary.DescribeAction(DeclareMax("bolt-charge"), build.Build));
+        Assert.Contains("Max Bolt Charge → Amplified (10s) [Maxed]", DescribeTrace(build, declared));
+    }
+
+    [Fact]
+    public void A_gain_keeps_a_declared_maximum()
+    {
+        var charger = Element("charger", ElementKind.Fragment, [On(new Trigger.AbilityCast(AbilityKind.ClassAbility), Buff("bolt-charge"))]);
+        var build = ValidateBuild([charger, GainWatcher]);
+
+        var charged = ResolveOnce(build, Dodge);
+        var declared = ActionResolution.ResolveAction(build, charged.State, DeclareMax("bolt-charge"));
+        var gained = ActionResolution.ResolveAction(build, declared.State, Dodge);
+
+        Assert.Equal([new ActiveBuff(Status("bolt-charge"), AtMax: true)], gained.State.Buffs);
+        Assert.Equal([new GameEvent.BuffGained(Status("bolt-charge"))], gained.Fired.Select(f => f.Trigger).OfType<GameEvent.BuffGained>());
+    }
+
+    [Fact]
+    public void A_declaration_that_does_not_hold_is_a_blocked_step_checked_in_order()
+    {
+        var charger = Element("charger", ElementKind.Fragment,
+            [On(new Trigger.AbilityCast(AbilityKind.ClassAbility), Buff("bolt-charge"), Buff("amplified"))]);
+        var build = ValidateBuild([charger]);
+        var charged = ResolveOnce(build, Dodge);
+        var declared = ActionResolution.ResolveAction(build, charged.State, DeclareMax("bolt-charge"));
+
+        string ReadBlocked(GameState state, PlayerAction action) =>
+            Assert.IsType<Optional<string>.Some>(ActionResolution.ResolveAction(build, state, action).Blocked).Value;
+
+        Assert.Equal("No buff 'void-charge' in the rules — nothing to declare.", ReadBlocked(charged.State, DeclareMax("void-charge")));
+        Assert.Equal("Jolt is a debuff — only a buff on you can be at max.", ReadBlocked(charged.State, DeclareMax("jolt")));
+        Assert.Equal("Amplified doesn't stack — end it with end:amplified.", ReadBlocked(charged.State, DeclareMax("amplified")));
+        Assert.Equal("Bolt Charge isn't active — nothing to declare at max.", ReadBlocked(ActionResolution.CreateInitialState(), DeclareMax("bolt-charge")));
+        Assert.Equal("Bolt Charge is already at max.", ReadBlocked(declared.State, DeclareMax("bolt-charge")));
+        Assert.Equal("Jolt isn't active — nothing ends.", ReadBlocked(charged.State, DeclareEnd("jolt")));
+        Assert.Equal("No buff or debuff 'void-charge' in the rules — nothing ends.", ReadBlocked(charged.State, DeclareEnd("void-charge")));
+    }
+
+    [Fact]
+    public void A_status_ends_only_when_a_rule_consumes_it_or_the_player_declares_it_ended()
+    {
+        var flow = Element("flow", ElementKind.Fragment,
+            [On(new Trigger.KillAny(new DamageSource.AnySource()), Buff("amplified"), new Outcome.DebuffTarget(Status("jolt"), Optional.None<Seconds>()))]);
+        var build = ValidateBuild([flow]);
+        var actions = ImmutableArray.Create(GrenadeKill, Dodge, Dodge, Dodge, DeclareEnd("amplified"), DeclareEnd("jolt"));
+
+        var resolutions = ActionResolution.ResolveSequence(build, ActionResolution.CreateInitialState(), actions);
+
+        Assert.Contains(resolutions[3].State.Buffs, b => b.Status == Status("amplified"));
+        Assert.Equal([Status("jolt")], resolutions[4].State.Target.Debuffs);
+        Assert.Empty(resolutions[4].State.Buffs);
+        Assert.Empty(resolutions[5].State.Target.Debuffs);
+        Assert.All(resolutions[4..], resolution => Assert.Empty(resolution.Fired));
+        Assert.Equal("Amplified ends", build.Catalog.Glossary.DescribeAction(DeclareEnd("amplified"), build.Build));
+    }
+
+    [Fact]
+    public void The_declarations_offered_are_the_ones_that_hold()
+    {
+        var charger = Element("charger", ElementKind.Fragment,
+            [On(new Trigger.AbilityCast(AbilityKind.ClassAbility), Buff("bolt-charge"), Buff("amplified"), new Outcome.DebuffTarget(Status("jolt"), Optional.None<Seconds>()))]);
+        var build = ValidateBuild([charger]);
+
+        var charged = ResolveOnce(build, Dodge);
+        var declared = ActionResolution.ResolveAction(build, charged.State, DeclareMax("bolt-charge"));
+
+        Assert.Empty(ActionResolution.ListDeclarations(build, ActionResolution.CreateInitialState()));
+        Assert.Equal(
+            ["max:bolt-charge", "end:bolt-charge", "end:amplified", "end:jolt"],
+            ActionResolution.ListDeclarations(build, charged.State).Select(d => ((PlayerAction)new PlayerAction.Declare(d)).ToActionToken()));
+        Assert.DoesNotContain(DeclareMax("bolt-charge"), declared.NowAvailable);
+        Assert.Contains(DeclareEnd("bolt-charge"), declared.NowAvailable);
     }
 
     [Fact]
@@ -84,7 +184,7 @@ public class ActionResolutionTests
         var yielded = resolution.Fired.Single(f => f.Source.Value == "yielder");
         Assert.Equal(Optional.Some("Giver"), yielded.NotStackedWith);
         Assert.Empty(yielded.Outcomes);
-        Assert.Equal(1, resolution.State.Buffs.Single(b => b.Status == Status("bolt-charge")).Stacks.Value);
+        Assert.Equal([new ActiveBuff(Status("bolt-charge"), AtMax: false)], resolution.State.Buffs);
         Assert.Contains("+1 Bolt Charge [Giver] + doesn't stack with Giver [Yielder]", DescribeTrace(build, resolution));
     }
 
@@ -98,7 +198,7 @@ public class ActionResolutionTests
         var fired = resolution.Fired.Single(f => f.Source.Value == "yielder");
         Assert.False(fired.NotStackedWith.IsSome());
         Assert.Single(fired.Outcomes);
-        Assert.Equal(1, resolution.State.Buffs.Single(b => b.Status == Status("bolt-charge")).Stacks.Value);
+        Assert.Contains(resolution.State.Buffs, b => b.Status == Status("bolt-charge"));
     }
 
     [Fact]
@@ -143,7 +243,7 @@ public class ActionResolutionTests
     }
 
     [Fact]
-    public void Reaching_max_stacks_cascades_into_StacksMaxed()
+    public void A_grant_never_raises_StacksMaxed_however_big_it_is()
     {
         var source = Element("source", ElementKind.Fragment,
             [On(new Trigger.Damage(new DamageSource.AbilityOf(AbilityKind.Grenade)), Buff("bolt-charge", 3))]);
@@ -153,9 +253,8 @@ public class ActionResolutionTests
 
         var resolution = ResolveOnce(build, GrenadeKill);
 
-        var fired = Assert.Single(resolution.Fired, f => f.Source.Value == "strike");
-        Assert.Equal(1, fired.Depth);
-        Assert.DoesNotContain(resolution.State.Buffs, b => b.Status == Status("bolt-charge"));
+        Assert.DoesNotContain(resolution.Fired, f => f.Source.Value == "strike");
+        Assert.Contains(resolution.State.Buffs, b => b.Status == Status("bolt-charge"));
     }
 
     [Fact]
@@ -171,10 +270,12 @@ public class ActionResolutionTests
         var pickup = ActionResolution.ResolveAction(build, kill.State, new PlayerAction.CollectPickups(Pickup("orb-of-power")));
 
         Assert.Contains(kill.State.Buffs, b => b.Status == Status("amplified"));
-        Assert.Equal(2, kill.State.Pickups.Single().Count);
+        Assert.Equal([Pickup("orb-of-power")], kill.State.Pickups);
+        Assert.Contains("2× Orb of Power [Spawner]", DescribeTrace(build, kill));
         Assert.Contains(new PlayerAction.CollectPickups(Pickup("orb-of-power")), kill.NowAvailable);
         Assert.Empty(pickup.State.Pickups);
-        Assert.Equal(2, pickup.State.Buffs.Single(b => b.Status == Status("bolt-charge")).Stacks.Value);
+        Assert.Single(pickup.Fired, f => f.Source.Value == "collector");
+        Assert.Contains(pickup.State.Buffs, b => b.Status == Status("bolt-charge"));
     }
 
     [Fact]
@@ -224,7 +325,7 @@ public class ActionResolutionTests
     }
 
     [Fact]
-    public void Converting_stacks_consumes_them_and_refunds_per_stack_times_stacks()
+    public void Converting_stacks_consumes_the_buff_and_shows_the_energy_per_stack_as_a_fact()
     {
         var charger = Element("charger", ElementKind.Fragment, [On(new Trigger.AbilityCast(AbilityKind.ClassAbility), Buff("bolt-charge", 2))]);
         var kickstart = Element("kickstart", ElementKind.ArmorMod,
@@ -233,11 +334,14 @@ public class ActionResolutionTests
 
         var charged = ResolveOnce(build, new PlayerAction.UseClassAbility());
         var thrown = ActionResolution.ResolveAction(build, charged.State, GrenadeKill);
+        var again = ActionResolution.ResolveAction(build, thrown.State, GrenadeKill);
 
         var applied = thrown.Fired.Single(f => f.Source.Value == "kickstart").Outcomes.Single();
         Assert.DoesNotContain(thrown.State.Buffs, b => b.Status == Status("bolt-charge"));
         Assert.Equal(Certainty.Approximate, applied.Certainty);
-        Assert.Equal(Optional.Some("×2 stacks"), applied.Caveat);
+        Assert.False(applied.Caveat.IsSome());
+        Assert.Contains("spends Bolt Charge → +~10% grenade energy per stack [Kickstart]", DescribeTrace(build, thrown));
+        Assert.Equal(Optional.Some("nothing to consume"), again.Fired.Single(f => f.Source.Value == "kickstart").Outcomes.Single().Caveat);
     }
 
     [Fact]
@@ -253,7 +357,7 @@ public class ActionResolutionTests
     }
 
     [Fact]
-    public void Conditional_passive_adds_extra_stacks_only_while_its_condition_holds()
+    public void A_conditional_passive_names_its_extra_stacks_on_the_grant_while_its_condition_holds()
     {
         var frequency = Element("frequency", ElementKind.Fragment,
             [On(new Trigger.AbilityCast(AbilityKind.ClassAbility), Buff("amplified"))],
@@ -265,24 +369,9 @@ public class ActionResolutionTests
         var plain = ResolveOnce(build, GrenadeKill);
         var amplified = ActionResolution.ResolveAction(build, ResolveOnce(build, new PlayerAction.UseClassAbility()).State, GrenadeKill);
 
-        Assert.Equal(1, plain.State.Buffs.Single(b => b.Status == Status("bolt-charge")).Stacks.Value);
-        Assert.Equal(2, amplified.State.Buffs.Single(b => b.Status == Status("bolt-charge")).Stacks.Value);
-    }
-
-    [Fact]
-    public void Waiting_expires_timed_statuses()
-    {
-        var flow = Element("flow", ElementKind.Fragment,
-            [On(new Trigger.KillAny(new DamageSource.AnySource()), Buff("amplified"), new Outcome.DebuffTarget(Status("jolt"), Optional.None<Seconds>()))]);
-        var build = ValidateBuild([flow]);
-
-        var kill = ResolveOnce(build, GrenadeKill);
-        var short_ = ActionResolution.ResolveAction(build, kill.State, new PlayerAction.Wait(Seconds.From(5m)));
-        var long_ = ActionResolution.ResolveAction(build, short_.State, new PlayerAction.Wait(Seconds.From(6m)));
-
-        Assert.Contains(short_.State.Buffs, b => b.Status == Status("amplified"));
-        Assert.Empty(short_.State.Target.Debuffs);
-        Assert.Empty(long_.State.Buffs);
+        Assert.False(plain.Fired.Single(f => f.Source.Value == "source").Outcomes.Single().Caveat.IsSome());
+        Assert.Equal(Optional.Some("+1 from Frequency"), amplified.Fired.Single(f => f.Source.Value == "source").Outcomes.Single().Caveat);
+        Assert.Equal(plain.State.Buffs, amplified.State.Buffs.Where(b => b.Status == Status("bolt-charge")).ToImmutableArray());
     }
 
     [Fact]
@@ -296,13 +385,13 @@ public class ActionResolutionTests
 
         Assert.All(resolutions, resolution => Assert.False(resolution.Blocked.IsSome()));
         Assert.All(resolutions, resolution => Assert.Empty(resolution.Notes));
-        Assert.Equal(3, resolutions[^1].State.Buffs.Single(b => b.Status == Status("bolt-charge")).Stacks.Value);
+        Assert.Contains(resolutions[^1].State.Buffs, b => b.Status == Status("bolt-charge"));
         Assert.Contains(GrenadeKill, resolutions[^1].NowAvailable);
         Assert.Contains(new PlayerAction.UseClassAbility(), resolutions[^1].NowAvailable);
     }
 
     [Fact]
-    public void Only_a_missing_pickup_or_an_empty_weapon_slot_blocks_a_step()
+    public void Only_a_missing_pickup_an_empty_weapon_slot_or_a_declaration_that_does_not_hold_blocks_a_step()
     {
         var build = ValidateBuild([]);
 
@@ -369,13 +458,13 @@ public class ActionResolutionTests
             [On(new Trigger.Damage(new DamageSource.AbilityOf(AbilityKind.Grenade)), new Outcome.DebuffTarget(Status("jolt"), Optional.None<Seconds>()))]);
         var flow = Element("flow", ElementKind.Fragment,
             [On(new Trigger.KillDebuffed(new DamageSource.AnySource(), [Status("jolt")]), Buff("bolt-charge"))]);
-        var build = ValidateBuild([shock, flow]);
+        var build = ValidateBuild([shock, flow, GainWatcher]);
 
         var resolution = ResolveOnce(build, new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Kill, TargetCount.From(3)));
 
         Assert.Equal(3, resolution.Fired.Count(f => f.Source.Value == "shock"));
         Assert.Equal(3, resolution.Fired.Count(f => f.Source.Value == "flow"));
-        Assert.Equal(3, resolution.State.Buffs.Single(b => b.Status == Status("bolt-charge")).Stacks.Value);
+        Assert.Equal(3, resolution.Fired.Count(f => f.Trigger is GameEvent.BuffGained));
     }
 
     [Fact]
@@ -395,7 +484,7 @@ public class ActionResolutionTests
         Assert.DoesNotContain(grenade.Fired, f => f.Source.Value == "one-for-all");   // not a weapon
         Assert.Equal("Hit 3+ enemies with weapon", build.Catalog.Glossary.DescribeTrigger(OneForAll.Rules[0].On));
         Assert.Contains(
-            "  Test Rifle hit 3 enemies → Amplified [One For All]",
+            "  Test Rifle hit 3 enemies → Amplified (10s) [One For All]",
             TraceRenderer.RenderResolution(build, three, new TraceOptions(false, false, false)).Select(line => line.ToPlainText()));
     }
 
@@ -413,7 +502,7 @@ public class ActionResolutionTests
         Assert.Empty(hitTwo.Fired);
         Assert.Empty(killOne.Fired);
         Assert.Single(killTwo.Fired);
-        Assert.Equal(1, killTwo.State.CountPickups(Pickup("orb-of-power")));
+        Assert.Equal([Pickup("orb-of-power")], killTwo.State.Pickups);
     }
 
     [Fact]

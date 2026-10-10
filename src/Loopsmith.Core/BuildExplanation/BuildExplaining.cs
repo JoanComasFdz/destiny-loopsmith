@@ -33,7 +33,7 @@ public static class BuildExplaining
         var ruleItems = build.Equipped
             .SelectMany(equipped => equipped.Element.Rules.Select(rule => (equipped.Element, equipped.Count, Rule: rule)))
             .Select((x, order) => (
-                Heading: glossary.DescribeTrigger(x.Rule.On),
+                Heading: DescribeHeading(glossary, x.Rule.On),
                 Rank: RankTrigger(x.Rule.On),
                 Order: order,
                 Affinity: ReadTriggerAffinity(build, x.Rule.On),
@@ -115,6 +115,12 @@ public static class BuildExplaining
             .. issues,
         ];
     }
+
+    /// <summary>The trigger; a stacking buff's max also names its cap from the glossary ("Max Bolt Charge (x10)"), a fact.</summary>
+    private static string DescribeHeading(KeywordGlossary glossary, Trigger trigger) =>
+        trigger is Trigger.StacksMaxed maxed && glossary.Statuses.TryGetValue(maxed.Status, out var definition)
+            ? glossary.DescribeTrigger(trigger) + definition.MaxStacks.Match(cap => $" (x{cap.Value.Value})", _ => "")
+            : glossary.DescribeTrigger(trigger);
 
     /// <summary>The rule's guards, plus "doesn't stack with X" for each equipped element it gives way to.</summary>
     private static Optional<string> DescribeRuleCondition(ValidatedBuild build, Rule rule)
@@ -203,5 +209,6 @@ public static class BuildExplaining
         condition.Match(
             hasBuff => glossary.ReadStatusAffinity(hasBuff.Status),
             lacksBuff => glossary.ReadStatusAffinity(lacksBuff.Status),
-            targetHas => glossary.ReadStatusAffinity(targetHas.Status));
+            targetHas => glossary.ReadStatusAffinity(targetHas.Status),
+            atMax => glossary.ReadStatusAffinity(atMax.Status));
 }

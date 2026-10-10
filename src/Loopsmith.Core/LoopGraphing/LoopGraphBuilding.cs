@@ -8,11 +8,14 @@ namespace Loopsmith.Core.LoopGraphing;
 
 /// <summary>
 /// Builds the static cause → effect graph of a build: nodes are triggers, ability energy and player
-/// actions; an edge exists when an outcome can produce an event that fires another rule.
+/// actions; an edge exists when an outcome can produce an event that fires another rule. A grant of a
+/// stacking buff leads to "Gain X" only; reaching its max is the player's call, one declared edge
+/// "Gain X → Max X" (ADRs D3).
 /// </summary>
 public static class LoopGraphBuilding
 {
     private const string You = "you";
+    private const string YouDeclare = "you declare";
 
     private sealed record RawEdge(string From, string To, string Source, EdgeKind Kind);
 
@@ -25,9 +28,20 @@ public static class LoopGraphBuilding
         var rules = build.Equipped
             .SelectMany(e => e.Element.Rules.Select(rule => (e.Element, Rule: rule, Key: ToTriggerKey(glossary, rule.On))))
             .ToImmutableArray();
-        var triggerNodes = rules
-            .DistinctBy(r => r.Key)
-            .Select(r => new GraphNode(r.Key, glossary.DescribeTrigger(r.Rule.On), NodeKind.Trigger, ReadTriggerAffinity(build, r.Rule.On)))
+        var maxedStatuses = rules
+            .SelectMany(r => ListMaxedStatuses(r.Rule))
+            .Where(glossary.IsStacking)
+            .Distinct()
+            .ToImmutableArray();
+        // A buff some rule reacts to at its max is gained, then declared at max: both are nodes, even with no rule on the gain.
+        var triggers = rules
+            .Select(r => r.Rule.On)
+            .Concat(maxedStatuses.SelectMany(ListDeclaredMaxTriggers))
+            .Select(on => (Key: ToTriggerKey(glossary, on), On: on))
+            .DistinctBy(t => t.Key)
+            .ToImmutableArray();
+        var triggerNodes = triggers
+            .Select(t => new GraphNode(t.Key, glossary.DescribeTrigger(t.On), NodeKind.Trigger, ReadTriggerAffinity(build, t.On)))
             .ToImmutableArray();
         var appliedDebuffs = rules
             .SelectMany(r => r.Rule.Then.OfType<Outcome.DebuffTarget>().Select(d => d.Status))
@@ -43,7 +57,7 @@ public static class LoopGraphBuilding
 
         // Which trigger nodes does a concrete event reach?
         IEnumerable<string> Reach(GameEvent gameEvent) =>
-            rules.Where(r => r.Rule.On.IsTriggeredBy(gameEvent)).Select(r => r.Key).Distinct();
+            triggers.Where(t => t.On.IsTriggeredBy(gameEvent)).Select(t => t.Key).Distinct();
 
         var playerEdges = abilityKinds
             .SelectMany(kind =>
@@ -60,13 +74,22 @@ public static class LoopGraphBuilding
 
         var ruleEdges = rules
             .SelectMany(r => r.Rule.Then.SelectMany(outcome =>
-                ListOutcomeEdges(build, r.Key, DescribeEdgeSource(glossary, r.Element, r.Rule), outcome, appliedDebuffs, Reach, rules.Select(x => (x.Key, x.Rule.On)))
+                ListOutcomeEdges(build, r.Key, DescribeEdgeSource(glossary, r.Element, r.Rule), outcome, appliedDebuffs, Reach, triggers)
                     .Select(edge => new RuleEdge(edge, r.Element.Id, r.Rule.DoesNotStackWith))))
             .ToImmutableArray();
         var triggeredElements = rules.Select(r => (r.Key, r.Element.Id)).ToImmutableHashSet();
         var routed = RouteThroughStackingFilters(ruleEdges, triggeredElements);
 
-        var edges = playerEdges.Concat(routed.Edges)
+        // Reaching the max is the player's call (ADRs D3): one declared link per buff, never a grant's.
+        var declaredEdges = maxedStatuses.Select(status => new RawEdge(
+            ToTriggerKey(glossary, new Trigger.BuffGained(status)), ToTriggerKey(glossary, new Trigger.StacksMaxed(status)), YouDeclare, EdgeKind.Declared));
+        // A rule guarded "at max" leads from its own trigger ("while Bolt Charge at max"); the declared max is what it needs.
+        var guardEdges = rules.SelectMany(r => r.Rule.When
+            .OfType<Condition.AtMax>()
+            .Where(atMax => glossary.IsStacking(atMax.Status))
+            .Select(atMax => new RawEdge(ToTriggerKey(glossary, new Trigger.StacksMaxed(atMax.Status)), r.Key, r.Element.Name, EdgeKind.Enables)));
+
+        var edges = playerEdges.Concat(routed.Edges).Concat(declaredEdges).Concat(guardEdges)
             .GroupBy(e => (e.From, e.To, e.Kind))
             .Select(g => new GraphEdge(g.Key.From, g.Key.To, g.Select(e => e.Source).Distinct().ToImmutableArray(), g.Key.Kind))
             .ToImmutableArray();
@@ -138,7 +161,7 @@ public static class LoopGraphBuilding
         return outcome.Match(
             grant => LinkToEnergy(grant.To),
             convert => LinkToEnergy(convert.To),
-            apply => LinkToTriggers(ListBuffEvents(glossary, apply.Status)),
+            apply => LinkToTriggers([new GameEvent.BuffGained(apply.Status)]),   // a grant is a gain, never the max (ADRs D3)
             _ => [],
             debuff => triggers
                 .Where(t => t.On.ListRequiredTargetStatuses().Contains(debuff.Status))
@@ -171,13 +194,25 @@ public static class LoopGraphBuilding
         + (rule.When.IsEmpty ? "" : $" ({glossary.DescribeConditions(rule.When)})")
         + (rule.Likelihood == Likelihood.Chance ? " (chance)" : "");
 
-    private static IEnumerable<GameEvent> ListBuffEvents(KeywordGlossary glossary, StatusId status)
+    /// <summary>The buffs a rule reacts to at their max: its <c>stacksMaxed</c> trigger and its <c>atMax</c> guards.</summary>
+    private static IEnumerable<StatusId> ListMaxedStatuses(Rule rule)
     {
-        yield return new GameEvent.BuffGained(status, StackCount.From(1));
-        if (glossary.CanReachMaxStacks(status))
+        if (rule.On is Trigger.StacksMaxed maxed)
         {
-            yield return new GameEvent.StacksMaxed(status);
+            yield return maxed.Status;
         }
+
+        foreach (var atMax in rule.When.OfType<Condition.AtMax>())
+        {
+            yield return atMax.Status;
+        }
+    }
+
+    /// <summary>"Gain X" and "Max X": the two ends of the link the player declares.</summary>
+    private static IEnumerable<Trigger> ListDeclaredMaxTriggers(StatusId status)
+    {
+        yield return new Trigger.BuffGained(status);
+        yield return new Trigger.StacksMaxed(status);
     }
 
     private static IEnumerable<GameEvent> ListCastEvents(AbilityKind kind, DamageType subclass, ImmutableArray<StatusId> debuffs)

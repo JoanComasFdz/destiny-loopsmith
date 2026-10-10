@@ -17,7 +17,7 @@ public sealed record TriggerButton(PlayerAction Action, string Token, string Lab
 /// A row of the palette: one trigger, or the hit / kill pair of the same ability or weapon. <see cref="Key"/> names
 /// the row ("cast:Grenade", "fire:Kinetic", "class", …) and stays the same from one step to the next.
 /// <see cref="Targets"/> is how many enemies the row's actions hit or kill — none for a row without targets (class
-/// ability, pickups, wait).
+/// ability, pickups, declared states).
 /// </summary>
 public sealed record TriggerChoice(string Key, string Title, Optional<TargetCount> Targets, ImmutableArray<TriggerButton> Buttons);
 
@@ -80,7 +80,7 @@ public static class TriggerPaletteShaping
             TriggerGroup.Ability => "Abilities",
             TriggerGroup.Weapon => "Weapons",
             TriggerGroup.Pickup => "Pickups",
-            _ => "Time",
+            _ => "States you declare",
         };
 
     /// <summary>Hit and kill of the same ability or weapon share a key; everything else stands alone.</summary>
@@ -90,7 +90,7 @@ public static class TriggerPaletteShaping
             _ => "class",
             fire => $"fire:{fire.Slot}",
             collect => $"pickup:{collect.Pickup}",
-            wait => $"wait:{wait.Duration}");
+            declare => ((PlayerAction)declare).ToActionToken());
 
     private static int ReadHitOrder(PlayerAction action) =>
         action.Match(

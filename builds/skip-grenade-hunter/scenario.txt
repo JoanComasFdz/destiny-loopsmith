@@ -1,9 +1,10 @@
 # Skip Grenade Hunter — one engagement, as the video plays it.
-# Tokens: grenade|melee|super[:hit|kill[:N]] class kinetic|energy|power[:hit|kill[:N]] pickup:<id> wait[:<s>]  (N = enemies, default 1)
+# Tokens: grenade|melee|super[:hit|kill[:N]] class[:air] kinetic|energy|power[:hit|kill[:N]] pickup:<id> max:<status> end:<status>  (N = enemies, default 1)
 class                 # Gambler's Dodge: arms Slice + Reaper, Bomber refunds grenade
 grenade:kill          # skip grenade: Spark of Shock jolts, Shinobu's Bolt Charge, jolted kill → Amplified + Dielectric's Bolt Charge + an Ionic Trace
 kinetic:kill          # Festival Flight: Slice severs, Reaper's orb, To Shreds' Woven Mail
 pickup:orb-of-power   # Armor Charge + Unraveling Rounds
 melee:kill            # Tempest Strike jolts, Impact Induction, Combination Blow
-grenade:kill          # Grenade Kickstart spends Armor Charge; the loop keeps feeding itself
+max:bolt-charge       # Bolt Charge at x10: Shinobu's Vow (New Tricks) and Flashover
+grenade:kill          # Grenade Kickstart spends Armor Charge, New Tricks is spent, the hit discharges Bolt Charge
 energy:kill           # Arc weapon: Spark of Discharge, Harmonic Siphon

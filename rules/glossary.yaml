@@ -1,9 +1,11 @@
 # Keyword vocabulary (docs/rule-format.md § Glossary).
 #
-# Engine semantics: a status WITHOUT maxStacks does not stack (re-applying only refreshes it, stacks
-# stay 1), so every stacking status carries maxStacks: bolt-charge, armor-charge, combination-blow,
-# slice. Durations appear only where a source states them; omitted duration = the status never
-# expires on its own in v1 (no source gives a number; "?" is never 0).
+# Semantics: maxStacks (>= 2) means the status stacks, up to that cap (a fact shown with the buff,
+# "up to x10"), and can be declared at max (`max:<status>`, ADRs D3). A status without it doesn't
+# stack: applying it while it is active changes nothing. The stacking statuses are bolt-charge,
+# armor-charge, combination-blow and slice. A duration is a fact shown on the outcome, given only
+# where a source states it. A status ends when a rule removes or consumes it, or when the player
+# declares it ended (`end:<status>`).
 # Sources: the Destiny Data Compendium snapshot of 2026-10-09 ("compendium/2026-10-09/<Tab>#<row>"
 # below; it has glossary rows for the Arc and Strand keywords) and Clarity 2.0625, which has no
 # status entries and only mentions them inside other entries.
@@ -20,15 +22,17 @@ statuses:
   # says 15 s). The artifact perk Amped Up (Artifact Perks#109, not in the skip-grenade build) raises
   # it to 20 s. Amplified's own effects (Arc#4) have no keyword element: the intrinsic Arc-kill counter
   # that grants it (25% minor, 50% elite or Guardian, 100% miniboss and up, kills within 6 s of each
-  # other) counts across actions, which v1 can't (and a keyword applies to every build, not just
-  # Arc); +50 Mobility, longer slides and Speed Booster need movement; +40 Handling needs an "all
-  # weapons" archetype; the 15% damage resistance against combatants is expressible but changes no
-  # loop. In this build Flow State grants Amplified on every jolted kill anyway.
+  # other) is progress the game doesn't show as a stacking status, so it could only be a chance rule
+  # (ADRs D8), and a keyword applies to every build, not just Arc; +50 Mobility, longer slides and
+  # Speed Booster need movement; +40 Handling needs an "all weapons" archetype; the 15% damage
+  # resistance against combatants is expressible but changes no loop. In this build Flow State
+  # grants Amplified on every jolted kill anyway.
   - { id: amplified, name: Amplified, kind: buff, affinity: arc, duration: 15s }
 
   # Base maximum 3: compendium/2026-10-09/Game Mechanics#94 (Charged Up raises it to 4|5|6; Clarity
-  # 2577472338 agrees). Decay (1 stack every 10 s while a passive mod is equipped, same row) is not
-  # modelled.
+  # 2577472338 agrees). Its decay (1 stack every 10 s while a passive mod is equipped, same row) is
+  # a fact of the game: Armor Charge ends when a rule consumes it (Grenade Kickstart) or the player
+  # declares it ended.
   - { id: armor-charge, name: Armor Charge, kind: buff, affinity: neutral, maxStacks: 3 }
 
   # Duration 10 s: compendium/2026-10-09/Strand#7 (generic Woven Mail; To Shreds' Artifact Perks#51
@@ -50,7 +54,7 @@ statuses:
 
   # Slice weapon perk window: 8 s (9 s enhanced), ends after 5 severs. compendium/2026-10-09/
   # Weapon Perks#198 (5 severing hits, each within 8 s of the last); Clarity 923806249 agrees (the
-  # buff ends at 5 stacks). See weapons/perks.yaml for the v1 count.
+  # buff ends at 5 stacks). In weapons/perks.yaml the player declares the 5 hits done (`max:slice`).
   - { id: slice, name: Slice, kind: buff, affinity: strand, maxStacks: 5, duration: 8s }
 
   # Reaper armed: the next weapon kill within 10 s of a class ability use (compendium/2026-10-09/
@@ -65,10 +69,10 @@ statuses:
   #  - unravel: no generic duration (Strand#10: it depends on the source);
   #  - blind 10 s against combatants (3 s on Guardians): Arc#7.
   # Not encoded: what these debuffs do to the enemy (Sever cuts its damage by 40% [15%], Strand#8;
-  # Blind stops it attacking, Arc#7), since v1 has no enemy behaviour; and Unravel's threads
-  # (Strand#10: after taking 40 damage an unraveled enemy sends out 3 threads of 26 [4] damage that
-  # spread Unravel, 1.2 s cooldown): no rule reacts to thread damage and v1's pack is already
-  # unraveled, so they would only add trace lines.
+  # Blind stops it attacking, Arc#7), since the rules describe no enemy behaviour; and Unravel's
+  # threads (Strand#10: after taking 40 damage an unraveled enemy sends out 3 threads of 26 [4]
+  # damage that spread Unravel, 1.2 s cooldown): no rule reacts to thread damage and the pack they
+  # would spread to is the one already unraveled (ADRs D7), so they would only add trace lines.
   - { id: jolt, name: Jolt, kind: debuff, affinity: arc, duration: 10s }
   - { id: sever, name: Sever, kind: debuff, affinity: strand, duration: 10s }
   - { id: unravel, name: Unravel, kind: debuff, affinity: strand }

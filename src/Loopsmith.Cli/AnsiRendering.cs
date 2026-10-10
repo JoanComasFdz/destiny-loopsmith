@@ -2,7 +2,7 @@ using Loopsmith.Core.Phrasing;
 
 namespace Loopsmith.Cli;
 
-/// <summary>Pure: styled lines → terminal text. Palette from the design proposal.</summary>
+/// <summary>Pure: styled lines → terminal text, one colour per element affinity and tone.</summary>
 public static class AnsiRendering
 {
     private const string Reset = "\u001b[0m";

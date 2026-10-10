@@ -1,9 +1,8 @@
 # Luminopotent armor set (Solo/Fireteam Ops). Clarity has no armor-set entries; both bonuses are in
 # the Compendium snapshot of 2026-10-09 (Armor Perks tab).
 elements:
-  # Previously authored from the user's note ("Luminopotent Mask 2 piece bonus": handling, reload
-  # and vent while Amplified). The Compendium names it Ionic Overclock and lists only Handling and
-  # Reload Speed, both "+?"; vent is the note's alone and is not encoded (see discrepancies.md).
+  # The Compendium names it Ionic Overclock and lists only Handling and Reload Speed, both "+?"; the
+  # note's vent is not encoded (see discrepancies.md).
   - id: luminopotent-2pc
     name: Ionic Overclock
     kind: armorSetBonus
@@ -23,7 +22,6 @@ elements:
 
   # The note files this under "Amplified ->"; the bonus itself has no Amplified condition and no
   # cooldown (Compendium, and the creator found none in testing) -> encoded unconditional.
-  # Previously a creator claim: "Final blows with Jolt or against Jolted combatants create ionic traces."
   - id: luminopotent-4pc
     name: Shock and Clear
     kind: armorSetBonus
@@ -31,7 +29,8 @@ elements:
     description: "Luminopotent 4-piece bonus: a Jolt kill or a kill of a Jolted enemy creates an Ionic Trace (no cooldown stated; none in the creator's testing)."
     source: "compendium/2026-10-09/Armor Perks#58"
     rules:
-      # "with Jolt" kills are covered too: Jolt only chains off a jolted pack, and v1's target is that pack.
+      # "with Jolt" kills are covered too: Jolt only chains off a jolted pack, and the target is
+      # that pack (ADRs D7).
       - on: { kill: { via: any, targetHas: [jolt] } }
         then:
           - { spawn: ionic-trace }

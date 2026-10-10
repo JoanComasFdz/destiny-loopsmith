@@ -95,7 +95,7 @@ public static class PlaySessions
                 [new Effect.WriteLines([StyledText.ToLine(0, "Description set.".ToSpan(Tone.Muted))])]),
             "a" or "analyse" or "analyze" => Answer(session,
             [
-                new Effect.WriteLines(LoopDesigning.RenderLoopReport(LoopDesigning.AnalyzeDesign(session.Design, LoopDesigning.DefaultMaxCycles))),
+                new Effect.WriteLines(LoopDesigning.RenderLoopReport(LoopDesigning.AnalyzeDesign(session.Design))),
                 new Effect.WriteLines(LoopReportRendering.RenderLoopDesign(session.Design.Design)),
             ]),
             "e" or "explain" => Answer(session, CommandShells.PlanExplain(session.Design.Build, ExplanationStyle.Note)),

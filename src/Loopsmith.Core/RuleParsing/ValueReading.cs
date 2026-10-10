@@ -45,9 +45,13 @@ internal static class ValueReading
     internal static Result<int, Errors> ReadNonNegativeInteger(YamlValue value) =>
         value.ParseWith(text => ParseWholeNumber(text, minimum: 0));
 
-    /// <summary>A stack count of at least one (<c>stacks</c>, <c>maxStacks</c>, <c>extra</c>).</summary>
+    /// <summary>A stack count of at least one (<c>stacks</c>, <c>extra</c>).</summary>
     internal static Result<StackCount, Errors> ReadStackCount(YamlValue value) =>
         value.ParseWith(text => ParseWholeNumber(text, minimum: 1).Bind(count => StackCount.TryFrom(count).ToResult()));
+
+    /// <summary>A stacking status's cap, at least 2 (<c>maxStacks</c>): a status that doesn't stack has none.</summary>
+    internal static Result<StackCount, Errors> ReadMaxStacks(YamlValue value) =>
+        value.ParseWith(text => ParseWholeNumber(text, minimum: 2).Bind(count => StackCount.TryFrom(count).ToResult()));
 
     /// <summary>A number of enemies, 1..20 (<c>atLeast</c>).</summary>
     internal static Result<TargetCount, Errors> ReadTargetCount(YamlValue value) =>

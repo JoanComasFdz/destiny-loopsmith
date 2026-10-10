@@ -1,111 +1,90 @@
-@* A LoopReport (LoopDesigning.AnalyzeDesign): the loop played back to back, cycle after cycle.
-   Every figure comes from the core (LoopReportArithmetic, Phrasing); this only lays it out. *@
-@{
-    var repeatable = Report.IsRepeatable();
-    var steady = Report.FindSteadyCycle();
-    var block = ReportReading.FindFirstBlock(Report);
-    var sources = ReportReading.ListTopSources(Report, 10);
-    var topFired = sources.IsEmpty ? 0 : sources.Max(source => source.Fired);
-}
+@* A LoopReport (LoopDesigning.AnalyzeDesign): the loop by its order of triggers — the verdict, then each step of the
+   repeating pass with what it needs and which step provided it, what it sets off and what is wasted there, and where
+   the first pass from a fresh spawn differs. Every word comes from the core's Phrasing; this only lays it out. *@
 <div class="analysis">
     <div class="analysis-head">
         <div>
             <div class="analysis-name">@Report.LoopName</div>
-            <div class="muted">@Report.BuildName · @Report.StepCount step@(Report.StepCount == 1 ? "" : "s") per cycle · up to @Report.MaxCycles cycles</div>
+            <div class="muted">@Report.BuildName · @Report.StepLabels.Length step@(Report.StepLabels.Length == 1 ? "" : "s")</div>
         </div>
-        <span class="badge big @(repeatable ? "ok" : "warn")" data-testid="repeatable">@ReportReading.DescribeRepeatability(Report)</span>
+        <span class="badge big @(Report.Verdict is LoopVerdict.Repeats ? "ok" : "warn")" data-testid="verdict">@Report.Verdict.DescribeShortVerdict()</span>
     </div>
 
-    @if (Report.Cycles.IsEmpty)
+    @if (Report.Verdict is LoopVerdict.NoSteps)
     {
         <p class="notice">Add steps to the loop, then analyze it.</p>
     }
-
-    @if (block is Optional<CycleBlock>.Some blocked)
+    else
     {
-        <p class="notice warn" data-testid="breaks">
-            Breaks in cycle @blocked.Value.Cycle at step #@(blocked.Value.Step.StepIndex + 1)
-            <code class="token">@blocked.Value.Step.Action.ToActionToken()</code>: @blocked.Value.Step.Reason
-        </p>
-    }
+        <p class="analysis-order" data-testid="order">@string.Join(" → ", Report.StepLabels)</p>
+        <p class="notice @(Report.Verdict is LoopVerdict.Breaks ? "warn" : "")" data-testid="verdict-text">@Report.Verdict.DescribeVerdict()</p>
 
-    @if (steady is Optional<CycleRun>.Some steadyCycle)
-    {
-        <h3 class="section-label">
-            Wasted per cycle
-            <span class="label-note">steady state = cycle @steadyCycle.Value.Number · rules that gave nothing because they don't stack</span>
-        </h3>
-        @if (Report.Wasted.IsEmpty)
+        <ol class="analysis-steps" data-testid="steps">
+            @foreach (var step in Report.Steps)
+            {
+                <li class="analysis-step @(step.Blocked.IsSome() ? "blocked" : "")">
+                    <div class="analysis-step-head"><span class="muted">#@(step.StepIndex + 1)</span> <strong>@step.Label</strong></div>
+                    @if (step.Blocked is Optional<string>.Some blocked)
+                    {
+                        <div class="analysis-field warn"><span class="field-label">blocked</span><span>@blocked.Value</span></div>
+                    }
+                    @if (!step.Needs.IsEmpty)
+                    {
+                        <div class="analysis-field" data-testid="needs">
+                            <span class="field-label">needs</span>
+                            <span class="chips">
+                                @foreach (var need in step.Needs)
+                                {
+                                    <span class="chip @ToneStyling.ToAffinityClass(need.Affinity)">@need.DescribeNeed()</span>
+                                }
+                            </span>
+                        </div>
+                    }
+                    @if (!step.SetsOff.IsEmpty)
+                    {
+                        <div class="analysis-field">
+                            <span class="field-label">sets off</span>
+                            <span class="chips">
+                                @foreach (var element in step.SetsOff)
+                                {
+                                    <span class="chip @ToneStyling.ToAffinityClass(element.Affinity)">@element.DescribeMention()</span>
+                                }
+                            </span>
+                        </div>
+                    }
+                    @foreach (var wasted in step.Wasted)
+                    {
+                        <div class="analysis-field warn" data-testid="wasted"><span class="field-label">wasted</span><span>@wasted.DescribeWasted()</span></div>
+                    }
+                </li>
+            }
+        </ol>
+
+        @if (!Report.FirstPassDifferences.IsEmpty)
         {
-            <p class="muted" data-testid="wasted">Nothing wasted — everything that fired stacked.</p>
-        }
-        else
-        {
-            <ul class="tallies wasted" data-testid="wasted">
-                @foreach (var wasted in Report.Wasted)
+            <h3 class="section-label">First pass <span class="label-note">from a fresh spawn, where it differs</span></h3>
+            <ul class="analysis-steps first-pass" data-testid="first-pass">
+                @foreach (var difference in Report.FirstPassDifferences)
                 {
-                    <li><span>@wasted.DescribeWasted()</span><strong>×@wasted.Count</strong></li>
+                    <li class="analysis-step">
+                        <div class="analysis-step-head"><span class="muted">#@(difference.StepIndex + 1)</span> <strong>@difference.Label</strong></div>
+                        @if (difference.BlockedOnFirstPass is Optional<string>.Some firstBlocked)
+                        {
+                            <div class="analysis-field warn"><span class="field-label">blocked</span><span>@firstBlocked.Value</span></div>
+                        }
+                        @if (!difference.OnlyInRepeatingPass.IsEmpty)
+                        {
+                            <div class="analysis-field"><span class="field-label">doesn't set off</span><span>@string.Join(" · ", difference.OnlyInRepeatingPass.Select(element => element.DescribeMention()))</span></div>
+                        }
+                        @if (!difference.OnlyOnFirstPass.IsEmpty)
+                        {
+                            <div class="analysis-field"><span class="field-label">only here</span><span>@string.Join(" · ", difference.OnlyOnFirstPass.Select(element => element.DescribeMention()))</span></div>
+                        }
+                    </li>
                 }
             </ul>
         }
     }
-
-    <div class="analysis-grid">
-        <div>
-            <h3 class="section-label">Per cycle</h3>
-            @if (Report.Outcomes.IsEmpty)
-            {
-                <p class="muted">Nothing counted.</p>
-            }
-            else
-            {
-                <ul class="tallies">
-                    @foreach (var tally in Report.Outcomes)
-                    {
-                        <li><span>@tally.Label</span><strong>@tally.Count</strong></li>
-                    }
-                </ul>
-            }
-            <ul class="tallies caveats">
-                <li title="Outcomes whose value is unknown (?) are shown but not applied — the real loop is stronger.">
-                    <span>Unknown values (?) not applied</span><strong>@Report.UnknownValues</strong>
-                </li>
-                <li title="Bullets marked (chance) fire in the simulation but are not guaranteed in game.">
-                    <span>Chance bullets</span><strong>@Report.ChanceRules</strong>
-                </li>
-            </ul>
-        </div>
-        <div>
-            <h3 class="section-label">Buff uptime</h3>
-            @if (Report.Uptime.IsEmpty)
-            {
-                <p class="muted">No buffs measured.</p>
-            }
-            @foreach (var uptime in Report.Uptime)
-            {
-                <div class="meter @ToneStyling.ToAffinityClass(uptime.Affinity)" title="@($"active after {uptime.StepsActive} of {uptime.Steps} steps")">
-                    <span class="meter-label">@uptime.Name</span>
-                    <span class="meter-bar"><span style="width:@ToPercent(uptime.ComputeUptimeRatio())%"></span></span>
-                    <span class="meter-value">@uptime.StepsActive/@uptime.Steps</span>
-                </div>
-            }
-        </div>
-        <div>
-            <h3 class="section-label">Top sources</h3>
-            @if (sources.IsEmpty)
-            {
-                <p class="muted">Nothing fired.</p>
-            }
-            @foreach (var source in sources)
-            {
-                <div class="meter @ToneStyling.ToAffinityClass(source.Affinity)">
-                    <span class="meter-label">@source.SourceName</span>
-                    <span class="meter-bar"><span style="width:@ToPercent(ReportReading.ToRatio(source.Fired, topFired))%"></span></span>
-                    <span class="meter-value">×@source.Fired</span>
-                </div>
-            }
-        </div>
-    </div>
 
     <details class="report-text">
         <summary>The report as text (same as <code>loopsmith loop</code>)</summary>
@@ -116,7 +95,4 @@
 @code {
     [Parameter, EditorRequired]
     public LoopReport Report { get; set; } = null!;
-
-    private static string ToPercent(decimal ratio) =>
-        (ratio * 100m).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
 }

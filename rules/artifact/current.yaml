@@ -1,18 +1,17 @@
 # Seasonal artifact perks used by the skip-grenade build: the Tablet of Ruin (Heresy) artifact, as
 # the creator says. Clarity has no artifact entries; the numbers come from the Compendium snapshot
 # of 2026-10-09 (Artifact Perks tab, Tablet of Ruin section: each perk's name sits in the row above
-# the cited description row). The creator's and the note's readings they replace are kept in
-# comments; where they disagree, see builds/skip-grenade-hunter/discrepancies.md.
+# the cited description row). Where the creator or the note disagrees, see
+# builds/skip-grenade-hunter/discrepancies.md.
 elements:
   - id: defibrillating-blast
     name: Defibrillating Blast
     kind: artifactPerk
     affinity: arc
     description: "Stunning a Champion grants x10 Bolt Charge. The splash of a Bolt Charge discharge Jolts what it hits, and each discharge restores ~55 HP and starts critical health regeneration (not shields)."
-    # Previously a creator claim: "damaging targets with bolt charge bolts jolts them and heals you".
     source: "compendium/2026-10-09/Artifact Perks#45"
     rules:
-      # "Stunning a Champion grants x10 Bolt Charge" is not encoded: v1 has no stun trigger.
+      # Not expressible: "Stunning a Champion grants x10 Bolt Charge" (no stun trigger).
       # The heal is ~55 HP: restoreHealth amounts are percentages, so it stays "?".
       - on: { damage: { via: keyword:bolt-charge } }
         then:
@@ -26,9 +25,6 @@ elements:
     kind: artifactPerk
     affinity: arc
     description: "Reaching x10 Bolt Charge makes you Amplified for 15 s. Bolt Charge discharges deal 50% more damage against combatants (675 -> 1014)."
-    # Previously a creator claim ("flashover, but lightning bolts deal more damage"), with the +50%
-    # from Clarity's Revolution frame (4185339856: "adds a multiplicative 50%") and the Amplified
-    # rule from the user's note ("Max bolt charge -> amplified [flashover]"). The Compendium has both.
     source: "compendium/2026-10-09/Artifact Perks#43"
     rules:
       - on: { stacksMaxed: bolt-charge }
@@ -46,8 +42,7 @@ elements:
     # Tablet of Ruin's Dielectric only grants Bolt Charge. The orbs and healing on rapid Arc-debuffed
     # kills that the creator reads out (and the note's "orb of power [dielectric]") belong to the
     # Encrypted Data Disk's version (Artifact Perks#7); the Compendium says this one does neither,
-    # so that rule is gone. Previously a creator claim: "Defeating arc debuff targets grants more
-    # bolt charge."
+    # so there is no orb or heal rule.
     description: "Defeating an Arc-debuffed enemy grants x1 Bolt Charge (Tablet of Ruin version: no orbs or healing on rapid kills)."
     source: "compendium/2026-10-09/Artifact Perks#41"
     rules:
@@ -65,10 +60,10 @@ elements:
     kind: artifactPerk
     affinity: strand
     description: "6 weapon damage instances against Severed enemies Unravel them. A Severed enemy's death releases 3 healing pulses, 2 s apart, each restoring 15 HP and granting Woven Mail for 10 s to you and allies nearby."
-    # Previously a creator claim: "Dealing sustained damage to severed targets unravels them".
     source: "compendium/2026-10-09/Artifact Perks#51"
     rules:
-      # Count-based (6 weapon damage instances); v1 has no counters, so it is marked chance.
+      # 6 weapon damage instances: progress the game doesn't show as a stacking status, so it is a
+      # chance rule (ADRs D8).
       - on: { damage: { via: weapon, targetHas: [sever] } }
         then:
           - { debuffTarget: unravel }
@@ -88,10 +83,10 @@ elements:
     kind: artifactPerk
     affinity: strand
     description: "Weapon damage worth 10% of an Unraveled enemy's health and shields spawns a Threadling (0.5 s cooldown). Those Threadlings Sever what they damage."
-    # Previously a creator claim: "Damaging unraveled targets with a weapon occasionally spawns a threadling."
     source: "compendium/2026-10-09/Artifact Perks#45"
     rules:
-      # Damage-threshold based; v1 has no counters, so it is marked chance.
+      # Damage-threshold based (10% of the enemy's health and shields): progress the game doesn't
+      # show as a stacking status, so it is a chance rule (ADRs D8).
       - on: { damage: { via: weapon, targetHas: [unravel] } }
         then:
           - { summon: threadling }
@@ -108,7 +103,6 @@ elements:
     kind: artifactPerk
     affinity: strand
     description: "Picking up an Orb of Power (or throwing a Tangle) gives your Strand weapons Unraveling Rounds for 14 s."
-    # Previously a creator claim: "we pick up an orb of power. Strand weapons gain unraveling rounds."
     source: "compendium/2026-10-09/Artifact Perks#45"
     rules:
       - on: { pickUp: orb-of-power }
@@ -117,9 +111,8 @@ elements:
         reason: "Grabbing an Orb of Power loads your Strand weapons with Unraveling Rounds for 14 seconds."
     passives: []
 
-  # Previously authored from the user's note ("Kill jolted target -> ... blind if severed [photonic
-  # flare]"). The Compendium's trigger is different: a kill of a Severed (or Exhausted) enemy with
-  # Arc damage, jolted or not.
+  # The Compendium's trigger: a kill of a Severed (or Exhausted) enemy with Arc damage, jolted or
+  # not (the note puts it on a jolted kill; see discrepancies.md).
   - id: photonic-flare
     name: Photonic Flare
     kind: artifactPerk
@@ -128,8 +121,8 @@ elements:
     source: "compendium/2026-10-09/Artifact Perks#47"
     rules:
       # "Exhausted" is not in the glossary and nothing in this build applies it, so only Severed is
-      # encoded (a second rule would double-fire on targets with both). The ~6 s cooldown is not
-      # modelled.
+      # encoded (a second rule would double-fire on targets with both). The ~6 s cooldown is a fact
+      # in the description.
       - on: { kill: { via: type:arc, targetHas: [sever] } }
         then:
           - { debuffTarget: blind }

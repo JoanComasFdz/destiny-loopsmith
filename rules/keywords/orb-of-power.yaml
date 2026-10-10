@@ -6,11 +6,10 @@ elements:
     affinity: neutral
     # Super energy per orb depends on what spawned it (Compendium Game Mechanics#229-238: Reaper
     # 0.8%|1.1%|1.25%|1.5% with 1|2|3|4 mods, Siphons 2.5%|3.75%|4.4% with 1|2|3 mods; Weapon
-    # Perks#22: Attrition Orbs 0.87%); a pickup carries no per-source value in v1, so the amount is "?".
+    # Perks#22: Attrition Orbs 0.87%); a pickup carries no per-source value, so the amount is "?".
     # Armor Charge on pickup: Game Mechanics#94 - any Orb of Power gives x1 Armor Charge while any
-    # Armor Charge mod is equipped (this build has Grenade Kickstart and Elemental Charge). v1 can't
-    # check for that, so the rule is unconditional. Previously authored (implied by Clarity's
-    # Powerful Friends, 2175577211).
+    # Armor Charge mod is equipped (this build has Grenade Kickstart and Elemental Charge). A rule
+    # can't check which mods are equipped, so it is unconditional.
     # Not encoded: the health an orb restores (0.7 HP per Health stat point, Game Mechanics#119):
     # it depends on a stat and is in HP.
     description: "Picking up an Orb of Power grants Super energy (amount depends on what spawned it) and, with any Armor Charge mod equipped, 1 stack of Armor Charge."

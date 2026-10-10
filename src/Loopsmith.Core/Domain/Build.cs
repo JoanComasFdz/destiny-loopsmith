@@ -40,7 +40,7 @@ public sealed record EquippedElement(BuildElement Element, int Count);
 
 /// <summary>
 /// Typestate: the only input Simulation accepts. Constructed only by BuildComposition
-/// (architecture test), so "simulate before validation" cannot happen.
+/// (architecture test), so "play steps before validation" cannot happen.
 /// </summary>
 public sealed record ValidatedBuild(
     Build Build,

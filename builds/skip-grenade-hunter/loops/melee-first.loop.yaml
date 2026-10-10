@@ -4,12 +4,14 @@ description: |-
   Open with the melee instead of the dodge: slide-melee to jolt the pack, then skip grenade and
   Arc weapon into it, grab the orbs and dodge last to refill the melee. Gambler's Dodge's melee
   refill depends on the Melee stat, so the rules give it as unknown ("?").
-catalog: authored-1cb8a41c41cc
+catalog: authored-e707a3336348
 steps:
   - do: melee:kill
     note: 'Combination Blow: Tempest Strike jolts, Impact Induction refunds grenade energy'
+  - do: max:bolt-charge
+    note: Bolt Charge at x10 — Shinobu's Vow and Flashover; the next ability hit discharges it
   - do: grenade:kill
-    note: 'Skip grenade into the jolted pack: Bolt Charge, Amplified and Ionic Traces'
+    note: 'Skip grenade into the jolted pack: its hit discharges Bolt Charge; Amplified and Ionic Traces'
   - do: energy:kill
     note: 'Arc weapon kill: Spark of Discharge traces, Harmonic Siphon orb'
   - do: pickup:orb-of-power

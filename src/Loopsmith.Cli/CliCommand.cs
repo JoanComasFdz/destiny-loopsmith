@@ -12,7 +12,7 @@ public partial record CliCommand
 {
     partial record Explain(ExplainRequest Request);
     partial record Validate(LoadRequest Request);
-    partial record Simulate(SimulateRequest Request);
+    partial record Trace(TraceRequest Request);
     partial record Play(PlayRequest Request);
     partial record Graph(GraphRequest Request);
     partial record Loop(LoopRequest Request);
@@ -30,28 +30,27 @@ public static class CliArguments
 
         Usage:
           loopsmith explain  <build.yaml> [--tree]            what each trigger sets off (note style; --tree aligned)
-          loopsmith simulate <build.yaml> --actions <a,b,…>   step through a sequence of actions
+          loopsmith trace    <build.yaml> --actions <a,b,…>   step through a sequence of steps (simulate: same)
                              [--scenario <file>] [--state] [--why] [--caveats]
           loopsmith play     <build.yaml> [--save <file.loop.yaml>] [--name "<loop name>"] [--why] [--caveats]
-                                                              interactive: pick the next action, see what fires;
-                                                              every action becomes a step of the loop you design
-          loopsmith loop     <file.loop.yaml> [--cycles <n>] [--trace] [--why] [--caveats]
-                                                              run a designed loop back to back: does it repeat,
-                                                              what's wasted?
-          loopsmith compare  <a.loop.yaml> <b.loop.yaml> [--cycles <n>]   two designed loops side by side
+                                                              interactive: pick the next step, see what fires;
+                                                              every step becomes part of the loop you design
+          loopsmith loop     <file.loop.yaml> [--trace] [--why] [--caveats]
+                                                              a designed loop by its order: does it repeat, what
+                                                              each step needs and sets off, what's wasted
+          loopsmith compare  <a.loop.yaml> <b.loop.yaml>      two loops' orders, trigger by trigger
           loopsmith loops    <build.yaml> [--limit <n>]       discovered loops (cycles that come back around)
           loopsmith graph    <build.yaml> [--loops-only] [--limit <n>]   Mermaid flowchart of the loop graph
           loopsmith validate <build.yaml>                     check the build against the rule catalog
 
         Options:
-          --rules <dir>   rules directory (default: nearest rules/ above the build or loop file, then the current directory)
-          --cycles <n>    cycles to run a loop for (default 10); a loop that completes all of them is repeatable
-          --trace         also print every step of the loop's first cycle
-          --scenario <f>  simulate: action tokens from a file, played after any --actions (one per line or comma
+          --rules <dir>   rules directory (default: nearest rules/ above the build or loop file, then above the current directory)
+          --trace         loop: also print every step of the first pass, and of the repeating pass when it differs
+          --scenario <f>  trace: step tokens from a file, played after any --actions (one per line or comma
                           separated, # comments); give --actions, --scenario or both
-          --state         simulate: show buffs, target debuffs and pickups after every step
+          --state         trace: show what is present after every step (buffs, debuffs on the pack, pickups)
           --why           traces: also show each fired rule's reason
-          --caveats       traces: also show each outcome's caveats (amount unknown, ×3 stacks, already active — refreshed, …)
+          --caveats       traces: also show each outcome's caveats (amount unknown, already active, +1 from Spark of Frequency, …)
           --verbose       --why and --caveats
           --limit <n>     loops/graph: how many loops to show (default 10)
           --save <file>   play: write the designed loop when you quit, if it has steps (w saves at any time)
@@ -59,16 +58,18 @@ public static class CliArguments
           --no-color      plain output (also when NO_COLOR is set or output is redirected)
 
         Play commands:
-          <number> or <action>  play it (and add it to the loop)    u  undo the last step
+          <number> or <step>    play it (and add it to the loop)    u  undo the last step
           n <note>              note on the last step               d <text>  loop description (\n = new line)
           a                     analyse the loop so far             w  save now
           e explain · s state · r reset · q quit (saves when --save is given and the loop has steps)
 
-        Actions:
-          grenade|melee|super[:hit|kill[:N]]  class  kinetic|energy|power[:hit|kill[:N]]  pickup:<id>  wait[:<seconds>]
+        Steps:
+          grenade|melee|super[:hit|kill[:N]]  class[:air]  kinetic|energy|power[:hit|kill[:N]]  pickup:<id>
+          max:<status>  end:<status>
           (without :kill the hit only damages; N = enemies hit or killed in that one action, 1..20, default 1:
-           grenade:kill:3 kills three, kinetic:hit:5 shoots five)
-          Abilities are always available: ability energy isn't simulated, energy outcomes are explained.
+           grenade:kill:3 kills three, kinetic:hit:5 shoots five; max:bolt-charge declares Bolt Charge at max,
+           end:amplified that Amplified has ended)
+          Loopsmith shows cause and effect: numbers are facts shown with their outcome, never added up.
         """;
 
     public static Result<CliInvocation, string> ParseArguments(ImmutableArray<string> args)
@@ -98,10 +99,10 @@ public static class CliArguments
             {
                 "explain" => Ok(new CliCommand.Explain(new ExplainRequest(load, o.Flags.Contains("--tree") ? ExplanationStyle.Tree : ExplanationStyle.Note)), noColor),
                 "validate" => Ok(new CliCommand.Validate(load), noColor),
-                "simulate" => Ok(new CliCommand.Simulate(new SimulateRequest(load, o.Actions, o.Scenario, trace)), noColor),
+                "trace" or "simulate" => Ok(new CliCommand.Trace(new TraceRequest(load, o.Actions, o.Scenario, trace)), noColor),
                 "play" => Ok(new CliCommand.Play(new PlayRequest(load, trace, o.Save, o.Name)), noColor),
-                "loop" => Ok(new CliCommand.Loop(new LoopRequest(files[0], o.Rules, o.Cycles, loopTrace)), noColor),
-                "compare" => Ok(new CliCommand.Compare(new CompareRequest(files[0], files[1], o.Rules, o.Cycles)), noColor),
+                "loop" => Ok(new CliCommand.Loop(new LoopRequest(files[0], o.Rules, loopTrace)), noColor),
+                "compare" => Ok(new CliCommand.Compare(new CompareRequest(files[0], files[1], o.Rules)), noColor),
                 "loops" => Ok(new CliCommand.Graph(new GraphRequest(load, GraphFormat.Loops, false, o.Limit)), noColor),
                 "graph" => Ok(new CliCommand.Graph(new GraphRequest(load, GraphFormat.Mermaid, o.Flags.Contains("--loops-only"), o.Limit)), noColor),
                 _ => Fail($"Unknown command '{command}'."),
@@ -122,7 +123,6 @@ public static class CliArguments
         ImmutableArray<string> Actions,
         Optional<string> Scenario,
         int Limit,
-        int Cycles,
         Optional<string> Save,
         Optional<string> Name,
         ImmutableHashSet<string> Flags);
@@ -133,7 +133,7 @@ public static class CliArguments
     private static Result<ParsedOptions, string> ParseOptions(ImmutableArray<string> args)
     {
         var parsed = new ParsedOptions(
-            Optional.None<string>(), [], Optional.None<string>(), 10, LoopDesigning.DefaultMaxCycles, Optional.None<string>(), Optional.None<string>(), []);
+            Optional.None<string>(), [], Optional.None<string>(), 10, Optional.None<string>(), Optional.None<string>(), []);
         for (var i = 0; i < args.Length; i++)
         {
             var arg = args[i];
@@ -151,10 +151,6 @@ public static class CliArguments
                     break;
                 case "--limit" when hasValue && int.TryParse(args[i + 1], out var limit) && limit > 0:
                     parsed = parsed with { Limit = limit };
-                    i++;
-                    break;
-                case "--cycles" when hasValue && int.TryParse(args[i + 1], out var cycles) && cycles > 0:
-                    parsed = parsed with { Cycles = cycles };
                     i++;
                     break;
                 case "--save" when hasValue:
