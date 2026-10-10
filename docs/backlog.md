@@ -38,8 +38,10 @@ first (Domain types, then the slices):
 - **Loop graph**: grants to a stacking buff lead to "Gain X", plus one declared edge `Gain X → Max X`;
   "gives grenade energy back"; regenerate `builds/*/loop-graph.md`.
 - **Rules and build data**: the Bolt Charge discharge rule on `atMax` (Compendium Arc#5); drop Slice's
-  `restart`; reword the counting comments in `rules/glossary.yaml`, `keywords/arc.yaml`,
-  `weapons/perks.yaml`, `mods/armor.yaml`, `hunter/arc.yaml`; `max:bolt-charge` steps in the example
+  `restart`; reword the counting and "v1" comments in `rules/glossary.yaml`, `keywords/arc.yaml`,
+  `keywords/orb-of-power.yaml`, `weapons/perks.yaml`, `mods/armor.yaml`, `exotics/armor.yaml`,
+  `artifact/current.yaml` and `hunter/arc.yaml` (its header still says there are no airborne qualifiers);
+  the Helicopter loop's description ("keep it up"); `max:bolt-charge` steps in the example
   loops and `scenario.txt` as [note-map.md](../builds/skip-grenade-hunter/note-map.md) describes; the
   goldens; `LoopFileParsingTests.SpecExampleYaml`, which copies loop-format.md's example.
 - Later: rename the `Simulation` slice (it plays steps; it simulates nothing).
