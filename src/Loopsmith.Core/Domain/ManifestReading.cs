@@ -14,6 +14,13 @@ public static class ManifestReading
             ? element.Hashes.Select(hash => catalog.Manifest.FindItem(hash)).FindFirstSome()
             : Optional.None<ManifestItem>();
 
+    /// <summary>The catalog element one of whose hashes this is (a hash names one element, the catalog checks it).</summary>
+    public static Optional<BuildElement> FindElementByHash(this RuleCatalog catalog, ItemHash hash) =>
+        catalog.Elements.Values
+            .Where(element => element.Hashes.Contains(hash))
+            .Select(Optional.Some)
+            .FindFirstSome();
+
     /// <summary>The subclass item of a class's subclass (Arcstrider for an Arc Hunter), when the glossary and the excerpt have it.</summary>
     public static Optional<ManifestItem> FindSubclassItem(this RuleCatalog catalog, GuardianClass guardianClass, Subclass subclass) =>
         catalog.Glossary.Subclasses

@@ -12,14 +12,15 @@ set -euo pipefail
 
 out="$1"
 mkdir -p "$out"
-components=(DestinyInventoryItemLiteDefinition DestinyInventoryBucketDefinition DestinyDamageTypeDefinition)
+components=(DestinyInventoryItemDefinition DestinyInventoryBucketDefinition DestinyDamageTypeDefinition
+  DestinySocketTypeDefinition DestinySocketCategoryDefinition)
 
 if [ -z "${MANIFEST_ID:-}" ]; then
   header=()
   [ -n "${BUNGIE_API_KEY:-}" ] && header=(-H "X-API-Key: ${BUNGIE_API_KEY}")
   curl -fsS "${header[@]}" -o "$out/index.json" https://www.bungie.net/Platform/Destiny2/Manifest/
   MANIFEST_VERSION=$(python3 -I -c 'import json,sys; print(json.load(open(sys.argv[1]))["Response"]["version"])' "$out/index.json")
-  MANIFEST_ID=$(python3 -I -c 'import json,re,sys; p=json.load(open(sys.argv[1]))["Response"]["jsonWorldComponentContentPaths"]["en"]["DestinyInventoryItemLiteDefinition"]; print(re.search(r"Definition-(.+)\.json$", p).group(1))' "$out/index.json")
+  MANIFEST_ID=$(python3 -I -c 'import json,re,sys; p=json.load(open(sys.argv[1]))["Response"]["jsonWorldComponentContentPaths"]["en"]["DestinyInventoryItemDefinition"]; print(re.search(r"Definition-(.+)\.json$", p).group(1))' "$out/index.json")
 fi
 
 for component in "${components[@]}"; do

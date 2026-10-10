@@ -153,7 +153,9 @@ font: "Arc  - Skipp grenade" reads "Arc - Skipp grenade"). The build is written 
 file (comments say where it came from), so the loop
 embeds, exports, shares and replays it like any other ([rule-format.md](rule-format.md#build-file-buildsbuildbuildyaml)).
 The designer shows the build the way DIM shows a loadout — the subclass with its super, abilities,
-aspects and fragments, the artifact perks, the weapons with their element, each armor piece with the mods
+aspects and fragments, the artifact perks, the weapons (kinetic, energy, heavy) with their element and
+their selected perks — the ones the build names, else an exotic's fixed ones from the manifest, and a "?"
+for each trait column still unknown — each armor piece with the mods
 of its slot (the slot the manifest gives the mod; other mods are general) — with Bungie's icons from the
 manifest excerpt; what the rules don't know sits where DIM would show it, dimmed. It also lists the
 left-out items under **Not in Loopsmith yet**, by their manifest name, each a link to its light.gg page; the build check adds `Unknown (?): …` and `Left out of the build: …` as info. A loadout for
