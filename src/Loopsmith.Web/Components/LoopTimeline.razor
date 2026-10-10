@@ -5,10 +5,11 @@
     var glossary = build.Catalog.Glossary;
     var steps = Session.Design.Steps;
 }
-<section class="timeline" aria-label="Loop timeline">
+<section class="timeline" aria-label="Loop timeline"
+         @ondragenter="EnterTimeline" @ondragleave="LeaveTimeline" @ondragover:preventDefault="true" @ondrop="DropAsync" @ondrop:preventDefault="true">
     <article class="step-card spawn @(IsSelected(0) ? "selected" : "") @DescribeDropTarget(0)" data-step="0" tabindex="0"
              @onclick="() => SelectStep(0)" @onkeydown="e => SelectStepByKey(e, 0)"
-             @ondragenter="() => EnterDropTarget(0)" @ondragover:preventDefault="true" @ondrop="() => DropOnAsync(0)" @ondrop:preventDefault="true">
+             @ondragenter="() => EnterDropTarget(0)">
         <header class="step-head">
             <span class="step-no">#0</span>
             <span class="step-title">Fresh spawn</span>
@@ -33,7 +34,7 @@
         <article class="step-card @(IsSelected(number) ? "selected" : "") @(blocked ? "blocked" : "") @(number == steps.Length ? "last" : "") @DescribeDropTarget(number) @(IsDragged(index) ? "dragged" : "")"
                  id="step-@number" data-step="@number" tabindex="0"
                  @onclick="() => SelectStep(number)" @onkeydown="e => SelectStepByKey(e, number)"
-                 @ondragenter="() => EnterDropTarget(number)" @ondragover:preventDefault="true" @ondrop="() => DropOnAsync(number)" @ondrop:preventDefault="true">
+                 @ondragenter="() => EnterDropTarget(number)">
             <header class="step-head">
                 <span class="step-drag" draggable="true" title="Drag to move this step" aria-hidden="true" data-step="@number"
                       @ondragstart="() => StartDrag(index)" @ondragend="EndDrag" @onclick:stopPropagation="true">⠿</span>
@@ -106,9 +107,12 @@
     [Parameter]
     public EventCallback<(int From, int To)> OnMove { get; set; }
 
-    // A drag under way: the step dragged (0-based) and the card it is over (its number: 0 is the spawn, the first place).
+    // A drag under way: the step dragged (0-based), the card it was last over (its number: 0 is the spawn, the first
+    // place; a gap between cards keeps it), and how deep in the timeline the pointer is (enters minus leaves, as each
+    // card's enter and leave bubble up: 0 is outside it, where a drop does nothing).
     private Optional<int> dragged = Optional.None<int>();
     private Optional<int> dropTarget = Optional.None<int>();
+    private int dragDepth;
 
     protected override void OnParametersSet()
     {
@@ -159,25 +163,37 @@
     {
         dragged = Optional.Some(index);
         dropTarget = Optional.None<int>();
+        dragDepth = 0;
     }
 
     private void EndDrag()
     {
         dragged = Optional.None<int>();
         dropTarget = Optional.None<int>();
+        dragDepth = 0;
     }
 
     private void EnterDropTarget(int number) =>
         dropTarget = dragged.IsSome() ? Optional.Some(number) : Optional.None<int>();
 
-    /// <summary>A step dropped on a card takes that card's place (on the spawn: the first place).</summary>
-    private async Task DropOnAsync(int number)
+    private void EnterTimeline() =>
+        dragDepth++;
+
+    /// <summary>Out of the timeline: no card to land on, so no line.</summary>
+    private void LeaveTimeline()
     {
-        var move = dragged.Map(from => (From: from, To: ToDropPlace(number)));
-        EndDrag();
+        dragDepth = Math.Max(dragDepth - 1, 0);
+        dropTarget = dragDepth == 0 ? Optional.None<int>() : dropTarget;
+    }
+
+    /// <summary>A step dropped in the timeline takes the place of the card it was last over (the spawn: the first place).</summary>
+    private async Task DropAsync()
+    {
+        var move = dragged.Bind(from => dropTarget.Map(target => (From: from, To: ToDropPlace(target)))); // pure
+        EndDrag();                                                                               // impure (UI state)
         if (move is Optional<(int From, int To)>.Some { Value: var chosen } && chosen.From != chosen.To)
         {
-            await OnMove.InvokeAsync(chosen);
+            await OnMove.InvokeAsync(chosen);                                                    // impure
         }
     }
 

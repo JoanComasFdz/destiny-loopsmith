@@ -213,7 +213,7 @@
     /// <summary>A step moved: the steps replay in the new order; the moved step is selected and keeps the focus.</summary>
     private void MoveStep((int From, int To) move)
     {
-        EditSession(session => LoopDesigning.MoveStep(session, move.From, move.To), scrollToEnd: false);
+        EditSession(session => LoopDesigning.MoveStep(session, move.From, move.To), scrollToEnd: false); // impure (UI state)
         Workbench.SelectedStep = Optional.Some(move.To + 1);                                    // impure (UI state)
         focusStep = Optional.Some(move.To + 1);                                                 // impure (UI state)
     }

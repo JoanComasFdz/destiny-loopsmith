@@ -66,13 +66,13 @@ window.loopsmith = {
   },
 };
 
-// A step dragged by its handle (Components/LoopTimeline.razor) shows its whole card while it moves; Firefox starts a
-// drag only when it carries data.
+// A step dragged by its handle (Components/LoopTimeline.razor) shows its whole card while it moves. Firefox starts a
+// drag only when it carries data: a type of Loopsmith's own, so a text field it is dropped on takes nothing.
 document.addEventListener("dragstart", (event) => {
   const handle = event.target instanceof Element ? event.target.closest(".step-drag") : null;
   if (!handle || !event.dataTransfer) return;
   event.dataTransfer.effectAllowed = "move";
-  event.dataTransfer.setData("text/plain", handle.dataset.step || "");
+  event.dataTransfer.setData("application/x-loopsmith-step", handle.dataset.step || "");
   const card = handle.closest(".step-card");
   if (card) event.dataTransfer.setDragImage(card, 16, 16);
 });
