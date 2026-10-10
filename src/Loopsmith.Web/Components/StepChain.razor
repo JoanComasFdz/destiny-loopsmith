@@ -1,0 +1,105 @@
+@* The step chain (docs/loop-format.md, "Analysis"): a row per step and an arrow per link, from the step that provided a
+   need to the step that needs it. An arrow from the pass before leaves downwards and comes back from the top (around
+   the loop) and is dashed; one whose needs came only from chance rules is faded and dotted; in a comparison, one the
+   other loop lacks is highlighted. Tap a step: its arrows stand out and what it needs and feeds is listed below. *@
+@{
+    var chain = ChainShaping.ShapeChain(Report.Steps.Length, Links);
+}
+<div class="chain" data-testid="chain">
+    <div class="chain-body" style="height: @(chain.Height)px">
+        <svg class="chain-arcs" width="@chain.GutterWidth" height="@chain.Height" viewBox="0 0 @chain.GutterWidth @chain.Height" aria-hidden="true">
+            @foreach (var arc in chain.Arcs)
+            {
+                <g class="@ToArcClass(arc)" data-from="@arc.Link.From" data-to="@arc.Link.To">
+                    <title>@arc.Title</title>
+                    @foreach (var path in arc.Paths)
+                    {
+                        <path d="@path" />
+                    }
+                    <polygon points="@arc.Arrowhead" />
+                </g>
+            }
+            @foreach (var step in Report.Steps)
+            {
+                <circle class="chain-dot @(step.Blocked.IsSome() ? "blocked" : "")" cx="@(chain.GutterWidth - 3)" cy="@ChainShaping.ReadRowCentre(step.StepIndex)" r="3" />
+            }
+        </svg>
+        <ol class="chain-rows" style="padding-left: @(chain.GutterWidth + 4)px">
+            @foreach (var step in Report.Steps)
+            {
+                <li class="chain-row @(selected == step.StepIndex ? "selected" : "") @(step.Blocked.IsSome() ? "blocked" : "")" style="height: @(chain.RowHeight)px">
+                    <button type="button" @onclick="() => Select(step.StepIndex)" aria-pressed="@(selected == step.StepIndex)">
+                        <span class="muted">#@(step.StepIndex + 1)</span>
+                        <span class="chain-label">@step.Label</span>
+                        @if (step.Blocked.IsSome())
+                        {
+                            <span class="tone-warning" aria-label="blocked">✗</span>
+                        }
+                    </button>
+                </li>
+            }
+        </ol>
+    </div>
+    @if (selected >= 0 && selected < Report.Steps.Length)
+    {
+        var step = Report.Steps[selected];
+        var incoming = Links.Where(compared => compared.Link.To == selected).ToImmutableArray();
+        var outgoing = Links.Where(compared => compared.Link.From == selected).ToImmutableArray();
+        <div class="chain-caption" data-testid="chain-caption">
+            <strong>#@(selected + 1) @step.Label</strong>
+            @if (step.Blocked is Optional<string>.Some blocked)
+            {
+                <div class="analysis-field warn"><span class="field-label">blocked</span><span>@blocked.Value</span></div>
+            }
+            <div class="analysis-field">
+                <span class="field-label">needs</span>
+                <span>
+                    @if (incoming.IsEmpty)
+                    {
+                        <span class="muted">nothing from earlier steps</span>
+                    }
+                    @foreach (var compared in incoming)
+                    {
+                        <span class="chain-item @(compared.OnlyHere ? "only-here" : "")">@compared.Link.DescribeLinkNeeds() ← @compared.Link.DescribeLinkSource()</span>
+                    }
+                </span>
+            </div>
+            <div class="analysis-field">
+                <span class="field-label">feeds</span>
+                <span>
+                    @if (outgoing.IsEmpty)
+                    {
+                        <span class="muted">no later step</span>
+                    }
+                    @foreach (var compared in outgoing)
+                    {
+                        <span class="chain-item @(compared.OnlyHere ? "only-here" : "")">@compared.Link.DescribeLinkTarget(): @compared.Link.DescribeLinkNeeds()</span>
+                    }
+                </span>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public LoopReport Report { get; set; } = null!;
+
+    /// <summary>The links to draw, each marked when a comparison's other loop lacks it.</summary>
+    [Parameter, EditorRequired]
+    public ImmutableArray<ComparedLink> Links { get; set; } = [];
+
+    private int selected = -1;
+
+    private void Select(int step) => selected = selected == step ? -1 : step;
+
+    private string ToArcClass(ChainArc arc) =>
+        string.Join(' ', new[]
+        {
+            "arc",
+            arc.Link.FromPreviousPass ? "carried" : "",
+            arc.Link.Likelihood == Likelihood.Chance ? "chance" : "",
+            arc.OnlyHere ? "only-here" : "",
+            selected < 0 ? "" : arc.Link.From == selected || arc.Link.To == selected ? "active" : "dim",
+        }.Where(name => name.Length > 0));
+}

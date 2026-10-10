@@ -1,6 +1,7 @@
-@* A LoopReport (LoopDesigning.AnalyzeDesign): the loop by its order of triggers — the verdict, then each step of the
-   repeating pass with what it needs and which step provided it, what it sets off and what is wasted there, and where
-   the first pass from a fresh spawn differs. Every word comes from the core's Phrasing; this only lays it out. *@
+@* A LoopReport (LoopDesigning.AnalyzeDesign): the loop by its order of triggers — the verdict, the step chain, then
+   each step of the repeating pass with what it needs and which step provided it, what it sets off in this order and on
+   its own, what is wasted there, and where the first pass from a fresh spawn differs. Every word comes from the core's
+   Phrasing; this only lays it out. *@
 <div class="analysis">
     <div class="analysis-head">
         <div>
@@ -19,6 +20,15 @@
         <p class="analysis-order" data-testid="order">@string.Join(" → ", Report.StepLabels)</p>
         <p class="notice @(Report.Verdict is LoopVerdict.Breaks ? "warn" : "")" data-testid="verdict-text">@Report.Verdict.DescribeVerdict()</p>
 
+        <h3 class="section-label">Chain <span class="label-note">which step feeds which — tap a step</span></h3>
+        <StepChain Report="Report" Links="ChainShaping.ListPlainLinks(Report.Links)" />
+
+        <div class="analysis-steps-head">
+            <h3 class="section-label">Steps</h3>
+            <label class="toggle" title="Also list what each step sets off wherever it goes in the loop">
+                <input type="checkbox" checked="@showOnItsOwn" @onchange="ToggleOnItsOwn" data-testid="toggle-on-its-own" /> on its own
+            </label>
+        </div>
         <ol class="analysis-steps" data-testid="steps">
             @foreach (var step in Report.Steps)
             {
@@ -40,16 +50,18 @@
                             </span>
                         </div>
                     }
-                    @if (!step.SetsOff.IsEmpty)
+                    @if (!step.InOrder.IsEmpty)
                     {
-                        <div class="analysis-field">
-                            <span class="field-label">sets off</span>
-                            <span class="chips">
-                                @foreach (var element in step.SetsOff)
-                                {
-                                    <span class="chip @ToneStyling.ToAffinityClass(element.Affinity)">@element.DescribeMention()</span>
-                                }
-                            </span>
+                        <div class="analysis-field" data-testid="in-order">
+                            <span class="field-label" title="Fires here because an earlier step provided what it needs">in this order</span>
+                            @RenderMentions(step.InOrder)
+                        </div>
+                    }
+                    @if (showOnItsOwn && !step.OnItsOwn.IsEmpty)
+                    {
+                        <div class="analysis-field" data-testid="on-its-own">
+                            <span class="field-label" title="Fires wherever this step goes in the loop">on its own</span>
+                            @RenderMentions(step.OnItsOwn)
                         </div>
                     }
                     @foreach (var wasted in step.Wasted)
@@ -95,4 +107,18 @@
 @code {
     [Parameter, EditorRequired]
     public LoopReport Report { get; set; } = null!;
+
+    private bool showOnItsOwn = true;
+
+    private void ToggleOnItsOwn(ChangeEventArgs e) => showOnItsOwn = e.Value is true;
+
+    private static RenderFragment RenderMentions(ImmutableArray<ElementMention> mentions) => __builder =>
+    {
+        <span class="chips">
+            @foreach (var element in mentions)
+            {
+                <span class="chip @ToneStyling.ToAffinityClass(element.Affinity)">@element.DescribeMention()</span>
+            }
+        </span>
+    };
 }

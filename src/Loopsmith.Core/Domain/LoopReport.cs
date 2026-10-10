@@ -30,15 +30,33 @@ public sealed record StepNeed(string What, Affinity Affinity, NeedProvider Provi
 /// <summary>A rule that gave way there, because it doesn't stack with <see cref="PartnerName"/>'s (ADRs D6).</summary>
 public sealed record WastedMention(ElementMention Source, string PartnerName);
 
-/// <summary>One step of a pass, in the order of the loop: what it needs and from where, what it sets off, what is wasted.</summary>
+/// <summary>
+/// One step of a pass, in the order of the loop: what it needs and from where, what it sets off, what is wasted.
+/// <see cref="InOrder"/> are the elements of <see cref="SetsOff"/> that fire there because an earlier step provided
+/// what their rule needed (or what the step itself needs: the orb it picks up, the buff it declares at max); the
+/// others fire wherever the step goes.
+/// </summary>
 public sealed record StepAnalysis(
     int StepIndex,
     string Token,
     string Label,
     ImmutableArray<StepNeed> Needs,
     ImmutableArray<ElementMention> SetsOff,
+    ImmutableArray<ElementMention> InOrder,
     ImmutableArray<WastedMention> Wasted,
-    Optional<string> Blocked);
+    Optional<string> Blocked)
+{
+    /// <summary>The elements of <see cref="SetsOff"/> that fire wherever the step goes (not in <see cref="InOrder"/>).</summary>
+    public ImmutableArray<ElementMention> OnItsOwn =>
+        [.. SetsOff.Where(element => !InOrder.Any(other => other.Source == element.Source))];
+}
+
+/// <summary>
+/// An arrow of the step chain: step <see cref="From"/> provided what step <see cref="To"/> needs — in the pass before
+/// when <see cref="FromPreviousPass"/> (it carries over, around the loop). <see cref="Likelihood"/> is chance when every
+/// need on it came only from chance rules.
+/// </summary>
+public sealed record StepLink(int From, int To, bool FromPreviousPass, ImmutableArray<StepNeed> Needs, Likelihood Likelihood);
 
 /// <summary>A step that does something else on the first pass from a fresh spawn than in the repeating pass.</summary>
 public sealed record PassDifference(
@@ -79,6 +97,7 @@ public sealed record LoopReport(
     LoopPass RepeatingPass,
     bool FirstPassRepeats,
     ImmutableArray<StepAnalysis> Steps,
+    ImmutableArray<StepLink> Links,
     ImmutableArray<PassDifference> FirstPassDifferences);
 
 /// <summary>A trigger's step in one loop, and whether that loop's first pass does something else there.</summary>
@@ -102,5 +121,16 @@ public partial record TriggerPlacement
 /// </summary>
 public sealed record TriggerComparison(string Label, TriggerPlacement Placement);
 
-/// <summary>Two loops' orders side by side (they may use different builds); nothing is scored.</summary>
-public sealed record LoopComparison(LoopReport Left, LoopReport Right, ImmutableArray<TriggerComparison> Triggers);
+/// <summary>
+/// A link of one loop's chain, and whether the other loop lacks it: no link between the same two triggers, the same
+/// way round the loop (within a pass, or from the pass before).
+/// </summary>
+public sealed record ComparedLink(StepLink Link, bool OnlyHere);
+
+/// <summary>Two loops' orders side by side (they may use different builds), trigger by trigger and as chains; nothing is scored.</summary>
+public sealed record LoopComparison(
+    LoopReport Left,
+    LoopReport Right,
+    ImmutableArray<TriggerComparison> Triggers,
+    ImmutableArray<ComparedLink> LeftLinks,
+    ImmutableArray<ComparedLink> RightLinks);

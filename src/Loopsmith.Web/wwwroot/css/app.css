@@ -670,3 +670,32 @@ textarea { resize: vertical; }
     .slines { font-size: 13px; }
     .step-card { padding: 9px 10px 7px; }
 }
+
+/* Step chain: a row per step, an arrow per link in the gutter to the left (StepChain.razor). */
+.chain { margin: 6px 0 14px; }
+.chain-body { position: relative; }
+.chain-arcs { position: absolute; left: 0; top: 0; overflow: visible; }
+.chain-arcs .arc path { fill: none; stroke: var(--arc); stroke-width: 1.6; }
+.chain-arcs .arc polygon { fill: var(--arc); }
+.chain-arcs .arc.carried path { stroke-dasharray: 6 4; }
+.chain-arcs .arc.chance { opacity: .55; }
+.chain-arcs .arc.chance path { stroke-dasharray: 2 3; }
+.chain-arcs .arc.only-here path { stroke: var(--warn); stroke-width: 2.2; }
+.chain-arcs .arc.only-here polygon { fill: var(--warn); }
+.chain-arcs .arc.active path { stroke-width: 2.6; }
+.chain-arcs .arc.dim { opacity: .14; }
+.chain-dot { fill: var(--muted); }
+.chain-dot.blocked { fill: var(--warn); }
+.chain-rows { list-style: none; margin: 0; padding-top: 0; padding-bottom: 0; padding-right: 0; }
+.chain-row button { all: unset; box-sizing: border-box; display: flex; align-items: center; gap: 6px; width: 100%; height: 100%; padding: 0 6px; border-radius: 6px; cursor: pointer; font-size: 13px; white-space: nowrap; overflow: hidden; }
+.chain-row button:hover, .chain-row button:focus-visible { background: var(--raised); }
+.chain-row.selected button { background: var(--raised); font-weight: 700; }
+.chain-row.blocked .chain-label { color: var(--warn); }
+.chain-label { overflow: hidden; text-overflow: ellipsis; }
+.chain-caption { margin-top: 8px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel-2); display: flex; flex-direction: column; gap: 5px; font-size: 12px; }
+.chain-item { display: inline-block; margin-right: 12px; }
+.chain-item.only-here { color: var(--warn); }
+.analysis-steps-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.compare-chains { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 6px 0 4px; }
+@media (max-width: 760px) { .compare-chains { grid-template-columns: minmax(0, 1fr); } }
+.chain-legend { font-size: 12px; margin: 0 0 12px; }

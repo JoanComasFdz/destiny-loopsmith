@@ -7,7 +7,8 @@ namespace Loopsmith.Core.ReportComparison;
 
 /// <summary>
 /// A <see cref="LoopComparison"/> as styled lines: each loop's order and verdict, then trigger by trigger its step in
-/// each loop, where its needs come from there, and the elements that fire in only one of them.
+/// each loop, where its needs come from there, and the elements that fire in only one of them; then the links of each
+/// loop's chain the other lacks.
 /// </summary>
 public static class ComparisonRendering
 {
@@ -29,7 +30,25 @@ public static class ComparisonRendering
             RenderOrder("B", right, nameWidth),
             StyledText.ToLine(0, "".ToSpan()),
             .. comparison.Triggers.SelectMany(trigger => RenderTrigger(trigger, labelWidth)),
+            .. RenderLinksOnlyHere("A", left, comparison.LeftLinks),
+            .. RenderLinksOnlyHere("B", right, comparison.RightLinks),
         ];
+    }
+
+    /// <summary>"Links only in A", then each link of A's chain that B lacks: "#2 Class ability → #4 Festival Flight (kill): Slice · Reaper".</summary>
+    private static ImmutableArray<StyledLine> RenderLinksOnlyHere(string side, LoopReport report, ImmutableArray<ComparedLink> links)
+    {
+        var only = links.Where(compared => compared.OnlyHere).Select(compared => compared.Link).ToImmutableArray();
+        return only.IsEmpty
+            ? []
+            :
+            [
+                StyledText.ToLine(0, "".ToSpan()),
+                StyledText.ToLine(0, $"Links only in {side}".ToSpan(Tone.Strong)),
+                .. only.Select(link => StyledText.ToLine(0,
+                    $"{Indent}{link.DescribeLinkSource()} {report.StepLabels[link.From]} → #{FormatStepNumber(report.Steps[link.To])} {report.StepLabels[link.To]}: ".ToSpan(Tone.Plain),
+                    link.DescribeLinkNeeds().ToSpan(Tone.Warning))),
+            ];
     }
 
     private static StyledLine RenderOrder(string side, LoopReport report, int nameWidth) =>

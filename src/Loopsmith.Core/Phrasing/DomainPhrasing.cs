@@ -375,6 +375,28 @@ public static class DomainPhrasing
         return $"{need.What} {need.Provider.DescribeProvider()}{sources}";
     }
 
+    /// <summary>"#2", "previous pass #6": where a link of the step chain starts.</summary>
+    public static string DescribeLinkSource(this StepLink link) =>
+        link.FromPreviousPass ? $"previous pass #{link.From + 1}" : $"#{link.From + 1}";
+
+    /// <summary>"#2 → #4: Slice · Reaper", "previous pass #6 → #3: Armor Charge": a link of the step chain.</summary>
+    public static string DescribeLink(this StepLink link) =>
+        $"{link.DescribeLinkSource()} → #{link.To + 1}: {link.DescribeLinkNeeds()}";
+
+    /// <summary>"#4", "next pass #3": where a link of the step chain ends, seen from the step that provided it.</summary>
+    public static string DescribeLinkTarget(this StepLink link) =>
+        link.FromPreviousPass ? $"next pass #{link.To + 1}" : $"#{link.To + 1}";
+
+    /// <summary>"Slice · Reaper", "Armor Charge (chance)": what flows along a link, a need that came only from chance rules marked.</summary>
+    public static string DescribeLinkNeeds(this StepLink link) =>
+        string.Join(" · ", link.Needs.Select(need => need.What + (IsChanceOnly(need) ? " (chance)" : "")));
+
+    private static bool IsChanceOnly(StepNeed need)
+    {
+        var elements = need.Provider.Match(earlier => earlier.Elements, previous => previous.Elements);
+        return !elements.IsEmpty && elements.All(element => element.Likelihood == Likelihood.Chance);
+    }
+
     /// <summary>"Reaper ← #1": a need and where it comes from, without the elements (comparisons).</summary>
     public static string DescribeNeedBriefly(this StepNeed need) =>
         $"{need.What} {need.Provider.DescribeProvider()}";

@@ -21,3 +21,22 @@ Bolt Charge at max      A #7 · B #3: sets off the same
    B needs     Bolt Charge ← #2
 Grenade (kill)          only in A (#8)
 Melee (kill)            only in B (#2)
+
+Links only in A
+   #2 Class ability → #4 Festival Flight (kill): Slice · Reaper
+   previous pass #6 Pick up Orb of Power → #4 Festival Flight (kill): Unraveling Rounds
+   #3 Grenade (kill) → #4 Festival Flight (kill): Jolt
+   #4 Festival Flight (kill) → #5 Any Arc weapon (kill): Sever · Unravel
+   #4 Festival Flight (kill) → #6 Pick up Orb of Power: Orb of Power
+   #5 Any Arc weapon (kill) → #7 Bolt Charge at max: Bolt Charge
+   #7 Bolt Charge at max → #8 Grenade (kill): New Tricks · Bolt Charge at max
+   #6 Pick up Orb of Power → #8 Grenade (kill): Armor Charge
+   #5 Any Arc weapon (kill) → #8 Grenade (kill): Bolt Charge · Sever
+   #3 Grenade (kill) → #8 Grenade (kill): Jolt
+
+Links only in B
+   #2 Melee (kill) → #3 Bolt Charge at max: Bolt Charge
+   #3 Bolt Charge at max → #4 Grenade (kill): New Tricks · Bolt Charge at max
+   #2 Melee (kill) → #4 Grenade (kill): Bolt Charge · Jolt
+   previous pass #7 Class ability → #5 Any Arc weapon (kill): Reaper
+   #5 Any Arc weapon (kill) → #6 Pick up Orb of Power: Orb of Power

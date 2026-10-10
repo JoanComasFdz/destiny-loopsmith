@@ -8,7 +8,8 @@ namespace Loopsmith.Core.TraceRendering;
 
 /// <summary>
 /// A <see cref="LoopReport"/> as styled lines: the order, the verdict, then each step of the repeating pass — what it
-/// needs and which step provided it, what it sets off, what is wasted — and where the first pass differs.
+/// needs and which step provided it, what it sets off in this order (thanks to an earlier step) and on its own, what is
+/// wasted — and where the first pass differs.
 /// </summary>
 public static class LoopReportRendering
 {
@@ -41,7 +42,8 @@ public static class LoopReportRendering
         StyledText.ToLine(0, $"#{(step.StepIndex + 1).ToString(Invariant)} ".ToSpan(Tone.Muted), step.Label.ToSpan(Tone.Strong)),
         .. step.Blocked.Match(reason => new[] { RenderField("blocked", reason.Value.ToSpan(Tone.Warning)) }, _ => []),
         .. step.Needs.IsEmpty ? [] : new[] { RenderField("needs", JoinSpans(step.Needs.Select(need => need.DescribeNeed().ToSpan(need.Affinity.ToTone())))) },
-        .. step.SetsOff.IsEmpty ? [] : new[] { RenderField("sets off", JoinSpans(step.SetsOff.Select(ToMentionSpan))) },
+        .. step.InOrder.IsEmpty ? [] : new[] { RenderField("in this order", JoinSpans(step.InOrder.Select(ToMentionSpan))) },
+        .. step.OnItsOwn.IsEmpty ? [] : new[] { RenderField("on its own", JoinSpans(step.OnItsOwn.Select(ToMentionSpan))) },
         .. step.Wasted.Select(wasted => RenderField("wasted", [wasted.DescribeWasted().ToSpan(Tone.Warning)])),
     ];
 

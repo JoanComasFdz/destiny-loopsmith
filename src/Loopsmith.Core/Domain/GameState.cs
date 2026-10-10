@@ -69,6 +69,8 @@ public sealed record AppliedOutcome(Outcome Outcome, Certainty Certainty, Option
 /// <see cref="NotStackedWith"/> names the element this rule gave way to (<see cref="Rule.DoesNotStackWith"/>): it
 /// matched, but applied nothing, so <see cref="Outcomes"/> is empty. <see cref="On"/> and <see cref="When"/> are the
 /// rule's own trigger and guards: what it needed (a debuffed target, a buff, a declared maximum).
+/// <see cref="CausedBy"/> is the place, among the step's fired rules, of the rule whose outcome raised the event this
+/// one fired on; none for the step's own events (the cast, the hit, the pickup, the declaration).
 /// </summary>
 public sealed record FiredRule(
     ElementId Source,
@@ -83,7 +85,8 @@ public sealed record FiredRule(
     int EventIndex,
     Optional<string> NotStackedWith,
     Trigger On,
-    ImmutableArray<Condition> When);
+    ImmutableArray<Condition> When,
+    Optional<int> CausedBy);
 
 /// <summary>A passive whose conditions hold in the current state (shown next to the state, not as a bullet).</summary>
 public sealed record ActivePassive(ElementId Source, string SourceName, Affinity Affinity, PassiveRule Passive);

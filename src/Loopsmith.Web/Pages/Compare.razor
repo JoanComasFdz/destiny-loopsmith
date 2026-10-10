@@ -48,6 +48,17 @@ else
                     @RenderOrder("A", leftReport)
                     @RenderOrder("B", rightReport)
                 </div>
+                <div class="compare-chains" data-testid="chains">
+                    <div class="compare-chain">
+                        <h3 class="section-label">A · @leftReport.LoopName</h3>
+                        <StepChain Report="leftReport" Links="comparison.Value.LeftLinks" />
+                    </div>
+                    <div class="compare-chain">
+                        <h3 class="section-label">B · @rightReport.LoopName</h3>
+                        <StepChain Report="rightReport" Links="comparison.Value.RightLinks" />
+                    </div>
+                </div>
+                <p class="muted chain-legend">Arrows: which step feeds which. Dashed comes from the pass before; faded and dotted only by chance; highlighted when the other loop doesn't have it.</p>
                 <div class="table-wrap">
                     <table class="data-table compare-table">
                         <thead>

@@ -5,29 +5,31 @@ New pack → Melee (kill) → Bolt Charge at max → Grenade (kill) → Any Arc 
 #1 New pack
 
 #2 Melee (kill)
-   sets off         Tempest Strike · Impact Induction · Combination Blow · Flow State · Dielectric · Shock and Clear · Shinobu's Vow · Bolt Charge · Spark of Discharge · Elemental Charge (chance) · Ionic Trace
+   on its own       Tempest Strike · Impact Induction · Combination Blow · Flow State · Dielectric · Shock and Clear · Shinobu's Vow · Bolt Charge · Spark of Discharge · Elemental Charge (chance) · Ionic Trace
    wasted           Tempest Strike — doesn't stack with Dielectric
 
 #3 Bolt Charge at max
    needs            Bolt Charge ← #2 [Dielectric; Spark of Discharge]
-   sets off         Shinobu's Vow · Flashover
+   in this order    Shinobu's Vow · Flashover
 
 #4 Grenade (kill)
    needs            New Tricks ← #3 [Shinobu's Vow] · Armor Charge ← previous pass #6 [Orb of Power] · Bolt Charge at max ← #3 · Bolt Charge ← #2 [Dielectric; Spark of Discharge] · Jolt ← #2 [Tempest Strike]
-   sets off         Shinobu's Vow · Grenade Kickstart · Spark of Shock · Bolt Charge · Jolt · Defibrillating Blast · Flow State · Dielectric · Shock and Clear · Spark of Discharge · Elemental Charge (chance) · Ionic Trace
+   in this order    Shinobu's Vow · Grenade Kickstart · Bolt Charge · Jolt · Defibrillating Blast · Flow State · Dielectric · Shock and Clear · Spark of Discharge · Elemental Charge (chance) · Ionic Trace
+   on its own       Spark of Shock
    wasted           Tempest Strike — doesn't stack with Dielectric
 
 #5 Any Arc weapon (kill)
    needs            Jolt ← #4 [Spark of Shock; Defibrillating Blast] · Reaper ← previous pass #7 [Reaper]
-   sets off         Jolt · Flow State · Reaper · Dielectric · Spark of Discharge · Shock and Clear · Harmonic Siphon (chance) · Shinobu's Vow · Bolt Charge · Elemental Charge (chance) · Ionic Trace
+   in this order    Jolt · Flow State · Reaper · Dielectric · Spark of Discharge · Shock and Clear · Shinobu's Vow · Bolt Charge · Elemental Charge (chance) · Ionic Trace
+   on its own       Harmonic Siphon (chance)
    wasted           Tempest Strike — doesn't stack with Dielectric
 
 #6 Pick up Orb of Power
    needs            Orb of Power ← #5 [Reaper; Harmonic Siphon (chance)]
-   sets off         Unraveling Orbs · Orb of Power
+   in this order    Unraveling Orbs · Orb of Power
 
 #7 Class ability
-   sets off         Reaper · Slice · Gambler's Dodge · Bomber
+   on its own       Reaper · Slice · Gambler's Dodge · Bomber
 
 First pass (from a fresh spawn, where it differs)
 #5 Any Arc weapon (kill)
