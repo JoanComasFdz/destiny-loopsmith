@@ -22,8 +22,60 @@ public class LoopFindingTests
         var loops = LoopFinding.FindLoops(graph);
 
         var loop = Assert.Single(loops);
-        Assert.True(loop.RefundsEnergy);
+        Assert.True(loop.GivesEnergyBack);
         Assert.Equal(["a:Grenade", "t:Grenade damage", "t:Gain Bolt Charge", "e:Grenade"], loop.NodeKeys);
+    }
+
+    [Fact]
+    public void A_grant_leads_only_to_the_gain_and_reaching_the_max_is_a_link_you_declare()
+    {
+        // Grenade damage → +Bolt Charge; at max → grenade energy. No rule reacts to the gain itself, yet its node exists.
+        var vow = Element("vow", ElementKind.Fragment,
+        [
+            On(new Trigger.Damage(new DamageSource.AbilityOf(AbilityKind.Grenade)), Buff("bolt-charge")),
+            On(new Trigger.StacksMaxed(Status("bolt-charge")), Energy(AbilityKind.Grenade, new GameValue.Unknown())),
+        ]);
+        var build = ValidateBuild([vow]);
+
+        var graph = LoopGraphBuilding.BuildLoopGraph(build);
+        var loops = LoopFinding.FindLoops(graph);
+
+        Assert.DoesNotContain(graph.Edges, e => e.From == "t:Grenade damage" && e.To == "t:Max Bolt Charge");
+        Assert.Contains(graph.Edges, e => e.From == "t:Grenade damage" && e.To == "t:Gain Bolt Charge" && e.Kind == EdgeKind.Rule);
+        var declared = Assert.Single(graph.Edges, e => e.Kind == EdgeKind.Declared);
+        Assert.Equal(("t:Gain Bolt Charge", "t:Max Bolt Charge", "you declare"), (declared.From, declared.To, string.Join(", ", declared.Sources)));
+        var loop = Assert.Single(loops);
+        Assert.True(loop.GivesEnergyBack);
+        Assert.Equal(["a:Grenade", "t:Grenade damage", "t:Gain Bolt Charge", "t:Max Bolt Charge", "e:Grenade"], loop.NodeKeys);
+        var text = LoopRendering.RenderLoops(graph, loops, 10).ToPlainText();
+        Assert.Contains("ability loop — gives grenade energy back · 5 steps", text);
+        Assert.Contains("Gain Bolt Charge →[you declare] Max Bolt Charge →[Vow] Grenade energy", text);
+        var mermaid = LoopRendering.RenderMermaid(graph, loops, loopsOnly: true);
+        Assert.Contains("-.->|\"you declare\"|", mermaid);   // dotted, and on the loop also thick and pink
+        Assert.Contains("linkStyle 0,1,2,3,4 ", mermaid);
+    }
+
+    [Fact]
+    public void A_rule_guarded_at_max_leads_from_its_own_trigger_and_needs_the_declared_max()
+    {
+        // Bolt Charge's discharge: the next ability hit at max gives energy; no rule triggers on the gain or the max.
+        var charge = Element("charge", ElementKind.Fragment,
+        [
+            On(new Trigger.Damage(new DamageSource.AbilityOf(AbilityKind.Grenade)), Buff("bolt-charge")),
+            OnWhen(new Trigger.Damage(new DamageSource.AnyAbility()), new Condition.AtMax(Status("bolt-charge")), Energy(AbilityKind.Grenade, new GameValue.Unknown())),
+        ]);
+        var build = ValidateBuild([charge]);
+
+        var graph = LoopGraphBuilding.BuildLoopGraph(build);
+        var loops = LoopFinding.FindLoops(graph);
+
+        Assert.Contains(graph.Edges, e => e.From == "t:Ability damage" && e.To == "e:Grenade" && e.Sources.SequenceEqual(["Charge (while Bolt Charge at max)"]));
+        Assert.Contains(graph.Edges, e => e.From == "t:Grenade damage" && e.To == "t:Gain Bolt Charge" && e.Kind == EdgeKind.Rule);
+        Assert.Contains(graph.Edges, e => e.From == "t:Gain Bolt Charge" && e.To == "t:Max Bolt Charge" && e.Kind == EdgeKind.Declared);
+        var needs = Assert.Single(graph.Edges, e => e.From == "t:Max Bolt Charge");
+        Assert.Equal(("t:Ability damage", EdgeKind.Enables, "Charge"), (needs.To, needs.Kind, string.Join(", ", needs.Sources)));
+        Assert.Contains(loops, loop => loop.NodeKeys.SequenceEqual(["a:Grenade", "t:Ability damage", "e:Grenade"]));
+        Assert.DoesNotContain(loops, loop => loop.NodeKeys.Contains("t:Max Bolt Charge"));   // a guard is a need, not a step
     }
 
     [Fact]

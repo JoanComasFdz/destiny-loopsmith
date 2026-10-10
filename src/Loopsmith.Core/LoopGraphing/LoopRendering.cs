@@ -21,9 +21,8 @@ public static class LoopRendering
 
     private static IEnumerable<StyledLine> RenderLoop(ImmutableDictionary<string, GraphNode> nodes, Loop loop, int number)
     {
-        var kind = loop.RefundsEnergy
-            ? "ability loop — refunds " + string.Join(", ", loop.NodeKeys.Where(k => nodes[k].Kind == NodeKind.Energy).Select(k => nodes[k].Label.ToLowerInvariant()))
-            : "buff loop";
+        var energies = loop.NodeKeys.Where(k => nodes[k].Kind == NodeKind.Energy).Select(k => nodes[k].Label.ToLowerInvariant());
+        var kind = loop.GivesEnergyBack ? $"ability loop — gives {JoinWithAnd(energies)} back" : "buff loop";
         var steps = loop.Edges.Count(edge => nodes[edge.To].Kind != NodeKind.Filter);   // a "doesn't stack" node is not a step
         yield return StyledText.ToLine(0, $"Loop {number}".ToSpan(Tone.Strong), $" · {kind} · {steps} steps".ToSpan(Tone.Muted));
         var spans = loop.Edges.SelectMany((edge, index) => (ImmutableArray<StyledSpan>)
@@ -37,8 +36,9 @@ public static class LoopRendering
 
     /// <summary>
     /// Mermaid flowchart (renders on GitHub and mermaid.live). Loop edges are thick and pink; the other player edges
-    /// and the "requires debuff" edges are dotted (the latter labelled with their source). Colours follow the design
-    /// proposal's element palette.
+    /// and the "needs" edges (a debuff a trigger requires, the max a guard reads) are dotted, the latter labelled with
+    /// their source. The link you declare ("Gain X → Max X", ADRs D3) is always dotted and labelled "you declare" — on a
+    /// loop, dotted, thick and pink. Colours follow the design proposal's element palette.
     /// </summary>
     public static string RenderMermaid(LoopGraph graph, ImmutableArray<Loop> loops, bool loopsOnly)
     {
@@ -78,10 +78,9 @@ public static class LoopRendering
             var label = edge.Kind == EdgeKind.Player ? "" : $"|\"{Escape(string.Join(" · ", edge.Sources))}\"|";
             var arrow = (edge.Kind, isLoop) switch
             {
-                (EdgeKind.Enables, _) => "-.->",
-                (EdgeKind.Player, true) => "==>",
-                (EdgeKind.Player, false) => "-.->",
+                (EdgeKind.Enables or EdgeKind.Declared, _) => "-.->",
                 (_, true) => "==>",
+                (EdgeKind.Player, false) => "-.->",
                 _ => "-->",
             };
             text.AppendLine($"  {ids[edge.From]} {arrow}{label} {ids[edge.To]}");
@@ -106,4 +105,11 @@ public static class LoopRendering
     ];
 
     private static string Escape(string text) => text.Replace("\"", "#quot;");
+
+    /// <summary>"grenade energy", "melee energy and class ability energy", "a, b and c".</summary>
+    private static string JoinWithAnd(IEnumerable<string> parts)
+    {
+        var all = parts.ToImmutableArray();
+        return all.Length <= 1 ? string.Join("", all) : $"{string.Join(", ", all[..^1])} and {all[^1]}";
+    }
 }

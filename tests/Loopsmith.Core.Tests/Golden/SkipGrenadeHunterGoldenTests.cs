@@ -173,7 +173,7 @@ public class SkipGrenadeHunterGoldenTests
         var graph = LoopGraphBuilding.BuildLoopGraph(Build);
         var loops = LoopFinding.FindLoops(graph);
 
-        Assert.Contains(loops, loop => loop.RefundsEnergy
+        Assert.Contains(loops, loop => loop.GivesEnergyBack
             && loop.NodeKeys.Contains("a:Grenade")
             && loop.NodeKeys.Contains("e:Grenade")
             && loop.Edges.Any(e => e.Sources.Contains("Shinobu's Vow")));
