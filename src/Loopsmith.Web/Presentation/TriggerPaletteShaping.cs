@@ -80,7 +80,7 @@ public static class TriggerPaletteShaping
             TriggerGroup.Ability => "Abilities",
             TriggerGroup.Weapon => "Weapons",
             TriggerGroup.Pickup => "Pickups",
-            _ => "Time",
+            _ => "States you declare",
         };
 
     /// <summary>Hit and kill of the same ability or weapon share a key; everything else stands alone.</summary>
@@ -90,7 +90,7 @@ public static class TriggerPaletteShaping
             _ => "class",
             fire => $"fire:{fire.Slot}",
             collect => $"pickup:{collect.Pickup}",
-            wait => $"wait:{wait.Duration}");
+            declare => ((PlayerAction)declare).ToActionToken());
 
     private static int ReadHitOrder(PlayerAction action) =>
         action.Match(

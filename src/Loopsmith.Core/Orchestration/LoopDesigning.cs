@@ -13,11 +13,12 @@ using Loopsmith.Core.TraceRendering;
 
 namespace Loopsmith.Core.Orchestration;
 
-public enum TriggerGroup { Ability, Weapon, Pickup, Time }
+public enum TriggerGroup { Ability, Weapon, Pickup, Declare }
 
 /// <summary>
-/// A trigger the designer can pick next — every option listed can be played (abilities are always available, ADRs D5).
-/// <see cref="IsNew"/> marks what the last step unlocked (a pickup that just landed). Abilities and weapons are listed
+/// A step the designer can pick next — every option listed can happen (abilities are always available, ADRs D5;
+/// a declaration is offered only when it holds, ADRs D3). <see cref="IsNew"/> marks what the last step unlocked (a
+/// pickup that just landed, a buff that can now be declared at max). Abilities and weapons are listed
 /// against one enemy; <see cref="LoopDesigning.SetTargetCount"/> aims them at more.
 /// </summary>
 public sealed record TriggerOption(
@@ -93,8 +94,9 @@ public static class LoopDesigning
             : session with { Design = session.Design with { Steps = session.Design.Steps.SetItem(index, session.Design.Steps[index] with { Note = note }) } };
 
     /// <summary>
-    /// Every trigger the build offers right now, grouped: every ability (always available — ADRs D5), every weapon,
-    /// the pickups on the ground, a wait. <see cref="TriggerOption.IsNew"/> marks what the last step made available.
+    /// Every step the build offers right now, grouped: every ability (always available — ADRs D5), every weapon, the
+    /// pickups on the ground and the states you can declare (ADRs D3). <see cref="TriggerOption.IsNew"/> marks what the
+    /// last step made available.
     /// </summary>
     public static ImmutableArray<TriggerOption> ListTriggerOptions(DesignSession session)
     {
@@ -127,13 +129,13 @@ public static class LoopDesigning
         var weapons = build.Build.Weapons
             .SelectMany(weapon => hits.Select(hit => ((PlayerAction)new PlayerAction.FireWeapon(weapon.Slot, hit, TargetCount.One), TriggerGroup.Weapon)));
         var pickups = state.Pickups
-            .Where(p => p.Count > 0)
-            .Select(p => ((PlayerAction)new PlayerAction.CollectPickups(p.Pickup), TriggerGroup.Pickup));
-        var wait = new[] { ((PlayerAction)new PlayerAction.Wait(ActionResolution.DefaultWait), TriggerGroup.Time) };
-        return [.. abilities, .. weapons, .. pickups, .. wait];
+            .Select(pickup => ((PlayerAction)new PlayerAction.CollectPickups(pickup), TriggerGroup.Pickup));
+        var declarations = ActionResolution.ListDeclarations(build, state)
+            .Select(declaration => ((PlayerAction)new PlayerAction.Declare(declaration), TriggerGroup.Declare));
+        return [.. abilities, .. weapons, .. pickups, .. declarations];
     }
 
-    /// <summary>How many enemies an ability or weapon action hits (or kills); none for the class ability, pickups and waits.</summary>
+    /// <summary>How many enemies an ability or weapon action hits (or kills); none for the class ability, pickups and declarations.</summary>
     public static Optional<TargetCount> ReadTargetCount(PlayerAction action) =>
         action switch
         {
@@ -144,7 +146,7 @@ public static class LoopDesigning
 
     /// <summary>
     /// The same ability or weapon action against <paramref name="targets"/> enemies ("kill 3 with the grenade"); the
-    /// class ability, pickups and waits have no targets and come back unchanged. Hosts validate a typed count with
+    /// class ability, pickups and declarations have no targets and come back unchanged. Hosts validate a typed count with
     /// <c>TargetCount.TryFrom</c> (1..20).
     /// </summary>
     public static PlayerAction SetTargetCount(PlayerAction action, TargetCount targets) =>

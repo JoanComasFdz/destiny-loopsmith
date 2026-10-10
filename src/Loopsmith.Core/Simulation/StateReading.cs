@@ -1,59 +1,53 @@
 using System.Collections.Immutable;
 using Loopsmith.Core.Domain;
-using Loopsmith.Core.Functional;
 
 namespace Loopsmith.Core.Simulation;
 
-/// <summary>Pure reads and immutable updates over <see cref="GameState"/>.</summary>
+/// <summary>Pure reads and immutable updates over <see cref="GameState"/>: what is present, and what the player declared.</summary>
 public static class StateReading
 {
-    public static Optional<ActiveStatus> FindBuff(this GameState state, StatusId status) =>
-        Optional.FromNullable(state.Buffs.FirstOrDefault(buff => buff.Status == status));
-
-    public static int ReadStacks(this GameState state, StatusId status) =>
-        state.FindBuff(status).Map(buff => buff.Stacks.Value).UnwrapOr(0);
-
     public static bool HasBuff(this GameState state, StatusId status) =>
         state.Buffs.Any(buff => buff.Status == status);
 
-    public static bool TargetHas(this GameState state, StatusId status) =>
-        state.Target.Debuffs.Any(debuff => debuff.Status == status);
+    /// <summary>The player declared this buff at its maximum (<c>max:</c>), and nothing has consumed or ended it since.</summary>
+    public static bool IsAtMax(this GameState state, StatusId status) =>
+        state.Buffs.Any(buff => buff.Status == status && buff.AtMax);
 
-    public static GameState PutBuff(this GameState state, ActiveStatus buff) =>
-        state with { Buffs = ReplaceOrAppend(state.Buffs, buff) };
+    public static bool TargetHas(this GameState state, StatusId status) =>
+        state.Target.Debuffs.Contains(status);
+
+    public static bool HasPickup(this GameState state, PickupId pickup) =>
+        state.Pickups.Contains(pickup);
+
+    /// <summary>Makes the buff present; one already present keeps its place (and its declaration).</summary>
+    public static GameState PutBuff(this GameState state, StatusId status) =>
+        state.HasBuff(status) ? state : state with { Buffs = state.Buffs.Add(new ActiveBuff(status, AtMax: false)) };
+
+    public static GameState DeclareAtMax(this GameState state, StatusId status) =>
+        state with { Buffs = [.. state.Buffs.Select(buff => buff.Status == status ? buff with { AtMax = true } : buff)] };
 
     public static GameState DropBuff(this GameState state, StatusId status) =>
-        state with { Buffs = state.Buffs.RemoveAll(b => b.Status == status) };
+        state with { Buffs = state.Buffs.RemoveAll(buff => buff.Status == status) };
 
-    public static GameState PutDebuff(this GameState state, ActiveStatus debuff) =>
-        state with { Target = state.Target with { Debuffs = ReplaceOrAppend(state.Target.Debuffs, debuff) } };
+    public static GameState PutDebuff(this GameState state, StatusId status) =>
+        state.TargetHas(status) ? state : state with { Target = state.Target with { Debuffs = state.Target.Debuffs.Add(status) } };
 
-    /// <summary>Refreshing a status keeps its place, so traces list statuses in the order they were gained.</summary>
-    private static ImmutableArray<ActiveStatus> ReplaceOrAppend(ImmutableArray<ActiveStatus> statuses, ActiveStatus status)
-    {
-        var index = statuses.Select(s => s.Status).ToImmutableArray().IndexOf(status.Status);
-        return index < 0 ? statuses.Add(status) : statuses.SetItem(index, status);
-    }
+    public static GameState DropDebuff(this GameState state, StatusId status) =>
+        state with { Target = state.Target with { Debuffs = state.Target.Debuffs.Remove(status) } };
 
-    public static int CountPickups(this GameState state, PickupId pickup) =>
-        state.Pickups.Where(p => p.Pickup == pickup).Sum(p => p.Count);
+    public static GameState PutPickup(this GameState state, PickupId pickup) =>
+        state.HasPickup(pickup) ? state : state with { Pickups = state.Pickups.Add(pickup) };
 
-    public static GameState AddPickups(this GameState state, PickupId pickup, int count) =>
-        state with
-        {
-            Pickups = state.Pickups.RemoveAll(p => p.Pickup == pickup)
-                .Add(new GroundPickup(pickup, state.CountPickups(pickup) + count)),
-        };
-
-    public static GameState ClearPickups(this GameState state, PickupId pickup) =>
-        state with { Pickups = state.Pickups.RemoveAll(p => p.Pickup == pickup) };
+    public static GameState DropPickup(this GameState state, PickupId pickup) =>
+        state with { Pickups = state.Pickups.Remove(pickup) };
 
     public static ImmutableArray<StatusId> ListTargetStatuses(this GameState state) =>
-        state.Target.Debuffs.Select(d => d.Status).ToImmutableArray();
+        state.Target.Debuffs;
 
     public static bool IsSatisfiedBy(this ImmutableArray<Condition> conditions, GameState state) =>
         conditions.All(condition => condition.Match(
             hasBuff => state.HasBuff(hasBuff.Status),
             lacksBuff => !state.HasBuff(lacksBuff.Status),
-            targetHas => state.TargetHas(targetHas.Status)));
+            targetHas => state.TargetHas(targetHas.Status),
+            atMax => state.IsAtMax(atMax.Status)));
 }

@@ -13,13 +13,14 @@ public static class ActionTokenParsing
     private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
 
     public const string Grammar =
-        "grenade|melee|super[:hit|kill[:N]], class[:air], kinetic|energy|power[:hit|kill[:N]], pickup:<id>, wait[:<seconds>]";
+        "grenade|melee|super[:hit|kill[:N]], class[:air], kinetic|energy|power[:hit|kill[:N]], pickup:<id>, max:<status>, end:<status>";
 
     /// <summary>
     /// <c>grenade</c>, <c>grenade:kill</c>, <c>grenade:kill:3</c>, <c>kinetic:hit:5</c>, <c>class</c>, <c>class:air</c> (an air move
     /// that spends the class ability, like Ascension),
-    /// <c>pickup:orb-of-power</c>, <c>wait:2.5</c>. Without <c>:kill</c> the hit only damages; without a count it hits
-    /// one enemy. The count is validated here, at the boundary (<see cref="TargetCount"/>: 1..20).
+    /// <c>pickup:orb-of-power</c>, and the states the player declares (ADRs D3): <c>max:bolt-charge</c>, <c>end:amplified</c>.
+    /// Without <c>:kill</c> the hit only damages; without a count it hits one enemy. The count is validated here, at the
+    /// boundary (<see cref="TargetCount"/>: 1..20); whether a declaration holds is the engine's (a blocked step).
     /// </summary>
     public static Result<PlayerAction, string> ParseActionToken(string token)
     {
@@ -35,10 +36,10 @@ public static class ActionTokenParsing
             "energy" => ParseAimedAction(token, parts, (hit, targets) => new PlayerAction.FireWeapon(WeaponSlot.Energy, hit, targets)),
             "power" => ParseAimedAction(token, parts, (hit, targets) => new PlayerAction.FireWeapon(WeaponSlot.Power, hit, targets)),
             "pickup" when parts.Length == 2 && PickupId.TryFrom(parts[1], out var pickup) => Ok(new PlayerAction.CollectPickups(pickup)),
-            "wait" when parts.Length == 1 => Ok(new PlayerAction.Wait(Seconds.From(5m))),
-            "wait" when parts.Length == 2
-                && decimal.TryParse(parts[1].TrimEnd('s'), NumberStyles.Number, Invariant, out var seconds)
-                && seconds > 0m => Ok(new PlayerAction.Wait(Seconds.From(seconds))),
+            "max" when parts.Length == 2 && StatusId.TryFrom(parts[1], out var maxed) =>
+                Ok(new PlayerAction.Declare(new StateDeclaration.ReachMax(maxed))),
+            "end" when parts.Length == 2 && StatusId.TryFrom(parts[1], out var ended) =>
+                Ok(new PlayerAction.Declare(new StateDeclaration.EndStatus(ended))),
             _ => FailUnknown(token),
         };
     }

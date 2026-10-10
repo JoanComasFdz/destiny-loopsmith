@@ -1,8 +1,8 @@
-@* The game state at one point of the loop: buffs, target debuffs, ground pickups, active passives (no ability energy: it isn't simulated). *@
+@* What is present at one point of the loop — buffs on you ("at max" once declared), debuffs on the pack, pickups on the ground — and the active passives. A chip's tooltip shows the source's facts. *@
 @{
     var glossary = Build.Catalog.Glossary;
-    var buffs = StateShaping.ShapeStatuses(glossary, State.Buffs);
-    var debuffs = StateShaping.ShapeStatuses(glossary, State.Target.Debuffs);
+    var buffs = StateShaping.ShapeBuffs(glossary, State.Buffs);
+    var debuffs = StateShaping.ShapeDebuffs(glossary, State.Target.Debuffs);
     var pickups = StateShaping.ShapePickups(glossary, State.Pickups);
     var passives = StateShaping.ListConditionalPassives(Passives);
 }
@@ -62,7 +62,7 @@
         <span class="chips">
             @foreach (var chip in chips)
             {
-                <span class="chip @ToneStyling.ToAffinityClass(chip.Affinity)">@chip.Text</span>
+                <span class="chip @ToneStyling.ToAffinityClass(chip.Affinity)" title="@(chip.Facts.Length > 0 ? chip.Facts : null)">@chip.Text</span>
             }
         </span>
     };

@@ -72,8 +72,8 @@ public sealed class LoopFileParsingTests
               - do: melee
               - do: SUPER:KILL
               - do: power:kill
-              - do: wait:2.25
-              - do: wait
+              - do: max:bolt-charge
+              - do: END:Amplified
             build: x
             """);
 
@@ -82,8 +82,8 @@ public sealed class LoopFileParsingTests
                 new PlayerAction.CastAbility(OffensiveAbility.Melee, HitOutcome.Damage, TargetCount.One),
                 new PlayerAction.CastAbility(OffensiveAbility.Super, HitOutcome.Kill, TargetCount.One),
                 new PlayerAction.FireWeapon(WeaponSlot.Power, HitOutcome.Kill, TargetCount.One),
-                new PlayerAction.Wait(Seconds.From(2.25m)),
-                new PlayerAction.Wait(Seconds.From(5m)),
+                new PlayerAction.Declare(new StateDeclaration.ReachMax(StatusId.From("bolt-charge"))),
+                new PlayerAction.Declare(new StateDeclaration.EndStatus(StatusId.From("amplified"))),
             ],
             design.Steps.Select(step => step.Action));
     }

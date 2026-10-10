@@ -84,17 +84,18 @@ public class ExampleLoopsGoldenTests
         Assert.Contains(airMove.Fired, rule => rule.Source.Value == "ascension");
         Assert.Contains(airMove.Fired, rule => rule.Source.Value == "gamblers-dodge");   // the dodge's effects fire too
         Assert.Contains(airMove.State.Buffs, buff => buff.Status.Value == "amplified");
-        Assert.Contains(airMove.State.Target.Debuffs, debuff => debuff.Status.Value == "jolt");
+        Assert.Contains(airMove.State.Target.Debuffs, debuff => debuff.Value == "jolt");
     }
 
     [Fact]
-    public void Slice_restarts_on_every_dodge_so_dodges_alone_never_max_it()
+    public void Slice_is_never_at_max_until_the_player_declares_it()
     {
         var report = AnalyzeLoop(MeleeFirstPath);   // one dodge per cycle, no Strand weapon
 
-        Assert.DoesNotContain(report.Outcomes, tally => tally.Label == "Slice maxed");
+        Assert.DoesNotContain(report.Cycles.SelectMany(cycle => cycle.Resolutions).SelectMany(r => r.Fired),
+            rule => rule.Trigger is GameEvent.StacksMaxed { Status.Value: "slice" });
         Assert.All(report.FindSteadyCycle().Match(cycle => cycle.Value.Resolutions, _ => []),
-            resolution => Assert.True(resolution.State.ReadStacks(StatusId.From("slice")) <= 1));
+            resolution => Assert.False(resolution.State.Buffs.Any(b => b.Status.Value == "slice" && b.AtMax)));
     }
 
     [Fact]
@@ -112,7 +113,7 @@ public class ExampleLoopsGoldenTests
             .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
         var designed = LoopDesigning.AppendStep(started, new PlayerAction.UseClassAbility(), Optional.Some("dodge: \"arm\" # everything"));
         designed = LoopDesigning.AppendStep(designed, new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Kill, TargetCount.One), Optional.None<string>());
-        designed = LoopDesigning.AppendStep(designed, new PlayerAction.Wait(Seconds.From(1.5m)), Optional.None<string>());
+        designed = LoopDesigning.AppendStep(designed, new PlayerAction.Declare(new StateDeclaration.ReachMax(StatusId.From("bolt-charge"))), Optional.None<string>());
         designed = LoopDesigning.RenameDesign(designed, "Round trip: test", Optional.Some("Joan"), Optional.Some("Line one\n  indented line two\n"));
 
         var imported = LoopDesigning.ImportLoop(Catalog, new SourceText("x.loop.yaml", LoopDesigning.ExportLoop(designed)))

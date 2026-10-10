@@ -1,6 +1,6 @@
 # Weapon perks (traits).
-# v1 limit: a perk's rule cannot say "this weapon". Both perks here sit on a Strand weapon in the
-# skip-grenade build (Festival Flight), so they are written against `weapon:strand`.
+# Not expressible: a perk's rule cannot say "this weapon". Both perks here sit on a Strand weapon
+# in the skip-grenade build (Festival Flight), so they are written against `weapon:strand`.
 elements:
   - id: slice
     name: Slice
@@ -8,30 +8,25 @@ elements:
     affinity: strand
     hash: 923806249           # enhanced: 3422796781 (9 s window)
     description: "Using your class ability (even with the weapon stowed) arms Slice: your next 5 hits on enemies that aren't Severed yet Sever them, as long as each comes within 8 s (9 s enhanced) of the previous one. A severing hit that kills doesn't count."
-    # Previously clarity/923806249@2.0625, which says the same ("Reaching 5 stacks immediately
-    # removes the buff").
     source: "compendium/2026-10-09/Weapon Perks#198"
     rules:
-      # The initial grant counts as 1 stack in v1, so a window gives 4 severs before the 5-stack cap;
-      # the Compendium says 5 severs. A buff granted at 0 stacks is not expressible (format gap).
-      # Every class ability use arms "the next 5" hits afresh, so a new dodge restarts Slice instead
-      # of adding a stack.
+      # Every class ability use arms Slice for the next 5 hits; the player declares max:slice when
+      # they are done (ADRs D3).
       - on: { abilityCast: classAbility }
         then:
-          - { applyBuff: { status: slice, stacks: 1, duration: 8s, restart: true } }
-        reason: "Dodging arms Slice for 8 seconds, even while the weapon is stowed; dodging again starts a fresh window."
-      # Not expressible: "non-Severed targets only" (no target-lacks guard) and "not if the
-      # severing hit kills" (the damage event precedes the kill).
+          - { applyBuff: { status: slice, stacks: 1, duration: 8s } }
+        reason: "Dodging arms Slice for 8 seconds, even while the weapon is stowed."
+      # Not expressible: "non-Severed targets only" (no target-lacks guard).
       - on: { damage: { via: weapon:strand } }
         when: [ { has: slice } ]
         then:
           - { debuffTarget: sever }
           - { applyBuff: { status: slice, stacks: 1, duration: 8s } }
-        reason: "While Slice is up, every enemy you hit gets severed and the Slice timer refreshes."
+        reason: "While Slice is up, every enemy you hit with a Strand weapon gets severed."
       - on: { stacksMaxed: slice }
         then:
           - { removeBuff: slice }
-        reason: "After 5 Slice stacks the buff ends."
+        reason: "Once its 5 hits are done (Slice at max), Slice ends."
     passives: []
 
   # Clarity: a WEAPON TRAIT (base + enhanced), not an armor mod. The note credits it on strand
@@ -42,11 +37,12 @@ elements:
     affinity: neutral
     hash: 243981275           # enhanced: 984655331
     description: "Scoring a magazine-based number of hits, each within 5 s of the last, makes the next hit spawn an Orb of Power (0.87% super energy, 1.1% enhanced; 0.5 s cooldown). Hits needed: 55.55% of the magazine + 1, rounded down (Grenade Launchers 3, Rocket Launchers 2, Bows 4, Swords 5). Counter persists through stow."
-    # Previously clarity/243981275@2.0625: 0.8% super energy per orb (Compendium 0.87%) and its own
-    # hit table (heavy GLs 3, wave-frame GLs 4).
+    # Clarity 243981275 gives its own hit table (heavy GLs 3, wave-frame GLs 4); the Compendium's
+    # is used.
     source: "compendium/2026-10-09/Weapon Perks#22"
     rules:
-      # Hit-count based, not kill based; v1 has no counters -> chance.
+      # Hit-count based, not kill based: progress the game doesn't show as a stacking status, so it
+      # is a chance rule (ADRs D8).
       - on: { damage: { via: weapon:strand } }
         then:
           - { spawn: orb-of-power }

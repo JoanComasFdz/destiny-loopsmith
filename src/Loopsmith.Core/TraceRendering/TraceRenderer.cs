@@ -34,20 +34,19 @@ public static class TraceRenderer
         return [header, .. fired, .. nothing, .. notes, .. state];
     }
 
-    /// <summary>Buffs, target debuffs, ground pickups and active passives — no energy bars: abilities are always available (ADRs D5).</summary>
+    /// <summary>What is present — buffs on you ("at max" once declared), debuffs on the pack, pickups on the ground — and the active passives.</summary>
     public static ImmutableArray<StyledLine> RenderState(ValidatedBuild build, GameState state, ImmutableArray<ActivePassive> passives)
     {
         var glossary = build.Catalog.Glossary;
         var buffs = state.Buffs.IsEmpty
             ? "none".ToSpan(Tone.Muted).ToSingleSpanList()
-            : JoinSpans(state.Buffs.Select(buff => DescribeActiveStatus(glossary, buff).ToSpan(glossary.ReadStatusAffinity(buff.Status).ToTone())));
+            : JoinSpans(state.Buffs.Select(buff => glossary.DescribeActiveBuff(buff).ToSpan(glossary.ReadStatusAffinity(buff.Status).ToTone())));
         var debuffs = state.Target.Debuffs.IsEmpty
             ? "none".ToSpan(Tone.Muted).ToSingleSpanList()
-            : JoinSpans(state.Target.Debuffs.Select(d => DescribeActiveStatus(glossary, d).ToSpan(glossary.ReadStatusAffinity(d.Status).ToTone())));
-        var ground = state.Pickups.Where(p => p.Count > 0).ToImmutableArray();
-        var pickups = ground.IsEmpty
+            : JoinSpans(state.Target.Debuffs.Select(d => glossary.DescribeStatus(d).ToSpan(glossary.ReadStatusAffinity(d).ToTone())));
+        var pickups = state.Pickups.IsEmpty
             ? "none".ToSpan(Tone.Muted).ToSingleSpanList()
-            : JoinSpans(ground.Select(p => $"{p.Count}× {glossary.DescribePickup(p.Pickup)}".ToSpan(Tone.Plain)));
+            : JoinSpans(state.Pickups.Select(p => glossary.DescribePickup(p).ToSpan(Tone.Plain)));
         var passiveLines = passives
             .Where(p => !p.Passive.When.IsEmpty)
             .Select(p => StyledText.ToLine(1,
@@ -185,14 +184,6 @@ public static class TraceRenderer
             "]".ToSpan(Tone.Muted),
             .. chance,
         ];
-    }
-
-    private static string DescribeActiveStatus(KeywordGlossary glossary, ActiveStatus status)
-    {
-        var name = glossary.DescribeStatus(status.Status);
-        var stacks = glossary.IsStacking(status.Status) ? $" ×{status.Stacks.Value}" : "";
-        var remaining = status.Remaining.Match(r => $" {r.Value.FormatSeconds()}", _ => "");
-        return name + stacks + remaining;
     }
 
     private static ImmutableArray<StyledSpan> ToSingleSpanList(this StyledSpan span) => [span];

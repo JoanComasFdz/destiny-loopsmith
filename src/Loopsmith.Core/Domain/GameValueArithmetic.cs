@@ -2,21 +2,16 @@ using Loopsmith.Core.Functional;
 
 namespace Loopsmith.Core.Domain;
 
-/// <summary>A number resolved for use, with how far to trust it. <c>None</c> = unknown, never 0.</summary>
-public sealed record ResolvedValue(Optional<decimal> Value, Certainty Certainty);
-
 /// <summary>Pure, dependency-free value arithmetic over <see cref="GameValue"/> (the allowed Domain exception).</summary>
 public static class GameValueArithmetic
 {
-    /// <summary>Picks the value for <paramref name="copies"/> equipped copies (PerModCount: N-th value, clamped to the last).</summary>
-    public static ResolvedValue ResolveForCopies(this GameValue value, int copies) =>
+    /// <summary>How far to trust a value shown as a fact: known (a per-copy value too), approximate, or unknown — never 0.</summary>
+    public static Certainty ReadCertainty(this GameValue value) =>
         value.Match(
-            known => new ResolvedValue(Optional.Some(known.Value), Certainty.Known),
-            perModCount => new ResolvedValue(
-                Optional.Some(perModCount.Values[Math.Clamp(copies, 1, perModCount.Values.Length) - 1]),
-                Certainty.Known),
-            approximate => new ResolvedValue(Optional.Some(approximate.Value), Certainty.Approximate),
-            _ => new ResolvedValue(Optional.None<decimal>(), Certainty.Unknown));
+            _ => Certainty.Known,
+            _ => Certainty.Known,
+            _ => Certainty.Approximate,
+            _ => Certainty.Unknown);
 
     /// <summary>The same value narrowed to <paramref name="copies"/> equipped copies (PerModCount → that copy's Known value).</summary>
     public static GameValue NarrowToCopies(this GameValue value, int copies) =>

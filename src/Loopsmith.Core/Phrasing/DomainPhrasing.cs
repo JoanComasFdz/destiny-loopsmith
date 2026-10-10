@@ -68,10 +68,6 @@ public static class DomainPhrasing
     public static Affinity ReadStatusAffinity(this KeywordGlossary glossary, StatusId status) =>
         glossary.Statuses.TryGetValue(status, out var definition) ? definition.Affinity : Affinity.Neutral;
 
-    public static bool IsStacking(this KeywordGlossary glossary, StatusId status) =>
-        glossary.Statuses.TryGetValue(status, out var definition)
-        && definition.MaxStacks.Match(max => max.Value.Value > 1, _ => false);
-
     // ── damage ─────────────────────────────────────────────────────────────────
 
     public static string DescribeDamageSource(this KeywordGlossary glossary, DamageSource source) =>
@@ -177,7 +173,8 @@ public static class DomainPhrasing
         condition.Match(
             hasBuff => $"while {glossary.DescribeStatus(hasBuff.Status)}",
             lacksBuff => $"without {glossary.DescribeStatus(lacksBuff.Status)}",
-            targetHas => $"if target {glossary.DescribeDebuffedAdjective(targetHas.Status)}");
+            targetHas => $"if target {glossary.DescribeDebuffedAdjective(targetHas.Status)}",
+            atMax => $"while {glossary.DescribeStatus(atMax.Status)} at max");
 
     public static string DescribeConditions(this KeywordGlossary glossary, ImmutableArray<Condition> conditions) =>
         string.Join(", ", conditions.Select(glossary.DescribeCondition));
@@ -187,10 +184,11 @@ public static class DomainPhrasing
             grant => grant.Amount.Match(
                 fraction => $"+{fraction.Amount.FormatPercent()} {grant.To.DescribeAbility()} energy",
                 _ => $"refills {grant.To.DescribeAbility()}"),
-            convert => $"spends {glossary.DescribeStatus(convert.Consumed)} → +{convert.PerStack.FormatPercent()} {convert.To.DescribeAbility()} energy each",
+            convert => $"spends {glossary.DescribeStatus(convert.Consumed)} → +{convert.PerStack.FormatPercent()} {convert.To.DescribeAbility()} energy per stack",
             apply => DescribeBuff(glossary, apply),
             remove => $"consumes {glossary.DescribeStatus(remove.Status)}",
-            debuff => $"{glossary.DescribeStatus(debuff.Status)} target" + debuff.Duration.Match(d => $" ({d.Value.FormatSeconds()})", _ => ""),
+            debuff => $"{glossary.DescribeStatus(debuff.Status)} target"
+                + glossary.ReadShownDuration(debuff.Status, debuff.Duration).Match(d => $" ({d.Value.FormatSeconds()})", _ => ""),
             spawn => (spawn.Count > 1 ? $"{spawn.Count}× " : "") + glossary.DescribePickup(spawn.Pickup),
             summon => (summon.Count > 1 ? $"{summon.Count}× " : "") + glossary.DescribeSummon(summon.Summon),
             strike => $"{glossary.DescribeStatus(strike.Via)} strike" + (strike.Hit == HitOutcome.Kill ? " (kills)" : ""),
@@ -253,20 +251,33 @@ public static class DomainPhrasing
             _ => outcome,
         };
 
+    /// <summary>"+1 Bolt Charge" for a status that stacks (the grant, a fact), "Amplified (15s)" otherwise.</summary>
     private static string DescribeBuff(KeywordGlossary glossary, Outcome.ApplyBuff apply)
     {
         var name = glossary.DescribeStatus(apply.Status);
-        var notes = new[] { apply.Duration.Match(d => d.Value.FormatSeconds(), _ => ""), apply.Restarts ? "restarts" : "" }
-            .Where(note => note.Length > 0)
-            .ToImmutableArray();
-        var suffix = notes.IsEmpty ? "" : $" ({string.Join(", ", notes)})";
-        return (glossary.IsStacking(apply.Status), apply.Restarts) switch
-        {
-            (true, true) => $"{name} ×{apply.Stacks.Value}{suffix}",
-            (true, false) => $"+{apply.Stacks.Value} {name}{suffix}",
-            _ => $"{name}{suffix}",
-        };
+        var suffix = glossary.ReadShownDuration(apply.Status, apply.Duration).Match(d => $" ({d.Value.FormatSeconds()})", _ => "");
+        return glossary.IsStacking(apply.Status) ? $"+{apply.Stacks.Value} {name}{suffix}" : $"{name}{suffix}";
     }
+
+    /// <summary>The duration an outcome shows: the rule's, else the glossary's — a fact, never counted down.</summary>
+    private static Optional<Seconds> ReadShownDuration(this KeywordGlossary glossary, StatusId status, Optional<Seconds> stated) =>
+        stated.IsSome()
+            ? stated
+            : glossary.Statuses.TryGetValue(status, out var definition) ? definition.Duration : Optional.None<Seconds>();
+
+    /// <summary>A status's facts from the glossary: "up to x10", "15s" — shown, never counted (ADRs D1).</summary>
+    public static string DescribeStatusFacts(this KeywordGlossary glossary, StatusId status) =>
+        glossary.Statuses.TryGetValue(status, out var definition)
+            ? string.Join(" · ", new[]
+                {
+                    definition.MaxStacks.Match(max => max.Value.Value > 1 ? $"up to x{max.Value.Value}" : "", _ => ""),
+                    definition.Duration.Match(duration => duration.Value.FormatSeconds(), _ => ""),
+                }.Where(fact => fact.Length > 0))
+            : "";
+
+    /// <summary>A buff on you as the state shows it: "Bolt Charge", or "Bolt Charge (at max)" once the player declared it.</summary>
+    public static string DescribeActiveBuff(this KeywordGlossary glossary, ActiveBuff buff) =>
+        glossary.DescribeStatus(buff.Status) + (buff.AtMax ? " (at max)" : "");
 
     public static string DescribePassive(this KeywordGlossary glossary, Passive passive) =>
         passive.Match(
@@ -286,19 +297,25 @@ public static class DomainPhrasing
             killed => $"{glossary.DescribeOrigin(killed.Origin, build)} kill{DescribeOnTarget(DescribeTargetPhrase(glossary, killed.TargetHas))}",
             struck => $"{glossary.DescribeOrigin(struck.Origin, build)} {(struck.Hit == HitOutcome.Kill ? "killed" : "hit")} {DescribeEnemies(struck.Targets)}",
             pickedUp => $"Picked up {glossary.DescribePickup(pickedUp.Pickup)}",
-            gained => glossary.IsStacking(gained.Status)
-                ? $"{glossary.DescribeStatus(gained.Status)} ×{gained.Stacks.Value}"
-                : $"{glossary.DescribeStatus(gained.Status)} gained",
+            gained => $"{glossary.DescribeStatus(gained.Status)} gained",
             maxed => $"Max {glossary.DescribeStatus(maxed.Status)}");
 
-    /// <summary>"Grenade (kill)", "Grenade (kill 3)", "Festival Flight (hit 5)", "Class ability", "Pick up Orb of Power".</summary>
+    /// <summary>
+    /// "Grenade (kill)", "Grenade (kill 3)", "Festival Flight (hit 5)", "Class ability", "Pick up Orb of Power",
+    /// "Bolt Charge at max", "Amplified ends".
+    /// </summary>
     public static string DescribeAction(this KeywordGlossary glossary, PlayerAction action, Build build) =>
         action.Match(
             cast => $"{Capitalize(cast.Kind.ToAbilityKind().DescribeAbility())} ({DescribeHit(cast.Hit, cast.Targets)})",
             use => use.Airborne ? "Class ability (in the air)" : "Class ability",
             fire => $"{DescribeWeapon(build, fire.Slot, fire.Slot.ToString())} ({DescribeHit(fire.Hit, fire.Targets)})",
             collect => $"Pick up {glossary.DescribePickup(collect.Pickup)}",
-            wait => $"Wait {wait.Duration.FormatSeconds()}");
+            declare => glossary.DescribeDeclaration(declare.Declaration));
+
+    public static string DescribeDeclaration(this KeywordGlossary glossary, StateDeclaration declaration) =>
+        declaration.Match(
+            max => $"{glossary.DescribeStatus(max.Status)} at max",
+            end => $"{glossary.DescribeStatus(end.Status)} ends");
 
     /// <summary>"kill", "hit", and with more than one target "kill 3", "hit 5".</summary>
     private static string DescribeHit(HitOutcome hit, TargetCount targets) =>
@@ -310,8 +327,8 @@ public static class DomainPhrasing
 
     /// <summary>
     /// The action's token, the same everywhere (CLI, loop files, the web): <c>grenade:kill</c>, <c>grenade:kill:3</c>,
-    /// <c>class</c>, <c>kinetic</c>, <c>kinetic:hit:5</c>, <c>pickup:orb-of-power</c>, <c>wait:5</c>. The target count is
-    /// written only when it is more than one, so one-target tokens read as before and every token round-trips.
+    /// <c>class</c>, <c>kinetic</c>, <c>kinetic:hit:5</c>, <c>pickup:orb-of-power</c>, <c>max:bolt-charge</c>,
+    /// <c>end:amplified</c>. The target count is written only when it is more than one; every token round-trips.
     /// </summary>
     public static string ToActionToken(this PlayerAction action) =>
         action.Match(
@@ -319,7 +336,9 @@ public static class DomainPhrasing
             use => use.Airborne ? "class:air" : "class",
             fire => fire.Slot.ToString().ToLowerInvariant() + ToHitSuffix(fire.Hit, fire.Targets),
             collect => $"pickup:{collect.Pickup}",
-            wait => $"wait:{wait.Duration.Value.ToString(LosslessDecimal, Invariant)}");
+            declare => declare.Declaration.Match(
+                max => $"max:{max.Status}",
+                end => $"end:{end.Status}"));
 
     private static string ToHitSuffix(HitOutcome hit, TargetCount targets) =>
         (hit, targets.Value) switch
@@ -335,9 +354,6 @@ public static class DomainPhrasing
     /// <summary>"Tempest Strike doesn't stack with Dielectric" — a rule that gave nothing (<see cref="WastedTally"/>).</summary>
     public static string DescribeWasted(this WastedTally wasted) =>
         $"{wasted.SourceName} doesn't stack with {wasted.PartnerName}";
-
-    /// <summary>Every significant digit of a decimal, no trailing zeros: tokens round-trip (<c>wait:2.25</c>).</summary>
-    private const string LosslessDecimal = "0.############################";
 
     public static string Capitalize(string text) =>
         text.Length == 0 ? text : char.ToUpperInvariant(text[0]) + text[1..];

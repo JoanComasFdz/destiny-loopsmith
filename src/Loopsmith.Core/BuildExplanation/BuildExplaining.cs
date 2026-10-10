@@ -203,5 +203,6 @@ public static class BuildExplaining
         condition.Match(
             hasBuff => glossary.ReadStatusAffinity(hasBuff.Status),
             lacksBuff => glossary.ReadStatusAffinity(lacksBuff.Status),
-            targetHas => glossary.ReadStatusAffinity(targetHas.Status));
+            targetHas => glossary.ReadStatusAffinity(targetHas.Status),
+            atMax => glossary.ReadStatusAffinity(atMax.Status));
 }

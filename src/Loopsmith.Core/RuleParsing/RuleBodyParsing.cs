@@ -19,7 +19,7 @@ internal static class RuleBodyParsing
     private static readonly ImmutableArray<string> TriggerNames =
         ["abilityCast", "kill", "damage", "pickUp", "buffGained", "stacksMaxed"];
 
-    private static readonly ImmutableArray<string> ConditionNames = ["has", "lacks", "targetHas"];
+    private static readonly ImmutableArray<string> ConditionNames = ["has", "lacks", "targetHas", "atMax"];
 
     private static readonly ImmutableArray<string> OutcomeNames =
     [
@@ -60,7 +60,7 @@ internal static class RuleBodyParsing
             "damage" => ReadDamageTrigger(scope, entry.Value),
             "pickUp" => scope.ReadPickup(entry.Value).Map(Trigger (pickup) => new Trigger.PickUp(pickup)),
             "buffGained" => scope.ReadBuff(entry.Value).Map(Trigger (status) => new Trigger.BuffGained(status)),
-            "stacksMaxed" => scope.ReadBuff(entry.Value).Map(Trigger (status) => new Trigger.StacksMaxed(status)),
+            "stacksMaxed" => scope.ReadStackingBuff(entry.Value).Map(Trigger (status) => new Trigger.StacksMaxed(status)),
             _ => entry.Value.FailAt<Trigger>(DescribeUnknown("trigger", entry.Key, TriggerNames)),
         });
 
@@ -161,6 +161,7 @@ internal static class RuleBodyParsing
             "has" => scope.ReadBuff(entry.Value).Map(Condition (status) => new Condition.HasBuff(status)),
             "lacks" => scope.ReadBuff(entry.Value).Map(Condition (status) => new Condition.LacksBuff(status)),
             "targetHas" => scope.ReadDebuff(entry.Value).Map(Condition (status) => new Condition.TargetHas(status)),
+            "atMax" => scope.ReadStackingBuff(entry.Value).Map(Condition (status) => new Condition.AtMax(status)),
             _ => entry.Value.FailAt<Condition>(DescribeUnknown("condition", entry.Key, ConditionNames)),
         });
 
@@ -212,17 +213,16 @@ internal static class RuleBodyParsing
             map.ReadRequired("perStack", ReadGameValue),
             Outcome (_, consumed, to, perStack) => new Outcome.ConvertStacksToEnergy(consumed, to, perStack)));
 
-    /// <summary><c>{ applyBuff: amplified }</c> or <c>{ applyBuff: { status, stacks = 1, duration, restart = false } }</c>.</summary>
+    /// <summary><c>{ applyBuff: amplified }</c> or <c>{ applyBuff: { status, stacks = 1, duration } }</c>.</summary>
     private static Result<Outcome, Errors> ReadApplyBuff(ReferenceScope scope, YamlValue value) =>
         value.Node is YamlScalarNode
             ? scope.ReadBuff(value).Map(Outcome (status) => new Outcome.ApplyBuff(status, Optional.None<Seconds>(), OneStack))
             : value.ToMap().Bind(map => Combine(
-                map.CheckKeys(["status", "stacks", "duration", "restart"]),
+                map.CheckKeys(["status", "stacks", "duration"]),
                 map.ReadRequired("status", scope.ReadBuff),
                 map.ReadOrDefault("duration", ReadDuration, Optional.None<Seconds>()),
                 map.ReadOrDefault("stacks", ReadStackCount, OneStack),
-                map.ReadOrDefault("restart", ReadBoolean, false),
-                Outcome (_, status, duration, stacks, restarts) => new Outcome.ApplyBuff(status, duration, stacks, restarts)));
+                Outcome (_, status, duration, stacks) => new Outcome.ApplyBuff(status, duration, stacks)));
 
     /// <summary><c>{ debuffTarget: jolt }</c> or <c>{ debuffTarget: { status, duration } }</c>.</summary>
     private static Result<Outcome, Errors> ReadDebuffTarget(ReferenceScope scope, YamlValue value) =>

@@ -173,8 +173,8 @@ public static class LoopGraphBuilding
 
     private static IEnumerable<GameEvent> ListBuffEvents(KeywordGlossary glossary, StatusId status)
     {
-        yield return new GameEvent.BuffGained(status, StackCount.From(1));
-        if (glossary.CanReachMaxStacks(status))
+        yield return new GameEvent.BuffGained(status);
+        if (glossary.IsStacking(status))
         {
             yield return new GameEvent.StacksMaxed(status);
         }

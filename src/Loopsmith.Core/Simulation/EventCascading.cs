@@ -79,7 +79,7 @@ public static class EventCascading
         var seed = (State: state, Applied: ImmutableArray<Applied>.Empty, Derived: ImmutableArray<PendingEvent>.Empty);
         var result = steps.Aggregate(seed, (acc, step) =>
         {
-            var application = OutcomeApplication.ApplyOutcome(build, acc.State, step.Outcome, step.Match.Equipped.Count);
+            var application = OutcomeApplication.ApplyOutcome(build, acc.State, step.Outcome);
             return (application.State, acc.Applied.Add(new Applied(step, application.Applied)), acc.Derived.AddRange(application.Derived));
         });
 
@@ -119,7 +119,7 @@ public static class EventCascading
             killed => $"kill:{ToOriginKey(killed.Origin)}:{killed.Tier}:{string.Join(",", killed.TargetHas.Order())}",
             struck => $"targets:{ToOriginKey(struck.Origin)}:{struck.Targets.Value}:{struck.Hit}",
             pickedUp => $"pickup:{pickedUp.Pickup}",
-            gained => $"gain:{gained.Status}:{gained.Stacks}",
+            gained => $"gain:{gained.Status}",
             maxed => $"max:{maxed.Status}");
 
     private static string ToOriginKey(DamageOrigin origin) =>

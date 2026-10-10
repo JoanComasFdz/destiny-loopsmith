@@ -1,22 +1,22 @@
 ﻿Infinite skip grenades  vs  Melee first
                                      Infinite skip grenades   Melee first
   Build                              Skip Grenade Hunter      Skip Grenade Hunter
-  Steps per cycle                    6                        5
+  Steps per cycle                    7                        6
   Repeatable cycles                  10+                      10+
-  Kills per cycle                    7 ✓                      6
-  Ionic Trace spawned per cycle      8 ✓                      7
+  Kills per cycle                    5 ✓                      4
+  Ionic Trace spawned per cycle      6 ✓                      5
   Orb of Power spawned per cycle     4 ✓                      2
-  Bolt Charge maxed per cycle        3                        3
-  Wasted per cycle (doesn't stack)   7                        6 ✓
-  Slice uptime                       6/6                      5/5
-  Amplified uptime                   6/6                      5/5
-  Woven Mail uptime                  6/6 ✓                    0/5
-  Unraveling Rounds uptime           6/6                      5/5
-  Armor Charge uptime                6/6                      5/5
-  Bolt Charge uptime                 6/6                      5/5
-  New Tricks uptime                  5/6                      5/5 ✓
-  Reaper uptime                      2/6                      3/5 ✓
-  Combination Blow uptime            0/6                      5/5 ✓
-  Unknown values                     35                       24 ✓
-  Chance bullets                     14                       8 ✓
+  Bolt Charge maxed per cycle        1                        1
+  Wasted per cycle (doesn't stack)   5                        4 ✓
+  Slice uptime                       7/7                      6/6
+  Amplified uptime                   7/7                      6/6
+  Woven Mail uptime                  7/7 ✓                    0/6
+  Unraveling Rounds uptime           7/7                      6/6
+  Bolt Charge uptime                 7/7                      6/6
+  Armor Charge uptime                7/7                      6/6
+  Reaper uptime                      2/7                      4/6 ✓
+  New Tricks uptime                  1/7                      1/6 ✓
+  Combination Blow uptime            0/7                      6/6 ✓
+  Unknown values                     24                       16 ✓
+  Chance bullets                     14                       7 ✓
 ✓ better: Infinite skip grenades on 4 metrics · Melee first on 6 metrics · 8 even or not judged

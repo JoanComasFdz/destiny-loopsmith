@@ -1,20 +1,16 @@
 using System.Collections.Immutable;
+using Loopsmith.Core.Causality;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 
 namespace Loopsmith.Core.Simulation;
 
-/// <summary>Pure entry point: no I/O, no clock, no randomness. Same build + state + action ⇒ same resolution.</summary>
+/// <summary>Pure entry point: no I/O, no randomness. Same build + state + step ⇒ same resolution.</summary>
 public static class ActionResolution
 {
-    public static readonly Seconds DefaultWait = Seconds.From(5m);
-
-    /// <summary>
-    /// Fresh spawn: no buffs, an undebuffed pack, nothing on the ground. There is no ability energy to fill —
-    /// abilities are always available (ADRs D5).
-    /// </summary>
+    /// <summary>Fresh spawn: no buffs, a clean pack, nothing on the ground (abilities are always available, ADRs D5).</summary>
     public static GameState CreateInitialState() =>
-        new(0, Seconds.From(0m), [], new TargetState(EnemyTier.Minor, []), []);
+        new(0, [], new TargetState(EnemyTier.Minor, []), []);
 
     public static Resolution ResolveAction(ValidatedBuild build, GameState state, PlayerAction action)
     {
@@ -27,7 +23,7 @@ public static class ActionResolution
         return new Resolution(action, finished.State, finished.Fired, passives, available, finished.Notes, opening.Blocked);
     }
 
-    /// <summary>Resolves a whole loop (FR-4): each action starts from the previous resolution's state.</summary>
+    /// <summary>Resolves a sequence of steps: each starts from the previous resolution's state.</summary>
     public static ImmutableArray<Resolution> ResolveSequence(ValidatedBuild build, GameState state, ImmutableArray<PlayerAction> actions)
     {
         var seed = (State: state, Resolutions: ImmutableArray<Resolution>.Empty);
@@ -40,8 +36,9 @@ public static class ActionResolution
     }
 
     /// <summary>
-    /// Every ability (always — no energy model, ADRs D5), every equipped weapon, the pickups on the ground and a wait.
-    /// Abilities and weapons are listed against one enemy; a host may set any <see cref="TargetCount"/>.
+    /// Every ability (always, ADRs D5), every equipped weapon, the pickups on the ground and the states the player can
+    /// declare now (<see cref="ListDeclarations"/>). Abilities and weapons are listed against one enemy; a host may set
+    /// any <see cref="TargetCount"/>.
     /// </summary>
     public static ImmutableArray<PlayerAction> ListAvailableActions(ValidatedBuild build, GameState state)
     {
@@ -57,9 +54,24 @@ public static class ActionResolution
             new PlayerAction.FireWeapon(weapon.Slot, HitOutcome.Kill, TargetCount.One),
             new PlayerAction.FireWeapon(weapon.Slot, HitOutcome.Damage, TargetCount.One),
         });
-        var pickups = state.Pickups.Where(p => p.Count > 0).Select(p => (PlayerAction)new PlayerAction.CollectPickups(p.Pickup));
-        var wait = new PlayerAction[] { new PlayerAction.Wait(DefaultWait) };
-        return [.. offensive, .. classAbility, .. weapons, .. pickups, .. wait];
+        var pickups = state.Pickups.Select(pickup => (PlayerAction)new PlayerAction.CollectPickups(pickup));
+        var declarations = ListDeclarations(build, state).Select(declaration => (PlayerAction)new PlayerAction.Declare(declaration));
+        return [.. offensive, .. classAbility, .. weapons, .. pickups, .. declarations];
+    }
+
+    /// <summary>
+    /// The declarations that hold now (ADRs D3): <c>max:</c> for each active buff that stacks and isn't at max yet,
+    /// <c>end:</c> for each active buff and each debuff on the pack.
+    /// </summary>
+    public static ImmutableArray<StateDeclaration> ListDeclarations(ValidatedBuild build, GameState state)
+    {
+        var glossary = build.Catalog.Glossary;
+        var maxes = state.Buffs
+            .Where(buff => glossary.IsStacking(buff.Status) && !buff.AtMax)
+            .Select(buff => (StateDeclaration)new StateDeclaration.ReachMax(buff.Status));
+        var ends = state.Buffs.Select(buff => buff.Status).Concat(state.Target.Debuffs)
+            .Select(status => (StateDeclaration)new StateDeclaration.EndStatus(status));
+        return [.. maxes, .. ends];
     }
 
     public static ImmutableArray<ActivePassive> ListActivePassives(ValidatedBuild build, GameState state) =>
@@ -86,7 +98,7 @@ public static class ActionResolution
             use => UseClassAbility(state, use.Airborne),
             fire => FireWeapon(build, state, fire),
             collect => CollectPickups(state, collect),
-            wait => Wait(state, wait));
+            declare => Declare(build, state, declare.Declaration));
 
     /// <summary>Never blocked: casting, then the strike on every target (ADRs D4, D5).</summary>
     private static Opening CastAbility(ValidatedBuild build, GameState state, PlayerAction.CastAbility cast)
@@ -129,38 +141,52 @@ public static class ActionResolution
         return [.. hits, .. kills, new PendingEvent.Ready(new GameEvent.TargetsHit(origin, targets, hit))];
     }
 
-    private static Opening CollectPickups(GameState state, PlayerAction.CollectPickups collect)
-    {
-        var count = state.CountPickups(collect.Pickup);
-        if (count == 0)
-        {
-            return BlockAction(state, $"No {collect.Pickup} on the ground — nothing happens.");
-        }
+    /// <summary>Picks the pickup up: one <see cref="GameEvent.PickedUp"/>, and it is no longer on the ground.</summary>
+    private static Opening CollectPickups(GameState state, PlayerAction.CollectPickups collect) =>
+        state.HasPickup(collect.Pickup)
+            ? new Opening(state.DropPickup(collect.Pickup), [new PendingEvent.Ready(new GameEvent.PickedUp(collect.Pickup))], [])
+            : BlockAction(state, $"No {collect.Pickup} on the ground — nothing happens.");
 
-        var events = Enumerable.Repeat<PendingEvent>(new PendingEvent.Ready(new GameEvent.PickedUp(collect.Pickup)), count);
-        return new Opening(state.ClearPickups(collect.Pickup), events.ToImmutableArray(), []);
+    private static Opening Declare(ValidatedBuild build, GameState state, StateDeclaration declaration) =>
+        declaration.Match(
+            max => DeclareMax(build.Catalog.Glossary, state, max.Status),
+            end => DeclareEnd(build.Catalog.Glossary, state, end.Status));
+
+    /// <summary>
+    /// "Bolt Charge at max" (ADRs D3): the buff is declared at its maximum and <see cref="GameEvent.StacksMaxed"/>
+    /// cascades. Blocked unless the buff stacks, is active and isn't declared at max already — checked in that order.
+    /// </summary>
+    private static Opening DeclareMax(KeywordGlossary glossary, GameState state, StatusId status)
+    {
+        var blocker = glossary.FindStatus(status).Match(
+            some => FindMaxBlocker(glossary, state, some.Value),
+            _ => Optional.Some($"No buff '{status}' in the rules — nothing to declare."));
+        return blocker.Match(
+            reason => BlockAction(state, reason.Value),
+            _ => new Opening(state.DeclareAtMax(status), [new PendingEvent.Ready(new GameEvent.StacksMaxed(status))], []));
     }
 
-    /// <summary>Time passes: timed buffs and debuffs expire. Nothing recharges — ability energy isn't simulated (ADRs D5).</summary>
-    private static Opening Wait(GameState state, PlayerAction.Wait wait)
-    {
-        var elapsed = wait.Duration.Value;
-        var aged = state with
+    private static Optional<string> FindMaxBlocker(KeywordGlossary glossary, GameState state, StatusDefinition definition) =>
+        definition switch
         {
-            Clock = Seconds.From(state.Clock.Value + elapsed),
-            Buffs = AgeStatuses(state.Buffs, elapsed),
-            Target = state.Target with { Debuffs = AgeStatuses(state.Target.Debuffs, elapsed) },
+            { Kind: KeywordKind.Debuff } => Optional.Some($"{definition.Name} is a debuff — only a buff on you can be at max."),
+            _ when !glossary.IsStacking(definition.Id) => Optional.Some($"{definition.Name} doesn't stack — end it with end:{definition.Id}."),
+            _ when !state.HasBuff(definition.Id) => Optional.Some($"{definition.Name} isn't active — nothing to declare at max."),
+            _ when state.IsAtMax(definition.Id) => Optional.Some($"{definition.Name} is already at max."),
+            _ => Optional.None<string>(),
         };
-        return new Opening(aged, [], []);
-    }
 
-    private static ImmutableArray<ActiveStatus> AgeStatuses(ImmutableArray<ActiveStatus> statuses, decimal elapsed) =>
-        statuses
-            .Select(status => status.Remaining.Match(
-                remaining => remaining.Value.Value > elapsed
-                    ? Optional.Some(status with { Remaining = Optional.Some(Seconds.From(remaining.Value.Value - elapsed)) })
-                    : Optional.None<ActiveStatus>(),
-                _ => Optional.Some(status)))
-            .SelectMany(kept => kept.Match(some => new[] { some.Value }, _ => []))
-            .ToImmutableArray();
+    /// <summary>"Amplified ends", "Jolt ends": the buff (with its declaration) or the debuff is removed; no event.</summary>
+    private static Opening DeclareEnd(KeywordGlossary glossary, GameState state, StatusId status) =>
+        glossary.FindStatus(status).Match(
+            some => EndStatus(state, some.Value),
+            _ => BlockAction(state, $"No buff or debuff '{status}' in the rules — nothing ends."));
+
+    private static Opening EndStatus(GameState state, StatusDefinition definition) =>
+        (definition.Kind, state.HasBuff(definition.Id), state.TargetHas(definition.Id)) switch
+        {
+            (KeywordKind.Buff, true, _) => new Opening(state.DropBuff(definition.Id), [], []),
+            (KeywordKind.Debuff, _, true) => new Opening(state.DropDebuff(definition.Id), [], []),
+            _ => BlockAction(state, $"{definition.Name} isn't active — nothing ends."),
+        };
 }

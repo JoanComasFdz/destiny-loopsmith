@@ -5,7 +5,7 @@ description: |-
   the Strand and Arc weapons, grab the orbs, skip grenade again. Every jolted kill feeds Bolt
   Charge and Ionic Traces, which give grenade energy back. Tempest Strike's Bolt Charge on those
   kills doesn't stack with Dielectric's, so the analysis lists it as wasted.
-catalog: authored-1cb8a41c41cc
+catalog: authored-e707a3336348
 steps:
   - do: class
     note: "Gambler's Dodge: arms Slice and Reaper; Bomber refunds grenade energy"
@@ -17,8 +17,10 @@ steps:
     note: 'Arc weapon on the jolted pack: Spark of Discharge traces, Harmonic Siphon orb'
   - do: pickup:orb-of-power
     note: 'Grab the orbs: Armor Charge for Grenade Kickstart, and Unraveling Rounds'
+  - do: max:bolt-charge
+    note: Bolt Charge at x10 — Shinobu's Vow gives New Tricks and grenade energy, Flashover makes you Amplified
   - do: grenade:kill
-    note: 'Second skip grenade: Kickstart spends Armor Charge; max Bolt Charge strikes and refunds the grenade'
+    note: 'Second skip grenade: Kickstart spends Armor Charge, New Tricks is spent, and its hit discharges Bolt Charge'
 build: |
   # Skip Grenade Hunter - Plunderthabooty's Arc Hunter "infinite skip grenade" build.
   # See note.txt (the user's explanation), transcript.txt (the video), note-map.md (golden trace

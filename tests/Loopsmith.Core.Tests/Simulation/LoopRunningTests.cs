@@ -87,7 +87,8 @@ public class LoopRunningTests
 
         Assert.True(report.IsRepeatable());
         Assert.Equal(1, report.Cycles[0].Resolutions[1].Fired.Count(f => f.Source.Value == "collector"));
-        Assert.Equal(2, report.Cycles[1].Resolutions[1].Fired.Count(f => f.Source.Value == "collector"));   // last cycle's orb too
+        Assert.Equal([Pickup("orb-of-power")], report.Cycles[0].Resolutions[^1].State.Pickups);   // the last kill's orb carries over
+        Assert.Equal(1, report.Cycles[1].Resolutions[1].Fired.Count(f => f.Source.Value == "collector"));   // one pickup step picks up one
     }
 
     [Fact]
@@ -118,24 +119,6 @@ public class LoopRunningTests
     }
 
     [Fact]
-    public void Kills_count_kill_actions_and_killing_strikes_and_maxed_statuses_count_once_per_event()
-    {
-        var charger = Element("charger", ElementKind.Fragment, [On(new Trigger.AbilityCast(AbilityKind.Grenade), Buff("bolt-charge", 3))]);
-        var striker = Element("striker", ElementKind.Fragment,
-        [
-            On(new Trigger.StacksMaxed(Status("bolt-charge")), new Outcome.RemoveBuff(Status("bolt-charge")), new Outcome.StrikeTarget(Status("bolt-charge"), HitOutcome.Kill)),
-            On(new Trigger.StacksMaxed(Status("bolt-charge")), Buff("amplified")),
-        ]);
-
-        var grenadeKillsThree = new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Kill, TargetCount.From(3));
-
-        var report = RunLoop(ValidateBuild([charger, striker]), grenadeKillsThree, RifleHit);
-
-        Assert.True(report.IsRepeatable());
-        Assert.Equal([new OutcomeTally("Kills", 4), new OutcomeTally("Bolt Charge maxed", 1)], report.Outcomes);   // 3 targets + the strike
-    }
-
-    [Fact]
     public void Spawned_pickups_are_counted_per_pickup_whether_collected_automatically_or_not()
     {
         var spawner = Element("spawner", ElementKind.Fragment,
@@ -147,20 +130,6 @@ public class LoopRunningTests
         Assert.Equal(
             [new OutcomeTally("Kills", 1), new OutcomeTally("Orb of Power spawned", 2), new OutcomeTally("Ionic Trace spawned", 1)],
             report.Outcomes);
-    }
-
-    [Fact]
-    public void Uptime_is_the_number_of_steps_a_buff_was_active_after()
-    {
-        var dodge = Element("dodge-amp", ElementKind.Fragment,
-            [On(new Trigger.AbilityCast(AbilityKind.ClassAbility), Buff("amplified"), new Outcome.GrantEnergy(AbilityKind.ClassAbility, new EnergyGrant.Full()))]);
-        var wait = new PlayerAction.Wait(Seconds.From(6m));
-
-        var report = RunLoop(ValidateBuild([dodge]), Dodge, wait, wait, RifleKill);   // Amplified lasts 10s
-
-        Assert.True(report.IsRepeatable());
-        Assert.Equal([new BuffUptime(Status("amplified"), "Amplified", Affinity.Arc, 2, 4)], report.Uptime);
-        Assert.Equal(0.5m, report.Uptime[0].ComputeUptimeRatio());
     }
 
     [Fact]

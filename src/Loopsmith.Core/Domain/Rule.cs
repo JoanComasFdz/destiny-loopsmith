@@ -28,6 +28,7 @@ public partial record Condition
     partial record HasBuff(StatusId Status);
     partial record LacksBuff(StatusId Status);
     partial record TargetHas(StatusId Status);
+    partial record AtMax(StatusId Status);   // the player declared this buff at its maximum (ADRs D3)
 }
 
 [Union]
@@ -39,15 +40,15 @@ public partial record EnergyGrant
 
 /// <summary>
 /// The game's consequences. ("Effect" is reserved for side effects described as data — see Orchestration.)
-/// Energy outcomes (<see cref="GrantEnergy"/>, <see cref="ConvertStacksToEnergy"/>, <see cref="ResetCooldown"/>) are
-/// explanations: ability energy isn't simulated (ADRs D5).
+/// Energy outcomes (<see cref="GrantEnergy"/>, <see cref="ConvertStacksToEnergy"/>'s energy, <see cref="ResetCooldown"/>),
+/// <see cref="ModifyDamage"/> and <see cref="RestoreHealth"/> are facts shown with their value (ADRs D1, D5).
 /// </summary>
 [Union]
 public partial record Outcome
 {
     partial record GrantEnergy(AbilityKind To, EnergyGrant Amount);
     partial record ConvertStacksToEnergy(StatusId Consumed, AbilityKind To, GameValue PerStack);
-    partial record ApplyBuff(StatusId Status, Optional<Seconds> Duration, StackCount Stacks, bool Restarts = false);   // Restarts: replaces the active stacks (re-arming Slice)
+    partial record ApplyBuff(StatusId Status, Optional<Seconds> Duration, StackCount Stacks);   // Stacks: the grant, a fact ("+1 Bolt Charge")
     partial record RemoveBuff(StatusId Status);
     partial record DebuffTarget(StatusId Status, Optional<Seconds> Duration);
     partial record Spawn(PickupId Pickup, int Count);
@@ -77,8 +78,8 @@ public sealed record WeaponStatChange(string Stat, GameValue Change);
 [Union]
 public partial record Passive
 {
-    partial record ExtraStacks(StatusId Status, StackCount Extra);           // Spark of Frequency
-    partial record ExtraCharges(AbilityKind Ability, int Extra);            // explained only (ADRs D5)
+    partial record ExtraStacks(StatusId Status, StackCount Extra);           // Spark of Frequency: a caveat on each grant
+    partial record ExtraCharges(AbilityKind Ability, int Extra);            // a fact (ADRs D5)
     partial record ModifyDamage(DamageSource Against, GameValue Change);     // Flashover, stat bonuses
     partial record ResistDamage(GameValue Amount);                           // Spark of Resistance
     partial record ModifyWeaponStats(ImmutableArray<string> Archetypes, ImmutableArray<WeaponStatChange> Changes);

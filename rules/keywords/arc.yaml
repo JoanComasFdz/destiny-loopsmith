@@ -1,27 +1,24 @@
 # Arc keyword elements: rules that are active in every build (kind: keyword).
 # Clarity 2.0625 has no status/verb entries; the numbers come from the Arc tab's glossary rows of the
-# Compendium snapshot of 2026-10-09. The creator's claims they replace are kept in comments.
+# Compendium snapshot of 2026-10-09.
 elements:
   - id: bolt-charge
     name: Bolt Charge
     kind: keyword
     affinity: arc
     description: "Stacking Arc buff; each stack gained grants 2.5% melee energy. At x10, your next ability hit or unpowered melee hit discharges an Arc bolt on that enemy (675 [PvP 66] damage: bolt plus ground splash) and the stacks reset."
-    # Previously a creator claim: "I call down six bolt charge lightning strikes."
     source: compendium/2026-10-09/Arc#5
     rules:
-      # v1 simplification (per the engine design): the discharge happens as soon as the stacks max
-      # out, and the strike is assumed to finish the pack in front of you (hit: kill). In game it
-      # waits for the next ability hit or unpowered melee hit at x10 (a guard on a stack count is not
-      # expressible).
-      - on: { stacksMaxed: bolt-charge }
+      # At x10 (declared: max:bolt-charge) the next ability hit discharges it; the strike is assumed to
+      # finish the pack in front of you (hit: kill). The unpowered melee hit isn't a separate source.
+      - on: { damage: { via: ability } }
+        when: [ { atMax: bolt-charge } ]
         then:
           - { removeBuff: bolt-charge }
           - { strikeTarget: { via: bolt-charge, hit: kill } }
-        reason: "Max out Bolt Charge and it calls down a lightning strike on your target, using up the stacks."
-      # 2.5% per stack gained (also past x10). v1 grants it once per gain event, so the extra stack a
-      # gain gets from Spark of Frequency while Amplified is not counted: a lower bound (format gap:
-      # energy per stack gained). Not encoded: the weapon-hit counter that also grants stacks.
+        reason: "With Bolt Charge at max, your next ability hit calls down a lightning strike on that enemy, using up the stacks."
+      # 2.5% per stack gained (also past x10): a fact shown on every Bolt Charge gain. Not encoded:
+      # the weapon-hit counter that also grants stacks.
       - on: { buffGained: bolt-charge }
         then:
           - { grantEnergy: { to: melee, amount: "2.5%" } }
@@ -33,12 +30,11 @@ elements:
     kind: keyword
     affinity: arc
     description: "Arc debuff, 10 s [PvP 5 s]. Once a Jolted target has taken 115 [45] damage it chains lightning to every enemy within 12 m for 119 [51] damage, at most every 0.8 s."
-    # Previously a creator claim: "everything that's being zapped by that jolt going out".
     source: compendium/2026-10-09/Arc#8
     rules:
       # Authored on weapon and ability damage only, NOT keyword damage: otherwise the jolt chain
       # (itself keyword damage) would re-trigger Jolt and feed itself. The 115-damage threshold and
-      # the 0.8 s cooldown are not modelled: every hit chains.
+      # the 0.8 s cooldown are facts in the description: every hit on a jolted target chains.
       - on: { damage: { via: weapon, targetHas: [jolt] } }
         then:
           - { strikeTarget: { via: jolt, hit: damage } }
@@ -53,9 +49,8 @@ elements:
     name: Ionic Trace
     kind: keyword
     affinity: arc
-    # Previously a creator claim, encoded "~15%": "ionic traces gives you 15% ability energy to all
-    # three abilities". Clarity has no base value (only the total with Fallen Sunstar, 1376049785:
-    # grenade 25% | melee 25% | class 30%). The Compendium's Armor Perks#114 repeats the base values.
+    # Clarity has no base value (only the total with Fallen Sunstar, 1376049785: grenade 25% |
+    # melee 25% | class 30%). The Compendium's Armor Perks#114 repeats the base values.
     description: "Arc pickup that homes in on you at 6 m/s. Collecting it grants 11.25% grenade and melee energy and 13.5% class ability energy. Allies don't get your traces."
     source: compendium/2026-10-09/Arc#6
     rules:

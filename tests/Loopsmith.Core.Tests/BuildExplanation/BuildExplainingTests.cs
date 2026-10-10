@@ -20,7 +20,7 @@ public class BuildExplainingTests
         var groups = BuildExplaining.ExplainBuild(build);
         var lines = BuildExplaining.RenderExplanation(groups, ExplanationStyle.Note).ToPlainText();
 
-        Assert.Equal("Grenade damage -> Jolt target [Spark Of Shock] + +1 Bolt Charge [Shinobus Vow]", lines);
+        Assert.Equal("Grenade damage -> Jolt target (4s) [Spark Of Shock] + +1 Bolt Charge [Shinobus Vow]", lines);
     }
 
     [Fact]
