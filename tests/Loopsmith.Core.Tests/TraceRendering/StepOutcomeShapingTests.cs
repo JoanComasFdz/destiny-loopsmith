@@ -92,4 +92,30 @@ public sealed class StepOutcomeShapingTests
         var line = Assert.Single(shaped.Events[0].Sources, source => source.Source.Value == "second").Outcomes.Single();
         Assert.Equal(("doesn't stack with First", Tone.Warning), (line.Text, line.Tone));
     }
+
+    [Fact]
+    public void An_element_whose_rules_fired_apart_shows_at_each_place_in_the_engines_order()
+    {
+        var first = Element("first", ElementKind.Fragment,
+            [On(new Trigger.Damage(Any), new Outcome.DebuffTarget(Status("jolt"), Optional.None<Seconds>())), On(new Trigger.Damage(Any), Energy(AbilityKind.Grenade, new GameValue.Unknown()))]);
+        var second = Element("second", ElementKind.Fragment, [On(new Trigger.Damage(Any), Buff("amplified"))]);
+        var session = Play(ValidateBuild([first, second]), GrenadeHit);
+
+        var shaped = LoopDesigning.ShapeStepOutcomes(session, session.Resolutions[0], Plain);
+
+        Assert.Equal(["first", "second", "first"], shaped.Events[0].Sources.Select(source => source.Source.Value));   // debuff, empower, refund
+    }
+
+    [Fact]
+    public void A_keywords_strike_names_its_keyword()
+    {
+        var spark = Element("spark", ElementKind.Fragment, [On(new Trigger.Damage(Any), new Outcome.StrikeTarget(Status("jolt"), HitOutcome.Damage))]);
+        var chained = Element("chained", ElementKind.Fragment, [On(new Trigger.Damage(new DamageSource.OfType(DamageType.Arc)), Buff("amplified"))]);
+        var jolt = Element("jolt", ElementKind.Keyword, []);
+        var session = Play(ValidateBuild([spark, chained], keywords: [jolt]), GrenadeHit);
+
+        var shaped = LoopDesigning.ShapeStepOutcomes(session, session.Resolutions[0], Plain);
+
+        Assert.Contains(shaped.Events, shapedEvent => shapedEvent.Depth == 1 && shapedEvent.Keyword == Optional.Some(ElementId.From("jolt")));
+    }
 }

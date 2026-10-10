@@ -125,8 +125,9 @@ airborne trigger (without one it fires exactly what `class` fires). Every token 
 event ("Grenade hit"), under it each element it set off (its icon and name, in its affinity's colour), and
 under each element every outcome it gave ("→ +1 Bolt Charge"). A cascade ("↳ Bolt Charge gained") nests
 under the event that set it off, and the same event several times in a row shows once, counted (×3). An
-element's name, or a keyword an outcome names (Jolt, Bolt Charge, Ionic Trace), shows a preview on hover
-and its details on a tap. "why" adds each rule's reason under its element; "caveats" adds the outcomes'
+element's name, or a status or pickup an outcome or event names when the rules have it as an element (Jolt,
+Bolt Charge, Ionic Trace, Combination Blow), shows a preview on hover and its details on a tap. An element
+whose rules the engine fired apart (a debuff first, energy last) shows at each of its places, in that order. "why" adds each rule's reason under its element; "caveats" adds the outcomes'
 caveats. Each step can be moved up or down, removed or dragged onto another step's place; the loop
 replays in its new order.
 

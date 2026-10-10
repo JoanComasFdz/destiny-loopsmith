@@ -71,6 +71,7 @@
 
     // The name under the pointer (or focused), by its place in the step: its preview shows next to it.
     private Optional<string> hovered = Optional.None<string>();
+    private Optional<StepOutcomes> shownOutcomes = Optional.None<StepOutcomes>();
 
     /// <summary>An element that fired: its icon (a dot in its affinity when it has none) and name, in its affinity's colour.</summary>
     private RenderFragment RenderElement(SourceOutcomes source, string key) => __builder =>
@@ -80,7 +81,7 @@
             <button type="button" class="outcome-element @ToneStyling.ToToneClass(source.Affinity.ToTone()) @ToneStyling.ToAffinityClass(source.Affinity)"
                     data-element="@source.Source.Value" title="@source.Kind.DescribeElementKind()"
                     @onclick="() => ShowDetailsAsync(source.Source)" @onclick:stopPropagation="true"
-                    @onmouseenter="() => Hover(key)" @onmouseleave="Unhover" @onfocus="() => Hover(key)" @onblur="Unhover">
+                    @onmouseenter="() => Hover(key)" @onmouseleave="() => Unhover(key)" @onfocus="() => Hover(key)" @onblur="() => Unhover(key)">
                 @if (icon is Optional<string>.Some known)
                 {
                     <img class="outcome-icon" src="@known.Value" alt="" loading="lazy" />
@@ -103,7 +104,7 @@
             <span class="outcome-name-wrap">
                 <button type="button" class="outcome-keyword @toneClass" data-keyword="@element.Value.Value"
                         @onclick="() => ShowDetailsAsync(element.Value)" @onclick:stopPropagation="true"
-                        @onmouseenter="() => Hover(key)" @onmouseleave="Unhover" @onfocus="() => Hover(key)" @onblur="Unhover">@text</button>
+                        @onmouseenter="() => Hover(key)" @onmouseleave="() => Unhover(key)" @onfocus="() => Hover(key)" @onblur="() => Unhover(key)">@text</button>
                 @RenderPreview(element.Value, key)
             </span>
         }
@@ -141,8 +142,19 @@
     private void Hover(string key) =>
         hovered = Optional.Some(key);
 
-    private void Unhover() =>
-        hovered = Optional.None<string>();
+    /// <summary>Only the name left hides its preview (a focused name keeps its own while the mouse passes another).</summary>
+    private void Unhover(string key) =>
+        hovered = hovered.Match(some => some.Value == key, _ => false) ? Optional.None<string>() : hovered;
+
+    /// <summary>A card shows another step after a move or a removal: no preview carried over to a name at the same place.</summary>
+    protected override void OnParametersSet()
+    {
+        if (!shownOutcomes.Match(shown => ReferenceEquals(shown.Value, Outcomes), _ => false))
+        {
+            shownOutcomes = Optional.Some(Outcomes);
+            hovered = Optional.None<string>();
+        }
+    }
 
     private async Task ShowDetailsAsync(ElementId element)
     {
