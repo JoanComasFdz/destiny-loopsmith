@@ -670,3 +670,32 @@ textarea { resize: vertical; }
     .slines { font-size: 13px; }
     .step-card { padding: 9px 10px 7px; }
 }
+
+/* Step chain: a row per step, an arrow per link in the gutter to the left (StepChain.razor). */
+.chain { margin: 6px 0 14px; }
+.chain-body { position: relative; }
+.chain-arcs { position: absolute; left: 0; top: 0; overflow: visible; }
+.chain-arcs { pointer-events: none; }
+.chain-arcs .line path { fill: none; stroke: var(--arc); stroke-width: 1.6; }
+.chain-arcs .arrowhead, .chain-arcs .junction { fill: var(--arc); }
+.chain-arcs .only-here path { stroke: var(--warn); }
+.chain-arcs .only-here .junction, .chain-arcs .arrowhead.only-here { fill: var(--warn); }
+.chain-arcs .chance { opacity: .5; }
+.chain-arcs .active path { stroke-width: 2.6; }
+.chain-arcs .dim, .chain-arcs .arrowhead.dim { opacity: .15; }
+.chain-arcs .card-edge { fill: var(--line); }
+.chain-arcs .card-edge.selected { fill: var(--line-2); }
+.chain-rows { list-style: none; margin: 0; padding-top: 0; padding-bottom: 0; padding-right: 0; }
+.chain-row { display: flex; align-items: flex-start; }
+.chain-card { all: unset; box-sizing: border-box; display: flex; align-items: center; gap: 6px; width: 100%; padding: 0 10px 0 4px; border-radius: 0 8px 8px 0; background: var(--line); cursor: pointer; font-size: 13px; white-space: nowrap; overflow: hidden; }
+.chain-card:hover, .chain-card:focus-visible { color: var(--text); text-decoration: underline; text-decoration-color: var(--dim); }
+.chain-row.selected .chain-card { background: var(--line-2); font-weight: 700; }
+.chain-row.blocked .chain-label { color: var(--warn); }
+.chain-label { overflow: hidden; text-overflow: ellipsis; }
+.chain-caption { margin-top: 8px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel-2); display: flex; flex-direction: column; gap: 5px; font-size: 12px; }
+.chain-item { display: inline-block; margin-right: 12px; }
+.chain-item.only-here { color: var(--warn); }
+.analysis-steps-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.compare-chains { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 6px 0 4px; }
+@media (max-width: 760px) { .compare-chains { grid-template-columns: minmax(0, 1fr); } }
+.chain-legend { font-size: 12px; margin: 0 0 12px; }

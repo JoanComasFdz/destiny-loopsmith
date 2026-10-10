@@ -166,12 +166,33 @@ public class ActionResolutionTests
         var charged = ResolveOnce(build, Dodge);
         var declared = ActionResolution.ResolveAction(build, charged.State, DeclareMax("bolt-charge"));
 
-        Assert.Empty(ActionResolution.ListDeclarations(build, ActionResolution.CreateInitialState()));
+        Assert.Equal([new StateDeclaration.NewPack()], ActionResolution.ListDeclarations(build, ActionResolution.CreateInitialState()));
         Assert.Equal(
-            ["max:bolt-charge", "end:bolt-charge", "end:amplified", "end:jolt"],
+            ["pack:new", "max:bolt-charge", "end:bolt-charge", "end:amplified", "end:jolt"],
             ActionResolution.ListDeclarations(build, charged.State).Select(d => ((PlayerAction)new PlayerAction.Declare(d)).ToActionToken()));
         Assert.DoesNotContain(DeclareMax("bolt-charge"), declared.NowAvailable);
         Assert.Contains(DeclareEnd("bolt-charge"), declared.NowAvailable);
+    }
+
+    [Fact]
+    public void A_new_pack_has_none_of_the_old_packs_debuffs_and_keeps_what_is_on_you_and_the_ground()
+    {
+        var charger = Element("charger", ElementKind.Fragment,
+        [
+            On(new Trigger.AbilityCast(AbilityKind.ClassAbility), Buff("amplified"), new Outcome.DebuffTarget(Status("jolt"), Optional.None<Seconds>()),
+                new Outcome.Spawn(Pickup("orb-of-power"), 1)),
+        ]);
+        var build = ValidateBuild([charger]);
+        var charged = ResolveOnce(build, Dodge);
+
+        var fresh = ActionResolution.ResolveAction(build, charged.State, new PlayerAction.Declare(new StateDeclaration.NewPack()));
+        var again = ActionResolution.ResolveAction(build, fresh.State, new PlayerAction.Declare(new StateDeclaration.NewPack()));
+
+        Assert.Empty(fresh.State.Target.Debuffs);
+        Assert.Equal([Status("amplified")], fresh.State.Buffs.Select(buff => buff.Status));
+        Assert.Equal([Pickup("orb-of-power")], fresh.State.Pickups);
+        Assert.Empty(fresh.Fired);
+        Assert.False(again.Blocked.IsSome());   // a clean pack can be new again: it always holds
     }
 
     [Fact]

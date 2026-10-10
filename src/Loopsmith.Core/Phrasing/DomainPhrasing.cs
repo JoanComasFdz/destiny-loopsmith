@@ -302,7 +302,7 @@ public static class DomainPhrasing
 
     /// <summary>
     /// "Grenade (kill)", "Grenade (kill 3)", "Festival Flight (hit 5)", "Class ability", "Pick up Orb of Power",
-    /// "Bolt Charge at max", "Amplified ends".
+    /// "Bolt Charge at max", "Amplified ends", "New pack".
     /// </summary>
     public static string DescribeAction(this KeywordGlossary glossary, PlayerAction action, Build build) =>
         action.Match(
@@ -315,7 +315,8 @@ public static class DomainPhrasing
     public static string DescribeDeclaration(this KeywordGlossary glossary, StateDeclaration declaration) =>
         declaration.Match(
             max => $"{glossary.DescribeStatus(max.Status)} at max",
-            end => $"{glossary.DescribeStatus(end.Status)} ends");
+            end => $"{glossary.DescribeStatus(end.Status)} ends",
+            _ => "New pack");
 
     /// <summary>"kill", "hit", and with more than one target "kill 3", "hit 5".</summary>
     private static string DescribeHit(HitOutcome hit, TargetCount targets) =>
@@ -328,7 +329,7 @@ public static class DomainPhrasing
     /// <summary>
     /// The action's token, the same everywhere (CLI, loop files, the web): <c>grenade:kill</c>, <c>grenade:kill:3</c>,
     /// <c>class</c>, <c>kinetic</c>, <c>kinetic:hit:5</c>, <c>pickup:orb-of-power</c>, <c>max:bolt-charge</c>,
-    /// <c>end:amplified</c>. The target count is written only when it is more than one; every token round-trips.
+    /// <c>end:amplified</c>, <c>pack:new</c>. The target count is written only when it is more than one; every token round-trips.
     /// </summary>
     public static string ToActionToken(this PlayerAction action) =>
         action.Match(
@@ -338,7 +339,8 @@ public static class DomainPhrasing
             collect => $"pickup:{collect.Pickup}",
             declare => declare.Declaration.Match(
                 max => $"max:{max.Status}",
-                end => $"end:{end.Status}"));
+                end => $"end:{end.Status}",
+                _ => "pack:new"));
 
     private static string ToHitSuffix(HitOutcome hit, TargetCount targets) =>
         (hit, targets.Value) switch
@@ -371,6 +373,42 @@ public static class DomainPhrasing
         var elements = need.Provider.Match(earlier => earlier.Elements, previous => previous.Elements);
         var sources = elements.IsEmpty ? "" : $" [{string.Join("; ", elements.Select(DescribeMention))}]";
         return $"{need.What} {need.Provider.DescribeProvider()}{sources}";
+    }
+
+    /// <summary>"#2", "previous pass #6": where a link of the step chain starts.</summary>
+    public static string DescribeLinkSource(this StepLink link) =>
+        link.FromPreviousPass ? $"previous pass #{link.From + 1}" : $"#{link.From + 1}";
+
+    /// <summary>"#2 → #4: Slice · Reaper", "previous pass #6 → #3: Armor Charge": a link of the step chain.</summary>
+    public static string DescribeLink(this StepLink link) =>
+        $"{link.DescribeLinkSource()} → #{link.To + 1}: {link.DescribeLinkNeeds()}";
+
+    /// <summary>"Slice · Reaper ← #2": a link as the step that needs it reads it.</summary>
+    public static string DescribeIncomingLink(this StepLink link) =>
+        $"{link.DescribeLinkNeeds()} ← {link.DescribeLinkSource()}";
+
+    /// <summary>"#5: Sever · Unravel", "next pass #3: Armor Charge": a link as the step that provided it reads it.</summary>
+    public static string DescribeOutgoingLink(this StepLink link) =>
+        $"{link.DescribeLinkTarget()}: {link.DescribeLinkNeeds()}";
+
+    /// <summary>A step with no incoming link.</summary>
+    public const string NoNeedsFromEarlierSteps = "nothing from earlier steps";
+
+    /// <summary>A step with no outgoing link.</summary>
+    public const string FeedsNoLaterStep = "no later step";
+
+    /// <summary>"#4", "next pass #3": where a link of the step chain ends, seen from the step that provided it.</summary>
+    public static string DescribeLinkTarget(this StepLink link) =>
+        link.FromPreviousPass ? $"next pass #{link.To + 1}" : $"#{link.To + 1}";
+
+    /// <summary>"Slice · Reaper", "Armor Charge (chance)": what flows along a link, a need that came only from chance rules marked.</summary>
+    public static string DescribeLinkNeeds(this StepLink link) =>
+        string.Join(" · ", link.Needs.Select(need => need.What + (IsChanceOnly(need) ? " (chance)" : "")));
+
+    private static bool IsChanceOnly(StepNeed need)
+    {
+        var elements = need.Provider.Match(earlier => earlier.Elements, previous => previous.Elements);
+        return !elements.IsEmpty && elements.All(element => element.Likelihood == Likelihood.Chance);
     }
 
     /// <summary>"Reaper ← #1": a need and where it comes from, without the elements (comparisons).</summary>

@@ -29,7 +29,7 @@ public static partial class LoopRunning
         if (actions.IsEmpty)
         {
             var empty = new LoopPass(initial, []);
-            return new LoopReport(loopName, build.Build.Name, labels, new LoopVerdict.NoSteps(), empty, empty, true, [], []);
+            return new LoopReport(loopName, build.Build.Name, labels, new LoopVerdict.NoSteps(), empty, empty, true, [], [], []);
         }
 
         var runs = RunPasses(build, initial, actions);
@@ -39,7 +39,8 @@ public static partial class LoopRunning
         var firstAnalysed = AnalyzePass(build, first, Optional.None<LoopPass>(), labels);
         var differences = runs.RepeatingIndex == 0 ? [] : ListDifferences(firstAnalysed, analysed);
         var verdict = JudgeVerdict(firstAnalysed, analysed);
-        return new LoopReport(loopName, build.Build.Name, labels, verdict, first, repeating, runs.RepeatingIndex == 0, analysed, differences);
+        return new LoopReport(
+            loopName, build.Build.Name, labels, verdict, first, repeating, runs.RepeatingIndex == 0, analysed, ListLinks(analysed), differences);
     }
 
     private sealed record PassRuns(ImmutableArray<LoopPass> Passes, int RepeatingIndex);
@@ -80,16 +81,59 @@ public static partial class LoopRunning
 
     private static ImmutableArray<StepAnalysis> AnalyzePass(
         ValidatedBuild build, LoopPass pass, Optional<LoopPass> previous, ImmutableArray<string> labels) =>
-        [
-            .. pass.Resolutions.Select((resolution, index) => new StepAnalysis(
-                index,
-                resolution.Action.ToActionToken(),
-                labels[index],
-                ListNeeds(build, pass, previous, index),
-                ListSetOff(resolution),
-                ListWasted(resolution),
-                resolution.Blocked)),
-        ];
+        [.. pass.Resolutions.Select((_, index) => AnalyzeStep(build, pass, previous, labels[index], index))];
+
+    private static StepAnalysis AnalyzeStep(ValidatedBuild build, LoopPass pass, Optional<LoopPass> previous, string label, int index)
+    {
+        var resolution = pass.Resolutions[index];
+        var met = ListMetNeeds(build, pass, previous, index);
+        var setsOff = ListSetOff(resolution);
+        var inOrder = ListInOrder(resolution, setsOff, met);
+        return new StepAnalysis(
+            index,
+            resolution.Action.ToActionToken(),
+            label,
+            [.. met.DistinctBy(use => use.Need).Select(use => use.Step)],
+            setsOff,
+            inOrder,
+            [.. setsOff.Where(element => !inOrder.Any(other => other.Source == element.Source))],
+            ListWasted(resolution),
+            resolution.Blocked);
+    }
+
+    /// <summary>
+    /// The elements that fire because an earlier step provided what they needed: all of them when the step's own action
+    /// needed it (the orb it picks up, the buff it declares at max), else those with a rule that needed it, or that fired
+    /// on an event such a rule raised (Dielectric's Bolt Charge on a pack an earlier step jolted sets off Shinobu's Vow).
+    /// </summary>
+    private static ImmutableArray<ElementMention> ListInOrder(Resolution resolution, ImmutableArray<ElementMention> setsOff, ImmutableArray<MetNeed> met)
+    {
+        if (met.Any(use => !use.By.IsSome()))
+        {
+            return setsOff;
+        }
+
+        var needing = met.SelectMany(use => use.By.Match(by => new[] { by.Value }, _ => [])).ToImmutableHashSet();
+        var inOrder = Enumerable.Range(0, resolution.Fired.Length).Aggregate(ImmutableHashSet<int>.Empty, (places, place) =>
+            needing.Contains(place) || IsCausedInOrder(resolution, places, place) || IsFedInOrder(resolution, places, place)
+                ? places.Add(place)
+                : places);
+        var sources = inOrder.Select(place => resolution.Fired[place].Source).ToImmutableHashSet();
+        return [.. setsOff.Where(element => sources.Contains(element.Source))];
+    }
+
+    /// <summary>The rule fired on an event an in-order rule raised.</summary>
+    private static bool IsCausedInOrder(Resolution resolution, ImmutableHashSet<int> inOrder, int place) =>
+        resolution.Fired[place].CausedBy.Match(cause => inOrder.Contains(cause.Value), _ => false);
+
+    /// <summary>The rule reads what an in-order rule of the same step provided before it (Slice's Sever, read by To Shreds' kill).</summary>
+    private static bool IsFedInOrder(Resolution resolution, ImmutableHashSet<int> inOrder, int place)
+    {
+        var rule = resolution.Fired[place];
+        return ListRuleNeeds(rule).Any(need => inOrder
+            .Where(earlier => resolution.Fired[earlier].EventIndex < rule.EventIndex)
+            .Any(earlier => resolution.Fired[earlier].Outcomes.Any(applied => IsProvidedBy(applied.Outcome, need))));
+    }
 
     /// <summary>The elements whose rules applied at the step, in the order they first fired.</summary>
     private static ImmutableArray<ElementMention> ListSetOff(Resolution resolution) =>
@@ -131,27 +175,32 @@ public static partial class LoopRunning
         partial record DeclaredMax(StatusId Status);
     }
 
+    /// <summary>A need and who needs it: the rule (its place in the step's fired rules) that reads or consumes it, none for the step's own action.</summary>
+    private sealed record NeedUse(Need Need, Optional<int> By);
+
+    /// <summary>A use whose need was there when the step began, with the step that provided it.</summary>
+    private sealed record MetNeed(Need Need, Optional<int> By, StepNeed Step);
+
     /// <summary>
     /// What the step uses that was already there when it began — so an earlier step provided it — and that step. What
     /// the step provides for itself (its own hit jolting the pack before its kill) is part of its cascade, not a need.
     /// </summary>
-    private static ImmutableArray<StepNeed> ListNeeds(ValidatedBuild build, LoopPass pass, Optional<LoopPass> previous, int index)
+    private static ImmutableArray<MetNeed> ListMetNeeds(ValidatedBuild build, LoopPass pass, Optional<LoopPass> previous, int index)
     {
         var glossary = build.Catalog.Glossary;
         var resolution = pass.Resolutions[index];
         var before = ReadStateBefore(pass, index);
         return
         [
-            .. ListNeedCandidates(resolution, before)
-                .Distinct()
-                .Where(need => IsPresent(before, need))
-                .SelectMany(need => FindProvider(pass, previous, index, need).Match(
-                    provider => new[] { new StepNeed(DescribeNeed(glossary, need), ReadNeedAffinity(glossary, need), provider.Value) },
+            .. ListNeedUses(resolution, before)
+                .Where(use => IsPresent(before, use.Need))
+                .SelectMany(use => FindProvider(pass, previous, index, use.Need).Match(
+                    provider => new[] { new MetNeed(use.Need, use.By, new StepNeed(DescribeNeed(glossary, use.Need), ReadNeedAffinity(glossary, use.Need), provider.Value)) },
                     _ => [])),
         ];
     }
 
-    private static IEnumerable<Need> ListNeedCandidates(Resolution resolution, GameState before)
+    private static IEnumerable<NeedUse> ListNeedUses(Resolution resolution, GameState before)
     {
         var fromAction = resolution.Blocked.IsSome()
             ? []
@@ -164,9 +213,12 @@ public static partial class LoopRunning
                 _ => Array.Empty<Need>(),
             };
         var fromRules = resolution.Fired
-            .Where(rule => !rule.NotStackedWith.IsSome())
-            .SelectMany(rule => ListRuleNeeds(rule).Where(need => !IsProvidedBefore(resolution, rule.EventIndex, need)));
-        return fromAction.Concat(fromRules);
+            .Select((rule, place) => (Rule: rule, Place: place))
+            .Where(x => !x.Rule.NotStackedWith.IsSome())
+            .SelectMany(x => ListRuleNeeds(x.Rule)
+                .Where(need => !IsProvidedBefore(resolution, x.Rule.EventIndex, need))
+                .Select(need => new NeedUse(need, Optional.Some(x.Place))));
+        return fromAction.Select(need => new NeedUse(need, Optional.None<int>())).Concat(fromRules);
     }
 
     private static GameState ReadStateBefore(LoopPass pass, int index) =>
@@ -296,6 +348,28 @@ public static partial class LoopRunning
             debuff => glossary.ReadStatusAffinity(debuff.Status),
             pickup => glossary.Pickups.TryGetValue(pickup.Pickup, out var definition) ? definition.Affinity : Affinity.Neutral,
             declared => glossary.ReadStatusAffinity(declared.Status));
+
+    // ── the step chain ──────────────────────────────────────────────────────────
+
+    /// <summary>Each need as an arrow from the step that provided it to the step that needs it, one per pair of steps.</summary>
+    private static ImmutableArray<StepLink> ListLinks(ImmutableArray<StepAnalysis> steps) =>
+        [
+            .. steps
+                .SelectMany(step => step.Needs.Select(need => (To: step.StepIndex, Need: need, From: ReadProviderStep(need.Provider))))
+                .GroupBy(x => (x.From.StepIndex, x.From.FromPreviousPass, x.To))
+                .Select(group => new StepLink(
+                    group.Key.StepIndex,
+                    group.Key.To,
+                    group.Key.FromPreviousPass,
+                    [.. group.Select(x => x.Need)],
+                    group.Any(x => IsCertain(ReadProviderElements(x.Need.Provider))) ? Likelihood.Always : Likelihood.Chance)),
+        ];
+
+    private static (int StepIndex, bool FromPreviousPass) ReadProviderStep(NeedProvider provider) =>
+        provider.Match(earlier => (earlier.StepIndex, false), previous => (previous.StepIndex, true));
+
+    private static ImmutableArray<ElementMention> ReadProviderElements(NeedProvider provider) =>
+        provider.Match(earlier => earlier.Elements, previous => previous.Elements);
 
     // ── verdict and the first pass ──────────────────────────────────────────────
 

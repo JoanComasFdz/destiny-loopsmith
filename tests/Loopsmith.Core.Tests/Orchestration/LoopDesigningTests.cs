@@ -26,7 +26,7 @@ public sealed class LoopDesigningTests
         var options = LoopDesigning.ListTriggerOptions(session);
 
         Assert.Equal(
-            ["grenade:kill", "grenade", "melee:kill", "melee", "class", "super:kill", "super", "energy:kill", "energy"],
+            ["grenade:kill", "grenade", "melee:kill", "melee", "class", "super:kill", "super", "energy:kill", "energy", "pack:new"],
             options.Select(option => option.Token));
         Assert.All(options, option => Assert.False(option.IsNew));
         Assert.Equal("Grenade (kill)", options[0].Label);

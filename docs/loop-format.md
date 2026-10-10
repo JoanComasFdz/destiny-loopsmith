@@ -63,7 +63,7 @@ Same tokens everywhere: CLI `--actions a,b,…` and `--scenario <file>` (one tok
 comma-separated; `#` starts a comment), `play`, loop files and web share links:
 
 `grenade|melee|super[:hit|kill[:N]]` · `class[:air]` · `kinetic|energy|power[:hit|kill[:N]]` ·
-`pickup:<pickup-id>` · `max:<status-id>` · `end:<status-id>`
+`pickup:<pickup-id>` · `max:<status-id>` · `end:<status-id>` · `pack:new`
 
 Tokens are read case-insensitively. Errors read `Unknown action '<token>'. Use …` or
 `Invalid target count in '<token>': use a whole number from 1 to 20 …`.
@@ -79,7 +79,7 @@ then no longer on the ground. A weapon action for an empty slot, or a pickup tha
 (`No orb-of-power on the ground — nothing happens.`), is a **blocked step**: it changes nothing.
 
 **States you declare** (ADRs D3). What only play decides — that a threshold is reached, that a status
-has ended — the player declares as a step of its own:
+has ended, that the next enemies are a new pack — the player declares as a step of its own:
 
 * `max:<status>` — "Bolt Charge at max": that buff is at its maximum. It raises `StacksMaxed`, so every
   `stacksMaxed` rule fires and cascades, and the buff stays declared at max (the `atMax` condition reads
@@ -103,16 +103,21 @@ has ended — the player declares as a step of its own:
   debuff on the pack has ended and is removed. It raises no event, so no rule reacts to it. Blocked
   unless the status is active: `Amplified isn't active — nothing ends.` ·
   `No buff or debuff 'amplifyed' in the rules — nothing ends.`
+* `pack:new` — "New pack": the next enemies are a new pack, with none of the old pack's debuffs; the
+  buffs on you and the pickups on the ground stay ([ADRs D7](../ADRs.md)). It raises no event and
+  always holds. A loop that meets a new group of enemies each pass starts with it, so the next pass's
+  first hit isn't credited with debuffs the new group doesn't have; a loop against one boss leaves it
+  out.
 
 **Written form.** Written tokens are lower-case and carry the count only when it is more than one
-(`grenade:kill`, `kinetic`, `grenade:kill:3`, `max:bolt-charge`, `end:amplified`). Every token written
+(`grenade:kill`, `kinetic`, `grenade:kill:3`, `max:bolt-charge`, `end:amplified`, `pack:new`). Every token written
 reads back as the same action (`grenade:hit` is written `grenade`). Labels read "Grenade (kill 3)",
 "Festival Flight (hit 5)" (a weapon by its build name), "Class ability (in the air)",
-"Pick up Orb of Power", "Bolt Charge at max", "Amplified ends".
+"Pick up Orb of Power", "Bolt Charge at max", "Amplified ends", "New pack".
 
 **What `play` and the web designer offer.** Only steps that can happen: the abilities, the equipped
-weapons, the pickups on the ground and a group **States you declare** — `max:` for each active
-buff that stacks and isn't at max yet, `end:` for each active status. `class:air` is offered only when an equipped rule has an
+weapons, the pickups on the ground and a group **States you declare** — `pack:new` always, `max:` for
+each active buff that stacks and isn't at max yet, `end:` for each active status. `class:air` is offered only when an equipped rule has an
 airborne trigger (without one it fires exactly what `class` fires). Every token still reads anywhere
 (CLI, loop files, share links).
 
@@ -156,21 +161,38 @@ has a blocked step (the first one, with its message).
 
 * **needs** — what was already there when the step began and the step uses, and which step provided
   it:
-  * a pickup it picks up: `Orb of Power ← #2 [Attrition Orbs (chance); Reaper; Strand Siphon (chance)]`
+  * a pickup it picks up: `Orb of Power ← #3 [Attrition Orbs (chance); Reaper; Strand Siphon (chance)]`
     (the step, then the elements that dropped it there);
-  * a buff a rule consumes or a guard reads: `Reaper ← #1 [Reaper]`;
-  * a debuff on the pack a trigger needs: `Jolt ← #2 [Spark of Shock]`;
-  * a declared state: `Bolt Charge at max ← #6`.
+  * a buff a rule consumes or a guard reads: `Reaper ← #2 [Reaper]`;
+  * a debuff on the pack a trigger needs: `Jolt ← #3 [Spark of Shock]`;
+  * a declared state: `Bolt Charge at max ← #7`.
 
   The provider is the latest step since the thing last arrived (it has been there from then on) where
   a rule that always fires provided it, else the latest one, so a sure drop is named before a chance
   one; `← previous pass #<k>` when it carries over from the pass before. What the step gives itself
   before it uses it — its hit jolts the pack, then its kill reads Jolt — is part of the step, not a
   need.
-* **sets off** — the elements whose rules fired there, each *(chance)* one marked (ADRs D8);
+* **in this order** — the elements that fire there because of an earlier step: their rule used
+  something an earlier step provided, or read what such a rule gave earlier in the step, or fired on
+  an event such a rule raised (Dielectric's Bolt Charge on a pack an earlier grenade jolted sets off
+  Shinobu's Vow). When the step's own action needs an earlier step (the orb it picks up, the buff it
+  declares at max), everything it sets off is in this order;
+* **on its own** — the elements that fire there wherever the step goes in the loop. Both lists mark
+  each *(chance)* one (ADRs D8);
 * **wasted** — a rule that gave way there because it doesn't stack with another element's
   ([rule-format.md](rule-format.md#rules-that-dont-stack), ADRs D6):
   `Tempest Strike — doesn't stack with Dielectric`.
+
+**The chain** — the needs drawn as arrows, one per pair of steps: from the step that provided a need
+to the step that needs it, labelled with what flows (`#2 → #3: Slice · Reaper`); one whose needs came
+only from chance rules is marked *(chance)*. The web draws the links within a pass above the steps:
+each step is a card whose left edge has a notch at the top, where the lines into it land (an
+arrowhead), and a square slot at the bottom, where the lines out of it start. A step's lines leave its
+slot as one stroke and split along it (a junction dot), one lane per later step they feed, the nearest
+splitting off first; lines into the same step merge on its notch; where a step's stroke crosses a
+line passing by from an earlier step, the stroke hops over it; a line by chance is faded. Tapping a step lists what it needs and what it feeds. A link
+from the pass before (`previous pass #4 → #3: Unraveling Rounds`) shows in the step's needs, not as
+an arrow.
 
 Where the first pass differs — a step blocked there, or an element that fires on one pass and not on
 the other — a **First pass** block lists those steps: *blocked*, *doesn't set off* (what fires in the
@@ -182,24 +204,27 @@ happen.
 *The report as text*). Illustrative, `…` elides:
 
 ```
-Dodge, then shoot — Skip Grenade Hunter · 3 steps
-Class ability → Festival Flight (kill) → Pick up Orb of Power
+Dodge, then shoot — Skip Grenade Hunter · 4 steps
+New pack → Class ability → Festival Flight (kill) → Pick up Orb of Power
 ✓ Repeats — each pass ends with what the next one needs
 
-#1 Class ability
-   sets off         Reaper · Slice · Gambler's Dodge · Bomber
+#1 New pack
 
-#2 Festival Flight (kill)
-   needs            Sever ← previous pass #2 [Slice; Horde Shuttle] · Slice ← #1 [Slice] · Unraveling Rounds ← previous pass #3 [Unraveling Orbs] · …
-   sets off         To Shreds · Slice · Unraveling Rounds · Horde Shuttle · Attrition Orbs (chance) · Reaper · Strand Siphon (chance)
+#2 Class ability
+   on its own       Reaper · Slice · Gambler's Dodge · Bomber
 
-#3 Pick up Orb of Power
-   needs            Orb of Power ← #2 [Attrition Orbs (chance); Reaper; Strand Siphon (chance)]
-   sets off         Unraveling Orbs · Orb of Power
+#3 Festival Flight (kill)
+   needs            Slice ← #2 [Slice] · Unraveling Rounds ← previous pass #4 [Unraveling Orbs] · Reaper ← #2 [Reaper]
+   in this order    Slice · Unraveling Rounds · Reaper · To Shreds
+   on its own       Attrition Orbs (chance) · Strand Siphon (chance)
+
+#4 Pick up Orb of Power
+   needs            Orb of Power ← #3 [Attrition Orbs (chance); Reaper; Strand Siphon (chance)]
+   in this order    Unraveling Orbs · Orb of Power
 
 First pass (from a fresh spawn, where it differs)
-#2 Festival Flight (kill)
-   doesn't set off  Unraveling Rounds · Horde Shuttle
+#3 Festival Flight (kill)
+   doesn't set off  Unraveling Rounds
 ```
 
 ## Comparison
@@ -212,22 +237,33 @@ builds; both replay with the same catalog. The comparison uses each loop's repea
   A's first `grenade:kill` with B's first `grenade:kill` — its step number in each loop, where its
   needs come from there (marked when that loop's first pass differs there), and the elements that
   fire in only one of them;
-* the triggers only one loop has, listed as such.
+* the triggers only one loop has, listed as such;
+* the links of each loop's chain the other loop lacks — no link between the same two triggers, the
+  same way round the loop — listed (`Links only in A`); the web draws each loop's chain with only
+  those links.
 
-Here the same three steps in another order: the shot after the dodge gets Slice and Reaper from #1;
-the shot before it gets them from the previous pass, so on B's first pass it sets off neither.
+Here the same steps in another order: the shot after the dodge gets Slice and Reaper from #2; the shot
+before it gets them from the previous pass, so on B's first pass it sets off neither. The chains say it
+in one line each.
 
 ```
-A  Dodge, then shoot   Class ability → Festival Flight (kill) → Pick up Orb of Power   ✓ Repeats   (Skip Grenade Hunter)
-B  Shoot, then dodge   Festival Flight (kill) → Class ability → Pick up Orb of Power   ✓ Repeats   (Skip Grenade Hunter)
+A  Dodge, then shoot   New pack → Class ability → Festival Flight (kill) → Pick up Orb of Power   ✓ Repeats   (Skip Grenade Hunter)
+B  Shoot, then dodge   New pack → Festival Flight (kill) → Class ability → Pick up Orb of Power   ✓ Repeats   (Skip Grenade Hunter)
 
-Class ability           A #1 · B #2: sets off the same
-Festival Flight (kill)  A #2 · B #1: sets off the same
-   A needs     Sever ← previous pass #2 · Slice ← #1 · Unraveling Rounds ← previous pass #3 · Unravel ← previous pass #2 · Reaper ← #1 (differs on A's first pass)
-   B needs     Sever ← previous pass #1 · Slice ← previous pass #2 · Unraveling Rounds ← previous pass #3 · Unravel ← previous pass #1 · Reaper ← previous pass #2 (differs on B's first pass)
-Pick up Orb of Power    A #3 · B #3: sets off the same
-   A needs     Orb of Power ← #2
-   B needs     Orb of Power ← #1
+New pack                A #1 · B #1: sets off the same
+Class ability           A #2 · B #3: sets off the same
+Festival Flight (kill)  A #3 · B #2: sets off the same
+   A needs     Slice ← #2 · Unraveling Rounds ← previous pass #4 · Reaper ← #2 (differs on A's first pass)
+   B needs     Slice ← previous pass #3 · Unraveling Rounds ← previous pass #4 · Reaper ← previous pass #3 (differs on B's first pass)
+Pick up Orb of Power    A #4 · B #4: sets off the same
+   A needs     Orb of Power ← #3
+   B needs     Orb of Power ← #2
+
+Links only in A
+   #2 Class ability → #3 Festival Flight (kill): Slice · Reaper
+
+Links only in B
+   previous pass #3 Class ability → #2 Festival Flight (kill): Slice · Reaper
 ```
 
 A trigger that sets off different elements in the two loops lists them as `only in A` / `only in B`;
@@ -242,7 +278,7 @@ loopsmith compare builds/skip-grenade-hunter/loops/infinite-skip-grenades.loop.y
                   builds/skip-grenade-hunter/loops/melee-first.loop.yaml
 ```
 
-`loop` prints the build summary, the order, the verdict and the steps (needs / sets off / wasted, and
+`loop` prints the build summary, the order, the verdict and the steps (needs / in this order / on its own / wasted, and
 the first pass where it differs); `--trace` adds the full trace of the first pass, and of the
 repeating pass when it differs (`--why` and `--caveats` add reasons and caveats to it, `--verbose`
 both). `compare` prints the comparison above. The rules are found from the loop file (`compare`: the

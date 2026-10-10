@@ -48,6 +48,17 @@ else
                     @RenderOrder("A", leftReport)
                     @RenderOrder("B", rightReport)
                 </div>
+                <div class="compare-chains" data-testid="chains">
+                    <div class="compare-chain">
+                        <h3 class="section-label">A · @leftReport.LoopName</h3>
+                        <StepChain Report="leftReport" Links="ChainShaping.ListDifferingLinks(comparison.Value.LeftLinks)" />
+                    </div>
+                    <div class="compare-chain">
+                        <h3 class="section-label">B · @rightReport.LoopName</h3>
+                        <StepChain Report="rightReport" Links="ChainShaping.ListDifferingLinks(comparison.Value.RightLinks)" />
+                    </div>
+                </div>
+                <p class="muted chain-legend">Each chain shows only the links that loop has and the other doesn't: lines leave a step from its slot (bottom left) and land in the notch (top left) of each later step it feeds.</p>
                 <div class="table-wrap">
                     <table class="data-table compare-table">
                         <thead>
@@ -234,7 +245,7 @@ else
             }
             @if (analysed.Needs.IsEmpty)
             {
-                <span class="muted">needs nothing from earlier steps</span>
+                <span class="muted">needs @DomainPhrasing.NoNeedsFromEarlierSteps</span>
             }
             else
             {

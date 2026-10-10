@@ -60,8 +60,8 @@ public static class ActionResolution
     }
 
     /// <summary>
-    /// The declarations that hold now (ADRs D3): <c>max:</c> for each active buff that stacks and isn't at max yet,
-    /// <c>end:</c> for each active buff and each debuff on the pack.
+    /// The declarations that hold now (ADRs D3): a new pack (always, ADRs D7), <c>max:</c> for each active buff that
+    /// stacks and isn't at max yet, <c>end:</c> for each active buff and each debuff on the pack.
     /// </summary>
     public static ImmutableArray<StateDeclaration> ListDeclarations(ValidatedBuild build, GameState state)
     {
@@ -71,7 +71,7 @@ public static class ActionResolution
             .Select(buff => (StateDeclaration)new StateDeclaration.ReachMax(buff.Status));
         var ends = state.Buffs.Select(buff => buff.Status).Concat(state.Target.Debuffs)
             .Select(status => (StateDeclaration)new StateDeclaration.EndStatus(status));
-        return [.. maxes, .. ends];
+        return [new StateDeclaration.NewPack(), .. maxes, .. ends];
     }
 
     public static ImmutableArray<ActivePassive> ListActivePassives(ValidatedBuild build, GameState state) =>
@@ -150,7 +150,8 @@ public static class ActionResolution
     private static Opening Declare(ValidatedBuild build, GameState state, StateDeclaration declaration) =>
         declaration.Match(
             max => DeclareMax(build.Catalog.Glossary, state, max.Status),
-            end => DeclareEnd(build.Catalog.Glossary, state, end.Status));
+            end => DeclareEnd(build.Catalog.Glossary, state, end.Status),
+            _ => new Opening(state.ReplacePack(), [], []));   // always holds: the next enemies are a new pack
 
     /// <summary>
     /// "Bolt Charge at max" (ADRs D3): the buff is declared at its maximum and <see cref="GameEvent.StacksMaxed"/>

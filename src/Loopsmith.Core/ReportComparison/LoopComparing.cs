@@ -7,7 +7,8 @@ namespace Loopsmith.Core.ReportComparison;
 /// <summary>
 /// Two loops' orders side by side (docs/loop-format.md, "Comparison"; ADRs D2). Pure. Triggers are matched by
 /// occurrence of the same action — A's first <c>grenade:kill</c> with B's first — so each row shows a trigger's place
-/// in both loops and what that place changes. Nothing is scored. The loops may use different builds.
+/// in both loops and what that place changes; each loop's chain marks the links the other lacks. Nothing is scored.
+/// The loops may use different builds.
 /// </summary>
 public static class LoopComparing
 {
@@ -23,7 +24,10 @@ public static class LoopComparing
         var rightOnly = rightSteps
             .Where(step => !leftSteps.Any(other => other.Key == step.Key))
             .Select(step => new TriggerComparison(step.Step.Label, new TriggerPlacement.OnlyInRight(PlaceStep(right, step.Step))));
-        return new LoopComparison(left, right, [.. matched, .. rightOnly]);
+        var leftLinkKeys = ListLinkKeys(left);
+        var rightLinkKeys = ListLinkKeys(right);
+        return new LoopComparison(
+            left, right, [.. matched, .. rightOnly], CompareLinks(left, rightLinkKeys), CompareLinks(right, leftLinkKeys));
     }
 
     /// <summary>Each step with its occurrence key: <c>grenade:kill#2</c> is the loop's second grenade kill.</summary>
@@ -35,6 +39,26 @@ public static class LoopComparing
 
     private static Optional<StepAnalysis> FindOccurrence(ImmutableArray<(string Key, StepAnalysis Step)> steps, string key) =>
         steps.Select(step => step.Key == key ? Optional.Some(step.Step) : Optional.None<StepAnalysis>()).FindFirstSome();
+
+    /// <summary>Each link of the report's chain, marked when the other loop has no link with its key.</summary>
+    private static ImmutableArray<ComparedLink> CompareLinks(LoopReport report, ImmutableHashSet<string> otherKeys)
+    {
+        var occurrences = ListOccurrenceKeys(report);
+        return [.. report.Links.Select(link => new ComparedLink(link, !otherKeys.Contains(ToLinkKey(occurrences, link))))];
+    }
+
+    private static ImmutableHashSet<string> ListLinkKeys(LoopReport report)
+    {
+        var occurrences = ListOccurrenceKeys(report);
+        return [.. report.Links.Select(link => ToLinkKey(occurrences, link))];
+    }
+
+    private static ImmutableArray<string> ListOccurrenceKeys(LoopReport report) =>
+        [.. ListOccurrences(report.Steps).Select(step => step.Key)];
+
+    /// <summary>A link by its two triggers and the way round the loop: <c>class#1&gt;kinetic:kill#1</c>, plus <c>@previous</c> from the pass before.</summary>
+    private static string ToLinkKey(ImmutableArray<string> occurrences, StepLink link) =>
+        $"{occurrences[link.From]}>{occurrences[link.To]}{(link.FromPreviousPass ? "@previous" : "")}";
 
     private static PlacedStep PlaceStep(LoopReport report, StepAnalysis step) =>
         new(step, report.FirstPassDifferences.Any(difference => difference.StepIndex == step.StepIndex));

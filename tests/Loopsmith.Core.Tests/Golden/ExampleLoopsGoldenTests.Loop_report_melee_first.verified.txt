@@ -1,46 +1,48 @@
-﻿Melee first — Skip Grenade Hunter · 6 steps
-Melee (kill) → Bolt Charge at max → Grenade (kill) → Any Arc weapon (kill) → Pick up Orb of Power → Class ability
+﻿Melee first — Skip Grenade Hunter · 7 steps
+New pack → Melee (kill) → Bolt Charge at max → Grenade (kill) → Any Arc weapon (kill) → Pick up Orb of Power → Class ability
 ✓ Repeats — each pass ends with what the next one needs
 
-#1 Melee (kill)
-   needs            Jolt ← previous pass #3 [Spark of Shock; Defibrillating Blast]
-   sets off         Tempest Strike · Jolt · Impact Induction · Combination Blow · Flow State · Dielectric · Shock and Clear · Shinobu's Vow · Bolt Charge · Spark of Discharge · Elemental Charge (chance) · Ionic Trace
+#1 New pack
+
+#2 Melee (kill)
+   on its own       Tempest Strike · Impact Induction · Combination Blow · Flow State · Dielectric · Shock and Clear · Shinobu's Vow · Bolt Charge · Spark of Discharge · Elemental Charge (chance) · Ionic Trace
    wasted           Tempest Strike — doesn't stack with Dielectric
 
-#2 Bolt Charge at max
-   needs            Bolt Charge ← #1 [Dielectric; Spark of Discharge]
-   sets off         Shinobu's Vow · Flashover
+#3 Bolt Charge at max
+   needs            Bolt Charge ← #2 [Dielectric; Spark of Discharge]
+   in this order    Shinobu's Vow · Flashover
 
-#3 Grenade (kill)
-   needs            New Tricks ← #2 [Shinobu's Vow] · Armor Charge ← previous pass #5 [Orb of Power] · Bolt Charge at max ← #2 · Bolt Charge ← #1 [Dielectric; Spark of Discharge] · Jolt ← #1 [Tempest Strike]
-   sets off         Shinobu's Vow · Grenade Kickstart · Spark of Shock · Bolt Charge · Jolt · Defibrillating Blast · Flow State · Dielectric · Shock and Clear · Spark of Discharge · Elemental Charge (chance) · Ionic Trace
+#4 Grenade (kill)
+   needs            New Tricks ← #3 [Shinobu's Vow] · Armor Charge ← previous pass #6 [Orb of Power] · Bolt Charge at max ← #3 · Bolt Charge ← #2 [Dielectric; Spark of Discharge] · Jolt ← #2 [Tempest Strike]
+   in this order    Shinobu's Vow · Grenade Kickstart · Bolt Charge · Jolt · Defibrillating Blast · Flow State · Dielectric · Shock and Clear · Spark of Discharge · Elemental Charge (chance) · Ionic Trace
+   on its own       Spark of Shock
    wasted           Tempest Strike — doesn't stack with Dielectric
 
-#4 Any Arc weapon (kill)
-   needs            Jolt ← #3 [Spark of Shock; Defibrillating Blast] · Reaper ← previous pass #6 [Reaper]
-   sets off         Jolt · Flow State · Reaper · Dielectric · Spark of Discharge · Shock and Clear · Harmonic Siphon (chance) · Shinobu's Vow · Bolt Charge · Elemental Charge (chance) · Ionic Trace
+#5 Any Arc weapon (kill)
+   needs            Jolt ← #4 [Spark of Shock; Defibrillating Blast] · Reaper ← previous pass #7 [Reaper]
+   in this order    Jolt · Flow State · Reaper · Dielectric · Spark of Discharge · Shock and Clear · Shinobu's Vow · Bolt Charge · Elemental Charge (chance) · Ionic Trace
+   on its own       Harmonic Siphon (chance)
    wasted           Tempest Strike — doesn't stack with Dielectric
 
-#5 Pick up Orb of Power
-   needs            Orb of Power ← #4 [Reaper; Harmonic Siphon (chance)]
-   sets off         Unraveling Orbs · Orb of Power
+#6 Pick up Orb of Power
+   needs            Orb of Power ← #5 [Reaper; Harmonic Siphon (chance)]
+   in this order    Unraveling Orbs · Orb of Power
 
-#6 Class ability
-   sets off         Reaper · Slice · Gambler's Dodge · Bomber
+#7 Class ability
+   on its own       Reaper · Slice · Gambler's Dodge · Bomber
 
 First pass (from a fresh spawn, where it differs)
-#1 Melee (kill)
-   doesn't set off  Jolt
-#4 Any Arc weapon (kill)
+#5 Any Arc weapon (kill)
    doesn't set off  Reaper
 
 Steps
   Open with the melee instead of the dodge: slide-melee to jolt the pack, then skip grenade and
   Arc weapon into it, grab the orbs and dodge last to refill the melee. Gambler's Dodge's melee
   refill depends on the Melee stat, so the rules give it as unknown ("?").
-  1. melee:kill           Combination Blow: Tempest Strike jolts, Impact Induction refunds grenade energy
-  2. max:bolt-charge      Bolt Charge at x10 — Shinobu's Vow and Flashover; the next ability hit discharges it
-  3. grenade:kill         Skip grenade into the jolted pack: its hit discharges Bolt Charge; Amplified and Ionic Traces
-  4. energy:kill          Arc weapon kill: Spark of Discharge traces, Harmonic Siphon orb
-  5. pickup:orb-of-power  Orbs: Armor Charge and Unraveling Rounds
-  6. class                Gambler's Dodge to refill the melee (the amount depends on the Melee stat)
+  1. pack:new             The next group of enemies: a new pack, nothing on it yet
+  2. melee:kill           Combination Blow: Tempest Strike jolts, Impact Induction refunds grenade energy
+  3. max:bolt-charge      Bolt Charge at x10 — Shinobu's Vow and Flashover; the next ability hit discharges it
+  4. grenade:kill         Skip grenade into the jolted pack: its hit discharges Bolt Charge; Amplified and Ionic Traces
+  5. energy:kill          Arc weapon kill: Spark of Discharge traces, Harmonic Siphon orb
+  6. pickup:orb-of-power  Orbs: Armor Charge and Unraveling Rounds
+  7. class                Gambler's Dodge to refill the melee (the amount depends on the Melee stat)

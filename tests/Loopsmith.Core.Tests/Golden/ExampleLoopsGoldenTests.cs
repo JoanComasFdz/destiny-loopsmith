@@ -80,7 +80,7 @@ public class ExampleLoopsGoldenTests
         var report = LoopDesigning.AnalyzeDesign(session);
 
         Assert.IsType<LoopVerdict.Repeats>(report.Verdict);
-        var airMove = session.Resolutions[0];
+        var airMove = session.Resolutions[1];   // after the new pack
         Assert.Equal(new PlayerAction.UseClassAbility(Airborne: true), airMove.Action);
         Assert.Contains(airMove.Fired, rule => rule.Source.Value == "ascension");
         Assert.Contains(airMove.Fired, rule => rule.Source.Value == "gamblers-dodge");   // the dodge's effects fire too

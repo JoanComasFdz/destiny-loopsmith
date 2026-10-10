@@ -27,7 +27,8 @@ short `discrepancies.md` for what differs, pointing to the parent's — see `bui
 ## Engine model (what a claim can turn into)
 
 - **"The pack in front of you" (D7).** One abstract target with a tier; a debuff stays on the pack, kill
-  after kill, until the player declares it ended (`end:jolt`).
+  after kill, until the player declares it ended (`end:jolt`) or a new pack (`pack:new`, "the next
+  group").
 - **Numbers are facts; the player declares thresholds (D1, D3).** "+1 Bolt Charge", "for 10 s", "up to
   x10" are facts on the outcome. "At 10 stacks" becomes a step where the
   player declares the state (`max:bolt-charge`, "Bolt Charge at max"), and a buff that has ended becomes

@@ -1,0 +1,121 @@
+@* The step chain (docs/loop-format.md, "Analysis"): a card per step. Its left edge has a notch at the top, where the
+   lines into the step land, and a square slot at the bottom, where the lines out of it start. A step's lines leave its
+   slot as one stroke and split along it (a junction dot), one lane per step they feed; lines into the same step merge
+   on its notch. A line whose needs came only from chance rules is faded; in a comparison only the links the other loop lacks
+   are drawn. Tap a step: its lines stand out and what it needs and feeds is listed below. *@
+@{
+    var chain = ChainShaping.ShapeChain(Report.Steps.Length, Links);
+}
+<div class="chain" data-testid="chain">
+    <div class="chain-body" style="height: @(chain.Height)px">
+        <svg class="chain-arcs" width="@chain.Width" height="@chain.Height" viewBox="0 0 @chain.Width @chain.Height" aria-hidden="true">
+            @foreach (var card in chain.Cards)
+            {
+                <path class="@ToCardClass(card.Step)" d="@card.Edge" />
+            }
+            @foreach (var line in chain.Lines)
+            {
+                <g class="@ToLineClass(line)" data-from="@line.Link.From" data-to="@line.Link.To">
+                    <title>@line.Title</title>
+                    <path d="@line.Path" />
+                    @if (line.Junction is Optional<ChainPoint>.Some junction)
+                    {
+                        <circle class="junction" cx="@junction.Value.X" cy="@junction.Value.Y" r="2.5" />
+                    }
+                </g>
+            }
+            @foreach (var arrowhead in chain.Arrowheads)
+            {
+                <polygon class="@ToArrowheadClass(arrowhead)" points="@arrowhead.Points" />
+            }
+        </svg>
+        <ol class="chain-rows" style="padding-left: @(chain.CardLeft)px">
+            @foreach (var step in Report.Steps)
+            {
+                <li class="chain-row @(selected == step.StepIndex ? "selected" : "") @(step.Blocked.IsSome() ? "blocked" : "")" style="height: @(chain.RowPitch)px">
+                    <button type="button" class="chain-card" style="height: @(chain.CardHeight)px; margin-top: @(ChainShaping.CardMargin)px" @onclick="() => Select(step.StepIndex)" aria-pressed="@(selected == step.StepIndex)">
+                        <span class="muted">#@(step.StepIndex + 1)</span>
+                        <span class="chain-label">@step.Label</span>
+                        @if (step.Blocked.IsSome())
+                        {
+                            <span class="tone-warning" aria-label="blocked">✗</span>
+                        }
+                    </button>
+                </li>
+            }
+        </ol>
+    </div>
+    @if (selected >= 0 && selected < Report.Steps.Length)
+    {
+        var step = Report.Steps[selected];
+        var incoming = Links.Where(compared => compared.Link.To == selected).ToImmutableArray();
+        var outgoing = Links.Where(compared => compared.Link.From == selected).ToImmutableArray();
+        <div class="chain-caption" data-testid="chain-caption">
+            <strong>#@(selected + 1) @step.Label</strong>
+            @if (step.Blocked is Optional<string>.Some blocked)
+            {
+                <div class="analysis-field warn"><span class="field-label">blocked</span><span>@blocked.Value</span></div>
+            }
+            <div class="analysis-field">
+                <span class="field-label">needs</span>
+                <span>
+                    @if (incoming.IsEmpty)
+                    {
+                        <span class="muted">@DomainPhrasing.NoNeedsFromEarlierSteps</span>
+                    }
+                    @foreach (var compared in incoming)
+                    {
+                        <span class="chain-item @(compared.OnlyHere ? "only-here" : "")">@compared.Link.DescribeIncomingLink()</span>
+                    }
+                </span>
+            </div>
+            <div class="analysis-field">
+                <span class="field-label">feeds</span>
+                <span>
+                    @if (outgoing.IsEmpty)
+                    {
+                        <span class="muted">@DomainPhrasing.FeedsNoLaterStep</span>
+                    }
+                    @foreach (var compared in outgoing)
+                    {
+                        <span class="chain-item @(compared.OnlyHere ? "only-here" : "")">@compared.Link.DescribeOutgoingLink()</span>
+                    }
+                </span>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public LoopReport Report { get; set; } = null!;
+
+    /// <summary>The links to draw, each marked when a comparison's other loop lacks it.</summary>
+    [Parameter, EditorRequired]
+    public ImmutableArray<ComparedLink> Links { get; set; } = [];
+
+    private int selected = -1;
+
+    private void Select(int step) => selected = selected == step ? -1 : step;
+
+    private string ToCardClass(int step) =>
+        JoinClasses(
+            "card-edge",
+            selected == step ? "selected" : "",
+            Report.Steps[step].Blocked.IsSome() ? "blocked" : "");
+
+    private string ToLineClass(ChainLine line) =>
+        JoinClasses(
+            "line",
+            line.OnlyHere ? "only-here" : "",
+            line.Link.Likelihood == Likelihood.Chance ? "chance" : "",
+            selected < 0 ? "" : line.Link.From == selected || line.Link.To == selected ? "active" : "dim");
+
+    private string ToArrowheadClass(ChainArrowhead arrowhead) =>
+        JoinClasses(
+            "arrowhead",
+            Links.Any(compared => compared.OnlyHere && compared.Link.To == arrowhead.Step) ? "only-here" : "",
+            selected < 0 ? "" : arrowhead.Step == selected || Links.Any(compared => compared.Link.To == arrowhead.Step && compared.Link.From == selected) ? "active" : "dim");
+
+    private static string JoinClasses(params string[] names) => string.Join(' ', names.Where(name => name.Length > 0));
+}

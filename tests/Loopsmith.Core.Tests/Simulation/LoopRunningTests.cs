@@ -161,6 +161,70 @@ public class LoopRunningTests
         Assert.Equal(["Orb of Power ← #3 [Lucky (chance)]"], DescribeNeeds(pickedBetween.Steps[3]));   // #1's orb was picked up at #2
     }
 
+    private static readonly BuildElement DodgeAmplifies = Element("giver", ElementKind.Fragment,
+        [On(new Trigger.AbilityCast(AbilityKind.ClassAbility), Buff("amplified"))]);
+
+    /// <summary>A grenade thrown while amplified gives Bolt Charge.</summary>
+    private static readonly BuildElement AmplifiedGrenade = Element("guarded", ElementKind.Fragment,
+        [OnWhen(new Trigger.AbilityCast(AbilityKind.Grenade), new Condition.HasBuff(Status("amplified")), Buff("bolt-charge"))]);
+
+    [Fact]
+    public void What_fires_because_an_earlier_step_provided_it_is_in_this_order_the_rest_on_its_own()
+    {
+        var plain = Element("plain", ElementKind.Fragment,
+            [On(new Trigger.AbilityCast(AbilityKind.Grenade), new Outcome.DebuffTarget(Status("jolt"), Optional.None<Seconds>()))]);
+        var watcher = Element("watcher", ElementKind.Fragment,
+            [On(new Trigger.BuffGained(Status("bolt-charge")), new Outcome.RestoreHealth(new GameValue.Unknown(), false))]);
+
+        var report = RunLoop(ValidateBuild([DodgeAmplifies, AmplifiedGrenade, plain, watcher]), Dodge, GrenadeKill, AmplifiedEnds);
+
+        var grenade = report.Steps[1];
+        Assert.Equal([Mention("guarded"), Mention("watcher")], grenade.InOrder);   // the watcher fires on the guarded rule's gain
+        Assert.Equal([Mention("plain")], grenade.OnItsOwn);
+        Assert.Equal(grenade.SetsOff.Length, grenade.InOrder.Length + grenade.OnItsOwn.Length);
+        Assert.Empty(report.Steps[0].InOrder);
+    }
+
+    [Fact]
+    public void A_rule_that_reads_what_an_in_order_rule_gave_earlier_in_the_step_is_in_this_order()
+    {
+        var jolter = Element("jolter", ElementKind.Fragment,
+            [OnWhen(new Trigger.AbilityCast(AbilityKind.Grenade), new Condition.HasBuff(Status("amplified")), new Outcome.DebuffTarget(Status("jolt"), Optional.None<Seconds>()))]);
+        var reader = Element("reader", ElementKind.Fragment,
+            [On(new Trigger.KillDebuffed(new DamageSource.AbilityOf(AbilityKind.Grenade), [Status("jolt")]), Buff("bolt-charge"))]);
+
+        var report = RunLoop(ValidateBuild([DodgeAmplifies, jolter, reader]), new PlayerAction.Declare(new StateDeclaration.NewPack()), Dodge, GrenadeKill, AmplifiedEnds);
+
+        Assert.Equal([Mention("jolter"), Mention("reader")], report.Steps[2].InOrder);   // the cast jolts the pack, then the kill reads it
+        Assert.Equal(["Amplified ← #2 [Giver]"], DescribeNeeds(report.Steps[2]));
+    }
+
+    [Fact]
+    public void The_chain_links_the_step_that_provided_a_need_to_the_step_that_needs_it()
+    {
+        var dodgeFirst = RunLoop(ValidateBuild([DodgeAmplifies, AmplifiedGrenade]), Dodge, GrenadeKill, AmplifiedEnds);
+        var opener = RunLoop(ValidateBuild([Spawner, Collector]), PickUpOrbs, RifleKill);
+
+        Assert.Equal(
+            [(0, 1, false, "Amplified"), (0, 2, false, "Amplified")],
+            dodgeFirst.Links.Select(link => (link.From, link.To, link.FromPreviousPass, link.DescribeLinkNeeds())));
+        var carried = Assert.Single(opener.Links);
+        Assert.Equal((1, 0, true, Likelihood.Always), (carried.From, carried.To, carried.FromPreviousPass, carried.Likelihood));
+        Assert.Equal(("previous pass #2", "Orb of Power"), (carried.DescribeLinkSource(), carried.DescribeLinkNeeds()));
+    }
+
+    [Fact]
+    public void A_link_whose_needs_came_only_from_chance_rules_is_chance()
+    {
+        var lucky = Element("lucky", ElementKind.Fragment,
+            [new Rule(new Trigger.AbilityCast(AbilityKind.Grenade), [], [new Outcome.Spawn(Pickup("orb-of-power"), 1)], Optional.None<string>(), Likelihood.Chance, [])]);
+
+        var report = RunLoop(ValidateBuild([lucky]), GrenadeKill, PickUpOrbs);
+
+        var link = Assert.Single(report.Links);
+        Assert.Equal((Likelihood.Chance, "Orb of Power (chance)"), (link.Likelihood, link.DescribeLinkNeeds()));
+    }
+
     [Fact]
     public void A_rule_that_reads_a_declared_maximum_needs_the_declaration()
     {
@@ -255,7 +319,7 @@ public class LoopRunningTests
         Assert.Equal(string.Join(" → ", report.StepLabels), lines[1]);
         Assert.StartsWith("✓ Repeats — on the first pass, #1 (", lines[2]);
         Assert.Contains("   needs            Orb of Power ← previous pass #2 [Spawner]", lines);
-        Assert.Contains("   sets off         Collector", lines);
+        Assert.Contains("   in this order    Collector", lines);   // the orb it picks up came from the pass before
         Assert.Contains("First pass (from a fresh spawn, where it differs)", lines);
         Assert.Contains("   doesn't set off  Collector", lines);
     }

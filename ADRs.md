@@ -14,7 +14,7 @@ follows from it.
 | D4 | The player declares how many enemies an action hits | The engine can't know how many enemies a grenade catches; perks depend on it |
 | D5 | Abilities are always available; energy outcomes are facts | Energy is time; tracking it would be a simulation |
 | D6 | Rules that don't stack give way and show as wasted | Wasted potential is what the build crafter most needs to see |
-| D7 | One target: the pack in front of you | Matches how add-clear builds are explained ("everything is jolted") |
+| D7 | One target: the pack in front of you, until the player declares a new one | Matches how add-clear builds are explained ("everything is jolted"); only play decides when the next group comes |
 | D8 | Chance rules always fire, marked *(chance)* | No probabilities without a simulation; the mark keeps the loop honest |
 | D9 | An airborne class ability use (`class:air`) | Air moves (Ascension) spend the class ability charge but only some rules react to them |
 | D10 | Causality is authored as YAML; a human confirms every rule | 55% of Compendium descriptions state the trigger, so drafts can be generated, never trusted |
@@ -93,10 +93,11 @@ declare them; a counter the game doesn't show (To Shreds' 6 weapon hits) is a *(
   `stacksMaxed` rules fire, and the buff stays declared at max (the `atMax` condition reads it) until a
   rule consumes or removes it, or an `end:`.
 * `end:<status>` — the buff on you or the debuff on the pack has ended ("Amplified ends").
+* `pack:new` — the next enemies are a new pack, with none of the old pack's debuffs ("New pack", D7).
 
 A declaration that doesn't hold is a **blocked step**, like a pickup that isn't on the ground:
 `max:` needs an active buff that stacks (`maxStacks` in the glossary) and isn't declared at max yet,
-`end:` an active status. Nothing else reaches a maximum: an `applyBuff` makes the buff present and
+`end:` an active status; `pack:new` always holds. Nothing else reaches a maximum: an `applyBuff` makes the buff present and
 shows its grant ("+1 Bolt Charge"). A status ends only through a rule's `removeBuff` or consumption,
 or an `end:`. **Consequence.** `stacksMaxed` fires only on a declaration;
 a rule that reacts to the next hit at the maximum uses the `atMax` condition (Bolt Charge discharges
@@ -145,12 +146,16 @@ own. Only rules matching the same event interact, and a rule gives way when any 
 matched that event, even if that rule itself gave way. The graph is static, so it pairs only rules on
 the same trigger — an approximation of the same-event rule — and its node is not a step.
 
-### D7 — One target: the pack in front of you
+### D7 — One target: the pack in front of you, until the player declares a new one
 
 **Decision.** One abstract target, the enemies in front of you, with a tier and the debuffs
 spread across it. A debuff stays on the pack until the player declares it ended (D3); after a kill
-the pack is still in front of you. **Consequence.** It matches how add-clear
-builds are explained ("everything is jolted") and is optimistic for a single boss. The tier is
+the pack is still in front of you. When the next group of enemies comes is play, so the player
+declares it: a `pack:new` step (D3) puts a new pack in front of you, with none of the old one's
+debuffs; the buffs on you and the pickups on the ground stay. A loop that meets a new group each pass
+starts with `pack:new`; a loop against one boss leaves it out. **Consequence.** It matches how add-clear
+builds are explained ("everything is jolted"), and a debuff the next group doesn't have isn't
+credited to the next pass's first hit. The tier is
 `minor`: a kill rule for a higher tier shows in `explain` and the graph but doesn't fire in a loop
 until the player can declare the tier ([docs/backlog.md](docs/backlog.md)).
 

@@ -74,6 +74,32 @@ public sealed class LoopComparingTests
     }
 
     [Fact]
+    public void A_link_the_other_loop_has_only_the_other_way_round_the_loop_is_marked_on_both()
+    {
+        var dodgeFirst = RunLoop("Dodge first", Dodge, GrenadeKill);
+        var grenadeFirst = RunLoop("Grenade first", GrenadeKill, Dodge);   // the grenade's Amplified comes from the pass before
+
+        var comparison = LoopComparing.CompareLoops(dodgeFirst, grenadeFirst);
+
+        var left = Assert.Single(comparison.LeftLinks);
+        var right = Assert.Single(comparison.RightLinks);
+        Assert.Equal((0, 1, false, true), (left.Link.From, left.Link.To, left.Link.FromPreviousPass, left.OnlyHere));
+        Assert.Equal((1, 0, true, true), (right.Link.From, right.Link.To, right.Link.FromPreviousPass, right.OnlyHere));
+    }
+
+    [Fact]
+    public void The_same_link_in_both_loops_is_not_marked()
+    {
+        var once = RunLoop("A", Dodge, GrenadeKill, AmplifiedEnds);
+        var again = RunLoop("B", Dodge, GrenadeKill, AmplifiedEnds);
+
+        var comparison = LoopComparing.CompareLoops(once, again);
+
+        Assert.Equal(2, comparison.LeftLinks.Length);
+        Assert.All(comparison.LeftLinks.AddRange(comparison.RightLinks), compared => Assert.False(compared.OnlyHere));
+    }
+
+    [Fact]
     public void A_side_is_marked_where_its_first_pass_does_something_else()
     {
         var dodgeFirst = RunLoop("Dodge first", Dodge, GrenadeKill);
@@ -107,6 +133,9 @@ public sealed class LoopComparingTests
                 "   A needs     Amplified ← #1",
                 "   B needs     Amplified ← #2",
                 $"{Pad(grenadeFirst.StepLabels[3])}only in B (#4)",
+                "",
+                "Links only in A",
+                $"   #1 {dodgeFirst.StepLabels[0]} → #2 {dodgeFirst.StepLabels[1]}: Amplified",
             ],
             lines);
 

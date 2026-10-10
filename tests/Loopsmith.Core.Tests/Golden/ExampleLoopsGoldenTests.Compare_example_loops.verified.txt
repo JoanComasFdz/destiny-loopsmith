@@ -1,23 +1,42 @@
-﻿A  Infinite skip grenades   Class ability → Grenade (kill) → Festival Flight (kill) → Any Arc weapon (kill) → Pick up Orb of Power → Bolt Charge at max → Grenade (kill)   ✓ Repeats   (Skip Grenade Hunter)
-B  Melee first              Melee (kill) → Bolt Charge at max → Grenade (kill) → Any Arc weapon (kill) → Pick up Orb of Power → Class ability   ✓ Repeats   (Skip Grenade Hunter)
+﻿A  Infinite skip grenades   New pack → Class ability → Grenade (kill) → Festival Flight (kill) → Any Arc weapon (kill) → Pick up Orb of Power → Bolt Charge at max → Grenade (kill)   ✓ Repeats   (Skip Grenade Hunter)
+B  Melee first              New pack → Melee (kill) → Bolt Charge at max → Grenade (kill) → Any Arc weapon (kill) → Pick up Orb of Power → Class ability   ✓ Repeats   (Skip Grenade Hunter)
 
-Class ability           A #1 · B #6: sets off the same
-Grenade (kill)          A #2 · B #3
-   A needs     Armor Charge ← previous pass #5 · Jolt ← previous pass #7 · Sever ← previous pass #4 (differs on A's first pass)
-   B needs     New Tricks ← #2 · Armor Charge ← previous pass #5 · Bolt Charge at max ← #2 · Bolt Charge ← #1 · Jolt ← #1
-   only in A   Photonic Flare · To Shreds
-   only in B   Defibrillating Blast
-Festival Flight (kill)  only in A (#3)
-Any Arc weapon (kill)   A #4 · B #4
-   A needs     Sever ← #3 · Unravel ← #3 · Jolt ← #2 (differs on A's first pass)
-   B needs     Jolt ← #3 · Reaper ← previous pass #6 (differs on B's first pass)
+New pack                A #1 · B #1: sets off the same
+Class ability           A #2 · B #7: sets off the same
+Grenade (kill)          A #3 · B #4
+   A needs     Armor Charge ← previous pass #6 (differs on A's first pass)
+   B needs     New Tricks ← #3 · Armor Charge ← previous pass #6 · Bolt Charge at max ← #3 · Bolt Charge ← #2 · Jolt ← #2
+   only in B   Jolt · Defibrillating Blast
+Festival Flight (kill)  only in A (#4)
+Any Arc weapon (kill)   A #5 · B #5
+   A needs     Sever ← #4 · Unravel ← #4 · Jolt ← #3 (differs on A's first pass)
+   B needs     Jolt ← #4 · Reaper ← previous pass #7 (differs on B's first pass)
    only in A   To Shreds · Horde Shuttle · Photonic Flare
    only in B   Reaper
-Pick up Orb of Power    A #5 · B #5: sets off the same
-   A needs     Orb of Power ← #3
-   B needs     Orb of Power ← #4
-Bolt Charge at max      A #6 · B #2: sets off the same
-   A needs     Bolt Charge ← #4
-   B needs     Bolt Charge ← #1
-Grenade (kill)          only in A (#7)
-Melee (kill)            only in B (#1)
+Pick up Orb of Power    A #6 · B #6: sets off the same
+   A needs     Orb of Power ← #4
+   B needs     Orb of Power ← #5
+Bolt Charge at max      A #7 · B #3: sets off the same
+   A needs     Bolt Charge ← #5
+   B needs     Bolt Charge ← #2
+Grenade (kill)          only in A (#8)
+Melee (kill)            only in B (#2)
+
+Links only in A
+   #2 Class ability → #4 Festival Flight (kill): Slice · Reaper
+   previous pass #6 Pick up Orb of Power → #4 Festival Flight (kill): Unraveling Rounds
+   #3 Grenade (kill) → #4 Festival Flight (kill): Jolt
+   #4 Festival Flight (kill) → #5 Any Arc weapon (kill): Sever · Unravel
+   #4 Festival Flight (kill) → #6 Pick up Orb of Power: Orb of Power
+   #5 Any Arc weapon (kill) → #7 Bolt Charge at max: Bolt Charge
+   #7 Bolt Charge at max → #8 Grenade (kill): New Tricks · Bolt Charge at max
+   #6 Pick up Orb of Power → #8 Grenade (kill): Armor Charge
+   #5 Any Arc weapon (kill) → #8 Grenade (kill): Bolt Charge · Sever
+   #3 Grenade (kill) → #8 Grenade (kill): Jolt
+
+Links only in B
+   #2 Melee (kill) → #3 Bolt Charge at max: Bolt Charge
+   #3 Bolt Charge at max → #4 Grenade (kill): New Tricks · Bolt Charge at max
+   #2 Melee (kill) → #4 Grenade (kill): Bolt Charge · Jolt
+   previous pass #7 Class ability → #5 Any Arc weapon (kill): Reaper
+   #5 Any Arc weapon (kill) → #6 Pick up Orb of Power: Orb of Power
