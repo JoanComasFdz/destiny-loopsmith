@@ -67,7 +67,7 @@ status's `maxStacks` (a whole number ≥ 2) and `duration`.
   changes nothing.
 * `duration` is a fact shown on an `applyBuff` / `debuffTarget` that gives none. A buff ends when a
   rule removes or consumes it, or when the player declares it ended (`end:amplified`); a debuff stays
-  on the pack until the player declares it ended (`end:jolt`).
+  on the pack until the player declares it ended (`end:jolt`) or declares a new pack (`pack:new`).
 * `collectsAutomatically: true` — collected the moment it spawns (Ionic Traces track to you);
   `false` — it lands on the ground until a `pickup:<id>` step ([loop-format.md](loop-format.md)).
 * `damageType` (summons): `kinetic|arc|solar|void|stasis|strand`.
@@ -405,7 +405,9 @@ the ground.
   ("Bolt Charge at max") emits `StacksMaxed(status)`, so the `stacksMaxed` rules fire and cascade, and
   marks the buff declared at max: `atMax` holds until a rule removes or consumes the buff, or the
   player ends it. `end:<status>` ("Amplified ends", "Jolt ends") removes the buff, with its
-  declaration, or the debuff from the pack, and derives no event.
+  declaration, or the debuff from the pack, and derives no event. `pack:new` ("New pack", ADRs D7) puts
+  a new pack in front of you: none of the old pack's debuffs, the buffs on you and the pickups on the
+  ground unchanged; it always holds and derives no event.
 * **Abilities are always available** (ADRs D5). A step is blocked only when it can't happen at all —
   the pickup isn't on the ground (`No orb-of-power on the ground — nothing happens.`), no weapon in that
   slot, a `max:` on a buff that doesn't stack, isn't active or is already at max, an `end:` on a status

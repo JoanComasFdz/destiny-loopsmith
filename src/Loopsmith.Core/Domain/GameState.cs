@@ -35,12 +35,16 @@ public partial record PlayerAction
     partial record Declare(StateDeclaration Declaration);   // a state only play decides (ADRs D3)
 }
 
-/// <summary>What the player declares as a step of its own (ADRs D3): <c>max:&lt;status&gt;</c>, <c>end:&lt;status&gt;</c>.</summary>
+/// <summary>
+/// What the player declares as a step of its own (ADRs D3): <c>max:&lt;status&gt;</c>, <c>end:&lt;status&gt;</c>,
+/// <c>pack:new</c>.
+/// </summary>
 [Union]
 public partial record StateDeclaration
 {
     partial record ReachMax(StatusId Status);    // a stacking buff on you is at its maximum
     partial record EndStatus(StatusId Status);   // a buff on you, or a debuff on the pack, has ended
+    partial record NewPack();                    // the next enemies are a new pack, with no debuffs (ADRs D7)
 }
 
 /// <summary>A concrete thing that happened — matched against <see cref="Trigger"/> patterns.</summary>

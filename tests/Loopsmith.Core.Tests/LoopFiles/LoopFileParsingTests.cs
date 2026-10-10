@@ -85,6 +85,7 @@ public sealed class LoopFileParsingTests
               - do: power:kill
               - do: max:bolt-charge
               - do: END:Amplified
+              - do: pack:new
             build: x
             """);
 
@@ -95,6 +96,7 @@ public sealed class LoopFileParsingTests
                 new PlayerAction.FireWeapon(WeaponSlot.Power, HitOutcome.Kill, TargetCount.One),
                 new PlayerAction.Declare(new StateDeclaration.ReachMax(StatusId.From("bolt-charge"))),
                 new PlayerAction.Declare(new StateDeclaration.EndStatus(StatusId.From("amplified"))),
+                new PlayerAction.Declare(new StateDeclaration.NewPack()),
             ],
             design.Steps.Select(step => step.Action));
     }

@@ -7,6 +7,8 @@ description: |-
   kills doesn't stack with Dielectric's, so the analysis lists it as wasted.
 catalog: authored-e707a3336348
 steps:
+  - do: pack:new
+    note: 'The next group of enemies: a new pack, nothing on it yet'
   - do: class
     note: "Gambler's Dodge: arms Slice and Reaper; Bomber refunds grenade energy"
   - do: grenade:kill

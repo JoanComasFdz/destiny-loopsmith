@@ -63,7 +63,7 @@ Same tokens everywhere: CLI `--actions a,b,…` and `--scenario <file>` (one tok
 comma-separated; `#` starts a comment), `play`, loop files and web share links:
 
 `grenade|melee|super[:hit|kill[:N]]` · `class[:air]` · `kinetic|energy|power[:hit|kill[:N]]` ·
-`pickup:<pickup-id>` · `max:<status-id>` · `end:<status-id>`
+`pickup:<pickup-id>` · `max:<status-id>` · `end:<status-id>` · `pack:new`
 
 Tokens are read case-insensitively. Errors read `Unknown action '<token>'. Use …` or
 `Invalid target count in '<token>': use a whole number from 1 to 20 …`.
@@ -79,7 +79,7 @@ then no longer on the ground. A weapon action for an empty slot, or a pickup tha
 (`No orb-of-power on the ground — nothing happens.`), is a **blocked step**: it changes nothing.
 
 **States you declare** (ADRs D3). What only play decides — that a threshold is reached, that a status
-has ended — the player declares as a step of its own:
+has ended, that the next enemies are a new pack — the player declares as a step of its own:
 
 * `max:<status>` — "Bolt Charge at max": that buff is at its maximum. It raises `StacksMaxed`, so every
   `stacksMaxed` rule fires and cascades, and the buff stays declared at max (the `atMax` condition reads
@@ -103,16 +103,21 @@ has ended — the player declares as a step of its own:
   debuff on the pack has ended and is removed. It raises no event, so no rule reacts to it. Blocked
   unless the status is active: `Amplified isn't active — nothing ends.` ·
   `No buff or debuff 'amplifyed' in the rules — nothing ends.`
+* `pack:new` — "New pack": the next enemies are a new pack, with none of the old pack's debuffs; the
+  buffs on you and the pickups on the ground stay ([ADRs D7](../ADRs.md)). It raises no event and
+  always holds. A loop that meets a new group of enemies each pass starts with it, so the next pass's
+  first hit isn't credited with debuffs the new group doesn't have; a loop against one boss leaves it
+  out.
 
 **Written form.** Written tokens are lower-case and carry the count only when it is more than one
-(`grenade:kill`, `kinetic`, `grenade:kill:3`, `max:bolt-charge`, `end:amplified`). Every token written
+(`grenade:kill`, `kinetic`, `grenade:kill:3`, `max:bolt-charge`, `end:amplified`, `pack:new`). Every token written
 reads back as the same action (`grenade:hit` is written `grenade`). Labels read "Grenade (kill 3)",
 "Festival Flight (hit 5)" (a weapon by its build name), "Class ability (in the air)",
-"Pick up Orb of Power", "Bolt Charge at max", "Amplified ends".
+"Pick up Orb of Power", "Bolt Charge at max", "Amplified ends", "New pack".
 
 **What `play` and the web designer offer.** Only steps that can happen: the abilities, the equipped
-weapons, the pickups on the ground and a group **States you declare** — `max:` for each active
-buff that stacks and isn't at max yet, `end:` for each active status. `class:air` is offered only when an equipped rule has an
+weapons, the pickups on the ground and a group **States you declare** — `pack:new` always, `max:` for
+each active buff that stacks and isn't at max yet, `end:` for each active status. `class:air` is offered only when an equipped rule has an
 airborne trigger (without one it fires exactly what `class` fires). Every token still reads anywhere
 (CLI, loop files, share links).
 

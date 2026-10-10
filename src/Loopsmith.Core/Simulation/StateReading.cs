@@ -32,6 +32,10 @@ public static class StateReading
     public static GameState PutDebuff(this GameState state, StatusId status) =>
         state.TargetHas(status) ? state : state with { Target = state.Target with { Debuffs = state.Target.Debuffs.Add(status) } };
 
+    /// <summary>A new pack: the same kind of enemies, none of the old pack's debuffs (ADRs D7).</summary>
+    public static GameState ReplacePack(this GameState state) =>
+        state with { Target = state.Target with { Debuffs = [] } };
+
     public static GameState DropDebuff(this GameState state, StatusId status) =>
         state with { Target = state.Target with { Debuffs = state.Target.Debuffs.Remove(status) } };
 

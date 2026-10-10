@@ -302,7 +302,7 @@ public static class DomainPhrasing
 
     /// <summary>
     /// "Grenade (kill)", "Grenade (kill 3)", "Festival Flight (hit 5)", "Class ability", "Pick up Orb of Power",
-    /// "Bolt Charge at max", "Amplified ends".
+    /// "Bolt Charge at max", "Amplified ends", "New pack".
     /// </summary>
     public static string DescribeAction(this KeywordGlossary glossary, PlayerAction action, Build build) =>
         action.Match(
@@ -315,7 +315,8 @@ public static class DomainPhrasing
     public static string DescribeDeclaration(this KeywordGlossary glossary, StateDeclaration declaration) =>
         declaration.Match(
             max => $"{glossary.DescribeStatus(max.Status)} at max",
-            end => $"{glossary.DescribeStatus(end.Status)} ends");
+            end => $"{glossary.DescribeStatus(end.Status)} ends",
+            _ => "New pack");
 
     /// <summary>"kill", "hit", and with more than one target "kill 3", "hit 5".</summary>
     private static string DescribeHit(HitOutcome hit, TargetCount targets) =>
@@ -328,7 +329,7 @@ public static class DomainPhrasing
     /// <summary>
     /// The action's token, the same everywhere (CLI, loop files, the web): <c>grenade:kill</c>, <c>grenade:kill:3</c>,
     /// <c>class</c>, <c>kinetic</c>, <c>kinetic:hit:5</c>, <c>pickup:orb-of-power</c>, <c>max:bolt-charge</c>,
-    /// <c>end:amplified</c>. The target count is written only when it is more than one; every token round-trips.
+    /// <c>end:amplified</c>, <c>pack:new</c>. The target count is written only when it is more than one; every token round-trips.
     /// </summary>
     public static string ToActionToken(this PlayerAction action) =>
         action.Match(
@@ -338,7 +339,8 @@ public static class DomainPhrasing
             collect => $"pickup:{collect.Pickup}",
             declare => declare.Declaration.Match(
                 max => $"max:{max.Status}",
-                end => $"end:{end.Status}"));
+                end => $"end:{end.Status}",
+                _ => "pack:new"));
 
     private static string ToHitSuffix(HitOutcome hit, TargetCount targets) =>
         (hit, targets.Value) switch

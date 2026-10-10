@@ -160,7 +160,7 @@ public sealed class LoopFileWritingTests
         "ab Z09 \n\n  \t#:-'\"|>{}[],&*!%@`~?\\/." + "é✓—" + "\r" + (char)0x85 + (char)0x2028 + (char)0xFEFF + (char)1;
 
     private static readonly ImmutableArray<string> Tokens =
-        ["class", "class:air", "grenade", "grenade:kill", "melee:kill", "super", "kinetic:kill", "energy", "power:kill", "pickup:orb-of-power", "max:bolt-charge", "end:jolt"];
+        ["class", "class:air", "grenade", "grenade:kill", "melee:kill", "super", "kinetic:kill", "energy", "power:kill", "pickup:orb-of-power", "max:bolt-charge", "end:jolt", "pack:new"];
 
     private static LoopDesign CreateRandomDesign(Random random)
     {

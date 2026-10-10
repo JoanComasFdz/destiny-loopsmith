@@ -6,6 +6,8 @@ description: |-
   refill depends on the Melee stat, so the rules give it as unknown ("?").
 catalog: authored-e707a3336348
 steps:
+  - do: pack:new
+    note: 'The next group of enemies: a new pack, nothing on it yet'
   - do: melee:kill
     note: 'Combination Blow: Tempest Strike jolts, Impact Induction refunds grenade energy'
   - do: max:bolt-charge

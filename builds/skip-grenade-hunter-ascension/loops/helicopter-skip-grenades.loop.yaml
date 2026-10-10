@@ -7,6 +7,8 @@ description: |-
   no Amplified: Ascension and Flashover (when you declare Bolt Charge at max) make you Amplified.
 catalog: authored-e707a3336348
 steps:
+  - do: pack:new
+    note: 'The next group of enemies: a new pack, nothing on it yet'
   - do: class:air
     note: "Ascension: helicopter up, jolting the pack and making you Amplified; the dodge's effects fire too (Slice, Reaper, Bomber)"
   - do: grenade:kill

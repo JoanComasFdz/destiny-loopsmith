@@ -153,11 +153,11 @@ is a fact about what gives energy back ([ADRs D5](ADRs.md)). The loop graph rend
 [builds/skip-grenade-hunter/loop-graph.md](builds/skip-grenade-hunter/loop-graph.md).
 
 Action tokens: `grenade|melee|super[:hit|kill[:N]]`, `class[:air]`, `kinetic|energy|power[:hit|kill[:N]]`,
-`pickup:<pickup-id>`, `max:<status-id>`, `end:<status-id>` — `N` is how many enemies that one action
+`pickup:<pickup-id>`, `max:<status-id>`, `end:<status-id>`, `pack:new` — `N` is how many enemies that one action
 hits or kills (1..20, default 1): `grenade:kill:3`, `kinetic:hit:5` ([ADRs D4](ADRs.md)); `class:air` is
 the class ability used in the air, like Ascension's air move ([ADRs D9](ADRs.md)); `pickup:orb-of-power`
-picks up an orb that is on the ground; `max:bolt-charge` declares Bolt Charge at max and `end:amplified`
-that Amplified has ended ([ADRs D3](ADRs.md)). A step that can't happen is blocked and changes nothing
+picks up an orb that is on the ground; `max:bolt-charge` declares Bolt Charge at max, `end:amplified`
+that Amplified has ended, and `pack:new` that the next enemies are a new pack ([ADRs D3, D7](ADRs.md)). A step that can't happen is blocked and changes nothing
 (`No orb-of-power on the ground — nothing happens.`).
 
 ## How it works

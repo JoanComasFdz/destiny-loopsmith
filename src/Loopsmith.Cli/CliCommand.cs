@@ -65,10 +65,10 @@ public static class CliArguments
 
         Steps:
           grenade|melee|super[:hit|kill[:N]]  class[:air]  kinetic|energy|power[:hit|kill[:N]]  pickup:<id>
-          max:<status>  end:<status>
+          max:<status>  end:<status>  pack:new
           (without :kill the hit only damages; N = enemies hit or killed in that one action, 1..20, default 1:
            grenade:kill:3 kills three, kinetic:hit:5 shoots five; max:bolt-charge declares Bolt Charge at max,
-           end:amplified that Amplified has ended)
+           end:amplified that Amplified has ended, pack:new that the next enemies are a new pack)
           Loopsmith shows cause and effect: numbers are facts shown with their outcome, never added up.
         """;
 
