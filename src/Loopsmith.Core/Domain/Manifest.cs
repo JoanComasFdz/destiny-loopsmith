@@ -64,7 +64,10 @@ public sealed record ManifestItem(
     Optional<string> Icon);
 
 /// <summary>A perk an armor set grants once that many of its pieces are worn (2: its 2-piece perk).</summary>
-public sealed record SetPerk(int Pieces, ItemHash Perk);
+public sealed record SetPerk(PieceCount Pieces, ItemHash Perk);
+
+/// <summary>A set perk with the armor set it belongs to.</summary>
+public sealed record PerkOfSet(ArmorSet Set, SetPerk Perk);
 
 /// <summary>An armor set of the manifest (Luminopotent): its name and the perks its piece counts grant, fewest pieces first.</summary>
 public sealed record ArmorSet(ItemHash Hash, string Name, ImmutableArray<SetPerk> Perks);

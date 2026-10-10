@@ -30,7 +30,10 @@ public static class BuildExplaining
     public static ImmutableArray<ExplanationGroup> ExplainBuild(ValidatedBuild build) =>
         ExplainEquipped(build, build.Equipped);
 
-    /// <summary>What one element sets off in this build (its copies counted), grouped by trigger: an item's details.</summary>
+    /// <summary>
+    /// What one element sets off in this build (its copies counted), grouped by trigger: an item's details. An element
+    /// the build doesn't equip is explained as one copy — what it would set off if it were.
+    /// </summary>
     public static ImmutableArray<ExplanationGroup> ExplainElement(ValidatedBuild build, BuildElement element) =>
         ExplainEquipped(build, [build.Equipped.Where(equipped => equipped.Element.Id == element.Id).Select(Optional.Some).FindFirstSome()
             .UnwrapOr(new EquippedElement(element, 1))]);

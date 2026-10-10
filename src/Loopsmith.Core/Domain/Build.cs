@@ -48,13 +48,13 @@ public partial record WeaponPerkSlot
 }
 
 /// <summary>How many pieces of an armor set some items are (a DIM loadout's armor).</summary>
-public sealed record WornSet(ArmorSet Set, int Pieces);
+public sealed record WornSet(ArmorSet Set, PieceCount Pieces);
 
 /// <summary>
 /// An armor set as a build shows it: the set, how many of its pieces the build wears (none: the build doesn't say —
 /// a build file names its set bonuses, not its armor) and each of its perks.
 /// </summary>
-public sealed record ArmorSetStatus(ArmorSet Set, Optional<int> Pieces, ImmutableArray<SetPerkStatus> Perks);
+public sealed record ArmorSetStatus(ArmorSet Set, Optional<PieceCount> Pieces, ImmutableArray<SetPerkStatus> Perks);
 
 /// <summary>A set perk: active when the build has it as a set bonus or wears enough pieces; its element when the rules know it.</summary>
 public sealed record SetPerkStatus(SetPerk Perk, bool Active, Optional<ElementId> Element);

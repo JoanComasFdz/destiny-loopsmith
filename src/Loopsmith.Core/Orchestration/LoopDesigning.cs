@@ -115,11 +115,27 @@ public static class LoopDesigning
     public static ImmutableArray<ElementId> ListLooseSetBonuses(ValidatedBuild build) =>
         ArmorSetting.ListLooseBonuses(build.Catalog, build.Build);
 
-    /// <summary>What an element sets off in the build — each trigger, then its outcomes and reasons — for an item's details; nothing for an id the catalog doesn't have.</summary>
-    public static ImmutableArray<StyledLine> ExplainElement(ValidatedBuild build, ElementId id) =>
-        build.Catalog.Elements.TryGetValue(id, out var element)
-            ? BuildExplaining.RenderElementExplanation(BuildExplaining.ExplainElement(build, element))
-            : [];
+    /// <summary>
+    /// What an element sets off in the build — each trigger, then its outcomes and reasons — for an item's details; one
+    /// the build doesn't equip (a catalyst that is off, a set perk not active) as one copy would.
+    /// </summary>
+    public static ImmutableArray<StyledLine> ExplainElement(ValidatedBuild build, BuildElement element) =>
+        BuildExplaining.RenderElementExplanation(BuildExplaining.ExplainElement(build, element));
+
+    /// <summary>True when the build equips the element (its slots, a weapon's perks, a catalyst that is on, its set bonuses).</summary>
+    public static bool IsEquipped(ValidatedBuild build, ElementId id) =>
+        build.Equipped.Any(equipped => equipped.Element.Id == id);
+
+    /// <summary>The build's weapon number <paramref name="weapon"/> (0-based, in the build's order), if it has one.</summary>
+    public static Optional<WeaponLoadout> FindWeapon(ValidatedBuild build, int weapon) =>
+        FindWeapon(build.Build, weapon).Match(found => Optional.Some(found.Value), _ => Optional.None<WeaponLoadout>());
+
+    /// <summary>That weapon's catalyst, when the manifest excerpt gives it one.</summary>
+    public static Optional<WeaponPerkSlot.Catalyst> FindCatalyst(ValidatedBuild build, int weapon) =>
+        FindWeapon(build, weapon).Bind(found => WeaponRolling.ListPerkSlots(build.Catalog, found)
+            .OfType<WeaponPerkSlot.Catalyst>()
+            .Select(Optional.Some)
+            .FindFirstSome());
 
     /// <summary>One weapon of the embedded build changed: that entry rewritten, the build validated again, the steps replayed.</summary>
     private static Result<DesignSession, string> EditWeapon(DesignSession session, int weapon, Func<WeaponLoadout, Result<WeaponLoadout, string>> change) =>

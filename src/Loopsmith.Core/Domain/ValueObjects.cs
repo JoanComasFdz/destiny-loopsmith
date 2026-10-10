@@ -99,6 +99,14 @@ public readonly partial struct StackCount
         value >= 0 ? Validation.Ok : Validation.Invalid("Stacks must not be negative");
 }
 
+/// <summary>How many pieces of an armor set: what a set perk needs, or what a loadout wears (at least one).</summary>
+[ValueObject<int>]
+public readonly partial struct PieceCount
+{
+    private static Validation Validate(int value) =>
+        value >= 1 ? Validation.Ok : Validation.Invalid("A piece count is at least 1");
+}
+
 /// <summary>Armor 3.0 stat value (0–200).</summary>
 [ValueObject<int>]
 public readonly partial struct StatValue

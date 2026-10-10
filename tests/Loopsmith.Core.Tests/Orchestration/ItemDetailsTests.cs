@@ -63,10 +63,10 @@ public sealed class ItemDetailsTests
 
         Assert.Equal(["luminopotent-2pc", "luminopotent-4pc"], session.Build.Build.ArmorSetBonuses.Select(id => id.Value));
         var luminopotent = Assert.Single(sets);
-        Assert.Equal(("Luminopotent", Optional.Some(4)), (luminopotent.Set.Name, luminopotent.Pieces));
+        Assert.Equal(("Luminopotent", Optional.Some(4)), (luminopotent.Set.Name, luminopotent.Pieces.Map(pieces => pieces.Value)));
         Assert.Equal(
             [(2, true, Optional.Some(ElementId.From("luminopotent-2pc"))), (4, true, Optional.Some(ElementId.From("luminopotent-4pc")))],
-            luminopotent.Perks.Select(perk => (perk.Perk.Pieces, perk.Active, perk.Element)));
+            luminopotent.Perks.Select(perk => (perk.Perk.Pieces.Value, perk.Active, perk.Element)));
         Assert.Empty(LoopDesigning.ListLooseSetBonuses(session.Build));
     }
 
@@ -80,7 +80,7 @@ public sealed class ItemDetailsTests
         var luminopotent = Assert.Single(LoopDesigning.ListArmorSets(twoPiece));
 
         Assert.False(luminopotent.Pieces.IsSome());
-        Assert.Equal([(2, true), (4, false)], luminopotent.Perks.Select(perk => (perk.Perk.Pieces, perk.Active)));
+        Assert.Equal([(2, true), (4, false)], luminopotent.Perks.Select(perk => (perk.Perk.Pieces.Value, perk.Active)));
     }
 
     [Fact]
@@ -88,14 +88,16 @@ public sealed class ItemDetailsTests
     {
         var session = StartOwnersDimDesign();
 
-        var lines = LoopDesigning.ExplainElement(session.Build, ElementId.From("reign-havoc"))
+        var lines = LoopDesigning.ExplainElement(session.Build, Catalog.Elements[ElementId.From("reign-havoc")])
             .Select(line => (line.Indent, Text: string.Concat(line.Spans.Select(span => span.Text))))
             .ToArray();
 
         Assert.Equal((0, "Kill target with heavy weapon"), lines[0]);
         Assert.Equal((1, "+1 Bolt Charge"), lines[1]);
         Assert.Equal(2, lines[2].Indent);
-        Assert.Empty(LoopDesigning.ExplainElement(session.Build, ElementId.From("no-such-element")));
+        Assert.Empty(LoopDesigning.ExplainElement(session.Build, Catalog.Elements[ElementId.From("thunderlord-catalyst")]));   // no rule written
+        Assert.True(LoopDesigning.IsEquipped(session.Build, ElementId.From("reign-havoc")));
+        Assert.False(LoopDesigning.IsEquipped(session.Build, ElementId.From("thunderlord-catalyst")));        // off
         Assert.Equal("Destiny Data Compendium (2026-10-09), Exotic Weapons row 144", Catalog.Elements[ElementId.From("reign-havoc")].Source.DescribeProvenance());
     }
 

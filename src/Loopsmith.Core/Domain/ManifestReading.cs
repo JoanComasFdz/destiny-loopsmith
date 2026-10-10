@@ -50,9 +50,27 @@ public static class ManifestReading
     public static bool IsInColumn(this RuleCatalog catalog, ElementId id, TraitColumn column) =>
         catalog.FindColumnHash(id, column).IsSome();
 
-    /// <summary>The armor set a set perk belongs to (Luminopotent, for Ionic Overclock).</summary>
-    public static Optional<ArmorSet> FindSetOfPerk(this ManifestExcerpt manifest, ItemHash perk) =>
-        manifest.ArmorSets.Values.Where(set => set.Perks.Any(setPerk => setPerk.Perk == perk)).Select(Optional.Some).FindFirstSome();
+    /// <summary>The armor set a set perk belongs to, with the pieces it needs (Luminopotent's 2-piece, for Ionic Overclock).</summary>
+    public static Optional<PerkOfSet> FindSetOfPerk(this ManifestExcerpt manifest, ItemHash perk) =>
+        manifest.ArmorSets.Values
+            .SelectMany(set => set.Perks.Where(setPerk => setPerk.Perk == perk).Select(setPerk => new PerkOfSet(set, setPerk)))
+            .Select(Optional.Some)
+            .FindFirstSome();
+
+    /// <summary>The intrinsic perk of the first of these armor items that has one (an exotic's copies: only one carries it).</summary>
+    public static Optional<ManifestItem> FindIntrinsicPerk(this ManifestExcerpt manifest, IEnumerable<ItemHash> armor) =>
+        armor
+            .Select(hash => manifest.FindItem(hash).Bind(item => item.Kind is ManifestKind.Armor piece ? piece.Intrinsic : Optional.None<ItemHash>()))
+            .FindFirstSome()
+            .Bind(manifest.FindItem);
+
+    /// <summary>The perks a catalyst grants (Return Stroke, for Thunderlord's), those the excerpt has.</summary>
+    public static ImmutableArray<ManifestItem> ListCatalystPerks(this ManifestExcerpt manifest, ItemHash catalyst) =>
+    [
+        .. manifest.FindItem(catalyst)
+            .Match(item => item.Value.Kind is ManifestKind.ExoticCatalyst granted ? granted.Perks : [], _ => ImmutableArray<ItemHash>.Empty)
+            .SelectMany(perk => manifest.FindItem(perk).Match(found => new[] { found.Value }, _ => [])),
+    ];
 
     /// <summary>The armor sets the items belong to, each with how many of them are its pieces (in the order first worn).</summary>
     public static ImmutableArray<WornSet> CountSetPieces(this ManifestExcerpt manifest, IEnumerable<ItemHash> items) =>
@@ -62,12 +80,12 @@ public static class ManifestReading
             .SelectMany(hash => manifest.FindItem(hash).Bind(item => item.Kind is ManifestKind.Armor armor ? armor.Set : Optional.None<ItemHash>())
                 .Match(set => new[] { set.Value }, _ => []))
             .GroupBy(set => set)
-            .SelectMany(group => manifest.ArmorSets.TryGetValue(group.Key, out var set) ? new[] { new WornSet(set, group.Count()) } : []),
+            .SelectMany(group => manifest.ArmorSets.TryGetValue(group.Key, out var set) ? new[] { new WornSet(set, PieceCount.From(group.Count())) } : []),
     ];
 
     /// <summary>The perks a set grants with that many pieces worn (2 pieces: its 2-piece perk).</summary>
     public static IEnumerable<SetPerk> ListActivePerks(this WornSet worn) =>
-        worn.Set.Perks.Where(perk => perk.Pieces <= worn.Pieces);
+        worn.Set.Perks.Where(perk => perk.Pieces.Value <= worn.Pieces.Value);
 
     /// <summary>The armor slot of an armor piece, or of a mod that only fits it; none for anything else (a general mod).</summary>
     public static Optional<ArmorSlot> ReadArmorSlot(this ManifestItem item) =>

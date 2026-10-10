@@ -7,67 +7,42 @@
             {
                 <img class="item-info-icon @DescribeTier(Info.Tier)" src="@icon.Value" alt="" />
             }
-            @if (Info.TypeLine is Optional<string>.Some type)
-            {
-                <span class="item-info-type">@type.Value</span>
-            }
+            <span class="item-info-type">@Info.TypeLine</span>
         </header>
         @foreach (var section in Info.Sections)
         {
             <section class="info-section">
-                @if (section.Name is Optional<string>.Some name)
+                @switch (section)
                 {
-                    <h3 class="info-section-title">
-                        @if (section.Icon is Optional<string>.Some sectionIcon)
+                    case InfoSection.Item item:
+                        @RenderTexts(item.BungieText, item.Rules)
+                        break;
+                    case InfoSection.Perk perk:
+                        @RenderHeading(perk.Heading)
+                        @RenderTexts(perk.BungieText, perk.Rules)
+                        break;
+                    case InfoSection.Unpicked unpicked:
+                        @RenderHeading(new SectionHeading(DomainPhrasing.Unknown, Optional.None<string>(), $"Trait · column {unpicked.Column + 1}"))
+                        <p class="muted info-note">Not picked: a DIM link carries the weapon, not its roll.</p>
+                        break;
+                    case InfoSection.Catalyst catalyst:
+                        @if (catalyst.Heading is Optional<SectionHeading>.Some heading)
                         {
-                            <img class="info-section-icon" src="@sectionIcon.Value" alt="" />
+                            @RenderHeading(heading.Value)
                         }
-                        <span>@name.Value</span>
-                        @if (section.Label is Optional<string>.Some label)
+                        @RenderTexts(catalyst.BungieText, catalyst.Rules)
+                        @if (OnSetCatalyst.HasDelegate)
                         {
-                            <span class="info-label">@label.Value</span>
+                            <button type="button" class="btn catalyst-switch @(catalyst.Toggle.On ? "on" : "")" role="switch" aria-checked="@(catalyst.Toggle.On ? "true" : "false")"
+                                    data-action="catalyst-toggle" @onclick="() => SetCatalystAsync(catalyst.Toggle)">
+                                Catalyst @(catalyst.Toggle.On ? "on" : "off") — turn it @(catalyst.Toggle.On ? "off" : "on")
+                            </button>
                         }
-                    </h3>
-                }
-                @if (section.BungieText is Optional<string>.Some bungie)
-                {
-                    <div class="info-source">Bungie</div>
-                    <p class="info-bungie">@bungie.Value</p>
-                }
-                <div class="info-source">Loopsmith's rules</div>
-                @if (section.Rules is Optional<InfoRules>.Some rules)
-                {
-                    @if (rules.Value.Description is Optional<string>.Some description)
-                    {
-                        <p class="info-rules-text">@description.Value</p>
-                    }
-                    @if (rules.Value.Inert)
-                    {
-                        <p class="muted info-note">No rule is written for it yet: it sets nothing off in a loop.</p>
-                    }
-                    else
-                    {
-                        <StyledLines Lines="rules.Value.Explanation" />
-                    }
-                    <p class="info-cite">Source: @rules.Value.Source</p>
-                }
-                else
-                {
-                    <p class="muted info-note">Not in Loopsmith's rules yet: it sets nothing off in a loop.</p>
-                }
-                @if (section.Catalyst is Optional<CatalystToggle>.Some catalyst)
-                {
-                    @if (OnSetCatalyst.HasDelegate)
-                    {
-                        <button type="button" class="btn catalyst-switch @(catalyst.Value.On ? "on" : "")" role="switch" aria-checked="@(catalyst.Value.On ? "true" : "false")"
-                                data-action="catalyst-toggle" @onclick="() => SetCatalystAsync(catalyst.Value)">
-                            Catalyst @(catalyst.Value.On ? "on" : "off") — turn it @(catalyst.Value.On ? "off" : "on")
-                        </button>
-                    }
-                    else
-                    {
-                        <p class="muted info-note">Catalyst @(catalyst.Value.On ? "on" : "off"). Turn it on or off while designing the loop.</p>
-                    }
+                        else
+                        {
+                            <p class="muted info-note">Catalyst @(catalyst.Toggle.On ? "on" : "off"). Turn it on or off while designing the loop.</p>
+                        }
+                        break;
                 }
             </section>
         }
@@ -85,8 +60,57 @@
     [Parameter]
     public EventCallback<CatalystToggle> OnSetCatalyst { get; set; }
 
-    private async Task SetCatalystAsync(CatalystToggle current) =>
-        await OnSetCatalyst.InvokeAsync(current with { On = !current.On });                      // impure
+    private async Task SetCatalystAsync(CatalystToggle current)
+    {
+        var toggled = current with { On = !current.On };                                         // pure
+        await OnSetCatalyst.InvokeAsync(toggled);                                                // impure
+    }
+
+    private static RenderFragment RenderHeading(SectionHeading heading) => __builder =>
+    {
+        <h3 class="info-section-title">
+            @if (heading.Icon is Optional<string>.Some icon)
+            {
+                <img class="info-section-icon" src="@icon.Value" alt="" />
+            }
+            <span>@heading.Name</span>
+            <span class="info-label">@heading.Label</span>
+        </h3>
+    };
+
+    private static RenderFragment RenderTexts(Optional<string> bungieText, Optional<InfoRules> rules) => __builder =>
+    {
+        @if (bungieText is Optional<string>.Some bungie)
+        {
+            <div class="info-source">Bungie</div>
+            <p class="info-bungie">@bungie.Value</p>
+        }
+        <div class="info-source">Loopsmith's rules</div>
+        @if (rules is Optional<InfoRules>.Some known)
+        {
+            @if (known.Value.Description is Optional<string>.Some description)
+            {
+                <p class="info-rules-text">@description.Value</p>
+            }
+            @if (known.Value.Explanation.IsEmpty)
+            {
+                <p class="muted info-note">No rule is written for it yet: it sets nothing off in a loop.</p>
+            }
+            else
+            {
+                @if (!known.Value.Equipped)
+                {
+                    <p class="muted info-note" data-testid="not-equipped">Not in this build right now; what it would set off:</p>
+                }
+                <StyledLines Lines="known.Value.Explanation" />
+            }
+            <p class="info-cite">Source: @known.Value.Source</p>
+        }
+        else
+        {
+            <p class="muted info-note">Not in Loopsmith's rules yet: it sets nothing off in a loop.</p>
+        }
+    };
 
     private static string DescribeTier(Optional<ItemTier> tier) =>
         tier.Match(known => known.Value == ItemTier.Exotic ? "exotic" : known.Value == ItemTier.Legendary ? "legendary" : "", _ => "");

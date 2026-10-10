@@ -191,11 +191,11 @@ public static class LoadoutShaping
     private static IconTile DescribeElement(RuleCatalog catalog, ElementId id) =>
         catalog.Elements.TryGetValue(id, out var element)
             ? catalog.FindElementItem(id).Match(
-                item => DescribeItem(item.Value, element.Name, true, element.Description, element.Affinity, DetailElement(id)),
-                _ => new IconTile(element.Name, Optional.None<string>(), element.Affinity, Optional.None<ItemTier>(), true, element.Description, 1, DetailElement(id)))
+                item => DescribeItem(item.Value, element.Name, true, element.Description, element.Affinity, ToElementDetails(id)),
+                _ => new IconTile(element.Name, Optional.None<string>(), element.Affinity, Optional.None<ItemTier>(), true, element.Description, 1, ToElementDetails(id)))
             : new IconTile(id.Value, Optional.None<string>(), Affinity.Neutral, Optional.None<ItemTier>(), true, Optional.None<string>(), 1, Optional.None<ItemDetails>());
 
-    private static Optional<ItemDetails> DetailElement(ElementId id) => Optional.Some<ItemDetails>(new ItemDetails.OfElement(id));
+    private static Optional<ItemDetails> ToElementDetails(ElementId id) => Optional.Some<ItemDetails>(new ItemDetails.OfElement(id));
 
     private static IconTile DescribeUnknownHash(RuleCatalog catalog, ItemHash hash) =>
         new(catalog.Manifest.DescribeItemHash(hash), Optional.None<string>(), Affinity.Neutral, Optional.None<ItemTier>(), false,
@@ -285,14 +285,14 @@ public static class LoadoutShaping
     }
 
     private static ArmorSetView DescribeArmorSet(RuleCatalog catalog, ArmorSetStatus set) =>
-        new(set.Set.Name, set.Pieces, [.. set.Perks.Select(perk => new SetPerkView(
+        new(set.Set.Name, set.Pieces.Map(pieces => pieces.Value), [.. set.Perks.Select(perk => new SetPerkView(
             perk.Element.Match(
                 id => DescribeElement(catalog, id.Value),
                 _ => catalog.Manifest.FindItem(perk.Perk.Perk).Match(
                     item => DescribeItem(item.Value, item.Value.Name, false, Optional.Some("Not in Loopsmith's rules yet."), Affinity.Neutral,
                         Optional.Some<ItemDetails>(new ItemDetails.OfItem(item.Value.Hash))),
                     _ => DescribeUnknownHash(catalog, perk.Perk.Perk))),
-            perk.Perk.Pieces,
+            perk.Perk.Pieces.Value,
             perk.Active))]);
 
     /// <summary>A perk of a weapon's roll by hash: its catalog element when the rules have it, else the manifest's (dimmed).</summary>

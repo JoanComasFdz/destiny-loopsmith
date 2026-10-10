@@ -516,8 +516,8 @@ public sealed class RuleCatalogParsingTests
         var stroke = items[ItemHash.From(818260022u)];
         Assert.Equal((Optional.None<string>(), Optional.Some("Lightning strikes reload.")), (stroke.Type, stroke.Description));
         Assert.Equal(Optional.Some(ItemHash.From(499993704u)), Assert.IsType<ManifestKind.Armor>(items[ItemHash.From(593554567u)].Kind).Set);
-        Assert.Equal([2, 4], catalog.Manifest.ArmorSets[ItemHash.From(499993704u)].Perks.Select(perk => perk.Pieces));
-        Assert.Equal(Optional.Some("Luminopotent"), catalog.Manifest.FindSetOfPerk(ItemHash.From(2769443639u)).Map(set => set.Name));
+        Assert.Equal([2, 4], catalog.Manifest.ArmorSets[ItemHash.From(499993704u)].Perks.Select(perk => perk.Pieces.Value));
+        Assert.Equal(Optional.Some(("Luminopotent", 2)), catalog.Manifest.FindSetOfPerk(ItemHash.From(2769443639u)).Map(found => (found.Set.Name, found.Perk.Pieces.Value)));
         Assert.Equal(Optional.Some(ArmorSlot.Helmet), items[ItemHash.From(3832366019u)].ReadArmorSlot());
         Assert.Equal(new ManifestKind.ArmorMod(Optional.None<ArmorSlot>()), items[ItemHash.From(1435557120u)].Kind);
         Assert.Empty(AssertOk(RuleCatalogParsing.ParseCatalog([Glossary])).Manifest.Items);

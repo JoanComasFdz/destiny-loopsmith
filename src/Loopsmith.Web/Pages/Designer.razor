@@ -191,11 +191,11 @@
         var edited = edit(open.Value);                                                           // pure
         if (edited is Result<DesignSession, string>.Ok next)
         {
-            EditSession(_ => next.Value, scrollToEnd: false, keepSelection: true);
+            EditSession(_ => next.Value, scrollToEnd: false, keepSelection: true);              // impure (UI state)
         }
         else if (edited is Result<DesignSession, string>.Error error)
         {
-            Workbench.Status = error.Failure;
+            Workbench.Status = error.Failure;                                                    // impure (UI state)
         }
     }
 

@@ -21,12 +21,12 @@ public static class ArmorSetting
             .SelectMany(id => catalog.Elements.TryGetValue(id, out var element) ? element.Hashes : [])
             .ToImmutableArray();
         var declared = bonusHashes
-            .SelectMany(hash => catalog.Manifest.FindSetOfPerk(hash).Match(set => new[] { set.Value }, _ => []))
+            .SelectMany(hash => catalog.Manifest.FindSetOfPerk(hash).Match(found => new[] { found.Value.Set }, _ => []))
             .Where(set => !worn.Any(piece => piece.Set.Hash == set.Hash));
         return
         [
             .. worn.Select(piece => DescribeSet(catalog, piece.Set, Optional.Some(piece.Pieces), bonusHashes)),
-            .. declared.DistinctBy(set => set.Hash).Select(set => DescribeSet(catalog, set, Optional.None<int>(), bonusHashes)),
+            .. declared.DistinctBy(set => set.Hash).Select(set => DescribeSet(catalog, set, Optional.None<PieceCount>(), bonusHashes)),
         ];
     }
 
@@ -37,9 +37,12 @@ public static class ArmorSetting
             || !element.Hashes.Any(hash => catalog.Manifest.FindSetOfPerk(hash).IsSome())),
     ];
 
-    private static ArmorSetStatus DescribeSet(RuleCatalog catalog, ArmorSet set, Optional<int> pieces, ImmutableArray<ItemHash> bonusHashes) =>
-        new(set, pieces, [.. set.Perks.Select(perk => new SetPerkStatus(
+    private static ArmorSetStatus DescribeSet(RuleCatalog catalog, ArmorSet set, Optional<PieceCount> pieces, ImmutableArray<ItemHash> bonusHashes)
+    {
+        var granted = pieces.Match(worn => new WornSet(set, worn.Value).ListActivePerks().ToImmutableArray(), _ => ImmutableArray<SetPerk>.Empty);
+        return new(set, pieces, [.. set.Perks.Select(perk => new SetPerkStatus(
             perk,
-            bonusHashes.Contains(perk.Perk) || pieces.Match(worn => worn.Value >= perk.Pieces, _ => false),
+            bonusHashes.Contains(perk.Perk) || granted.Contains(perk),
             catalog.FindElementByHash(perk.Perk).Map(element => element.Id)))]);
+    }
 }

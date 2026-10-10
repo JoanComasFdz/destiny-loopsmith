@@ -80,9 +80,12 @@ internal static class ManifestParsing
     private static Result<SetPerk, Errors> ReadSetPerk(YamlValue value) =>
         value.ToMap().Bind(map => Combine(
             map.CheckKeys(SetPerkKeys),
-            map.ReadRequired("pieces", ReadPositiveInteger),
+            map.ReadRequired("pieces", ReadPieceCount),
             map.ReadRequired("perk", ReadItemHash),
             (_, pieces, perk) => new SetPerk(pieces, perk)));
+
+    private static Result<PieceCount, Errors> ReadPieceCount(YamlValue value) =>
+        ReadPositiveInteger(value).Bind(pieces => PieceCount.TryFrom(pieces).ToResult().MapError(message => value.ToErrors(message)));
 
     /// <summary>The <c>kind:</c> words of the excerpt; each becomes a <see cref="ManifestKind"/> case with its own data.</summary>
     private enum KindWord

@@ -239,12 +239,12 @@
 
     private void OpenDetails(ItemDetails open)
     {
-        ClosePicker();
-        details = Optional.Some(open);
+        ClosePicker();                                                                           // impure (UI state)
+        details = Optional.Some(open);                                                           // impure (UI state)
     }
 
     private void CloseDetails() =>
-        details = Optional.None<ItemDetails>();
+        details = Optional.None<ItemDetails>();                                                  // impure (UI state)
 
     private const string PickerNote = "Green: the rules know it, so it sets things off in the loop; the rest only shows on the weapon.";
 
