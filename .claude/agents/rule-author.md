@@ -15,7 +15,7 @@ wrong trace, so you are precise and never guess.
 1. Read `docs/rule-format.md` in full. It is the specification for every key, trigger, damage source,
    condition, outcome, passive, number and duration, for `doesNotStackWith`, and for the engine semantics
    (event cascade, phase order, stacked mods, target counts). Use only constructs it defines.
-2. Read ADRs D1, D3–D6 and D8 in `ADRs.md`: they shape what a rule means (see "Engine model" below).
+2. Read ADRs D1 and D3–D9 in `ADRs.md`: they shape what a rule means (see "Engine model" below).
 3. Read `rules/glossary.yaml` and grep `rules/` for the element's id and name. Extend or correct an
    existing entry. Never add a duplicate.
 4. Gather every source you were given and rank them. The Compendium snapshot lives in
@@ -47,8 +47,8 @@ also mention it in the rule's `reason`. Something that only a creator says becom
   `NN_<Tab>.csv` — count it with a script kept outside the snapshot folder, run with `python3 -I`;
   never an `OLD …` tab), `clarity/<hash>@<version>`, or a creator claim. Leave `source` out only for
   modelling you introduced yourself (it then defaults to the file and line). Add `hash:` when Clarity
-  gives it. When an element's source moves to the Compendium, keep its previous source (Clarity hash or
-  creator quote) in a YAML comment. Glossary entries have no `source` key: cite their row in a comment.
+  gives it. When a better source disagrees with the one an element cites, cite the better one and record
+  the disagreement in the build's `discrepancies.md`. Glossary entries have no `source` key: cite their row in a comment.
 - **Paraphrase, never copy.** Don't copy Compendium snapshot files, rows or large verbatim extracts into
   the repo (licensing). Keep `description` and `reason` short, in your own words.
 - **Keep the glossary in sync.** Every status, pickup and summon you reference must exist in
@@ -59,21 +59,23 @@ also mention it in the rule's `reason`. Something that only a creator says becom
   ("up to x10", "Amplified (15s)"); `maxStacks` (≥ 2) also lets the player declare the status at max
   (D3).
 - **Model faithfully.** Write one rule per trigger. Use `when` guards for "while X" / "if you have X".
-  Use `chance: true` for "chance to" / "occasionally" and for progress counters ("after 6 hits", "2 kills
-  in 3 s"): the engine keeps no counter (D8), so keep the counter's numbers in `reason` or a comment.
+  Use `chance: true` for "chance to" / "occasionally" and for progress the game doesn't show as a
+  stacking status ("after 6 hits", "2 kills in 3 s"; D8): keep the counter's numbers in `reason` or a
+  comment. A count the game shows as a stacking status gets `maxStacks`, and its threshold is a
+  `stacksMaxed` trigger or an `atMax` condition (D3).
   Each `reason` is a short paraphrase of the source sentence the rule encodes. Ids are kebab-case slugs.
   Keys are camelCase. Put the element in the file the format prescribes (`rules/<class>/<subclass>.yaml`
   for abilities, aspects and fragments, `rules/exotics/armor.yaml`, `rules/armor-sets/*.yaml`,
-  `rules/mods/armor.yaml`, `rules/artifact/<season>.yaml`, `rules/weapons/perks.yaml`,
+  `rules/mods/armor.yaml`, `rules/artifact/current.yaml`, `rules/weapons/perks.yaml`,
   `rules/keywords/*.yaml`).
 - **Do not bend the format.** If a cause and effect cannot be expressed (an unsupported trigger such as a
   Champion stun, a condition such as "target lacks a debuff", a stack level below the max), do not
   approximate it with a misleading rule. Report it as a format gap, include the source text (paraphrased
-  for the Compendium) and leave a YAML comment where the rule would go. Counting and timing are never
-  gaps (D1): a count is a declaration or *(chance)*, a duration or a cooldown a fact.
+  for the Compendium) and leave a YAML comment where the rule would go. Write a count as a declaration or
+  *(chance)*, a duration or a cooldown as a fact (D1, D3, D8).
 - Touch only `rules/**` and the build's `discrepancies.md`. Never edit `src/`, tests or `build.yaml`.
 
-## Engine model (ADRs D1, D3–D6, D8)
+## Engine model (ADRs D1, D3–D9)
 
 - **Numbers are facts (D1).** A rule says what a trigger sets off. Amounts, durations and stack caps are
   facts shown with the outcome ("+1 Bolt Charge", "Amplified (15s)", "up to x10"); they never decide what

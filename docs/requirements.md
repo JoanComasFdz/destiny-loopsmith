@@ -20,10 +20,10 @@ whether a grenade lands — and almost everything runs on time (cooldowns, durat
 
 | Loopsmith does | Loopsmith doesn't |
 |---|---|
-| Show a source's number as a fact with its outcome: "+12% grenade energy", "Amplified (15s)", "up to x10" | Add numbers up, count stacks to a maximum, or count a duration down |
+| Show a source's number as a fact with its outcome: "+12% grenade energy", "Amplified (15s)", "up to x10" | Add numbers up or count stacks to a maximum |
 | Keep **what is present**: a buff on you, a debuff on the pack, a pickup on the ground | Track time, energy, health or enemy counts |
-| Let the **player declare** what only play decides: "Bolt Charge at max", "Amplified ends", "this grenade kills 3" | Decide when a threshold is reached or a buff runs out |
-| Judge a loop by its **order of triggers**: does each step get what it needs from the steps before it, can the order be repeated | Score a loop by kills, uptime, damage or energy per cycle |
+| Let the **player declare** what only play decides: "Bolt Charge at max", "Amplified ends", "this grenade kills 3" | Decide when a threshold is reached or a buff ends |
+| Judge a loop by its **order of triggers**: does each step get what it needs from the steps before it, can the order be repeated | Score a loop or add up what it gives |
 
 The product is the **loop the player designs** (D2): an ordered list of triggers and declared states
 ("dodge → grenade kill → pick up orb → Bolt Charge at max → grenade kill"), saved as a `*.loop.yaml`,
@@ -37,13 +37,13 @@ shared as a link, replayed, analysed and compared with another order.
 | FR-2 | **Validate a build** against the rule catalog: unknown elements, wrong slots, another class, another affinity, aspect and fragment limits, elements with no rules (inert), rules that don't stack with an equipped element. | Done; armor energy budget and the exotic weapon limit are open |
 | FR-3 | **Explain a build**: every trigger it reacts to → the outcomes it fires `[source]`, in the shape of a hand-written build note. | Done (`explain`, web) |
 | FR-4 | **Play one step** against the current state — a trigger (dodge, grenade kill on 3 enemies, pick up an orb, an air move) or a declared state (D3) — and get every rule it fires, cascades included, which element fired it and why, and what is available next. | Done for triggers; declared states are open (`docs/backlog.md`) |
-| FR-5 | **Design a loop** step by step, with notes and a description; undo, branch from an earlier step; save it as a self-contained `*.loop.yaml` and share it as a link. | Done (`play`, web designer) |
-| FR-6 | **Analyse a loop's order**: played from a fresh spawn and repeated from where it ends — does it repeat or where does it break, what each step needs and which earlier step provides it, what it sets off, what is wasted. | Open: today's report still counts (`docs/backlog.md`) |
-| FR-7 | **Compare two loops' orders** trigger by trigger: what each trigger sets off in its place in each loop, and why it differs. | Open: today's comparison still counts |
-| FR-8 | **Discover loops** in the cause → effect graph (cycles), and draw the graph. | Done (`loops`, `graph`) |
+| FR-5 | **Design a loop** step by step, with notes and a description; undo, branch from an earlier step; save it as a self-contained `*.loop.yaml` and share it as a link. | Done (`play`, web designer); declaring states is open (`docs/backlog.md`) |
+| FR-6 | **Analyse a loop's order**: played from a fresh spawn and repeated from where it ends — does it repeat or where does it break, what each step needs and which earlier step provides it, what it sets off, what is wasted. | Open (`docs/backlog.md`) |
+| FR-7 | **Compare two loops' orders** trigger by trigger: what each trigger sets off in its place in each loop, and why it differs. | Open (`docs/backlog.md`) |
+| FR-8 | **Discover loops** in the cause → effect graph (cycles), and draw the graph. | Done (`loops`, `graph`); the declared "Gain X → Max X" edge is open |
 | FR-9 | Every fired rule carries its **source element, trigger, outcomes and reason**; every number its **provenance and certainty** (known, approximate `~`, unknown `?`). | Done |
 | FR-10 | Builds and loops **pin a catalog version**, so a rules change never silently changes them (D15). | Done |
-| FR-11 | **Ingest** a dated Compendium snapshot and Clarity; a **coverage report** (elements without rules, names that don't resolve, numbers that disagree with the sources). | Open: the first snapshot was ingested by hand |
+| FR-11 | **Ingest** a dated Compendium snapshot and Clarity; a **coverage report** (elements without rules, names that don't resolve, numbers that disagree with the sources). | Open: the 2026-10-09 snapshot's numbers are in the rules by hand |
 | FR-12 | **Draft rules** from the Compendium's "On X:" phrasing for a human to confirm (D10). | Open |
 | FR-13 | **Join the Bungie manifest**: hashes, official names, icons (D14). | Open |
 

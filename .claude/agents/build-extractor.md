@@ -18,7 +18,7 @@ short `discrepancies.md` for what differs, pointing to the parent's — see `bui
 ## Before you write anything
 
 1. Read the **Build file** and **Engine semantics** sections of `docs/rule-format.md`, the action tokens
-   of `docs/loop-format.md`, and ADRs D1 and D3–D7 in `ADRs.md` (the engine model, summarised below).
+   of `docs/loop-format.md`, and ADRs D1 and D3–D9 in `ADRs.md` (the engine model, summarised below).
 2. Build an index of the elements that already exist: grep `rules/**/*.yaml` for `id:` and `name:`
    (abilities, aspects, fragments, exotics, armor-set bonuses, mods, artifact perks, weapon perks, keywords)
    and read `rules/glossary.yaml`. Reuse existing ids exactly. Match by name, and treat the user's typos
@@ -28,14 +28,14 @@ short `discrepancies.md` for what differs, pointing to the parent's — see `bui
 
 - **"The pack in front of you" (D7).** One abstract target with a tier; a debuff stays on the pack, kill
   after kill, until the player declares it ended (`end:jolt`).
-- **Numbers are facts; the player declares thresholds (D1, D3).** The engine never counts or times: "+1
-  Bolt Charge", "for 10 s", "up to x10" are facts on the outcome. "At 10 stacks" becomes a step where the
+- **Numbers are facts; the player declares thresholds (D1, D3).** "+1 Bolt Charge", "for 10 s", "up to
+  x10" are facts on the outcome. "At 10 stacks" becomes a step where the
   player declares the state (`max:bolt-charge`, "Bolt Charge at max"), and a buff that has ended becomes
-  `end:<status>` ("Amplified ends"). A counter ("after 3 kills", "every 2nd trace") is a *(chance)* rule.
-  Never record a claim as "not reproduced" because the engine doesn't count or time something.
+  `end:<status>` ("Amplified ends"). A counter the game doesn't show as a stacking status ("after 3 kills", "every 2nd trace") is a
+  *(chance)* rule (D8). A claim about a count, a duration or a threshold is reproduced as a declaration, a
+  *(chance)* rule or a fact — never "not reproduced".
 - **Energy outcomes are facts (D5).** Abilities are always available. "Refills melee" and other energy
-  claims are outcomes the trace shows; no step is ever blocked for lack of energy, so never record a claim
-  as "not reproduced" because of energy. A step is blocked only when it can't happen at all (nothing of
+  claims are reproduced as outcomes the trace shows. A step is blocked only when it can't happen at all (nothing of
   that pickup on the ground, no weapon in that slot, a declaration that doesn't hold).
 - **Target counts (D4).** The player says how many enemies an action hits (`grenade:kill:3`). A claim that
   depends on several targets in one action maps to an action with a count and an `atLeast` trigger.

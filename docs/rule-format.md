@@ -147,7 +147,8 @@ rules:
     when: [ { has: amplified } ]        # optional guards
     then:
       - { spawn: ionic-trace }
-    chance: true                        # optional: "occasionally / chance to" (default false)
+    chance: true                        # optional: "occasionally / chance to", or progress the game
+                                        # doesn't show as a stacking status (default false)
     reason: "Final blows against jolted targets create an Ionic Trace."
 ```
 
@@ -224,7 +225,7 @@ affinity; a summon its glossary `damageType`. The class ability deals no damage 
 ```
 
 So declaring "Bolt Charge at max" fires Shinobu's Vow (New Tricks, ~40% grenade energy, a heal) and
-Flashover (Amplified 15s), and the next grenade or melee hit fires the strike, which spends the buff.
+Flashover (Amplified 15s), and the next ability hit fires the strike, which spends the buff.
 
 **Outcomes (`then`)** — exactly one key each:
 
@@ -258,10 +259,10 @@ must be glossary `buff`s; in `debuffTarget`/`targetHas` glossary `debuff`s
 * **`debuffTarget`** puts the debuff on the pack, where it stays until the player ends it; no rule
   removes a debuff.
 
-What changes the state: `applyBuff`, `removeBuff`, `debuffTarget`, `spawn`, `summon`, `strikeTarget`,
-and the consumption of `convertStacksToEnergy`. The rest are **facts**, shown with their value and
+What changes the state or sets off events: `applyBuff`, `removeBuff`, `debuffTarget`, `spawn`,
+`summon`, `strikeTarget`, and the consumption of `convertStacksToEnergy`. The rest are **facts**, shown with their value and
 certainty and changing nothing: `grantEnergy`, the energy of `convertStacksToEnergy`, `resetCooldown`,
-`modifyDamage` and `restoreHealth` — no energy, damage or health is kept (ADRs D5).
+`modifyDamage` and `restoreHealth` (ADRs D1, D5).
 
 ### Rules that don't stack
 
@@ -403,7 +404,9 @@ the ground.
   declaration, or the debuff from the pack, and derives no event.
 * **Abilities are always available** (ADRs D5). A step is blocked only when it can't happen at all —
   the pickup isn't on the ground (`No orb-of-power on the ground — nothing happens.`), no weapon in that
-  slot, a `max:` on a buff that isn't active or doesn't stack, an `end:` on a status that isn't active.
+  slot, a `max:` on a buff that doesn't stack, isn't active or is already at max, an `end:` on a status
+  that isn't active, a declaration naming no status of the rules
+  ([loop-format.md](loop-format.md#action-tokens) has the messages).
   A blocked step changes nothing.
 * Each event **fully cascades** before the next one of the same action is emitted, so a kill
   sees the debuffs its own hit applied (grenade hit → Spark of Shock jolts → the kill counts as
@@ -433,7 +436,7 @@ the ground.
   `NotStackedWith` = that element's name, and its outcomes take no part in the phase order.
 * **Facts** (ADRs D1, D5): energy outcomes, `modifyDamage` and `restoreHealth` are shown with their
   value, certainty and a caveat when the value is missing (`amount unknown` / `value unknown`), and
-  change no state: no gauge, no total. An `Unknown` value stays `?` (never 0). Ability profiles and
+  change no state. An `Unknown` value stays `?` (never 0). Ability profiles and
   `extraCharges` are facts recorded from the Compendium.
-* `chance: true` rules fire and are marked *(chance)* in the trace (ADRs D8) — on every enemy of a
+* `chance: true` rules fire and are marked *(chance)* in every view (ADRs D8) — on every enemy of a
   multi-target action.

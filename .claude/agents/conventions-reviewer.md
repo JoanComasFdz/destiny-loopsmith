@@ -39,7 +39,7 @@ edit files.
      one Dunet case.
    - The hosts own no logic. `Loopsmith.Cli` maps argv in, calls an `Orchestration` shell and executes the
      returned effects (console I/O only there). `Loopsmith.Web` holds UI state and calls the pure
-     `Orchestration` API (`LoopDesigning`); its browser side effects (clipboard, downloads, confirm, URL)
+     `Orchestration` API (`LoopDesigning`); its browser side effects (clipboard, downloads, confirm, picked files, the URL)
      live in `Hosting/BrowserInterop` (and `wwwroot/js/loopsmith.js`).
    - The architecture tests catch compiled dependencies. You catch what they cannot: behaviour in the
      wrong slice or in a host, game-specific behaviour coded in C# instead of YAML, or a new top-level
@@ -49,7 +49,7 @@ edit files.
    `File.WriteAllText(path, Format(r))` or `return Parse(await File.ReadAllTextAsync(p))`. The fix is a
    named intermediate on its own line. Also check the `impure → pure → impure` sandwich and that shells
    mark each line `// pure` or `// impure`. Side effects are described as data (the `Effect` DU:
-   `WriteLines`, `WriteText`, `ShowFailure`) and executed by the host.
+   `WriteLines`, `WriteText`, `SaveFile`, `ShowFailure`) and executed by the host.
 3. **Verb naming.** Every method, local function and named delegate contains a verb (`ReadRules`,
    `ResolveAction`, `FindSlice`). The allowed idioms are `Is`/`Has`/`Can` predicates, `Parse`/`ToX`/`FromX`
    conversions, and union-case constructor names (`Optional.Some`, `Ok`/`Error`). Flag bare nouns
@@ -74,12 +74,11 @@ edit files.
    any catch-all, or a catch that swallows an exception.
 6. **Calls.** Prefer static direct calls. Flag interfaces and delegates introduced for "testability" or
    DI. Flag any third-party FP library.
-7. **State is causal: nothing in it is counted or timed** (CONVENTIONS.md, Domain modelling; ADRs D1).
-   Flag code that adds stacks toward a maximum, raises a threshold event (`StacksMaxed`) other than from a
-   declared `max:` step, keeps a stack count, a remaining duration or an energy total in state, ends a
-   status other than through a rule's outcome or a declared `end:`, adds up energy, refunds or cooldowns,
-   or branches on a source's number to decide when something happens. Numbers are shown as facts; the
-   player declares thresholds and endings (D3).
+7. **State is causal** (CONVENTIONS.md, Domain modelling; ADRs D1). Flag state that holds a number (a
+   count, an amount, seconds) other than the step; a `StacksMaxed` raised other than from a declared
+   `max:` step; a status ended other than by a rule's outcome or a declared `end:`; energy, refunds or
+   cooldowns added up; a branch on a source's number. Numbers are shown as facts; the player declares
+   thresholds and endings (D3).
 
 ## Report
 

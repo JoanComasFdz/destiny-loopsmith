@@ -10,18 +10,18 @@ follows from it.
 |---|---|---|
 | D1 | **Loopsmith describes cause and effect; it doesn't simulate the game** | Combat has too many variables and runs on time; exact numbers are impossible, and the build crafter needs to know what triggers what |
 | D2 | The designed loop — an ordered list of triggers — is the product | A build is played as a loop; the order of its triggers is what the player designs, saves, shares and compares |
-| D3 | The player declares thresholds and endings (`max:`, `end:`) | The engine can't know when Bolt Charge reaches x10 or a buff runs out; the player can |
+| D3 | The player declares thresholds and endings (`max:`, `end:`) | The engine can't know when Bolt Charge reaches x10 or a buff ends; the player can |
 | D4 | The player declares how many enemies an action hits | The engine can't know how many enemies a grenade catches; perks depend on it |
 | D5 | Abilities are always available; energy outcomes are facts | Energy is time; tracking it would be a simulation |
 | D6 | Rules that don't stack give way and show as wasted | Wasted potential is what the build crafter most needs to see |
 | D7 | One target: the pack in front of you | Matches how add-clear builds are explained ("everything is jolted") |
 | D8 | Chance rules always fire, marked *(chance)* | No probabilities without a simulation; the mark keeps the loop honest |
 | D9 | An airborne class ability use (`class:air`) | Air moves (Ascension) spend the class ability charge but only some rules react to them |
-| D10 | Causality is authored as YAML; drafts later from "On X:" phrasing | 55% of Compendium descriptions state the trigger; a human confirms every rule |
+| D10 | Causality is authored as YAML; a human confirms every rule | 55% of Compendium descriptions state the trigger, so drafts can be generated, never trusted |
 | D11 | The Compendium is the primary mechanics source; Clarity the cross-check | The Compendium covers abilities, artifact perks and statuses; Clarity has hashes |
 | D12 | The Compendium is joined by name, scoped by kind + class, alias table in git | It has no hashes; unresolved names are reported, never guessed |
 | D13 | Every number is a `GameValue` with `Provenance`; unknown stays `?` | ≈29% of descriptions contain a "?"; unknown ≠ 0; every number traceable |
-| D14 | Authored slugs now, the manifest hash as long-term identity | The manifest isn't reachable yet; slugs keep build files stable when hashes arrive |
+| D14 | Authored slugs as ids, the manifest hash as the long-term identity | The manifest isn't reachable yet; slugs keep build files stable when hashes arrive |
 | D15 | Builds and loops pin a catalog version | A rules change never silently changes a saved build or loop |
 | D16 | Vertical slices as folders, guarded by architecture tests | One change = one slice; boundaries can't silently rot |
 | D17 | Strict impure → pure → impure; effects as data | The pure core is deterministic, replayable, testable without infrastructure |
@@ -30,7 +30,7 @@ follows from it.
 | D20 | Vogen value objects validated at the boundary | Inside the core every value is known-valid |
 | D21 | Railway (ROP) for parsing, validating and playing; `Severity` only where the app branches | Short-circuit on the first blocking error, no app-state object |
 | D22 | Two kernel modules besides `Domain`: `Phrasing` and `Causality` | "How we say it" and "what a trigger means" each have one home |
-| D23 | Cascade termination is per causal chain | A global "once per step" guard suppressed sibling events |
+| D23 | Cascade termination is per causal chain | A global "once per step" guard would suppress sibling events |
 | D24 | Hosts own no logic; the CLI is the scripting and golden-test host | Both hosts share every line of logic through `Orchestration` |
 | D25 | The web designer runs in the browser, as static files | No server: any static host works, and a loop travels in its link |
 | D26 | Verify.XunitV3 pinned to 32.0.1 | 33.x needs a licence decision |
@@ -49,19 +49,18 @@ element caused it, what that unlocks next, and what doesn't work together (D6). 
 how many, how often, how long or when.
 
 * **Numbers are facts shown with their outcome** ("+12% grenade energy", "Amplified (15s)",
-  "up to x10", "reduces the cooldown by 2 s"). They are never added up, counted down or compared to
+  "up to x10", "reduces the cooldown by 2 s"). They are never added up or compared to
   decide what happens.
 * **State is what is present**: a buff on you, a debuff on the pack, a pickup on the ground — and
-  what the player declared (D3). Nothing in it is counted or timed: no stacks, energy or health.
+  what the player declared (D3). Nothing in it is counted: no stacks, energy or health.
 * **The player declares what only play can decide**: that a threshold is reached ("Bolt Charge at
-  max", "Combination Blow ×3"), that a buff has ended (D3), how many enemies one action hits (D4).
+  max", "Combination Blow at max"), that a buff has ended (D3), how many enemies one action hits (D4).
   The engine shows what the declared state sets off.
 * A loop is judged by its **order of triggers** (D2): whether each step gets what it needs from the
   steps before it, and whether the order can be repeated.
 
 **Consequence.** Abilities are always available (D5); a status ends when
-a rule consumes or removes it, or when the player declares it ended. The format has no keys for
-counters, cooldowns or decay, and a source's "after 6 hits" or "for 10 s" is a fact in the
+a rule consumes or removes it, or when the player declares it ended. A source's "after 6 hits" or "for 10 s" is a fact in the
 description, never a mechanism. No damage or health model either: damage and healing outcomes are
 facts too.
 
@@ -78,26 +77,29 @@ that doesn't hold), and for each step what it needs and which earlier step provi
 off and what is wasted there. Comparing two loops compares their orders — "dodge → grenade → pick up
 orb" against "grenade → dodge → pick up orb" — trigger by trigger: what each sets off in its place
 and why it differs. `Orchestration.LoopDesigning` is the API behind both hosts. **Consequence.**
-Two slices, `LoopFiles` and `ReportComparison`; no totals and no "better" score, since quantities
-are not modelled (D1). A loop designed against another catalog version replays with an Info note
+Two slices, `LoopFiles` and `ReportComparison`; the analysis and the comparison report, step by
+step, what each step needs and sets off. A loop designed against another catalog version replays with an Info note
 (D15). Format, analysis and comparison: [docs/loop-format.md](docs/loop-format.md).
 
 ### D3 — The player declares thresholds and endings
 
 **Context.** Many rules react to a threshold: Shinobu's Vow and Flashover at x10 Bolt Charge,
-Slice after its 5 hits, Combination Blow at ×3. When it is reached depends on play (D1).
+Slice after its 5 hits, Combination Blow at x3. When it is reached depends on play (D1). The game
+shows these counts as a stacking status (`maxStacks` in the glossary), so the player can see and
+declare them; a counter the game doesn't show (To Shreds' 6 weapon hits) is a *(chance)* rule (D8).
 **Decision.** A loop step can declare a state:
 
 * `max:<status>` — the buff is at its maximum ("Bolt Charge at max"). It raises `StacksMaxed`, so the
   `stacksMaxed` rules fire, and the buff stays declared at max (the `atMax` condition reads it) until a
-  rule consumes or removes it.
+  rule consumes or removes it, or an `end:`.
 * `end:<status>` — the buff on you or the debuff on the pack has ended ("Amplified ends").
 
 A declaration that doesn't hold is a **blocked step**, like a pickup that isn't on the ground:
-`max:` needs an active buff that stacks (`maxStacks` in the glossary), `end:` an active status.
-Nothing else reaches a maximum or ends a status: an `applyBuff` makes the buff present and shows its
-grant ("+1 Bolt Charge"), but never counts. **Consequence.** `stacksMaxed` fires only on a declaration;
-a rule that waits for the next hit at the maximum uses the `atMax` condition (Bolt Charge discharges
+`max:` needs an active buff that stacks (`maxStacks` in the glossary) and isn't declared at max yet,
+`end:` an active status. Nothing else reaches a maximum: an `applyBuff` makes the buff present and
+shows its grant ("+1 Bolt Charge"). A status ends only through a rule's `removeBuff` or consumption,
+or an `end:`. **Consequence.** `stacksMaxed` fires only on a declaration;
+a rule that reacts to the next hit at the maximum uses the `atMax` condition (Bolt Charge discharges
 on the next ability hit at x10). The cap and the duration are facts the player reads when deciding
 to declare. Format: [docs/loop-format.md](docs/loop-format.md#action-tokens)
 and [docs/rule-format.md](docs/rule-format.md).
@@ -146,16 +148,17 @@ the same trigger — an approximation of the same-event rule — and its node is
 ### D7 — One target: the pack in front of you
 
 **Decision.** One abstract target, the enemies in front of you, with a tier and the debuffs
-spread across it. A debuff stays on the pack until the player declares it ended (D3); kills don't
-use enemies up, and there is no health or enemy count. **Consequence.** It matches how add-clear
+spread across it. A debuff stays on the pack until the player declares it ended (D3); after a kill
+the pack is still in front of you. **Consequence.** It matches how add-clear
 builds are explained ("everything is jolted") and is optimistic for a single boss. The tier is
-`minor`: a `kill … tier:` rule shows in `explain` and the graph but doesn't fire in a loop until the
-player can declare the tier ([docs/backlog.md](docs/backlog.md)).
+`minor`: a kill rule for a higher tier shows in `explain` and the graph but doesn't fire in a loop
+until the player can declare the tier ([docs/backlog.md](docs/backlog.md)).
 
 ### D8 — Chance rules always fire, marked *(chance)*
 
 **Decision.** Rules with "chance to / occasionally / rapidly" fire and are marked *(chance)* in
-every view, and so are rules that depend on a counter the engine doesn't keep ("after 6 hits").
+every view, and so are rules that depend on progress the game doesn't show as a stacking status
+("after 6 weapon hits"; D3).
 Probabilities would need a simulation (D1); marking them keeps the loop honest without hiding it.
 
 ### D9 — An airborne class ability use (`class:air`)
@@ -192,7 +195,7 @@ user's notes come next and a creator's claim last. Every disagreement is recorde
 
 ### D12 — The Compendium is joined by name, scoped by kind and class
 
-**Decision.** The Compendium has no hashes, so its entries will be joined to the manifest by name,
+**Decision.** The Compendium has no hashes, so its entries are joined to the manifest by name,
 scoped by kind and class, with an alias table in git. Unresolved names are reported, never guessed.
 
 ### D13 — Every number is a `GameValue` with `Provenance`; unknown stays `?`
@@ -202,7 +205,7 @@ scoped by kind and class, with an alias table in git. Unresolved names are repor
 Clarity hash, creator claim, or the rule file's line). **Consequence.** An unknown is shown as "?" and
 never treated as 0; since numbers are facts (D1), "?" only means the source doesn't say.
 
-### D14 — Authored slugs now, the manifest hash as long-term identity
+### D14 — Authored slugs as ids, the manifest hash as the long-term identity
 
 **Context.** The Bungie manifest (and its API key) isn't reachable yet, and abilities, artifact perks
 and armor set bonuses have no Clarity hash. **Decision.** Elements are keyed by a kebab-case
@@ -265,8 +268,8 @@ one home.
 ### D23 — Cascade termination is per causal chain
 
 Cascade depth ≤ 5, and a rule never re-fires on an identical event *up its own causal chain*. A
-global "once per step" guard wrongly suppressed sibling events (two orbs picked up fired the pickup
-rule once).
+global "once per step" guard would suppress sibling events (two orbs picked up would fire the
+pickup rule once).
 
 ## Hosts and tooling
 
@@ -281,7 +284,7 @@ of the engine against real build notes, and the golden tests, which snapshot the
 **Decision.** `Loopsmith.Web` is a Blazor WebAssembly host: the C# core runs in the browser (rules,
 builds and example loops are embedded), so there is no server and any static host works — GitHub
 Pages, with a preview per pull request ([docs/hosting.md](docs/hosting.md)). Shared loops travel in
-the URL fragment (`#loop=…`). The app stores nothing in the browser (owner decision, for now): a loop
+the URL fragment (`#loop=…`). The app stores nothing in the browser (owner decision): a loop
 is kept by exporting it or copying its link. **Consequence.** No API or database; a saved library is
 open ([docs/backlog.md](docs/backlog.md)). The first visit downloads the .NET runtime (≈ 3 MB, then
 cached).

@@ -9,9 +9,7 @@ This file is the canonical, citable home for the conventions — it is binding, 
 it wins over any other document. The *reasoning* behind the cross-cutting choices
 is recorded in **[`ADRs.md`](./ADRs.md)**; an ADR explains why, it never overrides
 what this file says. The domain model these conventions produce is the code
-itself, under `src/Loopsmith.Core/Domain/`. Loopsmith describes cause and effect in
-a build and doesn't simulate the game (ADRs D1); the domain rules below follow
-from that.
+itself, under `src/Loopsmith.Core/Domain/`.
 
 ## Architecture
 
@@ -44,7 +42,7 @@ from that.
   `Orchestration` shell, and executes the returned effects (console I/O lives
   only in the host). `Loopsmith.Web` (Blazor WebAssembly) holds UI state and
   calls the same pure `Orchestration` API (`LoopDesigning`); browser side effects
-  (clipboard, downloads, picked files, the URL) live in its `Hosting/BrowserInterop`.
+  (clipboard, downloads, confirm, picked files, the URL) live in its `Hosting/BrowserInterop`.
   Any other host (an HTTP API, say) would do the same.
 
 ## Functional design
@@ -125,12 +123,11 @@ from that.
   known-valid.
 - **Unknowns are data.** A source's "?" becomes `GameValue.Unknown`, never 0; the
   trace shows "?". Every number keeps its `Provenance`.
-- **State is causal: nothing in it is counted or timed** (ADRs D1). Game state says
-  what is present (a buff, a debuff on the pack, a pickup on the ground) and what
-  the player declared ("Bolt Charge at max"); it holds no stack counter, no time
-  remaining and no energy total. A source's number (`+1 Bolt Charge`, `15s`,
-  `+12% grenade energy`) is a fact shown with its outcome — never accumulated,
-  and never compared to decide when something happens.
+- **State is causal** (ADRs D1). Game state says what is present (a buff, a
+  debuff on the pack, a pickup on the ground) and what the player declared
+  ("Bolt Charge at max"); it holds no number but the step. A source's number
+  (`+1 Bolt Charge`, `15s`, `+12% grenade energy`) is a fact shown with its
+  outcome — never accumulated, and never compared to decide what happens.
 - **Add a named failure/`Severity` case only when the app branches on it** (to
   recover or take a different path), never merely to carry a message. IO whose only
   outcome is "show the user what went wrong" uses `Result<_, string>`; the acted-on

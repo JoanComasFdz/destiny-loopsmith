@@ -5,7 +5,7 @@ Loopsmith describes **cause and effect** in a Destiny 2 build; it doesn't simula
 then step through its gameplay loop and see every outcome each trigger fires, which element caused
 it, what it unlocks next and what doesn't work together. Numbers are facts shown with their outcome;
 the player declares what only play decides: a threshold reached ("Bolt Charge at max",
-"Combination Blow ×3"), a buff ended, how many enemies an action hits.
+"Combination Blow at max"), a buff ended, how many enemies an action hits.
 **The product is the loop the user designs** (`*.loop.yaml`: save, share, replay, analyse,
 compare), judged by its order of triggers: does each step get what it needs from the steps before
 it, and does the order repeat.
@@ -22,11 +22,10 @@ Open items: [docs/backlog.md](docs/backlog.md).
 - The architecture tests (`tests/Loopsmith.Core.Tests/Architecture/`) guard slice
   boundaries, that only `SourceFetching` touches files (and only to read), and that the hosts
   call only `Orchestration` and the kernel — never weaken them to make code fit; fix the code.
-- **Cause and effect, never simulation** (ADRs D1): the state is what is present (a buff on you,
-  a debuff on the pack, a pickup on the ground) and what the player declared. Never add code that
-  counts or times anything — stacks toward a maximum, durations, energy, cooldowns.
-  Show a source's number as a fact with its outcome; the player declares when a threshold is reached
-  or a buff ends (`max:`, `end:` — D3).
+- **Cause and effect** (ADRs D1): the state is what is present (a buff on you, a debuff on the pack,
+  a pickup on the ground) and what the player declared; it holds no number. Show a source's number as
+  a fact with its outcome, never added up; the player declares when a threshold is reached or a buff
+  ends (`max:`, `end:` — D3).
 - **Unknown is data**: never invent a game number. Use `"?"` in YAML; the engine shows
   "?", never 0.
 - Never commit Compendium snapshots (`snapshots/` is gitignored — licensing, see README).

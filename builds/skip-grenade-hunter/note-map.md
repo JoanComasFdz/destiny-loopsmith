@@ -1,7 +1,6 @@
 # note.txt → engine events → expected fired sources (golden test)
 
-Loopsmith describes cause and effect; it doesn't simulate the game ([ADRs D1](../../ADRs.md)). Each
-line of `note.txt` is listed with:
+Each line of `note.txt` is listed with:
 
 - the engine event it describes;
 - a golden scenario: the start state and one step, either a player action or a state the player
@@ -28,8 +27,8 @@ Conventions:
 - **fired** = the element's rule matched and its guards held.
 - **gives way** = the rule fired but gave nothing: it doesn't stack with another element's rule on the
   same event (`doesNotStackWith`). It still counts as fired; the trace shows "doesn't stack with …".
-- *(chance)* = the rule is `chance: true`: a chance in game, or a counter Loopsmith doesn't keep
-  ("2 kills within 3 s"; ADRs D8). It fires, and the trace marks it.
+- *(chance)* = the rule is `chance: true`: a chance in game, or progress the game doesn't show as a
+  stacking status ("2 kills within 3 s"; ADRs D8). It fires, and the trace marks it.
 - **passive** = an always-on modifier that was applied, not a rule firing.
 - **State** is what is present: buffs by name, "(at max)" on a buff the player declared at max, the
   pack's debuffs, the pickups on the ground. A grant reads "+1 Bolt Charge" and a duration shows on

@@ -42,8 +42,8 @@ first (Domain types, then the slices):
   `keywords/orb-of-power.yaml`, `weapons/perks.yaml`, `mods/armor.yaml`, `exotics/armor.yaml`,
   `artifact/current.yaml` and `hunter/arc.yaml` (its header still says there are no airborne qualifiers);
   the Helicopter loop's description ("keep it up"); `max:bolt-charge` steps in the example
-  loops and `scenario.txt` as [note-map.md](../builds/skip-grenade-hunter/note-map.md) describes; the
-  goldens; `LoopFileParsingTests.SpecExampleYaml`, which copies loop-format.md's example.
+  loops and `scenario.txt` as [note-map.md](../builds/skip-grenade-hunter/note-map.md) describes (and
+  `scenario.txt`'s token comment); the goldens; `LoopFileParsingTests.SpecExampleYaml`, which copies loop-format.md's example.
 - Later: rename the `Simulation` slice (it plays steps; it simulates nothing).
 
 ## Data
@@ -65,8 +65,6 @@ first (Domain types, then the slices):
 
 ## Rule format gaps (what the Skip Grenade build couldn't express)
 
-Only gaps in cause and effect are gaps (ADRs D1).
-
 - **Triggers:** champion stun (Defibrillating Blast's "stun → max Bolt Charge", with an outcome that
   puts a buff at max); a slide qualifier (Tempest Strike is modelled as any melee); airborne grenade and
   melee actions (Ballistic Slam) — only the class ability has an airborne use (`class:air`, D9);
@@ -77,8 +75,8 @@ Only gaps in cause and effect are gaps (ADRs D1).
   Flare Sever only); "while a kind of mod is equipped" (an Orb of Power gives Armor Charge only with an
   Armor Charge mod equipped); "while in your super" (Arc Staff's damage resistance).
 - **Declared states:** a level below the max (`stacks:<status>:<n>`, for "Combination Blow ×2"); the
-  target's tier (D7: the pack is `minor`, so `kill … tier:` rules never fire in a loop — "punch the big
-  enemy"); "repeat until <state>" as a marker on a step.
+  target's tier (D7: the pack is `minor`, so a kill rule for a higher tier never fires in a loop — "punch
+  the big enemy"); "repeat until <state>" as a marker on a step.
 - **Facts the format can't show yet** (shown, never applied — most of this build's `?` would become
   readable): health in HP (`restoreHealth` reads as a percentage, so Combination Blow 100 → 40 HP,
   Defibrillating Blast ~55 HP, To Shreds 15 HP per pulse stay `?`); values by declared level (Combination
@@ -87,12 +85,11 @@ Only gaps in cause and effect are gaps (ADRs D1).
   State, Tempest Strike, Amplified's extras); an "all weapons" archetype. One "described fact" value and
   passive would cover them. The ability profiles (`charges`, `chunkScalar`, `baseCooldown`) are recorded
   but shown nowhere: show them in `explain`.
-- **Not gaps (D1)** — counting and timing, which the format never models: hit/kill counters and progress
-  meters across actions (Spark of Discharge's kills per trace, To Shreds' 6 weapon hits, Amplified's
-  intrinsic kill counter — *(chance)*, or the player declares the result); several hits on one enemy in
-  one action; how many hits Slice lasts; energy per stack; refunds and chunk scalars; rule cooldowns
-  (Impact Induction, Photonic Flare); buff decay (Armor Charge); "enemies nearby" (Spark of Resistance's
-  "3+ enemies" holds always).
+- **Written as declarations, *(chance)* or facts** (D3, D8), so they need no new format: progress the
+  game doesn't show as a stacking status (Spark of Discharge's kills per trace, To Shreds' 6 weapon hits,
+  Amplified's intrinsic kill counter) is *(chance)*; Slice's 5 hits end with `max:slice`; energy per
+  stack, refunds, chunk scalars and rule cooldowns (Impact Induction, Photonic Flare) are facts; Spark of
+  Resistance's "3+ enemies" always holds.
 
 ## Engine
 
@@ -120,7 +117,7 @@ Only gaps in cause and effect are gaps (ADRs D1).
 ## Owner items
 
 - Verify.XunitV3 33.x needs a SponsorCheck licence decision (D26).
-- Clarity's partnerships page: check it now that the site is public (README, Licensing).
+- Clarity's partnerships page: check it (the site is public; README, Licensing).
 - Confirm the Ascension assumption: Bomber, Reaper and Slice fire on its air move (it is a class ability
   cast — [discrepancies](../builds/skip-grenade-hunter-ascension/discrepancies.md)).
 - Delete the merged remote branches `data/compendium-2026-10-09`, `docs/session-notes` and

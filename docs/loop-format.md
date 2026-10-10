@@ -4,7 +4,7 @@
 ([ADRs D2](../ADRs.md#d2--the-designed-loop-is-the-product)): an ordered list of steps, each a trigger
 ("dodge", "throw a grenade and kill three") or a state the player declares ("Bolt Charge at max",
 D3). You pick a build, choose a step, see everything it sets off and what is available next, choose
-again, and so on. Loopsmith describes cause and effect, never quantities or time
+again, and so on. Loopsmith describes cause and effect
 ([ADRs D1](../ADRs.md#d1--loopsmith-describes-cause-and-effect-it-doesnt-simulate-the-game)), so a
 loop is judged by its **order of triggers**: whether each step gets what it needs from the steps
 before it, and whether the order repeats. The loop is data: it can be saved, shared, imported,
@@ -17,7 +17,7 @@ with, so it replays anywhere that has the rule catalog.
 
 ```yaml
 # Loopsmith loop v1
-loop: Infinite skip grenades            # required — the loop's name
+loop: Dodge, grenade, shoot             # required — the loop's name
 author: Joan                            # optional
 description: |                          # optional, free text
   Dodge to arm Slice and Reaper, skip grenade into the pack, shoot, grab Reaper's orb.
@@ -92,10 +92,13 @@ has ended — the player declares as a step of its own:
 
   and the next ability hit discharges it (Bolt Charge's `atMax` rule, Compendium Arc#5). The cap
   ("up to x10") is a fact the player reads when deciding to declare. A `max:` is blocked unless the buff
-  is active and stacks (`maxStacks` in the [glossary](rule-format.md#glossary-rulesglossaryyaml)):
-  `Bolt Charge isn't active — nothing to declare at max.` ·
+  stacks (`maxStacks` in the [glossary](rule-format.md#glossary-rulesglossaryyaml)), is active and isn't
+  declared at max already — checked in that order:
+  `No buff 'bolt-charg' in the rules — nothing to declare.` ·
+  `Jolt is a debuff — only a buff on you can be at max.` ·
   `New Tricks doesn't stack — end it with end:new-tricks.` ·
-  `No buff 'bolt-charg' in the rules — nothing to declare.`
+  `Bolt Charge isn't active — nothing to declare at max.` ·
+  `Bolt Charge is already at max.`
 * `end:<status>` — "Amplified ends", "Jolt ends": the buff on you (with its declaration at max) or the
   debuff on the pack has ended and is removed. It raises no event, so no rule reacts to it. Blocked
   unless the status is active: `Amplified isn't active — nothing ends.` ·
@@ -109,8 +112,7 @@ reads back as the same action (`grenade:hit` is written `grenade`). Labels read 
 
 **What `play` and the web designer offer.** Only steps that can happen: the abilities, the equipped
 weapons, the pickups on the ground and a group **States you declare** — `max:` for each active
-stacking buff that an equipped rule reacts to at its max (a `stacksMaxed` trigger or an `atMax`
-condition), `end:` for each active status. `class:air` is offered only when an equipped rule has an
+buff that stacks and isn't at max yet, `end:` for each active status. `class:air` is offered only when an equipped rule has an
 airborne trigger (without one it fires exactly what `class` fires). Every token still reads anywhere
 (CLI, loop files, share links).
 
@@ -199,8 +201,8 @@ builds; both replay with the same catalog. The comparison uses each loop's repea
 
 * each loop's order on one line, with its verdict;
 * then trigger by trigger (a declared state counts as one), matched by occurrence of the same action —
-  A's first `grenade:kill` with B's first `grenade:kill` — its step number in each loop and how its
-  place changes what it does: the elements that fire in only one of them and why (what an earlier step
+  A's first `grenade:kill` with B's first `grenade:kill` — its step number in each loop, where its
+  needs come from there, and the elements that fire in only one of them and why (what an earlier step
   provided, or didn't);
 * the triggers only one loop has, listed as such;
 * where a loop's first pass differs, it says so.
@@ -212,8 +214,6 @@ Class ability           A #1 · B #2: sets off the same
 Festival Flight (kill)  A #2: Reaper ← #1 · B #1: Reaper ← previous pass #2 (not on B's first pass)
 Pick up Orb of Power    A #3: Orb of Power ← #2 · B #3: Orb of Power ← #1
 ```
-
-Neither loop is scored: the comparison is about what each order sets off.
 
 ## CLI
 

@@ -54,13 +54,13 @@ dotnet run --project src/Loopsmith.Cli -- graph    builds/skip-grenade-hunter/bu
 | `trace` | A sequence of steps (`--actions class,grenade:kill:3,max:bolt-charge,energy:kill` or `--scenario file`), one block per step: the event → outcomes `[source]`, cascades indented `↳`; `--state` adds what is present after each step (buffs on you, debuffs on the pack, pickups on the ground). `--why` shows the reason text; `--caveats` the caveats (amount unknown, already active, …). `simulate` is an alias |
 | `play` | Interactive: pick the next step by number or token — an action, a pickup on the ground or a state you declare — and see what fires and what's available now. Every step becomes part of the loop you design: `u` undo, `n <note>`, `d <description>`, `a` analyse it so far; `--save <file.loop.yaml>` writes it on quit (`w` saves now), `--name` names it |
 | `loop` | A designed loop (`*.loop.yaml`): its build, its order of steps and the verdict — it repeats, or it breaks at the step that can't happen — then each step with what it needs (and which step provided it), what it sets off and what is wasted there, and where the first pass from a fresh spawn differs. `--trace` adds the full trace of the first pass, and of the repeating pass when it differs |
-| `compare` | Two designed loops' orders side by side (they may use different builds): each order on one line with its verdict, then trigger by trigger its step in each loop and what it sets off in only one of them, and why (what an earlier step provided, or didn't) |
+| `compare` | Two designed loops' orders side by side (they may use different builds): each order on one line with its verdict, then trigger by trigger its step in each loop, where its needs come from there, and the elements that fire in only one of them and why (what an earlier step provided, or didn't) |
 | `loops` | Discovered loops: cycles in the cause → effect graph, ability loops first ("ability loop — gives grenade energy back"). Reaching a stacking buff's max is a link you declare; where a rule gives way to one it doesn't stack with, the loop passes a "Doesn't stack" node (not counted as a step) |
 | `graph` | A Mermaid flowchart of the graph, with loop edges drawn thick; `Gain Bolt Charge → Max Bolt Charge` is a dotted edge labelled "you declare"; the arrows of rules that don't stack meet in a "Doesn't stack" rhombus, and only the rule that applies leaves it. It renders on GitHub and at mermaid.live |
 | `validate` | The build checked against the rule catalog (unknown elements, wrong slots, inert elements, rules that don't stack) |
 
-Every command takes `--rules <dir>` (default: the nearest `rules/` above the build or loop file, then the
-current directory) and `--no-color` (also when `NO_COLOR` is set or the output is redirected); `loops` and
+Every command takes `--rules <dir>` (default: the nearest `rules/` with a `glossary.yaml` above the build or loop
+file, then above the current directory) and `--no-color` (also when `NO_COLOR` is set or the output is redirected); `loops` and
 `graph` show `--limit <n>` loops (default 10); `--verbose` is `--why --caveats`. `--help` lists every
 option.
 
@@ -71,9 +71,9 @@ option.
 
 ```text
 Class ability -> +?% melee energy [Gambler's Dodge] + +12% grenade energy [Bomber] + Reaper (10s) [Reaper] + +1 Slice (8s) [Slice]
-Grenade damage -> Jolt target [Spark of Shock] + +1 Bolt Charge and +4.2% grenade energy [Shinobu's Vow]
+Grenade damage -> Jolt target (10s) [Spark of Shock] + +1 Bolt Charge and +4.2% grenade energy [Shinobu's Vow]
 Ability damage -> consumes Bolt Charge and Bolt Charge strike (kills) (while Bolt Charge at max) [Bolt Charge]
-Kill Jolted target -> +1 Bolt Charge (doesn't stack with Dielectric) [Tempest Strike] + Amplified [Flow State] + Ionic Trace [Shock and Clear] + +1 Bolt Charge [Dielectric]
+Kill Jolted target -> +1 Bolt Charge (doesn't stack with Dielectric) [Tempest Strike] + Amplified (15s) [Flow State] + Ionic Trace [Shock and Clear] + +1 Bolt Charge [Dielectric]
 Pick up Ionic Trace -> +1 Bolt Charge [Spark of Discharge] + +1 Armor Charge [Elemental Charge] (chance) + +11.3% grenade and melee energy and +13.5% class ability energy [Ionic Trace]
 Gain Bolt Charge -> +?% grenade energy [Shinobu's Vow] + +2.5% melee energy [Bolt Charge]
 Max Bolt Charge -> New Tricks and +~40% grenade energy and heals you and allies [Shinobu's Vow] + Amplified (15s) [Flashover]
@@ -85,9 +85,9 @@ While Amplified -> +1 Bolt Charge per gain [Spark of Frequency] + linear-fusion-
 
 ```text
 #2 Grenade (kill)
-  Grenade hit → Jolt target [Spark of Shock] + +1 Bolt Charge and +4.2% grenade energy [Shinobu's Vow]
+  Grenade hit → Jolt target (10s) [Spark of Shock] + +1 Bolt Charge and +4.2% grenade energy [Shinobu's Vow]
     ↳ Bolt Charge gained → +?% grenade energy [Shinobu's Vow] + +2.5% melee energy [Bolt Charge]
-  Grenade kill on Jolted target → Amplified [Flow State] + +1 Bolt Charge [Dielectric] + Ionic Trace [Shock and Clear] + doesn't stack with Dielectric [Tempest Strike]
+  Grenade kill on Jolted target → Amplified (15s) [Flow State] + +1 Bolt Charge [Dielectric] + Ionic Trace [Shock and Clear] + doesn't stack with Dielectric [Tempest Strike]
     ↳ Bolt Charge gained → +?% grenade energy [Shinobu's Vow] + +2.5% melee energy [Bolt Charge]
     ↳ Picked up Ionic Trace → +1 Bolt Charge [Spark of Discharge] + +1 Armor Charge [Elemental Charge] (chance) + +11.3% grenade and melee energy and +13.5% class ability energy [Ionic Trace]
       ↳ Bolt Charge gained → +?% grenade energy [Shinobu's Vow] + +2.5% melee energy [Bolt Charge]
@@ -109,11 +109,15 @@ Class ability → Festival Flight (kill) → Pick up Orb of Power
 #1 Class ability
    sets off  Gambler's Dodge · Bomber · Reaper · Slice
 #2 Festival Flight (kill)
-   needs     Reaper ← #1 [Reaper] · Slice ← #1 [Slice]
+   needs     Reaper ← #1 [Reaper] · Slice ← #1 [Slice] · Unraveling Rounds ← previous pass #3 [Unraveling Orbs] · …
    sets off  Slice · Reaper · Attrition Orbs (chance) · Strand Siphon (chance) · …
 #3 Pick up Orb of Power
    needs     Orb of Power ← #2 [Reaper; Attrition Orbs (chance); Strand Siphon (chance)]
    sets off  Unraveling Orbs · Orb of Power
+
+First pass
+#2 Festival Flight (kill)
+   doesn't set off  Unraveling Rounds — no Unraveling Rounds yet (#3 gives it) · …
 ```
 
 `compare` of that loop with the same steps in another order:
@@ -121,6 +125,7 @@ Class ability → Festival Flight (kill) → Pick up Orb of Power
 ```text
 A  Dodge, then shoot   Class ability → Festival Flight (kill) → Pick up Orb of Power   ✓ Repeats
 B  Shoot, then dodge   Festival Flight (kill) → Class ability → Pick up Orb of Power   ✓ Repeats
+Class ability           A #1 · B #2: sets off the same
 Festival Flight (kill)  A #2: Reaper ← #1 · B #1: Reaper ← previous pass #2 (not on B's first pass)
 Pick up Orb of Power    A #3: Orb of Power ← #2 · B #3: Orb of Power ← #1
 ```
@@ -192,9 +197,9 @@ tools/web/               prepare-pages.sh — readies a published site for GitHu
 | Source | Gives | Status |
 |---|---|---|
 | Authored rules (`rules/`) | Causality: what fires on what | ✅ used by the engine |
-| [Clarity](https://github.com/Database-Clarity/Live-Clarity-Database) | Hash-keyed descriptions with numbers (mods, fragments, aspects, exotic perks, weapon traits) | Used to author the first build (v2.0625); ingestion slice next |
+| [Clarity](https://github.com/Database-Clarity/Live-Clarity-Database) | Hash-keyed descriptions with numbers (mods, fragments, aspects, exotic perks, weapon traits) | Its numbers are in the first build's rules by hand (v2.0625); an ingestion slice is open |
 | Destiny Data Compendium | Abilities, artifact perks, statuses, and facts such as cooldowns and chunk energy scalars | The 2026-10-09 snapshot's numbers are in the first build's rules (by hand, `compendium/<date>/<tab>#<row>` sources); parser next |
-| Bungie manifest | Identity (hashes), names, icons | Later: not needed for loop design; needs an API key (not used anywhere yet) |
+| Bungie manifest | Identity (hashes), names, icons | Open (FR-13): not needed for loop design; needs an API key |
 
 **Getting a Compendium snapshot:** run `tools/compendium/get-compendium.ps1` (Windows) or
 `get-compendium.sh` locally and hand the resulting zip to a session — see
@@ -203,7 +208,8 @@ the cloud environment unless it's added to its allowed domains.)
 
 **Licensing.** The Compendium is one person's donation-supported work. Keep snapshots
 private, out of any public repo (`snapshots/` is gitignored), never served as raw text,
-and credit it. Check Clarity's partnerships page before a public site. Bungie API use
+and credit it. Clarity's partnerships page applies to a public site like this one (an owner check,
+[docs/backlog.md](docs/backlog.md)). Bungie API use
 falls under Bungie's API terms. Creator video transcripts are third-party content: keep them
 locally as `builds/<slug>/transcript.txt` (gitignored) and link the video instead.
 
@@ -221,21 +227,14 @@ force pushes. Details: [docs/hosting.md](docs/hosting.md).
 
 ## Roadmap
 
-Each requirement's status is in [docs/requirements.md](docs/requirements.md); the open work in
-[docs/backlog.md](docs/backlog.md).
+What works is in each requirement's status ([docs/requirements.md](docs/requirements.md)); the open
+work in detail in [docs/backlog.md](docs/backlog.md). Next:
 
-1. ✅ Skeleton: kernel, slices, architecture tests, CI.
-2. ✅ Rules for the first build; the engine (match, guard, phase order, cascade); CLI.
-3. ✅ Golden test: the engine reproduces the build note.
-4. ✅ Designed loops: `.loop.yaml` pinned to a catalog version, share links, `play`
-   ([ADRs D2](ADRs.md), [D15](ADRs.md)).
-5. ✅ Web loop designer (Blazor WebAssembly) on GitHub Pages, with a preview per pull request
-   ([ADRs D25](ADRs.md)).
-6. States you declare (`max:`, `end:`, [ADRs D3](ADRs.md)) and the loop analysis and comparison by
+1. States you declare (`max:`, `end:`, [ADRs D3](ADRs.md)) and the loop analysis and comparison by
    order of triggers (FR-4, FR-6, FR-7).
-7. Ingest: Compendium snapshot parsers (tab registry) + Clarity enrichment + coverage report (FR-11).
-8. Manifest join: names → hashes, icons (FR-13, [ADRs D14](ADRs.md)).
-9. Rule drafting from the Compendium's "On X:" phrasing (FR-12, [ADRs D10](ADRs.md)).
-10. More builds; richer rules (the rule-format gaps in [docs/backlog.md](docs/backlog.md)).
+2. Ingest: Compendium snapshot parsers (tab registry) + Clarity enrichment + coverage report (FR-11).
+3. Manifest join: names → hashes, icons (FR-13, [ADRs D14](ADRs.md)).
+4. Rule drafting from the Compendium's "On X:" phrasing (FR-12, [ADRs D10](ADRs.md)).
+5. More builds; richer rules (the rule-format gaps in [docs/backlog.md](docs/backlog.md)).
 
 Destiny 2 is a trademark of Bungie. Loopsmith is a fan project, not affiliated with Bungie.
