@@ -5,16 +5,20 @@
 
 <manifest-dir> holds the English JSON components get-manifest.sh downloads:
 DestinyInventoryItemDefinition.json, DestinyInventoryBucketDefinition.json, DestinyDamageTypeDefinition.json,
-DestinySocketTypeDefinition.json and DestinySocketCategoryDefinition.json. <version> is the manifest's
+DestinySocketTypeDefinition.json, DestinySocketCategoryDefinition.json, DestinyPlugSetDefinition.json,
+DestinySandboxPerkDefinition.json and DestinyEquipableItemSetDefinition.json. <version> is the manifest's
 version string (written into the file).
 
-The excerpt holds every hash Loopsmith names: each `hash:` in rules/ (elements and the glossary's
-subclasses) and every hash in the saved DIM shares (builds/*/dim-loadout.json). For each: its name,
-kind, type, icon, tier and, for weapons, armor and armor mods, its slot and damage type. A weapon also
-gets its trait columns (`traits`: the "frames" sockets among its weapon perks), each the list of perks
-it can roll (one, for a column that doesn't roll: an exotic's), and those perks are written as items
-too. A hash the manifest doesn't have is reported, not written. The output is sorted and stable, so a rerun
-on the same manifest changes nothing.
+The excerpt holds every hash Loopsmith names: each `hash:` in rules/ (elements, the glossary's subclasses,
+armor set perks) and every hash in the saved DIM shares (builds/*/dim-loadout.json). For each: its name,
+kind, type, icon, tier, Bungie's description and, for weapons, armor and armor mods, its slot and damage
+type. A weapon also gets its trait columns (`traits`: the "frames" sockets among its weapon perks), each
+the list of perks it can roll (one, for a column that doesn't roll: an exotic's), its intrinsic perk and,
+for an exotic, its catalyst; armor gets its intrinsic perk (an exotic's) and the armor set it belongs
+to. Those perks, catalysts (with the perks they grant) and sets (with their 2- and 4-piece perks) are
+written too. Perks a catalyst or a set grants are the manifest's sandbox perks (`kind: perk`). A hash the
+manifest doesn't have is reported, not written. The output is sorted and stable, so a rerun on the same
+manifest changes nothing.
 """
 
 import json
@@ -28,6 +32,7 @@ MOD_SLOTS = {"Helmet Armor Mod": "helmet", "Arms Armor Mod": "arms", "Chest Armo
              "Leg Armor Mod": "legs", "Class Item Armor Mod": "classItem", "General Armor Mod": "general"}
 TIERS = {2: "basic", 3: "common", 4: "rare", 5: "legendary", 6: "exotic"}
 DAMAGE_TYPES = {1: "kinetic", 2: "arc", 3: "solar", 4: "void", 6: "stasis", 7: "strand"}
+EMPTY_CATALYST = "v400.empty.exotic.masterwork"  # the plug category of an exotic's empty catalyst socket
 
 
 def read_json(path):
@@ -75,7 +80,7 @@ def classify(item, buckets):
     if type_name.endswith("Armor Mod"):
         return "armorMod", MOD_SLOTS.get(type_name)
     exact = {"Super Ability": "super", "Class Ability": "classAbility", "Movement Ability": "movement",
-             "Artifact Perk": "artifactPerk", "Trait": "weaponPerk", "Enhanced Trait": "weaponPerk"}
+             "Artifact Perk": "artifactPerk", "Trait": "weaponPerk", "Enhanced Trait": "weaponPerk", "Intrinsic": "intrinsic"}
     if type_name in exact:
         return exact[type_name], None
     for suffix, kind in ((" Grenade", "grenade"), (" Melee", "melee"), (" Aspect", "aspect"), (" Fragment", "fragment")):
@@ -111,15 +116,73 @@ def read_column(entry, plug_sets):
     return [entry["singleInitialItemHash"]] if entry.get("singleInitialItemHash") else []
 
 
-def to_entry(item_hash, item, buckets, socket_types, perk_category, plug_sets):
+def to_text(text):
+    """Bungie's text as YAML: quoted, ASCII-escaped, without the private-use glyphs of Destiny's icon font (they show as boxes elsewhere)."""
+    shown = re.sub(r" {2,}", " ", re.sub("[\ue000-\uf8ff]", "", text)).strip()
+    return json.dumps(shown, ensure_ascii=True)
+
+
+def find_category(categories, name):
+    return next(int(h) for h, c in categories.items() if c.get("displayProperties", {}).get("name") == name)
+
+
+def read_intrinsic(item, category, items):
+    """The item's intrinsic perk: the first named plug of an `intrinsics` socket in that category (a weapon's frame or exotic perk, an exotic armor's perk)."""
+    sockets = item.get("sockets") or {}
+    entries = sockets.get("socketEntries", [])
+    for group in sockets.get("socketCategories", []):
+        if group.get("socketCategoryHash") != category:
+            continue
+        for index in group.get("socketIndexes", []):
+            plug = items.get(str(entries[index].get("singleInitialItemHash")) if index < len(entries) else "", {})
+            if plug.get("plug", {}).get("plugCategoryIdentifier") == "intrinsics" and plug.get("displayProperties", {}).get("name"):
+                return plug["hash"]
+    return None
+
+
+def read_granted_perks(item, perks):
+    """The sandbox perks a plug grants that the game shows (a catalyst's), in order."""
+    return [entry["perkHash"] for entry in item.get("perks", [])
+            if perks.get(str(entry.get("perkHash")), {}).get("isDisplayable")
+            and perks[str(entry["perkHash"])].get("displayProperties", {}).get("name")]
+
+
+def read_catalyst(item, socket_types, plugs_by_category, items, perks):
+    """An exotic weapon's catalyst: a plug of its catalyst socket's own category that grants a perk the game shows."""
+    for entry in (item.get("sockets") or {}).get("socketEntries", []):
+        whitelist = [w.get("categoryIdentifier") for w in socket_types.get(str(entry.get("socketTypeHash")), {}).get("plugWhitelist", [])]
+        if EMPTY_CATALYST not in whitelist:
+            continue
+        for category in whitelist:
+            for plug in plugs_by_category.get(category, []) if category != EMPTY_CATALYST else []:
+                if read_granted_perks(items[str(plug)], perks):
+                    return plug
+    return None
+
+
+def to_perk_entry(perk_hash, perk):
+    """A sandbox perk (a catalyst's or an armor set's): name, Bungie's description, icon; it has no item type."""
+    display = perk.get("displayProperties", {})
+    fields = [("hash", str(perk_hash)), ("name", to_text(display.get("name", ""))), ("kind", "perk")]
+    if display.get("description"):
+        fields.append(("description", to_text(display["description"])))
+    if display.get("icon"):
+        fields.append(("icon", display["icon"]))
+    return "  - { " + ", ".join(f"{key}: {value}" for key, value in fields) + " }"
+
+
+def to_entry(item_hash, item, context):
+    buckets, socket_types, perk_category, plug_sets = context["buckets"], context["socket_types"], context["perk_category"], context["plug_sets"]
     display = item.get("displayProperties", {})
     kind, slot = classify(item, buckets)
+    kind = "catalyst" if item_hash in context["catalysts"] else kind
     fields = [
         ("hash", str(item_hash)),
-        ("name", json.dumps(display.get("name", ""), ensure_ascii=True)),
+        ("name", to_text(display.get("name", ""))),
         ("kind", kind),
-        ("type", json.dumps(item.get("itemTypeDisplayName") or "", ensure_ascii=True)),
     ]
+    if item.get("itemTypeDisplayName"):
+        fields.append(("type", to_text(item["itemTypeDisplayName"])))
     tier = TIERS.get(item.get("inventory", {}).get("tierType"))
     if tier:
         fields.append(("tier", tier))
@@ -131,9 +194,31 @@ def to_entry(item_hash, item, buckets, socket_types, perk_category, plug_sets):
     columns = read_traits(item, socket_types, perk_category, plug_sets) if kind == "weapon" else None
     if columns is not None:
         fields.append(("traits", "[" + ", ".join("[" + ", ".join(str(h) for h in column) + "]" for column in columns) + "]"))
+    intrinsic = context["intrinsics"].get(item_hash)
+    if intrinsic:
+        fields.append(("intrinsic", str(intrinsic)))
+    catalyst = context["weapon_catalysts"].get(item_hash)
+    if catalyst:
+        fields.append(("catalyst", str(catalyst)))
+    item_set = item.get("equippingBlock", {}).get("equipableItemSetHash") if kind == "armor" else None
+    if item_set:
+        fields.append(("set", str(item_set)))
+    granted = read_granted_perks(item, context["perks"]) if kind == "catalyst" else []
+    if granted:
+        fields.append(("perks", "[" + ", ".join(str(h) for h in granted) + "]"))
+    if display.get("description"):
+        fields.append(("description", to_text(display["description"])))
     if display.get("icon"):
         fields.append(("icon", display["icon"]))
     return "  - { " + ", ".join(f"{key}: {value}" for key, value in fields) + " }"
+
+
+def to_set_entry(set_hash, item_set):
+    """An armor set: its name and the perk each piece count grants (`pieces: 2` → its 2-piece perk)."""
+    perks = ", ".join(f"{{ pieces: {perk['requiredSetCount']}, perk: {perk['sandboxPerkHash']} }}"
+                      for perk in sorted(item_set.get("setPerks", []), key=lambda p: p["requiredSetCount"]))
+    name = to_text(item_set.get("displayProperties", {}).get("name", ""))
+    return f"  - {{ hash: {set_hash}, name: {name}, perks: [{perks}] }}"
 
 
 def main():
@@ -147,17 +232,41 @@ def main():
     damage_types = read_json(source / "DestinyDamageTypeDefinition.json")
     socket_types = read_json(source / "DestinySocketTypeDefinition.json")
     plug_sets = read_json(source / "DestinyPlugSetDefinition.json")
-    perk_category = next(int(h) for h, c in read_json(source / "DestinySocketCategoryDefinition.json").items()
-                         if c.get("displayProperties", {}).get("name") == "WEAPON PERKS")
+    perks = read_json(source / "DestinySandboxPerkDefinition.json")
+    item_sets = read_json(source / "DestinyEquipableItemSetDefinition.json")
+    categories = read_json(source / "DestinySocketCategoryDefinition.json")
+    perk_category = find_category(categories, "WEAPON PERKS")
+    intrinsic_categories = {"weapon": find_category(categories, "INTRINSIC TRAITS"), "armor": find_category(categories, "ARMOR PERKS")}
+    plugs_by_category = {}
+    for h, item in sorted(items.items(), key=lambda pair: int(pair[0])):
+        category = (item.get("plug") or {}).get("plugCategoryIdentifier")
+        if category:
+            plugs_by_category.setdefault(category, []).append(int(h))
+    set_of_perk = {perk["sandboxPerkHash"]: int(h) for h, item_set in item_sets.items() for perk in item_set.get("setPerks", [])}
 
     named = list_rule_hashes(root) | list_share_hashes(root)
-    perks = {h for n in named if str(n) in items and classify(items[str(n)], buckets)[0] == "weapon"
-             for column in (read_traits(items[str(n)], socket_types, perk_category, plug_sets) or []) for h in column}
-    wanted = sorted(named | perks)
-    missing = [h for h in wanted if str(h) not in items]
+    named_items = {h for h in named if str(h) in items}
+    kinds = {h: classify(items[str(h)], buckets)[0] for h in named_items}
+    weapons = {h for h in named_items if kinds[h] == "weapon"}
+    traits = {h for n in weapons for column in (read_traits(items[str(n)], socket_types, perk_category, plug_sets) or []) for h in column}
+    intrinsics = {h: read_intrinsic(items[str(h)], intrinsic_categories[kinds[h]], items) for h in named_items if kinds[h] in intrinsic_categories}
+    intrinsics = {h: plug for h, plug in intrinsics.items() if plug}
+    weapon_catalysts = {h: read_catalyst(items[str(h)], socket_types, plugs_by_category, items, perks) for h in weapons}
+    weapon_catalysts = {h: plug for h, plug in weapon_catalysts.items() if plug}
+    catalysts = set(weapon_catalysts.values())
+    catalyst_perks = {perk for plug in catalysts for perk in read_granted_perks(items[str(plug)], perks)}
+    wanted_sets = {items[str(h)].get("equippingBlock", {}).get("equipableItemSetHash") for h in named_items if kinds[h] == "armor"} - {None, 0}
+    wanted_sets |= {set_of_perk[h] for h in named if h in set_of_perk}
+    set_perks = {perk["sandboxPerkHash"] for h in wanted_sets for perk in item_sets[str(h)].get("setPerks", [])}
+    context = {"buckets": buckets, "socket_types": socket_types, "perk_category": perk_category, "plug_sets": plug_sets,
+               "intrinsics": intrinsics, "weapon_catalysts": weapon_catalysts, "catalysts": catalysts, "perks": perks}
+
+    wanted_items = sorted(named_items | traits | set(intrinsics.values()) | catalysts)
+    wanted_perks = sorted(((named - named_items) & {int(h) for h in perks}) | catalyst_perks | set_perks)
+    missing = sorted(named - named_items - set(wanted_perks))
     lines = [
-        "# Loopsmith's excerpt of the Bungie manifest (docs/rule-format.md, \"Manifest\"): names, icons, slots and",
-        "# damage types for every hash the rules and the saved DIM shares name. Generated by",
+        "# Loopsmith's excerpt of the Bungie manifest (docs/rule-format.md, \"Manifest\"): names, descriptions, icons,",
+        "# slots, perks and armor sets for every hash the rules and the saved DIM shares name. Generated by",
         "# tools/manifest/extract_manifest.py - don't edit by hand, rerun it. Bungie's data, used under its API terms.",
         f"version: {json.dumps(version)}",
         "damageTypes:",
@@ -167,10 +276,14 @@ def main():
         icon = definition.get("displayProperties", {}).get("icon")
         if name and icon:
             lines.append(f"  - {{ type: {name}, icon: {icon} }}")
+    lines.append("armorSets:")
+    lines.extend(to_set_entry(h, item_sets[str(h)]) for h in sorted(wanted_sets))
     lines.append("items:")
-    lines.extend(to_entry(h, items[str(h)], buckets, socket_types, perk_category, plug_sets) for h in wanted if str(h) in items)
+    entries = [(h, to_entry(h, items[str(h)], context)) for h in wanted_items]
+    entries += [(h, to_perk_entry(h, perks[str(h)])) for h in wanted_perks]
+    lines.extend(entry for _, entry in sorted(entries))
     (root / "rules" / "manifest.yaml").write_text("\n".join(lines) + "\n", encoding="utf-8")
-    print(f"wrote {len(wanted) - len(missing)} items to rules/manifest.yaml")
+    print(f"wrote {len(entries)} items and {len(wanted_sets)} armor sets to rules/manifest.yaml")
     for h in missing:
         print(f"not in the manifest: {h}", file=sys.stderr)
 

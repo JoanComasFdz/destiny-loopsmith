@@ -13,7 +13,8 @@ set -euo pipefail
 out="$1"
 mkdir -p "$out"
 components=(DestinyInventoryItemDefinition DestinyInventoryBucketDefinition DestinyDamageTypeDefinition
-  DestinySocketTypeDefinition DestinySocketCategoryDefinition DestinyPlugSetDefinition)
+  DestinySocketTypeDefinition DestinySocketCategoryDefinition DestinyPlugSetDefinition DestinySandboxPerkDefinition
+  DestinyEquipableItemSetDefinition)
 
 if [ -z "${MANIFEST_ID:-}" ]; then
   header=()
