@@ -9,44 +9,61 @@ namespace Loopsmith.Web.Presentation;
 /// <summary>A point of the drawn chain, in pixels.</summary>
 public sealed record ChainPoint(int X, int Y);
 
-/// <summary>The part of a step's line that goes into one step it feeds; a branch off the trunk has a junction dot.</summary>
-public sealed record ChainBranch(StepLink Link, string Path, Optional<ChainPoint> Junction, bool OnlyHere, string Title);
+/// <summary>The left edge of a step's card: a notch cut in at the top (ingress) and a tab out at the bottom (egress).</summary>
+public sealed record ChainCard(int Step, string Edge);
 
 /// <summary>
-/// The arrows out of one step: a trunk from the step's egress (bottom-left) down its own lane, and a branch into the
-/// ingress (top-left) of each step it feeds.
+/// One link drawn: from the source card's tab, left along the source's first stroke, down its own lane, right into the
+/// target card's notch. <see cref="Junction"/> marks where it splits off the source's stroke (none for the outermost).
 /// </summary>
-public sealed record ChainBus(int From, int Lane, ChainPoint Egress, string Trunk, ImmutableArray<ChainBranch> Branches, string Title);
+public sealed record ChainLine(StepLink Link, int Lane, string Path, Optional<ChainPoint> Junction, bool OnlyHere, string Title);
 
-/// <summary>An arrowhead on a fed step's ingress: every line into that step ends, merged, in this one arrowhead.</summary>
+/// <summary>The arrowhead in a fed step's notch: every line into that step ends, merged, in this one arrowhead.</summary>
 public sealed record ChainArrowhead(int Step, string Points);
 
-/// <summary>A step chain laid out: one row per step, the lines in lanes of a gutter to the left of the rows.</summary>
+/// <summary>A step chain laid out: one card per step, the lines in lanes of a gutter to the left of the cards.</summary>
 public sealed record ChainLayout(
-    int RowHeight,
-    int GutterWidth,
+    int RowPitch,
+    int CardHeight,
+    int CardLeft,
+    int Width,
     int Height,
-    ImmutableArray<ChainBus> Buses,
+    ImmutableArray<ChainCard> Cards,
+    ImmutableArray<ChainLine> Lines,
     ImmutableArray<ChainArrowhead> Arrowheads);
 
 /// <summary>
-/// Pure: a report's links → where to draw them. Every step has two connectors on its left: the lines into it end at its
-/// ingress (top), the line out of it starts at its egress (bottom). A step's line runs down its own lane and branches
-/// into each step it feeds; lines into the same step merge on its ingress, as close to it as the lanes allow. Lines of
-/// different steps never share a lane where they overlap; the shortest lie nearest the steps. Only links within a pass
-/// are drawn: each arrow goes down, from a step to a later one.
+/// Pure: a report's links → where to draw them. Each step is a card whose left edge has a notch at the top, where the
+/// lines into it land, and a tab at the bottom, where the lines out of it leave. A step's lines leave its tab as one
+/// stroke and split along it, one lane each: the nearest target splits off first, nearest the cards. Lines into the same
+/// step merge on its notch. Lines never share a lane where they overlap. Only links within a pass are drawn: each line
+/// goes down, from a step to a later one.
 /// </summary>
 public static class ChainShaping
 {
-    public const int RowHeight = 34;
+    public const int RowPitch = 44;
 
-    private const int IngressOffset = 10;
+    public const int CardHeight = 36;
 
-    private const int EgressOffset = 24;
+    private const int CardMargin = 4;
 
-    private const int LaneWidth = 10;
+    private const int IngressOffset = 11;
 
-    private const int Inset = 10;
+    private const int EgressOffset = 25;
+
+    /// <summary>How far the notch cuts in and the tab sticks out.</summary>
+    private const int Depth = 8;
+
+    /// <summary>Half the height of the notch and of the tab.</summary>
+    private const int Half = 6;
+
+    private const int CardRadius = 5;
+
+    private const int LaneWidth = 9;
+
+    private const int Inset = 7;
+
+    private const int Margin = 4;
 
     private const int Radius = 5;
 
@@ -64,77 +81,88 @@ public static class ChainShaping
 
     public static ChainLayout ShapeChain(int steps, ImmutableArray<ComparedLink> links)
     {
-        var bySource = links
-            .GroupBy(compared => compared.Link.From)
-            .Select(group => (From: group.Key, Links: group.OrderBy(compared => compared.Link.To).ToImmutableArray()))
+        var lanes = AssignLanes(links);
+        var laneCount = lanes.DefaultIfEmpty(-1).Max() + 1;
+        var edge = Margin + Math.Max(laneCount - 1, 0) * LaneWidth + Inset + Depth;   // x of the cards' left edge
+        var outermost = links
+            .Select((compared, index) => (compared.Link.From, Lane: lanes[index]))
+            .GroupBy(x => x.From)
+            .ToImmutableDictionary(group => group.Key, group => group.Max(x => x.Lane));
+        var lines = links
+            .Select((compared, index) => ShapeLine(compared, lanes[index], lanes[index] == outermost[compared.Link.From], edge))
             .ToImmutableArray();
-        var lanes = AssignLanes(bySource.Select(source => (source.From, Last: source.Links[^1].Link.To)).ToImmutableArray());
-        var laneCount = lanes.Values.DefaultIfEmpty(-1).Max() + 1;
-        var gutter = Inset + Math.Max(laneCount, 1) * LaneWidth + 4;
-        var buses = bySource.Select(source => ShapeBus(source.From, source.Links, lanes[source.From], gutter)).ToImmutableArray();
         var arrowheads = links
             .Select(compared => compared.Link.To)
             .Distinct()
             .Order()
-            .Select(step => new ChainArrowhead(step, ShapeArrowhead(gutter, ReadIngress(step))))
+            .Select(step => new ChainArrowhead(step, ShapeArrowhead(edge, ReadIngress(step))))
             .ToImmutableArray();
-        return new ChainLayout(RowHeight, gutter, Math.Max(steps, 1) * RowHeight, buses, arrowheads);
+        var cards = Enumerable.Range(0, steps).Select(step => new ChainCard(step, ShapeCardEdge(edge, step))).ToImmutableArray();
+        return new ChainLayout(RowPitch, CardHeight, edge + Depth + 1, edge + Depth + 2, Math.Max(steps, 1) * RowPitch, cards, lines, arrowheads);
     }
 
-    /// <summary>The y of a step's ingress, where the lines into it end.</summary>
-    public static int ReadIngress(int step) => step * RowHeight + IngressOffset;
+    private static int ReadCardTop(int step) => step * RowPitch + CardMargin;
 
-    /// <summary>The y of a step's egress, where the line out of it starts.</summary>
-    public static int ReadEgress(int step) => step * RowHeight + EgressOffset;
+    /// <summary>The y of a step's notch, where the lines into it land.</summary>
+    public static int ReadIngress(int step) => ReadCardTop(step) + IngressOffset;
+
+    /// <summary>The y of a step's tab, where the lines out of it leave.</summary>
+    public static int ReadEgress(int step) => ReadCardTop(step) + EgressOffset;
 
     /// <summary>
-    /// A lane per step that feeds others, shortest span first and nearest the steps; two steps share a lane only when their
-    /// lines don't overlap (one ends on an ingress above the other's egress).
+    /// A lane per link, shortest first and nearest the cards (so of one step's lines the nearest target splits off first);
+    /// two links share a lane only when their lines don't overlap.
     /// </summary>
-    private static ImmutableDictionary<int, int> AssignLanes(ImmutableArray<(int From, int Last)> spans) =>
-        spans
-            .OrderBy(span => span.Last - span.From)
-            .ThenBy(span => span.From)
-            .Aggregate(ImmutableDictionary<int, int>.Empty, (assigned, span) =>
-                assigned.Add(span.From, Enumerable.Range(0, assigned.Count + 1).First(lane => !assigned
-                    .Where(other => other.Value == lane)
-                    .Any(other => Overlaps(span, spans.First(candidate => candidate.From == other.Key))))));
-
-    private static bool Overlaps((int From, int Last) a, (int From, int Last) b) =>
-        ReadEgress(a.From) < ReadIngress(b.Last) && ReadEgress(b.From) < ReadIngress(a.Last);
-
-    private static ChainBus ShapeBus(int from, ImmutableArray<ComparedLink> links, int lane, int gutter)
+    private static ImmutableArray<int> AssignLanes(ImmutableArray<ComparedLink> links)
     {
-        var x = gutter - Inset - lane * LaneWidth;
-        var port = gutter - 1;
-        var egress = ReadEgress(from);
-        var last = ReadIngress(links[^1].Link.To);
-        var trunk = string.Create(Invariant, $"M {port} {egress} H {x + Radius} Q {x} {egress} {x} {egress + Radius} V {last - Radius}");
-        var branches = links.Select((compared, index) => index == links.Length - 1
-            ? ShapeLastBranch(compared, x, port, last)
-            : ShapeBranch(compared, x, port, ReadIngress(compared.Link.To)));
-        return new ChainBus(
-            from, lane, new ChainPoint(port, egress), trunk, [.. branches], string.Join("\n", links.Select(compared => compared.Link.DescribeLink())));
+        var order = Enumerable.Range(0, links.Length)
+            .OrderBy(index => links[index].Link.To - links[index].Link.From)
+            .ThenBy(index => links[index].Link.From)
+            .ThenBy(index => links[index].Link.To);
+        var assigned = order.Aggregate(ImmutableDictionary<int, int>.Empty, (lanes, index) =>
+            lanes.Add(index, Enumerable.Range(0, lanes.Count + 1).First(lane => !lanes
+                .Where(other => other.Value == lane)
+                .Any(other => Overlaps(links[other.Key].Link, links[index].Link)))));
+        return [.. Enumerable.Range(0, links.Length).Select(index => assigned[index])];
     }
 
-    /// <summary>A branch off the trunk into a step it passes on the way down, with a dot where it leaves the trunk.</summary>
-    private static ChainBranch ShapeBranch(ComparedLink compared, int x, int port, int ingress) =>
-        new(
-            compared.Link,
-            string.Create(Invariant, $"M {x} {ingress} H {port - ArrowLength}"),
-            Optional.Some(new ChainPoint(x, ingress)),
-            compared.OnlyHere,
-            compared.Link.DescribeLink());
+    private static bool Overlaps(StepLink a, StepLink b) =>
+        ReadEgress(a.From) < ReadIngress(b.To) && ReadEgress(b.From) < ReadIngress(a.To);
 
-    /// <summary>Where the trunk ends: it turns into the last step it feeds.</summary>
-    private static ChainBranch ShapeLastBranch(ComparedLink compared, int x, int port, int ingress) =>
-        new(
-            compared.Link,
-            string.Create(Invariant, $"M {x} {ingress - Radius} Q {x} {ingress} {x + Radius} {ingress} H {port - ArrowLength}"),
-            Optional.None<ChainPoint>(),
-            compared.OnlyHere,
-            compared.Link.DescribeLink());
+    private static int ReadLaneX(int edge, int lane) => edge - Depth - Inset - lane * LaneWidth;
 
-    private static string ShapeArrowhead(int gutter, int ingress) =>
-        string.Create(Invariant, $"{gutter - 1 - ArrowLength},{ingress - 4} {gutter - 1},{ingress} {gutter - 1 - ArrowLength},{ingress + 4}");
+    private static ChainLine ShapeLine(ComparedLink compared, int lane, bool isOutermost, int edge)
+    {
+        var x = ReadLaneX(edge, lane);
+        var egress = ReadEgress(compared.Link.From);
+        var ingress = ReadIngress(compared.Link.To);
+        var path = string.Create(Invariant,
+            $"M {edge - Depth} {egress} H {x + Radius} Q {x} {egress} {x} {egress + Radius} V {ingress - Radius} Q {x} {ingress} {x + Radius} {ingress} H {edge + Depth - 1 - ArrowLength}");
+        var junction = isOutermost ? Optional.None<ChainPoint>() : Optional.Some(new ChainPoint(x, egress));
+        return new ChainLine(compared.Link, lane, path, junction, compared.OnlyHere, compared.Link.DescribeLink());
+    }
+
+    private static string ShapeArrowhead(int edge, int ingress)
+    {
+        var tip = edge + Depth - 1;
+        return string.Create(Invariant, $"{tip - ArrowLength},{ingress - 4} {tip},{ingress} {tip - ArrowLength},{ingress + 4}");
+    }
+
+    /// <summary>
+    /// The left part of a card, up to where the card itself starts: rounded corners, the notch cut in at the ingress, the
+    /// tab out at the egress. Filled like the card, so the two read as one.
+    /// </summary>
+    private static string ShapeCardEdge(int edge, int step)
+    {
+        var top = ReadCardTop(step);
+        var bottom = top + CardHeight;
+        var ingress = ReadIngress(step);
+        var egress = ReadEgress(step);
+        var right = edge + Depth + 2;
+        return string.Create(Invariant,
+            $"M {edge + CardRadius} {top} H {right} V {bottom} H {edge + CardRadius} Q {edge} {bottom} {edge} {bottom - CardRadius} "
+            + $"V {egress + Half} L {edge - Depth} {egress} L {edge} {egress - Half} "
+            + $"V {ingress + Half} L {edge + Depth} {ingress} L {edge} {ingress - Half} "
+            + $"V {top + CardRadius} Q {edge} {top} {edge + CardRadius} {top} Z");
+    }
 }

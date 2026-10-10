@@ -186,10 +186,10 @@ has a blocked step (the first one, with its message).
 **The chain** — the needs drawn as arrows, one per pair of steps: from the step that provided a need
 to the step that needs it, labelled with what flows (`#2 → #3: Slice · Reaper`); one whose needs came
 only from chance rules is marked *(chance)*. The web draws the links within a pass above the steps:
-every step has two connectors on its left, the lines into it ending at the top one (an arrowhead) and
-the line out of it starting at the bottom one (a dot). A step's line runs down its own lane and
-branches (a junction dot) into each later step it feeds; lines into the same step merge on its
-arrowhead; a line by chance is faded. Tapping a step lists what it needs and what it feeds. A link
+each step is a card whose left edge has a notch at the top, where the lines into it land (an
+arrowhead), and a tab at the bottom, where the lines out of it leave. A step's lines leave its tab as
+one stroke and split along it (a junction dot), one lane per later step they feed, the nearest
+splitting off first; lines into the same step merge on its notch; a line by chance is faded. Tapping a step lists what it needs and what it feeds. A link
 from the pass before (`previous pass #4 → #3: Unraveling Rounds`) shows in the step's needs, not as
 an arrow.
 
