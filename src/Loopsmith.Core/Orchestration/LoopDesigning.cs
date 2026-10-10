@@ -106,6 +106,10 @@ public static class LoopDesigning
                 .Bind(build => BuildValidation.ValidateBuild(build, session.Build.Catalog))
                 .Map(validated => CreateSession(validated, session.Design with { Build = file })));
 
+    /// <summary>A weapon's perks the way the build holds them, column by column (what the designer shows and the build check equips).</summary>
+    public static ImmutableArray<WeaponPerkSlot> ListPerkSlots(ValidatedBuild build, WeaponLoadout weapon) =>
+        WeaponRolling.ListPerkSlots(build.Catalog, weapon);
+
     private static Result<WeaponLoadout, string> FindWeapon(Build build, int weapon) =>
         weapon >= 0 && weapon < build.Weapons.Length
             ? new Result<WeaponLoadout, string>.Ok(build.Weapons[weapon])

@@ -45,7 +45,7 @@ public static class LoopFileParsing
             map.ReadOptional("note", note => note.ToText()),
             (_, action, note) => new LoopStep(action, note)));
 
-    internal static string FormatErrors(Errors errors) =>
+    private static string FormatErrors(Errors errors) =>
         string.Join(
             "\n",
             errors

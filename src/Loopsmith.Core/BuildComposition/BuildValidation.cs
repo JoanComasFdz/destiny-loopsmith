@@ -45,8 +45,9 @@ public static class BuildValidation
     }
 
     /// <summary>
-    /// Every slot the build fills, in the format's order. A weapon's perks are the ones it names and the ones its roll
-    /// picked that the catalog knows by hash (the rest of its roll sets nothing off; <see cref="CheckRolls"/> says so).
+    /// Every slot the build fills, in the format's order. A weapon's perks are what <see cref="WeaponRolling.ListPerkSlots"/>
+    /// places: each column's perk the catalog knows by hash, and the named perks in no column (a perk the catalog doesn't
+    /// know sets nothing off; <see cref="CheckRolls"/> says so).
     /// </summary>
     private static ImmutableArray<Slot> ListSlots(Build build, RuleCatalog catalog)
     {
@@ -57,7 +58,7 @@ public static class BuildValidation
 
         var exotic = CreateOptionalSlot(build.ExoticArmor, "exotic armor", ElementKind.ExoticArmor);
         var weaponPerks = build.Weapons.SelectMany(w =>
-            CreateSlots([.. w.Perks, .. ListRolledElements(catalog, w)], $"{w.Name} perk", ElementKind.WeaponPerk, ElementKind.ExoticWeapon));
+            CreateSlots(ListWeaponPerks(catalog, w), $"{w.Name} perk", ElementKind.WeaponPerk, ElementKind.ExoticWeapon));
         return
         [
             .. CreateOptionalSlot(build.Abilities.Super, "super", ElementKind.Super),
@@ -74,8 +75,14 @@ public static class BuildValidation
         ];
     }
 
-    private static IEnumerable<ElementId> ListRolledElements(RuleCatalog catalog, WeaponLoadout weapon) =>
-        ListPicks(weapon).SelectMany(pick => catalog.FindElementByHash(pick.Hash).Match(element => new[] { element.Value.Id }, _ => []));
+    private static IEnumerable<ElementId> ListWeaponPerks(RuleCatalog catalog, WeaponLoadout weapon) =>
+        WeaponRolling.ListPerkSlots(catalog, weapon).SelectMany(slot => slot.Match(
+            named => [named.Perk],
+            fixedPerk => ListElement(catalog, Optional.Some(fixedPerk.Perk)),
+            rolling => ListElement(catalog, rolling.Perk)));
+
+    private static IEnumerable<ElementId> ListElement(RuleCatalog catalog, Optional<ItemHash> hash) =>
+        hash.Bind(catalog.FindElementByHash).Match(element => new[] { element.Value.Id }, _ => []);
 
     private sealed record RollPick(int Column, ItemHash Hash);
 
@@ -139,7 +146,8 @@ public static class BuildValidation
 
     /// <summary>
     /// A weapon's roll, against the manifest excerpt: a pick outside its column's perks (or past its last column) is a
-    /// warning; a pick the catalog doesn't know is part of the weapon, not of the trace.
+    /// warning, and so is a named perk whose column holds another; a pick the catalog doesn't know is part of the
+    /// weapon, not of the trace.
     /// </summary>
     private static IEnumerable<BuildIssue> CheckRolls(Build build, RuleCatalog catalog) =>
         build.Weapons.SelectMany(weapon => CheckRoll(catalog, weapon));
@@ -158,9 +166,13 @@ public static class BuildValidation
             .Where(pick => !catalog.FindElementByHash(pick.Hash).IsSome())
             .Select(pick => catalog.Manifest.DescribeTypedItemHash(pick.Hash))
             .ToImmutableArray();
+        var displaced = WeaponRolling.ListDisplacedPerks(catalog, weapon)
+            .Select(id => new BuildIssue(Severity.Warning,
+                $"{weapon.Name}: '{(catalog.Elements.TryGetValue(id, out var element) ? element.Name : id.Value)}' gives way to the other perk of its column — a column holds one perk."));
         return
         [
             .. misplaced,
+            .. displaced,
             .. unknown.IsEmpty
                 ? []
                 : new[] { new BuildIssue(Severity.Info, $"{weapon.Name}'s roll: {string.Join(", ", unknown)} — not in the rule catalog yet, so {(unknown.Length == 1 ? "it sets" : "they set")} nothing off.") },

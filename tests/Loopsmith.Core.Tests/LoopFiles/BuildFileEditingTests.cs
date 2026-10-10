@@ -83,6 +83,16 @@ public sealed class BuildFileEditingTests
         Assert.Contains("the build has no weapons", none.Failure);
     }
 
+    [Theory]
+    [InlineData("weapons: [\n  { slot: kinetic }\nstats: {}\n")]
+    [InlineData("weapons:\n  - { slot: kinetic\n")]
+    public void Unreadable_yaml_is_an_error_not_an_exception(string text)
+    {
+        var edited = BuildFileEditing.ReplaceWeapon(new SourceText("b.yaml", text), 0, Picked);
+
+        Assert.Contains("b.yaml:", Assert.IsType<Result<string, string>.Error>(edited).Failure);
+    }
+
     private static string ReplaceWeapon(SourceText file, int index, WeaponLoadout weapon) =>
         BuildFileEditing.ReplaceWeapon(file, index, weapon).Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
 

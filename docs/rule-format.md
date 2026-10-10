@@ -406,10 +406,11 @@ stats: { weapons: 47, class: 104, grenade: 145, super: 27, melee: 79 }   # any s
   are required; `archetype` (a kebab-case word), `perks` (element ids), `hash` (its manifest item: its icon
   and its trait columns) and `roll` are optional. The name labels its actions ("Festival Flight (hit 5)").
 * `roll`: the perk picked in each of the weapon's trait columns, by manifest hash, in column order; `"?"`
-  for a column not picked (`roll: ["?", 2209918983]`). It is what the designer's perk picker writes. The
-  weapon's perks are its `perks` and every roll perk the catalog knows by hash; a roll perk it doesn't
-  know (an enhanced version, say) is part of the weapon, not of the trace. A perk named in `perks` sits in
-  the column the excerpt has it in; picking that column replaces it.
+  for a column not picked (`roll: ["?", 2209918983]`). It is what the designer's perk picker writes. A
+  column holds one perk: the roll's pick, else the perk `perks` names in it, else (a column that doesn't
+  roll, an exotic's) its only one. The weapon's perks are what its columns hold that the catalog knows by
+  hash, and the perks `perks` names that are in no column; the designer shows exactly these. A perk the
+  catalog doesn't know (an enhanced version, say) is part of the weapon, not of the trace.
 * `stats`: any of `weapons`, `health`, `class`, `grenade`, `super`, `melee`, whole numbers 0..200.
 * `leftOut` (a build from a DIM link): what the loadout had that the catalog doesn't know, by manifest hash
   and where the loadout listed it — `leftOut: { items: [2005], subclassPlugs: [1001], armorMods: [3007],
@@ -434,6 +435,7 @@ stats: { weapons: 47, class: 104, grenade: 145, super: 27, melee: 79 }   # any s
 | `Left out of the build: <n> items, <n> subclass plugs, … from the DIM loadout — not in the rule catalog yet.` | Info |
 | `<weapon>'s roll: <perks> — not in the rule catalog yet, so they set nothing off.` — perks named as "Slice (Enhanced Trait)" | Info |
 | `<weapon>'s roll: <perk> isn't a perk of its column <n> in the manifest excerpt.` — only when the excerpt has the weapon's columns | Warning |
+| `<weapon>: '<perk>' gives way to the other perk of its column — a column holds one perk.` — a perk `perks` names in a column the roll (or another named perk) already fills; it doesn't count | Warning |
 | `'<name>' has no authored rules yet — it is inert in the trace.` | Warning |
 | a rule that doesn't stack with an equipped element ([above](#rules-that-dont-stack)) | Warning |
 | `Build pinned catalog <pinned>; using <current>.` | Info |

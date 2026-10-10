@@ -103,7 +103,44 @@ public sealed class PerkPickingTests
                 "Festival Flight's roll: Slice (Trait) isn't a perk of its column 3 in the manifest excerpt.",
             ],
             validated.Issues.Where(issue => issue.Severity == Severity.Warning && issue.Message.Contains("roll", StringComparison.Ordinal)).Select(issue => issue.Message));
-        Assert.Contains(validated.Equipped, equipped => equipped.Element.Id.Value == "slice");                 // still a perk the weapon has
+        Assert.Contains(validated.Equipped, equipped => equipped.Element.Id.Value == "attrition-orbs");        // shown in column 1, so it counts
+        Assert.DoesNotContain(validated.Equipped, equipped => equipped.Element.Id.Value == "slice");           // there is no column 3 to show it in
+    }
+
+    [Fact]
+    public void A_column_holds_one_perk_and_the_build_check_equips_what_the_designer_shows()
+    {
+        var session = StartOwnersDimDesign();
+        var flight = session.Build.Build.Weapons[0] with { Perks = [ElementId.From("slice"), ElementId.From("attrition-orbs")], Roll = [Optional.Some(ItemHash.From(EnhancedSlice))] };
+
+        var validated = BuildValidation.ValidateBuild(session.Build.Build with { Weapons = [flight] }, Catalog)
+            .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
+        var slots = LoopDesigning.ListPerkSlots(validated, flight);
+
+        Assert.Equal(
+            [Optional.Some(ItemHash.From(EnhancedSlice)), Optional.Some(ItemHash.From(AttritionOrbs))],
+            slots.Select(slot => Assert.IsType<WeaponPerkSlot.Rolling>(slot).Perk));
+        Assert.DoesNotContain(validated.Equipped, equipped => equipped.Element.Id.Value == "slice");
+        Assert.Contains(validated.Equipped, equipped => equipped.Element.Id.Value == "attrition-orbs");
+        Assert.Contains(validated.Issues, issue => issue.Severity == Severity.Warning
+            && issue.Message == "Festival Flight: 'Slice' gives way to the other perk of its column — a column holds one perk.");
+    }
+
+    [Fact]
+    public void A_column_that_does_not_roll_holds_its_perk_and_a_perk_in_no_column_is_listed_after()
+    {
+        var session = StartOwnersDimDesign();
+        var thunderlord = session.Build.Build.Weapons[1] with { Perks = [ElementId.From("slice")] };
+
+        var slots = LoopDesigning.ListPerkSlots(session.Build, thunderlord);
+
+        Assert.Equal(
+            [
+                new WeaponPerkSlot.Fixed(0, ItemHash.From(1419069769u)),
+                new WeaponPerkSlot.Fixed(1, ItemHash.From(2779035018u)),
+                new WeaponPerkSlot.Named(ElementId.From("slice")),
+            ],
+            slots);
     }
 
     [Fact]

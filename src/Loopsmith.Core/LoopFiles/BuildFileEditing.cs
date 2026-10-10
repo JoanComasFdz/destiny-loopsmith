@@ -28,7 +28,10 @@ public static class BuildFileEditing
 
     private sealed record TextSpan(int Start, int End);
 
-    /// <summary>The slice boundary for YamlDotNet's parser: its exceptions become an error here, once.</summary>
+    /// <summary>
+    /// The slice boundary for YamlDotNet's parser: its foreseeable exceptions become an error here, once (it throws
+    /// <c>InvalidOperationException</c> on some unclosed flow collections, as <see cref="YamlReading.LoadDocument"/> notes).
+    /// </summary>
     private static Result<ImmutableArray<ParsingEvent>, string> ReadEvents(SourceText file)
     {
         try
@@ -39,6 +42,10 @@ public static class BuildFileEditing
         catch (YamlException exception)
         {
             return new Result<ImmutableArray<ParsingEvent>, string>.Error($"{file.Path}:{exception.Start.Line}: invalid YAML: {exception.Message}");
+        }
+        catch (InvalidOperationException exception)
+        {
+            return new Result<ImmutableArray<ParsingEvent>, string>.Error($"{file.Path}:1: invalid YAML (check for an unclosed [ or {{): {exception.Message}");
         }
     }
 

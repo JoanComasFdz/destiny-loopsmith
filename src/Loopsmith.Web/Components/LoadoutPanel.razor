@@ -66,24 +66,24 @@
                             <span class="weapon-line-sub">@weapon.Slot.DescribeWeaponSlot()@(weapon.Archetype is Optional<string>.Some archetype ? $" · {DomainPhrasing.DescribeArchetype(archetype.Value)}" : "")</span>
                         </div>
                         <div class="weapon-perks" aria-label="Perks">
-                            @foreach (var slot in weapon.Perks)
+                            @foreach (var square in weapon.Perks)
                             {
-                                @if (CanPick && slot.Column is Optional<int>.Some column && !slot.Options.IsEmpty)
+                                @if (CanPick && square is PerkSquare.Pickable pickable)
                                 {
-                                    <button type="button" class="perk-slot @(IsOpen(weapon.Index, column.Value) ? "open" : "")" data-column="@column.Value"
-                                            aria-expanded="@(IsOpen(weapon.Index, column.Value) ? "true" : "false")"
-                                            title="@DescribePickTitle(weapon, column.Value, slot)" @onclick="() => TogglePicker(weapon.Index, column.Value)">
-                                        @RenderPerk(slot)
+                                    <button type="button" class="perk-slot @(IsOpen(weapon.Index, pickable.Column) ? "open" : "")" data-column="@pickable.Column"
+                                            aria-expanded="@(IsOpen(weapon.Index, pickable.Column) ? "true" : "false")"
+                                            title="@DescribePickTitle(weapon, pickable)" @onclick="() => TogglePicker(weapon.Index, pickable.Column)">
+                                        @RenderPerk(square)
                                     </button>
                                 }
                                 else
                                 {
-                                    @RenderPerk(slot)
+                                    @RenderPerk(square)
                                 }
                             }
                         </div>
                     </li>
-                    @if (FindOpenSlot(weapon) is Optional<OpenSlot>.Some open)
+                    @if (FindOpenColumn(weapon) is Optional<PerkSquare.Pickable>.Some open)
                     {
                         <li class="perk-picker-row">
                             <div class="perk-picker" role="dialog" tabindex="-1" data-testid="perk-picker" data-weapon="@weapon.Index" data-column="@open.Value.Column"
@@ -93,9 +93,9 @@
                                     <button type="button" class="btn ghost icon" title="Close" aria-label="Close" data-action="perk-picker-close" @onclick="ClosePicker">✕</button>
                                 </div>
                                 <div class="perk-options">
-                                    @foreach (var option in open.Value.Slot.Options)
+                                    @foreach (var option in open.Value.Options)
                                     {
-                                        var picked = open.Value.Slot.Picked == Optional.Some(option.Hash);
+                                        var picked = open.Value.Perk.Map(perk => perk.Hash) == Optional.Some(option.Hash);
                                         <button type="button" class="perk-option @(picked ? "picked" : "") @(option.Tile.InRules ? "in-rules" : "")"
                                                 data-hash="@option.Hash.Value" aria-pressed="@(picked ? "true" : "false")"
                                                 title="@DescribeTooltip(option.Tile)" @onclick="() => PickPerkAsync(weapon.Index, open.Value.Column, Optional.Some(option.Hash))">
@@ -109,7 +109,7 @@
                                 </div>
                                 <div class="perk-picker-foot">
                                     <span class="muted">@PickerNote</span>
-                                    @if (open.Value.Slot.Perk.IsSome())
+                                    @if (open.Value.Perk.IsSome())
                                     {
                                         <button type="button" class="btn" data-action="perk-clear" @onclick="() => PickPerkAsync(weapon.Index, open.Value.Column, Optional.None<ItemHash>())">Clear (?)</button>
                                     }
@@ -192,8 +192,6 @@
 
     private sealed record OpenPicker(int Weapon, int Column);
 
-    private sealed record OpenSlot(int Column, PerkSlot Slot);
-
     private Optional<OpenPicker> picker = Optional.None<OpenPicker>();
     private bool focusPicker;
     private ElementReference pickerElement;
@@ -212,10 +210,10 @@
     private bool IsOpen(int weapon, int column) =>
         picker == Optional.Some(new OpenPicker(weapon, column));
 
-    private Optional<OpenSlot> FindOpenSlot(WeaponView weapon) =>
+    private Optional<PerkSquare.Pickable> FindOpenColumn(WeaponView weapon) =>
         picker.Bind(open => open.Weapon == weapon.Index
-            ? weapon.Perks.Where(slot => slot.Column == Optional.Some(open.Column)).Select(slot => Optional.Some(new OpenSlot(open.Column, slot))).FindFirstSome()
-            : Optional.None<OpenSlot>());
+            ? weapon.Perks.OfType<PerkSquare.Pickable>().Where(column => column.Column == open.Column).Select(Optional.Some).FindFirstSome()
+            : Optional.None<PerkSquare.Pickable>());
 
     private void TogglePicker(int weapon, int column)
     {
@@ -240,20 +238,24 @@
         await OnPickPerk.InvokeAsync(new PerkPick(weapon, column, perk));                        // impure
     }
 
-    private RenderFragment RenderPerk(PerkSlot slot) => __builder =>
+    private RenderFragment RenderPerk(PerkSquare square) => __builder =>
     {
-        @if (slot.Perk is Optional<IconTile>.Some perk)
+        @switch (square)
         {
-            @RenderTile(perk.Value, "perk")
-        }
-        else
-        {
-            <span class="icon-tile perk empty-perk" title="@(CanPick ? PickPerk : MissingPerk)" aria-label="Perk not picked">?</span>
+            case PerkSquare.Shown shown:
+                @RenderTile(shown.Perk, "perk")
+                break;
+            case PerkSquare.Pickable { Perk: Optional<PickedPerk>.Some held }:
+                @RenderTile(held.Value.Tile, "perk")
+                break;
+            default:
+                <span class="icon-tile perk empty-perk" title="@(CanPick ? PickPerk : MissingPerk)" aria-label="Perk not picked">?</span>
+                break;
         }
     };
 
-    private static string DescribePickTitle(WeaponView weapon, int column, PerkSlot slot) =>
-        $"{weapon.Weapon.Name}, column {column + 1}: {slot.Perk.Match(perk => perk.Value.Name, _ => DomainPhrasing.Unknown)} — pick a perk";
+    private static string DescribePickTitle(WeaponView weapon, PerkSquare.Pickable column) =>
+        $"{weapon.Weapon.Name}, column {column.Column + 1}: {column.Perk.Match(perk => perk.Value.Tile.Name, _ => DomainPhrasing.Unknown)} — pick a perk";
 
     private static string DescribeOption(PerkOption option) =>
         string.Join(" · ", new[] { option.Type.UnwrapOr(""), option.Tile.InRules ? "in the rules" : "" }.Where(part => part.Length > 0));
