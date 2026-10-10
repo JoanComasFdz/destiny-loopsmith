@@ -1,6 +1,8 @@
 using System.Collections.Immutable;
+using System.Globalization;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
+using Loopsmith.Core.Phrasing;
 using static Loopsmith.Core.BuildParsing.ResultAccumulation;
 using static Loopsmith.Core.BuildParsing.YamlReading;
 using Errors = System.Collections.Immutable.ImmutableArray<Loopsmith.Core.BuildParsing.ParseError>;
@@ -17,10 +19,12 @@ public static class BuildFileParsing
     [
         "name", "author", "source", "catalog", "class", "subclass", "super", "grenade", "melee", "classAbility",
         "aspects", "fragments", "exoticArmor", "armorSetBonuses", "armorMods", "artifactPerks", "weapons", "stats",
+        "leftOut",
     ];
 
     private static readonly ImmutableArray<string> WeaponKeys = ["slot", "name", "type", "archetype", "perks"];
     private static readonly ImmutableArray<string> StatKeys = ["weapons", "health", "class", "grenade", "super", "melee"];
+    private static readonly ImmutableArray<string> LeftOutKeys = ["items", "subclassPlugs", "armorMods", "artifactPerks"];
 
     private static readonly StatLine NoStats = new(
         Optional.None<StatValue>(),
@@ -41,6 +45,13 @@ public static class BuildFileParsing
             .MapError(FormatErrors);
 
     private static Result<Build, Errors> ReadBuild(YamlMap map) =>
+        Combine(
+            ReadEquipment(map),
+            map.ReadOrDefault("leftOut", ReadLeftOut, []),
+            (build, leftOut) => build with { LeftOut = leftOut });
+
+    /// <summary>Everything but <c>leftOut</c> (one <c>Combine</c> takes at most 16 inputs).</summary>
+    private static Result<Build, Errors> ReadEquipment(YamlMap map) =>
         Combine(
             map.CheckKeys(BuildKeys),
             map.ReadRequired("name", ReadName),
@@ -74,15 +85,22 @@ public static class BuildFileParsing
                 armorMods,
                 artifactPerks,
                 weapons,
-                stats));
+                stats,
+                []));
 
+    /// <summary>Each ability is an element id, or <c>"?"</c> for one the build has but Loopsmith can't name.</summary>
     private static Result<AbilityLoadout, Errors> ReadAbilities(YamlMap map) =>
         Combine(
-            map.ReadRequired("super", ReadElementId),
-            map.ReadRequired("grenade", ReadElementId),
-            map.ReadRequired("melee", ReadElementId),
-            map.ReadRequired("classAbility", ReadElementId),
+            map.ReadRequired("super", ReadAbility),
+            map.ReadRequired("grenade", ReadAbility),
+            map.ReadRequired("melee", ReadAbility),
+            map.ReadRequired("classAbility", ReadAbility),
             (super, grenade, melee, classAbility) => new AbilityLoadout(super, grenade, melee, classAbility));
+
+    private static Result<Optional<ElementId>, Errors> ReadAbility(YamlValue value) =>
+        value.ParseWith(text => text == DomainPhrasing.Unknown
+            ? new Result<Optional<ElementId>, string>.Ok(Optional.None<ElementId>())
+            : ElementId.TryFrom(text).ToResult().Map(Optional.Some));
 
     private static Result<WeaponLoadout, Errors> ReadWeapon(YamlValue value) =>
         value.ToMap().Bind(map => Combine(
@@ -106,6 +124,27 @@ public static class BuildFileParsing
             map.ReadOptional("melee", ReadStatValue),
             (_, weapons, health, guardianClass, grenade, super, melee) =>
                 new StatLine(weapons, health, guardianClass, grenade, super, melee)));
+
+    /// <summary>
+    /// <c>leftOut: { items: [2531963421], subclassPlugs: […], armorMods: […], artifactPerks: […] }</c> — the manifest
+    /// hashes of what the DIM loadout had that the catalog doesn't know yet, by where the loadout listed them.
+    /// </summary>
+    private static Result<ImmutableArray<LeftOutItem>, Errors> ReadLeftOut(YamlValue value) =>
+        value.ToMap().Bind(map => Combine(
+            map.CheckKeys(LeftOutKeys),
+            map.ReadOrDefault("items", hashes => ReadLeftOutPart(hashes, LoadoutPart.Item), []),
+            map.ReadOrDefault("subclassPlugs", hashes => ReadLeftOutPart(hashes, LoadoutPart.SubclassPlug), []),
+            map.ReadOrDefault("armorMods", hashes => ReadLeftOutPart(hashes, LoadoutPart.ArmorMod), []),
+            map.ReadOrDefault("artifactPerks", hashes => ReadLeftOutPart(hashes, LoadoutPart.ArtifactPerk), []),
+            (_, items, plugs, mods, perks) => items.AddRange(plugs).AddRange(mods).AddRange(perks)));
+
+    private static Result<ImmutableArray<LeftOutItem>, Errors> ReadLeftOutPart(YamlValue value, LoadoutPart part) =>
+        value.ReadEach(value.Label, hash => ReadItemHash(hash).Map(read => new LeftOutItem(part, read)));
+
+    private static Result<ItemHash, Errors> ReadItemHash(YamlValue value) =>
+        value.ParseWith(text => uint.TryParse(text, NumberStyles.None, CultureInfo.InvariantCulture, out var hash)
+            ? ItemHash.TryFrom(hash).ToResult()
+            : new Result<ItemHash, string>.Error($"'{text}' is not a manifest hash (an unsigned 32-bit number)"));
 
     private static Result<StatValue, Errors> ReadStatValue(YamlValue value) =>
         value.ParseWith(text => ParseInteger(text).Bind(number => StatValue.TryFrom(number).ToResult()

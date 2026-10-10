@@ -23,6 +23,8 @@ public static class BuildValidation
             .SelectMany(r => r.Element.Match(some => new[] { (r.Slot, Element: some.Value) }, _ => []))
             .ToImmutableArray();
         var issues = resolved.SelectMany(r => r.Issues)
+            .Concat(CheckUnknownAbilities(build))
+            .Concat(CheckLeftOut(build))
             .Concat(CheckAspects(build, catalog))
             .Concat(CheckFragmentSlots(build, catalog))
             .Concat(CheckInertElements(elements.Select(e => e.Element)))
@@ -43,21 +45,20 @@ public static class BuildValidation
 
     private static ImmutableArray<Slot> ListSlots(Build build)
     {
-        static Slot CreateSlot(ElementId id, string name, params ElementKind[] accepts) => new(id, name, [.. accepts]);
         static IEnumerable<Slot> CreateSlots(IEnumerable<ElementId> ids, string name, params ElementKind[] accepts) =>
             ids.Select(id => new Slot(id, name, [.. accepts]));
+        static IEnumerable<Slot> CreateOptionalSlot(Optional<ElementId> id, string name, ElementKind accepts) =>
+            CreateSlots(id.Match(some => new[] { some.Value }, _ => []), name, accepts);
 
-        var exotic = build.ExoticArmor.Match(
-            some => new[] { CreateSlot(some.Value, "exotic armor", ElementKind.ExoticArmor) },
-            _ => []);
+        var exotic = CreateOptionalSlot(build.ExoticArmor, "exotic armor", ElementKind.ExoticArmor);
         var weaponPerks = build.Weapons.SelectMany(w =>
             CreateSlots(w.Perks, $"{w.Name} perk", ElementKind.WeaponPerk, ElementKind.ExoticWeapon));
         return
         [
-            CreateSlot(build.Abilities.Super, "super", ElementKind.Super),
-            CreateSlot(build.Abilities.Grenade, "grenade", ElementKind.Grenade),
-            CreateSlot(build.Abilities.Melee, "melee", ElementKind.Melee),
-            CreateSlot(build.Abilities.ClassAbility, "class ability", ElementKind.ClassAbility),
+            .. CreateOptionalSlot(build.Abilities.Super, "super", ElementKind.Super),
+            .. CreateOptionalSlot(build.Abilities.Grenade, "grenade", ElementKind.Grenade),
+            .. CreateOptionalSlot(build.Abilities.Melee, "melee", ElementKind.Melee),
+            .. CreateOptionalSlot(build.Abilities.ClassAbility, "class ability", ElementKind.ClassAbility),
             .. CreateSlots(build.Aspects, "aspect", ElementKind.Aspect),
             .. CreateSlots(build.Fragments, "fragment", ElementKind.Fragment),
             .. exotic,
@@ -100,6 +101,28 @@ public static class BuildValidation
         var isNeutral = element.Affinity is Affinity.Neutral or Affinity.Kinetic;
         return !isSubclassBound || isNeutral || subclass == Subclass.Prismatic || element.Affinity == subclass.ToAffinity();
     }
+
+    /// <summary>An ability given as "?" is part of the build but not of the trace: it sets nothing off.</summary>
+    private static IEnumerable<BuildIssue> CheckUnknownAbilities(Build build)
+    {
+        var abilities = build.Abilities;
+        var unknown = new[]
+            {
+                ("super", abilities.Super), ("grenade", abilities.Grenade), ("melee", abilities.Melee),
+                ("class ability", abilities.ClassAbility),
+            }
+            .Where(slot => !slot.Item2.IsSome())
+            .Select(slot => slot.Item1)
+            .ToImmutableArray();
+        return unknown.IsEmpty
+            ? []
+            : [new BuildIssue(Severity.Info, $"Unknown ({DomainPhrasing.Unknown}): {string.Join(", ", unknown)} — not in the rule catalog yet, so {(unknown.Length == 1 ? "it sets" : "they set")} nothing off.")];
+    }
+
+    private static IEnumerable<BuildIssue> CheckLeftOut(Build build) =>
+        build.LeftOut.IsEmpty
+            ? []
+            : [new BuildIssue(Severity.Info, $"Left out of the build: {build.LeftOut.DescribeLeftOut()} from the DIM loadout — not in the rule catalog yet.")];
 
     private static IEnumerable<BuildIssue> CheckAspects(Build build, RuleCatalog catalog)
     {

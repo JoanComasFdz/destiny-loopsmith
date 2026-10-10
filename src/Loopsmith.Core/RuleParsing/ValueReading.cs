@@ -1,6 +1,8 @@
+using System.Collections.Immutable;
 using System.Globalization;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
+using YamlDotNet.RepresentationModel;
 using Errors = System.Collections.Immutable.ImmutableArray<Loopsmith.Core.RuleParsing.ParseError>;
 
 namespace Loopsmith.Core.RuleParsing;
@@ -32,6 +34,12 @@ internal static class ValueReading
         value.ParseWith(text => uint.TryParse(text, NumberStyles.None, CultureInfo.InvariantCulture, out var hash)
             ? ItemHash.TryFrom(hash).ToResult()
             : new Result<ItemHash, string>.Error($"'{text}' is not a manifest hash (an unsigned 32-bit number)"));
+
+    /// <summary><c>hash: 1727069364</c>, or a list when copies of the item share its text (<c>hash: [3712696020, 2996369932]</c>).</summary>
+    internal static Result<ImmutableArray<ItemHash>, Errors> ReadItemHashes(YamlValue value) =>
+        value.Node is YamlSequenceNode
+            ? value.ReadEach("hash", ReadItemHash)
+            : ReadItemHash(value).Map(hash => ImmutableArray.Create(hash));
 
     /// <summary>A kebab-case word that is not an id of the glossary (weapon archetypes, weapon stats).</summary>
     internal static Result<string, Errors> ReadSlug(YamlValue value) =>

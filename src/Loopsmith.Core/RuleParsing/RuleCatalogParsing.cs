@@ -15,8 +15,8 @@ public static class RuleCatalogParsing
 {
     /// <summary>
     /// Parses the glossary, then every elements file against it; checks every status, pickup and summon
-    /// reference (and whether a buff or a debuff belongs in that position), that element ids are
-    /// unique across files and that <c>doesNotStackWith</c> names other elements without leading back to its own
+    /// reference (and whether a buff or a debuff belongs in that position), that element ids (and
+    /// manifest hashes) are unique across files and that <c>doesNotStackWith</c> names other elements without leading back to its own
     /// (ADRs D6). Every problem of the file set is reported at once, one <c>file:line: message</c> per line. If the
     /// glossary itself is missing or broken, the element files are still parsed for their own errors, but references
     /// are not checked against it.
@@ -35,8 +35,9 @@ public static class RuleCatalogParsing
         var located = elementFiles.SelectMany(file => file.Elements).ToImmutableArray();
         var elements = LocatedCollections.ToUniqueDictionary(located, element => element.Id, "element");
         var stacking = ReferenceChecking.CheckStackingReferences(located);
+        var hashes = ReferenceChecking.CheckUniqueHashes(located);
         var version = ComputeCatalogVersion(ordered);
-        return Combine(glossary, fileErrors, elements, stacking, (vocabulary, _, byId, _) => new RuleCatalog(version, vocabulary, byId))
+        return Combine(glossary, fileErrors, elements, stacking, hashes, (vocabulary, _, byId, _, _) => new RuleCatalog(version, vocabulary, byId))
             .MapError(FormatErrors);
     }
 

@@ -33,7 +33,7 @@ shared as a link, replayed, analysed and compared with another order.
 
 | ID | Requirement | Status |
 |---|---|---|
-| FR-1 | **Compose a build** like DIM: class, subclass, super, grenade, melee, class ability, aspects, fragments, exotic armor, armor set bonuses, armor mods (repeat = stacked copies), artifact perks, weapons with type, archetype and perks, stats. | Build files (`build.yaml`); a picker UI over the catalog is open |
+| FR-1 | **Compose a build** like DIM: class, subclass, super, grenade, melee, class ability, aspects, fragments, exotic armor, armor set bonuses, armor mods (repeat = stacked copies), artifact perks, weapons with type, archetype and perks, stats. | Build files (`build.yaml`) or a DIM link (FR-14); a picker UI over the catalog is open |
 | FR-2 | **Validate a build** against the rule catalog: unknown elements, wrong slots, another class, another affinity, aspect and fragment limits, elements with no rules (inert), rules that don't stack with an equipped element. | Done; armor energy budget and the exotic weapon limit are open |
 | FR-3 | **Explain a build**: every trigger it reacts to → the outcomes it fires `[source]`, in the shape of a hand-written build note. | Done (`explain`, web) |
 | FR-4 | **Play one step** against the current state — a trigger (dodge, grenade kill on 3 enemies, pick up an orb, an air move) or a declared state (D3) — and get every rule it fires, cascades included, which element fired it and why, and what is available next. | Done (`trace`, `play`, web designer) |
@@ -46,6 +46,7 @@ shared as a link, replayed, analysed and compared with another order.
 | FR-11 | **Ingest** a dated Compendium snapshot and Clarity; a **coverage report** (elements without rules, names that don't resolve, numbers that disagree with the sources). | Open: the 2026-10-09 snapshot's numbers are in the rules by hand |
 | FR-12 | **Draft rules** from the Compendium's "On X:" phrasing for a human to confirm (D10). | Open |
 | FR-13 | **Join the Bungie manifest**: hashes, official names, icons (D14). | Open |
+| FR-14 | **Start from a DIM link** (D27): a dim.gg share or a link carrying its loadout → a build of what the catalog recognises by hash, named after the loadout with the link as its source; an ability without a hash is `?`, everything unrecognised is listed (`leftOut`), nothing is guessed. | Done for links that carry their loadout and for the Arc, Solar and Void subclasses; dim.gg links wait on the DIM API registration ([hosting.md](hosting.md#dim-links)); weapons, supers, grenades, melees and the other subclasses wait on FR-13 |
 
 ## 3. Non-functional requirements
 
@@ -67,4 +68,5 @@ shared as a link, replayed, analysed and compared with another order.
 
 * Simulating combat: quantities, time, cooldowns, energy, damage, health, DPS (D1).
 * PvP numbers (the `[PvP]` part of a value is read and dropped), enemy AI, positioning.
-* Importing a player's inventory (Bungie OAuth, DIM loadouts) — possible after the manifest join.
+* Importing a player's inventory (Bungie OAuth) — possible after the manifest join. A shared DIM loadout
+  can start a build (FR-14).

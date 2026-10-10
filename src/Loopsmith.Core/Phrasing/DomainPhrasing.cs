@@ -10,6 +10,9 @@ public static class DomainPhrasing
 {
     private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
 
+    /// <summary>What is shown for something not known: a "?" number, an ability Loopsmith can't name.</summary>
+    public const string Unknown = "?";
+
     // ── numbers ────────────────────────────────────────────────────────────────
 
     public static string FormatPercent(this GameValue value) =>
@@ -24,7 +27,7 @@ public static class DomainPhrasing
             known => known.Value.ToString("0.##", Invariant),
             perModCount => string.Join("|", perModCount.Values.Select(v => v.ToString("0.##", Invariant))),
             approximate => "~" + approximate.Value.ToString("0.##", Invariant),
-            _ => "?");
+            _ => Unknown);
 
     public static string FormatSeconds(this Seconds seconds) =>
         seconds.Value.ToString("0.#", Invariant) + "s";
@@ -33,6 +36,32 @@ public static class DomainPhrasing
         (fraction * 100m).ToString("0.#", Invariant) + "%";
 
     // ── names ──────────────────────────────────────────────────────────────────
+
+    public static string DescribeLoadoutPart(this LoadoutPart part) =>
+        part switch
+        {
+            LoadoutPart.Item => "item",
+            LoadoutPart.SubclassPlug => "subclass plug",
+            LoadoutPart.ArmorMod => "armor mod",
+            _ => "artifact perk",
+        };
+
+    /// <summary>The heading for a part's left-out hashes: "Items", "Subclass plugs", "Armor mods", "Artifact perks".</summary>
+    public static string DescribeLoadoutParts(this LoadoutPart part) =>
+        part switch
+        {
+            LoadoutPart.Item => "Items",
+            LoadoutPart.SubclassPlug => "Subclass plugs",
+            LoadoutPart.ArmorMod => "Armor mods",
+            _ => "Artifact perks",
+        };
+
+    /// <summary>"3 items, 1 subclass plug, 2 armor mods": what a DIM loadout had that its build leaves out.</summary>
+    public static string DescribeLeftOut(this ImmutableArray<LeftOutItem> leftOut) =>
+        string.Join(", ", leftOut
+            .GroupBy(item => item.Part)
+            .OrderBy(group => group.Key)
+            .Select(group => $"{group.Count()} {group.Key.DescribeLoadoutPart()}{(group.Count() == 1 ? "" : "s")}"));
 
     public static string DescribeAbility(this AbilityKind kind) =>
         kind switch

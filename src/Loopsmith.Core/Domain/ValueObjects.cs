@@ -44,9 +44,23 @@ public readonly partial struct SummonId
         ElementId.IsSlug(value) ? Validation.Ok : Validation.Invalid($"'{value}' is not a kebab-case summon id");
 }
 
-/// <summary>Bungie manifest hash — the long-term identity (D14); optional until the manifest join exists.</summary>
+/// <summary>Bungie manifest hash — the long-term identity (D14); optional until the manifest join exists. Never 0.</summary>
 [ValueObject<uint>]
-public readonly partial struct ItemHash;
+public readonly partial struct ItemHash
+{
+    private static Validation Validate(uint value) =>
+        value > 0 ? Validation.Ok : Validation.Invalid("A manifest hash is never 0");
+}
+
+/// <summary>The id of a dim.gg share (<c>dim.gg/4j5nz4q</c>): 7 or more lowercase letters and digits, as DIM makes them.</summary>
+[ValueObject<string>]
+public readonly partial struct DimShareId
+{
+    private static Validation Validate(string value) =>
+        value.Length >= 7 && value.All(c => c is (>= 'a' and <= 'z') or (>= '0' and <= '9'))
+            ? Validation.Ok
+            : Validation.Invalid($"'{value}' is not a dim.gg share id");
+}
 
 /// <summary>Version of the rule catalog a build was authored against (requirements FR-10, ADRs D15).</summary>
 [ValueObject<string>]

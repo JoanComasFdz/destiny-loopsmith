@@ -8,13 +8,20 @@ namespace Loopsmith.Web.Hosting;
 /// <summary>A build shipped with the app, and the fresh design session it starts (or why it cannot).</summary>
 public sealed record BundledBuild(string Slug, SourceText File, Result<DesignSession, string> Fresh);
 
+/// <summary>A saved DIM share shipped with the app (<c>builds/&lt;slug&gt;/dim-loadout.json</c>), and the design it starts.</summary>
+public sealed record BundledDimBuild(string Slug, SourceText File, Result<DesignSession, string> Fresh);
+
 /// <summary>A loop file shipped with the app (<c>builds/&lt;slug&gt;/loops/*.loop.yaml</c>), imported once at startup.</summary>
 public sealed record BundledLoop(string Slug, SourceText File, Result<DesignSession, string> Opened);
 
 /// <summary>Everything the app needs after startup: the parsed catalog once, the bundled builds and loops.</summary>
-public sealed record LoopsmithBundle(RuleCatalog Catalog, ImmutableArray<BundledBuild> Builds, ImmutableArray<BundledLoop> Loops);
+public sealed record LoopsmithBundle(
+    RuleCatalog Catalog,
+    ImmutableArray<BundledDimBuild> DimBuilds,
+    ImmutableArray<BundledBuild> Builds,
+    ImmutableArray<BundledLoop> Loops);
 
-/// <summary>Pure: the embedded files → the catalog (parsed once) plus the bundled builds and loops.</summary>
+/// <summary>Pure: the embedded files → the catalog (parsed once) plus the bundled DIM shares, builds and loops.</summary>
 public static class BundleComposing
 {
     private const string RulesPrefix = "rules/";
@@ -28,7 +35,7 @@ public static class BundleComposing
             .ToImmutableArray();
         return CatalogLoading.ParseCatalog(ruleFiles)
             .MapError(error => $"The bundled rules do not parse:{Environment.NewLine}{error}")
-            .Map(catalog => new LoopsmithBundle(catalog, ListBuilds(catalog, files), ListLoops(catalog, files)));
+            .Map(catalog => new LoopsmithBundle(catalog, ListDimBuilds(catalog, files), ListBuilds(catalog, files), ListLoops(catalog, files)));
     }
 
     /// <summary>A design for a build file the user brought: parsed and validated against the catalog, then named.</summary>
@@ -38,6 +45,14 @@ public static class BundleComposing
     /// <summary>The name a new design starts with: "&lt;build name&gt; loop".</summary>
     public static DesignSession NameFreshDesign(DesignSession session) =>
         LoopDesigning.RenameDesign(session, $"{session.Build.Build.Name} loop", session.Design.Author, session.Design.Description);
+
+    private static ImmutableArray<BundledDimBuild> ListDimBuilds(RuleCatalog catalog, ImmutableArray<SourceText> files) =>
+    [
+        .. from file in files
+           let parts = file.Path.Split('/')
+           where parts is ["builds", _, "dim-loadout.json"]
+           select new BundledDimBuild(parts[1], file, LoopDesigning.StartSavedDimDesign(catalog, file)),
+    ];
 
     private static ImmutableArray<BundledBuild> ListBuilds(RuleCatalog catalog, ImmutableArray<SourceText> files) =>
     [

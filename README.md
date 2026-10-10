@@ -11,7 +11,10 @@ you declare, and Loopsmith shows what it sets off.
 
 DIM shows what you have equipped. Loopsmith takes that build (class, subclass, abilities, aspects,
 fragments, exotic, armor set, mods, artifact perks, weapons and perks) and explains its
-**gameplay loop**.
+**gameplay loop**. In the web designer you can start from a **DIM link**: paste it on Home and the
+designer opens with the loadout's build — what the rules know by hash; the rest is listed, never guessed
+([docs/loop-format.md](docs/loop-format.md#starting-from-a-dim-link)). Home also shows the owner's own
+Skip Grenade build as a DIM build card.
 
 **The product is the loop you design**: pick triggers one by one (dodge, grenade kill, pick up an
 orb, Bolt Charge at max), and the result is a `*.loop.yaml` you can save, share as a link, replay and
@@ -200,10 +203,10 @@ Coding conventions (binding): [CONVENTIONS.md](CONVENTIONS.md) · decisions: [AD
 ```
 src/Loopsmith.Core/      one project, slices = folders (kernel: Domain, Functional, Phrasing, Causality)
 src/Loopsmith.Cli/       host: argv → Orchestration shell → effects
-src/Loopsmith.Web/       host: Blazor WebAssembly loop designer (Designer, Compare)
+src/Loopsmith.Web/       host: Blazor WebAssembly loop designer (Home, Designer, Compare)
 tests/Loopsmith.Core.Tests/   unit, golden and architecture tests
 rules/                   authored causality (glossary, keywords, hunter, exotics, armor sets, mods, artifact, weapon perks)
-builds/<slug>/           build.yaml, discrepancies, loop-graph.md, loops/*.loop.yaml (+ the original note, note-map and
+builds/<slug>/           build.yaml, discrepancies, loop-graph.md, loops/*.loop.yaml, dim-loadout.json (+ the original note, note-map and
                          scenario.txt where the user wrote a note): skip-grenade-hunter and its Ascension variant
 docs/                    requirements, rule format, loop format, hosting, backlog
 tools/compendium/        Destiny Data Compendium download: sheet_dump.py + Docker/Python scripts
@@ -220,6 +223,7 @@ tools/web/               prepare-pages.sh — readies a published site for GitHu
 | [Clarity](https://github.com/Database-Clarity/Live-Clarity-Database) | Hash-keyed descriptions with numbers (mods, fragments, aspects, exotic perks, weapon traits) | Its numbers are in the first build's rules by hand (v2.0625); an ingestion slice is open |
 | Destiny Data Compendium | Abilities, artifact perks, statuses, and facts such as cooldowns and chunk energy scalars | The 2026-10-09 snapshot's numbers are in the first build's rules (by hand, `compendium/<date>/<tab>#<row>` sources); parser next |
 | Bungie manifest | Identity (hashes), names, icons | Open (FR-13): not needed for loop design; needs an API key |
+| [DIM](https://github.com/DestinyItemManager/DIM) (MIT) | How share links are read; the nine Light subclass hashes (in the glossary); the logo next to the DIM-link box and on DIM build cards | Used by the DIM-link start (FR-14); dim.gg links need Loopsmith registered with DIM's API ([docs/hosting.md](docs/hosting.md#dim-links)) |
 
 **Getting a Compendium snapshot:** run `tools/compendium/get-compendium.ps1` (Windows) or
 `get-compendium.sh` locally and hand the resulting zip to a session — see
@@ -250,8 +254,8 @@ force pushes. Details: [docs/hosting.md](docs/hosting.md).
 What works is in each requirement's status ([docs/requirements.md](docs/requirements.md)); the open
 work in detail in [docs/backlog.md](docs/backlog.md). Next:
 
-1. States you declare (`max:`, `end:`, [ADRs D3](ADRs.md)) and the loop analysis and comparison by
-   order of triggers (FR-4, FR-6, FR-7).
+1. Open dim.gg links (register with DIM's API) and fill a DIM build's gaps — weapons, supers, grenades,
+   melees, the other subclasses — through the manifest join (FR-14, FR-13).
 2. Ingest: Compendium snapshot parsers (tab registry) + Clarity enrichment + coverage report (FR-11).
 3. Manifest join: names → hashes, icons (FR-13, [ADRs D14](ADRs.md)).
 4. Rule drafting from the Compendium's "On X:" phrasing (FR-12, [ADRs D10](ADRs.md)).

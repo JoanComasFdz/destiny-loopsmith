@@ -1,7 +1,8 @@
 # Arc Hunter: abilities, aspects, fragments.
 #
 # Numbers from the Destiny Data Compendium snapshot of 2026-10-09 (source: compendium/2026-10-09/
-# <Tab>#<row>); hashes are Clarity 2.0625's. Ability energy amounts are base values: chunk energy
+# <Tab>#<row>); hashes are Clarity 2.0625's unless a comment says they are the manifest's (Clarity
+# has no grenade, melee or super entries). Ability energy amounts are base values: chunk energy
 # scalars and stats are not applied, and chunkScalar / baseCooldown are facts recorded from the
 # Compendium that change nothing (ADRs D5).
 # Format gaps that shape these rules (see builds/skip-grenade-hunter/discrepancies.md):
@@ -33,11 +34,39 @@ elements:
     # Not expressible: the super's damage resistance (no "while in your super" condition).
     passives: []
 
+  - id: gathering-storm
+    name: Gathering Storm
+    kind: super
+    affinity: arc
+    class: hunter
+    # The manifest's hash (light.gg, 2026-10-10): what a DIM loadout names (the owner's Skip Grenade
+    # loadout plugs it).
+    hash: 3769507632
+    # Tier 3 super, 500 s. Supers have no chunk energy scalar (Game Mechanics#12), so chunkScalar
+    # stays "?" rather than a made-up 1.
+    ability: { kind: super, charges: 1, chunkScalar: "?", baseCooldown: 500 }
+    description: "Thrown Arc super with 90% [PvP 49%] damage resistance. The staff blows up and sticks in whatever it hits: 544 [300] impact damage that jolts, and an explosion of up to 608 [?] within 10 m. 2 s later lightning strikes it for up to 1350 [500] within 10 m; 1.2 s after that it pulses 446 [60] damage within 10 m every 0.7 s for 8 s."
+    source: compendium/2026-10-09/Arc#45
+    rules:
+      # The Jolt is the impact's. A rule can't name one part of the super, but every throw begins
+      # with that impact, so any super damage jolts the pack in front of you (ADRs D7) - unlike
+      # Arc Staff's Blind, which only some of its attacks apply. The explosion, the lightning strike
+      # and the field are the same super action (`super:hit` / `super:kill`): their damage and
+      # timing are facts in the description. The Compendium states no Bolt Charge on its kills.
+      - on: { damage: { via: super } }
+        then:
+          - { debuffTarget: jolt }
+        reason: "The thrown staff jolts what it hits on impact."
+    # Not expressible: the super's damage resistance (no "while in your super" condition).
+    passives: []
+
   - id: skip-grenade
     name: Skip Grenade
     kind: grenade
     affinity: arc
     class: hunter
+    # The manifest's hash (light.gg, 2026-10-10): what a DIM loadout names.
+    hash: 146194908
     ability: { kind: grenade, charges: 1, chunkScalar: 0.75, baseCooldown: 151.5 }
     description: "Arc grenade that splits on impact into 4 seekers that chase enemies within 6 m; each seeker hits twice on impact, then explodes. Its interactions in this build come from Shinobu's Vow."
     source: compendium/2026-10-09/Arc#36
@@ -49,6 +78,9 @@ elements:
     kind: melee
     affinity: arc
     class: hunter
+    # The manifest's hash (light.gg, 2026-10-10): what a DIM loadout names (the owner's Arc
+    # loadout plugs it).
+    hash: 2716335211
     ability: { kind: melee, charges: 1, chunkScalar: 1, baseCooldown: 58.1 }
     description: "Arc punch. A melee kill grants 100% class ability energy, heals you and adds a Combination Blow stack (20 s, up to x3). Melee damage +133% / +266% / +400% [PvP 23% / 51.3% / 86%] at x1 / x2 / x3; the kill heal drops from 100 HP to 80 / 60 / 40 HP as stacks build."
     source: compendium/2026-10-09/Arc#41
@@ -76,8 +108,9 @@ elements:
     affinity: arc
     class: hunter
     # Clarity has 6 Gambler's Dodge hashes with identical text (one per subclass) and does not say
-    # which is Arc; 426473317 is the most recently uploaded. Resolve via the manifest later.
-    hash: 426473317
+    # which is Arc; 426473317 is the most recently uploaded, so it comes first. All six are this
+    # class ability, so a DIM loadout's Gambler's Dodge is recognised whichever copy it names.
+    hash: [426473317, 1282157890, 2711519340, 2816982785, 3636300855, 3933525367]
     ability: { kind: classAbility, charges: 1, chunkScalar: 0.8, baseCooldown: 56 }
     description: "Ground dodge. Grants 1% [PvP 0.35%] melee energy per Melee stat point (max 100% at 100 Melee), doubled within 15 m of an enemy. No chunk or stat scalar applies to that energy."
     source: "compendium/2026-10-09/Class Abilities#5"

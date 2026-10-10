@@ -83,6 +83,7 @@ public static class BuildExplaining
         var b = build.Build;
         var tone = b.Subclass.ToAffinity().ToTone();
         string DescribeElement(ElementId id) => build.Catalog.Elements.TryGetValue(id, out var e) ? e.Name : id.Value;
+        string DescribeAbility(Optional<ElementId> id) => id.Match(some => DescribeElement(some.Value), _ => DomainPhrasing.Unknown);
         string DescribeElements(IEnumerable<ElementId> ids) => string.Join(", ", ids
             .GroupBy(id => id)
             .Select(g => g.Count() > 1 ? $"{DescribeElement(g.Key)} ×{g.Count()}" : DescribeElement(g.Key)));
@@ -103,7 +104,7 @@ public static class BuildExplaining
         [
             StyledText.ToLine(0, b.Name.ToSpan(Tone.Strong), $"  {b.Class} · {b.Subclass}".ToSpan(tone)),
             .. source.Length > 0 ? [StyledText.ToLine(1, source.Trim().ToSpan(Tone.Muted))] : ImmutableArray<StyledLine>.Empty,
-            RenderRow("Abilities", $"{DescribeElement(b.Abilities.Super)} · {DescribeElement(b.Abilities.Grenade)} · {DescribeElement(b.Abilities.Melee)} · {DescribeElement(b.Abilities.ClassAbility)}"),
+            RenderRow("Abilities", $"{DescribeAbility(b.Abilities.Super)} · {DescribeAbility(b.Abilities.Grenade)} · {DescribeAbility(b.Abilities.Melee)} · {DescribeAbility(b.Abilities.ClassAbility)}"),
             RenderRow("Aspects", DescribeElements(b.Aspects)),
             RenderRow("Fragments", DescribeElements(b.Fragments)),
             RenderRow("Exotic", b.ExoticArmor.Match(e => DescribeElement(e.Value), _ => "—")),

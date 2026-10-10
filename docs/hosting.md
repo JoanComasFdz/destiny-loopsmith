@@ -37,6 +37,28 @@ The site is public on the internet (the repository is public). It contains the a
 numbers from Clarity and the Compendium snapshot, with paraphrased descriptions and row citations —
 but no Compendium snapshot text and no transcripts.
 
+## DIM links
+
+Home starts a loop from a DIM link ([loop-format.md](loop-format.md#starting-from-a-dim-link)). A link
+that carries its loadout (`…/loadouts?loadout=…`) needs nothing. A **dim.gg** share — what DIM's
+Share button copies — is on DIM's servers, and DIM's API hands it only to registered apps: the web
+app sends the app's key as `X-API-Key` from the origin the key was registered for. Until a key is
+set, a dim.gg link says Loopsmith can't open it yet. One-time setup (the owner):
+
+1. **A Bungie API key.** At https://www.bungie.net/en/Application create an application with
+   **Origin header** `https://joancomasfdz.github.io` (no OAuth needed for this).
+2. **Register Loopsmith with DIM's API** (what DIM's own `/developer` page does; the app id is
+   3+ lowercase letters, digits or dashes):
+   ```bash
+   curl -sS https://api.destinyitemmanager.com/new_app -H 'Content-Type: application/json' \
+     -d '{"id": "loopsmith", "bungieApiKey": "<the Bungie API key>", "origin": "https://joancomasfdz.github.io"}'
+   ```
+   The answer's `app.dimApiKey` is the key.
+3. **Set it** in `src/Loopsmith.Web/wwwroot/appsettings.json` (`"DimApiKey": "<key>"`) and merge. It
+   isn't a secret: it ships in the site, as DIM's own key ships in DIM, and only works from the
+   registered origin. PR previews share that origin, so they open dim.gg links too; a local run
+   (`localhost`) doesn't, unless the key is registered for that origin.
+
 ## Alternatives
 
 * **Cloudflare Pages / Netlify:** free for private repositories. Build in GitHub Actions with

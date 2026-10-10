@@ -24,7 +24,8 @@ public static class TestCatalog
             new PickupDefinition(Pickup("ionic-trace"), "Ionic Trace", Affinity.Arc, true),
             new PickupDefinition(Pickup("orb-of-power"), "Orb of Power", Affinity.Neutral, false),
         }.ToImmutableDictionary(p => p.Id),
-        ImmutableDictionary<SummonId, SummonDefinition>.Empty);
+        ImmutableDictionary<SummonId, SummonDefinition>.Empty,
+        []);
 
     public static Rule On(Trigger trigger, params Outcome[] then) =>
         new(trigger, [], [.. then], Optional.None<string>(), Likelihood.Always, []);
@@ -55,7 +56,7 @@ public static class TestCatalog
             kind,
             Affinity.Arc,
             Optional.None<GuardianClass>(),
-            Optional.None<ItemHash>(),
+            [],
             Optional.None<string>(),
             rules,
             passives.IsDefault ? [] : passives,
@@ -93,7 +94,7 @@ public static class TestCatalog
             Optional.None<CatalogVersion>(),
             GuardianClass.Hunter,
             Subclass.Arc,
-            new AbilityLoadout(abilities[3].Id, abilities[0].Id, abilities[1].Id, abilities[2].Id),
+            new AbilityLoadout(Optional.Some(abilities[3].Id), Optional.Some(abilities[0].Id), Optional.Some(abilities[1].Id), Optional.Some(abilities[2].Id)),
             [abilities[4].Id],
             fragments.Select(f => f.Id).ToImmutableArray(),
             Optional.None<ElementId>(),
@@ -102,7 +103,8 @@ public static class TestCatalog
             [],
             [new WeaponLoadout(WeaponSlot.Energy, "Test Rifle", DamageType.Arc, Optional.None<string>(), [])],
             new StatLine(Optional.None<StatValue>(), Optional.None<StatValue>(), Optional.None<StatValue>(),
-                Optional.None<StatValue>(), Optional.None<StatValue>(), Optional.None<StatValue>()));
+                Optional.None<StatValue>(), Optional.None<StatValue>(), Optional.None<StatValue>()),
+            []);
         return BuildValidation.ValidateBuild(build, catalog).Match(
             ok => ok.Value,
             error => throw new InvalidOperationException(error.Failure));

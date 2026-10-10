@@ -165,7 +165,7 @@ public sealed class RuleCatalogParsingTests
         Assert.Equal(ElementKind.Fragment, sparkOfShock.Kind);
         Assert.Equal(Affinity.Arc, sparkOfShock.Affinity);
         Assert.Equal(Optional.Some(GuardianClass.Hunter), sparkOfShock.Class);
-        Assert.Equal(Optional.Some(ItemHash.From(1727069364u)), sparkOfShock.Hash);
+        Assert.Equal([ItemHash.From(1727069364u)], sparkOfShock.Hashes);
         Assert.Equal(Optional.Some("Your Arc grenades jolt targets."), sparkOfShock.Description);
         Assert.Equal(new Provenance.Clarity(ItemHash.From(1727069364u), "2.0625"), sparkOfShock.Source);
         Assert.Equal(Optional.None<AbilityProfile>(), sparkOfShock.Ability);
@@ -439,6 +439,55 @@ public sealed class RuleCatalogParsingTests
             "hunter/arc.yaml:5: unknown key 'colour' in element (allowed: id, name, kind, affinity, class, hash, "
             + "fragmentSlots, ability, description, source, rules, passives)",
             message);
+    }
+
+    [Fact]
+    public void A_hash_list_names_the_copies_of_an_item_and_a_hash_names_one_element()
+    {
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToElementsFile("mods.yaml", """
+            elements:
+              - { id: bomber, name: Bomber, kind: armorMod, affinity: neutral, hash: [4188291233, 1001] }
+            """)]));
+        var message = ParseInvalidCatalog(Glossary, ToElementsFile("mods.yaml", """
+            elements:
+              - { id: bomber, name: Bomber, kind: armorMod, affinity: neutral, hash: [4188291233, 1001] }
+              - { id: reaper, name: Reaper, kind: armorMod, affinity: neutral, hash: 1001 }
+            """));
+
+        Assert.Equal([4188291233u, 1001u], catalog.Elements[ElementId.From("bomber")].Hashes.Select(hash => hash.Value));
+        Assert.Equal("mods.yaml:3: hash 1001 of 'reaper' is already on 'bomber' (mods.yaml:2)", message);
+    }
+
+    [Fact]
+    public void The_glossary_lists_subclass_items_by_hash_and_a_hash_names_one_subclass()
+    {
+        var subclasses = """
+
+            subclasses:
+              - { class: hunter, subclass: arc, name: Arcstrider, hash: 2328211300 }
+              - { class: titan, subclass: arc, name: Striker, hash: [2932390016, 1002] }
+            """;
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([new SourceText("glossary.yaml", GlossaryYaml + subclasses)]));
+        var message = ParseInvalidCatalog(new SourceText("glossary.yaml", GlossaryYaml + subclasses + """
+
+              - { class: warlock, subclass: arc, name: Stormcaller, hash: 1002 }
+            """));
+
+        Assert.Equal(
+            [(GuardianClass.Hunter, Subclass.Arc, "Arcstrider", 1), (GuardianClass.Titan, Subclass.Arc, "Striker", 2)],
+            catalog.Glossary.Subclasses.Select(subclass => (subclass.Class, subclass.Subclass, subclass.Name, subclass.Hashes.Length)));
+        Assert.Contains("hash 1002 of the subclass 'Stormcaller' is already on 'Striker'", message);
+    }
+
+    [Fact]
+    public void A_manifest_hash_is_never_0()
+    {
+        var message = ParseInvalidCatalog(Glossary, ToElementsFile("mods.yaml", """
+            elements:
+              - { id: bomber, name: Bomber, kind: armorMod, affinity: neutral, hash: 0 }
+            """));
+
+        Assert.Contains("A manifest hash is never 0", message);
     }
 
     [Fact]

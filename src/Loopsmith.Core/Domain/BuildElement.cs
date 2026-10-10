@@ -11,7 +11,9 @@ public sealed record AbilityProfile(AbilityKind Kind, int Charges, GameValue Chu
 
 /// <summary>
 /// An ability, aspect, fragment, exotic, armor-set bonus, mod, artifact perk, weapon trait or keyword: all "an element
-/// with rules".
+/// with rules". <see cref="Hashes"/> are its manifest hashes (ADRs D14): the first is its own, the others copies of
+/// the same item with the same text (a mod's artifice copy, a class ability's copy on each subclass). Empty when not
+/// known yet.
 /// </summary>
 public sealed record BuildElement(
     ElementId Id,
@@ -19,7 +21,7 @@ public sealed record BuildElement(
     ElementKind Kind,
     Affinity Affinity,
     Optional<GuardianClass> Class,
-    Optional<ItemHash> Hash,
+    ImmutableArray<ItemHash> Hashes,
     Optional<string> Description,
     ImmutableArray<Rule> Rules,
     ImmutableArray<PassiveRule> Passives,
@@ -43,7 +45,14 @@ public sealed record SummonDefinition(SummonId Id, string Name, DamageType Damag
 public sealed record KeywordGlossary(
     ImmutableDictionary<StatusId, StatusDefinition> Statuses,
     ImmutableDictionary<PickupId, PickupDefinition> Pickups,
-    ImmutableDictionary<SummonId, SummonDefinition> Summons);
+    ImmutableDictionary<SummonId, SummonDefinition> Summons,
+    ImmutableArray<SubclassDefinition> Subclasses);
+
+/// <summary>
+/// A subclass item of the manifest (Arcstrider: the Arc Hunter subclass), so a DIM loadout's subclass is recognised by
+/// its hash (ADRs D27). Only the subclasses whose hashes a source gives are listed.
+/// </summary>
+public sealed record SubclassDefinition(GuardianClass Class, Subclass Subclass, string Name, ImmutableArray<ItemHash> Hashes);
 
 /// <summary>
 /// Every authored element plus the keyword glossary. Keyword elements are active in every build.
