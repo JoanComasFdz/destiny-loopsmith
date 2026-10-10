@@ -12,16 +12,19 @@ public sealed class LoopFileParsingTests
     /// <summary>The example of docs/loop-format.md, verbatim.</summary>
     private const string SpecExampleYaml = """
         # Loopsmith loop v1
-        loop: Infinite skip grenades            # required — the loop's name
+        loop: Dodge, grenade, shoot             # required — the loop's name
         author: Joan                            # optional
         description: |                          # optional, free text
-          Dodge to arm Slice and Reaper, skip grenade into the pack, then shoot.
+          Dodge to arm Slice and Reaper, skip grenade into the pack, shoot, grab Reaper's orb.
         catalog: authored-e4426d03166b          # optional — catalog version it was designed against
         steps:                                  # required (may be empty), in order
           - do: class                           # an action token (below)
             note: Arm Slice + Reaper            # optional
           - do: grenade:kill
+          - do: kinetic:kill
           - do: pickup:orb-of-power
+          - do: max:bolt-charge
+            note: Shinobu's Vow and Flashover; the next grenade hit strikes
         build: |                                # required — the build file's full text (docs/rule-format.md)
           name: Skip Grenade Hunter
           class: hunter
@@ -39,14 +42,22 @@ public sealed class LoopFileParsingTests
     {
         var design = ParseValidLoop(SpecExampleYaml);
 
-        Assert.Equal("Infinite skip grenades", design.Name);
+        Assert.Equal("Dodge, grenade, shoot", design.Name);
         Assert.Equal(Optional.Some("Joan"), design.Author);
-        Assert.Equal(Optional.Some("Dodge to arm Slice and Reaper, skip grenade into the pack, then shoot.\n"), design.Description);
+        Assert.Equal(Optional.Some("Dodge to arm Slice and Reaper, skip grenade into the pack, shoot, grab Reaper's orb.\n"), design.Description);
         Assert.Equal(Optional.Some(CatalogVersion.From("authored-e4426d03166b")), design.Catalog);
         Assert.Equal(
-            [new PlayerAction.UseClassAbility(), new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Kill, TargetCount.One), new PlayerAction.CollectPickups(PickupId.From("orb-of-power"))],
+            [
+                new PlayerAction.UseClassAbility(),
+                new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Kill, TargetCount.One),
+                new PlayerAction.FireWeapon(WeaponSlot.Kinetic, HitOutcome.Kill, TargetCount.One),
+                new PlayerAction.CollectPickups(PickupId.From("orb-of-power")),
+                new PlayerAction.Declare(new StateDeclaration.ReachMax(StatusId.From("bolt-charge"))),
+            ],
             design.Steps.Select(step => step.Action));
-        Assert.Equal([Optional.Some("Arm Slice + Reaper"), Optional.None<string>(), Optional.None<string>()], design.Steps.Select(step => step.Note));
+        Assert.Equal(
+            [Optional.Some("Arm Slice + Reaper"), Optional.None<string>(), Optional.None<string>(), Optional.None<string>(), Optional.Some("Shinobu's Vow and Flashover; the next grenade hit strikes")],
+            design.Steps.Select(step => step.Note));
         Assert.Equal("name: Skip Grenade Hunter\nclass: hunter\n...", design.Build.Text);   // the example has no final line break
         Assert.Equal(LoopPath + "#build", design.Build.Path);
     }

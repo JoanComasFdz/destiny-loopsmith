@@ -5,7 +5,7 @@ using Mono.Cecil.Cil;
 namespace Loopsmith.Core.Tests.Architecture;
 
 /// <summary>
-/// Rule 5: only <c>BuildComposition</c> constructs <see cref="ValidatedBuild"/> (typestate: "simulate before
+/// Rule 5: only <c>BuildComposition</c> constructs <see cref="ValidatedBuild"/> (typestate: "play steps before
 /// validation" cannot happen). Scans the IL of every Core method for <c>newobj</c> of its constructors and calls
 /// to its compiler-generated <c>&lt;Clone&gt;$</c> (what a <c>with</c> expression compiles to).
 /// </summary>

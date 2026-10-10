@@ -47,6 +47,6 @@ public class BuildExplainingTests
 
         var headings = BuildExplaining.ExplainBuild(build).Select(g => g.Heading);
 
-        Assert.Equal(["Class ability", "Pick up Ionic Trace", "Max Bolt Charge"], headings);
+        Assert.Equal(["Class ability", "Pick up Ionic Trace", "Max Bolt Charge (x3)"], headings);   // a max names its cap
     }
 }

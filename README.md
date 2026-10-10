@@ -54,7 +54,7 @@ dotnet run --project src/Loopsmith.Cli -- graph    builds/skip-grenade-hunter/bu
 | `trace` | A sequence of steps (`--actions class,grenade:kill:3,max:bolt-charge,energy:kill` or `--scenario file`), one block per step: the event → outcomes `[source]`, cascades indented `↳`; `--state` adds what is present after each step (buffs on you, debuffs on the pack, pickups on the ground). `--why` shows the reason text; `--caveats` the caveats (amount unknown, already active, …). `simulate` is an alias |
 | `play` | Interactive: pick the next step by number or token — an action, a pickup on the ground or a state you declare — and see what fires and what's available now. Every step becomes part of the loop you design: `u` undo, `n <note>`, `d <description>`, `a` analyse it so far; `--save <file.loop.yaml>` writes it on quit (`w` saves now), `--name` names it |
 | `loop` | A designed loop (`*.loop.yaml`): its build, its order of steps and the verdict — it repeats, or it breaks at the step that can't happen — then each step with what it needs (and which step provided it), what it sets off and what is wasted there, and where the first pass from a fresh spawn differs. `--trace` adds the full trace of the first pass, and of the repeating pass when it differs |
-| `compare` | Two designed loops' orders side by side (they may use different builds): each order on one line with its verdict, then trigger by trigger its step in each loop, where its needs come from there, and the elements that fire in only one of them and why (what an earlier step provided, or didn't) |
+| `compare` | Two designed loops' orders side by side (they may use different builds): each order on one line with its verdict, then trigger by trigger its step in each loop, where its needs come from there, and the elements that fire in only one of them |
 | `loops` | Discovered loops: cycles in the cause → effect graph, ability loops first ("ability loop — gives grenade energy back"). Reaching a stacking buff's max is a link you declare; where a rule gives way to one it doesn't stack with, the loop passes a "Doesn't stack" node (not counted as a step) |
 | `graph` | A Mermaid flowchart of the graph, with loop edges drawn thick; `Gain Bolt Charge → Max Bolt Charge` is a dotted edge labelled "you declare"; the arrows of rules that don't stack meet in a "Doesn't stack" rhombus, and only the rule that applies leaves it. It renders on GitHub and at mermaid.live |
 | `validate` | The build checked against the rule catalog (unknown elements, wrong slots, inert elements, rules that don't stack) |
@@ -76,7 +76,7 @@ Ability damage -> consumes Bolt Charge and Bolt Charge strike (kills) (while Bol
 Kill Jolted target -> +1 Bolt Charge (doesn't stack with Dielectric) [Tempest Strike] + Amplified (15s) [Flow State] + Ionic Trace [Shock and Clear] + +1 Bolt Charge [Dielectric]
 Pick up Ionic Trace -> +1 Bolt Charge [Spark of Discharge] + +1 Armor Charge [Elemental Charge] (chance) + +11.3% grenade and melee energy and +13.5% class ability energy [Ionic Trace]
 Gain Bolt Charge -> +?% grenade energy [Shinobu's Vow] + +2.5% melee energy [Bolt Charge]
-Max Bolt Charge -> New Tricks and +~40% grenade energy and heals you and allies [Shinobu's Vow] + Amplified (15s) [Flashover]
+Max Bolt Charge (x10) -> New Tricks and +~40% grenade energy and heals you and allies [Shinobu's Vow] + Amplified (15s) [Flashover]
 While Amplified -> +1 Bolt Charge per gain [Spark of Frequency] + linear-fusion-rifle/fusion-rifle/heat-weapon: +handling, +reload [Ionic Overclock]
 ```
 
@@ -105,7 +105,7 @@ While Amplified -> +1 Bolt Charge per gain [Spark of Frequency] + linear-fusion-
   Active      linear-fusion-rifle/fusion-rifle/heat-weapon: +handling, +reload [Ionic Overclock]
 ```
 
-`loop` on a three-step loop (dodge, shoot, pick up the orb) — illustrative, `…` elides:
+`loop` on a three-step loop (dodge, shoot, pick up the orb) — `…` elides:
 
 ```text
 Dodge, then shoot — Skip Grenade Hunter · 3 steps
@@ -113,27 +113,35 @@ Class ability → Festival Flight (kill) → Pick up Orb of Power
 ✓ Repeats — each pass ends with what the next one needs
 
 #1 Class ability
-   sets off  Gambler's Dodge · Bomber · Reaper · Slice
-#2 Festival Flight (kill)
-   needs     Reaper ← #1 [Reaper] · Slice ← #1 [Slice] · Unraveling Rounds ← previous pass #3 [Unraveling Orbs] · …
-   sets off  Slice · Reaper · Attrition Orbs (chance) · Strand Siphon (chance) · …
-#3 Pick up Orb of Power
-   needs     Orb of Power ← #2 [Reaper; Attrition Orbs (chance); Strand Siphon (chance)]
-   sets off  Unraveling Orbs · Orb of Power
+   sets off         Reaper · Slice · Gambler's Dodge · Bomber
 
-First pass
 #2 Festival Flight (kill)
-   doesn't set off  Unraveling Rounds — no Unraveling Rounds yet (#3 gives it) · …
+   needs            Sever ← previous pass #2 [Slice; Horde Shuttle] · Slice ← #1 [Slice] · … · Reaper ← #1 [Reaper]
+   sets off         To Shreds · Slice · Unraveling Rounds · Horde Shuttle · Attrition Orbs (chance) · Reaper · Strand Siphon (chance)
+
+#3 Pick up Orb of Power
+   needs            Orb of Power ← #2 [Attrition Orbs (chance); Reaper; Strand Siphon (chance)]
+   sets off         Unraveling Orbs · Orb of Power
+
+First pass (from a fresh spawn, where it differs)
+#2 Festival Flight (kill)
+   doesn't set off  Unraveling Rounds · Horde Shuttle
 ```
 
-`compare` of that loop with the same steps in another order:
+`compare` of that loop with the same steps in another order — the shot before the dodge gets Slice
+and Reaper from the previous pass:
 
 ```text
-A  Dodge, then shoot   Class ability → Festival Flight (kill) → Pick up Orb of Power   ✓ Repeats
-B  Shoot, then dodge   Festival Flight (kill) → Class ability → Pick up Orb of Power   ✓ Repeats
+A  Dodge, then shoot   Class ability → Festival Flight (kill) → Pick up Orb of Power   ✓ Repeats   (Skip Grenade Hunter)
+B  Shoot, then dodge   Festival Flight (kill) → Class ability → Pick up Orb of Power   ✓ Repeats   (Skip Grenade Hunter)
+
 Class ability           A #1 · B #2: sets off the same
-Festival Flight (kill)  A #2: Reaper ← #1 · B #1: Reaper ← previous pass #2 (not on B's first pass)
-Pick up Orb of Power    A #3: Orb of Power ← #2 · B #3: Orb of Power ← #1
+Festival Flight (kill)  A #2 · B #1: sets off the same
+   A needs     Sever ← previous pass #2 · Slice ← #1 · … · Reaper ← #1 (differs on A's first pass)
+   B needs     Sever ← previous pass #1 · Slice ← previous pass #2 · … · Reaper ← previous pass #2 (differs on B's first pass)
+Pick up Orb of Power    A #3 · B #3: sets off the same
+   A needs     Orb of Power ← #2
+   B needs     Orb of Power ← #1
 ```
 
 `?` = the source doesn't say (shown, never treated as 0) · `~` = approximate ·

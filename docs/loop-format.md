@@ -143,7 +143,7 @@ Each step resolves as in [rule-format.md](rule-format.md#engine-semantics-what-a
 
 ```
 ✓ Repeats — each pass ends with what the next one needs
-✓ Repeats — on the first pass, #3 (Pick up Orb of Power) has nothing to pick up yet
+✓ Repeats — on the first pass, #1 (Pick up Orb of Power) can't happen yet: No orb-of-power on the ground — nothing happens.
 ✗ Breaks at #3 (Pick up Orb of Power): No orb-of-power on the ground — nothing happens.
 The loop has no steps.
 ```
@@ -154,23 +154,29 @@ has a blocked step (the first one, with its message).
 
 **The steps** of the repeating pass, each with:
 
-* **needs** — what the step uses and which step provided it (here for the loop of the
-  [file example](#file-loopyaml)):
-  * a pickup it picks up: `Orb of Power ← #3 [Reaper; Attrition Orbs (chance); Strand Siphon (chance)]`
-    (the step, then the elements that dropped it);
+* **needs** — what was already there when the step began and the step uses, and which step provided
+  it:
+  * a pickup it picks up: `Orb of Power ← #2 [Attrition Orbs (chance); Reaper; Strand Siphon (chance)]`
+    (the step, then the elements that dropped it there);
   * a buff a rule consumes or a guard reads: `Reaper ← #1 [Reaper]`;
   * a debuff on the pack a trigger needs: `Jolt ← #2 [Spark of Shock]`;
-  * a declared state: the grenade at #2 reads `Bolt Charge at max ← previous pass #5` —
-    `← previous pass #<k>` whenever a need carries over from the pass before.
+  * a declared state: `Bolt Charge at max ← #6`.
+
+  The provider is the latest step since the thing last arrived (it has been there from then on) where
+  a rule that always fires provided it, else the latest one, so a sure drop is named before a chance
+  one; `← previous pass #<k>` when it carries over from the pass before. What the step gives itself
+  before it uses it — its hit jolts the pack, then its kill reads Jolt — is part of the step, not a
+  need.
 * **sets off** — the elements whose rules fired there, each *(chance)* one marked (ADRs D8);
 * **wasted** — a rule that gave way there because it doesn't stack with another element's
   ([rule-format.md](rule-format.md#rules-that-dont-stack), ADRs D6):
   `Tempest Strike — doesn't stack with Dielectric`.
 
 Where the first pass differs — a step blocked there, or an element that fires on one pass and not on
-the other — a **First pass** block lists those steps and why (what an earlier step hadn't provided
-yet). A value the sources don't give (`?`, ADRs D13) and a *(chance)* rule show on the bullets of the
-trace, where they happen.
+the other — a **First pass** block lists those steps: *blocked*, *doesn't set off* (what fires in the
+repeating pass but not yet on the first) and *only here* (what fires only on the first). A value the
+sources don't give (`?`, ADRs D13) and a *(chance)* rule show on the bullets of the trace, where they
+happen.
 
 **The report as text** (CLI `loop`, `a` in `play`; the web lays the same out and shows this text under
 *The report as text*). Illustrative, `…` elides:
@@ -181,17 +187,19 @@ Class ability → Festival Flight (kill) → Pick up Orb of Power
 ✓ Repeats — each pass ends with what the next one needs
 
 #1 Class ability
-   sets off  Gambler's Dodge · Bomber · Reaper · Slice
-#2 Festival Flight (kill)
-   needs     Reaper ← #1 [Reaper] · Slice ← #1 [Slice] · Unraveling Rounds ← previous pass #3 [Unraveling Orbs] · …
-   sets off  Slice · Reaper · Attrition Orbs (chance) · Strand Siphon (chance) · …
-#3 Pick up Orb of Power
-   needs     Orb of Power ← #2 [Reaper; Attrition Orbs (chance); Strand Siphon (chance)]
-   sets off  Unraveling Orbs · Orb of Power
+   sets off         Reaper · Slice · Gambler's Dodge · Bomber
 
-First pass
 #2 Festival Flight (kill)
-   doesn't set off  Unraveling Rounds — no Unraveling Rounds yet (#3 gives it) · …
+   needs            Sever ← previous pass #2 [Slice; Horde Shuttle] · Slice ← #1 [Slice] · Unraveling Rounds ← previous pass #3 [Unraveling Orbs] · …
+   sets off         To Shreds · Slice · Unraveling Rounds · Horde Shuttle · Attrition Orbs (chance) · Reaper · Strand Siphon (chance)
+
+#3 Pick up Orb of Power
+   needs            Orb of Power ← #2 [Attrition Orbs (chance); Reaper; Strand Siphon (chance)]
+   sets off         Unraveling Orbs · Orb of Power
+
+First pass (from a fresh spawn, where it differs)
+#2 Festival Flight (kill)
+   doesn't set off  Unraveling Rounds · Horde Shuttle
 ```
 
 ## Comparison
@@ -202,18 +210,28 @@ builds; both replay with the same catalog. The comparison uses each loop's repea
 * each loop's order on one line, with its verdict;
 * then trigger by trigger (a declared state counts as one), matched by occurrence of the same action —
   A's first `grenade:kill` with B's first `grenade:kill` — its step number in each loop, where its
-  needs come from there, and the elements that fire in only one of them and why (what an earlier step
-  provided, or didn't);
-* the triggers only one loop has, listed as such;
-* where a loop's first pass differs, it says so.
+  needs come from there (marked when that loop's first pass differs there), and the elements that
+  fire in only one of them;
+* the triggers only one loop has, listed as such.
+
+Here the same three steps in another order: the shot after the dodge gets Slice and Reaper from #1;
+the shot before it gets them from the previous pass, so on B's first pass it sets off neither.
 
 ```
-A  Dodge, then shoot   Class ability → Festival Flight (kill) → Pick up Orb of Power   ✓ Repeats
-B  Shoot, then dodge   Festival Flight (kill) → Class ability → Pick up Orb of Power   ✓ Repeats
+A  Dodge, then shoot   Class ability → Festival Flight (kill) → Pick up Orb of Power   ✓ Repeats   (Skip Grenade Hunter)
+B  Shoot, then dodge   Festival Flight (kill) → Class ability → Pick up Orb of Power   ✓ Repeats   (Skip Grenade Hunter)
+
 Class ability           A #1 · B #2: sets off the same
-Festival Flight (kill)  A #2: Reaper ← #1 · B #1: Reaper ← previous pass #2 (not on B's first pass)
-Pick up Orb of Power    A #3: Orb of Power ← #2 · B #3: Orb of Power ← #1
+Festival Flight (kill)  A #2 · B #1: sets off the same
+   A needs     Sever ← previous pass #2 · Slice ← #1 · Unraveling Rounds ← previous pass #3 · Unravel ← previous pass #2 · Reaper ← #1 (differs on A's first pass)
+   B needs     Sever ← previous pass #1 · Slice ← previous pass #2 · Unraveling Rounds ← previous pass #3 · Unravel ← previous pass #1 · Reaper ← previous pass #2 (differs on B's first pass)
+Pick up Orb of Power    A #3 · B #3: sets off the same
+   A needs     Orb of Power ← #2
+   B needs     Orb of Power ← #1
 ```
+
+A trigger that sets off different elements in the two loops lists them as `only in A` / `only in B`;
+one only a loop has reads `only in A (#7)`.
 
 ## CLI
 

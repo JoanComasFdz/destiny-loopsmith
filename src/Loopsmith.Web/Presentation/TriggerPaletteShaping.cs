@@ -17,7 +17,7 @@ public sealed record TriggerButton(PlayerAction Action, string Token, string Lab
 /// A row of the palette: one trigger, or the hit / kill pair of the same ability or weapon. <see cref="Key"/> names
 /// the row ("cast:Grenade", "fire:Kinetic", "class", …) and stays the same from one step to the next.
 /// <see cref="Targets"/> is how many enemies the row's actions hit or kill — none for a row without targets (class
-/// ability, pickups, wait).
+/// ability, pickups, declared states).
 /// </summary>
 public sealed record TriggerChoice(string Key, string Title, Optional<TargetCount> Targets, ImmutableArray<TriggerButton> Buttons);
 
