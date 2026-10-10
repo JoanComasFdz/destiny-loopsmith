@@ -76,12 +76,13 @@
                     </div>
                 </div>
                 <LoopTimeline Session="session" Selected="Workbench.SelectedStep" Options="traceOptions"
-                              OnSelect="SelectStep" OnBranch="BranchFromStep" OnAnnotate="AnnotateStep" />
-            </div>
-            <aside class="col-side">
+                              OnSelect="SelectStep" OnBranch="BranchFromStep" OnAnnotate="AnnotateStep"
+                              OnRemove="RemoveStep" OnMove="MoveStep" />
                 <TriggerPalette Build="session.Build" Options="LoopDesigning.ListTriggerOptions(session)" OnPick="AppendTrigger"
                                 Caption="@(stepCount == 0 ? "from a fresh spawn" : $"after #{stepCount}")"
                                 Hint="@DescribePaletteHint(shown.Number, stepCount)" />
+            </div>
+            <aside class="col-side">
                 <StatePanel Build="session.Build" State="shown.State" Passives="shown.Passives" Caption="@shown.Caption" />
             </aside>
         </div>
@@ -117,6 +118,7 @@
     private string shareUrl = "";
     private bool shareCopied;
     private Optional<int> scrollToStep = Optional.None<int>();
+    private Optional<int> focusStep = Optional.None<int>();
     private ElementReference shareInput;
 
     /// <summary>The designer shows the open loop; with none open, Home is where one is picked.</summary>
@@ -179,6 +181,12 @@
             scrollToStep = Optional.None<int>();
             await Browser.RevealElementAsync($"step-{step.Value}");                              // impure
         }
+
+        if (focusStep is Optional<int>.Some moved)
+        {
+            focusStep = Optional.None<int>();
+            await Browser.FocusElementAsync($"step-{moved.Value}");                              // impure
+        }
     }
 
     // ── editing the loop ────────────────────────────────────────────────────────
@@ -196,6 +204,18 @@
         {
             EditSession(current => LoopDesigning.TruncateSteps(current, 0), scrollToEnd: false);
         }
+    }
+
+    /// <summary>A step removed: the later steps replay without it.</summary>
+    private void RemoveStep(int index) =>
+        EditSession(session => LoopDesigning.RemoveStep(session, index), scrollToEnd: false);
+
+    /// <summary>A step moved: the steps replay in the new order; the moved step is selected and keeps the focus.</summary>
+    private void MoveStep((int From, int To) move)
+    {
+        EditSession(session => LoopDesigning.MoveStep(session, move.From, move.To), scrollToEnd: false);
+        Workbench.SelectedStep = Optional.Some(move.To + 1);                                    // impure (UI state)
+        focusStep = Optional.Some(move.To + 1);                                                 // impure (UI state)
     }
 
     private void BranchFromStep(int number) =>

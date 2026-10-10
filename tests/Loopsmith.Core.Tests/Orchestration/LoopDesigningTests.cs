@@ -5,7 +5,10 @@ using static Loopsmith.Core.Tests.Support.TestCatalog;
 
 namespace Loopsmith.Core.Tests.Orchestration;
 
-/// <summary>The trigger palette of the designer: every ability always (ADRs D5), pickups when they land, target counts (D4).</summary>
+/// <summary>
+/// The designer: the trigger palette (every ability always, ADRs D5; pickups when they land; target counts, D4) and
+/// editing the steps (remove, move: the loop replays in its new order).
+/// </summary>
 public sealed class LoopDesigningTests
 {
     private static readonly PlayerAction GrenadeKill = new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Kill, TargetCount.One);
@@ -75,5 +78,46 @@ public sealed class LoopDesigningTests
 
         Assert.Equal(["grenade:kill:3", "energy:kill"], report.Steps.Select(step => step.Token));
         Assert.Contains("  - do: grenade:kill:3\n", LoopDesigning.ExportLoop(session));
+    }
+
+    [Fact]
+    public void Removing_a_step_replays_the_rest_without_it()
+    {
+        var spawner = Element("spawner", ElementKind.Fragment,
+            [On(new Trigger.KillAny(new DamageSource.AnySource()), new Outcome.Spawn(Pickup("orb-of-power"), 2))]);
+        var collect = new PlayerAction.CollectPickups(PickupId.From("orb-of-power"));
+        var session = LoopDesigning.AnnotateStep(AppendSteps(StartDesign(ValidateBuild([spawner])), RifleKill, collect, GrenadeKill), 2, Optional.Some("finish"));
+
+        var removed = LoopDesigning.RemoveStep(session, 0);
+        var outOfRange = LoopDesigning.RemoveStep(session, 3);
+
+        Assert.Equal([collect, GrenadeKill], removed.Design.Steps.Select(step => step.Action));
+        Assert.Equal(2, removed.Resolutions.Length);
+        Assert.False(session.Resolutions[1].Blocked.IsSome());
+        Assert.True(removed.Resolutions[0].Blocked.IsSome());                                    // no orb on the ground any more
+        Assert.Equal(Optional.Some("finish"), removed.Design.Steps[1].Note);
+        Assert.Same(session, outOfRange);
+    }
+
+    [Fact]
+    public void Moving_a_step_replays_the_loop_in_its_new_order_with_its_note()
+    {
+        var spawner = Element("spawner", ElementKind.Fragment,
+            [On(new Trigger.KillAny(new DamageSource.AnySource()), new Outcome.Spawn(Pickup("orb-of-power"), 2))]);
+        var collect = new PlayerAction.CollectPickups(PickupId.From("orb-of-power"));
+        var session = LoopDesigning.AnnotateStep(AppendSteps(StartDesign(ValidateBuild([spawner])), RifleKill, collect, GrenadeKill), 1, Optional.Some("grab it"));
+
+        var early = LoopDesigning.MoveStep(session, 1, 0);
+        var back = LoopDesigning.MoveStep(early, 0, 1);
+        var last = LoopDesigning.MoveStep(session, 0, 2);
+
+        Assert.Equal([collect, RifleKill, GrenadeKill], early.Design.Steps.Select(step => step.Action));
+        Assert.True(early.Resolutions[0].Blocked.IsSome());                                      // nothing to collect before the kill
+        Assert.Equal(Optional.Some("grab it"), early.Design.Steps[0].Note);
+        Assert.Equal(session.Design.Steps, back.Design.Steps);
+        Assert.False(back.Resolutions[1].Blocked.IsSome());
+        Assert.Equal([collect, GrenadeKill, RifleKill], last.Design.Steps.Select(step => step.Action));
+        Assert.Same(session, LoopDesigning.MoveStep(session, 1, 1));
+        Assert.Same(session, LoopDesigning.MoveStep(session, 0, 3));
     }
 }
