@@ -88,13 +88,15 @@ public static partial class LoopRunning
         var resolution = pass.Resolutions[index];
         var met = ListMetNeeds(build, pass, previous, index);
         var setsOff = ListSetOff(resolution);
+        var inOrder = ListInOrder(resolution, setsOff, met);
         return new StepAnalysis(
             index,
             resolution.Action.ToActionToken(),
             label,
             [.. met.DistinctBy(use => use.Need).Select(use => use.Step)],
             setsOff,
-            ListInOrder(resolution, setsOff, met),
+            inOrder,
+            [.. setsOff.Where(element => !inOrder.Any(other => other.Source == element.Source))],
             ListWasted(resolution),
             resolution.Blocked);
     }

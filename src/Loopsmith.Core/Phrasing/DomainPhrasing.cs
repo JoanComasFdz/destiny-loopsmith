@@ -383,6 +383,20 @@ public static class DomainPhrasing
     public static string DescribeLink(this StepLink link) =>
         $"{link.DescribeLinkSource()} → #{link.To + 1}: {link.DescribeLinkNeeds()}";
 
+    /// <summary>"Slice · Reaper ← #2": a link as the step that needs it reads it.</summary>
+    public static string DescribeIncomingLink(this StepLink link) =>
+        $"{link.DescribeLinkNeeds()} ← {link.DescribeLinkSource()}";
+
+    /// <summary>"#5: Sever · Unravel", "next pass #3: Armor Charge": a link as the step that provided it reads it.</summary>
+    public static string DescribeOutgoingLink(this StepLink link) =>
+        $"{link.DescribeLinkTarget()}: {link.DescribeLinkNeeds()}";
+
+    /// <summary>A step with no incoming link.</summary>
+    public const string NoNeedsFromEarlierSteps = "nothing from earlier steps";
+
+    /// <summary>A step with no outgoing link.</summary>
+    public const string FeedsNoLaterStep = "no later step";
+
     /// <summary>"#4", "next pass #3": where a link of the step chain ends, seen from the step that provided it.</summary>
     public static string DescribeLinkTarget(this StepLink link) =>
         link.FromPreviousPass ? $"next pass #{link.To + 1}" : $"#{link.To + 1}";

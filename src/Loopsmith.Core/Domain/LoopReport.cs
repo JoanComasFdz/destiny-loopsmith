@@ -33,8 +33,8 @@ public sealed record WastedMention(ElementMention Source, string PartnerName);
 /// <summary>
 /// One step of a pass, in the order of the loop: what it needs and from where, what it sets off, what is wasted.
 /// <see cref="InOrder"/> are the elements of <see cref="SetsOff"/> that fire there because an earlier step provided
-/// what their rule needed (or what the step itself needs: the orb it picks up, the buff it declares at max); the
-/// others fire wherever the step goes.
+/// what their rule needed (or what the step itself needs: the orb it picks up, the buff it declares at max);
+/// <see cref="OnItsOwn"/> the others, which fire wherever the step goes.
 /// </summary>
 public sealed record StepAnalysis(
     int StepIndex,
@@ -43,13 +43,9 @@ public sealed record StepAnalysis(
     ImmutableArray<StepNeed> Needs,
     ImmutableArray<ElementMention> SetsOff,
     ImmutableArray<ElementMention> InOrder,
+    ImmutableArray<ElementMention> OnItsOwn,
     ImmutableArray<WastedMention> Wasted,
-    Optional<string> Blocked)
-{
-    /// <summary>The elements of <see cref="SetsOff"/> that fire wherever the step goes (not in <see cref="InOrder"/>).</summary>
-    public ImmutableArray<ElementMention> OnItsOwn =>
-        [.. SetsOff.Where(element => !InOrder.Any(other => other.Source == element.Source))];
-}
+    Optional<string> Blocked);
 
 /// <summary>
 /// An arrow of the step chain: step <see cref="From"/> provided what step <see cref="To"/> needs — in the pass before

@@ -91,7 +91,7 @@ public static class ComparisonRendering
             return [];
         }
 
-        var needs = placed.Step.Needs.IsEmpty ? "nothing from earlier steps" : string.Join(" · ", placed.Step.Needs.Select(need => need.DescribeNeedBriefly()));
+        var needs = placed.Step.Needs.IsEmpty ? DomainPhrasing.NoNeedsFromEarlierSteps : string.Join(" · ", placed.Step.Needs.Select(need => need.DescribeNeedBriefly()));
         var firstPass = placed.DiffersOnFirstPass ? $" (differs on {side}'s first pass)" : "";
         return [RenderField($"{side} needs", needs.ToSpan(Tone.Plain), firstPass.ToSpan(Tone.Muted))];
     }

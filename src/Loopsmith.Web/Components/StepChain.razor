@@ -56,11 +56,11 @@
                 <span>
                     @if (incoming.IsEmpty)
                     {
-                        <span class="muted">nothing from earlier steps</span>
+                        <span class="muted">@DomainPhrasing.NoNeedsFromEarlierSteps</span>
                     }
                     @foreach (var compared in incoming)
                     {
-                        <span class="chain-item @(compared.OnlyHere ? "only-here" : "")">@compared.Link.DescribeLinkNeeds() ← @compared.Link.DescribeLinkSource()</span>
+                        <span class="chain-item @(compared.OnlyHere ? "only-here" : "")">@compared.Link.DescribeIncomingLink()</span>
                     }
                 </span>
             </div>
@@ -69,11 +69,11 @@
                 <span>
                     @if (outgoing.IsEmpty)
                     {
-                        <span class="muted">no later step</span>
+                        <span class="muted">@DomainPhrasing.FeedsNoLaterStep</span>
                     }
                     @foreach (var compared in outgoing)
                     {
-                        <span class="chain-item @(compared.OnlyHere ? "only-here" : "")">@compared.Link.DescribeLinkTarget(): @compared.Link.DescribeLinkNeeds()</span>
+                        <span class="chain-item @(compared.OnlyHere ? "only-here" : "")">@compared.Link.DescribeOutgoingLink()</span>
                     }
                 </span>
             </div>

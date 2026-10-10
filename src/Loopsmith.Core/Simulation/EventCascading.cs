@@ -58,6 +58,9 @@ public static class EventCascading
             .Where(match => !ancestry.Contains(ToFiredKey(match, gameEvent)))
             .ToImmutableArray();
 
+    /// <summary>An event an outcome raised, with the rule it came from as the rule matched (its index among the matches).</summary>
+    private sealed record RaisedEvent(PendingEvent Event, int MatchIndex);
+
     /// <summary>An event an outcome raised, with the place among this event's fired rules of the rule it came from.</summary>
     private sealed record DerivedEvent(PendingEvent Event, int Origin);
 
@@ -84,23 +87,23 @@ public static class EventCascading
             .ThenBy(step => step.Order)
             .ToImmutableArray();
 
-        var seed = (State: state, Applied: ImmutableArray<Applied>.Empty, Derived: ImmutableArray<DerivedEvent>.Empty);
+        var seed = (State: state, Applied: ImmutableArray<Applied>.Empty, Raised: ImmutableArray<RaisedEvent>.Empty);
         var result = steps.Aggregate(seed, (acc, step) =>
         {
             var application = OutcomeApplication.ApplyOutcome(build, acc.State, step.Outcome);
-            var derived = application.Derived.Select(pending => new DerivedEvent(pending, step.MatchIndex));
-            return (application.State, acc.Applied.Add(new Applied(step, application.Applied)), acc.Derived.AddRange(derived));
+            var raised = application.Derived.Select(pending => new RaisedEvent(pending, step.MatchIndex));
+            return (application.State, acc.Applied.Add(new Applied(step, application.Applied)), acc.Raised.AddRange(raised));
         });
 
         var ordered = matches
             .Select((match, matchIndex) => (MatchIndex: matchIndex, Fired: ToFiredRule(match, matchIndex, result.Applied, gameEvent, depth, eventIndex, givenWay[matchIndex], cause)))
             .OrderBy(x => x.Fired.Outcomes.Select(o => o.Outcome.ResolvePhase()).DefaultIfEmpty(Phase.Refund).Min())
             .ToImmutableArray();
-        var places = ordered.Select((x, place) => (x.MatchIndex, Place: place)).ToImmutableDictionary(x => x.MatchIndex, x => x.Place);
+        var matchOrder = ordered.Select(x => x.MatchIndex).ToImmutableArray();
         return new AppliedMatches(
             result.State,
             [.. ordered.Select(x => x.Fired)],
-            [.. result.Derived.Select(derived => derived with { Origin = places[derived.Origin] })]);
+            [.. result.Raised.Select(raised => new DerivedEvent(raised.Event, matchOrder.IndexOf(raised.MatchIndex)))]);
     }
 
     /// <summary>The name of another element matching the same event that this rule doesn't stack with, if any.</summary>
