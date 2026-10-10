@@ -5,7 +5,7 @@ description: |-
   the Strand and Arc weapons, grab the orbs, skip grenade again. Every jolted kill feeds Bolt
   Charge and Ionic Traces, which give grenade energy back. Tempest Strike's Bolt Charge on those
   kills doesn't stack with Dielectric's, so the analysis lists it as wasted.
-catalog: authored-db8af7224008
+catalog: authored-a6996a0f88c9
 steps:
   - do: pack:new
     note: 'The next group of enemies: a new pack, nothing on it yet'
@@ -66,7 +66,7 @@ build: |
     # Slice per the video. Attrition Orbs placement is INFERRED: the note credits it on strand weapon
     # kills, Clarity says it is a weapon trait, and Festival Flight is the only Strand weapon named.
     # Archetype omitted: no source names it.
-    - { slot: kinetic, name: Festival Flight, type: strand, perks: [slice, attrition-orbs] }
+    - { slot: kinetic, name: Festival Flight, type: strand, perks: [slice, attrition-orbs], hash: 4019651319 }
     # Placeholder: neither source names the energy weapon, but Spark of Discharge and Harmonic
     # Siphon need Arc weapon kills to do anything.
     - { slot: energy, name: Any Arc weapon, type: arc, perks: [] }

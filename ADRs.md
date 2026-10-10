@@ -213,12 +213,17 @@ never treated as 0; since numbers are facts (D1), "?" only means the source does
 
 ### D14 — Authored slugs as ids, the manifest hash as the long-term identity
 
-**Context.** The Bungie manifest (and its API key) isn't reachable yet, and abilities, artifact perks
-and armor set bonuses have no Clarity hash. **Decision.** Elements are keyed by a kebab-case
+**Context.** The manifest's API needs a key, and abilities, artifact perks and armor set bonuses have no
+Clarity hash; the manifest's component files are public (bungie.net serves them to anyone, ~3 MB compressed
+for the item table). **Decision.** Elements are keyed by a kebab-case
 `ElementId` (`shinobus-vow`); `Hashes` holds its manifest hash (plus the copies of the same item with the
 same text, such as a mod's second copy), filled from Clarity where known, empty otherwise. The manifest
-hash is the long-term identity (stable, shared by Clarity and DIM). **Consequence.** Builds reference
-slugs; the manifest join adds hashes without changing build files; a DIM loadout is read by hash (D27).
+hash is the long-term identity (stable, shared by Clarity and DIM). What the manifest says about the
+hashes Loopsmith names — official name, type, icon, rarity, slot, damage type — is a generated excerpt in
+the rules (`rules/manifest.yaml`, `tools/manifest/`), so the app shows builds the way DIM does without
+downloading the manifest. **Consequence.** Builds reference slugs; the manifest join adds hashes without
+changing build files; a DIM loadout is read by hash (D27). A hash outside the excerpt has no name or icon
+until the app reads the manifest itself (open: [docs/backlog.md](docs/backlog.md)).
 
 ### D15 — Builds and loops pin a catalog version
 
@@ -321,6 +326,6 @@ app's DIM API key; links that carry their loadout need nothing, and a share save
 (`builds/<slug>/dim-loadout.json`: its link and the loadout as DIM's share page carries it) opens
 without asking DIM. DIM offers no embeddable preview of a share (its page has only a stock link
 image), so Home draws its own card of what the catalog recognised. **Consequence.** A Stasis, Strand or
-Prismatic loadout can't start a build yet, and weapons are always left out, until the manifest join
-(requirements FR-13); dim.gg links work once the owner registers Loopsmith with DIM's API
+Prismatic loadout can't start a build yet, and a weapon outside the excerpt is left out, until the app
+reads the manifest itself (requirements FR-13); dim.gg links work once the owner registers Loopsmith with DIM's API
 ([docs/hosting.md](docs/hosting.md), "DIM links").

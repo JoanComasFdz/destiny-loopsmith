@@ -143,17 +143,20 @@ the build holds what the catalog recognises by hash, and nothing is guessed:
 |---|---|
 | the subclass item | `class` and `subclass` — the glossary's `subclasses` ([rule-format.md](rule-format.md#glossary-rulesglossaryyaml): the nine Light ones so far, whose hashes DIM's source lists); a Stasis, Strand or Prismatic loadout, or one without a subclass, can't start a build yet |
 | the subclass's plugs, in socket order | the super, grenade, melee and class ability, aspects and fragments the catalog has a hash for; an ability it has none for is `"?"` |
-| the other equipped items (and the Loadout Optimizer's exotic) | `exoticArmor` |
+| the other equipped items (and the Loadout Optimizer's exotic) | `exoticArmor`; a weapon the manifest excerpt knows ([rule-format.md](rule-format.md#manifest-excerpt-rulesmanifestyaml)) becomes one of `weapons` — its slot, name, damage type, archetype and `hash`, no perks (a loadout names the weapon, not its roll) |
 | `parameters.mods` (repeats are stacked copies) | `armorMods` |
 | `parameters.artifactUnlocks` | `artifactPerks` |
-| anything else — every weapon (its slot, name and damage type need the manifest), legendary armor, a jump, a hash no element has | `leftOut`, by hash and where the loadout listed it |
+| anything else — legendary armor, a jump, a weapon the excerpt doesn't know, a hash no element has | `leftOut`, by hash and where the loadout listed it |
 
 The loadout's name becomes the build's, without Destiny's icon glyphs (DIM draws them with its own
 font: "Arc  - Skipp grenade" reads "Arc - Skipp grenade"). The build is written as an ordinary build
 file (comments say where it came from), so the loop
 embeds, exports, shares and replays it like any other ([rule-format.md](rule-format.md#build-file-buildsbuildbuildyaml)).
-The designer lists the left-out hashes under **Not in Loopsmith yet**, each a link to its light.gg
-page; the build check adds `Unknown (?): …` and `Left out of the build: …` as info. A loadout for
+The designer shows the build the way DIM shows a loadout — the subclass with its super, abilities,
+aspects and fragments, the artifact perks, the weapons with their element, each armor piece with the mods
+of its slot (the slot the manifest gives the mod; other mods are general) — with Bungie's icons from the
+manifest excerpt; what the rules don't know sits where DIM would show it, dimmed. It also lists the
+left-out items under **Not in Loopsmith yet**, by their manifest name, each a link to its light.gg page; the build check adds `Unknown (?): …` and `Left out of the build: …` as info. A loadout for
 another class than its subclass's is an error, and so is text that isn't a loadout.
 
 **Shared DIM builds on Home.** A share can ship with the app as `builds/<slug>/dim-loadout.json` —
@@ -165,8 +168,8 @@ it as `?loadout=` JSON; item instance ids left out):
 ```
 
 Home shows each one as a card — DIM offers no embeddable preview (its share page has only a stock
-link image) — with the build's name, class and subclass, what the catalog recognised (abilities,
-aspects, fragments, exotic, mods) and how much it left out; "Start designing" opens it like a pasted
+link image) — with the build's name, class and subclass, the same DIM-style loadout, and how much it
+left out; "Start designing" opens it like a pasted
 link, without asking DIM. The owner's own Skip Grenade build is the first
 ([builds/skip-grenade-hunter/dim-loadout.json](../builds/skip-grenade-hunter/dim-loadout.json); how it
 differs from the hand-written `build.yaml` is in that build's discrepancies). The hand-written builds

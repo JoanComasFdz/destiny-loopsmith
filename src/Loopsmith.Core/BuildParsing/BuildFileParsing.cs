@@ -22,7 +22,7 @@ public static class BuildFileParsing
         "leftOut",
     ];
 
-    private static readonly ImmutableArray<string> WeaponKeys = ["slot", "name", "type", "archetype", "perks"];
+    private static readonly ImmutableArray<string> WeaponKeys = ["slot", "name", "type", "archetype", "perks", "hash"];
     private static readonly ImmutableArray<string> StatKeys = ["weapons", "health", "class", "grenade", "super", "melee"];
     private static readonly ImmutableArray<string> LeftOutKeys = ["items", "subclassPlugs", "armorMods", "artifactPerks"];
 
@@ -110,7 +110,8 @@ public static class BuildFileParsing
             map.ReadRequired("type", ReadVocabularyWord<DamageType>),
             map.ReadOptional("archetype", ReadSlug),
             map.ReadOrDefault("perks", ReadElementIds, []),
-            (_, slot, name, type, archetype, perks) => new WeaponLoadout(slot, name, type, archetype, perks)));
+            map.ReadOptional("hash", ReadItemHash),
+            (_, slot, name, type, archetype, perks, hash) => new WeaponLoadout(slot, name, type, archetype, perks, hash)));
 
     /// <summary><c>stats: { weapons: 47, class: 104, … }</c> — any subset, each 0..200.</summary>
     private static Result<StatLine, Errors> ReadStats(YamlValue value) =>

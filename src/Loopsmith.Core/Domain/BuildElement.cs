@@ -55,10 +55,11 @@ public sealed record KeywordGlossary(
 public sealed record SubclassDefinition(GuardianClass Class, Subclass Subclass, string Name, ImmutableArray<ItemHash> Hashes);
 
 /// <summary>
-/// Every authored element plus the keyword glossary. Keyword elements are active in every build.
-/// (Becomes PublishedCatalog once the manifest name→hash join exists.)
+/// Every authored element plus the keyword glossary, and the manifest excerpt that names their hashes (and those of the
+/// saved DIM shares). Keyword elements are active in every build.
 /// </summary>
 public sealed record RuleCatalog(
     CatalogVersion Version,
     KeywordGlossary Glossary,
-    ImmutableDictionary<ElementId, BuildElement> Elements);
+    ImmutableDictionary<ElementId, BuildElement> Elements,
+    ManifestExcerpt Manifest);
