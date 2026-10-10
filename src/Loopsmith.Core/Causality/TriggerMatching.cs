@@ -38,6 +38,7 @@ public static class TriggerMatching
             _ => true,
             _ => origin is DamageOrigin.Weapon,
             weaponOfType => origin is DamageOrigin.Weapon weapon && weapon.Type == weaponOfType.Type,
+            weaponInSlot => origin is DamageOrigin.Weapon weapon && weapon.Slot == weaponInSlot.Slot,
             _ => origin is DamageOrigin.Ability,
             abilityOf => origin is DamageOrigin.Ability ability && ability.Kind == abilityOf.Kind,
             ofType => ReadDamageType(origin) == ofType.Type,

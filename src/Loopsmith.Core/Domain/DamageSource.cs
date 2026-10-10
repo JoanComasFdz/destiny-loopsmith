@@ -9,6 +9,7 @@ public partial record DamageSource
     partial record AnySource();
     partial record AnyWeapon();
     partial record WeaponOfType(DamageType Type);
+    partial record WeaponInSlot(WeaponSlot Slot);    // the build's weapon in that slot: an exotic weapon's "this weapon"
     partial record AnyAbility();
     partial record AbilityOf(AbilityKind Kind);
     partial record OfType(DamageType Type);          // any weapon, ability, keyword or summon of that damage type

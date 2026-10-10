@@ -139,6 +139,7 @@ public static class DomainPhrasing
             _ => "any source",
             _ => "weapon",
             weaponOfType => $"{weaponOfType.Type} weapon",
+            weaponInSlot => $"{weaponInSlot.Slot.DescribeWeaponSlot().ToLowerInvariant()} weapon",
             _ => "ability",
             abilityOf => abilityOf.Kind.DescribeAbility(),
             ofType => $"{ofType.Type}",
