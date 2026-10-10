@@ -33,7 +33,7 @@
             @foreach (var step in Report.Steps)
             {
                 <li class="chain-row @(selected == step.StepIndex ? "selected" : "") @(step.Blocked.IsSome() ? "blocked" : "")" style="height: @(chain.RowPitch)px">
-                    <button type="button" class="chain-card" style="height: @(chain.CardHeight)px" @onclick="() => Select(step.StepIndex)" aria-pressed="@(selected == step.StepIndex)">
+                    <button type="button" class="chain-card" style="height: @(chain.CardHeight)px; margin-top: @(ChainShaping.CardMargin)px" @onclick="() => Select(step.StepIndex)" aria-pressed="@(selected == step.StepIndex)">
                         <span class="muted">#@(step.StepIndex + 1)</span>
                         <span class="chain-label">@step.Label</span>
                         @if (step.Blocked.IsSome())

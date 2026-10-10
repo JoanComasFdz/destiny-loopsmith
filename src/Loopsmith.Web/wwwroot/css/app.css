@@ -687,7 +687,7 @@ textarea { resize: vertical; }
 .chain-arcs .card-edge.selected { fill: var(--line-2); }
 .chain-rows { list-style: none; margin: 0; padding-top: 0; padding-bottom: 0; padding-right: 0; }
 .chain-row { display: flex; align-items: flex-start; }
-.chain-card { all: unset; box-sizing: border-box; display: flex; align-items: center; gap: 6px; width: 100%; margin-top: 4px; padding: 0 10px 0 4px; border-radius: 0 8px 8px 0; background: var(--line); cursor: pointer; font-size: 13px; white-space: nowrap; overflow: hidden; }
+.chain-card { all: unset; box-sizing: border-box; display: flex; align-items: center; gap: 6px; width: 100%; padding: 0 10px 0 4px; border-radius: 0 8px 8px 0; background: var(--line); cursor: pointer; font-size: 13px; white-space: nowrap; overflow: hidden; }
 .chain-card:hover, .chain-card:focus-visible { color: var(--text); text-decoration: underline; text-decoration-color: var(--dim); }
 .chain-row.selected .chain-card { background: var(--line-2); font-weight: 700; }
 .chain-row.blocked .chain-label { color: var(--warn); }

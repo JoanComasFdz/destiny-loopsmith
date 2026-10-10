@@ -41,15 +41,15 @@ public sealed record ChainLayout(
 /// </summary>
 public static class ChainShaping
 {
-    public const int RowPitch = 44;
+    public const int RowPitch = 56;
 
-    public const int CardHeight = 36;
+    public const int CardHeight = 46;
 
-    private const int CardMargin = 4;
+    public const int CardMargin = 5;
 
     private const int IngressOffset = 11;
 
-    private const int EgressOffset = 25;
+    private const int EgressOffset = 35;
 
     /// <summary>How far the notch cuts in and the tab sticks out.</summary>
     private const int Depth = 8;
