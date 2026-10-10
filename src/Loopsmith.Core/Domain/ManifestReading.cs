@@ -95,16 +95,6 @@ public static class ManifestReading
             ArmorSets = more.ArmorSets.Where(entry => !excerpt.ArmorSets.ContainsKey(entry.Key)).Aggregate(excerpt.ArmorSets, (sets, entry) => sets.Add(entry.Key, entry.Value)),
         };
 
-    /// <summary>The hashes a build names that the excerpt lacks: its weapons, their roll picks, what it left out.</summary>
-    public static ImmutableArray<ItemHash> ListUnknownHashes(this ManifestExcerpt excerpt, Build build) =>
-    [
-        .. build.Weapons.SelectMany(weapon => weapon.Hash.Match(hash => new[] { hash.Value }, _ => [])
-                .Concat(weapon.Roll.SelectMany(pick => pick.Match(hash => new[] { hash.Value }, _ => []))))
-            .Concat(build.LeftOut.Select(item => item.Hash))
-            .Distinct()
-            .Where(hash => !excerpt.Items.ContainsKey(hash)),
-    ];
-
     /// <summary>The armor slot of an armor piece, or of a mod that only fits it; none for anything else (a general mod).</summary>
     public static Optional<ArmorSlot> ReadArmorSlot(this ManifestItem item) =>
         item.Kind switch

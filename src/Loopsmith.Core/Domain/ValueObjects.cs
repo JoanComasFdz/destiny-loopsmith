@@ -99,6 +99,14 @@ public readonly partial struct StackCount
         value >= 0 ? Validation.Ok : Validation.Invalid("Stacks must not be negative");
 }
 
+/// <summary>A plug category of Bungie's manifest (<c>v404.repackage.machinegun0.masterwork</c>: what a socket takes).</summary>
+[ValueObject<string>]
+public readonly partial struct PlugCategoryId
+{
+    private static Validation Validate(string value) =>
+        value.Length > 0 && !value.Any(char.IsWhiteSpace) ? Validation.Ok : Validation.Invalid("A plug category is one word, not empty");
+}
+
 /// <summary>How many pieces of an armor set: what a set perk needs, or what a loadout wears (at least one).</summary>
 [ValueObject<int>]
 public readonly partial struct PieceCount

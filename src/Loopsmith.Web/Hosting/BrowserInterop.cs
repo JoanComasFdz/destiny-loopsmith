@@ -1,5 +1,7 @@
 using System.Collections.Immutable;
+using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
+using Loopsmith.Core.ManifestJoining;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.JSInterop;
 
@@ -39,19 +41,25 @@ public sealed class BrowserInterop(IJSRuntime js)
         return Optional.FromNullable(index);
     }
 
-    // JS interop serializes plain dictionaries and arrays (not immutable collections), so each call copies into them.
+    // JS interop serializes plain dictionaries and arrays (not immutable collections or value objects), so each call
+    // copies into them.
 
-    /// <summary>Downloads (once per tab) and indexes each component; why it couldn't, or "" when every one is in.</summary>
-    public ValueTask<string> LoadManifestTablesAsync(IReadOnlyDictionary<string, string> urls) =>
-        js.InvokeAsync<string>("loopsmithManifest.loadTables", new Dictionary<string, string>(urls));
+    /// <summary>Downloads (once per tab) and indexes each component (<c>{ component: url }</c>); why it couldn't, when it couldn't.</summary>
+    public async Task<Result<Unit, string>> LoadManifestTablesAsync(IReadOnlyDictionary<string, string> urls)
+    {
+        var problem = await js.InvokeAsync<string?>("loopsmithManifest.loadTables", new Dictionary<string, string>(urls));
+        return Optional.FromNullable(problem).Match<Result<Unit, string>>(
+            failed => new Result<Unit, string>.Error(failed.Value),
+            _ => new Result<Unit, string>.Ok(new Unit.Value()));
+    }
 
     /// <summary>The raw JSON of the entries asked for, per component (<c>{ component: { hash: entry } }</c>).</summary>
-    public ValueTask<string> ReadManifestEntriesAsync(IReadOnlyDictionary<string, ImmutableArray<uint>> request) =>
-        js.InvokeAsync<string>("loopsmithManifest.readEntries", request.ToDictionary(entry => entry.Key, entry => entry.Value.ToArray()));
+    public ValueTask<string> ReadManifestEntriesAsync(IReadOnlyDictionary<string, ImmutableArray<ItemHash>> request) =>
+        js.InvokeAsync<string>("loopsmithManifest.readEntries", request.ToDictionary(entry => entry.Key, entry => entry.Value.Select(hash => hash.Value).ToArray()));
 
-    /// <summary>The item component's plug items of each plug category (<c>{ category: [hashes] }</c>).</summary>
-    public ValueTask<string> FindManifestPlugsAsync(string component, IReadOnlyList<string> categories) =>
-        js.InvokeAsync<string>("loopsmithManifest.findPlugs", component, categories.ToArray());
+    /// <summary>The hashes of a component's entries whose JSON holds each needle (<c>{ needle: [hashes] }</c>).</summary>
+    public ValueTask<string> FindManifestEntriesContainingAsync(ManifestTextSearch search) =>
+        js.InvokeAsync<string>("loopsmithManifest.findEntriesContaining", search.Component, search.Needles.ToArray());
 
     /// <summary>A file the user picked with <c>InputFile</c>, as text (foreseeable failures become an error).</summary>
     public static async Task<Result<string, string>> ReadPickedFileAsync(IBrowserFile file)

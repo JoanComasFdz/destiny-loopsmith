@@ -68,7 +68,9 @@ nothing itself), indexes them in the page (`wwwroot/js/manifest.js`), and Core r
 Their paths come from the manifest index (`https://www.bungie.net/Platform/Destiny2/Manifest/`, sent with
 `BungieApiKey` when set in `wwwroot/appsettings.json`); when the index doesn't answer, from
 `ManifestContentId` there — the content id of the manifest the excerpt was made from. Update it when you
-regenerate the excerpt (`tools/manifest/get-manifest.sh` prints it).
+regenerate the excerpt (`tools/manifest/get-manifest.sh` prints it). Only paths in bungie.net's component
+folder are taken from the index. The tab remembers which items it read the manifest for, so the designer
+doesn't read again what Home just read (or failed to).
 
 ## Alternatives
 

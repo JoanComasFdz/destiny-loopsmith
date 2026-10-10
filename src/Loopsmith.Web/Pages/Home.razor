@@ -124,7 +124,6 @@
     private bool readingDimLink;
     private string readingStep = ReadingLink;
     private const string ReadingLink = "Reading the DIM link…";
-    private const string ReadingManifest = "Reading Bungie's manifest for what Loopsmith doesn't know yet…";
     private Optional<string> dimProblem = Optional.None<string>();
     private Optional<string> importProblem = Optional.None<string>();
 
@@ -194,36 +193,34 @@
             return;
         }
 
-        readingDimLink = true;
-        readingStep = ReadingLink;
-        dimProblem = Optional.None<string>();
+        readingDimLink = true;                                                                   // impure (UI state)
+        readingStep = ReadingLink;                                                               // impure (UI state)
+        dimProblem = Optional.None<string>();                                                    // impure (UI state)
         var loadout = await ReadLoadoutAsync(link);                                              // impure
         var unknown = loadout.Bind(json => LoopDesigning.ListUnknownLoadoutHashes(Bundle.Catalog, json)); // pure
-        var catalog = await JoinManifestAsync(Bundle.Catalog, unknown.Match(ok => ok.Value, _ => [])); // impure
-        readingDimLink = false;
+        var unknownHashes = unknown.Match(ok => ok.Value, _ => []);                              // pure
+        var catalog = await JoinManifestAsync(Bundle.Catalog, unknownHashes);                    // impure
+        readingDimLink = false;                                                                  // impure (UI state)
 
         var started = loadout.Bind(json => LoopDesigning.StartDimDesign(catalog.Catalog, link, json)); // pure
+        var note = catalog.Note.Match(problem => $" {problem.Value}", _ => "");                  // pure
         started.Match(                                                                           // impure
-            ok => OpenDesign(ok.Value, $"New loop for {ok.Value.Build.Build.Name}, from the DIM link.{catalog.Note}"),
+            ok => OpenDesign(ok.Value, $"New loop for {ok.Value.Build.Build.Name}, from the DIM link.{note}"),
             error => ShowDimProblem(error.Failure));
     }
-
-    private sealed record JoinedCatalog(RuleCatalog Catalog, string Note);
 
     /// <summary>The catalog with what Bungie's full manifest says of these hashes (none: as it is); a note when it couldn't be read.</summary>
     private async Task<JoinedCatalog> JoinManifestAsync(RuleCatalog catalog, ImmutableArray<ItemHash> unknown)
     {
         if (unknown.IsEmpty)
         {
-            return new JoinedCatalog(catalog, "");
+            return new JoinedCatalog(catalog, Optional.None<string>());
         }
 
-        readingStep = ReadingManifest;
+        readingStep = LoopDesigning.DescribeManifestReading(unknown.Length);                     // impure (UI state)
         StateHasChanged();                                                                       // impure
         var joined = await Manifest.JoinAsync(unknown);                                          // impure
-        return joined.Match(
-            ok => new JoinedCatalog(LoopDesigning.AddManifest(catalog, ok.Value), ""),
-            error => new JoinedCatalog(catalog, $" {error.Failure} Items Loopsmith doesn't know show by hash."));
+        return LoopDesigning.AddJoinedManifest(catalog, joined);                                 // pure
     }
 
     /// <summary>The link's loadout: DIM's answer for a dim.gg share, or the JSON a link carries.</summary>

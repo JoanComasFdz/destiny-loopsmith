@@ -42,6 +42,9 @@ public sealed record DesignSession(
     ImmutableArray<Resolution> Resolutions,
     GameState Current);
 
+/// <summary>A catalog with what Bungie's full manifest said added; <see cref="Note"/> says when it couldn't be read.</summary>
+public sealed record JoinedCatalog(RuleCatalog Catalog, Optional<string> Note);
+
 /// <summary>Pure API the hosts (CLI, web) use to design, export, import, analyse and compare loops.</summary>
 public static class LoopDesigning
 {
@@ -90,38 +93,71 @@ public static class LoopDesigning
 
     /// <summary>The hashes a DIM loadout wears that the catalog's manifest excerpt lacks (what the full manifest is read for).</summary>
     public static Result<ImmutableArray<ItemHash>, string> ListUnknownLoadoutHashes(RuleCatalog catalog, string loadoutJson) =>
-        DimLoadoutMapping.ListLoadoutHashes(loadoutJson).Map(hashes => (ImmutableArray<ItemHash>)[.. hashes.Distinct().Where(hash => !catalog.Manifest.Items.ContainsKey(hash))]);
+        DimLoadoutMapping.ListLoadoutHashes(loadoutJson).Map(hashes => ManifestJoin.ListUnknown(catalog.Manifest, hashes));
 
     /// <summary>The hashes an open design's build names that the excerpt lacks (its weapons, picks, what it left out).</summary>
     public static ImmutableArray<ItemHash> ListUnknownHashes(DesignSession session) =>
-        session.Build.Catalog.Manifest.ListUnknownHashes(session.Build.Build);
+        ManifestJoin.ListUnknownBuildHashes(session.Build.Catalog.Manifest, session.Build.Build);
 
-    /// <summary>Each manifest component's path on bungie.net: the index's, else the pinned content id's.</summary>
-    public static ImmutableDictionary<ManifestTable, string> ChooseManifestPaths(Optional<string> indexJson, string pinnedContentId) =>
-        ManifestTransport.ChoosePaths(indexJson, pinnedContentId);
+    /// <summary>What the host says while it reads the full manifest for <paramref name="count"/> hashes.</summary>
+    public static string DescribeManifestReading(int count) =>
+        $"Reading Bungie's manifest for {count} item{(count == 1 ? "" : "s")} Loopsmith doesn't know yet…";
 
-    public static string ToManifestComponentName(ManifestTable table) =>
-        ManifestTransport.ToComponentName(table);
+    /// <summary>The manifest's index on bungie.net (the paths of its current version's components).</summary>
+    public const string ManifestIndexUrl = ManifestTransport.IndexUrl;
 
+    /// <summary>Each manifest component's URL on bungie.net, by component name: the index's, else the pinned content id's.</summary>
+    public static ImmutableDictionary<string, string> ChooseManifestUrls(Optional<string> indexJson, string pinnedContentId) =>
+        ManifestTransport.ChooseUrls(indexJson, pinnedContentId);
+
+    /// <summary>A join of what these hashes need from the full manifest: its first question (or, for none, the excerpt).</summary>
     public static ManifestJoinStep StartManifestJoin(IEnumerable<ItemHash> hashes) =>
         ManifestJoin.StartJoin(hashes);
 
-    public static ManifestJoinStep ContinueManifestJoin(ManifestJoinProgress progress, ManifestAnswer answer) =>
-        ManifestJoin.ContinueJoin(progress, answer);
-
-    /// <summary>What the host is asked for, per component (an empty list: the whole component).</summary>
-    public static ImmutableDictionary<string, ImmutableArray<uint>> ToManifestRequest(ManifestQuery query) =>
+    /// <summary>What the host reads for a question, per component (an empty list: the whole component).</summary>
+    public static ImmutableDictionary<string, ImmutableArray<ItemHash>> ToManifestRequest(ManifestQuery query) =>
         ManifestTransport.ToEntryRequest(query);
 
-    public static ManifestAnswer ReadManifestAnswer(string entriesJson, string plugsJson) =>
-        ManifestTransport.ReadAnswer(entriesJson, plugsJson);
+    /// <summary>What the host searches the item component for, for a question's plug categories.</summary>
+    public static ManifestTextSearch ToManifestPlugSearch(ManifestQuery query) =>
+        ManifestTransport.ToPlugSearch(query);
+
+    /// <summary>The join with the host's answer to its question: its next step, or why the answer doesn't read.</summary>
+    public static Result<ManifestJoinStep, string> ContinueManifestJoin(ManifestJoinStep.Ask asked, string entriesJson, string foundJson) =>
+        ManifestTransport.ReadAnswer(asked.Query, entriesJson, foundJson)
+            .Map(answer => ManifestJoin.ContinueJoin(asked.Progress, answer));
+
+    /// <summary>The excerpt the join built, or why reading the manifest failed (or didn't finish).</summary>
+    public static Result<ManifestExcerpt, string> ToJoinedExcerpt(Result<ManifestJoinStep, string> step) =>
+        ManifestTransport.ToJoinedExcerpt(step);
+
+    /// <summary>
+    /// The catalog with what the full manifest said added to its excerpt (what it had stays); when the manifest
+    /// couldn't be read, the catalog as it is and a note saying so.
+    /// </summary>
+    public static JoinedCatalog AddJoinedManifest(RuleCatalog catalog, Result<ManifestExcerpt, string> joined) =>
+        joined.Match(
+            ok => new JoinedCatalog(AddManifest(catalog, ok.Value), Optional.None<string>()),
+            error => new JoinedCatalog(catalog, Optional.Some(DescribeManifestProblem(error.Failure))));
+
+    /// <summary>
+    /// The design with what the full manifest said of its build: validated again with it, its steps replayed; else why
+    /// not (the manifest couldn't be read, or the build doesn't validate with it).
+    /// </summary>
+    public static Result<DesignSession, string> UseJoinedManifest(DesignSession session, Result<ManifestExcerpt, string> joined) =>
+        joined
+            .MapError(DescribeManifestProblem)
+            .Bind(excerpt => UseCatalog(session, AddManifest(session.Build.Catalog, excerpt)));
 
     /// <summary>The catalog with a joined part of the full manifest added to its excerpt (what it had stays).</summary>
-    public static RuleCatalog AddManifest(RuleCatalog catalog, ManifestExcerpt joined) =>
+    private static RuleCatalog AddManifest(RuleCatalog catalog, ManifestExcerpt joined) =>
         catalog with { Manifest = catalog.Manifest.AddExcerpt(joined) };
 
+    private static string DescribeManifestProblem(string problem) =>
+        $"Couldn't read Bungie's manifest ({problem}). Items Loopsmith doesn't know show by hash.";
+
     /// <summary>The design with its build validated again against a catalog (one with more of the manifest), its steps replayed.</summary>
-    public static Result<DesignSession, string> UseCatalog(DesignSession session, RuleCatalog catalog) =>
+    private static Result<DesignSession, string> UseCatalog(DesignSession session, RuleCatalog catalog) =>
         BuildValidation.ValidateBuild(session.Build.Build, catalog)
             .Map(validated => CreateSession(validated, session.Design));
 

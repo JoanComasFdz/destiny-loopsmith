@@ -1,7 +1,7 @@
 // Loopsmith web host — Bungie's manifest, downloaded on demand: each component file is fetched from bungie.net (the
 // browser's HTTP cache keeps it; the app stores nothing), its bytes kept as they came, and every entry's place in
-// them indexed by hash. Core asks for entries by hash (and for the plug items of a plug category) and interprets the
-// raw JSON itself: no game logic lives here. Called from Hosting/BrowserInterop.cs.
+// them indexed by hash. Core asks for entries by hash (and for the entries whose JSON holds a piece of text) and
+// interprets the raw JSON itself: no game logic lives here. Called from Hosting/BrowserInterop.cs.
 window.loopsmithManifest = (() => {
   const tables = new Map();   // component name → { bytes, offsets: Map(hash → [start, end]) }
   const decoder = new TextDecoder("utf-8");
@@ -53,18 +53,14 @@ window.loopsmithManifest = (() => {
       }
     },
 
-    // Fetch and index the components ({ name: url }); an error message, or "" when all are in.
+    // Fetch and index the components ({ name: url }); why one couldn't be, or null when all are in.
     async loadTables(urls) {
       try {
         for (const [name, url] of Object.entries(urls)) await loadTable(name, url);
-        return "";
+        return null;
       } catch (error) {
         return String(error && error.message ? error.message : error);
       }
-    },
-
-    isLoaded(name) {
-      return tables.has(name);
     },
 
     // The raw JSON of each entry asked for ({ table: [hashes] } → { table: { hash: json } }); a missing one is left out.
@@ -85,21 +81,22 @@ window.loopsmithManifest = (() => {
       return JSON.stringify(answer);
     },
 
-    // The hashes of the item table's entries whose plug category is each of these ({ category: [hashes] }): one pass
-    // over the bytes per category, each match placed in the entry that holds it.
-    findPlugs(table, categories) {
+    // The hashes of a table's entries whose JSON holds each needle ({ needle: [hashes] }): one pass over the bytes per
+    // needle, each match placed in the entry that holds it.
+    findEntriesContaining(table, needles) {
       const found = {};
       const store = tables.get(table);
       if (!store) return JSON.stringify(found);
+      const encoder = new TextEncoder();
       const starts = [...store.offsets].map(([key, [start, end]]) => [start, end, Number(key)]).sort((a, b) => a[0] - b[0]);
-      for (const category of categories) {
-        const needle = new TextEncoder().encode(`"plugCategoryIdentifier":${JSON.stringify(category)}`);
+      for (const needle of needles) {
+        const bytes = encoder.encode(needle);
         const hashes = new Set();
-        for (let at = indexOf(store.bytes, needle, 0); at >= 0; at = indexOf(store.bytes, needle, at + 1)) {
+        for (let at = indexOf(store.bytes, bytes, 0); at >= 0; at = indexOf(store.bytes, bytes, at + 1)) {
           const entry = findEntry(starts, at);
           if (entry) hashes.add(entry[2]);
         }
-        found[category] = [...hashes].sort((a, b) => a - b);
+        found[needle] = [...hashes].sort((a, b) => a - b);
       }
       return JSON.stringify(found);
     },

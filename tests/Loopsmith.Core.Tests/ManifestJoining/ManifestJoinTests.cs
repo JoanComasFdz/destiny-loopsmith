@@ -20,7 +20,7 @@ public sealed class ManifestJoinTests
     {
         var store = new ManifestStore(Fixture.Tables);
 
-        var excerpt = store.Join(ManifestJoin.StartJoin([ItemHash.From(100u), ItemHash.From(200u)]), ManifestJoin.ContinueJoin);
+        var excerpt = store.Join([ItemHash.From(100u), ItemHash.From(200u)]);
         var weapon = Assert.IsType<ManifestKind.Weapon>(excerpt.Items[ItemHash.From(100u)].Kind);
         var armor = Assert.IsType<ManifestKind.Armor>(excerpt.Items[ItemHash.From(200u)].Kind);
 
@@ -41,7 +41,7 @@ public sealed class ManifestJoinTests
     {
         var store = new ManifestStore(Fixture.Tables);
 
-        var excerpt = store.Join(ManifestJoin.StartJoin([ItemHash.From(999u)]), ManifestJoin.ContinueJoin);
+        var excerpt = store.Join([ItemHash.From(999u)]);
 
         Assert.Empty(excerpt.Items);
         Assert.Equal(1, store.Rounds);
@@ -52,47 +52,55 @@ public sealed class ManifestJoinTests
     {
         var store = new ManifestStore(Fixture.Tables);
 
-        var excerpt = store.Join(ManifestJoin.StartJoin([ItemHash.From(300u)]), ManifestJoin.ContinueJoin);
+        var excerpt = store.Join([ItemHash.From(300u)]);
 
         Assert.IsType<ManifestKind.Fragment>(excerpt.Items[ItemHash.From(300u)].Kind);
         Assert.Equal(Optional.Some("Your grenades jolt.\n-10 Grenade"), excerpt.Items[ItemHash.From(300u)].Description);
     }
 
     [Fact]
-    public void The_components_paths_come_from_the_index_else_from_the_pinned_content_id()
+    public void The_components_urls_come_from_the_index_else_from_the_pinned_content_id()
     {
         var index = """{ "Response": { "jsonWorldComponentContentPaths": { "en": { """
-            + string.Join(", ", Enum.GetValues<ManifestTable>().Select(table => $"\"{ManifestTransport.ToComponentName(table)}\": \"/new/{table}.json\""))
+            + string.Join(", ", Enum.GetValues<ManifestTable>().Select(table => $"\"{ManifestTransport.ToComponentName(table)}\": \"/common/destiny2_content/json/en/{table}-new.json\""))
             + " } } } }";
+        var elsewhere = index.Replace("/common/destiny2_content/json/en/PlugSet-new.json", "//evil.example/PlugSet.json", StringComparison.Ordinal);
 
-        var fromIndex = ManifestTransport.ChoosePaths(Optional.Some(index), "pinned");
-        var pinned = ManifestTransport.ChoosePaths(Optional.None<string>(), "a8ba855a");
-        var broken = ManifestTransport.ChoosePaths(Optional.Some("<html>500</html>"), "a8ba855a");
+        var fromIndex = ManifestTransport.ChooseUrls(Optional.Some(index), "pinned");
+        var pinned = ManifestTransport.ChooseUrls(Optional.None<string>(), "a8ba855a");
+        var broken = ManifestTransport.ChooseUrls(Optional.Some("<html>500</html>"), "a8ba855a");
+        var notBungies = ManifestTransport.ChooseUrls(Optional.Some(elsewhere), "a8ba855a");
 
-        Assert.Equal("/new/PlugSet.json", fromIndex[ManifestTable.PlugSet]);
-        Assert.Equal("/common/destiny2_content/json/en/DestinyPlugSetDefinition-a8ba855a.json", pinned[ManifestTable.PlugSet]);
+        Assert.Equal("https://www.bungie.net/common/destiny2_content/json/en/PlugSet-new.json", fromIndex["DestinyPlugSetDefinition"]);
+        Assert.Equal("https://www.bungie.net/common/destiny2_content/json/en/DestinyPlugSetDefinition-a8ba855a.json", pinned["DestinyPlugSetDefinition"]);
         Assert.Equal(pinned, broken);
+        Assert.Equal(pinned, notBungies);                                                        // a path off the component folder isn't taken
     }
 
     [Fact]
-    public void A_query_becomes_the_hosts_request_and_its_json_answer_the_joins()
+    public void A_query_becomes_the_hosts_request_and_search_and_its_json_answer_the_joins()
     {
         var query = new ManifestQuery(
-            [new ManifestEntryKey(ManifestTable.InventoryItem, 7), new ManifestEntryKey(ManifestTable.InventoryItem, 8), new ManifestEntryKey(ManifestTable.SandboxPerk, 9)],
+            [new ManifestEntryKey(ManifestTable.InventoryItem, ItemHash.From(7u)), new ManifestEntryKey(ManifestTable.InventoryItem, ItemHash.From(8u)), new ManifestEntryKey(ManifestTable.SandboxPerk, ItemHash.From(9u))],
             [ManifestTable.SocketCategory],
-            ["x.masterwork"]);
+            [PlugCategoryId.From("x.masterwork")]);
 
         var request = ManifestTransport.ToEntryRequest(query);
+        var search = ManifestTransport.ToPlugSearch(query);
         var answer = ManifestTransport.ReadAnswer(
-            """{ "DestinyInventoryItemDefinition": { "7": "{\"hash\":7}", "x": "{}" }, "Unknown": { "1": "{}" } }""",
-            """{ "x.masterwork": [30, 31], "bad": "no" }""");
+            query,
+            """{ "DestinyInventoryItemDefinition": { "7": "{\"hash\":7}", "x": "{}", "0": "{}" }, "Unknown": { "1": "{}" } }""",
+            """{ "\"plugCategoryIdentifier\":\"x.masterwork\"": [30, 31, 0, "no"], "bad": [1] }""");
 
-        Assert.Equal([7u, 8u], request["DestinyInventoryItemDefinition"]);
-        Assert.Equal([9u], request["DestinySandboxPerkDefinition"]);
+        Assert.Equal([7u, 8u], request["DestinyInventoryItemDefinition"].Select(hash => hash.Value));
+        Assert.Equal([9u], request["DestinySandboxPerkDefinition"].Select(hash => hash.Value));
         Assert.Empty(request["DestinySocketCategoryDefinition"]);                                // the whole table
-        Assert.Equal("{\"hash\":7}", Assert.Single(answer.Entries).Value);
-        Assert.Equal([30u, 31u], Assert.Single(answer.Plugs).Value);
-        Assert.Empty(ManifestTransport.ReadAnswer("not json", "[]").Entries);
+        Assert.Equal(("DestinyInventoryItemDefinition", "\"plugCategoryIdentifier\":\"x.masterwork\""), (search.Component, Assert.Single(search.Needles)));
+        var read = Assert.IsType<Result<ManifestAnswer, string>.Ok>(answer).Value;
+        Assert.Equal("{\"hash\":7}", Assert.Single(read.Entries).Value);
+        Assert.Equal([30u, 31u], Assert.Single(read.Plugs).Value.Select(hash => hash.Value)); // 0 and "no" aren't hashes
+        Assert.IsType<Result<ManifestAnswer, string>.Error>(ManifestTransport.ReadAnswer(query, "not json", "{}"));
+        Assert.IsType<Result<ManifestAnswer, string>.Error>(ManifestTransport.ReadAnswer(query, "{}", "[]"));
     }
 
     [Fact]
@@ -120,7 +128,7 @@ public sealed class ManifestJoinTests
             .Manifest;
         var store = ManifestStore.ReadDirectory(directory!);
 
-        var joined = store.Join(ManifestJoin.StartJoin(bundled.Items.Keys), ManifestJoin.ContinueJoin);
+        var joined = store.Join(bundled.Items.Keys);
 
         Assert.Equal(
             bundled.Items.Values.OrderBy(item => item.Hash.Value).Select(DescribeItem),
@@ -174,7 +182,7 @@ public sealed class ManifestJoinTests
             }
             """;
 
-        internal static readonly ImmutableDictionary<ManifestTable, ImmutableDictionary<uint, string>> Tables = new Dictionary<ManifestTable, string>
+        internal static readonly ImmutableDictionary<ManifestTable, ImmutableDictionary<ItemHash, string>> Tables = new Dictionary<ManifestTable, string>
         {
             [ManifestTable.InventoryItem] = Items.Replace("Fires  faster.", "Fires  faster.", StringComparison.Ordinal),
             [ManifestTable.InventoryBucket] = Buckets,

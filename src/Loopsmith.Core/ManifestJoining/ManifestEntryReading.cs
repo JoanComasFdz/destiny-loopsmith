@@ -7,8 +7,9 @@ using Loopsmith.Core.Functional;
 namespace Loopsmith.Core.ManifestJoining;
 
 /// <summary>
-/// Reading Bungie's raw JSON: the slice boundary for <see cref="JsonDocument"/> (a malformed entry is left out, once,
-/// here), and total helpers over a parsed entry — a missing or mistyped field is none, never an exception.
+/// Reading Bungie's raw JSON: the slice boundary for <see cref="JsonDocument"/> (<see cref="ParseDocument"/>, once, here;
+/// a malformed entry is as if the manifest lacked it), and total helpers over a parsed entry — a missing or mistyped
+/// field is none, never an exception.
 /// </summary>
 internal static partial class ManifestEntryReading
 {
@@ -20,20 +21,8 @@ internal static partial class ManifestEntryReading
                 _ => []))
             .ToImmutableDictionary();
 
-    private static Optional<JsonElement> ParseEntry(string json)
-    {
-        try
-        {
-            using var document = JsonDocument.Parse(json);
-            return document.RootElement.ValueKind == JsonValueKind.Object
-                ? Optional.Some(document.RootElement.Clone())
-                : Optional.None<JsonElement>();
-        }
-        catch (JsonException)
-        {
-            return Optional.None<JsonElement>();
-        }
-    }
+    private static Optional<JsonElement> ParseEntry(string json) =>
+        ParseDocument(json).Match(parsed => Optional.Some(parsed.Value), _ => Optional.None<JsonElement>());
 
     /// <summary>The value at a path of property names, when every step is an object that has it.</summary>
     internal static Optional<JsonElement> ReadPath(this JsonElement element, params string[] path) =>
@@ -47,10 +36,13 @@ internal static partial class ManifestEntryReading
     internal static Optional<string> ReadText(this JsonElement element, params string[] path) =>
         element.ReadString(path).Map(ToShownText).Bind(text => text.Length > 0 ? Optional.Some(text) : Optional.None<string>());
 
-    internal static Optional<uint> ReadHash(this JsonElement element, params string[] path) =>
-        element.ReadPath(path).Bind(found => found.ValueKind == JsonValueKind.Number && found.TryGetUInt32(out var hash) && hash > 0
-            ? Optional.Some(hash)
-            : Optional.None<uint>());
+    /// <summary>A manifest hash: a whole number that is a valid <see cref="ItemHash"/> (never 0), else none.</summary>
+    internal static Optional<ItemHash> ReadHash(this JsonElement element, params string[] path) =>
+        element.ReadPath(path).Bind(ToItemHash);
+
+    /// <summary>A JSON number that is a manifest hash.</summary>
+    internal static Optional<ItemHash> ToItemHash(this JsonElement found) =>
+        found.ValueKind == JsonValueKind.Number && found.TryGetUInt32(out var hash) ? ToItemHash(hash) : Optional.None<ItemHash>();
 
     internal static Optional<int> ReadInteger(this JsonElement element, params string[] path) =>
         element.ReadPath(path).Bind(found => found.ValueKind == JsonValueKind.Number && found.TryGetInt32(out var number)
@@ -71,15 +63,37 @@ internal static partial class ManifestEntryReading
     internal static Optional<ItemHash> ToItemHash(uint hash) =>
         ItemHash.TryFrom(hash).ToOptional();
 
+    internal static Optional<PieceCount> ToPieceCount(int count) =>
+        PieceCount.TryFrom(count).ToOptional();
+
+    internal static Optional<PlugCategoryId> ToPlugCategory(string category) =>
+        PlugCategoryId.TryFrom(category).ToOptional();
+
+    /// <summary>The JSON text of a document, parsed — the one boundary for <see cref="JsonDocument"/>: why it isn't an object, or its root.</summary>
+    internal static Result<JsonElement, string> ParseDocument(string json)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(json);
+            return document.RootElement.ValueKind == JsonValueKind.Object
+                ? new Result<JsonElement, string>.Ok(document.RootElement.Clone())
+                : new Result<JsonElement, string>.Error("not a JSON object");
+        }
+        catch (JsonException exception)
+        {
+            return new Result<JsonElement, string>.Error(exception.Message);
+        }
+    }
+
     private static string ToShownText(string text) =>
-        RepeatedSpaces().Replace(IconGlyphs().Replace(text, ""), " ").Trim();
+        CreateRepeatedSpacePattern().Replace(CreateIconGlyphPattern().Replace(text, ""), " ").Trim();
 
     private static Optional<T> ToOptional<T>(this Vogen.ValueObjectOrError<T> outcome) =>
         outcome.IsSuccess ? Optional.Some(outcome.ValueObject) : Optional.None<T>();
 
     [GeneratedRegex("[-]")]
-    private static partial Regex IconGlyphs();
+    private static partial Regex CreateIconGlyphPattern();
 
     [GeneratedRegex(" {2,}")]
-    private static partial Regex RepeatedSpaces();
+    private static partial Regex CreateRepeatedSpacePattern();
 }

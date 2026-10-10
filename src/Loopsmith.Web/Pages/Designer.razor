@@ -133,30 +133,40 @@
 
     /// <summary>
     /// What the open build names that the bundled excerpt lacks (a shared loop's DIM build), read from Bungie's full
-    /// manifest: the build is validated again with it and the steps replay.
+    /// manifest (once per tab: what Home already asked for isn't read again): the design as it is when the manifest
+    /// answers (an edit made meanwhile stays) is validated again with it and its steps replay.
     /// </summary>
     private async Task JoinManifestAsync()
     {
-        var unknown = Workbench.Session.Match(open => LoopDesigning.ListUnknownHashes(open.Value), _ => []); // pure
+        if (Workbench.Session is not Optional<DesignSession>.Some opened)
+        {
+            return;
+        }
+
+        var lacking = LoopDesigning.ListUnknownHashes(opened.Value);                             // pure
+        var unknown = Manifest.ListUnasked(lacking);                                             // impure (reads the tab's asked hashes)
         if (unknown.IsEmpty)
         {
             return;
         }
 
         var status = Workbench.Status;
-        Workbench.Status = $"Reading Bungie's manifest for {unknown.Length} item{(unknown.Length == 1 ? "" : "s")} Loopsmith doesn't know yet…"; // impure (UI state)
+        Workbench.Status = LoopDesigning.DescribeManifestReading(unknown.Length);                // impure (UI state)
         var joined = await Manifest.JoinAsync(unknown);                                          // impure
-        var used = Workbench.Session.Match(                                                      // pure
-            open => joined.Bind(excerpt => LoopDesigning.UseCatalog(open.Value, LoopDesigning.AddManifest(open.Value.Build.Catalog, excerpt))),
-            _ => new Result<DesignSession, string>.Error(""));
+        if (Workbench.Session is not Optional<DesignSession>.Some current)
+        {
+            return;
+        }
+
+        var used = LoopDesigning.UseJoinedManifest(current.Value, joined);                       // pure
         if (used is Result<DesignSession, string>.Ok next)
         {
             Workbench.Session = Optional.Some(next.Value);                                       // impure (UI state)
             Workbench.Status = status;                                                           // impure (UI state)
         }
-        else if (joined is Result<ManifestExcerpt, string>.Error failed)
+        else if (used is Result<DesignSession, string>.Error failed)
         {
-            Workbench.Status = $"{status} {failed.Failure} Items Loopsmith doesn't know show by hash."; // impure (UI state)
+            Workbench.Status = $"{status} {failed.Failure}";                                     // impure (UI state)
         }
     }
 

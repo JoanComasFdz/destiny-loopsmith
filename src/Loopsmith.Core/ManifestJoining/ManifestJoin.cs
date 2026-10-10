@@ -55,7 +55,7 @@ public static class ManifestJoin
 
     private static readonly ManifestAnswer NoAnswer = new(
         ImmutableDictionary<ManifestEntryKey, string>.Empty,
-        ImmutableDictionary<string, ImmutableArray<uint>>.Empty);
+        ImmutableDictionary<PlugCategoryId, ImmutableArray<ItemHash>>.Empty);
 
     /// <summary>A join of what these hashes need: its first question to the manifest (or, for none, an empty excerpt).</summary>
     public static ManifestJoinStep StartJoin(IEnumerable<ItemHash> wanted) =>
@@ -68,15 +68,25 @@ public static class ManifestJoin
             Read = new ManifestAnswer(progress.Read.Entries.SetItems(answer.Entries), progress.Read.Plugs.SetItems(answer.Plugs)),
         });
 
+    /// <summary>The hashes the excerpt lacks (what the full manifest is read for), each once.</summary>
+    public static ImmutableArray<ItemHash> ListUnknown(ManifestExcerpt excerpt, IEnumerable<ItemHash> hashes) =>
+        [.. hashes.Distinct().Where(hash => !excerpt.Items.ContainsKey(hash))];
+
+    /// <summary>The hashes a build names that the excerpt lacks: its weapons, their roll picks, what it left out.</summary>
+    public static ImmutableArray<ItemHash> ListUnknownBuildHashes(ManifestExcerpt excerpt, Build build) =>
+        ListUnknown(excerpt, build.Weapons
+            .SelectMany(weapon => ToSequence(weapon.Hash).Concat(weapon.Roll.SelectMany(ToSequence)))
+            .Concat(build.LeftOut.Select(item => item.Hash)));
+
     // ── one round ───────────────────────────────────────────────────────────────────
 
-    /// <summary>What has been read, parsed; and what the walk has reached that wasn't read (or asked) yet.</summary>
+    /// <summary>What has been read, each entry parsed, and each plug category's plug items.</summary>
     private sealed record Reading(
         ImmutableDictionary<ManifestEntryKey, JsonElement> Entries,
-        ImmutableDictionary<string, ImmutableArray<uint>> Plugs);
+        ImmutableDictionary<PlugCategoryId, ImmutableArray<ItemHash>> Plugs);
 
     /// <summary>What a walk reaches: entries, whole tables and plug categories; each walk step adds to it.</summary>
-    private sealed record Reach(ImmutableHashSet<ManifestEntryKey> Entries, ImmutableHashSet<ManifestTable> Tables, ImmutableHashSet<string> Plugs)
+    private sealed record Reach(ImmutableHashSet<ManifestEntryKey> Entries, ImmutableHashSet<ManifestTable> Tables, ImmutableHashSet<PlugCategoryId> Plugs)
     {
         internal static readonly Reach None = new([], [], []);
     }
@@ -98,9 +108,9 @@ public static class ManifestJoin
                     AskedPlugs = progress.AskedPlugs.Union(plugs),
                 },
                 new ManifestQuery(
-                    [.. entries.OrderBy(key => key.Table).ThenBy(key => key.Hash)],
+                    [.. entries.OrderBy(key => key.Table).ThenBy(key => key.Hash.Value)],
                     [.. tables.OrderBy(table => table)],
-                    [.. plugs.Order(StringComparer.Ordinal)]));
+                    [.. plugs.OrderBy(plug => plug.Value, StringComparer.Ordinal)]));
     }
 
     // ── the walk: what each wanted hash needs read ───────────────────────────────
@@ -108,11 +118,11 @@ public static class ManifestJoin
     private static Reach WalkWanted(Reading reading, ImmutableArray<ItemHash> wanted) =>
         wanted.Aggregate(
             Reach.None with { Tables = [.. SmallTables] },
-            (reach, hash) => Join(Join(reach, Join(Need(ManifestTable.InventoryItem, hash.Value), Need(ManifestTable.SandboxPerk, hash.Value))),
-                FindEntry(reading, ManifestTable.InventoryItem, hash.Value).Match(
+            (reach, hash) => Join(Join(reach, Join(ToReach(ManifestTable.InventoryItem, hash), ToReach(ManifestTable.SandboxPerk, hash))),
+                FindEntry(reading, ManifestTable.InventoryItem, hash).Match(
                     item => WalkItem(reading, item.Value),
-                    _ => FindEntry(reading, ManifestTable.SandboxPerk, hash.Value).Match(
-                        _ => WalkSetOfPerk(reading, hash.Value),
+                    _ => FindEntry(reading, ManifestTable.SandboxPerk, hash).Match(
+                        _ => WalkSetOfPerk(reading, hash),
                         _ => Reach.None))));
 
     private static Reach WalkItem(Reading reading, JsonElement item) =>
@@ -131,13 +141,13 @@ public static class ManifestJoin
     /// <summary>The sandbox perks of an item (an aspect's or a fragment's text is its perks').</summary>
     private static Reach ListPerkNeeds(Reading reading, JsonElement item) =>
         item.ReadArray("perks").Aggregate(Reach.None, (reach, perk) =>
-            perk.ReadHash("perkHash").Match(hash => Join(reach, Need(ManifestTable.SandboxPerk, hash.Value)), _ => reach));
+            perk.ReadHash("perkHash").Match(hash => Join(reach, ToReach(ManifestTable.SandboxPerk, hash.Value)), _ => reach));
 
     private static Reach WalkWeaponSockets(Reading reading, JsonElement weapon)
     {
         var entries = weapon.ReadArray("sockets", "socketEntries");
         var types = entries.Aggregate(Reach.None, (reach, entry) =>
-            entry.ReadHash("socketTypeHash").Match(hash => Join(reach, Need(ManifestTable.SocketType, hash.Value)), _ => reach));
+            entry.ReadHash("socketTypeHash").Match(hash => Join(reach, ToReach(ManifestTable.SocketType, hash.Value)), _ => reach));
         var columns = ListTraitSockets(reading, weapon).Aggregate(Reach.None, (reach, socket) => Join(reach, WalkColumn(reading, socket)));
         var catalyst = ListCatalystCategories(reading, weapon).Aggregate(Reach.None, (reach, category) => Join(reach, WalkCatalystCategory(reading, category)));
         return Join(Join(types, columns), Join(catalyst, WalkIntrinsicSockets(reading, weapon, WeaponIntrinsicCategoryName)));
@@ -146,39 +156,39 @@ public static class ManifestJoin
     private static Reach WalkColumn(Reading reading, JsonElement socket) =>
         ReadPlugSet(socket).Match(
             set => FindEntry(reading, ManifestTable.PlugSet, set.Value).Match(
-                found => ListRollable(found.Value).Aggregate(Need(ManifestTable.PlugSet, set.Value), (reach, plug) => Join(reach, Need(ManifestTable.InventoryItem, plug))),
-                _ => Need(ManifestTable.PlugSet, set.Value)),
-            _ => socket.ReadHash("singleInitialItemHash").Match(initial => Need(ManifestTable.InventoryItem, initial.Value), _ => Reach.None));
+                found => ListRollable(found.Value).Aggregate(ToReach(ManifestTable.PlugSet, set.Value), (reach, plug) => Join(reach, ToReach(ManifestTable.InventoryItem, plug))),
+                _ => ToReach(ManifestTable.PlugSet, set.Value)),
+            _ => socket.ReadHash("singleInitialItemHash").Match(initial => ToReach(ManifestTable.InventoryItem, initial.Value), _ => Reach.None));
 
-    private static Reach WalkCatalystCategory(Reading reading, string category) =>
+    private static Reach WalkCatalystCategory(Reading reading, PlugCategoryId category) =>
         reading.Plugs.TryGetValue(category, out var plugs)
-            ? plugs.Aggregate(Reach.None with { Plugs = [category] }, (reach, plug) => Join(reach, Join(Need(ManifestTable.InventoryItem, plug),
+            ? plugs.Aggregate(Reach.None with { Plugs = [category] }, (reach, plug) => Join(reach, Join(ToReach(ManifestTable.InventoryItem, plug),
                 FindEntry(reading, ManifestTable.InventoryItem, plug).Match(item => ListPerkNeeds(reading, item.Value), _ => Reach.None))))
             : Reach.None with { Plugs = [category] };
 
     private static Reach WalkIntrinsicSockets(Reading reading, JsonElement item, string categoryName) =>
         ListSocketsInCategory(reading, item, categoryName).Aggregate(Reach.None, (reach, socket) =>
-            socket.ReadHash("singleInitialItemHash").Match(initial => Join(reach, Need(ManifestTable.InventoryItem, initial.Value)), _ => reach));
+            socket.ReadHash("singleInitialItemHash").Match(initial => Join(reach, ToReach(ManifestTable.InventoryItem, initial.Value)), _ => reach));
 
     /// <summary>A set's entry (a small table, read whole) and the perks its piece counts grant.</summary>
-    private static Reach WalkSet(Reading reading, uint set) =>
+    private static Reach WalkSet(Reading reading, ItemHash set) =>
         FindEntry(reading, ManifestTable.EquipableItemSet, set).Match(
             found => found.Value.ReadArray("setPerks").Aggregate(Reach.None, (reach, perk) =>
-                perk.ReadHash("sandboxPerkHash").Match(hash => Join(reach, Need(ManifestTable.SandboxPerk, hash.Value)), _ => reach)),
+                perk.ReadHash("sandboxPerkHash").Match(hash => Join(reach, ToReach(ManifestTable.SandboxPerk, hash.Value)), _ => reach)),
             _ => Reach.None);
 
     /// <summary>A wanted sandbox perk that is a set's perk (a set bonus's hash): its set and the set's other perks.</summary>
-    private static Reach WalkSetOfPerk(Reading reading, uint perk) =>
+    private static Reach WalkSetOfPerk(Reading reading, ItemHash perk) =>
         FindSetOfPerk(reading, perk).Match(set => WalkSet(reading, set.Value), _ => Reach.None);
 
     // ── the excerpt ─────────────────────────────────────────────────────────────────
 
-    private sealed record ReadItem(uint Hash, JsonElement Entry);
+    private sealed record ReadItem(ItemHash Hash, JsonElement Entry);
 
     private static ManifestExcerpt BuildExcerpt(Reading reading, ImmutableArray<ItemHash> wanted)
     {
         var wantedItems = wanted
-            .SelectMany(hash => ToSequence(FindEntry(reading, ManifestTable.InventoryItem, hash.Value).Map(entry => new ReadItem(hash.Value, entry))))
+            .SelectMany(hash => ToSequence(FindEntry(reading, ManifestTable.InventoryItem, hash).Map(entry => new ReadItem(hash, entry))))
             .ToImmutableArray();
         var weapons = wantedItems.Where(item => ClassifyItem(reading, item.Entry) == KindWord.Weapon).ToImmutableArray();
         var armor = wantedItems.Where(item => ClassifyItem(reading, item.Entry) == KindWord.Armor).ToImmutableArray();
@@ -190,11 +200,11 @@ public static class ManifestJoin
             .Concat(catalysts);
         var sets = armor
             .SelectMany(piece => ToSequence(piece.Entry.ReadHash("equippingBlock", "equipableItemSetHash")))
-            .Concat(wanted.SelectMany(hash => ToSequence(FindSetOfPerk(reading, hash.Value))))
+            .Concat(wanted.SelectMany(hash => ToSequence(FindSetOfPerk(reading, hash))))
             .Distinct()
             .SelectMany(set => ToSequence(FindEntry(reading, ManifestTable.EquipableItemSet, set).Map(entry => new ReadItem(set, entry))))
             .ToImmutableArray();
-        var perks = wanted.Select(hash => hash.Value).Where(hash => !FindEntry(reading, ManifestTable.InventoryItem, hash).IsSome())
+        var perks = wanted.Where(hash => !FindEntry(reading, ManifestTable.InventoryItem, hash).IsSome())
             .Concat(catalysts.SelectMany(plug => FindEntry(reading, ManifestTable.InventoryItem, plug).Match(entry => ListGrantedPerks(reading, entry.Value), _ => [])))
             .Concat(sets.SelectMany(set => set.Entry.ReadArray("setPerks").SelectMany(perk => ToSequence(perk.ReadHash("sandboxPerkHash")))));
         var items = wantedItems.Select(item => item.Hash).Concat(related).Distinct()
@@ -205,45 +215,45 @@ public static class ManifestJoin
         return new ManifestExcerpt(
             Optional.None<string>(),
             ImmutableDictionary<DamageType, string>.Empty,
-            sets.SelectMany(set => ToSequence(ToArmorSet(set.Hash, set.Entry))).ToImmutableDictionary(set => set.Hash),
+            sets.Select(set => ToArmorSet(set.Hash, set.Entry)).ToImmutableDictionary(set => set.Hash),
             items);
     }
 
-    private static Optional<ManifestItem> ToManifestItem(Reading reading, uint hash, bool isCatalyst) =>
-        ToItemHash(hash).Bind(itemHash => FindEntry(reading, ManifestTable.InventoryItem, hash).Bind(item =>
+    private static Optional<ManifestItem> ToManifestItem(Reading reading, ItemHash hash, bool isCatalyst) =>
+        FindEntry(reading, ManifestTable.InventoryItem, hash).Bind(item =>
         {
             var word = isCatalyst ? KindWord.Catalyst : ClassifyItem(reading, item);
             return ToKind(reading, item, word).Map(kind => new ManifestItem(
-                itemHash,
+                hash,
                 item.ReadText("displayProperties", "name").UnwrapOr(""),
                 kind,
                 item.ReadText("itemTypeDisplayName"),
                 item.ReadInteger("inventory", "tierType").Bind(tier => Tiers.TryGetValue(tier, out var found) ? Optional.Some(found) : Optional.None<ItemTier>()),
                 ReadDescription(reading, item),
                 item.ReadString("displayProperties", "icon").Bind(icon => icon.Length > 0 ? Optional.Some(icon) : Optional.None<string>())));
-        }));
+        });
 
     /// <summary>A sandbox perk (a catalyst's or an armor set's): name, Bungie's description, icon; no item type.</summary>
-    private static Optional<ManifestItem> ToPerkItem(Reading reading, uint hash) =>
-        ToItemHash(hash).Bind(itemHash => FindEntry(reading, ManifestTable.SandboxPerk, hash).Map(perk => new ManifestItem(
-            itemHash,
+    private static Optional<ManifestItem> ToPerkItem(Reading reading, ItemHash hash) =>
+        FindEntry(reading, ManifestTable.SandboxPerk, hash).Map(perk => new ManifestItem(
+            hash,
             perk.ReadText("displayProperties", "name").UnwrapOr(""),
             new ManifestKind.Perk(),
             Optional.None<string>(),
             Optional.None<ItemTier>(),
             perk.ReadText("displayProperties", "description"),
-            perk.ReadString("displayProperties", "icon").Bind(icon => icon.Length > 0 ? Optional.Some(icon) : Optional.None<string>()))));
+            perk.ReadString("displayProperties", "icon").Bind(icon => icon.Length > 0 ? Optional.Some(icon) : Optional.None<string>())));
 
-    private static Optional<ArmorSet> ToArmorSet(uint hash, JsonElement set) =>
-        ToItemHash(hash).Map(setHash => new ArmorSet(
-            setHash,
+    private static ArmorSet ToArmorSet(ItemHash hash, JsonElement set) =>
+        new(
+            hash,
             set.ReadText("displayProperties", "name").UnwrapOr(""),
             [
                 .. set.ReadArray("setPerks")
                     .SelectMany(perk => ToSequence(perk.ReadInteger("requiredSetCount").Bind(count => ToPieceCount(count))
-                        .Bind(count => perk.ReadHash("sandboxPerkHash").Bind(ToItemHash).Map(perkHash => new SetPerk(count, perkHash)))))
+                        .Bind(count => perk.ReadHash("sandboxPerkHash").Map(perkHash => new SetPerk(count, perkHash)))))
                     .OrderBy(perk => perk.Pieces.Value),
-            ]));
+            ]);
 
     /// <summary>The item's kind and its own data; none for a weapon or armor whose bucket gives no slot.</summary>
     private static Optional<ManifestKind> ToKind(Reading reading, JsonElement item, KindWord word) =>
@@ -254,18 +264,18 @@ public static class ManifestJoin
                     slot,
                     item.ReadInteger("defaultDamageType").Bind(type => DamageTypes.TryGetValue(type, out var found) ? Optional.Some(found) : Optional.None<DamageType>()),
                     ReadTraitColumns(reading, item).Match(
-                        columns => [.. columns.Value.Select(column => new TraitColumn([.. column.SelectMany(hash => ToSequence(ToItemHash(hash)))]))],
+                        columns => [.. columns.Value.Select(column => new TraitColumn(column))],
                         _ => ImmutableArray<TraitColumn>.Empty),
-                    FindIntrinsic(reading, item, WeaponIntrinsicCategoryName).Bind(ToItemHash),
-                    FindCatalyst(reading, item).Bind(ToItemHash))),
+                    FindIntrinsic(reading, item, WeaponIntrinsicCategoryName),
+                    FindCatalyst(reading, item))),
             KindWord.Armor => ReadBucketName(reading, item).Bind(bucket => ArmorBuckets.TryGetValue(bucket, out var slot) ? Optional.Some(slot) : Optional.None<ArmorSlot>())
                 .Map(slot => (ManifestKind)new ManifestKind.Armor(
                     slot,
-                    FindIntrinsic(reading, item, ArmorIntrinsicCategoryName).Bind(ToItemHash),
-                    item.ReadHash("equippingBlock", "equipableItemSetHash").Bind(ToItemHash))),
+                    FindIntrinsic(reading, item, ArmorIntrinsicCategoryName),
+                    item.ReadHash("equippingBlock", "equipableItemSetHash"))),
             KindWord.ArmorMod => Optional.Some<ManifestKind>(new ManifestKind.ArmorMod(item.ReadText("itemTypeDisplayName")
                 .Bind(type => ModSlots.TryGetValue(type, out var slot) ? Optional.Some(slot) : Optional.None<ArmorSlot>()))),
-            KindWord.Catalyst => Optional.Some<ManifestKind>(new ManifestKind.ExoticCatalyst([.. ListGrantedPerks(reading, item).SelectMany(hash => ToSequence(ToItemHash(hash)))])),
+            KindWord.Catalyst => Optional.Some<ManifestKind>(new ManifestKind.ExoticCatalyst(ListGrantedPerks(reading, item))),
             KindWord.Subclass => Optional.Some<ManifestKind>(new ManifestKind.Subclass()),
             KindWord.Super => Optional.Some<ManifestKind>(new ManifestKind.Super()),
             KindWord.Grenade => Optional.Some<ManifestKind>(new ManifestKind.Grenade()),
@@ -340,7 +350,7 @@ public static class ManifestJoin
             _ => text);
     }
 
-    private static Optional<uint> FindCategory(Reading reading, string name) =>
+    private static Optional<ItemHash> FindCategory(Reading reading, string name) =>
         reading.Entries
             .Where(entry => entry.Key.Table == ManifestTable.SocketCategory && entry.Value.ReadString("displayProperties", "name") == Optional.Some(name))
             .Select(entry => Optional.Some(entry.Key.Hash))
@@ -370,24 +380,24 @@ public static class ManifestJoin
         [.. ListSocketsInCategory(reading, weapon, PerkCategoryName).Where(socket => ReadWhitelist(reading, socket).Contains("frames"))];
 
     /// <summary>A weapon's trait columns, each the perks it can roll now in order; none when a column can't be read (unknown, not empty).</summary>
-    private static Optional<ImmutableArray<ImmutableArray<uint>>> ReadTraitColumns(Reading reading, JsonElement weapon)
+    private static Optional<ImmutableArray<ImmutableArray<ItemHash>>> ReadTraitColumns(Reading reading, JsonElement weapon)
     {
         var columns = ListTraitSockets(reading, weapon).Select(socket => ReadColumn(reading, socket)).ToImmutableArray();
         return weapon.ReadPath("sockets").IsSome() && columns.All(column => !column.IsEmpty)
             ? Optional.Some(columns)
-            : Optional.None<ImmutableArray<ImmutableArray<uint>>>();
+            : Optional.None<ImmutableArray<ImmutableArray<ItemHash>>>();
     }
 
-    private static ImmutableArray<uint> ReadColumn(Reading reading, JsonElement socket) =>
+    private static ImmutableArray<ItemHash> ReadColumn(Reading reading, JsonElement socket) =>
         ReadPlugSet(socket).Match(
-            set => FindEntry(reading, ManifestTable.PlugSet, set.Value).Match(found => ListRollable(found.Value), _ => ImmutableArray<uint>.Empty),
+            set => FindEntry(reading, ManifestTable.PlugSet, set.Value).Match(found => ListRollable(found.Value), _ => ImmutableArray<ItemHash>.Empty),
             _ => [.. ToSequence(socket.ReadHash("singleInitialItemHash"))]);
 
-    private static Optional<uint> ReadPlugSet(JsonElement socket) =>
+    private static Optional<ItemHash> ReadPlugSet(JsonElement socket) =>
         socket.ReadHash("randomizedPlugSetHash").Match(set => Optional.Some(set.Value), _ => socket.ReadHash("reusablePlugSetHash"));
 
     /// <summary>A plug set's perks that can roll now, each once, in order.</summary>
-    private static ImmutableArray<uint> ListRollable(JsonElement plugSet) =>
+    private static ImmutableArray<ItemHash> ListRollable(JsonElement plugSet) =>
         [
             .. plugSet.ReadArray("reusablePlugItems")
                 .Where(plug => plug.ReadFlag("currentlyCanRoll", true))
@@ -396,7 +406,7 @@ public static class ManifestJoin
         ];
 
     /// <summary>The first named plug of an intrinsic socket in that category (a weapon's frame or exotic perk, an exotic armor's perk).</summary>
-    private static Optional<uint> FindIntrinsic(Reading reading, JsonElement item, string categoryName) =>
+    private static Optional<ItemHash> FindIntrinsic(Reading reading, JsonElement item, string categoryName) =>
         ListSocketsInCategory(reading, item, categoryName)
             .SelectMany(socket => ToSequence(socket.ReadHash("singleInitialItemHash")))
             .Where(plug => FindEntry(reading, ManifestTable.InventoryItem, plug).Match(
@@ -407,17 +417,18 @@ public static class ManifestJoin
             .FindFirstSome();
 
     /// <summary>The categories of an exotic's catalyst socket (the one that takes the empty catalyst), the empty one aside.</summary>
-    private static ImmutableArray<string> ListCatalystCategories(Reading reading, JsonElement weapon) =>
+    private static ImmutableArray<PlugCategoryId> ListCatalystCategories(Reading reading, JsonElement weapon) =>
         [
             .. weapon.ReadArray("sockets", "socketEntries")
                 .Select(socket => ReadWhitelist(reading, socket))
                 .Where(whitelist => whitelist.Contains(EmptyCatalyst))
                 .SelectMany(whitelist => whitelist.Where(category => category != EmptyCatalyst))
-                .Distinct(),
+                .Distinct()
+                .SelectMany(category => ToSequence(ToPlugCategory(category))),
         ];
 
     /// <summary>An exotic's catalyst: a plug of its catalyst socket's own category that grants a perk the game shows.</summary>
-    private static Optional<uint> FindCatalyst(Reading reading, JsonElement weapon) =>
+    private static Optional<ItemHash> FindCatalyst(Reading reading, JsonElement weapon) =>
         ListCatalystCategories(reading, weapon)
             .SelectMany(category => reading.Plugs.TryGetValue(category, out var plugs) ? plugs : [])
             .Where(plug => FindEntry(reading, ManifestTable.InventoryItem, plug).Match(item => !ListGrantedPerks(reading, item.Value).IsEmpty, _ => false))
@@ -425,7 +436,7 @@ public static class ManifestJoin
             .FindFirstSome();
 
     /// <summary>The sandbox perks a plug grants that the game shows (a catalyst's), in order.</summary>
-    private static ImmutableArray<uint> ListGrantedPerks(Reading reading, JsonElement item) =>
+    private static ImmutableArray<ItemHash> ListGrantedPerks(Reading reading, JsonElement item) =>
         [
             .. item.ReadArray("perks")
                 .SelectMany(entry => ToSequence(entry.ReadHash("perkHash")))
@@ -434,7 +445,7 @@ public static class ManifestJoin
                     _ => false)),
         ];
 
-    private static Optional<uint> FindSetOfPerk(Reading reading, uint perk) =>
+    private static Optional<ItemHash> FindSetOfPerk(Reading reading, ItemHash perk) =>
         reading.Entries
             .Where(entry => entry.Key.Table == ManifestTable.EquipableItemSet
                 && entry.Value.ReadArray("setPerks").Any(setPerk => setPerk.ReadHash("sandboxPerkHash") == Optional.Some(perk)))
@@ -443,13 +454,10 @@ public static class ManifestJoin
 
     // ── small helpers ───────────────────────────────────────────────────────────────
 
-    private static Optional<JsonElement> FindEntry(Reading reading, ManifestTable table, uint hash) =>
+    private static Optional<JsonElement> FindEntry(Reading reading, ManifestTable table, ItemHash hash) =>
         reading.Entries.TryGetValue(new ManifestEntryKey(table, hash), out var entry) ? Optional.Some(entry) : Optional.None<JsonElement>();
 
-    private static Optional<PieceCount> ToPieceCount(int count) =>
-        PieceCount.TryFrom(count) is { IsSuccess: true } valid ? Optional.Some(valid.ValueObject) : Optional.None<PieceCount>();
-
-    private static Reach Need(ManifestTable table, uint hash) =>
+    private static Reach ToReach(ManifestTable table, ItemHash hash) =>
         Reach.None with { Entries = [new ManifestEntryKey(table, hash)] };
 
     private static Reach Join(Reach left, Reach right) =>
