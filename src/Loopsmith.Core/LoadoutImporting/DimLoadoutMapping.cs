@@ -100,10 +100,9 @@ public static class DimLoadoutMapping
     /// <c>grenade-launcher</c>) — with no perks: a DIM loadout names the weapon, not the perks it rolled.
     /// </summary>
     private static Optional<WeaponLoadout> ReadWeapon(ManifestExcerpt manifest, ItemHash hash) =>
-        manifest.Items.TryGetValue(hash, out var item) && item.Kind == ManifestKind.Weapon
-            && item.WeaponSlot is Optional<WeaponSlot>.Some slot && item.DamageType is Optional<DamageType>.Some type
-            ? Optional.Some(new WeaponLoadout(slot.Value, item.Name, type.Value, ToArchetype(item.Type), [], Optional.Some(hash)))
-            : Optional.None<WeaponLoadout>();
+        manifest.FindItem(hash).Bind(item => item.Kind is ManifestKind.Weapon { DamageType: Optional<DamageType>.Some type } weapon
+            ? Optional.Some(new WeaponLoadout(weapon.Slot, item.Name, type.Value, ToArchetype(item.Type), [], Optional.Some(hash)))
+            : Optional.None<WeaponLoadout>());
 
     private static Optional<string> ToArchetype(string type)
     {

@@ -1,25 +1,31 @@
 using System.Collections.Immutable;
+using Dunet;
 using Loopsmith.Core.Functional;
 
 namespace Loopsmith.Core.Domain;
 
-/// <summary>What an item of the Bungie manifest is, as Loopsmith shows it (the manifest's own item types, grouped).</summary>
-public enum ManifestKind
+/// <summary>
+/// What an item of the Bungie manifest is, as Loopsmith shows it (the manifest's own item types, grouped). A weapon has
+/// its slot and damage type, armor its slot, an armor mod the slot it only fits (none: a general mod); nothing else has
+/// a slot.
+/// </summary>
+[Union]
+public partial record ManifestKind
 {
-    Subclass,
-    Super,
-    Grenade,
-    Melee,
-    ClassAbility,
-    Movement,
-    Aspect,
-    Fragment,
-    Weapon,
-    WeaponPerk,
-    Armor,
-    ArmorMod,
-    ArtifactPerk,
-    Other,
+    partial record Subclass();
+    partial record Super();
+    partial record Grenade();
+    partial record Melee();
+    partial record ClassAbility();
+    partial record Movement();
+    partial record Aspect();
+    partial record Fragment();
+    partial record Weapon(WeaponSlot Slot, Optional<DamageType> DamageType);
+    partial record WeaponPerk();
+    partial record Armor(ArmorSlot Slot);
+    partial record ArmorMod(Optional<ArmorSlot> Slot);
+    partial record ArtifactPerk();
+    partial record Other();
 }
 
 /// <summary>The armor slot of an armor piece, or of a mod that only fits that piece.</summary>
@@ -29,9 +35,8 @@ public enum ArmorSlot { Helmet, Arms, Chest, Legs, ClassItem }
 public enum ItemTier { Basic, Common, Rare, Legendary, Exotic }
 
 /// <summary>
-/// One item of the manifest excerpt (<c>rules/manifest.yaml</c>, ADRs D14): its official name and type, its icon (a
-/// bungie.net path), its rarity, and for a weapon its slot and damage type, for armor and an armor mod its armor slot
-/// (none for a general mod).
+/// One item of the manifest excerpt (<c>rules/manifest.yaml</c>, ADRs D14): its official name, what it is, its type as
+/// the game words it, its rarity and its icon (a bungie.net path).
 /// </summary>
 public sealed record ManifestItem(
     ItemHash Hash,
@@ -39,9 +44,6 @@ public sealed record ManifestItem(
     ManifestKind Kind,
     string Type,
     Optional<ItemTier> Tier,
-    Optional<WeaponSlot> WeaponSlot,
-    Optional<ArmorSlot> ArmorSlot,
-    Optional<DamageType> DamageType,
     Optional<string> Icon);
 
 /// <summary>
