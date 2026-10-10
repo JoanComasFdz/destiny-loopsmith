@@ -610,8 +610,6 @@ textarea { resize: vertical; }
 .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .data-table th, .data-table td { padding: 6px 10px; border-bottom: 1px solid var(--line); text-align: left; }
 .data-table th { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
-.data-table td:not(:first-child) { font-family: var(--mono); }
-.data-table tr.blocked td { color: var(--warn); }
 
 /* compare */
 .page-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
