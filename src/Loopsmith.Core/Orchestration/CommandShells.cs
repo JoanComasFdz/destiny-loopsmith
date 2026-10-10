@@ -38,7 +38,7 @@ public static class CommandShells
         return effects;
     }
 
-    public static ImmutableArray<Effect> RunSimulate(SimulateRequest request)
+    public static ImmutableArray<Effect> RunTrace(TraceRequest request)
     {
         var build = BuildLoading.LoadValidatedBuild(request.Load);                                   // impure
         var scenario = FileSourceFetching.ReadOptionalTextFile(request.ScenarioPath);               // impure
@@ -46,7 +46,7 @@ public static class CommandShells
         var effects = build                                                                          // pure
             .Bind(validated => scenario
                 .Bind(file => ParseActions(request.ActionTokens, file.Map(f => f.Text)))
-                .Map(actions => PlanSimulation(validated, actions, request.Options)))
+                .Map(actions => PlanTrace(validated, actions, request.Options)))
             .Match(ok => ok.Value, error => [new Effect.ShowFailure(error.Failure)]);
         return effects;
     }
@@ -69,7 +69,7 @@ public static class CommandShells
         var effects = ruleFiles                                                                      // pure
             .Bind(CatalogLoading.ParseCatalog)
             .Bind(catalog => loopFile.Bind(file => LoopDesigning.ImportLoop(catalog, file)))
-            .Match(ok => PlanLoopReport(ok.Value, request.MaxCycles, request.Trace), error => [new Effect.ShowFailure(error.Failure)]);
+            .Match(ok => PlanLoopReport(ok.Value, request.Trace), error => [new Effect.ShowFailure(error.Failure)]);
         return effects;
     }
 
@@ -82,26 +82,25 @@ public static class CommandShells
         var effects = ruleFiles                                                                      // pure
             .Bind(CatalogLoading.ParseCatalog)
             .Bind(catalog => ImportBoth(catalog, left, right))
-            .Match(ok => PlanComparison(ok.Value.Left, ok.Value.Right, request.MaxCycles), error => [new Effect.ShowFailure(error.Failure)]);
+            .Match(ok => PlanComparison(ok.Value.Left, ok.Value.Right), error => [new Effect.ShowFailure(error.Failure)]);
         return effects;
     }
 
     // ── pure planning ───────────────────────────────────────────────────────────
 
-    /// <summary>Build summary, the report (verdict, steady state: what fired, what was wasted), the steps and, optionally, the trace of cycle 1.</summary>
-    public static ImmutableArray<Effect> PlanLoopReport(DesignSession session, int maxCycles, Optional<TraceOptions> trace)
+    /// <summary>
+    /// Build summary, the report (the order, the verdict, each step's needs, what it sets off, what is wasted), the
+    /// steps and, optionally, the full trace of the first pass and of the repeating pass when it differs.
+    /// </summary>
+    public static ImmutableArray<Effect> PlanLoopReport(DesignSession session, Optional<TraceOptions> trace)
     {
-        var report = LoopDesigning.AnalyzeDesign(session, maxCycles);
+        var report = LoopDesigning.AnalyzeDesign(session);
         var blank = new Effect.WriteLines([StyledText.ToLine(0, "".ToSpan())]);
+        var repeats = report.RepeatingPass != report.FirstPass;
         var traceEffects = trace.Match(
-            options => ImmutableArray.Create<Effect>(
-                blank,
-                new Effect.WriteLines([StyledText.ToLine(0, "Cycle 1, step by step".ToSpan(Tone.Strong))]),
-                new Effect.WriteLines(TraceRenderer.RenderSequence(
-                    session.Build,
-                    session.Initial,
-                    report.Cycles.IsEmpty ? [] : report.Cycles[0].Resolutions,
-                    options.Value))),
+            options => repeats
+                ? [.. PlanPassTrace(session, "First pass, step by step", report.FirstPass, options.Value), .. PlanPassTrace(session, "Repeating pass, step by step", report.RepeatingPass, options.Value)]
+                : PlanPassTrace(session, "First pass, step by step", report.FirstPass, options.Value),
             _ => []);
         return
         [
@@ -115,9 +114,16 @@ public static class CommandShells
         ];
     }
 
-    public static ImmutableArray<Effect> PlanComparison(DesignSession left, DesignSession right, int maxCycles)
+    private static ImmutableArray<Effect> PlanPassTrace(DesignSession session, string title, LoopPass pass, TraceOptions options) =>
+    [
+        new Effect.WriteLines([StyledText.ToLine(0, "".ToSpan())]),
+        new Effect.WriteLines([StyledText.ToLine(0, title.ToSpan(Tone.Strong))]),
+        new Effect.WriteLines(TraceRenderer.RenderSequence(session.Build, pass.Start, pass.Resolutions, options)),
+    ];
+
+    public static ImmutableArray<Effect> PlanComparison(DesignSession left, DesignSession right)
     {
-        var comparison = LoopDesigning.CompareLoops(LoopDesigning.AnalyzeDesign(left, maxCycles), LoopDesigning.AnalyzeDesign(right, maxCycles));
+        var comparison = LoopDesigning.CompareLoops(LoopDesigning.AnalyzeDesign(left), LoopDesigning.AnalyzeDesign(right));
         return [.. PlanCatalogNotes([left, right]), new Effect.WriteLines(LoopDesigning.RenderLoopComparison(comparison))];
     }
 
@@ -148,7 +154,7 @@ public static class CommandShells
         ];
     }
 
-    public static ImmutableArray<Effect> PlanSimulation(ValidatedBuild build, ImmutableArray<PlayerAction> actions, TraceOptions options)
+    public static ImmutableArray<Effect> PlanTrace(ValidatedBuild build, ImmutableArray<PlayerAction> actions, TraceOptions options)
     {
         var initial = ActionResolution.CreateInitialState();
         var resolutions = ActionResolution.ResolveSequence(build, initial, actions);

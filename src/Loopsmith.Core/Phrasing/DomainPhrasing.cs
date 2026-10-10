@@ -351,9 +351,47 @@ public static class DomainPhrasing
 
     // ── loop analysis ──────────────────────────────────────────────────────────
 
-    /// <summary>"Tempest Strike doesn't stack with Dielectric" — a rule that gave nothing (<see cref="WastedTally"/>).</summary>
-    public static string DescribeWasted(this WastedTally wasted) =>
-        $"{wasted.SourceName} doesn't stack with {wasted.PartnerName}";
+    /// <summary>"Attrition Orbs", or "Attrition Orbs (chance)" when it fired only by chance there (ADRs D8).</summary>
+    public static string DescribeMention(this ElementMention mention) =>
+        mention.Name + (mention.Likelihood == Likelihood.Chance ? " (chance)" : "");
+
+    /// <summary>"Tempest Strike — doesn't stack with Dielectric": a rule that gave way there (ADRs D6).</summary>
+    public static string DescribeWasted(this WastedMention wasted) =>
+        $"{wasted.Source.DescribeMention()} — doesn't stack with {wasted.PartnerName}";
+
+    /// <summary>"← #2", "← previous pass #2" (step numbers from 1, as the player reads them).</summary>
+    public static string DescribeProvider(this NeedProvider provider) =>
+        provider.Match(
+            earlier => $"← #{earlier.StepIndex + 1}",
+            previous => $"← previous pass #{previous.StepIndex + 1}");
+
+    /// <summary>"Reaper ← #1 [Reaper]", "Orb of Power ← #2 [Reaper; Strand Siphon (chance)]", "Bolt Charge at max ← #6".</summary>
+    public static string DescribeNeed(this StepNeed need)
+    {
+        var elements = need.Provider.Match(earlier => earlier.Elements, previous => previous.Elements);
+        var sources = elements.IsEmpty ? "" : $" [{string.Join("; ", elements.Select(DescribeMention))}]";
+        return $"{need.What} {need.Provider.DescribeProvider()}{sources}";
+    }
+
+    /// <summary>"Reaper ← #1": a need and where it comes from, without the elements (comparisons).</summary>
+    public static string DescribeNeedBriefly(this StepNeed need) =>
+        $"{need.What} {need.Provider.DescribeProvider()}";
+
+    /// <summary>The verdict on a loop's order (docs/loop-format.md, "Analysis").</summary>
+    public static string DescribeVerdict(this LoopVerdict verdict) =>
+        verdict.Match(
+            _ => "The loop has no steps.",
+            repeats => repeats.FirstPassBlocked.Match(
+                blocked => $"✓ Repeats — on the first pass, #{blocked.Value.StepIndex + 1} ({blocked.Value.Label}) can't happen yet: {blocked.Value.Reason}",
+                _ => "✓ Repeats — each pass ends with what the next one needs"),
+            breaks => $"✗ Breaks at #{breaks.Blocked.StepIndex + 1} ({breaks.Blocked.Label}): {breaks.Blocked.Reason}");
+
+    /// <summary>"✓ Repeats", "✗ Breaks at #3", "No steps" — the verdict in a word or two (comparison rows, badges).</summary>
+    public static string DescribeShortVerdict(this LoopVerdict verdict) =>
+        verdict.Match(
+            _ => "No steps",
+            _ => "✓ Repeats",
+            breaks => $"✗ Breaks at #{breaks.Blocked.StepIndex + 1}");
 
     public static string Capitalize(string text) =>
         text.Length == 0 ? text : char.ToUpperInvariant(text[0]) + text[1..];

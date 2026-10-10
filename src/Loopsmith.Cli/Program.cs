@@ -22,7 +22,7 @@ static int RunCommand(CliCommand command, bool useColor) =>
     command.Match(
         explain => RunShell(() => CommandShells.RunExplain(explain.Request), useColor),
         validate => RunShell(() => CommandShells.RunValidate(validate.Request), useColor),
-        simulate => RunShell(() => CommandShells.RunSimulate(simulate.Request), useColor),
+        trace => RunShell(() => CommandShells.RunTrace(trace.Request), useColor),
         play => RunPlay(play, useColor),
         graph => RunShell(() => CommandShells.RunGraph(graph.Request), useColor),
         loop => RunShell(() => CommandShells.RunLoop(loop.Request), useColor),

@@ -43,8 +43,6 @@ public sealed record DesignSession(
 /// <summary>Pure API the hosts (CLI, web) use to design, export, import, analyse and compare loops.</summary>
 public static class LoopDesigning
 {
-    public const int DefaultMaxCycles = 10;
-
     public static Result<DesignSession, string> StartDesign(RuleCatalog catalog, SourceText buildFile, string name) =>
         BuildFileParsing.ParseBuildFile(buildFile)
             .Bind(build => BuildValidation.ValidateBuild(build, catalog))
@@ -174,9 +172,12 @@ public static class LoopDesigning
                 .Bind(build => BuildValidation.ValidateBuild(build, catalog))
                 .Map(validated => CreateSession(validated, design)));
 
-    /// <summary>Run the design up to <paramref name="maxCycles"/> times back to back and measure it.</summary>
-    public static LoopReport AnalyzeDesign(DesignSession session, int maxCycles) =>
-        LoopRunning.RunLoop(session.Build, session.Design, maxCycles);
+    /// <summary>
+    /// The design analysed by its order of triggers: played from a fresh spawn, then again from where it ended until
+    /// it repeats — what each step needs and from which step, what it sets off, what is wasted (ADRs D2).
+    /// </summary>
+    public static LoopReport AnalyzeDesign(DesignSession session) =>
+        LoopRunning.RunLoop(session.Build, session.Design);
 
     public static LoopComparison CompareLoops(LoopReport left, LoopReport right) =>
         LoopComparing.CompareLoops(left, right);
@@ -205,11 +206,11 @@ public static class LoopDesigning
     public static ImmutableArray<StyledLine> ExplainBuild(ValidatedBuild build, ExplanationStyle style) =>
         BuildExplaining.RenderExplanation(BuildExplaining.ExplainBuild(build), style);
 
-    /// <summary>The report as styled lines (verdict, steady state: kills, pickups, what fired, what was wasted, uptime).</summary>
+    /// <summary>The report as styled lines: the order, the verdict, each step's needs, what it sets off, what is wasted.</summary>
     public static ImmutableArray<StyledLine> RenderLoopReport(LoopReport report) =>
         LoopReportRendering.RenderLoopReport(report);
 
-    /// <summary>The comparison as a two-column table, the better value of each row marked ✓.</summary>
+    /// <summary>The comparison as styled lines: both orders and their verdicts, then trigger by trigger.</summary>
     public static ImmutableArray<StyledLine> RenderLoopComparison(LoopComparison comparison) =>
         ComparisonRendering.RenderComparison(comparison);
 }

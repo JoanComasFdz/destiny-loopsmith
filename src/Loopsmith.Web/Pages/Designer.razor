@@ -394,7 +394,7 @@ else
     {
         if (Workbench.Session is Optional<DesignSession>.Some open)
         {
-            report = Optional.Some(LoopDesigning.AnalyzeDesign(open.Value, LoopDesigning.DefaultMaxCycles)); // pure
+            report = Optional.Some(LoopDesigning.AnalyzeDesign(open.Value)); // pure
             dialog = DesignerDialog.Analysis;
         }
     }

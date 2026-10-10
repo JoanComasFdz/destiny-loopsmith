@@ -82,7 +82,7 @@ public static class ComparisonPicking
             .ToResult(() => "This loop is no longer offered.")
             .Bind(choice => choice.Design);
         var report = design.Match(
-            ok => Optional.Some(LoopDesigning.AnalyzeDesign(ok.Value, LoopDesigning.DefaultMaxCycles)),
+            ok => Optional.Some(LoopDesigning.AnalyzeDesign(ok.Value)),
             _ => Optional.None<LoopReport>());
         return new ComparedLoop(id, design, report);
     }

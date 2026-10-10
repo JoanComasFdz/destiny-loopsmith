@@ -127,7 +127,8 @@ public sealed class PlaySessionsTests
         var turn = PlaySessions.PlanTurn(PlayAll(StartPlay(Optional.None<string>()), "class", "grenade:kill"), "a");
 
         var text = string.Join("\n", turn.Effects.OfType<Effect.WriteLines>().Select(lines => lines.Lines.ToPlainText()));
-        Assert.Contains("2 steps per cycle", text);
+        Assert.Contains("Skip Grenade Hunter loop — Skip Grenade Hunter · 2 steps", text);
+        Assert.Contains("✓ Repeats", text);
         Assert.Contains("Steps", text);
     }
 }

@@ -105,7 +105,7 @@ public static class EventCascading
         var outcomes = applied.Where(a => a.Step.Match == match).Select(a => a.Outcome).ToImmutableArray();
         return new FiredRule(
             element.Id, element.Name, element.Kind, element.Affinity, gameEvent, outcomes,
-            match.Rule.Reason, match.Rule.Likelihood, depth, eventIndex, notStackedWith);
+            match.Rule.Reason, match.Rule.Likelihood, depth, eventIndex, notStackedWith, match.Rule.On, match.Rule.When);
     }
 
     private static string ToFiredKey(RuleMatch match, GameEvent gameEvent) =>

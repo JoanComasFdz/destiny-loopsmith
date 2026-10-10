@@ -3,162 +3,99 @@ using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 using Loopsmith.Core.Phrasing;
 using Loopsmith.Core.ReportComparison;
+using Loopsmith.Core.Simulation;
+using static Loopsmith.Core.Tests.Support.TestCatalog;
 
 namespace Loopsmith.Core.Tests.ReportComparison;
 
-/// <summary>The rows and advantage rules of docs/loop-format.md "Comparison", on hand-built reports.</summary>
+/// <summary>docs/loop-format.md "Comparison": triggers matched by occurrence, and what each one's place changes.</summary>
 public sealed class LoopComparingTests
 {
-    /// <summary>A report that ran <paramref name="cycles"/> cycles (all completed by default); the ones after <paramref name="completed"/> are blocked.</summary>
-    private static LoopReport CreateReport(
-        string name,
-        int steps = 4,
-        int completed = 10,
-        int maxCycles = 10,
-        int? cycles = null,
-        ImmutableArray<WastedTally> wasted = default,
-        ImmutableArray<OutcomeTally> outcomes = default,
-        ImmutableArray<BuffUptime> uptime = default,
-        int unknown = 0,
-        int chance = 0)
-    {
-        var runs = Enumerable.Range(0, cycles ?? completed)
-            .Select(index => new CycleRun(
-                index + 1,
-                [],
-                index < completed ? Optional.None<BlockedStep>() : Optional.Some(new BlockedStep(0, new PlayerAction.CollectPickups(PickupId.From("orb-of-power")), "blocked"))))
-            .ToImmutableArray();
-        return new LoopReport(name, $"{name} build", steps, runs, completed, maxCycles, [], wasted.IsDefault ? [] : wasted,
-            outcomes.IsDefault ? [new OutcomeTally("Kills", 0)] : outcomes, uptime.IsDefault ? [] : uptime, unknown, chance);
-    }
+    private static readonly PlayerAction GrenadeKill = new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Kill, TargetCount.One);
+    private static readonly PlayerAction RifleKill = new PlayerAction.FireWeapon(WeaponSlot.Energy, HitOutcome.Kill, TargetCount.One);
+    private static readonly PlayerAction Dodge = new PlayerAction.UseClassAbility();
+    private static readonly PlayerAction AmplifiedEnds = new PlayerAction.Declare(new StateDeclaration.EndStatus(Status("amplified")));
 
-    private static BuffUptime ToUptime(string status, int active, int steps) =>
-        new(StatusId.From(status), string.Join(' ', status.Split('-').Select(DomainPhrasing.Capitalize)), Affinity.Arc, active, steps);
+    /// <summary>The dodge amplifies you; a grenade thrown while amplified gives Bolt Charge.</summary>
+    private static readonly ValidatedBuild Build = ValidateBuild(
+    [
+        Element("giver", ElementKind.Fragment, [On(new Trigger.AbilityCast(AbilityKind.ClassAbility), Buff("amplified"))]),
+        Element("guarded", ElementKind.Fragment,
+            [OnWhen(new Trigger.AbilityCast(AbilityKind.Grenade), new Condition.HasBuff(Status("amplified")), Buff("bolt-charge"))]),
+    ]);
 
-    private static ComparisonRow FindRow(LoopComparison comparison, string metric) =>
-        Assert.Single(comparison.Rows, row => row.Metric == metric);
+    private static LoopReport RunLoop(string name, params PlayerAction[] actions) =>
+        LoopRunning.RunLoop(Build, name, [.. actions.Select(action => new LoopStep(action, Optional.None<string>()))]);
 
-    private static LoopComparison Compare(LoopReport left, LoopReport right) => LoopComparing.CompareLoops(left, right);
+    private static int ReadStep(Optional<StepAnalysis> step) => step.Match(some => some.Value.StepIndex, _ => -1);
 
     [Fact]
-    public void Rows_follow_the_spec_order_with_the_union_of_both_reports()
+    public void Triggers_are_matched_by_occurrence_left_first_then_what_only_the_right_has()
     {
-        var left = CreateReport("Left",
-            outcomes: [new("Kills", 5), new("Orb of Power spawned", 2), new("Bolt Charge maxed", 1)],
-            uptime: [ToUptime("amplified", 4, 4)]);
-        var right = CreateReport("Right",
-            outcomes: [new("Kills", 3), new("Ionic Trace spawned", 3)],
-            uptime: [ToUptime("bolt-charge", 2, 4), ToUptime("amplified", 1, 4)]);
+        var left = RunLoop("A", Dodge, GrenadeKill, GrenadeKill);
+        var right = RunLoop("B", GrenadeKill, Dodge, RifleKill);
 
-        var comparison = Compare(left, right);
+        var comparison = LoopComparing.CompareLoops(left, right);
 
         Assert.Same(left, comparison.Left);
         Assert.Equal(
+            [(0, 1), (1, 0), (2, -1), (-1, 2)],
+            comparison.Triggers.Select(trigger => (ReadStep(trigger.Left), ReadStep(trigger.Right))));
+        Assert.Equal([left.StepLabels[0], left.StepLabels[1], left.StepLabels[2], right.StepLabels[2]], comparison.Triggers.Select(t => t.Label));
+    }
+
+    [Fact]
+    public void Dodge_then_grenade_sets_off_what_grenade_then_dodge_does_not()
+    {
+        var dodgeFirst = RunLoop("Dodge first", Dodge, GrenadeKill, AmplifiedEnds);
+        var grenadeFirst = RunLoop("Grenade first", GrenadeKill, Dodge, AmplifiedEnds);
+
+        var grenade = LoopComparing.CompareLoops(dodgeFirst, grenadeFirst).Triggers[1];
+
+        Assert.Equal((1, 0), (ReadStep(grenade.Left), ReadStep(grenade.Right)));
+        Assert.Equal(["Guarded"], grenade.OnlyLeft.Select(mention => mention.Name));
+        Assert.Empty(grenade.OnlyRight);
+        Assert.Equal(["Amplified ← #1"], dodgeFirst.Steps[1].Needs.Select(need => need.DescribeNeedBriefly()));
+        Assert.Empty(grenadeFirst.Steps[0].Needs);
+    }
+
+    [Fact]
+    public void A_trigger_only_one_loop_has_lists_no_differences()
+    {
+        var comparison = LoopComparing.CompareLoops(RunLoop("A", GrenadeKill), LoopRunning.RunLoop(Build, "Empty", []));
+
+        var trigger = Assert.Single(comparison.Triggers);
+        Assert.Equal((0, -1), (ReadStep(trigger.Left), ReadStep(trigger.Right)));
+        Assert.Empty(trigger.OnlyLeft);
+        Assert.Empty(trigger.OnlyRight);
+    }
+
+    [Fact]
+    public void The_table_shows_each_order_then_trigger_by_trigger_where_its_needs_come_from()
+    {
+        var dodgeFirst = RunLoop("Dodge first", Dodge, GrenadeKill, AmplifiedEnds);
+        var grenadeFirst = RunLoop("Grenade first", GrenadeKill, Dodge, AmplifiedEnds, RifleKill);
+
+        var lines = ComparisonRendering.RenderComparison(LoopComparing.CompareLoops(dodgeFirst, grenadeFirst))
+            .Select(line => line.ToPlainText())
+            .ToImmutableArray();
+
+        Assert.Equal(
             [
-                "Steps per cycle", "Repeatable cycles",
-                "Kills per cycle", "Orb of Power spawned per cycle", "Ionic Trace spawned per cycle", "Bolt Charge maxed per cycle",
-                "Wasted per cycle (doesn't stack)",
-                "Amplified uptime", "Bolt Charge uptime",
-                "Unknown values", "Chance bullets",
+                $"A  Dodge first     {string.Join(" → ", dodgeFirst.StepLabels)}   ✓ Repeats   (Test build)",
+                $"B  Grenade first   {string.Join(" → ", grenadeFirst.StepLabels)}   ✓ Repeats   (Test build)",
+                "",
+                $"{Pad(dodgeFirst.StepLabels[0])}A #1 · B #2: sets off the same",
+                $"{Pad(dodgeFirst.StepLabels[1])}A #2 · B #1",
+                "   A needs     Amplified ← #1",
+                "   only in A   Guarded",
+                $"{Pad(dodgeFirst.StepLabels[2])}A #3 · B #3: sets off the same",
+                "   A needs     Amplified ← #1",
+                "   B needs     Amplified ← #2",
+                $"{Pad(grenadeFirst.StepLabels[3])}only in B (#4)",
             ],
-            comparison.Rows.Select(row => row.Metric));
-    }
+            lines);
 
-    [Fact]
-    public void What_one_report_lacks_counts_as_zero()
-    {
-        var left = CreateReport("Left", steps: 4, outcomes: [new("Kills", 5), new("Orb of Power spawned", 2)], uptime: [ToUptime("amplified", 3, 4)]);
-        var right = CreateReport("Right", steps: 2, outcomes: [new("Kills", 5), new("Ionic Trace spawned", 3)]);
-
-        var comparison = Compare(left, right);
-
-        Assert.Equal(new ComparisonRow("Orb of Power spawned per cycle", "2", "0", Advantage.Left), FindRow(comparison, "Orb of Power spawned per cycle"));
-        Assert.Equal(new ComparisonRow("Ionic Trace spawned per cycle", "0", "3", Advantage.Right), FindRow(comparison, "Ionic Trace spawned per cycle"));
-        Assert.Equal(new ComparisonRow("Kills per cycle", "5", "5", Advantage.None), FindRow(comparison, "Kills per cycle"));
-        Assert.Equal(new ComparisonRow("Amplified uptime", "3/4", "0/2", Advantage.Left), FindRow(comparison, "Amplified uptime"));
-    }
-
-    [Fact]
-    public void Steps_per_cycle_are_shown_but_not_judged() =>
-        Assert.Equal(
-            new ComparisonRow("Steps per cycle", "3", "9", Advantage.None),
-            FindRow(Compare(CreateReport("L", steps: 3), CreateReport("R", steps: 9)), "Steps per cycle"));
-
-    [Fact]
-    public void More_repeatable_cycles_win_and_a_repeatable_loop_reads_max_plus()
-    {
-        var row = FindRow(Compare(CreateReport("L"), CreateReport("R", completed: 3, cycles: 4)), "Repeatable cycles");
-
-        Assert.Equal(new ComparisonRow("Repeatable cycles", "10+", "3", Advantage.Left), row);
-    }
-
-    [Fact]
-    public void On_equal_cycles_a_repeatable_loop_beats_one_that_broke()
-    {
-        var longerRun = CreateReport("R", completed: 10, maxCycles: 20, cycles: 11);
-
-        var row = FindRow(Compare(CreateReport("L"), longerRun), "Repeatable cycles");
-
-        Assert.Equal(new ComparisonRow("Repeatable cycles", "10+", "10", Advantage.Left), row);
-    }
-
-    [Fact]
-    public void Less_wasted_wins_counting_every_rule_that_did_not_stack()
-    {
-        static WastedTally Waste(string source, string partner, int count) =>
-            new(ElementId.From(source), DomainPhrasing.Capitalize(source), Affinity.Arc, partner, count);
-        var left = CreateReport("L", wasted: [Waste("tempest-strike", "Dielectric", 4), Waste("other", "Bomber", 1)]);
-        var right = CreateReport("R");
-
-        var comparison = Compare(left, right);
-
-        Assert.Equal(
-            new ComparisonRow("Wasted per cycle (doesn't stack)", "5", "0", Advantage.Right),
-            FindRow(comparison, "Wasted per cycle (doesn't stack)"));
-    }
-
-    [Fact]
-    public void Uptime_is_judged_as_a_fraction_of_the_cycle()
-    {
-        var comparison = Compare(
-            CreateReport("L", steps: 6, uptime: [ToUptime("amplified", 3, 6)]),
-            CreateReport("R", steps: 3, uptime: [ToUptime("amplified", 2, 3)]));
-
-        Assert.Equal(new ComparisonRow("Amplified uptime", "3/6", "2/3", Advantage.Right), FindRow(comparison, "Amplified uptime"));
-    }
-
-    [Fact]
-    public void Fewer_unknown_values_and_chance_bullets_win()
-    {
-        var comparison = Compare(CreateReport("L", unknown: 3, chance: 1), CreateReport("R", unknown: 5, chance: 1));
-
-        Assert.Equal(Advantage.Left, FindRow(comparison, "Unknown values").Better);
-        Assert.Equal(Advantage.None, FindRow(comparison, "Chance bullets").Better);
-    }
-
-    [Fact]
-    public void Comparing_with_an_empty_loop_does_not_crash()
-    {
-        var empty = new LoopReport("Empty", "B", 0, [], 0, 10, [], [], [new OutcomeTally("Kills", 0)], [], 0, 0);
-
-        var comparison = Compare(CreateReport("L", uptime: [ToUptime("amplified", 2, 4)]), empty);
-
-        Assert.Equal(new ComparisonRow("Repeatable cycles", "10+", "0", Advantage.Left), FindRow(comparison, "Repeatable cycles"));
-        Assert.Equal(new ComparisonRow("Amplified uptime", "2/4", "—", Advantage.Left), FindRow(comparison, "Amplified uptime"));
-    }
-
-    [Fact]
-    public void The_table_marks_the_better_side()
-    {
-        var comparison = Compare(
-            CreateReport("Skip loop", outcomes: [new("Kills", 4)]),
-            CreateReport("Melee loop", completed: 1, cycles: 2, outcomes: [new("Kills", 6)]));
-
-        var lines = ComparisonRendering.RenderComparison(comparison).Select(line => line.ToPlainText()).ToImmutableArray();
-
-        Assert.Equal("Skip loop  vs  Melee loop", lines[0]);
-        Assert.Matches(@"^  Repeatable cycles\s+10\+ ✓\s+1$", Assert.Single(lines, line => line.Contains("Repeatable cycles")));
-        Assert.Matches(@"^  Kills per cycle\s+4\s+6 ✓$", Assert.Single(lines, line => line.Contains("Kills per cycle")));
-        Assert.Contains("Skip loop on 1 metric · Melee loop on 1 metric", lines[^1]);
+        string Pad(string label) => label.PadRight(dodgeFirst.StepLabels.Concat(grenadeFirst.StepLabels).Max(other => other.Length) + 2);
     }
 }

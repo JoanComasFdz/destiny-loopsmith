@@ -63,7 +63,8 @@ public sealed record AppliedOutcome(Outcome Outcome, Certainty Certainty, Option
 /// One bullet of a build note: source → trigger → outcomes (reason), at cascade depth.
 /// <see cref="EventIndex"/> numbers the events of a step, so bullets of the same event can be grouped.
 /// <see cref="NotStackedWith"/> names the element this rule gave way to (<see cref="Rule.DoesNotStackWith"/>): it
-/// matched, but applied nothing, so <see cref="Outcomes"/> is empty.
+/// matched, but applied nothing, so <see cref="Outcomes"/> is empty. <see cref="On"/> and <see cref="When"/> are the
+/// rule's own trigger and guards: what it needed (a debuffed target, a buff, a declared maximum).
 /// </summary>
 public sealed record FiredRule(
     ElementId Source,
@@ -76,7 +77,9 @@ public sealed record FiredRule(
     Likelihood Likelihood,
     int Depth,
     int EventIndex,
-    Optional<string> NotStackedWith);
+    Optional<string> NotStackedWith,
+    Trigger On,
+    ImmutableArray<Condition> When);
 
 /// <summary>A passive whose conditions hold in the current state (shown next to the state, not as a bullet).</summary>
 public sealed record ActivePassive(ElementId Source, string SourceName, Affinity Affinity, PassiveRule Passive);

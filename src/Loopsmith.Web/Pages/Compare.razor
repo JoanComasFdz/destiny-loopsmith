@@ -9,7 +9,7 @@
 <section class="page-head">
     <div>
         <h1>Compare loops</h1>
-        <p class="muted">Pick a loop for each side — the one in the designer, an example, or a <code>.loop.yaml</code> you import. Each loop is played back to back from a fresh spawn for up to @LoopDesigning.DefaultMaxCycles cycles, then measured. The loops may use different builds.</p>
+        <p class="muted">Pick a loop for each side — the one in the designer, an example, or a <code>.loop.yaml</code> you import. Each loop is played from a fresh spawn and then again from where it ends; the comparison lines their triggers up, so you see how each one's place in the order changes what it needs and sets off. The loops may use different builds.</p>
     </div>
 </section>
 
@@ -42,38 +42,37 @@ else
         <section class="panel comparison" aria-label="Comparison">
             @if (compared.Value.Comparison is Optional<LoopComparison>.Some comparison)
             {
-                @if (comparison.Value.Rows.IsEmpty)
-                {
-                    <p class="notice">The comparison returned no metrics.</p>
-                }
-                else
-                {
-                    <div class="table-wrap">
-                        <table class="data-table compare-table">
-                            <thead>
+                var leftReport = comparison.Value.Left;
+                var rightReport = comparison.Value.Right;
+                <div class="compare-orders" data-testid="orders">
+                    @RenderOrder("A", leftReport)
+                    @RenderOrder("B", rightReport)
+                </div>
+                <div class="table-wrap">
+                    <table class="data-table compare-table">
+                        <thead>
+                            <tr>
+                                <th>Trigger</th>
+                                <th>A · @leftReport.LoopName</th>
+                                <th>B · @rightReport.LoopName</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var trigger in comparison.Value.Triggers)
+                            {
                                 <tr>
-                                    <th>Metric</th>
-                                    <th>@comparison.Value.Left.LoopName</th>
-                                    <th>@comparison.Value.Right.LoopName</th>
+                                    <td>@trigger.Label</td>
+                                    <td>@RenderStepCell(trigger.Left, trigger.OnlyLeft, leftReport)</td>
+                                    <td>@RenderStepCell(trigger.Right, trigger.OnlyRight, rightReport)</td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var row in comparison.Value.Rows)
-                                {
-                                    <tr>
-                                        <td>@row.Metric</td>
-                                        <td class="@(row.Better == Advantage.Left ? "better" : "")">@row.Left</td>
-                                        <td class="@(row.Better == Advantage.Right ? "better" : "")">@row.Right</td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                    <details class="report-text">
-                        <summary>The comparison as text (same as <code>loopsmith compare</code>)</summary>
-                        <StyledLines Lines="@LoopDesigning.RenderLoopComparison(comparison.Value)" Preformatted="true" />
-                    </details>
-                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <details class="report-text">
+                    <summary>The comparison as text (same as <code>loopsmith compare</code>)</summary>
+                    <StyledLines Lines="@LoopDesigning.RenderLoopComparison(comparison.Value)" Preformatted="true" />
+                </details>
             }
             else
             {
@@ -200,6 +199,55 @@ else
         </div>
     };
 
+    private static RenderFragment RenderOrder(string side, LoopReport report) => __builder =>
+    {
+        <p class="compare-order">
+            <span class="muted">@side</span>
+            <strong>@report.LoopName</strong>
+            <span>@string.Join(" → ", report.StepLabels)</span>
+            <span class="badge @(report.Verdict is LoopVerdict.Repeats ? "ok" : "warn")">@report.Verdict.DescribeShortVerdict()</span>
+        </p>
+    };
+
+    /// <summary>A trigger's step in one loop: its number, where its needs come from, what fires only there.</summary>
+    private static RenderFragment RenderStepCell(Optional<StepAnalysis> step, ImmutableArray<ElementMention> onlyHere, LoopReport report) => __builder =>
+    {
+        if (step is not Optional<StepAnalysis>.Some { Value: var analysed })
+        {
+            <span class="muted">not in this loop</span>
+            return;
+        }
+
+        <div class="compare-cell">
+            <span class="muted">#@(analysed.StepIndex + 1)</span>
+            @if (analysed.Blocked is Optional<string>.Some blocked)
+            {
+                <span class="tone-warning">blocked: @blocked.Value</span>
+            }
+            @if (analysed.Needs.IsEmpty)
+            {
+                <span class="muted">needs nothing from earlier steps</span>
+            }
+            else
+            {
+                <span class="chips">
+                    @foreach (var need in analysed.Needs)
+                    {
+                        <span class="chip @ToneStyling.ToAffinityClass(need.Affinity)">@need.DescribeNeedBriefly()</span>
+                    }
+                </span>
+            }
+            @if (!onlyHere.IsEmpty)
+            {
+                <span class="tone-warning">only here: @string.Join(", ", onlyHere.Select(element => element.DescribeMention()))</span>
+            }
+            @if (report.FirstPassDifferences.Any(difference => difference.StepIndex == analysed.StepIndex))
+            {
+                <span class="muted">differs on the first pass</span>
+            }
+        </div>
+    };
+
     private static RenderFragment RenderSide(ComparedLoop side, string label) => __builder =>
     {
         <section class="panel compare-side" aria-label="@label">
@@ -216,7 +264,7 @@ else
                     @if (side.Report is Optional<LoopReport>.Some report)
                     {
                         <p>
-                            <span class="badge @(report.Value.IsRepeatable() ? "ok" : "warn")" data-testid="repeatable">@ReportReading.DescribeRepeatability(report.Value)</span>
+                            <span class="badge @(report.Value.Verdict is LoopVerdict.Repeats ? "ok" : "warn")" data-testid="verdict">@report.Value.Verdict.DescribeShortVerdict()</span>
                         </p>
                     }
                     <ol class="step-list">

@@ -1,53 +1,45 @@
-﻿Infinite skip grenades  Skip Grenade Hunter
-  7 steps per cycle, played back to back from a fresh spawn for up to 10 cycles
-  ✓ Repeatable — all 10 cycles completed back to back
-  Ability energy isn't simulated: abilities are always available.
+﻿Infinite skip grenades — Skip Grenade Hunter · 7 steps
+Class ability → Grenade (kill) → Festival Flight (kill) → Any Arc weapon (kill) → Pick up Orb of Power → Bolt Charge at max → Grenade (kill)
+✓ Repeats — each pass ends with what the next one needs
 
-Steady state (cycle 10, the last completed)
-  Kills                 5
-  Ionic Trace spawned   6
-  Orb of Power spawned  4
-  Bolt Charge maxed     1
-  Fired per cycle
-    17× Shinobu's Vow
-    14× Bolt Charge
-     7× To Shreds
-     7× Spark of Discharge
-     6× Elemental Charge
-     6× Ionic Trace
-     5× Flow State
-     5× Dielectric
-     5× Shock and Clear
-     4× Jolt
-     4× Photonic Flare
-     4× Horde Shuttle
-     2× Reaper
-     2× Slice
-     2× Grenade Kickstart
-     2× Spark of Shock
-     1× Gambler's Dodge
-     1× Bomber
-     1× Unraveling Rounds
-     1× Attrition Orbs
-     1× Strand Siphon
-     1× Harmonic Siphon
-     1× Unraveling Orbs
-     1× Orb of Power
-     1× Flashover
-     1× Defibrillating Blast
-  Wasted per cycle (rules that gave nothing: they don't stack)
-    5× Tempest Strike doesn't stack with Dielectric
-  Buff uptime (active after how many of the cycle's steps)
-    Slice              7/7 steps
-    Amplified          7/7 steps
-    Woven Mail         7/7 steps
-    Unraveling Rounds  7/7 steps
-    Bolt Charge        7/7 steps
-    Armor Charge       7/7 steps
-    Reaper             2/7 steps
-    New Tricks         1/7 steps
-  ? 24 unknown values not applied — the real loop is stronger
-  (chance) 14 bullets fired in v1 but not guaranteed in game
+#1 Class ability
+   sets off         Reaper · Slice · Gambler's Dodge · Bomber
+
+#2 Grenade (kill)
+   needs            Armor Charge ← previous pass #5 [Orb of Power] · Jolt ← previous pass #7 [Spark of Shock; Defibrillating Blast] · Sever ← previous pass #4 [Horde Shuttle]
+   sets off         Grenade Kickstart · Spark of Shock · Shinobu's Vow · Jolt · Bolt Charge · Photonic Flare · Flow State · Dielectric · To Shreds · Shock and Clear · Spark of Discharge · Elemental Charge (chance) · Ionic Trace
+   wasted           Tempest Strike — doesn't stack with Dielectric
+
+#3 Festival Flight (kill)
+   needs            Sever ← previous pass #4 [Horde Shuttle] · Slice ← #1 [Slice] · Unraveling Rounds ← previous pass #5 [Unraveling Orbs] · Unravel ← previous pass #3 [To Shreds (chance); Unraveling Rounds] · Jolt ← #2 [Spark of Shock] · Reaper ← #1 [Reaper]
+   sets off         To Shreds · Slice · Unraveling Rounds · Horde Shuttle · Jolt · Attrition Orbs (chance) · Flow State · Reaper · Dielectric · Shock and Clear · Strand Siphon (chance) · Shinobu's Vow · Bolt Charge · Spark of Discharge · Elemental Charge (chance) · Ionic Trace
+   wasted           Tempest Strike — doesn't stack with Dielectric
+
+#4 Any Arc weapon (kill)
+   needs            Sever ← #3 [Slice; Horde Shuttle] · Unravel ← #3 [To Shreds (chance); Unraveling Rounds] · Jolt ← #2 [Spark of Shock]
+   sets off         To Shreds · Horde Shuttle · Jolt · Photonic Flare · Flow State · Dielectric · Spark of Discharge · Shock and Clear · Harmonic Siphon (chance) · Shinobu's Vow · Bolt Charge · Elemental Charge (chance) · Ionic Trace
+   wasted           Tempest Strike — doesn't stack with Dielectric
+
+#5 Pick up Orb of Power
+   needs            Orb of Power ← #3 [Attrition Orbs (chance); Reaper; Strand Siphon (chance)]
+   sets off         Unraveling Orbs · Orb of Power
+
+#6 Bolt Charge at max
+   needs            Bolt Charge ← #4 [Dielectric; Spark of Discharge]
+   sets off         Shinobu's Vow · Flashover
+
+#7 Grenade (kill)
+   needs            New Tricks ← #6 [Shinobu's Vow] · Armor Charge ← #5 [Orb of Power] · Bolt Charge at max ← #6 · Bolt Charge ← #4 [Dielectric; Spark of Discharge] · Jolt ← #2 [Spark of Shock] · Sever ← #4 [Horde Shuttle]
+   sets off         Shinobu's Vow · Grenade Kickstart · Spark of Shock · Bolt Charge · Jolt · Defibrillating Blast · Photonic Flare · Flow State · Dielectric · To Shreds · Shock and Clear · Spark of Discharge · Elemental Charge (chance) · Ionic Trace
+   wasted           Tempest Strike — doesn't stack with Dielectric
+
+First pass (from a fresh spawn, where it differs)
+#2 Grenade (kill)
+   doesn't set off  Grenade Kickstart · Jolt · Photonic Flare · To Shreds
+#3 Festival Flight (kill)
+   doesn't set off  Unraveling Rounds · Horde Shuttle
+#4 Any Arc weapon (kill)
+   doesn't set off  Horde Shuttle
 
 Steps
   The creator's loop: dodge to arm Slice and Reaper, skip grenade into the pack, clean up with
