@@ -50,10 +50,10 @@
     {
         <section class="loadout-box" aria-label="Weapons">
             <h4 class="loadout-label">Weapons</h4>
-            <div class="weapon-row">
+            <ol class="weapon-list">
                 @foreach (var weapon in view.Weapons)
                 {
-                    <div class="weapon-item" title="@DescribeWeapon(weapon)">
+                    <li class="weapon-line" data-slot="@weapon.Slot" title="@DescribeWeapon(weapon)">
                         <div class="weapon-icon">
                             @RenderTile(weapon.Weapon, "item")
                             @if (weapon.DamageIcon is Optional<string>.Some damage)
@@ -61,19 +61,23 @@
                                 <img class="damage-icon" src="@damage.Value" alt="@weapon.Type" loading="lazy" />
                             }
                         </div>
-                        <span class="weapon-item-name">@weapon.Weapon.Name</span>
-                        @if (!weapon.Perks.IsEmpty)
-                        {
-                            <div class="icon-grid perks">
-                                @foreach (var perk in weapon.Perks)
-                                {
-                                    @RenderTile(perk, "perk")
-                                }
-                            </div>
-                        }
-                    </div>
+                        <div class="weapon-text">
+                            <span class="weapon-line-name">@weapon.Weapon.Name</span>
+                            <span class="weapon-line-sub">@LoadoutShaping.DescribeSlot(weapon.Slot)@(weapon.Archetype is Optional<string>.Some archetype ? $" · {LoadoutShaping.DescribeArchetype(archetype.Value)}" : "")</span>
+                        </div>
+                        <div class="weapon-perks" aria-label="Perks">
+                            @foreach (var perk in weapon.Perks)
+                            {
+                                @RenderTile(perk, "perk")
+                            }
+                            @for (var missing = 0; missing < weapon.MissingPerks; missing++)
+                            {
+                                <span class="icon-tile perk empty-perk" title="@MissingPerk" aria-label="Perk not known">?</span>
+                            }
+                        </div>
+                    </li>
                 }
-            </div>
+            </ol>
         </section>
     }
 
@@ -166,7 +170,9 @@
         + tile.Description.Match(description => $" — {description.Value}", _ => "");
 
     private static string DescribeWeapon(WeaponView weapon) =>
-        $"{weapon.Weapon.Name} — {weapon.Slot} · {weapon.Type}{weapon.Archetype.Match(archetype => $" · {archetype.Value}", _ => "")}";
+        $"{weapon.Weapon.Name} — {LoadoutShaping.DescribeSlot(weapon.Slot)} · {weapon.Type}{weapon.Archetype.Match(archetype => $" · {LoadoutShaping.DescribeArchetype(archetype.Value)}", _ => "")}";
+
+    private const string MissingPerk = "Perk not known: the build doesn't name it (a DIM link carries the weapon, not its roll).";
 
     /// <summary>"SoR" for Spark of Resistance: what a square without an icon shows.</summary>
     private static string ToInitials(string name) =>

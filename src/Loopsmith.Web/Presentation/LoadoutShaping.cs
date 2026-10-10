@@ -27,13 +27,26 @@ public sealed record SubclassView(
     ImmutableArray<IconTile> Aspects,
     ImmutableArray<IconTile> Fragments);
 
-/// <summary>A weapon: its tile, slot, archetype, damage type (and that type's icon) and the perks the build gives it.</summary>
-public sealed record WeaponView(IconTile Weapon, WeaponSlot Slot, Optional<string> Archetype, DamageType Type, Optional<string> DamageIcon, ImmutableArray<IconTile> Perks);
+/// <summary>
+/// A weapon: its tile, slot, archetype, damage type (and that type's icon), the perks the build gives it, and how many of
+/// its two selected perks the build doesn't name (a DIM loadout names the weapon, not its roll).
+/// </summary>
+public sealed record WeaponView(
+    IconTile Weapon,
+    WeaponSlot Slot,
+    Optional<string> Archetype,
+    DamageType Type,
+    Optional<string> DamageIcon,
+    ImmutableArray<IconTile> Perks,
+    int MissingPerks);
 
 /// <summary>An armor slot: the piece in it (when the loadout names one) and the mods that only fit that slot, one tile each.</summary>
 public sealed record ArmorView(ArmorSlot Slot, Optional<IconTile> Piece, ImmutableArray<IconTile> Mods);
 
-/// <summary>A build laid out like DIM shows a loadout: subclass, artifact, weapons, armor with each piece's mods, general mods, set bonuses.</summary>
+/// <summary>
+/// A build laid out like DIM shows a loadout: subclass, artifact, weapons (kinetic, energy, power), armor with each
+/// piece's mods, general mods, set bonuses.
+/// </summary>
 public sealed record LoadoutView(
     SubclassView Subclass,
     ImmutableArray<IconTile> Artifact,
@@ -51,6 +64,9 @@ public sealed record LoadoutView(
 public static class LoadoutShaping
 {
     private const string IconHost = "https://www.bungie.net";
+
+    /// <summary>A weapon's selected perks: the two trait columns of its roll.</summary>
+    private const int SelectedPerks = 2;
 
     private static readonly ImmutableArray<ArmorSlot> ArmorSlots = [ArmorSlot.Helmet, ArmorSlot.Arms, ArmorSlot.Chest, ArmorSlot.Legs, ArmorSlot.ClassItem];
 
@@ -89,7 +105,7 @@ public static class LoadoutShaping
                 .. b.ArtifactPerks.Select(id => DescribeElement(catalog, id)),
                 .. leftOut.Where(entry => entry.Part == LoadoutPart.ArtifactPerk).Select(entry => DescribeLeftOut(entry.Item, entry.Hash)),
             ],
-            [.. b.Weapons.Select(weapon => DescribeWeapon(catalog, weapon))],
+            [.. b.Weapons.OrderBy(weapon => weapon.Slot).Select(weapon => DescribeWeapon(catalog, weapon))],
             [
                 .. ArmorSlots
                     .Select(slot => new ArmorView(
@@ -109,7 +125,20 @@ public static class LoadoutShaping
     /// <summary>The bungie.net address of a manifest icon path.</summary>
     public static string ToIconUrl(string path) => IconHost + path;
 
-    /// <summary>"Kinetic", "Class item": a slot as a label.</summary>
+    /// <summary>"Kinetic", "Energy", "Heavy": a weapon slot as Destiny names it.</summary>
+    public static string DescribeSlot(WeaponSlot slot) =>
+        slot switch
+        {
+            WeaponSlot.Kinetic => "Kinetic",
+            WeaponSlot.Energy => "Energy",
+            _ => "Heavy",
+        };
+
+    /// <summary>"grenade-launcher" → "Grenade Launcher": a weapon archetype as a label.</summary>
+    public static string DescribeArchetype(string archetype) =>
+        string.Join(' ', archetype.Split('-', StringSplitOptions.RemoveEmptyEntries).Select(word => char.ToUpperInvariant(word[0]) + word[1..]));
+
+    /// <summary>"Helmet", "Class item": an armor slot as a label.</summary>
     public static string DescribeSlot(ArmorSlot slot) =>
         slot switch
         {
@@ -182,7 +211,14 @@ public static class LoadoutShaping
             known => DescribeItem(known.Value, weapon.Name, true, Optional.None<string>(), weapon.Type.ToAffinity()),
             _ => new IconTile(weapon.Name, Optional.None<string>(), weapon.Type.ToAffinity(), Optional.None<ItemTier>(), true, Optional.None<string>(), 1));
         var damageIcon = catalog.Manifest.DamageTypeIcons.TryGetValue(weapon.Type, out var icon) ? Optional.Some(ToIconUrl(icon)) : Optional.None<string>();
-        return new WeaponView(tile, weapon.Slot, weapon.Archetype, weapon.Type, damageIcon, [.. weapon.Perks.Select(id => DescribeElement(catalog, id))]);
+        return new WeaponView(
+            tile,
+            weapon.Slot,
+            weapon.Archetype,
+            weapon.Type,
+            damageIcon,
+            [.. weapon.Perks.Select(id => DescribeElement(catalog, id))],
+            Math.Max(SelectedPerks - weapon.Perks.Length, 0));
     }
 
     private static bool IsKind(Optional<ManifestItem> item, ManifestKind kind) =>
