@@ -40,7 +40,7 @@ public partial record EnergyGrant
 /// <summary>
 /// The game's consequences. ("Effect" is reserved for side effects described as data — see Orchestration.)
 /// Energy outcomes (<see cref="GrantEnergy"/>, <see cref="ConvertStacksToEnergy"/>, <see cref="ResetCooldown"/>) are
-/// explanations: ability energy isn't simulated (ADRs D21).
+/// explanations: ability energy isn't simulated (ADRs D5).
 /// </summary>
 [Union]
 public partial record Outcome
@@ -78,7 +78,7 @@ public sealed record WeaponStatChange(string Stat, GameValue Change);
 public partial record Passive
 {
     partial record ExtraStacks(StatusId Status, StackCount Extra);           // Spark of Frequency
-    partial record ExtraCharges(AbilityKind Ability, int Extra);            // explained only (ADRs D21)
+    partial record ExtraCharges(AbilityKind Ability, int Extra);            // explained only (ADRs D5)
     partial record ModifyDamage(DamageSource Against, GameValue Change);     // Flashover, stat bonuses
     partial record ResistDamage(GameValue Amount);                           // Spark of Resistance
     partial record ModifyWeaponStats(ImmutableArray<string> Archetypes, ImmutableArray<WeaponStatChange> Changes);

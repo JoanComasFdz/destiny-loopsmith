@@ -44,7 +44,7 @@ public readonly partial struct SummonId
         ElementId.IsSlug(value) ? Validation.Ok : Validation.Invalid($"'{value}' is not a kebab-case summon id");
 }
 
-/// <summary>Bungie manifest hash — the long-term identity (D1); optional until the manifest join exists.</summary>
+/// <summary>Bungie manifest hash — the long-term identity (D14); optional until the manifest join exists.</summary>
 [ValueObject<uint>]
 public readonly partial struct ItemHash;
 
@@ -65,7 +65,7 @@ public readonly partial struct Seconds
 
 /// <summary>
 /// How many enemies one action hits (or kills), 1..20. The player says it — the engine can't know how many enemies a
-/// grenade or a burst of fire catches (ADRs D22).
+/// grenade or a burst of fire catches (ADRs D4).
 /// </summary>
 [ValueObject<int>]
 [Instance("One", 1)]

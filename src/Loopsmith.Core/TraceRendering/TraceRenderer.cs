@@ -34,7 +34,7 @@ public static class TraceRenderer
         return [header, .. fired, .. nothing, .. notes, .. state];
     }
 
-    /// <summary>Buffs, target debuffs, ground pickups and active passives — no energy bars: abilities are always available (ADRs D21).</summary>
+    /// <summary>Buffs, target debuffs, ground pickups and active passives — no energy bars: abilities are always available (ADRs D5).</summary>
     public static ImmutableArray<StyledLine> RenderState(ValidatedBuild build, GameState state, ImmutableArray<ActivePassive> passives)
     {
         var glossary = build.Catalog.Glossary;

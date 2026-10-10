@@ -16,7 +16,7 @@ namespace Loopsmith.Core.Orchestration;
 public enum TriggerGroup { Ability, Weapon, Pickup, Time }
 
 /// <summary>
-/// A trigger the designer can pick next — every option listed can be played (abilities are always available, ADRs D21).
+/// A trigger the designer can pick next — every option listed can be played (abilities are always available, ADRs D5).
 /// <see cref="IsNew"/> marks what the last step unlocked (a pickup that just landed). Abilities and weapons are listed
 /// against one enemy; <see cref="LoopDesigning.SetTargetCount"/> aims them at more.
 /// </summary>
@@ -93,7 +93,7 @@ public static class LoopDesigning
             : session with { Design = session.Design with { Steps = session.Design.Steps.SetItem(index, session.Design.Steps[index] with { Note = note }) } };
 
     /// <summary>
-    /// Every trigger the build offers right now, grouped: every ability (always available — ADRs D21), every weapon,
+    /// Every trigger the build offers right now, grouped: every ability (always available — ADRs D5), every weapon,
     /// the pickups on the ground, a wait. <see cref="TriggerOption.IsNew"/> marks what the last step made available.
     /// </summary>
     public static ImmutableArray<TriggerOption> ListTriggerOptions(DesignSession session)

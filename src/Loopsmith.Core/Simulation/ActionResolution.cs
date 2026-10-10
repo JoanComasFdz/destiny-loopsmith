@@ -11,7 +11,7 @@ public static class ActionResolution
 
     /// <summary>
     /// Fresh spawn: no buffs, an undebuffed pack, nothing on the ground. There is no ability energy to fill —
-    /// abilities are always available (ADRs D21).
+    /// abilities are always available (ADRs D5).
     /// </summary>
     public static GameState CreateInitialState() =>
         new(0, Seconds.From(0m), [], new TargetState(EnemyTier.Minor, []), []);
@@ -40,7 +40,7 @@ public static class ActionResolution
     }
 
     /// <summary>
-    /// Every ability (always — no energy model, ADRs D21), every equipped weapon, the pickups on the ground and a wait.
+    /// Every ability (always — no energy model, ADRs D5), every equipped weapon, the pickups on the ground and a wait.
     /// Abilities and weapons are listed against one enemy; a host may set any <see cref="TargetCount"/>.
     /// </summary>
     public static ImmutableArray<PlayerAction> ListAvailableActions(ValidatedBuild build, GameState state)
@@ -88,7 +88,7 @@ public static class ActionResolution
             collect => CollectPickups(state, collect),
             wait => Wait(state, wait));
 
-    /// <summary>Never blocked: casting, then the strike on every target (ADRs D21, D22).</summary>
+    /// <summary>Never blocked: casting, then the strike on every target (ADRs D4, D5).</summary>
     private static Opening CastAbility(ValidatedBuild build, GameState state, PlayerAction.CastAbility cast)
     {
         var kind = cast.Kind.ToAbilityKind();
@@ -116,7 +116,7 @@ public static class ActionResolution
     }
 
     /// <summary>
-    /// One action against N enemies (ADRs D22): N per-enemy hits, then N kills for a kill — each cascades fully, so
+    /// One action against N enemies (ADRs D4): N per-enemy hits, then N kills for a kill — each cascades fully, so
     /// later hits see the debuffs earlier ones applied — then one <see cref="GameEvent.TargetsHit"/> for the
     /// multi-target triggers ("hit 3+ enemies").
     /// </summary>
@@ -141,7 +141,7 @@ public static class ActionResolution
         return new Opening(state.ClearPickups(collect.Pickup), events.ToImmutableArray(), []);
     }
 
-    /// <summary>Time passes: timed buffs and debuffs expire. Nothing recharges — ability energy isn't simulated (ADRs D21).</summary>
+    /// <summary>Time passes: timed buffs and debuffs expire. Nothing recharges — ability energy isn't simulated (ADRs D5).</summary>
     private static Opening Wait(GameState state, PlayerAction.Wait wait)
     {
         var elapsed = wait.Duration.Value;
