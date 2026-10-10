@@ -160,6 +160,23 @@ def read_catalyst(item, socket_types, plugs_by_category, items, perks):
     return None
 
 
+def read_description(item, perks):
+    """Bungie's description of an item; for a subclass plug (an aspect, a fragment) whose own is empty, its perks' texts:
+    the perk of its own name gives its effect, the others their name or "name: text" (a fragment's stat change)."""
+    own = item.get("displayProperties", {}).get("description")
+    if own:
+        return own
+    lines = []
+    for entry in item.get("perks", []):
+        perk = perks.get(str(entry.get("perkHash")), {})
+        display = perk.get("displayProperties", {})
+        name, text = display.get("name", ""), display.get("description", "")
+        if not perk.get("isDisplayable") or not (name or text):
+            continue
+        lines.append(text if name == item.get("displayProperties", {}).get("name") or name == text or not name else f"{name}: {text}" if text else name)
+    return "\n".join(lines)
+
+
 def to_perk_entry(perk_hash, perk):
     """A sandbox perk (a catalyst's or an armor set's): name, Bungie's description, icon; it has no item type."""
     display = perk.get("displayProperties", {})
@@ -206,8 +223,9 @@ def to_entry(item_hash, item, context):
     granted = read_granted_perks(item, context["perks"]) if kind == "catalyst" else []
     if granted:
         fields.append(("perks", "[" + ", ".join(str(h) for h in granted) + "]"))
-    if display.get("description"):
-        fields.append(("description", to_text(display["description"])))
+    description = read_description(item, context["perks"])
+    if description:
+        fields.append(("description", to_text(description)))
     if display.get("icon"):
         fields.append(("icon", display["icon"]))
     return "  - { " + ", ".join(f"{key}: {value}" for key, value in fields) + " }"

@@ -1,8 +1,9 @@
 # Bungie manifest excerpt
 
-`rules/manifest.yaml` is Loopsmith's excerpt of the Bungie manifest: the official name, kind, type, icon,
-rarity and (for weapons, armor and armor mods) slot and damage type — and a weapon's trait columns with the
-perks each can roll — of every hash Loopsmith names — each
+`rules/manifest.yaml` is Loopsmith's excerpt of the Bungie manifest: the official name, kind, type, Bungie's
+description, icon, rarity and (for weapons, armor and armor mods) slot and damage type — and a weapon's trait
+columns with the perks each can roll, its intrinsic perk and an exotic's catalyst, an exotic armor's perk, and
+the armor sets with their 2- and 4-piece perks — of every hash Loopsmith names — each
 `hash:` in `rules/` and every hash a saved DIM share (`builds/*/dim-loadout.json`) wears, plus every perk those
 weapons' columns roll with. The web app shows a build the way DIM shows a loadout from it, a DIM link's weapons
 become the build's weapons, and the designer's perk picker offers what each column rolls with
@@ -12,7 +13,7 @@ bungie.net; the data is Bungie's, used under its API terms.
 Regenerate it after adding a hash to the rules, a saved DIM share, or when Bungie publishes a new manifest:
 
 ```bash
-tools/manifest/get-manifest.sh /tmp/manifest            # downloads six English components (~10 MB compressed, ~210 MB on disk)
+tools/manifest/get-manifest.sh /tmp/manifest            # downloads eight English components (~11 MB compressed, ~215 MB on disk)
 python3 -I tools/manifest/extract_manifest.py /tmp/manifest "$(cat /tmp/manifest/version.txt)"
 dotnet test                                             # the catalog version changes: re-pin the example loops
 ```

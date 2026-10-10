@@ -144,6 +144,7 @@ the build holds what the catalog recognises by hash, and nothing is guessed:
 | the subclass item | `class` and `subclass` — the glossary's `subclasses` ([rule-format.md](rule-format.md#glossary-rulesglossaryyaml): the nine Light ones so far, whose hashes DIM's source lists); a Stasis, Strand or Prismatic loadout, or one without a subclass, can't start a build yet |
 | the subclass's plugs, in socket order | the super, grenade, melee and class ability, aspects and fragments the catalog has a hash for; an ability it has none for is `"?"` |
 | the other equipped items (and the Loadout Optimizer's exotic) | `exoticArmor`; a weapon the manifest excerpt knows ([rule-format.md](rule-format.md#manifest-excerpt-rulesmanifestyaml)) becomes one of `weapons` — its slot, name, damage type, archetype and `hash`, no perks (a loadout names the weapon, not its roll) |
+| the armor pieces, by their manifest set | `armorSetBonuses`: each set perk the pieces grant (2 or 4 of a set) that the catalog has a hash for; the pieces themselves (legendary armor) are left out |
 | `parameters.mods` (repeats are stacked copies) | `armorMods` |
 | `parameters.artifactUnlocks` | `artifactPerks` |
 | anything else — legendary armor, a jump, a weapon the excerpt doesn't know, a hash no element has | `leftOut`, by hash and where the loadout listed it |
@@ -169,6 +170,21 @@ only that entry is rewritten, so the build file's comments stay — and the step
 build: a perk the rules know now sets things off; one they don't is shown, dimmed, and said so under
 Validation. Hand-written builds pick the same way; a perk they name in `perks` sits in its column and
 gives way to a pick there. The Home cards stay read-only.
+
+**An item's details.** Tapping a square opens its details: Bungie's text (from the manifest excerpt) and what
+Loopsmith's rules say — the element's description, written from the Compendium or Clarity (never copied), what
+it sets off in this build trigger by trigger, and its source ("Destiny Data Compendium (2026-10-09), Exotic
+Weapons row 144") — or that the rules don't know it yet. The name links to the item's light.gg page, and so
+does a weapon's name in the loadout. An exotic armor shows its exotic perk; an exotic weapon its intrinsic,
+each perk its columns hold and its catalyst. Legendary armor and weapons open nothing: their perks and mods
+carry what there is to know. The **armor sets** sit under the armor: each set with the pieces worn (a DIM
+loadout's) and its 2- and 4-piece perks, dimmed when not active, each with its own details.
+
+**An exotic's catalyst.** An exotic weapon with a catalyst shows it as a square after its perks, off until the
+build turns it on (a DIM link doesn't say). In the designer its details switch it on or off: the embedded
+build's weapon entry gets `catalyst: true`, the catalyst's element is equipped, and the steps replay. A
+catalyst whose effect the rules can't express yet (Thunderlord's Return Stroke refills ammo, which isn't
+modelled) is shown, and Validation says it sets nothing off.
 
 **Shared DIM builds on Home.** A share can ship with the app as `builds/<slug>/dim-loadout.json` —
 its link and the loadout as DIM's share page carries it (the page's "Open Loadout in DIM" link holds

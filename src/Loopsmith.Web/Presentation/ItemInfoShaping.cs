@@ -147,7 +147,7 @@ public static class ItemInfoShaping
         return new InfoSection(
             Optional.Some(element.Match(known => known.Value.Name, _ => build.Catalog.Manifest.DescribeItemHash(perk))),
             item.Bind(ToIcon),
-            Optional.Some(item.Bind(known => known.Type).Match(type => type.Value == "Trait" ? label : $"{label} · {type.Value}", _ => label)),
+            Optional.Some(item.Bind(known => known.Type).Match(type => label.StartsWith(type.Value, StringComparison.Ordinal) ? label : $"{label} · {type.Value}", _ => label)),
             item.Bind(known => known.Description),
             element.Map(known => DescribeRules(build, known)),
             Optional.None<CatalystToggle>());
