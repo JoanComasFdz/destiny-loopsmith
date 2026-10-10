@@ -9,12 +9,12 @@ namespace Loopsmith.Web.Presentation;
 /// <summary>A point of the drawn chain, in pixels.</summary>
 public sealed record ChainPoint(int X, int Y);
 
-/// <summary>The left edge of a step's card: a notch cut in at the top (ingress) and a tab out at the bottom (egress).</summary>
+/// <summary>The left edge of a step's card: a notch cut in at the top (ingress) and a square slot cut in at the bottom (egress).</summary>
 public sealed record ChainCard(int Step, string Edge);
 
 /// <summary>
-/// One link drawn: from the source card's tab, left along the source's first stroke, down its own lane, right into the
-/// target card's notch. <see cref="Junction"/> marks where it splits off the source's stroke (none for the outermost).
+/// One link drawn: from inside the source card's slot, left along the source's first stroke, down its own lane, right
+/// into the target card's notch. <see cref="Junction"/> marks where it splits off the source's stroke (none for the outermost).
 /// </summary>
 public sealed record ChainLine(StepLink Link, int Lane, string Path, Optional<ChainPoint> Junction, bool OnlyHere, string Title);
 
@@ -33,9 +33,10 @@ public sealed record ChainLayout(
     ImmutableArray<ChainArrowhead> Arrowheads);
 
 /// <summary>
-/// Pure: a report's links → where to draw them. Each step is a card whose left edge has a notch at the top, where the
-/// lines into it land, and a tab at the bottom, where the lines out of it leave. A step's lines leave its tab as one
-/// stroke and split along it, one lane each: the nearest target splits off first, nearest the cards. Lines into the same
+/// Pure: a report's links → where to draw them. Each step is a card whose left edge has a notch at the top, shaped like
+/// the arrow that lands there, and a square slot at the bottom, shaped like the line that leaves: its lines start inside
+/// the slot. A step's lines leave as one stroke and split along it, one lane each: the nearest target splits off first,
+/// nearest the cards. Lines into the same
 /// step merge on its notch. Lines never share a lane where they overlap. Only links within a pass are drawn: each line
 /// goes down, from a step to a later one.
 /// </summary>
@@ -51,11 +52,14 @@ public static class ChainShaping
 
     private const int EgressOffset = 35;
 
-    /// <summary>How far the notch cuts in and the tab sticks out.</summary>
-    private const int Depth = 8;
+    /// <summary>How far the notch and the slot cut into the card.</summary>
+    private const int Depth = 10;
 
-    /// <summary>Half the height of the notch and of the tab.</summary>
+    /// <summary>Half the height of the notch.</summary>
     private const int Half = 6;
+
+    /// <summary>Half the height of the slot: a little wider than a line.</summary>
+    private const int SlotHalf = 5;
 
     private const int CardRadius = 5;
 
@@ -83,7 +87,7 @@ public static class ChainShaping
     {
         var lanes = AssignLanes(links);
         var laneCount = lanes.DefaultIfEmpty(-1).Max() + 1;
-        var edge = Margin + Math.Max(laneCount - 1, 0) * LaneWidth + Inset + Depth;   // x of the cards' left edge
+        var edge = Margin + Math.Max(laneCount - 1, 0) * LaneWidth + Inset;   // x of the cards' left edge
         var outermost = links
             .Select((compared, index) => (compared.Link.From, Lane: lanes[index]))
             .GroupBy(x => x.From)
@@ -106,7 +110,7 @@ public static class ChainShaping
     /// <summary>The y of a step's notch, where the lines into it land.</summary>
     public static int ReadIngress(int step) => ReadCardTop(step) + IngressOffset;
 
-    /// <summary>The y of a step's tab, where the lines out of it leave.</summary>
+    /// <summary>The y of a step's slot, where the lines out of it leave.</summary>
     public static int ReadEgress(int step) => ReadCardTop(step) + EgressOffset;
 
     /// <summary>
@@ -129,7 +133,7 @@ public static class ChainShaping
     private static bool Overlaps(StepLink a, StepLink b) =>
         ReadEgress(a.From) < ReadIngress(b.To) && ReadEgress(b.From) < ReadIngress(a.To);
 
-    private static int ReadLaneX(int edge, int lane) => edge - Depth - Inset - lane * LaneWidth;
+    private static int ReadLaneX(int edge, int lane) => edge - Inset - lane * LaneWidth;
 
     private static ChainLine ShapeLine(ComparedLink compared, int lane, bool isOutermost, int edge)
     {
@@ -137,7 +141,7 @@ public static class ChainShaping
         var egress = ReadEgress(compared.Link.From);
         var ingress = ReadIngress(compared.Link.To);
         var path = string.Create(Invariant,
-            $"M {edge - Depth} {egress} H {x + Radius} Q {x} {egress} {x} {egress + Radius} V {ingress - Radius} Q {x} {ingress} {x + Radius} {ingress} H {edge + Depth - 1 - ArrowLength}");
+            $"M {edge + Depth} {egress} H {x + Radius} Q {x} {egress} {x} {egress + Radius} V {ingress - Radius} Q {x} {ingress} {x + Radius} {ingress} H {edge + Depth - 1 - ArrowLength}");
         var junction = isOutermost ? Optional.None<ChainPoint>() : Optional.Some(new ChainPoint(x, egress));
         return new ChainLine(compared.Link, lane, path, junction, compared.OnlyHere, compared.Link.DescribeLink());
     }
@@ -150,7 +154,7 @@ public static class ChainShaping
 
     /// <summary>
     /// The left part of a card, up to where the card itself starts: rounded corners, the notch cut in at the ingress, the
-    /// tab out at the egress. Filled like the card, so the two read as one.
+    /// square slot cut in at the egress. Filled like the card, so the two read as one.
     /// </summary>
     private static string ShapeCardEdge(int edge, int step)
     {
@@ -161,7 +165,7 @@ public static class ChainShaping
         var right = edge + Depth + 2;
         return string.Create(Invariant,
             $"M {edge + CardRadius} {top} H {right} V {bottom} H {edge + CardRadius} Q {edge} {bottom} {edge} {bottom - CardRadius} "
-            + $"V {egress + Half} L {edge - Depth} {egress} L {edge} {egress - Half} "
+            + $"V {egress + SlotHalf} H {edge + Depth} V {egress - SlotHalf} H {edge} "
             + $"V {ingress + Half} L {edge + Depth} {ingress} L {edge} {ingress - Half} "
             + $"V {top + CardRadius} Q {edge} {top} {edge + CardRadius} {top} Z");
     }

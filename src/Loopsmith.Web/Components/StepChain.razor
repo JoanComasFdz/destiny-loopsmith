@@ -1,7 +1,7 @@
 @* The step chain (docs/loop-format.md, "Analysis"): a card per step. Its left edge has a notch at the top, where the
-   lines into the step land, and a tab at the bottom, where the lines out of it leave. A step's lines leave its tab as one
-   stroke and split along it (a junction dot), one lane per step they feed; lines into the same step merge on its
-   notch. A line whose needs came only from chance rules is faded; in a comparison only the links the other loop lacks
+   lines into the step land, and a square slot at the bottom, where the lines out of it start. A step's lines leave its
+   slot as one stroke and split along it (a junction dot), one lane per step they feed; lines into the same step merge
+   on its notch. A line whose needs came only from chance rules is faded; in a comparison only the links the other loop lacks
    are drawn. Tap a step: its lines stand out and what it needs and feeds is listed below. *@
 @{
     var chain = ChainShaping.ShapeChain(Report.Steps.Length, Links);

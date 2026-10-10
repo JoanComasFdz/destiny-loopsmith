@@ -187,8 +187,8 @@ has a blocked step (the first one, with its message).
 to the step that needs it, labelled with what flows (`#2 → #3: Slice · Reaper`); one whose needs came
 only from chance rules is marked *(chance)*. The web draws the links within a pass above the steps:
 each step is a card whose left edge has a notch at the top, where the lines into it land (an
-arrowhead), and a tab at the bottom, where the lines out of it leave. A step's lines leave its tab as
-one stroke and split along it (a junction dot), one lane per later step they feed, the nearest
+arrowhead), and a square slot at the bottom, where the lines out of it start. A step's lines leave its
+slot as one stroke and split along it (a junction dot), one lane per later step they feed, the nearest
 splitting off first; lines into the same step merge on its notch; a line by chance is faded. Tapping a step lists what it needs and what it feeds. A link
 from the pass before (`previous pass #4 → #3: Unraveling Rounds`) shows in the step's needs, not as
 an arrow.

@@ -21,7 +21,7 @@
         <p class="notice @(Report.Verdict is LoopVerdict.Breaks ? "warn" : "")" data-testid="verdict-text">@Report.Verdict.DescribeVerdict()</p>
 
         <h3 class="section-label">Chain <span class="label-note">which step feeds which — tap a step</span></h3>
-        <p class="muted chain-legend">Lines leave a step at its tab (bottom left) and land in the notch (top left) of each later step it feeds; lines into the same step merge there.</p>
+        <p class="muted chain-legend">Lines leave a step from its slot (bottom left) and land in the notch (top left) of each later step it feeds; lines into the same step merge there.</p>
         <StepChain Report="Report" Links="ChainShaping.ListDrawnLinks(Report.Links)" />
 
         <div class="analysis-steps-head">
