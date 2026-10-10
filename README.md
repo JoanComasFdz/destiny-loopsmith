@@ -66,7 +66,7 @@ option.
 
 ### What it looks like
 
-`explain` on the [Skip Grenade Hunter](builds/skip-grenade-hunter/), compare with the
+`explain` on the [Skip Grenade Hunter](builds/skip-grenade-hunter/) (an excerpt), compare with the
 [original note](builds/skip-grenade-hunter/note.txt):
 
 ```text
@@ -93,13 +93,19 @@ While Amplified -> +1 Bolt Charge per gain [Spark of Frequency] + linear-fusion-
       ↳ Bolt Charge gained → +?% grenade energy [Shinobu's Vow] + +2.5% melee energy [Bolt Charge]
   Buffs         Reaper · Slice · Bolt Charge · Amplified · Armor Charge
   Target        Jolt
+  Ground        none
+  Active      +1 Bolt Charge per gain [Spark of Frequency]
+  Active      linear-fusion-rifle/fusion-rifle/heat-weapon: +handling, +reload [Ionic Overclock]
 #3 Bolt Charge at max
   Max Bolt Charge → New Tricks and +~40% grenade energy and heals you and allies [Shinobu's Vow] + Amplified (15s) [Flashover]
   Buffs         Reaper · Slice · Bolt Charge (at max) · Amplified · Armor Charge · New Tricks
   Target        Jolt
+  Ground        none
+  Active      +1 Bolt Charge per gain [Spark of Frequency]
+  Active      linear-fusion-rifle/fusion-rifle/heat-weapon: +handling, +reload [Ionic Overclock]
 ```
 
-`loop` on a three-step loop (dodge, shoot, pick up the orb):
+`loop` on a three-step loop (dodge, shoot, pick up the orb) — illustrative, `…` elides:
 
 ```text
 Dodge, then shoot — Skip Grenade Hunter · 3 steps
@@ -164,7 +170,7 @@ build.yaml ───┼─ parse → validate ──────┼─ trace / p
 * Outcomes of one event apply in phase order (debuff → empower → damage → spawn → refund),
   then derived events cascade depth-first (depth ≤ 5; a rule never re-fires on an identical
   event up its own causal chain).
-* Every number is a `GameValue` with provenance, shown as a fact with its outcome. **Unknown stays
+* Every number is a `GameValue`, shown as a fact with its outcome; every element keeps its provenance. **Unknown stays
   unknown**: a "?" is shown, never treated as 0.
 
 What Loopsmith is and must do, starting with the level of abstraction:

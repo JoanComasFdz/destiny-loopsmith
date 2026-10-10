@@ -31,7 +31,8 @@ rules/
 builds/<build>/build.yaml
 ```
 
-The folders are a convention: every `*.yaml` / `*.yml` under the rules root is read, and element ids
+The folders are a convention: every `*.yaml` under the rules root is read (the web app embeds only
+`*.yaml`, so use that extension), and element ids
 are unique across all of them (`duplicate element id '<id>' (first defined at <file>:<line>)`). The root
 holds exactly one `glossary.yaml`; every other file has the shape `elements: [ … ]`. When the glossary
 is missing or broken, the other files are still checked for their own errors, but their references
@@ -109,7 +110,7 @@ build slot ([Build check](#build-check)).
 
 | Form | Domain |
 |---|---|
-| `compendium/2026-10-09/Arc#54` | `Provenance.Compendium(snapshot, tab, row)` |
+| `compendium/2026-10-09/Arc#24` | `Provenance.Compendium(snapshot, tab, row)` |
 | `clarity/1727069364@2.0625` | `Provenance.Clarity(hash, version)` |
 | `{ creator: <url>, quote: "<what they said>" }` | `Provenance.CreatorClaim(url, quote)` — an absolute http(s) URL and a non-empty quote |
 | omitted | `Provenance.Authored(file, line)` |
@@ -142,18 +143,19 @@ shows the glossary's.
 ### Rules
 
 ```yaml
-rules:
-  - on: { kill: { via: any, targetHas: [jolt] } }
-    when: [ { has: amplified } ]        # optional guards
+rules:                                  # Reaper (rules/mods/armor.yaml)
+  - on: { kill: { via: weapon } }
+    when: [ { has: reaper } ]           # optional guards
     then:
-      - { spawn: ionic-trace }
-    chance: true                        # optional: "occasionally / chance to", or progress the game
-                                        # doesn't show as a stacking status (default false)
-    reason: "Final blows against jolted targets create an Ionic Trace."
+      - { removeBuff: reaper }
+      - { spawn: orb-of-power }
+    reason: "Your next weapon kill after a dodge drops an Orb of Power."
 ```
 
 `on` and `then` (at least one outcome) are required. `reason` is optional plain English, shown in
-traces with `--why`; `doesNotStackWith` is [below](#rules-that-dont-stack).
+traces with `--why`; `doesNotStackWith` is [below](#rules-that-dont-stack). `chance: true` (default
+false) marks a rule that may not happen in game: "chance to / occasionally", or progress the game
+doesn't show as a stacking status (Elemental Charge's progress per Ionic Trace; ADRs D8).
 
 **Triggers (`on`)** — exactly one key:
 
@@ -334,6 +336,7 @@ when they have a `when`, in the trace's state while it holds.
 ## Build file (`builds/<build>/build.yaml`)
 
 ```yaml
+# abridged and illustrative — the real one is builds/skip-grenade-hunter/build.yaml
 name: Skip Grenade Hunter
 author: Plunderthabooty                      # optional
 source: https://www.youtube.com/watch?v=zvd6sNS463E   # optional
@@ -362,7 +365,8 @@ stats: { weapons: 47, class: 104, grenade: 145, super: 27, melee: 79 }   # any s
   are required; `archetype` (a kebab-case word) and `perks` (element ids) are optional. The name
   labels its actions ("Festival Flight (hit 5)").
 * `stats`: any of `weapons`, `health`, `class`, `grenade`, `super`, `melee`, whole numbers 0..200.
-* Stats, archetypes and hashes are shown in the build summary; the engine doesn't use them.
+* Stats and archetypes are shown in the build summary, and hashes are recorded (D14); the engine
+  doesn't use them.
 
 ### Build check
 

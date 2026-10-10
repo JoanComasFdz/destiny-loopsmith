@@ -122,7 +122,7 @@ itself, under `src/Loopsmith.Core/Domain/`.
   (`TryFrom` in the parsing slices) — once inside the pure core a value object is
   known-valid.
 - **Unknowns are data.** A source's "?" becomes `GameValue.Unknown`, never 0; the
-  trace shows "?". Every number keeps its `Provenance`.
+  trace shows "?". Every element keeps its `Provenance` (its `source:`).
 - **State is causal** (ADRs D1). Game state says what is present (a buff, a
   debuff on the pack, a pickup on the ground) and what the player declared
   ("Bolt Charge at max"); it holds no number but the step. A source's number

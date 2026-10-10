@@ -49,7 +49,7 @@ element caused it, what that unlocks next, and what doesn't work together (D6). 
 how many, how often, how long or when.
 
 * **Numbers are facts shown with their outcome** ("+12% grenade energy", "Amplified (15s)",
-  "up to x10", "reduces the cooldown by 2 s"). They are never added up or compared to
+  "up to x10", "refills melee"). They are never added up or compared to
   decide what happens.
 * **State is what is present**: a buff on you, a debuff on the pack, a pickup on the ground — and
   what the player declared (D3). Nothing in it is counted: no stacks, energy or health.
@@ -201,8 +201,8 @@ scoped by kind and class, with an alias table in git. Unresolved names are repor
 ### D13 — Every number is a `GameValue` with `Provenance`; unknown stays `?`
 
 **Decision.** A number in the rules is `Known`, `PerModCount` (value by copies equipped),
-`Approximate` (`~`) or `Unknown` (`?`), and keeps where it came from (`Provenance`: Compendium row,
-Clarity hash, creator claim, or the rule file's line). **Consequence.** An unknown is shown as "?" and
+`Approximate` (`~`) or `Unknown` (`?`); every element keeps where its numbers came from
+(`Provenance`, its `source:`: Compendium row, Clarity hash, creator claim, or the rule file's line). **Consequence.** An unknown is shown as "?" and
 never treated as 0; since numbers are facts (D1), "?" only means the source doesn't say.
 
 ### D14 — Authored slugs as ids, the manifest hash as the long-term identity

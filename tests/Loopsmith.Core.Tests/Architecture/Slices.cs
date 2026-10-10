@@ -3,7 +3,7 @@ using System.Collections.Immutable;
 namespace Loopsmith.Core.Tests.Architecture;
 
 /// <summary>
-/// The slice map of <c>Loopsmith.Core</c> (CONVENTIONS.md "Architecture", design §04 "Dependency rules").
+/// The slice map of <c>Loopsmith.Core</c> (CONVENTIONS.md "Architecture", ADRs D16).
 /// Every rule iterates these lists, so a slice with no types yet passes trivially and starts being
 /// checked the moment its first type appears. A new top-level namespace must be added here
 /// (<see cref="SliceBoundaryTests.Every_core_type_lives_in_a_known_slice"/> fails until it is).

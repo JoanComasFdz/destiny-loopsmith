@@ -18,32 +18,38 @@ first (Domain types, then the slices):
   `Remaining` or `Clock`. An architecture test that `GameState` holds no `Seconds`/`decimal` member and
   no integer but `Step`, so a counter or clock can't come back.
 - **Declared states** (D3): `PlayerAction.Declare` with `max:<status>` and `end:<status>` (tokens,
-  labels and blocking messages as in [loop-format.md](loop-format.md#action-tokens)); `StacksMaxed`
-  only from `max:`; the `atMax` condition and its parse check.
+  labels and blocking messages as in [loop-format.md](loop-format.md#action-tokens)); `StacksMaxed` only
+  from `max:`; the `atMax` condition; parse checks that `maxStacks` is at least 2 and that `stacksMaxed`
+  and `atMax` name a status that stacks.
 - **Outcomes**: `ApplyBuff` makes the buff present and raises `BuffGained(status)` (no count; cascade
   key `gain:<status>`); remove `restart`; `convertStacksToEnergy` consumes the buff; `extraStacks` only
   adds its caveat; caveats "×N stacks", "restarted (was ×N)" and "refreshed" go; one `pickup` step picks
-  up one pickup. `ResolvedValue` → `ReadCertainty` (its value is never read); one `IsStacking`
-  (`KeywordResolution.CanReachMaxStacks` duplicates `DomainPhrasing.IsStacking`).
+  up one pickup; "no stacks to consume" → `nothing to consume`. `ResolvedValue` → `ReadCertainty` (its
+  value is never read); one `IsStacking` (`KeywordResolution.CanReachMaxStacks` duplicates
+  `DomainPhrasing.IsStacking`).
 - **Loop analysis** (D2): first pass, then repeated to the repeating pass; verdict "Repeats / Breaks at
   #k"; per step what it needs and from which step, what it sets off, what is wasted. Remove `MaxCycles`,
   `--cycles`, `CompletedCycles`, the `Sources`/`Outcomes`/`Uptime` tallies, the wasted, unknown and
   chance totals. `FiredRule` needs its rule's guards to say where a need came from.
 - **Comparison** (D2): the two orders trigger by trigger; remove the metric rows, ✓ marks and tally.
-- **Phrasing and hosts**: "Bolt Charge gained" event lines; state chips by name with "(at max)"; one
-  phrasing home in kernel `Phrasing` (the web duplicates `TraceRenderer`'s state text); the CLI's
-  `simulate` → `trace` (alias kept) and its help; the web palette's "States you declare" group, the
-  Analysis view and Compare page rebuilt on the new report, the State panel's "at max"; the build
+- **Phrasing and hosts**: "Bolt Charge gained" event lines; an outcome shows the glossary's duration
+  when its rule states none (`DescribeBuff`, `DescribeOutcome`); a stacking status's cap ("up to x10")
+  in `explain` and the web State panel; "… energy each" → "per stack"; state chips by name with "(at
+  max)"; one phrasing home in kernel `Phrasing` (the web duplicates `TraceRenderer`'s state text); the
+  CLI's `simulate` → `trace` (alias kept) and its help; the web palette's "States you declare" group,
+  the Analysis view and Compare page rebuilt on the new report, the State panel's "at max"; the build
   check's Info wording (`…; using <current>.`).
 - **Loop graph**: grants to a stacking buff lead to "Gain X", plus one declared edge `Gain X → Max X`;
   "gives grenade energy back"; regenerate `builds/*/loop-graph.md`.
 - **Rules and build data**: the Bolt Charge discharge rule on `atMax` (Compendium Arc#5); drop Slice's
   `restart`; reword the counting and "v1" comments in `rules/glossary.yaml`, `keywords/arc.yaml`,
   `keywords/orb-of-power.yaml`, `weapons/perks.yaml`, `mods/armor.yaml`, `exotics/armor.yaml`,
-  `artifact/current.yaml` and `hunter/arc.yaml` (its header still says there are no airborne qualifiers);
-  the Helicopter loop's description ("keep it up"); `max:bolt-charge` steps in the example
-  loops and `scenario.txt` as [note-map.md](../builds/skip-grenade-hunter/note-map.md) describes (and
-  `scenario.txt`'s token comment); the goldens; `LoopFileParsingTests.SpecExampleYaml`, which copies loop-format.md's example.
+  `artifact/current.yaml`, `armor-sets/luminopotent.yaml` and `hunter/arc.yaml` (its header still says
+  there are no airborne qualifiers); the "Previously <source>" comments (a disagreement goes to
+  `discrepancies.md`); the Helicopter loop's description ("keep it up"); `max:bolt-charge` steps in the
+  example loops and `scenario.txt` as [note-map.md](../builds/skip-grenade-hunter/note-map.md) describes
+  (and `scenario.txt`'s token comment); the goldens; `LoopFileParsingTests.SpecExampleYaml`, which
+  copies loop-format.md's example.
 - Later: rename the `Simulation` slice (it plays steps; it simulates nothing).
 
 ## Data

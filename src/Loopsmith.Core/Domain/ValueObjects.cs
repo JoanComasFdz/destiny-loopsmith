@@ -48,7 +48,7 @@ public readonly partial struct SummonId
 [ValueObject<uint>]
 public readonly partial struct ItemHash;
 
-/// <summary>Version of the rule catalog a build was authored against (FR-8).</summary>
+/// <summary>Version of the rule catalog a build was authored against (requirements FR-10, ADRs D15).</summary>
 [ValueObject<string>]
 public readonly partial struct CatalogVersion
 {

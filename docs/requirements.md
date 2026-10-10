@@ -41,7 +41,7 @@ shared as a link, replayed, analysed and compared with another order.
 | FR-6 | **Analyse a loop's order**: played from a fresh spawn and repeated from where it ends — does it repeat or where does it break, what each step needs and which earlier step provides it, what it sets off, what is wasted. | Open (`docs/backlog.md`) |
 | FR-7 | **Compare two loops' orders** trigger by trigger: what each trigger sets off in its place in each loop, and why it differs. | Open (`docs/backlog.md`) |
 | FR-8 | **Discover loops** in the cause → effect graph (cycles), and draw the graph. | Done (`loops`, `graph`); the declared "Gain X → Max X" edge is open |
-| FR-9 | Every fired rule carries its **source element, trigger, outcomes and reason**; every number its **provenance and certainty** (known, approximate `~`, unknown `?`). | Done |
+| FR-9 | Every fired rule carries its **source element, trigger, outcomes and reason**; every element its **provenance**, every number its **certainty** (known, approximate `~`, unknown `?`). | Done |
 | FR-10 | Builds and loops **pin a catalog version**, so a rules change never silently changes them (D15). | Done |
 | FR-11 | **Ingest** a dated Compendium snapshot and Clarity; a **coverage report** (elements without rules, names that don't resolve, numbers that disagree with the sources). | Open: the 2026-10-09 snapshot's numbers are in the rules by hand |
 | FR-12 | **Draft rules** from the Compendium's "On X:" phrasing for a human to confirm (D10). | Open |
