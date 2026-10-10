@@ -92,6 +92,25 @@ public static class LoopDesigning
     private static string ReadLink(DimLink link) =>
         link.Match(shared => shared.Link, inline => inline.Link);
 
+    /// <summary>
+    /// The design with a weapon's perk picked in one of its trait columns (or that column back to "?"): weapon
+    /// <paramref name="weapon"/> and column <paramref name="column"/> are 0-based, in the build's order. Only that
+    /// weapon's entry of the embedded build file changes; the build is validated again and the steps replayed with it.
+    /// </summary>
+    public static Result<DesignSession, string> PickWeaponPerk(DesignSession session, int weapon, int column, Optional<ItemHash> perk) =>
+        FindWeapon(session.Build.Build, weapon)
+            .Bind(loadout => WeaponRolling.PickPerk(session.Build.Catalog, loadout, column, perk))
+            .Bind(picked => BuildFileEditing.ReplaceWeapon(session.Design.Build, weapon, picked))
+            .Map(text => session.Design.Build with { Text = text })
+            .Bind(file => BuildFileParsing.ParseBuildFile(file)
+                .Bind(build => BuildValidation.ValidateBuild(build, session.Build.Catalog))
+                .Map(validated => CreateSession(validated, session.Design with { Build = file })));
+
+    private static Result<WeaponLoadout, string> FindWeapon(Build build, int weapon) =>
+        weapon >= 0 && weapon < build.Weapons.Length
+            ? new Result<WeaponLoadout, string>.Ok(build.Weapons[weapon])
+            : new Result<WeaponLoadout, string>.Error($"The build has no weapon {weapon + 1}.");
+
     public static DesignSession CreateSession(ValidatedBuild build, LoopDesign design)
     {
         var initial = ActionResolution.CreateInitialState();

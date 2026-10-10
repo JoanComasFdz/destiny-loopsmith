@@ -13,14 +13,19 @@ public sealed record AbilityLoadout(
     Optional<ElementId> Melee,
     Optional<ElementId> ClassAbility);
 
-/// <summary>An equipped weapon; <see cref="Hash"/> is its manifest item when known (a DIM loadout's, or written in the build file).</summary>
+/// <summary>
+/// An equipped weapon. <see cref="Perks"/> are named by catalog id; <see cref="Hash"/> is its manifest item when known (a
+/// DIM loadout's, or written in the build file); <see cref="Roll"/> is the perk picked in each of its trait columns, by
+/// manifest hash, in column order (none: not picked, "?" in the build file).
+/// </summary>
 public sealed record WeaponLoadout(
     WeaponSlot Slot,
     string Name,
     DamageType Type,
     Optional<string> Archetype,
     ImmutableArray<ElementId> Perks,
-    Optional<ItemHash> Hash);
+    Optional<ItemHash> Hash,
+    ImmutableArray<Optional<ItemHash>> Roll);
 
 public sealed record StatLine(
     Optional<StatValue> Weapons,

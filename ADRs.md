@@ -219,10 +219,12 @@ for the item table). **Decision.** Elements are keyed by a kebab-case
 `ElementId` (`shinobus-vow`); `Hashes` holds its manifest hash (plus the copies of the same item with the
 same text, such as a mod's second copy), filled from Clarity where known, empty otherwise. The manifest
 hash is the long-term identity (stable, shared by Clarity and DIM). What the manifest says about the
-hashes Loopsmith names — official name, type, icon, rarity, slot, damage type — is a generated excerpt in
+hashes Loopsmith names — official name, type, icon, rarity, slot, damage type, a weapon's trait columns and
+the perks each rolls with — is a generated excerpt in
 the rules (`rules/manifest.yaml`, `tools/manifest/`), so the app shows builds the way DIM does without
 downloading the manifest. **Consequence.** Builds reference slugs; the manifest join adds hashes without
-changing build files; a DIM loadout is read by hash (D27). A hash outside the excerpt has no name or icon
+changing build files; a DIM loadout is read by hash (D27), and a weapon's roll is picked by hash among its
+columns' perks (a build's `roll`). A hash outside the excerpt has no name or icon
 until the app reads the manifest itself (open: [docs/backlog.md](docs/backlog.md)).
 
 ### D15 — Builds and loops pin a catalog version

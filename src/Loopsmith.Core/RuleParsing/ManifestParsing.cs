@@ -22,10 +22,10 @@ internal static class ManifestParsing
 
     private static readonly ImmutableArray<string> ManifestKeys = ["version", "damageTypes", "items"];
     private static readonly ImmutableArray<string> DamageTypeKeys = ["type", "icon"];
-    private static readonly ImmutableArray<string> ItemKeys = ["hash", "name", "kind", "type", "tier", "slot", "damageType", "traits", "fixedTraits", "icon"];
+    private static readonly ImmutableArray<string> ItemKeys = ["hash", "name", "kind", "type", "tier", "slot", "damageType", "traits", "icon"];
 
     /// <summary>The keys only a weapon has.</summary>
-    private static readonly ImmutableArray<string> WeaponOnlyKeys = ["damageType", "traits", "fixedTraits"];
+    private static readonly ImmutableArray<string> WeaponOnlyKeys = ["damageType", "traits"];
 
     internal static Result<ManifestExcerpt, Errors> ReadManifest(SourceText file) =>
         YamlReading.LoadDocument(file, "manifest")
@@ -58,10 +58,10 @@ internal static class ManifestParsing
     }
 
     /// <summary>
-    /// <c>{ hash, name, kind, type, tier?, slot?, damageType?, traits?, fixedTraits?, icon? }</c>. A weapon needs its <c>slot</c>
-    /// (a weapon slot) and may have a <c>damageType</c>, <c>traits</c> (its trait columns) and <c>fixedTraits</c> (hashes);
-    /// armor needs its <c>slot</c> (an armor slot); an armor mod may have one (none: a general mod). Anywhere else these
-    /// keys are errors.
+    /// <c>{ hash, name, kind, type, tier?, slot?, damageType?, traits?, icon? }</c>. A weapon needs its <c>slot</c> (a weapon
+    /// slot) and may have a <c>damageType</c> and <c>traits</c> (its trait columns, each a list of the perk hashes it rolls
+    /// with: <c>[[a, b], [c]]</c>); armor needs its <c>slot</c> (an armor slot); an armor mod may have one (none: a general
+    /// mod). Anywhere else these keys are errors.
     /// </summary>
     private static Result<Located<ManifestItem>, Errors> ReadItem(YamlValue value) =>
         value.ToMap().Bind(map => Combine(
@@ -80,15 +80,20 @@ internal static class ManifestParsing
             KindWord.Weapon => Combine(
                 map.ReadRequired("slot", ReadVocabularyWord<WeaponSlot>),
                 map.ReadOptional("damageType", ReadVocabularyWord<DamageType>),
-                map.ReadOptional("traits", ReadNonNegativeInteger),
-                map.ReadOrDefault("fixedTraits", hashes => hashes.ReadEach("fixed trait", ReadItemHash), []),
-                (slot, damageType, traits, fixedTraits) => (ManifestKind)new ManifestKind.Weapon(slot, damageType, traits, fixedTraits)),
+                map.ReadOrDefault("traits", columns => columns.ReadEach("trait column", ReadTraitColumn), []),
+                (slot, damageType, traits) => (ManifestKind)new ManifestKind.Weapon(slot, damageType, traits)),
             KindWord.Armor => CheckWeaponOnlyKeys(map, word).Bind(_ => map.ReadRequired("slot", ReadVocabularyWord<ArmorSlot>)
                 .Map(slot => (ManifestKind)new ManifestKind.Armor(slot))),
             KindWord.ArmorMod => CheckWeaponOnlyKeys(map, word).Bind(_ => map.ReadOptional("slot", ReadVocabularyWord<ArmorSlot>)
                 .Map(slot => (ManifestKind)new ManifestKind.ArmorMod(slot))),
             _ => CheckWeaponOnlyKeys(map, word).Bind(_ => CheckNoSlot(map, word)).Map(_ => ToSlotlessKind(word)),
         };
+
+    /// <summary>A trait column: the hashes of the perks it rolls with; at least one.</summary>
+    private static Result<TraitColumn, Errors> ReadTraitColumn(YamlValue value) =>
+        value.ReadEach("perk", ReadItemHash).Bind(options => options.IsEmpty
+            ? value.FailAt<TraitColumn>("a trait column needs at least one perk hash")
+            : Succeed(new TraitColumn(options)));
 
     private static ManifestKind ToSlotlessKind(KindWord word) =>
         word switch

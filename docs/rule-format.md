@@ -90,17 +90,19 @@ version: "244213.26.06.29.2000-1-bnet.65864"
 damageTypes:
   - { type: strand, icon: /common/destiny2_content/icons/DestinyDamageTypeDefinition_….png }
 items:
-  - { hash: 4019651319, name: "Festival Flight", kind: weapon, type: "Grenade Launcher", tier: legendary, slot: kinetic, damageType: strand, traits: 2, icon: /common/…/e3d2….jpg }
-  - { hash: 3325463374, name: "Thunderlord", kind: weapon, type: "Machine Gun", tier: exotic, slot: power, damageType: arc, traits: 2, fixedTraits: [1419069769, 2779035018], icon: … }
+  - { hash: 4019651319, name: "Festival Flight", kind: weapon, type: "Grenade Launcher", tier: legendary, slot: kinetic, damageType: strand, traits: [[1017229899, …, 923806249, …], [1546142478, …, 243981275, …]], icon: /common/…/e3d2….jpg }
+  - { hash: 3325463374, name: "Thunderlord", kind: weapon, type: "Machine Gun", tier: exotic, slot: power, damageType: arc, traits: [[1419069769], [2779035018]], icon: … }
   - { hash: 3832366019, name: "Harmonic Siphon", kind: armorMod, type: "Helmet Armor Mod", tier: basic, slot: helmet, icon: /common/…/c917….png }
 ```
 
 * `kind`: `subclass|super|grenade|melee|classAbility|movement|aspect|fragment|weapon|weaponPerk|armor|armorMod|artifactPerk|other`.
 * `slot`: a weapon's `kinetic|energy|power` and armor's `helmet|arms|chest|legs|classItem` (both required);
-  an armor mod's armor slot (none: a general mod). `damageType` belongs to weapons, and so do `traits` (how
-  many trait columns its roll selects: the "frames" sockets of its perks) and `fixedTraits` (the perks of
-  the columns that don't roll, an exotic's — written as items too). These keys on anything else are an
-  error (`slot is only allowed on a weapon, armor or an armor mod, not on a grenade`).
+  an armor mod's armor slot (none: a general mod). `damageType` belongs to weapons, and so do `traits`: its
+  trait columns (the "frames" sockets of its perks), each the list of perk hashes it can roll with, enhanced
+  versions included (the manifest's plug set). A column that doesn't roll (an exotic's) has its one perk.
+  Every perk is written as an item too (`kind: weaponPerk`, `type: "Trait"` or `"Enhanced Trait"`); a column
+  needs at least one hash. These keys on anything else are an error (`slot is only allowed on a weapon,
+  armor or an armor mod, not on a grenade`).
 * `tier`: `basic|common|rare|legendary|exotic`. `icon` is a bungie.net path (the app prefixes
   `https://www.bungie.net`). A hash appears once. The file is optional: without it nothing has an icon.
 
@@ -390,6 +392,8 @@ armorMods: [elemental-charge, elemental-charge, grenade-kickstart, grenade-kicks
 artifactPerks: [defibrillating-blast, flashover]
 weapons:
   - { slot: kinetic, name: Festival Flight, type: strand, archetype: grenade-launcher, perks: [slice] }
+  - { slot: power, name: Thunderlord, type: arc, hash: 3325463374 }
+  - { slot: energy, name: Crisis Inverted, type: arc, hash: 2888266564, roll: ["?", 2209918983] }   # a perk per trait column
 stats: { weapons: 47, class: 104, grenade: 145, super: 27, melee: 79 }   # any subset; 0..200
 ```
 
@@ -399,9 +403,13 @@ stats: { weapons: 47, class: 104, grenade: 145, super: 27, melee: 79 }   # any s
 * Optional: `author`, `source` (an absolute http(s) URL), `catalog`, `exoticArmor`, and the lists
   `aspects`, `fragments`, `armorSetBonuses`, `armorMods`, `artifactPerks`, `weapons` (default empty).
 * A weapon: `slot` (`kinetic|energy|power`), `name` and `type` (`kinetic|arc|solar|void|stasis|strand`)
-  are required; `archetype` (a kebab-case word), `perks` (element ids) and `hash` (its manifest item, for
-  its icon) are optional. The name
-  labels its actions ("Festival Flight (hit 5)").
+  are required; `archetype` (a kebab-case word), `perks` (element ids), `hash` (its manifest item: its icon
+  and its trait columns) and `roll` are optional. The name labels its actions ("Festival Flight (hit 5)").
+* `roll`: the perk picked in each of the weapon's trait columns, by manifest hash, in column order; `"?"`
+  for a column not picked (`roll: ["?", 2209918983]`). It is what the designer's perk picker writes. The
+  weapon's perks are its `perks` and every roll perk the catalog knows by hash; a roll perk it doesn't
+  know (an enhanced version, say) is part of the weapon, not of the trace. A perk named in `perks` sits in
+  the column the excerpt has it in; picking that column replaces it.
 * `stats`: any of `weapons`, `health`, `class`, `grenade`, `super`, `melee`, whole numbers 0..200.
 * `leftOut` (a build from a DIM link): what the loadout had that the catalog doesn't know, by manifest hash
   and where the loadout listed it — `leftOut: { items: [2005], subclassPlugs: [1001], armorMods: [3007],
@@ -424,6 +432,8 @@ stats: { weapons: 47, class: 104, grenade: 145, super: 27, melee: 79 }   # any s
 | `Fragment slots unknown for <aspects> — fragment count not checked.` | Info |
 | `Unknown (?): <slots> — not in the rule catalog yet, so they set nothing off.` | Info |
 | `Left out of the build: <n> items, <n> subclass plugs, … from the DIM loadout — not in the rule catalog yet.` | Info |
+| `<weapon>'s roll: <perks> — not in the rule catalog yet, so they set nothing off.` — perks named as "Slice (Enhanced Trait)" | Info |
+| `<weapon>'s roll: <perk> isn't a perk of its column <n> in the manifest excerpt.` — only when the excerpt has the weapon's columns | Warning |
 | `'<name>' has no authored rules yet — it is inert in the trace.` | Warning |
 | a rule that doesn't stack with an equipped element ([above](#rules-that-dont-stack)) | Warning |
 | `Build pinned catalog <pinned>; using <current>.` | Info |

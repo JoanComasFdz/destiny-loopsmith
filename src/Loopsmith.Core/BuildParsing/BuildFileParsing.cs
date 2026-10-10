@@ -22,7 +22,7 @@ public static class BuildFileParsing
         "leftOut",
     ];
 
-    private static readonly ImmutableArray<string> WeaponKeys = ["slot", "name", "type", "archetype", "perks", "hash"];
+    private static readonly ImmutableArray<string> WeaponKeys = ["slot", "name", "type", "archetype", "perks", "hash", "roll"];
     private static readonly ImmutableArray<string> StatKeys = ["weapons", "health", "class", "grenade", "super", "melee"];
     private static readonly ImmutableArray<string> LeftOutKeys = ["items", "subclassPlugs", "armorMods", "artifactPerks"];
 
@@ -102,6 +102,10 @@ public static class BuildFileParsing
             ? new Result<Optional<ElementId>, string>.Ok(Optional.None<ElementId>())
             : ElementId.TryFrom(text).ToResult().Map(Optional.Some));
 
+    /// <summary>
+    /// <c>{ slot, name, type, archetype?, perks?, hash?, roll? }</c>; <c>roll: ["?", 243981275]</c> is the perk picked in
+    /// each trait column, by manifest hash, in column order ("?": not picked).
+    /// </summary>
     private static Result<WeaponLoadout, Errors> ReadWeapon(YamlValue value) =>
         value.ToMap().Bind(map => Combine(
             map.CheckKeys(WeaponKeys),
@@ -111,7 +115,13 @@ public static class BuildFileParsing
             map.ReadOptional("archetype", ReadSlug),
             map.ReadOrDefault("perks", ReadElementIds, []),
             map.ReadOptional("hash", ReadItemHash),
-            (_, slot, name, type, archetype, perks, hash) => new WeaponLoadout(slot, name, type, archetype, perks, hash)));
+            map.ReadOrDefault("roll", roll => roll.ReadEach(roll.Label, ReadRollPerk), []),
+            (_, slot, name, type, archetype, perks, hash, roll) => new WeaponLoadout(slot, name, type, archetype, perks, hash, roll)));
+
+    private static Result<Optional<ItemHash>, Errors> ReadRollPerk(YamlValue value) =>
+        value.ToText().Bind(text => text == DomainPhrasing.Unknown
+            ? Succeed(Optional.None<ItemHash>())
+            : ReadItemHash(value).Map(Optional.Some));
 
     /// <summary><c>stats: { weapons: 47, class: 104, … }</c> — any subset, each 0..200.</summary>
     private static Result<StatLine, Errors> ReadStats(YamlValue value) =>

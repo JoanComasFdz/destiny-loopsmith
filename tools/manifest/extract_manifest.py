@@ -11,9 +11,9 @@ version string (written into the file).
 The excerpt holds every hash Loopsmith names: each `hash:` in rules/ (elements and the glossary's
 subclasses) and every hash in the saved DIM shares (builds/*/dim-loadout.json). For each: its name,
 kind, type, icon, tier and, for weapons, armor and armor mods, its slot and damage type. A weapon also
-gets its number of trait columns (`traits`: the "frames" sockets among its weapon perks) and the
-perks of the columns that don't roll (`fixedTraits`: an exotic's), which are written as items too. A
-hash the manifest doesn't have is reported, not written. The output is sorted and stable, so a rerun
+gets its trait columns (`traits`: the "frames" sockets among its weapon perks), each the list of perks
+it can roll (one, for a column that doesn't roll: an exotic's), and those perks are written as items
+too. A hash the manifest doesn't have is reported, not written. The output is sorted and stable, so a rerun
 on the same manifest changes nothing.
 """
 
@@ -84,20 +84,34 @@ def classify(item, buckets):
     return "other", None
 
 
-def read_traits(item, socket_types, perk_category):
-    """(columns, fixed): how many trait ("frames") sockets the weapon's perks have, and the perks of those that don't roll."""
-    sockets = item.get("sockets", {})
+def read_traits(item, socket_types, perk_category, plug_sets):
+    """The weapon's trait ("frames") columns, each the perks it can roll in order (a fixed column: its one perk).
+
+    None when the weapon has no sockets or a column's perks can't be read: its columns are then unknown, not empty.
+    """
+    sockets = item.get("sockets")
+    if not sockets:
+        return None
     entries = sockets.get("socketEntries", [])
     indexes = [i for category in sockets.get("socketCategories", []) if category.get("socketCategoryHash") == perk_category
                for i in category.get("socketIndexes", [])]
     traits = [entries[i] for i in indexes if i < len(entries)
               and "frames" in [w.get("categoryIdentifier") for w in socket_types.get(str(entries[i].get("socketTypeHash")), {}).get("plugWhitelist", [])]]
-    fixed = [entry["singleInitialItemHash"] for entry in traits
-             if not entry.get("randomizedPlugSetHash") and entry.get("singleInitialItemHash")]
-    return (len(traits), fixed) if sockets else (None, [])
+    columns = [read_column(entry, plug_sets) for entry in traits]
+    return None if any(not column for column in columns) else columns
 
 
-def to_entry(item_hash, item, buckets, socket_types, perk_category):
+def read_column(entry, plug_sets):
+    """A trait socket's perks: those of its random (else curated) plug set that can roll now, each once, or its one fixed perk."""
+    plug_set = entry.get("randomizedPlugSetHash") or entry.get("reusablePlugSetHash")
+    if plug_set:
+        plugs = plug_sets.get(str(plug_set), {}).get("reusablePlugItems", [])
+        rollable = [plug["plugItemHash"] for plug in plugs if plug.get("currentlyCanRoll", True)]
+        return list(dict.fromkeys(rollable))
+    return [entry["singleInitialItemHash"]] if entry.get("singleInitialItemHash") else []
+
+
+def to_entry(item_hash, item, buckets, socket_types, perk_category, plug_sets):
     display = item.get("displayProperties", {})
     kind, slot = classify(item, buckets)
     fields = [
@@ -114,12 +128,9 @@ def to_entry(item_hash, item, buckets, socket_types, perk_category):
     damage = DAMAGE_TYPES.get(item.get("defaultDamageType"))
     if kind == "weapon" and damage:
         fields.append(("damageType", damage))
-    if kind == "weapon":
-        columns, fixed = read_traits(item, socket_types, perk_category)
-        if columns is not None:
-            fields.append(("traits", str(columns)))
-        if fixed:
-            fields.append(("fixedTraits", "[" + ", ".join(str(h) for h in fixed) + "]"))
+    columns = read_traits(item, socket_types, perk_category, plug_sets) if kind == "weapon" else None
+    if columns is not None:
+        fields.append(("traits", "[" + ", ".join("[" + ", ".join(str(h) for h in column) + "]" for column in columns) + "]"))
     if display.get("icon"):
         fields.append(("icon", display["icon"]))
     return "  - { " + ", ".join(f"{key}: {value}" for key, value in fields) + " }"
@@ -135,13 +146,14 @@ def main():
     buckets = read_json(source / "DestinyInventoryBucketDefinition.json")
     damage_types = read_json(source / "DestinyDamageTypeDefinition.json")
     socket_types = read_json(source / "DestinySocketTypeDefinition.json")
+    plug_sets = read_json(source / "DestinyPlugSetDefinition.json")
     perk_category = next(int(h) for h, c in read_json(source / "DestinySocketCategoryDefinition.json").items()
                          if c.get("displayProperties", {}).get("name") == "WEAPON PERKS")
 
     named = list_rule_hashes(root) | list_share_hashes(root)
-    fixed = {h for n in named if str(n) in items and classify(items[str(n)], buckets)[0] == "weapon"
-             for h in read_traits(items[str(n)], socket_types, perk_category)[1]}
-    wanted = sorted(named | fixed)
+    perks = {h for n in named if str(n) in items and classify(items[str(n)], buckets)[0] == "weapon"
+             for column in (read_traits(items[str(n)], socket_types, perk_category, plug_sets) or []) for h in column}
+    wanted = sorted(named | perks)
     missing = [h for h in wanted if str(h) not in items]
     lines = [
         "# Loopsmith's excerpt of the Bungie manifest (docs/rule-format.md, \"Manifest\"): names, icons, slots and",
@@ -156,7 +168,7 @@ def main():
         if name and icon:
             lines.append(f"  - {{ type: {name}, icon: {icon} }}")
     lines.append("items:")
-    lines.extend(to_entry(h, items[str(h)], buckets, socket_types, perk_category) for h in wanted if str(h) in items)
+    lines.extend(to_entry(h, items[str(h)], buckets, socket_types, perk_category, plug_sets) for h in wanted if str(h) in items)
     (root / "rules" / "manifest.yaml").write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(f"wrote {len(wanted) - len(missing)} items to rules/manifest.yaml")
     for h in missing:

@@ -65,6 +65,13 @@ public static class DomainPhrasing
     public static string DescribeItemHash(this ManifestExcerpt manifest, ItemHash hash) =>
         manifest.FindItem(hash).Match(item => item.Value.Name, _ => hash.Value.ToString(Invariant));
 
+    /// <summary>
+    /// A hash by its manifest name and type as the game words it ("Slice (Enhanced Trait)": a perk and its enhanced
+    /// version share a name), or the number when the excerpt doesn't have it.
+    /// </summary>
+    public static string DescribeTypedItemHash(this ManifestExcerpt manifest, ItemHash hash) =>
+        manifest.FindItem(hash).Match(item => $"{item.Value.Name} ({item.Value.Type})", _ => hash.Value.ToString(Invariant));
+
     public static string DescribeLoadoutPart(this LoadoutPart part) =>
         part switch
         {

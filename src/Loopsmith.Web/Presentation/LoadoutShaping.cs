@@ -26,19 +26,33 @@ public sealed record SubclassView(
     ImmutableArray<IconTile> Aspects,
     ImmutableArray<IconTile> Fragments);
 
+/// <summary>One perk a weapon's trait column rolls with, as the picker offers it: its hash, its tile (the rules' element when they know it) and its type as the game words it ("Enhanced Trait").</summary>
+public sealed record PerkOption(ItemHash Hash, IconTile Tile, Optional<string> Type);
+
 /// <summary>
-/// A weapon: its tile, slot, archetype, damage type (and that type's icon), its selected perks — the ones the build names,
-/// else the ones that don't roll (an exotic's, from the manifest) — and how many of its trait columns stay unknown (a
-/// DIM loadout names the weapon, not its roll; none when the excerpt doesn't give the columns).
+/// One perk square of a weapon. <see cref="Column"/> is its trait column (none: a perk the build names that isn't in
+/// any column the excerpt gives); <see cref="Perk"/> is what sits there — the roll's pick, else the perk the build names
+/// in that column, else the one perk a column that doesn't roll has — or none ("?"). <see cref="Options"/> are what can
+/// be picked there (none: it doesn't roll); <see cref="Picked"/> is which of them it is.
+/// </summary>
+public sealed record PerkSlot(Optional<int> Column, Optional<IconTile> Perk, Optional<ItemHash> Picked, ImmutableArray<PerkOption> Options);
+
+/// <summary>
+/// A weapon: where it is in the build (<see cref="Index"/>, what a pick names), its tile, slot, archetype, damage type
+/// (and that type's icon) and its perk squares, one per trait column the excerpt gives (none when it doesn't know the
+/// weapon: then just the perks the build names).
 /// </summary>
 public sealed record WeaponView(
+    int Index,
     IconTile Weapon,
     WeaponSlot Slot,
     Optional<string> Archetype,
     DamageType Type,
     Optional<string> DamageIcon,
-    ImmutableArray<IconTile> Perks,
-    int MissingPerks);
+    ImmutableArray<PerkSlot> Perks);
+
+/// <summary>A perk picked in the designer: weapon <see cref="Weapon"/>'s column <see cref="Column"/> (both 0-based, in the build's order), or back to "?" when none.</summary>
+public sealed record PerkPick(int Weapon, int Column, Optional<ItemHash> Perk);
 
 /// <summary>An armor slot: the piece in it (when the loadout names one) and the mods that only fit that slot, one tile each.</summary>
 public sealed record ArmorView(ArmorSlot Slot, Optional<IconTile> Piece, ImmutableArray<IconTile> Mods);
@@ -104,7 +118,7 @@ public static class LoadoutShaping
                 .. b.ArtifactPerks.Select(id => DescribeElement(catalog, id)),
                 .. leftOut.Where(entry => entry.Part == LoadoutPart.ArtifactPerk).Select(entry => DescribeLeftOut(catalog, entry)),
             ],
-            [.. b.Weapons.OrderBy(weapon => weapon.Slot).Select(weapon => DescribeWeapon(catalog, weapon))],
+            [.. b.Weapons.Select((weapon, index) => DescribeWeapon(catalog, weapon, index)).OrderBy(view => view.Slot)],
             [
                 .. ArmorSlots
                     .Select(slot => new ArmorView(
@@ -162,25 +176,43 @@ public static class LoadoutShaping
         where TKind : ManifestKind =>
         plugs.Where(entry => IsKind<TKind>(entry.Item)).Select(entry => DescribeLeftOut(catalog, entry));
 
-    private static WeaponView DescribeWeapon(RuleCatalog catalog, WeaponLoadout weapon)
+    private static WeaponView DescribeWeapon(RuleCatalog catalog, WeaponLoadout weapon, int index)
     {
         var item = weapon.Hash.Bind(hash => catalog.Manifest.FindItem(hash));
         var tile = item.Match(
             known => DescribeItem(known.Value, weapon.Name, true, Optional.None<string>(), weapon.Type.ToAffinity()),
             _ => new IconTile(weapon.Name, Optional.None<string>(), weapon.Type.ToAffinity(), Optional.None<ItemTier>(), true, Optional.None<string>(), 1));
         var damageIcon = catalog.Manifest.DamageTypeIcons.TryGetValue(weapon.Type, out var icon) ? Optional.Some(ToIconUrl(icon)) : Optional.None<string>();
-        var kind = item.Bind(known => known.Kind is ManifestKind.Weapon weaponKind ? Optional.Some(weaponKind) : Optional.None<ManifestKind.Weapon>());
-        var named = weapon.Perks.Select(id => DescribeElement(catalog, id)).ToImmutableArray();
-        var fixedTraits = kind.Match(some => some.Value.FixedTraits.Select(hash => DescribeTrait(catalog, hash)).ToImmutableArray(), _ => []);
-        var perks = named.IsEmpty ? fixedTraits : named;
+        var columns = catalog.Manifest.ListTraitColumns(weapon);
+        var outside = weapon.Perks
+            .Where(id => !columns.Any(column => catalog.IsInColumn(id, column)))
+            .Select(id => new PerkSlot(Optional.None<int>(), Optional.Some(DescribeElement(catalog, id)), Optional.None<ItemHash>(), []));
         return new WeaponView(
+            index,
             tile,
             weapon.Slot,
             weapon.Archetype,
             weapon.Type,
             damageIcon,
-            perks,
-            kind.Bind(weaponKind => weaponKind.Traits).Match(columns => Math.Max(columns.Value - perks.Length, 0), _ => 0));
+            [.. columns.Select((column, number) => DescribeColumn(catalog, weapon, column, number)), .. outside]);
+    }
+
+    /// <summary>A trait column's square: the roll's pick, else the perk the build names there, else its only perk, else "?".</summary>
+    private static PerkSlot DescribeColumn(RuleCatalog catalog, WeaponLoadout weapon, TraitColumn column, int number)
+    {
+        var pick = number < weapon.Roll.Length ? weapon.Roll[number] : Optional.None<ItemHash>();
+        var named = weapon.Perks.Where(id => catalog.IsInColumn(id, column)).Select(Optional.Some).FindFirstSome();
+        var namedHash = named.Bind(id => catalog.FindColumnHash(id, column));
+        var only = column.Options.Length == 1 ? Optional.Some(column.Options[0]) : Optional.None<ItemHash>();
+        var perk = pick.Match(
+            picked => Optional.Some(DescribeTrait(catalog, picked.Value)),
+            _ => named.Match(
+                id => Optional.Some(DescribeElement(catalog, id.Value)),
+                _ => only.Map(hash => DescribeTrait(catalog, hash))));
+        var options = column.Options.Length == 1
+            ? []
+            : column.Options.Select(hash => new PerkOption(hash, DescribeTrait(catalog, hash), catalog.Manifest.FindItem(hash).Map(found => found.Type))).ToImmutableArray();
+        return new PerkSlot(Optional.Some(number), perk, pick.IsSome() ? pick : namedHash, options);
     }
 
     /// <summary>A perk of a weapon's roll by hash: its catalog element when the rules have it, else the manifest's (dimmed).</summary>

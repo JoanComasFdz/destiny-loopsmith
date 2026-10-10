@@ -6,9 +6,8 @@ namespace Loopsmith.Core.Domain;
 
 /// <summary>
 /// What an item of the Bungie manifest is, as Loopsmith shows it (the manifest's own item types, grouped). A weapon has
-/// its slot, damage type, number of trait columns (the perks a roll selects; none when the excerpt doesn't say) and the
-/// perks of the columns that don't roll (an exotic's); armor its slot; an armor mod the slot it only fits (none: a
-/// general mod). Nothing else has a slot.
+/// its slot, damage type and trait columns (the perks a roll selects; none when the excerpt doesn't say); armor its
+/// slot; an armor mod the slot it only fits (none: a general mod). Nothing else has a slot.
 /// </summary>
 [Union]
 public partial record ManifestKind
@@ -21,13 +20,19 @@ public partial record ManifestKind
     partial record Movement();
     partial record Aspect();
     partial record Fragment();
-    partial record Weapon(WeaponSlot Slot, Optional<DamageType> DamageType, Optional<int> Traits, ImmutableArray<ItemHash> FixedTraits);
+    partial record Weapon(WeaponSlot Slot, Optional<DamageType> DamageType, ImmutableArray<TraitColumn> Traits);
     partial record WeaponPerk();
     partial record Armor(ArmorSlot Slot);
     partial record ArmorMod(Optional<ArmorSlot> Slot);
     partial record ArtifactPerk();
     partial record Other();
 }
+
+/// <summary>
+/// One trait column of a weapon: the perks it can roll with (the manifest's plug set; enhanced versions included), or the
+/// one perk it always has (an exotic's, or a column that doesn't roll).
+/// </summary>
+public sealed record TraitColumn(ImmutableArray<ItemHash> Options);
 
 /// <summary>The armor slot of an armor piece, or of a mod that only fits that piece.</summary>
 public enum ArmorSlot { Helmet, Arms, Chest, Legs, ClassItem }
