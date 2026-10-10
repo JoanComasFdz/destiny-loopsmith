@@ -1,4 +1,5 @@
-@* The designed loop: one card per step with what it fired (LoopDesigning.RenderStepOutcomes — the CLI's wording).
+@* The designed loop: one card per step with what it fired, line by line (LoopDesigning.ShapeStepOutcomes — the CLI's
+   wording); a name tapped shows its details.
    Each step can be moved up or down, removed, or (with a mouse) dragged by its handle onto another step's place. *@
 @{
     var build = Session.Build;
@@ -55,7 +56,7 @@
                 </span>
             </header>
             <div class="step-body">
-                <StyledLines Lines="@RenderStepLines(resolution)" IndentBase="1" />
+                <OutcomeTree Outcomes="@ShapeStep(resolution)" Build="build" OnShowDetails="ShowDetails" />
             </div>
             <div class="step-note" @onclick:stopPropagation="true">
                 <input class="note-input" placeholder="Add a note…" aria-label="@($"Note for step {number}")"
@@ -77,8 +78,14 @@
     }
 </section>
 
+@if (details is Optional<ItemDetails>.Some shownDetails && ItemInfoShaping.ShapeInfo(build, shownDetails.Value) is Optional<ItemInfo>.Some info)
+{
+    <ItemInfoDialog Info="info.Value" OnClose="CloseDetails" OnSetCatalyst="OnSetCatalyst" />
+}
+
 @code {
-    private readonly Dictionary<object, ImmutableArray<StyledLine>> renderedSteps = new(ReferenceEqualityComparer.Instance);
+    private readonly Dictionary<object, StepOutcomes> renderedSteps = new(ReferenceEqualityComparer.Instance);
+    private Optional<ItemDetails> details = Optional.None<ItemDetails>();
     private TraceOptions renderedWith = new(false, false, false);
 
     [Parameter, EditorRequired]
@@ -98,6 +105,10 @@
 
     [Parameter]
     public EventCallback<(int Index, string Note)> OnAnnotate { get; set; }
+
+    /// <summary>An exotic's catalyst turned on or off from its details.</summary>
+    [Parameter]
+    public EventCallback<CatalystToggle> OnSetCatalyst { get; set; }
 
     /// <summary>A step to remove (0-based).</summary>
     [Parameter]
@@ -129,17 +140,23 @@
         }
     }
 
-    /// <summary>The step's lines without its header (the card draws its own); cached per resolution.</summary>
-    private ImmutableArray<StyledLine> RenderStepLines(Resolution resolution)
+    /// <summary>The step's outcomes (the card draws its own header); cached per resolution.</summary>
+    private StepOutcomes ShapeStep(Resolution resolution)
     {
-        if (!renderedSteps.TryGetValue(resolution, out var lines))
+        if (!renderedSteps.TryGetValue(resolution, out var shaped))
         {
-            lines = LoopDesigning.RenderStepOutcomes(Session, resolution, Options with { ShowState = false });
-            renderedSteps[resolution] = lines;
+            shaped = LoopDesigning.ShapeStepOutcomes(Session, resolution, Options with { ShowState = false });
+            renderedSteps[resolution] = shaped;
         }
 
-        return lines;
+        return shaped;
     }
+
+    private void ShowDetails(ItemDetails shown) =>
+        details = Optional.Some(shown);
+
+    private void CloseDetails() =>
+        details = Optional.None<ItemDetails>();
 
     private bool IsSelected(int number) =>
         Selected.Match(some => some.Value == number, _ => false);

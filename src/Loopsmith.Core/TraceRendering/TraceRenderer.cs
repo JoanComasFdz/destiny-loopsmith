@@ -73,7 +73,8 @@ public static class TraceRenderer
             .ToImmutableArray();
     }
 
-    private static IEnumerable<ImmutableArray<FiredRule>> GroupByEvent(ImmutableArray<FiredRule> fired)
+    /// <summary>The fired rules, each run of the same event together (an event and the rules it set off).</summary>
+    internal static IEnumerable<ImmutableArray<FiredRule>> GroupByEvent(ImmutableArray<FiredRule> fired)
     {
         var current = ImmutableArray.CreateBuilder<FiredRule>();
         foreach (var rule in fired)
@@ -167,7 +168,7 @@ public static class TraceRenderer
     private static IEnumerable<StyledSpan> RenderFiredRule(ValidatedBuild build, FiredRule rule, bool isContinuation)
     {
         var glossary = build.Catalog.Glossary;
-        var copies = build.Equipped.Where(e => e.Element.Id == rule.Source).Select(e => e.Count).DefaultIfEmpty(1).First();
+        var copies = CountCopies(build, rule.Source);
         ImmutableArray<StyledSpan> joiner = isContinuation ? [" + ".ToSpan(Tone.Muted)] : [];
         var outcomes = rule.NotStackedWith.Match(
             partner => $"doesn't stack with {partner.Value}".ToSpan(Tone.Warning),
@@ -185,6 +186,10 @@ public static class TraceRenderer
             .. chance,
         ];
     }
+
+    /// <summary>The copies of an element equipped (one for an element every build has: a keyword).</summary>
+    internal static int CountCopies(ValidatedBuild build, ElementId source) =>
+        build.Equipped.Where(e => e.Element.Id == source).Select(e => e.Count).DefaultIfEmpty(1).First();
 
     private static ImmutableArray<StyledSpan> ToSingleSpanList(this StyledSpan span) => [span];
 

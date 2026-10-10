@@ -41,6 +41,9 @@ public sealed record ItemInfo(
     Optional<string> Page,
     ImmutableArray<InfoSection> Sections);
 
+/// <summary>What hovering a name shows before a tap opens its details: its name, type, icon and first text (Bungie's, else the rules').</summary>
+public sealed record ItemPreview(string Name, string TypeLine, Optional<string> Icon, Affinity Affinity, Optional<string> Text);
+
 /// <summary>
 /// Pure: what a square's details show. Bungie's text comes from the manifest excerpt (an exotic armor's from its
 /// intrinsic perk, a catalyst's from the perks it grants); the rules' part from the element (Orchestration explains it).
@@ -54,6 +57,22 @@ public static class ItemInfoShaping
             weapon => LoopDesigning.FindWeapon(build, weapon.Weapon).Map(found => ShapeWeapon(build, found, weapon.Weapon)),
             catalyst => LoopDesigning.FindWeapon(build, catalyst.Weapon).Bind(found => LoopDesigning.FindCatalyst(build, catalyst.Weapon)
                 .Map(plug => ShapeCatalyst(build, found, plug, catalyst.Weapon))));
+
+    /// <summary>The short preview of what <see cref="ShapeInfo"/> details: the same name, type and icon, and its first text.</summary>
+    public static Optional<ItemPreview> ShapePreview(ValidatedBuild build, ItemDetails details) =>
+        ShapeInfo(build, details).Map(info => new ItemPreview(
+            info.Name,
+            info.TypeLine,
+            info.Icon,
+            info.Affinity,
+            info.Sections.Select(ReadSectionText).FindFirstSome()));
+
+    private static Optional<string> ReadSectionText(InfoSection section) =>
+        section.Match(
+            item => new[] { item.BungieText, item.Rules.Bind(rules => rules.Description) }.FindFirstSome(),
+            perk => new[] { perk.BungieText, perk.Rules.Bind(rules => rules.Description) }.FindFirstSome(),
+            _ => Optional.None<string>(),
+            catalyst => new[] { catalyst.BungieText, catalyst.Rules.Bind(rules => rules.Description) }.FindFirstSome());
 
     private static Optional<ItemInfo> ShapeElement(ValidatedBuild build, ElementId id) =>
         build.Catalog.Elements.TryGetValue(id, out var element)

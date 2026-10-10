@@ -67,12 +67,13 @@ public static class TestCatalog
     public static AbilityProfile Profile(AbilityKind kind, int charges = 1, GameValue? chunkScalar = null) =>
         new(kind, charges, chunkScalar ?? new GameValue.Unknown(), new GameValue.Unknown());
 
-    /// <summary>Arc hunter with the given extra elements equipped as fragments / mods.</summary>
+    /// <summary>Arc hunter with the given extra elements equipped as fragments / mods (and keywords in the catalog: every build has them).</summary>
     public static ValidatedBuild ValidateBuild(
         ImmutableArray<BuildElement> fragments,
         ImmutableArray<BuildElement> mods = default,
         ImmutableArray<ElementId> modOrder = default,
-        BuildElement? grenade = null)
+        BuildElement? grenade = null,
+        ImmutableArray<BuildElement> keywords = default)
     {
         var abilities = new[]
         {
@@ -86,7 +87,7 @@ public static class TestCatalog
         var catalog = new RuleCatalog(
             CatalogVersion.From("test"),
             Glossary,
-            abilities.Concat(fragments).Concat(allMods).ToImmutableDictionary(e => e.Id),
+            abilities.Concat(fragments).Concat(allMods).Concat(keywords.IsDefault ? [] : keywords).ToImmutableDictionary(e => e.Id),
             new ManifestExcerpt(Optional.None<string>(), ImmutableDictionary<DamageType, string>.Empty, ImmutableDictionary<ItemHash, ArmorSet>.Empty, ImmutableDictionary<ItemHash, ManifestItem>.Empty));
         var build = new Build(
             "Test build",

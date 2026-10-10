@@ -77,7 +77,7 @@
                 </div>
                 <LoopTimeline Session="session" Selected="Workbench.SelectedStep" Options="traceOptions"
                               OnSelect="SelectStep" OnBranch="BranchFromStep" OnAnnotate="AnnotateStep"
-                              OnRemove="RemoveStep" OnMove="MoveStep" />
+                              OnRemove="RemoveStep" OnMove="MoveStep" OnSetCatalyst="SetCatalyst" />
                 <TriggerPalette Build="session.Build" Options="LoopDesigning.ListTriggerOptions(session)" OnPick="AppendTrigger"
                                 Caption="@(stepCount == 0 ? "from a fresh spawn" : $"after #{stepCount}")"
                                 Hint="@DescribePaletteHint(shown.Number, stepCount)" />

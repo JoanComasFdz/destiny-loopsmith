@@ -1,0 +1,152 @@
+@* A step's outcomes, one line each (LoopDesigning.ShapeStepOutcomes, the CLI's wording): the event, then each element
+   it set off (its icon and name) with each of its outcomes under it; a cascade (↳ Bolt Charge gained) nests under the
+   event that set it off. An element's or keyword's name shows a preview on hover (or focus) and its details on a tap. *@
+<div class="outcomes">
+    @if (Outcomes.Events.IsEmpty && Outcomes.Notes.IsEmpty)
+    {
+        <div class="outcome-none tone-muted">nothing triggers</div>
+    }
+    @for (var e = 0; e < Outcomes.Events.Length; e++)
+    {
+        var shaped = Outcomes.Events[e];
+        var eventKey = $"e{e}";
+        <div class="outcome-event" style="--depth:@shaped.Depth" data-depth="@shaped.Depth">
+            <div class="outcome-event-head">
+                @if (shaped.Depth > 0)
+                {
+                    <span class="tone-muted">↳ </span>
+                }
+                @RenderKeyword(shaped.Keyword, shaped.Event, "tone-strong outcome-event-name", eventKey)
+                @if (shaped.Repeats > 1)
+                {
+                    <span class="tone-strong"> ×@shaped.Repeats</span>
+                }
+            </div>
+            @for (var s = 0; s < shaped.Sources.Length; s++)
+            {
+                var source = shaped.Sources[s];
+                var sourceKey = $"{eventKey}s{s}";
+                <div class="outcome-source" data-source="@source.Source.Value">
+                    @RenderElement(source, sourceKey)
+                    @for (var l = 0; l < source.Outcomes.Length; l++)
+                    {
+                        var line = source.Outcomes[l];
+                        <div class="outcome-line">
+                            <span class="outcome-arrow tone-muted" aria-hidden="true">→</span>
+                            @RenderKeyword(line.Keyword, line.Text, ToneStyling.ToToneClass(line.Tone), $"{sourceKey}l{l}")
+                            @if (line.Chance)
+                            {
+                                <span class="tone-muted"> (chance)</span>
+                            }
+                        </div>
+                    }
+                    @foreach (var reason in source.Reasons)
+                    {
+                        <div class="outcome-detail tone-muted">why: @reason</div>
+                    }
+                    @foreach (var caveat in source.Caveats)
+                    {
+                        <div class="outcome-detail tone-muted">· @caveat</div>
+                    }
+                </div>
+            }
+        </div>
+    }
+    @foreach (var note in Outcomes.Notes)
+    {
+        <div class="outcome-note tone-warning">! @note</div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public StepOutcomes Outcomes { get; set; } = null!;
+
+    [Parameter, EditorRequired]
+    public ValidatedBuild Build { get; set; } = null!;
+
+    /// <summary>A name tapped: the element whose details to show.</summary>
+    [Parameter]
+    public EventCallback<ItemDetails> OnShowDetails { get; set; }
+
+    // The name under the pointer (or focused), by its place in the step: its preview shows next to it.
+    private Optional<string> hovered = Optional.None<string>();
+
+    /// <summary>An element that fired: its icon (a dot in its affinity when it has none) and name, in its affinity's colour.</summary>
+    private RenderFragment RenderElement(SourceOutcomes source, string key) => __builder =>
+    {
+        var icon = LoadoutShaping.FindElementIcon(Build.Catalog, source.Source);
+        <span class="outcome-name-wrap">
+            <button type="button" class="outcome-element @ToneStyling.ToToneClass(source.Affinity.ToTone()) @ToneStyling.ToAffinityClass(source.Affinity)"
+                    data-element="@source.Source.Value" title="@source.Kind.DescribeElementKind()"
+                    @onclick="() => ShowDetailsAsync(source.Source)" @onclick:stopPropagation="true"
+                    @onmouseenter="() => Hover(key)" @onmouseleave="Unhover" @onfocus="() => Hover(key)" @onblur="Unhover">
+                @if (icon is Optional<string>.Some known)
+                {
+                    <img class="outcome-icon" src="@known.Value" alt="" loading="lazy" />
+                }
+                else
+                {
+                    <span class="outcome-icon placeholder" aria-hidden="true"></span>
+                }
+                <span>@source.Name</span>
+            </button>
+            @RenderPreview(source.Source, key)
+        </span>
+    };
+
+    /// <summary>Text that names a keyword the catalog has (Jolt, Bolt Charge): tappable for its details; else plain text.</summary>
+    private RenderFragment RenderKeyword(Optional<ElementId> keyword, string text, string toneClass, string key) => __builder =>
+    {
+        if (keyword is Optional<ElementId>.Some element)
+        {
+            <span class="outcome-name-wrap">
+                <button type="button" class="outcome-keyword @toneClass" data-keyword="@element.Value.Value"
+                        @onclick="() => ShowDetailsAsync(element.Value)" @onclick:stopPropagation="true"
+                        @onmouseenter="() => Hover(key)" @onmouseleave="Unhover" @onfocus="() => Hover(key)" @onblur="Unhover">@text</button>
+                @RenderPreview(element.Value, key)
+            </span>
+        }
+        else
+        {
+            <span class="@toneClass">@text</span>
+        }
+    };
+
+    private RenderFragment RenderPreview(ElementId element, string key) => __builder =>
+    {
+        if (hovered.Match(some => some.Value == key, _ => false)
+            && ItemInfoShaping.ShapePreview(Build, new ItemDetails.OfElement(element)) is Optional<ItemPreview>.Some preview)
+        {
+            <span class="item-preview @ToneStyling.ToAffinityClass(preview.Value.Affinity)" role="tooltip" data-testid="item-preview">
+                <span class="item-preview-head">
+                    @if (preview.Value.Icon is Optional<string>.Some icon)
+                    {
+                        <img class="item-preview-icon" src="@icon.Value" alt="" />
+                    }
+                    <span>
+                        <span class="item-preview-name">@preview.Value.Name</span>
+                        <span class="item-preview-type">@preview.Value.TypeLine</span>
+                    </span>
+                </span>
+                @if (preview.Value.Text is Optional<string>.Some text)
+                {
+                    <span class="item-preview-text">@text.Value</span>
+                }
+                <span class="item-preview-hint">Tap for details</span>
+            </span>
+        }
+    };
+
+    private void Hover(string key) =>
+        hovered = Optional.Some(key);
+
+    private void Unhover() =>
+        hovered = Optional.None<string>();
+
+    private async Task ShowDetailsAsync(ElementId element)
+    {
+        hovered = Optional.None<string>();
+        await OnShowDetails.InvokeAsync(new ItemDetails.OfElement(element));                     // impure
+    }
+}
