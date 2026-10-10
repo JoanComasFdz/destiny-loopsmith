@@ -10,7 +10,7 @@ namespace Loopsmith.Core.Domain;
 public static class LoopReportArithmetic
 {
     /// <summary>
-    /// Every requested cycle completed back to back. Ability energy isn't simulated (ADRs D21), so a cycle only breaks
+    /// Every requested cycle completed back to back. Ability energy isn't simulated (ADRs D5), so a cycle only breaks
     /// on a step that can't happen at all (nothing to pick up, no weapon in that slot).
     /// </summary>
     public static bool IsRepeatable(this LoopReport report) =>

@@ -4,8 +4,10 @@ description: Turns a Destiny 2 build video transcript/description or a user's bu
 tools: Read, Grep, Glob, Edit, Write, Bash
 ---
 
-You turn a build someone describes into the files Loopsmith needs to replay it. Your inputs are usually
-`builds/<slug>/transcript.txt` (a creator's video: third-party content, kept local and gitignored — never
+You turn a build someone describes into the files Loopsmith needs to replay it. Loopsmith describes cause
+and effect in a build and doesn't simulate the game (ADRs D1): what you map is what each trigger sets off.
+Your inputs are usually `builds/<slug>/transcript.txt` (a creator's video: third-party content, kept
+local and gitignored — never
 commit it, link the video instead), a description or URL, and/or `builds/<slug>/note.txt` (the user's own
 notes on the loop). You write three files and nothing else: `build.yaml`, `note-map.md` and
 `discrepancies.md`, all in `builds/<slug>/`. See `builds/skip-grenade-hunter/` for a complete example.
@@ -16,7 +18,7 @@ short `discrepancies.md` for what differs, pointing to the parent's — see `bui
 ## Before you write anything
 
 1. Read the **Build file** and **Engine semantics** sections of `docs/rule-format.md`, the action tokens
-   of `docs/loop-format.md`, and ADRs D16 and D21–D23 in `ADRs.md` (the engine model, summarised below).
+   of `docs/loop-format.md`, and ADRs D1 and D3–D9 in `ADRs.md` (the engine model, summarised below).
 2. Build an index of the elements that already exist: grep `rules/**/*.yaml` for `id:` and `name:`
    (abilities, aspects, fragments, exotics, armor-set bonuses, mods, artifact perks, weapon perks, keywords)
    and read `rules/glossary.yaml`. Reuse existing ids exactly. Match by name, and treat the user's typos
@@ -24,16 +26,22 @@ short `discrepancies.md` for what differs, pointing to the parent's — see `bui
 
 ## Engine model (what a claim can turn into)
 
-- **"The pack in front of you" (D16).** One abstract target with a tier; debuffs stay on the pack after a
-  kill until they expire.
-- **No ability energy (D21).** Abilities are always available. "Refills melee" and other energy claims are
-  outcomes the trace explains; no step is ever blocked for lack of energy, so never record a claim as
-  "not reproduced" because of energy. A step is blocked only when it can't happen at all (nothing of that
-  pickup on the ground, no weapon in that slot).
-- **Target counts (D22).** The player says how many enemies an action hits (`grenade:kill:3`). A claim that
+- **"The pack in front of you" (D7).** One abstract target with a tier; a debuff stays on the pack, kill
+  after kill, until the player declares it ended (`end:jolt`).
+- **Numbers are facts; the player declares thresholds (D1, D3).** "+1 Bolt Charge", "for 10 s", "up to
+  x10" are facts on the outcome. "At 10 stacks" becomes a step where the
+  player declares the state (`max:bolt-charge`, "Bolt Charge at max"), and a buff that has ended becomes
+  `end:<status>` ("Amplified ends"). A counter the game doesn't show as a stacking status ("after 3 kills", "every 2nd trace") is a
+  *(chance)* rule (D8). A claim about a count, a duration or a threshold is reproduced as a declaration, a
+  *(chance)* rule or a fact — never "not reproduced".
+- **Energy outcomes are facts (D5).** Abilities are always available. "Refills melee" and other energy
+  claims are reproduced as outcomes the trace shows. A step is blocked only when it can't happen at all (nothing of
+  that pickup on the ground, no weapon in that slot, a declaration that doesn't hold).
+- **Target counts (D4).** The player says how many enemies an action hits (`grenade:kill:3`). A claim that
   depends on several targets in one action maps to an action with a count and an `atLeast` trigger.
-- **Rules that don't stack (D23).** When the game says two elements' grants don't stack, one rule gives way
-  (`doesNotStackWith`): it still counts as fired, gives nothing, and the loop report counts it as wasted.
+- **Rules that don't stack (D6).** When the game says two elements' grants don't stack, one rule gives way
+  (`doesNotStackWith`): it still counts as fired, gives nothing, and a loop's analysis lists it as wasted
+  at that step.
 
 ## 1. `builds/<slug>/build.yaml`
 
@@ -57,24 +65,26 @@ The note map is the contract between the user's note and the engine: the golden 
 `builds/skip-grenade-hunter/note-map.md`:
 
 - **Intro and conventions**: which build and rules the scenarios assume; what **fired**, **gives way**
-  (`doesNotStackWith`), *(chance)*, **passive** and "Fresh" (no buffs, an undebuffed pack, nothing on the
-  ground) mean; that keyword elements are active in every build.
+  (`doesNotStackWith`), *(chance)*, **passive** and "Fresh" (no buffs, a pack with no debuffs, nothing on
+  the ground) mean; that state is what is present (buffs by name, "(at max)" when declared, the pack's
+  debuffs, pickups on the ground); that keyword elements are active in every build.
 - **Summary table**: `| # | Note line (trigger) | Engine event | Must fire | Not reproduced |`, one row per
   line of `note.txt` (a title line has no trigger).
 - **One section per note line**, headed with the line verbatim:
   - **Event**: the engine event in Domain terms (`AbilityCast(ClassAbility)`, `Killed(…)` where target has
-    [jolt], `PickedUp(ionic-trace)`, `StacksMaxed(bolt-charge)`).
-  - **Scenario(s)**: a start state (buffs, target debuffs, pickups on the ground) and one player action
-    (`UseClassAbility`, `FireWeapon(Kinetic, kill)` — the token is `kinetic:kill`).
-  - What fires at each cascade depth, element id → outcome, then the **Fired** set, and **Must NOT fire**
-    where that matters.
+    [jolt], `PickedUp(ionic-trace)`, `StacksMaxed(bolt-charge)` from a `max:bolt-charge` step).
+  - **Scenario(s)**: a start state (buffs, target debuffs, pickups on the ground: present or not, and "at
+    max" for a declared buff) and one step: a player action (`UseClassAbility`, `FireWeapon(Kinetic, kill)`
+    — the token is `kinetic:kill`) or a declared state (`max:bolt-charge`, `end:amplified`).
+  - What fires at each cascade depth, element id → outcome, then the **Fired** set, the **End state**
+    (present / at max (declared) / not present) and **Must NOT fire** where that matters.
   - **Fully reproduced**, or **Reproduced differently** / **Not reproduced** with the reason, pointing at
     the `discrepancies.md` row.
 - Break a compound claim ("X -> A + B + C") into one expectation per element. Use the format's vocabulary
   (`kill via weapon:strand`, `spawn orb-of-power`, `applyBuff amplified`).
 - Check expectations against the engine where you can: `dotnet run --project src/Loopsmith.Cli --
-  simulate builds/<slug>/build.yaml --actions "class,kinetic:kill" --state --why` plays the actions that
-  lead to a start state and then the scenario's action.
+  trace builds/<slug>/build.yaml --actions "class,kinetic:kill,max:slice" --state --why` plays the steps
+  that lead to a start state and then the scenario's step.
 - End with **Missing elements to author** (grouped by target rules file; for each: id, name, kind, the
   claims it must satisfy and the source quotes — the `rule-author` agent works from this list) and
   **Open questions** (unconfirmed slots, claims the rule format cannot express). Leave out a section that

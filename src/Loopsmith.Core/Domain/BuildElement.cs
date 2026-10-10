@@ -5,7 +5,7 @@ namespace Loopsmith.Core.Domain;
 
 /// <summary>
 /// Cost model of an ability, straight from the Compendium (e.g. Threaded Spike: 145.2 s · 0.8x). Parsed and kept as
-/// data; the engine doesn't use it while ability energy isn't simulated (ADRs D21).
+/// data; the engine doesn't use it while ability energy isn't simulated (ADRs D5).
 /// </summary>
 public sealed record AbilityProfile(AbilityKind Kind, int Charges, GameValue ChunkScalar, GameValue BaseCooldownSeconds);
 

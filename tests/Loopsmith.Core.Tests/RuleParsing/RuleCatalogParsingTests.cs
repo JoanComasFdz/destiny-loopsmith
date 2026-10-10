@@ -699,7 +699,7 @@ public sealed class RuleCatalogParsingTests
         Assert.StartsWith("hunter/arc.yaml:9: ", message);
     }
 
-    // ── Multi-target triggers: "hit / kill at least N enemies in one action" (ADRs D22) ──────
+    // ── Multi-target triggers: "hit / kill at least N enemies in one action" (ADRs D4) ──────
 
     private const string OneForAllYaml = """
         elements:

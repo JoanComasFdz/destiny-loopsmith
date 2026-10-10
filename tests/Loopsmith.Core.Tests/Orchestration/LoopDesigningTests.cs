@@ -5,7 +5,7 @@ using static Loopsmith.Core.Tests.Support.TestCatalog;
 
 namespace Loopsmith.Core.Tests.Orchestration;
 
-/// <summary>The trigger palette of the designer: every ability always (ADRs D21), pickups when they land, target counts (D22).</summary>
+/// <summary>The trigger palette of the designer: every ability always (ADRs D5), pickups when they land, target counts (D4).</summary>
 public sealed class LoopDesigningTests
 {
     private static readonly PlayerAction GrenadeKill = new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Kill, TargetCount.One);

@@ -6,8 +6,8 @@ offline `viewer.html`, Google's raw HTML (`raw/`) and CSV export (`gviz/`), and 
 `--no-images`. Rule authors read it and write its numbers by hand into `rules/` (statuses,
 abilities, aspects, fragments, mods, exotics, artifact perks), citing each row as
 `compendium/<date>/<Tab>#<row>` ([docs/rule-format.md](../../docs/rule-format.md), Provenance) and
-paraphrasing, never copying, its text. Ability cooldowns and chunk energy scalars are recorded but
-not used by the engine (ADRs D21).
+paraphrasing, never copying, its text. Ability cooldowns, chunk energy scalars and extra charges are
+recorded in the rules as facts about their element (ADRs D1, D5).
 
 **Keep it private.** The Compendium is one person's donation-supported work: the raw snapshot is
 never committed (`snapshots/` and `tools/compendium/compendium-*` are gitignored) and never served.

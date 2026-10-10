@@ -313,7 +313,7 @@ public class ActionResolutionTests
         Assert.Contains("No weapon in the Power slot", Assert.IsType<Optional<string>.Some>(noPowerWeapon.Blocked).Value);
     }
 
-    // ── N targets (ADRs D22) ───────────────────────────────────────────────────────
+    // ── N targets (ADRs D4) ───────────────────────────────────────────────────────
 
     /// <summary>One For All: "hitting three separate targets … grants increased damage" — inline, not from the rules.</summary>
     private static readonly BuildElement OneForAll = Element("one-for-all", ElementKind.Fragment,   // a weapon perk in game; the test catalog equips fragments

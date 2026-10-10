@@ -3,7 +3,7 @@
 # Numbers from the Destiny Data Compendium snapshot of 2026-10-09 (source: compendium/2026-10-09/
 # <Tab>#<row>); where Clarity 2.0625 was the previous source, its hash stays and the old source is
 # noted in a comment. Ability energy amounts are base values: chunk energy scalars and stats are
-# not applied (ADRs D21), and chunkScalar / baseCooldown are recorded but unused.
+# not applied (ADRs D5), and chunkScalar / baseCooldown are recorded but unused.
 # v1 limits that shape these rules (see builds/skip-grenade-hunter/discrepancies.md):
 #  - an ability damage source cannot name a specific ability or its damage type ("Arc grenades",
 #    "Skip Grenade drones" -> `grenade`);

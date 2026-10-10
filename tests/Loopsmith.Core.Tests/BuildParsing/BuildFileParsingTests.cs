@@ -11,10 +11,11 @@ public sealed class BuildFileParsingTests
 
     /// <summary>The example of docs/rule-format.md, verbatim.</summary>
     private const string SpecExampleYaml = """
+        # abridged and illustrative — the real one is builds/skip-grenade-hunter/build.yaml
         name: Skip Grenade Hunter
         author: Plunderthabooty                      # optional
         source: https://www.youtube.com/watch?v=zvd6sNS463E   # optional
-        catalog: authored-0123456789ab               # optional pin (FR-8)
+        catalog: authored-0123456789ab               # optional pin (ADRs D15)
         class: hunter
         subclass: arc                                # arc|solar|void|stasis|strand|prismatic
         super: arc-staff

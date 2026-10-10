@@ -127,7 +127,7 @@ internal static class RuleBodyParsing
                 (_, trigger) => trigger)));
 
     /// <summary>
-    /// <c>atLeast</c> ("N enemies in one action", ADRs D22) is a trigger of its own: it can't be combined with a tier or a
+    /// <c>atLeast</c> ("N enemies in one action", ADRs D4) is a trigger of its own: it can't be combined with a tier or a
     /// target debuff (one error per combined key, at that key).
     /// </summary>
     private static Result<Unit, Errors> CheckAtLeastStandsAlone(YamlMap map, Optional<TargetCount> atLeast, params (string Key, bool IsPresent)[] others) =>

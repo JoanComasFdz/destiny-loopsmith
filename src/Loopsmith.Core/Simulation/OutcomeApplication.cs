@@ -45,7 +45,7 @@ public static class OutcomeApplication
     }
 
     /// <summary>
-    /// Explains an energy grant without changing any gauge — ability energy isn't simulated (ADRs D21). An unknown
+    /// Explains an energy grant without changing any gauge — ability energy isn't simulated (ADRs D5). An unknown
     /// amount stays unknown (counted, never applied as a number).
     /// </summary>
     private static Application AnnotateEnergy(GameState state, Outcome outcome, Certainty certainty, int stacks)

@@ -26,7 +26,7 @@ public sealed record BuffUptime(StatusId Status, string Name, Affinity Affinity,
 /// <summary>
 /// What a designed loop does when run back to back: how many cycles repeat, what fired, what was wasted (rules that
 /// don't stack), what's unknown. The steady-state figures (<see cref="Sources"/> onwards) describe one cycle.
-/// Ability energy isn't simulated or added up (ADRs D21).
+/// Ability energy isn't simulated or added up (ADRs D5).
 /// </summary>
 public sealed record LoopReport(
     string LoopName,

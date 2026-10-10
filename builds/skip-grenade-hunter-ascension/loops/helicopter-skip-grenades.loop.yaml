@@ -5,7 +5,7 @@ description: |-
   throw those skip grenades down"): the air move jolts the pack and makes you Amplified before the
   skip grenade lands, then the same clean-up as the original loop. Without Flow State, jolted kills give
   no Amplified; Ascension and Flashover (max Bolt Charge) keep it up.
-catalog: authored-ffea6e3fc30f
+catalog: authored-1cb8a41c41cc
 steps:
   - do: class:air
     note: "Ascension: helicopter up, jolting the pack and making you Amplified; the dodge's effects fire too (Slice, Reaper, Bomber)"

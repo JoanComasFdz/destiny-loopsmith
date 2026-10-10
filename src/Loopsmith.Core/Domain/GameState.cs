@@ -13,7 +13,7 @@ public sealed record GroundPickup(PickupId Pickup, int Count);
 
 /// <summary>
 /// Immutable snapshot; Simulation is a pure state machine (state, event) → (state, fired). There is no ability
-/// energy: abilities are always available (ADRs D21) — refunds are explained, not tracked.
+/// energy: abilities are always available (ADRs D5) — refunds are explained, not tracked.
 /// </summary>
 public sealed record GameState(
     int Step,
@@ -22,7 +22,7 @@ public sealed record GameState(
     TargetState Target,
     ImmutableArray<GroundPickup> Pickups);
 
-/// <summary>What the player chooses to do next. Abilities and weapons say how many enemies they hit or kill (ADRs D22).</summary>
+/// <summary>What the player chooses to do next. Abilities and weapons say how many enemies they hit or kill (ADRs D4).</summary>
 [Union]
 public partial record PlayerAction
 {
@@ -46,7 +46,7 @@ public partial record GameEvent
     partial record StacksMaxed(StatusId Status);
 }
 
-/// <summary>An outcome as it was applied, with how far to trust it (an energy grant only explains — ADRs D21).</summary>
+/// <summary>An outcome as it was applied, with how far to trust it (an energy grant only explains — ADRs D5).</summary>
 public sealed record AppliedOutcome(Outcome Outcome, Certainty Certainty, Optional<string> Caveat);
 
 /// <summary>

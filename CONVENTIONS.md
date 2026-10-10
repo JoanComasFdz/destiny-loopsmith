@@ -16,8 +16,9 @@ itself, under `src/Loopsmith.Core/Domain/`.
 - **Vertical Slice Architecture is the top-level driver.** Group by *feature*,
   never by kind. A behaviour change touches one slice, not a layer. The slices
   live under `src/Loopsmith.Core/` (`SourceFetching`, `RuleParsing`,
-  `BuildParsing`, `LoopFiles`, `BuildComposition`, `Simulation`, `BuildExplanation`,
-  `LoopGraphing`, `TraceRendering`, `ReportComparison`, `Orchestration`).
+  `BuildParsing`, `LoopFiles`, `BuildComposition`, `Simulation` (plays steps
+  against the state), `BuildExplanation`, `LoopGraphing`, `TraceRendering`,
+  `ReportComparison`, `Orchestration`).
 - **Feature slices depend only on the shared kernel** (`Domain` / `Functional` /
   `Phrasing` / `Causality`) — never sideways on each other. The only cross-slice
   dependency is `Orchestration` → every slice. An **architecture test** enforces
@@ -41,15 +42,16 @@ itself, under `src/Loopsmith.Core/Domain/`.
   `Orchestration` shell, and executes the returned effects (console I/O lives
   only in the host). `Loopsmith.Web` (Blazor WebAssembly) holds UI state and
   calls the same pure `Orchestration` API (`LoopDesigning`); browser side effects
-  (storage, clipboard, downloads, URL) live in its `Hosting/BrowserInterop`. A
-  future `Loopsmith.Api` host does the same with HTTP.
+  (clipboard, downloads, confirm, picked files, the URL) live in its `Hosting/BrowserInterop`.
+  Any other host (an HTTP API, say) would do the same.
 
 ## Functional design
 
 - **Pure/impure split — strict `impure → pure → impure` sandwich.** The
-  boundary (`SourceFetching`) reads files (later: the manifest, the Compendium
-  snapshot, Clarity); the host writes. Everything between is pure. Read at the
-  start, compute in the middle, write at the end.
+  boundary (`SourceFetching`) reads files (rules, builds, loop files, and the
+  sources it ingests: the manifest, the Compendium snapshot, Clarity); the host
+  writes. Everything between is pure. Read at the start, compute in the middle,
+  write at the end.
 - **Never mix or nest pure and impure calls on one line.** A statement is either
   pure or impure, never both — don't wrap an impure call around a pure one (or
   vice versa). Split them into separate statements, introducing a named
@@ -69,7 +71,7 @@ itself, under `src/Loopsmith.Core/Domain/`.
   boundary is — and it makes those boundary jumps easy to step through when
   debugging. Shells mark each line `// pure` or `// impure`.
 - **Effects as data.** Pure functions return an `Effect` DU describing the side
-  effects to perform (`WriteLines`, `WriteText`, `ShowFailure`); the impure shell
+  effects to perform (`WriteLines`, `WriteText`, `SaveFile`, `ShowFailure`); the impure shell
   `Match`es it and executes them.
 - **Honest, total signatures** via our own `Optional<T>`, `Result<T, F>`, and
   `Unit` (in `Functional/`) — defined as Dunet DUs with `Map`/`Bind`/`Match` as
@@ -77,16 +79,17 @@ itself, under `src/Loopsmith.Core/Domain/`.
   null-as-absence, no exceptions-as-control-flow across the pure core.
 - **Railway-oriented (ROP)** for the end-to-end flow: the pipeline composes
   `Result`-returning steps (read rules → parse catalog → parse build → validate
-  → simulate) that stay on the success track and short-circuit onto the failure
+  → play) that stay on the success track and short-circuit onto the failure
   track at the first blocking error — no explicit app-state object.
-- **Typestate when call order matters** (validation must precede simulation). It
+- **Typestate when call order matters** (validation must precede playing). It
   composes with ROP: `ValidatedBuild` is constructible only by
   `BuildComposition.BuildValidation.ValidateBuild` and is the success-track
-  payload `Simulation` consumes, so "simulate before validation" cannot happen
+  payload `Simulation` consumes, so "play before validation" cannot happen
   (architecture test on `newobj` / `<Clone>$`).
 - **Pure state machine** is reserved for genuinely stateful situations with more
-  than two states — `GameState` in `Simulation` ((state, event) → (state, fired)),
-  *not* the linear app flow, which is a railway, not a machine.
+  than two states — `GameState` in `Simulation`, the slice that plays steps
+  ((state, step) → (state, fired)), *not* the linear app flow, which is a
+  railway, not a machine.
 
 ## Domain modelling
 
@@ -94,7 +97,7 @@ itself, under `src/Loopsmith.Core/Domain/`.
   functions over the data. No methods carrying logic on the records themselves.
 - **Functions are actions — name them with a verb.** Every function/method name
   must contain a verb describing what it does (`ResolveAction`, `CascadeEvent`,
-  `ScaleEnergyByCost`, `ParseRuleFile`, `ComputeCoverage`) — never a bare noun
+  `DescribeTrigger`, `ParseRuleFile`, `ComputeCoverage`) — never a bare noun
   (`Phase`, `Cascade`, `Rules`). A name that is only a noun denotes a *thing*, so
   it belongs to data, not to a function. Two idioms satisfy the rule without an
   explicit action word: boolean predicates may lead with `Is`/`Has`/`Can`
@@ -103,7 +106,7 @@ itself, under `src/Loopsmith.Core/Domain/`.
   `Optional.Some`, `Optional.FromNullable`).
 - **Naming clash resolved:** the game's consequences (energy, buffs, orbs,
   debuffs) are called **`Outcome`**. **`Effect`** is reserved for side effects
-  described as data (`WriteLines`, `ShowFailure`, later `PersistCatalog`).
+  described as data (`WriteLines`, `WriteText`, `SaveFile`, `ShowFailure`).
 - **Immutability everywhere.** All domain types are immutable `record`s.
 - **Domain via discriminated unions, not inheritance.** DUs are generated with
   **Dunet**. Behaviour is static/extension functions over the DU that
@@ -119,8 +122,12 @@ itself, under `src/Loopsmith.Core/Domain/`.
   (`TryFrom` in the parsing slices) — once inside the pure core a value object is
   known-valid.
 - **Unknowns are data.** A source's "?" becomes `GameValue.Unknown`, never 0; the
-  trace shows "?" and the value is not applied. Every number keeps its
-  `Provenance`.
+  trace shows "?". Every element keeps its `Provenance` (its `source:`).
+- **State is causal** (ADRs D1). Game state says what is present (a buff, a
+  debuff on the pack, a pickup on the ground) and what the player declared
+  ("Bolt Charge at max"); it holds no number but the step. A source's number
+  (`+1 Bolt Charge`, `15s`, `+12% grenade energy`) is a fact shown with its
+  outcome — never accumulated, and never compared to decide what happens.
 - **Add a named failure/`Severity` case only when the app branches on it** (to
   recover or take a different path), never merely to carry a message. IO whose only
   outcome is "show the user what went wrong" uses `Result<_, string>`; the acted-on
