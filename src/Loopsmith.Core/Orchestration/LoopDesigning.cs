@@ -99,6 +99,10 @@ public static class LoopDesigning
     public static ImmutableArray<ItemHash> ListUnknownHashes(DesignSession session) =>
         ManifestJoin.ListUnknownBuildHashes(session.Build.Catalog.Manifest, session.Build.Build);
 
+    /// <summary>Of <paramref name="hashes"/>, those the host hasn't read the manifest for yet (<paramref name="asked"/>: found, missing or failed).</summary>
+    public static ImmutableArray<ItemHash> ListUnaskedHashes(ImmutableHashSet<ItemHash> asked, IEnumerable<ItemHash> hashes) =>
+        ManifestJoin.ListUnasked(asked, hashes);
+
     /// <summary>What the host says while it reads the full manifest for <paramref name="count"/> hashes.</summary>
     public static string DescribeManifestReading(int count) =>
         $"Reading Bungie's manifest for {count} item{(count == 1 ? "" : "s")} Loopsmith doesn't know yet…";

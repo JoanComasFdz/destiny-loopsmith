@@ -217,7 +217,8 @@
             return new JoinedCatalog(catalog, Optional.None<string>());
         }
 
-        readingStep = LoopDesigning.DescribeManifestReading(unknown.Length);                     // impure (UI state)
+        var reading = LoopDesigning.DescribeManifestReading(unknown.Length);                     // pure
+        readingStep = reading;                                                                   // impure (UI state)
         StateHasChanged();                                                                       // impure
         var joined = await Manifest.JoinAsync(unknown);                                          // impure
         return LoopDesigning.AddJoinedManifest(catalog, joined);                                 // pure

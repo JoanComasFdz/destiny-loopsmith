@@ -72,6 +72,10 @@ public static class ManifestJoin
     public static ImmutableArray<ItemHash> ListUnknown(ManifestExcerpt excerpt, IEnumerable<ItemHash> hashes) =>
         [.. hashes.Distinct().Where(hash => !excerpt.Items.ContainsKey(hash))];
 
+    /// <summary>Of <paramref name="hashes"/>, those not in <paramref name="asked"/> (a host reads the manifest for each once).</summary>
+    public static ImmutableArray<ItemHash> ListUnasked(ImmutableHashSet<ItemHash> asked, IEnumerable<ItemHash> hashes) =>
+        [.. hashes.Distinct().Where(hash => !asked.Contains(hash))];
+
     /// <summary>The hashes a build names that the excerpt lacks: its weapons, their roll picks, what it left out.</summary>
     public static ImmutableArray<ItemHash> ListUnknownBuildHashes(ManifestExcerpt excerpt, Build build) =>
         ListUnknown(excerpt, build.Weapons

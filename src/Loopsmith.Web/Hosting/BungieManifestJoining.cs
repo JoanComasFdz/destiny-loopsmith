@@ -17,16 +17,14 @@ namespace Loopsmith.Web.Hosting;
 /// </summary>
 public sealed class BungieManifestJoining(BrowserInterop browser, string apiKey, string pinnedContentId)
 {
-    private ImmutableHashSet<ItemHash> asked = [];
-
-    /// <summary>Of <paramref name="hashes"/>, those the manifest wasn't asked for yet in this tab (found, missing or failed: asked).</summary>
-    public ImmutableArray<ItemHash> ListUnasked(ImmutableArray<ItemHash> hashes) =>
-        [.. hashes.Where(hash => !asked.Contains(hash))];
+    /// <summary>The hashes the manifest was read for in this tab (found, missing or failed).</summary>
+    public ImmutableHashSet<ItemHash> Asked { get; private set; } = [];
 
     /// <summary>The excerpt of what <paramref name="hashes"/> need, from the full manifest; or why it couldn't be read.</summary>
     public async Task<Result<ManifestExcerpt, string>> JoinAsync(ImmutableArray<ItemHash> hashes)
     {
-        asked = asked.Union(hashes);                                                             // impure (tab state)
+        var asked = Asked.Union(hashes);                                                         // pure
+        Asked = asked;                                                                           // impure (tab state)
         var index = await browser.ReadManifestIndexAsync(LoopDesigning.ManifestIndexUrl, apiKey); // impure
         var urls = LoopDesigning.ChooseManifestUrls(index, pinnedContentId);                     // pure
         var loaded = await browser.LoadManifestTablesAsync(urls);                                // impure

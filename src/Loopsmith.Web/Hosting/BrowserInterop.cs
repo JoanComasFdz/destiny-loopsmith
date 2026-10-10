@@ -47,19 +47,26 @@ public sealed class BrowserInterop(IJSRuntime js)
     /// <summary>Downloads (once per tab) and indexes each component (<c>{ component: url }</c>); why it couldn't, when it couldn't.</summary>
     public async Task<Result<Unit, string>> LoadManifestTablesAsync(IReadOnlyDictionary<string, string> urls)
     {
-        var problem = await js.InvokeAsync<string?>("loopsmithManifest.loadTables", new Dictionary<string, string>(urls));
+        var plain = new Dictionary<string, string>(urls);
+        var problem = await js.InvokeAsync<string?>("loopsmithManifest.loadTables", plain);
         return Optional.FromNullable(problem).Match<Result<Unit, string>>(
             failed => new Result<Unit, string>.Error(failed.Value),
             _ => new Result<Unit, string>.Ok(new Unit.Value()));
     }
 
     /// <summary>The raw JSON of the entries asked for, per component (<c>{ component: { hash: entry } }</c>).</summary>
-    public ValueTask<string> ReadManifestEntriesAsync(IReadOnlyDictionary<string, ImmutableArray<ItemHash>> request) =>
-        js.InvokeAsync<string>("loopsmithManifest.readEntries", request.ToDictionary(entry => entry.Key, entry => entry.Value.Select(hash => hash.Value).ToArray()));
+    public async Task<string> ReadManifestEntriesAsync(IReadOnlyDictionary<string, ImmutableArray<ItemHash>> request)
+    {
+        var plain = request.ToDictionary(entry => entry.Key, entry => entry.Value.Select(hash => hash.Value).ToArray());
+        return await js.InvokeAsync<string>("loopsmithManifest.readEntries", plain);
+    }
 
     /// <summary>The hashes of a component's entries whose JSON holds each needle (<c>{ needle: [hashes] }</c>).</summary>
-    public ValueTask<string> FindManifestEntriesContainingAsync(ManifestTextSearch search) =>
-        js.InvokeAsync<string>("loopsmithManifest.findEntriesContaining", search.Component, search.Needles.ToArray());
+    public async Task<string> FindManifestEntriesContainingAsync(ManifestTextSearch search)
+    {
+        var needles = search.Needles.ToArray();
+        return await js.InvokeAsync<string>("loopsmithManifest.findEntriesContaining", search.Component, needles);
+    }
 
     /// <summary>A file the user picked with <c>InputFile</c>, as text (foreseeable failures become an error).</summary>
     public static async Task<Result<string, string>> ReadPickedFileAsync(IBrowserFile file)

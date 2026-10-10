@@ -144,14 +144,16 @@
         }
 
         var lacking = LoopDesigning.ListUnknownHashes(opened.Value);                             // pure
-        var unknown = Manifest.ListUnasked(lacking);                                             // impure (reads the tab's asked hashes)
+        var asked = Manifest.Asked;                                                              // impure (tab state)
+        var unknown = LoopDesigning.ListUnaskedHashes(asked, lacking);                           // pure
         if (unknown.IsEmpty)
         {
             return;
         }
 
         var status = Workbench.Status;
-        Workbench.Status = LoopDesigning.DescribeManifestReading(unknown.Length);                // impure (UI state)
+        var reading = LoopDesigning.DescribeManifestReading(unknown.Length);                     // pure
+        Workbench.Status = reading;                                                              // impure (UI state)
         var joined = await Manifest.JoinAsync(unknown);                                          // impure
         if (Workbench.Session is not Optional<DesignSession>.Some current)
         {
