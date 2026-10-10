@@ -87,7 +87,7 @@ public static class TestCatalog
             CatalogVersion.From("test"),
             Glossary,
             abilities.Concat(fragments).Concat(allMods).ToImmutableDictionary(e => e.Id),
-            new ManifestExcerpt(Optional.None<string>(), ImmutableDictionary<DamageType, string>.Empty, ImmutableDictionary<ItemHash, ManifestItem>.Empty));
+            new ManifestExcerpt(Optional.None<string>(), ImmutableDictionary<DamageType, string>.Empty, ImmutableDictionary<ItemHash, ArmorSet>.Empty, ImmutableDictionary<ItemHash, ManifestItem>.Empty));
         var build = new Build(
             "Test build",
             Optional.None<string>(),

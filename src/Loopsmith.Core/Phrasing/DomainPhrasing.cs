@@ -70,7 +70,7 @@ public static class DomainPhrasing
     /// version share a name), or the number when the excerpt doesn't have it.
     /// </summary>
     public static string DescribeTypedItemHash(this ManifestExcerpt manifest, ItemHash hash) =>
-        manifest.FindItem(hash).Match(item => $"{item.Value.Name} ({item.Value.Type})", _ => hash.Value.ToString(Invariant));
+        manifest.FindItem(hash).Match(item => item.Value.Type.Match(type => $"{item.Value.Name} ({type.Value})", _ => item.Value.Name), _ => hash.Value.ToString(Invariant));
 
     public static string DescribeLoadoutPart(this LoadoutPart part) =>
         part switch

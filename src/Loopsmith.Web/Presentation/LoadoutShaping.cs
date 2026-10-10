@@ -210,7 +210,7 @@ public static class LoadoutShaping
             rolling => new PerkSquare.Pickable(
                 rolling.Column,
                 rolling.Perk.Map(hash => new PickedPerk(hash, DescribeTrait(catalog, hash))),
-                [.. rolling.Options.Select(hash => new PerkOption(hash, DescribeTrait(catalog, hash), catalog.Manifest.FindItem(hash).Map(item => item.Type)))]));
+                [.. rolling.Options.Select(hash => new PerkOption(hash, DescribeTrait(catalog, hash), catalog.Manifest.FindItem(hash).Bind(item => item.Type)))]));
 
     /// <summary>A perk of a weapon's roll by hash: its catalog element when the rules have it, else the manifest's (dimmed).</summary>
     private static IconTile DescribeTrait(RuleCatalog catalog, ItemHash hash) =>
