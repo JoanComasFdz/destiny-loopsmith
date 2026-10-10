@@ -1,27 +1,35 @@
-@* The step chain (docs/loop-format.md, "Analysis"): a row per step and an arrow per link, from the step that provided a
-   need to the step that needs it. An arrow from the pass before leaves downwards and comes back from the top (around
-   the loop) and is dashed; one whose needs came only from chance rules is faded and dotted; in a comparison, one the
-   other loop lacks is highlighted. Tap a step: its arrows stand out and what it needs and feeds is listed below. *@
+@* The step chain (docs/loop-format.md, "Analysis"): a row per step, with two connectors on its left — lines into the
+   step end at the top one (the arrowhead), the line out of it starts at the bottom one (the dot). A step's line runs
+   down its own lane and branches (a junction dot) into each later step it feeds; lines into the same step merge on its
+   arrowhead. A line whose needs came only from chance rules is faded; in a comparison only the links the other loop
+   lacks are drawn. Tap a step: its lines stand out and what it needs and feeds is listed below. *@
 @{
     var chain = ChainShaping.ShapeChain(Report.Steps.Length, Links);
 }
 <div class="chain" data-testid="chain">
     <div class="chain-body" style="height: @(chain.Height)px">
         <svg class="chain-arcs" width="@chain.GutterWidth" height="@chain.Height" viewBox="0 0 @chain.GutterWidth @chain.Height" aria-hidden="true">
-            @foreach (var arc in chain.Arcs)
+            @foreach (var bus in chain.Buses)
             {
-                <g class="@ToArcClass(arc)" data-from="@arc.Link.From" data-to="@arc.Link.To">
-                    <title>@arc.Title</title>
-                    @foreach (var path in arc.Paths)
+                <g class="@ToBusClass(bus)" data-from="@bus.From">
+                    <path class="trunk" d="@bus.Trunk"><title>@bus.Title</title></path>
+                    <circle class="egress" cx="@bus.Egress.X" cy="@bus.Egress.Y" r="2.5" />
+                    @foreach (var branch in bus.Branches)
                     {
-                        <path d="@path" />
+                        <g class="@ToBranchClass(branch)" data-to="@branch.Link.To">
+                            <title>@branch.Title</title>
+                            <path d="@branch.Path" />
+                            @if (branch.Junction is Optional<ChainPoint>.Some junction)
+                            {
+                                <circle class="junction" cx="@junction.Value.X" cy="@junction.Value.Y" r="2.5" />
+                            }
+                        </g>
                     }
-                    <polygon points="@arc.Arrowhead" />
                 </g>
             }
-            @foreach (var step in Report.Steps)
+            @foreach (var arrowhead in chain.Arrowheads)
             {
-                <circle class="chain-dot @(step.Blocked.IsSome() ? "blocked" : "")" cx="@(chain.GutterWidth - 3)" cy="@ChainShaping.ReadRowCentre(step.StepIndex)" r="3" />
+                <polygon class="@ToArrowheadClass(arrowhead)" points="@arrowhead.Points" />
             }
         </svg>
         <ol class="chain-rows" style="padding-left: @(chain.GutterWidth + 4)px">
@@ -93,13 +101,24 @@
 
     private void Select(int step) => selected = selected == step ? -1 : step;
 
-    private string ToArcClass(ChainArc arc) =>
-        string.Join(' ', new[]
-        {
-            "arc",
-            arc.Link.FromPreviousPass ? "carried" : "",
-            arc.Link.Likelihood == Likelihood.Chance ? "chance" : "",
-            arc.OnlyHere ? "only-here" : "",
-            selected < 0 ? "" : arc.Link.From == selected || arc.Link.To == selected ? "active" : "dim",
-        }.Where(name => name.Length > 0));
+    private string ToBusClass(ChainBus bus) =>
+        JoinClasses(
+            "bus",
+            bus.Branches.Any(branch => branch.OnlyHere) ? "only-here" : "",
+            bus.Branches.All(branch => branch.Link.Likelihood == Likelihood.Chance) ? "chance" : "",
+            selected < 0 ? "" : bus.From == selected || bus.Branches.Any(branch => branch.Link.To == selected) ? "active" : "dim");
+
+    private string ToBranchClass(ChainBranch branch) =>
+        JoinClasses(
+            "branch",
+            branch.Link.Likelihood == Likelihood.Chance ? "chance" : "",
+            selected < 0 ? "" : branch.Link.From == selected || branch.Link.To == selected ? "active" : "dim");
+
+    private string ToArrowheadClass(ChainArrowhead arrowhead) =>
+        JoinClasses(
+            "arrowhead",
+            Links.Any(compared => compared.OnlyHere && compared.Link.To == arrowhead.Step) ? "only-here" : "",
+            selected < 0 ? "" : arrowhead.Step == selected || Links.Any(compared => compared.Link.To == arrowhead.Step && compared.Link.From == selected) ? "active" : "dim");
+
+    private static string JoinClasses(params string[] names) => string.Join(' ', names.Where(name => name.Length > 0));
 }

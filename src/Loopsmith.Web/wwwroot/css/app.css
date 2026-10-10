@@ -675,17 +675,13 @@ textarea { resize: vertical; }
 .chain { margin: 6px 0 14px; }
 .chain-body { position: relative; }
 .chain-arcs { position: absolute; left: 0; top: 0; overflow: visible; }
-.chain-arcs .arc path { fill: none; stroke: var(--arc); stroke-width: 1.6; }
-.chain-arcs .arc polygon { fill: var(--arc); }
-.chain-arcs .arc.carried path { stroke-dasharray: 6 4; }
-.chain-arcs .arc.chance { opacity: .55; }
-.chain-arcs .arc.chance path { stroke-dasharray: 2 3; }
-.chain-arcs .arc.only-here path { stroke: var(--warn); stroke-width: 2.2; }
-.chain-arcs .arc.only-here polygon { fill: var(--warn); }
-.chain-arcs .arc.active path { stroke-width: 2.6; }
-.chain-arcs .arc.dim { opacity: .14; }
-.chain-dot { fill: var(--muted); }
-.chain-dot.blocked { fill: var(--warn); }
+.chain-arcs path { fill: none; stroke: var(--arc); stroke-width: 1.6; }
+.chain-arcs .arrowhead, .chain-arcs .junction, .chain-arcs .egress { fill: var(--arc); }
+.chain-arcs .only-here path { stroke: var(--warn); }
+.chain-arcs .only-here .junction, .chain-arcs .only-here .egress, .chain-arcs .arrowhead.only-here { fill: var(--warn); }
+.chain-arcs .chance { opacity: .5; }
+.chain-arcs .active path { stroke-width: 2.6; }
+.chain-arcs .dim { opacity: .15; }
 .chain-rows { list-style: none; margin: 0; padding-top: 0; padding-bottom: 0; padding-right: 0; }
 .chain-row button { all: unset; box-sizing: border-box; display: flex; align-items: center; gap: 6px; width: 100%; height: 100%; padding: 0 6px; border-radius: 6px; cursor: pointer; font-size: 13px; white-space: nowrap; overflow: hidden; }
 .chain-row button:hover, .chain-row button:focus-visible { background: var(--raised); }

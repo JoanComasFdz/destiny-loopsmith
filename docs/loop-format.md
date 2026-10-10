@@ -184,10 +184,14 @@ has a blocked step (the first one, with its message).
   `Tempest Strike — doesn't stack with Dielectric`.
 
 **The chain** — the needs drawn as arrows, one per pair of steps: from the step that provided a need
-to the step that needs it, labelled with what flows (`#2 → #3: Slice · Reaper`). An arrow from the
-pass before (`previous pass #4 → #3: Unraveling Rounds`) goes around the loop; one whose needs came
-only from chance rules is marked *(chance)*. The web draws it above the steps (dashed around the
-loop, faded when by chance); tapping a step lists what it needs and what it feeds.
+to the step that needs it, labelled with what flows (`#2 → #3: Slice · Reaper`); one whose needs came
+only from chance rules is marked *(chance)*. The web draws the links within a pass above the steps:
+every step has two connectors on its left, the lines into it ending at the top one (an arrowhead) and
+the line out of it starting at the bottom one (a dot). A step's line runs down its own lane and
+branches (a junction dot) into each later step it feeds; lines into the same step merge on its
+arrowhead; a line by chance is faded. Tapping a step lists what it needs and what it feeds. A link
+from the pass before (`previous pass #4 → #3: Unraveling Rounds`) shows in the step's needs, not as
+an arrow.
 
 Where the first pass differs — a step blocked there, or an element that fires on one pass and not on
 the other — a **First pass** block lists those steps: *blocked*, *doesn't set off* (what fires in the
@@ -233,8 +237,9 @@ builds; both replay with the same catalog. The comparison uses each loop's repea
   needs come from there (marked when that loop's first pass differs there), and the elements that
   fire in only one of them;
 * the triggers only one loop has, listed as such;
-* each loop's chain, with the links the other loop lacks — no link between the same two triggers,
-  the same way round the loop — listed (`Links only in A`) and, on the web, highlighted.
+* the links of each loop's chain the other loop lacks — no link between the same two triggers, the
+  same way round the loop — listed (`Links only in A`); the web draws each loop's chain with only
+  those links.
 
 Here the same steps in another order: the shot after the dodge gets Slice and Reaper from #2; the shot
 before it gets them from the previous pass, so on B's first pass it sets off neither. The chains say it
