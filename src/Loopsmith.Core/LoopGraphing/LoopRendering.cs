@@ -38,7 +38,7 @@ public static class LoopRendering
     /// Mermaid flowchart (renders on GitHub and mermaid.live). Loop edges are thick and pink; the other player edges
     /// and the "needs" edges (a debuff a trigger requires, the max a guard reads) are dotted, the latter labelled with
     /// their source. The link you declare ("Gain X → Max X", ADRs D3) is always dotted and labelled "you declare" — on a
-    /// loop, dotted, thick and pink. Colours follow the design proposal's element palette.
+    /// loop, dotted, thick and pink. Nodes are coloured by element affinity.
     /// </summary>
     public static string RenderMermaid(LoopGraph graph, ImmutableArray<Loop> loops, bool loopsOnly)
     {
