@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#0a0d13" />
+    <meta name="description" content="Loopsmith — design a Destiny 2 build's gameplay loop: pick a trigger, see everything it fires, pick the next." />
+    <title>Loopsmith</title>
+    <!-- Keep "/" here: the GitHub Pages deploy rewrites it to the site's sub-path. Every other URL is relative. -->
+    <base href="/destiny-loopsmith/pr-preview/pr-9/" />
+    <link href="_framework/dotnet.edfiquuqw4.js" rel="preload" as="script" fetchpriority="high" crossorigin="anonymous" integrity="sha256-UhANGxqrD5kb1PgHgtsMVj3OWnma3OtVY8RjVGWQoC4=" />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="stylesheet" href="css/app.css" />
+    <script type="importmap">{
+  "imports": {
+    "./_framework/blazor.webassembly.js": "./_framework/blazor.webassembly.w3qd1tpl0e.js",
+    "./_framework/dotnet.js": "./_framework/dotnet.edfiquuqw4.js",
+    "./_framework/dotnet.native.js": "./_framework/dotnet.native.b6l13xorvf.js",
+    "./_framework/dotnet.runtime.js": "./_framework/dotnet.runtime.v06hirbjsv.js"
+  },
+  "scopes": {},
+  "integrity": {
+    "./_framework/blazor.webassembly.js": "sha256-lDXsDYFgm62F+YUvxES7IOTCXYpiHpU3uR45YdC6mq4=",
+    "./_framework/blazor.webassembly.w3qd1tpl0e.js": "sha256-lDXsDYFgm62F+YUvxES7IOTCXYpiHpU3uR45YdC6mq4=",
+    "./_framework/dotnet.edfiquuqw4.js": "sha256-UhANGxqrD5kb1PgHgtsMVj3OWnma3OtVY8RjVGWQoC4=",
+    "./_framework/dotnet.js": "sha256-UhANGxqrD5kb1PgHgtsMVj3OWnma3OtVY8RjVGWQoC4=",
+    "./_framework/dotnet.native.b6l13xorvf.js": "sha256-jZddobLBM2C3lQhYQ61xSQJ/WqD3eQCO3RzoHGaOjx0=",
+    "./_framework/dotnet.native.js": "sha256-jZddobLBM2C3lQhYQ61xSQJ/WqD3eQCO3RzoHGaOjx0=",
+    "./_framework/dotnet.runtime.js": "sha256-QbnqrZGHtGq7wudS17/AYEPpH9JkphrsyVllD6JHmds=",
+    "./_framework/dotnet.runtime.v06hirbjsv.js": "sha256-QbnqrZGHtGq7wudS17/AYEPpH9JkphrsyVllD6JHmds="
+  }
+}</script>
+</head>
+
+<body>
+    <div id="app">
+        <div class="boot">
+            <div class="boot-mark">Loopsmith</div>
+            <svg class="loading-progress" viewBox="0 0 100 100" aria-hidden="true">
+                <circle r="40" cx="50" cy="50" />
+                <circle r="40" cx="50" cy="50" />
+            </svg>
+            <div class="loading-progress-text"></div>
+        </div>
+    </div>
+
+    <div id="blazor-error-ui">
+        Something went wrong in Loopsmith.
+        <a href="." class="reload">Reload</a>
+        <span class="dismiss" role="button" aria-label="Dismiss">✕</span>
+    </div>
+    <script src="js/loopsmith.js"></script>
+    <script src="_framework/blazor.webassembly.w3qd1tpl0e.js"></script>
+</body>
+
+</html>
