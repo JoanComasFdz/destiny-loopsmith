@@ -1,0 +1,77 @@
+# Exotic weapons: an exotic's own perks (kind exoticWeapon) and its catalyst (kind catalyst, equipped
+# only while the build turns the catalyst on).
+# Numbers from the Destiny Data Compendium snapshot of 2026-10-09: the Exotic Weapons tab has one row per
+# weapon (its perks listed under its name, the mechanics in the fourth column). Hashes are the Bungie
+# manifest's (rules/manifest.yaml: Thunderlord 3325463374 rolls Lightning Rounds and Feeding Frenzy in
+# its two fixed trait columns; Feeding Frenzy is a generic trait, in weapons/perks.yaml).
+# "This weapon" is `slot:<slot>`, the build's weapon in that slot: an exotic always sits in its own
+# slot, so the rule fires for that weapon only. `weapon:arc` would also fire for the build's other Arc
+# weapons.
+elements:
+  # ================================================================ Thunderlord
+  # Arc adaptive machine gun, Power slot: compendium/2026-10-09/Exotic Weapons#144.
+  # Shared format gaps:
+  #  - Its lightning strike is the weapon's own, not a glossary status, and `strikeTarget` names a
+  #    status. `via: bolt-charge` would read as Bolt Charge's discharge: Defibrillating Blast would
+  #    jolt and heal on it, and Flashover would add its +50% (artifact/current.yaml), and neither
+  #    applies to this strike. So the strike is written the way Gathering Storm's is (hunter/arc.yaml):
+  #    it is part of the weapon's action, and its damage (up to 232 [PvP 65] within 5 m) is a fact in
+  #    the description. The player says how many enemies the action catches, strike included (ADRs D4).
+  #    The strike's x1 Bolt Charge is the rule's outcome.
+  #  - Bungie's perk text says the strikes stun. The Compendium row doesn't say so, and the format
+  #    has no stun outcome or trigger, so the stun is not encoded.
+  # The Compendium gives the strike "every 10 hits or on kill". Bungie's perk texts split the two:
+  # final blows are Reign Havoc's and continuous damage is Lightning Rounds'. Each perk carries its
+  # own rule.
+
+  - id: reign-havoc
+    name: Reign Havoc
+    kind: exoticWeapon
+    affinity: arc
+    hash: 4148158229          # the intrinsic perk's plug item
+    description: "Thunderlord's intrinsic. Each kill calls down a lightning strike that deals up to 232 [PvP 65] damage within 5 m and grants x1 Bolt Charge. The weapon also sways much less and its reticle barely drifts, with no hits needed."
+    source: "compendium/2026-10-09/Exotic Weapons#144"
+    rules:
+      - on: { kill: { via: slot:power } }
+        then:
+          - { applyBuff: { status: bolt-charge, stacks: 1 } }
+        reason: "Every Thunderlord kill calls down a lightning strike, and the strike gives you a stack of Bolt Charge."
+    # Not encoded: the reduced sway and reticle drift. The source gives no value, and modifyWeaponStats
+    # can name an archetype but not "this weapon". No rule reacts to it.
+    passives: []
+
+  - id: lightning-rounds
+    name: Lightning Rounds
+    kind: exoticWeapon
+    affinity: arc
+    hash: 1419069769
+    description: "Thunderlord's trait. Holding the trigger fires faster: the fire recovery delay drops to 0.75x after the first 13 rounds and to 0.6x after 26 in total. Every 10th hit calls down a lightning strike that deals up to 232 [PvP 65] damage within 5 m and grants x1 Bolt Charge."
+    source: "compendium/2026-10-09/Exotic Weapons#144"
+    rules:
+      # "Every 10 hits" is progress the game doesn't show as a stacking status, so this is a chance
+      # rule (ADRs D8), like Attrition Orbs' hit count (weapons/perks.yaml). The x1 Bolt Charge comes
+      # from the strike (Bungie's Reign Havoc text: every lightning strike grants it). No strike event
+      # exists to attach it to, so this rule grants it. A kill is also a hit, so a Thunderlord kill fires
+      # this rule as well as Reign Havoc's.
+      - on: { damage: { via: slot:power } }
+        then:
+          - { applyBuff: { status: bolt-charge, stacks: 1 } }
+        chance: true
+        reason: "Keep hitting with Thunderlord: every 10th hit calls down a lightning strike that gives you a stack of Bolt Charge."
+    # Not expressible: the faster fire while the trigger is held (0.75x / 0.6x fire recovery delay after
+    # 13 / 26 rounds). There is no "while holding the trigger" condition, and no rule reacts to fire
+    # rate.
+    passives: []
+
+  - id: thunderlord-catalyst
+    name: Return Stroke
+    kind: catalyst
+    affinity: arc
+    hash: 1550063955          # the catalyst plug item ("Thunderlord Catalyst")
+    description: "Thunderlord's catalyst: each of its lightning strikes puts 5 rounds back in the magazine from reserves."
+    source: "compendium/2026-10-09/Exotic Weapons#144"
+    # Not expressible: ammo and the magazine aren't modelled (there is no ammo or reload outcome).
+    # There is also no lightning-strike event to attach it to: the strikes are part of Reign Havoc's
+    # and Lightning Rounds' rules.
+    rules: []
+    passives: []

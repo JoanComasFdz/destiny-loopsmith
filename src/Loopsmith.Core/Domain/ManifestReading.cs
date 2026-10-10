@@ -30,11 +30,15 @@ public static class ManifestReading
             .Select(hash => catalog.Manifest.FindItem(hash))
             .FindFirstSome();
 
-    /// <summary>A weapon's trait columns: its manifest item's, when the build gives its hash and the excerpt has them; else none.</summary>
-    public static ImmutableArray<TraitColumn> ListTraitColumns(this ManifestExcerpt manifest, WeaponLoadout weapon) =>
+    /// <summary>What the excerpt says about a build's weapon (its slot, columns, intrinsic, catalyst), when the build gives its hash.</summary>
+    public static Optional<ManifestKind.Weapon> FindWeaponKind(this ManifestExcerpt manifest, WeaponLoadout weapon) =>
         weapon.Hash
             .Bind(hash => manifest.FindItem(hash))
-            .Match(item => item.Value.Kind is ManifestKind.Weapon kind ? kind.Traits : [], _ => ImmutableArray<TraitColumn>.Empty);
+            .Bind(item => item.Kind is ManifestKind.Weapon kind ? Optional.Some(kind) : Optional.None<ManifestKind.Weapon>());
+
+    /// <summary>A weapon's trait columns: its manifest item's, when the build gives its hash and the excerpt has them; else none.</summary>
+    public static ImmutableArray<TraitColumn> ListTraitColumns(this ManifestExcerpt manifest, WeaponLoadout weapon) =>
+        manifest.FindWeaponKind(weapon).Match(kind => kind.Value.Traits, _ => ImmutableArray<TraitColumn>.Empty);
 
     /// <summary>The one of an element's hashes that is a perk of this trait column (Slice's, in Festival Flight's first), if any.</summary>
     public static Optional<ItemHash> FindColumnHash(this RuleCatalog catalog, ElementId id, TraitColumn column) =>
@@ -45,6 +49,25 @@ public static class ManifestReading
     /// <summary>True when one of an element's hashes is a perk of this trait column.</summary>
     public static bool IsInColumn(this RuleCatalog catalog, ElementId id, TraitColumn column) =>
         catalog.FindColumnHash(id, column).IsSome();
+
+    /// <summary>The armor set a set perk belongs to (Luminopotent, for Ionic Overclock).</summary>
+    public static Optional<ArmorSet> FindSetOfPerk(this ManifestExcerpt manifest, ItemHash perk) =>
+        manifest.ArmorSets.Values.Where(set => set.Perks.Any(setPerk => setPerk.Perk == perk)).Select(Optional.Some).FindFirstSome();
+
+    /// <summary>The armor sets the items belong to, each with how many of them are its pieces (in the order first worn).</summary>
+    public static ImmutableArray<WornSet> CountSetPieces(this ManifestExcerpt manifest, IEnumerable<ItemHash> items) =>
+    [
+        .. items
+            .Distinct()
+            .SelectMany(hash => manifest.FindItem(hash).Bind(item => item.Kind is ManifestKind.Armor armor ? armor.Set : Optional.None<ItemHash>())
+                .Match(set => new[] { set.Value }, _ => []))
+            .GroupBy(set => set)
+            .SelectMany(group => manifest.ArmorSets.TryGetValue(group.Key, out var set) ? new[] { new WornSet(set, group.Count()) } : []),
+    ];
+
+    /// <summary>The perks a set grants with that many pieces worn (2 pieces: its 2-piece perk).</summary>
+    public static IEnumerable<SetPerk> ListActivePerks(this WornSet worn) =>
+        worn.Set.Perks.Where(perk => perk.Pieces <= worn.Pieces);
 
     /// <summary>The armor slot of an armor piece, or of a mod that only fits it; none for anything else (a general mod).</summary>
     public static Optional<ArmorSlot> ReadArmorSlot(this ManifestItem item) =>

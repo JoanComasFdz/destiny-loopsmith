@@ -31,7 +31,7 @@
         </div>
     </header>
 
-    <LoadoutPanel Build="Build" OnPickPerk="OnPickPerk" />
+    <LoadoutPanel Build="Build" OnPickPerk="OnPickPerk" OnSetCatalyst="OnSetCatalyst" />
 
     <h3 class="section-label">Stats</h3>
     <div class="stats">
@@ -89,6 +89,10 @@
     /// <summary>A perk picked in the loadout (the designer applies it to the design).</summary>
     [Parameter]
     public EventCallback<PerkPick> OnPickPerk { get; set; }
+
+    /// <summary>An exotic's catalyst turned on or off in its details (the designer applies it to the design).</summary>
+    [Parameter]
+    public EventCallback<CatalystToggle> OnSetCatalyst { get; set; }
 
     private static string ToPercent(Optional<int> value) =>
         value.Match(v => (100m * Math.Clamp(v.Value, 0, BuildSheetShaping.MaxStat) / BuildSheetShaping.MaxStat), _ => 0m)

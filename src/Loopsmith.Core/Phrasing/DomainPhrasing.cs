@@ -72,6 +72,34 @@ public static class DomainPhrasing
     public static string DescribeTypedItemHash(this ManifestExcerpt manifest, ItemHash hash) =>
         manifest.FindItem(hash).Match(item => item.Value.Type.Match(type => $"{item.Value.Name} ({type.Value})", _ => item.Value.Name), _ => hash.Value.ToString(Invariant));
 
+    /// <summary>Where an element's facts come from, for a reader ("Destiny Data Compendium (2026-10-09), Armor Perks row 57").</summary>
+    public static string DescribeProvenance(this Provenance source) =>
+        source.Match(
+            compendium => $"Destiny Data Compendium ({compendium.Snapshot.Value.ToString("yyyy-MM-dd", Invariant)}), {compendium.Tab} row {compendium.Row.ToString(Invariant)}",
+            clarity => $"Clarity ({clarity.ClarityVersion})",
+            authored => $"Loopsmith's rules ({authored.RuleFile}:{authored.Line.ToString(Invariant)})",
+            claim => $"a creator's claim ({claim.SourceUrl})");
+
+    /// <summary>What kind of element it is, as a label ("Aspect", "Exotic weapon perk", "Armor set bonus").</summary>
+    public static string DescribeElementKind(this ElementKind kind) =>
+        kind switch
+        {
+            ElementKind.Keyword => "Keyword",
+            ElementKind.Super => "Super",
+            ElementKind.Grenade => "Grenade",
+            ElementKind.Melee => "Melee",
+            ElementKind.ClassAbility => "Class ability",
+            ElementKind.Aspect => "Aspect",
+            ElementKind.Fragment => "Fragment",
+            ElementKind.ExoticArmor => "Exotic armor",
+            ElementKind.ExoticWeapon => "Exotic weapon perk",
+            ElementKind.Catalyst => "Catalyst",
+            ElementKind.ArmorSetBonus => "Armor set bonus",
+            ElementKind.ArmorMod => "Armor mod",
+            ElementKind.ArtifactPerk => "Artifact perk",
+            _ => "Weapon perk",
+        };
+
     public static string DescribeLoadoutPart(this LoadoutPart part) =>
         part switch
         {

@@ -8,7 +8,8 @@ namespace Loopsmith.Core.LoadoutImporting;
 /// Pure: a DIM loadout → a <see cref="Build"/> of what the rule catalog recognises by manifest hash, and the rest left
 /// out (<see cref="Build.LeftOut"/>). Nothing is guessed (ADRs D12): an ability the catalog has no hash for is "?", an
 /// item it doesn't know is listed, not matched by name. A weapon is equipped when the manifest excerpt knows its slot,
-/// name and damage type (without perks: a loadout doesn't carry them); any other weapon is left out.
+/// name and damage type (without perks: a loadout doesn't carry them); any other weapon is left out. The armor's set
+/// perks the pieces grant (2 or 4 of a set, by the excerpt) are its set bonuses, where the catalog knows them.
 /// </summary>
 public static class DimLoadoutMapping
 {
@@ -60,6 +61,10 @@ public static class DimLoadoutMapping
             .GroupBy(weapon => weapon.Slot)
             .Select(slot => slot.First())
             .ToImmutableArray();
+        var setBonuses = catalog.Manifest.CountSetPieces(items.Select(entry => entry.Hash))
+            .SelectMany(worn => worn.ListActivePerks())
+            .SelectMany(perk => byHash.TryGetValue(perk.Perk, out var element) && element.Kind == ElementKind.ArmorSetBonus ? new[] { element.Id } : [])
+            .ToImmutableArray();
         var leftOut = recognised
             .Where(entry => !entry.Element.IsSome() || !IsPlaceable(entry.Part, entry.Element))
             .Where(entry => !weapons.Any(weapon => weapon.Hash == Optional.Some(entry.Hash)))
@@ -81,7 +86,7 @@ public static class DimLoadoutMapping
             ListAll(placed, LoadoutPart.SubclassPlug, ElementKind.Aspect),
             ListAll(placed, LoadoutPart.SubclassPlug, ElementKind.Fragment),
             FindFirst(placed, LoadoutPart.Item, ElementKind.ExoticArmor),
-            [],
+            setBonuses,
             ListAll(placed, LoadoutPart.ArmorMod, ElementKind.ArmorMod),
             ListAll(placed, LoadoutPart.ArtifactPerk, ElementKind.ArtifactPerk),
             weapons,
@@ -101,7 +106,7 @@ public static class DimLoadoutMapping
     /// </summary>
     private static Optional<WeaponLoadout> ReadWeapon(ManifestExcerpt manifest, ItemHash hash) =>
         manifest.FindItem(hash).Bind(item => item.Kind is ManifestKind.Weapon { DamageType: Optional<DamageType>.Some type } weapon
-            ? Optional.Some(new WeaponLoadout(weapon.Slot, item.Name, type.Value, item.Type.Bind(ToArchetype), [], Optional.Some(hash), []))
+            ? Optional.Some(new WeaponLoadout(weapon.Slot, item.Name, type.Value, item.Type.Bind(ToArchetype), [], Optional.Some(hash), [], false))
             : Optional.None<WeaponLoadout>());
 
     private static Optional<string> ToArchetype(string type)

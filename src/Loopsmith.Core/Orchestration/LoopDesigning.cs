@@ -98,9 +98,34 @@ public static class LoopDesigning
     /// weapon's entry of the embedded build file changes; the build is validated again and the steps replayed with it.
     /// </summary>
     public static Result<DesignSession, string> PickWeaponPerk(DesignSession session, int weapon, int column, Optional<ItemHash> perk) =>
+        EditWeapon(session, weapon, loadout => WeaponRolling.PickPerk(session.Build.Catalog, loadout, column, perk));
+
+    /// <summary>
+    /// The design with an exotic weapon's catalyst on or off (<paramref name="weapon"/> 0-based, in the build's order):
+    /// only that weapon's entry of the embedded build file changes (<c>catalyst: true</c>); the steps replay with it.
+    /// </summary>
+    public static Result<DesignSession, string> SetCatalyst(DesignSession session, int weapon, bool on) =>
+        EditWeapon(session, weapon, loadout => WeaponRolling.SetCatalyst(session.Build.Catalog, loadout, on));
+
+    /// <summary>The build's armor sets: per set, the pieces worn (when the build says) and which of its perks are active.</summary>
+    public static ImmutableArray<ArmorSetStatus> ListArmorSets(ValidatedBuild build) =>
+        ArmorSetting.ListArmorSets(build.Catalog, build.Build);
+
+    /// <summary>The build's set bonuses in none of the manifest excerpt's sets (shown on their own).</summary>
+    public static ImmutableArray<ElementId> ListLooseSetBonuses(ValidatedBuild build) =>
+        ArmorSetting.ListLooseBonuses(build.Catalog, build.Build);
+
+    /// <summary>What an element sets off in the build — each trigger, then its outcomes and reasons — for an item's details; nothing for an id the catalog doesn't have.</summary>
+    public static ImmutableArray<StyledLine> ExplainElement(ValidatedBuild build, ElementId id) =>
+        build.Catalog.Elements.TryGetValue(id, out var element)
+            ? BuildExplaining.RenderElementExplanation(BuildExplaining.ExplainElement(build, element))
+            : [];
+
+    /// <summary>One weapon of the embedded build changed: that entry rewritten, the build validated again, the steps replayed.</summary>
+    private static Result<DesignSession, string> EditWeapon(DesignSession session, int weapon, Func<WeaponLoadout, Result<WeaponLoadout, string>> change) =>
         FindWeapon(session.Build.Build, weapon)
-            .Bind(loadout => WeaponRolling.PickPerk(session.Build.Catalog, loadout, column, perk))
-            .Bind(picked => BuildFileEditing.ReplaceWeapon(session.Design.Build, weapon, picked))
+            .Bind(change)
+            .Bind(changed => BuildFileEditing.ReplaceWeapon(session.Design.Build, weapon, changed))
             .Map(text => session.Design.Build with { Text = text })
             .Bind(file => BuildFileParsing.ParseBuildFile(file)
                 .Bind(build => BuildValidation.ValidateBuild(build, session.Build.Catalog))

@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Globalization;
 using Dunet;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
@@ -8,8 +9,23 @@ using Loopsmith.Core.Phrasing;
 namespace Loopsmith.Web.Presentation;
 
 /// <summary>
+/// What tapping a square opens: an element of the rules (and Bungie's text for its item), an item only the manifest
+/// excerpt knows, an exotic weapon (its intrinsic, perks and catalyst) or its catalyst. Legendary armor and weapons
+/// open nothing: their perks and mods carry what there is to know.
+/// </summary>
+[Union]
+public partial record ItemDetails
+{
+    partial record OfElement(ElementId Element);
+    partial record OfItem(ItemHash Hash);
+    partial record OfWeapon(int Weapon);
+    partial record OfCatalyst(int Weapon);
+}
+
+/// <summary>
 /// One square of the DIM-style loadout: the item's icon (a bungie.net address) or none, its name, colour and rarity,
-/// and whether the rules know it (an item the DIM loadout had but the build leaves out is shown, dimmed).
+/// whether the rules know it (an item the DIM loadout had but the build leaves out is shown, dimmed), and what tapping
+/// it opens (none: nothing to show).
 /// </summary>
 public sealed record IconTile(
     string Name,
@@ -18,7 +34,8 @@ public sealed record IconTile(
     Optional<ItemTier> Tier,
     bool InRules,
     Optional<string> Description,
-    int Copies);
+    int Copies,
+    Optional<ItemDetails> Details);
 
 /// <summary>The subclass block: the subclass item, its super, the abilities (class, jump, melee, grenade), aspects, fragments.</summary>
 public sealed record SubclassView(
@@ -46,19 +63,33 @@ public partial record PerkSquare
     partial record Pickable(int Column, Optional<PickedPerk> Perk, ImmutableArray<PerkOption> Options);
 }
 
+/// <summary>An exotic's catalyst square: the catalyst item's tile and whether the build turns it on.</summary>
+public sealed record CatalystSquare(IconTile Tile, bool On);
+
 /// <summary>
-/// A weapon: where it is in the build (<see cref="Index"/>, what a pick names), its tile, slot, archetype, damage type
-/// (and that type's icon) and its perk squares: one per trait column the excerpt gives, then the perks the build names
-/// in none of them.
+/// A weapon: where it is in the build (<see cref="Index"/>, what a pick names), its tile, its light.gg page, slot,
+/// archetype, damage type (and that type's icon), its perk squares — one per trait column the excerpt gives, then the
+/// perks the build names in none of them — and an exotic's catalyst.
 /// </summary>
 public sealed record WeaponView(
     int Index,
     IconTile Weapon,
+    Optional<string> Page,
     WeaponSlot Slot,
     Optional<string> Archetype,
     DamageType Type,
     Optional<string> DamageIcon,
-    ImmutableArray<PerkSquare> Perks);
+    ImmutableArray<PerkSquare> Perks,
+    Optional<CatalystSquare> Catalyst);
+
+/// <summary>An exotic's catalyst turned on or off in the designer (weapon 0-based, in the build's order).</summary>
+public sealed record CatalystToggle(int Weapon, bool On);
+
+/// <summary>A set perk's square: its tile, how many pieces it needs and whether it is active.</summary>
+public sealed record SetPerkView(IconTile Tile, int Pieces, bool Active);
+
+/// <summary>An armor set: its name, the pieces the build wears (none: the build doesn't say) and its perks.</summary>
+public sealed record ArmorSetView(string Name, Optional<int> Pieces, ImmutableArray<SetPerkView> Perks);
 
 /// <summary>A perk picked in the designer: weapon <see cref="Weapon"/>'s column <see cref="Column"/> (both 0-based, in the build's order), or back to "?" when none.</summary>
 public sealed record PerkPick(int Weapon, int Column, Optional<ItemHash> Perk);
@@ -68,7 +99,7 @@ public sealed record ArmorView(ArmorSlot Slot, Optional<IconTile> Piece, Immutab
 
 /// <summary>
 /// A build laid out like DIM shows a loadout: subclass, artifact, weapons (kinetic, energy, power), armor with each
-/// piece's mods, general mods, set bonuses.
+/// piece's mods, general mods, the armor sets with their perks, and set bonuses in no set the excerpt has.
 /// </summary>
 public sealed record LoadoutView(
     SubclassView Subclass,
@@ -76,6 +107,7 @@ public sealed record LoadoutView(
     ImmutableArray<WeaponView> Weapons,
     ImmutableArray<ArmorView> Armor,
     ImmutableArray<IconTile> GeneralMods,
+    ImmutableArray<ArmorSetView> ArmorSets,
     ImmutableArray<IconTile> SetBonuses);
 
 /// <summary>
@@ -88,6 +120,7 @@ public sealed record LoadoutView(
 public static class LoadoutShaping
 {
     private const string IconHost = "https://www.bungie.net";
+    private const string PageHost = "https://www.light.gg/db/items/";
 
     private static readonly ImmutableArray<ArmorSlot> ArmorSlots = [ArmorSlot.Helmet, ArmorSlot.Arms, ArmorSlot.Chest, ArmorSlot.Legs, ArmorSlot.ClassItem];
 
@@ -111,7 +144,8 @@ public static class LoadoutShaping
             .ToImmutableArray();
 
         var subclass = new SubclassView(
-            catalog.FindSubclassItem(b.Class, b.Subclass).Map(item => DescribeItem(item, item.Name, true, Optional.None<string>(), b.Subclass.ToAffinity())),
+            catalog.FindSubclassItem(b.Class, b.Subclass).Map(item => DescribeItem(item, item.Name, true, Optional.None<string>(), b.Subclass.ToAffinity(),
+                Optional.Some<ItemDetails>(new ItemDetails.OfItem(item.Hash)))),
             DescribeAbility<ManifestKind.Super>(catalog, b.Abilities.Super, plugs),
             [
                 DescribeAbility<ManifestKind.ClassAbility>(catalog, b.Abilities.ClassAbility, plugs),
@@ -137,8 +171,15 @@ public static class LoadoutShaping
                     .Where(view => view.Piece.IsSome() || !view.Mods.IsEmpty),
             ],
             GroupCopies(mods.Where(mod => !mod.Slot.IsSome()).Select(mod => mod.Tile)),
-            GroupCopies(b.ArmorSetBonuses.Select(id => DescribeElement(catalog, id))));
+            [.. LoopDesigning.ListArmorSets(build).Select(set => DescribeArmorSet(catalog, set))],
+            GroupCopies(LoopDesigning.ListLooseSetBonuses(build).Select(id => DescribeElement(catalog, id))));
     }
+
+    /// <summary>light.gg's page for an item of the manifest (a sandbox perk has none).</summary>
+    public static Optional<string> ToPageUrl(RuleCatalog catalog, ItemHash hash) =>
+        catalog.Manifest.FindItem(hash).Bind(item => item.Kind is ManifestKind.Perk
+            ? Optional.None<string>()
+            : Optional.Some(PageHost + hash.Value.ToString(CultureInfo.InvariantCulture) + "/"));
 
     /// <summary>The icon of the build's subclass item (Arcstrider for an Arc Hunter), when the glossary and the excerpt have it.</summary>
     public static Optional<string> FindSubclassIcon(RuleCatalog catalog, GuardianClass guardianClass, Subclass subclass) =>
@@ -150,22 +191,31 @@ public static class LoadoutShaping
     private static IconTile DescribeElement(RuleCatalog catalog, ElementId id) =>
         catalog.Elements.TryGetValue(id, out var element)
             ? catalog.FindElementItem(id).Match(
-                item => DescribeItem(item.Value, element.Name, true, element.Description, element.Affinity),
-                _ => new IconTile(element.Name, Optional.None<string>(), element.Affinity, Optional.None<ItemTier>(), true, element.Description, 1))
-            : new IconTile(id.Value, Optional.None<string>(), Affinity.Neutral, Optional.None<ItemTier>(), true, Optional.None<string>(), 1);
+                item => DescribeItem(item.Value, element.Name, true, element.Description, element.Affinity, DetailElement(id)),
+                _ => new IconTile(element.Name, Optional.None<string>(), element.Affinity, Optional.None<ItemTier>(), true, element.Description, 1, DetailElement(id)))
+            : new IconTile(id.Value, Optional.None<string>(), Affinity.Neutral, Optional.None<ItemTier>(), true, Optional.None<string>(), 1, Optional.None<ItemDetails>());
+
+    private static Optional<ItemDetails> DetailElement(ElementId id) => Optional.Some<ItemDetails>(new ItemDetails.OfElement(id));
 
     private static IconTile DescribeUnknownHash(RuleCatalog catalog, ItemHash hash) =>
         new(catalog.Manifest.DescribeItemHash(hash), Optional.None<string>(), Affinity.Neutral, Optional.None<ItemTier>(), false,
-            Optional.Some("Not in Loopsmith's rules or its manifest excerpt yet."), 1);
+            Optional.Some("Not in Loopsmith's rules or its manifest excerpt yet."), 1, Optional.None<ItemDetails>());
 
-    private static IconTile DescribeItem(ManifestItem item, string name, bool inRules, Optional<string> description, Affinity affinity) =>
-        new(name, item.Icon.Map(ToIconUrl), affinity, item.Tier, inRules, description, 1);
+    private static IconTile DescribeItem(ManifestItem item, string name, bool inRules, Optional<string> description, Affinity affinity, Optional<ItemDetails> details) =>
+        new(name, item.Icon.Map(ToIconUrl), affinity, item.Tier, inRules, description, 1, details);
 
-    /// <summary>A hash the build left out: the manifest's name and icon when the excerpt has it, else just the hash.</summary>
+    /// <summary>
+    /// A hash the build left out: the manifest's name and icon when the excerpt has it, else just the hash. It opens its
+    /// manifest details, unless it is legendary armor or a legendary weapon (DIM's perks and mods say more).
+    /// </summary>
     private static IconTile DescribeLeftOut(RuleCatalog catalog, LeftOutEntry entry) =>
         entry.Item.Match(
-            known => DescribeItem(known.Value, known.Value.Name, false, Optional.Some("Not in Loopsmith's rules yet: left out of the build."), ToAffinity(known.Value)),
+            known => DescribeItem(known.Value, known.Value.Name, false, Optional.Some("Not in Loopsmith's rules yet: left out of the build."), ToAffinity(known.Value),
+                IsLegendaryGear(known.Value) ? Optional.None<ItemDetails>() : Optional.Some<ItemDetails>(new ItemDetails.OfItem(known.Value.Hash))),
             _ => DescribeUnknownHash(catalog, entry.Hash));
+
+    private static bool IsLegendaryGear(ManifestItem item) =>
+        item.Kind is ManifestKind.Armor or ManifestKind.Weapon && item.Tier != Optional.Some(ItemTier.Exotic);
 
     /// <summary>
     /// An ability slot: its element; or, when the build has "?", the left-out subclass plug of that kind the manifest
@@ -179,7 +229,7 @@ public static class LoadoutShaping
                 .Select(Optional.Some)
                 .FindFirstSome()
                 .UnwrapOr(new IconTile(DomainPhrasing.Unknown, Optional.None<string>(), Affinity.Neutral, Optional.None<ItemTier>(), false,
-                    Optional.Some("Not known: not in the rule catalog yet, so it sets nothing off."), 1)));
+                    Optional.Some("Not known: not in the rule catalog yet, so it sets nothing off."), 1, Optional.None<ItemDetails>())));
 
     private static IEnumerable<IconTile> DescribeLeftOutPlugs<TKind>(RuleCatalog catalog, ImmutableArray<LeftOutEntry> plugs)
         where TKind : ManifestKind =>
@@ -189,28 +239,61 @@ public static class LoadoutShaping
     {
         var catalog = build.Catalog;
         var item = weapon.Hash.Bind(hash => catalog.Manifest.FindItem(hash));
+        var details = item.Bind(known => known.Tier == Optional.Some(ItemTier.Exotic)
+            ? Optional.Some<ItemDetails>(new ItemDetails.OfWeapon(index))
+            : Optional.None<ItemDetails>());
         var tile = item.Match(
-            known => DescribeItem(known.Value, weapon.Name, true, Optional.None<string>(), weapon.Type.ToAffinity()),
-            _ => new IconTile(weapon.Name, Optional.None<string>(), weapon.Type.ToAffinity(), Optional.None<ItemTier>(), true, Optional.None<string>(), 1));
+            known => DescribeItem(known.Value, weapon.Name, true, Optional.None<string>(), weapon.Type.ToAffinity(), details),
+            _ => new IconTile(weapon.Name, Optional.None<string>(), weapon.Type.ToAffinity(), Optional.None<ItemTier>(), true, Optional.None<string>(), 1, details));
         var damageIcon = catalog.Manifest.DamageTypeIcons.TryGetValue(weapon.Type, out var icon) ? Optional.Some(ToIconUrl(icon)) : Optional.None<string>();
+        var slots = LoopDesigning.ListPerkSlots(build, weapon);
         return new WeaponView(
             index,
             tile,
+            weapon.Hash.Bind(hash => ToPageUrl(catalog, hash)),
             weapon.Slot,
             weapon.Archetype,
             weapon.Type,
             damageIcon,
-            [.. LoopDesigning.ListPerkSlots(build, weapon).Select(slot => DescribePerkSlot(catalog, slot))]);
+            [.. slots.SelectMany(slot => DescribePerkSlot(catalog, slot))],
+            slots.OfType<WeaponPerkSlot.Catalyst>().Select(catalyst => Optional.Some(DescribeCatalyst(catalog, catalyst, index))).FindFirstSome());
     }
 
-    private static PerkSquare DescribePerkSlot(RuleCatalog catalog, WeaponPerkSlot slot) =>
-        slot.Match<PerkSquare>(
-            named => new PerkSquare.Shown(DescribeElement(catalog, named.Perk)),
-            fixedPerk => new PerkSquare.Shown(DescribeTrait(catalog, fixedPerk.Perk)),
-            rolling => new PerkSquare.Pickable(
-                rolling.Column,
-                rolling.Perk.Map(hash => new PickedPerk(hash, DescribeTrait(catalog, hash))),
-                [.. rolling.Options.Select(hash => new PerkOption(hash, DescribeTrait(catalog, hash), catalog.Manifest.FindItem(hash).Bind(item => item.Type)))]));
+    /// <summary>A perk square: the intrinsic and the catalyst have none (the weapon's details show the intrinsic; the catalyst has its own square).</summary>
+    private static IEnumerable<PerkSquare> DescribePerkSlot(RuleCatalog catalog, WeaponPerkSlot slot) =>
+        slot.Match<IEnumerable<PerkSquare>>(
+            _ => [],
+            named => [new PerkSquare.Shown(DescribeElement(catalog, named.Perk))],
+            fixedPerk => [new PerkSquare.Shown(DescribeTrait(catalog, fixedPerk.Perk))],
+            rolling =>
+            [
+                new PerkSquare.Pickable(
+                    rolling.Column,
+                    rolling.Perk.Map(hash => new PickedPerk(hash, DescribeTrait(catalog, hash))),
+                    [.. rolling.Options.Select(hash => new PerkOption(hash, DescribeTrait(catalog, hash), catalog.Manifest.FindItem(hash).Bind(item => item.Type)))]),
+            ],
+            _ => []);
+
+    private static CatalystSquare DescribeCatalyst(RuleCatalog catalog, WeaponPerkSlot.Catalyst catalyst, int weapon)
+    {
+        var details = Optional.Some<ItemDetails>(new ItemDetails.OfCatalyst(weapon));
+        var element = catalog.FindElementByHash(catalyst.Plug);
+        var tile = catalog.Manifest.FindItem(catalyst.Plug).Match(
+            item => DescribeItem(item.Value, item.Value.Name, element.IsSome(), element.Bind(known => known.Description), Affinity.Neutral, details),
+            _ => DescribeUnknownHash(catalog, catalyst.Plug) with { Details = details });
+        return new CatalystSquare(tile, catalyst.On);
+    }
+
+    private static ArmorSetView DescribeArmorSet(RuleCatalog catalog, ArmorSetStatus set) =>
+        new(set.Set.Name, set.Pieces, [.. set.Perks.Select(perk => new SetPerkView(
+            perk.Element.Match(
+                id => DescribeElement(catalog, id.Value),
+                _ => catalog.Manifest.FindItem(perk.Perk.Perk).Match(
+                    item => DescribeItem(item.Value, item.Value.Name, false, Optional.Some("Not in Loopsmith's rules yet."), Affinity.Neutral,
+                        Optional.Some<ItemDetails>(new ItemDetails.OfItem(item.Value.Hash))),
+                    _ => DescribeUnknownHash(catalog, perk.Perk.Perk))),
+            perk.Perk.Pieces,
+            perk.Active))]);
 
     /// <summary>A perk of a weapon's roll by hash: its catalog element when the rules have it, else the manifest's (dimmed).</summary>
     private static IconTile DescribeTrait(RuleCatalog catalog, ItemHash hash) =>

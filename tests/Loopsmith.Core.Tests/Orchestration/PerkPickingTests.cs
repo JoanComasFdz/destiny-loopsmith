@@ -91,7 +91,7 @@ public sealed class PerkPickingTests
     public void A_roll_pick_outside_its_column_is_a_warning()
     {
         var build = new WeaponLoadout(WeaponSlot.Kinetic, "Festival Flight", DamageType.Strand, Optional.None<string>(), [], Optional.Some(ItemHash.From(4019651319u)),
-            [Optional.Some(ItemHash.From(AttritionOrbs)), Optional.None<ItemHash>(), Optional.Some(ItemHash.From(Slice))]);
+            [Optional.Some(ItemHash.From(AttritionOrbs)), Optional.None<ItemHash>(), Optional.Some(ItemHash.From(Slice))], false);
         var session = StartOwnersDimDesign();
 
         var validated = BuildValidation.ValidateBuild(session.Build.Build with { Weapons = [build] }, Catalog)
@@ -119,7 +119,7 @@ public sealed class PerkPickingTests
 
         Assert.Equal(
             [Optional.Some(ItemHash.From(EnhancedSlice)), Optional.Some(ItemHash.From(AttritionOrbs))],
-            slots.Select(slot => Assert.IsType<WeaponPerkSlot.Rolling>(slot).Perk));
+            slots.OfType<WeaponPerkSlot.Rolling>().Select(slot => slot.Perk));
         Assert.DoesNotContain(validated.Equipped, equipped => equipped.Element.Id.Value == "slice");
         Assert.Contains(validated.Equipped, equipped => equipped.Element.Id.Value == "attrition-orbs");
         Assert.Contains(validated.Issues, issue => issue.Severity == Severity.Warning
@@ -127,7 +127,7 @@ public sealed class PerkPickingTests
     }
 
     [Fact]
-    public void A_column_that_does_not_roll_holds_its_perk_and_a_perk_in_no_column_is_listed_after()
+    public void An_exotic_lists_its_intrinsic_its_fixed_columns_a_perk_in_no_column_and_its_catalyst()
     {
         var session = StartOwnersDimDesign();
         var thunderlord = session.Build.Build.Weapons[1] with { Perks = [ElementId.From("slice")] };
@@ -136,9 +136,11 @@ public sealed class PerkPickingTests
 
         Assert.Equal(
             [
+                new WeaponPerkSlot.Intrinsic(ItemHash.From(4148158229u)),
                 new WeaponPerkSlot.Fixed(0, ItemHash.From(1419069769u)),
                 new WeaponPerkSlot.Fixed(1, ItemHash.From(2779035018u)),
                 new WeaponPerkSlot.Named(ElementId.From("slice")),
+                new WeaponPerkSlot.Catalyst(ItemHash.From(1550063955u), false),
             ],
             slots);
     }

@@ -63,7 +63,7 @@
 
         <div class="designer-grid">
             <aside class="col-build">
-                <BuildPanel Build="session.Build" Issues="LoopDesigning.ListDesignIssues(session)" OnPickPerk="PickPerk" />
+                <BuildPanel Build="session.Build" Issues="LoopDesigning.ListDesignIssues(session)" OnPickPerk="PickPerk" OnSetCatalyst="SetCatalyst" />
             </aside>
             <div class="col-loop">
                 <ExplainPanel Build="session.Build" />
@@ -177,23 +177,31 @@
             : Optional.Some(number);
 
     /// <summary>A perk picked in the build panel: the embedded build's weapon changes and the steps replay with it.</summary>
-    private void PickPerk(PerkPick pick)
+    private void PickPerk(PerkPick pick) =>
+        ApplyBuildEdit(session => LoopDesigning.PickWeaponPerk(session, pick.Weapon, pick.Column, pick.Perk));
+
+    /// <summary>A change to the embedded build: the new session when it succeeds, else its message in the status bar.</summary>
+    private void ApplyBuildEdit(Func<DesignSession, Result<DesignSession, string>> edit)
     {
         if (Workbench.Session is not Optional<DesignSession>.Some open)
         {
             return;
         }
 
-        var picked = LoopDesigning.PickWeaponPerk(open.Value, pick.Weapon, pick.Column, pick.Perk); // pure
-        if (picked is Result<DesignSession, string>.Ok next)
+        var edited = edit(open.Value);                                                           // pure
+        if (edited is Result<DesignSession, string>.Ok next)
         {
             EditSession(_ => next.Value, scrollToEnd: false, keepSelection: true);
         }
-        else if (picked is Result<DesignSession, string>.Error error)
+        else if (edited is Result<DesignSession, string>.Error error)
         {
             Workbench.Status = error.Failure;
         }
     }
+
+    /// <summary>An exotic's catalyst turned on or off: the embedded build's weapon changes and the steps replay with it.</summary>
+    private void SetCatalyst(CatalystToggle toggle) =>
+        ApplyBuildEdit(session => LoopDesigning.SetCatalyst(session, toggle.Weapon, toggle.On));
 
     /// <summary>Applies a pure edit to the open design (every edit is a new immutable session).</summary>
     private void EditSession(Func<DesignSession, DesignSession> edit, bool scrollToEnd, bool keepSelection = false)

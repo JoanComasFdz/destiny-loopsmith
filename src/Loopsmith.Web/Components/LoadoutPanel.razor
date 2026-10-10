@@ -1,6 +1,8 @@
 @* A build laid out the way DIM shows a loadout: the subclass with its super, abilities, aspects and fragments; the
-   artifact perks; the weapons; each armor piece with the mods of its slot; the general mods. Icons are Bungie's (from
-   the manifest excerpt); a square without one shows its initials. What the rules don't know is dimmed. *@
+   artifact perks; the weapons (an exotic's catalyst after its perks); each armor piece with the mods of its slot; the
+   general mods; the armor sets with their 2- and 4-piece perks. Icons are Bungie's (from the manifest excerpt); a square
+   without one shows its initials. What the rules don't know is dimmed. Tapping a square opens its details (Bungie's
+   text and Loopsmith's rules); legendary armor and weapons open none, their perks and mods do. *@
 @{
     var view = LoadoutShaping.ShapeLoadout(Build);
 }
@@ -62,7 +64,14 @@
                             }
                         </div>
                         <div class="weapon-text">
-                            <span class="weapon-line-name">@weapon.Weapon.Name</span>
+                            @if (weapon.Page is Optional<string>.Some weaponPage)
+                            {
+                                <a class="weapon-line-name" href="@weaponPage.Value" target="_blank" rel="noopener noreferrer" title="@weapon.Weapon.Name on light.gg">@weapon.Weapon.Name</a>
+                            }
+                            else
+                            {
+                                <span class="weapon-line-name">@weapon.Weapon.Name</span>
+                            }
                             <span class="weapon-line-sub">@weapon.Slot.DescribeWeaponSlot()@(weapon.Archetype is Optional<string>.Some archetype ? $" · {DomainPhrasing.DescribeArchetype(archetype.Value)}" : "")</span>
                         </div>
                         <div class="weapon-perks" aria-label="Perks">
@@ -73,13 +82,19 @@
                                     <button type="button" class="perk-slot @(IsOpen(weapon.Index, pickable.Column) ? "open" : "")" data-column="@pickable.Column"
                                             aria-expanded="@(IsOpen(weapon.Index, pickable.Column) ? "true" : "false")"
                                             title="@DescribePickTitle(weapon, pickable)" @onclick="() => TogglePicker(weapon.Index, pickable.Column)">
-                                        @RenderPerk(square)
+                                        @RenderPerk(square, false)
                                     </button>
                                 }
                                 else
                                 {
-                                    @RenderPerk(square)
+                                    @RenderPerk(square, true)
                                 }
+                            }
+                            @if (weapon.Catalyst is Optional<CatalystSquare>.Some catalyst)
+                            {
+                                <span class="catalyst-slot @(catalyst.Value.On ? "on" : "off")" data-testid="catalyst" data-on="@(catalyst.Value.On ? "true" : "false")">
+                                    @RenderTile(catalyst.Value.Tile with { Name = $"{catalyst.Value.Tile.Name} ({(catalyst.Value.On ? "on" : "off")})" }, "perk catalyst")
+                                </span>
                             }
                         </div>
                     </li>
@@ -99,7 +114,7 @@
                                         <button type="button" class="perk-option @(picked ? "picked" : "") @(option.Tile.InRules ? "in-rules" : "")"
                                                 data-hash="@option.Hash.Value" aria-pressed="@(picked ? "true" : "false")"
                                                 title="@DescribeTooltip(option.Tile)" @onclick="() => PickPerkAsync(weapon.Index, open.Value.Column, Optional.Some(option.Hash))">
-                                            @RenderTile(option.Tile, "perk")
+                                            @RenderTile(option.Tile, "perk", false)
                                             <span class="perk-option-text">
                                                 <span class="perk-option-name">@option.Tile.Name</span>
                                                 <span class="perk-option-type">@DescribeOption(option)</span>
@@ -109,6 +124,10 @@
                                 </div>
                                 <div class="perk-picker-foot">
                                     <span class="muted">@PickerNote</span>
+                                    @if (open.Value.Perk is Optional<PickedPerk>.Some held && held.Value.Tile.Details is Optional<ItemDetails>.Some heldDetails)
+                                    {
+                                        <button type="button" class="btn ghost" data-action="perk-details" @onclick="() => OpenDetails(heldDetails.Value)">About @held.Value.Tile.Name</button>
+                                    }
                                     @if (open.Value.Perk.IsSome())
                                     {
                                         <button type="button" class="btn" data-action="perk-clear" @onclick="() => PickPerkAsync(weapon.Index, open.Value.Column, Optional.None<ItemHash>())">Clear (?)</button>
@@ -162,17 +181,41 @@
         </section>
     }
 
-    @if (!view.SetBonuses.IsEmpty)
+    @if (!view.ArmorSets.IsEmpty || !view.SetBonuses.IsEmpty)
     {
-        <div class="set-bonuses">
+        <div class="set-bonuses" data-testid="armor-sets">
             <span class="loadout-sublabel">Armor set</span>
-            <div class="chips">
-                @foreach (var bonus in view.SetBonuses)
-                {
-                    <span class="chip @ToneStyling.ToAffinityClass(bonus.Affinity)" title="@DescribeTooltip(bonus)">@bonus.Name</span>
-                }
-            </div>
+            @foreach (var set in view.ArmorSets)
+            {
+                <div class="armor-set" data-set="@set.Name">
+                    <span class="armor-set-name">@set.Name@(set.Pieces is Optional<int>.Some pieces ? $" · {pieces.Value} {(pieces.Value == 1 ? "piece" : "pieces")}" : "")</span>
+                    <div class="armor-set-perks">
+                        @foreach (var perk in set.Perks)
+                        {
+                            <div class="set-perk @(perk.Active ? "active" : "inactive")" data-pieces="@perk.Pieces">
+                                @RenderTile(perk.Tile, "set-perk")
+                                <span class="set-perk-text">
+                                    <span class="set-perk-name">@perk.Tile.Name</span>
+                                    <span class="set-perk-pieces">@perk.Pieces-piece@(perk.Active ? "" : " · not active")</span>
+                                </span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+            @foreach (var bonus in view.SetBonuses)
+            {
+                <div class="set-perk active">
+                    @RenderTile(bonus, "set-perk")
+                    <span class="set-perk-text"><span class="set-perk-name">@bonus.Name</span></span>
+                </div>
+            }
         </div>
+    }
+
+    @if (details is Optional<ItemDetails>.Some shownDetails && ItemInfoShaping.ShapeInfo(Build, shownDetails.Value) is Optional<ItemInfo>.Some info)
+    {
+        <ItemInfoDialog Info="info.Value" OnClose="CloseDetails" OnSetCatalyst="OnSetCatalyst" />
     }
 </div>
 
@@ -187,6 +230,21 @@
     /// <summary>Set by the designer: a weapon's perk squares then open a picker of what each column rolls with. Unset (the Home card): read-only.</summary>
     [Parameter]
     public EventCallback<PerkPick> OnPickPerk { get; set; }
+
+    /// <summary>Set by the designer: an exotic's catalyst can be turned on or off from its details. Unset (the Home card): read-only.</summary>
+    [Parameter]
+    public EventCallback<CatalystToggle> OnSetCatalyst { get; set; }
+
+    private Optional<ItemDetails> details = Optional.None<ItemDetails>();
+
+    private void OpenDetails(ItemDetails open)
+    {
+        ClosePicker();
+        details = Optional.Some(open);
+    }
+
+    private void CloseDetails() =>
+        details = Optional.None<ItemDetails>();
 
     private const string PickerNote = "Green: the rules know it, so it sets things off in the loop; the rest only shows on the weapon.";
 
@@ -238,15 +296,16 @@
         await OnPickPerk.InvokeAsync(new PerkPick(weapon, column, perk));                        // impure
     }
 
-    private RenderFragment RenderPerk(PerkSquare square) => __builder =>
+    /// <summary>A perk square; <paramref name="tappable"/> false inside the picker's button (a button can't hold another).</summary>
+    private RenderFragment RenderPerk(PerkSquare square, bool tappable) => __builder =>
     {
         @switch (square)
         {
             case PerkSquare.Shown shown:
-                @RenderTile(shown.Perk, "perk")
+                @RenderTile(shown.Perk, "perk", tappable)
                 break;
             case PerkSquare.Pickable { Perk: Optional<PickedPerk>.Some held }:
-                @RenderTile(held.Value.Tile, "perk")
+                @RenderTile(held.Value.Tile, "perk", tappable)
                 break;
             default:
                 <span class="icon-tile perk empty-perk" title="@(CanPick ? PickPerk : MissingPerk)" aria-label="Perk not picked">?</span>
@@ -260,23 +319,39 @@
     private static string DescribeOption(PerkOption option) =>
         string.Join(" · ", new[] { option.Type.UnwrapOr(""), option.Tile.InRules ? "in the rules" : "" }.Where(part => part.Length > 0));
 
-    private RenderFragment RenderTile(IconTile tile, string kind) => __builder =>
+    /// <summary>A square: a button that opens its details when it has some (and <paramref name="tappable"/>), else a plain square.</summary>
+    private RenderFragment RenderTile(IconTile tile, string kind, bool tappable = true) => __builder =>
     {
-        <span class="icon-tile @kind @ToneStyling.ToAffinityClass(tile.Affinity) @DescribeTier(tile) @(tile.InRules ? "" : "out")"
-              title="@DescribeTooltip(tile)" aria-label="@tile.Name">
-            @if (tile.Icon is Optional<string>.Some icon)
-            {
-                <img src="@icon.Value" alt="" loading="lazy" />
-            }
-            else
-            {
-                <span class="icon-initials">@ToInitials(tile.Name)</span>
-            }
-            @if (tile.Copies > 1)
-            {
-                <span class="icon-count">×@tile.Copies</span>
-            }
-        </span>
+        @if (tappable && tile.Details is Optional<ItemDetails>.Some tileDetails)
+        {
+            <button type="button" class="icon-tile tappable @kind @ToneStyling.ToAffinityClass(tile.Affinity) @DescribeTier(tile) @(tile.InRules ? "" : "out")"
+                    title="@DescribeTooltip(tile)" aria-label="@tile.Name" aria-haspopup="dialog" @onclick="() => OpenDetails(tileDetails.Value)">
+                @RenderTileFace(tile)
+            </button>
+        }
+        else
+        {
+            <span class="icon-tile @kind @ToneStyling.ToAffinityClass(tile.Affinity) @DescribeTier(tile) @(tile.InRules ? "" : "out")"
+                  title="@DescribeTooltip(tile)" aria-label="@tile.Name">
+                @RenderTileFace(tile)
+            </span>
+        }
+    };
+
+    private RenderFragment RenderTileFace(IconTile tile) => __builder =>
+    {
+        @if (tile.Icon is Optional<string>.Some icon)
+        {
+            <img src="@icon.Value" alt="" loading="lazy" />
+        }
+        else
+        {
+            <span class="icon-initials">@ToInitials(tile.Name)</span>
+        }
+        @if (tile.Copies > 1)
+        {
+            <span class="icon-count">×@tile.Copies</span>
+        }
     };
 
     private static string DescribeTier(IconTile tile) =>

@@ -1,0 +1,93 @@
+@* An item's details: Bungie's text and, for what the rules know, Loopsmith's rules (written from the Compendium or
+   Clarity, with their source), section by section — an exotic weapon's intrinsic, perks and catalyst. *@
+<Modal Title="@Info.Name" TitleUrl="Info.Page" OnClose="OnClose">
+    <div class="item-info @ToneStyling.ToAffinityClass(Info.Affinity)" data-testid="item-info">
+        <header class="item-info-head">
+            @if (Info.Icon is Optional<string>.Some icon)
+            {
+                <img class="item-info-icon @DescribeTier(Info.Tier)" src="@icon.Value" alt="" />
+            }
+            @if (Info.TypeLine is Optional<string>.Some type)
+            {
+                <span class="item-info-type">@type.Value</span>
+            }
+        </header>
+        @foreach (var section in Info.Sections)
+        {
+            <section class="info-section">
+                @if (section.Name is Optional<string>.Some name)
+                {
+                    <h3 class="info-section-title">
+                        @if (section.Icon is Optional<string>.Some sectionIcon)
+                        {
+                            <img class="info-section-icon" src="@sectionIcon.Value" alt="" />
+                        }
+                        <span>@name.Value</span>
+                        @if (section.Label is Optional<string>.Some label)
+                        {
+                            <span class="info-label">@label.Value</span>
+                        }
+                    </h3>
+                }
+                @if (section.BungieText is Optional<string>.Some bungie)
+                {
+                    <div class="info-source">Bungie</div>
+                    <p class="info-bungie">@bungie.Value</p>
+                }
+                <div class="info-source">Loopsmith's rules</div>
+                @if (section.Rules is Optional<InfoRules>.Some rules)
+                {
+                    @if (rules.Value.Description is Optional<string>.Some description)
+                    {
+                        <p class="info-rules-text">@description.Value</p>
+                    }
+                    @if (rules.Value.Inert)
+                    {
+                        <p class="muted info-note">No rule is written for it yet: it sets nothing off in a loop.</p>
+                    }
+                    else
+                    {
+                        <StyledLines Lines="rules.Value.Explanation" />
+                    }
+                    <p class="info-cite">Source: @rules.Value.Source</p>
+                }
+                else
+                {
+                    <p class="muted info-note">Not in Loopsmith's rules yet: it sets nothing off in a loop.</p>
+                }
+                @if (section.Catalyst is Optional<CatalystToggle>.Some catalyst)
+                {
+                    @if (OnSetCatalyst.HasDelegate)
+                    {
+                        <button type="button" class="btn catalyst-switch @(catalyst.Value.On ? "on" : "")" role="switch" aria-checked="@(catalyst.Value.On ? "true" : "false")"
+                                data-action="catalyst-toggle" @onclick="() => SetCatalystAsync(catalyst.Value)">
+                            Catalyst @(catalyst.Value.On ? "on" : "off") — turn it @(catalyst.Value.On ? "off" : "on")
+                        </button>
+                    }
+                    else
+                    {
+                        <p class="muted info-note">Catalyst @(catalyst.Value.On ? "on" : "off"). Turn it on or off while designing the loop.</p>
+                    }
+                }
+            </section>
+        }
+    </div>
+</Modal>
+
+@code {
+    [Parameter, EditorRequired]
+    public ItemInfo Info { get; set; } = null!;
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    /// <summary>Set by the designer: the catalyst's switch turns it on or off. Unset (the Home card): it only says which.</summary>
+    [Parameter]
+    public EventCallback<CatalystToggle> OnSetCatalyst { get; set; }
+
+    private async Task SetCatalystAsync(CatalystToggle current) =>
+        await OnSetCatalyst.InvokeAsync(current with { On = !current.On });                      // impure
+
+    private static string DescribeTier(Optional<ItemTier> tier) =>
+        tier.Match(known => known.Value == ItemTier.Exotic ? "exotic" : known.Value == ItemTier.Legendary ? "legendary" : "", _ => "");
+}

@@ -49,3 +49,22 @@ elements:
         chance: true
         reason: "Keep landing hits with this weapon and every few hits it drops an Orb of Power."
     passives: []
+
+  # A generic trait: Thunderlord's second (fixed) column in the manifest excerpt, and No Time to
+  # Explain also lists it (compendium/2026-10-09/Exotic Weapons#36).
+  - id: feeding-frenzy
+    name: Feeding Frenzy
+    kind: weaponPerk
+    affinity: neutral
+    hash: 2779035018
+    description: "Each kill with the weapon adds a reload buff stack (up to x5, 3.5 s, kept through stow): +8 / +50 / +60 / +75 / +100 Reload Speed and a 0.975x / 0.9x / 0.87x / 0.84x / 0.8x reload duration at x1 to x5."
+    source: "compendium/2026-10-09/Weapon Perks#92"
+    # Not expressible: the reload buff needs a glossary buff for Feeding Frenzy (stacks, up to x5,
+    # 3.5 s; not in the glossary), and its bonus changes with the stack level, so a modifyWeaponStats
+    # value could only be "?". modifyWeaponStats also can't say "this weapon", and as a generic
+    # trait a `slot:` rule would be wrong for the other weapons that roll it.
+    # Nothing in a loop reacts to reload speed (see Spark of Frequency's reload buff,
+    # hunter/arc.yaml). The enhanced trait's values (+13 / +55 / +65 / +85 / +100 Reload Speed) belong
+    # to another plug.
+    rules: []
+    passives: []

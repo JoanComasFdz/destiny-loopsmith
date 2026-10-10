@@ -16,16 +16,29 @@ public static class WeaponRolling
     private sealed record Placing(ImmutableArray<WeaponPerkSlot> Slots, ImmutableArray<ElementId> Unplaced);
 
     /// <summary>
-    /// The weapon's perks: one slot per trait column the excerpt gives, in column order, then each perk the build names
-    /// that is in none of them. A named perk whose column holds another (the roll's pick) is in neither: see
-    /// <see cref="ListDisplacedPerks"/>.
+    /// The weapon's perks: its intrinsic perk, one slot per trait column the excerpt gives, in column order, each perk the
+    /// build names that is in none of them, then its catalyst (an exotic's: on or off). A named perk whose column holds
+    /// another (the roll's pick) is in none: see <see cref="ListDisplacedPerks"/>.
     /// </summary>
     public static ImmutableArray<WeaponPerkSlot> ListPerkSlots(RuleCatalog catalog, WeaponLoadout weapon)
     {
+        var kind = catalog.Manifest.FindWeaponKind(weapon);
         var columns = catalog.Manifest.ListTraitColumns(weapon);
         var placed = PlaceColumns(catalog, weapon, columns);
-        return [.. placed.Slots, .. placed.Unplaced.Where(id => !IsInAnyColumn(catalog, id, columns)).Select(id => new WeaponPerkSlot.Named(id))];
+        return
+        [
+            .. ToSome(kind.Bind(found => found.Intrinsic)).Select(perk => new WeaponPerkSlot.Intrinsic(perk)),
+            .. placed.Slots,
+            .. placed.Unplaced.Where(id => !IsInAnyColumn(catalog, id, columns)).Select(id => new WeaponPerkSlot.Named(id)),
+            .. ToSome(kind.Bind(found => found.Catalyst)).Select(plug => new WeaponPerkSlot.Catalyst(plug, weapon.Catalyst)),
+        ];
     }
+
+    /// <summary>The weapon with its catalyst on or off; on only when the excerpt says it has one.</summary>
+    public static Result<WeaponLoadout, string> SetCatalyst(RuleCatalog catalog, WeaponLoadout weapon, bool on) =>
+        !on || catalog.Manifest.FindWeaponKind(weapon).Bind(kind => kind.Catalyst).IsSome()
+            ? new Result<WeaponLoadout, string>.Ok(weapon with { Catalyst = on })
+            : new Result<WeaponLoadout, string>.Error($"{weapon.Name} has no catalyst in the manifest excerpt.");
 
     /// <summary>The perks the build names in a column that holds another perk (the roll's pick, or a perk named before it): they don't count.</summary>
     public static ImmutableArray<ElementId> ListDisplacedPerks(RuleCatalog catalog, WeaponLoadout weapon)
@@ -69,6 +82,9 @@ public static class WeaponRolling
             : new WeaponPerkSlot.Rolling(number, column.Options, pick.IsSome() ? pick : named.Bind(id => catalog.FindColumnHash(id, column)));
         return new Placing(placing.Slots.Add(slot), unplaced);
     }
+
+    private static IEnumerable<T> ToSome<T>(Optional<T> optional) =>
+        optional.Match(some => new[] { some.Value }, _ => []);
 
     private static bool IsInAnyColumn(RuleCatalog catalog, ElementId id, ImmutableArray<TraitColumn> columns) =>
         columns.Any(column => catalog.IsInColumn(id, column));

@@ -107,6 +107,7 @@ public static class BuildFileWriting
         .. ToListEntry("perks", weapon.Perks),
         .. weapon.Hash.Match(hash => ToEntry("hash", hash.Value.Value.ToString(CultureInfo.InvariantCulture)), _ => []),
         .. ToRollEntry(weapon.Roll),
+        .. weapon.Catalyst ? ToEntry("catalyst", "true") : [],
         new MappingEnd(),
     ];
 
