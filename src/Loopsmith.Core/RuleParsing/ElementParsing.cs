@@ -51,7 +51,7 @@ internal static class ElementParsing
                 map.ReadRequired("kind", ReadVocabularyWord<ElementKind>),
                 map.ReadRequired("affinity", ReadVocabularyWord<Affinity>),
                 map.ReadOptional("class", ReadVocabularyWord<GuardianClass>),
-                map.ReadOptional("hash", ReadItemHash),
+                map.ReadOrDefault("hash", ReadItemHashes, []),
                 map.ReadOptional("description", YamlReading.ToText),
                 map.ReadOrDefault("rules", rules => rules.ReadEach("rule", rule => RuleBodyParsing.ReadRule(scope, rule)), []),
                 map.ReadOrDefault(
@@ -61,9 +61,9 @@ internal static class ElementParsing
                 map.ReadOptional("ability", ReadAbilityProfile),
                 map.ReadOptional("fragmentSlots", ReadNonNegativeInteger),
                 map.ReadOrDefault("source", ReadProvenance, ToAuthored(map)),
-                (_, id, name, kind, affinity, guardianClass, hash, description, rules, passives, ability, fragmentSlots, source) =>
+                (_, id, name, kind, affinity, guardianClass, hashes, description, rules, passives, ability, fragmentSlots, source) =>
                     new BuildElement(
-                        id, name, kind, affinity, guardianClass, hash, description, rules, passives, ability, fragmentSlots, source))
+                        id, name, kind, affinity, guardianClass, hashes, description, rules, passives, ability, fragmentSlots, source))
             .Bind(element => Combine(
                 CheckFragmentSlots(map, element),
                 CheckAbilityProfile(map, element),

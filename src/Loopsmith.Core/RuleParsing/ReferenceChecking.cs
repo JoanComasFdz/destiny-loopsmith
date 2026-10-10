@@ -20,6 +20,24 @@ internal sealed record ReferenceScope(Optional<KeywordGlossary> Glossary);
 internal static class ReferenceChecking
 {
     /// <summary>
+    /// A manifest hash names one element: a hash on two elements (or twice on one) is an error at the repeat, so a
+    /// DIM link's item is recognised as one element or none.
+    /// </summary>
+    internal static Result<Unit, Errors> CheckUniqueHashes(ImmutableArray<Located<BuildElement>> elements)
+    {
+        var errors = elements
+            .SelectMany(element => element.Value.Hashes.Select(hash => (Hash: hash, Element: element)))
+            .GroupBy(entry => entry.Hash)
+            .SelectMany(group => group.Skip(1).Select(repeat => new ParseError(
+                repeat.Element.Path,
+                Optional.Some(repeat.Element.Line),
+                $"hash {group.Key} of '{repeat.Element.Value.Id}' is already on '{group.First().Element.Value.Id}' "
+                + $"({group.First().Element.Path}:{group.First().Element.Line})")))
+            .ToImmutableArray();
+        return errors.IsEmpty ? Succeed<Unit>(new Unit.Value()) : Fail<Unit>(errors);
+    }
+
+    /// <summary>
     /// <c>doesNotStackWith</c> names other elements of the catalog, never the rule's own element, and never leads
     /// back to it (A → B → A, or a longer circle: every rule in it would give way and none would apply). Errors are
     /// reported at the element.

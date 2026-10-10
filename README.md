@@ -11,7 +11,9 @@ you declare, and Loopsmith shows what it sets off.
 
 DIM shows what you have equipped. Loopsmith takes that build (class, subclass, abilities, aspects,
 fragments, exotic, armor set, mods, artifact perks, weapons and perks) and explains its
-**gameplay loop**.
+**gameplay loop**. In the web designer you can start from a **DIM link**: paste it on Home and the
+designer opens with the loadout's build — what the rules know by hash; the rest is listed, never guessed
+([docs/loop-format.md](docs/loop-format.md#starting-from-a-dim-link)).
 
 **The product is the loop you design**: pick triggers one by one (dodge, grenade kill, pick up an
 orb, Bolt Charge at max), and the result is a `*.loop.yaml` you can save, share as a link, replay and
@@ -220,6 +222,7 @@ tools/web/               prepare-pages.sh — readies a published site for GitHu
 | [Clarity](https://github.com/Database-Clarity/Live-Clarity-Database) | Hash-keyed descriptions with numbers (mods, fragments, aspects, exotic perks, weapon traits) | Its numbers are in the first build's rules by hand (v2.0625); an ingestion slice is open |
 | Destiny Data Compendium | Abilities, artifact perks, statuses, and facts such as cooldowns and chunk energy scalars | The 2026-10-09 snapshot's numbers are in the first build's rules (by hand, `compendium/<date>/<tab>#<row>` sources); parser next |
 | Bungie manifest | Identity (hashes), names, icons | Open (FR-13): not needed for loop design; needs an API key |
+| [DIM](https://github.com/DestinyItemManager/DIM) (MIT) | How share links are read; the nine Light subclass hashes; the logo next to the DIM-link box | Used by the DIM-link start (FR-14); dim.gg links need Loopsmith registered with DIM's API ([docs/hosting.md](docs/hosting.md#dim-links)) |
 
 **Getting a Compendium snapshot:** run `tools/compendium/get-compendium.ps1` (Windows) or
 `get-compendium.sh` locally and hand the resulting zip to a session — see
@@ -250,8 +253,8 @@ force pushes. Details: [docs/hosting.md](docs/hosting.md).
 What works is in each requirement's status ([docs/requirements.md](docs/requirements.md)); the open
 work in detail in [docs/backlog.md](docs/backlog.md). Next:
 
-1. States you declare (`max:`, `end:`, [ADRs D3](ADRs.md)) and the loop analysis and comparison by
-   order of triggers (FR-4, FR-6, FR-7).
+1. Open dim.gg links (register with DIM's API) and fill a DIM build's gaps — weapons, supers, grenades,
+   melees, the other subclasses — through the manifest join (FR-14, FR-13).
 2. Ingest: Compendium snapshot parsers (tab registry) + Clarity enrichment + coverage report (FR-11).
 3. Manifest join: names → hashes, icons (FR-13, [ADRs D14](ADRs.md)).
 4. Rule drafting from the Compendium's "On X:" phrasing (FR-12, [ADRs D10](ADRs.md)).

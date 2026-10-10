@@ -76,8 +76,9 @@ elements:
     affinity: arc
     class: hunter
     # Clarity has 6 Gambler's Dodge hashes with identical text (one per subclass) and does not say
-    # which is Arc; 426473317 is the most recently uploaded. Resolve via the manifest later.
-    hash: 426473317
+    # which is Arc; 426473317 is the most recently uploaded, so it comes first. All six are this
+    # class ability, so a DIM loadout's Gambler's Dodge is recognised whichever copy it names.
+    hash: [426473317, 1282157890, 2711519340, 2816982785, 3636300855, 3933525367]
     ability: { kind: classAbility, charges: 1, chunkScalar: 0.8, baseCooldown: 56 }
     description: "Ground dodge. Grants 1% [PvP 0.35%] melee energy per Melee stat point (max 100% at 100 Melee), doubled within 15 m of an enemy. No chunk or stat scalar applies to that energy."
     source: "compendium/2026-10-09/Class Abilities#5"

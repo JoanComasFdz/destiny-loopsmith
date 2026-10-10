@@ -11,27 +11,22 @@
 {
     var shown = ReadShownState(session);
     var stepCount = session.Design.Steps.Length;
-    var slug = FindBuildSlug(session);
     <div class="designer">
         <section class="panel loop-header" aria-label="Loop">
             <div class="loop-header-row">
-                <label class="build-picker">
+                <div class="build-identity" data-testid="build-identity">
                     <span class="field-label">Build</span>
-                    <select @key="pickerVersion" value="@slug" @onchange="PickBuildAsync" aria-label="Build">
-                        @foreach (var build in Bundle.Builds)
-                        {
-                            <option value="@build.Slug">@DescribeBuildOption(build)</option>
-                        }
-                        @if (slug == CustomSlug)
-                        {
-                            <option value="@CustomSlug">@session.Build.Build.Name (imported)</option>
-                        }
-                    </select>
-                </label>
-                <label class="btn file-btn" title="Start a new loop from your own build.yaml">
-                    Import build.yaml
-                    <InputFile OnChange="ImportBuildAsync" accept=".yaml,.yml" />
-                </label>
+                    <span class="build-identity-name">@session.Build.Build.Name</span>
+                    @if (session.Build.Build.SourceUrl is Optional<string>.Some source)
+                    {
+                        <a class="build-identity-link" href="@source.Value" target="_blank" rel="noopener noreferrer"
+                           title="@source.Value" data-testid="build-source">
+                            <span class="build-identity-kind">@(LoopDesigning.IsDimLink(source.Value) ? "DIM link" : "Source")</span>
+                            <span class="build-identity-url">@source.Value</span>
+                        </a>
+                    }
+                </div>
+                <a class="btn" href="" title="Start from another DIM link or build" data-action="change-build">Change build</a>
             </div>
             <div class="loop-fields">
                 <label class="field grow">
@@ -59,7 +54,6 @@
                 <button class="btn primary" @onclick="AnalyzeLoop" data-action="analyze">Analyze</button>
                 <button class="btn" @onclick="ExportLoopAsync" data-action="export">Export</button>
                 <button class="btn" @onclick="CopyShareLinkAsync" data-action="share">Copy share link</button>
-                <button class="btn" @onclick="OpenImportDialog" data-action="import">Import loop</button>
             </div>
         </div>
         @if (Workbench.Status.Length > 0)
@@ -94,17 +88,6 @@
 
     @switch (dialog)
     {
-        case DesignerDialog.ImportLoop:
-            <Modal Title="Import a loop" OnClose="CloseDialog">
-                <p class="muted">A <code>.loop.yaml</code> carries its own build, so it replays here as it was designed. It replaces the loop on screen.</p>
-                <ImportLoopForm Problem="importProblem" OnImport="ImportLoop" OnUnreadable="ShowImportProblem" />
-                @if (!Bundle.Loops.IsEmpty)
-                {
-                    <h3 class="section-label">Or open an example loop</h3>
-                    <ExampleLoopList Loops="Bundle.Loops" OnOpen="OpenExampleLoop" />
-                }
-            </Modal>
-            break;
         case DesignerDialog.ShareLink:
             <Modal Title="Share link" OnClose="CloseDialog">
                 <p class="@(shareCopied ? "tone-strong" : "tone-warning")" data-testid="share-status">
@@ -123,24 +106,17 @@
 }
 
 @code {
-    private const string CustomSlug = "custom";
-
-    private enum DesignerDialog { None, ImportLoop, ShareLink, Analysis }
+    private enum DesignerDialog { None, ShareLink, Analysis }
 
     private sealed record ShownState(int Number, GameState State, ImmutableArray<ActivePassive> Passives, string Caption);
 
     private TraceOptions traceOptions = new(false, false, false);
     private DesignerDialog dialog = DesignerDialog.None;
-    private Optional<string> importProblem = Optional.None<string>();
     private Optional<LoopReport> report = Optional.None<LoopReport>();
     private string shareUrl = "";
     private bool shareCopied;
-    private int pickerVersion;
     private Optional<int> scrollToStep = Optional.None<int>();
     private ElementReference shareInput;
-
-    [CascadingParameter]
-    public LoopsmithBundle Bundle { get; set; } = null!;
 
     /// <summary>The designer shows the open loop; with none open, Home is where one is picked.</summary>
     protected override void OnInitialized()
@@ -158,71 +134,6 @@
             scrollToStep = Optional.None<int>();
             await Browser.RevealElementAsync($"step-{step.Value}");                              // impure
         }
-    }
-
-    // ── opening a design ────────────────────────────────────────────────────────
-
-    private void OpenFreshDesign(Result<DesignSession, string> fresh)
-    {
-        fresh.Match(
-            ok => OpenDesign(ok.Value, $"New loop for {ok.Value.Build.Build.Name}."),
-            error => ShowNotice(error.Failure));
-    }
-
-    private Unit OpenDesign(DesignSession session, string message)
-    {
-        Workbench.OpenSession(session);
-        Workbench.Notice = Optional.None<string>();
-        report = Optional.None<LoopReport>();
-        Workbench.Status = message + DescribeCatalogMismatch(session);
-        return new Unit.Value();
-    }
-
-    /// <summary>" (Loop designed against catalog …; replaying with ….)" when the loop came from another catalog.</summary>
-    private static string DescribeCatalogMismatch(DesignSession session) =>
-        LoopDesigning.FindCatalogMismatch(session).Match(issue => $" {issue.Value.Message}", _ => "");
-
-    private void OpenExampleLoop(BundledLoop example)
-    {
-        dialog = DesignerDialog.None;
-        example.Opened.Match(
-            ok => OpenDesign(ok.Value, $"Opened the example “{ok.Value.Design.Name}”."),
-            error => ShowNotice(error.Failure));
-    }
-
-    private Unit ShowNotice(string message)
-    {
-        Workbench.Notice = Optional.Some(message);
-        Workbench.Status = "";
-        return new Unit.Value();
-    }
-
-    private async Task PickBuildAsync(ChangeEventArgs e)
-    {
-        var slug = e.Value?.ToString() ?? "";                                                   // pure
-        var picked = Optional.FromNullable(Bundle.Builds.FirstOrDefault(build => build.Slug == slug)); // pure
-        var proceed = await DiscardConfirming.ConfirmDiscardAsync(Workbench, Browser, "Switch build?"); // impure
-        if (!proceed || picked is not Optional<BundledBuild>.Some build)
-        {
-            pickerVersion++;
-            return;
-        }
-
-        OpenFreshDesign(build.Value.Fresh);
-    }
-
-    private async Task ImportBuildAsync(InputFileChangeEventArgs e)
-    {
-        var proceed = await DiscardConfirming.ConfirmDiscardAsync(Workbench, Browser, "Start a new loop from this build?"); // impure
-        if (!proceed)
-        {
-            return;
-        }
-
-        var text = await BrowserInterop.ReadPickedFileAsync(e.File);                             // impure
-
-        var started = text.Bind(value => BundleComposing.StartNamedDesign(Bundle.Catalog, new SourceText(e.File.Name, value))); // pure
-        OpenFreshDesign(started);
     }
 
     // ── editing the loop ────────────────────────────────────────────────────────
@@ -287,7 +198,7 @@
     private void ToggleCaveats(ChangeEventArgs e) =>
         traceOptions = traceOptions with { ShowCaveats = e.Value is true };
 
-    // ── toolbar: analyze, export, share, import ─────────────────────────────────
+    // ── toolbar: analyze, export, share ─────────────────────────────────────────
 
     private void AnalyzeLoop()
     {
@@ -329,31 +240,6 @@
     private async Task SelectShareUrlAsync() =>
         await shareInput.FocusAsync(preventScroll: true);                                        // impure
 
-    private void OpenImportDialog()
-    {
-        importProblem = Optional.None<string>();
-        dialog = DesignerDialog.ImportLoop;
-    }
-
-    private void ImportLoop(SourceText file)
-    {
-        var imported = LoopDesigning.ImportLoop(Bundle.Catalog, file);                           // pure
-        imported.Match(
-            ok =>
-            {
-                dialog = DesignerDialog.None;
-                return OpenDesign(ok.Value, $"Imported “{ok.Value.Design.Name}”.");
-            },
-            error =>
-            {
-                importProblem = Optional.Some(error.Failure);
-                return new Unit.Value();
-            });
-    }
-
-    private void ShowImportProblem(string problem) =>
-        importProblem = Optional.Some(problem);
-
     private void CloseDialog() =>
         dialog = DesignerDialog.None;
 
@@ -374,14 +260,6 @@
         shownNumber < stepCount
             ? $"The state shows #{shownNumber}; new steps still go after #{stepCount}. Use “Branch from here” on #{shownNumber} to continue from there."
             : "";
-
-    private string FindBuildSlug(DesignSession session) =>
-        Optional.FromNullable(Bundle.Builds.FirstOrDefault(build => build.File.Text == session.Design.Build.Text))
-            .Map(build => build.Slug)
-            .UnwrapOr(CustomSlug);
-
-    private static string DescribeBuildOption(BundledBuild build) =>
-        build.Fresh.Match(ok => ok.Value.Build.Build.Name, _ => $"{build.Slug} (invalid)");
 
     private string DescribePageTitle() =>
         Workbench.Session.Match(open => open.Value.Design.Name, _ => "Designer");

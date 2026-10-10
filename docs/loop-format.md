@@ -1,10 +1,10 @@
-# Designed loops: file format (v1), sharing, analysis, comparison
+# Designed loops: file format (v1), starting from a DIM link, sharing, analysis, comparison
 
 **The product of Loopsmith is a loop someone designs**
 ([ADRs D2](../ADRs.md#d2--the-designed-loop-is-the-product)): an ordered list of steps, each a trigger
 ("dodge", "throw a grenade and kill three") or a state the player declares ("Bolt Charge at max",
 D3). You pick a build, choose a step, see everything it sets off and what is available next, choose
-again, and so on. Loopsmith describes cause and effect
+again, and so on — the build can come from a DIM link. Loopsmith describes cause and effect
 ([ADRs D1](../ADRs.md#d1--loopsmith-describes-cause-and-effect-it-doesnt-simulate-the-game)), so a
 loop is judged by its **order of triggers**: whether each step gets what it needs from the steps
 before it, and whether the order repeats. The loop is data: it can be saved, shared, imported,
@@ -120,6 +120,39 @@ weapons, the pickups on the ground and a group **States you declare** — `pack:
 each active buff that stacks and isn't at max yet, `end:` for each active status. `class:air` is offered only when an equipped rule has an
 airborne trigger (without one it fires exactly what `class` fires). Every token still reads anywhere
 (CLI, loop files, share links).
+
+## Starting from a DIM link
+
+The web designer's Home starts a loop from a DIM link ([ADRs D27](../ADRs.md#d27--a-dim-link-starts-a-build-of-what-the-catalog-knows-by-hash-the-rest-is-left-out)):
+paste it, press the button, and the designer opens with the loadout's build, named after the
+loadout, its link as the build's `source` (the designer shows both). It reads the two kinds of link
+DIM itself opens:
+
+* **A dim.gg share** — what DIM's Share button copies (`https://dim.gg/4j5nz4q/Skip-Grenade`, or just
+  the id). The loadout is on DIM's servers: the web app asks DIM's API for it
+  (`GET https://api.destinyitemmanager.com/loadout_share?shareId=…` with the app's key as
+  `X-API-Key`), which needs Loopsmith registered with DIM ([hosting.md](hosting.md#dim-links)).
+  Until it is, a dim.gg link answers `Loopsmith can't open dim.gg links yet …`.
+* **A link that carries its loadout** — DIM's Loadouts page with the loadout as JSON in `?loadout=`
+  (D2ArmorPicker, guardian.report): read in the browser, nothing is fetched.
+
+Anything else is `That isn't a DIM link …`. The loadout's items are named only by manifest hash, so
+the build holds what the catalog recognises by hash, and nothing is guessed:
+
+| From the loadout | Becomes |
+|---|---|
+| the subclass item | `class` and `subclass` — the nine Light subclasses (DIM's own table); a Stasis, Strand or Prismatic loadout, or one without a subclass, can't start a build yet |
+| the subclass's plugs, in socket order | the super, grenade, melee and class ability, aspects and fragments the catalog has a hash for; an ability it has none for is `"?"` |
+| the other equipped items (and the Loadout Optimizer's exotic) | `exoticArmor` |
+| `parameters.mods` (repeats are stacked copies) | `armorMods` |
+| `parameters.artifactUnlocks` | `artifactPerks` |
+| anything else — every weapon (its slot, name and damage type need the manifest), legendary armor, a jump, a hash no element has | `leftOut`, by hash and where the loadout listed it |
+
+The build is written as an ordinary build file (comments say where it came from), so the loop
+embeds, exports, shares and replays it like any other ([rule-format.md](rule-format.md#build-file-buildsbuildbuildyaml)).
+The designer lists the left-out hashes under **Not in Loopsmith yet**, each a link to its light.gg
+page; the build check adds `Unknown (?): …` and `Left out of the build: …` as info. A loadout for
+another class than its subclass's is an error, and so is text that isn't a loadout.
 
 ## Sharing
 

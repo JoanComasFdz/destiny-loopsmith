@@ -165,7 +165,7 @@ public sealed class RuleCatalogParsingTests
         Assert.Equal(ElementKind.Fragment, sparkOfShock.Kind);
         Assert.Equal(Affinity.Arc, sparkOfShock.Affinity);
         Assert.Equal(Optional.Some(GuardianClass.Hunter), sparkOfShock.Class);
-        Assert.Equal(Optional.Some(ItemHash.From(1727069364u)), sparkOfShock.Hash);
+        Assert.Equal([ItemHash.From(1727069364u)], sparkOfShock.Hashes);
         Assert.Equal(Optional.Some("Your Arc grenades jolt targets."), sparkOfShock.Description);
         Assert.Equal(new Provenance.Clarity(ItemHash.From(1727069364u), "2.0625"), sparkOfShock.Source);
         Assert.Equal(Optional.None<AbilityProfile>(), sparkOfShock.Ability);
@@ -439,6 +439,23 @@ public sealed class RuleCatalogParsingTests
             "hunter/arc.yaml:5: unknown key 'colour' in element (allowed: id, name, kind, affinity, class, hash, "
             + "fragmentSlots, ability, description, source, rules, passives)",
             message);
+    }
+
+    [Fact]
+    public void A_hash_list_names_the_copies_of_an_item_and_a_hash_names_one_element()
+    {
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToElementsFile("mods.yaml", """
+            elements:
+              - { id: bomber, name: Bomber, kind: armorMod, affinity: neutral, hash: [4188291233, 1001] }
+            """)]));
+        var message = ParseInvalidCatalog(Glossary, ToElementsFile("mods.yaml", """
+            elements:
+              - { id: bomber, name: Bomber, kind: armorMod, affinity: neutral, hash: [4188291233, 1001] }
+              - { id: reaper, name: Reaper, kind: armorMod, affinity: neutral, hash: 1001 }
+            """));
+
+        Assert.Equal([4188291233u, 1001u], catalog.Elements[ElementId.From("bomber")].Hashes.Select(hash => hash.Value));
+        Assert.Equal("mods.yaml:3: hash 1001 of 'reaper' is already on 'bomber' (mods.yaml:2)", message);
     }
 
     [Fact]

@@ -14,7 +14,7 @@ elements:
     name: Elemental Charge
     kind: armorMod
     affinity: neutral
-    hash: 3712696020          # also 2996369932 (identical text)
+    hash: [3712696020, 2996369932]   # the second: a copy with identical text
     description: "Collecting Elemental Pickups or destroying Tangles grants 1 Armor Charge at 100% activation progress. Progress per Ionic Trace with 1|2|3 mods: 34%|50%|50% (Firesprites, Void Breaches, Tangles 50%|50%|100%; Stasis Shards 25%|34%|50%)."
     source: "compendium/2026-10-09/Armor Mods#4"
     rules:
@@ -31,7 +31,7 @@ elements:
     name: Grenade Kickstart
     kind: armorMod
     affinity: neutral
-    hash: 4182064480          # also 1924584408 (identical text)
+    hash: [4182064480, 1924584408]   # the second: a copy with identical text
     description: "When a grenade charge is used while you have Armor Charge: consumes all Armor Charge and grants grenade energy. Each mod and each Armor Charge stack counts as one 'charge'; energy with 2|3|...|9 charges: 16.2% | 21.7% | 28.4% | 34.4% | 38.4% | 41.3% | 43.4% | 45% (PvE). Affected by chunk energy scalars."
     source: "compendium/2026-10-09/Armor Mods#8"
     rules:
@@ -62,7 +62,7 @@ elements:
     name: Reaper
     kind: armorMod
     affinity: neutral
-    hash: 40751621            # also 4149682173 (identical text)
+    hash: [40751621, 4149682173]   # the second: a copy with identical text
     description: "The next weapon kill within 10 s of using your class ability spawns an Orb of Power (0.8%|1.1%|1.25%|1.5% super energy with 1|2|3|4 mods). 10|5|1 s cooldown between orbs with 1|2|3 mods."
     source: "compendium/2026-10-09/Armor Mods#14"
     rules:
@@ -102,7 +102,7 @@ elements:
     name: Strand Siphon
     kind: armorMod
     affinity: strand
-    hash: 3926119246          # also 3279257734 (identical text)
+    hash: [3926119246, 3279257734]   # the second: a copy with identical text
     description: "Spawns an Orb of Power after 2 kills within 3 s of each other with a Strand weapon (kills within 1 s of an orb don't count). Orbs grant 2.5%|3.75%|4.4% super energy with 1|2|3 mods."
     # The Compendium's generic Siphon row. Clarity 3926119246 says 3.25% with 2 mods; the
     # Compendium's 3.75% is used.
@@ -119,7 +119,7 @@ elements:
     name: Impact Induction
     kind: armorMod
     affinity: neutral
-    hash: 377010989           # also 1153260021 (identical text)
+    hash: [377010989, 1153260021]   # the second: a copy with identical text
     description: "Dealing powered melee damage grants grenade energy: 12% | 17% | 20% with 1|2|3 mods (PvP 6% | 8.5% | 10%). 7 s cooldown. Affected by chunk energy scalars."
     source: "compendium/2026-10-09/Armor Mods#10"
     rules:

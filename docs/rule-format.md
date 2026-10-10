@@ -82,7 +82,8 @@ elements:
                               # exoticWeapon|armorSetBonus|armorMod|artifactPerk|weaponPerk
     affinity: arc
     class: hunter             # optional: hunter|titan|warlock
-    hash: 1727069364          # optional manifest hash, an unsigned 32-bit number (from Clarity until the manifest join exists)
+    hash: 1727069364          # optional manifest hash, an unsigned 32-bit number (from Clarity until the manifest join exists);
+                              # a list when copies of the item share its text: hash: [3712696020, 2996369932]
     description: "Arc grenades apply Jolt on hit."   # optional
     source: compendium/2026-10-09/Arc#24             # optional, see Provenance; omitted → authored at file:line
     rules:                    # optional (default none)
@@ -93,8 +94,10 @@ elements:
     passives: []              # optional (default none)
 ```
 
-`id`, `name`, `kind` and `affinity` are required. Two keys belong to some kinds only (anywhere else they
-are an error):
+`id`, `name`, `kind` and `affinity` are required. A hash names one element: the same hash on two
+elements is an error (`hash 1001 of 'reaper' is already on 'bomber' (mods.yaml:2)`), so a DIM loadout's
+item is recognised as one element or none ([loop-format.md](loop-format.md#starting-from-a-dim-link)).
+Two keys belong to some kinds only (anywhere else they are an error):
 
 * `fragmentSlots: 2` — aspects only (`fragmentSlots is only allowed on aspects, not on a fragment`), a
   whole number ≥ 0; the build check counts fragments against it.
@@ -359,12 +362,17 @@ stats: { weapons: 47, class: 104, grenade: 145, super: 27, melee: 79 }   # any s
 ```
 
 * Required: `name`, `class` (`hunter|titan|warlock`), `subclass`, `super`, `grenade`, `melee`, `classAbility`.
+  An ability may be `"?"`: the build has one, but Loopsmith can't name it (a DIM link's super with no hash
+  in the catalog). It shows as "?" and sets nothing off.
 * Optional: `author`, `source` (an absolute http(s) URL), `catalog`, `exoticArmor`, and the lists
   `aspects`, `fragments`, `armorSetBonuses`, `armorMods`, `artifactPerks`, `weapons` (default empty).
 * A weapon: `slot` (`kinetic|energy|power`), `name` and `type` (`kinetic|arc|solar|void|stasis|strand`)
   are required; `archetype` (a kebab-case word) and `perks` (element ids) are optional. The name
   labels its actions ("Festival Flight (hit 5)").
 * `stats`: any of `weapons`, `health`, `class`, `grenade`, `super`, `melee`, whole numbers 0..200.
+* `leftOut` (a build from a DIM link): what the loadout had that the catalog doesn't know, by manifest hash
+  and where the loadout listed it — `leftOut: { items: [2005], subclassPlugs: [1001], armorMods: [3007],
+  artifactPerks: [4008] }` (any subset). Shown with the build, never played.
 * Stats and archetypes are shown in the build summary, and hashes are recorded (D14); the engine
   doesn't use them.
 
@@ -381,6 +389,8 @@ stats: { weapons: 47, class: 104, grenade: 145, super: 27, melee: 79 }   # any s
 | `'<name>' (<Affinity>) does not fit the <Subclass> subclass.` — a super, grenade, melee, aspect or fragment of another affinity; neutral and kinetic ones fit any, and Prismatic takes any | Blocking |
 | `<n> aspects equipped; at most 2.` · `'<name>' is equipped <n> times; aspects and fragments are unique.` · `<n> fragments equipped; the aspects grant <m> slots.` | Blocking |
 | `Fragment slots unknown for <aspects> — fragment count not checked.` | Info |
+| `Unknown (?): <slots> — not in the rule catalog yet, so they set nothing off.` | Info |
+| `Left out of the build: <n> items, <n> subclass plugs, … from the DIM loadout — not in the rule catalog yet.` | Info |
 | `'<name>' has no authored rules yet — it is inert in the trace.` | Warning |
 | a rule that doesn't stack with an equipped element ([above](#rules-that-dont-stack)) | Warning |
 | `Build pinned catalog <pinned>; using <current>.` | Info |

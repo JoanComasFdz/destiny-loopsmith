@@ -179,6 +179,41 @@ public sealed class BuildFileParsingTests
     }
 
     [Fact]
+    public void An_ability_given_as_a_question_mark_is_unknown_and_left_out_hashes_are_kept_by_part()
+    {
+        var build = ParseValidBuild("""
+            name: From DIM
+            source: https://dim.gg/4j5nz4q
+            class: hunter
+            subclass: arc
+            super: "?"
+            grenade: "?"
+            melee: combination-blow
+            classAbility: gamblers-dodge
+            leftOut: { items: [2005, 2006], armorMods: [3007] }
+            """);
+
+        Assert.Equal(
+            new AbilityLoadout(Optional.None<ElementId>(), Optional.None<ElementId>(), ElementId.From("combination-blow"), ElementId.From("gamblers-dodge")),
+            build.Abilities);
+        Assert.Equal(
+            [(LoadoutPart.Item, 2005u), (LoadoutPart.Item, 2006u), (LoadoutPart.ArmorMod, 3007u)],
+            build.LeftOut.Select(item => (item.Part, item.Hash.Value)));
+    }
+
+    [Fact]
+    public void A_left_out_list_takes_manifest_hashes_by_part()
+    {
+        var message = ParseInvalidBuild(MinimalYaml + """
+
+            leftOut: { weapons: [1], items: [abc] }
+            """);
+
+        Assert.Contains($"{BuildPath}:8: unknown key 'weapons' in build.leftOut", message);
+        Assert.Contains("'abc' is not a manifest hash", message);
+    }
+
+    [Fact]
     public void Missing_required_fields_are_errors()
     {
         var message = ParseInvalidBuild("""

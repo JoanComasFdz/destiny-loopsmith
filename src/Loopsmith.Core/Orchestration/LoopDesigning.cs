@@ -4,6 +4,7 @@ using Loopsmith.Core.BuildExplanation;
 using Loopsmith.Core.BuildParsing;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
+using Loopsmith.Core.LoadoutImporting;
 using Loopsmith.Core.LoopFiles;
 using Loopsmith.Core.Phrasing;
 using Loopsmith.Core.ReportComparison;
@@ -53,6 +54,37 @@ public static class LoopDesigning
                 Optional.Some(catalog.Version),
                 buildFile,
                 [])));
+
+    /// <summary>The comment a build from a DIM link starts with: where it came from and what <c>leftOut</c> means.</summary>
+    public const string DimBuildNote =
+        "Composed by Loopsmith from the DIM loadout at source. leftOut: what the loadout has that the rule catalog\n"
+        + "doesn't know yet, by manifest hash (weapons always, until Loopsmith reads the Bungie manifest).";
+
+    /// <summary>Pasted text → the DIM link it is: a dim.gg share (DIM's Share button) or a link that carries its loadout.</summary>
+    public static Result<DimLink, string> ReadDimLink(string text) =>
+        DimLinkReading.ReadDimLink(text);
+
+    /// <summary>Where a host asks DIM for a dim.gg share's loadout (an HTTP GET with the app's DIM API key as <c>X-API-Key</c>).</summary>
+    public static string ToDimShareRequestUrl(DimLink.Shared share) =>
+        DimLinkReading.ToShareRequestUrl(share.ShareId);
+
+    /// <summary>
+    /// A new design for a DIM loadout: <paramref name="loadoutJson"/> is the link's own loadout, or DIM's answer for a
+    /// dim.gg share. What the catalog recognises by hash becomes the build (the rest is its <c>leftOut</c>); the build is
+    /// written as a build file, so the loop embeds it — and exports, shares and replays it — like any other.
+    /// </summary>
+    public static Result<DesignSession, string> StartDimDesign(RuleCatalog catalog, DimLink link, string loadoutJson) =>
+        DimLoadoutMapping.MapLoadout(catalog, ReadLink(link), loadoutJson)
+            .Map(build => new SourceText("dim-loadout.build.yaml", BuildFileWriting.WriteBuildFile(build, [DimBuildNote])))
+            .Bind(file => StartDesign(catalog, file, "New loop"))
+            .Map(session => RenameDesign(session, $"{session.Build.Build.Name} loop", session.Design.Author, session.Design.Description));
+
+    /// <summary>True when a build's source is a DIM link (the designer calls it one).</summary>
+    public static bool IsDimLink(string url) =>
+        DimLinkReading.ReadDimLink(url) is Result<DimLink, string>.Ok;
+
+    private static string ReadLink(DimLink link) =>
+        link.Match(shared => shared.Link, inline => inline.Link);
 
     public static DesignSession CreateSession(ValidatedBuild build, LoopDesign design)
     {

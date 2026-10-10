@@ -3,8 +3,8 @@
 Each ADR explains **why**; [`CONVENTIONS.md`](./CONVENTIONS.md) says **what** and wins on any conflict.
 The requirements they serve are in [docs/requirements.md](docs/requirements.md). The list is the
 current set of decisions, in four groups: what the product is (D1–D9), sources and rules (D10–D15),
-architecture (D16–D23), hosts and tooling (D24–D26). D1 is the founding one: every other decision
-follows from it.
+architecture (D16–D23), hosts and tooling (D24–D26), and starting from a DIM link (D27). D1 is the
+founding one: every other decision follows from it.
 
 | # | Decision | Why |
 |---|---|---|
@@ -34,6 +34,7 @@ follows from it.
 | D24 | Hosts own no logic; the CLI is the scripting and golden-test host | Both hosts share every line of logic through `Orchestration` |
 | D25 | The web designer runs in the browser, as static files | No server: any static host works, and a loop travels in its link |
 | D26 | Verify.XunitV3 pinned to 32.0.1 | 33.x needs a licence decision |
+| D27 | A DIM link starts a build of what the catalog knows by hash; the rest is left out, listed | A player's build already lives in DIM; nothing is guessed, and what's missing stays visible |
 
 ## What the product is
 
@@ -214,9 +215,10 @@ never treated as 0; since numbers are facts (D1), "?" only means the source does
 
 **Context.** The Bungie manifest (and its API key) isn't reachable yet, and abilities, artifact perks
 and armor set bonuses have no Clarity hash. **Decision.** Elements are keyed by a kebab-case
-`ElementId` (`shinobus-vow`); `Hash` is `Optional<ItemHash>`, filled from Clarity where known. The
-manifest hash is the long-term identity (stable, shared by Clarity and DIM). **Consequence.** Builds
-reference slugs; the manifest join adds hashes without changing build files.
+`ElementId` (`shinobus-vow`); `Hashes` holds its manifest hash (plus the copies of the same item with the
+same text, such as a mod's second copy), filled from Clarity where known, empty otherwise. The manifest
+hash is the long-term identity (stable, shared by Clarity and DIM). **Consequence.** Builds reference
+slugs; the manifest join adds hashes without changing build files; a DIM loadout is read by hash (D27).
 
 ### D15 — Builds and loops pin a catalog version
 
@@ -298,3 +300,23 @@ cached).
 
 33.x requires xunit.v3 4.x and gates the build on a SponsorCheck licence property — a licensing
 decision for the owner. 32.0.1 predates SponsorCheck and works with xunit.v3 3.2.2.
+
+## Starting from a DIM link
+
+### D27 — A DIM link starts a build of what the catalog knows by hash; the rest is left out
+
+**Context.** Players keep their builds in DIM, and DIM shares a loadout as a link: a dim.gg share
+(the loadout is on DIM's servers, handed only to apps registered with DIM's API) or a link to DIM's
+Loadouts page carrying the loadout as JSON (D2ArmorPicker, guardian.report). A loadout names its
+items only by manifest hash, and the manifest isn't read yet (D14): the catalog has hashes for most
+aspects, fragments, mods and exotics it holds, none for supers, grenades, melees or weapons. **Decision.**
+`LoadoutImporting` (pure) reads the link and maps the loadout by hash: the subclass from DIM's own
+table of the nine Light subclass hashes, every other item to the catalog element with that hash. An
+ability the catalog has no hash for is `"?"` in the build (D13: unknown is data, never guessed —
+D12), and every item it doesn't recognise goes in the build's `leftOut` by hash, so whoever opens
+the loop sees what is missing. The build is written as an ordinary `build.yaml`, so a loop from a
+DIM link exports, shares and replays like any other. The web host fetches a dim.gg share with the
+app's DIM API key; links that carry their loadout need nothing. **Consequence.** A Stasis, Strand or
+Prismatic loadout can't start a build yet, and weapons are always left out, until the manifest join
+(requirements FR-13); dim.gg links work once the owner registers Loopsmith with DIM's API
+([docs/hosting.md](docs/hosting.md), "DIM links").

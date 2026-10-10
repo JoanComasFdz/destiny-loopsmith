@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
+using Loopsmith.Core.Phrasing;
 
 namespace Loopsmith.Web.Presentation;
 
@@ -29,7 +30,11 @@ public sealed record BuildSheet(
     ImmutableArray<ElementTile> Artifact,
     ImmutableArray<WeaponRow> Weapons,
     ImmutableArray<StatRow> Stats,
+    ImmutableArray<LeftOutGroup> LeftOut,
     ImmutableArray<BuildIssue> Issues);
+
+/// <summary>What a DIM loadout had that the build leaves out, by where the loadout listed it ("Armor mods": 3 hashes).</summary>
+public sealed record LeftOutGroup(string Label, ImmutableArray<ItemHash> Hashes);
 
 /// <summary>
 /// Pure: a validated build → its sheet. Names and colours come from the catalog; nothing is inferred. The issues are
@@ -50,10 +55,10 @@ public static class BuildSheetShaping
             b.Author,
             b.SourceUrl,
             [
-                new AbilityTile("Super", DescribeElement(catalog, b.Abilities.Super, 1)),
-                new AbilityTile("Grenade", DescribeElement(catalog, b.Abilities.Grenade, 1)),
-                new AbilityTile("Melee", DescribeElement(catalog, b.Abilities.Melee, 1)),
-                new AbilityTile("Class", DescribeElement(catalog, b.Abilities.ClassAbility, 1)),
+                new AbilityTile("Super", DescribeAbility(catalog, b.Abilities.Super)),
+                new AbilityTile("Grenade", DescribeAbility(catalog, b.Abilities.Grenade)),
+                new AbilityTile("Melee", DescribeAbility(catalog, b.Abilities.Melee)),
+                new AbilityTile("Class", DescribeAbility(catalog, b.Abilities.ClassAbility)),
             ],
             DescribeElements(catalog, b.Aspects),
             DescribeElements(catalog, b.Fragments),
@@ -70,6 +75,7 @@ public static class BuildSheetShaping
                 new StatRow("Super", ReadStat(b.Stats.Super)),
                 new StatRow("Melee", ReadStat(b.Stats.Melee)),
             ],
+            [.. b.LeftOut.GroupBy(item => item.Part).OrderBy(group => group.Key).Select(group => new LeftOutGroup(DescribeLeftOutGroup(group.Key), [.. group.Select(item => item.Hash)]))],
             issues);
     }
 
@@ -80,6 +86,21 @@ public static class BuildSheetShaping
         catalog.Elements.TryGetValue(id, out var element)
             ? new ElementTile(element.Name, element.Affinity, copies, element.Description)
             : new ElementTile(id.Value, Affinity.Neutral, copies, Optional.None<string>());
+
+    /// <summary>An ability the build gives as "?": a tile that says so (unknown is data, ADRs D1).</summary>
+    private static ElementTile DescribeAbility(RuleCatalog catalog, Optional<ElementId> id) =>
+        id.Match(
+            known => DescribeElement(catalog, known.Value, 1),
+            _ => new ElementTile(DomainPhrasing.Unknown, Affinity.Neutral, 1, Optional.Some("Not known: the DIM link's ability isn't in the rule catalog yet, so it sets nothing off.")));
+
+    private static string DescribeLeftOutGroup(LoadoutPart part) =>
+        part switch
+        {
+            LoadoutPart.Item => "Items",
+            LoadoutPart.SubclassPlug => "Subclass plugs",
+            LoadoutPart.ArmorMod => "Armor mods",
+            _ => "Artifact perks",
+        };
 
     private static Optional<int> ReadStat(Optional<StatValue> value) =>
         value.Map(stat => stat.Value);

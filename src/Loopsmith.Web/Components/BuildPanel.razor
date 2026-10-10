@@ -17,7 +17,7 @@
                     }
                     @if (sheet.SourceUrl is Optional<string>.Some url && IsWebLink(url.Value))
                     {
-                        <a href="@url.Value" target="_blank" rel="noopener noreferrer">source ↗</a>
+                        <a href="@url.Value" target="_blank" rel="noopener noreferrer">@(LoopDesigning.IsDimLink(url.Value) ? "DIM link" : "source") ↗</a>
                     }
                 </div>
             }
@@ -86,6 +86,24 @@
         }
     </div>
 
+    @if (!sheet.LeftOut.IsEmpty)
+    {
+        <h3 class="section-label">Not in Loopsmith yet</h3>
+        <p class="left-out-note muted">The DIM loadout has these, but no rule knows their hash yet, so the build leaves them out. Each opens on light.gg.</p>
+        @foreach (var group in sheet.LeftOut)
+        {
+            <div class="left-out" data-testid="left-out">
+                <span class="left-out-label">@group.Label</span>
+                <div class="chips">
+                    @foreach (var hash in group.Hashes)
+                    {
+                        <a class="chip left-out-hash" href="@ToLookupUrl(hash)" target="_blank" rel="noopener noreferrer" title="Look up @hash.Value on light.gg">@hash.Value ↗</a>
+                    }
+                </div>
+            </div>
+        }
+    }
+
     @if (!sheet.Issues.IsEmpty)
     {
         <h3 class="section-label">Validation</h3>
@@ -153,6 +171,10 @@
     private static string ToPercent(Optional<int> value) =>
         value.Match(v => (100m * Math.Clamp(v.Value, 0, BuildSheetShaping.MaxStat) / BuildSheetShaping.MaxStat), _ => 0m)
             .ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
+
+    /// <summary>light.gg's page for a manifest hash: what the item is, until Loopsmith reads the manifest itself.</summary>
+    private static string ToLookupUrl(ItemHash hash) =>
+        $"https://www.light.gg/db/items/{hash.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)}/";
 
     private static bool IsWebLink(string url) =>
         url.StartsWith("https://", StringComparison.OrdinalIgnoreCase) || url.StartsWith("http://", StringComparison.OrdinalIgnoreCase);

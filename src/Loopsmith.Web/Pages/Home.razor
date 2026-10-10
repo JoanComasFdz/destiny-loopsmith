@@ -3,9 +3,11 @@
 @inject Workbench Workbench
 @inject BrowserInterop Browser
 @inject NavigationManager Navigation
+@inject DimLoadoutFetching DimLoadouts
 
-@* The start screen (the logo leads here): continue the open loop, start one from a build, open an example or import a
-   loop. Opening anything goes to the designer. A share link (…/#loop=) lands here and opens its loop the same way. *@
+@* The start screen (the logo leads here): continue the open loop, start one from a DIM link or a bundled build, open an
+   example or import a loop. Opening anything goes to the designer. A share link (…/#loop=) lands here and opens its loop
+   the same way. *@
 
 <PageTitle>Loopsmith</PageTitle>
 
@@ -14,7 +16,7 @@
 <section class="chooser">
     <div class="chooser-intro">
         <h1>Design a build's gameplay loop</h1>
-        <p class="muted">Pick a build, then pick triggers — dodge, throw a grenade and kill, shoot, pick up an orb. Each step shows everything it fires, which element caused it, and what it unlocks next. The loop you design is the thing you export, share and compare.</p>
+        <p class="muted">Paste a DIM link or pick a build, then pick triggers — dodge, throw a grenade and kill, shoot, pick up an orb. Each step shows everything it fires, which element caused it, and what it unlocks next. The loop you design is the thing you export, share and compare.</p>
     </div>
 
     @if (Workbench.Session is Optional<DesignSession>.Some { Value: var open })
@@ -30,7 +32,26 @@
         </div>
     }
 
-    <h2 class="chooser-heading">Start from a build</h2>
+    <form class="dim-start" @onsubmit="StartFromDimLinkAsync" aria-labelledby="dim-start-label">
+        <div class="dim-field">
+            <img class="dim-logo" src="images/dim-logo.svg" alt="DIM" width="64" height="64" />
+            <div class="dim-input">
+                <label id="dim-start-label" class="dim-label" for="dim-link">Paste a DIM link here to start</label>
+                <input id="dim-link" class="dim-link" type="url" inputmode="url" autocomplete="off" spellcheck="false"
+                       placeholder="https://dim.gg/…" @bind="dimLink" @bind:event="oninput" data-testid="dim-link" />
+                <p class="dim-help muted">In DIM, open your loadout, choose <strong>Share</strong> and copy the link. Loopsmith reads the build from it — subclass, aspects, fragments, exotic, mods — and opens it in the designer.</p>
+            </div>
+        </div>
+        <button type="submit" class="btn primary dim-go" disabled="@(readingDimLink || dimLink.Trim().Length == 0)" data-action="dim-start">
+            @(readingDimLink ? "Reading the DIM link…" : "Start designing from this link →")
+        </button>
+        @if (dimProblem is Optional<string>.Some problem)
+        {
+            <p class="dim-problem" role="alert" data-testid="dim-problem">@problem.Value</p>
+        }
+    </form>
+
+    <h2 class="chooser-heading">Or start from one of Loopsmith's builds</h2>
     <div class="build-cards">
         @foreach (var build in Bundle.Builds)
         {
@@ -97,6 +118,9 @@
 
 @code {
     private bool importing;
+    private string dimLink = "";
+    private bool readingDimLink;
+    private Optional<string> dimProblem = Optional.None<string>();
     private Optional<string> importProblem = Optional.None<string>();
 
     [CascadingParameter]
@@ -147,6 +171,41 @@
         started.Match(
             ok => OpenDesign(ok.Value, $"New loop for {ok.Value.Build.Build.Name}."),
             error => ShowNotice(error.Failure));
+    }
+
+    /// <summary>Reads the pasted DIM link (asking DIM for a dim.gg share's loadout), builds what it can and opens the designer.</summary>
+    private async Task StartFromDimLinkAsync()
+    {
+        var read = LoopDesigning.ReadDimLink(dimLink);                                           // pure
+        if (read is not Result<DimLink, string>.Ok { Value: var link })
+        {
+            dimProblem = Optional.Some(read.Match(_ => "", error => error.Failure));
+            return;
+        }
+
+        var proceed = await DiscardConfirming.ConfirmDiscardAsync(Workbench, Browser, "Start a new loop from this DIM link?"); // impure
+        if (!proceed)
+        {
+            return;
+        }
+
+        readingDimLink = true;
+        dimProblem = Optional.None<string>();
+        var loadout = await link.Match(                                                          // impure
+            shared => DimLoadouts.FetchSharedLoadoutAsync(LoopDesigning.ToDimShareRequestUrl(shared)),
+            inline => Task.FromResult<Result<string, string>>(new Result<string, string>.Ok(inline.Loadout)));
+        readingDimLink = false;
+
+        var started = loadout.Bind(json => LoopDesigning.StartDimDesign(Bundle.Catalog, link, json)); // pure
+        started.Match(
+            ok => OpenDesign(ok.Value, $"New loop for {ok.Value.Build.Build.Name}, from the DIM link."),
+            error => ShowDimProblem(error.Failure));
+    }
+
+    private Unit ShowDimProblem(string problem)
+    {
+        dimProblem = Optional.Some(problem);
+        return new Unit.Value();
     }
 
     private void OpenImportDialog()

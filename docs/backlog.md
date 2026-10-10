@@ -17,9 +17,14 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
 - **Clarity ingestion slice** — Clarity is reachable (git clone): `descriptions/clarity.json` maps a
   hash to its name, type and descriptions. Its numbers are in the rules by hand (v2.0625).
 - **Bungie manifest** (FR-13; not needed for loop design) — hashes, official names and icons: a DIM-like
-  look, importing builds from DIM links / loadouts (they use hashes) and noticing game patches. The
-  `BUNGIE_API_KEY` environment secret exists; `www.bungie.net` is reachable from a session but answered
-  a 500 error page (2026-10-09, no key), so check manifest access with the key in a new session first.
+  look, noticing game patches, and the rest of a DIM link (FR-14): names for the left-out hashes, weapons
+  (slot, name, damage type), the hashes of supers, grenades and melees (so they stop being `?`), and the
+  Stasis, Strand and Prismatic subclass items (only the nine Light ones are known, from DIM's source).
+  The `BUNGIE_API_KEY` environment secret exists; `www.bungie.net` answered a 500 error page to a
+  session (2026-10-09/10, no key). The manifest index itself needs no key (it answered from outside the
+  session on 2026-10-10); single definitions (`/Manifest/DestinyInventoryItemDefinition/<hash>/`) do, so
+  check with the key in a new session. In the browser, a per-hash lookup with a Bungie key registered
+  for the site's origin would avoid downloading the whole item table (tens of MB).
 
 ## Rule format gaps (what the Skip Grenade build couldn't express)
 
@@ -72,9 +77,18 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   `.loop.yaml` or copying its share link, and loops imported on the Compare screen last until the tab
   closes. A library would need per-browser storage, or a backend to sync it across devices.
 - **A build picker** over the catalog instead of build files (FR-1).
+- **DIM links without the manifest** (FR-14) open only Arc, Solar and Void builds and leave every weapon
+  out, so a DIM build has no weapon triggers yet; a "pick the weapons" step after the import could fill
+  the gap before the manifest join. The designer has no way to edit a build either: changing it means
+  a new DIM link or build file.
 
 ## Owner items
 
+- **Register Loopsmith with DIM's API** so dim.gg links open (a Bungie API key for the site's origin,
+  then DIM's `new_app`; [hosting.md](hosting.md#dim-links)), and put the key in
+  `src/Loopsmith.Web/wwwroot/appsettings.json`.
+- The DIM logo on Home is DIM's (MIT-licensed repository, credited in the file and the README): fine
+  to show next to "paste a DIM link", or ask DIM.
 - Verify.XunitV3 33.x needs a SponsorCheck licence decision (D26).
 - Clarity's partnerships page: check it (the site is public; README, Licensing).
 - Confirm the Ascension assumption: Bomber, Reaper and Slice fire on its air move (it is a class ability

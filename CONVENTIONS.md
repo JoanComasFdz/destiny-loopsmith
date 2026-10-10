@@ -18,7 +18,7 @@ itself, under `src/Loopsmith.Core/Domain/`.
   live under `src/Loopsmith.Core/` (`SourceFetching`, `RuleParsing`,
   `BuildParsing`, `LoopFiles`, `BuildComposition`, `Simulation` (plays steps
   against the state), `BuildExplanation`, `LoopGraphing`, `TraceRendering`,
-  `ReportComparison`, `Orchestration`).
+  `ReportComparison`, `LoadoutImporting` (a DIM link → a build), `Orchestration`).
 - **Feature slices depend only on the shared kernel** (`Domain` / `Functional` /
   `Phrasing` / `Causality`) — never sideways on each other. The only cross-slice
   dependency is `Orchestration` → every slice. An **architecture test** enforces

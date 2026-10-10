@@ -309,8 +309,13 @@ textarea { resize: vertical; }
 
 .loop-header { display: flex; flex-direction: column; gap: 10px; }
 .loop-header-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; }
-.build-picker { display: flex; flex-direction: column; gap: 4px; flex: 1 1 240px; min-width: 0; }
-.build-picker select { width: 100%; font-weight: 650; }
+.build-identity { display: flex; flex-direction: column; gap: 3px; flex: 1 1 240px; min-width: 0; }
+.build-identity-name { font-size: 17px; font-weight: 750; }
+.build-identity-link { display: flex; align-items: baseline; gap: 8px; min-width: 0; color: var(--arc); text-decoration: none; font-size: 13px; }
+.build-identity-link:hover .build-identity-url { text-decoration: underline; }
+.build-identity-kind { flex: none; font-weight: 700; }
+.build-identity-kind::after { content: " ↗"; }
+.build-identity-url { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-family: var(--mono); font-size: 12px; }
 .loop-fields { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 10px; }
 .loop-fields .full { grid-column: 1 / -1; }
 .loop-name { font-size: 17px; font-weight: 750; }
@@ -545,6 +550,49 @@ textarea { resize: vertical; }
 .build-card-sub { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
 .build-card-go { margin-top: 8px; color: var(--aff, var(--arc)); font-weight: 700; font-size: 13px; }
 .chooser-more { margin: 0; }
+
+/* start from a DIM link */
+.dim-start {
+    --dim: #f37321;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 20px;
+    border: 1px solid color-mix(in srgb, var(--dim) 45%, var(--line));
+    border-radius: var(--radius);
+    background: linear-gradient(160deg, color-mix(in srgb, var(--dim) 10%, var(--panel)), var(--panel) 60%);
+}
+.dim-field { display: flex; align-items: flex-start; gap: 16px; }
+.dim-logo { flex: none; width: 64px; height: 64px; margin-top: 2px; }
+.dim-input { display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 0; }
+.dim-label { font-size: 20px; font-weight: 750; }
+.dim-link {
+    width: 100%;
+    min-height: 54px;
+    padding: 12px 14px;
+    font-family: var(--mono);
+    font-size: 15px;
+    border: 1px solid var(--line-2);
+    border-radius: var(--radius);
+}
+.dim-link:focus { outline: none; border-color: var(--dim); box-shadow: 0 0 0 3px color-mix(in srgb, var(--dim) 25%, transparent); }
+.dim-help { margin: 0; font-size: 13px; }
+.dim-go { align-self: stretch; padding: 14px 18px; font-size: 16px; font-weight: 750; color: #fff; background: var(--dim); border-color: var(--dim); }
+.dim-go:hover:not(:disabled) { border-color: #fff; }
+.dim-problem { margin: 0; padding: 10px 12px; border: 1px solid color-mix(in srgb, var(--warn) 50%, transparent); border-radius: 6px; color: var(--warn); background: color-mix(in srgb, var(--warn) 7%, transparent); }
+@media (max-width: 520px) {
+    .dim-start { padding: 14px; }
+    .dim-field { gap: 12px; }
+    .dim-logo { width: 44px; height: 44px; }
+    .dim-label { font-size: 17px; }
+}
+
+/* what a DIM loadout had that the build leaves out */
+.left-out-note { margin: 0 0 6px; font-size: 12px; }
+.left-out { display: flex; flex-direction: column; gap: 4px; margin-bottom: 6px; }
+.left-out-label { font-size: 11px; color: var(--muted); }
+.left-out-hash { font-family: var(--mono); text-decoration: none; color: var(--muted); }
+.left-out-hash:hover { color: var(--text); }
 .chooser-heading { margin-top: 6px; font-size: 13px; color: var(--muted); }
 .build-card.example { --aff: var(--solar); }
 .build-card-text {
@@ -584,9 +632,6 @@ textarea { resize: vertical; }
 .import-form { display: flex; flex-direction: column; gap: 12px; }
 .form-actions { display: flex; justify-content: flex-end; }
 .share-url { padding: 9px; }
-.example-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
-.example-item { width: 100%; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; white-space: normal; }
-.example-item .muted { font-size: 12px; font-weight: 500; }
 
 /* analysis */
 .label-note { margin-left: 8px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--dim); }

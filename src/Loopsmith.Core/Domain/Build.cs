@@ -3,7 +3,15 @@ using Loopsmith.Core.Functional;
 
 namespace Loopsmith.Core.Domain;
 
-public sealed record AbilityLoadout(ElementId Super, ElementId Grenade, ElementId Melee, ElementId ClassAbility);
+/// <summary>
+/// The four ability slots. None is "?" in the build file: an ability the build has but Loopsmith can't name (a DIM
+/// link's super that isn't in the catalog yet). Unknown is data: the slot shows "?" and sets nothing off.
+/// </summary>
+public sealed record AbilityLoadout(
+    Optional<ElementId> Super,
+    Optional<ElementId> Grenade,
+    Optional<ElementId> Melee,
+    Optional<ElementId> ClassAbility);
 
 public sealed record WeaponLoadout(WeaponSlot Slot, string Name, DamageType Type, Optional<string> Archetype, ImmutableArray<ElementId> Perks);
 
@@ -15,7 +23,10 @@ public sealed record StatLine(
     Optional<StatValue> Super,
     Optional<StatValue> Melee);
 
-/// <summary>A build as authored (DIM-like composition), not yet validated against the catalog.</summary>
+/// <summary>
+/// A build as authored (DIM-like composition), not yet validated against the catalog. <see cref="LeftOut"/> is what the
+/// DIM loadout it came from had that the catalog doesn't know yet (empty for a build written by hand).
+/// </summary>
 public sealed record Build(
     string Name,
     Optional<string> Author,
@@ -31,7 +42,8 @@ public sealed record Build(
     ImmutableArray<ElementId> ArmorMods,
     ImmutableArray<ElementId> ArtifactPerks,
     ImmutableArray<WeaponLoadout> Weapons,
-    StatLine Stats);
+    StatLine Stats,
+    ImmutableArray<LeftOutItem> LeftOut);
 
 public sealed record BuildIssue(Severity Severity, string Message);
 
