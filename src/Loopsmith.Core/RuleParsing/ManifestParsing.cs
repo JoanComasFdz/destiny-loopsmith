@@ -48,26 +48,65 @@ internal static class ManifestParsing
             map.ReadRequired("icon", ReadName),
             (_, type, icon) => new DamageTypeIcon(type, icon)));
 
+    /// <summary>The <c>kind:</c> words of the excerpt; each becomes a <see cref="ManifestKind"/> case with its own data.</summary>
+    private enum KindWord
+    {
+        Subclass, Super, Grenade, Melee, ClassAbility, Movement, Aspect, Fragment, Weapon, WeaponPerk, Armor, ArmorMod, ArtifactPerk, Other,
+    }
+
     /// <summary>
-    /// <c>{ hash, name, kind, type, tier?, slot?, damageType?, icon? }</c>. <c>slot</c> is a weapon slot on a weapon and an
-    /// armor slot on armor and an armor mod; anywhere else it is an error.
+    /// <c>{ hash, name, kind, type, tier?, slot?, damageType?, icon? }</c>. A weapon needs its <c>slot</c> (a weapon slot) and
+    /// may have a <c>damageType</c>; armor needs its <c>slot</c> (an armor slot); an armor mod may have one (none: a general
+    /// mod). Anywhere else both are errors.
     /// </summary>
     private static Result<Located<ManifestItem>, Errors> ReadItem(YamlValue value) =>
-        value.ToMap().Bind(map => map.ReadRequired("kind", ReadVocabularyWord<ManifestKind>).Bind(kind => Combine(
+        value.ToMap().Bind(map => Combine(
             map.CheckKeys(ItemKeys),
             map.ReadRequired("hash", ReadItemHash),
             map.ReadRequired("name", ReadName),
+            map.ReadRequired("kind", ReadVocabularyWord<KindWord>).Bind(word => ReadKind(map, word)),
             map.ReadRequired("type", ReadName),
             map.ReadOptional("tier", ReadVocabularyWord<ItemTier>),
-            kind == ManifestKind.Weapon ? map.ReadOptional("slot", ReadVocabularyWord<WeaponSlot>) : Succeed(Optional.None<WeaponSlot>()),
-            kind is ManifestKind.Armor or ManifestKind.ArmorMod ? map.ReadOptional("slot", ReadVocabularyWord<ArmorSlot>) : CheckNoSlot(map, kind),
-            map.ReadOptional("damageType", ReadVocabularyWord<DamageType>),
             map.ReadOptional("icon", ReadName),
-            (_, hash, name, type, tier, weaponSlot, armorSlot, damageType, icon) =>
-                map.ToLocated(new ManifestItem(hash, name, kind, type, tier, weaponSlot, armorSlot, damageType, icon)))));
+            (_, hash, name, kind, type, tier, icon) => map.ToLocated(new ManifestItem(hash, name, kind, type, tier, icon))));
 
-    private static Result<Optional<ArmorSlot>, Errors> CheckNoSlot(YamlMap map, ManifestKind kind) =>
-        map.FindValue("slot").IsSome() && kind != ManifestKind.Weapon
-            ? map.FailAtKey<Optional<ArmorSlot>>("slot", $"slot is only allowed on a weapon, armor or an armor mod, not on a {GameNotationParsing.ToVocabularyWord(kind)}")
-            : Succeed(Optional.None<ArmorSlot>());
+    private static Result<ManifestKind, Errors> ReadKind(YamlMap map, KindWord word) =>
+        word switch
+        {
+            KindWord.Weapon => Combine(
+                map.ReadRequired("slot", ReadVocabularyWord<WeaponSlot>),
+                map.ReadOptional("damageType", ReadVocabularyWord<DamageType>),
+                (slot, damageType) => (ManifestKind)new ManifestKind.Weapon(slot, damageType)),
+            KindWord.Armor => CheckNoDamageType(map, word).Bind(_ => map.ReadRequired("slot", ReadVocabularyWord<ArmorSlot>)
+                .Map(slot => (ManifestKind)new ManifestKind.Armor(slot))),
+            KindWord.ArmorMod => CheckNoDamageType(map, word).Bind(_ => map.ReadOptional("slot", ReadVocabularyWord<ArmorSlot>)
+                .Map(slot => (ManifestKind)new ManifestKind.ArmorMod(slot))),
+            _ => CheckNoDamageType(map, word).Bind(_ => CheckNoSlot(map, word)).Map(_ => ToSlotlessKind(word)),
+        };
+
+    private static ManifestKind ToSlotlessKind(KindWord word) =>
+        word switch
+        {
+            KindWord.Subclass => new ManifestKind.Subclass(),
+            KindWord.Super => new ManifestKind.Super(),
+            KindWord.Grenade => new ManifestKind.Grenade(),
+            KindWord.Melee => new ManifestKind.Melee(),
+            KindWord.ClassAbility => new ManifestKind.ClassAbility(),
+            KindWord.Movement => new ManifestKind.Movement(),
+            KindWord.Aspect => new ManifestKind.Aspect(),
+            KindWord.Fragment => new ManifestKind.Fragment(),
+            KindWord.WeaponPerk => new ManifestKind.WeaponPerk(),
+            KindWord.ArtifactPerk => new ManifestKind.ArtifactPerk(),
+            _ => new ManifestKind.Other(),
+        };
+
+    private static Result<Unit, Errors> CheckNoSlot(YamlMap map, KindWord word) =>
+        map.FindValue("slot").IsSome()
+            ? map.FailAtKey<Unit>("slot", $"slot is only allowed on a weapon, armor or an armor mod, not on a {GameNotationParsing.ToVocabularyWord(word)}")
+            : Succeed<Unit>(new Unit.Value());
+
+    private static Result<Unit, Errors> CheckNoDamageType(YamlMap map, KindWord word) =>
+        map.FindValue("damageType").IsSome()
+            ? map.FailAtKey<Unit>("damageType", $"damageType is only allowed on a weapon, not on a {GameNotationParsing.ToVocabularyWord(word)}")
+            : Succeed<Unit>(new Unit.Value());
 }

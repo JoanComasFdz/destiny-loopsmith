@@ -95,8 +95,9 @@ items:
 ```
 
 * `kind`: `subclass|super|grenade|melee|classAbility|movement|aspect|fragment|weapon|weaponPerk|armor|armorMod|artifactPerk|other`.
-* `slot`: a weapon's `kinetic|energy|power`; armor's and an armor mod's `helmet|arms|chest|legs|classItem` (a
-  general mod has none). On anything else it is an error.
+* `slot`: a weapon's `kinetic|energy|power` and armor's `helmet|arms|chest|legs|classItem` (both required);
+  an armor mod's armor slot (none: a general mod). `damageType` belongs to weapons. Either key on anything
+  else is an error (`slot is only allowed on a weapon, armor or an armor mod, not on a grenade`).
 * `tier`: `basic|common|rare|legendary|exotic`. `icon` is a bungie.net path (the app prefixes
   `https://www.bungie.net`). A hash appears once. The file is optional: without it nothing has an icon.
 

@@ -63,7 +63,7 @@
                         </div>
                         <div class="weapon-text">
                             <span class="weapon-line-name">@weapon.Weapon.Name</span>
-                            <span class="weapon-line-sub">@LoadoutShaping.DescribeSlot(weapon.Slot)@(weapon.Archetype is Optional<string>.Some archetype ? $" · {LoadoutShaping.DescribeArchetype(archetype.Value)}" : "")</span>
+                            <span class="weapon-line-sub">@weapon.Slot.DescribeWeaponSlot()@(weapon.Archetype is Optional<string>.Some archetype ? $" · {DomainPhrasing.DescribeArchetype(archetype.Value)}" : "")</span>
                         </div>
                         <div class="weapon-perks" aria-label="Perks">
                             @foreach (var perk in weapon.Perks)
@@ -95,7 +95,7 @@
                         }
                         else
                         {
-                            <span class="icon-tile empty" title="@LoadoutShaping.DescribeSlot(piece.Slot): no piece named">@LoadoutShaping.DescribeSlot(piece.Slot)</span>
+                            <span class="icon-tile empty" title="@piece.Slot.DescribeArmorSlot(): no piece named">@piece.Slot.DescribeArmorSlot()</span>
                         }
                         <div class="icon-grid mods">
                             @foreach (var mod in piece.Mods)
@@ -170,7 +170,7 @@
         + tile.Description.Match(description => $" — {description.Value}", _ => "");
 
     private static string DescribeWeapon(WeaponView weapon) =>
-        $"{weapon.Weapon.Name} — {LoadoutShaping.DescribeSlot(weapon.Slot)} · {weapon.Type}{weapon.Archetype.Match(archetype => $" · {LoadoutShaping.DescribeArchetype(archetype.Value)}", _ => "")}";
+        $"{weapon.Weapon.Name} — {weapon.Slot.DescribeWeaponSlot()} · {weapon.Type}{weapon.Archetype.Match(archetype => $" · {DomainPhrasing.DescribeArchetype(archetype.Value)}", _ => "")}";
 
     private const string MissingPerk = "Perk not known: the build doesn't name it (a DIM link carries the weapon, not its roll).";
 

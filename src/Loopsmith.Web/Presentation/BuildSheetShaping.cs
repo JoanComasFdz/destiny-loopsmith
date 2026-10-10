@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Globalization;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 using Loopsmith.Core.Orchestration;
@@ -63,7 +62,7 @@ public static class BuildSheetShaping
                     .OrderBy(group => group.Key)
                     .Select(group => new LeftOutGroup(
                         group.Key.DescribeLoadoutParts(),
-                        [.. group.GroupBy(item => item.Hash).Select(copies => new LeftOutEntry(copies.Key, DescribeHash(manifest, copies.Key), copies.Count()))])),
+                        [.. group.GroupBy(item => item.Hash).Select(copies => new LeftOutEntry(copies.Key, manifest.DescribeItemHash(copies.Key), copies.Count()))])),
             ],
             issues);
     }
@@ -73,10 +72,6 @@ public static class BuildSheetShaping
         LoopDesigning.ReadDimLink(link) is Result<DimLink, string>.Ok { Value: DimLink.Shared shared }
             ? $"dim.gg/{shared.ShareId.Value}"
             : "Open in DIM";
-
-    /// <summary>A hash by its manifest name, or the number when the excerpt doesn't have it.</summary>
-    private static string DescribeHash(ManifestExcerpt manifest, ItemHash hash) =>
-        manifest.Items.TryGetValue(hash, out var item) ? item.Name : hash.Value.ToString(CultureInfo.InvariantCulture);
 
     private static Optional<int> ReadStat(Optional<StatValue> value) =>
         value.Map(stat => stat.Value);
