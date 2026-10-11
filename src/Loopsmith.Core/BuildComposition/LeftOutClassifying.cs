@@ -25,14 +25,6 @@ public static class LeftOutClassifying
     public static ImmutableArray<LeftOutItem> ListMissing(RuleCatalog catalog, Build build) =>
         [.. build.LeftOut.Where(item => ClassifyLeftOut(catalog, item).IsMissing())];
 
-    /// <summary>The left-out items with no part in a loop, each with why: what "No part in a loop" lists.</summary>
-    public static ImmutableArray<NoLoopEffectItem> ListNoLoopEffect(RuleCatalog catalog, Build build) =>
-    [
-        .. build.LeftOut.SelectMany(item => ClassifyLeftOut(catalog, item).Match(
-            _ => [],
-            none => new[] { new NoLoopEffectItem(item, none.Why) })),
-    ];
-
     /// <summary>Why an item has no part in a loop: a stat or tuning mod by its stat plug, else by its manifest kind; none: a gap.</summary>
     private static Optional<string> FindNoLoopEffect(ManifestExcerpt manifest, ItemHash hash) =>
         manifest.StatPlugs.TryGetValue(hash, out var plug) && DescribeStatsOnly(plug) is Optional<string>.Some statsOnly
