@@ -1,9 +1,8 @@
 @inject BungieAccount Account
-@* The build's stats: as the build has them ("?" where it doesn't say), typed by hand, or added up from the player's
-   own armor after a Bungie login — the copies the build wears (the share's own, or picked with ⋯ in the build's armor;
-   else the player's best copy), plus the build's stat mods, tuning and fragments, the way DIM adds up a loadout
-   (LoopDesigning.AddUpStats). Or a character's current stats, as Bungie has them. Whatever is used goes into the
-   embedded build's stats:. *@
+@* The build's stats: as the build has them ("?" where it doesn't say), typed by hand, or from the player's own armor
+   after a Bungie login — the share's own pieces when the loadout is theirs, else the pieces they pick with ⋯ in the
+   build's armor — added up with the build's stat mods, tuning and fragments the way DIM does (LoopDesigning). After
+   the login this section says only that, in one line. Whatever is used goes into the embedded build's stats:. *@
 <div class="stats-head">
     <h3 class="section-label">Stats</h3>
     @if (OnSetStats.HasDelegate && !editing)
@@ -42,42 +41,45 @@ else
 
 @if (OnSetStats.HasDelegate && Account.CanLogIn)
 {
-    <div class="stats-login" data-testid="stats-login">
-        @if (waiting)
+    @if (Profile.IsSome())
+    {
+        @* After the login: one line. The build's own armor was loaded (its stats set), or how to pick yours (⋯). *@
+        @if (Note is Optional<string>.Some note)
         {
-            <p class="muted">Waiting for Bungie's login in its window…</p>
-            <button type="button" class="btn ghost small" data-action="cancel-login" @onclick="CancelLoginAsync">Cancel</button>
+            <p class="stats-armor-note" role="status" data-testid="armor-note">@note.Value</p>
         }
-        else if (Profile is Optional<BungieProfile>.Some loaded)
-        {
-            @RenderTotals(loaded.Value)
-        }
-        else
-        {
-            <p class="stats-login-note">
-                Log in with Bungie to load this build's stats from your own armor. Loopsmith asks Bungie for read-only access to
-                your characters, inventory and vault, finds this loadout's armor and adds up its stats with its mods and
-                fragments, the way DIM does. It changes nothing in your account and keeps nothing: the access is used once, in
-                this tab, and only with bungie.net.
-            </p>
-            <button type="button" class="btn primary" data-action="bungie-login" @onclick="LogInAsync">Log in with Bungie</button>
-        }
-        @if (problem is Optional<string>.Some why)
-        {
-            <p class="stats-problem" role="alert" data-testid="stats-login-problem">@why.Value</p>
-        }
-        @if (applied is Optional<string>.Some done)
-        {
-            <p class="status" role="status" data-testid="stats-applied">@done.Value</p>
-        }
-    </div>
+    }
+    else
+    {
+        <div class="stats-login" data-testid="stats-login">
+            @if (waiting)
+            {
+                <p class="muted">Waiting for Bungie's login in its window…</p>
+                <button type="button" class="btn ghost small" data-action="cancel-login" @onclick="CancelLoginAsync">Cancel</button>
+            }
+            else
+            {
+                <p class="stats-login-note">
+                    Log in with Bungie to load this build's stats from your own armor. Loopsmith asks Bungie for read-only access to
+                    your characters, inventory and vault, finds this loadout's armor and adds up its stats with its mods and
+                    fragments, the way DIM does. It changes nothing in your account and keeps nothing: the access is used once, in
+                    this tab, and only with bungie.net.
+                </p>
+                <button type="button" class="btn primary" data-action="bungie-login" @onclick="LogInAsync">Log in with Bungie</button>
+            }
+            @if (problem is Optional<string>.Some why)
+            {
+                <p class="stats-problem" role="alert" data-testid="stats-login-problem">@why.Value</p>
+            }
+        </div>
+    }
 }
 
 @code {
     [Parameter, EditorRequired]
     public ValidatedBuild Build { get; set; } = null!;
 
-    /// <summary>Stats to set on the build (typed, or from the player's armor); none: the stats are only shown.</summary>
+    /// <summary>Stats typed for the build; none: the stats are only shown.</summary>
     [Parameter]
     public EventCallback<StatLine> OnSetStats { get; set; }
 
@@ -98,54 +100,6 @@ else
     private ImmutableArray<string> problems = [];
     private bool waiting;
     private Optional<string> problem = Optional.None<string>();
-    private Optional<string> applied = Optional.None<string>();
-
-    /// <summary>What the build's armor adds up to (the copies it wears, else the player's best), how, and their characters' current stats.</summary>
-    private RenderFragment RenderTotals(BungieProfile loaded) => __builder =>
-    {
-        var choices = LoopDesigning.ListStatChoices(Build, loaded);
-        var totals = LoopDesigning.AddUpStats(Build, choices);
-        @if (Note is Optional<string>.Some note)
-        {
-            <p class="stats-armor-note" data-testid="armor-note">@note.Value</p>
-        }
-        @switch (totals)
-        {
-            case Result<StatTotals, string>.Ok added:
-                <p class="stats-total-label">Your armor adds up to:</p>
-                <StatBars Bars="StatsShaping.ToBars(added.Value.Stats)" Class="compact" TestId="stats-total" />
-                <details class="stats-parts">
-                    <summary>How it adds up</summary>
-                    <ul>
-                        @foreach (var part in added.Value.Parts)
-                        {
-                            <li><span class="stats-part-name">@part.Source</span> <span class="muted">@StatsShaping.DescribePoints(part.Points)</span></li>
-                        }
-                    </ul>
-                </details>
-                @foreach (var line in added.Value.Notes)
-                {
-                    <p class="muted stats-note">@line</p>
-                }
-                <button type="button" class="btn primary small" data-action="use-armor-stats" @onclick="() => UseAsync(added.Value.Stats, StatsFromArmor)">Use these stats</button>
-                break;
-            case Result<StatTotals, string>.Error refused:
-                <p class="muted" data-testid="stats-total-refused">@refused.Failure</p>
-                break;
-        }
-        @foreach (var character in choices.Characters)
-        {
-            <div class="stats-character" data-testid="character-stats">
-                <p>Or your @character.Class's current stats, as Bungie has them:</p>
-                <StatBars Bars="StatsShaping.ToBars(character.Stats)" Class="compact" TestId="character-stat-bars" />
-                <button type="button" class="btn small" data-action="use-character-stats" @onclick="() => UseAsync(character.Stats, StatsFromCharacter)">Use these</button>
-            </div>
-        }
-        <button type="button" class="btn ghost small" data-action="bungie-login" @onclick="LogInAsync">Log in again</button>
-    };
-
-    private const string StatsFromArmor = "Stats set from your armor.";
-    private const string StatsFromCharacter = "Stats set from your character.";
 
     private void StartEditing()
     {
@@ -179,7 +133,6 @@ else
     {
         waiting = true;                                                                          // impure (component state)
         problem = Optional.None<string>();                                                       // impure (component state)
-        applied = Optional.None<string>();                                                       // impure (component state)
         var loaded = await Account.LoadProfileAsync();                                           // impure (window, network)
         var refused = loaded.Match(_ => Optional.None<string>(), error => Optional.Some(error.Failure)); // pure
         waiting = false;                                                                         // impure (component state)
@@ -192,11 +145,4 @@ else
 
     private async Task CancelLoginAsync() =>
         await Account.CancelAsync();                                                             // impure
-
-    private async Task UseAsync(StatLine stats, string done)
-    {
-        await OnSetStats.InvokeAsync(stats);                                                     // impure
-        applied = Optional.Some(done);                                                           // impure (component state)
-    }
-
 }

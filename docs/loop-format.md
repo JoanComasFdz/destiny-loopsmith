@@ -271,30 +271,27 @@ steps replay:
   Bungie for read-only access and reads the player's armor (worn, carried and in the vault). A dim.gg share names
   the copy of each piece it wears (its instance id, kept as the build's `armorCopies`), so:
   * **their own share** — every copy is in their account: the build wears those pieces, and its stats are set from
-    them at once ("This loadout is yours…");
-  * **anyone else's** (or a link that names no copies) — they're told they can pick their own pieces. Meanwhile the
-    total uses their copy of each piece with the most points, when they own the same item; one they don't own is
-    said so.
+    them at once;
+  * **anyone else's** (or a link that names no copies) — nothing changes yet: they pick their own pieces with ⋯.
 
-  After the login each armor piece of the build has **⋯**: it opens the **armor picker** for that slot — the
-  player's pieces for it (for the build's class; Bungie's icons), the copy the build wears first (✓), then its other
-  copies, then the rest by name. Hovering a piece (or a first tap, on a phone) shows its stats, its set and where it
-  is; a click (a second tap, or "Wear this piece") wears it. The piece then is the build's: an exotic the rules know
-  is its exotic, any other piece a left-out item; its copy goes into `armorCopies`; its **set bonuses follow the
-  pieces**: two pieces of another set leave Luminopotent's 2-piece bonus only, and the other set's 2-piece perk shows
-  too. The steps replay, and the stats are set from the armor. A build wears one exotic: an exotic is listed only in
-  the exotic's own slot (the picker says how to wear one elsewhere). Pieces the excerpt doesn't know are named by
-  Bungie's full manifest, read once after the login; one it can't place is counted, not listed. The total is added up
-  the way DIM adds up a loadout, from the manifest excerpt's `statPlugs`
-  ([rule-format.md](rule-format.md#manifest-excerpt-rulesmanifestyaml)): each copy's roll (its armor-stat plugs)
-  and masterwork (Armor 3.0's adds only to its stats at 0; Armor 2.0's +2 to each at full energy); the build's
-  stat mods (Grenade Mod ×5: +50 Grenade) and tuning (Balanced Tuning: +1 to a piece's stats at 0, one per tuning
-  socket — one with no socket left adds nothing, and says so); and its fragments' stats (Spark of Shock: −10
-  Grenade). "How it adds up" lists each piece and each mod and fragment, and a total past 200 is said to count as
-  200. "Use these stats" sets them. A build that names no piece for some slot (a hand-written one) can't be added
-  up this way until a piece is picked for it with ⋯, and a piece whose roll the excerpt doesn't know is said so.
-* **A character's current stats** — after the login, each of the player's characters of the build's class, as
-  Bungie has them right now (what it wears, with its mods and subclass): "Use these".
+  The Stats section then says only that, in one line ("Your armor is loaded…", or "You can now pick your armor: tap
+  ⋯…"); it shows no total of its own. After the login each armor piece of the build has **⋯**: it opens the **armor
+  picker** for that slot — the player's pieces for it (for the build's class; Bungie's icons), the copy the build
+  wears first (✓, its stats shown), then its other copies, then the rest by name. Hovering a piece (or a first tap, on
+  a phone) shows its stats, its set and where it is; a click (a second tap, or "Wear this piece") wears it. The piece
+  then is the build's: an exotic the rules know is its exotic, any other piece a left-out item; its copy goes into
+  `armorCopies`; its **set bonuses follow the pieces**: two pieces of another set leave Luminopotent's 2-piece bonus
+  only, and the other set's 2-piece perk shows too. The steps replay, and the stats are set from the armor once every
+  slot has a piece the player owns (a piece not picked yet counts as their copy with the most points of the same item).
+  A build wears one exotic: an exotic is listed only in the exotic's own slot (the picker says how to wear one
+  elsewhere). Pieces the excerpt doesn't know are named by Bungie's full manifest, read once after the login; one it
+  can't place is counted, not listed. The stats are added up the way DIM adds up a loadout, from the manifest
+  excerpt's `statPlugs` ([rule-format.md](rule-format.md#manifest-excerpt-rulesmanifestyaml)): each copy's roll (its
+  armor-stat plugs) and masterwork (Armor 3.0's adds only to its stats at 0; Armor 2.0's +2 to each at full energy);
+  the build's stat mods (Grenade Mod ×5: +50 Grenade) and tuning (Balanced Tuning: +1 to a piece's stats at 0, one per
+  tuning socket — one with no socket left adds nothing); and its fragments' stats (Spark of Shock: −10 Grenade). A
+  build that names no piece for some slot (a hand-written one) gets its stats this way once a piece is picked for each
+  with ⋯; a piece whose roll the excerpt doesn't know leaves the stats as they were.
 
 Nothing of the login is kept (the player's armor stays in the tab until it closes); the stats and the copies are,
 in the loop's build, so a shared loop carries its author's numbers and pieces.

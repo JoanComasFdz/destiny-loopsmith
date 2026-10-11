@@ -11,7 +11,7 @@ public sealed record StatBar(string Name, string Value, string Width);
 
 /// <summary>
 /// Pure: how the Stats section words what it shows — the six stats in the game's order (Health first, Weapons last),
-/// as bars or a line, a piece's or a total's points, where a copy is, a slot.
+/// as bars, a copy's roll, where a copy is, a slot.
 /// </summary>
 public static class StatsShaping
 {
@@ -45,17 +45,6 @@ public static class StatsShaping
     /// <summary>The build's stats as the six inputs show them: a number, or empty for "?".</summary>
     public static ImmutableArray<string> ToInputs(StatLine stats) =>
         [.. Stats.Select(stat => stats.ReadStat(stat.Stat).Match(value => value.Value.Value.ToString(CultureInfo.InvariantCulture), _ => ""))];
-
-    /// <summary>"Weapons 47 · Health ? · Class 104 · …": a stat line, "?" where it doesn't say.</summary>
-    public static string DescribeStatLine(StatLine stats) =>
-        string.Join(" · ", Stats.Select(stat => $"{stat.Name} {stats.ReadStat(stat.Stat).Match(value => value.Value.Value.ToString(CultureInfo.InvariantCulture), _ => "?")}"));
-
-    /// <summary>"Weapons 5 · Health 30 · …": a copy's or a part's points (a part may be negative: "Grenade −10").</summary>
-    public static string DescribePoints(StatPoints points) =>
-        string.Join(" · ", Stats
-            .Select(stat => (stat.Name, Value: points.ReadPoints(stat.Stat)))
-            .Where(stat => stat.Value != 0)
-            .Select(stat => $"{stat.Name} {(stat.Value < 0 ? "−" : "+")}{Math.Abs(stat.Value).ToString(CultureInfo.InvariantCulture)}"));
 
     /// <summary>A copy's points, every stat shown (its roll has 0 in three): "Weapons 0 · Health 30 · …".</summary>
     public static string DescribeRoll(StatPoints points) =>

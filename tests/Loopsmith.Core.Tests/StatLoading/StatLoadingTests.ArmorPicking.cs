@@ -61,7 +61,7 @@ public sealed partial class StatLoadingTests
 
         var login = LoopDesigning.ApplyArmorLogin(session, ReadProfile([.. OwnShare(tuningSockets: 3)]));
 
-        Assert.StartsWith("This loadout is yours: the build wears its own pieces, and the stats are set from them.", login.Message, StringComparison.Ordinal);
+        Assert.StartsWith("Your armor is loaded: the build wears this loadout's own pieces, and its stats are theirs.", login.Message, StringComparison.Ordinal);
         Assert.Equal(new StatLine(ToKnownStat(27), ToKnownStat(27), ToKnownStat(100), ToKnownStat(190), ToKnownStat(125), ToKnownStat(27)), login.Session.Build.Build.Stats);
         Assert.Contains("stats: {health: 27, melee: 27, grenade: 190, super: 125, class: 100, weapons: 27}", login.Session.Design.Build.Text, StringComparison.Ordinal);
     }
@@ -75,7 +75,7 @@ public sealed partial class StatLoadingTests
         var other = LoopDesigning.ApplyArmorLogin(session, ReadProfile([.. OwnAll(tuningSockets: 0)]));
         var some = LoopDesigning.ApplyArmorLogin(session, ReadProfile(partly));
 
-        Assert.StartsWith("You can now pick your own pieces: tap ⋯ next to each armor piece in the build", other.Message, StringComparison.Ordinal);
+        Assert.StartsWith("You can now pick your armor: tap ⋯ next to each armor piece in the build", other.Message, StringComparison.Ordinal);
         Assert.Equal(session.Design.Build.Text, other.Session.Design.Build.Text);
         Assert.Equal("This loadout's pieces are in your account, but for Luminopotent Mask: tap ⋯ next to it in the build to pick one of yours.", some.Message);
         Assert.Equal(session.Design.Build.Text, some.Session.Design.Build.Text);

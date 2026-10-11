@@ -103,9 +103,9 @@ public static class StatAdding
     /// <summary>What the Stats section says after the login, for whose the build's copies are.</summary>
     public static string DescribeOwnership(LoadoutOwnership ownership) =>
         ownership.Match(
-            _ => "This loadout is yours: the build wears its own pieces, and the stats are set from them. Tap ⋯ next to a piece in the build to wear another.",
+            _ => "Your armor is loaded: the build wears this loadout's own pieces, and its stats are theirs. Tap ⋯ next to a piece to wear another.",
             partly => $"This loadout's pieces are in your account, but for {JoinWithAnd(partly.Missing)}: tap ⋯ next to {(partly.Missing.Length == 1 ? "it" : "each")} in the build to pick one of yours.",
-            _ => "You can now pick your own pieces: tap ⋯ next to each armor piece in the build to choose from your armor. The stats add up from what the build wears.");
+            _ => "You can now pick your armor: tap ⋯ next to each armor piece in the build. Its stats follow the pieces it wears.");
 
     /// <summary>
     /// The player's pieces for a slot, for the armor picker: the copy the build wears first, then its other copies, then
