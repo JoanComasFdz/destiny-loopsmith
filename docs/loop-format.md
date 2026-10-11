@@ -125,7 +125,9 @@ airborne trigger (without one it fires exactly what `class` fires). Every token 
 event ("Grenade hit"); under it, where what it set off comes from, with that item's icon — "Fragment ·
 Arcstrider" (the subclass), "Weapon perk · Festival Flight", "Armor mod · Luminopotent Cloak" (the piece in
 the mod's slot the build shows, else the slot), "Artifact perk · Tablet of Ruin", "Armor set ·
-Luminopotent", "Exotic armor", "Keyword" (in the order they first fired); under each, the elements from there
+Luminopotent", "Exotic armor", and for the keywords every build has, what each is in the game: "Arc buff" (Bolt
+Charge), "Arc debuff" (Jolt), "Arc elemental pickup" (Ionic Trace), "Pickup" (an Orb of Power) — in the order
+they first fired; under each, the elements from there
 (their icon and name, in their affinity's colour), and under each element every outcome it gave ("→ +1
 Bolt Charge"). A cascade ("↳ Bolt Charge gained") nests
 under the event that set it off, and the same event several times in a row shows once, counted (×3). An
@@ -140,8 +142,8 @@ on you on the left (Bolt Charge, Amplified, Woven Mail), your weapons' buffs in 
 the debuffs on the pack on the right (Jolt, Sever, Unravel), the pickups on the ground below them (an Orb of
 Power waiting for `pickup:orb-of-power`; an Ionic Trace never waits, it collects itself). A phone stacks the
 four. A status that switches other elements' passives on says how many ("Amplified · 1 effect": Spark of
-Frequency's extra Bolt Charge); its details list them under **While Amplified, in this build**, each with where it
-reaches. A passive that changes weapon stats (Ionic Overclock: Linear Fusion Rifles, Fusion Rifles and Heat
+Frequency's extra Bolt Charge); its details list them under **While Amplified** in their **In this build**
+card, each with where it reaches. A passive that changes weapon stats (Ionic Overclock: Linear Fusion Rifles, Fusion Rifles and Heat
 Weapons) shows in the weapons column next to the build's weapons of those types while it holds; when none of
 them is one, the details say it does nothing here and Validation says so too. A status's own effect (Woven
 Mail's damage resistance) is in its details, not in the state. Every status opens its details on a tap — one the
@@ -210,6 +212,10 @@ excerpt); where the rules' facts come from — for a Compendium row, Loopsmith's
 never copied), its tab and row ("Exotic Weapons tab, row 144 · snapshot of 2026-10-09") and a link to the sheet;
 Clarity's entry, a creator's claim (their words and link) or Loopsmith's own rule (its file and line) otherwise;
 and Loopsmith's rules: what it sets off in this build trigger by trigger — or that the rules don't know it yet.
+A keyword (a buff, a debuff, a pickup) also gets an **In this build** card: the build's other elements that deal
+with it, by role — what gives it (applies it, creates it), reacts to it, uses it up, needs it, strikes with it,
+changes it, and the passives switched on while it is there. Armor Charge: Elemental Charge and the Orb of Power
+give it, Grenade Kickstart uses it up. Its own rules stay in the rules card.
 Every keyword in it (Bolt Charge, Jolted, Ionic Trace) is in its affinity's colour. The name links to the item's light.gg page, and so
 does a weapon's name in the loadout. An exotic armor shows its exotic perk; an exotic weapon its intrinsic,
 each perk its columns hold and its catalyst. Legendary armor and weapons open nothing: their perks and mods

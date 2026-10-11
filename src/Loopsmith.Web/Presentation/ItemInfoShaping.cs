@@ -36,7 +36,8 @@ public sealed record SectionHeading(string Name, Optional<string> Icon, string L
 /// item itself; one of its perks (its intrinsic, an exotic armor's perk, what a column holds); a column not picked yet;
 /// an exotic's catalyst, with its switch (its heading when it is part of the weapon's details); an artifact, with the
 /// perks of it the build has (the artifact itself sets nothing off: its perks do); a status without an element of its own,
-/// with the glossary's facts; what a status switches on in this build (other elements' passives while it is there).
+/// with the glossary's facts; what in this build interacts with a keyword (gives it, reacts to it, uses it up, is
+/// switched on by it…).
 /// </summary>
 [Union]
 public partial record InfoSection
@@ -47,11 +48,14 @@ public partial record InfoSection
     partial record Catalyst(Optional<SectionHeading> Heading, Optional<string> BungieText, Optional<InfoRules> Rules, CatalystToggle Toggle);
     partial record Artifact(Optional<string> BungieText, ImmutableArray<SectionHeading> Perks);
     partial record Status(Optional<string> Facts);
-    partial record SwitchesOn(string Heading, ImmutableArray<SwitchedOnItem> Effects);
+    partial record InBuild(ImmutableArray<InBuildGroup> Groups);
 }
 
-/// <summary>An effect a status switches on in the build, as its details list it: the element's heading, what it does, where it reaches.</summary>
-public sealed record SwitchedOnItem(SectionHeading Heading, string Text, Optional<string> Note);
+/// <summary>One role of what interacts with a keyword in the build, under its heading ("Gives Armor Charge", "While Amplified").</summary>
+public sealed record InBuildGroup(string Heading, ImmutableArray<InBuildItem> Items);
+
+/// <summary>An element of the build that interacts with a keyword: its heading, what it does, where it reaches (weapons).</summary>
+public sealed record InBuildItem(SectionHeading Heading, string Text, Optional<string> Note);
 
 /// <summary>An item's details, as tapping its square shows them: its name, type, icon, rarity, light.gg page and sections.</summary>
 public sealed record ItemInfo(
@@ -115,24 +119,24 @@ public static class ItemInfoShaping
             _ => new InfoSection.Item(item.Bind(known => known.Description), rules));
         return new ItemInfo(
             element.Name,
-            item.Match(known => DescribeType(catalog, known.Value), _ => element.Kind.DescribeElementKind()),
+            item.Match(known => DescribeType(catalog, known.Value), _ => LoopDesigning.DescribeElementType(build, element.Id)),
             item.Bind(ToIcon),
             item.Bind(known => known.Tier),
             element.Affinity,
             item.Bind(known => LoadoutShaping.ToPageUrl(catalog, known.Hash)),
-            [section, .. catalog.FindElementStatus(element.Id).Match(status => DescribeSwitchesOn(build, status.Value), _ => [])]);
+            [section, .. LoopDesigning.FindKeyword(build, element.Id).Match(keyword => DescribeInBuild(build, keyword.Value), _ => [])]);
     }
 
     /// <summary>
     /// A status of the state: its element's details when it has one (Bolt Charge, Woven Mail), else the glossary's facts
-    /// (Amplified: no rules of its own) — either way with what it switches on in this build.
+    /// (Amplified: no rules of its own) — either way with what interacts with it in this build.
     /// </summary>
     private static Optional<ItemInfo> ShapeStatus(ValidatedBuild build, StatusId status) =>
         build.Catalog.FindStatusElement(status).Match(
             own => ShapeElement(build, own.Value),
             _ => Optional.Some(ShapeBareStatus(build, status)));
 
-    /// <summary>A status the rules have no element for (Amplified): the glossary's facts, and what it switches on.</summary>
+    /// <summary>A status the rules have no element for (Amplified): the glossary's facts, and what interacts with it in this build.</summary>
     private static ItemInfo ShapeBareStatus(ValidatedBuild build, StatusId status)
     {
         var glossary = build.Catalog.Glossary;
@@ -144,28 +148,31 @@ public static class ItemInfoShaping
             Optional.None<ItemTier>(),
             glossary.ReadStatusAffinity(status),
             Optional.None<string>(),
-            [new InfoSection.Status(facts.Length > 0 ? Optional.Some(facts) : Optional.None<string>()), .. DescribeSwitchesOn(build, status)]);
+            [new InfoSection.Status(facts.Length > 0 ? Optional.Some(facts) : Optional.None<string>()), .. DescribeInBuild(build, new KeywordRef.Status(status))]);
     }
 
-    /// <summary>"While Amplified, in this build": what the status switches on (none: no section).</summary>
-    private static ImmutableArray<InfoSection> DescribeSwitchesOn(ValidatedBuild build, StatusId status)
+    /// <summary>"In this build": what interacts with the keyword, role by role (none: no section).</summary>
+    private static ImmutableArray<InfoSection> DescribeInBuild(ValidatedBuild build, KeywordRef keyword)
     {
-        var effects = LoopDesigning.ExplainSwitchedOn(build, status);
-        return effects.IsEmpty
+        var groups = LoopDesigning.ExplainInteractions(build, keyword);
+        return groups.IsEmpty
             ? []
-            : [new InfoSection.SwitchesOn(
-                $"While {build.Catalog.Glossary.DescribeStatus(status)}, in this build",
-                [.. effects.Select(effect => new SwitchedOnItem(DescribeEffectHeading(build, effect), effect.Text, effect.Note))])];
+            : [new InfoSection.InBuild(
+            [
+                .. groups.Select(group => new InBuildGroup(
+                    group.Heading,
+                    [.. group.Interactions.Select(interaction => new InBuildItem(DescribeInteractionHeading(build, interaction), interaction.Text, interaction.Note))])),
+            ])];
     }
 
-    /// <summary>The element that has the effect: its name, icon and what it is ("Luminopotent · 2-piece perk", "Arc Fragment").</summary>
-    private static SectionHeading DescribeEffectHeading(ValidatedBuild build, SwitchedOnLine effect)
+    /// <summary>The element that interacts: its name, icon and what it is ("Luminopotent · 2-piece perk", "Arc Fragment").</summary>
+    private static SectionHeading DescribeInteractionHeading(ValidatedBuild build, KeywordInteraction interaction)
     {
-        var item = build.Catalog.FindElementItem(effect.Source);
+        var item = build.Catalog.FindElementItem(interaction.Source);
         return new SectionHeading(
-            effect.SourceName,
-            LoadoutShaping.FindElementIcon(build.Catalog, effect.Source),
-            item.Match(known => DescribeType(build.Catalog, known.Value), _ => effect.SourceKind.DescribeElementKind()));
+            interaction.SourceName,
+            LoadoutShaping.FindElementIcon(build.Catalog, interaction.Source),
+            item.Match(known => DescribeType(build.Catalog, known.Value), _ => LoopDesigning.DescribeElementType(build, interaction.Source)));
     }
 
     private static Optional<ItemInfo> ShapeItem(ValidatedBuild build, ItemHash hash) =>

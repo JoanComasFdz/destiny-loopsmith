@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using Dunet;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 
@@ -17,15 +16,6 @@ public sealed record OutcomeMention(Outcome Outcome, int Copies);
 
 /// <summary>An outcome and the phrase that describes it ("+1 Bolt Charge").</summary>
 public sealed record DescribedOutcome(Outcome Outcome, string Text);
-
-/// <summary>Which keyword a phrase names: a status, a pickup or a summon, by its id.</summary>
-[Union]
-public partial record KeywordRef
-{
-    partial record Status(StatusId Id);
-    partial record Pickup(PickupId Id);
-    partial record Summon(SummonId Id);
-}
 
 /// <summary>A keyword a phrase names, in its affinity.</summary>
 public sealed record KeywordName(KeywordRef Keyword, Affinity Affinity);

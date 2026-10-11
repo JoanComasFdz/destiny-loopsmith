@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Loopsmith.Core.Causality;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 using Loopsmith.Core.Phrasing;
