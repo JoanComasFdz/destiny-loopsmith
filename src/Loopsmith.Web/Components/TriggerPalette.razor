@@ -1,5 +1,13 @@
-@* The next triggers the build offers (LoopDesigning.ListTriggerOptions), grouped; hit and kill side by side.
-   Every trigger is pickable. A hit / kill pair has a target count: how many enemies that one action catches. *@
+@* The next triggers the build offers (LoopDesigning.ListTriggerOptions), laid out like Destiny's HUD
+   (TriggerHudShaping): the Super's diamond, the grenade, melee and class ability squares in the subclass's colour, the
+   weapons in their damage type's colour; above them what is on the ground and the states to declare. Tapping the Super,
+   an ability or a weapon picks it: its actions show below the HUD — hit or kill, and how many enemies that one action
+   catches — and stay there for the next step. One that only has one action (the class ability without an air move, a
+   pickup, a declared state) acts at once. Every trigger is pickable. *@
+@{
+    var hud = TriggerHudShaping.ShapeHud(Options, counts, Build);
+    var picked = FindPicked(hud);
+}
 <section class="panel palette" aria-label="Next trigger">
     <header class="panel-head">
         <h2>Next trigger</h2>
@@ -9,54 +17,112 @@
     {
         <p class="palette-hint">@Hint</p>
     }
-    @foreach (var group in TriggerPaletteShaping.ShapePalette(Options, counts, Build))
-    {
-        <h3 class="section-label">@group.Heading</h3>
-        <div class="trigger-list">
-            @foreach (var choice in group.Choices)
-            {
-                var isPair = choice.Buttons.Length > 1;
-                <div class="trigger-row @(isPair ? "pair" : "single")" data-choice="@choice.Key">
-                    @if (isPair)
-                    {
-                        <span class="trigger-title">@choice.Title</span>
-                    }
-                    @if (choice.Targets is Optional<TargetCount>.Some targets)
-                    {
-                        <label class="target-count" title="How many enemies one hit or kill catches">
-                            <span class="target-count-sign" aria-hidden="true">×</span>
-                            <select value="@targets.Value.Value" @onchange="e => PickTargetCount(choice.Key, e)"
-                                    aria-label="@($"{choice.Title}: enemies per hit or kill")">
-                                @foreach (var count in TriggerPaletteShaping.TargetCountChoices)
-                                {
-                                    <option value="@count">@count</option>
-                                }
-                            </select>
-                        </label>
-                    }
-                    <div class="trigger-buttons">
-                        @foreach (var button in choice.Buttons)
+    <div class="trig-hud aff-@hud.Subclass.ToString().ToLowerInvariant()" data-testid="trigger-hud">
+        @if (!hud.OnYou.IsEmpty || !hud.OnWeapons.IsEmpty || !hud.OnPack.IsEmpty || !hud.NewPack.IsEmpty || !hud.Ground.IsEmpty)
+        {
+            <div class="trig-status" aria-label="States you declare, and what is on the ground">
+                @RenderStatuses("you", "On you", hud.OnYou, [])
+                @RenderStatuses("weapons", "Your weapons", hud.OnWeapons, [])
+                @RenderStatuses("pack", "The pack", hud.OnPack, hud.NewPack)
+                @if (!hud.Ground.IsEmpty)
+                {
+                    <div class="trig-group" data-group="ground">
+                        <span class="trig-group-label">On the ground</span>
+                        @foreach (var button in hud.Ground)
                         {
-                            <button class="trigger @(isPair ? "half" : "whole")"
-                                    data-token="@button.Token"
-                                    title="@($"{button.Label}  ({button.Token})")"
-                                    @onclick="() => PickTrigger(button.Action)">
-                                <span class="trigger-caption">@button.Caption</span>
-                                @if (button.IsNew)
-                                {
-                                    <span class="badge new" title="Unlocked by the last step">new</span>
-                                }
-                            </button>
+                            @RenderButton(button, "trig-chip", "◆")
                         }
                     </div>
-                </div>
-            }
+                }
+            </div>
+        }
+        <div class="trig-bar" aria-hidden="true"></div>
+        <div class="trig-main">
+            <div class="trig-abilities">
+                @if (hud.Super is Optional<HudSlot>.Some super)
+                {
+                    @RenderSlot(super.Value, "trig-super")
+                }
+                @foreach (var ability in hud.Abilities)
+                {
+                    @RenderSlot(ability, "trig-ability")
+                }
+            </div>
+            <div class="trig-weapons">
+                @foreach (var weapon in hud.Weapons)
+                {
+                    var slot = weapon.Slot;
+                    var isPicked = picked.Match(found => found.Value.Choice.Key == slot.Choice.Key, _ => false);
+                    <button type="button" class="trig-weapon aff-@slot.Affinity.ToString().ToLowerInvariant() @(isPicked ? "picked" : "")"
+                            data-hud-slot="@slot.Choice.Key" aria-pressed="@(isPicked ? "true" : "false")"
+                            aria-label="@($"{slot.Name} ({weapon.WeaponSlot})")" title="@slot.Name"
+                            @onclick="() => Pick(slot)">
+                        <span class="trig-weapon-icon">
+                            @if (slot.Icon is Optional<string>.Some icon)
+                            {
+                                <img src="@icon.Value" alt="" loading="lazy" />
+                            }
+                        </span>
+                        @if (weapon.DamageIcon is Optional<string>.Some damage)
+                        {
+                            <img class="trig-damage-icon" src="@damage.Value" alt="" loading="lazy" />
+                        }
+                        <span class="trig-weapon-text">
+                            <span class="trig-weapon-name">@slot.Name</span>
+                            <span class="trig-weapon-kind">@DescribeWeaponKind(weapon)</span>
+                        </span>
+                        @if (slot.IsNew)
+                        {
+                            <span class="trig-new" title="Unlocked by the last step"></span>
+                        }
+                    </button>
+                }
+            </div>
         </div>
-    }
+    </div>
+    <div class="trig-actions" data-testid="trig-actions" aria-live="polite">
+        @if (picked is Optional<HudSlot>.Some shown)
+        {
+            var choice = shown.Value.Choice;
+            <span class="trig-actions-title">@shown.Value.Name</span>
+            <div class="trigger-buttons">
+                @foreach (var button in choice.Buttons)
+                {
+                    <button type="button" class="trigger" data-token="@button.Token" title="@($"{button.Label}  ({button.Token})")"
+                            @onclick="() => PickTrigger(button.Action)">
+                        <span class="trigger-caption">@button.Caption</span>
+                        @if (button.IsNew)
+                        {
+                            <span class="badge new" title="Unlocked by the last step">new</span>
+                        }
+                    </button>
+                }
+            </div>
+            @if (choice.Targets is Optional<TargetCount>.Some targets)
+            {
+                <label class="target-count" title="How many enemies one hit or kill catches">
+                    <span class="target-count-sign" aria-hidden="true">×</span>
+                    <select value="@targets.Value.Value" @onchange="e => PickTargetCount(choice.Key, e)"
+                            aria-label="@($"{choice.Title}: enemies per hit or kill")">
+                        @foreach (var count in TriggerPaletteShaping.TargetCountChoices)
+                        {
+                            <option value="@count">@count</option>
+                        }
+                    </select>
+                    <span class="target-count-label">@(targets.Value.Value == 1 ? "enemy" : "enemies")</span>
+                </label>
+            }
+        }
+        else
+        {
+            <span class="muted">Tap your Super, an ability or a weapon.</span>
+        }
+    </div>
 </section>
 
 @code {
     private ImmutableDictionary<string, TargetCount> counts = ImmutableDictionary<string, TargetCount>.Empty;
+    private Optional<string> pickedKey = Optional.None<string>();
 
     [Parameter, EditorRequired]
     public ValidatedBuild Build { get; set; } = null!;
@@ -74,12 +140,112 @@
     [Parameter]
     public EventCallback<PlayerAction> OnPick { get; set; }
 
+    /// <summary>The Super, an ability or a weapon: its square (the Super's a diamond), its icon or "?", a dot when it is new.</summary>
+    private RenderFragment RenderSlot(HudSlot slot, string kind) => __builder =>
+    {
+        var isPicked = pickedKey == Optional.Some(slot.Choice.Key);
+        var affinity = slot.Affinity.ToString().ToLowerInvariant();
+        @if (slot.AtOnce is Optional<TriggerButton>.Some once)
+        {
+            <button type="button" class="@kind trigger aff-@affinity" data-hud-slot="@slot.Choice.Key" data-token="@once.Value.Token"
+                    aria-label="@($"{slot.Kind}: {slot.Name}")" title="@($"{slot.Kind}: {slot.Name}  ({once.Value.Token})")"
+                    @onclick="() => PickTrigger(once.Value.Action)">
+                @RenderIcon(slot)
+            </button>
+        }
+        else
+        {
+            <button type="button" class="@kind aff-@affinity @(isPicked ? "picked" : "")" data-hud-slot="@slot.Choice.Key"
+                    aria-pressed="@(isPicked ? "true" : "false")" aria-label="@($"{slot.Kind}: {slot.Name}")" title="@($"{slot.Kind}: {slot.Name}")"
+                    @onclick="() => Pick(slot)">
+                @RenderIcon(slot)
+            </button>
+        }
+    };
+
+    /// <summary>A slot's icon or "?", and a dot when one of its actions is new.</summary>
+    private RenderFragment RenderIcon(HudSlot slot) => __builder =>
+    {
+        <span class="trig-icon">
+            @if (slot.Icon is Optional<string>.Some icon)
+            {
+                <img src="@icon.Value" alt="" loading="lazy" />
+            }
+            else
+            {
+                <span class="trig-unknown" aria-hidden="true">?</span>
+            }
+        </span>
+        @if (slot.IsNew)
+        {
+            <span class="trig-new" title="Unlocked by the last step"></span>
+        }
+    };
+
+    /// <summary>A group of statuses ("On you": Bolt Charge [at max (x10)] [ends]), and its other declarations (a new pack).</summary>
+    private RenderFragment RenderStatuses(string group, string label, ImmutableArray<HudStatus> statuses, ImmutableArray<TriggerButton> more) => __builder =>
+    {
+        @if (!statuses.IsEmpty || !more.IsEmpty)
+        {
+            <div class="trig-group" data-group="@group">
+                <span class="trig-group-label">@label</span>
+                @foreach (var status in statuses)
+                {
+                    <span class="trig-status-chip aff-@status.Affinity.ToString().ToLowerInvariant()">
+                        <span class="trig-status-name">@status.Name</span>
+                        @foreach (var button in status.Buttons)
+                        {
+                            @RenderButton(button, "trig-mini", "")
+                        }
+                    </span>
+                }
+                @foreach (var button in more)
+                {
+                    @RenderButton(button, "trig-chip", "")
+                }
+            </div>
+        }
+    };
+
+    /// <summary>A trigger that acts at one tap: a declaration, a new pack, a pickup.</summary>
+    private RenderFragment RenderButton(TriggerButton button, string kind, string glyph) => __builder =>
+    {
+        <button type="button" class="trigger @kind" data-token="@button.Token" title="@($"{button.Label}  ({button.Token})")"
+                @onclick="() => PickTrigger(button.Action)">
+            @if (glyph.Length > 0)
+            {
+                <span class="trig-chip-glyph" aria-hidden="true">@glyph</span>
+            }
+            <span class="trigger-caption">@button.Caption</span>
+            @if (button.IsNew)
+            {
+                <span class="badge new" title="Unlocked by the last step">new</span>
+            }
+        </button>
+    };
+
+    /// <summary>The slot whose actions show below the HUD, while the HUD still offers it.</summary>
+    private Optional<HudSlot> FindPicked(TriggerHud hud) =>
+        pickedKey.Bind(key => hud.Super.Match(found => new[] { found.Value }, _ => [])
+            .Concat(hud.Abilities)
+            .Concat(hud.Weapons.Select(weapon => weapon.Slot))
+            .Where(slot => slot.Choice.Key == key && !slot.AtOnce.IsSome())
+            .Select(Optional.Some)
+            .FindFirstSome());
+
+    private static string DescribeWeaponKind(HudWeapon weapon) =>
+        weapon.Archetype.Match(archetype => $"{weapon.WeaponSlot} · {archetype.Value}", _ => weapon.WeaponSlot.ToString());
+
+    private void Pick(HudSlot slot) =>
+        pickedKey = Optional.Some(slot.Choice.Key);                                              // impure (component state)
+
     private Task PickTrigger(PlayerAction action) =>
-        OnPick.InvokeAsync(action);
+        OnPick.InvokeAsync(action);                                                              // impure
 
     private void PickTargetCount(string key, ChangeEventArgs e)
     {
-        var picked = TriggerPaletteShaping.ParseTargetCount(e.Value?.ToString());
-        counts = picked.Match(count => counts.SetItem(key, count.Value), _ => counts.Remove(key));
+        var picked = TriggerPaletteShaping.ParseTargetCount(e.Value?.ToString());               // pure
+        var updated = picked.Match(count => counts.SetItem(key, count.Value), _ => counts.Remove(key)); // pure
+        counts = updated;                                                                        // impure (component state)
     }
 }
