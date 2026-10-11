@@ -23,15 +23,14 @@ public sealed record WeaponOptionView(
     bool Worn);
 
 /// <summary>The weapon picker for a slot: its title, the player's weapons for it and what it leaves out.</summary>
-public sealed record WeaponPickerView(WeaponSlot Slot, string Title, ImmutableArray<WeaponOptionView> Options, ImmutableArray<string> Notes);
+public sealed record WeaponPickerView(string Title, ImmutableArray<WeaponOptionView> Options, ImmutableArray<string> Notes);
 
 /// <summary>Pure: what the weapon picker shows of the weapons Core lists for a slot (LoopDesigning.ListWeaponOptions).</summary>
 public static class WeaponPickerShaping
 {
     public static WeaponPickerView ShapePicker(ValidatedBuild build, WeaponOptions options) =>
         new(
-            options.Slot,
-            $"Pick your {options.Slot.DescribeWeaponSlot().ToLowerInvariant()} weapon",
+            options.Slot.Match(slot => $"Pick your {slot.Value.DescribeWeaponSlot().ToLowerInvariant()} weapon", _ => "Pick a weapon"),
             [.. options.Options.Select(option => ShapeOption(build, option))],
             options.Notes);
 
@@ -40,15 +39,14 @@ public static class WeaponPickerShaping
         var catalog = build.Catalog;
         var kind = option.Item.Kind is ManifestKind.Weapon weapon ? Optional.Some(weapon) : Optional.None<ManifestKind.Weapon>();
         var type = kind.Bind(found => found.DamageType);
-        var roll = kind.Match(found => found.Value.Traits.ReadRoll(option.Weapon.Plugs), _ => []);
         return new WeaponOptionView(
             LoadoutShaping.DescribeWeaponItem(option.Item),
             LoadoutShaping.DescribeMarks(catalog, option.Item.Tier, Optional.Some(option.Weapon.Marks), LoopDesigning.FindCopyBreaker(build, option.Weapon)),
             option.Weapon.InstanceId,
             string.Join(" · ", new[] { option.Item.Type.UnwrapOr(""), type.Match(found => found.Value.ToString(), _ => "") }.Where(part => part.Length > 0)),
             type.Bind(found => LoadoutShaping.FindDamageIcon(catalog, found)),
-            [.. roll.SelectMany(pick => pick.Match(hash => new[] { LoadoutShaping.DescribePerk(catalog, hash.Value) }, _ => []))],
-            kind.Bind(found => found.Catalyst).Match(catalyst => option.Weapon.Plugs.Contains(catalyst.Value), _ => false),
+            [.. option.Roll.SelectMany(pick => pick.Match(hash => new[] { LoadoutShaping.DescribePerk(catalog, hash.Value) }, _ => []))],
+            option.Catalyst,
             StatsShaping.DescribePlace(option.Weapon.Place),
             option.Worn);
     }

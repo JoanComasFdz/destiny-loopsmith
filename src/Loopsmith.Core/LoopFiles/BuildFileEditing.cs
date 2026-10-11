@@ -41,7 +41,8 @@ public static class BuildFileEditing
         if (events[list.First] is SequenceStart { Style: SequenceStyle.Flow })
         {
             var close = (int)events[list.Last].Start.Index;                                     // the "]"
-            return new Result<string, string>.Ok(text.Insert(close, children.IsEmpty ? entry : $", {entry}"));
+            var trailingComma = text[..close].TrimEnd().EndsWith(',');                             // "[{…}, ]": YAML allows it
+            return new Result<string, string>.Ok(text.Insert(close, children.IsEmpty || trailingComma ? entry : $", {entry}"));
         }
 
         if (events[list.First] is not SequenceStart || children.IsEmpty)
@@ -52,7 +53,7 @@ public static class BuildFileEditing
         var start = (int)events[children[^1].First].Start.Index;
         var prefix = text[(text.LastIndexOf('\n', Math.Max(start - 1, 0)) + 1)..start];         // "  - "
         var lineEnd = text.IndexOf('\n', ToTextSpan(events, children[^1]).End);
-        return prefix.TrimEnd().EndsWith('-') && prefix.TrimEnd().TrimStart() == "-"
+        return prefix.Trim() == "-"
             ? new Result<string, string>.Ok(lineEnd < 0 ? $"{text}\n{prefix}{entry}\n" : text.Insert(lineEnd, $"\n{prefix}{entry}"))
             : new Result<string, string>.Error($"{file.Path}: its weapons aren't a list Loopsmith can add to");
     }

@@ -38,20 +38,22 @@ public static class CopyFinding
     }
 
     /// <summary>
-    /// The player's weapons for a slot, for the weapon picker: the copy the build's weapon there wears first (its weapon
-    /// number <paramref name="weapon"/>; none: an empty slot), then that weapon's other copies, then the rest by name and
-    /// tier. Its note counts the weapons the excerpt can't place. What the build can wear of them (one exotic) is
-    /// BuildComposition's to say (<c>WeaponSwapping.CheckWeapon</c>).
+    /// The player's weapons for the slot <paramref name="target"/> fills, for the weapon picker: the copy the build's weapon
+    /// there names first (ticked only when it is that very copy, so another copy of theirs can still be picked to load its
+    /// perks), then that weapon's other copies, then the rest by name and tier; each with the perks it holds and whether its
+    /// catalyst is in. Its note counts the weapons the excerpt can't place. What the build can wear of them (one exotic, one
+    /// weapon a slot) is BuildComposition's to say (<c>WeaponSwapping.CheckWeapon</c>).
     /// </summary>
-    public static WeaponOptions ListWeaponOptions(RuleCatalog catalog, Build build, BungieProfile profile, WeaponSlot slot, Optional<int> weapon)
+    public static WeaponOptions ListWeaponOptions(RuleCatalog catalog, Build build, BungieProfile profile, WeaponTarget target)
     {
-        var current = weapon.Bind(index => index >= 0 && index < build.Weapons.Length ? Optional.Some(build.Weapons[index]) : Optional.None<WeaponLoadout>());
-        var worn = current.Bind(found => FindWornWeapon(profile, found)).Map(copy => copy.InstanceId);
+        var slot = build.FindTargetSlot(target);
+        var current = build.FindTargetWeapon(target);
         var named = profile.Weapons.Select(owned => (Weapon: owned, Item: catalog.Manifest.FindItem(owned.Hash))).ToImmutableArray();
         var options = named
             .SelectMany(entry => entry.Item.Match(item => new[] { (entry.Weapon, Item: item.Value) }, _ => []))
-            .Where(entry => entry.Item.Kind is ManifestKind.Weapon kind && kind.Slot == slot)
-            .Select(entry => new WeaponOption(entry.Weapon, entry.Item, worn == Optional.Some(entry.Weapon.InstanceId)))
+            .SelectMany(entry => entry.Item.Kind is ManifestKind.Weapon kind && Optional.Some(kind.Slot) == slot
+                ? new[] { new WeaponOption(entry.Weapon, entry.Item, kind.Traits.ReadRoll(entry.Weapon.Plugs), kind.HoldsCatalyst(entry.Weapon.Plugs), current.Bind(found => found.Instance) == Optional.Some(entry.Weapon.InstanceId)) }
+                : [])
             .OrderByDescending(option => option.Worn)
             .ThenByDescending(option => current.Bind(found => found.Hash) == Optional.Some(option.Weapon.Hash))
             .ThenBy(option => option.Item.Name, StringComparer.Ordinal)
@@ -60,6 +62,32 @@ public static class CopyFinding
         var unnamed = named.Count(entry => !entry.Item.IsSome());
         ImmutableArray<string> notes = unnamed > 0 ? [$"{unnamed} of your weapons aren't listed: Loopsmith can't tell their slot yet (Bungie's manifest wasn't read for them)."] : [];
         return new WeaponOptions(slot, options, notes);
+    }
+
+    /// <summary>The build's weapons whose copy (the instance id they name: a dim.gg share's, or picked) is in the player's account, by weapon number, with the copy.</summary>
+    public static ImmutableArray<(int Weapon, OwnedWeapon Copy)> ListOwnedCopies(Build build, BungieProfile profile) =>
+    [
+        .. build.Weapons.SelectMany((weapon, index) => weapon.Instance
+            .Bind(instance => profile.Weapons.Where(owned => owned.InstanceId == instance).Select(Optional.Some).FindFirstSome())
+            .Match(copy => new[] { (index, copy.Value) }, _ => [])),
+    ];
+
+    /// <summary>
+    /// What the login says of the build's weapons: those <paramref name="loaded"/> (by weapon number: their copies' perks
+    /// read) hold their perks now; for the others (no copy named, or one not in the player's account), ⋯ picks one of
+    /// theirs. Empty for a build without weapons.
+    /// </summary>
+    public static string DescribeLoadedWeapons(Build build, ImmutableArray<int> loaded)
+    {
+        var theirs = loaded.Where(index => index >= 0 && index < build.Weapons.Length).Select(index => build.Weapons[index].Name).ToImmutableArray();
+        var others = build.Weapons.Where((_, index) => !loaded.Contains(index)).Select(weapon => weapon.Name).ToImmutableArray();
+        return (theirs.IsEmpty, others.IsEmpty) switch
+        {
+            (true, true) => "",
+            (false, true) => "Its weapons are yours too, with their perks.",
+            (false, false) => $"{JoinWithAnd(theirs)} {(theirs.Length == 1 ? "is" : "are")} yours too, with {(theirs.Length == 1 ? "its" : "their")} perks; tap ⋯ next to {JoinWithAnd(others)} to pick one of yours.",
+            (true, false) => "Tap ⋯ next to a weapon to pick one of yours.",
+        };
     }
 
     /// <summary>The player's weapon with this instance id, or why there is none.</summary>
@@ -78,6 +106,9 @@ public static class CopyFinding
     /// <summary>The champion one of the player's weapons breaks (the weapon picker's): its own breaker, else its weapon's.</summary>
     public static Optional<BreakerType> FindCopyBreaker(ManifestExcerpt manifest, OwnedWeapon copy) =>
         ChooseBreaker(manifest, copy.Marks.Breaker, manifest.FindItem(copy.Hash).Bind(item => item.Kind is ManifestKind.Weapon kind ? Optional.Some(kind) : Optional.None<ManifestKind.Weapon>()));
+
+    private static string JoinWithAnd(ImmutableArray<string> parts) =>
+        parts.Length <= 1 ? string.Concat(parts) : $"{string.Join(", ", parts[..^1])} and {parts[^1]}";
 
     /// <summary>A copy's breaker when it has one, else its weapon's own, by the excerpt's breaker types.</summary>
     private static Optional<BreakerType> ChooseBreaker(ManifestExcerpt manifest, Optional<ItemHash> copy, Optional<ManifestKind.Weapon> weapon) =>

@@ -65,7 +65,7 @@
         <div class="designer-grid">
             <aside class="col-build">
                 <BuildPanel Build="session.Build" Issues="LoopDesigning.ListDesignIssues(session)" OnPickPerk="PickPerk" OnSetCatalyst="SetCatalyst" OnSetStats="SetStats"
-                            Profile="Workbench.Armor" ArmorNote="Workbench.ArmorNote" OnLoggedIn="UseArmorAsync" OnLoggedOut="LogOut" OnPickArmor="PickArmor" OnPickWeapon="PickWeapon" />
+                            Profile="Workbench.Profile" LoginNote="Workbench.LoginNote" OnLoggedIn="UseBungieLoginAsync" OnLoggedOut="LogOut" OnPickArmor="PickArmor" OnPickWeapon="PickWeapon" />
             </aside>
             <div class="col-loop">
                 <ExplainPanel Build="session.Build" />
@@ -277,9 +277,9 @@
     /// (LoopDesigning.ApplyBungieLogin); the Stats section says what's next. Then Bungie's manifest is read for their
     /// pieces and weapons the excerpt lacks, so the pickers can name and place them.
     /// </summary>
-    private async Task UseArmorAsync(BungieProfile profile)
+    private async Task UseBungieLoginAsync(BungieProfile profile)
     {
-        Workbench.Armor = Optional.Some(profile);                                                // impure (UI state)
+        Workbench.Profile = Optional.Some(profile);                                                // impure (UI state)
         if (Workbench.Session is not Optional<DesignSession>.Some open)
         {
             return;
@@ -287,16 +287,16 @@
 
         var login = LoopDesigning.ApplyBungieLogin(open.Value, profile);                        // pure
         EditSession(_ => login.Session, scrollToEnd: false, keepSelection: true);               // impure (UI state)
-        Workbench.ArmorNote = Optional.Some(login.Message);                                      // impure (UI state)
+        Workbench.LoginNote = Optional.Some(login.Message);                                      // impure (UI state)
         await JoinManifestForAsync(session => LoopDesigning.ListUnknownProfileHashes(session, profile)); // impure
     }
 
     /// <summary>
-    /// The player logged out: their armor is forgotten (the access token was dropped after its two reads), so ⋯ goes and
-    /// the login box comes back. The design keeps the stats and the pieces it wears.
+    /// The player logged out: their armor and weapons are forgotten (the access token was dropped after its two reads), so
+    /// ⋯ goes and the login box comes back. The design keeps the stats, the pieces and the weapons it has.
     /// </summary>
     private void LogOut() =>
-        Workbench.ForgetArmor();                                                                 // impure (UI state)
+        Workbench.ForgetProfile();                                                                 // impure (UI state)
 
     /// <summary>
     /// A piece picked from the player's armor: swapped into the embedded build (its set bonuses follow), the stats set
@@ -304,9 +304,9 @@
     /// </summary>
     private void PickArmor(ArmorPick pick)
     {
-        if (Workbench.Armor is Optional<BungieProfile>.Some profile)
+        if (Workbench.Profile is Optional<BungieProfile>.Some profile)
         {
-            Workbench.ArmorNote = Optional.None<string>();                                       // impure (UI state)
+            Workbench.LoginNote = Optional.None<string>();                                       // impure (UI state)
             ApplyBuildEdit(session => LoopDesigning.PickArmorPiece(session, profile.Value, pick.Slot, pick.Instance)); // impure (UI state)
         }
     }
@@ -314,10 +314,10 @@
     /// <summary>A weapon picked from the player's weapons: swapped into the embedded build with its perks (or added, for an empty slot).</summary>
     private void PickWeapon(WeaponPick pick)
     {
-        if (Workbench.Armor is Optional<BungieProfile>.Some profile)
+        if (Workbench.Profile is Optional<BungieProfile>.Some profile)
         {
-            Workbench.ArmorNote = Optional.None<string>();                                       // impure (UI state)
-            ApplyBuildEdit(session => LoopDesigning.PickWeapon(session, profile.Value, pick.Slot, pick.Weapon, pick.Instance)); // impure (UI state)
+            Workbench.LoginNote = Optional.None<string>();                                       // impure (UI state)
+            ApplyBuildEdit(session => LoopDesigning.PickWeapon(session, profile.Value, pick.Target, pick.Instance)); // impure (UI state)
         }
     }
 

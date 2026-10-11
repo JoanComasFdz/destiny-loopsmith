@@ -34,6 +34,17 @@ public sealed record WeaponLoadout(
     Optional<ItemInstanceId> Instance);
 
 /// <summary>
+/// Where a weapon picked from the player's own goes in a build: in place of its weapon number <see cref="InPlaceOf.Weapon"/>
+/// (0-based, in the build's order; it takes that weapon's slot), or into a slot the build has no weapon in.
+/// </summary>
+[Union]
+public partial record WeaponTarget
+{
+    partial record InPlaceOf(int Weapon);
+    partial record IntoEmpty(WeaponSlot Slot);
+}
+
+/// <summary>
 /// One perk of a weapon as its build holds it (<c>BuildComposition.WeaponRolling.ListPerkSlots</c>): its intrinsic perk
 /// (its frame, or an exotic's own perk); a perk the build names that is in no trait column the manifest excerpt gives;
 /// a column that doesn't roll, with its one perk; a column that rolls, with what it rolls with and the perk there — the

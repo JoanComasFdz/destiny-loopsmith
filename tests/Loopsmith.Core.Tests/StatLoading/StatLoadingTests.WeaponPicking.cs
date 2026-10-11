@@ -74,11 +74,12 @@ public sealed partial class StatLoadingTests
             new FakeItem(ExoticRifle, "4003", "vault", [], null, DamageType: 2),
             new FakeItem(ItemHash.From(12345u), "4004", "vault", [], null, DamageType: 2)]);
 
-        var kinetic = LoopDesigning.ListWeaponOptions(session.Build, profile, WeaponSlot.Kinetic, Optional.Some(festival));
-        var energy = LoopDesigning.ListWeaponOptions(session.Build, profile, WeaponSlot.Energy, Optional.Some(crisis));
+        var kinetic = LoopDesigning.ListWeaponOptions(session.Build, profile, new WeaponTarget.InPlaceOf(festival));
+        var energy = LoopDesigning.ListWeaponOptions(session.Build, profile, new WeaponTarget.InPlaceOf(crisis));
 
         Assert.Equal([FestivalCopy, "4002", "4001"], kinetic.Options.Select(option => option.Weapon.InstanceId.Value));
         Assert.Equal([true, false, false], kinetic.Options.Select(option => option.Worn));
+        Assert.Equal([Optional.Some(ItemHash.From(9222u)), Optional.Some(ItemHash.From(9231u))], kinetic.Options[2].Roll);   // the perks the rifle holds
         Assert.Equal([CrisisCopy], energy.Options.Select(option => option.Weapon.InstanceId.Value));   // the exotic rifle: the build has Thunderlord
         Assert.Equal(
             ["A build wears one exotic weapon: swap Thunderlord for a legendary weapon to pick an exotic here.",
@@ -94,7 +95,7 @@ public sealed partial class StatLoadingTests
         var festival = session.Build.Build.Weapons.IndexOf(session.Build.Build.Weapons.Single(weapon => weapon.Hash == Optional.Some(Festival)));
         var profile = ReadProfile([.. OwnShareWeapons(), new FakeItem(KineticRifle, "4001", "vault", ImmutableArray.Create(ItemHash.From(9232u), ItemHash.From(9222u), Shader), null, Tier: 3, DamageType: 1)]);
 
-        var picked = Assert.IsType<Result<DesignSession, string>.Ok>(LoopDesigning.PickWeapon(session, profile, WeaponSlot.Kinetic, Optional.Some(festival), ItemInstanceId.From("4001"))).Value;
+        var picked = Assert.IsType<Result<DesignSession, string>.Ok>(LoopDesigning.PickWeapon(session, profile, new WeaponTarget.InPlaceOf(festival), ItemInstanceId.From("4001"))).Value;
         var rifle = picked.Build.Build.Weapons[festival];
 
         Assert.Equal(("Kinetic Rifle", DamageType.Kinetic, Optional.Some(KineticRifle), Optional.Some(ItemInstanceId.From("4001"))), (rifle.Name, rifle.Type, rifle.Hash, rifle.Instance));
@@ -112,13 +113,60 @@ public sealed partial class StatLoadingTests
         var handWritten = LoopDesigning.CreateSession(OpenHandWrittenBuild(), new LoopDesign("Test", Optional.None<string>(), Optional.None<string>(), Optional.None<CatalogVersion>(), ReadBuildFile(), []));
         var profile = ReadProfile([.. OwnShareWeapons(), new FakeItem(ExoticRifle, "4003", "vault", [], null, DamageType: 2)]);
 
-        var refused = Assert.IsType<Result<DesignSession, string>.Error>(LoopDesigning.PickWeapon(owners, profile, WeaponSlot.Energy, Optional.Some(crisis), ItemInstanceId.From("4003")));
-        var added = Assert.IsType<Result<DesignSession, string>.Ok>(LoopDesigning.PickWeapon(handWritten, profile, WeaponSlot.Power, Optional.None<int>(), ItemInstanceId.From(ThunderlordCopy))).Value;
+        var refused = Assert.IsType<Result<DesignSession, string>.Error>(LoopDesigning.PickWeapon(owners, profile, new WeaponTarget.InPlaceOf(crisis), ItemInstanceId.From("4003")));
+        var added = Assert.IsType<Result<DesignSession, string>.Ok>(LoopDesigning.PickWeapon(handWritten, profile, new WeaponTarget.IntoEmpty(WeaponSlot.Power), ItemInstanceId.From(ThunderlordCopy))).Value;
 
         Assert.Equal("A build wears one exotic weapon: swap Thunderlord for a legendary weapon first.", refused.Failure);
         Assert.Equal(handWritten.Build.Build.Weapons.Length + 1, added.Build.Build.Weapons.Length);
         Assert.Equal((WeaponSlot.Power, "Thunderlord", true), (added.Build.Build.Weapons[^1].Slot, added.Build.Build.Weapons[^1].Name, added.Build.Build.Weapons[^1].Catalyst));
         Assert.StartsWith(ReadBuildFile().Text.Split("weapons:")[0], added.Design.Build.Text, StringComparison.Ordinal);   // the rest of the file as it was
+    }
+
+    [Fact]
+    public void A_weapon_goes_only_into_its_own_slot_and_an_empty_slot_must_be_empty()
+    {
+        var session = OpenOwnersSession(Catalog with { Manifest = Catalog.Manifest.AddExcerpt(OtherWeapons) });
+        var crisis = session.Build.Build.Weapons.IndexOf(session.Build.Build.Weapons.Single(weapon => weapon.Hash == Optional.Some(Crisis)));
+        var profile = ReadProfile([.. OwnShareWeapons(), new FakeItem(KineticRifle, "4001", "vault", [], null, DamageType: 1)]);
+
+        var wrongSlot = Assert.IsType<Result<DesignSession, string>.Error>(LoopDesigning.PickWeapon(session, profile, new WeaponTarget.InPlaceOf(crisis), ItemInstanceId.From("4001")));
+        var taken = Assert.IsType<Result<DesignSession, string>.Error>(LoopDesigning.PickWeapon(session, profile, new WeaponTarget.IntoEmpty(WeaponSlot.Kinetic), ItemInstanceId.From("4001")));
+        var missing = Assert.IsType<Result<DesignSession, string>.Error>(LoopDesigning.PickWeapon(session, profile, new WeaponTarget.InPlaceOf(9), ItemInstanceId.From("4001")));
+
+        Assert.Equal("Kinetic Rifle is a kinetic weapon: it can't go in the energy slot.", wrongSlot.Failure);
+        Assert.Equal("The build already has a kinetic weapon: pick one in its place.", taken.Failure);
+        Assert.Equal("The build has no weapon 10.", missing.Failure);
+        Assert.Empty(LoopDesigning.ListWeaponOptions(session.Build, profile, new WeaponTarget.InPlaceOf(9)).Options);
+    }
+
+    [Fact]
+    public void For_someone_elses_share_no_copy_is_ticked_so_the_players_own_can_be_picked_and_loads_its_perks()
+    {
+        var session = OpenOwnersSession(Catalog);
+        var festival = session.Build.Build.Weapons.IndexOf(session.Build.Build.Weapons.Single(weapon => weapon.Hash == Optional.Some(Festival)));
+        var mine = OwnShareWeapons().First() with { Instance = "5100" };
+        var profile = ReadProfile([mine]);
+
+        var options = LoopDesigning.ListWeaponOptions(session.Build, profile, new WeaponTarget.InPlaceOf(festival));
+        var picked = Assert.IsType<Result<DesignSession, string>.Ok>(LoopDesigning.PickWeapon(session, profile, new WeaponTarget.InPlaceOf(festival), ItemInstanceId.From("5100"))).Value;
+
+        Assert.Equal([("5100", false)], options.Options.Select(option => (option.Weapon.InstanceId.Value, option.Worn)));
+        Assert.Equal(mine.Plugs.Take(2).Select(Optional.Some), picked.Build.Build.Weapons[festival].Roll);
+    }
+
+    [Fact]
+    public void A_hand_written_exotic_named_by_its_perks_counts_for_the_one_exotic_rule()
+    {
+        var build = OpenHandWrittenBuild();
+        var withExotic = build.Build with
+        {
+            Weapons = [.. build.Build.Weapons.Where(weapon => weapon.Slot != WeaponSlot.Energy),
+                new WeaponLoadout(WeaponSlot.Energy, "Some exotic", DamageType.Arc, Optional.None<string>(), [ElementId.From("reign-havoc")], Optional.None<ItemHash>(), [], false, Optional.None<ItemInstanceId>())],
+        };
+
+        var refused = Assert.IsType<Result<Unit, string>.Error>(Loopsmith.Core.BuildComposition.WeaponSwapping.CheckWeapon(Catalog, withExotic, new WeaponTarget.IntoEmpty(WeaponSlot.Power), Thunderlord));
+
+        Assert.Equal("A build wears one exotic weapon: swap Some exotic for a legendary weapon first.", refused.Failure);
     }
 
     /// <summary>The share's three weapons as the owner's own copies, each holding the last perk of each of its columns (Thunderlord: its catalyst too).</summary>

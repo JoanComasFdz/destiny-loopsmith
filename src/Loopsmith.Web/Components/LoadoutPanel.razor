@@ -65,18 +65,18 @@
             <ol class="weapon-list">
                 @foreach (var row in LoadoutShaping.ListWeaponRows(view, CanPickWeapons))
                 {
-                    var rowSlot = row.Slot;
-                    @if (row.Weapon is not Optional<WeaponView>.Some shownWeapon)
+                    @if (row is WeaponRow.Empty empty)
                     {
+                        var rowSlot = empty.Slot;
                         <li class="weapon-line empty" data-slot="@rowSlot">
                             <div class="weapon-icon"><span class="icon-tile empty" title="@rowSlot.DescribeWeaponSlot(): no weapon">@rowSlot.DescribeWeaponSlot()</span></div>
                             <div class="weapon-text"><span class="weapon-line-sub">No @rowSlot.DescribeWeaponSlot().ToLowerInvariant() weapon in the build</span></div>
-                            @RenderWeaponPick(rowSlot, Optional.None<int>())
+                            @RenderWeaponPick(new WeaponTarget.IntoEmpty(rowSlot), rowSlot)
                         </li>
                     }
-                    else
+                    else if (row is WeaponRow.Worn worn)
                     {
-                    var weapon = shownWeapon.Value;
+                    var weapon = worn.Weapon;
                     <li class="weapon-line" data-slot="@weapon.Slot" title="@DescribeWeapon(weapon)">
                         <div class="weapon-icon">
                             @RenderMarkedTile(weapon.Weapon, "item", weapon.Marks)
@@ -125,7 +125,7 @@
                                 </span>
                             }
                         </div>
-                        @RenderWeaponPick(weapon.Slot, Optional.Some(weapon.Index))
+                        @RenderWeaponPick(new WeaponTarget.InPlaceOf(weapon.Index), weapon.Slot)
                     </li>
                     @if (FindOpenColumn(weapon) is Optional<PerkSquare.Pickable>.Some open)
                     {
@@ -262,7 +262,7 @@
 
     @if (weaponPicker is Optional<WeaponTarget>.Some target && Profile is Optional<BungieProfile>.Some ownedWeapons)
     {
-        <WeaponPicker Build="Build" Profile="ownedWeapons.Value" Slot="target.Value.Slot" Weapon="target.Value.Weapon" OnPick="PickWeaponAsync" OnClose="CloseWeaponPicker" />
+        <WeaponPicker Build="Build" Profile="ownedWeapons.Value" Target="target.Value" OnPick="PickWeaponAsync" OnClose="CloseWeaponPicker" />
     }
 </div>
 
@@ -298,15 +298,13 @@
 
     private bool CanPickWeapons => Profile.IsSome() && OnPickWeapon.HasDelegate;
 
-    /// <summary>The weapon slot the picker is open for, and the build's weapon in it (none: an empty slot).</summary>
-    private sealed record WeaponTarget(WeaponSlot Slot, Optional<int> Weapon);
-
+    /// <summary>Where the open weapon picker's pick goes: in place of a weapon, or into an empty slot.</summary>
     private Optional<WeaponTarget> weaponPicker = Optional.None<WeaponTarget>();
 
-    private void OpenWeaponPicker(WeaponSlot slot, Optional<int> weapon)
+    private void OpenWeaponPicker(WeaponTarget target)
     {
         ClosePicker();                                                                           // impure (UI state)
-        weaponPicker = Optional.Some(new WeaponTarget(slot, weapon));                            // impure (UI state)
+        weaponPicker = Optional.Some(target);                                                    // impure (UI state)
     }
 
     private void CloseWeaponPicker() =>
@@ -319,13 +317,13 @@
     }
 
     /// <summary>⋯ next to a weapon slot (after the login): it opens the weapon picker for that slot.</summary>
-    private RenderFragment RenderWeaponPick(WeaponSlot slot, Optional<int> weapon) => __builder =>
+    private RenderFragment RenderWeaponPick(WeaponTarget target, WeaponSlot slot) => __builder =>
     {
         @if (CanPickWeapons)
         {
             <button type="button" class="btn ghost small weapon-pick" data-action="pick-weapon" data-slot="@slot"
                     title="Pick your own @slot.DescribeWeaponSlot().ToLowerInvariant() weapon" aria-label="Pick your own @slot.DescribeWeaponSlot().ToLowerInvariant() weapon"
-                    aria-haspopup="dialog" @onclick="() => OpenWeaponPicker(slot, weapon)">⋯</button>
+                    aria-haspopup="dialog" @onclick="() => OpenWeaponPicker(target)">⋯</button>
         }
     };
 

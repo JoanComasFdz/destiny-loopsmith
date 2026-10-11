@@ -115,14 +115,16 @@ public sealed record PerkPick(int Weapon, int Column, Optional<ItemHash> Perk);
 /// <summary>A piece picked from the player's armor for a slot of the build: the copy, by its instance id.</summary>
 public sealed record ArmorPick(ArmorSlot Slot, ItemInstanceId Instance);
 
-/// <summary>
-/// A weapon picked from the player's weapons for a slot of the build: in place of the build's weapon number
-/// <see cref="Weapon"/> (0-based, in the build's order), or added when none (an empty slot); the copy, by its instance id.
-/// </summary>
-public sealed record WeaponPick(WeaponSlot Slot, Optional<int> Weapon, ItemInstanceId Instance);
+/// <summary>A weapon picked from the player's weapons: where it goes in the build (in place of a weapon, or an empty slot), and the copy, by its instance id.</summary>
+public sealed record WeaponPick(WeaponTarget Target, ItemInstanceId Instance);
 
-/// <summary>A weapon slot of the loadout: the build's weapon in it, or none (an empty slot, shown after the login so ⋯ can fill it).</summary>
-public sealed record WeaponRow(WeaponSlot Slot, Optional<WeaponView> Weapon);
+/// <summary>A weapon slot of the loadout: the build's weapon in it, or an empty slot (shown after the login so ⋯ can fill it).</summary>
+[Union]
+public partial record WeaponRow
+{
+    partial record Worn(WeaponView Weapon);
+    partial record Empty(WeaponSlot Slot);
+}
 
 /// <summary>An armor slot: the piece in it (when the loadout names one), its copy's marks and the mods that only fit that slot, one tile each.</summary>
 public sealed record ArmorView(ArmorSlot Slot, Optional<IconTile> Piece, TileMarks Marks, ImmutableArray<IconTile> Mods);
@@ -218,11 +220,12 @@ public static class LoadoutShaping
     /// </summary>
     public static ImmutableArray<WeaponRow> ListWeaponRows(LoadoutView view, bool everySlot) =>
     [
-        .. view.Weapons.Select(weapon => new WeaponRow(weapon.Slot, Optional.Some(weapon)))
+        .. view.Weapons.Select(weapon => (Slot: weapon.Slot, Row: (WeaponRow)new WeaponRow.Worn(weapon)))
             .Concat(everySlot
-                ? WeaponSlots.Where(slot => !view.Weapons.Any(weapon => weapon.Slot == slot)).Select(slot => new WeaponRow(slot, Optional.None<WeaponView>()))
+                ? WeaponSlots.Where(slot => !view.Weapons.Any(weapon => weapon.Slot == slot)).Select(slot => (Slot: slot, Row: (WeaponRow)new WeaponRow.Empty(slot)))
                 : [])
-            .OrderBy(row => row.Slot),
+            .OrderBy(entry => entry.Slot)
+            .Select(entry => entry.Row),
     ];
 
     /// <summary>A weapon's square, by its manifest item: its name, icon and rarity (the weapon picker's; it opens nothing).</summary>

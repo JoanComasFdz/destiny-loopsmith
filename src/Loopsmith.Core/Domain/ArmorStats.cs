@@ -122,11 +122,14 @@ public sealed record ArmorOption(OwnedArmor Armor, ManifestItem Item, Optional<S
 /// <summary>What the armor picker lists for a slot (the copy the build wears first), and what it leaves out and why.</summary>
 public sealed record ArmorOptions(ArmorSlot Slot, ImmutableArray<ArmorOption> Options, ImmutableArray<string> Notes);
 
-/// <summary>One of the player's weapons the weapon picker lists: the copy, its manifest item, and whether the build wears it.</summary>
-public sealed record WeaponOption(OwnedWeapon Weapon, ManifestItem Item, bool Worn);
+/// <summary>
+/// One of the player's weapons the weapon picker lists: the copy, its manifest item, the perks it holds (each trait
+/// column's plug of its sockets: what the build would hold), whether its catalyst is in, and whether the build wears it.
+/// </summary>
+public sealed record WeaponOption(OwnedWeapon Weapon, ManifestItem Item, ImmutableArray<Optional<ItemHash>> Roll, bool Catalyst, bool Worn);
 
-/// <summary>What the weapon picker lists for a slot (the copy the build wears first), and what it leaves out and why.</summary>
-public sealed record WeaponOptions(WeaponSlot Slot, ImmutableArray<WeaponOption> Options, ImmutableArray<string> Notes);
+/// <summary>What the weapon picker lists for a slot (none: a weapon number the build hasn't), the copy the build names first, and what it leaves out and why.</summary>
+public sealed record WeaponOptions(Optional<WeaponSlot> Slot, ImmutableArray<WeaponOption> Options, ImmutableArray<string> Notes);
 
 /// <summary>
 /// Whether the copies a build wears (a dim.gg share's, by instance id) are the logged-in player's: all of them, some

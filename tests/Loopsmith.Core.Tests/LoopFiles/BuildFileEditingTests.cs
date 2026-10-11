@@ -96,6 +96,7 @@ public sealed class BuildFileEditingTests
     [Theory]
     [InlineData("weapons: [{ slot: energy, name: Any Arc weapon, type: arc }]\n", 2)]
     [InlineData("weapons: []\n", 1)]
+    [InlineData("weapons: [{ slot: energy, name: Any Arc weapon, type: arc }, ]\n", 2)]
     [InlineData("stats: { weapons: 47 }\n", 1)]
     public void A_weapon_is_added_to_a_flow_list_or_as_a_new_weapons_entry(string weapons, int count)
     {

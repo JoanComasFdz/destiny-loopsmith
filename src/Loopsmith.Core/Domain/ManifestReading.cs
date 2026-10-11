@@ -111,6 +111,10 @@ public static class ManifestReading
         return roll.Any(pick => pick.IsSome()) ? roll : [];
     }
 
+    /// <summary>True when a weapon's plugs hold its exotic catalyst (a catalyst completed and inserted in its socket).</summary>
+    public static bool HoldsCatalyst(this ManifestKind.Weapon kind, IEnumerable<ItemHash> plugs) =>
+        kind.Catalyst.Match(catalyst => plugs.Contains(catalyst.Value), _ => false);
+
     /// <summary>A weapon's archetype from its manifest type: "Grenade Launcher" → <c>grenade-launcher</c>; none when it isn't a slug.</summary>
     public static Optional<string> ToArchetype(string type)
     {

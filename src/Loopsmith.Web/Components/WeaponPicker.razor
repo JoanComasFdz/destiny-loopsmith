@@ -4,14 +4,15 @@
    "Use this weapon") picks it, and the designer swaps it into the build with its perks (LoopDesigning.PickWeapon).
    Picking the copy the build already wears just closes the picker. *@
 @{
-    var view = WeaponPickerShaping.ShapePicker(Build, LoopDesigning.ListWeaponOptions(Build, Profile, Slot, Weapon));
+    var view = WeaponPickerShaping.ShapePicker(Build, LoopDesigning.ListWeaponOptions(Build, Profile, Target));
+    var slot = Build.Build.FindTargetSlot(Target);
     var shown = view.Options.Where(option => focused == Optional.Some(option.Instance)).Select(Optional.Some).FindFirstSome();
 }
 <Modal Title="@view.Title" Size="wide" OnClose="OnClose">
-    <div class="weapon-picker" data-testid="weapon-picker" data-slot="@Slot">
+    <div class="weapon-picker" data-testid="weapon-picker" data-slot="@slot.Match(found => found.Value.ToString(), _ => "")">
         @if (view.Options.IsEmpty)
         {
-            <p class="muted" data-testid="weapon-picker-empty">Your account has no @Slot.DescribeWeaponSlot().ToLowerInvariant() weapon Loopsmith can list.</p>
+            <p class="muted" data-testid="weapon-picker-empty">Your account has no @slot.Match(found => found.Value.DescribeWeaponSlot().ToLowerInvariant(), _ => "") weapon Loopsmith can list for it.</p>
         }
         else
         {
@@ -108,12 +109,9 @@
     [Parameter, EditorRequired]
     public BungieProfile Profile { get; set; } = null!;
 
+    /// <summary>Where a pick goes: in place of one of the build's weapons, or into an empty slot.</summary>
     [Parameter, EditorRequired]
-    public WeaponSlot Slot { get; set; }
-
-    /// <summary>The build's weapon in the slot (0-based, in the build's order); none: an empty slot, which a pick fills.</summary>
-    [Parameter]
-    public Optional<int> Weapon { get; set; } = Optional.None<int>();
+    public WeaponTarget Target { get; set; } = null!;
 
     /// <summary>A weapon picked: the designer swaps it into the build.</summary>
     [Parameter]
@@ -129,7 +127,7 @@
 
     protected override void OnInitialized()
     {
-        var options = LoopDesigning.ListWeaponOptions(Build, Profile, Slot, Weapon);             // pure
+        var options = LoopDesigning.ListWeaponOptions(Build, Profile, Target);                   // pure
         var wearing = options.Options.Where(option => option.Worn).Select(option => Optional.Some(option.Weapon.InstanceId)).FindFirstSome(); // pure
         worn = wearing;                                                                          // impure (component state)
         focused = wearing;                                                                       // impure (component state)
@@ -163,7 +161,7 @@
     }
 
     private async Task PickAsync(ItemInstanceId instance) =>
-        await OnPick.InvokeAsync(new WeaponPick(Slot, Weapon, instance));                        // impure
+        await OnPick.InvokeAsync(new WeaponPick(Target, instance));                              // impure
 
     private static string DescribeTier(IconTile tile) =>
         tile.Tier.Match(tier => tier.Value == ItemTier.Exotic ? "exotic" : tier.Value == ItemTier.Legendary ? "legendary" : "", _ => "");

@@ -332,12 +332,14 @@ plugs in their sockets:
   build change, and the steps replay. The Stats section's line says so ("Its weapons are yours too, with their
   perks."), or, for weapons that aren't theirs, to pick their own with ⋯.
 * **⋯ next to each weapon** opens the **weapon picker** for its slot (all three slots show after the login, an empty
-  one too): the player's weapons for that slot, the copy the build wears first (✓), then that weapon's other copies,
-  then the rest by name; each with its tier, masterwork, breaker and element as in the loadout. Hovering one (or a
+  one too): the player's weapons for that slot, the copy the build names first (✓ when it is theirs; for someone
+  else's share none is ticked, so their own copy can be used to load its perks), then that weapon's other copies, then
+  the rest by name; each with its tier, masterwork, breaker and element as in the loadout. Hovering one (or a
   first tap) shows its type, tier and the perks it holds, and where it is; a click (a second tap, or "Use this
   weapon") puts it in the build: its entry is written anew (`{slot, name, type, archetype, perks: [], hash, roll,
   catalyst, instance}`, from the manifest and its sockets), or added for an empty slot, and the steps replay. A build
-  wears one exotic weapon: another exotic isn't listed while it does (the picker says which to swap). Weapons the
+  wears one exotic weapon (by its manifest item, or an exotic weapon element among a hand-written weapon's perks):
+  another exotic isn't listed while it does (the picker says which to swap); and one weapon a slot. Weapons the
   excerpt doesn't know are named by Bungie's full manifest, read once after the login with the armor; one it can't
   place is counted, not listed.
 

@@ -333,27 +333,29 @@ public static class LoopDesigning
     /// </summary>
     public static BungieLogin ApplyBungieLogin(DesignSession session, BungieProfile profile)
     {
-        var armed = LoadWeaponCopies(session, profile).Match(loaded => loaded.Value, _ => session);
-        var ownership = StatAdding.ReadOwnership(armed.Build.Catalog, armed.Build.Build, profile);
-        var copies = WeaponSwapping.SortCopies(armed.Build.Build, profile);
-        var message = string.Join(" ", new[] { StatAdding.DescribeOwnership(ownership), WeaponSwapping.DescribeCopies(copies.Theirs, copies.NotTheirs) }.Where(part => part.Length > 0));
+        var copies = CopyFinding.ListOwnedCopies(session.Build.Build, profile);
+        var loaded = WeaponSwapping.LoadCopies(session.Build.Catalog, session.Build.Build, copies);
+        var armed = LoadWeaponCopies(session, loaded.Build, loaded.Changed);
+        var ownership = StatAdding.ReadOwnership(session.Build.Catalog, session.Build.Build, profile);
+        var weapons = armed.Match(_ => CopyFinding.DescribeLoadedWeapons(session.Build.Build, loaded.Loaded), refused => refused.Failure);
+        var message = string.Join(" ", new[] { StatAdding.DescribeOwnership(ownership), weapons }.Where(part => part.Length > 0));
+        var current = armed.Match(ok => ok.Value, _ => session);
         return ownership is LoadoutOwnership.Own
-            ? SetStatsFromArmor(armed, profile).Match(
+            ? SetStatsFromArmor(current, profile).Match(
                 set => new BungieLogin(set.Value, message),
-                refused => new BungieLogin(armed, refused.Failure))
-            : new BungieLogin(armed, message);
+                refused => new BungieLogin(current, refused.Failure))
+            : new BungieLogin(current, message);
     }
 
-    /// <summary>The design with each weapon whose copy is the player's holding that copy's perks: only those entries of the embedded build change.</summary>
-    private static Result<DesignSession, string> LoadWeaponCopies(DesignSession session, BungieProfile profile)
+    /// <summary>The design with its weapons <paramref name="changed"/> (by weapon number) as <paramref name="build"/> has them: only those entries of the embedded build change.</summary>
+    private static Result<DesignSession, string> LoadWeaponCopies(DesignSession session, Build build, ImmutableArray<int> changed)
     {
-        var loaded = WeaponSwapping.LoadCopies(session.Build.Catalog, session.Build.Build, profile);
         var file = session.Design.Build;
-        return loaded.Changed.IsEmpty
+        return changed.IsEmpty
             ? new Result<DesignSession, string>.Ok(session)
-            : RebuildWith(session, loaded.Changed.Aggregate(
+            : RebuildWith(session, changed.Aggregate(
                 new Result<string, string>.Ok(file.Text) as Result<string, string>,
-                (text, index) => text.Bind(current => BuildFileEditing.ReplaceWeapon(file with { Text = current }, index, loaded.Build.Weapons[index]))));
+                (text, index) => text.Bind(current => BuildFileEditing.ReplaceWeapon(file with { Text = current }, index, build.Weapons[index]))));
     }
 
     /// <summary>
@@ -389,32 +391,32 @@ public static class LoopDesigning
     // ── The player's own weapons in the build (docs/loop-format.md, "Weapons from your account") ─────────────
 
     /// <summary>
-    /// What the weapon picker lists for a slot of the build: the player's weapons for it that the build can wear (one
-    /// exotic: WeaponSwapping), the copy its weapon number <paramref name="weapon"/> wears first (none: an empty slot),
-    /// and notes on what it leaves out.
+    /// What the weapon picker lists for where <paramref name="target"/> says (a weapon of the build, or an empty slot): the
+    /// player's weapons for that slot that the build can wear there (one exotic: WeaponSwapping), the copy the build names
+    /// first; with notes on the exotic rule and on the weapons Loopsmith can't place yet.
     /// </summary>
-    public static WeaponOptions ListWeaponOptions(ValidatedBuild build, BungieProfile profile, WeaponSlot slot, Optional<int> weapon)
+    public static WeaponOptions ListWeaponOptions(ValidatedBuild build, BungieProfile profile, WeaponTarget target)
     {
-        var listed = CopyFinding.ListWeaponOptions(build.Catalog, build.Build, profile, slot, weapon);
-        var exotic = WeaponSwapping.DescribeExoticRule(build.Catalog, build.Build, weapon);
+        var listed = CopyFinding.ListWeaponOptions(build.Catalog, build.Build, profile, target);
+        var exotic = WeaponSwapping.DescribeExoticRule(build.Catalog, build.Build, target);
         return listed with
         {
-            Options = [.. listed.Options.Where(option => WeaponSwapping.CheckWeapon(build.Catalog, build.Build, slot, weapon, option.Weapon.Hash).IsOk())],
+            Options = [.. listed.Options.Where(option => WeaponSwapping.CheckWeapon(build.Catalog, build.Build, target, option.Weapon.Hash).IsOk())],
             Notes = [.. exotic.Match(note => new[] { note.Value }, _ => []), .. listed.Notes],
         };
     }
 
     /// <summary>
-    /// The design wearing the player's weapon <paramref name="instance"/> in <paramref name="slot"/>: in place of its weapon
-    /// number <paramref name="weapon"/>, or added (an empty slot). That weapon's entry of the embedded build file is
-    /// written anew with the copy's perks, catalyst and instance (WeaponSwapping); the build check runs again and the
-    /// steps replay. Or why the weapon can't be worn.
+    /// The design wearing the player's weapon <paramref name="instance"/> where <paramref name="target"/> says: in place of
+    /// one of its weapons (that entry of the embedded build file is written anew with the copy's perks, catalyst and
+    /// instance), or added to an empty slot (WeaponSwapping); the build check runs again and the steps replay. Or why the
+    /// weapon can't be worn.
     /// </summary>
-    public static Result<DesignSession, string> PickWeapon(DesignSession session, BungieProfile profile, WeaponSlot slot, Optional<int> weapon, ItemInstanceId instance) =>
+    public static Result<DesignSession, string> PickWeapon(DesignSession session, BungieProfile profile, WeaponTarget target, ItemInstanceId instance) =>
         CopyFinding.FindWeapon(profile, instance)
-            .Bind(copy => WeaponSwapping.SwapWeapon(session.Build.Catalog, session.Build.Build, slot, weapon, copy))
-            .Bind(build => RebuildWith(session, weapon.Match(
-                index => BuildFileEditing.ReplaceWeapon(session.Design.Build, index.Value, build.Weapons[index.Value]),
+            .Bind(copy => WeaponSwapping.SwapWeapon(session.Build.Catalog, session.Build.Build, target, copy))
+            .Bind(build => RebuildWith(session, target.Match(
+                inPlace => BuildFileEditing.ReplaceWeapon(session.Design.Build, inPlace.Weapon, build.Weapons[inPlace.Weapon]),
                 _ => BuildFileEditing.AddWeapon(session.Design.Build, build.Weapons[^1]))));
 
     /// <summary>
