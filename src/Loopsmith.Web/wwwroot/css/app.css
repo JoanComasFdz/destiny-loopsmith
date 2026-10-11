@@ -393,6 +393,9 @@ textarea { resize: vertical; }
 .stat-bar { height: 6px; border-radius: 3px; background: #1a2130; overflow: hidden; }
 .stat-bar > span { display: block; height: 100%; background: var(--kinetic); }
 .stat-value { text-align: right; font-family: var(--mono); }
+.stats.compact { align-self: stretch; gap: 3px; }
+.stats.compact .stat { font-size: 11px; }
+.stats-total-label { color: var(--muted); }
 
 /* The Stats section: typed by hand, or added up from the player's armor after a Bungie login. */
 .stats-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
@@ -828,7 +831,6 @@ button.hud-chip:hover, button.hud-chip:focus-visible { background: color-mix(in 
 .armor-worn-mark { position: absolute; right: 1px; top: 0; padding: 0 3px; font-size: 11px; font-weight: 800; color: #fff; background: rgba(0, 0, 0, .7); }
 .armor-option-details { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel-2); font-size: 13px; overflow-wrap: anywhere; }
 .armor-option-name { font-weight: 650; }
-.armor-option-roll { font-family: var(--mono); font-size: 12px; }
 .armor-picker-hint, .armor-picker-note { margin: 0; font-size: 12px; }
 .icon-grid.mods { grid-template-columns: repeat(2, var(--mod-tile)); }
 .icon-grid.mods .icon-tile, .general-mods .icon-tile { width: var(--mod-tile); height: var(--mod-tile); }

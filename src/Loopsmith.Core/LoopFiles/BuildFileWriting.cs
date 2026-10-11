@@ -142,16 +142,11 @@ public static class BuildFileWriting
             : [ToKey("stats"), new MappingStart(null, null, true, MappingStyle.Flow), .. known, new MappingEnd()];
     }
 
-    /// <summary>The known stats as key and value events, in the format's order; the unknown ("?") ones left out.</summary>
+    /// <summary>The known stats as key and value events, in the game's order (health first); the unknown ("?") ones left out.</summary>
     private static ImmutableArray<ParsingEvent> ToStatEntries(StatLine stats) =>
         [
-            .. new (string Key, Optional<StatValue> Value)[]
-            {
-                ("weapons", stats.Weapons), ("health", stats.Health), ("class", stats.Class),
-                ("grenade", stats.Grenade), ("super", stats.Super), ("melee", stats.Melee),
-            }
-            .SelectMany(stat => stat.Value.Match(
-                value => ToEntry(stat.Key, value.Value.Value.ToString(CultureInfo.InvariantCulture)),
+            .. StatReading.GameOrder.SelectMany(stat => stats.ReadStat(stat).Match(
+                value => ToEntry(ToVocabularyWord(stat), value.Value.Value.ToString(CultureInfo.InvariantCulture)),
                 _ => [])),
         ];
 

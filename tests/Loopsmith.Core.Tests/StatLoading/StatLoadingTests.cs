@@ -205,7 +205,7 @@ public sealed partial class StatLoadingTests
         var changed = Assert.IsType<Result<DesignSession, string>.Ok>(LoopDesigning.SetStats(session, stats)).Value;
 
         Assert.Equal(stats, changed.Build.Build.Stats);
-        Assert.Contains("stats: {weapons: 47, class: 60, grenade: 145, super: 27, melee: 40}", changed.Design.Build.Text, StringComparison.Ordinal);
+        Assert.Contains("stats: {melee: 40, grenade: 145, super: 27, class: 60, weapons: 47}", changed.Design.Build.Text, StringComparison.Ordinal);
         Assert.Equal(session.Design.Build.Text.Split('\n').Length, changed.Design.Build.Text.Split('\n').Length);   // one line changed, nothing added
         Assert.Contains(changed.Build.Issues, issue => issue.Severity == Severity.Warning && issue.Message.StartsWith("With 40 Melee, a Gambler's Dodge gives back less than a full melee charge", StringComparison.Ordinal));
         Assert.Contains(changed.Build.Issues, issue => issue.Severity == Severity.Warning && issue.Message.StartsWith("With 60 Class, a Combination Blow kill gives back less than a full class ability", StringComparison.Ordinal));
@@ -218,7 +218,7 @@ public sealed partial class StatLoadingTests
 
         var changed = Assert.IsType<Result<DesignSession, string>.Ok>(LoopDesigning.SetStats(session, new StatLine(ToKnownStat(10), ToKnownStat(20), ToKnownStat(70), ToKnownStat(150), ToKnownStat(30), ToKnownStat(79)))).Value;
 
-        Assert.EndsWith("stats: {weapons: 10, health: 20, class: 70, grenade: 150, super: 30, melee: 79}\n", changed.Design.Build.Text, StringComparison.Ordinal);
+        Assert.EndsWith("stats: {health: 20, melee: 79, grenade: 150, super: 30, class: 70, weapons: 10}\n", changed.Design.Build.Text, StringComparison.Ordinal);
         Assert.Contains(changed.Build.Issues, issue => issue.Severity == Severity.Info && issue.Message.StartsWith("With 79 Melee, a Gambler's Dodge gives back a full melee charge only within 15 m", StringComparison.Ordinal));
         Assert.DoesNotContain(changed.Build.Issues, issue => issue.Message.Contains("Combination Blow kill", StringComparison.Ordinal));   // 70 Class is enough
     }
@@ -231,11 +231,11 @@ public sealed partial class StatLoadingTests
         Assert.Equal(
             new Result<Optional<StatValue>, string>.Error("Melee: a whole number from 0 to 200, or empty for \"?\"."),
             LoopDesigning.ReadStatInput(StatKind.Melee, "201"));
-        Assert.Equal(   // inputs not given are "?"
-            new StatLine(ToKnownStat(47), Optional.None<StatValue>(), ToKnownStat(104), Optional.None<StatValue>(), Optional.None<StatValue>(), Optional.None<StatValue>()),
+        Assert.Equal(   // the inputs in the game's order (Health, Melee, Grenade, Super, Class, Weapons); those not given are "?"
+            new StatLine(Optional.None<StatValue>(), ToKnownStat(47), Optional.None<StatValue>(), ToKnownStat(104), Optional.None<StatValue>(), Optional.None<StatValue>()),
             Assert.IsType<Result<StatLine, ImmutableArray<string>>.Ok>(LoopDesigning.ReadStatInputs(["47", " ", "104"])).Value);
         Assert.Equal(
-            ["Health: a whole number from 0 to 200, or empty for \"?\".", "Melee: a whole number from 0 to 200, or empty for \"?\"."],
+            ["Melee: a whole number from 0 to 200, or empty for \"?\".", "Weapons: a whole number from 0 to 200, or empty for \"?\"."],
             Assert.IsType<Result<StatLine, ImmutableArray<string>>.Error>(LoopDesigning.ReadStatInputs(["1", "x", "", "", "", "-3"])).Failure);
     }
 

@@ -316,8 +316,8 @@ public static class BuildValidation
             .Select(e => new BuildIssue(Severity.Warning, $"'{e.Name}' has no authored rules yet — it is inert in the trace."));
 
     /// <summary>
-    /// A rule that doesn't stack with another equipped element gives nothing when both fire: wasted potential the
-    /// build crafter should see before playing it.
+    /// A rule that doesn't stack with another equipped element gives nothing when both fire: a note for the build
+    /// crafter, who may keep both for what else each gives (not a mistake, so not a warning).
     /// </summary>
     private static IEnumerable<BuildIssue> CheckNotStacking(RuleCatalog catalog, IEnumerable<BuildElement> elements)
     {
@@ -326,9 +326,9 @@ public static class BuildValidation
             .SelectMany(rule => distinct
                 .Where(partner => partner.Id != element.Id && rule.DoesNotStackWith.Contains(partner.Id))
                 .Select(partner => new BuildIssue(
-                    Severity.Warning,
+                    Severity.Info,
                     $"'{element.Name}': {catalog.Glossary.DescribeOutcomes(rule.Then.Select(o => new OutcomeMention(o, 1)))} on "
-                    + $"\"{catalog.Glossary.DescribeTrigger(rule.On)}\" doesn't stack with '{partner.Name}' — with both equipped, it is wasted."))));
+                    + $"\"{catalog.Glossary.DescribeTrigger(rule.On)}\" doesn't stack with '{partner.Name}'."))));
     }
 
     private static IEnumerable<BuildIssue> CheckPinnedCatalog(Build build, RuleCatalog catalog) =>

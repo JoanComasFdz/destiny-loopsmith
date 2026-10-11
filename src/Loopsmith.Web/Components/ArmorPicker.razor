@@ -19,7 +19,7 @@
                     var instance = option.Instance;
                     <button type="button" role="option" aria-selected="@(focused == Optional.Some(instance) ? "true" : "false")"
                             class="icon-tile tappable item @DescribeTier(option.Tile) @(option.Worn ? "worn" : "") @(focused == Optional.Some(instance) ? "focused" : "")"
-                            title="@option.Tile.Name — @option.Roll" aria-label="@option.Tile.Name" data-instance="@instance.Value"
+                            title="@option.Tile.Name — @option.RollText" aria-label="@option.Tile.Name" data-instance="@instance.Value"
                             @onpointerenter="e => Hover(instance, e)" @onclick="() => ChooseAsync(instance)">
                         @if (option.Tile.Icon is Optional<string>.Some icon)
                         {
@@ -41,7 +41,14 @@
                 var piece = details.Value;
                 <div class="armor-option-details" data-testid="armor-option-details">
                     <div class="armor-option-name">@piece.Tile.Name@(piece.Set is Optional<string>.Some set ? $" · {set.Value} set" : "")</div>
-                    <div class="armor-option-roll">@piece.Roll</div>
+                    @if (piece.Roll is Optional<ImmutableArray<StatBar>>.Some roll)
+                    {
+                        <StatBars Bars="roll.Value" Class="compact" TestId="armor-option-roll" />
+                    }
+                    else
+                    {
+                        <div class="muted">@ArmorPickerShaping.UnreadRoll</div>
+                    }
                     <div class="muted">@piece.Place@(piece.Worn ? " · the build wears this one" : "")</div>
                     @if (!piece.Worn)
                     {

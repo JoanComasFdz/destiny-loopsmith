@@ -37,16 +37,7 @@
 }
 else
 {
-    <div class="stats" data-testid="stats">
-        @foreach (var row in Rows)
-        {
-            <div class="stat" data-stat="@row.Name">
-                <span class="stat-name">@row.Name</span>
-                <span class="stat-bar"><span style="width:@ToPercent(row.Value)%"></span></span>
-                <span class="stat-value">@(row.Value is Optional<int>.Some value ? value.Value.ToString(System.Globalization.CultureInfo.InvariantCulture) : "?")</span>
-            </div>
-        }
-    </div>
+    <StatBars Bars="StatsShaping.ToBars(Build.Build.Stats)" TestId="stats" />
 }
 
 @if (OnSetStats.HasDelegate && Account.CanLogIn)
@@ -86,10 +77,6 @@ else
     [Parameter, EditorRequired]
     public ValidatedBuild Build { get; set; } = null!;
 
-    /// <summary>The build's stats as the sheet shows them (name and value, "?" when unknown).</summary>
-    [Parameter, EditorRequired]
-    public ImmutableArray<StatRow> Rows { get; set; }
-
     /// <summary>Stats to set on the build (typed, or from the player's armor); none: the stats are only shown.</summary>
     [Parameter]
     public EventCallback<StatLine> OnSetStats { get; set; }
@@ -125,7 +112,8 @@ else
         @switch (totals)
         {
             case Result<StatTotals, string>.Ok added:
-                <p class="stats-total" data-testid="stats-total">Adds up to <strong>@StatsShaping.DescribeStatLine(added.Value.Stats)</strong></p>
+                <p class="stats-total-label">Your armor adds up to:</p>
+                <StatBars Bars="StatsShaping.ToBars(added.Value.Stats)" Class="compact" TestId="stats-total" />
                 <details class="stats-parts">
                     <summary>How it adds up</summary>
                     <ul>
@@ -148,7 +136,8 @@ else
         @foreach (var character in choices.Characters)
         {
             <div class="stats-character" data-testid="character-stats">
-                <p>Or your @character.Class's current stats, as Bungie has them: <span class="muted">@StatsShaping.DescribeStatLine(character.Stats)</span></p>
+                <p>Or your @character.Class's current stats, as Bungie has them:</p>
+                <StatBars Bars="StatsShaping.ToBars(character.Stats)" Class="compact" TestId="character-stat-bars" />
                 <button type="button" class="btn small" data-action="use-character-stats" @onclick="() => UseAsync(character.Stats, StatsFromCharacter)">Use these</button>
             </div>
         }
@@ -210,7 +199,4 @@ else
         applied = Optional.Some(done);                                                           // impure (component state)
     }
 
-    private static string ToPercent(Optional<int> value) =>
-        value.Match(v => (100m * Math.Clamp(v.Value, 0, BuildSheetShaping.MaxStat) / BuildSheetShaping.MaxStat), _ => 0m)
-            .ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
 }

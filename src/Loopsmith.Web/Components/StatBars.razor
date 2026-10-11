@@ -1,0 +1,25 @@
+@* Six stats as rows of bars, in the game's order (Health first, Weapons last): each its name, a bar and its value
+   ("?" when unknown). The build's stats, what armor adds up to, a character's, a piece's (StatsShaping.ToBars). *@
+<div class="stats @Class" data-testid="@TestId">
+    @foreach (var bar in Bars)
+    {
+        <div class="stat" data-stat="@bar.Name">
+            <span class="stat-name">@bar.Name</span>
+            <span class="stat-bar"><span style="width:@bar.Width%"></span></span>
+            <span class="stat-value">@bar.Value</span>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public ImmutableArray<StatBar> Bars { get; set; }
+
+    /// <summary>What the bars are, for the page's tests (<c>data-testid</c>).</summary>
+    [Parameter, EditorRequired]
+    public string TestId { get; set; } = "";
+
+    /// <summary>Extra classes: <c>compact</c> for bars inside a box (a total, a character's, a piece's).</summary>
+    [Parameter]
+    public string Class { get; set; } = "";
+}

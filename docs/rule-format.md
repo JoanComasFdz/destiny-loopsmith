@@ -145,7 +145,7 @@ items:
   only to a piece's stats at 0, the three its roll leaves empty), `tuningSocket` (the empty tuning socket's plug, with
   no stats: it marks the socket), `tuning` (a tuning mod: points from one stat to another), `balancedTuning` (like a
   masterwork, only to a piece's stats at 0; one piece per tuning socket), `statMod` or `fragment` (a fragment with a
-  stat), as DIM reads them. `stat` is one of the six (`weapons|health|class|grenade|super|melee`), `value` a whole
+  stat), as DIM reads them. `stat` is one of the six (`health|melee|grenade|super|class|weapons`), `value` a whole
   number (negative for a fragment's −10). A stat with a `class` counts for that class only (Spark of Focus and Echo of
   Persistence lower the stat of the class's own ability regeneration).
 
@@ -396,8 +396,9 @@ two elements' grants don't stack, say it on the rule of the side that gives noth
   `doesn't stack with Dielectric [Tempest Strike]`. It gives way even if that element's rule itself
   gave way to a third one.
 * Without a listed element equipped, or on an event no rule of it matches, the rule applies as usual.
-* With both equipped, the build check warns (in every build summary: `explain`, `validate`, the web…) —
-  `'Tempest Strike': +1 Bolt Charge on "Kill Jolted target" doesn't stack with 'Dielectric' — with both equipped, it is wasted.` —
+* With both equipped, the build check notes it (info, in every build summary: `explain`, `validate`, the web…) —
+  `'Tempest Strike': +1 Bolt Charge on "Kill Jolted target" doesn't stack with 'Dielectric'.` — a fact for the
+  build crafter, who may keep both for what else each gives;
   `explain` annotates the bullet (`+1 Bolt Charge (doesn't stack with Dielectric) [Tempest Strike]`),
   and a loop's analysis shows it as **wasted** at each step where it happens ([loop-format.md](loop-format.md)).
 * In the loop graph (`graph`, `loops`), where this rule and the rule it gives way to lead from the same
@@ -495,7 +496,8 @@ stats: { weapons: 47, class: 104, grenade: 145, super: 27, melee: 79 }   # any s
   roll, an exotic's) its only one. The weapon's perks are what its columns hold that the catalog knows by
   hash, and the perks `perks` names that are in no column; the designer shows exactly these. A perk the
   catalog doesn't know (an enhanced version, say) is part of the weapon, not of the trace.
-* `stats`: any of `weapons`, `health`, `class`, `grenade`, `super`, `melee`, whole numbers 0..200.
+* `stats`: any of `health`, `melee`, `grenade`, `super`, `class`, `weapons` (the game's order; any order reads),
+  whole numbers 0..200.
 * `leftOut` (a build from a DIM link): what the loadout had that the catalog doesn't know, by manifest hash
   and where the loadout listed it — `leftOut: { items: [2005], subclassPlugs: [1001], armorMods: [3007],
   artifactPerks: [4008] }` (any subset). Shown with the build, never played.

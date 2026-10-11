@@ -137,7 +137,8 @@ away is wasted potential. **Decision.** A rule-level `doesNotStackWith: [<elemen
 on the side that gives nothing. When a rule of a listed element fires on the same event, the
 declaring rule gives way: it is reported as fired with no outcomes, naming that element
 (`FiredRule.NotStackedWith`; the trace reads "doesn't stack with Dielectric [Tempest Strike]"). With
-both elements equipped the build check warns ("… with both equipped, it is wasted"), `explain`
+both elements equipped the build check notes it ("… doesn't stack with 'Dielectric'.", info: a crafter may keep
+both for what else each gives), `explain`
 annotates the bullet, a loop's analysis shows it at each step where it happens, and the loop graph
 routes both arrows through a "Doesn't stack" node. Parsing rejects an id that isn't an element of
 the rules, the rule's own element, an empty list, and a `doesNotStackWith` that leads back to its

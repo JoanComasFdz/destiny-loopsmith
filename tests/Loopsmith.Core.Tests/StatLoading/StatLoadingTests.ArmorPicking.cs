@@ -63,7 +63,7 @@ public sealed partial class StatLoadingTests
 
         Assert.StartsWith("This loadout is yours: the build wears its own pieces, and the stats are set from them.", login.Message, StringComparison.Ordinal);
         Assert.Equal(new StatLine(ToKnownStat(27), ToKnownStat(27), ToKnownStat(100), ToKnownStat(190), ToKnownStat(125), ToKnownStat(27)), login.Session.Build.Build.Stats);
-        Assert.Contains("stats: {weapons: 27, health: 27, class: 100, grenade: 190, super: 125, melee: 27}", login.Session.Design.Build.Text, StringComparison.Ordinal);
+        Assert.Contains("stats: {health: 27, melee: 27, grenade: 190, super: 125, class: 100, weapons: 27}", login.Session.Design.Build.Text, StringComparison.Ordinal);
     }
 
     [Fact]

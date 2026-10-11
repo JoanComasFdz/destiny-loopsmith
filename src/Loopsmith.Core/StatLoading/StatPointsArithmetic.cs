@@ -8,9 +8,8 @@ internal static class StatPointsArithmetic
 {
     internal static readonly StatPoints Zero = new(0, 0, 0, 0, 0, 0);
 
-    /// <summary>The six stats in the game's order (Weapons first, Melee last).</summary>
-    internal static readonly ImmutableArray<StatKind> AllStats =
-        [StatKind.Weapons, StatKind.Health, StatKind.Class, StatKind.Grenade, StatKind.Super, StatKind.Melee];
+    /// <summary>The six stats in the game's order (Health first, Weapons last).</summary>
+    internal static readonly ImmutableArray<StatKind> AllStats = StatReading.GameOrder;
 
     /// <summary>The same points in each of the six stats (Armor 2.0's masterwork: +2 to each).</summary>
     internal static StatPoints ToPointsInEachStat(int value) =>

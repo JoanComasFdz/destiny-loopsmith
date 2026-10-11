@@ -255,8 +255,8 @@ stay on Home as links, with "import a build.yaml" and "import a loop".
 
 ## Stats
 
-A build's `stats:` are its six armor stats (`weapons`, `health`, `class`, `grenade`, `super`, `melee`, 0..200;
-one the build doesn't give is "?"). They are facts of the build, never counted down: the engine simulates no
+A build's `stats:` are its six armor stats (`health`, `melee`, `grenade`, `super`, `class`, `weapons` — the game's
+order, which the designer shows as bars and Loopsmith writes; 0..200; one the build doesn't give is "?"). They are facts of the build, never counted down: the engine simulates no
 energy (ADRs D1, D5). What they change is said by the build check, from the elements' `statChecks`
 ([rule-format.md](rule-format.md#elements)) — Gambler's Dodge gives back 1% of a melee charge per Melee point,
 twice that within 15 m of an enemy, so below 50 Melee it warns that even near an enemy the melee doesn't come back

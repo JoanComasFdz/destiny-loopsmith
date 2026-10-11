@@ -127,12 +127,8 @@ public static class BuildExplaining
         var source = b.Author.Match(a => a.Value, _ => "") + b.SourceUrl.Match(u => $"  {u.Value}", _ => "");
         var weapons = b.Weapons.Select(w =>
             $"{w.Name} ({w.Type}{w.Archetype.Match(a => $" {a.Value}", _ => "")})" + (w.Perks.IsEmpty ? "" : $": {DescribeElements(w.Perks)}"));
-        var stats = new (string Name, Optional<StatValue> Value)[]
-            {
-                ("Weapons", b.Stats.Weapons), ("Health", b.Stats.Health), ("Class", b.Stats.Class),
-                ("Grenade", b.Stats.Grenade), ("Super", b.Stats.Super), ("Melee", b.Stats.Melee),
-            }
-            .SelectMany(s => s.Value.Match(v => new[] { $"{s.Name} {v.Value.Value}" }, _ => []));
+        var stats = StatReading.GameOrder
+            .SelectMany(stat => b.Stats.ReadStat(stat).Match(v => new[] { $"{stat} {v.Value.Value}" }, _ => []));
         var issues = build.Issues.Select(issue => StyledText.ToLine(1,
             $"{(issue.Severity == Severity.Warning ? "! " : "i ")}{issue.Message}".ToSpan(issue.Severity == Severity.Warning ? Tone.Warning : Tone.Muted)));
         return

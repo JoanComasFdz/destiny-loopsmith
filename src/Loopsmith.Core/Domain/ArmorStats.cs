@@ -39,6 +39,10 @@ public partial record StatPlug
 /// <summary>Pure reads of a build's stat line by stat.</summary>
 public static class StatReading
 {
+    /// <summary>The six armor stats in the order the game lists them (Health first, Weapons last).</summary>
+    public static readonly ImmutableArray<StatKind> GameOrder =
+        [StatKind.Health, StatKind.Melee, StatKind.Grenade, StatKind.Super, StatKind.Class, StatKind.Weapons];
+
     /// <summary>The build's value of a stat ("?" when the build doesn't say).</summary>
     public static Optional<StatValue> ReadStat(this StatLine stats, StatKind stat) =>
         stat switch
