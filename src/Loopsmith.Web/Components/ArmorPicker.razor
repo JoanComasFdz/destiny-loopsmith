@@ -27,7 +27,7 @@
                         }
                         else
                         {
-                            <span class="icon-initials">@option.Tile.Name[..1]</span>
+                            <span class="icon-initials">@(option.Tile.Name.Length > 0 ? option.Tile.Name[..1] : "?")</span>
                         }
                         @if (option.Worn)
                         {

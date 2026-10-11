@@ -142,6 +142,25 @@ public sealed partial class StatLoadingTests
             options.Notes);
     }
 
+    [Fact]
+    public void A_hand_written_build_wears_a_picked_piece_and_its_declared_set_bonuses_then_follow_the_pieces()
+    {
+        var session = LoopDesigning.CreateSession(OpenHandWrittenBuild(), new LoopDesign("Test", Optional.None<string>(), Optional.None<string>(), Optional.None<CatalogVersion>(), ReadBuildFile(), []));
+        var profile = ReadProfile([.. OwnShare(tuningSockets: 0)]);
+
+        var options = LoopDesigning.ListArmorOptions(session.Build, profile, ArmorSlot.Helmet);
+        var worn = Assert.IsType<Result<DesignSession, string>.Ok>(LoopDesigning.PickArmorPiece(session, profile, ArmorSlot.Helmet, ItemInstanceId.From("6917530185805135602"))).Value;
+
+        Assert.Equal(["6917530185805135602"], options.Options.Select(option => option.Armor.InstanceId.Value));
+        Assert.False(options.Options[0].Worn);                                                  // the build names no helmet
+        Assert.Equal([new LeftOutItem(LoadoutPart.Item, Mask)], worn.Build.Build.LeftOut);
+        Assert.Equal([new ArmorCopy(Mask, ItemInstanceId.From("6917530185805135602"))], worn.Build.Build.ArmorCopies);
+        Assert.Empty(worn.Build.Build.ArmorSetBonuses);                                          // one Luminopotent piece grants none
+        Assert.Equal(ElementId.From("shinobus-vow"), worn.Build.Build.ExoticArmor.UnwrapOr(ElementId.From("none")));
+        Assert.DoesNotContain("armorSetBonuses", worn.Design.Build.Text, StringComparison.Ordinal);
+        Assert.EndsWith("leftOut: {items: [593554567]}\narmorCopies: [{hash: 593554567, instance: \"6917530185805135602\"}]\n", worn.Design.Build.Text, StringComparison.Ordinal);
+    }
+
     /// <summary>Every piece of the owner's share as its own copy (its id), each a Grenade 30 · Super 25 · Class 20 roll, masterworked.</summary>
     private static IEnumerable<FakeItem> OwnShare(int tuningSockets) =>
         OwnAll(tuningSockets).Select(item => item with { Instance = ShareCopies[item.Hash] });
