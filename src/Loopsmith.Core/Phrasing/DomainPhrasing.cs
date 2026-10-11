@@ -72,13 +72,21 @@ public static class DomainPhrasing
     public static string DescribeTypedItemHash(this ManifestExcerpt manifest, ItemHash hash) =>
         manifest.FindItem(hash).Match(item => item.Value.Type.Match(type => $"{item.Value.Name} ({type.Value})", _ => item.Value.Name), _ => hash.Value.ToString(Invariant));
 
-    /// <summary>Where an element's facts come from, for a reader ("Destiny Data Compendium (2026-10-09), Armor Perks row 57").</summary>
-    public static string DescribeProvenance(this Provenance source) =>
+    /// <summary>Where an element's facts come from, as a heading ("Destiny Data Compendium", "A creator's claim").</summary>
+    public static string DescribeProvenanceTitle(this Provenance source) =>
         source.Match(
-            compendium => $"Destiny Data Compendium ({compendium.Snapshot.Value.ToString("yyyy-MM-dd", Invariant)}), {compendium.Tab} row {compendium.Row.ToString(Invariant)}",
-            clarity => $"Clarity ({clarity.ClarityVersion})",
-            authored => $"Loopsmith's rules ({authored.RuleFile}:{authored.Line.ToString(Invariant)})",
-            claim => $"a creator's claim ({claim.SourceUrl})");
+            _ => "Destiny Data Compendium",
+            _ => "Clarity",
+            _ => "Loopsmith's own rule",
+            _ => "A creator's claim");
+
+    /// <summary>Which row or entry of it ("Armor Perks tab, row 57 · snapshot of 2026-10-09"; a rule file's line).</summary>
+    public static string DescribeProvenanceCite(this Provenance source) =>
+        source.Match(
+            compendium => $"{compendium.Tab} tab, row {compendium.Row.ToString(Invariant)} · snapshot of {compendium.Snapshot.Value.ToString("yyyy-MM-dd", Invariant)}",
+            clarity => $"Clarity {clarity.ClarityVersion} · item {clarity.Hash.Value.ToString(Invariant)}",
+            authored => $"{authored.RuleFile}, line {authored.Line.ToString(Invariant)} · no Compendium or Clarity row cited",
+            _ => "Not checked against the game data (Compendium or Clarity) yet");
 
     /// <summary>What kind of element it is, as a label ("Aspect", "Exotic weapon perk", "Armor set bonus").</summary>
     public static string DescribeElementKind(this ElementKind kind) =>
@@ -157,8 +165,7 @@ public static class DomainPhrasing
         var at = 0;
         while (at < text.Length)
         {
-            var match = names.FirstOrDefault(name => IsWordAt(text, at, name.Text));
-            if (match.Text is null)
+            if (FindKeywordAt(names, text, at) is not Optional<(string Text, KeywordName Keyword)>.Some match)
             {
                 at++;
                 continue;
@@ -169,8 +176,8 @@ public static class DomainPhrasing
                 parts.Add(new PhrasePart(text[plainStart..at], Optional.None<KeywordName>()));
             }
 
-            parts.Add(new PhrasePart(match.Text, Optional.Some(match.Keyword)));
-            at += match.Text.Length;
+            parts.Add(new PhrasePart(match.Value.Text, Optional.Some(match.Value.Keyword)));
+            at += match.Value.Text.Length;
             plainStart = at;
         }
 
@@ -182,14 +189,18 @@ public static class DomainPhrasing
         return parts.ToImmutable();
     }
 
+    /// <summary>The keyword whose name starts at this place as a whole word (the longest first), when one does.</summary>
+    private static Optional<(string Text, KeywordName Keyword)> FindKeywordAt(ImmutableArray<(string Text, KeywordName Keyword)> names, string text, int at) =>
+        names.Where(name => IsWordAt(text, at, name.Text)).Take(1).Select(name => Optional.Some(name)).FindFirstSome();
+
     private static ImmutableArray<(string Text, KeywordName Keyword)> ListKeywordNames(KeywordGlossary glossary) =>
     [
         .. glossary.Statuses.Values
             .SelectMany(status => new[] { status.Name, status.Kind == KeywordKind.Debuff ? glossary.DescribeDebuffedAdjective(status.Id) : status.Name }
                 .Distinct()
-                .Select(name => (Text: name, Keyword: new KeywordName(status.Id.Value, status.Affinity))))
-            .Concat(glossary.Pickups.Values.Select(pickup => (Text: pickup.Name, Keyword: new KeywordName(pickup.Id.Value, pickup.Affinity))))
-            .Concat(glossary.Summons.Values.Select(summon => (Text: summon.Name, Keyword: new KeywordName(summon.Id.Value, summon.DamageType.ToAffinity()))))
+                .Select(name => (Text: name, Keyword: new KeywordName(new KeywordRef.Status(status.Id), status.Affinity))))
+            .Concat(glossary.Pickups.Values.Select(pickup => (Text: pickup.Name, Keyword: new KeywordName(new KeywordRef.Pickup(pickup.Id), pickup.Affinity))))
+            .Concat(glossary.Summons.Values.Select(summon => (Text: summon.Name, Keyword: new KeywordName(new KeywordRef.Summon(summon.Id), summon.DamageType.ToAffinity()))))
             .Where(name => name.Text.Length > 0)
             .OrderByDescending(name => name.Text.Length)
             .ThenBy(name => name.Text, StringComparer.Ordinal),

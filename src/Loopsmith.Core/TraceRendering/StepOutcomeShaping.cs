@@ -123,7 +123,7 @@ public static class StepOutcomeShaping
     [
         .. glossary.SplitKeywords(text).Select(part => new TextPart(
             part.Text,
-            part.Keyword.Map(keyword => new KeywordPart(keyword.Affinity, FindElement(elements, keyword.Id))))),
+            part.Keyword.Map(keyword => new KeywordPart(keyword.Affinity, FindElement(elements, ToIdText(keyword.Keyword)))))),
     ];
 
     private static Optional<WeaponSlot> FindEventWeapon(GameEvent gameEvent) =>
@@ -142,6 +142,9 @@ public static class StepOutcomeShaping
             ability: _ => Optional.None<WeaponSlot>(),
             keyword: _ => Optional.None<WeaponSlot>(),
             summoned: _ => Optional.None<WeaponSlot>());
+
+    private static string ToIdText(KeywordRef keyword) =>
+        keyword.Match(status => status.Id.Value, pickup => pickup.Id.Value, summon => summon.Id.Value);
 
     private static Optional<ElementId> FindElement(ElementIndex elements, string id) =>
         elements.ById.TryGetValue(id, out var element) ? Optional.Some(element) : Optional.None<ElementId>();

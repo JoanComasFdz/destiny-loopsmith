@@ -27,3 +27,9 @@ public partial record Provenance
 }
 
 public sealed record Sourced<T>(T Value, Provenance Source);
+
+/// <summary>The Destiny Data Compendium's public sheet: credited and linked, never served as text (README, Licensing).</summary>
+public static class CompendiumSheet
+{
+    public const string Url = "https://docs.google.com/spreadsheets/d/1WaxvbLx7UoSZaBqdFr1u32F2uWVLo-CJunJB4nlGUE4/edit";
+}

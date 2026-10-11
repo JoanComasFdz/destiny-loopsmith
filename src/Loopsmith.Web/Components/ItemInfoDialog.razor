@@ -144,23 +144,36 @@
     private static RenderFragment RenderSource(InfoSource source) => __builder =>
     {
         <div class="info-card source" data-testid="info-source">
-            <div class="info-source">@source.Title</div>
-            @if (source.Paraphrase is Optional<string>.Some paraphrase)
+            @switch (source)
             {
-                <p class="info-rules-text">@paraphrase.Value</p>
+                case InfoSource.Compendium compendium:
+                    @RenderSourceText(compendium.Title, compendium.Paraphrase)
+                    <p class="info-cite">
+                        <span>@compendium.Cite</span><span> · </span><a href="@compendium.SheetUrl" target="_blank" rel="noopener noreferrer">Open the Compendium</a>
+                    </p>
+                    break;
+                case InfoSource.Cited cited:
+                    @RenderSourceText(cited.Title, cited.Paraphrase)
+                    <p class="info-cite">@cited.Cite</p>
+                    break;
+                case InfoSource.Claim claim:
+                    @RenderSourceText(claim.Title, claim.Paraphrase)
+                    <blockquote class="info-quote">@claim.Quote</blockquote>
+                    <p class="info-cite">
+                        <span>@claim.Cite</span><span> · </span><a href="@claim.Url" target="_blank" rel="noopener noreferrer">Open the source</a>
+                    </p>
+                    break;
             }
-            @if (source.Quote is Optional<string>.Some quote)
-            {
-                <blockquote class="info-quote">@quote.Value</blockquote>
-            }
-            <p class="info-cite">
-                <span>@source.Cite</span>
-                @if (source.Link is Optional<SourceLink>.Some link)
-                {
-                    <span> · </span><a href="@link.Value.Url" target="_blank" rel="noopener noreferrer">@link.Value.Text</a>
-                }
-            </p>
         </div>
+    };
+
+    private static RenderFragment RenderSourceText(string title, Optional<string> paraphrase) => __builder =>
+    {
+        <div class="info-source">@title</div>
+        @if (paraphrase is Optional<string>.Some text)
+        {
+            <p class="info-rules-text">@text.Value</p>
+        }
     };
 
     private static string DescribeTier(Optional<ItemTier> tier) =>
