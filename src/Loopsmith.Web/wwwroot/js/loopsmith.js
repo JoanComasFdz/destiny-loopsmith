@@ -1,5 +1,6 @@
-// Loopsmith web host — the only browser side effects the app needs: download, clipboard, confirm, URL hash.
-// Called from Hosting/BrowserInterop.cs. No app logic lives here, and nothing is stored in the browser.
+// Loopsmith web host — the only browser side effects the app needs: download, clipboard, confirm, URL hash, scroll
+// and focus, a step card as its drag image. Called from Hosting/BrowserInterop.cs. No app logic lives here, and
+// nothing is stored in the browser.
 window.loopsmith = {
   downloadText(fileName, text, mimeType) {
     const blob = new Blob([text], { type: mimeType || "text/plain" });
@@ -45,7 +46,15 @@ window.loopsmith = {
 
   revealElement(id) {
     const element = document.getElementById(id);
-    if (element && window.matchMedia("(min-width: 1100px)").matches) {
+    if (element) {
+      element.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+  },
+
+  focusElement(id) {
+    const element = document.getElementById(id);
+    if (element) {
+      element.focus({ preventScroll: true });
       element.scrollIntoView({ block: "nearest", behavior: "smooth" });
     }
   },
@@ -56,3 +65,14 @@ window.loopsmith = {
     }
   },
 };
+
+// A step dragged by its handle (Components/LoopTimeline.razor) shows its whole card while it moves. Firefox starts a
+// drag only when it carries data: a type of Loopsmith's own, so a text field it is dropped on takes nothing.
+document.addEventListener("dragstart", (event) => {
+  const handle = event.target instanceof Element ? event.target.closest(".step-drag") : null;
+  if (!handle || !event.dataTransfer) return;
+  event.dataTransfer.effectAllowed = "move";
+  event.dataTransfer.setData("application/x-loopsmith-step", handle.dataset.step || "");
+  const card = handle.closest(".step-card");
+  if (card) event.dataTransfer.setDragImage(card, 16, 16);
+});

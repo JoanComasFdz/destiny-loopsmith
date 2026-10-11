@@ -265,6 +265,24 @@ public static class LoopDesigning
         return session with { Design = design, Resolutions = resolutions, Current = current };
     }
 
+    /// <summary>
+    /// The design without step <paramref name="index"/> (0-based): every later step replays without it (a step whose
+    /// cause is gone shows blocked). Out of range: the design as it is.
+    /// </summary>
+    public static DesignSession RemoveStep(DesignSession session, int index) =>
+        index < 0 || index >= session.Design.Steps.Length
+            ? session
+            : CreateSession(session.Build, session.Design with { Steps = session.Design.Steps.RemoveAt(index) });
+
+    /// <summary>
+    /// The design with step <paramref name="from"/> moved to place <paramref name="to"/> (0-based, its place after the
+    /// move), its note with it: the steps replay in the new order. Out of range, or the same place: the design as it is.
+    /// </summary>
+    public static DesignSession MoveStep(DesignSession session, int from, int to) =>
+        from < 0 || from >= session.Design.Steps.Length || to < 0 || to >= session.Design.Steps.Length || from == to
+            ? session
+            : CreateSession(session.Build, session.Design with { Steps = session.Design.Steps.RemoveAt(from).Insert(to, session.Design.Steps[from]) });
+
     public static DesignSession RenameDesign(DesignSession session, string name, Optional<string> author, Optional<string> description) =>
         session with { Design = session.Design with { Name = name, Author = author, Description = description } };
 

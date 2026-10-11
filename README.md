@@ -17,8 +17,9 @@ designer opens with the loadout's build — what the rules know by hash; the res
 Skip Grenade build as a DIM build card.
 
 **The product is the loop you design**: pick triggers one by one (dodge, grenade kill, pick up an
-orb, Bolt Charge at max), and the result is a `*.loop.yaml` you can save, share as a link, replay and
-compare with another loop. A loop is judged by its **order of triggers**: does each step get what it
+orb, Bolt Charge at max) under the last step, move or remove any step (the loop replays in its new
+order), and the result is a `*.loop.yaml` you can save, share as a link, replay and compare with
+another loop. A loop is judged by its **order of triggers**: does each step get what it
 needs from the steps before it, does the order repeat, and what is wasted where ("Tempest Strike's
 Bolt Charge doesn't stack with Dielectric's").
 

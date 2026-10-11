@@ -29,6 +29,10 @@ public sealed class BrowserInterop(IJSRuntime js)
     public ValueTask RevealElementAsync(string elementId) =>
         js.InvokeVoidAsync("loopsmith.revealElement", elementId);
 
+    /// <summary>Moves the keyboard focus to an element (a moved step's card) and scrolls it into view.</summary>
+    public ValueTask FocusElementAsync(string elementId) =>
+        js.InvokeVoidAsync("loopsmith.focusElement", elementId);
+
     public ValueTask ClearLocationHashAsync() =>
         js.InvokeVoidAsync("loopsmith.clearHash");
 

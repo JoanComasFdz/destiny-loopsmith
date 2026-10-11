@@ -1,12 +1,15 @@
-@* The designed loop: one card per step with what it fired (LoopDesigning.RenderStepOutcomes — the CLI's wording). *@
+@* The designed loop: one card per step with what it fired (LoopDesigning.RenderStepOutcomes — the CLI's wording).
+   Each step can be moved up or down, removed, or (with a mouse) dragged by its handle onto another step's place. *@
 @{
     var build = Session.Build;
     var glossary = build.Catalog.Glossary;
     var steps = Session.Design.Steps;
 }
-<section class="timeline" aria-label="Loop timeline">
-    <article class="step-card spawn @(IsSelected(0) ? "selected" : "")" data-step="0" tabindex="0"
-             @onclick="() => SelectStep(0)" @onkeydown="e => SelectStepByKey(e, 0)">
+<section class="timeline" aria-label="Loop timeline"
+         @ondragenter="EnterTimeline" @ondragleave="LeaveTimeline" @ondragover:preventDefault="true" @ondrop="DropAsync" @ondrop:preventDefault="true">
+    <article class="step-card spawn @(IsSelected(0) ? "selected" : "") @DescribeDropTarget(0)" data-step="0" tabindex="0"
+             @onclick="() => SelectStep(0)" @onkeydown="e => SelectStepByKey(e, 0)"
+             @ondragenter="() => EnterDropTarget(0)">
         <header class="step-head">
             <span class="step-no">#0</span>
             <span class="step-title">Fresh spawn</span>
@@ -28,10 +31,13 @@
         var step = steps[index];
         var resolution = Session.Resolutions[index];
         var blocked = resolution.Blocked.IsSome();
-        <article class="step-card @(IsSelected(number) ? "selected" : "") @(blocked ? "blocked" : "") @(number == steps.Length ? "last" : "")"
+        <article class="step-card @(IsSelected(number) ? "selected" : "") @(blocked ? "blocked" : "") @(number == steps.Length ? "last" : "") @DescribeDropTarget(number) @(IsDragged(index) ? "dragged" : "")"
                  id="step-@number" data-step="@number" tabindex="0"
-                 @onclick="() => SelectStep(number)" @onkeydown="e => SelectStepByKey(e, number)">
+                 @onclick="() => SelectStep(number)" @onkeydown="e => SelectStepByKey(e, number)"
+                 @ondragenter="() => EnterDropTarget(number)">
             <header class="step-head">
+                <span class="step-drag" draggable="true" title="Drag to move this step" aria-hidden="true" data-step="@number"
+                      @ondragstart="() => StartDrag(index)" @ondragend="EndDrag" @onclick:stopPropagation="true">⠿</span>
                 <span class="step-no">#@number</span>
                 <span class="step-title">@glossary.DescribeAction(step.Action, build.Build)</span>
                 <code class="token">@step.Action.ToActionToken()</code>
@@ -39,6 +45,14 @@
                 {
                     <span class="badge blocked" title="@resolution.Blocked.UnwrapOr("")">Blocked</span>
                 }
+                <span class="step-tools" @onclick:stopPropagation="true">
+                    <button type="button" class="icon-btn" disabled="@(index == 0)" title="Move up" aria-label="@($"Move step {number} up")"
+                            data-action="step-up" @onclick="() => MoveStepAsync(index, index - 1)">↑</button>
+                    <button type="button" class="icon-btn" disabled="@(index == steps.Length - 1)" title="Move down" aria-label="@($"Move step {number} down")"
+                            data-action="step-down" @onclick="() => MoveStepAsync(index, index + 1)">↓</button>
+                    <button type="button" class="icon-btn remove" title="Remove this step" aria-label="@($"Remove step {number}")"
+                            data-action="step-remove" @onclick="() => OnRemove.InvokeAsync(index)">✕</button>
+                </span>
             </header>
             <div class="step-body">
                 <StyledLines Lines="@RenderStepLines(resolution)" IndentBase="1" />
@@ -85,6 +99,21 @@
     [Parameter]
     public EventCallback<(int Index, string Note)> OnAnnotate { get; set; }
 
+    /// <summary>A step to remove (0-based).</summary>
+    [Parameter]
+    public EventCallback<int> OnRemove { get; set; }
+
+    /// <summary>A step to move (0-based): from its place to another (its place after the move).</summary>
+    [Parameter]
+    public EventCallback<(int From, int To)> OnMove { get; set; }
+
+    // A drag under way: the step dragged (0-based), the card it was last over (its number: 0 is the spawn, the first
+    // place; a gap between cards keeps it), and how deep in the timeline the pointer is (enters minus leaves, as each
+    // card's enter and leave bubble up: 0 is outside it, where a drop does nothing).
+    private Optional<int> dragged = Optional.None<int>();
+    private Optional<int> dropTarget = Optional.None<int>();
+    private int dragDepth;
+
     protected override void OnParametersSet()
     {
         if (renderedWith != Options)
@@ -126,4 +155,66 @@
 
     private Task AnnotateStep(int index, ChangeEventArgs e) =>
         OnAnnotate.InvokeAsync((index, e.Value?.ToString() ?? ""));
+
+    private Task MoveStepAsync(int from, int to) =>
+        OnMove.InvokeAsync((from, to));
+
+    private void StartDrag(int index)
+    {
+        dragged = Optional.Some(index);
+        dropTarget = Optional.None<int>();
+        dragDepth = 0;
+    }
+
+    private void EndDrag()
+    {
+        dragged = Optional.None<int>();
+        dropTarget = Optional.None<int>();
+        dragDepth = 0;
+    }
+
+    private void EnterDropTarget(int number) =>
+        dropTarget = dragged.IsSome() ? Optional.Some(number) : Optional.None<int>();
+
+    private void EnterTimeline() =>
+        dragDepth++;
+
+    /// <summary>Out of the timeline: no card to land on, so no line.</summary>
+    private void LeaveTimeline()
+    {
+        dragDepth = Math.Max(dragDepth - 1, 0);
+        dropTarget = dragDepth == 0 ? Optional.None<int>() : dropTarget;
+    }
+
+    /// <summary>A step dropped in the timeline takes the place of the card it was last over (the spawn: the first place).</summary>
+    private async Task DropAsync()
+    {
+        var move = dragged.Bind(from => dropTarget.Map(target => (From: from, To: ToDropPlace(target)))); // pure
+        EndDrag();                                                                               // impure (UI state)
+        if (move is Optional<(int From, int To)>.Some { Value: var chosen } && chosen.From != chosen.To)
+        {
+            await OnMove.InvokeAsync(chosen);                                                    // impure
+        }
+    }
+
+    private static int ToDropPlace(int number) =>
+        Math.Max(number - 1, 0);
+
+    private bool IsDragged(int index) =>
+        dragged.Match(some => some.Value == index, _ => false);
+
+    /// <summary>
+    /// Where the dragged step would land, drawn as a line on the card it is over: above it when the step moves up, below
+    /// it when it moves down (below the spawn: the first place). None when it would stay where it is.
+    /// </summary>
+    private string DescribeDropTarget(int number)
+    {
+        if (dragged is not Optional<int>.Some from || dropTarget is not Optional<int>.Some target || target.Value != number)
+        {
+            return "";
+        }
+
+        var place = ToDropPlace(number);
+        return place == from.Value ? "" : number > 0 && place < from.Value ? "drop-before" : "drop-after";
+    }
 }
