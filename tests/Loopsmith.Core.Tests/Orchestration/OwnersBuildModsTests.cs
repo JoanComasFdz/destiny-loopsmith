@@ -26,20 +26,35 @@ public sealed class OwnersBuildModsTests
     private static readonly PickupId Orb = PickupId.From("orb-of-power");
 
     [Fact]
-    public void Legendary_armor_pieces_and_Triple_Jump_have_no_part_in_a_loop_and_only_the_real_gaps_are_missing()
+    public void Legendary_armor_pieces_Triple_Jump_and_the_stat_mods_have_no_part_in_a_loop_so_nothing_is_missing()
     {
         var build = Play().Build;
         var mask = new LeftOutItem(LoadoutPart.Item, ItemHash.From(593554567u));                // Luminopotent Mask
         var tripleJump = new LeftOutItem(LoadoutPart.SubclassPlug, ItemHash.From(95544328u));
+        var grenadeMod = new LeftOutItem(LoadoutPart.ArmorMod, ItemHash.From(1435557120u));
+        var balancedTuning = new LeftOutItem(LoadoutPart.ArmorMod, ItemHash.From(3122197216u));
 
         var missing = LoopDesigning.ListMissing(build);
+        var noLoopEffect = LoopDesigning.ListNoLoopEffect(build);
 
         Assert.IsType<LeftOutReason.NoLoopEffect>(LoopDesigning.ClassifyLeftOut(build, mask));
         Assert.Equal(new LeftOutReason.NoLoopEffect("A jump: movement has no part in a loop."), LoopDesigning.ClassifyLeftOut(build, tripleJump));
-        Assert.DoesNotContain(mask, missing);
-        Assert.DoesNotContain(tripleJump, missing);
-        Assert.All(missing, item => Assert.IsType<LeftOutReason.NotInRules>(LoopDesigning.ClassifyLeftOut(build, item)));
-        Assert.Contains(build.Issues, issue => issue.Message == $"Left out of the build: {missing.DescribeLeftOut()} from the DIM loadout — not in the rule catalog yet.");
+        Assert.Equal(
+            new LeftOutReason.NoLoopEffect("A stat mod (+10 Grenade): it changes only stats, and the build's stats count it when they add up from your armor (after the Bungie login). It sets nothing off."),
+            LoopDesigning.ClassifyLeftOut(build, grenadeMod));
+        Assert.StartsWith("Balanced Tuning (+1 to each stat where its piece has 0, one piece per tuning socket): it changes only stats", Assert.IsType<LeftOutReason.NoLoopEffect>(LoopDesigning.ClassifyLeftOut(build, balancedTuning)).Why, StringComparison.Ordinal);
+        Assert.Equal((5, 2), (noLoopEffect.Count(entry => entry.Item == grenadeMod), noLoopEffect.Count(entry => entry.Item == balancedTuning)));
+        Assert.Empty(missing);
+        Assert.DoesNotContain(build.Issues, issue => issue.Message.StartsWith("Left out of the build:", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void A_left_out_fragment_with_stats_is_still_a_gap_not_a_stat_mod()
+    {
+        var build = Play().Build;
+        var fragment = Catalog.Manifest.StatPlugs.First(entry => entry.Value is StatPlug.Fragment).Key;
+
+        Assert.IsType<LeftOutReason.NotInRules>(LoopDesigning.ClassifyLeftOut(build, new LeftOutItem(LoadoutPart.SubclassPlug, fragment)));
     }
 
     [Fact]
