@@ -165,7 +165,9 @@ elements:
     name: Stasis Resistance
     kind: armorMod
     affinity: stasis
-    hash: [638704972, 3456250548]   # the second: a copy with identical text
+    # 1176372075: a third copy the manifest names Stasis Resistance, though its perk (2570355090) is Strand
+    # Resistance's. Listed here by its name, the one a DIM loadout shows; both mods are inert either way.
+    hash: [638704972, 3456250548, 1176372075]   # the second: a copy with identical text
     description: "Less Stasis damage from combatants: 15% | 25% | 30% with 1|2|3 copies (different resistance sources multiply)."
     source: "compendium/2026-10-09/Armor Mods#7"
     inert: "Damage resistance: Loopsmith doesn't model the damage you take, so no loop changes."
@@ -176,9 +178,7 @@ elements:
     name: Strand Resistance
     kind: armorMod
     affinity: strand
-    # 1176372075 is named Stasis Resistance in the manifest, but its perk (2570355090) is Strand
-    # Resistance's, the same as 2959732323's, so it is this mod's copy.
-    hash: [2959732323, 1176372075]
+    hash: 2959732323
     description: "Less Strand damage from combatants: 15% | 25% | 30% with 1|2|3 copies (different resistance sources multiply)."
     source: "compendium/2026-10-09/Armor Mods#7"
     inert: "Damage resistance: Loopsmith doesn't model the damage you take, so no loop changes."

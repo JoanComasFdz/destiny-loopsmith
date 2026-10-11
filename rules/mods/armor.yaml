@@ -134,7 +134,7 @@ elements:
     name: Ashes to Assets
     kind: armorMod
     affinity: neutral
-    hash: 856936828
+    hash: [856936828, 2136310244]   # the second: a copy with identical text
     description: "Each grenade kill gives extra Super energy, more for tougher enemies (the Compendium lists the amounts as mostly unknown). It doesn't add to Hands-On's, and Grapple melee kills give half."
     source: "compendium/2026-10-09/Armor Mods#4"
     rules:
@@ -192,7 +192,7 @@ elements:
     name: Concussive Dampener
     kind: armorMod
     affinity: neutral
-    hash: 3719981603
+    hash: [3719981603, 930759851]   # the second: a copy with identical text
     description: "Less area, blast and explosive damage from combatants: 15% | 25% | 30% with 1|2|3 resistance mods (PvE only)."
     source: "compendium/2026-10-09/Armor Mods#7"
     inert: "Damage resistance: Loopsmith doesn't model the damage you take, so no loop changes."
@@ -203,7 +203,7 @@ elements:
     name: Charged Up
     kind: armorMod
     affinity: neutral
-    hash: 2577472338
+    hash: [2577472338, 3181984586]   # the second: a copy with identical text
     description: "Raises the most Armor Charge you can hold from x3 to x4 | x5 | x6 with 1|2|3 mods."
     source: "compendium/2026-10-09/Armor Mods#3"
     rules: []
