@@ -63,6 +63,15 @@ statuses:
   # Armor Mods#14; Clarity 40751621 agrees).
   - { id: reaper, name: Reaper, kind: buff, affinity: neutral, duration: 10s }
 
+  # An overshield on you: Proximity Ward's 200 HP one during a finisher (compendium/2026-10-09/
+  # Armor Mods#13, Class Item). Its HP is a fact of the source. No generic duration.
+  - { id: overshield, name: Overshield, kind: buff, affinity: neutral }
+
+  # Void Overshield on you: Bulwark Finisher's lasts 8 | 10 | 12 | 14 s at x3 | x4 | x5 | x6 Armor
+  # Charge consumed (compendium/2026-10-09/Armor Mods#4, Class Item), a fact of that source. No
+  # generic duration.
+  - { id: void-overshield, name: Void Overshield, kind: buff, affinity: void }
+
   # ---------------------------------------------------------------- debuffs (on the target)
   # Durations against combatants (PvE) from the Compendium 2026-10-09:
   #  - jolt 10 s [PvP 5 s]: Arc#8 (refreshed by re-jolting);
