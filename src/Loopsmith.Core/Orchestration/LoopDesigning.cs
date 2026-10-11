@@ -441,9 +441,9 @@ public static class LoopDesigning
             : session with { Design = session.Design with { Steps = session.Design.Steps.SetItem(index, session.Design.Steps[index] with { Note = note }) } };
 
     /// <summary>
-    /// Every step the build offers right now, grouped: every ability (always available — ADRs D5), every weapon, the
-    /// pickups on the ground and the states you can declare (ADRs D3). <see cref="TriggerOption.IsNew"/> marks what the
-    /// last step made available.
+    /// Every step the build offers right now, grouped: every ability (always available — ADRs D5) and, with the
+    /// abilities, a finisher when a rule of the build reacts to one, every weapon, the pickups on the ground and the
+    /// states you can declare (ADRs D3). <see cref="TriggerOption.IsNew"/> marks what the last step made available.
     /// </summary>
     public static ImmutableArray<TriggerOption> ListTriggerOptions(DesignSession session)
     {
@@ -471,7 +471,8 @@ public static class LoopDesigning
         var abilities = new[] { OffensiveAbility.Grenade, OffensiveAbility.Melee }
             .SelectMany(kind => hits.Select(hit => ((PlayerAction)new PlayerAction.CastAbility(kind, hit, TargetCount.One), TriggerGroup.Ability)))
             .Concat(ActionResolution.ListClassAbilityActions(build).Select(use => (use, TriggerGroup.Ability)))
-            .Concat(hits.Select(hit => ((PlayerAction)new PlayerAction.CastAbility(OffensiveAbility.Super, hit, TargetCount.One), TriggerGroup.Ability)));
+            .Concat(hits.Select(hit => ((PlayerAction)new PlayerAction.CastAbility(OffensiveAbility.Super, hit, TargetCount.One), TriggerGroup.Ability)))
+            .Concat(ActionResolution.ListFinisherActions(build).Select(finisher => (finisher, TriggerGroup.Ability)));
         var weapons = build.Build.Weapons
             .SelectMany(weapon => hits.Select(hit => ((PlayerAction)new PlayerAction.FireWeapon(weapon.Slot, hit, TargetCount.One), TriggerGroup.Weapon)));
         var pickups = state.Pickups

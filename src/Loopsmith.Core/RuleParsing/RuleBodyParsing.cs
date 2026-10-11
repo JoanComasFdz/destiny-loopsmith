@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Dunet;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 using YamlDotNet.RepresentationModel;
@@ -7,6 +8,14 @@ using static Loopsmith.Core.RuleParsing.ValueReading;
 using Errors = System.Collections.Immutable.ImmutableArray<Loopsmith.Core.RuleParsing.ParseError>;
 
 namespace Loopsmith.Core.RuleParsing;
+
+/// <summary>Who a <c>grantEnergy</c> gives to: an ability, or the least-charged one (the game picks it: <c>to: leastCharged</c>).</summary>
+[Union]
+internal partial record EnergyRecipient
+{
+    partial record Ability(AbilityKind Kind);
+    partial record LeastCharged();
+}
 
 /// <summary>An element's <c>rules</c> (on → when → then) and <c>passives</c>, with every id checked against the glossary.</summary>
 internal static class RuleBodyParsing
@@ -17,7 +26,7 @@ internal static class RuleBodyParsing
     private static readonly ImmutableArray<string> DamageKeys = ["via", "targetHas", "atLeast"];
 
     private static readonly ImmutableArray<string> TriggerNames =
-        ["abilityCast", "kill", "damage", "pickUp", "buffGained", "stacksMaxed"];
+        ["abilityCast", "kill", "damage", "pickUp", "buffGained", "stacksMaxed", "finisher"];
 
     private static readonly ImmutableArray<string> ConditionNames = ["has", "lacks", "targetHas", "atMax"];
 
@@ -28,7 +37,7 @@ internal static class RuleBodyParsing
     ];
 
     private static readonly ImmutableArray<string> PassiveNames =
-        ["extraStacks", "extraCharges", "modifyDamage", "resistDamage", "modifyWeaponStats", "raiseMaxStacks"];
+        ["extraStacks", "extraCharges", "modifyDamage", "resistDamage", "modifyWeaponStats", "raiseMaxStacks", "modifyStat"];
 
     internal static Result<Rule, Errors> ReadRule(ReferenceScope scope, YamlValue value) =>
         value.ToMap().Bind(map => Combine(
@@ -68,8 +77,15 @@ internal static class RuleBodyParsing
             "pickUp" => scope.ReadPickup(entry.Value).Map(Trigger (pickup) => new Trigger.PickUp(pickup)),
             "buffGained" => scope.ReadBuff(entry.Value).Map(Trigger (status) => new Trigger.BuffGained(status)),
             "stacksMaxed" => scope.ReadStackingBuff(entry.Value).Map(Trigger (status) => new Trigger.StacksMaxed(status)),
+            "finisher" => ReadFinisherTrigger(entry.Value),
             _ => entry.Value.FailAt<Trigger>(DescribeUnknown("trigger", entry.Key, TriggerNames)),
         });
+
+    /// <summary><c>{ finisher: {} }</c>: the player does a finisher on an enemy of the pack (it kills it). It takes no keys.</summary>
+    private static Result<Trigger, Errors> ReadFinisherTrigger(YamlValue value) =>
+        value.ToMap().Bind(map => map.Node.Children.Count == 0
+            ? Succeed<Trigger>(new Trigger.Finisher())
+            : map.FailAt<Trigger>($"{map.Label} takes no keys: write {{ finisher: {{}} }}"));
 
     /// <summary>
     /// <c>{ abilityCast: grenade }</c>, or <c>{ abilityCast: { ability: classAbility, airborne: true } }</c> for casts made
@@ -198,12 +214,22 @@ internal static class RuleBodyParsing
             _ => entry.Value.FailAt<Outcome>(DescribeUnknown("outcome", entry.Key, OutcomeNames)),
         });
 
+    /// <summary><c>{ to: grenade, amount: "15%" }</c>, or <c>to: leastCharged</c> for the ability with the least energy (the game picks it).</summary>
     private static Result<Outcome, Errors> ReadGrantEnergy(YamlValue value) =>
         value.ToMap().Bind(map => Combine(
             map.CheckKeys(["to", "amount"]),
-            map.ReadRequired("to", ReadVocabularyWord<AbilityKind>),
+            map.ReadRequired("to", ReadEnergyRecipient),
             map.ReadRequired("amount", ReadEnergyGrant),
-            Outcome (_, to, amount) => new Outcome.GrantEnergy(to, amount)));
+            (_, to, amount) => to.Match<Outcome>(
+                ability => new Outcome.GrantEnergy(ability.Kind, amount),
+                _ => new Outcome.GrantLeastChargedEnergy(amount))));
+
+    private static Result<EnergyRecipient, Errors> ReadEnergyRecipient(YamlValue value) =>
+        value.ParseWith(text => text == "leastCharged"
+            ? new Result<EnergyRecipient, string>.Ok(new EnergyRecipient.LeastCharged())
+            : GameNotationParsing.ParseVocabularyWord<AbilityKind>(text)
+                .Map(EnergyRecipient (kind) => new EnergyRecipient.Ability(kind))
+                .MapError(message => $"{message}, or leastCharged"));
 
     /// <summary><c>full</c> → <see cref="EnergyGrant.Full"/>; any game value → a fraction of one charge.</summary>
     private static Result<EnergyGrant, Errors> ReadEnergyGrant(YamlValue value) =>
@@ -296,8 +322,26 @@ internal static class RuleBodyParsing
             "resistDamage" => ReadGameValue(entry.Value).Map(Passive (amount) => new Passive.ResistDamage(amount)),
             "modifyWeaponStats" => ReadModifyWeaponStats(entry.Value),
             "raiseMaxStacks" => ReadRaiseMaxStacks(scope, entry.Value),
+            "modifyStat" => ReadModifyStat(entry.Value),
             _ => entry.Value.FailAt<Passive>(DescribeUnknown("passive effect", entry.Key, PassiveNames)),
         });
+
+    /// <summary>
+    /// <c>modifyStat: { stat: grenade, change: "+20 | +40 | +50" }</c> (the Font mods, while Armor Charge): stat points, by
+    /// copies — a fact shown, never added to the build's stats (ADRs D1).
+    /// </summary>
+    private static Result<Passive, Errors> ReadModifyStat(YamlValue value) =>
+        value.ToMap().Bind(map => Combine(
+            map.CheckKeys(["stat", "change"]),
+            map.ReadRequired("stat", ReadVocabularyWord<StatKind>),
+            map.ReadRequired("change", ReadStatPoints),
+            Passive (_, stat, change) => new Passive.ModifyStat(stat, change)));
+
+    /// <summary>A number of stat points ("+20", "+20 | +40 | +50", "?"); a percent is refused (it would read as a fraction).</summary>
+    private static Result<GameValue, Errors> ReadStatPoints(YamlValue value) =>
+        value.ParseWith(text => text.Contains('%')
+            ? new Result<GameValue, string>.Error($"'{text}' is a percent; a stat change is a number of points (e.g. +20, or \"+20 | +40 | +50\" by copies)")
+            : GameNotationParsing.ParseGameValue(text));
 
     private static Result<Passive, Errors> ReadExtraStacks(ReferenceScope scope, YamlValue value) =>
         value.ToMap().Bind(map => Combine(

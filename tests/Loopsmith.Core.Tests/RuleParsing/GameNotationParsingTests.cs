@@ -13,6 +13,7 @@ public sealed class GameNotationParsingTests
         { "+50%", new GameValue.Known(0.5m) },
         { "-20%", new GameValue.Known(-0.2m) },
         { "2", new GameValue.Known(2m) },
+        { "+20", new GameValue.Known(20m) },
         { "0.5", new GameValue.Known(0.5m) },
         { " 15% ", new GameValue.Known(0.15m) },
         { "~25%", new GameValue.Approximate(0.25m) },
@@ -47,6 +48,14 @@ public sealed class GameNotationParsingTests
 
         var perModCount = Assert.IsType<GameValue.PerModCount>(value);
         Assert.Equal([0.12m, 0.17m, 0.20m], perModCount.Values);
+    }
+
+    [Fact]
+    public void Parses_plain_numbers_per_mod_count()
+    {
+        var value = AssertOk(GameNotationParsing.ParseGameValue("+20 | +40 | +50"));
+
+        Assert.Equal([20m, 40m, 50m], Assert.IsType<GameValue.PerModCount>(value).Values);
     }
 
     [Fact]
@@ -139,6 +148,7 @@ public sealed class GameNotationParsingTests
         { "any", new DamageSource.AnySource() },
         { "weapon", new DamageSource.AnyWeapon() },
         { "weapon:strand", new DamageSource.WeaponOfType(DamageType.Strand) },
+        { "weapon:harmonic", new DamageSource.WeaponOfSuperType() },
         { "ability", new DamageSource.AnyAbility() },
         { "grenade", new DamageSource.AbilityOf(AbilityKind.Grenade) },
         { "melee", new DamageSource.AbilityOf(AbilityKind.Melee) },
@@ -172,6 +182,15 @@ public sealed class GameNotationParsingTests
         var message = AssertError(GameNotationParsing.ParseDamageSource(text));
 
         Assert.Contains($"'{text}' is not a damage source", message);
+    }
+
+    [Fact]
+    public void A_weapon_of_an_unknown_element_names_harmonic_among_what_it_can_be()
+    {
+        var message = AssertError(GameNotationParsing.ParseDamageSource("weapon:prismatic"));
+
+        Assert.Contains("or harmonic", message);
+        Assert.Contains("weapon:harmonic", message);
     }
 
     [Fact]

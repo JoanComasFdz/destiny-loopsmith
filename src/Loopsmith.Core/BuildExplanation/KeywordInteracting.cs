@@ -36,7 +36,7 @@ public static class KeywordInteracting
         var own = build.Catalog.FindKeywordElement(keyword);
         var others = build.Equipped.Where(equipped => own != Optional.Some(equipped.Element.Id)).ToImmutableArray();
         var fromRules = others.SelectMany(equipped => equipped.Element.Rules
-            .SelectMany(rule => FindRuleRole(keyword, rule).Select(role => (Role: role, Interaction: DescribeRule(glossary, keyword, equipped, rule)))));
+            .SelectMany(rule => FindRuleRole(keyword, rule).Select(role => (Role: role, Interaction: DescribeRule(build, keyword, equipped, rule)))));
         var fromPassives = others.SelectMany(equipped => equipped.Element.Passives
             .SelectMany(passive => FindPassiveRole(keyword, passive).Select(role => (Role: role, Interaction: DescribePassive(build, equipped, passive, role)))));
         var name = DescribeKeywordName(glossary, keyword);
@@ -90,7 +90,8 @@ public static class KeywordInteracting
             multiple => IsVia(keyword, multiple.Via),
             pickUp => keyword is KeywordRef.Pickup pickup && pickup.Id == pickUp.Pickup,
             gained => IsStatus(keyword, gained.Status),
-            maxed => IsStatus(keyword, maxed.Status));
+            maxed => IsStatus(keyword, maxed.Status),
+            _ => false);
 
     /// <summary>A guard the keyword meets by being there (the kernel's: a "without it" guard doesn't need it).</summary>
     private static bool IsNamedBy(KeywordRef keyword, Condition condition) =>
@@ -106,7 +107,8 @@ public static class KeywordInteracting
             _ => false,
             _ => false,
             keywordOf => IsStatus(keyword, keywordOf.Status),
-            summonOf => keyword is KeywordRef.Summon summon && summon.Id == summonOf.Summon);
+            summonOf => keyword is KeywordRef.Summon summon && summon.Id == summonOf.Summon,
+            _ => false);
 
     private static bool IsUsingUp(KeywordRef keyword, Outcome outcome) =>
         outcome.Match(
@@ -114,6 +116,7 @@ public static class KeywordInteracting
             convert => IsStatus(keyword, convert.Consumed),
             _ => false,
             remove => IsStatus(keyword, remove.Status),
+            _ => false,
             _ => false,
             _ => false,
             _ => false,
@@ -136,6 +139,7 @@ public static class KeywordInteracting
             _ => false,
             _ => false,
             _ => false,
+            _ => false,
             _ => false);
 
     private static bool IsCollecting(KeywordRef keyword, Outcome outcome) =>
@@ -151,7 +155,8 @@ public static class KeywordInteracting
             _ => false,
             _ => false,
             _ => false,
-            collect => keyword is KeywordRef.Pickup pickup && pickup.Id == collect.Pickup);
+            collect => keyword is KeywordRef.Pickup pickup && pickup.Id == collect.Pickup,
+            _ => false);
 
     private static bool IsStriking(KeywordRef keyword, Outcome outcome) =>
         outcome.Match(
@@ -166,6 +171,7 @@ public static class KeywordInteracting
             _ => false,
             _ => false,
             _ => false,
+            _ => false,
             _ => false);
 
     private static bool IsChanging(KeywordRef keyword, Passive passive) =>
@@ -175,7 +181,8 @@ public static class KeywordInteracting
             modify => IsVia(keyword, modify.Against),
             _ => false,
             _ => false,
-            raise => IsStatus(keyword, raise.Status));
+            raise => IsStatus(keyword, raise.Status),
+            _ => false);
 
     private static bool IsAnyStatus(KeywordRef keyword, ImmutableArray<StatusId> statuses) =>
         statuses.Any(status => IsStatus(keyword, status));
@@ -184,9 +191,11 @@ public static class KeywordInteracting
         keyword is KeywordRef.Status named && named.Id == status;
 
     /// <summary>"Grenade thrown → spends Armor Charge → +?% grenade energy per stack (chance)", with its copies counted.</summary>
-    private static KeywordInteraction DescribeRule(KeywordGlossary glossary, KeywordRef keyword, EquippedElement equipped, Rule rule)
+    private static KeywordInteraction DescribeRule(ValidatedBuild build, KeywordRef keyword, EquippedElement equipped, Rule rule)
     {
-        var outcomes = glossary.DescribeOutcomes(rule.Then.Select(outcome => new OutcomeMention(outcome, equipped.Count)));
+        var glossary = build.Catalog.Glossary;
+        var superType = build.ReadSuperType();
+        var outcomes = glossary.DescribeOutcomes(rule.Then.Select(outcome => new OutcomeMention(outcome, equipped.Count)), superType);
         var others = rule.When.Where(condition => !IsNamedBy(keyword, condition)).ToImmutableArray();
         var condition = others.IsEmpty ? "" : $" ({glossary.DescribeConditions(others)})";
         var chance = rule.Likelihood == Likelihood.Chance ? " (chance)" : "";
@@ -195,7 +204,7 @@ public static class KeywordInteracting
             equipped.Element.Name,
             equipped.Element.Kind,
             equipped.Element.Affinity,
-            $"{glossary.DescribeTrigger(rule.On)} → {outcomes}{condition}{chance}",
+            $"{glossary.DescribeTrigger(rule.On, superType)} → {outcomes}{condition}{chance}",
             Optional.None<string>());
     }
 
@@ -209,7 +218,7 @@ public static class KeywordInteracting
             equipped.Element.Name,
             equipped.Element.Kind,
             equipped.Element.Affinity,
-            glossary.DescribePassive(passive.Modifier) + condition,
+            glossary.DescribePassive(passive.Modifier, equipped.Count, build.ReadSuperType()) + condition,
             DescribeReach(build.Build, PassiveReaching.FindReach(build.Build, passive.Modifier)));
     }
 

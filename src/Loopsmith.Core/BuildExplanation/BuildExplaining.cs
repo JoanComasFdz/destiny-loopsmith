@@ -64,6 +64,7 @@ public static class BuildExplaining
     private static ImmutableArray<ExplanationGroup> ExplainEquipped(ValidatedBuild build, ImmutableArray<EquippedElement> equippedElements)
     {
         var glossary = build.Catalog.Glossary;
+        var superType = build.ReadSuperType();
         var ruleItems = equippedElements
             .SelectMany(equipped => equipped.Element.Rules.Select(rule => (equipped.Element, equipped.Count, Rule: rule)))
             .Select((x, order) => (
@@ -72,7 +73,7 @@ public static class BuildExplaining
                 Order: order,
                 Affinity: ReadTriggerAffinity(build, x.Rule.On),
                 Item: new ExplanationItem(
-                    glossary.DescribeOutcomes(x.Rule.Then.Select(o => new OutcomeMention(o, x.Count))),
+                    glossary.DescribeOutcomes(x.Rule.Then.Select(o => new OutcomeMention(o, x.Count)), superType),
                     x.Element.Name,
                     x.Element.Kind,
                     x.Element.Affinity,
@@ -80,14 +81,14 @@ public static class BuildExplaining
                     DescribeRuleCondition(build, x.Rule),
                     x.Rule.Reason)));
         var passiveItems = equippedElements
-            .SelectMany(equipped => equipped.Element.Passives.Select(passive => (equipped.Element, Passive: passive)))
+            .SelectMany(equipped => equipped.Element.Passives.Select(passive => (equipped.Element, equipped.Count, Passive: passive)))
             .Select((x, order) => (
                 Heading: x.Passive.When.IsEmpty ? "Always" : DomainPhrasing.Capitalize(glossary.DescribeConditions(x.Passive.When)),
                 Rank: x.Passive.When.IsEmpty ? 70 : 60,
                 Order: 10_000 + order,
                 Affinity: x.Passive.When.Select(c => ReadConditionAffinity(glossary, c)).FirstOrDefault(Affinity.Neutral),
                 Item: new ExplanationItem(
-                    glossary.DescribePassive(x.Passive.Modifier),
+                    glossary.DescribePassive(x.Passive.Modifier, x.Count, superType),
                     x.Element.Name,
                     x.Element.Kind,
                     x.Element.Affinity,
@@ -150,7 +151,7 @@ public static class BuildExplaining
 
     /// <summary>The trigger; a stacking buff's max also names the build's cap ("Max Bolt Charge (x10)", Charged Up raises it), a fact.</summary>
     private static string DescribeHeading(ValidatedBuild build, Trigger trigger) =>
-        build.Catalog.Glossary.DescribeTrigger(trigger) + (trigger is Trigger.StacksMaxed maxed
+        build.Catalog.Glossary.DescribeTrigger(trigger, build.ReadSuperType()) + (trigger is Trigger.StacksMaxed maxed
             ? build.DescribeStackCap(maxed.Status).Match(cap => $" ({cap.Value})", _ => "")
             : "");
 
@@ -217,7 +218,8 @@ public static class BuildExplaining
             damageMultiple: _ => 12,
             pickUp: _ => 30,
             buffGained: _ => 40,
-            stacksMaxed: _ => 50);
+            stacksMaxed: _ => 50,
+            finisher: _ => 25);
 
     private static Affinity ReadTriggerAffinity(ValidatedBuild build, Trigger trigger)
     {
@@ -233,7 +235,8 @@ public static class BuildExplaining
             damageMultiple: _ => [],
             pickUp: _ => [],
             buffGained: buffGained => [buffGained.Status],
-            stacksMaxed: stacksMaxed => [stacksMaxed.Status]);
+            stacksMaxed: stacksMaxed => [stacksMaxed.Status],
+            finisher: _ => []);
         var pickup = trigger is Trigger.PickUp pickUp && glossary.Pickups.TryGetValue(pickUp.Pickup, out var definition)
             ? definition.Affinity
             : Affinity.Neutral;

@@ -230,13 +230,15 @@ tab's `NN_<Tab>.csv`, which is the spreadsheet's row. Archived `OLD …` tabs ar
 | `"15%"` | `Known(0.15)` | percent → fraction |
 | `"+50%"` | `Known(0.5)` | sign optional |
 | `"12% \| 17% \| 20%"` | `PerModCount([0.12, 0.17, 0.20])` | value by number of copies equipped (the last one for more copies) |
+| `"+20 \| +40 \| +50"` | `PerModCount([20, 40, 50])` | plain numbers by copies (stat points: `modifyStat`) |
 | `"~25%"`, `"25%?"` | `Approximate(0.25)` | shown `~25%` |
 | `"?"`, `"?%"` | `Unknown()` | **never 0** |
 | `"300% [20%]"` | PvE part `Known(3.0)` | `[…]` is the PvP value: checked, then dropped |
 | `2`, `"2"` | `Known(2)` | plain number |
 
 Game values appear in `grantEnergy.amount` (or `full`), `convertStacksToEnergy.perStack`, `modifyDamage.change`,
-`restoreHealth.amount`, `resistDamage`, a weapon-stat `change`, and `ability.chunkScalar` / `baseCooldown`.
+`restoreHealth.amount`, `resistDamage`, a weapon-stat `change`, `modifyStat.change` (stat points: a percent there is an
+error), and `ability.chunkScalar` / `baseCooldown`.
 Decimals use `.`; quote the value as the examples do (a bare `?` or `~` means something else to YAML).
 Every one is shown with its outcome, with its certainty (ADRs D13); an `Unknown` reads `?`.
 
@@ -276,6 +278,7 @@ doesn't show as a stacking status (Elemental Charge's progress per Ionic Trace; 
 | `{ pickUp: ionic-trace }` | `PickUp(pickup)` |
 | `{ buffGained: bolt-charge }` | `BuffGained(status)` |
 | `{ stacksMaxed: bolt-charge }` — the player declares the buff at max | `StacksMaxed(status)` |
+| `{ finisher: {} }` — the player does a finisher on an enemy of the pack (it kills it) | `Finisher()` |
 
 An **airborne** class ability use is an air move that spends the class ability charge (Ascension's,
 played as `class:air`, [loop-format.md](loop-format.md#action-tokens)). It is still a class ability
@@ -293,6 +296,17 @@ action hits ("One For All: hitting three separate targets…" → `{ damage: { v
 A kill hits too, so a kill action also fires `damage … atLeast`. Only player actions (abilities and
 weapons) fire `atLeast` triggers, once per action — keyword strikes and summons hit one enemy each.
 
+A **finisher** is the player's step `finisher` ("Finisher", [loop-format.md](loop-format.md#action-tokens)). It fires
+the `finisher` rules, then kills one enemy of the pack: a hit and a kill whose origin is the finisher. A finisher has
+no damage type and is no weapon or ability, so of the `damage` and `kill` rules only those whose `via` is `any` fire on
+it — `{ kill: { via: any, targetHas: [jolt] } }` on a finisher of a jolted enemy; `kill: { via: melee }` and
+`type:arc` never. `finisher` takes no keys (`{ finisher: {} }`; anything else in it is an error). The designer offers
+the step only when an equipped rule has a `finisher` trigger. What a finisher spends (the finisher mods' "consumes x3
+or more Armor Charge") is not counted — the state holds no stack count (ADRs D1): guard the rule with
+`when: [ { has: armor-charge } ]`, mark it `chance: true` when it needs more stacks than one (the player knows), and
+spend the buff with `convertStacksToEnergy` or `removeBuff`; for "consumes x1", leave the buff (stacks may remain)
+and say so in the `reason`.
+
 `buffGained` fires on every `applyBuff` of a stacking status (one with `maxStacks`), and on an
 `applyBuff` of a non-stacking status only when it wasn't active. `stacksMaxed` fires when the player
 declares the buff at its maximum (`max:bolt-charge`, "Bolt Charge at max" —
@@ -307,6 +321,7 @@ rules "Max Bolt Charge". A `stacksMaxed` (or `atMax`) on a status without `maxSt
 | `any` | `AnySource` |
 | `weapon` | `AnyWeapon` |
 | `weapon:strand` | `WeaponOfType(Strand)` |
+| `weapon:harmonic` | `WeaponOfSuperType` — a weapon of your Super's element (the Harmonic mods): of the build's Super's `affinity` in the catalog; with the Super `?` (or one of no element) it matches nothing |
 | `slot:power` | `WeaponInSlot(Power)` — the build's weapon in that slot (`kinetic\|energy\|power`): an exotic weapon's "this weapon", since an exotic always sits in its own slot |
 | `ability` | `AnyAbility` |
 | `grenade` / `melee` / `classAbility` / `super` | `AbilityOf(kind)` |
@@ -316,7 +331,10 @@ rules "Max Bolt Charge". A `stacksMaxed` (or `atMax`) on a status without `maxSt
 
 Types are `kinetic|arc|solar|void|stasis|strand`. A weapon deals its build `type`; an ability the
 subclass's (kinetic on Prismatic: per-ability types aren't modelled); a keyword strike its status's
-affinity; a summon its glossary `damageType`. The class ability deals no damage — it is only cast.
+affinity; a summon its glossary `damageType`. The class ability deals no damage — it is only cast. A finisher has no
+type: only `any` matches it. `weapon:harmonic` reads with the build's Super named — "Kill target with Arc weapon
+(your Super's element)", "+20% damage with Arc weapon (your Super's element)" — and "weapon of your Super's element"
+when the Super is `?`.
 
 **Conditions (`when`)**: `{ has: <status> }` · `{ lacks: <status> }` · `{ targetHas: <status> }` ·
 `{ atMax: <status> }` — all must hold, checked against the state when the event is processed.
@@ -338,6 +356,7 @@ Flashover (Amplified 15s), and the next ability hit fires the strike, which spen
 | YAML | Domain `Outcome` |
 |---|---|
 | `{ grantEnergy: { to: grenade, amount: "15%" } }` / `amount: full` | `GrantEnergy(to, Fraction(v) \| Full)` |
+| `{ grantEnergy: { to: leastCharged, amount: "10% \| 13% \| 15%" } }` — the ability with the least energy | `GrantLeastChargedEnergy(Fraction(v) \| Full)` |
 | `{ convertStacksToEnergy: { consumed: armor-charge, to: grenade, perStack: "?" } }` | `ConvertStacksToEnergy` |
 | `{ applyBuff: { status: bolt-charge, stacks: 1, duration: 10s } }` / `{ applyBuff: amplified }` | `ApplyBuff` (stacks default 1) |
 | `{ removeBuff: new-tricks }` | `RemoveBuff` |
@@ -363,6 +382,9 @@ must be glossary `buff`s; in `debuffTarget`/`targetHas` glossary `debuff`s
 * **`convertStacksToEnergy`** consumes the buff if it is active — removes it and its declaration — and
   shows the energy as a fact: `spends Armor Charge → +?% grenade energy per stack`. With the buff not
   active it carries the caveat `nothing to consume`.
+* **`grantEnergy` to `leastCharged`** (Orbs of Restoration, Restorative Finisher) is a fact like any energy grant:
+  `+10% energy to your least-charged ability` (by copies). The game picks the ability, so the loop graph draws no
+  arrow from it to one ability's energy.
 * **`debuffTarget`** puts the debuff on the pack, where it stays until the player ends it; no rule
   removes a debuff.
 * **`collect`** picks the pickup up when it is on the ground — it leaves the ground and its pickup
@@ -372,7 +394,7 @@ must be glossary `buff`s; in `debuffTarget`/`targetHas` glossary `debuff`s
 
 What changes the state or sets off events: `applyBuff`, `removeBuff`, `debuffTarget`, `spawn`,
 `summon`, `strikeTarget`, `collect`, and the consumption of `convertStacksToEnergy`. The rest are **facts**, shown with their value and
-certainty and changing nothing: `grantEnergy`, the energy of `convertStacksToEnergy`, `resetCooldown`,
+certainty and changing nothing: `grantEnergy` (to an ability or `leastCharged`), the energy of `convertStacksToEnergy`, `resetCooldown`,
 `modifyDamage` and `restoreHealth` (ADRs D1, D5).
 
 ### Rules that don't stack
@@ -439,8 +461,11 @@ passives:
 | `{ resistDamage: "25%" }` | `ResistDamage` |
 | `{ modifyWeaponStats: { archetypes: [fusion-rifle], changes: [ { stat: handling, change: "?" } ] } }` | `ModifyWeaponStats` (non-empty lists; archetypes and stats are kebab-case words) |
 | `{ raiseMaxStacks: { status: armor-charge, max: "4 \| 5 \| 6" } }` (a status with `maxStacks`; no `when`) | `RaiseMaxStacks` — the cap with it equipped, by copies |
+| `{ modifyStat: { stat: grenade, change: "+20 \| +40 \| +50" } }` (`health\|melee\|grenade\|super\|class\|weapons`; stat points, not a percent) | `ModifyStat(stat, change)` — "+20 Grenade" |
 
-Passives are facts and change no state. While its `when` holds, `extraStacks` adds a caveat to every
+Passives are facts and change no state. Each is shown with the value for the copies equipped (Weapon Surge
+`"+10% | +17% | +22% | +25%"` with two copies: `+17% Arc weapon damage`; Charged Up with one: `Armor Charge up to x4`).
+While its `when` holds, `extraStacks` adds a caveat to every
 `applyBuff` of that status (`+1 from Spark of Frequency`); the others are shown in `explain`, and,
 when they have a `when`, in the trace's state while it holds. `raiseMaxStacks` states the build's cap
 of a stacking status while it is equipped, as the source gives it by copies (Charged Up: Armor Charge
@@ -450,6 +475,10 @@ raising the same cap make it `"?"`: no source says how they combine. It always h
 it takes no when`). The cap is a fact: it shows in the status's facts (`up to x4`), in the declared step
 (`Armor Charge at max (x4)`) and in `explain`'s max heading (`Max Bolt Charge (x10)`); the player still
 declares it reached (ADRs D3).
+
+`modifyStat` (the Font mods: `+20 | +40 | +50` Grenade while Armor Charge, `when: [ { has: armor-charge } ]`) is a fact
+shown in `explain` and, while its `when` holds, in the step's state (`+20 Grenade [Grenade Font]` under Armor Charge).
+It is never added to the build's stats: the build's stat line and the `statChecks` that read it don't count it (ADRs D1, D28).
 
 ## Build file (`builds/<build>/build.yaml`)
 
@@ -549,6 +578,9 @@ the ground.
   N `Damaged(Weapon(slot, type))`, N `Killed` if a kill, then `TargetsHit`. N (the target count, 1..20)
   is the player's: the engine can't know how many enemies a hit catches (ADRs D4).
   `pickup:<id>` picks one pickup up: one `PickedUp(p)`, and that pickup is no longer on the ground.
+  `PerformFinisher` (`finisher`) emits `Finisher`, then one `Damaged(Finisher)` and one `Killed(Finisher)` on the pack
+  in front of you (one enemy, `minor`; no `TargetsHit`), and is never blocked. Only `via: any` matches the finisher
+  origin.
 * **Declarations** (ADRs D3, [loop-format.md](loop-format.md#action-tokens)). `max:<status>`
   ("Bolt Charge at max") emits `StacksMaxed(status)`, so the `stacksMaxed` rules fire and cascade, and
   marks the buff declared at max: `atMax` holds until a rule removes or consumes the buff, or the
@@ -584,11 +616,13 @@ the ground.
   its own causal chain (A → B → A stops). Sibling occurrences — two traces spawned, the three enemies
   of `grenade:kill:3` — each fire.
 * **Stacked mods:** an element equipped N times fires its rules once; `PerModCount` picks the
-  N-th value (last value if N is larger).
+  N-th value (last value if N is larger), in its outcomes and in its passives.
+* **`weapon:harmonic`** matches a weapon whose type is the damage type of the build's Super (its element's
+  `affinity`); with the Super `?`, or one the catalog doesn't have, it matches nothing.
 * **Rules that don't stack** (`doesNotStackWith`, ADRs D6): of the rules one event fires, a rule
   that lists another firing rule's element gives way — it is reported with no outcomes and
   `NotStackedWith` = that element's name, and its outcomes take no part in the phase order.
-* **Facts** (ADRs D1, D5): energy outcomes, `modifyDamage` and `restoreHealth` are shown with their
+* **Facts** (ADRs D1, D5): energy outcomes (`leastCharged` too), `modifyDamage` and `restoreHealth` are shown with their
   value, certainty and a caveat when the value is missing (`amount unknown` / `value unknown`), and
   change no state. An `Unknown` value stays `?` (never 0). Ability profiles and
   `extraCharges` are facts recorded from the Compendium.

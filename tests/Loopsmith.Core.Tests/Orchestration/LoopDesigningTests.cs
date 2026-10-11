@@ -36,6 +36,21 @@ public sealed class LoopDesigningTests
     }
 
     [Fact]
+    public void A_finisher_is_offered_with_the_abilities_only_where_a_rule_reacts_to_one()
+    {
+        var finisherMod = Element("finisher-mod", ElementKind.ArmorMod, [On(new Trigger.Finisher(), Buff("amplified"))]);
+        var session = AppendSteps(StartDesign(ValidateBuild([], mods: [finisherMod])), GrenadeKill, new PlayerAction.PerformFinisher());
+
+        var options = LoopDesigning.ListTriggerOptions(session);
+        var without = LoopDesigning.ListTriggerOptions(StartDesign(ValidateBuild([])));
+
+        var finisher = Assert.Single(options, option => option.Token == "finisher");
+        Assert.Equal(("Finisher", TriggerGroup.Ability, false), (finisher.Label, finisher.Group, finisher.IsNew));
+        Assert.Equal(Optional.None<TargetCount>(), LoopDesigning.ReadTargetCount(finisher.Action));
+        Assert.DoesNotContain(without, option => option.Token == "finisher");
+    }
+
+    [Fact]
     public void A_pickup_that_just_landed_is_new_and_only_then()
     {
         var spawner = Element("spawner", ElementKind.Fragment,

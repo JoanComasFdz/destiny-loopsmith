@@ -19,6 +19,7 @@ public partial record Trigger
     partial record PickUp(PickupId Pickup);
     partial record BuffGained(StatusId Status);
     partial record StacksMaxed(StatusId Status);
+    partial record Finisher();                                                 // the player does a finisher on an enemy of the pack
 }
 
 /// <summary>A guard on the current state, checked after the trigger matched.</summary>
@@ -40,8 +41,9 @@ public partial record EnergyGrant
 
 /// <summary>
 /// The game's consequences. ("Effect" is reserved for side effects described as data — see Orchestration.)
-/// Energy outcomes (<see cref="GrantEnergy"/>, <see cref="ConvertStacksToEnergy"/>'s energy, <see cref="ResetCooldown"/>),
-/// <see cref="ModifyDamage"/> and <see cref="RestoreHealth"/> are facts shown with their value (ADRs D1, D5).
+/// Energy outcomes (<see cref="GrantEnergy"/>, <see cref="ConvertStacksToEnergy"/>'s energy, <see cref="ResetCooldown"/>,
+/// <see cref="GrantLeastChargedEnergy"/>), <see cref="ModifyDamage"/> and <see cref="RestoreHealth"/> are facts shown with
+/// their value (ADRs D1, D5).
 /// </summary>
 [Union]
 public partial record Outcome
@@ -58,6 +60,7 @@ public partial record Outcome
     partial record RestoreHealth(GameValue Amount, bool IncludesAllies);
     partial record ResetCooldown(AbilityKind Which);
     partial record Collect(PickupId Pickup);   // picks it up from the ground when it is there (Powerful Attraction): a pickup event
+    partial record GrantLeastChargedEnergy(EnergyGrant Amount);   // to whichever ability has the least energy: the game picks, so a fact
 }
 
 /// <summary>
@@ -85,6 +88,7 @@ public partial record Passive
     partial record ResistDamage(GameValue Amount);                           // Spark of Resistance
     partial record ModifyWeaponStats(ImmutableArray<string> Archetypes, ImmutableArray<WeaponStatChange> Changes);
     partial record RaiseMaxStacks(StatusId Status, GameValue Max);           // Charged Up: the cap with it equipped, per copy ("4 | 5 | 6"), a fact (ADRs D3)
+    partial record ModifyStat(StatKind Stat, GameValue Change);              // Grenade Font: "+20 Grenade" while it holds, a fact never added to the stats (ADRs D1)
 }
 
 public sealed record PassiveRule(Passive Modifier, ImmutableArray<Condition> When, Optional<string> Reason);

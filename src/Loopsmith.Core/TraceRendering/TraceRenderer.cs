@@ -140,7 +140,7 @@ public static class TraceRenderer
                     foreach (var caveat in outcome.Caveat.Match(some => new[] { some.Value }, _ => []))
                     {
                         yield return StyledText.ToLine(detailIndent,
-                            $"· {glossary.DescribeOutcome(outcome.Outcome)}: {caveat}".ToSpan(Tone.Muted));
+                            $"· {glossary.DescribeOutcome(outcome.Outcome, build.ReadSuperType())}: {caveat}".ToSpan(Tone.Muted));
                     }
                 }
             }
@@ -185,7 +185,7 @@ public static class TraceRenderer
             partner => $"doesn't stack with {partner.Value}".ToSpan(Tone.Warning),
             _ => (rule.Outcomes.IsEmpty
                 ? "(no effect)"
-                : glossary.DescribeOutcomes(rule.Outcomes.Select(o => new OutcomeMention(o.Outcome, copies)))).ToSpan(Tone.Plain));
+                : glossary.DescribeOutcomes(rule.Outcomes.Select(o => new OutcomeMention(o.Outcome, copies)), build.ReadSuperType())).ToSpan(Tone.Plain));
         ImmutableArray<StyledSpan> chance = rule.Likelihood == Likelihood.Chance ? [" (chance)".ToSpan(Tone.Muted)] : [];
         return
         [

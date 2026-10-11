@@ -27,7 +27,8 @@ public static class OutcomeApplication
             modifyDamage => AnnotateFact(state, outcome, modifyDamage.Change.ReadCertainty(), "value unknown"),
             restoreHealth => AnnotateFact(state, outcome, restoreHealth.Amount.ReadCertainty(), "value unknown"),
             resetCooldown => KeepUnchanged(state, outcome, ""),
-            collect => Collect(state, outcome, collect));
+            collect => Collect(state, outcome, collect),
+            least => AnnotateFact(state, outcome, ReadGrantCertainty(least.Amount), "amount unknown"));
 
     /// <summary><c>full</c> is one whole charge (known); a fraction is as certain as its value.</summary>
     private static Certainty ReadGrantCertainty(EnergyGrant grant) =>

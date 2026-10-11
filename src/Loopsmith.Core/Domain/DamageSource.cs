@@ -15,6 +15,7 @@ public partial record DamageSource
     partial record OfType(DamageType Type);          // any weapon, ability, keyword or summon of that damage type
     partial record KeywordOf(StatusId Status);       // jolt chain, bolt-charge lightning, unravel threads…
     partial record SummonOf(SummonId Summon);
+    partial record WeaponOfSuperType();              // a weapon of the build's Super's element (Harmonic mods); none known: nothing
 }
 
 /// <summary>The <em>concrete</em> origin of damage in an event. Patterns (<see cref="DamageSource"/>) match origins.</summary>
@@ -25,4 +26,5 @@ public partial record DamageOrigin
     partial record Ability(AbilityKind Kind, DamageType Type);
     partial record Keyword(StatusId Status, DamageType Type);
     partial record Summoned(SummonId Summon, DamageType Type);
+    partial record Finisher();                       // no damage type: only "any source" matches it
 }

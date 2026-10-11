@@ -81,13 +81,15 @@ public static class TriggerPaletteShaping
             _ => "class",
             fire => $"fire:{fire.Slot}",
             collect => $"pickup:{collect.Pickup}",
-            declare => ((PlayerAction)declare).ToActionToken());
+            declare => ((PlayerAction)declare).ToActionToken(),
+            _ => "finisher");
 
     private static int ReadHitOrder(PlayerAction action) =>
         action.Match(
             cast => cast.Hit == HitOutcome.Kill ? 1 : 0,
             _ => 0,
             fire => fire.Hit == HitOutcome.Kill ? 1 : 0,
+            _ => 0,
             _ => 0,
             _ => 0);
 

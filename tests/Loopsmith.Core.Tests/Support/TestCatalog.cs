@@ -18,6 +18,7 @@ public static class TestCatalog
             new StatusDefinition(Status("bolt-charge"), "Bolt Charge", KeywordKind.Buff, Affinity.Arc, Optional.Some(StackCount.From(3)), Optional.None<Seconds>()),
             new StatusDefinition(Status("amplified"), "Amplified", KeywordKind.Buff, Affinity.Arc, Optional.None<StackCount>(), Optional.Some(Seconds.From(10m))),
             new StatusDefinition(Status("jolt"), "Jolt", KeywordKind.Debuff, Affinity.Arc, Optional.None<StackCount>(), Optional.Some(Seconds.From(4m))),
+            new StatusDefinition(Status("armor-charge"), "Armor Charge", KeywordKind.Buff, Affinity.Neutral, Optional.Some(StackCount.From(3)), Optional.None<Seconds>()),
         }.ToImmutableDictionary(s => s.Id),
         new[]
         {
@@ -69,20 +70,27 @@ public static class TestCatalog
     public static AbilityProfile Profile(AbilityKind kind, int charges = 1, GameValue? chunkScalar = null) =>
         new(kind, charges, chunkScalar ?? new GameValue.Unknown(), new GameValue.Unknown());
 
-    /// <summary>Arc hunter with the given extra elements equipped as fragments / mods (and keywords in the catalog: every build has them).</summary>
+    /// <summary>
+    /// Arc hunter with the given extra elements equipped as fragments / mods (and keywords in the catalog: every build has
+    /// them). <paramref name="super"/>: the affinity of the build's Super (Arc when not given; none: the Super is "?");
+    /// a Super of another element needs a <paramref name="subclass"/> it fits (Prismatic takes any).
+    /// </summary>
     public static ValidatedBuild ValidateBuild(
         ImmutableArray<BuildElement> fragments,
         ImmutableArray<BuildElement> mods = default,
         ImmutableArray<ElementId> modOrder = default,
         BuildElement? grenade = null,
-        ImmutableArray<BuildElement> keywords = default)
+        ImmutableArray<BuildElement> keywords = default,
+        Subclass subclass = Subclass.Arc,
+        Optional<Affinity>? super = null)
     {
+        var superAffinity = super ?? Optional.Some(Affinity.Arc);
         var abilities = new[]
         {
             grenade ?? Element("test-grenade", ElementKind.Grenade, [], ability: Optional.Some(Profile(AbilityKind.Grenade))),
             Element("test-melee", ElementKind.Melee, [], ability: Optional.Some(Profile(AbilityKind.Melee))),
             Element("test-dodge", ElementKind.ClassAbility, [], ability: Optional.Some(Profile(AbilityKind.ClassAbility))),
-            Element("test-super", ElementKind.Super, [], ability: Optional.Some(Profile(AbilityKind.Super))),
+            Element("test-super", ElementKind.Super, [], ability: Optional.Some(Profile(AbilityKind.Super))) with { Affinity = superAffinity.UnwrapOr(Affinity.Arc) },
             Element("test-aspect", ElementKind.Aspect, [], fragmentSlots: 4),
         };
         var allMods = mods.IsDefault ? [] : mods;
@@ -97,8 +105,8 @@ public static class TestCatalog
             Optional.None<string>(),
             Optional.None<CatalogVersion>(),
             GuardianClass.Hunter,
-            Subclass.Arc,
-            new AbilityLoadout(Optional.Some(abilities[3].Id), Optional.Some(abilities[0].Id), Optional.Some(abilities[1].Id), Optional.Some(abilities[2].Id)),
+            subclass,
+            new AbilityLoadout(superAffinity.Map(_ => abilities[3].Id), Optional.Some(abilities[0].Id), Optional.Some(abilities[1].Id), Optional.Some(abilities[2].Id)),
             [abilities[4].Id],
             fragments.Select(f => f.Id).ToImmutableArray(),
             Optional.None<ElementId>(),

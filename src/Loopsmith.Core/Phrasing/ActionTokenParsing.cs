@@ -13,11 +13,11 @@ public static class ActionTokenParsing
     private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
 
     public const string Grammar =
-        "grenade|melee|super[:hit|kill[:N]], class[:air], kinetic|energy|power[:hit|kill[:N]], pickup:<id>, max:<status>, end:<status>, pack:new";
+        "grenade|melee|super[:hit|kill[:N]], class[:air], kinetic|energy|power[:hit|kill[:N]], finisher, pickup:<id>, max:<status>, end:<status>, pack:new";
 
     /// <summary>
     /// <c>grenade</c>, <c>grenade:kill</c>, <c>grenade:kill:3</c>, <c>kinetic:hit:5</c>, <c>class</c>, <c>class:air</c> (an air move
-    /// that spends the class ability, like Ascension),
+    /// that spends the class ability, like Ascension), <c>finisher</c> (a finisher on one enemy of the pack: it kills it),
     /// <c>pickup:orb-of-power</c>, and the states the player declares (ADRs D3): <c>max:bolt-charge</c>, <c>end:amplified</c>,
     /// <c>pack:new</c> (the next enemies are a new pack, ADRs D7).
     /// Without <c>:kill</c> the hit only damages; without a count it hits one enemy. The count is validated here, at the
@@ -36,6 +36,7 @@ public static class ActionTokenParsing
             "kinetic" => ParseAimedAction(token, parts, (hit, targets) => new PlayerAction.FireWeapon(WeaponSlot.Kinetic, hit, targets)),
             "energy" => ParseAimedAction(token, parts, (hit, targets) => new PlayerAction.FireWeapon(WeaponSlot.Energy, hit, targets)),
             "power" => ParseAimedAction(token, parts, (hit, targets) => new PlayerAction.FireWeapon(WeaponSlot.Power, hit, targets)),
+            "finisher" when parts.Length == 1 => Ok(new PlayerAction.PerformFinisher()),
             "pickup" when parts.Length == 2 && PickupId.TryFrom(parts[1], out var pickup) => Ok(new PlayerAction.CollectPickups(pickup)),
             "max" when parts.Length == 2 && StatusId.TryFrom(parts[1], out var maxed) =>
                 Ok(new PlayerAction.Declare(new StateDeclaration.ReachMax(maxed))),
