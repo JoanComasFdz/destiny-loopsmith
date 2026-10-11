@@ -15,25 +15,40 @@ namespace Loopsmith.Core.BuildComposition;
 public static class ArmorSwapping
 {
     /// <summary>The build wearing <paramref name="piece"/> (copy <paramref name="copy"/>) in <paramref name="slot"/>; or why it can't.</summary>
-    public static Result<Build, string> SwapPiece(RuleCatalog catalog, Build build, ArmorSlot slot, ItemHash piece, ItemInstanceId copy)
+    public static Result<Build, string> SwapPiece(RuleCatalog catalog, Build build, ArmorSlot slot, ItemHash piece, ItemInstanceId copy) =>
+        CheckPiece(catalog, build, slot, piece).Map(_ => WearPiece(catalog, build, slot, piece, copy));
+
+    /// <summary>
+    /// Whether the build can wear <paramref name="piece"/> in <paramref name="slot"/>: a piece the excerpt knows, for that
+    /// slot, for the build's class (or any class), and an exotic only when the build wears none in another slot; or why not.
+    /// </summary>
+    public static Result<Unit, string> CheckPiece(RuleCatalog catalog, Build build, ArmorSlot slot, ItemHash piece)
     {
         var item = catalog.Manifest.FindItem(piece);
         var armor = item.Bind(found => found.Kind is ManifestKind.Armor kind ? Optional.Some(kind) : Optional.None<ManifestKind.Armor>());
         var exotic = item.Match(found => found.Value.Tier == Optional.Some(ItemTier.Exotic), _ => false);
-        var otherExotic = ListPieces(catalog, build)
+        var otherExotic = FindExoticElsewhere(catalog, build, slot);
+        return armor.Match(
+            known => known.Value.Slot != slot
+                ? Refuse($"{item.Match(found => found.Value.Name, _ => "That piece")} isn't for the {slot.DescribeArmorSlot().ToLowerInvariant()}.")
+                : known.Value.Class.Match(wornBy => wornBy.Value != build.Class, _ => false)
+                    ? Refuse($"{item.Match(found => found.Value.Name, _ => "That piece")} is {DescribeClassArmor(known.Value.Class)}, and the build is for a {build.Class}.")
+                    : exotic && otherExotic.IsSome()
+                        ? Refuse($"A build wears one exotic armor piece: swap {otherExotic.UnwrapOr("its exotic")} for a legendary piece first.")
+                        : new Result<Unit, string>.Ok(new Unit.Value()),
+            _ => Refuse("Loopsmith doesn't know that piece yet (Bungie's manifest wasn't read for it), so it can't put it in the build."));
+    }
+
+    /// <summary>What the armor picker says when the build's exotic is in another slot (no exotic can be picked here); none when it isn't.</summary>
+    public static Optional<string> DescribeExoticRule(RuleCatalog catalog, Build build, ArmorSlot slot) =>
+        FindExoticElsewhere(catalog, build, slot).Map(name => $"A build wears one exotic armor piece: swap {name} for a legendary piece to pick an exotic here.");
+
+    /// <summary>The name of the build's exotic piece when it is in another slot than <paramref name="slot"/>.</summary>
+    private static Optional<string> FindExoticElsewhere(RuleCatalog catalog, Build build, ArmorSlot slot) =>
+        ListPieces(catalog, build)
             .Where(worn => worn.Slot != slot && worn.Exotic)
             .Select(worn => Optional.Some(worn.Name))
             .FindFirstSome();
-        return armor.Match(
-            known => known.Value.Slot != slot
-                ? Fail($"{item.Match(found => found.Value.Name, _ => "That piece")} isn't for the {slot.DescribeArmorSlot().ToLowerInvariant()}.")
-                : known.Value.Class.Match(wornBy => wornBy.Value != build.Class, _ => false)
-                    ? Fail($"{item.Match(found => found.Value.Name, _ => "That piece")} is {DescribeClassArmor(known.Value.Class)}, and the build is for a {build.Class}.")
-                    : exotic && otherExotic.IsSome()
-                        ? Fail($"A build wears one exotic armor piece: swap {otherExotic.UnwrapOr("its exotic")} for a legendary piece first.")
-                        : new Result<Build, string>.Ok(WearPiece(catalog, build, slot, piece, copy)),
-            _ => Fail("Loopsmith doesn't know that piece yet (Bungie's manifest wasn't read for it), so it can't put it in the build."));
-    }
 
     /// <summary>A piece the build wears: its slot, its hash, its name and whether it is exotic.</summary>
     private sealed record WornPiece(ArmorSlot Slot, ItemHash Hash, string Name, bool Exotic);
@@ -100,6 +115,6 @@ public static class ArmorSwapping
     private static string DescribeClassArmor(Optional<GuardianClass> wornBy) =>
         wornBy.Match(only => $"{only.Value} armor", _ => "armor");
 
-    private static Result<Build, string> Fail(string why) =>
-        new Result<Build, string>.Error(why);
+    private static Result<Unit, string> Refuse(string why) =>
+        new Result<Unit, string>.Error(why);
 }

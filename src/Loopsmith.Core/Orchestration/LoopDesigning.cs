@@ -349,9 +349,20 @@ public static class LoopDesigning
             .Bind(build => RebuildWith(session, BuildFileEditing.ReplaceArmor(session.Design.Build, build)))
             .Map(worn => SetStatsFromArmor(worn, profile).Match(set => set.Value, _ => worn));
 
-    /// <summary>What the armor picker lists for a slot of the build, from the player's armor, and what it leaves out.</summary>
-    public static ArmorOptions ListArmorOptions(ValidatedBuild build, BungieProfile profile, ArmorSlot slot) =>
-        StatAdding.ListArmorOptions(build.Catalog, build.Build, profile, slot);
+    /// <summary>
+    /// What the armor picker lists for a slot of the build: the player's pieces for it that the build can wear (its class,
+    /// one exotic: ArmorSwapping), and notes on what it leaves out.
+    /// </summary>
+    public static ArmorOptions ListArmorOptions(ValidatedBuild build, BungieProfile profile, ArmorSlot slot)
+    {
+        var listed = StatAdding.ListArmorOptions(build.Catalog, build.Build, profile, slot);
+        var exotic = ArmorSwapping.DescribeExoticRule(build.Catalog, build.Build, slot);
+        return listed with
+        {
+            Options = [.. listed.Options.Where(option => ArmorSwapping.CheckPiece(build.Catalog, build.Build, slot, option.Armor.Hash).IsOk())],
+            Notes = [.. exotic.Match(note => new[] { note.Value }, _ => []), .. listed.Notes],
+        };
+    }
 
     /// <summary>The player's armor the catalog's excerpt lacks (what the full manifest is read for, so the picker can name and place it).</summary>
     public static ImmutableArray<ItemHash> ListUnknownArmorHashes(DesignSession session, BungieProfile profile) =>

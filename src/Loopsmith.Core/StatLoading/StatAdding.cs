@@ -108,9 +108,9 @@ public static class StatAdding
             _ => "You can now pick your own pieces: tap ⋯ next to each armor piece in the build to choose from your armor. The stats add up from what the build wears.");
 
     /// <summary>
-    /// What the armor picker lists for a slot: the player's pieces for it (for the build's class, or any class), the copy
-    /// the build wears first, then its other copies, then the rest by name; an exotic only when the build wears none in
-    /// another slot (a build wears one). Its notes say what is left out.
+    /// The player's pieces for a slot, for the armor picker: the copy the build wears first, then its other copies, then
+    /// the rest by name. Its note counts the pieces the excerpt can't place. What the build can wear of them (its class,
+    /// one exotic) is BuildComposition's to say (<c>ArmorSwapping.CheckPiece</c>).
     /// </summary>
     public static ArmorOptions ListArmorOptions(RuleCatalog catalog, Build build, BungieProfile profile, ArmorSlot slot)
     {
@@ -119,12 +119,10 @@ public static class StatAdding
         var worn = piece
             .Bind(found => FindWornCopy(new PieceChoice(found, ListCopies(catalog, found, profile)), build.ArmorCopies))
             .Map(copy => copy.Armor.InstanceId);
-        var exoticElsewhere = pieces.Where(found => found.Slot != slot && IsExotic(catalog, found)).Select(found => found.Name).ToImmutableArray();
         var named = profile.Armor.Select(armor => (Armor: armor, Item: catalog.Manifest.FindItem(armor.Hash))).ToImmutableArray();
         var options = named
             .SelectMany(entry => ToSequence(entry.Item).Select(item => (entry.Armor, Item: item)))
-            .Where(entry => entry.Item.Kind is ManifestKind.Armor armor && armor.Slot == slot && armor.Class.Match(only => only.Value == build.Class, _ => true))
-            .Where(entry => exoticElsewhere.IsEmpty || entry.Item.Tier != Optional.Some(ItemTier.Exotic))
+            .Where(entry => entry.Item.Kind is ManifestKind.Armor armor && armor.Slot == slot)
             .Select(entry => new ArmorOption(entry.Armor, entry.Item, ReadCopyPoints(catalog, entry.Armor), worn == Optional.Some(entry.Armor.InstanceId)))
             .OrderByDescending(option => option.Worn)
             .ThenByDescending(option => piece.Match(found => found.Value.Hashes.Contains(option.Armor.Hash), _ => false))
@@ -132,10 +130,7 @@ public static class StatAdding
             .ThenByDescending(option => option.Points.Match(points => ToTotal(points.Value), _ => -1))
             .ToImmutableArray();
         var unnamed = named.Count(entry => !entry.Item.IsSome());
-        var notes = exoticElsewhere
-            .Select(name => $"A build wears one exotic armor piece: swap {name} for a legendary piece to pick an exotic here.")
-            .Concat(unnamed > 0 ? [$"{unnamed} of your armor pieces aren't listed: Loopsmith can't tell their slot yet (Bungie's manifest wasn't read for them)."] : [])
-            .ToImmutableArray();
+        ImmutableArray<string> notes = unnamed > 0 ? [$"{unnamed} of your armor pieces aren't listed: Loopsmith can't tell their slot yet (Bungie's manifest wasn't read for them)."] : [];
         return new ArmorOptions(slot, options, notes);
     }
 
@@ -144,8 +139,6 @@ public static class StatAdding
         profile.Armor.Where(armor => armor.InstanceId == instance).Select(Optional.Some).FindFirstSome()
             .ToResult(() => "That piece isn't in your account any more: log in again to read your armor.");
 
-    private static bool IsExotic(RuleCatalog catalog, ArmorPiece piece) =>
-        piece.Hashes.Any(hash => catalog.Manifest.FindItem(hash).Match(item => item.Value.Tier == Optional.Some(ItemTier.Exotic), _ => false));
 
     /// <summary>What a copy gives: its roll and masterwork; none when the excerpt knows none of its armor-stat plugs.</summary>
     public static Optional<StatPoints> ReadCopyPoints(RuleCatalog catalog, OwnedArmor armor) =>

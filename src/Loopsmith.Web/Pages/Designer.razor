@@ -299,7 +299,7 @@
         if (Workbench.Armor is Optional<BungieProfile>.Some profile)
         {
             Workbench.ArmorNote = Optional.None<string>();                                       // impure (UI state)
-            ApplyBuildEdit(session => LoopDesigning.PickArmorPiece(session, profile.Value, pick.Slot, pick.Instance));
+            ApplyBuildEdit(session => LoopDesigning.PickArmorPiece(session, profile.Value, pick.Slot, pick.Instance)); // impure (UI state)
         }
     }
 
