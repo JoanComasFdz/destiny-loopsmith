@@ -163,7 +163,7 @@ public static class LoadoutShaping
             [.. b.Fragments.Select(id => DescribeElement(catalog, id)), .. DescribeLeftOutPlugs<ManifestKind.Fragment>(catalog, plugs)]);
         return new LoadoutView(
             subclass,
-            DescribeArtifact(catalog, b.ArtifactPerks, [.. leftOut.Where(entry => entry.Part == LoadoutPart.ArtifactPerk)]),
+            DescribeArtifact(build, [.. leftOut.Where(entry => entry.Part == LoadoutPart.ArtifactPerk)]),
             [.. b.Weapons.Select((weapon, index) => DescribeWeapon(build, weapon, index)).OrderBy(view => view.Slot)],
             [
                 .. ArmorSlots
@@ -202,14 +202,23 @@ public static class LoadoutShaping
                 _ => new IconTile(element.Name, Optional.None<string>(), element.Affinity, Optional.None<ItemTier>(), true, element.Description, 1, ToElementDetails(id)))
             : new IconTile(id.Value, Optional.None<string>(), Affinity.Neutral, Optional.None<ItemTier>(), true, Optional.None<string>(), 1, Optional.None<ItemDetails>());
 
-    /// <summary>The artifact the perks are from (by their hashes: the build's and the left-out ones), and the perks.</summary>
-    private static ArtifactView DescribeArtifact(RuleCatalog catalog, ImmutableArray<ElementId> perks, ImmutableArray<LeftOutEntry> leftOut)
+    /// <summary>The build's artifact and its perks: the build's, then the left-out ones.</summary>
+    private static ArtifactView DescribeArtifact(ValidatedBuild build, ImmutableArray<LeftOutEntry> leftOut)
     {
-        var hashes = perks.SelectMany(id => catalog.Elements.TryGetValue(id, out var element) ? element.Hashes : []).Concat(leftOut.Select(entry => entry.Hash));
-        var item = catalog.Manifest.FindArtifactOf(hashes).Map(artifact =>
+        var catalog = build.Catalog;
+        var item = FindArtifact(build).Map(artifact =>
             DescribeItem(artifact, artifact.Name, true, artifact.Description, Affinity.Neutral, Optional.Some<ItemDetails>(new ItemDetails.OfItem(artifact.Hash))));
-        return new ArtifactView(item, [.. perks.Select(id => DescribeElement(catalog, id)), .. leftOut.Select(entry => DescribeLeftOut(catalog, entry))]);
+        return new ArtifactView(item, [.. build.Build.ArtifactPerks.Select(id => DescribeElement(catalog, id)), .. leftOut.Select(entry => DescribeLeftOut(catalog, entry))]);
     }
+
+    /// <summary>
+    /// The build's artifact: the one in the excerpt that unlocks the most of its artifact perks (the rules' and the ones
+    /// a DIM loadout had that the rules don't know).
+    /// </summary>
+    public static Optional<ManifestItem> FindArtifact(ValidatedBuild build) =>
+        build.Catalog.Manifest.FindArtifactOf(build.Build.ArtifactPerks
+            .SelectMany(id => build.Catalog.Elements.TryGetValue(id, out var element) ? element.Hashes : [])
+            .Concat(build.Build.LeftOut.Where(entry => entry.Part == LoadoutPart.ArtifactPerk).Select(entry => entry.Hash)));
 
     private static Optional<ItemDetails> ToElementDetails(ElementId id) => Optional.Some<ItemDetails>(new ItemDetails.OfElement(id));
 

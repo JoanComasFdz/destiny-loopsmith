@@ -1,6 +1,8 @@
-@* A step's outcomes, one line each (LoopDesigning.ShapeStepOutcomes, the CLI's wording): the event, then each element
-   it set off (its icon and name) with each of its outcomes under it; a cascade (↳ Bolt Charge gained) nests under the
-   event that set it off. An element's or keyword's name shows a preview on hover (or focus) and its details on a tap. *@
+@* A step's outcomes, one line each (LoopDesigning.ShapeStepOutcomes, the CLI's wording): the event, then where what
+   it set off comes from (OutcomeOrigins: "Fragment · Arcstrider", "Weapon perk · Festival Flight", with that item's
+   icon), each element from there (its icon and name) and each of its outcomes under it; a cascade (↳ Bolt Charge
+   gained) nests under the event that set it off. An element's or keyword's name shows a preview on hover (or focus)
+   and its details on a tap. *@
 <div class="outcomes">
     @if (Outcomes.Events.IsEmpty && Outcomes.Notes.IsEmpty)
     {
@@ -22,31 +24,45 @@
                     <span class="tone-strong"> ×@shaped.Repeats</span>
                 }
             </div>
-            @for (var s = 0; s < shaped.Sources.Length; s++)
+            @{ var groups = OutcomeOrigins.GroupByOrigin(Build, shaped.Sources); }
+            @for (var g = 0; g < groups.Length; g++)
             {
-                var source = shaped.Sources[s];
-                var sourceKey = $"{eventKey}s{s}";
-                <div class="outcome-source" data-source="@source.Source.Value">
-                    @RenderElement(source, sourceKey)
-                    @for (var l = 0; l < source.Outcomes.Length; l++)
+                var group = groups[g];
+                <div class="outcome-origin" data-origin="@group.Origin.Label">
+                    <div class="outcome-origin-head @ToneStyling.ToAffinityClass(group.Origin.Affinity)">
+                        @if (group.Origin.Icon is Optional<string>.Some originIcon)
+                        {
+                            <img class="outcome-origin-icon" src="@originIcon.Value" alt="" loading="lazy" />
+                        }
+                        <span>@group.Origin.Label</span>
+                    </div>
+                    @for (var s = 0; s < group.Sources.Length; s++)
                     {
-                        var line = source.Outcomes[l];
-                        <div class="outcome-line">
-                            <span class="outcome-arrow tone-muted" aria-hidden="true">→</span>
-                            @RenderKeyword(line.Keyword, line.Text, ToneStyling.ToToneClass(line.Tone), $"{sourceKey}l{l}")
-                            @if (line.Chance)
+                        var source = group.Sources[s];
+                        var sourceKey = $"{eventKey}g{g}s{s}";
+                        <div class="outcome-source" data-source="@source.Source.Value">
+                            @RenderElement(source, sourceKey)
+                            @for (var l = 0; l < source.Outcomes.Length; l++)
                             {
-                                <span class="tone-muted"> (chance)</span>
+                                var line = source.Outcomes[l];
+                                <div class="outcome-line">
+                                    <span class="outcome-arrow tone-muted" aria-hidden="true">→</span>
+                                    @RenderKeyword(line.Keyword, line.Text, ToneStyling.ToToneClass(line.Tone), $"{sourceKey}l{l}")
+                                    @if (line.Chance)
+                                    {
+                                        <span class="tone-muted"> (chance)</span>
+                                    }
+                                </div>
+                            }
+                            @foreach (var reason in source.Reasons)
+                            {
+                                <div class="outcome-detail tone-muted">why: @reason</div>
+                            }
+                            @foreach (var caveat in source.Caveats)
+                            {
+                                <div class="outcome-detail tone-muted">· @caveat</div>
                             }
                         </div>
-                    }
-                    @foreach (var reason in source.Reasons)
-                    {
-                        <div class="outcome-detail tone-muted">why: @reason</div>
-                    }
-                    @foreach (var caveat in source.Caveats)
-                    {
-                        <div class="outcome-detail tone-muted">· @caveat</div>
                     }
                 </div>
             }

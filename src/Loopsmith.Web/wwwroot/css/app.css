@@ -490,6 +490,9 @@ textarea { resize: vertical; }
 .outcome-event { margin-left: calc(var(--depth, 0) * 18px); }
 .outcome-event[data-depth="0"] + .outcome-event[data-depth="0"] { margin-top: 4px; }
 .outcome-event-head { overflow-wrap: anywhere; }
+.outcome-origin { margin: 4px 0 0 12px; }
+.outcome-origin-head { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 10.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
+.outcome-origin-icon { width: 16px; height: 16px; flex: none; border-radius: 3px; background: #1a2130; object-fit: cover; }
 .outcome-source { margin: 2px 0 0 14px; }
 .outcome-line { display: flex; gap: 6px; margin-left: 26px; overflow-wrap: anywhere; }
 .outcome-arrow { flex: none; }

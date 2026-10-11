@@ -122,8 +122,12 @@ airborne trigger (without one it fires exactly what `class` fires). Every token 
 (CLI, loop files, share links).
 
 **How the designer shows a step.** The same facts and wording as the CLI's `trace`, one line each: the
-event ("Grenade hit"), under it each element it set off (its icon and name, in its affinity's colour), and
-under each element every outcome it gave ("→ +1 Bolt Charge"). A cascade ("↳ Bolt Charge gained") nests
+event ("Grenade hit"); under it, where what it set off comes from, with that item's icon — "Fragment ·
+Arcstrider" (the subclass), "Weapon perk · Festival Flight", "Armor mod · Luminopotent Cloak" (the piece in
+the mod's slot the build shows, else the slot), "Artifact perk · Tablet of Ruin", "Armor set ·
+Luminopotent", "Exotic armor", "Keyword" (in the order they first fired); under each, the elements from there
+(their icon and name, in their affinity's colour), and under each element every outcome it gave ("→ +1
+Bolt Charge"). A cascade ("↳ Bolt Charge gained") nests
 under the event that set it off, and the same event several times in a row shows once, counted (×3). An
 element's name, or a status or pickup an outcome or event names when the rules have it as an element (Jolt,
 Bolt Charge, Ionic Trace, Combination Blow), shows a preview on hover and its details on a tap. An element
