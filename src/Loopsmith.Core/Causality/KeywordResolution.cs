@@ -43,6 +43,22 @@ public static class KeywordResolution
     public static Optional<SummonId> FindElementSummon(this RuleCatalog catalog, ElementId element) =>
         catalog.Glossary.Summons.Keys.Where(summon => IsKeywordElement(element, summon.Value)).Take(1).Select(summon => Optional.Some(summon)).FindFirstSome();
 
+    /// <summary>The element a keyword is (Bolt Charge, Ionic Trace, Threadling), when the catalog has one.</summary>
+    public static Optional<ElementId> FindKeywordElement(this RuleCatalog catalog, KeywordRef keyword) =>
+        keyword.Match(
+            status => catalog.FindStatusElement(status.Id),
+            pickup => catalog.FindPickupElement(pickup.Id),
+            summon => catalog.FindSummonElement(summon.Id));
+
+    /// <summary>The keyword an element is (the bolt-charge element: Bolt Charge), when the glossary has one of its id.</summary>
+    public static Optional<KeywordRef> FindElementKeyword(this RuleCatalog catalog, ElementId element) =>
+        new[]
+        {
+            catalog.FindElementStatus(element).Map(status => (KeywordRef)new KeywordRef.Status(status)),
+            catalog.FindElementPickup(element).Map(pickup => (KeywordRef)new KeywordRef.Pickup(pickup)),
+            catalog.FindElementSummon(element).Map(summon => (KeywordRef)new KeywordRef.Summon(summon)),
+        }.FindFirstSome();
+
     /// <summary>The one rule both lookups follow: a keyword's element is the element of its id — its own effects.</summary>
     public static bool IsStatusElement(this ElementId element, StatusId status) =>
         IsKeywordElement(element, status.Value);

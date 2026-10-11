@@ -33,7 +33,7 @@ public static class KeywordInteracting
     public static ImmutableArray<InteractionGroup> ExplainInteractions(ValidatedBuild build, KeywordRef keyword)
     {
         var glossary = build.Catalog.Glossary;
-        var own = FindOwnElement(build.Catalog, keyword);
+        var own = build.Catalog.FindKeywordElement(keyword);
         var others = build.Equipped.Where(equipped => own != Optional.Some(equipped.Element.Id)).ToImmutableArray();
         var fromRules = others.SelectMany(equipped => equipped.Element.Rules
             .SelectMany(rule => FindRuleRole(keyword, rule).Select(role => (Role: role, Interaction: DescribeRule(glossary, keyword, equipped, rule)))));
@@ -49,20 +49,14 @@ public static class KeywordInteracting
         ];
     }
 
-    /// <summary>The keyword an element is (Bolt Charge, Ionic Trace, Threadling), when the glossary has one of its id.</summary>
-    public static Optional<KeywordRef> FindKeyword(RuleCatalog catalog, ElementId element) =>
-        new[]
-        {
-            catalog.FindElementStatus(element).Map(status => (KeywordRef)new KeywordRef.Status(status)),
-            catalog.FindElementPickup(element).Map(pickup => (KeywordRef)new KeywordRef.Pickup(pickup)),
-            catalog.FindElementSummon(element).Map(summon => (KeywordRef)new KeywordRef.Summon(summon)),
-        }.FindFirstSome();
-
-    private static Optional<ElementId> FindOwnElement(RuleCatalog catalog, KeywordRef keyword) =>
-        keyword.Match(
-            status => catalog.FindStatusElement(status.Id),
-            pickup => catalog.FindPickupElement(pickup.Id),
-            summon => catalog.FindSummonElement(summon.Id));
+    /// <summary>
+    /// What an element is, as a label: a keyword by what it is in the game ("Arc buff", "Arc elemental pickup", "Pickup"),
+    /// anything else by its kind ("Fragment", "Armor mod").
+    /// </summary>
+    public static string DescribeElementType(RuleCatalog catalog, ElementId element) =>
+        catalog.FindElementKeyword(element).Match(
+            keyword => catalog.Glossary.DescribeKeywordKind(keyword.Value),
+            _ => catalog.Elements.TryGetValue(element, out var found) ? found.Kind.DescribeElementKind() : "Element");
 
     /// <summary>The first role a rule has toward the keyword: what fires it, what it needs, what it does.</summary>
     private static IEnumerable<InteractionRole> FindRuleRole(KeywordRef keyword, Rule rule) =>
@@ -75,11 +69,11 @@ public static class KeywordInteracting
             (InteractionRole.Strikes, rule.Then.Any(outcome => IsStriking(keyword, outcome))),
         }.Where(role => role.Has).Take(1).Select(role => role.Role);
 
-    /// <summary>A passive switched on by the keyword (its condition names it), else one that changes it.</summary>
+    /// <summary>A passive switched on by the keyword (the kernel's answer, as the state's), else one that changes it.</summary>
     private static IEnumerable<InteractionRole> FindPassiveRole(KeywordRef keyword, PassiveRule passive) =>
         new (InteractionRole Role, bool Has)[]
         {
-            (InteractionRole.SwitchesOn, passive.When.Any(condition => IsNamedBy(keyword, condition))),
+            (InteractionRole.SwitchesOn, keyword is KeywordRef.Status status && passive.IsSwitchedOnBy(status.Id)),
             (InteractionRole.Changes, IsChanging(keyword, passive.Modifier)),
         }.Where(role => role.Has).Take(1).Select(role => role.Role);
 
@@ -97,12 +91,9 @@ public static class KeywordInteracting
             gained => IsStatus(keyword, gained.Status),
             maxed => IsStatus(keyword, maxed.Status));
 
+    /// <summary>A guard the keyword meets by being there (the kernel's: a "without it" guard doesn't need it).</summary>
     private static bool IsNamedBy(KeywordRef keyword, Condition condition) =>
-        condition.Match(
-            has => IsStatus(keyword, has.Status),
-            lacks => IsStatus(keyword, lacks.Status),
-            target => IsStatus(keyword, target.Status),
-            atMax => IsStatus(keyword, atMax.Status));
+        keyword is KeywordRef.Status status && condition.IsNaming(status.Id);
 
     private static bool IsVia(KeywordRef keyword, DamageSource via) =>
         via.Match(
@@ -117,25 +108,46 @@ public static class KeywordInteracting
             summonOf => keyword is KeywordRef.Summon summon && summon.Id == summonOf.Summon);
 
     private static bool IsUsingUp(KeywordRef keyword, Outcome outcome) =>
-        outcome switch
-        {
-            Outcome.ConvertStacksToEnergy convert => IsStatus(keyword, convert.Consumed),
-            Outcome.RemoveBuff remove => IsStatus(keyword, remove.Status),
+        outcome.Match(
             _ => false,
-        };
+            convert => IsStatus(keyword, convert.Consumed),
+            _ => false,
+            remove => IsStatus(keyword, remove.Status),
+            _ => false,
+            _ => false,
+            _ => false,
+            _ => false,
+            _ => false,
+            _ => false,
+            _ => false);
 
     private static bool IsGiving(KeywordRef keyword, Outcome outcome) =>
-        outcome switch
-        {
-            Outcome.ApplyBuff apply => IsStatus(keyword, apply.Status),
-            Outcome.DebuffTarget debuff => IsStatus(keyword, debuff.Status),
-            Outcome.Spawn spawn => keyword is KeywordRef.Pickup pickup && pickup.Id == spawn.Pickup,
-            Outcome.SpawnSummon spawn => keyword is KeywordRef.Summon summon && summon.Id == spawn.Summon,
+        outcome.Match(
             _ => false,
-        };
+            _ => false,
+            apply => IsStatus(keyword, apply.Status),
+            _ => false,
+            debuff => IsStatus(keyword, debuff.Status),
+            spawn => keyword is KeywordRef.Pickup pickup && pickup.Id == spawn.Pickup,
+            spawn => keyword is KeywordRef.Summon summon && summon.Id == spawn.Summon,
+            _ => false,
+            _ => false,
+            _ => false,
+            _ => false);
 
     private static bool IsStriking(KeywordRef keyword, Outcome outcome) =>
-        outcome is Outcome.StrikeTarget strike && IsStatus(keyword, strike.Via);
+        outcome.Match(
+            _ => false,
+            _ => false,
+            _ => false,
+            _ => false,
+            _ => false,
+            _ => false,
+            _ => false,
+            strike => IsStatus(keyword, strike.Via),
+            _ => false,
+            _ => false,
+            _ => false);
 
     private static bool IsChanging(KeywordRef keyword, Passive passive) =>
         passive.Match(

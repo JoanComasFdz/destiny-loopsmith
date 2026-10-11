@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using Loopsmith.Core.BuildComposition;
 using Loopsmith.Core.BuildExplanation;
 using Loopsmith.Core.BuildParsing;
+using Loopsmith.Core.Causality;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 using Loopsmith.Core.LoadoutImporting;
@@ -433,13 +434,11 @@ public static class LoopDesigning
     /// anything else by its kind ("Fragment", "Armor mod").
     /// </summary>
     public static string DescribeElementType(ValidatedBuild build, ElementId element) =>
-        KeywordInteracting.FindKeyword(build.Catalog, element).Match(
-            keyword => build.Catalog.Glossary.DescribeKeywordKind(keyword.Value),
-            _ => build.Catalog.Elements.TryGetValue(element, out var found) ? found.Kind.DescribeElementKind() : "Element");
+        KeywordInteracting.DescribeElementType(build.Catalog, element);
 
     /// <summary>The keyword an element is (Bolt Charge, Ionic Trace), when it is one.</summary>
     public static Optional<KeywordRef> FindKeyword(ValidatedBuild build, ElementId element) =>
-        KeywordInteracting.FindKeyword(build.Catalog, element);
+        build.Catalog.FindElementKeyword(element);
 
     /// <summary>The build's weapons (by index) whose own perks give this buff: Slice is Festival Flight's.</summary>
     public static ImmutableArray<int> ListWeaponsGiving(ValidatedBuild build, StatusId buff) =>
