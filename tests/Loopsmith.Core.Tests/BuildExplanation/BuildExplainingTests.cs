@@ -18,9 +18,28 @@ public class BuildExplainingTests
         var build = ValidateBuild([shock, vow]);
 
         var groups = BuildExplaining.ExplainBuild(build);
-        var lines = BuildExplaining.RenderExplanation(groups, ExplanationStyle.Note).ToPlainText();
+        var lines = BuildExplaining.RenderExplanation(build.Catalog.Glossary, groups, ExplanationStyle.Note).ToPlainText();
 
         Assert.Equal("Grenade damage -> Jolt target (4s) [Spark Of Shock] + +1 Bolt Charge [Shinobus Vow]", lines);
+    }
+
+    [Fact]
+    public void Every_keyword_an_explanation_names_is_in_its_affinitys_tone_in_a_note_a_tree_and_an_items_details()
+    {
+        var vow = Element("shinobus-vow", ElementKind.Fragment,
+            [On(new Trigger.Damage(new DamageSource.AbilityOf(AbilityKind.Grenade)), Buff("bolt-charge")) with { Reason = Optional.Some("Grenade hits give you Bolt Charge.") }]);
+        var build = ValidateBuild([vow]);
+        var groups = BuildExplaining.ExplainBuild(build);
+
+        var note = Assert.Single(BuildExplaining.RenderExplanation(build.Catalog.Glossary, groups, ExplanationStyle.Note));
+        var tree = BuildExplaining.RenderExplanation(build.Catalog.Glossary, groups, ExplanationStyle.Tree);
+        var details = BuildExplaining.RenderElementExplanation(build.Catalog.Glossary, groups);
+
+        Assert.Contains(note.Spans, span => span == new StyledSpan("Bolt Charge", Tone.Arc));
+        Assert.Contains(tree[1].Spans, span => span == new StyledSpan("Bolt Charge", Tone.Arc));
+        Assert.Equal(
+            [new StyledSpan("Grenade hits give you ", Tone.Muted), new StyledSpan("Bolt Charge", Tone.Arc), new StyledSpan(".", Tone.Muted)],
+            details[^1].Spans);                                                                    // the rule's reason
     }
 
     [Fact]

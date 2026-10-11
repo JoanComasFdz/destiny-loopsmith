@@ -5,12 +5,18 @@ using Loopsmith.Core.Phrasing;
 
 namespace Loopsmith.Core.TraceRendering;
 
+/// <summary>A keyword in a text: its affinity (it is highlighted in it) and the element it is when the catalog has one (its details).</summary>
+public sealed record KeywordPart(Affinity Affinity, Optional<ElementId> Element);
+
+/// <summary>A piece of an event's or an outcome's text: plain, or a keyword ("Bolt Charge", "Jolted", "Ionic Trace").</summary>
+public sealed record TextPart(string Text, Optional<KeywordPart> Keyword);
+
 /// <summary>
-/// One outcome on a line of its own ("+1 Bolt Charge"), or why its element gave none ("doesn't stack with …"); the
-/// element the status or pickup it names is, when the catalog has one by that id (Bolt Charge, Jolt, Ionic Trace,
-/// Combination Blow: something to show the details of).
+/// One outcome on a line of its own ("+1 Bolt Charge"), or why its element gave none ("doesn't stack with …"); its text
+/// in parts, each keyword apart (Bolt Charge, Jolt, Ionic Trace, Combination Blow: highlighted, with its details when the
+/// catalog has it as an element).
 /// </summary>
-public sealed record OutcomeLine(string Text, Tone Tone, Optional<ElementId> Keyword, bool Chance);
+public sealed record OutcomeLine(string Text, Tone Tone, ImmutableArray<TextPart> Parts, bool Chance);
 
 /// <summary>An element an event set off, its outcomes line by line; its rules' reasons and its outcomes' caveats when asked for.</summary>
 public sealed record SourceOutcomes(
@@ -23,15 +29,15 @@ public sealed record SourceOutcomes(
     ImmutableArray<string> Caveats);
 
 /// <summary>
-/// An event of a step (a hit, a kill, a buff gained) at its cascade depth (0: what the action itself did), the element
-/// it names (a buff gained, a pickup picked up, a keyword's strike), the weapon slot whose hit or kill it is (so a perk two
-/// weapons roll is this one's), how many times it happened in a row alike, and the elements it set off — each run of one
-/// element's rules together, in the order the engine fired them.
+/// An event of a step (a hit, a kill, a buff gained) at its cascade depth (0: what the action itself did), its text in
+/// parts (the keywords it names apart: "Grenade kill on Jolted target", "Bolt Charge gained"), the weapon slot whose hit
+/// or kill it is (so a perk two weapons roll is this one's), how many times it happened in a row alike, and the elements
+/// it set off — each run of one element's rules together, in the order the engine fired them.
 /// </summary>
 public sealed record EventOutcomes(
     int Depth,
     string Event,
-    Optional<ElementId> Keyword,
+    ImmutableArray<TextPart> Parts,
     Optional<WeaponSlot> Weapon,
     int Repeats,
     ImmutableArray<SourceOutcomes> Sources);
@@ -57,13 +63,8 @@ public static class StepOutcomeShaping
     {
         var first = group[0];
         var sources = GroupRuns(group).Select(rules => ShapeSource(build, elements, rules, options));
-        return new EventOutcomes(
-            first.Depth,
-            build.Catalog.Glossary.DescribeEvent(first.Trigger, build.Build),
-            FindEventElement(elements, first.Trigger),
-            FindEventWeapon(first.Trigger),
-            1,
-            [.. sources]);
+        var text = build.Catalog.Glossary.DescribeEvent(first.Trigger, build.Build);
+        return new EventOutcomes(first.Depth, text, SplitText(build.Catalog.Glossary, elements, text), FindEventWeapon(first.Trigger), 1, [.. sources]);
     }
 
     /// <summary>Each run of one element's rules, in the engine's order: an element whose rules aren't next to each other (a debuff first, energy last) shows twice.</summary>
@@ -90,11 +91,11 @@ public static class StepOutcomeShaping
     {
         var chance = rule.Likelihood == Likelihood.Chance;
         return rule.NotStackedWith.Match(
-            partner => [new OutcomeLine($"doesn't stack with {partner.Value}", Tone.Warning, Optional.None<ElementId>(), chance)],
+            partner => [ToLine(glossary, elements, $"doesn't stack with {partner.Value}", Tone.Warning, chance)],
             _ => rule.Outcomes.IsEmpty
-                ? [new OutcomeLine("(no effect)", Tone.Muted, Optional.None<ElementId>(), chance)]
+                ? [ToLine(glossary, elements, "(no effect)", Tone.Muted, chance)]
                 : glossary.ListOutcomePhrases(rule.Outcomes.Select(outcome => new OutcomeMention(outcome.Outcome, copies)))
-                    .Select(phrase => new OutcomeLine(phrase.Text, Tone.Plain, FindOutcomeElement(elements, phrase.Outcome), chance)));
+                    .Select(phrase => ToLine(glossary, elements, phrase.Text, Tone.Plain, chance)));
     }
 
     /// <summary>Identical events in a row (six orbs picked up) become one, counted.</summary>
@@ -114,29 +115,16 @@ public static class StepOutcomeShaping
     private static ElementIndex IndexElements(RuleCatalog catalog) =>
         new(catalog.Elements.Keys.ToImmutableDictionary(id => id.Value, id => id));
 
-    private static Optional<ElementId> FindOutcomeElement(ElementIndex elements, Outcome outcome) =>
-        outcome.Match(
-            grantEnergy: _ => Optional.None<ElementId>(),
-            convertStacksToEnergy: convert => FindElement(elements, convert.Consumed.Value),
-            applyBuff: apply => FindElement(elements, apply.Status.Value),
-            removeBuff: remove => FindElement(elements, remove.Status.Value),
-            debuffTarget: debuff => FindElement(elements, debuff.Status.Value),
-            spawn: spawn => FindElement(elements, spawn.Pickup.Value),
-            spawnSummon: summon => FindElement(elements, summon.Summon.Value),
-            strikeTarget: strike => FindElement(elements, strike.Via.Value),
-            modifyDamage: _ => Optional.None<ElementId>(),
-            restoreHealth: _ => Optional.None<ElementId>(),
-            resetCooldown: _ => Optional.None<ElementId>());
+    private static OutcomeLine ToLine(KeywordGlossary glossary, ElementIndex elements, string text, Tone tone, bool chance) =>
+        new(text, tone, SplitText(glossary, elements, text), chance);
 
-    private static Optional<ElementId> FindEventElement(ElementIndex elements, GameEvent gameEvent) =>
-        gameEvent.Match(
-            abilityCast: _ => Optional.None<ElementId>(),
-            damaged: damaged => FindOriginElement(elements, damaged.Origin),
-            killed: killed => FindOriginElement(elements, killed.Origin),
-            targetsHit: hit => FindOriginElement(elements, hit.Origin),
-            pickedUp: picked => FindElement(elements, picked.Pickup.Value),
-            buffGained: gained => FindElement(elements, gained.Status.Value),
-            stacksMaxed: maxed => FindElement(elements, maxed.Status.Value));
+    /// <summary>A text in parts, each keyword the glossary knows apart, with the element of its id when the catalog has one.</summary>
+    private static ImmutableArray<TextPart> SplitText(KeywordGlossary glossary, ElementIndex elements, string text) =>
+    [
+        .. glossary.SplitKeywords(text).Select(part => new TextPart(
+            part.Text,
+            part.Keyword.Map(keyword => new KeywordPart(keyword.Affinity, FindElement(elements, keyword.Id))))),
+    ];
 
     private static Optional<WeaponSlot> FindEventWeapon(GameEvent gameEvent) =>
         gameEvent.Match(
@@ -154,14 +142,6 @@ public static class StepOutcomeShaping
             ability: _ => Optional.None<WeaponSlot>(),
             keyword: _ => Optional.None<WeaponSlot>(),
             summoned: _ => Optional.None<WeaponSlot>());
-
-    /// <summary>A keyword's or a summon's damage names its element (a Jolt strike: Jolt); a weapon's or an ability's doesn't.</summary>
-    private static Optional<ElementId> FindOriginElement(ElementIndex elements, DamageOrigin origin) =>
-        origin.Match(
-            weapon: _ => Optional.None<ElementId>(),
-            ability: _ => Optional.None<ElementId>(),
-            keyword: keyword => FindElement(elements, keyword.Status.Value),
-            summoned: summoned => FindElement(elements, summoned.Summon.Value));
 
     private static Optional<ElementId> FindElement(ElementIndex elements, string id) =>
         elements.ById.TryGetValue(id, out var element) ? Optional.Some(element) : Optional.None<ElementId>();

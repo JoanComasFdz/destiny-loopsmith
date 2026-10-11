@@ -39,23 +39,27 @@ public static class BuildExplaining
             .UnwrapOr(new EquippedElement(element, 1))]);
 
     /// <summary>One element's explanation as lines: each trigger, then what it sets off, its condition and its reason.</summary>
-    public static ImmutableArray<StyledLine> RenderElementExplanation(ImmutableArray<ExplanationGroup> groups) =>
+    public static ImmutableArray<StyledLine> RenderElementExplanation(KeywordGlossary glossary, ImmutableArray<ExplanationGroup> groups) =>
     [
         .. groups.SelectMany(group => (ImmutableArray<StyledLine>)
         [
-            StyledText.ToLine(0, group.Heading.ToSpan(group.Affinity == Affinity.Neutral ? Tone.Strong : group.Affinity.ToTone())),
+            StyledText.ToLine(0, group.Heading.ToSpan(group.Affinity.ToHighlightTone())),
             .. group.Items.SelectMany(item => (ImmutableArray<StyledLine>)
             [
                 new StyledLine(1,
                 [
-                    item.Outcomes.ToSpan(Tone.Plain),
-                    .. item.Condition.Match(c => [$" ({c.Value})".ToSpan(Tone.Muted)], _ => ImmutableArray<StyledSpan>.Empty),
+                    .. SplitKeywords(glossary, item.Outcomes, Tone.Plain),
+                    .. item.Condition.Match(c => SplitKeywords(glossary, $" ({c.Value})", Tone.Muted), _ => ImmutableArray<StyledSpan>.Empty),
                     .. item.Likelihood == Likelihood.Chance ? [" (chance)".ToSpan(Tone.Muted)] : ImmutableArray<StyledSpan>.Empty,
                 ]),
-                .. item.Reason.Match(reason => [StyledText.ToLine(2, reason.Value.ToSpan(Tone.Muted))], _ => ImmutableArray<StyledLine>.Empty),
+                .. item.Reason.Match(reason => [new StyledLine(2, SplitKeywords(glossary, reason.Value, Tone.Muted))], _ => ImmutableArray<StyledLine>.Empty),
             ]),
         ]),
     ];
+
+    /// <summary>A text as spans: each keyword the glossary knows in its affinity's tone, the rest in the given one.</summary>
+    private static ImmutableArray<StyledSpan> SplitKeywords(KeywordGlossary glossary, string text, Tone rest) =>
+        [.. glossary.SplitKeywords(text).Select(part => part.Text.ToSpan(part.Keyword.Match(keyword => keyword.Value.Affinity.ToHighlightTone(), _ => rest)))];
 
     private static ImmutableArray<ExplanationGroup> ExplainEquipped(ValidatedBuild build, ImmutableArray<EquippedElement> equippedElements)
     {
@@ -102,10 +106,11 @@ public static class BuildExplaining
             .ToImmutableArray();
     }
 
-    public static ImmutableArray<StyledLine> RenderExplanation(ImmutableArray<ExplanationGroup> groups, ExplanationStyle style) =>
+    /// <summary>A build's explanation as a build note or an aligned tree; every keyword it names in its affinity's tone.</summary>
+    public static ImmutableArray<StyledLine> RenderExplanation(KeywordGlossary glossary, ImmutableArray<ExplanationGroup> groups, ExplanationStyle style) =>
         style == ExplanationStyle.Note
-            ? groups.Select(RenderNoteLine).ToImmutableArray()
-            : groups.SelectMany(RenderTree).ToImmutableArray();
+            ? groups.Select(group => RenderNoteLine(glossary, group)).ToImmutableArray()
+            : groups.SelectMany(group => RenderTree(glossary, group)).ToImmutableArray();
 
     /// <summary>DIM-like header: what is equipped, plus validation warnings.</summary>
     public static ImmutableArray<StyledLine> RenderBuildSummary(ValidatedBuild build)
@@ -164,13 +169,13 @@ public static class BuildExplaining
         return parts.IsEmpty ? Optional.None<string>() : Optional.Some(string.Join("; ", parts));
     }
 
-    private static StyledLine RenderNoteLine(ExplanationGroup group)
+    private static StyledLine RenderNoteLine(KeywordGlossary glossary, ExplanationGroup group)
     {
         var bullets = group.Items.SelectMany((item, index) => (ImmutableArray<StyledSpan>)
             [
                 .. index > 0 ? [" + ".ToSpan(Tone.Muted)] : ImmutableArray<StyledSpan>.Empty,
-                item.Outcomes.ToSpan(Tone.Plain),
-                .. item.Condition.Match(c => [$" ({c.Value})".ToSpan(Tone.Muted)], _ => ImmutableArray<StyledSpan>.Empty),
+                .. SplitKeywords(glossary, item.Outcomes, Tone.Plain),
+                .. item.Condition.Match(c => SplitKeywords(glossary, $" ({c.Value})", Tone.Muted), _ => ImmutableArray<StyledSpan>.Empty),
                 " [".ToSpan(Tone.Muted),
                 item.SourceName.ToSpan(item.Affinity.ToTone()),
                 "]".ToSpan(Tone.Muted),
@@ -179,19 +184,22 @@ public static class BuildExplaining
         return new StyledLine(0, [group.Heading.ToSpan(Tone.Strong), " -> ".ToSpan(Tone.Muted), .. bullets]);
     }
 
-    private static IEnumerable<StyledLine> RenderTree(ExplanationGroup group)
+    private static IEnumerable<StyledLine> RenderTree(KeywordGlossary glossary, ExplanationGroup group)
     {
         var texts = group.Items
             .Select(item => item.Outcomes + item.Condition.Match(c => $" ({c.Value})", _ => "") + (item.Likelihood == Likelihood.Chance ? " (chance)" : ""))
             .ToImmutableArray();
         var width = texts.Max(text => text.Length);
-        var header = StyledText.ToLine(0, group.Heading.ToSpan(group.Affinity == Affinity.Neutral ? Tone.Strong : group.Affinity.ToTone()));
-        var rows = group.Items.Select((item, index) => StyledText.ToLine(1,
+        var header = StyledText.ToLine(0, group.Heading.ToSpan(group.Affinity.ToHighlightTone()));
+        var rows = group.Items.Select((item, index) => new StyledLine(1,
+        [
             (index == group.Items.Length - 1 ? "└ " : "├ ").ToSpan(Tone.Muted),
-            texts[index].PadRight(width).ToSpan(Tone.Plain),
+            .. SplitKeywords(glossary, texts[index], Tone.Plain),
+            new string(' ', width - texts[index].Length).ToSpan(Tone.Plain),
             "  [".ToSpan(Tone.Muted),
             item.SourceName.ToSpan(item.Affinity.ToTone()),
-            "]".ToSpan(Tone.Muted)));
+            "]".ToSpan(Tone.Muted),
+        ]));
         return [header, .. rows];
     }
 

@@ -184,7 +184,7 @@ public class SkipGrenadeHunterGoldenTests
     public Task Explain_note_style()
     {
         var groups = BuildExplaining.ExplainBuild(Build);
-        var text = BuildExplaining.RenderExplanation(groups, ExplanationStyle.Note).ToPlainText();
+        var text = BuildExplaining.RenderExplanation(Build.Catalog.Glossary, groups, ExplanationStyle.Note).ToPlainText();
         return Verify(text);
     }
 

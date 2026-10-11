@@ -129,8 +129,10 @@ Luminopotent", "Exotic armor", "Keyword" (in the order they first fired); under 
 (their icon and name, in their affinity's colour), and under each element every outcome it gave ("→ +1
 Bolt Charge"). A cascade ("↳ Bolt Charge gained") nests
 under the event that set it off, and the same event several times in a row shows once, counted (×3). An
-element's name, or a status or pickup an outcome or event names when the rules have it as an element (Jolt,
-Bolt Charge, Ionic Trace, Combination Blow), shows a preview on hover and its details on a tap. An element
+element's name shows a preview on hover and its details on a tap. Every keyword an event or outcome names — a
+status, a debuff by its adjective ("Jolted"), a pickup, a summon — is in its affinity's colour wherever it is in
+the line ("+1 **Bolt Charge**", "Grenade kill on **Jolted** target"), and the ones the rules have as an element
+(Jolt, Bolt Charge, Ionic Trace, Combination Blow) preview and open the same way. An element
 whose rules the engine fired apart (a debuff first, energy last) shows at each of its places, in that order. "why" adds each rule's reason under its element; "caveats" adds the outcomes'
 caveats. Each step can be moved up or down, removed or dragged onto another step's place; the loop
 replays in its new order.
@@ -176,7 +178,8 @@ one perk per trait column the manifest excerpt gives — the build's pick (`roll
 in that column, else the one perk a column that doesn't roll has (an exotic's), else "?" — each armor piece with the mods
 of its slot (the slot the manifest gives the mod; other mods are general) — with Bungie's icons from the
 manifest excerpt; what the rules don't know sits where DIM would show it, dimmed. It also lists the
-left-out items under **Not in Loopsmith yet**, by their manifest name, each a link to its light.gg page; the build check adds `Unknown (?): …` and `Left out of the build: …` as info. A loadout for
+left-out items under **Not in Loopsmith yet** (collapsed, with how many of each part: open it to see them), by their
+manifest name, each a link to its light.gg page; the build check adds `Unknown (?): …` and `Left out of the build: …` as info. A loadout for
 another class than its subclass's is an error, and so is text that isn't a loadout.
 
 **Picking a weapon's perks.** A DIM link usually carries the weapon, not its roll, so the designer lets you pick
@@ -188,10 +191,12 @@ build: a perk the rules know now sets things off; one they don't is shown, dimme
 Validation. Hand-written builds pick the same way; a perk they name in `perks` sits in its column and
 gives way to a pick there. The Home cards stay read-only.
 
-**An item's details.** Tapping a square opens its details: Bungie's text (from the manifest excerpt) and what
-Loopsmith's rules say — the element's description, written from the Compendium or Clarity (never copied), what
-it sets off in this build trigger by trigger, and its source ("Destiny Data Compendium (2026-10-09), Exotic
-Weapons row 144") — or that the rules don't know it yet. The name links to the item's light.gg page, and so
+**An item's details.** Tapping a square opens its details, one card each: Bungie's text (from the manifest
+excerpt); where the rules' facts come from — for a Compendium row, Loopsmith's words for it (written from the row,
+never copied), its tab and row ("Exotic Weapons tab, row 144 · snapshot of 2026-10-09") and a link to the sheet;
+Clarity's entry, a creator's claim (their words and link) or Loopsmith's own rule (its file and line) otherwise;
+and Loopsmith's rules: what it sets off in this build trigger by trigger — or that the rules don't know it yet.
+Every keyword in it (Bolt Charge, Jolted, Ionic Trace) is in its affinity's colour. The name links to the item's light.gg page, and so
 does a weapon's name in the loadout. An exotic armor shows its exotic perk; an exotic weapon its intrinsic,
 each perk its columns hold and its catalyst. Legendary armor and weapons open nothing: their perks and mods
 carry what there is to know. The **armor sets** sit under the armor: each set with the pieces worn (a DIM

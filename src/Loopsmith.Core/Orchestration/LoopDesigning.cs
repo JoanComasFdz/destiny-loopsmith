@@ -208,7 +208,7 @@ public static class LoopDesigning
     /// the build doesn't equip (a catalyst that is off, a set perk not active) as one copy would.
     /// </summary>
     public static ImmutableArray<StyledLine> ExplainElement(ValidatedBuild build, BuildElement element) =>
-        BuildExplaining.RenderElementExplanation(BuildExplaining.ExplainElement(build, element));
+        BuildExplaining.RenderElementExplanation(build.Catalog.Glossary, BuildExplaining.ExplainElement(build, element));
 
     /// <summary>True when the build equips the element (its slots, a weapon's perks, a catalyst that is on, its set bonuses).</summary>
     public static bool IsEquipped(ValidatedBuild build, ElementId id) =>
@@ -415,7 +415,7 @@ public static class LoopDesigning
 
     /// <summary>The static view of a build: every trigger and what it sets off, as a build note or an aligned tree.</summary>
     public static ImmutableArray<StyledLine> ExplainBuild(ValidatedBuild build, ExplanationStyle style) =>
-        BuildExplaining.RenderExplanation(BuildExplaining.ExplainBuild(build), style);
+        BuildExplaining.RenderExplanation(build.Catalog.Glossary, BuildExplaining.ExplainBuild(build), style);
 
     /// <summary>The report as styled lines: the order, the verdict, each step's needs, what it sets off, what is wasted.</summary>
     public static ImmutableArray<StyledLine> RenderLoopReport(LoopReport report) =>
