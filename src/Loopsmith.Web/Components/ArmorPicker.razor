@@ -1,6 +1,7 @@
-@* The armor picker for a slot of the build: the player's pieces for it (after their Bungie login), Bungie's icons. A
-   piece's stats show on hover (a mouse) or a first tap; a click on a piece already showing (or "Wear this piece") picks
-   it, and the designer swaps it into the build (LoopDesigning.PickArmorPiece). *@
+@* The armor picker for a slot of the build: the player's pieces for it (after their Bungie login), Bungie's icons. It
+   opens showing the piece the build wears; another piece's stats show on hover (a mouse) or a first tap; a click on a
+   piece already showing (or "Wear this piece") picks it, and the designer swaps it into the build
+   (LoopDesigning.PickArmorPiece). Picking the piece the build already wears just closes the picker. *@
 @{
     var view = ArmorPickerShaping.ShapePicker(Build, LoopDesigning.ListArmorOptions(Build, Profile, Slot));
     var shown = view.Options.Where(option => focused == Optional.Some(option.Instance)).Select(Optional.Some).FindFirstSome();
@@ -87,6 +88,17 @@
 
     private Optional<ItemInstanceId> focused = Optional.None<ItemInstanceId>();
 
+    /// <summary>The copy the build wears in this slot, when the player owns it: the picker opens showing it.</summary>
+    private Optional<ItemInstanceId> worn = Optional.None<ItemInstanceId>();
+
+    protected override void OnInitialized()
+    {
+        var options = LoopDesigning.ListArmorOptions(Build, Profile, Slot);                      // pure
+        var wearing = options.Options.Where(option => option.Worn).Select(option => Optional.Some(option.Armor.InstanceId)).FindFirstSome(); // pure
+        worn = wearing;                                                                          // impure (component state)
+        focused = wearing;                                                                       // impure (component state)
+    }
+
     /// <summary>A mouse over a piece shows its details (a touch doesn't hover: its first tap does).</summary>
     private void Hover(ItemInstanceId instance, PointerEventArgs e)
     {
@@ -96,9 +108,15 @@
         }
     }
 
-    /// <summary>A click on the piece showing wears it; on another piece, shows that one.</summary>
+    /// <summary>A click on the piece showing wears it (the one the build wears closes the picker); on another piece, shows that one.</summary>
     private async Task ChooseAsync(ItemInstanceId instance)
     {
+        if (focused == Optional.Some(instance) && worn == Optional.Some(instance))
+        {
+            await OnClose.InvokeAsync();                                                         // impure
+            return;
+        }
+
         if (focused == Optional.Some(instance))
         {
             await PickAsync(instance);                                                           // impure
