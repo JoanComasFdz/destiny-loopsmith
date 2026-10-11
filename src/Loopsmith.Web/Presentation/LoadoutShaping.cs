@@ -188,6 +188,20 @@ public static class LoadoutShaping
     public static Optional<string> FindSubclassIcon(RuleCatalog catalog, GuardianClass guardianClass, Subclass subclass) =>
         catalog.FindSubclassItem(guardianClass, subclass).Bind(item => item.Icon).Map(ToIconUrl);
 
+    /// <summary>
+    /// The build's armor piece in a slot, as the build panel shows it: a piece the DIM loadout wore, else the build's
+    /// exotic; none when the excerpt knows neither.
+    /// </summary>
+    public static Optional<ManifestItem> FindArmorPiece(ValidatedBuild build, ArmorSlot slot)
+    {
+        var catalog = build.Catalog;
+        var worn = build.Build.LeftOut.Where(entry => entry.Part == LoadoutPart.Item).Select(entry => catalog.Manifest.FindItem(entry.Hash));
+        var exotic = build.Build.ExoticArmor.Bind(id => catalog.FindElementItem(id));
+        return worn.Append(exotic)
+            .Select(item => item.Bind(found => found.Kind is ManifestKind.Armor armor && armor.Slot == slot ? Optional.Some(found) : Optional.None<ManifestItem>()))
+            .FindFirstSome();
+    }
+
     /// <summary>The bungie.net address of a manifest icon path.</summary>
     public static string ToIconUrl(string path) => IconHost + path;
 

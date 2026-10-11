@@ -24,10 +24,17 @@ public sealed record SourceOutcomes(
 
 /// <summary>
 /// An event of a step (a hit, a kill, a buff gained) at its cascade depth (0: what the action itself did), the element
-/// it names (a buff gained, a pickup picked up, a keyword's strike), how many times it happened in a row alike, and the
-/// elements it set off — each run of one element's rules together, in the order the engine fired them.
+/// it names (a buff gained, a pickup picked up, a keyword's strike), the weapon slot whose hit or kill it is (so a perk two
+/// weapons roll is this one's), how many times it happened in a row alike, and the elements it set off — each run of one
+/// element's rules together, in the order the engine fired them.
 /// </summary>
-public sealed record EventOutcomes(int Depth, string Event, Optional<ElementId> Keyword, int Repeats, ImmutableArray<SourceOutcomes> Sources);
+public sealed record EventOutcomes(
+    int Depth,
+    string Event,
+    Optional<ElementId> Keyword,
+    Optional<WeaponSlot> Weapon,
+    int Repeats,
+    ImmutableArray<SourceOutcomes> Sources);
 
 /// <summary>A step's outcomes as a tree: event → element → outcome, and the step's notes (warnings).</summary>
 public sealed record StepOutcomes(ImmutableArray<EventOutcomes> Events, ImmutableArray<string> Notes);
@@ -54,6 +61,7 @@ public static class StepOutcomeShaping
             first.Depth,
             build.Catalog.Glossary.DescribeEvent(first.Trigger, build.Build),
             FindEventElement(elements, first.Trigger),
+            FindEventWeapon(first.Trigger),
             1,
             [.. sources]);
     }
@@ -129,6 +137,23 @@ public static class StepOutcomeShaping
             pickedUp: picked => FindElement(elements, picked.Pickup.Value),
             buffGained: gained => FindElement(elements, gained.Status.Value),
             stacksMaxed: maxed => FindElement(elements, maxed.Status.Value));
+
+    private static Optional<WeaponSlot> FindEventWeapon(GameEvent gameEvent) =>
+        gameEvent.Match(
+            abilityCast: _ => Optional.None<WeaponSlot>(),
+            damaged: damaged => FindOriginWeapon(damaged.Origin),
+            killed: killed => FindOriginWeapon(killed.Origin),
+            targetsHit: hit => FindOriginWeapon(hit.Origin),
+            pickedUp: _ => Optional.None<WeaponSlot>(),
+            buffGained: _ => Optional.None<WeaponSlot>(),
+            stacksMaxed: _ => Optional.None<WeaponSlot>());
+
+    private static Optional<WeaponSlot> FindOriginWeapon(DamageOrigin origin) =>
+        origin.Match(
+            weapon: weapon => Optional.Some(weapon.Slot),
+            ability: _ => Optional.None<WeaponSlot>(),
+            keyword: _ => Optional.None<WeaponSlot>(),
+            summoned: _ => Optional.None<WeaponSlot>());
 
     /// <summary>A keyword's or a summon's damage names its element (a Jolt strike: Jolt); a weapon's or an ability's doesn't.</summary>
     private static Optional<ElementId> FindOriginElement(ElementIndex elements, DamageOrigin origin) =>

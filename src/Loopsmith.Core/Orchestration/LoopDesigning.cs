@@ -191,6 +191,10 @@ public static class LoopDesigning
     public static ImmutableArray<ArmorSetStatus> ListArmorSets(ValidatedBuild build) =>
         ArmorSetting.ListArmorSets(build.Catalog, build.Build);
 
+    /// <summary>The build's weapons (by index) that hold this element: a perk they roll or have, or their turned-on catalyst.</summary>
+    public static ImmutableArray<int> ListWeaponsHolding(ValidatedBuild build, ElementId element) =>
+        BuildValidation.ListWeaponsHolding(build.Catalog, build.Build, element);
+
     /// <summary>The build's artifact and its perks of it: the excerpt's artifact that unlocks the most of them; none on a tie.</summary>
     public static Optional<BuildArtifact> FindArtifact(ValidatedBuild build) =>
         ArtifactFinding.FindArtifact(build.Catalog, build.Build);

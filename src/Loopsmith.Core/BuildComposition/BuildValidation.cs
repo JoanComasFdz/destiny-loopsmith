@@ -76,6 +76,15 @@ public static class BuildValidation
         ];
     }
 
+    /// <summary>The weapons (by index, in the build's order) whose perks or turned-on catalyst are this element, as the build check equips them.</summary>
+    public static ImmutableArray<int> ListWeaponsHolding(RuleCatalog catalog, Build build, ElementId element) =>
+    [
+        .. build.Weapons
+            .Select((weapon, index) => (Index: index, Holds: ListWeaponPerks(catalog, weapon).Concat(ListWeaponCatalysts(catalog, weapon)).Contains(element)))
+            .Where(weapon => weapon.Holds)
+            .Select(weapon => weapon.Index),
+    ];
+
     private static IEnumerable<ElementId> ListWeaponPerks(RuleCatalog catalog, WeaponLoadout weapon) =>
         WeaponRolling.ListPerkSlots(catalog, weapon).SelectMany(slot => slot.Match(
             intrinsic => ListElement(catalog, Optional.Some(intrinsic.Perk)),

@@ -118,4 +118,17 @@ public sealed class StepOutcomeShapingTests
 
         Assert.Contains(shaped.Events, shapedEvent => shapedEvent.Depth == 1 && shapedEvent.Keyword == Optional.Some(ElementId.From("jolt")));
     }
+
+    [Fact]
+    public void A_weapons_hit_or_kill_names_its_weapon_slot_an_abilitys_none()
+    {
+        var spawner = Element("spawner", ElementKind.Fragment, [On(new Trigger.KillAny(Any), new Outcome.Spawn(Pickup("orb-of-power"), 1))]);
+        var session = Play(ValidateBuild([spawner]), new PlayerAction.FireWeapon(WeaponSlot.Energy, HitOutcome.Kill, TargetCount.One), new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Kill, TargetCount.One));
+
+        var shot = LoopDesigning.ShapeStepOutcomes(session, session.Resolutions[0], Plain);
+        var thrown = LoopDesigning.ShapeStepOutcomes(session, session.Resolutions[1], Plain);
+
+        Assert.Equal(Optional.Some(WeaponSlot.Energy), Assert.Single(shot.Events).Weapon);
+        Assert.Equal(Optional.None<WeaponSlot>(), Assert.Single(thrown.Events).Weapon);
+    }
 }

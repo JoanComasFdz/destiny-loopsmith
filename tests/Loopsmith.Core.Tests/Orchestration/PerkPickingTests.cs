@@ -76,6 +76,8 @@ public sealed class PerkPickingTests
             [1319563986u, 2596646298u, 3585856470u, 1319563985u, 2596646301u, 3585856464u, 3585856465u],
             artifact.Perks.Select(perk => perk.Hash.Value));                                    // the hashes the saved share unlocks
         Assert.All(artifact.Perks, perk => Assert.True(perk.Element.IsSome()));
+        Assert.Equal([0], LoopDesigning.ListWeaponsHolding(session.Build, ElementId.From("slice")));          // Festival Flight
+        Assert.Empty(LoopDesigning.ListWeaponsHolding(session.Build, ElementId.From("attrition-orbs")));       // not picked
     }
 
     [Fact]

@@ -24,12 +24,12 @@
                     <span class="tone-strong"> ×@shaped.Repeats</span>
                 }
             </div>
-            @{ var groups = OutcomeOrigins.GroupByOrigin(Build, shaped.Sources); }
+            @{ var groups = OutcomeOrigins.GroupByOrigin(Build, shaped); }
             @for (var g = 0; g < groups.Length; g++)
             {
                 var group = groups[g];
                 <div class="outcome-origin" data-origin="@group.Origin.Label">
-                    <div class="outcome-origin-head @ToneStyling.ToAffinityClass(group.Origin.Affinity)">
+                    <div class="outcome-origin-head">
                         @if (group.Origin.Icon is Optional<string>.Some originIcon)
                         {
                             <img class="outcome-origin-icon" src="@originIcon.Value" alt="" loading="lazy" />

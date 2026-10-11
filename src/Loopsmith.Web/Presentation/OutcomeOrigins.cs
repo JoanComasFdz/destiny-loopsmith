@@ -12,33 +12,48 @@ namespace Loopsmith.Web.Presentation;
 /// "Fragment · Arcstrider", "Weapon perk · Festival Flight", "Armor mod · Luminopotent Mask", "Artifact perk · Tablet of
 /// Ruin", "Exotic armor", "Keyword" — with that item's icon (none when the build doesn't show one).
 /// </summary>
-public sealed record OutcomeOrigin(string Label, Optional<string> Icon, Affinity Affinity);
+public sealed record OutcomeOrigin(string Label, Optional<string> Icon);
 
 /// <summary>An origin and the elements an event set off from it, in the order they fired.</summary>
 public sealed record OriginGroup(OutcomeOrigin Origin, ImmutableArray<SourceOutcomes> Sources);
 
-/// <summary>Pure: an event's elements grouped by where they come from, the groups in the order their first element fired.</summary>
+/// <summary>
+/// Pure: an event's elements grouped by where they come from, the groups in the order their first element fired; an
+/// element whose rules fired apart (a debuff first, energy last) is one entry in its group, its outcomes in that order.
+/// </summary>
 public static class OutcomeOrigins
 {
-    public static ImmutableArray<OriginGroup> GroupByOrigin(ValidatedBuild build, ImmutableArray<SourceOutcomes> sources) =>
+    public static ImmutableArray<OriginGroup> GroupByOrigin(ValidatedBuild build, EventOutcomes shaped) =>
     [
-        .. sources
-            .Select(source => (Origin: FindOrigin(build, source), Source: source))
+        .. shaped.Sources
+            .Select(source => (Origin: FindOrigin(build, shaped, source), Source: source))
             .GroupBy(entry => entry.Origin)
-            .Select(group => new OriginGroup(group.Key, [.. group.Select(entry => entry.Source)])),
+            .Select(group => new OriginGroup(group.Key, JoinSameSource(group.Select(entry => entry.Source)))),
     ];
 
-    private static OutcomeOrigin FindOrigin(ValidatedBuild build, SourceOutcomes source) =>
+    /// <summary>The same element in a row (its rules fired apart, now in one group) as one entry.</summary>
+    private static ImmutableArray<SourceOutcomes> JoinSameSource(IEnumerable<SourceOutcomes> sources) =>
+        sources.Aggregate(ImmutableArray<SourceOutcomes>.Empty, (joined, next) =>
+            !joined.IsEmpty && joined[^1].Source == next.Source
+                ? joined.SetItem(joined.Length - 1, joined[^1] with
+                {
+                    Outcomes = joined[^1].Outcomes.AddRange(next.Outcomes),
+                    Reasons = joined[^1].Reasons.AddRange(next.Reasons),
+                    Caveats = joined[^1].Caveats.AddRange(next.Caveats),
+                })
+                : joined.Add(next));
+
+    private static OutcomeOrigin FindOrigin(ValidatedBuild build, EventOutcomes shaped, SourceOutcomes source) =>
         source.Kind switch
         {
             ElementKind.Super or ElementKind.Grenade or ElementKind.Melee or ElementKind.ClassAbility or ElementKind.Aspect or ElementKind.Fragment =>
                 DescribeSubclassOrigin(build, source.Kind),
-            ElementKind.ExoticWeapon or ElementKind.WeaponPerk or ElementKind.Catalyst => DescribeWeaponOrigin(build, source),
+            ElementKind.ExoticWeapon or ElementKind.WeaponPerk or ElementKind.Catalyst => DescribeWeaponOrigin(build, shaped, source),
             ElementKind.ArmorMod => DescribeModOrigin(build, source),
             ElementKind.ArmorSetBonus => DescribeSetOrigin(build.Catalog, source),
-            ElementKind.ArtifactPerk => DescribeArtifactOrigin(build),
-            ElementKind.ExoticArmor => new OutcomeOrigin("Exotic armor", Optional.None<string>(), Affinity.Neutral),
-            _ => new OutcomeOrigin("Keyword", Optional.None<string>(), Affinity.Neutral),
+            ElementKind.ArtifactPerk => DescribeArtifactOrigin(build, source),
+            ElementKind.ExoticArmor => new OutcomeOrigin("Exotic armor", Optional.None<string>()),
+            _ => new OutcomeOrigin("Keyword", Optional.None<string>()),
         };
 
     /// <summary>An ability, an aspect or a fragment: the subclass it is part of (Arcstrider), with its icon.</summary>
@@ -47,12 +62,14 @@ public static class OutcomeOrigins
         var subclass = build.Catalog.FindSubclassItem(build.Build.Class, build.Build.Subclass);
         return new OutcomeOrigin(
             $"{kind.DescribeElementKind()} · {subclass.Map(item => item.Name).UnwrapOr("Subclass")}",
-            subclass.Bind(item => item.Icon).Map(LoadoutShaping.ToIconUrl),
-            build.Build.Subclass.ToAffinity());
+            subclass.Bind(item => item.Icon).Map(LoadoutShaping.ToIconUrl));
     }
 
-    /// <summary>A weapon's perk, an exotic weapon's own or its catalyst: the build's weapon that holds it, with its icon.</summary>
-    private static OutcomeOrigin DescribeWeaponOrigin(ValidatedBuild build, SourceOutcomes source)
+    /// <summary>
+    /// A weapon's perk, an exotic weapon's own or its catalyst: the build's weapon that holds it (Core says which: the build
+    /// check's own mapping), with its icon; of two that hold it, the one whose hit or kill the event is.
+    /// </summary>
+    private static OutcomeOrigin DescribeWeaponOrigin(ValidatedBuild build, EventOutcomes shaped, SourceOutcomes source)
     {
         var label = source.Kind switch
         {
@@ -60,45 +77,28 @@ public static class OutcomeOrigins
             ElementKind.Catalyst => "Catalyst",
             _ => "Weapon perk",
         };
-        return build.Build.Weapons
-            .Where(weapon => LoopDesigning.ListPerkSlots(build, weapon).Any(slot => IsHeldBy(build.Catalog, slot, source.Source)))
+        var holding = LoopDesigning.ListWeaponsHolding(build, source.Source).Select(index => build.Build.Weapons[index]).ToImmutableArray();
+        return holding
+            .OrderBy(weapon => shaped.Weapon == Optional.Some(weapon.Slot) ? 0 : 1)
             .Select(weapon => Optional.Some(new OutcomeOrigin(
                 $"{label} · {weapon.Name}",
-                weapon.Hash.Bind(hash => build.Catalog.Manifest.FindItem(hash)).Bind(item => item.Icon).Map(LoadoutShaping.ToIconUrl),
-                weapon.Type.ToAffinity())))
+                weapon.Hash.Bind(hash => build.Catalog.Manifest.FindItem(hash)).Bind(item => item.Icon).Map(LoadoutShaping.ToIconUrl))))
             .FindFirstSome()
-            .UnwrapOr(new OutcomeOrigin(label, Optional.None<string>(), Affinity.Neutral));
+            .UnwrapOr(new OutcomeOrigin(label, Optional.None<string>()));
     }
 
-    private static bool IsHeldBy(RuleCatalog catalog, WeaponPerkSlot slot, ElementId element)
-    {
-        var hashes = catalog.Elements.TryGetValue(element, out var found) ? found.Hashes : [];
-        return slot.Match(
-            intrinsic => hashes.Contains(intrinsic.Perk),
-            named => named.Perk == element,
-            fixedPerk => hashes.Contains(fixedPerk.Perk),
-            rolling => rolling.Perk.Match(perk => hashes.Contains(perk.Value), _ => false),
-            catalyst => catalyst.On && hashes.Contains(catalyst.Plug));
-    }
-
-    /// <summary>An armor mod: the armor piece of its slot the build shows (its icon), else the slot; a general mod is "General".</summary>
+    /// <summary>
+    /// An armor mod: the armor piece in its slot that the build panel shows (its icon), else the slot; a mod with no slot is
+    /// "General"; one the excerpt doesn't know, just "Armor mod".
+    /// </summary>
     private static OutcomeOrigin DescribeModOrigin(ValidatedBuild build, SourceOutcomes source) =>
-        build.Catalog.FindElementItem(source.Source).Bind(item => item.ReadArmorSlot()).Match(
-            slot => FindArmorPiece(build, slot.Value).Match(
-                piece => new OutcomeOrigin($"Armor mod · {piece.Value.Name}", piece.Value.Icon.Map(LoadoutShaping.ToIconUrl), Affinity.Neutral),
-                _ => new OutcomeOrigin($"Armor mod · {slot.Value.DescribeArmorSlot()}", Optional.None<string>(), Affinity.Neutral)),
-            _ => new OutcomeOrigin("Armor mod · General", Optional.None<string>(), Affinity.Neutral));
-
-    /// <summary>The build's armor piece in a slot, when the excerpt knows it: its exotic, else a piece the DIM loadout wore.</summary>
-    private static Optional<ManifestItem> FindArmorPiece(ValidatedBuild build, ArmorSlot slot)
-    {
-        var catalog = build.Catalog;
-        var exotic = build.Build.ExoticArmor.Bind(id => catalog.FindElementItem(id));
-        var worn = build.Build.LeftOut.Where(entry => entry.Part == LoadoutPart.Item).Select(entry => catalog.Manifest.FindItem(entry.Hash));
-        return worn.Prepend(exotic)
-            .Select(item => item.Bind(found => found.Kind is ManifestKind.Armor armor && armor.Slot == slot ? Optional.Some(found) : Optional.None<ManifestItem>()))
-            .FindFirstSome();
-    }
+        build.Catalog.FindElementItem(source.Source).Match(
+            item => item.Value.ReadArmorSlot().Match(
+                slot => LoadoutShaping.FindArmorPiece(build, slot.Value).Match(
+                    piece => new OutcomeOrigin($"Armor mod · {piece.Value.Name}", piece.Value.Icon.Map(LoadoutShaping.ToIconUrl)),
+                    _ => new OutcomeOrigin($"Armor mod · {slot.Value.DescribeArmorSlot()}", Optional.None<string>())),
+                _ => new OutcomeOrigin("Armor mod · General", Optional.None<string>())),
+            _ => new OutcomeOrigin("Armor mod", Optional.None<string>()));
 
     /// <summary>An armor set bonus: its set, by name.</summary>
     private static OutcomeOrigin DescribeSetOrigin(RuleCatalog catalog, SourceOutcomes source) =>
@@ -106,12 +106,14 @@ public static class OutcomeOrigins
             .Select(hash => catalog.Manifest.FindSetOfPerk(hash))
             .FindFirstSome()
             .Match(
-                found => new OutcomeOrigin($"Armor set · {found.Value.Set.Name}", Optional.None<string>(), Affinity.Neutral),
-                _ => new OutcomeOrigin("Armor set", Optional.None<string>(), Affinity.Neutral));
+                found => new OutcomeOrigin($"Armor set · {found.Value.Set.Name}", Optional.None<string>()),
+                _ => new OutcomeOrigin("Armor set", Optional.None<string>()));
 
-    /// <summary>An artifact perk: the build's artifact (LoopDesigning.FindArtifact), with its icon.</summary>
-    private static OutcomeOrigin DescribeArtifactOrigin(ValidatedBuild build) =>
-        LoopDesigning.FindArtifact(build).Match(
-            found => new OutcomeOrigin($"Artifact perk · {found.Value.Item.Name}", found.Value.Item.Icon.Map(LoadoutShaping.ToIconUrl), Affinity.Neutral),
-            _ => new OutcomeOrigin("Artifact perk", Optional.None<string>(), Affinity.Neutral));
+    /// <summary>An artifact perk: the build's artifact (LoopDesigning.FindArtifact) when it unlocks this perk, with its icon.</summary>
+    private static OutcomeOrigin DescribeArtifactOrigin(ValidatedBuild build, SourceOutcomes source) =>
+        LoopDesigning.FindArtifact(build)
+            .Bind(found => found.Perks.Any(perk => perk.Element == Optional.Some(source.Source)) ? Optional.Some(found.Item) : Optional.None<ManifestItem>())
+            .Match(
+                artifact => new OutcomeOrigin($"Artifact perk · {artifact.Value.Name}", artifact.Value.Icon.Map(LoadoutShaping.ToIconUrl)),
+                _ => new OutcomeOrigin("Artifact perk", Optional.None<string>()));
 }
