@@ -168,6 +168,7 @@ public static class GameNotationParsing
         prefix switch
         {
             "weapon" => ParseVocabularyWord<DamageType>(argument).Map(DamageSource (type) => new DamageSource.WeaponOfType(type)),
+            "slot" => ParseVocabularyWord<WeaponSlot>(argument).Map(DamageSource (slot) => new DamageSource.WeaponInSlot(slot)),
             "type" => ParseVocabularyWord<DamageType>(argument).Map(DamageSource (type) => new DamageSource.OfType(type)),
             "keyword" => StatusId.TryFrom(argument).ToResult().Map(DamageSource (status) => new DamageSource.KeywordOf(status)),
             "summon" => SummonId.TryFrom(argument).ToResult().Map(DamageSource (summon) => new DamageSource.SummonOf(summon)),

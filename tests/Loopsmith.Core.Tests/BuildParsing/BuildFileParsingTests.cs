@@ -216,7 +216,26 @@ public sealed class BuildFileParsingTests
             """);
 
         Assert.Equal([Optional.None<ItemHash>(), Optional.Some(ItemHash.From(243981275u))], Assert.Single(build.Weapons).Roll);
+        Assert.False(Assert.Single(build.Weapons).Catalyst);
         Assert.Contains("'slice' is not a manifest hash", message);
+    }
+
+    [Fact]
+    public void A_weapons_catalyst_is_on_when_the_build_says_true()
+    {
+        var build = ParseValidBuild(MinimalYaml + """
+
+            weapons:
+              - { slot: power, name: Thunderlord, type: arc, hash: 3325463374, catalyst: true }
+            """);
+        var message = ParseInvalidBuild(MinimalYaml + """
+
+            weapons:
+              - { slot: power, name: Thunderlord, type: arc, catalyst: yes }
+            """);
+
+        Assert.True(Assert.Single(build.Weapons).Catalyst);
+        Assert.Contains("'yes' is not true or false", message);
     }
 
     [Fact]

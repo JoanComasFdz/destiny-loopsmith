@@ -486,9 +486,14 @@ public sealed class RuleCatalogParsingTests
             version: "244213.26.06.29.2000-1-bnet.65864"
             damageTypes:
               - { type: strand, icon: /common/strand.png }
+            armorSets:
+              - { hash: 499993704, name: "Luminopotent", perks: [{ pieces: 4, perk: 2769443638 }, { pieces: 2, perk: 2769443639 }] }
             items:
               - { hash: 4019651319, name: "Festival Flight", kind: weapon, type: "Grenade Launcher", tier: legendary, slot: kinetic, damageType: strand, traits: [[923806249, 3422796781], [243981275]], icon: /common/ff.jpg }
-              - { hash: 3325463374, name: "Thunderlord", kind: weapon, type: "Machine Gun", tier: exotic, slot: power, damageType: arc, traits: [[1419069769], [2779035018]] }
+              - { hash: 3325463374, name: "Thunderlord", kind: weapon, type: "Machine Gun", tier: exotic, slot: power, damageType: arc, traits: [[1419069769], [2779035018]], intrinsic: 4148158229, catalyst: 1550063955 }
+              - { hash: 1550063955, name: "Thunderlord Catalyst", kind: catalyst, tier: exotic, perks: [818260022] }
+              - { hash: 818260022, name: "Return Stroke", kind: perk, description: "Lightning strikes reload." }
+              - { hash: 593554567, name: "Luminopotent Mask", kind: armor, type: "Helmet", slot: helmet, set: 499993704 }
               - { hash: 3832366019, name: "Harmonic Siphon", kind: armorMod, type: "Helmet Armor Mod", slot: helmet }
               - { hash: 1435557120, name: "Grenade Mod", kind: armorMod, type: "General Armor Mod" }
             """);
@@ -506,6 +511,13 @@ public sealed class RuleCatalogParsingTests
             (flightKind.Slot, flightKind.DamageType, flight.Tier, flight.Icon));
         Assert.Equal([[923806249u, 3422796781u], [243981275u]], flightKind.Traits.Select(column => column.Options.Select(hash => hash.Value)));
         Assert.Equal([[1419069769u], [2779035018u]], thunderlord.Traits.Select(column => column.Options.Select(hash => hash.Value)));
+        Assert.Equal((Optional.Some(ItemHash.From(4148158229u)), Optional.Some(ItemHash.From(1550063955u))), (thunderlord.Intrinsic, thunderlord.Catalyst));
+        Assert.Equal(new ManifestKind.ExoticCatalyst([ItemHash.From(818260022u)]).Perks, Assert.IsType<ManifestKind.ExoticCatalyst>(items[ItemHash.From(1550063955u)].Kind).Perks);
+        var stroke = items[ItemHash.From(818260022u)];
+        Assert.Equal((Optional.None<string>(), Optional.Some("Lightning strikes reload.")), (stroke.Type, stroke.Description));
+        Assert.Equal(Optional.Some(ItemHash.From(499993704u)), Assert.IsType<ManifestKind.Armor>(items[ItemHash.From(593554567u)].Kind).Set);
+        Assert.Equal([2, 4], catalog.Manifest.ArmorSets[ItemHash.From(499993704u)].Perks.Select(perk => perk.Pieces.Value));
+        Assert.Equal(Optional.Some(("Luminopotent", 2)), catalog.Manifest.FindSetOfPerk(ItemHash.From(2769443639u)).Map(found => (found.Set.Name, found.Perk.Pieces.Value)));
         Assert.Equal(Optional.Some(ArmorSlot.Helmet), items[ItemHash.From(3832366019u)].ReadArmorSlot());
         Assert.Equal(new ManifestKind.ArmorMod(Optional.None<ArmorSlot>()), items[ItemHash.From(1435557120u)].Kind);
         Assert.Empty(AssertOk(RuleCatalogParsing.ParseCatalog([Glossary])).Manifest.Items);
@@ -521,6 +533,9 @@ public sealed class RuleCatalogParsingTests
               - { hash: 3832366019, name: "Harmonic Siphon", kind: armorMod, type: "Helmet Armor Mod", damageType: arc }
               - { hash: 1053737370, name: "Shinobu's Vow", kind: armor, type: "Gauntlets", slot: arms, traits: [[1]] }
               - { hash: 4019651319, name: "Festival Flight", kind: weapon, type: "Grenade Launcher", slot: kinetic, traits: [[923806249], []] }
+              - { hash: 1053737371, name: "Shinobu's Vow", kind: armor, type: "Gauntlets", slot: arms, catalyst: 1 }
+              - { hash: 4019651310, name: "Festival Flight", kind: weapon, type: "Grenade Launcher", slot: kinetic, set: 2 }
+              - { hash: 4148158229, name: "Reign Havoc", kind: intrinsic, perks: [3] }
             """));
 
         Assert.Contains("slot is only allowed on a weapon, armor or an armor mod, not on a grenade", message);
@@ -528,6 +543,9 @@ public sealed class RuleCatalogParsingTests
         Assert.Contains("damageType is only allowed on a weapon, not on a armorMod", message);
         Assert.Contains("traits is only allowed on a weapon, not on a armor", message);
         Assert.Contains("a trait column needs at least one perk hash", message);
+        Assert.Contains("catalyst is only allowed on a weapon, not on a armor", message);
+        Assert.Contains("set is only allowed on armor, not on a weapon", message);
+        Assert.Contains("perks is only allowed on a catalyst, not on a intrinsic", message);
     }
 
     [Fact]

@@ -7,6 +7,7 @@ elements:
     name: Ionic Overclock
     kind: armorSetBonus
     affinity: arc
+    hash: 2769443639          # the set's 2-piece perk (a manifest sandbox perk)
     description: "Luminopotent 2-piece bonus: while Amplified, Fusion Rifles, Linear Fusion Rifles and Heat weapons get +? Handling and +? Reload Speed."
     source: "compendium/2026-10-09/Armor Perks#57"
     rules: []
@@ -26,6 +27,7 @@ elements:
     name: Shock and Clear
     kind: armorSetBonus
     affinity: arc
+    hash: 2769443638          # the set's 4-piece perk
     description: "Luminopotent 4-piece bonus: a Jolt kill or a kill of a Jolted enemy creates an Ionic Trace (no cooldown stated; none in the creator's testing)."
     source: "compendium/2026-10-09/Armor Perks#58"
     rules:

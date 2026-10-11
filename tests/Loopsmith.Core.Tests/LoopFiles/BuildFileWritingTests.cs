@@ -36,7 +36,7 @@ public sealed class BuildFileWritingTests
     public void A_weapon_roll_is_written_with_a_question_mark_for_a_column_not_picked()
     {
         var weapon = new WeaponLoadout(WeaponSlot.Kinetic, "Festival Flight", DamageType.Strand, Optional.None<string>(), [], Optional.Some(ItemHash.From(4019651319u)),
-            [Optional.None<ItemHash>(), Optional.Some(ItemHash.From(243981275u))]);
+            [Optional.None<ItemHash>(), Optional.Some(ItemHash.From(243981275u))], false);
 
         var written = BuildFileWriting.WriteBuildFile(MinimalBuild with { Weapons = [weapon] }, []);
 

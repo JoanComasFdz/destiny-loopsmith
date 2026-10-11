@@ -4,6 +4,7 @@
 @inject BrowserInterop Browser
 @inject NavigationManager Navigation
 @inject DimLoadoutFetching DimLoadouts
+@inject BungieManifestJoining Manifest
 
 @* The start screen (the logo leads here): continue the open loop, start one from a DIM link or a bundled build, open an
    example or import a loop. Opening anything goes to the designer. A share link (…/#loop=) lands here and opens its loop
@@ -43,7 +44,7 @@
             </div>
         </div>
         <button type="submit" class="btn dim-go" disabled="@(readingDimLink || dimLink.Trim().Length == 0)" data-action="dim-start">
-            @(readingDimLink ? "Reading the DIM link…" : "Start designing from this link →")
+            @(readingDimLink ? readingStep : "Start designing from this link →")
         </button>
         @if (dimProblem is Optional<string>.Some problem)
         {
@@ -121,6 +122,8 @@
     private bool importing;
     private string dimLink = "";
     private bool readingDimLink;
+    private string readingStep = ReadingLink;
+    private const string ReadingLink = "Reading the DIM link…";
     private Optional<string> dimProblem = Optional.None<string>();
     private Optional<string> importProblem = Optional.None<string>();
 
@@ -190,15 +193,35 @@
             return;
         }
 
-        readingDimLink = true;
-        dimProblem = Optional.None<string>();
+        readingDimLink = true;                                                                   // impure (UI state)
+        readingStep = ReadingLink;                                                               // impure (UI state)
+        dimProblem = Optional.None<string>();                                                    // impure (UI state)
         var loadout = await ReadLoadoutAsync(link);                                              // impure
-        readingDimLink = false;
+        var unknown = loadout.Bind(json => LoopDesigning.ListUnknownLoadoutHashes(Bundle.Catalog, json)); // pure
+        var unknownHashes = unknown.Match(ok => ok.Value, _ => []);                              // pure
+        var catalog = await JoinManifestAsync(Bundle.Catalog, unknownHashes);                    // impure
+        readingDimLink = false;                                                                  // impure (UI state)
 
-        var started = loadout.Bind(json => LoopDesigning.StartDimDesign(Bundle.Catalog, link, json)); // pure
+        var started = loadout.Bind(json => LoopDesigning.StartDimDesign(catalog.Catalog, link, json)); // pure
+        var note = catalog.Note.Match(problem => $" {problem.Value}", _ => "");                  // pure
         started.Match(                                                                           // impure
-            ok => OpenDesign(ok.Value, $"New loop for {ok.Value.Build.Build.Name}, from the DIM link."),
+            ok => OpenDesign(ok.Value, $"New loop for {ok.Value.Build.Build.Name}, from the DIM link.{note}"),
             error => ShowDimProblem(error.Failure));
+    }
+
+    /// <summary>The catalog with what Bungie's full manifest says of these hashes (none: as it is); a note when it couldn't be read.</summary>
+    private async Task<JoinedCatalog> JoinManifestAsync(RuleCatalog catalog, ImmutableArray<ItemHash> unknown)
+    {
+        if (unknown.IsEmpty)
+        {
+            return new JoinedCatalog(catalog, Optional.None<string>());
+        }
+
+        var reading = LoopDesigning.DescribeManifestReading(unknown.Length);                     // pure
+        readingStep = reading;                                                                   // impure (UI state)
+        StateHasChanged();                                                                       // impure
+        var joined = await Manifest.JoinAsync(unknown);                                          // impure
+        return LoopDesigning.AddJoinedManifest(catalog, joined);                                 // pure
     }
 
     /// <summary>The link's loadout: DIM's answer for a dim.gg share, or the JSON a link carries.</summary>

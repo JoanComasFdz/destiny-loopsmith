@@ -5,6 +5,7 @@ using Loopsmith.Core.BuildParsing;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 using Loopsmith.Core.LoadoutImporting;
+using Loopsmith.Core.ManifestJoining;
 using Loopsmith.Core.LoopFiles;
 using Loopsmith.Core.Phrasing;
 using Loopsmith.Core.ReportComparison;
@@ -40,6 +41,9 @@ public sealed record DesignSession(
     GameState Initial,
     ImmutableArray<Resolution> Resolutions,
     GameState Current);
+
+/// <summary>A catalog with what Bungie's full manifest said added; <see cref="Note"/> says when it couldn't be read.</summary>
+public sealed record JoinedCatalog(RuleCatalog Catalog, Optional<string> Note);
 
 /// <summary>Pure API the hosts (CLI, web) use to design, export, import, analyse and compare loops.</summary>
 public static class LoopDesigning
@@ -85,6 +89,82 @@ public static class LoopDesigning
             .MapError(error => $"{savedShare.Path}: {error}")
             .Bind(link => StartDimDesign(catalog, link, savedShare.Text));
 
+    // ── Bungie's full manifest, for what the excerpt lacks (ManifestJoining) ──────────
+
+    /// <summary>The hashes a DIM loadout wears that the catalog's manifest excerpt lacks (what the full manifest is read for).</summary>
+    public static Result<ImmutableArray<ItemHash>, string> ListUnknownLoadoutHashes(RuleCatalog catalog, string loadoutJson) =>
+        DimLoadoutMapping.ListLoadoutHashes(loadoutJson).Map(hashes => ManifestJoin.ListUnknown(catalog.Manifest, hashes));
+
+    /// <summary>The hashes an open design's build names that the excerpt lacks (its weapons, picks, what it left out).</summary>
+    public static ImmutableArray<ItemHash> ListUnknownHashes(DesignSession session) =>
+        ManifestJoin.ListUnknownBuildHashes(session.Build.Catalog.Manifest, session.Build.Build);
+
+    /// <summary>Of <paramref name="hashes"/>, those the host hasn't read the manifest for yet (<paramref name="asked"/>: found, missing or failed).</summary>
+    public static ImmutableArray<ItemHash> ListUnaskedHashes(ImmutableHashSet<ItemHash> asked, IEnumerable<ItemHash> hashes) =>
+        ManifestJoin.ListUnasked(asked, hashes);
+
+    /// <summary>What the host says while it reads the full manifest for <paramref name="count"/> hashes.</summary>
+    public static string DescribeManifestReading(int count) =>
+        $"Reading Bungie's manifest for {count} item{(count == 1 ? "" : "s")} Loopsmith doesn't know yet…";
+
+    /// <summary>The manifest's index on bungie.net (the paths of its current version's components).</summary>
+    public const string ManifestIndexUrl = ManifestTransport.IndexUrl;
+
+    /// <summary>Each manifest component's URL on bungie.net, by component name: the index's, else the pinned content id's.</summary>
+    public static ImmutableDictionary<string, string> ChooseManifestUrls(Optional<string> indexJson, string pinnedContentId) =>
+        ManifestTransport.ChooseUrls(indexJson, pinnedContentId);
+
+    /// <summary>A join of what these hashes need from the full manifest: its first question (or, for none, the excerpt).</summary>
+    public static ManifestJoinStep StartManifestJoin(IEnumerable<ItemHash> hashes) =>
+        ManifestJoin.StartJoin(hashes);
+
+    /// <summary>What the host reads for a question, per component (an empty list: the whole component).</summary>
+    public static ImmutableDictionary<string, ImmutableArray<ItemHash>> ToManifestRequest(ManifestQuery query) =>
+        ManifestTransport.ToEntryRequest(query);
+
+    /// <summary>What the host searches the item component for, for a question's plug categories.</summary>
+    public static ManifestTextSearch ToManifestPlugSearch(ManifestQuery query) =>
+        ManifestTransport.ToPlugSearch(query);
+
+    /// <summary>The join with the host's answer to its question: its next step, or why the answer doesn't read.</summary>
+    public static Result<ManifestJoinStep, string> ContinueManifestJoin(ManifestJoinStep.Ask asked, string entriesJson, string foundJson) =>
+        ManifestTransport.ReadAnswer(asked.Query, entriesJson, foundJson)
+            .Map(answer => ManifestJoin.ContinueJoin(asked.Progress, answer));
+
+    /// <summary>The excerpt the join built, or why reading the manifest failed (or didn't finish).</summary>
+    public static Result<ManifestExcerpt, string> ToJoinedExcerpt(Result<ManifestJoinStep, string> step) =>
+        ManifestTransport.ToJoinedExcerpt(step);
+
+    /// <summary>
+    /// The catalog with what the full manifest said added to its excerpt (what it had stays); when the manifest
+    /// couldn't be read, the catalog as it is and a note saying so.
+    /// </summary>
+    public static JoinedCatalog AddJoinedManifest(RuleCatalog catalog, Result<ManifestExcerpt, string> joined) =>
+        joined.Match(
+            ok => new JoinedCatalog(AddManifest(catalog, ok.Value), Optional.None<string>()),
+            error => new JoinedCatalog(catalog, Optional.Some(DescribeManifestProblem(error.Failure))));
+
+    /// <summary>
+    /// The design with what the full manifest said of its build: validated again with it, its steps replayed; else why
+    /// not (the manifest couldn't be read, or the build doesn't validate with it).
+    /// </summary>
+    public static Result<DesignSession, string> UseJoinedManifest(DesignSession session, Result<ManifestExcerpt, string> joined) =>
+        joined
+            .MapError(DescribeManifestProblem)
+            .Bind(excerpt => UseCatalog(session, AddManifest(session.Build.Catalog, excerpt)));
+
+    /// <summary>The catalog with a joined part of the full manifest added to its excerpt (what it had stays).</summary>
+    private static RuleCatalog AddManifest(RuleCatalog catalog, ManifestExcerpt joined) =>
+        catalog with { Manifest = catalog.Manifest.AddExcerpt(joined) };
+
+    private static string DescribeManifestProblem(string problem) =>
+        $"Couldn't read Bungie's manifest ({problem}). Items Loopsmith doesn't know show by hash.";
+
+    /// <summary>The design with its build validated again against a catalog (one with more of the manifest), its steps replayed.</summary>
+    private static Result<DesignSession, string> UseCatalog(DesignSession session, RuleCatalog catalog) =>
+        BuildValidation.ValidateBuild(session.Build.Build, catalog)
+            .Map(validated => CreateSession(validated, session.Design));
+
     /// <summary>True when a build's source is a DIM link (the designer calls it one).</summary>
     public static bool IsDimLink(string url) =>
         DimLinkReading.ReadDimLink(url) is Result<DimLink, string>.Ok;
@@ -98,9 +178,50 @@ public static class LoopDesigning
     /// weapon's entry of the embedded build file changes; the build is validated again and the steps replayed with it.
     /// </summary>
     public static Result<DesignSession, string> PickWeaponPerk(DesignSession session, int weapon, int column, Optional<ItemHash> perk) =>
+        EditWeapon(session, weapon, loadout => WeaponRolling.PickPerk(session.Build.Catalog, loadout, column, perk));
+
+    /// <summary>
+    /// The design with an exotic weapon's catalyst on or off (<paramref name="weapon"/> 0-based, in the build's order):
+    /// only that weapon's entry of the embedded build file changes (<c>catalyst: true</c>); the steps replay with it.
+    /// </summary>
+    public static Result<DesignSession, string> SetCatalyst(DesignSession session, int weapon, bool on) =>
+        EditWeapon(session, weapon, loadout => WeaponRolling.SetCatalyst(session.Build.Catalog, loadout, on));
+
+    /// <summary>The build's armor sets: per set, the pieces worn (when the build says) and which of its perks are active.</summary>
+    public static ImmutableArray<ArmorSetStatus> ListArmorSets(ValidatedBuild build) =>
+        ArmorSetting.ListArmorSets(build.Catalog, build.Build);
+
+    /// <summary>The build's set bonuses in none of the manifest excerpt's sets (shown on their own).</summary>
+    public static ImmutableArray<ElementId> ListLooseSetBonuses(ValidatedBuild build) =>
+        ArmorSetting.ListLooseBonuses(build.Catalog, build.Build);
+
+    /// <summary>
+    /// What an element sets off in the build — each trigger, then its outcomes and reasons — for an item's details; one
+    /// the build doesn't equip (a catalyst that is off, a set perk not active) as one copy would.
+    /// </summary>
+    public static ImmutableArray<StyledLine> ExplainElement(ValidatedBuild build, BuildElement element) =>
+        BuildExplaining.RenderElementExplanation(BuildExplaining.ExplainElement(build, element));
+
+    /// <summary>True when the build equips the element (its slots, a weapon's perks, a catalyst that is on, its set bonuses).</summary>
+    public static bool IsEquipped(ValidatedBuild build, ElementId id) =>
+        build.Equipped.Any(equipped => equipped.Element.Id == id);
+
+    /// <summary>The build's weapon number <paramref name="weapon"/> (0-based, in the build's order), if it has one.</summary>
+    public static Optional<WeaponLoadout> FindWeapon(ValidatedBuild build, int weapon) =>
+        FindWeapon(build.Build, weapon).Match(found => Optional.Some(found.Value), _ => Optional.None<WeaponLoadout>());
+
+    /// <summary>That weapon's catalyst, when the manifest excerpt gives it one.</summary>
+    public static Optional<WeaponPerkSlot.Catalyst> FindCatalyst(ValidatedBuild build, int weapon) =>
+        FindWeapon(build, weapon).Bind(found => WeaponRolling.ListPerkSlots(build.Catalog, found)
+            .OfType<WeaponPerkSlot.Catalyst>()
+            .Select(Optional.Some)
+            .FindFirstSome());
+
+    /// <summary>One weapon of the embedded build changed: that entry rewritten, the build validated again, the steps replayed.</summary>
+    private static Result<DesignSession, string> EditWeapon(DesignSession session, int weapon, Func<WeaponLoadout, Result<WeaponLoadout, string>> change) =>
         FindWeapon(session.Build.Build, weapon)
-            .Bind(loadout => WeaponRolling.PickPerk(session.Build.Catalog, loadout, column, perk))
-            .Bind(picked => BuildFileEditing.ReplaceWeapon(session.Design.Build, weapon, picked))
+            .Bind(change)
+            .Bind(changed => BuildFileEditing.ReplaceWeapon(session.Design.Build, weapon, changed))
             .Map(text => session.Design.Build with { Text = text })
             .Bind(file => BuildFileParsing.ParseBuildFile(file)
                 .Bind(build => BuildValidation.ValidateBuild(build, session.Build.Catalog))

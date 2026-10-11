@@ -58,7 +58,8 @@ public static class BuildValidation
 
         var exotic = CreateOptionalSlot(build.ExoticArmor, "exotic armor", ElementKind.ExoticArmor);
         var weaponPerks = build.Weapons.SelectMany(w =>
-            CreateSlots(ListWeaponPerks(catalog, w), $"{w.Name} perk", ElementKind.WeaponPerk, ElementKind.ExoticWeapon));
+            CreateSlots(ListWeaponPerks(catalog, w), $"{w.Name} perk", ElementKind.WeaponPerk, ElementKind.ExoticWeapon)
+                .Concat(CreateSlots(ListWeaponCatalysts(catalog, w), $"{w.Name} catalyst", ElementKind.Catalyst)));
         return
         [
             .. CreateOptionalSlot(build.Abilities.Super, "super", ElementKind.Super),
@@ -77,9 +78,18 @@ public static class BuildValidation
 
     private static IEnumerable<ElementId> ListWeaponPerks(RuleCatalog catalog, WeaponLoadout weapon) =>
         WeaponRolling.ListPerkSlots(catalog, weapon).SelectMany(slot => slot.Match(
+            intrinsic => ListElement(catalog, Optional.Some(intrinsic.Perk)),
             named => [named.Perk],
             fixedPerk => ListElement(catalog, Optional.Some(fixedPerk.Perk)),
-            rolling => ListElement(catalog, rolling.Perk)));
+            rolling => ListElement(catalog, rolling.Perk),
+            _ => []));
+
+    /// <summary>The catalyst element of a weapon whose build turns it on, when the catalog knows it by hash.</summary>
+    private static IEnumerable<ElementId> ListWeaponCatalysts(RuleCatalog catalog, WeaponLoadout weapon) =>
+        WeaponRolling.ListPerkSlots(catalog, weapon)
+            .OfType<WeaponPerkSlot.Catalyst>()
+            .Where(catalyst => catalyst.On)
+            .SelectMany(catalyst => ListElement(catalog, Optional.Some(catalyst.Plug)));
 
     private static IEnumerable<ElementId> ListElement(RuleCatalog catalog, Optional<ItemHash> hash) =>
         hash.Bind(catalog.FindElementByHash).Match(element => new[] { element.Value.Id }, _ => []);
@@ -169,15 +179,27 @@ public static class BuildValidation
         var displaced = WeaponRolling.ListDisplacedPerks(catalog, weapon)
             .Select(id => new BuildIssue(Severity.Warning,
                 $"{weapon.Name}: '{(catalog.Elements.TryGetValue(id, out var element) ? element.Name : id.Value)}' gives way to the other perk of its column — a column holds one perk."));
+        var catalyst = CheckCatalyst(catalog, weapon);
         return
         [
             .. misplaced,
             .. displaced,
+            .. catalyst,
             .. unknown.IsEmpty
                 ? []
                 : new[] { new BuildIssue(Severity.Info, $"{weapon.Name}'s roll: {string.Join(", ", unknown)} — not in the rule catalog yet, so {(unknown.Length == 1 ? "it sets" : "they set")} nothing off.") },
         ];
     }
+
+    /// <summary>A catalyst turned on that the excerpt doesn't give the weapon is a warning; one the catalog doesn't know sets nothing off.</summary>
+    private static IEnumerable<BuildIssue> CheckCatalyst(RuleCatalog catalog, WeaponLoadout weapon) =>
+        !weapon.Catalyst
+            ? []
+            : catalog.Manifest.FindWeaponKind(weapon).Bind(kind => kind.Catalyst).Match(
+                plug => catalog.FindElementByHash(plug.Value).IsSome()
+                    ? []
+                    : new[] { new BuildIssue(Severity.Info, $"{weapon.Name}'s catalyst: {catalog.Manifest.DescribeItemHash(plug.Value)} — not in the rule catalog yet, so it sets nothing off.") },
+                _ => [new BuildIssue(Severity.Warning, $"{weapon.Name} has no catalyst in the manifest excerpt, so catalyst: true does nothing.")]);
 
     private static IEnumerable<BuildIssue> CheckAspects(Build build, RuleCatalog catalog)
     {

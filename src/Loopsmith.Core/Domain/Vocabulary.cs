@@ -28,6 +28,7 @@ public enum ElementKind
     Fragment,
     ExoticArmor,
     ExoticWeapon,
+    Catalyst,       // an exotic weapon's catalyst: equipped only while the build turns it on
     ArmorSetBonus,
     ArmorMod,
     ArtifactPerk,

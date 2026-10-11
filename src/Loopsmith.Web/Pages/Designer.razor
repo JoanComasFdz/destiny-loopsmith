@@ -2,6 +2,7 @@
 @inject Workbench Workbench
 @inject BrowserInterop Browser
 @inject NavigationManager Navigation
+@inject BungieManifestJoining Manifest
 
 <PageTitle>@DescribePageTitle() · Loopsmith</PageTitle>
 
@@ -63,7 +64,7 @@
 
         <div class="designer-grid">
             <aside class="col-build">
-                <BuildPanel Build="session.Build" Issues="LoopDesigning.ListDesignIssues(session)" OnPickPerk="PickPerk" />
+                <BuildPanel Build="session.Build" Issues="LoopDesigning.ListDesignIssues(session)" OnPickPerk="PickPerk" OnSetCatalyst="SetCatalyst" />
             </aside>
             <div class="col-loop">
                 <ExplainPanel Build="session.Build" />
@@ -119,11 +120,55 @@
     private ElementReference shareInput;
 
     /// <summary>The designer shows the open loop; with none open, Home is where one is picked.</summary>
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         if (!Workbench.Session.IsSome())
         {
             Navigation.NavigateTo("", replace: true);                                            // impure
+            return;
+        }
+
+        await JoinManifestAsync();                                                               // impure
+    }
+
+    /// <summary>
+    /// What the open build names that the bundled excerpt lacks (a shared loop's DIM build), read from Bungie's full
+    /// manifest (once per tab: what Home already asked for isn't read again): the design as it is when the manifest
+    /// answers (an edit made meanwhile stays) is validated again with it and its steps replay.
+    /// </summary>
+    private async Task JoinManifestAsync()
+    {
+        if (Workbench.Session is not Optional<DesignSession>.Some opened)
+        {
+            return;
+        }
+
+        var lacking = LoopDesigning.ListUnknownHashes(opened.Value);                             // pure
+        var asked = Manifest.Asked;                                                              // impure (tab state)
+        var unknown = LoopDesigning.ListUnaskedHashes(asked, lacking);                           // pure
+        if (unknown.IsEmpty)
+        {
+            return;
+        }
+
+        var status = Workbench.Status;
+        var reading = LoopDesigning.DescribeManifestReading(unknown.Length);                     // pure
+        Workbench.Status = reading;                                                              // impure (UI state)
+        var joined = await Manifest.JoinAsync(unknown);                                          // impure
+        if (Workbench.Session is not Optional<DesignSession>.Some current)
+        {
+            return;
+        }
+
+        var used = LoopDesigning.UseJoinedManifest(current.Value, joined);                       // pure
+        if (used is Result<DesignSession, string>.Ok next)
+        {
+            Workbench.Session = Optional.Some(next.Value);                                       // impure (UI state)
+            Workbench.Status = status;                                                           // impure (UI state)
+        }
+        else if (used is Result<DesignSession, string>.Error failed)
+        {
+            Workbench.Status = $"{status} {failed.Failure}";                                     // impure (UI state)
         }
     }
 
@@ -177,23 +222,31 @@
             : Optional.Some(number);
 
     /// <summary>A perk picked in the build panel: the embedded build's weapon changes and the steps replay with it.</summary>
-    private void PickPerk(PerkPick pick)
+    private void PickPerk(PerkPick pick) =>
+        ApplyBuildEdit(session => LoopDesigning.PickWeaponPerk(session, pick.Weapon, pick.Column, pick.Perk));
+
+    /// <summary>A change to the embedded build: the new session when it succeeds, else its message in the status bar.</summary>
+    private void ApplyBuildEdit(Func<DesignSession, Result<DesignSession, string>> edit)
     {
         if (Workbench.Session is not Optional<DesignSession>.Some open)
         {
             return;
         }
 
-        var picked = LoopDesigning.PickWeaponPerk(open.Value, pick.Weapon, pick.Column, pick.Perk); // pure
-        if (picked is Result<DesignSession, string>.Ok next)
+        var edited = edit(open.Value);                                                           // pure
+        if (edited is Result<DesignSession, string>.Ok next)
         {
-            EditSession(_ => next.Value, scrollToEnd: false, keepSelection: true);
+            EditSession(_ => next.Value, scrollToEnd: false, keepSelection: true);              // impure (UI state)
         }
-        else if (picked is Result<DesignSession, string>.Error error)
+        else if (edited is Result<DesignSession, string>.Error error)
         {
-            Workbench.Status = error.Failure;
+            Workbench.Status = error.Failure;                                                    // impure (UI state)
         }
     }
+
+    /// <summary>An exotic's catalyst turned on or off: the embedded build's weapon changes and the steps replay with it.</summary>
+    private void SetCatalyst(CatalystToggle toggle) =>
+        ApplyBuildEdit(session => LoopDesigning.SetCatalyst(session, toggle.Weapon, toggle.On));
 
     /// <summary>Applies a pure edit to the open design (every edit is a new immutable session).</summary>
     private void EditSession(Func<DesignSession, DesignSession> edit, bool scrollToEnd, bool keepSelection = false)

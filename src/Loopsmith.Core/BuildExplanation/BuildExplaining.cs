@@ -27,10 +27,40 @@ public enum ExplanationStyle
 /// <summary>The static view of a build: what each trigger sets off, without simulating.</summary>
 public static class BuildExplaining
 {
-    public static ImmutableArray<ExplanationGroup> ExplainBuild(ValidatedBuild build)
+    public static ImmutableArray<ExplanationGroup> ExplainBuild(ValidatedBuild build) =>
+        ExplainEquipped(build, build.Equipped);
+
+    /// <summary>
+    /// What one element sets off in this build (its copies counted), grouped by trigger: an item's details. An element
+    /// the build doesn't equip is explained as one copy — what it would set off if it were.
+    /// </summary>
+    public static ImmutableArray<ExplanationGroup> ExplainElement(ValidatedBuild build, BuildElement element) =>
+        ExplainEquipped(build, [build.Equipped.Where(equipped => equipped.Element.Id == element.Id).Select(Optional.Some).FindFirstSome()
+            .UnwrapOr(new EquippedElement(element, 1))]);
+
+    /// <summary>One element's explanation as lines: each trigger, then what it sets off, its condition and its reason.</summary>
+    public static ImmutableArray<StyledLine> RenderElementExplanation(ImmutableArray<ExplanationGroup> groups) =>
+    [
+        .. groups.SelectMany(group => (ImmutableArray<StyledLine>)
+        [
+            StyledText.ToLine(0, group.Heading.ToSpan(group.Affinity == Affinity.Neutral ? Tone.Strong : group.Affinity.ToTone())),
+            .. group.Items.SelectMany(item => (ImmutableArray<StyledLine>)
+            [
+                new StyledLine(1,
+                [
+                    item.Outcomes.ToSpan(Tone.Plain),
+                    .. item.Condition.Match(c => [$" ({c.Value})".ToSpan(Tone.Muted)], _ => ImmutableArray<StyledSpan>.Empty),
+                    .. item.Likelihood == Likelihood.Chance ? [" (chance)".ToSpan(Tone.Muted)] : ImmutableArray<StyledSpan>.Empty,
+                ]),
+                .. item.Reason.Match(reason => [StyledText.ToLine(2, reason.Value.ToSpan(Tone.Muted))], _ => ImmutableArray<StyledLine>.Empty),
+            ]),
+        ]),
+    ];
+
+    private static ImmutableArray<ExplanationGroup> ExplainEquipped(ValidatedBuild build, ImmutableArray<EquippedElement> equippedElements)
     {
         var glossary = build.Catalog.Glossary;
-        var ruleItems = build.Equipped
+        var ruleItems = equippedElements
             .SelectMany(equipped => equipped.Element.Rules.Select(rule => (equipped.Element, equipped.Count, Rule: rule)))
             .Select((x, order) => (
                 Heading: DescribeHeading(glossary, x.Rule.On),
@@ -45,7 +75,7 @@ public static class BuildExplaining
                     x.Rule.Likelihood,
                     DescribeRuleCondition(build, x.Rule),
                     x.Rule.Reason)));
-        var passiveItems = build.Equipped
+        var passiveItems = equippedElements
             .SelectMany(equipped => equipped.Element.Passives.Select(passive => (equipped.Element, Passive: passive)))
             .Select((x, order) => (
                 Heading: x.Passive.When.IsEmpty ? "Always" : DomainPhrasing.Capitalize(glossary.DescribeConditions(x.Passive.When)),
