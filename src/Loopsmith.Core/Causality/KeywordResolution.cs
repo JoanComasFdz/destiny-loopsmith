@@ -35,6 +35,14 @@ public static class KeywordResolution
     public static Optional<StatusId> FindElementStatus(this RuleCatalog catalog, ElementId element) =>
         catalog.Glossary.Statuses.Keys.Where(status => element.IsStatusElement(status)).Take(1).Select(status => Optional.Some(status)).FindFirstSome();
 
+    /// <summary>The pickup an element is (the ionic-trace element: Ionic Trace), when the glossary has one of its id.</summary>
+    public static Optional<PickupId> FindElementPickup(this RuleCatalog catalog, ElementId element) =>
+        catalog.Glossary.Pickups.Keys.Where(pickup => IsKeywordElement(element, pickup.Value)).Take(1).Select(pickup => Optional.Some(pickup)).FindFirstSome();
+
+    /// <summary>The summon an element is, when the glossary has one of its id.</summary>
+    public static Optional<SummonId> FindElementSummon(this RuleCatalog catalog, ElementId element) =>
+        catalog.Glossary.Summons.Keys.Where(summon => IsKeywordElement(element, summon.Value)).Take(1).Select(summon => Optional.Some(summon)).FindFirstSome();
+
     /// <summary>The one rule both lookups follow: a keyword's element is the element of its id — its own effects.</summary>
     public static bool IsStatusElement(this ElementId element, StatusId status) =>
         IsKeywordElement(element, status.Value);

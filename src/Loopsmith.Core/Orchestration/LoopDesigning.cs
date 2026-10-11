@@ -421,11 +421,25 @@ public static class LoopDesigning
         StepStateShaping.ShapeStepState(session.Build, resolution.State, resolution.ActivePassives);
 
     /// <summary>
-    /// What a status switches on in this build, for its details: other elements' passives whose condition names it
-    /// (while Amplified: Spark of Frequency's extra Bolt Charge; Ionic Overclock, and on which weapons).
+    /// What in this build interacts with a keyword, for its details, role by role: Armor Charge — Elemental Charge gives
+    /// it, Grenade Kickstart uses it up; Amplified — Flow State gives it, and while Amplified Spark of Frequency's extra
+    /// Bolt Charge (and Ionic Overclock, on which weapons).
     /// </summary>
-    public static ImmutableArray<SwitchedOnLine> ExplainSwitchedOn(ValidatedBuild build, StatusId status) =>
-        SwitchedOnExplaining.ExplainSwitchedOn(build, status);
+    public static ImmutableArray<InteractionGroup> ExplainInteractions(ValidatedBuild build, KeywordRef keyword) =>
+        KeywordInteracting.ExplainInteractions(build, keyword);
+
+    /// <summary>
+    /// What an element is, as a label: a keyword by what it is in the game ("Arc buff", "Arc elemental pickup", "Pickup"),
+    /// anything else by its kind ("Fragment", "Armor mod").
+    /// </summary>
+    public static string DescribeElementType(ValidatedBuild build, ElementId element) =>
+        KeywordInteracting.FindKeyword(build.Catalog, element).Match(
+            keyword => build.Catalog.Glossary.DescribeKeywordKind(keyword.Value),
+            _ => build.Catalog.Elements.TryGetValue(element, out var found) ? found.Kind.DescribeElementKind() : "Element");
+
+    /// <summary>The keyword an element is (Bolt Charge, Ionic Trace), when it is one.</summary>
+    public static Optional<KeywordRef> FindKeyword(ValidatedBuild build, ElementId element) =>
+        KeywordInteracting.FindKeyword(build.Catalog, element);
 
     /// <summary>The build's weapons (by index) whose own perks give this buff: Slice is Festival Flight's.</summary>
     public static ImmutableArray<int> ListWeaponsGiving(ValidatedBuild build, StatusId buff) =>

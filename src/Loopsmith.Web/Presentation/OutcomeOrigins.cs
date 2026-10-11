@@ -10,7 +10,9 @@ namespace Loopsmith.Web.Presentation;
 /// <summary>
 /// Where an element of a step comes from, as a heading: what kind of thing it is and the item it sits on —
 /// "Fragment · Arcstrider", "Weapon perk · Festival Flight", "Armor mod · Luminopotent Mask", "Artifact perk · Tablet of
-/// Ruin", "Exotic armor", "Keyword" — with that item's icon (none when the build doesn't show one).
+/// Ruin", "Exotic armor"; a keyword every build has, by what it is in the game ("Arc buff" for Bolt Charge, "Arc
+/// elemental pickup" for Ionic Trace, "Pickup" for an Orb of Power) — with that item's icon (none when the build doesn't
+/// show one).
 /// </summary>
 public sealed record OutcomeOrigin(string Label, Optional<string> Icon);
 
@@ -53,7 +55,7 @@ public static class OutcomeOrigins
             ElementKind.ArmorSetBonus => DescribeSetOrigin(build.Catalog, source),
             ElementKind.ArtifactPerk => DescribeArtifactOrigin(build, source),
             ElementKind.ExoticArmor => new OutcomeOrigin("Exotic armor", Optional.None<string>()),
-            _ => new OutcomeOrigin("Keyword", Optional.None<string>()),
+            _ => new OutcomeOrigin(LoopDesigning.DescribeElementType(build, source.Source), Optional.None<string>()),
         };
 
     /// <summary>An ability, an aspect or a fragment: the subclass it is part of (Arcstrider), with its icon.</summary>

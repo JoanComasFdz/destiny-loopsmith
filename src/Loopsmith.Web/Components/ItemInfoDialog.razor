@@ -57,20 +57,26 @@
                             {
                                 <p class="info-rules-text">@facts.Value</p>
                             }
-                            <p class="muted info-note">No rule of its own yet: by itself it sets nothing off. What it does in this build is what it switches on.</p>
+                            <p class="muted info-note">No rule of its own yet: by itself it sets nothing off. What in this build deals with it is below.</p>
                         </div>
                         break;
-                    case InfoSection.SwitchesOn switches:
-                        <div class="info-card switches" data-testid="info-switches-on">
-                            <div class="info-source">@switches.Heading</div>
-                            @foreach (var effect in switches.Effects)
+                    case InfoSection.InBuild inBuild:
+                        <div class="info-card switches" data-testid="info-in-build">
+                            <div class="info-source">In this build</div>
+                            @foreach (var group in inBuild.Groups)
                             {
-                                <div class="info-switched" data-source="@effect.Heading.Name">
-                                    @RenderHeading(effect.Heading)
-                                    <p class="info-rules-text">@effect.Text</p>
-                                    @if (effect.Note is Optional<string>.Some note)
+                                <div class="info-role" data-role="@group.Heading">
+                                    <div class="info-role-head">@group.Heading</div>
+                                    @foreach (var item in group.Items)
                                     {
-                                        <p class="muted info-note">@note.Value</p>
+                                        <div class="info-switched" data-source="@item.Heading.Name">
+                                            @RenderHeading(item.Heading)
+                                            <p class="info-rules-text">@item.Text</p>
+                                            @if (item.Note is Optional<string>.Some note)
+                                            {
+                                                <p class="muted info-note">@note.Value</p>
+                                            }
+                                        </div>
                                     }
                                 </div>
                             }

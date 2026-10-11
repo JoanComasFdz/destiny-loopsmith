@@ -841,8 +841,11 @@ a.weapon-line-name:hover { color: var(--arc); text-decoration: underline; }
 .info-card.source { border-left-color: var(--exotic); }
 .info-card.switches { border-left-color: var(--aff, var(--arc)); }
 .info-card.switches .info-source { color: var(--aff, var(--arc)); }
-.info-switched { display: flex; flex-direction: column; gap: 4px; }
-.info-switched + .info-switched { padding-top: 6px; border-top: 1px solid var(--line); }
+.info-role { display: flex; flex-direction: column; gap: 6px; }
+.info-role + .info-role { padding-top: 8px; border-top: 1px solid var(--line); }
+.info-role-head { font-size: 12px; font-weight: 700; color: var(--text); }
+.info-switched { display: flex; flex-direction: column; gap: 4px; padding-left: 8px; }
+.info-switched + .info-switched { padding-top: 6px; border-top: 1px dashed rgba(38, 48, 70, .9); }
 .info-card.source .info-source { color: var(--exotic); }
 .info-quote { margin: 0; padding-left: 10px; border-left: 2px solid var(--line); font-size: 12.5px; font-style: italic; color: var(--muted); }
 .info-cite a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }

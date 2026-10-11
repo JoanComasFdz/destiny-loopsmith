@@ -95,7 +95,7 @@
         var icon = LoadoutShaping.FindElementIcon(Build.Catalog, source.Source);
         <span class="outcome-name-wrap">
             <button type="button" class="outcome-element @ToneStyling.ToToneClass(source.Affinity.ToTone()) @ToneStyling.ToAffinityClass(source.Affinity)"
-                    data-element="@source.Source.Value" title="@source.Kind.DescribeElementKind()"
+                    data-element="@source.Source.Value" title="@LoopDesigning.DescribeElementType(Build, source.Source)"
                     @onclick="() => ShowDetailsAsync(source.Source)" @onclick:stopPropagation="true"
                     @onmouseenter="() => Hover(key)" @onmouseleave="() => Unhover(key)" @onfocus="() => Hover(key)" @onblur="() => Unhover(key)">
                 @if (icon is Optional<string>.Some known)

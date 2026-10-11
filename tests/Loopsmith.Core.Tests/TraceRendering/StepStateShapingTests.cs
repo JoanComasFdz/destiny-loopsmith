@@ -65,7 +65,7 @@ public sealed class StepStateShapingTests
         var amplified = StatusId.From("amplified");
 
         var state = LoopDesigning.ShapeStepState(played, played.Resolutions[1]);
-        var details = LoopDesigning.ExplainSwitchedOn(played.Build, amplified);
+        var details = Assert.Single(LoopDesigning.ExplainInteractions(played.Build, new KeywordRef.Status(amplified)), group => group.Heading == "While Amplified").Interactions;
 
         var entry = Assert.Single(state.Buffs, buff => buff.Text == "Amplified");
         Assert.Equal(["Spark of Frequency"], entry.SwitchesOn.Select(effect => effect.SourceName));
@@ -96,7 +96,8 @@ public sealed class StepStateShapingTests
         Assert.Equal("Ionic Overclock", effect.SourceName);
         Assert.Equal([2], effect.Weapons);
         Assert.Contains(state.Buffs.Single(buff => buff.Text == "Amplified").SwitchesOn, switched => switched.SourceName == "Ionic Overclock");
-        Assert.Equal(Optional.Some($"On {fusion.Name}."), LoopDesigning.ExplainSwitchedOn(build, StatusId.From("amplified"))[1].Note);
+        var whileAmplified = Assert.Single(LoopDesigning.ExplainInteractions(build, new KeywordRef.Status(StatusId.From("amplified"))), group => group.Heading == "While Amplified");
+        Assert.Equal(Optional.Some($"On {fusion.Name}."), whileAmplified.Interactions[1].Note);
         Assert.DoesNotContain(build.Issues, issue => issue.Message.StartsWith("Ionic Overclock", StringComparison.Ordinal));
         Assert.Empty(LoopDesigning.ShapeStepState(played, played.Resolutions[0]).WeaponEffects);    // not Amplified yet
     }

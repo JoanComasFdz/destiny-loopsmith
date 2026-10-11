@@ -459,6 +459,21 @@ public static class DomainPhrasing
             })
             : "Status";
 
+    /// <summary>
+    /// What a keyword is in the game, as a label: a status's kind ("Arc buff", "Strand weapon buff", "Arc debuff"), an
+    /// elemental pickup ("Arc elemental pickup": Ionic Traces, Firesprites, Tangles…), a plain pickup (an Orb of Power:
+    /// "Pickup"), a summon ("Strand summon").
+    /// </summary>
+    public static string DescribeKeywordKind(this KeywordGlossary glossary, KeywordRef keyword) =>
+        keyword.Match(
+            status => glossary.DescribeStatusKind(status.Id),
+            pickup => glossary.Pickups.TryGetValue(pickup.Id, out var definition) && definition.Affinity != Affinity.Neutral
+                ? $"{definition.Affinity} elemental pickup"
+                : "Pickup",
+            summon => glossary.Summons.TryGetValue(summon.Id, out var definition)
+                ? $"{definition.DamageType} summon"
+                : "Summon");
+
     private static string DescribeAffinityPrefix(Affinity affinity) =>
         affinity == Affinity.Neutral ? "" : $"{affinity} ";
 
