@@ -59,7 +59,11 @@ public static class DomainPhrasing
 
     /// <summary>"grenade-launcher" → "Grenade Launcher": a weapon archetype as a label.</summary>
     public static string DescribeArchetype(string archetype) =>
-        string.Join(' ', archetype.Split('-', StringSplitOptions.RemoveEmptyEntries).Select(word => char.ToUpperInvariant(word[0]) + word[1..]));
+        ToTitleWords(archetype);
+
+    /// <summary>"heat-weapon" → "Heat Weapon", "reload" → "Reload": a rule's id as words.</summary>
+    private static string ToTitleWords(string id) =>
+        string.Join(' ', id.Split('-', StringSplitOptions.RemoveEmptyEntries).Select(word => char.ToUpperInvariant(word[0]) + word[1..]));
 
     /// <summary>A hash by its manifest name, or the number when the excerpt doesn't have it.</summary>
     public static string DescribeItemHash(this ManifestExcerpt manifest, ItemHash hash) =>
@@ -444,6 +448,23 @@ public static class DomainPhrasing
                 }.Where(fact => fact.Length > 0))
             : "";
 
+    /// <summary>"Arc buff", "Strand weapon buff", "Arc debuff": what a status is, as a label (a neutral one: "Buff").</summary>
+    public static string DescribeStatusKind(this KeywordGlossary glossary, StatusId status) =>
+        glossary.Statuses.TryGetValue(status, out var definition)
+            ? ToSentenceStart(DescribeAffinityPrefix(definition.Affinity) + definition.Kind switch
+            {
+                KeywordKind.WeaponBuff => "weapon buff",
+                KeywordKind.Debuff => "debuff",
+                _ => "buff",
+            })
+            : "Status";
+
+    private static string DescribeAffinityPrefix(Affinity affinity) =>
+        affinity == Affinity.Neutral ? "" : $"{affinity} ";
+
+    private static string ToSentenceStart(string text) =>
+        char.ToUpperInvariant(text[0]) + text[1..];
+
     /// <summary>A buff on you as the state shows it: "Bolt Charge", or "Bolt Charge (at max)" once the player declared it.</summary>
     public static string DescribeActiveBuff(this KeywordGlossary glossary, ActiveBuff buff) =>
         glossary.DescribeStatus(buff.Status) + (buff.AtMax ? " (at max)" : "");
@@ -454,8 +475,22 @@ public static class DomainPhrasing
             charges => $"+{charges.Extra} {charges.Ability.DescribeAbility()} charge",
             modify => $"+{modify.Change.FormatPercent()} {glossary.DescribeDamageSource(modify.Against)} damage",
             resist => $"{resist.Amount.FormatPercent()} damage resistance",
-            weapons => $"{string.Join("/", weapons.Archetypes)}: "
-                + string.Join(", ", weapons.Changes.Select(c => c.Change is GameValue.Unknown ? $"+{c.Stat}" : $"{c.Stat} {c.Change.FormatPercent()}")));
+            weapons => $"{DescribeArchetypes(weapons.Archetypes)}: "
+                + string.Join(", ", weapons.Changes.Select(change => DescribeStatChange(change))));
+
+    /// <summary>"Linear Fusion Rifles, Fusion Rifles and Heat Weapons": weapon archetypes as the game names them, plural.</summary>
+    public static string DescribeArchetypes(ImmutableArray<string> archetypes) =>
+        JoinWithAnd(archetypes.Select(archetype => DescribeArchetype(archetype) + "s").ToImmutableArray());
+
+    /// <summary>"+? Handling" (the source gives no number: "?", never 0), else "Reload 20%".</summary>
+    private static string DescribeStatChange(WeaponStatChange change) =>
+        change.Change is GameValue.Unknown
+            ? $"+{Unknown} {ToTitleWords(change.Stat)}"
+            : $"{ToTitleWords(change.Stat)} {change.Change.FormatPercent()}";
+
+    /// <summary>"a", "a and b", "a, b and c".</summary>
+    private static string JoinWithAnd(ImmutableArray<string> parts) =>
+        parts.Length <= 1 ? string.Concat(parts) : $"{string.Join(", ", parts[..^1])} and {parts[^1]}";
 
     // ── events and actions ─────────────────────────────────────────────────────
 

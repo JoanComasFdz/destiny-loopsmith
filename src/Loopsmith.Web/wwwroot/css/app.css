@@ -621,14 +621,13 @@ textarea { resize: vertical; }
 .hud-group[data-group="weapons"] .chips, .hud-group[data-group="ground"] .chips { justify-content: center; }
 .hud-group[data-group="debuffs"] { align-items: flex-end; text-align: right; }
 .hud-group[data-group="debuffs"] .chips { justify-content: flex-end; }
-.hud-group[data-group="active"] { align-items: flex-start; }
 .hud-label { color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
 .hud-chip { gap: 6px; font: inherit; font-size: 12px; text-align: left; }
 button.hud-chip { cursor: pointer; }
 button.hud-chip:hover, button.hud-chip:focus-visible { background: color-mix(in srgb, var(--aff, var(--line)) 20%, transparent); }
 .hud-weapon { display: inline-flex; align-items: center; gap: 4px; padding-left: 6px; border-left: 1px solid color-mix(in srgb, var(--aff, var(--line)) 45%, transparent); color: var(--text); }
 .hud-weapon img { width: 16px; height: 16px; border-radius: 2px; flex: none; }
-.passives { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 3px; }
+.hud-switches { padding-left: 6px; border-left: 1px solid color-mix(in srgb, var(--aff, var(--line)) 45%, transparent); color: var(--muted); font-size: 11px; }
 @media (max-width: 640px) {
     .hud-columns { grid-template-columns: minmax(0, 1fr); gap: 8px; }
     .hud-group, .hud-group[data-group] { display: grid; grid-template-columns: 64px minmax(0, 1fr); align-items: start; gap: 8px; text-align: left; }
@@ -840,6 +839,10 @@ a.weapon-line-name:hover { color: var(--arc); text-decoration: underline; }
 .info-card.rules { border-left-color: var(--arc); }
 .info-card.rules .info-source { color: var(--arc); }
 .info-card.source { border-left-color: var(--exotic); }
+.info-card.switches { border-left-color: var(--aff, var(--arc)); }
+.info-card.switches .info-source { color: var(--aff, var(--arc)); }
+.info-switched { display: flex; flex-direction: column; gap: 4px; }
+.info-switched + .info-switched { padding-top: 6px; border-top: 1px solid var(--line); }
 .info-card.source .info-source { color: var(--exotic); }
 .info-quote { margin: 0; padding-left: 10px; border-left: 2px solid var(--line); font-size: 12.5px; font-style: italic; color: var(--muted); }
 .info-cite a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }

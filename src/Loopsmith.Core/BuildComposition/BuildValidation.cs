@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Loopsmith.Core.Causality;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 using Loopsmith.Core.Phrasing;
@@ -29,6 +30,7 @@ public static class BuildValidation
             .Concat(CheckAspects(build, catalog))
             .Concat(CheckFragmentSlots(build, catalog))
             .Concat(CheckInertElements(elements.Select(e => e.Element)))
+            .Concat(CheckUnreachedWeapons(build, elements.Select(e => e.Element)))
             .Concat(CheckNotStacking(catalog, elements.Select(e => e.Element).Concat(ListKeywordElements(catalog).Select(e => e.Element))))
             .Concat(CheckPinnedCatalog(build, catalog))
             .ToImmutableArray();
@@ -176,6 +178,23 @@ public static class BuildValidation
             ? []
             : [new BuildIssue(Severity.Info, $"Unknown ({DomainPhrasing.Unknown}): {string.Join(", ", unknown)} — not in the rule catalog yet, so {(unknown.Length == 1 ? "it sets" : "they set")} nothing off.")];
     }
+
+    /// <summary>
+    /// A passive that changes weapon stats for archetypes none of the build's weapons is ("Ionic Overclock changes Linear
+    /// Fusion Rifles, Fusion Rifles and Heat Weapons"): it does nothing here. Not said while a weapon's archetype is unknown.
+    /// </summary>
+    private static IEnumerable<BuildIssue> CheckUnreachedWeapons(Build build, IEnumerable<BuildElement> elements) =>
+        build.HasKnownArchetypes()
+            ? elements
+                .DistinctBy(element => element.Id)
+                .SelectMany(element => element.Passives
+                    .Select(passive => passive.Modifier)
+                    .OfType<Passive.ModifyWeaponStats>()
+                    .Where(weapons => PassiveReaching.FindReach(build, weapons) is PassiveReach.NoWeapon)
+                    .Select(weapons => new BuildIssue(
+                        Severity.Info,
+                        $"{element.Name} changes {DomainPhrasing.DescribeArchetypes(weapons.Archetypes)}, and no weapon in this build is one, so it does nothing here.")))
+            : [];
 
     private static IEnumerable<BuildIssue> CheckLeftOut(Build build) =>
         build.LeftOut.IsEmpty

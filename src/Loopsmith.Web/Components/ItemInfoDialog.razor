@@ -50,6 +50,32 @@
                             }
                         </div>
                         break;
+                    case InfoSection.Status status:
+                        <div class="info-card rules" data-testid="info-rules">
+                            <div class="info-source">Loopsmith's rules</div>
+                            @if (status.Facts is Optional<string>.Some facts)
+                            {
+                                <p class="info-rules-text">@facts.Value</p>
+                            }
+                            <p class="muted info-note">No rule of its own yet: by itself it sets nothing off. What it does in this build is what it switches on.</p>
+                        </div>
+                        break;
+                    case InfoSection.SwitchesOn switches:
+                        <div class="info-card switches" data-testid="info-switches-on">
+                            <div class="info-source">@switches.Heading</div>
+                            @foreach (var effect in switches.Effects)
+                            {
+                                <div class="info-switched" data-source="@effect.Heading.Name">
+                                    @RenderHeading(effect.Heading)
+                                    <p class="info-rules-text">@effect.Text</p>
+                                    @if (effect.Note is Optional<string>.Some note)
+                                    {
+                                        <p class="muted info-note">@note.Value</p>
+                                    }
+                                </div>
+                            }
+                        </div>
+                        break;
                     case InfoSection.Catalyst catalyst:
                         @if (catalyst.Heading is Optional<SectionHeading>.Some heading)
                         {

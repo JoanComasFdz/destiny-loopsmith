@@ -138,9 +138,16 @@ caveats. Each step ends with its **state** — what is present after it — laid
 on you on the left (Bolt Charge, Amplified, Woven Mail), your weapons' buffs in the middle (a glossary
 `weaponBuff`: Slice, Unraveling Rounds, each with the weapon whose own perk gives it — Slice with Festival Flight),
 the debuffs on the pack on the right (Jolt, Sever, Unravel), the pickups on the ground below them (an Orb of
-Power waiting for `pickup:orb-of-power`; an Ionic Trace never waits, it collects itself), then the passives
-that hold right then. A phone stacks the four. Each name the rules have opens its details on a tap, and its
-facts ("up to x5 · 8s") show on hover. The CLI's `--state` prints the same four lines.
+Power waiting for `pickup:orb-of-power`; an Ionic Trace never waits, it collects itself). A phone stacks the
+four. A status that switches other elements' passives on says how many ("Amplified · 1 effect": Spark of
+Frequency's extra Bolt Charge); its details list them under **While Amplified, in this build**, each with where it
+reaches. A passive that changes weapon stats (Ionic Overclock: Linear Fusion Rifles, Fusion Rifles and Heat
+Weapons) shows in the weapons column next to the build's weapons of those types while it holds; when none of
+them is one, the details say it does nothing here and Validation says so too. A status's own effect (Woven
+Mail's damage resistance) is in its details, not in the state. Every status opens its details on a tap — one the
+rules have no element for (Amplified) shows the glossary's facts and what it switches on — and its facts ("up to
+x5 · 8s") show on hover. The CLI's `--state` prints the same four lines, then one `While <status>` line for each
+status that switches something on.
 Each step can be moved up or down, removed or dragged onto another step's place; the loop
 replays in its new order.
 

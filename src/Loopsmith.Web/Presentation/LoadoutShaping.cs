@@ -10,13 +10,15 @@ namespace Loopsmith.Web.Presentation;
 
 /// <summary>
 /// What tapping a square opens: an element of the rules (and Bungie's text for its item), an item only the manifest
-/// excerpt knows, an exotic weapon (its intrinsic, perks and catalyst) or its catalyst. Legendary armor and weapons
-/// open nothing: their perks and mods carry what there is to know.
+/// excerpt knows, an exotic weapon (its intrinsic, perks and catalyst) or its catalyst; a status of the state (Amplified,
+/// which has no element: the glossary's facts and what it switches on). Legendary armor and weapons open nothing: their
+/// perks and mods carry what there is to know.
 /// </summary>
 [Union]
 public partial record ItemDetails
 {
     partial record OfElement(ElementId Element);
+    partial record OfStatus(StatusId Status);
     partial record OfItem(ItemHash Hash);
     partial record OfWeapon(int Weapon);
     partial record OfCatalyst(int Weapon);

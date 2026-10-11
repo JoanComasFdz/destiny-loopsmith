@@ -1,27 +1,32 @@
 @* What is present at the end of a step (LoopDesigning.ShapeStepState), laid out like the game's HUD: the buffs on you on
-   the left, your weapons' buffs in the middle (each with the weapon whose perk gives it), the debuffs on the pack on
-   the right, the pickups on the ground below them, then the passives that hold. A phone stacks them. A name the rules
-   have as an element opens its details on a tap; its facts ("up to x5 · 8s") show on hover. *@
+   the left, your weapons' buffs in the middle (each with the weapon whose perk gives it) and what changes those weapons'
+   stats right then, the debuffs on the pack on the right, the pickups on the ground below them. A phone stacks them.
+   A status that switches other elements' effects on says how many; its details list them. Every status opens its
+   details on a tap (Amplified, which has no element, its glossary facts); its facts ("up to x5 · 8s") show on hover. *@
 <div class="step-hud" data-testid="step-state">
     <div class="hud-title">State after #@Number</div>
     <div class="hud-columns">
         @RenderGroup("buffs", "Buffs", State.Buffs, false)
-        @RenderGroup("weapons", "Weapons", State.Weapons, true)
+        <div class="hud-group" data-group="weapons">
+            <span class="hud-label">Weapons</span>
+            <span class="chips">
+                @if (State.Weapons.IsEmpty && State.WeaponEffects.IsEmpty)
+                {
+                    <span class="muted">none</span>
+                }
+                @foreach (var entry in State.Weapons)
+                {
+                    @RenderEntry(entry, true)
+                }
+                @foreach (var effect in State.WeaponEffects)
+                {
+                    @RenderWeaponEffect(effect)
+                }
+            </span>
+        </div>
         @RenderGroup("debuffs", "Debuffs", State.Debuffs, false)
     </div>
     @RenderGroup("ground", "Ground", State.Ground, false)
-    @if (!State.Active.IsEmpty)
-    {
-        <div class="hud-group" data-group="active">
-            <span class="hud-label">Active</span>
-            <ul class="passives">
-                @foreach (var active in State.Active)
-                {
-                    <li>@active.Text <span class="muted">[</span><span class="@ToneStyling.ToToneClass(active.Affinity.ToTone())">@active.SourceName</span><span class="muted">]</span></li>
-                }
-            </ul>
-        </div>
-    }
 </div>
 
 @code {
@@ -35,7 +40,7 @@
     [Parameter, EditorRequired]
     public int Number { get; set; }
 
-    /// <summary>A name tapped: the element whose details to show.</summary>
+    /// <summary>A name tapped: what to show the details of.</summary>
     [Parameter]
     public EventCallback<ItemDetails> OnShowDetails { get; set; }
 
@@ -56,24 +61,45 @@
         </div>
     };
 
+    /// <summary>A status or pickup: tappable when there are details to show (its element, or — a status — its glossary facts).</summary>
     private RenderFragment RenderEntry(StateEntry entry, bool withWeapons) => __builder =>
     {
         var weapons = withWeapons ? StateHudShaping.ListBuffWeapons(Build, entry) : [];
-        var facts = entry.Facts is Optional<string>.Some known ? known.Value : null;
-        if (entry.Element is Optional<ElementId>.Some element)
+        var title = StateHudShaping.DescribeEntryTitle(entry);
+        if (StateHudShaping.FindEntryDetails(entry) is Optional<ItemDetails>.Some shown)
         {
-            <button type="button" class="chip hud-chip @ToneStyling.ToAffinityClass(entry.Affinity)" data-keyword="@entry.Keyword.DescribeKeywordId()" title="@facts"
-                    @onclick="() => ShowDetailsAsync(element.Value)" @onclick:stopPropagation="true">
+            <button type="button" class="chip hud-chip @ToneStyling.ToAffinityClass(entry.Affinity)" data-keyword="@entry.Keyword.DescribeKeywordId()" title="@title"
+                    @onclick="() => OnShowDetails.InvokeAsync(shown.Value)" @onclick:stopPropagation="true">
                 <span>@entry.Text</span>
+                @RenderSwitches(entry)
                 @RenderWeapons(weapons)
             </button>
         }
         else
         {
-            <span class="chip hud-chip @ToneStyling.ToAffinityClass(entry.Affinity)" data-keyword="@entry.Keyword.DescribeKeywordId()" title="@facts">
+            <span class="chip hud-chip @ToneStyling.ToAffinityClass(entry.Affinity)" data-keyword="@entry.Keyword.DescribeKeywordId()" title="@title">
                 <span>@entry.Text</span>
+                @RenderSwitches(entry)
                 @RenderWeapons(weapons)
             </span>
+        }
+    };
+
+    /// <summary>A change to the stats of some of the build's weapons right then (Ionic Overclock on a Fusion Rifle), with those weapons.</summary>
+    private RenderFragment RenderWeaponEffect(WeaponEffect effect) => __builder =>
+    {
+        <button type="button" class="chip hud-chip @ToneStyling.ToAffinityClass(effect.Affinity)" data-effect="@effect.Source.Value" title="@effect.Text"
+                @onclick="() => OnShowDetails.InvokeAsync(new ItemDetails.OfElement(effect.Source))" @onclick:stopPropagation="true">
+            <span>@effect.SourceName</span>
+            @RenderWeapons(StateHudShaping.ListWeapons(Build, effect.Weapons))
+        </button>
+    };
+
+    private static RenderFragment RenderSwitches(StateEntry entry) => __builder =>
+    {
+        if (!entry.SwitchesOn.IsEmpty)
+        {
+            <span class="hud-switches" data-testid="switches-on">@StateHudShaping.DescribeSwitchesCount(entry)</span>
         }
     };
 
@@ -90,7 +116,4 @@
             </span>
         }
     };
-
-    private async Task ShowDetailsAsync(ElementId element) =>
-        await OnShowDetails.InvokeAsync(new ItemDetails.OfElement(element));                     // impure
 }

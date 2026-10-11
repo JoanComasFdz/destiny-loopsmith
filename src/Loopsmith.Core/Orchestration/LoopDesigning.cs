@@ -420,6 +420,13 @@ public static class LoopDesigning
     public static StepState ShapeStepState(DesignSession session, Resolution resolution) =>
         StepStateShaping.ShapeStepState(session.Build, resolution.State, resolution.ActivePassives);
 
+    /// <summary>
+    /// What a status switches on in this build, for its details: other elements' passives whose condition names it
+    /// (while Amplified: Spark of Frequency's extra Bolt Charge; Ionic Overclock, and on which weapons).
+    /// </summary>
+    public static ImmutableArray<SwitchedOnLine> ExplainSwitchedOn(ValidatedBuild build, StatusId status) =>
+        SwitchedOnExplaining.ExplainSwitchedOn(build, status);
+
     /// <summary>The build's weapons (by index) whose own perks give this buff: Slice is Festival Flight's.</summary>
     public static ImmutableArray<int> ListWeaponsGiving(ValidatedBuild build, StatusId buff) =>
         BuildValidation.ListWeaponsGiving(build.Catalog, build.Build, buff);
