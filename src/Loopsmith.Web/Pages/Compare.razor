@@ -274,7 +274,6 @@ else
             {
                 case Result<DesignSession, string>.Ok opened:
                     var session = opened.Value;
-                    var glossary = session.Build.Catalog.Glossary;
                     <header class="panel-head">
                         <h2>@session.Design.Name</h2>
                         <span class="panel-caption">@label</span>
@@ -290,7 +289,7 @@ else
                         @foreach (var step in session.Design.Steps)
                         {
                             <li>
-                                <span class="step-list-title">@glossary.DescribeAction(step.Action, session.Build.Build)</span>
+                                <span class="step-list-title">@session.Build.DescribeAction(step.Action)</span>
                                 <code class="token">@step.Action.ToActionToken()</code>
                                 @if (step.Note is Optional<string>.Some note)
                                 {

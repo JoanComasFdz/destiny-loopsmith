@@ -100,7 +100,7 @@ While Amplified -> +1 Bolt Charge per gain [Spark of Frequency] + Linear Fusion 
   Debuffs       Jolt
   Ground        none
   While Amplified  +1 Bolt Charge per gain [Spark of Frequency]
-#3 Bolt Charge at max
+#3 Bolt Charge at max (x10)
   Max Bolt Charge → New Tricks and +~40% grenade energy and heals you and allies [Shinobu's Vow] + Amplified (15s) [Flashover]
   Buffs         Reaper · Bolt Charge (at max) · Amplified · Armor Charge · New Tricks
   Weapons       Slice

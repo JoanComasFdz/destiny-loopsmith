@@ -25,7 +25,7 @@ public static class BuildValidation
             .ToImmutableArray();
         var issues = resolved.SelectMany(r => r.Issues)
             .Concat(CheckUnknownAbilities(build))
-            .Concat(CheckLeftOut(build))
+            .Concat(CheckLeftOut(build, catalog))
             .Concat(CheckRolls(build, catalog))
             .Concat(CheckAspects(build, catalog))
             .Concat(CheckFragmentSlots(build, catalog))
@@ -196,10 +196,14 @@ public static class BuildValidation
                         $"{element.Name} changes {DomainPhrasing.DescribeArchetypes(weapons.Archetypes)}, and no weapon in this build is one, so it does nothing here.")))
             : [];
 
-    private static IEnumerable<BuildIssue> CheckLeftOut(Build build) =>
-        build.LeftOut.IsEmpty
+    /// <summary>What the DIM loadout had that no rule knows yet (a legendary armor piece or a jump has no part in a loop: not a gap).</summary>
+    private static IEnumerable<BuildIssue> CheckLeftOut(Build build, RuleCatalog catalog)
+    {
+        var missing = LeftOutClassifying.ListMissing(catalog, build);
+        return missing.IsEmpty
             ? []
-            : [new BuildIssue(Severity.Info, $"Left out of the build: {build.LeftOut.DescribeLeftOut()} from the DIM loadout — not in the rule catalog yet.")];
+            : [new BuildIssue(Severity.Info, $"Left out of the build: {missing.DescribeLeftOut()} from the DIM loadout — not in the rule catalog yet.")];
+    }
 
     /// <summary>
     /// A weapon's roll, against the manifest excerpt: a pick outside its column's perks (or past its last column) is a
@@ -282,10 +286,11 @@ public static class BuildValidation
         }
     }
 
+    /// <summary>An element with no rules is a gap, unless its rules file says why it needs none (<c>inert</c>: damage only, outside the model).</summary>
     private static IEnumerable<BuildIssue> CheckInertElements(IEnumerable<BuildElement> elements) =>
         elements
             .DistinctBy(e => e.Id)
-            .Where(e => e.Rules.IsEmpty && e.Passives.IsEmpty)
+            .Where(e => e.Rules.IsEmpty && e.Passives.IsEmpty && !e.Inert.IsSome())
             .Select(e => new BuildIssue(Severity.Warning, $"'{e.Name}' has no authored rules yet — it is inert in the trace."));
 
     /// <summary>

@@ -66,5 +66,6 @@ elements:
     # Nothing in a loop reacts to reload speed (see Spark of Frequency's reload buff,
     # hunter/arc.yaml). The enhanced trait's values (+13 / +55 / +65 / +85 / +100 Reload Speed) belong
     # to another plug.
+    inert: "Reload speed isn't part of a loop: Loopsmith counts no ammo and no reloads."
     rules: []
     passives: []

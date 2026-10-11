@@ -19,7 +19,7 @@ internal static class ElementParsing
     private static readonly ImmutableArray<string> ElementKeys =
     [
         "id", "name", "kind", "affinity", "class", "hash", "fragmentSlots", "ability", "description", "source",
-        "rules", "passives",
+        "rules", "passives", "inert",
     ];
 
     private static readonly ImmutableArray<string> AbilityKeys = ["kind", "charges", "chunkScalar", "baseCooldown"];
@@ -61,13 +61,21 @@ internal static class ElementParsing
                 map.ReadOptional("ability", ReadAbilityProfile),
                 map.ReadOptional("fragmentSlots", ReadNonNegativeInteger),
                 map.ReadOrDefault("source", ReadProvenance, ToAuthored(map)),
-                (_, id, name, kind, affinity, guardianClass, hashes, description, rules, passives, ability, fragmentSlots, source) =>
+                map.ReadOptional("inert", YamlReading.ToText),
+                (_, id, name, kind, affinity, guardianClass, hashes, description, rules, passives, ability, fragmentSlots, source, inert) =>
                     new BuildElement(
-                        id, name, kind, affinity, guardianClass, hashes, description, rules, passives, ability, fragmentSlots, source))
+                        id, name, kind, affinity, guardianClass, hashes, description, rules, passives, ability, fragmentSlots, source, inert))
             .Bind(element => Combine(
                 CheckFragmentSlots(map, element),
                 CheckAbilityProfile(map, element),
-                (_, _) => map.ToLocated(element))));
+                CheckInert(map, element),
+                (_, _, _) => map.ToLocated(element))));
+
+    /// <summary>An element with a reason to have no rules has none: <c>inert</c> with rules or passives would hide a real gap.</summary>
+    private static Result<Unit, Errors> CheckInert(YamlMap map, BuildElement element) =>
+        element.Inert.IsSome() && (!element.Rules.IsEmpty || !element.Passives.IsEmpty)
+            ? map.FailAtKey<Unit>("inert", "inert is only for an element with no rules and no passives")
+            : Succeed<Unit>(new Unit.Value());
 
     /// <summary>An omitted <c>source</c> means "authored here": the file and the element's first line.</summary>
     private static Provenance ToAuthored(YamlMap map) =>

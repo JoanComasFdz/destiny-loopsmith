@@ -26,7 +26,8 @@ public static class OutcomeApplication
             strikeTarget => StrikeTarget(build, state, outcome, strikeTarget),
             modifyDamage => AnnotateFact(state, outcome, modifyDamage.Change.ReadCertainty(), "value unknown"),
             restoreHealth => AnnotateFact(state, outcome, restoreHealth.Amount.ReadCertainty(), "value unknown"),
-            resetCooldown => KeepUnchanged(state, outcome, ""));
+            resetCooldown => KeepUnchanged(state, outcome, ""),
+            collect => Collect(state, outcome, collect));
 
     /// <summary><c>full</c> is one whole charge (known); a fraction is as certain as its value.</summary>
     private static Certainty ReadGrantCertainty(EnergyGrant grant) =>
@@ -72,6 +73,12 @@ public static class OutcomeApplication
 
         return new Application(state.PutPickup(spawn.Pickup), ToApplied(outcome, Certainty.Known, "on the ground"), []);
     }
+
+    /// <summary>Picks up what is on the ground (Powerful Attraction's orbs): it goes, and a pickup event follows; nothing there, nothing happens.</summary>
+    private static Application Collect(GameState state, Outcome outcome, Outcome.Collect collect) =>
+        state.HasPickup(collect.Pickup)
+            ? new Application(state.DropPickup(collect.Pickup), ToApplied(outcome, Certainty.Known, Optional.None<string>()), [new PendingEvent.Ready(new GameEvent.PickedUp(collect.Pickup))])
+            : KeepUnchanged(state, outcome, "nothing on the ground");
 
     private static Application SpawnSummon(ValidatedBuild build, GameState state, Outcome outcome, Outcome.SpawnSummon summon)
     {

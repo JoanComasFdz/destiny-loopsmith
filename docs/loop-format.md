@@ -81,12 +81,15 @@ then no longer on the ground. A weapon action for an empty slot, or a pickup tha
 **States you declare** (ADRs D3). What only play decides — that a threshold is reached, that a status
 has ended, that the next enemies are a new pack — the player declares as a step of its own:
 
-* `max:<status>` — "Bolt Charge at max": that buff is at its maximum. It raises `StacksMaxed`, so every
+* `max:<status>` — "Bolt Charge at max (x10)": that buff is at its maximum. The label names the build's cap, a
+  fact: the glossary's `maxStacks`, or the cap a `raiseMaxStacks` passive states for its copies (Charged Up: "Armor
+  Charge at max (x4)" with one copy — [rule-format.md](rule-format.md#passives)); the player declares it reached, nothing counts toward it.
+  It raises `StacksMaxed`, so every
   `stacksMaxed` rule fires and cascades, and the buff stays declared at max (the `atMax` condition reads
   it) until a rule consumes or removes it, or an `end:` step ends it. In the Skip Grenade build:
 
   ```
-  #5 Bolt Charge at max
+  #5 Bolt Charge at max (x10)
     Max Bolt Charge → New Tricks and +~40% grenade energy and heals you and allies [Shinobu's Vow] + Amplified (15s) [Flashover]
   ```
 
@@ -113,7 +116,7 @@ has ended, that the next enemies are a new pack — the player declares as a ste
 (`grenade:kill`, `kinetic`, `grenade:kill:3`, `max:bolt-charge`, `end:amplified`, `pack:new`). Every token written
 reads back as the same action (`grenade:hit` is written `grenade`). Labels read "Grenade (kill 3)",
 "Festival Flight (hit 5)" (a weapon by its build name), "Class ability (in the air)",
-"Pick up Orb of Power", "Bolt Charge at max", "Amplified ends", "New pack".
+"Pick up Orb of Power", "Bolt Charge at max (x10)", "Amplified ends", "New pack".
 
 **What `play` and the web designer offer.** Only steps that can happen: the abilities, the equipped
 weapons, the pickups on the ground and a group **States you declare** — `pack:new` always, `max:` for
@@ -195,8 +198,13 @@ in that column, else the one perk a column that doesn't roll has (an exotic's), 
 of its slot (the slot the manifest gives the mod; other mods are general) — with Bungie's icons from the
 manifest excerpt; what the rules don't know sits where DIM would show it, dimmed. It also lists the
 left-out items under **Not in Loopsmith yet** (collapsed, with how many of each part: open it to see them), by their
-manifest name, each a link to its light.gg page; the build check adds `Unknown (?): …` and `Left out of the build: …` as info. A loadout for
-another class than its subclass's is an error, and so is text that isn't a loadout.
+manifest name, each a link to its light.gg page; the build check adds `Unknown (?): …` and `Left out of the build: …` as info.
+What the manifest says has no part in a loop is not a gap, so it sits apart, under **No part in a loop** (collapsed),
+grouped by why: a legendary armor piece (its set's bonuses already count from the pieces worn; the piece carries
+stats and mod slots) and a jump. An element the rules mark `inert` ([rule-format.md](rule-format.md#elements):
+Skip Grenade, Feeding Frenzy, the resistance mods) is known: its details say "No rules needed." and why, and the
+build check doesn't warn about it. A loadout for another class than its subclass's is an error, and so is text that
+isn't a loadout.
 
 **Picking a weapon's perks.** A DIM link usually carries the weapon, not its roll, so the designer lets you pick
 it: click a perk square (a column that rolls) and choose among what the manifest says that column rolls

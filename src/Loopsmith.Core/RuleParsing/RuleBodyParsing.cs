@@ -24,11 +24,11 @@ internal static class RuleBodyParsing
     private static readonly ImmutableArray<string> OutcomeNames =
     [
         "grantEnergy", "convertStacksToEnergy", "applyBuff", "removeBuff", "debuffTarget", "spawn",
-        "summon", "strikeTarget", "modifyDamage", "restoreHealth", "resetCooldown",
+        "summon", "strikeTarget", "modifyDamage", "restoreHealth", "resetCooldown", "collect",
     ];
 
     private static readonly ImmutableArray<string> PassiveNames =
-        ["extraStacks", "extraCharges", "modifyDamage", "resistDamage", "modifyWeaponStats"];
+        ["extraStacks", "extraCharges", "modifyDamage", "resistDamage", "modifyWeaponStats", "raiseMaxStacks"];
 
     internal static Result<Rule, Errors> ReadRule(ReferenceScope scope, YamlValue value) =>
         value.ToMap().Bind(map => Combine(
@@ -48,7 +48,14 @@ internal static class RuleBodyParsing
             map.ReadRequired("effect", effect => ReadPassive(scope, effect)),
             map.ReadOrDefault("when", when => ReadConditions(scope, when), []),
             map.ReadOptional("reason", YamlReading.ToText),
-            (_, effect, when, reason) => new PassiveRule(effect, when, reason)));
+            (_, effect, when, reason) => new PassiveRule(effect, when, reason))
+            .Bind(passive => CheckAlwaysRaised(map, passive)));
+
+    /// <summary>A raised cap is the build's, a fact that always holds (ADRs D3): a <c>raiseMaxStacks</c> takes no <c>when</c>.</summary>
+    private static Result<PassiveRule, Errors> CheckAlwaysRaised(YamlMap map, PassiveRule passive) =>
+        passive.Modifier is Passive.RaiseMaxStacks && !passive.When.IsEmpty
+            ? map.FailAtKey<PassiveRule>("when", "raiseMaxStacks raises the build's cap, which always holds, so it takes no when")
+            : Succeed(passive);
 
     // ── Triggers (on) ────────────────────────────────────────────────────────────────────
 
@@ -187,6 +194,7 @@ internal static class RuleBodyParsing
                 .Map(Outcome (change) => new Outcome.ModifyDamage(change.Against, change.Change)),
             "restoreHealth" => ReadRestoreHealth(entry.Value),
             "resetCooldown" => ReadVocabularyWord<AbilityKind>(entry.Value).Map(Outcome (kind) => new Outcome.ResetCooldown(kind)),
+            "collect" => scope.ReadPickup(entry.Value).Map(Outcome (pickup) => new Outcome.Collect(pickup)),
             _ => entry.Value.FailAt<Outcome>(DescribeUnknown("outcome", entry.Key, OutcomeNames)),
         });
 
@@ -287,6 +295,7 @@ internal static class RuleBodyParsing
                 .Map(Passive (change) => new Passive.ModifyDamage(change.Against, change.Change)),
             "resistDamage" => ReadGameValue(entry.Value).Map(Passive (amount) => new Passive.ResistDamage(amount)),
             "modifyWeaponStats" => ReadModifyWeaponStats(entry.Value),
+            "raiseMaxStacks" => ReadRaiseMaxStacks(scope, entry.Value),
             _ => entry.Value.FailAt<Passive>(DescribeUnknown("passive effect", entry.Key, PassiveNames)),
         });
 
@@ -296,6 +305,14 @@ internal static class RuleBodyParsing
             map.ReadRequired("status", scope.ReadBuff),
             map.ReadRequired("extra", ReadStackCount),
             Passive (_, status, extra) => new Passive.ExtraStacks(status, extra)));
+
+    /// <summary><c>raiseMaxStacks: { status: armor-charge, max: "4 | 5 | 6" }</c>: only a status that stacks has a cap to raise.</summary>
+    private static Result<Passive, Errors> ReadRaiseMaxStacks(ReferenceScope scope, YamlValue value) =>
+        value.ToMap().Bind(map => Combine(
+            map.CheckKeys(["status", "max"]),
+            map.ReadRequired("status", scope.ReadStackingBuff),
+            map.ReadRequired("max", ReadGameValue),
+            Passive (_, status, max) => new Passive.RaiseMaxStacks(status, max)));
 
     private static Result<Passive, Errors> ReadExtraCharges(YamlValue value) =>
         value.ToMap().Bind(map => Combine(

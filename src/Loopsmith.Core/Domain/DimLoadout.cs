@@ -21,3 +21,26 @@ public enum LoadoutPart { Item, SubclassPlug, ArmorMod, ArtifactPerk }
 /// Kept with the build (unknown is data), so whoever opens the loop sees what is missing.
 /// </summary>
 public sealed record LeftOutItem(LoadoutPart Part, ItemHash Hash);
+
+/// <summary>
+/// Why a DIM loadout's item is outside its build: no rule knows it yet (a gap), or it has no part in a loop — a
+/// legendary armor piece (stats and mod slots; its set's bonuses count from the pieces worn), a jump — and why.
+/// </summary>
+[Union]
+public partial record LeftOutReason
+{
+    partial record NotInRules();
+    partial record NoLoopEffect(string Why);
+}
+
+/// <summary>A left-out item with no part in a loop, and why (Luminopotent Mask: "A Luminopotent piece: …").</summary>
+public sealed record NoLoopEffectItem(LeftOutItem Item, string Why);
+
+public static class LeftOutReading
+{
+    /// <summary>A gap: no rule knows the item yet (not one with no part in a loop).</summary>
+    public static bool IsMissing(this LeftOutReason reason) =>
+        reason.Match(
+            _ => true,
+            _ => false);
+}

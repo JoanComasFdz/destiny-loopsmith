@@ -359,7 +359,8 @@ public static class DomainPhrasing
             modify => $"+{modify.Change.FormatPercent()} {glossary.DescribeDamageSource(modify.Against)} damage",
             heal => (heal.IncludesAllies ? "heals you and allies" : "heals you")
                 + (heal.Amount is GameValue.Unknown ? "" : $" {heal.Amount.FormatPercent()}"),
-            reset => $"refills {reset.Which.DescribeAbility()}");
+            reset => $"refills {reset.Which.DescribeAbility()}",
+            collect => $"collects {glossary.DescribePickup(collect.Pickup)} from the ground");
 
     /// <summary>
     /// Several outcomes of one rule as one phrase, with values narrowed to the copies equipped and
@@ -438,15 +439,23 @@ public static class DomainPhrasing
             ? stated
             : glossary.Statuses.TryGetValue(status, out var definition) ? definition.Duration : Optional.None<Seconds>();
 
-    /// <summary>A status's facts from the glossary: "up to x10", "15s" — shown, never counted (ADRs D1).</summary>
-    public static string DescribeStatusFacts(this KeywordGlossary glossary, StatusId status) =>
-        glossary.Statuses.TryGetValue(status, out var definition)
-            ? string.Join(" · ", new[]
-                {
-                    definition.MaxStacks.Match(max => $"up to x{max.Value.Value}", _ => ""),
-                    definition.Duration.Match(duration => duration.Value.FormatSeconds(), _ => ""),
-                }.Where(fact => fact.Length > 0))
-            : "";
+    /// <summary>
+    /// A status's facts: "up to x10" (the build's cap: Charged Up raises Armor Charge's), "15s" from the glossary — shown,
+    /// never counted (ADRs D1); none when the glossary gives neither.
+    /// </summary>
+    public static Optional<string> DescribeStatusFacts(this ValidatedBuild build, StatusId status)
+    {
+        var duration = build.Catalog.Glossary.Statuses.TryGetValue(status, out var definition) ? definition.Duration : Optional.None<Seconds>();
+        var facts = new[] { build.DescribeStackCap(status).Map(cap => $"up to {cap}"), duration.Map(FormatSeconds) }
+            .OfType<Optional<string>.Some>()
+            .Select(fact => fact.Value)
+            .ToImmutableArray();
+        return facts.IsEmpty ? Optional.None<string>() : Optional.Some(string.Join(" · ", facts));
+    }
+
+    /// <summary>"x4": the build's cap of a status that stacks (<see cref="GlossaryReading.ReadStackCap"/>), a fact; none for one that doesn't.</summary>
+    public static Optional<string> DescribeStackCap(this ValidatedBuild build, StatusId status) =>
+        build.ReadStackCap(status).Map(cap => $"x{cap.FormatNumber()}");
 
     /// <summary>"Arc buff", "Strand weapon buff", "Arc debuff": what a status is, as a label (a neutral one: "Buff").</summary>
     public static string DescribeStatusKind(this KeywordGlossary glossary, StatusId status) =>
@@ -491,7 +500,8 @@ public static class DomainPhrasing
             modify => $"+{modify.Change.FormatPercent()} {glossary.DescribeDamageSource(modify.Against)} damage",
             resist => $"{resist.Amount.FormatPercent()} damage resistance",
             weapons => $"{DescribeArchetypes(weapons.Archetypes)}: "
-                + string.Join(", ", weapons.Changes.Select(change => DescribeStatChange(change))));
+                + string.Join(", ", weapons.Changes.Select(change => DescribeStatChange(change))),
+            raise => $"{glossary.DescribeStatus(raise.Status)} up to x{raise.Max.FormatNumber()}");
 
     /// <summary>"Linear Fusion Rifles, Fusion Rifles and Heat Weapons": weapon archetypes as the game names them, plural.</summary>
     public static string DescribeArchetypes(ImmutableArray<string> archetypes) =>
@@ -521,20 +531,21 @@ public static class DomainPhrasing
 
     /// <summary>
     /// "Grenade (kill)", "Grenade (kill 3)", "Festival Flight (hit 5)", "Class ability", "Pick up Orb of Power",
-    /// "Bolt Charge at max", "Amplified ends", "New pack".
+    /// "Bolt Charge at max (x10)", "Amplified ends", "New pack".
     /// </summary>
-    public static string DescribeAction(this KeywordGlossary glossary, PlayerAction action, Build build) =>
+    public static string DescribeAction(this ValidatedBuild build, PlayerAction action) =>
         action.Match(
             cast => $"{Capitalize(cast.Kind.ToAbilityKind().DescribeAbility())} ({DescribeHit(cast.Hit, cast.Targets)})",
             use => use.Airborne ? "Class ability (in the air)" : "Class ability",
-            fire => $"{DescribeWeapon(build, fire.Slot, fire.Slot.ToString())} ({DescribeHit(fire.Hit, fire.Targets)})",
-            collect => $"Pick up {glossary.DescribePickup(collect.Pickup)}",
-            declare => glossary.DescribeDeclaration(declare.Declaration));
+            fire => $"{DescribeWeapon(build.Build, fire.Slot, fire.Slot.ToString())} ({DescribeHit(fire.Hit, fire.Targets)})",
+            collect => $"Pick up {build.Catalog.Glossary.DescribePickup(collect.Pickup)}",
+            declare => build.DescribeDeclaration(declare.Declaration));
 
-    public static string DescribeDeclaration(this KeywordGlossary glossary, StateDeclaration declaration) =>
+    /// <summary>"Armor Charge at max (x4)": the max names the build's cap (Charged Up raises it), a fact the player declares reached.</summary>
+    private static string DescribeDeclaration(this ValidatedBuild build, StateDeclaration declaration) =>
         declaration.Match(
-            max => $"{glossary.DescribeStatus(max.Status)} at max",
-            end => $"{glossary.DescribeStatus(end.Status)} ends",
+            max => $"{build.Catalog.Glossary.DescribeStatus(max.Status)} at max" + build.DescribeStackCap(max.Status).Match(cap => $" ({cap.Value})", _ => ""),
+            end => $"{build.Catalog.Glossary.DescribeStatus(end.Status)} ends",
             _ => "New pack");
 
     /// <summary>"kill", "hit", and with more than one target "kill 3", "hit 5".</summary>

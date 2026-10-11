@@ -308,7 +308,6 @@ public static class LoopDesigning
     public static ImmutableArray<TriggerOption> ListTriggerOptions(DesignSession session)
     {
         var build = session.Build;
-        var glossary = build.Catalog.Glossary;
         var previous = session.Resolutions.Length switch
         {
             0 => [],
@@ -320,7 +319,7 @@ public static class LoopDesigning
             .Select(candidate => new TriggerOption(
                 candidate.Action,
                 candidate.Action.ToActionToken(),
-                glossary.DescribeAction(candidate.Action, build.Build),
+                build.DescribeAction(candidate.Action),
                 candidate.Group,
                 !previous.Contains(candidate.Action) && !session.Resolutions.IsEmpty))
             .ToImmutableArray();
@@ -435,6 +434,18 @@ public static class LoopDesigning
     /// </summary>
     public static string DescribeElementType(ValidatedBuild build, ElementId element) =>
         KeywordInteracting.DescribeElementType(build.Catalog, element);
+
+    /// <summary>What a left-out item is: a gap (no rule knows it yet) or something with no part in a loop, and why.</summary>
+    public static LeftOutReason ClassifyLeftOut(ValidatedBuild build, LeftOutItem item) =>
+        LeftOutClassifying.ClassifyLeftOut(build.Catalog, item);
+
+    /// <summary>The left-out items no rule knows yet: what "Not in Loopsmith yet" lists.</summary>
+    public static ImmutableArray<LeftOutItem> ListMissing(ValidatedBuild build) =>
+        LeftOutClassifying.ListMissing(build.Catalog, build.Build);
+
+    /// <summary>The left-out items with no part in a loop (a legendary armor piece, a jump), each with why: what "No part in a loop" lists.</summary>
+    public static ImmutableArray<NoLoopEffectItem> ListNoLoopEffect(ValidatedBuild build) =>
+        LeftOutClassifying.ListNoLoopEffect(build.Catalog, build.Build);
 
     /// <summary>The keyword an element is (Bolt Charge, Ionic Trace), when it is one.</summary>
     public static Optional<KeywordRef> FindKeyword(ValidatedBuild build, ElementId element) =>

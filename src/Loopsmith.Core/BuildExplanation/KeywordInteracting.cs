@@ -8,10 +8,10 @@ namespace Loopsmith.Core.BuildExplanation;
 
 /// <summary>
 /// How an element of the build deals with a keyword: it gives it (a buff, a debuff, a pickup, a summon), reacts to it
-/// (its trigger names it), needs it (its guard reads it), uses it up, strikes with it, changes it (a passive on it), or —
-/// a passive whose condition names it — is switched on by it.
+/// (its trigger names it), needs it (its guard reads it), uses it up, collects it (a pickup, from the ground: Powerful
+/// Attraction), strikes with it, changes it (a passive on it), or — a passive whose condition names it — is switched on by it.
 /// </summary>
-public enum InteractionRole { Gives, ReactsTo, UsesUp, Needs, Strikes, Changes, SwitchesOn }
+public enum InteractionRole { Gives, ReactsTo, UsesUp, Collects, Needs, Strikes, Changes, SwitchesOn }
 
 /// <summary>
 /// One way an element of the build deals with a keyword: the element (its name, kind and affinity), what it does
@@ -24,8 +24,8 @@ public sealed record InteractionGroup(InteractionRole Role, string Heading, Immu
 
 /// <summary>
 /// Pure: what in a build interacts with a keyword (Armor Charge: Elemental Charge gives it, Grenade Kickstart uses it
-/// up), role by role, each rule once — under the first role it has: reacts to it, uses it up, gives it, needs it,
-/// strikes with it. The keyword's own element (its own rules, in its details already) is left out, and so is a guard on
+/// up), role by role, each rule once — under the first role it has: reacts to it, uses it up, collects it, gives it,
+/// needs it, strikes with it. The keyword's own element (its own rules, in its details already) is left out, and so is a guard on
 /// the keyword itself in a rule's text ("while Armor Charge" under Armor Charge).
 /// </summary>
 public static class KeywordInteracting
@@ -64,6 +64,7 @@ public static class KeywordInteracting
         {
             (InteractionRole.ReactsTo, IsNamedBy(keyword, rule.On)),
             (InteractionRole.UsesUp, rule.Then.Any(outcome => IsUsingUp(keyword, outcome))),
+            (InteractionRole.Collects, rule.Then.Any(outcome => IsCollecting(keyword, outcome))),
             (InteractionRole.Gives, rule.Then.Any(outcome => IsGiving(keyword, outcome))),
             (InteractionRole.Needs, rule.When.Any(condition => IsNamedBy(keyword, condition))),
             (InteractionRole.Strikes, rule.Then.Any(outcome => IsStriking(keyword, outcome))),
@@ -119,6 +120,7 @@ public static class KeywordInteracting
             _ => false,
             _ => false,
             _ => false,
+            _ => false,
             _ => false);
 
     private static bool IsGiving(KeywordRef keyword, Outcome outcome) =>
@@ -133,7 +135,23 @@ public static class KeywordInteracting
             _ => false,
             _ => false,
             _ => false,
+            _ => false,
             _ => false);
+
+    private static bool IsCollecting(KeywordRef keyword, Outcome outcome) =>
+        outcome.Match(
+            _ => false,
+            _ => false,
+            _ => false,
+            _ => false,
+            _ => false,
+            _ => false,
+            _ => false,
+            _ => false,
+            _ => false,
+            _ => false,
+            _ => false,
+            collect => keyword is KeywordRef.Pickup pickup && pickup.Id == collect.Pickup);
 
     private static bool IsStriking(KeywordRef keyword, Outcome outcome) =>
         outcome.Match(
@@ -147,6 +165,7 @@ public static class KeywordInteracting
             strike => IsStatus(keyword, strike.Via),
             _ => false,
             _ => false,
+            _ => false,
             _ => false);
 
     private static bool IsChanging(KeywordRef keyword, Passive passive) =>
@@ -155,7 +174,8 @@ public static class KeywordInteracting
             _ => false,
             modify => IsVia(keyword, modify.Against),
             _ => false,
-            _ => false);
+            _ => false,
+            raise => IsStatus(keyword, raise.Status));
 
     private static bool IsAnyStatus(KeywordRef keyword, ImmutableArray<StatusId> statuses) =>
         statuses.Any(status => IsStatus(keyword, status));
@@ -215,6 +235,7 @@ public static class KeywordInteracting
             InteractionRole.ReactsTo => $"Reacts to {name}",
             InteractionRole.Needs => $"Needs {name}",
             InteractionRole.UsesUp => $"Uses up {name}",
+            InteractionRole.Collects => $"Collects {name}",
             InteractionRole.Strikes => $"Strikes with {name}",
             InteractionRole.Changes => $"Changes {name}",
             _ => $"While {name}",

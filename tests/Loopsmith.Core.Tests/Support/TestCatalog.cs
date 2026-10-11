@@ -62,7 +62,8 @@ public static class TestCatalog
             passives.IsDefault ? [] : passives,
             ability ?? Optional.None<AbilityProfile>(),
             fragmentSlots is { } slots ? Optional.Some(slots) : Optional.None<int>(),
-            new Provenance.Authored("test", 1));
+            new Provenance.Authored("test", 1),
+            Optional.None<string>());
 
     public static AbilityProfile Profile(AbilityKind kind, int charges = 1, GameValue? chunkScalar = null) =>
         new(kind, charges, chunkScalar ?? new GameValue.Unknown(), new GameValue.Unknown());

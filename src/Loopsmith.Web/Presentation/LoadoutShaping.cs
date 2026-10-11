@@ -132,13 +132,13 @@ public static class LoadoutShaping
 
     private static readonly ImmutableArray<ArmorSlot> ArmorSlots = [ArmorSlot.Helmet, ArmorSlot.Arms, ArmorSlot.Chest, ArmorSlot.Legs, ArmorSlot.ClassItem];
 
-    private sealed record LeftOutEntry(LoadoutPart Part, Optional<ManifestItem> Item, ItemHash Hash);
+    private sealed record LeftOutEntry(LoadoutPart Part, Optional<ManifestItem> Item, ItemHash Hash, LeftOutReason Reason);
 
     public static LoadoutView ShapeLoadout(ValidatedBuild build)
     {
         var b = build.Build;
         var catalog = build.Catalog;
-        var leftOut = b.LeftOut.Select(item => new LeftOutEntry(item.Part, catalog.Manifest.FindItem(item.Hash), item.Hash)).ToImmutableArray();
+        var leftOut = b.LeftOut.Select(item => new LeftOutEntry(item.Part, catalog.Manifest.FindItem(item.Hash), item.Hash, LoopDesigning.ClassifyLeftOut(build, item))).ToImmutableArray();
         var plugs = leftOut.Where(entry => entry.Part == LoadoutPart.SubclassPlug).ToImmutableArray();
         var mods = b.ArmorMods
             .Select(id => (Tile: DescribeElement(catalog, id), Slot: catalog.FindElementItem(id).Bind(item => item.ReadArmorSlot())))
@@ -237,12 +237,18 @@ public static class LoadoutShaping
         new(name, item.Icon.Map(ToIconUrl), affinity, item.Tier, inRules, description, 1, details);
 
     /// <summary>
-    /// A hash the build left out: the manifest's name and icon when the excerpt has it, else just the hash. It opens its
+    /// A hash the build left out: the manifest's name and icon when the excerpt has it, else just the hash — dimmed when no
+    /// rule knows it yet, not when it has no part in a loop (a set's armor piece, a jump: known, not missing). It opens its
     /// manifest details, unless it is legendary armor or a legendary weapon (DIM's perks and mods say more).
     /// </summary>
     private static IconTile DescribeLeftOut(RuleCatalog catalog, LeftOutEntry entry) =>
         entry.Item.Match(
-            known => DescribeItem(known.Value, known.Value.Name, false, Optional.Some("Not in Loopsmith's rules yet: left out of the build."), ToAffinity(known.Value),
+            known => DescribeItem(
+                known.Value,
+                known.Value.Name,
+                !entry.Reason.IsMissing(),
+                Optional.Some(entry.Reason.Match(_ => "Not in Loopsmith's rules yet: left out of the build.", none => none.Why)),
+                ToAffinity(known.Value),
                 IsLegendaryGear(known.Value) ? Optional.None<ItemDetails>() : Optional.Some<ItemDetails>(new ItemDetails.OfItem(known.Value.Hash))),
             _ => DescribeUnknownHash(catalog, entry.Hash));
 
@@ -331,7 +337,7 @@ public static class LoadoutShaping
     private static IconTile DescribeTrait(RuleCatalog catalog, ItemHash hash) =>
         catalog.FindElementByHash(hash).Match(
             element => DescribeElement(catalog, element.Value.Id),
-            _ => DescribeLeftOut(catalog, new LeftOutEntry(LoadoutPart.Item, catalog.Manifest.FindItem(hash), hash)));
+            _ => DescribeLeftOut(catalog, new LeftOutEntry(LoadoutPart.Item, catalog.Manifest.FindItem(hash), hash, new LeftOutReason.NotInRules())));
 
     private static bool IsKind<TKind>(Optional<ManifestItem> item)
         where TKind : ManifestKind =>

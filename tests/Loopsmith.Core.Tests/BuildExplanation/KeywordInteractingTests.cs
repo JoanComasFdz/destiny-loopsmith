@@ -24,15 +24,17 @@ public sealed class KeywordInteractingTests
         RuleFiles.Bind(CatalogLoading.ParseCatalog).Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
 
     [Fact]
-    public void Armor_Charge_is_given_by_Elemental_Charge_and_the_orb_and_used_up_by_Grenade_Kickstart()
+    public void Armor_Charge_is_given_by_Elemental_Charge_and_the_orb_used_up_by_Grenade_Kickstart_and_raised_by_Charged_Up()
     {
         var groups = Explain(new KeywordRef.Status(StatusId.From("armor-charge")));
 
-        Assert.Equal(["Gives Armor Charge", "Uses up Armor Charge"], groups.Select(group => group.Heading));
+        Assert.Equal(["Gives Armor Charge", "Uses up Armor Charge", "Changes Armor Charge"], groups.Select(group => group.Heading));
         Assert.Equal(["Elemental Charge", "Orb of Power"], groups[0].Interactions.Select(interaction => interaction.SourceName));
         Assert.Equal("Pick up Ionic Trace → +1 Armor Charge (chance)", groups[0].Interactions[0].Text);
         var kickstart = Assert.Single(groups[1].Interactions);
         Assert.Equal(("Grenade Kickstart", "Grenade thrown → spends Armor Charge → +?% grenade energy per stack"), (kickstart.SourceName, kickstart.Text));   // its "while Armor Charge" goes without saying here
+        var chargedUp = Assert.Single(groups[2].Interactions);
+        Assert.Equal(("Charged Up", "Armor Charge up to x4|5|6"), (chargedUp.SourceName, chargedUp.Text));
     }
 
     [Fact]

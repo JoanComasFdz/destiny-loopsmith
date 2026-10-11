@@ -13,7 +13,8 @@ public sealed record AbilityProfile(AbilityKind Kind, int Charges, GameValue Chu
 /// An ability, aspect, fragment, exotic, armor-set bonus, mod, artifact perk, weapon trait or keyword: all "an element
 /// with rules". <see cref="Hashes"/> are its manifest hashes (ADRs D14): the first is its own, the others copies of
 /// the same item with the same text (a mod's artifice copy, a class ability's copy on each subclass). Empty when not
-/// known yet.
+/// known yet. <see cref="Inert"/>: why it has no rules on purpose (damage only, outside the model), so the build check
+/// doesn't take it for a gap.
 /// </summary>
 public sealed record BuildElement(
     ElementId Id,
@@ -27,7 +28,8 @@ public sealed record BuildElement(
     ImmutableArray<PassiveRule> Passives,
     Optional<AbilityProfile> Ability,
     Optional<int> FragmentSlots,
-    Provenance Source);
+    Provenance Source,
+    Optional<string> Inert);
 
 /// <summary>Entry of the keyword glossary (the Compendium's "Statuses").</summary>
 public sealed record StatusDefinition(
