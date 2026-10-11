@@ -137,7 +137,8 @@ away is wasted potential. **Decision.** A rule-level `doesNotStackWith: [<elemen
 on the side that gives nothing. When a rule of a listed element fires on the same event, the
 declaring rule gives way: it is reported as fired with no outcomes, naming that element
 (`FiredRule.NotStackedWith`; the trace reads "doesn't stack with Dielectric [Tempest Strike]"). With
-both elements equipped the build check warns ("… with both equipped, it is wasted"), `explain`
+both elements equipped the build check notes it ("… doesn't stack with 'Dielectric'.", info: a crafter may keep
+both for what else each gives), `explain`
 annotates the bullet, a loop's analysis shows it at each step where it happens, and the loop graph
 routes both arrows through a "Doesn't stack" node. Parsing rejects an id that isn't an element of
 the rules, the rule's own element, an empty list, and a `doesNotStackWith` that leads back to its
@@ -350,11 +351,14 @@ login: a public OAuth client (no secret in a static site, D25), read-only, its t
 dropped. `StatLoading` (pure) reads Bungie's answers, matches the build's pieces with the player's copies (a pick
 when they own several) and adds the total up the way DIM adds up a loadout — each copy's roll and masterwork,
 the build's stat mods, tuning and fragments — from the manifest excerpt's `statPlugs`, every plug that changes
-an armor stat (shipped, so a phone needn't download Bungie's whole item table). Or it takes a character's
-current stats, as Bungie has them. **Consequence.** Stats are as exact as DIM's for a DIM loadout's pieces; a
-hand-written build names no pieces, so it takes typed or a character's stats. A build keeps no instance ids
-(a long link carries none; a dim.gg share does, but the build is by hash), so a piece owned twice is the player's
-pick. A piece whose roll
-the excerpt doesn't know (a newer manifest) is said so, never guessed (D12). The login's page is the site's
+an armor stat (shipped, so a phone needn't download Bungie's whole item table). **Consequence.** Stats are as
+exact as DIM's for a DIM loadout's pieces; a hand-written build names no pieces, so it takes typed stats until
+pieces are picked. A dim.gg share names each item's copy (its instance id): the build keeps them (`armorCopies`),
+so the share's owner gets its own pieces and their stats at once; anyone else is told to pick their own, and a long
+link (no ids) is like anyone else's. After the login the Stats section says only which of the two it is, in one
+line: no total of its own. A piece picked from the player's armor is worn by the build — its exotic or a left-out
+piece — and its set bonuses follow the pieces it wears (`ArmorSwapping`), so the loop the stats come from is the
+loop that plays; a build wears one exotic. A piece whose roll the excerpt doesn't know (a newer manifest) leaves
+the stats as they were, never guessed (D12). The login's page is the site's
 `/login`, Bungie's one redirect URL ([docs/hosting.md](docs/hosting.md), "Bungie login").
 

@@ -6,8 +6,11 @@ using Loopsmith.Core.Functional;
 
 namespace Loopsmith.Core.LoadoutImporting;
 
-/// <summary>An equipped item of a DIM loadout: its manifest hash and, for a subclass, the plugs by socket index.</summary>
-internal sealed record DimLoadoutItem(ItemHash Hash, ImmutableArray<ItemHash> Plugs);
+/// <summary>
+/// An equipped item of a DIM loadout: its manifest hash, the plugs by socket index (a subclass's, a weapon's perks) and
+/// the copy it is (its instance id: a dim.gg share names it, a long link from the share's page doesn't).
+/// </summary>
+internal sealed record DimLoadoutItem(ItemHash Hash, ImmutableArray<ItemHash> Plugs, Optional<ItemInstanceId> Instance);
 
 /// <summary>
 /// What Loopsmith reads of a DIM loadout (DIM's API type <c>Loadout</c>): its name, class (none for "any class"),
@@ -70,7 +73,10 @@ internal static class DimLoadoutParsing
 
     /// <summary>An item with a hash and its <c>socketOverrides</c> (<c>{ "0": hash, … }</c>: a subclass's plugs, a weapon's perks) in socket order.</summary>
     private static Optional<DimLoadoutItem> ReadItem(JsonElement item) =>
-        FindProperty(item, "hash").Bind(ReadHash).Map(hash => new DimLoadoutItem(hash, ReadPlugs(item)));
+        FindProperty(item, "hash").Bind(ReadHash).Map(hash => new DimLoadoutItem(
+            hash,
+            ReadPlugs(item),
+            FindProperty(item, "id").Bind(ReadText).Bind(id => ItemInstanceId.TryFrom(id) is { IsSuccess: true } outcome ? Optional.Some(outcome.ValueObject) : Optional.None<ItemInstanceId>())));
 
     private static ImmutableArray<ItemHash> ReadPlugs(JsonElement item) =>
         FindProperty(item, "socketOverrides").Match(

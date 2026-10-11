@@ -31,9 +31,9 @@
         </div>
     </header>
 
-    <LoadoutPanel Build="Build" OnPickPerk="OnPickPerk" OnSetCatalyst="OnSetCatalyst" />
+    <LoadoutPanel Build="Build" OnPickPerk="OnPickPerk" OnSetCatalyst="OnSetCatalyst" Profile="Profile" OnPickArmor="OnPickArmor" />
 
-    <StatsPanel Build="Build" Rows="sheet.Stats" OnSetStats="OnSetStats" />
+    <StatsPanel Build="Build" OnSetStats="OnSetStats" Profile="Profile" Note="ArmorNote" OnLoggedIn="OnLoggedIn" OnLoggedOut="OnLoggedOut" />
 
     @if (!sheet.LeftOut.IsEmpty)
     {
@@ -107,9 +107,29 @@
     [Parameter]
     public EventCallback<CatalystToggle> OnSetCatalyst { get; set; }
 
-    /// <summary>Stats set in the Stats section, typed or from the player's armor (the designer applies them); none: shown only.</summary>
+    /// <summary>Stats typed in the Stats section (the designer applies them); none: shown only.</summary>
     [Parameter]
     public EventCallback<StatLine> OnSetStats { get; set; }
+
+    /// <summary>The player's armor after their Bungie login: ⋯ next to an armor piece picks from it (none: logged out, no ⋯).</summary>
+    [Parameter]
+    public Optional<BungieProfile> Profile { get; set; } = Optional.None<BungieProfile>();
+
+    /// <summary>What the Stats section says after the login.</summary>
+    [Parameter]
+    public Optional<string> ArmorNote { get; set; } = Optional.None<string>();
+
+    /// <summary>The login read the player's profile (the designer keeps it).</summary>
+    [Parameter]
+    public EventCallback<BungieProfile> OnLoggedIn { get; set; }
+
+    /// <summary>The player logged out (the designer forgets their armor; the build keeps its stats and pieces).</summary>
+    [Parameter]
+    public EventCallback OnLoggedOut { get; set; }
+
+    /// <summary>A piece picked from the player's armor for a slot (the designer swaps it into the build).</summary>
+    [Parameter]
+    public EventCallback<ArmorPick> OnPickArmor { get; set; }
 
     /// <summary>light.gg's page for a manifest hash: what the item is, until Loopsmith reads the manifest itself.</summary>
     private static string ToLookupUrl(ItemHash hash) =>

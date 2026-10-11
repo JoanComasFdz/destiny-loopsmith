@@ -393,8 +393,10 @@ textarea { resize: vertical; }
 .stat-bar { height: 6px; border-radius: 3px; background: #1a2130; overflow: hidden; }
 .stat-bar > span { display: block; height: 100%; background: var(--kinetic); }
 .stat-value { text-align: right; font-family: var(--mono); }
+.stats.compact { align-self: stretch; gap: 3px; }
+.stats.compact .stat { font-size: 11px; }
 
-/* The Stats section: typed by hand, or added up from the player's armor after a Bungie login. */
+/* The Stats section: typed by hand, or from the player's armor after a Bungie login (then one line says how). */
 .stats-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .stats-head .section-label { margin-bottom: 6px; }
 .stats-edit { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px 10px; }
@@ -406,19 +408,8 @@ textarea { resize: vertical; }
 .stats-login { margin-top: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel-2); display: flex; flex-direction: column; align-items: flex-start; gap: 8px; font-size: 13px; }
 .stats-login p { margin: 0; }
 .stats-login-note { color: var(--muted); font-size: 12px; line-height: 1.45; }
-.stats-login .status { margin: 0; }
-.armor-choices { display: flex; flex-direction: column; gap: 8px; align-self: stretch; }
-.armor-choice { display: flex; flex-direction: column; gap: 3px; }
-.armor-choice-name { font-weight: 650; }
-.armor-copy { display: flex; align-items: flex-start; gap: 6px; font-size: 12px; overflow-wrap: anywhere; }
-.armor-copy input { margin-top: 2px; }
-.stats-total { overflow-wrap: anywhere; }
-.stats-parts { font-size: 12px; align-self: stretch; }
-.stats-parts summary { cursor: pointer; color: var(--muted); }
-.stats-parts ul { margin: 6px 0 0; padding-left: 18px; }
-.stats-part-name { font-weight: 600; }
-.stats-note { font-size: 12px; }
-.stats-character { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; overflow-wrap: anywhere; }
+.stats-armor { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 8px 12px; margin-top: 10px; }
+.stats-armor-note { flex: 1 1 200px; margin: 0; color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
 @media (max-width: 420px) { .stats-edit { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
 .issues { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; font-size: 12px; }
@@ -823,6 +814,16 @@ button.hud-chip:hover, button.hud-chip:focus-visible { background: color-mix(in 
 .armor-row { display: flex; flex-wrap: wrap; gap: 10px; }
 .armor-piece { display: flex; gap: 4px; align-items: flex-start; }
 .armor-piece > .icon-tile { width: calc(var(--tile) * 1.15); height: calc(var(--tile) * 1.15); }
+.armor-pick { align-self: flex-start; min-width: 28px; padding: 2px 6px; line-height: 1; font-size: 16px; letter-spacing: .05em; }
+.armor-picker { display: flex; flex-direction: column; gap: 10px; }
+.armor-options { grid-template-columns: repeat(auto-fill, calc(var(--tile) * 1.3)); gap: 6px; }
+.armor-options .icon-tile { width: calc(var(--tile) * 1.3); height: calc(var(--tile) * 1.3); }
+.armor-options .icon-tile.focused { outline: 2px solid var(--arc); outline-offset: 1px; }
+.armor-options .icon-tile.worn { box-shadow: 0 0 0 2px color-mix(in srgb, var(--ok) 70%, transparent); }
+.armor-worn-mark { position: absolute; right: 1px; top: 0; padding: 0 3px; font-size: 11px; font-weight: 800; color: #fff; background: rgba(0, 0, 0, .7); }
+.armor-option-details { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel-2); font-size: 13px; overflow-wrap: anywhere; }
+.armor-option-name { font-weight: 650; }
+.armor-picker-hint, .armor-picker-note { margin: 0; font-size: 12px; }
 .icon-grid.mods { grid-template-columns: repeat(2, var(--mod-tile)); }
 .icon-grid.mods .icon-tile, .general-mods .icon-tile { width: var(--mod-tile); height: var(--mod-tile); }
 .general-mods .icon-grid { grid-template-columns: repeat(auto-fill, var(--mod-tile)); }

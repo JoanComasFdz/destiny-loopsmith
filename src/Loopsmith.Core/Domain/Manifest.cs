@@ -7,8 +7,8 @@ namespace Loopsmith.Core.Domain;
 /// <summary>
 /// What an item of the Bungie manifest is, as Loopsmith shows it (the manifest's own item types, grouped). A weapon has
 /// its slot, damage type, trait columns (the perks a roll selects; none when the excerpt doesn't say), intrinsic perk
-/// (its frame, or an exotic's own perk) and, for an exotic, its catalyst; armor its slot, intrinsic perk (an exotic's)
-/// and the armor set it belongs to; an armor mod the slot it only fits (none: a general mod); a catalyst the perks it
+/// (its frame, or an exotic's own perk) and, for an exotic, its catalyst; armor its slot, intrinsic perk (an exotic's),
+/// the armor set it belongs to and the class that wears it (none: any class); an armor mod the slot it only fits (none: a general mod); a catalyst the perks it
 /// grants. A <see cref="Perk"/> is one of the manifest's sandbox perks: what a catalyst or an armor set grants.
 /// </summary>
 [Union]
@@ -31,7 +31,7 @@ public partial record ManifestKind
     partial record WeaponPerk();
     partial record IntrinsicPerk();
     partial record ExoticCatalyst(ImmutableArray<ItemHash> Perks);
-    partial record Armor(ArmorSlot Slot, Optional<ItemHash> Intrinsic, Optional<ItemHash> Set);
+    partial record Armor(ArmorSlot Slot, Optional<ItemHash> Intrinsic, Optional<ItemHash> Set, Optional<GuardianClass> Class);
     partial record ArmorMod(Optional<ArmorSlot> Slot);
     partial record ArtifactPerk();
     partial record Artifact(ImmutableArray<ItemHash> Perks);   // a season's artifact and every perk it unlocks

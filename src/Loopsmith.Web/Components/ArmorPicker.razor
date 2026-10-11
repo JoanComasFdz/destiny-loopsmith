@@ -1,0 +1,134 @@
+@* The armor picker for a slot of the build: the player's pieces for it (after their Bungie login), Bungie's icons. It
+   opens showing the piece the build wears; another piece's stats show on hover (a mouse) or a first tap; a click on a
+   piece already showing (or "Wear this piece") picks it, and the designer swaps it into the build
+   (LoopDesigning.PickArmorPiece). Picking the piece the build already wears just closes the picker. *@
+@{
+    var view = ArmorPickerShaping.ShapePicker(Build, LoopDesigning.ListArmorOptions(Build, Profile, Slot));
+    var shown = view.Options.Where(option => focused == Optional.Some(option.Instance)).Select(Optional.Some).FindFirstSome();
+}
+<Modal Title="@view.Title" Size="wide" OnClose="OnClose">
+    <div class="armor-picker" data-testid="armor-picker" data-slot="@Slot">
+        @if (view.Options.IsEmpty)
+        {
+            <p class="muted" data-testid="armor-picker-empty">Your account has no @Slot.DescribeArmorSlot().ToLowerInvariant() for a @Build.Build.Class that Loopsmith can list.</p>
+        }
+        else
+        {
+            <div class="icon-grid armor-options" role="listbox" aria-label="@view.Title">
+                @foreach (var option in view.Options)
+                {
+                    var instance = option.Instance;
+                    <button type="button" role="option" aria-selected="@(focused == Optional.Some(instance) ? "true" : "false")"
+                            class="icon-tile tappable item @DescribeTier(option.Tile) @(option.Worn ? "worn" : "") @(focused == Optional.Some(instance) ? "focused" : "")"
+                            title="@option.Tile.Name — @option.RollText" aria-label="@option.Tile.Name" data-instance="@instance.Value"
+                            @onpointerenter="e => Hover(instance, e)" @onclick="() => ChooseAsync(instance)">
+                        @if (option.Tile.Icon is Optional<string>.Some icon)
+                        {
+                            <img src="@icon.Value" alt="" loading="lazy" />
+                        }
+                        else
+                        {
+                            <span class="icon-initials">@(option.Tile.Name.Length > 0 ? option.Tile.Name[..1] : "?")</span>
+                        }
+                        @if (option.Worn)
+                        {
+                            <span class="armor-worn-mark" aria-hidden="true">✓</span>
+                        }
+                    </button>
+                }
+            </div>
+            @if (shown is Optional<ArmorOptionView>.Some details)
+            {
+                var piece = details.Value;
+                <div class="armor-option-details" data-testid="armor-option-details">
+                    <div class="armor-option-name">@piece.Tile.Name@(piece.Set is Optional<string>.Some set ? $" · {set.Value} set" : "")</div>
+                    @if (piece.Roll is Optional<ImmutableArray<StatBar>>.Some roll)
+                    {
+                        <StatBars Bars="roll.Value" Class="compact" TestId="armor-option-roll" />
+                    }
+                    else
+                    {
+                        <div class="muted">@ArmorPickerShaping.UnreadRoll</div>
+                    }
+                    <div class="muted">@piece.Place@(piece.Worn ? " · the build wears this one" : "")</div>
+                    @if (!piece.Worn)
+                    {
+                        <button type="button" class="btn primary small" data-action="wear-piece" @onclick="() => PickAsync(piece.Instance)">Wear this piece</button>
+                    }
+                </div>
+            }
+            else
+            {
+                <p class="muted armor-picker-hint">Tap a piece to see its stats; tap it again to wear it.</p>
+            }
+        }
+        @foreach (var note in view.Notes)
+        {
+            <p class="muted armor-picker-note">@note</p>
+        }
+    </div>
+</Modal>
+
+@code {
+    [Parameter, EditorRequired]
+    public ValidatedBuild Build { get; set; } = null!;
+
+    [Parameter, EditorRequired]
+    public BungieProfile Profile { get; set; } = null!;
+
+    [Parameter, EditorRequired]
+    public ArmorSlot Slot { get; set; }
+
+    /// <summary>A piece picked: the designer swaps it into the build.</summary>
+    [Parameter]
+    public EventCallback<ArmorPick> OnPick { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    private Optional<ItemInstanceId> focused = Optional.None<ItemInstanceId>();
+
+    /// <summary>The copy the build wears in this slot, when the player owns it: the picker opens showing it.</summary>
+    private Optional<ItemInstanceId> worn = Optional.None<ItemInstanceId>();
+
+    protected override void OnInitialized()
+    {
+        var options = LoopDesigning.ListArmorOptions(Build, Profile, Slot);                      // pure
+        var wearing = options.Options.Where(option => option.Worn).Select(option => Optional.Some(option.Armor.InstanceId)).FindFirstSome(); // pure
+        worn = wearing;                                                                          // impure (component state)
+        focused = wearing;                                                                       // impure (component state)
+    }
+
+    /// <summary>A mouse over a piece shows its details (a touch doesn't hover: its first tap does).</summary>
+    private void Hover(ItemInstanceId instance, PointerEventArgs e)
+    {
+        if (e.PointerType == "mouse")
+        {
+            focused = Optional.Some(instance);                                                  // impure (component state)
+        }
+    }
+
+    /// <summary>A click on the piece showing wears it (the one the build wears closes the picker); on another piece, shows that one.</summary>
+    private async Task ChooseAsync(ItemInstanceId instance)
+    {
+        if (focused == Optional.Some(instance) && worn == Optional.Some(instance))
+        {
+            await OnClose.InvokeAsync();                                                         // impure
+            return;
+        }
+
+        if (focused == Optional.Some(instance))
+        {
+            await PickAsync(instance);                                                           // impure
+            return;
+        }
+
+        focused = Optional.Some(instance);                                                       // impure (component state)
+    }
+
+    private async Task PickAsync(ItemInstanceId instance) =>
+        await OnPick.InvokeAsync(new ArmorPick(Slot, instance));                                 // impure
+
+    private static string DescribeTier(IconTile tile) =>
+        tile.Tier.Match(tier => tier.Value == ItemTier.Exotic ? "exotic" : tier.Value == ItemTier.Legendary ? "legendary" : "", _ => "");
+}

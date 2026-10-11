@@ -96,6 +96,9 @@ public sealed record ArmorSetView(string Name, Optional<int> Pieces, ImmutableAr
 /// <summary>A perk picked in the designer: weapon <see cref="Weapon"/>'s column <see cref="Column"/> (both 0-based, in the build's order), or back to "?" when none.</summary>
 public sealed record PerkPick(int Weapon, int Column, Optional<ItemHash> Perk);
 
+/// <summary>A piece picked from the player's armor for a slot of the build: the copy, by its instance id.</summary>
+public sealed record ArmorPick(ArmorSlot Slot, ItemInstanceId Instance);
+
 /// <summary>An armor slot: the piece in it (when the loadout names one) and the mods that only fit that slot, one tile each.</summary>
 public sealed record ArmorView(ArmorSlot Slot, Optional<IconTile> Piece, ImmutableArray<IconTile> Mods);
 
@@ -179,6 +182,17 @@ public static class LoadoutShaping
             [.. LoopDesigning.ListArmorSets(build).Select(set => DescribeArmorSet(catalog, set))],
             GroupCopies(LoopDesigning.ListLooseSetBonuses(build).Select(id => DescribeElement(catalog, id))));
     }
+
+    /// <summary>The armor rows to show: the slots with a piece or a mod; every slot when the player can pick pieces (after a login).</summary>
+    public static ImmutableArray<ArmorView> ListArmorRows(LoadoutView view, bool everySlot) =>
+        everySlot
+            ? [.. ArmorSlots.Select(slot => view.Armor.Where(row => row.Slot == slot).Select(Optional.Some).FindFirstSome()
+                .UnwrapOr(new ArmorView(slot, Optional.None<IconTile>(), [])))]
+            : view.Armor;
+
+    /// <summary>An armor piece of the player's as a square: its name, icon and rarity (it opens nothing: the picker shows its details).</summary>
+    public static IconTile DescribeArmorItem(ManifestItem item) =>
+        DescribeItem(item, item.Name, true, Optional.None<string>(), Affinity.Neutral, Optional.None<ItemDetails>());
 
     /// <summary>light.gg's page for an item of the manifest (a sandbox perk has none).</summary>
     public static Optional<string> ToPageUrl(RuleCatalog catalog, ItemHash hash) =>

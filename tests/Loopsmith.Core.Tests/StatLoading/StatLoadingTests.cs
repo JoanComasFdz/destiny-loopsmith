@@ -15,7 +15,7 @@ namespace Loopsmith.Core.Tests.StatLoading;
 /// characters, the build's pieces matched with the player's copies, and the total added up the way DIM adds up a
 /// loadout (each copy's roll and masterwork, the build's stat mods, Balanced Tuning, its fragments).
 /// </summary>
-public sealed class StatLoadingTests
+public sealed partial class StatLoadingTests
 {
     private static readonly Result<ImmutableArray<SourceText>, string> RuleFiles = FileSourceFetching.ReadRuleFiles(RepoFiles.ToPath("rules"));   // impure
 
@@ -100,8 +100,6 @@ public sealed class StatLoadingTests
         Assert.Equal(new ArmorPlace.Vault(), profile.Armor.Single(armor => armor.InstanceId == ItemInstanceId.From("1")).Place);
         Assert.Equal(new ArmorPlace.Equipped(GuardianClass.Hunter), profile.Armor.Single(armor => armor.InstanceId == ItemInstanceId.From("2")).Place);
         Assert.Equal(Optional.Some(11), profile.Armor.Single(armor => armor.InstanceId == ItemInstanceId.From("1")).EnergyCapacity);
-        var hunter = Assert.Single(profile.Characters);
-        Assert.Equal((GuardianClass.Hunter, Optional.Some(StatValue.From(47)), Optional.Some(StatValue.From(104))), (hunter.Class, hunter.Stats.Weapons, hunter.Stats.Class));
     }
 
     [Fact]
@@ -111,11 +109,12 @@ public sealed class StatLoadingTests
         var profile = ReadProfile([.. OwnAll(tuningSockets: 3)]);
         var choices = LoopDesigning.ListStatChoices(build, profile);
 
-        var totals = Assert.IsType<Result<StatTotals, string>.Ok>(LoopDesigning.AddUpStats(build, choices, ImmutableDictionary<ArmorSlot, ItemInstanceId>.Empty)).Value;
+        var totals = Assert.IsType<Result<StatTotals, string>.Ok>(LoopDesigning.AddUpStats(build, choices)).Value;
 
         // Each piece: Grenade 30, Super 25, Class 20, and the masterwork's +5 to the three at 0 (Weapons, Health, Melee).
         Assert.Equal(5, choices.Pieces.Length);
-        Assert.Equal(new StatPoints(25, 25, 100, 150, 125, 25), ReadPart(totals, "Armor"));
+        Assert.All(["Luminopotent Mask", "Shinobu's Vow", "Luminopotent Cuirass", "Luminopotent Strides", "Luminopotent Cloak"],
+            piece => Assert.Equal(new StatPoints(5, 5, 20, 30, 25, 5), ReadPart(totals, piece)));
         Assert.Equal(new StatPoints(0, 0, 0, 50, 0, 0), ReadPart(totals, "Grenade Mod ×5"));
         Assert.Equal(new StatPoints(2, 2, 0, 0, 0, 2), ReadPart(totals, "Balanced Tuning ×2"));   // +1 to each of two pieces' stats at 0
         Assert.Equal(new StatPoints(0, 0, 0, -10, 0, 0), ReadPart(totals, "Spark of Shock"));
@@ -134,12 +133,14 @@ public sealed class StatLoadingTests
         var choices = LoopDesigning.ListStatChoices(build, profile);
 
         var helmet = Assert.Single(choices.Pieces, choice => choice.Piece.Slot == ArmorSlot.Helmet);
-        var picked = Assert.IsType<Result<StatTotals, string>.Ok>(
-            LoopDesigning.AddUpStats(build, choices, ImmutableDictionary<ArmorSlot, ItemInstanceId>.Empty.Add(ArmorSlot.Helmet, ItemInstanceId.From("1002")))).Value;
+        var wearing = build with { Build = build.Build with { ArmorCopies = [new ArmorCopy(Mask, ItemInstanceId.From("1002"))] } };
+        var best = Assert.IsType<Result<StatTotals, string>.Ok>(LoopDesigning.AddUpStats(build, choices)).Value;
+        var worn = Assert.IsType<Result<StatTotals, string>.Ok>(LoopDesigning.AddUpStats(wearing, choices)).Value;
 
         Assert.Equal(["1001", "1002"], helmet.Copies.Select(copy => copy.Armor.InstanceId.Value));
         Assert.Equal(Optional.Some(new StatPoints(5, 5, 20, 20, 20, 5)), helmet.Copies[1].Points);
-        Assert.Equal(new StatPoints(25, 25, 100, 140, 120, 25), ReadPart(picked, "Armor"));
+        Assert.Equal(new StatPoints(5, 5, 20, 30, 25, 5), ReadPart(best, "Luminopotent Mask"));     // no copy named: the best one
+        Assert.Equal(new StatPoints(5, 5, 20, 20, 20, 5), ReadPart(worn, "Luminopotent Mask"));     // the copy the build wears
     }
 
     [Fact]
@@ -148,7 +149,7 @@ public sealed class StatLoadingTests
         var build = OpenOwnersBuild();
         var choices = LoopDesigning.ListStatChoices(build, ReadProfile([.. OwnAll(tuningSockets: 1)]));
 
-        var totals = Assert.IsType<Result<StatTotals, string>.Ok>(LoopDesigning.AddUpStats(build, choices, ImmutableDictionary<ArmorSlot, ItemInstanceId>.Empty)).Value;
+        var totals = Assert.IsType<Result<StatTotals, string>.Ok>(LoopDesigning.AddUpStats(build, choices)).Value;
 
         Assert.Equal(new StatPoints(1, 1, 0, 0, 0, 1), ReadPart(totals, "Balanced Tuning"));
         Assert.Equal(["Balanced Tuning found no tuning socket on these pieces, so it adds nothing."], totals.Notes);
@@ -163,10 +164,10 @@ public sealed class StatLoadingTests
 
         Assert.Equal(
             new Result<StatTotals, string>.Error("Your account has no Luminopotent Mask, so Loopsmith can't add up the build's stats from your armor."),
-            LoopDesigning.AddUpStats(build, unowned, ImmutableDictionary<ArmorSlot, ItemInstanceId>.Empty));
+            LoopDesigning.AddUpStats(build, unowned));
         Assert.Equal(
             new Result<StatTotals, string>.Error("Loopsmith can't read the stats of your Luminopotent Mask (Bungie's data may be newer than Loopsmith's). Type the stats instead."),
-            LoopDesigning.AddUpStats(build, unread, ImmutableDictionary<ArmorSlot, ItemInstanceId>.Empty));
+            LoopDesigning.AddUpStats(build, unread));
     }
 
     [Fact]
@@ -182,15 +183,15 @@ public sealed class StatLoadingTests
     }
 
     [Fact]
-    public void A_hand_written_build_names_no_pieces_so_only_a_characters_stats_or_typing_remain()
+    public void A_hand_written_build_names_no_pieces_so_its_stats_wait_for_picked_pieces_or_typing()
     {
         var build = OpenHandWrittenBuild();
         var choices = LoopDesigning.ListStatChoices(build, ReadProfile([.. OwnAll(tuningSockets: 0)]));
 
-        var refused = Assert.IsType<Result<StatTotals, string>.Error>(LoopDesigning.AddUpStats(build, choices, ImmutableDictionary<ArmorSlot, ItemInstanceId>.Empty));
+        var refused = Assert.IsType<Result<StatTotals, string>.Error>(LoopDesigning.AddUpStats(build, choices));
 
         Assert.StartsWith("The build names no armor piece for the helmet, the chest, the legs and the class item", refused.Failure, StringComparison.Ordinal);
-        Assert.Single(choices.Characters);
+        Assert.EndsWith("Pick a piece for it with ⋯, or type the stats.", refused.Failure, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -202,7 +203,7 @@ public sealed class StatLoadingTests
         var changed = Assert.IsType<Result<DesignSession, string>.Ok>(LoopDesigning.SetStats(session, stats)).Value;
 
         Assert.Equal(stats, changed.Build.Build.Stats);
-        Assert.Contains("stats: {weapons: 47, class: 60, grenade: 145, super: 27, melee: 40}", changed.Design.Build.Text, StringComparison.Ordinal);
+        Assert.Contains("stats: {melee: 40, grenade: 145, super: 27, class: 60, weapons: 47}", changed.Design.Build.Text, StringComparison.Ordinal);
         Assert.Equal(session.Design.Build.Text.Split('\n').Length, changed.Design.Build.Text.Split('\n').Length);   // one line changed, nothing added
         Assert.Contains(changed.Build.Issues, issue => issue.Severity == Severity.Warning && issue.Message.StartsWith("With 40 Melee, a Gambler's Dodge gives back less than a full melee charge", StringComparison.Ordinal));
         Assert.Contains(changed.Build.Issues, issue => issue.Severity == Severity.Warning && issue.Message.StartsWith("With 60 Class, a Combination Blow kill gives back less than a full class ability", StringComparison.Ordinal));
@@ -215,7 +216,7 @@ public sealed class StatLoadingTests
 
         var changed = Assert.IsType<Result<DesignSession, string>.Ok>(LoopDesigning.SetStats(session, new StatLine(ToKnownStat(10), ToKnownStat(20), ToKnownStat(70), ToKnownStat(150), ToKnownStat(30), ToKnownStat(79)))).Value;
 
-        Assert.EndsWith("stats: {weapons: 10, health: 20, class: 70, grenade: 150, super: 30, melee: 79}\n", changed.Design.Build.Text, StringComparison.Ordinal);
+        Assert.EndsWith("stats: {health: 20, melee: 79, grenade: 150, super: 30, class: 70, weapons: 10}\n", changed.Design.Build.Text, StringComparison.Ordinal);
         Assert.Contains(changed.Build.Issues, issue => issue.Severity == Severity.Info && issue.Message.StartsWith("With 79 Melee, a Gambler's Dodge gives back a full melee charge only within 15 m", StringComparison.Ordinal));
         Assert.DoesNotContain(changed.Build.Issues, issue => issue.Message.Contains("Combination Blow kill", StringComparison.Ordinal));   // 70 Class is enough
     }
@@ -228,11 +229,11 @@ public sealed class StatLoadingTests
         Assert.Equal(
             new Result<Optional<StatValue>, string>.Error("Melee: a whole number from 0 to 200, or empty for \"?\"."),
             LoopDesigning.ReadStatInput(StatKind.Melee, "201"));
-        Assert.Equal(   // inputs not given are "?"
-            new StatLine(ToKnownStat(47), Optional.None<StatValue>(), ToKnownStat(104), Optional.None<StatValue>(), Optional.None<StatValue>(), Optional.None<StatValue>()),
+        Assert.Equal(   // the inputs in the game's order (Health, Melee, Grenade, Super, Class, Weapons); those not given are "?"
+            new StatLine(Optional.None<StatValue>(), ToKnownStat(47), Optional.None<StatValue>(), ToKnownStat(104), Optional.None<StatValue>(), Optional.None<StatValue>()),
             Assert.IsType<Result<StatLine, ImmutableArray<string>>.Ok>(LoopDesigning.ReadStatInputs(["47", " ", "104"])).Value);
         Assert.Equal(
-            ["Health: a whole number from 0 to 200, or empty for \"?\".", "Melee: a whole number from 0 to 200, or empty for \"?\"."],
+            ["Melee: a whole number from 0 to 200, or empty for \"?\".", "Weapons: a whole number from 0 to 200, or empty for \"?\"."],
             Assert.IsType<Result<StatLine, ImmutableArray<string>>.Error>(LoopDesigning.ReadStatInputs(["1", "x", "", "", "", "-3"])).Failure);
     }
 
@@ -245,15 +246,15 @@ public sealed class StatLoadingTests
     }
 
     [Fact]
-    public void A_pick_of_a_copy_the_player_no_longer_has_falls_back_to_their_first()
+    public void A_copy_the_build_names_that_the_player_doesnt_have_gives_way_to_their_best()
     {
         var build = OpenOwnersBuild();
-        var choices = LoopDesigning.ListStatChoices(build, ReadProfile([.. OwnAll(tuningSockets: 0)]));
-        var helmet = Assert.Single(choices.Pieces, choice => choice.Piece.Slot == ArmorSlot.Helmet);
-        var stale = ImmutableDictionary<ArmorSlot, ItemInstanceId>.Empty.Add(ArmorSlot.Helmet, ItemInstanceId.From("9999"));
+        var stale = build with { Build = build.Build with { ArmorCopies = [new ArmorCopy(Mask, ItemInstanceId.From("9999"))] } };
+        var choices = LoopDesigning.ListStatChoices(stale, ReadProfile([.. OwnAll(tuningSockets: 0)]));
 
-        Assert.Equal(Optional.Some(ItemInstanceId.From("1001")), LoopDesigning.FindPickedCopy(helmet, stale).Map(copy => copy.Armor.InstanceId));
-        Assert.Equal(Optional.None<PieceCopy>(), LoopDesigning.FindPickedCopy(helmet with { Copies = [] }, stale));
+        var totals = Assert.IsType<Result<StatTotals, string>.Ok>(LoopDesigning.AddUpStats(stale, choices)).Value;
+
+        Assert.Equal(new StatPoints(5, 5, 20, 30, 25, 5), ReadPart(totals, "Luminopotent Mask"));
     }
 
     private sealed record FakeItem(ItemHash Hash, string Instance, string Place, ImmutableArray<ItemHash> Plugs, int? Energy);
@@ -279,7 +280,7 @@ public sealed class StatLoadingTests
             Response = new
             {
                 profileInventory = new { data = new { items = items.Where(item => item.Place == "vault").Select(ToItem).ToArray() } },
-                characters = new { data = new Dictionary<string, object> { ["c1"] = new { classType = 1, stats = new Dictionary<string, int> { ["2996146975"] = 47, ["1943323491"] = 104, ["1935470627"] = 400 } } } },
+                characters = new { data = new Dictionary<string, object> { ["c1"] = new { classType = 1 } } },
                 characterEquipment = new { data = new Dictionary<string, object> { ["c1"] = new { items = items.Where(item => item.Place == "equipped").Select(ToItem).ToArray() } } },
                 characterInventories = new { data = new Dictionary<string, object> { ["c1"] = new { items = items.Where(item => item.Place == "carried").Select(ToItem).ToArray() } } },
                 itemComponents = new

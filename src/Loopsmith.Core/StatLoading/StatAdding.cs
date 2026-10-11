@@ -40,55 +40,117 @@ public static class StatAdding
             .OrderBy(piece => piece.Slot),
     ];
 
-    /// <summary>For each piece the build wears, the player's copies of it (the most points first); and their characters of the build's class.</summary>
+    /// <summary>For each piece the build wears, the player's copies of it (the most points first).</summary>
     public static StatChoices ListStatChoices(RuleCatalog catalog, Build build, BungieProfile profile) =>
-        new(
-            [.. ListArmorPieces(catalog, build).Select(piece => new PieceChoice(piece, ListCopies(catalog, piece, profile)))],
-            [.. profile.Characters.Where(character => character.Class == build.Class)]);
+        new([.. ListArmorPieces(catalog, build).Select(piece => new PieceChoice(piece, ListCopies(catalog, piece, profile)))]);
 
     /// <summary>
-    /// The build's stats with the copies picked (by slot, the instance id; a slot not picked takes its first copy): the
-    /// armor, then the build's mods and fragments, each a part of the total. An error when the build doesn't name a
-    /// piece for every slot, or the player doesn't own one, or Loopsmith can't read one's roll.
+    /// The build's stats from the copies it wears (<see cref="Build.ArmorCopies"/>, when the player owns them; else
+    /// their copy with the most points): each piece, then the build's mods and fragments, each a part of the total. An
+    /// error when the build doesn't name a piece for every slot, or the player doesn't own one, or Loopsmith can't read
+    /// one's roll.
     /// </summary>
-    public static Result<StatTotals, string> AddUpStats(RuleCatalog catalog, Build build, StatChoices choices, ImmutableDictionary<ArmorSlot, ItemInstanceId> picks)
+    public static Result<StatTotals, string> AddUpStats(RuleCatalog catalog, Build build, StatChoices choices)
     {
         var plugs = catalog.Manifest.StatPlugs;
         var unnamed = Enum.GetValues<ArmorSlot>().Where(slot => !choices.Pieces.Any(choice => choice.Piece.Slot == slot)).ToImmutableArray();
         var unowned = choices.Pieces.Where(choice => choice.Copies.IsEmpty).Select(choice => choice.Piece.Name).ToImmutableArray();
-        var copies = choices.Pieces.SelectMany(choice => ToSequence(FindPickedCopy(choice, picks).Map(copy => (choice.Piece, Copy: copy)))).ToImmutableArray();
+        var copies = choices.Pieces.SelectMany(choice => ToSequence(FindWornCopy(choice, build.ArmorCopies).Map(copy => (choice.Piece, Copy: copy)))).ToImmutableArray();
         var rolls = copies.Select(chosen => (chosen.Piece, Roll: ReadRoll(plugs, chosen.Copy.Armor))).ToImmutableArray();
         var unread = rolls.Where(chosen => !chosen.Roll.IsSome()).Select(chosen => chosen.Piece.Name).ToImmutableArray();
         return !unnamed.IsEmpty
-            ? Fail($"The build names no armor piece for {JoinWithAnd(unnamed.Select(DescribeSlot))} (a DIM loadout's pieces), so Loopsmith can't add up its stats from your armor. Use a character's current stats, or type them.")
+            ? Fail($"The build names no armor piece for {JoinWithAnd(unnamed.Select(DescribeSlot))} (a DIM loadout's pieces), so Loopsmith can't add up its stats from your armor. Pick a piece for it with ⋯, or type the stats.")
             : !unowned.IsEmpty
                 ? Fail($"Your account has no {JoinWithAnd(unowned)}, so Loopsmith can't add up the build's stats from your armor.")
                 : !unread.IsEmpty
                     ? Fail($"Loopsmith can't read the stats of your {JoinWithAnd(unread)} (Bungie's data may be newer than Loopsmith's). Type the stats instead.")
-                    : new Result<StatTotals, string>.Ok(AddUp(catalog, build, [.. rolls.SelectMany(chosen => ToSequence(chosen.Roll))]));
+                    : new Result<StatTotals, string>.Ok(AddUp(catalog, build, [.. rolls.SelectMany(chosen => ToSequence(chosen.Roll.Map(roll => (chosen.Piece, roll))))]));
     }
 
-    /// <summary>The copy of a piece the player picked (by instance id), else their first (the most points); none when they own no copy.</summary>
-    public static Optional<PieceCopy> FindPickedCopy(PieceChoice choice, ImmutableDictionary<ArmorSlot, ItemInstanceId> picks)
+    /// <summary>
+    /// The copy of a piece the build wears, when the player owns it (by instance id: a dim.gg share's, or picked); else
+    /// their first (the most points); none when they own no copy.
+    /// </summary>
+    public static Optional<PieceCopy> FindWornCopy(PieceChoice choice, ImmutableArray<ArmorCopy> worn)
     {
-        var first = choice.Copies.Select(Optional.Some).FindFirstSome();
-        return picks.TryGetValue(choice.Piece.Slot, out var instance)
-            ? choice.Copies.Where(copy => copy.Armor.InstanceId == instance).Select(Optional.Some).Append(first).FindFirstSome()
-            : first;
+        var instances = worn.Where(copy => choice.Piece.Hashes.Contains(copy.Piece)).Select(copy => copy.Instance).ToImmutableHashSet();
+        return choice.Copies.Where(copy => instances.Contains(copy.Armor.InstanceId))
+            .Concat(choice.Copies)
+            .Select(Optional.Some)
+            .FindFirstSome();
     }
+
+    /// <summary>
+    /// Whether the copies the build wears are the player's: every piece's copy in their account (the share is theirs),
+    /// some, or none (the build names no copy, or none of them is theirs).
+    /// </summary>
+    public static LoadoutOwnership ReadOwnership(RuleCatalog catalog, Build build, BungieProfile profile)
+    {
+        var owned = profile.Armor.Select(armor => armor.InstanceId).ToImmutableHashSet();
+        var pieces = ListArmorPieces(catalog, build)
+            .Select(piece => (piece.Name, Mine: build.ArmorCopies.Any(copy => piece.Hashes.Contains(copy.Piece) && owned.Contains(copy.Instance))))
+            .ToImmutableArray();
+        var missing = pieces.Where(piece => !piece.Mine).Select(piece => piece.Name).ToImmutableArray();
+        return missing.Length == pieces.Length
+            ? new LoadoutOwnership.NotOwn()
+            : missing.IsEmpty
+                ? new LoadoutOwnership.Own()
+                : new LoadoutOwnership.PartlyOwn(missing);
+    }
+
+    /// <summary>What the Stats section says after the login, for whose the build's copies are.</summary>
+    public static string DescribeOwnership(LoadoutOwnership ownership) =>
+        ownership.Match(
+            _ => "Your armor is loaded: the build wears this loadout's own pieces, and its stats are theirs. Tap ⋯ next to a piece to wear another.",
+            partly => $"This loadout's pieces are in your account, but for {JoinWithAnd(partly.Missing)}: tap ⋯ next to {(partly.Missing.Length == 1 ? "it" : "each")} in the build to pick one of yours.",
+            _ => "You can now pick your armor: tap ⋯ next to each armor piece in the build. Its stats follow the pieces it wears.");
+
+    /// <summary>
+    /// The player's pieces for a slot, for the armor picker: the copy the build wears first, then its other copies, then
+    /// the rest by name. Its note counts the pieces the excerpt can't place. What the build can wear of them (its class,
+    /// one exotic) is BuildComposition's to say (<c>ArmorSwapping.CheckPiece</c>).
+    /// </summary>
+    public static ArmorOptions ListArmorOptions(RuleCatalog catalog, Build build, BungieProfile profile, ArmorSlot slot)
+    {
+        var pieces = ListArmorPieces(catalog, build);
+        var piece = pieces.Where(found => found.Slot == slot).Select(Optional.Some).FindFirstSome();
+        var worn = piece
+            .Bind(found => FindWornCopy(new PieceChoice(found, ListCopies(catalog, found, profile)), build.ArmorCopies))
+            .Map(copy => copy.Armor.InstanceId);
+        var named = profile.Armor.Select(armor => (Armor: armor, Item: catalog.Manifest.FindItem(armor.Hash))).ToImmutableArray();
+        var options = named
+            .SelectMany(entry => ToSequence(entry.Item).Select(item => (entry.Armor, Item: item)))
+            .Where(entry => entry.Item.Kind is ManifestKind.Armor armor && armor.Slot == slot)
+            .Select(entry => new ArmorOption(entry.Armor, entry.Item, ReadCopyPoints(catalog, entry.Armor), worn == Optional.Some(entry.Armor.InstanceId)))
+            .OrderByDescending(option => option.Worn)
+            .ThenByDescending(option => piece.Match(found => found.Value.Hashes.Contains(option.Armor.Hash), _ => false))
+            .ThenBy(option => option.Item.Name, StringComparer.Ordinal)
+            .ThenByDescending(option => option.Points.Match(points => ToTotal(points.Value), _ => -1))
+            .ToImmutableArray();
+        var unnamed = named.Count(entry => !entry.Item.IsSome());
+        ImmutableArray<string> notes = unnamed > 0 ? [$"{unnamed} of your armor pieces aren't listed: Loopsmith can't tell their slot yet (Bungie's manifest wasn't read for them)."] : [];
+        return new ArmorOptions(slot, options, notes);
+    }
+
+    /// <summary>The player's copy with this instance id, or why there is none.</summary>
+    public static Result<OwnedArmor, string> FindArmor(BungieProfile profile, ItemInstanceId instance) =>
+        profile.Armor.Where(armor => armor.InstanceId == instance).Select(Optional.Some).FindFirstSome()
+            .ToResult(() => "That piece isn't in your account any more: log in again to read your armor.");
+
 
     /// <summary>What a copy gives: its roll and masterwork; none when the excerpt knows none of its armor-stat plugs.</summary>
     public static Optional<StatPoints> ReadCopyPoints(RuleCatalog catalog, OwnedArmor armor) =>
         ReadRoll(catalog.Manifest.StatPlugs, armor).Map(roll => roll.Worn);
 
-    private static StatTotals AddUp(RuleCatalog catalog, Build build, ImmutableArray<PieceRoll> rolls)
+    private static StatTotals AddUp(RuleCatalog catalog, Build build, ImmutableArray<(ArmorPiece Piece, PieceRoll Roll)> worn)
     {
+        var rolls = worn.Select(entry => entry.Roll).ToImmutableArray();
         var mods = ListModPlugs(catalog, build);
         var balanced = mods.Where(mod => mod.Plug is StatPlug.BalancedTuning).ToImmutableArray();
         var sockets = rolls.Where(roll => roll.HasTuningSocket).ToImmutableArray();
         var copies = balanced.Sum(mod => mod.Copies);
         var tuned = sockets.Take(copies).ToImmutableArray();
-        var parts = ImmutableArray.Create(new StatPart("Armor", rolls.Select(roll => roll.Worn).Sum()))
+        var parts = worn.Select(entry => new StatPart(entry.Piece.Name, entry.Roll.Worn)).ToImmutableArray()
             .AddRange(mods.Where(mod => mod.Plug is not StatPlug.BalancedTuning).Select(mod => new StatPart(DescribeCopies(mod.Name, mod.Copies), mod.Plug.ToPoints(build.Class).MultiplyBy(mod.Copies))))
             .AddRange(tuned.IsEmpty ? [] : balanced.Select(mod => new StatPart(DescribeCopies(mod.Name, tuned.Length), tuned.Select(roll => mod.Plug.ToPointsOnEmpty(roll.Rolled)).Sum())))
             .AddRange(ListSubclassPlugs(catalog, build).Select(plug => new StatPart(plug.Name, plug.Plug.ToPoints(build.Class))));

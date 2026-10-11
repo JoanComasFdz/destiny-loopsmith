@@ -6,8 +6,6 @@ using Loopsmith.Core.Phrasing;
 
 namespace Loopsmith.Web.Presentation;
 
-public sealed record StatRow(string Name, Optional<int> Value);
-
 /// <summary>What a DIM loadout had that the build leaves out, one entry per hash (its manifest name when the excerpt has one) and its copies.</summary>
 public sealed record LeftOutEntry(ItemHash Hash, string Name, int Copies);
 
@@ -19,7 +17,7 @@ public sealed record NoLoopEffectGroup(string Why, ImmutableArray<LeftOutEntry> 
 
 /// <summary>
 /// What the build panel shows around the loadout (<see cref="LoadoutShaping"/>): the build's name, class, subclass,
-/// author and source, its stats, what a DIM loadout left out — what no rule knows yet, and what has no part in a loop —
+/// author and source, what a DIM loadout left out — what no rule knows yet, and what has no part in a loop —
 /// and the design's issues.
 /// </summary>
 public sealed record BuildSheet(
@@ -29,7 +27,6 @@ public sealed record BuildSheet(
     Optional<string> Author,
     Optional<string> SourceUrl,
     Optional<string> SubclassIcon,
-    ImmutableArray<StatRow> Stats,
     ImmutableArray<LeftOutGroup> LeftOut,
     ImmutableArray<NoLoopEffectGroup> NoLoopEffect,
     string NoLoopEffectCount,
@@ -41,8 +38,6 @@ public sealed record BuildSheet(
 /// </summary>
 public static class BuildSheetShaping
 {
-    public const int MaxStat = 200;
-
     public static BuildSheet ShapeSheet(ValidatedBuild build, ImmutableArray<BuildIssue> issues)
     {
         var b = build.Build;
@@ -55,14 +50,6 @@ public static class BuildSheetShaping
             b.Author,
             b.SourceUrl,
             LoadoutShaping.FindSubclassIcon(build.Catalog, b.Class, b.Subclass),
-            [
-                new StatRow("Weapons", ReadStat(b.Stats.Weapons)),
-                new StatRow("Health", ReadStat(b.Stats.Health)),
-                new StatRow("Class", ReadStat(b.Stats.Class)),
-                new StatRow("Grenade", ReadStat(b.Stats.Grenade)),
-                new StatRow("Super", ReadStat(b.Stats.Super)),
-                new StatRow("Melee", ReadStat(b.Stats.Melee)),
-            ],
             [
                 .. LoopDesigning.ListMissing(build)
                     .GroupBy(item => item.Part)
@@ -88,6 +75,4 @@ public static class BuildSheetShaping
             ? $"dim.gg/{shared.ShareId.Value}"
             : "Open in DIM";
 
-    private static Optional<int> ReadStat(Optional<StatValue> value) =>
-        value.Map(stat => stat.Value);
 }

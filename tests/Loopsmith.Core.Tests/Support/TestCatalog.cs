@@ -108,6 +108,7 @@ public static class TestCatalog
             [new WeaponLoadout(WeaponSlot.Energy, "Test Rifle", DamageType.Arc, Optional.None<string>(), [], Optional.None<ItemHash>(), [], false)],
             new StatLine(Optional.None<StatValue>(), Optional.None<StatValue>(), Optional.None<StatValue>(),
                 Optional.None<StatValue>(), Optional.None<StatValue>(), Optional.None<StatValue>()),
+            [],
             []);
         return BuildValidation.ValidateBuild(build, catalog).Match(
             ok => ok.Value,

@@ -223,14 +223,14 @@ public class ActionResolutionTests
     }
 
     [Fact]
-    public void The_build_check_warns_that_a_rule_which_does_not_stack_is_wasted()
+    public void The_build_check_notes_that_a_rule_does_not_stack()
     {
         var both = ValidateBuild([Yielder, Giver]);
         var alone = ValidateBuild([Yielder]);
 
-        var warning = Assert.Single(both.Issues, issue => issue.Message.Contains("doesn't stack"));
-        Assert.Equal(Severity.Warning, warning.Severity);
-        Assert.Equal("'Yielder': +1 Bolt Charge on \"Grenade thrown\" doesn't stack with 'Giver' — with both equipped, it is wasted.", warning.Message);
+        var note = Assert.Single(both.Issues, issue => issue.Message.Contains("doesn't stack"));
+        Assert.Equal(Severity.Info, note.Severity);
+        Assert.Equal("'Yielder': +1 Bolt Charge on \"Grenade thrown\" doesn't stack with 'Giver'.", note.Message);
         Assert.DoesNotContain(alone.Issues, issue => issue.Message.Contains("doesn't stack"));
     }
 

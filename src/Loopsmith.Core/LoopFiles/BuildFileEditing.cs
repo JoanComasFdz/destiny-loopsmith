@@ -32,20 +32,56 @@ public static class BuildFileEditing
             value => ReplaceText(buildFile.Text, ToTextSpan(events, value.Value), BuildFileWriting.WriteStats(stats)),
             _ => $"{buildFile.Text.TrimEnd('\n')}\nstats: {BuildFileWriting.WriteStats(stats)}\n"));
 
+    /// <summary>
+    /// The build file with its armor entries — <c>exoticArmor</c>, <c>armorSetBonuses</c>, <c>leftOut</c>,
+    /// <c>armorCopies</c> — written anew as <paramref name="build"/> has them (a piece picked from the player's armor
+    /// changes all four): each replaced where it was, added at the end when the file has none, removed when the build has
+    /// nothing for it. The rest of the file stays as it was.
+    /// </summary>
+    public static Result<string, string> ReplaceArmor(SourceText buildFile, Build build) =>
+        BuildFileWriting.WriteArmorEntries(build).Aggregate(
+            new Result<string, string>.Ok(buildFile.Text) as Result<string, string>,
+            (text, entry) => text.Bind(current => ReplaceEntry(buildFile with { Text = current }, entry.Key, entry.Value)));
+
+    /// <summary>A top-level entry's value replaced (or the entry added at the end), or the entry removed when there is no value.</summary>
+    private static Result<string, string> ReplaceEntry(SourceText buildFile, string key, Optional<string> value) =>
+        ReadEvents(buildFile).Map(events => FindTopLevelEntry(events, key).Match(
+            entry => value.Match(
+                written => ReplaceText(buildFile.Text, ToTextSpan(events, entry.Value.Value), written.Value),
+                _ => RemoveLines(buildFile.Text, (int)events[entry.Value.Key.First].Start.Index, ToTextSpan(events, entry.Value.Value).End)),
+            _ => value.Match(
+                written => $"{buildFile.Text.TrimEnd('\n')}\n{key}: {written.Value}\n",
+                _ => buildFile.Text)));
+
+    /// <summary>The text without the lines from <paramref name="start"/>'s through <paramref name="end"/>'s (an entry, its key to its value's end).</summary>
+    private static string RemoveLines(string text, int start, int end)
+    {
+        var lineStart = text.LastIndexOf('\n', Math.Max(start - 1, 0)) + 1;
+        var lineEnd = text.IndexOf('\n', end);
+        return string.Concat(text.AsSpan(0, start == 0 ? 0 : lineStart), lineEnd < 0 ? "" : text.AsSpan(lineEnd + 1));
+    }
+
     private static string ReplaceText(string text, TextSpan span, string replacement) =>
         string.Concat(text.AsSpan(0, span.Start), replacement, text.AsSpan(span.End));
 
     /// <summary>The value of a key of the file's top-level mapping, when it has the key.</summary>
-    private static Optional<EventSpan> FindTopLevelValue(ImmutableArray<ParsingEvent> events, string key)
+    private static Optional<EventSpan> FindTopLevelValue(ImmutableArray<ParsingEvent> events, string key) =>
+        FindTopLevelEntry(events, key).Map(entry => entry.Value);
+
+    /// <summary>A top-level entry: its key's node and its value's.</summary>
+    private sealed record EntrySpan(EventSpan Key, EventSpan Value);
+
+    /// <summary>The entry of a key of the file's top-level mapping, when it has the key.</summary>
+    private static Optional<EntrySpan> FindTopLevelEntry(ImmutableArray<ParsingEvent> events, string key)
     {
         const int Root = 2; // after StreamStart and DocumentStart
         return events.Length > Root && events[Root] is MappingStart
             ? ListChildren(events, Root)
                 .Chunk(2)
                 .Where(entry => entry.Length == 2 && events[entry[0].First] is Scalar scalar && scalar.Value == key)
-                .Select(entry => Optional.Some(entry[1]))
+                .Select(entry => Optional.Some(new EntrySpan(entry[0], entry[1])))
                 .FindFirstSome()
-            : Optional.None<EventSpan>();
+            : Optional.None<EntrySpan>();
     }
 
     /// <summary>A node as the indices of its first and last event (the same one for a scalar).</summary>

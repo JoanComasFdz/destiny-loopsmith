@@ -54,6 +54,7 @@ STAT_PLUG_KINDS = {748854354: "base", 1744546145: "base", 2198080209: "masterwor
 BALANCED_TUNING = 3122197216
 CLASS_STAT_PLUGS = {2272984671, 1727069360}     # Echo of Persistence, Spark of Focus: -10 to the class's regen stat
 CLASS_OF_STAT = {"weapons": "hunter", "health": "titan", "class": "warlock"}
+CLASS_TYPES = {0: "titan", 1: "hunter", 2: "warlock"}   # an item's classType (3: any class)
 
 
 def read_json(path):
@@ -254,6 +255,9 @@ def to_entry(item_hash, item, context):
     item_set = item.get("equippingBlock", {}).get("equipableItemSetHash") if kind == "armor" else None
     if item_set:
         fields.append(("set", str(item_set)))
+    armor_class = CLASS_TYPES.get(item.get("classType")) if kind == "armor" else None
+    if armor_class:
+        fields.append(("class", armor_class))
     granted = (read_granted_perks(item, context["perks"]) if kind == "catalyst"
                else read_artifact_perks(item, plug_sets, socket_types) if kind == "artifact" else [])
     if granted:

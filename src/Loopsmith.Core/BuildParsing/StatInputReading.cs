@@ -11,9 +11,8 @@ namespace Loopsmith.Core.BuildParsing;
 /// </summary>
 public static class StatInputReading
 {
-    /// <summary>The six stats in the order the inputs are in (the game's: Weapons first, Melee last).</summary>
-    public static readonly ImmutableArray<StatKind> InputOrder =
-        [StatKind.Weapons, StatKind.Health, StatKind.Class, StatKind.Grenade, StatKind.Super, StatKind.Melee];
+    /// <summary>The six stats in the order the inputs are in (the game's: Health first, Weapons last).</summary>
+    public static readonly ImmutableArray<StatKind> InputOrder = StatReading.GameOrder;
 
     /// <summary>A stat as typed: empty for unknown ("?"), else a whole number 0..200; or why it isn't one.</summary>
     public static Result<Optional<StatValue>, string> ReadStatInput(StatKind stat, string text) =>

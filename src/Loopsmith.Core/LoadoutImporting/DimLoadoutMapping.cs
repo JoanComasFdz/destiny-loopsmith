@@ -109,8 +109,18 @@ public static class DimLoadoutMapping
                 Optional.None<StatValue>(),
                 Optional.None<StatValue>(),
                 Optional.None<StatValue>()),
-            leftOut));
+            leftOut,
+            ListArmorCopies(catalog.Manifest, loadout)));
     }
+
+    /// <summary>The copy of each armor piece the loadout wears, when it names one (a dim.gg share does): its instance id.</summary>
+    private static ImmutableArray<ArmorCopy> ListArmorCopies(ManifestExcerpt manifest, DimLoadout loadout) =>
+    [
+        .. loadout.Equipped
+            .Where(item => manifest.FindItem(item.Hash).Match(found => found.Value.Kind is ManifestKind.Armor, _ => false))
+            .SelectMany(item => item.Instance.Match(instance => new[] { new ArmorCopy(item.Hash, instance.Value) }, _ => []))
+            .DistinctBy(copy => copy.Piece),
+    ];
 
     /// <summary>
     /// A weapon the manifest excerpt knows — its slot, name, damage type and archetype ("Grenade Launcher" →

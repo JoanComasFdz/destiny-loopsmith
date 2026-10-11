@@ -39,6 +39,10 @@ public partial record StatPlug
 /// <summary>Pure reads of a build's stat line by stat.</summary>
 public static class StatReading
 {
+    /// <summary>The six armor stats in the order the game lists them (Health first, Weapons last).</summary>
+    public static readonly ImmutableArray<StatKind> GameOrder =
+        [StatKind.Health, StatKind.Melee, StatKind.Grenade, StatKind.Super, StatKind.Class, StatKind.Weapons];
+
     /// <summary>The build's value of a stat ("?" when the build doesn't say).</summary>
     public static Optional<StatValue> ReadStat(this StatLine stats, StatKind stat) =>
         stat switch
@@ -85,11 +89,8 @@ public partial record ArmorPlace
 /// </summary>
 public sealed record OwnedArmor(ItemInstanceId InstanceId, ItemHash Hash, ArmorPlace Place, ImmutableArray<ItemHash> Plugs, Optional<int> EnergyCapacity);
 
-/// <summary>A character's stats as Bungie has them right now: what it is wearing, with its mods and subclass.</summary>
-public sealed record CharacterStats(GuardianClass Class, StatLine Stats);
-
-/// <summary>What Loopsmith reads of a player's Bungie profile: their armor (characters' and vault's) and their characters' stats.</summary>
-public sealed record BungieProfile(ImmutableArray<OwnedArmor> Armor, ImmutableArray<CharacterStats> Characters);
+/// <summary>What Loopsmith reads of a player's Bungie profile: their armor (worn, carried and in the vault).</summary>
+public sealed record BungieProfile(ImmutableArray<OwnedArmor> Armor);
 
 /// <summary>A piece the build wears (a DIM loadout's): its slot, name and the hashes that are it (an exotic's copies).</summary>
 public sealed record ArmorPiece(ArmorSlot Slot, string Name, ImmutableArray<ItemHash> Hashes);
@@ -100,10 +101,31 @@ public sealed record PieceCopy(OwnedArmor Armor, Optional<StatPoints> Points);
 /// <summary>A piece of the build and the player's copies of it (none: they don't own it).</summary>
 public sealed record PieceChoice(ArmorPiece Piece, ImmutableArray<PieceCopy> Copies);
 
-/// <summary>What the player can add the build's stats up from: a choice per piece the build wears, and their characters' current stats.</summary>
-public sealed record StatChoices(ImmutableArray<PieceChoice> Pieces, ImmutableArray<CharacterStats> Characters);
+/// <summary>What the player can add the build's stats up from: a choice per piece the build wears.</summary>
+public sealed record StatChoices(ImmutableArray<PieceChoice> Pieces);
 
-/// <summary>One part of a build's stat total: the armor, a mod (and its copies), a fragment — its name and points.</summary>
+/// <summary>
+/// A piece the player can pick for a slot of the build: their copy, its manifest item, the points it gives (none:
+/// Loopsmith can't read its roll) and whether it is the copy the build wears.
+/// </summary>
+public sealed record ArmorOption(OwnedArmor Armor, ManifestItem Item, Optional<StatPoints> Points, bool Worn);
+
+/// <summary>What the armor picker lists for a slot (the copy the build wears first), and what it leaves out and why.</summary>
+public sealed record ArmorOptions(ArmorSlot Slot, ImmutableArray<ArmorOption> Options, ImmutableArray<string> Notes);
+
+/// <summary>
+/// Whether the copies a build wears (a dim.gg share's, by instance id) are the logged-in player's: all of them, some
+/// (the pieces whose copy isn't in their account), or none — someone else's loadout, or one that doesn't say.
+/// </summary>
+[Union]
+public partial record LoadoutOwnership
+{
+    partial record Own();
+    partial record PartlyOwn(ImmutableArray<string> Missing);
+    partial record NotOwn();
+}
+
+/// <summary>One part of a build's stat total: an armor piece, a mod (and its copies), a fragment — its name and points.</summary>
 public sealed record StatPart(string Source, StatPoints Points);
 
 /// <summary>A build's stats added up from the player's armor, the parts they came from, and what was left out and why.</summary>
