@@ -1,0 +1,96 @@
+@* What is present at the end of a step (LoopDesigning.ShapeStepState), laid out like the game's HUD: the buffs on you on
+   the left, your weapons' buffs in the middle (each with the weapon whose perk gives it), the debuffs on the pack on
+   the right, the pickups on the ground below them, then the passives that hold. A phone stacks them. A name the rules
+   have as an element opens its details on a tap; its facts ("up to x5 · 8s") show on hover. *@
+<div class="step-hud" data-testid="step-state">
+    <div class="hud-title">State after #@Number</div>
+    <div class="hud-columns">
+        @RenderGroup("buffs", "Buffs", State.Buffs, false)
+        @RenderGroup("weapons", "Weapons", State.Weapons, true)
+        @RenderGroup("debuffs", "Debuffs", State.Debuffs, false)
+    </div>
+    @RenderGroup("ground", "Ground", State.Ground, false)
+    @if (!State.Active.IsEmpty)
+    {
+        <div class="hud-group" data-group="active">
+            <span class="hud-label">Active</span>
+            <ul class="passives">
+                @foreach (var active in State.Active)
+                {
+                    <li>@active.Text <span class="muted">[</span><span class="@ToneStyling.ToToneClass(active.Affinity.ToTone())">@active.SourceName</span><span class="muted">]</span></li>
+                }
+            </ul>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public StepState State { get; set; } = null!;
+
+    [Parameter, EditorRequired]
+    public ValidatedBuild Build { get; set; } = null!;
+
+    /// <summary>The step this is the state after.</summary>
+    [Parameter, EditorRequired]
+    public int Number { get; set; }
+
+    /// <summary>A name tapped: the element whose details to show.</summary>
+    [Parameter]
+    public EventCallback<ItemDetails> OnShowDetails { get; set; }
+
+    private RenderFragment RenderGroup(string group, string label, ImmutableArray<StateEntry> entries, bool withWeapons) => __builder =>
+    {
+        <div class="hud-group" data-group="@group">
+            <span class="hud-label">@label</span>
+            <span class="chips">
+                @if (entries.IsEmpty)
+                {
+                    <span class="muted">none</span>
+                }
+                @foreach (var entry in entries)
+                {
+                    @RenderEntry(entry, withWeapons)
+                }
+            </span>
+        </div>
+    };
+
+    private RenderFragment RenderEntry(StateEntry entry, bool withWeapons) => __builder =>
+    {
+        var weapons = withWeapons ? StateHudShaping.ListBuffWeapons(Build, entry) : [];
+        var facts = entry.Facts is Optional<string>.Some known ? known.Value : null;
+        if (entry.Element is Optional<ElementId>.Some element)
+        {
+            <button type="button" class="chip hud-chip @ToneStyling.ToAffinityClass(entry.Affinity)" data-keyword="@entry.Keyword.DescribeKeywordId()" title="@facts"
+                    @onclick="() => ShowDetailsAsync(element.Value)" @onclick:stopPropagation="true">
+                <span>@entry.Text</span>
+                @RenderWeapons(weapons)
+            </button>
+        }
+        else
+        {
+            <span class="chip hud-chip @ToneStyling.ToAffinityClass(entry.Affinity)" data-keyword="@entry.Keyword.DescribeKeywordId()" title="@facts">
+                <span>@entry.Text</span>
+                @RenderWeapons(weapons)
+            </span>
+        }
+    };
+
+    private static RenderFragment RenderWeapons(ImmutableArray<BuffWeapon> weapons) => __builder =>
+    {
+        foreach (var weapon in weapons)
+        {
+            <span class="hud-weapon" data-testid="buff-weapon">
+                @if (weapon.Icon is Optional<string>.Some icon)
+                {
+                    <img src="@icon.Value" alt="" loading="lazy" />
+                }
+                <span>@weapon.Name</span>
+            </span>
+        }
+    };
+
+    private async Task ShowDetailsAsync(ElementId element) =>
+        await OnShowDetails.InvokeAsync(new ItemDetails.OfElement(element));                     // impure
+}

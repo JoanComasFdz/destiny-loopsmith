@@ -59,7 +59,9 @@ subclasses:
 Each section is optional; ids are unique within a section. All keys shown are required except a
 status's `maxStacks` (a whole number ≥ 2) and `duration`.
 
-* `kind`: `buff` (on the player) · `debuff` (on the pack).
+* `kind`: `buff` (on the player) · `weaponBuff` (on the player's weapons: Slice, Unraveling Rounds — a
+  `buff` to the engine, wherever a rule names a buff; the designer's state shows it with the weapons) ·
+  `debuff` (on the pack).
   `affinity`: `neutral|kinetic|arc|solar|void|stasis|strand|prismatic`. A status's affinity is also the
   damage type of its `strikeTarget` strikes (neutral and prismatic strike as kinetic).
 * `maxStacks` says the status **stacks**, and its cap: a fact shown with the buff ("up to x10"). It

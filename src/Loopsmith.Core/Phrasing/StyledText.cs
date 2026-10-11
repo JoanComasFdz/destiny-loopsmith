@@ -54,6 +54,10 @@ public static class StyledText
             _ => Tone.Plain,
         };
 
+    /// <summary>A keyword's id as its rules write it ("bolt-charge", "orb-of-power").</summary>
+    public static string DescribeKeywordId(this KeywordRef keyword) =>
+        keyword.Match(status => status.Id.Value, pickup => pickup.Id.Value, summon => summon.Id.Value);
+
     /// <summary>A name highlighted in its affinity's tone; a neutral one (Orb of Power) strong, so it still stands out.</summary>
     public static Tone ToHighlightTone(this Affinity affinity) =>
         affinity == Affinity.Neutral ? Tone.Strong : affinity.ToTone();

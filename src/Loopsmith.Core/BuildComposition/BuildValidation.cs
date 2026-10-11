@@ -80,10 +80,29 @@ public static class BuildValidation
     public static ImmutableArray<int> ListWeaponsHolding(RuleCatalog catalog, Build build, ElementId element) =>
     [
         .. build.Weapons
-            .Select((weapon, index) => (Index: index, Holds: ListWeaponPerks(catalog, weapon).Concat(ListWeaponCatalysts(catalog, weapon)).Contains(element)))
+            .Select((weapon, index) => (Index: index, Holds: ListHeldElements(catalog, weapon).Contains(element)))
             .Where(weapon => weapon.Holds)
             .Select(weapon => weapon.Index),
     ];
+
+    /// <summary>
+    /// The weapons (by index) one of whose perks or turned-on catalyst has a rule that gives this buff (Slice: the weapon
+    /// that rolls Slice). None: no weapon's own perk gives it (Unraveling Rounds comes from an artifact perk).
+    /// </summary>
+    public static ImmutableArray<int> ListWeaponsGiving(RuleCatalog catalog, Build build, StatusId buff) =>
+    [
+        .. build.Weapons
+            .Select((weapon, index) => (Index: index, Gives: ListHeldElements(catalog, weapon).Any(element => IsGiving(catalog, element, buff))))
+            .Where(weapon => weapon.Gives)
+            .Select(weapon => weapon.Index),
+    ];
+
+    private static IEnumerable<ElementId> ListHeldElements(RuleCatalog catalog, WeaponLoadout weapon) =>
+        ListWeaponPerks(catalog, weapon).Concat(ListWeaponCatalysts(catalog, weapon));
+
+    private static bool IsGiving(RuleCatalog catalog, ElementId element, StatusId buff) =>
+        catalog.Elements.TryGetValue(element, out var found)
+        && found.Rules.Any(rule => rule.Then.Any(outcome => outcome is Outcome.ApplyBuff applied && applied.Status == buff));
 
     private static IEnumerable<ElementId> ListWeaponPerks(RuleCatalog catalog, WeaponLoadout weapon) =>
         WeaponRolling.ListPerkSlots(catalog, weapon).SelectMany(slot => slot.Match(

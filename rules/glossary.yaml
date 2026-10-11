@@ -11,7 +11,7 @@
 # status entries and only mentions them inside other entries.
 
 statuses:
-  # ---------------------------------------------------------------- buffs (on the player)
+  # ---------------------------------------------------------------- buffs (on the player; weaponBuff: on your weapons)
 
   # maxStacks 10: compendium/2026-10-09/Arc#5 (10 stacks are needed to discharge). Agrees with the
   # creator ("those 10 stacks of bolt charge") and with Clarity's New Tricks trigger ("x10").
@@ -43,7 +43,8 @@ statuses:
 
   # Duration depends on the source (Clarity: 11 s Facet of Bravery, 8 s Thread of Propagation;
   # Compendium Artifact Perks#45: 14 s from Unraveling Orbs, set in that rule). No generic duration.
-  - { id: unraveling-rounds, name: Unraveling Rounds, kind: buff, affinity: strand }
+  # A weapon buff (kind weaponBuff): your Strand weapons fire Unraveling Rounds; the state shows it with the weapons.
+  - { id: unraveling-rounds, name: Unraveling Rounds, kind: weaponBuff, affinity: strand }
 
   # Combination Blow melee damage stacks: up to 3, each lasting 20 s (compendium/2026-10-09/Arc#41;
   # the creator also says "times three stacks"). Clarity has no melee-ability entries.
@@ -55,7 +56,8 @@ statuses:
   # Slice weapon perk window: 8 s (9 s enhanced), ends after 5 severs. compendium/2026-10-09/
   # Weapon Perks#198 (5 severing hits, each within 8 s of the last); Clarity 923806249 agrees (the
   # buff ends at 5 stacks). In weapons/perks.yaml the player declares the 5 hits done (`max:slice`).
-  - { id: slice, name: Slice, kind: buff, affinity: strand, maxStacks: 5, duration: 8s }
+  # A weapon buff (kind weaponBuff): the perk's window is on the weapon that rolls it.
+  - { id: slice, name: Slice, kind: weaponBuff, affinity: strand, maxStacks: 5, duration: 8s }
 
   # Reaper armed: the next weapon kill within 10 s of a class ability use (compendium/2026-10-09/
   # Armor Mods#14; Clarity 40751621 agrees).

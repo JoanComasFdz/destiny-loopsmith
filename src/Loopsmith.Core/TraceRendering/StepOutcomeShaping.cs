@@ -54,7 +54,7 @@ public static class StepOutcomeShaping
 {
     public static StepOutcomes ShapeStepOutcomes(ValidatedBuild build, Resolution resolution, TraceOptions options)
     {
-        var elements = IndexElements(build.Catalog);
+        var elements = ElementIndexing.IndexElements(build.Catalog);
         var events = TraceRenderer.GroupByEvent(resolution.Fired).Select(group => ShapeEvent(build, elements, group, options));
         return new StepOutcomes(CollapseRepeats(events), resolution.Notes);
     }
@@ -109,12 +109,6 @@ public static class StepOutcomeShaping
         $"{shaped.Depth}|{shaped.Event}|" + string.Join("|", shaped.Sources.Select(source =>
             $"{source.Source.Value}:{string.Join(";", source.Outcomes.Select(line => $"{line.Text}{(line.Chance ? "?" : "")}"))}:{string.Join(";", source.Reasons)}:{string.Join(";", source.Caveats)}"));
 
-    /// <summary>The catalog's elements by their id's text: a status or pickup is the element of the same id, when there is one.</summary>
-    private sealed record ElementIndex(ImmutableDictionary<string, ElementId> ById);
-
-    private static ElementIndex IndexElements(RuleCatalog catalog) =>
-        new(catalog.Elements.Keys.ToImmutableDictionary(id => id.Value, id => id));
-
     private static OutcomeLine ToLine(KeywordGlossary glossary, ElementIndex elements, string text, Tone tone, bool chance) =>
         new(text, tone, SplitText(glossary, elements, text), chance);
 
@@ -123,7 +117,7 @@ public static class StepOutcomeShaping
     [
         .. glossary.SplitKeywords(text).Select(part => new TextPart(
             part.Text,
-            part.Keyword.Map(keyword => new KeywordPart(keyword.Affinity, FindElement(elements, ToIdText(keyword.Keyword)))))),
+            part.Keyword.Map(keyword => new KeywordPart(keyword.Affinity, elements.FindKeywordElement(keyword.Keyword))))),
     ];
 
     private static Optional<WeaponSlot> FindEventWeapon(GameEvent gameEvent) =>
@@ -143,11 +137,6 @@ public static class StepOutcomeShaping
             keyword: _ => Optional.None<WeaponSlot>(),
             summoned: _ => Optional.None<WeaponSlot>());
 
-    private static string ToIdText(KeywordRef keyword) =>
-        keyword.Match(status => status.Id.Value, pickup => pickup.Id.Value, summon => summon.Id.Value);
-
-    private static Optional<ElementId> FindElement(ElementIndex elements, string id) =>
-        elements.ById.TryGetValue(id, out var element) ? Optional.Some(element) : Optional.None<ElementId>();
 
     private static IEnumerable<T> ToSequence<T>(Optional<T> optional) =>
         optional.Match(found => new[] { found.Value }, _ => []);

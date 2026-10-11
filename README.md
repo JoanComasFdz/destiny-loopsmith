@@ -55,7 +55,7 @@ dotnet run --project src/Loopsmith.Cli -- graph    builds/skip-grenade-hunter/bu
 | Command | What you get |
 |---|---|
 | `explain` | Every trigger in the build → the outcomes it fires `[source]`, in the same shape as a hand-written build note (`--tree` for an aligned tree) |
-| `trace` | A sequence of steps (`--actions class,grenade:kill:3,max:bolt-charge,energy:kill` or `--scenario file`), one block per step: the event → outcomes `[source]`, cascades indented `↳`; `--state` adds what is present after each step (buffs on you, debuffs on the pack, pickups on the ground). `--why` shows the reason text; `--caveats` the caveats (amount unknown, already active, …). `simulate` is an alias |
+| `trace` | A sequence of steps (`--actions class,grenade:kill:3,max:bolt-charge,energy:kill` or `--scenario file`), one block per step: the event → outcomes `[source]`, cascades indented `↳`; `--state` adds what is present after each step (buffs on you, buffs on your weapons, debuffs on the pack, pickups on the ground). `--why` shows the reason text; `--caveats` the caveats (amount unknown, already active, …). `simulate` is an alias |
 | `play` | Interactive: pick the next step by number or token — an action, a pickup on the ground or a state you declare — and see what fires and what's available now. Every step becomes part of the loop you design: `u` undo, `n <note>`, `d <description>`, `a` analyse it so far; `--save <file.loop.yaml>` writes it on quit (`w` saves now), `--name` names it |
 | `loop` | A designed loop (`*.loop.yaml`): its build, its order of steps and the verdict — it repeats, or it breaks at the step that can't happen — then each step with what it needs (and which step provided it), what it sets off in this order and on its own, and what is wasted there, and where the first pass from a fresh spawn differs. `--trace` adds the full trace of the first pass, and of the repeating pass when it differs |
 | `compare` | Two designed loops' orders side by side (they may use different builds): each order on one line with its verdict, then trigger by trigger its step in each loop, where its needs come from there, and the elements that fire in only one of them; then the links of each loop's chain the other lacks |
@@ -95,15 +95,17 @@ While Amplified -> +1 Bolt Charge per gain [Spark of Frequency] + linear-fusion-
     ↳ Bolt Charge gained → +?% grenade energy [Shinobu's Vow] + +2.5% melee energy [Bolt Charge]
     ↳ Picked up Ionic Trace → +1 Bolt Charge [Spark of Discharge] + +1 Armor Charge [Elemental Charge] (chance) + +11.3% grenade and melee energy and +13.5% class ability energy [Ionic Trace]
       ↳ Bolt Charge gained → +?% grenade energy [Shinobu's Vow] + +2.5% melee energy [Bolt Charge]
-  Buffs         Reaper · Slice · Bolt Charge · Amplified · Armor Charge
-  Target        Jolt
+  Buffs         Reaper · Bolt Charge · Amplified · Armor Charge
+  Weapons       Slice
+  Debuffs       Jolt
   Ground        none
   Active      +1 Bolt Charge per gain [Spark of Frequency]
   Active      linear-fusion-rifle/fusion-rifle/heat-weapon: +handling, +reload [Ionic Overclock]
 #3 Bolt Charge at max
   Max Bolt Charge → New Tricks and +~40% grenade energy and heals you and allies [Shinobu's Vow] + Amplified (15s) [Flashover]
-  Buffs         Reaper · Slice · Bolt Charge (at max) · Amplified · Armor Charge · New Tricks
-  Target        Jolt
+  Buffs         Reaper · Bolt Charge (at max) · Amplified · Armor Charge · New Tricks
+  Weapons       Slice
+  Debuffs       Jolt
   Ground        none
   Active      +1 Bolt Charge per gain [Spark of Frequency]
   Active      linear-fusion-rifle/fusion-rifle/heat-weapon: +handling, +reload [Ionic Overclock]

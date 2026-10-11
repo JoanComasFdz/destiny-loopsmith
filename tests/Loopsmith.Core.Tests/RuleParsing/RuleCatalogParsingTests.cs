@@ -974,7 +974,7 @@ public sealed class RuleCatalogParsingTests
               - { id: Threadling, name: Threadling, damageType: prismatic }
             """));
 
-        Assert.Contains("glossary.yaml:2: status.kind: 'curse' is not one of: buff, debuff", message);
+        Assert.Contains("glossary.yaml:2: status.kind: 'curse' is not one of: buff, weaponBuff, debuff", message);
         Assert.Contains("glossary.yaml:2: status.maxStacks: '0' is not a whole number ≥ 2", message);
         Assert.Contains("glossary.yaml:4: pickup is missing 'collectsAutomatically'", message);
         Assert.Contains("glossary.yaml:6: summon.id: 'Threadling' is not a kebab-case summon id", message);

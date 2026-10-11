@@ -38,6 +38,7 @@ public enum ElementKind
 public enum KeywordKind
 {
     Buff,           // lives on the player (Amplified, Bolt Charge, Armor Charge…)
+    WeaponBuff,     // lives on the player's weapons (Slice, Unraveling Rounds): a buff to the engine, shown with the weapons
     Debuff,         // lives on the target (Jolt, Sever, Unravel, Blind…)
 }
 

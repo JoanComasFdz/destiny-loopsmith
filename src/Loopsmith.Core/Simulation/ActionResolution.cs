@@ -186,7 +186,7 @@ public static class ActionResolution
     private static Opening EndStatus(GameState state, StatusDefinition definition) =>
         (definition.Kind, state.HasBuff(definition.Id), state.TargetHas(definition.Id)) switch
         {
-            (KeywordKind.Buff, true, _) => new Opening(state.DropBuff(definition.Id), [], []),
+            (KeywordKind.Buff or KeywordKind.WeaponBuff, true, _) => new Opening(state.DropBuff(definition.Id), [], []),
             (KeywordKind.Debuff, _, true) => new Opening(state.DropDebuff(definition.Id), [], []),
             _ => BlockAction(state, $"{definition.Name} isn't active — nothing ends."),
         };

@@ -1,11 +1,13 @@
 ﻿Fresh spawn
   Buffs         none
-  Target        none
+  Weapons       none
+  Debuffs       none
   Ground        none
 #1 Class ability
   Class ability → Reaper (10s) [Reaper] + +1 Slice (8s) [Slice] + +?% melee energy [Gambler's Dodge] + +12% grenade energy [Bomber]
-  Buffs         Reaper · Slice
-  Target        none
+  Buffs         Reaper
+  Weapons       Slice
+  Debuffs       none
   Ground        none
 #2 Grenade (kill)
   Grenade hit → Jolt target (10s) [Spark of Shock] + +1 Bolt Charge and +4.2% grenade energy [Shinobu's Vow]
@@ -14,8 +16,9 @@
     ↳ Bolt Charge gained → +?% grenade energy [Shinobu's Vow] + +2.5% melee energy [Bolt Charge]
     ↳ Picked up Ionic Trace → +1 Bolt Charge [Spark of Discharge] + +1 Armor Charge [Elemental Charge] (chance) + +11.3% grenade and melee energy and +13.5% class ability energy [Ionic Trace]
       ↳ Bolt Charge gained → +?% grenade energy [Shinobu's Vow] + +2.5% melee energy [Bolt Charge]
-  Buffs         Reaper · Slice · Bolt Charge · Amplified · Armor Charge
-  Target        Jolt
+  Buffs         Reaper · Bolt Charge · Amplified · Armor Charge
+  Weapons       Slice
+  Debuffs       Jolt
   Ground        none
   Active      +1 Bolt Charge per gain [Spark of Frequency]
   Active      linear-fusion-rifle/fusion-rifle/heat-weapon: +handling, +reload [Ionic Overclock]
@@ -25,16 +28,18 @@
     ↳ Bolt Charge gained → +?% grenade energy [Shinobu's Vow] + +2.5% melee energy [Bolt Charge]
     ↳ Picked up Ionic Trace → +1 Bolt Charge [Spark of Discharge] + +1 Armor Charge [Elemental Charge] (chance) + +11.3% grenade and melee energy and +13.5% class ability energy [Ionic Trace]
       ↳ Bolt Charge gained → +?% grenade energy [Shinobu's Vow] + +2.5% melee energy [Bolt Charge]
-  Buffs         Slice · Bolt Charge · Amplified · Armor Charge · Woven Mail
-  Target        Jolt · Sever
+  Buffs         Bolt Charge · Amplified · Armor Charge · Woven Mail
+  Weapons       Slice
+  Debuffs       Jolt · Sever
   Ground        Orb of Power
   Active      +1 Bolt Charge per gain [Spark of Frequency]
   Active      linear-fusion-rifle/fusion-rifle/heat-weapon: +handling, +reload [Ionic Overclock]
   Active      45% damage resistance [Woven Mail]
 #4 Pick up Orb of Power
   Picked up Orb of Power → Unraveling Rounds (14s) [Unraveling Orbs] + +1 Armor Charge and +?% super energy [Orb of Power]
-  Buffs         Slice · Bolt Charge · Amplified · Armor Charge · Woven Mail · Unraveling Rounds
-  Target        Jolt · Sever
+  Buffs         Bolt Charge · Amplified · Armor Charge · Woven Mail
+  Weapons       Slice · Unraveling Rounds
+  Debuffs       Jolt · Sever
   Ground        none
   Active      +1 Bolt Charge per gain [Spark of Frequency]
   Active      linear-fusion-rifle/fusion-rifle/heat-weapon: +handling, +reload [Ionic Overclock]
@@ -45,8 +50,9 @@
     ↳ Bolt Charge gained → +?% grenade energy [Shinobu's Vow] + +2.5% melee energy [Bolt Charge]
     ↳ Picked up Ionic Trace → +1 Bolt Charge [Spark of Discharge] + +1 Armor Charge [Elemental Charge] (chance) + +11.3% grenade and melee energy and +13.5% class ability energy [Ionic Trace]
       ↳ Bolt Charge gained → +?% grenade energy [Shinobu's Vow] + +2.5% melee energy [Bolt Charge]
-  Buffs         Slice · Bolt Charge · Amplified · Armor Charge · Woven Mail · Unraveling Rounds · Combination Blow
-  Target        Jolt · Sever · Blind
+  Buffs         Bolt Charge · Amplified · Armor Charge · Woven Mail · Combination Blow
+  Weapons       Slice · Unraveling Rounds
+  Debuffs       Jolt · Sever · Blind
   Ground        none
   Active      +?% melee damage [Combination Blow]
   Active      +1 Bolt Charge per gain [Spark of Frequency]
@@ -54,8 +60,9 @@
   Active      45% damage resistance [Woven Mail]
 #6 Bolt Charge at max
   Max Bolt Charge → New Tricks and +~40% grenade energy and heals you and allies [Shinobu's Vow] + Amplified (15s) [Flashover]
-  Buffs         Slice · Bolt Charge (at max) · Amplified · Armor Charge · Woven Mail · Unraveling Rounds · Combination Blow · New Tricks
-  Target        Jolt · Sever · Blind
+  Buffs         Bolt Charge (at max) · Amplified · Armor Charge · Woven Mail · Combination Blow · New Tricks
+  Weapons       Slice · Unraveling Rounds
+  Debuffs       Jolt · Sever · Blind
   Ground        none
   Active      +?% melee damage [Combination Blow]
   Active      +1 Bolt Charge per gain [Spark of Frequency]
@@ -74,8 +81,9 @@
     ↳ Bolt Charge gained → +?% grenade energy [Shinobu's Vow] + +2.5% melee energy [Bolt Charge]
     ↳ Picked up Ionic Trace → +1 Bolt Charge [Spark of Discharge] + +1 Armor Charge [Elemental Charge] (chance) + +11.3% grenade and melee energy and +13.5% class ability energy [Ionic Trace]
       ↳ Bolt Charge gained → +?% grenade energy [Shinobu's Vow] + +2.5% melee energy [Bolt Charge]
-  Buffs         Slice · Amplified · Woven Mail · Unraveling Rounds · Combination Blow · Bolt Charge · Armor Charge
-  Target        Jolt · Sever · Blind
+  Buffs         Amplified · Woven Mail · Combination Blow · Bolt Charge · Armor Charge
+  Weapons       Slice · Unraveling Rounds
+  Debuffs       Jolt · Sever · Blind
   Ground        none
   Active      +?% melee damage [Combination Blow]
   Active      +1 Bolt Charge per gain [Spark of Frequency]
@@ -89,8 +97,9 @@
       ↳ Bolt Charge gained → +?% grenade energy [Shinobu's Vow] + +2.5% melee energy [Bolt Charge]
     ↳ Picked up Ionic Trace → +1 Bolt Charge [Spark of Discharge] + +1 Armor Charge [Elemental Charge] (chance) + +11.3% grenade and melee energy and +13.5% class ability energy [Ionic Trace]
       ↳ Bolt Charge gained → +?% grenade energy [Shinobu's Vow] + +2.5% melee energy [Bolt Charge]
-  Buffs         Slice · Amplified · Woven Mail · Unraveling Rounds · Combination Blow · Bolt Charge · Armor Charge
-  Target        Jolt · Sever · Blind · Unravel
+  Buffs         Amplified · Woven Mail · Combination Blow · Bolt Charge · Armor Charge
+  Weapons       Slice · Unraveling Rounds
+  Debuffs       Jolt · Sever · Blind · Unravel
   Ground        Orb of Power
   Active      +?% melee damage [Combination Blow]
   Active      +1 Bolt Charge per gain [Spark of Frequency]

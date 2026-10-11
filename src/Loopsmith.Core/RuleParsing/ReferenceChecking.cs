@@ -149,7 +149,7 @@ internal static class ReferenceChecking
         KeywordKind actual,
         Optional<KeywordKind> expected) =>
         expected.Match(
-            some => some.Value == actual
+            some => actual.IsKindOf(some.Value)
                 ? Succeed(id)
                 : value.FailAt<StatusId>(
                     $"{value.Label}: '{id}' is a {GameNotationParsing.ToVocabularyWord(actual)}, "

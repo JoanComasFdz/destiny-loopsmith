@@ -134,7 +134,14 @@ status, a debuff by its adjective ("Jolted"), a pickup, a summon — is in its a
 the line ("+1 **Bolt Charge**", "Grenade kill on **Jolted** target"), and the ones the rules have as an element
 (Jolt, Bolt Charge, Ionic Trace, Combination Blow) preview and open the same way. An element
 whose rules the engine fired apart (a debuff first, energy last) shows at each of its places, in that order. "why" adds each rule's reason under its element; "caveats" adds the outcomes'
-caveats. Each step can be moved up or down, removed or dragged onto another step's place; the loop
+caveats. Each step ends with its **state** — what is present after it — laid out like the game's HUD: the buffs
+on you on the left (Bolt Charge, Amplified, Woven Mail), your weapons' buffs in the middle (a glossary
+`weaponBuff`: Slice, Unraveling Rounds, each with the weapon whose own perk gives it — Slice with Festival Flight),
+the debuffs on the pack on the right (Jolt, Sever, Unravel), the pickups on the ground below them (an Orb of
+Power waiting for `pickup:orb-of-power`; an Ionic Trace never waits, it collects itself), then the passives
+that hold right then. A phone stacks the four. Each name the rules have opens its details on a tap, and its
+facts ("up to x5 · 8s") show on hover. The CLI's `--state` prints the same four lines.
+Each step can be moved up or down, removed or dragged onto another step's place; the loop
 replays in its new order.
 
 ## Starting from a DIM link
