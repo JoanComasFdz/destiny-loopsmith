@@ -437,7 +437,7 @@ public sealed class RuleCatalogParsingTests
 
         Assert.Equal(
             "hunter/arc.yaml:5: unknown key 'colour' in element (allowed: id, name, kind, affinity, class, hash, "
-            + "fragmentSlots, ability, description, source, rules, passives, inert)",
+            + "fragmentSlots, ability, description, source, rules, passives, inert, statChecks)",
             message);
     }
 
@@ -531,6 +531,47 @@ public sealed class RuleCatalogParsingTests
         Assert.Equal([4m, 5m, 6m], Assert.IsType<GameValue.PerModCount>(raise.Max).Values);
         Assert.Contains("'amplified' doesn't stack (no maxStacks)", notStacking);
         Assert.Equal("mods.yaml:8: raiseMaxStacks raises the build's cap, which always holds, so it takes no when", guarded);
+    }
+
+    [Fact]
+    public void A_stat_check_names_a_range_of_a_stat_and_says_a_warning_or_info()
+    {
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToElementsFile("hunter/arc.yaml", """
+            elements:
+              - id: gamblers-dodge
+                name: Gambler's Dodge
+                kind: classAbility
+                affinity: arc
+                statChecks:
+                  - { stat: melee, below: 50, severity: warning, says: "With {value} Melee, not a full charge." }
+                  - { stat: melee, from: 50, below: 100, severity: info, says: "With {value} Melee, full only near enemies." }
+            """)]));
+        var message = ParseInvalidCatalog(Glossary, ToElementsFile("hunter/arc.yaml", """
+            elements:
+              - id: gamblers-dodge
+                name: Gambler's Dodge
+                kind: classAbility
+                affinity: arc
+                statChecks:
+                  - { stat: melee, from: 60, below: 50, severity: warning, says: "Never." }
+            """));
+        var blocking = ParseInvalidCatalog(Glossary, ToElementsFile("hunter/arc.yaml", """
+            elements:
+              - id: gamblers-dodge
+                name: Gambler's Dodge
+                kind: classAbility
+                affinity: arc
+                statChecks:
+                  - { stat: melee, below: 250, severity: blocking, says: "Never." }
+            """));
+
+        Assert.Equal(
+            [new StatCheck(StatKind.Melee, Optional.None<StatValue>(), StatValue.From(50), StatCheckSeverity.Warning, "With {value} Melee, not a full charge."),
+                new StatCheck(StatKind.Melee, Optional.Some(StatValue.From(50)), StatValue.From(100), StatCheckSeverity.Info, "With {value} Melee, full only near enemies.")],
+            catalog.Elements[ElementId.From("gamblers-dodge")].StatChecks);
+        Assert.Equal("hunter/arc.yaml:7: a stat check's range starts below its end (from < below)", message);
+        Assert.Contains("not one of: warning, info", blocking);
+        Assert.Contains("Stat must be within 0..200", blocking);
     }
 
     [Fact]

@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
@@ -43,9 +44,31 @@ public static partial class DimLinkReading
     public static Result<DimLink, string> ReadSavedLink(string json) =>
         DimLoadoutParsing.ParseSavedLink(json).Bind(ReadDimLink);
 
-    /// <summary>The address a host asks for a dim.gg share's loadout.</summary>
+    /// <summary>
+    /// The address a host asks for a dim.gg share's loadout. DIM's API hands a share to any caller, from any origin
+    /// (its <c>GET /loadout_share</c> needs no API key), so the host asks with a plain GET and no header: a header such
+    /// as <c>X-API-Key</c> would make the browser ask DIM first (a CORS preflight), which DIM answers only for the
+    /// origins of apps registered with it.
+    /// </summary>
     public static string ToShareRequestUrl(DimShareId shareId) =>
         $"{ShareApi}?shareId={Uri.EscapeDataString(shareId.Value)}";
+
+    /// <summary>What to paste when DIM can't be asked for a share: the dim.gg page's long link carries the loadout.</summary>
+    private const string LongLinkInstead =
+        "Or open the dim.gg link, copy its \"Open Loadout in DIM\" link (long-press or right-click it, then copy the "
+        + "link) and paste that here instead: it carries the whole loadout.";
+
+    /// <summary>DIM's answer to the share request (its status and text): the loadout's JSON, or why there is none.</summary>
+    public static Result<string, string> ReadShareAnswer(int status, string text) =>
+        status is >= 200 and < 300
+            ? new Result<string, string>.Ok(text)
+            : new Result<string, string>.Error(status == 404
+                ? "DIM doesn't know that share: check the link (copy it again from DIM's Share)."
+                : $"DIM didn't hand over the shared loadout (HTTP {status.ToString(CultureInfo.InvariantCulture)}). Try again later. {LongLinkInstead}");
+
+    /// <summary>What to say when the browser couldn't reach DIM (<paramref name="why"/>: what it said).</summary>
+    public static string DescribeUnreachable(string why) =>
+        $"Couldn't reach DIM to read the shared loadout ({why}). Check your connection and try again. {LongLinkInstead}";
 
     /// <summary>
     /// The <c>loadout</c> query value of an http(s) link whose path ends in <c>/loadouts</c>, decoded as a browser does

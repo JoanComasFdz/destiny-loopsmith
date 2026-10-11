@@ -1,0 +1,234 @@
+@inject BungieAccount Account
+@* The build's stats: as the build has them ("?" where it doesn't say), typed by hand, or added up from the player's
+   own armor after a Bungie login — the build's pieces matched with their copies (one picked per piece when they own
+   several), plus the build's stat mods, tuning and fragments, the way DIM adds up a loadout (LoopDesigning.AddUpStats).
+   Or a character's current stats, as Bungie has them. Whatever is used goes into the embedded build's stats:. *@
+<div class="stats-head">
+    <h3 class="section-label">Stats</h3>
+    @if (OnSetStats.HasDelegate && !editing)
+    {
+        <button type="button" class="btn ghost small" data-action="edit-stats" @onclick="StartEditing">Edit</button>
+    }
+</div>
+@if (editing)
+{
+    <div class="stats-edit" data-testid="stats-edit">
+        @for (var i = 0; i < StatsShaping.Stats.Length; i++)
+        {
+            var index = i;
+            var stat = StatsShaping.Stats[index];
+            <label class="stat-input">
+                <span class="stat-name">@stat.Name</span>
+                <input type="number" min="0" max="200" step="1" inputmode="numeric" placeholder="?" data-stat="@stat.Name"
+                       value="@inputs[index]" @onchange="e => SetInput(index, e)" />
+            </label>
+        }
+    </div>
+    @foreach (var problem in problems)
+    {
+        <p class="stats-problem" role="alert">@problem</p>
+    }
+    <div class="stats-actions">
+        <button type="button" class="btn primary small" data-action="save-stats" @onclick="SaveAsync">Save</button>
+        <button type="button" class="btn ghost small" @onclick="CancelEditing">Cancel</button>
+        <span class="muted stats-hint">Empty is "?".</span>
+    </div>
+}
+else
+{
+    <div class="stats" data-testid="stats">
+        @foreach (var row in Rows)
+        {
+            <div class="stat" data-stat="@row.Name">
+                <span class="stat-name">@row.Name</span>
+                <span class="stat-bar"><span style="width:@ToPercent(row.Value)%"></span></span>
+                <span class="stat-value">@(row.Value is Optional<int>.Some value ? value.Value.ToString(System.Globalization.CultureInfo.InvariantCulture) : "?")</span>
+            </div>
+        }
+    </div>
+}
+
+@if (OnSetStats.HasDelegate && Account.CanLogIn)
+{
+    <div class="stats-login" data-testid="stats-login">
+        @if (waiting)
+        {
+            <p class="muted">Waiting for Bungie's login in its window…</p>
+            <button type="button" class="btn ghost small" data-action="cancel-login" @onclick="CancelLoginAsync">Cancel</button>
+        }
+        else if (profile is Optional<BungieProfile>.Some loaded)
+        {
+            @RenderChoices(loaded.Value)
+        }
+        else
+        {
+            <p class="stats-login-note">
+                Log in with Bungie to load this build's stats from your own armor. Loopsmith asks Bungie for read-only access to
+                your characters, inventory and vault, finds this loadout's armor and adds up its stats with its mods and
+                fragments, the way DIM does. It changes nothing in your account and keeps nothing: the access is used once, in
+                this tab, and only with bungie.net.
+            </p>
+            <button type="button" class="btn primary" data-action="bungie-login" @onclick="LogInAsync">Log in with Bungie</button>
+        }
+        @if (problem is Optional<string>.Some why)
+        {
+            <p class="stats-problem" role="alert" data-testid="stats-login-problem">@why.Value</p>
+        }
+        @if (applied is Optional<string>.Some done)
+        {
+            <p class="status" role="status" data-testid="stats-applied">@done.Value</p>
+        }
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public ValidatedBuild Build { get; set; } = null!;
+
+    /// <summary>The build's stats as the sheet shows them (name and value, "?" when unknown).</summary>
+    [Parameter, EditorRequired]
+    public ImmutableArray<StatRow> Rows { get; set; }
+
+    /// <summary>Stats to set on the build (typed, or from the player's armor); none: the stats are only shown.</summary>
+    [Parameter]
+    public EventCallback<StatLine> OnSetStats { get; set; }
+
+    private bool editing;
+    private ImmutableArray<string> inputs = [];
+    private ImmutableArray<string> problems = [];
+    private bool waiting;
+    private Optional<BungieProfile> profile = Optional.None<BungieProfile>();
+    private Optional<string> problem = Optional.None<string>();
+    private Optional<string> applied = Optional.None<string>();
+    private ImmutableDictionary<ArmorSlot, ItemInstanceId> picks = ImmutableDictionary<ArmorSlot, ItemInstanceId>.Empty;
+
+    /// <summary>The player's copies of each piece (one picked when they own several), what they add up to, and their characters' current stats.</summary>
+    private RenderFragment RenderChoices(BungieProfile loaded) => __builder =>
+    {
+        var choices = LoopDesigning.ListStatChoices(Build, loaded);
+        var totals = LoopDesigning.AddUpStats(Build, choices, picks);
+        <div class="armor-choices" data-testid="armor-choices">
+            @foreach (var choice in choices.Pieces)
+            {
+                var slot = choice.Piece.Slot;
+                <div class="armor-choice" data-slot="@slot">
+                    <div class="armor-choice-name"><span class="muted">@StatsShaping.DescribeSlot(slot)</span> · @choice.Piece.Name</div>
+                    @if (choice.Copies.IsEmpty)
+                    {
+                        <div class="muted">Not in your account.</div>
+                    }
+                    else
+                    {
+                        var picked = LoopDesigning.FindPickedCopy(choice, picks).Map(found => found.Armor.InstanceId);
+                        @foreach (var copy in choice.Copies)
+                        {
+                            var id = copy.Armor.InstanceId;
+                            <label class="armor-copy" data-instance="@id.Value">
+                                @if (choice.Copies.Length > 1)
+                                {
+                                    <input type="radio" name="copy-@slot" checked="@(picked == Optional.Some(id))" @onchange="() => Pick(slot, id)" />
+                                }
+                                <span>
+                                    @copy.Points.Match(points => StatsShaping.DescribeRoll(points.Value), _ => "stats Loopsmith can't read")
+                                    <span class="muted">— @StatsShaping.DescribePlace(copy.Armor.Place)</span>
+                                </span>
+                            </label>
+                        }
+                    }
+                </div>
+            }
+        </div>
+        @switch (totals)
+        {
+            case Result<StatTotals, string>.Ok added:
+                <p class="stats-total" data-testid="stats-total">Adds up to <strong>@StatsShaping.DescribeStatLine(added.Value.Stats)</strong></p>
+                <details class="stats-parts">
+                    <summary>How it adds up</summary>
+                    <ul>
+                        @foreach (var part in added.Value.Parts)
+                        {
+                            <li><span class="stats-part-name">@part.Source</span> <span class="muted">@StatsShaping.DescribePoints(part.Points)</span></li>
+                        }
+                    </ul>
+                </details>
+                @foreach (var note in added.Value.Notes)
+                {
+                    <p class="muted stats-note">@note</p>
+                }
+                <button type="button" class="btn primary small" data-action="use-armor-stats" @onclick="() => UseAsync(added.Value.Stats, StatsFromArmor)">Use these stats</button>
+                break;
+            case Result<StatTotals, string>.Error refused:
+                <p class="muted" data-testid="stats-total-refused">@refused.Failure</p>
+                break;
+        }
+        @foreach (var character in choices.Characters)
+        {
+            <div class="stats-character" data-testid="character-stats">
+                <p>Or your @character.Class's current stats, as Bungie has them: <span class="muted">@StatsShaping.DescribeStatLine(character.Stats)</span></p>
+                <button type="button" class="btn small" data-action="use-character-stats" @onclick="() => UseAsync(character.Stats, StatsFromCharacter)">Use these</button>
+            </div>
+        }
+        <button type="button" class="btn ghost small" data-action="bungie-login" @onclick="LogInAsync">Log in again</button>
+    };
+
+    private const string StatsFromArmor = "Stats set from your armor.";
+    private const string StatsFromCharacter = "Stats set from your character.";
+
+    private void StartEditing()
+    {
+        var typed = StatsShaping.ToInputs(Build.Build.Stats);                                    // pure
+        inputs = typed;                                                                          // impure (component state)
+        problems = [];                                                                           // impure (component state)
+        editing = true;                                                                          // impure (component state)
+    }
+
+    private void CancelEditing() =>
+        editing = false;                                                                         // impure (component state)
+
+    private void SetInput(int index, ChangeEventArgs e) =>
+        inputs = inputs.SetItem(index, e.Value?.ToString() ?? "");                               // impure (component state)
+
+    private async Task SaveAsync()
+    {
+        var read = LoopDesigning.ReadStatInputs(inputs);                                         // pure
+        var wrong = read.Match(_ => ImmutableArray<string>.Empty, error => error.Failure);       // pure
+        problems = wrong;                                                                        // impure (component state)
+        if (read is not Result<StatLine, ImmutableArray<string>>.Ok typed)
+        {
+            return;
+        }
+
+        editing = false;                                                                         // impure (component state)
+        await OnSetStats.InvokeAsync(typed.Value);                                               // impure
+    }
+
+    private async Task LogInAsync()
+    {
+        waiting = true;                                                                          // impure (component state)
+        problem = Optional.None<string>();                                                       // impure (component state)
+        applied = Optional.None<string>();                                                       // impure (component state)
+        var loaded = await Account.LoadProfileAsync();                                           // impure (window, network)
+        var read = loaded.Match(ok => Optional.Some(ok.Value), _ => profile);                    // pure
+        var refused = loaded.Match(_ => Optional.None<string>(), error => Optional.Some(error.Failure)); // pure
+        waiting = false;                                                                         // impure (component state)
+        profile = read;                                                                          // impure (component state)
+        problem = refused;                                                                       // impure (component state)
+        picks = ImmutableDictionary<ArmorSlot, ItemInstanceId>.Empty;                            // impure (component state)
+    }
+
+    private async Task CancelLoginAsync() =>
+        await Account.CancelAsync();                                                             // impure
+
+    private void Pick(ArmorSlot slot, ItemInstanceId instance) =>
+        picks = picks.SetItem(slot, instance);                                                   // impure (component state)
+
+    private async Task UseAsync(StatLine stats, string done)
+    {
+        await OnSetStats.InvokeAsync(stats);                                                     // impure
+        applied = Optional.Some(done);                                                           // impure (component state)
+    }
+
+    private static string ToPercent(Optional<int> value) =>
+        value.Match(v => (100m * Math.Clamp(v.Value, 0, BuildSheetShaping.MaxStat) / BuildSheetShaping.MaxStat), _ => 0m)
+            .ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
+}

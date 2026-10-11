@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Globalization;
 using Loopsmith.Core.Causality;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
@@ -30,6 +31,7 @@ public static class BuildValidation
             .Concat(CheckAspects(build, catalog))
             .Concat(CheckFragmentSlots(build, catalog))
             .Concat(CheckInertElements(elements.Select(e => e.Element)))
+            .Concat(CheckStats(build, elements.Select(e => e.Element)))
             .Concat(CheckUnreachedWeapons(build, elements.Select(e => e.Element)))
             .Concat(CheckNotStacking(catalog, elements.Select(e => e.Element).Concat(ListKeywordElements(catalog).Select(e => e.Element))))
             .Concat(CheckPinnedCatalog(build, catalog))
@@ -285,6 +287,26 @@ public static class BuildValidation
             yield return new BuildIssue(Severity.Blocking, $"{build.Fragments.Length} fragments equipped; the aspects grant {slots} slots.");
         }
     }
+
+    /// <summary>
+    /// What an equipped element's stat checks say at the build's stats (Gambler's Dodge below 50 Melee): each check
+    /// whose stat the build knows and whose range holds it, once per element. An unknown stat says nothing.
+    /// </summary>
+    private static IEnumerable<BuildIssue> CheckStats(Build build, IEnumerable<BuildElement> elements) =>
+        elements
+            .DistinctBy(e => e.Id)
+            .SelectMany(e => e.StatChecks)
+            .SelectMany(check => build.Stats.ReadStat(check.Stat).Match(
+                known => IsInRange(check, known.Value.Value)
+                    ? new[] { new BuildIssue(ToSeverity(check.Severity), check.Says.Replace("{value}", known.Value.Value.ToString(CultureInfo.InvariantCulture), StringComparison.Ordinal)) }
+                    : [],
+                _ => []));
+
+    private static bool IsInRange(StatCheck check, int value) =>
+        value < check.Below.Value && check.From.Match(from => value >= from.Value.Value, _ => true);
+
+    private static Severity ToSeverity(StatCheckSeverity severity) =>
+        severity == StatCheckSeverity.Warning ? Severity.Warning : Severity.Info;
 
     /// <summary>An element with no rules is a gap, unless its rules file says why it needs none (<c>inert</c>: damage only, outside the model).</summary>
     private static IEnumerable<BuildIssue> CheckInertElements(IEnumerable<BuildElement> elements) =>

@@ -62,6 +62,33 @@ public readonly partial struct DimShareId
             : Validation.Invalid($"'{value}' is not a dim.gg share id");
 }
 
+/// <summary>A player's copy of an item, as Bungie's profile names it (<c>itemInstanceId</c>): a number, written as text.</summary>
+[ValueObject<string>]
+public readonly partial struct ItemInstanceId
+{
+    private static Validation Validate(string value) =>
+        IsNumber(value) ? Validation.Ok : Validation.Invalid($"'{value}' is not an item instance id");
+
+    internal static bool IsNumber(string value) =>
+        value.Length > 0 && value.All(char.IsAsciiDigit);
+}
+
+/// <summary>A Destiny membership's id (<c>membershipId</c>): a number, written as text.</summary>
+[ValueObject<string>]
+public readonly partial struct MembershipId
+{
+    private static Validation Validate(string value) =>
+        ItemInstanceId.IsNumber(value) ? Validation.Ok : Validation.Invalid($"'{value}' is not a membership id");
+}
+
+/// <summary>A Destiny membership's platform, as Bungie numbers it (<c>membershipType</c>: 1 Xbox, 2 PlayStation, 3 Steam…).</summary>
+[ValueObject<int>]
+public readonly partial struct MembershipType
+{
+    private static Validation Validate(int value) =>
+        value > 0 ? Validation.Ok : Validation.Invalid("A membership type is a platform's number, above 0");
+}
+
 /// <summary>Version of the rule catalog a build was authored against (requirements FR-10, ADRs D15).</summary>
 [ValueObject<string>]
 public readonly partial struct CatalogVersion

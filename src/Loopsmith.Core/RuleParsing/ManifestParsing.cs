@@ -19,9 +19,12 @@ internal static class ManifestParsing
         Optional.None<string>(),
         ImmutableDictionary<DamageType, string>.Empty,
         ImmutableDictionary<ItemHash, ArmorSet>.Empty,
-        ImmutableDictionary<ItemHash, ManifestItem>.Empty);
+        ImmutableDictionary<ItemHash, ManifestItem>.Empty,
+        ImmutableDictionary<ItemHash, StatPlug>.Empty);
 
-    private static readonly ImmutableArray<string> ManifestKeys = ["version", "damageTypes", "armorSets", "items"];
+    private static readonly ImmutableArray<string> ManifestKeys = ["version", "damageTypes", "armorSets", "items", "statPlugs"];
+    private static readonly ImmutableArray<string> StatPlugKeys = ["hash", "kind", "stats"];
+    private static readonly ImmutableArray<string> PlugStatKeys = ["stat", "value", "class"];
     private static readonly ImmutableArray<string> DamageTypeKeys = ["type", "icon"];
     private static readonly ImmutableArray<string> ArmorSetKeys = ["hash", "name", "perks"];
     private static readonly ImmutableArray<string> SetPerkKeys = ["pieces", "perk"];
@@ -53,11 +56,50 @@ internal static class ManifestParsing
                 map.ReadOrDefault("items", items => items.ReadEach("item", ReadItem)
                     .Bind(located => LocatedCollections.ToUniqueDictionary(located, item => item.Hash, "manifest item")),
                     ImmutableDictionary<ItemHash, ManifestItem>.Empty),
-                (_, version, icons, sets, items) => new ManifestExcerpt(
+                map.ReadOrDefault("statPlugs", plugs => plugs.ReadEach("stat plug", ReadStatPlug)
+                    .Bind(located => LocatedCollections.ToUniqueDictionary(located, plug => plug.Hash, "stat plug")),
+                    ImmutableDictionary<ItemHash, HashedStatPlug>.Empty),
+                (_, version, icons, sets, items, statPlugs) => new ManifestExcerpt(
                     version,
                     icons.GroupBy(icon => icon.Type).ToImmutableDictionary(group => group.Key, group => group.First().Icon),
                     sets,
-                    items)));
+                    items,
+                    statPlugs.ToImmutableDictionary(entry => entry.Key, entry => entry.Value.Plug))));
+
+    /// <summary>A stat plug with its hash, while the excerpt's list becomes a dictionary.</summary>
+    private sealed record HashedStatPlug(ItemHash Hash, StatPlug Plug);
+
+    /// <summary>A stat plug's kind as the excerpt writes it; each becomes its <see cref="StatPlug"/> case.</summary>
+    private enum StatPlugWord { Base, Masterwork, TuningSocket, Tuning, BalancedTuning, StatMod, Fragment }
+
+    /// <summary><c>{ hash, kind: base|masterwork|tuningSocket|tuning|balancedTuning|statMod|fragment, stats: [{ stat, value, class? }] }</c>.</summary>
+    private static Result<Located<HashedStatPlug>, Errors> ReadStatPlug(YamlValue value) =>
+        value.ToMap().Bind(map => Combine(
+            map.CheckKeys(StatPlugKeys),
+            map.ReadRequired("hash", ReadItemHash),
+            map.ReadRequired("kind", ReadVocabularyWord<StatPlugWord>),
+            map.ReadOrDefault("stats", stats => stats.ReadEach("plug stat", ReadPlugStat), []),
+            (_, hash, kind, stats) => map.ToLocated(new HashedStatPlug(hash, ToStatPlug(kind, stats)))));
+
+    private static StatPlug ToStatPlug(StatPlugWord kind, ImmutableArray<PlugStat> stats) =>
+        kind switch
+        {
+            StatPlugWord.Base => new StatPlug.Rolled(stats),
+            StatPlugWord.Masterwork => new StatPlug.Masterwork(stats),
+            StatPlugWord.TuningSocket => new StatPlug.TuningSocket(),
+            StatPlugWord.Tuning => new StatPlug.Tuning(stats),
+            StatPlugWord.BalancedTuning => new StatPlug.BalancedTuning(stats),
+            StatPlugWord.StatMod => new StatPlug.StatMod(stats),
+            _ => new StatPlug.Fragment(stats),
+        };
+
+    private static Result<PlugStat, Errors> ReadPlugStat(YamlValue value) =>
+        value.ToMap().Bind(map => Combine(
+            map.CheckKeys(PlugStatKeys),
+            map.ReadRequired("stat", ReadVocabularyWord<StatKind>),
+            map.ReadRequired("value", ReadSignedInteger),
+            map.ReadOptional("class", ReadVocabularyWord<GuardianClass>),
+            (_, stat, points, forClass) => new PlugStat(stat, points, forClass)));
 
     private sealed record DamageTypeIcon(DamageType Type, string Icon);
 

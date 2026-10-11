@@ -165,9 +165,10 @@ DIM itself opens:
 
 * **A dim.gg share** — what DIM's Share button copies (`https://dim.gg/4j5nz4q/Skip-Grenade`, or just
   the id). The loadout is on DIM's servers: the web app asks DIM's API for it
-  (`GET https://api.destinyitemmanager.com/loadout_share?shareId=…` with the app's key as
-  `X-API-Key`), which needs Loopsmith registered with DIM ([hosting.md](hosting.md#dim-links)).
-  Until it is, a dim.gg link answers `Loopsmith can't open dim.gg links yet …`.
+  (`GET https://api.destinyitemmanager.com/loadout_share?shareId=…`, open to any caller: no key, no
+  header — [hosting.md](hosting.md#dim-links)). When DIM can't be reached or doesn't hand it over, the
+  message says how to get the other kind: the dim.gg page's "Open Loadout in DIM" link carries the whole
+  loadout (copy that link and paste it instead); a share DIM doesn't know is said so.
 * **A link that carries its loadout** — DIM's Loadouts page with the loadout as JSON in `?loadout=`
   (D2ArmorPicker, guardian.report): read in the browser, nothing is fetched.
 
@@ -251,6 +252,37 @@ link, without asking DIM. The owner's own Skip Grenade build is the first
 ([builds/skip-grenade-hunter/dim-loadout.json](../builds/skip-grenade-hunter/dim-loadout.json); how it
 differs from the hand-written `build.yaml` is in that build's discrepancies). The hand-written builds
 stay on Home as links, with "import a build.yaml" and "import a loop".
+
+## Stats
+
+A build's `stats:` are its six armor stats (`weapons`, `health`, `class`, `grenade`, `super`, `melee`, 0..200;
+one the build doesn't give is "?"). They are facts of the build, never counted down: the engine simulates no
+energy (ADRs D1, D5). What they change is said by the build check, from the elements' `statChecks`
+([rule-format.md](rule-format.md#elements)) — Gambler's Dodge gives back 1% of a melee charge per Melee point,
+twice that within 15 m of an enemy, so below 50 Melee it warns that even near an enemy the melee doesn't come back
+in full (and from 50 to 99 it says that only near an enemy it does); a Combination Blow kill refills the class
+ability in full only from 70 Class.
+
+In the designer the Stats section sets them, into the embedded build's `stats:` (only that line changes), and the
+steps replay:
+
+* **Typed** — "Edit": six inputs, a whole number 0..200 each, or empty for "?".
+* **From the player's own armor** — "Log in with Bungie" ([hosting.md](hosting.md#bungie-login)). Loopsmith asks
+  Bungie for read-only access, reads the player's armor (worn, carried and in the vault) and matches the build's
+  pieces — a DIM loadout's exotic and the legendary pieces it left out — with their copies; a piece they own more
+  than once is a pick (the copy with the most points first), one they don't own is said so. The total is added up
+  the way DIM adds up a loadout, from the manifest excerpt's `statPlugs`
+  ([rule-format.md](rule-format.md#manifest-excerpt-rulesmanifestyaml)): each copy's roll (its armor-stat plugs)
+  and masterwork (Armor 3.0's adds only to its stats at 0; Armor 2.0's +2 to each at full energy); the build's
+  stat mods (Grenade Mod ×5: +50 Grenade) and tuning (Balanced Tuning: +1 to a piece's stats at 0, one per tuning
+  socket — one with no socket left adds nothing, and says so); and its fragments' stats (Spark of Shock: −10
+  Grenade). "How it adds up" lists each part, and a total past 200 is said to count as 200. "Use these stats" sets
+  them. A build that names no piece for some slot (a hand-written one) can't be added up this way, and a piece
+  whose roll the excerpt doesn't know is said so.
+* **A character's current stats** — after the login, each of the player's characters of the build's class, as
+  Bungie has them right now (what it wears, with its mods and subclass): "Use these".
+
+Nothing of the login is kept; the stats are, in the loop's build, so a shared loop carries its author's numbers.
 
 ## Sharing
 

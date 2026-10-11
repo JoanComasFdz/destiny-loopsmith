@@ -125,21 +125,34 @@ public static class BuildFileWriting
                 new SequenceEnd(),
             ];
 
+    /// <summary>A build's <c>stats:</c> value on its own, <c>{weapons: 47, class: 104}</c> (<c>{}</c> when none is known).</summary>
+    internal static string WriteStats(StatLine stats)
+    {
+        ImmutableArray<ParsingEvent> events =
+            [new StreamStart(), new DocumentStart(), new MappingStart(null, null, true, MappingStyle.Flow), .. ToStatEntries(stats), new MappingEnd(), new DocumentEnd(true), new StreamEnd()];
+        return EmitYaml(events).TrimEnd('\n');
+    }
+
     private static ImmutableArray<ParsingEvent> ToStatsEntry(StatLine stats)
     {
-        var known = new (string Key, Optional<StatValue> Value)[]
+        var known = ToStatEntries(stats);
+        return known.IsEmpty
+            ? []
+            : [ToKey("stats"), new MappingStart(null, null, true, MappingStyle.Flow), .. known, new MappingEnd()];
+    }
+
+    /// <summary>The known stats as key and value events, in the format's order; the unknown ("?") ones left out.</summary>
+    private static ImmutableArray<ParsingEvent> ToStatEntries(StatLine stats) =>
+        [
+            .. new (string Key, Optional<StatValue> Value)[]
             {
                 ("weapons", stats.Weapons), ("health", stats.Health), ("class", stats.Class),
                 ("grenade", stats.Grenade), ("super", stats.Super), ("melee", stats.Melee),
             }
             .SelectMany(stat => stat.Value.Match(
                 value => ToEntry(stat.Key, value.Value.Value.ToString(CultureInfo.InvariantCulture)),
-                _ => []))
-            .ToImmutableArray();
-        return known.IsEmpty
-            ? []
-            : [ToKey("stats"), new MappingStart(null, null, true, MappingStyle.Flow), .. known, new MappingEnd()];
-    }
+                _ => [])),
+        ];
 
     /// <summary><c>leftOut: { items: […], subclassPlugs: […], … }</c>, each part in the loadout's order; nothing when empty.</summary>
     private static ImmutableArray<ParsingEvent> ToLeftOutEntry(ImmutableArray<LeftOutItem> leftOut)

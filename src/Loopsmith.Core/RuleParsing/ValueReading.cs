@@ -53,6 +53,12 @@ internal static class ValueReading
     internal static Result<int, Errors> ReadNonNegativeInteger(YamlValue value) =>
         value.ParseWith(text => ParseWholeNumber(text, minimum: 0));
 
+    /// <summary>A whole number that may be negative (a stat plug's <c>value: -10</c>).</summary>
+    internal static Result<int, Errors> ReadSignedInteger(YamlValue value) =>
+        value.ParseWith<int>(text => int.TryParse(text, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var number)
+            ? new Result<int, string>.Ok(number)
+            : new Result<int, string>.Error($"'{text}' is not a whole number"));
+
     /// <summary>A stack count of at least one (<c>stacks</c>, <c>extra</c>).</summary>
     internal static Result<StackCount, Errors> ReadStackCount(YamlValue value) =>
         value.ParseWith(text => ParseWholeNumber(text, minimum: 1).Bind(count => StackCount.TryFrom(count).ToResult()));
@@ -60,6 +66,10 @@ internal static class ValueReading
     /// <summary>A stacking status's cap, at least 2 (<c>maxStacks</c>): a status that doesn't stack has none.</summary>
     internal static Result<StackCount, Errors> ReadMaxStacks(YamlValue value) =>
         value.ParseWith(text => ParseWholeNumber(text, minimum: 2).Bind(count => StackCount.TryFrom(count).ToResult()));
+
+    /// <summary>An armor stat's value, 0..200 (a stat check's <c>from</c> and <c>below</c>).</summary>
+    internal static Result<StatValue, Errors> ReadStatValue(YamlValue value) =>
+        value.ParseWith(text => ParseWholeNumber(text, minimum: 0).Bind(number => StatValue.TryFrom(number).ToResult()));
 
     /// <summary>A number of enemies, 1..20 (<c>atLeast</c>).</summary>
     internal static Result<TargetCount, Errors> ReadTargetCount(YamlValue value) =>

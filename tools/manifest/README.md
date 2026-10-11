@@ -7,7 +7,9 @@ armor sets with their 2- and 4-piece perks, and the artifacts with the perks the
 `hash:` in `rules/` and every hash a saved DIM share (`builds/*/dim-loadout.json`) wears, plus every perk those
 weapons' columns roll with. The web app shows a build the way DIM shows a loadout from it, a DIM link's weapons
 become the build's weapons, and the designer's perk picker offers what each column rolls with
-([docs/loop-format.md](../../docs/loop-format.md#starting-from-a-dim-link)). Icons are loaded from
+([docs/loop-format.md](../../docs/loop-format.md#starting-from-a-dim-link)). It also holds every plug that changes an armor stat
+(`statPlugs`: armor-stat rolls, masterworks, tuning, stat mods, fragments), so the designer adds up a build's stats
+from the player's own armor the way DIM does ([docs/loop-format.md](../../docs/loop-format.md#stats)). Icons are loaded from
 bungie.net; the data is Bungie's, used under its API terms.
 
 Regenerate it after adding a hash to the rules, a saved DIM share, or when Bungie publishes a new manifest:

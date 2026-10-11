@@ -126,6 +126,27 @@ items:
   set perk's hash (`luminopotent-2pc` → `hash: 2769443639`), so a DIM loadout's pieces equip it.
 * `tier`: `basic|common|rare|legendary|exotic`. `icon` is a bungie.net path (the app prefixes
   `https://www.bungie.net`). A hash appears once. The file is optional: without it nothing has an icon.
+* `statPlugs`: every plug of the manifest that changes an armor stat, for adding up a build's stats from a
+  player's own armor the way DIM does ([loop-format.md](loop-format.md#stats)):
+
+  ```yaml
+  statPlugs:
+    - { hash: 311219525, kind: base, stats: [{ stat: weapons, value: 1 }] }
+    - { hash: 788990510, kind: masterwork, stats: [{ stat: weapons, value: 5 }, …, { stat: melee, value: 5 }] }
+    - { hash: 2121121504, kind: tuningSocket, stats: [] }
+    - { hash: 309000506, kind: tuning, stats: [{ stat: grenade, value: 5 }, { stat: melee, value: -5 }] }
+    - { hash: 3122197216, kind: balancedTuning, stats: [{ stat: weapons, value: 1 }, …] }
+    - { hash: 1435557120, kind: statMod, stats: [{ stat: grenade, value: 10 }] }
+    - { hash: 1727069360, kind: fragment, stats: [{ stat: class, value: -10, class: warlock }, { stat: weapons, value: -10, class: hunter }, …] }
+  ```
+
+  `kind`: `base` (a piece's rolled stats: its armor-stat and intrinsic plugs), `masterwork` (Armor 3.0's: it adds
+  only to a piece's stats at 0, the three its roll leaves empty), `tuningSocket` (the empty tuning socket's plug, with
+  no stats: it marks the socket), `tuning` (a tuning mod: points from one stat to another), `balancedTuning` (like a
+  masterwork, only to a piece's stats at 0; one piece per tuning socket), `statMod` or `fragment` (a fragment with a
+  stat), as DIM reads them. `stat` is one of the six (`weapons|health|class|grenade|super|melee`), `value` a whole
+  number (negative for a fragment's −10). A stat with a `class` counts for that class only (Spark of Focus and Echo of
+  Persistence lower the stat of the class's own ability regeneration).
 
 ## Elements
 
@@ -166,6 +187,20 @@ Two keys belong to some kinds only (anywhere else they are an error):
 
 `kind: keyword` elements are active in every build, once; every other kind is equipped through its
 build slot ([Build check](#build-check)).
+
+`statChecks` say something about an element at some values of a build's stat — a fact of the game the build
+check states, never counted (the stat isn't simulated):
+
+```yaml
+statChecks:
+  - { stat: melee, below: 50, severity: warning, says: "With {value} Melee, a Gambler's Dodge gives back less than a full melee charge, even near an enemy: …" }
+  - { stat: melee, from: 50, below: 100, severity: info, says: "With {value} Melee, a Gambler's Dodge gives back a full melee charge only within 15 m of an enemy …" }
+```
+
+A check speaks when the build's `stat` is known and at least `from` (when given) and below `below`; `{value}`
+is the build's value. `from` and `below` are stat values (0..200) and `from` < `below`
+(`a stat check's range starts below its end (from < below)`); `severity` is `warning` or `info` (a stat never
+blocks a build). An unknown stat ("?") says nothing.
 
 `inert: "<why>"` marks an element that is known and has no part in a loop on purpose — Skip Grenade
 (its hits are the grenade step itself), Feeding Frenzy (no ammo or reloads are counted), the
@@ -487,6 +522,7 @@ stats: { weapons: 47, class: 104, grenade: 145, super: 27, melee: 79 }   # any s
 | `<weapon> has no catalyst in the manifest excerpt, so catalyst: true does nothing.` | Warning |
 | `<weapon>'s catalyst: <name> — not in the rule catalog yet, so it sets nothing off.` | Info |
 | `'<name>' has no authored rules yet — it is inert in the trace.` — not for an `inert` element | Warning |
+| an equipped element's `statChecks` that the build's stats meet ([Elements](#elements)): `With 40 Melee, a Gambler's Dodge gives back less than a full melee charge …` | as the check says |
 | a rule that doesn't stack with an equipped element ([above](#rules-that-dont-stack)) | Warning |
 | `Build pinned catalog <pinned>; using <current>.` | Info |
 

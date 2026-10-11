@@ -15,16 +15,17 @@ var files = EmbeddedDataReading.ReadEmbeddedFiles(typeof(App).Assembly);        
 var startup = files.Bind(BundleComposing.ComposeBundle);                                   // pure
 var shareLinksWork = ShareLinkCoding.CheckRoundTrip();                                     // pure
 var workbench = new Workbench(startup, shareLinksWork);                                    // pure
-var configuredKey = builder.Configuration["DimApiKey"];                                    // impure (wwwroot/appsettings.json)
-var dimApiKey = (configuredKey ?? "").Trim();                                              // pure
-var dimLoadouts = new DimLoadoutFetching(new HttpClient(), dimApiKey);                     // impure
+var dimLoadouts = new DimLoadoutFetching(new HttpClient());                                // impure
 var configuredBungieKey = builder.Configuration["BungieApiKey"];                           // impure (wwwroot/appsettings.json)
 var configuredContentId = builder.Configuration["ManifestContentId"];                      // impure (wwwroot/appsettings.json)
+var configuredClientId = builder.Configuration["BungieClientId"];                          // impure (wwwroot/appsettings.json)
 var bungieApiKey = (configuredBungieKey ?? "").Trim();                                     // pure
 var manifestContentId = (configuredContentId ?? "").Trim();                                // pure
+var bungieClientId = (configuredClientId ?? "").Trim();                                    // pure
 
 builder.Services.AddSingleton(workbench);                                                  // impure
 builder.Services.AddSingleton<BrowserInterop>();                                           // impure
 builder.Services.AddSingleton(dimLoadouts);                                                // impure
 builder.Services.AddSingleton(services => new BungieManifestJoining(services.GetRequiredService<BrowserInterop>(), bungieApiKey, manifestContentId)); // impure
+builder.Services.AddSingleton(services => new BungieAccount(new HttpClient(), services.GetRequiredService<BrowserInterop>(), bungieApiKey, bungieClientId)); // impure
 await builder.Build().RunAsync();                                                          // impure

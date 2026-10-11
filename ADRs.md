@@ -318,7 +318,7 @@ decision for the owner. 32.0.1 predates SponsorCheck and works with xunit.v3 3.2
 ### D27 — A DIM link starts a build of what the catalog knows by hash; the rest is left out
 
 **Context.** Players keep their builds in DIM, and DIM shares a loadout as a link: a dim.gg share
-(the loadout is on DIM's servers, handed only to apps registered with DIM's API) or a link to DIM's
+(the loadout is on DIM's servers, which hand it to any caller) or a link to DIM's
 Loadouts page carrying the loadout as JSON (D2ArmorPicker, guardian.report). A loadout names its
 items only by manifest hash, and the manifest isn't read yet (D14): the catalog has hashes for most
 aspects, fragments, mods and exotics it holds, none for supers, grenades, melees or weapons. **Decision.**
@@ -328,12 +328,33 @@ catalog element with that hash. An
 ability the catalog has no hash for is `"?"` in the build (D13: unknown is data, never guessed —
 D12), and every item it doesn't recognise goes in the build's `leftOut` by hash, so whoever opens
 the loop sees what is missing. The build is written as an ordinary `build.yaml`, so a loop from a
-DIM link exports, shares and replays like any other. The web host fetches a dim.gg share with the
-app's DIM API key; links that carry their loadout need nothing, and a share saved with the app
+DIM link exports, shares and replays like any other. The web host fetches a dim.gg share from DIM's
+open `loadout_share` API with a plain GET (no key: a header would need a CORS preflight DIM grants only
+its registered apps); links that carry their loadout need nothing, and a share saved with the app
 (`builds/<slug>/dim-loadout.json`: its link and the loadout as DIM's share page carries it) opens
 without asking DIM. DIM offers no embeddable preview of a share (its page has only a stock link
 image), so Home draws its own card of what the catalog recognised. Items the manifest excerpt lacks are
 read from Bungie's full manifest first (D14), so the link's weapons, armor sets and left-out items have their
 names. **Consequence.** A Stasis, Strand or Prismatic loadout can't start a build yet (the glossary has the
-Light subclasses only); dim.gg links work once the owner registers Loopsmith with DIM's API
-([docs/hosting.md](docs/hosting.md), "DIM links").
+Light subclasses only); Loopsmith needs no registration with DIM ([docs/hosting.md](docs/hosting.md), "DIM links").
+
+### D28 — A build's stats come from the player's own armor, added up like DIM, after a read-only Bungie login
+
+**Context.** Some cause and effect depends on a stat: a Gambler's Dodge gives back 1% of a melee charge per Melee
+point (twice that near an enemy), a Combination Blow kill refills the class ability in full only from 70 Class.
+A DIM link carries no stats, and the armor it names may sit in the player's vault: only the player's login
+lets an app read it (Bungie shows anyone only what a character wears). **Decision.** A build's `stats:` stay a
+fact of the build (the engine still simulates no energy, D1, D5), and the elements' `statChecks` say what a stat
+changes in the build check. The designer sets the stats by hand, or from the player's own armor after a Bungie
+login: a public OAuth client (no secret in a static site, D25), read-only, its token used for two reads and
+dropped. `StatLoading` (pure) reads Bungie's answers, matches the build's pieces with the player's copies (a pick
+when they own several) and adds the total up the way DIM adds up a loadout — each copy's roll and masterwork,
+the build's stat mods, tuning and fragments — from the manifest excerpt's `statPlugs`, every plug that changes
+an armor stat (shipped, so a phone needn't download Bungie's whole item table). Or it takes a character's
+current stats, as Bungie has them. **Consequence.** Stats are as exact as DIM's for a DIM loadout's pieces; a
+hand-written build names no pieces, so it takes typed or a character's stats. A build keeps no instance ids
+(a long link carries none; a dim.gg share does, but the build is by hash), so a piece owned twice is the player's
+pick. A piece whose roll
+the excerpt doesn't know (a newer manifest) is said so, never guessed (D12). The login's page is the site's
+`/login`, Bungie's one redirect URL ([docs/hosting.md](docs/hosting.md), "Bungie login").
+

@@ -25,6 +25,14 @@ public static class ResultExtensions
             ok => bind(ok.Value),
             error => new Result<TOut, TFailure>.Error(error.Failure));
 
+    /// <summary>Bind with a step a shell awaits (a request): it runs only on Ok, and its failure is the result's.</summary>
+    public static Task<Result<TOut, TFailure>> BindAsync<T, TOut, TFailure>(
+        this Result<T, TFailure> result,
+        Func<T, Task<Result<TOut, TFailure>>> bind) =>
+        result.Match(
+            ok => bind(ok.Value),
+            error => Task.FromResult<Result<TOut, TFailure>>(new Result<TOut, TFailure>.Error(error.Failure)));
+
     public static Result<T, TOut> MapError<T, TFailure, TOut>(this Result<T, TFailure> result, Func<TFailure, TOut> map) =>
         result.Match<Result<T, TOut>>(
             ok => new Result<T, TOut>.Ok(ok.Value),

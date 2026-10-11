@@ -23,6 +23,31 @@ public static class BuildFileEditing
             .Bind(events => FindWeapon(buildFile, events, index).Map(entry => ToTextSpan(events, entry)))
             .Map(span => string.Concat(buildFile.Text.AsSpan(0, span.Start), BuildFileWriting.WriteWeapon(weapon), buildFile.Text.AsSpan(span.End)));
 
+    /// <summary>
+    /// The build file with its <c>stats:</c> written anew as <paramref name="stats"/> (one flow mapping where the old value
+    /// was), or added at its end when it has none; the rest of the file stays as it was.
+    /// </summary>
+    public static Result<string, string> ReplaceStats(SourceText buildFile, StatLine stats) =>
+        ReadEvents(buildFile).Map(events => FindTopLevelValue(events, "stats").Match(
+            value => ReplaceText(buildFile.Text, ToTextSpan(events, value.Value), BuildFileWriting.WriteStats(stats)),
+            _ => $"{buildFile.Text.TrimEnd('\n')}\nstats: {BuildFileWriting.WriteStats(stats)}\n"));
+
+    private static string ReplaceText(string text, TextSpan span, string replacement) =>
+        string.Concat(text.AsSpan(0, span.Start), replacement, text.AsSpan(span.End));
+
+    /// <summary>The value of a key of the file's top-level mapping, when it has the key.</summary>
+    private static Optional<EventSpan> FindTopLevelValue(ImmutableArray<ParsingEvent> events, string key)
+    {
+        const int Root = 2; // after StreamStart and DocumentStart
+        return events.Length > Root && events[Root] is MappingStart
+            ? ListChildren(events, Root)
+                .Chunk(2)
+                .Where(entry => entry.Length == 2 && events[entry[0].First] is Scalar scalar && scalar.Value == key)
+                .Select(entry => Optional.Some(entry[1]))
+                .FindFirstSome()
+            : Optional.None<EventSpan>();
+    }
+
     /// <summary>A node as the indices of its first and last event (the same one for a scalar).</summary>
     private sealed record EventSpan(int First, int Last);
 
