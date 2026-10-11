@@ -10,7 +10,7 @@
 
 @if (Workbench.Session is Optional<DesignSession>.Some { Value: var session })
 {
-    var shown = ReadShownState(session);
+    var shownNumber = ReadShownNumber(session);
     var stepCount = session.Design.Steps.Length;
     <div class="designer">
         <section class="panel loop-header" aria-label="Loop">
@@ -80,11 +80,8 @@
                               OnRemove="RemoveStep" OnMove="MoveStep" OnSetCatalyst="SetCatalyst" />
                 <TriggerPalette Build="session.Build" Options="LoopDesigning.ListTriggerOptions(session)" OnPick="AppendTrigger"
                                 Caption="@(stepCount == 0 ? "from a fresh spawn" : $"after #{stepCount}")"
-                                Hint="@DescribePaletteHint(shown.Number, stepCount)" />
+                                Hint="@DescribePaletteHint(shownNumber, stepCount)" />
             </div>
-            <aside class="col-side">
-                <StatePanel Build="session.Build" State="shown.State" Passives="shown.Passives" Caption="@shown.Caption" />
-            </aside>
         </div>
     </div>
 
@@ -109,8 +106,6 @@
 
 @code {
     private enum DesignerDialog { None, ShareLink, Analysis }
-
-    private sealed record ShownState(int Number, GameState State, ImmutableArray<ActivePassive> Passives, string Caption);
 
     private TraceOptions traceOptions = new(false, false, false);
     private DesignerDialog dialog = DesignerDialog.None;
@@ -337,20 +332,16 @@
 
     // ── reading for display ─────────────────────────────────────────────────────
 
-    /// <summary>The state the right column shows: after the selected card, else after the last step.</summary>
-    private ShownState ReadShownState(DesignSession session)
+    /// <summary>The step the selected card is (the spawn: 0), else the last one.</summary>
+    private int ReadShownNumber(DesignSession session)
     {
         var count = session.Resolutions.Length;
-        var number = Math.Clamp(Workbench.SelectedStep.UnwrapOr(count), 0, count);
-        return number == 0
-            ? new ShownState(0, session.Initial, [], "fresh spawn")
-            : new ShownState(number, session.Resolutions[number - 1].State, session.Resolutions[number - 1].ActivePassives,
-                number == count ? $"after #{number} · now" : $"after #{number}");
+        return Math.Clamp(Workbench.SelectedStep.UnwrapOr(count), 0, count);
     }
 
-    private static string DescribePaletteHint(int shownNumber, int stepCount) =>
-        shownNumber < stepCount
-            ? $"The state shows #{shownNumber}; new steps still go after #{stepCount}. Use “Branch from here” on #{shownNumber} to continue from there."
+    private static string DescribePaletteHint(int selectedNumber, int stepCount) =>
+        selectedNumber < stepCount
+            ? $"#{selectedNumber} is selected; new steps still go after #{stepCount}. Use “Branch from here” on #{selectedNumber} to continue from there."
             : "";
 
     private string DescribePageTitle() =>

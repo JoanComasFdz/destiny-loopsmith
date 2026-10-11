@@ -134,7 +134,21 @@ status, a debuff by its adjective ("Jolted"), a pickup, a summon — is in its a
 the line ("+1 **Bolt Charge**", "Grenade kill on **Jolted** target"), and the ones the rules have as an element
 (Jolt, Bolt Charge, Ionic Trace, Combination Blow) preview and open the same way. An element
 whose rules the engine fired apart (a debuff first, energy last) shows at each of its places, in that order. "why" adds each rule's reason under its element; "caveats" adds the outcomes'
-caveats. Each step can be moved up or down, removed or dragged onto another step's place; the loop
+caveats. Each step ends with its **state** — what is present after it — laid out like the game's HUD: the buffs
+on you on the left (Bolt Charge, Amplified, Woven Mail), your weapons' buffs in the middle (a glossary
+`weaponBuff`: Slice, Unraveling Rounds, each with the weapon whose own perk gives it — Slice with Festival Flight),
+the debuffs on the pack on the right (Jolt, Sever, Unravel), the pickups on the ground below them (an Orb of
+Power waiting for `pickup:orb-of-power`; an Ionic Trace never waits, it collects itself). A phone stacks the
+four. A status that switches other elements' passives on says how many ("Amplified · 1 effect": Spark of
+Frequency's extra Bolt Charge); its details list them under **While Amplified, in this build**, each with where it
+reaches. A passive that changes weapon stats (Ionic Overclock: Linear Fusion Rifles, Fusion Rifles and Heat
+Weapons) shows in the weapons column next to the build's weapons of those types while it holds; when none of
+them is one, the details say it does nothing here and Validation says so too. A status's own effect (Woven
+Mail's damage resistance) is in its details, not in the state. Every status opens its details on a tap — one the
+rules have no element for (Amplified) shows the glossary's facts and what it switches on — and its facts ("up to
+x5 · 8s") show on hover. The CLI's `--state` prints the same four lines, then one `While <status>` line for each
+status that switches something on.
+Each step can be moved up or down, removed or dragged onto another step's place; the loop
 replays in its new order.
 
 ## Starting from a DIM link

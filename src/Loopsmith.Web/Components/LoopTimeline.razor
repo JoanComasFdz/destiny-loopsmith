@@ -1,5 +1,6 @@
 @* The designed loop: one card per step with what it fired, line by line (LoopDesigning.ShapeStepOutcomes — the CLI's
-   wording); a name tapped shows its details.
+   wording), and what is present after it (StepStateHud: buffs, weapons, debuffs, ground); a name tapped shows its
+   details.
    Each step can be moved up or down, removed, or (with a mouse) dragged by its handle onto another step's place. *@
 @{
     var build = Session.Build;
@@ -57,6 +58,7 @@
             </header>
             <div class="step-body">
                 <OutcomeTree Outcomes="@ShapeStep(resolution)" Build="build" OnShowDetails="ShowDetails" />
+                <StepStateHud State="@ShapeState(resolution)" Build="build" Number="number" OnShowDetails="ShowDetails" />
             </div>
             <div class="step-note" @onclick:stopPropagation="true">
                 <input class="note-input" placeholder="Add a note…" aria-label="@($"Note for step {number}")"
@@ -85,6 +87,7 @@
 
 @code {
     private readonly Dictionary<object, StepOutcomes> renderedSteps = new(ReferenceEqualityComparer.Instance);
+    private readonly Dictionary<object, StepState> renderedStates = new(ReferenceEqualityComparer.Instance);
     private Optional<ItemDetails> details = Optional.None<ItemDetails>();
     private TraceOptions renderedWith = new(false, false, false);
 
@@ -138,6 +141,11 @@
         {
             renderedSteps.Remove(stale);
         }
+
+        foreach (var stale in renderedStates.Keys.Where(key => !current.Contains(key)).ToList())
+        {
+            renderedStates.Remove(stale);
+        }
     }
 
     /// <summary>The step's outcomes (the card draws its own header); cached per resolution.</summary>
@@ -147,6 +155,18 @@
         {
             shaped = LoopDesigning.ShapeStepOutcomes(Session, resolution, Options with { ShowState = false });
             renderedSteps[resolution] = shaped;
+        }
+
+        return shaped;
+    }
+
+    /// <summary>What is present after the step; cached per resolution.</summary>
+    private StepState ShapeState(Resolution resolution)
+    {
+        if (!renderedStates.TryGetValue(resolution, out var shaped))
+        {
+            shaped = LoopDesigning.ShapeStepState(Session, resolution);
+            renderedStates[resolution] = shaped;
         }
 
         return shaped;

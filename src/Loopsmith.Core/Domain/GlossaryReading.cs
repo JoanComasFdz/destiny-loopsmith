@@ -11,4 +11,8 @@ public static class GlossaryReading
     /// </summary>
     public static bool IsStacking(this KeywordGlossary glossary, StatusId status) =>
         glossary.Statuses.TryGetValue(status, out var definition) && definition.MaxStacks.IsSome();
+
+    /// <summary>A buff on you or on your weapons: the engine keeps both on the player (only the state shows them apart).</summary>
+    public static bool IsBuff(this KeywordKind kind) =>
+        kind is KeywordKind.Buff or KeywordKind.WeaponBuff;
 }

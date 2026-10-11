@@ -329,34 +329,17 @@ textarea { resize: vertical; }
     display: grid;
     gap: 12px;
     grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: "build" "loop" "side";
+    grid-template-areas: "build" "loop";
     align-items: start;
 }
 .col-build { grid-area: build; min-width: 0; }
 .col-loop { grid-area: loop; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
-.col-side { grid-area: side; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
-
-@media (min-width: 760px) {
-    .designer-grid {
-        grid-template-columns: minmax(0, 1fr) minmax(290px, 340px);
-        grid-template-areas: "build side" "loop side";
-    }
-    .col-side {
-        position: sticky;
-        top: calc(var(--topbar) + 12px);
-        max-height: calc(100vh - var(--topbar) - 24px);
-        overflow-y: auto;
-        grid-row: 1 / span 2;
-        scrollbar-width: thin;
-    }
-}
 
 @media (min-width: 1100px) {
     .designer-grid {
-        grid-template-columns: minmax(250px, 300px) minmax(0, 1fr) minmax(300px, 360px);
-        grid-template-areas: "build loop side";
+        grid-template-columns: minmax(250px, 300px) minmax(0, 1fr);
+        grid-template-areas: "build loop";
     }
-    .col-side { grid-row: auto; }
 }
 
 /* build panel */
@@ -628,11 +611,29 @@ textarea { resize: vertical; }
 .trigger:active { transform: translateY(1px); }
 .trigger .badge.new { font-size: 9px; padding: 0 4px; }
 
-/* state */
-.state-row { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 8px; align-items: start; padding: 6px 0; border-top: 1px solid rgba(38, 48, 70, .6); font-size: 12px; }
-.panel-head + .state-row { border-top: 0; }
-.state-label { color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding-top: 2px; }
-.passives { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 3px; }
+/* a step's state, laid out like the game's HUD: buffs on you left, your weapons' buffs in the middle, debuffs on the
+   pack right, the ground below them; a phone stacks them, label beside chips */
+.step-hud { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; padding-top: 8px; border-top: 1px dashed rgba(38, 48, 70, .9); font-size: 12px; }
+.hud-title { color: var(--dim); font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.hud-columns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.hud-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.hud-group[data-group="weapons"], .hud-group[data-group="ground"] { align-items: center; text-align: center; }
+.hud-group[data-group="weapons"] .chips, .hud-group[data-group="ground"] .chips { justify-content: center; }
+.hud-group[data-group="debuffs"] { align-items: flex-end; text-align: right; }
+.hud-group[data-group="debuffs"] .chips { justify-content: flex-end; }
+.hud-label { color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.hud-chip { gap: 6px; font: inherit; font-size: 12px; text-align: left; }
+button.hud-chip { cursor: pointer; }
+button.hud-chip:hover, button.hud-chip:focus-visible { background: color-mix(in srgb, var(--aff, var(--line)) 20%, transparent); }
+.hud-weapon { display: inline-flex; align-items: center; gap: 4px; padding-left: 6px; border-left: 1px solid color-mix(in srgb, var(--aff, var(--line)) 45%, transparent); color: var(--text); }
+.hud-weapon img { width: 16px; height: 16px; border-radius: 2px; flex: none; }
+.hud-switches { padding-left: 6px; border-left: 1px solid color-mix(in srgb, var(--aff, var(--line)) 45%, transparent); color: var(--muted); font-size: 11px; }
+@media (max-width: 640px) {
+    .hud-columns { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+    .hud-group, .hud-group[data-group] { display: grid; grid-template-columns: 64px minmax(0, 1fr); align-items: start; gap: 8px; text-align: left; }
+    .hud-group[data-group] .chips { justify-content: flex-start; }
+    .hud-label { padding-top: 3px; }
+}
 
 /* chooser (no design yet) */
 .chooser { display: flex; flex-direction: column; gap: 16px; max-width: 980px; margin: 8px auto; }
@@ -838,6 +839,10 @@ a.weapon-line-name:hover { color: var(--arc); text-decoration: underline; }
 .info-card.rules { border-left-color: var(--arc); }
 .info-card.rules .info-source { color: var(--arc); }
 .info-card.source { border-left-color: var(--exotic); }
+.info-card.switches { border-left-color: var(--aff, var(--arc)); }
+.info-card.switches .info-source { color: var(--aff, var(--arc)); }
+.info-switched { display: flex; flex-direction: column; gap: 4px; }
+.info-switched + .info-switched { padding-top: 6px; border-top: 1px solid var(--line); }
 .info-card.source .info-source { color: var(--exotic); }
 .info-quote { margin: 0; padding-left: 10px; border-left: 2px solid var(--line); font-size: 12.5px; font-style: italic; color: var(--muted); }
 .info-cite a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }

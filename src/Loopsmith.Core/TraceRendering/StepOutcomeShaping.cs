@@ -54,17 +54,17 @@ public static class StepOutcomeShaping
 {
     public static StepOutcomes ShapeStepOutcomes(ValidatedBuild build, Resolution resolution, TraceOptions options)
     {
-        var elements = IndexElements(build.Catalog);
-        var events = TraceRenderer.GroupByEvent(resolution.Fired).Select(group => ShapeEvent(build, elements, group, options));
+        var catalog = build.Catalog;
+        var events = TraceRenderer.GroupByEvent(resolution.Fired).Select(group => ShapeEvent(build, catalog, group, options));
         return new StepOutcomes(CollapseRepeats(events), resolution.Notes);
     }
 
-    private static EventOutcomes ShapeEvent(ValidatedBuild build, ElementIndex elements, ImmutableArray<FiredRule> group, TraceOptions options)
+    private static EventOutcomes ShapeEvent(ValidatedBuild build, RuleCatalog catalog, ImmutableArray<FiredRule> group, TraceOptions options)
     {
         var first = group[0];
-        var sources = GroupRuns(group).Select(rules => ShapeSource(build, elements, rules, options));
+        var sources = GroupRuns(group).Select(rules => ShapeSource(build, catalog, rules, options));
         var text = build.Catalog.Glossary.DescribeEvent(first.Trigger, build.Build);
-        return new EventOutcomes(first.Depth, text, SplitText(build.Catalog.Glossary, elements, text), FindEventWeapon(first.Trigger), 1, [.. sources]);
+        return new EventOutcomes(first.Depth, text, SplitText(build.Catalog.Glossary, catalog, text), FindEventWeapon(first.Trigger), 1, [.. sources]);
     }
 
     /// <summary>Each run of one element's rules, in the engine's order: an element whose rules aren't next to each other (a debuff first, energy last) shows twice.</summary>
@@ -74,12 +74,12 @@ public static class StepOutcomeShaping
                 ? runs.SetItem(runs.Length - 1, runs[^1].Add(rule))
                 : runs.Add([rule]));
 
-    private static SourceOutcomes ShapeSource(ValidatedBuild build, ElementIndex elements, ImmutableArray<FiredRule> rules, TraceOptions options)
+    private static SourceOutcomes ShapeSource(ValidatedBuild build, RuleCatalog catalog, ImmutableArray<FiredRule> rules, TraceOptions options)
     {
         var first = rules[0];
         var glossary = build.Catalog.Glossary;
         var copies = TraceRenderer.CountCopies(build, first.Source);
-        var lines = rules.SelectMany(rule => ShapeOutcomeLines(glossary, elements, rule, copies));
+        var lines = rules.SelectMany(rule => ShapeOutcomeLines(glossary, catalog, rule, copies));
         var reasons = options.ShowReasons ? rules.SelectMany(rule => ToSequence(rule.Reason)) : [];
         var caveats = options.ShowCaveats
             ? rules.SelectMany(rule => rule.Outcomes.SelectMany(outcome => ToSequence(outcome.Caveat).Select(caveat => $"{glossary.DescribeOutcome(outcome.Outcome)}: {caveat}")))
@@ -87,15 +87,15 @@ public static class StepOutcomeShaping
         return new SourceOutcomes(first.Source, first.SourceName, first.SourceKind, first.Affinity, [.. lines], [.. reasons], [.. caveats]);
     }
 
-    private static IEnumerable<OutcomeLine> ShapeOutcomeLines(KeywordGlossary glossary, ElementIndex elements, FiredRule rule, int copies)
+    private static IEnumerable<OutcomeLine> ShapeOutcomeLines(KeywordGlossary glossary, RuleCatalog catalog, FiredRule rule, int copies)
     {
         var chance = rule.Likelihood == Likelihood.Chance;
         return rule.NotStackedWith.Match(
-            partner => [ToLine(glossary, elements, $"doesn't stack with {partner.Value}", Tone.Warning, chance)],
+            partner => [ToLine(glossary, catalog, $"doesn't stack with {partner.Value}", Tone.Warning, chance)],
             _ => rule.Outcomes.IsEmpty
-                ? [ToLine(glossary, elements, "(no effect)", Tone.Muted, chance)]
+                ? [ToLine(glossary, catalog, "(no effect)", Tone.Muted, chance)]
                 : glossary.ListOutcomePhrases(rule.Outcomes.Select(outcome => new OutcomeMention(outcome.Outcome, copies)))
-                    .Select(phrase => ToLine(glossary, elements, phrase.Text, Tone.Plain, chance)));
+                    .Select(phrase => ToLine(glossary, catalog, phrase.Text, Tone.Plain, chance)));
     }
 
     /// <summary>Identical events in a row (six orbs picked up) become one, counted.</summary>
@@ -109,21 +109,15 @@ public static class StepOutcomeShaping
         $"{shaped.Depth}|{shaped.Event}|" + string.Join("|", shaped.Sources.Select(source =>
             $"{source.Source.Value}:{string.Join(";", source.Outcomes.Select(line => $"{line.Text}{(line.Chance ? "?" : "")}"))}:{string.Join(";", source.Reasons)}:{string.Join(";", source.Caveats)}"));
 
-    /// <summary>The catalog's elements by their id's text: a status or pickup is the element of the same id, when there is one.</summary>
-    private sealed record ElementIndex(ImmutableDictionary<string, ElementId> ById);
-
-    private static ElementIndex IndexElements(RuleCatalog catalog) =>
-        new(catalog.Elements.Keys.ToImmutableDictionary(id => id.Value, id => id));
-
-    private static OutcomeLine ToLine(KeywordGlossary glossary, ElementIndex elements, string text, Tone tone, bool chance) =>
-        new(text, tone, SplitText(glossary, elements, text), chance);
+    private static OutcomeLine ToLine(KeywordGlossary glossary, RuleCatalog catalog, string text, Tone tone, bool chance) =>
+        new(text, tone, SplitText(glossary, catalog, text), chance);
 
     /// <summary>A text in parts, each keyword the glossary knows apart, with the element of its id when the catalog has one.</summary>
-    private static ImmutableArray<TextPart> SplitText(KeywordGlossary glossary, ElementIndex elements, string text) =>
+    private static ImmutableArray<TextPart> SplitText(KeywordGlossary glossary, RuleCatalog catalog, string text) =>
     [
         .. glossary.SplitKeywords(text).Select(part => new TextPart(
             part.Text,
-            part.Keyword.Map(keyword => new KeywordPart(keyword.Affinity, FindElement(elements, ToIdText(keyword.Keyword)))))),
+            part.Keyword.Map(keyword => new KeywordPart(keyword.Affinity, catalog.FindKeywordElement(keyword.Keyword))))),
     ];
 
     private static Optional<WeaponSlot> FindEventWeapon(GameEvent gameEvent) =>
@@ -143,11 +137,6 @@ public static class StepOutcomeShaping
             keyword: _ => Optional.None<WeaponSlot>(),
             summoned: _ => Optional.None<WeaponSlot>());
 
-    private static string ToIdText(KeywordRef keyword) =>
-        keyword.Match(status => status.Id.Value, pickup => pickup.Id.Value, summon => summon.Id.Value);
-
-    private static Optional<ElementId> FindElement(ElementIndex elements, string id) =>
-        elements.ById.TryGetValue(id, out var element) ? Optional.Some(element) : Optional.None<ElementId>();
 
     private static IEnumerable<T> ToSequence<T>(Optional<T> optional) =>
         optional.Match(found => new[] { found.Value }, _ => []);

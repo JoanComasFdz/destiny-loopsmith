@@ -34,32 +34,47 @@ public static class TraceRenderer
         return [header, .. fired, .. nothing, .. notes, .. state];
     }
 
-    /// <summary>What is present — buffs on you ("at max" once declared), debuffs on the pack, pickups on the ground — and the active passives.</summary>
+    /// <summary>
+    /// What is present — buffs on you ("at max" once declared), buffs on your weapons and the changes to their stats,
+    /// debuffs on the pack, pickups on the ground — then, for each status that switches other elements' passives on,
+    /// what it switches on (<see cref="StepStateShaping"/>, as the designer shows it under each step).
+    /// </summary>
     public static ImmutableArray<StyledLine> RenderState(ValidatedBuild build, GameState state, ImmutableArray<ActivePassive> passives)
     {
-        var glossary = build.Catalog.Glossary;
-        var buffs = state.Buffs.IsEmpty
-            ? "none".ToSpan(Tone.Muted).ToSingleSpanList()
-            : JoinSpans(state.Buffs.Select(buff => glossary.DescribeActiveBuff(buff).ToSpan(glossary.ReadStatusAffinity(buff.Status).ToTone())));
-        var debuffs = state.Target.Debuffs.IsEmpty
-            ? "none".ToSpan(Tone.Muted).ToSingleSpanList()
-            : JoinSpans(state.Target.Debuffs.Select(d => glossary.DescribeStatus(d).ToSpan(glossary.ReadStatusAffinity(d).ToTone())));
-        var pickups = state.Pickups.IsEmpty
-            ? "none".ToSpan(Tone.Muted).ToSingleSpanList()
-            : JoinSpans(state.Pickups.Select(p => glossary.DescribePickup(p).ToSpan(Tone.Plain)));
-        var passiveLines = passives
-            .Where(p => !p.Passive.When.IsEmpty)
-            .Select(p => StyledText.ToLine(1,
-                "Active      ".ToSpan(Tone.Muted),
-                glossary.DescribePassive(p.Passive.Modifier).ToSpan(Tone.Plain),
-                " [".ToSpan(Tone.Muted), p.SourceName.ToSpan(p.Affinity.ToTone()), "]".ToSpan(Tone.Muted)));
+        var shaped = StepStateShaping.ShapeStepState(build, state, passives);
+        var weaponEffects = shaped.WeaponEffects.Select(effect =>
+            $"{effect.SourceName} on {string.Join(", ", effect.Weapons.Select(index => build.Build.Weapons[index].Name))}".ToSpan(effect.Affinity.ToTone()));
+        var switchedOn = shaped.Buffs.Concat(shaped.Weapons).Concat(shaped.Debuffs)
+            .Where(entry => !entry.SwitchesOn.IsEmpty)
+            .Select(entry => new StyledLine(1,
+            [
+                $"While {entry.Text}  ".ToSpan(Tone.Muted),
+                .. entry.SwitchesOn.SelectMany((effect, index) => (ImmutableArray<StyledSpan>)
+                [
+                    .. index > 0 ? [" · ".ToSpan(Tone.Muted)] : ImmutableArray<StyledSpan>.Empty,
+                    effect.Text.ToSpan(Tone.Plain),
+                    " [".ToSpan(Tone.Muted), effect.SourceName.ToSpan(effect.Affinity.ToTone()), "]".ToSpan(Tone.Muted),
+                ]),
+            ]));
         return
         [
-            new StyledLine(1, ["Buffs         ".ToSpan(Tone.Muted), .. buffs]),
-            new StyledLine(1, ["Target        ".ToSpan(Tone.Muted), .. debuffs]),
-            new StyledLine(1, ["Ground        ".ToSpan(Tone.Muted), .. pickups]),
-            .. passiveLines,
+            new StyledLine(1, ["Buffs         ".ToSpan(Tone.Muted), .. RenderEntries(shaped.Buffs)]),
+            new StyledLine(1, ["Weapons       ".ToSpan(Tone.Muted), .. RenderWeaponEntries(shaped.Weapons, weaponEffects)]),
+            new StyledLine(1, ["Debuffs       ".ToSpan(Tone.Muted), .. RenderEntries(shaped.Debuffs)]),
+            new StyledLine(1, ["Ground        ".ToSpan(Tone.Muted), .. RenderEntries(shaped.Ground)]),
+            .. switchedOn,
         ];
+    }
+
+    private static ImmutableArray<StyledSpan> RenderEntries(ImmutableArray<StateEntry> entries) =>
+        entries.IsEmpty
+            ? "none".ToSpan(Tone.Muted).ToSingleSpanList()
+            : JoinSpans(entries.Select(entry => entry.Text.ToSpan(entry.Affinity.ToTone())));
+
+    private static ImmutableArray<StyledSpan> RenderWeaponEntries(ImmutableArray<StateEntry> entries, IEnumerable<StyledSpan> effects)
+    {
+        var spans = entries.Select(entry => entry.Text.ToSpan(entry.Affinity.ToTone())).Concat(effects).ToImmutableArray();
+        return spans.IsEmpty ? "none".ToSpan(Tone.Muted).ToSingleSpanList() : JoinSpans(spans);
     }
 
     public static ImmutableArray<StyledLine> RenderAvailableActions(ValidatedBuild build, ImmutableArray<PlayerAction> actions)

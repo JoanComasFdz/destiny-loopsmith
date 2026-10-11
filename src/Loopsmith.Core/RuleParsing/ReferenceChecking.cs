@@ -149,12 +149,16 @@ internal static class ReferenceChecking
         KeywordKind actual,
         Optional<KeywordKind> expected) =>
         expected.Match(
-            some => some.Value == actual
+            some => IsKindOf(actual, some.Value)
                 ? Succeed(id)
                 : value.FailAt<StatusId>(
                     $"{value.Label}: '{id}' is a {GameNotationParsing.ToVocabularyWord(actual)}, "
                     + $"but this position needs a {GameNotationParsing.ToVocabularyWord(some.Value)}"),
             _ => Succeed(id));
+
+    /// <summary>A status of this kind fits where a rule needs that one (a weapon buff where a buff is needed).</summary>
+    private static bool IsKindOf(KeywordKind actual, KeywordKind expected) =>
+        actual == expected || (expected == KeywordKind.Buff && actual.IsBuff());
 
     private static Result<SummonId, Errors> CheckSummon(this ReferenceScope scope, YamlValue value, SummonId id) =>
         scope.Glossary.Match(

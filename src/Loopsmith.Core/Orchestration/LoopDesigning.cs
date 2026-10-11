@@ -413,6 +413,24 @@ public static class LoopDesigning
     public static StepOutcomes ShapeStepOutcomes(DesignSession session, Resolution resolution, TraceOptions options) =>
         StepOutcomeShaping.ShapeStepOutcomes(session.Build, resolution, options);
 
+    /// <summary>
+    /// What is present at the end of a step, laid out like the game's HUD: buffs on you, buffs on your weapons, debuffs
+    /// on the pack, pickups on the ground, the passives that hold (the designer draws it under the step).
+    /// </summary>
+    public static StepState ShapeStepState(DesignSession session, Resolution resolution) =>
+        StepStateShaping.ShapeStepState(session.Build, resolution.State, resolution.ActivePassives);
+
+    /// <summary>
+    /// What a status switches on in this build, for its details: other elements' passives whose condition names it
+    /// (while Amplified: Spark of Frequency's extra Bolt Charge; Ionic Overclock, and on which weapons).
+    /// </summary>
+    public static ImmutableArray<SwitchedOnLine> ExplainSwitchedOn(ValidatedBuild build, StatusId status) =>
+        SwitchedOnExplaining.ExplainSwitchedOn(build, status);
+
+    /// <summary>The build's weapons (by index) whose own perks give this buff: Slice is Festival Flight's.</summary>
+    public static ImmutableArray<int> ListWeaponsGiving(ValidatedBuild build, StatusId buff) =>
+        BuildValidation.ListWeaponsGiving(build.Catalog, build.Build, buff);
+
     /// <summary>The static view of a build: every trigger and what it sets off, as a build note or an aligned tree.</summary>
     public static ImmutableArray<StyledLine> ExplainBuild(ValidatedBuild build, ExplanationStyle style) =>
         BuildExplaining.RenderExplanation(build.Catalog.Glossary, BuildExplaining.ExplainBuild(build), style);
