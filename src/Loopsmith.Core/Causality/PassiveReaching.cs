@@ -17,8 +17,8 @@ public partial record PassiveReach
     partial record NoWeapon();
 }
 
-/// <summary>An equipped element's passive that a status switches on (its condition names it: "while Amplified"), and what it reaches.</summary>
-public sealed record SwitchedOnPassive(ActivePassive Passive, PassiveReach Reach);
+/// <summary>An equipped element's passive that a status switches on (its condition names it: "while Amplified"), the element's kind, and what it reaches.</summary>
+public sealed record SwitchedOnPassive(ActivePassive Passive, ElementKind SourceKind, PassiveReach Reach);
 
 /// <summary>
 /// Kernel: which passives a status switches on — the state, the build check and an item's details read the same
@@ -31,20 +31,25 @@ public static class PassiveReaching
     public static ImmutableArray<SwitchedOnPassive> ListSwitchedOn(this ValidatedBuild build, StatusId status) =>
     [
         .. build.Equipped
-            .SelectMany(equipped => equipped.Element.Passives.Select(passive => new ActivePassive(equipped.Element.Id, equipped.Element.Name, equipped.Element.Affinity, passive)))
-            .Where(passive => IsSwitchedOnBy(passive, status))
-            .Select(passive => new SwitchedOnPassive(passive, FindReach(build.Build, passive.Passive.Modifier))),
+            .SelectMany(equipped => equipped.Element.Passives.Select(passive => (
+                Passive: new ActivePassive(equipped.Element.Id, equipped.Element.Name, equipped.Element.Affinity, passive),
+                equipped.Element.Kind)))
+            .Where(switched => IsSwitchedOnBy(switched.Passive, status))
+            .Select(switched => new SwitchedOnPassive(switched.Passive, switched.Kind, FindReach(build.Build, switched.Passive.Passive.Modifier))),
     ];
 
     /// <summary>A passive holding now that this status switches on (not the status's own).</summary>
     public static bool IsSwitchedOnBy(this ActivePassive passive, StatusId status) =>
-        passive.Source.Value != status.Value && passive.Passive.When.Any(condition => IsNaming(condition, status));
+        !passive.Source.IsStatusElement(status) && passive.Passive.When.Any(condition => IsNaming(condition, status));
 
     /// <summary>A change to weapon stats reaches the build's weapons of its archetypes (none: nothing here); anything else reaches you.</summary>
     public static PassiveReach FindReach(Build build, Passive passive) =>
-        passive is Passive.ModifyWeaponStats weapons
-            ? ToWeaponReach(ListWeaponsOf(build, weapons.Archetypes))
-            : new PassiveReach.Player();
+        passive.Match<PassiveReach>(
+            _ => new PassiveReach.Player(),
+            _ => new PassiveReach.Player(),
+            _ => new PassiveReach.Player(),
+            _ => new PassiveReach.Player(),
+            weapons => ToWeaponReach(ListWeaponsOf(build, weapons.Archetypes)));
 
     /// <summary>Whether every weapon's archetype is known, so "no weapon is one of them" is a fact, not a guess.</summary>
     public static bool HasKnownArchetypes(this Build build) =>

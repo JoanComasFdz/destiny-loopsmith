@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Dunet;
 using Loopsmith.Core.BuildExplanation;
+using Loopsmith.Core.Causality;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 using Loopsmith.Core.Orchestration;
@@ -119,7 +120,7 @@ public static class ItemInfoShaping
             item.Bind(known => known.Tier),
             element.Affinity,
             item.Bind(known => LoadoutShaping.ToPageUrl(catalog, known.Hash)),
-            [section, .. FindStatusOf(catalog, element.Id).SelectMany(status => DescribeSwitchesOn(build, status))]);
+            [section, .. catalog.FindElementStatus(element.Id).Match(status => DescribeSwitchesOn(build, status.Value), _ => [])]);
     }
 
     /// <summary>
@@ -127,12 +128,9 @@ public static class ItemInfoShaping
     /// (Amplified: no rules of its own) — either way with what it switches on in this build.
     /// </summary>
     private static Optional<ItemInfo> ShapeStatus(ValidatedBuild build, StatusId status) =>
-        Optional.Some(build.Catalog.Elements.Values
-            .Where(element => element.Id.Value == status.Value)
-            .Take(1)
-            .Select(element => Optional.Some(ShapeElement(build, element)))
-            .FindFirstSome()
-            .Match(own => own.Value, _ => ShapeBareStatus(build, status)));
+        build.Catalog.FindStatusElement(status).Match(
+            own => ShapeElement(build, own.Value),
+            _ => Optional.Some(ShapeBareStatus(build, status)));
 
     /// <summary>A status the rules have no element for (Amplified): the glossary's facts, and what it switches on.</summary>
     private static ItemInfo ShapeBareStatus(ValidatedBuild build, StatusId status)
@@ -149,12 +147,8 @@ public static class ItemInfoShaping
             [new InfoSection.Status(facts.Length > 0 ? Optional.Some(facts) : Optional.None<string>()), .. DescribeSwitchesOn(build, status)]);
     }
 
-    /// <summary>The status an element of the same id is (Bolt Charge, Woven Mail), when the glossary has one.</summary>
-    private static IEnumerable<StatusId> FindStatusOf(RuleCatalog catalog, ElementId element) =>
-        catalog.Glossary.Statuses.Keys.Where(status => status.Value == element.Value);
-
     /// <summary>"While Amplified, in this build": what the status switches on (none: no section).</summary>
-    private static IEnumerable<InfoSection> DescribeSwitchesOn(ValidatedBuild build, StatusId status)
+    private static ImmutableArray<InfoSection> DescribeSwitchesOn(ValidatedBuild build, StatusId status)
     {
         var effects = LoopDesigning.ExplainSwitchedOn(build, status);
         return effects.IsEmpty

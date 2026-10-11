@@ -69,7 +69,7 @@
         if (StateHudShaping.FindEntryDetails(entry) is Optional<ItemDetails>.Some shown)
         {
             <button type="button" class="chip hud-chip @ToneStyling.ToAffinityClass(entry.Affinity)" data-keyword="@entry.Keyword.DescribeKeywordId()" title="@title"
-                    @onclick="() => OnShowDetails.InvokeAsync(shown.Value)" @onclick:stopPropagation="true">
+                    @onclick="() => ShowDetailsAsync(shown.Value)" @onclick:stopPropagation="true">
                 <span>@entry.Text</span>
                 @RenderSwitches(entry)
                 @RenderWeapons(weapons)
@@ -89,11 +89,20 @@
     private RenderFragment RenderWeaponEffect(WeaponEffect effect) => __builder =>
     {
         <button type="button" class="chip hud-chip @ToneStyling.ToAffinityClass(effect.Affinity)" data-effect="@effect.Source.Value" title="@effect.Text"
-                @onclick="() => OnShowDetails.InvokeAsync(new ItemDetails.OfElement(effect.Source))" @onclick:stopPropagation="true">
+                @onclick="() => ShowElementAsync(effect.Source)" @onclick:stopPropagation="true">
             <span>@effect.SourceName</span>
             @RenderWeapons(StateHudShaping.ListWeapons(Build, effect.Weapons))
         </button>
     };
+
+    private async Task ShowElementAsync(ElementId element)
+    {
+        var details = new ItemDetails.OfElement(element);                                       // pure
+        await ShowDetailsAsync(details);                                                         // impure
+    }
+
+    private async Task ShowDetailsAsync(ItemDetails details) =>
+        await OnShowDetails.InvokeAsync(details);                                                // impure
 
     private static RenderFragment RenderSwitches(StateEntry entry) => __builder =>
     {

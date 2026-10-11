@@ -24,7 +24,7 @@ public static class SwitchedOnExplaining
             .. build.ListSwitchedOn(status).Select(switched => new SwitchedOnLine(
                 switched.Passive.Source,
                 switched.Passive.SourceName,
-                build.Catalog.Elements.TryGetValue(switched.Passive.Source, out var element) ? element.Kind : ElementKind.Keyword,
+                switched.SourceKind,
                 switched.Passive.Affinity,
                 glossary.DescribePassive(switched.Passive.Passive.Modifier),
                 DescribeReach(build.Build, switched.Reach))),
