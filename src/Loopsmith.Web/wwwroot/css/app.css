@@ -823,7 +823,14 @@ a.weapon-line-name:hover { color: var(--arc); text-decoration: underline; }
 .item-info-icon.exotic { border-color: var(--exotic); }
 .item-info-icon.legendary { border-color: #8a5bb0; }
 .item-info-type { font-size: 12px; color: var(--muted); }
-.info-section { display: flex; flex-direction: column; gap: 6px; padding: 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel-2); }
+/* A section (the item, one of its perks, its catalyst): its heading, then one card per source — Bungie's text and
+   Loopsmith's rules — so each reads apart. Sections are set off by a rule between them. */
+.info-section { display: flex; flex-direction: column; gap: 8px; }
+.info-section + .info-section { padding-top: 12px; border-top: 1px solid var(--line); }
+.info-card { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border: 1px solid var(--line); border-left-width: 3px; border-radius: var(--radius); background: var(--panel-2); }
+.info-card.bungie { border-left-color: var(--kinetic); }
+.info-card.rules { border-left-color: var(--arc); }
+.info-card.rules .info-source { color: var(--arc); }
 .info-section-title { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 13px; font-weight: 700; }
 .info-section-icon { width: 28px; height: 28px; border-radius: 50%; flex: none; }
 .info-label { font-size: 11px; font-weight: 500; color: var(--muted); }

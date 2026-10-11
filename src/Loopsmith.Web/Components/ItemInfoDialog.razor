@@ -82,34 +82,38 @@
     {
         @if (bungieText is Optional<string>.Some bungie)
         {
-            <div class="info-source">Bungie</div>
-            <p class="info-bungie">@bungie.Value</p>
+            <div class="info-card bungie" data-testid="info-bungie">
+                <div class="info-source">Bungie</div>
+                <p class="info-bungie">@bungie.Value</p>
+            </div>
         }
-        <div class="info-source">Loopsmith's rules</div>
-        @if (rules is Optional<InfoRules>.Some known)
-        {
-            @if (known.Value.Description is Optional<string>.Some description)
+        <div class="info-card rules" data-testid="info-rules">
+            <div class="info-source">Loopsmith's rules</div>
+            @if (rules is Optional<InfoRules>.Some known)
             {
-                <p class="info-rules-text">@description.Value</p>
-            }
-            @if (known.Value.Explanation.IsEmpty)
-            {
-                <p class="muted info-note">No rule is written for it yet: it sets nothing off in a loop.</p>
+                @if (known.Value.Description is Optional<string>.Some description)
+                {
+                    <p class="info-rules-text">@description.Value</p>
+                }
+                @if (known.Value.Explanation.IsEmpty)
+                {
+                    <p class="muted info-note">No rule is written for it yet: it sets nothing off in a loop.</p>
+                }
+                else
+                {
+                    @if (!known.Value.Equipped)
+                    {
+                        <p class="muted info-note" data-testid="not-equipped">Not in this build right now; what it would set off:</p>
+                    }
+                    <StyledLines Lines="known.Value.Explanation" />
+                }
+                <p class="info-cite">Source: @known.Value.Source</p>
             }
             else
             {
-                @if (!known.Value.Equipped)
-                {
-                    <p class="muted info-note" data-testid="not-equipped">Not in this build right now; what it would set off:</p>
-                }
-                <StyledLines Lines="known.Value.Explanation" />
+                <p class="muted info-note">Not in Loopsmith's rules yet: it sets nothing off in a loop.</p>
             }
-            <p class="info-cite">Source: @known.Value.Source</p>
-        }
-        else
-        {
-            <p class="muted info-note">Not in Loopsmith's rules yet: it sets nothing off in a loop.</p>
-        }
+        </div>
     };
 
     private static string DescribeTier(Optional<ItemTier> tier) =>
