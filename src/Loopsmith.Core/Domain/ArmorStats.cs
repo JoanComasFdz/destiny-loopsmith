@@ -95,8 +95,8 @@ public sealed record OwnedArmor(ItemInstanceId InstanceId, ItemHash Hash, ArmorP
 /// </summary>
 public sealed record GearMarks(Optional<GearTier> Tier, bool Masterworked, Optional<ItemHash> Breaker);
 
-/// <summary>A weapon the player owns: its instance, item hash, where it is and its marks.</summary>
-public sealed record OwnedWeapon(ItemInstanceId InstanceId, ItemHash Hash, ArmorPlace Place, GearMarks Marks);
+/// <summary>A weapon the player owns: its instance, item hash, where it is, its marks and the plugs in its sockets (enabled ones, socket by socket: its perks, its catalyst).</summary>
+public sealed record OwnedWeapon(ItemInstanceId InstanceId, ItemHash Hash, ArmorPlace Place, GearMarks Marks, ImmutableArray<ItemHash> Plugs);
 
 /// <summary>What Loopsmith reads of a player's Bungie profile: their armor and weapons (worn, carried and in the vault).</summary>
 public sealed record BungieProfile(ImmutableArray<OwnedArmor> Armor, ImmutableArray<OwnedWeapon> Weapons);
@@ -121,6 +121,12 @@ public sealed record ArmorOption(OwnedArmor Armor, ManifestItem Item, Optional<S
 
 /// <summary>What the armor picker lists for a slot (the copy the build wears first), and what it leaves out and why.</summary>
 public sealed record ArmorOptions(ArmorSlot Slot, ImmutableArray<ArmorOption> Options, ImmutableArray<string> Notes);
+
+/// <summary>One of the player's weapons the weapon picker lists: the copy, its manifest item, and whether the build wears it.</summary>
+public sealed record WeaponOption(OwnedWeapon Weapon, ManifestItem Item, bool Worn);
+
+/// <summary>What the weapon picker lists for a slot (the copy the build wears first), and what it leaves out and why.</summary>
+public sealed record WeaponOptions(WeaponSlot Slot, ImmutableArray<WeaponOption> Options, ImmutableArray<string> Notes);
 
 /// <summary>
 /// Whether the copies a build wears (a dim.gg share's, by instance id) are the logged-in player's: all of them, some

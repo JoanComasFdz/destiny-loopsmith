@@ -65,7 +65,7 @@
         <div class="designer-grid">
             <aside class="col-build">
                 <BuildPanel Build="session.Build" Issues="LoopDesigning.ListDesignIssues(session)" OnPickPerk="PickPerk" OnSetCatalyst="SetCatalyst" OnSetStats="SetStats"
-                            Profile="Workbench.Armor" ArmorNote="Workbench.ArmorNote" OnLoggedIn="UseArmorAsync" OnLoggedOut="LogOut" OnPickArmor="PickArmor" />
+                            Profile="Workbench.Armor" ArmorNote="Workbench.ArmorNote" OnLoggedIn="UseArmorAsync" OnLoggedOut="LogOut" OnPickArmor="PickArmor" OnPickWeapon="PickWeapon" />
             </aside>
             <div class="col-loop">
                 <ExplainPanel Build="session.Build" />
@@ -272,9 +272,10 @@
         ApplyBuildEdit(session => LoopDesigning.SetStats(session, stats));
 
     /// <summary>
-    /// The player logged in with Bungie: their armor is kept for the tab; when the build's armor copies are theirs, its
-    /// stats are set from them (LoopDesigning.ApplyArmorLogin), and the Stats section says what's next. Then Bungie's
-    /// manifest is read for their pieces the excerpt lacks, so the armor picker can name and place them.
+    /// The player logged in with Bungie: their armor and weapons are kept for the tab; the build's weapons whose copies
+    /// are theirs hold those copies' perks, and when its armor copies are theirs its stats are set from them
+    /// (LoopDesigning.ApplyBungieLogin); the Stats section says what's next. Then Bungie's manifest is read for their
+    /// pieces and weapons the excerpt lacks, so the pickers can name and place them.
     /// </summary>
     private async Task UseArmorAsync(BungieProfile profile)
     {
@@ -284,10 +285,10 @@
             return;
         }
 
-        var login = LoopDesigning.ApplyArmorLogin(open.Value, profile);                         // pure
+        var login = LoopDesigning.ApplyBungieLogin(open.Value, profile);                        // pure
         EditSession(_ => login.Session, scrollToEnd: false, keepSelection: true);               // impure (UI state)
         Workbench.ArmorNote = Optional.Some(login.Message);                                      // impure (UI state)
-        await JoinManifestForAsync(session => LoopDesigning.ListUnknownArmorHashes(session, profile)); // impure
+        await JoinManifestForAsync(session => LoopDesigning.ListUnknownProfileHashes(session, profile)); // impure
     }
 
     /// <summary>
@@ -307,6 +308,16 @@
         {
             Workbench.ArmorNote = Optional.None<string>();                                       // impure (UI state)
             ApplyBuildEdit(session => LoopDesigning.PickArmorPiece(session, profile.Value, pick.Slot, pick.Instance)); // impure (UI state)
+        }
+    }
+
+    /// <summary>A weapon picked from the player's weapons: swapped into the embedded build with its perks (or added, for an empty slot).</summary>
+    private void PickWeapon(WeaponPick pick)
+    {
+        if (Workbench.Armor is Optional<BungieProfile>.Some profile)
+        {
+            Workbench.ArmorNote = Optional.None<string>();                                       // impure (UI state)
+            ApplyBuildEdit(session => LoopDesigning.PickWeapon(session, profile.Value, pick.Slot, pick.Weapon, pick.Instance)); // impure (UI state)
         }
     }
 

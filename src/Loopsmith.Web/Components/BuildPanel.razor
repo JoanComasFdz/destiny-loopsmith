@@ -31,7 +31,7 @@
         </div>
     </header>
 
-    <LoadoutPanel Build="Build" OnPickPerk="OnPickPerk" OnSetCatalyst="OnSetCatalyst" Profile="Profile" OnPickArmor="OnPickArmor" />
+    <LoadoutPanel Build="Build" OnPickPerk="OnPickPerk" OnSetCatalyst="OnSetCatalyst" Profile="Profile" OnPickArmor="OnPickArmor" OnPickWeapon="OnPickWeapon" />
 
     <StatsPanel Build="Build" OnSetStats="OnSetStats" Profile="Profile" Note="ArmorNote" OnLoggedIn="OnLoggedIn" OnLoggedOut="OnLoggedOut" />
 
@@ -110,6 +110,10 @@
     /// <summary>A piece picked from the player's armor for a slot (the designer swaps it into the build).</summary>
     [Parameter]
     public EventCallback<ArmorPick> OnPickArmor { get; set; }
+
+    /// <summary>A weapon picked from the player's weapons for a slot (the designer swaps it into the build, or adds it).</summary>
+    [Parameter]
+    public EventCallback<WeaponPick> OnPickWeapon { get; set; }
 
     /// <summary>light.gg's page for a manifest hash: what the item is, until Loopsmith reads the manifest itself.</summary>
     private static string ToLookupUrl(ItemHash hash) =>

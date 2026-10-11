@@ -30,8 +30,9 @@ public sealed partial class StatLoadingTests
         Assert.Equal(new GearMarks(Optional.Some(GearTier.From(4)), true, Optional.None<ItemHash>()), FindCopy(profile, "1").Marks);
         Assert.Equal(new GearMarks(Optional.None<GearTier>(), false, Optional.None<ItemHash>()), FindCopy(profile, "2").Marks);
         Assert.Equal(["3", "4"], profile.Weapons.Select(weapon => weapon.InstanceId.Value).Order());
-        Assert.Equal(new OwnedWeapon(ItemInstanceId.From("3"), Thunderlord, new ArmorPlace.Equipped(GuardianClass.Hunter),
-            new GearMarks(Optional.Some(GearTier.From(5)), true, Optional.Some(Disruption))), profile.Weapons.Single(weapon => weapon.Hash == Thunderlord));
+        var thunderlord = profile.Weapons.Single(weapon => weapon.Hash == Thunderlord);
+        Assert.Equal((ItemInstanceId.From("3"), (ArmorPlace)new ArmorPlace.Equipped(GuardianClass.Hunter), new GearMarks(Optional.Some(GearTier.From(5)), true, Optional.Some(Disruption))),
+            (thunderlord.InstanceId, thunderlord.Place, thunderlord.Marks));
     }
 
     [Fact]

@@ -38,12 +38,50 @@ public static class CopyFinding
     }
 
     /// <summary>
+    /// The player's weapons for a slot, for the weapon picker: the copy the build's weapon there wears first (its weapon
+    /// number <paramref name="weapon"/>; none: an empty slot), then that weapon's other copies, then the rest by name and
+    /// tier. Its note counts the weapons the excerpt can't place. What the build can wear of them (one exotic) is
+    /// BuildComposition's to say (<c>WeaponSwapping.CheckWeapon</c>).
+    /// </summary>
+    public static WeaponOptions ListWeaponOptions(RuleCatalog catalog, Build build, BungieProfile profile, WeaponSlot slot, Optional<int> weapon)
+    {
+        var current = weapon.Bind(index => index >= 0 && index < build.Weapons.Length ? Optional.Some(build.Weapons[index]) : Optional.None<WeaponLoadout>());
+        var worn = current.Bind(found => FindWornWeapon(profile, found)).Map(copy => copy.InstanceId);
+        var named = profile.Weapons.Select(owned => (Weapon: owned, Item: catalog.Manifest.FindItem(owned.Hash))).ToImmutableArray();
+        var options = named
+            .SelectMany(entry => entry.Item.Match(item => new[] { (entry.Weapon, Item: item.Value) }, _ => []))
+            .Where(entry => entry.Item.Kind is ManifestKind.Weapon kind && kind.Slot == slot)
+            .Select(entry => new WeaponOption(entry.Weapon, entry.Item, worn == Optional.Some(entry.Weapon.InstanceId)))
+            .OrderByDescending(option => option.Worn)
+            .ThenByDescending(option => current.Bind(found => found.Hash) == Optional.Some(option.Weapon.Hash))
+            .ThenBy(option => option.Item.Name, StringComparer.Ordinal)
+            .ThenByDescending(option => option.Weapon.Marks.Tier.Match(tier => tier.Value.Value, _ => 0))
+            .ToImmutableArray();
+        var unnamed = named.Count(entry => !entry.Item.IsSome());
+        ImmutableArray<string> notes = unnamed > 0 ? [$"{unnamed} of your weapons aren't listed: Loopsmith can't tell their slot yet (Bungie's manifest wasn't read for them)."] : [];
+        return new WeaponOptions(slot, options, notes);
+    }
+
+    /// <summary>The player's weapon with this instance id, or why there is none.</summary>
+    public static Result<OwnedWeapon, string> FindWeapon(BungieProfile profile, ItemInstanceId instance) =>
+        profile.Weapons.Where(owned => owned.InstanceId == instance).Select(Optional.Some).FindFirstSome()
+            .ToResult(() => "That weapon isn't in your account any more: log in again to read your weapons.");
+
+    /// <summary>
     /// The champion a build's weapon breaks, as DIM shows it: its copy's breaker (<paramref name="marks"/>, after the
     /// login), else the weapon's own (an exotic's: Thunderlord's Disruption), by the excerpt's breaker types; none when
     /// it has none.
     /// </summary>
     public static Optional<BreakerType> FindWeaponBreaker(ManifestExcerpt manifest, WeaponLoadout weapon, Optional<GearMarks> marks) =>
-        new[] { marks.Bind(found => found.Breaker), manifest.FindWeaponKind(weapon).Bind(kind => kind.Breaker) }
+        ChooseBreaker(manifest, marks.Bind(found => found.Breaker), manifest.FindWeaponKind(weapon));
+
+    /// <summary>The champion one of the player's weapons breaks (the weapon picker's): its own breaker, else its weapon's.</summary>
+    public static Optional<BreakerType> FindCopyBreaker(ManifestExcerpt manifest, OwnedWeapon copy) =>
+        ChooseBreaker(manifest, copy.Marks.Breaker, manifest.FindItem(copy.Hash).Bind(item => item.Kind is ManifestKind.Weapon kind ? Optional.Some(kind) : Optional.None<ManifestKind.Weapon>()));
+
+    /// <summary>A copy's breaker when it has one, else its weapon's own, by the excerpt's breaker types.</summary>
+    private static Optional<BreakerType> ChooseBreaker(ManifestExcerpt manifest, Optional<ItemHash> copy, Optional<ManifestKind.Weapon> weapon) =>
+        new[] { copy, weapon.Bind(kind => kind.Breaker) }
             .FindFirstSome()
             .Bind(manifest.FindBreakerType);
 }

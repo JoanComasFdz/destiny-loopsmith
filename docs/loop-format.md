@@ -323,6 +323,24 @@ the weapon's own, like Thunderlord's Disruption — shown before the login too) 
 overlays are the manifest excerpt's (`breakerTypes`, `itemConstants`); the tier, masterwork flag and breaker are
 Bungie's profile's for the copy (its instance's `gearTier` and `breakerTypeHash`, the item's `state`).
 
+<a id="weapons-from-your-account"></a>**Weapons from your account.** The login reads the player's weapons too, with the
+plugs in their sockets:
+
+* **The build's own copies** — a weapon whose `instance` (a dim.gg share's) is theirs takes that copy's perks: in each
+  trait column, the plug of its sockets the column rolls with (a share saves only the perks it was told to; the copy
+  has them all), and `catalyst: true` when its catalyst socket holds the catalyst. Only those entries of the embedded
+  build change, and the steps replay. The Stats section's line says so ("Its weapons are yours too, with their
+  perks."), or, for weapons that aren't theirs, to pick their own with ⋯.
+* **⋯ next to each weapon** opens the **weapon picker** for its slot (all three slots show after the login, an empty
+  one too): the player's weapons for that slot, the copy the build wears first (✓), then that weapon's other copies,
+  then the rest by name; each with its tier, masterwork, breaker and element as in the loadout. Hovering one (or a
+  first tap) shows its type, tier and the perks it holds, and where it is; a click (a second tap, or "Use this
+  weapon") puts it in the build: its entry is written anew (`{slot, name, type, archetype, perks: [], hash, roll,
+  catalyst, instance}`, from the manifest and its sockets), or added for an empty slot, and the steps replay. A build
+  wears one exotic weapon: another exotic isn't listed while it does (the picker says which to swap). Weapons the
+  excerpt doesn't know are named by Bungie's full manifest, read once after the login with the armor; one it can't
+  place is counted, not listed.
+
 Nothing of the login is kept (the player's armor and weapons stay in the tab until they log out or it closes); the
 stats and the copies are, in the loop's build, so a shared loop carries its author's numbers and pieces.
 

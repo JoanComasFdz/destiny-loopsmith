@@ -72,6 +72,40 @@ public sealed class BuildFileEditingTests
     }
 
     [Fact]
+    public void A_weapon_added_goes_on_its_own_line_after_the_last_one_and_comments_stay()
+    {
+        var file = new SourceText("b.yaml", Header + """
+            weapons:
+              - { slot: energy, name: Any Arc weapon, type: arc }   # the energy one
+            # Stats follow.
+            stats: { weapons: 47 }
+            """);
+
+        var edited = AddWeapon(file, Picked);
+
+        Assert.EndsWith("""
+            weapons:
+              - { slot: energy, name: Any Arc weapon, type: arc }   # the energy one
+              - {slot: kinetic, name: Festival Flight, type: strand, perks: [], hash: 4019651319, roll: [923806249]}
+            # Stats follow.
+            stats: { weapons: 47 }
+            """, edited, StringComparison.Ordinal);
+        Assert.Equal(2, ParseBuild(edited).Weapons.Length);
+    }
+
+    [Theory]
+    [InlineData("weapons: [{ slot: energy, name: Any Arc weapon, type: arc }]\n", 2)]
+    [InlineData("weapons: []\n", 1)]
+    [InlineData("stats: { weapons: 47 }\n", 1)]
+    public void A_weapon_is_added_to_a_flow_list_or_as_a_new_weapons_entry(string weapons, int count)
+    {
+        var edited = AddWeapon(new SourceText("b.yaml", Header + weapons), Picked);
+
+        Assert.Equal(count, ParseBuild(edited).Weapons.Length);
+        Assert.Equal(Picked.Roll, ParseBuild(edited).Weapons[^1].Roll);
+    }
+
+    [Fact]
     public void A_weapon_the_file_does_not_have_is_an_error()
     {
         var file = new SourceText("b.yaml", Header + "weapons:\n  - { slot: energy, name: Any Arc weapon, type: arc }\n");
@@ -95,6 +129,9 @@ public sealed class BuildFileEditingTests
 
     private static string ReplaceWeapon(SourceText file, int index, WeaponLoadout weapon) =>
         BuildFileEditing.ReplaceWeapon(file, index, weapon).Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
+
+    private static string AddWeapon(SourceText file, WeaponLoadout weapon) =>
+        BuildFileEditing.AddWeapon(file, weapon).Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
 
     private static Build ParseBuild(string text) =>
         BuildFileParsing.ParseBuildFile(new SourceText("edited.yaml", text)).Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));

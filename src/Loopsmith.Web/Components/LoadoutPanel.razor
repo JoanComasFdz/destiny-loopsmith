@@ -58,13 +58,25 @@
         }
     </div>
 
-    @if (!view.Weapons.IsEmpty)
+    @if (!view.Weapons.IsEmpty || CanPickWeapons)
     {
         <section class="loadout-box" aria-label="Weapons">
             <h4 class="loadout-label">Weapons</h4>
             <ol class="weapon-list">
-                @foreach (var weapon in view.Weapons)
+                @foreach (var row in LoadoutShaping.ListWeaponRows(view, CanPickWeapons))
                 {
+                    var rowSlot = row.Slot;
+                    @if (row.Weapon is not Optional<WeaponView>.Some shownWeapon)
+                    {
+                        <li class="weapon-line empty" data-slot="@rowSlot">
+                            <div class="weapon-icon"><span class="icon-tile empty" title="@rowSlot.DescribeWeaponSlot(): no weapon">@rowSlot.DescribeWeaponSlot()</span></div>
+                            <div class="weapon-text"><span class="weapon-line-sub">No @rowSlot.DescribeWeaponSlot().ToLowerInvariant() weapon in the build</span></div>
+                            @RenderWeaponPick(rowSlot, Optional.None<int>())
+                        </li>
+                    }
+                    else
+                    {
+                    var weapon = shownWeapon.Value;
                     <li class="weapon-line" data-slot="@weapon.Slot" title="@DescribeWeapon(weapon)">
                         <div class="weapon-icon">
                             @RenderMarkedTile(weapon.Weapon, "item", weapon.Marks)
@@ -113,6 +125,7 @@
                                 </span>
                             }
                         </div>
+                        @RenderWeaponPick(weapon.Slot, Optional.Some(weapon.Index))
                     </li>
                     @if (FindOpenColumn(weapon) is Optional<PerkSquare.Pickable>.Some open)
                     {
@@ -151,6 +164,7 @@
                                 </div>
                             </div>
                         </li>
+                    }
                     }
                 }
             </ol>
@@ -245,6 +259,11 @@
     {
         <ArmorPicker Build="Build" Profile="owned.Value" Slot="pickerSlot.Value" OnPick="PickArmorAsync" OnClose="CloseArmorPicker" />
     }
+
+    @if (weaponPicker is Optional<WeaponTarget>.Some target && Profile is Optional<BungieProfile>.Some ownedWeapons)
+    {
+        <WeaponPicker Build="Build" Profile="ownedWeapons.Value" Slot="target.Value.Slot" Weapon="target.Value.Weapon" OnPick="PickWeaponAsync" OnClose="CloseWeaponPicker" />
+    }
 </div>
 
 @code {
@@ -263,7 +282,7 @@
     [Parameter]
     public EventCallback<CatalystToggle> OnSetCatalyst { get; set; }
 
-    /// <summary>The player's armor after their Bungie login: each armor slot then has ⋯, which picks from it.</summary>
+    /// <summary>The player's armor and weapons after their Bungie login: each armor and weapon slot then has ⋯, which picks from them.</summary>
     [Parameter]
     public Optional<BungieProfile> Profile { get; set; } = Optional.None<BungieProfile>();
 
@@ -272,6 +291,43 @@
     public EventCallback<ArmorPick> OnPickArmor { get; set; }
 
     private bool CanPickArmor => Profile.IsSome() && OnPickArmor.HasDelegate;
+
+    /// <summary>Set by the designer: a weapon picked from the player's weapons is swapped into the build (or added). Unset (the Home card): read-only.</summary>
+    [Parameter]
+    public EventCallback<WeaponPick> OnPickWeapon { get; set; }
+
+    private bool CanPickWeapons => Profile.IsSome() && OnPickWeapon.HasDelegate;
+
+    /// <summary>The weapon slot the picker is open for, and the build's weapon in it (none: an empty slot).</summary>
+    private sealed record WeaponTarget(WeaponSlot Slot, Optional<int> Weapon);
+
+    private Optional<WeaponTarget> weaponPicker = Optional.None<WeaponTarget>();
+
+    private void OpenWeaponPicker(WeaponSlot slot, Optional<int> weapon)
+    {
+        ClosePicker();                                                                           // impure (UI state)
+        weaponPicker = Optional.Some(new WeaponTarget(slot, weapon));                            // impure (UI state)
+    }
+
+    private void CloseWeaponPicker() =>
+        weaponPicker = Optional.None<WeaponTarget>();                                            // impure (UI state)
+
+    private async Task PickWeaponAsync(WeaponPick pick)
+    {
+        weaponPicker = Optional.None<WeaponTarget>();                                            // impure (UI state)
+        await OnPickWeapon.InvokeAsync(pick);                                                    // impure
+    }
+
+    /// <summary>⋯ next to a weapon slot (after the login): it opens the weapon picker for that slot.</summary>
+    private RenderFragment RenderWeaponPick(WeaponSlot slot, Optional<int> weapon) => __builder =>
+    {
+        @if (CanPickWeapons)
+        {
+            <button type="button" class="btn ghost small weapon-pick" data-action="pick-weapon" data-slot="@slot"
+                    title="Pick your own @slot.DescribeWeaponSlot().ToLowerInvariant() weapon" aria-label="Pick your own @slot.DescribeWeaponSlot().ToLowerInvariant() weapon"
+                    aria-haspopup="dialog" @onclick="() => OpenWeaponPicker(slot, weapon)">⋯</button>
+        }
+    };
 
     private Optional<ItemDetails> details = Optional.None<ItemDetails>();
 

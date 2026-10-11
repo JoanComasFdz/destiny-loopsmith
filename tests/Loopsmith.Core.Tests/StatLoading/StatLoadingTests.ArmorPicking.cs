@@ -61,7 +61,7 @@ public sealed partial class StatLoadingTests
     {
         var session = OpenOwnersSession(Catalog);
 
-        var login = LoopDesigning.ApplyArmorLogin(session, ReadProfile([.. OwnShare(tuningSockets: 3)]));
+        var login = LoopDesigning.ApplyBungieLogin(session, ReadProfile([.. OwnShare(tuningSockets: 3)]));
 
         Assert.StartsWith("Your armor is loaded: the build wears this loadout's own pieces, and its stats are theirs.", login.Message, StringComparison.Ordinal);
         Assert.Equal(new StatLine(ToKnownStat(27), ToKnownStat(27), ToKnownStat(100), ToKnownStat(190), ToKnownStat(125), ToKnownStat(27)), login.Session.Build.Build.Stats);
@@ -74,12 +74,12 @@ public sealed partial class StatLoadingTests
         var session = OpenOwnersSession(Catalog);
         var partly = OwnShare(tuningSockets: 0).Select(item => item.Hash == Mask ? item with { Instance = "1001" } : item).ToImmutableArray();
 
-        var other = LoopDesigning.ApplyArmorLogin(session, ReadProfile([.. OwnAll(tuningSockets: 0)]));
-        var some = LoopDesigning.ApplyArmorLogin(session, ReadProfile(partly));
+        var other = LoopDesigning.ApplyBungieLogin(session, ReadProfile([.. OwnAll(tuningSockets: 0)]));
+        var some = LoopDesigning.ApplyBungieLogin(session, ReadProfile(partly));
 
         Assert.StartsWith("You can now pick your armor: tap ⋯ next to each armor piece in the build", other.Message, StringComparison.Ordinal);
         Assert.Equal(session.Design.Build.Text, other.Session.Design.Build.Text);
-        Assert.Equal("This loadout's pieces are in your account, but for Luminopotent Mask: tap ⋯ next to it in the build to pick one of yours.", some.Message);
+        Assert.Equal("This loadout's pieces are in your account, but for Luminopotent Mask: tap ⋯ next to it in the build to pick one of yours. Tap ⋯ next to a weapon to pick one of yours.", some.Message);
         Assert.Equal(session.Design.Build.Text, some.Session.Design.Build.Text);
     }
 
