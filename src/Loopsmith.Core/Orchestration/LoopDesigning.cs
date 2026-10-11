@@ -309,11 +309,11 @@ public static class LoopDesigning
     public static string ToBungieProfileUrl(DestinyMembership membership) =>
         BungieProfileReading.ToProfileUrl(membership);
 
-    /// <summary>The profile's armor and characters' stats, or what Bungie said.</summary>
+    /// <summary>The profile's armor, or what Bungie said.</summary>
     public static Result<BungieProfile, string> ReadBungieProfile(string json) =>
         BungieProfileReading.ReadProfile(json);
 
-    /// <summary>For each piece the build wears, the player's copies of it (the most points first); and their characters of the build's class.</summary>
+    /// <summary>For each piece the build wears, the player's copies of it (the most points first).</summary>
     public static StatChoices ListStatChoices(ValidatedBuild build, BungieProfile profile) =>
         StatAdding.ListStatChoices(build.Catalog, build.Build, profile);
 

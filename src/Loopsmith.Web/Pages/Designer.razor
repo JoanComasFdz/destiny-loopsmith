@@ -65,7 +65,7 @@
         <div class="designer-grid">
             <aside class="col-build">
                 <BuildPanel Build="session.Build" Issues="LoopDesigning.ListDesignIssues(session)" OnPickPerk="PickPerk" OnSetCatalyst="SetCatalyst" OnSetStats="SetStats"
-                            Profile="Workbench.Armor" ArmorNote="Workbench.ArmorNote" OnLoggedIn="UseArmorAsync" OnPickArmor="PickArmor" />
+                            Profile="Workbench.Armor" ArmorNote="Workbench.ArmorNote" OnLoggedIn="UseArmorAsync" OnLoggedOut="LogOut" OnPickArmor="PickArmor" />
             </aside>
             <div class="col-loop">
                 <ExplainPanel Build="session.Build" />
@@ -289,6 +289,13 @@
         Workbench.ArmorNote = Optional.Some(login.Message);                                      // impure (UI state)
         await JoinManifestForAsync(session => LoopDesigning.ListUnknownArmorHashes(session, profile)); // impure
     }
+
+    /// <summary>
+    /// The player logged out: their armor is forgotten (the access token was dropped after its two reads), so ⋯ goes and
+    /// the login box comes back. The design keeps the stats and the pieces it wears.
+    /// </summary>
+    private void LogOut() =>
+        Workbench.ForgetArmor();                                                                 // impure (UI state)
 
     /// <summary>
     /// A piece picked from the player's armor: swapped into the embedded build (its set bonuses follow), the stats set

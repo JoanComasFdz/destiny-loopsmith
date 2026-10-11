@@ -6,7 +6,7 @@ using Loopsmith.Core.Orchestration;
 namespace Loopsmith.Web.Hosting;
 
 /// <summary>
-/// Impure shell: the player's Bungie profile (their armor and characters), after they log in with Bungie in a window
+/// Impure shell: the player's Bungie profile (their armor), after they log in with Bungie in a window
 /// of its own — a public OAuth client, <c>BungieClientId</c> with <c>BungieApiKey</c> in wwwroot/appsettings.json
 /// (docs/hosting.md, "Bungie login"). The access token serves the two reads and is dropped: nothing is kept, in the tab
 /// or anywhere else. Core builds every URL and reads every answer.

@@ -40,11 +40,9 @@ public static class StatAdding
             .OrderBy(piece => piece.Slot),
     ];
 
-    /// <summary>For each piece the build wears, the player's copies of it (the most points first); and their characters of the build's class.</summary>
+    /// <summary>For each piece the build wears, the player's copies of it (the most points first).</summary>
     public static StatChoices ListStatChoices(RuleCatalog catalog, Build build, BungieProfile profile) =>
-        new(
-            [.. ListArmorPieces(catalog, build).Select(piece => new PieceChoice(piece, ListCopies(catalog, piece, profile)))],
-            [.. profile.Characters.Where(character => character.Class == build.Class)]);
+        new([.. ListArmorPieces(catalog, build).Select(piece => new PieceChoice(piece, ListCopies(catalog, piece, profile)))]);
 
     /// <summary>
     /// The build's stats from the copies it wears (<see cref="Build.ArmorCopies"/>, when the player owns them; else
@@ -61,7 +59,7 @@ public static class StatAdding
         var rolls = copies.Select(chosen => (chosen.Piece, Roll: ReadRoll(plugs, chosen.Copy.Armor))).ToImmutableArray();
         var unread = rolls.Where(chosen => !chosen.Roll.IsSome()).Select(chosen => chosen.Piece.Name).ToImmutableArray();
         return !unnamed.IsEmpty
-            ? Fail($"The build names no armor piece for {JoinWithAnd(unnamed.Select(DescribeSlot))} (a DIM loadout's pieces), so Loopsmith can't add up its stats from your armor. Use a character's current stats, or type them.")
+            ? Fail($"The build names no armor piece for {JoinWithAnd(unnamed.Select(DescribeSlot))} (a DIM loadout's pieces), so Loopsmith can't add up its stats from your armor. Pick a piece for it with ⋯, or type the stats.")
             : !unowned.IsEmpty
                 ? Fail($"Your account has no {JoinWithAnd(unowned)}, so Loopsmith can't add up the build's stats from your armor.")
                 : !unread.IsEmpty

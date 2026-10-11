@@ -2,7 +2,8 @@
 @* The build's stats: as the build has them ("?" where it doesn't say), typed by hand, or from the player's own armor
    after a Bungie login — the share's own pieces when the loadout is theirs, else the pieces they pick with ⋯ in the
    build's armor — added up with the build's stat mods, tuning and fragments the way DIM does (LoopDesigning). After
-   the login this section says only that, in one line. Whatever is used goes into the embedded build's stats:. *@
+   the login this section says only that, in one line, with "Log out" (the build keeps its stats and armor; the login
+   box comes back). Whatever is used goes into the embedded build's stats:. *@
 <div class="stats-head">
     <h3 class="section-label">Stats</h3>
     @if (OnSetStats.HasDelegate && !editing)
@@ -43,11 +44,14 @@ else
 {
     @if (Profile.IsSome())
     {
-        @* After the login: one line. The build's own armor was loaded (its stats set), or how to pick yours (⋯). *@
-        @if (Note is Optional<string>.Some note)
-        {
-            <p class="stats-armor-note" role="status" data-testid="armor-note">@note.Value</p>
-        }
+        @* After the login: one line — the build's own armor was loaded (its stats set), or how to pick yours (⋯) — and "Log out". *@
+        <div class="stats-armor" data-testid="stats-armor">
+            @if (Note is Optional<string>.Some note)
+            {
+                <p class="stats-armor-note" role="status" data-testid="armor-note">@note.Value</p>
+            }
+            <button type="button" class="btn ghost small" data-action="bungie-logout" @onclick="LogOutAsync">Log out</button>
+        </div>
     }
     else
     {
@@ -83,7 +87,7 @@ else
     [Parameter]
     public EventCallback<StatLine> OnSetStats { get; set; }
 
-    /// <summary>The player's armor and characters after their login (none: not logged in).</summary>
+    /// <summary>The player's armor after their login (none: not logged in, or logged out).</summary>
     [Parameter]
     public Optional<BungieProfile> Profile { get; set; } = Optional.None<BungieProfile>();
 
@@ -94,6 +98,10 @@ else
     /// <summary>The login read the player's profile (the designer keeps it and sets the stats when the loadout is theirs).</summary>
     [Parameter]
     public EventCallback<BungieProfile> OnLoggedIn { get; set; }
+
+    /// <summary>The player logged out: the designer forgets their armor (the build keeps its stats and pieces).</summary>
+    [Parameter]
+    public EventCallback OnLoggedOut { get; set; }
 
     private bool editing;
     private ImmutableArray<string> inputs = [];
@@ -145,4 +153,7 @@ else
 
     private async Task CancelLoginAsync() =>
         await Account.CancelAsync();                                                             // impure
+
+    private async Task LogOutAsync() =>
+        await OnLoggedOut.InvokeAsync();                                                         // impure
 }

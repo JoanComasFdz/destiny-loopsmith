@@ -100,8 +100,6 @@ public sealed partial class StatLoadingTests
         Assert.Equal(new ArmorPlace.Vault(), profile.Armor.Single(armor => armor.InstanceId == ItemInstanceId.From("1")).Place);
         Assert.Equal(new ArmorPlace.Equipped(GuardianClass.Hunter), profile.Armor.Single(armor => armor.InstanceId == ItemInstanceId.From("2")).Place);
         Assert.Equal(Optional.Some(11), profile.Armor.Single(armor => armor.InstanceId == ItemInstanceId.From("1")).EnergyCapacity);
-        var hunter = Assert.Single(profile.Characters);
-        Assert.Equal((GuardianClass.Hunter, Optional.Some(StatValue.From(47)), Optional.Some(StatValue.From(104))), (hunter.Class, hunter.Stats.Weapons, hunter.Stats.Class));
     }
 
     [Fact]
@@ -185,7 +183,7 @@ public sealed partial class StatLoadingTests
     }
 
     [Fact]
-    public void A_hand_written_build_names_no_pieces_so_only_a_characters_stats_or_typing_remain()
+    public void A_hand_written_build_names_no_pieces_so_its_stats_wait_for_picked_pieces_or_typing()
     {
         var build = OpenHandWrittenBuild();
         var choices = LoopDesigning.ListStatChoices(build, ReadProfile([.. OwnAll(tuningSockets: 0)]));
@@ -193,7 +191,7 @@ public sealed partial class StatLoadingTests
         var refused = Assert.IsType<Result<StatTotals, string>.Error>(LoopDesigning.AddUpStats(build, choices));
 
         Assert.StartsWith("The build names no armor piece for the helmet, the chest, the legs and the class item", refused.Failure, StringComparison.Ordinal);
-        Assert.Single(choices.Characters);
+        Assert.EndsWith("Pick a piece for it with ⋯, or type the stats.", refused.Failure, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -282,7 +280,7 @@ public sealed partial class StatLoadingTests
             Response = new
             {
                 profileInventory = new { data = new { items = items.Where(item => item.Place == "vault").Select(ToItem).ToArray() } },
-                characters = new { data = new Dictionary<string, object> { ["c1"] = new { classType = 1, stats = new Dictionary<string, int> { ["2996146975"] = 47, ["1943323491"] = 104, ["1935470627"] = 400 } } } },
+                characters = new { data = new Dictionary<string, object> { ["c1"] = new { classType = 1 } } },
                 characterEquipment = new { data = new Dictionary<string, object> { ["c1"] = new { items = items.Where(item => item.Place == "equipped").Select(ToItem).ToArray() } } },
                 characterInventories = new { data = new Dictionary<string, object> { ["c1"] = new { items = items.Where(item => item.Place == "carried").Select(ToItem).ToArray() } } },
                 itemComponents = new

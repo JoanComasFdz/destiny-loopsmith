@@ -275,7 +275,8 @@ steps replay:
   * **anyone else's** (or a link that names no copies) — nothing changes yet: they pick their own pieces with ⋯.
 
   The Stats section then says only that, in one line ("Your armor is loaded…", or "You can now pick your armor: tap
-  ⋯…"); it shows no total of its own. After the login each armor piece of the build has **⋯**: it opens the **armor
+  ⋯…"), with **Log out**; it shows no total of its own. Log out forgets the player's armor: the build keeps the
+  stats and pieces it has, the ⋯ go, and the login text and button come back. After the login each armor piece of the build has **⋯**: it opens the **armor
   picker** for that slot — the player's pieces for it (for the build's class; Bungie's icons), the copy the build
   wears first (✓, its stats shown), then its other copies, then the rest by name. Hovering a piece (or a first tap, on
   a phone) shows its stats, its set and where it is; a click (a second tap, or "Wear this piece") wears it. The piece
@@ -293,8 +294,8 @@ steps replay:
   build that names no piece for some slot (a hand-written one) gets its stats this way once a piece is picked for each
   with ⋯; a piece whose roll the excerpt doesn't know leaves the stats as they were.
 
-Nothing of the login is kept (the player's armor stays in the tab until it closes); the stats and the copies are,
-in the loop's build, so a shared loop carries its author's numbers and pieces.
+Nothing of the login is kept (the player's armor stays in the tab until they log out or it closes); the stats and
+the copies are, in the loop's build, so a shared loop carries its author's numbers and pieces.
 
 ## Sharing
 

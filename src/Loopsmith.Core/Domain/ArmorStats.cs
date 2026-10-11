@@ -89,11 +89,8 @@ public partial record ArmorPlace
 /// </summary>
 public sealed record OwnedArmor(ItemInstanceId InstanceId, ItemHash Hash, ArmorPlace Place, ImmutableArray<ItemHash> Plugs, Optional<int> EnergyCapacity);
 
-/// <summary>A character's stats as Bungie has them right now: what it is wearing, with its mods and subclass.</summary>
-public sealed record CharacterStats(GuardianClass Class, StatLine Stats);
-
-/// <summary>What Loopsmith reads of a player's Bungie profile: their armor (characters' and vault's) and their characters' stats.</summary>
-public sealed record BungieProfile(ImmutableArray<OwnedArmor> Armor, ImmutableArray<CharacterStats> Characters);
+/// <summary>What Loopsmith reads of a player's Bungie profile: their armor (worn, carried and in the vault).</summary>
+public sealed record BungieProfile(ImmutableArray<OwnedArmor> Armor);
 
 /// <summary>A piece the build wears (a DIM loadout's): its slot, name and the hashes that are it (an exotic's copies).</summary>
 public sealed record ArmorPiece(ArmorSlot Slot, string Name, ImmutableArray<ItemHash> Hashes);
@@ -104,8 +101,8 @@ public sealed record PieceCopy(OwnedArmor Armor, Optional<StatPoints> Points);
 /// <summary>A piece of the build and the player's copies of it (none: they don't own it).</summary>
 public sealed record PieceChoice(ArmorPiece Piece, ImmutableArray<PieceCopy> Copies);
 
-/// <summary>What the player can add the build's stats up from: a choice per piece the build wears, and their characters' current stats.</summary>
-public sealed record StatChoices(ImmutableArray<PieceChoice> Pieces, ImmutableArray<CharacterStats> Characters);
+/// <summary>What the player can add the build's stats up from: a choice per piece the build wears.</summary>
+public sealed record StatChoices(ImmutableArray<PieceChoice> Pieces);
 
 /// <summary>
 /// A piece the player can pick for a slot of the build: their copy, its manifest item, the points it gives (none:
