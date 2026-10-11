@@ -294,23 +294,32 @@ public static class DomainPhrasing
     /// Several outcomes of one rule as one phrase, with values narrowed to the copies equipped and
     /// same-amount energy grants merged: "+~15% grenade, melee and class ability energy".
     /// </summary>
-    public static string DescribeOutcomes(this KeywordGlossary glossary, IEnumerable<OutcomeMention> mentions)
+    public static string DescribeOutcomes(this KeywordGlossary glossary, IEnumerable<OutcomeMention> mentions) =>
+        string.Join(" and ", glossary.ListOutcomePhrases(mentions).Select(phrase => phrase.Text));
+
+    /// <summary>
+    /// Each outcome of one rule as a phrase of its own (what <see cref="DescribeOutcomes"/> joins), values narrowed to
+    /// the copies equipped and same-amount energy grants merged into one; each with the outcome it describes (a merged
+    /// grant: its first).
+    /// </summary>
+    public static ImmutableArray<DescribedOutcome> ListOutcomePhrases(this KeywordGlossary glossary, IEnumerable<OutcomeMention> mentions)
     {
         var phrases = mentions
             .Select(mention => NarrowOutcomeToCopies(mention.Outcome, mention.Copies))
             .Select(outcome => new OutcomePhrase(
                 glossary.DescribeOutcome(outcome),
+                outcome,
                 outcome is Outcome.GrantEnergy { Amount: EnergyGrant.Fraction fraction } grant
                     ? Optional.Some(new EnergyPhrase(fraction.Amount.FormatPercent(), grant.To))
                     : Optional.None<EnergyPhrase>()))
             .ToImmutableArray();
         var merged = phrases.Aggregate(ImmutableArray<OutcomePhrase>.Empty, MergeEnergyPhrase);
-        return string.Join(" and ", merged.Select(DescribeMergedPhrase));
+        return [.. merged.Select(phrase => new DescribedOutcome(phrase.Outcome, DescribeMergedPhrase(phrase)))];
     }
 
     private sealed record EnergyPhrase(string Amount, AbilityKind Ability);
 
-    private sealed record OutcomePhrase(string Text, Optional<EnergyPhrase> Energy, ImmutableArray<AbilityKind> MergedAbilities = default);
+    private sealed record OutcomePhrase(string Text, Outcome Outcome, Optional<EnergyPhrase> Energy, ImmutableArray<AbilityKind> MergedAbilities = default);
 
     private static ImmutableArray<OutcomePhrase> MergeEnergyPhrase(ImmutableArray<OutcomePhrase> merged, OutcomePhrase next)
     {

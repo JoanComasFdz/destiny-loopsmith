@@ -398,9 +398,12 @@ public static class LoopDesigning
             : Optional.Some(new BuildIssue(Severity.Info, $"Loop designed against catalog {designed}; replaying with {current}.")));
     }
 
-    /// <summary>What one step fired, worded like the CLI's trace, without its "#n action" header (the host draws its own).</summary>
-    public static ImmutableArray<StyledLine> RenderStepOutcomes(DesignSession session, Resolution resolution, TraceOptions options) =>
-        [.. TraceRenderer.RenderResolution(session.Build, resolution, options).Skip(1)];
+    /// <summary>
+    /// What one step fired as a tree: each event, the elements it set off, each of their outcomes on a line of its own
+    /// (the CLI's wording), and the keywords they name.
+    /// </summary>
+    public static StepOutcomes ShapeStepOutcomes(DesignSession session, Resolution resolution, TraceOptions options) =>
+        StepOutcomeShaping.ShapeStepOutcomes(session.Build, resolution, options);
 
     /// <summary>The static view of a build: every trigger and what it sets off, as a build note or an aligned tree.</summary>
     public static ImmutableArray<StyledLine> ExplainBuild(ValidatedBuild build, ExplanationStyle style) =>

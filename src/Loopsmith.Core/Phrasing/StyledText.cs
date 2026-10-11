@@ -13,6 +13,9 @@ public sealed record StyledLine(int Indent, ImmutableArray<StyledSpan> Spans);
 /// <summary>An outcome to describe and the copies of its element equipped.</summary>
 public sealed record OutcomeMention(Outcome Outcome, int Copies);
 
+/// <summary>An outcome and the phrase that describes it ("+1 Bolt Charge").</summary>
+public sealed record DescribedOutcome(Outcome Outcome, string Text);
+
 public static class StyledText
 {
     public static StyledSpan ToSpan(this string text, Tone tone = Tone.Plain) => new(text, tone);

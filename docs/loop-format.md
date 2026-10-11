@@ -121,6 +121,16 @@ each active buff that stacks and isn't at max yet, `end:` for each active status
 airborne trigger (without one it fires exactly what `class` fires). Every token still reads anywhere
 (CLI, loop files, share links).
 
+**How the designer shows a step.** The same facts and wording as the CLI's `trace`, one line each: the
+event ("Grenade hit"), under it each element it set off (its icon and name, in its affinity's colour), and
+under each element every outcome it gave ("→ +1 Bolt Charge"). A cascade ("↳ Bolt Charge gained") nests
+under the event that set it off, and the same event several times in a row shows once, counted (×3). An
+element's name, or a status or pickup an outcome or event names when the rules have it as an element (Jolt,
+Bolt Charge, Ionic Trace, Combination Blow), shows a preview on hover and its details on a tap. An element
+whose rules the engine fired apart (a debuff first, energy last) shows at each of its places, in that order. "why" adds each rule's reason under its element; "caveats" adds the outcomes'
+caveats. Each step can be moved up or down, removed or dragged onto another step's place; the loop
+replays in its new order.
+
 ## Starting from a DIM link
 
 The web designer's Home starts a loop from a DIM link ([ADRs D27](../ADRs.md#d27--a-dim-link-starts-a-build-of-what-the-catalog-knows-by-hash-the-rest-is-left-out)):
