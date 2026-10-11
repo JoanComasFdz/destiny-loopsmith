@@ -522,7 +522,6 @@ public sealed class RuleCatalogParsingTests
         Assert.Equal(Optional.Some(ArmorSlot.Helmet), items[ItemHash.From(3832366019u)].ReadArmorSlot());
         Assert.Equal(new ManifestKind.ArmorMod(Optional.None<ArmorSlot>()), items[ItemHash.From(1435557120u)].Kind);
         Assert.Equal([1319563986u, 2596646301u], Assert.IsType<ManifestKind.Artifact>(items[ItemHash.From(3821685388u)].Kind).Perks.Select(hash => hash.Value));
-        Assert.Equal(Optional.Some("Tablet of Ruin"), catalog.Manifest.FindArtifactOf([ItemHash.From(2596646301u)]).Map(item => item.Name));
         Assert.Empty(AssertOk(RuleCatalogParsing.ParseCatalog([Glossary])).Manifest.Items);
     }
 

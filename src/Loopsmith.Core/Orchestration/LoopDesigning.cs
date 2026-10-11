@@ -191,6 +191,10 @@ public static class LoopDesigning
     public static ImmutableArray<ArmorSetStatus> ListArmorSets(ValidatedBuild build) =>
         ArmorSetting.ListArmorSets(build.Catalog, build.Build);
 
+    /// <summary>The build's artifact and its perks of it: the excerpt's artifact that unlocks the most of them; none on a tie.</summary>
+    public static Optional<BuildArtifact> FindArtifact(ValidatedBuild build) =>
+        ArtifactFinding.FindArtifact(build.Catalog, build.Build);
+
     /// <summary>The build's set bonuses in none of the manifest excerpt's sets (shown on their own).</summary>
     public static ImmutableArray<ElementId> ListLooseSetBonuses(ValidatedBuild build) =>
         ArmorSetting.ListLooseBonuses(build.Catalog, build.Build);

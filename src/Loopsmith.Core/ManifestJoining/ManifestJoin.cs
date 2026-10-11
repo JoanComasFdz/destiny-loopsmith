@@ -18,6 +18,8 @@ namespace Loopsmith.Core.ManifestJoining;
 public static class ManifestJoin
 {
     private const string EmptyCatalyst = "v400.empty.exotic.masterwork";   // the plug category of an exotic's empty catalyst socket
+    private const string ArtifactPerkCategory = "artifact_perks";          // what an artifact's perk sockets take…
+    private const string ArtifactResetCategory = "artifact_reset";        // …and its reset socket too, with its Reset Artifact plug
     private const string PerkCategoryName = "WEAPON PERKS";
     private const string WeaponIntrinsicCategoryName = "INTRINSIC TRAITS";
     private const string ArmorIntrinsicCategoryName = "ARMOR PERKS";
@@ -137,7 +139,7 @@ public static class ManifestJoin
                 WalkWeaponSockets(reading, item)),
             KindWord.Artifact => Join(
                 ListPerkNeeds(reading, item),
-                WalkArtifactSockets(item)),
+                WalkArtifactSockets(reading, item)),
             KindWord.Armor => Join(
                 ListPerkNeeds(reading, item),
                 Join(WalkIntrinsicSockets(reading, item, ArmorIntrinsicCategoryName),
@@ -160,10 +162,13 @@ public static class ManifestJoin
         return Join(Join(types, columns), Join(catalyst, WalkIntrinsicSockets(reading, weapon, WeaponIntrinsicCategoryName)));
     }
 
-    /// <summary>An artifact's sockets' plug sets: what lists the perks it unlocks.</summary>
-    private static Reach WalkArtifactSockets(JsonElement artifact) =>
-        artifact.ReadArray("sockets", "socketEntries").Aggregate(Reach.None, (reach, socket) =>
-            socket.ReadHash("reusablePlugSetHash").Match(set => Join(reach, ToReach(ManifestTable.PlugSet, set.Value)), _ => reach));
+    /// <summary>An artifact's sockets: their types (which take artifact perks) and their plug sets (the perks it unlocks).</summary>
+    private static Reach WalkArtifactSockets(Reading reading, JsonElement artifact) =>
+        artifact.ReadArray("sockets", "socketEntries").Aggregate(Reach.None, (reach, socket) => Join(reach, Join(
+            socket.ReadHash("socketTypeHash").Match(type => ToReach(ManifestTable.SocketType, type.Value), _ => Reach.None),
+            IsArtifactPerkSocket(reading, socket)
+                ? socket.ReadHash("reusablePlugSetHash").Match(set => ToReach(ManifestTable.PlugSet, set.Value), _ => Reach.None)
+                : Reach.None)));
 
     private static Reach WalkColumn(Reading reading, JsonElement socket) =>
         ReadPlugSet(socket).Match(
@@ -409,13 +414,23 @@ public static class ManifestJoin
     private static Optional<ItemHash> ReadPlugSet(JsonElement socket) =>
         socket.ReadHash("randomizedPlugSetHash").Match(set => Optional.Some(set.Value), _ => socket.ReadHash("reusablePlugSetHash"));
 
-    /// <summary>An artifact's perks: every plug of its sockets' plug sets but a socket's initial (empty) one, socket by socket, each once.</summary>
+    /// <summary>
+    /// An artifact's perks: every plug of the plug sets of its sockets that take artifact perks (not its reset socket), but
+    /// a socket's initial (empty) one, socket by socket, each once.
+    /// </summary>
     private static ImmutableArray<ItemHash> ListArtifactPerks(Reading reading, JsonElement artifact) =>
         [
             .. artifact.ReadArray("sockets", "socketEntries")
+                .Where(socket => IsArtifactPerkSocket(reading, socket))
                 .SelectMany(socket => ListSocketPlugs(reading, socket))
                 .Distinct(),
         ];
+
+    private static bool IsArtifactPerkSocket(Reading reading, JsonElement socket)
+    {
+        var whitelist = ReadWhitelist(reading, socket);
+        return whitelist.Contains(ArtifactPerkCategory) && !whitelist.Contains(ArtifactResetCategory);
+    }
 
     private static IEnumerable<ItemHash> ListSocketPlugs(Reading reading, JsonElement socket)
     {

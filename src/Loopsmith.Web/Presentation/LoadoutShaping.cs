@@ -202,23 +202,14 @@ public static class LoadoutShaping
                 _ => new IconTile(element.Name, Optional.None<string>(), element.Affinity, Optional.None<ItemTier>(), true, element.Description, 1, ToElementDetails(id)))
             : new IconTile(id.Value, Optional.None<string>(), Affinity.Neutral, Optional.None<ItemTier>(), true, Optional.None<string>(), 1, Optional.None<ItemDetails>());
 
-    /// <summary>The build's artifact and its perks: the build's, then the left-out ones.</summary>
+    /// <summary>The build's artifact (Orchestration decides which) and its perks: the build's, then the left-out ones.</summary>
     private static ArtifactView DescribeArtifact(ValidatedBuild build, ImmutableArray<LeftOutEntry> leftOut)
     {
         var catalog = build.Catalog;
-        var item = FindArtifact(build).Map(artifact =>
-            DescribeItem(artifact, artifact.Name, true, artifact.Description, Affinity.Neutral, Optional.Some<ItemDetails>(new ItemDetails.OfItem(artifact.Hash))));
+        var item = LoopDesigning.FindArtifact(build).Map(found =>
+            DescribeItem(found.Item, found.Item.Name, true, found.Item.Description, Affinity.Neutral, Optional.Some<ItemDetails>(new ItemDetails.OfItem(found.Item.Hash))));
         return new ArtifactView(item, [.. build.Build.ArtifactPerks.Select(id => DescribeElement(catalog, id)), .. leftOut.Select(entry => DescribeLeftOut(catalog, entry))]);
     }
-
-    /// <summary>
-    /// The build's artifact: the one in the excerpt that unlocks the most of its artifact perks (the rules' and the ones
-    /// a DIM loadout had that the rules don't know).
-    /// </summary>
-    public static Optional<ManifestItem> FindArtifact(ValidatedBuild build) =>
-        build.Catalog.Manifest.FindArtifactOf(build.Build.ArtifactPerks
-            .SelectMany(id => build.Catalog.Elements.TryGetValue(id, out var element) ? element.Hashes : [])
-            .Concat(build.Build.LeftOut.Where(entry => entry.Part == LoadoutPart.ArtifactPerk).Select(entry => entry.Hash)));
 
     private static Optional<ItemDetails> ToElementDetails(ElementId id) => Optional.Some<ItemDetails>(new ItemDetails.OfElement(id));
 

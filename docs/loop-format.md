@@ -170,8 +170,8 @@ font: "Arc  - Skipp grenade" reads "Arc - Skipp grenade"). The build is written 
 file (comments say where it came from), so the loop
 embeds, exports, shares and replays it like any other ([rule-format.md](rule-format.md#build-file-buildsbuildbuildyaml)).
 The designer shows the build the way DIM shows a loadout — the subclass with its super, abilities,
-aspects and fragments, the artifact (the one that unlocks the most of the build's artifact perks, tappable
-for Bungie's text and which of its perks the build has) and its perks, the weapons (kinetic, energy, heavy) with their element and
+aspects and fragments, the artifact (the one that unlocks the most of the build's artifact perks — none on a
+tie — tappable for Bungie's text and which of its perks the build has) and its perks, the weapons (kinetic, energy, heavy) with their element and
 one perk per trait column the manifest excerpt gives — the build's pick (`roll`), else the perk it names
 in that column, else the one perk a column that doesn't roll has (an exotic's), else "?" — each armor piece with the mods
 of its slot (the slot the manifest gives the mod; other mods are general) — with Bungie's icons from the

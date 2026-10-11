@@ -68,7 +68,7 @@ internal static class DimLoadoutParsing
             parameters.Bind(p => FindProperty(p, "exoticArmorHash")).Bind(ReadHash)));
     }
 
-    /// <summary>An item with a hash; a subclass's <c>socketOverrides</c> (<c>{ "0": hash, … }</c>) in socket order.</summary>
+    /// <summary>An item with a hash and its <c>socketOverrides</c> (<c>{ "0": hash, … }</c>: a subclass's plugs, a weapon's perks) in socket order.</summary>
     private static Optional<DimLoadoutItem> ReadItem(JsonElement item) =>
         FindProperty(item, "hash").Bind(ReadHash).Map(hash => new DimLoadoutItem(hash, ReadPlugs(item)));
 

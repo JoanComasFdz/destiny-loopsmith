@@ -109,9 +109,9 @@ public static class OutcomeOrigins
                 found => new OutcomeOrigin($"Armor set · {found.Value.Set.Name}", Optional.None<string>(), Affinity.Neutral),
                 _ => new OutcomeOrigin("Armor set", Optional.None<string>(), Affinity.Neutral));
 
-    /// <summary>An artifact perk: the build's artifact (the one that unlocks the most of its perks), with its icon.</summary>
+    /// <summary>An artifact perk: the build's artifact (LoopDesigning.FindArtifact), with its icon.</summary>
     private static OutcomeOrigin DescribeArtifactOrigin(ValidatedBuild build) =>
-        LoadoutShaping.FindArtifact(build).Match(
-            artifact => new OutcomeOrigin($"Artifact perk · {artifact.Value.Name}", artifact.Value.Icon.Map(LoadoutShaping.ToIconUrl), Affinity.Neutral),
+        LoopDesigning.FindArtifact(build).Match(
+            found => new OutcomeOrigin($"Artifact perk · {found.Value.Item.Name}", found.Value.Item.Icon.Map(LoadoutShaping.ToIconUrl), Affinity.Neutral),
             _ => new OutcomeOrigin("Artifact perk", Optional.None<string>(), Affinity.Neutral));
 }

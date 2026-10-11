@@ -37,7 +37,7 @@ public sealed class ManifestJoinTests
     }
 
     [Fact]
-    public void An_artifact_brings_the_perks_of_its_sockets_plug_sets_without_the_empty_plug()
+    public void An_artifact_brings_the_perks_of_its_perk_sockets_without_the_empty_plug_or_its_reset()
     {
         var store = new ManifestStore(Fixture.Tables);
 
@@ -173,8 +173,8 @@ public sealed class ManifestJoinTests
     {
         private const string Buckets = """{"1":{"displayProperties":{"name":"Power Weapons"}},"2":{"displayProperties":{"name":"Helmet"}},"3":{"displayProperties":{"name":"Consumables"}}}""";
         private const string Categories = """{"7":{"displayProperties":{"name":"WEAPON PERKS"}},"8":{"displayProperties":{"name":"INTRINSIC TRAITS"}},"9":{"displayProperties":{"name":"ARMOR PERKS"}}}""";
-        private const string SocketTypes = """{"70":{"plugWhitelist":[{"categoryIdentifier":"frames"}]},"71":{"plugWhitelist":[{"categoryIdentifier":"intrinsics"}]},"72":{"plugWhitelist":[{"categoryIdentifier":"x.machinegun.masterwork"},{"categoryIdentifier":"v400.empty.exotic.masterwork"}]}}""";
-        private const string PlugSets = """{"80":{"reusablePlugItems":[{"plugItemHash":10,"currentlyCanRoll":true},{"plugItemHash":11},{"plugItemHash":13,"currentlyCanRoll":false},{"plugItemHash":10}]},"81":{"reusablePlugItems":[{"plugItemHash":401},{"plugItemHash":402},{"plugItemHash":403}]},"82":{"reusablePlugItems":[{"plugItemHash":401},{"plugItemHash":403},{"plugItemHash":404}]}}""";
+        private const string SocketTypes = """{"73":{"plugWhitelist":[{"categoryIdentifier":"artifact_perks"}]},"74":{"plugWhitelist":[{"categoryIdentifier":"artifact_perks"},{"categoryIdentifier":"artifact_reset"}]},"70":{"plugWhitelist":[{"categoryIdentifier":"frames"}]},"71":{"plugWhitelist":[{"categoryIdentifier":"intrinsics"}]},"72":{"plugWhitelist":[{"categoryIdentifier":"x.machinegun.masterwork"},{"categoryIdentifier":"v400.empty.exotic.masterwork"}]}}""";
+        private const string PlugSets = """{"80":{"reusablePlugItems":[{"plugItemHash":10,"currentlyCanRoll":true},{"plugItemHash":11},{"plugItemHash":13,"currentlyCanRoll":false},{"plugItemHash":10}]},"81":{"reusablePlugItems":[{"plugItemHash":401},{"plugItemHash":402},{"plugItemHash":403}]},"82":{"reusablePlugItems":[{"plugItemHash":401},{"plugItemHash":403},{"plugItemHash":404}]},"83":{"reusablePlugItems":[{"plugItemHash":405},{"plugItemHash":401}]}}""";
         private const string Sets = """{"500":{"displayProperties":{"name":"Testing"},"setPerks":[{"requiredSetCount":4,"sandboxPerkHash":601},{"requiredSetCount":2,"sandboxPerkHash":600}]}}""";
         private const string Perks = """{"40":{"isDisplayable":true,"displayProperties":{"name":"Return","description":"Strikes refill the magazine."}},"41":{"isDisplayable":false,"displayProperties":{"name":""}},"50":{"isDisplayable":true,"displayProperties":{"name":"Spark","description":"Your grenades jolt."}},"51":{"isDisplayable":true,"displayProperties":{"name":"-10 Grenade","description":"-10 Grenade"}},"600":{"isDisplayable":true,"displayProperties":{"name":"Two","description":"Two pieces worn."}},"601":{"isDisplayable":true,"displayProperties":{"name":"Four","description":"Four pieces worn."}}}""";
 
@@ -192,7 +192,7 @@ public sealed class ManifestJoinTests
               "200": { "displayProperties": { "name": "Test Mask" }, "itemTypeDisplayName": "Helmet", "inventory": { "bucketTypeHash": 2, "tierType": 5 }, "equippingBlock": { "equipableItemSetHash": 500 } },
               "300": { "displayProperties": { "name": "Spark", "description": "" }, "itemTypeDisplayName": "Arc Fragment", "inventory": { "bucketTypeHash": 3 }, "perks": [ { "perkHash": 50 }, { "perkHash": 51 } ] },
               "400": { "displayProperties": { "name": "Test Tablet" }, "itemTypeDisplayName": "Artifact", "inventory": { "bucketTypeHash": 3, "tierType": 5 },
-                       "sockets": { "socketEntries": [ { "socketTypeHash": 70, "singleInitialItemHash": 401, "reusablePlugSetHash": 81 }, { "socketTypeHash": 70, "singleInitialItemHash": 401, "reusablePlugSetHash": 82 } ] } }
+                       "sockets": { "socketEntries": [ { "socketTypeHash": 73, "singleInitialItemHash": 401, "reusablePlugSetHash": 81 }, { "socketTypeHash": 73, "singleInitialItemHash": 401, "reusablePlugSetHash": 82 }, { "socketTypeHash": 74, "singleInitialItemHash": 401, "reusablePlugSetHash": 83 } ] } }
             }
             """;
 

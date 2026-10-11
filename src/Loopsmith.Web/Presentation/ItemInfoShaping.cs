@@ -111,31 +111,27 @@ public static class ItemInfoShaping
                 Affinity.Neutral,
                 LoadoutShaping.ToPageUrl(build.Catalog, hash),
                 [
-                    item.Kind is ManifestKind.Artifact artifact
-                        ? DescribeArtifactSection(build, item, artifact)
+                    item.Kind is ManifestKind.Artifact
+                        ? DescribeArtifactSection(build, item)
                         : build.Catalog.Manifest.FindIntrinsicPerk([hash]).Match<InfoSection>(
                             perk => new InfoSection.Perk(new SectionHeading(perk.Value.Name, ToIcon(perk.Value), "Exotic perk"), perk.Value.Description, Optional.None<InfoRules>()),
                             _ => new InfoSection.Item(item.Description, Optional.None<InfoRules>())),
                 ])));
 
-    /// <summary>An artifact: Bungie's text and the perks of it the build has (each its own square to tap), the rules' first.</summary>
-    private static InfoSection DescribeArtifactSection(ValidatedBuild build, ManifestItem item, ManifestKind.Artifact artifact)
-    {
-        var catalog = build.Catalog;
-        var known = build.Build.ArtifactPerks
-            .SelectMany(id => catalog.Elements.TryGetValue(id, out var element) ? element.Hashes.Where(artifact.Perks.Contains).Take(1) : [])
-            .Select(perk => DescribeArtifactPerk(catalog, perk, "Artifact perk"));
-        var leftOut = build.Build.LeftOut
-            .Where(entry => entry.Part == LoadoutPart.ArtifactPerk && artifact.Perks.Contains(entry.Hash))
-            .Select(entry => DescribeArtifactPerk(catalog, entry.Hash, "Artifact perk · not in Loopsmith's rules yet"));
-        return new InfoSection.Artifact(item.Description, [.. known, .. leftOut]);
-    }
+    /// <summary>An artifact: Bungie's text and, when it is the build's artifact, the build's perks of it (their squares sit in the build).</summary>
+    private static InfoSection DescribeArtifactSection(ValidatedBuild build, ManifestItem item) =>
+        new InfoSection.Artifact(
+            item.Description,
+            LoopDesigning.FindArtifact(build).Match(
+                found => found.Value.Item.Hash == item.Hash ? [.. found.Value.Perks.Select(perk => DescribeArtifactPerk(build.Catalog, perk))] : ImmutableArray<SectionHeading>.Empty,
+                _ => ImmutableArray<SectionHeading>.Empty));
 
-    private static SectionHeading DescribeArtifactPerk(RuleCatalog catalog, ItemHash perk, string label) =>
+    private static SectionHeading DescribeArtifactPerk(RuleCatalog catalog, ArtifactPerkOfBuild perk) =>
         new(
-            catalog.FindElementByHash(perk).Match(element => element.Value.Name, _ => catalog.Manifest.DescribeItemHash(perk)),
-            catalog.Manifest.FindItem(perk).Bind(ToIcon),
-            label);
+            perk.Element.Bind(id => catalog.Elements.TryGetValue(id, out var element) ? Optional.Some(element.Name) : Optional.None<string>())
+                .UnwrapOr(catalog.Manifest.DescribeItemHash(perk.Hash)),
+            catalog.Manifest.FindItem(perk.Hash).Bind(ToIcon),
+            perk.Element.IsSome() ? "Artifact perk" : "Artifact perk · not in Loopsmith's rules yet");
 
     /// <summary>An exotic weapon: its intrinsic perk, each perk its columns hold (or "?"), the perks the build names, its catalyst.</summary>
     private static ItemInfo ShapeWeapon(ValidatedBuild build, WeaponLoadout weapon, int index)
