@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Globalization;
 using Dunet;
+using Loopsmith.Core.Causality;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 using Loopsmith.Core.Orchestration;
@@ -327,7 +328,7 @@ public static class LoadoutShaping
 
     /// <summary>An element's icon (the manifest's, by its hash); none for one without a hash (a keyword: Bolt Charge, Jolt).</summary>
     public static Optional<string> FindElementIcon(RuleCatalog catalog, ElementId id) =>
-        catalog.FindElementItem(id).Bind(item => item.Icon).Map(ToIconUrl);
+        catalog.FindElementIcon(id).Map(ToIconUrl);
 
     private static IconTile DescribeElement(RuleCatalog catalog, ElementId id) =>
         catalog.Elements.TryGetValue(id, out var element)

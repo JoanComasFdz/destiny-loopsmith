@@ -43,7 +43,8 @@ public sealed partial class StatLoadingTests
         ]),
         ImmutableDictionary<ItemHash, StatPlug>.Empty,
         ImmutableDictionary<ItemHash, BreakerType>.Empty,
-        new ItemOverlays([], Optional.None<string>(), Optional.None<string>()));
+        new ItemOverlays([], Optional.None<string>(), Optional.None<string>()),
+        ImmutableDictionary<ItemHash, KeywordTrait>.Empty);
 
     [Fact]
     public void A_dim_gg_share_names_the_copy_of_each_armor_piece_and_the_build_file_keeps_them()

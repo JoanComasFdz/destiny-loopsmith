@@ -153,7 +153,10 @@ own step as where Powerful Attraction collects it — and the same event several
 element's name shows a preview on hover and its details on a tap. Every keyword an event or outcome names — a
 status, a debuff by its adjective ("Jolted"), a pickup, a summon — is in its affinity's colour wherever it is in
 the line ("+1 **Bolt Charge**", "Grenade kill on **Jolted** target"), and the ones the rules have as an element
-(Jolt, Bolt Charge, Ionic Trace, Combination Blow) preview and open the same way. An element
+(Jolt, Bolt Charge, Ionic Trace, Combination Blow) preview and open the same way. A keyword shows the game's
+own icon before its name ([rule-format.md](rule-format.md#glossary-rulesglossaryyaml), `trait`) — in the step's
+text, in the state at its end and in its details; a step's title shows the icon of what it does (its weapon, its
+ability, the pickup or the status it declares), and an event that is a weapon's hit or kill shows that weapon's. An element
 whose rules the engine fired apart (a debuff first, energy last) shows at each of its places, in that order. "why" adds each rule's reason under its element; "caveats" adds the outcomes'
 caveats. Each step ends with its **state** — what is present after it — laid out like the game's HUD: the buffs
 on you on the left (Bolt Charge, Amplified, Woven Mail), your weapons' buffs in the middle (a glossary

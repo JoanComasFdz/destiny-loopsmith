@@ -59,6 +59,33 @@ public static class KeywordResolution
             catalog.FindElementSummon(element).Map(summon => (KeywordRef)new KeywordRef.Summon(summon)),
         }.FindFirstSome();
 
+    /// <summary>Bungie's trait a keyword is (Jolted, for Jolt), when the glossary gives one.</summary>
+    public static Optional<ItemHash> FindKeywordTrait(this KeywordGlossary glossary, KeywordRef keyword) =>
+        keyword.Match(
+            status => glossary.Statuses.TryGetValue(status.Id, out var found) ? found.Trait : Optional.None<ItemHash>(),
+            pickup => glossary.Pickups.TryGetValue(pickup.Id, out var found) ? found.Trait : Optional.None<ItemHash>(),
+            summon => glossary.Summons.TryGetValue(summon.Id, out var found) ? found.Trait : Optional.None<ItemHash>());
+
+    /// <summary>
+    /// A keyword's icon (a bungie.net path): its trait's, the game's own keyword icon (Jolted, Woven Mail); else its
+    /// element's manifest item's (Slice: its weapon perk); none when the excerpt has neither (Orb of Power).
+    /// </summary>
+    public static Optional<string> FindKeywordIcon(this RuleCatalog catalog, KeywordRef keyword) =>
+        new[]
+        {
+            catalog.Glossary.FindKeywordTrait(keyword)
+                .Bind(trait => catalog.Manifest.Traits.TryGetValue(trait, out var found) ? Optional.Some(found.Icon) : Optional.None<string>()),
+            catalog.FindKeywordElement(keyword).Bind(catalog.FindElementItem).Bind(item => item.Icon),
+        }.FindFirstSome();
+
+    /// <summary>An element's icon (a bungie.net path): its manifest item's; for a keyword's element, the keyword's.</summary>
+    public static Optional<string> FindElementIcon(this RuleCatalog catalog, ElementId element) =>
+        new[]
+        {
+            catalog.FindElementItem(element).Bind(item => item.Icon),
+            catalog.FindElementKeyword(element).Bind(catalog.FindKeywordIcon),
+        }.FindFirstSome();
+
     /// <summary>The one rule both lookups follow: a keyword's element is the element of its id — its own effects.</summary>
     public static bool IsStatusElement(this ElementId element, StatusId status) =>
         IsKeywordElement(element, status.Value);

@@ -12,12 +12,13 @@ become the build's weapons, and the designer's perk picker offers what each colu
 from the player's own armor the way DIM does ([docs/loop-format.md](../../docs/loop-format.md#stats)), and the three champion
 breakers (`breakerTypes`, with a weapon's own `breaker`) and the overlays Bungie draws on an item's icon (`itemConstants`:
 the gear tiers' diamonds and the masterwork glow), so a player's copies show their tier and masterwork as in DIM. Icons are loaded from
-bungie.net; the data is Bungie's, used under its API terms.
+bungie.net; the data is Bungie's, used under its API terms. It also holds the traits the glossary's keywords name
+(`keywordTraits`: the game's own keywords, Jolted, Bolt Charge, Woven Mail), so each keyword shows its in-game icon.
 
 Regenerate it after adding a hash to the rules, a saved DIM share, or when Bungie publishes a new manifest:
 
 ```bash
-tools/manifest/get-manifest.sh /tmp/manifest            # downloads ten English components (~11 MB compressed, ~215 MB on disk)
+tools/manifest/get-manifest.sh /tmp/manifest            # downloads eleven English components (~11 MB compressed, ~215 MB on disk)
 python3 -I tools/manifest/extract_manifest.py /tmp/manifest "$(cat /tmp/manifest/version.txt)"
 dotnet test                                             # the catalog version changes: re-pin the example loops
 ```

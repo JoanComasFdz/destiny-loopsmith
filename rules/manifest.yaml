@@ -18,6 +18,16 @@ itemConstants:
   tierOverlays: [/img/destiny_content/items/inventory-item-tier1.png, /img/destiny_content/items/inventory-item-tier2.png, /img/destiny_content/items/inventory-item-tier3.png, /img/destiny_content/items/inventory-item-tier4.png, /img/destiny_content/items/inventory-item-tier5.png]
   masterworkOverlay: /img/destiny_content/items/masterwork-overlay.png
   masterworkExoticOverlay: /img/destiny_content/items/masterwork-overlay-exotic.png
+keywordTraits:
+  - { hash: 500183315, name: "Blind", icon: /common/destiny2_content/icons/038cc5626aba34f106fc4b35d5e1b4e1.png }
+  - { hash: 945613349, name: "Unravel", icon: /common/destiny2_content/icons/051ff84191eed83b68476bb7956fedb8.png }
+  - { hash: 2519102437, name: "Sever", icon: /common/destiny2_content/icons/cf68d8d1181768364c8388206700fb17.png }
+  - { hash: 2724747993, name: "Threadling", icon: /common/destiny2_content/icons/2ebc3ae6a7db8aa91c5c11d4fcde3c64.png }
+  - { hash: 2935077680, name: "Bolt Charge", icon: /common/destiny2_content/icons/1a6c7927114c00751fcd2eeed6054563.png }
+  - { hash: 3173573497, name: "Woven Mail", icon: /common/destiny2_content/icons/4e86fbbeaf00f584a93e231dd2e36421.png }
+  - { hash: 3221118171, name: "Jolted", icon: /common/destiny2_content/icons/5c5922023e24197459e52dded0bb97ae.png }
+  - { hash: 3291013836, name: "Amplified", icon: /common/destiny2_content/icons/cc6ce294e996af1310981de31b45fcdd.png }
+  - { hash: 3824458961, name: "Ionic Trace", icon: /common/destiny2_content/icons/775777a47960f74df521545f7cf109f9.png }
 armorSets:
   - { hash: 499993704, name: "Luminopotent", perks: [{ pieces: 2, perk: 2769443639 }, { pieces: 4, perk: 2769443638 }] }
 items:

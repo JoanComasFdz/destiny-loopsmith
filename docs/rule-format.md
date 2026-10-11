@@ -45,19 +45,25 @@ The catalog version is `authored-<first 12 hex chars of SHA-256 over the (path, 
 
 ```yaml
 statuses:
-  - { id: bolt-charge, name: Bolt Charge, kind: buff,   affinity: arc, maxStacks: 10 }
-  - { id: jolt,        name: Jolt,        kind: debuff, affinity: arc, duration: 10s }
+  - { id: bolt-charge, name: Bolt Charge, kind: buff,   affinity: arc, maxStacks: 10, trait: 2935077680 }
+  - { id: jolt,        name: Jolt,        kind: debuff, affinity: arc, duration: 10s, trait: 3221118171 }
 pickups:
-  - { id: ionic-trace,  name: Ionic Trace,  affinity: arc,     collectsAutomatically: true }
+  - { id: ionic-trace,  name: Ionic Trace,  affinity: arc,     collectsAutomatically: true, trait: 3824458961 }
   - { id: orb-of-power, name: Orb of Power, affinity: neutral, collectsAutomatically: false }
 summons:
-  - { id: threadling, name: Threadling, damageType: strand }
+  - { id: threadling, name: Threadling, damageType: strand, trait: 2724747993 }
 subclasses:
   - { class: hunter, subclass: arc, name: Arcstrider, hash: 2328211300 }
 ```
 
 Each section is optional; ids are unique within a section. All keys shown are required except a
-status's `maxStacks` (a whole number ≥ 2) and `duration`.
+status's `maxStacks` (a whole number ≥ 2) and `duration`, and `trait`.
+
+* `trait`: Bungie's trait for the keyword (the manifest's `DestinyTraitDefinition`: the game's own keyword, as
+  its tooltips name it — Jolted for Jolt), by hash. The manifest excerpt's `keywordTraits` give its name and icon
+  ([Manifest excerpt](#manifest-excerpt-rulesmanifestyaml)); the icon shows before the keyword's name wherever
+  it appears. A keyword without one (Armor Charge, Orb of Power: Bungie has no trait for them) shows its
+  element's manifest icon when it has one (Slice: its weapon perk), else none.
 
 * `kind`: `buff` (on the player) · `weaponBuff` (on the player's weapons: Slice, Unraveling Rounds — a
   `buff` to the engine, wherever a rule names a buff; the designer's state shows it with the weapons) ·
@@ -135,6 +141,8 @@ items:
   icon (the manifest's inventory item constants): `tierOverlays` the diamonds of gear tiers 1 to 5 in order (tier
   1's draws none), `masterworkOverlay` the masterwork glow (`masterworkExoticOverlay` an exotic's). A player's copy
   shows them after their Bungie login ([loop-format.md](loop-format.md#stats)). Both are optional.
+* `keywordTraits`: the traits the glossary's keywords name (`trait:`), each `{ hash, name, icon }` — the
+  game's keyword icons (Jolted, Bolt Charge, Woven Mail).
 * `armorSets`: each set's name and the perk each piece count grants. A build's set bonus element gives the
   set perk's hash (`luminopotent-2pc` → `hash: 2769443639`), so a DIM loadout's pieces equip it.
 * `tier`: `basic|common|rare|legendary|exotic`. `icon` is a bungie.net path (the app prefixes

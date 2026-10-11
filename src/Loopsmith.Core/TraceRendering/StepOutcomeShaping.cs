@@ -6,8 +6,11 @@ using Loopsmith.Core.Phrasing;
 
 namespace Loopsmith.Core.TraceRendering;
 
-/// <summary>A keyword in a text: its affinity (it is highlighted in it) and the element it is when the catalog has one (its details).</summary>
-public sealed record KeywordPart(Affinity Affinity, Optional<ElementId> Element);
+/// <summary>
+/// A keyword in a text: its affinity (it is highlighted in it), the element it is when the catalog has one (its
+/// details), and its icon (a bungie.net path: the game's own keyword icon, when the excerpt has it).
+/// </summary>
+public sealed record KeywordPart(Affinity Affinity, Optional<ElementId> Element, Optional<string> Icon);
 
 /// <summary>A piece of an event's or an outcome's text: plain, or a keyword ("Bolt Charge", "Jolted", "Ionic Trace").</summary>
 public sealed record TextPart(string Text, Optional<KeywordPart> Keyword);
@@ -123,7 +126,7 @@ public static class StepOutcomeShaping
     [
         .. glossary.SplitKeywords(text).Select(part => new TextPart(
             part.Text,
-            part.Keyword.Map(keyword => new KeywordPart(keyword.Affinity, catalog.FindKeywordElement(keyword.Keyword))))),
+            part.Keyword.Map(keyword => new KeywordPart(keyword.Affinity, catalog.FindKeywordElement(keyword.Keyword), catalog.FindKeywordIcon(keyword.Keyword))))),
     ];
 
     private static Optional<WeaponSlot> FindEventWeapon(GameEvent gameEvent) =>

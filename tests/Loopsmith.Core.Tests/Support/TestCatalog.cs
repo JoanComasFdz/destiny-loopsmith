@@ -15,15 +15,15 @@ public static class TestCatalog
     public static readonly KeywordGlossary Glossary = new(
         new[]
         {
-            new StatusDefinition(Status("bolt-charge"), "Bolt Charge", KeywordKind.Buff, Affinity.Arc, Optional.Some(StackCount.From(3)), Optional.None<Seconds>()),
-            new StatusDefinition(Status("amplified"), "Amplified", KeywordKind.Buff, Affinity.Arc, Optional.None<StackCount>(), Optional.Some(Seconds.From(10m))),
-            new StatusDefinition(Status("jolt"), "Jolt", KeywordKind.Debuff, Affinity.Arc, Optional.None<StackCount>(), Optional.Some(Seconds.From(4m))),
-            new StatusDefinition(Status("armor-charge"), "Armor Charge", KeywordKind.Buff, Affinity.Neutral, Optional.Some(StackCount.From(3)), Optional.None<Seconds>()),
+            new StatusDefinition(Status("bolt-charge"), "Bolt Charge", KeywordKind.Buff, Affinity.Arc, Optional.Some(StackCount.From(3)), Optional.None<Seconds>(), Optional.None<ItemHash>()),
+            new StatusDefinition(Status("amplified"), "Amplified", KeywordKind.Buff, Affinity.Arc, Optional.None<StackCount>(), Optional.Some(Seconds.From(10m)), Optional.None<ItemHash>()),
+            new StatusDefinition(Status("jolt"), "Jolt", KeywordKind.Debuff, Affinity.Arc, Optional.None<StackCount>(), Optional.Some(Seconds.From(4m)), Optional.None<ItemHash>()),
+            new StatusDefinition(Status("armor-charge"), "Armor Charge", KeywordKind.Buff, Affinity.Neutral, Optional.Some(StackCount.From(3)), Optional.None<Seconds>(), Optional.None<ItemHash>()),
         }.ToImmutableDictionary(s => s.Id),
         new[]
         {
-            new PickupDefinition(Pickup("ionic-trace"), "Ionic Trace", Affinity.Arc, true),
-            new PickupDefinition(Pickup("orb-of-power"), "Orb of Power", Affinity.Neutral, false),
+            new PickupDefinition(Pickup("ionic-trace"), "Ionic Trace", Affinity.Arc, true, Optional.None<ItemHash>()),
+            new PickupDefinition(Pickup("orb-of-power"), "Orb of Power", Affinity.Neutral, false, Optional.None<ItemHash>()),
         }.ToImmutableDictionary(p => p.Id),
         ImmutableDictionary<SummonId, SummonDefinition>.Empty,
         []);
@@ -99,7 +99,7 @@ public static class TestCatalog
             Glossary,
             abilities.Concat(fragments).Concat(allMods).Concat(keywords.IsDefault ? [] : keywords).ToImmutableDictionary(e => e.Id),
             new ManifestExcerpt(Optional.None<string>(), ImmutableDictionary<DamageType, string>.Empty, ImmutableDictionary<ItemHash, ArmorSet>.Empty, ImmutableDictionary<ItemHash, ManifestItem>.Empty, ImmutableDictionary<ItemHash, StatPlug>.Empty,
-                ImmutableDictionary<ItemHash, BreakerType>.Empty, new ItemOverlays([], Optional.None<string>(), Optional.None<string>())));
+                ImmutableDictionary<ItemHash, BreakerType>.Empty, new ItemOverlays([], Optional.None<string>(), Optional.None<string>()), ImmutableDictionary<ItemHash, KeywordTrait>.Empty));
         var build = new Build(
             "Test build",
             Optional.None<string>(),

@@ -6,8 +6,9 @@
 <manifest-dir> holds the English JSON components get-manifest.sh downloads:
 DestinyInventoryItemDefinition.json, DestinyInventoryBucketDefinition.json, DestinyDamageTypeDefinition.json,
 DestinySocketTypeDefinition.json, DestinySocketCategoryDefinition.json, DestinyPlugSetDefinition.json,
-DestinySandboxPerkDefinition.json, DestinyEquipableItemSetDefinition.json, DestinyBreakerTypeDefinition.json and
-DestinyInventoryItemConstantsDefinition.json. <version> is the manifest's version string (written into the file).
+DestinySandboxPerkDefinition.json, DestinyEquipableItemSetDefinition.json, DestinyBreakerTypeDefinition.json,
+DestinyInventoryItemConstantsDefinition.json and DestinyTraitDefinition.json. <version> is the manifest's version
+string (written into the file).
 
 The excerpt holds every hash Loopsmith names: each `hash:` in rules/ (elements, the glossary's subclasses,
 armor set perks) and every hash in the saved DIM shares (builds/*/dim-loadout.json). For each: its name,
@@ -26,6 +27,9 @@ manifest changes nothing.
 `breakerTypes` are the three breakers with their icons; `itemConstants` the overlays Bungie draws on an item's icon, as
 DIM does: a gear tier's diamonds (`tierOverlays`, tier 1 to 5) and the masterwork glow (`masterworkOverlay`, and
 `masterworkExoticOverlay` for an exotic).
+`keywordTraits` are the game's own keywords the glossary's statuses, pickups and summons name (each `trait:` in rules/,
+DestinyTraitDefinition: Jolted, Bolt Charge, Woven Mail), with their names and icons: the icon shows next to the
+keyword's name.
 
 `statPlugs` are every plug that changes an armor stat, for adding up a build's stats from a player's own armor
 the way DIM does (docs/loop-format.md, "Stats"): a piece's rolled stats (`base`: the armor-stat and intrinsic plugs),
@@ -75,6 +79,16 @@ def list_rule_hashes(root):
         for match in re.finditer(r"hash:\s*(\[[^\]]*\]|\d+)", path.read_text(encoding="utf-8")):
             hashes.update(int(number) for number in re.findall(r"\d+", match.group(1)))
     return hashes
+
+
+def list_rule_traits(root):
+    """Every number after `trait:` in rules/: the glossary's keywords' traits."""
+    traits = set()
+    for path in sorted((root / "rules").rglob("*.yaml")):
+        if path.name == "manifest.yaml" and path.parent.name == "rules":
+            continue
+        traits.update(int(number) for number in re.findall(r"trait:\s*(\d+)", path.read_text(encoding="utf-8")))
+    return traits
 
 
 def list_share_hashes(root):
@@ -335,6 +349,7 @@ def main():
     categories = read_json(source / "DestinySocketCategoryDefinition.json")
     breaker_types = read_json(source / "DestinyBreakerTypeDefinition.json")
     item_constants = next(iter(read_json(source / "DestinyInventoryItemConstantsDefinition.json").values()), {})
+    trait_definitions = read_json(source / "DestinyTraitDefinition.json")
     perk_category = find_category(categories, "WEAPON PERKS")
     intrinsic_categories = {"weapon": find_category(categories, "INTRINSIC TRAITS"), "armor": find_category(categories, "ARMOR PERKS")}
     plugs_by_category = {}
@@ -390,6 +405,13 @@ def main():
     for key, written in (("masterworkOverlayPath", "masterworkOverlay"), ("masterworkExoticOverlayPath", "masterworkExoticOverlay")):
         if item_constants.get(key):
             lines.append(f"  {written}: {item_constants[key]}")
+    lines.append("keywordTraits:")
+    wanted_traits = list_rule_traits(root)
+    for h in sorted(wanted_traits):
+        display = trait_definitions.get(str(h), {}).get("displayProperties", {})
+        if display.get("name") and display.get("icon"):
+            lines.append(f"  - {{ hash: {h}, name: {to_text(display['name'])}, icon: {display['icon']} }}")
+    missing += sorted(h for h in wanted_traits if not trait_definitions.get(str(h), {}).get("displayProperties", {}).get("icon"))
     lines.append("armorSets:")
     lines.extend(to_set_entry(h, item_sets[str(h)]) for h in sorted(wanted_sets))
     lines.append("items:")

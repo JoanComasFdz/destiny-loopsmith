@@ -121,7 +121,7 @@ public static class ItemInfoShaping
         return new ItemInfo(
             element.Name,
             item.Match(known => DescribeType(catalog, known.Value), _ => LoopDesigning.DescribeElementType(build, element.Id)),
-            item.Bind(ToIcon),
+            LoadoutShaping.FindElementIcon(catalog, element.Id),
             item.Bind(known => known.Tier),
             element.Affinity,
             item.Bind(known => LoadoutShaping.ToPageUrl(catalog, known.Hash)),
@@ -145,7 +145,7 @@ public static class ItemInfoShaping
         return new ItemInfo(
             glossary.DescribeStatus(status),
             glossary.DescribeStatusKind(status),
-            Optional.None<string>(),
+            LoopDesigning.FindKeywordIcon(build, new KeywordRef.Status(status)).Map(LoadoutShaping.ToIconUrl),
             Optional.None<ItemTier>(),
             glossary.ReadStatusAffinity(status),
             Optional.None<string>(),
@@ -262,7 +262,7 @@ public static class ItemInfoShaping
     private static InfoSection DescribeNamedSection(ValidatedBuild build, ElementId id) =>
         build.Catalog.Elements.TryGetValue(id, out var element)
             ? new InfoSection.Perk(
-                new SectionHeading(element.Name, build.Catalog.FindElementItem(id).Bind(ToIcon), element.Kind.DescribeElementKind()),
+                new SectionHeading(element.Name, LoadoutShaping.FindElementIcon(build.Catalog, id), element.Kind.DescribeElementKind()),
                 build.Catalog.FindElementItem(id).Bind(item => item.Description),
                 Optional.Some(DescribeRules(build, element)))
             : new InfoSection.Perk(new SectionHeading(id.Value, Optional.None<string>(), "Perk"), Optional.None<string>(), Optional.None<InfoRules>());

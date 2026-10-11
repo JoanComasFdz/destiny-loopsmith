@@ -252,7 +252,8 @@ public static class ManifestJoin
             items,
             ImmutableDictionary<ItemHash, StatPlug>.Empty,
             ImmutableDictionary<ItemHash, BreakerType>.Empty,
-            new ItemOverlays([], Optional.None<string>(), Optional.None<string>()));
+            new ItemOverlays([], Optional.None<string>(), Optional.None<string>()),
+            ImmutableDictionary<ItemHash, KeywordTrait>.Empty);
     }
 
     private static Optional<ManifestItem> ToManifestItem(Reading reading, ItemHash hash, bool isCatalyst) =>
