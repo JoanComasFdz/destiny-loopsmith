@@ -1,0 +1,322 @@
+# Arms armor mods. Values are PvE values from the Compendium snapshot of 2026-10-09 (Armor Mods tab,
+# Arms column; a row is the CSV line); "a | b | c" per-copy values are PerModCount. Names and hashes
+# are the Bungie manifest's, every copy of a plug listed (`hash: [a, b]`). Grenade Kickstart and
+# Impact Induction are in armor.yaml.
+#
+# The Compendium's generic Dexterity (#3) and Loader (#11) rows are one row for every element
+# variant: each variant is its own element citing that row, and Bungie's text says which weapon
+# elements it covers.
+#
+# Cooldowns (7 s on the energy mods, 10 | 5 | 1 s between orbs) are facts in the description, as
+# they are on Impact Induction and Reaper in armor.yaml. Energy grants are facts (ADRs D5); the
+# Compendium (Game Mechanics#12) says chunk energy scalars apply to them unless a source says not.
+elements:
+  # ---------------------------------------------------------------- Ability energy
+  - id: bolstering-detonation
+    name: Bolstering Detonation
+    kind: armorMod
+    affinity: neutral
+    hash: [3726719281, 3245543337]
+    description: "Dealing grenade damage grants class ability energy: 12% | 17% | 20% with 1|2|3 mods (PvP 6% | 8.5% | 10%). 7 s cooldown. Affected by chunk energy scalars."
+    source: "compendium/2026-10-09/Armor Mods#2"
+    rules:
+      # The 7 s cooldown is a fact in the description.
+      - on: { damage: { via: grenade } }
+        then:
+          - { grantEnergy: { to: classAbility, amount: "12% | 17% | 20%" } }
+        reason: "Hitting enemies with your grenade gives you some class ability energy."
+    passives: []
+
+  - id: focusing-strike
+    name: Focusing Strike
+    kind: armorMod
+    affinity: neutral
+    hash: [3685945823, 3657186535]
+    description: "Dealing powered melee damage grants class ability energy: 12% | 17% | 20% with 1|2|3 mods (PvP 6% | 8.5% | 10%). 7 s cooldown. Affected by chunk energy scalars."
+    source: "compendium/2026-10-09/Armor Mods#6"
+    rules:
+      # The 7 s cooldown is a fact in the description.
+      - on: { damage: { via: melee } }
+        then:
+          - { grantEnergy: { to: classAbility, amount: "12% | 17% | 20%" } }
+        reason: "Landing your powered melee gives you some class ability energy."
+    passives: []
+
+  - id: momentum-transfer
+    name: Momentum Transfer
+    kind: armorMod
+    affinity: neutral
+    hash: [3599522901, 2031584061]
+    description: "Dealing grenade damage grants melee energy: 12% | 17% | 20% with 1|2|3 mods (PvP 6% | 8.5% | 10%). 7 s cooldown. Doesn't work with Grapple. Affected by chunk energy scalars."
+    source: "compendium/2026-10-09/Armor Mods#14"
+    rules:
+      # The 7 s cooldown is a fact in the description. Not expressible: "doesn't work with Grapple" -
+      # a damage source names the grenade ability, not which grenade it is, so with Grapple equipped
+      # this rule still fires; the exception is a fact in the description.
+      - on: { damage: { via: grenade } }
+        then:
+          - { grantEnergy: { to: melee, amount: "12% | 17% | 20%" } }
+        reason: "Hitting enemies with your grenade gives you some melee energy."
+    passives: []
+
+  - id: melee-kickstart
+    name: Melee Kickstart
+    kind: armorMod
+    affinity: neutral
+    hash: [1763780622, 1139671158]
+    description: "Using a melee charge while you hold Armor Charge spends all of it for melee energy. Each mod and each Armor Charge stack counts once; with 2|3|...|9 of them: 16.2% | 21.7% | 28.4% | 34.4% | 38.4% | 41.3% | 43.4% | 45% (PvE). Affected by chunk energy scalars."
+    source: "compendium/2026-10-09/Armor Mods#13"
+    rules:
+      # The refund is indexed by (mods + stacks), not linear per stack, so perStack is "?".
+      # With 2 mods: 1|2|3 Armor Charge -> 21.7%|28.4%|34.4% of a charge.
+      - on: { abilityCast: melee }
+        when: [ { has: armor-charge } ]
+        then:
+          - { convertStacksToEnergy: { consumed: armor-charge, to: melee, perStack: "?" } }
+        reason: "Using your melee while you hold Armor Charges burns them all for melee energy - the more charges and copies, the bigger the refund."
+    passives: []
+
+  # ---------------------------------------------------------------- Orbs of Power
+  - id: firepower
+    name: Firepower
+    kind: armorMod
+    affinity: neutral
+    hash: [2485657760, 965934024]
+    description: "Grenade kills spawn an Orb of Power (0.8% | 1.1% | 1.25% | 1.5% super energy with 1|2|3|4 mods), with a 10 | 5 | 1 s cooldown between orbs with 1|2|3 mods. With Heavy Handed equipped too, both can trigger only if Firepower sits before it (left to right)."
+    source: "compendium/2026-10-09/Armor Mods#5"
+    rules:
+      # The cooldown between orbs is a fact in the description, and so is the order with Heavy
+      # Handed: no rule reads the order of the mods.
+      - on: { kill: { via: grenade } }
+        then:
+          - { spawn: orb-of-power }
+        reason: "Your grenade kills drop Orbs of Power."
+    passives: []
+
+  - id: heavy-handed
+    name: Heavy Handed
+    kind: armorMod
+    affinity: neutral
+    hash: [2447449706, 1709236482]
+    description: "Powered melee kills spawn an Orb of Power (0.8% | 1.1% | 1.25% | 1.5% super energy with 1|2|3|4 mods), with a 10 | 5 | 1 s cooldown between orbs with 1|2|3 mods. With Firepower equipped too, both can trigger only if Heavy Handed sits after it (left to right)."
+    source: "compendium/2026-10-09/Armor Mods#9"
+    rules:
+      # The cooldown between orbs is a fact in the description, and so is the order with Firepower:
+      # no rule reads the order of the mods.
+      - on: { kill: { via: melee } }
+        then:
+          - { spawn: orb-of-power }
+        reason: "Your powered melee kills drop Orbs of Power."
+    passives: []
+
+  # ---------------------------------------------------------------- Armor Charge
+  - id: grenade-font
+    name: Grenade Font
+    kind: armorMod
+    affinity: neutral
+    hash: [1781551382, 1255614814]
+    description: "While you hold Armor Charge: +20 | +40 | +50 Grenade with 1|2|3 mods. As a passive Armor Charge mod it makes Armor Charge decay, one stack every 10 s (Game Mechanics#94)."
+    source: "compendium/2026-10-09/Armor Mods#7"
+    rules: []
+    passives:
+      # A fact shown while Armor Charge is on you, never added to the build's stats (ADRs D1). The
+      # decay is a fact too: the player declares Armor Charge ended.
+      - effect: { modifyStat: { stat: grenade, change: "+20 | +40 | +50" } }
+        when: [ { has: armor-charge } ]
+        reason: "While you hold Armor Charge, your Grenade stat is higher: +20 with one copy, up to +50 with three."
+
+  - id: melee-font
+    name: Melee Font
+    kind: armorMod
+    affinity: neutral
+    hash: [633101315, 2771425787]
+    description: "While you hold Armor Charge: +20 | +40 | +50 Melee with 1|2|3 mods. As a passive Armor Charge mod it makes Armor Charge decay, one stack every 10 s (Game Mechanics#94)."
+    source: "compendium/2026-10-09/Armor Mods#12"
+    rules: []
+    passives:
+      # A fact shown while Armor Charge is on you, never added to the build's stats (ADRs D1). The
+      # decay is a fact too: the player declares Armor Charge ended.
+      - effect: { modifyStat: { stat: melee, change: "+20 | +40 | +50" } }
+        when: [ { has: armor-charge } ]
+        reason: "While you hold Armor Charge, your Melee stat is higher: +20 with one copy, up to +50 with three."
+
+  - id: shield-break-charge
+    name: Shield Break Charge
+    kind: armorMod
+    affinity: neutral
+    hash: [48578555, 3047946307]
+    description: "Breaking a combatant's shield with damage of its element grants x1 | x2 Armor Charge with 1|2 mods."
+    source: "compendium/2026-10-09/Armor Mods#15"
+    inert: "Breaking a combatant's shield is no step in Loopsmith yet, so no loop sets it off."
+    rules: []
+    passives: []
+
+  # ---------------------------------------------------------------- Grenade throw
+  - id: fastball
+    name: Fastball
+    kind: armorMod
+    affinity: neutral
+    hash: 2649291407
+    description: "Grenades fly about 25% faster and farther; how much varies by grenade."
+    source: "compendium/2026-10-09/Armor Mods#4"
+    inert: "A property (how far and fast you throw your grenades): no step of a loop changes."
+    rules: []
+    passives: []
+
+  # ---------------------------------------------------------------- Dexterity
+  # Ready and stow speed of the matching weapons.
+  - id: arc-dexterity
+    name: Arc Dexterity
+    kind: armorMod
+    affinity: arc
+    hash: [2059068466, 2794359402]
+    description: "Arc weapons ready and stow in 0.8x | 0.75x | 0.7x the time with 1|2|3 mods (stowing no faster than at 100 Handling)."
+    source: "compendium/2026-10-09/Armor Mods#3"
+    inert: "Weapon handling (ready and stow speed of Arc weapons): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: solar-dexterity
+    name: Solar Dexterity
+    kind: armorMod
+    affinity: solar
+    hash: [3067648983, 531665167]
+    description: "Solar weapons ready and stow in 0.8x | 0.75x | 0.7x the time with 1|2|3 mods (stowing no faster than at 100 Handling)."
+    source: "compendium/2026-10-09/Armor Mods#3"
+    inert: "Weapon handling (ready and stow speed of Solar weapons): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: void-dexterity
+    name: Void Dexterity
+    kind: armorMod
+    affinity: void
+    hash: [467550918, 1017385934]
+    description: "Void weapons ready and stow in 0.8x | 0.75x | 0.7x the time with 1|2|3 mods (stowing no faster than at 100 Handling)."
+    source: "compendium/2026-10-09/Armor Mods#3"
+    inert: "Weapon handling (ready and stow speed of Void weapons): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: stasis-dexterity
+    name: Stasis Dexterity
+    kind: armorMod
+    affinity: stasis
+    hash: [193878019, 2267311547]
+    description: "Stasis weapons ready and stow in 0.8x | 0.75x | 0.7x the time with 1|2|3 mods (stowing no faster than at 100 Handling)."
+    source: "compendium/2026-10-09/Armor Mods#3"
+    inert: "Weapon handling (ready and stow speed of Stasis weapons): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: strand-dexterity
+    name: Strand Dexterity
+    kind: armorMod
+    affinity: strand
+    hash: [3323910164, 3979300428]
+    description: "Strand weapons ready and stow in 0.8x | 0.75x | 0.7x the time with 1|2|3 mods (stowing no faster than at 100 Handling)."
+    source: "compendium/2026-10-09/Armor Mods#3"
+    inert: "Weapon handling (ready and stow speed of Strand weapons): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: kinetic-dexterity
+    name: Kinetic Dexterity
+    kind: armorMod
+    affinity: kinetic
+    hash: [2076329105, 1561736585]
+    description: "Kinetic weapons ready and stow in 0.8x | 0.75x | 0.7x the time with 1|2|3 mods (stowing no faster than at 100 Handling)."
+    source: "compendium/2026-10-09/Armor Mods#3"
+    inert: "Weapon handling (ready and stow speed of Kinetic weapons): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: harmonic-dexterity
+    name: Harmonic Dexterity
+    kind: armorMod
+    affinity: neutral
+    hash: [1677180919, 2479297167]
+    description: "Weapons of your Super's element ready and stow in 0.8x | 0.75x | 0.7x the time with 1|2|3 mods (stowing no faster than at 100 Handling)."
+    source: "compendium/2026-10-09/Armor Mods#3"
+    inert: "Weapon handling (ready and stow speed of weapons of your Super's element): no step of a loop changes."
+    rules: []
+    passives: []
+
+  # ---------------------------------------------------------------- Loader
+  # Reload speed of the matching weapons, about 0.5 s after readying them.
+  - id: arc-loader
+    name: Arc Loader
+    kind: armorMod
+    affinity: arc
+    hash: [1125523126, 3046678542]
+    description: "Arc weapons readied for about 0.5 s get +10 | +15 | +18 reload speed with 1|2|3 mods and reload in 0.85x the time."
+    source: "compendium/2026-10-09/Armor Mods#11"
+    inert: "Weapon handling (reload speed of Arc weapons): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: solar-loader
+    name: Solar Loader
+    kind: armorMod
+    affinity: solar
+    hash: [1079896271, 634608391]
+    description: "Solar weapons readied for about 0.5 s get +10 | +15 | +18 reload speed with 1|2|3 mods and reload in 0.85x the time."
+    source: "compendium/2026-10-09/Armor Mods#11"
+    inert: "Weapon handling (reload speed of Solar weapons): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: void-loader
+    name: Void Loader
+    kind: armorMod
+    affinity: void
+    hash: [3980769162, 3224649746]
+    description: "Void weapons readied for about 0.5 s get +10 | +15 | +18 reload speed with 1|2|3 mods and reload in 0.85x the time."
+    source: "compendium/2026-10-09/Armor Mods#11"
+    inert: "Weapon handling (reload speed of Void weapons): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: stasis-loader
+    name: Stasis Loader
+    kind: armorMod
+    affinity: stasis
+    hash: [2793548555, 703902595]
+    description: "Stasis weapons readied for about 0.5 s get +10 | +15 | +18 reload speed with 1|2|3 mods and reload in 0.85x the time."
+    source: "compendium/2026-10-09/Armor Mods#11"
+    inert: "Weapon handling (reload speed of Stasis weapons): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: strand-loader
+    name: Strand Loader
+    kind: armorMod
+    affinity: strand
+    hash: [4244246940, 95934356]
+    description: "Strand weapons readied for about 0.5 s get +10 | +15 | +18 reload speed with 1|2|3 mods and reload in 0.85x the time."
+    source: "compendium/2026-10-09/Armor Mods#11"
+    inert: "Weapon handling (reload speed of Strand weapons): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: kinetic-loader
+    name: Kinetic Loader
+    kind: armorMod
+    affinity: kinetic
+    hash: [2586562813, 2237975061]
+    description: "Kinetic weapons readied for about 0.5 s get +10 | +15 | +18 reload speed with 1|2|3 mods and reload in 0.85x the time."
+    source: "compendium/2026-10-09/Armor Mods#11"
+    inert: "Weapon handling (reload speed of Kinetic weapons): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: harmonic-loader
+    name: Harmonic Loader
+    kind: armorMod
+    affinity: neutral
+    hash: [2657604783, 1702273159]
+    description: "Weapons of your Super's element readied for about 0.5 s get +10 | +15 | +18 reload speed with 1|2|3 mods and reload in 0.85x the time."
+    source: "compendium/2026-10-09/Armor Mods#11"
+    inert: "Weapon handling (reload speed of weapons of your Super's element): no step of a loop changes."
+    rules: []
+    passives: []
