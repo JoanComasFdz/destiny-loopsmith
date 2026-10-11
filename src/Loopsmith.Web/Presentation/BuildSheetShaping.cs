@@ -14,9 +14,13 @@ public sealed record LeftOutEntry(ItemHash Hash, string Name, int Copies);
 /// <summary>The left-out entries of one part of the loadout ("Armor mods").</summary>
 public sealed record LeftOutGroup(string Label, ImmutableArray<LeftOutEntry> Entries);
 
+/// <summary>Left-out items with no part in a loop, by why (the Luminopotent pieces: their set's bonuses count from them).</summary>
+public sealed record NoLoopEffectGroup(string Why, ImmutableArray<LeftOutEntry> Entries);
+
 /// <summary>
 /// What the build panel shows around the loadout (<see cref="LoadoutShaping"/>): the build's name, class, subclass,
-/// author and source, its stats, what a DIM loadout left out, and the design's issues.
+/// author and source, its stats, what a DIM loadout left out — what no rule knows yet, and what has no part in a loop —
+/// and the design's issues.
 /// </summary>
 public sealed record BuildSheet(
     string Name,
@@ -27,6 +31,8 @@ public sealed record BuildSheet(
     Optional<string> SubclassIcon,
     ImmutableArray<StatRow> Stats,
     ImmutableArray<LeftOutGroup> LeftOut,
+    ImmutableArray<NoLoopEffectGroup> NoLoopEffect,
+    string NoLoopEffectCount,
     ImmutableArray<BuildIssue> Issues);
 
 /// <summary>
@@ -41,6 +47,7 @@ public static class BuildSheetShaping
     {
         var b = build.Build;
         var manifest = build.Catalog.Manifest;
+        var noLoopEffect = LoopDesigning.ListNoLoopEffect(build);
         return new BuildSheet(
             b.Name,
             b.Class,
@@ -57,13 +64,21 @@ public static class BuildSheetShaping
                 new StatRow("Melee", ReadStat(b.Stats.Melee)),
             ],
             [
-                .. b.LeftOut
+                .. LoopDesigning.ListMissing(build)
                     .GroupBy(item => item.Part)
                     .OrderBy(group => group.Key)
                     .Select(group => new LeftOutGroup(
                         group.Key.DescribeLoadoutParts(),
                         [.. group.GroupBy(item => item.Hash).Select(copies => new LeftOutEntry(copies.Key, manifest.DescribeItemHash(copies.Key), copies.Count()))])),
             ],
+            [
+                .. noLoopEffect
+                    .GroupBy(entry => entry.Why)
+                    .Select(group => new NoLoopEffectGroup(
+                        group.Key,
+                        [.. group.GroupBy(entry => entry.Item.Hash).Select(copies => new LeftOutEntry(copies.Key, manifest.DescribeItemHash(copies.Key), copies.Count()))])),
+            ],
+            noLoopEffect.Select(entry => entry.Item).ToImmutableArray().DescribeLeftOut(),
             issues);
     }
 

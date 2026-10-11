@@ -49,12 +49,32 @@
     {
         @* Collapsed until opened: what the build leaves out is a list to look up, not part of the loop. *@
         <details class="left-out-section" data-testid="left-out-section">
-            <summary class="section-label">Not in Loopsmith yet <span class="left-out-count">@Build.Build.LeftOut.DescribeLeftOut()</span></summary>
+            <summary class="section-label">Not in Loopsmith yet <span class="left-out-count">@LoopDesigning.ListMissing(Build).DescribeLeftOut()</span></summary>
             <p class="left-out-note muted">The DIM loadout has these, but no rule knows them yet, so the build leaves them out (they show dimmed above). Each opens on light.gg.</p>
             @foreach (var group in sheet.LeftOut)
             {
                 <div class="left-out" data-testid="left-out">
                     <span class="left-out-label">@group.Label</span>
+                    <div class="chips">
+                        @foreach (var entry in group.Entries)
+                        {
+                            <a class="chip left-out-hash" href="@ToLookupUrl(entry.Hash)" target="_blank" rel="noopener noreferrer" title="@entry.Name (@entry.Hash.Value) on light.gg">@entry.Name@(entry.Copies > 1 ? $" ×{entry.Copies}" : "") ↗</a>
+                        }
+                    </div>
+                </div>
+            }
+        </details>
+    }
+
+    @if (!sheet.NoLoopEffect.IsEmpty)
+    {
+        @* Known, not missing: what the DIM loadout has that no loop uses (legendary armor, a jump). Collapsed too. *@
+        <details class="left-out-section" data-testid="no-loop-effect-section">
+            <summary class="section-label">No part in a loop <span class="left-out-count">@sheet.NoLoopEffectCount</span></summary>
+            @foreach (var group in sheet.NoLoopEffect)
+            {
+                <div class="left-out" data-testid="no-loop-effect">
+                    <span class="left-out-label">@group.Why</span>
                     <div class="chips">
                         @foreach (var entry in group.Entries)
                         {

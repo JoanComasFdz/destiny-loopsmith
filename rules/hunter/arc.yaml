@@ -72,6 +72,7 @@ elements:
     ability: { kind: grenade, charges: 1, chunkScalar: 0.75, baseCooldown: 151.5 }
     description: "Arc grenade that splits on impact into 4 seekers that chase enemies within 6 m; each seeker hits twice on impact, then explodes. Its interactions in this build come from Shinobu's Vow."
     source: compendium/2026-10-09/Arc#36
+    inert: "Damage only: its hits and kills are the grenade step itself, and what reacts to them (Shinobu's Vow) has the rules."
     rules: []
     passives: []
 
@@ -126,7 +127,8 @@ elements:
     passives: []
 
   # ================================================================ aspects
-  # fragmentSlots omitted: no source in hand states them.
+  # fragmentSlots: Bungie's manifest (244213.26.06.29.2000-1-bnet.65864), each aspect plug's energy
+  # capacity — the fragment slots it opens (the Compendium's column for them is empty in the snapshot).
 
   - id: tempest-strike
     name: Tempest Strike
@@ -134,6 +136,7 @@ elements:
     affinity: arc
     class: hunter
     hash: 4194622037
+    fragmentSlots: 2
     description: "Killing Jolted enemies grants x1 Bolt Charge (does not stack with Dielectric's). Charged melee while sliding sends a 22 m Arc wave along the ground that Jolts enemies hit and grants 75% damage resistance against combatants for about 4 s. Can trigger and benefits from Combination Blow."
     source: compendium/2026-10-09/Arc#51
     rules:
@@ -159,6 +162,7 @@ elements:
     affinity: arc
     class: hunter
     hash: 4194622036
+    fragmentSlots: 2
     description: "Killing a Jolted enemy grants Amplified. While Amplified: 200% faster base class ability regeneration, 66% [PvP 32%] damage resistance during the dodge animation, +50 Reload Speed and a 0.8x reload duration."
     source: compendium/2026-10-09/Arc#49
     rules:
@@ -177,6 +181,7 @@ elements:
     affinity: arc
     class: hunter
     hash: 4194622039
+    fragmentSlots: 3
     description: "While airborne with a class ability charge, [Air Move] spends the charge on an upward Arc Staff twirl: up to 181 damage and Jolt to enemies within 10 m, Amplified for you and allies within 10 m, and your dodge's effects trigger. Damage scales with Class above 100, up to +65% at 200."
     source: compendium/2026-10-09/Arc#48
     rules:

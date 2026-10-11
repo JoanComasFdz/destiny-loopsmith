@@ -437,8 +437,100 @@ public sealed class RuleCatalogParsingTests
 
         Assert.Equal(
             "hunter/arc.yaml:5: unknown key 'colour' in element (allowed: id, name, kind, affinity, class, hash, "
-            + "fragmentSlots, ability, description, source, rules, passives)",
+            + "fragmentSlots, ability, description, source, rules, passives, inert)",
             message);
+    }
+
+    [Fact]
+    public void An_inert_element_says_why_it_has_no_rules_and_inert_with_rules_is_an_error()
+    {
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToElementsFile("mods.yaml", """
+            elements:
+              - { id: harmonic-resistance, name: Harmonic Resistance, kind: armorMod, affinity: neutral, inert: "Damage resistance only." }
+            """)]));
+        var message = ParseInvalidCatalog(Glossary, ToElementsFile("mods.yaml", """
+            elements:
+              - id: recuperation
+                name: Recuperation
+                kind: armorMod
+                affinity: neutral
+                inert: "Heals only."
+                rules:
+                  - on: { pickUp: orb-of-power }
+                    then: [ { restoreHealth: { amount: "?" } } ]
+            """));
+
+        Assert.Equal(Optional.Some("Damage resistance only."), catalog.Elements[ElementId.From("harmonic-resistance")].Inert);
+        Assert.Equal("mods.yaml:6: inert is only for an element with no rules and no passives", message);
+    }
+
+    [Fact]
+    public void Collect_picks_up_a_pickup_the_glossary_knows()
+    {
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToElementsFile("mods.yaml", """
+            elements:
+              - id: powerful-attraction
+                name: Powerful Attraction
+                kind: armorMod
+                affinity: neutral
+                rules:
+                  - on: { abilityCast: classAbility }
+                    then: [ { collect: orb-of-power } ]
+            """)]));
+        var message = ParseInvalidCatalog(Glossary, ToElementsFile("mods.yaml", """
+            elements:
+              - id: powerful-attraction
+                name: Powerful Attraction
+                kind: armorMod
+                affinity: neutral
+                rules:
+                  - on: { abilityCast: classAbility }
+                    then: [ { collect: firesprite } ]
+            """));
+
+        var rule = Assert.Single(catalog.Elements[ElementId.From("powerful-attraction")].Rules);
+        Assert.Equal([new Outcome.Collect(PickupId.From("orb-of-power"))], rule.Then);
+        Assert.Contains("firesprite", message);
+    }
+
+    [Fact]
+    public void RaiseMaxStacks_raises_the_cap_of_a_status_that_stacks_and_always_holds()
+    {
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToElementsFile("mods.yaml", """
+            elements:
+              - id: charged-up
+                name: Charged Up
+                kind: armorMod
+                affinity: neutral
+                passives:
+                  - effect: { raiseMaxStacks: { status: armor-charge, max: "4 | 5 | 6" } }
+            """)]));
+        var notStacking = ParseInvalidCatalog(Glossary, ToElementsFile("mods.yaml", """
+            elements:
+              - id: charged-up
+                name: Charged Up
+                kind: armorMod
+                affinity: neutral
+                passives:
+                  - effect: { raiseMaxStacks: { status: amplified, max: 4 } }
+            """));
+        var guarded = ParseInvalidCatalog(Glossary, ToElementsFile("mods.yaml", """
+            elements:
+              - id: charged-up
+                name: Charged Up
+                kind: armorMod
+                affinity: neutral
+                passives:
+                  - effect: { raiseMaxStacks: { status: armor-charge, max: "4 | 5 | 6" } }
+                    when: [ { has: amplified } ]
+            """));
+
+        var passive = Assert.Single(catalog.Elements[ElementId.From("charged-up")].Passives);
+        var raise = Assert.IsType<Passive.RaiseMaxStacks>(passive.Modifier);
+        Assert.Equal(ToStatus("armor-charge"), raise.Status);
+        Assert.Equal([4m, 5m, 6m], Assert.IsType<GameValue.PerModCount>(raise.Max).Values);
+        Assert.Contains("'amplified' doesn't stack (no maxStacks)", notStacking);
+        Assert.Equal("mods.yaml:8: raiseMaxStacks raises the build's cap, which always holds, so it takes no when", guarded);
     }
 
     [Fact]

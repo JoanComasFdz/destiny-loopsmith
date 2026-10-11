@@ -176,7 +176,8 @@ public static class LoopGraphBuilding
                 strike.Hit == HitOutcome.Kill)),
             _ => [],
             _ => [],
-            reset => LinkToEnergy(reset.Which));
+            reset => LinkToEnergy(reset.Which),
+            collect => LinkToTriggers([new GameEvent.PickedUp(collect.Pickup)]));   // what is on the ground, picked up
     }
 
     private static string DescribeCastAction(AbilityKind kind) =>

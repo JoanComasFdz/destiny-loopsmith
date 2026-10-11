@@ -19,5 +19,6 @@ public static class OutcomePhasing
             strikeTarget: _ => Phase.Damage,
             modifyDamage: _ => Phase.Empower,
             restoreHealth: _ => Phase.Refund,
-            resetCooldown: _ => Phase.Refund);
+            resetCooldown: _ => Phase.Refund,
+            collect: _ => Phase.Spawn);
 }

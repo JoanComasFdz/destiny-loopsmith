@@ -67,7 +67,7 @@ public static class BuildExplaining
         var ruleItems = equippedElements
             .SelectMany(equipped => equipped.Element.Rules.Select(rule => (equipped.Element, equipped.Count, Rule: rule)))
             .Select((x, order) => (
-                Heading: DescribeHeading(glossary, x.Rule.On),
+                Heading: DescribeHeading(build, x.Rule.On),
                 Rank: RankTrigger(x.Rule.On),
                 Order: order,
                 Affinity: ReadTriggerAffinity(build, x.Rule.On),
@@ -152,11 +152,11 @@ public static class BuildExplaining
         ];
     }
 
-    /// <summary>The trigger; a stacking buff's max also names its cap from the glossary ("Max Bolt Charge (x10)"), a fact.</summary>
-    private static string DescribeHeading(KeywordGlossary glossary, Trigger trigger) =>
-        trigger is Trigger.StacksMaxed maxed && glossary.Statuses.TryGetValue(maxed.Status, out var definition)
-            ? glossary.DescribeTrigger(trigger) + definition.MaxStacks.Match(cap => $" (x{cap.Value.Value})", _ => "")
-            : glossary.DescribeTrigger(trigger);
+    /// <summary>The trigger; a stacking buff's max also names the build's cap ("Max Bolt Charge (x10)", Charged Up raises it), a fact.</summary>
+    private static string DescribeHeading(ValidatedBuild build, Trigger trigger) =>
+        build.Catalog.Glossary.DescribeTrigger(trigger) + (trigger is Trigger.StacksMaxed maxed
+            ? build.DescribeStackCap(maxed.Status).Match(cap => $" ({cap.Value})", _ => "")
+            : "");
 
     /// <summary>The rule's guards, plus "doesn't stack with X" for each equipped element it gives way to.</summary>
     private static Optional<string> DescribeRuleCondition(ValidatedBuild build, Rule rule)

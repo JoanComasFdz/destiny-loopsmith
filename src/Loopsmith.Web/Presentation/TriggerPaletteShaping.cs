@@ -71,7 +71,7 @@ public static class TriggerPaletteShaping
     private static TriggerButton ShapeButton(TriggerOption option, Optional<TargetCount> targets, string caption, ValidatedBuild build)
     {
         var action = targets.Match(count => LoopDesigning.SetTargetCount(option.Action, count.Value), _ => option.Action);
-        return new TriggerButton(action, action.ToActionToken(), build.Catalog.Glossary.DescribeAction(action, build.Build), caption, option.IsNew);
+        return new TriggerButton(action, action.ToActionToken(), build.DescribeAction(action), caption, option.IsNew);
     }
 
     private static string DescribeGroup(TriggerGroup group) =>

@@ -99,8 +99,8 @@ internal static class ReferenceChecking
         ValueReading.ReadStatusId(value).Bind(id => scope.CheckStatus(value, id, Optional.Some(KeywordKind.Buff)));
 
     /// <summary>
-    /// A buff that stacks (<c>stacksMaxed</c>, <c>atMax</c>): only a status with <c>maxStacks</c> can be declared at its
-    /// maximum (ADRs D3).
+    /// A buff that stacks (<c>stacksMaxed</c>, <c>atMax</c>, <c>raiseMaxStacks</c>): only a status with <c>maxStacks</c> can be
+    /// declared at its maximum, or have that maximum raised (ADRs D3).
     /// </summary>
     internal static Result<StatusId, Errors> ReadStackingBuff(this ReferenceScope scope, YamlValue value) =>
         scope.ReadBuff(value).Bind(id => scope.Glossary.Match(

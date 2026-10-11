@@ -67,8 +67,9 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
 
 - A `ChargeCount` value object instead of raw `int` for charges/copies/fragment slots.
 - An optional glossary `adjective` ("Frozen") instead of the suffix rule in `DescribeDebuffedAdjective`.
-- Build validation: armor energy budget and exotic-weapon limit (FR-2); fragment slots are
-  unknown for the current aspects, so the fragment count isn't checked.
+- Build validation: armor energy budget and exotic-weapon limit (FR-2). The aspects' fragment slots
+  come from the manifest's energy capacity (Flow State and Tempest Strike 2, Ascension 3), so the
+  fragment count is checked.
 
 ## Web
 

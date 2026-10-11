@@ -29,10 +29,10 @@ statuses:
   # grants Amplified on every jolted kill anyway.
   - { id: amplified, name: Amplified, kind: buff, affinity: arc, duration: 15s }
 
-  # Base maximum 3: compendium/2026-10-09/Game Mechanics#94 (Charged Up raises it to 4|5|6; Clarity
-  # 2577472338 agrees). Its decay (1 stack every 10 s while a passive mod is equipped, same row) is
-  # a fact of the game: Armor Charge ends when a rule consumes it (Grenade Kickstart) or the player
-  # declares it ended.
+  # Base maximum 3: compendium/2026-10-09/Game Mechanics#94. Charged Up raises a build's cap to
+  # 4|5|6 by copies (the `charged-up` mod's raiseMaxStacks passive; Clarity 2577472338 agrees). Its
+  # decay (1 stack every 10 s while a passive mod is equipped, same row) is a fact of the game:
+  # Armor Charge ends when a rule consumes it (Grenade Kickstart) or the player declares it ended.
   - { id: armor-charge, name: Armor Charge, kind: buff, affinity: neutral, maxStacks: 3 }
 
   # Duration 10 s: compendium/2026-10-09/Strand#7 (generic Woven Mail; To Shreds' Artifact Perks#51

@@ -48,12 +48,12 @@ public static class StepStateShaping
         var glossary = build.Catalog.Glossary;
         var catalog = build.Catalog;
         var reaching = passives.Select(passive => new ReachingPassive(passive, PassiveReaching.FindReach(build.Build, passive.Passive.Modifier))).ToImmutableArray();
-        var buffs = state.Buffs.Select(buff => (OnWeapons: IsOnWeapons(glossary, buff.Status), Entry: ShapeBuff(glossary, catalog, reaching, buff))).ToImmutableArray();
+        var buffs = state.Buffs.Select(buff => (OnWeapons: IsOnWeapons(glossary, buff.Status), Entry: ShapeBuff(build, reaching, buff))).ToImmutableArray();
         return new StepState(
             [.. buffs.Where(buff => !buff.OnWeapons).Select(buff => buff.Entry)],
             [.. buffs.Where(buff => buff.OnWeapons).Select(buff => buff.Entry)],
             [.. reaching.Where(passive => !passive.Passive.Passive.When.IsEmpty).SelectMany(passive => ToWeaponEffect(glossary, passive))],
-            [.. state.Target.Debuffs.Select(debuff => ShapeDebuff(glossary, catalog, reaching, debuff))],
+            [.. state.Target.Debuffs.Select(debuff => ShapeDebuff(build, reaching, debuff))],
             [.. state.Pickups.Select(pickup => ShapePickup(glossary, catalog, pickup))]);
     }
 
@@ -63,22 +63,23 @@ public static class StepStateShaping
     private static bool IsOnWeapons(KeywordGlossary glossary, StatusId status) =>
         glossary.Statuses.TryGetValue(status, out var definition) && definition.Kind == KeywordKind.WeaponBuff;
 
-    private static StateEntry ShapeBuff(KeywordGlossary glossary, RuleCatalog catalog, ImmutableArray<ReachingPassive> reaching, ActiveBuff buff) =>
-        ShapeStatus(glossary, catalog, reaching, buff.Status, glossary.DescribeActiveBuff(buff));
+    private static StateEntry ShapeBuff(ValidatedBuild build, ImmutableArray<ReachingPassive> reaching, ActiveBuff buff) =>
+        ShapeStatus(build, reaching, buff.Status, build.Catalog.Glossary.DescribeActiveBuff(buff));
 
-    private static StateEntry ShapeDebuff(KeywordGlossary glossary, RuleCatalog catalog, ImmutableArray<ReachingPassive> reaching, StatusId debuff) =>
-        ShapeStatus(glossary, catalog, reaching, debuff, glossary.DescribeStatus(debuff));
+    private static StateEntry ShapeDebuff(ValidatedBuild build, ImmutableArray<ReachingPassive> reaching, StatusId debuff) =>
+        ShapeStatus(build, reaching, debuff, build.Catalog.Glossary.DescribeStatus(debuff));
 
-    private static StateEntry ShapeStatus(KeywordGlossary glossary, RuleCatalog catalog, ImmutableArray<ReachingPassive> reaching, StatusId status, string text)
+    private static StateEntry ShapeStatus(ValidatedBuild build, ImmutableArray<ReachingPassive> reaching, StatusId status, string text)
     {
+        var glossary = build.Catalog.Glossary;
         var keyword = new KeywordRef.Status(status);
-        var facts = glossary.DescribeStatusFacts(status);
+        var facts = build.DescribeStatusFacts(status);
         return new StateEntry(
             keyword,
             text,
             glossary.ReadStatusAffinity(status),
-            catalog.FindKeywordElement(keyword),
-            facts.Length > 0 ? Optional.Some(facts) : Optional.None<string>(),
+            build.Catalog.FindKeywordElement(keyword),
+            facts,
             [.. ListSwitchedOn(glossary, reaching, status)]);
     }
 

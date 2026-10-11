@@ -156,7 +156,11 @@ public sealed class DimLoadoutMappingTests
         Assert.Equal(Optional.Some(ElementId.From("shinobus-vow")), build.ExoticArmor);
         Assert.Equal(["spark-of-resistance", "spark-of-frequency", "spark-of-shock", "spark-of-discharge"], build.Fragments.Select(id => id.Value));
         Assert.Equal(
-            ["harmonic-siphon", "strand-siphon", "grenade-kickstart", "grenade-kickstart", "impact-induction", "elemental-charge", "elemental-charge", "bomber", "reaper"],
+            [
+                "harmonic-siphon", "strand-siphon", "ashes-to-assets", "grenade-kickstart", "grenade-kickstart", "impact-induction",
+                "charged-up", "harmonic-resistance", "concussive-dampener", "elemental-charge", "elemental-charge", "recuperation", "bomber",
+                "reaper", "powerful-attraction",
+            ],
             build.ArmorMods.Select(id => id.Value));
         Assert.Equal(
             [

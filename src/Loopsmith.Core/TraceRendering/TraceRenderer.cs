@@ -21,10 +21,9 @@ public static class TraceRenderer
 
     public static ImmutableArray<StyledLine> RenderResolution(ValidatedBuild build, Resolution resolution, TraceOptions options)
     {
-        var glossary = build.Catalog.Glossary;
         var header = StyledText.ToLine(0,
             $"#{resolution.State.Step} ".ToSpan(Tone.Muted),
-            glossary.DescribeAction(resolution.Action, build.Build).ToSpan(Tone.Strong));
+            build.DescribeAction(resolution.Action).ToSpan(Tone.Strong));
         var fired = CollapseRepeats(GroupByEvent(resolution.Fired).Select(group => RenderGroup(build, group, options).ToImmutableArray()));
         var nothing = resolution.Fired.IsEmpty && resolution.Notes.IsEmpty
             ? [StyledText.ToLine(1, "nothing triggers".ToSpan(Tone.Muted))]
@@ -77,16 +76,13 @@ public static class TraceRenderer
         return spans.IsEmpty ? "none".ToSpan(Tone.Muted).ToSingleSpanList() : JoinSpans(spans);
     }
 
-    public static ImmutableArray<StyledLine> RenderAvailableActions(ValidatedBuild build, ImmutableArray<PlayerAction> actions)
-    {
-        var glossary = build.Catalog.Glossary;
-        return actions
+    public static ImmutableArray<StyledLine> RenderAvailableActions(ValidatedBuild build, ImmutableArray<PlayerAction> actions) =>
+        actions
             .Select((action, index) => StyledText.ToLine(1,
                 $"[{index + 1,2}] ".ToSpan(Tone.Muted),
                 $"{action.ToActionToken(),-22}".ToSpan(Tone.Strong),
-                glossary.DescribeAction(action, build.Build).ToSpan(Tone.Plain)))
+                build.DescribeAction(action).ToSpan(Tone.Plain)))
             .ToImmutableArray();
-    }
 
     /// <summary>The fired rules, each run of the same event together (an event and the rules it set off).</summary>
     internal static IEnumerable<ImmutableArray<FiredRule>> GroupByEvent(ImmutableArray<FiredRule> fired)

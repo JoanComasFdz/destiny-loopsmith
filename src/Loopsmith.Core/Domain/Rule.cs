@@ -57,6 +57,7 @@ public partial record Outcome
     partial record ModifyDamage(DamageSource Against, GameValue Change);
     partial record RestoreHealth(GameValue Amount, bool IncludesAllies);
     partial record ResetCooldown(AbilityKind Which);
+    partial record Collect(PickupId Pickup);   // picks it up from the ground when it is there (Powerful Attraction): a pickup event
 }
 
 /// <summary>
@@ -83,6 +84,7 @@ public partial record Passive
     partial record ModifyDamage(DamageSource Against, GameValue Change);     // Flashover, stat bonuses
     partial record ResistDamage(GameValue Amount);                           // Spark of Resistance
     partial record ModifyWeaponStats(ImmutableArray<string> Archetypes, ImmutableArray<WeaponStatChange> Changes);
+    partial record RaiseMaxStacks(StatusId Status, GameValue Max);           // Charged Up: the cap with it equipped, per copy ("4 | 5 | 6"), a fact (ADRs D3)
 }
 
 public sealed record PassiveRule(Passive Modifier, ImmutableArray<Condition> When, Optional<string> Reason);

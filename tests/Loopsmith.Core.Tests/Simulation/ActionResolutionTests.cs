@@ -99,7 +99,7 @@ public class ActionResolutionTests
         Assert.Contains(new ActiveBuff(Status("bolt-charge"), AtMax: true), declared.State.Buffs);
         Assert.Single(thrown.Fired, f => f.Source.Value == "discharge");
         Assert.DoesNotContain(thrown.State.Buffs, b => b.Status == Status("bolt-charge"));
-        Assert.Equal("Bolt Charge at max", build.Catalog.Glossary.DescribeAction(DeclareMax("bolt-charge"), build.Build));
+        Assert.Equal("Bolt Charge at max (x3)", build.DescribeAction(DeclareMax("bolt-charge")));   // the test glossary's cap
         Assert.Contains("Max Bolt Charge → Amplified (10s) [Maxed]", DescribeTrace(build, declared));
     }
 
@@ -153,7 +153,7 @@ public class ActionResolutionTests
         Assert.Empty(resolutions[4].State.Buffs);
         Assert.Empty(resolutions[5].State.Target.Debuffs);
         Assert.All(resolutions[4..], resolution => Assert.Empty(resolution.Fired));
-        Assert.Equal("Amplified ends", build.Catalog.Glossary.DescribeAction(DeclareEnd("amplified"), build.Build));
+        Assert.Equal("Amplified ends", build.DescribeAction(DeclareEnd("amplified")));
     }
 
     [Fact]
@@ -466,9 +466,9 @@ public class ActionResolutionTests
         var killThree = new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Kill, TargetCount.From(3));
         var hitFive = new PlayerAction.FireWeapon(WeaponSlot.Energy, HitOutcome.Damage, TargetCount.From(5));
 
-        Assert.Equal("Grenade (kill 3)", build.Catalog.Glossary.DescribeAction(killThree, build.Build));
-        Assert.Equal("Test Rifle (hit 5)", build.Catalog.Glossary.DescribeAction(hitFive, build.Build));
-        Assert.Equal("Grenade (kill)", build.Catalog.Glossary.DescribeAction(GrenadeKill, build.Build));
+        Assert.Equal("Grenade (kill 3)", build.DescribeAction(killThree));
+        Assert.Equal("Test Rifle (hit 5)", build.DescribeAction(hitFive));
+        Assert.Equal("Grenade (kill)", build.DescribeAction(GrenadeKill));
         Assert.Equal(["grenade:kill:3", "energy:hit:5", "grenade:kill"], new PlayerAction[] { killThree, hitFive, GrenadeKill }.Select(a => a.ToActionToken()));
     }
 

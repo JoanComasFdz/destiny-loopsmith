@@ -149,7 +149,11 @@
             @RenderSource(known.Value.Source)
             <div class="info-card rules" data-testid="info-rules">
                 <div class="info-source">Loopsmith's rules</div>
-                @if (known.Value.Explanation.IsEmpty)
+                @if (known.Value.Explanation.IsEmpty && known.Value.Inert is Optional<string>.Some inert)
+                {
+                    <p class="muted info-note" data-testid="inert">No rules needed. @inert.Value</p>
+                }
+                else if (known.Value.Explanation.IsEmpty)
                 {
                     <p class="muted info-note">No rule is written for it yet: it sets nothing off in a loop.</p>
                 }

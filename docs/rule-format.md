@@ -64,8 +64,9 @@ status's `maxStacks` (a whole number ≥ 2) and `duration`.
   `debuff` (on the pack).
   `affinity`: `neutral|kinetic|arc|solar|void|stasis|strand|prismatic`. A status's affinity is also the
   damage type of its `strikeTarget` strikes (neutral and prismatic strike as kinetic).
-* `maxStacks` says the status **stacks**, and its cap: a fact shown with the buff ("up to x10"). It
-  makes the buff declarable at its maximum — "Bolt Charge at max", `max:bolt-charge`
+* `maxStacks` says the status **stacks**, and its cap: a fact shown with the buff ("up to x10"), which a
+  build's `raiseMaxStacks` passives raise ([Passives](#passives): Charged Up). It
+  makes the buff declarable at its maximum — "Bolt Charge at max (x10)", `max:bolt-charge`
   ([loop-format.md](loop-format.md#action-tokens), ADRs D3) — so `stacksMaxed` triggers and `atMax`
   conditions need it. A status without `maxStacks` doesn't stack: applying it while it is active
   changes nothing.
@@ -146,6 +147,8 @@ elements:
           - { debuffTarget: jolt }
         reason: "Your Arc grenades jolt everything they hit."
     passives: []              # optional (default none)
+    # inert: "Damage resistance: Loopsmith doesn't model the damage you take, so no loop changes."
+                              # optional: why an element has no rules and no passives on purpose
 ```
 
 `id`, `name`, `kind` and `affinity` are required. A hash names one element: the same hash on two
@@ -154,7 +157,8 @@ item is recognised as one element or none ([loop-format.md](loop-format.md#start
 Two keys belong to some kinds only (anywhere else they are an error):
 
 * `fragmentSlots: 2` — aspects only (`fragmentSlots is only allowed on aspects, not on a fragment`), a
-  whole number ≥ 0; the build check counts fragments against it.
+  whole number ≥ 0; the build check counts fragments against it. It is the aspect's energy capacity in
+  Bungie's manifest (Flow State and Tempest Strike 2, Ascension 3).
 * `ability: { kind: grenade, charges: 1, chunkScalar: 0.75, baseCooldown: 151.5 }` — super, grenade, melee
   and classAbility elements only, and `kind` must be the element's kind. `charges` defaults to 1,
   `chunkScalar` and `baseCooldown` (game values) to `"?"`. The ability's profile: facts recorded from the
@@ -162,6 +166,12 @@ Two keys belong to some kinds only (anywhere else they are an error):
 
 `kind: keyword` elements are active in every build, once; every other kind is equipped through its
 build slot ([Build check](#build-check)).
+
+`inert: "<why>"` marks an element that is known and has no part in a loop on purpose — Skip Grenade
+(its hits are the grenade step itself), Feeding Frenzy (no ammo or reloads are counted), the
+resistance mods (no damage taken is modelled). It takes no rules and no passives
+(`inert is only for an element with no rules and no passives`), the build check gives it no "no
+authored rules" warning, and its details say "No rules needed." with the why.
 
 ### Provenance (`source`)
 
@@ -302,11 +312,12 @@ Flashover (Amplified 15s), and the next ability hit fires the strike, which spen
 | `{ modifyDamage: { against: keyword:bolt-charge, change: "+50%" } }` | `ModifyDamage` |
 | `{ restoreHealth: { amount: "?", allies: true } }` (`allies` default false) | `RestoreHealth` |
 | `{ resetCooldown: melee }` | `ResetCooldown` |
+| `{ collect: orb-of-power }` | `Collect` — picks the pickup up from the ground (Powerful Attraction) |
 
 Statuses in `applyBuff`/`removeBuff`/`convertStacksToEnergy.consumed`/`has`/`lacks`/`atMax`/`buffGained`/`stacksMaxed`/`extraStacks`
 must be glossary `buff`s; in `debuffTarget`/`targetHas` glossary `debuff`s
 (`'jolt' is a debuff, but this position needs a buff`); `strikeTarget.via` and `keyword:` take either.
-`spawn`/`pickUp` name glossary pickups, `summon`/`summon:` glossary summons.
+`spawn`/`pickUp`/`collect` name glossary pickups, `summon`/`summon:` glossary summons.
 
 * **`applyBuff`** makes the buff present; `stacks` is what one grant gives, as the source states it.
   A stacking status shows the grant — `+1 Bolt Charge`, `+1 Slice (8s)`; a non-stacking one shows the
@@ -318,9 +329,13 @@ must be glossary `buff`s; in `debuffTarget`/`targetHas` glossary `debuff`s
   active it carries the caveat `nothing to consume`.
 * **`debuffTarget`** puts the debuff on the pack, where it stays until the player ends it; no rule
   removes a debuff.
+* **`collect`** picks the pickup up when it is on the ground — it leaves the ground and its pickup
+  event follows, so every `pickUp` rule fires as if the player had picked it up (Recuperation, Orb of
+  Power's Armor Charge). With none on the ground it carries the caveat `nothing on the ground`. The
+  loop analysis counts the pickup as a need of the step, provided by the step that dropped it.
 
 What changes the state or sets off events: `applyBuff`, `removeBuff`, `debuffTarget`, `spawn`,
-`summon`, `strikeTarget`, and the consumption of `convertStacksToEnergy`. The rest are **facts**, shown with their value and
+`summon`, `strikeTarget`, `collect`, and the consumption of `convertStacksToEnergy`. The rest are **facts**, shown with their value and
 certainty and changing nothing: `grantEnergy`, the energy of `convertStacksToEnergy`, `resetCooldown`,
 `modifyDamage` and `restoreHealth` (ADRs D1, D5).
 
@@ -386,10 +401,18 @@ passives:
 | `{ modifyDamage: { against, change } }` | `ModifyDamage` |
 | `{ resistDamage: "25%" }` | `ResistDamage` |
 | `{ modifyWeaponStats: { archetypes: [fusion-rifle], changes: [ { stat: handling, change: "?" } ] } }` | `ModifyWeaponStats` (non-empty lists; archetypes and stats are kebab-case words) |
+| `{ raiseMaxStacks: { status: armor-charge, max: "4 \| 5 \| 6" } }` (a status with `maxStacks`; no `when`) | `RaiseMaxStacks` — the cap with it equipped, by copies |
 
 Passives are facts and change no state. While its `when` holds, `extraStacks` adds a caveat to every
 `applyBuff` of that status (`+1 from Spark of Frequency`); the others are shown in `explain`, and,
-when they have a `when`, in the trace's state while it holds.
+when they have a `when`, in the trace's state while it holds. `raiseMaxStacks` states the build's cap
+of a stacking status while it is equipped, as the source gives it by copies (Charged Up: Armor Charge
+`"4 | 5 | 6"`, so x4 with one copy; the glossary's x3 without it) — never added up (ADRs D1). Two elements
+raising the same cap make it `"?"`: no source says how they combine. It always holds, so a
+`raiseMaxStacks` with a `when` is an error (`raiseMaxStacks raises the build's cap, which always holds, so
+it takes no when`). The cap is a fact: it shows in the status's facts (`up to x4`), in the declared step
+(`Armor Charge at max (x4)`) and in `explain`'s max heading (`Max Bolt Charge (x10)`); the player still
+declares it reached (ADRs D3).
 
 ## Build file (`builds/<build>/build.yaml`)
 
@@ -457,13 +480,13 @@ stats: { weapons: 47, class: 104, grenade: 145, super: 27, melee: 79 }   # any s
 | `<n> aspects equipped; at most 2.` · `'<name>' is equipped <n> times; aspects and fragments are unique.` · `<n> fragments equipped; the aspects grant <m> slots.` | Blocking |
 | `Fragment slots unknown for <aspects> — fragment count not checked.` | Info |
 | `Unknown (?): <slots> — not in the rule catalog yet, so they set nothing off.` | Info |
-| `Left out of the build: <n> items, <n> subclass plugs, … from the DIM loadout — not in the rule catalog yet.` | Info |
+| `Left out of the build: <n> items, <n> subclass plugs, … from the DIM loadout — not in the rule catalog yet.` — only the gaps: a legendary armor piece (its set's bonuses count from the pieces worn) and a jump have no part in a loop and aren't counted | Info |
 | `<weapon>'s roll: <perks> — not in the rule catalog yet, so they set nothing off.` — perks named as "Slice (Enhanced Trait)" | Info |
 | `<weapon>'s roll: <perk> isn't a perk of its column <n> in the manifest excerpt.` — only when the excerpt has the weapon's columns | Warning |
 | `<weapon>: '<perk>' gives way to the other perk of its column — a column holds one perk.` — a perk `perks` names in a column the roll (or another named perk) already fills; it doesn't count | Warning |
 | `<weapon> has no catalyst in the manifest excerpt, so catalyst: true does nothing.` | Warning |
 | `<weapon>'s catalyst: <name> — not in the rule catalog yet, so it sets nothing off.` | Info |
-| `'<name>' has no authored rules yet — it is inert in the trace.` | Warning |
+| `'<name>' has no authored rules yet — it is inert in the trace.` — not for an `inert` element | Warning |
 | a rule that doesn't stack with an equipped element ([above](#rules-that-dont-stack)) | Warning |
 | `Build pinned catalog <pinned>; using <current>.` | Info |
 

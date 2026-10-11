@@ -50,7 +50,7 @@
   Debuffs       Jolt · Sever · Blind
   Ground        none
   While Amplified  +1 Bolt Charge per gain [Spark of Frequency]
-#6 Bolt Charge at max
+#6 Bolt Charge at max (x10)
   Max Bolt Charge → New Tricks and +~40% grenade energy and heals you and allies [Shinobu's Vow] + Amplified (15s) [Flashover]
   Buffs         Bolt Charge (at max) · Amplified · Armor Charge · Woven Mail · Combination Blow · New Tricks
   Weapons       Slice · Unraveling Rounds

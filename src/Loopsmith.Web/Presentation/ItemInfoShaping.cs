@@ -11,9 +11,10 @@ namespace Loopsmith.Web.Presentation;
 
 /// <summary>
 /// What Loopsmith's rules say about an element: what it sets off — as the build has it, or as one copy would when the
-/// build doesn't equip it — and where its facts come from. An empty explanation: no rule is written for it yet.
+/// build doesn't equip it — and where its facts come from. An empty explanation: no rule is written for it yet — unless
+/// it is inert on purpose (damage only, outside the model), and why.
 /// </summary>
-public sealed record InfoRules(ImmutableArray<StyledLine> Explanation, bool Equipped, InfoSource Source);
+public sealed record InfoRules(ImmutableArray<StyledLine> Explanation, bool Equipped, InfoSource Source, Optional<string> Inert);
 
 /// <summary>
 /// Where an element's facts come from, as a card of its own, each with its title, Loopsmith's words for it (a
@@ -140,7 +141,7 @@ public static class ItemInfoShaping
     private static ItemInfo ShapeBareStatus(ValidatedBuild build, StatusId status)
     {
         var glossary = build.Catalog.Glossary;
-        var facts = glossary.DescribeStatusFacts(status);
+        var facts = build.DescribeStatusFacts(status);
         return new ItemInfo(
             glossary.DescribeStatus(status),
             glossary.DescribeStatusKind(status),
@@ -148,7 +149,7 @@ public static class ItemInfoShaping
             Optional.None<ItemTier>(),
             glossary.ReadStatusAffinity(status),
             Optional.None<string>(),
-            [new InfoSection.Status(facts.Length > 0 ? Optional.Some(facts) : Optional.None<string>()), .. DescribeInBuild(build, new KeywordRef.Status(status))]);
+            [new InfoSection.Status(facts), .. DescribeInBuild(build, new KeywordRef.Status(status))]);
     }
 
     /// <summary>"In this build": what interacts with the keyword, role by role (none: no section).</summary>
@@ -282,7 +283,7 @@ public static class ItemInfoShaping
     }
 
     private static InfoRules DescribeRules(ValidatedBuild build, BuildElement element) =>
-        new(LoopDesigning.ExplainElement(build, element), LoopDesigning.IsEquipped(build, element.Id), DescribeSource(element));
+        new(LoopDesigning.ExplainElement(build, element), LoopDesigning.IsEquipped(build, element.Id), DescribeSource(element), element.Inert);
 
     /// <summary>The element's source card: the Compendium's row (and its sheet), Clarity's entry, the rule file, a creator's link.</summary>
     private static InfoSource DescribeSource(BuildElement element)

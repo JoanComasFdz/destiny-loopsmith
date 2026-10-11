@@ -24,7 +24,7 @@ public static partial class LoopRunning
     {
         var glossary = build.Catalog.Glossary;
         var actions = steps.Select(step => step.Action).ToImmutableArray();
-        var labels = actions.Select(action => glossary.DescribeAction(action, build.Build)).ToImmutableArray();
+        var labels = actions.Select(action => build.DescribeAction(action)).ToImmutableArray();
         var initial = ActionResolution.CreateInitialState();
         if (actions.IsEmpty)
         {
@@ -230,7 +230,7 @@ public static partial class LoopRunning
             .Where(rule => rule.EventIndex < eventIndex)
             .Any(rule => rule.Outcomes.Any(applied => IsProvidedBy(applied.Outcome, need)));
 
-    /// <summary>A rule needs what its trigger and guards read, and the buffs its outcomes consumed.</summary>
+    /// <summary>A rule needs what its trigger and guards read, the buffs its outcomes consumed and the pickups they collected.</summary>
     private static IEnumerable<Need> ListRuleNeeds(FiredRule rule)
     {
         var onTarget = rule.On switch
@@ -246,14 +246,25 @@ public static partial class LoopRunning
             atMax => [new Need.DeclaredMax(atMax.Status)]));
         var consumed = rule.Outcomes
             .Where(applied => !applied.Caveat.IsSome())
-            .SelectMany(applied => applied.Outcome switch
-            {
-                Outcome.RemoveBuff remove => [new Need.Buff(remove.Status)],
-                Outcome.ConvertStacksToEnergy convert => [new Need.Buff(convert.Consumed)],
-                _ => Array.Empty<Need>(),
-            });
+            .SelectMany(applied => ListConsumed(applied.Outcome));
         return onTarget.Select(status => (Need)new Need.Debuff(status)).Concat(guards).Concat(consumed);
     }
+
+    /// <summary>What an outcome uses up, so an earlier step had to provide it: the buff it removes or spends, the pickup it collects.</summary>
+    private static ImmutableArray<Need> ListConsumed(Outcome outcome) =>
+        outcome.Match<ImmutableArray<Need>>(
+            _ => [],
+            convert => [new Need.Buff(convert.Consumed)],
+            _ => [],
+            remove => [new Need.Buff(remove.Status)],
+            _ => [],
+            _ => [],
+            _ => [],
+            _ => [],
+            _ => [],
+            _ => [],
+            _ => [],
+            collect => [new Need.GroundPickup(collect.Pickup)]);
 
     private static bool IsPresent(GameState state, Need need) =>
         need.Match(

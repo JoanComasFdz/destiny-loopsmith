@@ -129,3 +129,86 @@ elements:
           - { grantEnergy: { to: grenade, amount: "12% | 17% | 20%" } }
         reason: "Landing your Arc melee gives you some grenade energy back."
     passives: []
+
+  - id: ashes-to-assets
+    name: Ashes to Assets
+    kind: armorMod
+    affinity: neutral
+    hash: 856936828
+    description: "Each grenade kill gives extra Super energy, more for tougher enemies (the Compendium lists the amounts as mostly unknown). It doesn't add to Hands-On's, and Grapple melee kills give half."
+    source: "compendium/2026-10-09/Armor Mods#4"
+    rules:
+      # The amount per enemy tier is unknown ("?"); the Compendium's tier-1 1% is itself marked uncertain.
+      - on: { kill: { via: grenade } }
+        then:
+          - { grantEnergy: { to: super, amount: "?" } }
+        reason: "Every grenade kill tops up your Super."
+    passives: []
+
+  - id: recuperation
+    name: Recuperation
+    kind: armorMod
+    affinity: neutral
+    hash: 4087056174
+    description: "Picking up an Orb of Power restores health: 16 | 21 | 21 HP with 1|2|3 mods."
+    source: "compendium/2026-10-09/Armor Mods#11"
+    rules:
+      # The HP amounts are a fact in the description: restoreHealth amounts are percentages.
+      - on: { pickUp: orb-of-power }
+        then:
+          - { restoreHealth: { amount: "?" } }
+        reason: "Every Orb of Power you pick up heals you a little."
+    passives: []
+
+  - id: powerful-attraction
+    name: Powerful Attraction
+    kind: armorMod
+    affinity: neutral
+    hash: 11126525
+    description: "Using your class ability pulls in the Orbs of Power around you (within 12.5 m, 18.5 m with 2 mods) and picks them up."
+    source: "compendium/2026-10-09/Armor Mods#12"
+    rules:
+      # The range is a fact: the orbs on the ground are the pack's in front of you (ADRs D7), so in reach.
+      - on: { abilityCast: classAbility }
+        then:
+          - { collect: orb-of-power }
+        reason: "Dodging pulls the Orbs of Power on the ground to you."
+    passives: []
+
+  # Resistance mods: what they change is the damage you take, which no rule reads (a loop has no
+  # incoming damage), so they are known and inert rather than missing.
+  - id: harmonic-resistance
+    name: Harmonic Resistance
+    kind: armorMod
+    affinity: neutral
+    hash: 1293710444
+    description: "Less damage from combatants of the element it matches: 15% | 25% | 30% with 1|2|3 resistance mods."
+    source: "compendium/2026-10-09/Armor Mods#7"
+    inert: "Damage resistance: Loopsmith doesn't model the damage you take, so no loop changes."
+    rules: []
+    passives: []
+
+  - id: concussive-dampener
+    name: Concussive Dampener
+    kind: armorMod
+    affinity: neutral
+    hash: 3719981603
+    description: "Less area, blast and explosive damage from combatants: 15% | 25% | 30% with 1|2|3 resistance mods (PvE only)."
+    source: "compendium/2026-10-09/Armor Mods#7"
+    inert: "Damage resistance: Loopsmith doesn't model the damage you take, so no loop changes."
+    rules: []
+    passives: []
+
+  - id: charged-up
+    name: Charged Up
+    kind: armorMod
+    affinity: neutral
+    hash: 2577472338
+    description: "Raises the most Armor Charge you can hold from x3 to x4 | x5 | x6 with 1|2|3 mods."
+    source: "compendium/2026-10-09/Armor Mods#3"
+    rules: []
+    passives:
+      # Also Game Mechanics#94. The cap is a fact by copies equipped, and the player still declares
+      # when Armor Charge is at max (ADRs D3).
+      - effect: { raiseMaxStacks: { status: armor-charge, max: "4 | 5 | 6" } }
+        reason: "You can hold more Armor Charge before it is at max: four with one copy, up to six with three."
