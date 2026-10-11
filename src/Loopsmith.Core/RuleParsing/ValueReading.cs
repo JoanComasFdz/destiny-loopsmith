@@ -67,6 +67,10 @@ internal static class ValueReading
     internal static Result<StackCount, Errors> ReadMaxStacks(YamlValue value) =>
         value.ParseWith(text => ParseWholeNumber(text, minimum: 2).Bind(count => StackCount.TryFrom(count).ToResult()));
 
+    /// <summary>An armor stat's value, 0..200 (a stat check's <c>from</c> and <c>below</c>).</summary>
+    internal static Result<StatValue, Errors> ReadStatValue(YamlValue value) =>
+        value.ParseWith(text => ParseWholeNumber(text, minimum: 0).Bind(number => StatValue.TryFrom(number).ToResult()));
+
     /// <summary>A number of enemies, 1..20 (<c>atLeast</c>).</summary>
     internal static Result<TargetCount, Errors> ReadTargetCount(YamlValue value) =>
         value.ParseWith(text => ParseWholeNumber(text, minimum: 1).Bind(count => TargetCount.TryFrom(count).ToResult()));

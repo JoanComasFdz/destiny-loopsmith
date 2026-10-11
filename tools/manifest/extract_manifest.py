@@ -25,10 +25,11 @@ manifest changes nothing.
 
 `statPlugs` are every plug that changes an armor stat, for adding up a build's stats from a player's own armor
 the way DIM does (docs/loop-format.md, "Stats"): a piece's rolled stats (`base`: the armor-stat and intrinsic plugs),
-its masterwork (`masterwork`, Armor 3.0's), its tuning (`tuning`, the empty socket's plug too: it marks the socket),
-the stat mods (`mod`) and the subclass fragments (`subclass`). A masterwork and Balanced Tuning add only to a piece's
-stats at 0 (`onlyEmptyStats`); Spark of Focus and Echo of Persistence lower the stat of the class's own ability
-regeneration (`class` on each stat), as DIM reads them.
+its masterwork (`masterwork`, Armor 3.0's: only to a piece's stats at 0), its tuning socket (`tuningSocket`, the
+empty socket's plug: it marks the socket), the tuning mods (`tuning`: points from one stat to another; and
+`balancedTuning`: like the masterwork, only to stats at 0), the stat mods (`statMod`) and the fragments with stats
+(`fragment`); Spark of Focus and Echo of Persistence lower the stat of the class's own ability regeneration (`class`
+on each stat), as DIM reads them.
 """
 
 import json
@@ -297,9 +298,15 @@ def to_stat_plug_entry(plug_hash, item, kind):
         listed = [f"{{ stat: {stat}, value: {value}, class: {CLASS_OF_STAT[stat]} }}" for stat, value in stats if stat in CLASS_OF_STAT]
     else:
         listed = [f"{{ stat: {stat}, value: {value} }}" for stat, value in stats]
-    only_empty = kind == "masterwork" or plug_hash == BALANCED_TUNING
-    flag = ", onlyEmptyStats: true" if only_empty else ""
-    return f"  - {{ hash: {plug_hash}, kind: {kind}, stats: [{', '.join(listed)}]{flag} }}"
+    return f"  - {{ hash: {plug_hash}, kind: {to_written_kind(plug_hash, kind, stats)}, stats: [{', '.join(listed)}] }}"
+
+
+def to_written_kind(plug_hash, kind, stats):
+    """The excerpt's kind of a stat plug: a tuning plug is the empty socket's (no stats), Balanced Tuning or a tuning
+    mod; a mod is a stat mod; a subclass plug is a fragment."""
+    if kind == "tuning":
+        return "tuningSocket" if not stats else "balancedTuning" if plug_hash == BALANCED_TUNING else "tuning"
+    return {"mod": "statMod", "subclass": "fragment"}.get(kind, kind)
 
 
 def main():

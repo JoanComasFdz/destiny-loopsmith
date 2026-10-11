@@ -555,12 +555,23 @@ public sealed class RuleCatalogParsingTests
                 statChecks:
                   - { stat: melee, from: 60, below: 50, severity: warning, says: "Never." }
             """));
+        var blocking = ParseInvalidCatalog(Glossary, ToElementsFile("hunter/arc.yaml", """
+            elements:
+              - id: gamblers-dodge
+                name: Gambler's Dodge
+                kind: classAbility
+                affinity: arc
+                statChecks:
+                  - { stat: melee, below: 250, severity: blocking, says: "Never." }
+            """));
 
         Assert.Equal(
-            [new StatCheck(StatKind.Melee, Optional.None<int>(), 50, Severity.Warning, "With {value} Melee, not a full charge."),
-                new StatCheck(StatKind.Melee, Optional.Some(50), 100, Severity.Info, "With {value} Melee, full only near enemies.")],
+            [new StatCheck(StatKind.Melee, Optional.None<StatValue>(), StatValue.From(50), StatCheckSeverity.Warning, "With {value} Melee, not a full charge."),
+                new StatCheck(StatKind.Melee, Optional.Some(StatValue.From(50)), StatValue.From(100), StatCheckSeverity.Info, "With {value} Melee, full only near enemies.")],
             catalog.Elements[ElementId.From("gamblers-dodge")].StatChecks);
-        Assert.Equal("hunter/arc.yaml:7: a stat check names a range of stat values (from < below <= 200) and says it as a warning or info", message);
+        Assert.Equal("hunter/arc.yaml:7: a stat check's range starts below its end (from < below)", message);
+        Assert.Contains("not one of: warning, info", blocking);
+        Assert.Contains("Stat must be within 0..200", blocking);
     }
 
     [Fact]

@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Globalization;
 using System.Text.Json;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
@@ -40,7 +41,20 @@ public static class BungieProfileReading
     /// wear (205), item instances (300: an armor piece's energy) and sockets (305: its plugs).
     /// </summary>
     public static string ToProfileUrl(DestinyMembership membership) =>
-        $"{Platform}/Destiny2/{membership.Type}/Profile/{Uri.EscapeDataString(membership.Id)}/?components=102,200,201,205,300,305";
+        $"{Platform}/Destiny2/{membership.Type.Value.ToString(CultureInfo.InvariantCulture)}/Profile/{membership.Id.Value}/?components=102,200,201,205,300,305";
+
+    /// <summary>
+    /// Bungie's answer to a request, as text: its JSON says what went wrong, even with an error status, so the readers
+    /// above read it; a server error that isn't JSON (Bungie down) is said as such.
+    /// </summary>
+    public static Result<string, string> ReadAnswer(int status, string text) =>
+        status >= 500 && !text.TrimStart().StartsWith('{')
+            ? new Result<string, string>.Error($"Bungie didn't answer (HTTP {status.ToString(CultureInfo.InvariantCulture)}). Try again later.")
+            : new Result<string, string>.Ok(text);
+
+    /// <summary>Why Bungie couldn't be asked: the browser couldn't reach it (<paramref name="why"/> is what it said).</summary>
+    public static string DescribeUnreachable(string why) =>
+        $"Couldn't reach Bungie ({why}). Check your connection and try again.";
 
     /// <summary>
     /// The membership to read: the cross-save primary one when the account has it, else the one its cross save
@@ -53,19 +67,21 @@ public static class BungieProfileReading
                 .SelectMany(entry => ToSequence(ReadMembershipEntry(entry)))
                 .ToImmutableArray();
             var primary = response.ReadString("primaryMembershipId")
-                .Bind(id => memberships.Where(entry => entry.Membership.Id == id).Select(Optional.Some).FindFirstSome());
-            var crossSaved = memberships.Where(entry => entry.CrossSave == 0 || entry.CrossSave == entry.Membership.Type).Select(Optional.Some).FindFirstSome();
+                .Bind(id => memberships.Where(entry => entry.Membership.Id.Value == id).Select(Optional.Some).FindFirstSome());
+            var crossSaved = memberships.Where(entry => entry.CrossSave == 0 || entry.CrossSave == entry.Membership.Type.Value).Select(Optional.Some).FindFirstSome();
             return primary.Match(found => Optional.Some(found.Value), _ => crossSaved)
                 .Match(found => Optional.Some(found.Value), _ => memberships.Select(Optional.Some).FindFirstSome())
                 .Map(entry => entry.Membership)
                 .ToResult(() => "Your Bungie account has no Destiny 2 characters.");
         });
 
+    /// <summary>A membership and the platform its cross save points to (0: none).</summary>
     private sealed record MembershipEntry(DestinyMembership Membership, int CrossSave);
 
     private static Optional<MembershipEntry> ReadMembershipEntry(JsonElement entry) =>
-        entry.ReadInteger("membershipType").Bind(type => entry.ReadString("membershipId").Map(id =>
-            new MembershipEntry(new DestinyMembership(type, id), entry.ReadInteger("crossSaveOverride").UnwrapOr(0))));
+        entry.ReadInteger("membershipType").Bind(type => MembershipType.TryFrom(type).ToOptional())
+            .Bind(type => entry.ReadString("membershipId").Bind(id => MembershipId.TryFrom(id).ToOptional())
+                .Map(id => new MembershipEntry(new DestinyMembership(type, id), entry.ReadInteger("crossSaveOverride").UnwrapOr(0))));
 
     /// <summary>
     /// The profile's armor — every instanced item with armor energy, worn, carried or in the vault — and each
@@ -96,15 +112,15 @@ public static class BungieProfileReading
 
     /// <summary>An item that is a piece of armor: it has an instance, and the instance has armor energy.</summary>
     private static Optional<OwnedArmor> ReadArmor(JsonElement response, JsonElement item, ArmorPlace place) =>
-        item.ReadString("itemInstanceId").Bind(instance => item.ReadHash("itemHash").Bind(hash =>
+        item.ReadString("itemInstanceId").Bind(instance => ItemInstanceId.TryFrom(instance).ToOptional().Bind(id => item.ReadHash("itemHash").Bind(hash =>
             response.ReadPath("itemComponents", "instances", "data", instance, "energy").Map(energy => new OwnedArmor(
-                instance,
+                id,
                 hash,
                 place,
                 [.. response.ReadArray("itemComponents", "sockets", "data", instance, "sockets")
                     .Where(socket => socket.ReadFlag("isEnabled", true))
                     .SelectMany(socket => ToSequence(socket.ReadHash("plugHash")))],
-                energy.ReadInteger("energyCapacity")))));
+                energy.ReadInteger("energyCapacity"))))));
 
     /// <summary>A character's six armor stats from its <c>stats</c> (Bungie's stat id → value; a value outside 0..200 is unknown).</summary>
     private static StatLine ReadStatLine(JsonElement character)

@@ -10,11 +10,14 @@ namespace Loopsmith.Core.StatLoading;
 /// "Stats"). The build's pieces (a DIM loadout's: its exotic and the legendary pieces it left out) are matched with the
 /// player's copies of them; each copy gives its roll (its armor-stat plugs) and its masterwork (Armor 3.0's adds only to
 /// its stats at 0; Armor 2.0's +2 to each at full energy). Then the build's stat mods and tuning (Balanced Tuning, like
-/// the masterwork, only to a piece's stats at 0, one per tuning socket) and its fragments' stats are added. Every number
-/// comes from the manifest excerpt's <c>statPlugs</c>; a piece whose roll it doesn't know can't be added up.
+/// the masterwork, only to a piece's stats at 0, one per tuning socket) and its fragments' stats are added. The numbers
+/// come from the manifest excerpt's <c>statPlugs</c>, but for Armor 2.0's masterwork, which Bungie's data doesn't hold:
+/// it is DIM's rule (<c>generateAssumedMasterworkStats</c> in DIM's <c>inventory/store/stats.ts</c>). A piece whose roll
+/// the excerpt doesn't know can't be added up.
 /// </summary>
 public static class StatAdding
 {
+    /// <summary>DIM's rule for an Armor 2.0 piece (no masterwork plug): at full energy, +2 to each stat.</summary>
     private const int LegacyFullEnergy = 10;
     private const int LegacyMasterworkBonus = 2;
     private const int MaxStat = 200;
@@ -48,12 +51,12 @@ public static class StatAdding
     /// armor, then the build's mods and fragments, each a part of the total. An error when the build doesn't name a
     /// piece for every slot, or the player doesn't own one, or Loopsmith can't read one's roll.
     /// </summary>
-    public static Result<StatTotals, string> AddUpStats(RuleCatalog catalog, Build build, StatChoices choices, ImmutableDictionary<ArmorSlot, string> picks)
+    public static Result<StatTotals, string> AddUpStats(RuleCatalog catalog, Build build, StatChoices choices, ImmutableDictionary<ArmorSlot, ItemInstanceId> picks)
     {
         var plugs = catalog.Manifest.StatPlugs;
         var unnamed = Enum.GetValues<ArmorSlot>().Where(slot => !choices.Pieces.Any(choice => choice.Piece.Slot == slot)).ToImmutableArray();
         var unowned = choices.Pieces.Where(choice => choice.Copies.IsEmpty).Select(choice => choice.Piece.Name).ToImmutableArray();
-        var copies = choices.Pieces.Where(choice => !choice.Copies.IsEmpty).Select(choice => (choice.Piece, Copy: PickCopy(choice, picks))).ToImmutableArray();
+        var copies = choices.Pieces.SelectMany(choice => ToSequence(FindPickedCopy(choice, picks).Map(copy => (choice.Piece, Copy: copy)))).ToImmutableArray();
         var rolls = copies.Select(chosen => (chosen.Piece, Roll: ReadRoll(plugs, chosen.Copy.Armor))).ToImmutableArray();
         var unread = rolls.Where(chosen => !chosen.Roll.IsSome()).Select(chosen => chosen.Piece.Name).ToImmutableArray();
         return !unnamed.IsEmpty
@@ -65,18 +68,14 @@ public static class StatAdding
                     : new Result<StatTotals, string>.Ok(AddUp(catalog, build, [.. rolls.SelectMany(chosen => ToSequence(chosen.Roll))]));
     }
 
-    /// <summary>A stat as typed: empty for unknown ("?"), else a whole number 0..200; or why it isn't one.</summary>
-    public static Result<Optional<StatValue>, string> ReadStatInput(StatKind stat, string text) =>
-        text.Trim().Length == 0
-            ? new Result<Optional<StatValue>, string>.Ok(Optional.None<StatValue>())
-            : ParseStat(text.Trim()).Match<Result<Optional<StatValue>, string>>(
-                value => new Result<Optional<StatValue>, string>.Ok(Optional.Some(value.Value)),
-                _ => new Result<Optional<StatValue>, string>.Error($"{stat}: a whole number from 0 to 200, or empty for \"?\"."));
-
-    private static Optional<StatValue> ParseStat(string text) =>
-        int.TryParse(text, NumberStyles.None, CultureInfo.InvariantCulture, out var number) && StatValue.TryFrom(number).IsSuccess
-            ? Optional.Some(StatValue.From(number))
-            : Optional.None<StatValue>();
+    /// <summary>The copy of a piece the player picked (by instance id), else their first (the most points); none when they own no copy.</summary>
+    public static Optional<PieceCopy> FindPickedCopy(PieceChoice choice, ImmutableDictionary<ArmorSlot, ItemInstanceId> picks)
+    {
+        var first = choice.Copies.Select(Optional.Some).FindFirstSome();
+        return picks.TryGetValue(choice.Piece.Slot, out var instance)
+            ? choice.Copies.Where(copy => copy.Armor.InstanceId == instance).Select(Optional.Some).Append(first).FindFirstSome()
+            : first;
+    }
 
     /// <summary>What a copy gives: its roll and masterwork; none when the excerpt knows none of its armor-stat plugs.</summary>
     public static Optional<StatPoints> ReadCopyPoints(RuleCatalog catalog, OwnedArmor armor) =>
@@ -85,19 +84,19 @@ public static class StatAdding
     private static StatTotals AddUp(RuleCatalog catalog, Build build, ImmutableArray<PieceRoll> rolls)
     {
         var mods = ListModPlugs(catalog, build);
-        var balanced = mods.Where(mod => mod.Plug.OnlyEmptyStats).ToImmutableArray();
+        var balanced = mods.Where(mod => mod.Plug is StatPlug.BalancedTuning).ToImmutableArray();
         var sockets = rolls.Where(roll => roll.HasTuningSocket).ToImmutableArray();
         var copies = balanced.Sum(mod => mod.Copies);
         var tuned = sockets.Take(copies).ToImmutableArray();
         var parts = ImmutableArray.Create(new StatPart("Armor", rolls.Select(roll => roll.Worn).Sum()))
-            .AddRange(mods.Where(mod => !mod.Plug.OnlyEmptyStats).Select(mod => new StatPart(DescribeCopies(mod.Name, mod.Copies), mod.Plug.ToPoints(build.Class).Times(mod.Copies))))
+            .AddRange(mods.Where(mod => mod.Plug is not StatPlug.BalancedTuning).Select(mod => new StatPart(DescribeCopies(mod.Name, mod.Copies), mod.Plug.ToPoints(build.Class).MultiplyBy(mod.Copies))))
             .AddRange(tuned.IsEmpty ? [] : balanced.Select(mod => new StatPart(DescribeCopies(mod.Name, tuned.Length), tuned.Select(roll => mod.Plug.ToPointsOnEmpty(roll.Rolled)).Sum())))
             .AddRange(ListSubclassPlugs(catalog, build).Select(plug => new StatPart(plug.Name, plug.Plug.ToPoints(build.Class))));
         var total = parts.Select(part => part.Points).Sum();
         var untuned = copies - tuned.Length;
-        var notes = ImmutableArray.Create(untuned > 0 ? $"{DescribeCopies(balanced[0].Name, untuned)} found no tuning socket on these pieces, so it adds nothing." : "")
-            .AddRange(StatPointsArithmetic.AllStats.Select(stat => DescribeClamped(stat, total.Read(stat))))
-            .Where(note => note.Length > 0)
+        var notes = balanced.Take(1).Where(_ => untuned > 0)
+            .Select(mod => $"{DescribeCopies(mod.Name, untuned)} found no tuning socket on these pieces, so it adds nothing.")
+            .Concat(StatPointsArithmetic.AllStats.SelectMany(stat => ToSequence(DescribeClamped(stat, total.ReadPoints(stat)))))
             .ToImmutableArray();
         return new StatTotals(ToStatLine(total), parts, notes);
     }
@@ -110,7 +109,7 @@ public static class StatAdding
     [
         .. build.ArmorMods.SelectMany(mod => ToSequence(FindElementPlug(catalog, mod)))
             .Concat(build.LeftOut.Where(item => item.Part == LoadoutPart.ArmorMod).Select(item => item.Hash))
-            .Where(hash => catalog.Manifest.StatPlugs.TryGetValue(hash, out var plug) && plug.Kind is StatPlugKind.Mod or StatPlugKind.Tuning)
+            .Where(hash => catalog.Manifest.StatPlugs.TryGetValue(hash, out var plug) && plug is StatPlug.StatMod or StatPlug.Tuning or StatPlug.BalancedTuning)
             .GroupBy(hash => hash)
             .Select(group => new NamedPlug(DescribeHash(catalog, group.Key), catalog.Manifest.StatPlugs[group.Key], group.Count())),
     ];
@@ -124,7 +123,7 @@ public static class StatAdding
             .Concat(build.Fragments)
             .SelectMany(element => ToSequence(FindElementPlug(catalog, element)))
             .Concat(build.LeftOut.Where(item => item.Part == LoadoutPart.SubclassPlug).Select(item => item.Hash))
-            .Where(hash => catalog.Manifest.StatPlugs.TryGetValue(hash, out var plug) && plug.Kind == StatPlugKind.Subclass)
+            .Where(hash => catalog.Manifest.StatPlugs.TryGetValue(hash, out var plug) && plug is StatPlug.Fragment)
             .Distinct()
             .Select(hash => new NamedPlug(DescribeHash(catalog, hash), catalog.Manifest.StatPlugs[hash], 1)),
     ];
@@ -143,11 +142,6 @@ public static class StatAdding
             .OrderByDescending(copy => copy.Points.Match(points => ToTotal(points.Value), _ => -1)),
     ];
 
-    private static PieceCopy PickCopy(PieceChoice choice, ImmutableDictionary<ArmorSlot, string> picks) =>
-        picks.TryGetValue(choice.Piece.Slot, out var instance)
-            ? choice.Copies.Where(copy => copy.Armor.InstanceId == instance).Select(Optional.Some).FindFirstSome().UnwrapOr(choice.Copies[0])
-            : choice.Copies[0];
-
     /// <summary>
     /// A copy's roll (its armor-stat and intrinsic plugs' stats), and that roll with its masterwork: Armor 3.0's
     /// masterwork plug adds only to the stats at 0; an Armor 2.0 piece (no such plug) gets +2 to each at full energy.
@@ -155,18 +149,15 @@ public static class StatAdding
     private static Optional<PieceRoll> ReadRoll(ImmutableDictionary<ItemHash, StatPlug> statPlugs, OwnedArmor armor)
     {
         var plugs = armor.Plugs.SelectMany(hash => statPlugs.TryGetValue(hash, out var plug) ? new[] { plug } : []).ToImmutableArray();
-        var rolled = plugs.Where(plug => plug.Kind == StatPlugKind.Base).Select(plug => plug.ToPoints()).Sum();
-        var masterworks = plugs.Where(plug => plug.Kind == StatPlugKind.Masterwork).ToImmutableArray();
+        var rolled = plugs.Where(plug => plug is StatPlug.Rolled).Select(plug => plug.ToPoints()).Sum();
+        var masterworks = plugs.Where(plug => plug is StatPlug.Masterwork).ToImmutableArray();
         var worn = masterworks.IsEmpty
-            ? rolled.Add(armor.EnergyCapacity.Match(energy => energy.Value >= LegacyFullEnergy, _ => false) ? AllStatsBy(LegacyMasterworkBonus) : StatPointsArithmetic.Zero)
+            ? rolled.Add(armor.EnergyCapacity.Match(energy => energy.Value >= LegacyFullEnergy, _ => false) ? StatPointsArithmetic.ToPointsInEachStat(LegacyMasterworkBonus) : StatPointsArithmetic.Zero)
             : rolled.Add(masterworks.Select(plug => plug.ToPointsOnEmpty(rolled)).Sum());
-        return plugs.Any(plug => plug.Kind == StatPlugKind.Base)
-            ? Optional.Some(new PieceRoll(rolled, worn, plugs.Any(plug => plug.Kind == StatPlugKind.Tuning)))
+        return plugs.Any(plug => plug is StatPlug.Rolled)
+            ? Optional.Some(new PieceRoll(rolled, worn, plugs.Any(plug => plug is StatPlug.TuningSocket or StatPlug.Tuning or StatPlug.BalancedTuning)))
             : Optional.None<PieceRoll>();
     }
-
-    private static StatPoints AllStatsBy(int value) =>
-        new(value, value, value, value, value, value);
 
     private static Optional<ArmorPiece> ToExoticPiece(RuleCatalog catalog, ElementId exotic) =>
         catalog.Elements.TryGetValue(exotic, out var element)
@@ -186,11 +177,11 @@ public static class StatAdding
     private static string DescribeCopies(string name, int copies) =>
         copies > 1 ? $"{name} ×{copies}" : name;
 
-    /// <summary>"Grenade adds up to 215, and the game counts 200": a total past 0..200, as the game holds it.</summary>
-    private static string DescribeClamped(StatKind stat, int value) =>
-        value > MaxStat
-            ? $"{stat} adds up to {value.ToString(CultureInfo.InvariantCulture)}, and the game counts {MaxStat}."
-            : value < 0 ? $"{stat} adds up to {value.ToString(CultureInfo.InvariantCulture)}, and the game counts 0." : "";
+    /// <summary>"Grenade adds up to 215, and the game counts 200": a total past 0..200, as the game holds it; none within it.</summary>
+    private static Optional<string> DescribeClamped(StatKind stat, int value) =>
+        value > MaxStat || value < 0
+            ? Optional.Some($"{stat} adds up to {value.ToString(CultureInfo.InvariantCulture)}, and the game counts {Math.Clamp(value, 0, MaxStat).ToString(CultureInfo.InvariantCulture)}.")
+            : Optional.None<string>();
 
     private static StatLine ToStatLine(StatPoints total) =>
         new(ToStat(total.Weapons), ToStat(total.Health), ToStat(total.Class), ToStat(total.Grenade), ToStat(total.Super), ToStat(total.Melee));

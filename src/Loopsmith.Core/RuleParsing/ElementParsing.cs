@@ -82,16 +82,16 @@ internal static class ElementParsing
         value.ToMap().Bind(map => Combine(
                 map.CheckKeys(StatCheckKeys),
                 map.ReadRequired("stat", ReadVocabularyWord<StatKind>),
-                map.ReadOptional("from", ReadNonNegativeInteger),
-                map.ReadRequired("below", ReadPositiveInteger),
-                map.ReadRequired("severity", ReadVocabularyWord<Severity>),
+                map.ReadOptional("from", ReadStatValue),
+                map.ReadRequired("below", ReadStatValue),
+                map.ReadRequired("severity", ReadVocabularyWord<StatCheckSeverity>),
                 map.ReadRequired("says", ReadName),
                 (_, stat, from, below, severity, says) => new StatCheck(stat, from, below, severity, says))
             .Bind(check => CheckStatRange(map, check)));
 
     private static Result<StatCheck, Errors> CheckStatRange(YamlMap map, StatCheck check) =>
-        check.Below > 200 || check.From.Match(from => from.Value >= check.Below, _ => false) || check.Severity == Severity.Blocking
-            ? map.FailAtKey<StatCheck>("below", "a stat check names a range of stat values (from < below <= 200) and says it as a warning or info")
+        check.From.Match(from => from.Value.Value >= check.Below.Value, _ => false)
+            ? map.FailAtKey<StatCheck>("below", "a stat check's range starts below its end (from < below)")
             : Succeed(check);
 
     /// <summary>An element with a reason to have no rules has none: <c>inert</c> with rules or passives would hide a real gap.</summary>

@@ -23,7 +23,7 @@ internal static class ManifestParsing
         ImmutableDictionary<ItemHash, StatPlug>.Empty);
 
     private static readonly ImmutableArray<string> ManifestKeys = ["version", "damageTypes", "armorSets", "items", "statPlugs"];
-    private static readonly ImmutableArray<string> StatPlugKeys = ["hash", "kind", "stats", "onlyEmptyStats"];
+    private static readonly ImmutableArray<string> StatPlugKeys = ["hash", "kind", "stats"];
     private static readonly ImmutableArray<string> PlugStatKeys = ["stat", "value", "class"];
     private static readonly ImmutableArray<string> DamageTypeKeys = ["type", "icon"];
     private static readonly ImmutableArray<string> ArmorSetKeys = ["hash", "name", "perks"];
@@ -69,15 +69,29 @@ internal static class ManifestParsing
     /// <summary>A stat plug with its hash, while the excerpt's list becomes a dictionary.</summary>
     private sealed record HashedStatPlug(ItemHash Hash, StatPlug Plug);
 
-    /// <summary><c>{ hash, kind: base|masterwork|tuning|mod|subclass, stats: [{ stat, value, class? }], onlyEmptyStats? }</c>.</summary>
+    /// <summary>A stat plug's kind as the excerpt writes it; each becomes its <see cref="StatPlug"/> case.</summary>
+    private enum StatPlugWord { Base, Masterwork, TuningSocket, Tuning, BalancedTuning, StatMod, Fragment }
+
+    /// <summary><c>{ hash, kind: base|masterwork|tuningSocket|tuning|balancedTuning|statMod|fragment, stats: [{ stat, value, class? }] }</c>.</summary>
     private static Result<Located<HashedStatPlug>, Errors> ReadStatPlug(YamlValue value) =>
         value.ToMap().Bind(map => Combine(
             map.CheckKeys(StatPlugKeys),
             map.ReadRequired("hash", ReadItemHash),
-            map.ReadRequired("kind", ReadVocabularyWord<StatPlugKind>),
+            map.ReadRequired("kind", ReadVocabularyWord<StatPlugWord>),
             map.ReadOrDefault("stats", stats => stats.ReadEach("plug stat", ReadPlugStat), []),
-            map.ReadOrDefault("onlyEmptyStats", ReadBoolean, false),
-            (_, hash, kind, stats, onlyEmpty) => map.ToLocated(new HashedStatPlug(hash, new StatPlug(kind, stats, onlyEmpty)))));
+            (_, hash, kind, stats) => map.ToLocated(new HashedStatPlug(hash, ToStatPlug(kind, stats)))));
+
+    private static StatPlug ToStatPlug(StatPlugWord kind, ImmutableArray<PlugStat> stats) =>
+        kind switch
+        {
+            StatPlugWord.Base => new StatPlug.Rolled(stats),
+            StatPlugWord.Masterwork => new StatPlug.Masterwork(stats),
+            StatPlugWord.TuningSocket => new StatPlug.TuningSocket(),
+            StatPlugWord.Tuning => new StatPlug.Tuning(stats),
+            StatPlugWord.BalancedTuning => new StatPlug.BalancedTuning(stats),
+            StatPlugWord.StatMod => new StatPlug.StatMod(stats),
+            _ => new StatPlug.Fragment(stats),
+        };
 
     private static Result<PlugStat, Errors> ReadPlugStat(YamlValue value) =>
         value.ToMap().Bind(map => Combine(

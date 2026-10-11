@@ -147,16 +147,16 @@ statPlugs:
   - { hash: 29254703, kind: base, stats: [{ stat: weapons, value: 5 }, { stat: class, value: 1 }, { stat: health, value: 10 }] }
   - { hash: 32051168, kind: base, stats: [{ stat: grenade, value: 1 }, { stat: super, value: 11 }, { stat: melee, value: 1 }] }
   - { hash: 67755179, kind: base, stats: [{ stat: grenade, value: 10 }, { stat: super, value: 1 }, { stat: melee, value: 1 }] }
-  - { hash: 74393640, kind: subclass, stats: [{ stat: class, value: 10 }] }
+  - { hash: 74393640, kind: fragment, stats: [{ stat: class, value: 10 }] }
   - { hash: 77849045, kind: base, stats: [{ stat: grenade, value: 6 }, { stat: super, value: 6 }, { stat: melee, value: 1 }] }
   - { hash: 91007917, kind: base, stats: [{ stat: grenade, value: 5 }, { stat: super, value: 5 }, { stat: melee, value: 1 }] }
   - { hash: 115819390, kind: base, stats: [{ stat: grenade, value: 1 }, { stat: super, value: 11 }, { stat: melee, value: 5 }] }
-  - { hash: 124726498, kind: subclass, stats: [{ stat: class, value: -10 }] }
-  - { hash: 124726499, kind: subclass, stats: [{ stat: weapons, value: 10 }] }
-  - { hash: 124726501, kind: subclass, stats: [{ stat: melee, value: 10 }] }
-  - { hash: 124726502, kind: subclass, stats: [{ stat: grenade, value: 10 }] }
-  - { hash: 124726504, kind: subclass, stats: [{ stat: grenade, value: -10 }] }
-  - { hash: 124726505, kind: subclass, stats: [{ stat: health, value: 10 }] }
+  - { hash: 124726498, kind: fragment, stats: [{ stat: class, value: -10 }] }
+  - { hash: 124726499, kind: fragment, stats: [{ stat: weapons, value: 10 }] }
+  - { hash: 124726501, kind: fragment, stats: [{ stat: melee, value: 10 }] }
+  - { hash: 124726502, kind: fragment, stats: [{ stat: grenade, value: 10 }] }
+  - { hash: 124726504, kind: fragment, stats: [{ stat: grenade, value: -10 }] }
+  - { hash: 124726505, kind: fragment, stats: [{ stat: health, value: 10 }] }
   - { hash: 128416290, kind: base, stats: [{ stat: weapons, value: 5 }, { stat: class, value: 5 }, { stat: health, value: 5 }] }
   - { hash: 134899365, kind: base, stats: [{ stat: grenade, value: 6 }, { stat: super, value: 1 }, { stat: melee, value: 9 }] }
   - { hash: 141714163, kind: base, stats: [{ stat: weapons, value: 6 }, { stat: class, value: 7 }, { stat: health, value: 1 }] }
@@ -170,7 +170,7 @@ statPlugs:
   - { hash: 183430253, kind: base, stats: [{ stat: grenade, value: 30 }, { stat: super, value: 25 }] }
   - { hash: 183430255, kind: base, stats: [{ stat: class, value: 30 }, { stat: weapons, value: 25 }] }
   - { hash: 187944698, kind: base, stats: [{ stat: weapons, value: 13 }, { stat: class, value: 1 }, { stat: health, value: 1 }] }
-  - { hash: 199176566, kind: mod, stats: [{ stat: health, value: 3 }] }
+  - { hash: 199176566, kind: statMod, stats: [{ stat: health, value: 3 }] }
   - { hash: 204379057, kind: base, stats: [{ stat: grenade, value: 1 }, { stat: super, value: 7 }, { stat: melee, value: 6 }] }
   - { hash: 229383925, kind: base, stats: [{ stat: weapons, value: 1 }, { stat: class, value: 5 }, { stat: health, value: 10 }] }
   - { hash: 236547055, kind: base, stats: [{ stat: weapons, value: 6 }, { stat: class, value: 1 }, { stat: health, value: 7 }] }
@@ -200,15 +200,15 @@ statPlugs:
   - { hash: 314704911, kind: base, stats: [{ stat: weapons, value: 5 }, { stat: class, value: 8 }, { stat: health, value: 1 }] }
   - { hash: 323635379, kind: tuning, stats: [{ stat: class, value: 5 }, { stat: weapons, value: -5 }] }
   - { hash: 333640025, kind: base, stats: [{ stat: weapons, value: 5 }, { stat: class, value: 1 }, { stat: health, value: 8 }] }
-  - { hash: 350061697, kind: mod, stats: [{ stat: super, value: 5 }] }
+  - { hash: 350061697, kind: statMod, stats: [{ stat: super, value: 5 }] }
   - { hash: 356817849, kind: base, stats: [{ stat: weapons, value: 5 }, { stat: class, value: 1 }, { stat: health, value: 6 }] }
-  - { hash: 362132288, kind: subclass, stats: [{ stat: grenade, value: -10 }] }
-  - { hash: 362132289, kind: subclass, stats: [{ stat: melee, value: 10 }] }
-  - { hash: 362132290, kind: subclass, stats: [{ stat: class, value: -10 }] }
-  - { hash: 362132291, kind: subclass, stats: [{ stat: grenade, value: 10 }] }
-  - { hash: 362132292, kind: subclass, stats: [{ stat: grenade, value: -10 }] }
-  - { hash: 362132294, kind: subclass, stats: [{ stat: health, value: -10 }] }
-  - { hash: 362132295, kind: subclass, stats: [{ stat: super, value: 10 }] }
+  - { hash: 362132288, kind: fragment, stats: [{ stat: grenade, value: -10 }] }
+  - { hash: 362132289, kind: fragment, stats: [{ stat: melee, value: 10 }] }
+  - { hash: 362132290, kind: fragment, stats: [{ stat: class, value: -10 }] }
+  - { hash: 362132291, kind: fragment, stats: [{ stat: grenade, value: 10 }] }
+  - { hash: 362132292, kind: fragment, stats: [{ stat: grenade, value: -10 }] }
+  - { hash: 362132294, kind: fragment, stats: [{ stat: health, value: -10 }] }
+  - { hash: 362132295, kind: fragment, stats: [{ stat: super, value: 10 }] }
   - { hash: 388618952, kind: tuning, stats: [{ stat: health, value: 5 }, { stat: melee, value: -5 }] }
   - { hash: 412523236, kind: base, stats: [{ stat: melee, value: 18 }] }
   - { hash: 412523237, kind: base, stats: [{ stat: melee, value: 19 }] }
@@ -260,7 +260,7 @@ statPlugs:
   - { hash: 534307848, kind: base, stats: [{ stat: grenade, value: 13 }, { stat: super, value: 1 }, { stat: melee, value: 1 }] }
   - { hash: 534630542, kind: tuning, stats: [{ stat: melee, value: 5 }, { stat: grenade, value: -5 }] }
   - { hash: 534710281, kind: base, stats: [{ stat: weapons, value: 7 }, { stat: class, value: 1 }, { stat: health, value: 5 }] }
-  - { hash: 539459624, kind: mod, stats: [{ stat: class, value: 3 }] }
+  - { hash: 539459624, kind: statMod, stats: [{ stat: class, value: 3 }] }
   - { hash: 584267664, kind: base, stats: [{ stat: grenade, value: 5 }, { stat: super, value: 10 }, { stat: melee, value: 5 }] }
   - { hash: 594234536, kind: base, stats: [{ stat: grenade, value: 1 }, { stat: super, value: 8 }, { stat: melee, value: 7 }] }
   - { hash: 597281635, kind: base, stats: [{ stat: grenade, value: 1 }, { stat: super, value: 8 }, { stat: melee, value: 6 }] }
@@ -275,7 +275,7 @@ statPlugs:
   - { hash: 611182007, kind: base, stats: [{ stat: class, value: 10 }] }
   - { hash: 611182014, kind: base, stats: [{ stat: class, value: 19 }] }
   - { hash: 611182015, kind: base, stats: [{ stat: class, value: 18 }] }
-  - { hash: 617569843, kind: mod, stats: [{ stat: grenade, value: 3 }] }
+  - { hash: 617569843, kind: statMod, stats: [{ stat: grenade, value: 3 }] }
   - { hash: 622142895, kind: base, stats: [{ stat: weapons, value: 7 }, { stat: class, value: 6 }, { stat: health, value: 1 }] }
   - { hash: 625442459, kind: base, stats: [{ stat: grenade, value: 1 }, { stat: super, value: 6 }, { stat: melee, value: 7 }] }
   - { hash: 627959586, kind: base, stats: [{ stat: class, value: 28 }] }
@@ -299,12 +299,12 @@ statPlugs:
   - { hash: 751095403, kind: base, stats: [{ stat: weapons, value: 6 }, { stat: class, value: 5 }, { stat: health, value: 1 }] }
   - { hash: 757147114, kind: base, stats: [{ stat: grenade, value: 11 }, { stat: super, value: 1 }, { stat: melee, value: 1 }] }
   - { hash: 772656086, kind: base, stats: [{ stat: weapons, value: 9 }, { stat: class, value: 1 }, { stat: health, value: 6 }] }
-  - { hash: 788990504, kind: masterwork, stats: [{ stat: weapons, value: 3 }, { stat: health, value: 3 }, { stat: grenade, value: 3 }, { stat: super, value: 3 }, { stat: class, value: 3 }, { stat: melee, value: 3 }], onlyEmptyStats: true }
-  - { hash: 788990505, kind: masterwork, stats: [{ stat: weapons, value: 2 }, { stat: health, value: 2 }, { stat: grenade, value: 2 }, { stat: super, value: 2 }, { stat: class, value: 2 }, { stat: melee, value: 2 }], onlyEmptyStats: true }
-  - { hash: 788990506, kind: masterwork, stats: [{ stat: weapons, value: 1 }, { stat: health, value: 1 }, { stat: grenade, value: 1 }, { stat: super, value: 1 }, { stat: class, value: 1 }, { stat: melee, value: 1 }], onlyEmptyStats: true }
-  - { hash: 788990507, kind: masterwork, stats: [], onlyEmptyStats: true }
-  - { hash: 788990510, kind: masterwork, stats: [{ stat: weapons, value: 5 }, { stat: health, value: 5 }, { stat: grenade, value: 5 }, { stat: super, value: 5 }, { stat: class, value: 5 }, { stat: melee, value: 5 }], onlyEmptyStats: true }
-  - { hash: 788990511, kind: masterwork, stats: [{ stat: weapons, value: 4 }, { stat: health, value: 4 }, { stat: grenade, value: 4 }, { stat: super, value: 4 }, { stat: class, value: 4 }, { stat: melee, value: 4 }], onlyEmptyStats: true }
+  - { hash: 788990504, kind: masterwork, stats: [{ stat: weapons, value: 3 }, { stat: health, value: 3 }, { stat: grenade, value: 3 }, { stat: super, value: 3 }, { stat: class, value: 3 }, { stat: melee, value: 3 }] }
+  - { hash: 788990505, kind: masterwork, stats: [{ stat: weapons, value: 2 }, { stat: health, value: 2 }, { stat: grenade, value: 2 }, { stat: super, value: 2 }, { stat: class, value: 2 }, { stat: melee, value: 2 }] }
+  - { hash: 788990506, kind: masterwork, stats: [{ stat: weapons, value: 1 }, { stat: health, value: 1 }, { stat: grenade, value: 1 }, { stat: super, value: 1 }, { stat: class, value: 1 }, { stat: melee, value: 1 }] }
+  - { hash: 788990507, kind: masterwork, stats: [] }
+  - { hash: 788990510, kind: masterwork, stats: [{ stat: weapons, value: 5 }, { stat: health, value: 5 }, { stat: grenade, value: 5 }, { stat: super, value: 5 }, { stat: class, value: 5 }, { stat: melee, value: 5 }] }
+  - { hash: 788990511, kind: masterwork, stats: [{ stat: weapons, value: 4 }, { stat: health, value: 4 }, { stat: grenade, value: 4 }, { stat: super, value: 4 }, { stat: class, value: 4 }, { stat: melee, value: 4 }] }
   - { hash: 792638842, kind: base, stats: [{ stat: grenade, value: 5 }, { stat: super, value: 1 }, { stat: melee, value: 11 }] }
   - { hash: 795935713, kind: base, stats: [{ stat: grenade, value: 1 }, { stat: super, value: 5 }, { stat: melee, value: 6 }] }
   - { hash: 803538505, kind: base, stats: [{ stat: weapons, value: 6 }, { stat: class, value: 7 }, { stat: health, value: 1 }] }
@@ -323,9 +323,9 @@ statPlugs:
   - { hash: 992788499, kind: base, stats: [{ stat: grenade, value: 5 }, { stat: super, value: 9 }, { stat: melee, value: 1 }] }
   - { hash: 1001412103, kind: base, stats: [{ stat: grenade, value: 8 }, { stat: super, value: 5 }, { stat: melee, value: 1 }] }
   - { hash: 1008588205, kind: base, stats: [{ stat: weapons, value: 10 }, { stat: health, value: 10 }, { stat: super, value: 10 }, { stat: melee, value: 5 }, { stat: grenade, value: 5 }] }
-  - { hash: 1051276348, kind: subclass, stats: [{ stat: melee, value: 10 }] }
-  - { hash: 1051276350, kind: subclass, stats: [{ stat: health, value: 10 }] }
-  - { hash: 1051276351, kind: subclass, stats: [{ stat: class, value: 10 }] }
+  - { hash: 1051276348, kind: fragment, stats: [{ stat: melee, value: 10 }] }
+  - { hash: 1051276350, kind: fragment, stats: [{ stat: health, value: 10 }] }
+  - { hash: 1051276351, kind: fragment, stats: [{ stat: class, value: 10 }] }
   - { hash: 1087628722, kind: base, stats: [{ stat: weapons, value: 7 }, { stat: class, value: 1 }, { stat: health, value: 8 }] }
   - { hash: 1087657324, kind: base, stats: [{ stat: weapons, value: 1 }, { stat: class, value: 1 }, { stat: health, value: 12 }] }
   - { hash: 1090584498, kind: base, stats: [{ stat: grenade, value: 13 }, { stat: super, value: 1 }, { stat: melee, value: 1 }] }
@@ -335,14 +335,14 @@ statPlugs:
   - { hash: 1144611477, kind: base, stats: [{ stat: weapons, value: 1 }, { stat: class, value: 6 }, { stat: health, value: 5 }] }
   - { hash: 1157098101, kind: base, stats: [{ stat: weapons, value: 1 }, { stat: class, value: 9 }, { stat: health, value: 5 }] }
   - { hash: 1177742666, kind: base, stats: [{ stat: grenade, value: 1 }, { stat: super, value: 5 }, { stat: melee, value: 5 }] }
-  - { hash: 1180408010, kind: mod, stats: [{ stat: health, value: 10 }] }
+  - { hash: 1180408010, kind: statMod, stats: [{ stat: health, value: 10 }] }
   - { hash: 1204269313, kind: base, stats: [{ stat: health, value: 20 }, { stat: class, value: 10 }, { stat: super, value: 10 }, { stat: melee, value: 5 }, { stat: grenade, value: 5 }] }
   - { hash: 1217350407, kind: base, stats: [{ stat: weapons, value: 8 }, { stat: class, value: 1 }, { stat: health, value: 5 }] }
   - { hash: 1219232383, kind: base, stats: [{ stat: grenade, value: 5 }, { stat: super, value: 1 }, { stat: melee, value: 7 }] }
   - { hash: 1223091094, kind: base, stats: [{ stat: weapons, value: 1 }, { stat: class, value: 13 }, { stat: health, value: 1 }] }
   - { hash: 1232201448, kind: base, stats: [{ stat: weapons, value: 1 }, { stat: class, value: 12 }, { stat: health, value: 1 }] }
   - { hash: 1232924472, kind: base, stats: [{ stat: weapons, value: 1 }, { stat: class, value: 5 }, { stat: health, value: 5 }] }
-  - { hash: 1237786518, kind: mod, stats: [{ stat: class, value: 5 }] }
+  - { hash: 1237786518, kind: statMod, stats: [{ stat: class, value: 5 }] }
   - { hash: 1244639311, kind: base, stats: [{ stat: grenade, value: 5 }, { stat: super, value: 8 }, { stat: melee, value: 1 }] }
   - { hash: 1248391073, kind: base, stats: [{ stat: weapons, value: 10 }, { stat: health, value: 10 }, { stat: super, value: 5 }, { stat: melee, value: 5 }, { stat: grenade, value: 5 }] }
   - { hash: 1259855003, kind: base, stats: [{ stat: grenade, value: 6 }, { stat: super, value: 8 }, { stat: melee, value: 1 }] }
@@ -352,12 +352,12 @@ statPlugs:
   - { hash: 1277668557, kind: base, stats: [{ stat: grenade, value: 1 }, { stat: super, value: 7 }, { stat: melee, value: 5 }] }
   - { hash: 1281324436, kind: base, stats: [{ stat: weapons, value: 5 }, { stat: class, value: 11 }, { stat: health, value: 1 }] }
   - { hash: 1281522919, kind: base, stats: [{ stat: grenade, value: 1 }, { stat: super, value: 7 }, { stat: melee, value: 8 }] }
-  - { hash: 1283668722, kind: masterwork, stats: [{ stat: weapons, value: 5 }, { stat: health, value: 5 }, { stat: grenade, value: 5 }, { stat: super, value: 5 }, { stat: class, value: 5 }, { stat: melee, value: 5 }], onlyEmptyStats: true }
-  - { hash: 1283668723, kind: masterwork, stats: [{ stat: weapons, value: 4 }, { stat: health, value: 4 }, { stat: grenade, value: 4 }, { stat: super, value: 4 }, { stat: class, value: 4 }, { stat: melee, value: 4 }], onlyEmptyStats: true }
-  - { hash: 1283668724, kind: masterwork, stats: [{ stat: weapons, value: 3 }, { stat: health, value: 3 }, { stat: grenade, value: 3 }, { stat: super, value: 3 }, { stat: class, value: 3 }, { stat: melee, value: 3 }], onlyEmptyStats: true }
-  - { hash: 1283668725, kind: masterwork, stats: [{ stat: weapons, value: 2 }, { stat: health, value: 2 }, { stat: grenade, value: 2 }, { stat: super, value: 2 }, { stat: class, value: 2 }, { stat: melee, value: 2 }], onlyEmptyStats: true }
-  - { hash: 1283668726, kind: masterwork, stats: [{ stat: weapons, value: 1 }, { stat: health, value: 1 }, { stat: grenade, value: 1 }, { stat: super, value: 1 }, { stat: class, value: 1 }, { stat: melee, value: 1 }], onlyEmptyStats: true }
-  - { hash: 1283668727, kind: masterwork, stats: [], onlyEmptyStats: true }
+  - { hash: 1283668722, kind: masterwork, stats: [{ stat: weapons, value: 5 }, { stat: health, value: 5 }, { stat: grenade, value: 5 }, { stat: super, value: 5 }, { stat: class, value: 5 }, { stat: melee, value: 5 }] }
+  - { hash: 1283668723, kind: masterwork, stats: [{ stat: weapons, value: 4 }, { stat: health, value: 4 }, { stat: grenade, value: 4 }, { stat: super, value: 4 }, { stat: class, value: 4 }, { stat: melee, value: 4 }] }
+  - { hash: 1283668724, kind: masterwork, stats: [{ stat: weapons, value: 3 }, { stat: health, value: 3 }, { stat: grenade, value: 3 }, { stat: super, value: 3 }, { stat: class, value: 3 }, { stat: melee, value: 3 }] }
+  - { hash: 1283668725, kind: masterwork, stats: [{ stat: weapons, value: 2 }, { stat: health, value: 2 }, { stat: grenade, value: 2 }, { stat: super, value: 2 }, { stat: class, value: 2 }, { stat: melee, value: 2 }] }
+  - { hash: 1283668726, kind: masterwork, stats: [{ stat: weapons, value: 1 }, { stat: health, value: 1 }, { stat: grenade, value: 1 }, { stat: super, value: 1 }, { stat: class, value: 1 }, { stat: melee, value: 1 }] }
+  - { hash: 1283668727, kind: masterwork, stats: [] }
   - { hash: 1284869343, kind: base, stats: [{ stat: grenade, value: 6 }, { stat: super, value: 9 }, { stat: melee, value: 1 }] }
   - { hash: 1300719726, kind: base, stats: [{ stat: grenade, value: 6 }, { stat: super, value: 9 }, { stat: melee, value: 1 }] }
   - { hash: 1303354444, kind: base, stats: [{ stat: weapons, value: 1 }, { stat: class, value: 13 }, { stat: health, value: 1 }] }
@@ -395,13 +395,13 @@ statPlugs:
   - { hash: 1408072829, kind: base, stats: [{ stat: weapons, value: 1 }, { stat: class, value: 5 }, { stat: health, value: 8 }] }
   - { hash: 1427308465, kind: base, stats: [{ stat: grenade, value: 1 }, { stat: super, value: 7 }, { stat: melee, value: 5 }] }
   - { hash: 1429795213, kind: base, stats: [{ stat: weapons, value: 1 }, { stat: class, value: 1 }, { stat: health, value: 15 }] }
-  - { hash: 1431426104, kind: masterwork, stats: [{ stat: weapons, value: 2 }, { stat: health, value: 2 }, { stat: grenade, value: 2 }, { stat: super, value: 2 }, { stat: class, value: 2 }, { stat: melee, value: 2 }], onlyEmptyStats: true }
-  - { hash: 1431426105, kind: masterwork, stats: [{ stat: weapons, value: 3 }, { stat: health, value: 3 }, { stat: grenade, value: 3 }, { stat: super, value: 3 }, { stat: class, value: 3 }, { stat: melee, value: 3 }], onlyEmptyStats: true }
-  - { hash: 1431426106, kind: masterwork, stats: [], onlyEmptyStats: true }
-  - { hash: 1431426107, kind: masterwork, stats: [{ stat: weapons, value: 1 }, { stat: health, value: 1 }, { stat: grenade, value: 1 }, { stat: super, value: 1 }, { stat: class, value: 1 }, { stat: melee, value: 1 }], onlyEmptyStats: true }
-  - { hash: 1431426110, kind: masterwork, stats: [{ stat: weapons, value: 4 }, { stat: health, value: 4 }, { stat: grenade, value: 4 }, { stat: super, value: 4 }, { stat: class, value: 4 }, { stat: melee, value: 4 }], onlyEmptyStats: true }
-  - { hash: 1431426111, kind: masterwork, stats: [{ stat: weapons, value: 5 }, { stat: health, value: 5 }, { stat: grenade, value: 5 }, { stat: super, value: 5 }, { stat: class, value: 5 }, { stat: melee, value: 5 }], onlyEmptyStats: true }
-  - { hash: 1435557120, kind: mod, stats: [{ stat: grenade, value: 10 }] }
+  - { hash: 1431426104, kind: masterwork, stats: [{ stat: weapons, value: 2 }, { stat: health, value: 2 }, { stat: grenade, value: 2 }, { stat: super, value: 2 }, { stat: class, value: 2 }, { stat: melee, value: 2 }] }
+  - { hash: 1431426105, kind: masterwork, stats: [{ stat: weapons, value: 3 }, { stat: health, value: 3 }, { stat: grenade, value: 3 }, { stat: super, value: 3 }, { stat: class, value: 3 }, { stat: melee, value: 3 }] }
+  - { hash: 1431426106, kind: masterwork, stats: [] }
+  - { hash: 1431426107, kind: masterwork, stats: [{ stat: weapons, value: 1 }, { stat: health, value: 1 }, { stat: grenade, value: 1 }, { stat: super, value: 1 }, { stat: class, value: 1 }, { stat: melee, value: 1 }] }
+  - { hash: 1431426110, kind: masterwork, stats: [{ stat: weapons, value: 4 }, { stat: health, value: 4 }, { stat: grenade, value: 4 }, { stat: super, value: 4 }, { stat: class, value: 4 }, { stat: melee, value: 4 }] }
+  - { hash: 1431426111, kind: masterwork, stats: [{ stat: weapons, value: 5 }, { stat: health, value: 5 }, { stat: grenade, value: 5 }, { stat: super, value: 5 }, { stat: class, value: 5 }, { stat: melee, value: 5 }] }
+  - { hash: 1435557120, kind: statMod, stats: [{ stat: grenade, value: 10 }] }
   - { hash: 1466306887, kind: base, stats: [{ stat: health, value: 10 }, { stat: class, value: 10 }, { stat: super, value: 5 }, { stat: melee, value: 10 }, { stat: grenade, value: 5 }] }
   - { hash: 1476255565, kind: base, stats: [{ stat: weapons, value: 6 }, { stat: class, value: 9 }, { stat: health, value: 1 }] }
   - { hash: 1476923952, kind: base, stats: [{ stat: melee, value: 30 }, { stat: health, value: 25 }] }
@@ -428,19 +428,19 @@ statPlugs:
   - { hash: 1553920866, kind: base, stats: [{ stat: grenade, value: 1 }, { stat: super, value: 1 }, { stat: melee, value: 13 }] }
   - { hash: 1561576321, kind: base, stats: [{ stat: grenade, value: 1 }, { stat: super, value: 10 }, { stat: melee, value: 5 }] }
   - { hash: 1570603856, kind: base, stats: [{ stat: grenade, value: 9 }, { stat: super, value: 6 }, { stat: melee, value: 1 }] }
-  - { hash: 1582132960, kind: masterwork, stats: [{ stat: weapons, value: 5 }, { stat: health, value: 5 }, { stat: grenade, value: 5 }, { stat: super, value: 5 }, { stat: class, value: 5 }, { stat: melee, value: 5 }], onlyEmptyStats: true }
-  - { hash: 1582132961, kind: masterwork, stats: [{ stat: weapons, value: 4 }, { stat: health, value: 4 }, { stat: grenade, value: 4 }, { stat: super, value: 4 }, { stat: class, value: 4 }, { stat: melee, value: 4 }], onlyEmptyStats: true }
-  - { hash: 1582132964, kind: masterwork, stats: [{ stat: weapons, value: 1 }, { stat: health, value: 1 }, { stat: grenade, value: 1 }, { stat: super, value: 1 }, { stat: class, value: 1 }, { stat: melee, value: 1 }], onlyEmptyStats: true }
-  - { hash: 1582132965, kind: masterwork, stats: [], onlyEmptyStats: true }
-  - { hash: 1582132966, kind: masterwork, stats: [{ stat: weapons, value: 3 }, { stat: health, value: 3 }, { stat: grenade, value: 3 }, { stat: super, value: 3 }, { stat: class, value: 3 }, { stat: melee, value: 3 }], onlyEmptyStats: true }
-  - { hash: 1582132967, kind: masterwork, stats: [{ stat: weapons, value: 2 }, { stat: health, value: 2 }, { stat: grenade, value: 2 }, { stat: super, value: 2 }, { stat: class, value: 2 }, { stat: melee, value: 2 }], onlyEmptyStats: true }
+  - { hash: 1582132960, kind: masterwork, stats: [{ stat: weapons, value: 5 }, { stat: health, value: 5 }, { stat: grenade, value: 5 }, { stat: super, value: 5 }, { stat: class, value: 5 }, { stat: melee, value: 5 }] }
+  - { hash: 1582132961, kind: masterwork, stats: [{ stat: weapons, value: 4 }, { stat: health, value: 4 }, { stat: grenade, value: 4 }, { stat: super, value: 4 }, { stat: class, value: 4 }, { stat: melee, value: 4 }] }
+  - { hash: 1582132964, kind: masterwork, stats: [{ stat: weapons, value: 1 }, { stat: health, value: 1 }, { stat: grenade, value: 1 }, { stat: super, value: 1 }, { stat: class, value: 1 }, { stat: melee, value: 1 }] }
+  - { hash: 1582132965, kind: masterwork, stats: [] }
+  - { hash: 1582132966, kind: masterwork, stats: [{ stat: weapons, value: 3 }, { stat: health, value: 3 }, { stat: grenade, value: 3 }, { stat: super, value: 3 }, { stat: class, value: 3 }, { stat: melee, value: 3 }] }
+  - { hash: 1582132967, kind: masterwork, stats: [{ stat: weapons, value: 2 }, { stat: health, value: 2 }, { stat: grenade, value: 2 }, { stat: super, value: 2 }, { stat: class, value: 2 }, { stat: melee, value: 2 }] }
   - { hash: 1656082061, kind: base, stats: [{ stat: weapons, value: 1 }, { stat: class, value: 9 }, { stat: health, value: 6 }] }
   - { hash: 1672416975, kind: tuning, stats: [{ stat: grenade, value: 5 }, { stat: super, value: -5 }] }
-  - { hash: 1703647492, kind: mod, stats: [{ stat: weapons, value: 5 }] }
-  - { hash: 1727069360, kind: subclass, stats: [{ stat: class, value: -10, class: warlock }, { stat: weapons, value: -10, class: hunter }, { stat: health, value: -10, class: titan }] }
-  - { hash: 1727069362, kind: subclass, stats: [{ stat: melee, value: -10 }] }
-  - { hash: 1727069364, kind: subclass, stats: [{ stat: grenade, value: -10 }] }
-  - { hash: 1727069366, kind: subclass, stats: [{ stat: melee, value: 10 }] }
+  - { hash: 1703647492, kind: statMod, stats: [{ stat: weapons, value: 5 }] }
+  - { hash: 1727069360, kind: fragment, stats: [{ stat: class, value: -10, class: warlock }, { stat: weapons, value: -10, class: hunter }, { stat: health, value: -10, class: titan }] }
+  - { hash: 1727069362, kind: fragment, stats: [{ stat: melee, value: -10 }] }
+  - { hash: 1727069364, kind: fragment, stats: [{ stat: grenade, value: -10 }] }
+  - { hash: 1727069366, kind: fragment, stats: [{ stat: melee, value: 10 }] }
   - { hash: 1728041517, kind: base, stats: [{ stat: weapons, value: 10 }, { stat: class, value: 10 }, { stat: super, value: 5 }, { stat: melee, value: 10 }, { stat: grenade, value: 5 }] }
   - { hash: 1738627851, kind: base, stats: [{ stat: grenade, value: 6 }, { stat: super, value: 7 }, { stat: melee, value: 1 }] }
   - { hash: 1749177701, kind: base, stats: [{ stat: grenade, value: 6 }, { stat: super, value: 5 }, { stat: melee, value: 1 }] }
@@ -468,12 +468,12 @@ statPlugs:
   - { hash: 2003042147, kind: base, stats: [{ stat: weapons, value: 8 }, { stat: class, value: 1 }, { stat: health, value: 7 }] }
   - { hash: 2004812199, kind: base, stats: [{ stat: grenade, value: 1 }, { stat: super, value: 7 }, { stat: melee, value: 6 }] }
   - { hash: 2009456796, kind: base, stats: [{ stat: weapons, value: 12 }, { stat: class, value: 1 }, { stat: health, value: 1 }] }
-  - { hash: 2024015888, kind: masterwork, stats: [], onlyEmptyStats: true }
-  - { hash: 2024015889, kind: masterwork, stats: [{ stat: weapons, value: 1 }, { stat: health, value: 1 }, { stat: grenade, value: 1 }, { stat: super, value: 1 }, { stat: class, value: 1 }, { stat: melee, value: 1 }], onlyEmptyStats: true }
-  - { hash: 2024015890, kind: masterwork, stats: [{ stat: weapons, value: 2 }, { stat: health, value: 2 }, { stat: grenade, value: 2 }, { stat: super, value: 2 }, { stat: class, value: 2 }, { stat: melee, value: 2 }], onlyEmptyStats: true }
-  - { hash: 2024015891, kind: masterwork, stats: [{ stat: weapons, value: 3 }, { stat: health, value: 3 }, { stat: grenade, value: 3 }, { stat: super, value: 3 }, { stat: class, value: 3 }, { stat: melee, value: 3 }], onlyEmptyStats: true }
-  - { hash: 2024015892, kind: masterwork, stats: [{ stat: weapons, value: 4 }, { stat: health, value: 4 }, { stat: grenade, value: 4 }, { stat: super, value: 4 }, { stat: class, value: 4 }, { stat: melee, value: 4 }], onlyEmptyStats: true }
-  - { hash: 2024015893, kind: masterwork, stats: [{ stat: weapons, value: 5 }, { stat: health, value: 5 }, { stat: grenade, value: 5 }, { stat: super, value: 5 }, { stat: class, value: 5 }, { stat: melee, value: 5 }], onlyEmptyStats: true }
+  - { hash: 2024015888, kind: masterwork, stats: [] }
+  - { hash: 2024015889, kind: masterwork, stats: [{ stat: weapons, value: 1 }, { stat: health, value: 1 }, { stat: grenade, value: 1 }, { stat: super, value: 1 }, { stat: class, value: 1 }, { stat: melee, value: 1 }] }
+  - { hash: 2024015890, kind: masterwork, stats: [{ stat: weapons, value: 2 }, { stat: health, value: 2 }, { stat: grenade, value: 2 }, { stat: super, value: 2 }, { stat: class, value: 2 }, { stat: melee, value: 2 }] }
+  - { hash: 2024015891, kind: masterwork, stats: [{ stat: weapons, value: 3 }, { stat: health, value: 3 }, { stat: grenade, value: 3 }, { stat: super, value: 3 }, { stat: class, value: 3 }, { stat: melee, value: 3 }] }
+  - { hash: 2024015892, kind: masterwork, stats: [{ stat: weapons, value: 4 }, { stat: health, value: 4 }, { stat: grenade, value: 4 }, { stat: super, value: 4 }, { stat: class, value: 4 }, { stat: melee, value: 4 }] }
+  - { hash: 2024015893, kind: masterwork, stats: [{ stat: weapons, value: 5 }, { stat: health, value: 5 }, { stat: grenade, value: 5 }, { stat: super, value: 5 }, { stat: class, value: 5 }, { stat: melee, value: 5 }] }
   - { hash: 2025044902, kind: base, stats: [{ stat: weapons, value: 19 }] }
   - { hash: 2025044903, kind: base, stats: [{ stat: weapons, value: 18 }] }
   - { hash: 2025044904, kind: base, stats: [{ stat: weapons, value: 17 }] }
@@ -508,19 +508,19 @@ statPlugs:
   - { hash: 2114652868, kind: base, stats: [{ stat: weapons, value: 20 }, { stat: super, value: 5 }, { stat: melee, value: 5 }, { stat: grenade, value: 10 }] }
   - { hash: 2116352646, kind: base, stats: [{ stat: weapons, value: 1 }, { stat: class, value: 8 }, { stat: health, value: 7 }] }
   - { hash: 2120002858, kind: base, stats: [{ stat: weapons, value: 5 }, { stat: class, value: 1 }, { stat: health, value: 5 }] }
-  - { hash: 2121121504, kind: tuning, stats: [] }
+  - { hash: 2121121504, kind: tuningSocket, stats: [] }
   - { hash: 2125798995, kind: tuning, stats: [{ stat: health, value: 5 }, { stat: weapons, value: -5 }] }
   - { hash: 2132812461, kind: base, stats: [{ stat: grenade, value: 5 }, { stat: super, value: 1 }, { stat: melee, value: 8 }] }
   - { hash: 2148570570, kind: base, stats: [{ stat: weapons, value: 1 }, { stat: class, value: 5 }, { stat: health, value: 11 }] }
   - { hash: 2157550925, kind: base, stats: [{ stat: weapons, value: 8 }, { stat: class, value: 5 }, { stat: health, value: 1 }] }
   - { hash: 2158218481, kind: base, stats: [{ stat: grenade, value: 9 }, { stat: super, value: 6 }, { stat: melee, value: 1 }] }
   - { hash: 2173375639, kind: base, stats: [{ stat: weapons, value: 8 }, { stat: class, value: 5 }, { stat: health, value: 1 }] }
-  - { hash: 2183487818, kind: masterwork, stats: [{ stat: weapons, value: 5 }, { stat: health, value: 5 }, { stat: grenade, value: 5 }, { stat: super, value: 5 }, { stat: class, value: 5 }, { stat: melee, value: 5 }], onlyEmptyStats: true }
-  - { hash: 2183487819, kind: masterwork, stats: [{ stat: weapons, value: 4 }, { stat: health, value: 4 }, { stat: grenade, value: 4 }, { stat: super, value: 4 }, { stat: class, value: 4 }, { stat: melee, value: 4 }], onlyEmptyStats: true }
-  - { hash: 2183487820, kind: masterwork, stats: [{ stat: weapons, value: 3 }, { stat: health, value: 3 }, { stat: grenade, value: 3 }, { stat: super, value: 3 }, { stat: class, value: 3 }, { stat: melee, value: 3 }], onlyEmptyStats: true }
-  - { hash: 2183487821, kind: masterwork, stats: [{ stat: weapons, value: 2 }, { stat: health, value: 2 }, { stat: grenade, value: 2 }, { stat: super, value: 2 }, { stat: class, value: 2 }, { stat: melee, value: 2 }], onlyEmptyStats: true }
-  - { hash: 2183487822, kind: masterwork, stats: [{ stat: weapons, value: 1 }, { stat: health, value: 1 }, { stat: grenade, value: 1 }, { stat: super, value: 1 }, { stat: class, value: 1 }, { stat: melee, value: 1 }], onlyEmptyStats: true }
-  - { hash: 2183487823, kind: masterwork, stats: [], onlyEmptyStats: true }
+  - { hash: 2183487818, kind: masterwork, stats: [{ stat: weapons, value: 5 }, { stat: health, value: 5 }, { stat: grenade, value: 5 }, { stat: super, value: 5 }, { stat: class, value: 5 }, { stat: melee, value: 5 }] }
+  - { hash: 2183487819, kind: masterwork, stats: [{ stat: weapons, value: 4 }, { stat: health, value: 4 }, { stat: grenade, value: 4 }, { stat: super, value: 4 }, { stat: class, value: 4 }, { stat: melee, value: 4 }] }
+  - { hash: 2183487820, kind: masterwork, stats: [{ stat: weapons, value: 3 }, { stat: health, value: 3 }, { stat: grenade, value: 3 }, { stat: super, value: 3 }, { stat: class, value: 3 }, { stat: melee, value: 3 }] }
+  - { hash: 2183487821, kind: masterwork, stats: [{ stat: weapons, value: 2 }, { stat: health, value: 2 }, { stat: grenade, value: 2 }, { stat: super, value: 2 }, { stat: class, value: 2 }, { stat: melee, value: 2 }] }
+  - { hash: 2183487822, kind: masterwork, stats: [{ stat: weapons, value: 1 }, { stat: health, value: 1 }, { stat: grenade, value: 1 }, { stat: super, value: 1 }, { stat: class, value: 1 }, { stat: melee, value: 1 }] }
+  - { hash: 2183487823, kind: masterwork, stats: [] }
   - { hash: 2190013560, kind: base, stats: [{ stat: grenade, value: 1 }, { stat: super, value: 1 }, { stat: melee, value: 13 }] }
   - { hash: 2191854732, kind: base, stats: [{ stat: weapons, value: 5 }, { stat: class, value: 5 }, { stat: health, value: 1 }] }
   - { hash: 2229578547, kind: base, stats: [{ stat: weapons, value: 9 }, { stat: class, value: 1 }, { stat: health, value: 6 }] }
@@ -532,31 +532,31 @@ statPlugs:
   - { hash: 2261839061, kind: base, stats: [{ stat: grenade, value: 1 }, { stat: super, value: 8 }, { stat: melee, value: 5 }] }
   - { hash: 2264557658, kind: base, stats: [{ stat: grenade, value: 11 }, { stat: super, value: 5 }, { stat: melee, value: 1 }] }
   - { hash: 2268589328, kind: base, stats: [{ stat: grenade, value: 1 }, { stat: super, value: 1 }, { stat: melee, value: 14 }] }
-  - { hash: 2272984656, kind: subclass, stats: [{ stat: weapons, value: 10 }, { stat: super, value: 10 }] }
-  - { hash: 2272984657, kind: subclass, stats: [{ stat: grenade, value: 10 }] }
-  - { hash: 2272984664, kind: subclass, stats: [{ stat: grenade, value: 10 }] }
-  - { hash: 2272984665, kind: subclass, stats: [{ stat: super, value: 10 }] }
-  - { hash: 2272984667, kind: subclass, stats: [{ stat: melee, value: 10 }] }
-  - { hash: 2272984668, kind: subclass, stats: [{ stat: grenade, value: -10 }] }
-  - { hash: 2272984670, kind: subclass, stats: [{ stat: health, value: 10 }] }
-  - { hash: 2272984671, kind: subclass, stats: [{ stat: class, value: -10, class: warlock }, { stat: weapons, value: -10, class: hunter }, { stat: health, value: -10, class: titan }] }
+  - { hash: 2272984656, kind: fragment, stats: [{ stat: weapons, value: 10 }, { stat: super, value: 10 }] }
+  - { hash: 2272984657, kind: fragment, stats: [{ stat: grenade, value: 10 }] }
+  - { hash: 2272984664, kind: fragment, stats: [{ stat: grenade, value: 10 }] }
+  - { hash: 2272984665, kind: fragment, stats: [{ stat: super, value: 10 }] }
+  - { hash: 2272984667, kind: fragment, stats: [{ stat: melee, value: 10 }] }
+  - { hash: 2272984668, kind: fragment, stats: [{ stat: grenade, value: -10 }] }
+  - { hash: 2272984670, kind: fragment, stats: [{ stat: health, value: 10 }] }
+  - { hash: 2272984671, kind: fragment, stats: [{ stat: class, value: -10, class: warlock }, { stat: weapons, value: -10, class: hunter }, { stat: health, value: -10, class: titan }] }
   - { hash: 2283579401, kind: base, stats: [{ stat: weapons, value: 5 }, { stat: class, value: 6 }, { stat: health, value: 1 }] }
   - { hash: 2287381891, kind: base, stats: [{ stat: weapons, value: 9 }, { stat: class, value: 6 }, { stat: health, value: 1 }] }
   - { hash: 2287852220, kind: base, stats: [{ stat: health, value: 20 }, { stat: class, value: 10 }, { stat: super, value: 5 }, { stat: melee, value: 5 }, { stat: grenade, value: 5 }] }
   - { hash: 2303800333, kind: base, stats: [{ stat: grenade, value: 7 }, { stat: super, value: 1 }, { stat: melee, value: 8 }] }
-  - { hash: 2322202118, kind: mod, stats: [{ stat: weapons, value: 3 }] }
+  - { hash: 2322202118, kind: statMod, stats: [{ stat: weapons, value: 3 }] }
   - { hash: 2329681032, kind: base, stats: [{ stat: grenade, value: 1 }, { stat: super, value: 13 }, { stat: melee, value: 1 }] }
   - { hash: 2373945819, kind: base, stats: [{ stat: weapons, value: 5 }, { stat: class, value: 5 }, { stat: health, value: 5 }] }
   - { hash: 2387165386, kind: base, stats: [{ stat: weapons, value: 6 }, { stat: class, value: 1 }, { stat: health, value: 9 }] }
   - { hash: 2399358832, kind: base, stats: [{ stat: weapons, value: 5 }, { stat: class, value: 1 }, { stat: health, value: 11 }] }
   - { hash: 2407887271, kind: base, stats: [{ stat: weapons, value: 1 }, { stat: class, value: 8 }, { stat: health, value: 5 }] }
   - { hash: 2411971911, kind: base, stats: [{ stat: weapons, value: 7 }, { stat: class, value: 8 }, { stat: health, value: 1 }] }
-  - { hash: 2416688576, kind: masterwork, stats: [{ stat: weapons, value: 3 }, { stat: health, value: 3 }, { stat: grenade, value: 3 }, { stat: super, value: 3 }, { stat: class, value: 3 }, { stat: melee, value: 3 }], onlyEmptyStats: true }
-  - { hash: 2416688577, kind: masterwork, stats: [{ stat: weapons, value: 2 }, { stat: health, value: 2 }, { stat: grenade, value: 2 }, { stat: super, value: 2 }, { stat: class, value: 2 }, { stat: melee, value: 2 }], onlyEmptyStats: true }
-  - { hash: 2416688578, kind: masterwork, stats: [{ stat: weapons, value: 1 }, { stat: health, value: 1 }, { stat: grenade, value: 1 }, { stat: super, value: 1 }, { stat: class, value: 1 }, { stat: melee, value: 1 }], onlyEmptyStats: true }
-  - { hash: 2416688579, kind: masterwork, stats: [], onlyEmptyStats: true }
-  - { hash: 2416688582, kind: masterwork, stats: [{ stat: weapons, value: 5 }, { stat: health, value: 5 }, { stat: grenade, value: 5 }, { stat: super, value: 5 }, { stat: class, value: 5 }, { stat: melee, value: 5 }], onlyEmptyStats: true }
-  - { hash: 2416688583, kind: masterwork, stats: [{ stat: weapons, value: 4 }, { stat: health, value: 4 }, { stat: grenade, value: 4 }, { stat: super, value: 4 }, { stat: class, value: 4 }, { stat: melee, value: 4 }], onlyEmptyStats: true }
+  - { hash: 2416688576, kind: masterwork, stats: [{ stat: weapons, value: 3 }, { stat: health, value: 3 }, { stat: grenade, value: 3 }, { stat: super, value: 3 }, { stat: class, value: 3 }, { stat: melee, value: 3 }] }
+  - { hash: 2416688577, kind: masterwork, stats: [{ stat: weapons, value: 2 }, { stat: health, value: 2 }, { stat: grenade, value: 2 }, { stat: super, value: 2 }, { stat: class, value: 2 }, { stat: melee, value: 2 }] }
+  - { hash: 2416688578, kind: masterwork, stats: [{ stat: weapons, value: 1 }, { stat: health, value: 1 }, { stat: grenade, value: 1 }, { stat: super, value: 1 }, { stat: class, value: 1 }, { stat: melee, value: 1 }] }
+  - { hash: 2416688579, kind: masterwork, stats: [] }
+  - { hash: 2416688582, kind: masterwork, stats: [{ stat: weapons, value: 5 }, { stat: health, value: 5 }, { stat: grenade, value: 5 }, { stat: super, value: 5 }, { stat: class, value: 5 }, { stat: melee, value: 5 }] }
+  - { hash: 2416688583, kind: masterwork, stats: [{ stat: weapons, value: 4 }, { stat: health, value: 4 }, { stat: grenade, value: 4 }, { stat: super, value: 4 }, { stat: class, value: 4 }, { stat: melee, value: 4 }] }
   - { hash: 2417261591, kind: base, stats: [{ stat: grenade, value: 8 }, { stat: super, value: 1 }, { stat: melee, value: 5 }] }
   - { hash: 2417304911, kind: base, stats: [{ stat: grenade, value: 1 }, { stat: super, value: 6 }, { stat: melee, value: 8 }] }
   - { hash: 2433764085, kind: base, stats: [{ stat: weapons, value: 6 }, { stat: class, value: 8 }, { stat: health, value: 1 }] }
@@ -572,10 +572,10 @@ statPlugs:
   - { hash: 2498433752, kind: base, stats: [{ stat: grenade, value: 28 }] }
   - { hash: 2498433753, kind: base, stats: [{ stat: grenade, value: 29 }] }
   - { hash: 2500662503, kind: base, stats: [{ stat: grenade, value: 1 }, { stat: super, value: 8 }, { stat: melee, value: 5 }] }
-  - { hash: 2507624050, kind: mod, stats: [{ stat: melee, value: 3 }] }
+  - { hash: 2507624050, kind: statMod, stats: [{ stat: melee, value: 3 }] }
   - { hash: 2515211331, kind: base, stats: [{ stat: grenade, value: 30 }] }
   - { hash: 2518640481, kind: base, stats: [{ stat: weapons, value: 5 }, { stat: class, value: 1 }, { stat: health, value: 7 }] }
-  - { hash: 2532323436, kind: mod, stats: [{ stat: health, value: 5 }] }
+  - { hash: 2532323436, kind: statMod, stats: [{ stat: health, value: 5 }] }
   - { hash: 2532652671, kind: base, stats: [{ stat: weapons, value: 7 }, { stat: class, value: 1 }, { stat: health, value: 6 }] }
   - { hash: 2537136913, kind: base, stats: [{ stat: weapons, value: 1 }, { stat: class, value: 10 }, { stat: health, value: 1 }] }
   - { hash: 2545139993, kind: base, stats: [{ stat: weapons, value: 7 }, { stat: class, value: 1 }, { stat: health, value: 6 }] }
@@ -598,21 +598,21 @@ statPlugs:
   - { hash: 2601796280, kind: base, stats: [{ stat: grenade, value: 7 }, { stat: super, value: 1 }, { stat: melee, value: 8 }] }
   - { hash: 2604400628, kind: base, stats: [{ stat: health, value: 10 }, { stat: class, value: 10 }, { stat: super, value: 5 }, { stat: melee, value: 5 }, { stat: grenade, value: 5 }] }
   - { hash: 2607035717, kind: base, stats: [{ stat: grenade, value: 10 }, { stat: super, value: 5 }, { stat: melee, value: 1 }] }
-  - { hash: 2626922115, kind: subclass, stats: [{ stat: super, value: 10 }] }
-  - { hash: 2626922120, kind: subclass, stats: [{ stat: melee, value: 10 }] }
-  - { hash: 2626922121, kind: subclass, stats: [{ stat: health, value: -10 }] }
-  - { hash: 2626922124, kind: subclass, stats: [{ stat: grenade, value: 10 }] }
-  - { hash: 2626922125, kind: subclass, stats: [{ stat: melee, value: 10 }] }
-  - { hash: 2626922126, kind: subclass, stats: [{ stat: melee, value: -10 }] }
-  - { hash: 2639422088, kind: mod, stats: [{ stat: melee, value: 5 }] }
-  - { hash: 2661180600, kind: subclass, stats: [{ stat: melee, value: 10 }] }
-  - { hash: 2661180602, kind: subclass, stats: [{ stat: class, value: 10 }] }
-  - { hash: 2661180603, kind: subclass, stats: [{ stat: class, value: -10 }] }
+  - { hash: 2626922115, kind: fragment, stats: [{ stat: super, value: 10 }] }
+  - { hash: 2626922120, kind: fragment, stats: [{ stat: melee, value: 10 }] }
+  - { hash: 2626922121, kind: fragment, stats: [{ stat: health, value: -10 }] }
+  - { hash: 2626922124, kind: fragment, stats: [{ stat: grenade, value: 10 }] }
+  - { hash: 2626922125, kind: fragment, stats: [{ stat: melee, value: 10 }] }
+  - { hash: 2626922126, kind: fragment, stats: [{ stat: melee, value: -10 }] }
+  - { hash: 2639422088, kind: statMod, stats: [{ stat: melee, value: 5 }] }
+  - { hash: 2661180600, kind: fragment, stats: [{ stat: melee, value: 10 }] }
+  - { hash: 2661180602, kind: fragment, stats: [{ stat: class, value: 10 }] }
+  - { hash: 2661180603, kind: fragment, stats: [{ stat: class, value: -10 }] }
   - { hash: 2664898188, kind: base, stats: [{ stat: grenade, value: 5 }, { stat: super, value: 11 }, { stat: melee, value: 1 }] }
   - { hash: 2683277641, kind: base, stats: [{ stat: grenade, value: 6 }, { stat: super, value: 6 }, { stat: melee, value: 1 }] }
   - { hash: 2692705068, kind: base, stats: [{ stat: grenade, value: 5 }, { stat: super, value: 5 }, { stat: melee, value: 5 }] }
   - { hash: 2701881372, kind: base, stats: [{ stat: grenade, value: 11 }, { stat: super, value: 1 }, { stat: melee, value: 5 }] }
-  - { hash: 2724608735, kind: mod, stats: [{ stat: super, value: 10 }] }
+  - { hash: 2724608735, kind: statMod, stats: [{ stat: super, value: 10 }] }
   - { hash: 2769650464, kind: base, stats: [{ stat: weapons, value: 8 }, { stat: class, value: 7 }, { stat: health, value: 1 }] }
   - { hash: 2807591295, kind: base, stats: [{ stat: grenade, value: 5 }, { stat: super, value: 1 }, { stat: melee, value: 8 }] }
   - { hash: 2819908046, kind: base, stats: [{ stat: grenade, value: 1 }, { stat: super, value: 1 }, { stat: melee, value: 11 }] }
@@ -645,31 +645,31 @@ statPlugs:
   - { hash: 3078811914, kind: base, stats: [{ stat: grenade, value: 1 }, { stat: super, value: 11 }, { stat: melee, value: 1 }] }
   - { hash: 3101883988, kind: base, stats: [{ stat: grenade, value: 1 }, { stat: super, value: 6 }, { stat: melee, value: 9 }] }
   - { hash: 3121760799, kind: tuning, stats: [{ stat: weapons, value: 5 }, { stat: health, value: -5 }] }
-  - { hash: 3122197216, kind: tuning, stats: [{ stat: weapons, value: 1 }, { stat: health, value: 1 }, { stat: grenade, value: 1 }, { stat: super, value: 1 }, { stat: class, value: 1 }, { stat: melee, value: 1 }], onlyEmptyStats: true }
+  - { hash: 3122197216, kind: balancedTuning, stats: [{ stat: weapons, value: 1 }, { stat: health, value: 1 }, { stat: grenade, value: 1 }, { stat: super, value: 1 }, { stat: class, value: 1 }, { stat: melee, value: 1 }] }
   - { hash: 3129612155, kind: base, stats: [{ stat: grenade, value: 6 }, { stat: super, value: 1 }, { stat: melee, value: 5 }] }
   - { hash: 3135249387, kind: base, stats: [{ stat: weapons, value: 5 }, { stat: class, value: 5 }, { stat: health, value: 1 }] }
   - { hash: 3148433189, kind: base, stats: [{ stat: weapons, value: 1 }, { stat: class, value: 5 }, { stat: health, value: 9 }] }
   - { hash: 3156820619, kind: base, stats: [{ stat: weapons, value: 10 }, { stat: health, value: 10 }, { stat: super, value: 10 }, { stat: melee, value: 5 }, { stat: grenade, value: 5 }] }
   - { hash: 3159532540, kind: base, stats: [{ stat: weapons, value: 1 }, { stat: class, value: 15 }, { stat: health, value: 1 }] }
   - { hash: 3159833103, kind: base, stats: [{ stat: weapons, value: 5 }, { stat: class, value: 1 }, { stat: health, value: 8 }] }
-  - { hash: 3160845295, kind: mod, stats: [{ stat: super, value: 3 }] }
+  - { hash: 3160845295, kind: statMod, stats: [{ stat: super, value: 3 }] }
   - { hash: 3161349231, kind: base, stats: [{ stat: weapons, value: 1 }, { stat: class, value: 6 }, { stat: health, value: 6 }] }
-  - { hash: 3192552688, kind: subclass, stats: [{ stat: health, value: 10 }] }
-  - { hash: 3192552691, kind: subclass, stats: [{ stat: grenade, value: -10 }] }
+  - { hash: 3192552688, kind: fragment, stats: [{ stat: health, value: 10 }] }
+  - { hash: 3192552691, kind: fragment, stats: [{ stat: grenade, value: -10 }] }
   - { hash: 3198072315, kind: base, stats: [{ stat: weapons, value: 7 }, { stat: class, value: 1 }, { stat: health, value: 7 }] }
   - { hash: 3198618292, kind: base, stats: [{ stat: weapons, value: 1 }, { stat: class, value: 9 }, { stat: health, value: 6 }] }
   - { hash: 3203727595, kind: base, stats: [{ stat: grenade, value: 1 }, { stat: super, value: 7 }, { stat: melee, value: 7 }] }
   - { hash: 3262209356, kind: base, stats: [{ stat: class, value: 20 }, { stat: super, value: 5 }, { stat: melee, value: 10 }, { stat: grenade, value: 5 }] }
-  - { hash: 3266153488, kind: masterwork, stats: [{ stat: weapons, value: 4 }, { stat: health, value: 4 }, { stat: grenade, value: 4 }, { stat: super, value: 4 }, { stat: class, value: 4 }, { stat: melee, value: 4 }], onlyEmptyStats: true }
-  - { hash: 3266153489, kind: masterwork, stats: [{ stat: weapons, value: 5 }, { stat: health, value: 5 }, { stat: grenade, value: 5 }, { stat: super, value: 5 }, { stat: class, value: 5 }, { stat: melee, value: 5 }], onlyEmptyStats: true }
-  - { hash: 3266153492, kind: masterwork, stats: [], onlyEmptyStats: true }
-  - { hash: 3266153493, kind: masterwork, stats: [{ stat: weapons, value: 1 }, { stat: health, value: 1 }, { stat: grenade, value: 1 }, { stat: super, value: 1 }, { stat: class, value: 1 }, { stat: melee, value: 1 }], onlyEmptyStats: true }
-  - { hash: 3266153494, kind: masterwork, stats: [{ stat: weapons, value: 2 }, { stat: health, value: 2 }, { stat: grenade, value: 2 }, { stat: super, value: 2 }, { stat: class, value: 2 }, { stat: melee, value: 2 }], onlyEmptyStats: true }
-  - { hash: 3266153495, kind: masterwork, stats: [{ stat: weapons, value: 3 }, { stat: health, value: 3 }, { stat: grenade, value: 3 }, { stat: super, value: 3 }, { stat: class, value: 3 }, { stat: melee, value: 3 }], onlyEmptyStats: true }
+  - { hash: 3266153488, kind: masterwork, stats: [{ stat: weapons, value: 4 }, { stat: health, value: 4 }, { stat: grenade, value: 4 }, { stat: super, value: 4 }, { stat: class, value: 4 }, { stat: melee, value: 4 }] }
+  - { hash: 3266153489, kind: masterwork, stats: [{ stat: weapons, value: 5 }, { stat: health, value: 5 }, { stat: grenade, value: 5 }, { stat: super, value: 5 }, { stat: class, value: 5 }, { stat: melee, value: 5 }] }
+  - { hash: 3266153492, kind: masterwork, stats: [] }
+  - { hash: 3266153493, kind: masterwork, stats: [{ stat: weapons, value: 1 }, { stat: health, value: 1 }, { stat: grenade, value: 1 }, { stat: super, value: 1 }, { stat: class, value: 1 }, { stat: melee, value: 1 }] }
+  - { hash: 3266153494, kind: masterwork, stats: [{ stat: weapons, value: 2 }, { stat: health, value: 2 }, { stat: grenade, value: 2 }, { stat: super, value: 2 }, { stat: class, value: 2 }, { stat: melee, value: 2 }] }
+  - { hash: 3266153495, kind: masterwork, stats: [{ stat: weapons, value: 3 }, { stat: health, value: 3 }, { stat: grenade, value: 3 }, { stat: super, value: 3 }, { stat: class, value: 3 }, { stat: melee, value: 3 }] }
   - { hash: 3272284147, kind: base, stats: [{ stat: grenade, value: 6 }, { stat: super, value: 1 }, { stat: melee, value: 7 }] }
-  - { hash: 3277705904, kind: subclass, stats: [{ stat: class, value: 10 }] }
-  - { hash: 3277705905, kind: subclass, stats: [{ stat: super, value: 10 }] }
-  - { hash: 3277705907, kind: subclass, stats: [{ stat: health, value: 10 }] }
+  - { hash: 3277705904, kind: fragment, stats: [{ stat: class, value: 10 }] }
+  - { hash: 3277705905, kind: fragment, stats: [{ stat: super, value: 10 }] }
+  - { hash: 3277705907, kind: fragment, stats: [{ stat: health, value: 10 }] }
   - { hash: 3284443097, kind: tuning, stats: [{ stat: weapons, value: 5 }, { stat: grenade, value: -5 }] }
   - { hash: 3310526732, kind: tuning, stats: [{ stat: health, value: 5 }, { stat: class, value: -5 }] }
   - { hash: 3324262725, kind: base, stats: [{ stat: weapons, value: 7 }, { stat: class, value: 1 }, { stat: health, value: 5 }] }
@@ -756,7 +756,7 @@ statPlugs:
   - { hash: 4002613733, kind: base, stats: [{ stat: weapons, value: 6 }, { stat: class, value: 1 }, { stat: health, value: 8 }] }
   - { hash: 4015706356, kind: base, stats: [{ stat: weapons, value: 10 }, { stat: health, value: 10 }, { stat: super, value: 5 }, { stat: melee, value: 5 }, { stat: grenade, value: 5 }] }
   - { hash: 4020349587, kind: tuning, stats: [{ stat: melee, value: 5 }, { stat: weapons, value: -5 }] }
-  - { hash: 4021790309, kind: mod, stats: [{ stat: grenade, value: 5 }] }
+  - { hash: 4021790309, kind: statMod, stats: [{ stat: grenade, value: 5 }] }
   - { hash: 4022107312, kind: base, stats: [{ stat: health, value: 4 }] }
   - { hash: 4022107313, kind: base, stats: [{ stat: health, value: 5 }] }
   - { hash: 4022107314, kind: base, stats: [{ stat: health, value: 6 }] }
@@ -779,20 +779,20 @@ statPlugs:
   - { hash: 4163227370, kind: base, stats: [{ stat: weapons, value: 20 }, { stat: health, value: 10 }, { stat: super, value: 5 }, { stat: melee, value: 5 }, { stat: grenade, value: 10 }] }
   - { hash: 4164883102, kind: tuning, stats: [{ stat: melee, value: 5 }, { stat: health, value: -5 }] }
   - { hash: 4179385676, kind: base, stats: [{ stat: weapons, value: 11 }, { stat: class, value: 1 }, { stat: health, value: 1 }] }
-  - { hash: 4180586737, kind: subclass, stats: [{ stat: health, value: 10 }] }
-  - { hash: 4183296050, kind: mod, stats: [{ stat: weapons, value: 10 }] }
+  - { hash: 4180586737, kind: fragment, stats: [{ stat: health, value: 10 }] }
+  - { hash: 4183296050, kind: statMod, stats: [{ stat: weapons, value: 10 }] }
   - { hash: 4184353495, kind: base, stats: [{ stat: grenade, value: 1 }, { stat: super, value: 1 }, { stat: melee, value: 15 }] }
   - { hash: 4195038769, kind: base, stats: [{ stat: grenade, value: 7 }, { stat: super, value: 5 }, { stat: melee, value: 1 }] }
   - { hash: 4198375581, kind: base, stats: [{ stat: weapons, value: 10 }, { stat: class, value: 10 }, { stat: super, value: 5 }, { stat: melee, value: 5 }, { stat: grenade, value: 5 }] }
-  - { hash: 4204488676, kind: mod, stats: [{ stat: class, value: 10 }] }
+  - { hash: 4204488676, kind: statMod, stats: [{ stat: class, value: 10 }] }
   - { hash: 4206284259, kind: base, stats: [{ stat: grenade, value: 1 }, { stat: super, value: 15 }, { stat: melee, value: 1 }] }
-  - { hash: 4208512210, kind: subclass, stats: [{ stat: melee, value: 10 }] }
-  - { hash: 4208512211, kind: subclass, stats: [{ stat: super, value: 10 }] }
-  - { hash: 4208512216, kind: subclass, stats: [{ stat: weapons, value: 10 }] }
-  - { hash: 4208512217, kind: subclass, stats: [{ stat: class, value: 10 }] }
-  - { hash: 4208512219, kind: subclass, stats: [{ stat: melee, value: -10 }] }
-  - { hash: 4208512221, kind: subclass, stats: [{ stat: melee, value: 10 }] }
-  - { hash: 4208512222, kind: subclass, stats: [{ stat: health, value: -10 }] }
+  - { hash: 4208512210, kind: fragment, stats: [{ stat: melee, value: 10 }] }
+  - { hash: 4208512211, kind: fragment, stats: [{ stat: super, value: 10 }] }
+  - { hash: 4208512216, kind: fragment, stats: [{ stat: weapons, value: 10 }] }
+  - { hash: 4208512217, kind: fragment, stats: [{ stat: class, value: 10 }] }
+  - { hash: 4208512219, kind: fragment, stats: [{ stat: melee, value: -10 }] }
+  - { hash: 4208512221, kind: fragment, stats: [{ stat: melee, value: 10 }] }
+  - { hash: 4208512222, kind: fragment, stats: [{ stat: health, value: -10 }] }
   - { hash: 4210715468, kind: tuning, stats: [{ stat: melee, value: 5 }, { stat: class, value: -5 }] }
   - { hash: 4222896411, kind: base, stats: [{ stat: grenade, value: 5 }, { stat: super, value: 1 }, { stat: melee, value: 6 }] }
   - { hash: 4223985057, kind: base, stats: [{ stat: weapons, value: 6 }, { stat: class, value: 1 }, { stat: health, value: 7 }] }
@@ -803,4 +803,4 @@ statPlugs:
   - { hash: 4256224050, kind: base, stats: [{ stat: grenade, value: 12 }, { stat: super, value: 1 }, { stat: melee, value: 1 }] }
   - { hash: 4284717165, kind: base, stats: [{ stat: grenade, value: 7 }, { stat: super, value: 8 }, { stat: melee, value: 1 }] }
   - { hash: 4286256569, kind: base, stats: [{ stat: weapons, value: 15 }, { stat: class, value: 1 }, { stat: health, value: 1 }] }
-  - { hash: 4287799666, kind: mod, stats: [{ stat: melee, value: 10 }] }
+  - { hash: 4287799666, kind: statMod, stats: [{ stat: melee, value: 10 }] }

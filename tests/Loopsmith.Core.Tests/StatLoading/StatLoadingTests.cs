@@ -77,10 +77,10 @@ public sealed class StatLoadingTests
 
         var membership = LoopDesigning.ReadDestinyMembership(memberships);
 
-        Assert.Equal(new Result<DestinyMembership, string>.Ok(new DestinyMembership(3, "333")), membership);
+        Assert.Equal(new Result<DestinyMembership, string>.Ok(new DestinyMembership(MembershipType.From(3), MembershipId.From("333"))), membership);
         Assert.Equal(
             "https://www.bungie.net/Platform/Destiny2/3/Profile/333/?components=102,200,201,205,300,305",
-            LoopDesigning.ToBungieProfileUrl(new DestinyMembership(3, "333")));
+            LoopDesigning.ToBungieProfileUrl(new DestinyMembership(MembershipType.From(3), MembershipId.From("333"))));
         Assert.Equal(
             new Result<DestinyMembership, string>.Error("Bungie said: This system is temporarily disabled for maintenance. (SystemDisabled)."),
             LoopDesigning.ReadDestinyMembership(refused));
@@ -91,15 +91,15 @@ public sealed class StatLoadingTests
     {
         var profile = ReadProfile(
             [
-                new FakeItem(Mask, "1", "vault", [RollPlug(StatKind.Grenade, 30), FullMasterwork], 11),
-                new FakeItem(Vow, "2", "equipped", [RollPlug(StatKind.Grenade, 30)], 11),
+                new FakeItem(Mask, "1", "vault", [FindRollPlug(StatKind.Grenade, 30), FullMasterwork], 11),
+                new FakeItem(Vow, "2", "equipped", [FindRollPlug(StatKind.Grenade, 30)], 11),
                 new FakeItem(ItemHash.From(4019651319u), "3", "carried", [], null),   // a weapon: no armor energy
             ]);
 
-        Assert.Equal(["1", "2"], profile.Armor.Select(armor => armor.InstanceId).Order());
-        Assert.Equal(new ArmorPlace.Vault(), profile.Armor.Single(armor => armor.InstanceId == "1").Place);
-        Assert.Equal(new ArmorPlace.Equipped(GuardianClass.Hunter), profile.Armor.Single(armor => armor.InstanceId == "2").Place);
-        Assert.Equal(Optional.Some(11), profile.Armor.Single(armor => armor.InstanceId == "1").EnergyCapacity);
+        Assert.Equal(["1", "2"], profile.Armor.Select(armor => armor.InstanceId.Value).Order());
+        Assert.Equal(new ArmorPlace.Vault(), profile.Armor.Single(armor => armor.InstanceId == ItemInstanceId.From("1")).Place);
+        Assert.Equal(new ArmorPlace.Equipped(GuardianClass.Hunter), profile.Armor.Single(armor => armor.InstanceId == ItemInstanceId.From("2")).Place);
+        Assert.Equal(Optional.Some(11), profile.Armor.Single(armor => armor.InstanceId == ItemInstanceId.From("1")).EnergyCapacity);
         var hunter = Assert.Single(profile.Characters);
         Assert.Equal((GuardianClass.Hunter, Optional.Some(StatValue.From(47)), Optional.Some(StatValue.From(104))), (hunter.Class, hunter.Stats.Weapons, hunter.Stats.Class));
     }
@@ -111,17 +111,17 @@ public sealed class StatLoadingTests
         var profile = ReadProfile([.. OwnAll(tuningSockets: 3)]);
         var choices = LoopDesigning.ListStatChoices(build, profile);
 
-        var totals = Assert.IsType<Result<StatTotals, string>.Ok>(LoopDesigning.AddUpStats(build, choices, ImmutableDictionary<ArmorSlot, string>.Empty)).Value;
+        var totals = Assert.IsType<Result<StatTotals, string>.Ok>(LoopDesigning.AddUpStats(build, choices, ImmutableDictionary<ArmorSlot, ItemInstanceId>.Empty)).Value;
 
         // Each piece: Grenade 30, Super 25, Class 20, and the masterwork's +5 to the three at 0 (Weapons, Health, Melee).
         Assert.Equal(5, choices.Pieces.Length);
-        Assert.Equal(new StatPoints(25, 25, 100, 150, 125, 25), Part(totals, "Armor"));
-        Assert.Equal(new StatPoints(0, 0, 0, 50, 0, 0), Part(totals, "Grenade Mod ×5"));
-        Assert.Equal(new StatPoints(2, 2, 0, 0, 0, 2), Part(totals, "Balanced Tuning ×2"));   // +1 to each of two pieces' stats at 0
-        Assert.Equal(new StatPoints(0, 0, 0, -10, 0, 0), Part(totals, "Spark of Shock"));
-        Assert.Equal(new StatPoints(0, 0, 0, 0, 0, 10), Part(totals, "Spark of Resistance"));
-        Assert.Equal(new StatPoints(0, 0, 0, 0, 0, -10), Part(totals, "Spark of Discharge"));
-        Assert.Equal(new StatLine(Stat(27), Stat(27), Stat(100), Stat(190), Stat(125), Stat(27)), totals.Stats);
+        Assert.Equal(new StatPoints(25, 25, 100, 150, 125, 25), ReadPart(totals, "Armor"));
+        Assert.Equal(new StatPoints(0, 0, 0, 50, 0, 0), ReadPart(totals, "Grenade Mod ×5"));
+        Assert.Equal(new StatPoints(2, 2, 0, 0, 0, 2), ReadPart(totals, "Balanced Tuning ×2"));   // +1 to each of two pieces' stats at 0
+        Assert.Equal(new StatPoints(0, 0, 0, -10, 0, 0), ReadPart(totals, "Spark of Shock"));
+        Assert.Equal(new StatPoints(0, 0, 0, 0, 0, 10), ReadPart(totals, "Spark of Resistance"));
+        Assert.Equal(new StatPoints(0, 0, 0, 0, 0, -10), ReadPart(totals, "Spark of Discharge"));
+        Assert.Equal(new StatLine(ToKnownStat(27), ToKnownStat(27), ToKnownStat(100), ToKnownStat(190), ToKnownStat(125), ToKnownStat(27)), totals.Stats);
         Assert.Empty(totals.Notes);
     }
 
@@ -129,17 +129,17 @@ public sealed class StatLoadingTests
     public void With_two_copies_of_a_piece_the_most_points_come_first_and_a_pick_changes_the_total()
     {
         var build = OpenOwnersBuild();
-        var weaker = new FakeItem(Mask, "mask-2", "vault", [RollPlug(StatKind.Grenade, 20), RollPlug(StatKind.Super, 20), RollPlug(StatKind.Class, 20), FullMasterwork, EmptyTuning], 11);
+        var weaker = new FakeItem(Mask, "1002", "vault", [FindRollPlug(StatKind.Grenade, 20), FindRollPlug(StatKind.Super, 20), FindRollPlug(StatKind.Class, 20), FullMasterwork, EmptyTuning], 11);
         var profile = ReadProfile([.. OwnAll(tuningSockets: 3), weaker]);
         var choices = LoopDesigning.ListStatChoices(build, profile);
 
         var helmet = Assert.Single(choices.Pieces, choice => choice.Piece.Slot == ArmorSlot.Helmet);
         var picked = Assert.IsType<Result<StatTotals, string>.Ok>(
-            LoopDesigning.AddUpStats(build, choices, ImmutableDictionary<ArmorSlot, string>.Empty.Add(ArmorSlot.Helmet, "mask-2"))).Value;
+            LoopDesigning.AddUpStats(build, choices, ImmutableDictionary<ArmorSlot, ItemInstanceId>.Empty.Add(ArmorSlot.Helmet, ItemInstanceId.From("1002")))).Value;
 
-        Assert.Equal(["helmet", "mask-2"], helmet.Copies.Select(copy => copy.Armor.InstanceId));
+        Assert.Equal(["1001", "1002"], helmet.Copies.Select(copy => copy.Armor.InstanceId.Value));
         Assert.Equal(Optional.Some(new StatPoints(5, 5, 20, 20, 20, 5)), helmet.Copies[1].Points);
-        Assert.Equal(new StatPoints(25, 25, 100, 140, 120, 25), Part(picked, "Armor"));
+        Assert.Equal(new StatPoints(25, 25, 100, 140, 120, 25), ReadPart(picked, "Armor"));
     }
 
     [Fact]
@@ -148,9 +148,9 @@ public sealed class StatLoadingTests
         var build = OpenOwnersBuild();
         var choices = LoopDesigning.ListStatChoices(build, ReadProfile([.. OwnAll(tuningSockets: 1)]));
 
-        var totals = Assert.IsType<Result<StatTotals, string>.Ok>(LoopDesigning.AddUpStats(build, choices, ImmutableDictionary<ArmorSlot, string>.Empty)).Value;
+        var totals = Assert.IsType<Result<StatTotals, string>.Ok>(LoopDesigning.AddUpStats(build, choices, ImmutableDictionary<ArmorSlot, ItemInstanceId>.Empty)).Value;
 
-        Assert.Equal(new StatPoints(1, 1, 0, 0, 0, 1), Part(totals, "Balanced Tuning"));
+        Assert.Equal(new StatPoints(1, 1, 0, 0, 0, 1), ReadPart(totals, "Balanced Tuning"));
         Assert.Equal(["Balanced Tuning found no tuning socket on these pieces, so it adds nothing."], totals.Notes);
     }
 
@@ -163,17 +163,17 @@ public sealed class StatLoadingTests
 
         Assert.Equal(
             new Result<StatTotals, string>.Error("Your account has no Luminopotent Mask, so Loopsmith can't add up the build's stats from your armor."),
-            LoopDesigning.AddUpStats(build, unowned, ImmutableDictionary<ArmorSlot, string>.Empty));
+            LoopDesigning.AddUpStats(build, unowned, ImmutableDictionary<ArmorSlot, ItemInstanceId>.Empty));
         Assert.Equal(
             new Result<StatTotals, string>.Error("Loopsmith can't read the stats of your Luminopotent Mask (Bungie's data may be newer than Loopsmith's). Type the stats instead."),
-            LoopDesigning.AddUpStats(build, unread, ImmutableDictionary<ArmorSlot, string>.Empty));
+            LoopDesigning.AddUpStats(build, unread, ImmutableDictionary<ArmorSlot, ItemInstanceId>.Empty));
     }
 
     [Fact]
     public void An_Armor_2_piece_at_full_energy_gets_plus_2_to_every_stat()
     {
         var build = OpenOwnersBuild();
-        var legacy = new FakeItem(Mask, "old", "vault", [RollPlug(StatKind.Grenade, 20)], 10);
+        var legacy = new FakeItem(Mask, "2001", "vault", [FindRollPlug(StatKind.Grenade, 20)], 10);
         var choices = LoopDesigning.ListStatChoices(build, ReadProfile([.. OwnAll(tuningSockets: 0).Where(item => item.Hash != Mask), legacy]));
 
         var helmet = Assert.Single(choices.Pieces, choice => choice.Piece.Slot == ArmorSlot.Helmet);
@@ -187,7 +187,7 @@ public sealed class StatLoadingTests
         var build = OpenHandWrittenBuild();
         var choices = LoopDesigning.ListStatChoices(build, ReadProfile([.. OwnAll(tuningSockets: 0)]));
 
-        var refused = Assert.IsType<Result<StatTotals, string>.Error>(LoopDesigning.AddUpStats(build, choices, ImmutableDictionary<ArmorSlot, string>.Empty));
+        var refused = Assert.IsType<Result<StatTotals, string>.Error>(LoopDesigning.AddUpStats(build, choices, ImmutableDictionary<ArmorSlot, ItemInstanceId>.Empty));
 
         Assert.StartsWith("The build names no armor piece for the helmet, the chest, the legs and the class item", refused.Failure, StringComparison.Ordinal);
         Assert.Single(choices.Characters);
@@ -197,7 +197,7 @@ public sealed class StatLoadingTests
     public void Setting_the_stats_rewrites_only_the_build_files_stats_and_the_stat_checks_speak()
     {
         var session = LoopDesigning.CreateSession(OpenHandWrittenBuild(), new LoopDesign("Test", Optional.None<string>(), Optional.None<string>(), Optional.None<CatalogVersion>(), ReadBuildFile(), []));
-        var stats = new StatLine(Stat(47), Optional.None<StatValue>(), Stat(60), Stat(145), Stat(27), Stat(40));
+        var stats = new StatLine(ToKnownStat(47), Optional.None<StatValue>(), ToKnownStat(60), ToKnownStat(145), ToKnownStat(27), ToKnownStat(40));
 
         var changed = Assert.IsType<Result<DesignSession, string>.Ok>(LoopDesigning.SetStats(session, stats)).Value;
 
@@ -213,7 +213,7 @@ public sealed class StatLoadingTests
     {
         var session = LoopDesigning.CreateSession(OpenOwnersBuild(), new LoopDesign("Test", Optional.None<string>(), Optional.None<string>(), Optional.None<CatalogVersion>(), WriteOwnersBuildFile(), []));
 
-        var changed = Assert.IsType<Result<DesignSession, string>.Ok>(LoopDesigning.SetStats(session, new StatLine(Stat(10), Stat(20), Stat(70), Stat(150), Stat(30), Stat(79)))).Value;
+        var changed = Assert.IsType<Result<DesignSession, string>.Ok>(LoopDesigning.SetStats(session, new StatLine(ToKnownStat(10), ToKnownStat(20), ToKnownStat(70), ToKnownStat(150), ToKnownStat(30), ToKnownStat(79)))).Value;
 
         Assert.EndsWith("stats: {weapons: 10, health: 20, class: 70, grenade: 150, super: 30, melee: 79}\n", changed.Design.Build.Text, StringComparison.Ordinal);
         Assert.Contains(changed.Build.Issues, issue => issue.Severity == Severity.Info && issue.Message.StartsWith("With 79 Melee, a Gambler's Dodge gives back a full melee charge only within 15 m", StringComparison.Ordinal));
@@ -223,11 +223,37 @@ public sealed class StatLoadingTests
     [Fact]
     public void A_typed_stat_is_a_whole_number_from_0_to_200_or_empty_for_unknown()
     {
-        Assert.Equal(new Result<Optional<StatValue>, string>.Ok(Stat(79)), LoopDesigning.ReadStatInput(StatKind.Melee, " 79 "));
+        Assert.Equal(new Result<Optional<StatValue>, string>.Ok(ToKnownStat(79)), LoopDesigning.ReadStatInput(StatKind.Melee, " 79 "));
         Assert.Equal(new Result<Optional<StatValue>, string>.Ok(Optional.None<StatValue>()), LoopDesigning.ReadStatInput(StatKind.Melee, ""));
         Assert.Equal(
             new Result<Optional<StatValue>, string>.Error("Melee: a whole number from 0 to 200, or empty for \"?\"."),
             LoopDesigning.ReadStatInput(StatKind.Melee, "201"));
+        Assert.Equal(   // inputs not given are "?"
+            new StatLine(ToKnownStat(47), Optional.None<StatValue>(), ToKnownStat(104), Optional.None<StatValue>(), Optional.None<StatValue>(), Optional.None<StatValue>()),
+            Assert.IsType<Result<StatLine, ImmutableArray<string>>.Ok>(LoopDesigning.ReadStatInputs(["47", " ", "104"])).Value);
+        Assert.Equal(
+            ["Health: a whole number from 0 to 200, or empty for \"?\".", "Melee: a whole number from 0 to 200, or empty for \"?\"."],
+            Assert.IsType<Result<StatLine, ImmutableArray<string>>.Error>(LoopDesigning.ReadStatInputs(["1", "x", "", "", "", "-3"])).Failure);
+    }
+
+    [Fact]
+    public void Bungies_answer_is_read_as_JSON_even_with_an_error_status_unless_Bungie_is_down()
+    {
+        Assert.Equal(Ok("""{ "ErrorCode": 99 }"""), LoopDesigning.ReadBungieAnswer(401, """{ "ErrorCode": 99 }"""));
+        Assert.Equal(Error("Bungie didn't answer (HTTP 503). Try again later."), LoopDesigning.ReadBungieAnswer(503, "<html>down</html>"));
+        Assert.Equal("Couldn't reach Bungie (Failed to fetch). Check your connection and try again.", LoopDesigning.DescribeBungieUnreachable("Failed to fetch"));
+    }
+
+    [Fact]
+    public void A_pick_of_a_copy_the_player_no_longer_has_falls_back_to_their_first()
+    {
+        var build = OpenOwnersBuild();
+        var choices = LoopDesigning.ListStatChoices(build, ReadProfile([.. OwnAll(tuningSockets: 0)]));
+        var helmet = Assert.Single(choices.Pieces, choice => choice.Piece.Slot == ArmorSlot.Helmet);
+        var stale = ImmutableDictionary<ArmorSlot, ItemInstanceId>.Empty.Add(ArmorSlot.Helmet, ItemInstanceId.From("9999"));
+
+        Assert.Equal(Optional.Some(ItemInstanceId.From("1001")), LoopDesigning.FindPickedCopy(helmet, stale).Map(copy => copy.Armor.InstanceId));
+        Assert.Equal(Optional.None<PieceCopy>(), LoopDesigning.FindPickedCopy(helmet with { Copies = [] }, stale));
     }
 
     private sealed record FakeItem(ItemHash Hash, string Instance, string Place, ImmutableArray<ItemHash> Plugs, int? Energy);
@@ -236,9 +262,9 @@ public sealed class StatLoadingTests
     private static IEnumerable<FakeItem> OwnAll(int tuningSockets) =>
         Legendary.Prepend(Vow).Select((hash, index) => new FakeItem(
             hash,
-            hash == Mask ? "helmet" : $"piece-{index}",
+            hash == Mask ? "1001" : $"{1100 + index}",
             index == 0 ? "equipped" : "vault",
-            [RollPlug(StatKind.Grenade, 30), RollPlug(StatKind.Super, 25), RollPlug(StatKind.Class, 20), FullMasterwork, .. index < tuningSockets ? [EmptyTuning] : ImmutableArray<ItemHash>.Empty],
+            [FindRollPlug(StatKind.Grenade, 30), FindRollPlug(StatKind.Super, 25), FindRollPlug(StatKind.Class, 20), FullMasterwork, .. index < tuningSockets ? [EmptyTuning] : ImmutableArray<ItemHash>.Empty],
             11));
 
     /// <summary>A Bungie profile answer holding these items (in the vault, or worn or carried by a Hunter) and the Hunter's stats.</summary>
@@ -268,17 +294,17 @@ public sealed class StatLoadingTests
     }
 
     /// <summary>An armor-stat plug of the excerpt that gives just this: a piece's roll in one stat.</summary>
-    private static ItemHash RollPlug(StatKind stat, int value) =>
+    private static ItemHash FindRollPlug(StatKind stat, int value) =>
         Catalog.Manifest.StatPlugs
-            .Where(entry => entry.Value.Kind == StatPlugKind.Base && entry.Value.Stats.Length == 1 && entry.Value.Stats[0].Stat == stat && entry.Value.Stats[0].Value == value)
+            .Where(entry => entry.Value is StatPlug.Rolled { Stats: [var only] } && only.Stat == stat && only.Value == value)
             .Select(entry => entry.Key)
             .Order()
             .First();
 
-    private static StatPoints Part(StatTotals totals, string source) =>
+    private static StatPoints ReadPart(StatTotals totals, string source) =>
         Assert.Single(totals.Parts, part => part.Source == source).Points;
 
-    private static Optional<StatValue> Stat(int value) =>
+    private static Optional<StatValue> ToKnownStat(int value) =>
         Optional.Some(StatValue.From(value));
 
     private static Result<string, string> Ok(string value) => new Result<string, string>.Ok(value);

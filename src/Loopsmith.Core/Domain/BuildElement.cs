@@ -38,7 +38,10 @@ public sealed record BuildElement(
 /// the build's <see cref="Stat"/> is known and at least <see cref="From"/> (when given) and below <see cref="Below"/>;
 /// <c>{value}</c> in <see cref="Says"/> is the build's value. A fact about the element at that stat, never counted.
 /// </summary>
-public sealed record StatCheck(StatKind Stat, Optional<int> From, int Below, Severity Severity, string Says);
+public sealed record StatCheck(StatKind Stat, Optional<StatValue> From, StatValue Below, StatCheckSeverity Severity, string Says);
+
+/// <summary>How a stat check speaks: a warning or a note, never blocking (a stat doesn't keep a build from working).</summary>
+public enum StatCheckSeverity { Warning, Info }
 
 /// <summary>Entry of the keyword glossary (the Compendium's "Statuses").</summary>
 public sealed record StatusDefinition(

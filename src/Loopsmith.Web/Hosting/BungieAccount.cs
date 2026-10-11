@@ -1,3 +1,4 @@
+using System.Net.Http.Headers;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 using Loopsmith.Core.Orchestration;
@@ -22,46 +23,49 @@ public sealed class BungieAccount(HttpClient http, BrowserInterop browser, strin
         var url = LoopDesigning.ToBungieLoginUrl(clientId, state);                              // pure
         var answer = await browser.LogInWithBungieAsync(url);                                    // impure
         var code = LoopDesigning.ReadBungieCallback(answer, state);                             // pure
-        if (code is not Result<string, string>.Ok loggedIn)
-        {
-            return Fail(code);
-        }
-
-        var form = LoopDesigning.ToBungieTokenForm(clientId, loggedIn.Value);                   // pure
-        var tokenAnswer = await PostFormAsync(LoopDesigning.BungieTokenUrl, form);               // impure
-        var token = tokenAnswer.Bind(LoopDesigning.ReadBungieAccessToken);                      // pure
-        if (token is not Result<string, string>.Ok access)
-        {
-            return Fail(token);
-        }
-
-        var membershipsAnswer = await GetAsync(LoopDesigning.BungieMembershipsUrl, access.Value); // impure
-        var membership = membershipsAnswer.Bind(LoopDesigning.ReadDestinyMembership);           // pure
-        if (membership is not Result<DestinyMembership, string>.Ok member)
-        {
-            return Fail(membership);
-        }
-
-        var profileUrl = LoopDesigning.ToBungieProfileUrl(member.Value);                        // pure
-        var profileAnswer = await GetAsync(profileUrl, access.Value);                            // impure
-        return profileAnswer.Bind(LoopDesigning.ReadBungieProfile);                             // pure
+        var token = await code.BindAsync(RequestTokenAsync);                                     // impure
+        return await token.BindAsync(ReadProfileAsync);                                          // impure
     }
 
     /// <summary>Stops waiting for the login (the player closed Bungie's window).</summary>
     public ValueTask CancelAsync() =>
-        browser.CancelBungieLoginAsync();
+        browser.CancelBungieLoginAsync();                                                        // impure
+
+    /// <summary>The login's code traded for an access token.</summary>
+    private async Task<Result<string, string>> RequestTokenAsync(string code)
+    {
+        var form = LoopDesigning.ToBungieTokenForm(clientId, code);                             // pure
+        var answer = await PostFormAsync(LoopDesigning.BungieTokenUrl, form);                    // impure
+        return answer.Bind(LoopDesigning.ReadBungieAccessToken);                                // pure
+    }
+
+    /// <summary>The token's account: its Destiny membership, then that membership's profile.</summary>
+    private async Task<Result<BungieProfile, string>> ReadProfileAsync(string accessToken)
+    {
+        var answer = await GetAsync(LoopDesigning.BungieMembershipsUrl, accessToken);            // impure
+        var membership = answer.Bind(LoopDesigning.ReadDestinyMembership);                      // pure
+        return await membership.BindAsync(member => ReadMemberProfileAsync(member, accessToken)); // impure
+    }
+
+    private async Task<Result<BungieProfile, string>> ReadMemberProfileAsync(DestinyMembership membership, string accessToken)
+    {
+        var url = LoopDesigning.ToBungieProfileUrl(membership);                                 // pure
+        var answer = await GetAsync(url, accessToken);                                           // impure
+        return answer.Bind(LoopDesigning.ReadBungieProfile);                                    // pure
+    }
 
     private async Task<Result<string, string>> PostFormAsync(string url, IEnumerable<KeyValuePair<string, string>> form)
     {
         try
         {
-            using var content = new FormUrlEncodedContent(form);
-            using var response = await http.PostAsync(url, content);
-            return await ReadAnswerAsync(response);
+            using var content = new FormUrlEncodedContent(form);                                 // pure
+            using var response = await http.PostAsync(url, content);                             // impure
+            var text = await response.Content.ReadAsStringAsync();                               // impure
+            return LoopDesigning.ReadBungieAnswer((int)response.StatusCode, text);              // pure
         }
         catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException)
         {
-            return DescribeUnreachable(exception);
+            return new Result<string, string>.Error(LoopDesigning.DescribeBungieUnreachable(exception.Message)); // pure
         }
     }
 
@@ -69,31 +73,16 @@ public sealed class BungieAccount(HttpClient http, BrowserInterop browser, strin
     {
         try
         {
-            using var request = new HttpRequestMessage(HttpMethod.Get, url);
-            request.Headers.Add("X-API-Key", apiKey);
-            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
-            using var response = await http.SendAsync(request);
-            return await ReadAnswerAsync(response);
+            using var request = new HttpRequestMessage(HttpMethod.Get, url);                     // pure
+            request.Headers.Add("X-API-Key", apiKey);                                            // pure (the request)
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken); // pure (the request)
+            using var response = await http.SendAsync(request);                                  // impure
+            var text = await response.Content.ReadAsStringAsync();                               // impure
+            return LoopDesigning.ReadBungieAnswer((int)response.StatusCode, text);              // pure
         }
         catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException)
         {
-            return DescribeUnreachable(exception);
+            return new Result<string, string>.Error(LoopDesigning.DescribeBungieUnreachable(exception.Message)); // pure
         }
     }
-
-    /// <summary>Bungie's answer text (its JSON says what went wrong, even on an error status); a server error that isn't JSON, said as such.</summary>
-    private static async Task<Result<string, string>> ReadAnswerAsync(HttpResponseMessage response)
-    {
-        var text = await response.Content.ReadAsStringAsync();
-        return (int)response.StatusCode >= 500 && !text.TrimStart().StartsWith('{')
-            ? new Result<string, string>.Error($"Bungie didn't answer (HTTP {(int)response.StatusCode}). Try again later.")
-            : new Result<string, string>.Ok(text);
-    }
-
-    private static Result<string, string> DescribeUnreachable(Exception exception) =>
-        new Result<string, string>.Error($"Couldn't reach Bungie ({exception.Message}). Check your connection and try again.");
-
-    /// <summary>A step's failure, carried on as the profile's.</summary>
-    private static Result<BungieProfile, string> Fail<TFrom>(Result<TFrom, string> failed) =>
-        new Result<BungieProfile, string>.Error(failed.Match(_ => "", error => error.Failure));
 }

@@ -4,21 +4,37 @@ using Loopsmith.Core.Functional;
 
 namespace Loopsmith.Core.Domain;
 
-/// <summary>
-/// What a plug that changes armor stats is, for adding up a build's stats from a player's own armor the way DIM does:
-/// a piece's rolled stats (<see cref="Base"/>), its masterwork, its tuning (the empty tuning socket's plug marks the
-/// socket), a stat mod, a subclass fragment.
-/// </summary>
-public enum StatPlugKind { Base, Masterwork, Tuning, Mod, Subclass }
-
 /// <summary>One stat a plug changes; <see cref="Class"/>: only for that class (Spark of Focus lowers the class's own regeneration stat).</summary>
 public sealed record PlugStat(StatKind Stat, int Value, Optional<GuardianClass> Class);
 
 /// <summary>
-/// A plug of the manifest excerpt's <c>statPlugs</c>. <see cref="OnlyEmptyStats"/>: it adds only to a piece's stats at
-/// 0, the three its roll leaves empty (an Armor 3.0 masterwork, Balanced Tuning).
+/// A plug of the manifest excerpt's <c>statPlugs</c>: what it does to armor stats, for adding up a build's stats from a
+/// player's own armor the way DIM does.
 /// </summary>
-public sealed record StatPlug(StatPlugKind Kind, ImmutableArray<PlugStat> Stats, bool OnlyEmptyStats);
+[Union]
+public partial record StatPlug
+{
+    /// <summary>A piece's rolled stats: an armor-stat plug, or its intrinsic (Armor 3.0's archetype).</summary>
+    partial record Rolled(ImmutableArray<PlugStat> Stats);
+
+    /// <summary>An Armor 3.0 masterwork: it adds only to the piece's stats at 0, the three its roll leaves empty.</summary>
+    partial record Masterwork(ImmutableArray<PlugStat> Stats);
+
+    /// <summary>The empty tuning socket's plug: it marks a piece that can take a tuning mod and changes no stat.</summary>
+    partial record TuningSocket();
+
+    /// <summary>A tuning mod that moves points between two stats (+5 Grenade, −5 Melee).</summary>
+    partial record Tuning(ImmutableArray<PlugStat> Stats);
+
+    /// <summary>Balanced Tuning: like a masterwork, only to a piece's stats at 0; one piece per tuning socket.</summary>
+    partial record BalancedTuning(ImmutableArray<PlugStat> Stats);
+
+    /// <summary>A stat mod (+10 Grenade).</summary>
+    partial record StatMod(ImmutableArray<PlugStat> Stats);
+
+    /// <summary>A fragment with stats (Spark of Shock's −10 Grenade).</summary>
+    partial record Fragment(ImmutableArray<PlugStat> Stats);
+}
 
 /// <summary>Pure reads of a build's stat line by stat.</summary>
 public static class StatReading
@@ -34,13 +50,25 @@ public static class StatReading
             StatKind.Super => stats.Super,
             _ => stats.Melee,
         };
+
+    /// <summary>The points in a stat.</summary>
+    public static int ReadPoints(this StatPoints points, StatKind stat) =>
+        stat switch
+        {
+            StatKind.Weapons => points.Weapons,
+            StatKind.Health => points.Health,
+            StatKind.Class => points.Class,
+            StatKind.Grenade => points.Grenade,
+            StatKind.Super => points.Super,
+            _ => points.Melee,
+        };
 }
 
 /// <summary>Points in each armor stat: a piece's, a mod's, a build's. A part may be negative (a fragment's −10).</summary>
 public sealed record StatPoints(int Weapons, int Health, int Class, int Grenade, int Super, int Melee);
 
-/// <summary>A Bungie account's Destiny membership: its platform (Bungie's membership type number) and id.</summary>
-public sealed record DestinyMembership(int Type, string Id);
+/// <summary>A Bungie account's Destiny membership: its platform (Bungie's membership type) and id.</summary>
+public sealed record DestinyMembership(MembershipType Type, MembershipId Id);
 
 /// <summary>Where a player's armor piece is: worn by a character, in a character's inventory, or in the vault.</summary>
 [Union]
@@ -55,7 +83,7 @@ public partial record ArmorPlace
 /// An armor piece the player owns, as Bungie's profile has it: its instance, item hash, where it is, the plugs in
 /// its sockets (enabled ones, socket by socket) and its energy capacity (Armor 2.0's masterwork reads it).
 /// </summary>
-public sealed record OwnedArmor(string InstanceId, ItemHash Hash, ArmorPlace Place, ImmutableArray<ItemHash> Plugs, Optional<int> EnergyCapacity);
+public sealed record OwnedArmor(ItemInstanceId InstanceId, ItemHash Hash, ArmorPlace Place, ImmutableArray<ItemHash> Plugs, Optional<int> EnergyCapacity);
 
 /// <summary>A character's stats as Bungie has them right now: what it is wearing, with its mods and subclass.</summary>
 public sealed record CharacterStats(GuardianClass Class, StatLine Stats);

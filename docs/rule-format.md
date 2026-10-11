@@ -132,20 +132,21 @@ items:
   ```yaml
   statPlugs:
     - { hash: 311219525, kind: base, stats: [{ stat: weapons, value: 1 }] }
-    - { hash: 788990510, kind: masterwork, stats: [{ stat: weapons, value: 5 }, …, { stat: melee, value: 5 }], onlyEmptyStats: true }
-    - { hash: 3122197216, kind: tuning, stats: [{ stat: weapons, value: 1 }, …], onlyEmptyStats: true }
-    - { hash: 2121121504, kind: tuning, stats: [] }
-    - { hash: 1435557120, kind: mod, stats: [{ stat: grenade, value: 10 }] }
-    - { hash: 1727069360, kind: subclass, stats: [{ stat: class, value: -10, class: warlock }, { stat: weapons, value: -10, class: hunter }, …] }
+    - { hash: 788990510, kind: masterwork, stats: [{ stat: weapons, value: 5 }, …, { stat: melee, value: 5 }] }
+    - { hash: 2121121504, kind: tuningSocket, stats: [] }
+    - { hash: 309000506, kind: tuning, stats: [{ stat: grenade, value: 5 }, { stat: melee, value: -5 }] }
+    - { hash: 3122197216, kind: balancedTuning, stats: [{ stat: weapons, value: 1 }, …] }
+    - { hash: 1435557120, kind: statMod, stats: [{ stat: grenade, value: 10 }] }
+    - { hash: 1727069360, kind: fragment, stats: [{ stat: class, value: -10, class: warlock }, { stat: weapons, value: -10, class: hunter }, …] }
   ```
 
-  `kind`: `base` (a piece's rolled stats: its armor-stat and intrinsic plugs), `masterwork` (Armor 3.0's),
-  `tuning` (the empty tuning socket's plug too, with no stats: it marks the socket), `mod` (a stat mod) or
-  `subclass` (a fragment with a stat). `stat` is one of the six (`weapons|health|class|grenade|super|melee`),
-  `value` a whole number (negative for a fragment's −10). `onlyEmptyStats`: it adds only to a piece's stats at
-  0 — the three its roll leaves empty (a masterwork, Balanced Tuning), as DIM reads them. A stat with a `class`
-  counts for that class only (Spark of Focus and Echo of Persistence lower the stat of the class's own ability
-  regeneration).
+  `kind`: `base` (a piece's rolled stats: its armor-stat and intrinsic plugs), `masterwork` (Armor 3.0's: it adds
+  only to a piece's stats at 0, the three its roll leaves empty), `tuningSocket` (the empty tuning socket's plug, with
+  no stats: it marks the socket), `tuning` (a tuning mod: points from one stat to another), `balancedTuning` (like a
+  masterwork, only to a piece's stats at 0; one piece per tuning socket), `statMod` or `fragment` (a fragment with a
+  stat), as DIM reads them. `stat` is one of the six (`weapons|health|class|grenade|super|melee`), `value` a whole
+  number (negative for a fragment's −10). A stat with a `class` counts for that class only (Spark of Focus and Echo of
+  Persistence lower the stat of the class's own ability regeneration).
 
 ## Elements
 
@@ -197,9 +198,9 @@ statChecks:
 ```
 
 A check speaks when the build's `stat` is known and at least `from` (when given) and below `below`; `{value}`
-is the build's value. `from` < `below` <= 200, and `severity` is `warning` or `info`
-(`a stat check names a range of stat values (from < below <= 200) and says it as a warning or info`). An unknown
-stat ("?") says nothing.
+is the build's value. `from` and `below` are stat values (0..200) and `from` < `below`
+(`a stat check's range starts below its end (from < below)`); `severity` is `warning` or `info` (a stat never
+blocks a build). An unknown stat ("?") says nothing.
 
 `inert: "<why>"` marks an element that is known and has no part in a loop on purpose — Skip Grenade
 (its hits are the grenade step itself), Feeding Frenzy (no ammo or reloads are counted), the

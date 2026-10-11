@@ -70,9 +70,17 @@ public static class LoopDesigning
     public static Result<DimLink, string> ReadDimLink(string text) =>
         DimLinkReading.ReadDimLink(text);
 
-    /// <summary>Where a host asks DIM for a dim.gg share's loadout (an HTTP GET with the app's DIM API key as <c>X-API-Key</c>).</summary>
+    /// <summary>Where a host asks DIM for a dim.gg share's loadout: a plain HTTP GET, no key and no header (DIM hands shares to anyone).</summary>
     public static string ToDimShareRequestUrl(DimLink.Shared share) =>
         DimLinkReading.ToShareRequestUrl(share.ShareId);
+
+    /// <summary>DIM's answer to a share request (its status and text): the loadout's JSON, or why there is none.</summary>
+    public static Result<string, string> ReadDimShareAnswer(int status, string text) =>
+        DimLinkReading.ReadShareAnswer(status, text);
+
+    /// <summary>What to say when the browser couldn't reach DIM (<paramref name="why"/>: what it said).</summary>
+    public static string DescribeDimUnreachable(string why) =>
+        DimLinkReading.DescribeUnreachable(why);
 
     /// <summary>
     /// A new design for a DIM loadout: <paramref name="loadoutJson"/> is the link's own loadout, or DIM's answer for a
@@ -249,9 +257,16 @@ public static class LoopDesigning
     public static Result<DesignSession, string> SetStats(DesignSession session, StatLine stats) =>
         RebuildWith(session, BuildFileEditing.ReplaceStats(session.Design.Build, stats));
 
+    /// <summary>The six stats in the order the Stats section's inputs are in (the game's).</summary>
+    public static ImmutableArray<StatKind> StatInputOrder => StatInputReading.InputOrder;
+
     /// <summary>A stat as typed: empty for unknown ("?"), else a whole number 0..200; or why it isn't one.</summary>
     public static Result<Optional<StatValue>, string> ReadStatInput(StatKind stat, string text) =>
-        StatAdding.ReadStatInput(stat, text);
+        StatInputReading.ReadStatInput(stat, text);
+
+    /// <summary>The Stats section's six inputs (in <see cref="StatInputOrder"/>) as a stat line, or what is wrong with each one that isn't a stat.</summary>
+    public static Result<StatLine, ImmutableArray<string>> ReadStatInputs(ImmutableArray<string> inputs) =>
+        StatInputReading.ReadStatInputs(inputs);
 
     /// <summary>Bungie's login page for this app (a public OAuth client): it comes back to the registered redirect URL with a code and the state.</summary>
     public static string ToBungieLoginUrl(string clientId, string state) =>
@@ -271,6 +286,14 @@ public static class LoopDesigning
     /// <summary>The token endpoint's answer: the access token, or what Bungie said.</summary>
     public static Result<string, string> ReadBungieAccessToken(string json) =>
         BungieAuthorizing.ReadAccessToken(json);
+
+    /// <summary>Bungie's answer to a request (its status and text): the text to read, or that Bungie is down.</summary>
+    public static Result<string, string> ReadBungieAnswer(int status, string text) =>
+        BungieProfileReading.ReadAnswer(status, text);
+
+    /// <summary>What to say when the browser couldn't reach Bungie (<paramref name="why"/>: what it said).</summary>
+    public static string DescribeBungieUnreachable(string why) =>
+        BungieProfileReading.DescribeUnreachable(why);
 
     /// <summary>The logged-in player's account and memberships, on Bungie's API.</summary>
     public const string BungieMembershipsUrl = BungieProfileReading.MembershipsUrl;
@@ -292,8 +315,12 @@ public static class LoopDesigning
         StatAdding.ListStatChoices(build.Catalog, build.Build, profile);
 
     /// <summary>The build's stats added up from the copies picked (by slot, an instance id), as DIM adds them up; or why they can't be.</summary>
-    public static Result<StatTotals, string> AddUpStats(ValidatedBuild build, StatChoices choices, ImmutableDictionary<ArmorSlot, string> picks) =>
+    public static Result<StatTotals, string> AddUpStats(ValidatedBuild build, StatChoices choices, ImmutableDictionary<ArmorSlot, ItemInstanceId> picks) =>
         StatAdding.AddUpStats(build.Catalog, build.Build, choices, picks);
+
+    /// <summary>The copy of a piece the player picked, else their first (the most points); none when they own no copy.</summary>
+    public static Optional<PieceCopy> FindPickedCopy(PieceChoice choice, ImmutableDictionary<ArmorSlot, ItemInstanceId> picks) =>
+        StatAdding.FindPickedCopy(choice, picks);
 
     /// <summary>A weapon's perks the way the build holds them, column by column (what the designer shows and the build check equips).</summary>
     public static ImmutableArray<WeaponPerkSlot> ListPerkSlots(ValidatedBuild build, WeaponLoadout weapon) =>

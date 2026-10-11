@@ -41,28 +41,18 @@ but no Compendium snapshot text and no transcripts.
 
 Home starts a loop from a DIM link ([loop-format.md](loop-format.md#starting-from-a-dim-link)). A link
 that carries its loadout (`…/loadouts?loadout=…`) needs nothing. A **dim.gg** share — what DIM's
-Share button copies — is on DIM's servers, and DIM's API hands it only to registered apps: the web
-app sends the app's key as `X-API-Key` from the origin the key was registered for. Until a key is
-set, a dim.gg link says Loopsmith can't open it yet. One-time setup (the owner):
+Share button copies — is on DIM's servers, and DIM's API hands it to any caller: `GET
+https://api.destinyitemmanager.com/loadout_share?shareId=…` needs no API key and answers any origin
+(dim-api's `api/server.ts` declares it before its API-key check, with CORS open to every origin; since
+2022). The web app asks with a plain GET and **no header**: a header such as `X-API-Key` would make the
+browser ask DIM first (a CORS preflight), which DIM answers only for the origins of apps registered
+with it. Nothing to set up, on the site, in a PR preview or in a local run.
 
-1. **A Bungie API key.** At https://www.bungie.net/en/Application create an application with
-   **Origin header** `https://joancomasfdz.github.io` (no OAuth needed for this). Done: it is the
-   `BungieApiKey` in `wwwroot/appsettings.json`.
-2. **A DIM API key for the site's origin, from the DIM team.** DIM's self-service registration
-   (`new_app`, what its `/developer` page does) only registers local development origins — localhost,
-   private addresses, `.lan`/`.local`/`.internal` hosts. It refused `https://joancomasfdz.github.io`
-   (2026-10-11, HTTP 400 `InvalidRequest`). A key for a public site comes from DIM's maintainers: ask
-   them (DIM's GitHub, https://github.com/DestinyItemManager/DIM, or its Discord) for an app `loopsmith`
-   with origin `https://joancomasfdz.github.io`. For a key that works in a local run only:
-   ```bash
-   curl -sS https://api.destinyitemmanager.com/new_app -H 'Content-Type: application/json' \
-     -d '{"id": "loopsmith-local", "bungieApiKey": "<a Bungie API key for http://localhost:5000>", "origin": "http://localhost:5000"}'
-   ```
-   The answer's `app.dimApiKey` is the key (don't merge a localhost key: it doesn't work on the site).
-3. **Set it** in `src/Loopsmith.Web/wwwroot/appsettings.json` (`"DimApiKey": "<key>"`) and merge. It
-   isn't a secret: it ships in the site, as DIM's own key ships in DIM, and only works from the
-   registered origin. PR previews share that origin, so they open dim.gg links too; a local run
-   (`localhost`) doesn't, unless the key is registered for that origin.
+A DIM API key (an app registered with DIM: self-service `new_app` for local origins, from DIM's
+maintainers for a public site — dim-api's README) is only for DIM Sync, a player's own DIM data
+(loadouts, tags, notes, searches), which Loopsmith doesn't read. Loopsmith's **Bungie** API key
+(`BungieApiKey` in `wwwroot/appsettings.json`, an application at https://www.bungie.net/en/Application
+with **Origin header** `https://joancomasfdz.github.io`) is for Bungie's manifest and login, below.
 
 ## Bungie login
 

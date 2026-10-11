@@ -27,6 +27,18 @@ public sealed class DimLinkReadingTests
     }
 
     [Fact]
+    public void DIMs_answer_is_the_loadout_or_says_why_there_is_none_and_how_to_paste_the_long_link()
+    {
+        var unknown = Assert.IsType<Result<string, string>.Error>(DimLinkReading.ReadShareAnswer(404, ""));
+        var down = Assert.IsType<Result<string, string>.Error>(DimLinkReading.ReadShareAnswer(503, "<html>"));
+
+        Assert.Equal(new Result<string, string>.Ok("""{"loadout":{}}"""), DimLinkReading.ReadShareAnswer(200, """{"loadout":{}}"""));
+        Assert.Equal("DIM doesn't know that share: check the link (copy it again from DIM's Share).", unknown.Failure);
+        Assert.StartsWith("DIM didn't hand over the shared loadout (HTTP 503). Try again later. Or open the dim.gg link, copy its \"Open Loadout in DIM\" link", down.Failure, StringComparison.Ordinal);
+        Assert.StartsWith("Couldn't reach DIM to read the shared loadout (Failed to fetch). Check your connection and try again. Or open the dim.gg link", DimLinkReading.DescribeUnreachable("Failed to fetch"), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void A_link_to_DIMs_loadouts_page_carries_its_loadout_percent_encoded()
     {
         const string link = "https://app.destinyitemmanager.com/loadouts?loadout=%7B%22name%22%3A%22Skip+Grenade%22%2C%22classType%22%3A1%7D";

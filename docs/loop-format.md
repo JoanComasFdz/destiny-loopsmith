@@ -165,11 +165,10 @@ DIM itself opens:
 
 * **A dim.gg share** — what DIM's Share button copies (`https://dim.gg/4j5nz4q/Skip-Grenade`, or just
   the id). The loadout is on DIM's servers: the web app asks DIM's API for it
-  (`GET https://api.destinyitemmanager.com/loadout_share?shareId=…` with the app's key as
-  `X-API-Key`), which needs Loopsmith registered with DIM ([hosting.md](hosting.md#dim-links)).
-  Until it is, a dim.gg link answers `Loopsmith can't open dim.gg links yet …`, and says how to get the
-  other kind: the dim.gg page's "Open Loadout in DIM" link carries the whole loadout (copy that link and paste
-  it instead).
+  (`GET https://api.destinyitemmanager.com/loadout_share?shareId=…`, open to any caller: no key, no
+  header — [hosting.md](hosting.md#dim-links)). When DIM can't be reached or doesn't hand it over, the
+  message says how to get the other kind: the dim.gg page's "Open Loadout in DIM" link carries the whole
+  loadout (copy that link and paste it instead); a share DIM doesn't know is said so.
 * **A link that carries its loadout** — DIM's Loadouts page with the loadout as JSON in `?loadout=`
   (D2ArmorPicker, guardian.report): read in the browser, nothing is fetched.
 

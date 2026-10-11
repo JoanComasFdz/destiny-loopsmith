@@ -12,16 +12,9 @@ internal static class StatPointsArithmetic
     internal static readonly ImmutableArray<StatKind> AllStats =
         [StatKind.Weapons, StatKind.Health, StatKind.Class, StatKind.Grenade, StatKind.Super, StatKind.Melee];
 
-    internal static int Read(this StatPoints points, StatKind stat) =>
-        stat switch
-        {
-            StatKind.Weapons => points.Weapons,
-            StatKind.Health => points.Health,
-            StatKind.Class => points.Class,
-            StatKind.Grenade => points.Grenade,
-            StatKind.Super => points.Super,
-            _ => points.Melee,
-        };
+    /// <summary>The same points in each of the six stats (Armor 2.0's masterwork: +2 to each).</summary>
+    internal static StatPoints ToPointsInEachStat(int value) =>
+        new(value, value, value, value, value, value);
 
     internal static StatPoints AddTo(this StatPoints points, StatKind stat, int value) =>
         stat switch
@@ -41,23 +34,34 @@ internal static class StatPointsArithmetic
     internal static StatPoints Sum(this IEnumerable<StatPoints> parts) =>
         parts.Aggregate(Zero, (total, part) => total.Add(part));
 
+    internal static StatPoints MultiplyBy(this StatPoints points, int copies) =>
+        new(points.Weapons * copies, points.Health * copies, points.Class * copies,
+            points.Grenade * copies, points.Super * copies, points.Melee * copies);
+
+    /// <summary>The stats a plug changes (the tuning socket's plug changes none).</summary>
+    internal static ImmutableArray<PlugStat> ReadStats(this StatPlug plug) =>
+        plug.Match(
+            rolled => rolled.Stats,
+            masterwork => masterwork.Stats,
+            _ => [],
+            tuning => tuning.Stats,
+            balanced => balanced.Stats,
+            mod => mod.Stats,
+            fragment => fragment.Stats);
+
     /// <summary>A plug's stats as points (a piece's roll: no stat of it is for one class only).</summary>
     internal static StatPoints ToPoints(this StatPlug plug) =>
-        plug.Stats.Aggregate(Zero, (points, stat) => points.AddTo(stat.Stat, stat.Value));
+        plug.ReadStats().Aggregate(Zero, (points, stat) => points.AddTo(stat.Stat, stat.Value));
 
     /// <summary>A plug's stats as points, those for another class left out (Spark of Focus's −10 to a Titan's Health).</summary>
     internal static StatPoints ToPoints(this StatPlug plug, GuardianClass forClass) =>
-        plug.Stats
+        plug.ReadStats()
             .Where(stat => stat.Class.Match(only => only.Value == forClass, _ => true))
             .Aggregate(Zero, (points, stat) => points.AddTo(stat.Stat, stat.Value));
 
     /// <summary>A plug's stats added only where <paramref name="roll"/> has 0 (a masterwork's, Balanced Tuning's).</summary>
     internal static StatPoints ToPointsOnEmpty(this StatPlug plug, StatPoints roll) =>
-        plug.Stats
-            .Where(stat => roll.Read(stat.Stat) == 0)
+        plug.ReadStats()
+            .Where(stat => roll.ReadPoints(stat.Stat) == 0)
             .Aggregate(Zero, (points, stat) => points.AddTo(stat.Stat, stat.Value));
-
-    internal static StatPoints Times(this StatPoints points, int copies) =>
-        new(points.Weapons * copies, points.Health * copies, points.Class * copies,
-            points.Grenade * copies, points.Super * copies, points.Melee * copies);
 }

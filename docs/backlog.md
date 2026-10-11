@@ -107,13 +107,11 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   bonuses above 100 (#126, #132, #138, #139) and Gambler's Dodge's refund as its number ("+79% melee energy") —
   need a rule value that reads a build stat; refunds below 70 of their stat scale down by an amount Bungie
   hasn't published ("?"). DIM's runtime stat benefits (Font mods while Armor Charge) aren't added up.
+- **The share's own copies**: a dim.gg share names each piece's instance id (`equipped[].id`), so the Stats
+  section could pick the shared copy when the player owns several (and it's theirs); a build keeps pieces by hash.
 
 ## Owner items
 
-- **A DIM API key for the site** so dim.gg links open: the Bungie API key is set (`BungieApiKey`), but
-  DIM's self-service `new_app` only registers local origins (it refused the site's, 2026-10-11), so the
-  key has to come from DIM's maintainers ([hosting.md](hosting.md#dim-links), step 2); then set it as
-  `DimApiKey` in `src/Loopsmith.Web/wwwroot/appsettings.json`.
 - The DIM logo on Home is DIM's (MIT-licensed repository, credited in the file and the README): fine
   to show next to "paste a DIM link", or ask DIM.
 - Verify.XunitV3 33.x needs a SponsorCheck licence decision (D26).

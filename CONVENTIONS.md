@@ -20,7 +20,8 @@ itself, under `src/Loopsmith.Core/Domain/`.
   files they embed), `BuildComposition`, `Simulation` (plays steps against the
   state), `BuildExplanation`, `LoopGraphing`, `TraceRendering`,
   `ReportComparison`, `LoadoutImporting` (a DIM link → a build), `ManifestJoining` (Bungie's full
-  manifest → the excerpt some hashes need), `Orchestration`).
+  manifest → the excerpt some hashes need), `StatLoading` (a Bungie login's answers → the player's armor
+  → the build's stats), `Orchestration`).
 - **Feature slices depend only on the shared kernel** (`Domain` / `Functional` /
   `Phrasing` / `Causality`) — never sideways on each other. The only cross-slice
   dependency is `Orchestration` → every slice. An **architecture test** enforces
@@ -130,6 +131,10 @@ itself, under `src/Loopsmith.Core/Domain/`.
   ("Bolt Charge at max"); it holds no number but the step. A source's number
   (`+1 Bolt Charge`, `15s`, `+12% grenade energy`) is a fact shown with its
   outcome — never accumulated, and never compared to decide what happens.
+  The one exception is the build's stat line (ADRs D28), which is not game state:
+  `StatLoading` may add it up from the player's armor the way DIM does, and the
+  build check may compare it with an element's declared `statChecks` to choose a
+  warning or a note. Neither ever changes what a step fires.
 - **Add a named failure/`Severity` case only when the app branches on it** (to
   recover or take a different path), never merely to carry a message. IO whose only
   outcome is "show the user what went wrong" uses `Result<_, string>`; the acted-on

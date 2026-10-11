@@ -288,7 +288,6 @@ public static class BuildValidation
         }
     }
 
-    /// <summary>An element with no rules is a gap, unless its rules file says why it needs none (<c>inert</c>: damage only, outside the model).</summary>
     /// <summary>
     /// What an equipped element's stat checks say at the build's stats (Gambler's Dodge below 50 Melee): each check
     /// whose stat the build knows and whose range holds it, once per element. An unknown stat says nothing.
@@ -299,13 +298,17 @@ public static class BuildValidation
             .SelectMany(e => e.StatChecks)
             .SelectMany(check => build.Stats.ReadStat(check.Stat).Match(
                 known => IsInRange(check, known.Value.Value)
-                    ? new[] { new BuildIssue(check.Severity, check.Says.Replace("{value}", known.Value.Value.ToString(CultureInfo.InvariantCulture), StringComparison.Ordinal)) }
+                    ? new[] { new BuildIssue(ToSeverity(check.Severity), check.Says.Replace("{value}", known.Value.Value.ToString(CultureInfo.InvariantCulture), StringComparison.Ordinal)) }
                     : [],
                 _ => []));
 
     private static bool IsInRange(StatCheck check, int value) =>
-        value < check.Below && check.From.Match(from => value >= from.Value, _ => true);
+        value < check.Below.Value && check.From.Match(from => value >= from.Value.Value, _ => true);
 
+    private static Severity ToSeverity(StatCheckSeverity severity) =>
+        severity == StatCheckSeverity.Warning ? Severity.Warning : Severity.Info;
+
+    /// <summary>An element with no rules is a gap, unless its rules file says why it needs none (<c>inert</c>: damage only, outside the model).</summary>
     private static IEnumerable<BuildIssue> CheckInertElements(IEnumerable<BuildElement> elements) =>
         elements
             .DistinctBy(e => e.Id)

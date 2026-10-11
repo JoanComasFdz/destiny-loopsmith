@@ -100,7 +100,7 @@ else
     private Optional<BungieProfile> profile = Optional.None<BungieProfile>();
     private Optional<string> problem = Optional.None<string>();
     private Optional<string> applied = Optional.None<string>();
-    private ImmutableDictionary<ArmorSlot, string> picks = ImmutableDictionary<ArmorSlot, string>.Empty;
+    private ImmutableDictionary<ArmorSlot, ItemInstanceId> picks = ImmutableDictionary<ArmorSlot, ItemInstanceId>.Empty;
 
     /// <summary>The player's copies of each piece (one picked when they own several), what they add up to, and their characters' current stats.</summary>
     private RenderFragment RenderChoices(BungieProfile loaded) => __builder =>
@@ -119,14 +119,14 @@ else
                     }
                     else
                     {
-                        var picked = picks.TryGetValue(slot, out var instance) ? instance : choice.Copies[0].Armor.InstanceId;
+                        var picked = LoopDesigning.FindPickedCopy(choice, picks).Map(found => found.Armor.InstanceId);
                         @foreach (var copy in choice.Copies)
                         {
                             var id = copy.Armor.InstanceId;
-                            <label class="armor-copy" data-instance="@id">
+                            <label class="armor-copy" data-instance="@id.Value">
                                 @if (choice.Copies.Length > 1)
                                 {
-                                    <input type="radio" name="copy-@slot" checked="@(id == picked)" @onchange="() => Pick(slot, id)" />
+                                    <input type="radio" name="copy-@slot" checked="@(picked == Optional.Some(id))" @onchange="() => Pick(slot, id)" />
                                 }
                                 <span>
                                     @copy.Points.Match(points => StatsShaping.DescribeRoll(points.Value), _ => "stats Loopsmith can't read")
@@ -176,8 +176,9 @@ else
 
     private void StartEditing()
     {
-        inputs = StatsShaping.ToInputs(Build.Build.Stats);                                       // pure
-        problems = [];                                                                           // pure
+        var typed = StatsShaping.ToInputs(Build.Build.Stats);                                    // pure
+        inputs = typed;                                                                          // impure (component state)
+        problems = [];                                                                           // impure (component state)
         editing = true;                                                                          // impure (component state)
     }
 
@@ -189,8 +190,9 @@ else
 
     private async Task SaveAsync()
     {
-        var read = StatsShaping.ReadInputs(inputs);                                              // pure
-        problems = read.Match(_ => ImmutableArray<string>.Empty, wrong => wrong.Failure);        // impure (component state)
+        var read = LoopDesigning.ReadStatInputs(inputs);                                         // pure
+        var wrong = read.Match(_ => ImmutableArray<string>.Empty, error => error.Failure);       // pure
+        problems = wrong;                                                                        // impure (component state)
         if (read is not Result<StatLine, ImmutableArray<string>>.Ok typed)
         {
             return;
@@ -206,16 +208,18 @@ else
         problem = Optional.None<string>();                                                       // impure (component state)
         applied = Optional.None<string>();                                                       // impure (component state)
         var loaded = await Account.LoadProfileAsync();                                           // impure (window, network)
+        var read = loaded.Match(ok => Optional.Some(ok.Value), _ => profile);                    // pure
+        var refused = loaded.Match(_ => Optional.None<string>(), error => Optional.Some(error.Failure)); // pure
         waiting = false;                                                                         // impure (component state)
-        profile = loaded.Match(ok => Optional.Some(ok.Value), _ => profile);                     // impure (component state)
-        problem = loaded.Match(_ => Optional.None<string>(), error => Optional.Some(error.Failure)); // impure (component state)
-        picks = ImmutableDictionary<ArmorSlot, string>.Empty;                                    // impure (component state)
+        profile = read;                                                                          // impure (component state)
+        problem = refused;                                                                       // impure (component state)
+        picks = ImmutableDictionary<ArmorSlot, ItemInstanceId>.Empty;                            // impure (component state)
     }
 
     private async Task CancelLoginAsync() =>
         await Account.CancelAsync();                                                             // impure
 
-    private void Pick(ArmorSlot slot, string instance) =>
+    private void Pick(ArmorSlot slot, ItemInstanceId instance) =>
         picks = picks.SetItem(slot, instance);                                                   // impure (component state)
 
     private async Task UseAsync(StatLine stats, string done)

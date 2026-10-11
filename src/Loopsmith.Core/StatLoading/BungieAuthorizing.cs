@@ -35,7 +35,7 @@ public static class BungieAuthorizing
     public static Result<string, string> ReadCallback(string answerJson, string sentState) =>
         BungieJsonReading.ParseDocument(answerJson).Bind(answer => FindRefusal(answer).Match(
             why => Fail(why.Value),
-            _ => answer.ReadString("state").Match(state => state.Value, _ => "") == sentState
+            _ => answer.ReadString("state") == Optional.Some(sentState)
                 ? answer.ReadString("code").ToResult(() => "Bungie's login came back without a code. Try again.")
                 : Fail("Bungie's answer isn't for this login. Try again.")));
 
