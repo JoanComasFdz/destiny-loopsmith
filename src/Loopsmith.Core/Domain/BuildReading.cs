@@ -2,7 +2,7 @@ using Loopsmith.Core.Functional;
 
 namespace Loopsmith.Core.Domain;
 
-/// <summary>Pure reads of a build that both kernel modules and the slices share.</summary>
+/// <summary>Pure reads of a build the slices share; the kernel's matching and phrasing take the result as a parameter.</summary>
 public static class BuildReading
 {
     /// <summary>
