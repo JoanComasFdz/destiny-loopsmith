@@ -134,6 +134,14 @@ public readonly partial struct PlugCategoryId
         value.Length > 0 && !value.Any(char.IsWhiteSpace) ? Validation.Ok : Validation.Invalid("A plug category is one word, not empty");
 }
 
+/// <summary>A copy's gear tier, 1 to 5 (Bungie's <c>gearTier</c>; DIM's diamonds).</summary>
+[ValueObject<int>]
+public readonly partial struct GearTier
+{
+    private static Validation Validate(int value) =>
+        value is >= 1 and <= 5 ? Validation.Ok : Validation.Invalid("A gear tier is 1 to 5");
+}
+
 /// <summary>How many pieces of an armor set: what a set perk needs, or what a loadout wears (at least one).</summary>
 [ValueObject<int>]
 public readonly partial struct PieceCount

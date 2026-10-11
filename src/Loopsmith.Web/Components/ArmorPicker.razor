@@ -19,8 +19,9 @@
                 {
                     var instance = option.Instance;
                     <button type="button" role="option" aria-selected="@(focused == Optional.Some(instance) ? "true" : "false")"
-                            class="icon-tile tappable item @DescribeTier(option.Tile) @(option.Worn ? "worn" : "") @(focused == Optional.Some(instance) ? "focused" : "")"
-                            title="@option.Tile.Name — @option.RollText" aria-label="@option.Tile.Name" data-instance="@instance.Value"
+                            class="icon-tile tappable item @DescribeTier(option.Tile) @(option.Worn ? "worn" : "") @(focused == Optional.Some(instance) ? "focused" : "") @(option.Marks.Masterworked ? "masterwork" : "")"
+                            data-tier="@LoadoutShaping.ToTierText(option.Marks)" data-masterwork="@(option.Marks.Masterworked ? "true" : "false")"
+                            title="@LoadoutShaping.AddMarks($"{option.Tile.Name} — {option.RollText}", option.Marks)" aria-label="@option.Tile.Name" data-instance="@instance.Value"
                             @onpointerenter="e => Hover(instance, e)" @onclick="() => ChooseAsync(instance)">
                         @if (option.Tile.Icon is Optional<string>.Some icon)
                         {
@@ -30,6 +31,7 @@
                         {
                             <span class="icon-initials">@(option.Tile.Name.Length > 0 ? option.Tile.Name[..1] : "?")</span>
                         }
+                        <TileOverlays Marks="option.Marks" />
                         @if (option.Worn)
                         {
                             <span class="armor-worn-mark" aria-hidden="true">✓</span>
@@ -42,6 +44,10 @@
                 var piece = details.Value;
                 <div class="armor-option-details" data-testid="armor-option-details">
                     <div class="armor-option-name">@piece.Tile.Name@(piece.Set is Optional<string>.Some set ? $" · {set.Value} set" : "")</div>
+                    @if (LoadoutShaping.AddMarks("", piece.Marks) is { Length: > 0 } marked)
+                    {
+                        <div class="armor-option-marks" data-testid="armor-option-marks">@marked</div>
+                    }
                     @if (piece.Roll is Optional<ImmutableArray<StatBar>>.Some roll)
                     {
                         <StatBars Bars="roll.Value" Class="compact" TestId="armor-option-roll" />

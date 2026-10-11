@@ -65,17 +65,28 @@ public partial record PerkSquare
     partial record Pickable(int Column, Optional<PickedPerk> Perk, ImmutableArray<PerkOption> Options);
 }
 
+/// <summary>A champion breaker on a weapon's square (Disruption): its name and icon, a bungie.net address.</summary>
+public sealed record BreakerBadge(string Name, string Icon);
+
+/// <summary>
+/// What DIM draws on a copy's square: its gear tier (1–5) with the overlay of its diamonds (Bungie's; tier 1's draws
+/// none), whether it is masterworked with the glow for it (and a gold border), and a weapon's champion breaker. The tier
+/// and masterwork are the player's copy's, after their Bungie login; a weapon's own breaker (an exotic's) shows before.
+/// </summary>
+public sealed record TileMarks(Optional<int> Tier, Optional<string> TierOverlay, bool Masterworked, Optional<string> MasterworkOverlay, Optional<BreakerBadge> Breaker);
+
 /// <summary>An exotic's catalyst square: the catalyst item's tile and whether the build turns it on.</summary>
 public sealed record CatalystSquare(IconTile Tile, bool On);
 
 /// <summary>
 /// A weapon: where it is in the build (<see cref="Index"/>, what a pick names), its tile, its light.gg page, slot,
-/// archetype, damage type (and that type's icon), its perk squares — one per trait column the excerpt gives, then the
-/// perks the build names in none of them — and an exotic's catalyst.
+/// archetype, damage type (and that type's icon), its marks (tier, masterwork, breaker), its perk squares — one per
+/// trait column the excerpt gives, then the perks the build names in none of them — and an exotic's catalyst.
 /// </summary>
 public sealed record WeaponView(
     int Index,
     IconTile Weapon,
+    TileMarks Marks,
     Optional<string> Page,
     WeaponSlot Slot,
     Optional<string> Archetype,
@@ -99,8 +110,8 @@ public sealed record PerkPick(int Weapon, int Column, Optional<ItemHash> Perk);
 /// <summary>A piece picked from the player's armor for a slot of the build: the copy, by its instance id.</summary>
 public sealed record ArmorPick(ArmorSlot Slot, ItemInstanceId Instance);
 
-/// <summary>An armor slot: the piece in it (when the loadout names one) and the mods that only fit that slot, one tile each.</summary>
-public sealed record ArmorView(ArmorSlot Slot, Optional<IconTile> Piece, ImmutableArray<IconTile> Mods);
+/// <summary>An armor slot: the piece in it (when the loadout names one), its copy's marks and the mods that only fit that slot, one tile each.</summary>
+public sealed record ArmorView(ArmorSlot Slot, Optional<IconTile> Piece, TileMarks Marks, ImmutableArray<IconTile> Mods);
 
 /// <summary>
 /// The artifact block: the season's artifact the perks are from (when the manifest excerpt has it: tapping it shows
@@ -122,7 +133,8 @@ public sealed record LoadoutView(
     ImmutableArray<IconTile> SetBonuses);
 
 /// <summary>
-/// Pure: a validated build → its DIM-style view: where each tile goes. What an element, a hash or a subclass is comes from
+/// Pure: a validated build (and the player's profile, after their Bungie login: the marks of their copies) → its
+/// DIM-style view: where each tile goes. What an element, a hash or a subclass is comes from
 /// the kernel (<see cref="ManifestReading"/>, over the manifest excerpt <c>rules/manifest.yaml</c>); what the excerpt
 /// doesn't know has no icon and keeps its catalog name (or "?"). Left-out items (a DIM loadout's,
 /// <see cref="Build.LeftOut"/>) sit where DIM would show them, marked as not in the rules: a mod under the armor piece of
@@ -137,7 +149,7 @@ public static class LoadoutShaping
 
     private sealed record LeftOutEntry(LoadoutPart Part, Optional<ManifestItem> Item, ItemHash Hash, LeftOutReason Reason);
 
-    public static LoadoutView ShapeLoadout(ValidatedBuild build)
+    public static LoadoutView ShapeLoadout(ValidatedBuild build, Optional<BungieProfile> profile)
     {
         var b = build.Build;
         var catalog = build.Catalog;
@@ -169,10 +181,12 @@ public static class LoadoutShaping
         return new LoadoutView(
             subclass,
             DescribeArtifact(build, [.. leftOut.Where(entry => entry.Part == LoadoutPart.ArtifactPerk)]),
-            [.. b.Weapons.Select((weapon, index) => DescribeWeapon(build, weapon, index)).OrderBy(view => view.Slot)],
+            [.. b.Weapons.Select((weapon, index) => DescribeWeapon(build, profile, weapon, index)).OrderBy(view => view.Slot)],
             [
                 .. ArmorSlots
-                    .Select(slot => new ArmorView(
+                    .Select(slot => DescribeArmorRow(
+                        build,
+                        profile,
                         slot,
                         pieces.Where(piece => piece.Slot == Optional.Some(slot)).Select(piece => Optional.Some(piece.Tile)).FindFirstSome(),
                         [.. mods.Where(mod => mod.Slot == Optional.Some(slot)).Select(mod => mod.Tile)]))
@@ -183,11 +197,19 @@ public static class LoadoutShaping
             GroupCopies(LoopDesigning.ListLooseSetBonuses(build).Select(id => DescribeElement(catalog, id))));
     }
 
+    /// <summary>An armor slot's row: its piece, with the marks of the player's copy of it (after their login), and its mods.</summary>
+    private static ArmorView DescribeArmorRow(ValidatedBuild build, Optional<BungieProfile> profile, ArmorSlot slot, Optional<IconTile> piece, ImmutableArray<IconTile> mods) =>
+        new(
+            slot,
+            piece,
+            DescribeMarks(build.Catalog, piece.Bind(tile => tile.Tier), profile.Bind(owned => LoopDesigning.FindArmorMarks(build, owned, slot)), Optional.None<BreakerType>()),
+            mods);
+
     /// <summary>The armor rows to show: the slots with a piece or a mod; every slot when the player can pick pieces (after a login).</summary>
     public static ImmutableArray<ArmorView> ListArmorRows(LoadoutView view, bool everySlot) =>
         everySlot
             ? [.. ArmorSlots.Select(slot => view.Armor.Where(row => row.Slot == slot).Select(Optional.Some).FindFirstSome()
-                .UnwrapOr(new ArmorView(slot, Optional.None<IconTile>(), [])))]
+                .UnwrapOr(new ArmorView(slot, Optional.None<IconTile>(), NoMarks, [])))]
             : view.Armor;
 
     /// <summary>An armor piece of the player's as a square: its name, icon and rarity (it opens nothing: the picker shows its details).</summary>
@@ -217,6 +239,40 @@ public static class LoadoutShaping
             .Select(item => item.Bind(found => found.Kind is ManifestKind.Armor armor && armor.Slot == slot ? Optional.Some(found) : Optional.None<ManifestItem>()))
             .FindFirstSome();
     }
+
+    /// <summary>A square with no marks: a copy Loopsmith doesn't know (before the login, or someone else's).</summary>
+    public static readonly TileMarks NoMarks = new(Optional.None<int>(), Optional.None<string>(), false, Optional.None<string>(), Optional.None<BreakerBadge>());
+
+    /// <summary>
+    /// A copy's marks, from Core's (its tier, masterwork; none: not the player's copy) and its breaker: the overlays are
+    /// the excerpt's, an exotic's masterwork glow its own (<paramref name="tier"/>: the item's rarity).
+    /// </summary>
+    public static TileMarks DescribeMarks(RuleCatalog catalog, Optional<ItemTier> tier, Optional<GearMarks> marks, Optional<BreakerType> breaker)
+    {
+        var overlays = catalog.Manifest.Overlays;
+        var gearTier = marks.Bind(found => found.Tier);
+        var masterworked = marks.Match(found => found.Value.Masterworked, _ => false);
+        return new TileMarks(
+            gearTier.Map(found => found.Value),
+            gearTier.Bind(overlays.FindTierOverlay).Map(ToIconUrl),
+            masterworked,
+            masterworked ? overlays.FindMasterworkOverlay(tier).Map(ToIconUrl) : Optional.None<string>(),
+            breaker.Map(found => new BreakerBadge(found.Name, ToIconUrl(found.Icon))));
+    }
+
+    /// <summary>A copy's tier as its square's <c>data-tier</c> says it ("4"); empty when Loopsmith doesn't know it.</summary>
+    public static string ToTierText(TileMarks marks) =>
+        marks.Tier.Match(tier => tier.Value.ToString(CultureInfo.InvariantCulture), _ => "");
+
+    /// <summary>A square's tooltip with its marks after it: "Thunderlord — … · Tier 4 · Masterworked · Disruption".</summary>
+    public static string AddMarks(string tooltip, TileMarks marks) =>
+        string.Join(" · ", new[]
+        {
+            tooltip,
+            marks.Tier.Match(tier => $"Tier {tier.Value}", _ => ""),
+            marks.Masterworked ? "Masterworked" : "",
+            marks.Breaker.Match(breaker => breaker.Value.Name, _ => ""),
+        }.Where(part => part.Length > 0));
 
     /// <summary>The bungie.net address of a manifest icon path.</summary>
     public static string ToIconUrl(string path) => IconHost + path;
@@ -287,7 +343,7 @@ public static class LoadoutShaping
         where TKind : ManifestKind =>
         plugs.Where(entry => IsKind<TKind>(entry.Item)).Select(entry => DescribeLeftOut(catalog, entry));
 
-    private static WeaponView DescribeWeapon(ValidatedBuild build, WeaponLoadout weapon, int index)
+    private static WeaponView DescribeWeapon(ValidatedBuild build, Optional<BungieProfile> profile, WeaponLoadout weapon, int index)
     {
         var catalog = build.Catalog;
         var item = weapon.Hash.Bind(hash => catalog.Manifest.FindItem(hash));
@@ -299,9 +355,11 @@ public static class LoadoutShaping
             _ => new IconTile(weapon.Name, Optional.None<string>(), weapon.Type.ToAffinity(), Optional.None<ItemTier>(), true, Optional.None<string>(), 1, details));
         var damageIcon = catalog.Manifest.DamageTypeIcons.TryGetValue(weapon.Type, out var icon) ? Optional.Some(ToIconUrl(icon)) : Optional.None<string>();
         var slots = LoopDesigning.ListPerkSlots(build, weapon);
+        var marks = profile.Bind(owned => LoopDesigning.FindWeaponMarks(owned, weapon));
         return new WeaponView(
             index,
             tile,
+            DescribeMarks(catalog, tile.Tier, marks, LoopDesigning.FindWeaponBreaker(build, weapon, marks)),
             weapon.Hash.Bind(hash => ToPageUrl(catalog, hash)),
             weapon.Slot,
             weapon.Archetype,

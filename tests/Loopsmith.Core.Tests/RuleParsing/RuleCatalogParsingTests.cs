@@ -659,6 +659,48 @@ public sealed class RuleCatalogParsingTests
     }
 
     [Fact]
+    public void The_manifest_excerpt_gives_the_breaker_types_the_overlays_of_an_icon_and_a_weapons_own_breaker()
+    {
+        var manifest = new SourceText("manifest.yaml", """
+            breakerTypes:
+              - { hash: 2611060930, name: "Disruption", icon: /common/disruption.png }
+            itemConstants:
+              tierOverlays: [/img/tier1.png, /img/tier2.png, /img/tier3.png, /img/tier4.png, /img/tier5.png]
+              masterworkOverlay: /img/mw.png
+              masterworkExoticOverlay: /img/mw-exotic.png
+            items:
+              - { hash: 3325463374, name: "Thunderlord", kind: weapon, type: "Machine Gun", tier: exotic, slot: power, damageType: arc, breaker: 2611060930 }
+              - { hash: 4019651319, name: "Festival Flight", kind: weapon, type: "Grenade Launcher", slot: kinetic, damageType: strand }
+            """);
+
+        var excerpt = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, manifest])).Manifest;
+        var bare = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary])).Manifest;
+
+        Assert.Equal(Optional.Some(new BreakerType(ItemHash.From(2611060930u), "Disruption", "/common/disruption.png")), excerpt.FindBreakerType(ItemHash.From(2611060930u)));
+        Assert.Equal(Optional.Some(ItemHash.From(2611060930u)), Assert.IsType<ManifestKind.Weapon>(excerpt.Items[ItemHash.From(3325463374u)].Kind).Breaker);
+        Assert.False(Assert.IsType<ManifestKind.Weapon>(excerpt.Items[ItemHash.From(4019651319u)].Kind).Breaker.IsSome());
+        Assert.Equal(Optional.Some("/img/tier3.png"), excerpt.Overlays.FindTierOverlay(GearTier.From(3)));
+        Assert.Equal((Optional.Some("/img/mw.png"), Optional.Some("/img/mw-exotic.png")), (excerpt.Overlays.Masterwork, excerpt.Overlays.ExoticMasterwork));
+        Assert.Equal((0, 0, false), (bare.BreakerTypes.Count, bare.Overlays.Tiers.Length, bare.Overlays.Masterwork.IsSome()));
+    }
+
+    [Fact]
+    public void A_manifest_breaker_belongs_to_a_weapon_and_a_breaker_type_has_a_name_and_an_icon()
+    {
+        var message = ParseInvalidCatalog(Glossary, new SourceText("manifest.yaml", """
+            breakerTypes:
+              - { hash: 485622768, name: "Shield Piercing" }
+            itemConstants: { tierOverlays: [/img/tier1.png], glow: /img/glow.png }
+            items:
+              - { hash: 1053737370, name: "Shinobu's Vow", kind: armor, type: "Gauntlets", slot: arms, breaker: 2611060930 }
+            """));
+
+        Assert.Contains("is missing 'icon'", message);
+        Assert.Contains("glow", message);
+        Assert.Contains("breaker is only allowed on a weapon, not on a armor", message);
+    }
+
+    [Fact]
     public void A_manifest_slot_belongs_to_weapons_armor_and_armor_mods_and_a_damage_type_to_weapons()
     {
         var message = ParseInvalidCatalog(Glossary, new SourceText("manifest.yaml", """

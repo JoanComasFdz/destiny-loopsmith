@@ -92,11 +92,17 @@ Bungie's text, and a DIM link's weapons and armor sets become the build's:
 version: "244213.26.06.29.2000-1-bnet.65864"
 damageTypes:
   - { type: strand, icon: /common/destiny2_content/icons/DestinyDamageTypeDefinition_….png }
+breakerTypes:
+  - { hash: 2611060930, name: "Disruption", icon: /common/destiny2_content/icons/DestinyBreakerTypeDefinition_….png }
+itemConstants:
+  tierOverlays: [/img/destiny_content/items/inventory-item-tier1.png, …, /img/destiny_content/items/inventory-item-tier5.png]
+  masterworkOverlay: /img/destiny_content/items/masterwork-overlay.png
+  masterworkExoticOverlay: /img/destiny_content/items/masterwork-overlay-exotic.png
 armorSets:
   - { hash: 499993704, name: "Luminopotent", perks: [{ pieces: 2, perk: 2769443639 }, { pieces: 4, perk: 2769443638 }] }
 items:
   - { hash: 4019651319, name: "Festival Flight", kind: weapon, type: "Grenade Launcher", tier: legendary, slot: kinetic, damageType: strand, traits: [[1017229899, …, 923806249, …], [1546142478, …, 243981275, …]], intrinsic: 1294026524, icon: /common/…/e3d2….jpg }
-  - { hash: 3325463374, name: "Thunderlord", kind: weapon, type: "Machine Gun", tier: exotic, slot: power, damageType: arc, traits: [[1419069769], [2779035018]], intrinsic: 4148158229, catalyst: 1550063955, icon: … }
+  - { hash: 3325463374, name: "Thunderlord", kind: weapon, type: "Machine Gun", tier: exotic, slot: power, damageType: arc, traits: [[1419069769], [2779035018]], intrinsic: 4148158229, catalyst: 1550063955, breaker: 2611060930, icon: … }
   - { hash: 1550063955, name: "Thunderlord Catalyst", kind: catalyst, tier: exotic, perks: [818260022], description: "Upgrades this weapon to a Masterwork. …", icon: … }
   - { hash: 818260022, name: "Return Stroke", kind: perk, description: "Causing a lightning strike with this weapon partially reloads the magazine from reserves.", icon: … }
   - { hash: 593554567, name: "Luminopotent Mask", kind: armor, type: "Helmet", tier: legendary, slot: helmet, set: 499993704, class: hunter, icon: … }
@@ -118,11 +124,17 @@ items:
   versions included (the manifest's plug set). A column that doesn't roll (an exotic's) has its one perk.
   Every perk is written as an item too (`kind: weaponPerk`, `type: "Trait"` or `"Enhanced Trait"`); a column
   needs at least one hash. A weapon's `intrinsic` is its frame (an exotic's own perk), its `catalyst` an
-  exotic's catalyst item (whose `perks` are what it grants); armor's `intrinsic` is an exotic's perk, its
+  exotic's catalyst item (whose `perks` are what it grants), its `breaker` the champion it breaks of its own (an
+  exotic's: a breaker type's hash; none for most weapons); armor's `intrinsic` is an exotic's perk, its
   `set` the armor set it belongs to and its `class` the class that wears it (`titan|hunter|warlock`; none: any
   class — the armor picker lists a build's class's pieces). These keys on anything else are an error (`slot is
   only allowed on a weapon, armor or an armor mod, not on a grenade`; `set is only allowed on armor, not on a
   weapon`; `perks` belongs to a catalyst or an artifact).
+* `breakerTypes`: the three champion breakers (Shield Piercing, Disruption, Stagger), each with its name and icon: a
+  weapon's breaker shows under its square, as DIM shows it. `itemConstants`: the overlays Bungie draws on an item's
+  icon (the manifest's inventory item constants): `tierOverlays` the diamonds of gear tiers 1 to 5 in order (tier
+  1's draws none), `masterworkOverlay` the masterwork glow (`masterworkExoticOverlay` an exotic's). A player's copy
+  shows them after their Bungie login ([loop-format.md](loop-format.md#stats)). Both are optional.
 * `armorSets`: each set's name and the perk each piece count grants. A build's set bonus element gives the
   set perk's hash (`luminopotent-2pc` → `hash: 2769443639`), so a DIM loadout's pieces equip it.
 * `tier`: `basic|common|rare|legendary|exotic`. `icon` is a bungie.net path (the app prefixes
@@ -514,8 +526,11 @@ stats: { weapons: 47, class: 104, grenade: 145, super: 27, melee: 79 }   # any s
   `aspects`, `fragments`, `armorSetBonuses`, `armorMods`, `artifactPerks`, `weapons` (default empty).
 * A weapon: `slot` (`kinetic|energy|power`), `name` and `type` (`kinetic|arc|solar|void|stasis|strand`)
   are required; `archetype` (a kebab-case word), `perks` (element ids), `hash` (its manifest item: its icon,
-  its trait columns, its intrinsic and catalyst), `roll` and `catalyst` are optional. The name labels its
+  its trait columns, its intrinsic and catalyst), `roll`, `catalyst` and `instance` are optional. The name labels its
   actions ("Festival Flight (hit 5)").
+* `instance`: the copy the build wears, by Bungie's instance id (a dim.gg share's, quoted: `instance:
+  "6917529810172542011"`); after the player's Bungie login its tier and masterwork show on the weapon's square when
+  it is theirs ([loop-format.md](loop-format.md#stats)).
 * `catalyst: true` turns an exotic's catalyst on (default `false`; a DIM link doesn't say, so its build starts
   off): the catalyst element (`kind: catalyst`, by the catalyst item's hash) is equipped only then. The weapon's
   intrinsic perk is equipped by hash, like its columns' perks.

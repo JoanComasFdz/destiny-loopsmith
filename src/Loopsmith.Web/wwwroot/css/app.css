@@ -22,6 +22,7 @@
     --bad: #ff6b6b;
     --ok: #4ee28a;
     --exotic: #ceae33;
+    --masterwork: #eade8b;   /* DIM's masterwork border */
     --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
     --radius: 8px;
@@ -843,6 +844,10 @@ button.hud-chip:hover, button.hud-chip:focus-visible { background: color-mix(in 
 .icon-tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .icon-tile.legendary { border-color: #8a5bb0; }
 .icon-tile.exotic { border-color: var(--exotic); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--exotic) 45%, transparent); }
+/* a copy's marks (after the Bungie login), as DIM draws them: Bungie's overlays over the icon, a masterwork's gold border */
+.icon-tile.masterwork { border-color: var(--masterwork); }
+.tile-overlay { position: absolute; inset: 0; background-size: contain; background-position: center; background-repeat: no-repeat; pointer-events: none; }
+.tile-overlay.masterwork-glow { opacity: .72; }
 .icon-tile.out { opacity: .55; filter: grayscale(.6); border-style: dashed; }
 .icon-tile.out:hover { opacity: .9; }
 .icon-tile.empty { border-style: dashed; color: var(--dim); font-size: 9px; text-align: center; background: transparent; }
@@ -853,9 +858,13 @@ button.hud-chip:hover, button.hud-chip:focus-visible { background: color-mix(in 
 .icon-tile.aspect, .icon-tile.fragment { border-color: color-mix(in srgb, var(--aff) 55%, rgba(255, 255, 255, .2)); }
 .weapon-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .weapon-line { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.weapon-icon { position: relative; flex: none; }
+.weapon-icon { position: relative; flex: none; display: flex; flex-direction: column; width: calc(var(--tile) * 1.2); }
 .weapon-icon .icon-tile { width: calc(var(--tile) * 1.2); height: calc(var(--tile) * 1.2); }
-.damage-icon { position: absolute; right: -6px; bottom: -6px; width: 18px; height: 18px; }
+/* DIM's polaroid: under a weapon's square, its breaker and element (gold when masterworked) */
+.tile-badge { display: flex; align-items: center; justify-content: flex-end; gap: 2px; height: 16px; padding: 0 2px; margin-top: -1px; background: #0d1017; border: 1px solid rgba(255, 255, 255, .28); border-top: 0; box-sizing: border-box; }
+.tile-badge.masterwork { background: color-mix(in srgb, var(--masterwork) 30%, #0d1017); border-color: var(--masterwork); }
+.tile-badge img { width: 13px; height: 13px; display: block; }
+.tile-badge:empty { display: none; }
 .weapon-text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
 .weapon-line-name { font-size: 13px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .weapon-line-sub { font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -893,6 +902,7 @@ button.hud-chip:hover, button.hud-chip:focus-visible { background: color-mix(in 
 .armor-worn-mark { position: absolute; right: 1px; top: 0; padding: 0 3px; font-size: 11px; font-weight: 800; color: #fff; background: rgba(0, 0, 0, .7); }
 .armor-option-details { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel-2); font-size: 13px; overflow-wrap: anywhere; }
 .armor-option-name { font-weight: 650; }
+.armor-option-marks { font-size: 12px; color: var(--masterwork); }
 .armor-picker-hint, .armor-picker-note { margin: 0; font-size: 12px; }
 .icon-grid.mods { grid-template-columns: repeat(2, var(--mod-tile)); }
 .icon-grid.mods .icon-tile, .general-mods .icon-tile { width: var(--mod-tile); height: var(--mod-tile); }

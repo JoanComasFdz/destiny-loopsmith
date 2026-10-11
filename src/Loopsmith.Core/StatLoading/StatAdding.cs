@@ -132,6 +132,29 @@ public static class StatAdding
         return new ArmorOptions(slot, options, notes);
     }
 
+    /// <summary>
+    /// The player's copy the build wears in a slot, as DIM resolves a loadout's item: the one the build names (a dim.gg
+    /// share's, or picked) when it is in their account, else their copy of that piece with the most points (the copy the
+    /// stats add up and the picker ticks: <see cref="FindWornCopy"/>); none when they own no copy, or the build names no piece.
+    /// </summary>
+    public static Optional<OwnedArmor> FindWornArmor(RuleCatalog catalog, Build build, BungieProfile profile, ArmorSlot slot) =>
+        ListArmorPieces(catalog, build).Where(piece => piece.Slot == slot).Select(Optional.Some).FindFirstSome()
+            .Bind(piece => FindWornCopy(new PieceChoice(piece, ListCopies(catalog, piece, profile)), build.ArmorCopies))
+            .Map(copy => copy.Armor);
+
+    /// <summary>
+    /// The player's copy of a build's weapon, as DIM resolves a loadout's item: the one the build names (a dim.gg share's)
+    /// when it is in their account, else their copy of that weapon with the highest tier; none when they own none.
+    /// </summary>
+    public static Optional<OwnedWeapon> FindWornWeapon(BungieProfile profile, WeaponLoadout weapon)
+    {
+        var copies = profile.Weapons.Where(owned => weapon.Hash == Optional.Some(owned.Hash)).ToImmutableArray();
+        return profile.Weapons.Where(owned => weapon.Instance == Optional.Some(owned.InstanceId))
+            .Concat(copies.OrderByDescending(owned => owned.Marks.Tier.Match(tier => tier.Value.Value, _ => 0)))
+            .Select(Optional.Some)
+            .FindFirstSome();
+    }
+
     /// <summary>The player's copy with this instance id, or why there is none.</summary>
     public static Result<OwnedArmor, string> FindArmor(BungieProfile profile, ItemInstanceId instance) =>
         profile.Armor.Where(armor => armor.InstanceId == instance).Select(Optional.Some).FindFirstSome()

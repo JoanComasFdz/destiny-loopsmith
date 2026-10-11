@@ -2,9 +2,11 @@
    artifact perks; the weapons (an exotic's catalyst after its perks); each armor piece with the mods of its slot; the
    general mods; the armor sets with their 2- and 4-piece perks. Icons are Bungie's (from the manifest excerpt); a square
    without one shows its initials. What the rules don't know is dimmed. Tapping a square opens its details (Bungie's
-   text and Loopsmith's rules); legendary armor and weapons open none, their perks and mods do. *@
+   text and Loopsmith's rules); legendary armor and weapons open none, their perks and mods do. After the player's Bungie
+   login, the copies the build wears that are theirs show their marks as DIM does: the tier's diamonds, a masterwork's
+   glow and gold border; a weapon shows its breaker and element under its square. *@
 @{
-    var view = LoadoutShaping.ShapeLoadout(Build);
+    var view = LoadoutShaping.ShapeLoadout(Build, Profile);
 }
 <div class="loadout @(Compact ? "compact" : "")" data-testid="loadout">
     <div class="loadout-row">
@@ -64,11 +66,17 @@
                 {
                     <li class="weapon-line" data-slot="@weapon.Slot" title="@DescribeWeapon(weapon)">
                         <div class="weapon-icon">
-                            @RenderTile(weapon.Weapon, "item")
-                            @if (weapon.DamageIcon is Optional<string>.Some damage)
-                            {
-                                <img class="damage-icon" src="@damage.Value" alt="@weapon.Type" loading="lazy" />
-                            }
+                            @RenderMarkedTile(weapon.Weapon, "item", weapon.Marks)
+                            <span class="tile-badge @(weapon.Marks.Masterworked ? "masterwork" : "")" data-testid="weapon-badge">
+                                @if (weapon.Marks.Breaker is Optional<BreakerBadge>.Some breaker)
+                                {
+                                    <img class="breaker-icon" src="@breaker.Value.Icon" alt="@breaker.Value.Name" title="@breaker.Value.Name" loading="lazy" />
+                                }
+                                @if (weapon.DamageIcon is Optional<string>.Some damage)
+                                {
+                                    <img class="damage-icon" src="@damage.Value" alt="@weapon.Type" title="@weapon.Type" loading="lazy" />
+                                }
+                            </span>
                         </div>
                         <div class="weapon-text">
                             @if (weapon.Page is Optional<string>.Some weaponPage)
@@ -159,7 +167,7 @@
                     <div class="armor-piece" data-slot="@slot">
                         @if (piece.Piece is Optional<IconTile>.Some item)
                         {
-                            @RenderTile(item.Value, "item")
+                            @RenderMarkedTile(item.Value, "item", piece.Marks)
                         }
                         else
                         {
@@ -363,20 +371,28 @@
         string.Join(" · ", new[] { option.Type.UnwrapOr(""), option.Tile.InRules ? "in the rules" : "" }.Where(part => part.Length > 0));
 
     /// <summary>A square: a button that opens its details when it has some (and <paramref name="tappable"/>), else a plain square.</summary>
-    private RenderFragment RenderTile(IconTile tile, string kind, bool tappable = true) => __builder =>
+    private RenderFragment RenderTile(IconTile tile, string kind, bool tappable = true) =>
+        RenderMarkedTile(tile, kind, LoadoutShaping.NoMarks, tappable);
+
+    /// <summary>A copy's square, with its marks drawn on it (TileMarks: the tier's diamonds, a masterwork's glow and border).</summary>
+    private RenderFragment RenderMarkedTile(IconTile tile, string kind, TileMarks marks, bool tappable = true) => __builder =>
     {
         @if (tappable && tile.Details is Optional<ItemDetails>.Some tileDetails)
         {
-            <button type="button" class="icon-tile tappable @kind @ToneStyling.ToAffinityClass(tile.Affinity) @DescribeTier(tile) @(tile.InRules ? "" : "out")"
-                    title="@DescribeTooltip(tile)" aria-label="@tile.Name" aria-haspopup="dialog" @onclick="() => OpenDetails(tileDetails.Value)">
+            <button type="button" class="icon-tile tappable @kind @ToneStyling.ToAffinityClass(tile.Affinity) @DescribeTier(tile) @(tile.InRules ? "" : "out") @(marks.Masterworked ? "masterwork" : "")"
+                    data-tier="@LoadoutShaping.ToTierText(marks)" data-masterwork="@(marks.Masterworked ? "true" : "false")"
+                    title="@LoadoutShaping.AddMarks(DescribeTooltip(tile), marks)" aria-label="@tile.Name" aria-haspopup="dialog" @onclick="() => OpenDetails(tileDetails.Value)">
                 @RenderTileFace(tile)
+                <TileOverlays Marks="marks" />
             </button>
         }
         else
         {
-            <span class="icon-tile @kind @ToneStyling.ToAffinityClass(tile.Affinity) @DescribeTier(tile) @(tile.InRules ? "" : "out")"
-                  title="@DescribeTooltip(tile)" aria-label="@tile.Name">
+            <span class="icon-tile @kind @ToneStyling.ToAffinityClass(tile.Affinity) @DescribeTier(tile) @(tile.InRules ? "" : "out") @(marks.Masterworked ? "masterwork" : "")"
+                  data-tier="@LoadoutShaping.ToTierText(marks)" data-masterwork="@(marks.Masterworked ? "true" : "false")"
+                  title="@LoadoutShaping.AddMarks(DescribeTooltip(tile), marks)" aria-label="@tile.Name">
                 @RenderTileFace(tile)
+                <TileOverlays Marks="marks" />
             </span>
         }
     };
@@ -405,7 +421,9 @@
         + tile.Description.Match(description => $" — {description.Value}", _ => "");
 
     private static string DescribeWeapon(WeaponView weapon) =>
-        $"{weapon.Weapon.Name} — {weapon.Slot.DescribeWeaponSlot()} · {weapon.Type}{weapon.Archetype.Match(archetype => $" · {DomainPhrasing.DescribeArchetype(archetype.Value)}", _ => "")}";
+        LoadoutShaping.AddMarks(
+            $"{weapon.Weapon.Name} — {weapon.Slot.DescribeWeaponSlot()} · {weapon.Type}{weapon.Archetype.Match(archetype => $" · {DomainPhrasing.DescribeArchetype(archetype.Value)}", _ => "")}",
+            weapon.Marks);
 
     private const string MissingPerk = "Perk not picked: a DIM link carries the weapon, not its roll. Pick it in the designer.";
 

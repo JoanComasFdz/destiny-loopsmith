@@ -234,7 +234,9 @@ public static class ManifestJoin
             ImmutableDictionary<DamageType, string>.Empty,
             sets.Select(set => ToArmorSet(set.Hash, set.Entry)).ToImmutableDictionary(set => set.Hash),
             items,
-            ImmutableDictionary<ItemHash, StatPlug>.Empty);
+            ImmutableDictionary<ItemHash, StatPlug>.Empty,
+            ImmutableDictionary<ItemHash, BreakerType>.Empty,
+            new ItemOverlays([], Optional.None<string>(), Optional.None<string>()));
     }
 
     private static Optional<ManifestItem> ToManifestItem(Reading reading, ItemHash hash, bool isCatalyst) =>
@@ -285,7 +287,8 @@ public static class ManifestJoin
                         columns => [.. columns.Value.Select(column => new TraitColumn(column))],
                         _ => ImmutableArray<TraitColumn>.Empty),
                     FindIntrinsic(reading, item, WeaponIntrinsicCategoryName),
-                    FindCatalyst(reading, item))),
+                    FindCatalyst(reading, item),
+                    item.ReadHash("breakerTypeHash"))),
             KindWord.Armor => ReadBucketName(reading, item).Bind(bucket => ArmorBuckets.TryGetValue(bucket, out var slot) ? Optional.Some(slot) : Optional.None<ArmorSlot>())
                 .Map(slot => (ManifestKind)new ManifestKind.Armor(
                     slot,

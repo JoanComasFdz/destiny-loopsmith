@@ -9,13 +9,15 @@ weapons' columns roll with. The web app shows a build the way DIM shows a loadou
 become the build's weapons, and the designer's perk picker offers what each column rolls with
 ([docs/loop-format.md](../../docs/loop-format.md#starting-from-a-dim-link)). It also holds every plug that changes an armor stat
 (`statPlugs`: armor-stat rolls, masterworks, tuning, stat mods, fragments), so the designer adds up a build's stats
-from the player's own armor the way DIM does ([docs/loop-format.md](../../docs/loop-format.md#stats)). Icons are loaded from
+from the player's own armor the way DIM does ([docs/loop-format.md](../../docs/loop-format.md#stats)), and the three champion
+breakers (`breakerTypes`, with a weapon's own `breaker`) and the overlays Bungie draws on an item's icon (`itemConstants`:
+the gear tiers' diamonds and the masterwork glow), so a player's copies show their tier and masterwork as in DIM. Icons are loaded from
 bungie.net; the data is Bungie's, used under its API terms.
 
 Regenerate it after adding a hash to the rules, a saved DIM share, or when Bungie publishes a new manifest:
 
 ```bash
-tools/manifest/get-manifest.sh /tmp/manifest            # downloads eight English components (~11 MB compressed, ~215 MB on disk)
+tools/manifest/get-manifest.sh /tmp/manifest            # downloads ten English components (~11 MB compressed, ~215 MB on disk)
 python3 -I tools/manifest/extract_manifest.py /tmp/manifest "$(cat /tmp/manifest/version.txt)"
 dotnet test                                             # the catalog version changes: re-pin the example loops
 ```

@@ -36,12 +36,24 @@ public sealed class BuildFileWritingTests
     public void A_weapon_roll_is_written_with_a_question_mark_for_a_column_not_picked()
     {
         var weapon = new WeaponLoadout(WeaponSlot.Kinetic, "Festival Flight", DamageType.Strand, Optional.None<string>(), [], Optional.Some(ItemHash.From(4019651319u)),
-            [Optional.None<ItemHash>(), Optional.Some(ItemHash.From(243981275u))], false);
+            [Optional.None<ItemHash>(), Optional.Some(ItemHash.From(243981275u))], false, Optional.None<ItemInstanceId>());
 
         var written = BuildFileWriting.WriteBuildFile(MinimalBuild with { Weapons = [weapon] }, []);
 
         Assert.Contains("- {slot: kinetic, name: Festival Flight, type: strand, perks: [], hash: 4019651319, roll: [\"?\", 243981275]}\n", written, StringComparison.Ordinal);
         Assert.Equal(weapon.Roll, Assert.Single(ParseBuild(new SourceText("written.yaml", written)).Weapons).Roll);
+    }
+
+    [Fact]
+    public void A_weapons_copy_is_written_as_its_instance_id_and_read_back()
+    {
+        var weapon = new WeaponLoadout(WeaponSlot.Power, "Thunderlord", DamageType.Arc, Optional.None<string>(), [], Optional.Some(ItemHash.From(3325463374u)),
+            [], false, Optional.Some(ItemInstanceId.From("6917529810172542011")));
+
+        var written = BuildFileWriting.WriteBuildFile(MinimalBuild with { Weapons = [weapon] }, []);
+
+        Assert.Contains("hash: 3325463374, instance: \"6917529810172542011\"}\n", written, StringComparison.Ordinal);
+        Assert.Equal(weapon.Instance, Assert.Single(ParseBuild(new SourceText("written.yaml", written)).Weapons).Instance);
     }
 
     [Fact]

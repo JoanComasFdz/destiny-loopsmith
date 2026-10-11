@@ -6,22 +6,26 @@
 <manifest-dir> holds the English JSON components get-manifest.sh downloads:
 DestinyInventoryItemDefinition.json, DestinyInventoryBucketDefinition.json, DestinyDamageTypeDefinition.json,
 DestinySocketTypeDefinition.json, DestinySocketCategoryDefinition.json, DestinyPlugSetDefinition.json,
-DestinySandboxPerkDefinition.json and DestinyEquipableItemSetDefinition.json. <version> is the manifest's
-version string (written into the file).
+DestinySandboxPerkDefinition.json, DestinyEquipableItemSetDefinition.json, DestinyBreakerTypeDefinition.json and
+DestinyInventoryItemConstantsDefinition.json. <version> is the manifest's version string (written into the file).
 
 The excerpt holds every hash Loopsmith names: each `hash:` in rules/ (elements, the glossary's subclasses,
 armor set perks) and every hash in the saved DIM shares (builds/*/dim-loadout.json). For each: its name,
 kind, type, icon, tier, Bungie's description and, for weapons, armor and armor mods, its slot and damage
-type. A weapon also gets its trait columns (`traits`: the "frames" sockets among its weapon perks), each
-the list of perks it can roll (one, for a column that doesn't roll: an exotic's), its intrinsic perk and,
-for an exotic, its catalyst; armor gets its intrinsic perk (an exotic's) and the armor set it belongs
-to. Those perks, catalysts (with the perks they grant) and sets (with their 2- and 4-piece perks) are
+type. A weapon also gets its breaker (`breaker`: the champion it breaks of its own, an exotic's), its trait
+columns (`traits`: the "frames" sockets among its weapon perks), each the list of perks it can roll (one, for
+a column that doesn't roll: an exotic's), its intrinsic perk and, for an exotic, its catalyst; armor gets its
+intrinsic perk (an exotic's) and the armor set it belongs to. Those perks, catalysts (with the perks they grant) and sets (with their 2- and 4-piece perks) are
 written too. Perks a catalyst or a set grants are the manifest's sandbox perks (`kind: perk`). The artifact an
 artifact perk belongs to (the artifact item whose sockets' plug sets hold it) is written with its perks
 (`kind: artifact`, `perks`: every plug of the plug sets of its sockets that take artifact perks, but a socket's
 initial, empty one, socket by socket, each once). A hash the
 manifest doesn't have is reported, not written. The output is sorted and stable, so a rerun on the same
 manifest changes nothing.
+
+`breakerTypes` are the three breakers with their icons; `itemConstants` the overlays Bungie draws on an item's icon, as
+DIM does: a gear tier's diamonds (`tierOverlays`, tier 1 to 5) and the masterwork glow (`masterworkOverlay`, and
+`masterworkExoticOverlay` for an exotic).
 
 `statPlugs` are every plug that changes an armor stat, for adding up a build's stats from a player's own armor
 the way DIM does (docs/loop-format.md, "Stats"): a piece's rolled stats (`base`: the armor-stat and intrinsic plugs),
@@ -243,6 +247,8 @@ def to_entry(item_hash, item, context):
     damage = DAMAGE_TYPES.get(item.get("defaultDamageType"))
     if kind == "weapon" and damage:
         fields.append(("damageType", damage))
+    if kind == "weapon" and item.get("breakerTypeHash"):
+        fields.append(("breaker", str(item["breakerTypeHash"])))
     columns = read_traits(item, socket_types, perk_category, plug_sets) if kind == "weapon" else None
     if columns is not None:
         fields.append(("traits", "[" + ", ".join("[" + ", ".join(str(h) for h in column) + "]" for column in columns) + "]"))
@@ -327,6 +333,8 @@ def main():
     perks = read_json(source / "DestinySandboxPerkDefinition.json")
     item_sets = read_json(source / "DestinyEquipableItemSetDefinition.json")
     categories = read_json(source / "DestinySocketCategoryDefinition.json")
+    breaker_types = read_json(source / "DestinyBreakerTypeDefinition.json")
+    item_constants = next(iter(read_json(source / "DestinyInventoryItemConstantsDefinition.json").values()), {})
     perk_category = find_category(categories, "WEAPON PERKS")
     intrinsic_categories = {"weapon": find_category(categories, "INTRINSIC TRAITS"), "armor": find_category(categories, "ARMOR PERKS")}
     plugs_by_category = {}
@@ -372,6 +380,16 @@ def main():
         icon = definition.get("displayProperties", {}).get("icon")
         if name and icon:
             lines.append(f"  - {{ type: {name}, icon: {icon} }}")
+    lines.append("breakerTypes:")
+    for h, definition in sorted(breaker_types.items(), key=lambda pair: pair[1].get("enumValue", 0)):
+        display = definition.get("displayProperties", {})
+        if display.get("icon"):
+            lines.append(f"  - {{ hash: {h}, name: {to_text(display.get('name', ''))}, icon: {display['icon']} }}")
+    lines.append("itemConstants:")
+    lines.append("  tierOverlays: [" + ", ".join(item_constants.get("gearTierOverlayImagePaths", [])) + "]")
+    for key, written in (("masterworkOverlayPath", "masterworkOverlay"), ("masterworkExoticOverlayPath", "masterworkExoticOverlay")):
+        if item_constants.get(key):
+            lines.append(f"  {written}: {item_constants[key]}")
     lines.append("armorSets:")
     lines.extend(to_set_entry(h, item_sets[str(h)]) for h in sorted(wanted_sets))
     lines.append("items:")

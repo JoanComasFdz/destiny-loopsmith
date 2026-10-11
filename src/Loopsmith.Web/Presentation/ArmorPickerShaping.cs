@@ -6,10 +6,11 @@ using Loopsmith.Core.Phrasing;
 namespace Loopsmith.Web.Presentation;
 
 /// <summary>
-/// One of the player's pieces in the armor picker: its square, its copy, its stats (as bars, and as a line for its
-/// tooltip; none when Loopsmith can't read them), where it is, its set and whether the build wears it.
+/// One of the player's pieces in the armor picker: its square and its marks (tier, masterwork), its copy, its stats (as
+/// bars, and as a line for its tooltip; none when Loopsmith can't read them), where it is, its set and whether the build
+/// wears it.
 /// </summary>
-public sealed record ArmorOptionView(IconTile Tile, ItemInstanceId Instance, Optional<ImmutableArray<StatBar>> Roll, string RollText, string Place, Optional<string> Set, bool Worn);
+public sealed record ArmorOptionView(IconTile Tile, TileMarks Marks, ItemInstanceId Instance, Optional<ImmutableArray<StatBar>> Roll, string RollText, string Place, Optional<string> Set, bool Worn);
 
 /// <summary>The armor picker for a slot: its title, the player's pieces for it and what it leaves out.</summary>
 public sealed record ArmorPickerView(ArmorSlot Slot, string Title, ImmutableArray<ArmorOptionView> Options, ImmutableArray<string> Notes);
@@ -27,6 +28,7 @@ public static class ArmorPickerShaping
     private static ArmorOptionView ShapeOption(ValidatedBuild build, ArmorOption option) =>
         new(
             LoadoutShaping.DescribeArmorItem(option.Item),
+            LoadoutShaping.DescribeMarks(build.Catalog, option.Item.Tier, Optional.Some(option.Armor.Marks), Optional.None<BreakerType>()),
             option.Armor.InstanceId,
             option.Points.Map(points => StatsShaping.ToBars(points, StatsShaping.MaxPieceStat)),
             option.Points.Match(points => StatsShaping.DescribeRoll(points.Value), _ => UnreadRoll),

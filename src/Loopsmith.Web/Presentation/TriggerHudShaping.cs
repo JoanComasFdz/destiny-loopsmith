@@ -52,7 +52,7 @@ public static class TriggerHudShaping
         var choices = sections.SelectMany(section => section.Choices).ToImmutableDictionary(choice => choice.Key);
         var abilities = build.Build.Abilities;
         var subclass = build.Build.Subclass.ToAffinity();
-        var weapons = LoadoutShaping.ShapeLoadout(build).Weapons;
+        var weapons = LoadoutShaping.ShapeLoadout(build, Optional.None<BungieProfile>()).Weapons;   // the HUD shows no tier or masterwork marks
         var declared = ListButtons(sections, TriggerGroup.Declare);
         var statuses = ShapeStatuses(build, declared);
         return new TriggerHud(

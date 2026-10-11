@@ -98,7 +98,8 @@ public static class TestCatalog
             CatalogVersion.From("test"),
             Glossary,
             abilities.Concat(fragments).Concat(allMods).Concat(keywords.IsDefault ? [] : keywords).ToImmutableDictionary(e => e.Id),
-            new ManifestExcerpt(Optional.None<string>(), ImmutableDictionary<DamageType, string>.Empty, ImmutableDictionary<ItemHash, ArmorSet>.Empty, ImmutableDictionary<ItemHash, ManifestItem>.Empty, ImmutableDictionary<ItemHash, StatPlug>.Empty));
+            new ManifestExcerpt(Optional.None<string>(), ImmutableDictionary<DamageType, string>.Empty, ImmutableDictionary<ItemHash, ArmorSet>.Empty, ImmutableDictionary<ItemHash, ManifestItem>.Empty, ImmutableDictionary<ItemHash, StatPlug>.Empty,
+                ImmutableDictionary<ItemHash, BreakerType>.Empty, new ItemOverlays([], Optional.None<string>(), Optional.None<string>())));
         var build = new Build(
             "Test build",
             Optional.None<string>(),
@@ -113,7 +114,7 @@ public static class TestCatalog
             [],
             modOrder.IsDefault ? allMods.Select(m => m.Id).ToImmutableArray() : modOrder,
             [],
-            [new WeaponLoadout(WeaponSlot.Energy, "Test Rifle", DamageType.Arc, Optional.None<string>(), [], Optional.None<ItemHash>(), [], false)],
+            [new WeaponLoadout(WeaponSlot.Energy, "Test Rifle", DamageType.Arc, Optional.None<string>(), [], Optional.None<ItemHash>(), [], false, Optional.None<ItemInstanceId>())],
             new StatLine(Optional.None<StatValue>(), Optional.None<StatValue>(), Optional.None<StatValue>(),
                 Optional.None<StatValue>(), Optional.None<StatValue>(), Optional.None<StatValue>()),
             [],

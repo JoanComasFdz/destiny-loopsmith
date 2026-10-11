@@ -33,7 +33,7 @@ public sealed class ItemDetailsTests
         Assert.DoesNotContain(session.Build.Equipped, equipped => equipped.Element.Id.Value == "thunderlord-catalyst");
         Assert.Contains(on.Build.Equipped, equipped => equipped.Element.Id.Value == "thunderlord-catalyst");
         Assert.Contains("name: Thunderlord", on.Design.Build.Text, StringComparison.Ordinal);
-        Assert.Contains("hash: 3325463374, catalyst: true}", on.Design.Build.Text, StringComparison.Ordinal);
+        Assert.Contains("hash: 3325463374, catalyst: true, instance: \"6917529810172542011\"}", on.Design.Build.Text, StringComparison.Ordinal);   // the share's copy
         Assert.True(on.Build.Build.Weapons[Thunderlord].Catalyst);
         Assert.DoesNotContain("catalyst:", off.Design.Build.Text, StringComparison.Ordinal);
         Assert.DoesNotContain(off.Build.Equipped, equipped => equipped.Element.Id.Value == "thunderlord-catalyst");
