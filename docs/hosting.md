@@ -48,13 +48,17 @@ set, a dim.gg link says Loopsmith can't open it yet. One-time setup (the owner):
 1. **A Bungie API key.** At https://www.bungie.net/en/Application create an application with
    **Origin header** `https://joancomasfdz.github.io` (no OAuth needed for this). Done: it is the
    `BungieApiKey` in `wwwroot/appsettings.json`.
-2. **Register Loopsmith with DIM's API** (what DIM's own `/developer` page does; the app id is
-   3+ lowercase letters, digits or dashes):
+2. **A DIM API key for the site's origin, from the DIM team.** DIM's self-service registration
+   (`new_app`, what its `/developer` page does) only registers local development origins — localhost,
+   private addresses, `.lan`/`.local`/`.internal` hosts. It refused `https://joancomasfdz.github.io`
+   (2026-10-11, HTTP 400 `InvalidRequest`). A key for a public site comes from DIM's maintainers: ask
+   them (DIM's GitHub, https://github.com/DestinyItemManager/DIM, or its Discord) for an app `loopsmith`
+   with origin `https://joancomasfdz.github.io`. For a key that works in a local run only:
    ```bash
    curl -sS https://api.destinyitemmanager.com/new_app -H 'Content-Type: application/json' \
-     -d '{"id": "loopsmith", "bungieApiKey": "<the Bungie API key>", "origin": "https://joancomasfdz.github.io"}'
+     -d '{"id": "loopsmith-local", "bungieApiKey": "<a Bungie API key for http://localhost:5000>", "origin": "http://localhost:5000"}'
    ```
-   The answer's `app.dimApiKey` is the key.
+   The answer's `app.dimApiKey` is the key (don't merge a localhost key: it doesn't work on the site).
 3. **Set it** in `src/Loopsmith.Web/wwwroot/appsettings.json` (`"DimApiKey": "<key>"`) and merge. It
    isn't a secret: it ships in the site, as DIM's own key ships in DIM, and only works from the
    registered origin. PR previews share that origin, so they open dim.gg links too; a local run
