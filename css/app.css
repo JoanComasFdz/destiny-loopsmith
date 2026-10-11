@@ -329,7 +329,7 @@ textarea { resize: vertical; }
     display: grid;
     gap: 12px;
     grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: "loop" "side" "build";
+    grid-template-areas: "build" "loop" "side";
     align-items: start;
 }
 .col-build { grid-area: build; min-width: 0; }
@@ -339,7 +339,7 @@ textarea { resize: vertical; }
 @media (min-width: 760px) {
     .designer-grid {
         grid-template-columns: minmax(0, 1fr) minmax(290px, 340px);
-        grid-template-areas: "loop side" "build side";
+        grid-template-areas: "build side" "loop side";
     }
     .col-side {
         position: sticky;
@@ -484,10 +484,116 @@ textarea { resize: vertical; }
 }
 .note-input:focus { border-bottom: 1px solid var(--arc); }
 .step-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 8px; font-size: 12px; }
+
+/* a step's outcomes, one per line (OutcomeTree.razor): event → element (icon, name) → each outcome; a cascade nests */
+.outcomes { display: flex; flex-direction: column; gap: 4px; font-size: 13.5px; line-height: 1.45; }
+.outcome-event { margin-left: calc(var(--depth, 0) * 18px); }
+.outcome-event[data-depth="0"] + .outcome-event[data-depth="0"] { margin-top: 4px; }
+.outcome-event-head { overflow-wrap: anywhere; }
+.outcome-source { margin: 2px 0 0 14px; }
+.outcome-line { display: flex; gap: 6px; margin-left: 26px; overflow-wrap: anywhere; }
+.outcome-arrow { flex: none; }
+.outcome-detail { margin-left: 26px; font-size: 12.5px; overflow-wrap: anywhere; }
+.outcome-note { overflow-wrap: anywhere; }
+.outcome-name-wrap { position: relative; display: inline; }
+.outcome-source > .outcome-name-wrap { display: flex; width: fit-content; }
+.outcome-element, .outcome-keyword {
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+.outcome-element { display: inline-flex; align-items: center; gap: 6px; color: var(--aff); }
+.outcome-element:hover span, .outcome-element:focus-visible span { text-decoration: underline; text-underline-offset: 3px; }
+.outcome-keyword { color: inherit; text-decoration: underline dotted rgba(138, 148, 168, .7); text-underline-offset: 3px; }
+.outcome-keyword.tone-strong { color: var(--text); }
+.outcome-keyword:hover, .outcome-keyword:focus-visible { text-decoration-style: solid; text-decoration-color: currentColor; }
+.outcome-icon { width: 20px; height: 20px; flex: none; border-radius: 3px; background: #1a2130; object-fit: cover; }
+.outcome-icon.placeholder { width: 10px; height: 10px; margin: 0 5px; border-radius: 2px; background: var(--aff); transform: rotate(45deg); opacity: .8; }
+.item-preview {
+    position: absolute;
+    z-index: 30;
+    top: calc(100% + 6px);
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: max-content;
+    max-width: min(320px, 70vw);
+    padding: 10px 12px;
+    border: 1px solid var(--line-2);
+    border-top: 3px solid var(--aff);
+    border-radius: var(--radius);
+    background: var(--raised);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .45);
+    color: var(--text);
+    font-size: 12.5px;
+    font-weight: 400;
+    line-height: 1.45;
+    white-space: normal;
+    pointer-events: none;
+}
+.item-preview-head { display: flex; align-items: center; gap: 8px; }
+.item-preview-icon { width: 32px; height: 32px; border-radius: 4px; flex: none; }
+.item-preview-name { display: block; font-weight: 700; font-size: 13.5px; }
+.item-preview-type { display: block; color: var(--muted); font-size: 11.5px; }
+.item-preview-text { color: var(--text); }
+.item-preview-hint { color: var(--dim); font-size: 11px; }
+@media (hover: none) {
+    .item-preview { display: none; }
+}
+
+/* editing a step: move up / down, remove; a handle to drag it (a mouse only) and the line where it would land */
+.step-drag { color: var(--dim); font-size: 15px; line-height: 1; padding: 2px 1px; cursor: grab; user-select: none; }
+.step-drag:hover { color: var(--text); }
+.step-drag:active { cursor: grabbing; }
+.step-tools { display: inline-flex; gap: 3px; margin-left: auto; }
+.icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 26px;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--muted);
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+}
+.icon-btn:hover:not(:disabled) { border-color: var(--line-2); background: var(--raised); color: var(--text); }
+.icon-btn.remove:hover:not(:disabled) { border-color: var(--bad); color: var(--bad); }
+.icon-btn:disabled { opacity: .35; cursor: default; }
+.step-card.dragged { opacity: .5; }
+.step-card.drop-before::before, .step-card.drop-after::after {
+    content: "";
+    position: absolute;
+    left: -3px;
+    right: -1px;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--arc);
+    box-shadow: 0 0 8px rgba(111, 227, 255, .6);
+    pointer-events: none;
+}
+.step-card.drop-before::before { top: -6px; }
+.step-card.drop-after::after { bottom: -6px; }
+@media (pointer: coarse) {
+    .step-drag { display: none; }
+    .icon-btn { width: 34px; height: 32px; }
+}
 .timeline-empty { margin: 4px 0; padding: 16px; border: 1px dashed var(--line-2); border-radius: var(--radius); color: var(--muted); text-align: center; }
 
-/* palette */
+/* palette: under the last step (the next trigger is where the loop goes on), in columns when the loop is wide */
 .palette { padding-bottom: 8px; }
+.col-loop .palette { margin-top: 2px; }
+@media (min-width: 620px) {
+    .col-loop .trigger-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 5px 12px; }
+}
 .palette-hint { margin: 0 0 6px; font-size: 12px; color: var(--warn); }
 .trigger-list { display: flex; flex-direction: column; gap: 5px; }
 .trigger-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
