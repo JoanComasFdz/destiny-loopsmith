@@ -496,6 +496,7 @@ public sealed class RuleCatalogParsingTests
               - { hash: 593554567, name: "Luminopotent Mask", kind: armor, type: "Helmet", slot: helmet, set: 499993704 }
               - { hash: 3832366019, name: "Harmonic Siphon", kind: armorMod, type: "Helmet Armor Mod", slot: helmet }
               - { hash: 1435557120, name: "Grenade Mod", kind: armorMod, type: "General Armor Mod" }
+              - { hash: 3821685388, name: "Tablet of Ruin", kind: artifact, type: "Artifact", tier: legendary, perks: [1319563986, 2596646301] }
             """);
 
         var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, manifest]));
@@ -520,6 +521,8 @@ public sealed class RuleCatalogParsingTests
         Assert.Equal(Optional.Some(("Luminopotent", 2)), catalog.Manifest.FindSetOfPerk(ItemHash.From(2769443639u)).Map(found => (found.Set.Name, found.Perk.Pieces.Value)));
         Assert.Equal(Optional.Some(ArmorSlot.Helmet), items[ItemHash.From(3832366019u)].ReadArmorSlot());
         Assert.Equal(new ManifestKind.ArmorMod(Optional.None<ArmorSlot>()), items[ItemHash.From(1435557120u)].Kind);
+        Assert.Equal([1319563986u, 2596646301u], Assert.IsType<ManifestKind.Artifact>(items[ItemHash.From(3821685388u)].Kind).Perks.Select(hash => hash.Value));
+        Assert.Equal(Optional.Some("Tablet of Ruin"), catalog.Manifest.FindArtifactOf([ItemHash.From(2596646301u)]).Map(item => item.Name));
         Assert.Empty(AssertOk(RuleCatalogParsing.ParseCatalog([Glossary])).Manifest.Items);
     }
 
@@ -545,7 +548,7 @@ public sealed class RuleCatalogParsingTests
         Assert.Contains("a trait column needs at least one perk hash", message);
         Assert.Contains("catalyst is only allowed on a weapon, not on a armor", message);
         Assert.Contains("set is only allowed on armor, not on a weapon", message);
-        Assert.Contains("perks is only allowed on a catalyst, not on a intrinsic", message);
+        Assert.Contains("perks is only allowed on a catalyst or an artifact, not on a intrinsic", message);
     }
 
     [Fact]

@@ -37,7 +37,7 @@ internal static class ManifestParsing
         ("catalyst", [KindWord.Weapon], "a weapon"),
         ("intrinsic", [KindWord.Weapon, KindWord.Armor], "a weapon or armor"),
         ("set", [KindWord.Armor], "armor"),
-        ("perks", [KindWord.Catalyst], "a catalyst"),
+        ("perks", [KindWord.Catalyst, KindWord.Artifact], "a catalyst or an artifact"),
     ];
 
     internal static Result<ManifestExcerpt, Errors> ReadManifest(SourceText file) =>
@@ -91,7 +91,7 @@ internal static class ManifestParsing
     private enum KindWord
     {
         Subclass, Super, Grenade, Melee, ClassAbility, Movement, Aspect, Fragment, Weapon, WeaponPerk, Intrinsic, Catalyst, Armor,
-        ArmorMod, ArtifactPerk, Perk, Other,
+        ArmorMod, ArtifactPerk, Artifact, Perk, Other,
     }
 
     /// <summary>
@@ -99,7 +99,8 @@ internal static class ManifestParsing
     /// may have a <c>damageType</c>, <c>traits</c> (its trait columns, each a list of the perk hashes it rolls with:
     /// <c>[[a, b], [c]]</c>), an <c>intrinsic</c> and a <c>catalyst</c> (hashes); armor needs its <c>slot</c> (an armor
     /// slot) and may have an <c>intrinsic</c> and a <c>set</c> (an armor set's hash); an armor mod may have a slot (none: a
-    /// general mod); a catalyst has the <c>perks</c> it grants. Anywhere else these keys are errors.
+    /// general mod); a catalyst has the <c>perks</c> it grants, an artifact the perks it unlocks. Anywhere else these keys
+    /// are errors.
     /// </summary>
     private static Result<Located<ManifestItem>, Errors> ReadItem(YamlValue value) =>
         value.ToMap().Bind(map => Combine(
@@ -131,6 +132,8 @@ internal static class ManifestParsing
             KindWord.ArmorMod => map.ReadOptional("slot", ReadVocabularyWord<ArmorSlot>).Map(slot => (ManifestKind)new ManifestKind.ArmorMod(slot)),
             KindWord.Catalyst => map.ReadOrDefault("perks", perks => perks.ReadEach("perk", ReadItemHash), [])
                 .Map(perks => (ManifestKind)new ManifestKind.ExoticCatalyst(perks)),
+            KindWord.Artifact => map.ReadOrDefault("perks", perks => perks.ReadEach("perk", ReadItemHash), [])
+                .Map(perks => (ManifestKind)new ManifestKind.Artifact(perks)),
             _ => Succeed(ToPlainKind(word)),
         };
 

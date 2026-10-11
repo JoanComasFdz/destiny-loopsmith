@@ -20,7 +20,8 @@ public sealed record SectionHeading(string Name, Optional<string> Icon, string L
 /// <summary>
 /// One part of an item's details, each with Bungie's text and what the rules say (none: not in the rules yet): the
 /// item itself; one of its perks (its intrinsic, an exotic armor's perk, what a column holds); a column not picked yet;
-/// an exotic's catalyst, with its switch (its heading when it is part of the weapon's details).
+/// an exotic's catalyst, with its switch (its heading when it is part of the weapon's details); an artifact, with the
+/// perks of it the build has (the artifact itself sets nothing off: its perks do).
 /// </summary>
 [Union]
 public partial record InfoSection
@@ -29,6 +30,7 @@ public partial record InfoSection
     partial record Perk(SectionHeading Heading, Optional<string> BungieText, Optional<InfoRules> Rules);
     partial record Unpicked(int Column);
     partial record Catalyst(Optional<SectionHeading> Heading, Optional<string> BungieText, Optional<InfoRules> Rules, CatalystToggle Toggle);
+    partial record Artifact(Optional<string> BungieText, ImmutableArray<SectionHeading> Perks);
 }
 
 /// <summary>An item's details, as tapping its square shows them: its name, type, icon, rarity, light.gg page and sections.</summary>
@@ -72,7 +74,8 @@ public static class ItemInfoShaping
             item => new[] { item.BungieText, item.Rules.Bind(rules => rules.Description) }.FindFirstSome(),
             perk => new[] { perk.BungieText, perk.Rules.Bind(rules => rules.Description) }.FindFirstSome(),
             _ => Optional.None<string>(),
-            catalyst => new[] { catalyst.BungieText, catalyst.Rules.Bind(rules => rules.Description) }.FindFirstSome());
+            catalyst => new[] { catalyst.BungieText, catalyst.Rules.Bind(rules => rules.Description) }.FindFirstSome(),
+            artifact => artifact.BungieText);
 
     private static Optional<ItemInfo> ShapeElement(ValidatedBuild build, ElementId id) =>
         build.Catalog.Elements.TryGetValue(id, out var element)
@@ -108,10 +111,31 @@ public static class ItemInfoShaping
                 Affinity.Neutral,
                 LoadoutShaping.ToPageUrl(build.Catalog, hash),
                 [
-                    build.Catalog.Manifest.FindIntrinsicPerk([hash]).Match<InfoSection>(
-                        perk => new InfoSection.Perk(new SectionHeading(perk.Value.Name, ToIcon(perk.Value), "Exotic perk"), perk.Value.Description, Optional.None<InfoRules>()),
-                        _ => new InfoSection.Item(item.Description, Optional.None<InfoRules>())),
+                    item.Kind is ManifestKind.Artifact artifact
+                        ? DescribeArtifactSection(build, item, artifact)
+                        : build.Catalog.Manifest.FindIntrinsicPerk([hash]).Match<InfoSection>(
+                            perk => new InfoSection.Perk(new SectionHeading(perk.Value.Name, ToIcon(perk.Value), "Exotic perk"), perk.Value.Description, Optional.None<InfoRules>()),
+                            _ => new InfoSection.Item(item.Description, Optional.None<InfoRules>())),
                 ])));
+
+    /// <summary>An artifact: Bungie's text and the perks of it the build has (each its own square to tap), the rules' first.</summary>
+    private static InfoSection DescribeArtifactSection(ValidatedBuild build, ManifestItem item, ManifestKind.Artifact artifact)
+    {
+        var catalog = build.Catalog;
+        var known = build.Build.ArtifactPerks
+            .SelectMany(id => catalog.Elements.TryGetValue(id, out var element) ? element.Hashes.Where(artifact.Perks.Contains).Take(1) : [])
+            .Select(perk => DescribeArtifactPerk(catalog, perk, "Artifact perk"));
+        var leftOut = build.Build.LeftOut
+            .Where(entry => entry.Part == LoadoutPart.ArtifactPerk && artifact.Perks.Contains(entry.Hash))
+            .Select(entry => DescribeArtifactPerk(catalog, entry.Hash, "Artifact perk · not in Loopsmith's rules yet"));
+        return new InfoSection.Artifact(item.Description, [.. known, .. leftOut]);
+    }
+
+    private static SectionHeading DescribeArtifactPerk(RuleCatalog catalog, ItemHash perk, string label) =>
+        new(
+            catalog.FindElementByHash(perk).Match(element => element.Value.Name, _ => catalog.Manifest.DescribeItemHash(perk)),
+            catalog.Manifest.FindItem(perk).Bind(ToIcon),
+            label);
 
     /// <summary>An exotic weapon: its intrinsic perk, each perk its columns hold (or "?"), the perks the build names, its catalyst.</summary>
     private static ItemInfo ShapeWeapon(ValidatedBuild build, WeaponLoadout weapon, int index)

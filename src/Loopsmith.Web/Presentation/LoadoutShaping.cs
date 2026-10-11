@@ -98,12 +98,18 @@ public sealed record PerkPick(int Weapon, int Column, Optional<ItemHash> Perk);
 public sealed record ArmorView(ArmorSlot Slot, Optional<IconTile> Piece, ImmutableArray<IconTile> Mods);
 
 /// <summary>
+/// The artifact block: the season's artifact the perks are from (when the manifest excerpt has it: tapping it shows
+/// Bungie's text) and the artifact perks the build has, then those the DIM loadout had that the rules don't know.
+/// </summary>
+public sealed record ArtifactView(Optional<IconTile> Item, ImmutableArray<IconTile> Perks);
+
+/// <summary>
 /// A build laid out like DIM shows a loadout: subclass, artifact, weapons (kinetic, energy, power), armor with each
 /// piece's mods, general mods, the armor sets with their perks, and set bonuses in no set the excerpt has.
 /// </summary>
 public sealed record LoadoutView(
     SubclassView Subclass,
-    ImmutableArray<IconTile> Artifact,
+    ArtifactView Artifact,
     ImmutableArray<WeaponView> Weapons,
     ImmutableArray<ArmorView> Armor,
     ImmutableArray<IconTile> GeneralMods,
@@ -157,10 +163,7 @@ public static class LoadoutShaping
             [.. b.Fragments.Select(id => DescribeElement(catalog, id)), .. DescribeLeftOutPlugs<ManifestKind.Fragment>(catalog, plugs)]);
         return new LoadoutView(
             subclass,
-            [
-                .. b.ArtifactPerks.Select(id => DescribeElement(catalog, id)),
-                .. leftOut.Where(entry => entry.Part == LoadoutPart.ArtifactPerk).Select(entry => DescribeLeftOut(catalog, entry)),
-            ],
+            DescribeArtifact(catalog, b.ArtifactPerks, [.. leftOut.Where(entry => entry.Part == LoadoutPart.ArtifactPerk)]),
             [.. b.Weapons.Select((weapon, index) => DescribeWeapon(build, weapon, index)).OrderBy(view => view.Slot)],
             [
                 .. ArmorSlots
@@ -198,6 +201,15 @@ public static class LoadoutShaping
                 item => DescribeItem(item.Value, element.Name, true, element.Description, element.Affinity, ToElementDetails(id)),
                 _ => new IconTile(element.Name, Optional.None<string>(), element.Affinity, Optional.None<ItemTier>(), true, element.Description, 1, ToElementDetails(id)))
             : new IconTile(id.Value, Optional.None<string>(), Affinity.Neutral, Optional.None<ItemTier>(), true, Optional.None<string>(), 1, Optional.None<ItemDetails>());
+
+    /// <summary>The artifact the perks are from (by their hashes: the build's and the left-out ones), and the perks.</summary>
+    private static ArtifactView DescribeArtifact(RuleCatalog catalog, ImmutableArray<ElementId> perks, ImmutableArray<LeftOutEntry> leftOut)
+    {
+        var hashes = perks.SelectMany(id => catalog.Elements.TryGetValue(id, out var element) ? element.Hashes : []).Concat(leftOut.Select(entry => entry.Hash));
+        var item = catalog.Manifest.FindArtifactOf(hashes).Map(artifact =>
+            DescribeItem(artifact, artifact.Name, true, artifact.Description, Affinity.Neutral, Optional.Some<ItemDetails>(new ItemDetails.OfItem(artifact.Hash))));
+        return new ArtifactView(item, [.. perks.Select(id => DescribeElement(catalog, id)), .. leftOut.Select(entry => DescribeLeftOut(catalog, entry))]);
+    }
 
     private static Optional<ItemDetails> ToElementDetails(ElementId id) => Optional.Some<ItemDetails>(new ItemDetails.OfElement(id));
 

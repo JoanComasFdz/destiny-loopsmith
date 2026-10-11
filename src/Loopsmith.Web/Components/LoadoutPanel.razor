@@ -34,12 +34,19 @@
                 </div>
             </div>
         </section>
-        @if (!view.Artifact.IsEmpty)
+        @if (view.Artifact.Item.IsSome() || !view.Artifact.Perks.IsEmpty)
         {
-            <section class="loadout-box artifact-box" aria-label="Artifact">
+            <section class="loadout-box artifact-box" aria-label="Artifact" data-testid="artifact">
                 <h4 class="loadout-label">Artifact</h4>
+                @if (view.Artifact.Item is Optional<IconTile>.Some artifact)
+                {
+                    <div class="artifact-item" data-testid="artifact-item">
+                        @RenderTile(artifact.Value, "item artifact")
+                        <span class="artifact-name">@artifact.Value.Name</span>
+                    </div>
+                }
                 <div class="icon-grid">
-                    @foreach (var tile in view.Artifact)
+                    @foreach (var tile in view.Artifact.Perks)
                     {
                         @RenderTile(tile, "artifact-perk")
                     }

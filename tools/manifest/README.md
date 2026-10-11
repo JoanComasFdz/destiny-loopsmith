@@ -2,8 +2,8 @@
 
 `rules/manifest.yaml` is Loopsmith's excerpt of the Bungie manifest: the official name, kind, type, Bungie's
 description, icon, rarity and (for weapons, armor and armor mods) slot and damage type — and a weapon's trait
-columns with the perks each can roll, its intrinsic perk and an exotic's catalyst, an exotic armor's perk, and
-the armor sets with their 2- and 4-piece perks — of every hash Loopsmith names — each
+columns with the perks each can roll, its intrinsic perk and an exotic's catalyst, an exotic armor's perk, the
+armor sets with their 2- and 4-piece perks, and the artifacts with the perks they unlock — of every hash Loopsmith names — each
 `hash:` in `rules/` and every hash a saved DIM share (`builds/*/dim-loadout.json`) wears, plus every perk those
 weapons' columns roll with. The web app shows a build the way DIM shows a loadout from it, a DIM link's weapons
 become the build's weapons, and the designer's perk picker offers what each column rolls with

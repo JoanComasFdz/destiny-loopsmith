@@ -25,6 +25,30 @@
                         @RenderHeading(new SectionHeading(DomainPhrasing.Unknown, Optional.None<string>(), $"Trait · column {unpicked.Column + 1}"))
                         <p class="muted info-note">Not picked: a DIM link carries the weapon, not its roll.</p>
                         break;
+                    case InfoSection.Artifact artifact:
+                        @if (artifact.BungieText is Optional<string>.Some bungie)
+                        {
+                            <div class="info-card bungie" data-testid="info-bungie">
+                                <div class="info-source">Bungie</div>
+                                <p class="info-bungie">@bungie.Value</p>
+                            </div>
+                        }
+                        <div class="info-card rules" data-testid="artifact-perks">
+                            <div class="info-source">In this build</div>
+                            @if (artifact.Perks.IsEmpty)
+                            {
+                                <p class="muted info-note">None of its perks: the build has none of this artifact's perks.</p>
+                            }
+                            else
+                            {
+                                <p class="muted info-note">The artifact sets nothing off itself; these perks of it do (tap each in the build for its details):</p>
+                                @foreach (var perk in artifact.Perks)
+                                {
+                                    @RenderHeading(perk)
+                                }
+                            }
+                        </div>
+                        break;
                     case InfoSection.Catalyst catalyst:
                         @if (catalyst.Heading is Optional<SectionHeading>.Some heading)
                         {

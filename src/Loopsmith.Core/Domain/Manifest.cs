@@ -34,6 +34,7 @@ public partial record ManifestKind
     partial record Armor(ArmorSlot Slot, Optional<ItemHash> Intrinsic, Optional<ItemHash> Set);
     partial record ArmorMod(Optional<ArmorSlot> Slot);
     partial record ArtifactPerk();
+    partial record Artifact(ImmutableArray<ItemHash> Perks);   // a season's artifact and every perk it unlocks
     partial record Perk();
     partial record Other();
 }

@@ -135,6 +135,9 @@ public static class ManifestJoin
             KindWord.Weapon => Join(
                 ListPerkNeeds(reading, item),
                 WalkWeaponSockets(reading, item)),
+            KindWord.Artifact => Join(
+                ListPerkNeeds(reading, item),
+                WalkArtifactSockets(item)),
             KindWord.Armor => Join(
                 ListPerkNeeds(reading, item),
                 Join(WalkIntrinsicSockets(reading, item, ArmorIntrinsicCategoryName),
@@ -156,6 +159,11 @@ public static class ManifestJoin
         var catalyst = ListCatalystCategories(reading, weapon).Aggregate(Reach.None, (reach, category) => Join(reach, WalkCatalystCategory(reading, category)));
         return Join(Join(types, columns), Join(catalyst, WalkIntrinsicSockets(reading, weapon, WeaponIntrinsicCategoryName)));
     }
+
+    /// <summary>An artifact's sockets' plug sets: what lists the perks it unlocks.</summary>
+    private static Reach WalkArtifactSockets(JsonElement artifact) =>
+        artifact.ReadArray("sockets", "socketEntries").Aggregate(Reach.None, (reach, socket) =>
+            socket.ReadHash("reusablePlugSetHash").Match(set => Join(reach, ToReach(ManifestTable.PlugSet, set.Value)), _ => reach));
 
     private static Reach WalkColumn(Reading reading, JsonElement socket) =>
         ReadPlugSet(socket).Match(
@@ -280,6 +288,7 @@ public static class ManifestJoin
             KindWord.ArmorMod => Optional.Some<ManifestKind>(new ManifestKind.ArmorMod(item.ReadText("itemTypeDisplayName")
                 .Bind(type => ModSlots.TryGetValue(type, out var slot) ? Optional.Some(slot) : Optional.None<ArmorSlot>()))),
             KindWord.Catalyst => Optional.Some<ManifestKind>(new ManifestKind.ExoticCatalyst(ListGrantedPerks(reading, item))),
+            KindWord.Artifact => Optional.Some<ManifestKind>(new ManifestKind.Artifact(ListArtifactPerks(reading, item))),
             KindWord.Subclass => Optional.Some<ManifestKind>(new ManifestKind.Subclass()),
             KindWord.Super => Optional.Some<ManifestKind>(new ManifestKind.Super()),
             KindWord.Grenade => Optional.Some<ManifestKind>(new ManifestKind.Grenade()),
@@ -299,13 +308,13 @@ public static class ManifestJoin
     private enum KindWord
     {
         Subclass, Super, Grenade, Melee, ClassAbility, Movement, Aspect, Fragment, Weapon, WeaponPerk, Intrinsic, Catalyst, Armor,
-        ArmorMod, ArtifactPerk, Other,
+        ArmorMod, ArtifactPerk, Artifact, Other,
     }
 
     private static readonly ImmutableDictionary<string, KindWord> ExactTypes = new Dictionary<string, KindWord>
     {
         ["Super Ability"] = KindWord.Super, ["Class Ability"] = KindWord.ClassAbility, ["Movement Ability"] = KindWord.Movement,
-        ["Artifact Perk"] = KindWord.ArtifactPerk, ["Trait"] = KindWord.WeaponPerk, ["Enhanced Trait"] = KindWord.WeaponPerk,
+        ["Artifact Perk"] = KindWord.ArtifactPerk, ["Artifact"] = KindWord.Artifact, ["Trait"] = KindWord.WeaponPerk, ["Enhanced Trait"] = KindWord.WeaponPerk,
         ["Intrinsic"] = KindWord.Intrinsic,
     }.ToImmutableDictionary();
 
@@ -399,6 +408,24 @@ public static class ManifestJoin
 
     private static Optional<ItemHash> ReadPlugSet(JsonElement socket) =>
         socket.ReadHash("randomizedPlugSetHash").Match(set => Optional.Some(set.Value), _ => socket.ReadHash("reusablePlugSetHash"));
+
+    /// <summary>An artifact's perks: every plug of its sockets' plug sets but a socket's initial (empty) one, socket by socket, each once.</summary>
+    private static ImmutableArray<ItemHash> ListArtifactPerks(Reading reading, JsonElement artifact) =>
+        [
+            .. artifact.ReadArray("sockets", "socketEntries")
+                .SelectMany(socket => ListSocketPlugs(reading, socket))
+                .Distinct(),
+        ];
+
+    private static IEnumerable<ItemHash> ListSocketPlugs(Reading reading, JsonElement socket)
+    {
+        var empty = socket.ReadHash("singleInitialItemHash");
+        return ToSequence(socket.ReadHash("reusablePlugSetHash"))
+            .SelectMany(set => ToSequence(FindEntry(reading, ManifestTable.PlugSet, set)))
+            .SelectMany(plugSet => plugSet.ReadArray("reusablePlugItems"))
+            .SelectMany(plug => ToSequence(plug.ReadHash("plugItemHash")))
+            .Where(plug => Optional.Some(plug) != empty);
+    }
 
     /// <summary>A plug set's perks that can roll now, each once, in order.</summary>
     private static ImmutableArray<ItemHash> ListRollable(JsonElement plugSet) =>

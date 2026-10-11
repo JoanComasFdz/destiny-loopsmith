@@ -734,6 +734,8 @@ textarea { resize: vertical; }
 .subclass-emblem { display: flex; flex-direction: column; align-items: center; gap: 6px; flex: none; }
 .icon-grid { display: grid; grid-template-columns: repeat(3, var(--tile)); gap: 4px; }
 .artifact-box .icon-grid { grid-template-columns: repeat(3, var(--tile)); }
+.artifact-item { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.artifact-name { font-weight: 650; font-size: 13px; }
 .icon-tile {
     position: relative;
     display: inline-flex;

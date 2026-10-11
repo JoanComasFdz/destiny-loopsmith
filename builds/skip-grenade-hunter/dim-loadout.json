@@ -6,7 +6,10 @@
     "classType": 1,
     "equipped": [
       {
-        "hash": 4019651319
+        "hash": 4019651319,
+        "socketOverrides": {
+          "3": 923806249
+        }
       },
       {
         "hash": 3325463374
@@ -54,6 +57,9 @@
     ],
     "notes": "Artifact: TABLET OF RUIN\n- Dielectric           -> Create elemental pickups\n- Unraveling Orbs      -> Orb of Power or Tangle grant unraveling rounds\n- Flashover            -> Max bolt charge gives amplified + Lightning deals more damage\n- Horde Shuttle        -> Kill unraveled enemy spawns threadling which severs\n- Photonic Flare       -> Kill exhausted/severed with arc blinds (Exhausted -> Overload round or Jolt)\n- To shreds            -> Damaging severed enemies unravels\n- Defibrilating Blast  -> Damage with bolt charge jotls and heals you + Stun a champion gives max Bolt Charge\n\nSources:\n- Plunder https://www.youtube.com/watch?v=zvd6sNS463E",
     "parameters": {
+      "artifactUnlocks": {
+        "unlockedItemHashes": [1319563986, 2596646298, 3585856470, 1319563985, 2596646301, 3585856464, 3585856465]
+      },
       "mods": [1435557120, 3832366019, 3926119246, 856936828, 1435557120, 4182064480, 4182064480, 377010989, 1435557120, 2577472338, 1293710444, 3719981603, 1435557120, 3712696020, 3712696020, 4087056174, 1435557120, 4188291233, 40751621, 11126525, 3122197216, 3122197216],
       "modsByBucket": {
         "14239492": [4248210736, 959073698],

@@ -47,14 +47,33 @@ public sealed class PerkPickingTests
         var session = StartOwnersDimDesign();
 
         var picked = Pick(session, 0, 1, Optional.Some(ItemHash.From(AttritionOrbs)));
-        var cleared = Pick(picked, 0, 1, Optional.None<ItemHash>());
+        var sliceCleared = Pick(picked, 0, 0, Optional.None<ItemHash>());
+        var cleared = Pick(sliceCleared, 0, 1, Optional.None<ItemHash>());
 
-        Assert.Equal([Optional.None<ItemHash>(), Optional.Some(ItemHash.From(AttritionOrbs))], picked.Build.Build.Weapons[0].Roll);
-        Assert.Contains("roll: [\"?\", 243981275]", picked.Design.Build.Text, StringComparison.Ordinal);
+        Assert.Equal([Optional.Some(ItemHash.From(Slice)), Optional.Some(ItemHash.From(AttritionOrbs))], picked.Build.Build.Weapons[0].Roll);
+        Assert.Contains("roll: [923806249, 243981275]", picked.Design.Build.Text, StringComparison.Ordinal);
         Assert.Contains(picked.Build.Equipped, equipped => equipped.Element.Id.Value == "attrition-orbs");
         Assert.DoesNotContain(session.Build.Equipped, equipped => equipped.Element.Id.Value == "attrition-orbs");
+        Assert.Contains("roll: [\"?\", 243981275]", sliceCleared.Design.Build.Text, StringComparison.Ordinal);
         Assert.Empty(cleared.Build.Build.Weapons[0].Roll);
         Assert.DoesNotContain("roll:", cleared.Design.Build.Text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void The_owners_dim_build_starts_with_slice_on_festival_flight_and_the_artifacts_perks()
+    {
+        var session = StartOwnersDimDesign();
+
+        var flight = session.Build.Build.Weapons[0];
+        Assert.Equal(("Festival Flight", Optional.Some(ItemHash.From(Slice))), (flight.Name, flight.Roll[0]));   // its socket override
+        Assert.Contains(session.Build.Equipped, equipped => equipped.Element.Id.Value == "slice");
+        Assert.Equal(
+            ["defibrillating-blast", "flashover", "dielectric", "to-shreds", "horde-shuttle", "unraveling-orbs", "photonic-flare"],
+            session.Build.Build.ArtifactPerks.Select(id => id.Value));
+        var catalog = session.Build.Catalog;
+        var perks = session.Build.Build.ArtifactPerks.SelectMany(id => catalog.Elements[id].Hashes);
+        Assert.Equal("Tablet of Ruin", catalog.Manifest.FindArtifactOf(perks).Map(item => item.Name).UnwrapOr("none"));   // all seven: other artifacts share some
+        Assert.Equal("Implement of Curiosity", catalog.Manifest.FindArtifactOf([ItemHash.From(2596646301u)]).Map(item => item.Name).UnwrapOr("none")); // Horde Shuttle alone: a tie, the lowest hash
     }
 
     [Fact]
