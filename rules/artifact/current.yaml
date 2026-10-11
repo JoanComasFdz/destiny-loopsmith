@@ -4,9 +4,9 @@
 # the cited description row). Where the creator or the note disagrees, see
 # builds/skip-grenade-hunter/discrepancies.md.
 # Hashes: the Bungie manifest (244213.26.06.29.2000-1-bnet.65864), joined by exact name among its
-# artifact perks (ADRs D12); two hashes are two copies with the same icon. Horde Shuttle has none:
-# the manifest has two artifact perks of that name with different icons, so which one this is stays
-# unresolved until a source says.
+# artifact perks (ADRs D12); two hashes are two copies with the same icon. Horde Shuttle's manifest has
+# two artifact perks of that name with different icons: its hash is the one the Tablet of Ruin artifact
+# itself (3821685388) unlocks, in its sockets' plug sets.
 elements:
   - id: defibrillating-blast
     name: Defibrillating Blast
@@ -90,6 +90,7 @@ elements:
     name: Horde Shuttle
     kind: artifactPerk
     affinity: strand
+    hash: 2596646301
     description: "Weapon damage worth 10% of an Unraveled enemy's health and shields spawns a Threadling (0.5 s cooldown). Those Threadlings Sever what they damage."
     source: "compendium/2026-10-09/Artifact Perks#45"
     rules:

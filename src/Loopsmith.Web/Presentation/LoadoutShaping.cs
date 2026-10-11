@@ -98,12 +98,18 @@ public sealed record PerkPick(int Weapon, int Column, Optional<ItemHash> Perk);
 public sealed record ArmorView(ArmorSlot Slot, Optional<IconTile> Piece, ImmutableArray<IconTile> Mods);
 
 /// <summary>
+/// The artifact block: the season's artifact the perks are from (when the manifest excerpt has it: tapping it shows
+/// Bungie's text) and the artifact perks the build has, then those the DIM loadout had that the rules don't know.
+/// </summary>
+public sealed record ArtifactView(Optional<IconTile> Item, ImmutableArray<IconTile> Perks);
+
+/// <summary>
 /// A build laid out like DIM shows a loadout: subclass, artifact, weapons (kinetic, energy, power), armor with each
 /// piece's mods, general mods, the armor sets with their perks, and set bonuses in no set the excerpt has.
 /// </summary>
 public sealed record LoadoutView(
     SubclassView Subclass,
-    ImmutableArray<IconTile> Artifact,
+    ArtifactView Artifact,
     ImmutableArray<WeaponView> Weapons,
     ImmutableArray<ArmorView> Armor,
     ImmutableArray<IconTile> GeneralMods,
@@ -157,10 +163,7 @@ public static class LoadoutShaping
             [.. b.Fragments.Select(id => DescribeElement(catalog, id)), .. DescribeLeftOutPlugs<ManifestKind.Fragment>(catalog, plugs)]);
         return new LoadoutView(
             subclass,
-            [
-                .. b.ArtifactPerks.Select(id => DescribeElement(catalog, id)),
-                .. leftOut.Where(entry => entry.Part == LoadoutPart.ArtifactPerk).Select(entry => DescribeLeftOut(catalog, entry)),
-            ],
+            DescribeArtifact(build, [.. leftOut.Where(entry => entry.Part == LoadoutPart.ArtifactPerk)]),
             [.. b.Weapons.Select((weapon, index) => DescribeWeapon(build, weapon, index)).OrderBy(view => view.Slot)],
             [
                 .. ArmorSlots
@@ -185,6 +188,20 @@ public static class LoadoutShaping
     public static Optional<string> FindSubclassIcon(RuleCatalog catalog, GuardianClass guardianClass, Subclass subclass) =>
         catalog.FindSubclassItem(guardianClass, subclass).Bind(item => item.Icon).Map(ToIconUrl);
 
+    /// <summary>
+    /// The build's armor piece in a slot, as the build panel shows it: a piece the DIM loadout wore, else the build's
+    /// exotic; none when the excerpt knows neither.
+    /// </summary>
+    public static Optional<ManifestItem> FindArmorPiece(ValidatedBuild build, ArmorSlot slot)
+    {
+        var catalog = build.Catalog;
+        var worn = build.Build.LeftOut.Where(entry => entry.Part == LoadoutPart.Item).Select(entry => catalog.Manifest.FindItem(entry.Hash));
+        var exotic = build.Build.ExoticArmor.Bind(id => catalog.FindElementItem(id));
+        return worn.Append(exotic)
+            .Select(item => item.Bind(found => found.Kind is ManifestKind.Armor armor && armor.Slot == slot ? Optional.Some(found) : Optional.None<ManifestItem>()))
+            .FindFirstSome();
+    }
+
     /// <summary>The bungie.net address of a manifest icon path.</summary>
     public static string ToIconUrl(string path) => IconHost + path;
 
@@ -198,6 +215,15 @@ public static class LoadoutShaping
                 item => DescribeItem(item.Value, element.Name, true, element.Description, element.Affinity, ToElementDetails(id)),
                 _ => new IconTile(element.Name, Optional.None<string>(), element.Affinity, Optional.None<ItemTier>(), true, element.Description, 1, ToElementDetails(id)))
             : new IconTile(id.Value, Optional.None<string>(), Affinity.Neutral, Optional.None<ItemTier>(), true, Optional.None<string>(), 1, Optional.None<ItemDetails>());
+
+    /// <summary>The build's artifact (Orchestration decides which) and its perks: the build's, then the left-out ones.</summary>
+    private static ArtifactView DescribeArtifact(ValidatedBuild build, ImmutableArray<LeftOutEntry> leftOut)
+    {
+        var catalog = build.Catalog;
+        var item = LoopDesigning.FindArtifact(build).Map(found =>
+            DescribeItem(found.Item, found.Item.Name, true, found.Item.Description, Affinity.Neutral, Optional.Some<ItemDetails>(new ItemDetails.OfItem(found.Item.Hash))));
+        return new ArtifactView(item, [.. build.Build.ArtifactPerks.Select(id => DescribeElement(catalog, id)), .. leftOut.Select(entry => DescribeLeftOut(catalog, entry))]);
+    }
 
     private static Optional<ItemDetails> ToElementDetails(ElementId id) => Optional.Some<ItemDetails>(new ItemDetails.OfElement(id));
 

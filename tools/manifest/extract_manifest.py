@@ -16,7 +16,10 @@ type. A weapon also gets its trait columns (`traits`: the "frames" sockets among
 the list of perks it can roll (one, for a column that doesn't roll: an exotic's), its intrinsic perk and,
 for an exotic, its catalyst; armor gets its intrinsic perk (an exotic's) and the armor set it belongs
 to. Those perks, catalysts (with the perks they grant) and sets (with their 2- and 4-piece perks) are
-written too. Perks a catalyst or a set grants are the manifest's sandbox perks (`kind: perk`). A hash the
+written too. Perks a catalyst or a set grants are the manifest's sandbox perks (`kind: perk`). The artifact an
+artifact perk belongs to (the artifact item whose sockets' plug sets hold it) is written with its perks
+(`kind: artifact`, `perks`: every plug of the plug sets of its sockets that take artifact perks, but a socket's
+initial, empty one, socket by socket, each once). A hash the
 manifest doesn't have is reported, not written. The output is sorted and stable, so a rerun on the same
 manifest changes nothing.
 """
@@ -33,6 +36,8 @@ MOD_SLOTS = {"Helmet Armor Mod": "helmet", "Arms Armor Mod": "arms", "Chest Armo
 TIERS = {2: "basic", 3: "common", 4: "rare", 5: "legendary", 6: "exotic"}
 DAMAGE_TYPES = {1: "kinetic", 2: "arc", 3: "solar", 4: "void", 6: "stasis", 7: "strand"}
 EMPTY_CATALYST = "v400.empty.exotic.masterwork"  # the plug category of an exotic's empty catalyst socket
+ARTIFACT_PERKS = "artifact_perks"                 # what an artifact's perk sockets take…
+ARTIFACT_RESET = "artifact_reset"                 # …and its reset socket too, with its Reset Artifact plug
 
 
 def read_json(path):
@@ -80,7 +85,8 @@ def classify(item, buckets):
     if type_name.endswith("Armor Mod"):
         return "armorMod", MOD_SLOTS.get(type_name)
     exact = {"Super Ability": "super", "Class Ability": "classAbility", "Movement Ability": "movement",
-             "Artifact Perk": "artifactPerk", "Trait": "weaponPerk", "Enhanced Trait": "weaponPerk", "Intrinsic": "intrinsic"}
+             "Artifact Perk": "artifactPerk", "Artifact": "artifact", "Trait": "weaponPerk", "Enhanced Trait": "weaponPerk",
+             "Intrinsic": "intrinsic"}
     if type_name in exact:
         return exact[type_name], None
     for suffix, kind in ((" Grenade", "grenade"), (" Melee", "melee"), (" Aspect", "aspect"), (" Fragment", "fragment")):
@@ -114,6 +120,18 @@ def read_column(entry, plug_sets):
         rollable = [plug["plugItemHash"] for plug in plugs if plug.get("currentlyCanRoll", True)]
         return list(dict.fromkeys(rollable))
     return [entry["singleInitialItemHash"]] if entry.get("singleInitialItemHash") else []
+
+
+def read_artifact_perks(item, plug_sets, socket_types):
+    """An artifact's perks: every plug of the plug sets of its sockets that take artifact perks (not its reset socket),
+    but a socket's initial (empty) one, socket by socket, each once."""
+    entries = (item.get("sockets") or {}).get("socketEntries", [])
+    whitelist = lambda entry: [w.get("categoryIdentifier") for w in socket_types.get(str(entry.get("socketTypeHash")), {}).get("plugWhitelist", [])]
+    takes_perks = lambda entry: ARTIFACT_PERKS in whitelist(entry) and ARTIFACT_RESET not in whitelist(entry)
+    hashes = [plug["plugItemHash"] for entry in entries if entry.get("reusablePlugSetHash") and takes_perks(entry)
+              for plug in plug_sets.get(str(entry["reusablePlugSetHash"]), {}).get("reusablePlugItems", [])
+              if plug["plugItemHash"] != entry.get("singleInitialItemHash")]
+    return list(dict.fromkeys(hashes))
 
 
 def to_text(text):
@@ -220,7 +238,8 @@ def to_entry(item_hash, item, context):
     item_set = item.get("equippingBlock", {}).get("equipableItemSetHash") if kind == "armor" else None
     if item_set:
         fields.append(("set", str(item_set)))
-    granted = read_granted_perks(item, context["perks"]) if kind == "catalyst" else []
+    granted = (read_granted_perks(item, context["perks"]) if kind == "catalyst"
+               else read_artifact_perks(item, plug_sets, socket_types) if kind == "artifact" else [])
     if granted:
         fields.append(("perks", "[" + ", ".join(str(h) for h in granted) + "]"))
     description = read_description(item, context["perks"])
@@ -276,10 +295,13 @@ def main():
     wanted_sets = {items[str(h)].get("equippingBlock", {}).get("equipableItemSetHash") for h in named_items if kinds[h] == "armor"} - {None, 0}
     wanted_sets |= {set_of_perk[h] for h in named if h in set_of_perk}
     set_perks = {perk["sandboxPerkHash"] for h in wanted_sets for perk in item_sets[str(h)].get("setPerks", [])}
+    artifact_perks = {h for h in named_items if kinds[h] == "artifactPerk"}
+    artifacts = {int(h) for h, item in items.items() if item.get("itemTypeDisplayName") == "Artifact"
+                 and artifact_perks & set(read_artifact_perks(item, plug_sets, socket_types))}
     context = {"buckets": buckets, "socket_types": socket_types, "perk_category": perk_category, "plug_sets": plug_sets,
                "intrinsics": intrinsics, "weapon_catalysts": weapon_catalysts, "catalysts": catalysts, "perks": perks}
 
-    wanted_items = sorted(named_items | traits | set(intrinsics.values()) | catalysts)
+    wanted_items = sorted(named_items | traits | set(intrinsics.values()) | catalysts | artifacts)
     wanted_perks = sorted(((named - named_items) & {int(h) for h in perks}) | catalyst_perks | set_perks)
     missing = sorted(named - named_items - set(wanted_perks))
     lines = [

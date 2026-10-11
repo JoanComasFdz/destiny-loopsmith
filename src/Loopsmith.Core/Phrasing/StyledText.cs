@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Loopsmith.Core.Domain;
+using Loopsmith.Core.Functional;
 
 namespace Loopsmith.Core.Phrasing;
 
@@ -15,6 +16,12 @@ public sealed record OutcomeMention(Outcome Outcome, int Copies);
 
 /// <summary>An outcome and the phrase that describes it ("+1 Bolt Charge").</summary>
 public sealed record DescribedOutcome(Outcome Outcome, string Text);
+
+/// <summary>A keyword a phrase names: a status, a pickup or a summon, by its id, in its affinity.</summary>
+public sealed record KeywordName(string Id, Affinity Affinity);
+
+/// <summary>A piece of a phrase: plain text, or a keyword's name ("Bolt Charge", "Jolted").</summary>
+public sealed record PhrasePart(string Text, Optional<KeywordName> Keyword);
 
 public static class StyledText
 {
@@ -36,6 +43,10 @@ public static class StyledText
             Affinity.Kinetic => Tone.Kinetic,
             _ => Tone.Plain,
         };
+
+    /// <summary>A name highlighted in its affinity's tone; a neutral one (Orb of Power) strong, so it still stands out.</summary>
+    public static Tone ToHighlightTone(this Affinity affinity) =>
+        affinity == Affinity.Neutral ? Tone.Strong : affinity.ToTone();
 
     public static string ToPlainText(this StyledLine line) =>
         new string(' ', line.Indent * 2) + string.Concat(line.Spans.Select(span => span.Text));

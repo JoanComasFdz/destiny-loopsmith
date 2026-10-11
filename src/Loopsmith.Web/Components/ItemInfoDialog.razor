@@ -1,5 +1,6 @@
-@* An item's details: Bungie's text and, for what the rules know, Loopsmith's rules (written from the Compendium or
-   Clarity, with their source), section by section — an exotic weapon's intrinsic, perks and catalyst. *@
+@* An item's details, section by section (an exotic weapon's intrinsic, perks and catalyst), each in cards: Bungie's text;
+   for what the rules know, where their facts come from (the Compendium's row in Loopsmith's words, Clarity, a creator's
+   claim) and what it sets off in a loop (Loopsmith's rules). *@
 <Modal Title="@Info.Name" TitleUrl="Info.Page" OnClose="OnClose">
     <div class="item-info @ToneStyling.ToAffinityClass(Info.Affinity)" data-testid="item-info">
         <header class="item-info-head">
@@ -24,6 +25,30 @@
                     case InfoSection.Unpicked unpicked:
                         @RenderHeading(new SectionHeading(DomainPhrasing.Unknown, Optional.None<string>(), $"Trait · column {unpicked.Column + 1}"))
                         <p class="muted info-note">Not picked: a DIM link carries the weapon, not its roll.</p>
+                        break;
+                    case InfoSection.Artifact artifact:
+                        @if (artifact.BungieText is Optional<string>.Some bungie)
+                        {
+                            <div class="info-card bungie" data-testid="info-bungie">
+                                <div class="info-source">Bungie</div>
+                                <p class="info-bungie">@bungie.Value</p>
+                            </div>
+                        }
+                        <div class="info-card rules" data-testid="artifact-perks">
+                            <div class="info-source">In this build</div>
+                            @if (artifact.Perks.IsEmpty)
+                            {
+                                <p class="muted info-note">None of its perks: the build has none of this artifact's perks.</p>
+                            }
+                            else
+                            {
+                                <p class="muted info-note">The artifact sets nothing off itself; these perks of it do (each is a square in the build, with its own details):</p>
+                                @foreach (var perk in artifact.Perks)
+                                {
+                                    @RenderHeading(perk)
+                                }
+                            }
+                        </div>
                         break;
                     case InfoSection.Catalyst catalyst:
                         @if (catalyst.Heading is Optional<SectionHeading>.Some heading)
@@ -87,14 +112,11 @@
                 <p class="info-bungie">@bungie.Value</p>
             </div>
         }
-        <div class="info-card rules" data-testid="info-rules">
-            <div class="info-source">Loopsmith's rules</div>
-            @if (rules is Optional<InfoRules>.Some known)
-            {
-                @if (known.Value.Description is Optional<string>.Some description)
-                {
-                    <p class="info-rules-text">@description.Value</p>
-                }
+        @if (rules is Optional<InfoRules>.Some known)
+        {
+            @RenderSource(known.Value.Source)
+            <div class="info-card rules" data-testid="info-rules">
+                <div class="info-source">Loopsmith's rules</div>
                 @if (known.Value.Explanation.IsEmpty)
                 {
                     <p class="muted info-note">No rule is written for it yet: it sets nothing off in a loop.</p>
@@ -107,12 +129,37 @@
                     }
                     <StyledLines Lines="known.Value.Explanation" />
                 }
-                <p class="info-cite">Source: @known.Value.Source</p>
-            }
-            else
-            {
+            </div>
+        }
+        else
+        {
+            <div class="info-card rules" data-testid="info-rules">
+                <div class="info-source">Loopsmith's rules</div>
                 <p class="muted info-note">Not in Loopsmith's rules yet: it sets nothing off in a loop.</p>
+            </div>
+        }
+    };
+
+    /// <summary>Where the rules' facts come from: Loopsmith's words for it (never the source's text), the row, a link to the source.</summary>
+    private static RenderFragment RenderSource(InfoSource source) => __builder =>
+    {
+        <div class="info-card source" data-testid="info-source">
+            <div class="info-source">@source.Title</div>
+            @if (source.Paraphrase is Optional<string>.Some paraphrase)
+            {
+                <p class="info-rules-text">@paraphrase.Value</p>
             }
+            @if (source.Quote is Optional<string>.Some quote)
+            {
+                <blockquote class="info-quote">@quote.Value</blockquote>
+            }
+            <p class="info-cite">
+                <span>@source.Cite</span>
+                @if (source.Link is Optional<SourceLink>.Some link)
+                {
+                    <span> · </span><a href="@link.Value.Url" target="_blank" rel="noopener noreferrer">@link.Value.Text</a>
+                }
+            </p>
         </div>
     };
 

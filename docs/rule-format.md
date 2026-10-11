@@ -100,8 +100,12 @@ items:
   - { hash: 3832366019, name: "Harmonic Siphon", kind: armorMod, type: "Helmet Armor Mod", tier: basic, slot: helmet, description: "…", icon: /common/…/c917….png }
 ```
 
-* `kind`: `subclass|super|grenade|melee|classAbility|movement|aspect|fragment|weapon|weaponPerk|intrinsic|catalyst|armor|armorMod|artifactPerk|perk|other`.
+* `kind`: `subclass|super|grenade|melee|classAbility|movement|aspect|fragment|weapon|weaponPerk|intrinsic|catalyst|armor|armorMod|artifactPerk|artifact|perk|other`.
   A `perk` is one of the manifest's sandbox perks — what a catalyst or an armor set grants — and has no `type`.
+  An `artifact` is a season's artifact: its `perks` are every perk it unlocks (the plug sets of its sockets that
+  take artifact perks, without a socket's empty plug or the reset socket), and it is written for every artifact
+  that unlocks an artifact perk the rules or a saved share name. Artifacts share perks, so a build's artifact is
+  the one that unlocks the most of its perks (each counted once); two that unlock as many: none, not a guess.
 * `description`: Bungie's text (for an aspect or a fragment, whose own is empty, its perks': its effect, then a
   stat change such as `-10 Grenade ▼`), without the private-use glyphs of Destiny's icon font. It is shown
   in an item's details as Bungie's; it is never a rule.
@@ -113,7 +117,8 @@ items:
   needs at least one hash. A weapon's `intrinsic` is its frame (an exotic's own perk), its `catalyst` an
   exotic's catalyst item (whose `perks` are what it grants); armor's `intrinsic` is an exotic's perk and its
   `set` the armor set it belongs to. These keys on anything else are an error (`slot is only allowed on a
-  weapon, armor or an armor mod, not on a grenade`; `set is only allowed on armor, not on a weapon`).
+  weapon, armor or an armor mod, not on a grenade`; `set is only allowed on armor, not on a weapon`; `perks`
+  belongs to a catalyst or an artifact).
 * `armorSets`: each set's name and the perk each piece count grants. A build's set bonus element gives the
   set perk's hash (`luminopotent-2pc` → `hash: 2769443639`), so a DIM loadout's pieces equip it.
 * `tier`: `basic|common|rare|legendary|exotic`. `icon` is a bungie.net path (the app prefixes

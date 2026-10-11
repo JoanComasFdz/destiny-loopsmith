@@ -144,6 +144,62 @@ public static class DomainPhrasing
     public static string DescribeSummon(this KeywordGlossary glossary, SummonId summon) =>
         glossary.Summons.TryGetValue(summon, out var definition) ? definition.Name : summon.Value;
 
+    /// <summary>
+    /// A phrase in parts: each keyword the glossary knows — a status by its name or, for a debuff, its adjective
+    /// ("Jolted"), a pickup, a summon — apart, as a whole word (the longest name first: "Unraveling Rounds" before
+    /// "Unravel"), the text between plain. Hosts highlight the keywords.
+    /// </summary>
+    public static ImmutableArray<PhrasePart> SplitKeywords(this KeywordGlossary glossary, string text)
+    {
+        var names = ListKeywordNames(glossary);
+        var parts = ImmutableArray.CreateBuilder<PhrasePart>();
+        var plainStart = 0;
+        var at = 0;
+        while (at < text.Length)
+        {
+            var match = names.FirstOrDefault(name => IsWordAt(text, at, name.Text));
+            if (match.Text is null)
+            {
+                at++;
+                continue;
+            }
+
+            if (at > plainStart)
+            {
+                parts.Add(new PhrasePart(text[plainStart..at], Optional.None<KeywordName>()));
+            }
+
+            parts.Add(new PhrasePart(match.Text, Optional.Some(match.Keyword)));
+            at += match.Text.Length;
+            plainStart = at;
+        }
+
+        if (text.Length > plainStart)
+        {
+            parts.Add(new PhrasePart(text[plainStart..], Optional.None<KeywordName>()));
+        }
+
+        return parts.ToImmutable();
+    }
+
+    private static ImmutableArray<(string Text, KeywordName Keyword)> ListKeywordNames(KeywordGlossary glossary) =>
+    [
+        .. glossary.Statuses.Values
+            .SelectMany(status => new[] { status.Name, status.Kind == KeywordKind.Debuff ? glossary.DescribeDebuffedAdjective(status.Id) : status.Name }
+                .Distinct()
+                .Select(name => (Text: name, Keyword: new KeywordName(status.Id.Value, status.Affinity))))
+            .Concat(glossary.Pickups.Values.Select(pickup => (Text: pickup.Name, Keyword: new KeywordName(pickup.Id.Value, pickup.Affinity))))
+            .Concat(glossary.Summons.Values.Select(summon => (Text: summon.Name, Keyword: new KeywordName(summon.Id.Value, summon.DamageType.ToAffinity()))))
+            .Where(name => name.Text.Length > 0)
+            .OrderByDescending(name => name.Text.Length)
+            .ThenBy(name => name.Text, StringComparer.Ordinal),
+    ];
+
+    private static bool IsWordAt(string text, int at, string word) =>
+        string.CompareOrdinal(text, at, word, 0, word.Length) == 0
+        && (at == 0 || !char.IsLetterOrDigit(text[at - 1]))
+        && (at + word.Length == text.Length || !char.IsLetterOrDigit(text[at + word.Length]));
+
     /// <summary>"Jolt" → "Jolted", "Sever" → "Severed" — the adjective a player uses for a debuffed target.</summary>
     public static string DescribeDebuffedAdjective(this KeywordGlossary glossary, StatusId status)
     {

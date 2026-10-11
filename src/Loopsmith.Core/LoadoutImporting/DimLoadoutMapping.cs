@@ -8,7 +8,8 @@ namespace Loopsmith.Core.LoadoutImporting;
 /// Pure: a DIM loadout → a <see cref="Build"/> of what the rule catalog recognises by manifest hash, and the rest left
 /// out (<see cref="Build.LeftOut"/>). Nothing is guessed (ADRs D12): an ability the catalog has no hash for is "?", an
 /// item it doesn't know is listed, not matched by name. A weapon is equipped when the manifest excerpt knows its slot,
-/// name and damage type (without perks: a loadout doesn't carry them); any other weapon is left out. The armor's set
+/// name and damage type, with the perks its socket overrides pick in its trait columns (a loadout saved with them);
+/// any other weapon is left out. The armor's set
 /// perks the pieces grant (2 or 4 of a set, by the excerpt) are its set bonuses, where the catalog knows them.
 /// </summary>
 public static class DimLoadoutMapping
@@ -65,9 +66,10 @@ public static class DimLoadoutMapping
         var perks = loadout.ArtifactPerks.Select(hash => Recognise(byHash, LoadoutPart.ArtifactPerk, hash)).ToImmutableArray();
         var recognised = plugs.Concat(items).Concat(mods).Concat(perks).ToImmutableArray();
         var placed = recognised.SelectMany(entry => ToSome(entry.Element).Select(element => (entry.Part, element, entry.Hash))).ToImmutableArray();
+        var overrides = loadout.Equipped.GroupBy(item => item.Hash).ToImmutableDictionary(group => group.Key, group => group.First().Plugs);
         var weapons = items
             .Where(entry => !entry.Element.IsSome())
-            .SelectMany(entry => ToSome(ReadWeapon(catalog.Manifest, entry.Hash)))
+            .SelectMany(entry => ToSome(ReadWeapon(catalog.Manifest, entry.Hash, overrides.GetValueOrDefault(entry.Hash, []))))
             .GroupBy(weapon => weapon.Slot)
             .Select(slot => slot.First())
             .ToImmutableArray();
@@ -112,12 +114,27 @@ public static class DimLoadoutMapping
 
     /// <summary>
     /// A weapon the manifest excerpt knows — its slot, name, damage type and archetype ("Grenade Launcher" →
-    /// <c>grenade-launcher</c>) — with no perks: a DIM loadout names the weapon, not the perks it rolled.
+    /// <c>grenade-launcher</c>) — and its roll: in each trait column, the loadout's socket override for it that the
+    /// column rolls with. A DIM loadout names the weapon; its perks only when they were saved with it (none: "?").
     /// </summary>
-    private static Optional<WeaponLoadout> ReadWeapon(ManifestExcerpt manifest, ItemHash hash) =>
+    private static Optional<WeaponLoadout> ReadWeapon(ManifestExcerpt manifest, ItemHash hash, ImmutableArray<ItemHash> overrides) =>
         manifest.FindItem(hash).Bind(item => item.Kind is ManifestKind.Weapon { DamageType: Optional<DamageType>.Some type } weapon
-            ? Optional.Some(new WeaponLoadout(weapon.Slot, item.Name, type.Value, item.Type.Bind(ToArchetype), [], Optional.Some(hash), [], false))
+            ? Optional.Some(new WeaponLoadout(weapon.Slot, item.Name, type.Value, item.Type.Bind(ToArchetype), [], Optional.Some(hash), ReadRoll(weapon.Traits, overrides), false))
             : Optional.None<WeaponLoadout>());
+
+    /// <summary>
+    /// Each column's pick: the first override it rolls with that an earlier column didn't take (an override fills one
+    /// column); none at all: no roll.
+    /// </summary>
+    private static ImmutableArray<Optional<ItemHash>> ReadRoll(ImmutableArray<TraitColumn> columns, ImmutableArray<ItemHash> overrides)
+    {
+        var roll = columns.Aggregate(ImmutableArray<Optional<ItemHash>>.Empty, (picked, column) => picked.Add(overrides
+            .Where(column.Options.Contains)
+            .Where(perk => !picked.Contains(Optional.Some(perk)))
+            .Select(Optional.Some)
+            .FindFirstSome()));
+        return roll.Any(pick => pick.IsSome()) ? roll : [];
+    }
 
     private static Optional<string> ToArchetype(string type)
     {

@@ -47,14 +47,37 @@ public sealed class PerkPickingTests
         var session = StartOwnersDimDesign();
 
         var picked = Pick(session, 0, 1, Optional.Some(ItemHash.From(AttritionOrbs)));
-        var cleared = Pick(picked, 0, 1, Optional.None<ItemHash>());
+        var sliceCleared = Pick(picked, 0, 0, Optional.None<ItemHash>());
+        var cleared = Pick(sliceCleared, 0, 1, Optional.None<ItemHash>());
 
-        Assert.Equal([Optional.None<ItemHash>(), Optional.Some(ItemHash.From(AttritionOrbs))], picked.Build.Build.Weapons[0].Roll);
-        Assert.Contains("roll: [\"?\", 243981275]", picked.Design.Build.Text, StringComparison.Ordinal);
+        Assert.Equal([Optional.Some(ItemHash.From(Slice)), Optional.Some(ItemHash.From(AttritionOrbs))], picked.Build.Build.Weapons[0].Roll);
+        Assert.Contains("roll: [923806249, 243981275]", picked.Design.Build.Text, StringComparison.Ordinal);
         Assert.Contains(picked.Build.Equipped, equipped => equipped.Element.Id.Value == "attrition-orbs");
         Assert.DoesNotContain(session.Build.Equipped, equipped => equipped.Element.Id.Value == "attrition-orbs");
+        Assert.Contains("roll: [\"?\", 243981275]", sliceCleared.Design.Build.Text, StringComparison.Ordinal);
         Assert.Empty(cleared.Build.Build.Weapons[0].Roll);
         Assert.DoesNotContain("roll:", cleared.Design.Build.Text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void The_owners_dim_build_starts_with_slice_on_festival_flight_and_the_artifacts_perks()
+    {
+        var session = StartOwnersDimDesign();
+
+        var flight = session.Build.Build.Weapons[0];
+        Assert.Equal(("Festival Flight", Optional.Some(ItemHash.From(Slice))), (flight.Name, flight.Roll[0]));   // its socket override
+        Assert.Contains(session.Build.Equipped, equipped => equipped.Element.Id.Value == "slice");
+        Assert.Equal(
+            ["defibrillating-blast", "flashover", "dielectric", "to-shreds", "horde-shuttle", "unraveling-orbs", "photonic-flare"],
+            session.Build.Build.ArtifactPerks.Select(id => id.Value));
+        var artifact = Assert.IsType<Optional<BuildArtifact>.Some>(LoopDesigning.FindArtifact(session.Build)).Value;   // other artifacts share some of the seven
+        Assert.Equal("Tablet of Ruin", artifact.Item.Name);
+        Assert.Equal(
+            [1319563986u, 2596646298u, 3585856470u, 1319563985u, 2596646301u, 3585856464u, 3585856465u],
+            artifact.Perks.Select(perk => perk.Hash.Value));                                    // the hashes the saved share unlocks
+        Assert.All(artifact.Perks, perk => Assert.True(perk.Element.IsSome()));
+        Assert.Equal([0], LoopDesigning.ListWeaponsHolding(session.Build, ElementId.From("slice")));          // Festival Flight
+        Assert.Empty(LoopDesigning.ListWeaponsHolding(session.Build, ElementId.From("attrition-orbs")));       // not picked
     }
 
     [Fact]

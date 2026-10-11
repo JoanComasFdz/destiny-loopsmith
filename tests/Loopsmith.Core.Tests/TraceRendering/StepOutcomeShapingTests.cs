@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 using Loopsmith.Core.Orchestration;
@@ -9,7 +10,7 @@ namespace Loopsmith.Core.Tests.TraceRendering;
 
 /// <summary>
 /// A step's outcomes as the web designer draws them: each event, the elements it set off (one each, in the order they
-/// fired), each outcome on a line of its own, the keyword it names, cascades a level deeper, repeats counted.
+/// fired), each outcome on a line of its own, every keyword it names apart, cascades a level deeper, repeats counted.
 /// </summary>
 public sealed class StepOutcomeShapingTests
 {
@@ -45,11 +46,11 @@ public sealed class StepOutcomeShapingTests
         Assert.Equal(["spark", "vow"], hit.Sources.Select(source => source.Source.Value));
         var jolted = Assert.Single(hit.Sources[0].Outcomes);
         Assert.StartsWith("Jolt target", jolted.Text);
-        Assert.Equal(Optional.Some(ElementId.From("jolt")), jolted.Keyword);                    // the debuff is a keyword: tappable
+        Assert.Equal([("Jolt", Affinity.Arc, Optional.Some(ElementId.From("jolt")))], ListKeywords(jolted.Parts));   // the debuff is a keyword: tappable
         Assert.Equal(["+1 Bolt Charge", "+?% grenade energy"], hit.Sources[1].Outcomes.Select(line => line.Text));
-        Assert.Equal(
-            [Optional.Some(ElementId.From("bolt-charge")), Optional.None<ElementId>()],
-            hit.Sources[1].Outcomes.Select(line => line.Keyword));
+        Assert.Equal(["+1 ", "Bolt Charge"], hit.Sources[1].Outcomes[0].Parts.Select(part => part.Text));
+        Assert.Equal([("Bolt Charge", Affinity.Arc, Optional.Some(ElementId.From("bolt-charge")))], ListKeywords(hit.Sources[1].Outcomes[0].Parts));
+        Assert.Empty(ListKeywords(hit.Sources[1].Outcomes[1].Parts));
         Assert.Empty(hit.Sources[1].Reasons);                                                    // only when asked for
     }
 
@@ -61,7 +62,8 @@ public sealed class StepOutcomeShapingTests
         var shaped = LoopDesigning.ShapeStepOutcomes(session, session.Resolutions[0], Plain with { ShowReasons = true });
 
         var gained = Assert.Single(shaped.Events, shapedEvent => shapedEvent.Depth == 1);
-        Assert.Equal(("Bolt Charge gained", Optional.Some(ElementId.From("bolt-charge"))), (gained.Event, gained.Keyword));
+        Assert.Equal("Bolt Charge gained", gained.Event);
+        Assert.Equal([("Bolt Charge", Affinity.Arc, Optional.Some(ElementId.From("bolt-charge")))], ListKeywords(gained.Parts));
         Assert.Equal(["+2.5% melee energy"], Assert.Single(gained.Sources).Outcomes.Select(line => line.Text));
         Assert.Equal(["Grenade hits charge you."], shaped.Events[0].Sources[1].Reasons);
     }
@@ -77,7 +79,9 @@ public sealed class StepOutcomeShapingTests
 
         var killed = Assert.Single(shaped.Events);
         Assert.Equal((3, "spawner"), (killed.Repeats, Assert.Single(killed.Sources).Source.Value));
-        Assert.Equal(Optional.None<ElementId>(), Assert.Single(killed.Sources[0].Outcomes).Keyword);   // no orb element in this catalog
+        Assert.Equal(
+            [("Orb of Power", Affinity.Neutral, Optional.None<ElementId>())],                     // a keyword still, with no orb element in this catalog
+            ListKeywords(Assert.Single(killed.Sources[0].Outcomes).Parts));
     }
 
     [Fact]
@@ -116,6 +120,36 @@ public sealed class StepOutcomeShapingTests
 
         var shaped = LoopDesigning.ShapeStepOutcomes(session, session.Resolutions[0], Plain);
 
-        Assert.Contains(shaped.Events, shapedEvent => shapedEvent.Depth == 1 && shapedEvent.Keyword == Optional.Some(ElementId.From("jolt")));
+        Assert.Contains(shaped.Events, shapedEvent => shapedEvent.Depth == 1
+            && ListKeywords(shapedEvent.Parts).Any(keyword => keyword.Element == Optional.Some(ElementId.From("jolt"))));
     }
+
+    [Fact]
+    public void A_weapons_hit_or_kill_names_its_weapon_slot_an_abilitys_none()
+    {
+        var spawner = Element("spawner", ElementKind.Fragment, [On(new Trigger.KillAny(Any), new Outcome.Spawn(Pickup("orb-of-power"), 1))]);
+        var session = Play(ValidateBuild([spawner]), new PlayerAction.FireWeapon(WeaponSlot.Energy, HitOutcome.Kill, TargetCount.One), new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Kill, TargetCount.One));
+
+        var shot = LoopDesigning.ShapeStepOutcomes(session, session.Resolutions[0], Plain);
+        var thrown = LoopDesigning.ShapeStepOutcomes(session, session.Resolutions[1], Plain);
+
+        Assert.Equal(Optional.Some(WeaponSlot.Energy), Assert.Single(shot.Events).Weapon);
+        Assert.Equal(Optional.None<WeaponSlot>(), Assert.Single(thrown.Events).Weapon);
+    }
+
+    [Fact]
+    public void A_keyword_is_a_whole_word_and_a_debuff_also_by_its_adjective()
+    {
+        var parts = Glossary.SplitKeywords("Kill on Jolted target near an Ionic Traceless Jolt");
+
+        Assert.Equal(["Kill on ", "Jolted", " target near an Ionic Traceless ", "Jolt"], parts.Select(part => part.Text));
+        Assert.Equal([false, true, false, true], parts.Select(part => part.Keyword.IsSome()));
+    }
+
+    private static ImmutableArray<(string Text, Affinity Affinity, Optional<ElementId> Element)> ListKeywords(ImmutableArray<TextPart> parts) =>
+    [
+        .. parts.SelectMany(part => part.Keyword.Match(
+            keyword => new[] { (part.Text, keyword.Value.Affinity, keyword.Value.Element) },
+            _ => [])),
+    ];
 }

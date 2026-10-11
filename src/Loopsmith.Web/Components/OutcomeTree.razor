@@ -1,6 +1,8 @@
-@* A step's outcomes, one line each (LoopDesigning.ShapeStepOutcomes, the CLI's wording): the event, then each element
-   it set off (its icon and name) with each of its outcomes under it; a cascade (↳ Bolt Charge gained) nests under the
-   event that set it off. An element's or keyword's name shows a preview on hover (or focus) and its details on a tap. *@
+@* A step's outcomes, one line each (LoopDesigning.ShapeStepOutcomes, the CLI's wording): the event, then where what
+   it set off comes from (OutcomeOrigins: "Fragment · Arcstrider", "Weapon perk · Festival Flight", with that item's
+   icon), each element from there (its icon and name) and each of its outcomes under it; a cascade (↳ Bolt Charge
+   gained) nests under the event that set it off. An element's or keyword's name shows a preview on hover (or focus)
+   and its details on a tap. *@
 <div class="outcomes">
     @if (Outcomes.Events.IsEmpty && Outcomes.Notes.IsEmpty)
     {
@@ -16,37 +18,51 @@
                 {
                     <span class="tone-muted">↳ </span>
                 }
-                @RenderKeyword(shaped.Keyword, shaped.Event, "tone-strong outcome-event-name", eventKey)
+                @RenderParts(shaped.Parts, "tone-strong outcome-event-name", eventKey)
                 @if (shaped.Repeats > 1)
                 {
                     <span class="tone-strong"> ×@shaped.Repeats</span>
                 }
             </div>
-            @for (var s = 0; s < shaped.Sources.Length; s++)
+            @{ var groups = OutcomeOrigins.GroupByOrigin(Build, shaped); }
+            @for (var g = 0; g < groups.Length; g++)
             {
-                var source = shaped.Sources[s];
-                var sourceKey = $"{eventKey}s{s}";
-                <div class="outcome-source" data-source="@source.Source.Value">
-                    @RenderElement(source, sourceKey)
-                    @for (var l = 0; l < source.Outcomes.Length; l++)
+                var group = groups[g];
+                <div class="outcome-origin" data-origin="@group.Origin.Label">
+                    <div class="outcome-origin-head">
+                        @if (group.Origin.Icon is Optional<string>.Some originIcon)
+                        {
+                            <img class="outcome-origin-icon" src="@originIcon.Value" alt="" loading="lazy" />
+                        }
+                        <span>@group.Origin.Label</span>
+                    </div>
+                    @for (var s = 0; s < group.Sources.Length; s++)
                     {
-                        var line = source.Outcomes[l];
-                        <div class="outcome-line">
-                            <span class="outcome-arrow tone-muted" aria-hidden="true">→</span>
-                            @RenderKeyword(line.Keyword, line.Text, ToneStyling.ToToneClass(line.Tone), $"{sourceKey}l{l}")
-                            @if (line.Chance)
+                        var source = group.Sources[s];
+                        var sourceKey = $"{eventKey}g{g}s{s}";
+                        <div class="outcome-source" data-source="@source.Source.Value">
+                            @RenderElement(source, sourceKey)
+                            @for (var l = 0; l < source.Outcomes.Length; l++)
                             {
-                                <span class="tone-muted"> (chance)</span>
+                                var line = source.Outcomes[l];
+                                <div class="outcome-line">
+                                    <span class="outcome-arrow tone-muted" aria-hidden="true">→</span>
+                                    @RenderParts(line.Parts, ToneStyling.ToToneClass(line.Tone), $"{sourceKey}l{l}")
+                                    @if (line.Chance)
+                                    {
+                                        <span class="tone-muted"> (chance)</span>
+                                    }
+                                </div>
+                            }
+                            @foreach (var reason in source.Reasons)
+                            {
+                                <div class="outcome-detail tone-muted">why: @reason</div>
+                            }
+                            @foreach (var caveat in source.Caveats)
+                            {
+                                <div class="outcome-detail tone-muted">· @caveat</div>
                             }
                         </div>
-                    }
-                    @foreach (var reason in source.Reasons)
-                    {
-                        <div class="outcome-detail tone-muted">why: @reason</div>
-                    }
-                    @foreach (var caveat in source.Caveats)
-                    {
-                        <div class="outcome-detail tone-muted">· @caveat</div>
                     }
                 </div>
             }
@@ -96,21 +112,38 @@
         </span>
     };
 
-    /// <summary>Text that names a keyword the catalog has (Jolt, Bolt Charge): tappable for its details; else plain text.</summary>
-    private RenderFragment RenderKeyword(Optional<ElementId> keyword, string text, string toneClass, string key) => __builder =>
+    /// <summary>
+    /// A text in its parts: each keyword it names (Bolt Charge, Jolted, Ionic Trace) always in its affinity's colour, and
+    /// tappable for its details when the catalog has it as an element; the rest in the line's tone.
+    /// </summary>
+    private RenderFragment RenderParts(ImmutableArray<TextPart> parts, string toneClass, string key) => __builder =>
     {
-        if (keyword is Optional<ElementId>.Some element)
+        for (var p = 0; p < parts.Length; p++)
+        {
+            var part = parts[p];
+            var partKey = $"{key}p{p}";
+            @RenderPart(part, toneClass, partKey)
+        }
+    };
+
+    private RenderFragment RenderPart(TextPart part, string toneClass, string key) => __builder =>
+    {
+        if (part.Keyword is Optional<KeywordPart>.Some keyword && keyword.Value.Element is Optional<ElementId>.Some element)
         {
             <span class="outcome-name-wrap">
-                <button type="button" class="outcome-keyword @toneClass" data-keyword="@element.Value.Value"
+                <button type="button" class="outcome-keyword keyword @ToneStyling.ToAffinityClass(keyword.Value.Affinity)" data-keyword="@element.Value.Value"
                         @onclick="() => ShowDetailsAsync(element.Value)" @onclick:stopPropagation="true"
-                        @onmouseenter="() => Hover(key)" @onmouseleave="() => Unhover(key)" @onfocus="() => Hover(key)" @onblur="() => Unhover(key)">@text</button>
+                        @onmouseenter="() => Hover(key)" @onmouseleave="() => Unhover(key)" @onfocus="() => Hover(key)" @onblur="() => Unhover(key)">@part.Text</button>
                 @RenderPreview(element.Value, key)
             </span>
         }
+        else if (part.Keyword is Optional<KeywordPart>.Some named)
+        {
+            <span class="keyword @ToneStyling.ToAffinityClass(named.Value.Affinity)">@part.Text</span>
+        }
         else
         {
-            <span class="@toneClass">@text</span>
+            <span class="@toneClass">@part.Text</span>
         }
     };
 

@@ -93,6 +93,17 @@ public sealed class DimLoadoutMappingTests
         Assert.Equal(("DIM loadout", Optional.Some(ElementId.From("shinobus-vow"))), (build.Name, build.ExoticArmor));
     }
 
+    [Fact]
+    public void A_weapons_socket_overrides_pick_its_perks_in_the_columns_that_roll_them()
+    {
+        // Festival Flight: Slice (923806249) rolls in its first trait column; 1001 is in no column.
+        var withPerks = MapLoadout("""{ "name": "x", "classType": 1, "equipped": [ { "hash": 2328211300 }, { "hash": 4019651319, "socketOverrides": { "1": 1001, "3": 923806249 } } ] }""");
+        var without = MapLoadout("""{ "name": "x", "classType": 1, "equipped": [ { "hash": 2328211300 }, { "hash": 4019651319, "socketOverrides": { "1": 1001 } } ] }""");
+
+        Assert.Equal([Optional.Some(ItemHash.From(923806249u)), Optional.None<ItemHash>()], Assert.Single(withPerks.Weapons).Roll);
+        Assert.Empty(Assert.Single(without.Weapons).Roll);                                     // nothing a column rolls: no roll
+    }
+
     [Theory]
     [InlineData("""{ "name": "No subclass", "equipped": [ { "hash": 1053737370 } ] }""", "can't tell this DIM loadout's subclass")]
     [InlineData("""{ "name": "Empty", "equipped": [] }""", "no equipped items")]
