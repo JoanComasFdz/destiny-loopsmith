@@ -102,9 +102,10 @@ items:
 
 * `kind`: `subclass|super|grenade|melee|classAbility|movement|aspect|fragment|weapon|weaponPerk|intrinsic|catalyst|armor|armorMod|artifactPerk|artifact|perk|other`.
   A `perk` is one of the manifest's sandbox perks — what a catalyst or an armor set grants — and has no `type`.
-  An `artifact` is a season's artifact: its `perks` are every perk it unlocks (its sockets' plug sets, without
-  a socket's empty plug), and it is written for every artifact that unlocks an artifact perk the rules or a
-  saved share name (artifacts share perks: a build's artifact is the one that unlocks the most of its perks).
+  An `artifact` is a season's artifact: its `perks` are every perk it unlocks (the plug sets of its sockets that
+  take artifact perks, without a socket's empty plug or the reset socket), and it is written for every artifact
+  that unlocks an artifact perk the rules or a saved share name. Artifacts share perks, so a build's artifact is
+  the one that unlocks the most of its perks (each counted once); two that unlock as many: none, not a guess.
 * `description`: Bungie's text (for an aspect or a fragment, whose own is empty, its perks': its effect, then a
   stat change such as `-10 Grenade ▼`), without the private-use glyphs of Destiny's icon font. It is shown
   in an item's details as Bungie's; it is never a rule.

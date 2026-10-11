@@ -93,6 +93,11 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
 - **What the rules can't say yet** (each noted in its rule file): a weapon's own lightning strike as an event
   (Thunderlord's strikes are part of its kill and hit rules), ammo and reload (Return Stroke, Feeding Frenzy:
   it would need a glossary buff), stuns, "while holding the trigger".
+- **Another season's artifact from a DIM link**: the excerpt has the artifacts of the perks the rules and the
+  saved shares name (the Tablet of Ruin). A DIM link names its artifact perks, not the artifact, and the
+  browser's manifest join reads an artifact only by its own hash, so a link from another season shows its perks
+  without the artifact until the excerpt is regenerated with rules for that season (the extractor finds the
+  artifact from its perks).
 - **Enhanced perks**: the catalog knows a perk by its base hash (Slice, not its enhanced version, whose
   numbers differ), so picking an enhanced perk sets nothing off until the rules author it.
 

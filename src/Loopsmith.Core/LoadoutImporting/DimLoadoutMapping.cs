@@ -122,10 +122,17 @@ public static class DimLoadoutMapping
             ? Optional.Some(new WeaponLoadout(weapon.Slot, item.Name, type.Value, item.Type.Bind(ToArchetype), [], Optional.Some(hash), ReadRoll(weapon.Traits, overrides), false))
             : Optional.None<WeaponLoadout>());
 
-    /// <summary>Each column's pick among the overrides (the first it rolls with); none at all: no roll.</summary>
+    /// <summary>
+    /// Each column's pick: the first override it rolls with that an earlier column didn't take (an override fills one
+    /// column); none at all: no roll.
+    /// </summary>
     private static ImmutableArray<Optional<ItemHash>> ReadRoll(ImmutableArray<TraitColumn> columns, ImmutableArray<ItemHash> overrides)
     {
-        var roll = columns.Select(column => overrides.Where(column.Options.Contains).Select(Optional.Some).FindFirstSome()).ToImmutableArray();
+        var roll = columns.Aggregate(ImmutableArray<Optional<ItemHash>>.Empty, (picked, column) => picked.Add(overrides
+            .Where(column.Options.Contains)
+            .Where(perk => !picked.Contains(Optional.Some(perk)))
+            .Select(Optional.Some)
+            .FindFirstSome()));
         return roll.Any(pick => pick.IsSome()) ? roll : [];
     }
 

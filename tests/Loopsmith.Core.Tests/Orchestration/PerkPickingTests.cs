@@ -70,10 +70,12 @@ public sealed class PerkPickingTests
         Assert.Equal(
             ["defibrillating-blast", "flashover", "dielectric", "to-shreds", "horde-shuttle", "unraveling-orbs", "photonic-flare"],
             session.Build.Build.ArtifactPerks.Select(id => id.Value));
-        var catalog = session.Build.Catalog;
-        var perks = session.Build.Build.ArtifactPerks.SelectMany(id => catalog.Elements[id].Hashes);
-        Assert.Equal("Tablet of Ruin", catalog.Manifest.FindArtifactOf(perks).Map(item => item.Name).UnwrapOr("none"));   // all seven: other artifacts share some
-        Assert.Equal("Implement of Curiosity", catalog.Manifest.FindArtifactOf([ItemHash.From(2596646301u)]).Map(item => item.Name).UnwrapOr("none")); // Horde Shuttle alone: a tie, the lowest hash
+        var artifact = Assert.IsType<Optional<BuildArtifact>.Some>(LoopDesigning.FindArtifact(session.Build)).Value;   // other artifacts share some of the seven
+        Assert.Equal("Tablet of Ruin", artifact.Item.Name);
+        Assert.Equal(
+            [1319563986u, 2596646298u, 3585856470u, 1319563985u, 2596646301u, 3585856464u, 3585856465u],
+            artifact.Perks.Select(perk => perk.Hash.Value));                                    // the hashes the saved share unlocks
+        Assert.All(artifact.Perks, perk => Assert.True(perk.Element.IsSome()));
     }
 
     [Fact]

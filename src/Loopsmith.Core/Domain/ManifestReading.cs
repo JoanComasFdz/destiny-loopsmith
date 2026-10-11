@@ -95,22 +95,6 @@ public static class ManifestReading
             ArmorSets = more.ArmorSets.Where(entry => !excerpt.ArmorSets.ContainsKey(entry.Key)).Aggregate(excerpt.ArmorSets, (sets, entry) => sets.Add(entry.Key, entry.Value)),
         };
 
-    /// <summary>
-    /// The artifact these perks are from (a build's artifact perks: the season's artifact), when the excerpt has one: the
-    /// one that unlocks the most of them (artifacts share perks), the lowest hash on a tie.
-    /// </summary>
-    public static Optional<ManifestItem> FindArtifactOf(this ManifestExcerpt excerpt, IEnumerable<ItemHash> perks)
-    {
-        var wanted = perks.ToImmutableHashSet();
-        return excerpt.Items.Values
-            .Select(item => (Item: item, Count: item.Kind is ManifestKind.Artifact artifact ? artifact.Perks.Count(wanted.Contains) : 0))
-            .Where(candidate => candidate.Count > 0)
-            .OrderByDescending(candidate => candidate.Count)
-            .ThenBy(candidate => candidate.Item.Hash.Value)
-            .Select(candidate => Optional.Some(candidate.Item))
-            .FindFirstSome();
-    }
-
     /// <summary>The armor slot of an armor piece, or of a mod that only fits it; none for anything else (a general mod).</summary>
     public static Optional<ArmorSlot> ReadArmorSlot(this ManifestItem item) =>
         item.Kind switch

@@ -59,6 +59,12 @@ public sealed record ArmorSetStatus(ArmorSet Set, Optional<PieceCount> Pieces, I
 /// <summary>A set perk: active when the build has it as a set bonus or wears enough pieces; its element when the rules know it.</summary>
 public sealed record SetPerkStatus(SetPerk Perk, bool Active, Optional<ElementId> Element);
 
+/// <summary>A build's artifact (the season's, from the manifest excerpt) and the build's perks it unlocks, in the build's order.</summary>
+public sealed record BuildArtifact(ManifestItem Item, ImmutableArray<ArtifactPerkOfBuild> Perks);
+
+/// <summary>One of the build's artifact perks: its hash in the artifact, and its element when the rules know it (else left out).</summary>
+public sealed record ArtifactPerkOfBuild(ItemHash Hash, Optional<ElementId> Element);
+
 public sealed record StatLine(
     Optional<StatValue> Weapons,
     Optional<StatValue> Health,
