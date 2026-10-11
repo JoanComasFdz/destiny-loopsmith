@@ -551,7 +551,7 @@ stats: { weapons: 47, class: 104, grenade: 145, super: 27, melee: 79 }   # any s
 | `<n> aspects equipped; at most 2.` · `'<name>' is equipped <n> times; aspects and fragments are unique.` · `<n> fragments equipped; the aspects grant <m> slots.` | Blocking |
 | `Fragment slots unknown for <aspects> — fragment count not checked.` | Info |
 | `Unknown (?): <slots> — not in the rule catalog yet, so they set nothing off.` | Info |
-| `Left out of the build: <n> items, <n> subclass plugs, … from the DIM loadout — not in the rule catalog yet.` — only the gaps: a legendary armor piece (its set's bonuses count from the pieces worn) and a jump have no part in a loop and aren't counted | Info |
+| `Left out of the build: <n> items, <n> subclass plugs, … from the DIM loadout — not in the rule catalog yet.` — only the gaps: a stat or tuning mod (it changes only stats, which the build's stats count when they add up from the player's armor), a legendary armor piece (its set's bonuses count from the pieces worn) and a jump have no part in a loop and aren't counted | Info |
 | `<weapon>'s roll: <perks> — not in the rule catalog yet, so they set nothing off.` — perks named as "Slice (Enhanced Trait)" | Info |
 | `<weapon>'s roll: <perk> isn't a perk of its column <n> in the manifest excerpt.` — only when the excerpt has the weapon's columns | Warning |
 | `<weapon>: '<perk>' gives way to the other perk of its column — a column holds one perk.` — a perk `perks` names in a column the roll (or another named perk) already fills; it doesn't count | Warning |
