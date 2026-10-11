@@ -7,7 +7,7 @@
 # where a source states it. A status ends when a rule removes or consumes it, or when the player
 # declares it ended (`end:<status>`). `trait` is Bungie's trait for the keyword (the manifest's
 # DestinyTraitDefinition: the game's own keyword, as its tooltips name it): the manifest excerpt's
-# `traits` give its icon, which shows next to the keyword's name. A keyword without one has none.
+# `keywordTraits` give its icon, which shows next to the keyword's name. A keyword without one has none.
 # Sources: the Destiny Data Compendium snapshot of 2026-10-09 ("compendium/2026-10-09/<Tab>#<row>"
 # below; it has glossary rows for the Arc and Strand keywords) and Clarity 2.0625, which has no
 # status entries and only mentions them inside other entries.

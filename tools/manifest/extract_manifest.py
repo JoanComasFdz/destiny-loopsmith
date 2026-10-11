@@ -411,7 +411,8 @@ def main():
         display = trait_definitions.get(str(h), {}).get("displayProperties", {})
         if display.get("name") and display.get("icon"):
             lines.append(f"  - {{ hash: {h}, name: {to_text(display['name'])}, icon: {display['icon']} }}")
-    missing += sorted(h for h in wanted_traits if not trait_definitions.get(str(h), {}).get("displayProperties", {}).get("icon"))
+    missing += sorted(h for h in wanted_traits if not (trait_definitions.get(str(h), {}).get("displayProperties", {}).get("name")
+                                                       and trait_definitions.get(str(h), {}).get("displayProperties", {}).get("icon")))
     lines.append("armorSets:")
     lines.extend(to_set_entry(h, item_sets[str(h)]) for h in sorted(wanted_sets))
     lines.append("items:")

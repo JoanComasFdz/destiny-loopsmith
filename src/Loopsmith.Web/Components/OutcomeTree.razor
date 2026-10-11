@@ -22,7 +22,7 @@
                 {
                     <span class="tone-muted">↳ </span>
                 }
-                @if (shaped.Weapon.Bind(slot => LoopDesigning.FindWeaponIcon(Build, slot)) is Optional<string>.Some weaponIcon)
+                @if (shaped.WeaponIcon is Optional<string>.Some weaponIcon)
                 {
                     <img class="inline-icon event-weapon-icon" src="@LoadoutShaping.ToIconUrl(weaponIcon.Value)" alt="" loading="lazy" data-testid="event-weapon-icon" />
                 }

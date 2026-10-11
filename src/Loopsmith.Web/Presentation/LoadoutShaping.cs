@@ -1,7 +1,6 @@
 using System.Collections.Immutable;
 using System.Globalization;
 using Dunet;
-using Loopsmith.Core.Causality;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 using Loopsmith.Core.Orchestration;
@@ -326,9 +325,9 @@ public static class LoadoutShaping
     /// <summary>The bungie.net address of a manifest icon path.</summary>
     public static string ToIconUrl(string path) => IconHost + path;
 
-    /// <summary>An element's icon (the manifest's, by its hash); none for one without a hash (a keyword: Bolt Charge, Jolt).</summary>
+    /// <summary>An element's icon: its manifest item's, else (a keyword's element) the keyword's own icon; none when the excerpt has neither.</summary>
     public static Optional<string> FindElementIcon(RuleCatalog catalog, ElementId id) =>
-        catalog.FindElementIcon(id).Map(ToIconUrl);
+        LoopDesigning.FindElementIcon(catalog, id).Map(ToIconUrl);
 
     private static IconTile DescribeElement(RuleCatalog catalog, ElementId id) =>
         catalog.Elements.TryGetValue(id, out var element)

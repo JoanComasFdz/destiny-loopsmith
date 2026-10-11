@@ -9,6 +9,10 @@ public static class ManifestReading
     public static Optional<ManifestItem> FindItem(this ManifestExcerpt manifest, ItemHash hash) =>
         manifest.Items.TryGetValue(hash, out var item) ? Optional.Some(item) : Optional.None<ManifestItem>();
 
+    /// <summary>The icon of a trait of the excerpt (a game keyword: Jolted), by its hash.</summary>
+    public static Optional<string> FindTraitIcon(this ManifestExcerpt manifest, ItemHash trait) =>
+        manifest.KeywordTraits.TryGetValue(trait, out var found) ? Optional.Some(found.Icon) : Optional.None<string>();
+
     /// <summary>An element's manifest item: the first of its hashes the excerpt has (an element's copies share their look).</summary>
     public static Optional<ManifestItem> FindElementItem(this RuleCatalog catalog, ElementId id) =>
         catalog.Elements.TryGetValue(id, out var element)

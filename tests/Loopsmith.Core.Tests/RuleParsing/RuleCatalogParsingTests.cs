@@ -723,7 +723,7 @@ public sealed class RuleCatalogParsingTests
         Assert.False(catalog.Glossary.Statuses[ToStatus("reaper")].Trait.IsSome());
         Assert.Equal(Optional.Some(ItemHash.From(3824458961u)), catalog.Glossary.Pickups[PickupId.From("ionic-trace")].Trait);
         Assert.Equal(Optional.Some(ItemHash.From(2724747993u)), catalog.Glossary.Summons[SummonId.From("threadling")].Trait);
-        Assert.Equal(new KeywordTrait(ItemHash.From(3221118171u), "Jolted", "/common/jolted.png"), catalog.Manifest.Traits[ItemHash.From(3221118171u)]);
+        Assert.Equal(new KeywordTrait(ItemHash.From(3221118171u), "Jolted", "/common/jolted.png"), catalog.Manifest.KeywordTraits[ItemHash.From(3221118171u)]);
         Assert.Contains("is missing 'icon'", ParseInvalidCatalog(Glossary, new SourceText("manifest.yaml", "keywordTraits:\n  - { hash: 1, name: \"X\" }\n")));
     }
 

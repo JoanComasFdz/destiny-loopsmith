@@ -61,8 +61,9 @@ status's `maxStacks` (a whole number ≥ 2) and `duration`, and `trait`.
 
 * `trait`: Bungie's trait for the keyword (the manifest's `DestinyTraitDefinition`: the game's own keyword, as
   its tooltips name it — Jolted for Jolt), by hash. The manifest excerpt's `keywordTraits` give its name and icon
-  ([Manifest excerpt](#manifest-excerpt-rulesmanifestyaml)); the icon shows before the keyword's name wherever
-  it appears. A keyword without one (Armor Charge, Orb of Power: Bungie has no trait for them) shows its
+  ([Manifest excerpt](#manifest-excerpt-rulesmanifestyaml)); the designer shows the icon before the keyword's
+  name in a step's text, its title, the state at its end and the keyword's details
+  ([loop-format.md](loop-format.md#action-tokens)). A keyword without one (Armor Charge, Orb of Power: Bungie has no trait for them) shows its
   element's manifest icon when it has one (Slice: its weapon perk), else none.
 
 * `kind`: `buff` (on the player) · `weaponBuff` (on the player's weapons: Slice, Unraveling Rounds — a

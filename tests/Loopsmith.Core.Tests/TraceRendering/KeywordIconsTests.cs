@@ -35,8 +35,8 @@ public sealed class KeywordIconsTests
             .ToImmutableArray();
 
         Assert.True(traits.Length >= 9, $"{traits.Length} traits");
-        Assert.All(traits, trait => Assert.True(Catalog.Manifest.Traits.ContainsKey(trait), $"trait {trait.Value} isn't in rules/manifest.yaml: rerun tools/manifest/"));
-        Assert.Equal("Jolted", Catalog.Manifest.Traits[ItemHash.From(3221118171u)].Name);
+        Assert.All(traits, trait => Assert.True(Catalog.Manifest.KeywordTraits.ContainsKey(trait), $"trait {trait.Value} isn't in rules/manifest.yaml: rerun tools/manifest/"));
+        Assert.Equal("Jolted", Catalog.Manifest.KeywordTraits[ItemHash.From(3221118171u)].Name);
     }
 
     [Fact]
@@ -45,11 +45,11 @@ public sealed class KeywordIconsTests
         var slice = new KeywordRef.Status(StatusId.From("slice"));
         var orb = new KeywordRef.Pickup(PickupId.From("orb-of-power"));
 
-        Assert.Equal(Optional.Some(Catalog.Manifest.Traits[ItemHash.From(3221118171u)].Icon), Catalog.FindKeywordIcon(Jolt));
-        Assert.Equal(Catalog.FindKeywordElement(slice).Bind(Catalog.FindElementItem).Bind(item => item.Icon), Catalog.FindKeywordIcon(slice));
-        Assert.True(Catalog.FindKeywordIcon(slice).IsSome());
-        Assert.False(Catalog.FindKeywordIcon(orb).IsSome());
-        Assert.Equal(Catalog.FindKeywordIcon(Jolt), Catalog.FindElementIcon(ElementId.From("jolt")));   // a keyword's element: the keyword's icon
+        Assert.Equal(Optional.Some(Catalog.Manifest.KeywordTraits[ItemHash.From(3221118171u)].Icon), IconFinding.FindKeywordIcon(Catalog, Jolt));
+        Assert.Equal(Catalog.FindKeywordElement(slice).Bind(Catalog.FindElementItem).Bind(item => item.Icon), IconFinding.FindKeywordIcon(Catalog, slice));
+        Assert.True(IconFinding.FindKeywordIcon(Catalog, slice).IsSome());
+        Assert.False(IconFinding.FindKeywordIcon(Catalog, orb).IsSome());
+        Assert.Equal(IconFinding.FindKeywordIcon(Catalog, Jolt), IconFinding.FindElementIcon(Catalog, ElementId.From("jolt")));   // a keyword's element: the keyword's icon
     }
 
     [Fact]
@@ -63,8 +63,9 @@ public sealed class KeywordIconsTests
 
         Assert.NotEmpty(keywords);
         Assert.All(keywords.Where(keyword => keyword.Text is "Bolt Charge" or "Jolted" or "Jolt"), keyword => Assert.True(keyword.Icon.IsSome(), keyword.Text));
-        Assert.Equal(LoopDesigning.FindWeaponIcon(session.Build, WeaponSlot.Energy), fired.Events[0].Weapon.Bind(slot => LoopDesigning.FindWeaponIcon(session.Build, slot)));
-        Assert.True(LoopDesigning.FindWeaponIcon(session.Build, WeaponSlot.Energy).IsSome());
+        Assert.Equal(Optional.Some(WeaponSlot.Energy), fired.Events[0].Weapon);
+        Assert.Equal(IconFinding.FindWeaponIcon(Catalog, session.Build.Build, WeaponSlot.Energy), fired.Events[0].WeaponIcon);
+        Assert.True(fired.Events[0].WeaponIcon.IsSome());
     }
 
     [Fact]
@@ -78,10 +79,10 @@ public sealed class KeywordIconsTests
         var pack = new PlayerAction.Declare(new StateDeclaration.NewPack());
 
         Assert.Equal(build.Build.Weapons.Single(found => found.Slot == WeaponSlot.Kinetic).Hash.Bind(Catalog.Manifest.FindItem).Bind(item => item.Icon), LoopDesigning.FindActionIcon(build, weapon));
-        Assert.Equal(build.Build.Abilities.Grenade.Bind(Catalog.FindElementIcon), LoopDesigning.FindActionIcon(build, grenade));
+        Assert.Equal(build.Build.Abilities.Grenade.Bind(grenadeElement => IconFinding.FindElementIcon(Catalog, grenadeElement)), LoopDesigning.FindActionIcon(build, grenade));
         Assert.True(LoopDesigning.FindActionIcon(build, grenade).IsSome());
-        Assert.Equal(Optional.Some(Catalog.Manifest.Traits[ItemHash.From(3824458961u)].Icon), LoopDesigning.FindActionIcon(build, trace));
-        Assert.Equal(Optional.Some(Catalog.Manifest.Traits[ItemHash.From(2935077680u)].Icon), LoopDesigning.FindActionIcon(build, max));
+        Assert.Equal(Optional.Some(Catalog.Manifest.KeywordTraits[ItemHash.From(3824458961u)].Icon), LoopDesigning.FindActionIcon(build, trace));
+        Assert.Equal(Optional.Some(Catalog.Manifest.KeywordTraits[ItemHash.From(2935077680u)].Icon), LoopDesigning.FindActionIcon(build, max));
         Assert.False(LoopDesigning.FindActionIcon(build, pack).IsSome());
     }
 
