@@ -373,20 +373,18 @@ public static class LoopDesigning
     /// is theirs, else their own (the one the picker ticks); none when they own no copy of the piece.
     /// </summary>
     public static Optional<GearMarks> FindArmorMarks(ValidatedBuild build, BungieProfile profile, ArmorSlot slot) =>
-        StatAdding.FindWornArmor(build.Catalog, build.Build, profile, slot).Map(armor => armor.Marks);
+        CopyFinding.FindWornArmor(build.Catalog, build.Build, profile, slot).Map(armor => armor.Marks);
 
     /// <summary>What the game draws on the player's copy of a build's weapon (its tier, masterwork, breaker): the share's copy when it is theirs, else their own.</summary>
     public static Optional<GearMarks> FindWeaponMarks(BungieProfile profile, WeaponLoadout weapon) =>
-        StatAdding.FindWornWeapon(profile, weapon).Map(owned => owned.Marks);
+        CopyFinding.FindWornWeapon(profile, weapon).Map(owned => owned.Marks);
 
     /// <summary>
     /// The champion a build's weapon breaks, as DIM shows it: its copy's breaker (<paramref name="marks"/>, after the
     /// player's login), else the weapon's own (an exotic's intrinsic: Thunderlord's Disruption); none when it has none.
     /// </summary>
     public static Optional<BreakerType> FindWeaponBreaker(ValidatedBuild build, WeaponLoadout weapon, Optional<GearMarks> marks) =>
-        new[] { marks.Bind(found => found.Breaker), build.Catalog.Manifest.FindWeaponKind(weapon).Bind(kind => kind.Breaker) }
-            .FindFirstSome()
-            .Bind(build.Catalog.Manifest.FindBreakerType);
+        CopyFinding.FindWeaponBreaker(build.Catalog.Manifest, weapon, marks);
 
     /// <summary>The design with its stats set from the copies its build wears, or why they don't add up.</summary>
     private static Result<DesignSession, string> SetStatsFromArmor(DesignSession session, BungieProfile profile)

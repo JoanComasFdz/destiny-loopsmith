@@ -1,10 +1,10 @@
 @* What Bungie draws over a copy's icon, layered as DIM layers it: a masterwork's glow, then the tier's diamonds (the
-   manifest's overlays; tier 1's draws none). Inside the square, which positions them. *@
-@if (Marks.MasterworkOverlay is Optional<string>.Some glow)
+   manifest's overlays; Bungie's tier-1 image is blank). Inside the square, which positions them. *@
+@if (Marks.Masterwork is Optional<MasterworkMark>.Some { Value.Glow: Optional<string>.Some glow })
 {
     <span class="tile-overlay masterwork-glow" style="background-image: url('@glow.Value')" aria-hidden="true"></span>
 }
-@if (Marks.TierOverlay is Optional<string>.Some pips)
+@if (Marks.Tier is Optional<TierMark>.Some { Value.Overlay: Optional<string>.Some pips })
 {
     <span class="tile-overlay tier-pips" style="background-image: url('@pips.Value')" aria-hidden="true"></span>
 }

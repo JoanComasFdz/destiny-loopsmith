@@ -19,8 +19,8 @@
                 {
                     var instance = option.Instance;
                     <button type="button" role="option" aria-selected="@(focused == Optional.Some(instance) ? "true" : "false")"
-                            class="icon-tile tappable item @DescribeTier(option.Tile) @(option.Worn ? "worn" : "") @(focused == Optional.Some(instance) ? "focused" : "") @(option.Marks.Masterworked ? "masterwork" : "")"
-                            data-tier="@LoadoutShaping.ToTierText(option.Marks)" data-masterwork="@(option.Marks.Masterworked ? "true" : "false")"
+                            class="icon-tile tappable item @DescribeTier(option.Tile) @(option.Worn ? "worn" : "") @(focused == Optional.Some(instance) ? "focused" : "") @LoadoutShaping.ToMasterworkClass(option.Marks)"
+                            data-tier="@LoadoutShaping.ToTierText(option.Marks)" data-masterwork="@LoadoutShaping.ToMasterworkText(option.Marks)"
                             title="@LoadoutShaping.AddMarks($"{option.Tile.Name} — {option.RollText}", option.Marks)" aria-label="@option.Tile.Name" data-instance="@instance.Value"
                             @onpointerenter="e => Hover(instance, e)" @onclick="() => ChooseAsync(instance)">
                         @if (option.Tile.Icon is Optional<string>.Some icon)

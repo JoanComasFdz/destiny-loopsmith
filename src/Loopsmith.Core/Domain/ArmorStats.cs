@@ -85,7 +85,7 @@ public partial record ArmorPlace
 
 /// <summary>
 /// An armor piece the player owns, as Bungie's profile has it: its instance, item hash, where it is, the plugs in
-/// its sockets (enabled ones, socket by socket) and its energy capacity (Armor 2.0's masterwork reads it).
+/// its sockets (enabled ones, socket by socket), its energy capacity (Armor 2.0's masterwork reads it) and its marks.
 /// </summary>
 public sealed record OwnedArmor(ItemInstanceId InstanceId, ItemHash Hash, ArmorPlace Place, ImmutableArray<ItemHash> Plugs, Optional<int> EnergyCapacity, GearMarks Marks);
 

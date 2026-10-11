@@ -68,12 +68,17 @@ public partial record PerkSquare
 /// <summary>A champion breaker on a weapon's square (Disruption): its name and icon, a bungie.net address.</summary>
 public sealed record BreakerBadge(string Name, string Icon);
 
+/// <summary>A copy's gear tier on its square, with the overlay of its diamonds (Bungie's; none when the excerpt lacks it).</summary>
+public sealed record TierMark(GearTier Tier, Optional<string> Overlay);
+
+/// <summary>A masterworked copy's mark: a gold border, and the glow over its icon (an exotic's its own; none when the excerpt lacks it).</summary>
+public sealed record MasterworkMark(Optional<string> Glow);
+
 /// <summary>
-/// What DIM draws on a copy's square: its gear tier (1–5) with the overlay of its diamonds (Bungie's; tier 1's draws
-/// none), whether it is masterworked with the glow for it (and a gold border), and a weapon's champion breaker. The tier
-/// and masterwork are the player's copy's, after their Bungie login; a weapon's own breaker (an exotic's) shows before.
+/// What DIM draws on a copy's square: its gear tier, its masterwork, and a weapon's champion breaker. The tier and
+/// masterwork are the player's copy's, after their Bungie login; a weapon's own breaker (an exotic's) shows before.
 /// </summary>
-public sealed record TileMarks(Optional<int> Tier, Optional<string> TierOverlay, bool Masterworked, Optional<string> MasterworkOverlay, Optional<BreakerBadge> Breaker);
+public sealed record TileMarks(Optional<TierMark> Tier, Optional<MasterworkMark> Masterwork, Optional<BreakerBadge> Breaker);
 
 /// <summary>An exotic's catalyst square: the catalyst item's tile and whether the build turns it on.</summary>
 public sealed record CatalystSquare(IconTile Tile, bool On);
@@ -240,8 +245,8 @@ public static class LoadoutShaping
             .FindFirstSome();
     }
 
-    /// <summary>A square with no marks: a copy Loopsmith doesn't know (before the login, or someone else's).</summary>
-    public static readonly TileMarks NoMarks = new(Optional.None<int>(), Optional.None<string>(), false, Optional.None<string>(), Optional.None<BreakerBadge>());
+    /// <summary>A square with no marks: one that isn't a copy (a perk, a mod, an empty slot), or a copy before the login.</summary>
+    public static readonly TileMarks NoMarks = new(Optional.None<TierMark>(), Optional.None<MasterworkMark>(), Optional.None<BreakerBadge>());
 
     /// <summary>
     /// A copy's marks, from Core's (its tier, masterwork; none: not the player's copy) and its breaker: the overlays are
@@ -250,27 +255,32 @@ public static class LoadoutShaping
     public static TileMarks DescribeMarks(RuleCatalog catalog, Optional<ItemTier> tier, Optional<GearMarks> marks, Optional<BreakerType> breaker)
     {
         var overlays = catalog.Manifest.Overlays;
-        var gearTier = marks.Bind(found => found.Tier);
         var masterworked = marks.Match(found => found.Value.Masterworked, _ => false);
         return new TileMarks(
-            gearTier.Map(found => found.Value),
-            gearTier.Bind(overlays.FindTierOverlay).Map(ToIconUrl),
-            masterworked,
-            masterworked ? overlays.FindMasterworkOverlay(tier).Map(ToIconUrl) : Optional.None<string>(),
+            marks.Bind(found => found.Tier).Map(found => new TierMark(found, overlays.FindTierOverlay(found).Map(ToIconUrl))),
+            masterworked ? Optional.Some(new MasterworkMark(overlays.FindMasterworkOverlay(tier).Map(ToIconUrl))) : Optional.None<MasterworkMark>(),
             breaker.Map(found => new BreakerBadge(found.Name, ToIconUrl(found.Icon))));
     }
 
     /// <summary>A copy's tier as its square's <c>data-tier</c> says it ("4"); empty when Loopsmith doesn't know it.</summary>
     public static string ToTierText(TileMarks marks) =>
-        marks.Tier.Match(tier => tier.Value.ToString(CultureInfo.InvariantCulture), _ => "");
+        marks.Tier.Match(tier => tier.Value.Tier.Value.ToString(CultureInfo.InvariantCulture), _ => "");
+
+    /// <summary>A masterworked copy's square class ("masterwork": the gold border), else none.</summary>
+    public static string ToMasterworkClass(TileMarks marks) =>
+        marks.Masterwork.IsSome() ? "masterwork" : "";
+
+    /// <summary>A square's <c>data-masterwork</c>: "true" for a masterworked copy.</summary>
+    public static string ToMasterworkText(TileMarks marks) =>
+        marks.Masterwork.IsSome() ? "true" : "false";
 
     /// <summary>A square's tooltip with its marks after it: "Thunderlord — … · Tier 4 · Masterworked · Disruption".</summary>
     public static string AddMarks(string tooltip, TileMarks marks) =>
         string.Join(" · ", new[]
         {
             tooltip,
-            marks.Tier.Match(tier => $"Tier {tier.Value}", _ => ""),
-            marks.Masterworked ? "Masterworked" : "",
+            marks.Tier.Match(tier => $"Tier {tier.Value.Tier.Value}", _ => ""),
+            marks.Masterwork.IsSome() ? "Masterworked" : "",
             marks.Breaker.Match(breaker => breaker.Value.Name, _ => ""),
         }.Where(part => part.Length > 0));
 

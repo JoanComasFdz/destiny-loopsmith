@@ -126,7 +126,8 @@ public static class DimLoadoutMapping
     /// <summary>
     /// A weapon the manifest excerpt knows — its slot, name, damage type and archetype ("Grenade Launcher" →
     /// <c>grenade-launcher</c>) — and its roll: in each trait column, the loadout's socket override for it that the
-    /// column rolls with. A DIM loadout names the weapon; its perks only when they were saved with it (none: "?").
+    /// column rolls with — and the copy it is (<paramref name="instance"/>, a dim.gg share's item id). A DIM loadout
+    /// names the weapon; its perks only when they were saved with it (none: "?").
     /// </summary>
     private static Optional<WeaponLoadout> ReadWeapon(ManifestExcerpt manifest, ItemHash hash, ImmutableArray<ItemHash> overrides, Optional<ItemInstanceId> instance) =>
         manifest.FindItem(hash).Bind(item => item.Kind is ManifestKind.Weapon { DamageType: Optional<DamageType>.Some type } weapon

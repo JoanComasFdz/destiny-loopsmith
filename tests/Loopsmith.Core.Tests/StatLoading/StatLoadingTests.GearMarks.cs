@@ -82,11 +82,12 @@ public sealed partial class StatLoadingTests
     }
 
     [Fact]
-    public void The_excerpt_has_the_tier_and_masterwork_overlays_and_tier_1_draws_none_of_its_own()
+    public void The_excerpt_has_the_tier_and_masterwork_overlays_and_an_excerpt_without_them_draws_none()
     {
         var overlays = Catalog.Manifest.Overlays;
 
         Assert.Equal(5, overlays.Tiers.Length);
+        Assert.Equal(Optional.Some("/img/destiny_content/items/inventory-item-tier1.png"), overlays.FindTierOverlay(GearTier.From(1)));   // Bungie's blank one
         Assert.Equal(Optional.Some("/img/destiny_content/items/inventory-item-tier4.png"), overlays.FindTierOverlay(GearTier.From(4)));
         Assert.Equal(Optional.Some("/img/destiny_content/items/masterwork-overlay-exotic.png"), overlays.FindMasterworkOverlay(Optional.Some(ItemTier.Exotic)));
         Assert.Equal(Optional.Some("/img/destiny_content/items/masterwork-overlay.png"), overlays.FindMasterworkOverlay(Optional.Some(ItemTier.Legendary)));

@@ -99,7 +99,7 @@ public static class ManifestReading
     public static Optional<BreakerType> FindBreakerType(this ManifestExcerpt manifest, ItemHash hash) =>
         manifest.BreakerTypes.TryGetValue(hash, out var breaker) ? Optional.Some(breaker) : Optional.None<BreakerType>();
 
-    /// <summary>The overlay of a gear tier's diamonds (Bungie's: tier 1's draws none), when the excerpt has it.</summary>
+    /// <summary>The overlay of a gear tier's diamonds (Bungie's; its tier-1 image is blank), when the excerpt has it.</summary>
     public static Optional<string> FindTierOverlay(this ItemOverlays overlays, GearTier tier) =>
         tier.Value <= overlays.Tiers.Length ? Optional.Some(overlays.Tiers[tier.Value - 1]) : Optional.None<string>();
 
