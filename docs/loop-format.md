@@ -145,9 +145,11 @@ the mod's slot the build shows, else the slot), "Artifact perk · Tablet of Ruin
 Luminopotent", "Exotic armor", and for the keywords every build has, what each is in the game: "Arc buff" (Bolt
 Charge), "Arc debuff" (Jolt), "Arc elemental pickup" (Ionic Trace), "Pickup" (an Orb of Power) — in the order
 they first fired; under each, the elements from there
-(their icon and name, in their affinity's colour), and under each element every outcome it gave ("→ +1
-Bolt Charge"). A cascade ("↳ Bolt Charge gained") nests
-under the event that set it off, and the same event several times in a row shows once, counted (×3). An
+(their icon and name, in their affinity's colour; the Orb of Power, which Bungie gives no icon, a ⚪), and under
+each element every outcome it gave, as a bulleted list ("• +1 Bolt Charge"). A cascade ("↳ Bolt Charge gained")
+nests under the event that set it off — a pickup picked up shows a 📍 instead ("📍 Picked up Orb of Power"), on its
+own step as where Powerful Attraction collects it — and the same event several times in a row shows once, counted
+(×3). An
 element's name shows a preview on hover and its details on a tap. Every keyword an event or outcome names — a
 status, a debuff by its adjective ("Jolted"), a pickup, a summon — is in its affinity's colour wherever it is in
 the line ("+1 **Bolt Charge**", "Grenade kill on **Jolted** target"), and the ones the rules have as an element

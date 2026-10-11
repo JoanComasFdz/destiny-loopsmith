@@ -32,14 +32,16 @@ public sealed record SourceOutcomes(
 /// <summary>
 /// An event of a step (a hit, a kill, a buff gained) at its cascade depth (0: what the action itself did), its text in
 /// parts (the keywords it names apart: "Grenade kill on Jolted target", "Bolt Charge gained"), the weapon slot whose hit
-/// or kill it is (so a perk two weapons roll is this one's), how many times it happened in a row alike, and the elements
-/// it set off — each run of one element's rules together, in the order the engine fired them.
+/// or kill it is (so a perk two weapons roll is this one's), the pickup it picked up ("Picked up Orb of Power"), how many
+/// times it happened in a row alike, and the elements it set off — each run of one element's rules together, in the
+/// order the engine fired them.
 /// </summary>
 public sealed record EventOutcomes(
     int Depth,
     string Event,
     ImmutableArray<TextPart> Parts,
     Optional<WeaponSlot> Weapon,
+    Optional<PickupId> Pickup,
     int Repeats,
     ImmutableArray<SourceOutcomes> Sources);
 
@@ -65,7 +67,8 @@ public static class StepOutcomeShaping
         var first = group[0];
         var sources = GroupRuns(group).Select(rules => ShapeSource(build, catalog, rules, options));
         var text = build.Catalog.Glossary.DescribeEvent(first.Trigger, build.Build);
-        return new EventOutcomes(first.Depth, text, SplitText(build.Catalog.Glossary, catalog, text), FindEventWeapon(first.Trigger), 1, [.. sources]);
+        var pickup = first.Trigger is GameEvent.PickedUp picked ? Optional.Some(picked.Pickup) : Optional.None<PickupId>();
+        return new EventOutcomes(first.Depth, text, SplitText(build.Catalog.Glossary, catalog, text), FindEventWeapon(first.Trigger), pickup, 1, [.. sources]);
     }
 
     /// <summary>Each run of one element's rules, in the engine's order: an element whose rules aren't next to each other (a debuff first, energy last) shows twice.</summary>
