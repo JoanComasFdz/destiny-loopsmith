@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Globalization;
 using Dunet;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
@@ -14,15 +13,18 @@ namespace Loopsmith.Web.Presentation;
 /// </summary>
 public sealed record InfoRules(ImmutableArray<StyledLine> Explanation, bool Equipped, InfoSource Source);
 
-/// <summary>Where to read a source itself: the Compendium's sheet, a creator's video or guide.</summary>
-public sealed record SourceLink(string Url, string Text);
-
 /// <summary>
-/// Where an element's facts come from, as a card of its own: the Destiny Data Compendium (its tab and row), Clarity,
-/// Loopsmith's own rule (no row cited) or a creator's claim; Loopsmith's words for it (a paraphrase, never the source's
-/// own text); where to read the source itself; a creator's words when it is a claim.
+/// Where an element's facts come from, as a card of its own, each with its title, Loopsmith's words for it (a
+/// paraphrase, never the source's own text) and which row or entry it is: a Compendium row, with its sheet; Clarity's
+/// entry or Loopsmith's own rule (no row cited); a creator's claim, with its link and their words.
 /// </summary>
-public sealed record InfoSource(string Title, Optional<string> Paraphrase, string Cite, Optional<SourceLink> Link, Optional<string> Quote);
+[Union]
+public partial record InfoSource
+{
+    partial record Compendium(string Title, Optional<string> Paraphrase, string Cite, string SheetUrl);
+    partial record Cited(string Title, Optional<string> Paraphrase, string Cite);
+    partial record Claim(string Title, Optional<string> Paraphrase, string Cite, string Url, string Quote);
+}
 
 /// <summary>A section's heading: a perk's name, icon and what it is ("Intrinsic", "Trait · column 1", "Exotic perk").</summary>
 public sealed record SectionHeading(string Name, Optional<string> Icon, string Label);
@@ -81,10 +83,10 @@ public static class ItemInfoShaping
 
     private static Optional<string> ReadSectionText(InfoSection section) =>
         section.Match(
-            item => new[] { item.BungieText, item.Rules.Bind(rules => rules.Source.Paraphrase) }.FindFirstSome(),
-            perk => new[] { perk.BungieText, perk.Rules.Bind(rules => rules.Source.Paraphrase) }.FindFirstSome(),
+            item => new[] { item.BungieText, item.Rules.Bind(rules => ReadParaphrase(rules.Source)) }.FindFirstSome(),
+            perk => new[] { perk.BungieText, perk.Rules.Bind(rules => ReadParaphrase(rules.Source)) }.FindFirstSome(),
             _ => Optional.None<string>(),
-            catalyst => new[] { catalyst.BungieText, catalyst.Rules.Bind(rules => rules.Source.Paraphrase) }.FindFirstSome(),
+            catalyst => new[] { catalyst.BungieText, catalyst.Rules.Bind(rules => ReadParaphrase(rules.Source)) }.FindFirstSome(),
             artifact => artifact.BungieText);
 
     private static Optional<ItemInfo> ShapeElement(ValidatedBuild build, ElementId id) =>
@@ -219,36 +221,20 @@ public static class ItemInfoShaping
     private static InfoRules DescribeRules(ValidatedBuild build, BuildElement element) =>
         new(LoopDesigning.ExplainElement(build, element), LoopDesigning.IsEquipped(build, element.Id), DescribeSource(element));
 
-    /// <summary>The element's source card: the Compendium's tab and row (and its sheet), Clarity's entry, the rule file, a creator's link.</summary>
-    private static InfoSource DescribeSource(BuildElement element) =>
-        element.Source.Match(
-            compendium => new InfoSource(
-                "Destiny Data Compendium",
-                element.Description,
-                $"{compendium.Tab} tab, row {compendium.Row.ToString(CultureInfo.InvariantCulture)} · snapshot of {compendium.Snapshot.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}",
-                Optional.Some(new SourceLink(CompendiumSheet, "Open the Compendium")),
-                Optional.None<string>()),
-            clarity => new InfoSource(
-                "Clarity",
-                element.Description,
-                $"Clarity {clarity.ClarityVersion} · item {clarity.Hash.Value.ToString(CultureInfo.InvariantCulture)}",
-                Optional.None<SourceLink>(),
-                Optional.None<string>()),
-            authored => new InfoSource(
-                "Loopsmith's own rule",
-                element.Description,
-                $"{authored.RuleFile}, line {authored.Line.ToString(CultureInfo.InvariantCulture)} · no Compendium or Clarity row cited",
-                Optional.None<SourceLink>(),
-                Optional.None<string>()),
-            claim => new InfoSource(
-                "A creator's claim",
-                element.Description,
-                "Not checked against the game data (Compendium or Clarity) yet",
-                Optional.Some(new SourceLink(claim.SourceUrl, "Open the source")),
-                Optional.Some(claim.Quote)));
+    /// <summary>The element's source card: the Compendium's row (and its sheet), Clarity's entry, the rule file, a creator's link.</summary>
+    private static InfoSource DescribeSource(BuildElement element)
+    {
+        var title = element.Source.DescribeProvenanceTitle();
+        var cite = element.Source.DescribeProvenanceCite();
+        return element.Source.Match<InfoSource>(
+            _ => new InfoSource.Compendium(title, element.Description, cite, CompendiumSheet.Url),
+            _ => new InfoSource.Cited(title, element.Description, cite),
+            _ => new InfoSource.Cited(title, element.Description, cite),
+            claim => new InfoSource.Claim(title, element.Description, cite, claim.SourceUrl, claim.Quote));
+    }
 
-    /// <summary>The Destiny Data Compendium's public sheet (README, Licensing: credited and linked, never served as text).</summary>
-    private const string CompendiumSheet = "https://docs.google.com/spreadsheets/d/1WaxvbLx7UoSZaBqdFr1u32F2uWVLo-CJunJB4nlGUE4/edit";
+    private static Optional<string> ReadParaphrase(InfoSource source) =>
+        source.Match(compendium => compendium.Paraphrase, cited => cited.Paraphrase, claim => claim.Paraphrase);
 
     /// <summary>"Exotic Machine Gun", "Legendary Helmet", "Luminopotent · 2-piece perk", "Arc Aspect".</summary>
     private static string DescribeType(RuleCatalog catalog, ManifestItem item) =>

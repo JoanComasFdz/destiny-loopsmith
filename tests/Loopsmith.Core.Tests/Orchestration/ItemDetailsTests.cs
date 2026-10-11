@@ -98,7 +98,8 @@ public sealed class ItemDetailsTests
         Assert.Empty(LoopDesigning.ExplainElement(session.Build, Catalog.Elements[ElementId.From("thunderlord-catalyst")]));   // no rule written
         Assert.True(LoopDesigning.IsEquipped(session.Build, ElementId.From("reign-havoc")));
         Assert.False(LoopDesigning.IsEquipped(session.Build, ElementId.From("thunderlord-catalyst")));        // off
-        Assert.Equal("Destiny Data Compendium (2026-10-09), Exotic Weapons row 144", Catalog.Elements[ElementId.From("reign-havoc")].Source.DescribeProvenance());
+        var source = Catalog.Elements[ElementId.From("reign-havoc")].Source;
+        Assert.Equal(("Destiny Data Compendium", "Exotic Weapons tab, row 144 · snapshot of 2026-10-09"), (source.DescribeProvenanceTitle(), source.DescribeProvenanceCite()));
     }
 
     [Fact]
