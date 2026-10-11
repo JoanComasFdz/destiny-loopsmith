@@ -15,8 +15,4 @@ public static class GlossaryReading
     /// <summary>A buff on you or on your weapons: the engine keeps both on the player (only the state shows them apart).</summary>
     public static bool IsBuff(this KeywordKind kind) =>
         kind is KeywordKind.Buff or KeywordKind.WeaponBuff;
-
-    /// <summary>A status of this kind fits where a rule needs that one (a weapon buff where a buff is needed).</summary>
-    public static bool IsKindOf(this KeywordKind actual, KeywordKind expected) =>
-        actual == expected || (expected == KeywordKind.Buff && actual.IsBuff());
 }

@@ -16,7 +16,9 @@ namespace Loopsmith.Core.Tests.TraceRendering;
 /// </summary>
 public sealed class StepStateShapingTests
 {
-    private static readonly Result<ImmutableArray<SourceText>, string> RuleFiles = FileSourceFetching.ReadRuleFiles(RepoFiles.ToPath("rules"));   // impure
+    private static readonly string RulesDirectory = RepoFiles.ToPath("rules");                                   // pure
+
+    private static readonly Result<ImmutableArray<SourceText>, string> RuleFiles = FileSourceFetching.ReadRuleFiles(RulesDirectory);   // impure
 
     private static readonly RuleCatalog Catalog =
         RuleFiles.Bind(CatalogLoading.ParseCatalog).Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
@@ -81,7 +83,8 @@ public sealed class StepStateShapingTests
     private static DesignSession Play(params PlayerAction[] actions)
     {
         const string path = "builds/skip-grenade-hunter/dim-loadout.json";
-        var json = File.ReadAllText(RepoFiles.ToPath(path));                                     // impure
+        var file = RepoFiles.ToPath(path);                                                       // pure
+        var json = File.ReadAllText(file);                                                       // impure
         var session = LoopDesigning.StartSavedDimDesign(Catalog, new SourceText(path, json))
             .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
         return actions.Aggregate(session, (played, action) => LoopDesigning.AppendStep(played, action, Optional.None<string>()));

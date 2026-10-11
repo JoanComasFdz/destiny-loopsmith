@@ -17,6 +17,6 @@ internal static class ElementIndexing
     internal static Optional<ElementId> FindKeywordElement(this ElementIndex elements, KeywordRef keyword) =>
         elements.FindElement(keyword.DescribeKeywordId());
 
-    internal static Optional<ElementId> FindElement(this ElementIndex elements, string id) =>
+    private static Optional<ElementId> FindElement(this ElementIndex elements, string id) =>
         elements.ById.TryGetValue(id, out var element) ? Optional.Some(element) : Optional.None<ElementId>();
 }
