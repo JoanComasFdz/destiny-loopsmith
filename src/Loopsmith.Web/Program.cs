@@ -20,11 +20,14 @@ var dimApiKey = (configuredKey ?? "").Trim();                                   
 var dimLoadouts = new DimLoadoutFetching(new HttpClient(), dimApiKey);                     // impure
 var configuredBungieKey = builder.Configuration["BungieApiKey"];                           // impure (wwwroot/appsettings.json)
 var configuredContentId = builder.Configuration["ManifestContentId"];                      // impure (wwwroot/appsettings.json)
+var configuredClientId = builder.Configuration["BungieClientId"];                          // impure (wwwroot/appsettings.json)
 var bungieApiKey = (configuredBungieKey ?? "").Trim();                                     // pure
 var manifestContentId = (configuredContentId ?? "").Trim();                                // pure
+var bungieClientId = (configuredClientId ?? "").Trim();                                    // pure
 
 builder.Services.AddSingleton(workbench);                                                  // impure
 builder.Services.AddSingleton<BrowserInterop>();                                           // impure
 builder.Services.AddSingleton(dimLoadouts);                                                // impure
 builder.Services.AddSingleton(services => new BungieManifestJoining(services.GetRequiredService<BrowserInterop>(), bungieApiKey, manifestContentId)); // impure
+builder.Services.AddSingleton(services => new BungieAccount(new HttpClient(), services.GetRequiredService<BrowserInterop>(), bungieApiKey, bungieClientId)); // impure
 await builder.Build().RunAsync();                                                          // impure

@@ -233,7 +233,8 @@ public static class ManifestJoin
             Optional.None<string>(),
             ImmutableDictionary<DamageType, string>.Empty,
             sets.Select(set => ToArmorSet(set.Hash, set.Entry)).ToImmutableDictionary(set => set.Hash),
-            items);
+            items,
+            ImmutableDictionary<ItemHash, StatPlug>.Empty);
     }
 
     private static Optional<ManifestItem> ToManifestItem(Reading reading, ItemHash hash, bool isCatalyst) =>

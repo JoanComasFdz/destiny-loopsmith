@@ -104,6 +104,14 @@ elements:
       - effect: { modifyDamage: { against: melee, change: "?" } }
         when: [ { has: combination-blow } ]
         reason: "Each Combination Blow stack makes your melee hits much harder."
+    statChecks:
+      # Arc#41: 70 Class for the kill to refill Gambler's Dodge completely. Chunk gains scale with their
+      # stat: 100% of the stated value at 70, more above, less below (TWID 2025-06-05; patch 9.0.0.4).
+      # How much less below 70 isn't published.
+      - stat: class
+        below: 70
+        severity: warning
+        says: "With {value} Class, a Combination Blow kill gives back less than a full class ability: its 100% needs 70 Class, and below that it gives less (how much less isn't published)."
 
   - id: gamblers-dodge
     name: Gambler's Dodge
@@ -125,6 +133,18 @@ elements:
           - { grantEnergy: { to: melee, amount: "?" } }
         reason: "Dodging near enemies refunds melee energy - 1% per Melee stat point, doubled within 15 m - so with enough Melee your punch comes straight back."
     passives: []
+    statChecks:
+      # Class Abilities#5: 1% of a melee charge per Melee point, doubled within 15 m of an enemy, so a
+      # full charge needs 50 Melee near an enemy and 100 anywhere.
+      - stat: melee
+        below: 50
+        severity: warning
+        says: "With {value} Melee, a Gambler's Dodge gives back less than a full melee charge, even near an enemy: it gives 1% per Melee point, twice that within 15 m of one, so a full charge needs 50 Melee near enemies (100 anywhere)."
+      - stat: melee
+        from: 50
+        below: 100
+        severity: info
+        says: "With {value} Melee, a Gambler's Dodge gives back a full melee charge only within 15 m of an enemy ({value}% of one farther away; 100 Melee for a full charge anywhere)."
 
   # ================================================================ aspects
   # fragmentSlots: Bungie's manifest (244213.26.06.29.2000-1-bnet.65864), each aspect plug's energy

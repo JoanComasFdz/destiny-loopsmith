@@ -1,0 +1,19 @@
+@page "/login"
+@inject BrowserInterop Browser
+
+@* Bungie's redirect page, should the host serve the app here instead of login.html: it hands Bungie's answer to the
+   tab that asked (js/bungie-login.js) and closes. *@
+<PageTitle>Bungie login · Loopsmith</PageTitle>
+<section class="panel empty-state">
+    <p class="muted">Back from Bungie. You can close this window and go back to Loopsmith.</p>
+</section>
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Browser.RelayBungieLoginAsync();                                               // impure
+        }
+    }
+}

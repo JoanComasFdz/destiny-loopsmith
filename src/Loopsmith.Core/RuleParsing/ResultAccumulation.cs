@@ -191,4 +191,23 @@ internal static class ResultAccumulation
         Result<T14, Errors> r14,
         Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, TOut> build) =>
         Combine(Combine(r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, r13, (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13) => (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13)), r14, (p, v14) => build(p.v1, p.v2, p.v3, p.v4, p.v5, p.v6, p.v7, p.v8, p.v9, p.v10, p.v11, p.v12, p.v13, v14));
+
+    internal static Result<TOut, Errors> Combine<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, TOut>(
+        Result<T1, Errors> r1,
+        Result<T2, Errors> r2,
+        Result<T3, Errors> r3,
+        Result<T4, Errors> r4,
+        Result<T5, Errors> r5,
+        Result<T6, Errors> r6,
+        Result<T7, Errors> r7,
+        Result<T8, Errors> r8,
+        Result<T9, Errors> r9,
+        Result<T10, Errors> r10,
+        Result<T11, Errors> r11,
+        Result<T12, Errors> r12,
+        Result<T13, Errors> r13,
+        Result<T14, Errors> r14,
+        Result<T15, Errors> r15,
+        Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, TOut> build) =>
+        Combine(Combine(r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, r13, r14, (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14) => (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14)), r15, (p, v15) => build(p.v1, p.v2, p.v3, p.v4, p.v5, p.v6, p.v7, p.v8, p.v9, p.v10, p.v11, p.v12, p.v13, p.v14, v15));
 }

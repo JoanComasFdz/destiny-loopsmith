@@ -337,3 +337,23 @@ read from Bungie's full manifest first (D14), so the link's weapons, armor sets 
 names. **Consequence.** A Stasis, Strand or Prismatic loadout can't start a build yet (the glossary has the
 Light subclasses only); dim.gg links work once the owner registers Loopsmith with DIM's API
 ([docs/hosting.md](docs/hosting.md), "DIM links").
+
+### D28 — A build's stats come from the player's own armor, added up like DIM, after a read-only Bungie login
+
+**Context.** Some cause and effect depends on a stat: a Gambler's Dodge gives back 1% of a melee charge per Melee
+point (twice that near an enemy), a Combination Blow kill refills the class ability in full only from 70 Class.
+A DIM link carries no stats, and the armor it names may sit in the player's vault: only the player's login
+lets an app read it (Bungie shows anyone only what a character wears). **Decision.** A build's `stats:` stay a
+fact of the build (the engine still simulates no energy, D1, D5), and the elements' `statChecks` say what a stat
+changes in the build check. The designer sets the stats by hand, or from the player's own armor after a Bungie
+login: a public OAuth client (no secret in a static site, D25), read-only, its token used for two reads and
+dropped. `StatLoading` (pure) reads Bungie's answers, matches the build's pieces with the player's copies (a pick
+when they own several) and adds the total up the way DIM adds up a loadout — each copy's roll and masterwork,
+the build's stat mods, tuning and fragments — from the manifest excerpt's `statPlugs`, every plug that changes
+an armor stat (shipped, so a phone needn't download Bungie's whole item table). Or it takes a character's
+current stats, as Bungie has them. **Consequence.** Stats are as exact as DIM's for a DIM loadout's pieces; a
+hand-written build names no pieces, so it takes typed or a character's stats. A DIM link carries no instance
+ids (the dim.gg page's long link drops them), so a piece owned twice is the player's pick. A piece whose roll
+the excerpt doesn't know (a newer manifest) is said so, never guessed (D12). The login's page is the site's
+`/login`, Bungie's one redirect URL ([docs/hosting.md](docs/hosting.md), "Bungie login").
+

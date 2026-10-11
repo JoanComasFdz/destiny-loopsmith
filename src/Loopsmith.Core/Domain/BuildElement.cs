@@ -14,7 +14,8 @@ public sealed record AbilityProfile(AbilityKind Kind, int Charges, GameValue Chu
 /// with rules". <see cref="Hashes"/> are its manifest hashes (ADRs D14): the first is its own, the others copies of
 /// the same item with the same text (a mod's artifice copy, a class ability's copy on each subclass). Empty when not
 /// known yet. <see cref="Inert"/>: why it has no rules on purpose (damage only, outside the model), so the build check
-/// doesn't take it for a gap.
+/// doesn't take it for a gap. <see cref="StatChecks"/>: what the build check says about it at some values of a stat
+/// (Gambler's Dodge below 50 Melee).
 /// </summary>
 public sealed record BuildElement(
     ElementId Id,
@@ -29,7 +30,15 @@ public sealed record BuildElement(
     Optional<AbilityProfile> Ability,
     Optional<int> FragmentSlots,
     Provenance Source,
-    Optional<string> Inert);
+    Optional<string> Inert,
+    ImmutableArray<StatCheck> StatChecks);
+
+/// <summary>
+/// "With {value} Melee, a Gambler's Dodge gives back less than a full melee charge…": what the build check says when
+/// the build's <see cref="Stat"/> is known and at least <see cref="From"/> (when given) and below <see cref="Below"/>;
+/// <c>{value}</c> in <see cref="Says"/> is the build's value. A fact about the element at that stat, never counted.
+/// </summary>
+public sealed record StatCheck(StatKind Stat, Optional<int> From, int Below, Severity Severity, string Says);
 
 /// <summary>Entry of the keyword glossary (the Compendium's "Statuses").</summary>
 public sealed record StatusDefinition(

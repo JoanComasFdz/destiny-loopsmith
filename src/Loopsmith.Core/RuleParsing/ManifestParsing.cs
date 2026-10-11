@@ -19,9 +19,12 @@ internal static class ManifestParsing
         Optional.None<string>(),
         ImmutableDictionary<DamageType, string>.Empty,
         ImmutableDictionary<ItemHash, ArmorSet>.Empty,
-        ImmutableDictionary<ItemHash, ManifestItem>.Empty);
+        ImmutableDictionary<ItemHash, ManifestItem>.Empty,
+        ImmutableDictionary<ItemHash, StatPlug>.Empty);
 
-    private static readonly ImmutableArray<string> ManifestKeys = ["version", "damageTypes", "armorSets", "items"];
+    private static readonly ImmutableArray<string> ManifestKeys = ["version", "damageTypes", "armorSets", "items", "statPlugs"];
+    private static readonly ImmutableArray<string> StatPlugKeys = ["hash", "kind", "stats", "onlyEmptyStats"];
+    private static readonly ImmutableArray<string> PlugStatKeys = ["stat", "value", "class"];
     private static readonly ImmutableArray<string> DamageTypeKeys = ["type", "icon"];
     private static readonly ImmutableArray<string> ArmorSetKeys = ["hash", "name", "perks"];
     private static readonly ImmutableArray<string> SetPerkKeys = ["pieces", "perk"];
@@ -53,11 +56,36 @@ internal static class ManifestParsing
                 map.ReadOrDefault("items", items => items.ReadEach("item", ReadItem)
                     .Bind(located => LocatedCollections.ToUniqueDictionary(located, item => item.Hash, "manifest item")),
                     ImmutableDictionary<ItemHash, ManifestItem>.Empty),
-                (_, version, icons, sets, items) => new ManifestExcerpt(
+                map.ReadOrDefault("statPlugs", plugs => plugs.ReadEach("stat plug", ReadStatPlug)
+                    .Bind(located => LocatedCollections.ToUniqueDictionary(located, plug => plug.Hash, "stat plug")),
+                    ImmutableDictionary<ItemHash, HashedStatPlug>.Empty),
+                (_, version, icons, sets, items, statPlugs) => new ManifestExcerpt(
                     version,
                     icons.GroupBy(icon => icon.Type).ToImmutableDictionary(group => group.Key, group => group.First().Icon),
                     sets,
-                    items)));
+                    items,
+                    statPlugs.ToImmutableDictionary(entry => entry.Key, entry => entry.Value.Plug))));
+
+    /// <summary>A stat plug with its hash, while the excerpt's list becomes a dictionary.</summary>
+    private sealed record HashedStatPlug(ItemHash Hash, StatPlug Plug);
+
+    /// <summary><c>{ hash, kind: base|masterwork|tuning|mod|subclass, stats: [{ stat, value, class? }], onlyEmptyStats? }</c>.</summary>
+    private static Result<Located<HashedStatPlug>, Errors> ReadStatPlug(YamlValue value) =>
+        value.ToMap().Bind(map => Combine(
+            map.CheckKeys(StatPlugKeys),
+            map.ReadRequired("hash", ReadItemHash),
+            map.ReadRequired("kind", ReadVocabularyWord<StatPlugKind>),
+            map.ReadOrDefault("stats", stats => stats.ReadEach("plug stat", ReadPlugStat), []),
+            map.ReadOrDefault("onlyEmptyStats", ReadBoolean, false),
+            (_, hash, kind, stats, onlyEmpty) => map.ToLocated(new HashedStatPlug(hash, new StatPlug(kind, stats, onlyEmpty)))));
+
+    private static Result<PlugStat, Errors> ReadPlugStat(YamlValue value) =>
+        value.ToMap().Bind(map => Combine(
+            map.CheckKeys(PlugStatKeys),
+            map.ReadRequired("stat", ReadVocabularyWord<StatKind>),
+            map.ReadRequired("value", ReadSignedInteger),
+            map.ReadOptional("class", ReadVocabularyWord<GuardianClass>),
+            (_, stat, points, forClass) => new PlugStat(stat, points, forClass)));
 
     private sealed record DamageTypeIcon(DamageType Type, string Icon);
 

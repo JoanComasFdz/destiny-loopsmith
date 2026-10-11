@@ -102,6 +102,12 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
 - **Enhanced perks**: the catalog knows a perk by its base hash (Slice, not its enhanced version, whose
   numbers differ), so picking an enhanced perk sets nothing off until the rules author it.
 
+- **Stats, next** (D28): the stat facts the game gives with an outcome — an orb's heal by Health (0.7 HP per
+  point, compendium/2026-10-09/Game Mechanics#119), a dodge's Overshield above 100 Class (#139), the damage
+  bonuses above 100 (#126, #132, #138, #139) and Gambler's Dodge's refund as its number ("+79% melee energy") —
+  need a rule value that reads a build stat; refunds below 70 of their stat scale down by an amount Bungie
+  hasn't published ("?"). DIM's runtime stat benefits (Font mods while Armor Charge) aren't added up.
+
 ## Owner items
 
 - **A DIM API key for the site** so dim.gg links open: the Bungie API key is set (`BungieApiKey`), but

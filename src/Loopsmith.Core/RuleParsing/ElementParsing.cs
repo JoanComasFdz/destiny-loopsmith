@@ -19,8 +19,10 @@ internal static class ElementParsing
     private static readonly ImmutableArray<string> ElementKeys =
     [
         "id", "name", "kind", "affinity", "class", "hash", "fragmentSlots", "ability", "description", "source",
-        "rules", "passives", "inert",
+        "rules", "passives", "inert", "statChecks",
     ];
+
+    private static readonly ImmutableArray<string> StatCheckKeys = ["stat", "from", "below", "severity", "says"];
 
     private static readonly ImmutableArray<string> AbilityKeys = ["kind", "charges", "chunkScalar", "baseCooldown"];
     private static readonly ImmutableArray<string> CreatorClaimKeys = ["creator", "quote"];
@@ -62,14 +64,35 @@ internal static class ElementParsing
                 map.ReadOptional("fragmentSlots", ReadNonNegativeInteger),
                 map.ReadOrDefault("source", ReadProvenance, ToAuthored(map)),
                 map.ReadOptional("inert", YamlReading.ToText),
-                (_, id, name, kind, affinity, guardianClass, hashes, description, rules, passives, ability, fragmentSlots, source, inert) =>
+                map.ReadOrDefault("statChecks", checks => checks.ReadEach("stat check", ReadStatCheck), []),
+                (_, id, name, kind, affinity, guardianClass, hashes, description, rules, passives, ability, fragmentSlots, source, inert, statChecks) =>
                     new BuildElement(
-                        id, name, kind, affinity, guardianClass, hashes, description, rules, passives, ability, fragmentSlots, source, inert))
+                        id, name, kind, affinity, guardianClass, hashes, description, rules, passives, ability, fragmentSlots, source, inert, statChecks))
             .Bind(element => Combine(
                 CheckFragmentSlots(map, element),
                 CheckAbilityProfile(map, element),
                 CheckInert(map, element),
                 (_, _, _) => map.ToLocated(element))));
+
+    /// <summary>
+    /// <c>{ stat: melee, from: 50, below: 100, severity: info, says: "With {value} Melee, …" }</c>: <c>from</c> is optional,
+    /// both are stat values (0..200) and <c>from</c> is below <c>below</c>; <c>severity</c> is <c>warning</c> or <c>info</c>.
+    /// </summary>
+    private static Result<StatCheck, Errors> ReadStatCheck(YamlValue value) =>
+        value.ToMap().Bind(map => Combine(
+                map.CheckKeys(StatCheckKeys),
+                map.ReadRequired("stat", ReadVocabularyWord<StatKind>),
+                map.ReadOptional("from", ReadNonNegativeInteger),
+                map.ReadRequired("below", ReadPositiveInteger),
+                map.ReadRequired("severity", ReadVocabularyWord<Severity>),
+                map.ReadRequired("says", ReadName),
+                (_, stat, from, below, severity, says) => new StatCheck(stat, from, below, severity, says))
+            .Bind(check => CheckStatRange(map, check)));
+
+    private static Result<StatCheck, Errors> CheckStatRange(YamlMap map, StatCheck check) =>
+        check.Below > 200 || check.From.Match(from => from.Value >= check.Below, _ => false) || check.Severity == Severity.Blocking
+            ? map.FailAtKey<StatCheck>("below", "a stat check names a range of stat values (from < below <= 200) and says it as a warning or info")
+            : Succeed(check);
 
     /// <summary>An element with a reason to have no rules has none: <c>inert</c> with rules or passives would hide a real gap.</summary>
     private static Result<Unit, Errors> CheckInert(YamlMap map, BuildElement element) =>

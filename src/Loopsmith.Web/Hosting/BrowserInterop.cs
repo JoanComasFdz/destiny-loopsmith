@@ -36,6 +36,20 @@ public sealed class BrowserInterop(IJSRuntime js)
     public ValueTask ClearLocationHashAsync() =>
         js.InvokeVoidAsync("loopsmith.clearHash");
 
+    // ── Bungie's login (wwwroot/js/bungie-login.js: its window, and the login page's answer back to this tab) ──
+
+    /// <summary>Opens Bungie's login in a window and waits for the login page's answer (JSON: the code and state, or why not).</summary>
+    public ValueTask<string> LogInWithBungieAsync(string url) =>
+        js.InvokeAsync<string>("loopsmithBungie.login", url);
+
+    /// <summary>Stops waiting for Bungie's login (the player closed its window).</summary>
+    public ValueTask CancelBungieLoginAsync() =>
+        js.InvokeVoidAsync("loopsmithBungie.cancel");
+
+    /// <summary>On the login page: hands Bungie's answer to the tab that asked, and closes the window.</summary>
+    public ValueTask RelayBungieLoginAsync() =>
+        js.InvokeVoidAsync("loopsmithBungie.relay", (object?)null);
+
     // ── Bungie's manifest (wwwroot/js/manifest.js holds the downloaded components; Core reads their entries) ──
 
     /// <summary>The manifest's index, or none when bungie.net doesn't answer it.</summary>

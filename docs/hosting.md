@@ -64,6 +64,34 @@ set, a dim.gg link says Loopsmith can't open it yet. One-time setup (the owner):
    registered origin. PR previews share that origin, so they open dim.gg links too; a local run
    (`localhost`) doesn't, unless the key is registered for that origin.
 
+## Bungie login
+
+The designer's Stats section loads a build's stats from the player's own armor
+([loop-format.md](loop-format.md#stats)): the player logs in with Bungie, and Loopsmith reads their characters,
+inventory and vault. Bungie's login is OAuth; Loopsmith is a **public** client (a site has no secret to keep), so
+an access token lasts an hour and comes with no refresh token, which is all it needs: the token serves two reads
+and is dropped, and nothing is kept, in the tab or anywhere else. One-time setup (the owner, at
+https://www.bungie.net/en/Application, on the application whose key is `BungieApiKey`):
+
+* **OAuth Client Type** Public; **Redirect URL** `https://joancomasfdz.github.io/destiny-loopsmith/login`
+  (Bungie allows one; it must match exactly); **Scope** "Read your Destiny 2 information (Vault, Inventory, and
+  Vendors)"; **Origin Header** `https://joancomasfdz.github.io`.
+* Its **OAuth client_id** goes in `wwwroot/appsettings.json` as `BungieClientId` (it isn't a secret: it ships
+  in the site). Without it (or without `BungieApiKey`) the Stats section offers only typing.
+
+How it runs: "Log in with Bungie" opens Bungie's authorize page in a window of its own
+(`https://www.bungie.net/en/oauth/authorize?client_id=…&response_type=code&state=…`, the state a random value
+the tab checks). Bungie sends the player back to the redirect URL — `wwwroot/login.html`, which GitHub Pages
+serves at `…/login` (the app's `/login` route does the same, should a host serve the app there instead) — and
+that page hands Bungie's answer to the tab that asked over a same-origin `BroadcastChannel`, then closes. The tab
+trades the code for a token (`POST https://www.bungie.net/platform/app/oauth/token/`, the client id and no
+secret), reads the account's Destiny membership (`/Platform/User/GetMembershipsForCurrentUser/`) and its profile
+(`/Platform/Destiny2/<type>/Profile/<id>/?components=102,200,201,205,300,305`), each with `X-API-Key` and the token.
+A PR preview is on the same origin, so the live site's login page answers its tab too; until the login page is on
+the live site (the PR that adds it, before it is merged), point the Redirect URL at the preview's
+(`…/destiny-loopsmith/pr-preview/pr-<n>/login`) to try it, then back. A browser that blocks pop-ups is asked to
+allow them; a local run (`localhost`) needs an application registered for that origin and redirect URL.
+
 ## Bungie's manifest
 
 For a DIM link's items the bundled excerpt (`rules/manifest.yaml`) lacks, the browser reads Bungie's full

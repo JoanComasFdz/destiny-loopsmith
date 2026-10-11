@@ -64,7 +64,7 @@
 
         <div class="designer-grid">
             <aside class="col-build">
-                <BuildPanel Build="session.Build" Issues="LoopDesigning.ListDesignIssues(session)" OnPickPerk="PickPerk" OnSetCatalyst="SetCatalyst" />
+                <BuildPanel Build="session.Build" Issues="LoopDesigning.ListDesignIssues(session)" OnPickPerk="PickPerk" OnSetCatalyst="SetCatalyst" OnSetStats="SetStats" />
             </aside>
             <div class="col-loop">
                 <ExplainPanel Build="session.Build" />
@@ -262,6 +262,9 @@
     /// <summary>An exotic's catalyst turned on or off: the embedded build's weapon changes and the steps replay with it.</summary>
     private void SetCatalyst(CatalystToggle toggle) =>
         ApplyBuildEdit(session => LoopDesigning.SetCatalyst(session, toggle.Weapon, toggle.On));
+
+    private void SetStats(StatLine stats) =>
+        ApplyBuildEdit(session => LoopDesigning.SetStats(session, stats));
 
     /// <summary>Applies a pure edit to the open design (every edit is a new immutable session).</summary>
     private void EditSession(Func<DesignSession, DesignSession> edit, bool scrollToEnd, bool keepSelection = false)

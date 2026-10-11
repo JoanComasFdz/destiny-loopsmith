@@ -12,6 +12,7 @@ using Loopsmith.Core.Phrasing;
 using Loopsmith.Core.ReportComparison;
 using Loopsmith.Core.RuleParsing;
 using Loopsmith.Core.Simulation;
+using Loopsmith.Core.StatLoading;
 using Loopsmith.Core.TraceRendering;
 
 namespace Loopsmith.Core.Orchestration;
@@ -228,13 +229,71 @@ public static class LoopDesigning
 
     /// <summary>One weapon of the embedded build changed: that entry rewritten, the build validated again, the steps replayed.</summary>
     private static Result<DesignSession, string> EditWeapon(DesignSession session, int weapon, Func<WeaponLoadout, Result<WeaponLoadout, string>> change) =>
-        FindWeapon(session.Build.Build, weapon)
+        RebuildWith(session, FindWeapon(session.Build.Build, weapon)
             .Bind(change)
-            .Bind(changed => BuildFileEditing.ReplaceWeapon(session.Design.Build, weapon, changed))
-            .Map(text => session.Design.Build with { Text = text })
+            .Bind(changed => BuildFileEditing.ReplaceWeapon(session.Design.Build, weapon, changed)));
+
+    /// <summary>The design with its embedded build file's text changed: the build parsed and validated again, the steps replayed.</summary>
+    private static Result<DesignSession, string> RebuildWith(DesignSession session, Result<string, string> text) =>
+        text.Map(changed => session.Design.Build with { Text = changed })
             .Bind(file => BuildFileParsing.ParseBuildFile(file)
                 .Bind(build => BuildValidation.ValidateBuild(build, session.Build.Catalog))
                 .Map(validated => CreateSession(validated, session.Design with { Build = file })));
+
+    // ── Stats: typed, or added up from the player's own armor (docs/loop-format.md, "Stats") ─────────────────
+
+    /// <summary>
+    /// The design with the build's stats set: only the embedded build file's <c>stats:</c> changes (an unknown stat is
+    /// left out, "?"); the build check runs again (its stat checks with it) and the steps replay.
+    /// </summary>
+    public static Result<DesignSession, string> SetStats(DesignSession session, StatLine stats) =>
+        RebuildWith(session, BuildFileEditing.ReplaceStats(session.Design.Build, stats));
+
+    /// <summary>A stat as typed: empty for unknown ("?"), else a whole number 0..200; or why it isn't one.</summary>
+    public static Result<Optional<StatValue>, string> ReadStatInput(StatKind stat, string text) =>
+        StatAdding.ReadStatInput(stat, text);
+
+    /// <summary>Bungie's login page for this app (a public OAuth client): it comes back to the registered redirect URL with a code and the state.</summary>
+    public static string ToBungieLoginUrl(string clientId, string state) =>
+        BungieAuthorizing.ToAuthorizeUrl(clientId, state);
+
+    /// <summary>Where the login's code becomes an access token.</summary>
+    public const string BungieTokenUrl = BungieAuthorizing.TokenUrl;
+
+    /// <summary>The token request's form (a public client: its id, no secret).</summary>
+    public static ImmutableArray<KeyValuePair<string, string>> ToBungieTokenForm(string clientId, string code) =>
+        BungieAuthorizing.ToTokenForm(clientId, code);
+
+    /// <summary>The login page's answer, as the host passes it on: the code when the state is the one sent, else why there is none.</summary>
+    public static Result<string, string> ReadBungieCallback(string answerJson, string sentState) =>
+        BungieAuthorizing.ReadCallback(answerJson, sentState);
+
+    /// <summary>The token endpoint's answer: the access token, or what Bungie said.</summary>
+    public static Result<string, string> ReadBungieAccessToken(string json) =>
+        BungieAuthorizing.ReadAccessToken(json);
+
+    /// <summary>The logged-in player's account and memberships, on Bungie's API.</summary>
+    public const string BungieMembershipsUrl = BungieProfileReading.MembershipsUrl;
+
+    /// <summary>The Destiny membership to read (the cross-save primary one), or why there is none.</summary>
+    public static Result<DestinyMembership, string> ReadDestinyMembership(string json) =>
+        BungieProfileReading.ReadMembership(json);
+
+    /// <summary>The membership's profile, with the parts Loopsmith reads (vault, characters, their items, instances, sockets).</summary>
+    public static string ToBungieProfileUrl(DestinyMembership membership) =>
+        BungieProfileReading.ToProfileUrl(membership);
+
+    /// <summary>The profile's armor and characters' stats, or what Bungie said.</summary>
+    public static Result<BungieProfile, string> ReadBungieProfile(string json) =>
+        BungieProfileReading.ReadProfile(json);
+
+    /// <summary>For each piece the build wears, the player's copies of it (the most points first); and their characters of the build's class.</summary>
+    public static StatChoices ListStatChoices(ValidatedBuild build, BungieProfile profile) =>
+        StatAdding.ListStatChoices(build.Catalog, build.Build, profile);
+
+    /// <summary>The build's stats added up from the copies picked (by slot, an instance id), as DIM adds them up; or why they can't be.</summary>
+    public static Result<StatTotals, string> AddUpStats(ValidatedBuild build, StatChoices choices, ImmutableDictionary<ArmorSlot, string> picks) =>
+        StatAdding.AddUpStats(build.Catalog, build.Build, choices, picks);
 
     /// <summary>A weapon's perks the way the build holds them, column by column (what the designer shows and the build check equips).</summary>
     public static ImmutableArray<WeaponPerkSlot> ListPerkSlots(ValidatedBuild build, WeaponLoadout weapon) =>

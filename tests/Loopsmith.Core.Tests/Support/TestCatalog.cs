@@ -63,7 +63,8 @@ public static class TestCatalog
             ability ?? Optional.None<AbilityProfile>(),
             fragmentSlots is { } slots ? Optional.Some(slots) : Optional.None<int>(),
             new Provenance.Authored("test", 1),
-            Optional.None<string>());
+            Optional.None<string>(),
+            []);
 
     public static AbilityProfile Profile(AbilityKind kind, int charges = 1, GameValue? chunkScalar = null) =>
         new(kind, charges, chunkScalar ?? new GameValue.Unknown(), new GameValue.Unknown());
@@ -89,7 +90,7 @@ public static class TestCatalog
             CatalogVersion.From("test"),
             Glossary,
             abilities.Concat(fragments).Concat(allMods).Concat(keywords.IsDefault ? [] : keywords).ToImmutableDictionary(e => e.Id),
-            new ManifestExcerpt(Optional.None<string>(), ImmutableDictionary<DamageType, string>.Empty, ImmutableDictionary<ItemHash, ArmorSet>.Empty, ImmutableDictionary<ItemHash, ManifestItem>.Empty));
+            new ManifestExcerpt(Optional.None<string>(), ImmutableDictionary<DamageType, string>.Empty, ImmutableDictionary<ItemHash, ArmorSet>.Empty, ImmutableDictionary<ItemHash, ManifestItem>.Empty, ImmutableDictionary<ItemHash, StatPlug>.Empty));
         var build = new Build(
             "Test build",
             Optional.None<string>(),

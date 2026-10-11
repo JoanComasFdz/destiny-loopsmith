@@ -33,17 +33,7 @@
 
     <LoadoutPanel Build="Build" OnPickPerk="OnPickPerk" OnSetCatalyst="OnSetCatalyst" />
 
-    <h3 class="section-label">Stats</h3>
-    <div class="stats">
-        @foreach (var stat in sheet.Stats)
-        {
-            <div class="stat">
-                <span class="stat-name">@stat.Name</span>
-                <span class="stat-bar"><span style="width:@ToPercent(stat.Value)%"></span></span>
-                <span class="stat-value">@(stat.Value is Optional<int>.Some value ? value.Value.ToString(System.Globalization.CultureInfo.InvariantCulture) : "?")</span>
-            </div>
-        }
-    </div>
+    <StatsPanel Build="Build" Rows="sheet.Stats" OnSetStats="OnSetStats" />
 
     @if (!sheet.LeftOut.IsEmpty)
     {
@@ -117,9 +107,9 @@
     [Parameter]
     public EventCallback<CatalystToggle> OnSetCatalyst { get; set; }
 
-    private static string ToPercent(Optional<int> value) =>
-        value.Match(v => (100m * Math.Clamp(v.Value, 0, BuildSheetShaping.MaxStat) / BuildSheetShaping.MaxStat), _ => 0m)
-            .ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
+    /// <summary>Stats set in the Stats section, typed or from the player's armor (the designer applies them); none: shown only.</summary>
+    [Parameter]
+    public EventCallback<StatLine> OnSetStats { get; set; }
 
     /// <summary>light.gg's page for a manifest hash: what the item is, until Loopsmith reads the manifest itself.</summary>
     private static string ToLookupUrl(ItemHash hash) =>

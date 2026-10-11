@@ -11,8 +11,9 @@ public sealed class DimLoadoutFetching(HttpClient http, string apiKey)
 {
     public const string NotRegistered =
         "Loopsmith can't open dim.gg links yet: DIM hands a shared loadout only to apps registered with its API, and "
-        + "Loopsmith's registration isn't set up. Links that carry the loadout itself (…/loadouts?loadout=…, from "
-        + "D2ArmorPicker or guardian.report) work now.";
+        + "Loopsmith's registration isn't set up. Open the dim.gg link, copy its \"Open Loadout in DIM\" link (long-press "
+        + "or right-click it, then copy the link) and paste that here instead: it carries the whole loadout. Links like it "
+        + "(…/loadouts?loadout=…, from D2ArmorPicker or guardian.report) work too.";
 
     public bool CanFetchShares => apiKey.Length > 0;
 

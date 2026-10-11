@@ -53,6 +53,12 @@ internal static class ValueReading
     internal static Result<int, Errors> ReadNonNegativeInteger(YamlValue value) =>
         value.ParseWith(text => ParseWholeNumber(text, minimum: 0));
 
+    /// <summary>A whole number that may be negative (a stat plug's <c>value: -10</c>).</summary>
+    internal static Result<int, Errors> ReadSignedInteger(YamlValue value) =>
+        value.ParseWith<int>(text => int.TryParse(text, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var number)
+            ? new Result<int, string>.Ok(number)
+            : new Result<int, string>.Error($"'{text}' is not a whole number"));
+
     /// <summary>A stack count of at least one (<c>stacks</c>, <c>extra</c>).</summary>
     internal static Result<StackCount, Errors> ReadStackCount(YamlValue value) =>
         value.ParseWith(text => ParseWholeNumber(text, minimum: 1).Bind(count => StackCount.TryFrom(count).ToResult()));
