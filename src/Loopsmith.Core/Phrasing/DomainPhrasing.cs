@@ -233,7 +233,12 @@ public static class DomainPhrasing
 
     // ── damage ─────────────────────────────────────────────────────────────────
 
-    public static string DescribeDamageSource(this KeywordGlossary glossary, DamageSource source) =>
+    /// <summary>
+    /// "Arc weapon", "grenade", "Jolt"… <paramref name="superType"/> is the build's Super's damage type
+    /// (<c>BuildReading.ReadSuperType</c>): a weapon of your Super's element names it when it is known ("Arc weapon (your
+    /// Super's element)"), else "weapon of your Super's element".
+    /// </summary>
+    public static string DescribeDamageSource(this KeywordGlossary glossary, DamageSource source, Optional<DamageType> superType) =>
         source.Match(
             _ => "any source",
             _ => "weapon",
@@ -243,32 +248,39 @@ public static class DomainPhrasing
             abilityOf => abilityOf.Kind.DescribeAbility(),
             ofType => $"{ofType.Type}",
             keywordOf => glossary.DescribeStatus(keywordOf.Status),
-            summonOf => glossary.DescribeSummon(summonOf.Summon));
+            summonOf => glossary.DescribeSummon(summonOf.Summon),
+            _ => superType.Match(type => $"{type.Value} weapon (your Super's element)", _ => "weapon of your Super's element"));
 
     public static string DescribeOrigin(this KeywordGlossary glossary, DamageOrigin origin, Build build) =>
         origin.Match(
             weapon => DescribeWeapon(build, weapon.Slot, $"{weapon.Type} weapon"),
             ability => Capitalize(ability.Kind.DescribeAbility()),
             keyword => glossary.DescribeStatus(keyword.Status),
-            summoned => glossary.DescribeSummon(summoned.Summon));
+            summoned => glossary.DescribeSummon(summoned.Summon),
+            _ => Finisher);
+
+    /// <summary>What a finisher is called everywhere: the action, its trigger, its event and its hit.</summary>
+    public const string Finisher = "Finisher";
 
     // ── triggers, conditions, outcomes, passives ───────────────────────────────
 
-    public static string DescribeTrigger(this KeywordGlossary glossary, Trigger trigger) =>
+    /// <summary>A rule's trigger as a player says it; <paramref name="superType"/>: see <see cref="DescribeDamageSource"/>.</summary>
+    public static string DescribeTrigger(this KeywordGlossary glossary, Trigger trigger, Optional<DamageType> superType) =>
         trigger.Match(
             cast => DescribeCast(cast.Kind, cast.Airborne),
-            killAny => DescribeKill(glossary, killAny.Via, []),
-            killOfTier => $"{DescribeKill(glossary, killOfTier.Via, [])} ({killOfTier.Tier})",
-            killDebuffed => DescribeKill(glossary, killDebuffed.Via, killDebuffed.TargetHas),
-            killMultiple => DescribeMultiKill(glossary, killMultiple.Via, killMultiple.AtLeast),
-            damage => DescribeDamage(glossary, damage.Via, []),
-            damageDebuffed => DescribeDamage(glossary, damageDebuffed.Via, damageDebuffed.TargetHas),
-            damageMultiple => DescribeMultiHit(glossary, damageMultiple.Via, damageMultiple.AtLeast),
+            killAny => DescribeKill(glossary, killAny.Via, [], superType),
+            killOfTier => $"{DescribeKill(glossary, killOfTier.Via, [], superType)} ({killOfTier.Tier})",
+            killDebuffed => DescribeKill(glossary, killDebuffed.Via, killDebuffed.TargetHas, superType),
+            killMultiple => DescribeMultiKill(glossary, killMultiple.Via, killMultiple.AtLeast, superType),
+            damage => DescribeDamage(glossary, damage.Via, [], superType),
+            damageDebuffed => DescribeDamage(glossary, damageDebuffed.Via, damageDebuffed.TargetHas, superType),
+            damageMultiple => DescribeMultiHit(glossary, damageMultiple.Via, damageMultiple.AtLeast, superType),
             pickUp => $"Pick up {glossary.DescribePickup(pickUp.Pickup)}",
             buffGained => $"Gain {glossary.DescribeStatus(buffGained.Status)}",
-            stacksMaxed => $"Max {glossary.DescribeStatus(stacksMaxed.Status)}");
+            stacksMaxed => $"Max {glossary.DescribeStatus(stacksMaxed.Status)}",
+            _ => Finisher);
 
-    private static string DescribeKill(KeywordGlossary glossary, DamageSource via, ImmutableArray<StatusId> targetHas)
+    private static string DescribeKill(KeywordGlossary glossary, DamageSource via, ImmutableArray<StatusId> targetHas, Optional<DamageType> superType)
     {
         var target = DescribeTargetPhrase(glossary, targetHas);
         return via switch
@@ -277,31 +289,39 @@ public static class DomainPhrasing
             DamageSource.AbilityOf ability => $"{Capitalize(ability.Kind.DescribeAbility())} kill{DescribeOnTarget(target)}",
             DamageSource.OfType type => $"{type.Type} kill{DescribeOnTarget(target)}",
             DamageSource.KeywordOf keyword => $"{glossary.DescribeStatus(keyword.Status)} kill{DescribeOnTarget(target)}",
-            _ => $"Kill {target} with {glossary.DescribeDamageSource(via)}",
+            _ => $"Kill {target} with {glossary.DescribeDamageSource(via, superType)}",
         };
     }
 
-    private static string DescribeDamage(KeywordGlossary glossary, DamageSource via, ImmutableArray<StatusId> targetHas)
+    /// <summary>"Arc weapon damage", "Damage target with Arc weapon (your Super's element)": a long source reads after the target.</summary>
+    private static string DescribeDamage(KeywordGlossary glossary, DamageSource via, ImmutableArray<StatusId> targetHas, Optional<DamageType> superType)
     {
         var target = DescribeTargetPhrase(glossary, targetHas);
         return via switch
         {
             DamageSource.AnySource => $"Damage {target}",
-            _ => $"{Capitalize(glossary.DescribeDamageSource(via))} damage{DescribeOnTarget(target)}",
+            DamageSource.WeaponOfSuperType => $"Damage {target} with {glossary.DescribeDamageSource(via, superType)}",
+            _ => $"{Capitalize(glossary.DescribeDamageSource(via, superType))} damage{DescribeOnTarget(target)}",
         };
     }
 
     /// <summary>"Kill 2+ with grenade", "Kill 3+ enemies" (any source).</summary>
-    private static string DescribeMultiKill(KeywordGlossary glossary, DamageSource via, TargetCount atLeast) =>
+    private static string DescribeMultiKill(KeywordGlossary glossary, DamageSource via, TargetCount atLeast, Optional<DamageType> superType) =>
         via is DamageSource.AnySource
             ? $"Kill {atLeast.Value}+ enemies"
-            : $"Kill {atLeast.Value}+ with {glossary.DescribeDamageSource(via)}";
+            : $"Kill {atLeast.Value}+ with {glossary.DescribeDamageSource(via, superType)}";
 
     /// <summary>"Hit 3+ enemies with weapon", "Hit 3+ enemies" (any source).</summary>
-    private static string DescribeMultiHit(KeywordGlossary glossary, DamageSource via, TargetCount atLeast) =>
+    private static string DescribeMultiHit(KeywordGlossary glossary, DamageSource via, TargetCount atLeast, Optional<DamageType> superType) =>
         via is DamageSource.AnySource
             ? $"Hit {atLeast.Value}+ enemies"
-            : $"Hit {atLeast.Value}+ enemies with {glossary.DescribeDamageSource(via)}";
+            : $"Hit {atLeast.Value}+ enemies with {glossary.DescribeDamageSource(via, superType)}";
+
+    /// <summary>"+20% Arc weapon damage"; a weapon of your Super's element reads "+20% damage with Arc weapon (your Super's element)".</summary>
+    private static string DescribeDamageChange(KeywordGlossary glossary, DamageSource against, GameValue change, Optional<DamageType> superType) =>
+        against is DamageSource.WeaponOfSuperType
+            ? $"+{change.FormatPercent()} damage with {glossary.DescribeDamageSource(against, superType)}"
+            : $"+{change.FormatPercent()} {glossary.DescribeDamageSource(against, superType)} damage";
 
     private static string DescribeTargetPhrase(KeywordGlossary glossary, ImmutableArray<StatusId> targetHas) =>
         targetHas.IsEmpty
@@ -343,7 +363,8 @@ public static class DomainPhrasing
     public static string DescribeConditions(this KeywordGlossary glossary, ImmutableArray<Condition> conditions) =>
         string.Join(", ", conditions.Select(glossary.DescribeCondition));
 
-    public static string DescribeOutcome(this KeywordGlossary glossary, Outcome outcome) =>
+    /// <summary>An outcome as a fact; <paramref name="superType"/>: see <see cref="DescribeDamageSource"/>.</summary>
+    public static string DescribeOutcome(this KeywordGlossary glossary, Outcome outcome, Optional<DamageType> superType) =>
         outcome.Match(
             grant => grant.Amount.Match(
                 fraction => $"+{fraction.Amount.FormatPercent()} {grant.To.DescribeAbility()} energy",
@@ -356,30 +377,34 @@ public static class DomainPhrasing
             spawn => (spawn.Count > 1 ? $"{spawn.Count}× " : "") + glossary.DescribePickup(spawn.Pickup),
             summon => (summon.Count > 1 ? $"{summon.Count}× " : "") + glossary.DescribeSummon(summon.Summon),
             strike => $"{glossary.DescribeStatus(strike.Via)} strike" + (strike.Hit == HitOutcome.Kill ? " (kills)" : ""),
-            modify => $"+{modify.Change.FormatPercent()} {glossary.DescribeDamageSource(modify.Against)} damage",
+            modify => DescribeDamageChange(glossary, modify.Against, modify.Change, superType),
             heal => (heal.IncludesAllies ? "heals you and allies" : "heals you")
                 + (heal.Amount is GameValue.Unknown ? "" : $" {heal.Amount.FormatPercent()}"),
             reset => $"refills {reset.Which.DescribeAbility()}",
-            collect => $"collects {glossary.DescribePickup(collect.Pickup)} from the ground");
+            collect => $"collects {glossary.DescribePickup(collect.Pickup)} from the ground",
+            least => least.Amount.Match(
+                fraction => $"+{fraction.Amount.FormatPercent()} energy to your least-charged ability",
+                _ => "refills your least-charged ability"));
 
     /// <summary>
     /// Several outcomes of one rule as one phrase, with values narrowed to the copies equipped and
     /// same-amount energy grants merged: "+~15% grenade, melee and class ability energy".
     /// </summary>
-    public static string DescribeOutcomes(this KeywordGlossary glossary, IEnumerable<OutcomeMention> mentions) =>
-        string.Join(" and ", glossary.ListOutcomePhrases(mentions).Select(phrase => phrase.Text));
+    public static string DescribeOutcomes(this KeywordGlossary glossary, IEnumerable<OutcomeMention> mentions, Optional<DamageType> superType) =>
+        string.Join(" and ", glossary.ListOutcomePhrases(mentions, superType).Select(phrase => phrase.Text));
 
     /// <summary>
     /// Each outcome of one rule as a phrase of its own (what <see cref="DescribeOutcomes"/> joins), values narrowed to
     /// the copies equipped and same-amount energy grants merged into one; each with the outcome it describes (a merged
     /// grant: its first).
     /// </summary>
-    public static ImmutableArray<DescribedOutcome> ListOutcomePhrases(this KeywordGlossary glossary, IEnumerable<OutcomeMention> mentions)
+    public static ImmutableArray<DescribedOutcome> ListOutcomePhrases(
+        this KeywordGlossary glossary, IEnumerable<OutcomeMention> mentions, Optional<DamageType> superType)
     {
         var phrases = mentions
             .Select(mention => NarrowOutcomeToCopies(mention.Outcome, mention.Copies))
             .Select(outcome => new OutcomePhrase(
-                glossary.DescribeOutcome(outcome),
+                glossary.DescribeOutcome(outcome, superType),
                 outcome,
                 outcome is Outcome.GrantEnergy { Amount: EnergyGrant.Fraction fraction } grant
                     ? Optional.Some(new EnergyPhrase(fraction.Amount.FormatPercent(), grant.To))
@@ -419,6 +444,8 @@ public static class DomainPhrasing
         {
             Outcome.GrantEnergy { Amount: EnergyGrant.Fraction fraction } grant =>
                 grant with { Amount = new EnergyGrant.Fraction(fraction.Amount.NarrowToCopies(copies)) },
+            Outcome.GrantLeastChargedEnergy { Amount: EnergyGrant.Fraction fraction } least =>
+                least with { Amount = new EnergyGrant.Fraction(fraction.Amount.NarrowToCopies(copies)) },
             Outcome.ConvertStacksToEnergy convert => convert with { PerStack = convert.PerStack.NarrowToCopies(copies) },
             Outcome.ModifyDamage modify => modify with { Change = modify.Change.NarrowToCopies(copies) },
             Outcome.RestoreHealth heal => heal with { Amount = heal.Amount.NarrowToCopies(copies) },
@@ -493,15 +520,45 @@ public static class DomainPhrasing
     public static string DescribeActiveBuff(this KeywordGlossary glossary, ActiveBuff buff) =>
         glossary.DescribeStatus(buff.Status) + (buff.AtMax ? " (at max)" : "");
 
-    public static string DescribePassive(this KeywordGlossary glossary, Passive passive) =>
-        passive.Match(
+    /// <summary>
+    /// A passive as a fact, its values narrowed to the <paramref name="copies"/> equipped (Weapon Surge with two copies:
+    /// "+17% Arc weapon damage"), as a rule's outcomes are; <paramref name="superType"/>: see <see cref="DescribeDamageSource"/>.
+    /// </summary>
+    public static string DescribePassive(this KeywordGlossary glossary, Passive passive, int copies, Optional<DamageType> superType) =>
+        NarrowPassiveToCopies(passive, copies).Match(
             extra => $"+{extra.Extra.Value} {glossary.DescribeStatus(extra.Status)} per gain",
             charges => $"+{charges.Extra} {charges.Ability.DescribeAbility()} charge",
-            modify => $"+{modify.Change.FormatPercent()} {glossary.DescribeDamageSource(modify.Against)} damage",
+            modify => DescribeDamageChange(glossary, modify.Against, modify.Change, superType),
             resist => $"{resist.Amount.FormatPercent()} damage resistance",
             weapons => $"{DescribeArchetypes(weapons.Archetypes)}: "
                 + string.Join(", ", weapons.Changes.Select(change => DescribeStatChange(change))),
-            raise => $"{glossary.DescribeStatus(raise.Status)} up to x{raise.Max.FormatNumber()}");
+            raise => $"{glossary.DescribeStatus(raise.Status)} up to x{raise.Max.FormatNumber()}",
+            stat => $"{FormatSignedNumber(stat.Change)} {stat.Stat}");
+
+    /// <summary>The same passive with each of its per-copy values narrowed to the copies equipped (<see cref="GameValueArithmetic.NarrowToCopies"/>).</summary>
+    private static Passive NarrowPassiveToCopies(Passive passive, int copies) =>
+        passive switch
+        {
+            Passive.ModifyDamage modify => modify with { Change = modify.Change.NarrowToCopies(copies) },
+            Passive.ResistDamage resist => resist with { Amount = resist.Amount.NarrowToCopies(copies) },
+            Passive.ModifyWeaponStats weapons => weapons with
+            {
+                Changes = [.. weapons.Changes.Select(change => change with { Change = change.Change.NarrowToCopies(copies) })],
+            },
+            Passive.RaiseMaxStacks raise => raise with { Max = raise.Max.NarrowToCopies(copies) },
+            Passive.ModifyStat stat => stat with { Change = stat.Change.NarrowToCopies(copies) },
+            _ => passive,
+        };
+
+    /// <summary>"+20", "+20|40|50", "+~20", "+?" — and "-10" for a value that lowers: a stat change as the game shows it.</summary>
+    private static string FormatSignedNumber(GameValue value) =>
+        value.Match(
+            known => known.Value < 0,
+            perModCount => perModCount.Values.Any(v => v < 0),
+            approximate => approximate.Value < 0,
+            _ => false)
+            ? value.FormatNumber()
+            : "+" + value.FormatNumber();
 
     /// <summary>"Linear Fusion Rifles, Fusion Rifles and Heat Weapons": weapon archetypes as the game names them, plural.</summary>
     public static string DescribeArchetypes(ImmutableArray<string> archetypes) =>
@@ -527,11 +584,12 @@ public static class DomainPhrasing
             struck => $"{glossary.DescribeOrigin(struck.Origin, build)} {(struck.Hit == HitOutcome.Kill ? "killed" : "hit")} {DescribeEnemies(struck.Targets)}",
             pickedUp => $"Picked up {glossary.DescribePickup(pickedUp.Pickup)}",
             gained => $"{glossary.DescribeStatus(gained.Status)} gained",
-            maxed => $"Max {glossary.DescribeStatus(maxed.Status)}");
+            maxed => $"Max {glossary.DescribeStatus(maxed.Status)}",
+            _ => Finisher);
 
     /// <summary>
     /// "Grenade (kill)", "Grenade (kill 3)", "Festival Flight (hit 5)", "Class ability", "Pick up Orb of Power",
-    /// "Bolt Charge at max (x10)", "Amplified ends", "New pack".
+    /// "Bolt Charge at max (x10)", "Amplified ends", "New pack", "Finisher".
     /// </summary>
     public static string DescribeAction(this ValidatedBuild build, PlayerAction action) =>
         action.Match(
@@ -539,7 +597,8 @@ public static class DomainPhrasing
             use => use.Airborne ? "Class ability (in the air)" : "Class ability",
             fire => $"{DescribeWeapon(build.Build, fire.Slot, fire.Slot.ToString())} ({DescribeHit(fire.Hit, fire.Targets)})",
             collect => $"Pick up {build.Catalog.Glossary.DescribePickup(collect.Pickup)}",
-            declare => build.DescribeDeclaration(declare.Declaration));
+            declare => build.DescribeDeclaration(declare.Declaration),
+            _ => Finisher);
 
     /// <summary>"Armor Charge at max (x4)": the max names the build's cap (Charged Up raises it), a fact the player declares reached.</summary>
     private static string DescribeDeclaration(this ValidatedBuild build, StateDeclaration declaration) =>
@@ -559,7 +618,8 @@ public static class DomainPhrasing
     /// <summary>
     /// The action's token, the same everywhere (CLI, loop files, the web): <c>grenade:kill</c>, <c>grenade:kill:3</c>,
     /// <c>class</c>, <c>kinetic</c>, <c>kinetic:hit:5</c>, <c>pickup:orb-of-power</c>, <c>max:bolt-charge</c>,
-    /// <c>end:amplified</c>, <c>pack:new</c>. The target count is written only when it is more than one; every token round-trips.
+    /// <c>end:amplified</c>, <c>pack:new</c>, <c>finisher</c>. The target count is written only when it is more than one; every
+    /// token round-trips.
     /// </summary>
     public static string ToActionToken(this PlayerAction action) =>
         action.Match(
@@ -570,7 +630,8 @@ public static class DomainPhrasing
             declare => declare.Declaration.Match(
                 max => $"max:{max.Status}",
                 end => $"end:{end.Status}",
-                _ => "pack:new"));
+                _ => "pack:new"),
+            _ => "finisher");
 
     private static string ToHitSuffix(HitOutcome hit, TargetCount targets) =>
         (hit, targets.Value) switch

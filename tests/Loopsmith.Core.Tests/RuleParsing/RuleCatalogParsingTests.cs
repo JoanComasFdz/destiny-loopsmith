@@ -1282,4 +1282,90 @@ public sealed class RuleCatalogParsingTests
         Assert.Contains("hunter/arc.yaml:6: element.source: 'wiki/spark-of-shock' is not a source", message);
         Assert.Contains("hunter/arc.yaml:11: element.source: creator 'not a url' is not an absolute http(s) URL", message);
     }
+
+    // ── Finishers, the least-charged ability, stat points, a weapon of your Super's element ─
+
+    /// <summary>One mod (line 2) whose one rule (line 7) is <paramref name="rule"/>.</summary>
+    private static SourceText ToProbeFile(string rule) =>
+        ToElementsFile("mods.yaml", $$"""
+            elements:
+              - id: probe
+                name: Probe
+                kind: armorMod
+                affinity: neutral
+                rules:
+                  - {{rule}}
+            """);
+
+    /// <summary>One mod (line 2) whose one passive (line 7) is <paramref name="passive"/>.</summary>
+    private static SourceText ToPassiveProbeFile(string passive) =>
+        ToElementsFile("mods.yaml", $$"""
+            elements:
+              - id: probe
+                name: Probe
+                kind: armorMod
+                affinity: neutral
+                passives:
+                  - {{passive}}
+            """);
+
+    [Fact]
+    public void Parses_a_finisher_trigger_which_takes_no_keys()
+    {
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog(
+            [Glossary, ToProbeFile("{ on: { finisher: {} }, when: [ { has: armor-charge } ], then: [ { spawn: orb-of-power } ], chance: true }")]));
+        var withKeys = ParseInvalidCatalog(Glossary, ToProbeFile("{ on: { finisher: { via: any } }, then: [ { spawn: orb-of-power } ] }"));
+        var notAMap = ParseInvalidCatalog(Glossary, ToProbeFile("{ on: { finisher: true }, then: [ { spawn: orb-of-power } ] }"));
+
+        var rule = Assert.Single(catalog.Elements[ElementId.From("probe")].Rules);
+        Assert.Equal(new Trigger.Finisher(), rule.On);
+        Assert.Equal([new Condition.HasBuff(ToStatus("armor-charge"))], rule.When);
+        Assert.Equal(Likelihood.Chance, rule.Likelihood);
+        Assert.Contains("mods.yaml:7: finisher takes no keys: write { finisher: {} }", withKeys);
+        Assert.Contains("finisher must be a mapping", notAMap);
+    }
+
+    [Fact]
+    public void Parses_an_energy_grant_to_the_least_charged_ability()
+    {
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog(
+            [Glossary, ToProbeFile("{ on: { pickUp: orb-of-power }, then: [ { grantEnergy: { to: leastCharged, amount: \"10% | 13% | 15%\" } }, { grantEnergy: { to: leastCharged, amount: full } } ] }")]));
+        var unknown = ParseInvalidCatalog(Glossary, ToProbeFile("{ on: { pickUp: orb-of-power }, then: [ { grantEnergy: { to: lowest, amount: \"10%\" } } ] }"));
+
+        var rule = Assert.Single(catalog.Elements[ElementId.From("probe")].Rules);
+        var least = Assert.IsType<Outcome.GrantLeastChargedEnergy>(rule.Then[0]);
+        var fraction = Assert.IsType<EnergyGrant.Fraction>(least.Amount);
+        Assert.Equal([0.10m, 0.13m, 0.15m], Assert.IsType<GameValue.PerModCount>(fraction.Amount).Values);
+        Assert.Equal(new Outcome.GrantLeastChargedEnergy(new EnergyGrant.Full()), rule.Then[1]);
+        Assert.Contains("grantEnergy.to: 'lowest' is not one of: grenade, melee, classAbility, super, or leastCharged", unknown);
+    }
+
+    [Fact]
+    public void Parses_a_stat_change_in_points_with_a_guard_and_refuses_a_percent()
+    {
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToPassiveProbeFile(
+            "{ effect: { modifyStat: { stat: grenade, change: \"+20 | +40 | +50\" } }, when: [ { has: armor-charge } ] }")]));
+        var plain = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToPassiveProbeFile(
+            "{ effect: { modifyStat: { stat: health, change: \"+20\" } } }")]));
+        var percent = ParseInvalidCatalog(Glossary, ToPassiveProbeFile("{ effect: { modifyStat: { stat: grenade, change: \"+20%\" } } }"));
+        var stat = ParseInvalidCatalog(Glossary, ToPassiveProbeFile("{ effect: { modifyStat: { stat: mobility, change: \"+20\" } } }"));
+
+        var passive = Assert.Single(catalog.Elements[ElementId.From("probe")].Passives);
+        var modify = Assert.IsType<Passive.ModifyStat>(passive.Modifier);
+        Assert.Equal(StatKind.Grenade, modify.Stat);
+        Assert.Equal([20m, 40m, 50m], Assert.IsType<GameValue.PerModCount>(modify.Change).Values);
+        Assert.Equal([new Condition.HasBuff(ToStatus("armor-charge"))], passive.When);
+        Assert.Equal(new Passive.ModifyStat(StatKind.Health, new GameValue.Known(20m)), Assert.Single(plain.Elements[ElementId.From("probe")].Passives).Modifier);
+        Assert.Contains("mods.yaml:7: modifyStat.change: '+20%' is a percent; a stat change is a number of points", percent);
+        Assert.Contains("'mobility' is not one of: weapons, health, class, grenade, super, melee", stat);
+    }
+
+    [Fact]
+    public void Parses_a_weapon_of_your_supers_element()
+    {
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog(
+            [Glossary, ToProbeFile("{ on: { kill: { via: \"weapon:harmonic\" } }, then: [ { spawn: orb-of-power } ] }")]));
+
+        Assert.Equal(new Trigger.KillAny(new DamageSource.WeaponOfSuperType()), Assert.Single(catalog.Elements[ElementId.From("probe")].Rules).On);
+    }
 }

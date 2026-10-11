@@ -43,7 +43,10 @@ public static class GameNotationParsing
         };
     }
 
-    /// <summary><c>any</c>, <c>weapon</c>, <c>weapon:strand</c>, <c>ability</c>, <c>grenade</c>, <c>type:arc</c>, <c>keyword:jolt</c>, <c>summon:threadling</c>.</summary>
+    /// <summary>
+    /// <c>any</c>, <c>weapon</c>, <c>weapon:strand</c>, <c>weapon:harmonic</c> (a weapon of your Super's element), <c>ability</c>,
+    /// <c>grenade</c>, <c>type:arc</c>, <c>keyword:jolt</c>, <c>summon:threadling</c>.
+    /// </summary>
     public static Result<DamageSource, string> ParseDamageSource(string text)
     {
         var trimmed = text.Trim();
@@ -52,7 +55,7 @@ public static class GameNotationParsing
             ? ToBareDamageSource(trimmed)
             : ToQualifiedDamageSource(trimmed[..colon], trimmed[(colon + 1)..]);
         return parsed.MapError(reason =>
-            $"'{text}' is not a damage source ({reason}; expected any, weapon, weapon:<type>, ability, "
+            $"'{text}' is not a damage source ({reason}; expected any, weapon, weapon:<type>, weapon:harmonic, ability, "
             + "grenade, melee, classAbility, super, type:<type>, keyword:<status> or summon:<summon>)");
     }
 
@@ -167,7 +170,10 @@ public static class GameNotationParsing
     private static Result<DamageSource, string> ToQualifiedDamageSource(string prefix, string argument) =>
         prefix switch
         {
-            "weapon" => ParseVocabularyWord<DamageType>(argument).Map(DamageSource (type) => new DamageSource.WeaponOfType(type)),
+            "weapon" when argument == "harmonic" => new Result<DamageSource, string>.Ok(new DamageSource.WeaponOfSuperType()),
+            "weapon" => ParseVocabularyWord<DamageType>(argument)
+                .Map(DamageSource (type) => new DamageSource.WeaponOfType(type))
+                .MapError(message => $"{message}, or harmonic"),
             "slot" => ParseVocabularyWord<WeaponSlot>(argument).Map(DamageSource (slot) => new DamageSource.WeaponInSlot(slot)),
             "type" => ParseVocabularyWord<DamageType>(argument).Map(DamageSource (type) => new DamageSource.OfType(type)),
             "keyword" => StatusId.TryFrom(argument).ToResult().Map(DamageSource (status) => new DamageSource.KeywordOf(status)),

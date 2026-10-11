@@ -25,8 +25,10 @@ public static class LoopGraphBuilding
     public static LoopGraph BuildLoopGraph(ValidatedBuild build)
     {
         var glossary = build.Catalog.Glossary;
+        var superType = build.ReadSuperType();
+        string ToKey(Trigger trigger) => ToTriggerKey(glossary, trigger, superType);
         var rules = build.Equipped
-            .SelectMany(e => e.Element.Rules.Select(rule => (e.Element, Rule: rule, Key: ToTriggerKey(glossary, rule.On))))
+            .SelectMany(e => e.Element.Rules.Select(rule => (e.Element, Rule: rule, Key: ToKey(rule.On))))
             .ToImmutableArray();
         var maxedStatuses = rules
             .SelectMany(r => ListMaxedStatuses(r.Rule))
@@ -37,11 +39,11 @@ public static class LoopGraphBuilding
         var triggers = rules
             .Select(r => r.Rule.On)
             .Concat(maxedStatuses.SelectMany(ListDeclaredMaxTriggers))
-            .Select(on => (Key: ToTriggerKey(glossary, on), On: on))
+            .Select(on => (Key: ToKey(on), On: on))
             .DistinctBy(t => t.Key)
             .ToImmutableArray();
         var triggerNodes = triggers
-            .Select(t => new GraphNode(t.Key, glossary.DescribeTrigger(t.On), NodeKind.Trigger, ReadTriggerAffinity(build, t.On)))
+            .Select(t => new GraphNode(t.Key, glossary.DescribeTrigger(t.On, superType), NodeKind.Trigger, ReadTriggerAffinity(build, t.On)))
             .ToImmutableArray();
         var appliedDebuffs = rules
             .SelectMany(r => r.Rule.Then.OfType<Outcome.DebuffTarget>().Select(d => d.Status))
@@ -54,10 +56,13 @@ public static class LoopGraphBuilding
         var energyNodes = abilityKinds.Select(k => new GraphNode(ToEnergyKey(k), $"{DomainPhrasing.Capitalize(k.DescribeAbility())} energy", NodeKind.Energy, subclassAffinity));
         var castNodes = abilityKinds.Select(k => new GraphNode(ToCastKey(k), DescribeCastAction(k), NodeKind.Action, subclassAffinity));
         var weaponNodes = build.Build.Weapons.Select(w => new GraphNode(ToWeaponKey(w.Slot), $"Shoot {w.Name}", NodeKind.Action, w.Type.ToAffinity()));
+        // A finisher is an action of its own only where a rule reacts to one (as the designer's palette offers it).
+        var hasFinisher = rules.Any(r => r.Rule.On is Trigger.Finisher);
+        GraphNode[] finisherNodes = hasFinisher ? [new GraphNode(FinisherKey, DomainPhrasing.Finisher, NodeKind.Action, Affinity.Neutral)] : [];
 
         // Which trigger nodes does a concrete event reach?
         IEnumerable<string> Reach(GameEvent gameEvent) =>
-            triggers.Where(t => t.On.IsTriggeredBy(gameEvent)).Select(t => t.Key).Distinct();
+            triggers.Where(t => t.On.IsTriggeredBy(gameEvent, superType)).Select(t => t.Key).Distinct();
 
         var playerEdges = abilityKinds
             .SelectMany(kind =>
@@ -70,7 +75,10 @@ public static class LoopGraphBuilding
                 ListHitEvents(new DamageOrigin.Weapon(w.Slot, w.Type), appliedDebuffs)
                     .Concat(ListVolleyEvents(new DamageOrigin.Weapon(w.Slot, w.Type)))
                     .SelectMany(Reach)
-                    .Select(to => new RawEdge(ToWeaponKey(w.Slot), to, You, EdgeKind.Player))));
+                    .Select(to => new RawEdge(ToWeaponKey(w.Slot), to, You, EdgeKind.Player))))
+            .Concat(hasFinisher
+                ? ListFinisherEvents(appliedDebuffs).SelectMany(Reach).Distinct().Select(to => new RawEdge(FinisherKey, to, You, EdgeKind.Player))
+                : []);
 
         var ruleEdges = rules
             .SelectMany(r => r.Rule.Then.SelectMany(outcome =>
@@ -82,19 +90,19 @@ public static class LoopGraphBuilding
 
         // Reaching the max is the player's call (ADRs D3): one declared link per buff, never a grant's.
         var declaredEdges = maxedStatuses.Select(status => new RawEdge(
-            ToTriggerKey(glossary, new Trigger.BuffGained(status)), ToTriggerKey(glossary, new Trigger.StacksMaxed(status)), YouDeclare, EdgeKind.Declared));
+            ToKey(new Trigger.BuffGained(status)), ToKey(new Trigger.StacksMaxed(status)), YouDeclare, EdgeKind.Declared));
         // A rule guarded "at max" leads from its own trigger ("while Bolt Charge at max"); the declared max is what it needs.
         var guardEdges = rules.SelectMany(r => r.Rule.When
             .OfType<Condition.AtMax>()
             .Where(atMax => glossary.IsStacking(atMax.Status))
-            .Select(atMax => new RawEdge(ToTriggerKey(glossary, new Trigger.StacksMaxed(atMax.Status)), r.Key, r.Element.Name, EdgeKind.Enables)));
+            .Select(atMax => new RawEdge(ToKey(new Trigger.StacksMaxed(atMax.Status)), r.Key, r.Element.Name, EdgeKind.Enables)));
 
         var edges = playerEdges.Concat(routed.Edges).Concat(declaredEdges).Concat(guardEdges)
             .GroupBy(e => (e.From, e.To, e.Kind))
             .Select(g => new GraphEdge(g.Key.From, g.Key.To, g.Select(e => e.Source).Distinct().ToImmutableArray(), g.Key.Kind))
             .ToImmutableArray();
         var used = edges.SelectMany(e => new[] { e.From, e.To }).ToImmutableHashSet();
-        var nodes = triggerNodes.Concat(energyNodes).Concat(castNodes).Concat(weaponNodes).Concat(routed.Filters)
+        var nodes = triggerNodes.Concat(energyNodes).Concat(castNodes).Concat(weaponNodes).Concat(finisherNodes).Concat(routed.Filters)
             .Where(n => used.Contains(n.Key))
             .ToImmutableArray();
         return new LoopGraph(nodes, edges);
@@ -177,7 +185,8 @@ public static class LoopGraphBuilding
             _ => [],
             _ => [],
             reset => LinkToEnergy(reset.Which),
-            collect => LinkToTriggers([new GameEvent.PickedUp(collect.Pickup)]));   // what is on the ground, picked up
+            collect => LinkToTriggers([new GameEvent.PickedUp(collect.Pickup)]),   // what is on the ground, picked up
+            _ => []);   // the least-charged ability: the game picks it, so it leads to no one ability's energy
     }
 
     private static string DescribeCastAction(AbilityKind kind) =>
@@ -232,6 +241,10 @@ public static class LoopGraphBuilding
         }
     }
 
+    /// <summary>The finisher, then its hit and kill: on a target that may carry any debuff some rule can apply, of every tier.</summary>
+    private static IEnumerable<GameEvent> ListFinisherEvents(ImmutableArray<StatusId> debuffs) =>
+        ListHitEvents(new DamageOrigin.Finisher(), debuffs).Prepend(new GameEvent.Finisher());
+
     /// <summary>
     /// Optimistic: a player action may hit (or kill) as many enemies as the player says, so it can reach every
     /// "hit / kill at least N in one action" trigger. Strikes and summons hit one enemy and never do.
@@ -275,7 +288,10 @@ public static class LoopGraphBuilding
             .UnwrapOr(pickup.UnwrapOr(build.Build.Subclass.ToAffinity()));
     }
 
-    private static string ToTriggerKey(KeywordGlossary glossary, Trigger trigger) => "t:" + glossary.DescribeTrigger(trigger);
+    private static string ToTriggerKey(KeywordGlossary glossary, Trigger trigger, Optional<DamageType> superType) =>
+        "t:" + glossary.DescribeTrigger(trigger, superType);
+
+    private const string FinisherKey = "a:Finisher";
 
     private static string ToEnergyKey(AbilityKind kind) => $"e:{kind}";
 

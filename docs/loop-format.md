@@ -62,7 +62,7 @@ build: |                                # required — the build file's full tex
 Same tokens everywhere: CLI `--actions a,b,…` and `--scenario <file>` (one token per line or
 comma-separated; `#` starts a comment), `play`, loop files and web share links:
 
-`grenade|melee|super[:hit|kill[:N]]` · `class[:air]` · `kinetic|energy|power[:hit|kill[:N]]` ·
+`grenade|melee|super[:hit|kill[:N]]` · `class[:air]` · `kinetic|energy|power[:hit|kill[:N]]` · `finisher` ·
 `pickup:<pickup-id>` · `max:<status-id>` · `end:<status-id>` · `pack:new`
 
 Tokens are read case-insensitively. Errors read `Unknown action '<token>'. Use …` or
@@ -74,7 +74,11 @@ one action hits (or kills), 1..20, default 1 — the player says it, the engine 
 `:hit` or `:kill` before it (`grenade:3` is an error), and `class` takes no count. `class:air` is the
 class ability used in the air — an air move that spends its charge, like Ascension's: it fires every
 class ability rule plus the ones with an airborne trigger ([rule-format.md](rule-format.md#rules),
-ADRs D9). `pickup:<id>` (any kebab-case id) picks that pickup up — one `PickedUp` event — and it is
+ADRs D9). `finisher` — "Finisher" — finishes one enemy of the pack: it fires the `finisher` rules, then
+its hit and kill fire the `damage` and `kill` rules whose source is `any` (a finisher has no damage type
+and is no weapon or ability, so `kill: { via: any, targetHas: [jolt] }` fires on a finisher of a jolted
+enemy; [rule-format.md](rule-format.md#rules)); it takes no count and is never blocked. `pickup:<id>`
+(any kebab-case id) picks that pickup up — one `PickedUp` event — and it is
 then no longer on the ground. A weapon action for an empty slot, or a pickup that isn't on the ground
 (`No orb-of-power on the ground — nothing happens.`), is a **blocked step**: it changes nothing.
 
@@ -113,15 +117,16 @@ has ended, that the next enemies are a new pack — the player declares as a ste
   out.
 
 **Written form.** Written tokens are lower-case and carry the count only when it is more than one
-(`grenade:kill`, `kinetic`, `grenade:kill:3`, `max:bolt-charge`, `end:amplified`, `pack:new`). Every token written
+(`grenade:kill`, `kinetic`, `grenade:kill:3`, `finisher`, `max:bolt-charge`, `end:amplified`, `pack:new`). Every token written
 reads back as the same action (`grenade:hit` is written `grenade`). Labels read "Grenade (kill 3)",
 "Festival Flight (hit 5)" (a weapon by its build name), "Class ability (in the air)",
-"Pick up Orb of Power", "Bolt Charge at max (x10)", "Amplified ends", "New pack".
+"Finisher", "Pick up Orb of Power", "Bolt Charge at max (x10)", "Amplified ends", "New pack".
 
 **What `play` and the web designer offer.** Only steps that can happen: the abilities, the equipped
 weapons, the pickups on the ground and a group **States you declare** — `pack:new` always, `max:` for
 each active buff that stacks and isn't at max yet, `end:` for each active status. `class:air` is offered only when an equipped rule has an
-airborne trigger (without one it fires exactly what `class` fires). Every token still reads anywhere
+airborne trigger (without one it fires exactly what `class` fires), and `finisher` (with the abilities) only when an
+equipped rule has a `finisher` trigger. Every token still reads anywhere
 (CLI, loop files, share links).
 
 **How the designer shows a step.** The same facts and wording as the CLI's `trace`, one line each: the

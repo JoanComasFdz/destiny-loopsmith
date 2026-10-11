@@ -36,9 +36,9 @@ public static class ActionResolution
     }
 
     /// <summary>
-    /// Every ability (always, ADRs D5), every equipped weapon, the pickups on the ground and the states the player can
-    /// declare now (<see cref="ListDeclarations"/>). Abilities and weapons are listed against one enemy; a host may set
-    /// any <see cref="TargetCount"/>.
+    /// Every ability (always, ADRs D5), a finisher where a rule reacts to one (<see cref="ListFinisherActions"/>), every
+    /// equipped weapon, the pickups on the ground and the states the player can declare now (<see cref="ListDeclarations"/>).
+    /// Abilities and weapons are listed against one enemy; a host may set any <see cref="TargetCount"/>.
     /// </summary>
     public static ImmutableArray<PlayerAction> ListAvailableActions(ValidatedBuild build, GameState state)
     {
@@ -49,6 +49,7 @@ public static class ActionResolution
                 new PlayerAction.CastAbility(kind, HitOutcome.Damage, TargetCount.One),
             });
         var classAbility = ListClassAbilityActions(build);
+        var finisher = ListFinisherActions(build);
         var weapons = build.Build.Weapons.SelectMany(weapon => new PlayerAction[]
         {
             new PlayerAction.FireWeapon(weapon.Slot, HitOutcome.Kill, TargetCount.One),
@@ -56,7 +57,7 @@ public static class ActionResolution
         });
         var pickups = state.Pickups.Select(pickup => (PlayerAction)new PlayerAction.CollectPickups(pickup));
         var declarations = ListDeclarations(build, state).Select(declaration => (PlayerAction)new PlayerAction.Declare(declaration));
-        return [.. offensive, .. classAbility, .. weapons, .. pickups, .. declarations];
+        return [.. offensive, .. classAbility, .. finisher, .. weapons, .. pickups, .. declarations];
     }
 
     /// <summary>
@@ -98,7 +99,18 @@ public static class ActionResolution
             use => UseClassAbility(state, use.Airborne),
             fire => FireWeapon(build, state, fire),
             collect => CollectPickups(state, collect),
-            declare => Declare(build, state, declare.Declaration));
+            declare => Declare(build, state, declare.Declaration),
+            _ => PerformFinisher(state));
+
+    /// <summary>
+    /// Never blocked: the finisher, then its hit and kill on one enemy of the pack. A finisher has no damage type and is
+    /// no weapon or ability, so only "any source" kills and hits react to it.
+    /// </summary>
+    private static Opening PerformFinisher(GameState state)
+    {
+        var origin = new DamageOrigin.Finisher();
+        return new Opening(state, [new PendingEvent.Ready(new GameEvent.Finisher()), new PendingEvent.HitTarget(origin), new PendingEvent.KillTarget(origin)], []);
+    }
 
     /// <summary>Never blocked: casting, then the strike on every target (ADRs D4, D5).</summary>
     private static Opening CastAbility(ValidatedBuild build, GameState state, PlayerAction.CastAbility cast)
@@ -118,6 +130,15 @@ public static class ActionResolution
         build.Equipped.Any(equipped => equipped.Element.Rules.Any(rule => rule.On is Trigger.AbilityCast { Airborne: true }))
             ? [new PlayerAction.UseClassAbility(), new PlayerAction.UseClassAbility(Airborne: true)]
             : [new PlayerAction.UseClassAbility()];
+
+    /// <summary>
+    /// A finisher, when an equipped rule reacts to one (<c>on: { finisher: {} }</c>); none otherwise. A finisher is always
+    /// possible in the game (it is never blocked here either), but a build that doesn't use it isn't offered it.
+    /// </summary>
+    public static ImmutableArray<PlayerAction> ListFinisherActions(ValidatedBuild build) =>
+        build.Equipped.Any(equipped => equipped.Element.Rules.Any(rule => rule.On is Trigger.Finisher))
+            ? [new PlayerAction.PerformFinisher()]
+            : [];
 
     private static Opening FireWeapon(ValidatedBuild build, GameState state, PlayerAction.FireWeapon fire)
     {

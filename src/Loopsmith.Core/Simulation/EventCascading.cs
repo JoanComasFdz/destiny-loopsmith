@@ -50,13 +50,16 @@ public static class EventCascading
             kill => new GameEvent.Killed(kill.Origin, state.Target.Tier, state.ListTargetStatuses()));
 
     public static ImmutableArray<RuleMatch> FindMatchingRules(
-        ValidatedBuild build, GameState state, GameEvent gameEvent, ImmutableHashSet<string> ancestry) =>
-        build.Equipped
+        ValidatedBuild build, GameState state, GameEvent gameEvent, ImmutableHashSet<string> ancestry)
+    {
+        var superType = build.ReadSuperType();
+        return build.Equipped
             .SelectMany(equipped => equipped.Element.Rules.Select((rule, index) => new RuleMatch(equipped, index, rule)))
-            .Where(match => match.Rule.On.IsTriggeredBy(gameEvent))
+            .Where(match => match.Rule.On.IsTriggeredBy(gameEvent, superType))
             .Where(match => match.Rule.When.IsSatisfiedBy(state))
             .Where(match => !ancestry.Contains(ToFiredKey(match, gameEvent)))
             .ToImmutableArray();
+    }
 
     /// <summary>An event an outcome raised, with the rule it came from as the rule matched (its index among the matches).</summary>
     private sealed record RaisedEvent(PendingEvent Event, int MatchIndex);
@@ -137,12 +140,14 @@ public static class EventCascading
             struck => $"targets:{ToOriginKey(struck.Origin)}:{struck.Targets.Value}:{struck.Hit}",
             pickedUp => $"pickup:{pickedUp.Pickup}",
             gained => $"gain:{gained.Status}",
-            maxed => $"max:{maxed.Status}");
+            maxed => $"max:{maxed.Status}",
+            _ => "finisher");
 
     private static string ToOriginKey(DamageOrigin origin) =>
         origin.Match(
             weapon => $"weapon/{weapon.Slot}/{weapon.Type}",
             ability => $"ability/{ability.Kind}/{ability.Type}",
             keyword => $"keyword/{keyword.Status}",
-            summoned => $"summon/{summoned.Summon}");
+            summoned => $"summon/{summoned.Summon}",
+            _ => "finisher");
 }

@@ -34,7 +34,7 @@ public sealed class KeywordInteractingTests
         var kickstart = Assert.Single(groups[1].Interactions);
         Assert.Equal(("Grenade Kickstart", "Grenade thrown → spends Armor Charge → +?% grenade energy per stack"), (kickstart.SourceName, kickstart.Text));   // its "while Armor Charge" goes without saying here
         var chargedUp = Assert.Single(groups[2].Interactions);
-        Assert.Equal(("Charged Up", "Armor Charge up to x4|5|6"), (chargedUp.SourceName, chargedUp.Text));
+        Assert.Equal(("Charged Up", "Armor Charge up to x4"), (chargedUp.SourceName, chargedUp.Text));   // one copy: its first cap
     }
 
     [Fact]

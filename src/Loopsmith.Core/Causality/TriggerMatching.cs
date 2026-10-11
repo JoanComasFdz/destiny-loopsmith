@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Loopsmith.Core.Domain;
+using Loopsmith.Core.Functional;
 
 namespace Loopsmith.Core.Causality;
 
@@ -9,31 +10,40 @@ namespace Loopsmith.Core.Causality;
 /// </summary>
 public static class TriggerMatching
 {
-    public static bool IsTriggeredBy(this Trigger trigger, GameEvent gameEvent) =>
+    /// <summary>
+    /// <paramref name="superType"/>: the damage type of the build's Super (<c>BuildReading.ReadSuperType</c>), which a
+    /// "weapon of your Super's element" source needs; none when the Super is "?".
+    /// </summary>
+    public static bool IsTriggeredBy(this Trigger trigger, GameEvent gameEvent, Optional<DamageType> superType) =>
         trigger.Match(
             abilityCast => gameEvent is GameEvent.AbilityCast cast && cast.Kind == abilityCast.Kind && (cast.Airborne || !abilityCast.Airborne),
-            killAny => gameEvent is GameEvent.Killed killed && killAny.Via.IsMatchedBy(killed.Origin),
+            killAny => gameEvent is GameEvent.Killed killed && killAny.Via.IsMatchedBy(killed.Origin, superType),
             killOfTier => gameEvent is GameEvent.Killed killed
-                && killOfTier.Via.IsMatchedBy(killed.Origin)
+                && killOfTier.Via.IsMatchedBy(killed.Origin, superType)
                 && killed.Tier == killOfTier.Tier,
             killDebuffed => gameEvent is GameEvent.Killed killed
-                && killDebuffed.Via.IsMatchedBy(killed.Origin)
+                && killDebuffed.Via.IsMatchedBy(killed.Origin, superType)
                 && HasEveryStatus(killed.TargetHas, killDebuffed.TargetHas),
             killMultiple => gameEvent is GameEvent.TargetsHit { Hit: HitOutcome.Kill } struck
-                && killMultiple.Via.IsMatchedBy(struck.Origin)
+                && killMultiple.Via.IsMatchedBy(struck.Origin, superType)
                 && struck.Targets.Value >= killMultiple.AtLeast.Value,
-            damage => gameEvent is GameEvent.Damaged damaged && damage.Via.IsMatchedBy(damaged.Origin),
+            damage => gameEvent is GameEvent.Damaged damaged && damage.Via.IsMatchedBy(damaged.Origin, superType),
             damageDebuffed => gameEvent is GameEvent.Damaged damaged
-                && damageDebuffed.Via.IsMatchedBy(damaged.Origin)
+                && damageDebuffed.Via.IsMatchedBy(damaged.Origin, superType)
                 && HasEveryStatus(damaged.TargetHas, damageDebuffed.TargetHas),
             damageMultiple => gameEvent is GameEvent.TargetsHit struck   // a kill hits too
-                && damageMultiple.Via.IsMatchedBy(struck.Origin)
+                && damageMultiple.Via.IsMatchedBy(struck.Origin, superType)
                 && struck.Targets.Value >= damageMultiple.AtLeast.Value,
             pickUp => gameEvent is GameEvent.PickedUp pickedUp && pickedUp.Pickup == pickUp.Pickup,
             buffGained => gameEvent is GameEvent.BuffGained gained && gained.Status == buffGained.Status,
-            stacksMaxed => gameEvent is GameEvent.StacksMaxed maxed && maxed.Status == stacksMaxed.Status);
+            stacksMaxed => gameEvent is GameEvent.StacksMaxed maxed && maxed.Status == stacksMaxed.Status,
+            _ => gameEvent is GameEvent.Finisher);
 
-    public static bool IsMatchedBy(this DamageSource source, DamageOrigin origin) =>
+    /// <summary>
+    /// Whether the pattern matches the origin. A finisher has no damage type and is no weapon or ability: only "any
+    /// source" matches it. A weapon of your Super's element needs the Super's type (<paramref name="superType"/>).
+    /// </summary>
+    public static bool IsMatchedBy(this DamageSource source, DamageOrigin origin, Optional<DamageType> superType) =>
         source.Match(
             _ => true,
             _ => origin is DamageOrigin.Weapon,
@@ -41,9 +51,10 @@ public static class TriggerMatching
             weaponInSlot => origin is DamageOrigin.Weapon weapon && weapon.Slot == weaponInSlot.Slot,
             _ => origin is DamageOrigin.Ability,
             abilityOf => origin is DamageOrigin.Ability ability && ability.Kind == abilityOf.Kind,
-            ofType => ReadDamageType(origin) == ofType.Type,
+            ofType => FindDamageType(origin).Match(type => type.Value == ofType.Type, _ => false),
             keywordOf => origin is DamageOrigin.Keyword keyword && keyword.Status == keywordOf.Status,
-            summonOf => origin is DamageOrigin.Summoned summoned && summoned.Summon == summonOf.Summon);
+            summonOf => origin is DamageOrigin.Summoned summoned && summoned.Summon == summonOf.Summon,
+            _ => origin is DamageOrigin.Weapon weapon && superType.Match(type => type.Value == weapon.Type, _ => false));
 
     /// <summary>The statuses a trigger needs on the target (empty when it doesn't care).</summary>
     public static ImmutableArray<StatusId> ListRequiredTargetStatuses(this Trigger trigger) =>
@@ -58,14 +69,17 @@ public static class TriggerMatching
             damageMultiple: _ => ImmutableArray<StatusId>.Empty,
             pickUp: _ => ImmutableArray<StatusId>.Empty,
             buffGained: _ => ImmutableArray<StatusId>.Empty,
-            stacksMaxed: _ => ImmutableArray<StatusId>.Empty);
+            stacksMaxed: _ => ImmutableArray<StatusId>.Empty,
+            finisher: _ => ImmutableArray<StatusId>.Empty);
 
-    public static DamageType ReadDamageType(this DamageOrigin origin) =>
+    /// <summary>The damage type of an origin; none for a finisher, which has none.</summary>
+    public static Optional<DamageType> FindDamageType(this DamageOrigin origin) =>
         origin.Match(
-            weapon => weapon.Type,
-            ability => ability.Type,
-            keyword => keyword.Type,
-            summoned => summoned.Type);
+            weapon => Optional.Some(weapon.Type),
+            ability => Optional.Some(ability.Type),
+            keyword => Optional.Some(keyword.Type),
+            summoned => Optional.Some(summoned.Type),
+            _ => Optional.None<DamageType>());
 
     private static bool HasEveryStatus(ImmutableArray<StatusId> present, ImmutableArray<StatusId> required) =>
         required.All(present.Contains);
