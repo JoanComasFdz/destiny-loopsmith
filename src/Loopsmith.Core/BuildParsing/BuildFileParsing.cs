@@ -19,12 +19,13 @@ public static class BuildFileParsing
     [
         "name", "author", "source", "catalog", "class", "subclass", "super", "grenade", "melee", "classAbility",
         "aspects", "fragments", "exoticArmor", "armorSetBonuses", "armorMods", "artifactPerks", "weapons", "stats",
-        "leftOut",
+        "leftOut", "armorCopies",
     ];
 
     private static readonly ImmutableArray<string> WeaponKeys = ["slot", "name", "type", "archetype", "perks", "hash", "roll", "catalyst"];
     private static readonly ImmutableArray<string> StatKeys = ["weapons", "health", "class", "grenade", "super", "melee"];
     private static readonly ImmutableArray<string> LeftOutKeys = ["items", "subclassPlugs", "armorMods", "artifactPerks"];
+    private static readonly ImmutableArray<string> ArmorCopyKeys = ["hash", "instance"];
 
     private static readonly StatLine NoStats = new(
         Optional.None<StatValue>(),
@@ -48,9 +49,10 @@ public static class BuildFileParsing
         Combine(
             ReadEquipment(map),
             map.ReadOrDefault("leftOut", ReadLeftOut, []),
-            (build, leftOut) => build with { LeftOut = leftOut });
+            map.ReadOrDefault("armorCopies", copies => copies.ReadEach("armor copy", ReadArmorCopy), []),
+            (build, leftOut, armorCopies) => build with { LeftOut = leftOut, ArmorCopies = armorCopies });
 
-    /// <summary>Everything but <c>leftOut</c> (one <c>Combine</c> takes at most 16 inputs).</summary>
+    /// <summary>Everything but <c>leftOut</c> and <c>armorCopies</c> (one <c>Combine</c> takes at most 16 inputs).</summary>
     private static Result<Build, Errors> ReadEquipment(YamlMap map) =>
         Combine(
             map.CheckKeys(BuildKeys),
@@ -86,6 +88,7 @@ public static class BuildFileParsing
                 artifactPerks,
                 weapons,
                 stats,
+                [],
                 []));
 
     /// <summary>Each ability is an element id, or <c>"?"</c> for one the build has but Loopsmith can't name.</summary>
@@ -158,6 +161,17 @@ public static class BuildFileParsing
             map.ReadOrDefault("armorMods", hashes => ReadLeftOutPart(hashes, LoadoutPart.ArmorMod), []),
             map.ReadOrDefault("artifactPerks", hashes => ReadLeftOutPart(hashes, LoadoutPart.ArtifactPerk), []),
             (_, items, plugs, mods, perks) => items.AddRange(plugs).AddRange(mods).AddRange(perks)));
+
+    /// <summary>
+    /// <c>{ hash: 593554567, instance: "6917530185805135602" }</c>: which copy of an armor piece the build wears, by the
+    /// copy's instance id (a number, quoted: it is larger than a YAML reader's integers).
+    /// </summary>
+    private static Result<ArmorCopy, Errors> ReadArmorCopy(YamlValue value) =>
+        value.ToMap().Bind(map => Combine(
+            map.CheckKeys(ArmorCopyKeys),
+            map.ReadRequired("hash", ReadItemHash),
+            map.ReadRequired("instance", instance => instance.ParseWith(text => ItemInstanceId.TryFrom(text).ToResult())),
+            (_, hash, instance) => new ArmorCopy(hash, instance)));
 
     private static Result<ImmutableArray<LeftOutItem>, Errors> ReadLeftOutPart(YamlValue value, LoadoutPart part) =>
         value.ReadEach(value.Label, hash => ReadItemHash(hash).Map(read => new LeftOutItem(part, read)));

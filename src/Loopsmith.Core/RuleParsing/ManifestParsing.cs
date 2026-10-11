@@ -29,7 +29,7 @@ internal static class ManifestParsing
     private static readonly ImmutableArray<string> ArmorSetKeys = ["hash", "name", "perks"];
     private static readonly ImmutableArray<string> SetPerkKeys = ["pieces", "perk"];
     private static readonly ImmutableArray<string> ItemKeys =
-        ["hash", "name", "kind", "type", "tier", "slot", "damageType", "traits", "intrinsic", "catalyst", "set", "perks", "description", "icon"];
+        ["hash", "name", "kind", "type", "tier", "slot", "damageType", "traits", "intrinsic", "catalyst", "set", "class", "perks", "description", "icon"];
 
     /// <summary>The keys only some kinds have, each with the kinds it belongs to (and how an error names them).</summary>
     private static readonly ImmutableArray<(string Key, ImmutableArray<KindWord> Kinds, string Where)> KindKeys =
@@ -40,6 +40,7 @@ internal static class ManifestParsing
         ("catalyst", [KindWord.Weapon], "a weapon"),
         ("intrinsic", [KindWord.Weapon, KindWord.Armor], "a weapon or armor"),
         ("set", [KindWord.Armor], "armor"),
+        ("class", [KindWord.Armor], "armor"),
         ("perks", [KindWord.Catalyst, KindWord.Artifact], "a catalyst or an artifact"),
     ];
 
@@ -170,7 +171,8 @@ internal static class ManifestParsing
                 map.ReadRequired("slot", ReadVocabularyWord<ArmorSlot>),
                 map.ReadOptional("intrinsic", ReadItemHash),
                 map.ReadOptional("set", ReadItemHash),
-                (slot, intrinsic, set) => (ManifestKind)new ManifestKind.Armor(slot, intrinsic, set)),
+                map.ReadOptional("class", ReadVocabularyWord<GuardianClass>),
+                (slot, intrinsic, set, wornBy) => (ManifestKind)new ManifestKind.Armor(slot, intrinsic, set, wornBy)),
             KindWord.ArmorMod => map.ReadOptional("slot", ReadVocabularyWord<ArmorSlot>).Map(slot => (ManifestKind)new ManifestKind.ArmorMod(slot)),
             KindWord.Catalyst => map.ReadOrDefault("perks", perks => perks.ReadEach("perk", ReadItemHash), [])
                 .Map(perks => (ManifestKind)new ManifestKind.ExoticCatalyst(perks)),

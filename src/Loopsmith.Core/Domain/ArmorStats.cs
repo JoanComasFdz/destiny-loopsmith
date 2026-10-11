@@ -103,7 +103,28 @@ public sealed record PieceChoice(ArmorPiece Piece, ImmutableArray<PieceCopy> Cop
 /// <summary>What the player can add the build's stats up from: a choice per piece the build wears, and their characters' current stats.</summary>
 public sealed record StatChoices(ImmutableArray<PieceChoice> Pieces, ImmutableArray<CharacterStats> Characters);
 
-/// <summary>One part of a build's stat total: the armor, a mod (and its copies), a fragment — its name and points.</summary>
+/// <summary>
+/// A piece the player can pick for a slot of the build: their copy, its manifest item, the points it gives (none:
+/// Loopsmith can't read its roll) and whether it is the copy the build wears.
+/// </summary>
+public sealed record ArmorOption(OwnedArmor Armor, ManifestItem Item, Optional<StatPoints> Points, bool Worn);
+
+/// <summary>What the armor picker lists for a slot (the copy the build wears first), and what it leaves out and why.</summary>
+public sealed record ArmorOptions(ArmorSlot Slot, ImmutableArray<ArmorOption> Options, ImmutableArray<string> Notes);
+
+/// <summary>
+/// Whether the copies a build wears (a dim.gg share's, by instance id) are the logged-in player's: all of them, some
+/// (the pieces whose copy isn't in their account), or none — someone else's loadout, or one that doesn't say.
+/// </summary>
+[Union]
+public partial record LoadoutOwnership
+{
+    partial record Own();
+    partial record PartlyOwn(ImmutableArray<string> Missing);
+    partial record NotOwn();
+}
+
+/// <summary>One part of a build's stat total: an armor piece, a mod (and its copies), a fragment — its name and points.</summary>
 public sealed record StatPart(string Source, StatPoints Points);
 
 /// <summary>A build's stats added up from the player's armor, the parts they came from, and what was left out and why.</summary>

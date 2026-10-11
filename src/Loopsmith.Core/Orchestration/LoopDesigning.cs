@@ -44,6 +44,9 @@ public sealed record DesignSession(
     ImmutableArray<Resolution> Resolutions,
     GameState Current);
 
+/// <summary>The design after the player's Bungie login (its stats set when the build's armor is theirs), and what to tell them.</summary>
+public sealed record ArmorLogin(DesignSession Session, string Message);
+
 /// <summary>A catalog with what Bungie's full manifest said added; <see cref="Note"/> says when it couldn't be read.</summary>
 public sealed record JoinedCatalog(RuleCatalog Catalog, Optional<string> Note);
 
@@ -314,13 +317,53 @@ public static class LoopDesigning
     public static StatChoices ListStatChoices(ValidatedBuild build, BungieProfile profile) =>
         StatAdding.ListStatChoices(build.Catalog, build.Build, profile);
 
-    /// <summary>The build's stats added up from the copies picked (by slot, an instance id), as DIM adds them up; or why they can't be.</summary>
-    public static Result<StatTotals, string> AddUpStats(ValidatedBuild build, StatChoices choices, ImmutableDictionary<ArmorSlot, ItemInstanceId> picks) =>
-        StatAdding.AddUpStats(build.Catalog, build.Build, choices, picks);
+    /// <summary>The build's stats added up from the copies it wears (else the player's best), as DIM adds them up; or why they can't be.</summary>
+    public static Result<StatTotals, string> AddUpStats(ValidatedBuild build, StatChoices choices) =>
+        StatAdding.AddUpStats(build.Catalog, build.Build, choices);
 
-    /// <summary>The copy of a piece the player picked, else their first (the most points); none when they own no copy.</summary>
-    public static Optional<PieceCopy> FindPickedCopy(PieceChoice choice, ImmutableDictionary<ArmorSlot, ItemInstanceId> picks) =>
-        StatAdding.FindPickedCopy(choice, picks);
+    // ── The player's own armor in the build (docs/loop-format.md, "Stats") ──────────────────────────────────
+
+    /// <summary>
+    /// The design once the player has logged in, and what to tell them: when the build's copies are all theirs (their
+    /// own dim.gg share), the build's stats are set from them; else they're told to pick their own pieces.
+    /// </summary>
+    public static ArmorLogin ApplyArmorLogin(DesignSession session, BungieProfile profile)
+    {
+        var ownership = StatAdding.ReadOwnership(session.Build.Catalog, session.Build.Build, profile);
+        var message = StatAdding.DescribeOwnership(ownership);
+        return ownership is LoadoutOwnership.Own
+            ? SetStatsFromArmor(session, profile).Match(
+                set => new ArmorLogin(set.Value, message),
+                refused => new ArmorLogin(session, refused.Failure))
+            : new ArmorLogin(session, message);
+    }
+
+    /// <summary>
+    /// The design wearing the player's copy <paramref name="instance"/> in <paramref name="slot"/>: the embedded build file's
+    /// exotic, left-out pieces, set bonuses and copies change (ArmorSwapping), the build check runs again and the steps
+    /// replay; then its stats are set from its armor when they add up. Or why the piece can't be worn.
+    /// </summary>
+    public static Result<DesignSession, string> PickArmorPiece(DesignSession session, BungieProfile profile, ArmorSlot slot, ItemInstanceId instance) =>
+        StatAdding.FindArmor(profile, instance)
+            .Bind(armor => ArmorSwapping.SwapPiece(session.Build.Catalog, session.Build.Build, slot, armor.Hash, instance))
+            .Bind(build => RebuildWith(session, BuildFileEditing.ReplaceArmor(session.Design.Build, build)))
+            .Map(worn => SetStatsFromArmor(worn, profile).Match(set => set.Value, _ => worn));
+
+    /// <summary>What the armor picker lists for a slot of the build, from the player's armor, and what it leaves out.</summary>
+    public static ArmorOptions ListArmorOptions(ValidatedBuild build, BungieProfile profile, ArmorSlot slot) =>
+        StatAdding.ListArmorOptions(build.Catalog, build.Build, profile, slot);
+
+    /// <summary>The player's armor the catalog's excerpt lacks (what the full manifest is read for, so the picker can name and place it).</summary>
+    public static ImmutableArray<ItemHash> ListUnknownArmorHashes(DesignSession session, BungieProfile profile) =>
+        ManifestJoin.ListUnknown(session.Build.Catalog.Manifest, profile.Armor.Select(armor => armor.Hash).Distinct());
+
+    /// <summary>The design with its stats set from the copies its build wears, or why they don't add up.</summary>
+    private static Result<DesignSession, string> SetStatsFromArmor(DesignSession session, BungieProfile profile)
+    {
+        var choices = StatAdding.ListStatChoices(session.Build.Catalog, session.Build.Build, profile);
+        return StatAdding.AddUpStats(session.Build.Catalog, session.Build.Build, choices)
+            .Bind(totals => SetStats(session, totals.Stats));
+    }
 
     /// <summary>A weapon's perks the way the build holds them, column by column (what the designer shows and the build check equips).</summary>
     public static ImmutableArray<WeaponPerkSlot> ListPerkSlots(ValidatedBuild build, WeaponLoadout weapon) =>

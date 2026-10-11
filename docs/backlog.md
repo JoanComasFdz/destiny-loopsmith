@@ -107,8 +107,8 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   bonuses above 100 (#126, #132, #138, #139) and Gambler's Dodge's refund as its number ("+79% melee energy") —
   need a rule value that reads a build stat; refunds below 70 of their stat scale down by an amount Bungie
   hasn't published ("?"). DIM's runtime stat benefits (Font mods while Armor Charge) aren't added up.
-- **The share's own copies**: a dim.gg share names each piece's instance id (`equipped[].id`), so the Stats
-  section could pick the shared copy when the player owns several (and it's theirs); a build keeps pieces by hash.
+- **Armor picker, next**: the mods of a picked piece aren't read (the build keeps the loadout's mods); armor of
+  another class's character isn't offered; an icon bungie.net doesn't serve shows broken.
 
 ## Owner items
 

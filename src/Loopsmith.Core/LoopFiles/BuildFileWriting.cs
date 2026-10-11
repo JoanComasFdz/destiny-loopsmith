@@ -64,6 +64,7 @@ public static class BuildFileWriting
         .. ToWeaponsEntry(build.Weapons),
         .. ToStatsEntry(build.Stats),
         .. ToLeftOutEntry(build.LeftOut),
+        .. ToArmorCopiesEntry(build.ArmorCopies),
         new MappingEnd(),
         new DocumentEnd(true),
         new StreamEnd(),
@@ -175,6 +176,45 @@ public static class BuildFileWriting
         return parts.IsEmpty
             ? []
             : [ToKey("leftOut"), new MappingStart(null, null, true, MappingStyle.Flow), .. parts, new MappingEnd()];
+    }
+
+    /// <summary><c>armorCopies: [{hash: 593554567, instance: "6917530185805135602"}, …]</c>; nothing when the build says none.</summary>
+    private static ImmutableArray<ParsingEvent> ToArmorCopiesEntry(ImmutableArray<ArmorCopy> copies) =>
+        copies.IsEmpty ? [] : [ToKey("armorCopies"), .. ToArmorCopiesValue(copies)];
+
+    private static ImmutableArray<ParsingEvent> ToArmorCopiesValue(ImmutableArray<ArmorCopy> copies) =>
+    [
+        new SequenceStart(null, null, true, SequenceStyle.Flow),
+        .. copies.SelectMany(copy => (ImmutableArray<ParsingEvent>)
+        [
+            new MappingStart(null, null, true, MappingStyle.Flow),
+            ToKey("hash"),
+            ToValue(copy.Piece.Value.ToString(CultureInfo.InvariantCulture)),
+            ToKey("instance"),
+            new Scalar(null, null, copy.Instance.Value, ScalarStyle.DoubleQuoted, false, true),
+            new MappingEnd(),
+        ]),
+        new SequenceEnd(),
+    ];
+
+    /// <summary>
+    /// The build's armor entries as the build file writes them — <c>exoticArmor</c>, <c>armorSetBonuses</c>,
+    /// <c>leftOut</c>, <c>armorCopies</c> — each key with its value's text, or none when the build has nothing for it
+    /// (so an edit removes the entry).
+    /// </summary>
+    internal static ImmutableArray<(string Key, Optional<string> Value)> WriteArmorEntries(Build build) =>
+    [
+        ("exoticArmor", build.ExoticArmor.Map(exotic => exotic.Value)),
+        ("armorSetBonuses", build.ArmorSetBonuses.IsEmpty ? Optional.None<string>() : Optional.Some(WriteValue([.. ToListEntry("armorSetBonuses", build.ArmorSetBonuses).Skip(1)]))),
+        ("leftOut", ToLeftOutEntry(build.LeftOut) is { IsEmpty: false } leftOut ? Optional.Some(WriteValue([.. leftOut.Skip(1)])) : Optional.None<string>()),
+        ("armorCopies", build.ArmorCopies.IsEmpty ? Optional.None<string>() : Optional.Some(WriteValue(ToArmorCopiesValue(build.ArmorCopies)))),
+    ];
+
+    /// <summary>One value's events (a flow list or mapping) as text, on one line.</summary>
+    private static string WriteValue(ImmutableArray<ParsingEvent> value)
+    {
+        ImmutableArray<ParsingEvent> events = [new StreamStart(), new DocumentStart(), .. value, new DocumentEnd(true), new StreamEnd()];
+        return EmitYaml(events).TrimEnd('\n');
     }
 
     private static Scalar ToKey(string key) => new(null, null, key, ScalarStyle.Plain, true, false);

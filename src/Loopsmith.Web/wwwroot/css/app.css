@@ -407,11 +407,7 @@ textarea { resize: vertical; }
 .stats-login p { margin: 0; }
 .stats-login-note { color: var(--muted); font-size: 12px; line-height: 1.45; }
 .stats-login .status { margin: 0; }
-.armor-choices { display: flex; flex-direction: column; gap: 8px; align-self: stretch; }
-.armor-choice { display: flex; flex-direction: column; gap: 3px; }
-.armor-choice-name { font-weight: 650; }
-.armor-copy { display: flex; align-items: flex-start; gap: 6px; font-size: 12px; overflow-wrap: anywhere; }
-.armor-copy input { margin-top: 2px; }
+.stats-armor-note { overflow-wrap: anywhere; }
 .stats-total { overflow-wrap: anywhere; }
 .stats-parts { font-size: 12px; align-self: stretch; }
 .stats-parts summary { cursor: pointer; color: var(--muted); }
@@ -823,6 +819,17 @@ button.hud-chip:hover, button.hud-chip:focus-visible { background: color-mix(in 
 .armor-row { display: flex; flex-wrap: wrap; gap: 10px; }
 .armor-piece { display: flex; gap: 4px; align-items: flex-start; }
 .armor-piece > .icon-tile { width: calc(var(--tile) * 1.15); height: calc(var(--tile) * 1.15); }
+.armor-pick { align-self: flex-start; min-width: 28px; padding: 2px 6px; line-height: 1; font-size: 16px; letter-spacing: .05em; }
+.armor-picker { display: flex; flex-direction: column; gap: 10px; }
+.armor-options { grid-template-columns: repeat(auto-fill, calc(var(--tile) * 1.3)); gap: 6px; }
+.armor-options .icon-tile { width: calc(var(--tile) * 1.3); height: calc(var(--tile) * 1.3); }
+.armor-options .icon-tile.focused { outline: 2px solid var(--arc); outline-offset: 1px; }
+.armor-options .icon-tile.worn { box-shadow: 0 0 0 2px color-mix(in srgb, var(--ok) 70%, transparent); }
+.armor-worn-mark { position: absolute; right: 1px; top: 0; padding: 0 3px; font-size: 11px; font-weight: 800; color: #fff; background: rgba(0, 0, 0, .7); }
+.armor-option-details { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel-2); font-size: 13px; overflow-wrap: anywhere; }
+.armor-option-name { font-weight: 650; }
+.armor-option-roll { font-family: var(--mono); font-size: 12px; }
+.armor-picker-hint, .armor-picker-note { margin: 0; font-size: 12px; }
 .icon-grid.mods { grid-template-columns: repeat(2, var(--mod-tile)); }
 .icon-grid.mods .icon-tile, .general-mods .icon-tile { width: var(--mod-tile); height: var(--mod-tile); }
 .general-mods .icon-grid { grid-template-columns: repeat(auto-fill, var(--mod-tile)); }

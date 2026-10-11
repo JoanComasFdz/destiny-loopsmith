@@ -153,16 +153,23 @@
         <section class="loadout-box" aria-label="Armor">
             <h4 class="loadout-label">Armor</h4>
             <div class="armor-row">
-                @foreach (var piece in view.Armor)
+                @foreach (var piece in LoadoutShaping.ListArmorRows(view, CanPickArmor))
                 {
-                    <div class="armor-piece" data-slot="@piece.Slot">
+                    var slot = piece.Slot;
+                    <div class="armor-piece" data-slot="@slot">
                         @if (piece.Piece is Optional<IconTile>.Some item)
                         {
                             @RenderTile(item.Value, "item")
                         }
                         else
                         {
-                            <span class="icon-tile empty" title="@piece.Slot.DescribeArmorSlot(): no piece named">@piece.Slot.DescribeArmorSlot()</span>
+                            <span class="icon-tile empty" title="@slot.DescribeArmorSlot(): no piece named">@slot.DescribeArmorSlot()</span>
+                        }
+                        @if (CanPickArmor)
+                        {
+                            <button type="button" class="btn ghost small armor-pick" data-action="pick-armor" data-slot="@slot"
+                                    title="Pick your own @slot.DescribeArmorSlot().ToLowerInvariant()" aria-label="Pick your own @slot.DescribeArmorSlot().ToLowerInvariant()"
+                                    aria-haspopup="dialog" @onclick="() => OpenArmorPicker(slot)">⋯</button>
                         }
                         <div class="icon-grid mods">
                             @foreach (var mod in piece.Mods)
@@ -224,6 +231,11 @@
     {
         <ItemInfoDialog Info="info.Value" OnClose="CloseDetails" OnSetCatalyst="OnSetCatalyst" />
     }
+
+    @if (armorPicker is Optional<ArmorSlot>.Some pickerSlot && Profile is Optional<BungieProfile>.Some owned)
+    {
+        <ArmorPicker Build="Build" Profile="owned.Value" Slot="pickerSlot.Value" OnPick="PickArmorAsync" OnClose="CloseArmorPicker" />
+    }
 </div>
 
 @code {
@@ -242,7 +254,31 @@
     [Parameter]
     public EventCallback<CatalystToggle> OnSetCatalyst { get; set; }
 
+    /// <summary>The player's armor after their Bungie login: each armor slot then has ⋯, which picks from it.</summary>
+    [Parameter]
+    public Optional<BungieProfile> Profile { get; set; } = Optional.None<BungieProfile>();
+
+    /// <summary>Set by the designer: a piece picked from the player's armor is swapped into the build. Unset (the Home card): read-only.</summary>
+    [Parameter]
+    public EventCallback<ArmorPick> OnPickArmor { get; set; }
+
+    private bool CanPickArmor => Profile.IsSome() && OnPickArmor.HasDelegate;
+
     private Optional<ItemDetails> details = Optional.None<ItemDetails>();
+
+    private Optional<ArmorSlot> armorPicker = Optional.None<ArmorSlot>();
+
+    private void OpenArmorPicker(ArmorSlot slot) =>
+        armorPicker = Optional.Some(slot);                                                       // impure (UI state)
+
+    private void CloseArmorPicker() =>
+        armorPicker = Optional.None<ArmorSlot>();                                                // impure (UI state)
+
+    private async Task PickArmorAsync(ArmorPick pick)
+    {
+        armorPicker = Optional.None<ArmorSlot>();                                                // impure (UI state)
+        await OnPickArmor.InvokeAsync(pick);                                                     // impure
+    }
 
     private void OpenDetails(ItemDetails open)
     {

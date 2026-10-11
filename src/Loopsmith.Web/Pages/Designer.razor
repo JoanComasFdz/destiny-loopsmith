@@ -64,7 +64,8 @@
 
         <div class="designer-grid">
             <aside class="col-build">
-                <BuildPanel Build="session.Build" Issues="LoopDesigning.ListDesignIssues(session)" OnPickPerk="PickPerk" OnSetCatalyst="SetCatalyst" OnSetStats="SetStats" />
+                <BuildPanel Build="session.Build" Issues="LoopDesigning.ListDesignIssues(session)" OnPickPerk="PickPerk" OnSetCatalyst="SetCatalyst" OnSetStats="SetStats"
+                            Profile="Workbench.Armor" ArmorNote="Workbench.ArmorNote" OnLoggedIn="UseArmorAsync" OnPickArmor="PickArmor" />
             </aside>
             <div class="col-loop">
                 <ExplainPanel Build="session.Build" />
@@ -133,14 +134,18 @@
     /// manifest (once per tab: what Home already asked for isn't read again): the design as it is when the manifest
     /// answers (an edit made meanwhile stays) is validated again with it and its steps replay.
     /// </summary>
-    private async Task JoinManifestAsync()
+    private Task JoinManifestAsync() =>
+        JoinManifestForAsync(LoopDesigning.ListUnknownHashes);                                   // impure
+
+    /// <summary>The hashes <paramref name="list"/> names for the open design that the excerpt lacks, read from Bungie's full manifest (as above).</summary>
+    private async Task JoinManifestForAsync(Func<DesignSession, ImmutableArray<ItemHash>> list)
     {
         if (Workbench.Session is not Optional<DesignSession>.Some opened)
         {
             return;
         }
 
-        var lacking = LoopDesigning.ListUnknownHashes(opened.Value);                             // pure
+        var lacking = list(opened.Value);                                                        // pure
         var asked = Manifest.Asked;                                                              // impure (tab state)
         var unknown = LoopDesigning.ListUnaskedHashes(asked, lacking);                           // pure
         if (unknown.IsEmpty)
@@ -265,6 +270,38 @@
 
     private void SetStats(StatLine stats) =>
         ApplyBuildEdit(session => LoopDesigning.SetStats(session, stats));
+
+    /// <summary>
+    /// The player logged in with Bungie: their armor is kept for the tab; when the build's armor copies are theirs, its
+    /// stats are set from them (LoopDesigning.ApplyArmorLogin), and the Stats section says what's next. Then Bungie's
+    /// manifest is read for their pieces the excerpt lacks, so the armor picker can name and place them.
+    /// </summary>
+    private async Task UseArmorAsync(BungieProfile profile)
+    {
+        Workbench.Armor = Optional.Some(profile);                                                // impure (UI state)
+        if (Workbench.Session is not Optional<DesignSession>.Some open)
+        {
+            return;
+        }
+
+        var login = LoopDesigning.ApplyArmorLogin(open.Value, profile);                         // pure
+        EditSession(_ => login.Session, scrollToEnd: false, keepSelection: true);               // impure (UI state)
+        Workbench.ArmorNote = Optional.Some(login.Message);                                      // impure (UI state)
+        await JoinManifestForAsync(session => LoopDesigning.ListUnknownArmorHashes(session, profile)); // impure
+    }
+
+    /// <summary>
+    /// A piece picked from the player's armor: swapped into the embedded build (its set bonuses follow), the stats set
+    /// from its armor. The login's note (whose the loadout's pieces are) no longer applies.
+    /// </summary>
+    private void PickArmor(ArmorPick pick)
+    {
+        if (Workbench.Armor is Optional<BungieProfile>.Some profile)
+        {
+            Workbench.ArmorNote = Optional.None<string>();                                       // impure (UI state)
+            ApplyBuildEdit(session => LoopDesigning.PickArmorPiece(session, profile.Value, pick.Slot, pick.Instance));
+        }
+    }
 
     /// <summary>Applies a pure edit to the open design (every edit is a new immutable session).</summary>
     private void EditSession(Func<DesignSession, DesignSession> edit, bool scrollToEnd, bool keepSelection = false)

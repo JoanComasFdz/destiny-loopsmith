@@ -352,9 +352,12 @@ when they own several) and adds the total up the way DIM adds up a loadout — e
 the build's stat mods, tuning and fragments — from the manifest excerpt's `statPlugs`, every plug that changes
 an armor stat (shipped, so a phone needn't download Bungie's whole item table). Or it takes a character's
 current stats, as Bungie has them. **Consequence.** Stats are as exact as DIM's for a DIM loadout's pieces; a
-hand-written build names no pieces, so it takes typed or a character's stats. A build keeps no instance ids
-(a long link carries none; a dim.gg share does, but the build is by hash), so a piece owned twice is the player's
-pick. A piece whose roll
+hand-written build names no pieces, so it takes typed or a character's stats until pieces are picked. A dim.gg
+share names each item's copy (its instance id): the build keeps them (`armorCopies`), so the share's owner gets its
+own pieces and their stats at once; anyone else picks their own, and a long link (no ids) is like anyone else's.
+A piece picked from the player's armor is worn by the build — its exotic or a left-out piece — and its set bonuses
+follow the pieces it wears (`ArmorSwapping`), so the loop the stats come from is the loop that plays; a build
+wears one exotic. A piece whose roll
 the excerpt doesn't know (a newer manifest) is said so, never guessed (D12). The login's page is the site's
 `/login`, Bungie's one redirect URL ([docs/hosting.md](docs/hosting.md), "Bungie login").
 

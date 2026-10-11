@@ -74,8 +74,16 @@ public sealed record StatLine(
     Optional<StatValue> Melee);
 
 /// <summary>
+/// Which copy of one of the build's armor pieces it wears: the piece's item hash and the copy's instance id (a dim.gg
+/// share names each item's; picking a piece from the player's own armor records theirs). Unknown to the rules; the
+/// Stats section adds the build's stats up from these copies when the logged-in player owns them.
+/// </summary>
+public sealed record ArmorCopy(ItemHash Piece, ItemInstanceId Instance);
+
+/// <summary>
 /// A build as authored (DIM-like composition), not yet validated against the catalog. <see cref="LeftOut"/> is what the
-/// DIM loadout it came from had that the catalog doesn't know yet (empty for a build written by hand).
+/// DIM loadout it came from had that the catalog doesn't know yet (empty for a build written by hand);
+/// <see cref="ArmorCopies"/> which copy of its armor pieces it wears, when it says (a dim.gg share's, or picked).
 /// </summary>
 public sealed record Build(
     string Name,
@@ -93,7 +101,8 @@ public sealed record Build(
     ImmutableArray<ElementId> ArtifactPerks,
     ImmutableArray<WeaponLoadout> Weapons,
     StatLine Stats,
-    ImmutableArray<LeftOutItem> LeftOut);
+    ImmutableArray<LeftOutItem> LeftOut,
+    ImmutableArray<ArmorCopy> ArmorCopies);
 
 public sealed record BuildIssue(Severity Severity, string Message);
 

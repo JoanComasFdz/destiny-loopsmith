@@ -290,7 +290,8 @@ public static class ManifestJoin
                 .Map(slot => (ManifestKind)new ManifestKind.Armor(
                     slot,
                     FindIntrinsic(reading, item, ArmorIntrinsicCategoryName),
-                    item.ReadHash("equippingBlock", "equipableItemSetHash"))),
+                    item.ReadHash("equippingBlock", "equipableItemSetHash"),
+                    item.ReadInteger("classType").Bind(ToGuardianClass))),
             KindWord.ArmorMod => Optional.Some<ManifestKind>(new ManifestKind.ArmorMod(item.ReadText("itemTypeDisplayName")
                 .Bind(type => ModSlots.TryGetValue(type, out var slot) ? Optional.Some(slot) : Optional.None<ArmorSlot>()))),
             KindWord.Catalyst => Optional.Some<ManifestKind>(new ManifestKind.ExoticCatalyst(ListGrantedPerks(reading, item))),
@@ -509,6 +510,16 @@ public static class ManifestJoin
 
     private static Reach Join(Reach left, Reach right) =>
         new(left.Entries.Union(right.Entries), left.Tables.Union(right.Tables), left.Plugs.Union(right.Plugs));
+
+    /// <summary>An item's class (<c>classType</c>: 0 Titan, 1 Hunter, 2 Warlock); none for any class (3).</summary>
+    private static Optional<GuardianClass> ToGuardianClass(int classType) =>
+        classType switch
+        {
+            0 => Optional.Some(GuardianClass.Titan),
+            1 => Optional.Some(GuardianClass.Hunter),
+            2 => Optional.Some(GuardianClass.Warlock),
+            _ => Optional.None<GuardianClass>(),
+        };
 
     private static IEnumerable<T> ToSequence<T>(Optional<T> optional) =>
         optional.Match(some => new[] { some.Value }, _ => []);

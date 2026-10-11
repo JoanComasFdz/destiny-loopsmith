@@ -99,7 +99,7 @@ items:
   - { hash: 3325463374, name: "Thunderlord", kind: weapon, type: "Machine Gun", tier: exotic, slot: power, damageType: arc, traits: [[1419069769], [2779035018]], intrinsic: 4148158229, catalyst: 1550063955, icon: … }
   - { hash: 1550063955, name: "Thunderlord Catalyst", kind: catalyst, tier: exotic, perks: [818260022], description: "Upgrades this weapon to a Masterwork. …", icon: … }
   - { hash: 818260022, name: "Return Stroke", kind: perk, description: "Causing a lightning strike with this weapon partially reloads the magazine from reserves.", icon: … }
-  - { hash: 593554567, name: "Luminopotent Mask", kind: armor, type: "Helmet", tier: legendary, slot: helmet, set: 499993704, icon: … }
+  - { hash: 593554567, name: "Luminopotent Mask", kind: armor, type: "Helmet", tier: legendary, slot: helmet, set: 499993704, class: hunter, icon: … }
   - { hash: 3832366019, name: "Harmonic Siphon", kind: armorMod, type: "Helmet Armor Mod", tier: basic, slot: helmet, description: "…", icon: /common/…/c917….png }
 ```
 
@@ -118,10 +118,11 @@ items:
   versions included (the manifest's plug set). A column that doesn't roll (an exotic's) has its one perk.
   Every perk is written as an item too (`kind: weaponPerk`, `type: "Trait"` or `"Enhanced Trait"`); a column
   needs at least one hash. A weapon's `intrinsic` is its frame (an exotic's own perk), its `catalyst` an
-  exotic's catalyst item (whose `perks` are what it grants); armor's `intrinsic` is an exotic's perk and its
-  `set` the armor set it belongs to. These keys on anything else are an error (`slot is only allowed on a
-  weapon, armor or an armor mod, not on a grenade`; `set is only allowed on armor, not on a weapon`; `perks`
-  belongs to a catalyst or an artifact).
+  exotic's catalyst item (whose `perks` are what it grants); armor's `intrinsic` is an exotic's perk, its
+  `set` the armor set it belongs to and its `class` the class that wears it (`titan|hunter|warlock`; none: any
+  class — the armor picker lists a build's class's pieces). These keys on anything else are an error (`slot is
+  only allowed on a weapon, armor or an armor mod, not on a grenade`; `set is only allowed on armor, not on a
+  weapon`; `perks` belongs to a catalyst or an artifact).
 * `armorSets`: each set's name and the perk each piece count grants. A build's set bonus element gives the
   set perk's hash (`luminopotent-2pc` → `hash: 2769443639`), so a DIM loadout's pieces equip it.
 * `tier`: `basic|common|rare|legendary|exotic`. `icon` is a bungie.net path (the app prefixes
@@ -498,6 +499,10 @@ stats: { weapons: 47, class: 104, grenade: 145, super: 27, melee: 79 }   # any s
 * `leftOut` (a build from a DIM link): what the loadout had that the catalog doesn't know, by manifest hash
   and where the loadout listed it — `leftOut: { items: [2005], subclassPlugs: [1001], armorMods: [3007],
   artifactPerks: [4008] }` (any subset). Shown with the build, never played.
+* `armorCopies` (a build from a dim.gg share, or with pieces picked from the player's armor): which copy of its
+  armor pieces it wears — `armorCopies: [{hash: 593554567, instance: "6917530185805135602"}, …]`, the piece's
+  manifest hash and the copy's instance id (a number, quoted). Unknown to the rules; the Stats section adds the
+  stats up from these copies when the logged-in player owns them ([loop-format.md](loop-format.md#stats)).
 * Stats and archetypes are shown in the build summary, and hashes are recorded (D14); the engine
   doesn't use them.
 
