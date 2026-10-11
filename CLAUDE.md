@@ -100,9 +100,9 @@ repos (Microsoft's download hosts are blocked by the network policy) and restore
 - **Cloud-session limits:** the network policy blocks docs.google.com, youtube.com,
   github.io, light.gg, d2foundry.gg and destinyitemmanager.com (NuGet, PyPI,
   raw.githubusercontent.com and git clones from github.com work). bungie.net's API (the manifest
-  index too) answered its own 500 error page (2026-10-10, without an API key), but its static
-  manifest files (`/common/destiny2_content/…`) download; the `BUNGIE_API_KEY` secret only reaches
-  sessions started after it was added. Repository settings and
+  index too) answers its own 500 error page to a session, even with the app's `BungieApiKey`
+  (2026-10-11), but its static manifest files (`/common/destiny2_content/…`) download; the
+  `BUNGIE_API_KEY` secret only reaches sessions started after it was added. Repository settings and
   deleting remote branches aren't possible from a session — ask the owner. If the clone is
   single-branch, after `git push -u` of a new branch run
   `git config --add remote.origin.fetch '+refs/heads/<b>:refs/remotes/origin/<b>' && git fetch`

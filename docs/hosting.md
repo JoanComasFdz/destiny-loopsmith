@@ -46,14 +46,19 @@ app sends the app's key as `X-API-Key` from the origin the key was registered fo
 set, a dim.gg link says Loopsmith can't open it yet. One-time setup (the owner):
 
 1. **A Bungie API key.** At https://www.bungie.net/en/Application create an application with
-   **Origin header** `https://joancomasfdz.github.io` (no OAuth needed for this).
-2. **Register Loopsmith with DIM's API** (what DIM's own `/developer` page does; the app id is
-   3+ lowercase letters, digits or dashes):
+   **Origin header** `https://joancomasfdz.github.io` (no OAuth needed for this). Done: it is the
+   `BungieApiKey` in `wwwroot/appsettings.json`.
+2. **A DIM API key for the site's origin, from the DIM team.** DIM's self-service registration
+   (`new_app`, what its `/developer` page does) only registers local development origins — localhost,
+   private addresses, `.lan`/`.local`/`.internal` hosts. It refused `https://joancomasfdz.github.io`
+   (2026-10-11, HTTP 400 `InvalidRequest`). A key for a public site comes from DIM's maintainers: ask
+   them (DIM's GitHub, https://github.com/DestinyItemManager/DIM, or its Discord) for an app `loopsmith`
+   with origin `https://joancomasfdz.github.io`. For a key that works in a local run only:
    ```bash
    curl -sS https://api.destinyitemmanager.com/new_app -H 'Content-Type: application/json' \
-     -d '{"id": "loopsmith", "bungieApiKey": "<the Bungie API key>", "origin": "https://joancomasfdz.github.io"}'
+     -d '{"id": "loopsmith-local", "bungieApiKey": "<a Bungie API key for http://localhost:5000>", "origin": "http://localhost:5000"}'
    ```
-   The answer's `app.dimApiKey` is the key.
+   The answer's `app.dimApiKey` is the key (don't merge a localhost key: it doesn't work on the site).
 3. **Set it** in `src/Loopsmith.Web/wwwroot/appsettings.json` (`"DimApiKey": "<key>"`) and merge. It
    isn't a secret: it ships in the site, as DIM's own key ships in DIM, and only works from the
    registered origin. PR previews share that origin, so they open dim.gg links too; a local run
@@ -66,8 +71,9 @@ manifest ([ADRs D14](../ADRs.md)): it downloads seven English component files fr
 compressed, the item table most of it; public, cross-origin, cached by the browser for hours — the app stores
 nothing itself), indexes them in the page (`wwwroot/js/manifest.js`), and Core reads the entries it needs.
 Their paths come from the manifest index (`https://www.bungie.net/Platform/Destiny2/Manifest/`, sent with
-`BungieApiKey` when set in `wwwroot/appsettings.json`); when the index doesn't answer, from
-`ManifestContentId` there — the content id of the manifest the excerpt was made from. Update it when you
+`BungieApiKey` from `wwwroot/appsettings.json`: Loopsmith's key, registered for the site's origin, so it
+isn't a secret — it ships in the site and Bungie answers it from that origin); when the index doesn't
+answer, from `ManifestContentId` there — the content id of the manifest the excerpt was made from. Update it when you
 regenerate the excerpt (`tools/manifest/get-manifest.sh` prints it). Only paths in bungie.net's component
 folder are taken from the index. The tab remembers which items it read the manifest for, so the designer
 doesn't read again what Home just read (or failed to).

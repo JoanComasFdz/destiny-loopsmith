@@ -98,9 +98,10 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
 
 ## Owner items
 
-- **Register Loopsmith with DIM's API** so dim.gg links open (a Bungie API key for the site's origin,
-  then DIM's `new_app`; [hosting.md](hosting.md#dim-links)), and put the key in
-  `src/Loopsmith.Web/wwwroot/appsettings.json`.
+- **A DIM API key for the site** so dim.gg links open: the Bungie API key is set (`BungieApiKey`), but
+  DIM's self-service `new_app` only registers local origins (it refused the site's, 2026-10-11), so the
+  key has to come from DIM's maintainers ([hosting.md](hosting.md#dim-links), step 2); then set it as
+  `DimApiKey` in `src/Loopsmith.Web/wwwroot/appsettings.json`.
 - The DIM logo on Home is DIM's (MIT-licensed repository, credited in the file and the README): fine
   to show next to "paste a DIM link", or ask DIM.
 - Verify.XunitV3 33.x needs a SponsorCheck licence decision (D26).
