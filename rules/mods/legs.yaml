@@ -1,0 +1,375 @@
+# Leg armor mods. Values are PvE values from the Compendium snapshot of 2026-10-09 (Armor Mods tab,
+# Legs column: "Armor Mods#7" is the Legs column's row 7, its CSV record number); "a | b | c"
+# per-copy values are PerModCount. Names and hashes are Bungie's manifest, every copy of a mod
+# listed (hash: [a, b]); the second copy has the same perk text.
+#
+# The Compendium's generic rows (Holster, Scavenger, Weapon Surge) are one row for every element
+# variant: each variant is its own element, citing the generic row, with the element its manifest
+# text names. A Harmonic variant matches your Super's element.
+#
+# Elemental Charge and Recuperation are in mods/armor.yaml.
+#
+# An Armor Charge mod's "Collecting an Orb of Power gives 1 temporary Armor Charge" (Bungie's text on
+# Weapons Font and the Weapon Surge mods) is the orb-of-power keyword's rule (keywords/orb-of-power.yaml,
+# Game Mechanics#94), so these mods don't repeat it: a second grant would show two stacks per orb.
+elements:
+  - id: absolution
+    name: Absolution
+    kind: armorMod
+    affinity: neutral
+    hash: [2793473444, 3184690956]   # the second: a copy with identical text
+    description: "Picking up an Orb of Power gives 5% | 7.5% | 10% grenade, melee and class ability energy with 1|2|3 mods (Bungie's text: all ability cooldowns)."
+    source: "compendium/2026-10-09/Armor Mods#2"
+    rules:
+      # The Compendium lists grenade, melee and class ability energy; no Super energy.
+      - on: { pickUp: orb-of-power }
+        then:
+          - { grantEnergy: { to: grenade, amount: "5% | 7.5% | 10%" } }
+          - { grantEnergy: { to: melee, amount: "5% | 7.5% | 10%" } }
+          - { grantEnergy: { to: classAbility, amount: "5% | 7.5% | 10%" } }
+        reason: "Every Orb of Power you pick up gives your grenade, melee and class ability some energy."
+    passives: []
+
+  - id: better-already
+    name: Better Already
+    kind: armorMod
+    affinity: neutral
+    hash: 2194294579
+    description: "Picking up an Orb of Power starts your health regenerating at once. More copies add nothing, whatever the tooltip says."
+    source: "compendium/2026-10-09/Armor Mods#3"
+    rules:
+      # A regeneration that starts, not a set heal: the amount is "?" (no source gives one).
+      - on: { pickUp: orb-of-power }
+        then:
+          - { restoreHealth: { amount: "?" } }
+        reason: "Picking up an Orb of Power starts your health regenerating right away."
+    passives: []
+
+  - id: enhanced-athletics
+    name: Enhanced Athletics
+    kind: armorMod
+    affinity: neutral
+    hash: 1133590731
+    description: "+30 | +50 | +60 Mobility with 1|2|3 mods: faster movement and higher jumps (a Hunter reaches the most Mobility with one copy in PvE)."
+    source: "compendium/2026-10-09/Armor Mods#5"
+    inert: "Mobility (movement speed and jump height): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: arc-holster
+    name: Arc Holster
+    kind: armorMod
+    affinity: arc
+    hash: [4294909663, 3798468567]   # the second: a copy with identical text
+    description: "Stowed Arc weapons slowly refill their magazine: 10% | 10% | 15% of it every 2.5 | 2 | 2 s with 1|2|3 mods (not breech-loaded Grenade Launchers, Crossbows or Rocket Launchers)."
+    source: "compendium/2026-10-09/Armor Mods#6"
+    inert: "Weapon handling (reloads your stowed Arc weapons): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: solar-holster
+    name: Solar Holster
+    kind: armorMod
+    affinity: solar
+    hash: [3775916472, 3675553168]   # the second: a copy with identical text
+    description: "Stowed Solar weapons slowly refill their magazine: 10% | 10% | 15% of it every 2.5 | 2 | 2 s with 1|2|3 mods (not breech-loaded Grenade Launchers, Crossbows or Rocket Launchers)."
+    source: "compendium/2026-10-09/Armor Mods#6"
+    inert: "Weapon handling (reloads your stowed Solar weapons): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: void-holster
+    name: Void Holster
+    kind: armorMod
+    affinity: void
+    hash: [2452545487, 2634786903]   # the second: a copy with identical text
+    description: "Stowed Void weapons slowly refill their magazine: 10% | 10% | 15% of it every 2.5 | 2 | 2 s with 1|2|3 mods (not breech-loaded Grenade Launchers, Crossbows or Rocket Launchers)."
+    source: "compendium/2026-10-09/Armor Mods#6"
+    inert: "Weapon handling (reloads your stowed Void weapons): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: stasis-holster
+    name: Stasis Holster
+    kind: armorMod
+    affinity: stasis
+    hash: [335129856, 2801811288]   # the second: a copy with identical text
+    description: "Stowed Stasis weapons slowly refill their magazine: 10% | 10% | 15% of it every 2.5 | 2 | 2 s with 1|2|3 mods (not breech-loaded Grenade Launchers, Crossbows or Rocket Launchers)."
+    source: "compendium/2026-10-09/Armor Mods#6"
+    inert: "Weapon handling (reloads your stowed Stasis weapons): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: strand-holster
+    name: Strand Holster
+    kind: armorMod
+    affinity: strand
+    hash: [3581696649, 2805854721]   # the second: a copy with identical text
+    description: "Stowed Strand weapons slowly refill their magazine: 10% | 10% | 15% of it every 2.5 | 2 | 2 s with 1|2|3 mods (not breech-loaded Grenade Launchers, Crossbows or Rocket Launchers)."
+    source: "compendium/2026-10-09/Armor Mods#6"
+    inert: "Weapon handling (reloads your stowed Strand weapons): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: kinetic-holster
+    name: Kinetic Holster
+    kind: armorMod
+    affinity: kinetic
+    hash: [3573031954, 3276278122]   # the second: a copy with identical text
+    description: "Stowed Kinetic weapons slowly refill their magazine: 10% | 10% | 15% of it every 2.5 | 2 | 2 s with 1|2|3 mods (not breech-loaded Grenade Launchers, Crossbows or Rocket Launchers)."
+    source: "compendium/2026-10-09/Armor Mods#6"
+    inert: "Weapon handling (reloads your stowed Kinetic weapons): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: harmonic-holster
+    name: Harmonic Holster
+    kind: armorMod
+    affinity: neutral
+    hash: 3969361392
+    description: "Stowed weapons of your Super's element slowly refill their magazine: 10% | 10% | 15% of it every 2.5 | 2 | 2 s with 1|2|3 mods (not breech-loaded Grenade Launchers, Crossbows or Rocket Launchers)."
+    source: "compendium/2026-10-09/Armor Mods#6"
+    inert: "Weapon handling (reloads stowed weapons of your Super's element): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: innervation
+    name: Innervation
+    kind: armorMod
+    affinity: neutral
+    hash: 1750845415
+    description: "Picking up an Orb of Power gives 10% | 13% | 15% grenade energy with 1|2|3 mods."
+    source: "compendium/2026-10-09/Armor Mods#7"
+    rules:
+      - on: { pickUp: orb-of-power }
+        then:
+          - { grantEnergy: { to: grenade, amount: "10% | 13% | 15%" } }
+        reason: "Every Orb of Power you pick up gives you some grenade energy."
+    passives: []
+
+  - id: insulation
+    name: Insulation
+    kind: armorMod
+    affinity: neutral
+    hash: 3325390304
+    description: "Picking up an Orb of Power gives 4% | 5% | 6% class ability energy with 1|2|3 mods."
+    source: "compendium/2026-10-09/Armor Mods#8"
+    rules:
+      - on: { pickUp: orb-of-power }
+        then:
+          - { grantEnergy: { to: classAbility, amount: "4% | 5% | 6%" } }
+        reason: "Every Orb of Power you pick up gives you some class ability energy."
+    passives: []
+
+  - id: invigoration
+    name: Invigoration
+    kind: armorMod
+    affinity: neutral
+    hash: 1848187513
+    description: "Picking up an Orb of Power gives 10% | 13% | 15% melee energy with 1|2|3 mods."
+    source: "compendium/2026-10-09/Armor Mods#9"
+    rules:
+      - on: { pickUp: orb-of-power }
+        then:
+          - { grantEnergy: { to: melee, amount: "10% | 13% | 15%" } }
+        reason: "Every Orb of Power you pick up gives you some melee energy."
+    passives: []
+
+  - id: orbs-of-restoration
+    name: Orbs of Restoration
+    kind: armorMod
+    affinity: neutral
+    hash: [1039115606, 3791691774]   # the second: a copy with identical text
+    description: "Picking up an Orb of Power gives 10% | 13% | 15% energy to your least-charged ability with 1|2|3 mods; none to an ability with several charges that has one ready."
+    source: "compendium/2026-10-09/Armor Mods#10"
+    rules:
+      # Which ability is least charged is play, so the grant names no ability (ADRs D5: a fact).
+      - on: { pickUp: orb-of-power }
+        then:
+          - { grantEnergy: { to: leastCharged, amount: "10% | 13% | 15%" } }
+        reason: "Every Orb of Power you pick up gives some energy to whichever ability is the least charged."
+    passives: []
+
+  - id: arc-scavenger
+    name: Arc Scavenger
+    kind: armorMod
+    affinity: arc
+    hash: [534479613, 2436471653]   # the second: a copy with identical text
+    description: "Ammo bricks give Arc weapons extra reserve ammo: usually one more round (Machine Guns 7 more, Trace Rifles 10% of their max reserves). Works with Ammo Finder bricks; PvE only."
+    source: "compendium/2026-10-09/Armor Mods#12"
+    inert: "Ammo: Loopsmith doesn't model ammo, so no loop changes."
+    rules: []
+    passives: []
+
+  - id: solar-scavenger
+    name: Solar Scavenger
+    kind: armorMod
+    affinity: solar
+    hash: [688956976, 56663992]   # the second: a copy with identical text
+    description: "Ammo bricks give Solar weapons extra reserve ammo: usually one more round (Machine Guns 7 more, Trace Rifles 10% of their max reserves). Works with Ammo Finder bricks; PvE only."
+    source: "compendium/2026-10-09/Armor Mods#12"
+    inert: "Ammo: Loopsmith doesn't model ammo, so no loop changes."
+    rules: []
+    passives: []
+
+  - id: void-scavenger
+    name: Void Scavenger
+    kind: armorMod
+    affinity: void
+    hash: [802695661, 2815817957]   # the second: a copy with identical text
+    description: "Ammo bricks give Void weapons extra reserve ammo: usually one more round (Machine Guns 7 more, Trace Rifles 10% of their max reserves). Works with Ammo Finder bricks; PvE only."
+    source: "compendium/2026-10-09/Armor Mods#12"
+    inert: "Ammo: Loopsmith doesn't model ammo, so no loop changes."
+    rules: []
+    passives: []
+
+  - id: stasis-scavenger
+    name: Stasis Scavenger
+    kind: armorMod
+    affinity: stasis
+    hash: [2734674728, 3174771856]   # the second: a copy with identical text
+    description: "Ammo bricks give Stasis weapons extra reserve ammo: usually one more round (Machine Guns 7 more, Trace Rifles 10% of their max reserves). Works with Ammo Finder bricks; PvE only."
+    source: "compendium/2026-10-09/Armor Mods#12"
+    inert: "Ammo: Loopsmith doesn't model ammo, so no loop changes."
+    rules: []
+    passives: []
+
+  - id: strand-scavenger
+    name: Strand Scavenger
+    kind: armorMod
+    affinity: strand
+    hash: [2257238439, 1305848463]   # the second: a copy with identical text
+    description: "Ammo bricks give Strand weapons extra reserve ammo: usually one more round (Machine Guns 7 more, Trace Rifles 10% of their max reserves). Works with Ammo Finder bricks; PvE only."
+    source: "compendium/2026-10-09/Armor Mods#12"
+    inert: "Ammo: Loopsmith doesn't model ammo, so no loop changes."
+    rules: []
+    passives: []
+
+  - id: kinetic-scavenger
+    name: Kinetic Scavenger
+    kind: armorMod
+    affinity: kinetic
+    hash: [1097608874, 579997810]   # the second: a copy with identical text
+    description: "Ammo bricks give Kinetic weapons extra reserve ammo: usually one more round (Machine Guns 7 more, Trace Rifles 10% of their max reserves). Works with Ammo Finder bricks; PvE only."
+    source: "compendium/2026-10-09/Armor Mods#12"
+    inert: "Ammo: Loopsmith doesn't model ammo, so no loop changes."
+    rules: []
+    passives: []
+
+  - id: harmonic-scavenger
+    name: Harmonic Scavenger
+    kind: armorMod
+    affinity: neutral
+    hash: [1301391064, 877723168]   # the second: a copy with identical text
+    description: "Ammo bricks give weapons of your Super's element extra reserve ammo: usually one more round (Machine Guns 7 more, Trace Rifles 10% of their max reserves). Works with Ammo Finder bricks; PvE only."
+    source: "compendium/2026-10-09/Armor Mods#12"
+    inert: "Ammo: Loopsmith doesn't model ammo, so no loop changes."
+    rules: []
+    passives: []
+
+  - id: stacks-on-stacks
+    name: Stacks on Stacks
+    kind: armorMod
+    affinity: neutral
+    hash: [3994043492, 1627901452]   # the second: a copy with identical text
+    description: "Every source of Armor Charge gives one more stack, unless that source says it doesn't (Bungie's text: Orb of Power pickups give 1 more)."
+    source: "compendium/2026-10-09/Armor Mods#13"
+    rules: []
+    passives:
+      # The Compendium's "every source" is used over Bungie's "Orb of Power pickups". No rule in the
+      # catalog says it doesn't benefit, so the extra stack holds for every grant. Whether more copies
+      # add more stacks isn't stated, so it is one.
+      - effect: { extraStacks: { status: armor-charge, extra: 1 } }
+        reason: "Every Armor Charge you gain comes with one extra stack."
+
+  - id: weapons-font
+    name: Weapons Font
+    kind: armorMod
+    affinity: neutral
+    hash: [4046357305, 1901221009]   # the second: a copy with identical text
+    description: "While you have any Armor Charge: +20 | +40 | +50 Weapons with 1|2|3 mods."
+    source: "compendium/2026-10-09/Armor Mods#14"
+    rules: []
+    passives:
+      # A fact shown while Armor Charge is on you; never added to the build's stats (ADRs D1).
+      - effect: { modifyStat: { stat: weapons, change: "+20 | +40 | +50" } }
+        when: [ { has: armor-charge } ]
+        reason: "While you hold any Armor Charge, your Weapons stat is higher."
+
+  - id: arc-weapon-surge
+    name: Arc Weapon Surge
+    kind: armorMod
+    affinity: arc
+    hash: [1834163303, 2246316031]   # the second: a copy with identical text
+    description: "While you have any Armor Charge, Arc weapons deal more damage: 10% | 17% | 22% | 25% with 1|2|3|4 mods (PvP 3% | 4.5% | 5.5% | 6%); the fourth only through the artifact or an exotic armor piece."
+    source: "compendium/2026-10-09/Armor Mods#15"
+    rules: []
+    passives:
+      - effect: { modifyDamage: { against: weapon:arc, change: "+10% | +17% | +22% | +25%" } }
+        when: [ { has: armor-charge } ]
+        reason: "While you hold any Armor Charge, your Arc weapons hit harder."
+
+  - id: solar-weapon-surge
+    name: Solar Weapon Surge
+    kind: armorMod
+    affinity: solar
+    hash: [2319885414, 2283894334]   # the second: a copy with identical text
+    description: "While you have any Armor Charge, Solar weapons deal more damage: 10% | 17% | 22% | 25% with 1|2|3|4 mods (PvP 3% | 4.5% | 5.5% | 6%); the fourth only through the artifact or an exotic armor piece."
+    source: "compendium/2026-10-09/Armor Mods#15"
+    rules: []
+    passives:
+      - effect: { modifyDamage: { against: weapon:solar, change: "+10% | +17% | +22% | +25%" } }
+        when: [ { has: armor-charge } ]
+        reason: "While you hold any Armor Charge, your Solar weapons hit harder."
+
+  - id: void-weapon-surge
+    name: Void Weapon Surge
+    kind: armorMod
+    affinity: void
+    hash: [3467460423, 3914973263]   # the second: a copy with identical text
+    description: "While you have any Armor Charge, Void weapons deal more damage: 10% | 17% | 22% | 25% with 1|2|3|4 mods (PvP 3% | 4.5% | 5.5% | 6%); the fourth only through the artifact or an exotic armor piece."
+    source: "compendium/2026-10-09/Armor Mods#15"
+    rules: []
+    passives:
+      - effect: { modifyDamage: { against: weapon:void, change: "+10% | +17% | +22% | +25%" } }
+        when: [ { has: armor-charge } ]
+        reason: "While you hold any Armor Charge, your Void weapons hit harder."
+
+  - id: stasis-weapon-surge
+    name: Stasis Weapon Surge
+    kind: armorMod
+    affinity: stasis
+    hash: [2921714558, 2526922422]   # the second: a copy with identical text
+    description: "While you have any Armor Charge, Stasis weapons deal more damage: 10% | 17% | 22% | 25% with 1|2|3|4 mods (PvP 3% | 4.5% | 5.5% | 6%); the fourth only through the artifact or an exotic armor piece."
+    source: "compendium/2026-10-09/Armor Mods#15"
+    rules: []
+    passives:
+      - effect: { modifyDamage: { against: weapon:stasis, change: "+10% | +17% | +22% | +25%" } }
+        when: [ { has: armor-charge } ]
+        reason: "While you hold any Armor Charge, your Stasis weapons hit harder."
+
+  - id: strand-weapon-surge
+    name: Strand Weapon Surge
+    kind: armorMod
+    affinity: strand
+    hash: [3112965625, 1501094193]   # the second: a copy with identical text
+    description: "While you have any Armor Charge, Strand weapons deal more damage: 10% | 17% | 22% | 25% with 1|2|3|4 mods (PvP 3% | 4.5% | 5.5% | 6%); the fourth only through the artifact or an exotic armor piece."
+    source: "compendium/2026-10-09/Armor Mods#15"
+    rules: []
+    passives:
+      - effect: { modifyDamage: { against: weapon:strand, change: "+10% | +17% | +22% | +25%" } }
+        when: [ { has: armor-charge } ]
+        reason: "While you hold any Armor Charge, your Strand weapons hit harder."
+
+  - id: kinetic-weapon-surge
+    name: Kinetic Weapon Surge
+    kind: armorMod
+    affinity: kinetic
+    hash: [14520248, 2318667184]   # the second: a copy with identical text
+    description: "While you have any Armor Charge, Kinetic weapons deal more damage: 10% | 17% | 22% | 25% with 1|2|3|4 mods (PvP 3% | 4.5% | 5.5% | 6%); the fourth only through the artifact or an exotic armor piece."
+    source: "compendium/2026-10-09/Armor Mods#15"
+    rules: []
+    passives:
+      - effect: { modifyDamage: { against: weapon:kinetic, change: "+10% | +17% | +22% | +25%" } }
+        when: [ { has: armor-charge } ]
+        reason: "While you hold any Armor Charge, your Kinetic weapons hit harder."
