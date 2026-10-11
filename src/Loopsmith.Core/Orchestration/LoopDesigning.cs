@@ -584,10 +584,6 @@ public static class LoopDesigning
     public static ImmutableArray<LeftOutItem> ListMissing(ValidatedBuild build) =>
         LeftOutClassifying.ListMissing(build.Catalog, build.Build);
 
-    /// <summary>The left-out items with no part in a loop (a legendary armor piece, a jump), each with why: what "No part in a loop" lists.</summary>
-    public static ImmutableArray<NoLoopEffectItem> ListNoLoopEffect(ValidatedBuild build) =>
-        LeftOutClassifying.ListNoLoopEffect(build.Catalog, build.Build);
-
     /// <summary>The keyword an element is (Bolt Charge, Ionic Trace), when it is one.</summary>
     public static Optional<KeywordRef> FindKeyword(ValidatedBuild build, ElementId element) =>
         build.Catalog.FindElementKeyword(element);

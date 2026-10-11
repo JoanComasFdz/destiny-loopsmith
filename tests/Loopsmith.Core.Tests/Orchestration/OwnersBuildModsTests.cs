@@ -35,7 +35,7 @@ public sealed class OwnersBuildModsTests
         var balancedTuning = new LeftOutItem(LoadoutPart.ArmorMod, ItemHash.From(3122197216u));
 
         var missing = LoopDesigning.ListMissing(build);
-        var noLoopEffect = LoopDesigning.ListNoLoopEffect(build);
+        var leftOut = build.Build.LeftOut;
 
         Assert.IsType<LeftOutReason.NoLoopEffect>(LoopDesigning.ClassifyLeftOut(build, mask));
         Assert.Equal(new LeftOutReason.NoLoopEffect("A jump: movement has no part in a loop."), LoopDesigning.ClassifyLeftOut(build, tripleJump));
@@ -43,7 +43,7 @@ public sealed class OwnersBuildModsTests
             new LeftOutReason.NoLoopEffect("A stat mod (+10 Grenade): it changes only stats, and the build's stats count it when they add up from your armor (after the Bungie login). It sets nothing off."),
             LoopDesigning.ClassifyLeftOut(build, grenadeMod));
         Assert.StartsWith("Balanced Tuning (+1 to each stat where its piece has 0, one piece per tuning socket): it changes only stats", Assert.IsType<LeftOutReason.NoLoopEffect>(LoopDesigning.ClassifyLeftOut(build, balancedTuning)).Why, StringComparison.Ordinal);
-        Assert.Equal((5, 2), (noLoopEffect.Count(entry => entry.Item == grenadeMod), noLoopEffect.Count(entry => entry.Item == balancedTuning)));
+        Assert.Equal((5, 2), (leftOut.Count(item => item == grenadeMod), leftOut.Count(item => item == balancedTuning)));
         Assert.Empty(missing);
         Assert.DoesNotContain(build.Issues, issue => issue.Message.StartsWith("Left out of the build:", StringComparison.Ordinal));
     }

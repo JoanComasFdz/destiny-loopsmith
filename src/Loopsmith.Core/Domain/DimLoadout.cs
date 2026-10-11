@@ -33,9 +33,6 @@ public partial record LeftOutReason
     partial record NoLoopEffect(string Why);
 }
 
-/// <summary>A left-out item with no part in a loop, and why (Luminopotent Mask: "A Luminopotent piece: …").</summary>
-public sealed record NoLoopEffectItem(LeftOutItem Item, string Why);
-
 public static class LeftOutReading
 {
     /// <summary>A gap: no rule knows the item yet (not one with no part in a loop).</summary>

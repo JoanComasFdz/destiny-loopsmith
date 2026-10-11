@@ -205,10 +205,10 @@ of its slot (the slot the manifest gives the mod; other mods are general) — wi
 manifest excerpt; what the rules don't know sits where DIM would show it, dimmed. It also lists the
 left-out items under **Not in Loopsmith yet** (collapsed, with how many of each part: open it to see them), by their
 manifest name, each a link to its light.gg page; the build check adds `Unknown (?): …` and `Left out of the build: …` as info.
-What the manifest says has no part in a loop is not a gap, so it sits apart, under **No part in a loop** (collapsed),
-grouped by why: a stat or tuning mod (Grenade Mod: +10 Grenade; Balanced Tuning — it changes only stats, which the
-build's stats count when they add up from the player's armor, [Stats](#stats)), a legendary armor piece (its set's
-bonuses already count from the pieces worn; the piece carries stats and mod slots) and a jump. An element the rules
+What the manifest says has no part in a loop is not a gap, and it isn't listed: its tile in the loadout isn't dimmed,
+and its tooltip says why — a stat or tuning mod (Grenade Mod: +10 Grenade; Balanced Tuning — it changes only stats,
+which the build's stats count when they add up from the player's armor, [Stats](#stats)), a legendary armor piece
+(its set's bonuses already count from the pieces worn; the piece carries stats and mod slots) or a jump. An element the rules
 mark `inert` ([rule-format.md](rule-format.md#elements): Skip Grenade, Feeding Frenzy, the ammo, weapon-handling and
 resistance mods) is known: its details say "No rules needed." and why, and the
 build check doesn't warn about it. A loadout for another class than its subclass's is an error, and so is text that
