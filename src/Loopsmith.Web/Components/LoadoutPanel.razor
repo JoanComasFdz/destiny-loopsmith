@@ -1,7 +1,7 @@
 @* A build laid out the way DIM shows a loadout: the subclass with its super, abilities, aspects and fragments; the
    artifact perks; the weapons (an exotic's catalyst after its perks); each armor piece with the mods of its slot; the
    general mods; the armor sets with their 2- and 4-piece perks. Icons are Bungie's (from the manifest excerpt); a square
-   without one shows its initials. What the rules don't know is dimmed. Tapping a square opens its details (Bungie's
+   without one shows its initials. What the rules don't know carries a small ⊘ in its lower-right corner. Tapping a square opens its details (Bungie's
    text and Loopsmith's rules); legendary armor and weapons open none, their perks and mods do. After the player's Bungie
    login, the player's copies of its pieces and weapons (the share's when theirs, else their own) show their marks as
    DIM does: the tier's diamonds, a masterwork's glow and gold border. A weapon shows its breaker and element under its
@@ -433,6 +433,10 @@
                     title="@LoadoutShaping.AddMarks(DescribeTooltip(tile), marks)" aria-label="@tile.Name" aria-haspopup="dialog" @onclick="() => OpenDetails(tileDetails.Value)">
                 @RenderTileFace(tile)
                 <TileOverlays Marks="marks" />
+                @if (!tile.InRules)
+                {
+                    <UnsupportedMark />
+                }
             </button>
         }
         else
@@ -442,6 +446,10 @@
                   title="@LoadoutShaping.AddMarks(DescribeTooltip(tile), marks)" aria-label="@tile.Name">
                 @RenderTileFace(tile)
                 <TileOverlays Marks="marks" />
+                @if (!tile.InRules)
+                {
+                    <UnsupportedMark />
+                }
             </span>
         }
     };

@@ -1,0 +1,8 @@
+@* What the rules don't know yet, on its square: a small grey ⊘ in the lower-right corner ("not counted"). The square
+   itself is drawn as any other; Loopsmith just sets nothing off for it. *@
+<span class="unsupported-mark" title="@Title" data-testid="unsupported-mark"><svg viewBox="0 0 10 10" aria-hidden="true"><circle cx="5" cy="5" r="3.6" fill="none" stroke="currentColor" stroke-width="1.6" /><line x1="2.5" y1="7.5" x2="7.5" y2="2.5" stroke="currentColor" stroke-width="1.6" /></svg></span>
+
+@code {
+    /// <summary>What the mark means, as its tooltip says it.</summary>
+    public const string Title = "Not in Loopsmith yet: it sets nothing off in your loop.";
+}

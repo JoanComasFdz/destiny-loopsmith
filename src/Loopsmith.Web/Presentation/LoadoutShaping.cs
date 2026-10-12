@@ -26,7 +26,7 @@ public partial record ItemDetails
 
 /// <summary>
 /// One square of the DIM-style loadout: the item's icon (a bungie.net address) or none, its name, colour and rarity,
-/// whether the rules know it (an item the DIM loadout had but the build leaves out is shown, dimmed), and what tapping
+/// whether the rules know it (an item the DIM loadout had but the build leaves out is shown, marked ⊘), and what tapping
 /// it opens (none: nothing to show). <see cref="Enhanced"/>: a weapon perk's enhanced trait, drawn as the game draws it.
 /// </summary>
 public sealed record IconTile(
@@ -247,7 +247,7 @@ public static class LoadoutShaping
     public static IconTile DescribeWeaponItem(ManifestItem item) =>
         DescribeItem(item, item.Name, true, Optional.None<string>(), ToAffinity(item), Optional.None<ItemDetails>());
 
-    /// <summary>A weapon perk by hash, as its square shows: its catalog element when the rules have it, else the manifest's (dimmed).</summary>
+    /// <summary>A weapon perk by hash, as its square shows: its catalog element when the rules have it, else the manifest's (marked ⊘).</summary>
     public static IconTile DescribePerk(RuleCatalog catalog, ItemHash hash) =>
         DescribeTrait(catalog, hash);
 
@@ -397,7 +397,7 @@ public static class LoadoutShaping
         new(name, item.Icon.Map(ToIconUrl), affinity, item.Tier, inRules, description, 1, details);
 
     /// <summary>
-    /// A hash the build left out: the manifest's name and icon when the excerpt has it, else just the hash — dimmed when no
+    /// A hash the build left out: the manifest's name and icon when the excerpt has it, else just the hash — marked ⊘ when no
     /// rule knows it yet, not when it has no part in a loop (a set's armor piece, a jump: known, not missing). It opens its
     /// manifest details, unless it is legendary armor or a legendary weapon (DIM's perks and mods say more).
     /// </summary>
@@ -417,7 +417,7 @@ public static class LoadoutShaping
 
     /// <summary>
     /// An ability slot: its element; or, when the build has "?", the left-out subclass plug of that kind the manifest
-    /// names (dimmed); or a "?" tile.
+    /// names (marked ⊘); or a "?" tile.
     /// </summary>
     private static IconTile DescribeAbility<TKind>(RuleCatalog catalog, Optional<ElementId> ability, ImmutableArray<LeftOutEntry> plugs)
         where TKind : ManifestKind =>
@@ -495,7 +495,7 @@ public static class LoadoutShaping
             perk.Perk.Pieces.Value,
             perk.Active))]);
 
-    /// <summary>A perk of a weapon's roll by hash: its catalog element when the rules have it, else the manifest's (dimmed).</summary>
+    /// <summary>A perk of a weapon's roll by hash: its catalog element when the rules have it, else the manifest's (marked ⊘).</summary>
     private static IconTile DescribeTrait(RuleCatalog catalog, ItemHash hash) =>
         catalog.FindElementByHash(hash).Match(
             element => DescribeElement(catalog, element.Value.Id),

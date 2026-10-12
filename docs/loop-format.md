@@ -226,10 +226,11 @@ tie — tappable for Bungie's text and which of its perks the build has) and its
 one perk per trait column the manifest excerpt gives — the build's pick (`roll`), else the perk it names
 in that column, else the one perk a column that doesn't roll has (an exotic's), else "?" — each armor piece with the mods
 of its slot (the slot the manifest gives the mod; other mods are general) — with Bungie's icons from the
-manifest excerpt; what the rules don't know sits where DIM would show it, dimmed. It also lists the
+manifest excerpt; what the rules don't know sits where DIM would show it, its icon as bright as any other's, with a
+small grey ⊘ in its lower-right corner ("Not in Loopsmith yet: it sets nothing off in your loop"). It also lists the
 left-out items under **Not in Loopsmith yet** (collapsed, with how many of each part: open it to see them), by their
 manifest name, each a link to its light.gg page; the build check adds `Unknown (?): …` and `Left out of the build: …` as info.
-What the manifest says has no part in a loop is not a gap, and it isn't listed: its tile in the loadout isn't dimmed,
+What the manifest says has no part in a loop is not a gap, and it isn't listed: its tile in the loadout has no ⊘,
 and its tooltip says why — a stat or tuning mod (Grenade Mod: +10 Grenade; Balanced Tuning — it changes only stats,
 which the build's stats count when they add up from the player's armor, [Stats](#stats)), a legendary armor piece
 (its set's bonuses already count from the pieces worn; the piece carries stats and mod slots) or a jump. An element the rules
@@ -246,7 +247,7 @@ the circle's lower half, a gold bar down its left side and a gold up-arrow, on t
 picker and in a step's text ("Slice (enhanced)"). The
 pick goes into the embedded build's weapon entry as `roll` ([rule-format.md](rule-format.md#build-file-buildsbuildbuildyaml)) —
 only that entry is rewritten, so the build file's comments stay — and the steps replay with the new
-build: a perk the rules know now sets things off; one they don't is shown, dimmed, and said so under
+build: a perk the rules know now sets things off; one they don't is shown with its ⊘, and said so under
 Validation. Hand-written builds pick the same way; a perk they name in `perks` sits in its column and
 gives way to a pick there. The Home cards stay read-only.
 

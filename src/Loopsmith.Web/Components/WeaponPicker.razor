@@ -65,6 +65,10 @@
                                         {
                                             <img src="@perkIcon.Value" alt="" loading="lazy" />
                                         }
+                                        @if (!perk.InRules)
+                                        {
+                                            <UnsupportedMark />
+                                        }
                                     </span>
                                     <span class="weapon-option-perk-name">@perk.Name</span>
                                 </span>
