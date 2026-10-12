@@ -50,6 +50,29 @@ public sealed class EnhancedPerksCatalogTests
         Assert.Equal(Catalog.Elements[ElementId.From(perk)].Inert.IsSome(), Catalog.Elements[enhanced].Inert.IsSome());
     }
 
+    [Theory]
+    [InlineData(3422796781u, true)]    // the enhanced Slice
+    [InlineData(1171147302u, true)]    // the enhanced Feeding Frenzy
+    [InlineData(923806249u, false)]    // Slice
+    [InlineData(2779035018u, false)]   // Feeding Frenzy
+    public void An_enhanced_traits_plug_is_drawn_enhanced_and_its_base_perks_is_not(uint hash, bool enhanced)
+    {
+        Assert.Equal(enhanced, LoopDesigning.IsEnhancedPerk(Catalog, ItemHash.From(hash)));
+    }
+
+    [Fact]
+    public void The_enhanced_traits_element_is_drawn_enhanced_and_any_plug_Bungie_types_one_too()
+    {
+        var unauthored = new ManifestItem(
+            ItemHash.From(556), "Rampage", new ManifestKind.WeaponPerk(), Optional.Some("Enhanced Trait"), Optional.None<ItemTier>(), Optional.None<string>(), Optional.None<string>(), Optional.None<string>());
+        var joined = Catalog with { Manifest = Catalog.Manifest with { Items = Catalog.Manifest.Items.Add(unauthored.Hash, unauthored) } };
+
+        Assert.True(LoopDesigning.IsEnhancedPerk(Catalog, ElementId.From("slice-enhanced")));
+        Assert.False(LoopDesigning.IsEnhancedPerk(Catalog, ElementId.From("slice")));
+        Assert.True(LoopDesigning.IsEnhancedPerk(joined, unauthored.Hash));   // no rules know it: Bungie's type says it
+        Assert.False(LoopDesigning.IsEnhancedPerk(Catalog, ItemHash.From(556)));   // a hash nobody knows
+    }
+
     [Fact]
     public void The_enhanced_slice_arms_for_9_seconds_where_slice_arms_for_8()
     {

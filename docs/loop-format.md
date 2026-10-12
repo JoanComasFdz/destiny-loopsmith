@@ -240,7 +240,10 @@ isn't a loadout.
 
 **Picking a weapon's perks.** A DIM link usually carries the weapon, not its roll, so the designer lets you pick
 it: click a perk square (a column that rolls) and choose among what the manifest says that column rolls
-with (enhanced versions included; the ones the rules know are marked), or **Clear** it back to "?". The
+with (enhanced versions included; the ones the rules know are marked), or **Clear** it back to "?". An
+enhanced trait is drawn as the game and DIM draw it — Bungie gives it the base perk's image — with a gold glow over
+the circle's lower half, a gold bar down its left side and a gold up-arrow, on the weapon's perk square, in the
+picker and in a step's text ("Slice (enhanced)"). The
 pick goes into the embedded build's weapon entry as `roll` ([rule-format.md](rule-format.md#build-file-buildsbuildbuildyaml)) —
 only that entry is rewritten, so the build file's comments stay — and the steps replay with the new
 build: a perk the rules know now sets things off; one they don't is shown, dimmed, and said so under

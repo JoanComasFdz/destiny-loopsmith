@@ -428,7 +428,7 @@
     {
         @if (tappable && tile.Details is Optional<ItemDetails>.Some tileDetails)
         {
-            <button type="button" class="icon-tile tappable @kind @ToneStyling.ToAffinityClass(tile.Affinity) @DescribeTier(tile) @(tile.InRules ? "" : "out") @LoadoutShaping.ToMasterworkClass(marks)"
+            <button type="button" class="icon-tile tappable @kind @ToneStyling.ToAffinityClass(tile.Affinity) @DescribeTier(tile) @(tile.InRules ? "" : "out") @(tile.Enhanced ? "enhanced" : "") @LoadoutShaping.ToMasterworkClass(marks)"
                     data-tier="@LoadoutShaping.ToTierText(marks)" data-masterwork="@LoadoutShaping.ToMasterworkText(marks)"
                     title="@LoadoutShaping.AddMarks(DescribeTooltip(tile), marks)" aria-label="@tile.Name" aria-haspopup="dialog" @onclick="() => OpenDetails(tileDetails.Value)">
                 @RenderTileFace(tile)
@@ -437,7 +437,7 @@
         }
         else
         {
-            <span class="icon-tile @kind @ToneStyling.ToAffinityClass(tile.Affinity) @DescribeTier(tile) @(tile.InRules ? "" : "out") @LoadoutShaping.ToMasterworkClass(marks)"
+            <span class="icon-tile @kind @ToneStyling.ToAffinityClass(tile.Affinity) @DescribeTier(tile) @(tile.InRules ? "" : "out") @(tile.Enhanced ? "enhanced" : "") @LoadoutShaping.ToMasterworkClass(marks)"
                   data-tier="@LoadoutShaping.ToTierText(marks)" data-masterwork="@LoadoutShaping.ToMasterworkText(marks)"
                   title="@LoadoutShaping.AddMarks(DescribeTooltip(tile), marks)" aria-label="@tile.Name">
                 @RenderTileFace(tile)
