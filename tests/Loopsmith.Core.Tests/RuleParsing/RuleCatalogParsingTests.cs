@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
+using Loopsmith.Core.Orchestration;
 using Loopsmith.Core.RuleParsing;
 using static Loopsmith.Core.Tests.RuleParsing.ParsingAssertions;
 
@@ -437,7 +438,7 @@ public sealed class RuleCatalogParsingTests
 
         Assert.Equal(
             "hunter/arc.yaml:5: unknown key 'colour' in element (allowed: id, name, kind, affinity, class, hash, "
-            + "fragmentSlots, ability, description, source, rules, passives, inert, statChecks)",
+            + "fragmentSlots, ability, description, source, rules, passives, inert, statChecks, enhanced)",
             message);
     }
 
@@ -1515,5 +1516,103 @@ public sealed class RuleCatalogParsingTests
             [Glossary, ToProbeFile("{ on: { kill: { via: \"weapon:harmonic\" } }, then: [ { spawn: orb-of-power } ] }")]));
 
         Assert.Equal(new Trigger.KillAny(new DamageSource.WeaponOfSuperType()), Assert.Single(catalog.Elements[ElementId.From("probe")].Rules).On);
+    }
+
+    // ── a weapon perk's enhanced trait ──────────────────────────────────────────────────
+
+    private static SourceText ToSliceFile(string enhanced, string kind = "weaponPerk") =>
+        ToElementsFile("weapons/perks.yaml", $$"""
+            elements:
+              - id: slice
+                name: Slice
+                kind: {{kind}}
+                affinity: strand
+                hash: 923806249
+                rules:
+                  - on: { abilityCast: classAbility }
+                    then:
+                      - { applyBuff: { status: amplified, duration: 8s } }
+                  - on: { kill: { via: weapon } }
+                    then:
+                      - { grantEnergy: { to: grenade, amount: 10% } }
+                enhanced: {{enhanced}}
+            """);
+
+    [Fact]
+    public void A_weapon_perks_enhanced_trait_is_its_own_element_with_the_enhanced_figures()
+    {
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToSliceFile("{ hash: 3422796781, values: { 8s: 9s, 10%: 12% }, description: \"Enhanced.\" }")]));
+
+        var perk = catalog.Elements[ElementId.From("slice")];
+        var enhanced = catalog.Elements[ElementId.From("slice-enhanced")];
+        Assert.Equal("Slice (enhanced)", enhanced.Name);
+        Assert.Equal([ItemHash.From(3422796781)], enhanced.Hashes);
+        Assert.Equal(Optional.Some("Enhanced."), enhanced.Description);
+        Assert.Equal(new Outcome.ApplyBuff(ToStatus("amplified"), Optional.Some(Seconds.From(9m)), StackCount.From(1)), enhanced.Rules[0].Then[0]);
+        Assert.Equal(new Outcome.GrantEnergy(AbilityKind.Grenade, new EnergyGrant.Fraction(new GameValue.Known(0.12m))), enhanced.Rules[1].Then[0]);
+        Assert.Equal(new Outcome.ApplyBuff(ToStatus("amplified"), Optional.Some(Seconds.From(8m)), StackCount.From(1)), perk.Rules[0].Then[0]);   // the perk keeps its own
+        Assert.Equal(ElementId.From("slice-enhanced"), catalog.EnhancedPerks[ElementId.From("slice")]);
+    }
+
+    [Fact]
+    public void An_enhanced_trait_without_values_has_the_perks_rules()
+    {
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToSliceFile("{ hash: 3422796781 }")]));
+
+        Assert.Equal(
+            catalog.Elements[ElementId.From("slice")].Rules.SelectMany(rule => rule.Then),
+            catalog.Elements[ElementId.From("slice-enhanced")].Rules.SelectMany(rule => rule.Then));
+        Assert.Equal(catalog.Elements[ElementId.From("slice")].Description, catalog.Elements[ElementId.From("slice-enhanced")].Description);
+    }
+
+    [Theory]
+    [InlineData("{ hash: 3422796781, values: { 7s: 9s } }", "7s isn't a value of slice's rules")]
+    [InlineData("{ hash: 3422796781, values: { 15%: 20% } }", "0.15 isn't a value of slice's rules")]
+    [InlineData("{ hash: 3422796781, values: { 8s: \"?s\" } }", "no duration to replace")]
+    [InlineData("{ hash: 3422796781, values: { 10%: \"?\" } }", "no figure to replace")]
+    [InlineData("{ values: { 8s: 9s } }", "is missing 'hash'")]
+    [InlineData("{ hash: 3422796781, chance: true }", "unknown key 'chance'")]
+    public void An_enhanced_block_says_exactly_what_changes(string enhanced, string message) =>
+        Assert.Contains(message, ParseInvalidCatalog(Glossary, ToSliceFile(enhanced)));
+
+    [Fact]
+    public void Only_a_weapon_perk_has_an_enhanced_trait() =>
+        Assert.Contains("only a weaponPerk has an enhanced trait, not a armorMod", ParseInvalidCatalog(Glossary, ToSliceFile("{ hash: 3422796781 }", "armorMod")));
+
+    [Fact]
+    public void An_enhanced_trait_takes_the_excerpts_other_plugs_of_it_by_name()
+    {
+        var manifest = new SourceText("manifest.yaml", """
+            items:
+              - { hash: 923806249, name: "Slice", kind: weaponPerk, type: "Trait" }
+              - { hash: 3422796781, name: "Slice", kind: weaponPerk, type: "Enhanced Trait" }
+              - { hash: 111, name: "Slice", kind: weaponPerk, type: "Enhanced Trait" }
+              - { hash: 222, name: "Slice", kind: weaponPerk, type: "Trait" }
+              - { hash: 333, name: "Slice", kind: weaponPerk, type: "Enhanced Origin Trait" }
+              - { hash: 444, name: "Kill Clip", kind: weaponPerk, type: "Enhanced Trait" }
+            """);
+
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, manifest, ToSliceFile("{ hash: 3422796781 }")]));
+
+        Assert.Equal([3422796781u, 111u, 333u], catalog.Elements[ElementId.From("slice-enhanced")].Hashes.Select(hash => hash.Value));
+        Assert.Equal([923806249u], catalog.Elements[ElementId.From("slice")].Hashes.Select(hash => hash.Value));   // a second base plug isn't the enhanced trait
+        Assert.False(catalog.FindElementByHash(ItemHash.From(444)).IsSome());                                     // nor another perk's
+        Assert.Equal(Optional.Some(ElementId.From("slice-enhanced")), catalog.FindElementByHash(ItemHash.From(111)).Map(element => element.Id));
+    }
+
+    [Fact]
+    public void An_enhanced_plug_a_login_reads_is_the_enhanced_traits_too()
+    {
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToSliceFile("{ hash: 3422796781 }")]));
+        var joined = catalog.Manifest with
+        {
+            Items = ImmutableDictionary<ItemHash, ManifestItem>.Empty.Add(ItemHash.From(555), new ManifestItem(
+                ItemHash.From(555), "Slice", new ManifestKind.WeaponPerk(), Optional.Some("Enhanced Trait"), Optional.None<ItemTier>(), Optional.None<string>(), Optional.None<string>(), Optional.None<string>())),
+        };
+
+        var withLogin = LoopDesigning.AddJoinedManifest(catalog, new Result<ManifestExcerpt, string>.Ok(joined)).Catalog;
+
+        Assert.Equal(Optional.Some(ElementId.From("slice-enhanced")), withLogin.FindElementByHash(ItemHash.From(555)).Map(element => element.Id));
+        Assert.False(catalog.FindElementByHash(ItemHash.From(555)).IsSome());
     }
 }

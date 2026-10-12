@@ -169,9 +169,12 @@ public static class LoopDesigning
             .MapError(DescribeManifestProblem)
             .Bind(excerpt => UseCatalog(session, AddManifest(session.Build.Catalog, excerpt)));
 
-    /// <summary>The catalog with a joined part of the full manifest added to its excerpt (what it had stays).</summary>
+    /// <summary>
+    /// The catalog with a joined part of the full manifest added to its excerpt (what it had stays), and the enhanced
+    /// traits' other plugs it names recognised (an account's enhanced Slice is Slice's enhanced trait).
+    /// </summary>
     private static RuleCatalog AddManifest(RuleCatalog catalog, ManifestExcerpt joined) =>
-        catalog with { Manifest = catalog.Manifest.AddExcerpt(joined) };
+        (catalog with { Manifest = catalog.Manifest.AddExcerpt(joined) }).RecognizeEnhancedPerks();
 
     private static string DescribeManifestProblem(string problem) =>
         $"Couldn't read Bungie's manifest ({problem}). Items Loopsmith doesn't know show by hash.";
