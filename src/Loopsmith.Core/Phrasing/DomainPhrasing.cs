@@ -147,6 +147,48 @@ public static class DomainPhrasing
             _ => "super",
         };
 
+    /// <summary>
+    /// An ability as it was used: its plain name for a press, else its secondary ("sliding melee", "airborne melee",
+    /// "class ability in the air", "held grenade").
+    /// </summary>
+    public static string DescribeAbilityUse(this AbilityKind kind, AbilityInput input) =>
+        (kind, input) switch
+        {
+            (_, AbilityInput.Press) => kind.DescribeAbility(),
+            (AbilityKind.Melee, AbilityInput.Slide) => "sliding melee",
+            (AbilityKind.Melee, AbilityInput.Air) => "airborne melee",
+            (AbilityKind.ClassAbility, AbilityInput.Air) => "class ability in the air",
+            (_, AbilityInput.Hold) => $"held {kind.DescribeAbility()}",
+            _ => $"{kind.DescribeAbility()} ({ToInputWord(input)})",
+        };
+
+    /// <summary>
+    /// How the player does an ability's use: "melee" for a press, else "slide + melee", "melee in the air", "air move" (the
+    /// air move key in the air, which spends the class ability's charge: Ascension), "hold grenade".
+    /// </summary>
+    public static string DescribeGesture(this AbilityKind kind, AbilityInput input) =>
+        (kind, input) switch
+        {
+            (_, AbilityInput.Slide) => $"slide + {kind.DescribeAbility()}",
+            (AbilityKind.ClassAbility, AbilityInput.Air) => "air move",
+            (_, AbilityInput.Air) => $"{kind.DescribeAbility()} in the air",
+            (_, AbilityInput.Hold) => $"hold {kind.DescribeAbility()}",
+            _ => kind.DescribeAbility(),
+        };
+
+    /// <summary>
+    /// The input's word in an action token and a rule (<c>melee:slide</c>, <c>class:air</c>, <c>grenade:hold</c>); a press is
+    /// <c>press</c> in a rule (<c>input: press</c>), and an action token writes none (<see cref="ToInputSuffix"/>).
+    /// </summary>
+    public static string ToInputWord(this AbilityInput input) =>
+        input switch
+        {
+            AbilityInput.Slide => "slide",
+            AbilityInput.Air => "air",
+            AbilityInput.Hold => "hold",
+            _ => "press",
+        };
+
     public static string DescribeStatus(this KeywordGlossary glossary, StatusId status) =>
         glossary.Statuses.TryGetValue(status, out var definition) ? definition.Name : status.Value;
 
@@ -249,12 +291,13 @@ public static class DomainPhrasing
             ofType => $"{ofType.Type}",
             keywordOf => glossary.DescribeStatus(keywordOf.Status),
             summonOf => glossary.DescribeSummon(summonOf.Summon),
-            _ => superType.Match(type => $"{type.Value} weapon (your Super's element)", _ => "weapon of your Super's element"));
+            _ => superType.Match(type => $"{type.Value} weapon (your Super's element)", _ => "weapon of your Super's element"),
+            usedAs => usedAs.Kind.DescribeAbilityUse(usedAs.Input));
 
     public static string DescribeOrigin(this KeywordGlossary glossary, DamageOrigin origin, Build build) =>
         origin.Match(
             weapon => DescribeWeapon(build, weapon.Slot, $"{weapon.Type} weapon"),
-            ability => Capitalize(ability.Kind.DescribeAbility()),
+            ability => Capitalize(ability.Kind.DescribeAbilityUse(ability.Input)),
             keyword => glossary.DescribeStatus(keyword.Status),
             summoned => glossary.DescribeSummon(summoned.Summon),
             _ => Finisher);
@@ -267,7 +310,7 @@ public static class DomainPhrasing
     /// <summary>A rule's trigger as a player says it; <paramref name="superType"/>: see <see cref="DescribeDamageSource"/>.</summary>
     public static string DescribeTrigger(this KeywordGlossary glossary, Trigger trigger, Optional<DamageType> superType) =>
         trigger.Match(
-            cast => DescribeCast(cast.Kind, cast.Airborne),
+            cast => DescribeCast(cast.Kind),
             killAny => DescribeKill(glossary, killAny.Via, [], superType),
             killOfTier => $"{DescribeKill(glossary, killOfTier.Via, [], superType)} ({killOfTier.Tier})",
             killDebuffed => DescribeKill(glossary, killDebuffed.Via, killDebuffed.TargetHas, superType),
@@ -278,7 +321,8 @@ public static class DomainPhrasing
             pickUp => $"Pick up {glossary.DescribePickup(pickUp.Pickup)}",
             buffGained => $"Gain {glossary.DescribeStatus(buffGained.Status)}",
             stacksMaxed => $"Max {glossary.DescribeStatus(stacksMaxed.Status)}",
-            _ => Finisher);
+            _ => Finisher,
+            castAs => DescribeCast(castAs.Kind, castAs.Input));
 
     private static string DescribeKill(KeywordGlossary glossary, DamageSource via, ImmutableArray<StatusId> targetHas, Optional<DamageType> superType)
     {
@@ -287,6 +331,7 @@ public static class DomainPhrasing
         {
             DamageSource.AnySource => $"Kill {target}",
             DamageSource.AbilityOf ability => $"{Capitalize(ability.Kind.DescribeAbility())} kill{DescribeOnTarget(target)}",
+            DamageSource.AbilityUsedAs usedAs => $"{Capitalize(usedAs.Kind.DescribeAbilityUse(usedAs.Input))} kill{DescribeOnTarget(target)}",
             DamageSource.OfType type => $"{type.Type} kill{DescribeOnTarget(target)}",
             DamageSource.KeywordOf keyword => $"{glossary.DescribeStatus(keyword.Status)} kill{DescribeOnTarget(target)}",
             _ => $"Kill {target} with {glossary.DescribeDamageSource(via, superType)}",
@@ -328,12 +373,16 @@ public static class DomainPhrasing
             ? "target"
             : string.Join(" + ", targetHas.Select(glossary.DescribeDebuffedAdjective)) + " target";
 
-    /// <summary>The ability-cast trigger as a player says it ("Grenade thrown"; the action itself is "Throw grenade").</summary>
-    private static string DescribeCast(AbilityKind kind, bool airborne) =>
-        (kind, airborne) switch
+    /// <summary>The ability-cast trigger as a player says it ("Grenade thrown", "Melee swung while sliding", "Grenade held").</summary>
+    private static string DescribeCast(AbilityKind kind, AbilityInput input) =>
+        (kind, input) switch
         {
-            (AbilityKind.ClassAbility, true) => "Class ability in the air",
-            _ => DescribeCast(kind),
+            (_, AbilityInput.Press) => DescribeCast(kind),
+            (AbilityKind.ClassAbility, AbilityInput.Air) => "Class ability in the air",
+            (AbilityKind.Melee, AbilityInput.Slide) => "Melee swung while sliding",
+            (AbilityKind.Melee, AbilityInput.Air) => "Melee swung in the air",
+            (AbilityKind.Grenade, AbilityInput.Hold) => "Grenade held",
+            _ => $"{Capitalize(kind.DescribeAbilityUse(input))} used",
         };
 
     private static string DescribeCast(AbilityKind kind) =>
@@ -578,7 +627,7 @@ public static class DomainPhrasing
 
     public static string DescribeEvent(this KeywordGlossary glossary, GameEvent gameEvent, Build build) =>
         gameEvent.Match(
-            cast => DescribeCast(cast.Kind, cast.Airborne),
+            cast => DescribeCast(cast.Kind, cast.Input),
             damaged => $"{glossary.DescribeOrigin(damaged.Origin, build)} hit{DescribeOnTarget(DescribeTargetPhrase(glossary, damaged.TargetHas))}",
             killed => $"{glossary.DescribeOrigin(killed.Origin, build)} kill{DescribeOnTarget(DescribeTargetPhrase(glossary, killed.TargetHas))}",
             struck => $"{glossary.DescribeOrigin(struck.Origin, build)} {(struck.Hit == HitOutcome.Kill ? "killed" : "hit")} {DescribeEnemies(struck.Targets)}",
@@ -593,8 +642,12 @@ public static class DomainPhrasing
     /// </summary>
     public static string DescribeAction(this ValidatedBuild build, PlayerAction action) =>
         action.Match(
-            cast => $"{Capitalize(cast.Kind.ToAbilityKind().DescribeAbility())} ({DescribeHit(cast.Hit, cast.Targets)})",
-            use => use.Airborne ? "Class ability (in the air)" : "Class ability",
+            cast => $"{Capitalize(cast.Kind.ToAbilityKind().DescribeAbilityUse(cast.Input))} ({DescribeHit(cast.Hit, cast.Targets)})",
+            use => use.Input switch
+            {
+                AbilityInput.Air => "Class ability (in the air)",
+                _ => "Class ability",
+            },
             fire => $"{DescribeWeapon(build.Build, fire.Slot, fire.Slot.ToString())} ({DescribeHit(fire.Hit, fire.Targets)})",
             collect => $"Pick up {build.Catalog.Glossary.DescribePickup(collect.Pickup)}",
             declare => build.DescribeDeclaration(declare.Declaration),
@@ -623,8 +676,8 @@ public static class DomainPhrasing
     /// </summary>
     public static string ToActionToken(this PlayerAction action) =>
         action.Match(
-            cast => cast.Kind.ToString().ToLowerInvariant() + ToHitSuffix(cast.Hit, cast.Targets),
-            use => use.Airborne ? "class:air" : "class",
+            cast => cast.Kind.ToString().ToLowerInvariant() + ToInputSuffix(cast.Input) + ToHitSuffix(cast.Hit, cast.Targets),
+            use => "class" + ToInputSuffix(use.Input),
             fire => fire.Slot.ToString().ToLowerInvariant() + ToHitSuffix(fire.Hit, fire.Targets),
             collect => $"pickup:{collect.Pickup}",
             declare => declare.Declaration.Match(
@@ -632,6 +685,10 @@ public static class DomainPhrasing
                 end => $"end:{end.Status}",
                 _ => "pack:new"),
             _ => "finisher");
+
+    /// <summary>":slide", ":air", ":hold" for a secondary; nothing for a press.</summary>
+    private static string ToInputSuffix(AbilityInput input) =>
+        input == AbilityInput.Press ? "" : ":" + input.ToInputWord();
 
     private static string ToHitSuffix(HitOutcome hit, TargetCount targets) =>
         (hit, targets.Value) switch

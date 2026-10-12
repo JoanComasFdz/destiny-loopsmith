@@ -48,7 +48,7 @@ Conventions:
 | 1 | Class ability | `AbilityCast(ClassAbility)` | gamblers-dodge, slice, reaper, bomber | "5s" on the sever |
 | 2 | Kill with strand weapon | `Damaged(Weapon strand)` then `Killed(Weapon strand)` target has [sever] | slice, attrition-orbs, strand-siphon, reaper, to-shreds; horde-shuttle only on an unraveled pack (2b) | Unravel and Threadling need an already severed or unraveled pack |
 | 3 | Arc grenade | `Damaged(Ability grenade arc)` | spark-of-shock, shinobus-vow | — |
-| 4 | Slide + melee | `Damaged(Ability melee arc)` | tempest-strike, impact-induction | "slide" |
+| 4 | Slide + melee | `Damaged(Ability melee arc slide)` | tempest-strike, impact-induction | — |
 | 5 | Kill jolted target | `Killed(…)` target has [jolt] (+[sever]) | flow-state, tempest-strike (gives way), harmonic-siphon, dielectric, photonic-flare | Tempest Strike → Amplified (and its Bolt Charge gives way to Dielectric's); Dielectric's orb; Photonic Flare needs an Arc kill of a severed target, not a jolted one |
 | 6 | Amplified | `While has amplified` (guard) | spark-of-frequency (passive), luminopotent-2pc (passive) | 4pc is unconditional; no vent |
 | 7 | Orb of power | `PickedUp(orb-of-power)` | orb-of-power, unraveling-orbs | Grenade Kickstart doesn't fire on pickup; +1 Armor Charge, not 2x |
@@ -135,7 +135,8 @@ This is the title and has no trigger.
 
 ## Line 4: "Slide + melee -> jolt [tempest strike] + reduced grenade cooldown [impact induction]"
 
-- **Event:** `Damaged(Ability melee arc)`. Action: `CastAbility(Melee, damage)` (`melee`).
+- **Event:** `Damaged(Ability melee arc slide)`. Action: `CastAbility(Melee, damage, slide)` (`melee:slide`, a
+  secondary ability use, ADRs D9: the HUD shows it below the melee square, "slide").
 - **Scenario 4:** fresh start.
   - On `Damaged` (depth 0):
     - `tempest-strike` → Jolt
@@ -143,8 +144,10 @@ This is the title and has no trigger.
   - Fired: **tempest-strike, impact-induction**.
   - End state: no buffs; target `[jolt]`.
 - **Reproduced differently:**
-  - **"Slide":** not modelled; any melee hit counts.
-  - **Combination Blow:** fires only on a melee kill (+1 Combination Blow (20s), 100% class ability energy, a heal `?`; row 28). With `CastAbility(Melee, kill)` it also fires, plus the line-5 cascade, because the target is jolted by the time of the kill: `flow-state`, `dielectric`, `luminopotent-4pc`, `tempest-strike` (gives way), then the Ionic Trace and Bolt Charge cascade.
+  - **"Slide":** modelled: only the sliding melee (`melee:slide`) is Tempest Strike's uppercut and jolts
+    (`via: melee:slide`, Compendium Arc#54); a plain `melee` hit fires Impact Induction alone. A sliding melee is
+    still a melee, so every melee rule fires for it too (Impact Induction, Combination Blow).
+  - **Combination Blow:** fires only on a melee kill (+1 Combination Blow (20s), 100% class ability energy, a heal `?`; row 28). With `CastAbility(Melee, kill, slide)` it also fires, plus the line-5 cascade, because the target is jolted by the time of the kill: `flow-state`, `dielectric`, `luminopotent-4pc`, `tempest-strike` (gives way), then the Ionic Trace and Bolt Charge cascade.
 
 ## Line 5: "Kill jolted target -> amplified [flow state, tempest strike] + orb of power [harmonic siphon] + orb of power [dielectric] + blind if severed [photonic flare]"
 
@@ -303,7 +306,7 @@ Its steps, with the note lines they play:
 2. `grenade:kill`: lines 3 and 5b (the pack jolted, Bolt Charge, Amplified, an Ionic Trace).
 3. `kinetic:kill`: line 2a on a jolted pack, so the kill is also line 5's jolted kill.
 4. `pickup:orb-of-power`: line 7a (Armor Charge, Unraveling Rounds).
-5. `melee:kill`: line 4, with Combination Blow on the kill.
+5. `melee:slide:kill`: line 4, with Combination Blow on the kill.
 6. `max:bolt-charge`: line 10a (Shinobu's Vow; Flashover's Amplified is already active, from #2).
 7. `grenade:kill`: lines 7b and 10b (New Tricks and Armor Charge consumed; the hit discharges Bolt Charge).
 8. `energy:kill`: line 8a (Spark of Discharge, Harmonic Siphon).
@@ -313,7 +316,7 @@ spends New Tricks and its hit discharges Bolt Charge. Each starts with `pack:new
 next group of enemies, so its first hit isn't credited with the last group's debuffs (ADRs D7):
 
 - **Infinite skip grenades** (the creator's loop): `pack:new`, `class`, `grenade:kill`, `kinetic:kill`, `energy:kill`, `pickup:orb-of-power`, `max:bolt-charge`, `grenade:kill`.
-- **Melee first**: `pack:new`, `melee:kill`, `max:bolt-charge`, `grenade:kill`, `energy:kill`, `pickup:orb-of-power`, `class`.
+- **Melee first**: `pack:new`, `melee:slide:kill`, `max:bolt-charge`, `grenade:kill`, `energy:kill`, `pickup:orb-of-power`, `class`.
 - **Helicopter skip grenades** ([the Ascension variant](../skip-grenade-hunter-ascension/discrepancies.md)): Infinite skip grenades with `class:air` at #2.
 
 ## What the build does that the note doesn't mention

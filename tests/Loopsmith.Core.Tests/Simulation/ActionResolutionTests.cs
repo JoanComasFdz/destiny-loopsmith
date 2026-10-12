@@ -26,10 +26,10 @@ public class ActionResolutionTests
 
     private static readonly PlayerAction Dodge = new PlayerAction.UseClassAbility();
 
-    private static readonly PlayerAction AirMove = new PlayerAction.UseClassAbility(Airborne: true);
+    private static readonly PlayerAction AirMove = new PlayerAction.UseClassAbility(AbilityInput.Air);
 
     private static readonly BuildElement AirOnly = Element("air-only", ElementKind.Fragment,
-        [On(new Trigger.AbilityCast(AbilityKind.ClassAbility, Airborne: true), Buff("amplified"))]);
+        [On(new Trigger.AbilityCastAs(AbilityKind.ClassAbility, AbilityInput.Air), Buff("amplified"))]);
 
     private static readonly BuildElement AnyUse = Element("any-use", ElementKind.Fragment,
         [On(new Trigger.AbilityCast(AbilityKind.ClassAbility), Buff("bolt-charge"))]);
@@ -55,6 +55,64 @@ public class ActionResolutionTests
         Assert.Contains(AirMove, ActionResolution.ListAvailableActions(ValidateBuild([AirOnly]), initial));
         Assert.DoesNotContain(AirMove, ActionResolution.ListAvailableActions(ValidateBuild([AnyUse]), initial));
     }
+
+    private static readonly BuildElement SlideOnly = Element("slide-only", ElementKind.Fragment,
+        [On(new Trigger.Damage(new DamageSource.AbilityUsedAs(AbilityKind.Melee, AbilityInput.Slide)), Debuff("jolt"))]);
+
+    private static readonly BuildElement AnyMelee = Element("any-melee", ElementKind.Fragment,
+        [On(new Trigger.Damage(new DamageSource.AbilityOf(AbilityKind.Melee)), Energy(AbilityKind.Grenade, new GameValue.Known(0.12m)))]);
+
+    private static readonly BuildElement HeldGrenade = Element("held-grenade", ElementKind.Fragment,
+        [On(new Trigger.AbilityCastAs(AbilityKind.Grenade, AbilityInput.Hold), Buff("amplified"))]);
+
+    private static readonly PlayerAction SlideMelee = new PlayerAction.CastAbility(OffensiveAbility.Melee, HitOutcome.Damage, TargetCount.One, AbilityInput.Slide);
+
+    private static readonly PlayerAction PlainMelee = new PlayerAction.CastAbility(OffensiveAbility.Melee, HitOutcome.Damage, TargetCount.One);
+
+    [Fact]
+    public void A_sliding_melee_is_a_melee_too_but_a_plain_melee_isnt_the_sliding_one()
+    {
+        var build = ValidateBuild([SlideOnly, AnyMelee]);
+
+        var slide = ResolveOnce(build, SlideMelee);
+        var plain = ResolveOnce(build, PlainMelee);
+
+        Assert.Equal(["any-melee", "slide-only"], slide.Fired.Where(f => f.Source.Value != "jolt").Select(f => f.Source.Value).Distinct().Order());
+        Assert.Equal(["any-melee"], plain.Fired.Select(f => f.Source.Value).Distinct());
+        Assert.Contains("Sliding melee hit → Jolt target (4s) [Slide Only] + +12% grenade energy [Any Melee]", DescribeTrace(build, slide));
+    }
+
+    [Fact]
+    public void A_secondary_is_offered_only_when_an_equipped_rule_names_it_after_its_ability()
+    {
+        var initial = ActionResolution.CreateInitialState();
+        var tokens = (ImmutableArray<BuildElement> elements) =>
+            ActionResolution.ListAvailableActions(ValidateBuild(elements), initial).Select(action => action.ToActionToken()).ToImmutableArray();
+
+        Assert.Equal(["melee", "melee:kill", "melee:slide", "melee:slide:kill"], tokens([SlideOnly]).Where(token => token.StartsWith("melee", StringComparison.Ordinal)).Order());
+        Assert.DoesNotContain(tokens([AnyMelee]), token => token.StartsWith("melee:slide", StringComparison.Ordinal));   // a plain melee rule: no secondary
+        Assert.Contains("grenade:hold:kill", tokens([HeldGrenade]));
+        Assert.Equal(["class", "class:air"], tokens([AirOnly]).Where(token => token.StartsWith("class", StringComparison.Ordinal)));
+    }
+
+    [Theory]
+    [InlineData("melee:slide", "melee:slide")]
+    [InlineData("melee:slide:kill:3", "melee:slide:kill:3")]
+    [InlineData("MELEE:AIR:hit", "melee:air")]
+    [InlineData("grenade:hold:kill", "grenade:hold:kill")]
+    [InlineData("class:air", "class:air")]
+    public void A_secondary_abilitys_token_reads_and_writes_back(string token, string written) =>
+        Assert.Equal(written, Assert.IsType<Result<PlayerAction, string>.Ok>(ActionTokenParsing.ParseActionToken(token)).Value.ToActionToken());
+
+    [Theory]
+    [InlineData("super:hold")]
+    [InlineData("grenade:slide")]
+    [InlineData("melee:hold")]
+    [InlineData("class:slide")]
+    [InlineData("class:hold")]   // Unbreakable is a held grenade; no class ability is held (Compendium Void, Prismatic)
+    [InlineData("melee:slide:slide")]
+    public void An_ability_takes_only_its_own_secondary_inputs_in_a_token(string token) =>
+        Assert.IsType<Result<PlayerAction, string>.Error>(ActionTokenParsing.ParseActionToken(token));
 
     /// <summary>Reacts to every Bolt Charge grant, so the trace shows each <see cref="GameEvent.BuffGained"/>.</summary>
     private static readonly BuildElement GainWatcher = Element("gain-watcher", ElementKind.Fragment,

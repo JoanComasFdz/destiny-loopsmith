@@ -91,6 +91,7 @@ public static class KeywordInteracting
             pickUp => keyword is KeywordRef.Pickup pickup && pickup.Id == pickUp.Pickup,
             gained => IsStatus(keyword, gained.Status),
             maxed => IsStatus(keyword, maxed.Status),
+            _ => false,
             _ => false);
 
     /// <summary>A guard the keyword meets by being there (the kernel's: a "without it" guard doesn't need it).</summary>
@@ -108,6 +109,7 @@ public static class KeywordInteracting
             _ => false,
             keywordOf => IsStatus(keyword, keywordOf.Status),
             summonOf => keyword is KeywordRef.Summon summon && summon.Id == summonOf.Summon,
+            _ => false,
             _ => false);
 
     private static bool IsUsingUp(KeywordRef keyword, Outcome outcome) =>

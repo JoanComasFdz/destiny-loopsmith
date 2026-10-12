@@ -28,8 +28,8 @@ public sealed record GameState(
 [Union]
 public partial record PlayerAction
 {
-    partial record CastAbility(OffensiveAbility Kind, HitOutcome Hit, TargetCount Targets);
-    partial record UseClassAbility(bool Airborne = false);   // airborne: an air move that spends the charge (Ascension)
+    partial record CastAbility(OffensiveAbility Kind, HitOutcome Hit, TargetCount Targets, AbilityInput Input = AbilityInput.Press);   // a secondary: melee:slide, grenade:hold
+    partial record UseClassAbility(AbilityInput Input = AbilityInput.Press);   // a secondary: the air move that spends the charge (Ascension)
     partial record FireWeapon(WeaponSlot Slot, HitOutcome Hit, TargetCount Targets);
     partial record CollectPickups(PickupId Pickup);
     partial record Declare(StateDeclaration Declaration);   // a state only play decides (ADRs D3)
@@ -52,7 +52,7 @@ public partial record StateDeclaration
 [Union]
 public partial record GameEvent
 {
-    partial record AbilityCast(AbilityKind Kind, bool Airborne = false);
+    partial record AbilityCast(AbilityKind Kind, AbilityInput Input = AbilityInput.Press);
     partial record Damaged(DamageOrigin Origin, EnemyTier Tier, ImmutableArray<StatusId> TargetHas);
     partial record Killed(DamageOrigin Origin, EnemyTier Tier, ImmutableArray<StatusId> TargetHas);
     partial record TargetsHit(DamageOrigin Origin, TargetCount Targets, HitOutcome Hit);   // once per action, after its per-enemy events

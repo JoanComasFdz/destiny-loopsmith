@@ -14,6 +14,10 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   and hand the zip to a session ([tools/compendium/README.md](../tools/compendium/README.md)); a cloud
   session can run `sheet_dump.py` itself once `docs.google.com` is in the environment's allowed domains.
   The raw snapshot stays private (`snapshots/` is gitignored).
+- **Secondary abilities of other subclasses** — the engine takes them (D9), the rules author only the Arc
+  Hunter's (Tempest Strike's `melee:slide`, Ascension's `class:air`). Open, from the Compendium: the grenade
+  held (Chaos Accelerant, Bleak Watcher, Mindspun Invocation, Unbreakable), the melee while sliding
+  (Lightning Surge, Consecration, Howl of the Storm, Flechette Storm) and in the air (Ballistic Slam).
 - **Clarity ingestion slice** — Clarity is reachable (git clone): `descriptions/clarity.json` maps a
   hash to its name, type and descriptions. Its numbers are in the rules by hand (v2.0625).
 - **Bungie manifest** (FR-13) — `rules/manifest.yaml` is an excerpt for the hashes Loopsmith names,
@@ -35,8 +39,8 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
 ## Rule format gaps (what the Skip Grenade build couldn't express)
 
 - **Triggers:** champion stun (Defibrillating Blast's "stun → max Bolt Charge", with an outcome that
-  puts a buff at max); a slide qualifier (Tempest Strike is modelled as any melee); airborne grenade and
-  melee actions (Ballistic Slam) — only the class ability has an airborne use (`class:air`, D9);
+  puts a buff at max); an air move that spends another ability's energy (Weavewalk's 20% melee energy;
+  secondary uses are the abilities' own — `melee:slide`, `melee:air`, `class:air`, `grenade:hold`, D9);
   blocking / reflecting attacks (Arc Staff's guard grants Bolt Charge per reflected attack).
 - **Damage sources:** a specific ability or an ability's element (Skip Grenade vs any grenade, "Arc
   grenades"; Momentum Transfer doesn't work with Grapple), "this weapon" for weapon perks. ("A weapon of your

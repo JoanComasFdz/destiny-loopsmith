@@ -16,7 +16,7 @@ public static class TriggerMatching
     /// </summary>
     public static bool IsTriggeredBy(this Trigger trigger, GameEvent gameEvent, Optional<DamageType> superType) =>
         trigger.Match(
-            abilityCast => gameEvent is GameEvent.AbilityCast cast && cast.Kind == abilityCast.Kind && (cast.Airborne || !abilityCast.Airborne),
+            abilityCast => gameEvent is GameEvent.AbilityCast cast && cast.Kind == abilityCast.Kind,
             killAny => gameEvent is GameEvent.Killed killed && killAny.Via.IsMatchedBy(killed.Origin, superType),
             killOfTier => gameEvent is GameEvent.Killed killed
                 && killOfTier.Via.IsMatchedBy(killed.Origin, superType)
@@ -37,11 +37,13 @@ public static class TriggerMatching
             pickUp => gameEvent is GameEvent.PickedUp pickedUp && pickedUp.Pickup == pickUp.Pickup,
             buffGained => gameEvent is GameEvent.BuffGained gained && gained.Status == buffGained.Status,
             stacksMaxed => gameEvent is GameEvent.StacksMaxed maxed && maxed.Status == stacksMaxed.Status,
-            _ => gameEvent is GameEvent.Finisher);
+            _ => gameEvent is GameEvent.Finisher,
+            castAs => gameEvent is GameEvent.AbilityCast cast && cast.Kind == castAs.Kind && cast.Input == castAs.Input);
 
     /// <summary>
     /// Whether the pattern matches the origin. A finisher has no damage type and is no weapon or ability: only "any
-    /// source" matches it. A weapon of your Super's element needs the Super's type (<paramref name="superType"/>).
+    /// source" matches it. A weapon of your Super's element needs the Super's type (<paramref name="superType"/>). An
+    /// ability matches however it was used (Tempest Strike's uppercut is melee damage), unless the pattern names the use.
     /// </summary>
     public static bool IsMatchedBy(this DamageSource source, DamageOrigin origin, Optional<DamageType> superType) =>
         source.Match(
@@ -54,7 +56,8 @@ public static class TriggerMatching
             ofType => FindDamageType(origin).Match(type => type.Value == ofType.Type, _ => false),
             keywordOf => origin is DamageOrigin.Keyword keyword && keyword.Status == keywordOf.Status,
             summonOf => origin is DamageOrigin.Summoned summoned && summoned.Summon == summonOf.Summon,
-            _ => origin is DamageOrigin.Weapon weapon && superType.Match(type => type.Value == weapon.Type, _ => false));
+            _ => origin is DamageOrigin.Weapon weapon && superType.Match(type => type.Value == weapon.Type, _ => false),
+            usedAs => origin is DamageOrigin.Ability ability && ability.Kind == usedAs.Kind && ability.Input == usedAs.Input);
 
     /// <summary>The statuses a trigger needs on the target (empty when it doesn't care).</summary>
     public static ImmutableArray<StatusId> ListRequiredTargetStatuses(this Trigger trigger) =>
@@ -70,7 +73,36 @@ public static class TriggerMatching
             pickUp: _ => ImmutableArray<StatusId>.Empty,
             buffGained: _ => ImmutableArray<StatusId>.Empty,
             stacksMaxed: _ => ImmutableArray<StatusId>.Empty,
-            finisher: _ => ImmutableArray<StatusId>.Empty);
+            finisher: _ => ImmutableArray<StatusId>.Empty,
+            abilityCastAs: _ => ImmutableArray<StatusId>.Empty);
+
+    /// <summary>The damage source a hit or kill trigger names (its <c>via</c>); none for the other triggers.</summary>
+    public static Optional<DamageSource> FindVia(this Trigger trigger) =>
+        trigger.Match(
+            abilityCast: _ => Optional.None<DamageSource>(),
+            killAny: killAny => Optional.Some(killAny.Via),
+            killOfTier: killOfTier => Optional.Some(killOfTier.Via),
+            killDebuffed: killDebuffed => Optional.Some(killDebuffed.Via),
+            killMultiple: killMultiple => Optional.Some(killMultiple.Via),
+            damage: damage => Optional.Some(damage.Via),
+            damageDebuffed: damageDebuffed => Optional.Some(damageDebuffed.Via),
+            damageMultiple: damageMultiple => Optional.Some(damageMultiple.Via),
+            pickUp: _ => Optional.None<DamageSource>(),
+            buffGained: _ => Optional.None<DamageSource>(),
+            stacksMaxed: _ => Optional.None<DamageSource>(),
+            finisher: _ => Optional.None<DamageSource>(),
+            abilityCastAs: _ => Optional.None<DamageSource>());
+
+    /// <summary>
+    /// The ability use a trigger names, when it names one: a cast of that use (<c>abilityCast: { ability: classAbility,
+    /// input: air }</c>) or a hit or kill by it (<c>via: melee:slide</c>).
+    /// </summary>
+    public static Optional<(AbilityKind Kind, AbilityInput Input)> FindNamedInput(this Trigger trigger) =>
+        trigger is Trigger.AbilityCastAs cast
+            ? Optional.Some((cast.Kind, cast.Input))
+            : trigger.FindVia().Bind(via => via is DamageSource.AbilityUsedAs usedAs
+                ? Optional.Some((usedAs.Kind, usedAs.Input))
+                : Optional.None<(AbilityKind, AbilityInput)>());
 
     /// <summary>The damage type of an origin; none for a finisher, which has none.</summary>
     public static Optional<DamageType> FindDamageType(this DamageOrigin origin) =>

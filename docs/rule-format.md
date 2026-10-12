@@ -307,7 +307,7 @@ doesn't show as a stacking status (Elemental Charge's progress per Ionic Trace; 
 | YAML | Domain `Trigger` |
 |---|---|
 | `{ abilityCast: grenade }` (`grenade\|melee\|classAbility\|super`) | `AbilityCast(kind)` |
-| `{ abilityCast: { ability: classAbility, airborne: true } }` — only the class ability used in the air | `AbilityCast(classAbility, Airborne: true)` |
+| `{ abilityCast: { ability: classAbility, input: air } }` — only that use of the ability (a secondary; `input` is `press\|slide\|air\|hold`) | `AbilityCastAs(classAbility, air)` |
 | `{ kill: { via: <source> } }` | `KillAny(via)` |
 | `{ kill: { via: <source>, tier: champion } }` (`minor\|major\|boss\|champion`) | `KillOfTier(via, tier)` |
 | `{ kill: { via: <source>, targetHas: [jolt, sever] } }` | `KillDebuffed(via, statuses)` |
@@ -320,12 +320,18 @@ doesn't show as a stacking status (Elemental Charge's progress per Ionic Trace; 
 | `{ stacksMaxed: bolt-charge }` — the player declares the buff at max | `StacksMaxed(status)` |
 | `{ finisher: {} }` — the player does a finisher on an enemy of the pack (it kills it) | `Finisher()` |
 
-An **airborne** class ability use is an air move that spends the class ability charge (Ascension's,
-played as `class:air`, [loop-format.md](loop-format.md#action-tokens)). It is still a class ability
-cast, so the plain `abilityCast: classAbility` rules fire on it too (the Compendium, Arc#48: the air
-move sets off the equipped class ability's effects); the airborne trigger never fires on a ground use
-(ADRs D9). The map form without `airborne` (or with `airborne: false`) is the plain trigger.
-`airborne: true` on another ability is an error (`abilityCast: only a classAbility can be airborne (there is no airborne grenade action)`).
+A **secondary ability use** is the ability used another way, which an aspect makes do something else
+(ADRs D9): the melee while sliding (`slide`: Tempest Strike's uppercut, played as `melee:slide`) or in the
+air (`air`: Ballistic Slam), the class ability's air move (`air`: Ascension — the air move key while
+airborne spends the class ability charge, played as `class:air`), the grenade held (`hold`: Chaos
+Accelerant, Bleak Watcher, Mindspun Invocation, Unbreakable). A Super has none. It is still that
+ability, so every plain rule on the ability fires on it too (the Compendium, Arc#48: the air move sets
+off the equipped class ability's effects; Arc#54: Tempest Strike's uppercut triggers Combination Blow);
+a trigger with an `input`, or a damage source `<ability>:<input>` (`via: melee:slide`), fires on that use
+only. `input: press` (or `via: melee:press`) is the plain press only. The map form without `input` is
+the plain trigger. An input the ability doesn't take is an error
+(`abilityCast: a grenade isn't used as 'slide' (it takes press, hold)`); the old `airborne` key is an
+unknown key (write `input: air`). [loop-format.md](loop-format.md#action-tokens) has the tokens.
 
 `via` defaults to `any`. `targetHas` lists one or more debuffs, and the target must have all of them.
 `tier` and `targetHas` together is an error (`kill cannot combine 'tier' and 'targetHas'`), and so is
@@ -364,7 +370,8 @@ rules "Max Bolt Charge". A `stacksMaxed` (or `atMax`) on a status without `maxSt
 | `weapon:harmonic` | `WeaponOfSuperType` — a weapon of your Super's element (the Harmonic mods): of the build's Super's `affinity` in the catalog; with the Super `?` (or one of no element) it matches nothing |
 | `slot:power` | `WeaponInSlot(Power)` — the build's weapon in that slot (`kinetic\|energy\|power`): an exotic weapon's "this weapon", since an exotic always sits in its own slot |
 | `ability` | `AnyAbility` |
-| `grenade` / `melee` / `classAbility` / `super` | `AbilityOf(kind)` |
+| `grenade` / `melee` / `classAbility` / `super` | `AbilityOf(kind)` — every use of it, its secondaries too |
+| `melee:slide` / `melee:air` / `classAbility:air` / `grenade:hold` (`<ability>:<input>`) | `AbilityUsedAs(kind, input)` — that use only: Tempest Strike's uppercut is `melee:slide` |
 | `type:arc` | `OfType(Arc)` — any weapon, ability, keyword or summon of that type |
 | `keyword:bolt-charge` | `KeywordOf(status)` — keyword damage (lightning strike, jolt chain…); any glossary status |
 | `summon:threadling` | `SummonOf(summon)` |
@@ -613,9 +620,12 @@ matches and cascades what those rules set off. The state a step plays against is
 buffs on you (and which of them the player declared at max), the debuffs on the pack, the pickups on
 the ground.
 
-* **Player actions → events.** `UseClassAbility` emits only `AbilityCast(classAbility)` — airborne
-  for `class:air` (an air move that spends the charge), which every `abilityCast: classAbility` rule
-  matches too; only the `airborne: true` rules tell the two apart.
+* **Player actions → events.** `UseClassAbility` emits only `AbilityCast(classAbility)` — with the
+  input `air` for `class:air` (the air move that spends the charge), which every `abilityCast:
+  classAbility` rule matches too; only the rules that name the input tell the two apart. A
+  secondary cast (`melee:slide:kill`) emits the same events as its press, each carrying the input:
+  `AbilityCast(melee, slide)`, then hits and kills whose origin is `Ability(melee, type, slide)` —
+  `via: melee` matches them, `via: melee:slide` matches only them.
   `CastAbility(k, hit, N)` (grenade, melee, super) emits `AbilityCast(k)`, then N
   `Damaged(Ability(k, subclass damage type))` — one per enemy — then N `Killed(…)` if `hit = kill`,
   then one `TargetsHit(origin, N, hit)` for the `atLeast` triggers. `FireWeapon(slot, hit, N)` emits

@@ -1,8 +1,10 @@
 @* The next triggers the build offers (LoopDesigning.ListTriggerOptions), laid out like Destiny's HUD
-   (TriggerHudShaping): the Super's diamond, the grenade, melee and class ability squares in the subclass's colour (and
-   the finisher's: the equipped finisher's icon after a Bungie login, else the class's own), the weapons in their damage type's colour; above them what is on the ground and the states to declare. Tapping the Super,
+   (TriggerHudShaping): the Super's diamond, the grenade, melee and class ability squares in the subclass's colour, each
+   with the secondary uses the build's rules name below it (Tempest Strike's sliding melee, Ascension's air move: a
+   different trigger from the press) (and the finisher's: the equipped finisher's icon after a Bungie login, else the
+   class's own), the weapons in their damage type's colour; above them what is on the ground and the states to declare. Tapping the Super,
    an ability or a weapon picks it: its actions show below the HUD — hit or kill, and how many enemies that one action
-   catches — and stay there for the next step. One that only has one action (the class ability without an air move, the
+   catches — and stay there for the next step. One that only has one action (the class ability, its air move, the
    finisher, a pickup, a declared state) acts at once. Every trigger is pickable. *@
 @{
     var hud = TriggerHudShaping.ShapeHud(Options, counts, Build, Profile);
@@ -45,7 +47,22 @@
                 }
                 @foreach (var ability in hud.Abilities)
                 {
-                    @RenderSlot(ability, "trig-ability")
+                    @if (ability.Secondaries.IsEmpty)
+                    {
+                        @RenderSlot(ability.Slot, "trig-ability")
+                    }
+                    else
+                    {
+                        <div class="trig-ability-col">
+                            @RenderSlot(ability.Slot, "trig-ability")
+                            <div class="trig-secondaries" aria-label="@($"{ability.Slot.Kind}: secondary uses")">
+                                @foreach (var secondary in ability.Secondaries)
+                                {
+                                    @RenderSecondary(secondary)
+                                }
+                            </div>
+                        </div>
+                    }
                 }
                 @if (hud.Finisher is Optional<HudSlot>.Some finisher)
                 {
@@ -173,6 +190,49 @@
         }
     };
 
+    /// <summary>
+    /// A secondary use below its ability's square: the icon of the element that names it and its input ("slide", "air",
+    /// "hold"); a tap picks it (its hit and kill show below the HUD), or acts at once when it has one action (the air move).
+    /// </summary>
+    private RenderFragment RenderSecondary(HudSecondary secondary) => __builder =>
+    {
+        var slot = secondary.Slot;
+        var isPicked = pickedKey == Optional.Some(slot.Choice.Key);
+        var affinity = slot.Affinity.ToString().ToLowerInvariant();
+        var title = $"{secondary.Gesture}: {secondary.NamedBy}";
+        @if (slot.AtOnce is Optional<TriggerButton>.Some once)
+        {
+            <button type="button" class="trig-secondary trigger aff-@affinity" data-hud-slot="@slot.Choice.Key" data-token="@once.Value.Token"
+                    aria-label="@($"{secondary.Gesture}: {slot.Name}")" title="@($"{title}  ({once.Value.Token})")"
+                    @onclick="() => PickTrigger(once.Value.Action)">
+                @RenderSecondaryFace(secondary)
+            </button>
+        }
+        else
+        {
+            <button type="button" class="trig-secondary aff-@affinity @(isPicked ? "picked" : "")" data-hud-slot="@slot.Choice.Key"
+                    aria-pressed="@(isPicked ? "true" : "false")" aria-label="@($"{secondary.Gesture}: {slot.Name}")" title="@title"
+                    @onclick="() => Pick(slot)">
+                @RenderSecondaryFace(secondary)
+            </button>
+        }
+    };
+
+    private static RenderFragment RenderSecondaryFace(HudSecondary secondary) => __builder =>
+    {
+        <span class="trig-secondary-icon" aria-hidden="true">
+            @if (secondary.Slot.Icon is Optional<string>.Some icon)
+            {
+                <img src="@icon.Value" alt="" loading="lazy" />
+            }
+        </span>
+        <span class="trig-secondary-caption">@secondary.Caption</span>
+        @if (secondary.Slot.IsNew)
+        {
+            <span class="trig-new" title="Unlocked by the last step"></span>
+        }
+    };
+
     /// <summary>A slot's icon (else its caption — a finisher has no icon —, else "?"), and a dot when one of its actions is new.</summary>
     private RenderFragment RenderIcon(HudSlot slot, Optional<string> caption) => __builder =>
     {
@@ -241,7 +301,8 @@
     /// <summary>The slot whose actions show below the HUD, while the HUD still offers it.</summary>
     private Optional<HudSlot> FindPicked(TriggerHud hud) =>
         pickedKey.Bind(key => hud.Super.Match(found => new[] { found.Value }, _ => [])
-            .Concat(hud.Abilities)
+            .Concat(hud.Abilities.Select(ability => ability.Slot))
+            .Concat(hud.Abilities.SelectMany(ability => ability.Secondaries.Select(secondary => secondary.Slot)))
             .Concat(hud.Weapons.Select(weapon => weapon.Slot))
             .Where(slot => slot.Choice.Key == key && !slot.AtOnce.IsSome())
             .Select(Optional.Some)

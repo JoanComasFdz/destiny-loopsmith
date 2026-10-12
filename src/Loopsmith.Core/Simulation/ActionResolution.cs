@@ -36,18 +36,15 @@ public static class ActionResolution
     }
 
     /// <summary>
-    /// Every ability (always, ADRs D5), a finisher (always, <see cref="ListFinisherActions"/>), every
+    /// Every ability (always, ADRs D5) and each of its secondary uses a rule reacts to (<see cref="ListSecondaryInputs"/>:
+    /// Tempest Strike's sliding melee, Ascension's air move), a finisher (always, <see cref="ListFinisherActions"/>), every
     /// equipped weapon, the pickups on the ground and the states the player can declare now (<see cref="ListDeclarations"/>).
     /// Abilities and weapons are listed against one enemy; a host may set any <see cref="TargetCount"/>.
     /// </summary>
     public static ImmutableArray<PlayerAction> ListAvailableActions(ValidatedBuild build, GameState state)
     {
         var offensive = new[] { OffensiveAbility.Grenade, OffensiveAbility.Melee, OffensiveAbility.Super }
-            .SelectMany(kind => new PlayerAction[]
-            {
-                new PlayerAction.CastAbility(kind, HitOutcome.Kill, TargetCount.One),
-                new PlayerAction.CastAbility(kind, HitOutcome.Damage, TargetCount.One),
-            });
+            .SelectMany(kind => ListCastActions(build, kind));
         var classAbility = ListClassAbilityActions(build);
         var finisher = ListFinisherActions();
         var weapons = build.Build.Weapons.SelectMany(weapon => new PlayerAction[]
@@ -96,7 +93,7 @@ public static class ActionResolution
     private static Opening OpenAction(ValidatedBuild build, GameState state, PlayerAction action) =>
         action.Match(
             cast => CastAbility(build, state, cast),
-            use => UseClassAbility(state, use.Airborne),
+            use => UseClassAbility(state, use.Input),
             fire => FireWeapon(build, state, fire),
             collect => CollectPickups(state, collect),
             declare => Declare(build, state, declare.Declaration),
@@ -116,20 +113,56 @@ public static class ActionResolution
     private static Opening CastAbility(ValidatedBuild build, GameState state, PlayerAction.CastAbility cast)
     {
         var kind = cast.Kind.ToAbilityKind();
-        var origin = new DamageOrigin.Ability(kind, build.Build.Subclass.ToDamageType());
+        var origin = new DamageOrigin.Ability(kind, build.Build.Subclass.ToDamageType(), cast.Input);
         var strike = ListStrikeEvents(origin, cast.Hit, cast.Targets);
-        return new Opening(state, [new PendingEvent.Ready(new GameEvent.AbilityCast(kind)), .. strike], []);
+        return new Opening(state, [new PendingEvent.Ready(new GameEvent.AbilityCast(kind, cast.Input)), .. strike], []);
     }
 
-    /// <summary>On the ground or in the air, the class ability is cast: every class ability rule fires either way.</summary>
-    private static Opening UseClassAbility(GameState state, bool airborne) =>
-        new(state, [new PendingEvent.Ready(new GameEvent.AbilityCast(AbilityKind.ClassAbility, airborne))], []);
+    /// <summary>On the ground or with its air move, the class ability is cast: every class ability rule fires either way.</summary>
+    private static Opening UseClassAbility(GameState state, AbilityInput input) =>
+        new(state, [new PendingEvent.Ready(new GameEvent.AbilityCast(AbilityKind.ClassAbility, input))], []);
 
-    /// <summary>The class ability, plus its airborne use when an equipped rule reacts only to that (Ascension).</summary>
+    /// <summary>The class ability, plus each secondary use an equipped rule reacts to (Ascension's air move).</summary>
     public static ImmutableArray<PlayerAction> ListClassAbilityActions(ValidatedBuild build) =>
-        build.Equipped.Any(equipped => equipped.Element.Rules.Any(rule => rule.On is Trigger.AbilityCast { Airborne: true }))
-            ? [new PlayerAction.UseClassAbility(), new PlayerAction.UseClassAbility(Airborne: true)]
-            : [new PlayerAction.UseClassAbility()];
+    [
+        new PlayerAction.UseClassAbility(),
+        .. ListSecondaryInputs(build, AbilityKind.ClassAbility).Select(input => new PlayerAction.UseClassAbility(input)),
+    ];
+
+    /// <summary>
+    /// The secondary inputs of an ability that an equipped rule reacts to — a cast trigger that names the input
+    /// (<c>abilityCast: { ability: classAbility, input: air }</c>) or a hit or kill by that use (<c>via: melee:slide</c>) —
+    /// in the order the game lists them. A secondary nothing reacts to isn't offered: it does what the ability does.
+    /// </summary>
+    public static ImmutableArray<AbilityInput> ListSecondaryInputs(ValidatedBuild build, AbilityKind kind) =>
+        [.. ListSecondaryUses(build, kind).Select(use => use.Input)];
+
+    /// <summary>As <see cref="ListSecondaryInputs"/>, each with the equipped elements whose rules name it (Tempest Strike, Ascension).</summary>
+    public static ImmutableArray<SecondaryUse> ListSecondaryUses(ValidatedBuild build, AbilityKind kind)
+    {
+        var named = build.Equipped
+            .SelectMany(equipped => equipped.Element.Rules
+                .SelectMany(rule => rule.On.FindNamedInput().Match(use => new[] { use.Value }, _ => []))
+                .Where(use => use.Kind == kind)
+                .Select(use => (use.Input, equipped.Element.Id)))
+            .ToImmutableArray();
+        return
+        [
+            .. kind.ListSecondaryInputs()
+                .Select(input => new SecondaryUse(kind, input, [.. named.Where(use => use.Input == input).Select(use => use.Id).Distinct()]))
+                .Where(use => !use.NamedBy.IsEmpty),
+        ];
+    }
+
+    /// <summary>An offensive ability's hit and kill against one enemy: its press, then each secondary use an equipped rule reacts to.</summary>
+    public static ImmutableArray<PlayerAction> ListCastActions(ValidatedBuild build, OffensiveAbility kind) =>
+    [
+        .. ListSecondaryInputs(build, kind.ToAbilityKind()).Prepend(AbilityInput.Press).SelectMany(input => new PlayerAction[]
+        {
+            new PlayerAction.CastAbility(kind, HitOutcome.Kill, TargetCount.One, input),
+            new PlayerAction.CastAbility(kind, HitOutcome.Damage, TargetCount.One, input),
+        }),
+    ];
 
     /// <summary>
     /// A finisher: always possible in the game, as an ability is (ADRs D5), so every build is offered one. It fires the

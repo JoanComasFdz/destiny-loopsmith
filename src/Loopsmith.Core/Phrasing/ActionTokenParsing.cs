@@ -13,11 +13,13 @@ public static class ActionTokenParsing
     private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
 
     public const string Grammar =
-        "grenade|melee|super[:hit|kill[:N]], class[:air], kinetic|energy|power[:hit|kill[:N]], finisher, pickup:<id>, max:<status>, end:<status>, pack:new";
+        "grenade[:hold]|melee[:slide|air]|super[:hit|kill[:N]], class[:air], kinetic|energy|power[:hit|kill[:N]], finisher, pickup:<id>, max:<status>, end:<status>, pack:new";
 
     /// <summary>
     /// <c>grenade</c>, <c>grenade:kill</c>, <c>grenade:kill:3</c>, <c>kinetic:hit:5</c>, <c>class</c>, <c>class:air</c> (an air move
-    /// that spends the class ability, like Ascension), <c>finisher</c> (a finisher on one enemy of the pack: it kills it),
+    /// that spends the class ability, like Ascension), a secondary ability's own token — <c>melee:slide:kill</c> (Tempest
+    /// Strike's uppercut), <c>melee:air</c>, <c>grenade:hold</c> — <c>finisher</c> (a finisher on one enemy
+    /// of the pack: it kills it),
     /// <c>pickup:orb-of-power</c>, and the states the player declares (ADRs D3): <c>max:bolt-charge</c>, <c>end:amplified</c>,
     /// <c>pack:new</c> (the next enemies are a new pack, ADRs D7).
     /// Without <c>:kill</c> the hit only damages; without a count it hits one enemy. The count is validated here, at the
@@ -28,11 +30,12 @@ public static class ActionTokenParsing
         var parts = token.Trim().ToLowerInvariant().Split(':');
         return parts[0] switch
         {
-            "grenade" => ParseAimedAction(token, parts, (hit, targets) => new PlayerAction.CastAbility(OffensiveAbility.Grenade, hit, targets)),
-            "melee" => ParseAimedAction(token, parts, (hit, targets) => new PlayerAction.CastAbility(OffensiveAbility.Melee, hit, targets)),
-            "super" => ParseAimedAction(token, parts, (hit, targets) => new PlayerAction.CastAbility(OffensiveAbility.Super, hit, targets)),
+            "grenade" => ParseCast(token, parts, OffensiveAbility.Grenade),
+            "melee" => ParseCast(token, parts, OffensiveAbility.Melee),
+            "super" => ParseCast(token, parts, OffensiveAbility.Super),
             "class" when parts.Length == 1 => Ok(new PlayerAction.UseClassAbility()),
-            "class" when parts.Length == 2 && parts[1] == "air" => Ok(new PlayerAction.UseClassAbility(Airborne: true)),
+            "class" when parts.Length == 2 && FindSecondaryInput(AbilityKind.ClassAbility, parts[1]) is Optional<AbilityInput>.Some input =>
+                Ok(new PlayerAction.UseClassAbility(input.Value)),
             "kinetic" => ParseAimedAction(token, parts, (hit, targets) => new PlayerAction.FireWeapon(WeaponSlot.Kinetic, hit, targets)),
             "energy" => ParseAimedAction(token, parts, (hit, targets) => new PlayerAction.FireWeapon(WeaponSlot.Energy, hit, targets)),
             "power" => ParseAimedAction(token, parts, (hit, targets) => new PlayerAction.FireWeapon(WeaponSlot.Power, hit, targets)),
@@ -46,6 +49,16 @@ public static class ActionTokenParsing
             _ => FailUnknown(token),
         };
     }
+
+    /// <summary>An ability's token: its secondary input first when it has one (<c>melee:slide</c>), then <c>[:hit|kill[:N]]</c>.</summary>
+    private static Result<PlayerAction, string> ParseCast(string token, string[] parts, OffensiveAbility kind) =>
+        (parts.Length > 1 ? FindSecondaryInput(kind.ToAbilityKind(), parts[1]) : Optional.None<AbilityInput>()).Match(
+            input => ParseAimedAction(token, [parts[0], .. parts[2..]], (hit, targets) => new PlayerAction.CastAbility(kind, hit, targets, input.Value)),
+            _ => ParseAimedAction(token, parts, (hit, targets) => new PlayerAction.CastAbility(kind, hit, targets)));
+
+    /// <summary>The secondary input a token part names (<c>slide</c>, <c>air</c>, <c>hold</c>), when the ability takes it.</summary>
+    private static Optional<AbilityInput> FindSecondaryInput(AbilityKind kind, string word) =>
+        kind.ListSecondaryInputs().Where(input => input.ToInputWord() == word).Select(Optional.Some).FindFirstSome();
 
     /// <summary>The <c>[:hit|kill[:N]]</c> suffix of an ability or weapon token.</summary>
     private static Result<PlayerAction, string> ParseAimedAction(
