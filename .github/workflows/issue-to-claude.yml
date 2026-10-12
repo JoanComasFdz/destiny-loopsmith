@@ -1,0 +1,71 @@
+name: Issue to Claude routine
+
+# An issue you wrote, labelled "agent" by you, is handed to the Claude routine: one cloud session per issue.
+on:
+  issues:
+    types: [labeled]
+
+permissions:
+  issues: write
+
+concurrency:
+  group: claude-issue-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  fire:
+    # Only an open issue that you wrote and you labelled. Claude sessions act as you on GitHub too,
+    # so CLAUDE.md forbids them to add this label; the in-progress limit below is the backstop.
+    if: >-
+      github.event.label.name == 'agent' &&
+      github.actor == 'JoanComasFdz' &&
+      github.event.issue.user.login == 'JoanComasFdz' &&
+      github.event.issue.state == 'open'
+    runs-on: ubuntu-latest
+    # The routine's URL and token live in this environment, which only workflows running on main can read.
+    environment: claude-routine
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      NUM: ${{ github.event.issue.number }}
+      WIP_LIMIT: "3"
+    steps:
+      - name: Skip a second session and enforce the in-progress limit
+        id: gate
+        run: |
+          started=$(gh api "repos/$REPO/issues/$NUM/comments?per_page=100" \
+            --jq '[.[] | select(.user.login == "github-actions[bot]" and (.body | contains("<!-- claude-session -->")))] | length')
+          busy=$(gh api "repos/$REPO/issues?labels=agent&state=open&per_page=100" \
+            --jq '[.[] | select(.pull_request | not)] | length')
+          if [ "$started" -gt 0 ]; then
+            gh api -X POST "repos/$REPO/issues/$NUM/comments" \
+              -f body="A session already works on this issue (its link is above). To start a new one, delete that comment, then add \`agent\` again." > /dev/null
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          elif [ "$busy" -gt "$WIP_LIMIT" ]; then
+            gh api -X DELETE "repos/$REPO/issues/$NUM/labels/agent" > /dev/null
+            gh api -X POST "repos/$REPO/issues/$NUM/comments" \
+              -f body="$((busy - 1)) issues are already in progress (limit $WIP_LIMIT), so the label was removed. Add \`agent\` again when one is merged." > /dev/null
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Fire the Claude routine and post its session link
+        if: steps.gate.outputs.skip != 'true'
+        env:
+          URL: ${{ secrets.CLAUDE_ROUTINE_URL }}
+          TOKEN: ${{ secrets.CLAUDE_ROUTINE_TOKEN }}
+          TITLE: ${{ github.event.issue.title }}
+          BODY: ${{ github.event.issue.body }}
+          AUTHOR: ${{ github.event.issue.user.login }}
+        run: |
+          jq -n --arg repo "$REPO" --arg n "$NUM" --arg a "$AUTHOR" --arg t "$TITLE" --arg b "$BODY" \
+            '{text: ("Repository: " + $repo + "\nIssue #" + $n + " by @" + $a + ": " + $t + "\n\n" + $b)}' > payload.json
+          # The response holds the session link. It isn't printed: this repository's logs are public.
+          curl -sSf -o response.json -X POST "$URL" \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "anthropic-beta: experimental-cc-routine-2026-04-01" \
+            -H "anthropic-version: 2023-06-01" \
+            -H "Content-Type: application/json" \
+            -d @payload.json
+          link=$(jq -r '.claude_code_session_url // "(no link returned: find the session at claude.ai/code)"' response.json)
+          gh api -X POST "repos/$REPO/issues/$NUM/comments" \
+            -f body="$(printf 'Working on this: %s\n\n<!-- claude-session -->' "$link")" > /dev/null
