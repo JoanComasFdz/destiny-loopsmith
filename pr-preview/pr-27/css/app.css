@@ -487,7 +487,8 @@ textarea { resize: vertical; }
 .note-input:focus { border-bottom: 1px solid var(--arc); }
 .step-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 8px; font-size: 12px; }
 
-/* a step's outcomes, one per line (OutcomeTree.razor): event → element (icon, name) → each outcome; a cascade nests */
+/* a step's outcomes, one per line (OutcomeTree.razor): event → element (icon, name) → its outcomes as a bulleted
+   list; a cascade nests, a pickup picked up shows a 📍 */
 .outcomes { display: flex; flex-direction: column; gap: 4px; font-size: 13.5px; line-height: 1.45; }
 .outcome-event { margin-left: calc(var(--depth, 0) * 18px); }
 .outcome-event[data-depth="0"] + .outcome-event[data-depth="0"] { margin-top: 4px; }
@@ -496,8 +497,10 @@ textarea { resize: vertical; }
 .outcome-origin-head { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 10.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
 .outcome-origin-icon { width: 16px; height: 16px; flex: none; border-radius: 3px; background: #1a2130; object-fit: cover; }
 .outcome-source { margin: 2px 0 0 14px; }
-.outcome-line { display: flex; gap: 6px; margin-left: 26px; overflow-wrap: anywhere; }
-.outcome-arrow { flex: none; }
+.outcome-lines { margin: 0 0 0 26px; padding-left: 16px; list-style: disc; }
+.outcome-line { overflow-wrap: anywhere; }
+.outcome-line::marker { color: var(--muted); }
+.outcome-pickup-mark { font-size: .95em; }
 .outcome-detail { margin-left: 26px; font-size: 12.5px; overflow-wrap: anywhere; }
 .outcome-note { overflow-wrap: anywhere; }
 .outcome-name-wrap { position: relative; display: inline; }
@@ -516,6 +519,7 @@ textarea { resize: vertical; }
 .keyword { color: var(--aff); font-weight: 650; }
 .outcome-keyword:hover, .outcome-keyword:focus-visible { text-decoration-style: solid; text-decoration-color: currentColor; }
 .outcome-icon { width: 20px; height: 20px; flex: none; border-radius: 3px; background: #1a2130; object-fit: cover; }
+.outcome-icon.glyph { display: inline-flex; align-items: center; justify-content: center; background: none; font-size: 15px; line-height: 1; }
 .outcome-icon.placeholder { width: 10px; height: 10px; margin: 0 5px; border-radius: 2px; background: var(--aff); transform: rotate(45deg); opacity: .8; }
 .item-preview {
     position: absolute;
@@ -658,6 +662,8 @@ textarea { resize: vertical; }
 .trig-icon { display: block; width: 100%; height: 100%; }
 .trig-icon img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .trig-unknown { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; font-size: 26px; font-weight: 700; color: var(--aff); }
+.trig-caption { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; color: var(--aff); font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.trig-finisher { margin-left: 6px; border-style: dashed; }
 .trig-super:hover, .trig-ability:hover { border-color: var(--text); background: var(--panel-2); }
 .trig-super.picked, .trig-ability.picked { border-color: var(--text); box-shadow: 0 0 0 2px var(--aff), 0 0 14px var(--aff); }
 .trig-weapons { display: flex; flex: 1 1 280px; flex-direction: column; gap: 4px; min-width: 0; }
