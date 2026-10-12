@@ -18,7 +18,9 @@ public sealed record AbilityLoadout(
 /// An equipped weapon. <see cref="Perks"/> are named by catalog id; <see cref="Hash"/> is its manifest item when known (a
 /// DIM loadout's, or written in the build file); <see cref="Roll"/> is the perk picked in each of its trait columns, by
 /// manifest hash, in column order (none: not picked, "?" in the build file); <see cref="Catalyst"/> says the build turns
-/// an exotic's catalyst on (a DIM loadout doesn't say, so it starts off).
+/// an exotic's catalyst on (a DIM loadout doesn't say, so it starts off); <see cref="Instance"/> is the copy it is, by
+/// instance id (a dim.gg share's): after the player's Bungie login its tier, masterwork and breaker show when the copy
+/// is theirs, else their own copy's.
 /// </summary>
 public sealed record WeaponLoadout(
     WeaponSlot Slot,
@@ -28,7 +30,8 @@ public sealed record WeaponLoadout(
     ImmutableArray<ElementId> Perks,
     Optional<ItemHash> Hash,
     ImmutableArray<Optional<ItemHash>> Roll,
-    bool Catalyst);
+    bool Catalyst,
+    Optional<ItemInstanceId> Instance);
 
 /// <summary>
 /// One perk of a weapon as its build holds it (<c>BuildComposition.WeaponRolling.ListPerkSlots</c>): its intrinsic perk

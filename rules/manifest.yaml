@@ -10,6 +10,14 @@ damageTypes:
   - { type: void, icon: /common/destiny2_content/icons/DestinyDamageTypeDefinition_ceb2f6197dccf3958bb31cc783eb97a0.png }
   - { type: stasis, icon: /common/destiny2_content/icons/DestinyDamageTypeDefinition_530c4c3e7981dc2aefd24fd3293482bf.png }
   - { type: strand, icon: /common/destiny2_content/icons/DestinyDamageTypeDefinition_b2fe51a94f3533f97079dfa0d27a4096.png }
+breakerTypes:
+  - { hash: 485622768, name: "Shield Piercing", icon: /common/destiny2_content/icons/DestinyBreakerTypeDefinition_07b9ba0194e85e46b258b04783e93d5d.png }
+  - { hash: 2611060930, name: "Disruption", icon: /common/destiny2_content/icons/DestinyBreakerTypeDefinition_da558352b624d799cf50de14d7cb9565.png }
+  - { hash: 3178805705, name: "Stagger", icon: /common/destiny2_content/icons/DestinyBreakerTypeDefinition_825a438c85404efd6472ff9e97fc7251.png }
+itemConstants:
+  tierOverlays: [/img/destiny_content/items/inventory-item-tier1.png, /img/destiny_content/items/inventory-item-tier2.png, /img/destiny_content/items/inventory-item-tier3.png, /img/destiny_content/items/inventory-item-tier4.png, /img/destiny_content/items/inventory-item-tier5.png]
+  masterworkOverlay: /img/destiny_content/items/masterwork-overlay.png
+  masterworkExoticOverlay: /img/destiny_content/items/masterwork-overlay-exotic.png
 armorSets:
   - { hash: 499993704, name: "Luminopotent", perks: [{ pieces: 2, perk: 2769443639 }, { pieces: 4, perk: 2769443638 }] }
 items:
@@ -280,7 +288,7 @@ items:
   - { hash: 3294892432, name: "Stasis Ammo Generation", kind: armorMod, type: "Chest Armor Mod", tier: basic, slot: chest, description: "Increases the ammo generation of Stasis weapons.", icon: /common/destiny2_content/icons/74d4ac9f90353d6b04bc673c37aa041c.png }
   - { hash: 3323910164, name: "Strand Dexterity", kind: armorMod, type: "Arms Armor Mod", tier: basic, slot: arms, description: "Faster ready and stow speed for Strand weapons.", icon: /common/destiny2_content/icons/13cad6d9366eb8e863d17eacf2caf3d0.png }
   - { hash: 3325390304, name: "Insulation", kind: armorMod, type: "Leg Armor Mod", tier: basic, slot: legs, description: "Reduces class ability cooldown each time you pick up an Orb of Power.", icon: /common/destiny2_content/icons/73c469225035f5854a044aa5c052a6f4.png }
-  - { hash: 3325463374, name: "Thunderlord", kind: weapon, type: "Machine Gun", tier: exotic, slot: power, damageType: arc, traits: [[1419069769], [2779035018]], intrinsic: 4148158229, catalyst: 1550063955, icon: /common/destiny2_content/icons/4a08027f7b5752f84d183ecc61682c3e.jpg }
+  - { hash: 3325463374, name: "Thunderlord", kind: weapon, type: "Machine Gun", tier: exotic, slot: power, damageType: arc, breaker: 2611060930, traits: [[1419069769], [2779035018]], intrinsic: 4148158229, catalyst: 1550063955, icon: /common/destiny2_content/icons/4a08027f7b5752f84d183ecc61682c3e.jpg }
   - { hash: 3410844187, name: "Void Resistance", kind: armorMod, type: "Chest Armor Mod", tier: basic, slot: chest, description: "Void Damage Resistance: Reduces incoming Void damage from combatants.", icon: /common/destiny2_content/icons/8853c3d7173e560ba83042c7f7530f62.png }
   - { hash: 3418165135, name: "Vorpal Weapon", kind: weaponPerk, type: "Enhanced Trait", tier: common, description: "Increased damage against bosses, vehicles, and Guardians with their Super active. Stability is improved. Swords have improved guard resistance.", icon: /common/destiny2_content/icons/bc5130b227ee577f2678ec2d2c97bf4a.png }
   - { hash: 3422796781, name: "Slice", kind: weaponPerk, type: "Enhanced Trait", tier: common, description: "Casting your class ability allows this weapon to sever targets on hit for an improved duration, up to a maximum number of targets.", icon: /common/destiny2_content/icons/5366f0752a2679e279672f07e1117a47.png }

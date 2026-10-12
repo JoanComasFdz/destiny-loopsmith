@@ -9,8 +9,9 @@ namespace Loopsmith.Core.ManifestJoining;
 /// <summary>
 /// Pure: Bungie's full manifest → the excerpt of what some hashes need (ADRs D14), the way
 /// <c>tools/manifest/extract_manifest.py</c> writes <c>rules/manifest.yaml</c>: each item's name, kind, type, rarity,
-/// description and icon; a weapon's slot, damage type, trait columns (and their perks), intrinsic perk and an
-/// exotic's catalyst (and the perks it grants); armor's slot, intrinsic perk and set (and the set's perks). The host
+/// description and icon; a weapon's slot, damage type, breaker, trait columns (and their perks), intrinsic perk and an
+/// exotic's catalyst (and the perks it grants); armor's slot, intrinsic perk and set (and the set's perks). The breaker
+/// types and an icon's overlays aren't joined: they come from <c>rules/manifest.yaml</c>. The host
 /// holds the manifest and answers what the join asks, round by round: each round walks from the wanted hashes
 /// through what has been read, and asks for what the walk reaches but hasn't read; when nothing is left to ask, the
 /// excerpt is built from the same walk. What the manifest doesn't have is asked once and left out.
@@ -234,7 +235,9 @@ public static class ManifestJoin
             ImmutableDictionary<DamageType, string>.Empty,
             sets.Select(set => ToArmorSet(set.Hash, set.Entry)).ToImmutableDictionary(set => set.Hash),
             items,
-            ImmutableDictionary<ItemHash, StatPlug>.Empty);
+            ImmutableDictionary<ItemHash, StatPlug>.Empty,
+            ImmutableDictionary<ItemHash, BreakerType>.Empty,
+            new ItemOverlays([], Optional.None<string>(), Optional.None<string>()));
     }
 
     private static Optional<ManifestItem> ToManifestItem(Reading reading, ItemHash hash, bool isCatalyst) =>
@@ -285,7 +288,8 @@ public static class ManifestJoin
                         columns => [.. columns.Value.Select(column => new TraitColumn(column))],
                         _ => ImmutableArray<TraitColumn>.Empty),
                     FindIntrinsic(reading, item, WeaponIntrinsicCategoryName),
-                    FindCatalyst(reading, item))),
+                    FindCatalyst(reading, item),
+                    item.ReadHash("breakerTypeHash"))),
             KindWord.Armor => ReadBucketName(reading, item).Bind(bucket => ArmorBuckets.TryGetValue(bucket, out var slot) ? Optional.Some(slot) : Optional.None<ArmorSlot>())
                 .Map(slot => (ManifestKind)new ManifestKind.Armor(
                     slot,

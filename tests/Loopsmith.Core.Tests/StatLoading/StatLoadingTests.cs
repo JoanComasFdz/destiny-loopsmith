@@ -257,7 +257,8 @@ public sealed partial class StatLoadingTests
         Assert.Equal(new StatPoints(5, 5, 20, 30, 25, 5), ReadPart(totals, "Luminopotent Mask"));
     }
 
-    private sealed record FakeItem(ItemHash Hash, string Instance, string Place, ImmutableArray<ItemHash> Plugs, int? Energy);
+    /// <summary>An item of a fake profile: armor has energy; a weapon a damage type (Bungie's: 2 Arc); either a tier, a state (4: masterworked) and a breaker.</summary>
+    private sealed record FakeItem(ItemHash Hash, string Instance, string Place, ImmutableArray<ItemHash> Plugs, int? Energy, int? Tier = null, int State = 0, int DamageType = 0, uint Breaker = 0);
 
     /// <summary>Every piece of the owner's loadout as a Grenade 30 · Super 25 · Class 20 roll, masterworked; the first ones with a tuning socket.</summary>
     private static IEnumerable<FakeItem> OwnAll(int tuningSockets) =>
@@ -271,7 +272,14 @@ public sealed partial class StatLoadingTests
     /// <summary>A Bungie profile answer holding these items (in the vault, or worn or carried by a Hunter) and the Hunter's stats.</summary>
     private static BungieProfile ReadProfile(ImmutableArray<FakeItem> items)
     {
-        object ToItem(FakeItem item) => new { itemHash = item.Hash.Value, itemInstanceId = item.Instance };
+        object ToItem(FakeItem item) => new { itemHash = item.Hash.Value, itemInstanceId = item.Instance, state = item.State };
+        object ToInstance(FakeItem item) => new Dictionary<string, object>(
+        [
+            KeyValuePair.Create<string, object>("damageType", item.DamageType),
+            KeyValuePair.Create<string, object>("breakerTypeHash", item.Breaker),
+            .. item.Energy is { } energy ? [KeyValuePair.Create<string, object>("energy", new { energyCapacity = energy })] : Array.Empty<KeyValuePair<string, object>>(),
+            .. item.Tier is { } tier ? [KeyValuePair.Create<string, object>("gearTier", tier)] : Array.Empty<KeyValuePair<string, object>>(),
+        ]);
         var answer = new
         {
             ErrorCode = 1,
@@ -285,7 +293,7 @@ public sealed partial class StatLoadingTests
                 characterInventories = new { data = new Dictionary<string, object> { ["c1"] = new { items = items.Where(item => item.Place == "carried").Select(ToItem).ToArray() } } },
                 itemComponents = new
                 {
-                    instances = new { data = items.ToDictionary(item => item.Instance, item => item.Energy is { } energy ? (object)new { energy = new { energyCapacity = energy } } : new { }) },
+                    instances = new { data = items.ToDictionary(item => item.Instance, ToInstance) },
                     sockets = new { data = items.ToDictionary(item => item.Instance, item => new { sockets = item.Plugs.Select(plug => new { plugHash = plug.Value, isEnabled = true }).ToArray() }) },
                 },
             },

@@ -8,8 +8,8 @@ namespace Loopsmith.Core.StatLoading;
 
 /// <summary>
 /// Pure: what Loopsmith asks Bungie's API for once the player has logged in, and what it reads of the answers — their
-/// Destiny membership, then their profile's armor (worn, carried and in the vault, with the plugs in its sockets).
-/// Everything else in the answers is left alone.
+/// Destiny membership, then their profile's armor (with the plugs in its sockets) and weapons, worn, carried and in the
+/// vault, each copy with its marks (gear tier, masterwork, breaker). Everything else in the answers is left alone.
 /// </summary>
 public static class BungieProfileReading
 {
@@ -20,7 +20,8 @@ public static class BungieProfileReading
 
     /// <summary>
     /// The profile's parts Loopsmith reads: the vault (102), characters (200: each one's class), what they carry (201) and
-    /// wear (205), item instances (300: an armor piece's energy) and sockets (305: its plugs).
+    /// wear (205; an item's <c>state</c>: masterworked), item instances (300: an armor piece's energy, a weapon's damage
+    /// type, a copy's gear tier and breaker) and sockets (305: its plugs).
     /// </summary>
     public static string ToProfileUrl(DestinyMembership membership) =>
         $"{Platform}/Destiny2/{membership.Type.Value.ToString(CultureInfo.InvariantCulture)}/Profile/{membership.Id.Value}/?components=102,200,201,205,300,305";
@@ -66,7 +67,8 @@ public static class BungieProfileReading
                 .Map(id => new MembershipEntry(new DestinyMembership(type, id), entry.ReadInteger("crossSaveOverride").UnwrapOr(0))));
 
     /// <summary>
-    /// The profile's armor: every instanced item with armor energy, worn, carried or in the vault (by which class).
+    /// The profile's armor (every instanced item with armor energy) and weapons (every instanced item with a damage type),
+    /// worn, carried or in the vault (by which class), each copy with its marks.
     /// </summary>
     public static Result<BungieProfile, string> ReadProfile(string json) =>
         BungieJsonReading.ReadResponse(json).Map(response =>
@@ -77,7 +79,10 @@ public static class BungieProfileReading
             var placed = response.ReadArray("profileInventory", "data", "items").Select(item => (Item: item, Place: (ArmorPlace)new ArmorPlace.Vault()))
                 .Concat(ListCharacterItems(response, "characterEquipment", classes, found => new ArmorPlace.Equipped(found)))
                 .Concat(ListCharacterItems(response, "characterInventories", classes, found => new ArmorPlace.Carried(found)));
-            return new BungieProfile([.. placed.SelectMany(entry => ToSequence(ReadArmor(response, entry.Item, entry.Place)))]);
+            var items = placed.ToImmutableArray();
+            return new BungieProfile(
+                [.. items.SelectMany(entry => ToSequence(ReadArmor(response, entry.Item, entry.Place)))],
+                [.. items.SelectMany(entry => ToSequence(ReadWeapon(response, entry.Item, entry.Place)))]);
         });
 
     private static IEnumerable<(JsonElement Item, ArmorPlace Place)> ListCharacterItems(
@@ -96,7 +101,28 @@ public static class BungieProfileReading
                 [.. response.ReadArray("itemComponents", "sockets", "data", instance, "sockets")
                     .Where(socket => socket.ReadFlag("isEnabled", true))
                     .SelectMany(socket => ToSequence(socket.ReadHash("plugHash")))],
-                energy.ReadInteger("energyCapacity"))))));
+                energy.ReadInteger("energyCapacity"),
+                ReadMarks(response, item, instance))))));
+
+    /// <summary>An item that is a weapon: it has an instance, and the instance a damage type (armor's has none).</summary>
+    private static Optional<OwnedWeapon> ReadWeapon(JsonElement response, JsonElement item, ArmorPlace place) =>
+        item.ReadString("itemInstanceId").Bind(instance => ItemInstanceId.TryFrom(instance).ToOptional().Bind(id => item.ReadHash("itemHash").Bind(hash =>
+            response.ReadInteger("itemComponents", "instances", "data", instance, "damageType")
+                .Bind(type => type > 0 ? Optional.Some(type) : Optional.None<int>())
+                .Map(_ => new OwnedWeapon(id, hash, place, ReadMarks(response, item, instance))))));
+
+    /// <summary>
+    /// A copy's marks: its instance's <c>gearTier</c> (1–5), the item's <c>state</c> masterwork flag (4) and its instance's
+    /// <c>breakerTypeHash</c> (0: none).
+    /// </summary>
+    private static GearMarks ReadMarks(JsonElement response, JsonElement item, string instance) =>
+        new(
+            response.ReadInteger("itemComponents", "instances", "data", instance, "gearTier").Bind(tier => GearTier.TryFrom(tier).ToOptional()),
+            (item.ReadInteger("state").UnwrapOr(0) & MasterworkState) != 0,
+            response.ReadHash("itemComponents", "instances", "data", instance, "breakerTypeHash"));
+
+    /// <summary>Bungie's <c>ItemState.Masterwork</c>: the item has a masterwork plug.</summary>
+    private const int MasterworkState = 4;
 
     /// <summary>Bungie's class type: 0 Titan, 1 Hunter, 2 Warlock (3: unknown).</summary>
     private static Optional<GuardianClass> ToClass(Optional<int> classType) =>

@@ -368,6 +368,24 @@ public static class LoopDesigning
     public static ImmutableArray<ItemHash> ListUnknownArmorHashes(DesignSession session, BungieProfile profile) =>
         ManifestJoin.ListUnknown(session.Build.Catalog.Manifest, profile.Armor.Select(armor => armor.Hash).Distinct());
 
+    /// <summary>
+    /// What the game draws on the player's copy the build wears in a slot (its tier, masterwork): the share's copy when it
+    /// is theirs, else their own (the one the picker ticks); none when they own no copy of the piece.
+    /// </summary>
+    public static Optional<GearMarks> FindArmorMarks(ValidatedBuild build, BungieProfile profile, ArmorSlot slot) =>
+        CopyFinding.FindWornArmor(build.Catalog, build.Build, profile, slot).Map(armor => armor.Marks);
+
+    /// <summary>What the game draws on the player's copy of a build's weapon (its tier, masterwork, breaker): the share's copy when it is theirs, else their own.</summary>
+    public static Optional<GearMarks> FindWeaponMarks(BungieProfile profile, WeaponLoadout weapon) =>
+        CopyFinding.FindWornWeapon(profile, weapon).Map(owned => owned.Marks);
+
+    /// <summary>
+    /// The champion a build's weapon breaks, as DIM shows it: its copy's breaker (<paramref name="marks"/>, after the
+    /// player's login), else the weapon's own (an exotic's intrinsic: Thunderlord's Disruption); none when it has none.
+    /// </summary>
+    public static Optional<BreakerType> FindWeaponBreaker(ValidatedBuild build, WeaponLoadout weapon, Optional<GearMarks> marks) =>
+        CopyFinding.FindWeaponBreaker(build.Catalog.Manifest, weapon, marks);
+
     /// <summary>The design with its stats set from the copies its build wears, or why they don't add up.</summary>
     private static Result<DesignSession, string> SetStatsFromArmor(DesignSession session, BungieProfile profile)
     {

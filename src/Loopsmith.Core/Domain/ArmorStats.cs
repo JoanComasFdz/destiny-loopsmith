@@ -74,7 +74,7 @@ public sealed record StatPoints(int Weapons, int Health, int Class, int Grenade,
 /// <summary>A Bungie account's Destiny membership: its platform (Bungie's membership type) and id.</summary>
 public sealed record DestinyMembership(MembershipType Type, MembershipId Id);
 
-/// <summary>Where a player's armor piece is: worn by a character, in a character's inventory, or in the vault.</summary>
+/// <summary>Where a player's armor piece (or weapon) is: worn by a character, in a character's inventory, or in the vault.</summary>
 [Union]
 public partial record ArmorPlace
 {
@@ -85,12 +85,21 @@ public partial record ArmorPlace
 
 /// <summary>
 /// An armor piece the player owns, as Bungie's profile has it: its instance, item hash, where it is, the plugs in
-/// its sockets (enabled ones, socket by socket) and its energy capacity (Armor 2.0's masterwork reads it).
+/// its sockets (enabled ones, socket by socket), its energy capacity (Armor 2.0's masterwork reads it) and its marks.
 /// </summary>
-public sealed record OwnedArmor(ItemInstanceId InstanceId, ItemHash Hash, ArmorPlace Place, ImmutableArray<ItemHash> Plugs, Optional<int> EnergyCapacity);
+public sealed record OwnedArmor(ItemInstanceId InstanceId, ItemHash Hash, ArmorPlace Place, ImmutableArray<ItemHash> Plugs, Optional<int> EnergyCapacity, GearMarks Marks);
 
-/// <summary>What Loopsmith reads of a player's Bungie profile: their armor (worn, carried and in the vault).</summary>
-public sealed record BungieProfile(ImmutableArray<OwnedArmor> Armor);
+/// <summary>
+/// What the game draws on a copy's icon, as DIM does: its gear tier (none for an item without one), whether it is
+/// masterworked, and the breaker it has as Bungie gives it for that copy (its own, or the season's artifact's), when any.
+/// </summary>
+public sealed record GearMarks(Optional<GearTier> Tier, bool Masterworked, Optional<ItemHash> Breaker);
+
+/// <summary>A weapon the player owns: its instance, item hash, where it is and its marks.</summary>
+public sealed record OwnedWeapon(ItemInstanceId InstanceId, ItemHash Hash, ArmorPlace Place, GearMarks Marks);
+
+/// <summary>What Loopsmith reads of a player's Bungie profile: their armor and weapons (worn, carried and in the vault).</summary>
+public sealed record BungieProfile(ImmutableArray<OwnedArmor> Armor, ImmutableArray<OwnedWeapon> Weapons);
 
 /// <summary>A piece the build wears (a DIM loadout's): its slot, name and the hashes that are it (an exotic's copies).</summary>
 public sealed record ArmorPiece(ArmorSlot Slot, string Name, ImmutableArray<ItemHash> Hashes);

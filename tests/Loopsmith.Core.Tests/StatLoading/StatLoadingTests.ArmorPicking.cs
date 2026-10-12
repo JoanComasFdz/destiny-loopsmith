@@ -41,7 +41,9 @@ public sealed partial class StatLoadingTests
             ToArmorItem(WarlockHood, "Warlock Hood", ArmorSlot.Helmet, ItemTier.Legendary, Optional.None<ItemHash>(), GuardianClass.Warlock),
             ToArmorItem(ExoticHelmet, "Celestial Nighthawk", ArmorSlot.Helmet, ItemTier.Exotic, Optional.None<ItemHash>(), GuardianClass.Hunter),
         ]),
-        ImmutableDictionary<ItemHash, StatPlug>.Empty);
+        ImmutableDictionary<ItemHash, StatPlug>.Empty,
+        ImmutableDictionary<ItemHash, BreakerType>.Empty,
+        new ItemOverlays([], Optional.None<string>(), Optional.None<string>()));
 
     [Fact]
     public void A_dim_gg_share_names_the_copy_of_each_armor_piece_and_the_build_file_keeps_them()

@@ -95,6 +95,18 @@ public static class ManifestReading
             ArmorSets = more.ArmorSets.Where(entry => !excerpt.ArmorSets.ContainsKey(entry.Key)).Aggregate(excerpt.ArmorSets, (sets, entry) => sets.Add(entry.Key, entry.Value)),
         };
 
+    /// <summary>A breaker type of the excerpt (Disruption), by its hash.</summary>
+    public static Optional<BreakerType> FindBreakerType(this ManifestExcerpt manifest, ItemHash hash) =>
+        manifest.BreakerTypes.TryGetValue(hash, out var breaker) ? Optional.Some(breaker) : Optional.None<BreakerType>();
+
+    /// <summary>The overlay of a gear tier's diamonds (Bungie's; its tier-1 image is blank), when the excerpt has it.</summary>
+    public static Optional<string> FindTierOverlay(this ItemOverlays overlays, GearTier tier) =>
+        tier.Value <= overlays.Tiers.Length ? Optional.Some(overlays.Tiers[tier.Value - 1]) : Optional.None<string>();
+
+    /// <summary>The masterwork glow Bungie draws on an item's icon: an exotic's its own.</summary>
+    public static Optional<string> FindMasterworkOverlay(this ItemOverlays overlays, Optional<ItemTier> tier) =>
+        tier == Optional.Some(ItemTier.Exotic) ? overlays.ExoticMasterwork : overlays.Masterwork;
+
     /// <summary>The armor slot of an armor piece, or of a mod that only fits it; none for anything else (a general mod).</summary>
     public static Optional<ArmorSlot> ReadArmorSlot(this ManifestItem item) =>
         item.Kind switch

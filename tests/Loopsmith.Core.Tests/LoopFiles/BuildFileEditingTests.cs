@@ -22,7 +22,7 @@ public sealed class BuildFileEditingTests
 
     private static readonly WeaponLoadout Picked = new(
         WeaponSlot.Kinetic, "Festival Flight", DamageType.Strand, Optional.None<string>(), [], Optional.Some(ItemHash.From(4019651319u)),
-        [Optional.Some(ItemHash.From(923806249u))], false);
+        [Optional.Some(ItemHash.From(923806249u))], false, Optional.None<ItemInstanceId>());
 
     [Fact]
     public void A_flow_weapon_entry_is_replaced_and_every_other_line_kept()

@@ -286,7 +286,7 @@ steps replay:
 
 * **Typed** — "Edit": six inputs, a whole number 0..200 each, or empty for "?".
 * **From the player's own armor** — "Log in with Bungie" ([hosting.md](hosting.md#bungie-login)). Loopsmith asks
-  Bungie for read-only access and reads the player's armor (worn, carried and in the vault). A dim.gg share names
+  Bungie for read-only access and reads the player's armor and weapons (worn, carried and in the vault). A dim.gg share names
   the copy of each piece it wears (its instance id, kept as the build's `armorCopies`), so:
   * **their own share** — every copy is in their account: the build wears those pieces, and its stats are set from
     them at once;
@@ -312,8 +312,19 @@ steps replay:
   build that names no piece for some slot (a hand-written one) gets its stats this way once a piece is picked for each
   with ⋯; a piece whose roll the excerpt doesn't know leaves the stats as they were.
 
-Nothing of the login is kept (the player's armor stays in the tab until they log out or it closes); the stats and
-the copies are, in the loop's build, so a shared loop carries its author's numbers and pieces.
+**Tiers and masterworks.** After the login the loadout shows the player's copies the way DIM does: each armor piece
+and weapon the build wears shows its copy's **gear tier** (Bungie's diamonds down the square's left edge; tier 1 has
+none), and a **masterworked** copy has a gold border and the masterwork glow (an exotic's its own); the armor picker's
+pieces show theirs, and the piece shown says it ("Tier 5 · Masterworked"). The copy is the one the build names when
+it is the player's (their own share, or a piece picked; a weapon's `instance`), else their own copy of that item, as
+DIM resolves a shared loadout's items: for armor the one the picker ticks (the most points), for a weapon its highest
+tier. Under each weapon's square, a strip shows its **breaker** (a champion icon: the copy's, after the login, else
+the weapon's own, like Thunderlord's Disruption — shown before the login too) and its **element**. The icons and
+overlays are the manifest excerpt's (`breakerTypes`, `itemConstants`); the tier, masterwork flag and breaker are
+Bungie's profile's for the copy (its instance's `gearTier` and `breakerTypeHash`, the item's `state`).
+
+Nothing of the login is kept (the player's armor and weapons stay in the tab until they log out or it closes); the
+stats and the copies are, in the loop's build, so a shared loop carries its author's numbers and pieces.
 
 ## Sharing
 
