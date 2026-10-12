@@ -73,11 +73,12 @@ public static class BuildFileWriting
     private static ImmutableArray<ParsingEvent> ToEntry(string key, string value) =>
         [ToKey(key), new Scalar(null, null, value, ScalarStyle.Any, true, true)];
 
-    /// <summary>An ability's id, or <c>"?"</c> (quoted, as the format writes it) when it isn't known.</summary>
-    private static ImmutableArray<ParsingEvent> ToAbilityEntry(string key, Optional<ElementId> ability) =>
+    /// <summary>An ability's id, or <c>"?"</c> (quoted, as the format writes it) when it isn't known; no entry for an empty slot.</summary>
+    private static ImmutableArray<ParsingEvent> ToAbilityEntry(string key, AbilityPlug ability) =>
         ability.Match(
-            known => ToEntry(key, known.Value.Value),
-            _ => [ToKey(key), new Scalar(null, null, DomainPhrasing.Unknown, ScalarStyle.DoubleQuoted, false, true)]);
+            known => ToEntry(key, known.Element.Value),
+            _ => [ToKey(key), new Scalar(null, null, DomainPhrasing.Unknown, ScalarStyle.DoubleQuoted, false, true)],
+            _ => []);
 
     private static ImmutableArray<ParsingEvent> ToListEntry(string key, ImmutableArray<ElementId> ids) =>
     [
@@ -208,13 +209,13 @@ public static class BuildFileWriting
 
     /// <summary>
     /// The build's subclass entries as the build file writes them — <c>super</c>, <c>grenade</c>, <c>melee</c>,
-    /// <c>classAbility</c> (<c>"?"</c> when unknown), <c>aspects</c>, <c>fragments</c>, <c>leftOut</c> (none when the build
-    /// leaves nothing out, so an edit removes the entry).
+    /// <c>classAbility</c> (<c>"?"</c> when unknown; none when the slot is empty), <c>aspects</c>, <c>fragments</c>,
+    /// <c>leftOut</c> (none when the build leaves nothing out) — an entry with none is removed by an edit.
     /// </summary>
     internal static ImmutableArray<(string Key, Optional<string> Value)> WriteSubclassEntries(Build build) =>
     [
         .. new[] { ("super", build.Abilities.Super), ("grenade", build.Abilities.Grenade), ("melee", build.Abilities.Melee), ("classAbility", build.Abilities.ClassAbility) }
-            .Select(ability => (ability.Item1, Optional.Some(WriteValue([.. ToAbilityEntry(ability.Item1, ability.Item2).Skip(1)])))),
+            .Select(ability => (ability.Item1, ToAbilityEntry(ability.Item1, ability.Item2) is { IsEmpty: false } entry ? Optional.Some(WriteValue([.. entry.Skip(1)])) : Optional.None<string>())),
         ("aspects", Optional.Some(WriteValue([.. ToListEntry("aspects", build.Aspects).Skip(1)]))),
         ("fragments", Optional.Some(WriteValue([.. ToListEntry("fragments", build.Fragments).Skip(1)]))),
         ("leftOut", ToLeftOutEntry(build.LeftOut) is { IsEmpty: false } leftOut ? Optional.Some(WriteValue([.. leftOut.Skip(1)])) : Optional.None<string>()),

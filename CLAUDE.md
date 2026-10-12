@@ -51,7 +51,7 @@ repos (Microsoft's download hosts are blocked by the network policy) and restore
 - `src/Loopsmith.Web/` — Blazor WebAssembly loop designer (host only; calls
   `Orchestration.LoopDesigning`). Deployed to GitHub Pages by `.github/workflows/pages.yml`;
   every PR gets a preview at `…/pr-preview/pr-<n>/` (`pr-preview.yml`)
-  ([docs/hosting.md](docs/hosting.md)). Home starts a loop from a DIM link; a dim.gg share is read from
+  ([docs/hosting.md](docs/hosting.md)). Home starts a loop from scratch (an Arc Hunter with nothing equipped) or from a DIM link; a dim.gg share is read from
   DIM's open share API with a plain GET, no key and no header (hosting.md "DIM links").
 - **The product is the designed loop**: `*.loop.yaml`, self-contained (embeds its build) —
   format, share links, analysis and comparison in [docs/loop-format.md](docs/loop-format.md).

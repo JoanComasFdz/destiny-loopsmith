@@ -40,11 +40,19 @@ public sealed record IconTile(
     Optional<ItemDetails> Details,
     bool Enhanced = false);
 
+/// <summary>An ability's square in the Subclass box: its plug's, or an empty slot (a build started from scratch), named for its kind.</summary>
+[Union]
+public partial record AbilityTile
+{
+    partial record Shown(IconTile Tile);
+    partial record Empty(string Slot);
+}
+
 /// <summary>The subclass block: the subclass item, its super, the abilities (class, jump, melee, grenade), aspects, fragments.</summary>
 public sealed record SubclassView(
     Optional<IconTile> Subclass,
-    IconTile Super,
-    ImmutableArray<IconTile> Abilities,
+    AbilityTile Super,
+    ImmutableArray<AbilityTile> Abilities,
     ImmutableArray<IconTile> Aspects,
     ImmutableArray<IconTile> Fragments);
 
@@ -201,12 +209,12 @@ public static class LoadoutShaping
         var subclass = new SubclassView(
             catalog.FindSubclassItem(b.Class, b.Subclass).Map(item => DescribeItem(item, item.Name, true, Optional.None<string>(), b.Subclass.ToAffinity(),
                 Optional.Some<ItemDetails>(new ItemDetails.OfItem(item.Hash)))),
-            DescribeAbility<ManifestKind.Super>(catalog, b.Abilities.Super, plugs),
+            DescribeAbility<ManifestKind.Super>(catalog, b.Abilities.Super, "Super", plugs),
             [
-                DescribeAbility<ManifestKind.ClassAbility>(catalog, b.Abilities.ClassAbility, plugs),
-                .. DescribeLeftOutPlugs<ManifestKind.Movement>(catalog, plugs),
-                DescribeAbility<ManifestKind.Melee>(catalog, b.Abilities.Melee, plugs),
-                DescribeAbility<ManifestKind.Grenade>(catalog, b.Abilities.Grenade, plugs),
+                DescribeAbility<ManifestKind.ClassAbility>(catalog, b.Abilities.ClassAbility, "Class ability", plugs),
+                .. DescribeLeftOutPlugs<ManifestKind.Movement>(catalog, plugs).Select(tile => (AbilityTile)new AbilityTile.Shown(tile)),
+                DescribeAbility<ManifestKind.Melee>(catalog, b.Abilities.Melee, "Melee", plugs),
+                DescribeAbility<ManifestKind.Grenade>(catalog, b.Abilities.Grenade, "Grenade", plugs),
             ],
             [.. b.Aspects.Select(id => DescribeElement(catalog, id)), .. DescribeLeftOutPlugs<ManifestKind.Aspect>(catalog, plugs)],
             [.. b.Fragments.Select(id => DescribeElement(catalog, id)), .. DescribeLeftOutPlugs<ManifestKind.Fragment>(catalog, plugs)]);
@@ -230,8 +238,8 @@ public static class LoadoutShaping
     }
 
     /// <summary>
-    /// The weapon rows to show: the build's weapons (kinetic, energy, power); with every slot when the player can pick
-    /// weapons (after a login), an empty one where the build has none.
+    /// The weapon rows to show: the build's weapons (kinetic, energy, power); with every slot (the designer's), an empty
+    /// one where the build has none.
     /// </summary>
     public static ImmutableArray<WeaponRow> ListWeaponRows(LoadoutView view, bool everySlot) =>
     [
@@ -268,7 +276,7 @@ public static class LoadoutShaping
                 profile.Bind(owned => LoopDesigning.FindStatFocus(build, owned, slot)).Map(DescribeStatFocus)),
             mods);
 
-    /// <summary>The armor rows to show: the slots with a piece or a mod; every slot when the player can pick pieces (after a login).</summary>
+    /// <summary>The armor rows to show: the slots with a piece or a mod; every slot (the designer's), an empty one where the build has none.</summary>
     public static ImmutableArray<ArmorView> ListArmorRows(LoadoutView view, bool everySlot) =>
         everySlot
             ? [.. ArmorSlots.Select(slot => view.Armor.Where(row => row.Slot == slot).Select(Optional.Some).FindFirstSome()
@@ -437,17 +445,18 @@ public static class LoadoutShaping
 
     /// <summary>
     /// An ability slot: its element; or, when the build has "?", the left-out subclass plug of that kind the manifest
-    /// names (marked ⊘); or a "?" tile.
+    /// names (marked ⊘); or a "?" tile; or, when it holds nothing, an empty slot named <paramref name="slot"/>.
     /// </summary>
-    private static IconTile DescribeAbility<TKind>(RuleCatalog catalog, Optional<ElementId> ability, ImmutableArray<LeftOutEntry> plugs)
+    private static AbilityTile DescribeAbility<TKind>(RuleCatalog catalog, AbilityPlug ability, string slot, ImmutableArray<LeftOutEntry> plugs)
         where TKind : ManifestKind =>
-        ability.Match(
-            known => DescribeElement(catalog, known.Value),
-            _ => DescribeLeftOutPlugs<TKind>(catalog, plugs)
+        ability.Match<AbilityTile>(
+            known => new AbilityTile.Shown(DescribeElement(catalog, known.Element)),
+            _ => new AbilityTile.Shown(DescribeLeftOutPlugs<TKind>(catalog, plugs)
                 .Select(Optional.Some)
                 .FindFirstSome()
                 .UnwrapOr(new IconTile(DomainPhrasing.Unknown, Optional.None<string>(), Affinity.Neutral, Optional.None<ItemTier>(), false,
-                    Optional.Some("Not known: not in the rule catalog yet, so it sets nothing off."), 1, Optional.None<ItemDetails>())));
+                    Optional.Some("Not known: not in the rule catalog yet, so it sets nothing off."), 1, Optional.None<ItemDetails>()))),
+            _ => new AbilityTile.Empty(slot));
 
     private static IEnumerable<IconTile> DescribeLeftOutPlugs<TKind>(RuleCatalog catalog, ImmutableArray<LeftOutEntry> plugs)
         where TKind : ManifestKind =>

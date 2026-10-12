@@ -112,7 +112,11 @@ public static class TestCatalog
             Optional.None<CatalogVersion>(),
             GuardianClass.Hunter,
             subclass,
-            new AbilityLoadout(superAffinity.Map(_ => abilities[3].Id), Optional.Some(abilities[0].Id), Optional.Some(abilities[1].Id), Optional.Some(abilities[2].Id)),
+            new AbilityLoadout(
+                superAffinity.Match<AbilityPlug>(_ => new AbilityPlug.Known(abilities[3].Id), _ => new AbilityPlug.Unknown()),
+                new AbilityPlug.Known(abilities[0].Id),
+                new AbilityPlug.Known(abilities[1].Id),
+                new AbilityPlug.Known(abilities[2].Id)),
             [abilities[4].Id],
             fragments.Select(f => f.Id).ToImmutableArray(),
             Optional.None<ElementId>(),

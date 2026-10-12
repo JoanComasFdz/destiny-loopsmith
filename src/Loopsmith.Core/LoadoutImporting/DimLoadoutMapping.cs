@@ -92,10 +92,10 @@ public static class DimLoadoutMapping
             subclass.Class,
             subclass.Subclass,
             new AbilityLoadout(
-                FindFirst(placed, LoadoutPart.SubclassPlug, ElementKind.Super),
-                FindFirst(placed, LoadoutPart.SubclassPlug, ElementKind.Grenade),
-                FindFirst(placed, LoadoutPart.SubclassPlug, ElementKind.Melee),
-                FindFirst(placed, LoadoutPart.SubclassPlug, ElementKind.ClassAbility)),
+                FindAbility(placed, ElementKind.Super),
+                FindAbility(placed, ElementKind.Grenade),
+                FindAbility(placed, ElementKind.Melee),
+                FindAbility(placed, ElementKind.ClassAbility)),
             ListAll(placed, LoadoutPart.SubclassPlug, ElementKind.Aspect),
             ListAll(placed, LoadoutPart.SubclassPlug, ElementKind.Fragment),
             FindFirst(placed, LoadoutPart.Item, ElementKind.ExoticArmor),
@@ -164,6 +164,10 @@ public static class DimLoadoutMapping
     private static Optional<ElementId> FindFirst(
         ImmutableArray<(LoadoutPart Part, BuildElement Element, ItemHash Hash)> placed, LoadoutPart part, ElementKind kind) =>
         ListAll(placed, part, kind).Select(Optional.Some).FindFirstSome();
+
+    /// <summary>The loadout's ability of this kind; "?" when the rules don't know it (or the loadout names none).</summary>
+    private static AbilityPlug FindAbility(ImmutableArray<(LoadoutPart Part, BuildElement Element, ItemHash Hash)> placed, ElementKind kind) =>
+        FindFirst(placed, LoadoutPart.SubclassPlug, kind).Match<AbilityPlug>(found => new AbilityPlug.Known(found.Value), _ => new AbilityPlug.Unknown());
 
     private static ImmutableArray<ElementId> ListAll(
         ImmutableArray<(LoadoutPart Part, BuildElement Element, ItemHash Hash)> placed, LoadoutPart part, ElementKind kind) =>

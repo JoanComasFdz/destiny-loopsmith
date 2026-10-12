@@ -6,8 +6,8 @@
 @inject DimLoadoutFetching DimLoadouts
 @inject BungieManifestJoining Manifest
 
-@* The start screen (the logo leads here): continue the open loop, start one from a DIM link or a bundled build, open an
-   example or import a loop. Opening anything goes to the designer. A share link (…/#loop=) lands here and opens its loop
+@* The start screen (the logo leads here): continue the open loop, start one from scratch (an Arc Hunter with nothing
+   equipped), from a DIM link or a bundled build, open an example or import a loop. Opening anything goes to the designer. A share link (…/#loop=) lands here and opens its loop
    the same way. *@
 
 <PageTitle>Loopsmith</PageTitle>
@@ -17,7 +17,7 @@
 <section class="chooser">
     <div class="chooser-intro">
         <h1>Design a build's gameplay loop</h1>
-        <p class="muted">Paste a DIM link or pick a build, then pick triggers — dodge, throw a grenade and kill, shoot, pick up an orb. Each step shows everything it fires, which element caused it, and what it unlocks next. The loop you design is the thing you export, share and compare.</p>
+        <p class="muted">Start from scratch, paste a DIM link or pick a build, then pick triggers — dodge, throw a grenade and kill, shoot, pick up an orb. Each step shows everything it fires, which element caused it, and what it unlocks next. The loop you design is the thing you export, share and compare.</p>
     </div>
 
     @if (Workbench.Session is Optional<DesignSession>.Some { Value: var open })
@@ -32,6 +32,11 @@
             </a>
         </div>
     }
+
+    <button type="button" class="btn scratch-start" @onclick="StartFromScratchAsync" data-action="scratch-start">
+        <span class="scratch-start-title">Start from scratch</span>
+        <span class="scratch-start-sub">An Arc Hunter with nothing equipped: pick its super, abilities, aspects and fragments in the designer, and your own weapons and armor after logging in with Bungie.</span>
+    </button>
 
     <form class="dim-start" @onsubmit="StartFromDimLinkAsync" aria-labelledby="dim-start-label">
         <div class="dim-field">
@@ -174,6 +179,21 @@
         var started = text.Bind(value => BundleComposing.StartNamedDesign(Bundle.Catalog, new SourceText(e.File.Name, value))); // pure
         started.Match(                                                                           // impure
             ok => OpenDesign(ok.Value, $"New loop for {ok.Value.Build.Build.Name}."),
+            error => ShowNotice(error.Failure));
+    }
+
+    /// <summary>A new loop for a build with nothing equipped (an Arc Hunter), opened in the designer.</summary>
+    private async Task StartFromScratchAsync()
+    {
+        var proceed = await DiscardConfirming.ConfirmDiscardAsync(Workbench, Browser, "Start a new loop from scratch?"); // impure
+        if (!proceed)
+        {
+            return;
+        }
+
+        var started = LoopDesigning.StartScratchDesign(Bundle.Catalog);                          // pure
+        started.Match(                                                                           // impure
+            ok => OpenDesign(ok.Value, $"New loop from scratch, for an {ok.Value.Build.Build.Name} with nothing equipped yet: ⋯ on the Subclass box picks its abilities."),
             error => ShowNotice(error.Failure));
     }
 

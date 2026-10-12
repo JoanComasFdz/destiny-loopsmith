@@ -5,21 +5,28 @@
    class's own), the weapons in their damage type's colour; above them what is on the ground and the states to declare. Tapping the Super,
    an ability or a weapon picks it: its actions show below the HUD — hit or kill, and how many enemies that one action
    catches — and stay there for the next step. One that only has one action (the class ability, its air move, the
-   finisher, a pickup, a declared state) acts at once. Every trigger is pickable. *@
+   finisher, a pickup, a declared state) acts at once. Every trigger is pickable — except while the build has nothing to set
+   things off (a build started from scratch, LoopDesigning.HasTriggerSource): then the panel is greyed out, nothing in it
+   can be tapped, and a line says why. *@
 @{
     var hud = TriggerHudShaping.ShapeHud(Options, counts, Build, Profile);
-    var picked = FindPicked(hud);
+    var disabled = !LoopDesigning.HasTriggerSource(Build);
+    var picked = disabled ? Optional.None<HudSlot>() : FindPicked(hud);
 }
-<section class="panel palette" aria-label="Next trigger">
+<section class="panel palette @(disabled ? "disabled" : "")" aria-label="Next trigger" aria-disabled="@(disabled ? "true" : "false")">
     <header class="panel-head">
         <h2>Next trigger</h2>
         <span class="panel-caption">@Caption</span>
     </header>
-    @if (Hint.Length > 0)
+    @if (disabled)
+    {
+        <p class="palette-disabled" role="status" data-testid="palette-disabled">Give the build a super, an ability or a weapon first: ⋯ on the Subclass box picks its abilities.</p>
+    }
+    else if (Hint.Length > 0)
     {
         <p class="palette-hint">@Hint</p>
     }
-    <div class="trig-hud aff-@hud.Subclass.ToString().ToLowerInvariant()" data-testid="trigger-hud">
+    <div class="trig-hud aff-@hud.Subclass.ToString().ToLowerInvariant()" data-testid="trigger-hud" inert="@disabled">
         @if (!hud.OnYou.IsEmpty || !hud.OnWeapons.IsEmpty || !hud.OnPack.IsEmpty || !hud.NewPack.IsEmpty || !hud.Ground.IsEmpty)
         {
             <div class="trig-status" aria-label="States you declare, and what is on the ground">
@@ -79,9 +86,9 @@
                             aria-label="@($"{slot.Name} ({weapon.WeaponSlot})")" title="@slot.Name"
                             @onclick="() => Pick(slot)">
                         <span class="trig-weapon-icon">
-                            @if (slot.Icon is Optional<string>.Some icon)
+                            @if (slot.Face is HudFace.Pictured weaponFace)
                             {
-                                <img src="@icon.Value" alt="" loading="lazy" />
+                                <img src="@weaponFace.Icon" alt="" loading="lazy" />
                             }
                         </span>
                         @if (weapon.DamageIcon is Optional<string>.Some damage)
@@ -101,7 +108,7 @@
             </div>
         </div>
     </div>
-    <div class="trig-actions" data-testid="trig-actions" aria-live="polite">
+    <div class="trig-actions" data-testid="trig-actions" aria-live="polite" inert="@disabled">
         @if (picked is Optional<HudSlot>.Some shown)
         {
             var choice = shown.Value.Choice;
@@ -174,7 +181,7 @@
         var affinity = slot.Affinity.ToString().ToLowerInvariant();
         @if (slot.AtOnce is Optional<TriggerButton>.Some once)
         {
-            <button type="button" class="@kind trigger aff-@affinity" data-hud-slot="@slot.Choice.Key" data-token="@once.Value.Token"
+            <button type="button" class="@kind trigger aff-@affinity @(slot.Face is HudFace.EmptySlot ? "empty" : "")" data-hud-slot="@slot.Choice.Key" data-token="@once.Value.Token"
                     aria-label="@($"{slot.Kind}: {slot.Name}")" title="@($"{slot.Kind}: {slot.Name}  ({once.Value.Token})")"
                     @onclick="() => PickTrigger(once.Value.Action)">
                 @RenderIcon(slot, caption)
@@ -182,7 +189,7 @@
         }
         else
         {
-            <button type="button" class="@kind aff-@affinity @(isPicked ? "picked" : "")" data-hud-slot="@slot.Choice.Key"
+            <button type="button" class="@kind aff-@affinity @(isPicked ? "picked" : "") @(slot.Face is HudFace.EmptySlot ? "empty" : "")" data-hud-slot="@slot.Choice.Key"
                     aria-pressed="@(isPicked ? "true" : "false")" aria-label="@($"{slot.Kind}: {slot.Name}")" title="@($"{slot.Kind}: {slot.Name}")"
                     @onclick="() => Pick(slot)">
                 @RenderIcon(slot, caption)
@@ -221,9 +228,9 @@
     private static RenderFragment RenderSecondaryFace(HudSecondary secondary) => __builder =>
     {
         <span class="trig-secondary-icon" aria-hidden="true">
-            @if (secondary.Slot.Icon is Optional<string>.Some icon)
+            @if (secondary.Slot.Face is HudFace.Pictured face)
             {
-                <img src="@icon.Value" alt="" loading="lazy" />
+                <img src="@face.Icon" alt="" loading="lazy" />
             }
         </span>
         <span class="trig-secondary-caption">@secondary.Caption</span>
@@ -233,17 +240,21 @@
         }
     };
 
-    /// <summary>A slot's icon (else its caption — a finisher has no icon —, else "?"), and a dot when one of its actions is new.</summary>
+    /// <summary>A slot's icon (else its caption — a finisher has no icon —, else its kind when it is empty, else "?"), and a dot when one of its actions is new.</summary>
     private RenderFragment RenderIcon(HudSlot slot, Optional<string> caption) => __builder =>
     {
         <span class="trig-icon">
-            @if (slot.Icon is Optional<string>.Some icon)
+            @if (slot.Face is HudFace.Pictured face)
             {
-                <img src="@icon.Value" alt="" loading="lazy" />
+                <img src="@face.Icon" alt="" loading="lazy" />
             }
             else if (caption is Optional<string>.Some text)
             {
                 <span class="trig-caption" aria-hidden="true">@text.Value</span>
+            }
+            else if (slot.Face is HudFace.EmptySlot)
+            {
+                <span class="trig-caption" aria-hidden="true">@slot.Kind</span>
             }
             else
             {

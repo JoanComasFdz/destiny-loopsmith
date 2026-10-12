@@ -91,19 +91,22 @@ public static class BuildFileParsing
                 [],
                 []));
 
-    /// <summary>Each ability is an element id, or <c>"?"</c> for one the build has but Loopsmith can't name.</summary>
+    /// <summary>
+    /// Each ability is an element id, or <c>"?"</c> for one the build has but Loopsmith can't name; a slot left out holds
+    /// nothing (a build started from scratch).
+    /// </summary>
     private static Result<AbilityLoadout, Errors> ReadAbilities(YamlMap map) =>
         Combine(
-            map.ReadRequired("super", ReadAbility),
-            map.ReadRequired("grenade", ReadAbility),
-            map.ReadRequired("melee", ReadAbility),
-            map.ReadRequired("classAbility", ReadAbility),
+            map.ReadOrDefault("super", ReadAbility, new AbilityPlug.Empty()),
+            map.ReadOrDefault("grenade", ReadAbility, new AbilityPlug.Empty()),
+            map.ReadOrDefault("melee", ReadAbility, new AbilityPlug.Empty()),
+            map.ReadOrDefault("classAbility", ReadAbility, new AbilityPlug.Empty()),
             (super, grenade, melee, classAbility) => new AbilityLoadout(super, grenade, melee, classAbility));
 
-    private static Result<Optional<ElementId>, Errors> ReadAbility(YamlValue value) =>
+    private static Result<AbilityPlug, Errors> ReadAbility(YamlValue value) =>
         value.ParseWith(text => text == DomainPhrasing.Unknown
-            ? new Result<Optional<ElementId>, string>.Ok(Optional.None<ElementId>())
-            : ElementId.TryFrom(text).ToResult().Map(Optional.Some));
+            ? new Result<AbilityPlug, string>.Ok(new AbilityPlug.Unknown())
+            : ElementId.TryFrom(text).ToResult().Map(id => (AbilityPlug)new AbilityPlug.Known(id)));
 
     /// <summary>
     /// <c>{ slot, name, type, archetype?, perks?, hash?, roll?, catalyst?, instance? }</c>; <c>roll: ["?", 243981275]</c> is

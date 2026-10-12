@@ -67,6 +67,59 @@ public static class LoopDesigning
                 buildFile,
                 [])));
 
+    /// <summary>The name of the build a loop started from scratch has (its loop: "Arc Hunter loop").</summary>
+    public const string ScratchBuildName = "Arc Hunter";
+
+    /// <summary>The comment a build started from scratch begins with.</summary>
+    public const string ScratchBuildNote =
+        "Started from scratch in Loopsmith's designer: an Arc Hunter with nothing equipped yet. An ability left out is an\n"
+        + "empty slot.";
+
+    /// <summary>
+    /// A new design for a build started from scratch: an Arc Hunter (Arcstrider) with nothing equipped — no super,
+    /// abilities, aspects or fragments, no weapons, no armor, no stats. The player fills it in the designer (the subclass
+    /// editor; their own weapons and armor after a Bungie login). It is written as a build file, so the loop embeds it —
+    /// and exports, shares and replays it — like any other.
+    /// </summary>
+    public static Result<DesignSession, string> StartScratchDesign(RuleCatalog catalog)
+    {
+        var build = CreateScratchBuild();
+        var file = new SourceText("from-scratch.build.yaml", BuildFileWriting.WriteBuildFile(build, [ScratchBuildNote]));
+        return StartDesign(catalog, file, $"{ScratchBuildName} loop");
+    }
+
+    private static Build CreateScratchBuild()
+    {
+        var empty = new AbilityPlug.Empty();
+        var noStat = Optional.None<StatValue>();
+        return new Build(
+            ScratchBuildName,
+            Optional.None<string>(),
+            Optional.None<string>(),
+            Optional.None<CatalogVersion>(),
+            GuardianClass.Hunter,
+            Subclass.Arc,
+            new AbilityLoadout(empty, empty, empty, empty),
+            [],
+            [],
+            Optional.None<ElementId>(),
+            [],
+            [],
+            [],
+            [],
+            new StatLine(noStat, noStat, noStat, noStat, noStat, noStat),
+            [],
+            []);
+    }
+
+    /// <summary>
+    /// True when the build has something to set things off: a super, grenade, melee or class ability (named or "?"), or a
+    /// weapon. A build started from scratch has none until the subclass editor or a weapon gives it one, and the designer
+    /// offers no trigger until then.
+    /// </summary>
+    public static bool HasTriggerSource(ValidatedBuild build) =>
+        build.Build.Abilities.ListPlugs().Any(plug => !plug.IsEmpty()) || !build.Build.Weapons.IsEmpty;
+
     /// <summary>The comment a build from a DIM link starts with: where it came from and what <c>leftOut</c> means.</summary>
     public const string DimBuildNote =
         "Composed by Loopsmith from the DIM loadout at source. leftOut: what the loadout has that the rule catalog\n"
