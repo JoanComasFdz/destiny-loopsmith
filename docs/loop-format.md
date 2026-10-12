@@ -209,7 +209,7 @@ the build holds what the catalog recognises by hash, and nothing is guessed:
 | From the loadout | Becomes |
 |---|---|
 | the subclass item | `class` and `subclass` — the glossary's `subclasses` ([rule-format.md](rule-format.md#glossary-rulesglossaryyaml): the nine Light ones so far, whose hashes DIM's source lists); a Stasis, Strand or Prismatic loadout, or one without a subclass, can't start a build yet |
-| the subclass's plugs, in socket order | the super, grenade, melee and class ability, aspects and fragments the catalog has a hash for; an ability it has none for is `"?"` |
+| the subclass's plugs, in socket order | the super, grenade, melee and class ability, aspects and fragments the catalog has a hash for, for the loadout's class (another class's, such as the Hunter's Spark of Shock on a Striker, is left out); an ability it has none for is `"?"` |
 | the other equipped items (and the Loadout Optimizer's exotic) | `exoticArmor`; a weapon the manifest excerpt knows ([rule-format.md](rule-format.md#manifest-excerpt-rulesmanifestyaml)) becomes one of `weapons` — its slot, name, damage type, archetype and `hash`, and as its `roll` the perk each trait column rolls with among the item's `socketOverrides` (a loadout saved with its perks; most name the weapon only) |
 | the armor pieces, by their manifest set | `armorSetBonuses`: each set perk the pieces grant (2 or 4 of a set) that the catalog has a hash for; the pieces themselves (legendary armor) are left out |
 | `parameters.mods` (repeats are stacked copies) | `armorMods` |
@@ -290,11 +290,11 @@ stay on Home as links, with "import a build.yaml" and "import a loop".
 
 ## Editing the subclass
 
-The designer's Subclass box has **Edit** (the Home cards stay read-only). It opens the subclass editor with the build's
-super, grenade, melee, class ability, jump, two aspects and fragments; tapping a plug's square opens its details, and
-**Change** lists everything the subclass can hold in that slot — Bungie's manifest, with icons and names: the ones the
-rules know are marked, the rest carry ⊘, a jump none (it has no part in a loop). An aspect or a fragment can't be equipped
-twice, and ✕ leaves its slot empty. The aspects open the fragment slots (`fragmentSlots` in the rules: Tempest Strike
+The designer's Subclass box has **⋯** next to its title, for every build (the Home cards stay read-only). It opens the
+subclass editor with the build's super, grenade, melee, class ability, jump, two aspects and fragments; tapping a plug's
+square opens its details, and **Change** lists everything the subclass can hold in that slot — Bungie's manifest, with
+icons and names: the ones the rules know are marked, the rest carry ⊘, a jump none (it has no part in a loop). An aspect
+or a fragment can't be equipped twice, and ✕ leaves its slot empty. The aspects open the fragment slots (`fragmentSlots` in the rules: Tempest Strike
 and Flow State 4, Tempest Strike and Ascension 5); the count follows the aspects at once. An aspect whose count the rules
 don't give shows "?" slots and limits nothing. An aspect change that closes slots takes out the last fragments and names
 them. **Cancel**, ✕ or Escape throws the changes away.
@@ -306,7 +306,9 @@ trigger HUD, the Validation list and **Analyze** follow it. When the stats were 
 (they equal what that armor gives for the old subclass), they are added up again with the new fragments (Spark of Shock
 gone gives back its −10 Grenade); stats the player typed stay as typed. The export and the share link carry the new
 subclass. What the subclass can hold comes from the manifest excerpt (`plugs` of the subclass item, written by
-`tools/manifest/` for Arcstrider only); another subclass or class has no Edit.
+`tools/manifest/` for each of the glossary's nine subclasses). A plug is the rules' element only when the rules know it
+for the build's class: the rules author Skip Grenade and the Sparks for the Hunter, so on a Striker or a Stormcaller
+they are left out (⊘), in the editor and from a DIM link alike.
 
 ## Stats
 

@@ -267,6 +267,10 @@ public static class LoopDesigning
     public static SubclassPlugs ReadSubclassPlugs(ValidatedBuild build) =>
         SubclassEditing.ReadPlugs(build.Catalog, build.Build);
 
+    /// <summary>The rules' element a subclass plug is on this build; none when the rules don't know it for its class (it is left out, ⊘).</summary>
+    public static Optional<BuildElement> FindSubclassElement(ValidatedBuild build, ItemHash plug) =>
+        SubclassEditing.FindElement(build.Catalog, build.Build, plug);
+
     /// <summary>Everything the build's subclass can hold in a slot (the manifest's), in its order.</summary>
     public static ImmutableArray<ItemHash> ListSubclassOptions(ValidatedBuild build, SubclassSlot slot) =>
         SubclassEditing.ListOptions(build.Catalog, build.Build, slot);

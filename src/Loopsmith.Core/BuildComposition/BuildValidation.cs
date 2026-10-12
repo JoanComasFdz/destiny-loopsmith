@@ -146,22 +146,14 @@ public static class BuildValidation
             .. slot.Accepts.Contains(element.Kind)
                 ? []
                 : new[] { new BuildIssue(Severity.Blocking, $"'{element.Name}' ({element.Kind}) can't go in the {slot.SlotName} slot.") },
-            .. element.Class.Match(c => c.Value == build.Class, _ => true)
+            .. element.FitsClass(build.Class)
                 ? []
                 : new[] { new BuildIssue(Severity.Blocking, $"'{element.Name}' belongs to another class, not {build.Class}.") },
-            .. IsSubclassCompatible(build.Subclass, element)
+            .. element.FitsSubclass(build.Subclass)
                 ? []
                 : new[] { new BuildIssue(Severity.Blocking, $"'{element.Name}' ({element.Affinity}) does not fit the {build.Subclass} subclass.") },
         ];
         return new ResolvedSlot(slot, Optional.Some(element), issues);
-    }
-
-    private static bool IsSubclassCompatible(Subclass subclass, BuildElement element)
-    {
-        var isSubclassBound = element.Kind is ElementKind.Super or ElementKind.Grenade or ElementKind.Melee
-            or ElementKind.Aspect or ElementKind.Fragment;
-        var isNeutral = element.Affinity is Affinity.Neutral or Affinity.Kinetic;
-        return !isSubclassBound || isNeutral || subclass == Subclass.Prismatic || element.Affinity == subclass.ToAffinity();
     }
 
     /// <summary>An ability given as "?" is part of the build but not of the trace: it sets nothing off.</summary>

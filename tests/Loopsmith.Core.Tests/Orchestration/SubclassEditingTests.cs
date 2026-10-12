@@ -9,7 +9,7 @@ using Loopsmith.Core.Tests.Support;
 namespace Loopsmith.Core.Tests.Orchestration;
 
 /// <summary>
-/// Editing the subclass in the designer: what Arcstrider can hold comes from the manifest excerpt, the aspects open the
+/// Editing the subclass in the designer: what each subclass can hold comes from the manifest excerpt, the aspects open the
 /// fragment slots, a saved edit rewrites only the embedded build's subclass entries and the steps replay with it.
 /// </summary>
 public sealed class SubclassEditingTests
@@ -21,6 +21,7 @@ public sealed class SubclassEditingTests
     private static readonly ItemHash SparkOfShock = ItemHash.From(1727069364u);
     private static readonly ItemHash SparkOfVolts = ItemHash.From(3277705904u);   // a fragment the rules don't know
     private static readonly ItemHash BlinkJump = ItemHash.From(95544329u);
+    private static readonly ItemHash SkipGrenade = ItemHash.From(146194908u);
 
     private static readonly RuleCatalog Catalog =
         FileSourceFetching.ReadRuleFiles(RepoFiles.ToPath("rules"))
@@ -153,6 +154,71 @@ public sealed class SubclassEditingTests
         Assert.Equal(new Result<DesignSession, string>.Error("A plug can be equipped once."), twice);
         Assert.IsType<Result<DesignSession, string>.Error>(foreign);
         Assert.Equal(new Result<DesignSession, string>.Error("4 fragments don't fit the 2 slots the aspects open."), crowded);
+    }
+
+    [Theory]
+    [InlineData(GuardianClass.Hunter, Subclass.Arc)]
+    [InlineData(GuardianClass.Hunter, Subclass.Solar)]
+    [InlineData(GuardianClass.Hunter, Subclass.Void)]
+    [InlineData(GuardianClass.Titan, Subclass.Arc)]
+    [InlineData(GuardianClass.Titan, Subclass.Solar)]
+    [InlineData(GuardianClass.Titan, Subclass.Void)]
+    [InlineData(GuardianClass.Warlock, Subclass.Arc)]
+    [InlineData(GuardianClass.Warlock, Subclass.Solar)]
+    [InlineData(GuardianClass.Warlock, Subclass.Void)]
+    public void Every_subclass_Loopsmith_opens_lists_what_it_can_hold_in_each_slot(GuardianClass guardianClass, Subclass subclass)
+    {
+        var build = StartBuild(guardianClass, subclass).Build;
+
+        Assert.True(LoopDesigning.CanEditSubclass(build));
+        Assert.All(
+            new[] { SubclassSlot.Super, SubclassSlot.Grenade, SubclassSlot.Melee, SubclassSlot.ClassAbility, SubclassSlot.Jump, SubclassSlot.Aspect, SubclassSlot.Fragment },
+            slot => Assert.NotEmpty(LoopDesigning.ListSubclassOptions(build, slot)));
+    }
+
+    [Fact]
+    public void A_Striker_saves_the_Arc_plugs_the_rules_author_for_the_Hunter_as_left_out_and_reopens_with_them()
+    {
+        var session = StartBuild(GuardianClass.Titan, Subclass.Arc);
+        ItemHash Find(SubclassSlot slot, string name) =>
+            LoopDesigning.ListSubclassOptions(session.Build, slot).Single(hash => Catalog.Manifest.FindItem(hash).Map(item => item.Name) == Optional.Some(name));
+        var plugs = new SubclassPlugs(
+            Optional.Some(Find(SubclassSlot.Super, "Thundercrash")),
+            Optional.Some(SkipGrenade),                                                          // the Hunter's Skip Grenade in the rules: the same plug
+            Optional.Some(Find(SubclassSlot.Melee, "Thunderclap")),
+            Optional.Some(Find(SubclassSlot.ClassAbility, "Thruster")),
+            Optional.None<ItemHash>(),
+            [Find(SubclassSlot.Aspect, "Knockout"), Find(SubclassSlot.Aspect, "Juggernaut")],
+            [SparkOfShock, SparkOfVolts]);
+
+        var saved = Edit(session, plugs);
+        var reopened = LoopDesigning.ImportLoop(Catalog, new SourceText("x.loop.yaml", LoopDesigning.ExportLoop(saved)))
+            .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
+
+        Assert.Equal(Optional.None<ElementId>(), saved.Build.Build.Abilities.Grenade);
+        Assert.Empty(saved.Build.Build.Fragments);
+        Assert.Contains(saved.Build.Build.LeftOut, item => item == new LeftOutItem(LoadoutPart.SubclassPlug, SkipGrenade));
+        Assert.Contains(saved.Build.Build.LeftOut, item => item == new LeftOutItem(LoadoutPart.SubclassPlug, SparkOfShock));
+        Assert.Equal(Optional.None<BuildElement>(), LoopDesigning.FindSubclassElement(saved.Build, SparkOfShock));
+        var after = LoopDesigning.ReadSubclassPlugs(reopened.Build);
+        Assert.Equal([plugs.Super, plugs.Grenade, plugs.Melee, plugs.ClassAbility], [after.Super, after.Grenade, after.Melee, after.ClassAbility]);
+        Assert.Equal(plugs.Aspects, after.Aspects);
+        Assert.Equal(plugs.Fragments, after.Fragments);
+    }
+
+    private static DesignSession StartBuild(GuardianClass guardianClass, Subclass subclass)
+    {
+        var text = $"""
+            name: Test
+            class: {guardianClass.ToString().ToLowerInvariant()}
+            subclass: {subclass.ToString().ToLowerInvariant()}
+            super: "?"
+            grenade: "?"
+            melee: "?"
+            classAbility: "?"
+            """;
+        return LoopDesigning.StartDesign(Catalog, new SourceText("build.yaml", text), "Test")
+            .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
     }
 
     private static DesignSession Edit(DesignSession session, SubclassPlugs plugs) =>

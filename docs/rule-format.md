@@ -137,7 +137,7 @@ items:
   take artifact perks, without a socket's empty plug or the reset socket), and it is written for every artifact
   that unlocks an artifact perk the rules or a saved share name. Artifacts share perks, so a build's artifact is
   the one that unlocks the most of its perks (each counted once); two that unlock as many: none, not a guess.
-  A `subclass` the designer can edit (Arcstrider) has `plugs`: every plug its sockets take — super, abilities, jump,
+  A `subclass` (each of the glossary's) has `plugs`: every plug its sockets take — super, abilities, jump,
   aspects, fragments, without the empty sockets' — each written as an item too; the subclass editor lists them.
 * `description`: Bungie's text (for an aspect or a fragment, whose own is empty, its perks': its effect, then a
   stat change such as `-10 Grenade ▼`), without the private-use glyphs of Destiny's icon font. It is shown

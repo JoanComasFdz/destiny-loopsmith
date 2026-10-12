@@ -6,9 +6,9 @@ namespace Loopsmith.Core.BuildComposition;
 
 /// <summary>
 /// Pure: the plugs a build's subclass holds and the ones it could (the manifest excerpt's <c>plugs</c> of the subclass
-/// item), and a build with other plugs. A plug the rules know is the build's element (its ability, aspect or fragment);
-/// any other is a left-out subclass plug, marked as not in the rules, and a jump is always left out (it has no part in a
-/// loop). The aspects open the fragment slots: the sum of the aspects' <c>fragmentSlots</c>, or not known when any
+/// item), and a build with other plugs. A plug the rules know for the build's class is the build's element (its ability,
+/// aspect or fragment); any other is a left-out subclass plug, marked as not in the rules (an Arc fragment the rules
+/// author for the Hunter is one on a Striker), and a jump is always left out (it has no part in a loop). The aspects open the fragment slots: the sum of the aspects' <c>fragmentSlots</c>, or not known when any
 /// aspect's isn't.
 /// </summary>
 public static class SubclassEditing
@@ -131,14 +131,15 @@ public static class SubclassEditing
 
     private static Build Write(RuleCatalog catalog, Build build, SubclassPlugs plugs)
     {
-        Optional<ElementId> Ability(Optional<ItemHash> plug) => plug.Bind(hash => FindElement(catalog, hash));
-        ImmutableArray<ElementId> Elements(ImmutableArray<ItemHash> hashes) => [.. hashes.SelectMany(hash => Flatten(FindElement(catalog, hash)))];
-        var unknown = ListSingles(plugs).Concat(plugs.Aspects).Concat(plugs.Fragments).Where(hash => !FindElement(catalog, hash).IsSome());
+        Optional<ElementId> FindId(ItemHash hash) => FindElement(catalog, build, hash).Map(element => element.Id);
+        Optional<ElementId> FindAbility(Optional<ItemHash> plug) => plug.Bind(FindId);
+        ImmutableArray<ElementId> ListElements(ImmutableArray<ItemHash> hashes) => [.. hashes.SelectMany(hash => Flatten(FindId(hash)))];
+        var unknown = ListSingles(plugs).Concat(plugs.Aspects).Concat(plugs.Fragments).Where(hash => !FindId(hash).IsSome());
         return build with
         {
-            Abilities = new AbilityLoadout(Ability(plugs.Super), Ability(plugs.Grenade), Ability(plugs.Melee), Ability(plugs.ClassAbility)),
-            Aspects = Elements(plugs.Aspects),
-            Fragments = Elements(plugs.Fragments),
+            Abilities = new AbilityLoadout(FindAbility(plugs.Super), FindAbility(plugs.Grenade), FindAbility(plugs.Melee), FindAbility(plugs.ClassAbility)),
+            Aspects = ListElements(plugs.Aspects),
+            Fragments = ListElements(plugs.Fragments),
             LeftOut = [.. build.LeftOut.Where(item => item.Part != LoadoutPart.SubclassPlug), .. unknown.Select(hash => new LeftOutItem(LoadoutPart.SubclassPlug, hash))],
         };
     }
@@ -149,8 +150,9 @@ public static class SubclassEditing
     private static IEnumerable<T> Flatten<T>(Optional<T> optional) =>
         optional.Match(some => new[] { some.Value }, _ => []);
 
-    private static Optional<ElementId> FindElement(RuleCatalog catalog, ItemHash hash) =>
-        catalog.FindElementByHash(hash).Bind(element => IsSubclassPlug(element.Kind) ? Optional.Some(element.Id) : Optional.None<ElementId>());
+    /// <summary>The rules' element a plug is on this build: an ability, aspect or fragment that fits its class and subclass; none: a left-out plug.</summary>
+    public static Optional<BuildElement> FindElement(RuleCatalog catalog, Build build, ItemHash hash) =>
+        catalog.FindElementByHash(hash).Bind(element => IsSubclassPlug(element.Kind) && element.Fits(build.Class, build.Subclass) ? Optional.Some(element) : Optional.None<BuildElement>());
 
     private static bool IsSubclassPlug(ElementKind kind) =>
         kind is ElementKind.Super or ElementKind.Grenade or ElementKind.Melee or ElementKind.ClassAbility or ElementKind.Aspect or ElementKind.Fragment;

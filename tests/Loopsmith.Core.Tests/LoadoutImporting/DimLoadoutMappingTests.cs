@@ -175,6 +175,24 @@ public sealed class DimLoadoutMappingTests
         Assert.Contains(build.LeftOut, item => item == new LeftOutItem(LoadoutPart.SubclassPlug, ItemHash.From(95544328u))); // Triple Jump
     }
 
+    [Fact]
+    public void An_Arc_plug_the_rules_author_for_the_Hunter_is_left_out_of_a_Striker_and_the_loadout_opens()
+    {
+        // Striker (2932390016): Knockout (an aspect the rules don't know), Spark of Shock and Skip Grenade (the Hunter's in the rules).
+        var json = """{ "name": "x", "classType": 0, "equipped": [ { "hash": 2932390016, "socketOverrides": { "3": 146194908, "5": 1656549674, "7": 1727069364 } } ] }""";
+
+        var session = LoopDesigning.ReadDimLink(Link).Bind(link => LoopDesigning.StartDimDesign(Catalog, link, json))
+            .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
+
+        Assert.Equal((GuardianClass.Titan, Subclass.Arc), (session.Build.Build.Class, session.Build.Build.Subclass));
+        Assert.Equal(Optional.None<ElementId>(), session.Build.Build.Abilities.Grenade);
+        Assert.Empty(session.Build.Build.Fragments);
+        Assert.Equal(
+            [146194908u, 1656549674u, 1727069364u],
+            session.Build.Build.LeftOut.Where(item => item.Part == LoadoutPart.SubclassPlug).Select(item => item.Hash.Value).Order());
+        Assert.True(LoopDesigning.CanEditSubclass(session.Build));
+    }
+
     private static Build MapLoadout(string json) =>
         DimLoadoutMapping.MapLoadout(Catalog, Link, json).Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
 }

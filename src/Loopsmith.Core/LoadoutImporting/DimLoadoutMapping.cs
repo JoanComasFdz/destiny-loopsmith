@@ -54,7 +54,7 @@ public static class DimLoadoutMapping
                 $"The DIM loadout is for another class than its subclass ({subclass.Name}, a {subclass.Class} subclass).");
         }
 
-        var plugs = subclassItem.Plugs.Select(hash => Recognise(byHash, LoadoutPart.SubclassPlug, hash)).ToImmutableArray();
+        var plugs = subclassItem.Plugs.Select(hash => KeepFitting(Recognise(byHash, LoadoutPart.SubclassPlug, hash), subclass.Class, subclass.Subclass)).ToImmutableArray();
         var items = loadout.Equipped
             .Where(item => !subclassByHash.ContainsKey(item.Hash))
             .Select(item => item.Hash)
@@ -138,6 +138,10 @@ public static class DimLoadoutMapping
 
     private static Recognition Recognise(ImmutableDictionary<ItemHash, BuildElement> byHash, LoadoutPart part, ItemHash hash) =>
         new(part, hash, byHash.TryGetValue(hash, out var element) ? Optional.Some(element) : Optional.None<BuildElement>());
+
+    /// <summary>A subclass plug whose element is another class's (an Arc fragment the rules author for the Hunter, on a Striker) is left out, not placed.</summary>
+    private static Recognition KeepFitting(Recognition entry, GuardianClass guardianClass, Subclass subclass) =>
+        entry with { Element = entry.Element.Bind(element => element.Fits(guardianClass, subclass) ? Optional.Some(element) : Optional.None<BuildElement>()) };
 
     /// <summary>
     /// Where a recognised element can go: a subclass plug is an ability, aspect or fragment; an item an exotic armor; a

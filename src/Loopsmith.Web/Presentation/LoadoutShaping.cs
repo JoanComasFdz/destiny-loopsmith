@@ -388,13 +388,13 @@ public static class LoadoutShaping
     }
 
     /// <summary>
-    /// A plug of the subclass editor as its square shows it: the rules' element when they know it, else the manifest's item
+    /// A plug of the subclass editor as its square shows it: the rules' element when they know it for the build's class, else the manifest's item
     /// marked ⊘ (a jump has no part in a loop, so it carries none). It opens its details either way.
     /// </summary>
     public static IconTile DescribeSubclassPlug(ValidatedBuild build, ItemHash hash)
     {
         var catalog = build.Catalog;
-        return catalog.FindElementByHash(hash).Match(
+        return LoopDesigning.FindSubclassElement(build, hash).Match(
             element => DescribeElement(catalog, element.Value.Id),
             _ =>
             {
