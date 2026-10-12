@@ -126,7 +126,8 @@
         var read = await Manifest.ListItemsAsync();                                              // impure (once per tab)
         var view = read.Map(Shape);                                                              // pure
         listed = Optional.Some(view);                                                            // impure (component state)
-        focused = view.Match(ok => ok.Value.Options.Where(option => option.Worn).Select(option => Optional.Some(option.Hash)).FindFirstSome(), _ => Optional.None<ItemHash>()); // impure (component state)
+        var wearing = view.Match(ok => ok.Value.Options.Where(option => option.Worn).Select(option => Optional.Some(option.Hash)).FindFirstSome(), _ => Optional.None<ItemHash>()); // pure
+        focused = wearing;                                                                       // impure (component state)
     }
 
     private void Search(ChangeEventArgs e) =>
@@ -172,7 +173,8 @@
         problem = Optional.None<string>();                                                       // impure (component state)
         var picked = await Pick(hash);                                                           // impure
         picking = false;                                                                         // impure (component state)
-        problem = picked.Match(_ => Optional.None<string>(), failed => Optional.Some(failed.Failure)); // impure (component state)
+        var why = picked.Match(_ => Optional.None<string>(), failed => Optional.Some(failed.Failure)); // pure
+        problem = why;                                                                           // impure (component state)
     }
 
     private static string DescribeTier(IconTile tile) =>

@@ -111,6 +111,20 @@ public sealed class ItemPickingTests
     }
 
     [Fact]
+    public void A_pick_whose_manifest_read_failed_says_so_and_one_that_read_adds_the_item()
+    {
+        var session = OpenHandWrittenLoop(Catalog);
+
+        var failed = LoopDesigning.UsePickedItemManifest(session, new Result<ManifestExcerpt, string>.Error("Failed to fetch"));
+        var read = Assert.IsType<Result<DesignSession, string>.Ok>(LoopDesigning.UsePickedItemManifest(session, new Result<ManifestExcerpt, string>.Ok(Joined))).Value;
+
+        Assert.Equal("Loopsmith couldn't read Bungie's manifest for it (Failed to fetch). Try again.", Assert.IsType<Result<DesignSession, string>.Error>(failed).Failure);
+        Assert.Empty(LoopDesigning.ListUnknownItemHashes(read, EnergyRifle));
+        Assert.Equal([EnergyRifle], LoopDesigning.ListUnknownItemHashes(session, EnergyRifle));
+        Assert.IsType<Result<DesignSession, string>.Ok>(LoopDesigning.PickWeaponItem(read, new WeaponTarget.InPlaceOf(1), EnergyRifle));
+    }
+
+    [Fact]
     public void Emptying_a_weapon_slot_takes_the_weapon_off_and_blocks_the_steps_that_use_it()
     {
         var session = OpenHandWrittenLoop(Catalog);

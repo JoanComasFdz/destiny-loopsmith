@@ -568,6 +568,15 @@ public static class LoopDesigning
         ManifestJoin.ListUnknown(session.Build.Catalog.Manifest, [item]);
 
     /// <summary>
+    /// The design with what Bungie's full manifest said of an item picked from "Every item" (its perks, catalyst or set:
+    /// <see cref="UseJoinedManifest"/>), or, when it couldn't be read, why — the pick waits for it, so it doesn't happen.
+    /// </summary>
+    public static Result<DesignSession, string> UsePickedItemManifest(DesignSession session, Result<ManifestExcerpt, string> joined) =>
+        joined.Match(
+            _ => UseJoinedManifest(session, joined),
+            failed => new Result<DesignSession, string>.Error($"Loopsmith couldn't read Bungie's manifest for it ({failed.Failure}). Try again."));
+
+    /// <summary>
     /// The design wearing the weapon <paramref name="item"/> of the game where <paramref name="target"/> says: in place of
     /// one of its weapons (that entry of the embedded build file is written anew: no roll, its catalyst off), or added to
     /// an empty slot; the build check runs again and the steps replay. Or why the weapon can't be worn.

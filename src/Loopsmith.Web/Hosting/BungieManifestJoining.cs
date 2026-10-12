@@ -78,7 +78,8 @@ public sealed class BungieManifestJoining(BrowserInterop browser, string apiKey,
             var read = Listing is Optional<ItemListing>.Some meanwhile
                 ? new Result<ItemListing, string>.Ok(meanwhile.Value)
                 : await ReadListingAsync();                                                      // impure
-            Listing = read.Match(ok => Optional.Some(ok.Value), _ => Optional.None<ItemListing>()); // impure (tab state)
+            var listing = read.Match(ok => Optional.Some(ok.Value), _ => Optional.None<ItemListing>()); // pure
+            Listing = listing;                                                                   // impure (tab state)
             return read;
         }
         finally
