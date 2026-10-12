@@ -22,6 +22,7 @@
     --bad: #ff6b6b;
     --ok: #4ee28a;
     --exotic: #ceae33;
+    --masterwork: #eade8b;   /* DIM's masterwork border */
     --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
     --radius: 8px;
@@ -486,7 +487,8 @@ textarea { resize: vertical; }
 .note-input:focus { border-bottom: 1px solid var(--arc); }
 .step-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 8px; font-size: 12px; }
 
-/* a step's outcomes, one per line (OutcomeTree.razor): event → element (icon, name) → each outcome; a cascade nests */
+/* a step's outcomes, one per line (OutcomeTree.razor): event → element (icon, name) → its outcomes as a bulleted
+   list; a cascade nests, a pickup picked up shows a 📍 */
 .outcomes { display: flex; flex-direction: column; gap: 4px; font-size: 13.5px; line-height: 1.45; }
 .outcome-event { margin-left: calc(var(--depth, 0) * 18px); }
 .outcome-event[data-depth="0"] + .outcome-event[data-depth="0"] { margin-top: 4px; }
@@ -495,8 +497,10 @@ textarea { resize: vertical; }
 .outcome-origin-head { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 10.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
 .outcome-origin-icon { width: 16px; height: 16px; flex: none; border-radius: 3px; background: #1a2130; object-fit: cover; }
 .outcome-source { margin: 2px 0 0 14px; }
-.outcome-line { display: flex; gap: 6px; margin-left: 26px; overflow-wrap: anywhere; }
-.outcome-arrow { flex: none; }
+.outcome-lines { margin: 0 0 0 26px; padding-left: 16px; list-style: disc; }
+.outcome-line { overflow-wrap: anywhere; }
+.outcome-line::marker { color: var(--muted); }
+.outcome-pickup-mark { font-size: .95em; }
 .outcome-detail { margin-left: 26px; font-size: 12.5px; overflow-wrap: anywhere; }
 .outcome-note { overflow-wrap: anywhere; }
 .outcome-name-wrap { position: relative; display: inline; }
@@ -515,6 +519,7 @@ textarea { resize: vertical; }
 .keyword { color: var(--aff); font-weight: 650; }
 .outcome-keyword:hover, .outcome-keyword:focus-visible { text-decoration-style: solid; text-decoration-color: currentColor; }
 .outcome-icon { width: 20px; height: 20px; flex: none; border-radius: 3px; background: #1a2130; object-fit: cover; }
+.outcome-icon.glyph { display: inline-flex; align-items: center; justify-content: center; background: none; font-size: 15px; line-height: 1; }
 .outcome-icon.placeholder { width: 10px; height: 10px; margin: 0 5px; border-radius: 2px; background: var(--aff); transform: rotate(45deg); opacity: .8; }
 .item-preview {
     position: absolute;
@@ -592,20 +597,16 @@ textarea { resize: vertical; }
 }
 .timeline-empty { margin: 4px 0; padding: 16px; border: 1px dashed var(--line-2); border-radius: var(--radius); color: var(--muted); text-align: center; }
 
-/* palette: under the last step (the next trigger is where the loop goes on), in columns when the loop is wide */
+/* palette: under the last step (the next trigger is where the loop goes on), laid out like Destiny's HUD — the Super's
+   diamond, the grenade, melee and class ability squares in the subclass's colour (--aff), the weapons in their damage
+   type's; above them the ground and the states to declare; the picked slot's actions below */
 .palette { padding-bottom: 8px; }
 .col-loop .palette { margin-top: 2px; }
-@media (min-width: 620px) {
-    .col-loop .trigger-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 5px 12px; }
-}
 .palette-hint { margin: 0 0 6px; font-size: 12px; color: var(--warn); }
-.trigger-list { display: flex; flex-direction: column; gap: 5px; }
-.trigger-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
-.trigger-title { flex: 1 1 0; min-width: 0; font-weight: 650; font-size: 13px; overflow-wrap: anywhere; }
-.trigger-buttons { display: flex; gap: 4px; }
-.target-count { display: inline-flex; align-items: center; gap: 2px; color: var(--muted); font-size: 12px; font-weight: 700; }
-.target-count select { padding: 4px 4px 4px 6px; min-height: 30px; font-family: var(--mono); font-size: 13px; }
-.trigger-row.single .trigger-buttons { flex: 1 1 100%; }
+.trigger-buttons { display: flex; flex-wrap: wrap; gap: 6px; }
+.target-count { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); font-size: 12px; font-weight: 700; }
+.target-count select { padding: 4px 4px 4px 6px; min-height: 34px; font-family: var(--mono); font-size: 13px; }
+.target-count-label { font-weight: 500; }
 .trigger {
     display: inline-flex;
     align-items: center;
@@ -623,11 +624,81 @@ textarea { resize: vertical; }
     cursor: pointer;
     text-transform: none;
 }
-.trigger.half { min-width: 62px; text-transform: lowercase; }
-.trigger.whole { flex: 1; justify-content: flex-start; }
 .trigger:hover { border-color: var(--arc); background: #1b2740; }
 .trigger:active { transform: translateY(1px); }
 .trigger .badge.new { font-size: 9px; padding: 0 4px; }
+
+.trig-hud { display: flex; flex-direction: column; gap: 8px; padding-top: 6px; }
+.trig-status { display: flex; flex-direction: column; gap: 6px; }
+.trig-group { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.trig-group-label { flex: 0 0 92px; color: var(--dim); font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.trig-status-chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 3px 2px 10px; border: 1px solid var(--line); border-left: 3px solid var(--aff); border-radius: 4px; background: rgba(255, 255, 255, .03); }
+.trig-status-name { margin-right: 2px; color: var(--aff); font-size: 13px; font-weight: 700; }
+.trigger.trig-mini { min-height: 28px; padding: 2px 8px; font-size: 12px; font-weight: 600; }
+.trig-chip { min-height: 32px; padding: 3px 12px 3px 9px; border-radius: 16px; border-color: var(--line-2); background: rgba(255, 255, 255, .035); font-weight: 600; }
+.trig-chip-glyph { color: var(--text); font-size: 12px; }
+@media (max-width: 520px) {
+    .trig-group-label { flex-basis: 100%; }
+}
+.trig-bar { height: 4px; margin-left: 46px; border-radius: 2px; background: linear-gradient(90deg, var(--aff), rgba(255, 255, 255, .06)); }
+.trig-main { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; }
+.trig-abilities { display: flex; align-items: center; gap: 8px; }
+.trig-super, .trig-ability {
+    position: relative;
+    flex: none;
+    width: 62px;
+    height: 62px;
+    min-height: 0;
+    padding: 0;
+    border: 2px solid var(--aff);
+    border-radius: 3px;
+    background: var(--panel-2);
+    color: var(--text);
+    cursor: pointer;
+}
+.trig-super { width: 58px; height: 58px; margin: 0 12px 0 8px; transform: rotate(45deg); overflow: hidden; }
+.trig-super .trig-icon { transform: rotate(-45deg) scale(1.42); }
+.trig-super .trig-new { transform: rotate(-45deg); }
+.trig-icon { display: block; width: 100%; height: 100%; }
+.trig-icon img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.trig-unknown { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; font-size: 26px; font-weight: 700; color: var(--aff); }
+.trig-caption { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; color: var(--aff); font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.trig-finisher { margin-left: 6px; border-style: dashed; }
+.trig-super:hover, .trig-ability:hover { border-color: var(--text); background: var(--panel-2); }
+.trig-super.picked, .trig-ability.picked { border-color: var(--text); box-shadow: 0 0 0 2px var(--aff), 0 0 14px var(--aff); }
+.trig-weapons { display: flex; flex: 1 1 280px; flex-direction: column; gap: 4px; min-width: 0; }
+.trig-weapon {
+    position: relative;
+    display: grid;
+    grid-template-columns: 42px 18px minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
+    padding: 3px 10px 3px 3px;
+    border: 1px solid var(--line);
+    border-right: 3px solid var(--aff);
+    border-radius: 3px;
+    background: rgba(255, 255, 255, .03);
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+.trig-weapon:hover { border-color: var(--line-2); border-right-color: var(--aff); background: rgba(255, 255, 255, .06); }
+.trig-weapon.picked { border-color: var(--aff); background: rgba(255, 255, 255, .07); box-shadow: 0 0 10px rgba(0, 0, 0, .4) inset; }
+.trig-weapon-icon { width: 42px; height: 42px; border-radius: 2px; background: var(--panel-2); overflow: hidden; }
+.trig-weapon-icon img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.trig-damage-icon { width: 18px; height: 18px; }
+.trig-weapon-text { display: flex; flex-direction: column; min-width: 0; }
+.trig-weapon-name { overflow: hidden; color: var(--aff); font-size: 14px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.trig-weapon-kind { overflow: hidden; color: var(--muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.trig-new { position: absolute; top: -4px; right: -4px; width: 10px; height: 10px; border-radius: 50%; background: var(--strand); box-shadow: 0 0 0 2px var(--panel); }
+.trig-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; min-height: 52px; margin-top: 12px; padding: 8px 12px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel-2); font-size: 13px; }
+.trig-actions-title { font-weight: 700; }
+.trig-actions .trigger { min-width: 78px; min-height: 36px; text-transform: lowercase; }
+@media (max-width: 420px) {
+    .trig-super, .trig-ability { width: 58px; height: 58px; }
+    .trig-super { width: 54px; height: 54px; }
+}
 
 /* a step's state, laid out like the game's HUD: buffs on you left, your weapons' buffs in the middle, debuffs on the
    pack right, the ground below them; a phone stacks them, label beside chips */
@@ -773,6 +844,10 @@ button.hud-chip:hover, button.hud-chip:focus-visible { background: color-mix(in 
 .icon-tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .icon-tile.legendary { border-color: #8a5bb0; }
 .icon-tile.exotic { border-color: var(--exotic); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--exotic) 45%, transparent); }
+/* a copy's marks (after the Bungie login), as DIM draws them: Bungie's overlays over the icon, a masterwork's gold border */
+.icon-tile.masterwork { border-color: var(--masterwork); }
+.tile-overlay { position: absolute; inset: 0; background-size: contain; background-position: center; background-repeat: no-repeat; pointer-events: none; }
+.tile-overlay.masterwork-glow { opacity: .72; }
 .icon-tile.out { opacity: .55; filter: grayscale(.6); border-style: dashed; }
 .icon-tile.out:hover { opacity: .9; }
 .icon-tile.empty { border-style: dashed; color: var(--dim); font-size: 9px; text-align: center; background: transparent; }
@@ -783,9 +858,13 @@ button.hud-chip:hover, button.hud-chip:focus-visible { background: color-mix(in 
 .icon-tile.aspect, .icon-tile.fragment { border-color: color-mix(in srgb, var(--aff) 55%, rgba(255, 255, 255, .2)); }
 .weapon-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .weapon-line { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.weapon-icon { position: relative; flex: none; }
+.weapon-icon { position: relative; flex: none; display: flex; flex-direction: column; width: calc(var(--tile) * 1.2); }
 .weapon-icon .icon-tile { width: calc(var(--tile) * 1.2); height: calc(var(--tile) * 1.2); }
-.damage-icon { position: absolute; right: -6px; bottom: -6px; width: 18px; height: 18px; }
+/* DIM's polaroid: under a weapon's square, its breaker and element (gold when masterworked) */
+.tile-badge { display: flex; align-items: center; justify-content: flex-end; gap: 2px; height: 16px; padding: 0 2px; margin-top: -1px; background: #0d1017; border: 1px solid rgba(255, 255, 255, .28); border-top: 0; box-sizing: border-box; }
+.tile-badge.masterwork { background: color-mix(in srgb, var(--masterwork) 30%, #0d1017); border-color: var(--masterwork); }
+.tile-badge img { width: 13px; height: 13px; display: block; }
+.tile-badge:empty { display: none; }
 .weapon-text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
 .weapon-line-name { font-size: 13px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .weapon-line-sub { font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -823,7 +902,20 @@ button.hud-chip:hover, button.hud-chip:focus-visible { background: color-mix(in 
 .armor-worn-mark { position: absolute; right: 1px; top: 0; padding: 0 3px; font-size: 11px; font-weight: 800; color: #fff; background: rgba(0, 0, 0, .7); }
 .armor-option-details { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel-2); font-size: 13px; overflow-wrap: anywhere; }
 .armor-option-name { font-weight: 650; }
+.armor-option-marks { font-size: 12px; color: var(--masterwork); }
 .armor-picker-hint, .armor-picker-note { margin: 0; font-size: 12px; }
+/* the weapon picker: the player's weapons for a slot, each square with its breaker and element strip under it */
+.weapon-pick { flex: none; align-self: center; min-width: 28px; padding: 2px 6px; line-height: 1; font-size: 16px; letter-spacing: .05em; }
+.weapon-line.empty .weapon-line-sub { white-space: normal; }
+.weapon-picker { display: flex; flex-direction: column; gap: 10px; }
+.weapon-options { grid-template-columns: repeat(auto-fill, calc(var(--tile) * 1.3)); gap: 6px; }
+.weapon-option { display: flex; flex-direction: column; width: calc(var(--tile) * 1.3); }
+.weapon-options .icon-tile { width: calc(var(--tile) * 1.3); height: calc(var(--tile) * 1.3); }
+.weapon-options .icon-tile.focused { outline: 2px solid var(--arc); outline-offset: 1px; }
+.weapon-options .icon-tile.worn { box-shadow: 0 0 0 2px color-mix(in srgb, var(--ok) 70%, transparent); }
+.weapon-option-perks { display: flex; flex-wrap: wrap; gap: 6px 12px; }
+.weapon-option-perk { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; }
+.weapon-option-perk.in-rules .weapon-option-perk-name { color: var(--ok); }
 .icon-grid.mods { grid-template-columns: repeat(2, var(--mod-tile)); }
 .icon-grid.mods .icon-tile, .general-mods .icon-tile { width: var(--mod-tile); height: var(--mod-tile); }
 .general-mods .icon-grid { grid-template-columns: repeat(auto-fill, var(--mod-tile)); }
