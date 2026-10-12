@@ -1025,6 +1025,7 @@ a.weapon-line-name:hover { color: var(--arc); text-decoration: underline; }
 .modal {
     width: min(580px, 100%);
     max-height: calc(100vh - 32px);
+    max-height: calc(100dvh - 32px);   /* the visible screen: on a phone, 100vh is the height with the browser bar hidden */
     overflow: auto;
     background: var(--panel);
     border: 1px solid var(--line-2);
@@ -1032,6 +1033,25 @@ a.weapon-line-name:hover { color: var(--arc); text-decoration: underline; }
     box-shadow: 0 20px 60px rgba(0, 0, 0, .55);
 }
 .modal.wide { width: min(1000px, 100%); }
+/* a picker fits the screen: its header (✕), the item shown and the notes stay in view, only its grid scrolls (the body
+   scrolls too only when even those don't fit) */
+.modal.fit { display: flex; flex-direction: column; overflow: hidden; }
+.modal.fit .modal-head { flex: none; }
+.modal.fit .modal-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+.modal.fit .weapon-picker, .modal.fit .armor-picker { flex: 1 1 auto; min-height: 0; }
+.modal.fit .weapon-picker > *, .modal.fit .armor-picker > * { flex: none; }
+.modal.fit .weapon-options, .modal.fit .armor-options {
+    flex: 0 1 auto;
+    min-height: calc(var(--tile) * 1.3 + 26px);   /* one row of squares (and the weapons' strips) at least */
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    align-content: start;
+    padding: 3px;                                 /* room for the focused square's outline */
+}
+@media (max-width: 520px) {
+    .modal-backdrop { padding: 8px; }
+    .modal { max-height: calc(100vh - 16px); max-height: calc(100dvh - 16px); }
+}
 .modal-head { position: sticky; top: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 14px; background: var(--panel); border-bottom: 1px solid var(--line); z-index: 1; }
 .modal-body { padding: 12px 14px 16px; display: flex; flex-direction: column; gap: 10px; }
 .modal-body p { margin: 0; }

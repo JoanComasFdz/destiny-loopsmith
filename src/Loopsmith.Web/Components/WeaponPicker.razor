@@ -8,7 +8,7 @@
     var slot = Build.Build.FindTargetSlot(Target);
     var shown = view.Options.Where(option => focused == Optional.Some(option.Instance)).Select(Optional.Some).FindFirstSome();
 }
-<Modal Title="@view.Title" Size="wide" OnClose="OnClose">
+<Modal Title="@view.Title" Size="wide fit" OnClose="OnClose">
     <div class="weapon-picker" data-testid="weapon-picker" data-slot="@slot.Match(found => found.Value.ToString(), _ => "")">
         <ManifestProgressBar />
         @if (view.Options.IsEmpty)

@@ -6,7 +6,7 @@
     var view = ArmorPickerShaping.ShapePicker(Build, LoopDesigning.ListArmorOptions(Build, Profile, Slot));
     var shown = view.Options.Where(option => focused == Optional.Some(option.Instance)).Select(Optional.Some).FindFirstSome();
 }
-<Modal Title="@view.Title" Size="wide" OnClose="OnClose">
+<Modal Title="@view.Title" Size="wide fit" OnClose="OnClose">
     <div class="armor-picker" data-testid="armor-picker" data-slot="@Slot">
         <ManifestProgressBar />
         @if (view.Options.IsEmpty)
