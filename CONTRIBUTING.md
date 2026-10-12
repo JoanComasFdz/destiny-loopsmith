@@ -2,10 +2,16 @@
 
 ## Writing an agent issue
 
-Open a Claude Code session on this repository (claude.ai/code, or the Code tab in the Claude app)
-and run `/agent-issue` followed by what you want, in your own words and any language. It drafts
-the issue in English with the Agent task form's sections, shows it to you, and opens it when you
-agree, without the `agent` label. Add the label when you want a session to start on it.
+Start a Claude Code session on this repository and type `/agent-issue` followed by what you want,
+in your own words and any language:
+
+- **Browser:** claude.ai/code → pick `JoanComasFdz/destiny-loopsmith` → start a session.
+- **Android or iPhone:** the Claude app → **Code** tab → new session on this repository.
+- **Windows or Mac:** the Claude desktop app → **Code** → **Cloud** (not Local) → this repository.
+
+It drafts the issue in English with the Agent task form's sections, shows it to you, and opens it
+when you agree, without the `agent` label. Add the label when you want a session to start on it.
+The skill comes from this repository, so it works only in Code sessions on it, not in a plain chat.
 
 ## Agent workflow
 
