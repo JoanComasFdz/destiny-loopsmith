@@ -91,9 +91,9 @@ public sealed record OwnedArmor(ItemInstanceId InstanceId, ItemHash Hash, ArmorP
 
 /// <summary>
 /// What the game draws on a copy's icon, as DIM does: its gear tier (none for an item without one), whether it is
-/// masterworked, and the breaker it has as Bungie gives it for that copy (its own, or the season's artifact's), when any.
+/// masterworked, the breaker it has as Bungie gives it for that copy, when any, and its power level.
 /// </summary>
-public sealed record GearMarks(Optional<GearTier> Tier, bool Masterworked, Optional<ItemHash> Breaker);
+public sealed record GearMarks(Optional<GearTier> Tier, bool Masterworked, Optional<ItemHash> Breaker, Optional<PowerLevel> Power);
 
 /// <summary>A weapon the player owns: its instance, item hash, where it is, its marks and the plugs in its sockets (enabled ones, socket by socket: its perks, its catalyst).</summary>
 public sealed record OwnedWeapon(ItemInstanceId InstanceId, ItemHash Hash, ArmorPlace Place, GearMarks Marks, ImmutableArray<ItemHash> Plugs);

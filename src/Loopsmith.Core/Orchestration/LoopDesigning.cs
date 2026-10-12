@@ -426,13 +426,25 @@ public static class LoopDesigning
     public static Optional<GearMarks> FindArmorMarks(ValidatedBuild build, BungieProfile profile, ArmorSlot slot) =>
         CopyFinding.FindWornArmor(build.Catalog, build.Build, profile, slot).Map(armor => armor.Marks);
 
+    /// <summary>
+    /// The stat a copy of the player's focuses on, with its name and icon: its highest rolled stat, as DIM shows it in an
+    /// Armor 3.0 piece's top-right corner; none when its roll isn't read.
+    /// </summary>
+    public static Optional<ArmorStatIcon> FindStatFocus(ValidatedBuild build, OwnedArmor armor) =>
+        StatAdding.FindStatFocus(build.Catalog, armor).Bind(build.Catalog.Manifest.FindArmorStat);
+
+    /// <summary>The stat focus (<see cref="FindStatFocus(ValidatedBuild, OwnedArmor)"/>) of the player's copy the build wears in a slot.</summary>
+    public static Optional<ArmorStatIcon> FindStatFocus(ValidatedBuild build, BungieProfile profile, ArmorSlot slot) =>
+        CopyFinding.FindWornArmor(build.Catalog, build.Build, profile, slot).Bind(armor => FindStatFocus(build, armor));
+
     /// <summary>What the game draws on the player's copy of a build's weapon (its tier, masterwork, breaker): the share's copy when it is theirs, else their own.</summary>
     public static Optional<GearMarks> FindWeaponMarks(BungieProfile profile, WeaponLoadout weapon) =>
         CopyFinding.FindWornWeapon(profile, weapon).Map(owned => owned.Marks);
 
     /// <summary>
     /// The champion a build's weapon breaks, as DIM shows it: its copy's breaker (<paramref name="marks"/>, after the
-    /// player's login), else the weapon's own (an exotic's intrinsic: Thunderlord's Disruption); none when it has none.
+    /// player's login), else the weapon's own (an exotic's: Thunderlord's Disruption; a legendary's frame's: Adaptive
+    /// Frame pierces barriers); none when it has none.
     /// </summary>
     public static Optional<BreakerType> FindWeaponBreaker(ValidatedBuild build, WeaponLoadout weapon, Optional<GearMarks> marks) =>
         CopyFinding.FindWeaponBreaker(build.Catalog.Manifest, weapon, marks);

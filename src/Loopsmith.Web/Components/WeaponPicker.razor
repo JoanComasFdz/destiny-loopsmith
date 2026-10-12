@@ -41,16 +41,7 @@
                                 <span class="armor-worn-mark" aria-hidden="true">✓</span>
                             }
                         </button>
-                        <span class="tile-badge @LoadoutShaping.ToMasterworkClass(option.Marks)" aria-hidden="true">
-                            @if (option.Marks.Breaker is Optional<BreakerBadge>.Some breaker)
-                            {
-                                <img class="breaker-icon" src="@breaker.Value.Icon" alt="" loading="lazy" />
-                            }
-                            @if (option.DamageIcon is Optional<string>.Some damage)
-                            {
-                                <img class="damage-icon" src="@damage.Value" alt="" loading="lazy" />
-                            }
-                        </span>
+                        <TileFooter Marks="option.Marks" DamageIcon="option.DamageIcon" DamageName="@(option.Damage.Match(found => found.Value.ToString(), _ => ""))" />
                     </div>
                 }
             </div>

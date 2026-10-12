@@ -107,6 +107,8 @@ damageTypes:
   - { type: strand, icon: /common/destiny2_content/icons/DestinyDamageTypeDefinition_….png }
 breakerTypes:
   - { hash: 2611060930, name: "Disruption", icon: /common/destiny2_content/icons/DestinyBreakerTypeDefinition_….png }
+armorStats:
+  - { stat: grenade, hash: 1735777505, name: "Grenade", icon: /common/destiny2_content/icons/065c….png }
 itemConstants:
   tierOverlays: [/img/destiny_content/items/inventory-item-tier1.png, …, /img/destiny_content/items/inventory-item-tier5.png]
   masterworkOverlay: /img/destiny_content/items/masterwork-overlay.png
@@ -114,7 +116,7 @@ itemConstants:
 armorSets:
   - { hash: 499993704, name: "Luminopotent", perks: [{ pieces: 2, perk: 2769443639 }, { pieces: 4, perk: 2769443638 }] }
 items:
-  - { hash: 4019651319, name: "Festival Flight", kind: weapon, type: "Grenade Launcher", tier: legendary, slot: kinetic, damageType: strand, traits: [[1017229899, …, 923806249, …], [1546142478, …, 243981275, …]], intrinsic: 1294026524, icon: /common/…/e3d2….jpg }
+  - { hash: 4019651319, name: "Festival Flight", kind: weapon, type: "Grenade Launcher", tier: legendary, slot: kinetic, damageType: strand, breaker: 2611060930, traits: [[1017229899, …, 923806249, …], [1546142478, …, 243981275, …]], intrinsic: 385138649, watermark: /common/…/50c3….png, icon: /common/…/e3d2….jpg }
   - { hash: 3325463374, name: "Thunderlord", kind: weapon, type: "Machine Gun", tier: exotic, slot: power, damageType: arc, traits: [[1419069769], [2779035018]], intrinsic: 4148158229, catalyst: 1550063955, breaker: 2611060930, icon: … }
   - { hash: 1550063955, name: "Thunderlord Catalyst", kind: catalyst, tier: exotic, perks: [818260022], description: "Upgrades this weapon to a Masterwork. …", icon: … }
   - { hash: 818260022, name: "Return Stroke", kind: perk, description: "Causing a lightning strike with this weapon partially reloads the magazine from reserves.", icon: … }
@@ -137,14 +139,18 @@ items:
   versions included (the manifest's plug set). A column that doesn't roll (an exotic's) has its one perk.
   Every perk is written as an item too (`kind: weaponPerk`, `type: "Trait"` or `"Enhanced Trait"`); a column
   needs at least one hash. A weapon's `intrinsic` is its frame (an exotic's own perk), its `catalyst` an
-  exotic's catalyst item (whose `perks` are what it grants), its `breaker` the champion it breaks of its own (an
-  exotic's: a breaker type's hash; none for most weapons); armor's `intrinsic` is an exotic's perk, its
+  exotic's catalyst item (whose `perks` are what it grants), its `breaker` the champion it breaks, a breaker type's
+  hash: its own (an exotic's), else its frame's — a frame's perk names the breaker in brackets ("[Shield-Piercing]
+  Barrier" on Adaptive Frame, "[Disruption] Overload" on Rapid-Fire Frame), as DIM reads it; armor's `intrinsic` is an exotic's perk, its
   `set` the armor set it belongs to and its `class` the class that wears it (`titan|hunter|warlock`; none: any
   class — the armor picker lists a build's class's pieces). These keys on anything else are an error (`slot is
   only allowed on a weapon, armor or an armor mod, not on a grenade`; `set is only allowed on armor, not on a
-  weapon`; `perks` belongs to a catalyst or an artifact).
+  weapon`; `perks` belongs to a catalyst or an artifact). A weapon's or armor's `watermark` is its season watermark:
+  the overlay with its season's or expansion's icon in the top-left corner, drawn over its square as DIM draws it.
 * `breakerTypes`: the three champion breakers (Shield Piercing, Disruption, Stagger), each with its name and icon: a
-  weapon's breaker shows under its square, as DIM shows it. `itemConstants`: the overlays Bungie draws on an item's
+  weapon's breaker shows under its square, as DIM shows it. `armorStats`: the six armor stats (`stat`: weapons, health,
+  class, grenade, super, melee), each with its manifest hash, name and icon: an Armor 3.0 piece's highest rolled stat
+  shows in its square's top-right corner, as DIM shows it. `itemConstants`: the overlays Bungie draws on an item's
   icon (the manifest's inventory item constants): `tierOverlays` the diamonds of gear tiers 1 to 5 in order (tier
   1's draws none), `masterworkOverlay` the masterwork glow (`masterworkExoticOverlay` an exotic's). A player's copy
   shows them after their Bungie login ([loop-format.md](loop-format.md#stats)). Both are optional.

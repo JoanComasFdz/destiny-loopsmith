@@ -27,11 +27,11 @@ public sealed partial class StatLoadingTests
                 new FakeItem(ItemHash.From(4019651319u), "4", "vault", [], null, DamageType: 7),
             ]);
 
-        Assert.Equal(new GearMarks(Optional.Some(GearTier.From(4)), true, Optional.None<ItemHash>()), FindCopy(profile, "1").Marks);
-        Assert.Equal(new GearMarks(Optional.None<GearTier>(), false, Optional.None<ItemHash>()), FindCopy(profile, "2").Marks);
+        Assert.Equal(new GearMarks(Optional.Some(GearTier.From(4)), true, Optional.None<ItemHash>(), Optional.None<PowerLevel>()), FindCopy(profile, "1").Marks);
+        Assert.Equal(new GearMarks(Optional.None<GearTier>(), false, Optional.None<ItemHash>(), Optional.None<PowerLevel>()), FindCopy(profile, "2").Marks);
         Assert.Equal(["3", "4"], profile.Weapons.Select(weapon => weapon.InstanceId.Value).Order());
         var thunderlord = profile.Weapons.Single(weapon => weapon.Hash == Thunderlord);
-        Assert.Equal((ItemInstanceId.From("3"), (ArmorPlace)new ArmorPlace.Equipped(GuardianClass.Hunter), new GearMarks(Optional.Some(GearTier.From(5)), true, Optional.Some(Disruption))),
+        Assert.Equal((ItemInstanceId.From("3"), (ArmorPlace)new ArmorPlace.Equipped(GuardianClass.Hunter), new GearMarks(Optional.Some(GearTier.From(5)), true, Optional.Some(Disruption), Optional.None<PowerLevel>())),
             (thunderlord.InstanceId, thunderlord.Place, thunderlord.Marks));
     }
 
@@ -46,9 +46,9 @@ public sealed partial class StatLoadingTests
             new FakeItem(Thunderlord, "5001", "vault", [], null, Tier: 5, DamageType: 2)]);
 
         Assert.Equal(Optional.Some(ItemInstanceId.From(ThunderlordCopy)), thunderlord.Instance);
-        Assert.Equal(Optional.Some(new GearMarks(Optional.Some(GearTier.From(5)), true, Optional.None<ItemHash>())), LoopDesigning.FindArmorMarks(build, own, ArmorSlot.Helmet));
+        Assert.Equal(Optional.Some(new GearMarks(Optional.Some(GearTier.From(5)), true, Optional.None<ItemHash>(), Optional.None<PowerLevel>())), LoopDesigning.FindArmorMarks(build, own, ArmorSlot.Helmet));
         Assert.Equal(Optional.Some(GearTier.From(3)), LoopDesigning.FindArmorMarks(build, own, ArmorSlot.Arms).Bind(marks => marks.Tier));
-        Assert.Equal(Optional.Some(new GearMarks(Optional.Some(GearTier.From(2)), false, Optional.Some(Disruption))), LoopDesigning.FindWeaponMarks(own, thunderlord));
+        Assert.Equal(Optional.Some(new GearMarks(Optional.Some(GearTier.From(2)), false, Optional.Some(Disruption), Optional.None<PowerLevel>())), LoopDesigning.FindWeaponMarks(own, thunderlord));
     }
 
     [Fact]
@@ -62,22 +62,53 @@ public sealed partial class StatLoadingTests
         var none = ReadProfile([new FakeItem(Vow, "5003", "vault", [], 11, Tier: 2)]);
 
         Assert.Equal(Optional.Some(GearTier.From(4)), LoopDesigning.FindArmorMarks(build, other, ArmorSlot.Helmet).Bind(marks => marks.Tier));   // the copy the picker ticks
-        Assert.Equal(Optional.Some(new GearMarks(Optional.Some(GearTier.From(5)), true, Optional.None<ItemHash>())), LoopDesigning.FindWeaponMarks(other, thunderlord));   // the highest tier
+        Assert.Equal(Optional.Some(new GearMarks(Optional.Some(GearTier.From(5)), true, Optional.None<ItemHash>(), Optional.None<PowerLevel>())), LoopDesigning.FindWeaponMarks(other, thunderlord));   // the highest tier
         Assert.False(LoopDesigning.FindArmorMarks(build, none, ArmorSlot.Helmet).IsSome());   // no Mask of theirs
         Assert.False(LoopDesigning.FindWeaponMarks(none, thunderlord).IsSome());
     }
 
     [Fact]
-    public void A_weapons_breaker_is_its_copys_after_the_login_else_its_own_and_a_weapon_without_one_has_none()
+    public void A_copy_shows_its_power_and_an_armor_piece_its_stat_focus_its_highest_rolled_stat()
+    {
+        var profile = ReadProfile(
+            [
+                new FakeItem(Mask, "1", "vault", [FindRollPlug(StatKind.Grenade, 30), FindRollPlug(StatKind.Super, 25), FullMasterwork], 11, Tier: 5, Power: 550),
+                new FakeItem(Mask, "2", "vault", [], 11, Power: 540),   // a roll the excerpt can't read
+                new FakeItem(Thunderlord, "3", "equipped", [], null, DamageType: 2),
+            ]);
+        var build = OpenOwnersBuild();
+
+        Assert.Equal(Optional.Some(PowerLevel.From(550)), FindCopy(profile, "1").Marks.Power);
+        Assert.Equal(Optional.None<PowerLevel>(), profile.Weapons.Single().Marks.Power);   // no primaryStat in the answer
+        Assert.Equal(Optional.Some((StatKind.Grenade, "Grenade")), LoopDesigning.FindStatFocus(build, FindCopy(profile, "1")).Map(stat => (stat.Stat, stat.Name)));
+        Assert.StartsWith("/common/destiny2_content/icons/", LoopDesigning.FindStatFocus(build, FindCopy(profile, "1")).Match(stat => stat.Value.Icon, _ => ""), StringComparison.Ordinal);
+        Assert.False(LoopDesigning.FindStatFocus(build, FindCopy(profile, "2")).IsSome());
+    }
+
+    [Fact]
+    public void A_legendary_weapon_shows_its_frame_and_an_exotic_none()
+    {
+        var crisis = Catalog.Manifest.FindItem(ItemHash.From(2888266564u)).Match(found => found.Value, _ => throw new InvalidOperationException("Crisis Inverted"));
+        var thunderlord = Catalog.Manifest.FindItem(Thunderlord).Match(found => found.Value, _ => throw new InvalidOperationException("Thunderlord"));
+
+        Assert.Equal(Optional.Some("Adaptive Frame"), Catalog.Manifest.FindWeaponFrame(crisis).Map(frame => frame.Name));
+        Assert.False(Catalog.Manifest.FindWeaponFrame(thunderlord).IsSome());
+        Assert.True(crisis.Watermark.IsSome());
+        Assert.Equal(Optional.Some(ItemHash.From(485622768u)), Assert.IsType<ManifestKind.Weapon>(crisis.Kind).Breaker);   // Adaptive Frame pierces barriers
+    }
+
+    [Fact]
+    public void A_weapons_breaker_is_its_copys_after_the_login_else_its_own_or_its_frames_and_a_weapon_without_one_has_none()
     {
         var build = OpenOwnersBuild();
         var thunderlord = build.Build.Weapons.Single(weapon => weapon.Hash == Optional.Some(Thunderlord));
         var festival = build.Build.Weapons.Single(weapon => weapon.Hash == Optional.Some(ItemHash.From(4019651319u)));
-        var staggering = Optional.Some(new GearMarks(Optional.None<GearTier>(), false, Optional.Some(Stagger)));
+        var staggering = Optional.Some(new GearMarks(Optional.None<GearTier>(), false, Optional.Some(Stagger), Optional.None<PowerLevel>()));
 
         Assert.Equal(Optional.Some("Disruption"), LoopDesigning.FindWeaponBreaker(build, thunderlord, Optional.None<GearMarks>()).Map(breaker => breaker.Name));
         Assert.Equal(Optional.Some("Stagger"), LoopDesigning.FindWeaponBreaker(build, thunderlord, staggering).Map(breaker => breaker.Name));
-        Assert.False(LoopDesigning.FindWeaponBreaker(build, festival, Optional.None<GearMarks>()).IsSome());
+        Assert.Equal(Optional.Some("Disruption"), LoopDesigning.FindWeaponBreaker(build, festival, Optional.None<GearMarks>()).Map(breaker => breaker.Name));   // its frame's
+        Assert.False(LoopDesigning.FindWeaponBreaker(build, festival with { Hash = Optional.None<ItemHash>() }, Optional.None<GearMarks>()).IsSome());   // a weapon the excerpt doesn't know
         Assert.StartsWith("/common/destiny2_content/icons/DestinyBreakerTypeDefinition_", LoopDesigning.FindWeaponBreaker(build, thunderlord, Optional.None<GearMarks>())
             .Match(breaker => breaker.Value.Icon, _ => ""), StringComparison.Ordinal);
     }

@@ -46,7 +46,7 @@ public sealed class ArtifactFindingTests
         var elements = perks.Select(perk => Element(perk.Id, ElementKind.ArtifactPerk, []) with { Hashes = [.. perk.Hashes.Select(ItemHash.From)] });
         var items = artifacts.Select((artifact, index) => new ManifestItem(
             ItemHash.From((uint)(1000 + index)), artifact.Name, new ManifestKind.Artifact([.. artifact.Perks.Select(ItemHash.From)]),
-            Optional.Some("Artifact"), Optional.None<ItemTier>(), Optional.None<string>(), Optional.None<string>()));
+            Optional.Some("Artifact"), Optional.None<ItemTier>(), Optional.None<string>(), Optional.None<string>(), Optional.None<string>()));
         var catalog = validated.Catalog with
         {
             Elements = elements.Aggregate(validated.Catalog.Elements, (all, element) => all.Add(element.Id, element)),

@@ -322,10 +322,16 @@ none), and a **masterworked** copy has a gold border and the masterwork glow (an
 pieces show theirs, and the piece shown says it ("Tier 5 · Masterworked"). The copy is the one the build names when
 it is the player's (their own share, or a piece picked; a weapon's `instance`), else their own copy of that item, as
 DIM resolves a shared loadout's items: for armor the one the picker ticks (the most points), for a weapon its highest
-tier. Under each weapon's square, a strip shows its **breaker** (a champion icon: the copy's, after the login, else
-the weapon's own, like Thunderlord's Disruption — shown before the login too) and its **element**. The icons and
-overlays are the manifest excerpt's (`breakerTypes`, `itemConstants`); the tier, masterwork flag and breaker are
-Bungie's profile's for the copy (its instance's `gearTier` and `breakerTypeHash`, the item's `state`).
+tier. Each square is drawn as DIM draws it: its **season watermark** over it (the season's or expansion's icon in
+the top-left corner), and in the top-right corner a legendary weapon's **frame** (Adaptive Frame; an exotic shows
+none) or, after the login, an Armor 3.0 piece's **stat focus** (its highest rolled stat's icon). Under each weapon's
+square a light footer (gold for a masterworked copy) shows its **breaker** (a champion icon: the copy's, after the
+login, else the weapon's own — Thunderlord's Disruption — or its frame's: Adaptive Frame pierces barriers, Rapid-Fire
+Frame overloads; shown before the login too), its **element** and, after the login, the copy's **power**; an armor
+piece gets the footer with its power after the login. The pickers' items show the same. The icons and overlays are
+the manifest excerpt's (`breakerTypes`, `armorStats`, an item's `watermark`, `itemConstants`); the tier, masterwork
+flag, breaker and power are Bungie's profile's for the copy (its instance's `gearTier`, `breakerTypeHash` and
+`primaryStat`, the item's `state`).
 
 <a id="weapons-from-your-account"></a>**Weapons from your account.** The login reads the player's weapons too, with the
 plugs in their sockets:

@@ -27,6 +27,8 @@ public sealed class ManifestJoinTests
         Assert.Equal((WeaponSlot.Power, Optional.Some(DamageType.Arc)), (weapon.Slot, weapon.DamageType));
         Assert.Equal([[10u, 11u], [12u]], weapon.Traits.Select(column => column.Options.Select(hash => hash.Value)));
         Assert.Equal((Optional.Some(ItemHash.From(20u)), Optional.Some(ItemHash.From(30u))), (weapon.Intrinsic, weapon.Catalyst));
+        Assert.Equal(Optional.Some(ItemHash.From(2611060930u)), weapon.Breaker);   // none of its own: its frame's perk is "[Disruption] Overload"
+        Assert.Equal((Optional.Some("/season.png"), Optional.None<string>()), (excerpt.Items[ItemHash.From(100u)].Watermark, excerpt.Items[ItemHash.From(20u)].Watermark));
         Assert.Equal([ItemHash.From(40u)], Assert.IsType<ManifestKind.ExoticCatalyst>(excerpt.Items[ItemHash.From(30u)].Kind).Perks);
         Assert.Equal((Optional.Some("Strikes refill the magazine."), Optional.None<string>()), (excerpt.Items[ItemHash.From(40u)].Description, excerpt.Items[ItemHash.From(40u)].Type));
         Assert.Equal("Fires faster.", excerpt.Items[ItemHash.From(10u)].Description.UnwrapOr(""));                 // icon glyph and double space gone
@@ -172,21 +174,22 @@ public sealed class ManifestJoinTests
     private static class Fixture
     {
         private const string Buckets = """{"1":{"displayProperties":{"name":"Power Weapons"}},"2":{"displayProperties":{"name":"Helmet"}},"3":{"displayProperties":{"name":"Consumables"}}}""";
+        private const string Breakers = """{"485622768":{"displayProperties":{"name":"Shield Piercing"}},"2611060930":{"displayProperties":{"name":"Disruption"}}}""";
         private const string Categories = """{"7":{"displayProperties":{"name":"WEAPON PERKS"}},"8":{"displayProperties":{"name":"INTRINSIC TRAITS"}},"9":{"displayProperties":{"name":"ARMOR PERKS"}}}""";
         private const string SocketTypes = """{"73":{"plugWhitelist":[{"categoryIdentifier":"artifact_perks"}]},"74":{"plugWhitelist":[{"categoryIdentifier":"artifact_perks"},{"categoryIdentifier":"artifact_reset"}]},"70":{"plugWhitelist":[{"categoryIdentifier":"frames"}]},"71":{"plugWhitelist":[{"categoryIdentifier":"intrinsics"}]},"72":{"plugWhitelist":[{"categoryIdentifier":"x.machinegun.masterwork"},{"categoryIdentifier":"v400.empty.exotic.masterwork"}]}}""";
         private const string PlugSets = """{"80":{"reusablePlugItems":[{"plugItemHash":10,"currentlyCanRoll":true},{"plugItemHash":11},{"plugItemHash":13,"currentlyCanRoll":false},{"plugItemHash":10}]},"81":{"reusablePlugItems":[{"plugItemHash":401},{"plugItemHash":402},{"plugItemHash":403}]},"82":{"reusablePlugItems":[{"plugItemHash":401},{"plugItemHash":403},{"plugItemHash":404}]},"83":{"reusablePlugItems":[{"plugItemHash":405},{"plugItemHash":401}]}}""";
         private const string Sets = """{"500":{"displayProperties":{"name":"Testing"},"setPerks":[{"requiredSetCount":4,"sandboxPerkHash":601},{"requiredSetCount":2,"sandboxPerkHash":600}]}}""";
-        private const string Perks = """{"40":{"isDisplayable":true,"displayProperties":{"name":"Return","description":"Strikes refill the magazine."}},"41":{"isDisplayable":false,"displayProperties":{"name":""}},"50":{"isDisplayable":true,"displayProperties":{"name":"Spark","description":"Your grenades jolt."}},"51":{"isDisplayable":true,"displayProperties":{"name":"-10 Grenade","description":"-10 Grenade"}},"600":{"isDisplayable":true,"displayProperties":{"name":"Two","description":"Two pieces worn."}},"601":{"isDisplayable":true,"displayProperties":{"name":"Four","description":"Four pieces worn."}}}""";
+        private const string Perks = """{"40":{"isDisplayable":true,"displayProperties":{"name":"Return","description":"Strikes refill the magazine."}},"41":{"isDisplayable":false,"displayProperties":{"name":""}},"42":{"isDisplayable":false,"displayProperties":{"name":"[Disruption] Overload"}},"50":{"isDisplayable":true,"displayProperties":{"name":"Spark","description":"Your grenades jolt."}},"51":{"isDisplayable":true,"displayProperties":{"name":"-10 Grenade","description":"-10 Grenade"}},"600":{"isDisplayable":true,"displayProperties":{"name":"Two","description":"Two pieces worn."}},"601":{"isDisplayable":true,"displayProperties":{"name":"Four","description":"Four pieces worn."}}}""";
 
         private const string Items = """
             {
-              "100": { "displayProperties": { "name": "Test Thunder", "icon": "/w.jpg" }, "itemTypeDisplayName": "Machine Gun", "inventory": { "bucketTypeHash": 1, "tierType": 6 }, "defaultDamageType": 2,
+              "100": { "displayProperties": { "name": "Test Thunder", "icon": "/w.jpg" }, "iconWatermark": "/season.png", "itemTypeDisplayName": "Machine Gun", "inventory": { "bucketTypeHash": 1, "tierType": 6 }, "defaultDamageType": 2,
                        "sockets": { "socketEntries": [ { "socketTypeHash": 71, "singleInitialItemHash": 20 }, { "socketTypeHash": 70, "randomizedPlugSetHash": 80 }, { "socketTypeHash": 70, "singleInitialItemHash": 12 }, { "socketTypeHash": 72, "singleInitialItemHash": 31 } ],
                                     "socketCategories": [ { "socketCategoryHash": 8, "socketIndexes": [0] }, { "socketCategoryHash": 7, "socketIndexes": [1, 2, 3] } ] } },
               "10": { "displayProperties": { "name": "Lightning", "description": "Fires  faster." }, "itemTypeDisplayName": "Trait", "plug": { "plugCategoryIdentifier": "frames" } },
               "11": { "displayProperties": { "name": "Frenzy" }, "itemTypeDisplayName": "Trait", "plug": { "plugCategoryIdentifier": "frames" } },
               "12": { "displayProperties": { "name": "Fixed" }, "itemTypeDisplayName": "Trait", "plug": { "plugCategoryIdentifier": "frames" } },
-              "20": { "displayProperties": { "name": "Havoc", "description": "Kills strike." }, "itemTypeDisplayName": "Intrinsic", "plug": { "plugCategoryIdentifier": "intrinsics" } },
+              "20": { "displayProperties": { "name": "Havoc", "description": "Kills strike." }, "itemTypeDisplayName": "Intrinsic", "plug": { "plugCategoryIdentifier": "intrinsics" }, "perks": [ { "perkHash": 42 } ] },
               "30": { "displayProperties": { "name": "Test Catalyst" }, "plug": { "plugCategoryIdentifier": "x.machinegun.masterwork" }, "perks": [ { "perkHash": 41 }, { "perkHash": 40 } ] },
               "31": { "displayProperties": { "name": "Empty Catalyst Socket" }, "plug": { "plugCategoryIdentifier": "v400.empty.exotic.masterwork" } },
               "200": { "displayProperties": { "name": "Test Mask" }, "itemTypeDisplayName": "Helmet", "inventory": { "bucketTypeHash": 2, "tierType": 5 }, "equippingBlock": { "equipableItemSetHash": 500 } },
@@ -205,6 +208,7 @@ public sealed class ManifestJoinTests
             [ManifestTable.PlugSet] = PlugSets,
             [ManifestTable.SandboxPerk] = Perks,
             [ManifestTable.EquipableItemSet] = Sets,
+            [ManifestTable.BreakerType] = Breakers,
         }.ToImmutableDictionary(entry => entry.Key, entry => ManifestStore.ReadTable(entry.Value));
     }
 }

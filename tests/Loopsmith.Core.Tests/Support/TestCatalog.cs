@@ -99,7 +99,7 @@ public static class TestCatalog
             Glossary,
             abilities.Concat(fragments).Concat(allMods).Concat(keywords.IsDefault ? [] : keywords).ToImmutableDictionary(e => e.Id),
             new ManifestExcerpt(Optional.None<string>(), ImmutableDictionary<DamageType, string>.Empty, ImmutableDictionary<ItemHash, ArmorSet>.Empty, ImmutableDictionary<ItemHash, ManifestItem>.Empty, ImmutableDictionary<ItemHash, StatPlug>.Empty,
-                ImmutableDictionary<ItemHash, BreakerType>.Empty, new ItemOverlays([], Optional.None<string>(), Optional.None<string>()), ImmutableDictionary<ItemHash, KeywordTrait>.Empty));
+                ImmutableDictionary<ItemHash, BreakerType>.Empty, new ItemOverlays([], Optional.None<string>(), Optional.None<string>()), ImmutableDictionary<ItemHash, KeywordTrait>.Empty, ImmutableDictionary<StatKind, ArmorStatIcon>.Empty));
         var build = new Build(
             "Test build",
             Optional.None<string>(),

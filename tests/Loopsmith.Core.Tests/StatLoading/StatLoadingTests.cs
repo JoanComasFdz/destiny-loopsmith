@@ -258,7 +258,7 @@ public sealed partial class StatLoadingTests
     }
 
     /// <summary>An item of a fake profile: armor has energy; a weapon a damage type (Bungie's: 2 Arc); either a tier, a state (4: masterworked) and a breaker.</summary>
-    private sealed record FakeItem(ItemHash Hash, string Instance, string Place, ImmutableArray<ItemHash> Plugs, int? Energy, int? Tier = null, int State = 0, int DamageType = 0, uint Breaker = 0);
+    private sealed record FakeItem(ItemHash Hash, string Instance, string Place, ImmutableArray<ItemHash> Plugs, int? Energy, int? Tier = null, int State = 0, int DamageType = 0, uint Breaker = 0, int? Power = null);
 
     /// <summary>Every piece of the owner's loadout as a Grenade 30 · Super 25 · Class 20 roll, masterworked; the first ones with a tuning socket.</summary>
     private static IEnumerable<FakeItem> OwnAll(int tuningSockets) =>
@@ -279,6 +279,7 @@ public sealed partial class StatLoadingTests
             KeyValuePair.Create<string, object>("breakerTypeHash", item.Breaker),
             .. item.Energy is { } energy ? [KeyValuePair.Create<string, object>("energy", new { energyCapacity = energy })] : Array.Empty<KeyValuePair<string, object>>(),
             .. item.Tier is { } tier ? [KeyValuePair.Create<string, object>("gearTier", tier)] : Array.Empty<KeyValuePair<string, object>>(),
+            .. item.Power is { } power ? [KeyValuePair.Create<string, object>("primaryStat", new { statHash = 1935470627u, value = power })] : Array.Empty<KeyValuePair<string, object>>(),
         ]);
         var answer = new
         {

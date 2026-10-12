@@ -14,7 +14,8 @@ out="$1"
 mkdir -p "$out"
 components=(DestinyInventoryItemDefinition DestinyInventoryBucketDefinition DestinyDamageTypeDefinition
   DestinySocketTypeDefinition DestinySocketCategoryDefinition DestinyPlugSetDefinition DestinySandboxPerkDefinition
-  DestinyEquipableItemSetDefinition DestinyBreakerTypeDefinition DestinyInventoryItemConstantsDefinition DestinyTraitDefinition)
+  DestinyEquipableItemSetDefinition DestinyBreakerTypeDefinition DestinyInventoryItemConstantsDefinition DestinyTraitDefinition
+  DestinyStatDefinition)
 
 if [ -z "${MANIFEST_ID:-}" ]; then
   header=()

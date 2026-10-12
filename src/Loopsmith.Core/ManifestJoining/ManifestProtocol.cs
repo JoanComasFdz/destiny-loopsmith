@@ -8,7 +8,7 @@ namespace Loopsmith.Core.ManifestJoining;
 // The join's protocol with the host that holds Bungie's manifest (ManifestJoin asks, the host answers).
 
 /// <summary>A component of Bungie's manifest the join reads (its file is <c>Destiny{Table}Definition-…json</c>).</summary>
-public enum ManifestTable { InventoryItem, InventoryBucket, SocketType, SocketCategory, PlugSet, SandboxPerk, EquipableItemSet }
+public enum ManifestTable { InventoryItem, InventoryBucket, SocketType, SocketCategory, PlugSet, SandboxPerk, EquipableItemSet, BreakerType }
 
 /// <summary>An entry of a manifest component: the table and its hash.</summary>
 public sealed record ManifestEntryKey(ManifestTable Table, ItemHash Hash);

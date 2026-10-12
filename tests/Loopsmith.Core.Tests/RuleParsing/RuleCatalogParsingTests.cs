@@ -747,6 +747,26 @@ public sealed class RuleCatalogParsingTests
     }
 
     [Fact]
+    public void The_excerpt_names_the_armor_stats_icons_and_a_weapons_or_armors_season_watermark()
+    {
+        var manifest = new SourceText("manifest.yaml", """
+            armorStats:
+              - { stat: grenade, hash: 1735777505, name: "Grenade", icon: /common/grenade.png }
+            items:
+              - { hash: 4019651319, name: "Festival Flight", kind: weapon, type: "Grenade Launcher", slot: kinetic, watermark: /common/season.png, icon: /common/ff.jpg }
+            """);
+
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, manifest]));
+
+        Assert.Equal(new ArmorStatIcon(StatKind.Grenade, "Grenade", "/common/grenade.png"), catalog.Manifest.ArmorStats[StatKind.Grenade]);
+        Assert.Equal(Optional.Some("/common/season.png"), catalog.Manifest.Items[ItemHash.From(4019651319u)].Watermark);
+        Assert.Contains("watermark is only allowed on a weapon or armor", ParseInvalidCatalog(Glossary, new SourceText("manifest.yaml", """
+            items:
+              - { hash: 1435557120, name: "Grenade Mod", kind: armorMod, type: "General Armor Mod", watermark: /common/season.png }
+            """)));
+    }
+
+    [Fact]
     public void A_manifest_slot_belongs_to_weapons_armor_and_armor_mods_and_a_damage_type_to_weapons()
     {
         var message = ParseInvalidCatalog(Glossary, new SourceText("manifest.yaml", """

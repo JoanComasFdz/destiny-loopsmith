@@ -80,16 +80,7 @@
                     <li class="weapon-line" data-slot="@weapon.Slot" title="@DescribeWeapon(weapon)">
                         <div class="weapon-icon">
                             @RenderMarkedTile(weapon.Weapon, "item", weapon.Marks)
-                            <span class="tile-badge @LoadoutShaping.ToMasterworkClass(weapon.Marks)" data-testid="weapon-badge">
-                                @if (weapon.Marks.Breaker is Optional<BreakerBadge>.Some breaker)
-                                {
-                                    <img class="breaker-icon" src="@breaker.Value.Icon" alt="@breaker.Value.Name" title="@breaker.Value.Name" loading="lazy" />
-                                }
-                                @if (weapon.DamageIcon is Optional<string>.Some damage)
-                                {
-                                    <img class="damage-icon" src="@damage.Value" alt="@weapon.Type" title="@weapon.Type" loading="lazy" />
-                                }
-                            </span>
+                            <TileFooter Marks="weapon.Marks" DamageIcon="weapon.DamageIcon" DamageName="@weapon.Type.ToString()" TestId="weapon-badge" />
                         </div>
                         <div class="weapon-text">
                             @if (weapon.Page is Optional<string>.Some weaponPage)
@@ -182,7 +173,10 @@
                     <div class="armor-piece" data-slot="@slot">
                         @if (piece.Piece is Optional<IconTile>.Some item)
                         {
-                            @RenderMarkedTile(item.Value, "item", piece.Marks)
+                            <div class="armor-icon">
+                                @RenderMarkedTile(item.Value, "item", piece.Marks)
+                                <TileFooter Marks="piece.Marks" TestId="armor-badge" />
+                            </div>
                         }
                         else
                         {

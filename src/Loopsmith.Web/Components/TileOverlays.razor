@@ -1,5 +1,7 @@
 @* What Bungie draws over a copy's icon, layered as DIM layers it: a masterwork's glow, then the tier's diamonds (the
-   manifest's overlays; Bungie's tier-1 image is blank). Inside the square, which positions them. *@
+   manifest's overlays; Bungie's tier-1 image is blank), then the season watermark (its icon in the top-left corner),
+   and in the top-right corner a legendary weapon's frame or an armor piece's stat focus. Inside the square, which
+   positions them. *@
 @if (Marks.Masterwork is Optional<MasterworkMark>.Some { Value.Glow: Optional<string>.Some glow })
 {
     <span class="tile-overlay masterwork-glow" style="background-image: url('@glow.Value')" aria-hidden="true"></span>
@@ -7,6 +9,14 @@
 @if (Marks.Tier is Optional<TierMark>.Some { Value.Overlay: Optional<string>.Some pips })
 {
     <span class="tile-overlay tier-pips" style="background-image: url('@pips.Value')" aria-hidden="true"></span>
+}
+@if (Marks.Watermark is Optional<string>.Some watermark)
+{
+    <span class="tile-overlay season-watermark" style="background-image: url('@watermark.Value')" aria-hidden="true" data-testid="tile-watermark"></span>
+}
+@if (Marks.Corner is Optional<CornerBadge>.Some corner)
+{
+    <span class="tile-corner @LoadoutShaping.ToCornerClass(corner.Value)" style="background-image: url('@corner.Value.Icon')" title="@corner.Value.Name" data-testid="tile-corner"></span>
 }
 
 @code {

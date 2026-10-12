@@ -1,0 +1,34 @@
+@* A copy's footer, as DIM draws it under its square: a weapon's breaker and damage type, then the copy's power level, on
+   a light bar (gold when masterworked). Nothing when it has none of those (a share's armor before the login). *@
+@if (Marks.Breaker.IsSome() || DamageIcon.IsSome() || Marks.Power.IsSome())
+{
+    <span class="tile-badge @LoadoutShaping.ToMasterworkClass(Marks)" data-testid="@TestId">
+        @if (Marks.Breaker is Optional<BreakerBadge>.Some breaker)
+        {
+            <img class="breaker-icon" src="@breaker.Value.Icon" alt="@breaker.Value.Name" title="@breaker.Value.Name" loading="lazy" />
+        }
+        @if (DamageIcon is Optional<string>.Some damage)
+        {
+            <img class="damage-icon" src="@damage.Value" alt="@DamageName" title="@DamageName" loading="lazy" />
+        }
+        @if (Marks.Power is Optional<PowerLevel>.Some power)
+        {
+            <span class="tile-power" title="Power @power.Value.Value" data-testid="tile-power">@power.Value.Value</span>
+        }
+    </span>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public TileMarks Marks { get; set; } = null!;
+
+    /// <summary>A weapon's damage type icon (a bungie.net address); none for armor.</summary>
+    [Parameter]
+    public Optional<string> DamageIcon { get; set; } = Optional.None<string>();
+
+    [Parameter]
+    public string DamageName { get; set; } = "";
+
+    [Parameter]
+    public string TestId { get; set; } = "tile-badge";
+}

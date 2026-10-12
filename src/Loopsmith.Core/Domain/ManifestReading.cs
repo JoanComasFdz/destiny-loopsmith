@@ -26,6 +26,20 @@ public static class ManifestReading
             .Select(Optional.Some)
             .FindFirstSome();
 
+    /// <summary>
+    /// A legendary weapon's intrinsic frame (Adaptive Frame), as the excerpt has it: DIM shows its icon in the weapon's
+    /// top-right corner. None for an exotic (its intrinsic is its own perk, which DIM doesn't show there) or a weapon whose
+    /// frame the excerpt lacks.
+    /// </summary>
+    public static Optional<ManifestItem> FindWeaponFrame(this ManifestExcerpt manifest, ManifestItem weapon) =>
+        weapon.Kind is ManifestKind.Weapon kind && weapon.Tier != Optional.Some(ItemTier.Exotic)
+            ? kind.Intrinsic.Bind(manifest.FindItem)
+            : Optional.None<ManifestItem>();
+
+    /// <summary>An armor stat as the excerpt names and draws it (Weapons, Health…); none when it lacks the stat.</summary>
+    public static Optional<ArmorStatIcon> FindArmorStat(this ManifestExcerpt manifest, StatKind stat) =>
+        manifest.ArmorStats.TryGetValue(stat, out var found) ? Optional.Some(found) : Optional.None<ArmorStatIcon>();
+
     /// <summary>The subclass item of a class's subclass (Arcstrider for an Arc Hunter), when the glossary and the excerpt have it.</summary>
     public static Optional<ManifestItem> FindSubclassItem(this RuleCatalog catalog, GuardianClass guardianClass, Subclass subclass) =>
         catalog.Glossary.Subclasses

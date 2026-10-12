@@ -46,7 +46,8 @@ public static class WeaponPickerShaping
         var type = kind.Bind(found => found.DamageType);
         return new WeaponOptionView(
             LoadoutShaping.DescribeWeaponItem(option.Item),
-            LoadoutShaping.DescribeMarks(catalog, option.Item.Tier, Optional.Some(option.Weapon.Marks), LoopDesigning.FindCopyBreaker(build, option.Weapon)),
+            LoadoutShaping.DescribeMarks(
+                catalog, Optional.Some(option.Item), Optional.Some(option.Weapon.Marks), LoopDesigning.FindCopyBreaker(build, option.Weapon), LoadoutShaping.DescribeFrame(catalog, option.Item)),
             option.Weapon.InstanceId,
             option.Item.Type.UnwrapOr(""),
             type,
