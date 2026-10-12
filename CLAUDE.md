@@ -126,8 +126,8 @@ repos (Microsoft's download hosts are blocked by the network policy) and restore
 - Never merge, approve or enable auto-merge on a pull request, and never push to `main` (the ruleset
   refuses it anyway). Never force-push: to update a branch, merge `origin/main` into it; squash
   merging flattens it.
-- Never add or remove the `agent` label and never open issues: a labelled issue starts another
-  session.
+- Never add or remove the `agent` label: a labelled issue starts another session. Open an issue only
+  when @JoanComasFdz asks for one in the session (the `agent-issue` skill), and leave it unlabelled.
 - Don't change `.github/workflows/`, repository settings, rulesets or secrets unless the issue asks
   for exactly that.
 - Don't stack pull requests: an issue that needs another issue's change waits until that PR is
@@ -148,6 +148,10 @@ repos (Microsoft's download hosts are blocked by the network policy) and restore
   no separate linter). Check a web change in a browser too (How we work).
 - In cloud sessions `gh issue` and `gh pr` fail (GitHub's GraphQL is blocked): use the built-in
   GitHub tools or `gh api repos/<owner>/<repo>/...` (REST).
+
+## Project skills (`.claude/skills/`)
+- `agent-issue` — what the owner wants, in any language → an "Agent task" issue in English
+  (`.github/ISSUE_TEMPLATE/agent-task.yml`'s sections), shown for approval, opened unlabelled.
 
 ## Project subagents (`.claude/agents/`)
 - `rule-author` — Compendium/Clarity/guide text → rules YAML (provenance, no invented numbers).
