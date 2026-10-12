@@ -140,15 +140,22 @@ public static class StatAdding
 
     /// <summary>
     /// A copy's stat focus, as DIM shows it on an Armor 3.0 piece's square: its highest rolled stat (the first in the
-    /// game's order on a tie); none when the excerpt knows none of its armor-stat plugs or it rolls nothing.
+    /// game's order on a tie); none for an Armor 2.0 piece, when the excerpt knows none of its armor-stat plugs or it
+    /// rolls nothing.
     /// </summary>
     public static Optional<StatKind> FindStatFocus(RuleCatalog catalog, OwnedArmor armor) =>
-        ReadRoll(catalog.Manifest.StatPlugs, armor).Bind(roll => StatPointsArithmetic.AllStats
-            .Select(stat => (Stat: stat, Points: roll.Rolled.ReadPoints(stat)))
-            .Where(entry => entry.Points > 0)
-            .OrderByDescending(entry => entry.Points)
-            .Select(entry => Optional.Some(entry.Stat))
-            .FirstOrDefault(Optional.None<StatKind>()));
+        IsArmor3(catalog.Manifest.StatPlugs, armor)
+            ? ReadRoll(catalog.Manifest.StatPlugs, armor).Bind(roll => StatPointsArithmetic.AllStats
+                .Select(stat => (Stat: stat, Points: roll.Rolled.ReadPoints(stat)))
+                .Where(entry => entry.Points > 0)
+                .OrderByDescending(entry => entry.Points)
+                .Select(entry => Optional.Some(entry.Stat))
+                .FirstOrDefault(Optional.None<StatKind>()))
+            : Optional.None<StatKind>();
+
+    /// <summary>Whether a copy is Armor 3.0, DIM's test: it holds an Armor 3.0 masterwork plug (an Armor 2.0 piece has none).</summary>
+    private static bool IsArmor3(ImmutableDictionary<ItemHash, StatPlug> statPlugs, OwnedArmor armor) =>
+        armor.Plugs.Any(hash => statPlugs.TryGetValue(hash, out var plug) && plug is StatPlug.Masterwork);
 
     /// <summary>What a copy gives: its roll and masterwork; none when the excerpt knows none of its armor-stat plugs.</summary>
     public static Optional<StatPoints> ReadCopyPoints(RuleCatalog catalog, OwnedArmor armor) =>

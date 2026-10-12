@@ -449,6 +449,16 @@ public static class LoopDesigning
     public static Optional<BreakerType> FindWeaponBreaker(ValidatedBuild build, WeaponLoadout weapon, Optional<GearMarks> marks) =>
         CopyFinding.FindWeaponBreaker(build.Catalog.Manifest, weapon, marks);
 
+    /// <summary>
+    /// A legendary weapon's intrinsic frame (Adaptive Frame), as the excerpt has it: DIM shows its icon in the weapon's
+    /// top-right corner. None for an exotic (its intrinsic is its own perk, which DIM doesn't show there) or a weapon whose
+    /// frame the excerpt lacks.
+    /// </summary>
+    public static Optional<ManifestItem> FindWeaponFrame(ValidatedBuild build, ManifestItem weapon) =>
+        weapon.Kind is ManifestKind.Weapon kind && weapon.Tier != Optional.Some(ItemTier.Exotic)
+            ? kind.Intrinsic.Bind(build.Catalog.Manifest.FindItem)
+            : Optional.None<ManifestItem>();
+
     /// <summary>The champion one of the player's weapons breaks (its own breaker, else its weapon's): what the weapon picker shows.</summary>
     public static Optional<BreakerType> FindCopyBreaker(ValidatedBuild build, OwnedWeapon copy) =>
         CopyFinding.FindCopyBreaker(build.Catalog.Manifest, copy);

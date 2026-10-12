@@ -108,7 +108,7 @@ damageTypes:
 breakerTypes:
   - { hash: 2611060930, name: "Disruption", icon: /common/destiny2_content/icons/DestinyBreakerTypeDefinition_….png }
 armorStats:
-  - { stat: grenade, hash: 1735777505, name: "Grenade", icon: /common/destiny2_content/icons/065c….png }
+  - { stat: grenade, name: "Grenade", icon: /common/destiny2_content/icons/065c….png }
 itemConstants:
   tierOverlays: [/img/destiny_content/items/inventory-item-tier1.png, …, /img/destiny_content/items/inventory-item-tier5.png]
   masterworkOverlay: /img/destiny_content/items/masterwork-overlay.png
@@ -149,7 +149,7 @@ items:
   the overlay with its season's or expansion's icon in the top-left corner, drawn over its square as DIM draws it.
 * `breakerTypes`: the three champion breakers (Shield Piercing, Disruption, Stagger), each with its name and icon: a
   weapon's breaker shows under its square, as DIM shows it. `armorStats`: the six armor stats (`stat`: weapons, health,
-  class, grenade, super, melee), each with its manifest hash, name and icon: an Armor 3.0 piece's highest rolled stat
+  class, grenade, super, melee), each with its name and icon: an Armor 3.0 piece's highest rolled stat
   shows in its square's top-right corner, as DIM shows it. `itemConstants`: the overlays Bungie draws on an item's
   icon (the manifest's inventory item constants): `tierOverlays` the diamonds of gear tiers 1 to 5 in order (tier
   1's draws none), `masterworkOverlay` the masterwork glow (`masterworkExoticOverlay` an exotic's). A player's copy

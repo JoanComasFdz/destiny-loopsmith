@@ -27,7 +27,7 @@ internal static class ManifestParsing
         ImmutableDictionary<StatKind, ArmorStatIcon>.Empty);
 
     private static readonly ImmutableArray<string> ManifestKeys = ["version", "damageTypes", "breakerTypes", "armorStats", "itemConstants", "keywordTraits", "armorSets", "items", "statPlugs"];
-    private static readonly ImmutableArray<string> ArmorStatKeys = ["stat", "hash", "name", "icon"];
+    private static readonly ImmutableArray<string> ArmorStatKeys = ["stat", "name", "icon"];
     private static readonly ImmutableArray<string> BreakerTypeKeys = ["hash", "name", "icon"];
     private static readonly ImmutableArray<string> ItemConstantsKeys = ["tierOverlays", "masterworkOverlay", "masterworkExoticOverlay"];
     private static readonly ImmutableArray<string> TraitKeys = ["hash", "name", "icon"];
@@ -103,15 +103,14 @@ internal static class ManifestParsing
             map.ReadRequired("icon", ReadName),
             (_, hash, name, icon) => map.ToLocated(new BreakerType(hash, name, icon))));
 
-    /// <summary><c>{ stat, hash, name, icon }</c>: an armor stat (weapons, health…) as the manifest names and draws it.</summary>
+    /// <summary><c>{ stat, name, icon }</c>: an armor stat (weapons, health…) as the manifest names and draws it.</summary>
     private static Result<Located<ArmorStatIcon>, Errors> ReadArmorStat(YamlValue value) =>
         value.ToMap().Bind(map => Combine(
             map.CheckKeys(ArmorStatKeys),
             map.ReadRequired("stat", ReadVocabularyWord<StatKind>),
-            map.ReadRequired("hash", ReadItemHash),
             map.ReadRequired("name", ReadName),
             map.ReadRequired("icon", ReadName),
-            (_, stat, _, name, icon) => map.ToLocated(new ArmorStatIcon(stat, name, icon))));
+            (_, stat, name, icon) => map.ToLocated(new ArmorStatIcon(stat, name, icon))));
 
     /// <summary><c>{ tierOverlays: [tier 1 … tier 5], masterworkOverlay, masterworkExoticOverlay }</c>: the overlays of an item's icon.</summary>
     private static Result<ItemOverlays, Errors> ReadItemOverlays(YamlValue value) =>

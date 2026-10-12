@@ -37,7 +37,11 @@ public static class WeaponPickerShaping
 
     /// <summary>A weapon's type line: its archetype and damage type ("Hand Cannon · Arc").</summary>
     public static string DescribeType(WeaponOptionView option) =>
-        string.Join(" · ", new[] { option.Archetype, option.Damage.Match(found => found.Value.ToString(), _ => "") }.Where(part => part.Length > 0));
+        string.Join(" · ", new[] { option.Archetype, DescribeDamage(option) }.Where(part => part.Length > 0));
+
+    /// <summary>A weapon's damage type by name ("Strand"), the footer icon's alt text; empty when it has none.</summary>
+    public static string DescribeDamage(WeaponOptionView option) =>
+        option.Damage.Match(found => found.Value.ToString(), _ => "");
 
     private static WeaponOptionView ShapeOption(ValidatedBuild build, WeaponOption option)
     {
@@ -47,7 +51,7 @@ public static class WeaponPickerShaping
         return new WeaponOptionView(
             LoadoutShaping.DescribeWeaponItem(option.Item),
             LoadoutShaping.DescribeMarks(
-                catalog, Optional.Some(option.Item), Optional.Some(option.Weapon.Marks), LoopDesigning.FindCopyBreaker(build, option.Weapon), LoadoutShaping.DescribeFrame(catalog, option.Item)),
+                catalog, Optional.Some(option.Item), Optional.Some(option.Weapon.Marks), LoopDesigning.FindCopyBreaker(build, option.Weapon), LoadoutShaping.DescribeFrame(build, option.Item)),
             option.Weapon.InstanceId,
             option.Item.Type.UnwrapOr(""),
             type,

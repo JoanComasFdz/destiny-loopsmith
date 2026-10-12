@@ -15,12 +15,12 @@ breakerTypes:
   - { hash: 2611060930, name: "Disruption", icon: /common/destiny2_content/icons/DestinyBreakerTypeDefinition_da558352b624d799cf50de14d7cb9565.png }
   - { hash: 3178805705, name: "Stagger", icon: /common/destiny2_content/icons/DestinyBreakerTypeDefinition_825a438c85404efd6472ff9e97fc7251.png }
 armorStats:
-  - { stat: weapons, hash: 2996146975, name: "Weapons", icon: /common/destiny2_content/icons/bc69675acdae9e6b9a68a02fb4d62e07.png }
-  - { stat: health, hash: 392767087, name: "Health", icon: /common/destiny2_content/icons/717b8b218cc14325a54869bef21d2964.png }
-  - { stat: class, hash: 1943323491, name: "Class", icon: /common/destiny2_content/icons/7eb845acb5b3a4a9b7e0b2f05f5c43f1.png }
-  - { stat: grenade, hash: 1735777505, name: "Grenade", icon: /common/destiny2_content/icons/065cdaabef560e5808e821cefaeaa22c.png }
-  - { stat: super, hash: 144602215, name: "Super", icon: /common/destiny2_content/icons/585ae4ede9c3da96b34086fccccdc8cd.png }
-  - { stat: melee, hash: 4244567218, name: "Melee", icon: /common/destiny2_content/icons/fa534aca76d7f2d7e7b4ba4df4271b42.png }
+  - { stat: weapons, name: "Weapons", icon: /common/destiny2_content/icons/bc69675acdae9e6b9a68a02fb4d62e07.png }
+  - { stat: health, name: "Health", icon: /common/destiny2_content/icons/717b8b218cc14325a54869bef21d2964.png }
+  - { stat: class, name: "Class", icon: /common/destiny2_content/icons/7eb845acb5b3a4a9b7e0b2f05f5c43f1.png }
+  - { stat: grenade, name: "Grenade", icon: /common/destiny2_content/icons/065cdaabef560e5808e821cefaeaa22c.png }
+  - { stat: super, name: "Super", icon: /common/destiny2_content/icons/585ae4ede9c3da96b34086fccccdc8cd.png }
+  - { stat: melee, name: "Melee", icon: /common/destiny2_content/icons/fa534aca76d7f2d7e7b4ba4df4271b42.png }
 itemConstants:
   tierOverlays: [/img/destiny_content/items/inventory-item-tier1.png, /img/destiny_content/items/inventory-item-tier2.png, /img/destiny_content/items/inventory-item-tier3.png, /img/destiny_content/items/inventory-item-tier4.png, /img/destiny_content/items/inventory-item-tier5.png]
   masterworkOverlay: /img/destiny_content/items/masterwork-overlay.png

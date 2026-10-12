@@ -41,7 +41,7 @@
                                 <span class="armor-worn-mark" aria-hidden="true">✓</span>
                             }
                         </button>
-                        <TileFooter Marks="option.Marks" DamageIcon="option.DamageIcon" DamageName="@(option.Damage.Match(found => found.Value.ToString(), _ => ""))" />
+                        <TileFooter Marks="option.Marks" DamageIcon="option.DamageIcon" DamageName="@WeaponPickerShaping.DescribeDamage(option)" />
                     </div>
                 }
             </div>

@@ -74,6 +74,7 @@ public sealed partial class StatLoadingTests
             [
                 new FakeItem(Mask, "1", "vault", [FindRollPlug(StatKind.Grenade, 30), FindRollPlug(StatKind.Super, 25), FullMasterwork], 11, Tier: 5, Power: 550),
                 new FakeItem(Mask, "2", "vault", [], 11, Power: 540),   // a roll the excerpt can't read
+                new FakeItem(Mask, "4", "vault", [FindRollPlug(StatKind.Grenade, 30)], 10, Power: 530),   // Armor 2.0: no Armor 3.0 masterwork plug
                 new FakeItem(Thunderlord, "3", "equipped", [], null, DamageType: 2),
             ]);
         var build = OpenOwnersBuild();
@@ -83,6 +84,7 @@ public sealed partial class StatLoadingTests
         Assert.Equal(Optional.Some((StatKind.Grenade, "Grenade")), LoopDesigning.FindStatFocus(build, FindCopy(profile, "1")).Map(stat => (stat.Stat, stat.Name)));
         Assert.StartsWith("/common/destiny2_content/icons/", LoopDesigning.FindStatFocus(build, FindCopy(profile, "1")).Match(stat => stat.Value.Icon, _ => ""), StringComparison.Ordinal);
         Assert.False(LoopDesigning.FindStatFocus(build, FindCopy(profile, "2")).IsSome());
+        Assert.False(LoopDesigning.FindStatFocus(build, FindCopy(profile, "4")).IsSome());   // DIM draws no focus on a legacy piece
     }
 
     [Fact]
@@ -91,8 +93,10 @@ public sealed partial class StatLoadingTests
         var crisis = Catalog.Manifest.FindItem(ItemHash.From(2888266564u)).Match(found => found.Value, _ => throw new InvalidOperationException("Crisis Inverted"));
         var thunderlord = Catalog.Manifest.FindItem(Thunderlord).Match(found => found.Value, _ => throw new InvalidOperationException("Thunderlord"));
 
-        Assert.Equal(Optional.Some("Adaptive Frame"), Catalog.Manifest.FindWeaponFrame(crisis).Map(frame => frame.Name));
-        Assert.False(Catalog.Manifest.FindWeaponFrame(thunderlord).IsSome());
+        var build = OpenOwnersBuild();
+
+        Assert.Equal(Optional.Some("Adaptive Frame"), LoopDesigning.FindWeaponFrame(build, crisis).Map(frame => frame.Name));
+        Assert.False(LoopDesigning.FindWeaponFrame(build, thunderlord).IsSome());
         Assert.True(crisis.Watermark.IsSome());
         Assert.Equal(Optional.Some(ItemHash.From(485622768u)), Assert.IsType<ManifestKind.Weapon>(crisis.Kind).Breaker);   // Adaptive Frame pierces barriers
     }

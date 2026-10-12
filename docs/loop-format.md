@@ -300,8 +300,8 @@ steps replay:
   ⋯…"), with **Log out**; it shows no total of its own. Log out forgets the player's armor: the build keeps the
   stats and pieces it has, the ⋯ go, and the login text and button come back. After the login each armor piece of the build has **⋯**: it opens the **armor
   picker** for that slot — the player's pieces for it (for the build's class; Bungie's icons), the copy the build
-  wears first (✓, its stats shown), then its other copies, then the rest by name. Hovering a piece (or a first tap, on
-  a phone) shows its stats, its set and where it is; a click (a second tap, or "Wear this piece") wears it. The piece
+  wears first (✓ in its square's lower-right corner, its stats shown), then its other copies, then the rest by name.
+  Hovering a piece (or a first tap, on a phone) shows its stats, its set and where it is; a click (a second tap, or "Wear this piece") wears it. The piece
   then is the build's: an exotic the rules know is its exotic, any other piece a left-out item; its copy goes into
   `armorCopies`; its **set bonuses follow the pieces**: two pieces of another set leave Luminopotent's 2-piece bonus
   only, and the other set's 2-piece perk shows too. The steps replay, and the stats are set from the armor once every

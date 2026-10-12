@@ -20,6 +20,19 @@ index="$site/index.html"
 sed -i -E "s|<base href=\"[^\"]*\" ?/?>|<base href=\"${base}\" />|" "$index"
 grep -q "<base href=\"${base}\"" "$index" || { echo "could not set <base href> in $index" >&2; exit 1; }
 
+# The page's own stylesheet and scripts get their content's hash as a query (css/app.css?v=…), so a browser that
+# cached the last deploy's copy (Pages lets it keep one for 10 minutes) fetches this one with the new markup.
+for page in "$index" "$site/login.html"; do
+  [ -f "$page" ] || continue
+  for asset in $(grep -oE '(href|src)="(css|js)/[^"?]+\.(css|js)"' "$page" | sed -E 's/^(href|src)="//; s/"$//'); do
+    [ -f "$site/$asset" ] || { echo "$page names $asset, which the site doesn't have" >&2; exit 1; }
+    version=$(sha256sum "$site/$asset" | cut -c1-12)
+    sed -i -E "s#(href|src)=\"${asset}\"#\1=\"${asset}?v=${version}\"#" "$page"
+  done
+done
+grep -qE 'href="css/app\.css\?v=[0-9a-f]{12}"' "$index" || { echo "could not version css/app.css in $index" >&2; exit 1; }
+rm -f "$site/login.html.br" "$site/login.html.gz"
+
 # Pre-compressed copies would still carry the old <base href>; Pages compresses on its own.
 rm -f "$site/index.html.br" "$site/index.html.gz"
 

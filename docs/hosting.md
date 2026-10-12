@@ -18,7 +18,10 @@ For this repository: https://joancomasfdz.github.io/destiny-loopsmith/ and
 
 Both workflows test the engine, publish the app and run `tools/web/prepare-pages.sh`, which sets
 `<base href>` to where the copy is served and drops the pre-compressed `index.html.br/.gz` (they'd
-keep the old base; Pages compresses on its own). For the main site only it adds `.nojekyll` (Pages
+keep the old base; Pages compresses on its own). It also adds each own stylesheet's and script's content hash to
+its URL in `index.html` and `login.html` (`css/app.css?v=…`): Pages lets a browser keep a file for ten minutes, and
+without it a fresh deploy's markup could meet the last deploy's cached `app.css` (`_framework/` is fingerprinted
+already). For the main site only it adds `.nojekyll` (Pages
 would otherwise hide `_framework/`; it reads the file only at the site root, so previews don't get
 one) and a `404.html` deep-link fallback that also sends deep links inside a preview
 (`…/pr-preview/pr-7/compare`) back to that preview's start page. The main deploy

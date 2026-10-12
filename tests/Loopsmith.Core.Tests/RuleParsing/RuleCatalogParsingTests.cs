@@ -751,7 +751,7 @@ public sealed class RuleCatalogParsingTests
     {
         var manifest = new SourceText("manifest.yaml", """
             armorStats:
-              - { stat: grenade, hash: 1735777505, name: "Grenade", icon: /common/grenade.png }
+              - { stat: grenade, name: "Grenade", icon: /common/grenade.png }
             items:
               - { hash: 4019651319, name: "Festival Flight", kind: weapon, type: "Grenade Launcher", slot: kinetic, watermark: /common/season.png, icon: /common/ff.jpg }
             """);

@@ -324,8 +324,8 @@ public static class LoadoutShaping
     }
 
     /// <summary>A legendary weapon's top-right corner: its intrinsic frame (Adaptive Frame), as DIM shows it; none for an exotic.</summary>
-    public static Optional<CornerBadge> DescribeFrame(RuleCatalog catalog, ManifestItem weapon) =>
-        catalog.Manifest.FindWeaponFrame(weapon).Bind(frame => frame.Icon.Map(icon => new CornerBadge(CornerKind.Frame, frame.Name, ToIconUrl(icon))));
+    public static Optional<CornerBadge> DescribeFrame(ValidatedBuild build, ManifestItem weapon) =>
+        LoopDesigning.FindWeaponFrame(build, weapon).Bind(frame => frame.Icon.Map(icon => new CornerBadge(CornerKind.Frame, frame.Name, ToIconUrl(icon))));
 
     /// <summary>An Armor 3.0 piece's top-right corner: the stat it focuses on (its highest rolled stat), as DIM shows it.</summary>
     public static CornerBadge DescribeStatFocus(ArmorStatIcon stat) =>
@@ -448,7 +448,7 @@ public static class LoadoutShaping
         return new WeaponView(
             index,
             tile,
-            DescribeMarks(catalog, item, marks, LoopDesigning.FindWeaponBreaker(build, weapon, marks), item.Bind(known => DescribeFrame(catalog, known))),
+            DescribeMarks(catalog, item, marks, LoopDesigning.FindWeaponBreaker(build, weapon, marks), item.Bind(known => DescribeFrame(build, known))),
             weapon.Hash.Bind(hash => ToPageUrl(catalog, hash)),
             weapon.Slot,
             weapon.Archetype,

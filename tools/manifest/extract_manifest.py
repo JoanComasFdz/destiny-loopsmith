@@ -431,7 +431,7 @@ def main():
     for h, stat in ARMOR_STATS.items():
         display = stat_definitions.get(str(h), {}).get("displayProperties", {})
         if display.get("icon"):
-            lines.append(f"  - {{ stat: {stat}, hash: {h}, name: {to_text(display.get('name', ''))}, icon: {display['icon']} }}")
+            lines.append(f"  - {{ stat: {stat}, name: {to_text(display.get('name', ''))}, icon: {display['icon']} }}")
         else:
             missing.append(h)
     lines.append("itemConstants:")
