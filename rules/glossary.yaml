@@ -46,7 +46,9 @@ statuses:
   # Duration depends on the source (Clarity: 11 s Facet of Bravery, 8 s Thread of Propagation;
   # Compendium Artifact Perks#45: 14 s from Unraveling Orbs, set in that rule). No generic duration.
   # A weapon buff (kind weaponBuff): your Strand weapons fire Unraveling Rounds; the state shows it with the weapons.
-  - { id: unraveling-rounds, name: Unraveling Rounds, kind: weaponBuff, affinity: strand }
+  # No trait: Bungie's manifest has no icon for it (2026-10-12: no trait, perk or item by that name). The game draws
+  # it in your buffs as a triangle around a round (drawnIcon: rounds), which the designer draws in its affinity.
+  - { id: unraveling-rounds, name: Unraveling Rounds, kind: weaponBuff, affinity: strand, drawnIcon: rounds }
 
   # Combination Blow melee damage stacks: up to 3, each lasting 20 s (compendium/2026-10-09/Arc#41;
   # the creator also says "times three stacks"). Clarity has no melee-ability entries.

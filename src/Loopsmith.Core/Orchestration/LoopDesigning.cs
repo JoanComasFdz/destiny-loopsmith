@@ -657,16 +657,16 @@ public static class LoopDesigning
     public static ImmutableArray<LeftOutItem> ListMissing(ValidatedBuild build) =>
         LeftOutClassifying.ListMissing(build.Catalog, build.Build);
 
-    /// <summary>The icon (a bungie.net path) of what a step does: its weapon's, its ability's, or its pickup's or status's keyword icon.</summary>
-    public static Optional<string> FindActionIcon(ValidatedBuild build, PlayerAction action) =>
+    /// <summary>The icon of what a step does: its weapon's, its ability's, or its pickup's or status's keyword icon.</summary>
+    public static Optional<IconRef> FindActionIcon(ValidatedBuild build, PlayerAction action) =>
         IconFinding.FindActionIcon(build.Catalog, build.Build, action);
 
-    /// <summary>A keyword's icon (a bungie.net path): the game's own (Jolted, Woven Mail), else its element's; none for one the excerpt has no icon for.</summary>
-    public static Optional<string> FindKeywordIcon(ValidatedBuild build, KeywordRef keyword) =>
+    /// <summary>A keyword's icon: the game's own (Jolted, Woven Mail), else its element's, else the shape the game draws for it (Unraveling Rounds); none without any.</summary>
+    public static Optional<IconRef> FindKeywordIcon(ValidatedBuild build, KeywordRef keyword) =>
         IconFinding.FindKeywordIcon(build.Catalog, keyword);
 
-    /// <summary>An element's icon (a bungie.net path): its manifest item's, else (a keyword's element: Jolt, Bolt Charge) the keyword's own; none when the excerpt has neither.</summary>
-    public static Optional<string> FindElementIcon(RuleCatalog catalog, ElementId element) =>
+    /// <summary>An element's icon: its manifest item's, else (a keyword's element: Jolt, Bolt Charge) the keyword's own; none when there is neither.</summary>
+    public static Optional<IconRef> FindElementIcon(RuleCatalog catalog, ElementId element) =>
         IconFinding.FindElementIcon(catalog, element);
 
     /// <summary>The keyword an element is (Bolt Charge, Ionic Trace), when it is one.</summary>

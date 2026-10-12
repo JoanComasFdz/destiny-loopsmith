@@ -129,10 +129,10 @@ public sealed class RuleCatalogParsingTests
 
         Assert.Equal(5, glossary.Statuses.Count);
         Assert.Equal(
-            new StatusDefinition(ToStatus("bolt-charge"), "Bolt Charge", KeywordKind.Buff, Affinity.Arc, Optional.Some(StackCount.From(10)), Optional.None<Seconds>(), Optional.None<ItemHash>()),
+            new StatusDefinition(ToStatus("bolt-charge"), "Bolt Charge", KeywordKind.Buff, Affinity.Arc, Optional.Some(StackCount.From(10)), Optional.None<Seconds>(), Optional.None<ItemHash>(), Optional.None<DrawnIcon>()),
             glossary.Statuses[ToStatus("bolt-charge")]);
         Assert.Equal(
-            new StatusDefinition(ToStatus("jolt"), "Jolt", KeywordKind.Debuff, Affinity.Arc, Optional.None<StackCount>(), Optional.Some(Seconds.From(4m)), Optional.None<ItemHash>()),
+            new StatusDefinition(ToStatus("jolt"), "Jolt", KeywordKind.Debuff, Affinity.Arc, Optional.None<StackCount>(), Optional.Some(Seconds.From(4m)), Optional.None<ItemHash>(), Optional.None<DrawnIcon>()),
             glossary.Statuses[ToStatus("jolt")]);
         Assert.Equal(Optional.None<Seconds>(), glossary.Statuses[ToStatus("sever")].Duration);
         Assert.Equal(
@@ -725,6 +725,25 @@ public sealed class RuleCatalogParsingTests
         Assert.Equal(Optional.Some(ItemHash.From(2724747993u)), catalog.Glossary.Summons[SummonId.From("threadling")].Trait);
         Assert.Equal(new KeywordTrait(ItemHash.From(3221118171u), "Jolted", "/common/jolted.png"), catalog.Manifest.KeywordTraits[ItemHash.From(3221118171u)]);
         Assert.Contains("is missing 'icon'", ParseInvalidCatalog(Glossary, new SourceText("manifest.yaml", "keywordTraits:\n  - { hash: 1, name: \"X\" }\n")));
+    }
+
+    [Fact]
+    public void A_status_bungies_data_has_no_icon_for_names_the_shape_the_game_draws_and_only_then()
+    {
+        var glossary = new SourceText("glossary.yaml", """
+            statuses:
+              - { id: unraveling-rounds, name: Unraveling Rounds, kind: weaponBuff, affinity: strand, drawnIcon: rounds }
+              - { id: reaper, name: Reaper, kind: buff, affinity: neutral }
+            """);
+
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([glossary]));
+
+        Assert.Equal(Optional.Some(DrawnIcon.Rounds), catalog.Glossary.Statuses[ToStatus("unraveling-rounds")].DrawnIcon);
+        Assert.False(catalog.Glossary.Statuses[ToStatus("reaper")].DrawnIcon.IsSome());
+        Assert.Contains(
+            "the status 'jolt' has a trait, so the game's own icon",
+            ParseInvalidCatalog(new SourceText("glossary.yaml", "statuses:\n  - { id: jolt, name: Jolt, kind: debuff, affinity: arc, trait: 3221118171, drawnIcon: rounds }\n")));
+        Assert.Contains("drawnIcon", ParseInvalidCatalog(new SourceText("glossary.yaml", "statuses:\n  - { id: x, name: X, kind: buff, affinity: arc, drawnIcon: hexagon }\n")));
     }
 
     [Fact]

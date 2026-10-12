@@ -15,10 +15,10 @@ public static class TestCatalog
     public static readonly KeywordGlossary Glossary = new(
         new[]
         {
-            new StatusDefinition(Status("bolt-charge"), "Bolt Charge", KeywordKind.Buff, Affinity.Arc, Optional.Some(StackCount.From(3)), Optional.None<Seconds>(), Optional.None<ItemHash>()),
-            new StatusDefinition(Status("amplified"), "Amplified", KeywordKind.Buff, Affinity.Arc, Optional.None<StackCount>(), Optional.Some(Seconds.From(10m)), Optional.None<ItemHash>()),
-            new StatusDefinition(Status("jolt"), "Jolt", KeywordKind.Debuff, Affinity.Arc, Optional.None<StackCount>(), Optional.Some(Seconds.From(4m)), Optional.None<ItemHash>()),
-            new StatusDefinition(Status("armor-charge"), "Armor Charge", KeywordKind.Buff, Affinity.Neutral, Optional.Some(StackCount.From(3)), Optional.None<Seconds>(), Optional.None<ItemHash>()),
+            new StatusDefinition(Status("bolt-charge"), "Bolt Charge", KeywordKind.Buff, Affinity.Arc, Optional.Some(StackCount.From(3)), Optional.None<Seconds>(), Optional.None<ItemHash>(), Optional.None<DrawnIcon>()),
+            new StatusDefinition(Status("amplified"), "Amplified", KeywordKind.Buff, Affinity.Arc, Optional.None<StackCount>(), Optional.Some(Seconds.From(10m)), Optional.None<ItemHash>(), Optional.None<DrawnIcon>()),
+            new StatusDefinition(Status("jolt"), "Jolt", KeywordKind.Debuff, Affinity.Arc, Optional.None<StackCount>(), Optional.Some(Seconds.From(4m)), Optional.None<ItemHash>(), Optional.None<DrawnIcon>()),
+            new StatusDefinition(Status("armor-charge"), "Armor Charge", KeywordKind.Buff, Affinity.Neutral, Optional.Some(StackCount.From(3)), Optional.None<Seconds>(), Optional.None<ItemHash>(), Optional.None<DrawnIcon>()),
         }.ToImmutableDictionary(s => s.Id),
         new[]
         {

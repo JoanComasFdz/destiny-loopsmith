@@ -106,10 +106,10 @@
     private async Task ShowDetailsAsync(ItemDetails details) =>
         await OnShowDetails.InvokeAsync(details);                                                // impure
 
-    /// <summary>A status's or pickup's icon (the game's own keyword icon), when the excerpt has it.</summary>
+    /// <summary>A status's or pickup's icon (the game's own keyword icon, or the shape it draws), when it has one.</summary>
     private RenderFragment RenderEntryIcon(StateEntry entry) => __builder =>
     {
-        if (LoopDesigning.FindKeywordIcon(Build, entry.Keyword) is Optional<string>.Some icon)
+        if (LoopDesigning.FindKeywordIcon(Build, entry.Keyword) is Optional<IconRef>.Some icon)
         {
             <img class="inline-icon hud-keyword-icon" src="@LoadoutShaping.ToIconUrl(icon.Value)" alt="" loading="lazy" />
         }

@@ -13,7 +13,7 @@ internal static class GlossaryParsing
     internal const string GlossaryPath = "glossary.yaml";
 
     private static readonly ImmutableArray<string> GlossaryKeys = ["statuses", "pickups", "summons", "subclasses"];
-    private static readonly ImmutableArray<string> StatusKeys = ["id", "name", "kind", "affinity", "maxStacks", "duration", "trait"];
+    private static readonly ImmutableArray<string> StatusKeys = ["id", "name", "kind", "affinity", "maxStacks", "duration", "trait", "drawnIcon"];
     private static readonly ImmutableArray<string> PickupKeys = ["id", "name", "affinity", "collectsAutomatically", "trait"];
     private static readonly ImmutableArray<string> SummonKeys = ["id", "name", "damageType", "trait"];
     private static readonly ImmutableArray<string> SubclassKeys = ["class", "subclass", "name", "hash"];
@@ -54,8 +54,16 @@ internal static class GlossaryParsing
             map.ReadOptional("maxStacks", ReadMaxStacks),
             map.ReadOrDefault("duration", ReadDuration, Optional.None<Seconds>()),
             map.ReadOptional("trait", ReadItemHash),
-            (_, id, name, kind, affinity, maxStacks, duration, trait) =>
-                map.ToLocated(new StatusDefinition(id, name, kind, affinity, maxStacks, duration, trait))));
+            map.ReadOptional("drawnIcon", ReadVocabularyWord<DrawnIcon>),
+            (_, id, name, kind, affinity, maxStacks, duration, trait, drawnIcon) => new StatusDefinition(id, name, kind, affinity, maxStacks, duration, trait, drawnIcon))
+            .Bind(status => CheckDrawnIcon(map, status))
+            .Map(map.ToLocated));
+
+    /// <summary>A drawn icon is for a keyword Bungie's data has no icon for: a status with a trait has the game's own.</summary>
+    private static Result<StatusDefinition, Errors> CheckDrawnIcon(YamlMap map, StatusDefinition status) =>
+        status.DrawnIcon.IsSome() && status.Trait.IsSome()
+            ? map.FailAtKey<StatusDefinition>("drawnIcon", $"the status '{status.Id.Value}' has a trait, so the game's own icon: a drawn one is for a keyword Bungie's data has no icon for")
+            : Succeed(status);
 
     private static Result<Located<PickupDefinition>, Errors> ReadPickup(YamlValue value) =>
         value.ToMap().Bind(map => Combine(

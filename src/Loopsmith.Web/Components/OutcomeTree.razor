@@ -169,10 +169,10 @@
         }
     };
 
-    /// <summary>A keyword's icon in front of its name (the game's own, Jolted, Woven Mail), when the excerpt has it.</summary>
+    /// <summary>A keyword's icon in front of its name (the game's own, Jolted, Woven Mail; or the shape it draws, Unraveling Rounds), when it has one.</summary>
     private static RenderFragment RenderKeywordIcon(KeywordPart keyword) => __builder =>
     {
-        if (keyword.Icon is Optional<string>.Some icon)
+        if (keyword.Icon is Optional<IconRef>.Some icon)
         {
             <img class="inline-icon keyword-icon" src="@LoadoutShaping.ToIconUrl(icon.Value)" alt="" loading="lazy" />
         }

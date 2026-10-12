@@ -8,9 +8,9 @@ namespace Loopsmith.Core.TraceRendering;
 
 /// <summary>
 /// A keyword in a text: its affinity (it is highlighted in it), the element it is when the catalog has one (its
-/// details), and its icon (a bungie.net path: the game's own keyword icon, when the excerpt has it).
+/// details), and its icon (the game's own keyword icon when the excerpt has it, or the shape the game draws for it).
 /// </summary>
-public sealed record KeywordPart(Affinity Affinity, Optional<ElementId> Element, Optional<string> Icon);
+public sealed record KeywordPart(Affinity Affinity, Optional<ElementId> Element, Optional<IconRef> Icon);
 
 /// <summary>A piece of an event's or an outcome's text: plain, or a keyword ("Bolt Charge", "Jolted", "Ionic Trace").</summary>
 public sealed record TextPart(string Text, Optional<KeywordPart> Keyword);

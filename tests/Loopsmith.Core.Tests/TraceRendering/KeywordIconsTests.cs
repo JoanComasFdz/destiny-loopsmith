@@ -12,7 +12,8 @@ namespace Loopsmith.Core.Tests.TraceRendering;
 
 /// <summary>
 /// The game's own icons next to a name (docs/rule-format.md, "Glossary"): a keyword shows its Bungie trait's (Jolted,
-/// Woven Mail), else its element's manifest icon (Slice's perk); a step shows its weapon's, its ability's or its
+/// Woven Mail), else its element's manifest icon (Slice's perk), else the shape the game draws for it (Unraveling
+/// Rounds); a step shows its weapon's, its ability's or its
 /// keyword's; an event its weapon's. All from the real rules and their manifest excerpt.
 /// </summary>
 public sealed class KeywordIconsTests
@@ -45,11 +46,27 @@ public sealed class KeywordIconsTests
         var slice = new KeywordRef.Status(StatusId.From("slice"));
         var orb = new KeywordRef.Pickup(PickupId.From("orb-of-power"));
 
-        Assert.Equal(Optional.Some(Catalog.Manifest.KeywordTraits[ItemHash.From(3221118171u)].Icon), IconFinding.FindKeywordIcon(Catalog, Jolt));
-        Assert.Equal(Catalog.FindKeywordElement(slice).Bind(Catalog.FindElementItem).Bind(item => item.Icon), IconFinding.FindKeywordIcon(Catalog, slice));
+        Assert.Equal(ToManifestIcon(Catalog.Manifest.KeywordTraits[ItemHash.From(3221118171u)].Icon), IconFinding.FindKeywordIcon(Catalog, Jolt));
+        Assert.Equal(Catalog.FindKeywordElement(slice).Bind(Catalog.FindElementItem).Bind(item => item.Icon).Map(IconFinding.ToManifestIcon), IconFinding.FindKeywordIcon(Catalog, slice));
         Assert.True(IconFinding.FindKeywordIcon(Catalog, slice).IsSome());
         Assert.False(IconFinding.FindKeywordIcon(Catalog, orb).IsSome());
         Assert.Equal(IconFinding.FindKeywordIcon(Catalog, Jolt), IconFinding.FindElementIcon(Catalog, ElementId.From("jolt")));   // a keyword's element: the keyword's icon
+    }
+
+    [Fact]
+    public void Unraveling_rounds_shows_the_shape_the_game_draws_for_it_in_strand()
+    {
+        // The game draws it in your buffs (a triangle around a round), but Bungie's manifest has no trait or item for it:
+        // the glossary says which shape it is (drawnIcon), the designer draws it.
+        var unraveling = new KeywordRef.Status(StatusId.From("unraveling-rounds"));
+        var drawn = Optional.Some<IconRef>(new IconRef.Drawn(DrawnIcon.Rounds, Affinity.Strand));
+
+        Assert.Equal(drawn, IconFinding.FindKeywordIcon(Catalog, unraveling));
+        Assert.Equal(drawn, IconFinding.FindElementIcon(Catalog, ElementId.From("unraveling-rounds")));   // its element's: the keyword's
+        Assert.Equal(drawn, LoopDesigning.FindActionIcon(Play().Build, new PlayerAction.Declare(new StateDeclaration.EndStatus(StatusId.From("unraveling-rounds")))));
+        Assert.All(
+            Catalog.Glossary.Statuses.Values.Where(status => status.DrawnIcon.IsSome()),
+            status => Assert.False(status.Trait.IsSome() || Catalog.FindKeywordElement(new KeywordRef.Status(status.Id)).Bind(Catalog.FindElementItem).Bind(item => item.Icon).IsSome(), status.Name));   // only where the game's data has none
     }
 
     [Fact]
@@ -78,13 +95,15 @@ public sealed class KeywordIconsTests
         var max = new PlayerAction.Declare(new StateDeclaration.ReachMax(StatusId.From("bolt-charge")));
         var pack = new PlayerAction.Declare(new StateDeclaration.NewPack());
 
-        Assert.Equal(build.Build.Weapons.Single(found => found.Slot == WeaponSlot.Kinetic).Hash.Bind(Catalog.Manifest.FindItem).Bind(item => item.Icon), LoopDesigning.FindActionIcon(build, weapon));
+        Assert.Equal(build.Build.Weapons.Single(found => found.Slot == WeaponSlot.Kinetic).Hash.Bind(Catalog.Manifest.FindItem).Bind(item => item.Icon).Map(IconFinding.ToManifestIcon), LoopDesigning.FindActionIcon(build, weapon));
         Assert.Equal(build.Build.Abilities.Grenade.Bind(grenadeElement => IconFinding.FindElementIcon(Catalog, grenadeElement)), LoopDesigning.FindActionIcon(build, grenade));
         Assert.True(LoopDesigning.FindActionIcon(build, grenade).IsSome());
-        Assert.Equal(Optional.Some(Catalog.Manifest.KeywordTraits[ItemHash.From(3824458961u)].Icon), LoopDesigning.FindActionIcon(build, trace));
-        Assert.Equal(Optional.Some(Catalog.Manifest.KeywordTraits[ItemHash.From(2935077680u)].Icon), LoopDesigning.FindActionIcon(build, max));
+        Assert.Equal(ToManifestIcon(Catalog.Manifest.KeywordTraits[ItemHash.From(3824458961u)].Icon), LoopDesigning.FindActionIcon(build, trace));
+        Assert.Equal(ToManifestIcon(Catalog.Manifest.KeywordTraits[ItemHash.From(2935077680u)].Icon), LoopDesigning.FindActionIcon(build, max));
         Assert.False(LoopDesigning.FindActionIcon(build, pack).IsSome());
     }
+
+    private static Optional<IconRef> ToManifestIcon(string path) => Optional.Some(IconFinding.ToManifestIcon(path));
 
     private static DesignSession Play(params PlayerAction[] actions)
     {

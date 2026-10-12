@@ -325,6 +325,12 @@ public static class LoadoutShaping
     /// <summary>The bungie.net address of a manifest icon path.</summary>
     public static string ToIconUrl(string path) => IconHost + path;
 
+    /// <summary>An icon's address: a manifest icon's on bungie.net, or a drawn one's (<see cref="IconDrawing"/>).</summary>
+    public static string ToIconUrl(IconRef icon) =>
+        icon.Match(
+            manifest => ToIconUrl(manifest.Path),
+            drawn => IconDrawing.DrawIcon(drawn.Shape, drawn.Affinity));
+
     /// <summary>An element's icon: its manifest item's, else (a keyword's element) the keyword's own icon; none when the excerpt has neither.</summary>
     public static Optional<string> FindElementIcon(RuleCatalog catalog, ElementId id) =>
         LoopDesigning.FindElementIcon(catalog, id).Map(ToIconUrl);

@@ -57,14 +57,20 @@ subclasses:
 ```
 
 Each section is optional; ids are unique within a section. All keys shown are required except a
-status's `maxStacks` (a whole number ≥ 2) and `duration`, and `trait`.
+status's `maxStacks` (a whole number ≥ 2), `duration` and `drawnIcon`, and `trait`.
 
 * `trait`: Bungie's trait for the keyword (the manifest's `DestinyTraitDefinition`: the game's own keyword, as
   its tooltips name it — Jolted for Jolt), by hash. The manifest excerpt's `keywordTraits` give its name and icon
   ([Manifest excerpt](#manifest-excerpt-rulesmanifestyaml)); the designer shows the icon before the keyword's
   name in a step's text, its title, the state at its end and the keyword's details
   ([loop-format.md](loop-format.md#action-tokens)). A keyword without one (Armor Charge, Orb of Power: Bungie has no trait for them) shows its
-  element's manifest icon when it has one (Slice: its weapon perk), else none.
+  element's manifest icon when it has one (Slice: its weapon perk), else its `drawnIcon`, else none.
+
+* `drawnIcon` (a status): the shape the game draws for a keyword Bungie's data has no icon file for, so the
+  designer draws it, in the status's affinity — Loopsmith's drawing of the game's shape, not Bungie's file.
+  `rounds`: a triangle around a round, as the game shows Unraveling Rounds in your buffs (Bungie's manifest has no
+  trait, perk or item by that name). A status with a `trait` has the game's own icon, so it takes no `drawnIcon`
+  (`the status 'jolt' has a trait, so the game's own icon`).
 
 * `kind`: `buff` (on the player) · `weaponBuff` (on the player's weapons: Slice, Unraveling Rounds — a
   `buff` to the engine, wherever a rule names a buff; the designer's state shows it with the weapons) ·
