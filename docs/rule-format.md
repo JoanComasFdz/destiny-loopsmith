@@ -54,6 +54,8 @@ summons:
   - { id: threadling, name: Threadling, damageType: strand, trait: 2724747993 }
 subclasses:
   - { class: hunter, subclass: arc, name: Arcstrider, hash: 2328211300 }
+finishers:
+  - { class: hunter, name: Blade Carnival, hash: 4012203003 }
 ```
 
 Each section is optional; ids are unique within a section. All keys shown are required except a
@@ -93,6 +95,11 @@ status's `maxStacks` (a whole number ≥ 2), `duration` and `drawnIcon`, and `tr
   copies), so a DIM loadout's subclass is recognised
   ([loop-format.md](loop-format.md#starting-from-a-dim-link)); a hash names one subclass (`hash 1002 of the
   subclass 'Stormcaller' is already on 'Striker'`). A manifest hash is never 0, here or on an element.
+* `finishers`: each class's own finisher, by its manifest hash — the one the game plays when the player has none
+  equipped (Bungie's data: the one Common, class-only item of the Finishers bucket for that class). The designer's
+  HUD shows its icon on the finisher square, and a finisher step's title, until a Bungie login names the finisher the
+  player's character has equipped ([loop-format.md](loop-format.md#action-tokens)). One per class (`the hunter
+  already has its finisher, 'Blade Carnival'`).
 
 ## Manifest excerpt (`rules/manifest.yaml`)
 

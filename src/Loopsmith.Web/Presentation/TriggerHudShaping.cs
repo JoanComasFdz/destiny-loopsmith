@@ -24,7 +24,8 @@ public sealed record HudStatus(string Name, Affinity Affinity, ImmutableArray<Tr
 /// <summary>
 /// The Next trigger section laid out like Destiny's HUD: the Super's diamond, then the grenade, melee and class ability
 /// squares in the subclass's colour (and the finisher's, when a rule of the build reacts to one: the game has no HUD
-/// square for it), then the weapons, each in its damage type's colour; above them, where the game
+/// square for it, so it shows the finisher's own icon — the player's equipped one after a Bungie login, else the
+/// class's), then the weapons, each in its damage type's colour; above them, where the game
 /// lists your buffs, the states to declare — the buffs on you, on your weapons and the debuffs on the pack (with a new
 /// pack) — and what is on the ground to pick up.
 /// </summary>
@@ -42,11 +43,13 @@ public sealed record TriggerHud(
 
 /// <summary>
 /// Pure: the palette's rows (<see cref="TriggerPaletteShaping.ShapePalette"/>) placed on the HUD, with the build's icons
-/// (<see cref="LoadoutShaping"/>). Every row of the palette has its place: no trigger is lost to the layout.
+/// (<see cref="LoadoutShaping"/>) and the finisher's (<see cref="LoopDesigning.FindFinisher"/>). Every row of the palette
+/// has its place: no trigger is lost to the layout.
 /// </summary>
 public static class TriggerHudShaping
 {
-    public static TriggerHud ShapeHud(ImmutableArray<TriggerOption> options, ImmutableDictionary<string, TargetCount> counts, ValidatedBuild build)
+    public static TriggerHud ShapeHud(
+        ImmutableArray<TriggerOption> options, ImmutableDictionary<string, TargetCount> counts, ValidatedBuild build, Optional<BungieProfile> profile)
     {
         var sections = TriggerPaletteShaping.ShapePalette(options, counts, build);
         var choices = sections.SelectMany(section => section.Choices).ToImmutableDictionary(choice => choice.Key);
@@ -66,7 +69,7 @@ public static class TriggerHudShaping
                     ShapeAbility(build, choices, "class", "Class ability", abilities.ClassAbility, subclass),
                 }.SelectMany(slot => slot.Match(found => new[] { found.Value }, _ => [])),
             ],
-            ShapeFinisher(choices),
+            ShapeFinisher(choices, LoopDesigning.FindFinisher(build, profile)),
             [.. weapons.SelectMany(weapon => ShapeWeapon(choices, weapon).Match(found => new[] { found.Value }, _ => []))],
             ListStatuses(statuses, KeywordKind.Buff),
             ListStatuses(statuses, KeywordKind.WeaponBuff),
@@ -89,10 +92,20 @@ public static class TriggerHudShaping
                 choice.Buttons.Any(button => button.IsNew)))
             : Optional.None<HudSlot>();
 
-    /// <summary>The finisher's square, when the palette offers one: no element and no damage type (neutral), one tap does it.</summary>
-    private static Optional<HudSlot> ShapeFinisher(ImmutableDictionary<string, TriggerChoice> choices) =>
+    /// <summary>
+    /// The finisher's square, when the palette offers one: the finisher's name and icon (none known: "Finisher" and no
+    /// icon), no element and no damage type (neutral); one tap does it.
+    /// </summary>
+    private static Optional<HudSlot> ShapeFinisher(ImmutableDictionary<string, TriggerChoice> choices, Optional<ManifestItem> finisher) =>
         choices.TryGetValue("finisher", out var choice)
-            ? Optional.Some(new HudSlot(choice, "Finisher", choice.Title, Optional.None<string>(), Affinity.Neutral, FindAtOnce(choice), choice.Buttons.Any(button => button.IsNew)))
+            ? Optional.Some(new HudSlot(
+                choice,
+                "Finisher",
+                finisher.Match(item => item.Value.Name, _ => choice.Title),
+                finisher.Bind(item => item.Icon).Map(LoadoutShaping.ToIconUrl),
+                Affinity.Neutral,
+                FindAtOnce(choice),
+                choice.Buttons.Any(button => button.IsNew)))
             : Optional.None<HudSlot>();
 
     private static Optional<HudWeapon> ShapeWeapon(ImmutableDictionary<string, TriggerChoice> choices, WeaponView weapon) =>

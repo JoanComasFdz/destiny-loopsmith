@@ -98,8 +98,14 @@ public sealed record GearMarks(Optional<GearTier> Tier, bool Masterworked, Optio
 /// <summary>A weapon the player owns: its instance, item hash, where it is, its marks and the plugs in its sockets (enabled ones, socket by socket: its perks, its catalyst).</summary>
 public sealed record OwnedWeapon(ItemInstanceId InstanceId, ItemHash Hash, ArmorPlace Place, GearMarks Marks, ImmutableArray<ItemHash> Plugs);
 
-/// <summary>What Loopsmith reads of a player's Bungie profile: their armor and weapons (worn, carried and in the vault).</summary>
-public sealed record BungieProfile(ImmutableArray<OwnedArmor> Armor, ImmutableArray<OwnedWeapon> Weapons);
+/// <summary>The finisher a character of the player's has equipped (its Finishers slot): the character's class and the item.</summary>
+public sealed record EquippedFinisher(GuardianClass Class, ItemHash Hash);
+
+/// <summary>
+/// What Loopsmith reads of a player's Bungie profile: their armor and weapons (worn, carried and in the vault), and the
+/// finisher each character has equipped.
+/// </summary>
+public sealed record BungieProfile(ImmutableArray<OwnedArmor> Armor, ImmutableArray<OwnedWeapon> Weapons, ImmutableArray<EquippedFinisher> Finishers);
 
 /// <summary>A piece the build wears (a DIM loadout's): its slot, name and the hashes that are it (an exotic's copies).</summary>
 public sealed record ArmorPiece(ArmorSlot Slot, string Name, ImmutableArray<ItemHash> Hashes);

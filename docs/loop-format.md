@@ -131,7 +131,10 @@ equipped rule has a `finisher` trigger. Every token still reads anywhere
 
 The web designer's **Next trigger** is laid out like Destiny's HUD: the Super's diamond, then the grenade, melee and
 class ability squares with the build's own icons in the subclass's colour — and, when a rule of the build reacts to a
-finisher, a **Finisher** square (the game has no HUD square for it; it has no icon, no element and no damage type) —
+finisher, a dashed **Finisher** square (the game has no HUD square for it; a finisher has no element and no damage
+type) with the finisher's own icon: after a Bungie login the one the player's character of the build's class has
+equipped (read from its Finishers slot; named from Bungie's full manifest when the excerpt doesn't have it), else the
+class's own, the one the game plays when none is equipped (Blade Carnival for a Hunter, the glossary's `finishers`) —
 then the three weapons with their icon, damage type's icon and colour. Tapping the Super, an ability or a weapon
 shows its actions under the HUD — hit or kill, and how many enemies that one action catches — and it stays picked
 for the next step; the class ability (with no air move) and the finisher act at one tap. Above the HUD, where the game lists your buffs, the states to declare are grouped by
@@ -157,7 +160,7 @@ the line ("+1 **Bolt Charge**", "Grenade kill on **Jolted** target"), and the on
 own icon before its name ([rule-format.md](rule-format.md#glossary-rulesglossaryyaml), `trait`) — in the step's
 text, in the state at its end and in its details (Unraveling Rounds, which Bungie's data has no icon for, shows the
 shape the game draws for it, the glossary's `drawnIcon`: a triangle around a round, in Strand green); a step's title shows the icon of what it does (its weapon, its
-ability, the pickup or the status it declares), and an event that is a weapon's hit or kill shows that weapon's. An element
+ability, the pickup or the status it declares, the finisher the HUD shows), and an event that is a weapon's hit or kill shows that weapon's. An element
 whose rules the engine fired apart (a debuff first, energy last) shows at each of its places, in that order. "why" adds each rule's reason under its element; "caveats" adds the outcomes'
 caveats. Each step ends with its **state** — what is present after it — laid out like the game's HUD: the buffs
 on you on the left (Bolt Charge, Amplified, Woven Mail), your weapons' buffs in the middle (a glossary

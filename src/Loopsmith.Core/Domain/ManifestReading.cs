@@ -38,6 +38,13 @@ public static class ManifestReading
             .Select(hash => catalog.Manifest.FindItem(hash))
             .FindFirstSome();
 
+    /// <summary>A class's own finisher (the glossary's) as the excerpt has it — its name and icon; none when either lacks it.</summary>
+    public static Optional<ManifestItem> FindClassFinisher(this RuleCatalog catalog, GuardianClass guardianClass) =>
+        catalog.Glossary.Finishers
+            .Where(definition => definition.Class == guardianClass)
+            .Select(definition => catalog.Manifest.FindItem(definition.Hash))
+            .FindFirstSome();
+
     /// <summary>What the excerpt says about a build's weapon (its slot, columns, intrinsic, catalyst), when the build gives its hash.</summary>
     public static Optional<ManifestKind.Weapon> FindWeaponKind(this ManifestExcerpt manifest, WeaponLoadout weapon) =>
         weapon.Hash

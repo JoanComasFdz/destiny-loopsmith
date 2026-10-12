@@ -9,8 +9,8 @@ namespace Loopsmith.Core.TraceRendering;
 /// its Bungie trait's (Jolted, Woven Mail), else its element's item's (Slice: its weapon perk), else the shape the game
 /// draws for it that Bungie's data has no file for (the glossary's <c>drawnIcon</c>: Unraveling Rounds); an element's
 /// is its keyword's when it is one, else its item's; a step's is its action's — a weapon's hit or kill the build's
-/// weapon in that slot, an ability its element, a pickup or a declared status its keyword. None where there is no icon
-/// (Orb of Power, a new pack, a finisher).
+/// weapon in that slot, an ability its element, a pickup or a declared status its keyword, a finisher the class's own
+/// finisher. None where there is no icon (Orb of Power, a new pack).
 /// </summary>
 public static class IconFinding
 {
@@ -43,7 +43,7 @@ public static class IconFinding
                 max => FindKeywordIcon(catalog, new KeywordRef.Status(max.Status)),
                 end => FindKeywordIcon(catalog, new KeywordRef.Status(end.Status)),
                 _ => Optional.None<IconRef>()),
-            _ => Optional.None<IconRef>());
+            _ => catalog.FindClassFinisher(build.Class).Bind(item => item.Icon).Map(ToManifestIcon));
 
     /// <summary>The icon of the build's weapon in a slot (its manifest item's), when the build gives its hash.</summary>
     public static Optional<string> FindWeaponIcon(RuleCatalog catalog, Build build, WeaponSlot slot) =>

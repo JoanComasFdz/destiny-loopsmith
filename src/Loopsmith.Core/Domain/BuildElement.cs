@@ -68,13 +68,20 @@ public sealed record KeywordGlossary(
     ImmutableDictionary<StatusId, StatusDefinition> Statuses,
     ImmutableDictionary<PickupId, PickupDefinition> Pickups,
     ImmutableDictionary<SummonId, SummonDefinition> Summons,
-    ImmutableArray<SubclassDefinition> Subclasses);
+    ImmutableArray<SubclassDefinition> Subclasses,
+    ImmutableArray<FinisherDefinition> Finishers);
 
 /// <summary>
 /// A subclass item of the manifest (Arcstrider: the Arc Hunter subclass), so a DIM loadout's subclass is recognised by
 /// its hash (ADRs D27). Only the subclasses whose hashes a source gives are listed.
 /// </summary>
 public sealed record SubclassDefinition(GuardianClass Class, Subclass Subclass, string Name, ImmutableArray<ItemHash> Hashes);
+
+/// <summary>
+/// A class's own finisher (Blade Carnival for a Hunter): the one that plays when the player has none equipped, by its
+/// manifest hash. The designer shows its icon for a finisher until a Bungie login names the one equipped.
+/// </summary>
+public sealed record FinisherDefinition(GuardianClass Class, string Name, ItemHash Hash);
 
 /// <summary>
 /// Every authored element plus the keyword glossary, and the manifest excerpt that names their hashes (and those of the
