@@ -340,8 +340,9 @@ plugs in their sockets:
   catalyst, instance}`, from the manifest and its sockets), or added for an empty slot, and the steps replay. A build
   wears one exotic weapon (by its manifest item, or an exotic weapon element among a hand-written weapon's perks):
   another exotic isn't listed while it does (the picker says which to swap); and one weapon a slot. Weapons the
-  excerpt doesn't know are named by Bungie's full manifest, read once after the login with the armor; one it can't
-  place is counted, not listed.
+  excerpt doesn't know are named by Bungie's full manifest, read once after the login with the armor (the Bungie
+  login section shows its progress bar; the page keeps working meanwhile — [hosting.md](hosting.md#bungies-manifest));
+  one it can't place is counted, not listed.
 
 Nothing of the login is kept (the player's armor and weapons stay in the tab until they log out or it closes); the
 stats and the copies are, in the loop's build, so a shared loop carries its author's numbers and pieces.

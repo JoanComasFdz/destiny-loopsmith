@@ -8,6 +8,7 @@
 }
 <Modal Title="@view.Title" Size="wide" OnClose="OnClose">
     <div class="armor-picker" data-testid="armor-picker" data-slot="@Slot">
+        <ManifestProgressBar />
         @if (view.Options.IsEmpty)
         {
             <p class="muted" data-testid="armor-picker-empty">Your account has no @Slot.DescribeArmorSlot().ToLowerInvariant() for a @Build.Build.Class that Loopsmith can list.</p>

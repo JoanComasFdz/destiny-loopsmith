@@ -157,6 +157,7 @@
         var reading = LoopDesigning.DescribeManifestReading(unknown.Length);                     // pure
         Workbench.Status = reading;                                                              // impure (UI state)
         var joined = await Manifest.JoinAsync(unknown);                                          // impure
+        await Task.Delay(1);                                                                     // impure (the browser's turn: the bar goes before the design is replayed)
         if (Workbench.Session is not Optional<DesignSession>.Some current)
         {
             return;

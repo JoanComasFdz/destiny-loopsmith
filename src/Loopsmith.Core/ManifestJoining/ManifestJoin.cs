@@ -97,8 +97,11 @@ public static class ManifestJoin
         ImmutableDictionary<string, ItemHash> CategoriesByName,
         ImmutableDictionary<ItemHash, ItemHash> SetsByPerk);
 
-    /// <summary>What a walk reaches: entries, whole tables and plug categories; each walk step adds to it.</summary>
-    private sealed record Reach(ImmutableHashSet<ManifestEntryKey> Entries, ImmutableHashSet<ManifestTable> Tables, ImmutableHashSet<PlugCategoryId> Plugs)
+    /// <summary>
+    /// What a walk reaches: entries, whole tables and plug categories, repeats and all — each walk step gathers its parts'
+    /// lists once (<see cref="Combine"/>) and a round makes them sets once, so a walk over hundreds of items stays cheap.
+    /// </summary>
+    private sealed record Reach(ImmutableArray<ManifestEntryKey> Entries, ImmutableArray<ManifestTable> Tables, ImmutableArray<PlugCategoryId> Plugs)
     {
         internal static readonly Reach None = new([], [], []);
     }
@@ -107,9 +110,9 @@ public static class ManifestJoin
     {
         var reading = ToReading(progress.Read);
         var reach = WalkWanted(reading, progress.Wanted);
-        var entries = reach.Entries.Except(progress.AskedEntries);
-        var tables = reach.Tables.Except(progress.AskedTables);
-        var plugs = reach.Plugs.Except(progress.AskedPlugs);
+        var entries = reach.Entries.ToImmutableHashSet().Except(progress.AskedEntries);
+        var tables = reach.Tables.ToImmutableHashSet().Except(progress.AskedTables);
+        var plugs = reach.Plugs.ToImmutableHashSet().Except(progress.AskedPlugs);
         return entries.IsEmpty && tables.IsEmpty && plugs.IsEmpty
             ? new ManifestJoinStep.Done(BuildExcerpt(reading, progress.Wanted))
             : new ManifestJoinStep.Ask(
@@ -128,14 +131,18 @@ public static class ManifestJoin
     // ── the walk: what each wanted hash needs read ───────────────────────────────
 
     private static Reach WalkWanted(Reading reading, ImmutableArray<ItemHash> wanted) =>
-        wanted.Aggregate(
-            Reach.None with { Tables = [.. SmallTables] },
-            (reach, hash) => Join(Join(reach, Join(ToReach(ManifestTable.InventoryItem, hash), ToReach(ManifestTable.SandboxPerk, hash))),
+        Combine(wanted
+            .SelectMany(hash => new[]
+            {
+                ToReach(ManifestTable.InventoryItem, hash),
+                ToReach(ManifestTable.SandboxPerk, hash),
                 FindEntry(reading, ManifestTable.InventoryItem, hash).Match(
                     item => WalkItem(reading, item.Value),
                     _ => FindEntry(reading, ManifestTable.SandboxPerk, hash).Match(
                         _ => WalkSetOfPerk(reading, hash),
-                        _ => Reach.None))));
+                        _ => Reach.None)),
+            })
+            .Prepend(Reach.None with { Tables = SmallTables }));
 
     private static Reach WalkItem(Reading reading, JsonElement item) =>
         ClassifyItem(reading, item) switch
@@ -146,58 +153,61 @@ public static class ManifestJoin
             KindWord.Artifact => Join(
                 ListPerkNeeds(reading, item),
                 WalkArtifactSockets(reading, item)),
-            KindWord.Armor => Join(
+            KindWord.Armor => Combine([
                 ListPerkNeeds(reading, item),
-                Join(WalkIntrinsicSockets(reading, item, ArmorIntrinsicCategoryName),
-                    item.ReadHash("equippingBlock", "equipableItemSetHash").Match(set => WalkSet(reading, set.Value), _ => Reach.None))),
+                WalkIntrinsicSockets(reading, item, ArmorIntrinsicCategoryName),
+                item.ReadHash("equippingBlock", "equipableItemSetHash").Match(set => WalkSet(reading, set.Value), _ => Reach.None)]),
             _ => ListPerkNeeds(reading, item),
         };
 
     /// <summary>The sandbox perks of an item (an aspect's or a fragment's text is its perks').</summary>
     private static Reach ListPerkNeeds(Reading reading, JsonElement item) =>
-        item.ReadArray("perks").Aggregate(Reach.None, (reach, perk) =>
-            perk.ReadHash("perkHash").Match(hash => Join(reach, ToReach(ManifestTable.SandboxPerk, hash.Value)), _ => reach));
+        ToEntryReach(ManifestTable.SandboxPerk, item.ReadArray("perks").SelectMany(perk => ToSequence(perk.ReadHash("perkHash"))));
 
     private static Reach WalkWeaponSockets(Reading reading, JsonElement weapon)
     {
         var entries = weapon.ReadArray("sockets", "socketEntries");
-        var types = entries.Aggregate(Reach.None, (reach, entry) =>
-            entry.ReadHash("socketTypeHash").Match(hash => Join(reach, ToReach(ManifestTable.SocketType, hash.Value)), _ => reach));
-        var columns = ListTraitSockets(reading, weapon).Aggregate(Reach.None, (reach, socket) => Join(reach, WalkColumn(reading, socket)));
-        var catalyst = ListCatalystCategories(reading, weapon).Aggregate(Reach.None, (reach, category) => Join(reach, WalkCatalystCategory(reading, category)));
-        return Join(Join(types, columns), Join(catalyst, WalkIntrinsicSockets(reading, weapon, WeaponIntrinsicCategoryName)));
+        var types = ToEntryReach(ManifestTable.SocketType, entries.SelectMany(entry => ToSequence(entry.ReadHash("socketTypeHash"))));
+        var columns = ListTraitSockets(reading, weapon).Select(socket => WalkColumn(reading, socket));
+        var catalyst = ListCatalystCategories(reading, weapon).Select(category => WalkCatalystCategory(reading, category));
+        return Combine(columns.Concat(catalyst).Append(types).Append(WalkIntrinsicSockets(reading, weapon, WeaponIntrinsicCategoryName)));
     }
 
     /// <summary>An artifact's sockets: their types (which take artifact perks) and their plug sets (the perks it unlocks).</summary>
     private static Reach WalkArtifactSockets(Reading reading, JsonElement artifact) =>
-        artifact.ReadArray("sockets", "socketEntries").Aggregate(Reach.None, (reach, socket) => Join(reach, Join(
+        Combine(artifact.ReadArray("sockets", "socketEntries").SelectMany(socket => new[]
+        {
             socket.ReadHash("socketTypeHash").Match(type => ToReach(ManifestTable.SocketType, type.Value), _ => Reach.None),
             IsArtifactPerkSocket(reading, socket)
                 ? socket.ReadHash("reusablePlugSetHash").Match(set => ToReach(ManifestTable.PlugSet, set.Value), _ => Reach.None)
-                : Reach.None)));
+                : Reach.None,
+        }));
 
     private static Reach WalkColumn(Reading reading, JsonElement socket) =>
         ReadPlugSet(socket).Match(
             set => FindEntry(reading, ManifestTable.PlugSet, set.Value).Match(
-                found => ListRollable(found.Value).Aggregate(ToReach(ManifestTable.PlugSet, set.Value), (reach, plug) => Join(reach, ToReach(ManifestTable.InventoryItem, plug))),
+                found => Join(ToReach(ManifestTable.PlugSet, set.Value), ToEntryReach(ManifestTable.InventoryItem, ListRollable(found.Value))),
                 _ => ToReach(ManifestTable.PlugSet, set.Value)),
             _ => socket.ReadHash("singleInitialItemHash").Match(initial => ToReach(ManifestTable.InventoryItem, initial.Value), _ => Reach.None));
 
     private static Reach WalkCatalystCategory(Reading reading, PlugCategoryId category) =>
         reading.Plugs.TryGetValue(category, out var plugs)
-            ? plugs.Aggregate(Reach.None with { Plugs = [category] }, (reach, plug) => Join(reach, Join(ToReach(ManifestTable.InventoryItem, plug),
-                FindEntry(reading, ManifestTable.InventoryItem, plug).Match(item => ListPerkNeeds(reading, item.Value), _ => Reach.None))))
+            ? Combine(plugs
+                .SelectMany(plug => new[]
+                {
+                    ToReach(ManifestTable.InventoryItem, plug),
+                    FindEntry(reading, ManifestTable.InventoryItem, plug).Match(item => ListPerkNeeds(reading, item.Value), _ => Reach.None),
+                })
+                .Prepend(Reach.None with { Plugs = [category] }))
             : Reach.None with { Plugs = [category] };
 
     private static Reach WalkIntrinsicSockets(Reading reading, JsonElement item, string categoryName) =>
-        ListSocketsInCategory(reading, item, categoryName).Aggregate(Reach.None, (reach, socket) =>
-            socket.ReadHash("singleInitialItemHash").Match(initial => Join(reach, ToReach(ManifestTable.InventoryItem, initial.Value)), _ => reach));
+        ToEntryReach(ManifestTable.InventoryItem, ListSocketsInCategory(reading, item, categoryName).SelectMany(socket => ToSequence(socket.ReadHash("singleInitialItemHash"))));
 
     /// <summary>A set's entry (a small table, read whole) and the perks its piece counts grant.</summary>
     private static Reach WalkSet(Reading reading, ItemHash set) =>
         FindEntry(reading, ManifestTable.EquipableItemSet, set).Match(
-            found => found.Value.ReadArray("setPerks").Aggregate(Reach.None, (reach, perk) =>
-                perk.ReadHash("sandboxPerkHash").Match(hash => Join(reach, ToReach(ManifestTable.SandboxPerk, hash.Value)), _ => reach)),
+            found => ToEntryReach(ManifestTable.SandboxPerk, found.Value.ReadArray("setPerks").SelectMany(perk => ToSequence(perk.ReadHash("sandboxPerkHash")))),
             _ => Reach.None);
 
     /// <summary>A wanted sandbox perk that is a set's perk (a set bonus's hash): its set and the set's other perks.</summary>
@@ -526,8 +536,19 @@ public static class ManifestJoin
     private static Reach ToReach(ManifestTable table, ItemHash hash) =>
         Reach.None with { Entries = [new ManifestEntryKey(table, hash)] };
 
+    /// <summary>The entries of <paramref name="table"/> for <paramref name="hashes"/>, as one reach.</summary>
+    private static Reach ToEntryReach(ManifestTable table, IEnumerable<ItemHash> hashes) =>
+        Reach.None with { Entries = [.. hashes.Select(hash => new ManifestEntryKey(table, hash))] };
+
     private static Reach Join(Reach left, Reach right) =>
-        new(left.Entries.Union(right.Entries), left.Tables.Union(right.Tables), left.Plugs.Union(right.Plugs));
+        Combine([left, right]);
+
+    /// <summary>Every reach in one: each of their lists gathered once.</summary>
+    private static Reach Combine(IEnumerable<Reach> reaches)
+    {
+        var all = reaches.ToImmutableArray();
+        return new([.. all.SelectMany(reach => reach.Entries)], [.. all.SelectMany(reach => reach.Tables)], [.. all.SelectMany(reach => reach.Plugs)]);
+    }
 
     /// <summary>An item's class (<c>classType</c>: 0 Titan, 1 Hunter, 2 Warlock); none for any class (3).</summary>
     private static Optional<GuardianClass> ToGuardianClass(int classType) =>

@@ -44,13 +44,15 @@ else
 {
     @if (Profile.IsSome())
     {
-        @* After the login: one line — the build's own armor was loaded (its stats set), or how to pick yours (⋯) — and "Log out". *@
+        @* After the login: one line — the build's own armor was loaded (its stats set), or how to pick yours (⋯) — and "Log out";
+           while Bungie's manifest is read for the player's items, its progress bar. *@
         <div class="stats-armor" data-testid="stats-armor">
             @if (Note is Optional<string>.Some note)
             {
                 <p class="stats-armor-note" role="status" data-testid="armor-note">@note.Value</p>
             }
             <button type="button" class="btn ghost small" data-action="bungie-logout" @onclick="LogOutAsync">Log out</button>
+            <ManifestProgressBar />
         </div>
     }
     else

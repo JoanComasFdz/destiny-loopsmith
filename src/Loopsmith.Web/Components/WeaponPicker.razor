@@ -10,6 +10,7 @@
 }
 <Modal Title="@view.Title" Size="wide" OnClose="OnClose">
     <div class="weapon-picker" data-testid="weapon-picker" data-slot="@slot.Match(found => found.Value.ToString(), _ => "")">
+        <ManifestProgressBar />
         @if (view.Options.IsEmpty)
         {
             <p class="muted" data-testid="weapon-picker-empty">Your account has no @slot.Match(found => found.Value.DescribeWeaponSlot().ToLowerInvariant(), _ => "") weapon Loopsmith can list for it.</p>

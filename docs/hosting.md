@@ -96,6 +96,14 @@ regenerate the excerpt (`tools/manifest/get-manifest.sh` prints it). Only paths 
 folder are taken from the index. The tab remembers which items it read the manifest for, so the designer
 doesn't read again what Home just read (or failed to).
 
+The page keeps answering taps while it reads: each file is indexed as its chunks arrive (~215 MB of JSON once
+unpacked, held once, never copied into one buffer), with a pause every 8 MB, and the join gives the browser a turn
+before each of its rounds (five for a vault of ~600 items). After a Bungie login, the **Bungie login section** shows a
+progress bar — "Reading Bungie's manifest for 609 of your items", "downloading… 84 MB", then "naming them (step 2)" —
+and so does the ⋯ picker opened meanwhile; the bar can't know the download's size (bungie.net sends the files
+compressed), so it fills ever more slowly towards the size the files had in 2026. Once the join has what it asked for,
+the files are let go: a later read (another DIM link) downloads them again, from the browser's cache.
+
 ## Alternatives
 
 * **Cloudflare Pages / Netlify:** free for private repositories. Build in GitHub Actions with
