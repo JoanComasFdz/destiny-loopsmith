@@ -137,6 +137,8 @@ items:
   take artifact perks, without a socket's empty plug or the reset socket), and it is written for every artifact
   that unlocks an artifact perk the rules or a saved share name. Artifacts share perks, so a build's artifact is
   the one that unlocks the most of its perks (each counted once); two that unlock as many: none, not a guess.
+  A `subclass` the designer can edit (Arcstrider) has `plugs`: every plug its sockets take — super, abilities, jump,
+  aspects, fragments, without the empty sockets' — each written as an item too; the subclass editor lists them.
 * `description`: Bungie's text (for an aspect or a fragment, whose own is empty, its perks': its effect, then a
   stat change such as `-10 Grenade ▼`), without the private-use glyphs of Destiny's icon font. It is shown
   in an item's details as Bungie's; it is never a rule.
@@ -152,7 +154,7 @@ items:
   `set` the armor set it belongs to and its `class` the class that wears it (`titan|hunter|warlock`; none: any
   class — the armor picker lists a build's class's pieces). These keys on anything else are an error (`slot is
   only allowed on a weapon, armor or an armor mod, not on a grenade`; `set is only allowed on armor, not on a
-  weapon`; `perks` belongs to a catalyst or an artifact). A weapon's or armor's `watermark` is its season watermark:
+  weapon`; `perks` belongs to a catalyst or an artifact; `plugs` to a subclass). A weapon's or armor's `watermark` is its season watermark:
   the overlay with its season's or expansion's icon in the top-left corner, drawn over its square as DIM draws it.
 * `breakerTypes`: the three champion breakers (Shield Piercing, Disruption, Stagger), each with its name and icon: a
   weapon's breaker shows under its square, as DIM shows it. `armorStats`: the six armor stats (`stat`: weapons, health,

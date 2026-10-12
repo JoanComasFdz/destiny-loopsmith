@@ -103,8 +103,9 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
 - **A preview card for a pasted link**: Home draws a DIM build card for the shares it ships with; a pasted
   link that carries its loadout could show the same card before "Start designing".
 - **Editing the rest of a build in the designer**: a weapon's perks can be picked (column by column, from
-  the manifest excerpt's trait columns), nothing else can; changing the subclass, mods or armor means a new
-  DIM link or build file.
+  the manifest excerpt's trait columns) and an Arcstrider build's subclass edited (abilities, aspects and fragments,
+  from the excerpt's `plugs`); changing another subclass, mods or armor means a new DIM link or build file. The other
+  subclasses need their `plugs` in the excerpt (`EDITABLE_SUBCLASSES` in `tools/manifest/extract_manifest.py`).
 - **A weapon's roll from Bungie**: a DIM link never carries one, so it is picked by hand; reading the
   equipped character's weapons by Bungie name (their sockets are public) needs a Bungie API key (owner).
 - **Exotic weapons beyond Thunderlord**: only Thunderlord's perks and catalyst are authored

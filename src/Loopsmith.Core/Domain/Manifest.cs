@@ -14,7 +14,7 @@ namespace Loopsmith.Core.Domain;
 [Union]
 public partial record ManifestKind
 {
-    partial record Subclass();
+    partial record Subclass(ImmutableArray<ItemHash> Plugs);   // everything it can hold (an editable subclass's; else none)
     partial record Super();
     partial record Grenade();
     partial record Melee();

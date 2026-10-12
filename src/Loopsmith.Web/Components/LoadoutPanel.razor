@@ -12,7 +12,14 @@
 <div class="loadout @(Compact ? "compact" : "")" data-testid="loadout">
     <div class="loadout-row">
         <section class="loadout-box subclass-box" aria-label="Subclass">
-            <h4 class="loadout-label">Subclass</h4>
+            <div class="loadout-label-row">
+                <h4 class="loadout-label">Subclass</h4>
+                @if (CanEditSubclass)
+                {
+                    <button type="button" class="btn small" data-action="edit-subclass" title="Change the super, abilities, aspects and fragments"
+                            aria-haspopup="dialog" @onclick="OpenSubclassEditor">Edit</button>
+                }
+            </div>
             <div class="subclass-body">
                 <div class="subclass-emblem">
                     @if (view.Subclass.Subclass is Optional<IconTile>.Some subclassItem)
@@ -77,21 +84,22 @@
                     else if (row is WeaponRow.Worn worn)
                     {
                     var weapon = worn.Weapon;
-                    <li class="weapon-line" data-slot="@weapon.Slot" title="@DescribeWeapon(weapon)">
-                        <div class="weapon-icon">
+                    <li class="weapon-line" data-slot="@weapon.Slot">
+                        <div class="weapon-icon weapon-preview-anchor" tabindex="@(weapon.Weapon.Details.IsSome() ? null : "0")" data-testid="weapon-anchor" aria-label="@weapon.Weapon.Name">
                             @RenderMarkedTile(weapon.Weapon, "item", weapon.Marks)
                             <TileFooter Marks="weapon.Marks" DamageIcon="weapon.DamageIcon" DamageName="@weapon.Type.ToString()" TestId="weapon-badge" />
+                            @RenderWeaponCard(weapon)
                         </div>
                         <div class="weapon-text">
-                            @if (weapon.Page is Optional<string>.Some weaponPage)
+                            @if (weapon.Page is Optional<string>.Some rowPage)
                             {
-                                <a class="weapon-line-name" href="@weaponPage.Value" target="_blank" rel="noopener noreferrer" title="@weapon.Weapon.Name on light.gg">@weapon.Weapon.Name</a>
+                                <a class="weapon-line-name" href="@rowPage.Value" target="_blank" rel="noopener noreferrer" title="@weapon.Weapon.Name on light.gg">@weapon.Weapon.Name</a>
                             }
                             else
                             {
                                 <span class="weapon-line-name">@weapon.Weapon.Name</span>
                             }
-                            <span class="weapon-line-sub">@weapon.Slot.DescribeWeaponSlot()@(weapon.Archetype is Optional<string>.Some archetype ? $" · {DomainPhrasing.DescribeArchetype(archetype.Value)}" : "")</span>
+                            <span class="weapon-line-sub">@weapon.Slot.DescribeWeaponSlot()@(weapon.Archetype is Optional<string>.Some rowArchetype ? $" · {DomainPhrasing.DescribeArchetype(rowArchetype.Value)}" : "")</span>
                         </div>
                         <div class="weapon-perks" aria-label="Perks">
                             @foreach (var square in weapon.Perks)
@@ -249,6 +257,11 @@
         <ItemInfoDialog Info="info.Value" OnClose="CloseDetails" OnSetCatalyst="OnSetCatalyst" />
     }
 
+    @if (subclassEditor)
+    {
+        <SubclassEditor Build="Build" OnSave="SaveSubclassAsync" OnClose="CloseSubclassEditor" />
+    }
+
     @if (armorPicker is Optional<ArmorSlot>.Some pickerSlot && Profile is Optional<BungieProfile>.Some owned)
     {
         <ArmorPicker Build="Build" Profile="owned.Value" Slot="pickerSlot.Value" OnPick="PickArmorAsync" OnClose="CloseArmorPicker" />
@@ -283,6 +296,29 @@
     /// <summary>Set by the designer: a piece picked from the player's armor is swapped into the build. Unset (the Home card): read-only.</summary>
     [Parameter]
     public EventCallback<ArmorPick> OnPickArmor { get; set; }
+
+    /// <summary>Set by the designer: the Subclass box then has Edit, which opens the subclass editor. Unset (the Home card): read-only.</summary>
+    [Parameter]
+    public EventCallback<SubclassPlugs> OnEditSubclass { get; set; }
+
+    private bool CanEditSubclass => OnEditSubclass.HasDelegate && LoopDesigning.CanEditSubclass(Build);
+
+    private bool subclassEditor;
+
+    private void OpenSubclassEditor()
+    {
+        ClosePicker();                                                                           // impure (UI state)
+        subclassEditor = true;                                                                   // impure (UI state)
+    }
+
+    private void CloseSubclassEditor() =>
+        subclassEditor = false;                                                                  // impure (UI state)
+
+    private async Task SaveSubclassAsync(SubclassPlugs plugs)
+    {
+        subclassEditor = false;                                                                  // impure (UI state)
+        await OnEditSubclass.InvokeAsync(plugs);                                                 // impure
+    }
 
     private bool CanPickArmor => Profile.IsSome() && OnPickArmor.HasDelegate;
 
@@ -319,6 +355,76 @@
                     title="Pick your own @slot.DescribeWeaponSlot().ToLowerInvariant() weapon" aria-label="Pick your own @slot.DescribeWeaponSlot().ToLowerInvariant() weapon"
                     aria-haspopup="dialog" @onclick="() => OpenWeaponPicker(target)">⋯</button>
         }
+    };
+
+    /// <summary>The preview card of a weapon row: like the weapon picker's details panel, without where the copy is or "Use this weapon". Shown by CSS on hover and focus, by loopsmith.js after a long tap.</summary>
+    private static RenderFragment RenderWeaponCard(WeaponView weapon) => __builder =>
+    {
+        var marked = LoadoutShaping.AddMarks("", weapon.Marks);
+        <div class="armor-option-details weapon-card" data-testid="weapon-card" role="tooltip">
+            <div class="armor-option-name">
+                @if (weapon.Page is Optional<string>.Some weaponPage)
+                {
+                    <a class="weapon-line-name" href="@weaponPage.Value" target="_blank" rel="noopener noreferrer" title="@weapon.Weapon.Name on light.gg" data-testid="weapon-card-name">@weapon.Weapon.Name</a>
+                }
+                else
+                {
+                    <span class="weapon-line-name" data-testid="weapon-card-name">@weapon.Weapon.Name</span>
+                }
+            </div>
+            <div class="muted" data-testid="weapon-card-type">@weapon.Slot.DescribeWeaponSlot()@(weapon.Archetype is Optional<string>.Some archetype ? $" · {DomainPhrasing.DescribeArchetype(archetype.Value)}" : "")</div>
+            <div class="option-damage @ToneStyling.ToToneClass(weapon.Type.ToAffinity().ToTone())" data-testid="weapon-card-damage">
+                @if (weapon.DamageIcon is Optional<string>.Some damageIcon)
+                {
+                    <img class="inline-icon" src="@damageIcon.Value" alt="" loading="lazy" />
+                }@weapon.Type
+            </div>
+            @if (marked.Length > 0)
+            {
+                <div class="armor-option-marks" data-testid="weapon-card-marks">@marked</div>
+            }
+            @if (!weapon.Perks.IsEmpty)
+            {
+                <div class="weapon-option-perks" data-testid="weapon-card-perks">
+                    @foreach (var square in weapon.Perks)
+                    {
+                        var perk = square switch
+                        {
+                            PerkSquare.Shown shown => Optional.Some(shown.Perk),
+                            PerkSquare.Pickable { Perk: Optional<PickedPerk>.Some held } => Optional.Some(held.Value.Tile),
+                            _ => Optional.None<IconTile>()
+                        };
+                        @if (perk is Optional<IconTile>.Some tile)
+                        {
+                            <span class="weapon-option-perk @(tile.Value.InRules ? "in-rules" : "")" title="@tile.Value.Name">
+                                <span class="icon-tile perk @(tile.Value.InRules ? "" : "out") @(tile.Value.Enhanced ? "enhanced" : "")">
+                                    @if (tile.Value.Icon is Optional<string>.Some perkIcon)
+                                    {
+                                        <img src="@perkIcon.Value" alt="" loading="lazy" />
+                                    }
+                                    @if (!tile.Value.InRules)
+                                    {
+                                        <UnsupportedMark />
+                                    }
+                                </span>
+                                <span class="weapon-option-perk-name">@tile.Value.Name</span>
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="weapon-option-perk" title="Perk not picked">
+                                <span class="icon-tile perk empty-perk">?</span>
+                                <span class="weapon-option-perk-name">?</span>
+                            </span>
+                        }
+                    }
+                </div>
+            }
+            @if (weapon.Catalyst is Optional<CatalystSquare>.Some catalyst)
+            {
+                <div class="muted" data-testid="weapon-card-catalyst">Its catalyst is @(catalyst.Value.On ? "on" : "off").</div>
+            }
+        </div>
     };
 
     private Optional<ItemDetails> details = Optional.None<ItemDetails>();
@@ -476,11 +582,6 @@
     private static string DescribeTooltip(IconTile tile) =>
         (tile.Copies > 1 ? $"{tile.Name} ×{tile.Copies}" : tile.Name)
         + tile.Description.Match(description => $" — {description.Value}", _ => "");
-
-    private static string DescribeWeapon(WeaponView weapon) =>
-        LoadoutShaping.AddMarks(
-            $"{weapon.Weapon.Name} — {weapon.Slot.DescribeWeaponSlot()} · {weapon.Type}{weapon.Archetype.Match(archetype => $" · {DomainPhrasing.DescribeArchetype(archetype.Value)}", _ => "")}",
-            weapon.Marks);
 
     private const string MissingPerk = "Perk not picked: a DIM link carries the weapon, not its roll. Pick it in the designer.";
 

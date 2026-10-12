@@ -329,7 +329,7 @@ public static partial class ManifestJoin
                 .Bind(type => ModSlots.TryGetValue(type, out var slot) ? Optional.Some(slot) : Optional.None<ArmorSlot>()))),
             KindWord.Catalyst => Optional.Some<ManifestKind>(new ManifestKind.ExoticCatalyst(ListGrantedPerks(reading, item))),
             KindWord.Artifact => Optional.Some<ManifestKind>(new ManifestKind.Artifact(ListArtifactPerks(reading, item))),
-            KindWord.Subclass => Optional.Some<ManifestKind>(new ManifestKind.Subclass()),
+            KindWord.Subclass => Optional.Some<ManifestKind>(new ManifestKind.Subclass([])),
             KindWord.Super => Optional.Some<ManifestKind>(new ManifestKind.Super()),
             KindWord.Grenade => Optional.Some<ManifestKind>(new ManifestKind.Grenade()),
             KindWord.Melee => Optional.Some<ManifestKind>(new ManifestKind.Melee()),

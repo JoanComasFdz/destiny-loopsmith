@@ -78,6 +78,17 @@ public static class BuildFileEditing
             new Result<string, string>.Ok(buildFile.Text) as Result<string, string>,
             (text, entry) => text.Bind(current => ReplaceEntry(buildFile with { Text = current }, entry.Key, entry.Value)));
 
+    /// <summary>
+    /// The build file with its subclass entries — <c>super</c>, <c>grenade</c>, <c>melee</c>, <c>classAbility</c>,
+    /// <c>aspects</c>, <c>fragments</c>, <c>leftOut</c> — written anew as <paramref name="build"/> has them (a subclass
+    /// edited in the designer changes all of them): each replaced where it was, added at the end when the file has none,
+    /// removed when the build has nothing for it. The rest of the file stays as it was.
+    /// </summary>
+    public static Result<string, string> ReplaceSubclass(SourceText buildFile, Build build) =>
+        BuildFileWriting.WriteSubclassEntries(build).Aggregate(
+            new Result<string, string>.Ok(buildFile.Text) as Result<string, string>,
+            (text, entry) => text.Bind(current => ReplaceEntry(buildFile with { Text = current }, entry.Key, entry.Value)));
+
     /// <summary>A top-level entry's value replaced (or the entry added at the end), or the entry removed when there is no value.</summary>
     private static Result<string, string> ReplaceEntry(SourceText buildFile, string key, Optional<string> value) =>
         ReadEvents(buildFile).Map(events => FindTopLevelEntry(events, key).Match(
