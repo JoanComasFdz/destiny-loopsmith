@@ -105,7 +105,8 @@ window.loopsmithManifest = (() => {
 
   // ── the download ───────────────────────────────────────────────────────────────
 
-  // How far the reading got (bytes downloaded, all components), told to .NET a few times a second.
+  // How far the reading got (the bytes received, all components, unpacked: the browser undoes bungie.net's compression),
+  // told to .NET a few times a second.
   function createProgress(reporter) {
     let bytes = 0, last = 0;
     return {
@@ -227,20 +228,23 @@ window.loopsmithManifest = (() => {
     return null;
   }
 
-  // Every place the needle starts, over the chunks (a match may cross from one chunk into the next).
+  // Every place the needle starts, over the chunks: each chunk searched where it is, and at each boundary a small window
+  // of the bytes around it (a match may cross from one chunk into the next: one that starts before the boundary and
+  // ends after it, so none is found twice). A chunk shorter than the needle is covered by the windows on either side.
   function findAll(store, needle) {
-    const places = [];
-    let tail = new Uint8Array(0);
+    const places = [], reach = needle.length - 1;
     for (let c = 0; c < store.chunks.length; c++) {
-      const window = new Uint8Array(tail.length + store.chunks[c].length);
-      window.set(tail, 0);
-      window.set(store.chunks[c], tail.length);
-      const base = store.starts[c] - tail.length;
-      // the tail is shorter than the needle, so a match in the window ends in this chunk: none is found twice
-      for (let at = indexOf(window, needle, 0); at >= 0; at = indexOf(window, needle, at + 1)) places.push(at + base);
-      tail = window.subarray(Math.max(0, window.length - (needle.length - 1)));
+      const chunk = store.chunks[c], base = store.starts[c];
+      for (let at = indexOf(chunk, needle, 0); at >= 0; at = indexOf(chunk, needle, at + 1)) places.push(base + at);
+      if (reach > 0 && c + 1 < store.chunks.length) {
+        const from = Math.max(0, base + chunk.length - reach), to = Math.min(store.length, base + chunk.length + reach);
+        const window = readBytes(store, from, to), boundary = base + chunk.length - from;
+        for (let at = indexOf(window, needle, 0); at >= 0; at = indexOf(window, needle, at + 1)) {
+          if (at < boundary && at + needle.length > boundary) places.push(from + at);
+        }
+      }
     }
-    return places;
+    return places.sort((a, b) => a - b);
   }
 
   function indexOf(bytes, needle, from) {

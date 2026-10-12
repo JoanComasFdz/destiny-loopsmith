@@ -135,10 +135,13 @@
     /// answers (an edit made meanwhile stays) is validated again with it and its steps replay.
     /// </summary>
     private Task JoinManifestAsync() =>
-        JoinManifestForAsync(LoopDesigning.ListUnknownHashes);                                   // impure
+        JoinManifestForAsync(LoopDesigning.ListUnknownHashes, ManifestReadFor.BuildItems);       // impure
 
-    /// <summary>The hashes <paramref name="list"/> names for the open design that the excerpt lacks, read from Bungie's full manifest (as above).</summary>
-    private async Task JoinManifestForAsync(Func<DesignSession, ImmutableArray<ItemHash>> list)
+    /// <summary>
+    /// The hashes <paramref name="list"/> names for the open design that the excerpt lacks (<paramref name="readFor"/>:
+    /// whose items they are, for the progress bar), read from Bungie's full manifest (as above).
+    /// </summary>
+    private async Task JoinManifestForAsync(Func<DesignSession, ImmutableArray<ItemHash>> list, ManifestReadFor readFor)
     {
         if (Workbench.Session is not Optional<DesignSession>.Some opened)
         {
@@ -156,7 +159,7 @@
         var status = Workbench.Status;
         var reading = LoopDesigning.DescribeManifestReading(unknown.Length);                     // pure
         Workbench.Status = reading;                                                              // impure (UI state)
-        var joined = await Manifest.JoinAsync(unknown);                                          // impure
+        var joined = await Manifest.JoinAsync(unknown, readFor);                                 // impure
         await Task.Delay(1);                                                                     // impure (the browser's turn: the bar goes before the design is replayed)
         if (Workbench.Session is not Optional<DesignSession>.Some current)
         {
@@ -289,7 +292,7 @@
         var login = LoopDesigning.ApplyBungieLogin(open.Value, profile);                        // pure
         EditSession(_ => login.Session, scrollToEnd: false, keepSelection: true);               // impure (UI state)
         Workbench.LoginNote = Optional.Some(login.Message);                                      // impure (UI state)
-        await JoinManifestForAsync(session => LoopDesigning.ListUnknownProfileHashes(session, profile)); // impure
+        await JoinManifestForAsync(session => LoopDesigning.ListUnknownProfileHashes(session, profile), ManifestReadFor.YourItems); // impure
     }
 
     /// <summary>

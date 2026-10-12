@@ -99,10 +99,12 @@ doesn't read again what Home just read (or failed to).
 The page keeps answering taps while it reads: each file is indexed as its chunks arrive (~215 MB of JSON once
 unpacked, held once, never copied into one buffer), with a pause every 8 MB, and the join gives the browser a turn
 before each of its rounds (five for a vault of ~600 items). After a Bungie login, the **Bungie login section** shows a
-progress bar — "Reading Bungie's manifest for 609 of your items", "downloading… 84 MB", then "naming them (step 2)" —
-and so does the ⋯ picker opened meanwhile; the bar can't know the download's size (bungie.net sends the files
-compressed), so it fills ever more slowly towards the size the files had in 2026. Once the join has what it asked for,
-the files are let go: a later read (another DIM link) downloads them again, from the browser's cache.
+progress bar — "Reading Bungie's manifest for 609 of your items", "reading its files… 84 MB" (unpacked), then "naming
+them (step 2)" — and so does the ⋯ picker opened meanwhile (a DIM link's read says "of this build's items"); the bar
+can't know the files' unpacked size (bungie.net sends them compressed), so it fills ever more slowly towards the size
+they had in 2026. One read runs at a time (a login during a DIM link's read waits for it). Once the join has what it
+asked for, the files are let go, unless another read waits for them: a later read downloads them again, from the
+browser's cache.
 
 ## Alternatives
 

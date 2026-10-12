@@ -1,60 +1,85 @@
 using System.Globalization;
+using Dunet;
 using Loopsmith.Core.Functional;
 
 namespace Loopsmith.Web.Presentation;
 
-public enum ManifestStage { Downloading, Naming }
+/// <summary>Whose items a read of Bungie's manifest names: the player's (after their Bungie login), or the open build's (a DIM link's).</summary>
+public enum ManifestReadFor { YourItems, BuildItems }
 
 /// <summary>
-/// How a read of Bungie's full manifest goes: for how many items, and whether its files are still downloading (the bytes
-/// so far — their total isn't known: bungie.net sends them compressed) or Loopsmith is naming the items from them (the
-/// round of questions it is on).
+/// Where a read of Bungie's manifest is: reading its files (the bytes come unpacked, so their total isn't known — bungie.net
+/// sends them compressed), or naming the items from them (the round of questions it is on).
 /// </summary>
-public sealed record ManifestReadProgress(int Items, ManifestStage Stage, long Bytes, int Round);
+[Union]
+public partial record ManifestReadStage
+{
+    partial record Reading(long Bytes);
+    partial record Naming(int Round);
+}
+
+/// <summary>A read of Bungie's full manifest in progress: for whose items, how many, and where it is.</summary>
+public sealed record ManifestReadProgress(ManifestReadFor For, int Items, ManifestReadStage Stage);
 
 /// <summary>
-/// What the progress bar says: its title, where the read is ("downloading… 84 MB"), and how far along the bar is, in
-/// percent: the downloading fills the bar to 85 % (four fifths of that by the size it is expected to have, then
-/// ever more slowly: its size isn't known), each naming round half of what's left before 99 %.
+/// What the progress bar says: its title, where the read is ("reading its files… 84 MB"), what to do meanwhile, and how
+/// far along the bar is, in
+/// percent: the files fill the bar to 85 % (four fifths of that by the size they are expected to have, then ever more
+/// slowly: their size isn't known), each naming round half of what's left before 99 %.
 /// </summary>
-public sealed record ManifestProgressView(string Title, string Detail, int Percent);
+public sealed record ManifestProgressView(string Title, string Detail, string Hint, int Percent);
 
-/// <summary>Pure: a manifest read's progress → the Bungie login section's progress bar.</summary>
+/// <summary>Pure: a manifest read's progress → the progress bar (the Bungie login section, the ⋯ pickers).</summary>
 public static class ManifestProgressShaping
 {
-    /// <summary>The bytes the download is assumed to near (Bungie's item table and its companions, about 215 MB in 2026): the bar slows past it, it never stops.</summary>
+    /// <summary>The unpacked bytes the files are assumed to near (Bungie's item table and its companions, about 215 MB in 2026): the bar slows past it, it never stops.</summary>
     private const double ExpectedBytes = 215_000_000;
 
-    public static ManifestReadProgress StartReading(int items) =>
-        new(items, ManifestStage.Downloading, 0, 0);
+    public static ManifestReadProgress StartReading(ManifestReadFor readFor, int items) =>
+        new(readFor, items, new ManifestReadStage.Reading(0));
 
-    public static ManifestReadProgress ReportDownload(ManifestReadProgress reading, long bytes) =>
-        reading.Stage == ManifestStage.Downloading ? reading with { Bytes = bytes } : reading;
+    /// <summary>How many bytes of the files have come (unpacked); once the naming has begun, the read is past them.</summary>
+    public static ManifestReadProgress ReportBytes(ManifestReadProgress progress, long bytes) =>
+        progress.Stage is ManifestReadStage.Reading ? progress with { Stage = new ManifestReadStage.Reading(bytes) } : progress;
 
-    public static ManifestReadProgress ReportRound(ManifestReadProgress reading, int round) =>
-        reading with { Stage = ManifestStage.Naming, Round = round };
+    /// <summary>The next round of naming: the first after the files, then one more each time.</summary>
+    public static ManifestReadProgress ReportRound(ManifestReadProgress progress) =>
+        progress with
+        {
+            Stage = progress.Stage.Match<ManifestReadStage>(
+                _ => new ManifestReadStage.Naming(1),
+                naming => new ManifestReadStage.Naming(naming.Round + 1)),
+        };
 
-    public static ManifestProgressView ShapeReading(ManifestReadProgress reading) =>
+    public static ManifestProgressView ShapeReading(ManifestReadProgress progress) =>
         new(
-            reading.Items == 1 ? "Reading Bungie's manifest for 1 of your items" : $"Reading Bungie's manifest for {reading.Items.ToString(CultureInfo.InvariantCulture)} of your items",
-            reading.Stage == ManifestStage.Downloading
-                ? $"downloading… {DescribeMegabytes(reading.Bytes)}"
-                : $"naming them (step {reading.Round.ToString(CultureInfo.InvariantCulture)})",
-            ToPercent(reading));
+            DescribeTitle(progress),
+            progress.Stage.Match(
+                reading => $"reading its files… {DescribeMegabytes(reading.Bytes)}",
+                naming => $"naming them (step {naming.Round.ToString(CultureInfo.InvariantCulture)})"),
+            progress.For == ManifestReadFor.YourItems
+                ? "You can keep designing meanwhile; ⋯ names your armor and weapons once it's done."
+                : "You can keep designing meanwhile; the build's items show by hash until it's done.",
+            progress.Stage.Match(
+                reading => (int)Math.Round(85 * (1 - Math.Exp(-1.6 * reading.Bytes / ExpectedBytes))),
+                naming => (int)Math.Round(99 - 14 * Math.Pow(0.5, naming.Round))));
 
-    private static int ToPercent(ManifestReadProgress reading) =>
-        reading.Stage == ManifestStage.Downloading
-            ? (int)Math.Round(85 * (1 - Math.Exp(-1.6 * reading.Bytes / ExpectedBytes)))
-            : (int)Math.Round(99 - 14 * Math.Pow(0.5, reading.Round));
-
-    private static string DescribeMegabytes(long bytes) =>
-        $"{(bytes / 1_000_000.0).ToString("0", CultureInfo.InvariantCulture)} MB";
+    /// <summary>A read in progress, when there is one.</summary>
+    public static Optional<ManifestProgressView> ShapeReading(Optional<ManifestReadProgress> progress) =>
+        progress.Map(ShapeReading);
 
     /// <summary>The bar's fill, as a CSS width.</summary>
     public static string ToWidth(int percent) =>
         $"{Math.Clamp(percent, 0, 100).ToString(CultureInfo.InvariantCulture)}%";
 
-    /// <summary>A read in progress, when there is one.</summary>
-    public static Optional<ManifestProgressView> ShapeReading(Optional<ManifestReadProgress> reading) =>
-        reading.Map(ShapeReading);
+    private static string DescribeTitle(ManifestReadProgress progress)
+    {
+        var count = progress.Items.ToString(CultureInfo.InvariantCulture);
+        return progress.For == ManifestReadFor.YourItems
+            ? progress.Items == 1 ? "Reading Bungie's manifest for 1 of your items" : $"Reading Bungie's manifest for {count} of your items"
+            : progress.Items == 1 ? "Reading Bungie's manifest for 1 of this build's items" : $"Reading Bungie's manifest for {count} of this build's items";
+    }
+
+    private static string DescribeMegabytes(long bytes) =>
+        $"{(bytes / 1_000_000.0).ToString("0", CultureInfo.InvariantCulture)} MB";
 }

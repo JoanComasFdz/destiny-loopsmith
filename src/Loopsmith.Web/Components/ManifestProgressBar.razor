@@ -1,8 +1,9 @@
 @implements IDisposable
 @inject BungieManifestJoining Manifest
-@* While Bungie's full manifest is read (after a login: the player's armor and weapons the bundled excerpt lacks): a
-   progress bar — what it reads for, where it is ("downloading… 84 MB", "naming them (step 2)"), how far along — and that
-   the page keeps working meanwhile. Only this bar renders as the read moves (BungieManifestJoining.ReadingChanged). *@
+@* While Bungie's full manifest is read (after a login: the player's armor and weapons the bundled excerpt lacks; or a
+   DIM link's items): a progress bar — what it reads for, where it is ("reading its files… 84 MB", "naming them (step
+   2)"), how far along — and that the page keeps working meanwhile. Only this bar renders as the read moves
+   (BungieManifestJoining.ReadingChanged). *@
 @if (ManifestProgressShaping.ShapeReading(Manifest.Reading) is Optional<ManifestProgressView>.Some shown)
 {
     <div class="manifest-progress" role="status" data-testid="manifest-progress">
@@ -14,7 +15,7 @@
              aria-valuenow="@shown.Value.Percent">
             <span style="width: @ManifestProgressShaping.ToWidth(shown.Value.Percent)"></span>
         </div>
-        <p class="manifest-progress-hint">You can keep designing meanwhile; ⋯ names your armor and weapons once it's done.</p>
+        <p class="manifest-progress-hint">@shown.Value.Hint</p>
     </div>
 }
 
