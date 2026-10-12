@@ -52,6 +52,20 @@ public sealed partial class StatLoadingTests
     }
 
     [Fact]
+    public void An_enhanced_copys_slice_still_arms_slice_and_severs_after_the_login()
+    {
+        var login = LoopDesigning.ApplyBungieLogin(OpenOwnersSession(Catalog), ReadProfile([.. OwnShare(tuningSockets: 0), .. OwnShareWeapons()]));
+        var played = new PlayerAction[] { new PlayerAction.UseClassAbility(), new PlayerAction.FireWeapon(WeaponSlot.Kinetic, HitOutcome.Damage, TargetCount.One) }
+            .Aggregate(login.Session, (session, action) => LoopDesigning.AppendStep(session, action, Optional.None<string>()));
+
+        Assert.Contains(login.Session.Build.Equipped, equipped => equipped.Element.Id.Value == "slice-enhanced");   // the copy rolls the enhanced trait
+        Assert.DoesNotContain(login.Session.Build.Issues, issue => issue.Message.Contains("Slice (Enhanced Trait)", StringComparison.Ordinal));
+        Assert.Contains(played.Resolutions[0].Fired, fired => fired.Source.Value == "slice-enhanced");              // the dodge arms it
+        Assert.Contains(played.Resolutions[1].Fired, fired => fired.Source.Value == "slice-enhanced"
+            && fired.Outcomes.Any(outcome => outcome.Outcome is Outcome.DebuffTarget { Status.Value: "sever" }));    // the Strand hit severs
+    }
+
+    [Fact]
     public void Someone_elses_share_keeps_its_weapons_and_the_player_is_told_to_pick_their_own()
     {
         var session = OpenOwnersSession(Catalog);

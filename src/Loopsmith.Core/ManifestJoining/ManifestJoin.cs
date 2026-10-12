@@ -57,7 +57,7 @@ public static class ManifestJoin
     }.ToImmutableDictionary();
 
     private static readonly ManifestAnswer NoAnswer = new(
-        ImmutableDictionary<ManifestEntryKey, string>.Empty,
+        ImmutableDictionary<ManifestEntryKey, JsonElement>.Empty,
         ImmutableDictionary<PlugCategoryId, ImmutableArray<ItemHash>>.Empty);
 
     /// <summary>A join of what these hashes need: its first question to the manifest (or, for none, an empty excerpt).</summary>
@@ -87,10 +87,15 @@ public static class ManifestJoin
 
     // ── one round ───────────────────────────────────────────────────────────────────
 
-    /// <summary>What has been read, each entry parsed, and each plug category's plug items.</summary>
+    /// <summary>
+    /// What has been read, each entry parsed, and each plug category's plug items; and, looked up once per round
+    /// rather than per item, the socket categories by name and the armor set each set perk belongs to.
+    /// </summary>
     private sealed record Reading(
         ImmutableDictionary<ManifestEntryKey, JsonElement> Entries,
-        ImmutableDictionary<PlugCategoryId, ImmutableArray<ItemHash>> Plugs);
+        ImmutableDictionary<PlugCategoryId, ImmutableArray<ItemHash>> Plugs,
+        ImmutableDictionary<string, ItemHash> CategoriesByName,
+        ImmutableDictionary<ItemHash, ItemHash> SetsByPerk);
 
     /// <summary>What a walk reaches: entries, whole tables and plug categories; each walk step adds to it.</summary>
     private sealed record Reach(ImmutableHashSet<ManifestEntryKey> Entries, ImmutableHashSet<ManifestTable> Tables, ImmutableHashSet<PlugCategoryId> Plugs)
@@ -100,7 +105,7 @@ public static class ManifestJoin
 
     private static ManifestJoinStep TakeStep(ManifestJoinProgress progress)
     {
-        var reading = new Reading(ParseEntries(progress.Read.Entries), progress.Read.Plugs);
+        var reading = ToReading(progress.Read);
         var reach = WalkWanted(reading, progress.Wanted);
         var entries = reach.Entries.Except(progress.AskedEntries);
         var tables = reach.Tables.Except(progress.AskedTables);
@@ -375,10 +380,7 @@ public static class ManifestJoin
     }
 
     private static Optional<ItemHash> FindCategory(Reading reading, string name) =>
-        reading.Entries
-            .Where(entry => entry.Key.Table == ManifestTable.SocketCategory && entry.Value.ReadString("displayProperties", "name") == Optional.Some(name))
-            .Select(entry => Optional.Some(entry.Key.Hash))
-            .FindFirstSome();
+        reading.CategoriesByName.TryGetValue(name, out var category) ? Optional.Some(category) : Optional.None<ItemHash>();
 
     private static ImmutableArray<JsonElement> ListSocketsInCategory(Reading reading, JsonElement item, string categoryName)
     {
@@ -498,11 +500,23 @@ public static class ManifestJoin
         ];
 
     private static Optional<ItemHash> FindSetOfPerk(Reading reading, ItemHash perk) =>
-        reading.Entries
-            .Where(entry => entry.Key.Table == ManifestTable.EquipableItemSet
-                && entry.Value.ReadArray("setPerks").Any(setPerk => setPerk.ReadHash("sandboxPerkHash") == Optional.Some(perk)))
-            .Select(entry => Optional.Some(entry.Key.Hash))
-            .FindFirstSome();
+        reading.SetsByPerk.TryGetValue(perk, out var set) ? Optional.Some(set) : Optional.None<ItemHash>();
+
+    /// <summary>What has been read, with its two lookups: each socket category by its name, each set perk's set (the lowest hash, when two have it).</summary>
+    private static Reading ToReading(ManifestAnswer read) =>
+        new(
+            read.Entries,
+            read.Plugs,
+            read.Entries
+                .Where(entry => entry.Key.Table == ManifestTable.SocketCategory)
+                .SelectMany(entry => ToSequence(entry.Value.ReadString("displayProperties", "name")).Select(name => (Name: name, entry.Key.Hash)))
+                .GroupBy(entry => entry.Name, StringComparer.Ordinal)
+                .ToImmutableDictionary(group => group.Key, group => ItemHash.From(group.Min(entry => entry.Hash.Value)), StringComparer.Ordinal),
+            read.Entries
+                .Where(entry => entry.Key.Table == ManifestTable.EquipableItemSet)
+                .SelectMany(entry => entry.Value.ReadArray("setPerks").SelectMany(setPerk => ToSequence(setPerk.ReadHash("sandboxPerkHash"))).Select(perk => (Perk: perk, Set: entry.Key.Hash)))
+                .GroupBy(entry => entry.Perk)
+                .ToImmutableDictionary(group => group.Key, group => ItemHash.From(group.Min(entry => entry.Set.Value))));
 
     // ── small helpers ───────────────────────────────────────────────────────────────
 

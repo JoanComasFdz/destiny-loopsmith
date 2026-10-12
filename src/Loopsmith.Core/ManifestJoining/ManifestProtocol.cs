@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Text.Json;
 using Dunet;
 using Loopsmith.Core.Domain;
 
@@ -27,9 +28,12 @@ public sealed record ManifestQuery(
 /// </summary>
 public sealed record ManifestTextSearch(string Component, ImmutableArray<string> Needles);
 
-/// <summary>The manifest's answer: each entry's raw JSON (what it has of what was asked), and each plug category's plug items.</summary>
+/// <summary>
+/// The manifest's answer: each entry (what it has of what was asked), parsed once where the answer is read, and each
+/// plug category's plug items.
+/// </summary>
 public sealed record ManifestAnswer(
-    ImmutableDictionary<ManifestEntryKey, string> Entries,
+    ImmutableDictionary<ManifestEntryKey, JsonElement> Entries,
     ImmutableDictionary<PlugCategoryId, ImmutableArray<ItemHash>> Plugs);
 
 /// <summary>

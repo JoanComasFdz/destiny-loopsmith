@@ -108,7 +108,7 @@ public sealed class ManifestJoinTests
         Assert.Empty(request["DestinySocketCategoryDefinition"]);                                // the whole table
         Assert.Equal(("DestinyInventoryItemDefinition", "\"plugCategoryIdentifier\":\"x.masterwork\""), (search.Component, Assert.Single(search.Needles)));
         var read = Assert.IsType<Result<ManifestAnswer, string>.Ok>(answer).Value;
-        Assert.Equal("{\"hash\":7}", Assert.Single(read.Entries).Value);
+        Assert.Equal("{\"hash\":7}", Assert.Single(read.Entries).Value.GetRawText());
         Assert.Equal([30u, 31u], Assert.Single(read.Plugs).Value.Select(hash => hash.Value)); // 0 and "no" aren't hashes
         Assert.IsType<Result<ManifestAnswer, string>.Error>(ManifestTransport.ReadAnswer(query, "not json", "{}"));
         Assert.IsType<Result<ManifestAnswer, string>.Error>(ManifestTransport.ReadAnswer(query, "{}", "[]"));

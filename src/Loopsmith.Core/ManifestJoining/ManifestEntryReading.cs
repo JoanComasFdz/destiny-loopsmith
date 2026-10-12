@@ -13,17 +13,6 @@ namespace Loopsmith.Core.ManifestJoining;
 /// </summary>
 internal static partial class ManifestEntryReading
 {
-    /// <summary>Every entry of the answers that parses, by key (an entry that doesn't parse is as if the manifest lacked it).</summary>
-    internal static ImmutableDictionary<ManifestEntryKey, JsonElement> ParseEntries(ImmutableDictionary<ManifestEntryKey, string> entries) =>
-        entries
-            .SelectMany(entry => ParseEntry(entry.Value).Match(
-                parsed => new[] { KeyValuePair.Create(entry.Key, parsed.Value) },
-                _ => []))
-            .ToImmutableDictionary();
-
-    private static Optional<JsonElement> ParseEntry(string json) =>
-        ParseDocument(json).Match(parsed => Optional.Some(parsed.Value), _ => Optional.None<JsonElement>());
-
     /// <summary>The value at a path of property names, when every step is an object that has it.</summary>
     internal static Optional<JsonElement> ReadPath(this JsonElement element, params string[] path) =>
         path.Aggregate(Optional.Some(element), (current, name) => current.Bind(found =>
