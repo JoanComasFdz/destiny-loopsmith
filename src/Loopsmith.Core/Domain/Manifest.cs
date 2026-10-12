@@ -109,3 +109,16 @@ public sealed record ManifestExcerpt(
     ItemOverlays Overlays,
     ImmutableDictionary<ItemHash, KeywordTrait> KeywordTraits,
     ImmutableDictionary<StatKind, ArmorStatIcon> ArmorStats);
+
+/// <summary>
+/// Every legendary and exotic weapon and armor piece of the game, as Bungie's full manifest has them (what the pickers
+/// list without a Bungie login): each name once per slot (and, for armor, per class), in its newest version. An item
+/// says what a picker draws — name, icon, season watermark, type, rarity, a weapon's slot, damage type, intrinsic perk and
+/// breaker, armor's slot, set and class — but not a weapon's trait columns or catalyst (the join reads those for the
+/// item picked). <see cref="Intrinsics"/> are the weapons' intrinsic perks (a legendary's frame: its icon shows in the
+/// top-right corner).
+/// </summary>
+public sealed record GameItems(
+    ImmutableArray<ManifestItem> Weapons,
+    ImmutableArray<ManifestItem> Armor,
+    ImmutableDictionary<ItemHash, ManifestItem> Intrinsics);

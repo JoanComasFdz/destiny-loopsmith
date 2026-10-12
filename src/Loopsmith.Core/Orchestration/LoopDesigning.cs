@@ -54,6 +54,16 @@ public sealed record BungieLogin(DesignSession Session, string Message);
 public sealed record JoinedCatalog(RuleCatalog Catalog, Optional<string> Note);
 
 /// <summary>Pure API the hosts (CLI, web) use to design, export, import, analyse and compare loops.</summary>
+/// <summary>
+/// One of the game's items in a picker without a login: the item; whether the rules know it (an exotic whose rules
+/// aren't written yet shows ⊘; a legendary always counts, its perks and set bonuses carry the ⊘ once it is picked); and
+/// whether the build wears it there.
+/// </summary>
+public sealed record GameItemOption(ManifestItem Item, bool InRules, bool Worn);
+
+/// <summary>What a picker without a login lists: the game's items for a slot that the build can wear there, and notes on what it leaves out.</summary>
+public sealed record GameItemOptions(ImmutableArray<GameItemOption> Options, ImmutableArray<string> Notes);
+
 public static class LoopDesigning
 {
     public static Result<DesignSession, string> StartDesign(RuleCatalog catalog, SourceText buildFile, string name) =>
@@ -203,6 +213,31 @@ public static class LoopDesigning
     /// <summary>The excerpt the join built, or why reading the manifest failed (or didn't finish).</summary>
     public static Result<ManifestExcerpt, string> ToJoinedExcerpt(Result<ManifestJoinStep, string> step) =>
         ManifestTransport.ToJoinedExcerpt(step);
+
+    /// <summary>A listing of every legendary and exotic weapon and armor piece of the game (the pickers without a login): its first question.</summary>
+    public static ManifestListStep StartGameItemListing() =>
+        ManifestJoin.StartGameItemListing();
+
+    /// <summary>What the host reads whole for a listing's question, per component (an empty list: the whole component).</summary>
+    public static ImmutableDictionary<string, ImmutableArray<ItemHash>> ToGameListRequest(ManifestListQuery query) =>
+        ManifestTransport.ToListEntryRequest(query);
+
+    /// <summary>The item entries the host reads cut down to <see cref="ManifestListQuery.OutlinePaths"/> for a listing's question (none: nothing to read).</summary>
+    public static ImmutableDictionary<string, ImmutableArray<ItemHash>> ToGameListOutlineRequest(ManifestListQuery query) =>
+        ManifestTransport.ToOutlineRequest(query);
+
+    /// <summary>What the host searches the item component for, for a listing's question.</summary>
+    public static ManifestTextSearch ToGameListSearch(ManifestListQuery query) =>
+        ManifestTransport.ToListSearch(query);
+
+    /// <summary>The listing with the host's answer to its question: its next step, or why the answer doesn't read.</summary>
+    public static Result<ManifestListStep, string> ContinueGameItemListing(ManifestListStep.Ask asked, string entriesJson, string outlinesJson, string foundJson) =>
+        ManifestTransport.ReadListAnswer(asked.Query, entriesJson, outlinesJson, foundJson)
+            .Map(answer => ManifestJoin.ContinueGameItemListing(asked.Progress, answer));
+
+    /// <summary>The game's weapons and armor the listing found, or why reading the manifest failed (or didn't finish).</summary>
+    public static Result<GameItems, string> ToListedGameItems(Result<ManifestListStep, string> step) =>
+        ManifestTransport.ToListedGameItems(step);
 
     /// <summary>
     /// The catalog with what the full manifest said added to its excerpt (what it had stays); when the manifest
@@ -524,6 +559,80 @@ public static class LoopDesigning
             .Bind(build => RebuildWith(session, target.Match(
                 inPlace => BuildFileEditing.ReplaceWeapon(session.Design.Build, inPlace.Weapon, build.Weapons[inPlace.Weapon]),
                 _ => BuildFileEditing.AddWeapon(session.Design.Build, build.Weapons[^1]))));
+
+    // ── Any weapon or armor piece of the game, without a login (docs/loop-format.md, "Weapons and armor of the game") ──
+
+    /// <summary>
+    /// What the weapon picker lists without a login for where <paramref name="target"/> says (a weapon of the build, or an
+    /// empty slot): the game's weapons for that slot the build can wear there (one exotic: WeaponSwapping), with the note
+    /// on the exotic rule.
+    /// </summary>
+    public static GameItemOptions ListGameWeaponOptions(ValidatedBuild build, GameItems game, WeaponTarget target)
+    {
+        var catalog = build.Catalog;
+        var worn = build.Build.FindTargetWeapon(target).Bind(weapon => weapon.Hash);
+        var exotic = WeaponSwapping.DescribeExoticRule(catalog, build.Build, target);
+        return new GameItemOptions(
+            [
+                .. game.Weapons
+                    .Where(item => WeaponSwapping.CheckWeaponItem(catalog, build.Build, target, Optional.Some(item)).IsOk())
+                    .Select(item => new GameItemOption(item, IsGameItemInRules(catalog, item), worn == Optional.Some(item.Hash))),
+            ],
+            [.. exotic.Match(note => new[] { note.Value }, _ => [])]);
+    }
+
+    /// <summary>
+    /// What the armor picker lists without a login for a slot: the game's pieces for it that the build can wear (its class
+    /// or any, one exotic: ArmorSwapping), with the note on the exotic rule.
+    /// </summary>
+    public static GameItemOptions ListGameArmorOptions(ValidatedBuild build, GameItems game, ArmorSlot slot)
+    {
+        var catalog = build.Catalog;
+        var exotic = ArmorSwapping.DescribeExoticRule(catalog, build.Build, slot);
+        return new GameItemOptions(
+            [
+                .. game.Armor
+                    .Where(item => ArmorSwapping.CheckPieceItem(catalog, build.Build, slot, Optional.Some(item)).IsOk())
+                    .Select(item => new GameItemOption(item, IsGameItemInRules(catalog, item), ArmorSwapping.IsWorn(catalog, build.Build, item.Hash))),
+            ],
+            [.. exotic.Match(note => new[] { note.Value }, _ => [])]);
+    }
+
+    /// <summary>The intrinsic perk of a weapon of the game (a legendary's frame: its icon goes in the square's top-right corner).</summary>
+    public static Optional<ManifestItem> FindGameIntrinsic(GameItems game, ManifestItem weapon) =>
+        weapon.Kind is ManifestKind.Weapon { Intrinsic: Optional<ItemHash>.Some intrinsic } && game.Intrinsics.TryGetValue(intrinsic.Value, out var found)
+            ? Optional.Some(found)
+            : Optional.None<ManifestItem>();
+
+    /// <summary>What a pick of the game's item <paramref name="item"/> needs read from the full manifest first: the item, when the excerpt lacks it.</summary>
+    public static ImmutableArray<ItemHash> ListUnknownPickHashes(DesignSession session, ItemHash item) =>
+        ManifestJoin.ListUnknown(session.Build.Catalog.Manifest, [item]);
+
+    /// <summary>
+    /// The design wearing the game's weapon <paramref name="weapon"/> where <paramref name="target"/> says (in place of
+    /// one of its weapons, or added to an empty slot), with no perk picked and its catalyst off; the build check runs again
+    /// and the steps replay. Or why it can't: the excerpt must know the weapon (the host reads it first: UseJoinedManifest).
+    /// </summary>
+    public static Result<DesignSession, string> PickGameWeapon(DesignSession session, WeaponTarget target, ItemHash weapon) =>
+        WeaponSwapping.PlaceWeapon(session.Build.Catalog, session.Build.Build, target, weapon)
+            .Bind(build => RebuildWith(session, target.Match(
+                inPlace => BuildFileEditing.ReplaceWeapon(session.Design.Build, inPlace.Weapon, build.Weapons[inPlace.Weapon]),
+                _ => BuildFileEditing.AddWeapon(session.Design.Build, build.Weapons[^1]))));
+
+    /// <summary>
+    /// The design wearing the game's <paramref name="piece"/> in <paramref name="slot"/> (no copy): its exotic, left-out
+    /// pieces and set bonuses change (ArmorSwapping), its stats stay, the build check runs again and the steps replay. Or
+    /// why it can't: the excerpt must know the piece (the host reads it first: UseJoinedManifest).
+    /// </summary>
+    public static Result<DesignSession, string> PickGameArmor(DesignSession session, ArmorSlot slot, ItemHash piece) =>
+        ArmorSwapping.PlacePiece(session.Build.Catalog, session.Build.Build, slot, piece)
+            .Bind(build => RebuildWith(session, BuildFileEditing.ReplaceArmor(session.Design.Build, build)));
+
+    /// <summary>An exotic counts as known when the rules have it (an exotic weapon's intrinsic perk is its element); a legendary always does.</summary>
+    private static bool IsGameItemInRules(RuleCatalog catalog, ManifestItem item) =>
+        item.Tier != Optional.Some(ItemTier.Exotic)
+        || catalog.FindElementByHash(item.Hash).IsSome()
+        || (item.Kind is ManifestKind.Weapon { Intrinsic: Optional<ItemHash>.Some intrinsic } && catalog.FindElementByHash(intrinsic.Value).IsSome());
 
     /// <summary>
     /// What the game draws on the player's copy the build wears in a slot (its tier, masterwork): the share's copy when it

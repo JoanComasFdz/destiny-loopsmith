@@ -7,24 +7,32 @@ namespace Loopsmith.Core.BuildComposition;
 
 /// <summary>
 /// Pure: one of a build's armor pieces swapped for another (a piece the player picked from their own armor,
-/// docs/loop-format.md "Stats"). The build's piece in that slot — its exotic, or a legendary piece it leaves out —
-/// becomes the new one: an exotic the rules know is the build's exotic, any other piece a left-out item. Which copy it
-/// wears is recorded, and its set bonuses follow the pieces it now wears: the bonuses of every set the old or the new
-/// pieces are from are the ones those pieces grant (two Luminopotent pieces: its 2-piece bonus only); other bonuses stay.
+/// docs/loop-format.md "Stats", or one of the game's picked without a login). The build's piece in that slot — its
+/// exotic, or a legendary piece it leaves out — becomes the new one: an exotic the rules know is the build's exotic, any
+/// other piece a left-out item. Which copy it wears is recorded (a piece of the game has none), and its set bonuses
+/// follow the pieces it now wears: the bonuses of every set the old or the new pieces are from are the ones those pieces
+/// grant (two Luminopotent pieces: its 2-piece bonus only); other bonuses stay.
 /// </summary>
 public static class ArmorSwapping
 {
     /// <summary>The build wearing <paramref name="piece"/> (copy <paramref name="copy"/>) in <paramref name="slot"/>; or why it can't.</summary>
     public static Result<Build, string> SwapPiece(RuleCatalog catalog, Build build, ArmorSlot slot, ItemHash piece, ItemInstanceId copy) =>
-        CheckPiece(catalog, build, slot, piece).Map(_ => WearPiece(catalog, build, slot, piece, copy));
+        CheckPiece(catalog, build, slot, piece).Map(_ => WearPiece(catalog, build, slot, piece, Optional.Some(copy)));
+
+    /// <summary>The build wearing the game's <paramref name="piece"/> (no copy: picked without a login) in <paramref name="slot"/>; or why it can't.</summary>
+    public static Result<Build, string> PlacePiece(RuleCatalog catalog, Build build, ArmorSlot slot, ItemHash piece) =>
+        CheckPiece(catalog, build, slot, piece).Map(_ => WearPiece(catalog, build, slot, piece, Optional.None<ItemInstanceId>()));
 
     /// <summary>
     /// Whether the build can wear <paramref name="piece"/> in <paramref name="slot"/>: a piece the excerpt knows, for that
     /// slot, for the build's class (or any class), and an exotic only when the build wears none in another slot; or why not.
     /// </summary>
-    public static Result<Unit, string> CheckPiece(RuleCatalog catalog, Build build, ArmorSlot slot, ItemHash piece)
+    public static Result<Unit, string> CheckPiece(RuleCatalog catalog, Build build, ArmorSlot slot, ItemHash piece) =>
+        CheckPieceItem(catalog, build, slot, catalog.Manifest.FindItem(piece));
+
+    /// <summary>Whether the build can wear <paramref name="item"/> in <paramref name="slot"/> (<see cref="CheckPiece"/>; none: a piece Loopsmith doesn't know).</summary>
+    public static Result<Unit, string> CheckPieceItem(RuleCatalog catalog, Build build, ArmorSlot slot, Optional<ManifestItem> item)
     {
-        var item = catalog.Manifest.FindItem(piece);
         var armor = item.Bind(found => found.Kind is ManifestKind.Armor kind ? Optional.Some(kind) : Optional.None<ManifestKind.Armor>());
         var exotic = item.Match(found => found.Value.Tier == Optional.Some(ItemTier.Exotic), _ => false);
         var otherExotic = FindExoticElsewhere(catalog, build, slot);
@@ -42,6 +50,11 @@ public static class ArmorSwapping
     /// <summary>What the armor picker says when the build's exotic is in another slot (no exotic can be picked here); none when it isn't.</summary>
     public static Optional<string> DescribeExoticRule(RuleCatalog catalog, Build build, ArmorSlot slot) =>
         FindExoticElsewhere(catalog, build, slot).Map(name => $"A build wears one exotic armor piece: swap {name} for a legendary piece to pick an exotic here.");
+
+    /// <summary>Whether the build wears the piece <paramref name="hash"/>: one of its exotic's hashes, or a piece it leaves out.</summary>
+    public static bool IsWorn(RuleCatalog catalog, Build build, ItemHash hash) =>
+        build.ExoticArmor.Match(id => catalog.Elements.TryGetValue(id.Value, out var element) && element.Hashes.Contains(hash), _ => false)
+        || build.LeftOut.Any(entry => entry.Part == LoadoutPart.Item && entry.Hash == hash);
 
     /// <summary>The name of the build's exotic piece when it is in another slot than <paramref name="slot"/>.</summary>
     private static Optional<string> FindExoticElsewhere(RuleCatalog catalog, Build build, ArmorSlot slot) =>
@@ -71,7 +84,7 @@ public static class ArmorSwapping
             ? Optional.Some(new WornPiece(armor.Slot, hash, item.Name, item.Tier == Optional.Some(ItemTier.Exotic)))
             : Optional.None<WornPiece>());
 
-    private static Build WearPiece(RuleCatalog catalog, Build build, ArmorSlot slot, ItemHash piece, ItemInstanceId copy)
+    private static Build WearPiece(RuleCatalog catalog, Build build, ArmorSlot slot, ItemHash piece, Optional<ItemInstanceId> copy)
     {
         var before = ListPieces(catalog, build);
         var removed = before.Where(worn => worn.Slot == slot).Select(worn => worn.Hash).ToImmutableHashSet();
@@ -84,7 +97,7 @@ public static class ArmorSwapping
         {
             ExoticArmor = exoticElement.Match(found => Optional.Some(found.Value), _ => exoticRemoved ? Optional.None<ElementId>() : build.ExoticArmor),
             LeftOut = exoticElement.IsSome() ? leftOut : leftOut.Add(new LeftOutItem(LoadoutPart.Item, piece)),
-            ArmorCopies = [.. build.ArmorCopies.Where(entry => !removed.Contains(entry.Piece) && entry.Piece != piece), new ArmorCopy(piece, copy)],
+            ArmorCopies = [.. build.ArmorCopies.Where(entry => !removed.Contains(entry.Piece) && entry.Piece != piece), .. copy.Match(worn => new[] { new ArmorCopy(piece, worn.Value) }, _ => [])],
         };
         var after = ListPieces(catalog, worn);
         return worn with { ArmorSetBonuses = ListSetBonuses(catalog, build.ArmorSetBonuses, before, after) };

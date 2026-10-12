@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 using Loopsmith.Core.ManifestJoining;
@@ -54,6 +55,60 @@ public sealed class ManifestStore(ImmutableDictionary<ManifestTable, ImmutableDi
         var entries = request.ToDictionary(component => component.Key, component => ReadEntries(ToTable(component.Key), component.Value));
         var found = search.Needles.ToDictionary(needle => needle, needle => FindContaining(ToTable(search.Component), needle));
         return (JsonSerializer.Serialize(entries), JsonSerializer.Serialize(found));
+    }
+
+    /// <summary>Runs a listing of the game's weapons and armor to the end, answering each of its questions as the host does.</summary>
+    public GameItems ListGameItems()
+    {
+        Result<ManifestListStep, string> step = new Result<ManifestListStep, string>.Ok(LoopDesigning.StartGameItemListing());
+        for (var round = 0; step is Result<ManifestListStep, string>.Ok { Value: ManifestListStep.Ask ask } && round < MaxRounds; round++)
+        {
+            var (entries, outlines, found) = AnswerList(ask.Query);
+            step = LoopDesigning.ContinueGameItemListing(ask, entries, outlines, found);
+        }
+
+        return LoopDesigning.ToListedGameItems(step).Match(ok => ok.Value, error => throw new InvalidOperationException($"The listing didn't finish in {MaxRounds} rounds: {error.Failure}"));
+    }
+
+    /// <summary>The host's three answers to a listing's question: the entries read whole, those cut down to its outline paths, and the entries holding each needle.</summary>
+    public (string Entries, string Outlines, string Found) AnswerList(ManifestListQuery query)
+    {
+        Rounds++;
+        var request = LoopDesigning.ToGameListRequest(query);
+        var outlineRequest = LoopDesigning.ToGameListOutlineRequest(query);
+        var search = LoopDesigning.ToGameListSearch(query);
+        var entries = request.ToDictionary(component => component.Key, component => ReadEntries(ToTable(component.Key), component.Value));
+        var outlines = outlineRequest.ToDictionary(component => component.Key, component => ReadEntries(ToTable(component.Key), component.Value)
+            .ToDictionary(entry => entry.Key, entry => OutlineEntry(entry.Value, query.OutlinePaths)));
+        var found = search.Needles.ToDictionary(needle => needle, needle => FindContaining(ToTable(search.Component), needle));
+        return (JsonSerializer.Serialize(entries), JsonSerializer.Serialize(outlines), JsonSerializer.Serialize(found));
+    }
+
+    /// <summary>
+    /// An entry cut down to <paramref name="paths"/> as manifest.js cuts it: each path's value kept where it is (a path of
+    /// property names; <c>*</c>: every element of an array, in place, null where it has nothing of the path).
+    /// </summary>
+    private static string OutlineEntry(string json, ImmutableArray<string> paths)
+    {
+        var root = JsonNode.Parse(json);
+        var outline = KeepPaths(root, [.. paths.Select(path => path.Split('.'))]) ?? new JsonObject();
+        return outline.ToJsonString();
+    }
+
+    private static JsonNode? KeepPaths(JsonNode? node, ImmutableArray<string[]> paths) =>
+        paths.Any(path => path.Length == 0) ? node?.DeepClone()
+        : node is JsonObject obj ? ToObjectOrNull(paths
+            .GroupBy(path => path[0], StringComparer.Ordinal)
+            .Where(group => group.Key != "*" && obj.ContainsKey(group.Key))
+            .Select(group => (group.Key, Kept: KeepPaths(obj[group.Key], [.. group.Select(path => path[1..])])))
+            .Where(child => child.Kept is not null))
+        : node is JsonArray array && paths.Any(path => path[0] == "*") ? new JsonArray([.. array.Select(element => KeepPaths(element, [.. paths.Where(path => path[0] == "*").Select(path => path[1..])]))])
+        : null;
+
+    private static JsonObject? ToObjectOrNull(IEnumerable<(string Key, JsonNode? Kept)> children)
+    {
+        var kept = children.ToArray();
+        return kept.Length == 0 ? null : new JsonObject(kept.Select(child => KeyValuePair.Create(child.Key, child.Kept)));
     }
 
     private Dictionary<string, string> ReadEntries(ManifestTable table, ImmutableArray<ItemHash> hashes) =>

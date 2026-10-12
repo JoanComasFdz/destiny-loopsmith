@@ -1,17 +1,21 @@
 // Loopsmith web host — Bungie's manifest, downloaded on demand: each component file is fetched from bungie.net (the
 // browser's HTTP cache keeps it; the app stores nothing), its bytes kept as the download gave them (in its chunks, never
 // copied into one buffer) and every entry's place in them indexed by hash as the chunks arrive — in the same pass, which
-// entries hold each "plugCategoryIdentifier". Core asks for entries by hash (and for the entries whose JSON holds a
-// piece of text) and interprets the raw JSON itself: no game logic lives here. The download reports how far it got to
+// entries hold each "plugCategoryIdentifier" and each "bucketTypeHash". Core asks for entries by hash (whole, or cut
+// down to the fields it names) and for the entries whose JSON holds a piece of text, and interprets the JSON itself:
+// no game logic lives here. The download reports how far it got to
 // .NET (a few times a second) and pauses every few megabytes, so the page keeps answering taps; once Core has what it
 // asked for, the tables are let go (a later read downloads them again, from the HTTP cache). Called from
 // Hosting/BrowserInterop.cs.
 window.loopsmithManifest = (() => {
-  const tables = new Map();   // component name → { store, offsets: Map(hash → [start, end]), categories: Map(category → [hash]) }
+  const tables = new Map();   // component name → { store, offsets: Map(hash → [start, end]), categories: Map(category → [hash]), buckets: Map(bucket → [hash]) }
   const decoder = new TextDecoder("utf-8");
-  const QUOTE = 34, BACKSLASH = 92, OPEN = 123, CLOSE = 125, COMMA = 44;
+  const QUOTE = 34, BACKSLASH = 92, OPEN = 123, CLOSE = 125, COMMA = 44, COLON = 58, ZERO = 48, NINE = 57;
+  const SPACE = 32, TAB = 9, NEWLINE = 10, RETURN = 13;
   const CATEGORY_KEY = new TextEncoder().encode("plugCategoryIdentifier");
   const CATEGORY_NEEDLE = /^"plugCategoryIdentifier":"([^"\\]*)"$/;
+  const BUCKET_KEY = new TextEncoder().encode("bucketTypeHash");
+  const BUCKET_NEEDLE = /^"bucketTypeHash":(\d+)$/;
   const SLICE = 8 * 1024 * 1024;   // bytes indexed between two pauses, so the page keeps answering taps
   const REPORT_EVERY = 250;        // ms between two progress reports
 
@@ -54,15 +58,23 @@ window.loopsmithManifest = (() => {
 
   // ── the index, built as the chunks arrive ──────────────────────────────────────
 
-  // The top-level object's entries: "hash": { … } → the byte range of { … }; and each "plugCategoryIdentifier": "…"
-  // inside an entry → that entry's hash. Strings are skipped whole (an escape may end one chunk and its character
-  // start the next), so braces and quotes inside them don't count. Offsets are the component's, not the chunk's.
+  // The top-level object's entries: "hash": { … } → the byte range of { … }; each "plugCategoryIdentifier": "…" inside
+  // an entry → that entry's hash; and each "bucketTypeHash": <number> inside an entry → that entry's hash. Strings are
+  // skipped whole (an escape may end one chunk and its character start the next), so braces and quotes inside them don't
+  // count; a number may end one chunk and go on in the next. Offsets are the component's, not the chunk's.
   function createIndexer(store) {
-    const offsets = new Map(), categories = new Map();
+    const offsets = new Map(), categories = new Map(), buckets = new Map();
     let depth = 0, inString = false, escaped = false, stringStart = -1, keyStart = -1, key = null, valueStart = -1, expectCategory = false;
+    let expectBucket = false, bucket = 0, bucketDigits = false;
     function feed(chunk, base) {
       for (let k = 0; k < chunk.length; k++) {
         const b = chunk[k];
+        if (expectBucket && !inString) {
+          if (b >= ZERO && b <= NINE) { bucket = bucket * 10 + (b - ZERO); bucketDigits = true; continue; }
+          if (!bucketDigits && (b === COLON || b === SPACE || b === TAB || b === NEWLINE || b === RETURN)) continue;
+          if (bucketDigits) addCategory(buckets, String(bucket), key);
+          expectBucket = false; bucketDigits = false; bucket = 0;
+        }
         if (inString) {
           if (escaped) { escaped = false; continue; }
           if (b === BACKSLASH) { escaped = true; continue; }
@@ -73,6 +85,7 @@ window.loopsmithManifest = (() => {
             else if (depth > 1 && key !== null) {
               if (expectCategory) { addCategory(categories, decoder.decode(readBytes(store, stringStart, i)), key); expectCategory = false; }
               else if (i - stringStart === CATEGORY_KEY.length && equals(readBytes(store, stringStart, i), CATEGORY_KEY)) expectCategory = true;
+              else if (i - stringStart === BUCKET_KEY.length && equals(readBytes(store, stringStart, i), BUCKET_KEY)) expectBucket = true;
             }
           }
           continue;
@@ -88,7 +101,7 @@ window.loopsmithManifest = (() => {
         if (b === COMMA) expectCategory = false;
       }
     }
-    return { feed, offsets, categories };
+    return { feed, offsets, categories, buckets };
   }
 
   function addCategory(categories, category, key) {
@@ -140,7 +153,7 @@ window.loopsmithManifest = (() => {
     } else {
       await take(new Uint8Array(await response.arrayBuffer()));
     }
-    tables.set(name, { store, offsets: indexer.offsets, categories: indexer.categories });
+    tables.set(name, { store, offsets: indexer.offsets, categories: indexer.categories, buckets: indexer.buckets });
   }
 
   return {
@@ -173,8 +186,10 @@ window.loopsmithManifest = (() => {
 
     // Each entry asked for, as the manifest has it ({ table: [hashes] } → { table: { hash: { …entry… } } }: the entries'
     // own JSON, not strings of it, so Core parses each once); a missing one is left out. An empty list asks for the
-    // whole table (a small one).
-    readEntries(request) {
+    // whole table (a small one). With `paths` (["displayProperties.name", "sockets.socketEntries.*.singleInitialItemHash"]:
+    // property names; "*" for each element of an array), each entry is cut down to those fields, where they are.
+    readEntries(request, paths) {
+      const tree = paths && paths.length ? toPathTree(paths) : null;
       const parts = [];
       for (const [name, hashes] of Object.entries(request)) {
         const table = tables.get(name);
@@ -183,7 +198,9 @@ window.loopsmithManifest = (() => {
         const entries = [];
         for (const key of keys) {
           const range = table.offsets.get(key);
-          if (range) entries.push(JSON.stringify(key) + ":" + decoder.decode(readBytes(table.store, range[0], range[1])));
+          if (!range) continue;
+          const text = decoder.decode(readBytes(table.store, range[0], range[1]));
+          entries.push(JSON.stringify(key) + ":" + (tree ? JSON.stringify(cutEntry(JSON.parse(text), tree) || {}) : text));
         }
         parts.push(JSON.stringify(name) + ":{" + entries.join(",") + "}");
       }
@@ -191,8 +208,8 @@ window.loopsmithManifest = (() => {
     },
 
     // The hashes of a table's entries whose JSON holds each needle ({ needle: [hashes] }). A plug category's needle
-    // ("plugCategoryIdentifier":"…") is answered from the index the load built; any other, by a pass over the bytes,
-    // each match placed in the entry that holds it.
+    // ("plugCategoryIdentifier":"…") and a bucket's ("bucketTypeHash":…) are answered from the index the load built; any
+    // other, by a pass over the bytes, each match placed in the entry that holds it.
     findEntriesContaining(table, needles) {
       const found = {};
       const store = tables.get(table);
@@ -203,6 +220,11 @@ window.loopsmithManifest = (() => {
         const category = CATEGORY_NEEDLE.exec(needle);
         if (category) {
           found[needle] = [...(store.categories.get(category[1]) || [])].sort((a, b) => a - b);
+          continue;
+        }
+        const bucket = BUCKET_NEEDLE.exec(needle);
+        if (bucket) {
+          found[needle] = [...(store.buckets.get(bucket[1]) || [])].sort((a, b) => a - b);
           continue;
         }
         starts = starts || [...store.offsets].map(([key, [start, end]]) => [start, end, Number(key)]).sort((a, b) => a[0] - b[0]);
@@ -216,6 +238,43 @@ window.loopsmithManifest = (() => {
       return JSON.stringify(found);
     },
   };
+
+  // The paths Core asks for, as a tree: name → { whole: the path ends here, children: the paths going on }.
+  function toPathTree(paths) {
+    const root = new Map();
+    for (const path of paths) {
+      let level = root;
+      const names = path.split(".");
+      names.forEach((name, i) => {
+        if (!level.has(name)) level.set(name, { whole: false, children: new Map() });
+        const node = level.get(name);
+        if (i === names.length - 1) node.whole = true;
+        level = node.children;
+      });
+    }
+    return root;
+  }
+
+  // A value cut down to the tree's paths: an object keeps the fields on a path (undefined when it has none); an array,
+  // under "*", keeps every element in its place (null where one has nothing of the path); anything else, nothing.
+  function cutEntry(value, tree) {
+    if (Array.isArray(value)) {
+      const each = tree.get("*");
+      if (!each) return undefined;
+      return value.map((element) => {
+        const kept = each.whole ? element : cutEntry(element, each.children);
+        return kept === undefined ? null : kept;
+      });
+    }
+    if (value === null || typeof value !== "object") return undefined;
+    let out;
+    for (const [name, node] of tree) {
+      if (name === "*" || !Object.prototype.hasOwnProperty.call(value, name)) continue;
+      const kept = node.whole ? value[name] : cutEntry(value[name], node.children);
+      if (kept !== undefined) (out || (out = {}))[name] = kept;
+    }
+    return out;
+  }
 
   function findEntry(starts, at) {
     let low = 0, high = starts.length - 1;

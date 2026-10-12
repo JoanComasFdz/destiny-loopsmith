@@ -92,6 +92,14 @@ public sealed class BrowserInterop(IJSRuntime js)
         return await js.InvokeAsync<string>("loopsmithManifest.readEntries", plain);
     }
 
+    /// <summary>The JSON of the entries asked for, each cut down to <paramref name="paths"/> (<c>{ component: { hash: outline } }</c>).</summary>
+    public async Task<string> ReadManifestOutlinesAsync(IReadOnlyDictionary<string, ImmutableArray<ItemHash>> request, ImmutableArray<string> paths)
+    {
+        var plain = request.ToDictionary(entry => entry.Key, entry => entry.Value.Select(hash => hash.Value).ToArray());
+        var fields = paths.ToArray();
+        return await js.InvokeAsync<string>("loopsmithManifest.readEntries", plain, fields);
+    }
+
     /// <summary>The hashes of a component's entries whose JSON holds each needle (<c>{ needle: [hashes] }</c>).</summary>
     public async Task<string> FindManifestEntriesContainingAsync(ManifestTextSearch search)
     {

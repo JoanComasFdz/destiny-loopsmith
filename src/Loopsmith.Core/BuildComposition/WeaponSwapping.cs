@@ -9,8 +9,9 @@ namespace Loopsmith.Core.BuildComposition;
 /// Pure: a build's weapons from the player's own copies (docs/loop-format.md, "Weapons from your account"). A copy
 /// becomes a build weapon as a DIM loadout's does — its slot, name, damage type and archetype from the manifest
 /// excerpt — with the perks it holds: in each trait column, the plug of its sockets that column rolls with; its
-/// catalyst on when its socket holds it; and the copy it is (its instance id). A build wears one exotic weapon, and one
-/// weapon per slot. Which copies are the player's is StatLoading's to say (<c>CopyFinding</c>).
+/// catalyst on when its socket holds it; and the copy it is (its instance id). A weapon of the game picked without a
+/// login (no copy behind it) becomes one with no perk picked and its catalyst off. A build wears one exotic weapon, and
+/// one weapon per slot. Which copies are the player's is StatLoading's to say (<c>CopyFinding</c>).
 /// </summary>
 public static class WeaponSwapping
 {
@@ -18,19 +19,28 @@ public static class WeaponSwapping
     public static Result<Build, string> SwapWeapon(RuleCatalog catalog, Build build, WeaponTarget target, OwnedWeapon copy) =>
         CheckWeapon(catalog, build, target, copy.Hash)
             .Bind(_ => ToWeapon(catalog, copy))
-            .Map(worn => build with
-            {
-                Weapons = target.Match(inPlace => build.Weapons.SetItem(inPlace.Weapon, worn), _ => build.Weapons.Add(worn)),
-            });
+            .Map(worn => WearWeapon(build, target, worn));
+
+    /// <summary>
+    /// The build wearing the game's weapon <paramref name="hash"/> (no copy: picked without a login) where
+    /// <paramref name="target"/> says, with no perk picked and its catalyst off; or why it can't.
+    /// </summary>
+    public static Result<Build, string> PlaceWeapon(RuleCatalog catalog, Build build, WeaponTarget target, ItemHash hash) =>
+        CheckWeapon(catalog, build, target, hash)
+            .Bind(_ => ToGameWeapon(catalog, hash))
+            .Map(worn => WearWeapon(build, target, worn));
 
     /// <summary>
     /// Whether the build can wear the weapon <paramref name="hash"/> where <paramref name="target"/> says: a weapon the
     /// build has (in place of it) or a slot it has none in; a weapon the excerpt knows, for that slot, with a damage type;
     /// and an exotic only when the build's other weapons have none. Or why not.
     /// </summary>
-    public static Result<Unit, string> CheckWeapon(RuleCatalog catalog, Build build, WeaponTarget target, ItemHash hash)
+    public static Result<Unit, string> CheckWeapon(RuleCatalog catalog, Build build, WeaponTarget target, ItemHash hash) =>
+        CheckWeaponItem(catalog, build, target, catalog.Manifest.FindItem(hash));
+
+    /// <summary>Whether the build can wear <paramref name="item"/> where <paramref name="target"/> says (<see cref="CheckWeapon"/>; none: a weapon Loopsmith doesn't know).</summary>
+    public static Result<Unit, string> CheckWeaponItem(RuleCatalog catalog, Build build, WeaponTarget target, Optional<ManifestItem> item)
     {
-        var item = catalog.Manifest.FindItem(hash);
         var kind = item.Bind(found => found.Kind is ManifestKind.Weapon known ? Optional.Some(known) : Optional.None<ManifestKind.Weapon>());
         var name = item.Match(found => found.Value.Name, _ => "That weapon");
         var exotic = item.Match(found => found.Value.Tier == Optional.Some(ItemTier.Exotic), _ => false);
@@ -55,7 +65,18 @@ public static class WeaponSwapping
     /// of its sockets); its catalyst on when its socket holds the catalyst; and its instance id. Or why it can't be one.
     /// </summary>
     public static Result<WeaponLoadout, string> ToWeapon(RuleCatalog catalog, OwnedWeapon copy) =>
-        catalog.Manifest.FindItem(copy.Hash).Match(
+        ToGameWeapon(catalog, copy.Hash).Map(weapon => catalog.Manifest.FindWeaponKind(weapon).Match(
+            kind => weapon with
+            {
+                Roll = kind.Value.Traits.ReadRoll(copy.Plugs),
+                Catalyst = kind.Value.HoldsCatalyst(copy.Plugs),
+                Instance = Optional.Some(copy.InstanceId),
+            },
+            _ => weapon));
+
+    /// <summary>A weapon of the game as a build weapon: the excerpt's slot, name, damage type and archetype; no perk picked, its catalyst off, no copy.</summary>
+    private static Result<WeaponLoadout, string> ToGameWeapon(RuleCatalog catalog, ItemHash hash) =>
+        catalog.Manifest.FindItem(hash).Match(
             item => item.Value.Kind is ManifestKind.Weapon { DamageType: Optional<DamageType>.Some type } kind
                 ? new Result<WeaponLoadout, string>.Ok(new WeaponLoadout(
                     kind.Slot,
@@ -63,12 +84,19 @@ public static class WeaponSwapping
                     type.Value,
                     item.Value.Type.Bind(ManifestReading.ToArchetype),
                     [],
-                    Optional.Some(copy.Hash),
-                    kind.Traits.ReadRoll(copy.Plugs),
-                    kind.HoldsCatalyst(copy.Plugs),
-                    Optional.Some(copy.InstanceId)))
+                    Optional.Some(hash),
+                    [],
+                    false,
+                    Optional.None<ItemInstanceId>()))
                 : Refuse<WeaponLoadout>($"Loopsmith doesn't know {item.Value.Name} as a weapon with a damage type, so it can't put it in the build."),
             _ => Refuse<WeaponLoadout>("Loopsmith doesn't know that weapon yet (Bungie's manifest wasn't read for it), so it can't put it in the build."));
+
+    /// <summary>The build with <paramref name="worn"/> where <paramref name="target"/> says: in place of one of its weapons, or added.</summary>
+    private static Build WearWeapon(Build build, WeaponTarget target, WeaponLoadout worn) =>
+        build with
+        {
+            Weapons = target.Match(inPlace => build.Weapons.SetItem(inPlace.Weapon, worn), _ => build.Weapons.Add(worn)),
+        };
 
     /// <summary>
     /// The build with each of its weapons in <paramref name="copies"/> (by weapon number: the player's copy of it) holding
