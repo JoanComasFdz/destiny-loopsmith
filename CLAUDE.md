@@ -69,6 +69,8 @@ repos (Microsoft's download hosts are blocked by the network policy) and restore
   Creator transcripts are third-party content: keep them local as `transcript.txt` (gitignored),
   never commit them.
 - `tests/Loopsmith.Core.Tests/` — unit, golden (`Golden/*.verified.txt`) and architecture tests.
+- `docs/issues/` — on `main`, only its README: each issue's files live on its own
+  `claude/issue-<N>-resources` branch, in `docs/issues/issue-<N>/resources/` (Naming (agent work)).
 - `docs/requirements.md` — the requirements, starting with the level of abstraction (what Loopsmith
   does and doesn't), then FR-1…FR-13 with their status, the non-functional requirements and what is
   out of scope.
@@ -123,21 +125,28 @@ the trigger; everything after it happens on one draft pull request.
    with one empty commit (`git commit --allow-empty -m "Start #<N>: <title>"`: GitHub needs a commit
    to open a PR) and open a **draft** PR into `main`. Title: the issue's title without `[agent] `.
    Body: `Closes #<N>`, then the plan in a few lines. Watch it (auto-fix) at once.
-2. **Ask on the PR.** If the issue is unclear, or needs something a session doesn't have (the
+2. **Open the issue's files.** If the issue has a "Screenshots and files" section, fetch its
+   resources branch (`git fetch origin claude/issue-<N>-resources`, then `git worktree add --detach
+   /tmp/issue-<N>-resources FETCH_HEAD`) and open every file in `docs/issues/issue-<N>/resources/`:
+   look at each image, read each log, YAML or XML file. Files @JoanComasFdz pastes into the session
+   later go onto that branch too, numbered on (Naming below; create the branch if the issue has
+   none), and a PR comment links them. An image in a GitHub comment can't be opened from a session
+   (GitHub's attachment storage is blocked): say so and ask for it in the session.
+3. **Ask on the PR.** If the issue is unclear, or needs something a session doesn't have (the
    Compendium snapshot for rule work, a creator transcript, a design decision), comment the
    questions on the PR and wait: a reply there wakes you. Don't guess.
-3. **Do the work** on that branch, changing only what the issue asks for. Before every push of a
-   change: `dotnet build Loopsmith.slnx` and `dotnet test` (warnings are errors; there is no separate linter), and
-   check a web change in a browser too (How we work). Push when a step is complete, not after every
-   edit: each push runs CI and the preview.
-4. **When it's done,** update the PR body (what changed, and how to check it on the preview at
+4. **Do the work** on that branch, changing only what the issue asks for. Before every push of a
+   change: `dotnet build Loopsmith.slnx` and `dotnet test` (warnings are errors; there is no
+   separate linter), and check a web change in a browser too (How we work). Push when a step is
+   complete, not after every edit: each push runs CI and the preview.
+5. **When it's done,** update the PR body (what changed, and how to check it on the preview at
    `…/pr-preview/pr-<PR number>/`) and comment `Ready for review` with what to look at. A session
    can't take a PR out of draft (that needs GraphQL): @JoanComasFdz clicks **Ready for review**.
-5. **Keep watching until the PR is merged or closed,** however many rounds it takes. Act on every
+6. **Keep watching until the PR is merged or closed,** however many rounds it takes. Act on every
    comment and review @JoanComasFdz writes on it, asked for or not, at any time, and on every CI
    failure. Reply in a review thread when you address it, but don't resolve it: @JoanComasFdz
    resolves threads, and that is their sign-off before merging.
-6. **Keep it mergeable.** A conflict with `main` doesn't always arrive as an event, so on every PR
+7. **Keep it mergeable.** A conflict with `main` doesn't always arrive as an event, so on every PR
    event, and on a check-in with `send_later` about every 4 hours while the PR waits (stop after 3
    in a row that found nothing new; the next event starts them again), look at its merge state. On a
    conflict, merge `origin/main` into the branch, resolve it, build and test, and push. A branch
@@ -153,15 +162,41 @@ Always:
   refuses it anyway). Never force-push: to update a branch, merge `origin/main` into it; squash
   merging flattens it.
 - Never add or remove the `agent` label: a labelled issue starts another session. Open an issue only
-  when @JoanComasFdz asks for one in the session (the `agent-issue` skill), and leave it unlabelled.
+  when @JoanComasFdz asks for one in the session (the `loopsmith-issue` skill), and leave it
+  unlabelled.
+- A `claude/issue-<N>-resources` branch only ever gets files added: never merge it, never open a
+  pull request from or into it, never delete or rewrite it (the issue's links point at its commits).
 - Don't change `.github/workflows/`, repository settings, rulesets or secrets unless the issue asks
   for exactly that.
 - In cloud sessions `gh issue` and `gh pr` fail (GitHub's GraphQL is blocked): use the built-in
   GitHub tools or `gh api repos/<owner>/<repo>/...` (REST).
 
+## Naming (agent work)
+| What | Name |
+|---|---|
+| Issue title | `[agent] <imperative sentence>`, at most about 70 characters after the prefix |
+| Work branch | `claude/issue-<N>` |
+| Its first commit | `Start #<N>: <title>` (empty) |
+| Draft PR title | the issue's title without `[agent] ` |
+| Resources branch | `claude/issue-<N>-resources`: an orphan branch with only that issue's files |
+| Resources folder | `docs/issues/issue-<N>/resources/` |
+| Resource file | `<NN>-<what>[-<where>].<ext>` (below) |
+| Resources commit | `Resources for #<N>: <title without [agent] >`; later ones `Add resources to #<N>: <what>` |
+
+A resource file's name starts with its two-digit place in the order the owner gave the files (`01`,
+`02`, …; files added later continue the count), then says what it shows, in lowercase ASCII
+kebab-case, and keeps its extension: `01-perk-picker-phone.png`, `02-designer-console.log`,
+`03-skip-grenade.loop.yaml`, `04-manifest-excerpt.xml`. No spaces, no personal names.
+
+The issue links each file at the commit that added it: an image inline from
+`https://raw.githubusercontent.com/<owner>/<repo>/<commit>/docs/issues/issue-<N>/resources/<file>`,
+any other file as its page on GitHub (`…/blob/<commit>/…`), and closes with "Resources also
+available in `claude/issue-<N>-resources`", linked to the folder on that branch.
+
 ## Project skills (`.claude/skills/`)
-- `agent-issue` — what the owner wants, in any language → an "Agent task" issue in English
-  (`.github/ISSUE_TEMPLATE/agent-task.yml`'s sections), shown for approval, opened unlabelled.
+- `loopsmith-issue` — what the owner wants, in any language, with their screenshots and files →
+  "Agent task" issues in English (`.github/ISSUE_TEMPLATE/agent-task.yml`'s sections), acceptance
+  criteria agreed with the owner, files on the issue's resources branch, opened unlabelled.
 
 ## Project subagents (`.claude/agents/`)
 - `rule-author` — Compendium/Clarity/guide text → rules YAML (provenance, no invented numbers).

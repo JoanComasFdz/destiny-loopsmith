@@ -28,3 +28,11 @@ body:
     attributes:
       label: Notes and pointers
       description: Files, rules, related issues or PRs. Say if the work needs the Compendium snapshot.
+  - type: textarea
+    id: files
+    attributes:
+      label: Screenshots and files
+      description: >-
+        Images and files dropped here are for you to look at: a Claude session can't open GitHub's
+        attachments. To give files to the session, write the issue with /loopsmith-issue in a Claude
+        Code session, or paste them into the working session.
