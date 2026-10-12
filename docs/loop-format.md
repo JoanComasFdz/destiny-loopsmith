@@ -340,7 +340,8 @@ Frame overloads; shown before the login too), its **element** and, after the log
 piece gets the footer with its power after the login. The pickers' items show the same. The icons and overlays are
 the manifest excerpt's (`breakerTypes`, `armorStats`, an item's `watermark`, `itemConstants`); the tier, masterwork
 flag, breaker and power are Bungie's profile's for the copy (its instance's `gearTier`, `breakerTypeHash` and
-`primaryStat`, the item's `state`).
+`primaryStat`, the item's `state`). The pages carry `<meta name="darkreader-lock">`: the site is dark already, and a
+dark-mode extension such as Dark Reader would otherwise repaint the light footers dark and hide their icons.
 
 <a id="weapons-from-your-account"></a>**Weapons from your account.** The login reads the player's weapons too, with the
 plugs in their sockets:
