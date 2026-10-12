@@ -257,6 +257,50 @@ public static class LoopDesigning
                 .Bind(build => BuildValidation.ValidateBuild(build, session.Build.Catalog))
                 .Map(validated => CreateSession(validated, session.Design with { Build = file })));
 
+    // ── The subclass: its abilities, aspects and fragments (docs/loop-format.md, "Subclass") ──────────────────
+
+    /// <summary>True when the designer can edit the build's subclass: the manifest excerpt lists the plugs it can hold.</summary>
+    public static bool CanEditSubclass(ValidatedBuild build) =>
+        SubclassEditing.CanEdit(build.Catalog, build.Build);
+
+    /// <summary>The plugs the build's subclass holds, by manifest hash (the rules' elements and the left-out plugs alike).</summary>
+    public static SubclassPlugs ReadSubclassPlugs(ValidatedBuild build) =>
+        SubclassEditing.ReadPlugs(build.Catalog, build.Build);
+
+    /// <summary>Everything the build's subclass can hold in a slot (the manifest's), in its order.</summary>
+    public static ImmutableArray<ItemHash> ListSubclassOptions(ValidatedBuild build, SubclassSlot slot) =>
+        SubclassEditing.ListOptions(build.Catalog, build.Build, slot);
+
+    /// <summary>How many fragment slots these aspects open; not known when an aspect's count isn't.</summary>
+    public static FragmentSlotCount CountFragmentSlots(ValidatedBuild build, ImmutableArray<ItemHash> aspects) =>
+        SubclassEditing.CountFragmentSlots(build.Catalog, aspects);
+
+    /// <summary>The plugs with other aspects: the fragments the new slot count closes are taken out, the last ones first, and named.</summary>
+    public static SubclassTrim SetSubclassAspects(ValidatedBuild build, SubclassPlugs plugs, ImmutableArray<ItemHash> aspects) =>
+        SubclassEditing.SetAspects(build.Catalog, plugs, aspects);
+
+    /// <summary>
+    /// The design with its subclass holding these plugs: only the embedded build file's subclass entries change (its
+    /// abilities, aspects, fragments and the plugs the rules don't know); the build check runs again and the steps
+    /// replay. Its stats are added up again from the player's armor when they were (they equal what that armor gave for
+    /// the old fragments); stats typed stay as typed.
+    /// </summary>
+    public static Result<DesignSession, string> EditSubclass(DesignSession session, Optional<BungieProfile> profile, SubclassPlugs plugs)
+    {
+        var addedUp = profile.Bind(owned => StatsAreAddedUp(session, owned) ? profile : Optional.None<BungieProfile>());
+        return SubclassEditing.ApplyPlugs(session.Build.Catalog, session.Build.Build, plugs)
+            .Bind(build => RebuildWith(session, BuildFileEditing.ReplaceSubclass(session.Design.Build, build)))
+            .Map(edited => addedUp.Match(owned => SetStatsFromArmor(edited, owned.Value).Match(set => set.Value, _ => edited), _ => edited));
+    }
+
+    /// <summary>True when the build's stats are what its armor adds up to for the player (not typed): then a change to its fragments adds them up again.</summary>
+    private static bool StatsAreAddedUp(DesignSession session, BungieProfile profile)
+    {
+        var choices = StatAdding.ListStatChoices(session.Build.Catalog, session.Build.Build, profile);
+        return StatAdding.AddUpStats(session.Build.Catalog, session.Build.Build, choices)
+            .Match(totals => totals.Value.Stats == session.Build.Build.Stats, _ => false);
+    }
+
     // ── Stats: typed, or added up from the player's own armor (docs/loop-format.md, "Stats") ─────────────────
 
     /// <summary>

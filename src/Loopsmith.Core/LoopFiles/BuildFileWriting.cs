@@ -206,6 +206,20 @@ public static class BuildFileWriting
         ("armorCopies", build.ArmorCopies.IsEmpty ? Optional.None<string>() : Optional.Some(WriteValue(ToArmorCopiesValue(build.ArmorCopies)))),
     ];
 
+    /// <summary>
+    /// The build's subclass entries as the build file writes them — <c>super</c>, <c>grenade</c>, <c>melee</c>,
+    /// <c>classAbility</c> (<c>"?"</c> when unknown), <c>aspects</c>, <c>fragments</c>, <c>leftOut</c> (none when the build
+    /// leaves nothing out, so an edit removes the entry).
+    /// </summary>
+    internal static ImmutableArray<(string Key, Optional<string> Value)> WriteSubclassEntries(Build build) =>
+    [
+        .. new[] { ("super", build.Abilities.Super), ("grenade", build.Abilities.Grenade), ("melee", build.Abilities.Melee), ("classAbility", build.Abilities.ClassAbility) }
+            .Select(ability => (ability.Item1, Optional.Some(WriteValue([.. ToAbilityEntry(ability.Item1, ability.Item2).Skip(1)])))),
+        ("aspects", Optional.Some(WriteValue([.. ToListEntry("aspects", build.Aspects).Skip(1)]))),
+        ("fragments", Optional.Some(WriteValue([.. ToListEntry("fragments", build.Fragments).Skip(1)]))),
+        ("leftOut", ToLeftOutEntry(build.LeftOut) is { IsEmpty: false } leftOut ? Optional.Some(WriteValue([.. leftOut.Skip(1)])) : Optional.None<string>()),
+    ];
+
     /// <summary>One value's events (a flow list or mapping) as text, on one line.</summary>
     private static string WriteValue(ImmutableArray<ParsingEvent> value)
     {
