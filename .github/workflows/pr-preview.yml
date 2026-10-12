@@ -15,7 +15,8 @@ permissions:
 
 jobs:
   # Whether a pull request changes more than Markdown, docs/, .github/ and .claude/ (a rename
-  # counts its old path too). If not, it gets no preview; closing a PR still removes its preview,
+  # counts its old path too; a PR with no changed files, like a draft's first empty commit, counts
+  # as docs-only). If not, it gets no preview; closing a PR still removes its preview,
   # in case an earlier push had one. If this job fails, the preview runs. Same list in ci.yml.
   changes:
     runs-on: ubuntu-latest
@@ -31,7 +32,7 @@ jobs:
         run: |
           files=$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR/files" \
             --jq '.[] | .filename, (.previous_filename // empty)')
-          n=$(printf '%s\n' "$files" | grep -cvE '\.md$|^docs/|^\.github/|^\.claude/' || true)
+          n=$(printf '%s' "$files" | grep -cvE '\.md$|^docs/|^\.github/|^\.claude/' || true)
           echo "code=$([ "$n" -gt 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
 
   preview:
