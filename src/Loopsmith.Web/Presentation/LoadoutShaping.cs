@@ -387,6 +387,26 @@ public static class LoadoutShaping
         return new ArtifactView(item, [.. build.Build.ArtifactPerks.Select(id => DescribeElement(catalog, id)), .. leftOut.Select(entry => DescribeLeftOut(catalog, entry))]);
     }
 
+    /// <summary>
+    /// A plug of the subclass editor as its square shows it: the rules' element when they know it, else the manifest's item
+    /// marked ⊘ (a jump has no part in a loop, so it carries none). It opens its details either way.
+    /// </summary>
+    public static IconTile DescribeSubclassPlug(ValidatedBuild build, ItemHash hash)
+    {
+        var catalog = build.Catalog;
+        return catalog.FindElementByHash(hash).Match(
+            element => DescribeElement(catalog, element.Value.Id),
+            _ =>
+            {
+                var left = new LeftOutItem(LoadoutPart.SubclassPlug, hash);
+                return DescribeLeftOut(catalog, new LeftOutEntry(left.Part, catalog.Manifest.FindItem(hash), hash, LoopDesigning.ClassifyLeftOut(build, left)));
+            });
+    }
+
+    /// <summary>The type the game words a plug with ("Arc Aspect", "Movement Ability"), when the excerpt has it.</summary>
+    public static Optional<string> FindPlugType(ValidatedBuild build, ItemHash hash) =>
+        build.Catalog.Manifest.FindItem(hash).Bind(item => item.Type);
+
     private static Optional<ItemDetails> ToElementDetails(ElementId id) => Optional.Some<ItemDetails>(new ItemDetails.OfElement(id));
 
     private static IconTile DescribeUnknownHash(RuleCatalog catalog, ItemHash hash) =>

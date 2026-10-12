@@ -12,7 +12,14 @@
 <div class="loadout @(Compact ? "compact" : "")" data-testid="loadout">
     <div class="loadout-row">
         <section class="loadout-box subclass-box" aria-label="Subclass">
-            <h4 class="loadout-label">Subclass</h4>
+            <div class="loadout-label-row">
+                <h4 class="loadout-label">Subclass</h4>
+                @if (CanEditSubclass)
+                {
+                    <button type="button" class="btn small" data-action="edit-subclass" title="Change the super, abilities, aspects and fragments"
+                            aria-haspopup="dialog" @onclick="OpenSubclassEditor">Edit</button>
+                }
+            </div>
             <div class="subclass-body">
                 <div class="subclass-emblem">
                     @if (view.Subclass.Subclass is Optional<IconTile>.Some subclassItem)
@@ -250,6 +257,11 @@
         <ItemInfoDialog Info="info.Value" OnClose="CloseDetails" OnSetCatalyst="OnSetCatalyst" />
     }
 
+    @if (subclassEditor)
+    {
+        <SubclassEditor Build="Build" OnSave="SaveSubclassAsync" OnClose="CloseSubclassEditor" />
+    }
+
     @if (armorPicker is Optional<ArmorSlot>.Some pickerSlot && Profile is Optional<BungieProfile>.Some owned)
     {
         <ArmorPicker Build="Build" Profile="owned.Value" Slot="pickerSlot.Value" OnPick="PickArmorAsync" OnClose="CloseArmorPicker" />
@@ -284,6 +296,29 @@
     /// <summary>Set by the designer: a piece picked from the player's armor is swapped into the build. Unset (the Home card): read-only.</summary>
     [Parameter]
     public EventCallback<ArmorPick> OnPickArmor { get; set; }
+
+    /// <summary>Set by the designer: the Subclass box then has Edit, which opens the subclass editor. Unset (the Home card): read-only.</summary>
+    [Parameter]
+    public EventCallback<SubclassPlugs> OnEditSubclass { get; set; }
+
+    private bool CanEditSubclass => OnEditSubclass.HasDelegate && LoopDesigning.CanEditSubclass(Build);
+
+    private bool subclassEditor;
+
+    private void OpenSubclassEditor()
+    {
+        ClosePicker();                                                                           // impure (UI state)
+        subclassEditor = true;                                                                   // impure (UI state)
+    }
+
+    private void CloseSubclassEditor() =>
+        subclassEditor = false;                                                                  // impure (UI state)
+
+    private async Task SaveSubclassAsync(SubclassPlugs plugs)
+    {
+        subclassEditor = false;                                                                  // impure (UI state)
+        await OnEditSubclass.InvokeAsync(plugs);                                                 // impure
+    }
 
     private bool CanPickArmor => Profile.IsSome() && OnPickArmor.HasDelegate;
 

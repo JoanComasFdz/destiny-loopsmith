@@ -274,7 +274,11 @@ public static class BuildValidation
             .Select(id => catalog.Elements.GetValueOrDefault(id))
             .OfType<BuildElement>()
             .ToImmutableArray();
-        var unknown = aspects.Where(a => !a.FragmentSlots.IsSome()).Select(a => a.Name).ToImmutableArray();
+        var leftOutAspects = build.LeftOut
+            .Where(item => item.Part == LoadoutPart.SubclassPlug)
+            .Select(item => catalog.Manifest.FindItem(item.Hash))
+            .SelectMany(item => item.Match(found => found.Value.Kind is ManifestKind.Aspect ? new[] { found.Value.Name } : [], _ => []));
+        var unknown = aspects.Where(a => !a.FragmentSlots.IsSome()).Select(a => a.Name).Concat(leftOutAspects).ToImmutableArray();
         if (!unknown.IsEmpty)
         {
             yield return new BuildIssue(Severity.Info, $"Fragment slots unknown for {string.Join(", ", unknown)} — fragment count not checked.");

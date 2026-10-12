@@ -989,6 +989,20 @@ button.hud-chip:hover, button.hud-chip:focus-visible { background: color-mix(in 
 .perk-option-text { display: flex; flex-direction: column; min-width: 0; }
 .perk-option-name { font-size: 12px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .perk-option-type { font-size: 10px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.loadout-label-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 6px; }
+.loadout-label-row .loadout-label { margin: 0; }
+.subclass-editor { display: flex; flex-direction: column; gap: 10px; }
+.sub-heading { margin: 4px 0 0; font-size: 13px; font-weight: 700; color: var(--text); }
+.sub-note { margin: 0; font-size: 12px; }
+.sub-group { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 6px; }
+.sub-slot { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 6px; border: 1px solid var(--line-2); border-radius: var(--radius); background: var(--panel-2); }
+.sub-slot.open { border-color: var(--arc); }
+.sub-slot-text { display: flex; flex-direction: column; min-width: 0; flex: 1 1 auto; }
+.sub-slot-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.sub-slot-name { font-size: 12px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sub-picker .perk-options { max-height: 40vh; overflow-y: auto; }
+.sub-picker .perk-option:disabled { opacity: .45; cursor: not-allowed; }
+.sub-foot { display: flex; justify-content: flex-end; gap: 8px; }
 .perk-picker-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-size: 11px; }
 .armor-row { display: flex; flex-wrap: wrap; gap: 10px; }
 .armor-piece { display: flex; gap: 4px; align-items: flex-start; }

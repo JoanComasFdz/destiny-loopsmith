@@ -65,7 +65,7 @@
         <div class="designer-grid">
             <aside class="col-build">
                 <BuildPanel Build="session.Build" Issues="LoopDesigning.ListDesignIssues(session)" OnPickPerk="PickPerk" OnSetCatalyst="SetCatalyst" OnSetStats="SetStats"
-                            Profile="Workbench.Profile" LoginNote="Workbench.LoginNote" OnLoggedIn="UseBungieLoginAsync" OnLoggedOut="LogOut" OnPickArmor="PickArmor" OnPickWeapon="PickWeapon" />
+                            Profile="Workbench.Profile" LoginNote="Workbench.LoginNote" OnLoggedIn="UseBungieLoginAsync" OnLoggedOut="LogOut" OnPickArmor="PickArmor" OnPickWeapon="PickWeapon" OnEditSubclass="EditSubclass" />
             </aside>
             <div class="col-loop">
                 <ExplainPanel Build="session.Build" />
@@ -313,6 +313,16 @@
             Workbench.LoginNote = Optional.None<string>();                                       // impure (UI state)
             ApplyBuildEdit(session => LoopDesigning.PickArmorPiece(session, profile.Value, pick.Slot, pick.Instance)); // impure (UI state)
         }
+    }
+
+    /// <summary>
+    /// The subclass editor saved: the embedded build's subclass changes and the steps replay with it; the stats are added up
+    /// again from the player's armor when they were (LoopDesigning.EditSubclass).
+    /// </summary>
+    private void EditSubclass(SubclassPlugs plugs)
+    {
+        var profile = Workbench.Profile;
+        ApplyBuildEdit(session => LoopDesigning.EditSubclass(session, profile, plugs));         // impure (UI state)
     }
 
     /// <summary>A weapon picked from the player's weapons: swapped into the embedded build with its perks (or added, for an empty slot).</summary>

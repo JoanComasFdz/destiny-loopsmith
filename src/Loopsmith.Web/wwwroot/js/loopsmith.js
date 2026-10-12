@@ -59,6 +59,12 @@ window.loopsmith = {
     }
   },
 
+  keepFocusIn(element) {
+    if (element && !element.contains(document.activeElement)) {
+      element.focus({ preventScroll: true });
+    }
+  },
+
   clearHash() {
     if (window.location.hash) {
       history.replaceState(history.state, "", window.location.pathname + window.location.search);

@@ -37,7 +37,7 @@ internal static class ManifestParsing
     private static readonly ImmutableArray<string> ArmorSetKeys = ["hash", "name", "perks"];
     private static readonly ImmutableArray<string> SetPerkKeys = ["pieces", "perk"];
     private static readonly ImmutableArray<string> ItemKeys =
-        ["hash", "name", "kind", "type", "tier", "slot", "damageType", "breaker", "traits", "intrinsic", "catalyst", "set", "class", "perks", "description", "watermark", "icon"];
+        ["hash", "name", "kind", "type", "tier", "slot", "damageType", "breaker", "traits", "intrinsic", "catalyst", "set", "class", "perks", "plugs", "description", "watermark", "icon"];
 
     /// <summary>The keys only some kinds have, each with the kinds it belongs to (and how an error names them).</summary>
     private static readonly ImmutableArray<(string Key, ImmutableArray<KindWord> Kinds, string Where)> KindKeys =
@@ -51,6 +51,7 @@ internal static class ManifestParsing
         ("set", [KindWord.Armor], "armor"),
         ("class", [KindWord.Armor], "armor"),
         ("perks", [KindWord.Catalyst, KindWord.Artifact], "a catalyst or an artifact"),
+        ("plugs", [KindWord.Subclass], "a subclass"),
         ("watermark", [KindWord.Weapon, KindWord.Armor], "a weapon or armor"),
     ];
 
@@ -243,6 +244,8 @@ internal static class ManifestParsing
                 .Map(perks => (ManifestKind)new ManifestKind.ExoticCatalyst(perks)),
             KindWord.Artifact => map.ReadOrDefault("perks", perks => perks.ReadEach("perk", ReadItemHash), [])
                 .Map(perks => (ManifestKind)new ManifestKind.Artifact(perks)),
+            KindWord.Subclass => map.ReadOrDefault("plugs", plugs => plugs.ReadEach("plug", ReadItemHash), [])
+                .Map(plugs => (ManifestKind)new ManifestKind.Subclass(plugs)),
             _ => Succeed(ToPlainKind(word)),
         };
 
@@ -255,7 +258,6 @@ internal static class ManifestParsing
     private static ManifestKind ToPlainKind(KindWord word) =>
         word switch
         {
-            KindWord.Subclass => new ManifestKind.Subclass(),
             KindWord.Super => new ManifestKind.Super(),
             KindWord.Grenade => new ManifestKind.Grenade(),
             KindWord.Melee => new ManifestKind.Melee(),

@@ -23,7 +23,9 @@ intrinsic perk (an exotic's) and the armor set it belongs to. Those perks, catal
 written too. Perks a catalyst or a set grants are the manifest's sandbox perks (`kind: perk`). The artifact an
 artifact perk belongs to (the artifact item whose sockets' plug sets hold it) is written with its perks
 (`kind: artifact`, `perks`: every plug of the plug sets of its sockets that take artifact perks, but a socket's
-initial, empty one, socket by socket, each once). A hash the
+initial, empty one, socket by socket, each once). An editable
+subclass (Arcstrider, `EDITABLE_SUBCLASSES`) also gets `plugs`: every plug its sockets take (super, abilities, jump, aspects,
+fragments; not the empty sockets'), each written as an item, so the designer's subclass editor offers them. A hash the
 manifest doesn't have is reported, not written. The output is sorted and stable, so a rerun on the same
 manifest changes nothing.
 
@@ -58,6 +60,7 @@ DAMAGE_TYPES = {1: "kinetic", 2: "arc", 3: "solar", 4: "void", 6: "stasis", 7: "
 EMPTY_CATALYST = "v400.empty.exotic.masterwork"  # the plug category of an exotic's empty catalyst socket
 ARTIFACT_PERKS = "artifact_perks"                 # what an artifact's perk sockets take…
 ARTIFACT_RESET = "artifact_reset"                 # …and its reset socket too, with its Reset Artifact plug
+EDITABLE_SUBCLASSES = {2328211300}                # Arcstrider: the subclass the designer's subclass editor offers the plugs of
 ARMOR_STATS = {2996146975: "weapons", 392767087: "health", 1943323491: "class", 1735777505: "grenade",
                144602215: "super", 4244567218: "melee"}
 STAT_PLUG_KINDS = {748854354: "base", 1744546145: "base", 2198080209: "masterwork", 3481777685: "tuning",
@@ -170,6 +173,16 @@ def read_artifact_perks(item, plug_sets, socket_types):
     hashes = [plug["plugItemHash"] for entry in entries if entry.get("reusablePlugSetHash") and takes_perks(entry)
               for plug in plug_sets.get(str(entry["reusablePlugSetHash"]), {}).get("reusablePlugItems", [])
               if plug["plugItemHash"] != entry.get("singleInitialItemHash")]
+    return list(dict.fromkeys(hashes))
+
+
+def read_subclass_plugs(item, plug_sets):
+    """Everything a subclass can hold: every plug of the plug sets of its sockets (super, abilities, aspects, fragments),
+    but an empty socket's plug (named "Empty …"), each once, in the manifest's order."""
+    entries = (item.get("sockets") or {}).get("socketEntries", [])
+    hashes = [plug["plugItemHash"] for entry in entries if entry.get("reusablePlugSetHash")
+              for plug in plug_sets.get(str(entry["reusablePlugSetHash"]), {}).get("reusablePlugItems", [])
+              if plug.get("currentlyCanRoll", True)]
     return list(dict.fromkeys(hashes))
 
 
@@ -305,6 +318,9 @@ def to_entry(item_hash, item, context):
                else read_artifact_perks(item, plug_sets, socket_types) if kind == "artifact" else [])
     if granted:
         fields.append(("perks", "[" + ", ".join(str(h) for h in granted) + "]"))
+    plugs = context["subclass_plugs"].get(item_hash) if kind == "subclass" else None
+    if plugs:
+        fields.append(("plugs", "[" + ", ".join(str(h) for h in plugs) + "]"))
     description = read_description(item, context["perks"])
     if description:
         fields.append(("description", to_text(description)))
@@ -402,6 +418,10 @@ def main():
     artifact_perks = {h for h in named_items if kinds[h] == "artifactPerk"}
     artifacts = {int(h) for h, item in items.items() if item.get("itemTypeDisplayName") == "Artifact"
                  and artifact_perks & set(read_artifact_perks(item, plug_sets, socket_types))}
+    # what an editable subclass can hold: its plugs (the designer's subclass editor offers them), but the empty sockets'
+    subclass_plugs = {h: [p for p in read_subclass_plugs(items[str(h)], plug_sets)
+                          if str(p) in items and not items[str(p)].get("displayProperties", {}).get("name", "").startswith("Empty")]
+                      for h in named_items if kinds[h] == "subclass" and h in EDITABLE_SUBCLASSES}
     # every enhanced plug of a trait the rules author (by its name: a weapon's enhanced copy, a crafted one), so the C#
     # catalog can tell an authored perk that lacks its enhanced trait (docs/rule-format.md, "Enhanced traits")
     trait_names = {items[str(h)]["displayProperties"]["name"] for h in list_rule_hashes(root)
@@ -411,9 +431,9 @@ def main():
                        and item.get("displayProperties", {}).get("name") in trait_names}
     context = {"buckets": buckets, "socket_types": socket_types, "perk_category": perk_category, "plug_sets": plug_sets,
                "intrinsics": intrinsics, "weapon_catalysts": weapon_catalysts, "catalysts": catalysts, "perks": perks,
-               "items": items, "breaker_types": breaker_types}
+               "items": items, "breaker_types": breaker_types, "subclass_plugs": subclass_plugs}
 
-    wanted_items = sorted(named_items | traits | set(intrinsics.values()) | catalysts | artifacts | enhanced_traits)
+    wanted_items = sorted(named_items | traits | set(intrinsics.values()) | catalysts | artifacts | enhanced_traits | {p for plugs in subclass_plugs.values() for p in plugs})
     wanted_perks = sorted(((named - named_items) & {int(h) for h in perks}) | catalyst_perks | set_perks)
     missing = sorted(named - named_items - set(wanted_perks))
     lines = [
