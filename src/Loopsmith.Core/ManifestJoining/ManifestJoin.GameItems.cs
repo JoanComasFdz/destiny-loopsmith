@@ -25,7 +25,6 @@ public static partial class ManifestJoin
     private const int WeaponItemType = 3;
     private const int LegendaryTierType = 5;
     private const int ExoticTierType = 6;
-    private const int AnyClass = 3;
 
     /// <summary>The fields of a slot's item entry the listing reads first: whether it is listed, and which version of its name it is.</summary>
     public static readonly ImmutableArray<string> SummaryPaths =
@@ -116,8 +115,11 @@ public static partial class ManifestJoin
             .Order(StringComparer.Ordinal),
     ];
 
-    /// <summary>A summarised entry that is listed: what makes its versions one item, and which version it is (its <c>index</c>).</summary>
-    private sealed record Version(ItemHash Hash, string Item, int Index);
+    /// <summary>What makes entries versions of one item: its slot's bucket, its class (an armor piece's; none for a weapon or any class) and its name.</summary>
+    private sealed record VersionKey(string Bucket, Optional<GuardianClass> Class, string Name);
+
+    /// <summary>A summarised entry that is listed: the item it is a version of, and which version (its <c>index</c>).</summary>
+    private sealed record Version(ItemHash Hash, VersionKey Item, int Index);
 
     /// <summary>
     /// Of the summarised entries, those listed (a legendary or exotic weapon with a damage type, or armor piece, one can
@@ -127,7 +129,7 @@ public static partial class ManifestJoin
     [
         .. summarised
             .SelectMany(hash => ToSequence(FindEntry(reading, ManifestTable.InventoryItem, hash).Bind(entry => ToVersion(reading, hash, entry))))
-            .GroupBy(version => version.Item, StringComparer.Ordinal)
+            .GroupBy(version => version.Item)
             .Select(versions => versions.OrderByDescending(version => version.Index).ThenByDescending(version => version.Hash.Value).First().Hash)
             .OrderBy(hash => hash.Value),
     ];
@@ -150,9 +152,7 @@ public static partial class ManifestJoin
             && item.ReadFlag("equippable", false)
             && !item.ReadFlag("redacted", false)
             && name.Length > 0;
-        var key = armor
-            ? $"armor|{bucket}|{item.ReadInteger("classType").UnwrapOr(AnyClass).ToString(CultureInfo.InvariantCulture)}|{name}"
-            : $"weapon|{bucket}|{name}";
+        var key = new VersionKey(bucket, armor ? item.ReadInteger("classType").Bind(ToGuardianClass) : Optional.None<GuardianClass>(), name);
         return listed ? Optional.Some(new Version(hash, key, item.ReadInteger("index").UnwrapOr(0))) : Optional.None<Version>();
     }
 

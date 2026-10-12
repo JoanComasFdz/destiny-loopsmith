@@ -137,7 +137,7 @@ public static class GamePickerShaping
             : Optional.None<BreakerType>();
         var frame = option.Item.Tier == Optional.Some(ItemTier.Exotic)
             ? Optional.None<CornerBadge>()
-            : LoopDesigning.FindGameIntrinsic(game, option.Item).Bind(intrinsic => intrinsic.Icon.Map(icon => new CornerBadge(CornerKind.Frame, intrinsic.Name, LoadoutShaping.ToIconUrl(icon))));
+            : game.FindIntrinsic(option.Item).Bind(intrinsic => intrinsic.Icon.Map(icon => new CornerBadge(CornerKind.Frame, intrinsic.Name, LoadoutShaping.ToIconUrl(icon))));
         return new GameOptionView(
             LoadoutShaping.DescribeWeaponItem(option.Item) with { InRules = option.InRules },
             LoadoutShaping.DescribeMarks(catalog, Optional.Some(option.Item), Optional.None<GearMarks>(), breaker, frame),

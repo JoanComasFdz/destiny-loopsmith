@@ -54,16 +54,6 @@ public sealed record BungieLogin(DesignSession Session, string Message);
 public sealed record JoinedCatalog(RuleCatalog Catalog, Optional<string> Note);
 
 /// <summary>Pure API the hosts (CLI, web) use to design, export, import, analyse and compare loops.</summary>
-/// <summary>
-/// One of the game's items in a picker without a login: the item; whether the rules know it (an exotic whose rules
-/// aren't written yet shows ⊘; a legendary always counts, its perks and set bonuses carry the ⊘ once it is picked); and
-/// whether the build wears it there.
-/// </summary>
-public sealed record GameItemOption(ManifestItem Item, bool InRules, bool Worn);
-
-/// <summary>What a picker without a login lists: the game's items for a slot that the build can wear there, and notes on what it leaves out.</summary>
-public sealed record GameItemOptions(ImmutableArray<GameItemOption> Options, ImmutableArray<string> Notes);
-
 public static class LoopDesigning
 {
     public static Result<DesignSession, string> StartDesign(RuleCatalog catalog, SourceText buildFile, string name) =>
@@ -567,42 +557,15 @@ public static class LoopDesigning
     /// empty slot): the game's weapons for that slot the build can wear there (one exotic: WeaponSwapping), with the note
     /// on the exotic rule.
     /// </summary>
-    public static GameItemOptions ListGameWeaponOptions(ValidatedBuild build, GameItems game, WeaponTarget target)
-    {
-        var catalog = build.Catalog;
-        var worn = build.Build.FindTargetWeapon(target).Bind(weapon => weapon.Hash);
-        var exotic = WeaponSwapping.DescribeExoticRule(catalog, build.Build, target);
-        return new GameItemOptions(
-            [
-                .. game.Weapons
-                    .Where(item => WeaponSwapping.CheckWeaponItem(catalog, build.Build, target, Optional.Some(item)).IsOk())
-                    .Select(item => new GameItemOption(item, IsGameItemInRules(catalog, item), worn == Optional.Some(item.Hash))),
-            ],
-            [.. exotic.Match(note => new[] { note.Value }, _ => [])]);
-    }
+    public static GameItemOptions ListGameWeaponOptions(ValidatedBuild build, GameItems game, WeaponTarget target) =>
+        GameItemPicking.ListWeapons(build.Catalog, build.Build, game, target);
 
     /// <summary>
     /// What the armor picker lists without a login for a slot: the game's pieces for it that the build can wear (its class
     /// or any, one exotic: ArmorSwapping), with the note on the exotic rule.
     /// </summary>
-    public static GameItemOptions ListGameArmorOptions(ValidatedBuild build, GameItems game, ArmorSlot slot)
-    {
-        var catalog = build.Catalog;
-        var exotic = ArmorSwapping.DescribeExoticRule(catalog, build.Build, slot);
-        return new GameItemOptions(
-            [
-                .. game.Armor
-                    .Where(item => ArmorSwapping.CheckPieceItem(catalog, build.Build, slot, Optional.Some(item)).IsOk())
-                    .Select(item => new GameItemOption(item, IsGameItemInRules(catalog, item), ArmorSwapping.IsWorn(catalog, build.Build, item.Hash))),
-            ],
-            [.. exotic.Match(note => new[] { note.Value }, _ => [])]);
-    }
-
-    /// <summary>The intrinsic perk of a weapon of the game (a legendary's frame: its icon goes in the square's top-right corner).</summary>
-    public static Optional<ManifestItem> FindGameIntrinsic(GameItems game, ManifestItem weapon) =>
-        weapon.Kind is ManifestKind.Weapon { Intrinsic: Optional<ItemHash>.Some intrinsic } && game.Intrinsics.TryGetValue(intrinsic.Value, out var found)
-            ? Optional.Some(found)
-            : Optional.None<ManifestItem>();
+    public static GameItemOptions ListGameArmorOptions(ValidatedBuild build, GameItems game, ArmorSlot slot) =>
+        GameItemPicking.ListPieces(build.Catalog, build.Build, game, slot);
 
     /// <summary>What a pick of the game's item <paramref name="item"/> needs read from the full manifest first: the item, when the excerpt lacks it.</summary>
     public static ImmutableArray<ItemHash> ListUnknownPickHashes(DesignSession session, ItemHash item) =>
@@ -627,12 +590,6 @@ public static class LoopDesigning
     public static Result<DesignSession, string> PickGameArmor(DesignSession session, ArmorSlot slot, ItemHash piece) =>
         ArmorSwapping.PlacePiece(session.Build.Catalog, session.Build.Build, slot, piece)
             .Bind(build => RebuildWith(session, BuildFileEditing.ReplaceArmor(session.Design.Build, build)));
-
-    /// <summary>An exotic counts as known when the rules have it (an exotic weapon's intrinsic perk is its element); a legendary always does.</summary>
-    private static bool IsGameItemInRules(RuleCatalog catalog, ManifestItem item) =>
-        item.Tier != Optional.Some(ItemTier.Exotic)
-        || catalog.FindElementByHash(item.Hash).IsSome()
-        || (item.Kind is ManifestKind.Weapon { Intrinsic: Optional<ItemHash>.Some intrinsic } && catalog.FindElementByHash(intrinsic.Value).IsSome());
 
     /// <summary>
     /// What the game draws on the player's copy the build wears in a slot (its tier, masterwork): the share's copy when it

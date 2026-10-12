@@ -122,3 +122,13 @@ public sealed record GameItems(
     ImmutableArray<ManifestItem> Weapons,
     ImmutableArray<ManifestItem> Armor,
     ImmutableDictionary<ItemHash, ManifestItem> Intrinsics);
+
+/// <summary>
+/// One of the game's items in a picker without a login: the item; whether the rules know it (an exotic whose rules
+/// aren't written yet shows ⊘; a legendary always counts, its perks and set bonuses carry the ⊘ once it is picked); and
+/// whether the build wears it there.
+/// </summary>
+public sealed record GameItemOption(ManifestItem Item, bool InRules, bool Worn);
+
+/// <summary>What a picker without a login lists: the game's items for a slot that the build can wear there, and notes on what it leaves out.</summary>
+public sealed record GameItemOptions(ImmutableArray<GameItemOption> Options, ImmutableArray<string> Notes);

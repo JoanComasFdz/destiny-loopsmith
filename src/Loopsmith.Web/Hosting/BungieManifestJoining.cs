@@ -76,7 +76,7 @@ public sealed class BungieManifestJoining(BrowserInterop browser, string apiKey,
     {
         if (Listed is Optional<GameItems>.Some kept)
         {
-            return new Result<GameItems, string>.Ok(kept.Value);
+            return new Result<GameItems, string>.Ok(kept.Value);                                   // pure
         }
 
         waiting++;                                                                               // impure (tab state)
@@ -86,7 +86,7 @@ public sealed class BungieManifestJoining(BrowserInterop browser, string apiKey,
         {
             if (Listed is Optional<GameItems>.Some meanwhile)
             {
-                return new Result<GameItems, string>.Ok(meanwhile.Value);
+                return new Result<GameItems, string>.Ok(meanwhile.Value);                          // pure
             }
 
             var listed = await ReadGameItemsAsync();                                             // impure
@@ -116,7 +116,7 @@ public sealed class BungieManifestJoining(BrowserInterop browser, string apiKey,
     {
         holds--;                                                                                 // impure (tab state)
         releases++;                                                                              // impure (tab state)
-        var release = releases;
+        var release = releases;                                                                  // impure (tab state)
         await Task.Delay(KeepAfterPicker);                                                       // impure
         if (release == releases && holds == 0 && waiting == 0 && oneAtATime.CurrentCount == 1)
         {

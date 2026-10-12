@@ -9,6 +9,12 @@ public static class ManifestReading
     public static Optional<ManifestItem> FindItem(this ManifestExcerpt manifest, ItemHash hash) =>
         manifest.Items.TryGetValue(hash, out var item) ? Optional.Some(item) : Optional.None<ManifestItem>();
 
+    /// <summary>The intrinsic perk of a weapon of the game's list (a legendary's frame: its icon goes in the square's top-right corner).</summary>
+    public static Optional<ManifestItem> FindIntrinsic(this GameItems game, ManifestItem weapon) =>
+        weapon.Kind is ManifestKind.Weapon { Intrinsic: Optional<ItemHash>.Some intrinsic } && game.Intrinsics.TryGetValue(intrinsic.Value, out var found)
+            ? Optional.Some(found)
+            : Optional.None<ManifestItem>();
+
     /// <summary>The icon of a trait of the excerpt (a game keyword: Jolted), by its hash.</summary>
     public static Optional<string> FindTraitIcon(this ManifestExcerpt manifest, ItemHash trait) =>
         manifest.KeywordTraits.TryGetValue(trait, out var found) ? Optional.Some(found.Icon) : Optional.None<string>();

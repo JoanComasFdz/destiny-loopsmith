@@ -197,8 +197,9 @@ is and it reopens empty.
 The Subclass box shows the Arcstrider icon and a dashed square named for each empty ability (Super, Class ability,
 Melee, Grenade); the Weapons and Armor boxes show their empty slots, as for every build in the designer (a slot
 without a weapon or a piece is a dashed square named for it). The player fills it from there: **⋯** on the Subclass
-box opens the subclass editor ([Editing the subclass](#editing-the-subclass)), and after a Bungie login ⋯ next to each
-weapon and armor slot picks one of their own ([Stats](#stats)).
+box opens the subclass editor ([Editing the subclass](#editing-the-subclass)), and ⋯ next to each weapon and armor slot
+picks any weapon or armor piece of the game ([Weapons and armor of the game](#weapons-and-armor-of-the-game)) — after a
+Bungie login, one of the player's own ([Stats](#stats)).
 
 While the build has no super, grenade, melee or class ability (named or "?") and no weapon, it has nothing to set things
 off, so the **Next trigger** panel is greyed out, nothing in it can be tapped, and a line says why ("Give the build a
@@ -415,6 +416,42 @@ plugs in their sockets:
 
 Nothing of the login is kept (the player's armor and weapons stay in the tab until they log out or it closes); the
 stats and the copies are, in the loop's build, so a shared loop carries its author's numbers and pieces.
+
+## Weapons and armor of the game
+
+Before a Bungie login, **⋯** next to each weapon slot (Kinetic, Energy, Heavy) and armor slot of the designer — an empty
+one, or one that holds an item — opens a picker over every legendary and exotic weapon or armor piece of the game that
+the slot can take: a weapon of that slot; a piece for that slot and the build's class (or any class). Each name is
+listed once, in its newest version (the manifest's latest entry of that name: Fatebringer's reissue, Shinobu's Vow's
+Armor 3.0 copy); Adept and Timelost weapons have names of their own, so they're listed apart. Each item is drawn as the
+loadout draws it — Bungie's icon, its season watermark, a legendary weapon's frame, a weapon's breaker and element under
+it — and an exotic the rules don't know yet carries ⊘ (Thunderlord and Shinobu's Vow don't; a legendary never does: its
+perks and set bonuses show ⊘ in the loadout once it is in). A search field narrows the list as you type: every word
+must be in the item's name, type, element, frame or set. For weapons, a type chip ("Hand Cannon") and an element chip
+narrow it too, one of each at a time (tapping it again clears it), combined with the search. On a phone each chip row
+is one line that scrolls sideways; the search field and the chips stay in view while the list scrolls.
+
+Hovering an item (or a first tap, on a phone) shows its name, type, element and frame (a piece's type and set); a
+click (a second tap, or **Use this weapon** / **Wear this piece**) puts it in the build, in place of the item the slot
+holds:
+
+* **A weapon** — its entry is written anew, `{slot, name, type, archetype, perks: [], hash}`: no perk picked, its
+  catalyst off, no copy. Each column that rolls shows "?" and is picked as any weapon's is ([Picking a weapon's
+  perks](#starting-from-a-dim-link)).
+* **An armor piece** — it goes in as a piece picked from the player's armor does (an exotic the rules know is the
+  build's exotic, any other piece a left-out item; the set bonuses follow the pieces worn), but with no copy behind it:
+  no `armorCopies` entry, and the stats stay as they are.
+
+The steps replay, and the export and the share link carry the items picked. A build wears one exotic weapon and one
+exotic armor piece: while another slot holds one, no exotic is listed (the picker says which to swap); the slot's own
+exotic can be swapped for another.
+
+The list comes from Bungie's full manifest, read the first time a picker opens in the tab (its progress bar shows in
+the picker: "Reading Bungie's manifest for every weapon and armor piece"; [hosting.md](hosting.md#bungies-manifest))
+and kept until the tab closes, so every picker after it opens at once. The item picked is then read from the manifest
+as a DIM link's items are ("Reading Bungie's manifest for the item you picked") and the build is checked again with it.
+When the manifest can't be read, the picker says so in one line and the slot stays as it was; the next ⋯ tries again.
+After a Bungie login, ⋯ picks from the player's own items instead ([Stats](#stats)).
 
 ## Sharing
 

@@ -189,14 +189,23 @@
             weapon => Build.Build.FindTargetSlot(weapon.Target).Match(found => found.Value.ToString(), _ => ""),
             armor => armor.Slot.ToString());
 
-    private void Search(ChangeEventArgs e) =>
-        filter = GamePickerShaping.SetSearch(filter, e.Value?.ToString() ?? "");                 // impure (component state)
+    private void Search(ChangeEventArgs e)
+    {
+        var narrowed = GamePickerShaping.SetSearch(filter, e.Value?.ToString() ?? "");           // pure
+        filter = narrowed;                                                                       // impure (component state)
+    }
 
-    private void ToggleType(string type) =>
-        filter = GamePickerShaping.ToggleType(filter, type);                                     // impure (component state)
+    private void ToggleType(string type)
+    {
+        var narrowed = GamePickerShaping.ToggleType(filter, type);                               // pure
+        filter = narrowed;                                                                       // impure (component state)
+    }
 
-    private void ToggleElement(DamageType element) =>
-        filter = GamePickerShaping.ToggleElement(filter, element);                               // impure (component state)
+    private void ToggleElement(DamageType element)
+    {
+        var narrowed = GamePickerShaping.ToggleElement(filter, element);                         // pure
+        filter = narrowed;                                                                       // impure (component state)
+    }
 
     /// <summary>A mouse over an item shows it (a touch doesn't hover: its first tap does).</summary>
     private void Hover(ItemHash hash, PointerEventArgs e)

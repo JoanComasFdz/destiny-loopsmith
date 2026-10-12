@@ -109,6 +109,16 @@ they had in 2026. One read runs at a time (a login during a DIM link's read wait
 asked for, the files are let go, unless another read waits for them: a later read downloads them again, from the
 browser's cache.
 
+The pickers without a login list every legendary and exotic weapon and armor piece of the game from the same files
+([loop-format.md](loop-format.md#weapons-and-armor-of-the-game)). As the item table loads, its index also notes each
+entry's `bucketTypeHash`, so Core finds the eight weapon and armor slots' entries (~10,700) at once, without a pass over
+the bytes. It reads each one cut down to a few fields (the page parses the entry and keeps only the paths Core names),
+picks the newest version of each name (~3,900 items), reads a little more of those (what a picker shows), then the
+weapons' frames and their perks (the champion a frame breaks). The list is kept in the tab (a few thousand items: little
+memory) and every picker after the first opens at once. While a picker is open the files stay, so the item picked is
+read at once; a minute after the last picker closes they are let go. The first open takes about 8 s on a desktop (3 s
+of it the download, measured in a cloud session) and about four times as long on a phone's slower CPU.
+
 ## Alternatives
 
 * **Cloudflare Pages / Netlify:** free for private repositories. Build in GitHub Actions with
