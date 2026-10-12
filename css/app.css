@@ -650,7 +650,7 @@ textarea { resize: vertical; }
 }
 .trig-bar { height: 4px; margin-left: 46px; border-radius: 2px; background: linear-gradient(90deg, var(--aff), rgba(255, 255, 255, .06)); }
 .trig-main { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; }
-.trig-abilities { display: flex; align-items: center; gap: 8px; }
+.trig-abilities { display: flex; align-items: flex-start; gap: 8px; }
 .trig-super, .trig-ability {
     position: relative;
     flex: none;
@@ -672,6 +672,35 @@ textarea { resize: vertical; }
 .trig-unknown { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; font-size: 26px; font-weight: 700; color: var(--aff); }
 .trig-caption { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; color: var(--aff); font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
 .trig-finisher { margin-left: 6px; border-style: dashed; }   /* no HUD square in the game: dashed */
+/* an ability's secondary uses (Tempest Strike's sliding melee, Ascension's air move) below its square: a different trigger */
+.trig-ability-col { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.trig-secondaries { display: flex; flex-direction: column; gap: 3px; width: 100%; }
+.trig-secondary {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+    min-height: 24px;
+    padding: 1px 4px 1px 1px;
+    border: 1px solid var(--aff);
+    border-radius: 3px;
+    background: var(--panel-2);
+    color: var(--aff);
+    font: inherit;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+.trigger.trig-secondary { justify-content: flex-start; min-height: 24px; padding: 1px 4px 1px 1px; border-color: var(--aff); color: var(--aff); font-size: 10px; }
+.trig-secondary:hover { border-color: var(--text); color: var(--text); }
+.trig-secondary.picked { border-color: var(--text); color: var(--text); box-shadow: 0 0 0 1px var(--aff), 0 0 8px var(--aff); }
+.trig-secondary-icon { flex: none; width: 20px; height: 20px; border-radius: 2px; overflow: hidden; background: rgba(255, 255, 255, .05); }
+.trig-secondary-icon img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.trig-secondary-caption { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.trig-secondary .trig-new { top: -3px; right: -3px; width: 8px; height: 8px; }
 .trig-super:hover, .trig-ability:hover { border-color: var(--text); background: var(--panel-2); }
 .trig-super.picked, .trig-ability.picked { border-color: var(--text); box-shadow: 0 0 0 2px var(--aff), 0 0 14px var(--aff); }
 .trig-weapons { display: flex; flex: 1 1 280px; flex-direction: column; gap: 4px; min-width: 0; }
