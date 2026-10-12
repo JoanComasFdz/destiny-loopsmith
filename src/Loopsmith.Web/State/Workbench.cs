@@ -30,13 +30,13 @@ public sealed class Workbench(Result<LoopsmithBundle, string> startup, bool shar
     public string Status { get; set; } = "";
 
     /// <summary>
-    /// The player's armor, read from Bungie after their login (in memory until they log out or the tab closes; the access
-    /// token was dropped): the build's stats add up from it, its armor picker lists it.
+    /// The player's armor and weapons, read from Bungie after their login (in memory until they log out or the tab closes;
+    /// the access token was dropped): the build's stats add up from it, its armor and weapon pickers list it.
     /// </summary>
-    public Optional<BungieProfile> Armor { get; set; } = Optional.None<BungieProfile>();
+    public Optional<BungieProfile> Profile { get; set; } = Optional.None<BungieProfile>();
 
-    /// <summary>What the Stats section says after the login (whose the build's armor is, how to pick yours).</summary>
-    public Optional<string> ArmorNote { get; set; } = Optional.None<string>();
+    /// <summary>What the Stats section says after the login (whose the build's armor and weapons are, how to pick yours).</summary>
+    public Optional<string> LoginNote { get; set; } = Optional.None<string>();
 
     /// <summary>Loops imported on the Compare screen (kept until the tab closes).</summary>
     public ImmutableArray<ImportedLoop> ImportedLoops { get; set; } = [];
@@ -44,11 +44,11 @@ public sealed class Workbench(Result<LoopsmithBundle, string> startup, bool shar
     /// <summary>The loops the Compare screen showed last (None until it first opens).</summary>
     public Optional<ComparisonPicks> ComparePicks { get; set; } = Optional.None<ComparisonPicks>();
 
-    /// <summary>Log out: the player's armor and the login's note go (the open design keeps its stats and pieces).</summary>
-    public void ForgetArmor()
+    /// <summary>Log out: the player's armor, weapons and the login's note go (the open design keeps its stats, pieces and weapons).</summary>
+    public void ForgetProfile()
     {
-        Armor = Optional.None<BungieProfile>();
-        ArmorNote = Optional.None<string>();
+        Profile = Optional.None<BungieProfile>();
+        LoginNote = Optional.None<string>();
     }
 
     /// <summary>Open a design: it becomes the current one, nothing is selected (and the login's note, about another build, goes).</summary>
@@ -56,6 +56,6 @@ public sealed class Workbench(Result<LoopsmithBundle, string> startup, bool shar
     {
         Session = Optional.Some(session);
         SelectedStep = Optional.None<int>();
-        ArmorNote = Optional.None<string>();
+        LoginNote = Optional.None<string>();
     }
 }

@@ -115,6 +115,17 @@ public sealed record PerkPick(int Weapon, int Column, Optional<ItemHash> Perk);
 /// <summary>A piece picked from the player's armor for a slot of the build: the copy, by its instance id.</summary>
 public sealed record ArmorPick(ArmorSlot Slot, ItemInstanceId Instance);
 
+/// <summary>A weapon picked from the player's weapons: where it goes in the build (in place of a weapon, or an empty slot), and the copy, by its instance id.</summary>
+public sealed record WeaponPick(WeaponTarget Target, ItemInstanceId Instance);
+
+/// <summary>A weapon slot of the loadout: the build's weapon in it, or an empty slot (shown after the login so ⋯ can fill it).</summary>
+[Union]
+public partial record WeaponRow
+{
+    partial record Worn(WeaponView Weapon);
+    partial record Empty(WeaponSlot Slot);
+}
+
 /// <summary>An armor slot: the piece in it (when the loadout names one), its copy's marks and the mods that only fit that slot, one tile each.</summary>
 public sealed record ArmorView(ArmorSlot Slot, Optional<IconTile> Piece, TileMarks Marks, ImmutableArray<IconTile> Mods);
 
@@ -151,6 +162,7 @@ public static class LoadoutShaping
     private const string PageHost = "https://www.light.gg/db/items/";
 
     private static readonly ImmutableArray<ArmorSlot> ArmorSlots = [ArmorSlot.Helmet, ArmorSlot.Arms, ArmorSlot.Chest, ArmorSlot.Legs, ArmorSlot.ClassItem];
+    private static readonly ImmutableArray<WeaponSlot> WeaponSlots = [WeaponSlot.Kinetic, WeaponSlot.Energy, WeaponSlot.Power];
 
     private sealed record LeftOutEntry(LoadoutPart Part, Optional<ManifestItem> Item, ItemHash Hash, LeftOutReason Reason);
 
@@ -201,6 +213,32 @@ public static class LoadoutShaping
             [.. LoopDesigning.ListArmorSets(build).Select(set => DescribeArmorSet(catalog, set))],
             GroupCopies(LoopDesigning.ListLooseSetBonuses(build).Select(id => DescribeElement(catalog, id))));
     }
+
+    /// <summary>
+    /// The weapon rows to show: the build's weapons (kinetic, energy, power); with every slot when the player can pick
+    /// weapons (after a login), an empty one where the build has none.
+    /// </summary>
+    public static ImmutableArray<WeaponRow> ListWeaponRows(LoadoutView view, bool everySlot) =>
+    [
+        .. view.Weapons.Select(weapon => (Slot: weapon.Slot, Row: (WeaponRow)new WeaponRow.Worn(weapon)))
+            .Concat(everySlot
+                ? WeaponSlots.Where(slot => !view.Weapons.Any(weapon => weapon.Slot == slot)).Select(slot => (Slot: slot, Row: (WeaponRow)new WeaponRow.Empty(slot)))
+                : [])
+            .OrderBy(entry => entry.Slot)
+            .Select(entry => entry.Row),
+    ];
+
+    /// <summary>A weapon's square, by its manifest item: its name, icon and rarity (the weapon picker's; it opens nothing).</summary>
+    public static IconTile DescribeWeaponItem(ManifestItem item) =>
+        DescribeItem(item, item.Name, true, Optional.None<string>(), ToAffinity(item), Optional.None<ItemDetails>());
+
+    /// <summary>A weapon perk by hash, as its square shows: its catalog element when the rules have it, else the manifest's (dimmed).</summary>
+    public static IconTile DescribePerk(RuleCatalog catalog, ItemHash hash) =>
+        DescribeTrait(catalog, hash);
+
+    /// <summary>The icon of a damage type (a bungie.net address), when the excerpt has it.</summary>
+    public static Optional<string> FindDamageIcon(RuleCatalog catalog, DamageType type) =>
+        catalog.Manifest.DamageTypeIcons.TryGetValue(type, out var icon) ? Optional.Some(ToIconUrl(icon)) : Optional.None<string>();
 
     /// <summary>An armor slot's row: its piece, with the marks of the player's copy of it (after their login), and its mods.</summary>
     private static ArmorView DescribeArmorRow(ValidatedBuild build, Optional<BungieProfile> profile, ArmorSlot slot, Optional<IconTile> piece, ImmutableArray<IconTile> mods) =>
@@ -363,7 +401,7 @@ public static class LoadoutShaping
         var tile = item.Match(
             known => DescribeItem(known.Value, weapon.Name, true, Optional.None<string>(), weapon.Type.ToAffinity(), details),
             _ => new IconTile(weapon.Name, Optional.None<string>(), weapon.Type.ToAffinity(), Optional.None<ItemTier>(), true, Optional.None<string>(), 1, details));
-        var damageIcon = catalog.Manifest.DamageTypeIcons.TryGetValue(weapon.Type, out var icon) ? Optional.Some(ToIconUrl(icon)) : Optional.None<string>();
+        var damageIcon = FindDamageIcon(catalog, weapon.Type);
         var slots = LoopDesigning.ListPerkSlots(build, weapon);
         var marks = profile.Bind(owned => LoopDesigning.FindWeaponMarks(owned, weapon));
         return new WeaponView(

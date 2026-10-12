@@ -6,7 +6,7 @@ elements:
     name: Slice
     kind: weaponPerk
     affinity: strand
-    hash: 923806249           # enhanced: 3422796781 (9 s window)
+    hash: 923806249           # the enhanced trait is its own plug: slice-enhanced below
     description: "Using your class ability (even with the weapon stowed) arms Slice: your next 5 hits on enemies that aren't Severed yet Sever them, as long as each comes within 8 s (9 s enhanced) of the previous one. A severing hit that kills doesn't count."
     source: "compendium/2026-10-09/Weapon Perks#198"
     rules:
@@ -29,13 +29,40 @@ elements:
         reason: "Once its 5 hits are done (Slice at max), Slice ends."
     passives: []
 
+  # The enhanced trait (a weapon's enhanced or crafted copy rolls it): its own plug, Slice with the window the
+  # Compendium row gives as its ↑ figure, 9 s instead of 8 s. Same rules otherwise.
+  - id: slice-enhanced
+    name: Slice (enhanced)
+    kind: weaponPerk
+    affinity: strand
+    hash: 3422796781
+    description: "The enhanced Slice: as Slice, with a 9 s window between hits instead of 8 s."
+    source: "compendium/2026-10-09/Weapon Perks#198"
+    rules:
+      - on: { abilityCast: classAbility }
+        then:
+          - { applyBuff: { status: slice, stacks: 1, duration: 9s } }
+        reason: "Dodging arms Slice for 9 seconds, even while the weapon is stowed."
+      # Not expressible: "non-Severed targets only" (no target-lacks guard).
+      - on: { damage: { via: weapon:strand } }
+        when: [ { has: slice } ]
+        then:
+          - { debuffTarget: sever }
+          - { applyBuff: { status: slice, stacks: 1, duration: 9s } }
+        reason: "While Slice is up, every enemy you hit with a Strand weapon gets severed."
+      - on: { stacksMaxed: slice }
+        then:
+          - { removeBuff: slice }
+        reason: "Once its 5 hits are done (Slice at max), Slice ends."
+    passives: []
+
   # Clarity: a WEAPON TRAIT (base + enhanced), not an armor mod. The note credits it on strand
   # weapon kills; which weapon carries it is inferred (Festival Flight).
   - id: attrition-orbs
     name: Attrition Orbs
     kind: weaponPerk
     affinity: neutral
-    hash: 243981275           # enhanced: 984655331
+    hash: 243981275           # the enhanced trait is its own plug: attrition-orbs-enhanced below
     description: "Scoring a magazine-based number of hits, each within 5 s of the last, makes the next hit spawn an Orb of Power (0.87% super energy, 1.1% enhanced; 0.5 s cooldown). Hits needed: 55.55% of the magazine + 1, rounded down (Grenade Launchers 3, Rocket Launchers 2, Bows 4, Swords 5). Counter persists through stow."
     # Clarity 243981275 gives its own hit table (heavy GLs 3, wave-frame GLs 4); the Compendium's
     # is used.
@@ -43,6 +70,23 @@ elements:
     rules:
       # Hit-count based, not kill based: progress the game doesn't show as a stacking status, so it
       # is a chance rule (ADRs D8).
+      - on: { damage: { via: weapon:strand } }
+        then:
+          - { spawn: orb-of-power }
+        chance: true
+        reason: "Keep landing hits with this weapon and every few hits it drops an Orb of Power."
+    passives: []
+
+  # The enhanced trait: its own plug; the same hits make the orb, which gives 1.1% Super energy (the row's ↑ figure)
+  # instead of 0.87%. The orb's energy isn't a rule here either, so the rules are Attrition Orbs'.
+  - id: attrition-orbs-enhanced
+    name: Attrition Orbs (enhanced)
+    kind: weaponPerk
+    affinity: neutral
+    hash: 984655331
+    description: "The enhanced Attrition Orbs: as Attrition Orbs, and the Orb of Power it makes gives 1.1% Super energy instead of 0.87%."
+    source: "compendium/2026-10-09/Weapon Perks#22"
+    rules:
       - on: { damage: { via: weapon:strand } }
         then:
           - { spawn: orb-of-power }

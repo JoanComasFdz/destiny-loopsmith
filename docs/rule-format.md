@@ -528,9 +528,10 @@ stats: { weapons: 47, class: 104, grenade: 145, super: 27, melee: 79 }   # any s
   are required; `archetype` (a kebab-case word), `perks` (element ids), `hash` (its manifest item: its icon,
   its trait columns, its intrinsic and catalyst), `roll`, `catalyst` and `instance` are optional. The name labels its
   actions ("Festival Flight (hit 5)").
-* `instance`: the copy the build wears, by Bungie's instance id (a dim.gg share's, quoted: `instance:
-  "6917529810172542011"`); after the player's Bungie login its tier and masterwork show on the weapon's square when
-  it is theirs ([loop-format.md](loop-format.md#stats)).
+* `instance`: the copy the build wears, by Bungie's instance id (a dim.gg share's, or one picked from the player's
+  weapons; quoted: `instance: "6917529810172542011"`); after the player's Bungie login its tier and masterwork show on
+  the weapon's square when it is theirs, and it holds that copy's perks
+  ([loop-format.md](loop-format.md#weapons-from-your-account)).
 * `catalyst: true` turns an exotic's catalyst on (default `false`; a DIM link doesn't say, so its build starts
   off): the catalyst element (`kind: catalyst`, by the catalyst item's hash) is equipped only then. The weapon's
   intrinsic perk is equipped by hash, like its columns' perks.

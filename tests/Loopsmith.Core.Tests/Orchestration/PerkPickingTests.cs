@@ -32,8 +32,9 @@ public sealed class PerkPickingTests
 
         Assert.Equal(["attrition-orbs"], flight.Perks.Select(id => id.Value));
         Assert.Equal([Optional.Some(ItemHash.From(EnhancedSlice))], flight.Roll);
-        Assert.DoesNotContain(picked.Build.Equipped, equipped => equipped.Element.Id.Value == "slice");      // the rules know Slice, not its enhanced version
-        Assert.Contains(picked.Build.Issues, issue => issue.Severity == Severity.Info && issue.Message.Contains("Festival Flight's roll: Slice (Enhanced Trait) — not in the rule catalog yet", StringComparison.Ordinal));
+        Assert.Contains(picked.Build.Equipped, equipped => equipped.Element.Id.Value == "slice-enhanced");  // the enhanced trait is its own element
+        Assert.DoesNotContain(picked.Build.Equipped, equipped => equipped.Element.Id.Value == "slice");
+        Assert.DoesNotContain(picked.Build.Issues, issue => issue.Message.Contains("not in the rule catalog yet", StringComparison.Ordinal));
         Assert.Contains("# Slice per the video.", picked.Design.Build.Text, StringComparison.Ordinal);
         Assert.Equal(
             session.Design.Build.Text.Split('\n').Where(line => !line.Contains("Festival Flight", StringComparison.Ordinal)),

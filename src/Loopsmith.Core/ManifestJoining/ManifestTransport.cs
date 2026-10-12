@@ -73,19 +73,27 @@ public static class ManifestTransport
             _ => new Result<ManifestExcerpt, string>.Error("its reading didn't finish"),
             done => new Result<ManifestExcerpt, string>.Ok(done.Excerpt)));
 
-    private static ImmutableDictionary<ManifestEntryKey, string> ReadEntries(JsonElement root) =>
+    private static ImmutableDictionary<ManifestEntryKey, JsonElement> ReadEntries(JsonElement root) =>
         Enum.GetValues<ManifestTable>()
             .SelectMany(table => root.ReadPath(ToComponentName(table)).Match(
                 entries => entries.Value.ValueKind == JsonValueKind.Object ? entries.Value.EnumerateObject().SelectMany(entry => ReadEntry(table, entry)) : [],
                 _ => []))
             .ToImmutableDictionary();
 
-    private static IEnumerable<KeyValuePair<ManifestEntryKey, string>> ReadEntry(ManifestTable table, JsonProperty entry) =>
+    /// <summary>
+    /// An entry of the answer, parsed once: an object as it is (the host's answer holds the entries' own JSON), or a
+    /// string of JSON parsed here; one that doesn't parse is as if the manifest lacked it.
+    /// </summary>
+    private static IEnumerable<KeyValuePair<ManifestEntryKey, JsonElement>> ReadEntry(ManifestTable table, JsonProperty entry) =>
         ReadHashName(entry.Name).Match(
-            hash => entry.Value.ValueKind == JsonValueKind.String ? ToSequence(Optional.FromNullable(entry.Value.GetString())).Select(json => KeyValuePair.Create(new ManifestEntryKey(table, hash.Value), json))
-                : entry.Value.ValueKind == JsonValueKind.Object ? [KeyValuePair.Create(new ManifestEntryKey(table, hash.Value), entry.Value.GetRawText())]
+            hash => entry.Value.ValueKind == JsonValueKind.String
+                ? ToSequence(Optional.FromNullable(entry.Value.GetString()).Bind(ReadEntryText)).Select(parsed => KeyValuePair.Create(new ManifestEntryKey(table, hash.Value), parsed))
+                : entry.Value.ValueKind == JsonValueKind.Object ? [KeyValuePair.Create(new ManifestEntryKey(table, hash.Value), entry.Value)]
                 : [],
             _ => []);
+
+    private static Optional<JsonElement> ReadEntryText(string json) =>
+        ParseDocument(json).Match(parsed => Optional.Some(parsed.Value), _ => Optional.None<JsonElement>());
 
     private static ImmutableDictionary<PlugCategoryId, ImmutableArray<ItemHash>> ReadPlugs(ManifestQuery query, JsonElement found) =>
         query.PlugCategories

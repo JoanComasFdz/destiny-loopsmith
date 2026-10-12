@@ -1,0 +1,31 @@
+@implements IDisposable
+@inject BungieManifestJoining Manifest
+@* While Bungie's full manifest is read (after a login: the player's armor and weapons the bundled excerpt lacks; or a
+   DIM link's items): a progress bar — what it reads for, where it is ("reading its files… 84 MB", "naming them (step
+   2)"), how far along — and that the page keeps working meanwhile. Only this bar renders as the read moves
+   (BungieManifestJoining.ReadingChanged). *@
+@if (ManifestProgressShaping.ShapeReading(Manifest.Reading) is Optional<ManifestProgressView>.Some shown)
+{
+    <div class="manifest-progress" role="status" data-testid="manifest-progress">
+        <div class="manifest-progress-text">
+            <span class="manifest-progress-title">@shown.Value.Title</span>
+            <span class="manifest-progress-detail" data-testid="manifest-progress-detail">@shown.Value.Detail</span>
+        </div>
+        <div class="manifest-progress-bar" role="progressbar" aria-label="@shown.Value.Title" aria-valuemin="0" aria-valuemax="100"
+             aria-valuenow="@shown.Value.Percent">
+            <span style="width: @ManifestProgressShaping.ToWidth(shown.Value.Percent)"></span>
+        </div>
+        <p class="manifest-progress-hint">@shown.Value.Hint</p>
+    </div>
+}
+
+@code {
+    protected override void OnInitialized() =>
+        Manifest.ReadingChanged += Refresh;                                                      // impure
+
+    private void Refresh() =>
+        _ = InvokeAsync(StateHasChanged);                                                        // impure (renders this bar only)
+
+    public void Dispose() =>
+        Manifest.ReadingChanged -= Refresh;                                                      // impure
+}

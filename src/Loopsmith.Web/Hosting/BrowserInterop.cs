@@ -62,15 +62,23 @@ public sealed class BrowserInterop(IJSRuntime js)
     // JS interop serializes plain dictionaries and arrays (not immutable collections or value objects), so each call
     // copies into them.
 
-    /// <summary>Downloads (once per tab) and indexes each component (<c>{ component: url }</c>); why it couldn't, when it couldn't.</summary>
-    public async Task<Result<Unit, string>> LoadManifestTablesAsync(IReadOnlyDictionary<string, string> urls)
+    /// <summary>
+    /// Downloads and indexes each component (<c>{ component: url }</c>) not in yet, telling <paramref name="reporter"/>
+    /// how many bytes came; why it couldn't, when it couldn't.
+    /// </summary>
+    public async Task<Result<Unit, string>> LoadManifestTablesAsync<TReporter>(IReadOnlyDictionary<string, string> urls, DotNetObjectReference<TReporter> reporter)
+        where TReporter : class
     {
         var plain = new Dictionary<string, string>(urls);
-        var problem = await js.InvokeAsync<string?>("loopsmithManifest.loadTables", plain);
+        var problem = await js.InvokeAsync<string?>("loopsmithManifest.loadTables", plain, reporter);
         return Optional.FromNullable(problem).Match<Result<Unit, string>>(
             failed => new Result<Unit, string>.Error(failed.Value),
             _ => new Result<Unit, string>.Ok(new Unit.Value()));
     }
+
+    /// <summary>Lets the downloaded components go (most of the tab's memory); the next read downloads them again.</summary>
+    public ValueTask ReleaseManifestTablesAsync() =>
+        js.InvokeVoidAsync("loopsmithManifest.releaseTables");
 
     /// <summary>The raw JSON of the entries asked for, per component (<c>{ component: { hash: entry } }</c>).</summary>
     public async Task<string> ReadManifestEntriesAsync(IReadOnlyDictionary<string, ImmutableArray<ItemHash>> request)

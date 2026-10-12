@@ -95,6 +95,35 @@ public static class ManifestReading
             ArmorSets = more.ArmorSets.Where(entry => !excerpt.ArmorSets.ContainsKey(entry.Key)).Aggregate(excerpt.ArmorSets, (sets, entry) => sets.Add(entry.Key, entry.Value)),
         };
 
+    /// <summary>
+    /// A weapon's roll from the plugs it holds (a DIM loadout's socket overrides, or a copy's sockets): each trait column's
+    /// pick is the first of them it rolls with that an earlier column didn't take (a plug fills one column); none at all:
+    /// no roll.
+    /// </summary>
+    public static ImmutableArray<Optional<ItemHash>> ReadRoll(this ImmutableArray<TraitColumn> columns, IEnumerable<ItemHash> plugs)
+    {
+        var held = plugs.ToImmutableArray();
+        var roll = columns.Aggregate(ImmutableArray<Optional<ItemHash>>.Empty, (picked, column) => picked.Add(held
+            .Where(column.Options.Contains)
+            .Where(perk => !picked.Contains(Optional.Some(perk)))
+            .Select(Optional.Some)
+            .FindFirstSome()));
+        return roll.Any(pick => pick.IsSome()) ? roll : [];
+    }
+
+    /// <summary>True when a weapon's plugs hold its exotic catalyst (a catalyst completed and inserted in its socket).</summary>
+    public static bool HoldsCatalyst(this ManifestKind.Weapon kind, IEnumerable<ItemHash> plugs) =>
+        kind.Catalyst.Match(catalyst => plugs.Contains(catalyst.Value), _ => false);
+
+    /// <summary>A weapon's archetype from its manifest type: "Grenade Launcher" → <c>grenade-launcher</c>; none when it isn't a slug.</summary>
+    public static Optional<string> ToArchetype(string type)
+    {
+        var words = new string([.. type.ToLowerInvariant().Select(c => char.IsAsciiLetterOrDigit(c) ? c : ' ')])
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var slug = string.Join('-', words);
+        return ElementId.IsSlug(slug) ? Optional.Some(slug) : Optional.None<string>();
+    }
+
     /// <summary>A breaker type of the excerpt (Disruption), by its hash.</summary>
     public static Optional<BreakerType> FindBreakerType(this ManifestExcerpt manifest, ItemHash hash) =>
         manifest.BreakerTypes.TryGetValue(hash, out var breaker) ? Optional.Some(breaker) : Optional.None<BreakerType>();

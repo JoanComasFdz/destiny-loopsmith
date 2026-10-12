@@ -24,6 +24,41 @@ public static class BuildFileEditing
             .Map(span => string.Concat(buildFile.Text.AsSpan(0, span.Start), BuildFileWriting.WriteWeapon(weapon), buildFile.Text.AsSpan(span.End)));
 
     /// <summary>
+    /// The build file with <paramref name="weapon"/> added as its last weapon (one flow mapping): on a line of its own
+    /// after the last entry of a block list (with that entry's indentation), inside a flow list, or as a new
+    /// <c>weapons:</c> at the end when the file has none. The rest of the file stays as it was.
+    /// </summary>
+    public static Result<string, string> AddWeapon(SourceText buildFile, WeaponLoadout weapon) =>
+        ReadEvents(buildFile).Bind(events => FindTopLevelValue(events, "weapons").Match(
+            list => AddToList(buildFile, events, list.Value, BuildFileWriting.WriteWeapon(weapon)),
+            _ => new Result<string, string>.Ok($"{buildFile.Text.TrimEnd('\n')}\nweapons:\n  - {BuildFileWriting.WriteWeapon(weapon)}\n")));
+
+    /// <summary>An entry added at the end of a list: after its last entry's line (a block list), or before its "]" (a flow list).</summary>
+    private static Result<string, string> AddToList(SourceText file, ImmutableArray<ParsingEvent> events, EventSpan list, string entry)
+    {
+        var text = file.Text;
+        var children = ListChildren(events, list.First);
+        if (events[list.First] is SequenceStart { Style: SequenceStyle.Flow })
+        {
+            var close = (int)events[list.Last].Start.Index;                                     // the "]"
+            var trailingComma = text[..close].TrimEnd().EndsWith(',');                             // "[{…}, ]": YAML allows it
+            return new Result<string, string>.Ok(text.Insert(close, children.IsEmpty || trailingComma ? entry : $", {entry}"));
+        }
+
+        if (events[list.First] is not SequenceStart || children.IsEmpty)
+        {
+            return new Result<string, string>.Error($"{file.Path}: its weapons aren't a list Loopsmith can add to");
+        }
+
+        var start = (int)events[children[^1].First].Start.Index;
+        var prefix = text[(text.LastIndexOf('\n', Math.Max(start - 1, 0)) + 1)..start];         // "  - "
+        var lineEnd = text.IndexOf('\n', ToTextSpan(events, children[^1]).End);
+        return prefix.Trim() == "-"
+            ? new Result<string, string>.Ok(lineEnd < 0 ? $"{text}\n{prefix}{entry}\n" : text.Insert(lineEnd, $"\n{prefix}{entry}"))
+            : new Result<string, string>.Error($"{file.Path}: its weapons aren't a list Loopsmith can add to");
+    }
+
+    /// <summary>
     /// The build file with its <c>stats:</c> written anew as <paramref name="stats"/> (one flow mapping where the old value
     /// was), or added at its end when it has none; the rest of the file stays as it was.
     /// </summary>

@@ -26,7 +26,10 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   - **The CLI** reads only the excerpt; a build there with other items shows them by hash.
   - **The pinned content id** (`ManifestContentId`, used when the manifest index doesn't answer) has to be
     updated with the excerpt; Bungie may drop old component files.
-  - **Phones:** the item table is ~9 MB to download and ~200 MB in memory while the tab keeps it.
+  - **Phones:** the item table is ~9 MB to download and ~215 MB in memory while a read lasts (let go after it), and
+    the join's rounds still hold the page for up to ~1 s each on a desktop (the last round, which builds the excerpt,
+    the longest): a phone feels them. Splitting the excerpt's build from the last round, or asking for fewer fields of
+    each item, would shorten them.
   - Hashes the excerpt can't give by a unique name: Horde Shuttle (two artifact perks of that name).
 
 ## Rule format gaps (what the Skip Grenade build couldn't express)

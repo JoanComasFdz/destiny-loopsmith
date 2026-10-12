@@ -21,7 +21,7 @@ public static class BungieProfileReading
     /// <summary>
     /// The profile's parts Loopsmith reads: the vault (102), characters (200: each one's class), what they carry (201) and
     /// wear (205; an item's <c>state</c>: masterworked), item instances (300: an armor piece's energy, a weapon's damage
-    /// type, a copy's gear tier and breaker) and sockets (305: its plugs).
+    /// type, a copy's gear tier and breaker) and sockets (305: its plugs — an armor piece's stats, a weapon's perks).
     /// </summary>
     public static string ToProfileUrl(DestinyMembership membership) =>
         $"{Platform}/Destiny2/{membership.Type.Value.ToString(CultureInfo.InvariantCulture)}/Profile/{membership.Id.Value}/?components=102,200,201,205,300,305";
@@ -98,18 +98,24 @@ public static class BungieProfileReading
                 id,
                 hash,
                 place,
-                [.. response.ReadArray("itemComponents", "sockets", "data", instance, "sockets")
-                    .Where(socket => socket.ReadFlag("isEnabled", true))
-                    .SelectMany(socket => ToSequence(socket.ReadHash("plugHash")))],
+                ReadPlugs(response, instance),
                 energy.ReadInteger("energyCapacity"),
                 ReadMarks(response, item, instance))))));
+
+    /// <summary>The plugs in a copy's sockets: the enabled ones, socket by socket.</summary>
+    private static ImmutableArray<ItemHash> ReadPlugs(JsonElement response, string instance) =>
+    [
+        .. response.ReadArray("itemComponents", "sockets", "data", instance, "sockets")
+            .Where(socket => socket.ReadFlag("isEnabled", true))
+            .SelectMany(socket => ToSequence(socket.ReadHash("plugHash"))),
+    ];
 
     /// <summary>An item that is a weapon: it has an instance, and the instance a damage type (armor's has none).</summary>
     private static Optional<OwnedWeapon> ReadWeapon(JsonElement response, JsonElement item, ArmorPlace place) =>
         item.ReadString("itemInstanceId").Bind(instance => ItemInstanceId.TryFrom(instance).ToOptional().Bind(id => item.ReadHash("itemHash").Bind(hash =>
             response.ReadInteger("itemComponents", "instances", "data", instance, "damageType")
                 .Bind(type => type > 0 ? Optional.Some(type) : Optional.None<int>())
-                .Map(_ => new OwnedWeapon(id, hash, place, ReadMarks(response, item, instance))))));
+                .Map(_ => new OwnedWeapon(id, hash, place, ReadMarks(response, item, instance), ReadPlugs(response, instance))))));
 
     /// <summary>
     /// A copy's marks: its instance's <c>gearTier</c> (1–5), the item's <c>state</c> masterwork flag (4) and its instance's

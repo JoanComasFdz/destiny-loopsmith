@@ -220,7 +220,7 @@
         var reading = LoopDesigning.DescribeManifestReading(unknown.Length);                     // pure
         readingStep = reading;                                                                   // impure (UI state)
         StateHasChanged();                                                                       // impure
-        var joined = await Manifest.JoinAsync(unknown);                                          // impure
+        var joined = await Manifest.JoinAsync(unknown, ManifestReadFor.BuildItems);              // impure
         return LoopDesigning.AddJoinedManifest(catalog, joined);                                 // pure
     }
 

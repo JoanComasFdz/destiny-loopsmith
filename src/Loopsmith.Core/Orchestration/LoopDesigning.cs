@@ -44,8 +44,11 @@ public sealed record DesignSession(
     ImmutableArray<Resolution> Resolutions,
     GameState Current);
 
-/// <summary>The design after the player's Bungie login (its stats set when the build's armor is theirs), and what to tell them.</summary>
-public sealed record ArmorLogin(DesignSession Session, string Message);
+/// <summary>
+/// The design after the player's Bungie login (its weapons holding their copies' perks when the copies are theirs, its
+/// stats set when its armor is), and what to tell them.
+/// </summary>
+public sealed record BungieLogin(DesignSession Session, string Message);
 
 /// <summary>A catalog with what Bungie's full manifest said added; <see cref="Note"/> says when it couldn't be read.</summary>
 public sealed record JoinedCatalog(RuleCatalog Catalog, Optional<string> Note);
@@ -324,18 +327,35 @@ public static class LoopDesigning
     // ── The player's own armor in the build (docs/loop-format.md, "Stats") ──────────────────────────────────
 
     /// <summary>
-    /// The design once the player has logged in, and what to tell them: when the build's copies are all theirs (their
-    /// own dim.gg share), the build's stats are set from them; else they're told to pick their own pieces.
+    /// The design once the player has logged in, and what to tell them: each weapon whose copy is theirs (their own
+    /// dim.gg share) holds that copy's perks and catalyst; when the build's armor copies are all theirs, its stats are set
+    /// from them; else they're told to pick their own pieces and weapons.
     /// </summary>
-    public static ArmorLogin ApplyArmorLogin(DesignSession session, BungieProfile profile)
+    public static BungieLogin ApplyBungieLogin(DesignSession session, BungieProfile profile)
     {
+        var copies = CopyFinding.ListOwnedCopies(session.Build.Build, profile);
+        var loaded = WeaponSwapping.LoadCopies(session.Build.Catalog, session.Build.Build, copies);
+        var armed = LoadWeaponCopies(session, loaded.Build, loaded.Changed);
         var ownership = StatAdding.ReadOwnership(session.Build.Catalog, session.Build.Build, profile);
-        var message = StatAdding.DescribeOwnership(ownership);
+        var weapons = armed.Match(_ => CopyFinding.DescribeLoadedWeapons(session.Build.Build, loaded.Loaded), refused => refused.Failure);
+        var message = string.Join(" ", new[] { StatAdding.DescribeOwnership(ownership), weapons }.Where(part => part.Length > 0));
+        var current = armed.Match(ok => ok.Value, _ => session);
         return ownership is LoadoutOwnership.Own
-            ? SetStatsFromArmor(session, profile).Match(
-                set => new ArmorLogin(set.Value, message),
-                refused => new ArmorLogin(session, refused.Failure))
-            : new ArmorLogin(session, message);
+            ? SetStatsFromArmor(current, profile).Match(
+                set => new BungieLogin(set.Value, message),
+                refused => new BungieLogin(current, refused.Failure))
+            : new BungieLogin(current, message);
+    }
+
+    /// <summary>The design with its weapons <paramref name="changed"/> (by weapon number) as <paramref name="build"/> has them: only those entries of the embedded build change.</summary>
+    private static Result<DesignSession, string> LoadWeaponCopies(DesignSession session, Build build, ImmutableArray<int> changed)
+    {
+        var file = session.Design.Build;
+        return changed.IsEmpty
+            ? new Result<DesignSession, string>.Ok(session)
+            : RebuildWith(session, changed.Aggregate(
+                new Result<string, string>.Ok(file.Text) as Result<string, string>,
+                (text, index) => text.Bind(current => BuildFileEditing.ReplaceWeapon(file with { Text = current }, index, build.Weapons[index]))));
     }
 
     /// <summary>
@@ -364,9 +384,40 @@ public static class LoopDesigning
         };
     }
 
-    /// <summary>The player's armor the catalog's excerpt lacks (what the full manifest is read for, so the picker can name and place it).</summary>
-    public static ImmutableArray<ItemHash> ListUnknownArmorHashes(DesignSession session, BungieProfile profile) =>
-        ManifestJoin.ListUnknown(session.Build.Catalog.Manifest, profile.Armor.Select(armor => armor.Hash).Distinct());
+    /// <summary>The player's armor and weapons the catalog's excerpt lacks (what the full manifest is read for, so the pickers can name and place them).</summary>
+    public static ImmutableArray<ItemHash> ListUnknownProfileHashes(DesignSession session, BungieProfile profile) =>
+        ManifestJoin.ListUnknown(session.Build.Catalog.Manifest, profile.Armor.Select(armor => armor.Hash).Concat(profile.Weapons.Select(weapon => weapon.Hash)).Distinct());
+
+    // ── The player's own weapons in the build (docs/loop-format.md, "Weapons from your account") ─────────────
+
+    /// <summary>
+    /// What the weapon picker lists for where <paramref name="target"/> says (a weapon of the build, or an empty slot): the
+    /// player's weapons for that slot that the build can wear there (one exotic: WeaponSwapping), the copy the build names
+    /// first; with notes on the exotic rule and on the weapons Loopsmith can't place yet.
+    /// </summary>
+    public static WeaponOptions ListWeaponOptions(ValidatedBuild build, BungieProfile profile, WeaponTarget target)
+    {
+        var listed = CopyFinding.ListWeaponOptions(build.Catalog, build.Build, profile, target);
+        var exotic = WeaponSwapping.DescribeExoticRule(build.Catalog, build.Build, target);
+        return listed with
+        {
+            Options = [.. listed.Options.Where(option => WeaponSwapping.CheckWeapon(build.Catalog, build.Build, target, option.Weapon.Hash).IsOk())],
+            Notes = [.. exotic.Match(note => new[] { note.Value }, _ => []), .. listed.Notes],
+        };
+    }
+
+    /// <summary>
+    /// The design wearing the player's weapon <paramref name="instance"/> where <paramref name="target"/> says: in place of
+    /// one of its weapons (that entry of the embedded build file is written anew with the copy's perks, catalyst and
+    /// instance), or added to an empty slot (WeaponSwapping); the build check runs again and the steps replay. Or why the
+    /// weapon can't be worn.
+    /// </summary>
+    public static Result<DesignSession, string> PickWeapon(DesignSession session, BungieProfile profile, WeaponTarget target, ItemInstanceId instance) =>
+        CopyFinding.FindWeapon(profile, instance)
+            .Bind(copy => WeaponSwapping.SwapWeapon(session.Build.Catalog, session.Build.Build, target, copy))
+            .Bind(build => RebuildWith(session, target.Match(
+                inPlace => BuildFileEditing.ReplaceWeapon(session.Design.Build, inPlace.Weapon, build.Weapons[inPlace.Weapon]),
+                _ => BuildFileEditing.AddWeapon(session.Design.Build, build.Weapons[^1]))));
 
     /// <summary>
     /// What the game draws on the player's copy the build wears in a slot (its tier, masterwork): the share's copy when it
@@ -385,6 +436,10 @@ public static class LoopDesigning
     /// </summary>
     public static Optional<BreakerType> FindWeaponBreaker(ValidatedBuild build, WeaponLoadout weapon, Optional<GearMarks> marks) =>
         CopyFinding.FindWeaponBreaker(build.Catalog.Manifest, weapon, marks);
+
+    /// <summary>The champion one of the player's weapons breaks (its own breaker, else its weapon's): what the weapon picker shows.</summary>
+    public static Optional<BreakerType> FindCopyBreaker(ValidatedBuild build, OwnedWeapon copy) =>
+        CopyFinding.FindCopyBreaker(build.Catalog.Manifest, copy);
 
     /// <summary>The design with its stats set from the copies its build wears, or why they don't add up.</summary>
     private static Result<DesignSession, string> SetStatsFromArmor(DesignSession session, BungieProfile profile)
