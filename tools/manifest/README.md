@@ -19,8 +19,8 @@ copies look as in DIM: the season icon top-left, a legendary weapon's frame or a
 tier and masterwork, and the breaker under the square. Icons are loaded from
 bungie.net; the data is Bungie's, used under its API terms. It also holds the traits the glossary's keywords name
 (`keywordTraits`: the game's own keywords, Jolted, Bolt Charge, Woven Mail), so each keyword shows its in-game icon.
-Arcstrider (`EDITABLE_SUBCLASSES` in the extractor) also lists every plug it can hold (`plugs`: super, abilities, jump,
-aspects, fragments), which the designer's subclass editor offers; add a subclass's hash there to make it editable.
+Each subclass (the glossary's) also lists every plug it can hold (`plugs`: super, abilities, jump, aspects, fragments),
+which the designer's subclass editor offers.
 
 Regenerate it after adding a hash to the rules, a saved DIM share, or when Bungie publishes a new manifest:
 

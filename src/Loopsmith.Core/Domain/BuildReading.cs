@@ -18,4 +18,27 @@ public static class BuildReading
         build.Abilities.Super
             .Bind(super => catalog.Elements.TryGetValue(super, out var element) ? Optional.Some(element.Affinity) : Optional.None<Affinity>())
             .Bind(affinity => affinity is Affinity.Neutral or Affinity.Prismatic ? Optional.None<DamageType>() : Optional.Some(affinity.ToDamageType()));
+
+    /// <summary>
+    /// True when the element can go on a build of this class and subclass (<see cref="FitsClass"/> and
+    /// <see cref="FitsSubclass"/>): an Arc fragment the rules author for the Hunter doesn't fit a Striker.
+    /// </summary>
+    public static bool Fits(this BuildElement element, GuardianClass guardianClass, Subclass subclass) =>
+        element.FitsClass(guardianClass) && element.FitsSubclass(subclass);
+
+    /// <summary>True when the element is the class's, or any class's.</summary>
+    public static bool FitsClass(this BuildElement element, GuardianClass guardianClass) =>
+        element.Class.Match(c => c.Value == guardianClass, _ => true);
+
+    /// <summary>
+    /// True when the element fits the subclass: a super, grenade, melee, aspect or fragment of its element (or neutral or
+    /// kinetic; Prismatic takes any); any other kind fits every subclass.
+    /// </summary>
+    public static bool FitsSubclass(this BuildElement element, Subclass subclass)
+    {
+        var isSubclassBound = element.Kind is ElementKind.Super or ElementKind.Grenade or ElementKind.Melee
+            or ElementKind.Aspect or ElementKind.Fragment;
+        var isNeutral = element.Affinity is Affinity.Neutral or Affinity.Kinetic;
+        return !isSubclassBound || isNeutral || subclass == Subclass.Prismatic || element.Affinity == subclass.ToAffinity();
+    }
 }

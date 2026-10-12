@@ -991,6 +991,7 @@ button.hud-chip:hover, button.hud-chip:focus-visible { background: color-mix(in 
 .perk-option-type { font-size: 10px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .loadout-label-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 6px; }
 .loadout-label-row .loadout-label { margin: 0; }
+.subclass-edit { flex: none; min-width: 28px; padding: 2px 6px; line-height: 1; font-size: 16px; letter-spacing: .05em; }
 .subclass-editor { display: flex; flex-direction: column; gap: 10px; }
 .sub-heading { margin: 4px 0 0; font-size: 13px; font-weight: 700; color: var(--text); }
 .sub-note { margin: 0; font-size: 12px; }

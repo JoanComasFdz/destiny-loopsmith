@@ -16,8 +16,8 @@
                 <h4 class="loadout-label">Subclass</h4>
                 @if (CanEditSubclass)
                 {
-                    <button type="button" class="btn small" data-action="edit-subclass" title="Change the super, abilities, aspects and fragments"
-                            aria-haspopup="dialog" @onclick="OpenSubclassEditor">Edit</button>
+                    <button type="button" class="btn ghost small subclass-edit" data-action="edit-subclass" title="Edit the subclass" aria-label="Edit the subclass"
+                            aria-haspopup="dialog" @onclick="OpenSubclassEditor">⋯</button>
                 }
             </div>
             <div class="subclass-body">
@@ -297,7 +297,7 @@
     [Parameter]
     public EventCallback<ArmorPick> OnPickArmor { get; set; }
 
-    /// <summary>Set by the designer: the Subclass box then has Edit, which opens the subclass editor. Unset (the Home card): read-only.</summary>
+    /// <summary>Set by the designer: the Subclass box then has ⋯, which opens the subclass editor. Unset (the Home card): read-only.</summary>
     [Parameter]
     public EventCallback<SubclassPlugs> OnEditSubclass { get; set; }
 
