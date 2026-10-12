@@ -83,7 +83,17 @@
                             <TileFooter Marks="weapon.Marks" DamageIcon="weapon.DamageIcon" DamageName="@weapon.Type.ToString()" TestId="weapon-badge" />
                             @RenderWeaponCard(weapon)
                         </div>
-                        <div class="weapon-spacer"></div>
+                        <div class="weapon-text">
+                            @if (weapon.Page is Optional<string>.Some rowPage)
+                            {
+                                <a class="weapon-line-name" href="@rowPage.Value" target="_blank" rel="noopener noreferrer" title="@weapon.Weapon.Name on light.gg">@weapon.Weapon.Name</a>
+                            }
+                            else
+                            {
+                                <span class="weapon-line-name">@weapon.Weapon.Name</span>
+                            }
+                            <span class="weapon-line-sub">@weapon.Slot.DescribeWeaponSlot()@(weapon.Archetype is Optional<string>.Some rowArchetype ? $" · {DomainPhrasing.DescribeArchetype(rowArchetype.Value)}" : "")</span>
+                        </div>
                         <div class="weapon-perks" aria-label="Perks">
                             @foreach (var square in weapon.Perks)
                             {
