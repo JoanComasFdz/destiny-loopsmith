@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Dunet;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 using YamlDotNet.RepresentationModel;
@@ -9,22 +10,31 @@ using Errors = System.Collections.Immutable.ImmutableArray<Loopsmith.Core.RulePa
 namespace Loopsmith.Core.RuleParsing;
 
 /// <summary>What an enhanced trait changes: each value of the perk's rules (a duration, a game value) → the enhanced one.</summary>
-internal sealed record EnhancedValues(ImmutableDictionary<Seconds, Seconds> Durations, ImmutableDictionary<GameValue, GameValue> Values)
+internal sealed record EnhancedValues(ImmutableDictionary<Seconds, Seconds> Durations, ImmutableDictionary<GameValue, GameValue> Values);
+
+/// <summary>One entry of <c>values</c>, as written (<c>8s</c>, <c>0.87%</c>): two durations, or two game values.</summary>
+[Union]
+internal partial record EnhancedPair
 {
-    internal static readonly EnhancedValues None = new(ImmutableDictionary<Seconds, Seconds>.Empty, ImmutableDictionary<GameValue, GameValue>.Empty);
+    partial record DurationPair(Seconds Base, Seconds Enhanced, string Written);
+    partial record ValuePair(GameValue Base, GameValue Enhanced, string Written);
 }
 
 /// <summary>
 /// A weapon perk's <c>enhanced:</c> block — the enhanced trait an enhanced or crafted copy of a weapon rolls, its own plug:
 /// <c>{ hash, values: { 8s: 9s }, description }</c>. Its element (<c>&lt;id&gt;-enhanced</c>, "Slice (enhanced)") is the
-/// perk with the Compendium row's ↑ figures in place of the base ones: <c>values</c> maps a value the perk's rules use
-/// (a duration such as <c>8s</c>, a game value such as <c>0.87%</c>) to the enhanced one; one they don't use is an error,
-/// so a typo can't leave the base figure in. Without <c>values</c> the rules are the perk's (the enhanced figures are in
-/// its description only). Other plugs of the same enhanced trait are recognised by name (<see cref="EnhancedPerks"/>).
+/// perk — its kind, affinity, source, inert and stat checks — with the Compendium row's ↑ figures in place of the base
+/// ones: <c>values</c> maps a value the perk's rules or passives use (a duration such as <c>8s</c>, a game value such as
+/// <c>0.87%</c>) to the enhanced one; one they don't use is an error, so a typo can't leave the base figure in, and so is
+/// a reason that writes a replaced figure (it would say the base one). Without <c>values</c> the rules are the perk's
+/// (the enhanced figures are in its description only). Other plugs of the same enhanced trait are recognised by name
+/// (<see cref="EnhancedPerkRecognition.RecognizeEnhancedPerks"/>).
 /// </summary>
 internal static class EnhancedPerkParsing
 {
     private static readonly ImmutableArray<string> EnhancedKeys = ["hash", "values", "description"];
+
+    private static readonly EnhancedValues NoValues = new(ImmutableDictionary<Seconds, Seconds>.Empty, ImmutableDictionary<GameValue, GameValue>.Empty);
 
     /// <summary>The element of the perk's enhanced trait, when its YAML has an <c>enhanced:</c> block.</summary>
     internal static Result<Optional<BuildElement>, Errors> ReadEnhanced(YamlMap map, BuildElement perk) =>
@@ -35,32 +45,34 @@ internal static class EnhancedPerkParsing
             ? Combine(
                     block.CheckKeys(EnhancedKeys),
                     block.ReadRequired("hash", ReadItemHashes),
-                    block.ReadOrDefault("values", ReadValues, EnhancedValues.None),
+                    block.ReadOrDefault("values", ReadPairs, []),
                     block.ReadOptional("description", YamlReading.ToText),
-                    (_, hashes, values, description) => (Hashes: hashes, Values: values, Description: description))
-                .Bind(read => CheckUsed(block, perk, read.Values).Map(_ => ToEnhanced(perk, read.Hashes, read.Values, read.Description)))
+                    (_, hashes, pairs, description) => (Hashes: hashes, Pairs: pairs, Description: description))
+                .Bind(read => Combine(
+                    CheckUsed(block, perk, read.Pairs),
+                    CheckOnce(block, read.Pairs),
+                    CheckReasons(block, perk, read.Pairs),
+                    (_, _, _) => ToEnhanced(perk, read.Hashes, ToValues(read.Pairs), read.Description)))
             : block.FailAt<BuildElement>($"{block.Label}: only a weaponPerk has an enhanced trait, not a {GameNotationParsing.ToVocabularyWord(perk.Kind)}");
 
     /// <summary><c>{ 8s: 9s, 0.87%: 1.1% }</c>: each pair two durations, or two game values.</summary>
-    private static Result<EnhancedValues, Errors> ReadValues(YamlValue value) =>
-        value.ToMap().Bind(map => map.Node.Children
-            .Select(entry => ReadPair(map, entry))
-            .CollectAll()
-            .Map(pairs => new EnhancedValues(
-                pairs.SelectMany(pair => pair.Duration.Match(found => new[] { found.Value }, _ => [])).ToImmutableDictionary(pair => pair.Base, pair => pair.Enhanced),
-                pairs.SelectMany(pair => pair.Value.Match(found => new[] { found.Value }, _ => [])).ToImmutableDictionary(pair => pair.Base, pair => pair.Enhanced))));
+    private static Result<ImmutableArray<EnhancedPair>, Errors> ReadPairs(YamlValue value) =>
+        value.ToMap().Bind(map => map.Node.Children.Select(entry => ReadPair(map, entry)).CollectAll());
 
-    private sealed record Pair(Optional<(Seconds Base, Seconds Enhanced)> Duration, Optional<(GameValue Base, GameValue Enhanced)> Value);
-
-    private static Result<Pair, Errors> ReadPair(YamlMap map, KeyValuePair<YamlNode, YamlNode> entry)
+    private static Result<EnhancedPair, Errors> ReadPair(YamlMap map, KeyValuePair<YamlNode, YamlNode> entry)
     {
         var label = entry.Key is YamlScalarNode { Value: { } name } ? $"{map.Label}.{name}" : map.Label;
         var key = new YamlValue(map.Path, entry.Key, label);
         var enhanced = new YamlValue(map.Path, entry.Value, label);
         return key.ToText().Bind(text => text.Trim().EndsWith('s')
-            ? Combine(key.ParseWith(ParseSeconds), enhanced.ParseWith(ParseSeconds), (from, to) => new Pair(Optional.Some((from, to)), Optional.None<(GameValue, GameValue)>()))
-            : Combine(key.ParseWith(ParseValue), enhanced.ParseWith(ParseValue), (from, to) => new Pair(Optional.None<(Seconds, Seconds)>(), Optional.Some((from, to)))));
+            ? Combine(key.ParseWith(ParseSeconds), enhanced.ParseWith(ParseSeconds), EnhancedPair (from, to) => new EnhancedPair.DurationPair(from, to, text.Trim()))
+            : Combine(key.ParseWith(ParseValue), enhanced.ParseWith(ParseValue), EnhancedPair (from, to) => new EnhancedPair.ValuePair(from, to, text.Trim())));
     }
+
+    private static EnhancedValues ToValues(ImmutableArray<EnhancedPair> pairs) =>
+        pairs.Aggregate(NoValues, (values, pair) => pair.Match(
+            duration => values with { Durations = values.Durations.SetItem(duration.Base, duration.Enhanced) },
+            value => values with { Values = values.Values.SetItem(value.Base, value.Enhanced) }));
 
     private static Result<Seconds, string> ParseSeconds(string text) =>
         GameNotationParsing.ParseDuration(text).Bind(Result<Seconds, string> (duration) => duration.Match<Result<Seconds, string>>(
@@ -73,23 +85,61 @@ internal static class EnhancedPerkParsing
             ? new Result<GameValue, string>.Ok(value)
             : new Result<GameValue, string>.Error($"'{text}' is no figure to replace: write one value (e.g. 1.1%)"));
 
-    /// <summary>Every value to replace is one the perk's rules use (a typo would leave the base figure in).</summary>
-    private static Result<Unit, Errors> CheckUsed(YamlMap block, BuildElement perk, EnhancedValues values)
+    /// <summary>Every value to replace is one the perk's rules or passives use (a typo would leave the base figure in).</summary>
+    private static Result<Unit, Errors> CheckUsed(YamlMap block, BuildElement perk, ImmutableArray<EnhancedPair> pairs)
     {
         var durations = perk.Rules.SelectMany(rule => rule.Then).SelectMany(ListDurations).ToImmutableHashSet();
         var used = perk.Rules.SelectMany(rule => rule.Then).SelectMany(ListValues)
             .Concat(perk.Passives.SelectMany(passive => ListValues(passive.Modifier)))
             .ToImmutableHashSet();
-        var unused = values.Durations.Keys.Where(duration => !durations.Contains(duration)).Select(duration => $"{duration.Value}s")
-            .Concat(values.Values.Keys.Where(value => !used.Contains(value)).Select(GameValuePhrasing))
+        var unused = pairs
+            .Where(pair => pair.Match(duration => !durations.Contains(duration.Base), value => !used.Contains(value.Base)))
+            .Select(DescribeWritten)
             .ToImmutableArray();
         return unused.IsEmpty
             ? Succeed<Unit>(new Unit.Value())
             : block.FailAtKey<Unit>("values", $"{block.Label}.values: {string.Join(", ", unused)} isn't a value of {perk.Id}'s rules");
     }
 
-    private static string GameValuePhrasing(GameValue value) =>
-        value.Match(known => $"{known.Value}", _ => "per-copy values", approximate => $"~{approximate.Value}", _ => "?");
+    /// <summary>A value is replaced once: <c>8s</c> and <c>8.0s</c> are the same duration.</summary>
+    private static Result<Unit, Errors> CheckOnce(YamlMap block, ImmutableArray<EnhancedPair> pairs)
+    {
+        var repeated = pairs
+            .GroupBy(pair => pair.Match<object>(duration => duration.Base, value => value.Base))
+            .Where(group => group.Count() > 1)
+            .Select(group => string.Join(" and ", group.Select(DescribeWritten)))
+            .ToImmutableArray();
+        return repeated.IsEmpty
+            ? Succeed<Unit>(new Unit.Value())
+            : block.FailAtKey<Unit>("values", $"{block.Label}.values: {string.Join("; ", repeated)} replace the same value (write it once)");
+    }
+
+    /// <summary>
+    /// No reason writes a figure the enhanced trait replaces ("arms Slice for 8 seconds"): the enhanced trait's would say
+    /// the base one. The outcome shows the figure as a fact; the reason says what happens.
+    /// </summary>
+    private static Result<Unit, Errors> CheckReasons(YamlMap block, BuildElement perk, ImmutableArray<EnhancedPair> pairs)
+    {
+        var reasons = perk.Rules.SelectMany(rule => ToSequence(rule.Reason))
+            .Concat(perk.Passives.SelectMany(passive => ToSequence(passive.Reason)))
+            .ToImmutableArray();
+        var written = pairs
+            .Where(pair => reasons.Any(reason => ListSpellings(pair).Any(spelling => reason.Contains(spelling, StringComparison.Ordinal))))
+            .Select(DescribeWritten)
+            .ToImmutableArray();
+        return written.IsEmpty
+            ? Succeed<Unit>(new Unit.Value())
+            : block.FailAtKey<Unit>("values", $"{block.Label}.values: a reason of {perk.Id} writes {string.Join(", ", written)}, which its enhanced trait replaces (say it without the figure)");
+    }
+
+    /// <summary>How a reason could write the figure: "8 seconds", "8 s", "8s"; "10%".</summary>
+    private static ImmutableArray<string> ListSpellings(EnhancedPair pair) =>
+        pair.Match<ImmutableArray<string>>(
+            duration => [$"{duration.Base.Value} second", $"{duration.Base.Value} s ", $"{duration.Base.Value}s"],
+            value => [value.Written]);
+
+    private static string DescribeWritten(EnhancedPair pair) =>
+        pair.Match(duration => duration.Written, value => value.Written);
 
     private static BuildElement ToEnhanced(BuildElement perk, ImmutableArray<ItemHash> hashes, EnhancedValues values, Optional<string> description) =>
         perk with

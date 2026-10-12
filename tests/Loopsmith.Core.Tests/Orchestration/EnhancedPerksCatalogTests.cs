@@ -9,7 +9,7 @@ namespace Loopsmith.Core.Tests.Orchestration;
 
 /// <summary>
 /// The weapon perks' enhanced traits, in the real rules: every authored perk whose enhanced trait the manifest excerpt
-/// has (the extractor adds every enhanced plug of a trait the rules name) has that trait's element, holding each of
+/// has (the extractor adds every enhanced plug of a trait the rules author) has that trait's element, holding each of
 /// its plugs, with the Compendium's ↑ figures — so a perk authored without its <c>enhanced:</c> block fails here.
 /// </summary>
 public sealed class EnhancedPerksCatalogTests
@@ -53,13 +53,14 @@ public sealed class EnhancedPerksCatalogTests
     [Fact]
     public void The_enhanced_slice_arms_for_9_seconds_where_slice_arms_for_8()
     {
-        var durations = (string id) => Catalog.Elements[ElementId.From(id)].Rules
+        Assert.Equal([Optional.Some(Seconds.From(8m))], ListBuffDurations("slice"));
+        Assert.Equal([Optional.Some(Seconds.From(9m))], ListBuffDurations("slice-enhanced"));
+    }
+
+    private static IEnumerable<Optional<Seconds>> ListBuffDurations(string id) =>
+        Catalog.Elements[ElementId.From(id)].Rules
             .SelectMany(rule => rule.Then)
             .OfType<Outcome.ApplyBuff>()
             .Select(buff => buff.Duration)
             .Distinct();
-
-        Assert.Equal([Optional.Some(Seconds.From(8m))], durations("slice"));
-        Assert.Equal([Optional.Some(Seconds.From(9m))], durations("slice-enhanced"));
-    }
 }

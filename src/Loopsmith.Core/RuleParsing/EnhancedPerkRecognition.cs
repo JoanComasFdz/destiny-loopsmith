@@ -1,14 +1,16 @@
 using System.Collections.Immutable;
+using Loopsmith.Core.Domain;
 
-namespace Loopsmith.Core.Domain;
+namespace Loopsmith.Core.RuleParsing;
 
 /// <summary>
 /// Pure: a weapon perk's enhanced trait is one perk with several plugs — the one its <c>enhanced:</c> block names, and
 /// others of the same name that Bungie's manifest types "Enhanced Trait" (or "Enhanced Origin Trait"): a weapon's
 /// enhanced copy, a crafted one. Every such plug the excerpt has (the bundled one, or with what a Bungie login read)
-/// is the enhanced trait's element's, so a DIM link or an account's weapon that rolls it equips it.
+/// is the enhanced trait's element's, so a DIM link or an account's weapon that rolls it equips it. A plug no element
+/// owns goes to one enhanced trait only: one two of them would take (their perks share a name) goes to neither.
 /// </summary>
-public static class EnhancedPerkReading
+public static class EnhancedPerkRecognition
 {
     private static readonly ImmutableArray<string> EnhancedTypes = ["Enhanced Trait", "Enhanced Origin Trait"];
 
@@ -20,11 +22,15 @@ public static class EnhancedPerkReading
             .Where(item => item.Type.Match(type => EnhancedTypes.Contains(type.Value), _ => false) && !owned.Contains(item.Hash))
             .GroupBy(item => item.Name, StringComparer.Ordinal)
             .ToImmutableDictionary(group => group.Key, group => group.Select(item => item.Hash).Order().ToImmutableArray(), StringComparer.Ordinal);
-        var recognized = catalog.EnhancedPerks
+        var claims = catalog.EnhancedPerks
             .Where(pair => catalog.Elements.ContainsKey(pair.Key) && catalog.Elements.ContainsKey(pair.Value))
             .Select(pair => (Enhanced: catalog.Elements[pair.Value], Plugs: ListPlugs(catalog, catalog.Elements[pair.Key], plugsByName)))
-            .Where(found => !found.Plugs.IsEmpty)
-            .Select(found => found.Enhanced with { Hashes = [.. found.Enhanced.Hashes, .. found.Plugs] });
+            .ToImmutableArray();
+        var contested = claims.SelectMany(claim => claim.Plugs).GroupBy(plug => plug).Where(group => group.Count() > 1).Select(group => group.Key).ToImmutableHashSet();
+        var recognized = claims
+            .Select(claim => (claim.Enhanced, Plugs: claim.Plugs.Where(plug => !contested.Contains(plug)).ToImmutableArray()))
+            .Where(claim => !claim.Plugs.IsEmpty)
+            .Select(claim => claim.Enhanced with { Hashes = [.. claim.Enhanced.Hashes, .. claim.Plugs] });
         return catalog with { Elements = catalog.Elements.SetItems(recognized.Select(element => KeyValuePair.Create(element.Id, element))) };
     }
 

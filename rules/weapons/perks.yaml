@@ -15,7 +15,7 @@ elements:
       - on: { abilityCast: classAbility }
         then:
           - { applyBuff: { status: slice, stacks: 1, duration: 8s } }
-        reason: "Dodging arms Slice for 8 seconds, even while the weapon is stowed."
+        reason: "Dodging arms Slice, even while the weapon is stowed."
       # Not expressible: "non-Severed targets only" (no target-lacks guard).
       - on: { damage: { via: weapon:strand } }
         when: [ { has: slice } ]

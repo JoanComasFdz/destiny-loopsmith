@@ -1567,13 +1567,59 @@ public sealed class RuleCatalogParsingTests
 
     [Theory]
     [InlineData("{ hash: 3422796781, values: { 7s: 9s } }", "7s isn't a value of slice's rules")]
-    [InlineData("{ hash: 3422796781, values: { 15%: 20% } }", "0.15 isn't a value of slice's rules")]
+    [InlineData("{ hash: 3422796781, values: { 15%: 20% } }", "15% isn't a value of slice's rules")]
+    [InlineData("{ hash: 3422796781, values: { 8s: 9s, 8.0s: 10s } }", "8s and 8.0s replace the same value")]
+    [InlineData("{ hash: 3422796781, values: { 10%: 12%, 10.0%: 15% } }", "10% and 10.0% replace the same value")]
     [InlineData("{ hash: 3422796781, values: { 8s: \"?s\" } }", "no duration to replace")]
     [InlineData("{ hash: 3422796781, values: { 10%: \"?\" } }", "no figure to replace")]
     [InlineData("{ values: { 8s: 9s } }", "is missing 'hash'")]
     [InlineData("{ hash: 3422796781, chance: true }", "unknown key 'chance'")]
     public void An_enhanced_block_says_exactly_what_changes(string enhanced, string message) =>
         Assert.Contains(message, ParseInvalidCatalog(Glossary, ToSliceFile(enhanced)));
+
+    [Fact]
+    public void A_reason_doesnt_write_a_figure_the_enhanced_trait_replaces()
+    {
+        var file = ToElementsFile("weapons/perks.yaml", """
+            elements:
+              - id: slice
+                name: Slice
+                kind: weaponPerk
+                affinity: strand
+                hash: 923806249
+                rules:
+                  - on: { abilityCast: classAbility }
+                    then:
+                      - { applyBuff: { status: amplified, duration: 8s } }
+                    reason: "Dodging arms it for 8 seconds."
+                enhanced: { hash: 3422796781, values: { 8s: 9s } }
+            """);
+
+        Assert.Contains("a reason of slice writes 8s, which its enhanced trait replaces", ParseInvalidCatalog(Glossary, file));
+    }
+
+    [Fact]
+    public void An_enhanced_plug_two_enhanced_traits_would_take_is_neithers()
+    {
+        var other = ToElementsFile("weapons/other.yaml", """
+            elements:
+              - id: slice-copy
+                name: Slice
+                kind: weaponPerk
+                affinity: strand
+                hash: 1
+                inert: "A test perk named like Slice."
+                enhanced: { hash: 2 }
+            """);
+        var manifest = new SourceText("manifest.yaml", """
+            items:
+              - { hash: 111, name: "Slice", kind: weaponPerk, type: "Enhanced Trait" }
+            """);
+
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, manifest, ToSliceFile("{ hash: 3422796781 }"), other]));
+
+        Assert.False(catalog.FindElementByHash(ItemHash.From(111)).IsSome());
+    }
 
     [Fact]
     public void Only_a_weapon_perk_has_an_enhanced_trait() =>

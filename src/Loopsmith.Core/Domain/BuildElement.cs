@@ -87,7 +87,7 @@ public sealed record FinisherDefinition(GuardianClass Class, string Name, ItemHa
 /// Every authored element plus the keyword glossary, and the manifest excerpt that names their hashes (and those of the
 /// saved DIM shares). Keyword elements are active in every build. <see cref="EnhancedPerks"/>: each weapon perk with an
 /// enhanced trait (its own plug, with the Compendium's ↑ figures) → that trait's element; the excerpt's other plugs of the
-/// same enhanced trait are that element's too (<see cref="EnhancedPerkReading.RecognizeEnhancedPerks"/>).
+/// same enhanced trait are that element's too (RuleParsing's <c>EnhancedPerkRecognition</c>).
 /// </summary>
 public sealed record RuleCatalog(
     CatalogVersion Version,

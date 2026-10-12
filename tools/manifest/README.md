@@ -5,7 +5,7 @@ description, icon, rarity and (for weapons, armor and armor mods) slot and damag
 columns with the perks each can roll, its intrinsic perk and an exotic's catalyst, an exotic armor's perk, the
 armor sets with their 2- and 4-piece perks, and the artifacts with the perks they unlock — of every hash Loopsmith names — each
 `hash:` in `rules/` and every hash a saved DIM share (`builds/*/dim-loadout.json`) wears, plus every perk those
-weapons' columns roll with, and every enhanced plug of a trait the rules name (by its name: "Enhanced Trait",
+weapons' columns roll with, and every enhanced plug of a trait the rules author (by its name: "Enhanced Trait",
 "Enhanced Origin Trait"), so the tests can tell an authored perk that lacks its `enhanced` block
 ([docs/rule-format.md](../../docs/rule-format.md#enhanced-traits-enhanced)). The web app shows a build the way DIM shows a loadout from it, a DIM link's weapons
 become the build's weapons, and the designer's perk picker offers what each column rolls with

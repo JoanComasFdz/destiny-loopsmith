@@ -174,7 +174,7 @@ public static class LoopDesigning
     /// traits' other plugs it names recognised (an account's enhanced Slice is Slice's enhanced trait).
     /// </summary>
     private static RuleCatalog AddManifest(RuleCatalog catalog, ManifestExcerpt joined) =>
-        (catalog with { Manifest = catalog.Manifest.AddExcerpt(joined) }).RecognizeEnhancedPerks();
+        EnhancedPerkRecognition.RecognizeEnhancedPerks(catalog with { Manifest = catalog.Manifest.AddExcerpt(joined) });
 
     private static string DescribeManifestProblem(string problem) =>
         $"Couldn't read Bungie's manifest ({problem}). Items Loopsmith doesn't know show by hash.";

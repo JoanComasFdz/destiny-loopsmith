@@ -266,17 +266,20 @@ it as a block, not as a second element:
       description: "The enhanced Slice: as Slice, with a 9 s window between hits instead of 8 s."   # optional
 ```
 
-The catalog gets a second element, `<id>-enhanced` ("Slice (enhanced)"), with the block's hashes and the perk's
-rules and passives, each value of `values` replaced (`slice-enhanced` arms Slice for 9 s); the perk keeps its own.
+The catalog gets a second element, `<id>-enhanced` ("Slice (enhanced)"): the perk — its kind, affinity, source, `inert`
+and stat checks, its rules and passives — with the block's hashes and description, each value of `values` replaced
+(`slice-enhanced` arms Slice for 9 s); the perk keeps its own. A reason is copied as it is, so it doesn't write a figure
+the block replaces (`Dodging arms Slice, even while the weapon is stowed.`: the outcome shows the 8 s or 9 s).
 Without `values` its rules are the perk's (Attrition Orbs: its ↑ figure, the orb's Super energy, is in no rule; Feeding
 Frenzy: inert, its ↑ figures in its description). A value the rules don't use is an error
-(`enhanced.values: 7s isn't a value of slice's rules`), and so is `"?"` (an unknown figure is left out, not written),
+(`enhanced.values: 7s isn't a value of slice's rules`), and so are a value given twice (`8s` and `8.0s`), a reason
+that writes a replaced figure (`a reason of slice writes 8s, which its enhanced trait replaces`), `"?"` (an unknown figure is left out, not written),
 `enhanced` on another kind (`only a weaponPerk has an enhanced trait, not a armorMod`) or a block without `hash`.
 Every other plug of the manifest excerpt that Bungie types "Enhanced Trait" or "Enhanced Origin Trait" with the perk's
 name is the enhanced trait's too — the bundled excerpt's, and what Bungie's full manifest adds after a login (an
 account's enhanced copy of a weapon) — so the designer equips it from a DIM link or a picked weapon. The excerpt
-generator adds every enhanced plug of a trait the rules name, and a test fails when an authored perk has one but no
-`enhanced` block. Armor has no enhanced perks: set bonuses have none in the game (only legacy raid mods do).
+generator adds every enhanced plug of a trait the rules author, and a test fails when an authored perk has one but no
+`enhanced` block. A plug two enhanced traits would take (their perks share a name) is neither's. Armor has no enhanced perks: set bonuses have none in the game (only legacy raid mods do).
 
 ### Provenance (`source`)
 

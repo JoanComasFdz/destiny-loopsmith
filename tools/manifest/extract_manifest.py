@@ -402,10 +402,10 @@ def main():
     artifact_perks = {h for h in named_items if kinds[h] == "artifactPerk"}
     artifacts = {int(h) for h, item in items.items() if item.get("itemTypeDisplayName") == "Artifact"
                  and artifact_perks & set(read_artifact_perks(item, plug_sets, socket_types))}
-    # every enhanced plug of a trait the rules name (by its name: a weapon's enhanced copy, a crafted one), so the C#
+    # every enhanced plug of a trait the rules author (by its name: a weapon's enhanced copy, a crafted one), so the C#
     # catalog can tell an authored perk that lacks its enhanced trait (docs/rule-format.md, "Enhanced traits")
-    trait_names = {items[str(h)]["displayProperties"]["name"] for h in named_items
-                   if items[str(h)].get("itemTypeDisplayName") in ("Trait", "Origin Trait")}
+    trait_names = {items[str(h)]["displayProperties"]["name"] for h in list_rule_hashes(root)
+                   if str(h) in items and items[str(h)].get("itemTypeDisplayName") in ("Trait", "Origin Trait")}
     enhanced_traits = {int(h) for h, item in items.items()
                        if item.get("itemTypeDisplayName") in ("Enhanced Trait", "Enhanced Origin Trait")
                        and item.get("displayProperties", {}).get("name") in trait_names}
