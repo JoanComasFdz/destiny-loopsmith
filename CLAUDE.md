@@ -133,8 +133,17 @@ repos (Microsoft's download hosts are blocked by the network policy) and restore
 - Don't stack pull requests: an issue that needs another issue's change waits until that PR is
   merged.
 - If the issue is unclear, or needs something a session doesn't have (the Compendium snapshot for
-  rule work, a creator transcript, a design decision), comment the questions on the issue and stop.
-  @JoanComasFdz answers in the session.
+  rule work, a creator transcript, a design decision), comment the questions on the issue and don't
+  start the change. @JoanComasFdz answers in the session, which wakes it, or on the issue, which
+  doesn't: check back with `send_later`, about 30 minutes after asking and then every 2 hours, and
+  read the issue's comments for an answer @JoanComasFdz wrote. After 4 check-ins without one, say on
+  the issue that the session waits for an answer in the session, and stop checking.
+- Keep the pull request mergeable. A conflict with `main` doesn't always arrive as an event, so on
+  every PR event, and on a check-in with `send_later` about every 4 hours while the PR waits for
+  review (stop after 3 in a row that found nothing new, or when it is merged or closed), look at its
+  merge state. On a conflict, merge `origin/main` into the branch, resolve it, run the build and
+  tests, and push. A branch that is only behind `main` stays as it is: @JoanComasFdz clicks Update
+  branch, so pull before your next change.
 - Before every push: `dotnet build Loopsmith.slnx` and `dotnet test` (warnings are errors; there is
   no separate linter). Check a web change in a browser too (How we work).
 - In cloud sessions `gh issue` and `gh pr` fail (GitHub's GraphQL is blocked): use the built-in
