@@ -55,10 +55,10 @@ public static class SubclassEditing
         ];
 
         return new SubclassPlugs(
-            Find(build.Abilities.Super, SubclassSlot.Super),
-            Find(build.Abilities.Grenade, SubclassSlot.Grenade),
-            Find(build.Abilities.Melee, SubclassSlot.Melee),
-            Find(build.Abilities.ClassAbility, SubclassSlot.ClassAbility),
+            Find(build.Abilities.Super.ToElement(), SubclassSlot.Super),
+            Find(build.Abilities.Grenade.ToElement(), SubclassSlot.Grenade),
+            Find(build.Abilities.Melee.ToElement(), SubclassSlot.Melee),
+            Find(build.Abilities.ClassAbility.ToElement(), SubclassSlot.ClassAbility),
             Find(Optional.None<ElementId>(), SubclassSlot.Jump),
             List(build.Aspects, SubclassSlot.Aspect),
             List(build.Fragments, SubclassSlot.Fragment));
@@ -129,15 +129,27 @@ public static class SubclassEditing
         return new Result<Build, string>.Ok(Write(catalog, build, plugs));
     }
 
+    /// <summary>
+    /// The build holding the plugs: a plug the rules know is its element, any other a left-out plug ("?" in an ability
+    /// slot). An ability slot with no plug is empty, except a "?" the build holds without a plug (a build file's), which
+    /// the editor shows empty but keeps.
+    /// </summary>
     private static Build Write(RuleCatalog catalog, Build build, SubclassPlugs plugs)
     {
         Optional<ElementId> FindId(ItemHash hash) => FindElement(catalog, build, hash).Map(element => element.Id);
-        Optional<ElementId> FindAbility(Optional<ItemHash> plug) => plug.Bind(FindId);
+        AbilityPlug FindAbility(Optional<ItemHash> plug, AbilityPlug held) =>
+            plug.Match(
+                hash => FindId(hash.Value).Match<AbilityPlug>(id => new AbilityPlug.Known(id.Value), _ => new AbilityPlug.Unknown()),
+                _ => held is AbilityPlug.Unknown ? held : new AbilityPlug.Empty());
         ImmutableArray<ElementId> ListElements(ImmutableArray<ItemHash> hashes) => [.. hashes.SelectMany(hash => Flatten(FindId(hash)))];
         var unknown = ListSingles(plugs).Concat(plugs.Aspects).Concat(plugs.Fragments).Where(hash => !FindId(hash).IsSome());
         return build with
         {
-            Abilities = new AbilityLoadout(FindAbility(plugs.Super), FindAbility(plugs.Grenade), FindAbility(plugs.Melee), FindAbility(plugs.ClassAbility)),
+            Abilities = new AbilityLoadout(
+                FindAbility(plugs.Super, build.Abilities.Super),
+                FindAbility(plugs.Grenade, build.Abilities.Grenade),
+                FindAbility(plugs.Melee, build.Abilities.Melee),
+                FindAbility(plugs.ClassAbility, build.Abilities.ClassAbility)),
             Aspects = ListElements(plugs.Aspects),
             Fragments = ListElements(plugs.Fragments),
             LeftOut = [.. build.LeftOut.Where(item => item.Part != LoadoutPart.SubclassPlug), .. unknown.Select(hash => new LeftOutItem(LoadoutPart.SubclassPlug, hash))],

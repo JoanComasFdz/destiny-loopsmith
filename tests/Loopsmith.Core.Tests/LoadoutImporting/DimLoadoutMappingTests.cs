@@ -52,7 +52,7 @@ public sealed class DimLoadoutMappingTests
 
         Assert.Equal(("Skip Grenade Hunter", GuardianClass.Hunter, Subclass.Arc), (build.Name, build.Class, build.Subclass));
         Assert.Equal(Optional.Some(Link), build.SourceUrl);
-        Assert.Equal(Optional.Some(ElementId.From("gamblers-dodge")), build.Abilities.ClassAbility);
+        Assert.Equal<AbilityPlug>(new AbilityPlug.Known(ElementId.From("gamblers-dodge")), build.Abilities.ClassAbility);
         Assert.Equal(["tempest-strike", "flow-state"], build.Aspects.Select(id => id.Value));
         Assert.Equal(["spark-of-resistance", "spark-of-frequency", "spark-of-shock", "spark-of-discharge"], build.Fragments.Select(id => id.Value));
         Assert.Equal(Optional.Some(ElementId.From("shinobus-vow")), build.ExoticArmor);
@@ -67,7 +67,7 @@ public sealed class DimLoadoutMappingTests
 
         Assert.Equal(
             [false, false, false],
-            new[] { build.Abilities.Super, build.Abilities.Grenade, build.Abilities.Melee }.Select(ability => ability.IsSome()));
+            new[] { build.Abilities.Super, build.Abilities.Grenade, build.Abilities.Melee }.Select(ability => ability.ToElement().IsSome()));
         Assert.Equal(
             [
                 (LoadoutPart.SubclassPlug, 1001u), (LoadoutPart.SubclassPlug, 1002u), (LoadoutPart.SubclassPlug, 1003u),
@@ -150,7 +150,11 @@ public sealed class DimLoadoutMappingTests
         Assert.Equal(("Arc - Skipp grenade", GuardianClass.Hunter, Subclass.Arc), (build.Name, build.Class, build.Subclass));
         Assert.Equal(Optional.Some("https://dim.gg/2jguuoq/Arc-Skipp-grenade"), build.SourceUrl);
         Assert.Equal(
-            new AbilityLoadout(ElementId.From("gathering-storm"), ElementId.From("skip-grenade"), ElementId.From("combination-blow"), ElementId.From("gamblers-dodge")),
+            new AbilityLoadout(
+                new AbilityPlug.Known(ElementId.From("gathering-storm")),
+                new AbilityPlug.Known(ElementId.From("skip-grenade")),
+                new AbilityPlug.Known(ElementId.From("combination-blow")),
+                new AbilityPlug.Known(ElementId.From("gamblers-dodge"))),
             build.Abilities);
         Assert.Equal(["flow-state", "tempest-strike"], build.Aspects.Select(id => id.Value));
         Assert.Equal(Optional.Some(ElementId.From("shinobus-vow")), build.ExoticArmor);
@@ -185,7 +189,7 @@ public sealed class DimLoadoutMappingTests
             .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
 
         Assert.Equal((GuardianClass.Titan, Subclass.Arc), (session.Build.Build.Class, session.Build.Build.Subclass));
-        Assert.Equal(Optional.None<ElementId>(), session.Build.Build.Abilities.Grenade);
+        Assert.Equal<AbilityPlug>(new AbilityPlug.Unknown(), session.Build.Build.Abilities.Grenade);
         Assert.Empty(session.Build.Build.Fragments);
         Assert.Equal(
             [146194908u, 1656549674u, 1727069364u],

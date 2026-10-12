@@ -1,10 +1,10 @@
-# Designed loops: file format (v1), starting from a DIM link, sharing, analysis, comparison
+# Designed loops: file format (v1), starting from scratch or a DIM link, sharing, analysis, comparison
 
 **The product of Loopsmith is a loop someone designs**
 ([ADRs D2](../ADRs.md#d2--the-designed-loop-is-the-product)): an ordered list of steps, each a trigger
 ("dodge", "throw a grenade and kill three") or a state the player declares ("Bolt Charge at max",
 D3). You pick a build, choose a step, see everything it sets off and what is available next, choose
-again, and so on — the build can come from a DIM link. Loopsmith describes cause and effect
+again, and so on — the build can come from a DIM link, or start from scratch. Loopsmith describes cause and effect
 ([ADRs D1](../ADRs.md#d1--loopsmith-describes-cause-and-effect-it-doesnt-simulate-the-game)), so a
 loop is judged by its **order of triggers**: whether each step gets what it needs from the steps
 before it, and whether the order repeats. The loop is data: it can be saved, shared, imported,
@@ -184,6 +184,27 @@ x5 · 8s") show on hover. The CLI's `--state` prints the same four lines, then o
 status that switches something on.
 Each step can be moved up or down, removed or dragged onto another step's place; the loop
 replays in its new order.
+
+## Starting from scratch
+
+Home's **Start from scratch** button, above the DIM link, opens the designer on a new loop, *Arc Hunter loop*, for a
+build named *Arc Hunter* (class `hunter`, subclass `arc`: Arcstrider) with nothing equipped: no super, grenade, melee or
+class ability, no aspects, fragments, weapons, armor, mods, artifact perks or stats. Its build file names only that
+(`name`, `class`, `subclass`, and a comment saying where it came from): an ability left out is an empty slot, not `"?"`
+([rule-format.md](rule-format.md#build-file-buildsbuildbuildyaml)), so the export and the share link carry it as it
+is and it reopens empty.
+
+The Subclass box shows the Arcstrider icon and a dashed square named for each empty ability (Super, Class ability,
+Melee, Grenade); the Weapons and Armor boxes show their empty slots, as for every build in the designer (a slot
+without a weapon or a piece is a dashed square named for it). The player fills it from there: **⋯** on the Subclass
+box opens the subclass editor ([Editing the subclass](#editing-the-subclass)), and after a Bungie login ⋯ next to each
+weapon and armor slot picks one of their own ([Stats](#stats)).
+
+While the build has no super, grenade, melee or class ability (named or "?") and no weapon, it has nothing to set things
+off, so the **Next trigger** panel is greyed out, nothing in it can be tapped, and a line says why ("Give the build a
+super, an ability or a weapon first"); this holds for any build in that state. Once the editor gives it an ability, the
+panel offers it; an ability slot still empty is a dashed square named for its kind in the HUD too (an ability is always
+possible in the game, ADRs D5, so it can still be cast — it sets off what reacts to any cast).
 
 ## Starting from a DIM link
 
@@ -377,8 +398,8 @@ plugs in their sockets:
   has them all), and `catalyst: true` when its catalyst socket holds the catalyst. Only those entries of the embedded
   build change, and the steps replay. The Stats section's line says so ("Its weapons are yours too, with their
   perks."), or, for weapons that aren't theirs, to pick their own with ⋯.
-* **⋯ next to each weapon** opens the **weapon picker** for its slot (all three slots show after the login, an empty
-  one too): the player's weapons for that slot, the copy the build names first (✓ when it is theirs; for someone
+* **⋯ next to each weapon** opens the **weapon picker** for its slot (all three slots show, an empty one too; ⋯ comes
+  with the login): the player's weapons for that slot, the copy the build names first (✓ when it is theirs; for someone
   else's share none is ticked, so their own copy can be used to load its perks), then that weapon's other copies, then
   the rest by name; each with its tier, masterwork, breaker and element as in the loadout. Hovering one (or a
   first tap) shows its type, tier and the perks it holds, and where it is; a click (a second tap, or "Use this

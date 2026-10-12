@@ -96,7 +96,7 @@ public sealed class KeywordIconsTests
         var pack = new PlayerAction.Declare(new StateDeclaration.NewPack());
 
         Assert.Equal(build.Build.Weapons.Single(found => found.Slot == WeaponSlot.Kinetic).Hash.Bind(Catalog.Manifest.FindItem).Bind(item => item.Icon).Map(IconFinding.ToManifestIcon), LoopDesigning.FindActionIcon(build, weapon));
-        Assert.Equal(build.Build.Abilities.Grenade.Bind(grenadeElement => IconFinding.FindElementIcon(Catalog, grenadeElement)), LoopDesigning.FindActionIcon(build, grenade));
+        Assert.Equal(build.Build.Abilities.Grenade.ToElement().Bind(grenadeElement => IconFinding.FindElementIcon(Catalog, grenadeElement)), LoopDesigning.FindActionIcon(build, grenade));
         Assert.True(LoopDesigning.FindActionIcon(build, grenade).IsSome());
         Assert.Equal(ToManifestIcon(Catalog.Manifest.KeywordTraits[ItemHash.From(3824458961u)].Icon), LoopDesigning.FindActionIcon(build, trace));
         Assert.Equal(ToManifestIcon(Catalog.Manifest.KeywordTraits[ItemHash.From(2935077680u)].Icon), LoopDesigning.FindActionIcon(build, max));

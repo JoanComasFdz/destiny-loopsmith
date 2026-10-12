@@ -198,8 +198,8 @@ public static class StatAdding
     /// <summary>The build's subclass plugs with stats (Spark of Shock's −10 Grenade): its aspects, fragments and abilities, and left-out subclass plugs.</summary>
     private static ImmutableArray<NamedPlug> ListSubclassPlugs(RuleCatalog catalog, Build build) =>
     [
-        .. new[] { build.Abilities.Super, build.Abilities.Grenade, build.Abilities.Melee, build.Abilities.ClassAbility }
-            .SelectMany(ability => ability.Match(found => new[] { found.Value }, _ => []))
+        .. build.Abilities.ListPlugs()
+            .SelectMany(ability => ability.ToElement().Match(found => new[] { found.Value }, _ => []))
             .Concat(build.Aspects)
             .Concat(build.Fragments)
             .SelectMany(element => ToSequence(FindElementPlug(catalog, element)))

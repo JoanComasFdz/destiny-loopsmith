@@ -4,15 +4,25 @@ using Loopsmith.Core.Functional;
 
 namespace Loopsmith.Core.Domain;
 
-/// <summary>
-/// The four ability slots. None is "?" in the build file: an ability the build has but Loopsmith can't name (a DIM
-/// link's super that isn't in the catalog yet). Unknown is data: the slot shows "?" and sets nothing off.
-/// </summary>
+/// <summary>The four ability slots, each with what it holds (<see cref="AbilityPlug"/>).</summary>
 public sealed record AbilityLoadout(
-    Optional<ElementId> Super,
-    Optional<ElementId> Grenade,
-    Optional<ElementId> Melee,
-    Optional<ElementId> ClassAbility);
+    AbilityPlug Super,
+    AbilityPlug Grenade,
+    AbilityPlug Melee,
+    AbilityPlug ClassAbility);
+
+/// <summary>
+/// What an ability slot holds: an element of the rules; an ability the build has but Loopsmith can't name (<c>"?"</c> in
+/// the build file: a DIM link's super that isn't in the catalog yet; unknown is data, so the slot shows "?" and sets
+/// nothing off); or nothing yet (a build started from scratch: the build file leaves its key out, the slot shows empty).
+/// </summary>
+[Union]
+public partial record AbilityPlug
+{
+    partial record Known(ElementId Element);
+    partial record Unknown;
+    partial record Empty;
+}
 
 /// <summary>
 /// An equipped weapon. <see cref="Perks"/> are named by catalog id; <see cref="Hash"/> is its manifest item when known (a

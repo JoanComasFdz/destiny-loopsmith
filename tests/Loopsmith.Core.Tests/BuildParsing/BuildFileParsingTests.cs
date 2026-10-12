@@ -66,10 +66,10 @@ public sealed class BuildFileParsingTests
         Assert.Equal(Subclass.Arc, build.Subclass);
         Assert.Equal(
             new AbilityLoadout(
-                ElementId.From("arc-staff"),
-                ElementId.From("skip-grenade"),
-                ElementId.From("combination-blow"),
-                ElementId.From("gamblers-dodge")),
+                new AbilityPlug.Known(ElementId.From("arc-staff")),
+                new AbilityPlug.Known(ElementId.From("skip-grenade")),
+                new AbilityPlug.Known(ElementId.From("combination-blow")),
+                new AbilityPlug.Known(ElementId.From("gamblers-dodge"))),
             build.Abilities);
         Assert.Equal(["tempest-strike", "flow-state"], ToNames(build.Aspects));
         Assert.Equal(
@@ -194,7 +194,7 @@ public sealed class BuildFileParsingTests
             """);
 
         Assert.Equal(
-            new AbilityLoadout(Optional.None<ElementId>(), Optional.None<ElementId>(), ElementId.From("combination-blow"), ElementId.From("gamblers-dodge")),
+            new AbilityLoadout(new AbilityPlug.Unknown(), new AbilityPlug.Unknown(), new AbilityPlug.Known(ElementId.From("combination-blow")), new AbilityPlug.Known(ElementId.From("gamblers-dodge"))),
             build.Abilities);
         Assert.Equal(
             [(LoadoutPart.Item, 2005u), (LoadoutPart.Item, 2006u), (LoadoutPart.ArmorMod, 3007u)],
@@ -254,19 +254,32 @@ public sealed class BuildFileParsingTests
     public void Missing_required_fields_are_errors()
     {
         var message = ParseInvalidBuild("""
-            name: Half a Hunter
-            class: hunter
             grenade: skip-grenade
             """);
 
         Assert.Equal(
             string.Join(
                 "\n",
-                $"{BuildPath}:1: build is missing 'subclass'",
-                $"{BuildPath}:1: build is missing 'super'",
-                $"{BuildPath}:1: build is missing 'melee'",
-                $"{BuildPath}:1: build is missing 'classAbility'"),
+                $"{BuildPath}:1: build is missing 'name'",
+                $"{BuildPath}:1: build is missing 'class'",
+                $"{BuildPath}:1: build is missing 'subclass'"),
             message);
+    }
+
+    [Fact]
+    public void An_ability_left_out_is_an_empty_slot_and_a_question_mark_is_unknown()
+    {
+        var build = ParseValidBuild("""
+            name: Half a Hunter
+            class: hunter
+            subclass: arc
+            grenade: skip-grenade
+            melee: "?"
+            """);
+
+        Assert.Equal(
+            new AbilityLoadout(new AbilityPlug.Empty(), new AbilityPlug.Known(ElementId.From("skip-grenade")), new AbilityPlug.Unknown(), new AbilityPlug.Empty()),
+            build.Abilities);
     }
 
     [Fact]
