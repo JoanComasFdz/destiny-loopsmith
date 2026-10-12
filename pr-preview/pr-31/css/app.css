@@ -888,8 +888,12 @@ button.hud-chip:hover, button.hud-chip:focus-visible { background: color-mix(in 
 .icon-tile.masterwork { border-color: var(--masterwork); }
 .tile-overlay { position: absolute; inset: 0; background-size: contain; background-position: center; background-repeat: no-repeat; pointer-events: none; }
 .tile-overlay.masterwork-glow { opacity: .72; }
-.icon-tile.out { opacity: .55; filter: grayscale(.6); border-style: dashed; }
-.icon-tile.out:hover { opacity: .9; }
+/* a square the rules don't know yet: drawn as any other, with a small grey ⊘ in its lower-right corner (its title: "Not in
+   Loopsmith yet: it sets nothing off in your loop"); a count it carries (×2) moves to the lower-left */
+.icon-tile.out { overflow: visible; }
+.unsupported-mark { position: absolute; right: -3px; bottom: -3px; z-index: 1; width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; box-sizing: border-box; border-radius: 50%; background: #2a303c; border: 1.5px solid var(--panel); color: #c3c9d4; }
+.unsupported-mark svg { width: 8px; height: 8px; display: block; }
+.icon-tile.out .icon-count { right: auto; left: 1px; }
 .icon-tile.empty { border-style: dashed; color: var(--dim); font-size: 9px; text-align: center; background: transparent; }
 .icon-initials { font-size: 11px; font-weight: 750; color: var(--aff, var(--text)); letter-spacing: .02em; }
 .icon-count { position: absolute; right: 1px; bottom: 0; padding: 0 2px; font-size: 10px; font-weight: 750; color: #fff; background: rgba(0, 0, 0, .7); }
@@ -926,11 +930,7 @@ button.hud-chip:hover, button.hud-chip:focus-visible { background: color-mix(in 
 /* a weapon's own perks (the build's, a copy's in the weapon picker, the picked one in the perk picker) on DIM's blue
    circle for a plugged perk; what a column could roll with stays dark */
 .weapon-perks .icon-tile.perk:not(.empty-perk), .weapon-option-perk .icon-tile.perk, .perk-option.picked .icon-tile.perk { --perk-fill: #4887ba; }
-/* a perk the rules don't know yet: its icon is dimmed and its circle dashed; its circle's fill, and an enhanced trait's
-   gold glow and arrow, stay as bright as a known perk's (dimming the whole square turned them grey) */
-.icon-tile.perk.out { opacity: 1; filter: none; }
-.icon-tile.perk.out img { opacity: .55; filter: grayscale(.6); }
-.icon-tile.perk.out:hover img { opacity: .9; }
+
 .icon-tile.perk img { border-radius: 50%; }
 /* an enhanced trait, as the game and DIM draw it over the base perk's icon (Bungie gives both the same image): a gold
    glow over the circle's lower half, behind the icon, and one straight gold up-arrow down the circle's left edge: its
