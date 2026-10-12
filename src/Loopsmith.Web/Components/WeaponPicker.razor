@@ -8,7 +8,7 @@
     var slot = Build.Build.FindTargetSlot(Target);
     var shown = view.Options.Where(option => focused == Optional.Some(option.Instance)).Select(Optional.Some).FindFirstSome();
 }
-<Modal Title="@view.Title" Size="wide" OnClose="OnClose">
+<Modal Title="@view.Title" Size="wide fit" OnClose="OnClose">
     <div class="weapon-picker" data-testid="weapon-picker" data-slot="@slot.Match(found => found.Value.ToString(), _ => "")">
         <ManifestProgressBar />
         @if (view.Options.IsEmpty)
@@ -25,7 +25,7 @@
                         <button type="button" role="option" aria-selected="@(focused == Optional.Some(instance) ? "true" : "false")"
                                 class="icon-tile tappable item @DescribeTier(option.Tile) @(option.Worn ? "worn" : "") @(focused == Optional.Some(instance) ? "focused" : "") @LoadoutShaping.ToMasterworkClass(option.Marks)"
                                 data-tier="@LoadoutShaping.ToTierText(option.Marks)" data-masterwork="@LoadoutShaping.ToMasterworkText(option.Marks)"
-                                title="@LoadoutShaping.AddMarks($"{option.Tile.Name} — {option.TypeLine}", option.Marks)" aria-label="@option.Tile.Name" data-instance="@instance.Value"
+                                title="@LoadoutShaping.AddMarks($"{option.Tile.Name} — {WeaponPickerShaping.DescribeType(option)}", option.Marks)" aria-label="@option.Tile.Name" data-instance="@instance.Value"
                                 @onpointerenter="e => Hover(instance, e)" @onclick="() => ChooseAsync(instance)">
                             @if (option.Tile.Icon is Optional<string>.Some icon)
                             {
@@ -41,16 +41,7 @@
                                 <span class="armor-worn-mark" aria-hidden="true">✓</span>
                             }
                         </button>
-                        <span class="tile-badge @LoadoutShaping.ToMasterworkClass(option.Marks)" aria-hidden="true">
-                            @if (option.Marks.Breaker is Optional<BreakerBadge>.Some breaker)
-                            {
-                                <img class="breaker-icon" src="@breaker.Value.Icon" alt="" loading="lazy" />
-                            }
-                            @if (option.DamageIcon is Optional<string>.Some damage)
-                            {
-                                <img class="damage-icon" src="@damage.Value" alt="" loading="lazy" />
-                            }
-                        </span>
+                        <TileFooter Marks="option.Marks" DamageIcon="option.DamageIcon" DamageName="@WeaponPickerShaping.DescribeDamage(option)" />
                     </div>
                 }
             </div>
@@ -58,11 +49,11 @@
             {
                 var weapon = details.Value;
                 <div class="armor-option-details" data-testid="weapon-option-details">
-                    <div class="armor-option-name">@weapon.Tile.Name@(weapon.TypeLine.Length > 0 ? $" · {weapon.TypeLine}" : "")</div>
-                    @if (LoadoutShaping.AddMarks("", weapon.Marks) is { Length: > 0 } marked)
-                    {
-                        <div class="armor-option-marks" data-testid="weapon-option-marks">@marked</div>
-                    }
+                    @* One line, its marks last: the panel keeps its height from one weapon to the next, masterworked or not. *@
+                    <div class="armor-option-name">@weapon.Tile.Name@(weapon.Archetype.Length > 0 ? $" · {weapon.Archetype}" : "")@if (weapon.Damage is Optional<DamageType>.Some damage)
+                        {<span class="option-sep"> · </span><span class="option-damage @ToneStyling.ToToneClass(damage.Value.ToAffinity().ToTone())" data-testid="weapon-option-damage">@if (weapon.DamageIcon is Optional<string>.Some damageIcon)
+                            {<img class="inline-icon" src="@damageIcon.Value" alt="" loading="lazy" />}@damage.Value</span>}@if (LoadoutShaping.AddMarks("", weapon.Marks) is { Length: > 0 } marked)
+                        {<span class="option-sep"> · </span><span class="armor-option-marks" data-testid="weapon-option-marks">@marked</span>}</div>
                     @if (!weapon.Perks.IsEmpty)
                     {
                         <div class="weapon-option-perks" data-testid="weapon-option-perks">

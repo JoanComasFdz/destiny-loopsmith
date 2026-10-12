@@ -74,11 +74,25 @@ public sealed record TierMark(GearTier Tier, Optional<string> Overlay);
 /// <summary>A masterworked copy's mark: a gold border, and the glow over its icon (an exotic's its own; none when the excerpt lacks it).</summary>
 public sealed record MasterworkMark(Optional<string> Glow);
 
+/// <summary>What DIM draws in a square's top-right corner: a legendary weapon's frame, or an Armor 3.0 piece's stat focus.</summary>
+public enum CornerKind { Frame, StatFocus }
+
+/// <summary>The top-right corner of a square: what it shows (Adaptive Frame, a Weapons focus) and its icon, a bungie.net address.</summary>
+public sealed record CornerBadge(CornerKind Kind, string Name, string Icon);
+
 /// <summary>
-/// What DIM draws on a copy's square: its gear tier, its masterwork, and a weapon's champion breaker. The tier and
-/// masterwork are the player's copy's, after their Bungie login; a weapon's own breaker (an exotic's) shows before.
+/// What DIM draws on a copy's square: its gear tier, its masterwork, a weapon's champion breaker, the item's season
+/// watermark (top-left), its corner (top-right: a legendary weapon's frame, an armor piece's stat focus) and its power
+/// level (in the footer). The tier, masterwork, stat focus and power are the player's copy's, after their Bungie login;
+/// the watermark, a weapon's frame and its own breaker (an exotic's, a frame's) show before.
 /// </summary>
-public sealed record TileMarks(Optional<TierMark> Tier, Optional<MasterworkMark> Masterwork, Optional<BreakerBadge> Breaker);
+public sealed record TileMarks(
+    Optional<TierMark> Tier,
+    Optional<MasterworkMark> Masterwork,
+    Optional<BreakerBadge> Breaker,
+    Optional<string> Watermark,
+    Optional<CornerBadge> Corner,
+    Optional<PowerLevel> Power);
 
 /// <summary>An exotic's catalyst square: the catalyst item's tile and whether the build turns it on.</summary>
 public sealed record CatalystSquare(IconTile Tile, bool On);
@@ -245,7 +259,12 @@ public static class LoadoutShaping
         new(
             slot,
             piece,
-            DescribeMarks(build.Catalog, piece.Bind(tile => tile.Tier), profile.Bind(owned => LoopDesigning.FindArmorMarks(build, owned, slot)), Optional.None<BreakerType>()),
+            DescribeMarks(
+                build.Catalog,
+                FindArmorPiece(build, slot),
+                profile.Bind(owned => LoopDesigning.FindArmorMarks(build, owned, slot)),
+                Optional.None<BreakerType>(),
+                profile.Bind(owned => LoopDesigning.FindStatFocus(build, owned, slot)).Map(DescribeStatFocus)),
             mods);
 
     /// <summary>The armor rows to show: the slots with a piece or a mod; every slot when the player can pick pieces (after a login).</summary>
@@ -283,22 +302,38 @@ public static class LoadoutShaping
             .FindFirstSome();
     }
 
-    /// <summary>A square with no marks: one that isn't a copy (a perk, a mod, an empty slot), or a copy before the login.</summary>
-    public static readonly TileMarks NoMarks = new(Optional.None<TierMark>(), Optional.None<MasterworkMark>(), Optional.None<BreakerBadge>());
+    /// <summary>A square with no marks: one that isn't a copy (a perk, a mod, an empty slot).</summary>
+    public static readonly TileMarks NoMarks = new(
+        Optional.None<TierMark>(), Optional.None<MasterworkMark>(), Optional.None<BreakerBadge>(), Optional.None<string>(), Optional.None<CornerBadge>(), Optional.None<PowerLevel>());
 
     /// <summary>
-    /// A copy's marks, from Core's (its tier, masterwork; none: not the player's copy) and its breaker: the overlays are
-    /// the excerpt's, an exotic's masterwork glow its own (<paramref name="tier"/>: the item's rarity).
+    /// A copy's marks, from Core's (its tier, masterwork, power; none: not the player's copy), its breaker and corner, and
+    /// its item's watermark: the overlays are the excerpt's, an exotic's masterwork glow its own.
     /// </summary>
-    public static TileMarks DescribeMarks(RuleCatalog catalog, Optional<ItemTier> tier, Optional<GearMarks> marks, Optional<BreakerType> breaker)
+    public static TileMarks DescribeMarks(RuleCatalog catalog, Optional<ManifestItem> item, Optional<GearMarks> marks, Optional<BreakerType> breaker, Optional<CornerBadge> corner)
     {
         var overlays = catalog.Manifest.Overlays;
         var masterworked = marks.Match(found => found.Value.Masterworked, _ => false);
         return new TileMarks(
             marks.Bind(found => found.Tier).Map(found => new TierMark(found, overlays.FindTierOverlay(found).Map(ToIconUrl))),
-            masterworked ? Optional.Some(new MasterworkMark(overlays.FindMasterworkOverlay(tier).Map(ToIconUrl))) : Optional.None<MasterworkMark>(),
-            breaker.Map(found => new BreakerBadge(found.Name, ToIconUrl(found.Icon))));
+            masterworked ? Optional.Some(new MasterworkMark(overlays.FindMasterworkOverlay(item.Bind(found => found.Tier)).Map(ToIconUrl))) : Optional.None<MasterworkMark>(),
+            breaker.Map(found => new BreakerBadge(found.Name, ToIconUrl(found.Icon))),
+            item.Bind(found => found.Watermark).Map(ToIconUrl),
+            corner,
+            marks.Bind(found => found.Power));
     }
+
+    /// <summary>A legendary weapon's top-right corner: its intrinsic frame (Adaptive Frame), as DIM shows it; none for an exotic.</summary>
+    public static Optional<CornerBadge> DescribeFrame(ValidatedBuild build, ManifestItem weapon) =>
+        LoopDesigning.FindWeaponFrame(build, weapon).Bind(frame => frame.Icon.Map(icon => new CornerBadge(CornerKind.Frame, frame.Name, ToIconUrl(icon))));
+
+    /// <summary>An Armor 3.0 piece's top-right corner: the stat it focuses on (its highest rolled stat), as DIM shows it.</summary>
+    public static CornerBadge DescribeStatFocus(ArmorStatIcon stat) =>
+        new(CornerKind.StatFocus, $"{stat.Name} focus", ToIconUrl(stat.Icon));
+
+    /// <summary>A square's corner class: "frame" or "stat-focus".</summary>
+    public static string ToCornerClass(CornerBadge corner) =>
+        corner.Kind == CornerKind.Frame ? "frame" : "stat-focus";
 
     /// <summary>A copy's tier as its square's <c>data-tier</c> says it ("4"); empty when Loopsmith doesn't know it.</summary>
     public static string ToTierText(TileMarks marks) =>
@@ -325,9 +360,15 @@ public static class LoadoutShaping
     /// <summary>The bungie.net address of a manifest icon path.</summary>
     public static string ToIconUrl(string path) => IconHost + path;
 
-    /// <summary>An element's icon (the manifest's, by its hash); none for one without a hash (a keyword: Bolt Charge, Jolt).</summary>
+    /// <summary>An icon's address: a manifest icon's on bungie.net, or a drawn one's (<see cref="IconDrawing"/>).</summary>
+    public static string ToIconUrl(IconRef icon) =>
+        icon.Match(
+            manifest => ToIconUrl(manifest.Path),
+            drawn => IconDrawing.DrawIcon(drawn.Shape, drawn.Affinity));
+
+    /// <summary>An element's icon: its manifest item's, else (a keyword's element) the keyword's own icon; none when the excerpt has neither.</summary>
     public static Optional<string> FindElementIcon(RuleCatalog catalog, ElementId id) =>
-        catalog.FindElementItem(id).Bind(item => item.Icon).Map(ToIconUrl);
+        LoopDesigning.FindElementIcon(catalog, id).Map(ToIconUrl);
 
     private static IconTile DescribeElement(RuleCatalog catalog, ElementId id) =>
         catalog.Elements.TryGetValue(id, out var element)
@@ -407,7 +448,7 @@ public static class LoadoutShaping
         return new WeaponView(
             index,
             tile,
-            DescribeMarks(catalog, tile.Tier, marks, LoopDesigning.FindWeaponBreaker(build, weapon, marks)),
+            DescribeMarks(catalog, item, marks, LoopDesigning.FindWeaponBreaker(build, weapon, marks), item.Bind(known => DescribeFrame(build, known))),
             weapon.Hash.Bind(hash => ToPageUrl(catalog, hash)),
             weapon.Slot,
             weapon.Archetype,

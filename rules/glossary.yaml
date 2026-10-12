@@ -5,7 +5,9 @@
 # stack: applying it while it is active changes nothing. The stacking statuses are bolt-charge,
 # armor-charge, combination-blow and slice. A duration is a fact shown on the outcome, given only
 # where a source states it. A status ends when a rule removes or consumes it, or when the player
-# declares it ended (`end:<status>`).
+# declares it ended (`end:<status>`). `trait` is Bungie's trait for the keyword (the manifest's
+# DestinyTraitDefinition: the game's own keyword, as its tooltips name it): the manifest excerpt's
+# `keywordTraits` give its icon, which shows next to the keyword's name. A keyword without one has none.
 # Sources: the Destiny Data Compendium snapshot of 2026-10-09 ("compendium/2026-10-09/<Tab>#<row>"
 # below; it has glossary rows for the Arc and Strand keywords) and Clarity 2.0625, which has no
 # status entries and only mentions them inside other entries.
@@ -16,7 +18,7 @@ statuses:
   # maxStacks 10: compendium/2026-10-09/Arc#5 (10 stacks are needed to discharge). Agrees with the
   # creator ("those 10 stacks of bolt charge") and with Clarity's New Tricks trigger ("x10").
   # No duration is stated.
-  - { id: bolt-charge, name: Bolt Charge, kind: buff, affinity: arc, maxStacks: 10 }
+  - { id: bolt-charge, name: Bolt Charge, kind: buff, affinity: arc, maxStacks: 10, trait: 2935077680 }
 
   # 15 s: compendium/2026-10-09/Arc#4 (the intrinsic Arc buff; Flashover's Artifact Perks#43 also
   # says 15 s). The artifact perk Amped Up (Artifact Perks#109, not in the skip-grenade build) raises
@@ -27,7 +29,7 @@ statuses:
   # Speed Booster need movement; +40 Handling needs an "all weapons" archetype; the 15% damage
   # resistance against combatants is expressible but changes no loop. In this build Flow State
   # grants Amplified on every jolted kill anyway.
-  - { id: amplified, name: Amplified, kind: buff, affinity: arc, duration: 15s }
+  - { id: amplified, name: Amplified, kind: buff, affinity: arc, duration: 15s, trait: 3291013836 }
 
   # Base maximum 3: compendium/2026-10-09/Game Mechanics#94. Charged Up raises a build's cap to
   # 4|5|6 by copies (the `charged-up` mod's raiseMaxStacks passive; Clarity 2577472338 agrees). Its
@@ -39,12 +41,14 @@ statuses:
   # also says 10 s). Clarity mentions other durations for other sources (5 s, 2-20 s); a rule can
   # override it. Its 45% [25%] damage resistance and its removal on a Super cast are the woven-mail
   # keyword element (keywords/strand.yaml).
-  - { id: woven-mail, name: Woven Mail, kind: buff, affinity: strand, duration: 10s }
+  - { id: woven-mail, name: Woven Mail, kind: buff, affinity: strand, duration: 10s, trait: 3173573497 }
 
   # Duration depends on the source (Clarity: 11 s Facet of Bravery, 8 s Thread of Propagation;
   # Compendium Artifact Perks#45: 14 s from Unraveling Orbs, set in that rule). No generic duration.
   # A weapon buff (kind weaponBuff): your Strand weapons fire Unraveling Rounds; the state shows it with the weapons.
-  - { id: unraveling-rounds, name: Unraveling Rounds, kind: weaponBuff, affinity: strand }
+  # No trait: Bungie's manifest has no icon for it (2026-10-12: no trait, perk or item by that name). The game draws
+  # it in your buffs as a triangle around a round (drawnIcon: rounds), which the designer draws in its affinity.
+  - { id: unraveling-rounds, name: Unraveling Rounds, kind: weaponBuff, affinity: strand, drawnIcon: rounds }
 
   # Combination Blow melee damage stacks: up to 3, each lasting 20 s (compendium/2026-10-09/Arc#41;
   # the creator also says "times three stacks"). Clarity has no melee-ability entries.
@@ -84,19 +88,19 @@ statuses:
   # threads (Strand#10: after taking 40 damage an unraveled enemy sends out 3 threads of 26 [4]
   # damage that spread Unravel, 1.2 s cooldown): no rule reacts to thread damage and the pack they
   # would spread to is the one already unraveled (ADRs D7), so they would only add trace lines.
-  - { id: jolt, name: Jolt, kind: debuff, affinity: arc, duration: 10s }
-  - { id: sever, name: Sever, kind: debuff, affinity: strand, duration: 10s }
-  - { id: unravel, name: Unravel, kind: debuff, affinity: strand }
-  - { id: blind, name: Blind, kind: debuff, affinity: arc, duration: 10s }
+  - { id: jolt, name: Jolt, kind: debuff, affinity: arc, duration: 10s, trait: 3221118171 }
+  - { id: sever, name: Sever, kind: debuff, affinity: strand, duration: 10s, trait: 2519102437 }
+  - { id: unravel, name: Unravel, kind: debuff, affinity: strand, trait: 945613349 }
+  - { id: blind, name: Blind, kind: debuff, affinity: arc, duration: 10s, trait: 500183315 }
 
 pickups:
   # Ionic Traces home in on you at 6 m/s (compendium/2026-10-09/Arc#6); the creator agrees:
   # "you don't need to go pick them up ... They literally come to you."
-  - { id: ionic-trace, name: Ionic Trace, affinity: arc, collectsAutomatically: true }
+  - { id: ionic-trace, name: Ionic Trace, affinity: arc, collectsAutomatically: true, trait: 3824458961 }
   - { id: orb-of-power, name: Orb of Power, affinity: neutral, collectsAutomatically: false }
 
 summons:
-  - { id: threadling, name: Threadling, damageType: strand }
+  - { id: threadling, name: Threadling, damageType: strand, trait: 2724747993 }
 
 # ---------------------------------------------------------------- subclass items
 # The manifest hash of each subclass item, so a DIM loadout's subclass is recognised (ADRs D27,

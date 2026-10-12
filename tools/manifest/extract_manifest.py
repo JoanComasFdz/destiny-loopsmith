@@ -6,13 +6,17 @@
 <manifest-dir> holds the English JSON components get-manifest.sh downloads:
 DestinyInventoryItemDefinition.json, DestinyInventoryBucketDefinition.json, DestinyDamageTypeDefinition.json,
 DestinySocketTypeDefinition.json, DestinySocketCategoryDefinition.json, DestinyPlugSetDefinition.json,
-DestinySandboxPerkDefinition.json, DestinyEquipableItemSetDefinition.json, DestinyBreakerTypeDefinition.json and
-DestinyInventoryItemConstantsDefinition.json. <version> is the manifest's version string (written into the file).
+DestinySandboxPerkDefinition.json, DestinyEquipableItemSetDefinition.json, DestinyBreakerTypeDefinition.json,
+DestinyInventoryItemConstantsDefinition.json, DestinyTraitDefinition.json and DestinyStatDefinition.json. <version> is the manifest's version
+string (written into the file).
 
 The excerpt holds every hash Loopsmith names: each `hash:` in rules/ (elements, the glossary's subclasses,
 armor set perks) and every hash in the saved DIM shares (builds/*/dim-loadout.json). For each: its name,
 kind, type, icon, tier, Bungie's description and, for weapons, armor and armor mods, its slot and damage
-type. A weapon also gets its breaker (`breaker`: the champion it breaks of its own, an exotic's), its trait
+type, and a weapon's or armor piece's season watermark (`watermark`: the overlay with its season's or expansion's
+icon in its top-left corner). A weapon also gets its breaker (`breaker`: the champion it breaks of its own, an
+exotic's, else the one its intrinsic frame gives it — a frame's perk named with the breaker, "[Shield-Piercing]
+Barrier" on Adaptive Frame, as DIM reads it), its trait
 columns (`traits`: the "frames" sockets among its weapon perks), each the list of perks it can roll (one, for
 a column that doesn't roll: an exotic's), its intrinsic perk and, for an exotic, its catalyst; armor gets its
 intrinsic perk (an exotic's) and the armor set it belongs to. Those perks, catalysts (with the perks they grant) and sets (with their 2- and 4-piece perks) are
@@ -23,9 +27,13 @@ initial, empty one, socket by socket, each once). A hash the
 manifest doesn't have is reported, not written. The output is sorted and stable, so a rerun on the same
 manifest changes nothing.
 
-`breakerTypes` are the three breakers with their icons; `itemConstants` the overlays Bungie draws on an item's icon, as
+`breakerTypes` are the three breakers with their icons; `armorStats` the six armor stats with their names and icons (an
+Armor 3.0 piece's highest stat shows in its square's top-right corner, as DIM shows it); `itemConstants` the overlays Bungie draws on an item's icon, as
 DIM does: a gear tier's diamonds (`tierOverlays`, tier 1 to 5) and the masterwork glow (`masterworkOverlay`, and
 `masterworkExoticOverlay` for an exotic).
+`keywordTraits` are the game's own keywords the glossary's statuses, pickups and summons name (each `trait:` in rules/,
+DestinyTraitDefinition: Jolted, Bolt Charge, Woven Mail), with their names and icons: the icon shows next to the
+keyword's name.
 
 `statPlugs` are every plug that changes an armor stat, for adding up a build's stats from a player's own armor
 the way DIM does (docs/loop-format.md, "Stats"): a piece's rolled stats (`base`: the armor-stat and intrinsic plugs),
@@ -75,6 +83,16 @@ def list_rule_hashes(root):
         for match in re.finditer(r"hash:\s*(\[[^\]]*\]|\d+)", path.read_text(encoding="utf-8")):
             hashes.update(int(number) for number in re.findall(r"\d+", match.group(1)))
     return hashes
+
+
+def list_rule_traits(root):
+    """Every number after `trait:` in rules/: the glossary's keywords' traits."""
+    traits = set()
+    for path in sorted((root / "rules").rglob("*.yaml")):
+        if path.name == "manifest.yaml" and path.parent.name == "rules":
+            continue
+        traits.update(int(number) for number in re.findall(r"trait:\s*(\d+)", path.read_text(encoding="utf-8")))
+    return traits
 
 
 def list_share_hashes(root):
@@ -179,6 +197,22 @@ def read_intrinsic(item, category, items):
     return None
 
 
+def read_frame_breaker(plug, perks, breaker_types):
+    """The breaker an intrinsic frame gives its weapon: a perk of the plug named with a breaker in brackets
+    ("[Shield-Piercing] Barrier" on Adaptive Frame, "[Disruption] Overload" on Rapid-Fire Frame), as DIM reads it."""
+    names = {to_breaker_name(d.get("displayProperties", {}).get("name", "")): int(h) for h, d in breaker_types.items()}
+    for entry in (plug or {}).get("perks", []):
+        name = perks.get(str(entry.get("perkHash")), {}).get("displayProperties", {}).get("name", "")
+        for token in re.findall(r"\[([^\]]+)\]", name):
+            if to_breaker_name(token) in names:
+                return names[to_breaker_name(token)]
+    return None
+
+
+def to_breaker_name(name):
+    return name.replace("-", " ").strip().lower()
+
+
 def read_granted_perks(item, perks):
     """The sandbox perks a plug grants that the game shows (a catalyst's), in order."""
     return [entry["perkHash"] for entry in item.get("perks", [])
@@ -247,8 +281,11 @@ def to_entry(item_hash, item, context):
     damage = DAMAGE_TYPES.get(item.get("defaultDamageType"))
     if kind == "weapon" and damage:
         fields.append(("damageType", damage))
-    if kind == "weapon" and item.get("breakerTypeHash"):
-        fields.append(("breaker", str(item["breakerTypeHash"])))
+    breaker = item.get("breakerTypeHash") or (
+        read_frame_breaker(context["items"].get(str(context["intrinsics"].get(item_hash))), context["perks"], context["breaker_types"])
+        if item_hash in context["intrinsics"] else None)
+    if kind == "weapon" and breaker:
+        fields.append(("breaker", str(breaker)))
     columns = read_traits(item, socket_types, perk_category, plug_sets) if kind == "weapon" else None
     if columns is not None:
         fields.append(("traits", "[" + ", ".join("[" + ", ".join(str(h) for h in column) + "]" for column in columns) + "]"))
@@ -271,6 +308,8 @@ def to_entry(item_hash, item, context):
     description = read_description(item, context["perks"])
     if description:
         fields.append(("description", to_text(description)))
+    if kind in ("weapon", "armor") and item.get("iconWatermark"):
+        fields.append(("watermark", item["iconWatermark"]))
     if display.get("icon"):
         fields.append(("icon", display["icon"]))
     return "  - { " + ", ".join(f"{key}: {value}" for key, value in fields) + " }"
@@ -335,6 +374,8 @@ def main():
     categories = read_json(source / "DestinySocketCategoryDefinition.json")
     breaker_types = read_json(source / "DestinyBreakerTypeDefinition.json")
     item_constants = next(iter(read_json(source / "DestinyInventoryItemConstantsDefinition.json").values()), {})
+    trait_definitions = read_json(source / "DestinyTraitDefinition.json")
+    stat_definitions = read_json(source / "DestinyStatDefinition.json")
     perk_category = find_category(categories, "WEAPON PERKS")
     intrinsic_categories = {"weapon": find_category(categories, "INTRINSIC TRAITS"), "armor": find_category(categories, "ARMOR PERKS")}
     plugs_by_category = {}
@@ -362,7 +403,8 @@ def main():
     artifacts = {int(h) for h, item in items.items() if item.get("itemTypeDisplayName") == "Artifact"
                  and artifact_perks & set(read_artifact_perks(item, plug_sets, socket_types))}
     context = {"buckets": buckets, "socket_types": socket_types, "perk_category": perk_category, "plug_sets": plug_sets,
-               "intrinsics": intrinsics, "weapon_catalysts": weapon_catalysts, "catalysts": catalysts, "perks": perks}
+               "intrinsics": intrinsics, "weapon_catalysts": weapon_catalysts, "catalysts": catalysts, "perks": perks,
+               "items": items, "breaker_types": breaker_types}
 
     wanted_items = sorted(named_items | traits | set(intrinsics.values()) | catalysts | artifacts)
     wanted_perks = sorted(((named - named_items) & {int(h) for h in perks}) | catalyst_perks | set_perks)
@@ -385,11 +427,26 @@ def main():
         display = definition.get("displayProperties", {})
         if display.get("icon"):
             lines.append(f"  - {{ hash: {h}, name: {to_text(display.get('name', ''))}, icon: {display['icon']} }}")
+    lines.append("armorStats:")
+    for h, stat in ARMOR_STATS.items():
+        display = stat_definitions.get(str(h), {}).get("displayProperties", {})
+        if display.get("icon"):
+            lines.append(f"  - {{ stat: {stat}, name: {to_text(display.get('name', ''))}, icon: {display['icon']} }}")
+        else:
+            missing.append(h)
     lines.append("itemConstants:")
     lines.append("  tierOverlays: [" + ", ".join(item_constants.get("gearTierOverlayImagePaths", [])) + "]")
     for key, written in (("masterworkOverlayPath", "masterworkOverlay"), ("masterworkExoticOverlayPath", "masterworkExoticOverlay")):
         if item_constants.get(key):
             lines.append(f"  {written}: {item_constants[key]}")
+    lines.append("keywordTraits:")
+    wanted_traits = list_rule_traits(root)
+    for h in sorted(wanted_traits):
+        display = trait_definitions.get(str(h), {}).get("displayProperties", {})
+        if display.get("name") and display.get("icon"):
+            lines.append(f"  - {{ hash: {h}, name: {to_text(display['name'])}, icon: {display['icon']} }}")
+    missing += sorted(h for h in wanted_traits if not (trait_definitions.get(str(h), {}).get("displayProperties", {}).get("name")
+                                                       and trait_definitions.get(str(h), {}).get("displayProperties", {}).get("icon")))
     lines.append("armorSets:")
     lines.extend(to_set_entry(h, item_sets[str(h)]) for h in sorted(wanted_sets))
     lines.append("items:")

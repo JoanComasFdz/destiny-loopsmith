@@ -33,7 +33,9 @@ public sealed partial class StatLoadingTests
         ]),
         ImmutableDictionary<ItemHash, StatPlug>.Empty,
         ImmutableDictionary<ItemHash, BreakerType>.Empty,
-        new ItemOverlays([], Optional.None<string>(), Optional.None<string>()));
+        new ItemOverlays([], Optional.None<string>(), Optional.None<string>()),
+        ImmutableDictionary<ItemHash, KeywordTrait>.Empty,
+        ImmutableDictionary<StatKind, ArmorStatIcon>.Empty);
 
     [Fact]
     public void Logging_in_with_the_shares_own_account_loads_its_weapons_perks_and_catalyst()
@@ -198,5 +200,5 @@ public sealed partial class StatLoadingTests
         KeyValuePair.Create(hash, new ManifestItem(hash, name,
             new ManifestKind.Weapon(slot, Optional.Some(type), [.. traits.Select(column => new TraitColumn([.. column.Select(ItemHash.From)]))],
                 Optional.None<ItemHash>(), Optional.None<ItemHash>(), Optional.None<ItemHash>()),
-            Optional.Some("Auto Rifle"), Optional.Some(tier), Optional.None<string>(), Optional.None<string>()));
+            Optional.Some("Auto Rifle"), Optional.Some(tier), Optional.None<string>(), Optional.None<string>(), Optional.None<string>()));
 }

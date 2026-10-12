@@ -43,18 +43,26 @@ public sealed record StatCheck(StatKind Stat, Optional<StatValue> From, StatValu
 /// <summary>How a stat check speaks: a warning or a note, never blocking (a stat doesn't keep a build from working).</summary>
 public enum StatCheckSeverity { Warning, Info }
 
-/// <summary>Entry of the keyword glossary (the Compendium's "Statuses").</summary>
+/// <summary>
+/// Entry of the keyword glossary (the Compendium's "Statuses"); <see cref="Trait"/> is Bungie's trait for it (the
+/// manifest's in-game keyword, with its icon), when it has one; <see cref="DrawnIcon"/> the shape the game draws for
+/// it when Bungie's data has no icon for it (Unraveling Rounds).
+/// </summary>
 public sealed record StatusDefinition(
     StatusId Id,
     string Name,
     KeywordKind Kind,
     Affinity Affinity,
     Optional<StackCount> MaxStacks,
-    Optional<Seconds> Duration);
+    Optional<Seconds> Duration,
+    Optional<ItemHash> Trait,
+    Optional<DrawnIcon> DrawnIcon);
 
-public sealed record PickupDefinition(PickupId Id, string Name, Affinity Affinity, bool CollectsAutomatically);
+/// <summary>A pickup of the glossary (Ionic Trace, Orb of Power); <see cref="Trait"/> as for a status.</summary>
+public sealed record PickupDefinition(PickupId Id, string Name, Affinity Affinity, bool CollectsAutomatically, Optional<ItemHash> Trait);
 
-public sealed record SummonDefinition(SummonId Id, string Name, DamageType DamageType);
+/// <summary>A summon of the glossary (Threadling); <see cref="Trait"/> as for a status.</summary>
+public sealed record SummonDefinition(SummonId Id, string Name, DamageType DamageType, Optional<ItemHash> Trait);
 
 public sealed record KeywordGlossary(
     ImmutableDictionary<StatusId, StatusDefinition> Statuses,

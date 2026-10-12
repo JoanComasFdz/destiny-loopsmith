@@ -5,7 +5,8 @@ namespace Loopsmith.Core.Causality;
 
 /// <summary>
 /// Kernel: facts about keywords the slices rely on — what damage type a keyword strike or a summon deals, how a
-/// pickup or a status is found, and which element a keyword is — so all read the same answer.
+/// pickup or a status is found, which element a keyword is, and which Bungie trait (the game's own keyword) — so all
+/// read the same answer.
 /// </summary>
 public static class KeywordResolution
 {
@@ -58,6 +59,13 @@ public static class KeywordResolution
             catalog.FindElementPickup(element).Map(pickup => (KeywordRef)new KeywordRef.Pickup(pickup)),
             catalog.FindElementSummon(element).Map(summon => (KeywordRef)new KeywordRef.Summon(summon)),
         }.FindFirstSome();
+
+    /// <summary>Bungie's trait a keyword is (Jolted, for Jolt), when the glossary gives one.</summary>
+    public static Optional<ItemHash> FindKeywordTrait(this KeywordGlossary glossary, KeywordRef keyword) =>
+        keyword.Match(
+            status => glossary.Statuses.TryGetValue(status.Id, out var found) ? found.Trait : Optional.None<ItemHash>(),
+            pickup => glossary.Pickups.TryGetValue(pickup.Id, out var found) ? found.Trait : Optional.None<ItemHash>(),
+            summon => glossary.Summons.TryGetValue(summon.Id, out var found) ? found.Trait : Optional.None<ItemHash>());
 
     /// <summary>The one rule both lookups follow: a keyword's element is the element of its id — its own effects.</summary>
     public static bool IsStatusElement(this ElementId element, StatusId status) =>

@@ -142,6 +142,14 @@ public readonly partial struct GearTier
         value is >= 1 and <= 5 ? Validation.Ok : Validation.Invalid("A gear tier is 1 to 5");
 }
 
+/// <summary>A copy's power level (Bungie's instance <c>primaryStat</c>: 550), at least 1; DIM writes it on its square's footer.</summary>
+[ValueObject<int>]
+public readonly partial struct PowerLevel
+{
+    private static Validation Validate(int value) =>
+        value >= 1 ? Validation.Ok : Validation.Invalid("A power level is at least 1");
+}
+
 /// <summary>How many pieces of an armor set: what a set perk needs, or what a loadout wears (at least one).</summary>
 [ValueObject<int>]
 public readonly partial struct PieceCount

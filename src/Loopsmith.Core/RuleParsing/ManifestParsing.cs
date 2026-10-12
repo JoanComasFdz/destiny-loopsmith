@@ -22,18 +22,22 @@ internal static class ManifestParsing
         ImmutableDictionary<ItemHash, ManifestItem>.Empty,
         ImmutableDictionary<ItemHash, StatPlug>.Empty,
         ImmutableDictionary<ItemHash, BreakerType>.Empty,
-        new ItemOverlays([], Optional.None<string>(), Optional.None<string>()));
+        new ItemOverlays([], Optional.None<string>(), Optional.None<string>()),
+        ImmutableDictionary<ItemHash, KeywordTrait>.Empty,
+        ImmutableDictionary<StatKind, ArmorStatIcon>.Empty);
 
-    private static readonly ImmutableArray<string> ManifestKeys = ["version", "damageTypes", "breakerTypes", "itemConstants", "armorSets", "items", "statPlugs"];
+    private static readonly ImmutableArray<string> ManifestKeys = ["version", "damageTypes", "breakerTypes", "armorStats", "itemConstants", "keywordTraits", "armorSets", "items", "statPlugs"];
+    private static readonly ImmutableArray<string> ArmorStatKeys = ["stat", "name", "icon"];
     private static readonly ImmutableArray<string> BreakerTypeKeys = ["hash", "name", "icon"];
     private static readonly ImmutableArray<string> ItemConstantsKeys = ["tierOverlays", "masterworkOverlay", "masterworkExoticOverlay"];
+    private static readonly ImmutableArray<string> TraitKeys = ["hash", "name", "icon"];
     private static readonly ImmutableArray<string> StatPlugKeys = ["hash", "kind", "stats"];
     private static readonly ImmutableArray<string> PlugStatKeys = ["stat", "value", "class"];
     private static readonly ImmutableArray<string> DamageTypeKeys = ["type", "icon"];
     private static readonly ImmutableArray<string> ArmorSetKeys = ["hash", "name", "perks"];
     private static readonly ImmutableArray<string> SetPerkKeys = ["pieces", "perk"];
     private static readonly ImmutableArray<string> ItemKeys =
-        ["hash", "name", "kind", "type", "tier", "slot", "damageType", "breaker", "traits", "intrinsic", "catalyst", "set", "class", "perks", "description", "icon"];
+        ["hash", "name", "kind", "type", "tier", "slot", "damageType", "breaker", "traits", "intrinsic", "catalyst", "set", "class", "perks", "description", "watermark", "icon"];
 
     /// <summary>The keys only some kinds have, each with the kinds it belongs to (and how an error names them).</summary>
     private static readonly ImmutableArray<(string Key, ImmutableArray<KindWord> Kinds, string Where)> KindKeys =
@@ -47,6 +51,7 @@ internal static class ManifestParsing
         ("set", [KindWord.Armor], "armor"),
         ("class", [KindWord.Armor], "armor"),
         ("perks", [KindWord.Catalyst, KindWord.Artifact], "a catalyst or an artifact"),
+        ("watermark", [KindWord.Weapon, KindWord.Armor], "a weapon or armor"),
     ];
 
     internal static Result<ManifestExcerpt, Errors> ReadManifest(SourceText file) =>
@@ -59,7 +64,13 @@ internal static class ManifestParsing
                 map.ReadOrDefault("breakerTypes", types => types.ReadEach("breaker type", ReadBreakerType)
                     .Bind(located => LocatedCollections.ToUniqueDictionary(located, type => type.Hash, "breaker type")),
                     ImmutableDictionary<ItemHash, BreakerType>.Empty),
+                map.ReadOrDefault("armorStats", stats => stats.ReadEach("armor stat", ReadArmorStat)
+                    .Bind(located => LocatedCollections.ToUniqueDictionary(located, stat => stat.Stat, "armor stat")),
+                    ImmutableDictionary<StatKind, ArmorStatIcon>.Empty),
                 map.ReadOrDefault("itemConstants", ReadItemOverlays, NoOverlays),
+                map.ReadOrDefault("keywordTraits", traits => traits.ReadEach("keyword trait", ReadTrait)
+                    .Bind(located => LocatedCollections.ToUniqueDictionary(located, trait => trait.Hash, "trait")),
+                    ImmutableDictionary<ItemHash, KeywordTrait>.Empty),
                 map.ReadOrDefault("armorSets", sets => sets.ReadEach("armor set", ReadArmorSet)
                     .Bind(located => LocatedCollections.ToUniqueDictionary(located, set => set.Hash, "armor set")),
                     ImmutableDictionary<ItemHash, ArmorSet>.Empty),
@@ -69,14 +80,16 @@ internal static class ManifestParsing
                 map.ReadOrDefault("statPlugs", plugs => plugs.ReadEach("stat plug", ReadStatPlug)
                     .Bind(located => LocatedCollections.ToUniqueDictionary(located, plug => plug.Hash, "stat plug")),
                     ImmutableDictionary<ItemHash, HashedStatPlug>.Empty),
-                (_, version, icons, breakers, overlays, sets, items, statPlugs) => new ManifestExcerpt(
+                (_, version, icons, breakers, armorStats, overlays, traits, sets, items, statPlugs) => new ManifestExcerpt(
                     version,
                     icons.GroupBy(icon => icon.Type).ToImmutableDictionary(group => group.Key, group => group.First().Icon),
                     sets,
                     items,
                     statPlugs.ToImmutableDictionary(entry => entry.Key, entry => entry.Value.Plug),
                     breakers,
-                    overlays)));
+                    overlays,
+                    traits,
+                    armorStats)));
 
     /// <summary>An excerpt without <c>itemConstants</c>: no overlays to draw.</summary>
     private static readonly ItemOverlays NoOverlays = new([], Optional.None<string>(), Optional.None<string>());
@@ -90,6 +103,15 @@ internal static class ManifestParsing
             map.ReadRequired("icon", ReadName),
             (_, hash, name, icon) => map.ToLocated(new BreakerType(hash, name, icon))));
 
+    /// <summary><c>{ stat, name, icon }</c>: an armor stat (weapons, health…) as the manifest names and draws it.</summary>
+    private static Result<Located<ArmorStatIcon>, Errors> ReadArmorStat(YamlValue value) =>
+        value.ToMap().Bind(map => Combine(
+            map.CheckKeys(ArmorStatKeys),
+            map.ReadRequired("stat", ReadVocabularyWord<StatKind>),
+            map.ReadRequired("name", ReadName),
+            map.ReadRequired("icon", ReadName),
+            (_, stat, name, icon) => map.ToLocated(new ArmorStatIcon(stat, name, icon))));
+
     /// <summary><c>{ tierOverlays: [tier 1 … tier 5], masterworkOverlay, masterworkExoticOverlay }</c>: the overlays of an item's icon.</summary>
     private static Result<ItemOverlays, Errors> ReadItemOverlays(YamlValue value) =>
         value.ToMap().Bind(map => Combine(
@@ -98,6 +120,15 @@ internal static class ManifestParsing
             map.ReadOptional("masterworkOverlay", ReadName),
             map.ReadOptional("masterworkExoticOverlay", ReadName),
             (_, tiers, masterwork, exotic) => new ItemOverlays(tiers, masterwork, exotic)));
+
+    /// <summary><c>{ hash, name, icon }</c>: a trait (a keyword of the game) the glossary names.</summary>
+    private static Result<Located<KeywordTrait>, Errors> ReadTrait(YamlValue value) =>
+        value.ToMap().Bind(map => Combine(
+            map.CheckKeys(TraitKeys),
+            map.ReadRequired("hash", ReadItemHash),
+            map.ReadRequired("name", ReadName),
+            map.ReadRequired("icon", ReadName),
+            (_, hash, name, icon) => map.ToLocated(new KeywordTrait(hash, name, icon))));
 
     /// <summary>A stat plug with its hash, while the excerpt's list becomes a dictionary.</summary>
     private sealed record HashedStatPlug(ItemHash Hash, StatPlug Plug);
@@ -187,7 +218,8 @@ internal static class ManifestParsing
             map.ReadOptional("tier", ReadVocabularyWord<ItemTier>),
             map.ReadOptional("description", ReadName),
             map.ReadOptional("icon", ReadName),
-            (_, hash, name, kind, type, tier, description, icon) => map.ToLocated(new ManifestItem(hash, name, kind, type, tier, description, icon))));
+            map.ReadOptional("watermark", ReadName),
+            (_, hash, name, kind, type, tier, description, icon, watermark) => map.ToLocated(new ManifestItem(hash, name, kind, type, tier, description, icon, watermark))));
 
     private static Result<ManifestKind, Errors> ReadKind(YamlMap map, KindWord word) =>
         word switch

@@ -43,7 +43,9 @@ public sealed partial class StatLoadingTests
         ]),
         ImmutableDictionary<ItemHash, StatPlug>.Empty,
         ImmutableDictionary<ItemHash, BreakerType>.Empty,
-        new ItemOverlays([], Optional.None<string>(), Optional.None<string>()));
+        new ItemOverlays([], Optional.None<string>(), Optional.None<string>()),
+        ImmutableDictionary<ItemHash, KeywordTrait>.Empty,
+        ImmutableDictionary<StatKind, ArmorStatIcon>.Empty);
 
     [Fact]
     public void A_dim_gg_share_names_the_copy_of_each_armor_piece_and_the_build_file_keeps_them()
@@ -172,7 +174,7 @@ public sealed partial class StatLoadingTests
 
     private static KeyValuePair<ItemHash, ManifestItem> ToArmorItem(ItemHash hash, string name, ArmorSlot slot, ItemTier tier, Optional<ItemHash> set, GuardianClass wornBy) =>
         KeyValuePair.Create(hash, new ManifestItem(hash, name, new ManifestKind.Armor(slot, Optional.None<ItemHash>(), set, Optional.Some(wornBy)),
-            Optional.None<string>(), Optional.Some(tier), Optional.None<string>(), Optional.None<string>()));
+            Optional.None<string>(), Optional.Some(tier), Optional.None<string>(), Optional.None<string>(), Optional.None<string>()));
 
     private static DesignSession OpenOwnersSession(RuleCatalog catalog)
     {

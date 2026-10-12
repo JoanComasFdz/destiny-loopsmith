@@ -118,14 +118,15 @@ public static class BungieProfileReading
                 .Map(_ => new OwnedWeapon(id, hash, place, ReadMarks(response, item, instance), ReadPlugs(response, instance))))));
 
     /// <summary>
-    /// A copy's marks: its instance's <c>gearTier</c> (1–5), the item's <c>state</c> masterwork flag (4) and its instance's
-    /// <c>breakerTypeHash</c> (0: none).
+    /// A copy's marks: its instance's <c>gearTier</c> (1–5), the item's <c>state</c> masterwork flag (4), its instance's
+    /// <c>breakerTypeHash</c> (0: none) and its power level (its instance's <c>primaryStat</c> value).
     /// </summary>
     private static GearMarks ReadMarks(JsonElement response, JsonElement item, string instance) =>
         new(
             response.ReadInteger("itemComponents", "instances", "data", instance, "gearTier").Bind(tier => GearTier.TryFrom(tier).ToOptional()),
             (item.ReadInteger("state").UnwrapOr(0) & MasterworkState) != 0,
-            response.ReadHash("itemComponents", "instances", "data", instance, "breakerTypeHash"));
+            response.ReadHash("itemComponents", "instances", "data", instance, "breakerTypeHash"),
+            response.ReadInteger("itemComponents", "instances", "data", instance, "primaryStat", "value").Bind(power => PowerLevel.TryFrom(power).ToOptional()));
 
     /// <summary>Bungie's <c>ItemState.Masterwork</c>: the item has a masterwork plug.</summary>
     private const int MasterworkState = 4;

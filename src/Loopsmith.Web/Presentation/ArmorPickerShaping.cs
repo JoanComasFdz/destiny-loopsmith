@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
+using Loopsmith.Core.Orchestration;
 using Loopsmith.Core.Phrasing;
 
 namespace Loopsmith.Web.Presentation;
@@ -28,7 +29,8 @@ public static class ArmorPickerShaping
     private static ArmorOptionView ShapeOption(ValidatedBuild build, ArmorOption option) =>
         new(
             LoadoutShaping.DescribeArmorItem(option.Item),
-            LoadoutShaping.DescribeMarks(build.Catalog, option.Item.Tier, Optional.Some(option.Armor.Marks), Optional.None<BreakerType>()),
+            LoadoutShaping.DescribeMarks(
+                build.Catalog, Optional.Some(option.Item), Optional.Some(option.Armor.Marks), Optional.None<BreakerType>(), LoopDesigning.FindStatFocus(build, option.Armor).Map(LoadoutShaping.DescribeStatFocus)),
             option.Armor.InstanceId,
             option.Points.Map(points => StatsShaping.ToBars(points, StatsShaping.MaxPieceStat)),
             option.Points.Match(points => StatsShaping.DescribeRoll(points.Value), _ => UnreadRoll),

@@ -13,9 +13,9 @@ internal static class GlossaryParsing
     internal const string GlossaryPath = "glossary.yaml";
 
     private static readonly ImmutableArray<string> GlossaryKeys = ["statuses", "pickups", "summons", "subclasses"];
-    private static readonly ImmutableArray<string> StatusKeys = ["id", "name", "kind", "affinity", "maxStacks", "duration"];
-    private static readonly ImmutableArray<string> PickupKeys = ["id", "name", "affinity", "collectsAutomatically"];
-    private static readonly ImmutableArray<string> SummonKeys = ["id", "name", "damageType"];
+    private static readonly ImmutableArray<string> StatusKeys = ["id", "name", "kind", "affinity", "maxStacks", "duration", "trait", "drawnIcon"];
+    private static readonly ImmutableArray<string> PickupKeys = ["id", "name", "affinity", "collectsAutomatically", "trait"];
+    private static readonly ImmutableArray<string> SummonKeys = ["id", "name", "damageType", "trait"];
     private static readonly ImmutableArray<string> SubclassKeys = ["class", "subclass", "name", "hash"];
 
     internal static Result<KeywordGlossary, Errors> ReadGlossary(SourceText file) =>
@@ -53,8 +53,17 @@ internal static class GlossaryParsing
             map.ReadRequired("affinity", ReadVocabularyWord<Affinity>),
             map.ReadOptional("maxStacks", ReadMaxStacks),
             map.ReadOrDefault("duration", ReadDuration, Optional.None<Seconds>()),
-            (_, id, name, kind, affinity, maxStacks, duration) =>
-                map.ToLocated(new StatusDefinition(id, name, kind, affinity, maxStacks, duration))));
+            map.ReadOptional("trait", ReadItemHash),
+            map.ReadOptional("drawnIcon", ReadVocabularyWord<DrawnIcon>),
+            (_, id, name, kind, affinity, maxStacks, duration, trait, drawnIcon) => new StatusDefinition(id, name, kind, affinity, maxStacks, duration, trait, drawnIcon))
+            .Bind(status => CheckDrawnIcon(map, status))
+            .Map(map.ToLocated));
+
+    /// <summary>A drawn icon is for a keyword Bungie's data has no icon for: a status with a trait has the game's own.</summary>
+    private static Result<StatusDefinition, Errors> CheckDrawnIcon(YamlMap map, StatusDefinition status) =>
+        status.DrawnIcon.IsSome() && status.Trait.IsSome()
+            ? map.FailAtKey<StatusDefinition>("drawnIcon", $"the status '{status.Id.Value}' has a trait, so the game's own icon: a drawn one is for a keyword Bungie's data has no icon for")
+            : Succeed(status);
 
     private static Result<Located<PickupDefinition>, Errors> ReadPickup(YamlValue value) =>
         value.ToMap().Bind(map => Combine(
@@ -63,8 +72,9 @@ internal static class GlossaryParsing
             map.ReadRequired("name", ReadName),
             map.ReadRequired("affinity", ReadVocabularyWord<Affinity>),
             map.ReadRequired("collectsAutomatically", ReadBoolean),
-            (_, id, name, affinity, collectsAutomatically) =>
-                map.ToLocated(new PickupDefinition(id, name, affinity, collectsAutomatically))));
+            map.ReadOptional("trait", ReadItemHash),
+            (_, id, name, affinity, collectsAutomatically, trait) =>
+                map.ToLocated(new PickupDefinition(id, name, affinity, collectsAutomatically, trait))));
 
     private static Result<Located<SummonDefinition>, Errors> ReadSummon(YamlValue value) =>
         value.ToMap().Bind(map => Combine(
@@ -72,7 +82,8 @@ internal static class GlossaryParsing
             map.ReadRequired("id", ReadSummonId),
             map.ReadRequired("name", ReadName),
             map.ReadRequired("damageType", ReadVocabularyWord<DamageType>),
-            (_, id, name, damageType) => map.ToLocated(new SummonDefinition(id, name, damageType))));
+            map.ReadOptional("trait", ReadItemHash),
+            (_, id, name, damageType, trait) => map.ToLocated(new SummonDefinition(id, name, damageType, trait))));
 
     /// <summary><c>{ class: hunter, subclass: arc, name: Arcstrider, hash: 2328211300 }</c> — the hash may be a list of copies.</summary>
     private static Result<Located<SubclassDefinition>, Errors> ReadSubclass(YamlValue value) =>

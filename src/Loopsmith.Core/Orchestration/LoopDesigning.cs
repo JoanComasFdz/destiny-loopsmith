@@ -426,16 +426,38 @@ public static class LoopDesigning
     public static Optional<GearMarks> FindArmorMarks(ValidatedBuild build, BungieProfile profile, ArmorSlot slot) =>
         CopyFinding.FindWornArmor(build.Catalog, build.Build, profile, slot).Map(armor => armor.Marks);
 
+    /// <summary>
+    /// The stat a copy of the player's focuses on, with its name and icon: its highest rolled stat, as DIM shows it in an
+    /// Armor 3.0 piece's top-right corner; none when its roll isn't read.
+    /// </summary>
+    public static Optional<ArmorStatIcon> FindStatFocus(ValidatedBuild build, OwnedArmor armor) =>
+        StatAdding.FindStatFocus(build.Catalog, armor).Bind(build.Catalog.Manifest.FindArmorStat);
+
+    /// <summary>The stat focus (<see cref="FindStatFocus(ValidatedBuild, OwnedArmor)"/>) of the player's copy the build wears in a slot.</summary>
+    public static Optional<ArmorStatIcon> FindStatFocus(ValidatedBuild build, BungieProfile profile, ArmorSlot slot) =>
+        CopyFinding.FindWornArmor(build.Catalog, build.Build, profile, slot).Bind(armor => FindStatFocus(build, armor));
+
     /// <summary>What the game draws on the player's copy of a build's weapon (its tier, masterwork, breaker): the share's copy when it is theirs, else their own.</summary>
     public static Optional<GearMarks> FindWeaponMarks(BungieProfile profile, WeaponLoadout weapon) =>
         CopyFinding.FindWornWeapon(profile, weapon).Map(owned => owned.Marks);
 
     /// <summary>
     /// The champion a build's weapon breaks, as DIM shows it: its copy's breaker (<paramref name="marks"/>, after the
-    /// player's login), else the weapon's own (an exotic's intrinsic: Thunderlord's Disruption); none when it has none.
+    /// player's login), else the weapon's own (an exotic's: Thunderlord's Disruption; a legendary's frame's: Adaptive
+    /// Frame pierces barriers); none when it has none.
     /// </summary>
     public static Optional<BreakerType> FindWeaponBreaker(ValidatedBuild build, WeaponLoadout weapon, Optional<GearMarks> marks) =>
         CopyFinding.FindWeaponBreaker(build.Catalog.Manifest, weapon, marks);
+
+    /// <summary>
+    /// A legendary weapon's intrinsic frame (Adaptive Frame), as the excerpt has it: DIM shows its icon in the weapon's
+    /// top-right corner. None for an exotic (its intrinsic is its own perk, which DIM doesn't show there) or a weapon whose
+    /// frame the excerpt lacks.
+    /// </summary>
+    public static Optional<ManifestItem> FindWeaponFrame(ValidatedBuild build, ManifestItem weapon) =>
+        weapon.Kind is ManifestKind.Weapon kind && weapon.Tier != Optional.Some(ItemTier.Exotic)
+            ? kind.Intrinsic.Bind(build.Catalog.Manifest.FindItem)
+            : Optional.None<ManifestItem>();
 
     /// <summary>The champion one of the player's weapons breaks (its own breaker, else its weapon's): what the weapon picker shows.</summary>
     public static Optional<BreakerType> FindCopyBreaker(ValidatedBuild build, OwnedWeapon copy) =>
@@ -656,6 +678,18 @@ public static class LoopDesigning
     /// <summary>The left-out items no rule knows yet: what "Not in Loopsmith yet" lists.</summary>
     public static ImmutableArray<LeftOutItem> ListMissing(ValidatedBuild build) =>
         LeftOutClassifying.ListMissing(build.Catalog, build.Build);
+
+    /// <summary>The icon of what a step does: its weapon's, its ability's, or its pickup's or status's keyword icon.</summary>
+    public static Optional<IconRef> FindActionIcon(ValidatedBuild build, PlayerAction action) =>
+        IconFinding.FindActionIcon(build.Catalog, build.Build, action);
+
+    /// <summary>A keyword's icon: the game's own (Jolted, Woven Mail), else its element's, else the shape the game draws for it (Unraveling Rounds); none without any.</summary>
+    public static Optional<IconRef> FindKeywordIcon(ValidatedBuild build, KeywordRef keyword) =>
+        IconFinding.FindKeywordIcon(build.Catalog, keyword);
+
+    /// <summary>An element's icon: its manifest item's, else (a keyword's element: Jolt, Bolt Charge) the keyword's own; none when there is neither.</summary>
+    public static Optional<IconRef> FindElementIcon(RuleCatalog catalog, ElementId element) =>
+        IconFinding.FindElementIcon(catalog, element);
 
     /// <summary>The keyword an element is (Bolt Charge, Ionic Trace), when it is one.</summary>
     public static Optional<KeywordRef> FindKeyword(ValidatedBuild build, ElementId element) =>

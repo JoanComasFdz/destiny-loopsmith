@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 using static Loopsmith.Core.ManifestJoining.ManifestEntryReading;
@@ -9,14 +10,15 @@ namespace Loopsmith.Core.ManifestJoining;
 /// <summary>
 /// Pure: Bungie's full manifest → the excerpt of what some hashes need (ADRs D14), the way
 /// <c>tools/manifest/extract_manifest.py</c> writes <c>rules/manifest.yaml</c>: each item's name, kind, type, rarity,
-/// description and icon; a weapon's slot, damage type, breaker, trait columns (and their perks), intrinsic perk and an
+/// description, icon and a weapon's or armor's season watermark; a weapon's slot, damage type, breaker (its own, else its
+/// intrinsic frame's: a frame's perk named with the breaker, "[Shield-Piercing] Barrier"), trait columns (and their perks), intrinsic perk and an
 /// exotic's catalyst (and the perks it grants); armor's slot, intrinsic perk and set (and the set's perks). The breaker
 /// types and an icon's overlays aren't joined: they come from <c>rules/manifest.yaml</c>. The host
 /// holds the manifest and answers what the join asks, round by round: each round walks from the wanted hashes
 /// through what has been read, and asks for what the walk reaches but hasn't read; when nothing is left to ask, the
 /// excerpt is built from the same walk. What the manifest doesn't have is asked once and left out.
 /// </summary>
-public static class ManifestJoin
+public static partial class ManifestJoin
 {
     private const string EmptyCatalyst = "v400.empty.exotic.masterwork";   // the plug category of an exotic's empty catalyst socket
     private const string ArtifactPerkCategory = "artifact_perks";          // what an artifact's perk sockets take…
@@ -26,7 +28,7 @@ public static class ManifestJoin
     private const string ArmorIntrinsicCategoryName = "ARMOR PERKS";
 
     private static readonly ImmutableArray<ManifestTable> SmallTables =
-        [ManifestTable.InventoryBucket, ManifestTable.SocketCategory, ManifestTable.EquipableItemSet];
+        [ManifestTable.InventoryBucket, ManifestTable.SocketCategory, ManifestTable.EquipableItemSet, ManifestTable.BreakerType];
 
     private static readonly ImmutableDictionary<string, WeaponSlot> WeaponBuckets = new Dictionary<string, WeaponSlot>
     {
@@ -170,8 +172,14 @@ public static class ManifestJoin
         var types = ToEntryReach(ManifestTable.SocketType, entries.SelectMany(entry => ToSequence(entry.ReadHash("socketTypeHash"))));
         var columns = ListTraitSockets(reading, weapon).Select(socket => WalkColumn(reading, socket));
         var catalyst = ListCatalystCategories(reading, weapon).Select(category => WalkCatalystCategory(reading, category));
-        return Combine(columns.Concat(catalyst).Append(types).Append(WalkIntrinsicSockets(reading, weapon, WeaponIntrinsicCategoryName)));
+        return Combine(columns.Concat(catalyst).Append(types).Append(WalkIntrinsicSockets(reading, weapon, WeaponIntrinsicCategoryName)).Append(WalkFramePerks(reading, weapon)));
     }
+
+    /// <summary>The sandbox perks of a weapon's intrinsic frame, once it is read: the perk named with its breaker is among them.</summary>
+    private static Reach WalkFramePerks(Reading reading, JsonElement weapon) =>
+        FindIntrinsic(reading, weapon, WeaponIntrinsicCategoryName)
+            .Bind(frame => FindEntry(reading, ManifestTable.InventoryItem, frame))
+            .Match(frame => ListPerkNeeds(reading, frame.Value), _ => Reach.None);
 
     /// <summary>An artifact's sockets: their types (which take artifact perks) and their plug sets (the perks it unlocks).</summary>
     private static Reach WalkArtifactSockets(Reading reading, JsonElement artifact) =>
@@ -252,7 +260,9 @@ public static class ManifestJoin
             items,
             ImmutableDictionary<ItemHash, StatPlug>.Empty,
             ImmutableDictionary<ItemHash, BreakerType>.Empty,
-            new ItemOverlays([], Optional.None<string>(), Optional.None<string>()));
+            new ItemOverlays([], Optional.None<string>(), Optional.None<string>()),
+            ImmutableDictionary<ItemHash, KeywordTrait>.Empty,
+            ImmutableDictionary<StatKind, ArmorStatIcon>.Empty);
     }
 
     private static Optional<ManifestItem> ToManifestItem(Reading reading, ItemHash hash, bool isCatalyst) =>
@@ -266,7 +276,10 @@ public static class ManifestJoin
                 item.ReadText("itemTypeDisplayName"),
                 item.ReadInteger("inventory", "tierType").Bind(tier => Tiers.TryGetValue(tier, out var found) ? Optional.Some(found) : Optional.None<ItemTier>()),
                 ReadDescription(reading, item),
-                item.ReadString("displayProperties", "icon").Bind(icon => icon.Length > 0 ? Optional.Some(icon) : Optional.None<string>())));
+                item.ReadString("displayProperties", "icon").Bind(icon => icon.Length > 0 ? Optional.Some(icon) : Optional.None<string>()),
+                kind is ManifestKind.Weapon or ManifestKind.Armor
+                    ? item.ReadString("iconWatermark").Bind(watermark => watermark.Length > 0 ? Optional.Some(watermark) : Optional.None<string>())
+                    : Optional.None<string>()));
         });
 
     /// <summary>A sandbox perk (a catalyst's or an armor set's): name, Bungie's description, icon; no item type.</summary>
@@ -278,7 +291,8 @@ public static class ManifestJoin
             Optional.None<string>(),
             Optional.None<ItemTier>(),
             perk.ReadText("displayProperties", "description"),
-            perk.ReadString("displayProperties", "icon").Bind(icon => icon.Length > 0 ? Optional.Some(icon) : Optional.None<string>())));
+            perk.ReadString("displayProperties", "icon").Bind(icon => icon.Length > 0 ? Optional.Some(icon) : Optional.None<string>()),
+            Optional.None<string>()));
 
     private static ArmorSet ToArmorSet(ItemHash hash, JsonElement set) =>
         new(
@@ -304,7 +318,7 @@ public static class ManifestJoin
                         _ => ImmutableArray<TraitColumn>.Empty),
                     FindIntrinsic(reading, item, WeaponIntrinsicCategoryName),
                     FindCatalyst(reading, item),
-                    item.ReadHash("breakerTypeHash"))),
+                    new[] { item.ReadHash("breakerTypeHash"), FindFrameBreaker(reading, item) }.FindFirstSome())),
             KindWord.Armor => ReadBucketName(reading, item).Bind(bucket => ArmorBuckets.TryGetValue(bucket, out var slot) ? Optional.Some(slot) : Optional.None<ArmorSlot>())
                 .Map(slot => (ManifestKind)new ManifestKind.Armor(
                     slot,
@@ -468,6 +482,33 @@ public static class ManifestJoin
                 .SelectMany(plug => ToSequence(plug.ReadHash("plugItemHash")))
                 .Distinct(),
         ];
+
+    /// <summary>
+    /// The breaker a weapon's intrinsic frame gives it, as DIM reads it: the breaker type named in brackets in one of the
+    /// frame's perks ("[Shield-Piercing] Barrier" on Adaptive Frame, "[Disruption] Overload" on Rapid-Fire Frame).
+    /// </summary>
+    private static Optional<ItemHash> FindFrameBreaker(Reading reading, JsonElement weapon)
+    {
+        var breakers = reading.Entries
+            .Where(entry => entry.Key.Table == ManifestTable.BreakerType)
+            .SelectMany(entry => ToSequence(entry.Value.ReadText("displayProperties", "name").Map(name => (Name: ToBreakerName(name), Hash: entry.Key.Hash))))
+            .ToImmutableArray();
+        return FindIntrinsic(reading, weapon, WeaponIntrinsicCategoryName)
+            .Bind(frame => FindEntry(reading, ManifestTable.InventoryItem, frame))
+            .Bind(frame => frame.ReadArray("perks")
+                .SelectMany(perk => ToSequence(perk.ReadHash("perkHash").Bind(hash => FindEntry(reading, ManifestTable.SandboxPerk, hash))))
+                .SelectMany(perk => ToSequence(perk.ReadString("displayProperties", "name")))
+                .SelectMany(name => CreateBracketedNamePattern().Matches(name).Select(match => ToBreakerName(match.Groups[1].Value)))
+                .SelectMany(name => breakers.Where(breaker => breaker.Name == name).Select(breaker => breaker.Hash))
+                .Select(Optional.Some)
+                .FindFirstSome());
+    }
+
+    /// <summary>A breaker's name as frames' perks and the breaker table both write it ("Shield-Piercing", "Shield Piercing").</summary>
+    private static string ToBreakerName(string name) => name.Replace('-', ' ').Trim().ToLowerInvariant();
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"\[([^\]]+)\]")]
+    private static partial Regex CreateBracketedNamePattern();
 
     /// <summary>The first named plug of an intrinsic socket in that category (a weapon's frame or exotic perk, an exotic armor's perk).</summary>
     private static Optional<ItemHash> FindIntrinsic(Reading reading, JsonElement item, string categoryName) =>

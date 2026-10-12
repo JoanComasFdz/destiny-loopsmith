@@ -22,6 +22,10 @@
                 {
                     <span class="tone-muted">↳ </span>
                 }
+                @if (shaped.WeaponIcon is Optional<string>.Some weaponIcon)
+                {
+                    <img class="inline-icon event-weapon-icon" src="@LoadoutShaping.ToIconUrl(weaponIcon.Value)" alt="" loading="lazy" data-testid="event-weapon-icon" />
+                }
                 @RenderParts(shaped.Parts, "tone-strong outcome-event-name", eventKey)
                 @if (shaped.Repeats > 1)
                 {
@@ -151,17 +155,26 @@
             <span class="outcome-name-wrap">
                 <button type="button" class="outcome-keyword keyword @ToneStyling.ToAffinityClass(keyword.Value.Affinity)" data-keyword="@element.Value.Value"
                         @onclick="() => ShowDetailsAsync(element.Value)" @onclick:stopPropagation="true"
-                        @onmouseenter="() => Hover(key)" @onmouseleave="() => Unhover(key)" @onfocus="() => Hover(key)" @onblur="() => Unhover(key)">@part.Text</button>
+                        @onmouseenter="() => Hover(key)" @onmouseleave="() => Unhover(key)" @onfocus="() => Hover(key)" @onblur="() => Unhover(key)">@RenderKeywordIcon(keyword.Value)@part.Text</button>
                 @RenderPreview(element.Value, key)
             </span>
         }
         else if (part.Keyword is Optional<KeywordPart>.Some named)
         {
-            <span class="keyword @ToneStyling.ToAffinityClass(named.Value.Affinity)">@part.Text</span>
+            <span class="keyword @ToneStyling.ToAffinityClass(named.Value.Affinity)">@RenderKeywordIcon(named.Value)@part.Text</span>
         }
         else
         {
             <span class="@toneClass">@part.Text</span>
+        }
+    };
+
+    /// <summary>A keyword's icon in front of its name (the game's own, Jolted, Woven Mail; or the shape it draws, Unraveling Rounds), when it has one.</summary>
+    private static RenderFragment RenderKeywordIcon(KeywordPart keyword) => __builder =>
+    {
+        if (keyword.Icon is Optional<IconRef>.Some icon)
+        {
+            <img class="inline-icon keyword-icon" src="@LoadoutShaping.ToIconUrl(icon.Value)" alt="" loading="lazy" />
         }
     };
 

@@ -6,7 +6,7 @@
     var view = ArmorPickerShaping.ShapePicker(Build, LoopDesigning.ListArmorOptions(Build, Profile, Slot));
     var shown = view.Options.Where(option => focused == Optional.Some(option.Instance)).Select(Optional.Some).FindFirstSome();
 }
-<Modal Title="@view.Title" Size="wide" OnClose="OnClose">
+<Modal Title="@view.Title" Size="wide fit" OnClose="OnClose">
     <div class="armor-picker" data-testid="armor-picker" data-slot="@Slot">
         <ManifestProgressBar />
         @if (view.Options.IsEmpty)
@@ -19,6 +19,7 @@
                 @foreach (var option in view.Options)
                 {
                     var instance = option.Instance;
+                    <div class="armor-option">
                     <button type="button" role="option" aria-selected="@(focused == Optional.Some(instance) ? "true" : "false")"
                             class="icon-tile tappable item @DescribeTier(option.Tile) @(option.Worn ? "worn" : "") @(focused == Optional.Some(instance) ? "focused" : "") @LoadoutShaping.ToMasterworkClass(option.Marks)"
                             data-tier="@LoadoutShaping.ToTierText(option.Marks)" data-masterwork="@LoadoutShaping.ToMasterworkText(option.Marks)"
@@ -38,17 +39,17 @@
                             <span class="armor-worn-mark" aria-hidden="true">✓</span>
                         }
                     </button>
+                    <TileFooter Marks="option.Marks" />
+                    </div>
                 }
             </div>
             @if (shown is Optional<ArmorOptionView>.Some details)
             {
                 var piece = details.Value;
                 <div class="armor-option-details" data-testid="armor-option-details">
-                    <div class="armor-option-name">@piece.Tile.Name@(piece.Set is Optional<string>.Some set ? $" · {set.Value} set" : "")</div>
-                    @if (LoadoutShaping.AddMarks("", piece.Marks) is { Length: > 0 } marked)
-                    {
-                        <div class="armor-option-marks" data-testid="armor-option-marks">@marked</div>
-                    }
+                    @* One line, its marks last: the panel keeps its height from one piece to the next, masterworked or not. *@
+                    <div class="armor-option-name">@piece.Tile.Name@(piece.Set is Optional<string>.Some set ? $" · {set.Value} set" : "")@if (LoadoutShaping.AddMarks("", piece.Marks) is { Length: > 0 } marked)
+                        {<span class="option-sep"> · </span><span class="armor-option-marks" data-testid="armor-option-marks">@marked</span>}</div>
                     @if (piece.Roll is Optional<ImmutableArray<StatBar>>.Some roll)
                     {
                         <StatBars Bars="roll.Value" Class="compact" TestId="armor-option-roll" />

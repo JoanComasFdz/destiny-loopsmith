@@ -129,20 +129,20 @@ public sealed class RuleCatalogParsingTests
 
         Assert.Equal(5, glossary.Statuses.Count);
         Assert.Equal(
-            new StatusDefinition(ToStatus("bolt-charge"), "Bolt Charge", KeywordKind.Buff, Affinity.Arc, Optional.Some(StackCount.From(10)), Optional.None<Seconds>()),
+            new StatusDefinition(ToStatus("bolt-charge"), "Bolt Charge", KeywordKind.Buff, Affinity.Arc, Optional.Some(StackCount.From(10)), Optional.None<Seconds>(), Optional.None<ItemHash>(), Optional.None<DrawnIcon>()),
             glossary.Statuses[ToStatus("bolt-charge")]);
         Assert.Equal(
-            new StatusDefinition(ToStatus("jolt"), "Jolt", KeywordKind.Debuff, Affinity.Arc, Optional.None<StackCount>(), Optional.Some(Seconds.From(4m))),
+            new StatusDefinition(ToStatus("jolt"), "Jolt", KeywordKind.Debuff, Affinity.Arc, Optional.None<StackCount>(), Optional.Some(Seconds.From(4m)), Optional.None<ItemHash>(), Optional.None<DrawnIcon>()),
             glossary.Statuses[ToStatus("jolt")]);
         Assert.Equal(Optional.None<Seconds>(), glossary.Statuses[ToStatus("sever")].Duration);
         Assert.Equal(
-            new PickupDefinition(PickupId.From("ionic-trace"), "Ionic Trace", Affinity.Arc, CollectsAutomatically: true),
+            new PickupDefinition(PickupId.From("ionic-trace"), "Ionic Trace", Affinity.Arc, CollectsAutomatically: true, Optional.None<ItemHash>()),
             glossary.Pickups[PickupId.From("ionic-trace")]);
         Assert.Equal(
-            new PickupDefinition(PickupId.From("orb-of-power"), "Orb of Power", Affinity.Neutral, CollectsAutomatically: false),
+            new PickupDefinition(PickupId.From("orb-of-power"), "Orb of Power", Affinity.Neutral, CollectsAutomatically: false, Optional.None<ItemHash>()),
             glossary.Pickups[PickupId.From("orb-of-power")]);
         Assert.Equal(
-            new SummonDefinition(SummonId.From("threadling"), "Threadling", DamageType.Strand),
+            new SummonDefinition(SummonId.From("threadling"), "Threadling", DamageType.Strand, Optional.None<ItemHash>()),
             glossary.Summons[SummonId.From("threadling")]);
     }
 
@@ -698,6 +698,72 @@ public sealed class RuleCatalogParsingTests
         Assert.Contains("is missing 'icon'", message);
         Assert.Contains("glow", message);
         Assert.Contains("breaker is only allowed on a weapon, not on a armor", message);
+    }
+
+    [Fact]
+    public void A_glossary_keyword_names_its_trait_and_the_excerpt_gives_the_traits_name_and_icon()
+    {
+        var glossary = new SourceText("glossary.yaml", """
+            statuses:
+              - { id: jolt, name: Jolt, kind: debuff, affinity: arc, trait: 3221118171 }
+              - { id: reaper, name: Reaper, kind: buff, affinity: neutral }
+            pickups:
+              - { id: ionic-trace, name: Ionic Trace, affinity: arc, collectsAutomatically: true, trait: 3824458961 }
+            summons:
+              - { id: threadling, name: Threadling, damageType: strand, trait: 2724747993 }
+            """);
+        var manifest = new SourceText("manifest.yaml", """
+            keywordTraits:
+              - { hash: 3221118171, name: "Jolted", icon: /common/jolted.png }
+            """);
+
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([glossary, manifest]));
+
+        Assert.Equal(Optional.Some(ItemHash.From(3221118171u)), catalog.Glossary.Statuses[ToStatus("jolt")].Trait);
+        Assert.False(catalog.Glossary.Statuses[ToStatus("reaper")].Trait.IsSome());
+        Assert.Equal(Optional.Some(ItemHash.From(3824458961u)), catalog.Glossary.Pickups[PickupId.From("ionic-trace")].Trait);
+        Assert.Equal(Optional.Some(ItemHash.From(2724747993u)), catalog.Glossary.Summons[SummonId.From("threadling")].Trait);
+        Assert.Equal(new KeywordTrait(ItemHash.From(3221118171u), "Jolted", "/common/jolted.png"), catalog.Manifest.KeywordTraits[ItemHash.From(3221118171u)]);
+        Assert.Contains("is missing 'icon'", ParseInvalidCatalog(Glossary, new SourceText("manifest.yaml", "keywordTraits:\n  - { hash: 1, name: \"X\" }\n")));
+    }
+
+    [Fact]
+    public void A_status_bungies_data_has_no_icon_for_names_the_shape_the_game_draws_and_only_then()
+    {
+        var glossary = new SourceText("glossary.yaml", """
+            statuses:
+              - { id: unraveling-rounds, name: Unraveling Rounds, kind: weaponBuff, affinity: strand, drawnIcon: rounds }
+              - { id: reaper, name: Reaper, kind: buff, affinity: neutral }
+            """);
+
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([glossary]));
+
+        Assert.Equal(Optional.Some(DrawnIcon.Rounds), catalog.Glossary.Statuses[ToStatus("unraveling-rounds")].DrawnIcon);
+        Assert.False(catalog.Glossary.Statuses[ToStatus("reaper")].DrawnIcon.IsSome());
+        Assert.Contains(
+            "the status 'jolt' has a trait, so the game's own icon",
+            ParseInvalidCatalog(new SourceText("glossary.yaml", "statuses:\n  - { id: jolt, name: Jolt, kind: debuff, affinity: arc, trait: 3221118171, drawnIcon: rounds }\n")));
+        Assert.Contains("drawnIcon", ParseInvalidCatalog(new SourceText("glossary.yaml", "statuses:\n  - { id: x, name: X, kind: buff, affinity: arc, drawnIcon: hexagon }\n")));
+    }
+
+    [Fact]
+    public void The_excerpt_names_the_armor_stats_icons_and_a_weapons_or_armors_season_watermark()
+    {
+        var manifest = new SourceText("manifest.yaml", """
+            armorStats:
+              - { stat: grenade, name: "Grenade", icon: /common/grenade.png }
+            items:
+              - { hash: 4019651319, name: "Festival Flight", kind: weapon, type: "Grenade Launcher", slot: kinetic, watermark: /common/season.png, icon: /common/ff.jpg }
+            """);
+
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, manifest]));
+
+        Assert.Equal(new ArmorStatIcon(StatKind.Grenade, "Grenade", "/common/grenade.png"), catalog.Manifest.ArmorStats[StatKind.Grenade]);
+        Assert.Equal(Optional.Some("/common/season.png"), catalog.Manifest.Items[ItemHash.From(4019651319u)].Watermark);
+        Assert.Contains("watermark is only allowed on a weapon or armor", ParseInvalidCatalog(Glossary, new SourceText("manifest.yaml", """
+            items:
+              - { hash: 1435557120, name: "Grenade Mod", kind: armorMod, type: "General Armor Mod", watermark: /common/season.png }
+            """)));
     }
 
     [Fact]

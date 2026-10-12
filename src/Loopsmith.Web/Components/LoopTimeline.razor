@@ -40,7 +40,13 @@
                 <span class="step-drag" draggable="true" title="Drag to move this step" aria-hidden="true" data-step="@number"
                       @ondragstart="() => StartDrag(index)" @ondragend="EndDrag" @onclick:stopPropagation="true">⠿</span>
                 <span class="step-no">#@number</span>
-                <span class="step-title">@build.DescribeAction(step.Action)</span>
+                <span class="step-title">
+                    @if (LoopDesigning.FindActionIcon(build, step.Action) is Optional<IconRef>.Some actionIcon)
+                    {
+                        <img class="inline-icon step-icon" src="@LoadoutShaping.ToIconUrl(actionIcon.Value)" alt="" loading="lazy" data-testid="step-icon" />
+                    }
+                    @build.DescribeAction(step.Action)
+                </span>
                 <code class="token">@step.Action.ToActionToken()</code>
                 @if (blocked)
                 {

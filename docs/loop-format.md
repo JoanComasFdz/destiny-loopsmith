@@ -153,7 +153,11 @@ own step as where Powerful Attraction collects it — and the same event several
 element's name shows a preview on hover and its details on a tap. Every keyword an event or outcome names — a
 status, a debuff by its adjective ("Jolted"), a pickup, a summon — is in its affinity's colour wherever it is in
 the line ("+1 **Bolt Charge**", "Grenade kill on **Jolted** target"), and the ones the rules have as an element
-(Jolt, Bolt Charge, Ionic Trace, Combination Blow) preview and open the same way. An element
+(Jolt, Bolt Charge, Ionic Trace, Combination Blow) preview and open the same way. A keyword shows the game's
+own icon before its name ([rule-format.md](rule-format.md#glossary-rulesglossaryyaml), `trait`) — in the step's
+text, in the state at its end and in its details (Unraveling Rounds, which Bungie's data has no icon for, shows the
+shape the game draws for it, the glossary's `drawnIcon`: a triangle around a round, in Strand green); a step's title shows the icon of what it does (its weapon, its
+ability, the pickup or the status it declares), and an event that is a weapon's hit or kill shows that weapon's. An element
 whose rules the engine fired apart (a debuff first, energy last) shows at each of its places, in that order. "why" adds each rule's reason under its element; "caveats" adds the outcomes'
 caveats. Each step ends with its **state** — what is present after it — laid out like the game's HUD: the buffs
 on you on the left (Bolt Charge, Amplified, Woven Mail), your weapons' buffs in the middle (a glossary
@@ -296,8 +300,8 @@ steps replay:
   ⋯…"), with **Log out**; it shows no total of its own. Log out forgets the player's armor: the build keeps the
   stats and pieces it has, the ⋯ go, and the login text and button come back. After the login each armor piece of the build has **⋯**: it opens the **armor
   picker** for that slot — the player's pieces for it (for the build's class; Bungie's icons), the copy the build
-  wears first (✓, its stats shown), then its other copies, then the rest by name. Hovering a piece (or a first tap, on
-  a phone) shows its stats, its set and where it is; a click (a second tap, or "Wear this piece") wears it. The piece
+  wears first (✓ in its square's lower-right corner, its stats shown), then its other copies, then the rest by name.
+  Hovering a piece (or a first tap, on a phone) shows its stats, its set and where it is; a click (a second tap, or "Wear this piece") wears it. The piece
   then is the build's: an exotic the rules know is its exotic, any other piece a left-out item; its copy goes into
   `armorCopies`; its **set bonuses follow the pieces**: two pieces of another set leave Luminopotent's 2-piece bonus
   only, and the other set's 2-piece perk shows too. The steps replay, and the stats are set from the armor once every
@@ -318,10 +322,16 @@ none), and a **masterworked** copy has a gold border and the masterwork glow (an
 pieces show theirs, and the piece shown says it ("Tier 5 · Masterworked"). The copy is the one the build names when
 it is the player's (their own share, or a piece picked; a weapon's `instance`), else their own copy of that item, as
 DIM resolves a shared loadout's items: for armor the one the picker ticks (the most points), for a weapon its highest
-tier. Under each weapon's square, a strip shows its **breaker** (a champion icon: the copy's, after the login, else
-the weapon's own, like Thunderlord's Disruption — shown before the login too) and its **element**. The icons and
-overlays are the manifest excerpt's (`breakerTypes`, `itemConstants`); the tier, masterwork flag and breaker are
-Bungie's profile's for the copy (its instance's `gearTier` and `breakerTypeHash`, the item's `state`).
+tier. Each square is drawn as DIM draws it: its **season watermark** over it (the season's or expansion's icon in
+the top-left corner), and in the top-right corner a legendary weapon's **frame** (Adaptive Frame; an exotic shows
+none) or, after the login, an Armor 3.0 piece's **stat focus** (its highest rolled stat's icon). Under each weapon's
+square a light footer (gold for a masterworked copy) shows its **breaker** (a champion icon: the copy's, after the
+login, else the weapon's own — Thunderlord's Disruption — or its frame's: Adaptive Frame pierces barriers, Rapid-Fire
+Frame overloads; shown before the login too), its **element** and, after the login, the copy's **power**; an armor
+piece gets the footer with its power after the login. The pickers' items show the same. The icons and overlays are
+the manifest excerpt's (`breakerTypes`, `armorStats`, an item's `watermark`, `itemConstants`); the tier, masterwork
+flag, breaker and power are Bungie's profile's for the copy (its instance's `gearTier`, `breakerTypeHash` and
+`primaryStat`, the item's `state`).
 
 <a id="weapons-from-your-account"></a>**Weapons from your account.** The login reads the player's weapons too, with the
 plugs in their sockets:
