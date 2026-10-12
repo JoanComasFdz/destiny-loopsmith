@@ -8,14 +8,15 @@ namespace Loopsmith.Web.Presentation;
 
 /// <summary>
 /// One of the player's weapons in the weapon picker: its square and marks (tier, masterwork, breaker), its copy, its
-/// type line ("Hand Cannon · Arc") and element icon, the perks it holds (one square per trait column it fills), whether
-/// its catalyst is in, where it is and whether the build wears it.
+/// archetype ("Hand Cannon"), damage type and its icon, the perks it holds (one square per trait column it fills),
+/// whether its catalyst is in, where it is and whether the build wears it.
 /// </summary>
 public sealed record WeaponOptionView(
     IconTile Tile,
     TileMarks Marks,
     ItemInstanceId Instance,
-    string TypeLine,
+    string Archetype,
+    Optional<DamageType> Damage,
     Optional<string> DamageIcon,
     ImmutableArray<IconTile> Perks,
     bool Catalyst,
@@ -34,6 +35,10 @@ public static class WeaponPickerShaping
             [.. options.Options.Select(option => ShapeOption(build, option))],
             options.Notes);
 
+    /// <summary>A weapon's type line: its archetype and damage type ("Hand Cannon · Arc").</summary>
+    public static string DescribeType(WeaponOptionView option) =>
+        string.Join(" · ", new[] { option.Archetype, option.Damage.Match(found => found.Value.ToString(), _ => "") }.Where(part => part.Length > 0));
+
     private static WeaponOptionView ShapeOption(ValidatedBuild build, WeaponOption option)
     {
         var catalog = build.Catalog;
@@ -43,7 +48,8 @@ public static class WeaponPickerShaping
             LoadoutShaping.DescribeWeaponItem(option.Item),
             LoadoutShaping.DescribeMarks(catalog, option.Item.Tier, Optional.Some(option.Weapon.Marks), LoopDesigning.FindCopyBreaker(build, option.Weapon)),
             option.Weapon.InstanceId,
-            string.Join(" · ", new[] { option.Item.Type.UnwrapOr(""), type.Match(found => found.Value.ToString(), _ => "") }.Where(part => part.Length > 0)),
+            option.Item.Type.UnwrapOr(""),
+            type,
             type.Bind(found => LoadoutShaping.FindDamageIcon(catalog, found)),
             [.. option.Roll.SelectMany(pick => pick.Match(hash => new[] { LoadoutShaping.DescribePerk(catalog, hash.Value) }, _ => []))],
             option.Catalyst,
