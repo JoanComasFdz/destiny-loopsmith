@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 using Loopsmith.Core.ManifestJoining;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.JSInterop;
 
@@ -32,6 +33,10 @@ public sealed class BrowserInterop(IJSRuntime js)
     /// <summary>Moves the keyboard focus to an element (a moved step's card) and scrolls it into view.</summary>
     public ValueTask FocusElementAsync(string elementId) =>
         js.InvokeVoidAsync("loopsmith.focusElement", elementId);
+
+    /// <summary>Puts the keyboard focus in a dialog when it is anywhere else (the button that was focused went away), so Escape still reaches it.</summary>
+    public ValueTask KeepFocusInAsync(ElementReference element) =>
+        js.InvokeVoidAsync("loopsmith.keepFocusIn", element);
 
     public ValueTask ClearLocationHashAsync() =>
         js.InvokeVoidAsync("loopsmith.clearHash");

@@ -288,6 +288,26 @@ link, without asking DIM. The owner's own Skip Grenade build is the first
 differs from the hand-written `build.yaml` is in that build's discrepancies). The hand-written builds
 stay on Home as links, with "import a build.yaml" and "import a loop".
 
+## Editing the subclass
+
+The designer's Subclass box has **Edit** (the Home cards stay read-only). It opens the subclass editor with the build's
+super, grenade, melee, class ability, jump, two aspects and fragments; tapping a plug's square opens its details, and
+**Change** lists everything the subclass can hold in that slot — Bungie's manifest, with icons and names: the ones the
+rules know are marked, the rest carry ⊘, a jump none (it has no part in a loop). An aspect or a fragment can't be equipped
+twice, and ✕ leaves its slot empty. The aspects open the fragment slots (`fragmentSlots` in the rules: Tempest Strike
+and Flow State 4, Tempest Strike and Ascension 5); the count follows the aspects at once. An aspect whose count the rules
+don't give shows "?" slots and limits nothing. An aspect change that closes slots takes out the last fragments and names
+them. **Cancel**, ✕ or Escape throws the changes away.
+
+**Save** rewrites only the embedded build file's `super`, `grenade`, `melee`, `classAbility`, `aspects`, `fragments`
+and `leftOut` (a plug the rules don't know, and the jump, are `leftOut.subclassPlugs`, shown ⊘ and listed under "Not in
+Loopsmith yet" — a jump isn't); the build check runs again and the steps replay with the new build, in place. The Next
+trigger HUD, the Validation list and **Analyze** follow it. When the stats were added up from the player's armor
+(they equal what that armor gives for the old subclass), they are added up again with the new fragments (Spark of Shock
+gone gives back its −10 Grenade); stats the player typed stay as typed. The export and the share link carry the new
+subclass. What the subclass can hold comes from the manifest excerpt (`plugs` of the subclass item, written by
+`tools/manifest/` for Arcstrider only); another subclass or class has no Edit.
+
 ## Stats
 
 A build's `stats:` are its six armor stats (`health`, `melee`, `grenade`, `super`, `class`, `weapons` — the game's
