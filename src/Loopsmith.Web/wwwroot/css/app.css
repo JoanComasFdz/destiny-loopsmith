@@ -1063,6 +1063,34 @@ button.hud-chip:hover, button.hud-chip:focus-visible { background: color-mix(in 
 .weapon-option-perks { display: flex; flex-wrap: wrap; gap: 6px 12px; }
 .weapon-option-perk { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; }
 .weapon-option-perk.in-rules .weapon-option-perk-name { color: var(--ok); }
+/* the pickers without a login (every item of the game): a search field and chip rows above the grid, which alone scrolls;
+   on a phone each chip row is one line that scrolls sideways */
+.game-picker-filters { display: flex; flex-direction: column; gap: 6px; }
+.game-picker-search { width: 100%; box-sizing: border-box; }
+.filter-chips { display: flex; gap: 5px; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; padding-bottom: 2px; }
+.filter-chip {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font: inherit;
+    font-size: 12px;
+    white-space: nowrap;
+    color: var(--text);
+    background: transparent;
+    border: 1px solid var(--line-2);
+    cursor: pointer;
+}
+.filter-chip img { width: 14px; height: 14px; }
+.filter-chip[aria-pressed="true"] { border-color: var(--arc); background: color-mix(in srgb, var(--arc) 18%, transparent); }
+.game-picker-count { font-size: 12px; }
+.game-option-line { display: flex; align-items: center; gap: 5px; }
+.game-option-line img { width: 16px; height: 16px; }
+@media (min-width: 700px) {
+    .filter-chips { flex-wrap: wrap; overflow-x: visible; }
+}
 .icon-grid.mods { grid-template-columns: repeat(2, var(--mod-tile)); }
 .icon-grid.mods .icon-tile, .general-mods .icon-tile { width: var(--mod-tile); height: var(--mod-tile); }
 .general-mods .icon-grid { grid-template-columns: repeat(auto-fill, var(--mod-tile)); }

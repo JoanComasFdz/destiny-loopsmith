@@ -29,7 +29,7 @@ public sealed class GameItemListingTests
             (listed.Weapons[0].Type, listed.Weapons[0].Tier, listed.Weapons[0].Icon, listed.Weapons[0].Watermark));
         Assert.Equal(Optional.Some(ItemHash.From(2611060930u)), Assert.IsType<ManifestKind.Weapon>(listed.Weapons[1].Kind).Breaker); // an exotic's own
         Assert.Equal(("Adaptive Frame", Optional.Some("/adaptive.png")), (listed.Intrinsics[ItemHash.From(20u)].Name, listed.Intrinsics[ItemHash.From(20u)].Icon));
-        Assert.InRange(store.Rounds, 3, 6);
+        Assert.InRange(store.Rounds, 4, 7);
     }
 
     [Fact]

@@ -88,7 +88,7 @@ public static class LoopDesigning
     /// <summary>
     /// A new design for a build started from scratch: an Arc Hunter (Arcstrider) with nothing equipped — no super,
     /// abilities, aspects or fragments, no weapons, no armor, no stats. The player fills it in the designer (the subclass
-    /// editor; their own weapons and armor after a Bungie login). It is written as a build file, so the loop embeds it —
+    /// editor; any weapon and armor piece of the game, or their own after a Bungie login). It is written as a build file, so the loop embeds it —
     /// and exports, shares and replays it — like any other.
     /// </summary>
     public static Result<DesignSession, string> StartScratchDesign(RuleCatalog catalog)

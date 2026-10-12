@@ -65,7 +65,8 @@
         <div class="designer-grid">
             <aside class="col-build">
                 <BuildPanel Build="session.Build" Issues="LoopDesigning.ListDesignIssues(session)" OnPickPerk="PickPerk" OnSetCatalyst="SetCatalyst" OnSetStats="SetStats"
-                            Profile="Workbench.Profile" LoginNote="Workbench.LoginNote" OnLoggedIn="UseBungieLoginAsync" OnLoggedOut="LogOut" OnPickArmor="PickArmor" OnPickWeapon="PickWeapon" OnEditSubclass="EditSubclass" />
+                            Profile="Workbench.Profile" LoginNote="Workbench.LoginNote" OnLoggedIn="UseBungieLoginAsync" OnLoggedOut="LogOut" OnPickArmor="PickArmor" OnPickWeapon="PickWeapon"
+                            OnPickGameWeapon="PickGameWeaponAsync" OnPickGameArmor="PickGameArmorAsync" OnEditSubclass="EditSubclass" />
             </aside>
             <div class="col-loop">
                 <ExplainPanel Build="session.Build" />
@@ -333,6 +334,49 @@
             Workbench.LoginNote = Optional.None<string>();                                       // impure (UI state)
             ApplyBuildEdit(session => LoopDesigning.PickWeapon(session, profile.Value, pick.Target, pick.Instance)); // impure (UI state)
         }
+    }
+
+    /// <summary>A weapon of the game picked without a login: read from Bungie's manifest when the excerpt lacks it, then put in the build with no perk picked.</summary>
+    private Task PickGameWeaponAsync(GameWeaponPick pick) =>
+        PickGameItemAsync(pick.Weapon, session => LoopDesigning.PickGameWeapon(session, pick.Target, pick.Weapon));
+
+    /// <summary>An armor piece of the game picked without a login: read from Bungie's manifest when the excerpt lacks it, then worn (the stats stay).</summary>
+    private Task PickGameArmorAsync(GameArmorPick pick) =>
+        PickGameItemAsync(pick.Piece, session => LoopDesigning.PickGameArmor(session, pick.Slot, pick.Piece));
+
+    /// <summary>
+    /// The item <paramref name="item"/> read from Bungie's full manifest when the excerpt lacks it (the picker shows the
+    /// progress bar meanwhile; the design as it is then is validated again with it), then <paramref name="pick"/> applied;
+    /// a refusal goes to the status line.
+    /// </summary>
+    private async Task PickGameItemAsync(ItemHash item, Func<DesignSession, Result<DesignSession, string>> pick)
+    {
+        if (Workbench.Session is not Optional<DesignSession>.Some open)
+        {
+            return;
+        }
+
+        var lacking = LoopDesigning.ListUnknownPickHashes(open.Value, item);                     // pure
+        if (!lacking.IsEmpty)
+        {
+            var joined = await Manifest.JoinAsync(lacking, ManifestReadFor.PickedItem);          // impure
+            if (Workbench.Session is not Optional<DesignSession>.Some current)
+            {
+                return;
+            }
+
+            var used = LoopDesigning.UseJoinedManifest(current.Value, joined);                   // pure
+            if (used is Result<DesignSession, string>.Error refused)
+            {
+                Workbench.Status = refused.Failure;                                              // impure (UI state)
+                return;
+            }
+
+            var reread = used.Match(ok => Optional.Some(ok.Value), _ => current);                // pure
+            Workbench.Session = reread;                                                          // impure (UI state)
+        }
+
+        ApplyBuildEdit(pick);                                                                    // impure (UI state)
     }
 
     /// <summary>Applies a pure edit to the open design (every edit is a new immutable session).</summary>

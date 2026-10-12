@@ -6,7 +6,8 @@
    login, the player's copies of its pieces and weapons (the share's when theirs, else their own) show their marks as
    DIM does: the tier's diamonds, a masterwork's glow and gold border. A weapon shows its breaker and element under its
    square. In the designer every weapon and armor slot shows, and a slot that holds nothing (an ability of a build started
-   from scratch, a weapon or armor slot) is a dashed square with its slot's name. *@
+   from scratch, a weapon or armor slot) is a dashed square with its slot's name. Each weapon and armor slot there has ⋯:
+   after the login it picks from the player's own items, before it from every weapon or armor piece of the game. *@
 @{
     var view = LoadoutShaping.ShapeLoadout(Build, Profile);
 }
@@ -191,11 +192,11 @@
                         {
                             <span class="icon-tile empty" title="@slot.DescribeArmorSlot(): no piece named">@slot.DescribeArmorSlot()</span>
                         }
-                        @if (CanPickArmor)
+                        @if (CanPickArmor || CanPickGameArmor)
                         {
+                            var pickTitle = CanPickArmor ? $"Pick your own {slot.DescribeArmorSlot().ToLowerInvariant()}" : $"Pick a {slot.DescribeArmorSlot().ToLowerInvariant()} piece of the game";
                             <button type="button" class="btn ghost small armor-pick" data-action="pick-armor" data-slot="@slot"
-                                    title="Pick your own @slot.DescribeArmorSlot().ToLowerInvariant()" aria-label="Pick your own @slot.DescribeArmorSlot().ToLowerInvariant()"
-                                    aria-haspopup="dialog" @onclick="() => OpenArmorPicker(slot)">⋯</button>
+                                    title="@pickTitle" aria-label="@pickTitle" aria-haspopup="dialog" @onclick="() => OpenArmorPicker(slot)">⋯</button>
                         }
                         <div class="icon-grid mods">
                             @foreach (var mod in piece.Mods)
@@ -272,6 +273,18 @@
     {
         <WeaponPicker Build="Build" Profile="ownedWeapons.Value" Target="target.Value" OnPick="PickWeaponAsync" OnClose="CloseWeaponPicker" />
     }
+
+    @if (CanPickGameWeapons && weaponPicker is Optional<WeaponTarget>.Some gameTarget)
+    {
+        var picking = gameTarget.Value;
+        <GamePicker Build="Build" Target="new GamePickerTarget.Weapon(picking)" OnPick="hash => PickGameWeaponAsync(picking, hash)" OnClose="CloseWeaponPicker" />
+    }
+
+    @if (CanPickGameArmor && armorPicker is Optional<ArmorSlot>.Some gameSlot)
+    {
+        var picking = gameSlot.Value;
+        <GamePicker Build="Build" Target="new GamePickerTarget.Armor(picking)" OnPick="hash => PickGameArmorAsync(picking, hash)" OnClose="CloseArmorPicker" />
+    }
 </div>
 
 @code {
@@ -323,6 +336,38 @@
 
     private bool CanPickArmor => Profile.IsSome() && OnPickArmor.HasDelegate;
 
+    /// <summary>Set by the designer: before a Bungie login, ⋯ next to each weapon slot picks from every weapon of the game. Unset (the Home card): read-only.</summary>
+    [Parameter]
+    public EventCallback<GameWeaponPick> OnPickGameWeapon { get; set; }
+
+    /// <summary>Set by the designer: before a Bungie login, ⋯ next to each armor slot picks from every armor piece of the game. Unset (the Home card): read-only.</summary>
+    [Parameter]
+    public EventCallback<GameArmorPick> OnPickGameArmor { get; set; }
+
+    private bool CanPickGameWeapons => !Profile.IsSome() && OnPickGameWeapon.HasDelegate;
+
+    private bool CanPickGameArmor => !Profile.IsSome() && OnPickGameArmor.HasDelegate;
+
+    /// <summary>A weapon of the game picked: the designer reads it and puts it in the build; then this picker (if it is still the open one) closes.</summary>
+    private async Task PickGameWeaponAsync(WeaponTarget target, ItemHash weapon)
+    {
+        await OnPickGameWeapon.InvokeAsync(new GameWeaponPick(target, weapon));                  // impure
+        if (weaponPicker == Optional.Some(target))
+        {
+            weaponPicker = Optional.None<WeaponTarget>();                                        // impure (UI state)
+        }
+    }
+
+    /// <summary>A piece of the game picked: the designer reads it and puts it in the build; then this picker (if it is still the open one) closes.</summary>
+    private async Task PickGameArmorAsync(ArmorSlot slot, ItemHash piece)
+    {
+        await OnPickGameArmor.InvokeAsync(new GameArmorPick(slot, piece));                       // impure
+        if (armorPicker == Optional.Some(slot))
+        {
+            armorPicker = Optional.None<ArmorSlot>();                                            // impure (UI state)
+        }
+    }
+
     /// <summary>Set by the designer: a weapon picked from the player's weapons is swapped into the build (or added). Unset (the Home card): read-only.</summary>
     [Parameter]
     public EventCallback<WeaponPick> OnPickWeapon { get; set; }
@@ -350,14 +395,14 @@
         await OnPickWeapon.InvokeAsync(pick);                                                    // impure
     }
 
-    /// <summary>⋯ next to a weapon slot (after the login): it opens the weapon picker for that slot.</summary>
+    /// <summary>⋯ next to a weapon slot: it opens the weapon picker for that slot (the player's own weapons after the login; every weapon of the game before it).</summary>
     private RenderFragment RenderWeaponPick(WeaponTarget target, WeaponSlot slot) => __builder =>
     {
-        @if (CanPickWeapons)
+        @if (CanPickWeapons || CanPickGameWeapons)
         {
+            var pickTitle = CanPickWeapons ? $"Pick your own {slot.DescribeWeaponSlot().ToLowerInvariant()} weapon" : $"Pick a {slot.DescribeWeaponSlot().ToLowerInvariant()} weapon of the game";
             <button type="button" class="btn ghost small weapon-pick" data-action="pick-weapon" data-slot="@slot"
-                    title="Pick your own @slot.DescribeWeaponSlot().ToLowerInvariant() weapon" aria-label="Pick your own @slot.DescribeWeaponSlot().ToLowerInvariant() weapon"
-                    aria-haspopup="dialog" @onclick="() => OpenWeaponPicker(target)">⋯</button>
+                    title="@pickTitle" aria-label="@pickTitle" aria-haspopup="dialog" @onclick="() => OpenWeaponPicker(target)">⋯</button>
         }
     };
 

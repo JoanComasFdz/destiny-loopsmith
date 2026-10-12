@@ -1,0 +1,242 @@
+@implements IDisposable
+@inject BungieManifestJoining Manifest
+@* The picker without a Bungie login, for a weapon or an armor slot of the build: every legendary and exotic weapon or
+   armor piece of the game that the slot can take (LoopDesigning.ListGameWeaponOptions / ListGameArmorOptions), from
+   Bungie's full manifest — read the first time in the tab, with its progress bar; then kept. Each is drawn as the
+   loadout draws it; an exotic the rules don't know yet carries ⊘. A search field (and, for weapons, type and element
+   chips) narrows the list. Hovering an item (a mouse) or a first tap shows it; a click on the item showing, or "Use this
+   weapon" / "Wear this piece", picks it: the designer reads it from the manifest (the bar shows meanwhile) and puts it in
+   the build, then the picker closes. While it is open the manifest's tables stay loaded, so that read is quick. *@
+@{
+    var view = game.Map(listed => ShapeView(listed));
+    var shown = view.Bind(found => found.Shown.Where(option => focused == Optional.Some(option.Hash)).Select(Optional.Some).FindFirstSome());
+    var noun = Target is GamePickerTarget.Weapon ? "weapon" : "piece";
+}
+<Modal Title="@DescribeTitle()" Size="wide fit" OnClose="OnClose">
+    <div class="@(Target is GamePickerTarget.Weapon ? "weapon-picker" : "armor-picker") game-picker" data-testid="game-picker" data-slot="@DescribeSlot()">
+        <ManifestProgressBar />
+        @if (problem is Optional<string>.Some unread)
+        {
+            <p class="tone-warning" data-testid="game-picker-problem">@unread.Value</p>
+        }
+        else if (view is Optional<GamePickerView>.Some { Value: var picker })
+        {
+            <div class="game-picker-filters">
+                <input type="search" class="game-picker-search" placeholder="@picker.SearchHint" aria-label="@picker.SearchHint" value="@filter.Search"
+                       @oninput="Search" data-testid="game-picker-search" />
+                @if (!picker.Types.IsEmpty)
+                {
+                    <div class="filter-chips" role="group" aria-label="Weapon type" data-testid="type-chips">
+                        @foreach (var chip in picker.Types)
+                        {
+                            var type = chip.Type;
+                            <button type="button" class="filter-chip" aria-pressed="@(chip.On ? "true" : "false")" @onclick="() => ToggleType(type)">@type</button>
+                        }
+                    </div>
+                }
+                @if (!picker.Elements.IsEmpty)
+                {
+                    <div class="filter-chips" role="group" aria-label="Element" data-testid="element-chips">
+                        @foreach (var chip in picker.Elements)
+                        {
+                            var element = chip.Element;
+                            <button type="button" class="filter-chip @ToneStyling.ToToneClass(element.ToAffinity().ToTone())" aria-pressed="@(chip.On ? "true" : "false")" @onclick="() => ToggleElement(element)">
+                                @if (chip.Icon is Optional<string>.Some icon)
+                                {
+                                    <img src="@icon.Value" alt="" loading="lazy" />
+                                }
+                                @element
+                            </button>
+                        }
+                    </div>
+                }
+                <span class="muted game-picker-count" data-testid="game-picker-count">@GamePickerShaping.DescribeCount(picker, $"{noun}s")</span>
+            </div>
+            @if (picker.Shown.IsEmpty)
+            {
+                <p class="muted" data-testid="game-picker-none">@(picker.Total == 0 ? $"No {noun} of the game fits this slot." : $"No {noun} matches.")</p>
+            }
+            else
+            {
+                <div class="icon-grid @(Target is GamePickerTarget.Weapon ? "weapon-options" : "armor-options")" role="listbox" aria-label="@picker.Title">
+                    @foreach (var option in picker.Shown)
+                    {
+                        var hash = option.Hash;
+                        <div class="@(Target is GamePickerTarget.Weapon ? "weapon-option" : "armor-option")">
+                            <button type="button" role="option" aria-selected="@(focused == Optional.Some(hash) ? "true" : "false")"
+                                    class="icon-tile tappable item @DescribeTier(option.Tile) @(option.Worn ? "worn" : "") @(focused == Optional.Some(hash) ? "focused" : "") @(option.InRules ? "" : "out")"
+                                    title="@option.Tile.Name" aria-label="@option.Tile.Name" data-hash="@hash.Value"
+                                    @onpointerenter="e => Hover(hash, e)" @onclick="() => ChooseAsync(hash)">
+                                @if (option.Tile.Icon is Optional<string>.Some icon)
+                                {
+                                    <img src="@icon.Value" alt="" loading="lazy" />
+                                }
+                                else
+                                {
+                                    <span class="icon-initials">@(option.Tile.Name.Length > 0 ? option.Tile.Name[..1] : "?")</span>
+                                }
+                                <TileOverlays Marks="option.Marks" />
+                                @if (!option.InRules)
+                                {
+                                    <UnsupportedMark />
+                                }
+                                @if (option.Worn)
+                                {
+                                    <span class="armor-worn-mark" aria-hidden="true">✓</span>
+                                }
+                            </button>
+                            <TileFooter Marks="option.Marks" DamageIcon="option.DamageIcon" DamageName="@option.Damage.Match(found => found.Value.ToString(), _ => "")" />
+                        </div>
+                    }
+                </div>
+            }
+            @if (shown is Optional<GameOptionView>.Some details)
+            {
+                var item = details.Value;
+                <div class="armor-option-details" data-testid="game-option-details">
+                    <div class="armor-option-name">@item.Tile.Name</div>
+                    <div class="game-option-line">
+                        @if (item.DamageIcon is Optional<string>.Some damageIcon)
+                        {
+                            <img class="inline-icon" src="@damageIcon.Value" alt="" loading="lazy" />
+                        }
+                        @(Target is GamePickerTarget.Weapon ? GamePickerShaping.DescribeWeaponLine(item) : GamePickerShaping.DescribeArmorLine(item))
+                    </div>
+                    @if (!item.InRules)
+                    {
+                        <div class="muted" data-testid="game-option-unsupported">@UnsupportedMark.Title</div>
+                    }
+                    @if (item.Worn)
+                    {
+                        <div class="muted">The build wears this one.</div>
+                    }
+                    else
+                    {
+                        <button type="button" class="btn primary small" data-action="use-game-item" disabled="@picking" @onclick="() => PickAsync(item.Hash)">
+                            @(picking ? "Reading it…" : Target is GamePickerTarget.Weapon ? "Use this weapon" : "Wear this piece")
+                        </button>
+                    }
+                </div>
+            }
+            else
+            {
+                <p class="muted armor-picker-hint">Tap a @noun to see it; tap it again to @(Target is GamePickerTarget.Weapon ? "use" : "wear") it.</p>
+            }
+            @foreach (var note in picker.Notes)
+            {
+                <p class="muted armor-picker-note">@note</p>
+            }
+        }
+    </div>
+</Modal>
+
+@code {
+    [Parameter, EditorRequired]
+    public ValidatedBuild Build { get; set; } = null!;
+
+    /// <summary>The slot the picker fills: a weapon's (in place of one, or an empty slot), or an armor slot.</summary>
+    [Parameter, EditorRequired]
+    public GamePickerTarget Target { get; set; } = null!;
+
+    /// <summary>An item picked: the designer reads it and puts it in the build (the picker stays open until it has).</summary>
+    [Parameter]
+    public EventCallback<ItemHash> OnPick { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    private Optional<GameItems> game = Optional.None<GameItems>();
+    private Optional<string> problem = Optional.None<string>();
+    private GamePickerFilter filter = GamePickerShaping.NoFilter;
+    private Optional<ItemHash> focused = Optional.None<ItemHash>();
+    private Optional<ItemHash> worn = Optional.None<ItemHash>();
+    private bool picking;
+
+    /// <summary>The game's items (read the first time in the tab), the tables held while the picker is open; it opens showing the item the build wears there.</summary>
+    protected override async Task OnInitializedAsync()
+    {
+        Manifest.Hold();                                                                         // impure (tab state)
+        var listed = await Manifest.ListGameItemsAsync();                                        // impure
+        var read = listed.Match(ok => Optional.Some(ok.Value), _ => Optional.None<GameItems>()); // pure
+        var why = listed.Match(_ => Optional.None<string>(), error => Optional.Some(GamePickerShaping.DescribeUnread(error.Failure))); // pure
+        var wearing = read.Bind(found => ListOptions(found).Options.Where(option => option.Worn).Select(option => Optional.Some(option.Item.Hash)).FindFirstSome()); // pure
+        game = read;                                                                             // impure (component state)
+        problem = why;                                                                           // impure (component state)
+        worn = wearing;                                                                          // impure (component state)
+        focused = wearing;                                                                       // impure (component state)
+    }
+
+    public void Dispose() =>
+        _ = Manifest.LetGoAsync();                                                               // impure
+
+    private GameItemOptions ListOptions(GameItems listed) =>
+        Target.Match(
+            weapon => LoopDesigning.ListGameWeaponOptions(Build, listed, weapon.Target),
+            armor => LoopDesigning.ListGameArmorOptions(Build, listed, armor.Slot));
+
+    private GamePickerView ShapeView(GameItems listed) =>
+        Target.Match(
+            weapon => GamePickerShaping.ShapeWeaponPicker(Build, listed, ListOptions(listed), Build.Build.FindTargetSlot(weapon.Target), filter),
+            armor => GamePickerShaping.ShapeArmorPicker(Build, ListOptions(listed), armor.Slot, filter));
+
+    private string DescribeTitle() =>
+        Target.Match(
+            weapon => GamePickerShaping.DescribeWeaponTitle(Build.Build.FindTargetSlot(weapon.Target)),
+            armor => GamePickerShaping.DescribeArmorTitle(armor.Slot));
+
+    private string DescribeSlot() =>
+        Target.Match(
+            weapon => Build.Build.FindTargetSlot(weapon.Target).Match(found => found.Value.ToString(), _ => ""),
+            armor => armor.Slot.ToString());
+
+    private void Search(ChangeEventArgs e) =>
+        filter = GamePickerShaping.SetSearch(filter, e.Value?.ToString() ?? "");                 // impure (component state)
+
+    private void ToggleType(string type) =>
+        filter = GamePickerShaping.ToggleType(filter, type);                                     // impure (component state)
+
+    private void ToggleElement(DamageType element) =>
+        filter = GamePickerShaping.ToggleElement(filter, element);                               // impure (component state)
+
+    /// <summary>A mouse over an item shows it (a touch doesn't hover: its first tap does).</summary>
+    private void Hover(ItemHash hash, PointerEventArgs e)
+    {
+        if (e.PointerType == "mouse" && !picking)
+        {
+            focused = Optional.Some(hash);                                                       // impure (component state)
+        }
+    }
+
+    /// <summary>A click on the item showing picks it (the one the build wears closes the picker); on another item, shows that one.</summary>
+    private async Task ChooseAsync(ItemHash hash)
+    {
+        if (picking)
+        {
+            return;
+        }
+
+        if (focused == Optional.Some(hash) && worn == Optional.Some(hash))
+        {
+            await OnClose.InvokeAsync();                                                         // impure
+            return;
+        }
+
+        if (focused == Optional.Some(hash))
+        {
+            await PickAsync(hash);                                                               // impure
+            return;
+        }
+
+        focused = Optional.Some(hash);                                                           // impure (component state)
+    }
+
+    private async Task PickAsync(ItemHash hash)
+    {
+        picking = true;                                                                          // impure (component state)
+        await OnPick.InvokeAsync(hash);                                                          // impure
+        picking = false;                                                                         // impure (component state)
+    }
+
+    private static string DescribeTier(IconTile tile) =>
+        tile.Tier.Match(tier => tier.Value == ItemTier.Exotic ? "exotic" : tier.Value == ItemTier.Legendary ? "legendary" : "", _ => "");
+}

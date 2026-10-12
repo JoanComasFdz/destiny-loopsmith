@@ -35,7 +35,7 @@
 
     <button type="button" class="btn scratch-start" @onclick="StartFromScratchAsync" data-action="scratch-start">
         <span class="scratch-start-title">Start from scratch</span>
-        <span class="scratch-start-sub">An Arc Hunter with nothing equipped: pick its super, abilities, aspects and fragments in the designer, and your own weapons and armor after logging in with Bungie.</span>
+        <span class="scratch-start-sub">An Arc Hunter with nothing equipped: pick its super, abilities, aspects and fragments in the designer, and any weapon or armor piece of the game (or your own, after logging in with Bungie).</span>
     </button>
 
     <form class="dim-start" @onsubmit="StartFromDimLinkAsync" aria-labelledby="dim-start-label">
@@ -193,7 +193,7 @@
 
         var started = LoopDesigning.StartScratchDesign(Bundle.Catalog);                          // pure
         started.Match(                                                                           // impure
-            ok => OpenDesign(ok.Value, $"New loop from scratch, for an {ok.Value.Build.Build.Name} with nothing equipped yet: ⋯ on the Subclass box picks its abilities."),
+            ok => OpenDesign(ok.Value, $"New loop from scratch, for an {ok.Value.Build.Build.Name} with nothing equipped yet: ⋯ on the Subclass box picks its abilities, ⋯ next to a weapon or armor slot an item of the game."),
             error => ShowNotice(error.Failure));
     }
 
