@@ -11,11 +11,12 @@ namespace Loopsmith.Web.Presentation;
 /// (the build's element or weapon, from the manifest excerpt; none: "?") and colour, and the palette row it acts as
 /// (its hit / kill pair, or the class ability). <see cref="AtOnce"/>: its one action, when it has one and no target
 /// count (the class ability, the finisher) — a tap acts at once. <see cref="IsNew"/>: one of its actions was unlocked by
-/// the last step. <see cref="Secondaries"/>: the ability's secondary uses the build's rules name, shown below it.
+/// the last step.
 /// </summary>
-public sealed record HudSlot(
-    TriggerChoice Choice, string Kind, string Name, Optional<string> Icon, Affinity Affinity, Optional<TriggerButton> AtOnce, bool IsNew,
-    ImmutableArray<HudSecondary> Secondaries);
+public sealed record HudSlot(TriggerChoice Choice, string Kind, string Name, Optional<string> Icon, Affinity Affinity, Optional<TriggerButton> AtOnce, bool IsNew);
+
+/// <summary>An ability's square and its secondary uses the build's rules name, shown below it (none: the press only).</summary>
+public sealed record HudAbility(HudSlot Slot, ImmutableArray<HudSecondary> Secondaries);
 
 /// <summary>
 /// A secondary use of an ability, below its square — a different trigger from the press (Tempest Strike's sliding melee,
@@ -42,7 +43,7 @@ public sealed record HudStatus(string Name, Affinity Affinity, ImmutableArray<Tr
 public sealed record TriggerHud(
     Affinity Subclass,
     Optional<HudSlot> Super,
-    ImmutableArray<HudSlot> Abilities,
+    ImmutableArray<HudAbility> Abilities,
     Optional<HudSlot> Finisher,
     ImmutableArray<HudWeapon> Weapons,
     ImmutableArray<HudStatus> OnYou,
@@ -70,7 +71,7 @@ public static class TriggerHudShaping
         var statuses = ShapeStatuses(build, declared);
         return new TriggerHud(
             subclass,
-            ShapeAbility(build, choices, AbilityKind.Super, "Super", abilities.Super, subclass),
+            ShapeAbility(build, choices, AbilityKind.Super, "Super", abilities.Super, subclass).Map(super => super.Slot),
             [
                 .. new[]
                 {
@@ -89,21 +90,22 @@ public static class TriggerHudShaping
     }
 
     /// <summary>The choice the ability's press names, when the palette offers it (none: the build has no such trigger), with its secondary uses.</summary>
-    private static Optional<HudSlot> ShapeAbility(
+    private static Optional<HudAbility> ShapeAbility(
         ValidatedBuild build, ImmutableDictionary<string, TriggerChoice> choices, AbilityKind ability, string kind, Optional<ElementId> equipped, Affinity subclass)
     {
         var affinity = equipped.Bind(id => build.Catalog.Elements.TryGetValue(id, out var element) ? Optional.Some(element.Affinity) : Optional.None<Affinity>()).UnwrapOr(subclass);
         return choices.TryGetValue(TriggerPaletteShaping.ToAbilityKey(ability, AbilityInput.Press), out var choice)
-            ? Optional.Some(new HudSlot(
-                choice,
-                kind,
-                equipped.Bind(id => build.Catalog.Elements.TryGetValue(id, out var element) ? Optional.Some(element.Name) : Optional.None<string>()).UnwrapOr($"{kind} ?"),
-                equipped.Bind(id => LoadoutShaping.FindElementIcon(build.Catalog, id)),
-                affinity,
-                FindAtOnce(choice),
-                choice.Buttons.Any(button => button.IsNew),
+            ? Optional.Some(new HudAbility(
+                new HudSlot(
+                    choice,
+                    kind,
+                    equipped.Bind(id => build.Catalog.Elements.TryGetValue(id, out var element) ? Optional.Some(element.Name) : Optional.None<string>()).UnwrapOr($"{kind} ?"),
+                    equipped.Bind(id => LoadoutShaping.FindElementIcon(build.Catalog, id)),
+                    affinity,
+                    FindAtOnce(choice),
+                    choice.Buttons.Any(button => button.IsNew)),
                 [.. LoopDesigning.ListSecondaryUses(build, ability).SelectMany(use => ShapeSecondary(build, choices, use, kind, affinity).Match(found => new[] { found.Value }, _ => []))]))
-            : Optional.None<HudSlot>();
+            : Optional.None<HudAbility>();
     }
 
     /// <summary>
@@ -124,8 +126,7 @@ public static class TriggerHudShaping
                     use.NamedBy.Select(id => LoadoutShaping.FindElementIcon(build.Catalog, id)).FindFirstSome(),
                     affinity,
                     FindAtOnce(choice),
-                    choice.Buttons.Any(button => button.IsNew),
-                    []),
+                    choice.Buttons.Any(button => button.IsNew)),
                 DomainPhrasing.Capitalize(use.Kind.DescribeGesture(use.Input)),
                 use.Input.ToInputWord(),
                 named))
@@ -145,14 +146,13 @@ public static class TriggerHudShaping
                 finisher.Bind(item => item.Icon).Map(LoadoutShaping.ToIconUrl),
                 Affinity.Neutral,
                 FindAtOnce(choice),
-                choice.Buttons.Any(button => button.IsNew),
-                []))
+                choice.Buttons.Any(button => button.IsNew)))
             : Optional.None<HudSlot>();
 
     private static Optional<HudWeapon> ShapeWeapon(ImmutableDictionary<string, TriggerChoice> choices, WeaponView weapon) =>
         choices.TryGetValue($"fire:{weapon.Slot}", out var choice)
             ? Optional.Some(new HudWeapon(
-                new HudSlot(choice, weapon.Slot.ToString(), weapon.Weapon.Name, weapon.Weapon.Icon, weapon.Type.ToAffinity(), FindAtOnce(choice), choice.Buttons.Any(button => button.IsNew), []),
+                new HudSlot(choice, weapon.Slot.ToString(), weapon.Weapon.Name, weapon.Weapon.Icon, weapon.Type.ToAffinity(), FindAtOnce(choice), choice.Buttons.Any(button => button.IsNew)),
                 weapon.Slot,
                 weapon.DamageIcon,
                 weapon.Archetype.Map(DomainPhrasing.DescribeArchetype)))

@@ -118,7 +118,7 @@ public static class ActionResolution
         return new Opening(state, [new PendingEvent.Ready(new GameEvent.AbilityCast(kind, cast.Input)), .. strike], []);
     }
 
-    /// <summary>On the ground, in the air or held, the class ability is cast: every class ability rule fires either way.</summary>
+    /// <summary>On the ground or with its air move, the class ability is cast: every class ability rule fires either way.</summary>
     private static Opening UseClassAbility(GameState state, AbilityInput input) =>
         new(state, [new PendingEvent.Ready(new GameEvent.AbilityCast(AbilityKind.ClassAbility, input))], []);
 
@@ -142,7 +142,7 @@ public static class ActionResolution
     {
         var named = build.Equipped
             .SelectMany(equipped => equipped.Element.Rules
-                .SelectMany(rule => FindNamedInput(rule.On).Match(use => new[] { use.Value }, _ => []))
+                .SelectMany(rule => rule.On.FindNamedInput().Match(use => new[] { use.Value }, _ => []))
                 .Where(use => use.Kind == kind)
                 .Select(use => (use.Input, equipped.Element.Id)))
             .ToImmutableArray();
@@ -163,29 +163,6 @@ public static class ActionResolution
             new PlayerAction.CastAbility(kind, HitOutcome.Damage, TargetCount.One, input),
         }),
     ];
-
-    /// <summary>The ability use a trigger names, when it names one (a cast or a hit or kill by that use).</summary>
-    private static Optional<(AbilityKind Kind, AbilityInput Input)> FindNamedInput(Trigger trigger) =>
-        trigger switch
-        {
-            Trigger.AbilityCastAs cast => Optional.Some((cast.Kind, cast.Input)),
-            _ => FindVia(trigger).Bind(via => via is DamageSource.AbilityUsedAs usedAs
-                ? Optional.Some((usedAs.Kind, usedAs.Input))
-                : Optional.None<(AbilityKind, AbilityInput)>()),
-        };
-
-    private static Optional<DamageSource> FindVia(Trigger trigger) =>
-        trigger switch
-        {
-            Trigger.KillAny kill => Optional.Some(kill.Via),
-            Trigger.KillOfTier kill => Optional.Some(kill.Via),
-            Trigger.KillDebuffed kill => Optional.Some(kill.Via),
-            Trigger.KillMultiple kill => Optional.Some(kill.Via),
-            Trigger.Damage damage => Optional.Some(damage.Via),
-            Trigger.DamageDebuffed damage => Optional.Some(damage.Via),
-            Trigger.DamageMultiple damage => Optional.Some(damage.Via),
-            _ => Optional.None<DamageSource>(),
-        };
 
     /// <summary>
     /// A finisher: always possible in the game, as an ability is (ADRs D5), so every build is offered one. It fires the

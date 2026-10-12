@@ -29,7 +29,7 @@ public sealed record GameState(
 public partial record PlayerAction
 {
     partial record CastAbility(OffensiveAbility Kind, HitOutcome Hit, TargetCount Targets, AbilityInput Input = AbilityInput.Press);   // a secondary: melee:slide, grenade:hold
-    partial record UseClassAbility(AbilityInput Input = AbilityInput.Press);   // a secondary: the air move that spends the charge (Ascension), held
+    partial record UseClassAbility(AbilityInput Input = AbilityInput.Press);   // a secondary: the air move that spends the charge (Ascension)
     partial record FireWeapon(WeaponSlot Slot, HitOutcome Hit, TargetCount Targets);
     partial record CollectPickups(PickupId Pickup);
     partial record Declare(StateDeclaration Declaration);   // a state only play decides (ADRs D3)

@@ -90,7 +90,7 @@ internal static class RuleBodyParsing
     /// <summary>
     /// <c>{ abilityCast: grenade }</c> (any use of it), or <c>{ abilityCast: { ability: melee, input: slide } }</c> for one use
     /// only: a secondary ability — the melee while sliding (Tempest Strike's uppercut) or in the air, the class ability's
-    /// air move (Ascension) or held, the grenade held. A plain cast trigger matches every use.
+    /// air move (Ascension), the grenade held. A plain cast trigger matches every use.
     /// </summary>
     private static Result<Trigger, Errors> ReadAbilityCastTrigger(YamlValue value) =>
         value.Node is YamlScalarNode

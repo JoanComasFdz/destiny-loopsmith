@@ -176,7 +176,10 @@ public static class DomainPhrasing
             _ => kind.DescribeAbility(),
         };
 
-    /// <summary>The input's word in an action token and a rule (<c>melee:slide</c>, <c>class:air</c>, <c>grenade:hold</c>); a press has none.</summary>
+    /// <summary>
+    /// The input's word in an action token and a rule (<c>melee:slide</c>, <c>class:air</c>, <c>grenade:hold</c>); a press is
+    /// <c>press</c> in a rule (<c>input: press</c>), and an action token writes none (<see cref="ToInputSuffix"/>).
+    /// </summary>
     public static string ToInputWord(this AbilityInput input) =>
         input switch
         {

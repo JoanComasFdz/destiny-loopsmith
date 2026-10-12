@@ -49,13 +49,13 @@
                 {
                     @if (ability.Secondaries.IsEmpty)
                     {
-                        @RenderSlot(ability, "trig-ability")
+                        @RenderSlot(ability.Slot, "trig-ability")
                     }
                     else
                     {
                         <div class="trig-ability-col">
-                            @RenderSlot(ability, "trig-ability")
-                            <div class="trig-secondaries" aria-label="@($"{ability.Kind}: secondary uses")">
+                            @RenderSlot(ability.Slot, "trig-ability")
+                            <div class="trig-secondaries" aria-label="@($"{ability.Slot.Kind}: secondary uses")">
                                 @foreach (var secondary in ability.Secondaries)
                                 {
                                     @RenderSecondary(secondary)
@@ -301,7 +301,7 @@
     /// <summary>The slot whose actions show below the HUD, while the HUD still offers it.</summary>
     private Optional<HudSlot> FindPicked(TriggerHud hud) =>
         pickedKey.Bind(key => hud.Super.Match(found => new[] { found.Value }, _ => [])
-            .Concat(hud.Abilities)
+            .Concat(hud.Abilities.Select(ability => ability.Slot))
             .Concat(hud.Abilities.SelectMany(ability => ability.Secondaries.Select(secondary => secondary.Slot)))
             .Concat(hud.Weapons.Select(weapon => weapon.Slot))
             .Where(slot => slot.Choice.Key == key && !slot.AtOnce.IsSome())
