@@ -10,7 +10,8 @@ permissions:
 
 jobs:
   # Whether a pull request changes more than Markdown, docs/, .github/ and .claude/ (a rename
-  # counts its old path too). If not, `build` is skipped, and a skipped required check counts as
+  # counts its old path too; a PR with no changed files, like a draft's first empty commit, counts
+  # as docs-only). If not, `build` is skipped, and a skipped required check counts as
   # passed. If this job fails, `build` runs. Pushes to main always build. Same list in pr-preview.yml.
   changes:
     runs-on: ubuntu-latest
@@ -27,7 +28,7 @@ jobs:
           if [ "$GITHUB_EVENT_NAME" != pull_request ]; then echo "code=true" >> "$GITHUB_OUTPUT"; exit 0; fi
           files=$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR/files" \
             --jq '.[] | .filename, (.previous_filename // empty)')
-          n=$(printf '%s\n' "$files" | grep -cvE '\.md$|^docs/|^\.github/|^\.claude/' || true)
+          n=$(printf '%s' "$files" | grep -cvE '\.md$|^docs/|^\.github/|^\.claude/' || true)
           echo "code=$([ "$n" -gt 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
 
   build:
