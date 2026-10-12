@@ -130,10 +130,11 @@ equipped rule has a `finisher` trigger. Every token still reads anywhere
 (CLI, loop files, share links).
 
 The web designer's **Next trigger** is laid out like Destiny's HUD: the Super's diamond, then the grenade, melee and
-class ability squares with the build's own icons in the subclass's colour, then the three weapons with their icon,
-damage type's icon and colour. Tapping the Super, an ability or a weapon shows its actions under the HUD — hit or
-kill, and how many enemies that one action catches — and it stays picked for the next step; the class ability (with
-no air move) acts at one tap. Above the HUD, where the game lists your buffs, the states to declare are grouped by
+class ability squares with the build's own icons in the subclass's colour — and, when a rule of the build reacts to a
+finisher, a **Finisher** square (the game has no HUD square for it; it has no icon, no element and no damage type) —
+then the three weapons with their icon, damage type's icon and colour. Tapping the Super, an ability or a weapon
+shows its actions under the HUD — hit or kill, and how many enemies that one action catches — and it stays picked
+for the next step; the class ability (with no air move) and the finisher act at one tap. Above the HUD, where the game lists your buffs, the states to declare are grouped by
 status — on you, on your weapons, on the pack (with **New pack**) — each with its own buttons ("Bolt Charge: at max
 (x10) · ends"), and what is on the ground to pick up.
 
