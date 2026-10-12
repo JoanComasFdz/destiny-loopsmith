@@ -925,9 +925,10 @@ button.hud-chip:hover, button.hud-chip:focus-visible { background: color-mix(in 
 .icon-tile.perk { width: calc(var(--mod-tile) + 4px); height: calc(var(--mod-tile) + 4px); border-radius: 50%; background: #1f2633; }
 .icon-tile.perk img { border-radius: 50%; }
 /* an enhanced trait, as the game and DIM draw it over the base perk's icon (Bungie gives both the same image): a gold
-   glow over the circle's lower half, behind the icon, and one straight gold up-arrow down the circle's left edge, its
-   head outside the circle and its shaft past the middle (DIM's, measured on its circle: head from 13.5% to 27% down,
-   shaft to 68%, 2.7–8% across). The glow fills the border box once, so no sliver of it repeats into the 1 px border. */
+   glow over the circle's lower half, behind the icon, and one straight gold up-arrow down the circle's left edge: its
+   head outside the circle (13.5% to 27% down), its shaft (2.7–8% across) running down until it meets the circle's
+   outline, where it fades into it (solid to 68%, gone by 78%). The glow fills the border box once, so no sliver of it
+   repeats into the 1 px border. */
 .icon-tile.perk.enhanced, .outcome-icon.enhanced-perk {
     overflow: visible;
     background: linear-gradient(to bottom, transparent 50%, var(--masterwork)) border-box no-repeat, #1f2633;
@@ -940,10 +941,10 @@ button.hud-chip:hover, button.hud-chip:focus-visible { background: color-mix(in 
     left: -2.7%;
     top: 13.5%;
     width: 16.2%;
-    height: 54.5%;
-    background: var(--masterwork);
-    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 54'%3E%3Cpath d='M6,54 L6,13.5 L0,13.5 L9,0 L18,13.5 L12,13.5 L12,54 z'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
-    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 54'%3E%3Cpath d='M6,54 L6,13.5 L0,13.5 L9,0 L18,13.5 L12,13.5 L12,54 z'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+    height: 64.5%;
+    background: linear-gradient(to bottom, var(--masterwork) 84%, transparent);
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 64.5'%3E%3Cpath d='M6,64.5 L6,13.5 L0,13.5 L9,0 L18,13.5 L12,13.5 L12,64.5 z'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 64.5'%3E%3Cpath d='M6,64.5 L6,13.5 L0,13.5 L9,0 L18,13.5 L12,13.5 L12,64.5 z'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
     pointer-events: none;
 }
 /* a perk square's 1 px border: its arrow is placed from the outer edge, as DIM's is */
