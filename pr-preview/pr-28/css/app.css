@@ -411,6 +411,14 @@ textarea { resize: vertical; }
 .stats-login-note { color: var(--muted); font-size: 12px; line-height: 1.45; }
 .stats-armor { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 8px 12px; margin-top: 10px; }
 .stats-armor-note { flex: 1 1 200px; margin: 0; color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
+/* while Bungie's manifest is read for the player's items: the bar under the login's line, the whole width */
+.manifest-progress { flex: 1 1 100%; display: flex; flex-direction: column; gap: 5px; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel-2); font-size: 12px; }
+.manifest-progress-text { display: flex; flex-wrap: wrap; gap: 2px 8px; }
+.manifest-progress-title { color: var(--text); font-weight: 650; }
+.manifest-progress-detail { color: var(--muted); font-variant-numeric: tabular-nums; }
+.manifest-progress-bar { position: relative; height: 6px; border-radius: 3px; background: rgba(255, 255, 255, .07); overflow: hidden; }
+.manifest-progress-bar > span { display: block; height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--arc), var(--strand)); transition: width .25s ease-out; }
+.manifest-progress-hint { margin: 0; color: var(--dim); font-size: 11px; }
 @media (max-width: 420px) { .stats-edit { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
 .issues { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; font-size: 12px; }
