@@ -996,8 +996,11 @@ button.hud-chip:hover, button.hud-chip:focus-visible { background: color-mix(in 
 .sub-heading { margin: 4px 0 0; font-size: 13px; font-weight: 700; color: var(--text); }
 .sub-note { margin: 0; font-size: 12px; }
 .sub-group { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 6px; }
-.sub-slot { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 6px; border: 1px solid var(--line-2); border-radius: var(--radius); background: var(--panel-2); }
-.sub-slot.open { border-color: var(--arc); }
+.sub-slot { display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 6px; border: 1px solid var(--line-2); border-radius: var(--radius); background: var(--panel-2); }
+.sub-slot-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+/* the open slot holds its list, across the editor's full width (the slots after it move down a row) */
+.sub-slot.open { grid-column: 1 / -1; border-color: var(--arc); }
+.sub-slot .sub-picker { padding: 8px 0 0; border: none; border-top: 1px solid var(--line-2); border-radius: 0; background: none; }
 .sub-slot-text { display: flex; flex-direction: column; min-width: 0; flex: 1 1 auto; }
 .sub-slot-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
 .sub-slot-name { font-size: 12px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
