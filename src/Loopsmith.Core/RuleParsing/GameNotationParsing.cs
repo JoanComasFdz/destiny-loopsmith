@@ -45,7 +45,8 @@ public static class GameNotationParsing
 
     /// <summary>
     /// <c>any</c>, <c>weapon</c>, <c>weapon:strand</c>, <c>weapon:harmonic</c> (a weapon of your Super's element), <c>ability</c>,
-    /// <c>grenade</c>, <c>type:arc</c>, <c>keyword:jolt</c>, <c>summon:threadling</c>.
+    /// <c>grenade</c>, <c>melee:slide</c> (only that use of the ability: a secondary, Tempest Strike's uppercut),
+    /// <c>type:arc</c>, <c>keyword:jolt</c>, <c>summon:threadling</c>.
     /// </summary>
     public static Result<DamageSource, string> ParseDamageSource(string text)
     {
@@ -56,7 +57,8 @@ public static class GameNotationParsing
             : ToQualifiedDamageSource(trimmed[..colon], trimmed[(colon + 1)..]);
         return parsed.MapError(reason =>
             $"'{text}' is not a damage source ({reason}; expected any, weapon, weapon:<type>, weapon:harmonic, ability, "
-            + "grenade, melee, classAbility, super, type:<type>, keyword:<status> or summon:<summon>)");
+            + "grenade, melee, classAbility, super, <ability>:<input> (melee:slide, melee:air, classAbility:air, grenade:hold), "
+            + "type:<type>, keyword:<status> or summon:<summon>)");
     }
 
     /// <summary><c>compendium/2026-10-09/Arc#54</c> or <c>clarity/1727069364@2.0625</c>.</summary>
@@ -178,8 +180,21 @@ public static class GameNotationParsing
             "type" => ParseVocabularyWord<DamageType>(argument).Map(DamageSource (type) => new DamageSource.OfType(type)),
             "keyword" => StatusId.TryFrom(argument).ToResult().Map(DamageSource (status) => new DamageSource.KeywordOf(status)),
             "summon" => SummonId.TryFrom(argument).ToResult().Map(DamageSource (summon) => new DamageSource.SummonOf(summon)),
-            _ => new Result<DamageSource, string>.Error($"unknown qualifier '{prefix}:'"),
+            _ => ParseVocabularyWord<AbilityKind>(prefix)
+                .MapError(_ => $"unknown qualifier '{prefix}:'")
+                .Bind(kind => ParseAbilityInput(kind, argument).Map(DamageSource (input) => new DamageSource.AbilityUsedAs(kind, input))),
         };
+
+    /// <summary>
+    /// The input word of an ability's use — <c>press</c>, <c>slide</c>, <c>air</c>, <c>hold</c> — when that ability takes
+    /// it (<see cref="AbilityInputs.CanTake"/>: a melee slides or is airborne, a class ability is used in the air, a
+    /// grenade is held); why not otherwise.
+    /// </summary>
+    public static Result<AbilityInput, string> ParseAbilityInput(AbilityKind kind, string word) =>
+        ParseVocabularyWord<AbilityInput>(word).Bind(Result<AbilityInput, string> (input) => kind.CanTake(input)
+            ? new Result<AbilityInput, string>.Ok(input)
+            : new Result<AbilityInput, string>.Error(
+                $"a {ToVocabularyWord(kind)} isn't used as '{word}' (it takes {string.Join(", ", kind.ListSecondaryInputs().Prepend(AbilityInput.Press).Select(ToVocabularyWord))})"));
 
     /// <summary><c>&lt;yyyy-MM-dd&gt;/&lt;tab&gt;#&lt;row&gt;</c>; the tab is everything between the first '/' and the last '#'.</summary>
     private static Optional<Provenance> ToCompendium(string rest)

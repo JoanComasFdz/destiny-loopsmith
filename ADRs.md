@@ -16,7 +16,7 @@ founding one: every other decision follows from it.
 | D6 | Rules that don't stack give way and show as wasted | Wasted potential is what the build crafter most needs to see |
 | D7 | One target: the pack in front of you, until the player declares a new one | Matches how add-clear builds are explained ("everything is jolted"); only play decides when the next group comes |
 | D8 | Chance rules always fire, marked *(chance)* | No probabilities without a simulation; the mark keeps the loop honest |
-| D9 | An airborne class ability use (`class:air`) | Air moves (Ascension) spend the class ability charge but only some rules react to them |
+| D9 | Secondary ability uses (`melee:slide`, `class:air`, `grenade:hold`) | An aspect makes a slide, an air move or a hold a different trigger from the ability's press, but every rule on the ability still fires for it |
 | D10 | Causality is authored as YAML; a human confirms every rule | 55% of Compendium descriptions state the trigger, so drafts can be generated, never trusted |
 | D11 | The Compendium is the primary mechanics source; Clarity the cross-check | The Compendium covers abilities, artifact perks and statuses; Clarity has hashes |
 | D12 | The Compendium is joined by name, scoped by kind + class, alias table in git | It has no hashes; unresolved names are reported, never guessed |
@@ -168,18 +168,26 @@ every view, and so are rules that depend on progress the game doesn't show as a 
 ("after 6 weapon hits"; D3).
 Probabilities would need a simulation (D1); marking them keeps the loop honest without hiding it.
 
-### D9 — An airborne class ability use (`class:air`)
+### D9 — Secondary ability uses (`melee:slide`, `class:air`, `grenade:hold`)
 
-**Context.** Ascension (Compendium Arc#48) is an air move that spends the class ability charge: it
-jolts nearby enemies, makes you Amplified and sets off the equipped class ability's effects.
-**Decision.** The class ability action carries an airborne flag: token `class:air`
-(`UseClassAbility(Airborne: true)`), event `AbilityCast(ClassAbility, Airborne: true)`. It is still a
-class ability cast — the charge is spent — so every `abilityCast: classAbility` rule fires on it too.
-The trigger `{ abilityCast: { ability: classAbility, airborne: true } }` fires only on the airborne
-use; `airborne` on a grenade, melee or super is a parse error. `class:air` always parses, but `play`
-and the web palette offer it only when an equipped rule has an airborne trigger: without one it fires
-exactly what `class` fires. **Consequence.** Any other airborne class-ability move is the same flag.
-Airborne grenade and melee actions and slide qualifiers are open ([docs/backlog.md](docs/backlog.md)).
+**Context.** Some aspects give an ability a second use with its own effects. Tempest Strike (Compendium
+Arc#54): the melee while sliding is an uppercut that jolts; a plain press is a basic melee. Ascension
+(Arc#48): the air move key while airborne spends the class ability charge on a twirl that jolts and
+Amplifies, and sets off the equipped class ability's effects. Chaos Accelerant, Bleak Watcher, Mindspun
+Invocation and Unbreakable (Void, Stasis, Strand, Prismatic): the grenade held.
+**Decision.** An ability use carries an input (`AbilityInput`: press, slide, air, hold): tokens
+`melee:slide[:hit|kill[:N]]`, `melee:air`, `grenade:hold`, `class:air`; events
+`AbilityCast(kind, input)` and `Ability(kind, type, input)` origins. An ability takes only the inputs the
+game has (`AbilityInputs`: a melee slides or is airborne, the class ability has its air move, a grenade
+is held; a Super has none) — any other is a parse error, in a token and in a rule. A secondary is still
+that ability, so every rule on the ability fires for it too (a sliding melee is a melee for Combination
+Blow); only a rule that names the input tells them apart: `abilityCast: { ability: classAbility, input:
+air }` and `via: melee:slide`. Every token parses anywhere, but `play`, the palette and the HUD offer a
+secondary only when an equipped rule names it — without one it fires exactly what the press fires — and
+the HUD shows it below its ability's square, with the icon of the element that names it.
+**Consequence.** A new secondary from an aspect is an input on an existing ability, not a new action.
+Air moves that spend another ability's energy (Weavewalk's melee energy) are open
+([docs/backlog.md](docs/backlog.md)).
 
 ## Sources and rules
 

@@ -202,13 +202,7 @@ public static class BuildExplaining
 
     private static int RankTrigger(Trigger trigger) =>
         trigger.Match(
-            abilityCast: cast => cast.Kind switch
-            {
-                AbilityKind.ClassAbility => 0,
-                AbilityKind.Grenade => 1,
-                AbilityKind.Melee => 2,
-                _ => 3,
-            },
+            abilityCast: cast => RankAbility(cast.Kind),
             killAny: _ => 20,
             killOfTier: _ => 21,
             killDebuffed: _ => 22,
@@ -219,7 +213,17 @@ public static class BuildExplaining
             pickUp: _ => 30,
             buffGained: _ => 40,
             stacksMaxed: _ => 50,
-            finisher: _ => 25);
+            finisher: _ => 25,
+            abilityCastAs: cast => RankAbility(cast.Kind));
+
+    private static int RankAbility(AbilityKind kind) =>
+        kind switch
+        {
+            AbilityKind.ClassAbility => 0,
+            AbilityKind.Grenade => 1,
+            AbilityKind.Melee => 2,
+            _ => 3,
+        };
 
     private static Affinity ReadTriggerAffinity(ValidatedBuild build, Trigger trigger)
     {
@@ -236,7 +240,8 @@ public static class BuildExplaining
             pickUp: _ => [],
             buffGained: buffGained => [buffGained.Status],
             stacksMaxed: stacksMaxed => [stacksMaxed.Status],
-            finisher: _ => []);
+            finisher: _ => [],
+            abilityCastAs: _ => []);
         var pickup = trigger is Trigger.PickUp pickUp && glossary.Pickups.TryGetValue(pickUp.Pickup, out var definition)
             ? definition.Affinity
             : Affinity.Neutral;

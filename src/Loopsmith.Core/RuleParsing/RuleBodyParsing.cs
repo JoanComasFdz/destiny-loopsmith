@@ -88,20 +88,23 @@ internal static class RuleBodyParsing
             : map.FailAt<Trigger>($"{map.Label} takes no keys: write {{ finisher: {{}} }}"));
 
     /// <summary>
-    /// <c>{ abilityCast: grenade }</c>, or <c>{ abilityCast: { ability: classAbility, airborne: true } }</c> for casts made
-    /// in the air only (an air move that spends the class ability, like Ascension). A plain cast trigger matches both.
+    /// <c>{ abilityCast: grenade }</c> (any use of it), or <c>{ abilityCast: { ability: melee, input: slide } }</c> for one use
+    /// only: a secondary ability — the melee while sliding (Tempest Strike's uppercut) or in the air, the class ability's
+    /// air move (Ascension) or held, the grenade held. A plain cast trigger matches every use.
     /// </summary>
     private static Result<Trigger, Errors> ReadAbilityCastTrigger(YamlValue value) =>
         value.Node is YamlScalarNode
             ? ReadVocabularyWord<AbilityKind>(value).Map(Trigger (kind) => new Trigger.AbilityCast(kind))
             : value.ToMap().Bind(map => Combine(
-                    map.CheckKeys(["ability", "airborne"]),
+                    map.CheckKeys(["ability", "input"]),
                     map.ReadRequired("ability", ReadVocabularyWord<AbilityKind>),
-                    map.ReadOrDefault("airborne", ReadBoolean, false),
-                    (_, kind, airborne) => (kind, airborne))
-                .Bind(cast => cast.airborne && cast.kind != AbilityKind.ClassAbility
-                    ? map.FailAtKey<Trigger>("airborne", $"{map.Label}: only a classAbility can be airborne (there is no airborne {GameNotationParsing.ToVocabularyWord(cast.kind)} action)")
-                    : Succeed<Trigger>(new Trigger.AbilityCast(cast.kind, cast.airborne))));
+                    map.ReadOptional("input", ReadName),
+                    (_, kind, word) => (kind, word))
+                .Bind(cast => cast.word.Match(
+                    word => GameNotationParsing.ParseAbilityInput(cast.kind, word.Value).Match(
+                        input => Succeed<Trigger>(new Trigger.AbilityCastAs(cast.kind, input.Value)),
+                        why => map.FailAtKey<Trigger>("input", $"{map.Label}: {why.Failure}")),
+                    _ => Succeed<Trigger>(new Trigger.AbilityCast(cast.kind)))));
 
     private static Result<Trigger, Errors> ReadKillTrigger(ReferenceScope scope, YamlValue value) =>
         value.ToMap().Bind(map => Combine(

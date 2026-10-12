@@ -8,8 +8,9 @@
 # Format gaps that shape these rules (see builds/skip-grenade-hunter/discrepancies.md):
 #  - an ability damage source cannot name a specific ability or its damage type ("Arc grenades",
 #    "Skip Grenade drones" -> `grenade`);
-#  - no movement qualifiers such as "while sliding". The one airborne action is the class ability's
-#    air move (`class:air`, ADRs D9), which Ascension reacts to.
+#  - movement qualifiers are the abilities' secondary uses only (ADRs D9): the melee while sliding
+#    (`melee:slide`, Tempest Strike's uppercut) and the class ability's air move (`class:air`,
+#    Ascension). A rule on the plain ability fires for its secondary uses too.
 elements:
   # ================================================================ abilities
 
@@ -167,10 +168,13 @@ elements:
           - { applyBuff: { status: bolt-charge, stacks: 1 } }
         doesNotStackWith: [dielectric]
         reason: "Killing a jolted enemy gives you a stack of Bolt Charge."
-      # Not expressible: "while sliding" (no movement qualifier), so any melee hit counts. The
-      # damage resistance after the cast (75%, about 4 s) is a fact in the description; no rule
-      # reacts to it.
-      - on: { damage: { via: melee } }
+      # The uppercut is the melee ability used while sliding (`melee:slide`, a secondary ability): only
+      # its hits Jolt; a plain melee doesn't. It is still a melee, so every melee rule fires for it too
+      # (Combination Blow's, as the Compendium says: it triggers its effects and gets its damage). The
+      # Compendium also says it doesn't interact with Disorienting Blow — not in the rules, nothing to
+      # keep apart. The damage resistance after it (75%, about 4 s) is a fact in the description; no
+      # rule reacts to it.
+      - on: { damage: { via: melee:slide } }
         then:
           - { debuffTarget: jolt }
         reason: "Slide into your charged melee and the Arc uppercut jolts every enemy it hits."
@@ -205,11 +209,11 @@ elements:
     description: "While airborne with a class ability charge, [Air Move] spends the charge on an upward Arc Staff twirl: up to 181 damage and Jolt to enemies within 10 m, Amplified for you and allies within 10 m, and your dodge's effects trigger. Damage scales with Class above 100, up to +65% at 200."
     source: compendium/2026-10-09/Arc#48
     rules:
-      # The air move (`class:air`) spends the class ability charge, so it is a class ability cast:
-      # the dodge's own effects (and every other class ability rule) fire too, as the Compendium
-      # says. This rule fires only on that airborne use, never on a ground dodge. Used by the
-      # skip-grenade-hunter-ascension build (the creator's alternative to Flow State).
-      - on: { abilityCast: { ability: classAbility, airborne: true } }
+      # The air move (`class:air`, a secondary ability) spends the class ability charge, so it is a
+      # class ability cast: the dodge's own effects (and every other class ability rule) fire too, as
+      # the Compendium says. This rule fires only on that airborne use, never on a ground dodge. Used
+      # by the skip-grenade-hunter-ascension build (the creator's alternative to Flow State).
+      - on: { abilityCast: { ability: classAbility, input: air } }
         then:
           - { debuffTarget: jolt }
           - { applyBuff: amplified }

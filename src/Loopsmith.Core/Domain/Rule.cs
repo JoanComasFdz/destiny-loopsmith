@@ -8,7 +8,7 @@ namespace Loopsmith.Core.Domain;
 [Union]
 public partial record Trigger
 {
-    partial record AbilityCast(AbilityKind Kind, bool Airborne = false);   // airborne: only casts made in the air
+    partial record AbilityCast(AbilityKind Kind);                          // any use of the ability, its secondary ones too
     partial record KillAny(DamageSource Via);
     partial record KillOfTier(DamageSource Via, EnemyTier Tier);
     partial record KillDebuffed(DamageSource Via, ImmutableArray<StatusId> TargetHas);
@@ -20,6 +20,7 @@ public partial record Trigger
     partial record BuffGained(StatusId Status);
     partial record StacksMaxed(StatusId Status);
     partial record Finisher();                                                 // the player does a finisher on an enemy of the pack
+    partial record AbilityCastAs(AbilityKind Kind, AbilityInput Input);        // only that use of the ability: the melee while sliding, the class ability's air move
 }
 
 /// <summary>A guard on the current state, checked after the trigger matched.</summary>

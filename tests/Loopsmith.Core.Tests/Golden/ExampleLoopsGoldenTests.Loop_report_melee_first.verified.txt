@@ -1,10 +1,10 @@
 ﻿Melee first — Skip Grenade Hunter · 7 steps
-New pack → Melee (kill) → Bolt Charge at max (x10) → Grenade (kill) → Any Arc weapon (kill) → Pick up Orb of Power → Class ability
+New pack → Sliding melee (kill) → Bolt Charge at max (x10) → Grenade (kill) → Any Arc weapon (kill) → Pick up Orb of Power → Class ability
 ✓ Repeats — each pass ends with what the next one needs
 
 #1 New pack
 
-#2 Melee (kill)
+#2 Sliding melee (kill)
    on its own       Tempest Strike · Impact Induction · Combination Blow · Flow State · Dielectric · Shock and Clear · Shinobu's Vow · Bolt Charge · Spark of Discharge · Elemental Charge (chance) · Ionic Trace
    wasted           Tempest Strike — doesn't stack with Dielectric
 
@@ -40,7 +40,7 @@ Steps
   Arc weapon into it, grab the orbs and dodge last to refill the melee. Gambler's Dodge's melee
   refill depends on the Melee stat, so the rules give it as unknown ("?").
   1. pack:new             The next group of enemies: a new pack, nothing on it yet
-  2. melee:kill           Combination Blow: Tempest Strike jolts, Impact Induction refunds grenade energy
+  2. melee:slide:kill     Slide + melee: Tempest Strike's uppercut jolts, Impact Induction refunds grenade energy, Combination Blow
   3. max:bolt-charge      Bolt Charge at x10 — Shinobu's Vow and Flashover; the next ability hit discharges it
   4. grenade:kill         Skip grenade into the jolted pack: its hit discharges Bolt Charge; Amplified and Ionic Traces
   5. energy:kill          Arc weapon kill: Spark of Discharge traces, Harmonic Siphon orb

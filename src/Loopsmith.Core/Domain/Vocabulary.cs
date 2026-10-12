@@ -17,6 +17,16 @@ public enum AbilityKind { Grenade, Melee, ClassAbility, Super }
 /// <summary>Abilities that hit something (a class ability is used, not aimed — see <c>PlayerAction.UseClassAbility</c>).</summary>
 public enum OffensiveAbility { Grenade, Melee, Super }
 
+/// <summary>
+/// How an ability is used: its plain press, or the input that makes it a secondary ability an aspect enables — the
+/// melee while sliding (Tempest Strike's uppercut, Lightning Surge) or in the air (Ballistic Slam), the class ability's
+/// air move (Ascension: the air move key in the air spends the class ability's charge), the grenade held (Chaos
+/// Accelerant, Bleak Watcher, Unbreakable). A secondary is still
+/// that ability: every rule on the ability fires for it too, and only rules that name the input tell them apart
+/// (<see cref="AbilityInputs.CanTake"/> says which ability takes which input).
+/// </summary>
+public enum AbilityInput { Press, Slide, Air, Hold }
+
 public enum ElementKind
 {
     Keyword,        // core statuses/pickups whose rules are always active (Bolt Charge, Ionic Trace…)

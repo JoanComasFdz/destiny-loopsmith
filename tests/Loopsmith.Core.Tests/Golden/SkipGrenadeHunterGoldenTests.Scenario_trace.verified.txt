@@ -39,9 +39,9 @@
   Debuffs       Jolt · Sever
   Ground        none
   While Amplified  +1 Bolt Charge per gain [Spark of Frequency]
-#5 Melee (kill)
-  Melee hit on Jolted + Severed target → Jolt target (10s) [Tempest Strike] + Jolt strike [Jolt] + +12% grenade energy [Impact Induction]
-  Melee kill on Jolted + Severed target → Blind target (10s) [Photonic Flare] + +1 Combination Blow (20s) and +100% class ability energy and heals you [Combination Blow] + Amplified (15s) [Flow State] + +1 Bolt Charge [Dielectric] + Woven Mail (10s) and heals you and allies [To Shreds] + Ionic Trace [Shock and Clear] + doesn't stack with Dielectric [Tempest Strike]
+#5 Sliding melee (kill)
+  Sliding melee hit on Jolted + Severed target → Jolt target (10s) [Tempest Strike] + Jolt strike [Jolt] + +12% grenade energy [Impact Induction]
+  Sliding melee kill on Jolted + Severed target → Blind target (10s) [Photonic Flare] + +1 Combination Blow (20s) and +100% class ability energy and heals you [Combination Blow] + Amplified (15s) [Flow State] + +1 Bolt Charge [Dielectric] + Woven Mail (10s) and heals you and allies [To Shreds] + Ionic Trace [Shock and Clear] + doesn't stack with Dielectric [Tempest Strike]
     ↳ Bolt Charge gained → +?% grenade energy [Shinobu's Vow] + +2.5% melee energy [Bolt Charge]
     ↳ Picked up Ionic Trace → +1 Bolt Charge [Spark of Discharge] + +1 Armor Charge [Elemental Charge] (chance) + +11.3% grenade and melee energy and +13.5% class ability energy [Ionic Trace]
       ↳ Bolt Charge gained → +?% grenade energy [Shinobu's Vow] + +2.5% melee energy [Bolt Charge]

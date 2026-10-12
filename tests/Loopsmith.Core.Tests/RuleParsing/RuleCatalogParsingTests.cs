@@ -943,10 +943,10 @@ public sealed class RuleCatalogParsingTests
     public void Parses_an_airborne_class_ability_trigger()
     {
         var catalog = AssertOk(RuleCatalogParsing.ParseCatalog(
-            [Glossary, ToAirMoveFile("{ abilityCast: { ability: classAbility, airborne: true } }", "{ applyBuff: { status: bolt-charge } }")]));
+            [Glossary, ToAirMoveFile("{ abilityCast: { ability: classAbility, input: air } }", "{ applyBuff: { status: bolt-charge } }")]));
 
         var rule = catalog.Elements[ElementId.From("ascension")].Rules[0];
-        Assert.Equal(new Trigger.AbilityCast(AbilityKind.ClassAbility, Airborne: true), rule.On);
+        Assert.Equal(new Trigger.AbilityCastAs(AbilityKind.ClassAbility, AbilityInput.Air), rule.On);
         Assert.Equal(new Outcome.ApplyBuff(ToStatus("bolt-charge"), Optional.None<Seconds>(), StackCount.From(1)), rule.Then[0]);
     }
 
@@ -989,7 +989,7 @@ public sealed class RuleCatalogParsingTests
     }
 
     [Fact]
-    public void The_map_form_of_a_cast_trigger_without_airborne_is_the_plain_trigger()
+    public void The_map_form_of_a_cast_trigger_without_an_input_is_the_plain_trigger()
     {
         var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToAirMoveFile("{ abilityCast: { ability: grenade } }")]));
 
@@ -997,12 +997,30 @@ public sealed class RuleCatalogParsingTests
     }
 
     [Fact]
-    public void Only_a_class_ability_can_be_airborne()
+    public void An_ability_takes_only_the_secondary_inputs_the_game_has()
     {
-        var message = ParseInvalidCatalog(Glossary, ToAirMoveFile("{ abilityCast: { ability: grenade, airborne: true } }"));
+        var grenade = ParseInvalidCatalog(Glossary, ToAirMoveFile("{ abilityCast: { ability: grenade, input: slide } }"));
+        var super = ParseInvalidCatalog(Glossary, ToAirMoveFile("{ damage: { via: super:hold } }"));
+        var held = ParseInvalidCatalog(Glossary, ToAirMoveFile("{ abilityCast: { ability: classAbility, input: hold } }"));
+        var old = ParseInvalidCatalog(Glossary, ToAirMoveFile("{ abilityCast: { ability: classAbility, airborne: true } }"));
 
-        Assert.Contains("only a classAbility can be airborne", message);
-        Assert.StartsWith("hunter/arc.yaml:", message);
+        Assert.Contains("a grenade isn't used as 'slide' (it takes press, hold)", grenade);
+        Assert.StartsWith("hunter/arc.yaml:", grenade);
+        Assert.Contains("a super isn't used as 'hold' (it takes press)", super);
+        Assert.Contains("a classAbility isn't used as 'hold' (it takes press, air)", held);
+        Assert.Contains("airborne", old);   // the old key is no key any more: input: air
+    }
+
+    [Fact]
+    public void A_secondary_abilitys_cast_and_its_hits_parse_as_that_use_only()
+    {
+        var cast = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToAirMoveFile("{ abilityCast: { ability: melee, input: slide } }")]));
+        var hit = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToAirMoveFile("{ damage: { via: melee:slide } }")]));
+        var held = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToAirMoveFile("{ kill: { via: grenade:hold } }")]));
+
+        Assert.Equal(new Trigger.AbilityCastAs(AbilityKind.Melee, AbilityInput.Slide), cast.Elements[ElementId.From("ascension")].Rules[0].On);
+        Assert.Equal(new Trigger.Damage(new DamageSource.AbilityUsedAs(AbilityKind.Melee, AbilityInput.Slide)), hit.Elements[ElementId.From("ascension")].Rules[0].On);
+        Assert.Equal(new Trigger.KillAny(new DamageSource.AbilityUsedAs(AbilityKind.Grenade, AbilityInput.Hold)), held.Elements[ElementId.From("ascension")].Rules[0].On);
     }
 
     // ── Rules that don't stack ───────────────────────────────────────────────────────────

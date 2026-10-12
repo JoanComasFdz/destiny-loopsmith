@@ -42,6 +42,9 @@ public static class TestCatalog
     public static Outcome Buff(string status, int stacks = 1) =>
         new Outcome.ApplyBuff(Status(status), Optional.None<Seconds>(), StackCount.From(stacks));
 
+    public static Outcome Debuff(string status) =>
+        new Outcome.DebuffTarget(Status(status), Optional.None<Seconds>());
+
     public static Outcome Energy(AbilityKind to, GameValue amount) =>
         new Outcome.GrantEnergy(to, new EnergyGrant.Fraction(amount));
 

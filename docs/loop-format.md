@@ -62,7 +62,7 @@ build: |                                # required — the build file's full tex
 Same tokens everywhere: CLI `--actions a,b,…` and `--scenario <file>` (one token per line or
 comma-separated; `#` starts a comment), `play`, loop files and web share links:
 
-`grenade|melee|super[:hit|kill[:N]]` · `class[:air]` · `kinetic|energy|power[:hit|kill[:N]]` · `finisher` ·
+`grenade[:hold]|melee[:slide|air]|super[:hit|kill[:N]]` · `class[:air]` · `kinetic|energy|power[:hit|kill[:N]]` · `finisher` ·
 `pickup:<pickup-id>` · `max:<status-id>` · `end:<status-id>` · `pack:new`
 
 Tokens are read case-insensitively. Errors read `Unknown action '<token>'. Use …` or
@@ -71,10 +71,13 @@ Tokens are read case-insensitively. Errors read `Unknown action '<token>'. Use �
 **Triggers.** An ability or weapon action without `:kill` only damages. `N` is how many enemies that
 one action hits (or kills), 1..20, default 1 — the player says it, the engine can't know (ADRs D4):
 `grenade:kill:3` kills three, `kinetic:hit:5` shoots five, `energy:kill:2` kills two. A count needs
-`:hit` or `:kill` before it (`grenade:3` is an error), and `class` takes no count. `class:air` is the
-class ability used in the air — an air move that spends its charge, like Ascension's: it fires every
-class ability rule plus the ones with an airborne trigger ([rule-format.md](rule-format.md#rules),
-ADRs D9). `finisher` — "Finisher" — finishes one enemy of the pack: it fires the `finisher` rules, then
+`:hit` or `:kill` before it (`grenade:3` is an error), and `class` takes no count. A **secondary ability
+use** goes between the ability and its hit (ADRs D9): `melee:slide:kill` is the melee while sliding
+(Tempest Strike's uppercut), `melee:air` the melee in the air, `grenade:hold` the grenade held (Chaos
+Accelerant, Bleak Watcher), `class:air` the class ability's air move — the air move key while airborne
+spends its charge, like Ascension's. A secondary fires every rule of its ability plus the ones that name
+the input ([rule-format.md](rule-format.md#rules)); an ability takes only the inputs the game has
+(`grenade:slide`, `class:hold` and `super:hold` are errors). `finisher` — "Finisher" — finishes one enemy of the pack: it fires the `finisher` rules, then
 its hit and kill fire the `damage` and `kill` rules whose source is `any` (a finisher has no damage type
 and is no weapon or ability, so `kill: { via: any, targetHas: [jolt] }` fires on a finisher of a jolted
 enemy; [rule-format.md](rule-format.md#rules)); it takes no count and is never blocked. `pickup:<id>`
@@ -119,25 +122,28 @@ has ended, that the next enemies are a new pack — the player declares as a ste
 **Written form.** Written tokens are lower-case and carry the count only when it is more than one
 (`grenade:kill`, `kinetic`, `grenade:kill:3`, `finisher`, `max:bolt-charge`, `end:amplified`, `pack:new`). Every token written
 reads back as the same action (`grenade:hit` is written `grenade`). Labels read "Grenade (kill 3)",
-"Festival Flight (hit 5)" (a weapon by its build name), "Class ability (in the air)",
+"Festival Flight (hit 5)" (a weapon by its build name), "Sliding melee (kill)", "Class ability (in the air)",
 "Finisher", "Pick up Orb of Power", "Bolt Charge at max (x10)", "Amplified ends", "New pack".
 
 **What `play` and the web designer offer.** Only steps that can happen: the abilities, the equipped
 weapons, the pickups on the ground and the **states you declare** — `pack:new` always, `max:` for
-each active buff that stacks and isn't at max yet, `end:` for each active status. `class:air` is offered only when an equipped rule has an
-airborne trigger (without one it fires exactly what `class` fires); `finisher` (with the abilities) always, as the
-game always allows one — in a build where no rule reacts to a finisher and none fires on a kill from any source, it
-sets nothing off. Every token still reads anywhere
+each active buff that stacks and isn't at max yet, `end:` for each active status. A secondary (`melee:slide`, `class:air`)
+is offered only when an equipped rule names it (without one it fires exactly what the press fires); `finisher` (with
+the abilities) always, as the game always allows one — in a build where no rule reacts to a finisher and none fires on
+a kill from any source, it sets nothing off. Every token still reads anywhere
 (CLI, loop files, share links).
 
 The web designer's **Next trigger** is laid out like Destiny's HUD: the Super's diamond, then the grenade, melee and
-class ability squares with the build's own icons in the subclass's colour — and a dashed **Finisher** square (the game has no HUD square for it; a finisher has no element and no damage
+class ability squares with the build's own icons in the subclass's colour, each with the secondary uses the build's
+rules name below it — a different trigger from the press, captioned by its input ("slide", "air", "hold") with the
+icon of the element that names it (Tempest Strike, Ascension) — and a dashed **Finisher** square (the game has no HUD square for it; a finisher has no element and no damage
 type) with the finisher's own icon: after a Bungie login the one the player's character of the build's class has
 equipped (read from its Finishers slot; named from Bungie's full manifest when the excerpt doesn't have it), else the
 class's own, the one the game plays when none is equipped (Blade Carnival for a Hunter, the glossary's `finishers`) —
 then the three weapons with their icon, damage type's icon and colour. Tapping the Super, an ability or a weapon
 shows its actions under the HUD — hit or kill, and how many enemies that one action catches — and it stays picked
-for the next step; the class ability (with no air move) and the finisher act at one tap. Above the HUD, where the game lists your buffs, the states to declare are grouped by
+for the next step; a secondary's own hit and kill show the same way ("Sliding melee · Tempest Strike"); the class
+ability, its air move and the finisher act at one tap. Above the HUD, where the game lists your buffs, the states to declare are grouped by
 status — on you, on your weapons, on the pack (with **New pack**) — each with its own buttons ("Bolt Charge: at max
 (x10) · ends"), and what is on the ground to pick up.
 

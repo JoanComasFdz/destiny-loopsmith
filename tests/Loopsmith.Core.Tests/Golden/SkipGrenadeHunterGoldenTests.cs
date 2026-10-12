@@ -62,8 +62,13 @@ public class SkipGrenadeHunterGoldenTests
     // ── note line 4: Slide + melee ──────────────────────────────────────────────
     [Fact]
     public void Line4_melee_hit() =>
+        AssertFires(Resolve(Fresh, new PlayerAction.CastAbility(OffensiveAbility.Melee, HitOutcome.Damage, TargetCount.One, AbilityInput.Slide)),
+            must: ["tempest-strike", "impact-induction"]);   // "Slide + melee": Tempest Strike's uppercut (melee:slide)
+
+    [Fact]
+    public void Line4_a_melee_without_the_slide_doesnt_jolt() =>
         AssertFires(Resolve(Fresh, new PlayerAction.CastAbility(OffensiveAbility.Melee, HitOutcome.Damage, TargetCount.One)),
-            must: ["tempest-strike", "impact-induction"]);
+            must: ["impact-induction"], mustNot: ["tempest-strike"]);   // a melee is still a melee: Impact Induction fires
 
     // ── note line 5: Kill jolted target ─────────────────────────────────────────
     [Fact]

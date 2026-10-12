@@ -14,8 +14,9 @@ namespace Loopsmith.Web.Presentation;
 public sealed record TriggerButton(PlayerAction Action, string Token, string Label, string Caption, bool IsNew);
 
 /// <summary>
-/// A row of the palette: one trigger, or the hit / kill pair of the same ability or weapon. <see cref="Key"/> names
-/// the row ("cast:Grenade", "fire:Kinetic", "class", …) and stays the same from one step to the next.
+/// A row of the palette: one trigger, or the hit / kill pair of the same ability use or weapon. <see cref="Key"/> names
+/// the row ("cast:Grenade", "cast:Melee:Slide", "fire:Kinetic", "class", "class:Air", …) and stays the same from one step
+/// to the next.
 /// <see cref="Targets"/> is how many enemies the row's actions hit or kill — none for a row without targets (class
 /// ability, pickups, declared states).
 /// </summary>
@@ -74,11 +75,21 @@ public static class TriggerPaletteShaping
         return new TriggerButton(action, action.ToActionToken(), build.DescribeAction(action), caption, option.IsNew);
     }
 
-    /// <summary>Hit and kill of the same ability or weapon share a key; everything else stands alone.</summary>
+    /// <summary>
+    /// The row key of an ability's use: "cast:Grenade", "class" for a press; a secondary use is a row of its own
+    /// ("cast:Melee:Slide", "class:Air") — a different trigger, doing different things.
+    /// </summary>
+    public static string ToAbilityKey(AbilityKind kind, AbilityInput input)
+    {
+        var press = kind == AbilityKind.ClassAbility ? "class" : $"cast:{kind}";
+        return input == AbilityInput.Press ? press : $"{press}:{input}";
+    }
+
+    /// <summary>Hit and kill of the same ability use or weapon share a key; everything else stands alone.</summary>
     private static string ToPairKey(PlayerAction action) =>
         action.Match(
-            cast => $"cast:{cast.Kind}",
-            _ => "class",
+            cast => ToAbilityKey(cast.Kind.ToAbilityKind(), cast.Input),
+            use => ToAbilityKey(AbilityKind.ClassAbility, use.Input),
             fire => $"fire:{fire.Slot}",
             collect => $"pickup:{collect.Pickup}",
             declare => ((PlayerAction)declare).ToActionToken(),

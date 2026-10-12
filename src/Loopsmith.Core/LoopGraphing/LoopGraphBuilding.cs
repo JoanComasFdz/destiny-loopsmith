@@ -227,17 +227,21 @@ public static class LoopGraphBuilding
 
     private static IEnumerable<GameEvent> ListCastEvents(AbilityKind kind, DamageType subclass, ImmutableArray<StatusId> debuffs)
     {
-        yield return new GameEvent.AbilityCast(kind);
-        if (kind == AbilityKind.ClassAbility)
+        // every use of the ability: its press and each secondary (the air move reaches Ascension's rules, the sliding
+        // melee Tempest Strike's), as the player may use any of them
+        foreach (var input in kind.ListSecondaryInputs().Prepend(AbilityInput.Press))
         {
-            yield return new GameEvent.AbilityCast(kind, Airborne: true);   // reaches airborne-only rules (Ascension)
-            yield break;
-        }
+            yield return new GameEvent.AbilityCast(kind, input);
+            if (kind == AbilityKind.ClassAbility)
+            {
+                continue;
+            }
 
-        var origin = new DamageOrigin.Ability(kind, subclass);
-        foreach (var hit in ListHitEvents(origin, debuffs).Concat(ListVolleyEvents(origin)))
-        {
-            yield return hit;
+            var origin = new DamageOrigin.Ability(kind, subclass, input);
+            foreach (var hit in ListHitEvents(origin, debuffs).Concat(ListVolleyEvents(origin)))
+            {
+                yield return hit;
+            }
         }
     }
 

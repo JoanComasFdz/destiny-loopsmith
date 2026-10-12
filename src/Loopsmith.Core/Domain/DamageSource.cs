@@ -11,11 +11,12 @@ public partial record DamageSource
     partial record WeaponOfType(DamageType Type);
     partial record WeaponInSlot(WeaponSlot Slot);    // the build's weapon in that slot: an exotic weapon's "this weapon"
     partial record AnyAbility();
-    partial record AbilityOf(AbilityKind Kind);
+    partial record AbilityOf(AbilityKind Kind);                // that ability however it's used (its secondary ones too)
     partial record OfType(DamageType Type);          // any weapon, ability, keyword or summon of that damage type
     partial record KeywordOf(StatusId Status);       // jolt chain, bolt-charge lightning, unravel threads…
     partial record SummonOf(SummonId Summon);
     partial record WeaponOfSuperType();              // a weapon of the build's Super's element (Harmonic mods); none known: nothing
+    partial record AbilityUsedAs(AbilityKind Kind, AbilityInput Input);   // only that use of the ability: melee:slide, Tempest Strike's uppercut
 }
 
 /// <summary>The <em>concrete</em> origin of damage in an event. Patterns (<see cref="DamageSource"/>) match origins.</summary>
@@ -23,7 +24,7 @@ public partial record DamageSource
 public partial record DamageOrigin
 {
     partial record Weapon(WeaponSlot Slot, DamageType Type);
-    partial record Ability(AbilityKind Kind, DamageType Type);
+    partial record Ability(AbilityKind Kind, DamageType Type, AbilityInput Input = AbilityInput.Press);
     partial record Keyword(StatusId Status, DamageType Type);
     partial record Summoned(SummonId Summon, DamageType Type);
     partial record Finisher();                       // no damage type: only "any source" matches it
