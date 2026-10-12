@@ -37,8 +37,9 @@ public static class RuleCatalogParsing
         var elements = LocatedCollections.ToUniqueDictionary(located, element => element.Id, "element");
         var stacking = ReferenceChecking.CheckStackingReferences(located);
         var hashes = ReferenceChecking.CheckUniqueHashes(located);
+        var enhanced = elementFiles.SelectMany(file => file.EnhancedPerks).ToImmutableDictionary(pair => pair.Perk, pair => pair.Enhanced);
         var version = ComputeCatalogVersion(ordered);
-        return Combine(glossary, fileErrors, elements, stacking, hashes, manifest, (vocabulary, _, byId, _, _, excerpt) => new RuleCatalog(version, vocabulary, byId, excerpt))
+        return Combine(glossary, fileErrors, elements, stacking, hashes, manifest, (vocabulary, _, byId, _, _, excerpt) => new RuleCatalog(version, vocabulary, byId, excerpt, enhanced).RecognizeEnhancedPerks())
             .MapError(FormatErrors);
     }
 

@@ -60,10 +60,14 @@
                             @foreach (var perk in weapon.Perks)
                             {
                                 <span class="weapon-option-perk @(perk.InRules ? "in-rules" : "")" title="@perk.Name">
-                                    <span class="icon-tile perk @(perk.InRules ? "" : "out")">
+                                    <span class="icon-tile perk @(perk.InRules ? "" : "out") @(perk.Enhanced ? "enhanced" : "")">
                                         @if (perk.Icon is Optional<string>.Some perkIcon)
                                         {
                                             <img src="@perkIcon.Value" alt="" loading="lazy" />
+                                        }
+                                        @if (!perk.InRules)
+                                        {
+                                            <UnsupportedMark />
                                         }
                                     </span>
                                     <span class="weapon-option-perk-name">@perk.Name</span>

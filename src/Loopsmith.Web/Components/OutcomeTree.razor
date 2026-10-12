@@ -105,8 +105,9 @@
     private Optional<StepOutcomes> shownOutcomes = Optional.None<StepOutcomes>();
 
     /// <summary>
-    /// An element that fired: its icon and name, in its affinity's colour. One with no icon in Bungie's data shows a dot
-    /// in its affinity — but the Orb of Power, which Bungie gives no icon, a ⚪ (an orb).
+    /// An element that fired: its icon and name, in its affinity's colour (an enhanced trait's icon drawn as the game
+    /// draws it). One with no icon in Bungie's data shows a dot in its affinity — but the Orb of Power, which Bungie gives
+    /// no icon, a ⚪ (an orb).
     /// </summary>
     private RenderFragment RenderElement(SourceOutcomes source, string key) => __builder =>
     {
@@ -116,9 +117,13 @@
                     data-element="@source.Source.Value" title="@LoopDesigning.DescribeElementType(Build, source.Source)"
                     @onclick="() => ShowDetailsAsync(source.Source)" @onclick:stopPropagation="true"
                     @onmouseenter="() => Hover(key)" @onmouseleave="() => Unhover(key)" @onfocus="() => Hover(key)" @onblur="() => Unhover(key)">
-                @if (icon is Optional<string>.Some known)
+                @if (icon is Optional<string>.Some known && LoopDesigning.IsEnhancedPerk(Build.Catalog, source.Source))
                 {
-                    <img class="outcome-icon" src="@known.Value" alt="" loading="lazy" />
+                    <span class="outcome-icon enhanced-perk" aria-hidden="true"><img src="@known.Value" alt="" loading="lazy" /></span>
+                }
+                else if (icon is Optional<string>.Some plain)
+                {
+                    <img class="outcome-icon" src="@plain.Value" alt="" loading="lazy" />
                 }
                 else if (LoopDesigning.FindKeyword(Build, source.Source) == Optional.Some<KeywordRef>(new KeywordRef.Pickup(OrbOfPower)))
                 {

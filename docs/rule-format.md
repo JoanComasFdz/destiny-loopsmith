@@ -249,6 +249,38 @@ resistance mods (no damage taken is modelled). It takes no rules and no passives
 (`inert is only for an element with no rules and no passives`), the build check gives it no "no
 authored rules" warning, and its details say "No rules needed." with the why.
 
+### Enhanced traits (`enhanced`)
+
+A weapon trait's **enhanced trait** — the one a weapon's enhanced or crafted copy rolls — is its own plug with its
+own hash, and the Compendium gives its figures after a ↑ in the perk's row ("8 ↑9 seconds"). A `weaponPerk` writes
+it as a block, not as a second element:
+
+```yaml
+  - id: slice
+    kind: weaponPerk
+    hash: 923806249
+    rules: [ … { applyBuff: { status: slice, duration: 8s } } … ]
+    enhanced:
+      hash: 3422796781          # its plug (a list when there are more)
+      values: { 8s: 9s }        # the ↑ figures: a value the rules use → the enhanced one (durations, game values)
+      description: "The enhanced Slice: as Slice, with a 9 s window between hits instead of 8 s."   # optional
+```
+
+The catalog gets a second element, `<id>-enhanced` ("Slice (enhanced)"): the perk — its kind, affinity, source, `inert`
+and stat checks, its rules and passives — with the block's hashes and description, each value of `values` replaced
+(`slice-enhanced` arms Slice for 9 s); the perk keeps its own. A reason is copied as it is, so it doesn't write a figure
+the block replaces (`Dodging arms Slice, even while the weapon is stowed.`: the outcome shows the 8 s or 9 s).
+Without `values` its rules are the perk's (Attrition Orbs: its ↑ figure, the orb's Super energy, is in no rule; Feeding
+Frenzy: inert, its ↑ figures in its description). A value the rules don't use is an error
+(`enhanced.values: 7s isn't a value of slice's rules`), and so are a value given twice (`8s` and `8.0s`), a reason
+that writes a replaced figure (`a reason of slice writes 8s, which its enhanced trait replaces`), `"?"` (an unknown figure is left out, not written),
+`enhanced` on another kind (`only a weaponPerk has an enhanced trait, not a armorMod`) or a block without `hash`.
+Every other plug of the manifest excerpt that Bungie types "Enhanced Trait" or "Enhanced Origin Trait" with the perk's
+name is the enhanced trait's too — the bundled excerpt's, and what Bungie's full manifest adds after a login (an
+account's enhanced copy of a weapon) — so the designer equips it from a DIM link or a picked weapon. The excerpt
+generator adds every enhanced plug of a trait the rules author, and a test fails when an authored perk has one but no
+`enhanced` block. A plug two enhanced traits would take (their perks share a name) is neither's. Armor has no enhanced perks: set bonuses have none in the game (only legacy raid mods do).
+
 ### Provenance (`source`)
 
 | Form | Domain |

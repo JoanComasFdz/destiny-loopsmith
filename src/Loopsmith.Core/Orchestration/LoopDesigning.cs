@@ -169,9 +169,12 @@ public static class LoopDesigning
             .MapError(DescribeManifestProblem)
             .Bind(excerpt => UseCatalog(session, AddManifest(session.Build.Catalog, excerpt)));
 
-    /// <summary>The catalog with a joined part of the full manifest added to its excerpt (what it had stays).</summary>
+    /// <summary>
+    /// The catalog with a joined part of the full manifest added to its excerpt (what it had stays), and the enhanced
+    /// traits' other plugs it names recognised (an account's enhanced Slice is Slice's enhanced trait).
+    /// </summary>
     private static RuleCatalog AddManifest(RuleCatalog catalog, ManifestExcerpt joined) =>
-        catalog with { Manifest = catalog.Manifest.AddExcerpt(joined) };
+        EnhancedPerkRecognition.RecognizeEnhancedPerks(catalog with { Manifest = catalog.Manifest.AddExcerpt(joined) });
 
     private static string DescribeManifestProblem(string problem) =>
         $"Couldn't read Bungie's manifest ({problem}). Items Loopsmith doesn't know show by hash.";
@@ -713,6 +716,19 @@ public static class LoopDesigning
     /// <summary>A keyword's icon: the game's own (Jolted, Woven Mail), else its element's, else the shape the game draws for it (Unraveling Rounds); none without any.</summary>
     public static Optional<IconRef> FindKeywordIcon(ValidatedBuild build, KeywordRef keyword) =>
         IconFinding.FindKeywordIcon(build.Catalog, keyword);
+
+    /// <summary>
+    /// Whether a weapon perk is an enhanced trait, which the game and DIM draw over the base perk's icon (Bungie gives
+    /// both the same image): a plug Bungie types "Enhanced Trait" or "Enhanced Origin Trait", or one of an enhanced
+    /// element of the rules (Slice (enhanced)).
+    /// </summary>
+    public static bool IsEnhancedPerk(RuleCatalog catalog, ItemHash perk) =>
+        catalog.Manifest.FindItem(perk).Match(item => EnhancedPerkRecognition.IsEnhancedPlug(item.Value), _ => false)
+        || catalog.FindElementByHash(perk).Match(element => IsEnhancedPerk(catalog, element.Value.Id), _ => false);
+
+    /// <summary>Whether an element is a weapon perk's enhanced trait (Slice (enhanced)): see <see cref="IsEnhancedPerk(RuleCatalog, ItemHash)"/>.</summary>
+    public static bool IsEnhancedPerk(RuleCatalog catalog, ElementId element) =>
+        catalog.EnhancedPerks.ContainsValue(element);
 
     /// <summary>An element's icon: its manifest item's, else (a keyword's element: Jolt, Bolt Charge) the keyword's own; none when there is neither.</summary>
     public static Optional<IconRef> FindElementIcon(RuleCatalog catalog, ElementId element) =>

@@ -118,8 +118,9 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   browser's manifest join reads an artifact only by its own hash, so a link from another season shows its perks
   without the artifact until the excerpt is regenerated with rules for that season (the extractor finds the
   artifact from its perks).
-- **Enhanced perks**: the catalog knows a perk by its base hash (Slice, not its enhanced version, whose
-  numbers differ), so picking an enhanced perk sets nothing off until the rules author it.
+- **Weapon perks**: the rules author 3 (Slice, Attrition Orbs, Feeding Frenzy), each with its enhanced trait
+  (rule-format.md, "Enhanced traits"); the game has ~226 enhanced traits and ~86 enhanced origin traits, whose base
+  perks aren't authored either. A perk authored next gets its `enhanced` block (a test asks for it).
 
 - **Stats, next** (D28): the stat facts the game gives with an outcome — an orb's heal by Health (0.7 HP per
   point, compendium/2026-10-09/Game Mechanics#119), a dodge's Overshield above 100 Class (#139), the damage

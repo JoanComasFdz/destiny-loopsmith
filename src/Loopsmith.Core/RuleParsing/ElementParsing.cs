@@ -8,8 +8,11 @@ using Errors = System.Collections.Immutable.ImmutableArray<Loopsmith.Core.RulePa
 
 namespace Loopsmith.Core.RuleParsing;
 
-/// <summary>The elements of one rules file that parsed, and the errors of those that did not.</summary>
-internal sealed record ElementsFile(ImmutableArray<Located<BuildElement>> Elements, Errors Errors);
+/// <summary>
+/// The elements of one rules file that parsed (a weapon perk's enhanced trait among them, after its perk), each weapon
+/// perk with an enhanced trait → that trait's element, and the errors of those that did not parse.
+/// </summary>
+internal sealed record ElementsFile(ImmutableArray<Located<BuildElement>> Elements, ImmutableArray<(ElementId Perk, ElementId Enhanced)> EnhancedPerks, Errors Errors);
 
 /// <summary>A <c>rules/**/*.yaml</c> file other than the glossary: <c>elements: [ … ]</c>.</summary>
 internal static class ElementParsing
@@ -19,7 +22,7 @@ internal static class ElementParsing
     private static readonly ImmutableArray<string> ElementKeys =
     [
         "id", "name", "kind", "affinity", "class", "hash", "fragmentSlots", "ability", "description", "source",
-        "rules", "passives", "inert", "statChecks",
+        "rules", "passives", "inert", "statChecks", "enhanced",
     ];
 
     private static readonly ImmutableArray<string> StatCheckKeys = ["stat", "from", "below", "severity", "says"];
@@ -37,15 +40,19 @@ internal static class ElementParsing
                 (_, items) => items))
             .Match(
                 ok => ToElementsFile(ok.Value.Select(item => ReadElement(scope, item))),
-                error => new ElementsFile([], error.Failure));
+                error => new ElementsFile([], [], error.Failure));
 
-    private static ElementsFile ToElementsFile(IEnumerable<Result<Located<BuildElement>, Errors>> elements)
+    private static ElementsFile ToElementsFile(IEnumerable<Result<(Located<BuildElement> Element, Optional<Located<BuildElement>> Enhanced), Errors>> elements)
     {
         var (parsed, errors) = elements.Partition();
-        return new ElementsFile(parsed, errors);
+        return new ElementsFile(
+            [.. parsed.SelectMany(read => read.Enhanced.Match(enhanced => new[] { read.Element, enhanced.Value }, _ => [read.Element]))],
+            [.. parsed.SelectMany(read => read.Enhanced.Match(enhanced => new[] { (read.Element.Value.Id, enhanced.Value.Value.Id) }, _ => []))],
+            errors);
     }
 
-    private static Result<Located<BuildElement>, Errors> ReadElement(ReferenceScope scope, YamlValue value) =>
+    /// <summary>An element and, for a weapon perk with an <c>enhanced:</c> block, its enhanced trait's (EnhancedPerkParsing).</summary>
+    private static Result<(Located<BuildElement> Element, Optional<Located<BuildElement>> Enhanced), Errors> ReadElement(ReferenceScope scope, YamlValue value) =>
         value.ToMap().Bind(map => Combine(
                 map.CheckKeys(ElementKeys),
                 map.ReadRequired("id", ReadElementId),
@@ -72,7 +79,8 @@ internal static class ElementParsing
                 CheckFragmentSlots(map, element),
                 CheckAbilityProfile(map, element),
                 CheckInert(map, element),
-                (_, _, _) => map.ToLocated(element))));
+                EnhancedPerkParsing.ReadEnhanced(map, element),
+                (_, _, _, enhanced) => (map.ToLocated(element), enhanced.Map(map.ToLocated)))));
 
     /// <summary>
     /// <c>{ stat: melee, from: 50, below: 100, severity: info, says: "With {value} Melee, …" }</c>: <c>from</c> is optional,
