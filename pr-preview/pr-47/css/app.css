@@ -611,6 +611,9 @@ textarea { resize: vertical; }
 .palette { padding-bottom: 8px; }
 .col-loop .palette { margin-top: 2px; }
 .palette-hint { margin: 0 0 6px; font-size: 12px; color: var(--warn); }
+/* nothing to trigger yet (a build started from scratch): the HUD greyed out and inert, a line says why */
+.palette-disabled { margin: 0 0 6px; font-size: 13px; color: var(--text); }
+.palette.disabled .trig-hud, .palette.disabled .trig-actions { opacity: .4; filter: grayscale(1); pointer-events: none; user-select: none; }
 .trigger-buttons { display: flex; flex-wrap: wrap; gap: 6px; }
 .target-count { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); font-size: 12px; font-weight: 700; }
 .target-count select { padding: 4px 4px 4px 6px; min-height: 34px; font-family: var(--mono); font-size: 13px; }
@@ -671,6 +674,8 @@ textarea { resize: vertical; }
 .trig-icon img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .trig-unknown { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; font-size: 26px; font-weight: 700; color: var(--aff); }
 .trig-caption { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; color: var(--aff); font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.trig-super.empty, .trig-ability.empty { border-style: dashed; background: transparent; }
+.trig-ability.empty .trig-caption { padding: 0 2px; text-align: center; line-height: 1.15; }
 .trig-finisher { margin-left: 6px; border-style: dashed; }   /* no HUD square in the game: dashed */
 /* an ability's secondary uses (Tempest Strike's sliding melee, Ascension's air move) below its square: a different trigger */
 .trig-ability-col { display: flex; flex-direction: column; align-items: center; gap: 4px; }
@@ -792,6 +797,28 @@ button.hud-chip:hover, button.hud-chip:focus-visible { background: color-mix(in 
 .build-card-sub { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
 .build-card-go { margin-top: 8px; color: var(--aff, var(--arc)); font-weight: 700; font-size: 13px; }
 .chooser-more { margin: 0; }
+
+/* start from scratch: an Arc Hunter with nothing equipped */
+.btn.scratch-start {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    width: 100%;
+    padding: 18px 20px;
+    text-align: left;
+    white-space: normal;
+    color: var(--text);
+    border-color: color-mix(in srgb, var(--arc) 55%, var(--line));
+    border-radius: var(--radius);
+    background: linear-gradient(160deg, color-mix(in srgb, var(--arc) 14%, var(--panel)), var(--panel) 60%);
+}
+.btn.scratch-start:hover { border-color: var(--arc); box-shadow: 0 0 20px color-mix(in srgb, var(--arc) 18%, transparent); }
+.scratch-start-title { font-size: 20px; font-weight: 750; color: var(--arc); }
+.scratch-start-sub { font-size: 13px; font-weight: 500; color: var(--muted); }
+@media (max-width: 520px) {
+    .btn.scratch-start { padding: 14px; }
+    .scratch-start-title { font-size: 17px; }
+}
 
 /* start from a DIM link */
 .dim-start {
