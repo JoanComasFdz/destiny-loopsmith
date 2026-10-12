@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Downloads the English manifest components extract_manifest.py reads, into <out-dir>:
+# Downloads the English manifest components extract_manifest.py reads (and the lite item table the web app lists every
+# weapon and armor piece from, for the tests), into <out-dir>:
 #   tools/manifest/get-manifest.sh <out-dir>
 # The component paths come from Bungie's manifest index (https://www.bungie.net/Platform/Destiny2/Manifest/;
 # sent with $BUNGIE_API_KEY as X-API-Key when it is set). Where the index can't be read (a cloud session got
@@ -15,7 +16,7 @@ mkdir -p "$out"
 components=(DestinyInventoryItemDefinition DestinyInventoryBucketDefinition DestinyDamageTypeDefinition
   DestinySocketTypeDefinition DestinySocketCategoryDefinition DestinyPlugSetDefinition DestinySandboxPerkDefinition
   DestinyEquipableItemSetDefinition DestinyBreakerTypeDefinition DestinyInventoryItemConstantsDefinition DestinyTraitDefinition
-  DestinyStatDefinition)
+  DestinyStatDefinition DestinyInventoryItemLiteDefinition)
 
 if [ -z "${MANIFEST_ID:-}" ]; then
   header=()

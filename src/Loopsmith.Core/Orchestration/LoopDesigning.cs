@@ -183,6 +183,28 @@ public static class LoopDesigning
     public static ImmutableDictionary<string, string> ChooseManifestUrls(Optional<string> indexJson, string pinnedContentId) =>
         ManifestTransport.ChooseUrls(indexJson, pinnedContentId);
 
+    // ── Every weapon and armor piece in the game (the pickers' "Every item", docs/loop-format.md) ──────────────
+
+    /// <summary>The URLs of the components the listing reads (the lite item table, the buckets, the sets): the index's, else the pinned content id's.</summary>
+    public static ImmutableDictionary<string, string> ChooseListingUrls(Optional<string> indexJson, string pinnedContentId) =>
+        ManifestTransport.ChooseComponentUrls(indexJson, pinnedContentId, ManifestListing.Components);
+
+    /// <summary>What the host reads first for the listing: the buckets and the armor sets, whole.</summary>
+    public static ImmutableDictionary<string, ImmutableArray<ItemHash>> ToListingTableRequest() =>
+        ManifestListing.ToTableRequest();
+
+    /// <summary>The host's answer to <see cref="ToListingTableRequest"/>: the weapon and armor slots' buckets and the sets; or why it doesn't read.</summary>
+    public static Result<ListingTables, string> ReadListingTables(string entriesJson) =>
+        ManifestListing.ReadTables(entriesJson);
+
+    /// <summary>What the host reads next: the lite items of the weapon and armor buckets, each cut down to what the pickers need.</summary>
+    public static ManifestPartsQuery ToListingPartsQuery(ListingTables tables) =>
+        ManifestListing.ToPartsQuery(tables);
+
+    /// <summary>The host's answer to <see cref="ToListingPartsQuery"/>: every weapon and armor piece a build can wear; or why it doesn't read.</summary>
+    public static Result<ItemListing, string> ReadItemListing(ListingTables tables, string partsJson) =>
+        ManifestListing.ReadListing(tables, partsJson);
+
     /// <summary>A join of what these hashes need from the full manifest: its first question (or, for none, the excerpt).</summary>
     public static ManifestJoinStep StartManifestJoin(IEnumerable<ItemHash> hashes) =>
         ManifestJoin.StartJoin(hashes);
@@ -524,6 +546,61 @@ public static class LoopDesigning
             .Bind(build => RebuildWith(session, target.Match(
                 inPlace => BuildFileEditing.ReplaceWeapon(session.Design.Build, inPlace.Weapon, build.Weapons[inPlace.Weapon]),
                 _ => BuildFileEditing.AddWeapon(session.Design.Build, build.Weapons[^1]))));
+
+    // ── Every weapon and armor piece in the game, and emptying a slot (docs/loop-format.md, "Every item") ──────
+
+    /// <summary>
+    /// What the weapon picker's "Every item" lists for where <paramref name="target"/> says: every weapon of the game for
+    /// that slot the build can wear there (one exotic), the one it wears there first, then by name.
+    /// </summary>
+    public static WeaponItemOptions ListWeaponItems(ValidatedBuild build, ItemListing listing, WeaponTarget target) =>
+        WeaponSwapping.ListItemOptions(build.Catalog, build.Build, listing, target);
+
+    /// <summary>
+    /// What the armor picker's "Every item" lists for <paramref name="slot"/>: every piece of the game for that slot and
+    /// the build's class (one exotic), the one it wears there first, then by name, each with its set.
+    /// </summary>
+    public static ArmorItemOptions ListArmorItems(ValidatedBuild build, ItemListing listing, ArmorSlot slot) =>
+        ArmorSwapping.ListItemOptions(build.Catalog, build.Build, listing, slot);
+
+    /// <summary>The item picked from "Every item", when the catalog's excerpt lacks it (what the full manifest is read for before the pick: its perks, catalyst or set).</summary>
+    public static ImmutableArray<ItemHash> ListUnknownItemHashes(DesignSession session, ItemHash item) =>
+        ManifestJoin.ListUnknown(session.Build.Catalog.Manifest, [item]);
+
+    /// <summary>
+    /// The design wearing the weapon <paramref name="item"/> of the game where <paramref name="target"/> says: in place of
+    /// one of its weapons (that entry of the embedded build file is written anew: no roll, its catalyst off), or added to
+    /// an empty slot; the build check runs again and the steps replay. Or why the weapon can't be worn.
+    /// </summary>
+    public static Result<DesignSession, string> PickWeaponItem(DesignSession session, WeaponTarget target, ItemHash item) =>
+        WeaponSwapping.PutWeapon(session.Build.Catalog, session.Build.Build, target, item)
+            .Bind(build => RebuildWith(session, target.Match(
+                inPlace => BuildFileEditing.ReplaceWeapon(session.Design.Build, inPlace.Weapon, build.Weapons[inPlace.Weapon]),
+                _ => BuildFileEditing.AddWeapon(session.Design.Build, build.Weapons[^1]))));
+
+    /// <summary>
+    /// The design wearing the armor piece <paramref name="item"/> of the game in <paramref name="slot"/> (no copy: its
+    /// stats stay as they were); the build check runs again and the steps replay. Or why the piece can't be worn.
+    /// </summary>
+    public static Result<DesignSession, string> PickArmorItem(DesignSession session, ArmorSlot slot, ItemHash item) =>
+        ArmorSwapping.PutPiece(session.Build.Catalog, session.Build.Build, slot, item)
+            .Bind(build => RebuildWith(session, BuildFileEditing.ReplaceArmor(session.Design.Build, build)));
+
+    /// <summary>
+    /// The design without its weapon number <paramref name="weapon"/>: that slot empty (a step that uses it is blocked);
+    /// the build check runs again and the steps replay. Or why not.
+    /// </summary>
+    public static Result<DesignSession, string> EmptyWeaponSlot(DesignSession session, int weapon) =>
+        WeaponSwapping.RemoveWeapon(session.Build.Build, weapon)
+            .Bind(_ => RebuildWith(session, BuildFileEditing.RemoveWeapon(session.Design.Build, weapon)));
+
+    /// <summary>
+    /// The design with nothing in <paramref name="slot"/> (its exotic gone when it was there, its set bonuses following
+    /// the pieces left); the build check runs again and the steps replay. Or why not.
+    /// </summary>
+    public static Result<DesignSession, string> EmptyArmorSlot(DesignSession session, ArmorSlot slot) =>
+        ArmorSwapping.RemovePiece(session.Build.Catalog, session.Build.Build, slot)
+            .Bind(build => RebuildWith(session, BuildFileEditing.ReplaceArmor(session.Design.Build, build)));
 
     /// <summary>
     /// What the game draws on the player's copy the build wears in a slot (its tier, masterwork): the share's copy when it

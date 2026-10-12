@@ -137,6 +137,21 @@ public sealed record WeaponOption(OwnedWeapon Weapon, ManifestItem Item, Immutab
 /// <summary>What the weapon picker lists for a slot (none: a weapon number the build hasn't), the copy the build names first, and what it leaves out and why.</summary>
 public sealed record WeaponOptions(Optional<WeaponSlot> Slot, ImmutableArray<WeaponOption> Options, ImmutableArray<string> Notes);
 
+/// <summary>A weapon of the game the weapon picker's "Every item" lists: its manifest item (the listing's) and whether the build wears it there.</summary>
+public sealed record WeaponItemOption(ManifestItem Item, bool Worn);
+
+/// <summary>What "Every item" lists for a weapon slot (none: a weapon number the build hasn't), the weapon the build wears there first, and what it leaves out and why.</summary>
+public sealed record WeaponItemOptions(Optional<WeaponSlot> Slot, ImmutableArray<WeaponItemOption> Options, ImmutableArray<string> Notes);
+
+/// <summary>
+/// An armor piece of the game the armor picker's "Every item" lists: its manifest item (the listing's), its armor set
+/// when it is of one, whether the build wears it, and what the build can't hold of it (an exotic class item's spirits).
+/// </summary>
+public sealed record ArmorItemOption(ManifestItem Item, Optional<ArmorSet> Set, bool Worn, Optional<string> Note);
+
+/// <summary>What "Every item" lists for an armor slot (the piece the build wears there first), and what it leaves out and why.</summary>
+public sealed record ArmorItemOptions(ArmorSlot Slot, ImmutableArray<ArmorItemOption> Options, ImmutableArray<string> Notes);
+
 /// <summary>
 /// Whether the copies a build wears (a dim.gg share's, by instance id) are the logged-in player's: all of them, some
 /// (the pieces whose copy isn't in their account), or none — someone else's loadout, or one that doesn't say.

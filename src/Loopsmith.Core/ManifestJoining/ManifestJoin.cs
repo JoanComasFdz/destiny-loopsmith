@@ -30,12 +30,12 @@ public static partial class ManifestJoin
     private static readonly ImmutableArray<ManifestTable> SmallTables =
         [ManifestTable.InventoryBucket, ManifestTable.SocketCategory, ManifestTable.EquipableItemSet, ManifestTable.BreakerType];
 
-    private static readonly ImmutableDictionary<string, WeaponSlot> WeaponBuckets = new Dictionary<string, WeaponSlot>
+    internal static readonly ImmutableDictionary<string, WeaponSlot> WeaponBuckets = new Dictionary<string, WeaponSlot>
     {
         ["Kinetic Weapons"] = WeaponSlot.Kinetic, ["Energy Weapons"] = WeaponSlot.Energy, ["Power Weapons"] = WeaponSlot.Power,
     }.ToImmutableDictionary();
 
-    private static readonly ImmutableDictionary<string, ArmorSlot> ArmorBuckets = new Dictionary<string, ArmorSlot>
+    internal static readonly ImmutableDictionary<string, ArmorSlot> ArmorBuckets = new Dictionary<string, ArmorSlot>
     {
         ["Helmet"] = ArmorSlot.Helmet, ["Gauntlets"] = ArmorSlot.Arms, ["Chest Armor"] = ArmorSlot.Chest,
         ["Leg Armor"] = ArmorSlot.Legs, ["Class Armor"] = ArmorSlot.ClassItem,
@@ -47,12 +47,12 @@ public static partial class ManifestJoin
         ["Leg Armor Mod"] = ArmorSlot.Legs, ["Class Item Armor Mod"] = ArmorSlot.ClassItem,
     }.ToImmutableDictionary();
 
-    private static readonly ImmutableDictionary<int, ItemTier> Tiers = new Dictionary<int, ItemTier>
+    internal static readonly ImmutableDictionary<int, ItemTier> Tiers = new Dictionary<int, ItemTier>
     {
         [2] = ItemTier.Basic, [3] = ItemTier.Common, [4] = ItemTier.Rare, [5] = ItemTier.Legendary, [6] = ItemTier.Exotic,
     }.ToImmutableDictionary();
 
-    private static readonly ImmutableDictionary<int, DamageType> DamageTypes = new Dictionary<int, DamageType>
+    internal static readonly ImmutableDictionary<int, DamageType> DamageTypes = new Dictionary<int, DamageType>
     {
         [1] = DamageType.Kinetic, [2] = DamageType.Arc, [3] = DamageType.Solar, [4] = DamageType.Void,
         [6] = DamageType.Stasis, [7] = DamageType.Strand,
@@ -294,7 +294,7 @@ public static partial class ManifestJoin
             perk.ReadString("displayProperties", "icon").Bind(icon => icon.Length > 0 ? Optional.Some(icon) : Optional.None<string>()),
             Optional.None<string>()));
 
-    private static ArmorSet ToArmorSet(ItemHash hash, JsonElement set) =>
+    internal static ArmorSet ToArmorSet(ItemHash hash, JsonElement set) =>
         new(
             hash,
             set.ReadText("displayProperties", "name").UnwrapOr(""),
@@ -592,7 +592,7 @@ public static partial class ManifestJoin
     }
 
     /// <summary>An item's class (<c>classType</c>: 0 Titan, 1 Hunter, 2 Warlock); none for any class (3).</summary>
-    private static Optional<GuardianClass> ToGuardianClass(int classType) =>
+    internal static Optional<GuardianClass> ToGuardianClass(int classType) =>
         classType switch
         {
             0 => Optional.Some(GuardianClass.Titan),

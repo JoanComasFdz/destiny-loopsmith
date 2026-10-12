@@ -109,3 +109,11 @@ public sealed record ManifestExcerpt(
     ItemOverlays Overlays,
     ImmutableDictionary<ItemHash, KeywordTrait> KeywordTraits,
     ImmutableDictionary<StatKind, ArmorStatIcon> ArmorStats);
+
+/// <summary>
+/// Every weapon and armor piece of Bungie's manifest a build can wear — legendary and exotic, every version of each (a
+/// season's reissue is an item of its own) — as the pickers' "Every item" lists them (read from the manifest's lite item
+/// table): each a manifest item with its slot, damage type or class, armor set and season watermark, without its perks
+/// (a pick reads those with the join); and the armor sets by hash.
+/// </summary>
+public sealed record ItemListing(ImmutableArray<ManifestItem> Items, ImmutableDictionary<ItemHash, ArmorSet> Sets);

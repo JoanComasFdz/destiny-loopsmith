@@ -29,10 +29,17 @@ public static class ManifestTransport
     /// Each component's URL, by component name: the manifest index's paths (<c>Response.jsonWorldComponentContentPaths.en</c>)
     /// when it has every one (each on bungie.net's component folder), else the pinned content id's.
     /// </summary>
-    public static ImmutableDictionary<string, string> ChooseUrls(Optional<string> indexJson, string pinnedContentId)
+    public static ImmutableDictionary<string, string> ChooseUrls(Optional<string> indexJson, string pinnedContentId) =>
+        ChooseComponentUrls(indexJson, pinnedContentId, [.. Enum.GetValues<ManifestTable>().Select(ToComponentName)]);
+
+    /// <summary>
+    /// The URLs of <paramref name="components"/> (by component name, <c>DestinyInventoryItemLiteDefinition</c>), as
+    /// <see cref="ChooseUrls"/> chooses them: the index's when it has every one, else the pinned content id's.
+    /// </summary>
+    public static ImmutableDictionary<string, string> ChooseComponentUrls(Optional<string> indexJson, string pinnedContentId, ImmutableArray<string> components)
     {
-        var pinned = Enum.GetValues<ManifestTable>().ToImmutableDictionary(ToComponentName, table => $"{Host}{ComponentFolder}en/{ToComponentName(table)}-{pinnedContentId}.json");
-        var fromIndex = indexJson.Bind(ReadIndexUrls);
+        var pinned = components.Distinct().ToImmutableDictionary(name => name, name => $"{Host}{ComponentFolder}en/{name}-{pinnedContentId}.json");
+        var fromIndex = indexJson.Bind(json => ReadIndexUrls(json, components));
         return fromIndex.Match(urls => urls.Value.Count == pinned.Count ? urls.Value : pinned, _ => pinned);
     }
 
@@ -105,11 +112,12 @@ public static class ManifestTransport
     private static string ToPlugNeedle(PlugCategoryId category) =>
         PlugCategoryField + "\"" + JsonEncodedText.Encode(category.Value, JavaScriptEncoder.UnsafeRelaxedJsonEscaping).Value + "\"";
 
-    private static Optional<ImmutableDictionary<string, string>> ReadIndexUrls(string json) =>
+    private static Optional<ImmutableDictionary<string, string>> ReadIndexUrls(string json, ImmutableArray<string> components) =>
         ParseDocument(json).Match(
             root => root.Value.ReadPath("Response", "jsonWorldComponentContentPaths", "en").Map(paths =>
-                Enum.GetValues<ManifestTable>()
-                    .SelectMany(table => ToSequence(paths.ReadString(ToComponentName(table)).Bind(ToComponentUrl)).Select(url => KeyValuePair.Create(ToComponentName(table), url)))
+                components
+                    .Distinct()
+                    .SelectMany(name => ToSequence(paths.ReadString(name).Bind(ToComponentUrl)).Select(url => KeyValuePair.Create(name, url)))
                     .ToImmutableDictionary()),
             _ => Optional.None<ImmutableDictionary<string, string>>());
 
