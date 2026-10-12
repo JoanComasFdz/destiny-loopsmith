@@ -1,8 +1,8 @@
 @* A step's outcomes, one line each (LoopDesigning.ShapeStepOutcomes, the CLI's wording): the event, then where what
    it set off comes from (OutcomeOrigins: "Fragment · Arcstrider", "Weapon perk · Festival Flight", with that item's
-   icon), each element from there (its icon and name) and each of its outcomes under it; a cascade (↳ Bolt Charge
-   gained) nests under the event that set it off. An element's or keyword's name shows a preview on hover (or focus)
-   and its details on a tap. *@
+   icon), each element from there (its icon and name) and each of its outcomes under it, as a bulleted list; a cascade
+   (↳ Bolt Charge gained) nests under the event that set it off, and a pickup picked up shows a 📍 (it is on the floor).
+   An element's or keyword's name shows a preview on hover (or focus) and its details on a tap. *@
 <div class="outcomes">
     @if (Outcomes.Events.IsEmpty && Outcomes.Notes.IsEmpty)
     {
@@ -14,7 +14,11 @@
         var eventKey = $"e{e}";
         <div class="outcome-event" style="--depth:@shaped.Depth" data-depth="@shaped.Depth">
             <div class="outcome-event-head">
-                @if (shaped.Depth > 0)
+                @if (shaped.Pickup.IsSome())
+                {
+                    <span class="outcome-pickup-mark" aria-hidden="true">📍 </span>
+                }
+                else if (shaped.Depth > 0)
                 {
                     <span class="tone-muted">↳ </span>
                 }
@@ -42,17 +46,21 @@
                         var sourceKey = $"{eventKey}g{g}s{s}";
                         <div class="outcome-source" data-source="@source.Source.Value">
                             @RenderElement(source, sourceKey)
-                            @for (var l = 0; l < source.Outcomes.Length; l++)
+                            @if (!source.Outcomes.IsEmpty)
                             {
-                                var line = source.Outcomes[l];
-                                <div class="outcome-line">
-                                    <span class="outcome-arrow tone-muted" aria-hidden="true">→</span>
-                                    @RenderParts(line.Parts, ToneStyling.ToToneClass(line.Tone), $"{sourceKey}l{l}")
-                                    @if (line.Chance)
+                                <ul class="outcome-lines">
+                                    @for (var l = 0; l < source.Outcomes.Length; l++)
                                     {
-                                        <span class="tone-muted"> (chance)</span>
+                                        var line = source.Outcomes[l];
+                                        <li class="outcome-line">
+                                            @RenderParts(line.Parts, ToneStyling.ToToneClass(line.Tone), $"{sourceKey}l{l}")
+                                            @if (line.Chance)
+                                            {
+                                                <span class="tone-muted"> (chance)</span>
+                                            }
+                                        </li>
                                     }
-                                </div>
+                                </ul>
                             }
                             @foreach (var reason in source.Reasons)
                             {
@@ -75,6 +83,9 @@
 </div>
 
 @code {
+    /// <summary>The pickup Bungie's data has no icon for (its keyword tooltips, DestinyTraitDefinition, don't name it).</summary>
+    private static readonly PickupId OrbOfPower = PickupId.From("orb-of-power");
+
     [Parameter, EditorRequired]
     public StepOutcomes Outcomes { get; set; } = null!;
 
@@ -89,7 +100,10 @@
     private Optional<string> hovered = Optional.None<string>();
     private Optional<StepOutcomes> shownOutcomes = Optional.None<StepOutcomes>();
 
-    /// <summary>An element that fired: its icon (a dot in its affinity when it has none) and name, in its affinity's colour.</summary>
+    /// <summary>
+    /// An element that fired: its icon and name, in its affinity's colour. One with no icon in Bungie's data shows a dot
+    /// in its affinity — but the Orb of Power, which Bungie gives no icon, a ⚪ (an orb).
+    /// </summary>
     private RenderFragment RenderElement(SourceOutcomes source, string key) => __builder =>
     {
         var icon = LoadoutShaping.FindElementIcon(Build.Catalog, source.Source);
@@ -101,6 +115,10 @@
                 @if (icon is Optional<string>.Some known)
                 {
                     <img class="outcome-icon" src="@known.Value" alt="" loading="lazy" />
+                }
+                else if (LoopDesigning.FindKeyword(Build, source.Source) == Optional.Some<KeywordRef>(new KeywordRef.Pickup(OrbOfPower)))
+                {
+                    <span class="outcome-icon glyph" aria-hidden="true">⚪</span>
                 }
                 else
                 {
