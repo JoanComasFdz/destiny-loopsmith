@@ -704,8 +704,11 @@ textarea { resize: vertical; }
 .trig-actions-title { font-weight: 700; }
 .trig-actions .trigger { min-width: 78px; min-height: 36px; text-transform: lowercase; }
 @media (max-width: 420px) {
-    .trig-super, .trig-ability { width: 58px; height: 58px; }
-    .trig-super { width: 54px; height: 54px; }
+    /* the Super, three abilities and the finisher on one row down to a 320 px phone: the squares take a fifth of the
+       screen less the page's and the panel's padding and the row's gaps (at most 58 px) */
+    .trig-abilities { --sq: clamp(40px, calc((100vw - 112px) / 5), 58px); }
+    .trig-super, .trig-ability { width: var(--sq); height: var(--sq); }
+    .trig-super { width: calc(var(--sq) - 4px); height: calc(var(--sq) - 4px); }
 }
 
 /* a step's state, laid out like the game's HUD: buffs on you left, your weapons' buffs in the middle, debuffs on the

@@ -106,9 +106,9 @@ public sealed class ArmorModsCatalogTests
     }
 
     [Fact]
-    public void Without_a_finisher_mod_no_finisher_is_offered()
+    public void Without_a_finisher_mod_a_finisher_is_still_offered()
     {
-        Assert.DoesNotContain(LoopDesigning.ListTriggerOptions(Play([])), option => option.Token == "finisher");
+        Assert.Contains(LoopDesigning.ListTriggerOptions(Play([])), option => option.Token == "finisher");
     }
 
     /// <summary>The owner's DIM build wearing <paramref name="mods"/> too, played through <paramref name="actions"/>.</summary>

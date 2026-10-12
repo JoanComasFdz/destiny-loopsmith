@@ -125,13 +125,13 @@ reads back as the same action (`grenade:hit` is written `grenade`). Labels read 
 **What `play` and the web designer offer.** Only steps that can happen: the abilities, the equipped
 weapons, the pickups on the ground and the **states you declare** — `pack:new` always, `max:` for
 each active buff that stacks and isn't at max yet, `end:` for each active status. `class:air` is offered only when an equipped rule has an
-airborne trigger (without one it fires exactly what `class` fires), and `finisher` (with the abilities) only when an
-equipped rule has a `finisher` trigger. Every token still reads anywhere
+airborne trigger (without one it fires exactly what `class` fires); `finisher` (with the abilities) always, as the
+game always allows one — in a build where no rule reacts to a finisher and none fires on a kill from any source, it
+sets nothing off. Every token still reads anywhere
 (CLI, loop files, share links).
 
 The web designer's **Next trigger** is laid out like Destiny's HUD: the Super's diamond, then the grenade, melee and
-class ability squares with the build's own icons in the subclass's colour — and, when a rule of the build reacts to a
-finisher, a dashed **Finisher** square (the game has no HUD square for it; a finisher has no element and no damage
+class ability squares with the build's own icons in the subclass's colour — and a dashed **Finisher** square (the game has no HUD square for it; a finisher has no element and no damage
 type) with the finisher's own icon: after a Bungie login the one the player's character of the build's class has
 equipped (read from its Finishers slot; named from Bungie's full manifest when the excerpt doesn't have it), else the
 class's own, the one the game plays when none is equipped (Blade Carnival for a Hunter, the glossary's `finishers`) —

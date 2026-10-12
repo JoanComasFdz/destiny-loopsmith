@@ -23,9 +23,8 @@ public sealed record HudStatus(string Name, Affinity Affinity, ImmutableArray<Tr
 
 /// <summary>
 /// The Next trigger section laid out like Destiny's HUD: the Super's diamond, then the grenade, melee and class ability
-/// squares in the subclass's colour (and the finisher's, when a rule of the build reacts to one: the game has no HUD
-/// square for it, so it shows the finisher's own icon — the player's equipped one after a Bungie login, else the
-/// class's), then the weapons, each in its damage type's colour; above them, where the game
+/// squares in the subclass's colour (and the finisher's: the game has no HUD square for it, so it shows the finisher's
+/// own icon — the player's equipped one after a Bungie login, else the class's), then the weapons, each in its damage type's colour; above them, where the game
 /// lists your buffs, the states to declare — the buffs on you, on your weapons and the debuffs on the pack (with a new
 /// pack) — and what is on the ground to pick up.
 /// </summary>
