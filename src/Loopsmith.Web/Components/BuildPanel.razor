@@ -56,26 +56,6 @@
         </details>
     }
 
-    @if (!sheet.NoLoopEffect.IsEmpty)
-    {
-        @* Known, not missing: what the DIM loadout has that no loop uses (legendary armor, a jump). Collapsed too. *@
-        <details class="left-out-section" data-testid="no-loop-effect-section">
-            <summary class="section-label">No part in a loop <span class="left-out-count">@sheet.NoLoopEffectCount</span></summary>
-            @foreach (var group in sheet.NoLoopEffect)
-            {
-                <div class="left-out" data-testid="no-loop-effect">
-                    <span class="left-out-label">@group.Why</span>
-                    <div class="chips">
-                        @foreach (var entry in group.Entries)
-                        {
-                            <a class="chip left-out-hash" href="@ToLookupUrl(entry.Hash)" target="_blank" rel="noopener noreferrer" title="@entry.Name (@entry.Hash.Value) on light.gg">@entry.Name@(entry.Copies > 1 ? $" ×{entry.Copies}" : "") ↗</a>
-                        }
-                    </div>
-                </div>
-            }
-        </details>
-    }
-
     @if (!sheet.Issues.IsEmpty)
     {
         <h3 class="section-label">Validation</h3>

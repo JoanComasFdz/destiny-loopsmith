@@ -80,22 +80,24 @@ public static class StepOutcomeShaping
         var first = rules[0];
         var glossary = build.Catalog.Glossary;
         var copies = TraceRenderer.CountCopies(build, first.Source);
-        var lines = rules.SelectMany(rule => ShapeOutcomeLines(glossary, catalog, rule, copies));
+        var superType = build.ReadSuperType();
+        var lines = rules.SelectMany(rule => ShapeOutcomeLines(glossary, catalog, rule, copies, superType));
         var reasons = options.ShowReasons ? rules.SelectMany(rule => ToSequence(rule.Reason)) : [];
         var caveats = options.ShowCaveats
-            ? rules.SelectMany(rule => rule.Outcomes.SelectMany(outcome => ToSequence(outcome.Caveat).Select(caveat => $"{glossary.DescribeOutcome(outcome.Outcome)}: {caveat}")))
+            ? rules.SelectMany(rule => rule.Outcomes.SelectMany(outcome => ToSequence(outcome.Caveat).Select(caveat => $"{glossary.DescribeOutcome(outcome.Outcome, superType)}: {caveat}")))
             : [];
         return new SourceOutcomes(first.Source, first.SourceName, first.SourceKind, first.Affinity, [.. lines], [.. reasons], [.. caveats]);
     }
 
-    private static IEnumerable<OutcomeLine> ShapeOutcomeLines(KeywordGlossary glossary, RuleCatalog catalog, FiredRule rule, int copies)
+    private static IEnumerable<OutcomeLine> ShapeOutcomeLines(
+        KeywordGlossary glossary, RuleCatalog catalog, FiredRule rule, int copies, Optional<DamageType> superType)
     {
         var chance = rule.Likelihood == Likelihood.Chance;
         return rule.NotStackedWith.Match(
             partner => [ToLine(glossary, catalog, $"doesn't stack with {partner.Value}", Tone.Warning, chance)],
             _ => rule.Outcomes.IsEmpty
                 ? [ToLine(glossary, catalog, "(no effect)", Tone.Muted, chance)]
-                : glossary.ListOutcomePhrases(rule.Outcomes.Select(outcome => new OutcomeMention(outcome.Outcome, copies)))
+                : glossary.ListOutcomePhrases(rule.Outcomes.Select(outcome => new OutcomeMention(outcome.Outcome, copies)), superType)
                     .Select(phrase => ToLine(glossary, catalog, phrase.Text, Tone.Plain, chance)));
     }
 
@@ -129,14 +131,16 @@ public static class StepOutcomeShaping
             targetsHit: hit => FindOriginWeapon(hit.Origin),
             pickedUp: _ => Optional.None<WeaponSlot>(),
             buffGained: _ => Optional.None<WeaponSlot>(),
-            stacksMaxed: _ => Optional.None<WeaponSlot>());
+            stacksMaxed: _ => Optional.None<WeaponSlot>(),
+            finisher: _ => Optional.None<WeaponSlot>());
 
     private static Optional<WeaponSlot> FindOriginWeapon(DamageOrigin origin) =>
         origin.Match(
             weapon: weapon => Optional.Some(weapon.Slot),
             ability: _ => Optional.None<WeaponSlot>(),
             keyword: _ => Optional.None<WeaponSlot>(),
-            summoned: _ => Optional.None<WeaponSlot>());
+            summoned: _ => Optional.None<WeaponSlot>(),
+            finisher: _ => Optional.None<WeaponSlot>());
 
 
     private static IEnumerable<T> ToSequence<T>(Optional<T> optional) =>

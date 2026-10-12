@@ -23,7 +23,8 @@ public sealed record HudStatus(string Name, Affinity Affinity, ImmutableArray<Tr
 
 /// <summary>
 /// The Next trigger section laid out like Destiny's HUD: the Super's diamond, then the grenade, melee and class ability
-/// squares in the subclass's colour, then the weapons, each in its damage type's colour; above them, where the game
+/// squares in the subclass's colour (and the finisher's, when a rule of the build reacts to one: the game has no HUD
+/// square for it), then the weapons, each in its damage type's colour; above them, where the game
 /// lists your buffs, the states to declare — the buffs on you, on your weapons and the debuffs on the pack (with a new
 /// pack) — and what is on the ground to pick up.
 /// </summary>
@@ -31,6 +32,7 @@ public sealed record TriggerHud(
     Affinity Subclass,
     Optional<HudSlot> Super,
     ImmutableArray<HudSlot> Abilities,
+    Optional<HudSlot> Finisher,
     ImmutableArray<HudWeapon> Weapons,
     ImmutableArray<HudStatus> OnYou,
     ImmutableArray<HudStatus> OnWeapons,
@@ -64,6 +66,7 @@ public static class TriggerHudShaping
                     ShapeAbility(build, choices, "class", "Class ability", abilities.ClassAbility, subclass),
                 }.SelectMany(slot => slot.Match(found => new[] { found.Value }, _ => [])),
             ],
+            ShapeFinisher(choices),
             [.. weapons.SelectMany(weapon => ShapeWeapon(choices, weapon).Match(found => new[] { found.Value }, _ => []))],
             ListStatuses(statuses, KeywordKind.Buff),
             ListStatuses(statuses, KeywordKind.WeaponBuff),
@@ -84,6 +87,12 @@ public static class TriggerHudShaping
                 ability.Bind(id => build.Catalog.Elements.TryGetValue(id, out var element) ? Optional.Some(element.Affinity) : Optional.None<Affinity>()).UnwrapOr(subclass),
                 FindAtOnce(choice),
                 choice.Buttons.Any(button => button.IsNew)))
+            : Optional.None<HudSlot>();
+
+    /// <summary>The finisher's square, when the palette offers one: no element and no damage type (neutral), one tap does it.</summary>
+    private static Optional<HudSlot> ShapeFinisher(ImmutableDictionary<string, TriggerChoice> choices) =>
+        choices.TryGetValue("finisher", out var choice)
+            ? Optional.Some(new HudSlot(choice, "Finisher", choice.Title, Optional.None<string>(), Affinity.Neutral, FindAtOnce(choice), choice.Buttons.Any(button => button.IsNew)))
             : Optional.None<HudSlot>();
 
     private static Optional<HudWeapon> ShapeWeapon(ImmutableDictionary<string, TriggerChoice> choices, WeaponView weapon) =>

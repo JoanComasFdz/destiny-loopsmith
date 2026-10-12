@@ -1,0 +1,285 @@
+# Chest armor mods. Values are PvE values from the Compendium snapshot of 2026-10-09 (Armor Mods tab,
+# Chest column: "Armor Mods#7" is the Chest column's row 7, its CSV record number); "a | b | c"
+# per-copy values are PerModCount. Names and hashes are Bungie's manifest, every copy of a mod
+# listed (hash: [a, b]); the second copy has the same perk text.
+#
+# The Compendium's generic rows (Ammo Generation, Resistance, Unflinching Aim) are one row for every
+# element variant: each variant is its own element, citing the generic row, with the element its
+# manifest text names. A Harmonic variant matches your Super's element.
+#
+# Charged Up, Harmonic Resistance and Concussive Dampener are in mods/armor.yaml.
+#
+# An Armor Charge mod's "Collecting an Orb of Power gives 1 temporary Armor Charge" (Bungie's text on
+# Emergency Reinforcement and Health Font) is the orb-of-power keyword's rule (keywords/orb-of-power.yaml,
+# Game Mechanics#94), so these mods don't repeat it: a second grant would show two stacks per orb.
+elements:
+  - id: arc-ammo-generation
+    name: Arc Ammo Generation
+    kind: armorMod
+    affinity: arc
+    hash: [450381139, 4283953067]   # the second: a copy with identical text
+    description: "Arc weapons generate ammo faster: +20 | +40 | +50 Ammo Generation with 1|2|3 mods (a Sword gets +20 | +30 | +35 Ammo Capacity instead)."
+    source: "compendium/2026-10-09/Armor Mods#2"
+    inert: "Ammo: Loopsmith doesn't model ammo, so no loop changes."
+    rules: []
+    passives: []
+
+  - id: solar-ammo-generation
+    name: Solar Ammo Generation
+    kind: armorMod
+    affinity: solar
+    hash: [2526773280, 411014648]   # the second: a copy with identical text
+    description: "Solar weapons generate ammo faster: +20 | +40 | +50 Ammo Generation with 1|2|3 mods (a Sword gets +20 | +30 | +35 Ammo Capacity instead)."
+    source: "compendium/2026-10-09/Armor Mods#2"
+    inert: "Ammo: Loopsmith doesn't model ammo, so no loop changes."
+    rules: []
+    passives: []
+
+  - id: void-ammo-generation
+    name: Void Ammo Generation
+    kind: armorMod
+    affinity: void
+    hash: [1669792723, 2413278875]   # the second: a copy with identical text
+    description: "Void weapons generate ammo faster: +20 | +40 | +50 Ammo Generation with 1|2|3 mods (a Sword gets +20 | +30 | +35 Ammo Capacity instead)."
+    source: "compendium/2026-10-09/Armor Mods#2"
+    inert: "Ammo: Loopsmith doesn't model ammo, so no loop changes."
+    rules: []
+    passives: []
+
+  - id: stasis-ammo-generation
+    name: Stasis Ammo Generation
+    kind: armorMod
+    affinity: stasis
+    hash: [3462414552, 3294892432]   # the second: a copy with identical text
+    description: "Stasis weapons generate ammo faster: +20 | +40 | +50 Ammo Generation with 1|2|3 mods (a Sword gets +20 | +30 | +35 Ammo Capacity instead)."
+    source: "compendium/2026-10-09/Armor Mods#2"
+    inert: "Ammo: Loopsmith doesn't model ammo, so no loop changes."
+    rules: []
+    passives: []
+
+  - id: strand-ammo-generation
+    name: Strand Ammo Generation
+    kind: armorMod
+    affinity: strand
+    hash: [4287822553, 2303417969]   # the second: a copy with identical text
+    description: "Strand weapons generate ammo faster: +20 | +40 | +50 Ammo Generation with 1|2|3 mods (a Sword gets +20 | +30 | +35 Ammo Capacity instead)."
+    source: "compendium/2026-10-09/Armor Mods#2"
+    inert: "Ammo: Loopsmith doesn't model ammo, so no loop changes."
+    rules: []
+    passives: []
+
+  - id: kinetic-ammo-generation
+    name: Kinetic Ammo Generation
+    kind: armorMod
+    affinity: kinetic
+    hash: [2407398462, 2305736470]   # the second: a copy with identical text
+    description: "Kinetic weapons generate ammo faster: +20 | +40 | +50 Ammo Generation with 1|2|3 mods (a Sword gets +20 | +30 | +35 Ammo Capacity instead)."
+    source: "compendium/2026-10-09/Armor Mods#2"
+    inert: "Ammo: Loopsmith doesn't model ammo, so no loop changes."
+    rules: []
+    passives: []
+
+  - id: harmonic-ammo-generation
+    name: Harmonic Ammo Generation
+    kind: armorMod
+    affinity: neutral
+    hash: [1971149752, 1103878128]   # the second: a copy with identical text
+    description: "Weapons of your Super's element generate ammo faster: +20 | +40 | +50 Ammo Generation with 1|2|3 mods (a Sword gets +20 | +30 | +35 Ammo Capacity instead)."
+    source: "compendium/2026-10-09/Armor Mods#2"
+    inert: "Ammo: Loopsmith doesn't model ammo, so no loop changes."
+    rules: []
+    passives: []
+
+  - id: emergency-reinforcement
+    name: Emergency Reinforcement
+    kind: armorMod
+    affinity: neutral
+    hash: [1024379611, 422994787]   # the second: a copy with identical text
+    description: "Reaching critical health while you hold x3 or more Armor Charge consumes them for 10% damage resistance, lasting longer for more charges spent: 6 | 9 | 12 | 15 s (four values, though the Compendium labels only x3, x4 and x5). Bungie's text: when your shields break."
+    source: "compendium/2026-10-09/Armor Mods#4"
+    # Not expressible: its trigger is your health dropping to critical (Bungie's text: your shields
+    # breaking), and no step of a loop takes damage. It would consume the Armor Charge (x3 or more).
+    inert: "Damage resistance at critical health: Loopsmith doesn't model the damage you take, so no loop sets it off or spends its Armor Charge."
+    rules: []
+    passives: []
+
+  - id: health-font
+    name: Health Font
+    kind: armorMod
+    affinity: neutral
+    hash: [686455429, 3075302157]   # the second: a copy with identical text
+    description: "While you have any Armor Charge: +20 | +40 | +50 Health with 1|2|3 mods."
+    source: "compendium/2026-10-09/Armor Mods#5"
+    rules: []
+    passives:
+      # A fact shown while Armor Charge is on you; never added to the build's stats (ADRs D1).
+      - effect: { modifyStat: { stat: health, change: "+20 | +40 | +50" } }
+        when: [ { has: armor-charge } ]
+        reason: "While you hold any Armor Charge, your Health stat is higher."
+
+  - id: lucent-blades
+    name: Lucent Blades
+    kind: armorMod
+    affinity: neutral
+    hash: [531057500, 830369300]   # the second: a copy with identical text
+    description: "Equipped Swords recharge their energy faster (+30 | +50 | +60 Charge Rate) and Glaive ranged hits give 20% | 30% | 35% more weapon energy, with 1|2|3 mods; it adds to Immovable Object's."
+    source: "compendium/2026-10-09/Armor Mods#6"
+    inert: "Weapon energy (Sword recharge, Glaive energy from ranged hits): Loopsmith doesn't model weapon energy or ammo, so no loop changes."
+    rules: []
+    passives: []
+
+  - id: arc-resistance
+    name: Arc Resistance
+    kind: armorMod
+    affinity: arc
+    hash: [953234331, 3539253011]   # the second: a copy with identical text
+    description: "Less Arc damage from combatants: 15% | 25% | 30% with 1|2|3 copies (different resistance sources multiply)."
+    source: "compendium/2026-10-09/Armor Mods#7"
+    inert: "Damage resistance: Loopsmith doesn't model the damage you take, so no loop changes."
+    rules: []
+    passives: []
+
+  - id: solar-resistance
+    name: Solar Resistance
+    kind: armorMod
+    affinity: solar
+    hash: [3194530172, 3846931924]   # the second: a copy with identical text
+    description: "Less Solar damage from combatants: 15% | 25% | 30% with 1|2|3 copies (different resistance sources multiply)."
+    source: "compendium/2026-10-09/Armor Mods#7"
+    inert: "Damage resistance: Loopsmith doesn't model the damage you take, so no loop changes."
+    rules: []
+    passives: []
+
+  - id: void-resistance
+    name: Void Resistance
+    kind: armorMod
+    affinity: void
+    hash: [3410844187, 2788997987]   # the second: a copy with identical text
+    description: "Less Void damage from combatants: 15% | 25% | 30% with 1|2|3 copies (different resistance sources multiply)."
+    source: "compendium/2026-10-09/Armor Mods#7"
+    inert: "Damage resistance: Loopsmith doesn't model the damage you take, so no loop changes."
+    rules: []
+    passives: []
+
+  - id: stasis-resistance
+    name: Stasis Resistance
+    kind: armorMod
+    affinity: stasis
+    # 1176372075: a third copy the manifest names Stasis Resistance, though its perk (2570355090) is Strand
+    # Resistance's. Listed here by its name, the one a DIM loadout shows; both mods are inert either way.
+    hash: [638704972, 3456250548, 1176372075]   # the second: a copy with identical text
+    description: "Less Stasis damage from combatants: 15% | 25% | 30% with 1|2|3 copies (different resistance sources multiply)."
+    source: "compendium/2026-10-09/Armor Mods#7"
+    inert: "Damage resistance: Loopsmith doesn't model the damage you take, so no loop changes."
+    rules: []
+    passives: []
+
+  - id: strand-resistance
+    name: Strand Resistance
+    kind: armorMod
+    affinity: strand
+    hash: 2959732323
+    description: "Less Strand damage from combatants: 15% | 25% | 30% with 1|2|3 copies (different resistance sources multiply)."
+    source: "compendium/2026-10-09/Armor Mods#7"
+    inert: "Damage resistance: Loopsmith doesn't model the damage you take, so no loop changes."
+    rules: []
+    passives: []
+
+  - id: melee-damage-resistance
+    name: Melee Damage Resistance
+    kind: armorMod
+    affinity: neutral
+    hash: [1763668984, 2562645296]   # the second: a copy with identical text
+    description: "Less damage from combatants within 5 m: 15% | 25% | 30% with 1|2|3 copies (different resistance sources multiply)."
+    source: "compendium/2026-10-09/Armor Mods#7"
+    inert: "Damage resistance: Loopsmith doesn't model the damage you take, so no loop changes."
+    rules: []
+    passives: []
+
+  - id: sniper-damage-resistance
+    name: Sniper Damage Resistance
+    kind: armorMod
+    affinity: neutral
+    hash: [707237917, 657773637]   # the second: a copy with identical text
+    description: "Less damage from combatants beyond 30 m: 15% | 25% | 30% with 1|2|3 copies (different resistance sources multiply)."
+    source: "compendium/2026-10-09/Armor Mods#7"
+    inert: "Damage resistance: Loopsmith doesn't model the damage you take, so no loop changes."
+    rules: []
+    passives: []
+
+  - id: unflinching-arc-aim
+    name: Unflinching Arc Aim
+    kind: armorMod
+    affinity: arc
+    hash: [319908131, 792400107]   # the second: a copy with identical text
+    description: "Less flinch from incoming fire while aiming down sights with Arc weapons: 25% | 30% | 35% flinch resistance with 1|2|3 mods."
+    source: "compendium/2026-10-09/Armor Mods#8"
+    inert: "Weapon handling (less flinch while aiming Arc weapons): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: unflinching-solar-aim
+    name: Unflinching Solar Aim
+    kind: armorMod
+    affinity: solar
+    hash: [1553790504, 1019574576]   # the second: a copy with identical text
+    description: "Less flinch from incoming fire while aiming down sights with Solar weapons: 25% | 30% | 35% flinch resistance with 1|2|3 mods."
+    source: "compendium/2026-10-09/Armor Mods#8"
+    inert: "Weapon handling (less flinch while aiming Solar weapons): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: unflinching-void-aim
+    name: Unflinching Void Aim
+    kind: armorMod
+    affinity: void
+    hash: [3437323171, 3887037435]   # the second: a copy with identical text
+    description: "Less flinch from incoming fire while aiming down sights with Void weapons: 25% | 30% | 35% flinch resistance with 1|2|3 mods."
+    source: "compendium/2026-10-09/Armor Mods#8"
+    inert: "Weapon handling (less flinch while aiming Void weapons): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: unflinching-stasis-aim
+    name: Unflinching Stasis Aim
+    kind: armorMod
+    affinity: stasis
+    hash: [2959504464, 1118428792]   # the second: a copy with identical text
+    description: "Less flinch from incoming fire while aiming down sights with Stasis weapons: 25% | 30% | 35% flinch resistance with 1|2|3 mods."
+    source: "compendium/2026-10-09/Armor Mods#8"
+    inert: "Weapon handling (less flinch while aiming Stasis weapons): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: unflinching-strand-aim
+    name: Unflinching Strand Aim
+    kind: armorMod
+    affinity: strand
+    hash: [3979621113, 3598972737]   # the second: a copy with identical text
+    description: "Less flinch from incoming fire while aiming down sights with Strand weapons: 25% | 30% | 35% flinch resistance with 1|2|3 mods."
+    source: "compendium/2026-10-09/Armor Mods#8"
+    inert: "Weapon handling (less flinch while aiming Strand weapons): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: unflinching-kinetic-aim
+    name: Unflinching Kinetic Aim
+    kind: armorMod
+    affinity: kinetic
+    hash: [1262438062, 2325151798]   # the second: a copy with identical text
+    description: "Less flinch from incoming fire while aiming down sights with Kinetic weapons: 25% | 30% | 35% flinch resistance with 1|2|3 mods."
+    source: "compendium/2026-10-09/Armor Mods#8"
+    inert: "Weapon handling (less flinch while aiming Kinetic weapons): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: unflinching-harmonic-aim
+    name: Unflinching Harmonic Aim
+    kind: armorMod
+    affinity: neutral
+    hash: [3094620656, 293178904]   # the second: a copy with identical text
+    description: "Less flinch from incoming fire while aiming down sights with weapons of your Super's element: 25% | 30% | 35% flinch resistance with 1|2|3 mods."
+    source: "compendium/2026-10-09/Armor Mods#8"
+    inert: "Weapon handling (less flinch while aiming weapons of your Super's element): no step of a loop changes."
+    rules: []
+    passives: []

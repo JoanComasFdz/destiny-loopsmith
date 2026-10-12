@@ -64,7 +64,7 @@ public static class CliArguments
           e explain · s state · r reset · q quit (saves when --save is given and the loop has steps)
 
         Steps:
-          grenade|melee|super[:hit|kill[:N]]  class[:air]  kinetic|energy|power[:hit|kill[:N]]  pickup:<id>
+          grenade|melee|super[:hit|kill[:N]]  class[:air]  kinetic|energy|power[:hit|kill[:N]]  finisher  pickup:<id>
           max:<status>  end:<status>  pack:new
           (without :kill the hit only damages; N = enemies hit or killed in that one action, 1..20, default 1:
            grenade:kill:3 kills three, kinetic:hit:5 shoots five; max:bolt-charge declares Bolt Charge at max,

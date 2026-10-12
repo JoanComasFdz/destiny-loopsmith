@@ -33,6 +33,7 @@ public partial record PlayerAction
     partial record FireWeapon(WeaponSlot Slot, HitOutcome Hit, TargetCount Targets);
     partial record CollectPickups(PickupId Pickup);
     partial record Declare(StateDeclaration Declaration);   // a state only play decides (ADRs D3)
+    partial record PerformFinisher();                       // a finisher on one enemy of the pack: it kills it
 }
 
 /// <summary>
@@ -58,6 +59,7 @@ public partial record GameEvent
     partial record PickedUp(PickupId Pickup);
     partial record BuffGained(StatusId Status);   // a grant of the buff (every grant, for a status that stacks)
     partial record StacksMaxed(StatusId Status);  // only from a declared max: step
+    partial record Finisher();                    // before the finisher's hit and kill (origin DamageOrigin.Finisher)
 }
 
 /// <summary>An outcome as it was applied, with how far to trust it (an energy grant only explains — ADRs D5).</summary>

@@ -36,7 +36,8 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   melee actions (Ballistic Slam) — only the class ability has an airborne use (`class:air`, D9);
   blocking / reflecting attacks (Arc Staff's guard grants Bolt Charge per reflected attack).
 - **Damage sources:** a specific ability or an ability's element (Skip Grenade vs any grenade, "Arc
-  grenades"), "this weapon" for weapon perks, "matches your super's element" (Harmonic Siphon).
+  grenades"; Momentum Transfer doesn't work with Grapple), "this weapon" for weapon perks. ("A weapon of your
+  Super's element" is `weapon:harmonic`.)
 - **Conditions:** "target lacks a debuff"; "target has any of" (Dielectric counts Jolt only, Photonic
   Flare Sever only); "while a kind of mod is equipped" (an Orb of Power gives Armor Charge only with an
   Armor Charge mod equipped); "while in your super" (Arc Staff's damage resistance).
@@ -51,6 +52,17 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   State, Tempest Strike, Amplified's extras); an "all weapons" archetype. One "described fact" value and
   passive would cover them. The ability profiles (`charges`, `chunkScalar`, `baseCooldown`) are recorded
   but shown nowhere: show them in `explain`.
+- **Armor mods** (all current ones of the five slots are in `rules/mods/`; raid, activity and seasonal mods
+  aren't): no trigger for breaking a combatant's shield (Shield Break Charge, inert), for the damage you take or
+  critical health (Emergency Reinforcement, inert) or for an ability's energy "fully expended" (the Kickstarts
+  fire on any use while you hold Armor Charge, as the Compendium says); spending a fixed number of stacks (a
+  finisher that takes x2 or x3 Armor Charge leaves the buff on; "x3 or more" spends it all, *(chance)*); energy
+  or a duration by the stacks spent (Explosive, One-Two and Utility Finisher 70–100%, Bulwark's overshield
+  8–14 s, the Kickstarts by mods + stacks: `?` with the table in the description); an overshield's HP
+  (Proximity Ward); the order mods are slotted in (Firepower before Heavy Handed); two mods that can't both pay
+  out on different events (Hands-On and Ashes to Assets); an amount by class (Dynamo); a cooldown between orbs
+  (Firepower on `grenade:kill:3` drops three). Ammo, weapon handling, damage taken and allies-only mods are
+  inert by design (D1).
 - **Written as declarations, *(chance)* or facts** (D3, D8), so they need no new format: progress the
   game doesn't show as a stacking status (Spark of Discharge's kills per trace, To Shreds' 6 weapon hits,
   Amplified's intrinsic kill counter) is *(chance)*; Slice's 5 hits end with `max:slice`; energy per

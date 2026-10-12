@@ -264,7 +264,8 @@ public static partial class LoopRunning
             _ => [],
             _ => [],
             _ => [],
-            collect => [new Need.GroundPickup(collect.Pickup)]);
+            collect => [new Need.GroundPickup(collect.Pickup)],
+            _ => []);
 
     private static bool IsPresent(GameState state, Need need) =>
         need.Match(

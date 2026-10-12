@@ -20,5 +20,6 @@ public static class OutcomePhasing
             modifyDamage: _ => Phase.Empower,
             restoreHealth: _ => Phase.Refund,
             resetCooldown: _ => Phase.Refund,
-            collect: _ => Phase.Spawn);
+            collect: _ => Phase.Spawn,
+            grantLeastChargedEnergy: _ => Phase.Refund);
 }

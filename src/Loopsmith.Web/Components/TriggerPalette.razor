@@ -1,9 +1,9 @@
 @* The next triggers the build offers (LoopDesigning.ListTriggerOptions), laid out like Destiny's HUD
-   (TriggerHudShaping): the Super's diamond, the grenade, melee and class ability squares in the subclass's colour, the
-   weapons in their damage type's colour; above them what is on the ground and the states to declare. Tapping the Super,
+   (TriggerHudShaping): the Super's diamond, the grenade, melee and class ability squares in the subclass's colour (and
+   a finisher's, when a rule reacts to one), the weapons in their damage type's colour; above them what is on the ground and the states to declare. Tapping the Super,
    an ability or a weapon picks it: its actions show below the HUD — hit or kill, and how many enemies that one action
-   catches — and stay there for the next step. One that only has one action (the class ability without an air move, a
-   pickup, a declared state) acts at once. Every trigger is pickable. *@
+   catches — and stay there for the next step. One that only has one action (the class ability without an air move, the
+   finisher, a pickup, a declared state) acts at once. Every trigger is pickable. *@
 @{
     var hud = TriggerHudShaping.ShapeHud(Options, counts, Build);
     var picked = FindPicked(hud);
@@ -46,6 +46,10 @@
                 @foreach (var ability in hud.Abilities)
                 {
                     @RenderSlot(ability, "trig-ability")
+                }
+                @if (hud.Finisher is Optional<HudSlot>.Some finisher)
+                {
+                    @RenderSlot(finisher.Value, "trig-ability trig-finisher", Optional.Some(finisher.Value.Name))
                 }
             </div>
             <div class="trig-weapons">
@@ -140,8 +144,10 @@
     [Parameter]
     public EventCallback<PlayerAction> OnPick { get; set; }
 
-    /// <summary>The Super, an ability or a weapon: its square (the Super's a diamond), its icon or "?", a dot when it is new.</summary>
-    private RenderFragment RenderSlot(HudSlot slot, string kind) => __builder =>
+    /// <summary>The Super, an ability or a weapon: its square (the Super's a diamond), its icon (else its caption, else "?"), a dot when it is new.</summary>
+    private RenderFragment RenderSlot(HudSlot slot, string kind) => RenderSlot(slot, kind, Optional.None<string>());
+
+    private RenderFragment RenderSlot(HudSlot slot, string kind, Optional<string> caption) => __builder =>
     {
         var isPicked = pickedKey == Optional.Some(slot.Choice.Key);
         var affinity = slot.Affinity.ToString().ToLowerInvariant();
@@ -150,7 +156,7 @@
             <button type="button" class="@kind trigger aff-@affinity" data-hud-slot="@slot.Choice.Key" data-token="@once.Value.Token"
                     aria-label="@($"{slot.Kind}: {slot.Name}")" title="@($"{slot.Kind}: {slot.Name}  ({once.Value.Token})")"
                     @onclick="() => PickTrigger(once.Value.Action)">
-                @RenderIcon(slot)
+                @RenderIcon(slot, caption)
             </button>
         }
         else
@@ -158,18 +164,22 @@
             <button type="button" class="@kind aff-@affinity @(isPicked ? "picked" : "")" data-hud-slot="@slot.Choice.Key"
                     aria-pressed="@(isPicked ? "true" : "false")" aria-label="@($"{slot.Kind}: {slot.Name}")" title="@($"{slot.Kind}: {slot.Name}")"
                     @onclick="() => Pick(slot)">
-                @RenderIcon(slot)
+                @RenderIcon(slot, caption)
             </button>
         }
     };
 
-    /// <summary>A slot's icon or "?", and a dot when one of its actions is new.</summary>
-    private RenderFragment RenderIcon(HudSlot slot) => __builder =>
+    /// <summary>A slot's icon (else its caption — a finisher has no icon —, else "?"), and a dot when one of its actions is new.</summary>
+    private RenderFragment RenderIcon(HudSlot slot, Optional<string> caption) => __builder =>
     {
         <span class="trig-icon">
             @if (slot.Icon is Optional<string>.Some icon)
             {
                 <img src="@icon.Value" alt="" loading="lazy" />
+            }
+            else if (caption is Optional<string>.Some text)
+            {
+                <span class="trig-caption" aria-hidden="true">@text.Value</span>
             }
             else
             {

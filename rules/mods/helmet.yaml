@@ -1,0 +1,499 @@
+# Helmet armor mods. Values are PvE values from the Compendium snapshot of 2026-10-09 (Armor Mods tab,
+# Helmet column; a row is the CSV line); "a | b | c" per-copy values are PerModCount. Names and hashes
+# are the Bungie manifest's, every copy of a plug listed (`hash: [a, b]`). Ashes to Assets, Harmonic
+# Siphon and Strand Siphon are in armor.yaml.
+#
+# The Compendium's generic Siphon (#11) and Targeting (#13) rows are one row for every element
+# variant: each variant is its own element citing that row, and Bungie's text says which weapon
+# elements it covers (a dual siphon lists two Siphon perks).
+#
+# "2 kills within 3 s" (the Siphons) is progress the game doesn't show as a stacking status, so it is
+# a chance rule (`chance: true`, ADRs D8), as the siphons in armor.yaml are. Cooldowns are facts in
+# the description.
+elements:
+  # ---------------------------------------------------------------- Siphons (one element)
+  - id: arc-siphon
+    name: Arc Siphon
+    kind: armorMod
+    affinity: arc
+    hash: [2724068510, 3847471926]
+    description: "Two kills within 3 s of each other with Arc weapons spawn an Orb of Power (kills within 1 s of an orb don't count). Orbs grant 2.5% | 3.75% | 4.4% super energy with 1|2|3 mods."
+    source: "compendium/2026-10-09/Armor Mods#11"
+    rules:
+      - on: { kill: { via: weapon:arc } }
+        then:
+          - { spawn: orb-of-power }
+        chance: true
+        reason: "Chain a couple of kills with an Arc weapon and an Orb of Power drops."
+    passives: []
+
+  - id: solar-siphon
+    name: Solar Siphon
+    kind: armorMod
+    affinity: solar
+    hash: [4255093903, 1086997255]
+    description: "Two kills within 3 s of each other with Solar weapons spawn an Orb of Power (kills within 1 s of an orb don't count). Orbs grant 2.5% | 3.75% | 4.4% super energy with 1|2|3 mods."
+    source: "compendium/2026-10-09/Armor Mods#11"
+    rules:
+      - on: { kill: { via: weapon:solar } }
+        then:
+          - { spawn: orb-of-power }
+        chance: true
+        reason: "Chain a couple of kills with a Solar weapon and an Orb of Power drops."
+    passives: []
+
+  - id: void-siphon
+    name: Void Siphon
+    kind: armorMod
+    affinity: void
+    hash: [2773358872, 1210012576]
+    description: "Two kills within 3 s of each other with Void weapons spawn an Orb of Power (kills within 1 s of an orb don't count). Orbs grant 2.5% | 3.75% | 4.4% super energy with 1|2|3 mods."
+    source: "compendium/2026-10-09/Armor Mods#11"
+    rules:
+      - on: { kill: { via: weapon:void } }
+        then:
+          - { spawn: orb-of-power }
+        chance: true
+        reason: "Chain a couple of kills with a Void weapon and an Orb of Power drops."
+    passives: []
+
+  - id: stasis-siphon
+    name: Stasis Siphon
+    kind: armorMod
+    affinity: stasis
+    hash: [837201397, 3188328909]
+    description: "Two kills within 3 s of each other with Stasis weapons spawn an Orb of Power (kills within 1 s of an orb don't count). Orbs grant 2.5% | 3.75% | 4.4% super energy with 1|2|3 mods."
+    source: "compendium/2026-10-09/Armor Mods#11"
+    rules:
+      - on: { kill: { via: weapon:stasis } }
+        then:
+          - { spawn: orb-of-power }
+        chance: true
+        reason: "Chain a couple of kills with a Stasis weapon and an Orb of Power drops."
+    passives: []
+
+  - id: kinetic-siphon
+    name: Kinetic Siphon
+    kind: armorMod
+    affinity: kinetic
+    hash: [1388734897, 897335593]
+    description: "Two kills within 3 s of each other with Kinetic weapons spawn an Orb of Power (kills within 1 s of an orb don't count). Orbs grant 2.5% | 3.75% | 4.4% super energy with 1|2|3 mods."
+    source: "compendium/2026-10-09/Armor Mods#11"
+    rules:
+      - on: { kill: { via: weapon:kinetic } }
+        then:
+          - { spawn: orb-of-power }
+        chance: true
+        reason: "Chain a couple of kills with a Kinetic weapon and an Orb of Power drops."
+    passives: []
+
+  # ---------------------------------------------------------------- Siphons (two elements)
+  # Bungie's text gives each of these two Siphon perks, one per weapon element, so each element is a
+  # rule of its own. Whether a kill of each element counts toward the same pair isn't stated; either
+  # way every such kill is a chance rule.
+  - id: arc-stasis-dual-siphon
+    name: Arc/Stasis Dual Siphon
+    kind: armorMod
+    affinity: neutral
+    hash: 2077016094
+    description: "The Arc and the Stasis Siphon in one mod: two kills within 3 s of each other with Arc or with Stasis weapons spawn an Orb of Power (kills within 1 s of an orb don't count). Orbs grant 2.5% | 3.75% | 4.4% super energy with 1|2|3 mods."
+    source: "compendium/2026-10-09/Armor Mods#11"
+    rules:
+      - on: { kill: { via: weapon:arc } }
+        then:
+          - { spawn: orb-of-power }
+        chance: true
+        reason: "Chain a couple of kills with an Arc weapon and an Orb of Power drops."
+      - on: { kill: { via: weapon:stasis } }
+        then:
+          - { spawn: orb-of-power }
+        chance: true
+        reason: "Chain a couple of kills with a Stasis weapon and an Orb of Power drops."
+    passives: []
+
+  - id: arc-strand-siphon-combo
+    name: Arc/Strand Siphon Combo
+    kind: armorMod
+    affinity: neutral
+    hash: 2812559045
+    description: "The Arc and the Strand Siphon in one mod: two kills within 3 s of each other with Arc or with Strand weapons spawn an Orb of Power (kills within 1 s of an orb don't count). Orbs grant 2.5% | 3.75% | 4.4% super energy with 1|2|3 mods."
+    source: "compendium/2026-10-09/Armor Mods#11"
+    rules:
+      - on: { kill: { via: weapon:arc } }
+        then:
+          - { spawn: orb-of-power }
+        chance: true
+        reason: "Chain a couple of kills with an Arc weapon and an Orb of Power drops."
+      - on: { kill: { via: weapon:strand } }
+        then:
+          - { spawn: orb-of-power }
+        chance: true
+        reason: "Chain a couple of kills with a Strand weapon and an Orb of Power drops."
+    passives: []
+
+  - id: kinetic-charge-siphon
+    name: Kinetic Charge Siphon
+    kind: armorMod
+    affinity: neutral
+    hash: 2733010662
+    description: "The Kinetic and the Arc Siphon in one mod: two kills within 3 s of each other with Kinetic or with Arc weapons spawn an Orb of Power (kills within 1 s of an orb don't count). Orbs grant 2.5% | 3.75% | 4.4% super energy with 1|2|3 mods."
+    source: "compendium/2026-10-09/Armor Mods#11"
+    rules:
+      - on: { kill: { via: weapon:kinetic } }
+        then:
+          - { spawn: orb-of-power }
+        chance: true
+        reason: "Chain a couple of kills with a Kinetic weapon and an Orb of Power drops."
+      - on: { kill: { via: weapon:arc } }
+        then:
+          - { spawn: orb-of-power }
+        chance: true
+        reason: "Chain a couple of kills with an Arc weapon and an Orb of Power drops."
+    passives: []
+
+  - id: kinetic-entropy-siphon
+    name: Kinetic Entropy Siphon
+    kind: armorMod
+    affinity: neutral
+    hash: 1433540272
+    description: "The Kinetic and the Void Siphon in one mod: two kills within 3 s of each other with Kinetic or with Void weapons spawn an Orb of Power (kills within 1 s of an orb don't count). Orbs grant 2.5% | 3.75% | 4.4% super energy with 1|2|3 mods."
+    source: "compendium/2026-10-09/Armor Mods#11"
+    rules:
+      - on: { kill: { via: weapon:kinetic } }
+        then:
+          - { spawn: orb-of-power }
+        chance: true
+        reason: "Chain a couple of kills with a Kinetic weapon and an Orb of Power drops."
+      - on: { kill: { via: weapon:void } }
+        then:
+          - { spawn: orb-of-power }
+        chance: true
+        reason: "Chain a couple of kills with a Void weapon and an Orb of Power drops."
+    passives: []
+
+  - id: kinetic-thermal-siphon
+    name: Kinetic Thermal Siphon
+    kind: armorMod
+    affinity: neutral
+    hash: 2734970071
+    description: "The Kinetic and the Solar Siphon in one mod: two kills within 3 s of each other with Kinetic or with Solar weapons spawn an Orb of Power (kills within 1 s of an orb don't count). Orbs grant 2.5% | 3.75% | 4.4% super energy with 1|2|3 mods."
+    source: "compendium/2026-10-09/Armor Mods#11"
+    rules:
+      - on: { kill: { via: weapon:kinetic } }
+        then:
+          - { spawn: orb-of-power }
+        chance: true
+        reason: "Chain a couple of kills with a Kinetic weapon and an Orb of Power drops."
+      - on: { kill: { via: weapon:solar } }
+        then:
+          - { spawn: orb-of-power }
+        chance: true
+        reason: "Chain a couple of kills with a Solar weapon and an Orb of Power drops."
+    passives: []
+
+  - id: solar-strand-dual-siphon
+    name: Solar/Strand Dual Siphon
+    kind: armorMod
+    affinity: neutral
+    hash: 2831374162
+    description: "The Solar and the Strand Siphon in one mod: two kills within 3 s of each other with Solar or with Strand weapons spawn an Orb of Power (kills within 1 s of an orb don't count). Orbs grant 2.5% | 3.75% | 4.4% super energy with 1|2|3 mods."
+    source: "compendium/2026-10-09/Armor Mods#11"
+    rules:
+      - on: { kill: { via: weapon:solar } }
+        then:
+          - { spawn: orb-of-power }
+        chance: true
+        reason: "Chain a couple of kills with a Solar weapon and an Orb of Power drops."
+      - on: { kill: { via: weapon:strand } }
+        then:
+          - { spawn: orb-of-power }
+        chance: true
+        reason: "Chain a couple of kills with a Strand weapon and an Orb of Power drops."
+    passives: []
+
+  - id: thermodynamic-siphon
+    name: Thermodynamic Siphon
+    kind: armorMod
+    affinity: neutral
+    hash: 521530777
+    description: "The Stasis and the Solar Siphon in one mod: two kills within 3 s of each other with Stasis or with Solar weapons spawn an Orb of Power (kills within 1 s of an orb don't count). Orbs grant 2.5% | 3.75% | 4.4% super energy with 1|2|3 mods."
+    source: "compendium/2026-10-09/Armor Mods#11"
+    rules:
+      - on: { kill: { via: weapon:stasis } }
+        then:
+          - { spawn: orb-of-power }
+        chance: true
+        reason: "Chain a couple of kills with a Stasis weapon and an Orb of Power drops."
+      - on: { kill: { via: weapon:solar } }
+        then:
+          - { spawn: orb-of-power }
+        chance: true
+        reason: "Chain a couple of kills with a Solar weapon and an Orb of Power drops."
+    passives: []
+
+  - id: void-stasis-dual-siphon
+    name: Void/Stasis Dual Siphon
+    kind: armorMod
+    affinity: neutral
+    hash: 3458160468
+    description: "The Void and the Stasis Siphon in one mod: two kills within 3 s of each other with Void or with Stasis weapons spawn an Orb of Power (kills within 1 s of an orb don't count). Orbs grant 2.5% | 3.75% | 4.4% super energy with 1|2|3 mods."
+    source: "compendium/2026-10-09/Armor Mods#11"
+    rules:
+      - on: { kill: { via: weapon:void } }
+        then:
+          - { spawn: orb-of-power }
+        chance: true
+        reason: "Chain a couple of kills with a Void weapon and an Orb of Power drops."
+      - on: { kill: { via: weapon:stasis } }
+        then:
+          - { spawn: orb-of-power }
+        chance: true
+        reason: "Chain a couple of kills with a Stasis weapon and an Orb of Power drops."
+    passives: []
+
+  - id: void-strand-dual-siphon
+    name: Void/Strand Dual Siphon
+    kind: armorMod
+    affinity: neutral
+    hash: 110793779
+    description: "The Void and the Strand Siphon in one mod: two kills within 3 s of each other with Void or with Strand weapons spawn an Orb of Power (kills within 1 s of an orb don't count). Orbs grant 2.5% | 3.75% | 4.4% super energy with 1|2|3 mods."
+    source: "compendium/2026-10-09/Armor Mods#11"
+    rules:
+      - on: { kill: { via: weapon:void } }
+        then:
+          - { spawn: orb-of-power }
+        chance: true
+        reason: "Chain a couple of kills with a Void weapon and an Orb of Power drops."
+      - on: { kill: { via: weapon:strand } }
+        then:
+          - { spawn: orb-of-power }
+        chance: true
+        reason: "Chain a couple of kills with a Strand weapon and an Orb of Power drops."
+    passives: []
+
+  # ---------------------------------------------------------------- Targeting
+  # Aim assist, accuracy and aim-down-sights speed of the matching weapons, once readied for 1 s.
+  - id: arc-targeting
+    name: Arc Targeting
+    kind: armorMod
+    affinity: arc
+    hash: [967052942, 96682422]
+    description: "Arc weapons readied for 1 s get +5 | +8 | +10 aim assist, a 0.9x | 0.85x | 0.8x accuracy cone and 0.85x | 0.75x | 0.7x aim-down-sights time with 1|2|3 mods."
+    source: "compendium/2026-10-09/Armor Mods#13"
+    inert: "Weapon handling (aim assist, accuracy and aim-down-sights speed of Arc weapons): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: solar-targeting
+    name: Solar Targeting
+    kind: armorMod
+    affinity: solar
+    hash: [2719698929, 331268185]
+    description: "Solar weapons readied for 1 s get +5 | +8 | +10 aim assist, a 0.9x | 0.85x | 0.8x accuracy cone and 0.85x | 0.75x | 0.7x aim-down-sights time with 1|2|3 mods."
+    source: "compendium/2026-10-09/Armor Mods#13"
+    inert: "Weapon handling (aim assist, accuracy and aim-down-sights speed of Solar weapons): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: void-targeting
+    name: Void Targeting
+    kind: armorMod
+    affinity: void
+    hash: [1589556860, 2888195476]
+    description: "Void weapons readied for 1 s get +5 | +8 | +10 aim assist, a 0.9x | 0.85x | 0.8x accuracy cone and 0.85x | 0.75x | 0.7x aim-down-sights time with 1|2|3 mods."
+    source: "compendium/2026-10-09/Armor Mods#13"
+    inert: "Weapon handling (aim assist, accuracy and aim-down-sights speed of Void weapons): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: stasis-targeting
+    name: Stasis Targeting
+    kind: armorMod
+    affinity: stasis
+    hash: [721001747, 1801153435]
+    description: "Stasis weapons readied for 1 s get +5 | +8 | +10 aim assist, a 0.9x | 0.85x | 0.8x accuracy cone and 0.85x | 0.75x | 0.7x aim-down-sights time with 1|2|3 mods."
+    source: "compendium/2026-10-09/Armor Mods#13"
+    inert: "Weapon handling (aim assist, accuracy and aim-down-sights speed of Stasis weapons): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: strand-targeting
+    name: Strand Targeting
+    kind: armorMod
+    affinity: strand
+    hash: [3000428062, 3013778406]
+    description: "Strand weapons readied for 1 s get +5 | +8 | +10 aim assist, a 0.9x | 0.85x | 0.8x accuracy cone and 0.85x | 0.75x | 0.7x aim-down-sights time with 1|2|3 mods."
+    source: "compendium/2026-10-09/Armor Mods#13"
+    inert: "Weapon handling (aim assist, accuracy and aim-down-sights speed of Strand weapons): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: kinetic-targeting
+    name: Kinetic Targeting
+    kind: armorMod
+    affinity: kinetic
+    hash: [2467203039, 2214424583]
+    description: "Kinetic weapons readied for 1 s get +5 | +8 | +10 aim assist, a 0.9x | 0.85x | 0.8x accuracy cone and 0.85x | 0.75x | 0.7x aim-down-sights time with 1|2|3 mods."
+    source: "compendium/2026-10-09/Armor Mods#13"
+    inert: "Weapon handling (aim assist, accuracy and aim-down-sights speed of Kinetic weapons): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: harmonic-targeting
+    name: Harmonic Targeting
+    kind: armorMod
+    affinity: neutral
+    hash: [1305536863, 1891463783]
+    description: "Weapons of your Super's element readied for 1 s get +5 | +8 | +10 aim assist, a 0.9x | 0.85x | 0.8x accuracy cone and 0.85x | 0.75x | 0.7x aim-down-sights time with 1|2|3 mods."
+    source: "compendium/2026-10-09/Armor Mods#13"
+    inert: "Weapon handling (aim assist, accuracy and aim-down-sights speed of weapons of your Super's element): no step of a loop changes."
+    rules: []
+    passives: []
+
+  # ---------------------------------------------------------------- Super energy
+  - id: dynamo
+    name: Dynamo
+    kind: armorMod
+    affinity: neutral
+    hash: [2414626352, 1604394872]
+    description: "Using your class ability within 15 m of an enemy grants Super energy: 2.5% | 4% with 1|2 mods (PvP 1.25% | 2.4%), times the class's multiplier: Hunter x1, Titan x1.2, Warlock x2."
+    source: "compendium/2026-10-09/Armor Mods#5"
+    rules:
+      # The amount depends on the build's class (2.5% | 4% times x1 Hunter, x1.2 Titan, x2 Warlock),
+      # which a rule can't read, so it is "?". The 15 m range is a fact: the pack is in front of you
+      # (ADRs D7), so in reach.
+      - on: { abilityCast: classAbility }
+        then:
+          - { grantEnergy: { to: super, amount: "?" } }
+        reason: "Using your class ability near enemies gives you some Super energy."
+    passives: []
+
+  - id: hands-on
+    name: Hands-On
+    kind: armorMod
+    affinity: neutral
+    hash: [3938489430, 1036557198]
+    description: "Each powered melee kill gives extra Super energy, more for tougher enemies (the Compendium lists the amounts as mostly unknown). It doesn't add to Ashes to Assets'."
+    source: "compendium/2026-10-09/Armor Mods#6"
+    rules:
+      # The amount per enemy tier is unknown ("?"); the Compendium's tier-2 1.33% and tier-4 5% are
+      # themselves marked uncertain. Not benefiting together with Ashes to Assets is a fact in the
+      # description: a melee kill and a grenade kill are different events, and doesNotStackWith
+      # (ADRs D6) pairs rules on one event.
+      - on: { kill: { via: melee } }
+        then:
+          - { grantEnergy: { to: super, amount: "?" } }
+        reason: "Every powered melee kill tops up your Super."
+    passives: []
+
+  - id: power-preservation
+    name: Power Preservation
+    kind: armorMod
+    affinity: neutral
+    hash: [3149307605, 2982306509]
+    description: "Super kills spawn Orbs of Power for your allies (2.5% | 3.75% | 4.4% super energy with 1|2|3 mods), at most one every 2 s."
+    source: "compendium/2026-10-09/Armor Mods#8"
+    inert: "It helps your allies only: a loop is yours, so nothing in it changes."
+    rules: []
+    passives: []
+
+  # ---------------------------------------------------------------- Armor Charge
+  - id: powerful-friends
+    name: Powerful Friends
+    kind: armorMod
+    affinity: neutral
+    hash: 2175577211
+    description: "Picking up an Orb of Power gives allies within 18 m x1 Armor Charge (Bungie's text: allies who already hold one)."
+    source: "compendium/2026-10-09/Armor Mods#9"
+    inert: "It helps your allies only: a loop is yours, so nothing in it changes."
+    rules: []
+    passives: []
+
+  - id: radiant-light
+    name: Radiant Light
+    kind: armorMod
+    affinity: neutral
+    hash: 2199590568
+    description: "Casting your Super gives allies within 21 m x1 Armor Charge (x2 to allies on another subclass), and you x1 if you already hold Armor Charge."
+    source: "compendium/2026-10-09/Armor Mods#10"
+    rules:
+      # The allies' Armor Charge is no part of your loop. Bungie's text names only the allies (those
+      # who hold one, and an extra one for a different Super element); the Compendium adds the
+      # caster's x1 when already charged, which is what this rule encodes.
+      - on: { abilityCast: super }
+        when: [ { has: armor-charge } ]
+        then:
+          - { applyBuff: { status: armor-charge, stacks: 1 } }
+        reason: "Casting your Super while you hold Armor Charge gives you one more."
+    passives: []
+
+  - id: super-font
+    name: Super Font
+    kind: armorMod
+    affinity: neutral
+    hash: [1130820873, 3461249873]
+    description: "While you hold Armor Charge: +20 | +40 | +50 Super with 1|2|3 mods. As a passive Armor Charge mod it makes Armor Charge decay, one stack every 10 s (Game Mechanics#94)."
+    source: "compendium/2026-10-09/Armor Mods#12"
+    rules: []
+    passives:
+      # A fact shown while Armor Charge is on you, never added to the build's stats (ADRs D1). The
+      # decay is a fact too: the player declares Armor Charge ended.
+      - effect: { modifyStat: { stat: super, change: "+20 | +40 | +50" } }
+        when: [ { has: armor-charge } ]
+        reason: "While you hold Armor Charge, your Super stat is higher: +20 with one copy, up to +50 with three."
+
+  # ---------------------------------------------------------------- Weapons and ammo
+  - id: in-flight-compensator
+    name: In-Flight Compensator
+    kind: armorMod
+    affinity: neutral
+    hash: [2899505723, 3518670115]
+    description: "+15 | +25 | +30 airborne effectiveness for all your weapons with 1|2|3 mods."
+    source: "compendium/2026-10-09/Armor Mods#7"
+    inert: "A property (how well your weapons aim while you are airborne): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: heavy-ammo-finder
+    name: Heavy Ammo Finder
+    kind: armorMod
+    affinity: neutral
+    hash: [554409585, 644105]
+    description: "Everything that fills the Heavy ammo meter counts 1.33x | 1.66x | 2x with 1|2|3 mods."
+    source: "compendium/2026-10-09/Armor Mods#2"
+    inert: "Ammo: Loopsmith doesn't model ammo, so no loop changes."
+    rules: []
+    passives: []
+
+  - id: special-ammo-finder
+    name: Special Ammo Finder
+    kind: armorMod
+    affinity: neutral
+    hash: [2595839237, 3775800797]
+    description: "Everything that fills the Special ammo meter counts 1.25x | 1.4x | 1.5x with 1|2|3 mods."
+    source: "compendium/2026-10-09/Armor Mods#2"
+    inert: "Ammo: Loopsmith doesn't model ammo, so no loop changes."
+    rules: []
+    passives: []
+
+  - id: heavy-ammo-scout
+    name: Heavy Ammo Scout
+    kind: armorMod
+    affinity: neutral
+    hash: 1274140735
+    description: "When your Heavy ammo meter drops a brick, your allies get a copy of it, worth 37% | 67% | 100% of a regular brick with 1|2|3 mods."
+    source: "compendium/2026-10-09/Armor Mods#3"
+    inert: "Ammo: Loopsmith doesn't model ammo, so no loop changes."
+    rules: []
+    passives: []
+
+  - id: special-ammo-scout
+    name: Special Ammo Scout
+    kind: armorMod
+    affinity: neutral
+    hash: 25154119
+    description: "When your Special ammo meter drops a brick, your allies get a copy of it, worth 37% | 67% | 100% of a regular brick with 1|2|3 mods."
+    source: "compendium/2026-10-09/Armor Mods#3"
+    inert: "Ammo: Loopsmith doesn't model ammo, so no loop changes."
+    rules: []
+    passives: []

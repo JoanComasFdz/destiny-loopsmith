@@ -62,7 +62,7 @@ build: |                                # required — the build file's full tex
 Same tokens everywhere: CLI `--actions a,b,…` and `--scenario <file>` (one token per line or
 comma-separated; `#` starts a comment), `play`, loop files and web share links:
 
-`grenade|melee|super[:hit|kill[:N]]` · `class[:air]` · `kinetic|energy|power[:hit|kill[:N]]` ·
+`grenade|melee|super[:hit|kill[:N]]` · `class[:air]` · `kinetic|energy|power[:hit|kill[:N]]` · `finisher` ·
 `pickup:<pickup-id>` · `max:<status-id>` · `end:<status-id>` · `pack:new`
 
 Tokens are read case-insensitively. Errors read `Unknown action '<token>'. Use …` or
@@ -74,7 +74,11 @@ one action hits (or kills), 1..20, default 1 — the player says it, the engine 
 `:hit` or `:kill` before it (`grenade:3` is an error), and `class` takes no count. `class:air` is the
 class ability used in the air — an air move that spends its charge, like Ascension's: it fires every
 class ability rule plus the ones with an airborne trigger ([rule-format.md](rule-format.md#rules),
-ADRs D9). `pickup:<id>` (any kebab-case id) picks that pickup up — one `PickedUp` event — and it is
+ADRs D9). `finisher` — "Finisher" — finishes one enemy of the pack: it fires the `finisher` rules, then
+its hit and kill fire the `damage` and `kill` rules whose source is `any` (a finisher has no damage type
+and is no weapon or ability, so `kill: { via: any, targetHas: [jolt] }` fires on a finisher of a jolted
+enemy; [rule-format.md](rule-format.md#rules)); it takes no count and is never blocked. `pickup:<id>`
+(any kebab-case id) picks that pickup up — one `PickedUp` event — and it is
 then no longer on the ground. A weapon action for an empty slot, or a pickup that isn't on the ground
 (`No orb-of-power on the ground — nothing happens.`), is a **blocked step**: it changes nothing.
 
@@ -113,22 +117,24 @@ has ended, that the next enemies are a new pack — the player declares as a ste
   out.
 
 **Written form.** Written tokens are lower-case and carry the count only when it is more than one
-(`grenade:kill`, `kinetic`, `grenade:kill:3`, `max:bolt-charge`, `end:amplified`, `pack:new`). Every token written
+(`grenade:kill`, `kinetic`, `grenade:kill:3`, `finisher`, `max:bolt-charge`, `end:amplified`, `pack:new`). Every token written
 reads back as the same action (`grenade:hit` is written `grenade`). Labels read "Grenade (kill 3)",
 "Festival Flight (hit 5)" (a weapon by its build name), "Class ability (in the air)",
-"Pick up Orb of Power", "Bolt Charge at max (x10)", "Amplified ends", "New pack".
+"Finisher", "Pick up Orb of Power", "Bolt Charge at max (x10)", "Amplified ends", "New pack".
 
 **What `play` and the web designer offer.** Only steps that can happen: the abilities, the equipped
 weapons, the pickups on the ground and the **states you declare** — `pack:new` always, `max:` for
 each active buff that stacks and isn't at max yet, `end:` for each active status. `class:air` is offered only when an equipped rule has an
-airborne trigger (without one it fires exactly what `class` fires). Every token still reads anywhere
+airborne trigger (without one it fires exactly what `class` fires), and `finisher` (with the abilities) only when an
+equipped rule has a `finisher` trigger. Every token still reads anywhere
 (CLI, loop files, share links).
 
 The web designer's **Next trigger** is laid out like Destiny's HUD: the Super's diamond, then the grenade, melee and
-class ability squares with the build's own icons in the subclass's colour, then the three weapons with their icon,
-damage type's icon and colour. Tapping the Super, an ability or a weapon shows its actions under the HUD — hit or
-kill, and how many enemies that one action catches — and it stays picked for the next step; the class ability (with
-no air move) acts at one tap. Above the HUD, where the game lists your buffs, the states to declare are grouped by
+class ability squares with the build's own icons in the subclass's colour — and, when a rule of the build reacts to a
+finisher, a **Finisher** square (the game has no HUD square for it; it has no icon, no element and no damage type) —
+then the three weapons with their icon, damage type's icon and colour. Tapping the Super, an ability or a weapon
+shows its actions under the HUD — hit or kill, and how many enemies that one action catches — and it stays picked
+for the next step; the class ability (with no air move) and the finisher act at one tap. Above the HUD, where the game lists your buffs, the states to declare are grouped by
 status — on you, on your weapons, on the pack (with **New pack**) — each with its own buttons ("Bolt Charge: at max
 (x10) · ends"), and what is on the ground to pick up.
 
@@ -208,10 +214,12 @@ of its slot (the slot the manifest gives the mod; other mods are general) — wi
 manifest excerpt; what the rules don't know sits where DIM would show it, dimmed. It also lists the
 left-out items under **Not in Loopsmith yet** (collapsed, with how many of each part: open it to see them), by their
 manifest name, each a link to its light.gg page; the build check adds `Unknown (?): …` and `Left out of the build: …` as info.
-What the manifest says has no part in a loop is not a gap, so it sits apart, under **No part in a loop** (collapsed),
-grouped by why: a legendary armor piece (its set's bonuses already count from the pieces worn; the piece carries
-stats and mod slots) and a jump. An element the rules mark `inert` ([rule-format.md](rule-format.md#elements):
-Skip Grenade, Feeding Frenzy, the resistance mods) is known: its details say "No rules needed." and why, and the
+What the manifest says has no part in a loop is not a gap, and it isn't listed: its tile in the loadout isn't dimmed,
+and its tooltip says why — a stat or tuning mod (Grenade Mod: +10 Grenade; Balanced Tuning — it changes only stats,
+which the build's stats count when they add up from the player's armor, [Stats](#stats)), a legendary armor piece
+(its set's bonuses already count from the pieces worn; the piece carries stats and mod slots) or a jump. An element the rules
+mark `inert` ([rule-format.md](rule-format.md#elements): Skip Grenade, Feeding Frenzy, the ammo, weapon-handling and
+resistance mods) is known: its details say "No rules needed." and why, and the
 build check doesn't warn about it. A loadout for another class than its subclass's is an error, and so is text that
 isn't a loadout.
 

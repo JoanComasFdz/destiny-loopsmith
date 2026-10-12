@@ -33,7 +33,7 @@ public static class BuildValidation
             .Concat(CheckInertElements(elements.Select(e => e.Element)))
             .Concat(CheckStats(build, elements.Select(e => e.Element)))
             .Concat(CheckUnreachedWeapons(build, elements.Select(e => e.Element)))
-            .Concat(CheckNotStacking(catalog, elements.Select(e => e.Element).Concat(ListKeywordElements(catalog).Select(e => e.Element))))
+            .Concat(CheckNotStacking(catalog, build.ReadSuperType(catalog), elements.Select(e => e.Element).Concat(ListKeywordElements(catalog).Select(e => e.Element))))
             .Concat(CheckPinnedCatalog(build, catalog))
             .ToImmutableArray();
 
@@ -319,7 +319,7 @@ public static class BuildValidation
     /// A rule that doesn't stack with another equipped element gives nothing when both fire: a note for the build
     /// crafter, who may keep both for what else each gives (not a mistake, so not a warning).
     /// </summary>
-    private static IEnumerable<BuildIssue> CheckNotStacking(RuleCatalog catalog, IEnumerable<BuildElement> elements)
+    private static IEnumerable<BuildIssue> CheckNotStacking(RuleCatalog catalog, Optional<DamageType> superType, IEnumerable<BuildElement> elements)
     {
         var distinct = elements.DistinctBy(e => e.Id).ToImmutableArray();
         return distinct.SelectMany(element => element.Rules
@@ -327,8 +327,8 @@ public static class BuildValidation
                 .Where(partner => partner.Id != element.Id && rule.DoesNotStackWith.Contains(partner.Id))
                 .Select(partner => new BuildIssue(
                     Severity.Info,
-                    $"'{element.Name}': {catalog.Glossary.DescribeOutcomes(rule.Then.Select(o => new OutcomeMention(o, 1)))} on "
-                    + $"\"{catalog.Glossary.DescribeTrigger(rule.On)}\" doesn't stack with '{partner.Name}'."))));
+                    $"'{element.Name}': {catalog.Glossary.DescribeOutcomes(rule.Then.Select(o => new OutcomeMention(o, 1)), superType)} on "
+                    + $"\"{catalog.Glossary.DescribeTrigger(rule.On, superType)}\" doesn't stack with '{partner.Name}'."))));
     }
 
     private static IEnumerable<BuildIssue> CheckPinnedCatalog(Build build, RuleCatalog catalog) =>

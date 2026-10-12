@@ -13,8 +13,9 @@ Weapon damage on Jolted target -> Jolt strike [Jolt]
 Ability damage on Jolted target -> Jolt strike [Jolt]
 Super kill -> +1 Bolt Charge [Arc Staff]
 Melee kill -> +1 Combination Blow (20s) and +100% class ability energy and heals you [Combination Blow]
-Kill target with Arc weapon -> Ionic Trace [Spark of Discharge] (chance) + Orb of Power [Harmonic Siphon] (chance)
+Kill target with Arc weapon -> Ionic Trace [Spark of Discharge] (chance)
 Kill target with weapon -> consumes Reaper and Orb of Power (while Reaper) [Reaper]
+Kill target with Arc weapon (your Super's element) -> Orb of Power [Harmonic Siphon] (chance)
 Kill target with Strand weapon -> Orb of Power [Strand Siphon] (chance)
 Kill Jolted target -> +1 Bolt Charge (doesn't stack with Dielectric) [Tempest Strike] + Amplified (15s) [Flow State] + Ionic Trace [Shock and Clear] + +1 Bolt Charge [Dielectric]
 Kill Severed target -> Woven Mail (10s) and heals you and allies [To Shreds]
