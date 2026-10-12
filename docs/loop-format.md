@@ -123,11 +123,19 @@ reads back as the same action (`grenade:hit` is written `grenade`). Labels read 
 "Finisher", "Pick up Orb of Power", "Bolt Charge at max (x10)", "Amplified ends", "New pack".
 
 **What `play` and the web designer offer.** Only steps that can happen: the abilities, the equipped
-weapons, the pickups on the ground and a group **States you declare** — `pack:new` always, `max:` for
+weapons, the pickups on the ground and the **states you declare** — `pack:new` always, `max:` for
 each active buff that stacks and isn't at max yet, `end:` for each active status. `class:air` is offered only when an equipped rule has an
 airborne trigger (without one it fires exactly what `class` fires), and `finisher` (with the abilities) only when an
 equipped rule has a `finisher` trigger. Every token still reads anywhere
 (CLI, loop files, share links).
+
+The web designer's **Next trigger** is laid out like Destiny's HUD: the Super's diamond, then the grenade, melee and
+class ability squares with the build's own icons in the subclass's colour, then the three weapons with their icon,
+damage type's icon and colour. Tapping the Super, an ability or a weapon shows its actions under the HUD — hit or
+kill, and how many enemies that one action catches — and it stays picked for the next step; the class ability (with
+no air move) acts at one tap. Above the HUD, where the game lists your buffs, the states to declare are grouped by
+status — on you, on your weapons, on the pack (with **New pack**) — each with its own buttons ("Bolt Charge: at max
+(x10) · ends"), and what is on the ground to pick up.
 
 **How the designer shows a step.** The same facts and wording as the CLI's `trace`, one line each: the
 event ("Grenade hit"); under it, where what it set off comes from, with that item's icon — "Fragment ·
