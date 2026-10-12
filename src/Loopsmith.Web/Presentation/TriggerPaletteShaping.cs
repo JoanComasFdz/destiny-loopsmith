@@ -21,7 +21,7 @@ public sealed record TriggerButton(PlayerAction Action, string Token, string Lab
 /// </summary>
 public sealed record TriggerChoice(string Key, string Title, Optional<TargetCount> Targets, ImmutableArray<TriggerButton> Buttons);
 
-public sealed record TriggerSection(TriggerGroup Group, string Heading, ImmutableArray<TriggerChoice> Choices);
+public sealed record TriggerSection(TriggerGroup Group, ImmutableArray<TriggerChoice> Choices);
 
 /// <summary>
 /// Pure: <see cref="LoopDesigning.ListTriggerOptions"/> → palette sections with hit/kill pairs side by side, each pair
@@ -39,7 +39,7 @@ public static class TriggerPaletteShaping
         .. options
             .GroupBy(option => option.Group)
             .OrderBy(group => group.Key)
-            .Select(group => new TriggerSection(group.Key, DescribeGroup(group.Key), ShapeChoices([.. group], counts, build))),
+            .Select(group => new TriggerSection(group.Key, ShapeChoices([.. group], counts, build))),
     ];
 
     /// <summary>A picked count ("3") as a <see cref="TargetCount"/>; none when it is not a whole number in range.</summary>
@@ -73,15 +73,6 @@ public static class TriggerPaletteShaping
         var action = targets.Match(count => LoopDesigning.SetTargetCount(option.Action, count.Value), _ => option.Action);
         return new TriggerButton(action, action.ToActionToken(), build.DescribeAction(action), caption, option.IsNew);
     }
-
-    private static string DescribeGroup(TriggerGroup group) =>
-        group switch
-        {
-            TriggerGroup.Ability => "Abilities",
-            TriggerGroup.Weapon => "Weapons",
-            TriggerGroup.Pickup => "Pickups",
-            _ => "States you declare",
-        };
 
     /// <summary>Hit and kill of the same ability or weapon share a key; everything else stands alone.</summary>
     private static string ToPairKey(PlayerAction action) =>
