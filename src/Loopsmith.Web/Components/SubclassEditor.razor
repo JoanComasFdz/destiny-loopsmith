@@ -1,6 +1,7 @@
 @* The subclass editor: the build's super, grenade, melee, class ability, jump, aspects and fragments, each slot with its
-   plug (tap the square for its details) and Change, which lists everything the subclass can hold there (Bungie's manifest;
-   the ones the rules know are marked, the rest carry ⊘, a jump none). The aspects open the fragment slots; an aspect
+   plug (tap the square for its details) and Change, which opens, inside the slot, the list of everything the subclass can
+   hold there (Bungie's manifest; the ones the rules know are marked, the rest carry ⊘, a jump none). A fragment's ✕
+   empties its slot; an aspect has none, it is only swapped for another. The aspects open the fragment slots; an aspect
    change that closes slots takes the last fragments out and names them. Save hands the plugs to the designer
    (LoopDesigning.EditSubclass); Cancel, ✕ or Escape throws the changes away. *@
 @using System.Globalization
@@ -41,37 +42,6 @@
                 @RenderMany(SubclassSlot.Fragment, "Fragment", index, index < draft.Fragments.Length ? Optional.Some(draft.Fragments[index]) : Optional.None<ItemHash>())
             }
         </div>
-
-        @if (picker is Optional<OpenPick>.Some open)
-        {
-            var options = LoopDesigning.ListSubclassOptions(Build, open.Value.Slot);
-            <div class="perk-picker sub-picker" id="subclass-picker" role="group" data-testid="subclass-picker" data-slot="@open.Value.Slot" aria-label="@($"Pick {DescribeSlot(open.Value.Slot).ToLowerInvariant()}")">
-                <div class="perk-picker-head">
-                    <span class="perk-picker-title">Pick @DescribeSlot(open.Value.Slot).ToLowerInvariant()</span>
-                    <button type="button" class="btn ghost icon" title="Close the list" aria-label="Close the list" data-action="subclass-picker-close" @onclick="ClosePicker">✕</button>
-                </div>
-                <div class="perk-options">
-                    @foreach (var option in options)
-                    {
-                        var hash = option;
-                        var tile = LoadoutShaping.DescribeSubclassPlug(Build, hash);
-                        var current = FindHeld(open.Value) == Optional.Some(hash);
-                        var elsewhere = !current && IsHeldElsewhere(open.Value.Slot, hash);
-                        <button type="button" class="perk-option @(current ? "picked" : "") @(tile.InRules ? "in-rules" : "")" data-hash="@hash.Value"
-                                disabled="@elsewhere" aria-pressed="@(current ? "true" : "false")"
-                                title="@(elsewhere ? $"{tile.Name} is already equipped" : tile.Name)" @onclick="() => Choose(open.Value, hash)">
-                            @RenderTile(tile, "perk", false)
-                            <span class="perk-option-text">
-                                <span class="perk-option-name">@tile.Name</span>
-                                <span class="perk-option-type">@DescribeOption(hash, elsewhere)</span>
-                            </span>
-                        </button>
-                    }
-                </div>
-                <p class="muted sub-note">Green: the rules know it, so it sets things off in the loop; ⊘: the rules don't know it yet, it only shows on the subclass.</p>
-            </div>
-        }
-
         <div class="sub-foot">
             <button type="button" class="btn" data-action="subclass-cancel" @onclick="OnClose">Cancel</button>
             <button type="button" class="btn primary" data-action="subclass-save" @onclick="SaveAsync">Save</button>
@@ -86,6 +56,9 @@
 
 @code {
     private const int AspectSlots = 2;
+
+    /// <summary>The id of the slot whose list is open: it is scrolled into view when the list opens.</summary>
+    private const string OpenSlotId = "subclass-open-slot";
 
     private sealed record OpenPick(SubclassSlot Slot, int Index);
 
@@ -114,33 +87,72 @@
     private RenderFragment RenderMany(SubclassSlot slot, string label, int index, Optional<ItemHash> plug) =>
         RenderSlot(slot, $"{label} {index + 1}", index, plug, true);
 
-    private RenderFragment RenderSlot(SubclassSlot slot, string label, int index, Optional<ItemHash> plug, bool removable) => __builder =>
+    /// <summary>A slot: its plug, Change and, for a fragment, ✕. <paramref name="many"/>: an aspect or fragment slot, which can be empty.</summary>
+    private RenderFragment RenderSlot(SubclassSlot slot, string label, int index, Optional<ItemHash> plug, bool many) => __builder =>
     {
-        var open = picker == Optional.Some(new OpenPick(slot, index));
-        <div class="sub-slot @(open ? "open" : "")" data-slot="@slot" data-index="@index">
-            @if (plug is Optional<ItemHash>.Some held)
+        var pick = new OpenPick(slot, index);
+        var open = picker == Optional.Some(pick);
+        <div class="sub-slot @(open ? "open" : "")" id="@(open ? OpenSlotId : null)" data-slot="@slot" data-index="@index">
+            <div class="sub-slot-row">
+                @if (plug is Optional<ItemHash>.Some held)
+                {
+                    var tile = LoadoutShaping.DescribeSubclassPlug(Build, held.Value);
+                    @RenderTile(tile, slot == SubclassSlot.Aspect ? "aspect" : slot == SubclassSlot.Fragment ? "fragment" : "", true)
+                    <span class="sub-slot-text">
+                        <span class="sub-slot-label">@label</span>
+                        <span class="sub-slot-name" data-testid="slot-name">@tile.Name</span>
+                    </span>
+                }
+                else
+                {
+                    <span class="icon-tile empty" title="@label: empty">@(many ? "+" : DomainPhrasing.Unknown)</span>
+                    <span class="sub-slot-text">
+                        <span class="sub-slot-label">@label</span>
+                        <span class="sub-slot-name muted" data-testid="slot-name">@(many ? "Empty" : DomainPhrasing.Unknown)</span>
+                    </span>
+                }
+                <button type="button" class="btn small" data-action="change-slot" aria-expanded="@(open ? "true" : "false")"
+                        title="List what @DescribeSlot(slot).ToLowerInvariant() can be" @onclick="() => TogglePicker(pick)">@(plug.IsSome() ? "Change" : "Pick")</button>
+                @if (slot == SubclassSlot.Fragment && plug.IsSome())
+                {
+                    <button type="button" class="btn ghost small" data-action="remove-slot" title="Remove @label" aria-label="Remove @label" @onclick="() => RemoveFragment(index)">✕</button>
+                }
+            </div>
+            @if (open)
             {
-                var tile = LoadoutShaping.DescribeSubclassPlug(Build, held.Value);
-                @RenderTile(tile, slot == SubclassSlot.Aspect ? "aspect" : slot == SubclassSlot.Fragment ? "fragment" : "", true)
-                <span class="sub-slot-text">
-                    <span class="sub-slot-label">@label</span>
-                    <span class="sub-slot-name" data-testid="slot-name">@tile.Name</span>
-                </span>
+                @RenderPicker(pick)
             }
-            else
-            {
-                <span class="icon-tile empty" title="@label: empty">@(removable ? "+" : DomainPhrasing.Unknown)</span>
-                <span class="sub-slot-text">
-                    <span class="sub-slot-label">@label</span>
-                    <span class="sub-slot-name muted" data-testid="slot-name">@(removable ? "Empty" : DomainPhrasing.Unknown)</span>
-                </span>
-            }
-            <button type="button" class="btn small" data-action="change-slot" aria-expanded="@(open ? "true" : "false")"
-                    title="List what @DescribeSlot(slot).ToLowerInvariant() can be" @onclick="() => TogglePicker(new OpenPick(slot, index))">@(plug.IsSome() ? "Change" : "Pick")</button>
-            @if (removable && plug.IsSome())
-            {
-                <button type="button" class="btn ghost small" data-action="remove-slot" title="Remove @label" aria-label="Remove @label" @onclick="() => Remove(slot, index)">✕</button>
-            }
+        </div>
+    };
+
+    /// <summary>The list of what the slot can hold, inside the slot's box under its plug: picking one puts it there and closes the list.</summary>
+    private RenderFragment RenderPicker(OpenPick open) => __builder =>
+    {
+        var options = LoopDesigning.ListSubclassOptions(Build, open.Slot);
+        <div class="perk-picker sub-picker" role="group" data-testid="subclass-picker" data-slot="@open.Slot" aria-label="@($"Pick {DescribeSlot(open.Slot).ToLowerInvariant()}")">
+            <div class="perk-picker-head">
+                <span class="perk-picker-title">Pick @DescribeSlot(open.Slot).ToLowerInvariant()</span>
+                <button type="button" class="btn ghost icon" title="Close the list" aria-label="Close the list" data-action="subclass-picker-close" @onclick="ClosePicker">✕</button>
+            </div>
+            <div class="perk-options">
+                @foreach (var option in options)
+                {
+                    var hash = option;
+                    var tile = LoadoutShaping.DescribeSubclassPlug(Build, hash);
+                    var current = FindHeld(open) == Optional.Some(hash);
+                    var elsewhere = !current && IsHeldElsewhere(open.Slot, hash);
+                    <button type="button" class="perk-option @(current ? "picked" : "") @(tile.InRules ? "in-rules" : "")" data-hash="@hash.Value"
+                            disabled="@elsewhere" aria-pressed="@(current ? "true" : "false")"
+                            title="@(elsewhere ? $"{tile.Name} is already equipped" : tile.Name)" @onclick="() => Choose(open, hash)">
+                        @RenderTile(tile, "perk", false)
+                        <span class="perk-option-text">
+                            <span class="perk-option-name">@tile.Name</span>
+                            <span class="perk-option-type">@DescribeOption(hash, elsewhere)</span>
+                        </span>
+                    </button>
+                }
+            </div>
+            <p class="muted sub-note">Green: the rules know it, so it sets things off in the loop; ⊘: the rules don't know it yet, it only shows on the subclass.</p>
         </div>
     };
 
@@ -220,13 +232,13 @@
 
     private bool revealPicker;
 
-    /// <summary>The list opens below the slots: on a phone it is scrolled into view once it is shown.</summary>
+    /// <summary>The list opens inside its slot: the slot is scrolled just far enough into view to show it, once it is shown.</summary>
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (revealPicker && picker.IsSome())
         {
             revealPicker = false;
-            await Browser.RevealElementAsync("subclass-picker");                                 // impure
+            await Browser.RevealElementAsync(OpenSlotId);                                        // impure
         }
     }
 
@@ -254,11 +266,10 @@
         picker = Optional.None<OpenPick>();                                                      // impure (UI state)
     }
 
-    private void Remove(SubclassSlot slot, int index)
+    /// <summary>✕ on a fragment: its slot is left empty. An aspect can't be taken out, only swapped (Change).</summary>
+    private void RemoveFragment(int index)
     {
-        draft = slot == SubclassSlot.Aspect                                                      // pure
-            ? SetAspects([.. draft.Aspects.Where((_, at) => at != index)])
-            : draft with { Fragments = [.. draft.Fragments.Where((_, at) => at != index)] };
+        draft = draft with { Fragments = [.. draft.Fragments.Where((_, at) => at != index)] };   // pure
         picker = Optional.None<OpenPick>();                                                      // impure (UI state)
     }
 
