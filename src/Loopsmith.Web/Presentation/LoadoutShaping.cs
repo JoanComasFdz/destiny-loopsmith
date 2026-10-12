@@ -141,7 +141,13 @@ public sealed record ArmorPick(ArmorSlot Slot, ItemInstanceId Instance);
 /// <summary>A weapon picked from the player's weapons: where it goes in the build (in place of a weapon, or an empty slot), and the copy, by its instance id.</summary>
 public sealed record WeaponPick(WeaponTarget Target, ItemInstanceId Instance);
 
-/// <summary>A weapon slot of the loadout: the build's weapon in it, or an empty slot (shown after the login so ⋯ can fill it).</summary>
+/// <summary>A weapon of the game picked from "Every item": where it goes in the build, and the weapon, by its manifest hash.</summary>
+public sealed record WeaponItemPick(WeaponTarget Target, ItemHash Item);
+
+/// <summary>An armor piece of the game picked from "Every item" for a slot of the build, by its manifest hash.</summary>
+public sealed record ArmorItemPick(ArmorSlot Slot, ItemHash Item);
+
+/// <summary>A weapon slot of the loadout: the build's weapon in it, or an empty slot (shown in the designer so ⋯ can fill it).</summary>
 [Union]
 public partial record WeaponRow
 {
@@ -283,7 +289,7 @@ public static class LoadoutShaping
                 .UnwrapOr(new ArmorView(slot, Optional.None<IconTile>(), NoMarks, [])))]
             : view.Armor;
 
-    /// <summary>An armor piece of the player's as a square: its name, icon and rarity (it opens nothing: the picker shows its details).</summary>
+    /// <summary>An armor piece (the player's, or of the game) as a square: its name, icon and rarity (it opens nothing: the picker shows its details).</summary>
     public static IconTile DescribeArmorItem(ManifestItem item) =>
         DescribeItem(item, item.Name, true, Optional.None<string>(), Affinity.Neutral, Optional.None<ItemDetails>());
 

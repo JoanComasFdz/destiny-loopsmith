@@ -1,99 +1,121 @@
-@* The weapon picker for a slot of the build: the player's weapons for it (after their Bungie login), Bungie's icons,
-   each with its tier, masterwork, breaker and element as DIM shows them. It opens showing the copy the build's weapon
-   there wears; another weapon's perks show on hover (a mouse) or a first tap; a click on a weapon already showing (or
-   "Use this weapon") picks it, and the designer swaps it into the build with its perks (LoopDesigning.PickWeapon).
-   Picking the copy the build already wears just closes the picker. *@
+@* The weapon picker for a slot of the build. Without a Bungie login it lists every weapon of the game for the slot
+   ("Every item": EveryItemList); after one, a switch shows the player's own weapons for it ("Yours", first) or every
+   weapon. Yours shows Bungie's icons, each with its tier, masterwork, breaker and element as DIM shows them, and opens
+   showing the copy the build's weapon there wears; another weapon's perks show on hover (a mouse) or a first tap; a click
+   on a weapon already showing (or "Use this weapon") picks it, and the designer swaps it into the build with its perks
+   (LoopDesigning.PickWeapon). Picking the copy the build already wears just closes the picker. A weapon of the game goes
+   in with no roll (LoopDesigning.PickWeaponItem). "Empty this slot" takes the build's weapon there off. *@
 @{
-    var view = WeaponPickerShaping.ShapePicker(Build, LoopDesigning.ListWeaponOptions(Build, Profile, Target));
     var slot = Build.Build.FindTargetSlot(Target);
-    var shown = view.Options.Where(option => focused == Optional.Some(option.Instance)).Select(Optional.Some).FindFirstSome();
+    var slotName = slot.Match(found => found.Value.DescribeWeaponSlot().ToLowerInvariant(), _ => "");
+    var yours = everyItem ? Optional.None<BungieProfile>() : Profile;
 }
-<Modal Title="@view.Title" Size="wide fit" OnClose="OnClose">
+<Modal Title="@(yours.IsSome() ? $"Pick your {slotName} weapon" : $"Pick a {slotName} weapon")" Size="wide fit" OnClose="OnClose">
     <div class="weapon-picker" data-testid="weapon-picker" data-slot="@slot.Match(found => found.Value.ToString(), _ => "")">
         <ManifestProgressBar />
-        @if (view.Options.IsEmpty)
+        @if (Profile.IsSome())
         {
-            <p class="muted" data-testid="weapon-picker-empty">Your account has no @slot.Match(found => found.Value.DescribeWeaponSlot().ToLowerInvariant(), _ => "") weapon Loopsmith can list for it.</p>
+            <PickerModeSwitch EveryItem="everyItem" OnChange="SwitchMode" />
         }
-        else
+        @if (yours is Optional<BungieProfile>.Some owned)
         {
-            <div class="icon-grid weapon-options" role="listbox" aria-label="@view.Title">
-                @foreach (var option in view.Options)
-                {
-                    var instance = option.Instance;
-                    <div class="weapon-option">
-                        <button type="button" role="option" aria-selected="@(focused == Optional.Some(instance) ? "true" : "false")"
-                                class="icon-tile tappable item @DescribeTier(option.Tile) @(option.Worn ? "worn" : "") @(focused == Optional.Some(instance) ? "focused" : "") @LoadoutShaping.ToMasterworkClass(option.Marks)"
-                                data-tier="@LoadoutShaping.ToTierText(option.Marks)" data-masterwork="@LoadoutShaping.ToMasterworkText(option.Marks)"
-                                title="@LoadoutShaping.AddMarks($"{option.Tile.Name} — {WeaponPickerShaping.DescribeType(option)}", option.Marks)" aria-label="@option.Tile.Name" data-instance="@instance.Value"
-                                @onpointerenter="e => Hover(instance, e)" @onclick="() => ChooseAsync(instance)">
-                            @if (option.Tile.Icon is Optional<string>.Some icon)
-                            {
-                                <img src="@icon.Value" alt="" loading="lazy" />
-                            }
-                            else
-                            {
-                                <span class="icon-initials">@(option.Tile.Name.Length > 0 ? option.Tile.Name[..1] : "?")</span>
-                            }
-                            <TileOverlays Marks="option.Marks" />
-                            @if (option.Worn)
-                            {
-                                <span class="armor-worn-mark" aria-hidden="true">✓</span>
-                            }
-                        </button>
-                        <TileFooter Marks="option.Marks" DamageIcon="option.DamageIcon" DamageName="@WeaponPickerShaping.DescribeDamage(option)" />
-                    </div>
-                }
-            </div>
-            @if (shown is Optional<WeaponOptionView>.Some details)
+            var view = WeaponPickerShaping.ShapePicker(Build, LoopDesigning.ListWeaponOptions(Build, owned.Value, Target));
+            var shown = view.Options.Where(option => focused == Optional.Some(option.Instance)).Select(Optional.Some).FindFirstSome();
+            if (view.Options.IsEmpty)
             {
-                var weapon = details.Value;
-                <div class="armor-option-details" data-testid="weapon-option-details">
-                    @* One line, its marks last: the panel keeps its height from one weapon to the next, masterworked or not. *@
-                    <div class="armor-option-name">@weapon.Tile.Name@(weapon.Archetype.Length > 0 ? $" · {weapon.Archetype}" : "")@if (weapon.Damage is Optional<DamageType>.Some damage)
-                        {<span class="option-sep"> · </span><span class="option-damage @ToneStyling.ToToneClass(damage.Value.ToAffinity().ToTone())" data-testid="weapon-option-damage">@if (weapon.DamageIcon is Optional<string>.Some damageIcon)
-                            {<img class="inline-icon" src="@damageIcon.Value" alt="" loading="lazy" />}@damage.Value</span>}@if (LoadoutShaping.AddMarks("", weapon.Marks) is { Length: > 0 } marked)
-                        {<span class="option-sep"> · </span><span class="armor-option-marks" data-testid="weapon-option-marks">@marked</span>}</div>
-                    @if (!weapon.Perks.IsEmpty)
-                    {
-                        <div class="weapon-option-perks" data-testid="weapon-option-perks">
-                            @foreach (var perk in weapon.Perks)
-                            {
-                                <span class="weapon-option-perk @(perk.InRules ? "in-rules" : "")" title="@perk.Name">
-                                    <span class="icon-tile perk @(perk.InRules ? "" : "out") @(perk.Enhanced ? "enhanced" : "")">
-                                        @if (perk.Icon is Optional<string>.Some perkIcon)
-                                        {
-                                            <img src="@perkIcon.Value" alt="" loading="lazy" />
-                                        }
-                                        @if (!perk.InRules)
-                                        {
-                                            <UnsupportedMark />
-                                        }
-                                    </span>
-                                    <span class="weapon-option-perk-name">@perk.Name</span>
-                                </span>
-                            }
-                        </div>
-                    }
-                    @if (weapon.Catalyst)
-                    {
-                        <div class="muted">Its catalyst is in: the build turns it on.</div>
-                    }
-                    <div class="muted">@weapon.Place@(weapon.Worn ? " · the build wears this one" : "")</div>
-                    @if (!weapon.Worn)
-                    {
-                        <button type="button" class="btn primary small" data-action="wear-weapon" @onclick="() => PickAsync(weapon.Instance)">Use this weapon</button>
-                    }
-                </div>
+                <p class="muted" data-testid="weapon-picker-empty">Your account has no @slotName weapon Loopsmith can list for it.</p>
             }
             else
             {
-                <p class="muted armor-picker-hint">Tap a weapon to see its perks; tap it again to use it.</p>
+                <div class="icon-grid weapon-options" role="listbox" aria-label="@view.Title">
+                    @foreach (var option in view.Options)
+                    {
+                        var instance = option.Instance;
+                        <div class="weapon-option">
+                            <button type="button" role="option" aria-selected="@(focused == Optional.Some(instance) ? "true" : "false")"
+                                    class="icon-tile tappable item @DescribeTier(option.Tile) @(option.Worn ? "worn" : "") @(focused == Optional.Some(instance) ? "focused" : "") @LoadoutShaping.ToMasterworkClass(option.Marks)"
+                                    data-tier="@LoadoutShaping.ToTierText(option.Marks)" data-masterwork="@LoadoutShaping.ToMasterworkText(option.Marks)"
+                                    title="@LoadoutShaping.AddMarks($"{option.Tile.Name} — {WeaponPickerShaping.DescribeType(option)}", option.Marks)" aria-label="@option.Tile.Name" data-instance="@instance.Value"
+                                    @onpointerenter="e => Hover(instance, e)" @onclick="() => ChooseAsync(instance)">
+                                @if (option.Tile.Icon is Optional<string>.Some icon)
+                                {
+                                    <img src="@icon.Value" alt="" loading="lazy" />
+                                }
+                                else
+                                {
+                                    <span class="icon-initials">@(option.Tile.Name.Length > 0 ? option.Tile.Name[..1] : "?")</span>
+                                }
+                                <TileOverlays Marks="option.Marks" />
+                                @if (option.Worn)
+                                {
+                                    <span class="armor-worn-mark" aria-hidden="true">✓</span>
+                                }
+                            </button>
+                            <TileFooter Marks="option.Marks" DamageIcon="option.DamageIcon" DamageName="@WeaponPickerShaping.DescribeDamage(option)" />
+                        </div>
+                    }
+                </div>
+                @if (shown is Optional<WeaponOptionView>.Some details)
+                {
+                    var weapon = details.Value;
+                    <div class="armor-option-details" data-testid="weapon-option-details">
+                        @* One line, its marks last: the panel keeps its height from one weapon to the next, masterworked or not. *@
+                        <div class="armor-option-name">@weapon.Tile.Name@(weapon.Archetype.Length > 0 ? $" · {weapon.Archetype}" : "")@if (weapon.Damage is Optional<DamageType>.Some damage)
+                            {<span class="option-sep"> · </span><span class="option-damage @ToneStyling.ToToneClass(damage.Value.ToAffinity().ToTone())" data-testid="weapon-option-damage">@if (weapon.DamageIcon is Optional<string>.Some damageIcon)
+                                {<img class="inline-icon" src="@damageIcon.Value" alt="" loading="lazy" />}@damage.Value</span>}@if (LoadoutShaping.AddMarks("", weapon.Marks) is { Length: > 0 } marked)
+                            {<span class="option-sep"> · </span><span class="armor-option-marks" data-testid="weapon-option-marks">@marked</span>}</div>
+                        @if (!weapon.Perks.IsEmpty)
+                        {
+                            <div class="weapon-option-perks" data-testid="weapon-option-perks">
+                                @foreach (var perk in weapon.Perks)
+                                {
+                                    <span class="weapon-option-perk @(perk.InRules ? "in-rules" : "")" title="@perk.Name">
+                                        <span class="icon-tile perk @(perk.InRules ? "" : "out") @(perk.Enhanced ? "enhanced" : "")">
+                                            @if (perk.Icon is Optional<string>.Some perkIcon)
+                                            {
+                                                <img src="@perkIcon.Value" alt="" loading="lazy" />
+                                            }
+                                            @if (!perk.InRules)
+                                            {
+                                                <UnsupportedMark />
+                                            }
+                                        </span>
+                                        <span class="weapon-option-perk-name">@perk.Name</span>
+                                    </span>
+                                }
+                            </div>
+                        }
+                        @if (weapon.Catalyst)
+                        {
+                            <div class="muted">Its catalyst is in: the build turns it on.</div>
+                        }
+                        <div class="muted">@weapon.Place@(weapon.Worn ? " · the build wears this one" : "")</div>
+                        @if (!weapon.Worn)
+                        {
+                            <button type="button" class="btn primary small" data-action="wear-weapon" @onclick="() => PickAsync(weapon.Instance)">Use this weapon</button>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="muted armor-picker-hint">Tap a weapon to see its perks; tap it again to use it.</p>
+                }
+            }
+            foreach (var note in view.Notes)
+            {
+                <p class="muted armor-picker-note">@note</p>
             }
         }
-        @foreach (var note in view.Notes)
+        else
         {
-            <p class="muted armor-picker-note">@note</p>
+            <EveryItemList Shape="ShapeEveryItem" Noun="weapon" UseLabel="Use this weapon" Pick="PickItemAsync" OnClose="OnClose"
+                           Detail="Its perks are picked in the build, column by column; an exotic's catalyst starts off." />
+        }
+        @if (Target is WeaponTarget.InPlaceOf inPlace && OnEmpty.HasDelegate)
+        {
+            <div class="picker-foot">
+                <button type="button" class="btn small" data-action="empty-slot" @onclick="() => OnEmpty.InvokeAsync(inPlace.Weapon)">Empty this slot</button>
+            </div>
         }
     </div>
 </Modal>
@@ -102,19 +124,31 @@
     [Parameter, EditorRequired]
     public ValidatedBuild Build { get; set; } = null!;
 
-    [Parameter, EditorRequired]
-    public BungieProfile Profile { get; set; } = null!;
+    /// <summary>The player's armor and weapons after their Bungie login: "Yours" lists their weapons; none: every weapon of the game only.</summary>
+    [Parameter]
+    public Optional<BungieProfile> Profile { get; set; } = Optional.None<BungieProfile>();
 
     /// <summary>Where a pick goes: in place of one of the build's weapons, or into an empty slot.</summary>
     [Parameter, EditorRequired]
     public WeaponTarget Target { get; set; } = null!;
 
-    /// <summary>A weapon picked: the designer swaps it into the build.</summary>
+    /// <summary>One of the player's weapons picked: the designer swaps it into the build.</summary>
     [Parameter]
     public EventCallback<WeaponPick> OnPick { get; set; }
 
+    /// <summary>A weapon of the game picked: the designer reads what it needs of it and puts it in the build, or says why not.</summary>
+    [Parameter, EditorRequired]
+    public Func<WeaponItemPick, Task<Result<Unit, string>>> PickItem { get; set; } = null!;
+
+    /// <summary>"Empty this slot" (the weapon number): the designer takes that weapon off.</summary>
+    [Parameter]
+    public EventCallback<int> OnEmpty { get; set; }
+
     [Parameter]
     public EventCallback OnClose { get; set; }
+
+    /// <summary>"Every item" is shown (always without a login); else "Yours".</summary>
+    private bool everyItem;
 
     private Optional<ItemInstanceId> focused = Optional.None<ItemInstanceId>();
 
@@ -123,11 +157,24 @@
 
     protected override void OnInitialized()
     {
-        var options = LoopDesigning.ListWeaponOptions(Build, Profile, Target);                   // pure
-        var wearing = options.Options.Where(option => option.Worn).Select(option => Optional.Some(option.Weapon.InstanceId)).FindFirstSome(); // pure
-        worn = wearing;                                                                          // impure (component state)
-        focused = wearing;                                                                       // impure (component state)
+        everyItem = !Profile.IsSome();                                                           // impure (component state)
+        if (Profile is Optional<BungieProfile>.Some owned)
+        {
+            var options = LoopDesigning.ListWeaponOptions(Build, owned.Value, Target);           // pure
+            var wearing = options.Options.Where(option => option.Worn).Select(option => Optional.Some(option.Weapon.InstanceId)).FindFirstSome(); // pure
+            worn = wearing;                                                                      // impure (component state)
+            focused = wearing;                                                                   // impure (component state)
+        }
     }
+
+    private void SwitchMode(bool every) =>
+        everyItem = every;                                                                       // impure (component state)
+
+    private ItemListView ShapeEveryItem(ItemListing listing) =>
+        ItemListShaping.ShapeWeapons(Build, LoopDesigning.ListWeaponItems(Build, listing, Target));
+
+    private Task<Result<Unit, string>> PickItemAsync(ItemHash item) =>
+        PickItem(new WeaponItemPick(Target, item));                                              // impure
 
     /// <summary>A mouse over a weapon shows its perks (a touch doesn't hover: its first tap does).</summary>
     private void Hover(ItemInstanceId instance, PointerEventArgs e)

@@ -4,8 +4,12 @@ using Loopsmith.Core.Functional;
 
 namespace Loopsmith.Web.Presentation;
 
-/// <summary>Whose items a read of Bungie's manifest names: the player's (after their Bungie login), or the open build's (a DIM link's).</summary>
-public enum ManifestReadFor { YourItems, BuildItems }
+/// <summary>
+/// What a read of Bungie's manifest is for: the player's items (after their Bungie login), the open build's (a DIM
+/// link's), every weapon and armor piece in the game (the pickers' "Every item", from the lite item table), or the item
+/// picked there (its perks, catalyst or set, before it goes into the build).
+/// </summary>
+public enum ManifestReadFor { YourItems, BuildItems, EveryItem, PickedItem }
 
 /// <summary>
 /// Where a read of Bungie's manifest is: reading its files (the bytes come unpacked, so their total isn't known — bungie.net
@@ -35,6 +39,9 @@ public static class ManifestProgressShaping
     /// <summary>The unpacked bytes the files are assumed to near (Bungie's item table and its companions, about 215 MB in 2026): the bar slows past it, it never stops.</summary>
     private const double ExpectedBytes = 215_000_000;
 
+    /// <summary>The same for the listing: the lite item table, the buckets and the sets (about 62 MB in 2026).</summary>
+    private const double ExpectedListingBytes = 62_000_000;
+
     public static ManifestReadProgress StartReading(ManifestReadFor readFor, int items) =>
         new(readFor, items, new ManifestReadStage.Reading(0));
 
@@ -57,11 +64,15 @@ public static class ManifestProgressShaping
             progress.Stage.Match(
                 reading => $"reading its files… {DescribeMegabytes(reading.Bytes)}",
                 naming => $"naming them (step {naming.Round.ToString(CultureInfo.InvariantCulture)})"),
-            progress.For == ManifestReadFor.YourItems
-                ? "You can keep designing meanwhile; ⋯ names your armor and weapons once it's done."
-                : "You can keep designing meanwhile; the build's items show by hash until it's done.",
+            progress.For switch
+            {
+                ManifestReadFor.YourItems => "You can keep designing meanwhile; ⋯ names your armor and weapons once it's done.",
+                ManifestReadFor.EveryItem => "Only the first time in this tab: the list shows once it's done.",
+                ManifestReadFor.PickedItem => "It goes into the build once it's done.",
+                _ => "You can keep designing meanwhile; the build's items show by hash until it's done.",
+            },
             progress.Stage.Match(
-                reading => (int)Math.Round(85 * (1 - Math.Exp(-1.6 * reading.Bytes / ExpectedBytes))),
+                reading => (int)Math.Round(85 * (1 - Math.Exp(-1.6 * reading.Bytes / (progress.For == ManifestReadFor.EveryItem ? ExpectedListingBytes : ExpectedBytes)))),
                 naming => (int)Math.Round(99 - 14 * Math.Pow(0.5, naming.Round))));
 
     /// <summary>A read in progress, when there is one.</summary>
@@ -75,9 +86,13 @@ public static class ManifestProgressShaping
     private static string DescribeTitle(ManifestReadProgress progress)
     {
         var count = progress.Items.ToString(CultureInfo.InvariantCulture);
-        return progress.For == ManifestReadFor.YourItems
-            ? progress.Items == 1 ? "Reading Bungie's manifest for 1 of your items" : $"Reading Bungie's manifest for {count} of your items"
-            : progress.Items == 1 ? "Reading Bungie's manifest for 1 of this build's items" : $"Reading Bungie's manifest for {count} of this build's items";
+        return progress.For switch
+        {
+            ManifestReadFor.YourItems => progress.Items == 1 ? "Reading Bungie's manifest for 1 of your items" : $"Reading Bungie's manifest for {count} of your items",
+            ManifestReadFor.EveryItem => "Reading Bungie's manifest for every weapon and armor piece",
+            ManifestReadFor.PickedItem => "Reading Bungie's manifest for the item you picked",
+            _ => progress.Items == 1 ? "Reading Bungie's manifest for 1 of this build's items" : $"Reading Bungie's manifest for {count} of this build's items",
+        };
     }
 
     private static string DescribeMegabytes(long bytes) =>

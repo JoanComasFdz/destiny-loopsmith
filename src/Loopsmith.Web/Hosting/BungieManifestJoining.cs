@@ -10,7 +10,8 @@ namespace Loopsmith.Web.Hosting;
 
 /// <summary>
 /// Impure shell: Bungie's full manifest for the hashes the bundled excerpt lacks (a pasted DIM link's other items, a
-/// login's armor and weapons). The components download from bungie.net (the browser's HTTP cache keeps them; the app
+/// login's armor and weapons, an item picked from "Every item"), and the listing of every weapon and armor piece in the
+/// game (<see cref="ListItemsAsync"/>: from the manifest's lite item table, once per tab). The components download from bungie.net (the browser's HTTP cache keeps them; the app
 /// stores nothing, ADRs D25) and are indexed as they come; Core asks for their entries round by round (each round asks
 /// only what it hasn't asked, so the rounds end) and builds the excerpt; then, when no other read waits for them, the
 /// components are let go (they are most of the tab's memory). One read runs at a time: another (the page answers taps
@@ -54,6 +55,39 @@ public sealed class BungieManifestJoining(BrowserInterop browser, string apiKey,
         }
     }
 
+    /// <summary>Every weapon and armor piece of the game, once listed in this tab.</summary>
+    public Optional<ItemListing> Listing { get; private set; } = Optional.None<ItemListing>();
+
+    /// <summary>
+    /// Every weapon and armor piece a build can wear (the pickers' "Every item"): read once per tab from the manifest's
+    /// lite item table, its buckets and its sets, then kept (a read that failed is tried again next time); or why it
+    /// couldn't be read. One read at a time, as <see cref="JoinAsync"/>.
+    /// </summary>
+    public async Task<Result<ItemListing, string>> ListItemsAsync()
+    {
+        if (Listing is Optional<ItemListing>.Some listed)
+        {
+            return new Result<ItemListing, string>.Ok(listed.Value);
+        }
+
+        waiting++;                                                                               // impure (tab state)
+        await oneAtATime.WaitAsync();                                                            // impure
+        waiting--;                                                                               // impure (tab state)
+        try
+        {
+            var read = Listing is Optional<ItemListing>.Some meanwhile
+                ? new Result<ItemListing, string>.Ok(meanwhile.Value)
+                : await ReadListingAsync();                                                      // impure
+            Listing = read.Match(ok => Optional.Some(ok.Value), _ => Optional.None<ItemListing>()); // impure (tab state)
+            return read;
+        }
+        finally
+        {
+            await ReleaseAsync();                                                                // impure
+            oneAtATime.Release();                                                                // impure
+        }
+    }
+
     /// <summary>How many bytes of the manifest's components have come, unpacked (manifest.js, a few times a second).</summary>
     [JSInvokable]
     public void ReportDownload(double bytes)
@@ -84,6 +118,37 @@ public sealed class BungieManifestJoining(BrowserInterop browser, string apiKey,
         }
 
         return LoopDesigning.ToJoinedExcerpt(step);                                              // pure
+    }
+
+    private async Task<Result<ItemListing, string>> ReadListingAsync()
+    {
+        var started = ManifestProgressShaping.StartReading(ManifestReadFor.EveryItem, 0);       // pure
+        ShowReading(Optional.Some(started));                                                     // impure (tab state)
+        using var reporter = DotNetObjectReference.Create(this);                                 // impure
+        var index = await browser.ReadManifestIndexAsync(LoopDesigning.ManifestIndexUrl, apiKey); // impure
+        var urls = LoopDesigning.ChooseListingUrls(index, pinnedContentId);                      // pure
+        var loaded = await browser.LoadManifestTablesAsync(urls, reporter);                      // impure
+        return await loaded.BindAsync(_ => ReadListedTablesAsync());                             // impure
+    }
+
+    /// <summary>The listing's small components (the buckets, the sets), then its items.</summary>
+    private async Task<Result<ItemListing, string>> ReadListedTablesAsync()
+    {
+        var request = LoopDesigning.ToListingTableRequest();                                     // pure
+        var tablesJson = await browser.ReadManifestEntriesAsync(request);                       // impure
+        var tables = LoopDesigning.ReadListingTables(tablesJson);                                // pure
+        return await tables.BindAsync(ReadListedItemsAsync);                                     // impure
+    }
+
+    /// <summary>The lite items of the weapon and armor buckets, cut down to what the pickers need, as the listing.</summary>
+    private async Task<Result<ItemListing, string>> ReadListedItemsAsync(ListingTables tables)
+    {
+        var naming = Reading.Map(ManifestProgressShaping.ReportRound);                           // pure
+        ShowReading(naming);                                                                     // impure (tab state)
+        await Task.Delay(1);                                                                     // impure (the browser's turn: the bar)
+        var query = LoopDesigning.ToListingPartsQuery(tables);                                   // pure
+        var partsJson = await browser.ReadManifestPartsAsync(query);                             // impure
+        return LoopDesigning.ReadItemListing(tables, partsJson);                                 // pure
     }
 
     /// <summary>The read is over (done or failed): the bar goes, and the components, unless another read waits for them.</summary>

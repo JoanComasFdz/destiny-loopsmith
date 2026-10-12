@@ -197,8 +197,8 @@ is and it reopens empty.
 The Subclass box shows the Arcstrider icon and a dashed square named for each empty ability (Super, Class ability,
 Melee, Grenade); the Weapons and Armor boxes show their empty slots, as for every build in the designer (a slot
 without a weapon or a piece is a dashed square named for it). The player fills it from there: **⋯** on the Subclass
-box opens the subclass editor ([Editing the subclass](#editing-the-subclass)), and after a Bungie login ⋯ next to each
-weapon and armor slot picks one of their own ([Stats](#stats)).
+box opens the subclass editor ([Editing the subclass](#editing-the-subclass)), and ⋯ next to each weapon and armor
+slot picks one from every item of the game, or after a Bungie login one of their own ([Every item](#every-item)).
 
 While the build has no super, grenade, melee or class ability (named or "?") and no weapon, it has nothing to set things
 off, so the **Next trigger** panel is greyed out, nothing in it can be tapped, and a line says why ("Give the build a
@@ -356,8 +356,9 @@ steps replay:
 
   The Stats section then says only that, in one line ("Your armor is loaded…", or "You can now pick your armor: tap
   ⋯…"), with **Log out**; it shows no total of its own. Log out forgets the player's armor: the build keeps the
-  stats and pieces it has, the ⋯ go, and the login text and button come back. After the login each armor piece of the build has **⋯**: it opens the **armor
-  picker** for that slot — the player's pieces for it (for the build's class; Bungie's icons), the copy the build
+  stats and pieces it has, the pickers list [every item](#every-item) only, and the login text and button come back.
+  After the login the **armor picker** (⋯ next to each armor slot) opens on **Yours**: the player's pieces for that
+  slot (for the build's class; Bungie's icons), the copy the build
   wears first (✓ in its square's lower-right corner, its stats shown), then its other copies, then the rest by name.
   Hovering a piece (or a first tap, on a phone) shows its stats, its set and where it is; a click (a second tap, or "Wear this piece") wears it. The piece
   then is the build's: an exotic the rules know is its exotic, any other piece a left-out item; its copy goes into
@@ -400,8 +401,8 @@ plugs in their sockets:
   has them all), and `catalyst: true` when its catalyst socket holds the catalyst. Only those entries of the embedded
   build change, and the steps replay. The Stats section's line says so ("Its weapons are yours too, with their
   perks."), or, for weapons that aren't theirs, to pick their own with ⋯.
-* **⋯ next to each weapon** opens the **weapon picker** for its slot (all three slots show, an empty one too; ⋯ comes
-  with the login): the player's weapons for that slot, the copy the build names first (✓ when it is theirs; for someone
+* **⋯ next to each weapon slot** opens the **weapon picker** for it, after the login on **Yours**: the player's
+  weapons for that slot, the copy the build names first (✓ when it is theirs; for someone
   else's share none is ticked, so their own copy can be used to load its perks), then that weapon's other copies, then
   the rest by name; each with its tier, masterwork, breaker and element as in the loadout. Hovering one (or a
   first tap) shows its type, tier and the perks it holds, and where it is; a click (a second tap, or "Use this
@@ -415,6 +416,34 @@ plugs in their sockets:
 
 Nothing of the login is kept (the player's armor and weapons stay in the tab until they log out or it closes); the
 stats and the copies are, in the loop's build, so a shared loop carries its author's numbers and pieces.
+
+<a id="every-item"></a>**Every item.** In the designer every weapon slot (kinetic, energy, heavy) and every armor slot
+(helmet, arms, chest, legs, class item) shows, an empty one too, each with **⋯**, with or without a login (Home's
+cards stay read-only). Without a login ⋯ opens its picker on **Every item**; after one, a **Yours / Every item** switch
+picks between the player's own items (above) and these, starting on Yours:
+
+* **The list** — every legendary and exotic weapon of the game for that slot, or every legendary and exotic armor piece
+  for that slot and the build's class: every version of each (a season's reissue is an item of its own, told apart by
+  its watermark and, for armor, its set: one version may be in an armor set another isn't), the one the slot holds
+  first (✓), then by name, a name's versions side by side. A search box narrows it as you type, by name or type ("hand
+  cannon", "arc"; for armor its name or its set's). It comes from Bungie's lite item table, read once per tab when a
+  picker first opens (its progress bar shows; [hosting.md](hosting.md#bungies-manifest)). The one-exotic rule holds as
+  in the player's pickers: no exotic is listed while another slot holds one (the picker says which to swap).
+* **A pick** — hovering an item (or a first tap) shows its name, type and damage type (for armor, its set); a click (a
+  second tap, or "Use this weapon" / "Wear this piece") puts it in. Bungie's full manifest is read for it first when
+  the excerpt lacks it (its trait columns, catalyst or set): the picker shows the bar and stays open, and when it can't
+  be read it says so and the build doesn't change. A **weapon**'s entry is then written anew, or added for an empty
+  slot, as `{slot, name, type, archetype, perks: [], hash}`: no roll (each rolling column shows "?", picked with the
+  perk picker; a column that doesn't roll shows its perk) and its catalyst off. A **piece** goes into its slot as one
+  picked from the player's armor does (an exotic the rules know is the build's exotic, any other piece a left-out item,
+  the set bonuses following the pieces), with no copy: the stats stay as they were.
+* **Exotic class items** (Relativism, Stoicism, Solipsism) are listed like any exotic, but their two random perks
+  (spirits) can't be picked yet: the build wears the item without them.
+* **Empty this slot**, at the foot of a filled slot's picker, takes the weapon (with its perks) or the piece off: a step
+  that uses that weapon slot becomes a blocked step, an exotic taken off is no longer the build's exotic, and the set
+  bonuses follow the pieces left.
+
+The steps replay after each change, and the loop's build carries it (export, share link).
 
 ## Sharing
 

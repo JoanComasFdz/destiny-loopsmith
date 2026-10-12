@@ -99,11 +99,20 @@ regenerate the excerpt (`tools/manifest/get-manifest.sh` prints it). Only paths 
 folder are taken from the index. The tab remembers which items it read the manifest for, so the designer
 doesn't read again what Home just read (or failed to).
 
+The pickers' **Every item** ([loop-format.md](loop-format.md#every-item)) lists every weapon and armor piece of the
+game from another file, read the same way once per tab when a picker first opens: the item table's lite version
+(`DestinyInventoryItemLiteDefinition`, ~3 MB compressed, ~61 MB unpacked: the items without their sockets), with the
+buckets and the armor sets. Core asks for the items of the weapon and armor buckets, each cut down in the page to the
+fields a square needs (one pass over the file, `readEntryParts`: ~10,000 entries, ~3.7 MB of JSON), and the tab keeps
+the list it reads (a failed read is tried again at the next opening). A pick then reads the full manifest for that one
+item (its perks, catalyst or set), as above, even when the tab asked for it before.
+
 The page keeps answering taps while it reads: each file is indexed as its chunks arrive (~215 MB of JSON once
 unpacked, held once, never copied into one buffer), with a pause every 8 MB, and the join gives the browser a turn
 before each of its rounds (five for a vault of ~600 items). After a Bungie login, the **Bungie login section** shows a
 progress bar — "Reading Bungie's manifest for 609 of your items", "reading its files… 84 MB" (unpacked), then "naming
-them (step 2)" — and so does the ⋯ picker opened meanwhile (a DIM link's read says "of this build's items"); the bar
+them (step 2)" — and so does the ⋯ picker opened meanwhile (a DIM link's read says "of this build's items"; a
+picker's first opening "for every weapon and armor piece", a pick "for the item you picked"); the bar
 can't know the files' unpacked size (bungie.net sends them compressed), so it fills ever more slowly towards the size
 they had in 2026. One read runs at a time (a login during a DIM link's read waits for it). Once the join has what it
 asked for, the files are let go, unless another read waits for them: a later read downloads them again, from the

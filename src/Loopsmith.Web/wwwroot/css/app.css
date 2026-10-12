@@ -1063,6 +1063,21 @@ button.hud-chip:hover, button.hud-chip:focus-visible { background: color-mix(in 
 .weapon-option-perks { display: flex; flex-wrap: wrap; gap: 6px 12px; }
 .weapon-option-perk { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; }
 .weapon-option-perk.in-rules .weapon-option-perk-name { color: var(--ok); }
+/* "Every item": every weapon or armor piece of the game for a slot, a search box above them */
+.every-item { display: flex; flex-direction: column; gap: 10px; }
+.every-item-search { display: flex; align-items: center; gap: 6px 10px; flex-wrap: wrap; }
+.every-item-query { flex: 1 1 200px; min-width: 0; }
+.every-item-count { font-size: 12px; white-space: nowrap; }
+.every-item-options { grid-template-columns: repeat(auto-fill, calc(var(--tile) * 1.3)); gap: 6px; }
+.every-item-options .icon-tile { width: calc(var(--tile) * 1.3); height: calc(var(--tile) * 1.3); }
+.every-item-options .icon-tile.focused { outline: 2px solid var(--arc); outline-offset: 1px; }
+.every-item-options .icon-tile.worn { box-shadow: 0 0 0 2px color-mix(in srgb, var(--ok) 70%, transparent); }
+/* after a login: the switch between the player's own items and every item of the game */
+.picker-modes { display: inline-flex; align-self: flex-start; border: 1px solid var(--line-2); border-radius: var(--radius); overflow: hidden; }
+.picker-mode { padding: 5px 12px; border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 13px; cursor: pointer; }
+.picker-mode + .picker-mode { border-left: 1px solid var(--line-2); }
+.picker-mode.on { background: var(--raised); color: var(--text); font-weight: 650; }
+.picker-foot { display: flex; justify-content: flex-end; }
 .icon-grid.mods { grid-template-columns: repeat(2, var(--mod-tile)); }
 .icon-grid.mods .icon-tile, .general-mods .icon-tile { width: var(--mod-tile); height: var(--mod-tile); }
 .general-mods .icon-grid { grid-template-columns: repeat(auto-fill, var(--mod-tile)); }
@@ -1186,6 +1201,17 @@ a.weapon-line-name:hover { color: var(--arc); text-decoration: underline; }
     overscroll-behavior: contain;
     align-content: start;
     padding: 3px;                                 /* room for the focused square's outline */
+}
+/* …and so does "Every item": its search box, the item shown and the notes stay in view, only its grid scrolls */
+.modal.fit .weapon-picker > .every-item, .modal.fit .armor-picker > .every-item { flex: 0 1 auto; min-height: 0; }
+.modal.fit .every-item > * { flex: none; }
+.modal.fit .every-item-options {
+    flex: 0 1 auto;
+    min-height: calc(var(--tile) * 1.3 + 26px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    align-content: start;
+    padding: 3px;
 }
 @media (max-width: 520px) {
     .modal-backdrop { padding: 8px; }
