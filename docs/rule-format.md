@@ -588,9 +588,11 @@ weapons:
 stats: { weapons: 47, class: 104, grenade: 145, super: 27, melee: 79 }   # any subset; 0..200
 ```
 
-* Required: `name`, `class` (`hunter|titan|warlock`), `subclass`, `super`, `grenade`, `melee`, `classAbility`.
-  An ability may be `"?"`: the build has one, but Loopsmith can't name it (a DIM link's super with no hash
-  in the catalog). It shows as "?" and sets nothing off.
+* Required: `name`, `class` (`hunter|titan|warlock`), `subclass`.
+* The abilities `super`, `grenade`, `melee`, `classAbility`: each an element id, or `"?"`: the build has one, but
+  Loopsmith can't name it (a DIM link's super with no hash in the catalog). It shows as "?" and sets nothing off. An
+  ability left out is an empty slot (a build started from scratch, [loop-format.md](loop-format.md#starting-from-scratch)):
+  it shows empty, sets nothing off, and the build check doesn't call it unknown.
 * Optional: `author`, `source` (an absolute http(s) URL), `catalog`, `exoticArmor`, and the lists
   `aspects`, `fragments`, `armorSetBonuses`, `armorMods`, `artifactPerks`, `weapons` (default empty).
 * A weapon: `slot` (`kinetic|energy|power`), `name` and `type` (`kinetic|arc|solar|void|stasis|strand`)

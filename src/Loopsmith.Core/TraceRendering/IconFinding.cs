@@ -36,7 +36,7 @@ public static class IconFinding
     public static Optional<IconRef> FindActionIcon(RuleCatalog catalog, Build build, PlayerAction action) =>
         action.Match(
             cast => FindAbility(build.Abilities, cast.Kind).Bind(element => FindElementIcon(catalog, element)),
-            _ => build.Abilities.ClassAbility.Bind(element => FindElementIcon(catalog, element)),
+            _ => build.Abilities.ClassAbility.ToElement().Bind(element => FindElementIcon(catalog, element)),
             fire => FindWeaponIcon(catalog, build, fire.Slot).Map(ToManifestIcon),
             collect => FindKeywordIcon(catalog, new KeywordRef.Pickup(collect.Pickup)),
             declare => declare.Declaration.Match(
@@ -67,8 +67,8 @@ public static class IconFinding
     private static Optional<ElementId> FindAbility(AbilityLoadout abilities, OffensiveAbility kind) =>
         kind switch
         {
-            OffensiveAbility.Grenade => abilities.Grenade,
-            OffensiveAbility.Melee => abilities.Melee,
-            _ => abilities.Super,
+            OffensiveAbility.Grenade => abilities.Grenade.ToElement(),
+            OffensiveAbility.Melee => abilities.Melee.ToElement(),
+            _ => abilities.Super.ToElement(),
         };
 }

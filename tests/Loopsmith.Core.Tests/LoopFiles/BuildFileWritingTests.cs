@@ -66,7 +66,7 @@ public sealed class BuildFileWritingTests
             Optional.None<CatalogVersion>(),
             GuardianClass.Hunter,
             Subclass.Arc,
-            new AbilityLoadout(Optional.None<ElementId>(), Optional.None<ElementId>(), Optional.None<ElementId>(), Optional.Some(ElementId.From("gamblers-dodge"))),
+            new AbilityLoadout(new AbilityPlug.Unknown(), new AbilityPlug.Unknown(), new AbilityPlug.Unknown(), new AbilityPlug.Known(ElementId.From("gamblers-dodge"))),
             [ElementId.From("tempest-strike")],
             [],
             Optional.None<ElementId>(),

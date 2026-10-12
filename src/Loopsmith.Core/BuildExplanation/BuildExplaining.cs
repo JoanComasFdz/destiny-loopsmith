@@ -119,7 +119,7 @@ public static class BuildExplaining
         var b = build.Build;
         var tone = b.Subclass.ToAffinity().ToTone();
         string DescribeElement(ElementId id) => build.Catalog.Elements.TryGetValue(id, out var e) ? e.Name : id.Value;
-        string DescribeAbility(Optional<ElementId> id) => id.Match(some => DescribeElement(some.Value), _ => DomainPhrasing.Unknown);
+        string DescribeAbility(AbilityPlug ability) => ability.Match(known => DescribeElement(known.Element), _ => DomainPhrasing.Unknown, _ => "—");
         string DescribeElements(IEnumerable<ElementId> ids) => string.Join(", ", ids
             .GroupBy(id => id)
             .Select(g => g.Count() > 1 ? $"{DescribeElement(g.Key)} ×{g.Count()}" : DescribeElement(g.Key)));

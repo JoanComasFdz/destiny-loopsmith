@@ -66,10 +66,10 @@ public static class BuildValidation
                 .Concat(CreateSlots(ListWeaponCatalysts(catalog, w), $"{w.Name} catalyst", ElementKind.Catalyst)));
         return
         [
-            .. CreateOptionalSlot(build.Abilities.Super, "super", ElementKind.Super),
-            .. CreateOptionalSlot(build.Abilities.Grenade, "grenade", ElementKind.Grenade),
-            .. CreateOptionalSlot(build.Abilities.Melee, "melee", ElementKind.Melee),
-            .. CreateOptionalSlot(build.Abilities.ClassAbility, "class ability", ElementKind.ClassAbility),
+            .. CreateOptionalSlot(build.Abilities.Super.ToElement(), "super", ElementKind.Super),
+            .. CreateOptionalSlot(build.Abilities.Grenade.ToElement(), "grenade", ElementKind.Grenade),
+            .. CreateOptionalSlot(build.Abilities.Melee.ToElement(), "melee", ElementKind.Melee),
+            .. CreateOptionalSlot(build.Abilities.ClassAbility.ToElement(), "class ability", ElementKind.ClassAbility),
             .. CreateSlots(build.Aspects, "aspect", ElementKind.Aspect),
             .. CreateSlots(build.Fragments, "fragment", ElementKind.Fragment),
             .. exotic,
@@ -156,7 +156,7 @@ public static class BuildValidation
         return new ResolvedSlot(slot, Optional.Some(element), issues);
     }
 
-    /// <summary>An ability given as "?" is part of the build but not of the trace: it sets nothing off.</summary>
+    /// <summary>An ability given as "?" is part of the build but not of the trace: it sets nothing off. An empty slot says nothing.</summary>
     private static IEnumerable<BuildIssue> CheckUnknownAbilities(Build build)
     {
         var abilities = build.Abilities;
@@ -165,7 +165,7 @@ public static class BuildValidation
                 ("super", abilities.Super), ("grenade", abilities.Grenade), ("melee", abilities.Melee),
                 ("class ability", abilities.ClassAbility),
             }
-            .Where(slot => !slot.Item2.IsSome())
+            .Where(slot => slot.Item2 is AbilityPlug.Unknown)
             .Select(slot => slot.Item1)
             .ToImmutableArray();
         return unknown.IsEmpty

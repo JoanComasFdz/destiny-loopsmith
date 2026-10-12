@@ -135,10 +135,14 @@ public sealed class SubclassEditingTests
 
         var saved = Edit(session, plugs with { Aspects = [TempestStrike], Fragments = ImmutableArray<ItemHash>.Empty, Super = Optional.None<ItemHash>() });
 
-        Assert.Equal(Optional.None<ElementId>(), saved.Build.Build.Abilities.Super);
-        Assert.Contains("super: \"?\"", saved.Design.Build.Text, StringComparison.Ordinal);
+        var reopened = LoopDesigning.ImportLoop(Catalog, new SourceText("x.loop.yaml", LoopDesigning.ExportLoop(saved)))
+            .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
+
+        Assert.Equal<AbilityPlug>(new AbilityPlug.Empty(), saved.Build.Build.Abilities.Super);
+        Assert.DoesNotMatch("(?m)^super:", saved.Design.Build.Text);
         Assert.Contains("fragments: []", saved.Design.Build.Text, StringComparison.Ordinal);
         Assert.Empty(saved.Build.Build.Fragments);
+        Assert.Equal<AbilityPlug>(new AbilityPlug.Empty(), reopened.Build.Build.Abilities.Super);
     }
 
     [Fact]
@@ -195,7 +199,7 @@ public sealed class SubclassEditingTests
         var reopened = LoopDesigning.ImportLoop(Catalog, new SourceText("x.loop.yaml", LoopDesigning.ExportLoop(saved)))
             .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
 
-        Assert.Equal(Optional.None<ElementId>(), saved.Build.Build.Abilities.Grenade);
+        Assert.Equal<AbilityPlug>(new AbilityPlug.Unknown(), saved.Build.Build.Abilities.Grenade);
         Assert.Empty(saved.Build.Build.Fragments);
         Assert.Contains(saved.Build.Build.LeftOut, item => item == new LeftOutItem(LoadoutPart.SubclassPlug, SkipGrenade));
         Assert.Contains(saved.Build.Build.LeftOut, item => item == new LeftOutItem(LoadoutPart.SubclassPlug, SparkOfShock));

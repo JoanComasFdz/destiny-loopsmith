@@ -5,7 +5,8 @@
    text and Loopsmith's rules); legendary armor and weapons open none, their perks and mods do. After the player's Bungie
    login, the player's copies of its pieces and weapons (the share's when theirs, else their own) show their marks as
    DIM does: the tier's diamonds, a masterwork's glow and gold border. A weapon shows its breaker and element under its
-   square. *@
+   square. In the designer every weapon and armor slot shows, and a slot that holds nothing (an ability of a build started
+   from scratch, a weapon or armor slot) is a dashed square with its slot's name. *@
 @{
     var view = LoadoutShaping.ShapeLoadout(Build, Profile);
 }
@@ -26,12 +27,12 @@
                     {
                         @RenderTile(subclassItem.Value, "subclass-icon")
                     }
-                    @RenderTile(view.Subclass.Super, "super-icon")
+                    @RenderAbility(view.Subclass.Super, "super-icon")
                 </div>
                 <div class="icon-grid">
-                    @foreach (var tile in view.Subclass.Abilities)
+                    @foreach (var ability in view.Subclass.Abilities)
                     {
-                        @RenderTile(tile, "")
+                        @RenderAbility(ability, "")
                     }
                     @foreach (var tile in view.Subclass.Aspects)
                     {
@@ -65,12 +66,12 @@
         }
     </div>
 
-    @if (!view.Weapons.IsEmpty || CanPickWeapons)
+    @if (!view.Weapons.IsEmpty || ShowsEverySlot)
     {
         <section class="loadout-box" aria-label="Weapons">
             <h4 class="loadout-label">Weapons</h4>
             <ol class="weapon-list">
-                @foreach (var row in LoadoutShaping.ListWeaponRows(view, CanPickWeapons))
+                @foreach (var row in LoadoutShaping.ListWeaponRows(view, ShowsEverySlot))
                 {
                     @if (row is WeaponRow.Empty empty)
                     {
@@ -170,12 +171,12 @@
         </section>
     }
 
-    @if (!view.Armor.IsEmpty || !view.GeneralMods.IsEmpty)
+    @if (!view.Armor.IsEmpty || !view.GeneralMods.IsEmpty || ShowsEverySlot)
     {
         <section class="loadout-box" aria-label="Armor">
             <h4 class="loadout-label">Armor</h4>
             <div class="armor-row">
-                @foreach (var piece in LoadoutShaping.ListArmorRows(view, CanPickArmor))
+                @foreach (var piece in LoadoutShaping.ListArmorRows(view, ShowsEverySlot))
                 {
                     var slot = piece.Slot;
                     <div class="armor-piece" data-slot="@slot">
@@ -327,6 +328,9 @@
     public EventCallback<WeaponPick> OnPickWeapon { get; set; }
 
     private bool CanPickWeapons => Profile.IsSome() && OnPickWeapon.HasDelegate;
+
+    /// <summary>The designer's loadout (it picks weapons and armor) shows every weapon and armor slot, an empty one too; the Home card shows what the build has.</summary>
+    private bool ShowsEverySlot => OnPickWeapon.HasDelegate && OnPickArmor.HasDelegate;
 
     /// <summary>Where the open weapon picker's pick goes: in place of a weapon, or into an empty slot.</summary>
     private Optional<WeaponTarget> weaponPicker = Optional.None<WeaponTarget>();
@@ -526,6 +530,19 @@
         string.Join(" · ", new[] { option.Type.UnwrapOr(""), option.Tile.InRules ? "in the rules" : "" }.Where(part => part.Length > 0));
 
     /// <summary>A square: a button that opens its details when it has some (and <paramref name="tappable"/>), else a plain square.</summary>
+    /// <summary>An ability's square: its plug's tile, or a dashed square named for its slot when it holds nothing.</summary>
+    private RenderFragment RenderAbility(AbilityTile ability, string kind) => __builder =>
+    {
+        @if (ability is AbilityTile.Shown shown)
+        {
+            @RenderTile(shown.Tile, kind)
+        }
+        else if (ability is AbilityTile.Empty empty)
+        {
+            <span class="icon-tile empty @kind" title="@($"{empty.Slot} — empty: ⋯ on the Subclass box picks one.")" aria-label="@($"{empty.Slot}: empty")" data-empty="true">@empty.Slot</span>
+        }
+    };
+
     private RenderFragment RenderTile(IconTile tile, string kind, bool tappable = true) =>
         RenderMarkedTile(tile, kind, LoadoutShaping.NoMarks, tappable);
 

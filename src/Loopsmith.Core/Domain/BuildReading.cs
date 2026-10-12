@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Loopsmith.Core.Functional;
 
 namespace Loopsmith.Core.Domain;
@@ -7,7 +8,7 @@ public static class BuildReading
 {
     /// <summary>
     /// The damage type of the build's Super: its element's affinity in the catalog (Arc Staff: Arc). None when the build's
-    /// Super is "?", the catalog doesn't have it, or its affinity is no damage type (neutral, prismatic): a "weapon of your
+    /// Super is "?" or empty, the catalog doesn't have it, or its affinity is no damage type (neutral, prismatic): a "weapon of your
     /// Super's element" then matches nothing, and its phrase names no element.
     /// </summary>
     public static Optional<DamageType> ReadSuperType(this ValidatedBuild build) =>
@@ -15,9 +16,21 @@ public static class BuildReading
 
     /// <inheritdoc cref="ReadSuperType(ValidatedBuild)"/>
     public static Optional<DamageType> ReadSuperType(this Build build, RuleCatalog catalog) =>
-        build.Abilities.Super
+        build.Abilities.Super.ToElement()
             .Bind(super => catalog.Elements.TryGetValue(super, out var element) ? Optional.Some(element.Affinity) : Optional.None<Affinity>())
             .Bind(affinity => affinity is Affinity.Neutral or Affinity.Prismatic ? Optional.None<DamageType>() : Optional.Some(affinity.ToDamageType()));
+
+    /// <summary>The slot's element of the rules; none when the slot holds "?" or nothing.</summary>
+    public static Optional<ElementId> ToElement(this AbilityPlug plug) =>
+        plug.Match(known => Optional.Some(known.Element), _ => Optional.None<ElementId>(), _ => Optional.None<ElementId>());
+
+    /// <summary>True when the slot holds nothing (a build started from scratch); "?" is an ability the build has.</summary>
+    public static bool IsEmpty(this AbilityPlug plug) =>
+        plug is AbilityPlug.Empty;
+
+    /// <summary>The four ability slots in the format's order: super, grenade, melee, class ability.</summary>
+    public static ImmutableArray<AbilityPlug> ListPlugs(this AbilityLoadout abilities) =>
+        [abilities.Super, abilities.Grenade, abilities.Melee, abilities.ClassAbility];
 
     /// <summary>
     /// True when the element can go on a build of this class and subclass (<see cref="FitsClass"/> and
