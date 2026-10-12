@@ -593,20 +593,16 @@ textarea { resize: vertical; }
 }
 .timeline-empty { margin: 4px 0; padding: 16px; border: 1px dashed var(--line-2); border-radius: var(--radius); color: var(--muted); text-align: center; }
 
-/* palette: under the last step (the next trigger is where the loop goes on), in columns when the loop is wide */
+/* palette: under the last step (the next trigger is where the loop goes on), laid out like Destiny's HUD — the Super's
+   diamond, the grenade, melee and class ability squares in the subclass's colour (--aff), the weapons in their damage
+   type's; above them the ground and the states to declare; the picked slot's actions below */
 .palette { padding-bottom: 8px; }
 .col-loop .palette { margin-top: 2px; }
-@media (min-width: 620px) {
-    .col-loop .trigger-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 5px 12px; }
-}
 .palette-hint { margin: 0 0 6px; font-size: 12px; color: var(--warn); }
-.trigger-list { display: flex; flex-direction: column; gap: 5px; }
-.trigger-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
-.trigger-title { flex: 1 1 0; min-width: 0; font-weight: 650; font-size: 13px; overflow-wrap: anywhere; }
-.trigger-buttons { display: flex; gap: 4px; }
-.target-count { display: inline-flex; align-items: center; gap: 2px; color: var(--muted); font-size: 12px; font-weight: 700; }
-.target-count select { padding: 4px 4px 4px 6px; min-height: 30px; font-family: var(--mono); font-size: 13px; }
-.trigger-row.single .trigger-buttons { flex: 1 1 100%; }
+.trigger-buttons { display: flex; flex-wrap: wrap; gap: 6px; }
+.target-count { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); font-size: 12px; font-weight: 700; }
+.target-count select { padding: 4px 4px 4px 6px; min-height: 34px; font-family: var(--mono); font-size: 13px; }
+.target-count-label { font-weight: 500; }
 .trigger {
     display: inline-flex;
     align-items: center;
@@ -624,11 +620,79 @@ textarea { resize: vertical; }
     cursor: pointer;
     text-transform: none;
 }
-.trigger.half { min-width: 62px; text-transform: lowercase; }
-.trigger.whole { flex: 1; justify-content: flex-start; }
 .trigger:hover { border-color: var(--arc); background: #1b2740; }
 .trigger:active { transform: translateY(1px); }
 .trigger .badge.new { font-size: 9px; padding: 0 4px; }
+
+.trig-hud { display: flex; flex-direction: column; gap: 8px; padding-top: 6px; }
+.trig-status { display: flex; flex-direction: column; gap: 6px; }
+.trig-group { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.trig-group-label { flex: 0 0 92px; color: var(--dim); font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.trig-status-chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 3px 2px 10px; border: 1px solid var(--line); border-left: 3px solid var(--aff); border-radius: 4px; background: rgba(255, 255, 255, .03); }
+.trig-status-name { margin-right: 2px; color: var(--aff); font-size: 13px; font-weight: 700; }
+.trigger.trig-mini { min-height: 28px; padding: 2px 8px; font-size: 12px; font-weight: 600; }
+.trig-chip { min-height: 32px; padding: 3px 12px 3px 9px; border-radius: 16px; border-color: var(--line-2); background: rgba(255, 255, 255, .035); font-weight: 600; }
+.trig-chip-glyph { color: var(--text); font-size: 12px; }
+@media (max-width: 520px) {
+    .trig-group-label { flex-basis: 100%; }
+}
+.trig-bar { height: 4px; margin-left: 46px; border-radius: 2px; background: linear-gradient(90deg, var(--aff), rgba(255, 255, 255, .06)); }
+.trig-main { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; }
+.trig-abilities { display: flex; align-items: center; gap: 8px; }
+.trig-super, .trig-ability {
+    position: relative;
+    flex: none;
+    width: 62px;
+    height: 62px;
+    min-height: 0;
+    padding: 0;
+    border: 2px solid var(--aff);
+    border-radius: 3px;
+    background: var(--panel-2);
+    color: var(--text);
+    cursor: pointer;
+}
+.trig-super { width: 58px; height: 58px; margin: 0 12px 0 8px; transform: rotate(45deg); overflow: hidden; }
+.trig-super .trig-icon { transform: rotate(-45deg) scale(1.42); }
+.trig-super .trig-new { transform: rotate(-45deg); }
+.trig-icon { display: block; width: 100%; height: 100%; }
+.trig-icon img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.trig-unknown { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; font-size: 26px; font-weight: 700; color: var(--aff); }
+.trig-super:hover, .trig-ability:hover { border-color: var(--text); background: var(--panel-2); }
+.trig-super.picked, .trig-ability.picked { border-color: var(--text); box-shadow: 0 0 0 2px var(--aff), 0 0 14px var(--aff); }
+.trig-weapons { display: flex; flex: 1 1 280px; flex-direction: column; gap: 4px; min-width: 0; }
+.trig-weapon {
+    position: relative;
+    display: grid;
+    grid-template-columns: 42px 18px minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
+    padding: 3px 10px 3px 3px;
+    border: 1px solid var(--line);
+    border-right: 3px solid var(--aff);
+    border-radius: 3px;
+    background: rgba(255, 255, 255, .03);
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+.trig-weapon:hover { border-color: var(--line-2); border-right-color: var(--aff); background: rgba(255, 255, 255, .06); }
+.trig-weapon.picked { border-color: var(--aff); background: rgba(255, 255, 255, .07); box-shadow: 0 0 10px rgba(0, 0, 0, .4) inset; }
+.trig-weapon-icon { width: 42px; height: 42px; border-radius: 2px; background: var(--panel-2); overflow: hidden; }
+.trig-weapon-icon img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.trig-damage-icon { width: 18px; height: 18px; }
+.trig-weapon-text { display: flex; flex-direction: column; min-width: 0; }
+.trig-weapon-name { overflow: hidden; color: var(--aff); font-size: 14px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.trig-weapon-kind { overflow: hidden; color: var(--muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.trig-new { position: absolute; top: -4px; right: -4px; width: 10px; height: 10px; border-radius: 50%; background: var(--strand); box-shadow: 0 0 0 2px var(--panel); }
+.trig-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; min-height: 52px; margin-top: 12px; padding: 8px 12px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel-2); font-size: 13px; }
+.trig-actions-title { font-weight: 700; }
+.trig-actions .trigger { min-width: 78px; min-height: 36px; text-transform: lowercase; }
+@media (max-width: 420px) {
+    .trig-super, .trig-ability { width: 58px; height: 58px; }
+    .trig-super { width: 54px; height: 54px; }
+}
 
 /* a step's state, laid out like the game's HUD: buffs on you left, your weapons' buffs in the middle, debuffs on the
    pack right, the ground below them; a phone stacks them, label beside chips */
