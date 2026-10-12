@@ -922,7 +922,15 @@ button.hud-chip:hover, button.hud-chip:focus-visible { background: color-mix(in 
 .weapon-line-name { font-size: 13px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .weapon-line-sub { font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .weapon-perks { display: flex; gap: 6px; flex: none; }
-.icon-tile.perk { width: calc(var(--mod-tile) + 4px); height: calc(var(--mod-tile) + 4px); border-radius: 50%; background: #1f2633; }
+.icon-tile.perk { --perk-fill: #1f2633; width: calc(var(--mod-tile) + 4px); height: calc(var(--mod-tile) + 4px); border-radius: 50%; background: var(--perk-fill); }
+/* a weapon's own perks (the build's, a copy's in the weapon picker, the picked one in the perk picker) on DIM's blue
+   circle for a plugged perk; what a column could roll with stays dark */
+.weapon-perks .icon-tile.perk:not(.empty-perk), .weapon-option-perk .icon-tile.perk, .perk-option.picked .icon-tile.perk { --perk-fill: #4887ba; }
+/* a perk the rules don't know yet: its icon is dimmed and its circle dashed; its circle's fill, and an enhanced trait's
+   gold glow and arrow, stay as bright as a known perk's (dimming the whole square turned them grey) */
+.icon-tile.perk.out { opacity: 1; filter: none; }
+.icon-tile.perk.out img { opacity: .55; filter: grayscale(.6); }
+.icon-tile.perk.out:hover img { opacity: .9; }
 .icon-tile.perk img { border-radius: 50%; }
 /* an enhanced trait, as the game and DIM draw it over the base perk's icon (Bungie gives both the same image): a gold
    glow over the circle's lower half, behind the icon, and one straight gold up-arrow down the circle's left edge: its
@@ -931,7 +939,7 @@ button.hud-chip:hover, button.hud-chip:focus-visible { background: color-mix(in 
    repeats into the 1 px border. */
 .icon-tile.perk.enhanced, .outcome-icon.enhanced-perk {
     overflow: visible;
-    background: linear-gradient(to bottom, transparent 50%, var(--masterwork)) border-box no-repeat, #1f2633;
+    background: linear-gradient(to bottom, transparent 50%, var(--masterwork)) border-box no-repeat, var(--perk-fill, #1f2633);
 }
 .outcome-icon.enhanced-perk { position: relative; display: inline-flex; border-radius: 50%; }
 .outcome-icon.enhanced-perk img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
