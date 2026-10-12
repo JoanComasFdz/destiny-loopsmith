@@ -1,6 +1,6 @@
 ---
 name: loopsmith-task
-description: Starts a piece of Loopsmith work from what the owner wants, written in any language and any shape (a sentence, a dictated note, a list), plus the screenshots and files they paste (images, logs, YAML, XML, JSON, loop files). Agrees the spec and the acceptance criteria with them, then does the work in this same session on one branch and one draft pull request, watched until it is merged. Use when the owner runs /loopsmith-task or asks to start a task.
+description: Starts a piece of Loopsmith work from what the owner wants, written in any language and any shape (a sentence, a dictated note, a list), plus the screenshots and files they paste (images, logs, YAML, XML, JSON, loop files). Agrees the spec and the acceptance criteria with them, then does the work in this same session on one branch and one pull request, watched until it is merged. Use when the owner runs /loopsmith-task or asks to start a task.
 argument-hint: what you want, in your own words and any language (paste screenshots and files too)
 ---
 
@@ -8,7 +8,7 @@ argument-hint: what you want, in your own words and any language (paste screensh
 
 The owner writes what they want however it comes out, in any language, and may paste screenshots
 and files. You agree with them on what to build and how to check it, then you build it: in this
-session, on one branch and one draft pull request (CLAUDE.md, "Agent workflow").
+session, on one branch and one pull request (CLAUDE.md, "Agent workflow").
 
 - **Language.** Whatever language the owner writes in, reply in English and write everything in
   English, like the rest of the repository. Don't quote their original words in the PR: say it with
@@ -107,8 +107,8 @@ for; suggest it to them instead.
 
 ## 5. Start the work
 
-When they say go, follow CLAUDE.md's "Agent workflow" from step 1. The spec becomes the draft PR's
-title and description.
+When they say go, follow CLAUDE.md's "Agent workflow" from step 1. The spec becomes the PR's title and
+description when the work is ready for review.
 
 The owner's files never go into the repository by themselves. When the work needs one in the
 repository, put it in its proper place, for example a loop file as a test case under `builds/` or

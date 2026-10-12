@@ -10,9 +10,9 @@ permissions:
 
 jobs:
   # Whether a pull request changes more than Markdown, docs/, .github/ and .claude/ (a rename
-  # counts its old path too; a PR with no changed files, like a draft's first empty commit, counts
-  # as docs-only). If not, `build` is skipped, and a skipped required check counts as
-  # passed. If this job fails, `build` runs. Pushes to main always build. Same list in pr-preview.yml.
+  # counts its old path too; a PR with no changed files counts as docs-only). If not, `build` is
+  # skipped, and a skipped required check counts as passed. If this job fails, `build` runs.
+  # Pushes to main always build. Same list in pr-preview.yml.
   changes:
     runs-on: ubuntu-latest
     permissions:

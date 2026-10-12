@@ -15,9 +15,9 @@ permissions:
 
 jobs:
   # Whether a pull request changes more than Markdown, docs/, .github/ and .claude/ (a rename
-  # counts its old path too; a PR with no changed files, like a draft's first empty commit, counts
-  # as docs-only). If not, it gets no preview; closing a PR still removes its preview,
-  # in case an earlier push had one. If this job fails, the preview runs. Same list in ci.yml.
+  # counts its old path too; a PR with no changed files counts as docs-only). If not, it gets no
+  # preview; closing a PR still removes its preview, in case an earlier push had one. If this job
+  # fails, the preview runs. Same list in ci.yml.
   changes:
     runs-on: ubuntu-latest
     permissions:

@@ -118,28 +118,24 @@ repos (Microsoft's download hosts are blocked by the network policy) and restore
 Work starts in a cloud session where @JoanComasFdz runs `/loopsmith-task` with what they want, in
 their own words and any language, and pastes any screenshots and files. The skill agrees the spec
 and its acceptance criteria with them; then the same session does the work, on one branch and one
-draft pull request:
+pull request:
 
-1. **Open the draft PR first.** From the latest `origin/main`, create the work branch (Naming), push
-   it with one empty commit (`git commit --allow-empty -m "Start: <title>"`: GitHub needs a commit
-   to open a PR) and open a **draft** PR into `main`, with the task's title and the agreed spec as
-   its description. Watch it (auto-fix) at once.
-2. **Ask, and listen in both places.** Ask your questions in the session. @JoanComasFdz may also
-   answer, or add things, asked for or not, on the PR: comments and reviews there wake you. Act on
-   both, at any time. Don't guess: if something a session doesn't have is needed (the Compendium
-   snapshot for rule work, a creator transcript, a design decision), ask for it.
-3. **Do the work** on that branch, changing only what the spec covers. Before every push of a
-   change: `dotnet build Loopsmith.slnx` and `dotnet test` (warnings are errors; there is no
-   separate linter), and check a web change in a browser too (How we work). Push when a step is
-   complete, not after every edit: each push runs CI and the preview.
-4. **When it's done,** tick the acceptance criteria you checked, add to the description what changed
-   and how to check it on the preview at `…/pr-preview/pr-<PR number>/`, and say `Ready for review`
-   in the session and on the PR. A session can't take a PR out of draft (that needs GraphQL):
-   @JoanComasFdz clicks **Ready for review**.
+1. **Branch.** From the latest `origin/main`, create the work branch (Naming).
+2. **Ask in the session.** Ask your questions there and wait for the answer. Don't guess: if
+   something a session doesn't have is needed (the Compendium snapshot for rule work, a creator
+   transcript, a design decision), ask for it.
+3. **Do the work** on that branch, changing only what the spec covers. Before every push: `dotnet
+   build Loopsmith.slnx` and `dotnet test` (warnings are errors; there is no separate linter), and
+   check a web change in a browser too (How we work). Push when a step is complete, not after every
+   edit.
+4. **When it's ready for review, open the pull request** into `main` (not a draft), with the task's
+   title and the agreed spec as its description: tick the acceptance criteria you checked, and add
+   what changed and how to check it on the preview at `…/pr-preview/pr-<PR number>/`. Watch it
+   (auto-fix) at once, and give @JoanComasFdz its link in the session.
 5. **Keep watching until the PR is merged or closed,** however many rounds it takes: every message
-   in the session, every comment and review @JoanComasFdz writes on the PR, every CI failure. Reply
-   in a review thread when you address it, but don't resolve it: @JoanComasFdz resolves threads, and
-   that is their sign-off before merging.
+   in the session, every comment and review @JoanComasFdz writes on the PR (they wake you), every CI
+   failure. Reply in a review thread when you address it, but don't resolve it: @JoanComasFdz
+   resolves threads, and that is their sign-off before merging.
 6. **Keep it mergeable.** A conflict with `main` doesn't always arrive as an event, so on every PR
    event, and on a check-in with `send_later` about every 4 hours while the PR waits (stop after 3
    in a row that found nothing new; the next event starts them again), look at its merge state. On a
@@ -171,7 +167,6 @@ Always:
 |---|---|
 | Task title (PR title) | an imperative sentence, at most about 70 characters |
 | Work branch | `claude/<slug>`: the title's gist in at most 5 lowercase ASCII kebab-case words, e.g. `claude/perk-descriptions-on-phone` |
-| Its first commit | `Start: <title>` (empty) |
 | A file given in the session | `<NN>-<what>[-<where>].<ext>` (below), as the spec's "Files given in the session" lists it |
 
 A file's name starts with its two-digit place in the order the owner gave the files (`01`, `02`, …;
@@ -181,7 +176,7 @@ keeps its extension: `01-perk-picker-phone.png`, `02-designer-console.log`,
 
 ## Project skills (`.claude/skills/`)
 - `loopsmith-task` — what the owner wants, in any language, with their screenshots and files → a
-  spec with acceptance criteria agreed with them → the work, in the same session, on one draft pull
+  spec with acceptance criteria agreed with them → the work, in the same session, on one pull
   request watched until it is merged (Agent workflow).
 
 ## Project subagents (`.claude/agents/`)

@@ -22,15 +22,15 @@ The session always answers in English. One task is one pull request.
    agree with or change. If you asked for several independent things, it takes one and gives you a
    ready-to-paste `/loopsmith-task …` line for each of the others.
 2. **Round 2:** the spec (title, goal, acceptance criteria, out of scope, notes, the files you gave),
-   exactly as it will open the pull request. You say go.
-3. It opens a **draft** pull request from `claude/<slug>` with the spec as its description, and
-   watches it.
-4. It works on that branch. Talk to it in the session, or on the PR: comments and reviews there wake
-   it within seconds, asked for or not.
-5. When it's done, it ticks the acceptance criteria and says **Ready for review**. Check the change
-   on the preview (`…/pr-preview/pr-<PR number>/`), click **Ready for review** (a session can't take a
-   PR out of draft), review, resolve the threads and **Squash and merge**.
-6. It keeps watching through any number of review rounds, until the PR is merged or closed.
+   exactly as it will describe the pull request. You say go.
+3. It works on its branch, `claude/<slug>`. Talk to it in the session at any time: questions,
+   answers, more screenshots.
+4. When it's ready for review, it opens the pull request with the spec as its description, the
+   acceptance criteria ticked, and how to check the change on the preview
+   (`…/pr-preview/pr-<PR number>/`), and gives you the link. Review there or in the session:
+   comments and reviews on the PR wake it within seconds. Resolve the threads and
+   **Squash and merge**.
+5. It keeps watching through any number of review rounds, until the PR is merged or closed.
 
 The session never merges, approves or pushes to `main`, and it replies in review threads without
 resolving them. Names follow CLAUDE.md, "Naming (agent work)".
@@ -48,5 +48,5 @@ resolving them. Names follow CLAUDE.md, "Naming (agent work)".
   conflict by merging `main` into its branch. To have it done now, tell it "merge origin/main into
   this branch".
 - **Out of date.** A PR that is only behind `main` waits for you: click **Update branch**.
-- **Dropping a task.** Close the PR, then click **Delete branch** on the closed PR (a session can't
-  delete branches), and archive the session.
+- **Dropping a task.** Tell the session, close the PR if it has one, click **Delete branch** (a
+  session can't delete branches), and archive the session.
