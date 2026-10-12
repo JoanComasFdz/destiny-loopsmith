@@ -1,0 +1,317 @@
+// Loopsmith web host — Bungie's manifest, downloaded on demand: each component file is fetched from bungie.net (the
+// browser's HTTP cache keeps it; the app stores nothing), its bytes kept as the download gave them (in its chunks, never
+// copied into one buffer) and every entry's place in them indexed by hash as the chunks arrive — in the same pass, which
+// entries hold each "plugCategoryIdentifier" and each "bucketTypeHash". Core asks for entries by hash (whole, or cut
+// down to the fields it names) and for the entries whose JSON holds a piece of text, and interprets the JSON itself:
+// no game logic lives here. The download reports how far it got to
+// .NET (a few times a second) and pauses every few megabytes, so the page keeps answering taps; once Core has what it
+// asked for, the tables are let go (a later read downloads them again, from the HTTP cache). Called from
+// Hosting/BrowserInterop.cs.
+window.loopsmithManifest = (() => {
+  const tables = new Map();   // component name → { store, offsets: Map(hash → [start, end]), categories: Map(category → [hash]), buckets: Map(bucket → [hash]) }
+  const decoder = new TextDecoder("utf-8");
+  const QUOTE = 34, BACKSLASH = 92, OPEN = 123, CLOSE = 125, COMMA = 44, COLON = 58, ZERO = 48, NINE = 57;
+  const SPACE = 32, TAB = 9, NEWLINE = 10, RETURN = 13;
+  const CATEGORY_KEY = new TextEncoder().encode("plugCategoryIdentifier");
+  const CATEGORY_NEEDLE = /^"plugCategoryIdentifier":"([^"\\]*)"$/;
+  const BUCKET_KEY = new TextEncoder().encode("bucketTypeHash");
+  const BUCKET_NEEDLE = /^"bucketTypeHash":(\d+)$/;
+  const SLICE = 8 * 1024 * 1024;   // bytes indexed between two pauses, so the page keeps answering taps
+  const REPORT_EVERY = 250;        // ms between two progress reports
+
+  const pause = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+  // ── a component's bytes, in the chunks the download gave ───────────────────────
+
+  function createStore() { return { chunks: [], starts: [], length: 0 }; }
+
+  function addChunk(store, chunk) {
+    store.starts.push(store.length);
+    store.chunks.push(chunk);
+    store.length += chunk.length;
+  }
+
+  // The chunk holding byte `at`.
+  function findChunk(store, at) {
+    let low = 0, high = store.starts.length - 1;
+    while (low < high) {
+      const middle = (low + high + 1) >> 1;
+      if (store.starts[middle] <= at) low = middle; else high = middle - 1;
+    }
+    return low;
+  }
+
+  // Bytes [start, end): a view when one chunk holds them, else a copy of the pieces.
+  function readBytes(store, start, end) {
+    const first = findChunk(store, start);
+    const offset = start - store.starts[first];
+    if (offset + (end - start) <= store.chunks[first].length) return store.chunks[first].subarray(offset, offset + (end - start));
+    const out = new Uint8Array(end - start);
+    for (let c = first, at = start; at < end; c++) {
+      const from = at - store.starts[c];
+      const piece = store.chunks[c].subarray(from, Math.min(store.chunks[c].length, from + (end - at)));
+      out.set(piece, at - start);
+      at += piece.length;
+    }
+    return out;
+  }
+
+  // ── the index, built as the chunks arrive ──────────────────────────────────────
+
+  // The top-level object's entries: "hash": { … } → the byte range of { … }; each "plugCategoryIdentifier": "…" inside
+  // an entry → that entry's hash; and each "bucketTypeHash": <number> inside an entry → that entry's hash. Strings are
+  // skipped whole (an escape may end one chunk and its character start the next), so braces and quotes inside them don't
+  // count; a number may end one chunk and go on in the next. Offsets are the component's, not the chunk's.
+  function createIndexer(store) {
+    const offsets = new Map(), categories = new Map(), buckets = new Map();
+    let depth = 0, inString = false, escaped = false, stringStart = -1, keyStart = -1, key = null, valueStart = -1, expectCategory = false;
+    let expectBucket = false, bucket = 0, bucketDigits = false;
+    function feed(chunk, base) {
+      for (let k = 0; k < chunk.length; k++) {
+        const b = chunk[k];
+        if (expectBucket && !inString) {
+          if (b >= ZERO && b <= NINE) { bucket = bucket * 10 + (b - ZERO); bucketDigits = true; continue; }
+          if (!bucketDigits && (b === COLON || b === SPACE || b === TAB || b === NEWLINE || b === RETURN)) continue;
+          if (bucketDigits) addCategory(buckets, String(bucket), key);
+          expectBucket = false; bucketDigits = false; bucket = 0;
+        }
+        if (inString) {
+          if (escaped) { escaped = false; continue; }
+          if (b === BACKSLASH) { escaped = true; continue; }
+          if (b === QUOTE) {
+            const i = base + k;
+            inString = false;
+            if (depth === 1 && keyStart >= 0) { key = decoder.decode(readBytes(store, keyStart, i)); keyStart = -1; }
+            else if (depth > 1 && key !== null) {
+              if (expectCategory) { addCategory(categories, decoder.decode(readBytes(store, stringStart, i)), key); expectCategory = false; }
+              else if (i - stringStart === CATEGORY_KEY.length && equals(readBytes(store, stringStart, i), CATEGORY_KEY)) expectCategory = true;
+              else if (i - stringStart === BUCKET_KEY.length && equals(readBytes(store, stringStart, i), BUCKET_KEY)) expectBucket = true;
+            }
+          }
+          continue;
+        }
+        if (b === QUOTE) { inString = true; stringStart = base + k + 1; if (depth === 1 && key === null) keyStart = base + k + 1; continue; }
+        if (b === OPEN) { expectCategory = false; if (depth === 1 && key !== null) valueStart = base + k; depth++; continue; }
+        if (b === CLOSE) {
+          expectCategory = false;
+          depth--;
+          if (depth === 1 && key !== null && valueStart >= 0) { offsets.set(key, [valueStart, base + k + 1]); key = null; valueStart = -1; }
+          continue;
+        }
+        if (b === COMMA) expectCategory = false;
+      }
+    }
+    return { feed, offsets, categories, buckets };
+  }
+
+  function addCategory(categories, category, key) {
+    const hashes = categories.get(category);
+    if (!hashes) categories.set(category, [Number(key)]);
+    else if (hashes[hashes.length - 1] !== Number(key)) hashes.push(Number(key));
+  }
+
+  function equals(bytes, other) {
+    if (bytes.length !== other.length) return false;
+    for (let j = 0; j < other.length; j++) if (bytes[j] !== other[j]) return false;
+    return true;
+  }
+
+  // ── the download ───────────────────────────────────────────────────────────────
+
+  // How far the reading got (the bytes received, all components, unpacked: the browser undoes bungie.net's compression),
+  // told to .NET a few times a second.
+  function createProgress(reporter) {
+    let bytes = 0, last = 0;
+    return {
+      add(count) {
+        bytes += count;
+        const now = performance.now();
+        if (reporter && now - last >= REPORT_EVERY) { last = now; reporter.invokeMethodAsync("ReportDownload", bytes).catch(() => {}); }
+      },
+    };
+  }
+
+  async function loadTable(name, url, progress) {
+    if (tables.has(name)) return;
+    const response = await fetch(url, { mode: "cors", credentials: "omit" });
+    if (!response.ok) throw new Error(`${name}: HTTP ${response.status}`);
+    const store = createStore(), indexer = createIndexer(store);
+    let sincePause = 0;
+    const take = async (chunk) => {
+      for (let from = 0; from < chunk.length; from += SLICE) {   // a big chunk (no stream) is indexed a slice at a time
+        const piece = chunk.subarray(from, Math.min(chunk.length, from + SLICE));
+        addChunk(store, piece);
+        indexer.feed(piece, store.length - piece.length);
+        progress.add(piece.length);
+        sincePause += piece.length;
+        if (sincePause >= SLICE) { sincePause = 0; await pause(); }
+      }
+    };
+    if (response.body && response.body.getReader) {
+      const reader = response.body.getReader();
+      for (let read = await reader.read(); !read.done; read = await reader.read()) await take(read.value);
+    } else {
+      await take(new Uint8Array(await response.arrayBuffer()));
+    }
+    tables.set(name, { store, offsets: indexer.offsets, categories: indexer.categories, buckets: indexer.buckets });
+  }
+
+  return {
+    // The manifest's index (its component paths), or null when bungie.net doesn't answer it.
+    async readIndex(url, apiKey) {
+      try {
+        const response = await fetch(url, { headers: apiKey ? { "X-API-Key": apiKey } : {}, credentials: "omit" });
+        return response.ok ? await response.text() : null;
+      } catch (_) {
+        return null;
+      }
+    },
+
+    // Fetch and index the components ({ name: url }), telling `reporter` (a .NET object, or null) how many bytes came;
+    // why one couldn't be, or null when all are in.
+    async loadTables(urls, reporter) {
+      try {
+        const progress = createProgress(reporter);
+        for (const [name, url] of Object.entries(urls)) await loadTable(name, url, progress);
+        return null;
+      } catch (error) {
+        return String(error && error.message ? error.message : error);
+      }
+    },
+
+    // Let the components go (their bytes are most of the tab's memory); a later read downloads them again.
+    releaseTables() {
+      tables.clear();
+    },
+
+    // Each entry asked for, as the manifest has it ({ table: [hashes] } → { table: { hash: { …entry… } } }: the entries'
+    // own JSON, not strings of it, so Core parses each once); a missing one is left out. An empty list asks for the
+    // whole table (a small one). With `paths` (["displayProperties.name", "sockets.socketEntries.*.singleInitialItemHash"]:
+    // property names; "*" for each element of an array), each entry is cut down to those fields, where they are.
+    readEntries(request, paths) {
+      const tree = paths && paths.length ? toPathTree(paths) : null;
+      const parts = [];
+      for (const [name, hashes] of Object.entries(request)) {
+        const table = tables.get(name);
+        if (!table) continue;
+        const keys = hashes.length ? hashes.map(String) : [...table.offsets.keys()];
+        const entries = [];
+        for (const key of keys) {
+          const range = table.offsets.get(key);
+          if (!range) continue;
+          const text = decoder.decode(readBytes(table.store, range[0], range[1]));
+          entries.push(JSON.stringify(key) + ":" + (tree ? JSON.stringify(cutEntry(JSON.parse(text), tree) || {}) : text));
+        }
+        parts.push(JSON.stringify(name) + ":{" + entries.join(",") + "}");
+      }
+      return "{" + parts.join(",") + "}";
+    },
+
+    // The hashes of a table's entries whose JSON holds each needle ({ needle: [hashes] }). A plug category's needle
+    // ("plugCategoryIdentifier":"…") and a bucket's ("bucketTypeHash":…) are answered from the index the load built; any
+    // other, by a pass over the bytes, each match placed in the entry that holds it.
+    findEntriesContaining(table, needles) {
+      const found = {};
+      const store = tables.get(table);
+      if (!store) return JSON.stringify(found);
+      const encoder = new TextEncoder();
+      let starts = null;
+      for (const needle of needles) {
+        const category = CATEGORY_NEEDLE.exec(needle);
+        if (category) {
+          found[needle] = [...(store.categories.get(category[1]) || [])].sort((a, b) => a - b);
+          continue;
+        }
+        const bucket = BUCKET_NEEDLE.exec(needle);
+        if (bucket) {
+          found[needle] = [...(store.buckets.get(bucket[1]) || [])].sort((a, b) => a - b);
+          continue;
+        }
+        starts = starts || [...store.offsets].map(([key, [start, end]]) => [start, end, Number(key)]).sort((a, b) => a[0] - b[0]);
+        const hashes = new Set();
+        for (const at of findAll(store.store, encoder.encode(needle))) {
+          const entry = findEntry(starts, at);
+          if (entry) hashes.add(entry[2]);
+        }
+        found[needle] = [...hashes].sort((a, b) => a - b);
+      }
+      return JSON.stringify(found);
+    },
+  };
+
+  // The paths Core asks for, as a tree: name → { whole: the path ends here, children: the paths going on }.
+  function toPathTree(paths) {
+    const root = new Map();
+    for (const path of paths) {
+      let level = root;
+      const names = path.split(".");
+      names.forEach((name, i) => {
+        if (!level.has(name)) level.set(name, { whole: false, children: new Map() });
+        const node = level.get(name);
+        if (i === names.length - 1) node.whole = true;
+        level = node.children;
+      });
+    }
+    return root;
+  }
+
+  // A value cut down to the tree's paths: an object keeps the fields on a path (undefined when it has none); an array,
+  // under "*", keeps every element in its place (null where one has nothing of the path); anything else, nothing.
+  function cutEntry(value, tree) {
+    if (Array.isArray(value)) {
+      const each = tree.get("*");
+      if (!each) return undefined;
+      return value.map((element) => {
+        const kept = each.whole ? element : cutEntry(element, each.children);
+        return kept === undefined ? null : kept;
+      });
+    }
+    if (value === null || typeof value !== "object") return undefined;
+    let out;
+    for (const [name, node] of tree) {
+      if (name === "*" || !Object.prototype.hasOwnProperty.call(value, name)) continue;
+      const kept = node.whole ? value[name] : cutEntry(value[name], node.children);
+      if (kept !== undefined) (out || (out = {}))[name] = kept;
+    }
+    return out;
+  }
+
+  function findEntry(starts, at) {
+    let low = 0, high = starts.length - 1;
+    while (low <= high) {
+      const middle = (low + high) >> 1;
+      if (starts[middle][0] > at) high = middle - 1;
+      else if (starts[middle][1] <= at) low = middle + 1;
+      else return starts[middle];
+    }
+    return null;
+  }
+
+  // Every place the needle starts, over the chunks: each chunk searched where it is, and at each boundary a small window
+  // of the bytes around it (a match may cross from one chunk into the next: one that starts before the boundary and
+  // ends after it, so none is found twice). A chunk shorter than the needle is covered by the windows on either side.
+  function findAll(store, needle) {
+    const places = [], reach = needle.length - 1;
+    for (let c = 0; c < store.chunks.length; c++) {
+      const chunk = store.chunks[c], base = store.starts[c];
+      for (let at = indexOf(chunk, needle, 0); at >= 0; at = indexOf(chunk, needle, at + 1)) places.push(base + at);
+      if (reach > 0 && c + 1 < store.chunks.length) {
+        const from = Math.max(0, base + chunk.length - reach), to = Math.min(store.length, base + chunk.length + reach);
+        const window = readBytes(store, from, to), boundary = base + chunk.length - from;
+        for (let at = indexOf(window, needle, 0); at >= 0; at = indexOf(window, needle, at + 1)) {
+          if (at < boundary && at + needle.length > boundary) places.push(from + at);
+        }
+      }
+    }
+    return places.sort((a, b) => a - b);
+  }
+
+  function indexOf(bytes, needle, from) {
+    const first = needle[0], last = bytes.length - needle.length;
+    outer: for (let i = bytes.indexOf(first, from); i >= 0 && i <= last; i = bytes.indexOf(first, i + 1)) {
+      for (let j = 1; j < needle.length; j++) if (bytes[i + j] !== needle[j]) continue outer;
+      return i;
+    }
+    return -1;
+  }
+})();
