@@ -295,7 +295,8 @@ subclass editor with the build's super, grenade, melee, class ability, jump, two
 square opens its details, and **Change** opens, inside that slot (across the editor's width), the list of everything the
 subclass can hold there — Bungie's manifest, with icons and names: the ones the rules know are marked, the rest carry ⊘,
 a jump none (it has no part in a loop). One list is open at a time; picking a plug puts it in the slot and closes it. An aspect
-or a fragment can't be equipped twice, and ✕ leaves its slot empty. The aspects open the fragment slots (`fragmentSlots` in the rules: Tempest Strike
+or a fragment can't be equipped twice; ✕ leaves a fragment's slot empty, while an aspect has no ✕: it is only swapped
+for another. The aspects open the fragment slots (`fragmentSlots` in the rules: Tempest Strike
 and Flow State 4, Tempest Strike and Ascension 5); the count follows the aspects at once. An aspect whose count the rules
 don't give shows "?" slots and limits nothing. An aspect change that closes slots takes out the last fragments and names
 them. **Cancel**, ✕ or Escape throws the changes away.

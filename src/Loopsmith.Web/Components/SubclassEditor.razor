@@ -1,8 +1,9 @@
 @* The subclass editor: the build's super, grenade, melee, class ability, jump, aspects and fragments, each slot with its
    plug (tap the square for its details) and Change, which opens, inside the slot, the list of everything the subclass can
-   hold there (Bungie's manifest; the ones the rules know are marked, the rest carry ⊘, a jump none). The aspects open
-   the fragment slots; an aspect change that closes slots takes the last fragments out and names them. Save hands the
-   plugs to the designer (LoopDesigning.EditSubclass); Cancel, ✕ or Escape throws the changes away. *@
+   hold there (Bungie's manifest; the ones the rules know are marked, the rest carry ⊘, a jump none). A fragment's ✕
+   empties its slot; an aspect has none, it is only swapped for another. The aspects open the fragment slots; an aspect
+   change that closes slots takes the last fragments out and names them. Save hands the plugs to the designer
+   (LoopDesigning.EditSubclass); Cancel, ✕ or Escape throws the changes away. *@
 @using System.Globalization
 @inject BrowserInterop Browser
 @{
@@ -86,7 +87,8 @@
     private RenderFragment RenderMany(SubclassSlot slot, string label, int index, Optional<ItemHash> plug) =>
         RenderSlot(slot, $"{label} {index + 1}", index, plug, true);
 
-    private RenderFragment RenderSlot(SubclassSlot slot, string label, int index, Optional<ItemHash> plug, bool removable) => __builder =>
+    /// <summary>A slot: its plug, Change and, for a fragment, ✕. <paramref name="many"/>: an aspect or fragment slot, which can be empty.</summary>
+    private RenderFragment RenderSlot(SubclassSlot slot, string label, int index, Optional<ItemHash> plug, bool many) => __builder =>
     {
         var pick = new OpenPick(slot, index);
         var open = picker == Optional.Some(pick);
@@ -103,17 +105,17 @@
                 }
                 else
                 {
-                    <span class="icon-tile empty" title="@label: empty">@(removable ? "+" : DomainPhrasing.Unknown)</span>
+                    <span class="icon-tile empty" title="@label: empty">@(many ? "+" : DomainPhrasing.Unknown)</span>
                     <span class="sub-slot-text">
                         <span class="sub-slot-label">@label</span>
-                        <span class="sub-slot-name muted" data-testid="slot-name">@(removable ? "Empty" : DomainPhrasing.Unknown)</span>
+                        <span class="sub-slot-name muted" data-testid="slot-name">@(many ? "Empty" : DomainPhrasing.Unknown)</span>
                     </span>
                 }
                 <button type="button" class="btn small" data-action="change-slot" aria-expanded="@(open ? "true" : "false")"
                         title="List what @DescribeSlot(slot).ToLowerInvariant() can be" @onclick="() => TogglePicker(pick)">@(plug.IsSome() ? "Change" : "Pick")</button>
-                @if (removable && plug.IsSome())
+                @if (slot == SubclassSlot.Fragment && plug.IsSome())
                 {
-                    <button type="button" class="btn ghost small" data-action="remove-slot" title="Remove @label" aria-label="Remove @label" @onclick="() => Remove(slot, index)">✕</button>
+                    <button type="button" class="btn ghost small" data-action="remove-slot" title="Remove @label" aria-label="Remove @label" @onclick="() => RemoveFragment(index)">✕</button>
                 }
             </div>
             @if (open)
@@ -264,11 +266,10 @@
         picker = Optional.None<OpenPick>();                                                      // impure (UI state)
     }
 
-    private void Remove(SubclassSlot slot, int index)
+    /// <summary>✕ on a fragment: its slot is left empty. An aspect can't be taken out, only swapped (Change).</summary>
+    private void RemoveFragment(int index)
     {
-        draft = slot == SubclassSlot.Aspect                                                      // pure
-            ? SetAspects([.. draft.Aspects.Where((_, at) => at != index)])
-            : draft with { Fragments = [.. draft.Fragments.Where((_, at) => at != index)] };
+        draft = draft with { Fragments = [.. draft.Fragments.Where((_, at) => at != index)] };   // pure
         picker = Optional.None<OpenPick>();                                                      // impure (UI state)
     }
 
