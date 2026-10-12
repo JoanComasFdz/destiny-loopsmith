@@ -26,6 +26,7 @@ public static class TestCatalog
             new PickupDefinition(Pickup("orb-of-power"), "Orb of Power", Affinity.Neutral, false, Optional.None<ItemHash>()),
         }.ToImmutableDictionary(p => p.Id),
         ImmutableDictionary<SummonId, SummonDefinition>.Empty,
+        [],
         []);
 
     public static Rule On(Trigger trigger, params Outcome[] then) =>

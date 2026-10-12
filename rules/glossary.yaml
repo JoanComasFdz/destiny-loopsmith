@@ -1,4 +1,4 @@
-# Keyword vocabulary and subclass items (docs/rule-format.md § Glossary).
+# Keyword vocabulary, subclass items and class finishers (docs/rule-format.md § Glossary).
 #
 # Semantics: maxStacks (>= 2) means the status stacks, up to that cap (a fact shown with the buff,
 # "up to x10"), and can be declared at max (`max:<status>`, ADRs D3). A status without it doesn't
@@ -118,3 +118,13 @@ subclasses:
   - { class: hunter,  subclass: void,  name: Nightstalker, hash: 2453351420 }
   - { class: titan,   subclass: void,  name: Sentinel,     hash: 2842471112 }
   - { class: warlock, subclass: void,  name: Voidwalker,   hash: 2849050827 }
+
+# ---------------------------------------------------------------- class finishers
+# Each class's own finisher, which the game plays when the player has none equipped (the manifest's "Finishers" item:
+# "If no finishers are in your inventory, your default class finisher plays."): the one Common, class-only item of the
+# Finishers bucket (3683254069) for each class. The designer's HUD shows its icon on the finisher square until a Bungie
+# login names the finisher the player's character has equipped (docs/loop-format.md, "Next trigger").
+finishers:
+  - { class: hunter,  name: Blade Carnival,   hash: 4012203003 }
+  - { class: titan,   name: The Focused Fist, hash: 2854370169 }
+  - { class: warlock, name: Palm of Wen Jie,  hash: 254514436 }

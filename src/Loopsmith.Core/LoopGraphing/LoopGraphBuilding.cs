@@ -56,13 +56,15 @@ public static class LoopGraphBuilding
         var energyNodes = abilityKinds.Select(k => new GraphNode(ToEnergyKey(k), $"{DomainPhrasing.Capitalize(k.DescribeAbility())} energy", NodeKind.Energy, subclassAffinity));
         var castNodes = abilityKinds.Select(k => new GraphNode(ToCastKey(k), DescribeCastAction(k), NodeKind.Action, subclassAffinity));
         var weaponNodes = build.Build.Weapons.Select(w => new GraphNode(ToWeaponKey(w.Slot), $"Shoot {w.Name}", NodeKind.Action, w.Type.ToAffinity()));
-        // A finisher is an action of its own only where a rule reacts to one (as the designer's palette offers it).
-        var hasFinisher = rules.Any(r => r.Rule.On is Trigger.Finisher);
-        GraphNode[] finisherNodes = hasFinisher ? [new GraphNode(FinisherKey, DomainPhrasing.Finisher, NodeKind.Action, Affinity.Neutral)] : [];
 
         // Which trigger nodes does a concrete event reach?
         IEnumerable<string> Reach(GameEvent gameEvent) =>
             triggers.Where(t => t.On.IsTriggeredBy(gameEvent, superType)).Select(t => t.Key).Distinct();
+
+        // A finisher is always possible (the designer's palette offers it in every build); the graph draws it where it
+        // sets something off: a rule reacting to a finisher, or a damage or kill rule from any source.
+        var finisherReach = ListFinisherEvents(appliedDebuffs).SelectMany(Reach).Distinct().ToImmutableArray();
+        GraphNode[] finisherNodes = finisherReach.IsEmpty ? [] : [new GraphNode(FinisherKey, DomainPhrasing.Finisher, NodeKind.Action, Affinity.Neutral)];
 
         var playerEdges = abilityKinds
             .SelectMany(kind =>
@@ -76,9 +78,7 @@ public static class LoopGraphBuilding
                     .Concat(ListVolleyEvents(new DamageOrigin.Weapon(w.Slot, w.Type)))
                     .SelectMany(Reach)
                     .Select(to => new RawEdge(ToWeaponKey(w.Slot), to, You, EdgeKind.Player))))
-            .Concat(hasFinisher
-                ? ListFinisherEvents(appliedDebuffs).SelectMany(Reach).Distinct().Select(to => new RawEdge(FinisherKey, to, You, EdgeKind.Player))
-                : []);
+            .Concat(finisherReach.Select(to => new RawEdge(FinisherKey, to, You, EdgeKind.Player)));
 
         var ruleEdges = rules
             .SelectMany(r => r.Rule.Then.SelectMany(outcome =>

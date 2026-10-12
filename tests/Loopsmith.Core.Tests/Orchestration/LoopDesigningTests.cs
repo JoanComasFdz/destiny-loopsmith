@@ -29,14 +29,14 @@ public sealed class LoopDesigningTests
         var options = LoopDesigning.ListTriggerOptions(session);
 
         Assert.Equal(
-            ["grenade:kill", "grenade", "melee:kill", "melee", "class", "super:kill", "super", "energy:kill", "energy", "pack:new"],
+            ["grenade:kill", "grenade", "melee:kill", "melee", "class", "super:kill", "super", "finisher", "energy:kill", "energy", "pack:new"],
             options.Select(option => option.Token));
         Assert.All(options, option => Assert.False(option.IsNew));
         Assert.Equal("Grenade (kill)", options[0].Label);
     }
 
     [Fact]
-    public void A_finisher_is_offered_with_the_abilities_only_where_a_rule_reacts_to_one()
+    public void A_finisher_is_offered_with_the_abilities_in_every_build()
     {
         var finisherMod = Element("finisher-mod", ElementKind.ArmorMod, [On(new Trigger.Finisher(), Buff("amplified"))]);
         var session = AppendSteps(StartDesign(ValidateBuild([], mods: [finisherMod])), GrenadeKill, new PlayerAction.PerformFinisher());
@@ -47,7 +47,8 @@ public sealed class LoopDesigningTests
         var finisher = Assert.Single(options, option => option.Token == "finisher");
         Assert.Equal(("Finisher", TriggerGroup.Ability, false), (finisher.Label, finisher.Group, finisher.IsNew));
         Assert.Equal(Optional.None<TargetCount>(), LoopDesigning.ReadTargetCount(finisher.Action));
-        Assert.DoesNotContain(without, option => option.Token == "finisher");
+        var bare = Assert.Single(without, option => option.Token == "finisher");   // no rule reacts to it: still possible
+        Assert.Equal(("Finisher", TriggerGroup.Ability), (bare.Label, bare.Group));
     }
 
     [Fact]

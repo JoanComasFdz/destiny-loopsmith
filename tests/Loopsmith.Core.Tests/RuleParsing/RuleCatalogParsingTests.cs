@@ -613,6 +613,28 @@ public sealed class RuleCatalogParsingTests
     }
 
     [Fact]
+    public void The_glossary_gives_each_class_its_own_finisher_and_a_class_one()
+    {
+        var finishers = """
+
+            finishers:
+              - { class: hunter, name: Blade Carnival, hash: 4012203003 }
+              - { class: titan, name: The Focused Fist, hash: 2854370169 }
+            """;
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([new SourceText("glossary.yaml", GlossaryYaml + finishers)]));
+        var message = ParseInvalidCatalog(new SourceText("glossary.yaml", GlossaryYaml + finishers + """
+
+              - { class: hunter, name: Golden Age Dropkick, hash: 2504641454 }
+            """));
+
+        Assert.Equal(
+            [new FinisherDefinition(GuardianClass.Hunter, "Blade Carnival", ItemHash.From(4012203003u)), new FinisherDefinition(GuardianClass.Titan, "The Focused Fist", ItemHash.From(2854370169u))],
+            catalog.Glossary.Finishers);
+        Assert.Contains("the hunter already has its finisher, 'Blade Carnival'", message);
+        Assert.Empty(AssertOk(RuleCatalogParsing.ParseCatalog([new SourceText("glossary.yaml", GlossaryYaml)])).Glossary.Finishers);
+    }
+
+    [Fact]
     public void The_manifest_excerpt_names_items_with_their_icon_slot_and_damage_type()
     {
         var manifest = new SourceText("manifest.yaml", """

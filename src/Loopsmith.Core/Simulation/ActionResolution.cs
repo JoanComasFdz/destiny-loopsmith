@@ -36,7 +36,7 @@ public static class ActionResolution
     }
 
     /// <summary>
-    /// Every ability (always, ADRs D5), a finisher where a rule reacts to one (<see cref="ListFinisherActions"/>), every
+    /// Every ability (always, ADRs D5), a finisher (always, <see cref="ListFinisherActions"/>), every
     /// equipped weapon, the pickups on the ground and the states the player can declare now (<see cref="ListDeclarations"/>).
     /// Abilities and weapons are listed against one enemy; a host may set any <see cref="TargetCount"/>.
     /// </summary>
@@ -49,7 +49,7 @@ public static class ActionResolution
                 new PlayerAction.CastAbility(kind, HitOutcome.Damage, TargetCount.One),
             });
         var classAbility = ListClassAbilityActions(build);
-        var finisher = ListFinisherActions(build);
+        var finisher = ListFinisherActions();
         var weapons = build.Build.Weapons.SelectMany(weapon => new PlayerAction[]
         {
             new PlayerAction.FireWeapon(weapon.Slot, HitOutcome.Kill, TargetCount.One),
@@ -132,13 +132,12 @@ public static class ActionResolution
             : [new PlayerAction.UseClassAbility()];
 
     /// <summary>
-    /// A finisher, when an equipped rule reacts to one (<c>on: { finisher: {} }</c>); none otherwise. A finisher is always
-    /// possible in the game (it is never blocked here either), but a build that doesn't use it isn't offered it.
+    /// A finisher: always possible in the game, as an ability is (ADRs D5), so every build is offered one. It fires the
+    /// rules that react to a finisher (<c>on: { finisher: {} }</c>), and its kill fires the <c>kill</c> rules from any
+    /// source; in a build with neither, it sets nothing off.
     /// </summary>
-    public static ImmutableArray<PlayerAction> ListFinisherActions(ValidatedBuild build) =>
-        build.Equipped.Any(equipped => equipped.Element.Rules.Any(rule => rule.On is Trigger.Finisher))
-            ? [new PlayerAction.PerformFinisher()]
-            : [];
+    public static ImmutableArray<PlayerAction> ListFinisherActions() =>
+        [new PlayerAction.PerformFinisher()];
 
     private static Opening FireWeapon(ValidatedBuild build, GameState state, PlayerAction.FireWeapon fire)
     {

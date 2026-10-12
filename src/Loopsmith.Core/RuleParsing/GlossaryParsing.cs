@@ -12,11 +12,12 @@ internal static class GlossaryParsing
 {
     internal const string GlossaryPath = "glossary.yaml";
 
-    private static readonly ImmutableArray<string> GlossaryKeys = ["statuses", "pickups", "summons", "subclasses"];
+    private static readonly ImmutableArray<string> GlossaryKeys = ["statuses", "pickups", "summons", "subclasses", "finishers"];
     private static readonly ImmutableArray<string> StatusKeys = ["id", "name", "kind", "affinity", "maxStacks", "duration", "trait", "drawnIcon"];
     private static readonly ImmutableArray<string> PickupKeys = ["id", "name", "affinity", "collectsAutomatically", "trait"];
     private static readonly ImmutableArray<string> SummonKeys = ["id", "name", "damageType", "trait"];
     private static readonly ImmutableArray<string> SubclassKeys = ["class", "subclass", "name", "hash"];
+    private static readonly ImmutableArray<string> FinisherKeys = ["class", "name", "hash"];
 
     internal static Result<KeywordGlossary, Errors> ReadGlossary(SourceText file) =>
         YamlReading.LoadDocument(file, "glossary")
@@ -42,7 +43,8 @@ internal static class GlossaryParsing
                     .Bind(items => LocatedCollections.ToUniqueDictionary(items, summon => summon.Id, "summon")),
                 ImmutableDictionary<SummonId, SummonDefinition>.Empty),
             map.ReadOrDefault("subclasses", subclasses => subclasses.ReadEach("subclass", ReadSubclass).Bind(CheckSubclassHashes), []),
-            (_, statuses, pickups, summons, subclasses) => new KeywordGlossary(statuses, pickups, summons, subclasses));
+            map.ReadOrDefault("finishers", finishers => finishers.ReadEach("finisher", ReadFinisher).Bind(CheckFinisherClasses), []),
+            (_, statuses, pickups, summons, subclasses, finishers) => new KeywordGlossary(statuses, pickups, summons, subclasses, finishers));
 
     private static Result<Located<StatusDefinition>, Errors> ReadStatus(YamlValue value) =>
         value.ToMap().Bind(map => Combine(
@@ -94,6 +96,28 @@ internal static class GlossaryParsing
             map.ReadRequired("name", ReadName),
             map.ReadRequired("hash", ReadItemHashes),
             (_, guardianClass, subclass, name, hashes) => map.ToLocated(new SubclassDefinition(guardianClass, subclass, name, hashes))));
+
+    /// <summary><c>{ class: hunter, name: Blade Carnival, hash: 4012203003 }</c>: a class's own finisher.</summary>
+    private static Result<Located<FinisherDefinition>, Errors> ReadFinisher(YamlValue value) =>
+        value.ToMap().Bind(map => Combine(
+            map.CheckKeys(FinisherKeys),
+            map.ReadRequired("class", ReadVocabularyWord<GuardianClass>),
+            map.ReadRequired("name", ReadName),
+            map.ReadRequired("hash", ReadItemHash),
+            (_, guardianClass, name, hash) => map.ToLocated(new FinisherDefinition(guardianClass, name, hash))));
+
+    /// <summary>A class has one finisher of its own: a second for it is an error at the repeat.</summary>
+    private static Result<ImmutableArray<FinisherDefinition>, Errors> CheckFinisherClasses(ImmutableArray<Located<FinisherDefinition>> finishers)
+    {
+        var errors = finishers
+            .GroupBy(finisher => finisher.Value.Class)
+            .SelectMany(group => group.Skip(1).Select(repeat => new ParseError(
+                repeat.Path,
+                Optional.Some(repeat.Line),
+                $"the {group.Key.ToString().ToLowerInvariant()} already has its finisher, '{group.First().Value.Name}'")))
+            .ToImmutableArray();
+        return errors.IsEmpty ? Succeed(finishers.Select(finisher => finisher.Value).ToImmutableArray()) : Fail<ImmutableArray<FinisherDefinition>>(errors);
+    }
 
     /// <summary>A subclass hash names one subclass: a repeat is an error at the repeat.</summary>
     private static Result<ImmutableArray<SubclassDefinition>, Errors> CheckSubclassHashes(ImmutableArray<Located<SubclassDefinition>> subclasses)

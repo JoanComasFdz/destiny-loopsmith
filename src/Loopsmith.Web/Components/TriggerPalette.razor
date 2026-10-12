@@ -1,11 +1,11 @@
 @* The next triggers the build offers (LoopDesigning.ListTriggerOptions), laid out like Destiny's HUD
    (TriggerHudShaping): the Super's diamond, the grenade, melee and class ability squares in the subclass's colour (and
-   a finisher's, when a rule reacts to one), the weapons in their damage type's colour; above them what is on the ground and the states to declare. Tapping the Super,
+   the finisher's: the equipped finisher's icon after a Bungie login, else the class's own), the weapons in their damage type's colour; above them what is on the ground and the states to declare. Tapping the Super,
    an ability or a weapon picks it: its actions show below the HUD — hit or kill, and how many enemies that one action
    catches — and stay there for the next step. One that only has one action (the class ability without an air move, the
    finisher, a pickup, a declared state) acts at once. Every trigger is pickable. *@
 @{
-    var hud = TriggerHudShaping.ShapeHud(Options, counts, Build);
+    var hud = TriggerHudShaping.ShapeHud(Options, counts, Build, Profile);
     var picked = FindPicked(hud);
 }
 <section class="panel palette" aria-label="Next trigger">
@@ -49,7 +49,7 @@
                 }
                 @if (hud.Finisher is Optional<HudSlot>.Some finisher)
                 {
-                    @RenderSlot(finisher.Value, "trig-ability trig-finisher", Optional.Some(finisher.Value.Name))
+                    @RenderSlot(finisher.Value, "trig-ability trig-finisher", Optional.Some("Finisher"))
                 }
             </div>
             <div class="trig-weapons">
@@ -133,6 +133,10 @@
 
     [Parameter, EditorRequired]
     public ImmutableArray<TriggerOption> Options { get; set; }
+
+    /// <summary>The player's Bungie profile, after a login: the finisher square shows the finisher they have equipped.</summary>
+    [Parameter]
+    public Optional<BungieProfile> Profile { get; set; } = Optional.None<BungieProfile>();
 
     [Parameter]
     public string Caption { get; set; } = "";

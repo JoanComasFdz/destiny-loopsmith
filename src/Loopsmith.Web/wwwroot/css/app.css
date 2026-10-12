@@ -671,7 +671,7 @@ textarea { resize: vertical; }
 .trig-icon img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .trig-unknown { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; font-size: 26px; font-weight: 700; color: var(--aff); }
 .trig-caption { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; color: var(--aff); font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
-.trig-finisher { margin-left: 6px; border-style: dashed; }
+.trig-finisher { margin-left: 6px; border-style: dashed; }   /* no HUD square in the game: dashed */
 .trig-super:hover, .trig-ability:hover { border-color: var(--text); background: var(--panel-2); }
 .trig-super.picked, .trig-ability.picked { border-color: var(--text); box-shadow: 0 0 0 2px var(--aff), 0 0 14px var(--aff); }
 .trig-weapons { display: flex; flex: 1 1 280px; flex-direction: column; gap: 4px; min-width: 0; }
@@ -704,8 +704,11 @@ textarea { resize: vertical; }
 .trig-actions-title { font-weight: 700; }
 .trig-actions .trigger { min-width: 78px; min-height: 36px; text-transform: lowercase; }
 @media (max-width: 420px) {
-    .trig-super, .trig-ability { width: 58px; height: 58px; }
-    .trig-super { width: 54px; height: 54px; }
+    /* the Super, three abilities and the finisher on one row down to a 320 px phone: the squares take a fifth of the
+       screen less the page's and the panel's padding and the row's gaps (at most 58 px) */
+    .trig-abilities { --sq: clamp(40px, calc((100vw - 112px) / 5), 58px); }
+    .trig-super, .trig-ability { width: var(--sq); height: var(--sq); }
+    .trig-super { width: calc(var(--sq) - 4px); height: calc(var(--sq) - 4px); }
 }
 
 /* a step's state, laid out like the game's HUD: buffs on you left, your weapons' buffs in the middle, debuffs on the

@@ -41,7 +41,7 @@
                       @ondragstart="() => StartDrag(index)" @ondragend="EndDrag" @onclick:stopPropagation="true">⠿</span>
                 <span class="step-no">#@number</span>
                 <span class="step-title">
-                    @if (LoopDesigning.FindActionIcon(build, step.Action) is Optional<IconRef>.Some actionIcon)
+                    @if (LoopDesigning.FindActionIcon(build, Profile, step.Action) is Optional<IconRef>.Some actionIcon)
                     {
                         <img class="inline-icon step-icon" src="@LoadoutShaping.ToIconUrl(actionIcon.Value)" alt="" loading="lazy" data-testid="step-icon" />
                     }
@@ -104,6 +104,10 @@
 
     [Parameter]
     public TraceOptions Options { get; set; } = new(false, false, false);
+
+    /// <summary>The player's Bungie profile, after a login: a finisher step shows the finisher they have equipped.</summary>
+    [Parameter]
+    public Optional<BungieProfile> Profile { get; set; } = Optional.None<BungieProfile>();
 
     [Parameter]
     public EventCallback<int> OnSelect { get; set; }

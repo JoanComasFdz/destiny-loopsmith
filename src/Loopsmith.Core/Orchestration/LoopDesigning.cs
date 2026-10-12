@@ -386,7 +386,9 @@ public static class LoopDesigning
 
     /// <summary>The player's armor and weapons the catalog's excerpt lacks (what the full manifest is read for, so the pickers can name and place them).</summary>
     public static ImmutableArray<ItemHash> ListUnknownProfileHashes(DesignSession session, BungieProfile profile) =>
-        ManifestJoin.ListUnknown(session.Build.Catalog.Manifest, profile.Armor.Select(armor => armor.Hash).Concat(profile.Weapons.Select(weapon => weapon.Hash)).Distinct());
+        ManifestJoin.ListUnknown(
+            session.Build.Catalog.Manifest,
+            profile.Armor.Select(armor => armor.Hash).Concat(profile.Weapons.Select(weapon => weapon.Hash)).Concat(profile.Finishers.Select(finisher => finisher.Hash)).Distinct());
 
     // ── The player's own weapons in the build (docs/loop-format.md, "Weapons from your account") ─────────────
 
@@ -537,7 +539,7 @@ public static class LoopDesigning
 
     /// <summary>
     /// Every step the build offers right now, grouped: every ability (always available — ADRs D5) and, with the
-    /// abilities, a finisher when a rule of the build reacts to one, every weapon, the pickups on the ground and the
+    /// abilities, a finisher (always possible too), every weapon, the pickups on the ground and the
     /// states you can declare (ADRs D3). <see cref="TriggerOption.IsNew"/> marks what the last step made available.
     /// </summary>
     public static ImmutableArray<TriggerOption> ListTriggerOptions(DesignSession session)
@@ -567,7 +569,7 @@ public static class LoopDesigning
             .SelectMany(kind => hits.Select(hit => ((PlayerAction)new PlayerAction.CastAbility(kind, hit, TargetCount.One), TriggerGroup.Ability)))
             .Concat(ActionResolution.ListClassAbilityActions(build).Select(use => (use, TriggerGroup.Ability)))
             .Concat(hits.Select(hit => ((PlayerAction)new PlayerAction.CastAbility(OffensiveAbility.Super, hit, TargetCount.One), TriggerGroup.Ability)))
-            .Concat(ActionResolution.ListFinisherActions(build).Select(finisher => (finisher, TriggerGroup.Ability)));
+            .Concat(ActionResolution.ListFinisherActions().Select(finisher => (finisher, TriggerGroup.Ability)));
         var weapons = build.Build.Weapons
             .SelectMany(weapon => hits.Select(hit => ((PlayerAction)new PlayerAction.FireWeapon(weapon.Slot, hit, TargetCount.One), TriggerGroup.Weapon)));
         var pickups = state.Pickups
@@ -682,6 +684,22 @@ public static class LoopDesigning
     /// <summary>The icon of what a step does: its weapon's, its ability's, or its pickup's or status's keyword icon.</summary>
     public static Optional<IconRef> FindActionIcon(ValidatedBuild build, PlayerAction action) =>
         IconFinding.FindActionIcon(build.Catalog, build.Build, action);
+
+    /// <summary>
+    /// As <see cref="FindActionIcon(ValidatedBuild, PlayerAction)"/>, and a finisher's is the player's equipped finisher's
+    /// after a Bungie login (<see cref="FindFinisher"/>).
+    /// </summary>
+    public static Optional<IconRef> FindActionIcon(ValidatedBuild build, Optional<BungieProfile> profile, PlayerAction action) =>
+        action is PlayerAction.PerformFinisher
+            ? FinisherFinding.FindFinisher(build.Catalog, build.Build, profile).Bind(item => item.Icon).Map(IconFinding.ToManifestIcon)
+            : IconFinding.FindActionIcon(build.Catalog, build.Build, action);
+
+    /// <summary>
+    /// The build's finisher (its name and icon): the one the player's character of the build's class has equipped, after
+    /// a Bungie login; else the class's own (Blade Carnival for a Hunter); none when the excerpt has neither.
+    /// </summary>
+    public static Optional<ManifestItem> FindFinisher(ValidatedBuild build, Optional<BungieProfile> profile) =>
+        FinisherFinding.FindFinisher(build.Catalog, build.Build, profile);
 
     /// <summary>A keyword's icon: the game's own (Jolted, Woven Mail), else its element's, else the shape the game draws for it (Unraveling Rounds); none without any.</summary>
     public static Optional<IconRef> FindKeywordIcon(ValidatedBuild build, KeywordRef keyword) =>

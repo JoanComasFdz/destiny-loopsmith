@@ -257,8 +257,11 @@ public sealed partial class StatLoadingTests
         Assert.Equal(new StatPoints(5, 5, 20, 30, 25, 5), ReadPart(totals, "Luminopotent Mask"));
     }
 
-    /// <summary>An item of a fake profile: armor has energy; a weapon a damage type (Bungie's: 2 Arc); either a tier, a state (4: masterworked) and a breaker.</summary>
-    private sealed record FakeItem(ItemHash Hash, string Instance, string Place, ImmutableArray<ItemHash> Plugs, int? Energy, int? Tier = null, int State = 0, int DamageType = 0, uint Breaker = 0, int? Power = null);
+    /// <summary>
+    /// An item of a fake profile: armor has energy; a weapon a damage type (Bungie's: 2 Arc); either a tier, a state (4:
+    /// masterworked), a breaker and a power level; any item the bucket it is in (a finisher's: 3683254069).
+    /// </summary>
+    private sealed record FakeItem(ItemHash Hash, string Instance, string Place, ImmutableArray<ItemHash> Plugs, int? Energy, int? Tier = null, int State = 0, int DamageType = 0, uint Breaker = 0, uint Bucket = 0, int? Power = null);
 
     /// <summary>Every piece of the owner's loadout as a Grenade 30 · Super 25 · Class 20 roll, masterworked; the first ones with a tuning socket.</summary>
     private static IEnumerable<FakeItem> OwnAll(int tuningSockets) =>
@@ -272,7 +275,7 @@ public sealed partial class StatLoadingTests
     /// <summary>A Bungie profile answer holding these items (in the vault, or worn or carried by a Hunter) and the Hunter's stats.</summary>
     private static BungieProfile ReadProfile(ImmutableArray<FakeItem> items)
     {
-        object ToItem(FakeItem item) => new { itemHash = item.Hash.Value, itemInstanceId = item.Instance, state = item.State };
+        object ToItem(FakeItem item) => new { itemHash = item.Hash.Value, itemInstanceId = item.Instance, state = item.State, bucketHash = item.Bucket };
         object ToInstance(FakeItem item) => new Dictionary<string, object>(
         [
             KeyValuePair.Create<string, object>("damageType", item.DamageType),

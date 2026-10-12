@@ -91,24 +91,28 @@ public sealed class ArmorModMechanicsTests
     }
 
     [Fact]
-    public void A_finisher_is_offered_only_where_a_rule_reacts_to_one_and_always_resolves()
+    public void A_finisher_is_offered_in_every_build_and_always_resolves()
     {
         var initial = ActionResolution.CreateInitialState();
         var without = ValidateBuild([JoltedKill]);
 
         Assert.Contains(Finisher, ActionResolution.ListAvailableActions(ValidateBuild([], mods: [FinisherMod]), initial));
-        Assert.DoesNotContain(Finisher, ActionResolution.ListAvailableActions(without, initial));
-        Assert.False(ResolveOnce(without, Finisher).Blocked.IsSome());   // a token still plays anywhere
+        Assert.Contains(Finisher, ActionResolution.ListAvailableActions(without, initial));   // always possible in the game
+        Assert.False(ResolveOnce(without, Finisher).Blocked.IsSome());
     }
 
     [Fact]
-    public void The_loop_graph_draws_a_finisher_action_only_where_a_rule_reacts_to_one()
+    public void The_loop_graph_draws_a_finisher_action_where_it_sets_something_off()
     {
+        var anyKill = Element("any-kill", ElementKind.Fragment, [On(new Trigger.KillAny(new DamageSource.AnySource()), Buff("bolt-charge"))]);
         var with = LoopGraphBuilding.BuildLoopGraph(ValidateBuild([JoltedKill], mods: [FinisherMod]));
-        var without = LoopGraphBuilding.BuildLoopGraph(ValidateBuild([JoltedKill]));
+        var killing = LoopGraphBuilding.BuildLoopGraph(ValidateBuild([anyKill]));
+        var without = LoopGraphBuilding.BuildLoopGraph(ValidateBuild([JoltedKill]));   // nothing in it jolts: a finisher's kill reaches no rule
 
         Assert.Contains(with.Nodes, node => node.Key == "a:Finisher" && node.Label == "Finisher" && node.Kind == NodeKind.Action);
         Assert.Contains(with.Edges, edge => edge.From == "a:Finisher" && edge.To == "t:Finisher");
+        Assert.Contains(killing.Nodes, node => node.Key == "a:Finisher");
+        Assert.Contains(killing.Edges, edge => edge.From == "a:Finisher");
         Assert.DoesNotContain(without.Nodes, node => node.Key == "a:Finisher");
     }
 

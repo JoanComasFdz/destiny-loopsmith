@@ -9,7 +9,8 @@ namespace Loopsmith.Core.StatLoading;
 /// <summary>
 /// Pure: what Loopsmith asks Bungie's API for once the player has logged in, and what it reads of the answers — their
 /// Destiny membership, then their profile's armor (with the plugs in its sockets) and weapons, worn, carried and in the
-/// vault, each copy with its marks (gear tier, masterwork, breaker). Everything else in the answers is left alone.
+/// vault, each copy with its marks (gear tier, masterwork, breaker), and the finisher each character has equipped.
+/// Everything else in the answers is left alone.
 /// </summary>
 public static class BungieProfileReading
 {
@@ -20,7 +21,7 @@ public static class BungieProfileReading
 
     /// <summary>
     /// The profile's parts Loopsmith reads: the vault (102), characters (200: each one's class), what they carry (201) and
-    /// wear (205; an item's <c>state</c>: masterworked), item instances (300: an armor piece's energy, a weapon's damage
+    /// wear (205; an item's <c>state</c>: masterworked; the item in its Finishers slot), item instances (300: an armor piece's energy, a weapon's damage
     /// type, a copy's gear tier and breaker) and sockets (305: its plugs — an armor piece's stats, a weapon's perks).
     /// </summary>
     public static string ToProfileUrl(DestinyMembership membership) =>
@@ -68,7 +69,8 @@ public static class BungieProfileReading
 
     /// <summary>
     /// The profile's armor (every instanced item with armor energy) and weapons (every instanced item with a damage type),
-    /// worn, carried or in the vault (by which class), each copy with its marks.
+    /// worn, carried or in the vault (by which class), each copy with its marks; and each character's equipped finisher
+    /// (the item it wears in the Finishers bucket).
     /// </summary>
     public static Result<BungieProfile, string> ReadProfile(string json) =>
         BungieJsonReading.ReadResponse(json).Map(response =>
@@ -82,8 +84,21 @@ public static class BungieProfileReading
             var items = placed.ToImmutableArray();
             return new BungieProfile(
                 [.. items.SelectMany(entry => ToSequence(ReadArmor(response, entry.Item, entry.Place)))],
-                [.. items.SelectMany(entry => ToSequence(ReadWeapon(response, entry.Item, entry.Place)))]);
+                [.. items.SelectMany(entry => ToSequence(ReadWeapon(response, entry.Item, entry.Place)))],
+                [.. items.SelectMany(entry => ToSequence(ReadFinisher(entry.Item, entry.Place)))]);
         });
+
+    /// <summary>Bungie's Finishers bucket: the slot a character's finisher is equipped in.</summary>
+    private const uint FinishersBucket = 3683254069;
+
+    /// <summary>
+    /// An item a character wears in the Finishers bucket: that character's finisher (a finisher, or the "Finishers" item:
+    /// a random one of theirs each time). One carried or in the vault isn't equipped.
+    /// </summary>
+    private static Optional<EquippedFinisher> ReadFinisher(JsonElement item, ArmorPlace place) =>
+        place is ArmorPlace.Equipped equipped && item.ReadHash("bucketHash") == Optional.Some(ItemHash.From(FinishersBucket))
+            ? item.ReadHash("itemHash").Map(hash => new EquippedFinisher(equipped.Class, hash))
+            : Optional.None<EquippedFinisher>();
 
     private static IEnumerable<(JsonElement Item, ArmorPlace Place)> ListCharacterItems(
         JsonElement response, string component, ImmutableDictionary<string, GuardianClass> classes, Func<GuardianClass, ArmorPlace> place) =>
