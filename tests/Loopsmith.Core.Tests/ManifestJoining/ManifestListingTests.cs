@@ -35,6 +35,8 @@ public sealed class ManifestListingTests
         Assert.Equal((ArmorSlot.Helmet, Optional.Some(ItemHash.From(500u)), Optional.Some(GuardianClass.Hunter)), (mask.Slot, mask.Set, mask.Class));
         Assert.Equal("Testing", listing.Sets[ItemHash.From(500u)].Name);
         Assert.Equal(4, store.Rounds);                                                           // the small components, the items, the frames, their perks
+        Assert.Equal([1, 2, 3, 4], store.ListingRounds);                                         // as the startup screen counts them…
+        Assert.Equal(4, LoopDesigning.ListingRounds);                                            // …"step 2 of 4"
     }
 
     [Fact]
@@ -63,15 +65,16 @@ public sealed class ManifestListingTests
     }
 
     [Fact]
-    public void The_listing_reads_six_components_and_says_why_an_answer_doesnt_read()
+    public void The_listing_reads_six_components_the_tab_loads_at_startup_and_says_why_an_answer_doesnt_read()
     {
-        var urls = LoopDesigning.ChooseListingUrls(Optional.None<string>(), "pinned");
+        var urls = LoopDesigning.ChooseManifestUrls(Optional.None<string>(), "pinned");
         var start = Assert.IsType<ListingStep.Ask>(LoopDesigning.StartListing());
 
         Assert.Equal(
             ["DestinyBreakerTypeDefinition", "DestinyEquipableItemSetDefinition", "DestinyInventoryBucketDefinition", "DestinyInventoryItemDefinition",
                 "DestinySandboxPerkDefinition", "DestinySocketCategoryDefinition"],
-            urls.Keys.Order(StringComparer.Ordinal));
+            ManifestListing.Components.Order(StringComparer.Ordinal));
+        Assert.All(ManifestListing.Components, component => Assert.Contains(component, urls.Keys)); // the web app loads every one at startup
         Assert.Equal("https://www.bungie.net/common/destiny2_content/json/en/DestinyInventoryItemDefinition-pinned.json", urls["DestinyInventoryItemDefinition"]);
         Assert.Empty(start.Query.Parts.Paths);                                                   // the first round reads the small components only
         Assert.IsType<Result<ListingStep, string>.Error>(LoopDesigning.ContinueListing(start, "not json", "{}"));

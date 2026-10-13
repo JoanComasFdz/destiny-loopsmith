@@ -1,9 +1,9 @@
 @implements IDisposable
 @inject BungieManifestJoining Manifest
-@* While Bungie's full manifest is read (after a login: the player's armor and weapons the bundled excerpt lacks; or a
-   DIM link's items): a progress bar — what it reads for, where it is ("reading its files… 84 MB", "naming them (step
-   2)"), how far along — and that the page keeps working meanwhile. Only this bar renders as the read moves
-   (BungieManifestJoining.ReadingChanged). *@
+@* While Bungie's full manifest is read (after a login: the player's armor and weapons the bundled excerpt lacks; a
+   DIM link's items; an item picked from Every item): a progress bar — what it reads for, where it is ("naming them
+   (step 2)"; "reading its files… 84 MB" first when the tab went on without its startup load), how far along — and
+   that the page keeps working meanwhile. Only this bar renders as the read moves (BungieManifestJoining.ReadingChanged). *@
 @if (ManifestProgressShaping.ShapeReading(Manifest.Reading) is Optional<ManifestProgressView>.Some shown)
 {
     <div class="manifest-progress" role="status" data-testid="manifest-progress">
