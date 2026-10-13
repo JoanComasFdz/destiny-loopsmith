@@ -23,7 +23,7 @@ public sealed class ScratchDesignTests
             .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
 
     private static readonly AbilityLoadout NoAbilities =
-        new(new AbilityPlug.Empty(), new AbilityPlug.Empty(), new AbilityPlug.Empty(), new AbilityPlug.Empty());
+        new(new AbilityPlug.Empty(), new AbilityPlug.Empty(), new AbilityPlug.Empty(), new AbilityPlug.Empty(), new AbilityPlug.Empty());
 
     [Fact]
     public void A_loop_from_scratch_is_an_arc_hunter_with_nothing_equipped()
@@ -70,6 +70,7 @@ public sealed class ScratchDesignTests
             new AbilityLoadout(
                 new AbilityPlug.Known(ElementId.From("arc-staff")),
                 new AbilityPlug.Known(ElementId.From("skip-grenade")),
+                new AbilityPlug.Empty(),
                 new AbilityPlug.Empty(),
                 new AbilityPlug.Empty()),
             edited.Build.Build.Abilities);

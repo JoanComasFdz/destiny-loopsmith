@@ -28,7 +28,7 @@ public static class BuildReading
     public static bool IsEmpty(this AbilityPlug plug) =>
         plug is AbilityPlug.Empty;
 
-    /// <summary>The four ability slots in the format's order: super, grenade, melee, class ability.</summary>
+    /// <summary>The four ability slots in the format's order: super, grenade, melee, class ability (not the jump: it sets nothing off).</summary>
     public static ImmutableArray<AbilityPlug> ListPlugs(this AbilityLoadout abilities) =>
         [abilities.Super, abilities.Grenade, abilities.Melee, abilities.ClassAbility];
 
@@ -44,12 +44,12 @@ public static class BuildReading
         element.Class.Match(c => c.Value == guardianClass, _ => true);
 
     /// <summary>
-    /// True when the element fits the subclass: a super, grenade, melee, aspect or fragment of its element (or neutral or
-    /// kinetic; Prismatic takes any); any other kind fits every subclass.
+    /// True when the element fits the subclass: a super, grenade, melee, jump, aspect or fragment of its element (or neutral
+    /// or kinetic; Prismatic takes any); any other kind fits every subclass.
     /// </summary>
     public static bool FitsSubclass(this BuildElement element, Subclass subclass)
     {
-        var isSubclassBound = element.Kind is ElementKind.Super or ElementKind.Grenade or ElementKind.Melee
+        var isSubclassBound = element.Kind is ElementKind.Super or ElementKind.Grenade or ElementKind.Melee or ElementKind.Jump
             or ElementKind.Aspect or ElementKind.Fragment;
         var isNeutral = element.Affinity is Affinity.Neutral or Affinity.Kinetic;
         return !isSubclassBound || isNeutral || subclass == Subclass.Prismatic || element.Affinity == subclass.ToAffinity();

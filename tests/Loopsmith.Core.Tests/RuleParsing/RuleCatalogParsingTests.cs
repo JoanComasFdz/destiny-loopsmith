@@ -1404,11 +1404,17 @@ public sealed class RuleCatalogParsingTests
                 kind: aspect
                 affinity: arc
                 ability: { kind: grenade }
+              - id: high-jump
+                name: High Jump
+                kind: jump
+                affinity: arc
+                ability: { kind: classAbility }
             """));
 
         Assert.Contains("hunter/arc.yaml:6: fragmentSlots is only allowed on aspects, not on a fragment", message);
         Assert.Contains("hunter/arc.yaml:11: ability.kind 'melee' does not match the element kind 'grenade'", message);
         Assert.Contains("hunter/arc.yaml:16: ability is only allowed on super, grenade, melee and classAbility elements", message);
+        Assert.Contains("hunter/arc.yaml:21: ability is only allowed on super, grenade, melee and classAbility elements, not on a jump", message);
     }
 
     [Fact]

@@ -76,6 +76,10 @@ statuses:
   # generic duration.
   - { id: void-overshield, name: Void Overshield, kind: buff, affinity: void }
 
+  # Lethal Current armed: the next melee hit within 10 s of a class ability use jolts and sets off an
+  # aftershock (compendium/2026-10-13/Arc#50). No trait: the game shows it as no keyword.
+  - { id: lethal-current, name: Lethal Current, kind: buff, affinity: arc, duration: 10s }
+
   # ---------------------------------------------------------------- debuffs (on the target)
   # Durations against combatants (PvE) from the Compendium 2026-10-09:
   #  - jolt 10 s [PvP 5 s]: Arc#8 (refreshed by re-jolting);

@@ -34,6 +34,7 @@ public enum ElementKind
     Grenade,
     Melee,
     ClassAbility,
+    Jump,           // a movement ability (High Jump, Blink…): inert, movement has no part in a loop
     Aspect,
     Fragment,
     ExoticArmor,

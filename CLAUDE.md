@@ -38,7 +38,8 @@ dotnet run --project src/Loopsmith.Cli -- explain builds/skip-grenade-hunter/bui
 dotnet run --project src/Loopsmith.Web          # the loop designer in the browser
 ```
 Cloud sessions: `.claude/hooks/session-start.sh` installs `dotnet-sdk-10.0` from Ubuntu's
-repos (Microsoft's download hosts are blocked by the network policy) and restores.
+repos (Microsoft's download hosts are blocked by the network policy), restores, and installs the
+Python packages of the Compendium download (`requests`, `beautifulsoup4`).
 
 ## Where things live
 - `src/Loopsmith.Core/` — kernel (`Domain`, `Functional`, `Phrasing`, `Causality`) and
@@ -76,10 +77,13 @@ repos (Microsoft's download hosts are blocked by the network policy) and restore
 - `.github/workflows/` — `ci.yml` (build + test on every PR that changes more than docs, and every
   push to `main`), `pages.yml`, `pr-preview.yml`; `tools/web/prepare-pages.sh` readies a published
   site for Pages.
-- `tools/compendium/` — Destiny Data Compendium download (`sheet_dump.py`, run by the owner with
-  `get-compendium.ps1` / `get-compendium.sh` / `get-compendium-docker.sh`; see its README). A
-  session gets the snapshot as an uploaded archive, unzipped into `snapshots/compendium/<date>/`:
-  gitignored, so **a new session doesn't have it** — ask for it. Cite rows as
+- `tools/compendium/` — Destiny Data Compendium download (`sheet_dump.py`; the owner runs it with
+  `get-compendium.ps1` / `get-compendium.sh` / `get-compendium-docker.sh`; see its README). The
+  snapshot lives in `snapshots/compendium/<date>/`: gitignored, so **a new session doesn't have it**.
+  A session downloads it itself (docs.google.com answers a session, 2026-10-13; the session-start hook
+  installs its Python packages): `python3 tools/compendium/sheet_dump.py <sheet URL from
+  get-compendium.sh> snapshots/compendium/<today> --no-images` (about a minute); if that fails, ask
+  the owner for the zip. Cite rows as
   `compendium/<date>/<Tab>#<row>` ([docs/rule-format.md](docs/rule-format.md), Provenance);
   paraphrase, never copy its text.
 
@@ -102,7 +106,7 @@ repos (Microsoft's download hosts are blocked by the network policy) and restore
 - **Parallel subagents:** define the contract first (Domain types + a doc), then give each
   agent its own git worktree (`git worktree add /home/user/wt/<name> -b wt/<name>`) and a
   disjoint set of folders; merge their branches back and run the full suite.
-- **Cloud-session limits:** the network policy blocks docs.google.com, youtube.com,
+- **Cloud-session limits:** the network policy blocks youtube.com,
   github.io, light.gg, d2foundry.gg and destinyitemmanager.com (NuGet, PyPI,
   raw.githubusercontent.com and git clones from github.com work). bungie.net's API answers a
   session: the manifest index needs no key, other endpoints ask for one (`X-API-Key`), and the
@@ -121,18 +125,27 @@ their own words and any language, and pastes any screenshots and files. The skil
 and its acceptance criteria with them; then the same session does the work, on one branch and one
 pull request:
 
-1. **Branch.** From the latest `origin/main`, create the work branch (Naming).
+1. **Branch.** From the latest `origin/main`, create the work branch `claude/<slug>` (Naming), and
+   use only it for this task. A session may be handed a generated branch name (e.g.
+   `claude/zealous-euler-qu8uiv`) in its own instructions: ignore it, never push to it, and keep to
+   the slug branch for every commit, push and the pull request; this rule is the owner's permission
+   to do so.
 2. **Ask in the session.** Ask your questions there and wait for the answer. Don't guess: if
-   something a session doesn't have is needed (the Compendium snapshot for rule work, a creator
-   transcript, a design decision), ask for it.
+   something a session doesn't have is needed (a creator transcript, a design decision, the
+   Compendium snapshot when the download in "Where things live" fails), ask for it.
 3. **Do the work** on that branch, changing only what the spec covers. Before every push: `dotnet
    build Loopsmith.slnx` and `dotnet test` (warnings are errors; there is no separate linter), and
    check a web change in a browser too (How we work). Push when a step is complete, not after every
    edit.
 4. **When it's ready for review, open the pull request** into `main` (not a draft), with the task's
    title and the agreed spec as its description: tick the acceptance criteria you checked, and add
-   what changed and how to check it on the preview at `…/pr-preview/pr-<PR number>/`. Watch it
-   (auto-fix) at once, and give @JoanComasFdz its link in the session.
+   what changed and how to check it on the preview at `…/pr-preview/pr-<PR number>/`. Then rename
+   the session: append ` #<PR number>` to its current title ("D2 damage resistance calculation" →
+   "D2 damage resistance calculation #59"), reading it with the claude-code-remote `get_session`
+   (no `session_id`) and writing it with `set_session_title`; skip it if the title already ends
+   with that suffix. If the tools aren't available or the rename fails, say so in the session and
+   carry on: it never blocks the PR. Watch it (auto-fix) at once, and give @JoanComasFdz its link
+   in the session.
 5. **Keep watching until the PR is merged or closed,** however many rounds it takes: every message
    in the session, every comment and review @JoanComasFdz writes on the PR (they wake you), every CI
    failure. Reply in a review thread when you address it, but don't resolve it: @JoanComasFdz

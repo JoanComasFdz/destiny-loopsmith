@@ -22,6 +22,7 @@ public sealed class BuildFileParsingTests
         grenade: skip-grenade
         melee: combination-blow
         classAbility: gamblers-dodge
+        jump: triple-jump                            # optional
         aspects: [tempest-strike, flow-state]
         fragments: [spark-of-resistance, spark-of-frequency, spark-of-shock, spark-of-discharge]
         exoticArmor: shinobus-vow                    # optional
@@ -69,7 +70,8 @@ public sealed class BuildFileParsingTests
                 new AbilityPlug.Known(ElementId.From("arc-staff")),
                 new AbilityPlug.Known(ElementId.From("skip-grenade")),
                 new AbilityPlug.Known(ElementId.From("combination-blow")),
-                new AbilityPlug.Known(ElementId.From("gamblers-dodge"))),
+                new AbilityPlug.Known(ElementId.From("gamblers-dodge")),
+                new AbilityPlug.Known(ElementId.From("triple-jump"))),
             build.Abilities);
         Assert.Equal(["tempest-strike", "flow-state"], ToNames(build.Aspects));
         Assert.Equal(
@@ -194,7 +196,7 @@ public sealed class BuildFileParsingTests
             """);
 
         Assert.Equal(
-            new AbilityLoadout(new AbilityPlug.Unknown(), new AbilityPlug.Unknown(), new AbilityPlug.Known(ElementId.From("combination-blow")), new AbilityPlug.Known(ElementId.From("gamblers-dodge"))),
+            new AbilityLoadout(new AbilityPlug.Unknown(), new AbilityPlug.Unknown(), new AbilityPlug.Known(ElementId.From("combination-blow")), new AbilityPlug.Known(ElementId.From("gamblers-dodge")), new AbilityPlug.Empty()),
             build.Abilities);
         Assert.Equal(
             [(LoadoutPart.Item, 2005u), (LoadoutPart.Item, 2006u), (LoadoutPart.ArmorMod, 3007u)],
@@ -278,8 +280,29 @@ public sealed class BuildFileParsingTests
             """);
 
         Assert.Equal(
-            new AbilityLoadout(new AbilityPlug.Empty(), new AbilityPlug.Known(ElementId.From("skip-grenade")), new AbilityPlug.Unknown(), new AbilityPlug.Empty()),
+            new AbilityLoadout(new AbilityPlug.Empty(), new AbilityPlug.Known(ElementId.From("skip-grenade")), new AbilityPlug.Unknown(), new AbilityPlug.Empty(), new AbilityPlug.Empty()),
             build.Abilities);
+    }
+
+    [Fact]
+    public void A_jump_is_an_element_id_or_a_question_mark_and_left_out_it_is_empty()
+    {
+        var known = ParseValidBuild("""
+            name: Jumper
+            class: hunter
+            subclass: arc
+            jump: triple-jump
+            """);
+        var unknown = ParseValidBuild("""
+            name: Jumper
+            class: hunter
+            subclass: arc
+            jump: "?"
+            """);
+
+        Assert.Equal<AbilityPlug>(new AbilityPlug.Known(ElementId.From("triple-jump")), known.Abilities.Jump);
+        Assert.Equal<AbilityPlug>(new AbilityPlug.Unknown(), unknown.Abilities.Jump);
+        Assert.Equal<AbilityPlug>(new AbilityPlug.Empty(), ParseValidBuild(MinimalYaml).Abilities.Jump);
     }
 
     [Fact]

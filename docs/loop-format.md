@@ -230,12 +230,12 @@ the build holds what the catalog recognises by hash, and nothing is guessed:
 | From the loadout | Becomes |
 |---|---|
 | the subclass item | `class` and `subclass` — the glossary's `subclasses` ([rule-format.md](rule-format.md#glossary-rulesglossaryyaml): the nine Light ones so far, whose hashes DIM's source lists); a Stasis, Strand or Prismatic loadout, or one without a subclass, can't start a build yet |
-| the subclass's plugs, in socket order | the super, grenade, melee and class ability, aspects and fragments the catalog has a hash for, for the loadout's class (another class's, such as the Hunter's Spark of Shock on a Striker, is left out); an ability it has none for is `"?"` |
+| the subclass's plugs, in socket order | the super, grenade, melee and class ability, the jump, aspects and fragments the catalog has a hash for, for the loadout's class and subclass (another class's, such as the Hunter's Spark of Shock on a Striker, is left out); an ability it has none for is `"?"`, a jump it has none for is left out (it has no part in a loop) |
 | the other equipped items (and the Loadout Optimizer's exotic) | `exoticArmor`; a weapon the manifest excerpt knows ([rule-format.md](rule-format.md#manifest-excerpt-rulesmanifestyaml)) becomes one of `weapons` — its slot, name, damage type, archetype and `hash`, and as its `roll` the perk each trait column rolls with among the item's `socketOverrides` (a loadout saved with its perks; most name the weapon only) |
 | the armor pieces, by their manifest set | `armorSetBonuses`: each set perk the pieces grant (2 or 4 of a set) that the catalog has a hash for; the pieces themselves (legendary armor) are left out |
 | `parameters.mods` (repeats are stacked copies) | `armorMods` |
 | `parameters.artifactUnlocks` | `artifactPerks` |
-| anything else — legendary armor, a jump, a weapon the excerpt doesn't know, a hash no element has | `leftOut`, by hash and where the loadout listed it |
+| anything else — legendary armor, a jump the rules don't have (another subclass's), a weapon the excerpt doesn't know, a hash no element has | `leftOut`, by hash and where the loadout listed it |
 
 The loadout's name becomes the build's, without Destiny's icon glyphs (DIM draws them with its own
 font: "Arc  - Skipp grenade" reads "Arc - Skipp grenade"). The build is written as an ordinary build
@@ -254,9 +254,9 @@ manifest name, each a link to its light.gg page; the build check adds `Unknown (
 What the manifest says has no part in a loop is not a gap, and it isn't listed: its tile in the loadout has no ⊘,
 and its tooltip says why — a stat or tuning mod (Grenade Mod: +10 Grenade; Balanced Tuning — it changes only stats,
 which the build's stats count when they add up from the player's armor, [Stats](#stats)), a legendary armor piece
-(its set's bonuses already count from the pieces worn; the piece carries stats and mod slots) or a jump. An element the rules
-mark `inert` ([rule-format.md](rule-format.md#elements): Skip Grenade, Feeding Frenzy, the ammo, weapon-handling and
-resistance mods) is known: its details say "No rules needed." and why, and the
+(its set's bonuses already count from the pieces worn; the piece carries stats and mod slots) or a jump the rules don't
+have. An element the rules mark `inert` ([rule-format.md](rule-format.md#elements): Skip Grenade, Feeding Frenzy, the
+ammo, weapon-handling and resistance mods, the Arcstrider's jumps) is known: its details say "No rules needed." and why, and the
 build check doesn't warn about it. A loadout for another class than its subclass's is an error, and so is text that
 isn't a loadout.
 
@@ -315,19 +315,24 @@ stay on Home as links, with "import a build.yaml" and "import a loop".
 The designer's Subclass box has **⋯** next to its title, for every build (the Home cards stay read-only). It opens the
 subclass editor with the build's super, grenade, melee, class ability, jump, two aspects and fragments; tapping a plug's
 square opens its details, and the slot's **⋯** opens a dropdown under that slot (above it when there's no room below),
-one option per line, with everything the subclass can hold there — Bungie's manifest, with icons and names: the ones the
-rules know are marked, the rest carry ⊘, a jump none (it has no part in a loop). The dropdown floats over the slots after
+one option per line, with everything the subclass can hold there — Bungie's manifest, with icons and names. The ones the
+rules don't know carry ⊘ (every Arcstrider plug is known, its four jumps `inert`), except a jump the rules don't have
+(another subclass's), which carries none: it has no part in a loop. The dropdown floats over the slots after
 it, so none of them moves. One dropdown is open at a time; picking a plug puts it in the slot and closes it, and ⋯ again, a
-tap outside it or Escape closes it without a change (Escape closes only the dropdown, not the editor). An aspect
+tap outside it or Escape closes it without a change (Escape closes only the dropdown, not the editor). Hovering over
+a plug (an option, a slot of the editor, or a square of the Subclass box) shows its name and Bungie's description of it
+(the manifest's; the rules' when the excerpt has none), and for a ⊘ plug why it is marked. An aspect
 or a fragment can't be equipped twice; ✕ leaves a fragment's slot empty, while an aspect has no ✕: it is only swapped
 for another. The aspects open the fragment slots (`fragmentSlots` in the rules: Tempest Strike
 and Flow State 4, Tempest Strike and Ascension 5); the count follows the aspects at once. An aspect whose count the rules
 don't give shows "?" slots and limits nothing. An aspect change that closes slots takes out the last fragments and names
 them. **Cancel**, ✕ or Escape throws the changes away.
 
-**Save** rewrites only the embedded build file's `super`, `grenade`, `melee`, `classAbility`, `aspects`, `fragments`
-and `leftOut` (a plug the rules don't know, and the jump, are `leftOut.subclassPlugs`, shown ⊘ and listed under "Not in
-Loopsmith yet" — a jump isn't); the build check runs again and the steps replay with the new build, in place. The Next
+**Save** rewrites only the embedded build file's `super`, `grenade`, `melee`, `classAbility`, `jump`, `aspects`,
+`fragments` and `leftOut` (a plug the rules don't know is in `leftOut.subclassPlugs`, shown ⊘ and listed under "Not in
+Loopsmith yet"; so is a jump the rules don't have, which isn't ⊘ or listed; a jump the rules know is `jump:`, and a
+build file that still lists one under `leftOut.subclassPlugs` opens with it and is saved with it as `jump:`; an entry
+the file didn't have is added at its end); the build check runs again and the steps replay with the new build, in place. The Next
 trigger HUD, the Validation list and **Analyze** follow it. When the stats were added up from the player's armor
 (they equal what that armor gives for the old subclass), they are added up again with the new fragments (Spark of Shock
 gone gives back its −10 Grenade); stats the player typed stay as typed. The export and the share link carry the new

@@ -18,7 +18,7 @@ public static class BuildFileParsing
     private static readonly ImmutableArray<string> BuildKeys =
     [
         "name", "author", "source", "catalog", "class", "subclass", "super", "grenade", "melee", "classAbility",
-        "aspects", "fragments", "exoticArmor", "armorSetBonuses", "armorMods", "artifactPerks", "weapons", "stats",
+        "jump", "aspects", "fragments", "exoticArmor", "armorSetBonuses", "armorMods", "artifactPerks", "weapons", "stats",
         "leftOut", "armorCopies",
     ];
 
@@ -92,8 +92,8 @@ public static class BuildFileParsing
                 []));
 
     /// <summary>
-    /// Each ability is an element id, or <c>"?"</c> for one the build has but Loopsmith can't name; a slot left out holds
-    /// nothing (a build started from scratch).
+    /// Each ability, and the jump, is an element id, or <c>"?"</c> for one the build has but Loopsmith can't name; a slot
+    /// left out holds nothing (a build started from scratch, or a jump the rules don't have: <c>leftOut.subclassPlugs</c>).
     /// </summary>
     private static Result<AbilityLoadout, Errors> ReadAbilities(YamlMap map) =>
         Combine(
@@ -101,7 +101,8 @@ public static class BuildFileParsing
             map.ReadOrDefault("grenade", ReadAbility, new AbilityPlug.Empty()),
             map.ReadOrDefault("melee", ReadAbility, new AbilityPlug.Empty()),
             map.ReadOrDefault("classAbility", ReadAbility, new AbilityPlug.Empty()),
-            (super, grenade, melee, classAbility) => new AbilityLoadout(super, grenade, melee, classAbility));
+            map.ReadOrDefault("jump", ReadAbility, new AbilityPlug.Empty()),
+            (super, grenade, melee, classAbility, jump) => new AbilityLoadout(super, grenade, melee, classAbility, jump));
 
     private static Result<AbilityPlug, Errors> ReadAbility(YamlValue value) =>
         value.ParseWith(text => text == DomainPhrasing.Unknown

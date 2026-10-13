@@ -95,8 +95,8 @@ Files, rules, builds, related PRs, open questions.
   - `Open question:` lines for what you couldn't settle.
   - For a bug, a cause you suspect but haven't verified is marked as not diagnosed. You reproduce
     the bug first.
-  - Rule work names its source. When it needs the Compendium snapshot, say so and ask for it: a
-    session doesn't have it.
+  - Rule work names its source. When it needs the Compendium snapshot, the session downloads it
+    (`tools/compendium/README.md`, "In a cloud session"); ask for the zip only if that fails.
 - **Files given in the session:** each file's name (Naming) and what it shows, in one line. They stay
   in this session and aren't committed; the list keeps a record of what the work was based on.
   Write `None.` if there were none.
@@ -109,6 +109,19 @@ for; suggest it to them instead.
 
 When they say go, follow CLAUDE.md's "Agent workflow" from step 1. The spec becomes the PR's title and
 description when the work is ready for review.
+
+The work branch is always `claude/<slug>`, named from the agreed title (CLAUDE.md, "Naming (agent
+work)"), even when this session was handed a generated branch name such as
+`claude/zealous-euler-qu8uiv`. Don't push to the generated one; every commit, push and the pull
+request use the slug branch.
+
+Once the pull request is open, rename this session so it shows the PR (CLAUDE.md, "Agent workflow",
+step 4):
+- Read the current title with the claude-code-remote `get_session` tool, with no `session_id`.
+- If the title already ends with ` #<PR number>`, leave it. Otherwise append that suffix with
+  `set_session_title`: "D2 damage resistance calculation" → "D2 damage resistance calculation #59".
+- If the tools aren't available or the rename fails, say so in the session and carry on. The rename
+  never blocks the PR.
 
 The owner's files never go into the repository by themselves. When the work needs one in the
 repository, put it in its proper place, for example a loop file as a test case under `builds/` or

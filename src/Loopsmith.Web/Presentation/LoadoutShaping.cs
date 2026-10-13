@@ -28,6 +28,8 @@ public partial record ItemDetails
 /// One square of the DIM-style loadout: the item's icon (a bungie.net address) or none, its name, colour and rarity,
 /// whether the rules know it (an item the DIM loadout had but the build leaves out is shown, marked ⊘), and what tapping
 /// it opens (none: nothing to show). <see cref="Enhanced"/>: a weapon perk's enhanced trait, drawn as the game draws it.
+/// <see cref="GameText"/>: Bungie's description of the item (the manifest's), when the excerpt has it: a subclass plug's
+/// tooltip.
 /// </summary>
 public sealed record IconTile(
     string Name,
@@ -38,7 +40,10 @@ public sealed record IconTile(
     Optional<string> Description,
     int Copies,
     Optional<ItemDetails> Details,
-    bool Enhanced = false);
+    bool Enhanced = false)
+{
+    public Optional<string> GameText { get; init; } = Optional.None<string>();
+}
 
 /// <summary>An ability's square in the Subclass box: its plug's, or an empty slot (a build started from scratch), named for its kind.</summary>
 [Union]
@@ -225,7 +230,7 @@ public static class LoadoutShaping
             DescribeAbility<ManifestKind.Super>(catalog, b.Abilities.Super, "Super", plugs),
             [
                 DescribeAbility<ManifestKind.ClassAbility>(catalog, b.Abilities.ClassAbility, "Class ability", plugs),
-                .. DescribeLeftOutPlugs<ManifestKind.Movement>(catalog, plugs).Select(tile => (AbilityTile)new AbilityTile.Shown(tile)),
+                .. DescribeJump(catalog, b.Abilities.Jump, plugs),
                 DescribeAbility<ManifestKind.Melee>(catalog, b.Abilities.Melee, "Melee", plugs),
                 DescribeAbility<ManifestKind.Grenade>(catalog, b.Abilities.Grenade, "Grenade", plugs),
             ],
@@ -410,7 +415,7 @@ public static class LoadoutShaping
 
     /// <summary>
     /// A plug of the subclass editor as its square shows it: the rules' element when they know it for the build's class, else the manifest's item
-    /// marked ⊘ (a jump has no part in a loop, so it carries none). It opens its details either way.
+    /// marked ⊘ (a jump the rules don't have has no part in a loop, so it carries none). It opens its details either way.
     /// </summary>
     public static IconTile DescribeSubclassPlug(ValidatedBuild build, ItemHash hash)
     {
@@ -435,11 +440,23 @@ public static class LoadoutShaping
             Optional.Some("Not in Loopsmith's rules or its manifest excerpt yet."), 1, Optional.None<ItemDetails>());
 
     private static IconTile DescribeItem(ManifestItem item, string name, bool inRules, Optional<string> description, Affinity affinity, Optional<ItemDetails> details) =>
-        new(name, item.Icon.Map(ToIconUrl), affinity, item.Tier, inRules, description, 1, details);
+        new(name, item.Icon.Map(ToIconUrl), affinity, item.Tier, inRules, description, 1, details) { GameText = item.Description };
+
+    /// <summary>
+    /// A subclass plug's tooltip: its name, then Bungie's description of it (the rules' when the manifest excerpt has none),
+    /// and for a plug the rules don't know, why it is marked ⊘.
+    /// </summary>
+    public static string DescribePlugTooltip(IconTile tile) =>
+        string.Join("\n", new[]
+        {
+            tile.Name,
+            tile.GameText.Match(text => text.Value, _ => tile.Description.UnwrapOr("")),
+            !tile.InRules && tile.GameText.IsSome() ? tile.Description.UnwrapOr("") : "",
+        }.Where(part => part.Length > 0));
 
     /// <summary>
     /// A hash the build left out: the manifest's name and icon when the excerpt has it, else just the hash — marked ⊘ when no
-    /// rule knows it yet, not when it has no part in a loop (a set's armor piece, a jump: known, not missing). It opens its
+    /// rule knows it yet, not when it has no part in a loop (a set's armor piece, a jump the rules don't have: known, not missing). It opens its
     /// manifest details, unless it is legendary armor or a legendary weapon (DIM's perks and mods say more).
     /// </summary>
     private static IconTile DescribeLeftOut(RuleCatalog catalog, LeftOutEntry entry) =>
@@ -470,6 +487,16 @@ public static class LoadoutShaping
                 .UnwrapOr(new IconTile(DomainPhrasing.Unknown, Optional.None<string>(), Affinity.Neutral, Optional.None<ItemTier>(), false,
                     Optional.Some("Not known: not in the rule catalog yet, so it sets nothing off."), 1, Optional.None<ItemDetails>()))),
             _ => new AbilityTile.Empty(slot));
+
+    /// <summary>
+    /// The jump's square, when the build has one: its element; or, for "?", the left-out jump the manifest names, else a
+    /// "?" tile; or, when the slot holds nothing, the left-out jump (one the rules don't have, or a build file's from before
+    /// jumps were elements), else no square.
+    /// </summary>
+    private static ImmutableArray<AbilityTile> DescribeJump(RuleCatalog catalog, AbilityPlug jump, ImmutableArray<LeftOutEntry> plugs) =>
+        jump.IsEmpty()
+            ? [.. DescribeLeftOutPlugs<ManifestKind.Movement>(catalog, plugs).Select(tile => (AbilityTile)new AbilityTile.Shown(tile))]
+            : [DescribeAbility<ManifestKind.Movement>(catalog, jump, "Jump", plugs)];
 
     private static IEnumerable<IconTile> DescribeLeftOutPlugs<TKind>(RuleCatalog catalog, ImmutableArray<LeftOutEntry> plugs)
         where TKind : ManifestKind =>
