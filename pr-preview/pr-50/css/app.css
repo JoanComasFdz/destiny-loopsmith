@@ -1042,7 +1042,6 @@ button.hud-chip:hover, button.hud-chip:focus-visible { background: color-mix(in 
 .armor-picker { display: flex; flex-direction: column; gap: 10px; }
 .armor-options { grid-template-columns: repeat(auto-fill, calc(var(--tile) * 1.3)); gap: 6px; }
 .armor-options .icon-tile { width: calc(var(--tile) * 1.3); height: calc(var(--tile) * 1.3); }
-.armor-options .icon-tile.focused { outline: 2px solid var(--arc); outline-offset: 1px; }
 .armor-options .icon-tile.worn { box-shadow: 0 0 0 2px color-mix(in srgb, var(--ok) 70%, transparent); }
 /* the copy worn: a tick in the square's lower-right corner, clear of the frame or stat focus above it and of the footer */
 .armor-worn-mark { position: absolute; right: 0; bottom: 0; padding: 0 3px; font-size: 11px; font-weight: 800; line-height: 14px; color: #fff; background: rgba(0, 0, 0, .7); pointer-events: none; }
@@ -1058,7 +1057,6 @@ button.hud-chip:hover, button.hud-chip:focus-visible { background: color-mix(in 
 .weapon-options { grid-template-columns: repeat(auto-fill, calc(var(--tile) * 1.3)); gap: 6px; }
 .weapon-option { display: flex; flex-direction: column; width: calc(var(--tile) * 1.3); }
 .weapon-options .icon-tile { width: calc(var(--tile) * 1.3); height: calc(var(--tile) * 1.3); }
-.weapon-options .icon-tile.focused { outline: 2px solid var(--arc); outline-offset: 1px; }
 .weapon-options .icon-tile.worn { box-shadow: 0 0 0 2px color-mix(in srgb, var(--ok) 70%, transparent); }
 .weapon-option-perks { display: flex; flex-wrap: wrap; gap: 6px 12px; }
 .weapon-option-perk { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; }
@@ -1070,7 +1068,8 @@ button.hud-chip:hover, button.hud-chip:focus-visible { background: color-mix(in 
 .every-item-count { font-size: 12px; white-space: nowrap; }
 .every-item-options { grid-template-columns: repeat(auto-fill, calc(var(--tile) * 1.3)); gap: 6px; }
 .every-item-options .icon-tile { width: calc(var(--tile) * 1.3); height: calc(var(--tile) * 1.3); }
-.every-item-options .icon-tile.focused { outline: 2px solid var(--arc); outline-offset: 1px; }
+/* the item shown in a picker: its square and the footer under it, framed together */
+.weapon-option.focused, .armor-option.focused { outline: 2px solid var(--arc); outline-offset: 1px; }
 .every-item-options .icon-tile.worn { box-shadow: 0 0 0 2px color-mix(in srgb, var(--ok) 70%, transparent); }
 /* after a login: the switch between the player's own items and every item of the game */
 .picker-modes { display: inline-flex; align-self: flex-start; border: 1px solid var(--line-2); border-radius: var(--radius); overflow: hidden; }
