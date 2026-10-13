@@ -28,5 +28,5 @@ Max Bolt Charge (x10) -> New Tricks and +~40% grenade energy and heals you and a
 Max Slice (x5) -> consumes Slice [Slice]
 While Combination Blow -> +?% melee damage [Combination Blow]
 While Amplified -> +1 Bolt Charge per gain [Spark of Frequency] + Linear Fusion Rifles, Fusion Rifles and Heat Weapons: +? Handling, +? Reload [Ionic Overclock]
-While Woven Mail -> 45% damage resistance [Woven Mail]
-Always -> 25% damage resistance [Spark of Resistance] + +1 grenade charge [Shinobu's Vow] + +50% Bolt Charge damage [Flashover]
+While Woven Mail -> 45% [PvP 25%] damage resistance [Woven Mail]
+Always -> 25% [PvP 10%] damage resistance [Spark of Resistance] + +1 grenade charge [Shinobu's Vow] + +50% Bolt Charge damage [Flashover] + 34.5% damage resistance against combatants [Guardian]

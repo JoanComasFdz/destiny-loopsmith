@@ -89,6 +89,13 @@ internal static class ValueReading
     internal static Result<GameValue, Errors> ReadGameValue(YamlValue value) =>
         value.ParseWith(GameNotationParsing.ParseGameValue);
 
+    /// <summary>A game value with its PvP value in brackets, when it has one (<c>"45% [25%]"</c>).</summary>
+    internal static Result<PveAndPvp, Errors> ReadPveAndPvp(YamlValue value) =>
+        value.ParseWith(GameNotationParsing.ParsePveAndPvp);
+
+    internal static Result<CombatantDamage, Errors> ReadCombatantDamage(YamlValue value) =>
+        value.ParseWith(GameNotationParsing.ParseCombatantDamage);
+
     internal static Result<TEnum, Errors> ReadVocabularyWord<TEnum>(YamlValue value)
         where TEnum : struct, Enum =>
         value.ParseWith(GameNotationParsing.ParseVocabularyWord<TEnum>);

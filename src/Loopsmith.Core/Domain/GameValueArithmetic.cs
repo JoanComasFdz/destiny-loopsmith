@@ -19,6 +19,28 @@ public static class GameValueArithmetic
             ? new GameValue.Known(perModCount.Values[Math.Clamp(copies, 1, perModCount.Values.Length) - 1])
             : value;
 
+    /// <summary>
+    /// Damage resistances together, the way the game stacks them: each multiplies what the others let through,
+    /// 1 − (1 − a) × (1 − b) × … (compendium Armor Mods#7). An unknown one — or a per-copy one not yet narrowed to its
+    /// copies (<see cref="NarrowToCopies"/>) — makes the total unknown, never a total without it; an approximate one makes
+    /// it approximate; none is 0.
+    /// </summary>
+    public static GameValue CombineResistances(this IEnumerable<GameValue> resistances) =>
+        resistances.Aggregate<GameValue, GameValue>(new GameValue.Known(0m), CombineTwoResistances);
+
+    private static GameValue CombineTwoResistances(GameValue total, GameValue next) =>
+        (total, next) switch
+        {
+            (GameValue.Known known, GameValue.Known other) => new GameValue.Known(MultiplyResistances(known.Value, other.Value)),
+            (GameValue.Known known, GameValue.Approximate other) => new GameValue.Approximate(MultiplyResistances(known.Value, other.Value)),
+            (GameValue.Approximate approximate, GameValue.Known other) => new GameValue.Approximate(MultiplyResistances(approximate.Value, other.Value)),
+            (GameValue.Approximate approximate, GameValue.Approximate other) => new GameValue.Approximate(MultiplyResistances(approximate.Value, other.Value)),
+            _ => new GameValue.Unknown(),
+        };
+
+    private static decimal MultiplyResistances(decimal first, decimal second) =>
+        1m - ((1m - first) * (1m - second));
+
     public static DamageType ToDamageType(this Affinity affinity) =>
         affinity switch
         {

@@ -11,7 +11,8 @@ namespace Loopsmith.Core.Tests.Orchestration;
 
 /// <summary>
 /// The owner's DIM build, item by item: what has no part in a loop says so (its legendary armor pieces, Triple Jump
-/// (an inert element of the rules; a jump they don't have, left out), the resistance mods, Feeding Frenzy), Powerful Attraction collects the orbs on the ground when you dodge, Ashes to Assets answers a
+/// (an inert element of the rules; a jump they don't have, left out), Feeding Frenzy), the resistance mods show in the
+/// step's damage resistance, Powerful Attraction collects the orbs on the ground when you dodge, Ashes to Assets answers a
 /// grenade kill, and Charged Up raises the Armor Charge cap the player declares reached.
 /// </summary>
 public sealed class OwnersBuildModsTests
@@ -65,7 +66,7 @@ public sealed class OwnersBuildModsTests
         var build = Play().Build;
         var inert = build.Equipped.Where(equipped => equipped.Element.Inert.IsSome()).Select(equipped => equipped.Element.Name).ToImmutableArray();
 
-        Assert.Equal(["Concussive Dampener", "Feeding Frenzy", "Harmonic Resistance", "Skip Grenade", "Triple Jump"], inert.Order());
+        Assert.Equal(["Feeding Frenzy", "Skip Grenade", "Triple Jump"], inert.Order());
         Assert.DoesNotContain(build.Issues, issue => issue.Message.Contains("no authored rules", StringComparison.Ordinal));
     }
 

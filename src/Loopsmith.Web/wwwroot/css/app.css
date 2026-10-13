@@ -762,6 +762,17 @@ button.hud-chip:hover, button.hud-chip:focus-visible { background: color-mix(in 
 .hud-weapon { display: inline-flex; align-items: center; gap: 4px; padding-left: 6px; border-left: 1px solid color-mix(in srgb, var(--aff, var(--line)) 45%, transparent); color: var(--text); }
 .hud-weapon img { width: 16px; height: 16px; border-radius: 2px; flex: none; }
 .hud-switches { padding-left: 6px; border-left: 1px solid color-mix(in srgb, var(--aff, var(--line)) 45%, transparent); color: var(--muted); font-size: 11px; }
+/* the damage resistance right then: a row per line, PvE and PvP columns; its sources and formulas open under it */
+.hud-resistance { display: flex; flex-direction: column; gap: 2px; padding-top: 6px; border-top: 1px dotted rgba(38, 48, 70, .9); }
+.hud-resistance-row { display: grid; grid-template-columns: minmax(0, 1fr) 64px 64px; align-items: baseline; gap: 8px; }
+.hud-resistance-head { padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.hud-resistance-head:hover .hud-label, .hud-resistance-head:focus-visible .hud-label { color: var(--text); }
+.hud-resistance-name { min-width: 0; overflow-wrap: anywhere; }
+.hud-resistance-value { text-align: right; font-variant-numeric: tabular-nums; }
+.hud-resistance-value[data-column="pve"] { font-weight: 650; }
+.hud-resistance-sources { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
+.hud-resistance-source-line { display: flex; flex-direction: column; gap: 4px; }
+.hud-resistance-formula { color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 @media (max-width: 640px) {
     .hud-columns { grid-template-columns: minmax(0, 1fr); gap: 8px; }
     .hud-group, .hud-group[data-group] { display: grid; grid-template-columns: 64px minmax(0, 1fr); align-items: start; gap: 8px; text-align: left; }

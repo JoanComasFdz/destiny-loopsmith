@@ -61,6 +61,22 @@ public static class GameNotationParsing
             + "type:<type>, keyword:<status> or summon:<summon>)");
     }
 
+    /// <summary>
+    /// The combatants' damage a resistance reduces: <c>combatants</c> (all of it), a damage type (<c>arc</c>),
+    /// <c>harmonic</c> (the Super's element), <c>within:5</c> / <c>beyond:30</c> (metres), <c>blast</c>.
+    /// </summary>
+    public static Result<CombatantDamage, string> ParseCombatantDamage(string text)
+    {
+        var trimmed = text.Trim();
+        var colon = trimmed.IndexOf(':');
+        var parsed = colon < 0
+            ? ToBareCombatantDamage(trimmed)
+            : ToRange(trimmed[..colon], trimmed[(colon + 1)..]);
+        return parsed.ToResult(() =>
+            $"'{text}' is not the damage a resistance reduces (expected combatants, a damage type (arc, solar, …), harmonic, "
+            + "within:<metres>, beyond:<metres> or blast)");
+    }
+
     /// <summary><c>compendium/2026-10-09/Arc#54</c> or <c>clarity/1727069364@2.0625</c>.</summary>
     public static Result<Provenance, string> ParseProvenance(string text)
     {
@@ -157,6 +173,27 @@ public static class GameNotationParsing
             ? Optional.Some(isPercent ? value / 100m : value)
             : Optional.None<decimal>();
     }
+
+    private static Optional<CombatantDamage> ToBareCombatantDamage(string word) =>
+        word switch
+        {
+            "combatants" => Optional.Some<CombatantDamage>(new CombatantDamage.All()),
+            "harmonic" => Optional.Some<CombatantDamage>(new CombatantDamage.OfSuperType()),
+            "blast" => Optional.Some<CombatantDamage>(new CombatantDamage.Blast()),
+            _ => ParseVocabularyWord<DamageType>(word).Match(
+                type => Optional.Some<CombatantDamage>(new CombatantDamage.OfType(type.Value)),
+                _ => Optional.None<CombatantDamage>()),
+        };
+
+    private static Optional<CombatantDamage> ToRange(string prefix, string metres) =>
+        decimal.TryParse(metres, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var value) && value > 0
+            ? prefix switch
+            {
+                "within" => Optional.Some<CombatantDamage>(new CombatantDamage.WithinRange(value)),
+                "beyond" => Optional.Some<CombatantDamage>(new CombatantDamage.BeyondRange(value)),
+                _ => Optional.None<CombatantDamage>(),
+            }
+            : Optional.None<CombatantDamage>();
 
     private static Result<DamageSource, string> ToBareDamageSource(string word) =>
         word switch
