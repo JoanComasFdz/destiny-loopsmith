@@ -86,6 +86,10 @@ public sealed class BrowserInterop(IJSRuntime js)
         return ToOutcome(problem);
     }
 
+    /// <summary>Waits until the browser has painted the page, so a bar's change shows before the next long step.</summary>
+    public ValueTask WaitForPaintAsync() =>
+        js.InvokeVoidAsync("loopsmithManifest.waitForPaint");
+
     /// <summary>The copy of the manifest the browser saved (<c>{ "urls": { component: url }, "bytes": n }</c>), or none.</summary>
     public async Task<Optional<string>> ReadSavedManifestAsync()
     {

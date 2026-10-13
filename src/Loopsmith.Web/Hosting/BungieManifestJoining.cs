@@ -320,7 +320,7 @@ public sealed class BungieManifestJoining(BrowserInterop browser, string apiKey,
         {
             var round = LoopDesigning.ToListingRound(ask);                                       // pure
             ReportListingRound(round);                                                           // impure (tab state)
-            await Task.Delay(1);                                                                 // impure (the browser's turn: taps, the bar)
+            await browser.WaitForPaintAsync();                                                   // impure (the browser paints the bars, answers taps)
             var entries = await browser.ReadManifestEntriesAsync(ask.Query.Entries);            // impure
             var parts = await browser.ReadManifestPartsAsync(ask.Query.Parts);                  // impure
             step = LoopDesigning.ContinueListing(ask, entries, parts);                           // pure
