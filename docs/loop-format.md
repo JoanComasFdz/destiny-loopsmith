@@ -420,8 +420,11 @@ rolled two perks or more has each of them):
   copy (its `instance`: picked from Yours, or the player's own dim.gg share's) is theirs, each perk the copy doesn't
   have in that column carries a small amber **!** in its square's upper-right corner (clear of the ⊘ in the lower
   right and of an enhanced trait's arrow on the left) and "Not on your copy" under its name. Picking one puts the same
-  **!** on the weapon's perk square and adds a warning under Validation: "Festival Flight: your copy doesn't have Hatchling in column 2 (it has Elemental Honing
-  (enhanced) or Attrition Orbs)." Each perk of a column that rolled two or more is the copy's; so is a base perk whose
+  **!** on the weapon's perk square and a warning under Validation, one line per perk: a perk the rules don't know
+  already has the grey line on the weapon's roll, which turns yellow in its place and says it ("Festival Flight's
+  roll: Hatchling (Trait) — not in the rule catalog yet, so it sets nothing off. Your copy doesn't have Hatchling in
+  column 2 (it has Elemental Honing (enhanced) or Attrition Orbs)."); one they know gets a yellow line of its own
+  ("Festival Flight: your copy doesn't have Slice (enhanced) in column 1 (it has Slice)."). Each perk of a column that rolled two or more is the copy's; so is a base perk whose
   enhanced version the copy has (the enhanced trait does all it does), but not an enhanced perk whose base the copy
   has. A weapon picked from Every item or written in the build file isn't compared, and nothing of it is saved: the
   marks and the warning go when the player logs out.

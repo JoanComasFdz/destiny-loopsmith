@@ -58,7 +58,7 @@ public sealed partial class StatLoadingTests
     }
 
     [Fact]
-    public void A_perk_the_players_copy_doesnt_have_is_a_warning_and_one_it_can_switch_to_is_not()
+    public void A_perk_the_players_copy_doesnt_have_turns_its_rolls_line_into_a_warning_and_one_it_can_switch_to_does_not()
     {
         var profile = ReadProfile([.. OwnShare(tuningSockets: 0), .. OwnShareWeapons().Select(item => item.Hash == Festival ? OwnFestivalWithTwoPerks() : item)]);
         var session = LoopDesigning.ApplyBungieLogin(OpenOwnersSession(Catalog), profile).Session;
@@ -68,15 +68,22 @@ public sealed partial class StatLoadingTests
         var attrition = PickPerk(hatchling, festival, 1, Optional.Some(AttritionOrbs));
         var cleared = PickPerk(hatchling, festival, 1, Optional.None<ItemHash>());
 
+        var grey = LoopDesigning.ListDesignIssues(hatchling);
+        var yellow = LoopDesigning.ListDesignIssues(hatchling, Optional.Some(profile));
+        var roll = new BuildIssue(Severity.Info, "Festival Flight's roll: Hatchling (Trait) — not in the rule catalog yet, so it sets nothing off.");
+
         Assert.Empty(ListCopyWarnings(session, profile));
-        Assert.Equal(["Festival Flight: your copy doesn't have Hatchling in column 2 (it has Elemental Honing (enhanced) or Attrition Orbs)."], ListCopyWarnings(hatchling, profile));
-        Assert.Contains(LoopDesigning.ListDesignIssues(hatchling, Optional.Some(profile)), issue => issue.Severity == Severity.Warning && issue.Message.StartsWith("Festival Flight: your copy", StringComparison.Ordinal));
+        Assert.Equal(grey.Length, yellow.Length);                                                                   // one line, not two
+        Assert.Equal(
+            new BuildIssue(Severity.Warning, "Festival Flight's roll: Hatchling (Trait) — not in the rule catalog yet, so it sets nothing off. Your copy doesn't have Hatchling in column 2 (it has Elemental Honing (enhanced) or Attrition Orbs)."),
+            yellow[grey.IndexOf(roll)]);                                                                              // in the grey line's place
+        Assert.Single(yellow, issue => issue.Message.Contains("Hatchling", StringComparison.Ordinal));
         Assert.Contains(new ColumnPerk(1, Hatchling), LoopDesigning.ListPerksNotOnCopy(hatchling.Build, profile, hatchling.Build.Build.Weapons[festival]));   // its square is marked too
         Assert.DoesNotContain(new ColumnPerk(1, AttritionOrbs), LoopDesigning.ListPerksNotOnCopy(attrition.Build, profile, attrition.Build.Build.Weapons[festival]));
         Assert.Empty(ListCopyWarnings(attrition, profile));
         Assert.Empty(ListCopyWarnings(cleared, profile));
         Assert.Equal(LoopDesigning.ListDesignIssues(hatchling), LoopDesigning.ListDesignIssues(hatchling, Optional.None<BungieProfile>()));   // logged out: no warning
-        Assert.DoesNotContain("your copy", hatchling.Design.Build.Text, StringComparison.Ordinal);                                          // nothing of it is saved
+        Assert.DoesNotContain("your copy", hatchling.Design.Build.Text, StringComparison.OrdinalIgnoreCase);                                // nothing of it is saved
     }
 
     [Fact]
@@ -94,7 +101,9 @@ public sealed partial class StatLoadingTests
         var enhancedMissing = LoopDesigning.ListPerksNotOnCopy(enhanced.Build, enhancedCopy, enhanced.Build.Build.Weapons[festival]);
 
         Assert.Empty(ListCopyWarnings(slice, enhancedCopy));
-        Assert.Equal(["Festival Flight: your copy doesn't have Slice (enhanced) in column 1 (it has Slice)."], ListCopyWarnings(enhancedSlice, baseCopy));
+        Assert.Equal(["Festival Flight: your copy doesn't have Slice (enhanced) in column 1 (it has Slice)."], ListCopyWarnings(enhancedSlice, baseCopy));   // the rules know it: a line of its own
+        Assert.Contains(LoopDesigning.ListDesignIssues(enhancedSlice, Optional.Some(baseCopy)), issue => issue.Severity == Severity.Info
+            && issue.Message.StartsWith("Festival Flight's roll: Elemental Honing", StringComparison.Ordinal));                                         // another perk's line stays as it is
         Assert.Contains(new ColumnPerk(0, EnhancedSlice), plainMissing);        // the picker marks the enhanced Slice on a plain copy
         Assert.DoesNotContain(new ColumnPerk(0, Slice), plainMissing);
         Assert.DoesNotContain(new ColumnPerk(0, Slice), enhancedMissing);       // nor Slice on an enhanced one
@@ -127,5 +136,5 @@ public sealed partial class StatLoadingTests
         Assert.IsType<Result<DesignSession, string>.Ok>(LoopDesigning.PickWeaponPerk(session, weapon, column, perk)).Value;
 
     private static string[] ListCopyWarnings(DesignSession session, BungieProfile profile) =>
-        [.. LoopDesigning.ListDesignIssues(session, Optional.Some(profile)).Where(issue => issue.Message.Contains("your copy", StringComparison.Ordinal)).Select(issue => issue.Message)];
+        [.. LoopDesigning.ListDesignIssues(session, Optional.Some(profile)).Where(issue => issue.Message.Contains("your copy", StringComparison.OrdinalIgnoreCase)).Select(issue => issue.Message)];
 }

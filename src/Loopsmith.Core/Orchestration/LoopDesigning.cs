@@ -831,14 +831,14 @@ public static class LoopDesigning
         [.. session.Build.Issues, .. FindCatalogMismatch(session).Match(issue => [issue.Value], _ => ImmutableArray<BuildIssue>.Empty)];
 
     /// <summary>
-    /// The design's issues (<see cref="ListDesignIssues(DesignSession)"/>) and, after the player's Bungie login, a warning
-    /// for each column of a weapon whose copy is theirs that holds a perk the copy doesn't have.
+    /// The design's issues (<see cref="ListDesignIssues(DesignSession)"/>) and, after the player's Bungie login, what a
+    /// weapon whose copy is theirs holds that the copy doesn't have: one warning line per weapon — the line on its roll's
+    /// perks the rules don't know, when there is one, says it too (CopyPerkChecking).
     /// </summary>
     public static ImmutableArray<BuildIssue> ListDesignIssues(DesignSession session, Optional<BungieProfile> profile) =>
-    [
-        .. ListDesignIssues(session),
-        .. profile.Match(owned => CheckCopyPerks(session.Build, owned.Value), _ => ImmutableArray<BuildIssue>.Empty),
-    ];
+        profile.Match(
+            owned => CopyPerkChecking.AddCopyWarnings(session.Build.Catalog, ListDesignIssues(session), ListCopyColumns(session.Build, owned.Value)),
+            _ => ListDesignIssues(session));
 
     /// <summary>
     /// The perks a build's weapon's columns that roll offer that the player's copy doesn't have there (the perk picker
@@ -851,11 +851,11 @@ public static class LoopDesigning
             copy => CopyPerkChecking.ListMissingPerks(build.Catalog, weapon, CopyFinding.ReadCopyColumns(build.Catalog.Manifest, weapon, copy.Value)),
             _ => ImmutableArray<ColumnPerk>.Empty);
 
-    /// <summary>The build's weapons whose copies are the player's, each column whose perk the copy doesn't have as a warning.</summary>
-    private static ImmutableArray<BuildIssue> CheckCopyPerks(ValidatedBuild build, BungieProfile profile) =>
+    /// <summary>The build's weapons whose copies are the player's, each with the perks its copy has by column.</summary>
+    private static ImmutableArray<(WeaponLoadout Weapon, ImmutableArray<ImmutableArray<ItemHash>> Columns)> ListCopyColumns(ValidatedBuild build, BungieProfile profile) =>
     [
-        .. CopyFinding.ListOwnedCopies(build.Build, profile).SelectMany(owned => CopyPerkChecking.CheckCopyPerks(
-            build.Catalog, build.Build.Weapons[owned.Weapon], CopyFinding.ReadCopyColumns(build.Catalog.Manifest, build.Build.Weapons[owned.Weapon], owned.Copy))),
+        .. CopyFinding.ListOwnedCopies(build.Build, profile).Select(owned =>
+            (build.Build.Weapons[owned.Weapon], CopyFinding.ReadCopyColumns(build.Catalog.Manifest, build.Build.Weapons[owned.Weapon], owned.Copy))),
     ];
 
     /// <summary>Info when the loop was designed against another catalog version than the one replaying it.</summary>
