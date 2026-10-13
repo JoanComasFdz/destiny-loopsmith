@@ -340,7 +340,7 @@ public sealed class RuleCatalogParsingTests
         Assert.Equal(new DamageSource.SummonOf(SummonId.From("threadling")), modifyDamage.Against);
         Assert.Equal([0.12m, 0.17m, 0.20m], Assert.IsType<GameValue.PerModCount>(modifyDamage.Change).Values);
 
-        Assert.Equal(new Passive.ResistDamage(new PveAndPvp(new GameValue.Known(0.25m), Optional.None<GameValue>()), ResistanceScope.Any), passives[3].Modifier);
+        Assert.Equal(new Passive.ResistDamage(new PveAndPvp(new GameValue.Known(0.25m), Optional.None<GameValue>())), passives[3].Modifier);
 
         var weaponStats = Assert.IsType<Passive.ModifyWeaponStats>(passives[4].Modifier);
         Assert.Equal(["fusion-rifle"], weaponStats.Archetypes);
@@ -535,7 +535,7 @@ public sealed class RuleCatalogParsingTests
     }
 
     [Fact]
-    public void A_resistance_keeps_its_PvP_value_and_one_against_combatants_only_takes_none()
+    public void A_resistance_keeps_its_PvP_value_and_one_against_combatants_takes_none()
     {
         var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToElementsFile("mods.yaml", """
             elements:
@@ -550,7 +550,13 @@ public sealed class RuleCatalogParsingTests
                 kind: armorMod
                 affinity: arc
                 passives:
-                  - effect: { resistDamage: { amount: "15% | 25% | 30%", against: arc } }
+                  - effect: { resistCombatantDamage: { against: arc, amount: "15% | 25% | 30%" } }
+              - id: melee-damage-resistance
+                name: Melee Damage Resistance
+                kind: armorMod
+                affinity: neutral
+                passives:
+                  - effect: { resistCombatantDamage: { against: "within:5", amount: "15%" } }
             """)]));
         var withPvp = ParseInvalidCatalog(Glossary, ToElementsFile("mods.yaml", """
             elements:
@@ -559,16 +565,28 @@ public sealed class RuleCatalogParsingTests
                 kind: armorMod
                 affinity: arc
                 passives:
-                  - effect: { resistDamage: { amount: "15% [5%]", against: arc } }
+                  - effect: { resistCombatantDamage: { against: arc, amount: "15% [5%]" } }
+            """));
+        var unknownScope = ParseInvalidCatalog(Glossary, ToElementsFile("mods.yaml", """
+            elements:
+              - id: arc-resistance
+                name: Arc Resistance
+                kind: armorMod
+                affinity: arc
+                passives:
+                  - effect: { resistCombatantDamage: { against: "near:5", amount: "15%" } }
             """));
 
         Assert.Equal(
-            new Passive.ResistDamage(new PveAndPvp(new GameValue.Known(0.45m), Optional.Some<GameValue>(new GameValue.Known(0.25m))), ResistanceScope.Any),
+            new Passive.ResistDamage(new PveAndPvp(new GameValue.Known(0.45m), Optional.Some<GameValue>(new GameValue.Known(0.25m)))),
             Assert.Single(catalog.Elements[ElementId.From("woven")].Passives).Modifier);
-        var arc = Assert.IsType<Passive.ResistDamage>(Assert.Single(catalog.Elements[ElementId.From("arc-resistance")].Passives).Modifier);
-        Assert.Equal((ResistanceScope.Arc, false), (arc.Against, arc.Amount.Pvp.IsSome()));
-        Assert.Equal([0.15m, 0.25m, 0.30m], Assert.IsType<GameValue.PerModCount>(arc.Amount.Pve).Values);
-        Assert.Contains("a resistance against arc is against combatants only, so it has no PvP value", withPvp);
+        var arc = Assert.IsType<Passive.ResistCombatantDamage>(Assert.Single(catalog.Elements[ElementId.From("arc-resistance")].Passives).Modifier);
+        Assert.Equal(new CombatantDamage.OfType(DamageType.Arc), arc.Against);
+        Assert.Equal([0.15m, 0.25m, 0.30m], Assert.IsType<GameValue.PerModCount>(arc.Amount).Values);
+        var melee = Assert.IsType<Passive.ResistCombatantDamage>(Assert.Single(catalog.Elements[ElementId.From("melee-damage-resistance")].Passives).Modifier);
+        Assert.Equal(new CombatantDamage.WithinRange(5m), melee.Against);
+        Assert.Contains("a resistance against combatants does nothing in PvP, so it has no PvP value", withPvp);
+        Assert.Contains("'near:5' is not the damage a resistance reduces", unknownScope);
     }
 
     [Fact]

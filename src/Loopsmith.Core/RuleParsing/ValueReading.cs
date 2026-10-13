@@ -93,6 +93,9 @@ internal static class ValueReading
     internal static Result<PveAndPvp, Errors> ReadPveAndPvp(YamlValue value) =>
         value.ParseWith(GameNotationParsing.ParsePveAndPvp);
 
+    internal static Result<CombatantDamage, Errors> ReadCombatantDamage(YamlValue value) =>
+        value.ParseWith(GameNotationParsing.ParseCombatantDamage);
+
     internal static Result<TEnum, Errors> ReadVocabularyWord<TEnum>(YamlValue value)
         where TEnum : struct, Enum =>
         value.ParseWith(GameNotationParsing.ParseVocabularyWord<TEnum>);

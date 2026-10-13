@@ -182,7 +182,7 @@ Mail's damage resistance) is in its details, not in the state's chips: it counts
 them. Every status opens its details on a tap — one the
 rules have no element for (Amplified) shows the glossary's facts and what it switches on — and its facts ("up to
 x5 · 8s") show on hover. Under them, the **damage resistance** right then (ADRs D29): a small table with a PvE and a PvP column. Its first row,
-*All damage*, multiplies every `resistDamage` passive that holds — the Guardian's base 34.5% against combatants, Spark
+*All damage*, multiplies every resistance passive that holds — the Guardian's base 34.5% against combatants, Spark
 of Resistance, Woven Mail while it is on you — the way the game stacks them, 1 − (1 − a) × (1 − b) × …: 73% PvE and
 32.5% PvP with those three (the base does nothing in PvP). Each resistance against some combatants only adds a row of
 its own, PvE only (PvP "—"): *Arc combatants* (Arc Resistance, or Harmonic Resistance with an Arc Super), *Combatants

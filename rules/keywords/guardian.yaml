@@ -13,5 +13,5 @@ elements:
     source: "compendium/2026-10-13/Game Mechanics#106"
     rules: []
     passives:
-      - effect: { resistDamage: { amount: "34.5%", against: combatants } }
+      - effect: { resistCombatantDamage: { against: combatants, amount: "34.5%" } }
         reason: "Every Guardian takes 34.5% less damage from combatants."

@@ -86,10 +86,27 @@ public partial record Passive
     partial record ExtraStacks(StatusId Status, StackCount Extra);           // Spark of Frequency: a caveat on each grant
     partial record ExtraCharges(AbilityKind Ability, int Extra);            // a fact (ADRs D5)
     partial record ModifyDamage(DamageSource Against, GameValue Change);     // Flashover, stat bonuses
-    partial record ResistDamage(PveAndPvp Amount, ResistanceScope Against);  // Spark of Resistance: "25% [10%]"; Arc Resistance: Arc combatants' only
+    partial record ResistDamage(PveAndPvp Amount);                           // Spark of Resistance: any damage, "25% [10%]"
     partial record ModifyWeaponStats(ImmutableArray<string> Archetypes, ImmutableArray<WeaponStatChange> Changes);
     partial record RaiseMaxStacks(StatusId Status, GameValue Max);           // Charged Up: the cap with it equipped, per copy ("4 | 5 | 6"), a fact (ADRs D3)
     partial record ModifyStat(StatKind Stat, GameValue Change);              // Grenade Font: "+20 Grenade" while it holds, a fact never added to the stats (ADRs D1)
+    partial record ResistCombatantDamage(CombatantDamage Against, GameValue Amount);   // Arc Resistance: combatants only, nothing in PvP
+}
+
+/// <summary>
+/// The combatants' damage a resistance reduces (PvE only): all of it (the Guardian's base), one damage type (Arc
+/// Resistance), the Super's element (Harmonic Resistance), from within or beyond a range (Melee Damage Resistance: 5 m,
+/// Sniper Damage Resistance: 30 m), area, blast and explosive damage (Concussive Dampener).
+/// </summary>
+[Union]
+public partial record CombatantDamage
+{
+    partial record All();
+    partial record OfType(DamageType Type);
+    partial record OfSuperType();
+    partial record WithinRange(decimal Meters);
+    partial record BeyondRange(decimal Meters);
+    partial record Blast();
 }
 
 public sealed record PassiveRule(Passive Modifier, ImmutableArray<Condition> When, Optional<string> Reason);

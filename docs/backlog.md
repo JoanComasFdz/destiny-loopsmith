@@ -135,7 +135,7 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   bonuses above 100 (#126, #132, #138, #139) and Gambler's Dodge's refund as its number ("+79% melee energy") —
   need a rule value that reads a build stat; refunds below 70 of their stat scale down by an amount Bungie
   hasn't published ("?"). DIM's runtime stat benefits (Font mods while Armor Charge) aren't added up.
-- **Damage resistance, next** (D29): only `resistDamage` passives count. Sources that are still only a description
+- **Damage resistance, next** (D29): only resistance passives count. Sources that are still only a description
   aren't counted: the Supers' (Arc Staff, Storm's Edge: 90% [PvP 53%/49%], needing a "while in your super"
   condition), Amplified's 15% against combatants (a glossary status, no keyword element), Flow State's during the
   dodge, Emergency Reinforcement's at critical health (inert), the armor set bonuses' and artifact perks'. Spark of

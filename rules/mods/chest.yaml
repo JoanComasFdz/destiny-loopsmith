@@ -137,7 +137,7 @@ elements:
     source: "compendium/2026-10-09/Armor Mods#7"
     rules: []
     passives:
-      - effect: { resistDamage: { amount: "15% | 25% | 30%", against: arc } }
+      - effect: { resistCombatantDamage: { against: arc, amount: "15% | 25% | 30%" } }
         reason: "You take less Arc damage from combatants."
 
   - id: solar-resistance
@@ -149,7 +149,7 @@ elements:
     source: "compendium/2026-10-09/Armor Mods#7"
     rules: []
     passives:
-      - effect: { resistDamage: { amount: "15% | 25% | 30%", against: solar } }
+      - effect: { resistCombatantDamage: { against: solar, amount: "15% | 25% | 30%" } }
         reason: "You take less Solar damage from combatants."
 
   - id: void-resistance
@@ -161,7 +161,7 @@ elements:
     source: "compendium/2026-10-09/Armor Mods#7"
     rules: []
     passives:
-      - effect: { resistDamage: { amount: "15% | 25% | 30%", against: void } }
+      - effect: { resistCombatantDamage: { against: void, amount: "15% | 25% | 30%" } }
         reason: "You take less Void damage from combatants."
 
   - id: stasis-resistance
@@ -175,7 +175,7 @@ elements:
     source: "compendium/2026-10-09/Armor Mods#7"
     rules: []
     passives:
-      - effect: { resistDamage: { amount: "15% | 25% | 30%", against: stasis } }
+      - effect: { resistCombatantDamage: { against: stasis, amount: "15% | 25% | 30%" } }
         reason: "You take less Stasis damage from combatants."
 
   - id: strand-resistance
@@ -187,7 +187,7 @@ elements:
     source: "compendium/2026-10-09/Armor Mods#7"
     rules: []
     passives:
-      - effect: { resistDamage: { amount: "15% | 25% | 30%", against: strand } }
+      - effect: { resistCombatantDamage: { against: strand, amount: "15% | 25% | 30%" } }
         reason: "You take less Strand damage from combatants."
 
   - id: melee-damage-resistance
@@ -199,7 +199,7 @@ elements:
     source: "compendium/2026-10-09/Armor Mods#7"
     rules: []
     passives:
-      - effect: { resistDamage: { amount: "15% | 25% | 30%", against: closeRange } }
+      - effect: { resistCombatantDamage: { against: "within:5", amount: "15% | 25% | 30%" } }
         reason: "You take less damage from combatants within 5 m."
 
   - id: sniper-damage-resistance
@@ -211,7 +211,7 @@ elements:
     source: "compendium/2026-10-09/Armor Mods#7"
     rules: []
     passives:
-      - effect: { resistDamage: { amount: "15% | 25% | 30%", against: longRange } }
+      - effect: { resistCombatantDamage: { against: "beyond:30", amount: "15% | 25% | 30%" } }
         reason: "You take less damage from combatants beyond 30 m."
 
   - id: unflinching-arc-aim

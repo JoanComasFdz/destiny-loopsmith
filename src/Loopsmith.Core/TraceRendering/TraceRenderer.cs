@@ -63,24 +63,35 @@ public static class TraceRenderer
             new StyledLine(1, ["Weapons       ".ToSpan(Tone.Muted), .. RenderWeaponEntries(shaped.Weapons, weaponEffects)]),
             new StyledLine(1, ["Debuffs       ".ToSpan(Tone.Muted), .. RenderEntries(shaped.Debuffs)]),
             new StyledLine(1, ["Ground        ".ToSpan(Tone.Muted), .. RenderEntries(shaped.Ground)]),
-            .. shaped.Resistance.Select(RenderResistanceLine),
+            .. shaped.Resistance.Map(RenderResistance).UnwrapOr([]),
             .. switchedOn,
         ];
     }
 
-    /// <summary>"Resistance    PvE 73% · PvP 32.5%  (Base resistance 34.5% × Woven Mail 45% [PvP 25%])"; a line against some damage only: "  against Arc combatants  PvE 81.1%  (× Arc Resistance 30%)".</summary>
-    private static StyledLine RenderResistanceLine(ResistanceLine line, int index)
-    {
-        var label = line.Against.Map(against => $"  against {against}  ").UnwrapOr("Resistance    ");
-        var totals = "PvE " + line.Pve.FormatPercent() + line.Pvp.Map(pvp => " · PvP " + pvp.FormatPercent()).UnwrapOr("");
-        var sources = line.Sources.SelectMany((source, at) => (ImmutableArray<StyledSpan>)
+    /// <summary>
+    /// "Resistance    PvE 73% · PvP 32.5%  (Guardian 34.5% × Woven Mail 45% [PvP 25%])", then a line for each resistance
+    /// against some combatants only: "  against Arc combatants  PvE 81.1%  (× Arc Resistance 30%)".
+    /// </summary>
+    private static ImmutableArray<StyledLine> RenderResistance(DamageResistance resistance) =>
+    [
+        RenderResistanceLine("Resistance    ", $"PvE {resistance.AllDamage.Pve.FormatPercent()} · PvP {resistance.AllDamage.Pvp.FormatPercent()}", "", resistance.AllDamage.Sources),
+        .. resistance.AgainstSome.Select(line => RenderResistanceLine($"  against {line.Against}  ", $"PvE {line.Pve.FormatPercent()}", "× ", line.Sources)),
+    ];
+
+    private static StyledLine RenderResistanceLine(string label, string totals, string lead, ImmutableArray<ResistanceSource> sources) =>
+        new(1,
         [
-            (at > 0 ? " × " : index > 0 ? "× " : "").ToSpan(Tone.Muted),
-            source.Name.ToSpan(source.Affinity.ToTone()),
-            (" " + source.Pve.FormatPercent() + source.Pvp.Map(pvp => $" [PvP {pvp.FormatPercent()}]").UnwrapOr("")).ToSpan(Tone.Plain),
+            label.ToSpan(Tone.Muted),
+            totals.ToSpan(Tone.Strong),
+            $"  ({lead}".ToSpan(Tone.Muted),
+            .. sources.SelectMany((source, index) => (ImmutableArray<StyledSpan>)
+            [
+                .. index > 0 ? [" × ".ToSpan(Tone.Muted)] : ImmutableArray<StyledSpan>.Empty,
+                source.Name.ToSpan(source.Affinity.ToTone()),
+                (" " + source.Pve.FormatPercent() + source.Pvp.Map(pvp => $" [PvP {pvp.FormatPercent()}]").UnwrapOr("")).ToSpan(Tone.Plain),
+            ]),
+            ")".ToSpan(Tone.Muted),
         ]);
-        return new StyledLine(1, [label.ToSpan(Tone.Muted), totals.ToSpan(Tone.Strong), "  (".ToSpan(Tone.Muted), .. sources, ")".ToSpan(Tone.Muted)]);
-    }
 
     private static ImmutableArray<StyledSpan> RenderEntries(ImmutableArray<StateEntry> entries) =>
         entries.IsEmpty

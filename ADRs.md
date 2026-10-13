@@ -381,7 +381,7 @@ know how the number is reached. The game has a known rule: different sources of 
 let through, 1 − (1 − a) × (1 − b) × … (compendium Armor Mods#7), so 25% and 45% make 58.75%, not 70%. A Guardian
 starts with 34.5% against combatants and none in Crucible (Game Mechanics#106). D1 forbids adding a source's numbers
 up to decide what happens. **Decision (product owner).** The end of each step shows the damage resistance that holds
-right then: the resistance passives (`resistDamage`) of the elements equipped and of the statuses present, the
+right then: the resistance passives (`resistDamage`, `resistCombatantDamage`) of the elements equipped and of the statuses present, the
 Guardian's base among them (a keyword element, so in every build), multiplied by the game's rule. It is the one
 total besides the build's stats (D28): a fact shown with its sources and formula, never game state and never read to
 decide what a step fires. It shows two columns: PvE (every source) and PvP (only the sources that reduce any damage,
@@ -389,6 +389,6 @@ each by its PvP value; one the source gives none for is "?"). A resistance again
 Resistance, Melee or Sniper Damage Resistance, Concussive Dampener; Harmonic Resistance on its Super's element) is a
 line of its own, all damage's sources and its own together, PvE only. An unknown value makes its total "?".
 **Consequence.** A source that is only a description — a Super's resistance, Amplified's, a resistance during an
-animation — is not counted until it is authored as a `resistDamage` passive. A condition the format can't express is
+animation — is not counted until it is authored as a resistance passive. A condition the format can't express is
 treated as holding, as for any passive (Spark of Resistance's "3+ enemies within 15 m", D7). Copies of one mod take
 the mod's own value by copies (15% | 25% | 30%); different mods multiply.

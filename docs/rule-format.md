@@ -308,11 +308,11 @@ tab's `NN_<Tab>.csv`, which is the spreadsheet's row. Archived `OLD …` tabs ar
 | `"+20 \| +40 \| +50"` | `PerModCount([20, 40, 50])` | plain numbers by copies (stat points: `modifyStat`) |
 | `"~25%"`, `"25%?"` | `Approximate(0.25)` | shown `~25%` |
 | `"?"`, `"?%"` | `Unknown()` | **never 0** |
-| `"300% [20%]"` | PvE part `Known(3.0)` | `[…]` is the PvP value: checked, then dropped (kept by `resistDamage`) |
+| `"300% [20%]"` | PvE part `Known(3.0)` | `[…]` is the PvP value: checked, then dropped (kept by `resistDamage`; refused by `resistCombatantDamage`) |
 | `2`, `"2"` | `Known(2)` | plain number |
 
 Game values appear in `grantEnergy.amount` (or `full`), `convertStacksToEnergy.perStack`, `modifyDamage.change`,
-`restoreHealth.amount`, `resistDamage`, a weapon-stat `change`, `modifyStat.change` (stat points: a percent there is an
+`restoreHealth.amount`, `resistDamage`, `resistCombatantDamage.amount`, a weapon-stat `change`, `modifyStat.change` (stat points: a percent there is an
 error), and `ability.chunkScalar` / `baseCooldown`.
 Decimals use `.`; quote the value as the examples do (a bare `?` or `~` means something else to YAML).
 Every one is shown with its outcome, with its certainty (ADRs D13); an `Unknown` reads `?`.
@@ -540,8 +540,8 @@ passives:
 | `{ extraStacks: { status, extra } }` (`extra` ≥ 1) | `ExtraStacks` |
 | `{ extraCharges: { ability: grenade, extra: 1 } }` | `ExtraCharges` (a fact, ADRs D5) |
 | `{ modifyDamage: { against, change } }` | `ModifyDamage` |
-| `{ resistDamage: "25% [10%]" }` (any damage; `[…]` the PvP value) | `ResistDamage(amount, Any)` |
-| `{ resistDamage: { amount: "15% \| 25% \| 30%", against: arc } }` (combatants only; no `[…]`) | `ResistDamage(amount, Arc)` |
+| `{ resistDamage: "25% [10%]" }` (any damage; `[…]` the PvP value) | `ResistDamage` |
+| `{ resistCombatantDamage: { against: arc, amount: "15% \| 25% \| 30%" } }` (combatants only; no `[…]`) | `ResistCombatantDamage(CombatantDamage.OfType(Arc), amount)` |
 | `{ modifyWeaponStats: { archetypes: [fusion-rifle], changes: [ { stat: handling, change: "?" } ] } }` | `ModifyWeaponStats` (non-empty lists; archetypes and stats are kebab-case words) |
 | `{ raiseMaxStacks: { status: armor-charge, max: "4 \| 5 \| 6" } }` (a status with `maxStacks`; no `when`) | `RaiseMaxStacks` — the cap with it equipped, by copies |
 | `{ modifyStat: { stat: grenade, change: "+20 \| +40 \| +50" } }` (`health\|melee\|grenade\|super\|class\|weapons`; stat points, not a percent) | `ModifyStat(stat, change)` — "+20 Grenade" |
@@ -559,13 +559,14 @@ it takes no when`). The cap is a fact: it shows in the status's facts (`up to x4
 (`Armor Charge at max (x4)`) and in `explain`'s max heading (`Max Bolt Charge (x10)`); the player still
 declares it reached (ADRs D3).
 
-`resistDamage` is a damage resistance, shown in `explain` and counted in the step's **damage resistance** (ADRs D29,
-[loop-format.md](loop-format.md#action-tokens)) while its `when` holds. Its string form reduces any damage: the
-`[…]` is its PvP value, and without one its PvP value is `?` (write `"20% [20%]"` when they are the same). Its map
-form reduces only combatants' damage, so it does nothing in PvP and takes no `[…]` (`a resistance against arc is
-against combatants only, so it has no PvP value: drop the [ ]`): `against` is `combatants` (all of it: the Guardian's
-base), a damage type (`arc`, `solar`, `void`, `stasis`, `strand`), `harmonic` (the Super's element), `closeRange`
-(within 5 m), `longRange` (beyond 30 m) or `blast` (area, blast and explosive damage), or `any` (the string form's).
+`resistDamage` and `resistCombatantDamage` are damage resistances, shown in `explain` and counted in the step's
+**damage resistance** (ADRs D29, [loop-format.md](loop-format.md#action-tokens)) while their `when` holds.
+`resistDamage` reduces any damage: the `[…]` is its PvP value, and without one its PvP value is `?` (write
+`"20% [20%]"` when they are the same). `resistCombatantDamage` reduces only combatants' damage, so it does nothing in
+PvP and its `amount` takes no `[…]` (`a resistance against combatants does nothing in PvP, so it has no PvP value: drop
+the [ ]`). Its `against` is `combatants` (all of it: the Guardian's base), a damage type (`arc`, `solar`, `void`,
+`stasis`, `strand`), `harmonic` (the Super's element), `"within:5"` / `"beyond:30"` (combatants within or beyond that
+many metres: Melee and Sniper Damage Resistance) or `blast` (area, blast and explosive damage: Concussive Dampener).
 Copies of one mod take its value by copies (`"15% | 25% | 30%"`); different sources multiply what the others let
 through, 1 − (1 − a) × (1 − b) × … (compendium Armor Mods#7), never added up.
 

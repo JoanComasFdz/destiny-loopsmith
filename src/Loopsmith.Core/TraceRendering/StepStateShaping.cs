@@ -39,7 +39,7 @@ public sealed record StepState(
     ImmutableArray<WeaponEffect> WeaponEffects,
     ImmutableArray<StateEntry> Debuffs,
     ImmutableArray<StateEntry> Ground,
-    ImmutableArray<ResistanceLine> Resistance);
+    Optional<DamageResistance> Resistance);
 
 /// <summary>Pure: a <see cref="GameState"/> → what the state shows, in the glossary's words (the CLI's state lines, the designer's step state).</summary>
 public static class StepStateShaping

@@ -187,7 +187,7 @@ elements:
     source: "compendium/2026-10-09/Armor Mods#7"
     rules: []
     passives:
-      - effect: { resistDamage: { amount: "15% | 25% | 30%", against: harmonic } }
+      - effect: { resistCombatantDamage: { against: harmonic, amount: "15% | 25% | 30%" } }
         reason: "You take less damage from combatants of your Super's element."
 
   - id: concussive-dampener
@@ -199,7 +199,7 @@ elements:
     source: "compendium/2026-10-09/Armor Mods#7"
     rules: []
     passives:
-      - effect: { resistDamage: { amount: "15% | 25% | 30%", against: blast } }
+      - effect: { resistCombatantDamage: { against: blast, amount: "15% | 25% | 30%" } }
         reason: "You take less area, blast and explosive damage from combatants."
 
   - id: charged-up

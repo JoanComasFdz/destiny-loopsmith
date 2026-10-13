@@ -140,22 +140,20 @@ public sealed class StepStateShapingTests
             new PlayerAction.UseClassAbility(),
             new PlayerAction.FireWeapon(WeaponSlot.Kinetic, HitOutcome.Kill, TargetCount.One));   // To Shreds: Woven Mail
 
-        var resistance = LoopDesigning.ShapeStepState(played, played.Resolutions[1]).Resistance;
+        var resistance = Assert.IsType<Optional<DamageResistance>.Some>(LoopDesigning.ShapeStepState(played, played.Resolutions[1]).Resistance).Value;
 
-        var all = resistance[0];
-        Assert.Equal(Optional.None<string>(), all.Against);
+        var all = resistance.AllDamage;
         Assert.Equal(["Guardian", "Spark of Resistance", "Woven Mail"], all.Sources.Select(source => source.Name));
         Assert.Equal(new GameValue.Known(1m - (0.655m * 0.75m * 0.55m)), all.Pve);                       // 73%
-        Assert.Equal(Optional.Some<GameValue>(new GameValue.Known(1m - (0.9m * 0.75m))), all.Pvp);       // 32.5%: the base is against combatants only
+        Assert.Equal(new GameValue.Known(1m - (0.9m * 0.75m)), all.Pvp);                                 // 32.5%: the base is against combatants only
         Assert.Equal(Optional.None<GameValue>(), all.Sources[0].Pvp);
         Assert.Equal("1 − (1 − 34.5%) × (1 − 25%) × (1 − 45%) = 73%", all.PveFormula);
-        Assert.Equal(Optional.Some("1 − (1 − 10%) × (1 − 25%) = 32.5%"), all.PvpFormula);
-        var arc = resistance[1];
-        Assert.Equal(Optional.Some("Arc combatants"), arc.Against);                                       // Harmonic: the Super is Arc
+        Assert.Equal("1 − (1 − 10%) × (1 − 25%) = 32.5%", all.PvpFormula);
+        var arc = resistance.AgainstSome[0];
+        Assert.Equal("Arc combatants", arc.Against);                                                     // Harmonic: the Super is Arc
         Assert.Equal(["Harmonic Resistance"], arc.Sources.Select(source => source.Name));
         Assert.Equal(new GameValue.Known(1m - (0.655m * 0.75m * 0.55m * 0.85m)), arc.Pve);
-        Assert.Equal(Optional.None<GameValue>(), arc.Pvp);
-        Assert.Equal(Optional.Some("combatants' area, blast and explosive damage"), resistance[2].Against);
+        Assert.Equal("combatants' area, blast and explosive damage", resistance.AgainstSome[1].Against);
     }
 
     [Fact]
@@ -166,7 +164,7 @@ public sealed class StepStateShapingTests
             new PlayerAction.FireWeapon(WeaponSlot.Kinetic, HitOutcome.Kill, TargetCount.One),
             new PlayerAction.Declare(new StateDeclaration.EndStatus(StatusId.From("woven-mail"))));
 
-        var all = LoopDesigning.ShapeStepState(played, played.Resolutions[2]).Resistance[0];
+        var all = Assert.IsType<Optional<DamageResistance>.Some>(LoopDesigning.ShapeStepState(played, played.Resolutions[2]).Resistance).Value.AllDamage;
 
         Assert.Equal(["Guardian", "Spark of Resistance"], all.Sources.Select(source => source.Name));
         Assert.Equal(new GameValue.Known(1m - (0.655m * 0.75m)), all.Pve);

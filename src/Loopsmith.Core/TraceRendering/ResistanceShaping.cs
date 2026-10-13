@@ -13,89 +13,78 @@ namespace Loopsmith.Core.TraceRendering;
 public sealed record ResistanceSource(ElementId Element, string Name, Affinity Affinity, GameValue Pve, Optional<GameValue> Pvp);
 
 /// <summary>
-/// A line of the step's damage resistance (ADRs D29), its sources multiplied the way the game stacks them. The first line
-/// is the resistance to all damage (<see cref="Against"/> none): every source that reduces any damage or all combatants'.
-/// Each other line is against some damage only ("Arc combatants"): its total is the first line's sources and its own
-/// together, its <see cref="Sources"/> only its own, and it has no PvP total (combatants only). The formulas show the
-/// multiplication: "1 − (1 − 34.5%) × (1 − 45%) = 64%".
+/// The resistance to all damage: every source that reduces any damage or all combatants' damage, multiplied. PvP counts
+/// only the sources that reduce any damage (none: 0%). The formulas show the multiplication: "1 − (1 − 34.5%) × (1 − 45%) = 64%".
 /// </summary>
-public sealed record ResistanceLine(
-    Optional<string> Against,
-    GameValue Pve,
-    Optional<GameValue> Pvp,
-    ImmutableArray<ResistanceSource> Sources,
-    string PveFormula,
-    Optional<string> PvpFormula);
+public sealed record AllDamageResistance(GameValue Pve, GameValue Pvp, ImmutableArray<ResistanceSource> Sources, string PveFormula, string PvpFormula);
 
 /// <summary>
-/// Pure: the damage resistance passives holding at the end of a step → the step's resistance lines. A total is a fact
-/// shown with its sources, never read to decide what happens (ADRs D29).
+/// A resistance against some combatants' damage only ("Arc combatants"): all damage's sources and its own together, PvE
+/// only; <see cref="Sources"/> are its own.
+/// </summary>
+public sealed record CombatantResistance(string Against, GameValue Pve, ImmutableArray<ResistanceSource> Sources, string PveFormula);
+
+/// <summary>The step's damage resistance (ADRs D29): to all damage, and against some combatants' damage only.</summary>
+public sealed record DamageResistance(AllDamageResistance AllDamage, ImmutableArray<CombatantResistance> AgainstSome);
+
+/// <summary>
+/// Pure: the damage resistance passives holding at the end of a step → the step's damage resistance, its sources
+/// multiplied the way the game stacks them. A total is a fact shown with its sources, never read to decide what happens
+/// (ADRs D29). None without a source.
 /// </summary>
 public static class ResistanceShaping
 {
-    public static ImmutableArray<ResistanceLine> ShapeResistance(ValidatedBuild build, ImmutableArray<ActivePassive> passives)
+    public static Optional<DamageResistance> ShapeResistance(ValidatedBuild build, ImmutableArray<ActivePassive> passives)
     {
         var superType = build.ReadSuperType();
-        var resistances = passives
-            .SelectMany(passive => passive.Passive.Modifier is Passive.ResistDamage resist
-                ? [ToScopedSource(build, passive, resist, superType)]
-                : Array.Empty<ScopedSource>())
-            .ToImmutableArray();
+        var resistances = passives.SelectMany(passive => ToResistance(build, passive, superType)).ToImmutableArray();
         var general = resistances
-            .Where(entry => IsGeneral(entry.Scope))
-            .OrderBy(entry => entry.Scope == ResistanceScope.Any)
-            .Select(entry => entry.Source)
+            .Where(resistance => resistance.Against is CombatantDamage.All)
+            .Select(resistance => resistance.Source)
+            .OrderBy(source => source.Pvp.IsSome())
             .ToImmutableArray();
-        var conditional = resistances
-            .Where(entry => !IsGeneral(entry.Scope))
-            .GroupBy(entry => entry.Scope)
-            .OrderBy(group => group.Key)
-            .Select(group => ShapeConditionalLine(general, group.Key, [.. group.Select(entry => entry.Source)], superType));
-        return resistances.IsEmpty ? [] : [ShapeGeneralLine(general), .. conditional];
+        var againstSome = resistances
+            .Where(resistance => resistance.Against is not CombatantDamage.All)
+            .GroupBy(resistance => resistance.Against)
+            .Select(group => ShapeCombatantResistance(general, group.Key.DescribeCombatantDamage(superType), [.. group.Select(resistance => resistance.Source)]))
+            .ToImmutableArray();
+        return resistances.IsEmpty
+            ? Optional.None<DamageResistance>()
+            : Optional.Some(new DamageResistance(ShapeAllDamage(general), againstSome));
     }
 
-    private sealed record ScopedSource(ResistanceScope Scope, ResistanceSource Source);
+    /// <summary>A source and the combatants' damage it reduces (<see cref="CombatantDamage.All"/>: any damage too).</summary>
+    private sealed record ScopedSource(CombatantDamage Against, ResistanceSource Source);
 
-    private static ScopedSource ToScopedSource(ValidatedBuild build, ActivePassive passive, Passive.ResistDamage resist, Optional<DamageType> superType)
+    private static IEnumerable<ScopedSource> ToResistance(ValidatedBuild build, ActivePassive passive, Optional<DamageType> superType)
     {
         var copies = TraceRenderer.CountCopies(build, passive.Source);
-        var pve = resist.Amount.Pve.NarrowToCopies(copies);
-        var pvp = resist.Against == ResistanceScope.Any
-            ? Optional.Some(resist.Amount.Pvp.Map(value => value.NarrowToCopies(copies)).UnwrapOr(new GameValue.Unknown()))
-            : Optional.None<GameValue>();
-        return new ScopedSource(
-            ResolveHarmonic(resist.Against, superType),
-            new ResistanceSource(passive.Source, passive.SourceName, passive.Affinity, pve, pvp));
+        return passive.Passive.Modifier switch
+        {
+            Passive.ResistDamage any => [new ScopedSource(
+                new CombatantDamage.All(),
+                ToSource(passive, any.Amount.Pve.NarrowToCopies(copies), Optional.Some(any.Amount.Pvp.Map(pvp => pvp.NarrowToCopies(copies)).UnwrapOr(new GameValue.Unknown()))))],
+            Passive.ResistCombatantDamage combatant => [new ScopedSource(
+                ResolveSuperType(combatant.Against, superType),
+                ToSource(passive, combatant.Amount.NarrowToCopies(copies), Optional.None<GameValue>()))],
+            _ => [],
+        };
     }
 
-    private static bool IsGeneral(ResistanceScope scope) =>
-        scope is ResistanceScope.Any or ResistanceScope.Combatants;
+    private static ResistanceSource ToSource(ActivePassive passive, GameValue pve, Optional<GameValue> pvp) =>
+        new(passive.Source, passive.SourceName, passive.Affinity, pve, pvp);
 
-    /// <summary>The resistance to all damage: PvP counts only the sources that reduce any damage (none: 0%).</summary>
-    private static ResistanceLine ShapeGeneralLine(ImmutableArray<ResistanceSource> sources)
+    private static AllDamageResistance ShapeAllDamage(ImmutableArray<ResistanceSource> sources)
     {
         var pve = sources.Select(source => source.Pve).ToImmutableArray();
         var pvp = sources.SelectMany(source => source.Pvp.Map(value => new[] { value }).UnwrapOr([])).ToImmutableArray();
-        return new ResistanceLine(
-            Optional.None<string>(),
-            pve.CombineResistances(),
-            Optional.Some(pvp.CombineResistances()),
-            sources,
-            DescribeFormula(pve),
-            Optional.Some(DescribeFormula(pvp)));
+        return new AllDamageResistance(pve.CombineResistances(), pvp.CombineResistances(), sources, DescribeFormula(pve), DescribeFormula(pvp));
     }
 
-    private static ResistanceLine ShapeConditionalLine(
-        ImmutableArray<ResistanceSource> general, ResistanceScope scope, ImmutableArray<ResistanceSource> sources, Optional<DamageType> superType)
+    private static CombatantResistance ShapeCombatantResistance(ImmutableArray<ResistanceSource> general, string against, ImmutableArray<ResistanceSource> sources)
     {
         var pve = general.Concat(sources).Select(source => source.Pve).ToImmutableArray();
-        return new ResistanceLine(
-            scope.DescribeResistanceScope(superType),
-            pve.CombineResistances(),
-            Optional.None<GameValue>(),
-            sources,
-            DescribeFormula(pve),
-            Optional.None<string>());
+        return new CombatantResistance(against, pve.CombineResistances(), sources, DescribeFormula(pve));
     }
 
     /// <summary>"1 − (1 − 34.5%) × (1 − 45%) = 64%"; one source: "25%"; none: "0%: nothing reduces it".</summary>
@@ -108,19 +97,10 @@ public static class ResistanceShaping
         };
 
     /// <summary>Harmonic Resistance is against the Super's element: on the line of that element when it is known.</summary>
-    private static ResistanceScope ResolveHarmonic(ResistanceScope scope, Optional<DamageType> superType) =>
-        scope == ResistanceScope.Harmonic
-            ? superType.Map(ToResistanceScope).UnwrapOr(ResistanceScope.Harmonic)
-            : scope;
-
-    private static ResistanceScope ToResistanceScope(DamageType type) =>
-        type switch
-        {
-            DamageType.Arc => ResistanceScope.Arc,
-            DamageType.Solar => ResistanceScope.Solar,
-            DamageType.Void => ResistanceScope.Void,
-            DamageType.Stasis => ResistanceScope.Stasis,
-            DamageType.Strand => ResistanceScope.Strand,
-            _ => ResistanceScope.Harmonic,
-        };
+    private static CombatantDamage ResolveSuperType(CombatantDamage against, Optional<DamageType> superType) =>
+        against is CombatantDamage.OfSuperType
+            ? superType
+                .Bind(type => type == DamageType.Kinetic ? Optional.None<CombatantDamage>() : Optional.Some<CombatantDamage>(new CombatantDamage.OfType(type)))
+                .UnwrapOr(against)
+            : against;
 }

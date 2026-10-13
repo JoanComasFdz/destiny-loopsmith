@@ -134,7 +134,7 @@ itself, under `src/Loopsmith.Core/Domain/`.
   Two exceptions, neither of them game state: the build's stat line (ADRs D28) —
   `StatLoading` may add it up from the player's armor the way DIM does, and the
   build check may compare it with an element's declared `statChecks` to choose a
-  warning or a note — and the step's damage resistance (ADRs D29), the `resistDamage`
+  warning or a note — and the step's damage resistance (ADRs D29), the resistance
   passives holding right then multiplied by the game's rule, shown with its sources.
   Neither ever changes what a step fires.
 - **Add a named failure/`Severity` case only when the app branches on it** (to

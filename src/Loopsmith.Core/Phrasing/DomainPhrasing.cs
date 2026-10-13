@@ -578,36 +578,33 @@ public static class DomainPhrasing
             extra => $"+{extra.Extra.Value} {glossary.DescribeStatus(extra.Status)} per gain",
             charges => $"+{charges.Extra} {charges.Ability.DescribeAbility()} charge",
             modify => DescribeDamageChange(glossary, modify.Against, modify.Change, superType),
-            resist => DescribeResistance(resist, superType),
+            resist => DescribeResistance(resist),
             weapons => $"{DescribeArchetypes(weapons.Archetypes)}: "
                 + string.Join(", ", weapons.Changes.Select(change => DescribeStatChange(change))),
             raise => $"{glossary.DescribeStatus(raise.Status)} up to x{raise.Max.FormatNumber()}",
-            stat => $"{FormatSignedNumber(stat.Change)} {stat.Stat}");
+            stat => $"{FormatSignedNumber(stat.Change)} {stat.Stat}",
+            combatant => $"{combatant.Amount.FormatPercent()} damage resistance against {combatant.Against.DescribeCombatantDamage(superType)}");
 
-    /// <summary>"45% [PvP 25%] damage resistance", "30% damage resistance against Arc combatants".</summary>
-    private static string DescribeResistance(Passive.ResistDamage resist, Optional<DamageType> superType) =>
+    /// <summary>"45% [PvP 25%] damage resistance": against any damage, with its PvP value when the source gives one.</summary>
+    private static string DescribeResistance(Passive.ResistDamage resist) =>
         resist.Amount.Pve.FormatPercent()
         + resist.Amount.Pvp.Map(pvp => $" [PvP {pvp.FormatPercent()}]").UnwrapOr("")
-        + " damage resistance"
-        + resist.Against.DescribeResistanceScope(superType).Map(scope => " against " + scope).UnwrapOr("");
+        + " damage resistance";
 
     /// <summary>
-    /// What a resistance reduces, when it isn't any damage: "combatants", "Arc combatants", "combatants within 5 m",
-    /// "combatants beyond 30 m", "combatants' area, blast and explosive damage"; the Super's element by name when known.
+    /// The combatants' damage a resistance reduces: "combatants", "Arc combatants", "combatants within 5 m", "combatants
+    /// beyond 30 m", "combatants' area, blast and explosive damage"; the Super's element by name when known.
     /// </summary>
-    public static Optional<string> DescribeResistanceScope(this ResistanceScope scope, Optional<DamageType> superType) =>
-        scope switch
-        {
-            ResistanceScope.Any => Optional.None<string>(),
-            ResistanceScope.Combatants => Optional.Some("combatants"),
-            ResistanceScope.Harmonic => Optional.Some(superType
+    public static string DescribeCombatantDamage(this CombatantDamage against, Optional<DamageType> superType) =>
+        against.Match(
+            _ => "combatants",
+            type => $"{type.Type} combatants",
+            _ => superType
                 .Bind(type => type == DamageType.Kinetic ? Optional.None<string>() : Optional.Some($"{type} combatants"))
-                .UnwrapOr("combatants of your Super's element")),
-            ResistanceScope.CloseRange => Optional.Some("combatants within 5 m"),
-            ResistanceScope.LongRange => Optional.Some("combatants beyond 30 m"),
-            ResistanceScope.Blast => Optional.Some("combatants' area, blast and explosive damage"),
-            _ => Optional.Some($"{scope} combatants"),
-        };
+                .UnwrapOr("combatants of your Super's element"),
+            within => $"combatants within {within.Meters.ToString("0.#", Invariant)} m",
+            beyond => $"combatants beyond {beyond.Meters.ToString("0.#", Invariant)} m",
+            _ => "combatants' area, blast and explosive damage");
 
     /// <summary>The same passive with each of its per-copy values narrowed to the copies equipped (<see cref="GameValueArithmetic.NarrowToCopies"/>).</summary>
     private static Passive NarrowPassiveToCopies(Passive passive, int copies) =>
@@ -624,6 +621,7 @@ public static class DomainPhrasing
             },
             Passive.RaiseMaxStacks raise => raise with { Max = raise.Max.NarrowToCopies(copies) },
             Passive.ModifyStat stat => stat with { Change = stat.Change.NarrowToCopies(copies) },
+            Passive.ResistCombatantDamage combatant => combatant with { Amount = combatant.Amount.NarrowToCopies(copies) },
             _ => passive,
         };
 
