@@ -1,11 +1,14 @@
-@* The subclass editor: the build's super, grenade, melee, class ability, jump, aspects and fragments, each slot with its
-   plug (tap the square for its details) and ⋯, which opens a dropdown under the slot (above it when there's no room
-   below) with everything the subclass can hold there (Bungie's manifest; the ones the rules don't know carry ⊘, a jump
-   the rules don't have none: movement has no part in a loop). The dropdown floats over the slots after it, so none of them moves; ⋯ again, a tap outside it
-   or Escape closes it (Escape doesn't close the editor while a dropdown is open). A fragment's ✕
-   empties its slot; an aspect has none, it is only swapped for another. The aspects open the fragment slots; an aspect
-   change that closes slots takes the last fragments out and names them. Save hands the plugs to the designer
-   (LoopDesigning.EditSubclass); Cancel, ✕ or Escape throws the changes away. *@
+@* The subclass editor, laid out like the game's subclass screen: the subclass's icon, name and "Hunter Subclass" as its
+   header; the super on the left; Abilities (class ability, jump, melee, grenade) and Aspects in one row beside it,
+   Fragments under them (at phone width the super sits above them and a group that doesn't fit its row wraps). Each
+   group is a grey panel of squares (tap one for its details), each with a footer holding ⋯, which opens a dropdown
+   under the slot (above it when there's no room below) with everything the subclass can hold there (Bungie's manifest;
+   the ones the rules don't know carry ⊘, a jump the rules don't have none: movement has no part in a loop). The
+   dropdown floats over the slots after it, so none of them moves; ⋯ again, a tap outside it or Escape closes it (Escape
+   doesn't close the editor while a dropdown is open). A fragment's ✕ empties its slot; an aspect has none, it is only
+   swapped for another. The aspects open the fragment slots; an aspect change that closes slots takes the last fragments
+   out and names them. Save hands the plugs to the designer (LoopDesigning.EditSubclass); Cancel, ✕ or Escape throws the
+   changes away. *@
 @using System.Globalization
 @inject BrowserInterop Browser
 @{
@@ -13,42 +16,71 @@
     var fragmentCapacity = slots.Match(count => count.Value, _ => draft.Fragments.Length + 1);
     var slotText = slots.Match(count => count.Value.ToString(CultureInfo.InvariantCulture), _ => DomainPhrasing.Unknown);
 }
-<Modal Title="Edit subclass" Size="wide" OnClose="OnClose">
-    <div class="subclass-editor" data-testid="subclass-editor" @onclick="ClosePicker" @onkeydown="CloseOnEscape" @onkeydown:stopPropagation="true">
-        <div class="sub-group">
-            @RenderSingle(SubclassSlot.Super, "Super", draft.Super)
-            @RenderSingle(SubclassSlot.ClassAbility, "Class ability", draft.ClassAbility)
-            @RenderSingle(SubclassSlot.Melee, "Melee", draft.Melee)
-            @RenderSingle(SubclassSlot.Grenade, "Grenade", draft.Grenade)
-            @RenderSingle(SubclassSlot.Jump, "Jump", draft.Jump)
-        </div>
-        <h3 class="sub-heading">Aspects</h3>
-        <div class="sub-group" data-testid="aspect-slots">
-            @for (var index = 0; index < AspectSlots; index++)
+<Modal Title="@($"{heading.Name}, {heading.Kind}")" Size="wide" OnClose="OnClose">
+    <Heading>
+        <div class="sub-head" data-testid="subclass-head">
+            @if (heading.Icon is Optional<IconTile>.Some subclassItem)
             {
-                @RenderMany(SubclassSlot.Aspect, "Aspect", index, index < draft.Aspects.Length ? Optional.Some(draft.Aspects[index]) : Optional.None<ItemHash>())
+                @RenderTile(subclassItem.Value, "sub-head-icon", true)
             }
+            <div class="sub-head-text">
+                <h2 class="sub-head-name" data-testid="subclass-name">@heading.Name</h2>
+                <span class="sub-head-kind" data-testid="subclass-kind">@heading.Kind</span>
+            </div>
         </div>
-        <h3 class="sub-heading">Fragments <span class="muted" data-testid="fragment-count">· @slotText slot@(slotText == "1" ? "" : "s")</span></h3>
-        @if (!slots.IsSome())
-        {
-            <p class="muted sub-note" data-testid="fragment-unknown">Loopsmith doesn't know how many fragment slots these aspects open, so it doesn't limit the fragments.</p>
-        }
-        @if (trimNote.Length > 0)
-        {
-            <p class="tone-warning sub-note" role="status" data-testid="trim-note">@trimNote</p>
-        }
-        <div class="sub-group" data-testid="fragment-slots">
-            @for (var index = 0; index < Math.Max(fragmentCapacity, draft.Fragments.Length); index++)
-            {
-                @RenderMany(SubclassSlot.Fragment, "Fragment", index, index < draft.Fragments.Length ? Optional.Some(draft.Fragments[index]) : Optional.None<ItemHash>())
-            }
+    </Heading>
+    <ChildContent>
+        <div class="subclass-editor" data-testid="subclass-editor" @onclick="ClosePicker" @onkeydown="CloseOnEscape" @onkeydown:stopPropagation="true">
+            <div class="sub-layout">
+                <div class="sub-super" data-testid="super-slot">
+                    @RenderSingle(SubclassSlot.Super, "Super", draft.Super)
+                </div>
+                <div class="sub-sections">
+                    <div class="sub-row">
+                        <section class="sub-section" aria-labelledby="sub-abilities">
+                            <h3 class="sub-heading" id="sub-abilities">Abilities</h3>
+                            <div class="sub-group" data-testid="ability-slots">
+                                @RenderSingle(SubclassSlot.ClassAbility, "Class ability", draft.ClassAbility)
+                                @RenderSingle(SubclassSlot.Jump, "Jump", draft.Jump)
+                                @RenderSingle(SubclassSlot.Melee, "Melee", draft.Melee)
+                                @RenderSingle(SubclassSlot.Grenade, "Grenade", draft.Grenade)
+                            </div>
+                        </section>
+                        <section class="sub-section" aria-labelledby="sub-aspects">
+                            <h3 class="sub-heading" id="sub-aspects">Aspects</h3>
+                            <div class="sub-group" data-testid="aspect-slots">
+                                @for (var index = 0; index < AspectSlots; index++)
+                                {
+                                    @RenderMany(SubclassSlot.Aspect, "Aspect", index, index < draft.Aspects.Length ? Optional.Some(draft.Aspects[index]) : Optional.None<ItemHash>())
+                                }
+                            </div>
+                        </section>
+                    </div>
+                    <section class="sub-section" aria-labelledby="sub-fragments">
+                        <h3 class="sub-heading" id="sub-fragments">Fragments <span class="sub-heading-note" data-testid="fragment-count">· @slotText slot@(slotText == "1" ? "" : "s")</span></h3>
+                        @if (!slots.IsSome())
+                        {
+                            <p class="muted sub-note" data-testid="fragment-unknown">Loopsmith doesn't know how many fragment slots these aspects open, so it doesn't limit the fragments.</p>
+                        }
+                        @if (trimNote.Length > 0)
+                        {
+                            <p class="tone-warning sub-note" role="status" data-testid="trim-note">@trimNote</p>
+                        }
+                        <div class="sub-group" data-testid="fragment-slots">
+                            @for (var index = 0; index < Math.Max(fragmentCapacity, draft.Fragments.Length); index++)
+                            {
+                                @RenderMany(SubclassSlot.Fragment, "Fragment", index, index < draft.Fragments.Length ? Optional.Some(draft.Fragments[index]) : Optional.None<ItemHash>())
+                            }
+                        </div>
+                    </section>
+                </div>
+            </div>
+            <div class="sub-foot">
+                <button type="button" class="btn" data-action="subclass-cancel" @onclick="OnClose">Cancel</button>
+                <button type="button" class="btn primary" data-action="subclass-save" @onclick="SaveAsync">Save</button>
+            </div>
         </div>
-        <div class="sub-foot">
-            <button type="button" class="btn" data-action="subclass-cancel" @onclick="OnClose">Cancel</button>
-            <button type="button" class="btn primary" data-action="subclass-save" @onclick="SaveAsync">Save</button>
-        </div>
-    </div>
+    </ChildContent>
 </Modal>
 
 @if (details is Optional<ItemDetails>.Some shown && ItemInfoShaping.ShapeInfo(Build, shown.Value) is Optional<ItemInfo>.Some info)
@@ -76,12 +108,16 @@
     public EventCallback OnClose { get; set; }
 
     private SubclassPlugs draft = null!;
+    private SubclassHeading heading = null!;
     private Optional<OpenPick> picker = Optional.None<OpenPick>();
     private Optional<ItemDetails> details = Optional.None<ItemDetails>();
     private string trimNote = "";
 
-    protected override void OnInitialized() =>
+    protected override void OnInitialized()
+    {
         draft = LoopDesigning.ReadSubclassPlugs(Build);                                          // pure
+        heading = LoadoutShaping.DescribeSubclassHeading(Build);                                 // pure
+    }
 
     private RenderFragment RenderSingle(SubclassSlot slot, string label, Optional<ItemHash> plug) =>
         RenderSlot(slot, label, 0, plug, false);
@@ -89,38 +125,31 @@
     private RenderFragment RenderMany(SubclassSlot slot, string label, int index, Optional<ItemHash> plug) =>
         RenderSlot(slot, $"{label} {index + 1}", index, plug, true);
 
-    /// <summary>A slot: its plug, ⋯ and, for a fragment, ✕. <paramref name="many"/>: an aspect or fragment slot, which can be empty.</summary>
+    /// <summary>A slot: its plug's square and, in the footer under it, ⋯ and, for a fragment, ✕. <paramref name="many"/>: an
+    /// aspect or fragment slot, which can be empty.</summary>
     private RenderFragment RenderSlot(SubclassSlot slot, string label, int index, Optional<ItemHash> plug, bool many) => __builder =>
     {
         var pick = new OpenPick(slot, index);
         var open = picker == Optional.Some(pick);
         <div class="sub-slot @(open ? "open" : "")" data-slot="@slot" data-index="@index">
-            <div class="sub-slot-row">
-                @if (plug is Optional<ItemHash>.Some held)
+            @if (plug is Optional<ItemHash>.Some held)
+            {
+                var tile = LoadoutShaping.DescribeSubclassPlug(Build, held.Value);
+                @RenderTile(tile, slot == SubclassSlot.Aspect ? "aspect" : slot == SubclassSlot.Fragment ? "fragment" : "", true)
+            }
+            else
+            {
+                <span class="icon-tile empty" title="@label: empty" aria-label="@label: empty">@(many ? "+" : DomainPhrasing.Unknown)</span>
+            }
+            <div class="sub-slot-foot">
+                @if (slot == SubclassSlot.Fragment && plug.IsSome())
                 {
-                    var tile = LoadoutShaping.DescribeSubclassPlug(Build, held.Value);
-                    @RenderTile(tile, slot == SubclassSlot.Aspect ? "aspect" : slot == SubclassSlot.Fragment ? "fragment" : "", true)
-                    <span class="sub-slot-text">
-                        <span class="sub-slot-label">@label</span>
-                        <span class="sub-slot-name" data-testid="slot-name">@tile.Name</span>
-                    </span>
+                    <button type="button" class="sub-slot-button" data-action="remove-slot" title="Remove @label" aria-label="Remove @label" @onclick="() => RemoveFragment(index)">✕</button>
                 }
-                else
-                {
-                    <span class="icon-tile empty" title="@label: empty">@(many ? "+" : DomainPhrasing.Unknown)</span>
-                    <span class="sub-slot-text">
-                        <span class="sub-slot-label">@label</span>
-                        <span class="sub-slot-name muted" data-testid="slot-name">@(many ? "Empty" : DomainPhrasing.Unknown)</span>
-                    </span>
-                }
-                <button type="button" class="btn ghost small sub-slot-pick" id="@DescribePickButtonId(pick)" data-action="change-slot"
+                <button type="button" class="sub-slot-button sub-slot-pick" id="@DescribePickButtonId(pick)" data-action="change-slot"
                         aria-expanded="@(open ? "true" : "false")" aria-controls="@(open ? OpenListId : null)"
                         title="List what @DescribeSlot(slot).ToLowerInvariant() can be" aria-label="List what @label.ToLowerInvariant() can be"
                         @onclick="() => TogglePicker(pick)" @onclick:stopPropagation="true">⋯</button>
-                @if (slot == SubclassSlot.Fragment && plug.IsSome())
-                {
-                    <button type="button" class="btn ghost small" data-action="remove-slot" title="Remove @label" aria-label="Remove @label" @onclick="() => RemoveFragment(index)">✕</button>
-                }
             </div>
             @if (open)
             {

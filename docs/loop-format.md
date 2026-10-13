@@ -313,8 +313,12 @@ stay on Home as links, with "import a build.yaml" and "import a loop".
 ## Editing the subclass
 
 The designer's Subclass box has **⋯** next to its title, for every build (the Home cards stay read-only). It opens the
-subclass editor with the build's super, grenade, melee, class ability, jump, two aspects and fragments; tapping a plug's
-square opens its details, and the slot's **⋯** opens a dropdown under that slot (above it when there's no room below),
+subclass editor, laid out like the game's subclass screen: the subclass's icon, its name in capitals and "Hunter
+Subclass" as the header (the subclass's own name, Strand, and no icon when the manifest excerpt doesn't know its item);
+the super on the left; Abilities (class ability, jump, melee, grenade) and the two Aspects in one row beside it;
+Fragments under them. At phone width the super sits above the groups, and a group that doesn't fit its row wraps. Each
+group is a grey panel of squares, and each square has a footer with its **⋯** (and a fragment's ✕). Tapping a plug's
+square (or the subclass's icon) opens its details, and the slot's **⋯** opens a dropdown under that slot (above it when there's no room below),
 one option per line, with everything the subclass can hold there — Bungie's manifest, with icons and names. The ones the
 rules don't know carry ⊘ (every Arcstrider plug is known, its four jumps `inert`), except a jump the rules don't have
 (another subclass's), which carries none: it has no part in a loop. The dropdown floats over the slots after

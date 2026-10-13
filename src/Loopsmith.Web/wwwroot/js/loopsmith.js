@@ -54,16 +54,21 @@ window.loopsmith = {
   // A dropdown (the subclass editor's) floats under the slot it belongs to (its parent). It opens above the slot when
   // what is visible of the dialog below the slot can't hold it and there's more room above (the dialog's sticky
   // header doesn't count), and it is never taller than that room, so it stays in view without scrolling the dialog.
+  // It starts at the slot's left edge, shifted left as far as it takes to end inside the dialog.
   placeDropdown(id) {
     const list = document.getElementById(id);
     if (!list || !list.parentElement) return;
     const frame = list.closest(".modal");
     const head = frame ? frame.querySelector(".modal-head") : null;
-    const frameRect = frame ? frame.getBoundingClientRect() : { top: 0, bottom: window.innerHeight };
+    const frameRect = frame ? frame.getBoundingClientRect() : { top: 0, bottom: window.innerHeight, left: 0, right: window.innerWidth };
     const top = Math.max(frameRect.top, 0) + (head ? head.offsetHeight : 0);
     const bottom = Math.min(frameRect.bottom, window.innerHeight);
     const slot = list.parentElement.getBoundingClientRect();
     const gap = 10;
+    list.style.left = "";
+    const overflow = slot.left + list.offsetWidth - (frameRect.right - gap);
+    const shift = Math.min(Math.max(overflow, 0), Math.max(slot.left - (frameRect.left + gap), 0));
+    list.style.left = `${-shift}px`;
     const below = bottom - slot.bottom - gap;
     const above = slot.top - top - gap;
     list.style.maxHeight = "";
