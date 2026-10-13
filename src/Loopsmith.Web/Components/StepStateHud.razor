@@ -2,7 +2,9 @@
    the left, your weapons' buffs in the middle (each with the weapon whose perk gives it) and what changes those weapons'
    stats right then, the debuffs on the pack on the right, the pickups on the ground below them. A phone stacks them.
    A status that switches other elements' effects on says how many; its details list them. Every status opens its
-   details on a tap (Amplified, which has no element, its glossary facts); its facts ("up to x5 · 8s") show on hover. *@
+   details on a tap (Amplified, which has no element, its glossary facts); its facts ("up to x5 · 8s") show on hover.
+   Below them, the damage resistance right then: PvE and PvP for all damage, and a PvE line for each resistance against
+   some combatants only; tapping its title shows where each comes from and how they multiply. *@
 <div class="step-hud" data-testid="step-state">
     <div class="hud-title">State after #@Number</div>
     <div class="hud-columns">
@@ -27,6 +29,33 @@
         @RenderGroup("debuffs", "Debuffs", State.Debuffs, false)
     </div>
     @RenderGroup("ground", "Ground", State.Ground, false)
+    @if (State.Resistance is Optional<DamageResistance>.Some resistance)
+    {
+        var all = resistance.Value.AllDamage;
+        <div class="hud-resistance" data-testid="resistance">
+            <button type="button" class="hud-resistance-row hud-resistance-head" aria-expanded="@(showResistance ? "true" : "false")"
+                    @onclick="ToggleResistance" @onclick:stopPropagation="true">
+                <span class="hud-label">@(showResistance ? "▾" : "▸") Damage resistance</span>
+                <span class="hud-label hud-resistance-value">PvE</span>
+                <span class="hud-label hud-resistance-value">PvP</span>
+            </button>
+            @RenderResistanceRow("All damage", all.Pve.FormatPercent(), all.Pvp.FormatPercent())
+            @foreach (var line in resistance.Value.AgainstSome)
+            {
+                @RenderResistanceRow(DomainPhrasing.Capitalize(line.Against), line.Pve.FormatPercent(), "0%")
+            }
+            @if (showResistance)
+            {
+                <div class="hud-resistance-sources" data-testid="resistance-sources">
+                    @RenderResistanceSources("All damage", all.Sources, [$"PvE: {all.PveFormula}", $"PvP: {all.PvpFormula}"])
+                    @foreach (var line in resistance.Value.AgainstSome)
+                    {
+                        @RenderResistanceSources($"{DomainPhrasing.Capitalize(line.Against)}: all damage ×", line.Sources, [$"PvE: {line.PveFormula}"])
+                    }
+                </div>
+            }
+        </div>
+    }
 </div>
 
 @code {
@@ -96,6 +125,47 @@
             @RenderWeapons(StateHudShaping.ListWeapons(Build, effect.Weapons))
         </button>
     };
+
+    private bool showResistance;
+
+    /// <summary>A row of the resistance table: what it is against, its PvE and PvP totals (0% in PvP for a row against combatants only).</summary>
+    private static RenderFragment RenderResistanceRow(string name, string pve, string pvp) => __builder =>
+    {
+        <div class="hud-resistance-row" data-testid="resistance-line">
+            <span class="hud-resistance-name">@name</span>
+            <span class="hud-resistance-value" data-column="pve">@pve</span>
+            <span class="hud-resistance-value muted" data-column="pvp">@pvp</span>
+        </div>
+    };
+
+    /// <summary>A row's sources, each with its icon (when Bungie's data has one) and values, opening its details on a tap, and how they multiply.</summary>
+    private RenderFragment RenderResistanceSources(string heading, ImmutableArray<ResistanceSource> sources, string[] formulas) => __builder =>
+    {
+        <div class="hud-resistance-source-line">
+            <span class="hud-label">@heading</span>
+            <span class="chips">
+                @foreach (var source in sources)
+                {
+                    <button type="button" class="chip hud-chip @ToneStyling.ToAffinityClass(source.Affinity)" data-effect="@source.Element.Value"
+                            @onclick="() => ShowElementAsync(source.Element)" @onclick:stopPropagation="true">
+                        @if (LoadoutShaping.FindElementIcon(Build.Catalog, source.Element) is Optional<string>.Some icon)
+                        {
+                            <img class="inline-icon hud-keyword-icon" src="@icon.Value" alt="" loading="lazy" />
+                        }
+                        <span>@source.Name</span>
+                        <span class="hud-switches">@StateHudShaping.DescribeResistanceSource(source)</span>
+                    </button>
+                }
+            </span>
+            @foreach (var formula in formulas)
+            {
+                <span class="hud-resistance-formula">@formula</span>
+            }
+        </div>
+    };
+
+    private void ToggleResistance() =>
+        showResistance = !showResistance;
 
     private async Task ShowElementAsync(ElementId element)
     {

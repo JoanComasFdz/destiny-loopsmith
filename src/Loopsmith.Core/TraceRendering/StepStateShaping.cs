@@ -31,14 +31,15 @@ public sealed record WeaponEffect(string Text, ElementId Source, string SourceNa
 /// <summary>
 /// What is present at the end of a step, laid out like the game's HUD: the buffs on you, the buffs on your weapons
 /// (Slice, Unraveling Rounds) and the passives changing those weapons' stats, the debuffs on the pack, the pickups on
-/// the ground.
+/// the ground — and your damage resistance right then, PvE and PvP (<see cref="ResistanceShaping"/>; none without a source).
 /// </summary>
 public sealed record StepState(
     ImmutableArray<StateEntry> Buffs,
     ImmutableArray<StateEntry> Weapons,
     ImmutableArray<WeaponEffect> WeaponEffects,
     ImmutableArray<StateEntry> Debuffs,
-    ImmutableArray<StateEntry> Ground);
+    ImmutableArray<StateEntry> Ground,
+    Optional<DamageResistance> Resistance);
 
 /// <summary>Pure: a <see cref="GameState"/> → what the state shows, in the glossary's words (the CLI's state lines, the designer's step state).</summary>
 public static class StepStateShaping
@@ -60,7 +61,8 @@ public static class StepStateShaping
             [.. buffs.Where(buff => buff.OnWeapons).Select(buff => buff.Entry)],
             [.. reaching.Where(passive => !passive.Passive.Passive.When.IsEmpty).SelectMany(ToWeaponEffect)],
             [.. state.Target.Debuffs.Select(debuff => ShapeDebuff(build, reaching, debuff))],
-            [.. state.Pickups.Select(pickup => ShapePickup(glossary, catalog, pickup))]);
+            [.. state.Pickups.Select(pickup => ShapePickup(glossary, catalog, pickup))],
+            ResistanceShaping.ShapeResistance(build, passives));
     }
 
     /// <summary>A passive holding right then, what it reaches in the build, and what it does in the glossary's words.</summary>

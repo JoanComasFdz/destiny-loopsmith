@@ -62,6 +62,13 @@ public sealed record SubclassView(
     ImmutableArray<IconTile> Fragments);
 
 /// <summary>
+/// The subclass editor's header, as the game's subclass screen heads it: the subclass item's square (none when the
+/// glossary or the excerpt doesn't know it), its name (Arcstrider; else the subclass's, Strand) and its kind as the game
+/// words it ("Hunter Subclass").
+/// </summary>
+public sealed record SubclassHeading(Optional<IconTile> Icon, string Name, string Kind);
+
+/// <summary>
 /// One perk a weapon's trait column rolls with, as the picker offers it: its hash, its tile (the rules' element when they
 /// know it), its type as the game words it ("Enhanced Trait") and whether the player's copy of the weapon doesn't have
 /// it in that column (after their Bungie login, for a weapon whose copy is theirs; else false).
@@ -225,8 +232,7 @@ public static class LoadoutShaping
             .ToImmutableArray();
 
         var subclass = new SubclassView(
-            catalog.FindSubclassItem(b.Class, b.Subclass).Map(item => DescribeItem(item, item.Name, true, Optional.None<string>(), b.Subclass.ToAffinity(),
-                Optional.Some<ItemDetails>(new ItemDetails.OfItem(item.Hash)))),
+            catalog.FindSubclassItem(b.Class, b.Subclass).Map(item => DescribeSubclassItem(b, item)),
             DescribeAbility<ManifestKind.Super>(catalog, b.Abilities.Super, "Super", plugs),
             [
                 DescribeAbility<ManifestKind.ClassAbility>(catalog, b.Abilities.ClassAbility, "Class ability", plugs),
@@ -429,6 +435,17 @@ public static class LoadoutShaping
             });
     }
 
+    /// <summary>The subclass editor's header for the build's class and subclass (the subclass item's name and type, else "Strand" and "Hunter Subclass").</summary>
+    public static SubclassHeading DescribeSubclassHeading(ValidatedBuild build)
+    {
+        var b = build.Build;
+        var item = build.Catalog.FindSubclassItem(b.Class, b.Subclass);
+        return new SubclassHeading(
+            item.Map(found => DescribeSubclassItem(b, found)),
+            item.Map(found => found.Name).UnwrapOr(b.Subclass.ToString()),
+            item.Bind(found => found.Type).UnwrapOr($"{b.Class} Subclass"));
+    }
+
     /// <summary>The type the game words a plug with ("Arc Aspect", "Movement Ability"), when the excerpt has it.</summary>
     public static Optional<string> FindPlugType(ValidatedBuild build, ItemHash hash) =>
         build.Catalog.Manifest.FindItem(hash).Bind(item => item.Type);
@@ -438,6 +455,10 @@ public static class LoadoutShaping
     private static IconTile DescribeUnknownHash(RuleCatalog catalog, ItemHash hash) =>
         new(catalog.Manifest.DescribeItemHash(hash), Optional.None<string>(), Affinity.Neutral, Optional.None<ItemTier>(), false,
             Optional.Some("Not in Loopsmith's rules or its manifest excerpt yet."), 1, Optional.None<ItemDetails>());
+
+    /// <summary>The subclass item's square (Arcstrider), in the subclass's colour; it opens its details.</summary>
+    private static IconTile DescribeSubclassItem(Build b, ManifestItem item) =>
+        DescribeItem(item, item.Name, true, Optional.None<string>(), b.Subclass.ToAffinity(), Optional.Some<ItemDetails>(new ItemDetails.OfItem(item.Hash)));
 
     private static IconTile DescribeItem(ManifestItem item, string name, bool inRules, Optional<string> description, Affinity affinity, Optional<ItemDetails> details) =>
         new(name, item.Icon.Map(ToIconUrl), affinity, item.Tier, inRules, description, 1, details) { GameText = item.Description };

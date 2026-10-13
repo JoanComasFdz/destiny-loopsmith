@@ -178,10 +178,21 @@ Frequency's extra Bolt Charge); its details list them under **While Amplified** 
 card, each with where it reaches. A passive that changes weapon stats (Ionic Overclock: Linear Fusion Rifles, Fusion Rifles and Heat
 Weapons) shows in the weapons column next to the build's weapons of those types while it holds; when none of
 them is one, the details say it does nothing here and Validation says so too. A status's own effect (Woven
-Mail's damage resistance) is in its details, not in the state. Every status opens its details on a tap — one the
+Mail's damage resistance) is in its details, not in the state's chips: it counts in the **damage resistance** below
+them. Every status opens its details on a tap — one the
 rules have no element for (Amplified) shows the glossary's facts and what it switches on — and its facts ("up to
-x5 · 8s") show on hover. The CLI's `--state` prints the same four lines, then one `While <status>` line for each
-status that switches something on.
+x5 · 8s") show on hover. Under them, the **damage resistance** right then (ADRs D29): a small table with a PvE and a PvP column. Its first row,
+*All damage*, multiplies every resistance passive that holds — the Guardian's base 34.5% against combatants, Spark
+of Resistance, Woven Mail while it is on you — the way the game stacks them, 1 − (1 − a) × (1 − b) × …: 73% PvE and
+32.5% PvP with those three (the base does nothing in PvP). Each resistance against some combatants only adds a row of
+its own, PvE only (PvP 0%): *Arc combatants* (Arc Resistance, or Harmonic Resistance with an Arc Super), *Combatants
+within 5 m*, *Combatants beyond 30 m*, *Combatants' area, blast and explosive damage*, all damage's sources and its own
+together. A source whose value is "?" makes its total "?". Tapping the title (*▸ Damage resistance*) lists each row's
+sources with their PvE and PvP values (each opens its details on a tap) and the formula; tapping it again hides them.
+The totals are facts, never read to decide what a step fires. The CLI's `--state` prints the same four lines, a
+`Resistance` line (`PvE 73% · PvP 32.5%  (Guardian 34.5% × Spark of Resistance 25% [PvP 10%] × Woven Mail 45% [PvP
+25%])`) and an `against …` line for each row of its own, then one `While <status>` line for each status that switches
+something on.
 Each step can be moved up or down, removed or dragged onto another step's place; the loop
 replays in its new order.
 
@@ -313,8 +324,13 @@ stay on Home as links, with "import a build.yaml" and "import a loop".
 ## Editing the subclass
 
 The designer's Subclass box has **⋯** next to its title, for every build (the Home cards stay read-only). It opens the
-subclass editor with the build's super, grenade, melee, class ability, jump, two aspects and fragments; tapping a plug's
-square opens its details, and the slot's **⋯** opens a dropdown under that slot (above it when there's no room below),
+subclass editor, laid out like the game's subclass screen: the subclass's icon, its name in capitals and "Hunter
+Subclass" as the header (the subclass's own name, Strand, and no icon when the manifest excerpt doesn't know its item);
+the super on the left; Abilities (class ability, jump, melee, grenade) and the two Aspects in one row beside it;
+Fragments under them. At phone width the super sits above the groups, and a group that doesn't fit its row wraps. Each
+group is a grey panel of squares, and each square has a footer with its **⋯** (and a fragment's ✕). Tapping a plug's
+square (or the subclass's icon) opens its details, and the slot's **⋯** opens a dropdown under that slot (above it when
+the screen has no room below; it may spill out of the editor),
 one option per line, with everything the subclass can hold there — Bungie's manifest, with icons and names. The ones the
 rules don't know carry ⊘ (every Arcstrider plug is known, its four jumps `inert`), except a jump the rules don't have
 (another subclass's), which carries none: it has no part in a loop. The dropdown floats over the slots after
@@ -322,11 +338,12 @@ it, so none of them moves. One dropdown is open at a time; picking a plug puts i
 tap outside it or Escape closes it without a change (Escape closes only the dropdown, not the editor). Hovering over
 a plug (an option, a slot of the editor, or a square of the Subclass box) shows its name and Bungie's description of it
 (the manifest's; the rules' when the excerpt has none), and for a ⊘ plug why it is marked. An aspect
-or a fragment can't be equipped twice; ✕ leaves a fragment's slot empty, while an aspect has no ✕: it is only swapped
-for another. The aspects open the fragment slots (`fragmentSlots` in the rules: Tempest Strike
+or a fragment can't be equipped twice; ✕ leaves a fragment's slot empty and the other fragments stay in their slots
+(Save writes them in slot order: the build keeps no places, so the editor shows them packed next time), while an aspect
+has no ✕: it is only swapped for another. The aspects open the fragment slots (`fragmentSlots` in the rules: Tempest Strike
 and Flow State 4, Tempest Strike and Ascension 5); the count follows the aspects at once. An aspect whose count the rules
 don't give shows "?" slots and limits nothing. An aspect change that closes slots takes out the last fragments and names
-them. **Cancel**, ✕ or Escape throws the changes away.
+them; the fragments left keep their slots, or are packed from the first one when a closed slot held one. **Cancel**, ✕ or Escape throws the changes away.
 
 **Save** rewrites only the embedded build file's `super`, `grenade`, `melee`, `classAbility`, `jump`, `aspects`,
 `fragments` and `leftOut` (a plug the rules don't know is in `leftOut.subclassPlugs`, shown ⊘ and listed under "Not in

@@ -1,0 +1,17 @@
+# The Guardian's own resistance: active in every build (kind: keyword).
+elements:
+  - id: guardian
+    name: Guardian
+    kind: keyword
+    affinity: neutral
+    # Game Mechanics#106: by default a Guardian has 70 [100] health with 34.5% damage resistance
+    # against combatants and 130 shields (~237 effective HP against combatants, 230 in Crucible: no
+    # base resistance in PvP). It is one of the step's damage resistance sources (ADRs D29): against
+    # combatants only, so its PvP total doesn't count it. Not encoded: the Health stat's shield HP
+    # above 100 (same row), which is HP, not resistance.
+    description: "By default a Guardian takes 34.5% less damage from combatants (none in PvP)."
+    source: "compendium/2026-10-13/Game Mechanics#106"
+    rules: []
+    passives:
+      - effect: { resistCombatantDamage: { against: combatants, amount: "34.5%" } }
+        reason: "Every Guardian takes 34.5% less damage from combatants."

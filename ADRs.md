@@ -3,7 +3,8 @@
 Each ADR explains **why**; [`CONVENTIONS.md`](./CONVENTIONS.md) says **what** and wins on any conflict.
 The requirements they serve are in [docs/requirements.md](docs/requirements.md). The list is the
 current set of decisions, in four groups: what the product is (D1–D9), sources and rules (D10–D15),
-architecture (D16–D23), hosts and tooling (D24–D26), and starting from a DIM link (D27). D1 is the
+architecture (D16–D23), hosts and tooling (D24–D26), starting from a DIM link (D27), the build's stats (D28) and the
+step's damage resistance (D29). D1 is the
 founding one: every other decision follows from it.
 
 | # | Decision | Why |
@@ -35,6 +36,7 @@ founding one: every other decision follows from it.
 | D25 | The web designer runs in the browser, as static files | No server: any static host works, and a loop travels in its link; only Bungie's manifest is saved in the browser |
 | D26 | Verify.XunitV3 pinned to 32.0.1 | 33.x needs a licence decision |
 | D27 | A DIM link starts a build of what the catalog knows by hash; the rest is left out, listed | A player's build already lives in DIM; nothing is guessed, and what's missing stays visible |
+| D29 | The step's state shows its damage resistance, its sources multiplied, PvE and PvP | Builds are judged by how much damage they shrug off; the game stacks resistance by a known rule, so the total is a fact, never a decision |
 
 ## What the product is
 
@@ -378,3 +380,21 @@ loop that plays; a build wears one exotic. A piece whose roll the excerpt doesn'
 the stats as they were, never guessed (D12). The login's page is the site's
 `/login`, Bungie's one redirect URL ([docs/hosting.md](docs/hosting.md), "Bungie login").
 
+### D29 — The step's state shows its damage resistance, its sources multiplied, PvE and PvP
+
+**Context.** Builds are often judged by how much damage they shrug off ("70% damage resistance"), and players rarely
+know how the number is reached. The game has a known rule: different sources of resistance multiply what the others
+let through, 1 − (1 − a) × (1 − b) × … (compendium Armor Mods#7), so 25% and 45% make 58.75%, not 70%. A Guardian
+starts with 34.5% against combatants and none in Crucible (Game Mechanics#106). D1 forbids adding a source's numbers
+up to decide what happens. **Decision (product owner).** The end of each step shows the damage resistance that holds
+right then: the resistance passives (`resistDamage`, `resistCombatantDamage`) of the elements equipped and of the statuses present, the
+Guardian's base among them (a keyword element, so in every build), multiplied by the game's rule. It is the one
+total besides the build's stats (D28): a fact shown with its sources and formula, never game state and never read to
+decide what a step fires. It shows two columns: PvE (every source) and PvP (only the sources that reduce any damage,
+each by its PvP value; one the source gives none for is "?"). A resistance against some combatants only (Arc
+Resistance, Melee or Sniper Damage Resistance, Concussive Dampener; Harmonic Resistance on its Super's element) is a
+line of its own, all damage's sources and its own together, PvE only. An unknown value makes its total "?".
+**Consequence.** A source that is only a description — a Super's resistance, Amplified's, a resistance during an
+animation — is not counted until it is authored as a resistance passive. A condition the format can't express is
+treated as holding, as for any passive (Spark of Resistance's "3+ enemies within 15 m", D7). Copies of one mod take
+the mod's own value by copies (15% | 25% | 30%); different mods multiply.

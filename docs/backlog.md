@@ -142,6 +142,11 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   bonuses above 100 (#126, #132, #138, #139) and Gambler's Dodge's refund as its number ("+79% melee energy") —
   need a rule value that reads a build stat; refunds below 70 of their stat scale down by an amount Bungie
   hasn't published ("?"). DIM's runtime stat benefits (Font mods while Armor Charge) aren't added up.
+- **Damage resistance, next** (D29): only resistance passives count. Sources that are still only a description
+  aren't counted: the Supers' (Arc Staff, Storm's Edge: 90% [PvP 53%/49%], needing a "while in your super"
+  condition), Amplified's 15% against combatants (a glossary status, no keyword element), Flow State's during the
+  dodge, Emergency Reinforcement's at critical health (inert), the armor set bonuses' and artifact perks'. Spark of
+  Resistance's "3+ enemies within 15 m" is treated as always holding (D7).
 - **Armor picker, next**: the mods of a picked piece aren't read (the build keeps the loadout's mods); armor of
   another class's character isn't offered; an icon bungie.net doesn't serve shows broken.
 - **Exotic class items' spirits**: Relativism, Stoicism and Solipsism are listed in the armor picker's Every item, but
