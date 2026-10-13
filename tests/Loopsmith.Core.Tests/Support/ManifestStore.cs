@@ -35,6 +35,9 @@ public sealed class ManifestStore(ImmutableDictionary<ManifestTable, ImmutableDi
 
     public int Rounds { get; private set; }
 
+    /// <summary>The round each of a listing's questions said it was (<c>LoopDesigning.ToListingRound</c>).</summary>
+    public ImmutableArray<int> ListingRounds { get; private set; } = [];
+
     /// <summary>Runs a join of what <paramref name="hashes"/> need to the end, answering each of its questions as the host does.</summary>
     public ManifestExcerpt Join(IEnumerable<ItemHash> hashes)
     {
@@ -65,6 +68,7 @@ public sealed class ManifestStore(ImmutableDictionary<ManifestTable, ImmutableDi
         for (var round = 0; step is Result<ListingStep, string>.Ok { Value: ListingStep.Ask ask } && round < MaxRounds; round++)
         {
             Rounds++;
+            ListingRounds = ListingRounds.Add(LoopDesigning.ToListingRound(ask));
             step = LoopDesigning.ContinueListing(ask, AnswerEntries(ask.Query.Entries), AnswerParts(ask.Query.Parts));
         }
 

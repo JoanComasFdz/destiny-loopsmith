@@ -1,0 +1,50 @@
+@implements IDisposable
+@inject BungieManifestJoining Manifest
+@* While the tab loads Bungie's manifest (BungieManifestJoining.LoadAtStartupAsync), this screen stands in for every page
+   (MainLayout): a bar for its files' download (the MB so far; "connection lost, trying again: 2 of 3" when one broke)
+   and one for the listing of every weapon and armor piece (step n of 4); a sheen runs over the bar at work (a CSS
+   animation the browser plays even while .NET answers the listing's questions). When the load fails: why, with Try again and
+   Continue without it. Only this screen renders as the load moves (BungieManifestJoining.StartupChanged). *@
+@{
+    var view = ManifestStartupShaping.ShapeStartup(Manifest.Startup);
+}
+<section class="panel manifest-startup" data-testid="manifest-startup" aria-busy="@(view.Problem.IsSome() ? "false" : "true")">
+    <h1>@ManifestStartupShaping.Title</h1>
+    <p class="muted">Loopsmith reads it once, when it opens, and keeps it while this tab is open: the weapon and armor pickers, DIM links and the Bungie login use it.</p>
+    @foreach (var bar in view.Bars)
+    {
+        <div class="manifest-progress" role="status" data-testid="startup-bar">
+            <div class="manifest-progress-text">
+                <span class="manifest-progress-title">@bar.Label</span>
+                <span class="manifest-progress-detail" data-testid="startup-bar-detail">@bar.Detail</span>
+            </div>
+            <div class="manifest-progress-bar @(bar.Active ? "active" : "")" role="progressbar" aria-label="@bar.Label" aria-valuemin="0" aria-valuemax="100"
+                 aria-valuenow="@bar.Percent">
+                <span style="width: @ManifestProgressShaping.ToWidth(bar.Percent)"></span>
+            </div>
+        </div>
+    }
+    @if (view.Problem is Optional<string>.Some problem)
+    {
+        <p class="manifest-startup-problem" role="alert" data-testid="startup-problem">@problem.Value</p>
+        <p class="muted">Without it, Loopsmith works with the data it comes with; a DIM link, the Bungie login or a picker's Every item loads the manifest when it needs it.</p>
+        <div class="manifest-startup-actions">
+            <button type="button" class="btn primary" data-action="manifest-try-again" @onclick="TryAgainAsync">Try again</button>
+            <button type="button" class="btn" data-action="manifest-continue" @onclick="Manifest.SkipStartup">Continue without it</button>
+        </div>
+    }
+</section>
+
+@code {
+    protected override void OnInitialized() =>
+        Manifest.StartupChanged += Refresh;                                                      // impure
+
+    private Task TryAgainAsync() =>
+        Manifest.TryStartupAgainAsync();                                                         // impure
+
+    private void Refresh() =>
+        _ = InvokeAsync(StateHasChanged);                                                        // impure (renders this screen only)
+
+    public void Dispose() =>
+        Manifest.StartupChanged -= Refresh;                                                      // impure
+}

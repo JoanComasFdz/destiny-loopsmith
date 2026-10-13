@@ -223,7 +223,7 @@ DIM itself opens:
   (D2ArmorPicker, guardian.report): read in the browser, nothing is fetched.
 
 Anything else is `That isn't a DIM link …`. Items the manifest excerpt lacks are read from Bungie's full
-manifest first (the button says so; a few seconds the first time — [hosting.md](hosting.md#bungies-manifest)),
+manifest first, which the tab loaded when the app opened (the button says so — [hosting.md](hosting.md#bungies-manifest)),
 and the same happens when a shared loop names them. The loadout's items are named only by manifest hash, so
 the build holds what the catalog recognises by hash, and nothing is guessed:
 
@@ -415,8 +415,8 @@ rolled two perks or more has each of them):
   catalyst, instance}`, from the manifest and its sockets), or added for an empty slot, and the steps replay. A build
   wears one exotic weapon (by its manifest item, or an exotic weapon element among a hand-written weapon's perks):
   another exotic isn't listed while it does (the picker says which to swap); and one weapon a slot. Weapons the
-  excerpt doesn't know are named by Bungie's full manifest, read once after the login with the armor (the Bungie
-  login section shows its progress bar; the page keeps working meanwhile — [hosting.md](hosting.md#bungies-manifest));
+  excerpt doesn't know are named by Bungie's full manifest, which the tab holds, once after the login with the armor
+  (the Bungie login section shows its progress bar; the page keeps working meanwhile — [hosting.md](hosting.md#bungies-manifest));
   one it can't place is counted, not listed.
 * **Perks your copy doesn't have** — the perk picker still offers every perk a column rolls with. For a weapon whose
   copy (its `instance`: picked from Yours, or the player's own dim.gg share's) is theirs, each perk the copy doesn't
@@ -449,8 +449,8 @@ picks between the player's own items (above) and these, starting on Yours:
   name carries it too); a legendary never does, its perks and set bonuses show what the rules know once it is worn.
   Each weapon's footer shows its damage type and its breaker (its
   own, else its frame's: Adaptive Frame pierces barriers), and the item shown is framed with its footer. The list comes
-  from Bungie's item table, read once per tab when a picker first opens (its progress bar shows;
-  [hosting.md](hosting.md#bungies-manifest)). The one-exotic rule holds as
+  from Bungie's item table, listed once when the app opens (its startup screen;
+  [hosting.md](hosting.md#bungies-manifest)), so a picker opens at once. The one-exotic rule holds as
   in the player's pickers: no exotic is listed while another slot holds one (the picker says which to swap).
 * **A pick** — hovering an item (or a first tap) shows its name, type and damage type (for armor, its set); a click (a
   second tap, or "Use this weapon" / "Wear this piece") puts it in. Bungie's full manifest is read for it first when

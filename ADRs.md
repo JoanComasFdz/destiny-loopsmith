@@ -232,14 +232,16 @@ hashes Loopsmith names — official name, type, description, icon, rarity, slot,
 columns and the perks each rolls with, intrinsic perks, an exotic's catalyst, armor sets and their perks — is a
 generated excerpt in
 the rules (`rules/manifest.yaml`, `tools/manifest/`), so the app shows the bundled builds the way DIM does
-without downloading the manifest. For a hash outside it (a pasted DIM link's other items), the web app reads
-Bungie's full manifest in the browser, the way DIM does: the component files download from bungie.net (public,
-cross-origin; the browser's HTTP cache keeps them — the app itself stores nothing, D25), the page indexes
-their entries by hash, and `ManifestJoining` (pure) reads the entries it needs, the same way the extractor
-does, into an excerpt added to the catalog's. **Consequence.** Builds reference slugs; the manifest join adds
+without downloading the manifest. For a hash outside it (a pasted DIM link's other items, a login's, an item
+picked from every item of the game), the web app reads Bungie's full manifest in the browser, the way DIM does:
+when the app opens, the component files download from bungie.net (public, cross-origin; the browser's HTTP cache
+keeps them — the app itself stores nothing, D25) and the page indexes their entries by hash and keeps them for as
+long as the tab is open; `ManifestJoining` (pure) reads the entries it needs, the same way the extractor does, into
+an excerpt added to the catalog's. **Consequence.** Builds reference slugs; the manifest join adds
 hashes without changing build files; a DIM loadout is read by hash (D27), and a weapon's roll is picked by
-hash among its columns' perks (a build's `roll`). The first link with unknown items costs a ~9 MB download
-and a few seconds; the CLI knows only the excerpt.
+hash among its columns' perks (a build's `roll`). Opening the app costs a ~9 MB download and some seconds
+behind a startup screen (the download is skipped while the browser's cache holds the files); after that a link,
+a login or a pick reads from the files the tab holds. The CLI knows only the excerpt.
 
 ### D15 — Builds and loops pin a catalog version
 

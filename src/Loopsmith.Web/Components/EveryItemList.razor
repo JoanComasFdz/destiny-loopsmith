@@ -1,6 +1,7 @@
 @inject BungieManifestJoining Manifest
 @* The pickers' "Every item": every weapon or armor piece of the game the slot can take (Shape: LoopDesigning.ListWeaponItems
-   or ListArmorItems over the listing BungieManifestJoining reads once per tab, with the picker's progress bar), every
+   or ListArmorItems over the listing BungieManifestJoining made when the app opened; read here, with the picker's
+   progress bar, only when the player went on without it), every
    version of each, with a search box (and, for weapons, weapon type and element chips that combine with it); an exotic
    the rules don't know yet carries ⊘. It opens showing the item the slot holds (✓, first); another's details show on
    hover (a mouse) or a first tap; a click on the item showing (or the button) picks it: Pick reads Bungie's manifest for
@@ -157,7 +158,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var read = await Manifest.ListItemsAsync();                                              // impure (once per tab)
+        var read = await Manifest.ListItemsAsync();                                              // impure (the tab's listing)
         var view = read.Map(Shape);                                                              // pure
         listed = Optional.Some(view);                                                            // impure (component state)
         var wearing = view.Match(ok => ok.Value.Options.Where(option => option.Worn).Select(option => Optional.Some(option.Hash)).FindFirstSome(), _ => Optional.None<ItemHash>()); // pure
