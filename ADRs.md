@@ -38,6 +38,7 @@ founding one: every other decision follows from it.
 | D27 | A DIM link starts a build of what the catalog knows by hash; the rest is left out, listed | A player's build already lives in DIM; nothing is guessed, and what's missing stays visible |
 | D29 | The step's state shows its damage resistance, its sources multiplied, PvE and PvP | Builds are judged by how much damage they shrug off; the game stacks resistance by a known rule, so the total is a fact, never a decision |
 | D30 | Armor mods are picked in the pieces' sockets; the energy budget holds when its capacity is known | A build's mods are part of its loop and the game decides what fits; the sockets and costs are Bungie's, the capacity the player's copy's |
+| D31 | A build names its artifact; its perks are picked under the limits its perk slots give (Artifacts 2.0) | Since Monument of Triumph one of seven artifacts is equipped with up to seven perks; the tiers and slots are Bungie's, read from the artifact's sockets |
 
 ## What the product is
 
@@ -420,3 +421,19 @@ game has no copy to read it from. **Consequence.** Mods the rules don't know can
 or an activity's socket shows when the piece worn has one. A slot with no piece holds one free socket more than its
 mods, since it has no sockets to read. A tuning mod (a Tier 5 copy's tuning socket) isn't picked here; it stays in
 the build. A stat mod the manifest excerpt lacks (`statPlugs`) doesn't add to the stats yet.
+
+### D31 — A build names its artifact; its perks are picked under the limits its perk slots give (Artifacts 2.0)
+
+**Context.** Monument of Triumph (Update 9.7.0, June 2026) replaced the seasonal artifact with seven artifacts, one
+equipped at a time, each with three tiers of seven perks and no unlock thresholds. A build named its artifact perks, not
+its artifact, which was found from them (the one that unlocks the most), so it couldn't hold an artifact with no perks
+picked, and the perks couldn't be changed but by a new DIM link or build file. **Decision (product owner).** The
+designer's artifact editor changes the artifact and picks its perks, laid out like the game's screen. A build may name
+its artifact (`artifact:`, its manifest hash); one that doesn't keeps the one its perks point to. The limits are
+Bungie's, not authored: the artifact's seven perk sockets take three plug sets that reach one tier further each (two
+Tier 1, three Tiers 1–2, two Tiers 1–3), so the perks fit when, for each tier, no more of them are of that tier or
+higher than there are sockets that take it — at most 7, 5 of Tiers 2–3, 2 of Tier 3. The manifest excerpt holds all
+seven artifacts with their `tiers` and `slots`, and every perk. Switching artifact in the editor shows the perks last
+picked for it while the loop is open (the tab's memory, D25: nothing is stored). **Consequence.** A perk the rules don't
+know can be picked (⊘, in `leftOut`), like a fragment or a mod. Artifact perks being off in Trials and Competitive
+Crucible isn't modelled.

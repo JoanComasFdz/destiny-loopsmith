@@ -335,7 +335,7 @@ public static class LoopDesigning
     public static ArtifactChoice ReadArtifactChoice(ValidatedBuild build) =>
         ArtifactEditing.ReadChoice(build.Catalog, build.Build);
 
-    /// <summary>The perks to show for an artifact: the build's own for its artifact, else the last picked for it here, else none.</summary>
+    /// <summary>The perks to show for an artifact: the last picked for it here, else the build's own for its artifact, else none.</summary>
     public static ImmutableArray<ItemHash> RecallArtifactPerks(ValidatedBuild build, ImmutableDictionary<ItemHash, ImmutableArray<ItemHash>> remembered, ItemHash artifact) =>
         ArtifactEditing.RecallPerks(build.Catalog, build.Build, remembered, artifact);
 

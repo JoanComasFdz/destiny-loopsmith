@@ -133,10 +133,15 @@ items:
 
 * `kind`: `subclass|super|grenade|melee|classAbility|movement|aspect|fragment|weapon|weaponPerk|intrinsic|catalyst|armor|armorMod|artifactPerk|artifact|perk|other`.
   A `perk` is one of the manifest's sandbox perks — what a catalyst or an armor set grants — and has no `type`.
-  An `artifact` is a season's artifact: its `perks` are every perk it unlocks (the plug sets of its sockets that
-  take artifact perks, without a socket's empty plug or the reset socket), and it is written for every artifact
-  that unlocks an artifact perk the rules or a saved share name. Artifacts share perks, so a build's artifact is
-  the one that unlocks the most of its perks (each counted once); two that unlock as many: none, not a guess.
+  An `artifact` is one of the seven artifacts of Artifacts 2.0 (every artifact item whose sockets take artifact
+  perks; each is written, with every one of its perks as an item): `tiers` are its perks by tier, Tier 1 first
+  (`tiers: [[…7], […7], […7]]`) — its perk sockets' plug sets, each once in socket order, reach one tier further each,
+  so a tier is the perks of its plug set that an earlier one doesn't have, without a socket's empty plug — and
+  `slots` the highest tier each of its perk sockets takes (`slots: [1, 1, 2, 2, 2, 3, 3]`: two take Tier 1, three
+  Tiers 1–2, two Tiers 1–3; not the reset socket). The perks fit when, for each tier, no more of them are of that
+  tier or higher than there are slots that take it: at most 7, 5 of Tiers 2–3, 2 of Tier 3. A build's artifact is the
+  one it names (`artifact:`), else the one that unlocks the most of its perks (each counted once; two that unlock as
+  many: none, not a guess).
   A `subclass` (each of the glossary's) has `plugs`: every plug its sockets take — super, abilities, jump,
   aspects, fragments, without the empty sockets' — each written as an item too; the subclass editor lists them.
 * `description`: Bungie's text (for an aspect or a fragment, whose own is empty, its perks': its effect, then a
@@ -154,7 +159,7 @@ items:
   `set` the armor set it belongs to and its `class` the class that wears it (`titan|hunter|warlock`; none: any
   class — the armor picker lists a build's class's pieces). These keys on anything else are an error (`slot is
   only allowed on a weapon, armor or an armor mod, not on a grenade`; `set is only allowed on armor, not on a
-  weapon`; `perks` belongs to a catalyst or an artifact; `plugs` to a subclass). A weapon's or armor's `watermark` is its season watermark:
+  weapon`; `perks` belongs to a catalyst; `tiers` and `slots` to an artifact; `plugs` to a subclass). A weapon's or armor's `watermark` is its season watermark:
   the overlay with its season's or expansion's icon in the top-left corner, drawn over its square as DIM draws it.
 * `breakerTypes`: the three champion breakers (Shield Piercing, Disruption, Stagger), each with its name and icon: a
   weapon's breaker shows under its square, as DIM shows it. `armorStats`: the six armor stats (`stat`: weapons, health,
@@ -605,6 +610,7 @@ fragments: [spark-of-resistance, spark-of-frequency, spark-of-shock, spark-of-di
 exoticArmor: shinobus-vow                    # optional
 armorSetBonuses: [luminopotent-2pc, luminopotent-4pc]
 armorMods: [elemental-charge, elemental-charge, grenade-kickstart, grenade-kickstart, bomber]   # repeat = stacked copies
+artifact: 3821685388                         # optional: its manifest hash (Tablet of Ruin)
 artifactPerks: [defibrillating-blast, flashover]
 weapons:
   - { slot: kinetic, name: Festival Flight, type: strand, archetype: grenade-launcher, perks: [slice] }
@@ -622,7 +628,11 @@ stats: { weapons: 47, class: 104, grenade: 145, super: 27, melee: 79 }   # any s
   has no jump the rules know: none, or one of a subclass the rules don't have, which `leftOut.subclassPlugs` holds
   (a build file from before jumps were elements may hold an Arcstrider jump there too; it still opens and shows it,
   and the subclass editor's Save writes it as `jump:`).
-* Optional: `author`, `source` (an absolute http(s) URL), `catalog`, `exoticArmor`, and the lists
+* `artifact`: the artifact the build equips, by manifest hash (one of the excerpt's `kind: artifact` items). The
+  designer's artifact editor writes it ([loop-format.md](loop-format.md#artifact)); left out, the build's artifact is
+  the one that unlocks the most of its `artifactPerks` (a build file, a DIM link). Its perks the rules don't know are
+  in `leftOut.artifactPerks`.
+* Optional: `author`, `source` (an absolute http(s) URL), `catalog`, `exoticArmor`, `artifact`, and the lists
   `aspects`, `fragments`, `armorSetBonuses`, `armorMods`, `artifactPerks`, `weapons` (default empty).
 * A weapon: `slot` (`kinetic|energy|power`), `name` and `type` (`kinetic|arc|solar|void|stasis|strand`)
   are required; `archetype` (a kebab-case word), `perks` (element ids), `hash` (its manifest item: its icon,

@@ -101,15 +101,15 @@ public static class ArtifactEditing
         catalog.FindElementByHash(perk).Bind(element => element.Kind == ElementKind.ArtifactPerk ? Optional.Some(element) : Optional.None<BuildElement>());
 
     /// <summary>
-    /// The perks remembered for an artifact: the build's own when it is the build's artifact, else the last picked for it
-    /// (<paramref name="remembered"/>, by artifact), else none.
+    /// The perks to show for an artifact: the last picked for it (<paramref name="remembered"/>, by artifact), else the
+    /// build's own when it is the build's artifact, else none.
     /// </summary>
     public static ImmutableArray<ItemHash> RecallPerks(RuleCatalog catalog, Build build, ImmutableDictionary<ItemHash, ImmutableArray<ItemHash>> remembered, ItemHash artifact)
     {
         var held = ReadChoice(catalog, build);
-        return held.Artifact == Optional.Some(artifact)
-            ? held.Perks
-            : remembered.TryGetValue(artifact, out var perks) ? perks : [];
+        return remembered.TryGetValue(artifact, out var perks)
+            ? perks
+            : held.Artifact == Optional.Some(artifact) ? held.Perks : [];
     }
 
     /// <summary>

@@ -255,8 +255,8 @@ font: "Arc  - Skipp grenade" reads "Arc - Skipp grenade"). The build is written 
 file (comments say where it came from), so the loop
 embeds, exports, shares and replays it like any other ([rule-format.md](rule-format.md#build-file-buildsbuildbuildyaml)).
 The designer shows the build the way DIM shows a loadout — the subclass with its super, abilities,
-aspects and fragments, the artifact (the one that unlocks the most of the build's artifact perks — none on a
-tie — tappable for Bungie's text and which of its perks the build has) and its perks, the weapons (kinetic, energy, heavy) with their element and
+aspects and fragments, the artifact (the one the build names, else the one that unlocks the most of the build's
+artifact perks — none on a tie — tappable for Bungie's text and which of its perks the build has) and its perks, the weapons (kinetic, energy, heavy) with their element and
 one perk per trait column the manifest excerpt gives — the build's pick (`roll`), else the perk it names
 in that column, else the one perk a column that doesn't roll has (an exotic's), else "?" — each armor piece with the mods
 of its slot (the slot the manifest gives the mod; other mods are general) — with Bungie's icons from the
@@ -359,6 +359,36 @@ subclass. What the subclass can hold comes from the manifest excerpt (`plugs` of
 `tools/manifest/` for each of the glossary's nine subclasses). A plug is the rules' element only when the rules know it
 for the build's class: the rules author Skip Grenade and the Sparks for the Hunter, so on a Striker or a Stormcaller
 they are left out (⊘), in the editor and from a DIM link alike.
+
+## Artifact
+
+In the designer the **Artifact** box has ⋯ (also on a loop from scratch, whose box shows an empty artifact): it opens
+the **artifact editor**, laid out like the game's artifact screen since Monument of Triumph (Artifacts 2.0). The Home
+cards stay read-only.
+
+* **The artifact.** The header shows the artifact's icon, its name and "Artifact"; ⋯ beside the name opens a dropdown
+  of the seven artifacts (NPA Repulsion Regulator, Queensfoil Censer, Hunter's Journal, Slayer Baron Apothecary Satchel,
+  Tablet of Ruin, Implement of Curiosity, Encrypted Data Disk), each with how many of its perks are picked, and "No
+  artifact". With no artifact the editor lists them in its body. One artifact is equipped at a time.
+* **Its perks** stand in three columns, Tier 1 to Tier 3, seven each, in the game's order (the excerpt's `tiers`,
+  [rule-format.md](rule-format.md)). Under them the seven **perk slots** show the perks picked, in their groups: two
+  take Tier 1, three Tiers 1–2, two Tiers 1–3 (the excerpt's `slots`); then the **counts**: "7/7 selected",
+  "Tier 2–3: 4/5", "Tier 3: 2/2". So at most 7 perks are active, 5 of Tiers 2–3 and 2 of Tier 3; there are no
+  thresholds to reach any more.
+* **Tapping a perk** makes it active (it lights up and takes a slot), or takes it out when it is. A perk that would
+  break a count is dimmed; tapping it only shows its details, "Requirements not met" and which count ("At most 2 perks
+  of Tier 3 can be active."). The details of the perk last tapped (or hovered) show beside the board (under it on a
+  phone), like the game's tooltip: its name, "Artifact Perk · Tier 2", its state, Bungie's text; **What it does** opens
+  its full details. A perk the rules don't know carries ⊘ (it sets nothing off) and can still be picked.
+* **Switching artifact** shows the perks last picked for that artifact while this loop is open in the designer
+  (starting from the loop's own artifact and perks); one not set up yet starts with none. Switching back brings the
+  earlier picks back. They are remembered for the tab only, not saved in the loop file or the browser; opening another
+  loop starts afresh.
+* **Save** rewrites only the embedded build file's `artifact` (its hash; removed for no artifact), `artifactPerks`
+  (the rules' perks) and the artifact perks in `leftOut` (the others); the build check runs again and the steps replay
+  (take Flashover out and maxing Bolt Charge no longer makes you Amplified). The export and the share link carry them.
+  **Cancel**, ✕ or Escape throws the changes away (Escape closes only the dropdown when it is open). A loop that
+  doesn't name its artifact (a build file, a DIM link) opens with the one that unlocks the most of its perks.
 
 ## Armor mods
 

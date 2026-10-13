@@ -146,14 +146,13 @@ public sealed class ArtifactPickingTests
     }
 
     [Fact]
-    public void An_artifact_shows_the_builds_perks_else_the_last_picked_for_it_else_none()
+    public void An_artifact_shows_the_last_perks_picked_for_it_else_the_builds_else_none()
     {
         var build = ImportLoop(SkipGrenadesPath).Build;
-        var remembered = ImmutableDictionary<ItemHash, ImmutableArray<ItemHash>>.Empty
-            .Add(HuntersJournal, [ItemHash.From(3116632771u)])
-            .Add(TabletOfRuin, [Flashover]);
+        var remembered = ImmutableDictionary<ItemHash, ImmutableArray<ItemHash>>.Empty.Add(HuntersJournal, [ItemHash.From(3116632771u)]);
 
         Assert.Equal(LoopDesigning.ReadArtifactChoice(build).Perks, LoopDesigning.RecallArtifactPerks(build, remembered, TabletOfRuin));
+        Assert.Equal([Flashover], LoopDesigning.RecallArtifactPerks(build, remembered.Add(TabletOfRuin, [Flashover]), TabletOfRuin));
         Assert.Equal([ItemHash.From(3116632771u)], LoopDesigning.RecallArtifactPerks(build, remembered, HuntersJournal));
         Assert.Empty(LoopDesigning.RecallArtifactPerks(build, remembered, ItemHash.From(1014202826u)));
     }

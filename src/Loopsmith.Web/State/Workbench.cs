@@ -44,6 +44,12 @@ public sealed class Workbench(Result<LoopsmithBundle, string> startup, bool shar
     /// <summary>The loops the Compare screen showed last (None until it first opens).</summary>
     public Optional<ComparisonPicks> ComparePicks { get; set; } = Optional.None<ComparisonPicks>();
 
+    /// <summary>
+    /// The perks last picked for each artifact in the artifact editor while this loop is open: switching to an artifact
+    /// shows them again. A loop opened anew starts with none.
+    /// </summary>
+    public ImmutableDictionary<ItemHash, ImmutableArray<ItemHash>> ArtifactPerks { get; set; } = ImmutableDictionary<ItemHash, ImmutableArray<ItemHash>>.Empty;
+
     /// <summary>Log out: the player's armor, weapons and the login's note go (the open design keeps its stats, pieces and weapons).</summary>
     public void ForgetProfile()
     {
@@ -56,6 +62,7 @@ public sealed class Workbench(Result<LoopsmithBundle, string> startup, bool shar
     {
         Session = Optional.Some(session);
         SelectedStep = Optional.None<int>();
+        ArtifactPerks = ImmutableDictionary<ItemHash, ImmutableArray<ItemHash>>.Empty;
         LoginNote = Optional.None<string>();
     }
 }
