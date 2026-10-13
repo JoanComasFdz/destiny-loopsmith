@@ -91,13 +91,16 @@ public static partial class ManifestJoin
 
     /// <summary>
     /// What has been read, each entry parsed, and each plug category's plug items; and, looked up once per round
-    /// rather than per item, the socket categories by name and the armor set each set perk belongs to.
+    /// rather than per item, the socket categories by name, the armor set each set perk belongs to, the breaker types
+    /// by name (as frames' perks write them) and the inventory buckets' names.
     /// </summary>
     private sealed record Reading(
         ImmutableDictionary<ManifestEntryKey, JsonElement> Entries,
         ImmutableDictionary<PlugCategoryId, ImmutableArray<ItemHash>> Plugs,
         ImmutableDictionary<string, ItemHash> CategoriesByName,
-        ImmutableDictionary<ItemHash, ItemHash> SetsByPerk);
+        ImmutableDictionary<ItemHash, ItemHash> SetsByPerk,
+        ImmutableArray<(string Name, ItemHash Hash)> Breakers,
+        ImmutableDictionary<ItemHash, string> BucketNames);
 
     /// <summary>
     /// What a walk reaches: entries, whole tables and plug categories, repeats and all — each walk step gathers its parts'
@@ -376,8 +379,7 @@ public static partial class ManifestJoin
 
     private static Optional<string> ReadBucketName(Reading reading, JsonElement item) =>
         item.ReadHash("inventory", "bucketTypeHash")
-            .Bind(bucket => FindEntry(reading, ManifestTable.InventoryBucket, bucket))
-            .Bind(bucket => bucket.ReadString("displayProperties", "name"));
+            .Bind(bucket => reading.BucketNames.TryGetValue(bucket, out var name) ? Optional.Some(name) : Optional.None<string>());
 
     /// <summary>Bungie's description; for a subclass plug whose own is empty, its perks' (its effect, then e.g. "-10 Grenade ▼").</summary>
     private static Optional<string> ReadDescription(Reading reading, JsonElement item)
@@ -487,22 +489,16 @@ public static partial class ManifestJoin
     /// The breaker a weapon's intrinsic frame gives it, as DIM reads it: the breaker type named in brackets in one of the
     /// frame's perks ("[Shield-Piercing] Barrier" on Adaptive Frame, "[Disruption] Overload" on Rapid-Fire Frame).
     /// </summary>
-    private static Optional<ItemHash> FindFrameBreaker(Reading reading, JsonElement weapon)
-    {
-        var breakers = reading.Entries
-            .Where(entry => entry.Key.Table == ManifestTable.BreakerType)
-            .SelectMany(entry => ToSequence(entry.Value.ReadText("displayProperties", "name").Map(name => (Name: ToBreakerName(name), Hash: entry.Key.Hash))))
-            .ToImmutableArray();
-        return FindIntrinsic(reading, weapon, WeaponIntrinsicCategoryName)
+    private static Optional<ItemHash> FindFrameBreaker(Reading reading, JsonElement weapon) =>
+        FindIntrinsic(reading, weapon, WeaponIntrinsicCategoryName)
             .Bind(frame => FindEntry(reading, ManifestTable.InventoryItem, frame))
             .Bind(frame => frame.ReadArray("perks")
                 .SelectMany(perk => ToSequence(perk.ReadHash("perkHash").Bind(hash => FindEntry(reading, ManifestTable.SandboxPerk, hash))))
                 .SelectMany(perk => ToSequence(perk.ReadString("displayProperties", "name")))
                 .SelectMany(ListBracketedNames)
-                .SelectMany(name => breakers.Where(breaker => breaker.Name == name).Select(breaker => breaker.Hash))
+                .SelectMany(name => reading.Breakers.Where(breaker => breaker.Name == name).Select(breaker => breaker.Hash))
                 .Select(Optional.Some)
                 .FindFirstSome());
-    }
 
     /// <summary>A breaker's name as frames' perks and the breaker table both write it ("Shield-Piercing", "Shield Piercing").</summary>
     internal static string ToBreakerName(string name) => name.Replace('-', ' ').Trim().ToLowerInvariant();
@@ -557,21 +553,36 @@ public static partial class ManifestJoin
     private static Optional<ItemHash> FindSetOfPerk(Reading reading, ItemHash perk) =>
         reading.SetsByPerk.TryGetValue(perk, out var set) ? Optional.Some(set) : Optional.None<ItemHash>();
 
-    /// <summary>What has been read, with its two lookups: each socket category by its name, each set perk's set (the lowest hash, when two have it).</summary>
-    private static Reading ToReading(ManifestAnswer read) =>
-        new(
+    /// <summary>
+    /// What has been read, with its lookups: each socket category by its name, each set perk's set (the lowest hash, when
+    /// two have it), the breaker types and the buckets' names — from the small tables, found in one pass over what was read.
+    /// </summary>
+    private static Reading ToReading(ManifestAnswer read)
+    {
+        var small = read.Entries.Where(entry => SmallTables.Contains(entry.Key.Table)).ToImmutableArray();
+        return new(
             read.Entries,
             read.Plugs,
-            read.Entries
+            small
                 .Where(entry => entry.Key.Table == ManifestTable.SocketCategory)
                 .SelectMany(entry => ToSequence(entry.Value.ReadString("displayProperties", "name")).Select(name => (Name: name, entry.Key.Hash)))
                 .GroupBy(entry => entry.Name, StringComparer.Ordinal)
                 .ToImmutableDictionary(group => group.Key, group => ItemHash.From(group.Min(entry => entry.Hash.Value)), StringComparer.Ordinal),
-            read.Entries
+            small
                 .Where(entry => entry.Key.Table == ManifestTable.EquipableItemSet)
                 .SelectMany(entry => entry.Value.ReadArray("setPerks").SelectMany(setPerk => ToSequence(setPerk.ReadHash("sandboxPerkHash"))).Select(perk => (Perk: perk, Set: entry.Key.Hash)))
                 .GroupBy(entry => entry.Perk)
-                .ToImmutableDictionary(group => group.Key, group => ItemHash.From(group.Min(entry => entry.Set.Value))));
+                .ToImmutableDictionary(group => group.Key, group => ItemHash.From(group.Min(entry => entry.Set.Value))),
+            [
+                .. small
+                    .Where(entry => entry.Key.Table == ManifestTable.BreakerType)
+                    .SelectMany(entry => ToSequence(entry.Value.ReadText("displayProperties", "name").Map(name => (Name: ToBreakerName(name), entry.Key.Hash)))),
+            ],
+            small
+                .Where(entry => entry.Key.Table == ManifestTable.InventoryBucket)
+                .SelectMany(entry => ToSequence(entry.Value.ReadString("displayProperties", "name")).Select(name => KeyValuePair.Create(entry.Key.Hash, name)))
+                .ToImmutableDictionary());
+    }
 
     // ── small helpers ───────────────────────────────────────────────────────────────
 

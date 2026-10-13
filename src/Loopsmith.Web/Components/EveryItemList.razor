@@ -1,19 +1,45 @@
 @inject BungieManifestJoining Manifest
 @* The pickers' "Every item": every weapon or armor piece of the game the slot can take (Shape: LoopDesigning.ListWeaponItems
    or ListArmorItems over the listing BungieManifestJoining reads once per tab, with the picker's progress bar), every
-   version of each, with a search box. It opens showing the item the slot holds (✓, first); another's details show on
+   version of each, with a search box (and, for weapons, weapon type and element chips that combine with it); an exotic
+   the rules don't know yet carries ⊘. It opens showing the item the slot holds (✓, first); another's details show on
    hover (a mouse) or a first tap; a click on the item showing (or the button) picks it: Pick reads Bungie's manifest for
    it (its perks, catalyst or set) and puts it in the build, or says why it couldn't, here. *@
 <div class="every-item" data-testid="every-item">
     @if (listed is Optional<Result<ItemListView, string>>.Some { Value: Result<ItemListView, string>.Ok { Value: var view } })
     {
-        var shown = ItemListShaping.FilterOptions(view.Options, query);
+        var shown = ItemListShaping.FilterOptions(view.Options, filter);
         var details = view.Options.Where(option => focused == Optional.Some(option.Hash)).Select(Optional.Some).FindFirstSome();
         <div class="every-item-search">
             <input type="search" class="every-item-query" placeholder="Search by name or type" aria-label="Search by name or type" data-testid="every-item-search"
-                   value="@query" @oninput="Search" />
+                   value="@filter.Query" @oninput="Search" />
             <span class="muted every-item-count" data-testid="every-item-count">@ItemListShaping.DescribeCount(shown.Length, view.Options.Length, Noun)</span>
         </div>
+        @if (!view.Types.IsEmpty)
+        {
+            <div class="filter-chips" role="group" aria-label="Weapon type" data-testid="type-chips">
+                @foreach (var type in view.Types)
+                {
+                    <button type="button" class="filter-chip" aria-pressed="@(filter.Type == Optional.Some(type) ? "true" : "false")" @onclick="() => ToggleType(type)">@type</button>
+                }
+            </div>
+        }
+        @if (!view.Elements.IsEmpty)
+        {
+            <div class="filter-chips" role="group" aria-label="Element" data-testid="element-chips">
+                @foreach (var chip in view.Elements)
+                {
+                    var element = chip.Element;
+                    <button type="button" class="filter-chip @ToneStyling.ToToneClass(element.ToAffinity().ToTone())" aria-pressed="@(filter.Element == Optional.Some(element) ? "true" : "false")" @onclick="() => ToggleElement(element)">
+                        @if (chip.Icon is Optional<string>.Some icon)
+                        {
+                            <img src="@icon.Value" alt="" loading="lazy" />
+                        }
+                        @element
+                    </button>
+                }
+            </div>
+        }
         @if (view.Options.IsEmpty)
         {
             <p class="muted" data-testid="every-item-empty">No @Noun of the game fits this slot.</p>
@@ -26,7 +52,7 @@
                     var hash = option.Hash;
                     <div class="weapon-option @(focused == Optional.Some(hash) ? "focused" : "")" @key="hash">
                         <button type="button" role="option" aria-selected="@(focused == Optional.Some(hash) ? "true" : "false")"
-                                class="icon-tile tappable item @DescribeTier(option.Tile) @(option.Worn ? "worn" : "") @(focused == Optional.Some(hash) ? "focused" : "")"
+                                class="icon-tile tappable item @DescribeTier(option.Tile) @(option.Worn ? "worn" : "") @(focused == Optional.Some(hash) ? "focused" : "") @(option.InRules ? "" : "out")"
                                 title="@($"{option.Tile.Name} — {option.Line}")" aria-label="@option.Tile.Name" data-hash="@hash.Value"
                                 @onpointerenter="e => Hover(hash, e)" @onclick="() => ChooseAsync(option)">
                             @if (option.Tile.Icon is Optional<string>.Some icon)
@@ -38,6 +64,10 @@
                                 <span class="icon-initials">@(option.Tile.Name.Length > 0 ? option.Tile.Name[..1] : "?")</span>
                             }
                             <TileOverlays Marks="option.Marks" />
+                            @if (!option.InRules)
+                            {
+                                <UnsupportedMark />
+                            }
                             @if (option.Worn)
                             {
                                 <span class="armor-worn-mark" aria-hidden="true">✓</span>
@@ -54,6 +84,10 @@
                     <div class="armor-option-name">@item.Tile.Name@if (item.Line.Length > 0)
                         {<span class="option-sep"> · </span><span class="@item.Damage.Match(damage => ToneStyling.ToToneClass(damage.Value.ToAffinity().ToTone()), _ => "")" data-testid="item-option-line">@if (item.DamageIcon is Optional<string>.Some damageIcon)
                             {<img class="inline-icon" src="@damageIcon.Value" alt="" loading="lazy" />}@item.Line</span>}</div>
+                    @if (!item.InRules)
+                    {
+                        <div class="muted" data-testid="item-option-unsupported">@UnsupportedMark.Title</div>
+                    }
                     @if (item.Note is Optional<string>.Some note)
                     {
                         <div class="tone-warning" data-testid="item-option-note">@note.Value</div>
@@ -116,7 +150,7 @@
     /// <summary>The listing for this slot once read (or why it couldn't be); none while it is read.</summary>
     private Optional<Result<ItemListView, string>> listed = Optional.None<Result<ItemListView, string>>();
 
-    private string query = "";
+    private ItemListFilter filter = ItemListShaping.NoFilter;
     private Optional<ItemHash> focused = Optional.None<ItemHash>();
     private bool picking;
     private Optional<string> problem = Optional.None<string>();
@@ -130,8 +164,23 @@
         focused = wearing;                                                                       // impure (component state)
     }
 
-    private void Search(ChangeEventArgs e) =>
-        query = e.Value?.ToString() ?? "";                                                       // impure (component state)
+    private void Search(ChangeEventArgs e)
+    {
+        var narrowed = ItemListShaping.SetQuery(filter, e.Value?.ToString() ?? "");             // pure
+        filter = narrowed;                                                                       // impure (component state)
+    }
+
+    private void ToggleType(string type)
+    {
+        var narrowed = ItemListShaping.ToggleType(filter, type);                                 // pure
+        filter = narrowed;                                                                       // impure (component state)
+    }
+
+    private void ToggleElement(DamageType element)
+    {
+        var narrowed = ItemListShaping.ToggleElement(filter, element);                           // pure
+        filter = narrowed;                                                                       // impure (component state)
+    }
 
     /// <summary>A mouse over an item shows its details (a touch doesn't hover: its first tap does).</summary>
     private void Hover(ItemHash hash, PointerEventArgs e)

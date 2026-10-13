@@ -105,7 +105,8 @@ game from the same files, read once per tab when a picker first opens: the item 
 components (~8 MB compressed). Core asks, in four rounds, for the small components, then the items of the weapon and
 armor buckets, each cut down in the page to the fields a square needs and, for a weapon, the plugs its sockets start
 with (one pass over the file, `readEntryParts`: ~10,000 entries, ~5 MB of JSON), then the weapons' intrinsic frames and
-their perks — a weapon's breaker is its own, else its frame's ("[Shield-Piercing] Barrier"), as the join reads it.
+their perks — a weapon's intrinsic is its first named intrinsic plug (the rules know an exotic weapon by it), and its
+breaker is its own, else its frame's ("[Shield-Piercing] Barrier"), as the join reads them.
 The tab keeps the list it reads (a failed read is tried again at the next opening). A pick then reads the full manifest
 for that one item (its perks, catalyst or set), as above, even when the tab asked for it before.
 

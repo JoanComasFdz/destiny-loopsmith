@@ -441,7 +441,11 @@ picks between the player's own items (above) and these, starting on Yours:
   for that slot and the build's class: every version of each (a season's reissue is an item of its own, told apart by
   its watermark and, for armor, its set: one version may be in an armor set another isn't), the one the slot holds
   first (✓), then by name, a name's versions side by side. A search box narrows it as you type, by name or type ("hand
-  cannon", "arc"; for armor its name or its set's). Each weapon's footer shows its damage type and its breaker (its
+  cannon", "arc"; for armor its name or its set's); for weapons, a row of weapon type chips and one of element chips
+  narrow it too (one chip of each row at a time, combined with the search). An exotic the rules don't know yet
+  carries ⊘ (an exotic weapon is known by its intrinsic perk, an exotic piece by its hash: a version the rules don't
+  name carries it too); a legendary never does, its perks and set bonuses show what the rules know once it is worn.
+  Each weapon's footer shows its damage type and its breaker (its
   own, else its frame's: Adaptive Frame pierces barriers), and the item shown is framed with its footer. The list comes
   from Bungie's item table, read once per tab when a picker first opens (its progress bar shows;
   [hosting.md](hosting.md#bungies-manifest)). The one-exotic rule holds as
