@@ -78,14 +78,22 @@ public static class WeaponBinding
 
     /// <summary>"This weapon" is the slot's weapon; "this weapon, when it is X" is it when its type is X, else nothing.</summary>
     private static Optional<DamageSource> BindSource(DamageSource source, WeaponSlot slot, DamageType type) =>
-        source switch
-        {
-            DamageSource.ThisWeapon => Optional.Some<DamageSource>(new DamageSource.WeaponInSlot(slot)),
-            DamageSource.ThisWeaponOfType ofType => ofType.Type == type
+        source.Match(
+            anySource: _ => Optional.Some(source),
+            anyWeapon: _ => Optional.Some(source),
+            weaponOfType: _ => Optional.Some(source),
+            weaponInSlot: _ => Optional.Some(source),
+            anyAbility: _ => Optional.Some(source),
+            abilityOf: _ => Optional.Some(source),
+            ofType: _ => Optional.Some(source),
+            keywordOf: _ => Optional.Some(source),
+            summonOf: _ => Optional.Some(source),
+            weaponOfSuperType: _ => Optional.Some(source),
+            abilityUsedAs: _ => Optional.Some(source),
+            thisWeapon: _ => Optional.Some<DamageSource>(new DamageSource.WeaponInSlot(slot)),
+            thisWeaponOfType: ofType => ofType.Type == type
                 ? Optional.Some<DamageSource>(new DamageSource.WeaponInSlot(slot))
-                : Optional.None<DamageSource>(),
-            _ => Optional.Some(source),
-        };
+                : Optional.None<DamageSource>());
 
     private static IEnumerable<T> ToSequence<T>(Optional<T> optional) =>
         optional.Match(some => new[] { some.Value }, _ => []);

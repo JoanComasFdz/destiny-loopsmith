@@ -165,7 +165,8 @@ public sealed class WeaponModsCatalogTests
     public void A_dim_link_weapons_mod_is_the_weapons_mod_not_a_left_out_item()
     {
         const string path = "builds/skip-grenade-hunter/dim-loadout.json";
-        var share = JsonNode.Parse(File.ReadAllText(RepoFiles.ToPath(path)))!;                  // impure
+        var json = File.ReadAllText(RepoFiles.ToPath(path));                                     // impure
+        var share = JsonNode.Parse(json)!;                                                       // pure
         share["loadout"]!["equipped"]![0]!["socketOverrides"]!["4"] = Synergy;                   // Festival Flight with Synergy
 
         var session = LoopDesigning.StartSavedDimDesign(Catalog, new SourceText(path, share.ToJsonString()))

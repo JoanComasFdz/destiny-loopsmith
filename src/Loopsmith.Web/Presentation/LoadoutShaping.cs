@@ -153,6 +153,14 @@ public sealed record ModOption(ItemHash Hash, IconTile Tile, bool Enhanced, bool
 /// <summary>A weapon's mod square: the mod it holds, by hash and tile (none: its socket is empty), and the mods its mod socket takes.</summary>
 public sealed record ModSquare(Optional<ItemHash> Held, Optional<IconTile> Mod, ImmutableArray<ModOption> Options);
 
+/// <summary>What the loadout's open picker picks for: a weapon's trait column (0-based), or its mod socket.</summary>
+[Union]
+public partial record PickerTarget
+{
+    partial record PerkColumn(int Weapon, int Column);
+    partial record ModSocket(int Weapon);
+}
+
 /// <summary>A weapon mod picked in the designer (weapon 0-based, in the build's order; none: the socket emptied).</summary>
 public sealed record ModPick(int Weapon, Optional<ItemHash> Mod);
 

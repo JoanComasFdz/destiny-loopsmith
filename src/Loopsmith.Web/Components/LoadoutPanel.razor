@@ -108,9 +108,9 @@
                             {
                                 @if (CanPick && square is PerkSquare.Pickable pickable)
                                 {
-                                    <button type="button" class="perk-slot @(IsOpen(weapon.Index, pickable.Column) ? "open" : "")" data-column="@pickable.Column"
-                                            aria-expanded="@(IsOpen(weapon.Index, pickable.Column) ? "true" : "false")"
-                                            title="@DescribePickTitle(weapon, pickable)" @onclick="() => TogglePicker(weapon.Index, pickable.Column)">
+                                    <button type="button" class="perk-slot @(IsOpen(new PickerTarget.PerkColumn(weapon.Index, pickable.Column)) ? "open" : "")" data-column="@pickable.Column"
+                                            aria-expanded="@(IsOpen(new PickerTarget.PerkColumn(weapon.Index, pickable.Column)) ? "true" : "false")"
+                                            title="@DescribePickTitle(weapon, pickable)" @onclick="() => TogglePicker(new PickerTarget.PerkColumn(weapon.Index, pickable.Column))">
                                         @RenderPerk(square, false)
                                     </button>
                                 }
@@ -129,10 +129,10 @@
                             {
                                 @if (CanPickMod && !modSquare.Value.Options.IsEmpty)
                                 {
-                                    <button type="button" class="mod-slot @(IsOpen(weapon.Index, ModColumn) ? "open" : "")" data-testid="weapon-mod"
+                                    <button type="button" class="mod-slot @(IsOpen(new PickerTarget.ModSocket(weapon.Index)) ? "open" : "")" data-testid="weapon-mod"
                                             data-hash="@modSquare.Value.Held.Match(hash => hash.Value.Value.ToString(System.Globalization.CultureInfo.InvariantCulture), _ => "")"
-                                            aria-expanded="@(IsOpen(weapon.Index, ModColumn) ? "true" : "false")"
-                                            title="@DescribeModTitle(weapon, modSquare.Value)" @onclick="() => TogglePicker(weapon.Index, ModColumn)">
+                                            aria-expanded="@(IsOpen(new PickerTarget.ModSocket(weapon.Index)) ? "true" : "false")"
+                                            title="@DescribeModTitle(weapon, modSquare.Value)" @onclick="() => TogglePicker(new PickerTarget.ModSocket(weapon.Index))">
                                         @RenderMod(modSquare.Value, false)
                                     </button>
                                 }
@@ -194,7 +194,7 @@
                             </div>
                         </li>
                     }
-                    @if (IsOpen(weapon.Index, ModColumn) && weapon.Mod is Optional<ModSquare>.Some openMod)
+                    @if (IsOpen(new PickerTarget.ModSocket(weapon.Index)) && weapon.Mod is Optional<ModSquare>.Some openMod)
                     {
                         <li class="perk-picker-row">
                             <div class="perk-picker mod-picker" role="dialog" tabindex="-1" data-testid="mod-picker" data-weapon="@weapon.Index"
@@ -602,18 +602,13 @@
 
     private const string PickerNote = "Green: the rules know it, so it sets things off in the loop; the rest only shows on the weapon.";
 
-    private sealed record OpenPicker(int Weapon, int Column);
-
-    private Optional<OpenPicker> picker = Optional.None<OpenPicker>();
+    private Optional<PickerTarget> picker = Optional.None<PickerTarget>();
     private bool focusPicker;
     private ElementReference pickerElement;
 
     private bool CanPick => OnPickPerk.HasDelegate;
 
     private bool CanPickMod => OnPickMod.HasDelegate;
-
-    /// <summary>The picker's "column" when it is a weapon's mod picker (a trait column is 0 or more).</summary>
-    private const int ModColumn = -1;
 
     private const string ModPickerNote = "Green: the rules know it. An enhanced mod only fits a Tier 4 or 5 weapon: after a Bungie login, your copy's tier says.";
 
@@ -626,22 +621,22 @@
         }
     }
 
-    private bool IsOpen(int weapon, int column) =>
-        picker == Optional.Some(new OpenPicker(weapon, column));
+    private bool IsOpen(PickerTarget target) =>
+        picker == Optional.Some(target);
 
     private Optional<PerkSquare.Pickable> FindOpenColumn(WeaponView weapon) =>
-        picker.Bind(open => open.Weapon == weapon.Index
-            ? weapon.Perks.OfType<PerkSquare.Pickable>().Where(column => column.Column == open.Column).Select(Optional.Some).FindFirstSome()
+        picker.Bind(open => open is PickerTarget.PerkColumn perk && perk.Weapon == weapon.Index
+            ? weapon.Perks.OfType<PerkSquare.Pickable>().Where(column => column.Column == perk.Column).Select(Optional.Some).FindFirstSome()
             : Optional.None<PerkSquare.Pickable>());
 
-    private void TogglePicker(int weapon, int column)
+    private void TogglePicker(PickerTarget target)
     {
-        picker = IsOpen(weapon, column) ? Optional.None<OpenPicker>() : Optional.Some(new OpenPicker(weapon, column));
+        picker = IsOpen(target) ? Optional.None<PickerTarget>() : Optional.Some(target);
         focusPicker = picker.IsSome();
     }
 
     private void ClosePicker() =>
-        picker = Optional.None<OpenPicker>();
+        picker = Optional.None<PickerTarget>();
 
     private void ClosePickerOnEscape(KeyboardEventArgs e)
     {

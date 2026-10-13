@@ -335,12 +335,21 @@ public static class LoopDesigning
     [
         .. build.Equipped
             .SelectMany(equipped => equipped.Element.Rules)
-            .SelectMany(rule => rule.On switch
-            {
-                Trigger.KillMultiple kill => new[] { kill.AtLeast },
-                Trigger.DamageMultiple damage => [damage.AtLeast],
-                _ => [],
-            })
+            .SelectMany(rule => rule.On.Match(
+                abilityCast: _ => ImmutableArray<TargetCount>.Empty,
+                killAny: _ => [],
+                killOfTier: _ => [],
+                killDebuffed: _ => [],
+                killMultiple: kill => [kill.AtLeast],
+                damage: _ => [],
+                damageDebuffed: _ => [],
+                damageMultiple: damage => [damage.AtLeast],
+                pickUp: _ => [],
+                buffGained: _ => [],
+                stacksMaxed: _ => [],
+                finisher: _ => [],
+                abilityCastAs: _ => [],
+                killFewer: _ => []))   // fewer than N: 1 to 9 already reach it
             .Distinct(),
     ];
 
