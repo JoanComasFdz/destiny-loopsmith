@@ -30,7 +30,7 @@ public static class ManifestTransport
     /// when it has every one (each on bungie.net's component folder), else the pinned content id's.
     /// </summary>
     public static ImmutableDictionary<string, string> ChooseUrls(Optional<string> indexJson, string pinnedContentId) =>
-        ChooseComponentUrls(indexJson, pinnedContentId, [.. Enum.GetValues<ManifestTable>().Select(ToComponentName)]);
+        ChooseComponentUrls(indexJson, pinnedContentId, Components);
 
     /// <summary>
     /// The URLs of <paramref name="components"/> (by component name, <c>DestinySandboxPerkDefinition</c>), as
@@ -42,6 +42,18 @@ public static class ManifestTransport
         var fromIndex = indexJson.Bind(json => ReadIndexUrls(json, components));
         return fromIndex.Match(urls => urls.Value.Count == pinned.Count ? urls.Value : pinned, _ => pinned);
     }
+
+    /// <summary>The name of every component the join and the listing read (the web app loads them all when it starts).</summary>
+    public static readonly ImmutableArray<string> Components = [.. Enum.GetValues<ManifestTable>().Select(ToComponentName)];
+
+    /// <summary>
+    /// Each component's URL as the manifest index gives it, when it gives every one (each on bungie.net's component
+    /// folder): the manifest's current version; none when there's no index, it doesn't read or it lacks a component.
+    /// </summary>
+    public static Optional<ImmutableDictionary<string, string>> ReadCurrentUrls(Optional<string> indexJson) =>
+        indexJson
+            .Bind(json => ReadIndexUrls(json, Components))
+            .Bind(urls => urls.Count == Components.Length ? Optional.Some(urls) : Optional.None<ImmutableDictionary<string, string>>());
 
     /// <summary>What the host is asked for: each component's hashes (an empty list: the whole component).</summary>
     public static ImmutableDictionary<string, ImmutableArray<ItemHash>> ToEntryRequest(ManifestQuery query) =>

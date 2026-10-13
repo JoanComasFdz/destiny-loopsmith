@@ -473,7 +473,8 @@ picks between the player's own items (above) and these, starting on Yours:
   name carries it too); a legendary never does, its perks and set bonuses show what the rules know once it is worn.
   Each weapon's footer shows its damage type and its breaker (its
   own, else its frame's: Adaptive Frame pierces barriers), and the item shown is framed with its footer. The list comes
-  from Bungie's item table, listed once when the app opens (its startup screen;
+  from Bungie's item table, listed once when the app opens (its startup screen; a later visit reads the list saved in
+  the browser while the manifest's version holds;
   [hosting.md](hosting.md#bungies-manifest)), so a picker opens at once. The one-exotic rule holds as
   in the player's pickers: no exotic is listed while another slot holds one (the picker says which to swap).
 * **A pick** — hovering an item (or a first tap) shows its name, type and damage type (for armor, its set); a click (a

@@ -33,7 +33,7 @@ founding one: every other decision follows from it.
 | D22 | Two kernel modules besides `Domain`: `Phrasing` and `Causality` | "How we say it" and "what a trigger means" each have one home |
 | D23 | Cascade termination is per causal chain | A global "once per step" guard would suppress sibling events |
 | D24 | Hosts own no logic; the CLI is the scripting and golden-test host | Both hosts share every line of logic through `Orchestration` |
-| D25 | The web designer runs in the browser, as static files | No server: any static host works, and a loop travels in its link |
+| D25 | The web designer runs in the browser, as static files | No server: any static host works, and a loop travels in its link; only Bungie's manifest is saved in the browser |
 | D26 | Verify.XunitV3 pinned to 32.0.1 | 33.x needs a licence decision |
 | D27 | A DIM link starts a build of what the catalog knows by hash; the rest is left out, listed | A player's build already lives in DIM; nothing is guessed, and what's missing stays visible |
 | D29 | The step's state shows its damage resistance, its sources multiplied, PvE and PvP | Builds are judged by how much damage they shrug off; the game stacks resistance by a known rule, so the total is a fact, never a decision |
@@ -236,14 +236,16 @@ generated excerpt in
 the rules (`rules/manifest.yaml`, `tools/manifest/`), so the app shows the bundled builds the way DIM does
 without downloading the manifest. For a hash outside it (a pasted DIM link's other items, a login's, an item
 picked from every item of the game), the web app reads Bungie's full manifest in the browser, the way DIM does:
-when the app opens, the component files download from bungie.net (public, cross-origin; the browser's HTTP cache
-keeps them — the app itself stores nothing, D25) and the page indexes their entries by hash and keeps them for as
-long as the tab is open; `ManifestJoining` (pure) reads the entries it needs, the same way the extractor does, into
+when the app opens, the component files download from bungie.net (public, cross-origin) and the page indexes their
+entries by hash and keeps them for as long as the tab is open; the browser saves them, gzipped, with the listing of
+every weapon and armor piece made from them (D25), and a later visit reads that copy instead while the manifest index
+names its version; `ManifestJoining` (pure) reads the entries it needs, the same way the extractor does, into
 an excerpt added to the catalog's. **Consequence.** Builds reference slugs; the manifest join adds
 hashes without changing build files; a DIM loadout is read by hash (D27), and a weapon's roll is picked by
-hash among its columns' perks (a build's `roll`). Opening the app costs a ~9 MB download and some seconds
-behind a startup screen (the download is skipped while the browser's cache holds the files); after that a link,
-a login or a pick reads from the files the tab holds. The CLI knows only the excerpt.
+hash among its columns' perks (a build's `roll`). Opening the app the first time (and after Bungie publishes a new
+version) costs a ~9 MB download and some seconds behind a startup screen; a later visit checks the version and reads
+the saved copy (~9 MB gzipped on disk, a few seconds); after that a link, a login or a pick reads from the files the
+tab holds. The CLI knows only the excerpt.
 
 ### D15 — Builds and loops pin a catalog version
 
@@ -316,9 +318,13 @@ of the engine against real build notes, and the golden tests, which snapshot the
 **Decision.** `Loopsmith.Web` is a Blazor WebAssembly host: the C# core runs in the browser (rules,
 builds and example loops are embedded), so there is no server and any static host works — GitHub
 Pages, with a preview per pull request ([docs/hosting.md](docs/hosting.md)). Shared loops travel in
-the URL fragment (`#loop=…`). The app stores nothing in the browser (owner decision): a loop
-is kept by exporting it or copying its link. **Consequence.** No API or database; a saved library is
-open ([docs/backlog.md](docs/backlog.md)). The first visit downloads the .NET runtime (≈ 3 MB, then
+the URL fragment (`#loop=…`). The app stores nothing in the browser but Bungie's manifest (owner
+decisions): a loop is kept by exporting it or copying its link. Bungie's manifest (D14) and the listing of every weapon
+and armor piece made from it are saved in the browser's IndexedDB, as DIM saves its copy: the files gzipped, keyed by the
+manifest version (their URLs), the listing by that version and the Loopsmith code that made it, each in place of the
+one saved before. At startup the app asks the manifest index for the current version and reads the saved copy when it
+is that version (or the index doesn't answer); a browser that can't save downloads at every visit, as before.
+**Consequence.** No API or database; a saved library is open ([docs/backlog.md](docs/backlog.md)). The first visit downloads the .NET runtime (≈ 3 MB, then
 cached).
 
 ### D26 — Verify.XunitV3 pinned to 32.0.1

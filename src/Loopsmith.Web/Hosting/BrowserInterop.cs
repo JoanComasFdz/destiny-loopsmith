@@ -10,8 +10,8 @@ namespace Loopsmith.Web.Hosting;
 
 /// <summary>
 /// Impure: every browser side effect the web host performs (download, clipboard, confirm, URL hash, reading a
-/// picked file). Nothing is stored in the browser. Components call these on their own lines, never nested in a
-/// pure call.
+/// picked file, Bungie's manifest). The one thing stored in the browser is Bungie's manifest and its listing of every
+/// weapon and armor piece (ADRs D25). Components call these on their own lines, never nested in a pure call.
 /// </summary>
 public sealed class BrowserInterop(IJSRuntime js)
 {
@@ -83,9 +83,66 @@ public sealed class BrowserInterop(IJSRuntime js)
     {
         var plain = new Dictionary<string, string>(urls);
         var problem = await js.InvokeAsync<string?>("loopsmithManifest.loadTables", plain, retries, reporter);
-        return Optional.FromNullable(problem).Match<Result<Unit, string>>(
-            failed => new Result<Unit, string>.Error(failed.Value),
-            _ => new Result<Unit, string>.Ok(new Unit.Value()));
+        return ToOutcome(problem);
+    }
+
+    /// <summary>Waits until the browser has painted the page, so a bar's change shows before the next long step.</summary>
+    public ValueTask WaitForPaintAsync() =>
+        js.InvokeVoidAsync("loopsmithManifest.waitForPaint");
+
+    /// <summary>The copy of the manifest the browser saved (<c>{ "urls": { component: url }, "bytes": n }</c>), or none.</summary>
+    public async Task<Optional<string>> ReadSavedManifestAsync()
+    {
+        var saved = await js.InvokeAsync<string?>("loopsmithManifest.readSaved");
+        return Optional.FromNullable(saved);
+    }
+
+    /// <summary>
+    /// Reads the saved components (<c>{ component: url }</c>) not in yet into the tab, as a download would bring them; tells
+    /// <paramref name="reporter"/> how many bytes are in (<c>ReportDownload</c>); why it couldn't, when it couldn't.
+    /// </summary>
+    public async Task<Result<Unit, string>> LoadSavedManifestTablesAsync<TReporter>(IReadOnlyDictionary<string, string> urls, DotNetObjectReference<TReporter> reporter)
+        where TReporter : class
+    {
+        var plain = new Dictionary<string, string>(urls);
+        var problem = await js.InvokeAsync<string?>("loopsmithManifest.loadSaved", plain, reporter);
+        return ToOutcome(problem);
+    }
+
+    /// <summary>Saves the components the tab holds (<c>{ component: url }</c>) in place of the copy saved before; why it couldn't, when it couldn't.</summary>
+    public async Task<Result<Unit, string>> SaveManifestTablesAsync(IReadOnlyDictionary<string, string> urls)
+    {
+        var plain = new Dictionary<string, string>(urls);
+        try
+        {
+            var problem = await js.InvokeAsync<string?>("loopsmithManifest.saveTables", plain);
+            return ToOutcome(problem);
+        }
+        catch (JSException exception)
+        {
+            return new Result<Unit, string>.Error(exception.Message);
+        }
+    }
+
+    /// <summary>The listing of every weapon and armor piece the browser saved under <paramref name="key"/>, or none.</summary>
+    public async Task<Optional<string>> ReadSavedListingAsync(string key)
+    {
+        var saved = await js.InvokeAsync<string?>("loopsmithManifest.readSavedListing", key);
+        return Optional.FromNullable(saved);
+    }
+
+    /// <summary>Saves the listing under <paramref name="key"/>, in place of the one saved before; why it couldn't, when it couldn't.</summary>
+    public async Task<Result<Unit, string>> SaveListingAsync(string key, string text)
+    {
+        try
+        {
+            var problem = await js.InvokeAsync<string?>("loopsmithManifest.saveListing", key, text);
+            return ToOutcome(problem);
+        }
+        catch (JSException exception)
+        {
+            return new Result<Unit, string>.Error(exception.Message);
+        }
     }
 
     /// <summary>The raw JSON of the entries asked for, per component (<c>{ component: { hash: entry } }</c>).</summary>
@@ -111,6 +168,12 @@ public sealed class BrowserInterop(IJSRuntime js)
         var paths = query.Paths.ToDictionary(entry => entry.Key, entry => entry.Value.Select(path => path.ToArray()).ToArray());
         return await js.InvokeAsync<string>("loopsmithManifest.readEntryParts", query.Component, query.Key, paths);
     }
+
+    /// <summary>What manifest.js answered: done (null), or why not.</summary>
+    private static Result<Unit, string> ToOutcome(string? problem) =>
+        Optional.FromNullable(problem).Match<Result<Unit, string>>(
+            failed => new Result<Unit, string>.Error(failed.Value),
+            _ => new Result<Unit, string>.Ok(new Unit.Value()));
 
     /// <summary>A file the user picked with <c>InputFile</c>, as text (foreseeable failures become an error).</summary>
     public static async Task<Result<string, string>> ReadPickedFileAsync(IBrowserFile file)

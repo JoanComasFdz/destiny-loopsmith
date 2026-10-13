@@ -89,10 +89,10 @@ allow them; a local run (`localhost`) needs an application registered for that o
 ## Bungie's manifest
 
 When the app opens, the browser loads Bungie's full manifest ([ADRs D14](../ADRs.md)) and keeps it for as long as the
-tab is open, as DIM does: the weapon and armor pickers' **Every item**, a DIM link's items the bundled excerpt
+tab is open, as DIM does, and saves a copy for the next visit (below): the weapon and armor pickers' **Every item**, a DIM link's items the bundled excerpt
 (`rules/manifest.yaml`) lacks, and a Bungie login's armor and weapons are all read from it, and no read downloads it
 again. It downloads eight English component files from bungie.net (~9 MB compressed, the item table most of it;
-public, cross-origin, cached by the browser for hours — the app stores nothing itself), indexes them in the page
+public, cross-origin), indexes them in the page
 (`wwwroot/js/manifest.js`), and Core reads the entries it needs. Their paths come from the manifest index
 (`https://www.bungie.net/Platform/Destiny2/Manifest/`, sent with `BungieApiKey` from `wwwroot/appsettings.json`:
 Loopsmith's key, registered for the site's origin, so it isn't a secret — it ships in the site and Bungie answers it
@@ -101,15 +101,32 @@ excerpt was made from. Update it when you regenerate the excerpt (`tools/manifes
 paths in bungie.net's component folder are taken from the index. The tab remembers which items it read the manifest
 for, so the designer doesn't read again what Home just read (or failed to).
 
+**The saved copy.** Once the load is done, the browser saves the files (gzipped: ~9 MB of the ~213 MB unpacked) and
+the listing of every weapon and armor piece in its IndexedDB (`loopsmith-manifest`), each in place of the one saved
+before ([ADRs D25](../ADRs.md)). The next visit (a reload, a new tab) asks the manifest index for the current version
+first: when the saved files are that version, it reads them instead of downloading (unpacking and indexing them as a
+download does), and the listing too when the same build of Loopsmith's code made it (a deploy that changes the code
+lists again from the saved files; nothing is downloaded). A new version downloads and lists as a first visit does, and
+replaces the copy. When the index doesn't answer, the saved copy is read; without one, the pinned version downloads.
+A browser that can't save (storage blocked or full, no IndexedDB) downloads at every visit, as before; a saved copy
+that doesn't read is downloaded again.
+
 **The startup screen.** Until the load is done, a screen stands in for every page (Home, the designer opened from a
-share link, Compare) and the screen tabs are hidden: "Downloading Bungie's manifest", with a bar for its files ("40
-MB", unpacked: the bar can't know their size, bungie.net sends them compressed, so it fills ever more slowly towards
-the size they had in 2026) and one for the listing of every weapon and armor piece ("step 2 of 4"). A sheen runs over
-the bar at work: a CSS animation the browser keeps playing while .NET answers the listing's questions (the second takes
-a few seconds, the page's thread busy). Then the page the link points to opens. Measured from a session on a desktop:
-the screen shows for ~10 s (~4 s the download, ~5 s the listing), after the app's own start (~7 s, as before). Bungie's login
-redirect (`login`, should the host serve the app there instead of `login.html`) neither loads the manifest nor waits
-for it.
+share link, Compare) and the screen tabs are hidden: "Checking Bungie's manifest" while it asks for the version, then
+"Downloading Bungie's manifest". Its first bar is the files' alone ("40 MB", unpacked: the bar can't know their size,
+bungie.net sends them compressed, so it fills ever more slowly towards the size they had in 2026), full once they're
+all in ("213 MB · done"). Under **Listing every weapon and armor piece**, each of the listing's four steps has its own
+bar, waiting ("next"), at work ("at work…") or done: reading the slots, armor sets and breakers; finding every weapon and
+armor piece (the long one, a few seconds); reading the weapons' frames; finding each weapon's breaker. A step can't say
+how far it got, so a sheen runs over the bar at work: a CSS animation the browser keeps playing while .NET is busy with
+the step. Before each step the page waits for the browser to paint, so the bars move as the steps do, and a full bar
+fills at once (a width transition would stop half-way while the next step holds the page's thread). With a saved copy
+it is "Reading Bungie's manifest": the first bar reads **Reading the saved copy** ("84 of 213 MB") and the steps are
+full at once ("from the saved copy"), unless the code changed and they run again. Then the page the link points to
+opens. Measured from a session on a desktop: the screen shows for ~10 s (~4 s the download, ~5 s the listing), after
+the app's own start (~7 s, as before); with a saved copy, ~4 s (the version check, then ~2 s reading the copy).
+Bungie's login redirect (`login`, should the host serve the app there instead of `login.html`) neither loads the
+manifest nor waits for it.
 
 **When the connection breaks.** A file whose download breaks is downloaded again from its start, up to 3 times, a
 moment later each time; the files already in stay, and the bar says so ("connection lost, trying again: 2 of 3"). A

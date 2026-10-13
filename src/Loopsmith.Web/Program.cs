@@ -1,4 +1,5 @@
 using Loopsmith.Core.Functional;
+using Loopsmith.Core.Orchestration;
 using Loopsmith.Web;
 using Loopsmith.Web.Hosting;
 using Loopsmith.Web.State;
@@ -22,10 +23,12 @@ var configuredClientId = builder.Configuration["BungieClientId"];               
 var bungieApiKey = (configuredBungieKey ?? "").Trim();                                     // pure
 var manifestContentId = (configuredContentId ?? "").Trim();                                // pure
 var bungieClientId = (configuredClientId ?? "").Trim();                                    // pure
+var coreModuleId = typeof(LoopDesigning).Assembly.ManifestModule.ModuleVersionId;          // impure (the Core build this app runs: a saved listing is its)
+var coreVersion = coreModuleId.ToString("N");                                              // pure
 
 builder.Services.AddSingleton(workbench);                                                  // impure
 builder.Services.AddSingleton<BrowserInterop>();                                           // impure
 builder.Services.AddSingleton(dimLoadouts);                                                // impure
-builder.Services.AddSingleton(services => new BungieManifestJoining(services.GetRequiredService<BrowserInterop>(), bungieApiKey, manifestContentId)); // impure
+builder.Services.AddSingleton(services => new BungieManifestJoining(services.GetRequiredService<BrowserInterop>(), bungieApiKey, manifestContentId, coreVersion)); // impure
 builder.Services.AddSingleton(services => new BungieAccount(new HttpClient(), services.GetRequiredService<BrowserInterop>(), bungieApiKey, bungieClientId)); // impure
 await builder.Build().RunAsync();                                                          // impure

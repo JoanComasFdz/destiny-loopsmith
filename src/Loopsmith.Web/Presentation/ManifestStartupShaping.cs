@@ -6,16 +6,20 @@ using Loopsmith.Core.Functional;
 namespace Loopsmith.Web.Presentation;
 
 /// <summary>
-/// Where the tab's startup load of Bungie's manifest is: not begun, downloading its files, listing every weapon and armor
-/// piece from them (the listing's question it is on, of how many), failed (why), done, or skipped (the player went on
-/// without it: the next read that needs it loads it then).
+/// Where the tab's startup load of Bungie's manifest is: not begun, checking the manifest's version (and the copy the
+/// browser saved), downloading its files, reading the saved copy instead (the bytes read of how many, and whether the
+/// listing was saved with it), listing every weapon and armor piece from the files (the listing's question it is on, of
+/// how many; whether the files came from the saved copy, and how many bytes they are), failed (why), done, or skipped
+/// (the player went on without it: the next read that needs it loads it then).
 /// </summary>
 [Union]
 public partial record ManifestStartup
 {
     partial record Waiting();
+    partial record Checking();
     partial record Downloading(ManifestDownload Download);
-    partial record Listing(int Round, int Rounds);
+    partial record ReadingSaved(long Bytes, Optional<long> Total, bool ListingSaved);
+    partial record Listing(int Round, int Rounds, bool FromSaved, long Bytes);
     partial record Failed(string Reason);
     partial record Ready();
     partial record Skipped();
@@ -24,25 +28,50 @@ public partial record ManifestStartup
 /// <summary>One bar of the startup screen: what it is for, where it is, how far along (percent), and whether it is the one moving.</summary>
 public sealed record StartupBarView(string Label, string Detail, int Percent, bool Active);
 
-/// <summary>The startup screen: its bars (the files, then the listing; none once it failed), and why it failed when it did.</summary>
-public sealed record StartupView(ImmutableArray<StartupBarView> Bars, Optional<string> Problem);
+/// <summary>
+/// The startup screen: its title, the files' bar (their download, or the saved copy's reading), the listing's bars (one
+/// per step; none once it failed), and why it failed when it did.
+/// </summary>
+public sealed record StartupView(string Title, ImmutableArray<StartupBarView> Files, ImmutableArray<StartupBarView> Steps, Optional<string> Problem);
 
 /// <summary>
 /// Pure: the startup load of Bungie's manifest → the screen that stands in for every page until it is done (or the
-/// player goes on without it): a bar for the files' download and one for the listing of every weapon and armor piece.
+/// player goes on without it): a bar for the files, only theirs (their download, or the saved copy read instead: full
+/// once they're in), and a bar for each step of the listing of every weapon and armor piece (waiting, at work, done; all
+/// full when the listing was saved with the copy).
 /// </summary>
 public static class ManifestStartupShaping
 {
-    public const string Title = "Downloading Bungie's manifest";
-
+    private const string CheckingTitle = "Checking Bungie's manifest";
+    private const string DownloadingTitle = "Downloading Bungie's manifest";
+    private const string ReadingTitle = "Reading Bungie's manifest";
     private const string FilesLabel = "Downloading its files";
-    private const string ItemsLabel = "Listing every weapon and armor piece";
+    private const string SavedLabel = "Reading the saved copy";
+
+    /// <summary>The heading over the listing's bars.</summary>
+    public const string ListingTitle = "Listing every weapon and armor piece";
+
+    /// <summary>What each of the listing's steps does (ManifestListing's rounds, in order).</summary>
+    private static readonly ImmutableArray<string> StepLabels =
+    [
+        "Reading the slots, armor sets and breakers",
+        "Finding every weapon and armor piece",
+        "Reading the weapons' frames",
+        "Finding each weapon's breaker",
+    ];
     private const string LoginPath = "login";
 
     public static readonly ManifestStartup NotBegun = new ManifestStartup.Waiting();
 
-    /// <summary>The load begins (or begins again, after Try again) with its files.</summary>
+    /// <summary>The load begins (or begins again, after Try again): the manifest's version and the browser's saved copy first.</summary>
+    public static readonly ManifestStartup CheckBegun = new ManifestStartup.Checking();
+
+    /// <summary>The files download (there's no saved copy of the current version, or it didn't read).</summary>
     public static readonly ManifestStartup DownloadBegun = new ManifestStartup.Downloading(ManifestProgressShaping.NoDownload);
+
+    /// <summary>The saved copy is read instead of a download: <paramref name="total"/> bytes, unpacked (when known); its listing with it when it was saved.</summary>
+    public static ManifestStartup BeginReadingSaved(Optional<long> total, bool listingSaved) =>
+        new ManifestStartup.ReadingSaved(0, total, listingSaved);
 
     /// <summary>The player went on without the manifest (after a failed load).</summary>
     public static readonly ManifestStartup Skipped = new ManifestStartup.Skipped();
@@ -62,17 +91,32 @@ public static class ManifestStartupShaping
         return string.Equals(path, LoginPath, StringComparison.OrdinalIgnoreCase);
     }
 
-    /// <summary>How far the files' download got, while the load downloads them (past them, it stays where it is).</summary>
+    /// <summary>How far the files' download (or the saved copy's reading) got, while the load is at them (past them, it stays where it is).</summary>
     public static ManifestStartup ReportDownload(ManifestStartup startup, ManifestDownload download) =>
-        startup is ManifestStartup.Downloading ? new ManifestStartup.Downloading(download) : startup;
+        startup switch
+        {
+            ManifestStartup.Downloading => new ManifestStartup.Downloading(download),
+            ManifestStartup.ReadingSaved reading => reading with { Bytes = download.Bytes },
+            _ => startup,
+        };
 
     /// <summary>The listing's question the load is on (1 to <paramref name="rounds"/>), while the load runs (else it stays where it is).</summary>
     public static ManifestStartup ReportListing(ManifestStartup startup, int round, int rounds) =>
-        IsLoading(startup) ? new ManifestStartup.Listing(round, rounds) : startup;
+        startup switch
+        {
+            ManifestStartup.ReadingSaved reading => new ManifestStartup.Listing(round, rounds, true, reading.Total.UnwrapOr(reading.Bytes)),
+            ManifestStartup.Listing listing => listing with { Round = round, Rounds = rounds },
+            ManifestStartup.Downloading downloading => new ManifestStartup.Listing(round, rounds, false, downloading.Download.Bytes),
+            _ => startup,
+        };
 
-    /// <summary>Whether the load is downloading the files or listing the items.</summary>
+    /// <summary>Whether the load is at the files (downloading them, reading the saved copy) or listing the items.</summary>
     public static bool IsLoading(ManifestStartup startup) =>
-        startup is ManifestStartup.Downloading or ManifestStartup.Listing;
+        startup is ManifestStartup.Downloading or ManifestStartup.ReadingSaved or ManifestStartup.Listing;
+
+    /// <summary>Whether the load is at the files: the download, or the saved copy (they say how far they got).</summary>
+    public static bool IsAtFiles(ManifestStartup startup) =>
+        startup is ManifestStartup.Downloading or ManifestStartup.ReadingSaved;
 
     /// <summary>The load's end: done, or why it failed.</summary>
     public static ManifestStartup EndStartup<T>(Result<T, string> loaded) =>
@@ -82,27 +126,63 @@ public static class ManifestStartupShaping
 
     public static StartupView ShapeStartup(ManifestStartup startup) =>
         startup.Match(
-            _ => new StartupView([ShapeFiles("starting…", 0, true), WaitingItems], Optional.None<string>()),
+            _ => new StartupView(CheckingTitle, [new(FilesLabel, "starting…", 0, true)], WaitingSteps, Optional.None<string>()),
+            _ => new StartupView(CheckingTitle, [new(FilesLabel, "checking its version…", 0, true)], WaitingSteps, Optional.None<string>()),
             downloading => new StartupView(
-                [ShapeFiles(ManifestProgressShaping.DescribeDownload(downloading.Download), ToDownloadPercent(downloading.Download), true), WaitingItems],
+                DownloadingTitle,
+                [new(FilesLabel, ManifestProgressShaping.DescribeDownload(downloading.Download), ToDownloadPercent(downloading.Download), true)],
+                WaitingSteps,
                 Optional.None<string>()),
-            listing => new StartupView([ShapeFiles("done", 100, false), ShapeItems(listing)], Optional.None<string>()),
-            failed => new StartupView([], Optional.Some($"Couldn't read Bungie's manifest ({failed.Reason}).")),
-            _ => new StartupView([], Optional.None<string>()),
-            _ => new StartupView([], Optional.None<string>()));
+            reading => new StartupView(
+                ReadingTitle,
+                [new(SavedLabel, DescribeSavedReading(reading), ToSavedPercent(reading), true)],
+                reading.ListingSaved ? SavedSteps : WaitingSteps,
+                Optional.None<string>()),
+            listing => new StartupView(
+                listing.FromSaved ? ReadingTitle : DownloadingTitle,
+                [new(listing.FromSaved ? SavedLabel : FilesLabel, $"{ToMegabytes(listing.Bytes)} MB · done", 100, false)],
+                ShapeSteps(listing),
+                Optional.None<string>()),
+            failed => new StartupView(DownloadingTitle, [], [], Optional.Some($"Couldn't read Bungie's manifest ({failed.Reason}).")),
+            _ => new StartupView(DownloadingTitle, [], [], Optional.None<string>()),
+            _ => new StartupView(DownloadingTitle, [], [], Optional.None<string>()));
 
-    private static readonly StartupBarView WaitingItems = new(ItemsLabel, "once the files are in", 0, false);
+    /// <summary>Each step waits for the files (the first) or for the step before it.</summary>
+    private static readonly ImmutableArray<StartupBarView> WaitingSteps =
+        [.. StepLabels.Select((label, at) => new StartupBarView(label, at == 0 ? "once the files are in" : "next", 0, false))];
 
-    private static StartupBarView ShapeFiles(string detail, int percent, bool active) =>
-        new(FilesLabel, detail, percent, active);
+    private static readonly ImmutableArray<StartupBarView> SavedSteps =
+        [.. StepLabels.Select(label => new StartupBarView(label, "from the saved copy", 100, false))];
 
-    /// <summary>Step n of m, the bar at the middle of that step (its question is being read and answered).</summary>
-    private static StartupBarView ShapeItems(ManifestStartup.Listing listing) =>
-        new(
-            ItemsLabel,
-            $"step {listing.Round.ToString(CultureInfo.InvariantCulture)} of {listing.Rounds.ToString(CultureInfo.InvariantCulture)}",
-            (int)Math.Round(100.0 * (2 * listing.Round - 1) / (2 * Math.Max(1, listing.Rounds))),
-            true);
+    /// <summary>The steps before the one at work done, it at work (its bar's sheen moving: a step can't say how far it got), the rest next.</summary>
+    private static ImmutableArray<StartupBarView> ShapeSteps(ManifestStartup.Listing listing) =>
+    [
+        .. Enumerable.Range(1, Math.Max(listing.Rounds, 1)).Select(step =>
+        {
+            var label = DescribeStep(step);
+            return step < listing.Round ? new StartupBarView(label, "done", 100, false)
+                : step == listing.Round ? new StartupBarView(label, "at work…", 0, true)
+                : new StartupBarView(label, "next", 0, false);
+        }),
+    ];
+
+    private static string DescribeStep(int step) =>
+        step >= 1 && step <= StepLabels.Length ? StepLabels[step - 1] : $"Step {step.ToString(CultureInfo.InvariantCulture)}";
+
+    /// <summary>The bytes read of the saved copy's ("84 of 199 MB"; just the bytes when its size wasn't saved).</summary>
+    private static string DescribeSavedReading(ManifestStartup.ReadingSaved reading) =>
+        reading.Total.Match(
+            total => $"{ToMegabytes(Math.Min(reading.Bytes, total.Value))} of {ToMegabytes(total.Value)} MB",
+            _ => $"{ToMegabytes(reading.Bytes)} MB");
+
+    /// <summary>The saved copy's bar: by its saved size (else as a download's), up to 99 % until the listing begins.</summary>
+    private static int ToSavedPercent(ManifestStartup.ReadingSaved reading) =>
+        reading.Total.Match(
+            total => (int)Math.Min(99, Math.Round(100.0 * reading.Bytes / total.Value)),
+            _ => ToDownloadPercent(new ManifestDownload(reading.Bytes, Optional.None<ManifestRetry>())));
+
+    private static string ToMegabytes(long bytes) =>
+        (bytes / 1_000_000.0).ToString("0", CultureInfo.InvariantCulture);
 
     /// <summary>The download's bar: up to 99 % while files come (their size isn't known), full once they're all in.</summary>
     private static int ToDownloadPercent(ManifestDownload download) =>
