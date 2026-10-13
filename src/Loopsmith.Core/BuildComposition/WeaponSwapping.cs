@@ -41,7 +41,7 @@ public static class WeaponSwapping
     /// <summary>
     /// What "Every item" lists for where <paramref name="target"/> says: every weapon of <paramref name="listing"/> the
     /// build can wear there (that slot's; one exotic), the one it wears there first, then by name (a name's versions side
-    /// by side); with a note on the exotic rule.
+    /// by side), each with whether the rules know it; with a note on the exotic rule.
     /// </summary>
     public static WeaponItemOptions ListItemOptions(RuleCatalog catalog, Build build, ItemListing listing, WeaponTarget target)
     {
@@ -54,7 +54,7 @@ public static class WeaponSwapping
                 .. open.Match(
                         slot => listing.Items.Where(item => CheckItem(slot.Value, otherExotic, Optional.Some(item)).IsOk()),
                         _ => [])
-                    .Select(item => new WeaponItemOption(item, worn == Optional.Some(item.Hash)))
+                    .Select(item => new WeaponItemOption(item, catalog.IsItemInRules(item), worn == Optional.Some(item.Hash)))
                     .OrderByDescending(option => option.Worn),
             ],
             [.. DescribeExoticRule(catalog, build, target).Match(note => new[] { note.Value }, _ => [])]);

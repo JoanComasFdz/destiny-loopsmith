@@ -40,7 +40,7 @@ public static class ArmorSwapping
     /// <summary>
     /// What "Every item" lists for <paramref name="slot"/>: every piece of <paramref name="listing"/> the build can wear
     /// there (that slot's, the build's class; one exotic), the one it wears there first, then by name (a name's versions
-    /// side by side), each with its set; with a note on the exotic rule.
+    /// side by side), each with its set and whether the rules know it; with a note on the exotic rule.
     /// </summary>
     public static ArmorItemOptions ListItemOptions(RuleCatalog catalog, Build build, ItemListing listing, ArmorSlot slot)
     {
@@ -51,7 +51,7 @@ public static class ArmorSwapping
             [
                 .. listing.Items
                     .Where(item => CheckItem(build.Class, slot, otherExotic, Optional.Some(item)).IsOk())
-                    .Select(item => new ArmorItemOption(item, FindSet(listing, item), worn.Contains(item.Hash), DescribeUnheldPerks(item)))
+                    .Select(item => new ArmorItemOption(item, FindSet(listing, item), catalog.IsItemInRules(item), worn.Contains(item.Hash), DescribeUnheldPerks(item)))
                     .OrderByDescending(option => option.Worn),
             ],
             [.. DescribeExoticRule(catalog, build, slot).Match(note => new[] { note.Value }, _ => [])]);

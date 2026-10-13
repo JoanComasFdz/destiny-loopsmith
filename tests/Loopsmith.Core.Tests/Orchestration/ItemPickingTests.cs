@@ -80,6 +80,29 @@ public sealed class ItemPickingTests
     }
 
     [Fact]
+    public void Every_item_marks_an_exotic_the_rules_dont_know_and_never_a_legendary()
+    {
+        var session = OpenHandWrittenLoop(Catalog);
+        var thunderlord = ToWeapon(ItemHash.From(3325463374u), "Thunderlord", WeaponSlot.Power, DamageType.Arc, ItemTier.Exotic, []) with
+        {
+            Kind = new ManifestKind.Weapon(WeaponSlot.Power, Optional.Some(DamageType.Arc), [], Optional.Some(ItemHash.From(4148158229u)), Optional.None<ItemHash>(), Optional.None<ItemHash>()),
+        };                                                                                       // the rules name it by its intrinsic, Reign Havoc
+        var shinobu = ToArmor(ItemHash.From(1053737370u), "Shinobu's Vow", ArmorSlot.Arms, ItemTier.Exotic, Optional.None<ItemHash>(), GuardianClass.Hunter);
+        var unknownArms = ToArmor(ItemHash.From(9315u), "Unknown Grips", ArmorSlot.Arms, ItemTier.Exotic, Optional.None<ItemHash>(), GuardianClass.Hunter);
+        var listing = Listing.Add(thunderlord).Add(shinobu).Add(unknownArms);
+
+        var power = LoopDesigning.ListWeaponItems(session.Build, listing, new WeaponTarget.IntoEmpty(WeaponSlot.Power));
+        var arms = LoopDesigning.ListArmorItems(session.Build, listing, ArmorSlot.Arms);
+
+        Assert.Equal(
+            ["Alpha Machine Gun False", "Thunderlord True", "Zeta Launcher True"],
+            power.Options.Select(option => $"{option.Item.Name} {option.InRules}").Order(StringComparer.Ordinal));
+        Assert.Equal(
+            ["Shinobu's Vow True", "Unknown Grips False"],
+            arms.Options.Select(option => $"{option.Item.Name} {option.InRules}").Order(StringComparer.Ordinal));
+    }
+
+    [Fact]
     public void A_weapon_of_the_game_fills_an_empty_slot_with_no_roll_and_its_catalyst_off()
     {
         var session = OpenHandWrittenLoop(Catalog with { Manifest = Catalog.Manifest.AddExcerpt(Joined) });
