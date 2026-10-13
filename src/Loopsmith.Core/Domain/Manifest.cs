@@ -111,24 +111,9 @@ public sealed record ManifestExcerpt(
     ImmutableDictionary<StatKind, ArmorStatIcon> ArmorStats);
 
 /// <summary>
-/// Every legendary and exotic weapon and armor piece of the game, as Bungie's full manifest has them (what the pickers
-/// list without a Bungie login): each name once per slot (and, for armor, per class), in its newest version. An item
-/// says what a picker draws — name, icon, season watermark, type, rarity, a weapon's slot, damage type, intrinsic perk and
-/// breaker, armor's slot, set and class — but not a weapon's trait columns or catalyst (the join reads those for the
-/// item picked). <see cref="Intrinsics"/> are the weapons' intrinsic perks (a legendary's frame: its icon shows in the
-/// top-right corner).
+/// Every weapon and armor piece of Bungie's manifest a build can wear — legendary and exotic, every version of each (a
+/// season's reissue is an item of its own) — as the pickers' "Every item" lists them (read from the manifest's item
+/// table): each a manifest item with its slot, damage type (and a weapon's breaker: its own, else its frame's) or class,
+/// armor set and season watermark, without its perks (a pick reads those with the join); and the armor sets by hash.
 /// </summary>
-public sealed record GameItems(
-    ImmutableArray<ManifestItem> Weapons,
-    ImmutableArray<ManifestItem> Armor,
-    ImmutableDictionary<ItemHash, ManifestItem> Intrinsics);
-
-/// <summary>
-/// One of the game's items in a picker without a login: the item; whether the rules know it (an exotic whose rules
-/// aren't written yet shows ⊘; a legendary always counts, its perks and set bonuses carry the ⊘ once it is picked); and
-/// whether the build wears it there.
-/// </summary>
-public sealed record GameItemOption(ManifestItem Item, bool InRules, bool Worn);
-
-/// <summary>What a picker without a login lists: the game's items for a slot that the build can wear there, and notes on what it leaves out.</summary>
-public sealed record GameItemOptions(ImmutableArray<GameItemOption> Options, ImmutableArray<string> Notes);
+public sealed record ItemListing(ImmutableArray<ManifestItem> Items, ImmutableDictionary<ItemHash, ArmorSet> Sets);

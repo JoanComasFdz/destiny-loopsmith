@@ -2,12 +2,12 @@
    artifact perks; the weapons (an exotic's catalyst after its perks); each armor piece with the mods of its slot; the
    general mods; the armor sets with their 2- and 4-piece perks. Icons are Bungie's (from the manifest excerpt); a square
    without one shows its initials. What the rules don't know carries a small ⊘ in its lower-right corner. Tapping a square opens its details (Bungie's
-   text and Loopsmith's rules); legendary armor and weapons open none, their perks and mods do. After the player's Bungie
-   login, the player's copies of its pieces and weapons (the share's when theirs, else their own) show their marks as
-   DIM does: the tier's diamonds, a masterwork's glow and gold border. A weapon shows its breaker and element under its
-   square. In the designer every weapon and armor slot shows, and a slot that holds nothing (an ability of a build started
-   from scratch, a weapon or armor slot) is a dashed square with its slot's name. Each weapon and armor slot there has ⋯:
-   after the login it picks from the player's own items, before it from every weapon or armor piece of the game. *@
+   text and Loopsmith's rules); legendary armor and weapons open none, their perks and mods do. In the designer every
+   weapon and armor slot shows, each with ⋯: the weapon or armor picker for it (every item of the game; after the
+   player's Bungie login, theirs too); a slot that holds nothing (an ability of a build started from scratch, a weapon
+   or armor slot) is a dashed square with its slot's name. After the login, the player's copies of its pieces and weapons
+   (the share's when theirs, else their own) show their marks as DIM does: the tier's diamonds, a masterwork's glow and
+   gold border. A weapon shows its breaker and element under its square. *@
 @{
     var view = LoadoutShaping.ShapeLoadout(Build, Profile);
 }
@@ -192,11 +192,11 @@
                         {
                             <span class="icon-tile empty" title="@slot.DescribeArmorSlot(): no piece named">@slot.DescribeArmorSlot()</span>
                         }
-                        @if (CanPickArmor || CanPickGameArmor)
+                        @if (CanPickArmor)
                         {
-                            var pickTitle = CanPickArmor ? $"Pick your own {slot.DescribeArmorSlot().ToLowerInvariant()}" : $"Pick a {slot.DescribeArmorSlot().ToLowerInvariant()} piece of the game";
                             <button type="button" class="btn ghost small armor-pick" data-action="pick-armor" data-slot="@slot"
-                                    title="@pickTitle" aria-label="@pickTitle" aria-haspopup="dialog" @onclick="() => OpenArmorPicker(slot)">⋯</button>
+                                    title="Pick a @slot.DescribeArmorSlot().ToLowerInvariant()" aria-label="Pick a @slot.DescribeArmorSlot().ToLowerInvariant()"
+                                    aria-haspopup="dialog" @onclick="() => OpenArmorPicker(slot, piece.Piece.IsSome())">⋯</button>
                         }
                         <div class="icon-grid mods">
                             @foreach (var mod in piece.Mods)
@@ -264,26 +264,16 @@
         <SubclassEditor Build="Build" OnSave="SaveSubclassAsync" OnClose="CloseSubclassEditor" />
     }
 
-    @if (armorPicker is Optional<ArmorSlot>.Some pickerSlot && Profile is Optional<BungieProfile>.Some owned)
+    @if (armorPicker is Optional<ArmorPickerOpen>.Some armorOpen && CanPickArmor)
     {
-        <ArmorPicker Build="Build" Profile="owned.Value" Slot="pickerSlot.Value" OnPick="PickArmorAsync" OnClose="CloseArmorPicker" />
+        <ArmorPicker Build="Build" Profile="Profile" Slot="armorOpen.Value.Slot" Filled="armorOpen.Value.Filled" OnPick="PickArmorAsync" PickItem="PickArmorItemAsync"
+                     OnEmpty="EmptyArmorAsync" OnClose="CloseArmorPicker" />
     }
 
-    @if (weaponPicker is Optional<WeaponTarget>.Some target && Profile is Optional<BungieProfile>.Some ownedWeapons)
+    @if (weaponPicker is Optional<WeaponTarget>.Some target && CanPickWeapons)
     {
-        <WeaponPicker Build="Build" Profile="ownedWeapons.Value" Target="target.Value" OnPick="PickWeaponAsync" OnClose="CloseWeaponPicker" />
-    }
-
-    @if (CanPickGameWeapons && weaponPicker is Optional<WeaponTarget>.Some gameTarget)
-    {
-        var picking = gameTarget.Value;
-        <GamePicker Build="Build" Target="new GamePickerTarget.Weapon(picking)" OnPick="hash => PickGameWeaponAsync(picking, hash)" OnClose="CloseWeaponPicker" />
-    }
-
-    @if (CanPickGameArmor && armorPicker is Optional<ArmorSlot>.Some gameSlot)
-    {
-        var picking = gameSlot.Value;
-        <GamePicker Build="Build" Target="new GamePickerTarget.Armor(picking)" OnPick="hash => PickGameArmorAsync(picking, hash)" OnClose="CloseArmorPicker" />
+        <WeaponPicker Build="Build" Profile="Profile" Target="target.Value" OnPick="PickWeaponAsync" PickItem="PickWeaponItemAsync"
+                      OnEmpty="EmptyWeaponAsync" OnClose="CloseWeaponPicker" />
     }
 </div>
 
@@ -303,7 +293,7 @@
     [Parameter]
     public EventCallback<CatalystToggle> OnSetCatalyst { get; set; }
 
-    /// <summary>The player's armor and weapons after their Bungie login: each armor and weapon slot then has ⋯, which picks from them.</summary>
+    /// <summary>The player's armor and weapons after their Bungie login: the pickers then list theirs too ("Yours").</summary>
     [Parameter]
     public Optional<BungieProfile> Profile { get; set; } = Optional.None<BungieProfile>();
 
@@ -334,45 +324,35 @@
         await OnEditSubclass.InvokeAsync(plugs);                                                 // impure
     }
 
-    private bool CanPickArmor => Profile.IsSome() && OnPickArmor.HasDelegate;
-
-    /// <summary>Set by the designer: before a Bungie login, ⋯ next to each weapon slot picks from every weapon of the game. Unset (the Home card): read-only.</summary>
+    /// <summary>
+    /// Set by the designer: a piece of the game picked from "Every item" is read from Bungie's manifest and put in the
+    /// build (the picker shows why when it can't be). Unset (the Home card): read-only, no ⋯.
+    /// </summary>
     [Parameter]
-    public EventCallback<GameWeaponPick> OnPickGameWeapon { get; set; }
+    public Optional<Func<ArmorItemPick, Task<Result<Unit, string>>>> PickArmorItem { get; set; } = Optional.None<Func<ArmorItemPick, Task<Result<Unit, string>>>>();
 
-    /// <summary>Set by the designer: before a Bungie login, ⋯ next to each armor slot picks from every armor piece of the game. Unset (the Home card): read-only.</summary>
+    /// <summary>Set by the designer: "Empty this slot" takes the build's piece there off.</summary>
     [Parameter]
-    public EventCallback<GameArmorPick> OnPickGameArmor { get; set; }
+    public EventCallback<ArmorSlot> OnEmptyArmor { get; set; }
 
-    private bool CanPickGameWeapons => !Profile.IsSome() && OnPickGameWeapon.HasDelegate;
-
-    private bool CanPickGameArmor => !Profile.IsSome() && OnPickGameArmor.HasDelegate;
-
-    /// <summary>A weapon of the game picked: the designer reads it and puts it in the build; then this picker (if it is still the open one) closes.</summary>
-    private async Task PickGameWeaponAsync(WeaponTarget target, ItemHash weapon)
-    {
-        await OnPickGameWeapon.InvokeAsync(new GameWeaponPick(target, weapon));                  // impure
-        if (weaponPicker == Optional.Some(target))
-        {
-            weaponPicker = Optional.None<WeaponTarget>();                                        // impure (UI state)
-        }
-    }
-
-    /// <summary>A piece of the game picked: the designer reads it and puts it in the build; then this picker (if it is still the open one) closes.</summary>
-    private async Task PickGameArmorAsync(ArmorSlot slot, ItemHash piece)
-    {
-        await OnPickGameArmor.InvokeAsync(new GameArmorPick(slot, piece));                       // impure
-        if (armorPicker == Optional.Some(slot))
-        {
-            armorPicker = Optional.None<ArmorSlot>();                                            // impure (UI state)
-        }
-    }
+    private bool CanPickArmor => PickArmorItem.IsSome();
 
     /// <summary>Set by the designer: a weapon picked from the player's weapons is swapped into the build (or added). Unset (the Home card): read-only.</summary>
     [Parameter]
     public EventCallback<WeaponPick> OnPickWeapon { get; set; }
 
-    private bool CanPickWeapons => Profile.IsSome() && OnPickWeapon.HasDelegate;
+    /// <summary>
+    /// Set by the designer: a weapon of the game picked from "Every item" is read from Bungie's manifest and put in the
+    /// build (the picker shows why when it can't be). Unset (the Home card): read-only, no ⋯.
+    /// </summary>
+    [Parameter]
+    public Optional<Func<WeaponItemPick, Task<Result<Unit, string>>>> PickWeaponItem { get; set; } = Optional.None<Func<WeaponItemPick, Task<Result<Unit, string>>>>();
+
+    /// <summary>Set by the designer: "Empty this slot" takes the build's weapon there (its number) off.</summary>
+    [Parameter]
+    public EventCallback<int> OnEmptyWeapon { get; set; }
+
+    private bool CanPickWeapons => PickWeaponItem.IsSome();
 
     /// <summary>The designer's loadout (it picks weapons and armor) shows every weapon and armor slot, an empty one too; the Home card shows what the build has.</summary>
     private bool ShowsEverySlot => OnPickWeapon.HasDelegate && OnPickArmor.HasDelegate;
@@ -395,14 +375,35 @@
         await OnPickWeapon.InvokeAsync(pick);                                                    // impure
     }
 
-    /// <summary>⋯ next to a weapon slot: it opens the weapon picker for that slot (the player's own weapons after the login; every weapon of the game before it).</summary>
+    /// <summary>A weapon of the game picked: the designer puts it in; the picker closes when it did, else it says why.</summary>
+    private async Task<Result<Unit, string>> PickWeaponItemAsync(WeaponItemPick pick)
+    {
+        var picked = await PickWeaponItem.Match(
+            pickItem => pickItem.Value(pick),
+            _ => Task.FromResult<Result<Unit, string>>(new Result<Unit, string>.Error("Weapons can't be picked here.")));   // impure
+        if (picked.IsOk())
+        {
+            weaponPicker = Optional.None<WeaponTarget>();                                        // impure (UI state)
+            StateHasChanged();                                                                   // impure (the picker's own event: this panel renders the close)
+        }
+
+        return picked;
+    }
+
+    private async Task EmptyWeaponAsync(int weapon)
+    {
+        weaponPicker = Optional.None<WeaponTarget>();                                            // impure (UI state)
+        await OnEmptyWeapon.InvokeAsync(weapon);                                                 // impure
+    }
+
+    /// <summary>⋯ next to a weapon slot (in the designer): it opens the weapon picker for that slot.</summary>
     private RenderFragment RenderWeaponPick(WeaponTarget target, WeaponSlot slot) => __builder =>
     {
-        @if (CanPickWeapons || CanPickGameWeapons)
+        @if (CanPickWeapons)
         {
-            var pickTitle = CanPickWeapons ? $"Pick your own {slot.DescribeWeaponSlot().ToLowerInvariant()} weapon" : $"Pick a {slot.DescribeWeaponSlot().ToLowerInvariant()} weapon of the game";
             <button type="button" class="btn ghost small weapon-pick" data-action="pick-weapon" data-slot="@slot"
-                    title="@pickTitle" aria-label="@pickTitle" aria-haspopup="dialog" @onclick="() => OpenWeaponPicker(target)">⋯</button>
+                    title="Pick a @slot.DescribeWeaponSlot().ToLowerInvariant() weapon" aria-label="Pick a @slot.DescribeWeaponSlot().ToLowerInvariant() weapon"
+                    aria-haspopup="dialog" @onclick="() => OpenWeaponPicker(target)">⋯</button>
         }
     };
 
@@ -478,18 +479,45 @@
 
     private Optional<ItemDetails> details = Optional.None<ItemDetails>();
 
-    private Optional<ArmorSlot> armorPicker = Optional.None<ArmorSlot>();
+    /// <summary>The open armor picker: its slot, and whether the build wears a piece there (it can be emptied).</summary>
+    private sealed record ArmorPickerOpen(ArmorSlot Slot, bool Filled);
 
-    private void OpenArmorPicker(ArmorSlot slot) =>
-        armorPicker = Optional.Some(slot);                                                       // impure (UI state)
+    private Optional<ArmorPickerOpen> armorPicker = Optional.None<ArmorPickerOpen>();
+
+    private void OpenArmorPicker(ArmorSlot slot, bool filled)
+    {
+        ClosePicker();                                                                           // impure (UI state)
+        armorPicker = Optional.Some(new ArmorPickerOpen(slot, filled));                          // impure (UI state)
+    }
 
     private void CloseArmorPicker() =>
-        armorPicker = Optional.None<ArmorSlot>();                                                // impure (UI state)
+        armorPicker = Optional.None<ArmorPickerOpen>();                                          // impure (UI state)
 
     private async Task PickArmorAsync(ArmorPick pick)
     {
-        armorPicker = Optional.None<ArmorSlot>();                                                // impure (UI state)
+        armorPicker = Optional.None<ArmorPickerOpen>();                                          // impure (UI state)
         await OnPickArmor.InvokeAsync(pick);                                                     // impure
+    }
+
+    /// <summary>A piece of the game picked: the designer puts it in; the picker closes when it did, else it says why.</summary>
+    private async Task<Result<Unit, string>> PickArmorItemAsync(ArmorItemPick pick)
+    {
+        var picked = await PickArmorItem.Match(
+            pickItem => pickItem.Value(pick),
+            _ => Task.FromResult<Result<Unit, string>>(new Result<Unit, string>.Error("Armor can't be picked here.")));   // impure
+        if (picked.IsOk())
+        {
+            armorPicker = Optional.None<ArmorPickerOpen>();                                      // impure (UI state)
+            StateHasChanged();                                                                   // impure (the picker's own event: this panel renders the close)
+        }
+
+        return picked;
+    }
+
+    private async Task EmptyArmorAsync(ArmorSlot slot)
+    {
+        armorPicker = Optional.None<ArmorPickerOpen>();                                          // impure (UI state)
+        await OnEmptyArmor.InvokeAsync(slot);                                                    // impure
     }
 
     private void OpenDetails(ItemDetails open)

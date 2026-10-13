@@ -30,12 +30,6 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   - **The CLI** reads only the excerpt; a build there with other items shows them by hash.
   - **The pinned content id** (`ManifestContentId`, used when the manifest index doesn't answer) has to be
     updated with the excerpt; Bungie may drop old component files.
-  - **The game's weapons and armor** (the pickers without a login): the first open in a tab took ~8 s on a desktop and
-    ~32 s with the CPU slowed 4× (~11 s of it loading the files), most of the rest Core reading thousands of entries
-    as `JsonElement`s into immutable dictionaries in the browser's .NET. Reading them with less allocation, or starting
-    the list in the background once the designer opens (it costs the download and the memory to players who never open
-    a picker), would shorten it. One version per name is offered (the newest): an older version with another perk pool
-    can't be picked.
   - **Phones:** the item table is ~9 MB to download and ~215 MB in memory while a read lasts (let go after it), and
     the join's rounds still hold the page for up to ~1 s each on a desktop (the last round, which builds the excerpt,
     the longest): a phone feels them. Splitting the excerpt's build from the last round, or asking for fewer fields of
@@ -110,9 +104,9 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   link that carries its loadout could show the same card before "Start designing".
 - **Editing the rest of a build in the designer**: a weapon's perks can be picked (column by column, from
   the manifest excerpt's trait columns), the subclass edited (abilities, aspects and fragments, from the excerpt's
-  `plugs`, for each of the nine Light subclasses), and its weapons and armor picked from every item of the game (or the
-  player's own, after a Bungie login); changing the class or the subclass itself, or mods, means a new DIM link or build
-  file. The rules author only Arcstrider's elements, so another subclass's plugs show ⊘ and set
+  `plugs`, for each of the nine Light subclasses) and any weapon or armor slot filled, swapped or emptied (every item of
+  the game, or the player's own after a login); changing the class or the subclass itself, mods or the artifact means a
+  new DIM link or build file. The rules author only Arcstrider's elements, so another subclass's plugs show ⊘ and set
   nothing off until their rules are written.
 - **A weapon's roll from Bungie**: a DIM link never carries one, so it is picked by hand; reading the
   equipped character's weapons by Bungie name (their sockets are public) needs a Bungie API key (owner).
@@ -136,9 +130,15 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   bonuses above 100 (#126, #132, #138, #139) and Gambler's Dodge's refund as its number ("+79% melee energy") —
   need a rule value that reads a build stat; refunds below 70 of their stat scale down by an amount Bungie
   hasn't published ("?"). DIM's runtime stat benefits (Font mods while Armor Charge) aren't added up.
-- **Armor picker, next**: a piece of the game picked without a login has no roll, so the stats don't count it until one
-  of the player's pieces is picked for that slot; the mods of a picked piece aren't read (the build keeps the loadout's mods); armor of
+- **Armor picker, next**: the mods of a picked piece aren't read (the build keeps the loadout's mods); armor of
   another class's character isn't offered; an icon bungie.net doesn't serve shows broken.
+- **Exotic class items' spirits**: Relativism, Stoicism and Solipsism are listed in the armor picker's Every item, but
+  their two random perks (spirits) can't be picked and no rule authors them: the build wears the item without them.
+- **Every item, next**: filter chips by weapon type and damage type next to the search box; reading Bungie's manifest
+  once at startup and keeping it, as DIM does, so the pickers, DIM links and the login don't each read it (the first
+  opening of a picker reads the item table, ~8 MB, for the breakers' frames); the list (~7,500 items, ~5 MB of JSON
+  parsed in .NET once per tab) and its grid (up to ~930 squares for energy weapons) could be lighter on a phone (fewer
+  fields, or a grid that draws only the rows in view).
 
 ## Owner items
 

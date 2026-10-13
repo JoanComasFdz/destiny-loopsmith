@@ -1,0 +1,17 @@
+@* The weapon and armor pickers' switch after a Bungie login: "Yours" (the player's own copies) or "Every item" (every
+   weapon or armor piece of the game). Without a login the pickers list every item and show no switch. *@
+<div class="picker-modes" role="tablist" aria-label="Which items to list" data-testid="picker-modes">
+    <button type="button" role="tab" class="picker-mode @(EveryItem ? "" : "on")" aria-selected="@(EveryItem ? "false" : "true")"
+            data-mode="yours" @onclick="() => OnChange.InvokeAsync(false)">Yours</button>
+    <button type="button" role="tab" class="picker-mode @(EveryItem ? "on" : "")" aria-selected="@(EveryItem ? "true" : "false")"
+            data-mode="every" @onclick="() => OnChange.InvokeAsync(true)">Every item</button>
+</div>
+
+@code {
+    /// <summary>True: "Every item" is on; false: "Yours".</summary>
+    [Parameter]
+    public bool EveryItem { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> OnChange { get; set; }
+}

@@ -1,0 +1,182 @@
+@inject BungieManifestJoining Manifest
+@* The pickers' "Every item": every weapon or armor piece of the game the slot can take (Shape: LoopDesigning.ListWeaponItems
+   or ListArmorItems over the listing BungieManifestJoining reads once per tab, with the picker's progress bar), every
+   version of each, with a search box. It opens showing the item the slot holds (✓, first); another's details show on
+   hover (a mouse) or a first tap; a click on the item showing (or the button) picks it: Pick reads Bungie's manifest for
+   it (its perks, catalyst or set) and puts it in the build, or says why it couldn't, here. *@
+<div class="every-item" data-testid="every-item">
+    @if (listed is Optional<Result<ItemListView, string>>.Some { Value: Result<ItemListView, string>.Ok { Value: var view } })
+    {
+        var shown = ItemListShaping.FilterOptions(view.Options, query);
+        var details = view.Options.Where(option => focused == Optional.Some(option.Hash)).Select(Optional.Some).FindFirstSome();
+        <div class="every-item-search">
+            <input type="search" class="every-item-query" placeholder="Search by name or type" aria-label="Search by name or type" data-testid="every-item-search"
+                   value="@query" @oninput="Search" />
+            <span class="muted every-item-count" data-testid="every-item-count">@ItemListShaping.DescribeCount(shown.Length, view.Options.Length, Noun)</span>
+        </div>
+        @if (view.Options.IsEmpty)
+        {
+            <p class="muted" data-testid="every-item-empty">No @Noun of the game fits this slot.</p>
+        }
+        else
+        {
+            <div class="icon-grid every-item-options" role="listbox" aria-label="@($"Every {Noun}")">
+                @foreach (var option in shown)
+                {
+                    var hash = option.Hash;
+                    <div class="weapon-option @(focused == Optional.Some(hash) ? "focused" : "")" @key="hash">
+                        <button type="button" role="option" aria-selected="@(focused == Optional.Some(hash) ? "true" : "false")"
+                                class="icon-tile tappable item @DescribeTier(option.Tile) @(option.Worn ? "worn" : "") @(focused == Optional.Some(hash) ? "focused" : "")"
+                                title="@($"{option.Tile.Name} — {option.Line}")" aria-label="@option.Tile.Name" data-hash="@hash.Value"
+                                @onpointerenter="e => Hover(hash, e)" @onclick="() => ChooseAsync(option)">
+                            @if (option.Tile.Icon is Optional<string>.Some icon)
+                            {
+                                <img src="@icon.Value" alt="" loading="lazy" />
+                            }
+                            else
+                            {
+                                <span class="icon-initials">@(option.Tile.Name.Length > 0 ? option.Tile.Name[..1] : "?")</span>
+                            }
+                            <TileOverlays Marks="option.Marks" />
+                            @if (option.Worn)
+                            {
+                                <span class="armor-worn-mark" aria-hidden="true">✓</span>
+                            }
+                        </button>
+                        <TileFooter Marks="option.Marks" DamageIcon="option.DamageIcon" DamageName="@option.Damage.Match(found => found.Value.ToString(), _ => "")" />
+                    </div>
+                }
+            </div>
+            @if (details is Optional<ItemOptionView>.Some found)
+            {
+                var item = found.Value;
+                <div class="armor-option-details" data-testid="item-option-details">
+                    <div class="armor-option-name">@item.Tile.Name@if (item.Line.Length > 0)
+                        {<span class="option-sep"> · </span><span class="@item.Damage.Match(damage => ToneStyling.ToToneClass(damage.Value.ToAffinity().ToTone()), _ => "")" data-testid="item-option-line">@if (item.DamageIcon is Optional<string>.Some damageIcon)
+                            {<img class="inline-icon" src="@damageIcon.Value" alt="" loading="lazy" />}@item.Line</span>}</div>
+                    @if (item.Note is Optional<string>.Some note)
+                    {
+                        <div class="tone-warning" data-testid="item-option-note">@note.Value</div>
+                    }
+                    <div class="muted">@(item.Worn ? "The build wears this one." : Detail)</div>
+                    @if (problem is Optional<string>.Some why)
+                    {
+                        <p class="tone-warning" role="alert" data-testid="item-pick-problem">@why.Value</p>
+                    }
+                    @if (!item.Worn)
+                    {
+                        <button type="button" class="btn primary small" data-action="use-item" disabled="@picking" @onclick="() => PickAsync(item.Hash)">@(picking ? "Reading Bungie's manifest…" : UseLabel)</button>
+                    }
+                </div>
+            }
+            else
+            {
+                <p class="muted armor-picker-hint">Tap @(Noun == "piece" ? "a piece" : $"a {Noun}") to see it; tap it again to use it.</p>
+            }
+        }
+        @foreach (var note in view.Notes)
+        {
+            <p class="muted armor-picker-note">@note</p>
+        }
+    }
+    else if (listed is Optional<Result<ItemListView, string>>.Some { Value: Result<ItemListView, string>.Error failed })
+    {
+        <p class="tone-warning" role="alert" data-testid="every-item-failed">Loopsmith couldn't read Bungie's manifest (@failed.Failure). Close this and tap ⋯ again to try again.</p>
+    }
+    else
+    {
+        <p class="muted" data-testid="every-item-loading">Listing every @Noun in the game…</p>
+    }
+</div>
+
+@code {
+    /// <summary>What the listing shows for this slot (LoopDesigning.ListWeaponItems or ListArmorItems, shaped).</summary>
+    [Parameter, EditorRequired]
+    public Func<ItemListing, ItemListView> Shape { get; set; } = null!;
+
+    /// <summary>What an item is called here: "weapon" or "piece".</summary>
+    [Parameter, EditorRequired]
+    public string Noun { get; set; } = "";
+
+    /// <summary>The details' button: "Use this weapon", "Wear this piece".</summary>
+    [Parameter, EditorRequired]
+    public string UseLabel { get; set; } = "";
+
+    /// <summary>What the details say of an item the build doesn't wear (what a pick gives it).</summary>
+    [Parameter, EditorRequired]
+    public string Detail { get; set; } = "";
+
+    /// <summary>An item picked: reads what the build needs of it and puts it in, or says why it couldn't (the picker then stays open).</summary>
+    [Parameter, EditorRequired]
+    public Func<ItemHash, Task<Result<Unit, string>>> Pick { get; set; } = null!;
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    /// <summary>The listing for this slot once read (or why it couldn't be); none while it is read.</summary>
+    private Optional<Result<ItemListView, string>> listed = Optional.None<Result<ItemListView, string>>();
+
+    private string query = "";
+    private Optional<ItemHash> focused = Optional.None<ItemHash>();
+    private bool picking;
+    private Optional<string> problem = Optional.None<string>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var read = await Manifest.ListItemsAsync();                                              // impure (once per tab)
+        var view = read.Map(Shape);                                                              // pure
+        listed = Optional.Some(view);                                                            // impure (component state)
+        var wearing = view.Match(ok => ok.Value.Options.Where(option => option.Worn).Select(option => Optional.Some(option.Hash)).FindFirstSome(), _ => Optional.None<ItemHash>()); // pure
+        focused = wearing;                                                                       // impure (component state)
+    }
+
+    private void Search(ChangeEventArgs e) =>
+        query = e.Value?.ToString() ?? "";                                                       // impure (component state)
+
+    /// <summary>A mouse over an item shows its details (a touch doesn't hover: its first tap does).</summary>
+    private void Hover(ItemHash hash, PointerEventArgs e)
+    {
+        if (e.PointerType == "mouse" && !picking)
+        {
+            focused = Optional.Some(hash);                                                       // impure (component state)
+            problem = Optional.None<string>();                                                   // impure (component state)
+        }
+    }
+
+    /// <summary>A click on the item showing uses it (the one the build wears closes the picker); on another item, shows that one.</summary>
+    private async Task ChooseAsync(ItemOptionView option)
+    {
+        if (focused == Optional.Some(option.Hash) && option.Worn)
+        {
+            await OnClose.InvokeAsync();                                                         // impure
+            return;
+        }
+
+        if (focused == Optional.Some(option.Hash))
+        {
+            await PickAsync(option.Hash);                                                        // impure
+            return;
+        }
+
+        focused = Optional.Some(option.Hash);                                                    // impure (component state)
+        problem = Optional.None<string>();                                                       // impure (component state)
+    }
+
+    private async Task PickAsync(ItemHash hash)
+    {
+        if (picking)
+        {
+            return;
+        }
+
+        picking = true;                                                                          // impure (component state)
+        problem = Optional.None<string>();                                                       // impure (component state)
+        var picked = await Pick(hash);                                                           // impure
+        picking = false;                                                                         // impure (component state)
+        var why = picked.Match(_ => Optional.None<string>(), failed => Optional.Some(failed.Failure)); // pure
+        problem = why;                                                                           // impure (component state)
+    }
+
+    private static string DescribeTier(IconTile tile) =>
+        tile.Tier.Match(tier => tier.Value == ItemTier.Exotic ? "exotic" : tier.Value == ItemTier.Legendary ? "legendary" : "", _ => "");
+}

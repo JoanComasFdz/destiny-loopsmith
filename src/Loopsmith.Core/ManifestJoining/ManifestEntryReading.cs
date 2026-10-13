@@ -74,11 +74,8 @@ internal static partial class ManifestEntryReading
         }
     }
 
-    /// <summary>The text without icon glyphs and repeated spaces; most texts have neither, and skip the patterns (thousands are read at once).</summary>
     private static string ToShownText(string text) =>
-        text.AsSpan().IndexOfAnyInRange('', '') < 0 && !text.Contains("  ", StringComparison.Ordinal)
-            ? text.Trim()
-            : CreateRepeatedSpacePattern().Replace(CreateIconGlyphPattern().Replace(text, ""), " ").Trim();
+        CreateRepeatedSpacePattern().Replace(CreateIconGlyphPattern().Replace(text, ""), " ").Trim();
 
     private static Optional<T> ToOptional<T>(this Vogen.ValueObjectOrError<T> outcome) =>
         outcome.IsSuccess ? Optional.Some(outcome.ValueObject) : Optional.None<T>();

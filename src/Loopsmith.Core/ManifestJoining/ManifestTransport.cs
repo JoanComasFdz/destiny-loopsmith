@@ -29,10 +29,17 @@ public static class ManifestTransport
     /// Each component's URL, by component name: the manifest index's paths (<c>Response.jsonWorldComponentContentPaths.en</c>)
     /// when it has every one (each on bungie.net's component folder), else the pinned content id's.
     /// </summary>
-    public static ImmutableDictionary<string, string> ChooseUrls(Optional<string> indexJson, string pinnedContentId)
+    public static ImmutableDictionary<string, string> ChooseUrls(Optional<string> indexJson, string pinnedContentId) =>
+        ChooseComponentUrls(indexJson, pinnedContentId, [.. Enum.GetValues<ManifestTable>().Select(ToComponentName)]);
+
+    /// <summary>
+    /// The URLs of <paramref name="components"/> (by component name, <c>DestinySandboxPerkDefinition</c>), as
+    /// <see cref="ChooseUrls"/> chooses them: the index's when it has every one, else the pinned content id's.
+    /// </summary>
+    public static ImmutableDictionary<string, string> ChooseComponentUrls(Optional<string> indexJson, string pinnedContentId, ImmutableArray<string> components)
     {
-        var pinned = Enum.GetValues<ManifestTable>().ToImmutableDictionary(ToComponentName, table => $"{Host}{ComponentFolder}en/{ToComponentName(table)}-{pinnedContentId}.json");
-        var fromIndex = indexJson.Bind(ReadIndexUrls);
+        var pinned = components.Distinct().ToImmutableDictionary(name => name, name => $"{Host}{ComponentFolder}en/{name}-{pinnedContentId}.json");
+        var fromIndex = indexJson.Bind(json => ReadIndexUrls(json, components));
         return fromIndex.Match(urls => urls.Value.Count == pinned.Count ? urls.Value : pinned, _ => pinned);
     }
 
@@ -67,41 +74,11 @@ public static class ManifestTransport
                 .MapError(problem => $"its search doesn't read: {problem}")
                 .Map(found => new ManifestAnswer(ReadEntries(entries), ReadPlugs(query, found))));
 
-    /// <summary>What the host reads whole for a listing's question: its entries and whole tables, per component (as <see cref="ToEntryRequest"/>).</summary>
-    public static ImmutableDictionary<string, ImmutableArray<ItemHash>> ToListEntryRequest(ManifestListQuery query) =>
-        ToEntryRequest(new ManifestQuery(query.Entries, query.WholeTables, []));
-
-    /// <summary>The item entries the host reads cut down to the query's outline paths; none when it asks for none (an empty list would be the whole table).</summary>
-    public static ImmutableDictionary<string, ImmutableArray<ItemHash>> ToOutlineRequest(ManifestListQuery query) =>
-        query.Outlines.IsEmpty
-            ? ImmutableDictionary<string, ImmutableArray<ItemHash>>.Empty
-            : ImmutableDictionary<string, ImmutableArray<ItemHash>>.Empty.Add(ToComponentName(ManifestTable.InventoryItem), query.Outlines);
-
-    /// <summary>The search for a listing's needles in the item component.</summary>
-    public static ManifestTextSearch ToListSearch(ManifestListQuery query) =>
-        new(ToComponentName(ManifestTable.InventoryItem), query.Needles);
-
-    /// <summary>
-    /// The host's answer to a listing's <paramref name="query"/>: <paramref name="entriesJson"/> and
-    /// <paramref name="outlinesJson"/> as a join's entries (<see cref="ReadAnswer"/>; the outlines cut down), and
-    /// <paramref name="foundJson"/> <c>{ "needle": [hashes] }</c>; an answer that doesn't parse is why it doesn't read.
-    /// </summary>
-    public static Result<ManifestListAnswer, string> ReadListAnswer(ManifestListQuery query, string entriesJson, string outlinesJson, string foundJson) =>
+    /// <summary>The host's entries (<c>{ "DestinyXDefinition": { "hash": { …entry… } } }</c>), each parsed once; or why they don't read.</summary>
+    internal static Result<ImmutableDictionary<ManifestEntryKey, JsonElement>, string> ReadEntryAnswer(string entriesJson) =>
         ParseDocument(entriesJson)
             .MapError(problem => $"its entries don't read: {problem}")
-            .Bind(entries => ParseDocument(outlinesJson)
-                .MapError(problem => $"its outlines don't read: {problem}")
-                .Bind(outlines => ParseDocument(foundJson)
-                    .MapError(problem => $"its search doesn't read: {problem}")
-                    .Map(found => new ManifestListAnswer(
-                        new ManifestAnswer(ReadEntries(entries).SetItems(ReadEntries(outlines)), ImmutableDictionary<PlugCategoryId, ImmutableArray<ItemHash>>.Empty),
-                        ReadFound(query.Needles, found)))));
-
-    /// <summary>The game's weapons and armor a finished listing found; why there are none when reading the manifest failed or didn't finish.</summary>
-    public static Result<GameItems, string> ToListedGameItems(Result<ManifestListStep, string> step) =>
-        step.Bind(reached => reached.Match<Result<GameItems, string>>(
-            _ => new Result<GameItems, string>.Error("its reading didn't finish"),
-            done => new Result<GameItems, string>.Ok(done.Items)));
+            .Map(ReadEntries);
 
     /// <summary>The excerpt a finished join built; why there is none when reading the manifest failed or didn't finish.</summary>
     public static Result<ManifestExcerpt, string> ToJoinedExcerpt(Result<ManifestJoinStep, string> step) =>
@@ -138,22 +115,15 @@ public static class ManifestTransport
                 _ => []))
             .ToImmutableDictionary();
 
-    private static ImmutableDictionary<string, ImmutableArray<ItemHash>> ReadFound(ImmutableArray<string> needles, JsonElement found) =>
-        needles
-            .Distinct(StringComparer.Ordinal)
-            .SelectMany(needle => found.ReadPath(needle).Match(
-                hashes => new[] { KeyValuePair.Create(needle, hashes.Value.ValueKind == JsonValueKind.Array ? hashes.Value.EnumerateArray().SelectMany(hash => ToSequence(hash.ToItemHash())).ToImmutableArray() : []) },
-                _ => []))
-            .ToImmutableDictionary(StringComparer.Ordinal);
-
     private static string ToPlugNeedle(PlugCategoryId category) =>
         PlugCategoryField + "\"" + JsonEncodedText.Encode(category.Value, JavaScriptEncoder.UnsafeRelaxedJsonEscaping).Value + "\"";
 
-    private static Optional<ImmutableDictionary<string, string>> ReadIndexUrls(string json) =>
+    private static Optional<ImmutableDictionary<string, string>> ReadIndexUrls(string json, ImmutableArray<string> components) =>
         ParseDocument(json).Match(
             root => root.Value.ReadPath("Response", "jsonWorldComponentContentPaths", "en").Map(paths =>
-                Enum.GetValues<ManifestTable>()
-                    .SelectMany(table => ToSequence(paths.ReadString(ToComponentName(table)).Bind(ToComponentUrl)).Select(url => KeyValuePair.Create(ToComponentName(table), url)))
+                components
+                    .Distinct()
+                    .SelectMany(name => ToSequence(paths.ReadString(name).Bind(ToComponentUrl)).Select(url => KeyValuePair.Create(name, url)))
                     .ToImmutableDictionary()),
             _ => Optional.None<ImmutableDictionary<string, string>>());
 

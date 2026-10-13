@@ -2,7 +2,6 @@ using System.Collections.Immutable;
 using System.Text.Json;
 using Dunet;
 using Loopsmith.Core.Domain;
-using Loopsmith.Core.Functional;
 
 namespace Loopsmith.Core.ManifestJoining;
 
@@ -54,42 +53,4 @@ public partial record ManifestJoinStep
 {
     partial record Ask(ManifestJoinProgress Progress, ManifestQuery Query);
     partial record Done(ManifestExcerpt Excerpt);
-}
-
-/// <summary>
-/// What the listing of the game's weapons and armor asks Bungie's manifest for next: whole (small) tables; the item
-/// entries that hold each needle (a slot's bucket, <c>"bucketTypeHash":1498876634</c>); item entries cut down to
-/// <see cref="OutlinePaths"/> (thousands of them: only the fields that round needs — a path of property names, <c>*</c>
-/// for each element of an array); and entries read whole.
-/// </summary>
-public sealed record ManifestListQuery(
-    ImmutableArray<ManifestTable> WholeTables,
-    ImmutableArray<string> Needles,
-    ImmutableArray<ItemHash> Outlines,
-    ImmutableArray<string> OutlinePaths,
-    ImmutableArray<ManifestEntryKey> Entries);
-
-/// <summary>The manifest's answer to a listing's question: the entries (whole or cut down) and the item entries holding each needle.</summary>
-public sealed record ManifestListAnswer(ManifestAnswer Read, ImmutableDictionary<string, ImmutableArray<ItemHash>> Found);
-
-/// <summary>
-/// A listing under way: what it has read, the entries each needle found, the items it lists (once their summaries are
-/// read: each name's newest version), and what it has asked — summaries, outlines and whole entries apart (never asked again).
-/// </summary>
-public sealed record ManifestListProgress(
-    ManifestAnswer Read,
-    ImmutableDictionary<string, ImmutableArray<ItemHash>> Found,
-    Optional<ImmutableArray<ItemHash>> Listed,
-    ImmutableHashSet<ManifestTable> AskedTables,
-    ImmutableHashSet<string> AskedNeedles,
-    ImmutableHashSet<ItemHash> AskedSummaries,
-    ImmutableHashSet<ItemHash> AskedOutlines,
-    ImmutableHashSet<ManifestEntryKey> AskedEntries);
-
-/// <summary>A listing's next step: ask the manifest for more, or done — the game's weapons and armor.</summary>
-[Union]
-public partial record ManifestListStep
-{
-    partial record Ask(ManifestListProgress Progress, ManifestListQuery Query);
-    partial record Done(GameItems Items);
 }

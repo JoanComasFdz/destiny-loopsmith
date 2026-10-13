@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 using Loopsmith.Core.ManifestJoining;
@@ -9,9 +10,10 @@ using Loopsmith.Core.Orchestration;
 namespace Loopsmith.Core.Tests.Support;
 
 /// <summary>
-/// What the web host (Hosting/BungieManifestJoining.cs, wwwroot/js/manifest.js) does for the manifest join, in memory:
-/// holds each component's entries as raw JSON, answers Core's request and text search as JSON, and runs the join's
-/// rounds through <see cref="LoopDesigning"/> as the host does.
+/// What the web host (Hosting/BungieManifestJoining.cs, wwwroot/js/manifest.js) does for the manifest join and the
+/// listing of every weapon and armor piece, in memory: holds each component's entries as raw JSON, answers Core's
+/// requests, text searches and parts queries as JSON, and runs their rounds through <see cref="LoopDesigning"/> as the
+/// host does.
 /// </summary>
 public sealed class ManifestStore(ImmutableDictionary<ManifestTable, ImmutableDictionary<ItemHash, string>> tables)
 {
@@ -52,63 +54,84 @@ public sealed class ManifestStore(ImmutableDictionary<ManifestTable, ImmutableDi
         Rounds++;
         var request = LoopDesigning.ToManifestRequest(query);
         var search = LoopDesigning.ToManifestPlugSearch(query);
-        var entries = request.ToDictionary(component => component.Key, component => ReadEntries(ToTable(component.Key), component.Value));
         var found = search.Needles.ToDictionary(needle => needle, needle => FindContaining(ToTable(search.Component), needle));
-        return (JsonSerializer.Serialize(entries), JsonSerializer.Serialize(found));
+        return (AnswerEntries(request), JsonSerializer.Serialize(found));
     }
 
-    /// <summary>Runs a listing of the game's weapons and armor to the end, answering each of its questions as the host does.</summary>
-    public GameItems ListGameItems()
+    /// <summary>Runs a listing of every weapon and armor piece to the end, answering each of its questions as the host does.</summary>
+    public ItemListing List()
     {
-        Result<ManifestListStep, string> step = new Result<ManifestListStep, string>.Ok(LoopDesigning.StartGameItemListing());
-        for (var round = 0; step is Result<ManifestListStep, string>.Ok { Value: ManifestListStep.Ask ask } && round < MaxRounds; round++)
+        Result<ListingStep, string> step = new Result<ListingStep, string>.Ok(LoopDesigning.StartListing());
+        for (var round = 0; step is Result<ListingStep, string>.Ok { Value: ListingStep.Ask ask } && round < MaxRounds; round++)
         {
-            var (entries, outlines, found) = AnswerList(ask.Query);
-            step = LoopDesigning.ContinueGameItemListing(ask, entries, outlines, found);
+            Rounds++;
+            step = LoopDesigning.ContinueListing(ask, AnswerEntries(ask.Query.Entries), AnswerParts(ask.Query.Parts));
         }
 
-        return LoopDesigning.ToListedGameItems(step).Match(ok => ok.Value, error => throw new InvalidOperationException($"The listing didn't finish in {MaxRounds} rounds: {error.Failure}"));
+        return LoopDesigning.ToItemListing(step).Match(ok => ok.Value, error => throw new InvalidOperationException($"The listing didn't finish in {MaxRounds} rounds: {error.Failure}"));
     }
 
-    /// <summary>The host's three answers to a listing's question: the entries read whole, those cut down to its outline paths, and the entries holding each needle.</summary>
-    public (string Entries, string Outlines, string Found) AnswerList(ManifestListQuery query)
+    /// <summary>The entries asked for, per component (an empty list: the whole component).</summary>
+    public string AnswerEntries(ImmutableDictionary<string, ImmutableArray<ItemHash>> request) =>
+        JsonSerializer.Serialize(request.ToDictionary(component => component.Key, component => ReadEntries(ToTable(component.Key), component.Value)));
+
+    /// <summary>The host's answer to a parts query: <c>{ "value": { "hash": { …parts… } } }</c>, as manifest.js's <c>readEntryParts</c>.</summary>
+    public string AnswerParts(ManifestPartsQuery query)
     {
-        Rounds++;
-        var request = LoopDesigning.ToGameListRequest(query);
-        var outlineRequest = LoopDesigning.ToGameListOutlineRequest(query);
-        var search = LoopDesigning.ToGameListSearch(query);
-        var entries = request.ToDictionary(component => component.Key, component => ReadEntries(ToTable(component.Key), component.Value));
-        var outlines = outlineRequest.ToDictionary(component => component.Key, component => ReadEntries(ToTable(component.Key), component.Value)
-            .ToDictionary(entry => entry.Key, entry => OutlineEntry(entry.Value, query.OutlinePaths)));
-        var found = search.Needles.ToDictionary(needle => needle, needle => FindContaining(ToTable(search.Component), needle));
-        return (JsonSerializer.Serialize(entries), JsonSerializer.Serialize(outlines), JsonSerializer.Serialize(found));
+        var groups = new JsonObject();
+        if (query.Paths.IsEmpty)
+        {
+            return groups.ToJsonString();
+        }
+
+        var pattern = new Regex($"\"{Regex.Escape(query.Key)}\":([^,}}\\]]*)", RegexOptions.CultureInvariant);
+        foreach (var (hash, json) in tables[ToTable(query.Component)].OrderBy(entry => entry.Key.Value))
+        {
+            foreach (var value in pattern.Matches(json).Select(match => match.Groups[1].Value).Where(query.Paths.ContainsKey).Distinct())
+            {
+                var group = groups[value] as JsonObject ?? new JsonObject();
+                groups[value] = group;
+                group[hash.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)] = Cut(JsonNode.Parse(json), query.Paths[value]) ?? new JsonObject();
+            }
+        }
+
+        return groups.ToJsonString();
     }
 
     /// <summary>
-    /// An entry cut down to <paramref name="paths"/> as manifest.js cuts it: each path's value kept where it is (a path of
-    /// property names; <c>*</c>: every element of an array, in place, null where it has nothing of the path).
+    /// A value cut down to the paths it has, as manifest.js cuts it: an object keeps the properties the paths name (one
+    /// that keeps none is left out), an array maps <c>*</c> over its elements (one that keeps nothing is null), and an
+    /// empty path keeps the value whole.
     /// </summary>
-    private static string OutlineEntry(string json, ImmutableArray<string> paths)
+    private static JsonNode? Cut(JsonNode? value, IEnumerable<ImmutableArray<string>> paths)
     {
-        var root = JsonNode.Parse(json);
-        var outline = KeepPaths(root, [.. paths.Select(path => path.Split('.'))]) ?? new JsonObject();
-        return outline.ToJsonString();
-    }
+        var all = paths.ToImmutableArray();
+        if (all.Any(path => path.IsEmpty))
+        {
+            return value?.DeepClone();
+        }
 
-    private static JsonNode? KeepPaths(JsonNode? node, ImmutableArray<string[]> paths) =>
-        paths.Any(path => path.Length == 0) ? node?.DeepClone()
-        : node is JsonObject obj ? ToObjectOrNull(paths
-            .GroupBy(path => path[0], StringComparer.Ordinal)
-            .Where(group => group.Key != "*" && obj.ContainsKey(group.Key))
-            .Select(group => (group.Key, Kept: KeepPaths(obj[group.Key], [.. group.Select(path => path[1..])])))
-            .Where(child => child.Kept is not null))
-        : node is JsonArray array && paths.Any(path => path[0] == "*") ? new JsonArray([.. array.Select(element => KeepPaths(element, [.. paths.Where(path => path[0] == "*").Select(path => path[1..])]))])
-        : null;
+        if (value is JsonArray array)
+        {
+            var rest = all.Where(path => path[0] == "*").Select(path => path[1..]).ToImmutableArray();
+            return rest.IsEmpty ? null : new JsonArray([.. array.Select(element => Cut(element, rest))]);
+        }
 
-    private static JsonObject? ToObjectOrNull(IEnumerable<(string Key, JsonNode? Kept)> children)
-    {
-        var kept = children.ToArray();
-        return kept.Length == 0 ? null : new JsonObject(kept.Select(child => KeyValuePair.Create(child.Key, child.Kept)));
+        if (value is not JsonObject entry)
+        {
+            return null;
+        }
+
+        var parts = new JsonObject();
+        foreach (var named in all.Where(path => path[0] != "*").GroupBy(path => path[0]))
+        {
+            if (entry.TryGetPropertyValue(named.Key, out var child) && Cut(child, named.Select(path => path[1..])) is { } kept)
+            {
+                parts[named.Key] = kept;
+            }
+        }
+
+        return parts.Count > 0 ? parts : null;
     }
 
     private Dictionary<string, string> ReadEntries(ManifestTable table, ImmutableArray<ItemHash> hashes) =>
@@ -118,6 +141,6 @@ public sealed class ManifestStore(ImmutableDictionary<ManifestTable, ImmutableDi
     private uint[] FindContaining(ManifestTable table, string needle) =>
         [.. tables[table].Where(entry => entry.Value.Contains(needle, StringComparison.Ordinal)).Select(entry => entry.Key.Value).Order()];
 
-    private static ManifestTable ToTable(string component) =>
+    internal static ManifestTable ToTable(string component) =>
         Enum.GetValues<ManifestTable>().Single(table => ManifestTransport.ToComponentName(table) == component);
 }

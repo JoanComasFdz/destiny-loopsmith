@@ -31,8 +31,8 @@
         </div>
     </header>
 
-    <LoadoutPanel Build="Build" OnPickPerk="OnPickPerk" OnSetCatalyst="OnSetCatalyst" Profile="Profile" OnPickArmor="OnPickArmor" OnPickWeapon="OnPickWeapon"
-                  OnPickGameWeapon="OnPickGameWeapon" OnPickGameArmor="OnPickGameArmor" OnEditSubclass="OnEditSubclass" />
+    <LoadoutPanel Build="Build" OnPickPerk="OnPickPerk" OnSetCatalyst="OnSetCatalyst" Profile="Profile" OnPickArmor="OnPickArmor" OnPickWeapon="OnPickWeapon" OnEditSubclass="OnEditSubclass"
+                  PickWeaponItem="PickWeaponItem" PickArmorItem="PickArmorItem" OnEmptyWeapon="OnEmptyWeapon" OnEmptyArmor="OnEmptyArmor" />
 
     <StatsPanel Build="Build" OnSetStats="OnSetStats" Profile="Profile" Note="LoginNote" OnLoggedIn="OnLoggedIn" OnLoggedOut="OnLoggedOut" />
 
@@ -92,7 +92,7 @@
     [Parameter]
     public EventCallback<StatLine> OnSetStats { get; set; }
 
-    /// <summary>The player's armor after their Bungie login: ⋯ next to an armor piece picks from it (none: logged out, no ⋯).</summary>
+    /// <summary>The player's armor and weapons after their Bungie login: the pickers list theirs too (none: logged out).</summary>
     [Parameter]
     public Optional<BungieProfile> Profile { get; set; } = Optional.None<BungieProfile>();
 
@@ -116,13 +116,21 @@
     [Parameter]
     public EventCallback<WeaponPick> OnPickWeapon { get; set; }
 
-    /// <summary>A weapon of the game picked without a login (the designer reads it and puts it in the build).</summary>
+    /// <summary>A weapon of the game picked from "Every item" (the designer reads it from Bungie's manifest and puts it in, or says why not).</summary>
     [Parameter]
-    public EventCallback<GameWeaponPick> OnPickGameWeapon { get; set; }
+    public Optional<Func<WeaponItemPick, Task<Result<Unit, string>>>> PickWeaponItem { get; set; } = Optional.None<Func<WeaponItemPick, Task<Result<Unit, string>>>>();
 
-    /// <summary>An armor piece of the game picked without a login (the designer reads it and puts it in the build).</summary>
+    /// <summary>A piece of the game picked from "Every item" (the designer reads it from Bungie's manifest and puts it in, or says why not).</summary>
     [Parameter]
-    public EventCallback<GameArmorPick> OnPickGameArmor { get; set; }
+    public Optional<Func<ArmorItemPick, Task<Result<Unit, string>>>> PickArmorItem { get; set; } = Optional.None<Func<ArmorItemPick, Task<Result<Unit, string>>>>();
+
+    /// <summary>"Empty this slot" on a weapon (its number): the designer takes it off.</summary>
+    [Parameter]
+    public EventCallback<int> OnEmptyWeapon { get; set; }
+
+    /// <summary>"Empty this slot" on an armor slot: the designer takes its piece off.</summary>
+    [Parameter]
+    public EventCallback<ArmorSlot> OnEmptyArmor { get; set; }
 
     /// <summary>The subclass editor's Save: the plugs the subclass now holds.</summary>
     [Parameter]

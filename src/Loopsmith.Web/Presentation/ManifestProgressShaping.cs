@@ -5,10 +5,11 @@ using Loopsmith.Core.Functional;
 namespace Loopsmith.Web.Presentation;
 
 /// <summary>
-/// Whose items a read of Bungie's manifest names: the player's (after their Bungie login), the open build's (a DIM
-/// link's), every weapon and armor piece of the game (the pickers without a login), or the one just picked from them.
+/// What a read of Bungie's manifest is for: the player's items (after their Bungie login), the open build's (a DIM
+/// link's), every weapon and armor piece in the game (the pickers' "Every item"), or the item picked there (its perks,
+/// catalyst or set, before it goes into the build).
 /// </summary>
-public enum ManifestReadFor { YourItems, BuildItems, GameItems, PickedItem }
+public enum ManifestReadFor { YourItems, BuildItems, EveryItem, PickedItem }
 
 /// <summary>
 /// Where a read of Bungie's manifest is: reading its files (the bytes come unpacked, so their total isn't known — bungie.net
@@ -60,7 +61,13 @@ public static class ManifestProgressShaping
             progress.Stage.Match(
                 reading => $"reading its files… {DescribeMegabytes(reading.Bytes)}",
                 naming => $"naming them (step {naming.Round.ToString(CultureInfo.InvariantCulture)})"),
-            DescribeHint(progress.For),
+            progress.For switch
+            {
+                ManifestReadFor.YourItems => "You can keep designing meanwhile; ⋯ names your armor and weapons once it's done.",
+                ManifestReadFor.EveryItem => "Only the first time in this tab: the list shows once it's done.",
+                ManifestReadFor.PickedItem => "It goes into the build once it's done.",
+                _ => "You can keep designing meanwhile; the build's items show by hash until it's done.",
+            },
             progress.Stage.Match(
                 reading => (int)Math.Round(85 * (1 - Math.Exp(-1.6 * reading.Bytes / ExpectedBytes))),
                 naming => (int)Math.Round(99 - 14 * Math.Pow(0.5, naming.Round))));
@@ -79,20 +86,11 @@ public static class ManifestProgressShaping
         return progress.For switch
         {
             ManifestReadFor.YourItems => progress.Items == 1 ? "Reading Bungie's manifest for 1 of your items" : $"Reading Bungie's manifest for {count} of your items",
-            ManifestReadFor.GameItems => "Reading Bungie's manifest for every weapon and armor piece",
+            ManifestReadFor.EveryItem => "Reading Bungie's manifest for every weapon and armor piece",
             ManifestReadFor.PickedItem => "Reading Bungie's manifest for the item you picked",
             _ => progress.Items == 1 ? "Reading Bungie's manifest for 1 of this build's items" : $"Reading Bungie's manifest for {count} of this build's items",
         };
     }
-
-    private static string DescribeHint(ManifestReadFor readFor) =>
-        readFor switch
-        {
-            ManifestReadFor.YourItems => "You can keep designing meanwhile; ⋯ names your armor and weapons once it's done.",
-            ManifestReadFor.GameItems => "Only the first time in this tab: the list shows once it's done.",
-            ManifestReadFor.PickedItem => "It goes into the build once it's done.",
-            _ => "You can keep designing meanwhile; the build's items show by hash until it's done.",
-        };
 
     private static string DescribeMegabytes(long bytes) =>
         $"{(bytes / 1_000_000.0).ToString("0", CultureInfo.InvariantCulture)} MB";

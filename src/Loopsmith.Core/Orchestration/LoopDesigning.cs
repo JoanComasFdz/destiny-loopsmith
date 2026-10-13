@@ -78,7 +78,7 @@ public static class LoopDesigning
     /// <summary>
     /// A new design for a build started from scratch: an Arc Hunter (Arcstrider) with nothing equipped — no super,
     /// abilities, aspects or fragments, no weapons, no armor, no stats. The player fills it in the designer (the subclass
-    /// editor; any weapon and armor piece of the game, or their own after a Bungie login). It is written as a build file, so the loop embeds it —
+    /// editor; their own weapons and armor after a Bungie login). It is written as a build file, so the loop embeds it —
     /// and exports, shares and replays it — like any other.
     /// </summary>
     public static Result<DesignSession, string> StartScratchDesign(RuleCatalog catalog)
@@ -183,6 +183,24 @@ public static class LoopDesigning
     public static ImmutableDictionary<string, string> ChooseManifestUrls(Optional<string> indexJson, string pinnedContentId) =>
         ManifestTransport.ChooseUrls(indexJson, pinnedContentId);
 
+    // ── Every weapon and armor piece in the game (the pickers' "Every item", docs/loop-format.md) ──────────────
+
+    /// <summary>The URLs of the components the listing reads (the item table, the sandbox perks and four small ones): the index's, else the pinned content id's.</summary>
+    public static ImmutableDictionary<string, string> ChooseListingUrls(Optional<string> indexJson, string pinnedContentId) =>
+        ManifestTransport.ChooseComponentUrls(indexJson, pinnedContentId, ManifestListing.Components);
+
+    /// <summary>A listing of every weapon and armor piece a build can wear: its first question to the host.</summary>
+    public static ListingStep StartListing() =>
+        ManifestListing.StartListing();
+
+    /// <summary>The listing with the host's answers to its question (its entries, its parts): its next step, or why an answer doesn't read.</summary>
+    public static Result<ListingStep, string> ContinueListing(ListingStep.Ask asked, string entriesJson, string partsJson) =>
+        ManifestListing.ContinueListing(asked, entriesJson, partsJson);
+
+    /// <summary>The listing a finished listing built, or why reading the manifest failed (or didn't finish).</summary>
+    public static Result<ItemListing, string> ToItemListing(Result<ListingStep, string> step) =>
+        ManifestListing.ToItemListing(step);
+
     /// <summary>A join of what these hashes need from the full manifest: its first question (or, for none, the excerpt).</summary>
     public static ManifestJoinStep StartManifestJoin(IEnumerable<ItemHash> hashes) =>
         ManifestJoin.StartJoin(hashes);
@@ -203,31 +221,6 @@ public static class LoopDesigning
     /// <summary>The excerpt the join built, or why reading the manifest failed (or didn't finish).</summary>
     public static Result<ManifestExcerpt, string> ToJoinedExcerpt(Result<ManifestJoinStep, string> step) =>
         ManifestTransport.ToJoinedExcerpt(step);
-
-    /// <summary>A listing of every legendary and exotic weapon and armor piece of the game (the pickers without a login): its first question.</summary>
-    public static ManifestListStep StartGameItemListing() =>
-        ManifestJoin.StartGameItemListing();
-
-    /// <summary>What the host reads whole for a listing's question, per component (an empty list: the whole component).</summary>
-    public static ImmutableDictionary<string, ImmutableArray<ItemHash>> ToGameListRequest(ManifestListQuery query) =>
-        ManifestTransport.ToListEntryRequest(query);
-
-    /// <summary>The item entries the host reads cut down to <see cref="ManifestListQuery.OutlinePaths"/> for a listing's question (none: nothing to read).</summary>
-    public static ImmutableDictionary<string, ImmutableArray<ItemHash>> ToGameListOutlineRequest(ManifestListQuery query) =>
-        ManifestTransport.ToOutlineRequest(query);
-
-    /// <summary>What the host searches the item component for, for a listing's question.</summary>
-    public static ManifestTextSearch ToGameListSearch(ManifestListQuery query) =>
-        ManifestTransport.ToListSearch(query);
-
-    /// <summary>The listing with the host's answer to its question: its next step, or why the answer doesn't read.</summary>
-    public static Result<ManifestListStep, string> ContinueGameItemListing(ManifestListStep.Ask asked, string entriesJson, string outlinesJson, string foundJson) =>
-        ManifestTransport.ReadListAnswer(asked.Query, entriesJson, outlinesJson, foundJson)
-            .Map(answer => ManifestJoin.ContinueGameItemListing(asked.Progress, answer));
-
-    /// <summary>The game's weapons and armor the listing found, or why reading the manifest failed (or didn't finish).</summary>
-    public static Result<GameItems, string> ToListedGameItems(Result<ManifestListStep, string> step) =>
-        ManifestTransport.ToListedGameItems(step);
 
     /// <summary>
     /// The catalog with what the full manifest said added to its excerpt (what it had stays); when the manifest
@@ -550,45 +543,68 @@ public static class LoopDesigning
                 inPlace => BuildFileEditing.ReplaceWeapon(session.Design.Build, inPlace.Weapon, build.Weapons[inPlace.Weapon]),
                 _ => BuildFileEditing.AddWeapon(session.Design.Build, build.Weapons[^1]))));
 
-    // ── Any weapon or armor piece of the game, without a login (docs/loop-format.md, "Weapons and armor of the game") ──
+    // ── Every weapon and armor piece in the game, and emptying a slot (docs/loop-format.md, "Every item") ──────
 
     /// <summary>
-    /// What the weapon picker lists without a login for where <paramref name="target"/> says (a weapon of the build, or an
-    /// empty slot): the game's weapons for that slot the build can wear there (one exotic: WeaponSwapping), with the note
-    /// on the exotic rule.
+    /// What the weapon picker's "Every item" lists for where <paramref name="target"/> says: every weapon of the game for
+    /// that slot the build can wear there (one exotic), the one it wears there first, then by name.
     /// </summary>
-    public static GameItemOptions ListGameWeaponOptions(ValidatedBuild build, GameItems game, WeaponTarget target) =>
-        GameItemPicking.ListWeapons(build.Catalog, build.Build, game, target);
+    public static WeaponItemOptions ListWeaponItems(ValidatedBuild build, ItemListing listing, WeaponTarget target) =>
+        WeaponSwapping.ListItemOptions(build.Catalog, build.Build, listing, target);
 
     /// <summary>
-    /// What the armor picker lists without a login for a slot: the game's pieces for it that the build can wear (its class
-    /// or any, one exotic: ArmorSwapping), with the note on the exotic rule.
+    /// What the armor picker's "Every item" lists for <paramref name="slot"/>: every piece of the game for that slot and
+    /// the build's class (one exotic), the one it wears there first, then by name, each with its set.
     /// </summary>
-    public static GameItemOptions ListGameArmorOptions(ValidatedBuild build, GameItems game, ArmorSlot slot) =>
-        GameItemPicking.ListPieces(build.Catalog, build.Build, game, slot);
+    public static ArmorItemOptions ListArmorItems(ValidatedBuild build, ItemListing listing, ArmorSlot slot) =>
+        ArmorSwapping.ListItemOptions(build.Catalog, build.Build, listing, slot);
 
-    /// <summary>What a pick of the game's item <paramref name="item"/> needs read from the full manifest first: the item, when the excerpt lacks it.</summary>
-    public static ImmutableArray<ItemHash> ListUnknownPickHashes(DesignSession session, ItemHash item) =>
+    /// <summary>The item picked from "Every item", when the catalog's excerpt lacks it (what the full manifest is read for before the pick: its perks, catalyst or set).</summary>
+    public static ImmutableArray<ItemHash> ListUnknownItemHashes(DesignSession session, ItemHash item) =>
         ManifestJoin.ListUnknown(session.Build.Catalog.Manifest, [item]);
 
     /// <summary>
-    /// The design wearing the game's weapon <paramref name="weapon"/> where <paramref name="target"/> says (in place of
-    /// one of its weapons, or added to an empty slot), with no perk picked and its catalyst off; the build check runs again
-    /// and the steps replay. Or why it can't: the excerpt must know the weapon (the host reads it first: UseJoinedManifest).
+    /// The design with what Bungie's full manifest said of an item picked from "Every item" (its perks, catalyst or set:
+    /// <see cref="UseJoinedManifest"/>), or, when it couldn't be read, why — the pick waits for it, so it doesn't happen.
     /// </summary>
-    public static Result<DesignSession, string> PickGameWeapon(DesignSession session, WeaponTarget target, ItemHash weapon) =>
-        WeaponSwapping.PlaceWeapon(session.Build.Catalog, session.Build.Build, target, weapon)
+    public static Result<DesignSession, string> UsePickedItemManifest(DesignSession session, Result<ManifestExcerpt, string> joined) =>
+        joined.Match(
+            _ => UseJoinedManifest(session, joined),
+            failed => new Result<DesignSession, string>.Error($"Loopsmith couldn't read Bungie's manifest for it ({failed.Failure}). Try again."));
+
+    /// <summary>
+    /// The design wearing the weapon <paramref name="item"/> of the game where <paramref name="target"/> says: in place of
+    /// one of its weapons (that entry of the embedded build file is written anew: no roll, its catalyst off), or added to
+    /// an empty slot; the build check runs again and the steps replay. Or why the weapon can't be worn.
+    /// </summary>
+    public static Result<DesignSession, string> PickWeaponItem(DesignSession session, WeaponTarget target, ItemHash item) =>
+        WeaponSwapping.PutWeapon(session.Build.Catalog, session.Build.Build, target, item)
             .Bind(build => RebuildWith(session, target.Match(
                 inPlace => BuildFileEditing.ReplaceWeapon(session.Design.Build, inPlace.Weapon, build.Weapons[inPlace.Weapon]),
                 _ => BuildFileEditing.AddWeapon(session.Design.Build, build.Weapons[^1]))));
 
     /// <summary>
-    /// The design wearing the game's <paramref name="piece"/> in <paramref name="slot"/> (no copy): its exotic, left-out
-    /// pieces and set bonuses change (ArmorSwapping), its stats stay, the build check runs again and the steps replay. Or
-    /// why it can't: the excerpt must know the piece (the host reads it first: UseJoinedManifest).
+    /// The design wearing the armor piece <paramref name="item"/> of the game in <paramref name="slot"/> (no copy: its
+    /// stats stay as they were); the build check runs again and the steps replay. Or why the piece can't be worn.
     /// </summary>
-    public static Result<DesignSession, string> PickGameArmor(DesignSession session, ArmorSlot slot, ItemHash piece) =>
-        ArmorSwapping.PlacePiece(session.Build.Catalog, session.Build.Build, slot, piece)
+    public static Result<DesignSession, string> PickArmorItem(DesignSession session, ArmorSlot slot, ItemHash item) =>
+        ArmorSwapping.PutPiece(session.Build.Catalog, session.Build.Build, slot, item)
+            .Bind(build => RebuildWith(session, BuildFileEditing.ReplaceArmor(session.Design.Build, build)));
+
+    /// <summary>
+    /// The design without its weapon number <paramref name="weapon"/>: that slot empty (a step that uses it is blocked);
+    /// the build check runs again and the steps replay. Or why not.
+    /// </summary>
+    public static Result<DesignSession, string> EmptyWeaponSlot(DesignSession session, int weapon) =>
+        WeaponSwapping.RemoveWeapon(session.Build.Build, weapon)
+            .Bind(_ => RebuildWith(session, BuildFileEditing.RemoveWeapon(session.Design.Build, weapon)));
+
+    /// <summary>
+    /// The design with nothing in <paramref name="slot"/> (its exotic gone when it was there, its set bonuses following
+    /// the pieces left); the build check runs again and the steps replay. Or why not.
+    /// </summary>
+    public static Result<DesignSession, string> EmptyArmorSlot(DesignSession session, ArmorSlot slot) =>
+        ArmorSwapping.RemovePiece(session.Build.Catalog, session.Build.Build, slot)
             .Bind(build => RebuildWith(session, BuildFileEditing.ReplaceArmor(session.Design.Build, build)));
 
     /// <summary>
