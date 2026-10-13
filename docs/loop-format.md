@@ -263,7 +263,9 @@ of its slot (the slot the manifest gives the mod; other mods are general) — wi
 manifest excerpt; what the rules don't know sits where DIM would show it, its icon as bright as any other's, with a
 small grey ⊘ in its lower-right corner ("Not in Loopsmith yet: it sets nothing off in your loop"). It also lists the
 left-out items under **Not in Loopsmith yet** (collapsed, with how many of each part: open it to see them), by their
-manifest name, each a link to its light.gg page; the build check adds `Unknown (?): …` and `Left out of the build: …` as info.
+manifest name, each a link to its light.gg page. The ⊘ and that list say it all: Validation adds no line for what the
+rules don't know yet ([rule-format.md](rule-format.md#elements): an element is in the loop, outside it on purpose, or
+not authored yet).
 What the manifest says has no part in a loop is not a gap, and it isn't listed: its tile in the loadout has no ⊘,
 and its tooltip says why — a stat or tuning mod (Grenade Mod: +10 Grenade; Balanced Tuning — it changes only stats,
 which the build's stats count when they add up from the player's armor, [Stats](#stats)), a legendary armor piece
@@ -319,8 +321,8 @@ loadout's) and its 2- and 4-piece perks, dimmed when not active, each with its o
 **An exotic's catalyst.** An exotic weapon with a catalyst shows it as a square after its perks, off until the
 build turns it on (a DIM link doesn't say). In the designer its details switch it on or off: the embedded
 build's weapon entry gets `catalyst: true`, the catalyst's element is equipped, and the steps replay. A
-catalyst whose effect the rules can't express yet (Thunderlord's Return Stroke refills ammo, which isn't
-modelled) is shown, and Validation says it sets nothing off.
+catalyst outside the loop (Thunderlord's Return Stroke refills ammo, which isn't modelled) is shown, and its details
+say "No rules needed." and why; one the rules don't know yet carries the ⊘. Validation says nothing of either.
 
 **Shared DIM builds on Home.** A share can ship with the app as `builds/<slug>/dim-loadout.json` —
 its link and the loadout as DIM's API hands it over (the share page's "Open Loadout in DIM" link holds
@@ -501,11 +503,9 @@ rolled two perks or more has each of them):
   copy (its `instance`: picked from Yours, or the player's own dim.gg share's) is theirs, each perk the copy doesn't
   have in that column carries a small amber **!** in its square's upper-right corner (clear of the ⊘ in the lower
   right and of an enhanced trait's arrow on the left) and "Not on your copy" under its name. Picking one puts the same
-  **!** on the weapon's perk square and a warning under Validation, one line per perk: a perk the rules don't know
-  already has the grey line on the weapon's roll, which turns yellow in its place and says it ("Festival Flight's
-  roll: Hatchling (Trait) — not in the rule catalog yet, so it sets nothing off. Your copy doesn't have Hatchling in
-  column 2 (it has Elemental Honing (enhanced) or Attrition Orbs)."); one they know gets a yellow line of its own
-  ("Festival Flight: your copy doesn't have Slice (enhanced) in column 1 (it has Slice)."). Each perk of a column that rolled two or more is the copy's; so is a base perk whose
+  **!** on the weapon's perk square and a yellow warning under Validation, one line per perk, whether or not the rules
+  know it ("Festival Flight: your copy doesn't have Hatchling in column 2 (it has Elemental Honing (enhanced) or
+  Attrition Orbs)."; "Festival Flight: your copy doesn't have Slice (enhanced) in column 1 (it has Slice)."). Each perk of a column that rolled two or more is the copy's; so is a base perk whose
   enhanced version the copy has (the enhanced trait does all it does), but not an enhanced perk whose base the copy
   has. A weapon picked from Every item or written in the build file isn't compared, and nothing of it is saved: the
   marks and the warning go when the player logs out.

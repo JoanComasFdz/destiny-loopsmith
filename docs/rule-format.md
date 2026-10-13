@@ -256,10 +256,21 @@ is the build's value. `from` and `below` are stat values (0..200) and `from` < `
 blocks a build). An unknown stat ("?") says nothing.
 
 `inert: "<why>"` marks an element that is known and has no part in a loop on purpose — Skip Grenade
-(its hits are the grenade step itself), Feeding Frenzy (no ammo or reloads are counted), Emergency
+(its hits are the grenade step itself), Feeding Frenzy and Return Stroke (no ammo or reloads are counted), Emergency
 Reinforcement (no damage taken is modelled, so nothing sets it off). It takes no rules and no passives
-(`inert is only for an element with no rules and no passives`), the build check gives it no "no
-authored rules" warning, and its details say "No rules needed." with the why.
+(`inert is only for an element with no rules and no passives`), the build check says nothing of it, and its details
+say "No rules needed." with the why.
+
+**An element is in one of three states**, and only the last is a gap:
+
+| State | In the rule files | What the player sees |
+|---|---|---|
+| In the loop | `rules` or `passives` | what it sets off, in the trace and the graph |
+| Outside the loop on purpose | `inert: "<why>"` | nothing under Validation; its details say "No rules needed." and why |
+| Not authored yet | no element (the manifest knows it, the rules don't) | its square carries a small grey ⊘; nothing under Validation |
+
+An element with no rules, no passives and no `inert` is a gap in the rule files, not something to show the player:
+a test over `rules/` fails and names it (`ElementStatesCatalogTests`). Write its rules, or say why it needs none.
 
 ### Enhanced traits (`enhanced`)
 
@@ -690,6 +701,10 @@ stats: { weapons: 47, class: 104, grenade: 145, super: 27, melee: 79 }   # any s
 
 `BuildValidation` checks the build against the catalog. Blocking issues stop it
 (`Build '<name>' is invalid:` and one `✗` line each); warnings (`!`) and info (`i`) show in its summary.
+What the rules don't know yet — a `"?"` ability, a weapon perk, mod or catalyst the catalog has no element for,
+what a DIM link left out — is part of the build, not of the trace, and no line here: its square carries the ⊘
+([above](#elements)), and the designer lists the left-out items under "Not in Loopsmith yet". An `inert` element says
+nothing either.
 
 | Issue | Severity |
 |---|---|
@@ -699,16 +714,10 @@ stats: { weapons: 47, class: 104, grenade: 145, super: 27, melee: 79 }   # any s
 | `'<name>' (<Affinity>) does not fit the <Subclass> subclass.` — a super, grenade, melee, jump, aspect or fragment of another affinity; neutral and kinetic ones fit any, and Prismatic takes any | Blocking |
 | `<n> aspects equipped; at most 2.` · `'<name>' is equipped <n> times; aspects and fragments are unique.` · `<n> fragments equipped; the aspects grant <m> slots.` | Blocking |
 | `Fragment slots unknown for <aspects> — fragment count not checked.` | Info |
-| `Unknown (?): <slots> — not in the rule catalog yet, so they set nothing off.` | Info |
-| `Left out of the build: <n> items, <n> subclass plugs, … from the DIM loadout — not in the rule catalog yet.` — only the gaps: a stat or tuning mod (it changes only stats, which the build's stats count when they add up from the player's armor), a legendary armor piece (its set's bonuses count from the pieces worn) and a jump the rules don't have have no part in a loop and aren't counted | Info |
-| `<weapon>'s roll: <perks> — not in the rule catalog yet, so they set nothing off.` — perks named as "Slice (Enhanced Trait)" | Info |
 | `<weapon>'s roll: <perk> isn't a perk of its column <n> in the manifest excerpt.` — only when the excerpt has the weapon's columns | Warning |
 | `<weapon>: '<perk>' gives way to the other perk of its column — a column holds one perk.` — a perk `perks` names in a column the roll (or another named perk) already fills; it doesn't count | Warning |
 | `<weapon> has no catalyst in the manifest excerpt, so catalyst: true does nothing.` | Warning |
 | `<weapon>'s mod: <mod> isn't a mod its mod socket takes in the manifest excerpt.` — only when the excerpt lists what it takes | Warning |
-| `<weapon>'s mod: <mod> — not in the rule catalog yet, so it sets nothing off.` | Info |
-| `<weapon>'s catalyst: <name> — not in the rule catalog yet, so it sets nothing off.` | Info |
-| `'<name>' has no authored rules yet — it is inert in the trace.` — not for an `inert` element | Warning |
 | an equipped element's `statChecks` that the build's stats meet ([Elements](#elements)): `With 40 Melee, a Gambler's Dodge gives back less than a full melee charge …` | as the check says |
 | a rule that doesn't stack with an equipped element ([above](#rules-that-dont-stack)) | Warning |
 | `Build pinned catalog <pinned>; using <current>.` | Info |

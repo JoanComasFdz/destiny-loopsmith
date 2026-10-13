@@ -85,11 +85,11 @@ public sealed class JumpSlotTests
     }
 
     [Fact]
-    public void An_unknown_jump_is_named_with_the_unknown_abilities()
+    public void An_unknown_jump_is_part_of_the_build_and_says_nothing_under_validation()
     {
         var build = Assert.IsType<Result<ValidatedBuild, string>.Ok>(ValidateHunter("jump: \"?\"")).Value;
 
-        Assert.Contains(build.Issues, issue => issue.Severity == Severity.Info && issue.Message.StartsWith("Unknown (?): jump — ", StringComparison.Ordinal));
+        Assert.Empty(build.Issues);
     }
 
     private static string ReadBuildText() =>

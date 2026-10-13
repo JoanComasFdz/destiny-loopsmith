@@ -3,6 +3,7 @@ using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 using Loopsmith.Core.LoadoutImporting;
 using Loopsmith.Core.Orchestration;
+using Loopsmith.Core.Phrasing;
 using Loopsmith.Core.SourceFetching;
 using Loopsmith.Core.Tests.Support;
 
@@ -132,8 +133,8 @@ public sealed class DimLoadoutMappingTests
         Assert.Equal("Skip Grenade Hunter loop", session.Design.Name);
         Assert.Contains("super: \"?\"", session.Design.Build.Text);
         Assert.Equal(7, reopened.Build.Build.LeftOut.Length);
-        Assert.Contains(session.Build.Issues, issue => issue.Message.StartsWith("Left out of the build: 1 item, 4 subclass plugs, 1 armor mod, 1 artifact perk", StringComparison.Ordinal));
-        Assert.Contains(session.Build.Issues, issue => issue.Message.StartsWith("Unknown (?): super, grenade, melee", StringComparison.Ordinal));
+        Assert.Equal("1 item, 4 subclass plugs, 1 armor mod, 1 artifact perk", LoopDesigning.ListMissing(session.Build).DescribeLeftOut());
+        Assert.DoesNotContain(session.Build.Issues, issue => issue.Message.StartsWith("Left out of the build", StringComparison.Ordinal) || issue.Message.StartsWith("Unknown (?)", StringComparison.Ordinal));
         Assert.True(LoopDesigning.IsDimLink(reopened.Build.Build.SourceUrl.UnwrapOr("")));
     }
 
