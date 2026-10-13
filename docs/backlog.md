@@ -82,6 +82,13 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   out on different events (Hands-On and Ashes to Assets); an amount by class (Dynamo); a cooldown between orbs
   (Firepower on `grenade:kill:3` drops three). Ammo, weapon handling, damage taken and allies-only mods are
   inert by design (D1).
+- **Weapon mods** (every one the Compendium lists is in `rules/mods/weapons.yaml`; all inert but Synergy): the
+  manifest's other weapon mods aren't authored — the old Adept mods (Adept Range, Adept Mag…), Enhanced Heat Generated
+  and Vent Speed, Full Auto Retrofit, the bow and activity mods (Jumpshot, Tungsten Bowstring, Fikrul's Friends…) —
+  so they show with their ⊘ and set nothing off. Synergy's cooldowns (the pickups' 0–12 s, its own) and the counter's
+  other enemy tiers (elite 16.7%, boss 50%: the pack is rank-and-file, ADRs D7) are facts in its description. What
+  picking up a Firesprite, Void Breach, Stasis Shard or Tangle gives has no keyword element yet. The perks of
+  `rules/weapons/perks.yaml` could say `weapon:this` instead of their weapon's type, now that it exists.
 - **Written as declarations, *(chance)* or facts** (D3, D8), so they need no new format: progress the
   game doesn't show as a stacking status (Spark of Discharge's kills per trace, To Shreds' 6 weapon hits,
   Amplified's intrinsic kill counter) is *(chance)*; Slice's 5 hits end with `max:slice`; energy per

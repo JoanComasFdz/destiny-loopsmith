@@ -398,3 +398,20 @@ line of its own, all damage's sources and its own together, PvE only. An unknown
 animation — is not counted until it is authored as a resistance passive. A condition the format can't express is
 treated as holding, as for any passive (Spark of Resistance's "3+ enemies within 15 m", D7). Copies of one mod take
 the mod's own value by copies (15% | 25% | 30%); different mods multiply.
+
+### D30 — "This weapon" is bound by the build check; a counter the game doesn't show splits into certain and chance kills
+
+**Context.** A weapon mod or perk acts on the weapon that holds it ("Synergy: kills with this weapon … spawns a pickup of
+the weapon's element"), but an element is one YAML entry for every weapon that can hold it, so its rules can't name a
+slot or a damage type (the perks of `weapons/perks.yaml` named their one weapon's type instead). Synergy's counter is
+progress the game doesn't show as a stacking status (D8: a chance rule), yet the owner wanted a way to make it fire
+for sure, as a kill count, and each enhanced mod as its own element, offered only where the game allows it.
+**Decision.** A rule says `weapon:this` (or `weapon:this:<type>`), and only an element a weapon
+holds may; the build check binds it to the weapon holding it — its slot, and its type for the typed form, a rule for
+another type left out — so the engine and the loop graph see an ordinary weapon-in-slot source, and the same element
+on two weapons is two elements, not stacked copies. A kill trigger takes `fewerThan` beside `atLeast`, so one count
+splits the kills of one action: the kills that fill the counter on their own (12 rank-and-file for Synergy, 8 for its
+enhanced version, from the Compendium's per-kill share) fire for sure, fewer fire as a chance. **Consequence.** The
+trigger palette offers the counts equipped rules name (12) beside 1 to 9. Kills of earlier steps don't add up (D1): a
+step of fewer kills stays a chance, whatever came before. An enhanced weapon mod is its own element and its own plug;
+the designer offers it only for a weapon known to be Tier 4 or 5 (after a Bungie login), as the game does.
