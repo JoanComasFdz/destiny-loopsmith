@@ -21,17 +21,22 @@ public sealed record ListingQuery(ImmutableDictionary<string, ImmutableArray<Ite
 
 /// <summary>
 /// The listing's small components, read: each weapon and armor bucket's slot (by the bucket's hash), the armor sets, the
-/// socket category of a weapon's intrinsic frame, and the breaker types by name ("shield piercing").
+/// socket category of a weapon's intrinsic frame and of an armor piece's mods, and the breaker types by name ("shield
+/// piercing").
 /// </summary>
 public sealed record ListingTables(
     ImmutableDictionary<ItemHash, WeaponSlot> WeaponBuckets,
     ImmutableDictionary<ItemHash, ArmorSlot> ArmorBuckets,
     ImmutableDictionary<ItemHash, ArmorSet> Sets,
     Optional<ItemHash> IntrinsicCategory,
+    Optional<ItemHash> ModCategory,
     ImmutableDictionary<string, ItemHash> Breakers);
 
-/// <summary>An item the listing keeps, and the plugs its intrinsic sockets start with (a weapon's frame is among them).</summary>
-public sealed record ListedEntry(ManifestItem Item, ImmutableArray<ItemHash> Intrinsics);
+/// <summary>
+/// An item the listing keeps, the plugs its intrinsic sockets start with (a weapon's frame is among them) and, for armor,
+/// the plugs its mod sockets start with (an empty socket's plug names the category the socket takes).
+/// </summary>
+public sealed record ListedEntry(ManifestItem Item, ImmutableArray<ItemHash> Intrinsics, ImmutableArray<ItemHash> ModSockets);
 
 /// <summary>Where a listing is: what it has read so far, and so what it waits for.</summary>
 [Union]
@@ -40,7 +45,8 @@ public partial record ListingProgress
     partial record AwaitingTables();
     partial record AwaitingItems(ListingTables Tables);
     partial record AwaitingFrames(ListingTables Tables, ImmutableArray<ListedEntry> Items);
-    partial record AwaitingFramePerks(ListingTables Tables, ImmutableArray<ListedEntry> Items, ImmutableDictionary<ItemHash, JsonElement> Frames);
+    partial record AwaitingFramePerks(
+        ListingTables Tables, ImmutableArray<ListedEntry> Items, ImmutableDictionary<ItemHash, JsonElement> Frames, ImmutableDictionary<ItemHash, PlugCategoryId> SocketPlugs);
 }
 
 /// <summary>A listing's next step: ask the host for more, or done — every weapon and armor piece a build can wear.</summary>
@@ -55,8 +61,10 @@ public partial record ListingStep
 /// Pure: every weapon and armor piece a build can wear, from Bungie's manifest (<see cref="ItemListing"/>, the pickers'
 /// "Every item"), in four rounds the host answers: the small components whole (the buckets, the armor sets, the socket
 /// categories, the breaker types); the items of the weapon and armor buckets, each cut down to the fields its square and
-/// the build check need and the plugs its sockets start with; the weapons' intrinsic frames; and the frames' perks. A
-/// weapon's breaker is its own, else its frame's (a frame's perk named with the breaker, "[Shield-Piercing] Barrier"),
+/// the build check need and the plugs its sockets start with; the weapons' intrinsic frames and the empty plugs armor's
+/// mod sockets start with (their categories: what each socket takes); and the frames' perks with every armor mod of
+/// those categories (the mod picker's list, ADRs D30: named, with a perk or a stat — an empty or locked socket's plug
+/// has neither). A weapon's breaker is its own, else its frame's (a frame's perk named with the breaker, "[Shield-Piercing] Barrier"),
 /// as the join reads it. An item is listed when it is equippable, named, legendary or exotic, and a weapon in a weapon
 /// bucket or armor in an armor bucket; every version of it is (each reissue is an item of its own, with its season's
 /// watermark and, for armor, its set).
@@ -65,6 +73,9 @@ public static class ManifestListing
 {
     private const string BucketKey = "bucketTypeHash";
     private const string IntrinsicCategoryName = "INTRINSIC TRAITS";
+    private const string ModCategoryName = "ARMOR MODS";
+    private const string PlugCategoryKey = "plugCategoryIdentifier";
+    private const string GuardianRankRequirement = "Requires Guardian Rank";
     private const int ArmorItemType = 2;     // the manifest's itemType for armor…
     private const int WeaponItemType = 3;    // …and for weapons
 
@@ -92,13 +103,28 @@ public static class ManifestListing
         ["equippingBlock", "equipableItemSetHash"],
     ];
 
-    /// <summary>…and, for a weapon, the plugs its sockets start with and which sockets are its intrinsic ones (its frame).</summary>
-    private static readonly ImmutableArray<ImmutableArray<string>> WeaponPaths =
+    /// <summary>…and the plugs its sockets start with and which sockets are which (a weapon's intrinsic frame, armor's mods).</summary>
+    private static readonly ImmutableArray<ImmutableArray<string>> SocketedPaths =
     [
         .. ItemPaths,
         ["sockets", "socketEntries", "*", "singleInitialItemHash"],
         ["sockets", "socketCategories", "*", "socketCategoryHash"],
         ["sockets", "socketCategories", "*", "socketIndexes"],
+    ];
+
+    /// <summary>What the mod picker shows of a mod, and what tells a mod from an empty or locked socket's plug (a perk, a stat).</summary>
+    private static readonly ImmutableArray<ImmutableArray<string>> ModPaths =
+    [
+        ["displayProperties", "name"],
+        ["displayProperties", "icon"],
+        ["displayProperties", "description"],
+        ["itemTypeDisplayName"],
+        ["inventory", "tierType"],
+        ["plug", PlugCategoryKey],
+        ["plug", "energyCost", "energyCost"],
+        ["plug", "insertionRules", "*", "failureMessage"],
+        ["perks", "*", "perkHash"],
+        ["investmentStats", "*", "value"],
     ];
 
     private static readonly ManifestPartsQuery NoParts =
@@ -124,8 +150,10 @@ public static class ManifestListing
             awaiting => ParseDocument(partsJson)
                 .MapError(problem => $"its items don't read: {problem}")
                 .Map(parts => AskFrames(awaiting.Tables, ReadItems(awaiting.Tables, parts))),
-            awaiting => new Result<ListingStep, string>.Ok(AskFramePerks(awaiting.Tables, awaiting.Items, ReadFrames(entries))),
-            awaiting => new Result<ListingStep, string>.Ok(new ListingStep.Done(BuildListing(awaiting.Tables, awaiting.Items, awaiting.Frames, entries)))));
+            awaiting => new Result<ListingStep, string>.Ok(AskFramePerks(awaiting.Tables, awaiting.Items, ReadFrames(entries), ReadSocketPlugs(entries))),
+            awaiting => ParseDocument(partsJson)
+                .MapError(problem => $"its armor mods don't read: {problem}")
+                .Map(parts => (ListingStep)new ListingStep.Done(BuildListing(awaiting.Tables, awaiting.Items, awaiting.Frames, entries, awaiting.SocketPlugs, ReadMods(awaiting.SocketPlugs, parts))))));
 
     /// <summary>The listing a finished step built; why there is none when reading the manifest failed or didn't finish.</summary>
     public static Result<ItemListing, string> ToItemListing(Result<ListingStep, string> step) =>
@@ -143,18 +171,22 @@ public static class ManifestListing
         var weapons = buckets.Where(bucket => ManifestJoin.WeaponBuckets.ContainsKey(bucket.Name)).ToImmutableDictionary(bucket => bucket.Hash, bucket => ManifestJoin.WeaponBuckets[bucket.Name]);
         var armor = buckets.Where(bucket => ManifestJoin.ArmorBuckets.ContainsKey(bucket.Name)).ToImmutableDictionary(bucket => bucket.Hash, bucket => ManifestJoin.ArmorBuckets[bucket.Name]);
         var sets = ListTable(entries, ManifestTable.EquipableItemSet).ToImmutableDictionary(entry => entry.Hash, entry => ManifestJoin.ToArmorSet(entry.Hash, entry.Entry));
-        var intrinsic = ListTable(entries, ManifestTable.SocketCategory)
-            .Where(entry => entry.Entry.ReadString("displayProperties", "name") == Optional.Some(IntrinsicCategoryName))
-            .Select(entry => Optional.Some(entry.Hash))
-            .FindFirstSome();
+        var intrinsic = FindSocketCategory(entries, IntrinsicCategoryName);
+        var mods = FindSocketCategory(entries, ModCategoryName);
         var breakers = ListTable(entries, ManifestTable.BreakerType)
             .SelectMany(entry => ToSequence(entry.Entry.ReadText("displayProperties", "name").Map(name => (Name: ManifestJoin.ToBreakerName(name), entry.Hash))))
             .DistinctBy(breaker => breaker.Name)
             .ToImmutableDictionary(breaker => breaker.Name, breaker => breaker.Hash);
         return weapons.IsEmpty || armor.IsEmpty
             ? new Result<ListingTables, string>.Error("its buckets name no weapon or armor slot")
-            : new Result<ListingTables, string>.Ok(new ListingTables(weapons, armor, sets, intrinsic, breakers));
+            : new Result<ListingTables, string>.Ok(new ListingTables(weapons, armor, sets, intrinsic, mods, breakers));
     }
+
+    private static Optional<ItemHash> FindSocketCategory(ImmutableDictionary<ManifestEntryKey, JsonElement> entries, string name) =>
+        ListTable(entries, ManifestTable.SocketCategory)
+            .Where(entry => entry.Entry.ReadString("displayProperties", "name") == Optional.Some(name))
+            .Select(entry => Optional.Some(entry.Hash))
+            .FindFirstSome();
 
     /// <summary>The items of the weapon and armor buckets, each cut down to its parts.</summary>
     private static ListingStep AskItems(ListingTables tables) =>
@@ -164,37 +196,60 @@ public static class ManifestListing
                 ImmutableDictionary<string, ImmutableArray<ItemHash>>.Empty,
                 NoParts with
                 {
-                    Paths = tables.WeaponBuckets.Keys.Select(hash => (Hash: hash, Paths: WeaponPaths))
-                        .Concat(tables.ArmorBuckets.Keys.Select(hash => (Hash: hash, Paths: ItemPaths)))
+                    Paths = tables.WeaponBuckets.Keys.Concat(tables.ArmorBuckets.Keys)
+                        .Select(hash => (Hash: hash, Paths: SocketedPaths))
                         .ToImmutableDictionary(bucket => bucket.Hash.Value.ToString(CultureInfo.InvariantCulture), bucket => bucket.Paths),
                 }));
 
-    /// <summary>The weapons' intrinsic plugs (their frames, an exotic's own perk), unless no weapon has one.</summary>
+    /// <summary>The weapons' intrinsic plugs (their frames, an exotic's own perk) and the plugs armor's mod sockets start with, unless there are none.</summary>
     private static ListingStep AskFrames(ListingTables tables, ImmutableArray<ListedEntry> items)
     {
-        var frames = items.SelectMany(entry => entry.Intrinsics).Distinct().Order().ToImmutableArray();
-        return frames.IsEmpty
-            ? new ListingStep.Done(BuildListing(tables, items, ImmutableDictionary<ItemHash, JsonElement>.Empty, ImmutableDictionary<ManifestEntryKey, JsonElement>.Empty))
+        var plugs = items.SelectMany(entry => entry.Intrinsics.Concat(entry.ModSockets)).Distinct().Order().ToImmutableArray();
+        return plugs.IsEmpty
+            ? new ListingStep.Done(BuildListing(tables, items, ImmutableDictionary<ItemHash, JsonElement>.Empty, ImmutableDictionary<ManifestEntryKey, JsonElement>.Empty, NoSocketPlugs, NoMods))
             : new ListingStep.Ask(
                 new ListingProgress.AwaitingFrames(tables, items),
-                new ListingQuery(ManifestTransport.ToEntryRequest(new ManifestQuery([.. frames.Select(hash => new ManifestEntryKey(ManifestTable.InventoryItem, hash))], [], [])), NoParts));
+                new ListingQuery(ManifestTransport.ToEntryRequest(new ManifestQuery([.. plugs.Select(hash => new ManifestEntryKey(ManifestTable.InventoryItem, hash))], [], [])), NoParts));
     }
 
-    /// <summary>The perks of the frames read (a frame's breaker is in one's name).</summary>
-    private static ListingStep AskFramePerks(ListingTables tables, ImmutableArray<ListedEntry> items, ImmutableDictionary<ItemHash, JsonElement> frames)
+    /// <summary>The perks of the frames read (a frame's breaker is in one's name), and the item entries of the mod sockets' categories, cut down to the mod's parts.</summary>
+    private static ListingStep AskFramePerks(
+        ListingTables tables, ImmutableArray<ListedEntry> items, ImmutableDictionary<ItemHash, JsonElement> frames, ImmutableDictionary<ItemHash, PlugCategoryId> socketPlugs)
     {
         var perks = frames.Values.SelectMany(ListPerks).Distinct().Order().ToImmutableArray();
-        return perks.IsEmpty
-            ? new ListingStep.Done(BuildListing(tables, items, frames, ImmutableDictionary<ManifestEntryKey, JsonElement>.Empty))
+        var categories = socketPlugs.Values.Distinct().OrderBy(category => category.Value, StringComparer.Ordinal).ToImmutableArray();
+        return perks.IsEmpty && categories.IsEmpty
+            ? new ListingStep.Done(BuildListing(tables, items, frames, ImmutableDictionary<ManifestEntryKey, JsonElement>.Empty, socketPlugs, NoMods))
             : new ListingStep.Ask(
-                new ListingProgress.AwaitingFramePerks(tables, items, frames),
-                new ListingQuery(ManifestTransport.ToEntryRequest(new ManifestQuery([.. perks.Select(hash => new ManifestEntryKey(ManifestTable.SandboxPerk, hash))], [], [])), NoParts));
+                new ListingProgress.AwaitingFramePerks(tables, items, frames, socketPlugs),
+                new ListingQuery(
+                    ManifestTransport.ToEntryRequest(new ManifestQuery([.. perks.Select(hash => new ManifestEntryKey(ManifestTable.SandboxPerk, hash))], [], [])),
+                    new ManifestPartsQuery(
+                        ManifestTransport.ToComponentName(ManifestTable.InventoryItem),
+                        PlugCategoryKey,
+                        categories.ToImmutableDictionary(ToJsonString, _ => ModPaths))));
     }
 
-    /// <summary>The listing: the items by name (a name's versions side by side, by hash), each weapon with its intrinsic and breaker; and the sets.</summary>
+    /// <summary>No mods read (no piece has a mod socket the listing reads mods of).</summary>
+    private static readonly ImmutableArray<ListedMod> NoMods = [];
+
+    private static readonly ImmutableDictionary<ItemHash, PlugCategoryId> NoSocketPlugs = ImmutableDictionary<ItemHash, PlugCategoryId>.Empty;
+
+    /// <summary>
+    /// The listing: the items by name (a name's versions side by side, by hash), each weapon with its intrinsic and
+    /// breaker; the sets; the mods by name (a name's copies side by side, the costlier first); and each armor piece's
+    /// mod sockets by the categories they take, when the listing read its mods.
+    /// </summary>
     private static ItemListing BuildListing(
-        ListingTables tables, ImmutableArray<ListedEntry> items, ImmutableDictionary<ItemHash, JsonElement> frames, ImmutableDictionary<ManifestEntryKey, JsonElement> perks) =>
-        new(
+        ListingTables tables,
+        ImmutableArray<ListedEntry> items,
+        ImmutableDictionary<ItemHash, JsonElement> frames,
+        ImmutableDictionary<ManifestEntryKey, JsonElement> perks,
+        ImmutableDictionary<ItemHash, PlugCategoryId> socketPlugs,
+        ImmutableArray<ListedMod> mods)
+    {
+        var categories = mods.Select(mod => mod.Category).ToImmutableHashSet();
+        return new(
             [
                 .. items
                     .Select(entry => entry.Item.Kind is ManifestKind.Weapon weapon
@@ -203,7 +258,14 @@ public static class ManifestListing
                     .OrderBy(item => item.Name, StringComparer.OrdinalIgnoreCase)
                     .ThenBy(item => item.Hash.Value),
             ],
-            tables.Sets);
+            tables.Sets,
+            [.. mods.OrderBy(mod => mod.Item.Name, StringComparer.OrdinalIgnoreCase).ThenByDescending(mod => mod.Cost.Value).ThenBy(mod => mod.Item.Hash.Value)],
+            items
+                .Where(entry => entry.Item.Kind is ManifestKind.Armor)
+                .Select(entry => (entry.Item.Hash, Sockets: entry.ModSockets.SelectMany(plug => socketPlugs.TryGetValue(plug, out var category) ? new[] { category } : []).Where(categories.Contains).ToImmutableArray()))
+                .Where(entry => !entry.Sockets.IsEmpty)
+                .ToImmutableDictionary(entry => entry.Hash, entry => entry.Sockets));
+    }
 
     // ── reading the answers ─────────────────────────────────────────────────────────
 
@@ -234,7 +296,8 @@ public static class ManifestListing
                 Optional.None<string>(),
                 parts.ReadString("displayProperties", "icon").Bind(ToPresent),
                 parts.ReadString("iconWatermark").Bind(ToPresent)),
-            found is ManifestKind.Weapon ? ListIntrinsicPlugs(tables, parts) : []));
+            found is ManifestKind.Weapon ? ListSocketPlugs(tables.IntrinsicCategory, parts) : [],
+            found is ManifestKind.Armor ? ListSocketPlugs(tables.ModCategory, parts) : []));
     }
 
     /// <summary>A weapon in a weapon bucket (its slot, damage type and own breaker), armor in an armor bucket (its slot, set and class); none for anything else.</summary>
@@ -262,11 +325,11 @@ public static class ManifestListing
                 : Optional.None<ManifestKind>();
     }
 
-    /// <summary>The plugs a weapon's intrinsic sockets start with (its frame, an exotic's own perk).</summary>
-    private static ImmutableArray<ItemHash> ListIntrinsicPlugs(ListingTables tables, JsonElement parts)
+    /// <summary>The plugs the sockets of a socket category start with (a weapon's intrinsic ones: its frame, an exotic's own perk; armor's mod sockets: their empty plugs).</summary>
+    private static ImmutableArray<ItemHash> ListSocketPlugs(Optional<ItemHash> socketCategory, JsonElement parts)
     {
         var entries = parts.ReadArray("sockets", "socketEntries");
-        return tables.IntrinsicCategory.Match(
+        return socketCategory.Match(
             category => [.. parts.ReadArray("sockets", "socketCategories")
                 .Where(group => group.ReadHash("socketCategoryHash") == Optional.Some(category.Value))
                 .SelectMany(group => group.ReadArray("socketIndexes"))
@@ -279,6 +342,63 @@ public static class ManifestListing
         ListTable(entries, ManifestTable.InventoryItem)
             .Where(entry => entry.Entry.ReadString("plug", "plugCategoryIdentifier") == Optional.Some("intrinsics") && entry.Entry.ReadText("displayProperties", "name").IsSome())
             .ToImmutableDictionary(entry => entry.Hash, entry => entry.Entry);
+
+    /// <summary>The mod sockets' empty plugs read: each one's category, when it is a mod socket a build chooses for (ArmorModCategories).</summary>
+    private static ImmutableDictionary<ItemHash, PlugCategoryId> ReadSocketPlugs(ImmutableDictionary<ManifestEntryKey, JsonElement> entries) =>
+        ListTable(entries, ManifestTable.InventoryItem)
+            .SelectMany(entry => ToSequence(entry.Entry.ReadString("plug", PlugCategoryKey).Bind(ToPlugCategory)
+                .Bind(category => IsModSocket(category) ? Optional.Some((Plug: entry.Hash, Category: category)) : Optional.None<(ItemHash Plug, PlugCategoryId Category)>())))
+            .ToImmutableDictionary(entry => entry.Plug, entry => entry.Category);
+
+    /// <summary>True when a socket that starts with a plug of this category is a mod socket a build chooses for (ArmorModCategories).</summary>
+    private static bool IsModSocket(PlugCategoryId category) =>
+        category == ArmorModCategories.General
+        || ArmorModCategories.FindSlot(category).IsSome()
+        || category == ArmorModCategories.Artifice
+        || category.Value.StartsWith(ArmorModCategories.RaidPrefix, StringComparison.Ordinal)
+        || category.Value.StartsWith(ArmorModCategories.ActivityPrefix, StringComparison.Ordinal);
+
+    /// <summary>
+    /// The mods of the parts read: the entries of the categories asked for that are named and have a perk or a stat (an
+    /// empty socket's plug, a locked one's, has neither), and aren't a socket's empty plug.
+    /// </summary>
+    private static ImmutableArray<ListedMod> ReadMods(ImmutableDictionary<ItemHash, PlugCategoryId> socketPlugs, JsonElement parts) =>
+    [
+        .. parts.EnumerateObject()
+            .Where(group => group.Value.ValueKind == JsonValueKind.Object)
+            .SelectMany(group => group.Value.EnumerateObject())
+            .SelectMany(entry => ToSequence(ReadHashName(entry.Name).Bind(hash => socketPlugs.ContainsKey(hash) ? Optional.None<ListedMod>() : ToListedMod(hash, entry.Value))))
+            .DistinctBy(mod => mod.Item.Hash),
+    ];
+
+    private static Optional<ListedMod> ToListedMod(ItemHash hash, JsonElement parts)
+    {
+        var name = parts.ReadText("displayProperties", "name");
+        var category = parts.ReadString("plug", PlugCategoryKey).Bind(ToPlugCategory);
+        var effective = !parts.ReadArray("perks").IsEmpty || parts.ReadArray("investmentStats").Any(stat => stat.ReadInteger("value").Match(value => value.Value != 0, _ => false));
+        return effective
+            ? name.Bind(found => category.Map(mods => new ListedMod(
+                new ManifestItem(
+                    hash,
+                    found,
+                    new ManifestKind.ArmorMod(ArmorModCategories.FindSlot(mods)),
+                    parts.ReadText("itemTypeDisplayName"),
+                    parts.ReadInteger("inventory", "tierType").Bind(tier => ManifestJoin.Tiers.TryGetValue(tier, out var known) ? Optional.Some(known) : Optional.None<ItemTier>()),
+                    parts.ReadText("displayProperties", "description"),
+                    parts.ReadString("displayProperties", "icon").Bind(ToPresent),
+                    Optional.None<string>()),
+                mods,
+                parts.ReadInteger("plug", "energyCost", "energyCost").Bind(cost => ArmorEnergy.TryFrom(cost).IsSuccess ? Optional.Some(ArmorEnergy.From(cost)) : Optional.None<ArmorEnergy>()).UnwrapOr(ArmorEnergy.Zero),
+                [.. parts.ReadArray("plug", "insertionRules")
+                    .SelectMany(rule => ToSequence(rule.ReadText("failureMessage")))
+                    .Where(message => !message.StartsWith(GuardianRankRequirement, StringComparison.Ordinal))
+                    .Distinct()])))
+            : Optional.None<ListedMod>();
+    }
+
+    /// <summary>A string value as Bungie's JSON writes it, quotes and all (what a parts query groups by).</summary>
+    private static string ToJsonString(PlugCategoryId category) =>
+        JsonSerializer.Serialize(category.Value);
 
     private static IEnumerable<ItemHash> ListPerks(JsonElement frame) =>
         frame.ReadArray("perks").SelectMany(perk => ToSequence(perk.ReadHash("perkHash")));

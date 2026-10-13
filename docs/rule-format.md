@@ -385,7 +385,7 @@ so a `major|boss|champion` kill shows in `explain` and the graph but doesn't fir
 `atLeast` is a whole number 1..20 (`TargetCount`, ADRs D4): the player says how many enemies an
 action hits ("One For All: hitting three separate targets…" → `{ damage: { via: weapon, atLeast: 3 } }`).
 `fewerThan` (a kill only) is 2..20 and stands alone like `atLeast` (`kill cannot combine 'atLeast' and 'fewerThan'`):
-the two split one count (ADRs D30), so a counter the game doesn't show fires for sure on the kills that fill it and as a chance
+the two split one count (ADRs D31), so a counter the game doesn't show fires for sure on the kills that fill it and as a chance
 on fewer — Synergy (`rules/mods/weapons.yaml`): `atLeast: 12` spawns its pickup, `fewerThan: 12` spawns it with
 `chance: true`, since the kills of earlier steps may have filled it. The designer's trigger palette offers every
 `atLeast` count an equipped rule names, beside 1 to 9.
@@ -428,7 +428,7 @@ rules "Max Bolt Charge". A `stacksMaxed` (or `atMax`) on a status without `maxSt
 | `keyword:bolt-charge` | `KeywordOf(status)` — keyword damage (lightning strike, jolt chain…); any glossary status |
 | `summon:threadling` | `SummonOf(summon)` |
 
-**This weapon** (ADRs D30). A weapon perk's or mod's rules name no weapon: `weapon:this` is the one holding it. The build check
+**This weapon** (ADRs D31). A weapon perk's or mod's rules name no weapon: `weapon:this` is the one holding it. The build check
 binds it (`Causality.WeaponBinding`): it equips the element as that weapon's — `weapon:this` becomes that weapon's slot,
 `weapon:this:<type>` too when the weapon is of that type, and a rule, passive or damage change for another type is left
 out — so two weapons holding Synergy are two elements, each with its own weapon's rules (not stacked copies). Unbound
@@ -676,6 +676,13 @@ stats: { weapons: 47, class: 104, grenade: 145, super: 27, melee: 79 }   # any s
   armor pieces it wears — `armorCopies: [{hash: 593554567, instance: "6917530185805135602"}, …]`, the piece's
   manifest hash and the copy's instance id (a number, quoted). Unknown to the rules; the Stats section adds the
   stats up from these copies when the logged-in player owns them ([loop-format.md](loop-format.md#stats)).
+* `armorModPlugs`: which copy of an armor mod the rules know the build holds, by manifest hash, for a mod one of
+  whose copies isn't its element's first hash (many mods have a cheaper copy the seasonal artifact allows: Arc Siphon
+  3 energy, or 1). It lists every copy of such a mod, in `armorMods`' order: each of the element's mods holds the next
+  one of these that is its element's, else its first hash (`armorMods: [arc-siphon, arc-siphon]` with
+  `armorModPlugs: [2724068510, 3847471926]`: one of each). Written by a DIM link and by the designer's mod picker
+  ([loop-format.md](loop-format.md#armor-mods)); a mod not named here holds its element's first hash. The copy
+  decides only its energy cost: both play alike.
 * Stats and archetypes are shown in the build summary, and hashes are recorded (D14); the engine
   doesn't use them.
 

@@ -68,6 +68,8 @@ public static class ManifestSaving
         {
             ["items"] = new JsonArray([.. listing.Items.SelectMany(item => ToSequence(ToItemNode(item)))]),
             ["sets"] = new JsonArray([.. listing.Sets.Values.OrderBy(set => set.Hash.Value).Select(ToSetNode)]),
+            ["mods"] = new JsonArray([.. listing.Mods.Select(ToModNode)]),
+            ["modSockets"] = new JsonArray([.. listing.ModSockets.OrderBy(piece => piece.Key.Value).Select(piece => ToModSocketsNode(piece.Key, piece.Value))]),
         }.ToJsonString();
 
     /// <summary>The listing the browser saved, or why it doesn't read.</summary>
@@ -80,7 +82,9 @@ public static class ManifestSaving
         root.ReadPath("items").IsSome() && root.ReadPath("sets").IsSome()
             ? new Result<ItemListing, string>.Ok(new ItemListing(
                 [.. root.ReadArray("items").SelectMany(item => ToSequence(ReadItem(item)))],
-                root.ReadArray("sets").SelectMany(set => ToSequence(ReadSet(set))).ToImmutableDictionary(set => set.Hash)))
+                root.ReadArray("sets").SelectMany(set => ToSequence(ReadSet(set))).ToImmutableDictionary(set => set.Hash),
+                [.. root.ReadArray("mods").SelectMany(mod => ToSequence(ReadMod(mod)))],
+                root.ReadArray("modSockets").SelectMany(piece => ToSequence(ReadModSockets(piece))).ToImmutableDictionary(piece => piece.Piece, piece => piece.Sockets)))
             : new Result<ItemListing, string>.Error("the saved listing has no items or sets");
 
     // ── the saved copy ──────────────────────────────────────────────────────────────
@@ -145,6 +149,28 @@ public static class ManifestSaving
             KeyValuePair.Create("class", armor.Class.Map(found => (JsonNode)found.ToString())),
         ]);
 
+    /// <summary>A mod as the listing saves it: its item's fields, its category, cost and requirements.</summary>
+    private static JsonNode ToModNode(ListedMod mod) =>
+        ToObject(
+        [
+            KeyValuePair.Create("hash", Optional.Some<JsonNode>(mod.Item.Hash.Value)),
+            KeyValuePair.Create("name", Optional.Some<JsonNode>(mod.Item.Name)),
+            KeyValuePair.Create("type", mod.Item.Type.Map(text => (JsonNode)text)),
+            KeyValuePair.Create("tier", mod.Item.Tier.Map(tier => (JsonNode)tier.ToString())),
+            KeyValuePair.Create("description", mod.Item.Description.Map(text => (JsonNode)text)),
+            KeyValuePair.Create("icon", mod.Item.Icon.Map(text => (JsonNode)text)),
+            KeyValuePair.Create("category", Optional.Some<JsonNode>(mod.Category.Value)),
+            KeyValuePair.Create("cost", Optional.Some<JsonNode>(mod.Cost.Value)),
+            KeyValuePair.Create("requirements", Optional.Some<JsonNode>(new JsonArray([.. mod.Requirements.Select(text => (JsonNode)text)]))),
+        ]);
+
+    private static JsonNode ToModSocketsNode(ItemHash piece, ImmutableArray<PlugCategoryId> sockets) =>
+        new JsonObject
+        {
+            ["piece"] = piece.Value,
+            ["sockets"] = new JsonArray([.. sockets.Select(category => (JsonNode)category.Value)]),
+        };
+
     private static JsonNode ToSetNode(ArmorSet set) =>
         new JsonObject
         {
@@ -198,6 +224,30 @@ public static class ManifestSaving
             armor.ReadHash("intrinsic"),
             armor.ReadHash("set"),
             armor.ReadString("class").Bind(ReadEnum<GuardianClass>)));
+
+    private static Optional<ListedMod> ReadMod(JsonElement mod)
+    {
+        var category = mod.ReadString("category").Bind(ToPlugCategory);
+        var cost = mod.ReadInteger("cost").Bind(found => ArmorEnergy.TryFrom(found).IsSuccess ? Optional.Some(ArmorEnergy.From(found)) : Optional.None<ArmorEnergy>());
+        return mod.ReadHash("hash").Bind(hash => mod.ReadString("name").Bind(name => category.Bind(found => cost.Map(energy => new ListedMod(
+            new ManifestItem(
+                hash,
+                name,
+                new ManifestKind.ArmorMod(ArmorModCategories.FindSlot(found)),
+                mod.ReadString("type"),
+                mod.ReadString("tier").Bind(ReadEnum<ItemTier>),
+                mod.ReadString("description"),
+                mod.ReadString("icon"),
+                Optional.None<string>()),
+            found,
+            energy,
+            [.. mod.ReadArray("requirements").SelectMany(text => text.ValueKind == JsonValueKind.String ? ToSequence(Optional.FromNullable(text.GetString())) : [])])))));
+    }
+
+    private static Optional<(ItemHash Piece, ImmutableArray<PlugCategoryId> Sockets)> ReadModSockets(JsonElement piece) =>
+        piece.ReadHash("piece").Map(hash => (hash, piece.ReadArray("sockets")
+            .SelectMany(category => category.ValueKind == JsonValueKind.String ? ToSequence(Optional.FromNullable(category.GetString()).Bind(ToPlugCategory)) : [])
+            .ToImmutableArray()));
 
     private static Optional<ArmorSet> ReadSet(JsonElement set) =>
         set.ReadHash("hash").Bind(hash => set.ReadString("name").Map(name => new ArmorSet(

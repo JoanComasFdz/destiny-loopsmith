@@ -64,11 +64,13 @@
 
         <div class="designer-grid">
             <aside class="col-build">
-                <BuildPanel Build="session.Build" Issues="LoopDesigning.ListDesignIssues(session, Workbench.Profile)" OnPickPerk="PickPerk" OnPickMod="PickMod" OnSetCatalyst="SetCatalyst" OnSetStats="SetStats"
+                <BuildPanel Build="session.Build" Issues="LoopDesigning.ListDesignIssues(session, Workbench.Profile)" OnPickPerk="PickPerk" OnPickWeaponMod="PickWeaponMod" OnSetCatalyst="SetCatalyst" OnSetStats="SetStats"
                             Profile="Workbench.Profile" LoginNote="Workbench.LoginNote" OnLoggedIn="UseBungieLoginAsync" OnLoggedOut="LogOut" OnPickArmor="PickArmor" OnPickWeapon="PickWeapon" OnEditSubclass="EditSubclass"
                             PickWeaponItem="Optional.Some<Func<WeaponItemPick, Task<Result<Unit, string>>>>(PickWeaponItemAsync)"
                             PickArmorItem="Optional.Some<Func<ArmorItemPick, Task<Result<Unit, string>>>>(PickArmorItemAsync)"
-                            OnEmptyWeapon="EmptyWeaponSlot" OnEmptyArmor="EmptyArmorSlot" />
+                            OnEmptyWeapon="EmptyWeaponSlot" OnEmptyArmor="EmptyArmorSlot"
+                            PickMod="Optional.Some<Func<ModPick, Task<Result<Unit, string>>>>(PickModAsync)"
+                            ClearMod="Optional.Some<Func<ModSocketPlace, Task<Result<Unit, string>>>>(ClearModAsync)" />
             </aside>
             <div class="col-loop">
                 <ExplainPanel Build="session.Build" />
@@ -253,7 +255,7 @@
         ApplyBuildEdit(session => LoopDesigning.PickWeaponPerk(session, pick.Weapon, pick.Column, pick.Perk));
 
     /// <summary>A weapon mod picked (or removed) in the build panel: the embedded build's weapon changes and the steps replay with it.</summary>
-    private void PickMod(ModPick pick) =>
+    private void PickWeaponMod(WeaponModPick pick) =>
         ApplyBuildEdit(session => LoopDesigning.PickWeaponMod(session, pick.Weapon, pick.Mod));
 
     /// <summary>A change to the embedded build: the new session when it succeeds, else its message in the status bar.</summary>
@@ -360,6 +362,28 @@
         var read = await JoinPickedItemAsync(pick.Item);                                         // impure
         var picked = read.Bind(session => LoopDesigning.PickArmorItem(session, pick.Slot, pick.Item)); // pure
         return UsePickedItem(picked);                                                            // impure (UI state)
+    }
+
+    /// <summary>
+    /// A mod picked for one of the build's sockets: Bungie's manifest is read for it when the excerpt lacks it (its name,
+    /// icon, slot), then it goes into the embedded build and the steps replay (its stats added up again when they were
+    /// from the player's armor). Or why not, for the picker to show (the build doesn't change).
+    /// </summary>
+    private async Task<Result<Unit, string>> PickModAsync(ModPick pick)
+    {
+        var read = await JoinPickedItemAsync(pick.Mod);                                          // impure
+        var listing = await Manifest.ListItemsAsync();                                           // impure (the tab's listing)
+        var picked = read.Bind(session => listing.Bind(listed => LoopDesigning.PickMod(session, listed, Workbench.Profile, pick.Place, pick.Mod))); // pure
+        return UsePickedItem(picked);                                                            // impure (UI state)
+    }
+
+    /// <summary>"Clear this socket": its mod comes out of the embedded build and the steps replay; or why not.</summary>
+    private async Task<Result<Unit, string>> ClearModAsync(ModSocketPlace place)
+    {
+        var listing = await Manifest.ListItemsAsync();                                           // impure (the tab's listing)
+        var current = Workbench.Session.ToResult(() => "No loop is open.");                      // impure (tab state)
+        var cleared = current.Bind(session => listing.Bind(listed => LoopDesigning.ClearMod(session, listed, Workbench.Profile, place))); // pure
+        return UsePickedItem(cleared);                                                           // impure (UI state)
     }
 
     /// <summary>

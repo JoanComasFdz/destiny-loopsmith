@@ -107,6 +107,16 @@ public static class BuildFileEditing
             (text, entry) => text.Bind(current => ReplaceEntry(buildFile with { Text = current }, entry.Key, entry.Value)));
 
     /// <summary>
+    /// The build file with its mod entries — <c>armorMods</c>, <c>leftOut</c>, <c>armorModPlugs</c> — written anew as
+    /// <paramref name="build"/> has them (a mod picked or cleared in the designer): each replaced where it was, added at the
+    /// end when the file has none, removed when the build has nothing for it. The rest of the file stays as it was.
+    /// </summary>
+    public static Result<string, string> ReplaceMods(SourceText buildFile, Build build) =>
+        BuildFileWriting.WriteModEntries(build).Aggregate(
+            new Result<string, string>.Ok(buildFile.Text) as Result<string, string>,
+            (text, entry) => text.Bind(current => ReplaceEntry(buildFile with { Text = current }, entry.Key, entry.Value)));
+
+    /// <summary>
     /// The build file with its subclass entries — <c>super</c>, <c>grenade</c>, <c>melee</c>, <c>classAbility</c>,
     /// <c>jump</c>, <c>aspects</c>, <c>fragments</c>, <c>leftOut</c> — written anew as <paramref name="build"/> has them (a subclass
     /// edited in the designer changes all of them): each replaced where it was, added at the end when the file has none,

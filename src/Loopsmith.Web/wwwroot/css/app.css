@@ -1189,6 +1189,44 @@ button.hud-chip:hover, button.hud-chip:focus-visible { background: color-mix(in 
 .icon-grid.mods { grid-template-columns: repeat(2, var(--mod-tile)); }
 .icon-grid.mods .icon-tile, .general-mods .icon-tile { width: var(--mod-tile); height: var(--mod-tile); }
 .general-mods .icon-grid { grid-template-columns: repeat(auto-fill, var(--mod-tile)); }
+/* the designer's mod sockets: a piece's slot mods and own sockets (three to a line), its energy under them, and the
+   General row; an empty socket is a dashed square named for what it takes, a filled one shows its mod and its cost */
+.loadout { --socket-tile: var(--mod-tile); }
+.mod-sockets { display: flex; flex-direction: column; gap: 3px; }
+.icon-grid.mods.sockets { grid-template-columns: repeat(4, var(--socket-tile)); }
+.general-mods .icon-grid.sockets { grid-template-columns: repeat(auto-fill, var(--socket-tile)); }
+.mod-socket { position: relative; display: inline-flex; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; border-radius: 4px; }
+.icon-grid .mod-socket .icon-tile, .icon-grid.mods .mod-socket .icon-tile { width: var(--socket-tile); height: var(--socket-tile); }
+.mod-socket .icon-tile.empty { font-size: 8px; line-height: 1.1; overflow: hidden; word-break: break-word; }
+.mod-socket:hover .icon-tile, .mod-socket:focus-visible .icon-tile { border-color: var(--arc); }
+.mod-socket:focus-visible { outline: 2px solid var(--arc); outline-offset: 1px; }
+.mod-socket-cost { position: absolute; top: 0; right: 0; min-width: 11px; padding: 0 2px; font-size: 9px; font-weight: 800; line-height: 11px; text-align: center; color: #fff; background: rgba(0, 0, 0, .72); border-bottom-left-radius: 3px; pointer-events: none; }
+.mod-energy { font-size: 10px; color: var(--muted); white-space: nowrap; }
+.mod-energy.over { color: var(--warn); font-weight: 700; }
+.unplaced-mods .loadout-sublabel { color: var(--warn); }
+/* on a phone the loadout has the width: the sockets are as big as a piece's square, easy to tap and to tell apart */
+@media (max-width: 640px) {
+    .loadout:not(.compact) { --socket-tile: 46px; }
+    .loadout:not(.compact) .general-mods .icon-grid { grid-template-columns: repeat(auto-fill, var(--socket-tile)); }
+    .loadout:not(.compact) .general-mods .icon-grid:not(.sockets) .icon-tile { width: var(--socket-tile); height: var(--socket-tile); }
+    .mod-socket-cost { min-width: 14px; font-size: 11px; line-height: 14px; }
+    .mod-socket .icon-tile.empty { font-size: 10px; }
+    .mod-energy { font-size: 12px; }
+}
+.mod-picker { display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+.mod-picker-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.mod-search { flex: 1 1 160px; min-width: 0; }
+.mod-picker-energy { font-size: 12px; }
+.mod-picker .picker-foot { align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+.mod-picker .picker-foot > .muted { flex: 1 1 200px; font-size: 11px; }
+.mod-options { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 2px; overflow-y: auto; overscroll-behavior: contain; min-height: 0; }
+.mod-option .icon-tile { width: var(--mod-tile, 32px); height: var(--mod-tile, 32px); flex: none; }
+.mod-option .perk-option-type, .mod-option .perk-option-warning { white-space: normal; }
+.mod-option:disabled { opacity: .5; cursor: not-allowed; }
+.mod-option:disabled .perk-option-warning { opacity: 1; }
+.modal.fit .mod-picker { flex: 1 1 auto; }
+.modal.fit .mod-picker > * { flex: none; }
+.modal.fit .mod-picker > .mod-options { flex: 0 1 auto; }
 .set-bonuses .loadout-sublabel { margin-top: 0; }
 .armor-set { display: flex; flex-direction: column; gap: 4px; margin-bottom: 6px; }
 .armor-set-name { font-size: 12px; font-weight: 650; }
@@ -1482,8 +1520,8 @@ a.weapon-line-name:hover { color: var(--arc); text-decoration: underline; }
 .icon-tile.weapon-mod { width: var(--mod-tile); height: var(--mod-tile); border-radius: 4px; }
 .icon-tile.weapon-mod.enhanced { border-color: var(--masterwork); box-shadow: inset 0 -8px 10px -6px var(--masterwork); }
 .icon-tile.empty-mod { border-style: dashed; color: var(--dim); font-size: 14px; font-weight: 700; background: transparent; }
-.mod-slot { padding: 0; border: 0; background: none; border-radius: 4px; display: inline-flex; align-self: center; }
-button.mod-slot { cursor: pointer; }
-.mod-slot:hover .icon-tile, .mod-slot.open .icon-tile { border-color: var(--arc); box-shadow: 0 0 0 2px color-mix(in srgb, var(--arc) 35%, transparent); }
+.weapon-mod-slot { padding: 0; border: 0; background: none; border-radius: 4px; display: inline-flex; align-self: center; }
+button.weapon-mod-slot { cursor: pointer; }
+.weapon-mod-slot:hover .icon-tile, .weapon-mod-slot.open .icon-tile { border-color: var(--arc); box-shadow: 0 0 0 2px color-mix(in srgb, var(--arc) 35%, transparent); }
 .perk-option.unavailable { opacity: .45; cursor: not-allowed; }
 .perk-option.unavailable:hover { background: none; }

@@ -292,7 +292,7 @@ public sealed class BungieManifestJoining(BrowserInterop browser, string apiKey,
         var files = await LoadFilesAsync(withListing: true);                                     // impure
         if (files is not Result<HeldFiles, string>.Ok { Value: var loaded })
         {
-            return files.Map(_ => new ItemListing([], ImmutableDictionary<ItemHash, ArmorSet>.Empty)); // pure (its failure)
+            return files.Map(_ => new ItemListing([], ImmutableDictionary<ItemHash, ArmorSet>.Empty, [], ImmutableDictionary<ItemHash, ImmutableArray<PlugCategoryId>>.Empty)); // pure (its failure)
         }
 
         if (loaded.Listing is Optional<ItemListing>.Some saved)

@@ -109,6 +109,7 @@ public static class LoopDesigning
             [],
             new StatLine(noStat, noStat, noStat, noStat, noStat, noStat),
             [],
+            [],
             []);
     }
 
@@ -682,6 +683,55 @@ public static class LoopDesigning
     public static Result<DesignSession, string> EmptyArmorSlot(DesignSession session, ArmorSlot slot) =>
         ArmorSwapping.RemovePiece(session.Build.Catalog, session.Build.Build, slot)
             .Bind(build => RebuildWith(session, BuildFileEditing.ReplaceArmor(session.Design.Build, build)));
+
+    // ── Armor mods: the pieces' mod sockets, the mod picker (docs/loop-format.md, "Armor mods") ──────────────
+
+    /// <summary>
+    /// The energy each armor slot's copy holds, after the player's Bungie login: the copy the build wears there (the
+    /// share's when theirs, else their own); a slot without one isn't in it ("?").
+    /// </summary>
+    public static ImmutableDictionary<ArmorSlot, ArmorEnergy> ListArmorCapacities(ValidatedBuild build, Optional<BungieProfile> profile) =>
+        profile.Match(
+            owned => Enum.GetValues<ArmorSlot>()
+                .SelectMany(slot => CopyFinding.FindWornArmor(build.Catalog, build.Build, owned.Value, slot)
+                    .Bind(armor => armor.EnergyCapacity)
+                    .Bind(capacity => ArmorEnergy.TryFrom(capacity).IsSuccess ? Optional.Some(ArmorEnergy.From(capacity)) : Optional.None<ArmorEnergy>())
+                    .Match(capacity => new[] { KeyValuePair.Create(slot, capacity.Value) }, _ => []))
+                .ToImmutableDictionary(),
+            _ => ImmutableDictionary<ArmorSlot, ArmorEnergy>.Empty);
+
+    /// <summary>
+    /// The build's mods in its pieces' sockets (from the listing of every piece): each slot's row (its slot mods and own
+    /// sockets) with its energy, the General row, and the mods no socket takes.
+    /// </summary>
+    public static ModLayout LayOutMods(ValidatedBuild build, ItemListing listing, Optional<BungieProfile> profile) =>
+        ArmorModding.LayOutMods(build.Catalog, build.Build, listing, ListArmorCapacities(build, profile));
+
+    /// <summary>What the mod picker lists for a socket: every mod of its category, the subclass's element first, the ones that don't fit refused and why; or why there's no such socket.</summary>
+    public static Result<ModOptions, string> ListModOptions(ValidatedBuild build, ItemListing listing, Optional<BungieProfile> profile, ModSocketPlace place) =>
+        ArmorModding.ListModOptions(build.Catalog, build.Build, listing, ListArmorCapacities(build, profile), place);
+
+    /// <summary>
+    /// The design with <paramref name="mod"/> in the socket at <paramref name="place"/>: only the embedded build file's
+    /// mod entries change (<c>armorMods</c>, <c>armorModPlugs</c>, the mods in <c>leftOut</c>); the build check runs again,
+    /// the steps replay, and its stats are added up again from the player's armor when they were (a stat mod changes
+    /// them). Or why the mod can't go in (its energy, its socket). Read the full manifest for a mod the excerpt lacks
+    /// first (<see cref="ListUnknownItemHashes"/>), as for an item.
+    /// </summary>
+    public static Result<DesignSession, string> PickMod(DesignSession session, ItemListing listing, Optional<BungieProfile> profile, ModSocketPlace place, ItemHash mod) =>
+        EditMods(session, profile, build => ArmorModding.PutMod(build.Catalog, build.Build, listing, ListArmorCapacities(build, profile), place, mod));
+
+    /// <summary>The design without the mod in the socket at <paramref name="place"/> (as <see cref="PickMod"/> changes it); or why not.</summary>
+    public static Result<DesignSession, string> ClearMod(DesignSession session, ItemListing listing, Optional<BungieProfile> profile, ModSocketPlace place) =>
+        EditMods(session, profile, build => ArmorModding.ClearMod(build.Catalog, build.Build, listing, ListArmorCapacities(build, profile), place));
+
+    private static Result<DesignSession, string> EditMods(DesignSession session, Optional<BungieProfile> profile, Func<ValidatedBuild, Result<Build, string>> change)
+    {
+        var addedUp = profile.Bind(owned => StatsAreAddedUp(session, owned) ? profile : Optional.None<BungieProfile>());
+        return change(session.Build)
+            .Bind(build => RebuildWith(session, BuildFileEditing.ReplaceMods(session.Design.Build, build)))
+            .Map(edited => addedUp.Match(owned => SetStatsFromArmor(edited, owned.Value).Match(set => set.Value, _ => edited), _ => edited));
+    }
 
     /// <summary>
     /// What the game draws on the player's copy the build wears in a slot (its tier, masterwork): the share's copy when it

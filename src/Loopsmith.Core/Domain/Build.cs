@@ -124,7 +124,10 @@ public sealed record ArmorCopy(ItemHash Piece, ItemInstanceId Instance);
 /// <summary>
 /// A build as authored (DIM-like composition), not yet validated against the catalog. <see cref="LeftOut"/> is what the
 /// DIM loadout it came from had that the catalog doesn't know yet (empty for a build written by hand);
-/// <see cref="ArmorCopies"/> which copy of its armor pieces it wears, when it says (a dim.gg share's, or picked).
+/// <see cref="ArmorCopies"/> which copy of its armor pieces it wears, when it says (a dim.gg share's, or picked);
+/// <see cref="ArmorModPlugs"/> which copy of an armor mod the rules know it holds, for an element one of whose copies
+/// isn't its first hash (the cheaper copy the seasonal artifact allows): each of the element's mods, in order, holds the
+/// next of these that is one of its element's hashes, else the element's first hash.
 /// </summary>
 public sealed record Build(
     string Name,
@@ -143,7 +146,8 @@ public sealed record Build(
     ImmutableArray<WeaponLoadout> Weapons,
     StatLine Stats,
     ImmutableArray<LeftOutItem> LeftOut,
-    ImmutableArray<ArmorCopy> ArmorCopies);
+    ImmutableArray<ArmorCopy> ArmorCopies,
+    ImmutableArray<ItemHash> ArmorModPlugs);
 
 public sealed record BuildIssue(Severity Severity, string Message);
 

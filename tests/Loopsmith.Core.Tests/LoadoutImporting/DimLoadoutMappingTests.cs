@@ -57,6 +57,7 @@ public sealed class DimLoadoutMappingTests
         Assert.Equal(["spark-of-resistance", "spark-of-frequency", "spark-of-shock", "spark-of-discharge"], build.Fragments.Select(id => id.Value));
         Assert.Equal(Optional.Some(ElementId.From("shinobus-vow")), build.ExoticArmor);
         Assert.Equal(["elemental-charge", "elemental-charge", "grenade-kickstart", "grenade-kickstart", "bomber"], build.ArmorMods.Select(id => id.Value));
+        Assert.Equal([3712696020u, 2996369932u], build.ArmorModPlugs.Select(hash => hash.Value));  // one copy isn't its element's first: each copy kept, in order
         Assert.Empty(build.Weapons);
     }
 

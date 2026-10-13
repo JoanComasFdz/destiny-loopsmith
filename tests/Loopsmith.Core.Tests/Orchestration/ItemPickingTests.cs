@@ -44,7 +44,9 @@ public sealed class ItemPickingTests
             ToArmor(HunterMask, "Testing Mask", ArmorSlot.Helmet, ItemTier.Legendary, Optional.Some(TestingSet), GuardianClass.Hunter),
             ToArmor(TitanHelm, "Testing Helm", ArmorSlot.Helmet, ItemTier.Legendary, Optional.Some(TestingSet), GuardianClass.Titan),
         ],
-        ImmutableDictionary.CreateRange([KeyValuePair.Create(TestingSet, new ArmorSet(TestingSet, "Testing", []))]));
+        ImmutableDictionary.CreateRange([KeyValuePair.Create(TestingSet, new ArmorSet(TestingSet, "Testing", []))]),
+        [],
+        ImmutableDictionary<ItemHash, ImmutableArray<PlugCategoryId>>.Empty);
 
     /// <summary>What the join reads for a pick: the item with its trait columns.</summary>
     private static readonly ManifestExcerpt Joined = new(

@@ -107,10 +107,10 @@ public static class ArmorSwapping
             .FindFirstSome();
 
     /// <summary>A piece the build wears: its slot, its hash, its name and whether it is exotic.</summary>
-    private sealed record WornPiece(ArmorSlot Slot, ItemHash Hash, string Name, bool Exotic);
+    internal sealed record WornPiece(ArmorSlot Slot, ItemHash Hash, string Name, bool Exotic);
 
     /// <summary>The build's pieces the excerpt knows: its exotic (the first of its element's hashes that is armor), then the armor it leaves out.</summary>
-    private static ImmutableArray<WornPiece> ListPieces(RuleCatalog catalog, Build build) =>
+    internal static ImmutableArray<WornPiece> ListPieces(RuleCatalog catalog, Build build) =>
     [
         .. build.ExoticArmor
             .Bind(id => catalog.Elements.TryGetValue(id, out var element)
