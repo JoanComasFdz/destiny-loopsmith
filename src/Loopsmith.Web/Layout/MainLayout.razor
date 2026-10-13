@@ -1,5 +1,11 @@
 @inherits LayoutComponentBase
+@implements IDisposable
 @inject Workbench Workbench
+@inject BungieManifestJoining Manifest
+@inject NavigationManager Navigation
+@* Every page's frame. When the tab opens, it loads Bungie's manifest (kept for the tab): until that is done (or the player
+   goes on without it), the startup screen stands in for the page and the screen tabs are hidden. Bungie's login
+   redirect (login) neither loads it nor waits for it: it hands the login back and closes. *@
 
 <div class="app-shell">
     <header class="topbar">
@@ -7,10 +13,13 @@
             <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 5a11 11 0 1 1-10.4 7.4" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" /><path d="M3.5 8.5l2.4 4.1 4.3-2.1" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" /><circle cx="16" cy="16" r="3.2" fill="var(--solar)" /></svg>
             <span class="brand-name">Loopsmith</span>
         </a>
-        <nav class="tabs" aria-label="Screens">
-            <NavLink class="tab" href="designer">Designer</NavLink>
-            <NavLink class="tab" href="compare">Compare</NavLink>
-        </nav>
+        @if (!IsWaitingForManifest())
+        {
+            <nav class="tabs" aria-label="Screens">
+                <NavLink class="tab" href="designer">Designer</NavLink>
+                <NavLink class="tab" href="compare">Compare</NavLink>
+            </nav>
+        }
         @if (Workbench.Startup is Result<LoopsmithBundle, string>.Ok started)
         {
             <span class="catalog-tag" title="Rule catalog version this app was built with">@started.Value.Catalog.Version</span>
@@ -20,6 +29,9 @@
     <main class="content">
         @switch (Workbench.Startup)
         {
+            case Result<LoopsmithBundle, string>.Ok when IsWaitingForManifest():
+                <ManifestStartupScreen />
+                break;
             case Result<LoopsmithBundle, string>.Ok ok:
                 <CascadingValue Value="ok.Value" IsFixed="true">
                     <ErrorBoundary @ref="errorBoundary">
@@ -55,10 +67,36 @@
 
 @code {
     private ErrorBoundary? errorBoundary;
+    private bool loginRedirect;
+
+    /// <summary>The tab opens: Bungie's manifest loads (not on Bungie's login redirect), the startup screen showing how far.</summary>
+    protected override async Task OnInitializedAsync()
+    {
+        var path = Navigation.ToBaseRelativePath(Navigation.Uri);                                // impure
+        var redirect = ManifestStartupShaping.IsLoginRedirect(path);                             // pure
+        loginRedirect = redirect;                                                                // impure (component state)
+        if (loginRedirect)
+        {
+            return;
+        }
+
+        Manifest.StartupChanged += Refresh;                                                      // impure
+        await Manifest.LoadAtStartupAsync();                                                     // impure
+    }
 
     protected override void OnParametersSet() =>
         errorBoundary?.Recover();
 
+    /// <summary>Whether the startup screen stands in for the page (the load is neither done nor skipped).</summary>
+    private bool IsWaitingForManifest() =>
+        !loginRedirect && ManifestStartupShaping.IsBlocking(Manifest.Startup);
+
     private void RecoverScreen() =>
         errorBoundary?.Recover();
+
+    private void Refresh() =>
+        _ = InvokeAsync(StateHasChanged);                                                        // impure
+
+    public void Dispose() =>
+        Manifest.StartupChanged -= Refresh;                                                      // impure
 }
