@@ -347,6 +347,10 @@ public static class LoopDesigning
     public static ImmutableArray<ArtifactLimit> CountArtifactLimits(ManifestKind.Artifact artifact, ImmutableArray<ItemHash> perks) =>
         ArtifactEditing.CountLimits(artifact, perks);
 
+    /// <summary>True when no more perks fit the limit.</summary>
+    public static bool IsArtifactLimitFull(ArtifactLimit limit) =>
+        ArtifactEditing.IsFull(limit);
+
     /// <summary>The limit picking the perk as well would break; none when it can be picked.</summary>
     public static Optional<ArtifactLimit> FindBrokenArtifactLimit(ManifestKind.Artifact artifact, ImmutableArray<ItemHash> perks, ItemHash perk) =>
         ArtifactEditing.FindBrokenLimit(artifact, perks, perk);

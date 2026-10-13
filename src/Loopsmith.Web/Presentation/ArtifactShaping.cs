@@ -53,7 +53,7 @@ public static class ArtifactShaping
                 DomainPhrasing.DescribeArtifactTier(index + 1),
                 [.. tier.Perks.Select(perk => DescribeCell(build, found, perks, perk, index + 1))]))],
             LoopDesigning.PlaceArtifactPerks(found, perks).Map(placed => GroupSlots(build, found, placed)),
-            [.. LoopDesigning.CountArtifactLimits(found, perks).Select(limit => new ArtifactCount(limit.DescribeArtifactLimit(), limit.Used >= limit.Capacity))]));
+            [.. LoopDesigning.CountArtifactLimits(found, perks).Select(limit => new ArtifactCount(limit.DescribeArtifactLimit(), LoopDesigning.IsArtifactLimitFull(limit)))]));
 
     /// <summary>The details of a perk of the artifact, with these perks picked; none for a perk the artifact doesn't have.</summary>
     public static Optional<ArtifactPerkDetails> DescribeDetails(ValidatedBuild build, ItemHash artifact, ImmutableArray<ItemHash> perks, ItemHash perk) =>

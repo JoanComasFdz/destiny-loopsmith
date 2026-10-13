@@ -54,6 +54,10 @@ public static class ArtifactEditing
         ];
     }
 
+    /// <summary>True when no more perks fit the limit.</summary>
+    public static bool IsFull(ArtifactLimit limit) =>
+        limit.Used >= limit.Capacity;
+
     /// <summary>
     /// The limit picking <paramref name="perk"/> as well would break — of those it counts against that are full, the
     /// narrowest (the highest tier) — none when it fits, is picked already or isn't the artifact's.
@@ -62,7 +66,7 @@ public static class ArtifactEditing
         perks.Contains(perk)
             ? Optional.None<ArtifactLimit>()
             : FindTier(artifact, perk).Bind(tier => CountLimits(artifact, perks)
-                .Where(limit => limit.FromTier <= tier && limit.Used >= limit.Capacity)
+                .Where(limit => limit.FromTier <= tier && IsFull(limit))
                 .OrderByDescending(limit => limit.FromTier)
                 .Select(Optional.Some)
                 .FindFirstSome());
