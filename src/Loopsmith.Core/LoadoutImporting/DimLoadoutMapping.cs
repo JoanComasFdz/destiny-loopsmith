@@ -123,7 +123,7 @@ public static class DimLoadoutMapping
     private static ImmutableArray<ItemHash> ListModPlugs(ImmutableArray<(LoadoutPart Part, BuildElement Element, ItemHash Hash)> placed)
     {
         var mods = placed.Where(entry => entry.Part == LoadoutPart.ArmorMod && entry.Element.Kind == ElementKind.ArmorMod).ToImmutableArray();
-        var mixed = mods.Where(entry => entry.Element.Hashes.FirstOrDefault() != entry.Hash).Select(entry => entry.Element.Id).ToImmutableHashSet();
+        var mixed = mods.Where(entry => !entry.Element.Hashes.IsEmpty && entry.Element.Hashes[0] != entry.Hash).Select(entry => entry.Element.Id).ToImmutableHashSet();
         return [.. mods.Where(entry => mixed.Contains(entry.Element.Id)).Select(entry => entry.Hash)];
     }
 

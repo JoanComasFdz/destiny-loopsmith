@@ -346,8 +346,16 @@ public static class ManifestListing
     private static ImmutableDictionary<ItemHash, PlugCategoryId> ReadSocketPlugs(ImmutableDictionary<ManifestEntryKey, JsonElement> entries) =>
         ListTable(entries, ManifestTable.InventoryItem)
             .SelectMany(entry => ToSequence(entry.Entry.ReadString("plug", PlugCategoryKey).Bind(ToPlugCategory)
-                .Bind(category => ArmorModCategories.IsModSocket(category) ? Optional.Some((Plug: entry.Hash, Category: category)) : Optional.None<(ItemHash Plug, PlugCategoryId Category)>())))
+                .Bind(category => IsModSocket(category) ? Optional.Some((Plug: entry.Hash, Category: category)) : Optional.None<(ItemHash Plug, PlugCategoryId Category)>())))
             .ToImmutableDictionary(entry => entry.Plug, entry => entry.Category);
+
+    /// <summary>True when a socket that starts with a plug of this category is a mod socket a build chooses for (ArmorModCategories).</summary>
+    private static bool IsModSocket(PlugCategoryId category) =>
+        category == ArmorModCategories.General
+        || ArmorModCategories.FindSlot(category).IsSome()
+        || category == ArmorModCategories.Artifice
+        || category.Value.StartsWith(ArmorModCategories.RaidPrefix, StringComparison.Ordinal)
+        || category.Value.StartsWith(ArmorModCategories.ActivityPrefix, StringComparison.Ordinal);
 
     /// <summary>
     /// The mods of the parts read: the entries of the categories asked for that are named and have a perk or a stat (an

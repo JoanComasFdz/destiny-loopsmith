@@ -56,7 +56,7 @@ public static class ArmorModding
                     .Where(mod => mod.Category == socket.Category)
                     .Select(mod => new ModOption(
                         mod,
-                        FindModElement(catalog, mod.Item.Hash).IsSome() || ArmorModCategories.ChangesOnlyStats(mod.Category),
+                        FindModElement(catalog, mod.Item.Hash).IsSome() || ChangesOnlyStats(mod.Category),
                         FindModElement(catalog, mod.Item.Hash).Match(found => Optional.Some(found.Value.Affinity) == element, _ => false),
                         CheckEnergy(catalog, build, index, listing, capacities, layout, socket, mod)))
                     .OrderByDescending(option => option.OfSubclassElement),
@@ -116,8 +116,8 @@ public static class ArmorModding
         var generalFilled = FillSockets(general, generalMods);
         var ownUse = Enum.GetValues<ArmorSlot>().ToImmutableDictionary(
             slot => slot,
-            slot => filled.Sockets.Where(entry => entry.Socket.Owner == slot).Sum(entry => entry.Mod.Match(mod => CostOf(index, mod.Value), _ => 0)));
-        var generalUse = AssignGeneralMods(general, generalFilled.Sockets.SelectMany(entry => ToSequence(entry.Mod)).Select(mod => CostOf(index, mod)), ownUse, capacities);
+            slot => filled.Sockets.Where(entry => entry.Socket.Owner == slot).Sum(entry => entry.Mod.Match(mod => FindCost(index, mod.Value), _ => 0)));
+        var generalUse = AssignGeneralMods(general, generalFilled.Sockets.SelectMany(entry => ToSequence(entry.Mod)).Select(mod => FindCost(index, mod)), ownUse, capacities);
         return new ModLayout(
             [
                 .. rows.Select(row => new PieceModSockets(
@@ -149,12 +149,14 @@ public static class ArmorModding
             (Sockets: sockets.Select(socket => (Socket: socket, Mod: Optional.None<HeldMod>())).ToImmutableArray(), Left: ImmutableArray<HeldMod>.Empty),
             (filling, entry) =>
             {
-                var at = entry.Listed.Match(
-                    found => filling.Sockets.Select((socket, place) => (socket, place)).Where(free => free.socket.Socket.Category == found.Value.Category && !free.socket.Mod.IsSome()).Select(free => free.place).DefaultIfEmpty(-1).First(),
-                    _ => -1);
-                return at < 0
-                    ? (filling.Sockets, filling.Left.Add(entry.Mod))
-                    : (filling.Sockets.SetItem(at, (filling.Sockets[at].Socket, Optional.Some(entry.Mod))), filling.Left);
+                var free = entry.Listed.Bind(found => filling.Sockets
+                    .Select((socket, place) => (socket, place))
+                    .Where(open => open.socket.Socket.Category == found.Category && !open.socket.Mod.IsSome())
+                    .Select(open => Optional.Some(open.place))
+                    .FindFirstSome());
+                return free.Match(
+                    at => (filling.Sockets.SetItem(at.Value, (filling.Sockets[at.Value].Socket, Optional.Some(entry.Mod))), filling.Left),
+                    _ => (filling.Sockets, filling.Left.Add(entry.Mod)));
             });
 
     /// <summary>
@@ -203,7 +205,7 @@ public static class ArmorModding
     private static int DescribeLeft(ModLayout layout, ImmutableDictionary<ItemHash, ListedMod> index, ModSocket socket, ArmorSlot slot)
     {
         var energy = layout.Pieces.Single(piece => piece.Slot == slot).Energy;
-        var freed = socket.Mod.Match(mod => CostOf(index, mod.Value), _ => 0);
+        var freed = socket.Mod.Match(mod => FindCost(index, mod.Value), _ => 0);
         return Math.Max(0, energy.Capacity.Match(capacity => capacity.Value.Value, _ => 0) - energy.Used.Value + freed);
     }
 
@@ -275,8 +277,13 @@ public static class ArmorModding
     private static ImmutableDictionary<ItemHash, ListedMod> ToModIndex(ItemListing listing) =>
         listing.Mods.GroupBy(mod => mod.Item.Hash).ToImmutableDictionary(group => group.Key, group => group.First());
 
-    private static int CostOf(ImmutableDictionary<ItemHash, ListedMod> index, HeldMod mod) =>
+    /// <summary>A held mod's energy cost (the listing's; one it lacks is in no socket, so it costs no piece anything).</summary>
+    private static int FindCost(ImmutableDictionary<ItemHash, ListedMod> index, HeldMod mod) =>
         index.TryGetValue(mod.Plug, out var found) ? found.Cost.Value : 0;
+
+    /// <summary>True for the mods that change only stats (the general mods, an artifice socket's): no rule needs to know them.</summary>
+    private static bool ChangesOnlyStats(PlugCategoryId category) =>
+        category == ArmorModCategories.General || category == ArmorModCategories.Artifice;
 
     /// <summary>The subclass's element; none for Prismatic (its abilities are of several).</summary>
     private static Optional<Affinity> ToAffinity(Subclass subclass) =>

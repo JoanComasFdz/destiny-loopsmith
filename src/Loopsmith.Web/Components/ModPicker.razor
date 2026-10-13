@@ -10,11 +10,8 @@
 @if (options is Result<ModOptions, string>.Ok listed)
 {
     var view = ModShaping.ShapePicker(Build, Listing, listed.Value);
-    var elementName = view.Element.Match(element => element.Value.ToString(), _ => "");
-    var shown = view.Options
-        .Where(option => !elementOnly || option.OfElement)
-        .Where(option => query.Length == 0 || option.Tile.Name.Contains(query, StringComparison.OrdinalIgnoreCase))
-        .ToImmutableArray();
+    var elementName = ModShaping.DescribeElementName(view);
+    var shown = ModShaping.FilterOptions(view, elementOnly, query);
     <Modal Title="@view.Title" Size="wide fit" OnClose="OnClose">
         <div class="mod-picker" data-testid="mod-picker">
             <div class="mod-picker-tools">
@@ -132,11 +129,17 @@ else if (options is Result<ModOptions, string>.Error missing)
     private bool picking;
     private Optional<string> problem = Optional.None<string>();
 
-    private void ToggleElementOnly(ChangeEventArgs e) =>
-        elementOnly = e.Value is true;                                                           // impure (component state)
+    private void ToggleElementOnly(ChangeEventArgs e)
+    {
+        var ticked = e.Value is true;                                                            // pure
+        elementOnly = ticked;                                                                    // impure (component state)
+    }
 
-    private void Search(ChangeEventArgs e) =>
-        query = (e.Value?.ToString() ?? "").Trim();                                              // impure (component state)
+    private void Search(ChangeEventArgs e)
+    {
+        var narrowed = (e.Value?.ToString() ?? "").Trim();                                       // pure
+        query = narrowed;                                                                        // impure (component state)
+    }
 
     private Task PickAsync(ItemHash mod) =>
         RunAsync(() => PickMod(new ModPick(Place, mod)));

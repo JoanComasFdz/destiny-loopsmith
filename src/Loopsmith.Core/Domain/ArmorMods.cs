@@ -24,8 +24,14 @@ public static class ArmorModCategories
         [ArmorSlot.ClassItem] = PlugCategoryId.From("enhancements.v2_class_item"),
     }.ToImmutableDictionary();
 
-    private static readonly ImmutableArray<string> OwnPrefixes = ["enhancements.raid_", "enhancements.season_"];
-    private const string Artifice = "enhancements.artifice";
+    /// <summary>An artifice socket's mods (+3 to a stat).</summary>
+    public static readonly PlugCategoryId Artifice = PlugCategoryId.From("enhancements.artifice");
+
+    /// <summary>How a raid's sockets' categories start (<c>enhancements.raid_v800</c>)…</summary>
+    public const string RaidPrefix = "enhancements.raid_";
+
+    /// <summary>…and an activity's or an older raid's (<c>enhancements.season_outlaw</c>: Last Wish).</summary>
+    public const string ActivityPrefix = "enhancements.season_";
 
     /// <summary>The category of a slot's own mods (Helmet: <c>enhancements.v2_head</c>).</summary>
     public static PlugCategoryId ToSlotCategory(ArmorSlot slot) =>
@@ -35,16 +41,6 @@ public static class ArmorModCategories
     public static Optional<ArmorSlot> FindSlot(PlugCategoryId category) =>
         SlotCategories.Where(entry => entry.Value == category).Select(entry => Optional.Some(entry.Key)).FindFirstSome();
 
-    /// <summary>True for the mods that change only stats (the general mods, an artifice socket's): no rule needs to know them.</summary>
-    public static bool ChangesOnlyStats(PlugCategoryId category) =>
-        category == General || category.Value == Artifice;
-
-    /// <summary>True when a socket that starts with a plug of this category is a mod socket a build chooses for.</summary>
-    public static bool IsModSocket(PlugCategoryId category) =>
-        category == General
-        || SlotCategories.ContainsValue(category)
-        || category.Value == Artifice
-        || OwnPrefixes.Any(prefix => category.Value.StartsWith(prefix, StringComparison.Ordinal));
 }
 
 /// <summary>An armor mod the build holds: its plug (the copy, by hash) and, when the rules know it, its element.</summary>

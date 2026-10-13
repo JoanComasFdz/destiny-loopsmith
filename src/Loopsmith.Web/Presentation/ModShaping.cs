@@ -69,27 +69,27 @@ public static class ModShaping
 
     /// <summary>What a socket takes, as the game words its mods: "Helmet mod", "General mod", "Artifice mod", or a raid's ("Vault of Glass Armor Mod").</summary>
     public static string DescribeTakes(ItemListing listing, PlugCategoryId category) =>
-        ArmorModCategories.FindSlot(category).Match(
-            slot => $"{slot.Value.DescribeArmorSlot()} mod",
-            _ => category == ArmorModCategories.General ? "General mod"
-                : category.Value == "enhancements.artifice" ? "Artifice mod"
-                : listing.Mods.Where(mod => mod.Category == category).SelectMany(mod => mod.Item.Type.Match(type => new[] { type.Value }, _ => [])).DefaultIfEmpty("Mod").First());
+        category.DescribeModSocket().UnwrapOr(
+            listing.Mods.Where(mod => mod.Category == category).SelectMany(mod => mod.Item.Type.Match(type => new[] { type.Value }, _ => [])).DefaultIfEmpty("Mod").First());
 
-    /// <summary>What an empty socket's square says it takes: its slot ("Helmet"), "General", "Artifice", "Raid", else "Special".</summary>
-    private static string DescribeShortTakes(ItemListing listing, PlugCategoryId category) =>
-        ArmorModCategories.FindSlot(category).Match(
-            slot => slot.Value.DescribeArmorSlot(),
-            _ => category == ArmorModCategories.General ? "General"
-                : category.Value == "enhancements.artifice" ? "Artifice"
-                : DescribeTakes(listing, category).Contains("Raid", StringComparison.Ordinal) ? "Raid"
-                : "Special");
+    /// <summary>The picker's options the filters let through: of the subclass's element only (when ticked), and whose name holds the search text.</summary>
+    public static ImmutableArray<ModOptionView> FilterOptions(ModPickerView view, bool elementOnly, string query) =>
+    [
+        .. view.Options
+            .Where(option => !elementOnly || option.OfElement)
+            .Where(option => query.Length == 0 || option.Tile.Name.Contains(query, StringComparison.OrdinalIgnoreCase)),
+    ];
+
+    /// <summary>The element filter's name ("Arc"); empty when the picker has none.</summary>
+    public static string DescribeElementName(ModPickerView view) =>
+        view.Element.Match(element => element.Value.ToString(), _ => "");
 
     private static ModSocketView ShapeSocket(ValidatedBuild build, ItemListing listing, ImmutableDictionary<ItemHash, ListedMod> index, ModSocket socket) =>
         new(
             socket.Place,
             socket.Mod.Map(mod => LoadoutShaping.DescribeHeldMod(build, mod, Find(index, mod.Plug))),
             DescribeTakes(listing, socket.Category),
-            DescribeShortTakes(listing, socket.Category),
+            socket.Category.DescribeModSocketShort(),
             socket.Mod.Bind(mod => Find(index, mod.Plug)).Map(found => found.Cost.Value));
 
     private static bool IsOver(ArmorEnergyUse energy) =>

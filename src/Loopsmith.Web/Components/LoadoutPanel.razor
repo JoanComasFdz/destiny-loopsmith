@@ -13,7 +13,8 @@
 @inject BungieManifestJoining Manifest
 @{
     var view = LoadoutShaping.ShapeLoadout(Build, Profile);
-    var mods = ShapeMods();
+    var listing = CanPickMods ? Manifest.Listing : Optional.None<ItemListing>();         // impure (the tab's listing)
+    var mods = listing.Map(found => ModShaping.ShapeMods(Build, LoopDesigning.LayOutMods(Build, found, Profile), found));   // pure
 }
 <div class="loadout @(Compact ? "compact" : "")" data-testid="loadout">
     <div class="loadout-row">
@@ -423,12 +424,6 @@
 
     /// <summary>The socket whose mod picker is open.</summary>
     private Optional<ModSocketPlace> modPicker = Optional.None<ModSocketPlace>();
-
-    /// <summary>The sockets view, in the designer once the listing is read; none otherwise (the mods show as the loadout has them).</summary>
-    private Optional<ModsView> ShapeMods() =>
-        CanPickMods && Manifest.Listing is Optional<ItemListing>.Some listing
-            ? Optional.Some(ModShaping.ShapeMods(Build, LoopDesigning.LayOutMods(Build, listing.Value, Profile), listing.Value))
-            : Optional.None<ModsView>();
 
     /// <summary>In the designer, the listing of every piece and mod is read when the tab doesn't have it yet (the app reads it when it opens).</summary>
     protected override async Task OnParametersSetAsync()
