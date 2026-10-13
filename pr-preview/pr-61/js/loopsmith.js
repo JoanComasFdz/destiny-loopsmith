@@ -51,31 +51,36 @@ window.loopsmith = {
     }
   },
 
-  // A dropdown (the subclass editor's) floats under the slot it belongs to (its parent). It opens above the slot when
-  // what is visible of the dialog below the slot can't hold it and there's more room above (the dialog's sticky
-  // header doesn't count), and it is never taller than that room, so it stays in view without scrolling the dialog.
-  // It starts at the slot's left edge, shifted left as far as it takes to end inside the dialog.
+  // A dropdown (the subclass editor's) floats under the slot it belongs to (its parent), fixed to the screen so it can
+  // spill out of the dialog. It opens above the slot when the screen below can't hold it and there's more room above,
+  // it is never taller than that room, and it shifts left to end on the screen. It follows the slot while the dialog
+  // scrolls or the window resizes, until it is gone.
   placeDropdown(id) {
     const list = document.getElementById(id);
     if (!list || !list.parentElement) return;
     const frame = list.closest(".modal");
-    const head = frame ? frame.querySelector(".modal-head") : null;
-    const frameRect = frame ? frame.getBoundingClientRect() : { top: 0, bottom: window.innerHeight, left: 0, right: window.innerWidth };
-    const top = Math.max(frameRect.top, 0) + (head ? head.offsetHeight : 0);
-    const bottom = Math.min(frameRect.bottom, window.innerHeight);
-    const slot = list.parentElement.getBoundingClientRect();
-    const gap = 10;
-    list.style.left = "";
-    const overflow = slot.left + list.offsetWidth - (frameRect.right - gap);
-    const shift = Math.min(Math.max(overflow, 0), Math.max(slot.left - (frameRect.left + gap), 0));
-    list.style.left = `${-shift}px`;
-    const below = bottom - slot.bottom - gap;
-    const above = slot.top - top - gap;
-    list.style.maxHeight = "";
-    const wanted = list.offsetHeight;
-    const up = below < wanted && above > below;
-    list.style.maxHeight = `${Math.max(Math.min(wanted, up ? above : below), 120)}px`;
-    list.dataset.drop = up ? "up" : "down";
+    const gap = 4;
+    const margin = 8;
+    const place = () => {
+      if (!list.isConnected) {
+        if (frame) frame.removeEventListener("scroll", place);
+        window.removeEventListener("resize", place);
+        return;
+      }
+      const slot = list.parentElement.getBoundingClientRect();
+      list.style.maxHeight = "";
+      const wanted = list.offsetHeight;
+      const below = window.innerHeight - slot.bottom - gap - margin;
+      const above = slot.top - gap - margin;
+      const up = below < wanted && above > below;
+      list.style.maxHeight = `${Math.max(Math.min(wanted, up ? above : below), 120)}px`;
+      list.style.top = `${up ? slot.top - gap - list.offsetHeight : slot.bottom + gap}px`;
+      list.style.left = `${Math.max(Math.min(slot.left, window.innerWidth - margin - list.offsetWidth), margin)}px`;
+      list.dataset.drop = up ? "up" : "down";
+    };
+    place();
+    if (frame) frame.addEventListener("scroll", place, { passive: true });
+    window.addEventListener("resize", place);
     const held = list.querySelector('[aria-pressed="true"]');
     if (held) held.scrollIntoView({ block: "nearest" });
     (held || list).focus({ preventScroll: true });
