@@ -44,6 +44,7 @@ public enum ElementKind
     ArmorMod,
     ArtifactPerk,
     WeaponPerk,
+    WeaponMod,      // a weapon's mod (Backup Mag, Synergy): one per weapon, in its mod socket
 }
 
 public enum KeywordKind

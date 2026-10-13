@@ -185,12 +185,21 @@ public sealed class GameNotationParsingTests
     }
 
     [Fact]
-    public void A_weapon_of_an_unknown_element_names_harmonic_among_what_it_can_be()
+    public void A_weapon_of_an_unknown_element_names_harmonic_and_this_among_what_it_can_be()
     {
         var message = AssertError(GameNotationParsing.ParseDamageSource("weapon:prismatic"));
 
-        Assert.Contains("or harmonic", message);
+        Assert.Contains("harmonic or this", message);
         Assert.Contains("weapon:harmonic", message);
+        Assert.Contains("weapon:this:<type>", message);
+    }
+
+    [Fact]
+    public void This_weapon_is_the_weapon_holding_the_element_and_may_name_its_type()
+    {
+        Assert.Equal(new DamageSource.ThisWeapon(), AssertOk(GameNotationParsing.ParseDamageSource("weapon:this")));
+        Assert.Equal(new DamageSource.ThisWeaponOfType(DamageType.Arc), AssertOk(GameNotationParsing.ParseDamageSource("weapon:this:arc")));
+        Assert.Contains("weapon:this:prismatic", AssertError(GameNotationParsing.ParseDamageSource("weapon:this:prismatic")));
     }
 
     [Fact]

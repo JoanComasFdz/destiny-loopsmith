@@ -7,7 +7,7 @@ namespace Loopsmith.Core.Domain;
 /// <summary>
 /// What an item of the Bungie manifest is, as Loopsmith shows it (the manifest's own item types, grouped). A weapon has
 /// its slot, damage type, trait columns (the perks a roll selects; none when the excerpt doesn't say), intrinsic perk
-/// (its frame, or an exotic's own perk) and, for an exotic, its catalyst; armor its slot, intrinsic perk (an exotic's),
+/// (its frame, or an exotic's own perk), the weapon mods its mod socket takes and, for an exotic, its catalyst; armor its slot, intrinsic perk (an exotic's),
 /// the armor set it belongs to and the class that wears it (none: any class); an armor mod the slot it only fits (none: a general mod); a catalyst the perks it
 /// grants. A <see cref="Perk"/> is one of the manifest's sandbox perks: what a catalyst or an armor set grants.
 /// </summary>
@@ -28,8 +28,10 @@ public partial record ManifestKind
         ImmutableArray<TraitColumn> Traits,
         Optional<ItemHash> Intrinsic,
         Optional<ItemHash> Catalyst,
-        Optional<ItemHash> Breaker);   // the champion it breaks, by its breaker type: its own (an exotic's), else its intrinsic frame's
+        Optional<ItemHash> Breaker,    // the champion it breaks, by its breaker type: its own (an exotic's), else its intrinsic frame's
+        ImmutableArray<ItemHash> Mods); // the weapon mods its mod socket takes (none: it has no mod socket, or the excerpt doesn't say)
     partial record WeaponPerk();
+    partial record WeaponMod(bool Enhanced);   // Enhanced: an enhanced weapon mod, which only a Tier 4 or 5 weapon takes
     partial record IntrinsicPerk();
     partial record ExoticCatalyst(ImmutableArray<ItemHash> Perks);
     partial record Armor(ArmorSlot Slot, Optional<ItemHash> Intrinsic, Optional<ItemHash> Set, Optional<GuardianClass> Class);

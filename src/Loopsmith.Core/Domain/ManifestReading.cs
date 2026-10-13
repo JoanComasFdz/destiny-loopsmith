@@ -6,6 +6,9 @@ namespace Loopsmith.Core.Domain;
 /// <summary>Pure reads of the manifest excerpt (ADRs D14) that the slices and the hosts share: what a hash, an element or a subclass is.</summary>
 public static class ManifestReading
 {
+    /// <summary>The manifest's type of an enhanced weapon mod, which only a Tier 4 or 5 weapon takes.</summary>
+    public const string EnhancedWeaponModType = "Enhanced Weapon Mod";
+
     public static Optional<ManifestItem> FindItem(this ManifestExcerpt manifest, ItemHash hash) =>
         manifest.Items.TryGetValue(hash, out var item) ? Optional.Some(item) : Optional.None<ManifestItem>();
 
@@ -154,6 +157,10 @@ public static class ManifestReading
     /// <summary>True when a weapon's plugs hold its exotic catalyst (a catalyst completed and inserted in its socket).</summary>
     public static bool HoldsCatalyst(this ManifestKind.Weapon kind, IEnumerable<ItemHash> plugs) =>
         kind.Catalyst.Match(catalyst => plugs.Contains(catalyst.Value), _ => false);
+
+    /// <summary>The weapon mod a weapon's plugs hold: the first of them its mod socket takes; none when it holds none.</summary>
+    public static Optional<ItemHash> ReadMod(this ManifestKind.Weapon kind, IEnumerable<ItemHash> plugs) =>
+        plugs.Where(kind.Mods.Contains).Select(Optional.Some).FindFirstSome();
 
     /// <summary>A weapon's archetype from its manifest type: "Grenade Launcher" → <c>grenade-launcher</c>; none when it isn't a slug.</summary>
     public static Optional<string> ToArchetype(string type)

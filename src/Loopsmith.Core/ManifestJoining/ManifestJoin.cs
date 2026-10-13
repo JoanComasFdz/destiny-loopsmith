@@ -11,7 +11,7 @@ namespace Loopsmith.Core.ManifestJoining;
 /// Pure: Bungie's full manifest → the excerpt of what some hashes need (ADRs D14), the way
 /// <c>tools/manifest/extract_manifest.py</c> writes <c>rules/manifest.yaml</c>: each item's name, kind, type, rarity,
 /// description, icon and a weapon's or armor's season watermark; a weapon's slot, damage type, breaker (its own, else its
-/// intrinsic frame's: a frame's perk named with the breaker, "[Shield-Piercing] Barrier"), trait columns (and their perks), intrinsic perk and an
+/// intrinsic frame's: a frame's perk named with the breaker, "[Shield-Piercing] Barrier"), trait columns (and their perks), mods (the mod socket's plugs), intrinsic perk and an
 /// exotic's catalyst (and the perks it grants); armor's slot, intrinsic perk and set (and the set's perks). The breaker
 /// types and an icon's overlays aren't joined: they come from <c>rules/manifest.yaml</c>. The host
 /// holds the manifest and answers what the join asks, round by round: each round walks from the wanted hashes
@@ -26,6 +26,13 @@ public static partial class ManifestJoin
     private const string PerkCategoryName = "WEAPON PERKS";
     private const string WeaponIntrinsicCategoryName = "INTRINSIC TRAITS";
     private const string ArmorIntrinsicCategoryName = "ARMOR PERKS";
+    private const string ModCategoryName = "WEAPON MODS";                  // a weapon's mod socket and its masterwork's
+
+    /// <summary>The plug categories only a weapon's mod socket takes (its masterwork socket takes none of them).</summary>
+    private static readonly ImmutableArray<string> ModSocketCategories = ["v400.weapon.mod_guns", "v400.weapon.mod_damage", "v400.weapon.mod_magazine"];
+
+    /// <summary>The plug category of a mod socket's empty plug ("Empty Mod Socket", "Random Masterwork"): no mod.</summary>
+    private const string EmptyModCategory = "v400.weapon.mod_empty";
 
     private static readonly ImmutableArray<ManifestTable> SmallTables =
         [ManifestTable.InventoryBucket, ManifestTable.SocketCategory, ManifestTable.EquipableItemSet, ManifestTable.BreakerType];
@@ -175,7 +182,8 @@ public static partial class ManifestJoin
         var types = ToEntryReach(ManifestTable.SocketType, entries.SelectMany(entry => ToSequence(entry.ReadHash("socketTypeHash"))));
         var columns = ListTraitSockets(reading, weapon).Select(socket => WalkColumn(reading, socket));
         var catalyst = ListCatalystCategories(reading, weapon).Select(category => WalkCatalystCategory(reading, category));
-        return Combine(columns.Concat(catalyst).Append(types).Append(WalkIntrinsicSockets(reading, weapon, WeaponIntrinsicCategoryName)).Append(WalkFramePerks(reading, weapon)));
+        var mods = ListModSockets(reading, weapon).Select(socket => WalkModSocket(reading, socket));
+        return Combine(columns.Concat(catalyst).Concat(mods).Append(types).Append(WalkIntrinsicSockets(reading, weapon, WeaponIntrinsicCategoryName)).Append(WalkFramePerks(reading, weapon)));
     }
 
     /// <summary>The sandbox perks of a weapon's intrinsic frame, once it is read: the perk named with its breaker is among them.</summary>
@@ -200,6 +208,14 @@ public static partial class ManifestJoin
                 found => Join(ToReach(ManifestTable.PlugSet, set.Value), ToEntryReach(ManifestTable.InventoryItem, ListRollable(found.Value))),
                 _ => ToReach(ManifestTable.PlugSet, set.Value)),
             _ => socket.ReadHash("singleInitialItemHash").Match(initial => ToReach(ManifestTable.InventoryItem, initial.Value), _ => Reach.None));
+
+    /// <summary>A weapon's mod socket: its plug set and every plug in it (the mods, and the empty plugs, which are left out once read).</summary>
+    private static Reach WalkModSocket(Reading reading, JsonElement socket) =>
+        socket.ReadHash("reusablePlugSetHash").Match(
+            set => FindEntry(reading, ManifestTable.PlugSet, set.Value).Match(
+                found => Join(ToReach(ManifestTable.PlugSet, set.Value), ToEntryReach(ManifestTable.InventoryItem, ListPlugItems(found.Value))),
+                _ => ToReach(ManifestTable.PlugSet, set.Value)),
+            _ => Reach.None);
 
     private static Reach WalkCatalystCategory(Reading reading, PlugCategoryId category) =>
         reading.Plugs.TryGetValue(category, out var plugs)
@@ -240,6 +256,7 @@ public static partial class ManifestJoin
         var related = weapons
             .SelectMany(weapon => ReadTraitColumns(reading, weapon.Entry).Match(columns => columns.Value.SelectMany(column => column), _ => []))
             .Concat(weapons.SelectMany(weapon => ToSequence(FindIntrinsic(reading, weapon.Entry, WeaponIntrinsicCategoryName))))
+            .Concat(weapons.SelectMany(weapon => ListMods(reading, weapon.Entry)))
             .Concat(armor.SelectMany(piece => ToSequence(FindIntrinsic(reading, piece.Entry, ArmorIntrinsicCategoryName))))
             .Concat(catalysts);
         var sets = armor
@@ -321,7 +338,10 @@ public static partial class ManifestJoin
                         _ => ImmutableArray<TraitColumn>.Empty),
                     FindIntrinsic(reading, item, WeaponIntrinsicCategoryName),
                     FindCatalyst(reading, item),
-                    new[] { item.ReadHash("breakerTypeHash"), FindFrameBreaker(reading, item) }.FindFirstSome())),
+                    new[] { item.ReadHash("breakerTypeHash"), FindFrameBreaker(reading, item) }.FindFirstSome(),
+                    ListMods(reading, item))),
+            KindWord.WeaponMod => Optional.Some<ManifestKind>(new ManifestKind.WeaponMod(
+                item.ReadText("itemTypeDisplayName") == Optional.Some(ManifestReading.EnhancedWeaponModType))),
             KindWord.Armor => ReadBucketName(reading, item).Bind(bucket => ArmorBuckets.TryGetValue(bucket, out var slot) ? Optional.Some(slot) : Optional.None<ArmorSlot>())
                 .Map(slot => (ManifestKind)new ManifestKind.Armor(
                     slot,
@@ -350,7 +370,7 @@ public static partial class ManifestJoin
 
     private enum KindWord
     {
-        Subclass, Super, Grenade, Melee, ClassAbility, Movement, Aspect, Fragment, Weapon, WeaponPerk, Intrinsic, Catalyst, Armor,
+        Subclass, Super, Grenade, Melee, ClassAbility, Movement, Aspect, Fragment, Weapon, WeaponPerk, WeaponMod, Intrinsic, Catalyst, Armor,
         ArmorMod, ArtifactPerk, Artifact, Other,
     }
 
@@ -358,6 +378,7 @@ public static partial class ManifestJoin
     {
         ["Super Ability"] = KindWord.Super, ["Class Ability"] = KindWord.ClassAbility, ["Movement Ability"] = KindWord.Movement,
         ["Artifact Perk"] = KindWord.ArtifactPerk, ["Artifact"] = KindWord.Artifact, ["Trait"] = KindWord.WeaponPerk, ["Enhanced Trait"] = KindWord.WeaponPerk,
+        ["Weapon Mod"] = KindWord.WeaponMod, [ManifestReading.EnhancedWeaponModType] = KindWord.WeaponMod,
         ["Intrinsic"] = KindWord.Intrinsic,
     }.ToImmutableDictionary();
 
@@ -426,6 +447,30 @@ public static partial class ManifestJoin
                 .Match(type => type.Value.ReadArray("plugWhitelist"), _ => ImmutableArray<JsonElement>.Empty)
                 .SelectMany(entry => ToSequence(entry.ReadString("categoryIdentifier"))),
         ];
+
+    /// <summary>A weapon's mod socket: the socket of its weapon mods category whose type takes weapon mods (not its masterwork's).</summary>
+    private static ImmutableArray<JsonElement> ListModSockets(Reading reading, JsonElement weapon) =>
+        [.. ListSocketsInCategory(reading, weapon, ModCategoryName).Where(socket => ReadWhitelist(reading, socket).Any(ModSocketCategories.Contains))];
+
+    /// <summary>
+    /// The weapon mods a weapon's mod socket takes, in the plug set's order, each once: its plug set's plugs, without the
+    /// empty ones (once read: a plug not read yet is left out, not guessed).
+    /// </summary>
+    private static ImmutableArray<ItemHash> ListMods(Reading reading, JsonElement weapon) =>
+        [
+            .. ListModSockets(reading, weapon)
+                .SelectMany(socket => ToSequence(socket.ReadHash("reusablePlugSetHash")))
+                .SelectMany(set => ToSequence(FindEntry(reading, ManifestTable.PlugSet, set)))
+                .SelectMany(plugSet => ListPlugItems(plugSet))
+                .Distinct()
+                .Where(plug => FindEntry(reading, ManifestTable.InventoryItem, plug).Match(
+                    item => item.Value.ReadString("plug", "plugCategoryIdentifier") != Optional.Some(EmptyModCategory),
+                    _ => false)),
+        ];
+
+    /// <summary>Every plug of a plug set, in its order (rollable or not: a mod socket offers them all).</summary>
+    private static ImmutableArray<ItemHash> ListPlugItems(JsonElement plugSet) =>
+        [.. plugSet.ReadArray("reusablePlugItems").SelectMany(plug => ToSequence(plug.ReadHash("plugItemHash")))];
 
     /// <summary>A weapon's trait ("frames") sockets: the perk sockets whose socket type takes frames.</summary>
     private static ImmutableArray<JsonElement> ListTraitSockets(Reading reading, JsonElement weapon) =>

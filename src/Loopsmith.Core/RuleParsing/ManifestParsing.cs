@@ -37,7 +37,7 @@ internal static class ManifestParsing
     private static readonly ImmutableArray<string> ArmorSetKeys = ["hash", "name", "perks"];
     private static readonly ImmutableArray<string> SetPerkKeys = ["pieces", "perk"];
     private static readonly ImmutableArray<string> ItemKeys =
-        ["hash", "name", "kind", "type", "tier", "slot", "damageType", "breaker", "traits", "intrinsic", "catalyst", "set", "class", "perks", "tiers", "slots", "plugs", "description", "watermark", "icon"];
+        ["hash", "name", "kind", "type", "tier", "slot", "damageType", "breaker", "traits", "intrinsic", "catalyst", "mods", "set", "class", "perks", "tiers", "slots", "plugs", "description", "watermark", "icon"];
 
     /// <summary>The keys only some kinds have, each with the kinds it belongs to (and how an error names them).</summary>
     private static readonly ImmutableArray<(string Key, ImmutableArray<KindWord> Kinds, string Where)> KindKeys =
@@ -47,6 +47,7 @@ internal static class ManifestParsing
         ("breaker", [KindWord.Weapon], "a weapon"),
         ("traits", [KindWord.Weapon], "a weapon"),
         ("catalyst", [KindWord.Weapon], "a weapon"),
+        ("mods", [KindWord.Weapon], "a weapon"),
         ("intrinsic", [KindWord.Weapon, KindWord.Armor], "a weapon or armor"),
         ("set", [KindWord.Armor], "armor"),
         ("class", [KindWord.Armor], "armor"),
@@ -199,14 +200,15 @@ internal static class ManifestParsing
     /// <summary>The <c>kind:</c> words of the excerpt; each becomes a <see cref="ManifestKind"/> case with its own data.</summary>
     private enum KindWord
     {
-        Subclass, Super, Grenade, Melee, ClassAbility, Movement, Aspect, Fragment, Weapon, WeaponPerk, Intrinsic, Catalyst, Armor,
+        Subclass, Super, Grenade, Melee, ClassAbility, Movement, Aspect, Fragment, Weapon, WeaponPerk, WeaponMod, Intrinsic, Catalyst, Armor,
         ArmorMod, ArtifactPerk, Artifact, Perk, Other,
     }
 
     /// <summary>
     /// <c>{ hash, name, kind, type?, tier?, description?, icon?, … }</c>. A weapon needs its <c>slot</c> (a weapon slot) and
     /// may have a <c>damageType</c>, <c>traits</c> (its trait columns, each a list of the perk hashes it rolls with:
-    /// <c>[[a, b], [c]]</c>), an <c>intrinsic</c> and a <c>catalyst</c> (hashes); armor needs its <c>slot</c> (an armor
+    /// <c>[[a, b], [c]]</c>), an <c>intrinsic</c> and a <c>catalyst</c> (hashes) and <c>mods</c> (the weapon mods its mod
+    /// socket takes); a weapon mod typed "Enhanced Weapon Mod" is an enhanced one; armor needs its <c>slot</c> (an armor
     /// slot) and may have an <c>intrinsic</c> and a <c>set</c> (an armor set's hash); an armor mod may have a slot (none: a
     /// general mod); a catalyst has the <c>perks</c> it grants; an artifact its <c>tiers</c> (each a list of perk hashes) and <c>slots</c> (the highest tier each perk slot takes). Anywhere else these keys
     /// are errors.
@@ -234,7 +236,10 @@ internal static class ManifestParsing
                 map.ReadOptional("intrinsic", ReadItemHash),
                 map.ReadOptional("catalyst", ReadItemHash),
                 map.ReadOptional("breaker", ReadItemHash),
-                (slot, damageType, traits, intrinsic, catalyst, breaker) => (ManifestKind)new ManifestKind.Weapon(slot, damageType, traits, intrinsic, catalyst, breaker)),
+                map.ReadOrDefault("mods", mods => mods.ReadEach("mod", ReadItemHash), []),
+                (slot, damageType, traits, intrinsic, catalyst, breaker, mods) => (ManifestKind)new ManifestKind.Weapon(slot, damageType, traits, intrinsic, catalyst, breaker, mods)),
+            KindWord.WeaponMod => map.ReadOptional("type", ReadName)
+                .Map(type => (ManifestKind)new ManifestKind.WeaponMod(type == Optional.Some(ManifestReading.EnhancedWeaponModType))),
             KindWord.Armor => Combine(
                 map.ReadRequired("slot", ReadVocabularyWord<ArmorSlot>),
                 map.ReadOptional("intrinsic", ReadItemHash),

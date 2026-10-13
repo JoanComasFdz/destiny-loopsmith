@@ -309,11 +309,57 @@ public static class LoopDesigning
     public static Result<DesignSession, string> SetCatalyst(DesignSession session, int weapon, bool on) =>
         EditWeapon(session, weapon, loadout => WeaponRolling.SetCatalyst(session.Build.Catalog, loadout, on));
 
+    /// <summary>
+    /// The design with a weapon's mod picked, or its mod socket emptied (<paramref name="weapon"/> 0-based, in the build's
+    /// order): only that weapon's entry of the embedded build file changes (<c>mod:</c>); the steps replay with it.
+    /// </summary>
+    public static Result<DesignSession, string> PickWeaponMod(DesignSession session, int weapon, Optional<ItemHash> mod) =>
+        EditWeapon(session, weapon, loadout => WeaponRolling.PickMod(session.Build.Catalog, loadout, mod));
+
+    /// <summary>
+    /// The mods weapon number <paramref name="weapon"/> takes, as its mod picker lists them: an enhanced one only when
+    /// the player's copy of it is Tier 4 or 5 (<paramref name="profile"/>: after a Bungie login; without one, or a
+    /// weapon they don't own, its tier isn't known). None when the excerpt doesn't say.
+    /// </summary>
+    public static ImmutableArray<WeaponModOption> ListWeaponMods(ValidatedBuild build, int weapon, Optional<BungieProfile> profile) =>
+        FindWeapon(build, weapon).Match(
+            found => WeaponRolling.ListModOptions(
+                build.Catalog,
+                found.Value,
+                profile.Bind(owned => FindWeaponMarks(owned, found.Value)).Bind(marks => marks.Tier)),
+            _ => ImmutableArray<WeaponModOption>.Empty);
+
+    /// <summary>
+    /// The enemy counts the build's equipped rules need in one action: a kill or hit of at least N (Synergy's 12 kills).
+    /// The trigger palette offers them beside 1 to 9.
+    /// </summary>
+    public static ImmutableArray<TargetCount> ListNamedTargetCounts(ValidatedBuild build) =>
+    [
+        .. build.Equipped
+            .SelectMany(equipped => equipped.Element.Rules)
+            .SelectMany(rule => rule.On.Match(
+                abilityCast: _ => ImmutableArray<TargetCount>.Empty,
+                killAny: _ => [],
+                killOfTier: _ => [],
+                killDebuffed: _ => [],
+                killMultiple: kill => [kill.AtLeast],
+                damage: _ => [],
+                damageDebuffed: _ => [],
+                damageMultiple: damage => [damage.AtLeast],
+                pickUp: _ => [],
+                buffGained: _ => [],
+                stacksMaxed: _ => [],
+                finisher: _ => [],
+                abilityCastAs: _ => [],
+                killFewer: _ => []))   // fewer than N: 1 to 9 already reach it
+            .Distinct(),
+    ];
+
     /// <summary>The build's armor sets: per set, the pieces worn (when the build says) and which of its perks are active.</summary>
     public static ImmutableArray<ArmorSetStatus> ListArmorSets(ValidatedBuild build) =>
         ArmorSetting.ListArmorSets(build.Catalog, build.Build);
 
-    /// <summary>The build's weapons (by index) that hold this element: a perk they roll or have, or their turned-on catalyst.</summary>
+    /// <summary>The build's weapons (by index) that hold this element: a perk they roll or have, their turned-on catalyst or their mod.</summary>
     public static ImmutableArray<int> ListWeaponsHolding(ValidatedBuild build, ElementId element) =>
         BuildValidation.ListWeaponsHolding(build.Catalog, build.Build, element);
 

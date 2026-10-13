@@ -79,7 +79,7 @@ public sealed class ScratchDesignTests
     [Fact]
     public void A_build_with_a_weapon_or_an_unknown_ability_has_something_to_trigger()
     {
-        var weapon = new WeaponLoadout(WeaponSlot.Kinetic, "Festival Flight", DamageType.Strand, Optional.None<string>(), [], Optional.None<ItemHash>(), [], false, Optional.None<ItemInstanceId>());
+        var weapon = new WeaponLoadout(WeaponSlot.Kinetic, "Festival Flight", DamageType.Strand, Optional.None<string>(), [], Optional.None<ItemHash>(), [], false, Optional.None<ItemInstanceId>(), Optional.None<ItemHash>());
         var scratch = StartScratch().Build.Build;
 
         var armed = Validate(scratch with { Weapons = [weapon] });

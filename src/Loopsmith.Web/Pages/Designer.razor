@@ -64,7 +64,7 @@
 
         <div class="designer-grid">
             <aside class="col-build">
-                <BuildPanel Build="session.Build" Issues="LoopDesigning.ListDesignIssues(session, Workbench.Profile)" OnPickPerk="PickPerk" OnSetCatalyst="SetCatalyst" OnSetStats="SetStats"
+                <BuildPanel Build="session.Build" Issues="LoopDesigning.ListDesignIssues(session, Workbench.Profile)" OnPickPerk="PickPerk" OnPickWeaponMod="PickWeaponMod" OnSetCatalyst="SetCatalyst" OnSetStats="SetStats"
                             Profile="Workbench.Profile" LoginNote="Workbench.LoginNote" OnLoggedIn="UseBungieLoginAsync" OnLoggedOut="LogOut" OnPickArmor="PickArmor" OnPickWeapon="PickWeapon" OnEditSubclass="EditSubclass"
                             OnEditArtifact="EditArtifact" RememberedArtifactPerks="Workbench.ArtifactPerks"
                             PickWeaponItem="Optional.Some<Func<WeaponItemPick, Task<Result<Unit, string>>>>(PickWeaponItemAsync)"
@@ -254,6 +254,10 @@
     /// <summary>A perk picked in the build panel: the embedded build's weapon changes and the steps replay with it.</summary>
     private void PickPerk(PerkPick pick) =>
         ApplyBuildEdit(session => LoopDesigning.PickWeaponPerk(session, pick.Weapon, pick.Column, pick.Perk));
+
+    /// <summary>A weapon mod picked (or removed) in the build panel: the embedded build's weapon changes and the steps replay with it.</summary>
+    private void PickWeaponMod(WeaponModPick pick) =>
+        ApplyBuildEdit(session => LoopDesigning.PickWeaponMod(session, pick.Weapon, pick.Mod));
 
     /// <summary>A change to the embedded build: the new session when it succeeds, else its message in the status bar.</summary>
     private void ApplyBuildEdit(Func<DesignSession, Result<DesignSession, string>> edit)

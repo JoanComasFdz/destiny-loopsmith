@@ -21,6 +21,7 @@ public partial record Trigger
     partial record StacksMaxed(StatusId Status);
     partial record Finisher();                                                 // the player does a finisher on an enemy of the pack
     partial record AbilityCastAs(AbilityKind Kind, AbilityInput Input);        // only that use of the ability: the melee while sliding, the class ability's air move
+    partial record KillFewer(DamageSource Via, TargetCount FewerThan);         // kill fewer than N enemies in one action (at least one)
 }
 
 /// <summary>A guard on the current state, checked after the trigger matched.</summary>

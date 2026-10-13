@@ -44,7 +44,8 @@ public static class GameNotationParsing
     }
 
     /// <summary>
-    /// <c>any</c>, <c>weapon</c>, <c>weapon:strand</c>, <c>weapon:harmonic</c> (a weapon of your Super's element), <c>ability</c>,
+    /// <c>any</c>, <c>weapon</c>, <c>weapon:strand</c>, <c>weapon:harmonic</c> (a weapon of your Super's element), <c>weapon:this</c>
+    /// (the weapon holding the element: a weapon mod's, a perk's), <c>weapon:this:arc</c> (it, when it is Arc), <c>ability</c>,
     /// <c>grenade</c>, <c>melee:slide</c> (only that use of the ability: a secondary, Tempest Strike's uppercut),
     /// <c>type:arc</c>, <c>keyword:jolt</c>, <c>summon:threadling</c>.
     /// </summary>
@@ -56,7 +57,7 @@ public static class GameNotationParsing
             ? ToBareDamageSource(trimmed)
             : ToQualifiedDamageSource(trimmed[..colon], trimmed[(colon + 1)..]);
         return parsed.MapError(reason =>
-            $"'{text}' is not a damage source ({reason}; expected any, weapon, weapon:<type>, weapon:harmonic, ability, "
+            $"'{text}' is not a damage source ({reason}; expected any, weapon, weapon:<type>, weapon:harmonic, weapon:this, weapon:this:<type>, ability, "
             + "grenade, melee, classAbility, super, <ability>:<input> (melee:slide, melee:air, classAbility:air, grenade:hold), "
             + "type:<type>, keyword:<status> or summon:<summon>)");
     }
@@ -210,9 +211,12 @@ public static class GameNotationParsing
         prefix switch
         {
             "weapon" when argument == "harmonic" => new Result<DamageSource, string>.Ok(new DamageSource.WeaponOfSuperType()),
+            "weapon" when argument == "this" => new Result<DamageSource, string>.Ok(new DamageSource.ThisWeapon()),
+            "weapon" when argument.StartsWith("this:", StringComparison.Ordinal) => ParseVocabularyWord<DamageType>(argument["this:".Length..])
+                .Map(DamageSource (type) => new DamageSource.ThisWeaponOfType(type)),
             "weapon" => ParseVocabularyWord<DamageType>(argument)
                 .Map(DamageSource (type) => new DamageSource.WeaponOfType(type))
-                .MapError(message => $"{message}, or harmonic"),
+                .MapError(message => $"{message}, harmonic or this"),
             "slot" => ParseVocabularyWord<WeaponSlot>(argument).Map(DamageSource (slot) => new DamageSource.WeaponInSlot(slot)),
             "type" => ParseVocabularyWord<DamageType>(argument).Map(DamageSource (type) => new DamageSource.OfType(type)),
             "keyword" => StatusId.TryFrom(argument).ToResult().Map(DamageSource (status) => new DamageSource.KeywordOf(status)),

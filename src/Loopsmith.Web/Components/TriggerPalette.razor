@@ -132,7 +132,7 @@
                     <span class="target-count-sign" aria-hidden="true">×</span>
                     <select value="@targets.Value.Value" @onchange="e => PickTargetCount(choice.Key, e)"
                             aria-label="@($"{choice.Title}: enemies per hit or kill")">
-                        @foreach (var count in TriggerPaletteShaping.TargetCountChoices)
+                        @foreach (var count in TriggerPaletteShaping.ListTargetCountChoices(Build))
                         {
                             <option value="@count">@count</option>
                         }

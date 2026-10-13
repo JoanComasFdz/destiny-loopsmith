@@ -17,6 +17,8 @@ public partial record DamageSource
     partial record SummonOf(SummonId Summon);
     partial record WeaponOfSuperType();              // a weapon of the build's Super's element (Harmonic mods); none known: nothing
     partial record AbilityUsedAs(AbilityKind Kind, AbilityInput Input);   // only that use of the ability: melee:slide, Tempest Strike's uppercut
+    partial record ThisWeapon();                     // the weapon holding the element (a weapon mod's, a perk's): the build check binds it to that weapon's slot
+    partial record ThisWeaponOfType(DamageType Type);   // the weapon holding the element, when it is of that type (Synergy's pickup by the weapon's element)
 }
 
 /// <summary>The <em>concrete</em> origin of damage in an event. Patterns (<see cref="DamageSource"/>) match origins.</summary>

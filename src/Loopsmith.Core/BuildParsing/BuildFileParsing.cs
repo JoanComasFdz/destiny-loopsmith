@@ -22,7 +22,7 @@ public static class BuildFileParsing
         "leftOut", "armorCopies", "armorModPlugs",
     ];
 
-    private static readonly ImmutableArray<string> WeaponKeys = ["slot", "name", "type", "archetype", "perks", "hash", "roll", "catalyst", "instance"];
+    private static readonly ImmutableArray<string> WeaponKeys = ["slot", "name", "type", "archetype", "perks", "hash", "roll", "catalyst", "instance", "mod"];
     private static readonly ImmutableArray<string> StatKeys = ["weapons", "health", "class", "grenade", "super", "melee"];
     private static readonly ImmutableArray<string> LeftOutKeys = ["items", "subclassPlugs", "armorMods", "artifactPerks"];
     private static readonly ImmutableArray<string> ArmorCopyKeys = ["hash", "instance"];
@@ -114,9 +114,10 @@ public static class BuildFileParsing
             : ElementId.TryFrom(text).ToResult().Map(id => (AbilityPlug)new AbilityPlug.Known(id)));
 
     /// <summary>
-    /// <c>{ slot, name, type, archetype?, perks?, hash?, roll?, catalyst?, instance? }</c>; <c>roll: ["?", 243981275]</c> is
+    /// <c>{ slot, name, type, archetype?, perks?, hash?, roll?, catalyst?, instance?, mod? }</c>; <c>roll: ["?", 243981275]</c> is
     /// the perk picked in each trait column, by manifest hash, in column order ("?": not picked); <c>catalyst: true</c>
-    /// turns an exotic's catalyst on (default false); <c>instance: "6917…"</c> is the copy it is (a quoted instance id).
+    /// turns an exotic's catalyst on (default false); <c>instance: "6917…"</c> is the copy it is (a quoted instance id);
+    /// <c>mod: 3820243349</c> is the weapon mod in its mod socket, by manifest hash.
     /// </summary>
     private static Result<WeaponLoadout, Errors> ReadWeapon(YamlValue value) =>
         value.ToMap().Bind(map => Combine(
@@ -130,7 +131,8 @@ public static class BuildFileParsing
             map.ReadOrDefault("roll", roll => roll.ReadEach(roll.Label, ReadRollPerk), []),
             map.ReadOrDefault("catalyst", ReadBoolean, false),
             map.ReadOptional("instance", instance => instance.ParseWith(text => ItemInstanceId.TryFrom(text).ToResult())),
-            (_, slot, name, type, archetype, perks, hash, roll, catalyst, instance) => new WeaponLoadout(slot, name, type, archetype, perks, hash, roll, catalyst, instance)));
+            map.ReadOptional("mod", ReadItemHash),
+            (_, slot, name, type, archetype, perks, hash, roll, catalyst, instance, mod) => new WeaponLoadout(slot, name, type, archetype, perks, hash, roll, catalyst, instance, mod)));
 
     private static Result<bool, Errors> ReadBoolean(YamlValue value) =>
         value.ParseWith<bool>(text => text switch
