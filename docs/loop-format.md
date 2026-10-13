@@ -289,7 +289,8 @@ have are marked, and picking one is warned about ([Weapons from your account](#w
 **A weapon's mod.** A weapon with a mod socket (a legendary; most exotics have none) shows its mod as a square after
 its perks — dashed with a + while the socket is empty. A DIM link gives it when the loadout saved it, and so does a
 weapon picked from the player's own. In the designer, clicking it opens the **mod picker**: every mod Bungie's
-manifest says that weapon's mod socket takes, the ones the rules know in green, the enhanced ones (framed in gold)
+manifest says that weapon's mod socket takes — not marked in green as perks are: the rules know every mod the
+Compendium lists, and one they don't (an old Adept mod) carries its ⊘ — the enhanced ones (framed in gold)
 listed too but dimmed and not clickable unless the weapon is known to be Tier 4 or 5 — after a Bungie login, the
 player's copy's tier says; without one, an enhanced mod can't be picked here (a DIM link or a build file can still name
 one). **Remove mod** empties the socket. The pick goes into the embedded build's weapon entry as `mod`

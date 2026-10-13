@@ -207,7 +207,7 @@
                                     @foreach (var option in openMod.Value.Options)
                                     {
                                         var picked = openMod.Value.Held == Optional.Some(option.Hash);
-                                        <button type="button" class="perk-option mod-option @(picked ? "picked" : "") @(option.Tile.InRules ? "in-rules" : "") @(option.CanTake ? "" : "unavailable")"
+                                        <button type="button" class="perk-option mod-option @(picked ? "picked" : "") @(option.CanTake ? "" : "unavailable")"
                                                 data-hash="@option.Hash.Value" data-enhanced="@(option.Enhanced ? "true" : "false")" aria-pressed="@(picked ? "true" : "false")"
                                                 disabled="@(!option.CanTake)" aria-disabled="@(option.CanTake ? "false" : "true")"
                                                 title="@DescribeModOptionTooltip(option)" @onclick="() => PickModAsync(weapon.Index, Optional.Some(option.Hash))">
@@ -610,7 +610,11 @@
 
     private bool CanPickMod => OnPickMod.HasDelegate;
 
-    private const string ModPickerNote = "Green: the rules know it. An enhanced mod only fits a Tier 4 or 5 weapon: after a Bungie login, your copy's tier says.";
+    /// <summary>
+    /// The mod picker's note. It doesn't mark the mods the rules know in green, as the perk picker does: the rules know
+    /// every mod the Compendium lists, and the few they don't carry their ⊘.
+    /// </summary>
+    private const string ModPickerNote = "An enhanced mod only fits a Tier 4 or 5 weapon: after a Bungie login, your copy's tier says. ⊘: not in the rules yet.";
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -675,12 +679,9 @@
         $"{weapon.Weapon.Name}'s mod: {square.Mod.Match(mod => mod.Value.Name, _ => "none")} — pick a mod";
 
     private static string DescribeModOption(ModOption option) =>
-        string.Join(" · ", new[]
-        {
-            option.Enhanced ? "Enhanced" : "",
-            option.CanTake ? "" : "Tier 4 or 5 weapons only",
-            option.Tile.InRules ? "in the rules" : "",
-        }.Where(part => part.Length > 0));
+        option.Enhanced
+            ? option.CanTake ? "Enhanced" : "Enhanced · Tier 4 or 5 weapons only"
+            : "Weapon mod";
 
     private static string DescribeModOptionTooltip(ModOption option) =>
         option.CanTake
