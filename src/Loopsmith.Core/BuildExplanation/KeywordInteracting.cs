@@ -92,7 +92,8 @@ public static class KeywordInteracting
             gained => IsStatus(keyword, gained.Status),
             maxed => IsStatus(keyword, maxed.Status),
             _ => false,
-            _ => false);
+            _ => false,
+            fewer => IsVia(keyword, fewer.Via));
 
     /// <summary>A guard the keyword meets by being there (the kernel's: a "without it" guard doesn't need it).</summary>
     private static bool IsNamedBy(KeywordRef keyword, Condition condition) =>
@@ -109,6 +110,8 @@ public static class KeywordInteracting
             _ => false,
             keywordOf => IsStatus(keyword, keywordOf.Status),
             summonOf => keyword is KeywordRef.Summon summon && summon.Id == summonOf.Summon,
+            _ => false,
+            _ => false,
             _ => false,
             _ => false);
 

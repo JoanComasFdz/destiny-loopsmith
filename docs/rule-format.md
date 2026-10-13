@@ -26,6 +26,7 @@ rules/
   exotics/armor.yaml
   armor-sets/*.yaml
   mods/armor.yaml
+  mods/weapons.yaml      weapon mods (Backup Mag, Synergy…): what a weapon's mod socket holds
   artifact/current.yaml
   weapons/perks.yaml
 builds/<build>/build.yaml
@@ -131,7 +132,9 @@ items:
   - { hash: 3832366019, name: "Harmonic Siphon", kind: armorMod, type: "Helmet Armor Mod", tier: basic, slot: helmet, description: "…", icon: /common/…/c917….png }
 ```
 
-* `kind`: `subclass|super|grenade|melee|classAbility|movement|aspect|fragment|weapon|weaponPerk|intrinsic|catalyst|armor|armorMod|artifactPerk|artifact|perk|other`.
+* `kind`: `subclass|super|grenade|melee|classAbility|movement|aspect|fragment|weapon|weaponPerk|weaponMod|intrinsic|catalyst|armor|armorMod|artifactPerk|artifact|perk|other`.
+  A `weaponMod` is a weapon mod (Bungie types it "Weapon Mod", or "Enhanced Weapon Mod" for an enhanced one, which only
+  a Tier 4 or 5 weapon takes).
   A `perk` is one of the manifest's sandbox perks — what a catalyst or an armor set grants — and has no `type`.
   An `artifact` is a season's artifact: its `perks` are every perk it unlocks (the plug sets of its sockets that
   take artifact perks, without a socket's empty plug or the reset socket), and it is written for every artifact
@@ -148,7 +151,9 @@ items:
   versions included (the manifest's plug set). A column that doesn't roll (an exotic's) has its one perk.
   Every perk is written as an item too (`kind: weaponPerk`, `type: "Trait"` or `"Enhanced Trait"`); a column
   needs at least one hash. A weapon's `intrinsic` is its frame (an exotic's own perk), its `catalyst` an
-  exotic's catalyst item (whose `perks` are what it grants), its `breaker` the champion it breaks, a breaker type's
+  exotic's catalyst item (whose `perks` are what it grants), its `mods` the weapon mods its mod socket takes (the plugs
+  of its mod socket's plug set, without the empty ones; each written as a `weaponMod` item; none: it has no mod socket,
+  as most exotics), its `breaker` the champion it breaks, a breaker type's
   hash: its own (an exotic's), else its frame's — a frame's perk names the breaker in brackets ("[Shield-Piercing]
   Barrier" on Adaptive Frame, "[Disruption] Overload" on Rapid-Fire Frame), as DIM reads it; armor's `intrinsic` is an exotic's perk, its
   `set` the armor set it belongs to and its `class` the class that wears it (`titan|hunter|warlock`; none: any
@@ -198,7 +203,7 @@ elements:
   - id: spark-of-shock
     name: Spark of Shock
     kind: fragment            # keyword|super|grenade|melee|classAbility|jump|aspect|fragment|exoticArmor|
-                              # exoticWeapon|catalyst|armorSetBonus|armorMod|artifactPerk|weaponPerk
+                              # exoticWeapon|catalyst|armorSetBonus|armorMod|artifactPerk|weaponPerk|weaponMod
     affinity: arc
     class: hunter             # optional: hunter|titan|warlock
     hash: 1727069364          # optional manifest hash, an unsigned 32-bit number (from Clarity until the manifest join exists);
@@ -354,6 +359,7 @@ doesn't show as a stacking status (Elemental Charge's progress per Ionic Trace; 
 | `{ damage: { via: <source>, targetHas: [sever] } }` | `DamageDebuffed(via, statuses)` |
 | `{ damage: { via: weapon, atLeast: 3 } }` — hit at least N enemies with `via` in one action | `DamageMultiple(via, atLeast)` |
 | `{ kill: { via: grenade, atLeast: 2 } }` — kill at least N enemies with `via` in one action | `KillMultiple(via, atLeast)` |
+| `{ kill: { via: "weapon:this", fewerThan: 12 } }` — kill fewer than N enemies (at least one) with `via` in one action | `KillFewer(via, fewerThan)` |
 | `{ pickUp: ionic-trace }` | `PickUp(pickup)` |
 | `{ buffGained: bolt-charge }` | `BuffGained(status)` |
 | `{ stacksMaxed: bolt-charge }` — the player declares the buff at max | `StacksMaxed(status)` |
@@ -378,6 +384,11 @@ unknown key (write `input: air`). [loop-format.md](loop-format.md#action-tokens)
 so a `major|boss|champion` kill shows in `explain` and the graph but doesn't fire in a loop.
 `atLeast` is a whole number 1..20 (`TargetCount`, ADRs D4): the player says how many enemies an
 action hits ("One For All: hitting three separate targets…" → `{ damage: { via: weapon, atLeast: 3 } }`).
+`fewerThan` (a kill only) is 2..20 and stands alone like `atLeast` (`kill cannot combine 'atLeast' and 'fewerThan'`):
+the two split one count (ADRs D31), so a counter the game doesn't show fires for sure on the kills that fill it and as a chance
+on fewer — Synergy (`rules/mods/weapons.yaml`): `atLeast: 12` spawns its pickup, `fewerThan: 12` spawns it with
+`chance: true`, since the kills of earlier steps may have filled it. The designer's trigger palette offers every
+`atLeast` count an equipped rule names, beside 1 to 9.
 A kill hits too, so a kill action also fires `damage … atLeast`. Only player actions (abilities and
 weapons) fire `atLeast` triggers, once per action — keyword strikes and summons hit one enemy each.
 
@@ -408,12 +419,21 @@ rules "Max Bolt Charge". A `stacksMaxed` (or `atMax`) on a status without `maxSt
 | `weapon:strand` | `WeaponOfType(Strand)` |
 | `weapon:harmonic` | `WeaponOfSuperType` — a weapon of your Super's element (the Harmonic mods): of the build's Super's `affinity` in the catalog; with the Super `?` (or one of no element) it matches nothing |
 | `slot:power` | `WeaponInSlot(Power)` — the build's weapon in that slot (`kinetic\|energy\|power`): an exotic weapon's "this weapon", since an exotic always sits in its own slot |
+| `weapon:this` | `ThisWeapon` — the weapon holding the element: only in a `weaponPerk`, `weaponMod`, `exoticWeapon` or `catalyst` (`weapon:this is the weapon holding the element: only a weaponPerk, weaponMod, exoticWeapon or catalyst has one, not a armorMod`) |
+| `weapon:this:arc` | `ThisWeaponOfType(Arc)` — the weapon holding the element, when it is of that type: a rule (or a passive, or a damage change) for "this weapon, when Arc" is part of the build only on an Arc weapon (Synergy's Ionic Trace) |
 | `ability` | `AnyAbility` |
 | `grenade` / `melee` / `classAbility` / `super` | `AbilityOf(kind)` — every use of it, its secondaries too |
 | `melee:slide` / `melee:air` / `classAbility:air` / `grenade:hold` (`<ability>:<input>`) | `AbilityUsedAs(kind, input)` — that use only: Tempest Strike's uppercut is `melee:slide` |
 | `type:arc` | `OfType(Arc)` — any weapon, ability, keyword or summon of that type |
 | `keyword:bolt-charge` | `KeywordOf(status)` — keyword damage (lightning strike, jolt chain…); any glossary status |
 | `summon:threadling` | `SummonOf(summon)` |
+
+**This weapon** (ADRs D31). A weapon perk's or mod's rules name no weapon: `weapon:this` is the one holding it. The build check
+binds it (`Causality.WeaponBinding`): it equips the element as that weapon's — `weapon:this` becomes that weapon's slot,
+`weapon:this:<type>` too when the weapon is of that type, and a rule, passive or damage change for another type is left
+out — so two weapons holding Synergy are two elements, each with its own weapon's rules (not stacked copies). Unbound
+(the catalog's own text: an item's details), it reads "this weapon" and matches nothing. The perks of
+`weapons/perks.yaml` still name their weapon's type (`weapon:strand`) as they did before it existed.
 
 Types are `kinetic|arc|solar|void|stasis|strand`. A weapon deals its build `type`; an ability the
 subclass's (kinetic on Prismatic: per-ability types aren't modelled); a keyword strike its status's
@@ -609,6 +629,7 @@ artifactPerks: [defibrillating-blast, flashover]
 weapons:
   - { slot: kinetic, name: Festival Flight, type: strand, archetype: grenade-launcher, perks: [slice] }
   - { slot: power, name: Thunderlord, type: arc, hash: 3325463374, catalyst: true }           # its catalyst on
+  - { slot: kinetic, name: Festival Flight, type: strand, hash: 4019651319, mod: 3820243349 }   # Synergy in its mod socket
   - { slot: energy, name: Crisis Inverted, type: arc, hash: 2888266564, roll: ["?", 2209918983] }   # a perk per trait column
 stats: { weapons: 47, class: 104, grenade: 145, super: 27, melee: 79 }   # any subset; 0..200
 ```
@@ -632,6 +653,11 @@ stats: { weapons: 47, class: 104, grenade: 145, super: 27, melee: 79 }   # any s
   weapons; quoted: `instance: "6917529810172542011"`); after the player's Bungie login its tier and masterwork show on
   the weapon's square when it is theirs, and it holds that copy's perks
   ([loop-format.md](loop-format.md#weapons-from-your-account)).
+* `mod`: the weapon mod in its mod socket, by manifest hash (one; none: no mod, or the build doesn't say). The
+  catalog's `weaponMod` element with that hash is equipped as that weapon's (Synergy's "this weapon",
+  [above](#rules)); a mod the catalog doesn't know is part of the weapon, not of the trace. A DIM link's weapon gives
+  it when its socket overrides hold one, and so does a weapon picked from the player's own; the designer's mod picker
+  writes it.
 * `catalyst: true` turns an exotic's catalyst on (default `false`; a DIM link doesn't say, so its build starts
   off): the catalyst element (`kind: catalyst`, by the catalyst item's hash) is equipped only then. The weapon's
   intrinsic perk is equipped by hash, like its columns' perks.
@@ -668,7 +694,7 @@ stats: { weapons: 47, class: 104, grenade: 145, super: 27, melee: 79 }   # any s
 | Issue | Severity |
 |---|---|
 | `Unknown <slot> '<id>' — no such element in the rule catalog.` | Blocking |
-| `'<name>' (<Kind>) can't go in the <slot> slot.` — each slot takes its own kind; a weapon's perks take `weaponPerk` or `exoticWeapon`, its catalyst `catalyst`; a `keyword` element goes in no slot | Blocking |
+| `'<name>' (<Kind>) can't go in the <slot> slot.` — each slot takes its own kind; a weapon's perks take `weaponPerk` or `exoticWeapon`, its catalyst `catalyst`, its mod `weaponMod`; a `keyword` element goes in no slot | Blocking |
 | `'<name>' belongs to another class, not <Class>.` — the element's `class` isn't the build's | Blocking |
 | `'<name>' (<Affinity>) does not fit the <Subclass> subclass.` — a super, grenade, melee, jump, aspect or fragment of another affinity; neutral and kinetic ones fit any, and Prismatic takes any | Blocking |
 | `<n> aspects equipped; at most 2.` · `'<name>' is equipped <n> times; aspects and fragments are unique.` · `<n> fragments equipped; the aspects grant <m> slots.` | Blocking |
@@ -679,6 +705,8 @@ stats: { weapons: 47, class: 104, grenade: 145, super: 27, melee: 79 }   # any s
 | `<weapon>'s roll: <perk> isn't a perk of its column <n> in the manifest excerpt.` — only when the excerpt has the weapon's columns | Warning |
 | `<weapon>: '<perk>' gives way to the other perk of its column — a column holds one perk.` — a perk `perks` names in a column the roll (or another named perk) already fills; it doesn't count | Warning |
 | `<weapon> has no catalyst in the manifest excerpt, so catalyst: true does nothing.` | Warning |
+| `<weapon>'s mod: <mod> isn't a mod its mod socket takes in the manifest excerpt.` — only when the excerpt lists what it takes | Warning |
+| `<weapon>'s mod: <mod> — not in the rule catalog yet, so it sets nothing off.` | Info |
 | `<weapon>'s catalyst: <name> — not in the rule catalog yet, so it sets nothing off.` | Info |
 | `'<name>' has no authored rules yet — it is inert in the trace.` — not for an `inert` element | Warning |
 | an equipped element's `statChecks` that the build's stats meet ([Elements](#elements)): `With 40 Melee, a Gambler's Dodge gives back less than a full melee charge …` | as the check says |

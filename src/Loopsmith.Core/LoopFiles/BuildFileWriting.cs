@@ -113,6 +113,7 @@ public static class BuildFileWriting
         .. ToRollEntry(weapon.Roll),
         .. weapon.Catalyst ? ToEntry("catalyst", "true") : [],
         .. weapon.Instance.Match(instance => (ImmutableArray<ParsingEvent>)[ToKey("instance"), new Scalar(null, null, instance.Value.Value, ScalarStyle.DoubleQuoted, false, true)], _ => []),
+        .. weapon.Mod.Match(mod => ToEntry("mod", mod.Value.Value.ToString(CultureInfo.InvariantCulture)), _ => []),
         new MappingEnd(),
     ];
 

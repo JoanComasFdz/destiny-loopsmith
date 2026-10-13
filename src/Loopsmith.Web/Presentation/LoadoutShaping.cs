@@ -128,7 +128,8 @@ public sealed record CatalystSquare(IconTile Tile, bool On);
 /// <summary>
 /// A weapon: where it is in the build (<see cref="Index"/>, what a pick names), its tile, its light.gg page, slot,
 /// archetype, damage type (and that type's icon), its marks (tier, masterwork, breaker), its perk squares — one per
-/// trait column the excerpt gives, then the perks the build names in none of them — and an exotic's catalyst.
+/// trait column the excerpt gives, then the perks the build names in none of them — an exotic's catalyst and its mod
+/// square (when it holds a mod, or its mod socket takes some).
 /// </summary>
 public sealed record WeaponView(
     int Index,
@@ -140,7 +141,28 @@ public sealed record WeaponView(
     DamageType Type,
     Optional<string> DamageIcon,
     ImmutableArray<PerkSquare> Perks,
-    Optional<CatalystSquare> Catalyst);
+    Optional<CatalystSquare> Catalyst,
+    Optional<WeaponModSquare> Mod);
+
+/// <summary>
+/// A weapon mod its mod picker offers: its hash, its tile (the rules' element when they know it), whether it is an
+/// enhanced mod and whether the weapon can take it (an enhanced one only on a weapon known to be Tier 4 or 5).
+/// </summary>
+public sealed record WeaponModChoice(ItemHash Hash, IconTile Tile, bool Enhanced, bool CanTake);
+
+/// <summary>A weapon's mod square: the mod it holds, by hash and tile (none: its socket is empty), and the mods its mod socket takes.</summary>
+public sealed record WeaponModSquare(Optional<ItemHash> Held, Optional<IconTile> Mod, ImmutableArray<WeaponModChoice> Options);
+
+/// <summary>What the loadout's open inline picker picks for: a weapon's trait column (0-based), or its weapon mod socket.</summary>
+[Union]
+public partial record PickerTarget
+{
+    partial record PerkColumn(int Weapon, int Column);
+    partial record WeaponModSocket(int Weapon);
+}
+
+/// <summary>A weapon mod picked in the designer (weapon 0-based, in the build's order; none: the socket emptied).</summary>
+public sealed record WeaponModPick(int Weapon, Optional<ItemHash> Mod);
 
 /// <summary>An exotic's catalyst turned on or off in the designer (weapon 0-based, in the build's order).</summary>
 public sealed record CatalystToggle(int Weapon, bool On);
@@ -571,8 +593,29 @@ public static class LoadoutShaping
             weapon.Type,
             damageIcon,
             [.. slots.SelectMany(slot => DescribePerkSlot(catalog, notOnCopy, slot))],
-            slots.OfType<WeaponPerkSlot.Catalyst>().Select(catalyst => Optional.Some(DescribeCatalyst(catalog, catalyst, index))).FindFirstSome());
+            slots.OfType<WeaponPerkSlot.Catalyst>().Select(catalyst => Optional.Some(DescribeCatalyst(catalog, catalyst, index))).FindFirstSome(),
+            DescribeMod(build, profile, weapon, index));
     }
+
+    /// <summary>
+    /// A weapon's mod square: the mod it holds and what its mod socket takes, each enhanced mod marked and takeable only on
+    /// a weapon known to be Tier 4 or 5; none for a weapon with neither (an exotic: no mod socket).
+    /// </summary>
+    private static Optional<WeaponModSquare> DescribeMod(ValidatedBuild build, Optional<BungieProfile> profile, WeaponLoadout weapon, int index)
+    {
+        var options = LoopDesigning.ListWeaponMods(build, index, profile);
+        var held = weapon.Mod.Map(mod => DescribeWeaponMod(build.Catalog, mod));
+        return held.IsSome() || !options.IsEmpty
+            ? Optional.Some(new WeaponModSquare(weapon.Mod, held, [.. options.Select(option => new WeaponModChoice(option.Mod.Hash, DescribeWeaponMod(build.Catalog, option.Mod.Hash), option.Enhanced, option.CanTake))]))
+            : Optional.None<WeaponModSquare>();
+    }
+
+    /// <summary>A weapon mod by hash: its catalog element when the rules have it (an inert one too), else the manifest's (marked ⊘).</summary>
+    private static IconTile DescribeWeaponMod(RuleCatalog catalog, ItemHash hash) =>
+        catalog.FindElementByHash(hash).Match(
+            element => DescribeElement(catalog, element.Value.Id),
+            _ => DescribeLeftOut(catalog, new LeftOutEntry(LoadoutPart.Item, catalog.Manifest.FindItem(hash), hash, new LeftOutReason.NotInRules())))
+        with { Enhanced = catalog.Manifest.FindItem(hash).Match(item => item.Value.Kind is ManifestKind.WeaponMod { Enhanced: true }, _ => false) };
 
     /// <summary>
     /// A perk square: the intrinsic and the catalyst have none (the weapon's details show the intrinsic; the catalyst has

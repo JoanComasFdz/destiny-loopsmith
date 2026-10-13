@@ -40,6 +40,33 @@ public static class WeaponRolling
             ? new Result<WeaponLoadout, string>.Ok(weapon with { Catalyst = on })
             : new Result<WeaponLoadout, string>.Error($"{weapon.Name} has no catalyst in the manifest excerpt.");
 
+    /// <summary>The lowest gear tier that takes an enhanced weapon mod (compendium/2026-10-13/Weapon Perks#252).</summary>
+    private const int EnhancedModTier = 4;
+
+    /// <summary>
+    /// The weapon mods the weapon's mod socket takes, in the manifest's order, each with whether the rules know it and
+    /// whether the weapon can take it: an enhanced one only when <paramref name="tier"/> (its copy's) is 4 or 5. None when
+    /// the excerpt doesn't say what it takes.
+    /// </summary>
+    public static ImmutableArray<WeaponModOption> ListModOptions(RuleCatalog catalog, WeaponLoadout weapon, Optional<GearTier> tier) =>
+    [
+        .. catalog.Manifest.FindWeaponKind(weapon).Map(kind => kind.Mods).UnwrapOr([])
+            .SelectMany(hash => ToSome(catalog.Manifest.FindItem(hash)))
+            .Select(mod =>
+            {
+                var enhanced = mod.Kind is ManifestKind.WeaponMod { Enhanced: true };
+                return new WeaponModOption(mod, catalog.IsItemInRules(mod), enhanced, !enhanced || tier.Match(known => known.Value.Value >= EnhancedModTier, _ => false));
+            }),
+    ];
+
+    /// <summary>The weapon with <paramref name="mod"/> in its mod socket, or none; a mod its socket doesn't take (as the excerpt says) can't be picked.</summary>
+    public static Result<WeaponLoadout, string> PickMod(RuleCatalog catalog, WeaponLoadout weapon, Optional<ItemHash> mod) =>
+        mod.Match<Result<WeaponLoadout, string>>(
+            hash => catalog.Manifest.FindWeaponKind(weapon).Map(kind => kind.Mods.Contains(hash.Value)).UnwrapOr(false)
+                ? new Result<WeaponLoadout, string>.Ok(weapon with { Mod = mod })
+                : new Result<WeaponLoadout, string>.Error($"{catalog.Manifest.DescribeTypedItemHash(hash.Value)} isn't a mod {weapon.Name}'s mod socket takes in the manifest excerpt."),
+            _ => new Result<WeaponLoadout, string>.Ok(weapon with { Mod = mod }));
+
     /// <summary>The perks the build names in a column that holds another perk (the roll's pick, or a perk named before it): they don't count.</summary>
     public static ImmutableArray<ElementId> ListDisplacedPerks(RuleCatalog catalog, WeaponLoadout weapon)
     {

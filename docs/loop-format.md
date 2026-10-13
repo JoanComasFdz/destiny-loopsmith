@@ -286,6 +286,21 @@ Validation. Hand-written builds pick the same way; a perk they name in `perks` s
 gives way to a pick there. The Home cards stay read-only. After a Bungie login, the perks the player's own copy doesn't
 have are marked, and picking one is warned about ([Weapons from your account](#weapons-from-your-account)).
 
+**A weapon's mod.** A weapon with a mod socket (a legendary; most exotics have none) shows its mod as a square after
+its perks — dashed with a + while the socket is empty. A DIM link gives it when the loadout saved it, and so does a
+weapon picked from the player's own. In the designer, clicking it opens the **weapon mod picker**, under the weapon: every mod Bungie's
+manifest says that weapon's mod socket takes — not marked in green as perks are: the rules know every mod the
+Compendium lists, and one they don't (an old Adept mod) carries its ⊘ — the enhanced ones (framed in gold)
+listed too but dimmed and not clickable unless the weapon is known to be Tier 4 or 5 — after a Bungie login, the
+player's copy's tier says; without one, an enhanced mod can't be picked here (a DIM link or a build file can still name
+one). **Remove mod** empties the socket. The pick goes into the embedded build's weapon entry as `mod`
+([rule-format.md](rule-format.md#build-file-buildsbuildbuildyaml)), only that entry is rewritten, and the steps replay.
+Almost every mod is inert (stats, handling, ammo, radar: "No rules needed."); **Synergy** fills a counter with this
+weapon's kills and spawns a pickup of the weapon's element — Kinetic an Orb of Power, Arc an Ionic Trace, Solar a
+Firesprite, Void a Void Breach, Stasis a Stasis Shard, Strand a Tangle. Twelve kills in one step (eight with the
+enhanced mod) fill it for sure; fewer spawn the pickup as *(chance)*, since earlier steps' kills count too. The trigger
+palette's enemy count offers 12 (and any count an equipped rule needs) beside 1 to 9.
+
 **An item's details.** Tapping a square opens its details, one card each: Bungie's text (from the manifest
 excerpt); where the rules' facts come from — for a Compendium row, Loopsmith's words for it (written from the row,
 never copied), its tab and row ("Exotic Weapons tab, row 144 · snapshot of 2026-10-09") and a link to the sheet;
@@ -464,7 +479,7 @@ rolled two perks or more has each of them):
 
 * **The build's own copies** — a weapon whose `instance` (a dim.gg share's) is theirs takes that copy's perks: in each
   trait column, the plug of its sockets the column rolls with (a share saves only the perks it was told to; the copy
-  has them all), and `catalyst: true` when its catalyst socket holds the catalyst. Only those entries of the embedded
+  has them all), `catalyst: true` when its catalyst socket holds the catalyst, and its mod. Only those entries of the embedded
   build change, and the steps replay. The Stats section's line says so ("Its weapons are yours too, with their
   perks."), or, for weapons that aren't theirs, to pick their own with ⋯.
 * **⋯ next to each weapon slot** opens the **weapon picker** for it, after the login on **Yours**: the player's
@@ -476,7 +491,7 @@ rolled two perks or more has each of them):
   as icons only, their names in their tooltips), and where it is — the details keep room for the most perks a column
   of the listed weapons holds, so "Use this weapon", in their upper right corner, stays put from one weapon to the
   next; a click (a second tap, or "Use this weapon") puts it in the build: its entry is written anew (`{slot, name, type, archetype, perks: [], hash, roll,
-  catalyst, instance}`, from the manifest and its sockets), or added for an empty slot, and the steps replay. A build
+  catalyst, instance, mod}`, from the manifest and its sockets), or added for an empty slot, and the steps replay. A build
   wears one exotic weapon (by its manifest item, or an exotic weapon element among a hand-written weapon's perks):
   another exotic isn't listed while it does (the picker says which to swap); and one weapon a slot. Weapons the
   excerpt doesn't know are named by Bungie's full manifest, which the tab holds, once after the login with the armor

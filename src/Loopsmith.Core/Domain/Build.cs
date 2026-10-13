@@ -35,7 +35,8 @@ public partial record AbilityPlug
 /// manifest hash, in column order (none: not picked, "?" in the build file); <see cref="Catalyst"/> says the build turns
 /// an exotic's catalyst on (a DIM loadout doesn't say, so it starts off); <see cref="Instance"/> is the copy it is, by
 /// instance id (a dim.gg share's): after the player's Bungie login its tier, masterwork and breaker show when the copy
-/// is theirs, else their own copy's.
+/// is theirs, else their own copy's. <see cref="Mod"/> is the weapon mod in its mod socket, by manifest hash (none: no
+/// mod, or the build doesn't say).
 /// </summary>
 public sealed record WeaponLoadout(
     WeaponSlot Slot,
@@ -46,7 +47,8 @@ public sealed record WeaponLoadout(
     Optional<ItemHash> Hash,
     ImmutableArray<Optional<ItemHash>> Roll,
     bool Catalyst,
-    Optional<ItemInstanceId> Instance);
+    Optional<ItemInstanceId> Instance,
+    Optional<ItemHash> Mod);
 
 /// <summary>
 /// Where a weapon picked from the player's own goes in a build: in place of its weapon number <see cref="InPlaceOf.Weapon"/>
@@ -75,6 +77,13 @@ public partial record WeaponPerkSlot
     partial record Rolling(int Column, ImmutableArray<ItemHash> Options, Optional<ItemHash> Perk);
     partial record Catalyst(ItemHash Plug, bool On);
 }
+
+/// <summary>
+/// A weapon mod a weapon's mod picker lists: the manifest's mod, whether the rules know it, whether it is an enhanced
+/// one, and whether the weapon can take it — an enhanced mod only on a weapon known to be Tier 4 or 5 (its copy's tier,
+/// after the player's Bungie login); a weapon whose tier isn't known takes the others only.
+/// </summary>
+public sealed record WeaponModOption(ManifestItem Mod, bool InRules, bool Enhanced, bool CanTake);
 
 /// <summary>A perk in one of a weapon's trait columns (<see cref="Column"/> 0-based, in column order).</summary>
 public sealed record ColumnPerk(int Column, ItemHash Perk);

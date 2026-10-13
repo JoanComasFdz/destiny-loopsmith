@@ -1247,6 +1247,70 @@ public sealed class RuleCatalogParsingTests
     }
 
     [Fact]
+    public void Parses_a_weapon_mod_with_this_weapon_and_a_kill_of_fewer_than_N()
+    {
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToElementsFile("mods/weapons.yaml", """
+            elements:
+              - id: synergy
+                name: Synergy
+                kind: weaponMod
+                affinity: neutral
+                rules:
+                  - on: { kill: { via: "weapon:this:arc", atLeast: 12 } }
+                    then: [ { spawn: ionic-trace } ]
+                  - on: { kill: { via: "weapon:this", fewerThan: 12 } }
+                    then: [ { spawn: orb-of-power } ]
+                    chance: true
+            """)]));
+
+        var synergy = catalog.Elements[ElementId.From("synergy")];
+        Assert.Equal(ElementKind.WeaponMod, synergy.Kind);
+        Assert.Equal(new Trigger.KillMultiple(new DamageSource.ThisWeaponOfType(DamageType.Arc), TargetCount.From(12)), synergy.Rules[0].On);
+        Assert.Equal(new Trigger.KillFewer(new DamageSource.ThisWeapon(), TargetCount.From(12)), synergy.Rules[1].On);
+    }
+
+    [Theory]
+    [InlineData("kill: { via: weapon, fewerThan: 1 }", "hunter/arc.yaml:7: kill.fewerThan: fewer than 1 kills never happens (use 2..20)")]
+    [InlineData("kill: { via: weapon, fewerThan: 3, atLeast: 2 }", "hunter/arc.yaml:7: kill cannot combine 'atLeast' and 'fewerThan'")]
+    [InlineData("kill: { via: weapon, fewerThan: 3, tier: champion }", "hunter/arc.yaml:7: kill cannot combine 'fewerThan' and 'tier'")]
+    [InlineData("damage: { via: weapon, fewerThan: 3 }", "hunter/arc.yaml:7: unknown key 'fewerThan' in damage")]
+    public void Fewer_than_is_a_count_of_2_to_20_on_a_kill_and_stands_alone(string trigger, string expected)
+    {
+        var message = ParseInvalidCatalog(Glossary, ToElementsFile("hunter/arc.yaml", $$"""
+            elements:
+              - id: one-for-all
+                name: One For All
+                kind: weaponPerk
+                affinity: kinetic
+                rules:
+                  - on: { {{trigger}} }
+                    then: [ { spawn: orb-of-power } ]
+            """));
+
+        Assert.Contains(expected, message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void This_weapon_belongs_to_an_element_a_weapon_holds()
+    {
+        var message = ParseInvalidCatalog(Glossary, ToElementsFile("mods/armor.yaml", """
+            elements:
+              - id: reaper
+                name: Reaper
+                kind: armorMod
+                affinity: neutral
+                rules:
+                  - on: { kill: { via: "weapon:this" } }
+                    then: [ { spawn: orb-of-power } ]
+            """));
+
+        Assert.Contains(
+            "weapon:this is the weapon holding the element: only a weaponPerk, weaponMod, exoticWeapon or catalyst has one, not a armorMod",
+            message,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Tier_and_target_has_together_is_an_error()
     {
         var message = ParseInvalidCatalog(Glossary, ToElementsFile("hunter/arc.yaml", """

@@ -130,6 +130,7 @@ public static class DomainPhrasing
             ElementKind.ArmorSetBonus => "Armor set bonus",
             ElementKind.ArmorMod => "Armor mod",
             ElementKind.ArtifactPerk => "Artifact perk",
+            ElementKind.WeaponMod => "Weapon mod",
             _ => "Weapon perk",
         };
 
@@ -313,7 +314,9 @@ public static class DomainPhrasing
             keywordOf => glossary.DescribeStatus(keywordOf.Status),
             summonOf => glossary.DescribeSummon(summonOf.Summon),
             _ => superType.Match(type => $"{type.Value} weapon (your Super's element)", _ => "weapon of your Super's element"),
-            usedAs => usedAs.Kind.DescribeAbilityUse(usedAs.Input));
+            usedAs => usedAs.Kind.DescribeAbilityUse(usedAs.Input),
+            _ => "this weapon",
+            thisOfType => $"this weapon ({thisOfType.Type})");
 
     public static string DescribeOrigin(this KeywordGlossary glossary, DamageOrigin origin, Build build) =>
         origin.Match(
@@ -343,7 +346,8 @@ public static class DomainPhrasing
             buffGained => $"Gain {glossary.DescribeStatus(buffGained.Status)}",
             stacksMaxed => $"Max {glossary.DescribeStatus(stacksMaxed.Status)}",
             _ => Finisher,
-            castAs => DescribeCast(castAs.Kind, castAs.Input));
+            castAs => DescribeCast(castAs.Kind, castAs.Input),
+            killFewer => DescribeFewKills(glossary, killFewer.Via, killFewer.FewerThan, superType));
 
     private static string DescribeKill(KeywordGlossary glossary, DamageSource via, ImmutableArray<StatusId> targetHas, Optional<DamageType> superType)
     {
@@ -376,6 +380,16 @@ public static class DomainPhrasing
         via is DamageSource.AnySource
             ? $"Kill {atLeast.Value}+ enemies"
             : $"Kill {atLeast.Value}+ with {glossary.DescribeDamageSource(via, superType)}";
+
+    /// <summary>"Kill 1–11 with this weapon", "Kill 1–11 enemies" (any source): fewer than N in one action, at least one.</summary>
+    private static string DescribeFewKills(KeywordGlossary glossary, DamageSource via, TargetCount fewerThan, Optional<DamageType> superType)
+    {
+        var most = fewerThan.Value - 1;
+        var range = most == 1 ? "1" : $"1–{most.ToString(Invariant)}";
+        return via is DamageSource.AnySource
+            ? $"Kill {range} {(most == 1 ? "enemy" : "enemies")}"
+            : $"Kill {range} with {glossary.DescribeDamageSource(via, superType)}";
+    }
 
     /// <summary>"Hit 3+ enemies with weapon", "Hit 3+ enemies" (any source).</summary>
     private static string DescribeMultiHit(KeywordGlossary glossary, DamageSource via, TargetCount atLeast, Optional<DamageType> superType) =>

@@ -38,12 +38,17 @@ public static class TriggerMatching
             buffGained => gameEvent is GameEvent.BuffGained gained && gained.Status == buffGained.Status,
             stacksMaxed => gameEvent is GameEvent.StacksMaxed maxed && maxed.Status == stacksMaxed.Status,
             _ => gameEvent is GameEvent.Finisher,
-            castAs => gameEvent is GameEvent.AbilityCast cast && cast.Kind == castAs.Kind && cast.Input == castAs.Input);
+            castAs => gameEvent is GameEvent.AbilityCast cast && cast.Kind == castAs.Kind && cast.Input == castAs.Input,
+            killFewer => gameEvent is GameEvent.TargetsHit { Hit: HitOutcome.Kill } struck
+                && killFewer.Via.IsMatchedBy(struck.Origin, superType)
+                && struck.Targets.Value < killFewer.FewerThan.Value);
 
     /// <summary>
     /// Whether the pattern matches the origin. A finisher has no damage type and is no weapon or ability: only "any
     /// source" matches it. A weapon of your Super's element needs the Super's type (<paramref name="superType"/>). An
     /// ability matches however it was used (Tempest Strike's uppercut is melee damage), unless the pattern names the use.
+    /// "This weapon" matches nothing until the build check binds it to the slot of the weapon holding the element
+    /// (<c>WeaponBinding</c>): unbound, no weapon is known to hold it.
     /// </summary>
     public static bool IsMatchedBy(this DamageSource source, DamageOrigin origin, Optional<DamageType> superType) =>
         source.Match(
@@ -57,7 +62,9 @@ public static class TriggerMatching
             keywordOf => origin is DamageOrigin.Keyword keyword && keyword.Status == keywordOf.Status,
             summonOf => origin is DamageOrigin.Summoned summoned && summoned.Summon == summonOf.Summon,
             _ => origin is DamageOrigin.Weapon weapon && superType.Match(type => type.Value == weapon.Type, _ => false),
-            usedAs => origin is DamageOrigin.Ability ability && ability.Kind == usedAs.Kind && ability.Input == usedAs.Input);
+            usedAs => origin is DamageOrigin.Ability ability && ability.Kind == usedAs.Kind && ability.Input == usedAs.Input,
+            _ => false,
+            _ => false);
 
     /// <summary>The statuses a trigger needs on the target (empty when it doesn't care).</summary>
     public static ImmutableArray<StatusId> ListRequiredTargetStatuses(this Trigger trigger) =>
@@ -74,7 +81,8 @@ public static class TriggerMatching
             buffGained: _ => ImmutableArray<StatusId>.Empty,
             stacksMaxed: _ => ImmutableArray<StatusId>.Empty,
             finisher: _ => ImmutableArray<StatusId>.Empty,
-            abilityCastAs: _ => ImmutableArray<StatusId>.Empty);
+            abilityCastAs: _ => ImmutableArray<StatusId>.Empty,
+            killFewer: _ => ImmutableArray<StatusId>.Empty);
 
     /// <summary>The damage source a hit or kill trigger names (its <c>via</c>); none for the other triggers.</summary>
     public static Optional<DamageSource> FindVia(this Trigger trigger) =>
@@ -91,7 +99,8 @@ public static class TriggerMatching
             buffGained: _ => Optional.None<DamageSource>(),
             stacksMaxed: _ => Optional.None<DamageSource>(),
             finisher: _ => Optional.None<DamageSource>(),
-            abilityCastAs: _ => Optional.None<DamageSource>());
+            abilityCastAs: _ => Optional.None<DamageSource>(),
+            killFewer: killFewer => Optional.Some(killFewer.Via));
 
     /// <summary>
     /// The ability use a trigger names, when it names one: a cast of that use (<c>abilityCast: { ability: classAbility,
