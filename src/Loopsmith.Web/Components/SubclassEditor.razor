@@ -1,6 +1,6 @@
 @* The subclass editor: the build's super, grenade, melee, class ability, jump, aspects and fragments, each slot with its
    plug (tap the square for its details) and ⋯, which opens, inside the slot, the list of everything the subclass can
-   hold there (Bungie's manifest; the ones the rules know are marked, the rest carry ⊘, a jump the rules don't have none:
+   hold there (Bungie's manifest; the ones the rules don't know carry ⊘, a jump the rules don't have none:
    movement has no part in a loop). A fragment's ✕
    empties its slot; an aspect has none, it is only swapped for another. The aspects open the fragment slots; an aspect
    change that closes slots takes the last fragments out and names them. Save hands the plugs to the designer
@@ -143,7 +143,7 @@
                     var tile = LoadoutShaping.DescribeSubclassPlug(Build, hash);
                     var current = FindHeld(open) == Optional.Some(hash);
                     var elsewhere = !current && IsHeldElsewhere(open.Slot, hash);
-                    <button type="button" class="perk-option @(current ? "picked" : "") @(tile.InRules ? "in-rules" : "")" data-hash="@hash.Value"
+                    <button type="button" class="perk-option @(current ? "picked" : "")" data-hash="@hash.Value"
                             disabled="@elsewhere" aria-pressed="@(current ? "true" : "false")"
                             title="@(elsewhere ? $"{tile.Name} is already equipped" : tile.Name)" @onclick="() => Choose(open, hash)">
                         @RenderTile(tile, "perk", false)
@@ -154,7 +154,6 @@
                     </button>
                 }
             </div>
-            <p class="muted sub-note">Green: the rules know it (its details say what it sets off in the loop, or why nothing); ⊘: the rules don't know it yet, it only shows on the subclass.</p>
         </div>
     };
 
@@ -202,12 +201,8 @@
     private string DescribeOption(ItemHash hash, bool elsewhere)
     {
         var type = LoadoutShaping.FindPlugType(Build, hash).UnwrapOr("");
-        return string.Join(" · ", new[] { type, IsElement(hash) ? "in the rules" : "", elsewhere ? "equipped" : "" }.Where(part => part.Length > 0));
+        return string.Join(" · ", new[] { type, elsewhere ? "equipped" : "" }.Where(part => part.Length > 0));
     }
-
-    /// <summary>True when the rules know the plug for this build (a jump of another subclass shows no ⊘, but isn't one).</summary>
-    private bool IsElement(ItemHash hash) =>
-        LoopDesigning.FindSubclassElement(Build, hash).IsSome();
 
     private static string DescribeSlot(SubclassSlot slot) =>
         slot switch
