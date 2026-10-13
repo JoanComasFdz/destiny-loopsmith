@@ -61,7 +61,7 @@ public static class BuildFileWriting
         .. build.ExoticArmor.Match(exotic => ToEntry("exoticArmor", exotic.Value.Value), _ => []),
         .. ToListEntry("armorSetBonuses", build.ArmorSetBonuses),
         .. ToListEntry("armorMods", build.ArmorMods),
-        .. build.Artifact.Match(artifact => ToEntry("artifact", artifact.Value.Value.ToString(CultureInfo.InvariantCulture)), _ => []),
+        .. build.Artifact.Match(artifact => (ImmutableArray<ParsingEvent>)[ToKey("artifact"), .. ToArtifactValue(artifact.Value)], _ => []),
         .. ToListEntry("artifactPerks", build.ArtifactPerks),
         .. ToWeaponsEntry(build.Weapons),
         .. ToStatsEntry(build.Stats),
@@ -118,19 +118,33 @@ public static class BuildFileWriting
         new MappingEnd(),
     ];
 
+    /// <summary><c>{hash: 3821685388, slots: [3585856470, "?", …]}</c>: the artifact and the perk in each slot, <c>"?"</c> for an empty one.</summary>
+    private static ImmutableArray<ParsingEvent> ToArtifactValue(ArtifactLoadout artifact) =>
+    [
+        new MappingStart(null, null, true, MappingStyle.Flow),
+        ToKey("hash"),
+        ToValue(artifact.Hash.Value.ToString(CultureInfo.InvariantCulture)),
+        ToKey("slots"),
+        .. ToPicksValue(artifact.Slots),
+        new MappingEnd(),
+    ];
+
+    /// <summary><c>["?", 243981275]</c>: picks by place, <c>"?"</c> for none.</summary>
+    private static ImmutableArray<ParsingEvent> ToPicksValue(ImmutableArray<Optional<ItemHash>> picks) =>
+    [
+        new SequenceStart(null, null, true, SequenceStyle.Flow),
+        .. picks.Select(pick => pick.Match(
+            hash => (ParsingEvent)ToValue(hash.Value.Value.ToString(CultureInfo.InvariantCulture)),
+            _ => new Scalar(null, null, DomainPhrasing.Unknown, ScalarStyle.DoubleQuoted, false, true))),
+        new SequenceEnd(),
+    ];
+
     /// <summary><c>roll: ["?", 243981275]</c>: each trait column's pick in column order, <c>"?"</c> for none; nothing when empty.</summary>
     private static ImmutableArray<ParsingEvent> ToRollEntry(ImmutableArray<Optional<ItemHash>> roll) =>
         roll.IsEmpty
             ? []
             :
-            [
-                ToKey("roll"),
-                new SequenceStart(null, null, true, SequenceStyle.Flow),
-                .. roll.Select(pick => pick.Match(
-                    hash => (ParsingEvent)ToValue(hash.Value.Value.ToString(CultureInfo.InvariantCulture)),
-                    _ => new Scalar(null, null, DomainPhrasing.Unknown, ScalarStyle.DoubleQuoted, false, true))),
-                new SequenceEnd(),
-            ];
+            [ToKey("roll"), .. ToPicksValue(roll)];
 
     /// <summary>A build's <c>stats:</c> value on its own, <c>{weapons: 47, class: 104}</c> (<c>{}</c> when none is known).</summary>
     internal static string WriteStats(StatLine stats)
@@ -249,13 +263,13 @@ public static class BuildFileWriting
     ];
 
     /// <summary>
-    /// The build's artifact entries as the build file writes them — <c>artifact</c> (its hash), <c>artifactPerks</c> and
+    /// The build's artifact entries as the build file writes them — <c>artifact</c> (its hash and slots), <c>artifactPerks</c> and
     /// <c>leftOut</c> (its artifact perks the rules don't know, with the rest of what it leaves out) — an entry with none
     /// is removed by an edit.
     /// </summary>
     internal static ImmutableArray<(string Key, Optional<string> Value)> WriteArtifactEntries(Build build) =>
     [
-        ("artifact", build.Artifact.Map(artifact => artifact.Value.ToString(CultureInfo.InvariantCulture))),
+        ("artifact", build.Artifact.Map(artifact => WriteValue(ToArtifactValue(artifact)))),
         ("artifactPerks", build.ArtifactPerks.IsEmpty ? Optional.None<string>() : Optional.Some(WriteValue([.. ToListEntry("artifactPerks", build.ArtifactPerks).Skip(1)]))),
         ("leftOut", ToLeftOutEntry(build.LeftOut) is { IsEmpty: false } leftOut ? Optional.Some(WriteValue([.. leftOut.Skip(1)])) : Optional.None<string>()),
     ];

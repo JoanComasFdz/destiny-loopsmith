@@ -26,6 +26,7 @@ public static class BuildFileParsing
     private static readonly ImmutableArray<string> StatKeys = ["weapons", "health", "class", "grenade", "super", "melee"];
     private static readonly ImmutableArray<string> LeftOutKeys = ["items", "subclassPlugs", "armorMods", "artifactPerks"];
     private static readonly ImmutableArray<string> ArmorCopyKeys = ["hash", "instance"];
+    private static readonly ImmutableArray<string> ArtifactKeys = ["hash", "slots"];
 
     private static readonly StatLine NoStats = new(
         Optional.None<StatValue>(),
@@ -51,7 +52,7 @@ public static class BuildFileParsing
             map.ReadOrDefault("leftOut", ReadLeftOut, []),
             map.ReadOrDefault("armorCopies", copies => copies.ReadEach("armor copy", ReadArmorCopy), []),
             map.ReadOrDefault("armorModPlugs", plugs => plugs.ReadEach("armor mod plug", ReadItemHash), []),
-            map.ReadOptional("artifact", ReadItemHash),
+            map.ReadOptional("artifact", ReadArtifact),
             (build, leftOut, armorCopies, armorModPlugs, artifact) => build with { LeftOut = leftOut, ArmorCopies = armorCopies, ArmorModPlugs = armorModPlugs, Artifact = artifact });
 
     /// <summary>Everything but <c>leftOut</c>, <c>armorCopies</c>, <c>armorModPlugs</c> and <c>artifact</c> (one <c>Combine</c> takes at most 16 inputs).</summary>
@@ -93,7 +94,7 @@ public static class BuildFileParsing
                 [],
                 [],
                 [],
-                Optional.None<ItemHash>()));
+                Optional.None<ArtifactLoadout>()));
 
     /// <summary>
     /// Each ability, and the jump, is an element id, or <c>"?"</c> for one the build has but Loopsmith can't name; a slot
@@ -183,6 +184,17 @@ public static class BuildFileParsing
             map.ReadRequired("hash", ReadItemHash),
             map.ReadRequired("instance", instance => instance.ParseWith(text => ItemInstanceId.TryFrom(text).ToResult())),
             (_, hash, instance) => new ArmorCopy(hash, instance)));
+
+    /// <summary>
+    /// <c>artifact: { hash: 3821685388, slots: [3585856470, "?", …] }</c>: the artifact the build equips and the perk in
+    /// each of its perk slots, by manifest hash, in slot order (<c>"?"</c>: an empty slot).
+    /// </summary>
+    private static Result<ArtifactLoadout, Errors> ReadArtifact(YamlValue value) =>
+        value.ToMap().Bind(map => Combine(
+            map.CheckKeys(ArtifactKeys),
+            map.ReadRequired("hash", ReadItemHash),
+            map.ReadOrDefault("slots", slots => slots.ReadEach("artifact slot", ReadRollPerk), []),
+            (_, hash, slots) => new ArtifactLoadout(hash, slots)));
 
     private static Result<ImmutableArray<LeftOutItem>, Errors> ReadLeftOutPart(YamlValue value, LoadoutPart part) =>
         value.ReadEach(value.Label, hash => ReadItemHash(hash).Map(read => new LeftOutItem(part, read)));

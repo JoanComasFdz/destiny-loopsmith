@@ -1,19 +1,19 @@
-@* The artifact editor, laid out like the game's artifact screen (Artifacts 2.0): the artifact's icon, name and "Artifact"
-   as its header, with ⋯ beside the name, which opens a dropdown of every artifact (and "No artifact"); the artifact's
-   perks in three columns, Tier 1 to Tier 3, seven each; under them the seven perk slots in their groups — two take
-   Tier 1, three Tiers 1–2, two Tiers 1–3 — holding the perks picked, and the counts (7 perks, 5 of Tiers 2–3, 2 of
-   Tier 3). Tapping a perk makes it active, or takes it out when it is; a perk that would break a count is dimmed and
-   only shows its details. The details of the perk last tapped (or hovered) show beside the board, like the game's
-   tooltip: its name, tier, "Requirements not met" and why, and Bungie's text; "What it does" opens its full details. A
-   perk the rules don't know carries ⊘ and can still be picked. Switching to another artifact shows the perks last
-   picked for it while the loop is open (none for one not set up yet); switching back brings the earlier picks back.
-   Save hands the artifact, its perks and what was picked for each artifact to the designer (LoopDesigning.EditArtifact);
-   Cancel, ✕ or Escape throws the changes away. *@
+@* The artifact editor, laid out like the game's artifact screen since Monument of Triumph (Artifacts 2.0): the artifact's
+   icon, name and "Artifact" as its header, with ⋯ beside the name, which opens a dropdown of every artifact (and "No
+   artifact"); under it the artifact's flavour text and what it works best with (an element with its icon); then its
+   seven perk slots in three groups — two take Tier 1 (◆), three Tiers 1–2 (◆◆), two Tiers 1–3 (◆◆◆) — each a square
+   with a footer holding ⋯ and, when it holds a perk, ✕, like the subclass editor's fragments. ⋯ opens a dropdown under
+   the slot (above it when there's no room below), floating over the slots after it, with every perk the slot takes, by
+   tier; a perk in another slot is greyed out ("equipped"). Picking one puts it in the slot; ✕ empties the slot and the
+   others stay. Tapping a perk's square opens its details. A perk the rules don't know carries ⊘ and can still be picked.
+   Switching to another artifact shows the slots last picked for it while the loop is open (empty for one not set up
+   yet). Save hands the artifact, its slots and what was picked for each artifact to the designer
+   (LoopDesigning.EditArtifact); Cancel, ✕ or Escape throws the changes away (Escape closes only a dropdown when one is
+   open). *@
 @inject BrowserInterop Browser
 @{
     var item = artifact.Bind(hash => Artifacts.Where(found => found.Hash == hash).Select(Optional.Some).FirstOrDefault(Optional.None<ManifestItem>()));
-    var board = artifact.Bind(hash => ArtifactShaping.ShapeBoard(Build, hash, perks));
-    var shown = artifact.Bind(hash => focus.Bind(perk => ArtifactShaping.DescribeDetails(Build, hash, perks, perk)));
+    var groups = artifact.Bind(hash => ArtifactShaping.ShapeSlots(Build, hash, slots));
 }
 <Modal Title="@(item.Match(found => $"{found.Value.Name}, Artifact", _ => "Artifact"))" Size="snug" OnClose="OnClose">
     <Heading>
@@ -30,82 +30,66 @@
                 <h2 class="sub-head-name" data-testid="artifact-name">@item.Match(found => found.Value.Name, _ => "No artifact")</h2>
                 <span class="sub-head-kind" data-testid="artifact-kind">Artifact</span>
             </div>
-            <div class="art-switch @(listOpen ? "open" : "")">
+            <div class="art-switch @(open == Optional.Some(SwitchList) ? "open" : "")">
                 <button type="button" class="btn ghost small art-switch-button" id="@SwitchButtonId" data-action="switch-artifact"
-                        aria-expanded="@(listOpen ? "true" : "false")" aria-controls="@(listOpen ? OpenListId : null)"
-                        title="Pick another artifact" aria-label="Pick another artifact" @onclick="ToggleList" @onclick:stopPropagation="true">⋯</button>
-                @if (listOpen)
+                        aria-expanded="@(open == Optional.Some(SwitchList) ? "true" : "false")" aria-controls="@(open == Optional.Some(SwitchList) ? OpenListId : null)"
+                        title="Pick another artifact" aria-label="Pick another artifact" @onclick="() => ToggleList(SwitchList)" @onclick:stopPropagation="true">⋯</button>
+                @if (open == Optional.Some(SwitchList))
                 {
-                    @RenderArtifactList()
+                    <div class="sub-drop art-drop" id="@OpenListId" role="group" tabindex="-1" data-testid="artifact-picker" aria-label="Pick an artifact" @onclick:stopPropagation="true">
+                        <div class="sub-drop-options">
+                            @RenderArtifactOptions(true)
+                        </div>
+                    </div>
                 }
             </div>
         </div>
     </Heading>
     <ChildContent>
         <div class="artifact-editor" data-testid="artifact-editor" @onclick="CloseList" @onkeydown="CloseOnEscape" @onkeydown:stopPropagation="true">
-            @if (board is Optional<ArtifactBoard>.Some shownBoard)
+            @if (item is Optional<ManifestItem>.Some shownItem && groups is Optional<ImmutableArray<ArtifactSlotGroup>>.Some shownGroups)
             {
-                <div class="art-layout">
-                    <div class="art-board">
-                        <div class="art-columns" data-testid="artifact-columns">
-                            @foreach (var column in shownBoard.Value.Columns)
-                            {
-                                <section class="art-column" aria-label="@column.Heading" data-tier="@column.Tier">
-                                    <h3 class="sub-heading art-column-heading">@column.Heading</h3>
-                                    <div class="art-perks">
-                                        @foreach (var cell in column.Perks)
-                                        {
-                                            @RenderPerk(cell)
-                                        }
-                                    </div>
-                                </section>
-                            }
-                        </div>
-                        @if (shownBoard.Value.Slots is Optional<ImmutableArray<ArtifactSlotGroup>>.Some slots)
+                var header = ArtifactShaping.DescribeHeader(Build, shownItem.Value);
+                @if (header.Flavor is Optional<string>.Some flavor)
+                {
+                    <p class="art-flavor" data-testid="artifact-flavor">@flavor.Value</p>
+                }
+                @if (!header.Focus.IsEmpty)
+                {
+                    <div class="art-focus" data-testid="artifact-focus">
+                        <span class="art-focus-title">Works best with:</span>
+                        @foreach (var line in header.Focus)
                         {
-                            <div class="art-slots" data-testid="artifact-slots" aria-label="Perk slots">
-                                @foreach (var group in slots.Value)
+                            <div class="art-focus-line">
+                                <span class="art-focus-label">@line.Label:</span>
+                                @foreach (var chip in line.Chips)
                                 {
-                                    <div class="art-slot-group" data-tier="@group.Tier">
-                                        <span class="art-slot-label">@group.Label</span>
-                                        <div class="art-slot-row">
-                                            @foreach (var slot in group.Slots)
-                                            {
-                                                @if (slot is Optional<IconTile>.Some held)
-                                                {
-                                                    @RenderTile(held.Value, "art-slot", false)
-                                                }
-                                                else
-                                                {
-                                                    <span class="icon-tile empty art-slot" title="@group.Label: empty" aria-label="@group.Label: empty"></span>
-                                                }
-                                            }
-                                        </div>
-                                    </div>
+                                    @if (chip.Icon is Optional<string>.Some icon)
+                                    {
+                                        <img class="art-focus-icon" src="@icon.Value" alt="@chip.Name" title="@chip.Name" />
+                                    }
+                                    else
+                                    {
+                                        <span class="art-focus-chip">@chip.Name</span>
+                                    }
                                 }
                             </div>
                         }
-                        else
-                        {
-                            <p class="tone-warning sub-note" role="status" data-testid="artifact-overfull">These perks don't fit the artifact's slots: take some out.</p>
-                        }
-                        <div class="art-counts" data-testid="artifact-counts">
-                            @foreach (var count in shownBoard.Value.Counts)
-                            {
-                                <span class="art-count @(count.Full ? "full" : "")">@count.Text</span>
-                            }
-                        </div>
                     </div>
-                    <aside class="art-details" data-testid="artifact-details" aria-live="polite">
-                        @if (shown is Optional<ArtifactPerkDetails>.Some perkDetails)
-                        {
-                            @RenderDetails(perkDetails.Value)
-                        }
-                        else
-                        {
-                            <p class="muted art-hint">Tap a perk to make it active, or to take it out. Its details show here.</p>
-                        }
-                    </aside>
+                }
+                <div class="art-slots" data-testid="artifact-slots">
+                    @foreach (var group in shownGroups.Value)
+                    {
+                        <section class="art-slot-group" data-tier="@group.Tier" aria-label="@group.Label">
+                            <div class="art-slot-mark" title="@group.Label" aria-hidden="true">@group.Mark</div>
+                            <div class="sub-group art-slot-row">
+                                @foreach (var slot in group.Slots)
+                                {
+                                    @RenderSlot(slot, group.Label)
+                                }
+                            </div>
+                        </section>
+                    }
                 </div>
             }
             else
@@ -123,24 +107,27 @@
     </ChildContent>
 </Modal>
 
-@if (details is Optional<ItemDetails>.Some open && ItemInfoShaping.ShapeInfo(Build, open.Value) is Optional<ItemInfo>.Some info)
+@if (details is Optional<ItemDetails>.Some shown && ItemInfoShaping.ShapeInfo(Build, shown.Value) is Optional<ItemInfo>.Some info)
 {
     <ItemInfoDialog Info="info.Value" OnClose="CloseDetails" />
 }
 
 @code {
-    /// <summary>The id of the open artifact list: it is placed under (or above) ⋯ once it is shown.</summary>
+    /// <summary>The id of the open dropdown: it is placed under (or above) its ⋯ once it is shown.</summary>
     private const string OpenListId = "artifact-open-list";
     private const string SwitchButtonId = "artifact-switch";
+
+    /// <summary>The artifact list's place among the open dropdowns (a slot's is its index, 0 or more).</summary>
+    private const int SwitchList = -1;
 
     [Parameter, EditorRequired]
     public ValidatedBuild Build { get; set; } = null!;
 
-    /// <summary>The perks last picked for each artifact while the loop is open (the designer keeps them).</summary>
+    /// <summary>The slots last picked for each artifact while the loop is open (the designer keeps them).</summary>
     [Parameter]
-    public ImmutableDictionary<ItemHash, ImmutableArray<ItemHash>> Remembered { get; set; } = ImmutableDictionary<ItemHash, ImmutableArray<ItemHash>>.Empty;
+    public ImmutableDictionary<ItemHash, ImmutableArray<Optional<ItemHash>>> Remembered { get; set; } = ImmutableDictionary<ItemHash, ImmutableArray<Optional<ItemHash>>>.Empty;
 
-    /// <summary>Save: the artifact, its perks and what was picked for each artifact. The designer replays the loop with them.</summary>
+    /// <summary>Save: the artifact, its slots and what was picked for each artifact. The designer replays the loop with them.</summary>
     [Parameter]
     public EventCallback<ArtifactSave> OnSave { get; set; }
 
@@ -150,76 +137,78 @@
 
     private ImmutableArray<ManifestItem> Artifacts = [];
     private Optional<ItemHash> artifact = Optional.None<ItemHash>();
-    private ImmutableArray<ItemHash> perks = [];
-    private ImmutableDictionary<ItemHash, ImmutableArray<ItemHash>> remembered = ImmutableDictionary<ItemHash, ImmutableArray<ItemHash>>.Empty;
-    private Optional<ItemHash> focus = Optional.None<ItemHash>();
+    private ImmutableArray<Optional<ItemHash>> slots = [];
+    private ImmutableDictionary<ItemHash, ImmutableArray<Optional<ItemHash>>> remembered = ImmutableDictionary<ItemHash, ImmutableArray<Optional<ItemHash>>>.Empty;
     private Optional<ItemDetails> details = Optional.None<ItemDetails>();
-    private bool listOpen;
+    private Optional<int> open = Optional.None<int>();
     private bool placeList;
-    private bool refocus;
+    private Optional<string> refocus = Optional.None<string>();
 
     protected override void OnInitialized()
     {
         var held = LoopDesigning.ReadArtifactChoice(Build);                                     // pure
         Artifacts = LoopDesigning.ListArtifacts(Build);                                         // pure
         artifact = held.Artifact;                                                                // impure (UI state)
-        perks = held.Perks;                                                                      // impure (UI state)
-        remembered = held.Artifact.Match(found => Remembered.SetItem(found.Value, held.Perks), _ => Remembered); // pure
+        slots = held.Slots;                                                                      // impure (UI state)
+        remembered = held.Artifact.Match(found => Remembered.SetItem(found.Value, held.Slots), _ => Remembered); // pure
     }
 
-    /// <summary>A perk of the columns: a button that makes it active or takes it out (a dimmed one only shows its details).</summary>
-    private RenderFragment RenderPerk(ArtifactPerkCell cell) => __builder =>
+    /// <summary>A slot: its perk's square (tap: its details) or an empty "+", and in the footer under it ✕ (when it holds one) and ⋯.</summary>
+    private RenderFragment RenderSlot(ArtifactSlotView slot, string label) => __builder =>
     {
-        var blocked = cell.Blocked.IsSome();
-        var classes = $"icon-tile art-perk {(cell.Picked ? "picked" : "")} {(blocked ? "blocked" : "")} {(cell.Tile.InRules ? "" : "out")} {(focus == Optional.Some(cell.Perk) ? "focused" : "")}";
-        <button type="button" class="@classes" data-hash="@cell.Perk.Value" aria-pressed="@(cell.Picked ? "true" : "false")"
-                aria-disabled="@(blocked ? "true" : "false")" title="@DescribePerkTooltip(cell)" aria-label="@cell.Tile.Name"
-                @onclick="() => TapPerk(cell)" @onmouseenter="() => FocusPerk(cell.Perk)" @onfocus="() => FocusPerk(cell.Perk)">
-            @RenderTileFace(cell.Tile)
-            @if (!cell.Tile.InRules)
+        var isOpen = open == Optional.Some(slot.Index);
+        var name = $"{label} slot {slot.Index + 1}";
+        <div class="sub-slot art-slot @(isOpen ? "open" : "")" data-slot="@slot.Index" data-tier="@slot.Tier">
+            @if (slot.Perk is Optional<IconTile>.Some held)
             {
-                <UnsupportedMark />
+                @RenderTile(held.Value, "art-perk", true)
             }
-        </button>
-    };
-
-    /// <summary>The focused perk's details, like the game's tooltip.</summary>
-    private RenderFragment RenderDetails(ArtifactPerkDetails shown) => __builder =>
-    {
-        <div class="art-tip @(shown.Picked ? "picked" : "") @(shown.Blocked.IsSome() ? "blocked" : "")" data-testid="artifact-tip">
-            <div class="art-tip-head">
-                @RenderTile(shown.Tile, "art-tip-icon", false)
-                <div class="art-tip-title">
-                    <h3 class="art-tip-name">@shown.Tile.Name</h3>
-                    <span class="art-tip-kind">@shown.Kind</span>
-                </div>
+            else
+            {
+                <span class="icon-tile empty art-perk" title="@name: empty" aria-label="@name: empty">+</span>
+            }
+            <div class="sub-slot-foot">
+                @if (slot.Perk.IsSome())
+                {
+                    <button type="button" class="sub-slot-button" data-action="clear-slot" title="Empty @name" aria-label="Empty @name" @onclick="() => ClearSlot(slot.Index)" @onclick:stopPropagation="true">✕</button>
+                }
+                <button type="button" class="sub-slot-button sub-slot-pick" id="@DescribePickButtonId(slot.Index)" data-action="pick-slot"
+                        aria-expanded="@(isOpen ? "true" : "false")" aria-controls="@(isOpen ? OpenListId : null)"
+                        title="List what @name can hold" aria-label="List what @name can hold"
+                        @onclick="() => ToggleList(slot.Index)" @onclick:stopPropagation="true">⋯</button>
             </div>
-            <p class="art-tip-state" data-testid="artifact-tip-state">@shown.State</p>
-            @if (shown.Blocked is Optional<string>.Some why)
+            @if (isOpen)
             {
-                <p class="art-tip-why" data-testid="artifact-tip-why">@why.Value</p>
-            }
-            @if (shown.Tile.GameText.Match(text => text.Value, _ => shown.Tile.Description.UnwrapOr("")) is { Length: > 0 } text)
-            {
-                <p class="art-tip-text">@text</p>
-            }
-            @if (!shown.Tile.InRules)
-            {
-                <p class="art-tip-out"><UnsupportedMark /> Loopsmith has no rules for it yet: it sets nothing off.</p>
-            }
-            @if (shown.Tile.Details is Optional<ItemDetails>.Some open)
-            {
-                <button type="button" class="btn ghost small" data-action="artifact-perk-details" @onclick="() => OpenDetails(open.Value)">What it does</button>
+                @RenderSlotOptions(slot.Index, name)
             }
         </div>
     };
 
-    /// <summary>The dropdown of every artifact (and none), one per line, floating under ⋯: picking one shows its perks.</summary>
-    private RenderFragment RenderArtifactList() => __builder =>
+    /// <summary>The dropdown of what a slot can hold, by tier, floating under the slot: picking one puts it there and closes the list.</summary>
+    private RenderFragment RenderSlotOptions(int index, string name) => __builder =>
     {
-        <div class="sub-drop art-drop" id="@OpenListId" role="group" tabindex="-1" data-testid="artifact-picker" aria-label="Pick an artifact" @onclick:stopPropagation="true">
+        var groups = artifact.Match(found => ArtifactShaping.ListOptions(Build, found.Value, slots, index), _ => ImmutableArray<ArtifactOptionGroup>.Empty);
+        <div class="sub-drop art-drop" id="@OpenListId" role="group" tabindex="-1" data-testid="artifact-slot-picker" data-slot="@index"
+             aria-label="@($"Pick a perk for {name}")" @onclick:stopPropagation="true">
             <div class="sub-drop-options">
-                @RenderArtifactOptions(true)
+                @foreach (var group in groups)
+                {
+                    <div class="art-drop-heading">@group.Heading</div>
+                    @foreach (var option in group.Perks)
+                    {
+                        var perk = option.Perk;
+                        <button type="button" class="perk-option @(option.Current ? "picked" : "")" data-hash="@perk.Value" data-tier="@option.Tier"
+                                disabled="@option.Elsewhere" aria-pressed="@(option.Current ? "true" : "false")"
+                                title="@(option.Elsewhere ? $"{LoadoutShaping.DescribePlugTooltip(option.Tile)}\n(equipped in another slot)" : LoadoutShaping.DescribePlugTooltip(option.Tile))"
+                                @onclick="() => PickPerk(index, perk)">
+                            @RenderTile(option.Tile, "perk", false)
+                            <span class="perk-option-text">
+                                <span class="perk-option-name">@option.Tile.Name</span>
+                                <span class="perk-option-type">@DescribeOption(option)</span>
+                            </span>
+                        </button>
+                    }
+                }
             </div>
         </div>
     };
@@ -237,7 +226,7 @@
                 @RenderTile(tile, "perk", false)
                 <span class="perk-option-text">
                     <span class="perk-option-name">@option.Name</span>
-                    <span class="perk-option-type">@ArtifactShaping.DescribePicked(current ? perks.Length : LoopDesigning.RecallArtifactPerks(Build, remembered, hash).Length)</span>
+                    <span class="perk-option-type">@ArtifactShaping.DescribePicked(current ? slots : LoopDesigning.RecallArtifactSlots(Build, remembered, hash))</span>
                 </span>
             </button>
         }
@@ -262,6 +251,10 @@
         {
             <button type="button" class="@classes tappable" title="@LoadoutShaping.DescribePlugTooltip(tile)" aria-label="@tile.Name" aria-haspopup="dialog" @onclick="() => OpenDetails(tileDetails.Value)">
                 @RenderTileFace(tile)
+                @if (!tile.InRules)
+                {
+                    <UnsupportedMark />
+                }
             </button>
         }
         else
@@ -288,89 +281,90 @@
         }
     };
 
-    private static string DescribePerkTooltip(ArtifactPerkCell cell) =>
-        string.Join("\n", new[] { LoadoutShaping.DescribePlugTooltip(cell.Tile), cell.Blocked.Match(why => $"Requirements not met: {why.Value}", _ => "") }.Where(part => part.Length > 0));
+    private static string DescribeOption(ArtifactPerkOption option) =>
+        string.Join(" · ", new[] { DomainPhrasing.DescribeArtifactTier(option.Tier), option.Tile.InRules ? "" : "not in the rules", option.Elsewhere ? "equipped" : "" }.Where(part => part.Length > 0));
 
-    /// <summary>A tap on a perk: an active one is taken out, one that fits is made active; either way its details show.</summary>
-    private void TapPerk(ArtifactPerkCell cell)
+    /// <summary>The ⋯ of a slot: its id, for the focus to come back to it when its dropdown closes.</summary>
+    private static string DescribePickButtonId(int slot) =>
+        $"artifact-pick-{slot}";
+
+    private void PickPerk(int index, ItemHash perk)
     {
-        focus = Optional.Some(cell.Perk);                                                        // impure (UI state)
-        if (cell.Picked)
-        {
-            perks = perks.Remove(cell.Perk);                                                     // impure (UI state)
-        }
-        else if (!cell.Blocked.IsSome())
-        {
-            perks = perks.Add(cell.Perk);                                                        // impure (UI state)
-        }
+        slots = slots.SetItem(index, Optional.Some(perk));                                       // impure (UI state)
+        refocus = Optional.Some(DescribePickButtonId(index));                                    // impure (UI state)
+        open = Optional.None<int>();                                                             // impure (UI state)
     }
 
-    private void FocusPerk(ItemHash perk) =>
-        focus = Optional.Some(perk);                                                             // impure (UI state)
+    /// <summary>✕ on a slot: it is left empty, the other perks stay in their slots.</summary>
+    private void ClearSlot(int index)
+    {
+        slots = slots.SetItem(index, Optional.None<ItemHash>());                                 // impure (UI state)
+        open = Optional.None<int>();                                                             // impure (UI state)
+    }
 
-    /// <summary>Another artifact: the perks of the one left are remembered, the new one shows the perks last picked for it (else none).</summary>
+    /// <summary>Another artifact: the slots of the one left are remembered, the new one shows the slots last picked for it (else empty ones).</summary>
     private void SwitchArtifact(Optional<ItemHash> next)
     {
-        remembered = artifact.Match(left => remembered.SetItem(left.Value, perks), _ => remembered); // impure (UI state)
-        perks = next.Match(found => LoopDesigning.RecallArtifactPerks(Build, remembered, found.Value), _ => ImmutableArray<ItemHash>.Empty); // impure (UI state)
+        remembered = artifact.Match(left => remembered.SetItem(left.Value, slots), _ => remembered); // impure (UI state)
+        slots = next.Match(found => LoopDesigning.RecallArtifactSlots(Build, remembered, found.Value), _ => ImmutableArray<Optional<ItemHash>>.Empty); // impure (UI state)
         artifact = next;                                                                         // impure (UI state)
-        focus = Optional.None<ItemHash>();                                                       // impure (UI state)
-        listOpen = false;                                                                        // impure (UI state)
-        refocus = true;                                                                          // impure (UI state)
+        open = Optional.None<int>();                                                             // impure (UI state)
+        refocus = Optional.Some(SwitchButtonId);                                                 // impure (UI state)
     }
 
-    /// <summary>The list that just opened is placed under ⋯ (above it when there's no room below) and takes the focus, so
-    /// Escape reaches it; one that closed hands the focus back to ⋯.</summary>
+    /// <summary>A dropdown that just opened is placed under its ⋯ (above it when there's no room below) and takes the focus,
+    /// so Escape reaches it; one that closed hands the focus back to its ⋯.</summary>
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (placeList && listOpen)
+        if (placeList && open.IsSome())
         {
             placeList = false;
             await Browser.PlaceDropdownAsync(OpenListId);                                        // impure
         }
-        if (refocus)
+        if (refocus is Optional<string>.Some button)
         {
-            refocus = false;
-            await Browser.FocusElementAsync(SwitchButtonId);                                     // impure
+            refocus = Optional.None<string>();
+            await Browser.FocusElementAsync(button.Value);                                       // impure
         }
     }
 
-    private void ToggleList()
+    private void ToggleList(int list)
     {
-        listOpen = !listOpen;                                                                    // impure (UI state)
-        placeList = listOpen;                                                                    // impure (UI state)
+        var closing = open == Optional.Some(list);                                               // pure
+        open = closing ? Optional.None<int>() : Optional.Some(list);                             // impure (UI state)
+        placeList = !closing;                                                                    // impure (UI state)
     }
 
-    /// <summary>A tap outside the open list (in the editor) closes it.</summary>
+    /// <summary>A tap outside the open dropdown (in the editor) closes it.</summary>
     private void CloseList() =>
-        listOpen = false;                                                                        // impure (UI state)
+        open = Optional.None<int>();                                                             // impure (UI state)
 
-    /// <summary>Escape with the list open closes the list only, and the focus goes back to ⋯; with none open it closes the
-    /// editor (the editor handles Escape itself, as the subclass editor does).</summary>
+    /// <summary>Escape with a dropdown open closes the dropdown only, and the focus goes back to its ⋯; with none open it
+    /// closes the editor (the editor handles Escape itself, as the subclass editor does).</summary>
     private async Task CloseOnEscape(KeyboardEventArgs e)
     {
         if (e.Key != "Escape")
         {
             return;
         }
-        if (listOpen)
+        if (open is Optional<int>.Some list)
         {
-            listOpen = false;                                                                    // impure (UI state)
-            refocus = true;                                                                      // impure (UI state)
+            refocus = Optional.Some(list.Value == SwitchList ? SwitchButtonId : DescribePickButtonId(list.Value)); // impure (UI state)
+            open = Optional.None<int>();                                                         // impure (UI state)
             return;
         }
         await OnClose.InvokeAsync();                                                             // impure
     }
 
-    private void OpenDetails(ItemDetails open) =>
-        details = Optional.Some(open);                                                           // impure (UI state)
+    private void OpenDetails(ItemDetails shown) =>
+        details = Optional.Some(shown);                                                          // impure (UI state)
 
     private void CloseDetails() =>
         details = Optional.None<ItemDetails>();                                                  // impure (UI state)
 
     private Task SaveAsync()
     {
-        var kept = artifact.Match(found => remembered.SetItem(found.Value, perks), _ => remembered); // pure
-        return OnSave.InvokeAsync(new ArtifactSave(new ArtifactChoice(artifact, perks), kept)); // impure
+        var kept = artifact.Match(found => remembered.SetItem(found.Value, slots), _ => remembered); // pure
+        return OnSave.InvokeAsync(new ArtifactSave(new ArtifactChoice(artifact, slots), kept));  // impure
     }
 }

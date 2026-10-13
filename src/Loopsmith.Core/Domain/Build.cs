@@ -107,16 +107,17 @@ public sealed record BuildArtifact(ManifestItem Item, ImmutableArray<ArtifactPer
 public sealed record ArtifactPerkOfBuild(ItemHash Hash, Optional<ElementId> Element);
 
 /// <summary>
-/// An artifact and its perks as the designer's artifact editor holds them, by manifest hash (no artifact: no perks).
+/// The artifact a build equips and the perk in each of its perk slots, by manifest hash, in slot order (none: an empty
+/// slot): written by the designer's artifact editor (<c>artifact: { hash, slots }</c>), so each perk is read back into
+/// the slot it was put in.
 /// </summary>
-public sealed record ArtifactChoice(Optional<ItemHash> Artifact, ImmutableArray<ItemHash> Perks);
+public sealed record ArtifactLoadout(ItemHash Hash, ImmutableArray<Optional<ItemHash>> Slots);
 
 /// <summary>
-/// One of an artifact's limits (Artifacts 2.0): at most <see cref="Capacity"/> of its perks from Tier
-/// <see cref="FromTier"/> to <see cref="ToTier"/> (its last) — as many as its perk slots that take Tier
-/// <see cref="FromTier"/> — of which <see cref="Used"/> are picked.
+/// An artifact and the perk in each of its slots as the designer's artifact editor holds them, by manifest hash, in slot
+/// order (no artifact: no slots).
 /// </summary>
-public sealed record ArtifactLimit(int FromTier, int ToTier, int Used, int Capacity);
+public sealed record ArtifactChoice(Optional<ItemHash> Artifact, ImmutableArray<Optional<ItemHash>> Slots);
 
 public sealed record StatLine(
     Optional<StatValue> Weapons,
@@ -140,8 +141,9 @@ public sealed record ArmorCopy(ItemHash Piece, ItemInstanceId Instance);
 /// <see cref="ArmorModPlugs"/> which copy of an armor mod the rules know it holds, for an element one of whose copies
 /// isn't its first hash (the cheaper copy the seasonal artifact allows): each of the element's mods, in order, holds the
 /// next of these that is one of its element's hashes, else the element's first hash; <see cref="Artifact"/> the artifact
-/// it equips, by manifest hash, when it says (picked in the designer's artifact editor; none: the one that unlocks the
-/// most of its artifact perks, <c>BuildComposition.ArtifactFinding</c>).
+/// it equips and the perk in each of its slots, when it says (picked in the designer's artifact editor; none: the one
+/// that unlocks the most of its artifact perks, <c>BuildComposition.ArtifactFinding</c>, its perks placed in its slots).
+/// <see cref="ArtifactPerks"/> and the left-out artifact perks are what it equips either way.
 /// </summary>
 public sealed record Build(
     string Name,
@@ -162,7 +164,7 @@ public sealed record Build(
     ImmutableArray<LeftOutItem> LeftOut,
     ImmutableArray<ArmorCopy> ArmorCopies,
     ImmutableArray<ItemHash> ArmorModPlugs,
-    Optional<ItemHash> Artifact);
+    Optional<ArtifactLoadout> Artifact);
 
 public sealed record BuildIssue(Severity Severity, string Message);
 

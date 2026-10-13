@@ -37,7 +37,7 @@ public partial record ManifestKind
     partial record Armor(ArmorSlot Slot, Optional<ItemHash> Intrinsic, Optional<ItemHash> Set, Optional<GuardianClass> Class);
     partial record ArmorMod(Optional<ArmorSlot> Slot);
     partial record ArtifactPerk();
-    partial record Artifact(ImmutableArray<ArtifactTier> Tiers, ImmutableArray<int> Slots);   // Artifacts 2.0: its perks by tier (Tier 1 first), and the highest tier each perk slot takes (1-based)
+    partial record Artifact(ImmutableArray<ArtifactTier> Tiers, ImmutableArray<int> Slots, Optional<string> Flavor);   // Artifacts 2.0: its perks by tier (Tier 1 first), the highest tier each perk slot takes (1-based), its flavour text
     partial record Perk();
     partial record Other();
 }

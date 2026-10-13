@@ -20,7 +20,7 @@ tier and masterwork, and the breaker under the square. Icons are loaded from
 bungie.net; the data is Bungie's, used under its API terms. It also holds the traits the glossary's keywords name
 (`keywordTraits`: the game's own keywords, Jolted, Bolt Charge, Woven Mail), so each keyword shows its in-game icon.
 Every artifact of Artifacts 2.0 (the seven) is written with all its perks: its `tiers` (Tier 1 to 3, seven perks each) and the
-highest tier each of its seven perk slots takes (`slots`), which the designer's artifact editor lays out.
+highest tier each of its seven perk slots takes (`slots`), and its flavour text (`flavor`), which the designer's artifact editor shows.
 Each subclass (the glossary's) also lists every plug it can hold (`plugs`: super, abilities, jump, aspects, fragments),
 which the designer's subclass editor offers.
 

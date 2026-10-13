@@ -510,7 +510,7 @@ public static partial class ManifestJoin
         [
             .. ListSocketPlugs(reading, sockets[sets.IndexOf(set)]).Distinct().Where(plug => !built.Any(tier => tier.Perks.Contains(plug))),
         ])));
-        return new ManifestKind.Artifact(tiers, [.. sets.Select(set => reach.IndexOf(set) + 1)]);
+        return new ManifestKind.Artifact(tiers, [.. sets.Select(set => reach.IndexOf(set) + 1)], artifact.ReadText("flavorText"));
     }
 
     private static bool IsArtifactPerkSocket(Reading reading, JsonElement socket)

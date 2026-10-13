@@ -111,7 +111,7 @@ public static class LoopDesigning
             [],
             [],
             [],
-            Optional.None<ItemHash>());
+            Optional.None<ArtifactLoadout>());
     }
 
     /// <summary>
@@ -377,33 +377,21 @@ public static class LoopDesigning
     public static Optional<ManifestKind.Artifact> FindArtifactTiers(ValidatedBuild build, ItemHash artifact) =>
         ArtifactEditing.FindArtifact(build.Catalog, artifact);
 
-    /// <summary>The build's artifact and its perks of it, by manifest hash (no artifact: none).</summary>
+    /// <summary>The build's artifact and the perk in each of its slots, by manifest hash (no artifact: no slots).</summary>
     public static ArtifactChoice ReadArtifactChoice(ValidatedBuild build) =>
         ArtifactEditing.ReadChoice(build.Catalog, build.Build);
 
-    /// <summary>The perks to show for an artifact: the last picked for it here, else the build's own for its artifact, else none.</summary>
-    public static ImmutableArray<ItemHash> RecallArtifactPerks(ValidatedBuild build, ImmutableDictionary<ItemHash, ImmutableArray<ItemHash>> remembered, ItemHash artifact) =>
-        ArtifactEditing.RecallPerks(build.Catalog, build.Build, remembered, artifact);
+    /// <summary>The slots to show for an artifact: the last picked for it here, else the build's own for its artifact, else empty ones.</summary>
+    public static ImmutableArray<Optional<ItemHash>> RecallArtifactSlots(ValidatedBuild build, ImmutableDictionary<ItemHash, ImmutableArray<Optional<ItemHash>>> remembered, ItemHash artifact) =>
+        ArtifactEditing.RecallSlots(build.Catalog, build.Build, remembered, artifact);
 
     /// <summary>The tier a perk is in (1-based); none for a perk the artifact doesn't have.</summary>
     public static Optional<int> FindArtifactTier(ManifestKind.Artifact artifact, ItemHash perk) =>
         ArtifactEditing.FindTier(artifact, perk);
 
-    /// <summary>The artifact's limits (all perks, Tiers 2–3, Tier 3) with these perks picked.</summary>
-    public static ImmutableArray<ArtifactLimit> CountArtifactLimits(ManifestKind.Artifact artifact, ImmutableArray<ItemHash> perks) =>
-        ArtifactEditing.CountLimits(artifact, perks);
-
-    /// <summary>True when no more perks fit the limit.</summary>
-    public static bool IsArtifactLimitFull(ArtifactLimit limit) =>
-        ArtifactEditing.IsFull(limit);
-
-    /// <summary>The limit picking the perk as well would break; none when it can be picked.</summary>
-    public static Optional<ArtifactLimit> FindBrokenArtifactLimit(ManifestKind.Artifact artifact, ImmutableArray<ItemHash> perks, ItemHash perk) =>
-        ArtifactEditing.FindBrokenLimit(artifact, perks, perk);
-
-    /// <summary>The perks in the artifact's slots, in slot order (none: empty); none when they don't fit.</summary>
-    public static Optional<ImmutableArray<Optional<ItemHash>>> PlaceArtifactPerks(ManifestKind.Artifact artifact, ImmutableArray<ItemHash> perks) =>
-        ArtifactEditing.PlacePerks(artifact, perks);
+    /// <summary>What an artifact's slot number <paramref name="slot"/> (0-based) can hold: the perks of the tiers it takes, Tier 1's first.</summary>
+    public static ImmutableArray<ItemHash> ListArtifactSlotOptions(ManifestKind.Artifact artifact, int slot) =>
+        ArtifactEditing.ListSlotOptions(artifact, slot);
 
     /// <summary>The rules' artifact perk with this hash; none when the rules don't know it (⊘).</summary>
     public static Optional<BuildElement> FindArtifactPerkElement(ValidatedBuild build, ItemHash perk) =>

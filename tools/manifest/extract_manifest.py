@@ -26,7 +26,7 @@ written too. Perks a catalyst or a set grants are the manifest's sandbox perks (
 artifacts (Artifacts 2.0: every artifact item with sockets that take artifact perks, the seven the designer's artifact
 editor offers) are written with all their perks (`kind: artifact`, `tiers`: the perks of each tier, Tier 1 first — the
 perk sockets' plug sets, each once in socket order, reach one tier further each — and `slots`: the highest tier each
-perk socket takes), and each of those perks as an item. A subclass (each of the glossary's) also gets `plugs`: every plug its
+perk socket takes, and `flavor`: its flavour text), and each of those perks as an item. A subclass (each of the glossary's) also gets `plugs`: every plug its
 sockets take (super, abilities, jump, aspects, fragments; not the empty sockets'), each written as an item, so the
 designer's subclass editor offers them. A hash the
 manifest doesn't have is reported, not written. The output is sorted and stable, so a rerun on the same
@@ -362,6 +362,8 @@ def to_entry(item_hash, item, context):
     if tiers:
         fields.append(("tiers", "[" + ", ".join("[" + ", ".join(str(h) for h in tier) + "]" for tier in tiers) + "]"))
         fields.append(("slots", "[" + ", ".join(str(n) for n in slots) + "]"))
+        if item.get("flavorText"):
+            fields.append(("flavor", to_text(item["flavorText"])))
     plugs = context["subclass_plugs"].get(item_hash) if kind == "subclass" else None
     if plugs:
         fields.append(("plugs", "[" + ", ".join(str(h) for h in plugs) + "]"))

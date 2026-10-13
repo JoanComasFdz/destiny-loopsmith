@@ -130,7 +130,7 @@ public static class TestCatalog
             [],
             [],
             [],
-            Optional.None<ItemHash>());
+            Optional.None<ArtifactLoadout>());
         return BuildValidation.ValidateBuild(build, catalog).Match(
             ok => ok.Value,
             error => throw new InvalidOperationException(error.Failure));

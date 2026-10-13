@@ -114,7 +114,7 @@ public static class DimLoadoutMapping
             leftOut,
             ListArmorCopies(catalog.Manifest, loadout),
             ListModPlugs(placed),
-            Optional.None<ItemHash>()));
+            Optional.None<ArtifactLoadout>()));
     }
 
     /// <summary>

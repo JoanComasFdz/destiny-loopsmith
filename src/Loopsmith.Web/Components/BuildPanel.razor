@@ -154,9 +154,9 @@
     [Parameter]
     public EventCallback<ArtifactSave> OnEditArtifact { get; set; }
 
-    /// <summary>The perks last picked for each artifact while the loop is open.</summary>
+    /// <summary>The slots last picked for each artifact while the loop is open.</summary>
     [Parameter]
-    public ImmutableDictionary<ItemHash, ImmutableArray<ItemHash>> RememberedArtifactPerks { get; set; } = ImmutableDictionary<ItemHash, ImmutableArray<ItemHash>>.Empty;
+    public ImmutableDictionary<ItemHash, ImmutableArray<Optional<ItemHash>>> RememberedArtifactPerks { get; set; } = ImmutableDictionary<ItemHash, ImmutableArray<Optional<ItemHash>>>.Empty;
 
     /// <summary>light.gg's page for a manifest hash: what the item is, until Loopsmith reads the manifest itself.</summary>
     private static string ToLookupUrl(ItemHash hash) =>

@@ -166,7 +166,7 @@ public sealed class ManifestJoinTests
             ManifestKind.Armor armor => $"armor {armor.Slot} intrinsic {armor.Intrinsic.Match(hash => hash.Value.Value.ToString(), _ => "-")} set {armor.Set.Match(hash => hash.Value.Value.ToString(), _ => "-")}",
             ManifestKind.ArmorMod mod => $"armorMod {mod.Slot.Match(slot => slot.Value.ToString(), _ => "general")}",
             ManifestKind.ExoticCatalyst catalyst => $"catalyst [{string.Join(",", catalyst.Perks.Select(hash => hash.Value))}]",
-            ManifestKind.Artifact artifact => $"artifact [{string.Join(" / ", artifact.Tiers.Select(tier => string.Join(",", tier.Perks.Select(hash => hash.Value))))}] slots [{string.Join(",", artifact.Slots)}]",
+            ManifestKind.Artifact artifact => $"artifact [{string.Join(" / ", artifact.Tiers.Select(tier => string.Join(",", tier.Perks.Select(hash => hash.Value))))}] slots [{string.Join(",", artifact.Slots)}] flavor {artifact.Flavor.UnwrapOr("-")}",
             _ => kind.GetType().Name,
         };
 

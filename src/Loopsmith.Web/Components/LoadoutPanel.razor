@@ -480,9 +480,9 @@
     [Parameter]
     public EventCallback<ArtifactSave> OnEditArtifact { get; set; }
 
-    /// <summary>The perks last picked for each artifact while the loop is open (the designer keeps them for the editor).</summary>
+    /// <summary>The slots last picked for each artifact while the loop is open (the designer keeps them for the editor).</summary>
     [Parameter]
-    public ImmutableDictionary<ItemHash, ImmutableArray<ItemHash>> RememberedArtifactPerks { get; set; } = ImmutableDictionary<ItemHash, ImmutableArray<ItemHash>>.Empty;
+    public ImmutableDictionary<ItemHash, ImmutableArray<Optional<ItemHash>>> RememberedArtifactPerks { get; set; } = ImmutableDictionary<ItemHash, ImmutableArray<Optional<ItemHash>>>.Empty;
 
     private bool CanEditArtifact => OnEditArtifact.HasDelegate && !LoopDesigning.ListArtifacts(Build).IsEmpty;
 

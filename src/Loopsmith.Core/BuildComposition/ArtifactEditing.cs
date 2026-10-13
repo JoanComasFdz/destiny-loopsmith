@@ -6,11 +6,10 @@ namespace Loopsmith.Core.BuildComposition;
 
 /// <summary>
 /// Pure: the artifacts a build can equip (Artifacts 2.0: every artifact of the manifest excerpt with perk slots), the one
-/// it equips with its perks, the artifact's limits, and a build with another artifact and perks. An artifact's perks come
-/// in tiers, and each of its perk slots takes the tiers up to its own (the excerpt's <c>slots</c>: two take Tier 1, three
-/// Tiers 1–2, two Tiers 1–3); the perks fit when, for each tier, no more of them are of that tier or higher than there
-/// are slots that take it — at most 7 perks, 5 of Tiers 2–3 and 2 of Tier 3. A perk the rules know is the build's
-/// element; any other a left-out artifact perk (⊘).
+/// it equips with the perk in each of its slots, what a slot can take, and a build with another artifact and perks. An
+/// artifact's perks come in tiers, and each of its perk slots takes the tiers up to its own (the excerpt's <c>slots</c>:
+/// two take Tier 1, three Tiers 1–2, two Tiers 1–3), so a slot only ever holds a perk it takes and nothing is counted. A
+/// perk the rules know is the build's element; any other a left-out artifact perk (⊘).
 /// </summary>
 public static class ArtifactEditing
 {
@@ -27,11 +26,25 @@ public static class ArtifactEditing
     public static Optional<ManifestKind.Artifact> FindArtifact(RuleCatalog catalog, ItemHash hash) =>
         catalog.Manifest.FindItem(hash).Bind(item => item.Kind is ManifestKind.Artifact artifact ? Optional.Some(artifact) : Optional.None<ManifestKind.Artifact>());
 
-    /// <summary>The build's artifact and its perks of it (<see cref="ArtifactFinding.FindArtifact"/>); no artifact, no perks, when it has none.</summary>
+    /// <summary>
+    /// The build's artifact (<see cref="ArtifactFinding.FindArtifact"/>) and the perk in each of its slots: the slots the
+    /// build names when they hold its perks, each in a slot that takes it; else its perks placed (<see cref="PlacePerks"/>:
+    /// a build file or a DIM link names its perks, not their slots). No artifact: no slots.
+    /// </summary>
     public static ArtifactChoice ReadChoice(RuleCatalog catalog, Build build) =>
         ArtifactFinding.FindArtifact(catalog, build).Match(
-            found => new ArtifactChoice(Optional.Some(found.Value.Item.Hash), [.. found.Value.Perks.Select(perk => perk.Hash)]),
+            found => found.Value.Item.Kind is ManifestKind.Artifact artifact
+                ? new ArtifactChoice(Optional.Some(found.Value.Item.Hash), ReadSlots(artifact, build.Artifact, [.. found.Value.Perks.Select(perk => perk.Hash)]))
+                : new ArtifactChoice(Optional.None<ItemHash>(), []),
             _ => new ArtifactChoice(Optional.None<ItemHash>(), []));
+
+    /// <summary>The slots the build names when they fit the artifact and hold exactly its perks, else its perks placed.</summary>
+    private static ImmutableArray<Optional<ItemHash>> ReadSlots(ManifestKind.Artifact artifact, Optional<ArtifactLoadout> named, ImmutableArray<ItemHash> perks) =>
+        named
+            .Bind(loadout => FitsSlots(artifact, loadout.Slots) && ListHeld(loadout.Slots).ToHashSet().SetEquals(perks)
+                ? Optional.Some(loadout.Slots)
+                : Optional.None<ImmutableArray<Optional<ItemHash>>>())
+            .UnwrapOr(PlacePerks(artifact, perks));
 
     /// <summary>The tier a perk is in (1-based); none for a perk the artifact doesn't have.</summary>
     public static Optional<int> FindTier(ManifestKind.Artifact artifact, ItemHash perk) =>
@@ -39,54 +52,26 @@ public static class ArtifactEditing
             .Select((tier, index) => tier.Perks.Contains(perk) ? Optional.Some(index + 1) : Optional.None<int>())
             .FindFirstSome();
 
-    /// <summary>
-    /// The artifact's limits with these perks picked: one for each tier its slots start to thin out at (Tier 1: every
-    /// slot; then each tier fewer slots take), with how many of the perks count against it.
-    /// </summary>
-    public static ImmutableArray<ArtifactLimit> CountLimits(ManifestKind.Artifact artifact, ImmutableArray<ItemHash> perks)
-    {
-        var tiers = perks.SelectMany(perk => Flatten(FindTier(artifact, perk))).ToImmutableArray();
-        return
-        [
-            .. Enumerable.Range(1, artifact.Tiers.Length)
-                .Where(from => from == 1 || CountSlots(artifact, from) != CountSlots(artifact, from - 1))
-                .Select(from => new ArtifactLimit(from, artifact.Tiers.Length, tiers.Count(tier => tier >= from), CountSlots(artifact, from))),
-        ];
-    }
-
-    /// <summary>True when no more perks fit the limit.</summary>
-    public static bool IsFull(ArtifactLimit limit) =>
-        limit.Used >= limit.Capacity;
-
-    /// <summary>
-    /// The limit picking <paramref name="perk"/> as well would break — of those it counts against that are full, the
-    /// narrowest (the highest tier) — none when it fits, is picked already or isn't the artifact's.
-    /// </summary>
-    public static Optional<ArtifactLimit> FindBrokenLimit(ManifestKind.Artifact artifact, ImmutableArray<ItemHash> perks, ItemHash perk) =>
-        perks.Contains(perk)
-            ? Optional.None<ArtifactLimit>()
-            : FindTier(artifact, perk).Bind(tier => CountLimits(artifact, perks)
-                .Where(limit => limit.FromTier <= tier && IsFull(limit))
-                .OrderByDescending(limit => limit.FromTier)
-                .Select(Optional.Some)
-                .FindFirstSome());
+    /// <summary>What slot number <paramref name="slot"/> (0-based) can hold: every perk of the tiers it takes, Tier 1's first.</summary>
+    public static ImmutableArray<ItemHash> ListSlotOptions(ManifestKind.Artifact artifact, int slot) =>
+        slot >= 0 && slot < artifact.Slots.Length
+            ? [.. artifact.Tiers.Take(artifact.Slots[slot]).SelectMany(tier => tier.Perks).Distinct()]
+            : [];
 
     /// <summary>
     /// The perks in the artifact's slots, in slot order (none: an empty slot): the highest tiers first, each in the free
-    /// slot that takes the fewest tiers (picked order among a tier); none when they don't fit or one isn't the artifact's.
+    /// slot that takes the fewest tiers (in the order given among a tier); a perk no free slot takes, or the artifact
+    /// doesn't have, is left out.
     /// </summary>
-    public static Optional<ImmutableArray<Optional<ItemHash>>> PlacePerks(ManifestKind.Artifact artifact, ImmutableArray<ItemHash> perks)
-    {
-        var empty = artifact.Slots.Select(_ => Optional.None<ItemHash>()).ToImmutableArray();
-        var ordered = perks
+    public static ImmutableArray<Optional<ItemHash>> PlacePerks(ManifestKind.Artifact artifact, ImmutableArray<ItemHash> perks) =>
+        perks
             .Select((perk, index) => (Perk: perk, Tier: FindTier(artifact, perk), Index: index))
             .OrderByDescending(entry => entry.Tier.UnwrapOr(0))
-            .ThenBy(entry => entry.Index);
-        return ordered.Aggregate(
-            Optional.Some(empty),
-            (placed, next) => placed.Bind(slots => next.Tier.Bind(tier => FindFreeSlot(artifact, slots, tier)
-                .Map(at => slots.SetItem(at, Optional.Some(next.Perk))))));
-    }
+            .ThenBy(entry => entry.Index)
+            .Aggregate(
+                ListEmptySlots(artifact),
+                (slots, next) => next.Tier.Bind(tier => FindFreeSlot(artifact, slots, tier))
+                    .Match(at => slots.SetItem(at.Value, Optional.Some(next.Perk)), _ => slots));
 
     /// <summary>The free slot that takes this tier and the fewest tiers, the first such.</summary>
     private static Optional<int> FindFreeSlot(ManifestKind.Artifact artifact, ImmutableArray<Optional<ItemHash>> slots, int tier) =>
@@ -97,35 +82,48 @@ public static class ArtifactEditing
             .Select(Optional.Some)
             .FindFirstSome();
 
-    private static int CountSlots(ManifestKind.Artifact artifact, int tier) =>
-        artifact.Slots.Count(slot => slot >= tier);
+    private static ImmutableArray<Optional<ItemHash>> ListEmptySlots(ManifestKind.Artifact artifact) =>
+        [.. artifact.Slots.Select(_ => Optional.None<ItemHash>())];
+
+    /// <summary>True when there is one entry per slot, each perk the artifact's, in a slot that takes its tier, and none twice.</summary>
+    private static bool FitsSlots(ManifestKind.Artifact artifact, ImmutableArray<Optional<ItemHash>> slots) =>
+        slots.Length == artifact.Slots.Length
+        && slots.Select((slot, at) => slot.Match(perk => FindTier(artifact, perk.Value).Match(tier => tier.Value <= artifact.Slots[at], _ => false), _ => true)).All(fits => fits)
+        && ListHeld(slots).Distinct().Count() == ListHeld(slots).Length;
+
+    private static ImmutableArray<ItemHash> ListHeld(ImmutableArray<Optional<ItemHash>> slots) =>
+        [.. slots.SelectMany(slot => Flatten(slot))];
 
     /// <summary>The rules' artifact perk with this hash; none: the rules don't know it (it is left out, ⊘).</summary>
     public static Optional<BuildElement> FindPerkElement(RuleCatalog catalog, ItemHash perk) =>
         catalog.FindElementByHash(perk).Bind(element => element.Kind == ElementKind.ArtifactPerk ? Optional.Some(element) : Optional.None<BuildElement>());
 
     /// <summary>
-    /// The perks to show for an artifact: the last picked for it (<paramref name="remembered"/>, by artifact), else the
-    /// build's own when it is the build's artifact, else none.
+    /// The slots to show for an artifact: the last picked for it (<paramref name="remembered"/>, by artifact), else the
+    /// build's own when it is the build's artifact, else empty ones.
     /// </summary>
-    public static ImmutableArray<ItemHash> RecallPerks(RuleCatalog catalog, Build build, ImmutableDictionary<ItemHash, ImmutableArray<ItemHash>> remembered, ItemHash artifact)
+    public static ImmutableArray<Optional<ItemHash>> RecallSlots(RuleCatalog catalog, Build build, ImmutableDictionary<ItemHash, ImmutableArray<Optional<ItemHash>>> remembered, ItemHash artifact)
     {
         var held = ReadChoice(catalog, build);
-        return remembered.TryGetValue(artifact, out var perks)
-            ? perks
-            : held.Artifact == Optional.Some(artifact) ? held.Perks : [];
+        return remembered.TryGetValue(artifact, out var slots)
+            ? slots
+            : held.Artifact == Optional.Some(artifact)
+                ? held.Slots
+                : FindArtifact(catalog, artifact).Match(found => ListEmptySlots(found.Value), _ => ImmutableArray<Optional<ItemHash>>.Empty);
     }
 
     /// <summary>
-    /// The build with this artifact and these perks, or why it can't hold them (an artifact the excerpt doesn't have, a
-    /// perk that isn't the artifact's or is picked twice, perks that don't fit its slots, perks without an artifact).
+    /// The build with this artifact and the perk in each of its slots, or why it can't hold them (an artifact the excerpt
+    /// doesn't have, not one entry per slot, a perk that isn't the artifact's, in a slot that doesn't take its tier or
+    /// picked twice, perks without an artifact).
     /// </summary>
     public static Result<Build, string> ApplyChoice(RuleCatalog catalog, Build build, ArtifactChoice choice)
     {
+        var held = ListHeld(choice.Slots);
         if (choice.Artifact is not Optional<ItemHash>.Some picked)
         {
-            return choice.Perks.IsEmpty
-                ? new Result<Build, string>.Ok(Write(catalog, build, Optional.None<ItemHash>(), []))
+            return held.IsEmpty
+                ? new Result<Build, string>.Ok(Write(catalog, build, Optional.None<ArtifactLoadout>()))
                 : Refuse("Artifact perks need an artifact.");
         }
 
@@ -135,32 +133,43 @@ public static class ArtifactEditing
             return Refuse($"{name} isn't an artifact Loopsmith knows.");
         }
 
-        var foreign = choice.Perks.Where(perk => !FindTier(artifact.Value, perk).IsSome()).ToImmutableArray();
+        if (choice.Slots.Length != artifact.Value.Slots.Length)
+        {
+            return Refuse($"{name} has {artifact.Value.Slots.Length} perk slots, not {choice.Slots.Length}.");
+        }
+
+        var foreign = held.Where(perk => !FindTier(artifact.Value, perk).IsSome()).ToImmutableArray();
         if (!foreign.IsEmpty)
         {
             return Refuse($"{DescribeItem(catalog, foreign[0])} isn't one of {name}'s perks.");
         }
 
-        if (choice.Perks.Distinct().Count() != choice.Perks.Length)
+        if (held.Distinct().Count() != held.Length)
         {
             return Refuse("An artifact perk can be picked once.");
         }
 
-        if (!PlacePerks(artifact.Value, choice.Perks).IsSome())
+        var misplaced = Enumerable.Range(0, choice.Slots.Length)
+            .Where(at => choice.Slots[at].Match(perk => FindTier(artifact.Value, perk.Value).UnwrapOr(0) > artifact.Value.Slots[at], _ => false))
+            .ToImmutableArray();
+        if (!misplaced.IsEmpty)
         {
-            return Refuse($"These perks don't fit {name}'s slots.");
+            var at = misplaced[0];
+            var perk = choice.Slots[at].Match(found => found.Value, _ => picked.Value);
+            return Refuse($"{DescribeItem(catalog, perk)} is a Tier {FindTier(artifact.Value, perk).UnwrapOr(0)} perk: slot {at + 1} takes up to Tier {artifact.Value.Slots[at]}.");
         }
 
-        var ordered = choice.Perks
-            .OrderBy(perk => FindTier(artifact.Value, perk).UnwrapOr(0))
-            .ThenBy(perk => artifact.Value.Tiers.SelectMany(tier => tier.Perks).ToList().IndexOf(perk))
-            .ToImmutableArray();
-        return new Result<Build, string>.Ok(Write(catalog, build, Optional.Some(picked.Value), ordered));
+        return new Result<Build, string>.Ok(Write(catalog, build, Optional.Some(new ArtifactLoadout(picked.Value, choice.Slots))));
     }
 
-    /// <summary>The build holding the artifact and its perks: a perk the rules know is its element, any other a left-out artifact perk.</summary>
-    private static Build Write(RuleCatalog catalog, Build build, Optional<ItemHash> artifact, ImmutableArray<ItemHash> perks) =>
-        build with
+    /// <summary>
+    /// The build holding the artifact and its slots: a perk the rules know is its element, any other a left-out artifact
+    /// perk, each in slot order.
+    /// </summary>
+    private static Build Write(RuleCatalog catalog, Build build, Optional<ArtifactLoadout> artifact)
+    {
+        var perks = artifact.Match(found => ListHeld(found.Value.Slots), _ => ImmutableArray<ItemHash>.Empty);
+        return build with
         {
             Artifact = artifact,
             ArtifactPerks = [.. perks.SelectMany(perk => Flatten(FindPerkElement(catalog, perk).Map(element => element.Id)))],
@@ -170,6 +179,7 @@ public static class ArtifactEditing
                 .. perks.Where(perk => !FindPerkElement(catalog, perk).IsSome()).Select(perk => new LeftOutItem(LoadoutPart.ArtifactPerk, perk)),
             ],
         };
+    }
 
     private static IEnumerable<T> Flatten<T>(Optional<T> optional) =>
         optional.Match(some => new[] { some.Value }, _ => []);

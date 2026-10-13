@@ -131,15 +131,13 @@ itself, under `src/Loopsmith.Core/Domain/`.
   ("Bolt Charge at max"); it holds no number but the step. A source's number
   (`+1 Bolt Charge`, `15s`, `+12% grenade energy`) is a fact shown with its
   outcome — never accumulated, and never compared to decide what happens.
-  Four exceptions, none of them game state: the build's stat line (ADRs D28) —
+  Three exceptions, none of them game state: the build's stat line (ADRs D28) —
   `StatLoading` may add it up from the player's armor the way DIM does, and the
   build check may compare it with an element's declared `statChecks` to choose a
   warning or a note — the step's damage resistance (ADRs D29), the resistance
   passives holding right then multiplied by the game's rule, shown with its sources,
-  the armor energy a piece's mods use (ADRs D30), added up per piece and compared
-  with its copy's capacity to refuse a mod picked in the designer that doesn't fit,
-  and the artifact's perk limits (ADRs D32), the perks picked counted per tier and
-  compared with the artifact's perk slots to refuse a perk that doesn't fit.
+  and the armor energy a piece's mods use (ADRs D30), added up per piece and compared
+  with its copy's capacity to refuse a mod picked in the designer that doesn't fit.
   None ever changes what a step fires.
 - **Add a named failure/`Severity` case only when the app branches on it** (to
   recover or take a different path), never merely to carry a message. IO whose only
