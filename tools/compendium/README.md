@@ -50,9 +50,8 @@ Windows, or run `tailscale set --accept-dns=false`.
 Unzip it so the tab files sit directly in `snapshots/compendium/<date>/` (gitignored): the zip made by
 `get-compendium.*` holds a `compendium-<date>/` folder, whose contents go there. `7z x` extracts a
 `.7z` (`apt-get install 7zip` if it's missing). The snapshot is never in git, so **every new session
-starts without it**: upload the archive again when a session needs it. A session can also download it
-itself once `docs.google.com` is in the environment's allowed domains (the sheet URL is in
-`get-compendium.sh`):
+starts without it**. A session downloads it itself: `docs.google.com` answers a session (2026-10-13; the
+sheet URL is in `get-compendium.sh`). If that fails, upload the archive.
 
 ```bash
 pip install requests beautifulsoup4

@@ -11,8 +11,8 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   [builds/skip-grenade-hunter/discrepancies.md](../builds/skip-grenade-hunter/discrepancies.md)). Next:
   a parser slice (a registry of per-tab parsers) instead of hand copying, and the coverage report
   (requirements FR-11). To refresh, run `tools/compendium/get-compendium.ps1` (Windows) or `.sh` locally
-  and hand the zip to a session ([tools/compendium/README.md](../tools/compendium/README.md)); a cloud
-  session can run `sheet_dump.py` itself once `docs.google.com` is in the environment's allowed domains.
+  and hand the zip to a session, or let the session run `sheet_dump.py` itself
+  ([tools/compendium/README.md](../tools/compendium/README.md)).
   The raw snapshot stays private (`snapshots/` is gitignored).
 - **Secondary abilities of other subclasses** — the engine takes them (D9), the rules author only the Arc
   Hunter's (Tempest Strike's `melee:slide`, Ascension's `class:air`). Open, from the Compendium: the grenade

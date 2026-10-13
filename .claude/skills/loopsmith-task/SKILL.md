@@ -95,8 +95,8 @@ Files, rules, builds, related PRs, open questions.
   - `Open question:` lines for what you couldn't settle.
   - For a bug, a cause you suspect but haven't verified is marked as not diagnosed. You reproduce
     the bug first.
-  - Rule work names its source. When it needs the Compendium snapshot, say so and ask for it: a
-    session doesn't have it.
+  - Rule work names its source. When it needs the Compendium snapshot, the session downloads it
+    (`tools/compendium/README.md`, "In a cloud session"); ask for the zip only if that fails.
 - **Files given in the session:** each file's name (Naming) and what it shows, in one line. They stay
   in this session and aren't committed; the list keeps a record of what the work was based on.
   Write `None.` if there were none.
