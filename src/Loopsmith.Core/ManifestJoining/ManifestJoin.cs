@@ -331,7 +331,7 @@ public static partial class ManifestJoin
             KindWord.ArmorMod => Optional.Some<ManifestKind>(new ManifestKind.ArmorMod(item.ReadText("itemTypeDisplayName")
                 .Bind(type => ModSlots.TryGetValue(type, out var slot) ? Optional.Some(slot) : Optional.None<ArmorSlot>()))),
             KindWord.Catalyst => Optional.Some<ManifestKind>(new ManifestKind.ExoticCatalyst(ListGrantedPerks(reading, item))),
-            KindWord.Artifact => Optional.Some<ManifestKind>(new ManifestKind.Artifact(ListArtifactPerks(reading, item))),
+            KindWord.Artifact => Optional.Some<ManifestKind>(ReadArtifact(reading, item)),
             KindWord.Subclass => Optional.Some<ManifestKind>(new ManifestKind.Subclass([])),
             KindWord.Super => Optional.Some<ManifestKind>(new ManifestKind.Super()),
             KindWord.Grenade => Optional.Some<ManifestKind>(new ManifestKind.Grenade()),
@@ -449,16 +449,24 @@ public static partial class ManifestJoin
         socket.ReadHash("randomizedPlugSetHash").Match(set => Optional.Some(set.Value), _ => socket.ReadHash("reusablePlugSetHash"));
 
     /// <summary>
-    /// An artifact's perks: every plug of the plug sets of its sockets that take artifact perks (not its reset socket), but
-    /// a socket's initial (empty) one, socket by socket, each once.
+    /// An artifact's tiers and perk slots (Artifacts 2.0): its perk sockets' plug sets (not its reset socket's), each once in
+    /// socket order, reach one tier further each — the first takes Tier 1's perks, the next Tier 1's and 2's, … — so a tier
+    /// is the perks of its plug set an earlier one doesn't have, in the plug set's order, without a socket's initial
+    /// (empty) plug; each perk socket takes up to its plug set's tier.
     /// </summary>
-    private static ImmutableArray<ItemHash> ListArtifactPerks(Reading reading, JsonElement artifact) =>
+    private static ManifestKind.Artifact ReadArtifact(Reading reading, JsonElement artifact)
+    {
+        var sockets = artifact.ReadArray("sockets", "socketEntries")
+            .Where(socket => IsArtifactPerkSocket(reading, socket) && socket.ReadHash("reusablePlugSetHash").IsSome())
+            .ToImmutableArray();
+        var sets = sockets.SelectMany(socket => ToSequence(socket.ReadHash("reusablePlugSetHash"))).ToImmutableArray();
+        var reach = sets.Distinct().ToImmutableArray();
+        var tiers = reach.Aggregate(ImmutableArray<ArtifactTier>.Empty, (built, set) => built.Add(new ArtifactTier(
         [
-            .. artifact.ReadArray("sockets", "socketEntries")
-                .Where(socket => IsArtifactPerkSocket(reading, socket))
-                .SelectMany(socket => ListSocketPlugs(reading, socket))
-                .Distinct(),
-        ];
+            .. ListSocketPlugs(reading, sockets[sets.IndexOf(set)]).Distinct().Where(plug => !built.Any(tier => tier.Perks.Contains(plug))),
+        ])));
+        return new ManifestKind.Artifact(tiers, [.. sets.Select(set => reach.IndexOf(set) + 1)]);
+    }
 
     private static bool IsArtifactPerkSocket(Reading reading, JsonElement socket)
     {

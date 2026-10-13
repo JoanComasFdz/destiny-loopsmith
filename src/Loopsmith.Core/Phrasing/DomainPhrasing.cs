@@ -827,6 +827,34 @@ public static class DomainPhrasing
             _ => "✓ Repeats",
             breaks => $"✗ Breaks at #{breaks.Blocked.StepIndex + 1}");
 
+    // ── the artifact (Artifacts 2.0) ───────────────────────────────────────────
+
+    /// <summary>"Tier 2": an artifact tier's column heading.</summary>
+    public static string DescribeArtifactTier(int tier) =>
+        $"Tier {tier.ToString(Invariant)}";
+
+    /// <summary>"Tier 1", "Tier 1–2": the tiers a perk slot takes (up to <paramref name="tier"/>).</summary>
+    public static string DescribeArtifactSlot(int tier) =>
+        tier == 1 ? DescribeArtifactTier(1) : $"Tier 1–{tier.ToString(Invariant)}";
+
+    /// <summary>"Tier 2–3", "Tier 3": the tiers a limit counts (none for the one on every perk).</summary>
+    private static string DescribeLimitTiers(ArtifactLimit limit) =>
+        limit.FromTier == limit.ToTier
+            ? DescribeArtifactTier(limit.FromTier)
+            : $"Tier {limit.FromTier.ToString(Invariant)}–{limit.ToTier.ToString(Invariant)}";
+
+    /// <summary>"6/7 selected", "Tier 2–3: 4/5", "Tier 3: 2/2": a limit and how full it is.</summary>
+    public static string DescribeArtifactLimit(this ArtifactLimit limit) =>
+        limit.FromTier == 1
+            ? $"{limit.Used.ToString(Invariant)}/{limit.Capacity.ToString(Invariant)} selected"
+            : $"{DescribeLimitTiers(limit)}: {limit.Used.ToString(Invariant)}/{limit.Capacity.ToString(Invariant)}";
+
+    /// <summary>"At most 2 perks of Tier 3 can be active.": why a perk can't be picked as well.</summary>
+    public static string DescribeBrokenArtifactLimit(this ArtifactLimit limit) =>
+        limit.FromTier == 1
+            ? $"At most {limit.Capacity.ToString(Invariant)} perks can be active."
+            : $"At most {limit.Capacity.ToString(Invariant)} perk{(limit.Capacity == 1 ? "" : "s")} of {DescribeLimitTiers(limit)} can be active.";
+
     public static string Capitalize(string text) =>
         text.Length == 0 ? text : char.ToUpperInvariant(text[0]) + text[1..];
 }

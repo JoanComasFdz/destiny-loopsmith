@@ -129,7 +129,8 @@ public static class TestCatalog
                 Optional.None<StatValue>(), Optional.None<StatValue>(), Optional.None<StatValue>()),
             [],
             [],
-            []);
+            [],
+            Optional.None<ItemHash>());
         return BuildValidation.ValidateBuild(build, catalog).Match(
             ok => ok.Value,
             error => throw new InvalidOperationException(error.Failure));

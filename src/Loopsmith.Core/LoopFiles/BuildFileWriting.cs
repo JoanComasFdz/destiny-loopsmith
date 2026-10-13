@@ -61,6 +61,7 @@ public static class BuildFileWriting
         .. build.ExoticArmor.Match(exotic => ToEntry("exoticArmor", exotic.Value.Value), _ => []),
         .. ToListEntry("armorSetBonuses", build.ArmorSetBonuses),
         .. ToListEntry("armorMods", build.ArmorMods),
+        .. build.Artifact.Match(artifact => ToEntry("artifact", artifact.Value.Value.ToString(CultureInfo.InvariantCulture)), _ => []),
         .. ToListEntry("artifactPerks", build.ArtifactPerks),
         .. ToWeaponsEntry(build.Weapons),
         .. ToStatsEntry(build.Stats),
@@ -243,6 +244,18 @@ public static class BuildFileWriting
             .Select(ability => (ability.Item1, ToAbilityEntry(ability.Item1, ability.Item2) is { IsEmpty: false } entry ? Optional.Some(WriteValue([.. entry.Skip(1)])) : Optional.None<string>())),
         ("aspects", Optional.Some(WriteValue([.. ToListEntry("aspects", build.Aspects).Skip(1)]))),
         ("fragments", Optional.Some(WriteValue([.. ToListEntry("fragments", build.Fragments).Skip(1)]))),
+        ("leftOut", ToLeftOutEntry(build.LeftOut) is { IsEmpty: false } leftOut ? Optional.Some(WriteValue([.. leftOut.Skip(1)])) : Optional.None<string>()),
+    ];
+
+    /// <summary>
+    /// The build's artifact entries as the build file writes them — <c>artifact</c> (its hash), <c>artifactPerks</c> and
+    /// <c>leftOut</c> (its artifact perks the rules don't know, with the rest of what it leaves out) — an entry with none
+    /// is removed by an edit.
+    /// </summary>
+    internal static ImmutableArray<(string Key, Optional<string> Value)> WriteArtifactEntries(Build build) =>
+    [
+        ("artifact", build.Artifact.Map(artifact => artifact.Value.ToString(CultureInfo.InvariantCulture))),
+        ("artifactPerks", build.ArtifactPerks.IsEmpty ? Optional.None<string>() : Optional.Some(WriteValue([.. ToListEntry("artifactPerks", build.ArtifactPerks).Skip(1)]))),
         ("leftOut", ToLeftOutEntry(build.LeftOut) is { IsEmpty: false } leftOut ? Optional.Some(WriteValue([.. leftOut.Skip(1)])) : Optional.None<string>()),
     ];
 

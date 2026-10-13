@@ -18,7 +18,7 @@ public static class BuildFileParsing
     private static readonly ImmutableArray<string> BuildKeys =
     [
         "name", "author", "source", "catalog", "class", "subclass", "super", "grenade", "melee", "classAbility",
-        "jump", "aspects", "fragments", "exoticArmor", "armorSetBonuses", "armorMods", "artifactPerks", "weapons", "stats",
+        "jump", "aspects", "fragments", "exoticArmor", "armorSetBonuses", "armorMods", "artifact", "artifactPerks", "weapons", "stats",
         "leftOut", "armorCopies", "armorModPlugs",
     ];
 
@@ -51,9 +51,10 @@ public static class BuildFileParsing
             map.ReadOrDefault("leftOut", ReadLeftOut, []),
             map.ReadOrDefault("armorCopies", copies => copies.ReadEach("armor copy", ReadArmorCopy), []),
             map.ReadOrDefault("armorModPlugs", plugs => plugs.ReadEach("armor mod plug", ReadItemHash), []),
-            (build, leftOut, armorCopies, armorModPlugs) => build with { LeftOut = leftOut, ArmorCopies = armorCopies, ArmorModPlugs = armorModPlugs });
+            map.ReadOptional("artifact", ReadItemHash),
+            (build, leftOut, armorCopies, armorModPlugs, artifact) => build with { LeftOut = leftOut, ArmorCopies = armorCopies, ArmorModPlugs = armorModPlugs, Artifact = artifact });
 
-    /// <summary>Everything but <c>leftOut</c>, <c>armorCopies</c> and <c>armorModPlugs</c> (one <c>Combine</c> takes at most 16 inputs).</summary>
+    /// <summary>Everything but <c>leftOut</c>, <c>armorCopies</c>, <c>armorModPlugs</c> and <c>artifact</c> (one <c>Combine</c> takes at most 16 inputs).</summary>
     private static Result<Build, Errors> ReadEquipment(YamlMap map) =>
         Combine(
             map.CheckKeys(BuildKeys),
@@ -91,7 +92,8 @@ public static class BuildFileParsing
                 stats,
                 [],
                 [],
-                []));
+                [],
+                Optional.None<ItemHash>()));
 
     /// <summary>
     /// Each ability, and the jump, is an element id, or <c>"?"</c> for one the build has but Loopsmith can't name; a slot

@@ -39,14 +39,15 @@ public sealed class ManifestJoinTests
     }
 
     [Fact]
-    public void An_artifact_brings_the_perks_of_its_perk_sockets_without_the_empty_plug_or_its_reset()
+    public void An_artifact_brings_its_tiers_and_perk_slots_without_the_empty_plug_or_its_reset()
     {
         var store = new ManifestStore(Fixture.Tables);
 
         var excerpt = store.Join([ItemHash.From(400u)]);
 
         var artifact = Assert.IsType<ManifestKind.Artifact>(excerpt.Items[ItemHash.From(400u)].Kind);
-        Assert.Equal([402u, 403u, 404u], artifact.Perks.Select(hash => hash.Value));
+        Assert.Equal([[402u, 403u], [404u]], artifact.Tiers.Select(tier => tier.Perks.Select(hash => hash.Value)));   // the second plug set's 403 is Tier 1's
+        Assert.Equal([1, 2, 2], artifact.Slots);
     }
 
     [Fact]
@@ -163,7 +164,7 @@ public sealed class ManifestJoinTests
             ManifestKind.Armor armor => $"armor {armor.Slot} intrinsic {armor.Intrinsic.Match(hash => hash.Value.Value.ToString(), _ => "-")} set {armor.Set.Match(hash => hash.Value.Value.ToString(), _ => "-")}",
             ManifestKind.ArmorMod mod => $"armorMod {mod.Slot.Match(slot => slot.Value.ToString(), _ => "general")}",
             ManifestKind.ExoticCatalyst catalyst => $"catalyst [{string.Join(",", catalyst.Perks.Select(hash => hash.Value))}]",
-            ManifestKind.Artifact artifact => $"artifact [{string.Join(",", artifact.Perks.Select(hash => hash.Value))}]",
+            ManifestKind.Artifact artifact => $"artifact [{string.Join(" / ", artifact.Tiers.Select(tier => string.Join(",", tier.Perks.Select(hash => hash.Value))))}] slots [{string.Join(",", artifact.Slots)}]",
             _ => kind.GetType().Name,
         };
 
@@ -195,7 +196,7 @@ public sealed class ManifestJoinTests
               "200": { "displayProperties": { "name": "Test Mask" }, "itemTypeDisplayName": "Helmet", "inventory": { "bucketTypeHash": 2, "tierType": 5 }, "equippingBlock": { "equipableItemSetHash": 500 } },
               "300": { "displayProperties": { "name": "Spark", "description": "" }, "itemTypeDisplayName": "Arc Fragment", "inventory": { "bucketTypeHash": 3 }, "perks": [ { "perkHash": 50 }, { "perkHash": 51 } ] },
               "400": { "displayProperties": { "name": "Test Tablet" }, "itemTypeDisplayName": "Artifact", "inventory": { "bucketTypeHash": 3, "tierType": 5 },
-                       "sockets": { "socketEntries": [ { "socketTypeHash": 73, "singleInitialItemHash": 401, "reusablePlugSetHash": 81 }, { "socketTypeHash": 73, "singleInitialItemHash": 401, "reusablePlugSetHash": 82 }, { "socketTypeHash": 74, "singleInitialItemHash": 401, "reusablePlugSetHash": 83 } ] } }
+                       "sockets": { "socketEntries": [ { "socketTypeHash": 73, "singleInitialItemHash": 401, "reusablePlugSetHash": 81 }, { "socketTypeHash": 73, "singleInitialItemHash": 401, "reusablePlugSetHash": 82 }, { "socketTypeHash": 73, "singleInitialItemHash": 401, "reusablePlugSetHash": 82 }, { "socketTypeHash": 74, "singleInitialItemHash": 401, "reusablePlugSetHash": 83 } ] } }
             }
             """;
 

@@ -110,7 +110,8 @@ public static class LoopDesigning
             new StatLine(noStat, noStat, noStat, noStat, noStat, noStat),
             [],
             [],
-            []);
+            [],
+            Optional.None<ItemHash>());
     }
 
     /// <summary>
@@ -319,6 +320,53 @@ public static class LoopDesigning
     /// <summary>The build's artifact and its perks of it: the excerpt's artifact that unlocks the most of them; none on a tie.</summary>
     public static Optional<BuildArtifact> FindArtifact(ValidatedBuild build) =>
         ArtifactFinding.FindArtifact(build.Catalog, build.Build);
+
+    // ── The artifact: which one and its perks (docs/loop-format.md, "Artifact") ───────────────────────────────
+
+    /// <summary>Every artifact the build can equip (the excerpt's, with perk slots), by name.</summary>
+    public static ImmutableArray<ManifestItem> ListArtifacts(ValidatedBuild build) =>
+        ArtifactEditing.ListArtifacts(build.Catalog);
+
+    /// <summary>An artifact's tiers and perk slots, when the excerpt has it.</summary>
+    public static Optional<ManifestKind.Artifact> FindArtifactTiers(ValidatedBuild build, ItemHash artifact) =>
+        ArtifactEditing.FindArtifact(build.Catalog, artifact);
+
+    /// <summary>The build's artifact and its perks of it, by manifest hash (no artifact: none).</summary>
+    public static ArtifactChoice ReadArtifactChoice(ValidatedBuild build) =>
+        ArtifactEditing.ReadChoice(build.Catalog, build.Build);
+
+    /// <summary>The perks to show for an artifact: the build's own for its artifact, else the last picked for it here, else none.</summary>
+    public static ImmutableArray<ItemHash> RecallArtifactPerks(ValidatedBuild build, ImmutableDictionary<ItemHash, ImmutableArray<ItemHash>> remembered, ItemHash artifact) =>
+        ArtifactEditing.RecallPerks(build.Catalog, build.Build, remembered, artifact);
+
+    /// <summary>The tier a perk is in (1-based); none for a perk the artifact doesn't have.</summary>
+    public static Optional<int> FindArtifactTier(ManifestKind.Artifact artifact, ItemHash perk) =>
+        ArtifactEditing.FindTier(artifact, perk);
+
+    /// <summary>The artifact's limits (all perks, Tiers 2–3, Tier 3) with these perks picked.</summary>
+    public static ImmutableArray<ArtifactLimit> CountArtifactLimits(ManifestKind.Artifact artifact, ImmutableArray<ItemHash> perks) =>
+        ArtifactEditing.CountLimits(artifact, perks);
+
+    /// <summary>The limit picking the perk as well would break; none when it can be picked.</summary>
+    public static Optional<ArtifactLimit> FindBrokenArtifactLimit(ManifestKind.Artifact artifact, ImmutableArray<ItemHash> perks, ItemHash perk) =>
+        ArtifactEditing.FindBrokenLimit(artifact, perks, perk);
+
+    /// <summary>The perks in the artifact's slots, in slot order (none: empty); none when they don't fit.</summary>
+    public static Optional<ImmutableArray<Optional<ItemHash>>> PlaceArtifactPerks(ManifestKind.Artifact artifact, ImmutableArray<ItemHash> perks) =>
+        ArtifactEditing.PlacePerks(artifact, perks);
+
+    /// <summary>The rules' artifact perk with this hash; none when the rules don't know it (⊘).</summary>
+    public static Optional<BuildElement> FindArtifactPerkElement(ValidatedBuild build, ItemHash perk) =>
+        ArtifactEditing.FindPerkElement(build.Catalog, perk);
+
+    /// <summary>
+    /// The design with this artifact and these perks: only the embedded build file's artifact entries change
+    /// (<c>artifact</c>, <c>artifactPerks</c> and the perks the rules don't know in <c>leftOut</c>); the build check runs
+    /// again and the steps replay.
+    /// </summary>
+    public static Result<DesignSession, string> EditArtifact(DesignSession session, ArtifactChoice choice) =>
+        RebuildWith(session, ArtifactEditing.ApplyChoice(session.Build.Catalog, session.Build.Build, choice)
+            .Bind(build => BuildFileEditing.ReplaceArtifact(session.Design.Build, build)));
 
     /// <summary>The build's set bonuses in none of the manifest excerpt's sets (shown on their own).</summary>
     public static ImmutableArray<ElementId> ListLooseSetBonuses(ValidatedBuild build) =>

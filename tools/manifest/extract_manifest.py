@@ -21,9 +21,10 @@ columns (`traits`: the "frames" sockets among its weapon perks), each the list o
 a column that doesn't roll: an exotic's), its intrinsic perk and, for an exotic, its catalyst; armor gets its
 intrinsic perk (an exotic's) and the armor set it belongs to. Those perks, catalysts (with the perks they grant) and sets (with their 2- and 4-piece perks) are
 written too. Perks a catalyst or a set grants are the manifest's sandbox perks (`kind: perk`). The artifact an
-artifact perk belongs to (the artifact item whose sockets' plug sets hold it) is written with its perks
-(`kind: artifact`, `perks`: every plug of the plug sets of its sockets that take artifact perks, but a socket's
-initial, empty one, socket by socket, each once). A subclass (each of the glossary's) also gets `plugs`: every plug its
+artifacts (Artifacts 2.0: every artifact item with sockets that take artifact perks, the seven the designer's artifact
+editor offers) are written with all their perks (`kind: artifact`, `tiers`: the perks of each tier, Tier 1 first — the
+perk sockets' plug sets, each once in socket order, reach one tier further each — and `slots`: the highest tier each
+perk socket takes), and each of those perks as an item. A subclass (each of the glossary's) also gets `plugs`: every plug its
 sockets take (super, abilities, jump, aspects, fragments; not the empty sockets'), each written as an item, so the
 designer's subclass editor offers them. A hash the
 manifest doesn't have is reported, not written. The output is sorted and stable, so a rerun on the same
@@ -163,16 +164,34 @@ def read_column(entry, plug_sets):
     return [entry["singleInitialItemHash"]] if entry.get("singleInitialItemHash") else []
 
 
-def read_artifact_perks(item, plug_sets, socket_types):
-    """An artifact's perks: every plug of the plug sets of its sockets that take artifact perks (not its reset socket),
-    but a socket's initial (empty) one, socket by socket, each once."""
+def read_artifact_sockets(item, socket_types):
+    """An artifact's perk sockets (not its reset socket), in socket order."""
     entries = (item.get("sockets") or {}).get("socketEntries", [])
     whitelist = lambda entry: [w.get("categoryIdentifier") for w in socket_types.get(str(entry.get("socketTypeHash")), {}).get("plugWhitelist", [])]
-    takes_perks = lambda entry: ARTIFACT_PERKS in whitelist(entry) and ARTIFACT_RESET not in whitelist(entry)
-    hashes = [plug["plugItemHash"] for entry in entries if entry.get("reusablePlugSetHash") and takes_perks(entry)
-              for plug in plug_sets.get(str(entry["reusablePlugSetHash"]), {}).get("reusablePlugItems", [])
-              if plug["plugItemHash"] != entry.get("singleInitialItemHash")]
-    return list(dict.fromkeys(hashes))
+    return [entry for entry in entries if entry.get("reusablePlugSetHash")
+            and ARTIFACT_PERKS in whitelist(entry) and ARTIFACT_RESET not in whitelist(entry)]
+
+
+def read_artifact_tiers(item, plug_sets, socket_types):
+    """An artifact's tiers (Artifacts 2.0): its perk sockets' plug sets, each once in socket order, are its tiers' reach —
+    the first takes Tier 1's perks, the next Tier 1's and 2's, … — so a tier is the perks of its plug set that an earlier
+    one doesn't have, in the plug set's order, without a socket's initial (empty) plug. Returns the tiers and, for each
+    perk socket, the highest tier it takes (1-based)."""
+    sockets = read_artifact_sockets(item, socket_types)
+    sets = list(dict.fromkeys(entry["reusablePlugSetHash"] for entry in sockets))
+    tiers, seen = [], set()
+    for plug_set in sets:
+        empty = {entry.get("singleInitialItemHash") for entry in sockets if entry["reusablePlugSetHash"] == plug_set}
+        plugs = [plug["plugItemHash"] for plug in plug_sets.get(str(plug_set), {}).get("reusablePlugItems", [])]
+        tier = [h for h in dict.fromkeys(plugs) if h not in seen and h not in empty]
+        seen.update(tier)
+        tiers.append(tier)
+    return tiers, [sets.index(entry["reusablePlugSetHash"]) + 1 for entry in sockets]
+
+
+def read_artifact_perks(item, plug_sets, socket_types):
+    """An artifact's perks: every perk of its tiers, Tier 1's first."""
+    return [h for tier in read_artifact_tiers(item, plug_sets, socket_types)[0] for h in tier]
 
 
 def read_subclass_plugs(item, plug_sets):
@@ -313,10 +332,13 @@ def to_entry(item_hash, item, context):
     armor_class = CLASS_TYPES.get(item.get("classType")) if kind == "armor" else None
     if armor_class:
         fields.append(("class", armor_class))
-    granted = (read_granted_perks(item, context["perks"]) if kind == "catalyst"
-               else read_artifact_perks(item, plug_sets, socket_types) if kind == "artifact" else [])
+    granted = read_granted_perks(item, context["perks"]) if kind == "catalyst" else []
     if granted:
         fields.append(("perks", "[" + ", ".join(str(h) for h in granted) + "]"))
+    tiers, slots = read_artifact_tiers(item, plug_sets, socket_types) if kind == "artifact" else ([], [])
+    if tiers:
+        fields.append(("tiers", "[" + ", ".join("[" + ", ".join(str(h) for h in tier) + "]" for tier in tiers) + "]"))
+        fields.append(("slots", "[" + ", ".join(str(n) for n in slots) + "]"))
     plugs = context["subclass_plugs"].get(item_hash) if kind == "subclass" else None
     if plugs:
         fields.append(("plugs", "[" + ", ".join(str(h) for h in plugs) + "]"))
@@ -414,9 +436,10 @@ def main():
     wanted_sets = {items[str(h)].get("equippingBlock", {}).get("equipableItemSetHash") for h in named_items if kinds[h] == "armor"} - {None, 0}
     wanted_sets |= {set_of_perk[h] for h in named if h in set_of_perk}
     set_perks = {perk["sandboxPerkHash"] for h in wanted_sets for perk in item_sets[str(h)].get("setPerks", [])}
-    artifact_perks = {h for h in named_items if kinds[h] == "artifactPerk"}
+    # every artifact with perk sockets (Artifacts 2.0: the seven the designer's artifact editor offers) and all its perks
     artifacts = {int(h) for h, item in items.items() if item.get("itemTypeDisplayName") == "Artifact"
-                 and artifact_perks & set(read_artifact_perks(item, plug_sets, socket_types))}
+                 and read_artifact_perks(item, plug_sets, socket_types)}
+    artifact_perks = {p for h in artifacts for p in read_artifact_perks(items[str(h)], plug_sets, socket_types) if str(p) in items}
     # what a subclass can hold: its plugs (the designer's subclass editor offers them), but the empty sockets'
     subclass_plugs = {h: [p for p in read_subclass_plugs(items[str(h)], plug_sets)
                           if str(p) in items and not items[str(p)].get("displayProperties", {}).get("name", "").startswith("Empty")]
@@ -432,7 +455,7 @@ def main():
                "intrinsics": intrinsics, "weapon_catalysts": weapon_catalysts, "catalysts": catalysts, "perks": perks,
                "items": items, "breaker_types": breaker_types, "subclass_plugs": subclass_plugs}
 
-    wanted_items = sorted(named_items | traits | set(intrinsics.values()) | catalysts | artifacts | enhanced_traits | {p for plugs in subclass_plugs.values() for p in plugs})
+    wanted_items = sorted(named_items | traits | set(intrinsics.values()) | catalysts | artifacts | artifact_perks | enhanced_traits | {p for plugs in subclass_plugs.values() for p in plugs})
     wanted_perks = sorted(((named - named_items) & {int(h) for h in perks}) | catalyst_perks | set_perks)
     missing = sorted(named - named_items - set(wanted_perks))
     lines = [

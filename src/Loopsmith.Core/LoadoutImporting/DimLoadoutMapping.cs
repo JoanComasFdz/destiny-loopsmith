@@ -113,7 +113,8 @@ public static class DimLoadoutMapping
                 Optional.None<StatValue>()),
             leftOut,
             ListArmorCopies(catalog.Manifest, loadout),
-            ListModPlugs(placed)));
+            ListModPlugs(placed),
+            Optional.None<ItemHash>()));
     }
 
     /// <summary>
