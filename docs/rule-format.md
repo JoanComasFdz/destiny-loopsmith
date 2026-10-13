@@ -643,6 +643,13 @@ stats: { weapons: 47, class: 104, grenade: 145, super: 27, melee: 79 }   # any s
   armor pieces it wears — `armorCopies: [{hash: 593554567, instance: "6917530185805135602"}, …]`, the piece's
   manifest hash and the copy's instance id (a number, quoted). Unknown to the rules; the Stats section adds the
   stats up from these copies when the logged-in player owns them ([loop-format.md](loop-format.md#stats)).
+* `armorModPlugs`: which copy of an armor mod the rules know the build holds, by manifest hash, for a mod one of
+  whose copies isn't its element's first hash (many mods have a cheaper copy the seasonal artifact allows: Arc Siphon
+  3 energy, or 1). It lists every copy of such a mod, in `armorMods`' order: each of the element's mods holds the next
+  one of these that is its element's, else its first hash (`armorMods: [arc-siphon, arc-siphon]` with
+  `armorModPlugs: [2724068510, 3847471926]`: one of each). Written by a DIM link and by the designer's mod picker
+  ([loop-format.md](loop-format.md#armor-mods)); a mod not named here holds its element's first hash. The copy
+  decides only its energy cost: both play alike.
 * Stats and archetypes are shown in the build summary, and hashes are recorded (D14); the engine
   doesn't use them.
 

@@ -358,6 +358,42 @@ subclass. What the subclass can hold comes from the manifest excerpt (`plugs` of
 for the build's class: the rules author Skip Grenade and the Sparks for the Hunter, so on a Striker or a Stormcaller
 they are left out (⊘), in the editor and from a DIM link alike.
 
+## Armor mods
+
+In the designer every armor piece shows its **mod sockets** next to it, and its energy under them ("Energy 7 / 10";
+"7 / ?" until the player's Bungie login gives the capacity of their copy of the piece, [Stats](#stats)); the
+**General mods** row under the armor holds every piece's general socket. The Home cards stay read-only: they show the
+mods as before, each piece with the mods of its slot and the general mods together ([ADRs D30](../ADRs.md#d30--armor-mods-are-picked-in-the-pieces-sockets-the-energy-budget-holds-when-its-capacity-is-known)).
+
+* **The sockets** are the game's, from Bungie's manifest (the listing read when the app opens, with every weapon and
+  armor piece): a piece's general socket, the sockets of its slot's mods (three on an Armor 3.0 piece, two on an older
+  one) and its own (an artifice socket, a raid's or an activity's). A slot with no piece whose sockets Loopsmith can
+  read — none worn (a loop from scratch), or a piece the listing lacks — holds the mods the build has for it and one free
+  socket, and gives the General row one socket. An empty socket is a dashed square named for what it takes
+  ("Helmet", "General", "Artifice", "Raid"); a filled one shows its mod, ⊘ when the rules don't know it, and its
+  energy cost in its corner.
+* **Placing.** A build holds its mods as a list, as a DIM loadout does (`armorMods`, `armorModPlugs` and the mods in
+  `leftOut`), so the designer places them: each in the first free socket of the pieces that takes it, in the build's
+  order; the general mods fill the General row and count against the pieces with the most energy left, the costliest
+  first (as DIM assigns them). A mod no free socket takes (more mods than the pieces hold, or of a raid no piece is
+  from) shows under **Mods with no socket**; one that goes in no mod socket (a tuning mod, in a Tier 5 copy's tuning
+  socket) under **Tuning and other mods**. Both stay in the build.
+* **The mod picker.** Tapping a socket opens it: every mod of the game the socket takes, by name, the subclass's
+  element first (Arc Siphon and Arc Targeting on an Arc build) with a filter for them only ("Arc only"; none for
+  Prismatic or a socket without elemental mods), and a search box. Each shows its icon, its energy cost and what
+  Bungie says it needs ("Must Be Selected in the Seasonal Artifact": the cheaper copy of a mod; Guardian Rank aside);
+  the ones the rules know are green, a mod they don't carries ⊘ (it sets nothing off), and a mod that changes only
+  stats (a general or artifice mod) needs no rule. A mod whose cost is more than the piece has left, when its copy's
+  capacity is known, can't be picked and says why ("Solar Siphon costs 3 energy: the helmet has 2 left"; for a
+  general mod, that no piece has that much left); without a login nothing is refused. Picking one puts it in that
+  socket, in place of the one there; **Clear this socket** takes it out; **About …** opens the details of the mod in
+  the socket. Picking the same mod again stacks its copies (Elemental Charge ×2).
+* **What changes.** Only the embedded build file's mod entries: `armorMods` (the rules' mods), `armorModPlugs` (the
+  exact copy, for a mod with a cheaper one: [rule-format.md](rule-format.md#build-file-buildsbuildbuildyaml)) and the
+  mods in `leftOut`; Bungie's manifest is read first for a mod the excerpt lacks (its name and icon). The build check
+  runs again and the steps replay; stats added up from the player's armor are added up again (a stat mod changes
+  them), typed ones stay. The export and the share link carry the mods.
+
 ## Stats
 
 A build's `stats:` are its six armor stats (`health`, `melee`, `grenade`, `super`, `class`, `weapons` — the game's
