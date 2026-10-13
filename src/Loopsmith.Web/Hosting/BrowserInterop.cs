@@ -30,6 +30,11 @@ public sealed class BrowserInterop(IJSRuntime js)
     public ValueTask RevealElementAsync(string elementId) =>
         js.InvokeVoidAsync("loopsmith.revealElement", elementId);
 
+    /// <summary>Places a dropdown under its slot, or above it when there's more room there and too little below, sized to
+    /// the dialog's visible part, and puts the focus in it (on the plug held, if listed).</summary>
+    public ValueTask PlaceDropdownAsync(string elementId) =>
+        js.InvokeVoidAsync("loopsmith.placeDropdown", elementId);
+
     /// <summary>Moves the keyboard focus to an element (a moved step's card) and scrolls it into view.</summary>
     public ValueTask FocusElementAsync(string elementId) =>
         js.InvokeVoidAsync("loopsmith.focusElement", elementId);
