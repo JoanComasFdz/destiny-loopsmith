@@ -186,6 +186,30 @@ public static class LoopDesigning
     public static ImmutableDictionary<string, string> ChooseManifestUrls(Optional<string> indexJson, string pinnedContentId) =>
         ManifestTransport.ChooseUrls(indexJson, pinnedContentId);
 
+    // ── The manifest's copy saved in the browser between visits (ADRs D14, D25) ─────────────────────────────
+
+    /// <summary>The copy of the manifest the browser saved (<c>{ "urls": …, "bytes": n }</c>), when there's one with every component.</summary>
+    public static Optional<SavedManifest> ReadSavedManifest(Optional<string> savedJson) =>
+        ManifestSaving.ReadSavedManifest(savedJson);
+
+    /// <summary>The saved copy when the manifest index names its version (or doesn't answer), else a download of the current (or pinned) version.</summary>
+    public static ManifestSource ChooseManifestSource(Optional<string> indexJson, string pinnedContentId, Optional<SavedManifest> saved) =>
+        ManifestSaving.ChooseSource(indexJson, pinnedContentId, saved);
+
+    /// <summary>The key a listing is saved under: the manifest version it was read from and the code that made it.</summary>
+    public static string ToListingKey(ImmutableDictionary<string, string> urls, string codeVersion) =>
+        ManifestSaving.ToListingKey(urls, codeVersion);
+
+    /// <summary>The listing of every weapon and armor piece as the browser saves it.</summary>
+    public static string ToSavedListing(ItemListing listing) =>
+        ManifestSaving.ToListingText(listing);
+
+    /// <summary>The listing the browser saved under the key asked for, when there's one and it reads.</summary>
+    public static Optional<ItemListing> ReadSavedListing(Optional<string> savedText) =>
+        savedText.Bind(text => ManifestSaving.ReadListingText(text).Match(
+            ok => Optional.Some(ok.Value),
+            _ => Optional.None<ItemListing>()));
+
     // ── Every weapon and armor piece in the game (the pickers' "Every item", docs/loop-format.md) ──────────────
 
     /// <summary>How many questions a listing asks at most (the startup screen's "step 2 of 4").</summary>

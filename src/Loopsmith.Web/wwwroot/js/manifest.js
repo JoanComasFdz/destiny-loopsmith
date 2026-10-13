@@ -1,12 +1,14 @@
 // Loopsmith web host — Bungie's manifest, loaded when the app starts and kept for the tab: each component file is fetched
-// from bungie.net (the browser's HTTP cache keeps it; the app stores nothing), its bytes kept as the download gave them
-// (in its chunks, never copied into one buffer) and every entry's place in them indexed by hash as the chunks arrive — in
-// the same pass, which entries hold each "plugCategoryIdentifier". A download that breaks starts that file again from its
-// start, a few times, before the load gives up (the files already in stay). Core asks for entries by hash (for the
-// entries whose JSON holds a piece of text, and for the entries holding a key's value, cut down to the fields it names)
-// and interprets the raw JSON itself: no game logic lives here. The download reports how far it got to .NET (a few times
-// a second, and at once when a file starts again) and pauses every few megabytes, so the page keeps answering taps.
-// Called from Hosting/BrowserInterop.cs.
+// from bungie.net, its bytes kept as the download gave them (in its chunks, never copied into one buffer) and every
+// entry's place in them indexed by hash as the chunks arrive — in the same pass, which entries hold each
+// "plugCategoryIdentifier". A download that breaks starts that file again from its start, a few times, before the load
+// gives up (the files already in stay). The files are saved in the browser (IndexedDB, gzipped, as DIM saves its copy)
+// with the URLs they came from (their version); a later visit reads them from there when .NET finds them still current,
+// unpacking and indexing them as a download does. The listing of every weapon and armor piece is saved beside them,
+// under the key .NET gives it. Core asks for entries by hash (for the entries whose JSON holds a piece of text, and for
+// the entries holding a key's value, cut down to the fields it names) and interprets the raw JSON itself: no game logic
+// lives here. Reading the files reports how far it got to .NET (a few times a second, and at once when a file starts
+// again) and pauses every few megabytes, so the page keeps answering taps. Called from Hosting/BrowserInterop.cs.
 window.loopsmithManifest = (() => {
   const tables = new Map();   // component name → { url, store, offsets: Map(hash → [start, end]), categories: Map(category → [hash]) }
   const decoder = new TextDecoder("utf-8");
@@ -16,6 +18,8 @@ window.loopsmithManifest = (() => {
   const SLICE = 8 * 1024 * 1024;   // bytes indexed between two pauses, so the page keeps answering taps
   const REPORT_EVERY = 250;        // ms between two progress reports
   const RETRY_WAIT = 1000;         // ms before a broken file's next try (times the try's number)
+  const DATABASE = "loopsmith-manifest", SAVED = "saved", FILES_KEY = "files", LISTING_KEY = "listing";
+  let found = null;                // the saved copy readSaved found, until loadSaved reads it (one read of the database)
 
   const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   const pause = () => wait(0);
@@ -134,6 +138,8 @@ window.loopsmithManifest = (() => {
         attempt = 0;
         report();
       },
+      // Every file is in: the last bytes are told.
+      flush() { report(); },
     };
   }
 
@@ -162,10 +168,27 @@ window.loopsmithManifest = (() => {
   async function downloadTable(name, url, counted) {
     const response = await fetch(url, { mode: "cors", credentials: "omit" });
     if (!response.ok) throw new Error(`${name}: HTTP ${response.status}`);
+    if (response.body && response.body.getReader) return await indexStream(response.body, counted);
+    const { store, indexer, take } = createTaker(counted);
+    await take(new Uint8Array(await response.arrayBuffer()));
+    return { store, offsets: indexer.offsets, categories: indexer.categories };
+  }
+
+  // A component's bytes from a stream (a download, or a saved file unpacking), indexed as they come.
+  async function indexStream(stream, counted) {
+    const { store, indexer, take } = createTaker(counted);
+    const reader = stream.getReader();
+    for (let read = await reader.read(); !read.done; read = await reader.read()) await take(read.value);
+    return { store, offsets: indexer.offsets, categories: indexer.categories };
+  }
+
+  // Where a component's bytes go: its store, indexed as they come (a big chunk a slice at a time), `counted` told how
+  // many came each time, with a pause every few megabytes.
+  function createTaker(counted) {
     const store = createStore(), indexer = createIndexer(store);
     let sincePause = 0;
     const take = async (chunk) => {
-      for (let from = 0; from < chunk.length; from += SLICE) {   // a big chunk (no stream) is indexed a slice at a time
+      for (let from = 0; from < chunk.length; from += SLICE) {
         const piece = chunk.subarray(from, Math.min(chunk.length, from + SLICE));
         addChunk(store, piece);
         indexer.feed(piece, store.length - piece.length);
@@ -174,14 +197,73 @@ window.loopsmithManifest = (() => {
         if (sincePause >= SLICE) { sincePause = 0; await pause(); }
       }
     };
-    if (response.body && response.body.getReader) {
-      const reader = response.body.getReader();
-      for (let read = await reader.read(); !read.done; read = await reader.read()) await take(read.value);
-    } else {
-      await take(new Uint8Array(await response.arrayBuffer()));
-    }
-    return { store, offsets: indexer.offsets, categories: indexer.categories };
+    return { store, indexer, take };
   }
+
+  // ── the copy saved in the browser ──────────────────────────────────────────────
+
+  // The database, or null where the browser keeps none (a private window that refuses it, storage blocked).
+  function openDatabase() {
+    return new Promise((resolve) => {
+      try {
+        const opening = indexedDB.open(DATABASE, 1);
+        opening.onupgradeneeded = () => opening.result.createObjectStore(SAVED);
+        opening.onsuccess = () => resolve(opening.result);
+        opening.onerror = () => resolve(null);
+        opening.onblocked = () => resolve(null);
+      } catch (_) {
+        resolve(null);
+      }
+    });
+  }
+
+  // A saved record, or null when there's none or it can't be read.
+  async function readRecord(key) {
+    const database = await openDatabase();
+    if (!database) return null;
+    try {
+      return await new Promise((resolve) => {
+        const request = database.transaction(SAVED, "readonly").objectStore(SAVED).get(key);
+        request.onsuccess = () => resolve(request.result ?? null);
+        request.onerror = () => resolve(null);
+      });
+    } catch (_) {
+      return null;
+    } finally {
+      database.close();
+    }
+  }
+
+  // Saves a record in place of the one under its key; throws when it can't (no database, storage full).
+  async function writeRecord(key, value) {
+    const database = await openDatabase();
+    if (!database) throw new Error("this browser keeps nothing saved for the app");
+    try {
+      await new Promise((resolve, reject) => {
+        const transaction = database.transaction(SAVED, "readwrite");
+        transaction.objectStore(SAVED).put(value, key);
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = () => reject(transaction.error);
+        transaction.onabort = () => reject(transaction.error || new Error("saving was cut short"));
+      });
+    } finally {
+      database.close();
+    }
+  }
+
+  // A component's bytes gzipped, chunk by chunk (never copied into one buffer first).
+  async function compress(store) {
+    let next = 0;
+    const chunks = new ReadableStream({
+      pull(controller) {
+        if (next < store.chunks.length) controller.enqueue(store.chunks[next++]);
+        else controller.close();
+      },
+    });
+    return await new Response(chunks.pipeThrough(new CompressionStream("gzip"))).arrayBuffer();
+  }
+
+  const describe = (error) => String(error && error.message ? error.message : error);
 
   return {
     // The manifest's index (its component paths), or null when bungie.net doesn't answer it.
@@ -198,12 +280,80 @@ window.loopsmithManifest = (() => {
     // download breaks, telling `reporter` (a .NET object, or null) how many bytes came and which try a file is on; why
     // one couldn't be, or null when all are in. They stay for the tab.
     async loadTables(urls, retries, reporter) {
+      found = null;   // a download instead of the saved copy: it isn't read
       try {
         const progress = createProgress(reporter);
         for (const [name, url] of Object.entries(urls)) await loadTable(name, url, retries, progress);
         return null;
       } catch (error) {
-        return String(error && error.message ? error.message : error);
+        return describe(error);
+      }
+    },
+
+    // The copy the browser saved, as { urls: { name: url }, bytes } (bytes: its size unpacked), or null when there's none.
+    async readSaved() {
+      const record = await readRecord(FILES_KEY);
+      found = record && record.urls && record.files ? record : null;
+      return found ? JSON.stringify({ urls: found.urls, bytes: found.bytes || 0 }) : null;
+    },
+
+    // Reads the saved components ({ name: url }) not in yet into the tab, unpacking and indexing them as a download does,
+    // telling `reporter` how many bytes are in; why it couldn't (the copy lacks one, or doesn't unpack), or null.
+    async loadSaved(urls, reporter) {
+      try {
+        if (typeof DecompressionStream === "undefined") return "this browser can't unpack the saved copy";
+        const record = found || await readRecord(FILES_KEY);
+        found = null;
+        const progress = createProgress(reporter);
+        for (const [name, url] of Object.entries(urls)) {
+          const kept = tables.get(name);
+          if (kept && kept.url === url) continue;
+          if (!record || !record.urls || record.urls[name] !== url || !record.files || !record.files[name]) return `the saved copy lacks ${name}`;
+          const unpacked = new Response(record.files[name]).body.pipeThrough(new DecompressionStream("gzip"));
+          const table = await indexStream(unpacked, (count) => progress.add(count));
+          tables.set(name, { url, ...table });
+        }
+        progress.flush();
+        return null;
+      } catch (error) {
+        return describe(error);
+      }
+    },
+
+    // Saves the components the tab holds ({ name: url }), gzipped, in place of the copy saved before; why it couldn't
+    // (a component isn't in, the browser can't compress, storage is full or blocked), or null.
+    async saveTables(urls) {
+      try {
+        if (typeof CompressionStream === "undefined") return "this browser can't compress the copy";
+        const files = {};
+        let bytes = 0;
+        for (const [name, url] of Object.entries(urls)) {
+          const table = tables.get(name);
+          if (!table || table.url !== url) return `${name} isn't in`;
+          files[name] = await compress(table.store);
+          bytes += table.store.length;
+          await pause();
+        }
+        await writeRecord(FILES_KEY, { urls, bytes, files });
+        return null;
+      } catch (error) {
+        return describe(error);
+      }
+    },
+
+    // The listing saved under `key`, or null when there's none under it.
+    async readSavedListing(key) {
+      const record = await readRecord(LISTING_KEY);
+      return record && record.key === key && typeof record.text === "string" ? record.text : null;
+    },
+
+    // Saves the listing under `key`, in place of the one saved before; why it couldn't, or null.
+    async saveListing(key, text) {
+      try {
+        await writeRecord(LISTING_KEY, { key, text });
+        return null;
+      } catch (error) {
+        return describe(error);
       }
     },
 

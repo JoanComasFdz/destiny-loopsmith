@@ -53,6 +53,19 @@ public sealed class ManifestListingTests
     }
 
     [Fact]
+    public void The_listing_saved_in_the_browser_reads_back_as_it_was_listed()
+    {
+        var listing = new ManifestStore(Fixture.Tables).List();
+
+        var saved = LoopDesigning.ToSavedListing(listing);
+        var read = Assert.IsType<Optional<ItemListing>.Some>(LoopDesigning.ReadSavedListing(Optional.Some(saved))).Value;
+
+        Assert.Equal(listing.Items.Select(item => item.Hash), read.Items.Select(item => item.Hash));
+        Assert.Equal(listing.Sets.Keys.Order(), read.Sets.Keys.Order());
+        Assert.Equal(saved, LoopDesigning.ToSavedListing(read));                                 // every field kept
+    }
+
+    [Fact]
     public void A_weapons_intrinsic_is_its_first_named_intrinsic_plug()
     {
         var listing = new ManifestStore(Fixture.Tables).List();

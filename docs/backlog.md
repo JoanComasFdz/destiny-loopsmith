@@ -35,10 +35,6 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
     which builds the excerpt, the longest): a phone feels them. Splitting the excerpt's build from the last round, or
     asking for fewer fields of each item, would shorten them; keeping only the fields Loopsmith reads (as DIM trims
     its tables) would hold less.
-  - **Saving it across visits:** the app loads the manifest at every start (a new tab, a reload), behind its startup
-    screen; DIM saves it in the browser (IndexedDB) and checks the manifest index's version at start, so a visit with
-    the same version skips the download. Saving the list of every weapon and armor piece too would skip the listing,
-    the slowest part. It changes "the app stores nothing" (ADRs D25).
   - Hashes the excerpt can't give by a unique name: Horde Shuttle (two artifact perks of that name).
 
 ## Rule format gaps (what the Skip Grenade build couldn't express)
@@ -101,7 +97,7 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   3.2 MB gzip in a Release publish; cached afterwards). The `wasm-tools` workload would shrink it;
   it can't be installed in cloud sessions, but the deploy workflows on GitHub's runners could
   install it.
-- **No saved library.** The app stores nothing in the browser (D25): a loop is kept by exporting its
+- **No saved library.** The app stores nothing in the browser but Bungie's manifest (D25): a loop is kept by exporting its
   `.loop.yaml` or copying its share link, and loops imported on the Compare screen last until the tab
   closes. A library would need per-browser storage, or a backend to sync it across devices.
 - **A build picker** over the catalog instead of build files (FR-1).
