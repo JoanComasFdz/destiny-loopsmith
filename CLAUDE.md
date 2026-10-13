@@ -108,8 +108,8 @@ repos (Microsoft's download hosts are blocked by the network policy) and restore
   session: the manifest index needs no key, other endpoints ask for one (`X-API-Key`), and the
   static manifest files (`/common/destiny2_content/…`) download. The `BUNGIE_API_KEY` secret only
   reaches sessions started after it was added; a Bungie login isn't possible from a session.
-  Repository settings and deleting remote branches aren't possible from a session — ask the owner. If the clone is
-  single-branch, after `git push -u` of a new branch run
+  Repository settings and deleting remote branches aren't possible from a session — ask the owner.
+  If the clone is single-branch, after `git push -u` of a new branch run
   `git config --add remote.origin.fetch '+refs/heads/<b>:refs/remotes/origin/<b>' && git fetch`
   so the branch tracks its remote.
 - **History rewrites** (e.g. purging a file): rewrite only `c1074e8..<branch>` — the root
