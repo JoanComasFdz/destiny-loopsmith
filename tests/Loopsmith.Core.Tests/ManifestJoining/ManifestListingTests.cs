@@ -9,16 +9,19 @@ using Loopsmith.Core.Tests.Support;
 namespace Loopsmith.Core.Tests.ManifestJoining;
 
 /// <summary>
-/// The listing of every weapon and armor piece a build can wear (the pickers' "Every item"), from Bungie's lite item
-/// table. A fixture shaped like Bungie's JSON always runs; a downloaded manifest with its lite item table
-/// (<c>LOOPSMITH_MANIFEST_DIR</c>) must list every weapon and armor piece of the bundled excerpt as the join reads it.
+/// The listing of every weapon and armor piece a build can wear (the pickers' "Every item"), from Bungie's item table,
+/// each weapon with its breaker (its own, else its frame's). A fixture shaped like Bungie's JSON always runs; a downloaded
+/// manifest (<c>LOOPSMITH_MANIFEST_DIR</c>) must list every weapon and armor piece of the bundled excerpt as the join
+/// reads it, breakers included.
 /// </summary>
 public sealed class ManifestListingTests
 {
     [Fact]
     public void Legendary_and_exotic_weapons_and_armor_are_listed_by_name_every_version_side_by_side()
     {
-        var listing = ListingStore.List(Fixture.Buckets, Fixture.Sets, ListingStore.ReadTable(Fixture.Items));
+        var store = new ManifestStore(Fixture.Tables);
+
+        var listing = store.List();
 
         Assert.Equal(
             ["Alpha Cannon 102", "Test Mask 200", "Zeta Rifle 100", "Zeta Rifle 101"],
@@ -31,22 +34,43 @@ public sealed class ManifestListingTests
         var mask = Assert.IsType<ManifestKind.Armor>(listing.Items.Single(item => item.Hash.Value == 200u).Kind);
         Assert.Equal((ArmorSlot.Helmet, Optional.Some(ItemHash.From(500u)), Optional.Some(GuardianClass.Hunter)), (mask.Slot, mask.Set, mask.Class));
         Assert.Equal("Testing", listing.Sets[ItemHash.From(500u)].Name);
+        Assert.Equal(4, store.Rounds);                                                           // the small components, the items, the frames, their perks
     }
 
     [Fact]
-    public void The_listing_reads_three_components_and_says_why_an_answer_doesnt_read()
+    public void A_weapons_breaker_is_its_own_else_its_frames()
+    {
+        var listing = new ManifestStore(Fixture.Tables).List();
+        var breakers = listing.Items
+            .Where(item => item.Kind is ManifestKind.Weapon)
+            .ToImmutableDictionary(item => item.Hash.Value, item => ((ManifestKind.Weapon)item.Kind).Breaker.Match(found => found.Value.Value, _ => 0u));
+
+        Assert.Equal(485622768u, breakers[100u]);                                               // Adaptive Frame: "[Shield-Piercing] Barrier"
+        Assert.Equal(0u, breakers[101u]);                                                       // its frame names no breaker
+        Assert.Equal(2611060930u, breakers[102u]);                                              // its own (Disruption), whatever its frame says
+    }
+
+    [Fact]
+    public void The_listing_reads_six_components_and_says_why_an_answer_doesnt_read()
     {
         var urls = LoopDesigning.ChooseListingUrls(Optional.None<string>(), "pinned");
+        var start = Assert.IsType<ListingStep.Ask>(LoopDesigning.StartListing());
 
         Assert.Equal(
-            ["DestinyEquipableItemSetDefinition", "DestinyInventoryBucketDefinition", "DestinyInventoryItemLiteDefinition"],
+            ["DestinyBreakerTypeDefinition", "DestinyEquipableItemSetDefinition", "DestinyInventoryBucketDefinition", "DestinyInventoryItemDefinition",
+                "DestinySandboxPerkDefinition", "DestinySocketCategoryDefinition"],
             urls.Keys.Order(StringComparer.Ordinal));
-        Assert.Equal("https://www.bungie.net/common/destiny2_content/json/en/DestinyInventoryItemLiteDefinition-pinned.json", urls["DestinyInventoryItemLiteDefinition"]);
-        Assert.IsType<Result<ListingTables, string>.Error>(LoopDesigning.ReadListingTables("not json"));
-        Assert.IsType<Result<ListingTables, string>.Error>(LoopDesigning.ReadListingTables("""{ "DestinyInventoryBucketDefinition": { "3": { "displayProperties": { "name": "Consumables" } } } }"""));
-        var tables = LoopDesigning.ReadListingTables($$"""{ "DestinyInventoryBucketDefinition": {{Fixture.Buckets}} }""").Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
-        Assert.Equal(["1", "2"], LoopDesigning.ToListingPartsQuery(tables).Values);
-        Assert.IsType<Result<ItemListing, string>.Error>(LoopDesigning.ReadItemListing(tables, "[]"));
+        Assert.Equal("https://www.bungie.net/common/destiny2_content/json/en/DestinyInventoryItemDefinition-pinned.json", urls["DestinyInventoryItemDefinition"]);
+        Assert.Empty(start.Query.Parts.Paths);                                                   // the first round reads the small components only
+        Assert.IsType<Result<ListingStep, string>.Error>(LoopDesigning.ContinueListing(start, "not json", "{}"));
+        Assert.IsType<Result<ListingStep, string>.Error>(LoopDesigning.ContinueListing(start, """{ "DestinyInventoryBucketDefinition": { "3": { "displayProperties": { "name": "Consumables" } } } }""", "{}"));
+        var items = Assert.IsType<ListingStep.Ask>(Assert.IsType<Result<ListingStep, string>.Ok>(
+            LoopDesigning.ContinueListing(start, $$"""{ "DestinyInventoryBucketDefinition": {{Fixture.Buckets}} }""", "{}")).Value);
+        Assert.Equal(["1", "2"], items.Query.Parts.Paths.Keys.Order(StringComparer.Ordinal));
+        Assert.Contains(["sockets", "socketEntries", "*", "singleInitialItemHash"], items.Query.Parts.Paths["1"]);   // a weapon's sockets, for its frame
+        Assert.DoesNotContain(items.Query.Parts.Paths["2"], path => path[0] == "sockets");                               // armor needs none
+        Assert.IsType<Result<ListingStep, string>.Error>(LoopDesigning.ContinueListing(items, "{}", "[]"));
+        Assert.IsType<Result<ItemListing, string>.Error>(LoopDesigning.ToItemListing(new Result<ListingStep, string>.Ok(items)));
     }
 
     /// <summary>The listing and the join read Bungie's manifest alike: every weapon and armor piece of the bundled excerpt is listed as the join named it.</summary>
@@ -54,7 +78,7 @@ public sealed class ManifestListingTests
     public void The_real_manifest_lists_every_weapon_and_armor_piece_of_the_bundled_excerpt()
     {
         var directory = Environment.GetEnvironmentVariable("LOOPSMITH_MANIFEST_DIR");
-        Assert.SkipWhen(string.IsNullOrEmpty(directory) || !ListingStore.HasLiteItems(directory), "Set LOOPSMITH_MANIFEST_DIR to a downloaded manifest with its lite item table to run it.");
+        Assert.SkipWhen(string.IsNullOrEmpty(directory), "Set LOOPSMITH_MANIFEST_DIR to a downloaded manifest (tools/manifest/get-manifest.sh) to run it.");
         var bundled = FileSourceFetching.ReadRuleFiles(RepoFiles.ToPath("rules"))
             .Bind(CatalogLoading.ParseCatalog)
             .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure))
@@ -63,7 +87,7 @@ public sealed class ManifestListingTests
             .Where(item => item.Kind is ManifestKind.Weapon or ManifestKind.Armor && (item.Tier == Optional.Some(ItemTier.Legendary) || item.Tier == Optional.Some(ItemTier.Exotic)))
             .ToImmutableArray();
 
-        var listing = ListingStore.ListDirectory(directory!);
+        var listing = ManifestStore.ReadDirectory(directory!).List();
         var listed = listing.Items.ToImmutableDictionary(item => item.Hash);
 
         Assert.NotEmpty(wearable);
@@ -76,30 +100,51 @@ public sealed class ManifestListingTests
         $"{item.Hash.Value}: {item.Name} | {item.Type.UnwrapOr("-")} | {item.Tier.Match(tier => tier.Value.ToString(), _ => "-")} | {item.Icon.UnwrapOr("-")} | "
             + item.Kind switch
             {
-                ManifestKind.Weapon weapon => $"weapon {weapon.Slot} {weapon.DamageType.Match(type => type.Value.ToString(), _ => "-")}",
+                ManifestKind.Weapon weapon => $"weapon {weapon.Slot} {weapon.DamageType.Match(type => type.Value.ToString(), _ => "-")} breaker {weapon.Breaker.Match(hash => hash.Value.Value.ToString(), _ => "-")}",
                 ManifestKind.Armor armor => $"armor {armor.Slot} set {armor.Set.Match(hash => hash.Value.Value.ToString(), _ => "-")} class {armor.Class.Match(found => found.Value.ToString(), _ => "any")}",
                 _ => item.Kind.GetType().Name,
             };
 
-    /// <summary>Bungie-shaped lite items: two versions of a legendary, an exotic, a set's helmet, and what isn't listed.</summary>
+    /// <summary>Bungie-shaped items: two versions of a legendary (one on a breaker frame), an exotic with its own breaker, a set's helmet, and what isn't listed.</summary>
     private static class Fixture
     {
         internal const string Buckets = """{"1":{"displayProperties":{"name":"Kinetic Weapons"}},"2":{"displayProperties":{"name":"Helmet"}},"3":{"displayProperties":{"name":"Consumables"}}}""";
-        internal const string Sets = """{"500":{"displayProperties":{"name":"Testing"},"setPerks":[{"requiredSetCount":2,"sandboxPerkHash":600}]}}""";
+        private const string Sets = """{"500":{"displayProperties":{"name":"Testing"},"setPerks":[{"requiredSetCount":2,"sandboxPerkHash":600}]}}""";
+        private const string Categories = """{"8":{"displayProperties":{"name":"INTRINSIC TRAITS"}},"7":{"displayProperties":{"name":"WEAPON PERKS"}}}""";
+        private const string Breakers = """{"485622768":{"displayProperties":{"name":"Shield Piercing"}},"2611060930":{"displayProperties":{"name":"Disruption"}}}""";
+        private const string Perks = """{"42":{"displayProperties":{"name":"[Shield-Piercing] Barrier"}},"43":{"displayProperties":{"name":"Faster"}},"44":{"displayProperties":{"name":"[Stagger] Unstoppable"}}}""";
+        private const string Sockets = """ "sockets": { "socketEntries": [ { "singleInitialItemHash": 0 }, { "singleInitialItemHash": FRAME }, { "singleInitialItemHash": 10 } ], "socketCategories": [ { "socketCategoryHash": 7, "socketIndexes": [2] }, { "socketCategoryHash": 8, "socketIndexes": [1] } ] } """;
 
-        internal const string Items = """
+        private const string Items = """
             {
-              "101": { "displayProperties": { "name": "Zeta Rifle", "icon": "/z2.jpg" }, "iconWatermark": "/season-2.png", "itemTypeDisplayName": "Scout Rifle", "itemType": 3, "equippable": true, "defaultDamageType": 1, "inventory": { "bucketTypeHash": 1, "tierType": 5 } },
-              "100": { "displayProperties": { "name": "Zeta Rifle", "icon": "/z1.jpg" }, "iconWatermark": "/season-1.png", "itemTypeDisplayName": "Scout Rifle", "itemType": 3, "equippable": true, "defaultDamageType": 1, "inventory": { "bucketTypeHash": 1, "tierType": 5 } },
-              "102": { "displayProperties": { "name": "Alpha Cannon", "icon": "/cannon.jpg" }, "iconWatermark": "/season-2.png", "itemTypeDisplayName": "Hand Cannon", "itemType": 3, "equippable": true, "defaultDamageType": 3, "inventory": { "bucketTypeHash": 1, "tierType": 6 } },
+              "101": { "displayProperties": { "name": "Zeta Rifle", "icon": "/z2.jpg" }, "iconWatermark": "/season-2.png", "itemTypeDisplayName": "Scout Rifle", "itemType": 3, "equippable": true, "defaultDamageType": 1, "inventory": { "bucketTypeHash": 1, "tierType": 5 }, SOCKETS21 },
+              "100": { "displayProperties": { "name": "Zeta Rifle", "icon": "/z1.jpg" }, "iconWatermark": "/season-1.png", "itemTypeDisplayName": "Scout Rifle", "itemType": 3, "equippable": true, "defaultDamageType": 1, "inventory": { "bucketTypeHash": 1, "tierType": 5 }, SOCKETS20 },
+              "102": { "displayProperties": { "name": "Alpha Cannon", "icon": "/cannon.jpg" }, "iconWatermark": "/season-2.png", "itemTypeDisplayName": "Hand Cannon", "itemType": 3, "equippable": true, "defaultDamageType": 3, "breakerTypeHash": 2611060930, "inventory": { "bucketTypeHash": 1, "tierType": 6 }, SOCKETS22 },
               "103": { "displayProperties": { "name": "Blue Rifle" }, "itemTypeDisplayName": "Auto Rifle", "itemType": 3, "equippable": true, "defaultDamageType": 1, "inventory": { "bucketTypeHash": 1, "tierType": 4 } },
               "104": { "displayProperties": { "name": "Preview Rifle" }, "itemTypeDisplayName": "Auto Rifle", "itemType": 3, "equippable": false, "defaultDamageType": 1, "inventory": { "bucketTypeHash": 1, "tierType": 5 } },
               "105": { "displayProperties": { "name": "Rifle Ornament" }, "itemTypeDisplayName": "Ornament", "itemType": 19, "equippable": true, "inventory": { "bucketTypeHash": 1, "tierType": 5 } },
               "106": { "displayProperties": { "name": "" }, "itemTypeDisplayName": "Auto Rifle", "itemType": 3, "equippable": true, "defaultDamageType": 1, "inventory": { "bucketTypeHash": 1, "tierType": 5 } },
               "200": { "displayProperties": { "name": "Test Mask" }, "itemTypeDisplayName": "Helmet", "itemType": 2, "equippable": true, "classType": 1, "inventory": { "bucketTypeHash": 2, "tierType": 5 }, "equippingBlock": { "equipableItemSetHash": 500 } },
               "201": { "displayProperties": { "name": "Test Mask" }, "itemTypeDisplayName": "Helmet", "itemType": 2, "equippable": true, "classType": 1, "inventory": { "bucketTypeHash": 14239492, "tierType": 5 } },
-              "300": { "displayProperties": { "name": "Healing Potion" }, "itemType": 9, "equippable": false, "inventory": { "bucketTypeHash": 3, "tierType": 5 } }
+              "300": { "displayProperties": { "name": "Healing Potion" }, "itemType": 9, "equippable": false, "inventory": { "bucketTypeHash": 3, "tierType": 5 } },
+              "10": { "displayProperties": { "name": "Lightning" }, "itemTypeDisplayName": "Trait", "plug": { "plugCategoryIdentifier": "frames" } },
+              "20": { "displayProperties": { "name": "Adaptive Frame" }, "itemTypeDisplayName": "Intrinsic", "plug": { "plugCategoryIdentifier": "intrinsics" }, "perks": [ { "perkHash": 43 }, { "perkHash": 42 } ] },
+              "21": { "displayProperties": { "name": "Plain Frame" }, "itemTypeDisplayName": "Intrinsic", "plug": { "plugCategoryIdentifier": "intrinsics" }, "perks": [ { "perkHash": 43 } ] },
+              "22": { "displayProperties": { "name": "Cannon's Own" }, "itemTypeDisplayName": "Intrinsic", "plug": { "plugCategoryIdentifier": "intrinsics" }, "perks": [ { "perkHash": 44 } ] }
             }
             """;
+
+        internal static readonly ImmutableDictionary<ManifestTable, ImmutableDictionary<ItemHash, string>> Tables = new Dictionary<ManifestTable, string>
+        {
+            [ManifestTable.InventoryItem] = Items
+                .Replace("SOCKETS20", Sockets.Replace("FRAME", "20", StringComparison.Ordinal), StringComparison.Ordinal)
+                .Replace("SOCKETS21", Sockets.Replace("FRAME", "21", StringComparison.Ordinal), StringComparison.Ordinal)
+                .Replace("SOCKETS22", Sockets.Replace("FRAME", "22", StringComparison.Ordinal), StringComparison.Ordinal),
+            [ManifestTable.InventoryBucket] = Buckets,
+            [ManifestTable.EquipableItemSet] = Sets,
+            [ManifestTable.SocketCategory] = Categories,
+            [ManifestTable.SandboxPerk] = Perks,
+            [ManifestTable.BreakerType] = Breakers,
+        }.ToImmutableDictionary(entry => entry.Key, entry => ManifestStore.ReadTable(entry.Value));
     }
 }

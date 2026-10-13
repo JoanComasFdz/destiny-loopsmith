@@ -8,8 +8,8 @@ using Loopsmith.Core.Phrasing;
 namespace Loopsmith.Web.Presentation;
 
 /// <summary>
-/// One item of the game the pickers' "Every item" lists: its square and marks (its season watermark), its hash, its type
-/// line ("Hand Cannon · Arc", "Helmet · Luminopotent set"), a weapon's damage type and that type's icon, what the build
+/// One item of the game the pickers' "Every item" lists: its square and marks (its season watermark, a weapon's breaker),
+/// its hash, its type line ("Hand Cannon · Arc · Shield Piercing", "Helmet · Luminopotent set"), a weapon's damage type and that type's icon, what the build
 /// can't hold of it (an exotic class item's spirits), the text the search box matches and whether the build wears it.
 /// </summary>
 public sealed record ItemOptionView(
@@ -53,11 +53,13 @@ public static class ItemListShaping
     private static ItemOptionView ShapeWeapon(ValidatedBuild build, WeaponItemOption option)
     {
         var item = option.Item;
-        var damage = item.Kind is ManifestKind.Weapon weapon ? weapon.DamageType : Optional.None<DamageType>();
-        var line = JoinParts(item.Type.UnwrapOr(""), damage.Match(found => found.Value.ToString(), _ => ""));
+        var weapon = item.Kind is ManifestKind.Weapon kind ? Optional.Some(kind) : Optional.None<ManifestKind.Weapon>();
+        var damage = weapon.Bind(found => found.DamageType);
+        var breaker = weapon.Bind(found => found.Breaker).Bind(build.Catalog.Manifest.FindBreakerType);
+        var line = JoinParts(item.Type.UnwrapOr(""), damage.Match(found => found.Value.ToString(), _ => ""), breaker.Match(found => found.Value.Name, _ => ""));
         return new ItemOptionView(
             LoadoutShaping.DescribeWeaponItem(item),
-            LoadoutShaping.DescribeMarks(build.Catalog, Optional.Some(item), Optional.None<GearMarks>(), Optional.None<BreakerType>(), Optional.None<CornerBadge>()),
+            LoadoutShaping.DescribeMarks(build.Catalog, Optional.Some(item), Optional.None<GearMarks>(), breaker, Optional.None<CornerBadge>()),
             item.Hash,
             line,
             damage,

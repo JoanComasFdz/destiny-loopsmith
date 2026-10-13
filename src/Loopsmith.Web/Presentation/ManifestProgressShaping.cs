@@ -6,8 +6,8 @@ namespace Loopsmith.Web.Presentation;
 
 /// <summary>
 /// What a read of Bungie's manifest is for: the player's items (after their Bungie login), the open build's (a DIM
-/// link's), every weapon and armor piece in the game (the pickers' "Every item", from the lite item table), or the item
-/// picked there (its perks, catalyst or set, before it goes into the build).
+/// link's), every weapon and armor piece in the game (the pickers' "Every item"), or the item picked there (its perks,
+/// catalyst or set, before it goes into the build).
 /// </summary>
 public enum ManifestReadFor { YourItems, BuildItems, EveryItem, PickedItem }
 
@@ -39,9 +39,6 @@ public static class ManifestProgressShaping
     /// <summary>The unpacked bytes the files are assumed to near (Bungie's item table and its companions, about 215 MB in 2026): the bar slows past it, it never stops.</summary>
     private const double ExpectedBytes = 215_000_000;
 
-    /// <summary>The same for the listing: the lite item table, the buckets and the sets (about 62 MB in 2026).</summary>
-    private const double ExpectedListingBytes = 62_000_000;
-
     public static ManifestReadProgress StartReading(ManifestReadFor readFor, int items) =>
         new(readFor, items, new ManifestReadStage.Reading(0));
 
@@ -72,7 +69,7 @@ public static class ManifestProgressShaping
                 _ => "You can keep designing meanwhile; the build's items show by hash until it's done.",
             },
             progress.Stage.Match(
-                reading => (int)Math.Round(85 * (1 - Math.Exp(-1.6 * reading.Bytes / (progress.For == ManifestReadFor.EveryItem ? ExpectedListingBytes : ExpectedBytes)))),
+                reading => (int)Math.Round(85 * (1 - Math.Exp(-1.6 * reading.Bytes / ExpectedBytes))),
                 naming => (int)Math.Round(99 - 14 * Math.Pow(0.5, naming.Round))));
 
     /// <summary>A read in progress, when there is one.</summary>

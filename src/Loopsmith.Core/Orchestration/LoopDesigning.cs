@@ -185,25 +185,21 @@ public static class LoopDesigning
 
     // ── Every weapon and armor piece in the game (the pickers' "Every item", docs/loop-format.md) ──────────────
 
-    /// <summary>The URLs of the components the listing reads (the lite item table, the buckets, the sets): the index's, else the pinned content id's.</summary>
+    /// <summary>The URLs of the components the listing reads (the item table, the sandbox perks and four small ones): the index's, else the pinned content id's.</summary>
     public static ImmutableDictionary<string, string> ChooseListingUrls(Optional<string> indexJson, string pinnedContentId) =>
         ManifestTransport.ChooseComponentUrls(indexJson, pinnedContentId, ManifestListing.Components);
 
-    /// <summary>What the host reads first for the listing: the buckets and the armor sets, whole.</summary>
-    public static ImmutableDictionary<string, ImmutableArray<ItemHash>> ToListingTableRequest() =>
-        ManifestListing.ToTableRequest();
+    /// <summary>A listing of every weapon and armor piece a build can wear: its first question to the host.</summary>
+    public static ListingStep StartListing() =>
+        ManifestListing.StartListing();
 
-    /// <summary>The host's answer to <see cref="ToListingTableRequest"/>: the weapon and armor slots' buckets and the sets; or why it doesn't read.</summary>
-    public static Result<ListingTables, string> ReadListingTables(string entriesJson) =>
-        ManifestListing.ReadTables(entriesJson);
+    /// <summary>The listing with the host's answers to its question (its entries, its parts): its next step, or why an answer doesn't read.</summary>
+    public static Result<ListingStep, string> ContinueListing(ListingStep.Ask asked, string entriesJson, string partsJson) =>
+        ManifestListing.ContinueListing(asked, entriesJson, partsJson);
 
-    /// <summary>What the host reads next: the lite items of the weapon and armor buckets, each cut down to what the pickers need.</summary>
-    public static ManifestPartsQuery ToListingPartsQuery(ListingTables tables) =>
-        ManifestListing.ToPartsQuery(tables);
-
-    /// <summary>The host's answer to <see cref="ToListingPartsQuery"/>: every weapon and armor piece a build can wear; or why it doesn't read.</summary>
-    public static Result<ItemListing, string> ReadItemListing(ListingTables tables, string partsJson) =>
-        ManifestListing.ReadListing(tables, partsJson);
+    /// <summary>The listing a finished listing built, or why reading the manifest failed (or didn't finish).</summary>
+    public static Result<ItemListing, string> ToItemListing(Result<ListingStep, string> step) =>
+        ManifestListing.ToItemListing(step);
 
     /// <summary>A join of what these hashes need from the full manifest: its first question (or, for none, the excerpt).</summary>
     public static ManifestJoinStep StartManifestJoin(IEnumerable<ItemHash> hashes) =>

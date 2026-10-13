@@ -33,7 +33,7 @@ public static class ManifestTransport
         ChooseComponentUrls(indexJson, pinnedContentId, [.. Enum.GetValues<ManifestTable>().Select(ToComponentName)]);
 
     /// <summary>
-    /// The URLs of <paramref name="components"/> (by component name, <c>DestinyInventoryItemLiteDefinition</c>), as
+    /// The URLs of <paramref name="components"/> (by component name, <c>DestinySandboxPerkDefinition</c>), as
     /// <see cref="ChooseUrls"/> chooses them: the index's when it has every one, else the pinned content id's.
     /// </summary>
     public static ImmutableDictionary<string, string> ChooseComponentUrls(Optional<string> indexJson, string pinnedContentId, ImmutableArray<string> components)
@@ -73,6 +73,12 @@ public static class ManifestTransport
             .Bind(entries => ParseDocument(foundJson)
                 .MapError(problem => $"its search doesn't read: {problem}")
                 .Map(found => new ManifestAnswer(ReadEntries(entries), ReadPlugs(query, found))));
+
+    /// <summary>The host's entries (<c>{ "DestinyXDefinition": { "hash": { …entry… } } }</c>), each parsed once; or why they don't read.</summary>
+    internal static Result<ImmutableDictionary<ManifestEntryKey, JsonElement>, string> ReadEntryAnswer(string entriesJson) =>
+        ParseDocument(entriesJson)
+            .MapError(problem => $"its entries don't read: {problem}")
+            .Map(ReadEntries);
 
     /// <summary>The excerpt a finished join built; why there is none when reading the manifest failed or didn't finish.</summary>
     public static Result<ManifestExcerpt, string> ToJoinedExcerpt(Result<ManifestJoinStep, string> step) =>

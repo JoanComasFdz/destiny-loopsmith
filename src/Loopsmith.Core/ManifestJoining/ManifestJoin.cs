@@ -498,14 +498,18 @@ public static partial class ManifestJoin
             .Bind(frame => frame.ReadArray("perks")
                 .SelectMany(perk => ToSequence(perk.ReadHash("perkHash").Bind(hash => FindEntry(reading, ManifestTable.SandboxPerk, hash))))
                 .SelectMany(perk => ToSequence(perk.ReadString("displayProperties", "name")))
-                .SelectMany(name => CreateBracketedNamePattern().Matches(name).Select(match => ToBreakerName(match.Groups[1].Value)))
+                .SelectMany(ListBracketedNames)
                 .SelectMany(name => breakers.Where(breaker => breaker.Name == name).Select(breaker => breaker.Hash))
                 .Select(Optional.Some)
                 .FindFirstSome());
     }
 
     /// <summary>A breaker's name as frames' perks and the breaker table both write it ("Shield-Piercing", "Shield Piercing").</summary>
-    private static string ToBreakerName(string name) => name.Replace('-', ' ').Trim().ToLowerInvariant();
+    internal static string ToBreakerName(string name) => name.Replace('-', ' ').Trim().ToLowerInvariant();
+
+    /// <summary>The breaker names a perk's name carries in brackets ("[Shield-Piercing] Barrier": "shield piercing").</summary>
+    internal static IEnumerable<string> ListBracketedNames(string name) =>
+        CreateBracketedNamePattern().Matches(name).Select(match => ToBreakerName(match.Groups[1].Value));
 
     [System.Text.RegularExpressions.GeneratedRegex(@"\[([^\]]+)\]")]
     private static partial Regex CreateBracketedNamePattern();

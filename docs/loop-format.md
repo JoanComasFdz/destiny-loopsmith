@@ -426,8 +426,10 @@ picks between the player's own items (above) and these, starting on Yours:
   for that slot and the build's class: every version of each (a season's reissue is an item of its own, told apart by
   its watermark and, for armor, its set: one version may be in an armor set another isn't), the one the slot holds
   first (✓), then by name, a name's versions side by side. A search box narrows it as you type, by name or type ("hand
-  cannon", "arc"; for armor its name or its set's). It comes from Bungie's lite item table, read once per tab when a
-  picker first opens (its progress bar shows; [hosting.md](hosting.md#bungies-manifest)). The one-exotic rule holds as
+  cannon", "arc"; for armor its name or its set's). Each weapon's footer shows its damage type and its breaker (its
+  own, else its frame's: Adaptive Frame pierces barriers), and the item shown is framed with its footer. The list comes
+  from Bungie's item table, read once per tab when a picker first opens (its progress bar shows;
+  [hosting.md](hosting.md#bungies-manifest)). The one-exotic rule holds as
   in the player's pickers: no exotic is listed while another slot holds one (the picker says which to swap).
 * **A pick** — hovering an item (or a first tap) shows its name, type and damage type (for armor, its set); a click (a
   second tap, or "Use this weapon" / "Wear this piece") puts it in. Bungie's full manifest is read for it first when
