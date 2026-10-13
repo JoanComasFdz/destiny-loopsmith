@@ -55,6 +55,7 @@ public static class BuildFileWriting
         .. ToAbilityEntry("grenade", build.Abilities.Grenade),
         .. ToAbilityEntry("melee", build.Abilities.Melee),
         .. ToAbilityEntry("classAbility", build.Abilities.ClassAbility),
+        .. ToAbilityEntry("jump", build.Abilities.Jump),
         .. ToListEntry("aspects", build.Aspects),
         .. ToListEntry("fragments", build.Fragments),
         .. build.ExoticArmor.Match(exotic => ToEntry("exoticArmor", exotic.Value.Value), _ => []),
@@ -209,12 +210,12 @@ public static class BuildFileWriting
 
     /// <summary>
     /// The build's subclass entries as the build file writes them — <c>super</c>, <c>grenade</c>, <c>melee</c>,
-    /// <c>classAbility</c> (<c>"?"</c> when unknown; none when the slot is empty), <c>aspects</c>, <c>fragments</c>,
+    /// <c>classAbility</c>, <c>jump</c> (<c>"?"</c> when unknown; none when the slot is empty), <c>aspects</c>, <c>fragments</c>,
     /// <c>leftOut</c> (none when the build leaves nothing out) — an entry with none is removed by an edit.
     /// </summary>
     internal static ImmutableArray<(string Key, Optional<string> Value)> WriteSubclassEntries(Build build) =>
     [
-        .. new[] { ("super", build.Abilities.Super), ("grenade", build.Abilities.Grenade), ("melee", build.Abilities.Melee), ("classAbility", build.Abilities.ClassAbility) }
+        .. new[] { ("super", build.Abilities.Super), ("grenade", build.Abilities.Grenade), ("melee", build.Abilities.Melee), ("classAbility", build.Abilities.ClassAbility), ("jump", build.Abilities.Jump) }
             .Select(ability => (ability.Item1, ToAbilityEntry(ability.Item1, ability.Item2) is { IsEmpty: false } entry ? Optional.Some(WriteValue([.. entry.Skip(1)])) : Optional.None<string>())),
         ("aspects", Optional.Some(WriteValue([.. ToListEntry("aspects", build.Aspects).Skip(1)]))),
         ("fragments", Optional.Some(WriteValue([.. ToListEntry("fragments", build.Fragments).Skip(1)]))),

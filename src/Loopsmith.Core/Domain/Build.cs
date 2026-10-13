@@ -4,12 +4,17 @@ using Loopsmith.Core.Functional;
 
 namespace Loopsmith.Core.Domain;
 
-/// <summary>The four ability slots, each with what it holds (<see cref="AbilityPlug"/>).</summary>
+/// <summary>
+/// The four ability slots and the jump, each with what it holds (<see cref="AbilityPlug"/>). A jump is an element of the
+/// rules like the abilities (<c>kind: jump</c>), but it is <c>inert</c>: movement has no part in a loop, so it sets
+/// nothing off and the engine never plays it.
+/// </summary>
 public sealed record AbilityLoadout(
     AbilityPlug Super,
     AbilityPlug Grenade,
     AbilityPlug Melee,
-    AbilityPlug ClassAbility);
+    AbilityPlug ClassAbility,
+    AbilityPlug Jump);
 
 /// <summary>
 /// What an ability slot holds: an element of the rules; an ability the build has but Loopsmith can't name (<c>"?"</c> in

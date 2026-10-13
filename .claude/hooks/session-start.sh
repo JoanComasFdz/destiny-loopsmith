@@ -1,6 +1,7 @@
 #!/bin/bash
 # SessionStart hook for Claude Code cloud sessions: make the .NET 10 SDK available and restore packages,
-# so `dotnet build` / `dotnet test` work. Idempotent and quiet; does nothing outside cloud sessions.
+# so `dotnet build` / `dotnet test` work, and install what tools/compendium/sheet_dump.py needs to download
+# the Compendium snapshot. Idempotent and quiet; does nothing outside cloud sessions.
 set -euo pipefail
 
 if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
@@ -30,3 +31,8 @@ if [ -n "${CLAUDE_ENV_FILE:-}" ] && ! grep -qs 'DOTNET_NOLOGO' "$CLAUDE_ENV_FILE
 fi
 
 dotnet restore "$CLAUDE_PROJECT_DIR/Loopsmith.slnx" --verbosity quiet
+
+# tools/compendium/sheet_dump.py (the Compendium download). Not fatal: the build doesn't need it.
+if ! python3 -c 'import requests, bs4' >/dev/null 2>&1; then
+  python3 -m pip install -q requests beautifulsoup4 >/dev/null 2>&1 || true
+fi

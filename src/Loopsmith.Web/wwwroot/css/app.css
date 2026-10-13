@@ -1060,7 +1060,6 @@ button.hud-chip:hover, button.hud-chip:focus-visible { background: color-mix(in 
 .sub-drop-options { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: 2px; overflow-y: auto; overscroll-behavior: contain; }
 .sub-drop .perk-option { flex: none; }
 .sub-drop .perk-option:disabled { opacity: .45; cursor: not-allowed; }
-.sub-drop-key { flex: none; margin: 0; padding-top: 6px; border-top: 1px solid var(--line-2); font-size: 11px; }
 .sub-foot { display: flex; justify-content: flex-end; gap: 8px; }
 .perk-picker-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-size: 11px; }
 .armor-row { display: flex; flex-wrap: wrap; gap: 10px; }
