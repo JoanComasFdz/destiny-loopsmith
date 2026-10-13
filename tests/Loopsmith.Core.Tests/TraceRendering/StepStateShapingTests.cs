@@ -71,10 +71,10 @@ public sealed class StepStateShapingTests
         Assert.Equal(["Spark of Frequency"], entry.SwitchesOn.Select(effect => effect.SourceName));
         Assert.Equal("+1 Bolt Charge per gain", entry.SwitchesOn[0].Text);
         Assert.Empty(state.WeaponEffects);
-        Assert.Equal(["Spark of Frequency", "Ionic Overclock"], details.Select(line => line.SourceName));
+        Assert.Equal(["Flow State", "Spark of Frequency", "Ionic Overclock"], details.Select(line => line.SourceName));
         Assert.Equal(
             ("Linear Fusion Rifles, Fusion Rifles and Heat Weapons: +? Handling, +? Reload", Optional.Some("No weapon in this build is one of them, so it does nothing here.")),
-            (details[1].Text, details[1].Note));
+            (details[2].Text, details[2].Note));
         Assert.Contains(played.Build.Issues, issue => issue.Severity == Severity.Info
             && issue.Message == "Ionic Overclock changes Linear Fusion Rifles, Fusion Rifles and Heat Weapons, and no weapon in this build is one, so it does nothing here.");
     }
@@ -97,7 +97,7 @@ public sealed class StepStateShapingTests
         Assert.Equal([2], effect.Weapons);
         Assert.Contains(state.Buffs.Single(buff => buff.Text == "Amplified").SwitchesOn, switched => switched.SourceName == "Ionic Overclock");
         var whileAmplified = Assert.Single(LoopDesigning.ExplainInteractions(build, new KeywordRef.Status(StatusId.From("amplified"))), group => group.Heading == "While Amplified");
-        Assert.Equal(Optional.Some($"On {fusion.Name}."), whileAmplified.Interactions[1].Note);
+        Assert.Equal(Optional.Some($"On {fusion.Name}."), whileAmplified.Interactions[2].Note);
         Assert.DoesNotContain(build.Issues, issue => issue.Message.StartsWith("Ionic Overclock", StringComparison.Ordinal));
         Assert.Empty(LoopDesigning.ShapeStepState(played, played.Resolutions[0]).WeaponEffects);    // not Amplified yet
     }
@@ -170,6 +170,71 @@ public sealed class StepStateShapingTests
         Assert.Equal(new GameValue.Known(1m - (0.655m * 0.75m)), all.Pve);
     }
 
+    [Theory]
+    [InlineData("arc-staff", "Arc Staff", 0.53)]
+    [InlineData("gathering-storm", "Gathering Storm", 0.49)]
+    [InlineData("storms-edge", "Storm's Edge", 0.45)]
+    public void Casting_the_Super_puts_you_in_it_and_its_resistance_counts_until_the_player_ends_it(string super, string name, decimal pvp)
+    {
+        var owners = Play().Build;
+        var build = Validate(owners.Build with { Abilities = owners.Build.Abilities with { Super = new AbilityPlug.Known(ElementId.From(super)) } });
+        var played = PlayOn(build,
+            new PlayerAction.CastAbility(OffensiveAbility.Super, HitOutcome.Kill, TargetCount.One),
+            new PlayerAction.FireWeapon(WeaponSlot.Energy, HitOutcome.Kill, TargetCount.One),
+            new PlayerAction.Declare(new StateDeclaration.EndStatus(StatusId.From("super"))));
+
+        var cast = ReadAllDamage(played, 0);
+        var later = ReadAllDamage(played, 1);
+        var ended = ReadAllDamage(played, 2);
+
+        var source = Assert.Single(cast.Sources, source => source.Name == name);
+        Assert.Equal((new GameValue.Known(0.9m), Optional.Some<GameValue>(new GameValue.Known(pvp))), (source.Pve, source.Pvp));
+        Assert.Contains(played.Resolutions[0].State.Buffs, buff => buff.Status == StatusId.From("super"));
+        Assert.Contains(later.Sources, source => source.Name == name);                          // still in your Super
+        Assert.DoesNotContain(ended.Sources, source => source.Name == name);                    // end:super
+    }
+
+    [Fact]
+    public void Flow_States_resistance_holds_on_a_class_ability_step_while_Amplified_and_on_no_other()
+    {
+        var played = Play(
+            new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Kill, TargetCount.One),   // Spark of Shock jolts, Flow State: Amplified
+            new PlayerAction.UseClassAbility(),
+            new PlayerAction.FireWeapon(WeaponSlot.Energy, HitOutcome.Kill, TargetCount.One),
+            new PlayerAction.Declare(new StateDeclaration.EndStatus(StatusId.From("amplified"))),
+            new PlayerAction.UseClassAbility());
+
+        var dodge = Assert.Single(ReadAllDamage(played, 1).Sources, source => source.Name == "Flow State");
+
+        Assert.Equal((new GameValue.Known(0.66m), Optional.Some<GameValue>(new GameValue.Known(0.32m))), (dodge.Pve, dodge.Pvp));
+        Assert.DoesNotContain(ReadAllDamage(played, 0).Sources, source => source.Name == "Flow State");   // Amplified, no dodge
+        Assert.DoesNotContain(ReadAllDamage(played, 2).Sources, source => source.Name == "Flow State");   // Amplified, a weapon
+        Assert.DoesNotContain(ReadAllDamage(played, 4).Sources, source => source.Name == "Flow State");   // a dodge, not Amplified
+    }
+
+    [Fact]
+    public void Ascensions_air_move_is_a_dodge_for_Flow_State()
+    {
+        var owners = Play().Build;
+        var build = Validate(owners.Build with { Aspects = [ElementId.From("flow-state"), ElementId.From("ascension")] });
+        var played = PlayOn(build, new PlayerAction.UseClassAbility(AbilityInput.Air));            // Ascension: Amplified
+
+        Assert.Contains(ReadAllDamage(played, 0).Sources, source => source.Name == "Flow State");
+    }
+
+    [Fact]
+    public void Amplified_resists_combatants_15_percent_in_PvE_only()
+    {
+        var played = Play(new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Kill, TargetCount.One));
+
+        var all = ReadAllDamage(played, 0);
+
+        var amplified = Assert.Single(all.Sources, source => source.Name == "Amplified");
+        Assert.Equal((new GameValue.Known(0.15m), Optional.None<GameValue>()), (amplified.Pve, amplified.Pvp));
+        Assert.Equal(new GameValue.Known(1m - (0.85m * 0.655m * 0.75m)), all.Pve);
+        Assert.Equal(new GameValue.Known(0.1m), all.Pvp);                                        // Spark of Resistance's alone
+    }
+
     [Fact]
     public void The_CLI_says_what_a_status_switches_on_under_its_state()
     {
@@ -182,6 +247,12 @@ public sealed class StepStateShapingTests
         Assert.Contains("While Amplified  +1 Bolt Charge per gain [Spark of Frequency]", lines);
         Assert.DoesNotContain(lines, line => line.StartsWith("Active", StringComparison.Ordinal));
     }
+
+    private static AllDamageResistance ReadAllDamage(DesignSession played, int step) =>
+        Assert.IsType<Optional<DamageResistance>.Some>(LoopDesigning.ShapeStepState(played, played.Resolutions[step]).Resistance).Value.AllDamage;
+
+    private static ValidatedBuild Validate(Build build) =>
+        BuildValidation.ValidateBuild(build, Catalog).Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
 
     private static DesignSession PlayOn(ValidatedBuild build, params PlayerAction[] actions) =>
         actions.Aggregate(

@@ -38,7 +38,7 @@ public static class KeywordInteracting
         var fromRules = others.SelectMany(equipped => equipped.Element.Rules
             .SelectMany(rule => FindRuleRole(keyword, rule).Select(role => (Role: role, Interaction: DescribeRule(build, keyword, equipped, rule)))));
         var fromPassives = others.SelectMany(equipped => equipped.Element.Passives
-            .SelectMany(passive => FindPassiveRole(keyword, passive).Select(role => (Role: role, Interaction: DescribePassive(build, equipped, passive, role)))));
+            .SelectMany(passive => FindPassiveRole(keyword, passive).Select(role => (Role: role, Interaction: DescribePassive(build, keyword, equipped, passive, role)))));
         var name = DescribeKeywordName(glossary, keyword);
         return
         [
@@ -214,11 +214,15 @@ public static class KeywordInteracting
             Optional.None<string>());
     }
 
-    /// <summary>A passive: what it does (its condition too, unless the keyword is what switches it on), and where a weapon change reaches.</summary>
-    private static KeywordInteraction DescribePassive(ValidatedBuild build, EquippedElement equipped, PassiveRule passive, InteractionRole role)
+    /// <summary>
+    /// A passive: what it does, its conditions but the keyword's own when the keyword switches it on (Flow State's "during
+    /// your class ability" under "While Amplified"), and where a weapon change reaches.
+    /// </summary>
+    private static KeywordInteraction DescribePassive(ValidatedBuild build, KeywordRef keyword, EquippedElement equipped, PassiveRule passive, InteractionRole role)
     {
         var glossary = build.Catalog.Glossary;
-        var condition = role == InteractionRole.SwitchesOn || passive.When.IsEmpty ? "" : $" ({glossary.DescribeConditions(passive.When)})";
+        var shown = role == InteractionRole.SwitchesOn ? passive.When.Where(when => !IsNamedBy(keyword, when)).ToImmutableArray() : passive.When;
+        var condition = shown.IsEmpty ? "" : $" ({glossary.DescribeConditions(shown)})";
         return new KeywordInteraction(
             equipped.Element.Id,
             equipped.Element.Name,

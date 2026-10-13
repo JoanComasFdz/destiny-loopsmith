@@ -38,7 +38,8 @@ public static class PassiveReaching
             has => has.Status == status,
             _ => false,
             target => target.Status == status,
-            atMax => atMax.Status == status);
+            atMax => atMax.Status == status,
+            _ => false);
 
     /// <summary>A change to weapon stats reaches the build's weapons of its archetypes (none: nothing here); anything else reaches you.</summary>
     public static PassiveReach FindReach(Build build, Passive passive) =>

@@ -243,7 +243,8 @@ public static partial class LoopRunning
             has => new Need[] { new Need.Buff(has.Status) },
             _ => [],
             targetHas => [new Need.Debuff(targetHas.Status)],
-            atMax => [new Need.DeclaredMax(atMax.Status)]));
+            atMax => [new Need.DeclaredMax(atMax.Status)],
+            _ => []));
         var consumed = rule.Outcomes
             .Where(applied => !applied.Caveat.IsSome())
             .SelectMany(applied => ListConsumed(applied.Outcome));

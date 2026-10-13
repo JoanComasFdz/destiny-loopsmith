@@ -28,7 +28,7 @@ internal static class RuleBodyParsing
     private static readonly ImmutableArray<string> TriggerNames =
         ["abilityCast", "kill", "damage", "pickUp", "buffGained", "stacksMaxed", "finisher"];
 
-    private static readonly ImmutableArray<string> ConditionNames = ["has", "lacks", "targetHas", "atMax"];
+    private static readonly ImmutableArray<string> ConditionNames = ["has", "lacks", "targetHas", "atMax", "during"];
 
     private static readonly ImmutableArray<string> OutcomeNames =
     [
@@ -212,6 +212,7 @@ internal static class RuleBodyParsing
             "lacks" => scope.ReadBuff(entry.Value).Map(Condition (status) => new Condition.LacksBuff(status)),
             "targetHas" => scope.ReadDebuff(entry.Value).Map(Condition (status) => new Condition.TargetHas(status)),
             "atMax" => scope.ReadStackingBuff(entry.Value).Map(Condition (status) => new Condition.AtMax(status)),
+            "during" => ReadVocabularyWord<AbilityKind>(entry.Value).Map(Condition (ability) => new Condition.During(ability)),
             _ => entry.Value.FailAt<Condition>(DescribeUnknown("condition", entry.Key, ConditionNames)),
         });
 

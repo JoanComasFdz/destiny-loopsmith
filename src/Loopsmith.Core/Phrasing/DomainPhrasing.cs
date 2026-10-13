@@ -422,7 +422,8 @@ public static class DomainPhrasing
             hasBuff => $"while {glossary.DescribeStatus(hasBuff.Status)}",
             lacksBuff => $"without {glossary.DescribeStatus(lacksBuff.Status)}",
             targetHas => $"if target {glossary.DescribeDebuffedAdjective(targetHas.Status)}",
-            atMax => $"while {glossary.DescribeStatus(atMax.Status)} at max");
+            atMax => $"while {glossary.DescribeStatus(atMax.Status)} at max",
+            during => $"during your {during.Ability.DescribeAbility()}");
 
     public static string DescribeConditions(this KeywordGlossary glossary, ImmutableArray<Condition> conditions) =>
         string.Join(", ", conditions.Select(glossary.DescribeCondition));

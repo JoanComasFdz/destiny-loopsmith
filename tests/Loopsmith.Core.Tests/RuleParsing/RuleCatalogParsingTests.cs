@@ -1635,6 +1635,18 @@ public sealed class RuleCatalogParsingTests
     }
 
     [Fact]
+    public void Parses_a_guard_on_the_ability_the_step_casts_and_refuses_an_unknown_ability()
+    {
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToPassiveProbeFile(
+            "{ effect: { resistDamage: \"66% [32%]\" }, when: [ { has: amplified }, { during: classAbility } ] }")]));
+        var unknown = ParseInvalidCatalog(Glossary, ToPassiveProbeFile("{ effect: { resistDamage: \"66% [32%]\" }, when: [ { during: dodge } ] }"));
+
+        var passive = Assert.Single(catalog.Elements[ElementId.From("probe")].Passives);
+        Assert.Equal<Condition>([new Condition.HasBuff(ToStatus("amplified")), new Condition.During(AbilityKind.ClassAbility)], passive.When);
+        Assert.Contains("'dodge' is not one of: grenade, melee, classAbility, super", unknown);
+    }
+
+    [Fact]
     public void Parses_a_weapon_of_your_supers_element()
     {
         var catalog = AssertOk(RuleCatalogParsing.ParseCatalog(

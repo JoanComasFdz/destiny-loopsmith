@@ -22,14 +22,15 @@ statuses:
 
   # 15 s: compendium/2026-10-09/Arc#4 (the intrinsic Arc buff; Flashover's Artifact Perks#43 also
   # says 15 s). The artifact perk Amped Up (Artifact Perks#109, not in the skip-grenade build) raises
-  # it to 20 s. Amplified's own effects (Arc#4) have no keyword element: the intrinsic Arc-kill counter
-  # that grants it (25% minor, 50% elite or Guardian, 100% miniboss and up, kills within 6 s of each
-  # other) is progress the game doesn't show as a stacking status, so it could only be a chance rule
-  # (ADRs D8), and a keyword applies to every build, not just Arc; +50 Mobility, longer slides and
-  # Speed Booster need movement; +40 Handling needs an "all weapons" archetype; the 15% damage
-  # resistance against combatants is expressible but changes no loop. In this build Flow State
-  # grants Amplified on every jolted kill anyway.
+  # it to 20 s. Its 15% damage resistance against combatants is the amplified keyword element
+  # (keywords/arc.yaml), which says what else of Arc#4 isn't encoded.
   - { id: amplified, name: Amplified, kind: buff, affinity: arc, duration: 15s, trait: 3291013836 }
+
+  # You are in your Super: casting it puts you in it (the super keyword element, keywords/super.yaml)
+  # and the player declares it over (`end:super`, ADRs D3). No duration: a roaming Super's lasts until
+  # its energy runs out (Arc Staff's 20 s base, compendium/2026-10-13/Arc#44), a thrown one's until
+  # its last cast; while it lasts, the Super's damage resistance counts (ADRs D29).
+  - { id: super, name: Super, kind: buff, affinity: neutral }
 
   # Base maximum 3: compendium/2026-10-09/Game Mechanics#94. Charged Up raises a build's cap to
   # 4|5|6 by copies (the `charged-up` mod's raiseMaxStacks passive; Clarity 2577472338 agrees). Its

@@ -110,7 +110,8 @@ has ended, that the next enemies are a new pack — the player declares as a ste
   `Bolt Charge isn't active — nothing to declare at max.` ·
   `Bolt Charge is already at max.`
 * `end:<status>` — "Amplified ends", "Jolt ends": the buff on you (with its declaration at max) or the
-  debuff on the pack has ended and is removed. It raises no event, so no rule reacts to it. Blocked
+  debuff on the pack has ended and is removed. `end:super` — "Super ends": casting the Super puts you in it (the
+  `super` status, while its damage resistance counts) and every step after it is still in it, until this step. It raises no event, so no rule reacts to it. Blocked
   unless the status is active: `Amplified isn't active — nothing ends.` ·
   `No buff or debuff 'amplifyed' in the rules — nothing ends.`
 * `pack:new` — "New pack": the next enemies are a new pack, with none of the old pack's debuffs; the
@@ -180,11 +181,12 @@ Weapons) shows in the weapons column next to the build's weapons of those types 
 them is one, the details say it does nothing here and Validation says so too. A status's own effect (Woven
 Mail's damage resistance) is in its details, not in the state's chips: it counts in the **damage resistance** below
 them. Every status opens its details on a tap — one the
-rules have no element for (Amplified) shows the glossary's facts and what it switches on — and its facts ("up to
+rules have no element for (Armor Charge) shows the glossary's facts and what it switches on — and its facts ("up to
 x5 · 8s") show on hover. Under them, the **damage resistance** right then (ADRs D29): a small table with a PvE and a PvP column. Its first row,
 *All damage*, multiplies every resistance passive that holds — the Guardian's base 34.5% against combatants, Spark
-of Resistance, Woven Mail while it is on you — the way the game stacks them, 1 − (1 − a) × (1 − b) × …: 73% PvE and
-32.5% PvP with those three (the base does nothing in PvP). Each resistance against some combatants only adds a row of
+of Resistance, Woven Mail while it is on you, Amplified's 15% against combatants, the Super's 90% while you're in it
+(from its cast to `end:super`), Flow State's 66% on a dodge step while Amplified — the way the game stacks them, 1 − (1 − a) × (1 − b) × …: 73% PvE and
+32.5% PvP with the first three (the base does nothing in PvP). Each resistance against some combatants only adds a row of
 its own, PvE only (PvP 0%): *Arc combatants* (Arc Resistance, or Harmonic Resistance with an Arc Super), *Combatants
 within 5 m*, *Combatants beyond 30 m*, *Combatants' area, blast and explosive damage*, all damage's sources and its own
 together. A source whose value is "?" makes its total "?". Tapping the title (*▸ Damage resistance*) lists each row's

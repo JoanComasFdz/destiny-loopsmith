@@ -32,6 +32,7 @@ public partial record Condition
     partial record LacksBuff(StatusId Status);
     partial record TargetHas(StatusId Status);
     partial record AtMax(StatusId Status);   // the player declared this buff at its maximum (ADRs D3)
+    partial record During(AbilityKind Ability);   // the step casts this ability: it is under way at the step's end (Flow State's dodge)
 }
 
 [Union]
