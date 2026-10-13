@@ -13,7 +13,7 @@
 @inject BrowserInterop Browser
 @{
     var slots = LoopDesigning.CountFragmentSlots(Build, draft.Aspects).Slots;
-    var fragmentCapacity = slots.Match(count => count.Value, _ => draft.Fragments.Length + 1);
+    var fragmentCapacity = slots.Match(count => count.Value, _ => fragmentSlots.Count(slot => slot.IsSome()) + 1);
     var slotText = slots.Match(count => count.Value.ToString(CultureInfo.InvariantCulture), _ => DomainPhrasing.Unknown);
 }
 <Modal Title="@($"{heading.Name}, {heading.Kind}")" Size="snug" OnClose="OnClose">
@@ -67,9 +67,9 @@
                             <p class="tone-warning sub-note" role="status" data-testid="trim-note">@trimNote</p>
                         }
                         <div class="sub-group" data-testid="fragment-slots">
-                            @for (var index = 0; index < Math.Max(fragmentCapacity, draft.Fragments.Length); index++)
+                            @for (var index = 0; index < Math.Max(fragmentCapacity, fragmentSlots.Length); index++)
                             {
-                                @RenderMany(SubclassSlot.Fragment, "Fragment", index, index < draft.Fragments.Length ? Optional.Some(draft.Fragments[index]) : Optional.None<ItemHash>())
+                                @RenderMany(SubclassSlot.Fragment, "Fragment", index, index < fragmentSlots.Length ? fragmentSlots[index] : Optional.None<ItemHash>())
                             }
                         </div>
                     </section>
@@ -108,6 +108,10 @@
     public EventCallback OnClose { get; set; }
 
     private SubclassPlugs draft = null!;
+
+    /// <summary>The fragments by slot: ✕ leaves its slot empty, the others stay where they are (the build keeps them as a
+    /// list, so Save writes them in slot order and the editor shows them packed next time). The draft's own list isn't read.</summary>
+    private ImmutableArray<Optional<ItemHash>> fragmentSlots = [];
     private SubclassHeading heading = null!;
     private Optional<OpenPick> picker = Optional.None<OpenPick>();
     private Optional<ItemDetails> details = Optional.None<ItemDetails>();
@@ -116,6 +120,7 @@
     protected override void OnInitialized()
     {
         draft = LoopDesigning.ReadSubclassPlugs(Build);                                          // pure
+        fragmentSlots = [.. draft.Fragments.Select(Optional.Some)];                              // pure
         heading = LoadoutShaping.DescribeSubclassHeading(Build);                                 // pure
     }
 
@@ -248,12 +253,12 @@
             SubclassSlot.ClassAbility => draft.ClassAbility,
             SubclassSlot.Jump => draft.Jump,
             SubclassSlot.Aspect => pick.Index < draft.Aspects.Length ? Optional.Some(draft.Aspects[pick.Index]) : Optional.None<ItemHash>(),
-            _ => pick.Index < draft.Fragments.Length ? Optional.Some(draft.Fragments[pick.Index]) : Optional.None<ItemHash>(),
+            _ => pick.Index < fragmentSlots.Length ? fragmentSlots[pick.Index] : Optional.None<ItemHash>(),
         };
 
     /// <summary>True when the plug sits in another slot of the same kind (an aspect or a fragment is equipped once).</summary>
     private bool IsHeldElsewhere(SubclassSlot slot, ItemHash hash) =>
-        slot == SubclassSlot.Aspect ? draft.Aspects.Contains(hash) : slot == SubclassSlot.Fragment && draft.Fragments.Contains(hash);
+        slot == SubclassSlot.Aspect ? draft.Aspects.Contains(hash) : slot == SubclassSlot.Fragment && fragmentSlots.Contains(Optional.Some(hash));
 
     /// <summary>The ⋯ of a slot: its id, for the focus to come back to it when its dropdown closes.</summary>
     private static string DescribePickButtonId(OpenPick pick) =>
@@ -309,6 +314,10 @@
 
     private void Choose(OpenPick pick, ItemHash hash)
     {
+        if (pick.Slot == SubclassSlot.Fragment)
+        {
+            fragmentSlots = PlaceFragment(fragmentSlots, pick.Index, hash);                      // impure (UI state)
+        }
         draft = pick.Slot switch                                                                 // pure
         {
             SubclassSlot.Super => draft with { Super = Optional.Some(hash) },
@@ -317,7 +326,7 @@
             SubclassSlot.ClassAbility => draft with { ClassAbility = Optional.Some(hash) },
             SubclassSlot.Jump => draft with { Jump = Optional.Some(hash) },
             SubclassSlot.Aspect => SetAspects(Place(draft.Aspects, pick.Index, hash)),
-            _ => draft with { Fragments = Place(draft.Fragments, pick.Index, hash) },
+            _ => draft,
         };
         refocus = Optional.Some(DescribePickButtonId(pick));                                     // impure (UI state)
         picker = Optional.None<OpenPick>();                                                      // impure (UI state)
@@ -326,7 +335,7 @@
     /// <summary>✕ on a fragment: its slot is left empty. An aspect can't be taken out, only swapped (⋯).</summary>
     private void RemoveFragment(int index)
     {
-        draft = draft with { Fragments = [.. draft.Fragments.Where((_, at) => at != index)] };   // pure
+        fragmentSlots = fragmentSlots.SetItem(index, Optional.None<ItemHash>());                  // impure (UI state)
         picker = Optional.None<OpenPick>();                                                      // impure (UI state)
     }
 
@@ -334,17 +343,40 @@
     private static ImmutableArray<ItemHash> Place(ImmutableArray<ItemHash> held, int index, ItemHash hash) =>
         index < held.Length ? held.SetItem(index, hash) : held.Add(hash);
 
+    /// <summary>The fragment slots with the plug in slot <paramref name="index"/> (empty slots before it, when it is past the last one).</summary>
+    private static ImmutableArray<Optional<ItemHash>> PlaceFragment(ImmutableArray<Optional<ItemHash>> slots, int index, ItemHash hash) =>
+        index < slots.Length
+            ? slots.SetItem(index, Optional.Some(hash))
+            : [.. slots, .. Enumerable.Repeat(Optional.None<ItemHash>(), index - slots.Length), Optional.Some(hash)];
+
+    /// <summary>
+    /// The fragment slots after an aspect change: the fragments <paramref name="kept"/> stay in their slots when every one
+    /// of them is in a slot still open, else they are packed from the first slot; the slots past the count close.
+    /// </summary>
+    private static ImmutableArray<Optional<ItemHash>> KeepFragmentPlaces(ImmutableArray<Optional<ItemHash>> slots, ImmutableArray<ItemHash> kept, Optional<int> count)
+    {
+        var placed = slots.Select(slot => slot.Bind(hash => kept.Contains(hash) ? Optional.Some(hash) : Optional.None<ItemHash>())).ToImmutableArray();
+        var open = count.UnwrapOr(placed.Length);
+        return placed.Skip(open).Any(slot => slot.IsSome()) ? [.. kept.Select(Optional.Some)] : [.. placed.Take(open)];
+    }
+
     /// <summary>The draft with these aspects: the fragments their slot count no longer holds are taken out, the last first, and named.</summary>
     private SubclassPlugs SetAspects(ImmutableArray<ItemHash> aspects)
     {
-        var trimmed = LoopDesigning.SetSubclassAspects(Build, draft, aspects);                   // pure
+        var trimmed = LoopDesigning.SetSubclassAspects(Build, ReadPlugs(), aspects);             // pure
         var names = trimmed.Removed.Select(hash => LoadoutShaping.DescribeSubclassPlug(Build, hash).Name).ToImmutableArray();
-        var slots = LoopDesigning.CountFragmentSlots(Build, aspects).Slots.UnwrapOr(0);
+        var count = LoopDesigning.CountFragmentSlots(Build, aspects).Slots;
+        var slots = count.UnwrapOr(0);
+        fragmentSlots = KeepFragmentPlaces(fragmentSlots, trimmed.Plugs.Fragments, count);      // impure (UI state)
         trimNote = names.IsEmpty                                                                 // impure (UI state)
             ? ""
             : $"Removed {string.Join(", ", names)}: the aspects open {slots} fragment slot{(slots == 1 ? "" : "s")}.";
         return trimmed.Plugs;
     }
+
+    /// <summary>The plugs the editor holds: the draft with the fragments in slot order.</summary>
+    private SubclassPlugs ReadPlugs() =>
+        draft with { Fragments = [.. fragmentSlots.OfType<Optional<ItemHash>.Some>().Select(slot => slot.Value)] };
 
     private void OpenDetails(ItemDetails open) =>
         details = Optional.Some(open);                                                           // impure (UI state)
@@ -353,5 +385,5 @@
         details = Optional.None<ItemDetails>();                                                  // impure (UI state)
 
     private Task SaveAsync() =>
-        OnSave.InvokeAsync(draft);                                                               // impure
+        OnSave.InvokeAsync(ReadPlugs());                                                               // impure
 }
