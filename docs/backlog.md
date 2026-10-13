@@ -38,6 +38,17 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
 
 ## Rule format gaps (what the Skip Grenade build couldn't express)
 
+- **The rest of the Arc Hunter** (`rules/hunter/arc.yaml`: every Arcstrider plug is authored, compendium/2026-10-13).
+  What its elements couldn't express, so they are `inert` or fire on more than they should:
+  - steps that don't exist: taking damage at critical health (Spark of Instinct's jolting burst — the only one that
+    would change a loop: its Jolt feeds Spark of Ions and Lethal Current; Spark of Recharge), being hit by a melee
+    attack (Spark of Feedback), sprinting (Spark of Haste and Focus: no loop would change, as with a jump), sliding over
+    an ammo brick (Spark of Momentum's x3 Bolt Charge);
+  - a weapon's ammo type (Spark of Beacons: Special and Heavy Arc kills only — a `chance` rule on every Arc weapon
+    kill) and precision kills (Spark of Brilliance — `chance`);
+  - kills within a time of each other (Spark of Amplitude's 2 kills within 4 s — `chance`) and a rule's cooldown
+    (Spark of Ions' 10 s between traces: it fires on every jolted kill);
+  - Storm's Edge's teleport to its knife, Lethal Current's longer lunge: movement, which has no part in a loop.
 - **Triggers:** champion stun (Defibrillating Blast's "stun → max Bolt Charge", with an outcome that
   puts a buff at max); an air move that spends another ability's energy (Weavewalk's 20% melee energy;
   secondary uses are the abilities' own — `melee:slide`, `melee:air`, `class:air`, `grenade:hold`, D9);
