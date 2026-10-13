@@ -10,11 +10,11 @@ public static class ActionResolution
 {
     /// <summary>Fresh spawn: no buffs, a clean pack, nothing on the ground (abilities are always available, ADRs D5).</summary>
     public static GameState CreateInitialState() =>
-        new(0, [], new TargetState(EnemyTier.Minor, []), []);
+        new(0, [], new TargetState(EnemyTier.Minor, []), [], Optional.None<AbilityKind>());
 
     public static Resolution ResolveAction(ValidatedBuild build, GameState state, PlayerAction action)
     {
-        var stepped = state with { Step = state.Step + 1 };
+        var stepped = state with { Step = state.Step + 1, Casting = ReadCast(action) };
         var opening = OpenAction(build, stepped, action);
         var seed = new Cascade(opening.State, [], opening.Notes, 0);
         var finished = opening.Events.Aggregate(seed, (acc, pending) => EventCascading.CascadeEvent(build, acc, pending, 0));
@@ -71,6 +71,16 @@ public static class ActionResolution
             .Select(status => (StateDeclaration)new StateDeclaration.EndStatus(status));
         return [new StateDeclaration.NewPack(), .. maxes, .. ends];
     }
+
+    /// <summary>The ability a step casts (an offensive ability, the class ability), under way for the whole step; none for any other step.</summary>
+    public static Optional<AbilityKind> ReadCast(PlayerAction action) =>
+        action.Match(
+            cast => Optional.Some(cast.Kind.ToAbilityKind()),
+            _ => Optional.Some(AbilityKind.ClassAbility),
+            _ => Optional.None<AbilityKind>(),
+            _ => Optional.None<AbilityKind>(),
+            _ => Optional.None<AbilityKind>(),
+            _ => Optional.None<AbilityKind>());
 
     public static ImmutableArray<ActivePassive> ListActivePassives(ValidatedBuild build, GameState state) =>
         build.Equipped

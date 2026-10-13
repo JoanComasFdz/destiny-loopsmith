@@ -16,13 +16,15 @@ public sealed record TargetState(EnemyTier Tier, ImmutableArray<StatusId> Debuff
 /// <summary>
 /// Immutable snapshot of what is present — buffs on you, debuffs on the pack, pickups on the ground — and what the
 /// player declared. It holds no number but the step (ADRs D1); the Simulation slice plays steps against it,
-/// (state, step) → (state, fired). Abilities are always available (ADRs D5).
+/// (state, step) → (state, fired). Abilities are always available (ADRs D5). <see cref="Casting"/> is the ability the
+/// step casts, under way right then (Flow State's dodge, <see cref="Condition.During"/>); none for any other step.
 /// </summary>
 public sealed record GameState(
     int Step,
     ImmutableArray<ActiveBuff> Buffs,
     TargetState Target,
-    ImmutableArray<PickupId> Pickups);
+    ImmutableArray<PickupId> Pickups,
+    Optional<AbilityKind> Casting);
 
 /// <summary>What the player chooses to do next. Abilities and weapons say how many enemies they hit or kill (ADRs D4).</summary>
 [Union]
