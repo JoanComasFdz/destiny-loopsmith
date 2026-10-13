@@ -105,9 +105,8 @@ repos (Microsoft's download hosts are blocked by the network policy) and restore
 - **Cloud-session limits:** the network policy blocks docs.google.com, youtube.com,
   github.io, light.gg, d2foundry.gg and destinyitemmanager.com (NuGet, PyPI,
   raw.githubusercontent.com and git clones from github.com work). bungie.net's API answers a
-  session: the manifest index needs no key,
-  other endpoints ask for one (`X-API-Key`), and the static manifest files
-  (`/common/destiny2_content/…`) download. The `BUNGIE_API_KEY` secret only reaches sessions
+  session: the manifest index needs no key, other endpoints ask for one (`X-API-Key`), and the
+  static manifest files (`/common/destiny2_content/…`) download. The `BUNGIE_API_KEY` secret only reaches sessions
   started after it was added; a Bungie login isn't possible from a session. Repository settings and
   deleting remote branches aren't possible from a session — ask the owner. If the clone is
   single-branch, after `git push -u` of a new branch run
