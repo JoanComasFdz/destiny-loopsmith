@@ -110,6 +110,11 @@ for; suggest it to them instead.
 When they say go, follow CLAUDE.md's "Agent workflow" from step 1. The spec becomes the PR's title and
 description when the work is ready for review.
 
+The work branch is always `claude/<slug>`, named from the agreed title (CLAUDE.md, "Naming (agent
+work)"), even when this session was handed a generated branch name such as
+`claude/zealous-euler-qu8uiv`. Don't push to the generated one; every commit, push and the pull
+request use the slug branch.
+
 Once the pull request is open, rename this session so it shows the PR (CLAUDE.md, "Agent workflow",
 step 4):
 - Read the current title with the claude-code-remote `get_session` tool, with no `session_id`.
