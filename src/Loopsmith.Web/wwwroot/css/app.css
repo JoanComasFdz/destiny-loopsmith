@@ -1191,11 +1191,12 @@ button.hud-chip:hover, button.hud-chip:focus-visible { background: color-mix(in 
 .general-mods .icon-grid { grid-template-columns: repeat(auto-fill, var(--mod-tile)); }
 /* the designer's mod sockets: a piece's slot mods and own sockets (three to a line), its energy under them, and the
    General row; an empty socket is a dashed square named for what it takes, a filled one shows its mod and its cost */
+.loadout { --socket-tile: var(--mod-tile); }
 .mod-sockets { display: flex; flex-direction: column; gap: 3px; }
-.icon-grid.mods.sockets { grid-template-columns: repeat(3, var(--mod-tile)); }
-.general-mods .icon-grid.sockets { grid-template-columns: repeat(auto-fill, var(--mod-tile)); }
+.icon-grid.mods.sockets { grid-template-columns: repeat(4, var(--socket-tile)); }
+.general-mods .icon-grid.sockets { grid-template-columns: repeat(auto-fill, var(--socket-tile)); }
 .mod-socket { position: relative; display: inline-flex; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; border-radius: 4px; }
-.mod-socket .icon-tile { width: var(--mod-tile); height: var(--mod-tile); }
+.icon-grid .mod-socket .icon-tile, .icon-grid.mods .mod-socket .icon-tile { width: var(--socket-tile); height: var(--socket-tile); }
 .mod-socket .icon-tile.empty { font-size: 8px; line-height: 1.1; overflow: hidden; word-break: break-word; }
 .mod-socket:hover .icon-tile, .mod-socket:focus-visible .icon-tile { border-color: var(--arc); }
 .mod-socket:focus-visible { outline: 2px solid var(--arc); outline-offset: 1px; }
@@ -1203,6 +1204,15 @@ button.hud-chip:hover, button.hud-chip:focus-visible { background: color-mix(in 
 .mod-energy { font-size: 10px; color: var(--muted); white-space: nowrap; }
 .mod-energy.over { color: var(--warn); font-weight: 700; }
 .unplaced-mods .loadout-sublabel { color: var(--warn); }
+/* on a phone the loadout has the width: the sockets are as big as a piece's square, easy to tap and to tell apart */
+@media (max-width: 640px) {
+    .loadout:not(.compact) { --socket-tile: 46px; }
+    .loadout:not(.compact) .general-mods .icon-grid { grid-template-columns: repeat(auto-fill, var(--socket-tile)); }
+    .loadout:not(.compact) .general-mods .icon-grid:not(.sockets) .icon-tile { width: var(--socket-tile); height: var(--socket-tile); }
+    .mod-socket-cost { min-width: 14px; font-size: 11px; line-height: 14px; }
+    .mod-socket .icon-tile.empty { font-size: 10px; }
+    .mod-energy { font-size: 12px; }
+}
 .mod-picker { display: flex; flex-direction: column; gap: 8px; min-height: 0; }
 .mod-picker-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 .mod-search { flex: 1 1 160px; min-width: 0; }

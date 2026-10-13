@@ -371,7 +371,8 @@ mods as before, each piece with the mods of its slot and the general mods togeth
   read — none worn (a loop from scratch), or a piece the listing lacks — holds the mods the build has for it and one free
   socket, and gives the General row one socket. An empty socket is a dashed square named for what it takes
   ("Helmet", "General", "Artifice", "Raid"); a filled one shows its mod, ⊘ when the rules don't know it, and its
-  energy cost in its corner.
+  energy cost in its corner. On a phone (640 px wide or less) the sockets are as big as a piece's square, four to a
+  line, so a piece's artifice socket stays on its row.
 * **Placing.** A build holds its mods as a list, as a DIM loadout does (`armorMods`, `armorModPlugs` and the mods in
   `leftOut`), so the designer places them: each in the first free socket of the pieces that takes it, in the build's
   order; the general mods fill the General row and count against the pieces with the most energy left, the costliest
