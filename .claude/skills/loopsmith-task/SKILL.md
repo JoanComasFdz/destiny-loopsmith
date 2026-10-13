@@ -110,6 +110,14 @@ for; suggest it to them instead.
 When they say go, follow CLAUDE.md's "Agent workflow" from step 1. The spec becomes the PR's title and
 description when the work is ready for review.
 
+Once the pull request is open, rename this session so it shows the PR (CLAUDE.md, "Agent workflow",
+step 4):
+- Read the current title with the claude-code-remote `get_session` tool, with no `session_id`.
+- If the title already ends with ` #<PR number>`, leave it. Otherwise append that suffix with
+  `set_session_title`: "D2 damage resistance calculation" → "D2 damage resistance calculation #59".
+- If the tools aren't available or the rename fails, say so in the session and carry on. The rename
+  never blocks the PR.
+
 The owner's files never go into the repository by themselves. When the work needs one in the
 repository, put it in its proper place, for example a loop file as a test case under `builds/` or
 `tests/`. Before it goes in, check it for personal data and secrets, and say what you found. The same
