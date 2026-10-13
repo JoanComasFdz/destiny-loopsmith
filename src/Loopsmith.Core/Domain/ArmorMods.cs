@@ -77,5 +77,9 @@ public sealed record ModLayout(ImmutableArray<PieceModSockets> Pieces, Immutable
 /// </summary>
 public sealed record ModOption(ListedMod Mod, bool InRules, bool OfSubclassElement, Optional<string> Refused);
 
-/// <summary>What the mod picker lists for a socket: the mods of its category (the subclass's element first), the one in it, and its piece's energy.</summary>
-public sealed record ModOptions(ModSocket Socket, ImmutableArray<ModOption> Options, Optional<ArmorEnergyUse> Energy);
+/// <summary>
+/// What the mod picker lists for a socket: the socket (the mod in it), the mods of its category (the subclass's element
+/// first: <see cref="Element"/>, none for Prismatic), and its piece's energy (none for the General row: the general mods
+/// go wherever the energy lets them).
+/// </summary>
+public sealed record ModOptions(ModSocket Socket, ImmutableArray<ModOption> Options, Optional<Affinity> Element, Optional<ArmorEnergyUse> Energy);
