@@ -50,4 +50,8 @@ public static class StateHudShaping
     /// <summary>"1 effect", "2 effects": how many other elements' effects the status switches on right then.</summary>
     public static string DescribeSwitchesCount(StateEntry entry) =>
         entry.SwitchesOn.Length == 1 ? "1 effect" : $"{entry.SwitchesOn.Length} effects";
+
+    /// <summary>"45% · PvP 25%"; a source against combatants only: "34.5% · PvP 0%" (it does nothing in PvP).</summary>
+    public static string DescribeResistanceSource(ResistanceSource source) =>
+        source.Pve.FormatPercent() + source.Pvp.Map(pvp => $" · PvP {pvp.FormatPercent()}").UnwrapOr(" · PvP 0%");
 }

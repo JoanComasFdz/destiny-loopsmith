@@ -175,8 +175,9 @@ elements:
         reason: "Dodging pulls the Orbs of Power on the ground to you."
     passives: []
 
-  # Resistance mods: what they change is the damage you take, which no rule reads (a loop has no
-  # incoming damage), so they are known and inert rather than missing.
+  # Resistance mods: no rule reads the damage you take (a loop has no incoming damage), but the step's
+  # state shows your damage resistance (ADRs D29): against combatants only (Armor Mods#7), so a line of
+  # their own in PvE, nothing in PvP. Different resistance sources multiply (same row).
   - id: harmonic-resistance
     name: Harmonic Resistance
     kind: armorMod
@@ -184,9 +185,10 @@ elements:
     hash: 1293710444
     description: "Less damage from combatants of the element it matches: 15% | 25% | 30% with 1|2|3 resistance mods."
     source: "compendium/2026-10-09/Armor Mods#7"
-    inert: "Damage resistance: Loopsmith doesn't model the damage you take, so no loop changes."
     rules: []
-    passives: []
+    passives:
+      - effect: { resistCombatantDamage: { against: harmonic, amount: "15% | 25% | 30%" } }
+        reason: "You take less damage from combatants of your Super's element."
 
   - id: concussive-dampener
     name: Concussive Dampener
@@ -195,9 +197,10 @@ elements:
     hash: [3719981603, 930759851]   # the second: a copy with identical text
     description: "Less area, blast and explosive damage from combatants: 15% | 25% | 30% with 1|2|3 resistance mods (PvE only)."
     source: "compendium/2026-10-09/Armor Mods#7"
-    inert: "Damage resistance: Loopsmith doesn't model the damage you take, so no loop changes."
     rules: []
-    passives: []
+    passives:
+      - effect: { resistCombatantDamage: { against: blast, amount: "15% | 25% | 30%" } }
+        reason: "You take less area, blast and explosive damage from combatants."
 
   - id: charged-up
     name: Charged Up
