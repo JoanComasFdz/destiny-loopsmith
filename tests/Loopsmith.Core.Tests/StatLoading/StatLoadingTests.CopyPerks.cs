@@ -71,6 +71,8 @@ public sealed partial class StatLoadingTests
         Assert.Empty(ListCopyWarnings(session, profile));
         Assert.Equal(["Festival Flight: your copy doesn't have Hatchling in column 2 (it has Elemental Honing (enhanced) or Attrition Orbs)."], ListCopyWarnings(hatchling, profile));
         Assert.Contains(LoopDesigning.ListDesignIssues(hatchling, Optional.Some(profile)), issue => issue.Severity == Severity.Warning && issue.Message.StartsWith("Festival Flight: your copy", StringComparison.Ordinal));
+        Assert.Contains(new ColumnPerk(1, Hatchling), LoopDesigning.ListPerksNotOnCopy(hatchling.Build, profile, hatchling.Build.Build.Weapons[festival]));   // its square is marked too
+        Assert.DoesNotContain(new ColumnPerk(1, AttritionOrbs), LoopDesigning.ListPerksNotOnCopy(attrition.Build, profile, attrition.Build.Build.Weapons[festival]));
         Assert.Empty(ListCopyWarnings(attrition, profile));
         Assert.Empty(ListCopyWarnings(cleared, profile));
         Assert.Equal(LoopDesigning.ListDesignIssues(hatchling), LoopDesigning.ListDesignIssues(hatchling, Optional.None<BungieProfile>()));   // logged out: no warning

@@ -1017,8 +1017,9 @@ button.hud-chip:hover, button.hud-chip:focus-visible { background: color-mix(in 
 .perk-option-name { font-size: 12px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .perk-option-type { font-size: 10px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* after the login, a perk the player's copy doesn't have in that column: a small amber ! in its square's upper-right
-   corner (CopyWarningMark), clear of the ⊘ (lower right) and of an enhanced trait's arrow (left), and a line saying so */
-.perk-option-icon { position: relative; display: inline-flex; flex: none; }
+   corner (CopyWarningMark), clear of the ⊘ (lower right) and of an enhanced trait's arrow (left), in the perk picker
+   (with a line saying so) and on the weapon's perk square */
+.perk-mark-anchor { position: relative; display: inline-flex; flex: none; }
 .copy-warning-mark { position: absolute; right: -3px; top: -3px; z-index: 2; width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; box-sizing: border-box; border-radius: 50%; background: var(--warn); border: 1.5px solid var(--panel); color: #1b1f27; font-size: 9px; font-weight: 800; line-height: 1; }
 .perk-option-warning { font-size: 10px; color: var(--warn); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .loadout-label-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 6px; }

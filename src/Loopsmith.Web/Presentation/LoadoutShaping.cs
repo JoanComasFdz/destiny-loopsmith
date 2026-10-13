@@ -63,8 +63,11 @@ public sealed record SubclassView(
 /// </summary>
 public sealed record PerkOption(ItemHash Hash, IconTile Tile, Optional<string> Type, bool NotOnCopy);
 
-/// <summary>The perk a rolling column holds: its hash (which option it is) and its tile.</summary>
-public sealed record PickedPerk(ItemHash Hash, IconTile Tile);
+/// <summary>
+/// The perk a rolling column holds: its hash (which option it is), its tile and whether the player's copy of the weapon
+/// doesn't have it in that column (after their Bungie login, for a weapon whose copy is theirs; else false).
+/// </summary>
+public sealed record PickedPerk(ItemHash Hash, IconTile Tile, bool NotOnCopy);
 
 /// <summary>
 /// One perk square of a weapon, from the build's <see cref="WeaponPerkSlot"/>s: a perk that just shows (one the build
@@ -513,7 +516,7 @@ public static class LoadoutShaping
             [
                 new PerkSquare.Pickable(
                     rolling.Column,
-                    rolling.Perk.Map(hash => new PickedPerk(hash, DescribeTrait(catalog, hash))),
+                    rolling.Perk.Map(hash => new PickedPerk(hash, DescribeTrait(catalog, hash), notOnCopy.Contains(new ColumnPerk(rolling.Column, hash)))),
                     [.. rolling.Options.Select(hash => new PerkOption(hash, DescribeTrait(catalog, hash), catalog.Manifest.FindItem(hash).Bind(item => item.Type), notOnCopy.Contains(new ColumnPerk(rolling.Column, hash))))]),
             ],
             _ => []);

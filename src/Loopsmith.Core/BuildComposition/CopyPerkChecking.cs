@@ -14,10 +14,15 @@ namespace Loopsmith.Core.BuildComposition;
 /// </summary>
 public static class CopyPerkChecking
 {
-    /// <summary>Every perk the weapon's columns that roll offer that the copy doesn't have there: what the perk picker marks.</summary>
+    /// <summary>
+    /// Every perk the weapon's columns that roll offer (and the one each holds) that the copy doesn't have there: what
+    /// the perk picker and the weapon's perk squares mark.
+    /// </summary>
     public static ImmutableArray<ColumnPerk> ListMissingPerks(RuleCatalog catalog, WeaponLoadout weapon, ImmutableArray<ImmutableArray<ItemHash>> copyColumns) =>
     [
         .. ListRollingColumns(catalog, weapon).SelectMany(slot => slot.Options
+            .Concat(slot.Perk.Match(held => new[] { held.Value }, _ => []))
+            .Distinct()
             .Where(perk => IsMissing(catalog, copyColumns, slot.Column, perk))
             .Select(perk => new ColumnPerk(slot.Column, perk))),
     ];
