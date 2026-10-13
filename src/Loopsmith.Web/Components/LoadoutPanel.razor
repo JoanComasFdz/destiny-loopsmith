@@ -141,13 +141,23 @@
                                     @foreach (var option in open.Value.Options)
                                     {
                                         var picked = open.Value.Perk.Map(perk => perk.Hash) == Optional.Some(option.Hash);
-                                        <button type="button" class="perk-option @(picked ? "picked" : "") @(option.Tile.InRules ? "in-rules" : "")"
-                                                data-hash="@option.Hash.Value" aria-pressed="@(picked ? "true" : "false")"
-                                                title="@DescribeTooltip(option.Tile)" @onclick="() => PickPerkAsync(weapon.Index, open.Value.Column, Optional.Some(option.Hash))">
-                                            @RenderTile(option.Tile, "perk", false)
+                                        <button type="button" class="perk-option @(picked ? "picked" : "") @(option.Tile.InRules ? "in-rules" : "") @(option.NotOnCopy ? "not-on-copy" : "")"
+                                                data-hash="@option.Hash.Value" data-on-copy="@(option.NotOnCopy ? "false" : null)" aria-pressed="@(picked ? "true" : "false")"
+                                                title="@DescribeOptionTooltip(option)" @onclick="() => PickPerkAsync(weapon.Index, open.Value.Column, Optional.Some(option.Hash))">
+                                            <span class="perk-mark-anchor">
+                                                @RenderTile(option.Tile, "perk", false)
+                                                @if (option.NotOnCopy)
+                                                {
+                                                    <CopyWarningMark />
+                                                }
+                                            </span>
                                             <span class="perk-option-text">
                                                 <span class="perk-option-name">@option.Tile.Name</span>
                                                 <span class="perk-option-type">@DescribeOption(option)</span>
+                                                @if (option.NotOnCopy)
+                                                {
+                                                    <span class="perk-option-warning">Not on your copy</span>
+                                                }
                                             </span>
                                         </button>
                                     }
@@ -587,6 +597,13 @@
             case PerkSquare.Shown shown:
                 @RenderTile(shown.Perk, "perk", tappable)
                 break;
+            case PerkSquare.Pickable { Perk: Optional<PickedPerk>.Some held } when held.Value.NotOnCopy:
+                @* the player's copy doesn't have it in this column: the picker's amber ! on its square too *@
+                <span class="perk-mark-anchor" data-on-copy="false">
+                    @RenderTile(held.Value.Tile, "perk", tappable)
+                    <CopyWarningMark />
+                </span>
+                break;
             case PerkSquare.Pickable { Perk: Optional<PickedPerk>.Some held }:
                 @RenderTile(held.Value.Tile, "perk", tappable)
                 break;
@@ -597,10 +614,14 @@
     };
 
     private static string DescribePickTitle(WeaponView weapon, PerkSquare.Pickable column) =>
-        $"{weapon.Weapon.Name}, column {column.Column + 1}: {column.Perk.Match(perk => perk.Value.Tile.Name, _ => DomainPhrasing.Unknown)} — pick a perk";
+        $"{weapon.Weapon.Name}, column {column.Column + 1}: {column.Perk.Match(perk => perk.Value.NotOnCopy ? $"{perk.Value.Tile.Name} (not on your copy)" : perk.Value.Tile.Name, _ => DomainPhrasing.Unknown)} — pick a perk";
 
     private static string DescribeOption(PerkOption option) =>
         string.Join(" · ", new[] { option.Type.UnwrapOr(""), option.Tile.InRules ? "in the rules" : "" }.Where(part => part.Length > 0));
+
+    /// <summary>An option's tooltip: its square's, then why it carries the ! when the player's copy doesn't have it.</summary>
+    private static string DescribeOptionTooltip(PerkOption option) =>
+        option.NotOnCopy ? $"{DescribeTooltip(option.Tile)}\n{CopyWarningMark.Title}" : DescribeTooltip(option.Tile);
 
     /// <summary>A square: a button that opens its details when it has some (and <paramref name="tappable"/>), else a plain square.</summary>
     /// <summary>An ability's square: its plug's tile, or a dashed square named for its slot when it holds nothing.</summary>

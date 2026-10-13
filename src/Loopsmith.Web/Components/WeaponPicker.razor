@@ -64,23 +64,32 @@
                             {<span class="option-sep"> · </span><span class="option-damage @ToneStyling.ToToneClass(damage.Value.ToAffinity().ToTone())" data-testid="weapon-option-damage">@if (weapon.DamageIcon is Optional<string>.Some damageIcon)
                                 {<img class="inline-icon" src="@damageIcon.Value" alt="" loading="lazy" />}@damage.Value</span>}@if (LoadoutShaping.AddMarks("", weapon.Marks) is { Length: > 0 } marked)
                             {<span class="option-sep"> · </span><span class="armor-option-marks" data-testid="weapon-option-marks">@marked</span>}</div>
-                        @if (!weapon.Perks.IsEmpty)
+                        @if (!weapon.Columns.IsEmpty)
                         {
+                            @* One group per column: the perk the copy holds, then (a column that rolled two or more) those it can switch to. *@
                             <div class="weapon-option-perks" data-testid="weapon-option-perks">
-                                @foreach (var perk in weapon.Perks)
+                                @foreach (var column in weapon.Columns)
                                 {
-                                    <span class="weapon-option-perk @(perk.InRules ? "in-rules" : "")" title="@perk.Name">
-                                        <span class="icon-tile perk @(perk.InRules ? "" : "out") @(perk.Enhanced ? "enhanced" : "")">
-                                            @if (perk.Icon is Optional<string>.Some perkIcon)
-                                            {
-                                                <img src="@perkIcon.Value" alt="" loading="lazy" />
-                                            }
-                                            @if (!perk.InRules)
-                                            {
-                                                <UnsupportedMark />
-                                            }
-                                        </span>
-                                        <span class="weapon-option-perk-name">@perk.Name</span>
+                                    <span class="weapon-option-column @(column.Length > 1 ? "switchable" : "")" data-testid="weapon-option-column" data-perks="@column.Length">
+                                        @for (var at = 0; at < column.Length; at++)
+                                        {
+                                            var perk = column[at];
+                                            var held = at == 0;
+                                            <span class="weapon-option-perk @(perk.InRules ? "in-rules" : "") @(held ? "" : "alternate")"
+                                                  title="@(held ? perk.Name : $"{perk.Name} — your copy can switch to it")">
+                                                <span class="icon-tile perk @(perk.InRules ? "" : "out") @(perk.Enhanced ? "enhanced" : "")">
+                                                    @if (perk.Icon is Optional<string>.Some perkIcon)
+                                                    {
+                                                        <img src="@perkIcon.Value" alt="" loading="lazy" />
+                                                    }
+                                                    @if (!perk.InRules)
+                                                    {
+                                                        <UnsupportedMark />
+                                                    }
+                                                </span>
+                                                <span class="weapon-option-perk-name">@perk.Name</span>
+                                            </span>
+                                        }
                                     </span>
                                 }
                             </div>

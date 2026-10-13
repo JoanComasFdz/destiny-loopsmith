@@ -71,6 +71,21 @@ public static class ManifestReading
             ? element.Hashes.Where(column.Options.Contains).Select(Optional.Some).FindFirstSome()
             : Optional.None<ItemHash>();
 
+    /// <summary>Whether Bungie types a plug as an enhanced trait ("Enhanced Trait", "Enhanced Origin Trait").</summary>
+    public static bool IsEnhancedPlug(this ManifestItem item) =>
+        item.Type.Match(type => EnhancedTypes.Contains(type.Value), _ => false);
+
+    /// <summary>
+    /// Whether a weapon perk is an enhanced trait, which the game and DIM draw over the base perk's icon (Bungie gives
+    /// both the same image): a plug Bungie types so (<see cref="IsEnhancedPlug"/>), or one of an enhanced element of the
+    /// rules (Slice (enhanced)).
+    /// </summary>
+    public static bool IsEnhancedPerk(this RuleCatalog catalog, ItemHash perk) =>
+        catalog.Manifest.FindItem(perk).Match(item => item.Value.IsEnhancedPlug(), _ => false)
+        || catalog.FindElementByHash(perk).Match(element => catalog.EnhancedPerks.ContainsValue(element.Value.Id), _ => false);
+
+    private static readonly ImmutableArray<string> EnhancedTypes = ["Enhanced Trait", "Enhanced Origin Trait"];
+
     /// <summary>True when one of an element's hashes is a perk of this trait column.</summary>
     public static bool IsInColumn(this RuleCatalog catalog, ElementId id, TraitColumn column) =>
         catalog.FindColumnHash(id, column).IsSome();

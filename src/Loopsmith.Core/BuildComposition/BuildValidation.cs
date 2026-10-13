@@ -217,10 +217,6 @@ public static class BuildValidation
                 .Where(pick => pick.Column >= columns.Length || !columns[pick.Column].Options.Contains(pick.Hash))
                 .Select(pick => new BuildIssue(Severity.Warning,
                     $"{weapon.Name}'s roll: {catalog.Manifest.DescribeTypedItemHash(pick.Hash)} isn't a perk of its column {pick.Column + 1} in the manifest excerpt."));
-        var unknown = picks
-            .Where(pick => !catalog.FindElementByHash(pick.Hash).IsSome())
-            .Select(pick => catalog.Manifest.DescribeTypedItemHash(pick.Hash))
-            .ToImmutableArray();
         var displaced = WeaponRolling.ListDisplacedPerks(catalog, weapon)
             .Select(id => new BuildIssue(Severity.Warning,
                 $"{weapon.Name}: '{(catalog.Elements.TryGetValue(id, out var element) ? element.Name : id.Value)}' gives way to the other perk of its column — a column holds one perk."));
@@ -230,10 +226,24 @@ public static class BuildValidation
             .. misplaced,
             .. displaced,
             .. catalyst,
-            .. unknown.IsEmpty
-                ? []
-                : new[] { new BuildIssue(Severity.Info, $"{weapon.Name}'s roll: {string.Join(", ", unknown)} — not in the rule catalog yet, so {(unknown.Length == 1 ? "it sets" : "they set")} nothing off.") },
+            .. CheckUnknownRoll(catalog, weapon).Match(issue => new[] { issue.Value }, _ => []),
         ];
+    }
+
+    /// <summary>
+    /// The info that a weapon's roll holds perks the catalog doesn't know ("Festival Flight's roll: Hatchling (Trait) —
+    /// not in the rule catalog yet, so it sets nothing off."); none when it knows them all. The build check lists it;
+    /// <see cref="CopyPerkChecking"/> turns it into the weapon's warning when the player's copy lacks a perk.
+    /// </summary>
+    public static Optional<BuildIssue> CheckUnknownRoll(RuleCatalog catalog, WeaponLoadout weapon)
+    {
+        var unknown = ListPicks(weapon)
+            .Where(pick => !catalog.FindElementByHash(pick.Hash).IsSome())
+            .Select(pick => catalog.Manifest.DescribeTypedItemHash(pick.Hash))
+            .ToImmutableArray();
+        return unknown.IsEmpty
+            ? Optional.None<BuildIssue>()
+            : Optional.Some(new BuildIssue(Severity.Info, $"{weapon.Name}'s roll: {string.Join(", ", unknown)} — not in the rule catalog yet, so {(unknown.Length == 1 ? "it sets" : "they set")} nothing off."));
     }
 
     /// <summary>A catalyst turned on that the excerpt doesn't give the weapon is a warning; one the catalog doesn't know sets nothing off.</summary>

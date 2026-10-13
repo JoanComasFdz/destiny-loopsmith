@@ -12,14 +12,12 @@ namespace Loopsmith.Core.RuleParsing;
 /// </summary>
 public static class EnhancedPerkRecognition
 {
-    private static readonly ImmutableArray<string> EnhancedTypes = ["Enhanced Trait", "Enhanced Origin Trait"];
-
     /// <summary>The catalog with each enhanced trait's element holding every plug of it the excerpt has (no element's own plug is taken).</summary>
     public static RuleCatalog RecognizeEnhancedPerks(this RuleCatalog catalog)
     {
         var owned = catalog.Elements.Values.SelectMany(element => element.Hashes).ToImmutableHashSet();
         var plugsByName = catalog.Manifest.Items.Values
-            .Where(item => IsEnhancedPlug(item) && !owned.Contains(item.Hash))
+            .Where(item => item.IsEnhancedPlug() && !owned.Contains(item.Hash))
             .GroupBy(item => item.Name, StringComparer.Ordinal)
             .ToImmutableDictionary(group => group.Key, group => group.Select(item => item.Hash).Order().ToImmutableArray(), StringComparer.Ordinal);
         var claims = catalog.EnhancedPerks
@@ -33,10 +31,6 @@ public static class EnhancedPerkRecognition
             .Select(claim => claim.Enhanced with { Hashes = [.. claim.Enhanced.Hashes, .. claim.Plugs] });
         return catalog with { Elements = catalog.Elements.SetItems(recognized.Select(element => KeyValuePair.Create(element.Id, element))) };
     }
-
-    /// <summary>Whether Bungie types a plug as an enhanced trait ("Enhanced Trait", "Enhanced Origin Trait").</summary>
-    public static bool IsEnhancedPlug(ManifestItem item) =>
-        item.Type.Match(type => EnhancedTypes.Contains(type.Value), _ => false);
 
     /// <summary>The unowned enhanced plugs named like the perk (its manifest item's name, else its own).</summary>
     private static ImmutableArray<ItemHash> ListPlugs(RuleCatalog catalog, BuildElement perk, ImmutableDictionary<string, ImmutableArray<ItemHash>> plugsByName)

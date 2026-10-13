@@ -79,7 +79,7 @@ public sealed partial class StatLoadingTests
 
         Assert.Equal(new Result<DestinyMembership, string>.Ok(new DestinyMembership(MembershipType.From(3), MembershipId.From("333"))), membership);
         Assert.Equal(
-            "https://www.bungie.net/Platform/Destiny2/3/Profile/333/?components=102,200,201,205,300,305",
+            "https://www.bungie.net/Platform/Destiny2/3/Profile/333/?components=102,200,201,205,300,305,310",
             LoopDesigning.ToBungieProfileUrl(new DestinyMembership(MembershipType.From(3), MembershipId.From("333"))));
         Assert.Equal(
             new Result<DestinyMembership, string>.Error("Bungie said: This system is temporarily disabled for maintenance. (SystemDisabled)."),
@@ -259,9 +259,10 @@ public sealed partial class StatLoadingTests
 
     /// <summary>
     /// An item of a fake profile: armor has energy; a weapon a damage type (Bungie's: 2 Arc); either a tier, a state (4:
-    /// masterworked), a breaker and a power level; any item the bucket it is in (a finisher's: 3683254069).
+    /// masterworked), a breaker and a power level; any item the bucket it is in (a finisher's: 3683254069). Its plugs are
+    /// one per socket; <see cref="Switchable"/> gives a socket (by index) the reusable plugs Bungie lists for it (310).
     /// </summary>
-    private sealed record FakeItem(ItemHash Hash, string Instance, string Place, ImmutableArray<ItemHash> Plugs, int? Energy, int? Tier = null, int State = 0, int DamageType = 0, uint Breaker = 0, uint Bucket = 0, int? Power = null);
+    private sealed record FakeItem(ItemHash Hash, string Instance, string Place, ImmutableArray<ItemHash> Plugs, int? Energy, int? Tier = null, int State = 0, int DamageType = 0, uint Breaker = 0, uint Bucket = 0, int? Power = null, ImmutableDictionary<int, ImmutableArray<ItemHash>>? Switchable = null);
 
     /// <summary>Every piece of the owner's loadout as a Grenade 30 · Super 25 · Class 20 roll, masterworked; the first ones with a tuning socket.</summary>
     private static IEnumerable<FakeItem> OwnAll(int tuningSockets) =>
@@ -299,6 +300,15 @@ public sealed partial class StatLoadingTests
                 {
                     instances = new { data = items.ToDictionary(item => item.Instance, ToInstance) },
                     sockets = new { data = items.ToDictionary(item => item.Instance, item => new { sockets = item.Plugs.Select(plug => new { plugHash = plug.Value, isEnabled = true }).ToArray() }) },
+                    reusablePlugs = new
+                    {
+                        data = items.Where(item => item.Switchable is not null).ToDictionary(item => item.Instance, item => new
+                        {
+                            plugs = item.Switchable!.ToDictionary(
+                                socket => socket.Key.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                                socket => socket.Value.Select(plug => new { plugItemHash = plug.Value, canInsert = true, enabled = true }).ToArray()),
+                        }),
+                    },
                 },
             },
         };

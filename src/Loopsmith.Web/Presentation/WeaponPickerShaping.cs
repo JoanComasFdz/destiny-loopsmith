@@ -8,8 +8,8 @@ namespace Loopsmith.Web.Presentation;
 
 /// <summary>
 /// One of the player's weapons in the weapon picker: its square and marks (tier, masterwork, breaker), its copy, its
-/// archetype ("Hand Cannon"), damage type and its icon, the perks it holds (one square per trait column it fills),
-/// whether its catalyst is in, where it is and whether the build wears it.
+/// archetype ("Hand Cannon"), damage type and its icon, its perks (one group per trait column it fills: the perk it
+/// holds, then those it can switch to), whether its catalyst is in, where it is and whether the build wears it.
 /// </summary>
 public sealed record WeaponOptionView(
     IconTile Tile,
@@ -18,7 +18,7 @@ public sealed record WeaponOptionView(
     string Archetype,
     Optional<DamageType> Damage,
     Optional<string> DamageIcon,
-    ImmutableArray<IconTile> Perks,
+    ImmutableArray<ImmutableArray<IconTile>> Columns,
     bool Catalyst,
     string Place,
     bool Worn);
@@ -56,7 +56,7 @@ public static class WeaponPickerShaping
             option.Item.Type.UnwrapOr(""),
             type,
             type.Bind(found => LoadoutShaping.FindDamageIcon(catalog, found)),
-            [.. option.Roll.SelectMany(pick => pick.Match(hash => new[] { LoadoutShaping.DescribePerk(catalog, hash.Value) }, _ => []))],
+            [.. option.Columns.Where(column => !column.IsEmpty).Select(column => column.Select(hash => LoadoutShaping.DescribePerk(catalog, hash)).ToImmutableArray())],
             option.Catalyst,
             StatsShaping.DescribePlace(option.Weapon.Place),
             option.Worn);

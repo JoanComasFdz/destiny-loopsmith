@@ -56,11 +56,18 @@ public sealed record SubclassView(
     ImmutableArray<IconTile> Aspects,
     ImmutableArray<IconTile> Fragments);
 
-/// <summary>One perk a weapon's trait column rolls with, as the picker offers it: its hash, its tile (the rules' element when they know it) and its type as the game words it ("Enhanced Trait").</summary>
-public sealed record PerkOption(ItemHash Hash, IconTile Tile, Optional<string> Type);
+/// <summary>
+/// One perk a weapon's trait column rolls with, as the picker offers it: its hash, its tile (the rules' element when they
+/// know it), its type as the game words it ("Enhanced Trait") and whether the player's copy of the weapon doesn't have
+/// it in that column (after their Bungie login, for a weapon whose copy is theirs; else false).
+/// </summary>
+public sealed record PerkOption(ItemHash Hash, IconTile Tile, Optional<string> Type, bool NotOnCopy);
 
-/// <summary>The perk a rolling column holds: its hash (which option it is) and its tile.</summary>
-public sealed record PickedPerk(ItemHash Hash, IconTile Tile);
+/// <summary>
+/// The perk a rolling column holds: its hash (which option it is), its tile and whether the player's copy of the weapon
+/// doesn't have it in that column (after their Bungie login, for a weapon whose copy is theirs; else false).
+/// </summary>
+public sealed record PickedPerk(ItemHash Hash, IconTile Tile, bool NotOnCopy);
 
 /// <summary>
 /// One perk square of a weapon, from the build's <see cref="WeaponPerkSlot"/>s: a perk that just shows (one the build
@@ -481,6 +488,7 @@ public static class LoadoutShaping
         var damageIcon = FindDamageIcon(catalog, weapon.Type);
         var slots = LoopDesigning.ListPerkSlots(build, weapon);
         var marks = profile.Bind(owned => LoopDesigning.FindWeaponMarks(owned, weapon));
+        var notOnCopy = profile.Match(owned => LoopDesigning.ListPerksNotOnCopy(build, owned.Value, weapon), _ => []).ToImmutableHashSet();
         return new WeaponView(
             index,
             tile,
@@ -490,12 +498,16 @@ public static class LoadoutShaping
             weapon.Archetype,
             weapon.Type,
             damageIcon,
-            [.. slots.SelectMany(slot => DescribePerkSlot(catalog, slot))],
+            [.. slots.SelectMany(slot => DescribePerkSlot(catalog, notOnCopy, slot))],
             slots.OfType<WeaponPerkSlot.Catalyst>().Select(catalyst => Optional.Some(DescribeCatalyst(catalog, catalyst, index))).FindFirstSome());
     }
 
-    /// <summary>A perk square: the intrinsic and the catalyst have none (the weapon's details show the intrinsic; the catalyst has its own square).</summary>
-    private static IEnumerable<PerkSquare> DescribePerkSlot(RuleCatalog catalog, WeaponPerkSlot slot) =>
+    /// <summary>
+    /// A perk square: the intrinsic and the catalyst have none (the weapon's details show the intrinsic; the catalyst has
+    /// its own square). A column that rolls offers what it rolls with, each marked when the player's copy doesn't have
+    /// it there (<paramref name="notOnCopy"/>, after the login: LoopDesigning.ListPerksNotOnCopy).
+    /// </summary>
+    private static IEnumerable<PerkSquare> DescribePerkSlot(RuleCatalog catalog, ImmutableHashSet<ColumnPerk> notOnCopy, WeaponPerkSlot slot) =>
         slot.Match<IEnumerable<PerkSquare>>(
             _ => [],
             named => [new PerkSquare.Shown(DescribeElement(catalog, named.Perk) with { Enhanced = LoopDesigning.IsEnhancedPerk(catalog, named.Perk) })],
@@ -504,8 +516,8 @@ public static class LoadoutShaping
             [
                 new PerkSquare.Pickable(
                     rolling.Column,
-                    rolling.Perk.Map(hash => new PickedPerk(hash, DescribeTrait(catalog, hash))),
-                    [.. rolling.Options.Select(hash => new PerkOption(hash, DescribeTrait(catalog, hash), catalog.Manifest.FindItem(hash).Bind(item => item.Type)))]),
+                    rolling.Perk.Map(hash => new PickedPerk(hash, DescribeTrait(catalog, hash), notOnCopy.Contains(new ColumnPerk(rolling.Column, hash)))),
+                    [.. rolling.Options.Select(hash => new PerkOption(hash, DescribeTrait(catalog, hash), catalog.Manifest.FindItem(hash).Bind(item => item.Type), notOnCopy.Contains(new ColumnPerk(rolling.Column, hash))))]),
             ],
             _ => []);
 

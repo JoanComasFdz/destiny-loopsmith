@@ -64,7 +64,7 @@
 
         <div class="designer-grid">
             <aside class="col-build">
-                <BuildPanel Build="session.Build" Issues="LoopDesigning.ListDesignIssues(session)" OnPickPerk="PickPerk" OnSetCatalyst="SetCatalyst" OnSetStats="SetStats"
+                <BuildPanel Build="session.Build" Issues="LoopDesigning.ListDesignIssues(session, Workbench.Profile)" OnPickPerk="PickPerk" OnSetCatalyst="SetCatalyst" OnSetStats="SetStats"
                             Profile="Workbench.Profile" LoginNote="Workbench.LoginNote" OnLoggedIn="UseBungieLoginAsync" OnLoggedOut="LogOut" OnPickArmor="PickArmor" OnPickWeapon="PickWeapon" OnEditSubclass="EditSubclass"
                             PickWeaponItem="Optional.Some<Func<WeaponItemPick, Task<Result<Unit, string>>>>(PickWeaponItemAsync)"
                             PickArmorItem="Optional.Some<Func<ArmorItemPick, Task<Result<Unit, string>>>>(PickArmorItemAsync)"

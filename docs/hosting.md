@@ -79,7 +79,8 @@ serves at `…/login` (the app's `/login` route does the same, should a host ser
 that page hands Bungie's answer to the tab that asked over a same-origin `BroadcastChannel`, then closes. The tab
 trades the code for a token (`POST https://www.bungie.net/platform/app/oauth/token/`, the client id and no
 secret), reads the account's Destiny membership (`/Platform/User/GetMembershipsForCurrentUser/`) and its profile
-(`/Platform/Destiny2/<type>/Profile/<id>/?components=102,200,201,205,300,305`), each with `X-API-Key` and the token.
+(`/Platform/Destiny2/<type>/Profile/<id>/?components=102,200,201,205,300,305,310`: 310 is each weapon's reusable
+plugs, the perks a column can switch to), each with `X-API-Key` and the token.
 A PR preview is on the same origin, so the live site's login page answers its tab too; until the login page is on
 the live site (the PR that adds it, before it is merged), point the Redirect URL at the preview's
 (`…/destiny-loopsmith/pr-preview/pr-<n>/login`) to try it, then back. A browser that blocks pop-ups is asked to
