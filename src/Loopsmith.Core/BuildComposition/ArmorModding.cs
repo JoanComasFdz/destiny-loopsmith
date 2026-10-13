@@ -56,7 +56,7 @@ public static class ArmorModding
                     .Where(mod => mod.Category == socket.Category)
                     .Select(mod => new ModOption(
                         mod,
-                        FindModElement(catalog, mod.Item.Hash).IsSome(),
+                        FindModElement(catalog, mod.Item.Hash).IsSome() || ArmorModCategories.ChangesOnlyStats(mod.Category),
                         FindModElement(catalog, mod.Item.Hash).Match(found => Optional.Some(found.Value.Affinity) == element, _ => false),
                         CheckEnergy(catalog, build, index, listing, capacities, layout, socket, mod)))
                     .OrderByDescending(option => option.OfSubclassElement),
@@ -127,7 +127,8 @@ public static class ArmorModding
                     new ArmorEnergyUse(ArmorEnergy.From(ownUse[row.Slot] + generalUse.GetValueOrDefault(row.Slot, 0)), capacities.TryGetValue(row.Slot, out var capacity) ? Optional.Some(capacity) : Optional.None<ArmorEnergy>()))),
             ],
             [.. generalFilled.Sockets.Select((entry, at) => new ModSocket(entry.Socket.Category, entry.Mod, new ModSocketPlace(Optional.None<ArmorSlot>(), at)))],
-            [.. filled.Left.Concat(generalFilled.Left)]);
+            [.. filled.Left.Concat(generalFilled.Left).Where(mod => index.ContainsKey(mod.Plug))],
+            [.. filled.Left.Where(mod => !index.ContainsKey(mod.Plug))]);
     }
 
     /// <summary>The mod sockets of the piece the build wears in a slot, by category, when the listing has them; none for no piece (or one it can't read).</summary>
@@ -213,6 +214,7 @@ public static class ArmorModding
             .Concat(layout.General)
             .SelectMany(socket => ToSequence(socket.Place == place ? mod : socket.Mod)),
         .. layout.Unplaced,
+        .. layout.Unsocketed,
     ];
 
     /// <summary>

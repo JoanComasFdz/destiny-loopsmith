@@ -35,6 +35,10 @@ public static class ArmorModCategories
     public static Optional<ArmorSlot> FindSlot(PlugCategoryId category) =>
         SlotCategories.Where(entry => entry.Value == category).Select(entry => Optional.Some(entry.Key)).FindFirstSome();
 
+    /// <summary>True for the mods that change only stats (the general mods, an artifice socket's): no rule needs to know them.</summary>
+    public static bool ChangesOnlyStats(PlugCategoryId category) =>
+        category == General || category.Value == Artifice;
+
     /// <summary>True when a socket that starts with a plug of this category is a mod socket a build chooses for.</summary>
     public static bool IsModSocket(PlugCategoryId category) =>
         category == General
@@ -66,14 +70,16 @@ public sealed record PieceModSockets(ArmorSlot Slot, bool PieceKnown, ImmutableA
 
 /// <summary>
 /// The build's mods as the designer lays them out: each slot's sockets (its slot mods and own sockets), the General row
-/// (every piece's general socket; the general mods go wherever the energy lets them, as DIM assigns them), and the mods
-/// no socket takes (more than the pieces hold, or of a category no piece worn has).
+/// (every piece's general socket; the general mods go wherever the energy lets them, as DIM assigns them), the mods no
+/// free socket takes (more than the pieces hold, or of a category no piece worn has) and the ones that aren't socket
+/// mods (a tuning mod, which goes in a Tier 5 copy's tuning socket; one the listing doesn't have).
 /// </summary>
-public sealed record ModLayout(ImmutableArray<PieceModSockets> Pieces, ImmutableArray<ModSocket> General, ImmutableArray<HeldMod> Unplaced);
+public sealed record ModLayout(ImmutableArray<PieceModSockets> Pieces, ImmutableArray<ModSocket> General, ImmutableArray<HeldMod> Unplaced, ImmutableArray<HeldMod> Unsocketed);
 
 /// <summary>
-/// A mod the mod picker offers for a socket: the listing's mod, whether the rules know it, whether its element is the
-/// subclass's, and why it can't go in when it can't (its energy is more than the piece has left).
+/// A mod the mod picker offers for a socket: the listing's mod, whether the rules know it (a mod that changes only
+/// stats needs no rule), whether its element is the subclass's, and why it can't go in when it can't (its energy is more
+/// than the piece has left).
 /// </summary>
 public sealed record ModOption(ListedMod Mod, bool InRules, bool OfSubclassElement, Optional<string> Refused);
 

@@ -1,0 +1,171 @@
+@* The mod picker for one of the build's mod sockets: every mod of the game the socket takes (Bungie's manifest, read
+   when the app opened), the subclass's element first, with its energy cost and what Bungie says it needs (the cheaper
+   copy of a mod: "Must Be Selected in the Seasonal Artifact"). The rules' mods are marked; one they don't know carries
+   ⊘. A mod that would take the piece over its copy's energy (known after a Bungie login) can't be picked, and says
+   why. A tap picks it: the designer reads what the excerpt lacks of it and puts it in the socket
+   (LoopDesigning.PickMod). "Clear this socket" takes the mod there out. *@
+@{
+    var options = LoopDesigning.ListModOptions(Build, Listing, Profile, Place);
+}
+@if (options is Result<ModOptions, string>.Ok listed)
+{
+    var view = ModShaping.ShapePicker(Build, Listing, listed.Value);
+    var elementName = view.Element.Match(element => element.Value.ToString(), _ => "");
+    var shown = view.Options
+        .Where(option => !elementOnly || option.OfElement)
+        .Where(option => query.Length == 0 || option.Tile.Name.Contains(query, StringComparison.OrdinalIgnoreCase))
+        .ToImmutableArray();
+    <Modal Title="@view.Title" Size="wide fit" OnClose="OnClose">
+        <div class="mod-picker" data-testid="mod-picker">
+            <div class="mod-picker-tools">
+                <input type="search" class="mod-search" placeholder="Search mods" aria-label="Search mods" value="@query" @oninput="Search" />
+                @if (view.Element.IsSome())
+                {
+                    <label class="toggle" title="Show only the @elementName mods">
+                        <input type="checkbox" data-action="mod-element-only" checked="@elementOnly" @onchange="ToggleElementOnly" /> @elementName only
+                    </label>
+                }
+                @if (view.Energy is Optional<string>.Some energy)
+                {
+                    <span class="mod-picker-energy muted" data-testid="mod-picker-energy">@energy.Value</span>
+                }
+            </div>
+            @if (shown.IsEmpty)
+            {
+                <p class="muted" data-testid="mod-picker-empty">No mod here matches.</p>
+            }
+            else
+            {
+                <div class="mod-options" role="listbox" aria-label="@view.Title">
+                    @foreach (var option in shown)
+                    {
+                        var refused = option.Refused.IsSome();
+                        <button type="button" role="option" aria-selected="@(option.Picked ? "true" : "false")"
+                                class="perk-option mod-option @(option.Picked ? "picked" : "") @(option.InRules ? "in-rules" : "") @(refused ? "refused" : "")"
+                                data-hash="@option.Hash.Value" disabled="@(refused || picking)" title="@DescribeOptionTooltip(option)"
+                                @onclick="() => PickAsync(option.Hash)">
+                            <span class="perk-mark-anchor">
+                                <span class="icon-tile mod @ToneStyling.ToAffinityClass(option.Tile.Affinity) @(option.InRules ? "" : "out")">
+                                    @if (option.Tile.Icon is Optional<string>.Some icon)
+                                    {
+                                        <img src="@icon.Value" alt="" loading="lazy" />
+                                    }
+                                    else
+                                    {
+                                        <span class="icon-initials">@(option.Tile.Name.Length > 0 ? option.Tile.Name[..1] : "?")</span>
+                                    }
+                                    @if (!option.InRules)
+                                    {
+                                        <UnsupportedMark />
+                                    }
+                                </span>
+                            </span>
+                            <span class="perk-option-text">
+                                <span class="perk-option-name">@option.Tile.Name</span>
+                                <span class="perk-option-type"><span class="mod-cost" data-testid="mod-cost">@option.Cost</span> energy@(option.Requirements.IsEmpty ? "" : $" · {string.Join(" · ", option.Requirements)}")</span>
+                                @if (option.Refused is Optional<string>.Some why)
+                                {
+                                    <span class="perk-option-warning" data-testid="mod-refused">@why.Value</span>
+                                }
+                            </span>
+                        </button>
+                    }
+                </div>
+            }
+            @if (problem is Optional<string>.Some failed)
+            {
+                <p class="status error" role="alert" data-testid="mod-picker-problem">@failed.Value</p>
+            }
+            <div class="picker-foot">
+                <span class="muted">Green: Loopsmith's rules know it · ⊘: not in its rules yet (it sets nothing off)</span>
+                @if (view.Held is Optional<IconTile>.Some held && held.Value.Details is Optional<ItemDetails>.Some heldDetails && OnDetails.HasDelegate)
+                {
+                    <button type="button" class="btn ghost small" data-action="mod-details" @onclick="() => OnDetails.InvokeAsync(heldDetails.Value)">About @held.Value.Name</button>
+                }
+                @if (view.Held.IsSome())
+                {
+                    <button type="button" class="btn small" data-action="clear-mod" disabled="@picking" @onclick="ClearAsync">Clear this socket</button>
+                }
+            </div>
+        </div>
+    </Modal>
+}
+else if (options is Result<ModOptions, string>.Error missing)
+{
+    <Modal Title="Pick a mod" OnClose="OnClose">
+        <p class="muted">@missing.Failure</p>
+    </Modal>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public ValidatedBuild Build { get; set; } = null!;
+
+    /// <summary>Every armor piece and mod of the game (read when the app opened).</summary>
+    [Parameter, EditorRequired]
+    public ItemListing Listing { get; set; } = null!;
+
+    /// <summary>The player's armor after their Bungie login: their copies' energy.</summary>
+    [Parameter]
+    public Optional<BungieProfile> Profile { get; set; } = Optional.None<BungieProfile>();
+
+    [Parameter, EditorRequired]
+    public ModSocketPlace Place { get; set; } = null!;
+
+    /// <summary>A mod picked: the designer reads what it needs and puts it in, or says why not (the picker then stays open).</summary>
+    [Parameter, EditorRequired]
+    public Func<ModPick, Task<Result<Unit, string>>> PickMod { get; set; } = null!;
+
+    /// <summary>"Clear this socket": the designer takes the mod there out.</summary>
+    [Parameter, EditorRequired]
+    public Func<ModSocketPlace, Task<Result<Unit, string>>> ClearMod { get; set; } = null!;
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    /// <summary>"About …": the mod in the socket's details (Bungie's text and Loopsmith's rules).</summary>
+    [Parameter]
+    public EventCallback<ItemDetails> OnDetails { get; set; }
+
+    private bool elementOnly;
+    private string query = "";
+    private bool picking;
+    private Optional<string> problem = Optional.None<string>();
+
+    private void ToggleElementOnly(ChangeEventArgs e) =>
+        elementOnly = e.Value is true;                                                           // impure (component state)
+
+    private void Search(ChangeEventArgs e) =>
+        query = (e.Value?.ToString() ?? "").Trim();                                              // impure (component state)
+
+    private Task PickAsync(ItemHash mod) =>
+        RunAsync(() => PickMod(new ModPick(Place, mod)));
+
+    private Task ClearAsync() =>
+        RunAsync(() => ClearMod(Place));
+
+    private async Task RunAsync(Func<Task<Result<Unit, string>>> edit)
+    {
+        if (picking)
+        {
+            return;
+        }
+
+        picking = true;                                                                          // impure (component state)
+        problem = Optional.None<string>();                                                       // impure (component state)
+        var done = await edit();                                                                 // impure
+        picking = false;                                                                         // impure (component state)
+        var why = done.Match(_ => Optional.None<string>(), failed => Optional.Some(failed.Failure)); // pure
+        problem = why;                                                                           // impure (component state)
+    }
+
+    private static string DescribeOptionTooltip(ModOptionView option) =>
+        string.Join("\n", new[]
+        {
+            $"{option.Tile.Name} · {option.Cost} energy",
+            option.Tile.Description.UnwrapOr(""),
+            string.Join("\n", option.Requirements),
+            option.Refused.UnwrapOr(""),
+            option.InRules ? "" : "Not in Loopsmith's rules yet: it sets nothing off in your loop.",
+        }.Where(part => part.Length > 0));
+}

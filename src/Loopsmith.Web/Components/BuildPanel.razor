@@ -32,7 +32,8 @@
     </header>
 
     <LoadoutPanel Build="Build" OnPickPerk="OnPickPerk" OnSetCatalyst="OnSetCatalyst" Profile="Profile" OnPickArmor="OnPickArmor" OnPickWeapon="OnPickWeapon" OnEditSubclass="OnEditSubclass"
-                  PickWeaponItem="PickWeaponItem" PickArmorItem="PickArmorItem" OnEmptyWeapon="OnEmptyWeapon" OnEmptyArmor="OnEmptyArmor" />
+                  PickWeaponItem="PickWeaponItem" PickArmorItem="PickArmorItem" OnEmptyWeapon="OnEmptyWeapon" OnEmptyArmor="OnEmptyArmor"
+                  PickMod="PickMod" ClearMod="ClearMod" />
 
     <StatsPanel Build="Build" OnSetStats="OnSetStats" Profile="Profile" Note="LoginNote" OnLoggedIn="OnLoggedIn" OnLoggedOut="OnLoggedOut" />
 
@@ -123,6 +124,14 @@
     /// <summary>A piece of the game picked from "Every item" (the designer reads it from Bungie's manifest and puts it in, or says why not).</summary>
     [Parameter]
     public Optional<Func<ArmorItemPick, Task<Result<Unit, string>>>> PickArmorItem { get; set; } = Optional.None<Func<ArmorItemPick, Task<Result<Unit, string>>>>();
+
+    /// <summary>A mod picked for a socket (the designer reads it from Bungie's manifest when needed and puts it in, or says why not).</summary>
+    [Parameter]
+    public Optional<Func<ModPick, Task<Result<Unit, string>>>> PickMod { get; set; } = Optional.None<Func<ModPick, Task<Result<Unit, string>>>>();
+
+    /// <summary>"Clear this socket": the designer takes the mod there out (or says why not).</summary>
+    [Parameter]
+    public Optional<Func<ModSocketPlace, Task<Result<Unit, string>>>> ClearMod { get; set; } = Optional.None<Func<ModSocketPlace, Task<Result<Unit, string>>>>();
 
     /// <summary>"Empty this slot" on a weapon (its number): the designer takes it off.</summary>
     [Parameter]

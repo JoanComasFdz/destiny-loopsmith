@@ -98,6 +98,20 @@ public sealed class ArmorModPickingTests
     }
 
     [Fact]
+    public void A_mod_that_goes_in_no_mod_socket_stays_in_the_build_apart_from_the_sockets()
+    {
+        var tuned = Pick(Pick(StartScratch(), GeneralFirst, GrenadeMod), HelmetFirst, ArcSiphon);
+        var withoutGrenadeMod = Listing with { Mods = [.. Listing.Mods.Where(mod => mod.Item.Hash != GrenadeMod)] };   // as a tuning mod: not a socket's
+
+        var layout = LoopDesigning.LayOutMods(tuned.Build, withoutGrenadeMod, NoLogin);
+        var cleared = Assert.IsType<Result<DesignSession, string>.Ok>(LoopDesigning.ClearMod(tuned, withoutGrenadeMod, NoLogin, HelmetFirst)).Value;
+
+        Assert.Equal([GrenadeMod], layout.Unsocketed.Select(mod => mod.Plug));
+        Assert.Empty(layout.Unplaced);
+        Assert.Equal([GrenadeMod], cleared.Build.Build.LeftOut.Where(item => item.Part == LoadoutPart.ArmorMod).Select(item => item.Hash)); // an edit keeps it
+    }
+
+    [Fact]
     public void The_picker_lists_the_sockets_mods_the_subclasss_element_first_and_marks_the_rules()
     {
         var options = Assert.IsType<Result<ModOptions, string>.Ok>(LoopDesigning.ListModOptions(StartScratch().Build, Listing, NoLogin, HelmetFirst)).Value;

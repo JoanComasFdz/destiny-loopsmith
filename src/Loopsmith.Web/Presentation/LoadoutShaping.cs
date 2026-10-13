@@ -283,6 +283,30 @@ public static class LoadoutShaping
     public static IconTile DescribePerk(RuleCatalog catalog, ItemHash hash) =>
         DescribeTrait(catalog, hash);
 
+    /// <summary>
+    /// A mod in one of the build's mod sockets as its square shows it: the rules' element when they know it, else the
+    /// manifest's item (the excerpt's, else the listing's) marked ⊘ unless it has no part in a loop (a stat mod).
+    /// </summary>
+    public static IconTile DescribeHeldMod(ValidatedBuild build, HeldMod mod, Optional<ListedMod> listed)
+    {
+        var catalog = build.Catalog;
+        var left = new LeftOutItem(LoadoutPart.ArmorMod, mod.Plug);
+        var item = catalog.Manifest.FindItem(mod.Plug).Match(found => Optional.Some(found.Value), _ => listed.Map(found => found.Item));
+        return mod.Element.Match(
+            id => DescribeElement(catalog, id.Value),
+            _ => DescribeLeftOut(catalog, new LeftOutEntry(left.Part, item, mod.Plug, LoopDesigning.ClassifyLeftOut(build, left))));
+    }
+
+    /// <summary>Copies of the same mod as one square, with a count ("Balanced Tuning ×2").</summary>
+    public static ImmutableArray<IconTile> GroupModCopies(IEnumerable<IconTile> tiles) =>
+        GroupCopies(tiles);
+
+    /// <summary>A mod of the mod picker as its square shows it: the rules' element when they know it, else the listing's item marked ⊘.</summary>
+    public static IconTile DescribeListedMod(ValidatedBuild build, ListedMod mod, bool inRules) =>
+        build.Catalog.FindElementByHash(mod.Item.Hash).Match(
+            element => DescribeElement(build.Catalog, element.Value.Id) with { Icon = mod.Item.Icon.Map(ToIconUrl), Description = mod.Item.Description },
+            _ => DescribeItem(mod.Item, mod.Item.Name, inRules, mod.Item.Description, Affinity.Neutral, Optional.None<ItemDetails>()));
+
     /// <summary>The icon of a damage type (a bungie.net address), when the excerpt has it.</summary>
     public static Optional<string> FindDamageIcon(RuleCatalog catalog, DamageType type) =>
         catalog.Manifest.DamageTypeIcons.TryGetValue(type, out var icon) ? Optional.Some(ToIconUrl(icon)) : Optional.None<string>();
