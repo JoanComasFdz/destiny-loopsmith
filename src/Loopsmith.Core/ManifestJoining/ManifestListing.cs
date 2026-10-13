@@ -104,6 +104,13 @@ public static class ManifestListing
     private static readonly ManifestPartsQuery NoParts =
         new(ManifestTransport.ToComponentName(ManifestTable.InventoryItem), BucketKey, ImmutableDictionary<string, ImmutableArray<ImmutableArray<string>>>.Empty);
 
+    /// <summary>How many questions a listing asks at most (the small components, the items, the frames, their perks).</summary>
+    public const int Rounds = 4;
+
+    /// <summary>Which of its <see cref="Rounds"/> questions a listing is on (1 for the small components … 4 for the frames' perks).</summary>
+    public static int ToRound(ListingProgress progress) =>
+        progress.Match(_ => 1, _ => 2, _ => 3, _ => 4);
+
     /// <summary>A listing's first question: the small components, whole.</summary>
     public static ListingStep StartListing() =>
         new ListingStep.Ask(

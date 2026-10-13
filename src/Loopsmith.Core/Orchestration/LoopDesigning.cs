@@ -179,19 +179,25 @@ public static class LoopDesigning
     /// <summary>The manifest's index on bungie.net (the paths of its current version's components).</summary>
     public const string ManifestIndexUrl = ManifestTransport.IndexUrl;
 
-    /// <summary>Each manifest component's URL on bungie.net, by component name: the index's, else the pinned content id's.</summary>
+    /// <summary>
+    /// Each manifest component's URL on bungie.net, by component name (every component the join and the listing read: the
+    /// web app loads them all when it starts and keeps them for the tab): the index's, else the pinned content id's.
+    /// </summary>
     public static ImmutableDictionary<string, string> ChooseManifestUrls(Optional<string> indexJson, string pinnedContentId) =>
         ManifestTransport.ChooseUrls(indexJson, pinnedContentId);
 
     // ── Every weapon and armor piece in the game (the pickers' "Every item", docs/loop-format.md) ──────────────
 
-    /// <summary>The URLs of the components the listing reads (the item table, the sandbox perks and four small ones): the index's, else the pinned content id's.</summary>
-    public static ImmutableDictionary<string, string> ChooseListingUrls(Optional<string> indexJson, string pinnedContentId) =>
-        ManifestTransport.ChooseComponentUrls(indexJson, pinnedContentId, ManifestListing.Components);
+    /// <summary>How many questions a listing asks at most (the startup screen's "step 2 of 4").</summary>
+    public const int ListingRounds = ManifestListing.Rounds;
 
     /// <summary>A listing of every weapon and armor piece a build can wear: its first question to the host.</summary>
     public static ListingStep StartListing() =>
         ManifestListing.StartListing();
+
+    /// <summary>Which of its <see cref="ListingRounds"/> questions a listing is asking (1 to 4).</summary>
+    public static int ToListingRound(ListingStep.Ask asked) =>
+        ManifestListing.ToRound(asked.Progress);
 
     /// <summary>The listing with the host's answers to its question (its entries, its parts): its next step, or why an answer doesn't read.</summary>
     public static Result<ListingStep, string> ContinueListing(ListingStep.Ask asked, string entriesJson, string partsJson) =>
