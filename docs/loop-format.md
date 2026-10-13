@@ -314,7 +314,7 @@ stay on Home as links, with "import a build.yaml" and "import a loop".
 
 The designer's Subclass box has **⋯** next to its title, for every build (the Home cards stay read-only). It opens the
 subclass editor with the build's super, grenade, melee, class ability, jump, two aspects and fragments; tapping a plug's
-square opens its details, and **Change** opens, inside that slot (across the editor's width), the list of everything the
+square opens its details, and the slot's **⋯** opens, inside that slot (across the editor's width), the list of everything the
 subclass can hold there — Bungie's manifest, with icons and names: the ones the rules know are marked, the rest carry ⊘,
 a jump none (it has no part in a loop). One list is open at a time; picking a plug puts it in the slot and closes it. An aspect
 or a fragment can't be equipped twice; ✕ leaves a fragment's slot empty, while an aspect has no ✕: it is only swapped
