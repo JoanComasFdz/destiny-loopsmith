@@ -22,6 +22,7 @@ public partial record Trigger
     partial record Finisher();                                                 // the player does a finisher on an enemy of the pack
     partial record AbilityCastAs(AbilityKind Kind, AbilityInput Input);        // only that use of the ability: the melee while sliding, the class ability's air move
     partial record KillFewer(DamageSource Via, TargetCount FewerThan);         // kill fewer than N enemies in one action (at least one)
+    partial record CriticalHealth();                                           // the player declares they reached critical health (ADRs D3)
 }
 
 /// <summary>A guard on the current state, checked after the trigger matched.</summary>
@@ -33,6 +34,7 @@ public partial record Condition
     partial record TargetHas(StatusId Status);
     partial record AtMax(StatusId Status);   // the player declared this buff at its maximum (ADRs D3)
     partial record During(AbilityKind Ability);   // the step casts this ability: it is under way at the step's end (Flow State's dodge)
+    partial record BelowMax(StatusId Status);   // this buff is on you, not declared at its maximum: a count below it may still do (ADRs D3, D8)
 }
 
 [Union]

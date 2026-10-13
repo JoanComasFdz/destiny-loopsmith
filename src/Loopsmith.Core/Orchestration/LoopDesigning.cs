@@ -350,7 +350,8 @@ public static class LoopDesigning
                 stacksMaxed: _ => [],
                 finisher: _ => [],
                 abilityCastAs: _ => [],
-                killFewer: _ => []))   // fewer than N: 1 to 9 already reach it
+                killFewer: _ => [],   // fewer than N: 1 to 9 already reach it
+                criticalHealth: _ => []))
             .Distinct(),
     ];
 

@@ -40,7 +40,7 @@ public partial record PlayerAction
 
 /// <summary>
 /// What the player declares as a step of its own (ADRs D3): <c>max:&lt;status&gt;</c>, <c>end:&lt;status&gt;</c>,
-/// <c>pack:new</c>.
+/// <c>pack:new</c>, <c>health:critical</c>.
 /// </summary>
 [Union]
 public partial record StateDeclaration
@@ -48,6 +48,7 @@ public partial record StateDeclaration
     partial record ReachMax(StatusId Status);    // a stacking buff on you is at its maximum
     partial record EndStatus(StatusId Status);   // a buff on you, or a debuff on the pack, has ended
     partial record NewPack();                    // the next enemies are a new pack, with no debuffs (ADRs D7)
+    partial record CriticalHealth();             // your shields broke: you are at critical health (no damage is modelled, ADRs D1)
 }
 
 /// <summary>A concrete thing that happened — matched against <see cref="Trigger"/> patterns.</summary>
@@ -62,6 +63,7 @@ public partial record GameEvent
     partial record BuffGained(StatusId Status);   // a grant of the buff (every grant, for a status that stacks)
     partial record StacksMaxed(StatusId Status);  // only from a declared max: step
     partial record Finisher();                    // before the finisher's hit and kill (origin DamageOrigin.Finisher)
+    partial record CriticalHealth();              // only from a declared health:critical step
 }
 
 /// <summary>An outcome as it was applied, with how far to trust it (an energy grant only explains — ADRs D5).</summary>

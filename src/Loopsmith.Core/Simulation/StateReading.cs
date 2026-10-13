@@ -59,5 +59,6 @@ public static class StateReading
             lacksBuff => !state.HasBuff(lacksBuff.Status),
             targetHas => state.TargetHas(targetHas.Status),
             atMax => state.IsAtMax(atMax.Status),
-            during => state.IsCasting(during.Ability)));
+            during => state.IsCasting(during.Ability),
+            belowMax => state.HasBuff(belowMax.Status) && !state.IsAtMax(belowMax.Status)));
 }

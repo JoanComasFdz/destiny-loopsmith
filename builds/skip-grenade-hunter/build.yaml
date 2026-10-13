@@ -19,6 +19,7 @@ fragments: [spark-of-resistance, spark-of-frequency, spark-of-shock, spark-of-di
 exoticArmor: shinobus-vow
 armorSetBonuses: [luminopotent-2pc, luminopotent-4pc]
 # Elemental Charge x2 (boots) and Grenade Kickstart x2 (gauntlets) per the video; the rest per the note.
+# Emergency Reinforcement (chest): the owner's addition, named by neither (discrepancies.md, row 36).
 armorMods:
   - elemental-charge
   - elemental-charge
@@ -29,6 +30,7 @@ armorMods:
   - harmonic-siphon
   - strand-siphon
   - impact-induction
+  - emergency-reinforcement
 artifactPerks:
   - defibrillating-blast
   - flashover

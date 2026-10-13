@@ -256,8 +256,8 @@ is the build's value. `from` and `below` are stat values (0..200) and `from` < `
 blocks a build). An unknown stat ("?") says nothing.
 
 `inert: "<why>"` marks an element that is known and has no part in a loop on purpose — Skip Grenade
-(its hits are the grenade step itself), Feeding Frenzy (no ammo or reloads are counted), Emergency
-Reinforcement (no damage taken is modelled, so nothing sets it off). It takes no rules and no passives
+(its hits are the grenade step itself), Feeding Frenzy (no ammo or reloads are counted), Shield Break
+Charge (no combatant's shield is modelled, so nothing sets it off). It takes no rules and no passives
 (`inert is only for an element with no rules and no passives`), the build check gives it no "no
 authored rules" warning, and its details say "No rules needed." with the why.
 
@@ -364,6 +364,7 @@ doesn't show as a stacking status (Elemental Charge's progress per Ionic Trace; 
 | `{ buffGained: bolt-charge }` | `BuffGained(status)` |
 | `{ stacksMaxed: bolt-charge }` — the player declares the buff at max | `StacksMaxed(status)` |
 | `{ finisher: {} }` — the player does a finisher on an enemy of the pack (it kills it) | `Finisher()` |
+| `{ criticalHealth: {} }` — the player declares they reached critical health (`health:critical`) | `CriticalHealth()` |
 
 A **secondary ability use** is the ability used another way, which an aspect makes do something else
 (ADRs D9): the melee while sliding (`slide`: Tempest Strike's uppercut, played as `melee:slide`) or in the
@@ -443,7 +444,7 @@ type: only `any` matches it. `weapon:harmonic` reads with the build's Super name
 when the Super is `?`.
 
 **Conditions (`when`)**: `{ has: <status> }` · `{ lacks: <status> }` · `{ targetHas: <status> }` ·
-`{ atMax: <status> }` · `{ during: <ability> }` — all must hold, checked against the state when the event is processed.
+`{ atMax: <status> }` · `{ belowMax: <status> }` · `{ during: <ability> }` — all must hold, checked against the state when the event is processed.
 `during` (`grenade|melee|classAbility|super`) holds for the whole of a step that casts that ability, any use of it
 (`class` and `class:air` are both the class ability), and on no other step: what is under way at the step's end, such
 as Flow State's dodge (`when: [ { has: amplified }, { during: classAbility } ]`: 66% [PvP 32%] damage resistance on a
@@ -463,6 +464,26 @@ keyword element) until the player declares `end:super`, and a Super's resistance
 
 So declaring "Bolt Charge at max" fires Shinobu's Vow (New Tricks, ~40% grenade energy, a heal) and
 Flashover (Amplified 15s), and the next ability hit fires the strike, which spends the buff.
+
+`belowMax` (a status that stacks, like `atMax`) holds while the buff is on you and not declared at max; `explain` reads
+it `(while Armor Charge below max)`. With `atMax` it splits a threshold the state doesn't count (ADRs D1): a rule that
+needs "x3 or more Armor Charge" fires for sure at the declared max (the cap is x3 or more) and as a `chance` below it
+(ADRs D8). Emergency Reinforcement (`rules/mods/chest.yaml`):
+
+```yaml
+  - on: { criticalHealth: {} }
+    when: [ { atMax: armor-charge } ]
+    then: [ { removeBuff: armor-charge }, { applyBuff: emergency-reinforcement } ]
+  - on: { criticalHealth: {} }
+    when: [ { belowMax: armor-charge } ]
+    then: [ { removeBuff: armor-charge }, { applyBuff: emergency-reinforcement } ]
+    chance: true
+```
+
+A **critical health** step is the player's declaration (`health:critical`, "Critical health",
+[loop-format.md](loop-format.md#action-tokens), ADRs D3): no damage you take is modelled, so only the player can say
+your shields broke. `criticalHealth` takes no keys (`{ criticalHealth: {} }`); the designer offers the step only when an
+equipped rule has the trigger, and the loop graph draws it as a "Critical health" node the player declares.
 
 **Outcomes (`then`)** — exactly one key each:
 
@@ -741,7 +762,8 @@ the ground.
   player ends it. `end:<status>` ("Amplified ends", "Jolt ends") removes the buff, with its
   declaration, or the debuff from the pack, and derives no event. `pack:new` ("New pack", ADRs D7) puts
   a new pack in front of you: none of the old pack's debuffs, the buffs on you and the pickups on the
-  ground unchanged; it always holds and derives no event.
+  ground unchanged; it always holds and derives no event. `health:critical` ("Critical health") emits
+  `CriticalHealth`, so the `criticalHealth` rules fire and cascade; it always holds and changes no state.
 * **Abilities are always available** (ADRs D5). A step is blocked only when it can't happen at all —
   the pickup isn't on the ground (`No orb-of-power on the ground — nothing happens.`), no weapon in that
   slot, a `max:` on a buff that doesn't stack, isn't active or is already at max, an `end:` on a status

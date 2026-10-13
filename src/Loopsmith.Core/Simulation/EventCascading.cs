@@ -141,7 +141,8 @@ public static class EventCascading
             pickedUp => $"pickup:{pickedUp.Pickup}",
             gained => $"gain:{gained.Status}",
             maxed => $"max:{maxed.Status}",
-            _ => "finisher");
+            _ => "finisher",
+            _ => "critical-health");
 
     private static string ToOriginKey(DamageOrigin origin) =>
         origin.Match(

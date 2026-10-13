@@ -77,6 +77,12 @@ statuses:
   # generic duration.
   - { id: void-overshield, name: Void Overshield, kind: buff, affinity: void }
 
+  # Emergency Reinforcement's damage resistance on you, from reaching critical health with x3 or more
+  # Armor Charge (the mod of that name, mods/chest.yaml; compendium/2026-10-13/Armor Mods#4). It lasts
+  # 6 | 9 | 12 | 15 s by the charges spent, which the state doesn't count (ADRs D1), so no generic
+  # duration: the player declares it ended (`end:emergency-reinforcement`, ADRs D3).
+  - { id: emergency-reinforcement, name: Emergency Reinforcement, kind: buff, affinity: neutral }
+
   # Lethal Current armed: the next melee hit within 10 s of a class ability use jolts and sets off an
   # aftershock (compendium/2026-10-13/Arc#50). No trait: the game shows it as no keyword.
   - { id: lethal-current, name: Lethal Current, kind: buff, affinity: arc, duration: 10s }

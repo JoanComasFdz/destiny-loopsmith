@@ -93,7 +93,8 @@ public static class KeywordInteracting
             maxed => IsStatus(keyword, maxed.Status),
             _ => false,
             _ => false,
-            fewer => IsVia(keyword, fewer.Via));
+            fewer => IsVia(keyword, fewer.Via),
+            _ => false);
 
     /// <summary>A guard the keyword meets by being there (the kernel's: a "without it" guard doesn't need it).</summary>
     private static bool IsNamedBy(KeywordRef keyword, Condition condition) =>

@@ -1600,6 +1600,21 @@ public sealed class RuleCatalogParsingTests
     }
 
     [Fact]
+    public void Parses_a_critical_health_trigger_which_takes_no_keys_and_a_belowMax_condition_on_a_status_that_stacks()
+    {
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog(
+            [Glossary, ToProbeFile("{ on: { criticalHealth: {} }, when: [ { belowMax: armor-charge } ], then: [ { removeBuff: armor-charge } ], chance: true }")]));
+        var withKeys = ParseInvalidCatalog(Glossary, ToProbeFile("{ on: { criticalHealth: { via: any } }, then: [ { removeBuff: armor-charge } ] }"));
+        var notStacking = ParseInvalidCatalog(Glossary, ToProbeFile("{ on: { criticalHealth: {} }, when: [ { belowMax: amplified } ], then: [ { removeBuff: amplified } ] }"));
+
+        var rule = Assert.Single(catalog.Elements[ElementId.From("probe")].Rules);
+        Assert.Equal(new Trigger.CriticalHealth(), rule.On);
+        Assert.Equal([new Condition.BelowMax(ToStatus("armor-charge"))], rule.When);
+        Assert.Contains("mods.yaml:7: criticalHealth takes no keys: write { criticalHealth: {} }", withKeys);
+        Assert.Contains("'amplified' doesn't stack (no maxStacks), so it is never at max", notStacking);
+    }
+
+    [Fact]
     public void Parses_an_energy_grant_to_the_least_charged_ability()
     {
         var catalog = AssertOk(RuleCatalogParsing.ParseCatalog(

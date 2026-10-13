@@ -26,9 +26,9 @@ internal static class RuleBodyParsing
     private static readonly ImmutableArray<string> DamageKeys = ["via", "targetHas", "atLeast"];
 
     private static readonly ImmutableArray<string> TriggerNames =
-        ["abilityCast", "kill", "damage", "pickUp", "buffGained", "stacksMaxed", "finisher"];
+        ["abilityCast", "kill", "damage", "pickUp", "buffGained", "stacksMaxed", "finisher", "criticalHealth"];
 
-    private static readonly ImmutableArray<string> ConditionNames = ["has", "lacks", "targetHas", "atMax", "during"];
+    private static readonly ImmutableArray<string> ConditionNames = ["has", "lacks", "targetHas", "atMax", "belowMax", "during"];
 
     private static readonly ImmutableArray<string> OutcomeNames =
     [
@@ -78,6 +78,7 @@ internal static class RuleBodyParsing
             "buffGained" => scope.ReadBuff(entry.Value).Map(Trigger (status) => new Trigger.BuffGained(status)),
             "stacksMaxed" => scope.ReadStackingBuff(entry.Value).Map(Trigger (status) => new Trigger.StacksMaxed(status)),
             "finisher" => ReadFinisherTrigger(entry.Value),
+            "criticalHealth" => ReadCriticalHealthTrigger(entry.Value),
             _ => entry.Value.FailAt<Trigger>(DescribeUnknown("trigger", entry.Key, TriggerNames)),
         });
 
@@ -86,6 +87,12 @@ internal static class RuleBodyParsing
         value.ToMap().Bind(map => map.Node.Children.Count == 0
             ? Succeed<Trigger>(new Trigger.Finisher())
             : map.FailAt<Trigger>($"{map.Label} takes no keys: write {{ finisher: {{}} }}"));
+
+    /// <summary><c>{ criticalHealth: {} }</c>: the player declares they reached critical health (<c>health:critical</c>). It takes no keys.</summary>
+    private static Result<Trigger, Errors> ReadCriticalHealthTrigger(YamlValue value) =>
+        value.ToMap().Bind(map => map.Node.Children.Count == 0
+            ? Succeed<Trigger>(new Trigger.CriticalHealth())
+            : map.FailAt<Trigger>($"{map.Label} takes no keys: write {{ criticalHealth: {{}} }}"));
 
     /// <summary>
     /// <c>{ abilityCast: grenade }</c> (any use of it), or <c>{ abilityCast: { ability: melee, input: slide } }</c> for one use
@@ -212,6 +219,7 @@ internal static class RuleBodyParsing
             "lacks" => scope.ReadBuff(entry.Value).Map(Condition (status) => new Condition.LacksBuff(status)),
             "targetHas" => scope.ReadDebuff(entry.Value).Map(Condition (status) => new Condition.TargetHas(status)),
             "atMax" => scope.ReadStackingBuff(entry.Value).Map(Condition (status) => new Condition.AtMax(status)),
+            "belowMax" => scope.ReadStackingBuff(entry.Value).Map(Condition (status) => new Condition.BelowMax(status)),
             "during" => ReadVocabularyWord<AbilityKind>(entry.Value).Map(Condition (ability) => new Condition.During(ability)),
             _ => entry.Value.FailAt<Condition>(DescribeUnknown("condition", entry.Key, ConditionNames)),
         });

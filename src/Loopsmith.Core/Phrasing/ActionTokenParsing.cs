@@ -13,7 +13,7 @@ public static class ActionTokenParsing
     private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
 
     public const string Grammar =
-        "grenade[:hold]|melee[:slide|air]|super[:hit|kill[:N]], class[:air], kinetic|energy|power[:hit|kill[:N]], finisher, pickup:<id>, max:<status>, end:<status>, pack:new";
+        "grenade[:hold]|melee[:slide|air]|super[:hit|kill[:N]], class[:air], kinetic|energy|power[:hit|kill[:N]], finisher, pickup:<id>, max:<status>, end:<status>, pack:new, health:critical";
 
     /// <summary>
     /// <c>grenade</c>, <c>grenade:kill</c>, <c>grenade:kill:3</c>, <c>kinetic:hit:5</c>, <c>class</c>, <c>class:air</c> (an air move
@@ -21,7 +21,7 @@ public static class ActionTokenParsing
     /// Strike's uppercut), <c>melee:air</c>, <c>grenade:hold</c> — <c>finisher</c> (a finisher on one enemy
     /// of the pack: it kills it),
     /// <c>pickup:orb-of-power</c>, and the states the player declares (ADRs D3): <c>max:bolt-charge</c>, <c>end:amplified</c>,
-    /// <c>pack:new</c> (the next enemies are a new pack, ADRs D7).
+    /// <c>pack:new</c> (the next enemies are a new pack, ADRs D7), <c>health:critical</c> (you reached critical health).
     /// Without <c>:kill</c> the hit only damages; without a count it hits one enemy. The count is validated here, at the
     /// boundary (<see cref="TargetCount"/>: 1..20); whether a declaration holds is the engine's (a blocked step).
     /// </summary>
@@ -46,6 +46,7 @@ public static class ActionTokenParsing
             "end" when parts.Length == 2 && StatusId.TryFrom(parts[1], out var ended) =>
                 Ok(new PlayerAction.Declare(new StateDeclaration.EndStatus(ended))),
             "pack" when parts.Length == 2 && parts[1] == "new" => Ok(new PlayerAction.Declare(new StateDeclaration.NewPack())),
+            "health" when parts.Length == 2 && parts[1] == "critical" => Ok(new PlayerAction.Declare(new StateDeclaration.CriticalHealth())),
             _ => FailUnknown(token),
         };
     }

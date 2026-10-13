@@ -141,7 +141,8 @@ public static class StepOutcomeShaping
             pickedUp: _ => Optional.None<WeaponSlot>(),
             buffGained: _ => Optional.None<WeaponSlot>(),
             stacksMaxed: _ => Optional.None<WeaponSlot>(),
-            finisher: _ => Optional.None<WeaponSlot>());
+            finisher: _ => Optional.None<WeaponSlot>(),
+            criticalHealth: _ => Optional.None<WeaponSlot>());
 
     private static Optional<WeaponSlot> FindOriginWeapon(DamageOrigin origin) =>
         origin.Match(

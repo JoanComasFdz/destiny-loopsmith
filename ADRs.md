@@ -98,15 +98,19 @@ declare them; a counter the game doesn't show (To Shreds' 6 weapon hits) is a *(
   rule consumes or removes it, or an `end:`.
 * `end:<status>` — the buff on you or the debuff on the pack has ended ("Amplified ends").
 * `pack:new` — the next enemies are a new pack, with none of the old pack's debuffs ("New pack", D7).
+* `health:critical` — you reached critical health ("Critical health"): no damage you take is modelled, so the player
+  says when the shields broke. It raises `CriticalHealth`, so the `criticalHealth` rules fire (Emergency
+  Reinforcement), and leaves nothing in the state.
 
 A declaration that doesn't hold is a **blocked step**, like a pickup that isn't on the ground:
 `max:` needs an active buff that stacks (`maxStacks` in the glossary) and isn't declared at max yet,
-`end:` an active status; `pack:new` always holds. Nothing else reaches a maximum: an `applyBuff` makes the buff present and
+`end:` an active status; `pack:new` and `health:critical` always hold. Nothing else reaches a maximum: an `applyBuff` makes the buff present and
 shows its grant ("+1 Bolt Charge"). A status ends only through a rule's `removeBuff` or consumption,
 or an `end:`. **Consequence.** `stacksMaxed` fires only on a declaration;
 a rule that reacts to the next hit at the maximum uses the `atMax` condition (Bolt Charge discharges
-on the next ability hit at x10). The cap and the duration are facts the player reads when deciding
-to declare. Format: [docs/loop-format.md](docs/loop-format.md#action-tokens)
+on the next ability hit at x10). A rule that needs a count below the cap ("x3 or more Armor Charge": Emergency
+Reinforcement) fires for sure at the declared max and as a *(chance)* below it (the `belowMax` condition, D8). The cap
+and the duration are facts the player reads when deciding to declare. Format: [docs/loop-format.md](docs/loop-format.md#action-tokens)
 and [docs/rule-format.md](docs/rule-format.md).
 
 ### D4 — The player declares how many enemies an action hits

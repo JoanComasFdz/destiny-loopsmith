@@ -236,6 +236,27 @@ public sealed class StepStateShapingTests
     }
 
     [Fact]
+    public void Emergency_Reinforcement_resists_10_percent_with_no_PvP_value_from_critical_health_until_it_ends()
+    {
+        var owners = Play().Build;
+        var build = Validate(owners.Build with { ArmorMods = owners.Build.ArmorMods.Add(ElementId.From("emergency-reinforcement")) });
+        var played = PlayOn(build,
+            new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Kill, TargetCount.One),   // Elemental Charge: Armor Charge
+            new PlayerAction.Declare(new StateDeclaration.ReachMax(StatusId.From("armor-charge"))),
+            new PlayerAction.Declare(new StateDeclaration.CriticalHealth()),
+            new PlayerAction.Declare(new StateDeclaration.EndStatus(StatusId.From("emergency-reinforcement"))));
+
+        var critical = ReadAllDamage(played, 2);
+
+        var reinforcement = Assert.Single(critical.Sources, source => source.Name == "Emergency Reinforcement");
+        Assert.Equal((new GameValue.Known(0.1m), Optional.Some<GameValue>(new GameValue.Unknown())), (reinforcement.Pve, reinforcement.Pvp));
+        Assert.Equal(new GameValue.Unknown(), critical.Pvp);
+        Assert.DoesNotContain(played.Resolutions[2].State.Buffs, buff => buff.Status == StatusId.From("armor-charge"));
+        Assert.DoesNotContain(ReadAllDamage(played, 1).Sources, source => source.Name == "Emergency Reinforcement");
+        Assert.DoesNotContain(ReadAllDamage(played, 3).Sources, source => source.Name == "Emergency Reinforcement");
+    }
+
+    [Fact]
     public void The_CLI_says_what_a_status_switches_on_under_its_state()
     {
         var played = Play(

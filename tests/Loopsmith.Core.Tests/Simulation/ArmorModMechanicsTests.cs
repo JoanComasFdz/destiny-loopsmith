@@ -116,6 +116,77 @@ public sealed class ArmorModMechanicsTests
         Assert.DoesNotContain(without.Nodes, node => node.Key == "a:Finisher");
     }
 
+    // ── Critical health ──────────────────────────────────────────────────────────────────
+
+    private static readonly PlayerAction CriticalHealth = new PlayerAction.Declare(new StateDeclaration.CriticalHealth());
+
+    private static readonly PlayerAction ArmorChargeAtMax = new PlayerAction.Declare(new StateDeclaration.ReachMax(Status("armor-charge")));
+
+    /// <summary>Emergency Reinforcement's shape: for sure at the declared max, a chance below it.</summary>
+    private static readonly BuildElement Reinforcement = Mod("reinforcement",
+    [
+        OnWhen(new Trigger.CriticalHealth(), new Condition.AtMax(Status("armor-charge")), new Outcome.RemoveBuff(Status("armor-charge")), Buff("amplified")),
+        OnWhen(new Trigger.CriticalHealth(), new Condition.BelowMax(Status("armor-charge")), new Outcome.RemoveBuff(Status("armor-charge")), Buff("amplified"))
+            with { Likelihood = Likelihood.Chance },
+    ]);
+
+    [Fact]
+    public void Critical_health_is_a_token_a_label_and_a_trigger_named_Critical_health()
+    {
+        var build = ValidateBuild([], mods: [Reinforcement]);
+
+        Assert.Equal("health:critical", CriticalHealth.ToActionToken());
+        Assert.Equal(new Result<PlayerAction, string>.Ok(CriticalHealth), ActionTokenParsing.ParseActionToken("Health:Critical"));
+        Assert.IsType<Result<PlayerAction, string>.Error>(ActionTokenParsing.ParseActionToken("health"));
+        Assert.IsType<Result<PlayerAction, string>.Error>(ActionTokenParsing.ParseActionToken("health:low"));
+        Assert.Equal("Critical health", build.DescribeAction(CriticalHealth));
+        Assert.Equal("Critical health", build.Catalog.Glossary.DescribeTrigger(new Trigger.CriticalHealth(), build.ReadSuperType()));
+        Assert.Equal("while Armor Charge below max", build.Catalog.Glossary.DescribeCondition(new Condition.BelowMax(Status("armor-charge"))));
+        Assert.Contains("Critical health -> consumes Armor Charge and Amplified (10s) (while Armor Charge at max) [Reinforcement]", DescribeExplanation(build));
+    }
+
+    [Fact]
+    public void Critical_health_is_offered_only_when_a_rule_reacts_to_it_and_always_resolves()
+    {
+        var initial = ActionResolution.CreateInitialState();
+        var without = ValidateBuild([Charger]);
+
+        Assert.Contains(CriticalHealth, ActionResolution.ListAvailableActions(ValidateBuild([], mods: [Reinforcement]), initial));
+        Assert.DoesNotContain(CriticalHealth, ActionResolution.ListAvailableActions(without, initial));
+        var nothing = ResolveOnce(without, CriticalHealth);
+        Assert.False(nothing.Blocked.IsSome());
+        Assert.Empty(nothing.Fired);
+    }
+
+    [Fact]
+    public void Critical_health_spends_the_buff_for_sure_at_its_declared_max_as_a_chance_below_it_and_does_nothing_without_it()
+    {
+        var build = ValidateBuild([Charger], mods: [Reinforcement]);
+
+        var bare = ResolveOnce(build, CriticalHealth);
+        var below = ResolveSteps(build, Dodge, CriticalHealth)[1];
+        var atMax = ResolveSteps(build, Dodge, ArmorChargeAtMax, CriticalHealth)[2];
+
+        Assert.Empty(bare.Fired);
+        var chance = Assert.Single(below.Fired);
+        Assert.Equal((Likelihood.Chance, (GameEvent)new GameEvent.CriticalHealth()), (chance.Likelihood, chance.Trigger));
+        Assert.Equal(Likelihood.Always, Assert.Single(atMax.Fired).Likelihood);
+        Assert.Equal([Status("amplified")], below.State.Buffs.Select(buff => buff.Status));    // the Armor Charge is spent
+        Assert.Equal([Status("amplified")], atMax.State.Buffs.Select(buff => buff.Status));
+        Assert.Equal("#2 Critical health\n  Critical health → consumes Armor Charge and Amplified (10s) [Reinforcement] (chance)", DescribeTrace(build, below));
+    }
+
+    [Fact]
+    public void The_loop_graph_draws_critical_health_as_a_declaration_where_a_rule_reacts_to_it()
+    {
+        var with = LoopGraphBuilding.BuildLoopGraph(ValidateBuild([Charger], mods: [Reinforcement]));
+        var without = LoopGraphBuilding.BuildLoopGraph(ValidateBuild([Charger]));
+
+        Assert.Contains(with.Nodes, node => node.Key == "a:CriticalHealth" && node.Label == "Critical health" && node.Kind == NodeKind.Action);
+        Assert.Contains(with.Edges, edge => edge.From == "a:CriticalHealth" && edge.To == "t:Critical health" && edge.Kind == EdgeKind.Declared);
+        Assert.DoesNotContain(without.Nodes, node => node.Key == "a:CriticalHealth");
+    }
+
     // ── A stat change while a buff holds ─────────────────────────────────────────────────
 
     private static readonly BuildElement Charger = Element("charger", ElementKind.Fragment,
