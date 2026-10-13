@@ -270,7 +270,8 @@ pick goes into the embedded build's weapon entry as `roll` ([rule-format.md](rul
 only that entry is rewritten, so the build file's comments stay — and the steps replay with the new
 build: a perk the rules know now sets things off; one they don't is shown with its ⊘, and said so under
 Validation. Hand-written builds pick the same way; a perk they name in `perks` sits in its column and
-gives way to a pick there. The Home cards stay read-only.
+gives way to a pick there. The Home cards stay read-only. After a Bungie login, the perks the player's own copy doesn't
+have are marked, and picking one is warned about ([Weapons from your account](#weapons-from-your-account)).
 
 **An item's details.** Tapping a square opens its details, one card each: Bungie's text (from the manifest
 excerpt); where the rules' facts come from — for a Compendium row, Loopsmith's words for it (written from the row,
@@ -394,7 +395,8 @@ flag, breaker and power are Bungie's profile's for the copy (its instance's `gea
 dark-mode extension such as Dark Reader would otherwise repaint the light footers dark and hide their icons.
 
 <a id="weapons-from-your-account"></a>**Weapons from your account.** The login reads the player's weapons too, with the
-plugs in their sockets:
+plugs in their sockets and, socket by socket, the perks each copy can switch to (Bungie's reusable plugs: a column that
+rolled two perks or more has each of them):
 
 * **The build's own copies** — a weapon whose `instance` (a dim.gg share's) is theirs takes that copy's perks: in each
   trait column, the plug of its sockets the column rolls with (a share saves only the perks it was told to; the copy
@@ -405,7 +407,8 @@ plugs in their sockets:
   weapons for that slot, the copy the build names first (✓ when it is theirs; for someone
   else's share none is ticked, so their own copy can be used to load its perks), then that weapon's other copies, then
   the rest by name; each with its tier, masterwork, breaker and element as in the loadout. Hovering one (or a
-  first tap) shows its type, tier and the perks it holds, and where it is; a click (a second tap, or "Use this
+  first tap) shows its type, tier and its perks column by column (a column that rolled two or more shows them framed
+  together, the one it holds on DIM's blue), and where it is; a click (a second tap, or "Use this
   weapon") puts it in the build: its entry is written anew (`{slot, name, type, archetype, perks: [], hash, roll,
   catalyst, instance}`, from the manifest and its sockets), or added for an empty slot, and the steps replay. A build
   wears one exotic weapon (by its manifest item, or an exotic weapon element among a hand-written weapon's perks):
@@ -413,6 +416,15 @@ plugs in their sockets:
   excerpt doesn't know are named by Bungie's full manifest, read once after the login with the armor (the Bungie
   login section shows its progress bar; the page keeps working meanwhile — [hosting.md](hosting.md#bungies-manifest));
   one it can't place is counted, not listed.
+* **Perks your copy doesn't have** — the perk picker still offers every perk a column rolls with. For a weapon whose
+  copy (its `instance`: picked from Yours, or the player's own dim.gg share's) is theirs, each perk the copy doesn't
+  have in that column carries a small amber **!** in its square's upper-right corner (clear of the ⊘ in the lower
+  right and of an enhanced trait's arrow on the left) and "Not on your copy" under its name. Picking one adds a
+  warning under Validation: "Festival Flight: your copy doesn't have Hatchling in column 2 (it has Elemental Honing
+  (enhanced) or Attrition Orbs)." Each perk of a column that rolled two or more is the copy's; so is a base perk whose
+  enhanced version the copy has (the enhanced trait does all it does), but not an enhanced perk whose base the copy
+  has. A weapon picked from Every item or written in the build file isn't compared, and nothing of it is saved: the
+  marks and the warning go when the player logs out.
 
 Nothing of the login is kept (the player's armor and weapons stay in the tab until they log out or it closes); the
 stats and the copies are, in the loop's build, so a shared loop carries its author's numbers and pieces.
