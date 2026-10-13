@@ -138,7 +138,7 @@
         </div>
     };
 
-    /// <summary>A row's sources, each with its values and opening its details on a tap, and how they multiply.</summary>
+    /// <summary>A row's sources, each with its icon (when Bungie's data has one) and values, opening its details on a tap, and how they multiply.</summary>
     private RenderFragment RenderResistanceSources(string heading, ImmutableArray<ResistanceSource> sources, string[] formulas) => __builder =>
     {
         <div class="hud-resistance-source-line">
@@ -148,6 +148,10 @@
                 {
                     <button type="button" class="chip hud-chip @ToneStyling.ToAffinityClass(source.Affinity)" data-effect="@source.Element.Value"
                             @onclick="() => ShowElementAsync(source.Element)" @onclick:stopPropagation="true">
+                        @if (LoadoutShaping.FindElementIcon(Build.Catalog, source.Element) is Optional<string>.Some icon)
+                        {
+                            <img class="inline-icon hud-keyword-icon" src="@icon.Value" alt="" loading="lazy" />
+                        }
                         <span>@source.Name</span>
                         <span class="hud-switches">@StateHudShaping.DescribeResistanceSource(source)</span>
                     </button>
