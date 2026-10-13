@@ -108,7 +108,7 @@ public static class BuildFileEditing
 
     /// <summary>
     /// The build file with its subclass entries — <c>super</c>, <c>grenade</c>, <c>melee</c>, <c>classAbility</c>,
-    /// <c>aspects</c>, <c>fragments</c>, <c>leftOut</c> — written anew as <paramref name="build"/> has them (a subclass
+    /// <c>jump</c>, <c>aspects</c>, <c>fragments</c>, <c>leftOut</c> — written anew as <paramref name="build"/> has them (a subclass
     /// edited in the designer changes all of them): each replaced where it was, added at the end when the file has none,
     /// removed when the build has nothing for it. The rest of the file stays as it was.
     /// </summary>

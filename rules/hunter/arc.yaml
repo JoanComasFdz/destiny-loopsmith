@@ -1,8 +1,10 @@
 # Arc Hunter: abilities, aspects, fragments.
 #
-# Numbers from the Destiny Data Compendium snapshot of 2026-10-09 (source: compendium/2026-10-09/
-# <Tab>#<row>); hashes are Clarity 2.0625's unless a comment says they are the manifest's (Clarity
-# has no grenade, melee or super entries). Ability energy amounts are base values: chunk energy
+# Numbers from the Destiny Data Compendium snapshots of 2026-10-09 and 2026-10-13 (source:
+# compendium/<date>/<Tab>#<row>; the elements added with the 2026-10-13 snapshot cite it). Hashes are
+# Clarity 2.0625's for the elements of the 2026-10-09 snapshot unless a comment says they are the
+# manifest's (Clarity has no grenade, melee or super entries); the elements of the 2026-10-13
+# snapshot take the manifest's (244213.26.06.29.2000-1-bnet.65864: the Arcstrider's plugs). Ability energy amounts are base values: chunk energy
 # scalars and stats are not applied, and chunkScalar / baseCooldown are facts recorded from the
 # Compendium that change nothing (ADRs D5).
 # Format gaps that shape these rules (see builds/skip-grenade-hunter/discrepancies.md):
@@ -63,6 +65,24 @@ elements:
     # Not expressible: the super's damage resistance (no "while in your super" condition).
     passives: []
 
+  - id: storms-edge
+    name: Storm's Edge
+    kind: super
+    affinity: arc
+    class: hunter
+    hash: 3769507635
+    # Tier 1 super, 625 s. Supers have no chunk energy scalar (Game Mechanics#12), so chunkScalar
+    # stays "?". Its duration and drain per knife are "?" in the Compendium too.
+    ability: { kind: super, charges: 1, chunkScalar: "?", baseCooldown: 625 }
+    description: "Thrown Arc super with 90% [PvP 45%] damage resistance: up to 3 homing knives per cast. Each one hits for 90 impact and up to 171 damage within 3 m, then you teleport to it and spin, hitting twice for 1440 within 6 m."
+    source: compendium/2026-10-13/Arc#46
+    # Not expressible: the teleport (movement has no part in a loop) and the super's damage
+    # resistance (no "while in your super" condition). The Compendium states no Bolt Charge, Jolt
+    # or Blind for it.
+    inert: "Damage only: its hits and kills are the super step itself, and the teleport to the knife is movement, which has no part in a loop."
+    rules: []
+    passives: []
+
   - id: skip-grenade
     name: Skip Grenade
     kind: grenade
@@ -74,6 +94,90 @@ elements:
     description: "Arc grenade that splits on impact into 4 seekers that chase enemies within 6 m; each seeker hits twice on impact, then explodes. Its interactions in this build come from Shinobu's Vow."
     source: compendium/2026-10-09/Arc#36
     inert: "Damage only: its hits and kills are the grenade step itself, and what reacts to them (Shinobu's Vow) has the rules."
+    rules: []
+    passives: []
+
+  - id: arcbolt-grenade
+    name: Arcbolt Grenade
+    kind: grenade
+    affinity: arc
+    class: hunter
+    hash: 1582574009
+    ability: { kind: grenade, charges: 1, chunkScalar: 0.75, baseCooldown: 151.5 }
+    description: "Arc grenade that, 1 s after impact, sends lightning at the nearest enemy in sight within 12 m; it chains to the next enemy within 10 m, up to 4 enemies, 521 [PvP 85] damage each."
+    source: compendium/2026-10-13/Arc#28
+    inert: "Damage only: its hits and kills are the grenade step itself, and what reacts to grenade hits (Spark of Shock) has the rules."
+    rules: []
+    passives: []
+
+  - id: flashbang-grenade
+    name: Flashbang Grenade
+    kind: grenade
+    affinity: arc
+    class: hunter
+    hash: 2909720723
+    ability: { kind: grenade, charges: 1, chunkScalar: 0.875, baseCooldown: 131.7 }
+    description: "Arc grenade that explodes once it slows down: up to 684 [PvP 120] damage within 7.5 m, and Blind for up to 5 [3] s on enemies within 10 m. You can't blind yourself."
+    source: compendium/2026-10-13/Arc#29
+    rules:
+      # The blind is shorter than the glossary's 10 s (Arc#7, every Blind against combatants): this
+      # grenade's is "up to 5 s".
+      - on: { damage: { via: grenade } }
+        then:
+          - { debuffTarget: { status: blind, duration: 5s } }
+        reason: "Your Flashbang blinds the enemies around its explosion."
+    passives: []
+
+  - id: flux-grenade
+    name: Flux Grenade
+    kind: grenade
+    affinity: arc
+    class: hunter
+    hash: 4198689901
+    ability: { kind: grenade, charges: 1, chunkScalar: 0.875, baseCooldown: 105.4 }
+    description: "Arc grenade that sticks to enemies or surfaces and explodes 1.7 s later: up to 901 [PvP 150] damage within 6 m, or 1500 [250] when it sticks to an enemy."
+    source: compendium/2026-10-13/Arc#31
+    inert: "Damage only: its hits and kills are the grenade step itself, and what reacts to grenade hits (Spark of Shock) has the rules."
+    rules: []
+    passives: []
+
+  - id: lightning-grenade
+    name: Lightning Grenade
+    kind: grenade
+    affinity: arc
+    class: hunter
+    hash: 2994412667
+    # One charge: the Compendium gives a second only with Touch of Thunder (a Titan aspect, Arc#33).
+    ability: { kind: grenade, charges: 1, chunkScalar: 0.5, baseCooldown: 219.5 }
+    description: "Arc grenade that sticks to surfaces and enemies and, after 1 s, strikes a lightning bolt every 1.67 s, 4 times (5 with Spark of Magnitude): 373 [PvP 120] damage each, 1492 in all (1865 with Spark of Magnitude)."
+    source: compendium/2026-10-13/Arc#32
+    inert: "Damage only: its hits and kills are the grenade step itself, and what reacts to grenade hits (Spark of Shock) has the rules."
+    rules: []
+    passives: []
+
+  - id: pulse-grenade
+    name: Pulse Grenade
+    kind: grenade
+    affinity: arc
+    class: hunter
+    hash: 1713935764
+    ability: { kind: grenade, charges: 1, chunkScalar: 0.625, baseCooldown: 175.6 }
+    description: "Arc grenade that bursts on impact for up to 156 [PvP 50] damage within 6 m, then pulses every 0.7 s, 5 more times (7 with Spark of Magnitude), for up to 249 [80] each: 1245 in all (1743 with Spark of Magnitude)."
+    source: compendium/2026-10-13/Arc#34
+    inert: "Damage only: its hits and kills are the grenade step itself, and what reacts to grenade hits (Spark of Shock) has the rules."
+    rules: []
+    passives: []
+
+  - id: storm-grenade
+    name: Storm Grenade
+    kind: grenade
+    affinity: arc
+    class: hunter
+    hash: 2481624867
+    ability: { kind: grenade, charges: 1, chunkScalar: 0.625, baseCooldown: 175.6 }
+    description: "Arc grenade that calls a lightning strike 0.85 s after impact (up to 440 [PvP 70] damage within 7 m), then a barrage of bolts in an X over 7 m 0.6 s later (up to 311 [50]); Spark of Magnitude adds a second barrage in a +. A combatant takes each barrage once: up to 751 in all (1062 with Spark of Magnitude)."
+    source: compendium/2026-10-13/Arc#37
+    inert: "Damage only: its hits and kills are the grenade step itself, and what reacts to grenade hits (Spark of Shock) has the rules."
     rules: []
     passives: []
 
@@ -114,6 +218,26 @@ elements:
         severity: warning
         says: "With {value} Class, a Combination Blow kill gives back less than a full class ability: its 100% needs 70 Class, and below that it gives less (how much less isn't published)."
 
+  - id: disorienting-blow
+    name: Disorienting Blow
+    kind: melee
+    affinity: arc
+    class: hunter
+    hash: 2716335210
+    ability: { kind: melee, charges: 1, chunkScalar: 0.9, baseCooldown: 118.8 }
+    description: "Arc palm strike: 162 impact and up to 976 damage within 7 m. A hit blinds enemies within 9.6 m for 8.5 s and gives you Amplified and x2 Bolt Charge."
+    source: compendium/2026-10-13/Arc#42
+    rules:
+      # The plain press only (`melee:press`): Tempest Strike's sliding uppercut is the melee too, but
+      # the Compendium says it doesn't interact with Disorienting Blow (Arc#51).
+      - on: { damage: { via: melee:press } }
+        then:
+          - { debuffTarget: { status: blind, duration: 8.5s } }
+          - { applyBuff: amplified }
+          - { applyBuff: { status: bolt-charge, stacks: 2 } }
+        reason: "Every Disorienting Blow hit blinds the enemies around it, makes you Amplified and gives you two Bolt Charge stacks."
+    passives: []
+
   - id: gamblers-dodge
     name: Gambler's Dodge
     kind: classAbility
@@ -146,6 +270,22 @@ elements:
         below: 100
         severity: info
         says: "With {value} Melee, a Gambler's Dodge gives back a full melee charge only within 15 m of an enemy ({value}% of one farther away; 100 Melee for a full charge anywhere)."
+
+  - id: marksmans-dodge
+    name: Marksman's Dodge
+    kind: classAbility
+    affinity: arc
+    class: hunter
+    # One copy per Hunter subclass, all with this text (Bungie's manifest: hunter.<subclass>.
+    # class_abilities); 426473316 is the Arcstrider's. As with Gambler's Dodge, a DIM loadout's
+    # Marksman's Dodge is recognised whichever copy it names.
+    hash: [426473316, 1282157891, 2711519341, 2816982784, 3636300854, 3933525366]
+    ability: { kind: classAbility, charges: 1, chunkScalar: 1, baseCooldown: 42 }
+    description: "Evasive dodge that reloads all your weapons and picks up ammo bricks within 15 m. While dodging, combatants' projectiles stop tracking you."
+    source: "compendium/2026-10-13/Class Abilities#6"
+    inert: "Reloads and ammo only: Loopsmith counts neither, and the dodge itself is the class ability step, which every rule on a class ability use reacts to."
+    rules: []
+    passives: []
 
   # ================================================================ aspects
   # fragmentSlots: Bungie's manifest (244213.26.06.29.2000-1-bnet.65864), each aspect plug's energy
@@ -220,7 +360,219 @@ elements:
         reason: "Air-casting your class ability launches you up, jolting enemies within 10 m and making you Amplified."
     passives: []
 
+  - id: lethal-current
+    name: Lethal Current
+    kind: aspect
+    affinity: arc
+    class: hunter
+    hash: 4194622038
+    fragmentSlots: 2
+    description: "Your direct melee hits blind jolted enemies. Using your class ability extends your melee lunge to 7 m, and your next melee or Tempest Strike hit within 10 s jolts the enemy and sets off an aftershock (195 damage within 6 m)."
+    source: compendium/2026-10-13/Arc#50
+    rules:
+      # "Direct" melee hits: the plain press (`melee:press`), not Tempest Strike's ground wave.
+      - on: { damage: { via: melee:press, targetHas: [jolt] } }
+        then:
+          - { debuffTarget: blind }
+        reason: "Punching a jolted enemy blinds it."
+      # Every class ability use arms it (Ascension's air move is one too); the longer lunge is a fact
+      # in the description.
+      - on: { abilityCast: classAbility }
+        then:
+          - { applyBuff: lethal-current }
+        reason: "Using your class ability arms your next melee hit."
+      # "The next Melee/Tempest Strike hit": any melee use, the sliding uppercut too. The aftershock is
+      # its own strike (Arc damage from the aspect), so it is a keyword strike, not a second melee hit.
+      - on: { damage: { via: melee } }
+        when: [ { has: lethal-current } ]
+        then:
+          - { removeBuff: lethal-current }
+          - { debuffTarget: jolt }
+          - { strikeTarget: { via: lethal-current, hit: damage } }
+        reason: "Your armed melee hit jolts the enemy and sets off a damaging aftershock around it."
+    passives: []
+
   # ================================================================ fragments
+
+  - id: spark-of-amplitude
+    name: Spark of Amplitude
+    kind: fragment
+    affinity: arc
+    class: hunter
+    hash: 3277705906
+    description: "While Amplified, 2 kills within 4 s of each other create an Orb of Power (2.5% Super energy), then 10 s of cooldown during which kills don't count. The kill that makes you Amplified counts."
+    source: compendium/2026-10-13/Arc#10
+    rules:
+      # Two kills within 4 s: progress the game doesn't show as a stacking status, so a chance rule
+      # (ADRs D8), like Spark of Discharge's counter.
+      - on: { kill: { via: any } }
+        when: [ { has: amplified } ]
+        then:
+          - { spawn: orb-of-power }
+        chance: true
+        reason: "While you're Amplified, two quick kills drop an Orb of Power (then 10 s before the next)."
+    passives: []
+
+  - id: spark-of-beacons
+    name: Spark of Beacons
+    kind: fragment
+    affinity: arc
+    class: hunter
+    hash: 1727069367
+    description: "While Amplified, kills with Special or Heavy ammo Arc weapons set off a blinding blast: Blind on enemies within 7.5 m."
+    source: compendium/2026-10-13/Arc#11
+    rules:
+      # A damage source can't name a weapon's ammo type, so this fires on every Arc weapon kill and
+      # is marked chance: a Primary weapon's kill doesn't set it off in the game.
+      - on: { kill: { via: weapon:arc } }
+        when: [ { has: amplified } ]
+        then:
+          - { debuffTarget: blind }
+        chance: true
+        reason: "While you're Amplified, a Special or Heavy Arc weapon kill blinds the enemies around it."
+    passives: []
+
+  - id: spark-of-brilliance
+    name: Spark of Brilliance
+    kind: fragment
+    affinity: arc
+    class: hunter
+    hash: 3277705905
+    description: "Precision kills on blinded enemies set off a blinding blast: Blind on enemies within 7.5 m."
+    source: compendium/2026-10-13/Arc#12
+    rules:
+      # Loopsmith doesn't tell precision kills from body kills, so the rule is marked chance.
+      - on: { kill: { via: any, targetHas: [blind] } }
+        then:
+          - { debuffTarget: blind }
+        chance: true
+        reason: "A precision kill on a blinded enemy blinds the enemies around it."
+    passives: []
+
+  - id: spark-of-feedback
+    name: Spark of Feedback
+    kind: fragment
+    affinity: arc
+    class: hunter
+    hash: 3277705907
+    description: "Being hit by a melee attack gives your next melee hit within 5 s +100% damage [PvP 50%, 15% with Knockout]; not refreshed while active."
+    source: compendium/2026-10-13/Arc#14
+    inert: "Being hit by a melee attack is no step in Loopsmith (it doesn't model the damage you take), so no loop sets it off."
+    rules: []
+    passives: []
+
+  - id: spark-of-focus
+    name: Spark of Focus
+    kind: fragment
+    affinity: arc
+    class: hunter
+    hash: 1727069360
+    description: "After 1.25 s of sprinting at 5 m/s or more, your class ability regenerates 150% [PvP 75%] faster, until it has a charge ready."
+    source: compendium/2026-10-13/Arc#15
+    inert: "Sprinting is no step in Loopsmith, and a faster regeneration is a rate, which a loop doesn't count."
+    rules: []
+    passives: []
+
+  - id: spark-of-haste
+    name: Spark of Haste
+    kind: fragment
+    affinity: arc
+    class: hunter
+    hash: 3478354817
+    description: "After 1.25 s of sprinting at 5 m/s or more, +50 Health stat while you keep sprinting."
+    source: compendium/2026-10-13/Arc#17
+    inert: "Sprinting is no step in Loopsmith, and the Health it raises only changes the damage you can take, which Loopsmith doesn't model."
+    rules: []
+    passives: []
+
+  - id: spark-of-instinct
+    name: Spark of Instinct
+    kind: fragment
+    affinity: arc
+    class: hunter
+    hash: 3478354816
+    description: "At critical health, taking damage sends out an Arc burst: up to 46 [PvP 20] damage and Jolt on nearby enemies (radius not given), about 15 s between bursts."
+    source: compendium/2026-10-13/Arc#18
+    # Not expressible yet: its Jolt would matter to a loop (Spark of Ions, Lethal Current), but no step
+    # takes damage or declares critical health (docs/backlog.md, Rule format gaps).
+    inert: "Taking damage at critical health is no step in Loopsmith yet, so no loop sets off its jolting burst."
+    rules: []
+    passives: []
+
+  - id: spark-of-ions
+    name: Spark of Ions
+    kind: fragment
+    affinity: arc
+    class: hunter
+    hash: 1727069363
+    description: "Killing a jolted enemy, or a kill with Bolt Charge's strike, creates an Ionic Trace; 10 s between traces."
+    source: compendium/2026-10-13/Arc#19
+    rules:
+      # The 10 s cooldown between traces is a fact in the description: a loop's steps don't measure
+      # time, so the rule fires on every such kill.
+      - on: { kill: { via: any, targetHas: [jolt] } }
+        then:
+          - { spawn: ionic-trace }
+        reason: "Killing a jolted enemy creates an Ionic Trace (at most one every 10 s)."
+      - on: { kill: { via: keyword:bolt-charge } }
+        then:
+          - { spawn: ionic-trace }
+        reason: "A kill with Bolt Charge's lightning strike creates an Ionic Trace (at most one every 10 s)."
+    passives: []
+
+  - id: spark-of-magnitude
+    name: Spark of Magnitude
+    kind: fragment
+    affinity: arc
+    class: hunter
+    hash: 1727069374
+    description: "Lingering Arc grenades last longer: Lightning Grenade strikes one more bolt (5), Pulse Grenade pulses twice more (8 in all), Storm Grenade adds a second barrage."
+    source: compendium/2026-10-13/Arc#20
+    inert: "More hits from the same grenade: they are the grenade step itself, so no loop changes."
+    rules: []
+    passives: []
+
+  - id: spark-of-momentum
+    name: Spark of Momentum
+    kind: fragment
+    affinity: arc
+    class: hunter
+    hash: 1727069365
+    description: "Sliding over an ammo brick (when not full of that ammo) refills your equipped weapon and gives you x3 Bolt Charge."
+    source: compendium/2026-10-13/Arc#21
+    # Not expressible yet: its x3 Bolt Charge would matter to a loop, but no step slides over ammo
+    # (docs/backlog.md, Rule format gaps).
+    inert: "Sliding over an ammo brick is no step in Loopsmith yet, so no loop sets off its x3 Bolt Charge."
+    rules: []
+    passives: []
+
+  - id: spark-of-recharge
+    name: Spark of Recharge
+    kind: fragment
+    affinity: arc
+    class: hunter
+    hash: 1727069375
+    description: "On reaching critical health, your grenade and melee regenerate 400% [PvP 200%] faster until your shields are full again."
+    source: compendium/2026-10-13/Arc#22
+    inert: "Critical health is no step in Loopsmith (it doesn't model the damage you take), and a faster regeneration is a rate, which a loop doesn't count."
+    rules: []
+    passives: []
+
+  - id: spark-of-volts
+    name: Spark of Volts
+    kind: fragment
+    affinity: arc
+    class: hunter
+    hash: 3277705904
+    description: "Finishers make you Amplified and give you x1 Bolt Charge."
+    source: compendium/2026-10-13/Arc#25
+    rules:
+      - on: { finisher: {} }
+        then:
+          - { applyBuff: amplified }
+          - { applyBuff: { status: bolt-charge, stacks: 1 } }
+        reason: "Every finisher makes you Amplified and gives you a Bolt Charge stack."
+    passives: []
 
   - id: spark-of-resistance
     name: Spark of Resistance
@@ -290,4 +642,52 @@ elements:
           - { spawn: ionic-trace }
         chance: true
         reason: "Rack up Arc weapon kills and every few of them drop an Ionic Trace (one per boss kill)."
+    passives: []
+
+  # ================================================================ jumps
+  # The Compendium has no rows for jumps; names and descriptions are Bungie's manifest's
+  # (rules/manifest.yaml), and these are the Arcstrider copies' hashes.
+
+  - id: high-jump
+    name: High Jump
+    kind: jump
+    affinity: arc
+    class: hunter
+    hash: 95544330
+    description: "Jump a second time in the air to climb higher."
+    inert: "A jump: movement has no part in a loop."
+    rules: []
+    passives: []
+
+  - id: strafe-jump
+    name: Strafe Jump
+    kind: jump
+    affinity: arc
+    class: hunter
+    hash: 95544331
+    description: "Jump a second time in the air with strong control over where you go."
+    inert: "A jump: movement has no part in a loop."
+    rules: []
+    passives: []
+
+  - id: triple-jump
+    name: Triple Jump
+    kind: jump
+    affinity: arc
+    class: hunter
+    hash: 95544328
+    description: "Jump a second and a third time in the air to keep control of your movement."
+    inert: "A jump: movement has no part in a loop."
+    rules: []
+    passives: []
+
+  - id: hunter-blink
+    name: Blink
+    kind: jump
+    affinity: arc
+    class: hunter
+    hash: 95544329
+    description: "Jump in the air to teleport a short distance."
+    inert: "A jump: movement has no part in a loop."
+    rules: []
     passives: []

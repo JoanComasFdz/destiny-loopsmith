@@ -7,8 +7,9 @@ namespace Loopsmith.Core.BuildComposition;
 /// <summary>
 /// Pure: the plugs a build's subclass holds and the ones it could (the manifest excerpt's <c>plugs</c> of the subclass
 /// item), and a build with other plugs. A plug the rules know for the build's class is the build's element (its ability,
-/// aspect or fragment); any other is a left-out subclass plug, marked as not in the rules (an Arc fragment the rules
-/// author for the Hunter is one on a Striker), and a jump is always left out (it has no part in a loop). The aspects open the fragment slots: the sum of the aspects' <c>fragmentSlots</c>, or not known when any
+/// jump, aspect or fragment); any other is a left-out subclass plug, marked as not in the rules (an Arc fragment the rules
+/// author for the Hunter is one on a Striker), except a jump the rules don't have, which has no part in a loop and isn't
+/// marked. The aspects open the fragment slots: the sum of the aspects' <c>fragmentSlots</c>, or not known when any
 /// aspect's isn't.
 /// </summary>
 public static class SubclassEditing
@@ -59,7 +60,7 @@ public static class SubclassEditing
             Find(build.Abilities.Grenade.ToElement(), SubclassSlot.Grenade),
             Find(build.Abilities.Melee.ToElement(), SubclassSlot.Melee),
             Find(build.Abilities.ClassAbility.ToElement(), SubclassSlot.ClassAbility),
-            Find(Optional.None<ElementId>(), SubclassSlot.Jump),
+            Find(build.Abilities.Jump.ToElement(), SubclassSlot.Jump),
             List(build.Aspects, SubclassSlot.Aspect),
             List(build.Fragments, SubclassSlot.Fragment));
     }
@@ -131,25 +132,27 @@ public static class SubclassEditing
 
     /// <summary>
     /// The build holding the plugs: a plug the rules know is its element, any other a left-out plug ("?" in an ability
-    /// slot). An ability slot with no plug is empty, except a "?" the build holds without a plug (a build file's), which
-    /// the editor shows empty but keeps.
+    /// slot; a jump the rules don't have leaves the jump slot empty, since it has no part in a loop). An ability slot with
+    /// no plug is empty, except a "?" the build holds without a plug (a build file's), which the editor shows empty but
+    /// keeps.
     /// </summary>
     private static Build Write(RuleCatalog catalog, Build build, SubclassPlugs plugs)
     {
         Optional<ElementId> FindId(ItemHash hash) => FindElement(catalog, build, hash).Map(element => element.Id);
-        AbilityPlug FindAbility(Optional<ItemHash> plug, AbilityPlug held) =>
+        AbilityPlug FindAbility(Optional<ItemHash> plug, AbilityPlug held, AbilityPlug unknown) =>
             plug.Match(
-                hash => FindId(hash.Value).Match<AbilityPlug>(id => new AbilityPlug.Known(id.Value), _ => new AbilityPlug.Unknown()),
+                hash => FindId(hash.Value).Match<AbilityPlug>(id => new AbilityPlug.Known(id.Value), _ => unknown),
                 _ => held is AbilityPlug.Unknown ? held : new AbilityPlug.Empty());
         ImmutableArray<ElementId> ListElements(ImmutableArray<ItemHash> hashes) => [.. hashes.SelectMany(hash => Flatten(FindId(hash)))];
         var unknown = ListSingles(plugs).Concat(plugs.Aspects).Concat(plugs.Fragments).Where(hash => !FindId(hash).IsSome());
         return build with
         {
             Abilities = new AbilityLoadout(
-                FindAbility(plugs.Super, build.Abilities.Super),
-                FindAbility(plugs.Grenade, build.Abilities.Grenade),
-                FindAbility(plugs.Melee, build.Abilities.Melee),
-                FindAbility(plugs.ClassAbility, build.Abilities.ClassAbility)),
+                FindAbility(plugs.Super, build.Abilities.Super, new AbilityPlug.Unknown()),
+                FindAbility(plugs.Grenade, build.Abilities.Grenade, new AbilityPlug.Unknown()),
+                FindAbility(plugs.Melee, build.Abilities.Melee, new AbilityPlug.Unknown()),
+                FindAbility(plugs.ClassAbility, build.Abilities.ClassAbility, new AbilityPlug.Unknown()),
+                FindAbility(plugs.Jump, build.Abilities.Jump, new AbilityPlug.Empty())),
             Aspects = ListElements(plugs.Aspects),
             Fragments = ListElements(plugs.Fragments),
             LeftOut = [.. build.LeftOut.Where(item => item.Part != LoadoutPart.SubclassPlug), .. unknown.Select(hash => new LeftOutItem(LoadoutPart.SubclassPlug, hash))],
@@ -162,12 +165,13 @@ public static class SubclassEditing
     private static IEnumerable<T> Flatten<T>(Optional<T> optional) =>
         optional.Match(some => new[] { some.Value }, _ => []);
 
-    /// <summary>The rules' element a plug is on this build: an ability, aspect or fragment that fits its class and subclass; none: a left-out plug.</summary>
+    /// <summary>The rules' element a plug is on this build: an ability, jump, aspect or fragment that fits its class and subclass; none: a left-out plug.</summary>
     public static Optional<BuildElement> FindElement(RuleCatalog catalog, Build build, ItemHash hash) =>
         catalog.FindElementByHash(hash).Bind(element => IsSubclassPlug(element.Kind) && element.Fits(build.Class, build.Subclass) ? Optional.Some(element) : Optional.None<BuildElement>());
 
     private static bool IsSubclassPlug(ElementKind kind) =>
-        kind is ElementKind.Super or ElementKind.Grenade or ElementKind.Melee or ElementKind.ClassAbility or ElementKind.Aspect or ElementKind.Fragment;
+        kind is ElementKind.Super or ElementKind.Grenade or ElementKind.Melee or ElementKind.ClassAbility or ElementKind.Jump
+            or ElementKind.Aspect or ElementKind.Fragment;
 
     private static string DescribePlug(RuleCatalog catalog, ItemHash hash) =>
         catalog.Manifest.FindItem(hash).Match(item => item.Value.Name, _ => $"Item {hash.Value}");

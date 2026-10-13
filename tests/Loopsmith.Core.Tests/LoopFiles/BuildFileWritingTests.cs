@@ -66,7 +66,7 @@ public sealed class BuildFileWritingTests
             Optional.None<CatalogVersion>(),
             GuardianClass.Hunter,
             Subclass.Arc,
-            new AbilityLoadout(new AbilityPlug.Unknown(), new AbilityPlug.Unknown(), new AbilityPlug.Unknown(), new AbilityPlug.Known(ElementId.From("gamblers-dodge"))),
+            new AbilityLoadout(new AbilityPlug.Unknown(), new AbilityPlug.Unknown(), new AbilityPlug.Unknown(), new AbilityPlug.Known(ElementId.From("gamblers-dodge")), new AbilityPlug.Empty()),
             [ElementId.From("tempest-strike")],
             [],
             Optional.None<ElementId>(),
@@ -91,6 +91,22 @@ public sealed class BuildFileWritingTests
         Assert.Equal(
             [(LoadoutPart.Item, 2005u), (LoadoutPart.Item, 2006u), (LoadoutPart.ArmorMod, 3007u)],
             read.LeftOut.Select(item => (item.Part, item.Hash.Value)));
+    }
+
+    [Fact]
+    public void A_jump_is_written_after_the_class_ability_and_read_back()
+    {
+        var known = MinimalBuild with { Abilities = MinimalBuild.Abilities with { Jump = new AbilityPlug.Known(ElementId.From("hunter-blink")) } };
+        var unknown = MinimalBuild with { Abilities = MinimalBuild.Abilities with { Jump = new AbilityPlug.Unknown() } };
+
+        var writtenKnown = BuildFileWriting.WriteBuildFile(known, []);
+        var writtenUnknown = BuildFileWriting.WriteBuildFile(unknown, []);
+
+        Assert.Contains("classAbility: \"?\"\njump: hunter-blink\naspects: []\n", writtenKnown, StringComparison.Ordinal);
+        Assert.Contains("jump: \"?\"\n", writtenUnknown, StringComparison.Ordinal);
+        Assert.DoesNotContain("jump:", BuildFileWriting.WriteBuildFile(MinimalBuild, []), StringComparison.Ordinal);   // no jump: no entry
+        Assert.Equal(known.Abilities, ParseBuild(new SourceText("written.yaml", writtenKnown)).Abilities);
+        Assert.Equal(unknown.Abilities, ParseBuild(new SourceText("written.yaml", writtenUnknown)).Abilities);
     }
 
     private static Build ParseBuild(SourceText file) =>

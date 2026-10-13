@@ -197,7 +197,7 @@ items:
 elements:
   - id: spark-of-shock
     name: Spark of Shock
-    kind: fragment            # keyword|super|grenade|melee|classAbility|aspect|fragment|exoticArmor|
+    kind: fragment            # keyword|super|grenade|melee|classAbility|jump|aspect|fragment|exoticArmor|
                               # exoticWeapon|catalyst|armorSetBonus|armorMod|artifactPerk|weaponPerk
     affinity: arc
     class: hunter             # optional: hunter|titan|warlock
@@ -229,8 +229,12 @@ Two keys belong to some kinds only (anywhere else they are an error):
   Compendium, changing nothing (ADRs D5).
 
 `kind: keyword` elements are active in every build, once; every other kind is equipped through its
-build slot ([Build check](#build-check)). Besides the keywords, `keywords/guardian.yaml` holds the Guardian's own
-damage resistance (34.5% against combatants, compendium Game Mechanics#106), so every build's state counts it.
+build slot ([Build check](#build-check)). A `kind: jump` element is a subclass's jump (High Jump, Blink): it is
+`inert` ("A jump: movement has no part in a loop."), so the build knows it and its subclass editor marks it, but it
+sets nothing off and the engine never plays it. The rules have the Arcstrider's four, by that subclass's hashes; a
+jump of another subclass (each has its own copies) stays a left-out plug. Besides the keywords, `keywords/guardian.yaml`
+holds the Guardian's own damage resistance (34.5% against combatants, compendium Game Mechanics#106), so every build's
+state counts it.
 
 `statChecks` say something about an element at some values of a build's stat — a fact of the game the build
 check states, never counted (the stat isn't simulated):
@@ -588,6 +592,7 @@ super: arc-staff
 grenade: skip-grenade
 melee: combination-blow
 classAbility: gamblers-dodge
+jump: triple-jump                            # optional
 aspects: [tempest-strike, flow-state]
 fragments: [spark-of-resistance, spark-of-frequency, spark-of-shock, spark-of-discharge]
 exoticArmor: shinobus-vow                    # optional
@@ -606,6 +611,10 @@ stats: { weapons: 47, class: 104, grenade: 145, super: 27, melee: 79 }   # any s
   Loopsmith can't name it (a DIM link's super with no hash in the catalog). It shows as "?" and sets nothing off. An
   ability left out is an empty slot (a build started from scratch, [loop-format.md](loop-format.md#starting-from-scratch)):
   it shows empty, sets nothing off, and the build check doesn't call it unknown.
+* `jump`: a `kind: jump` element id, or `"?"`, like the abilities; it sets nothing off either way. Left out, the build
+  has no jump the rules know: none, or one of a subclass the rules don't have, which `leftOut.subclassPlugs` holds
+  (a build file from before jumps were elements may hold an Arcstrider jump there too; it still opens and shows it,
+  and the subclass editor's Save writes it as `jump:`).
 * Optional: `author`, `source` (an absolute http(s) URL), `catalog`, `exoticArmor`, and the lists
   `aspects`, `fragments`, `armorSetBonuses`, `armorMods`, `artifactPerks`, `weapons` (default empty).
 * A weapon: `slot` (`kinetic|energy|power`), `name` and `type` (`kinetic|arc|solar|void|stasis|strand`)
@@ -647,11 +656,11 @@ stats: { weapons: 47, class: 104, grenade: 145, super: 27, melee: 79 }   # any s
 | `Unknown <slot> '<id>' — no such element in the rule catalog.` | Blocking |
 | `'<name>' (<Kind>) can't go in the <slot> slot.` — each slot takes its own kind; a weapon's perks take `weaponPerk` or `exoticWeapon`, its catalyst `catalyst`; a `keyword` element goes in no slot | Blocking |
 | `'<name>' belongs to another class, not <Class>.` — the element's `class` isn't the build's | Blocking |
-| `'<name>' (<Affinity>) does not fit the <Subclass> subclass.` — a super, grenade, melee, aspect or fragment of another affinity; neutral and kinetic ones fit any, and Prismatic takes any | Blocking |
+| `'<name>' (<Affinity>) does not fit the <Subclass> subclass.` — a super, grenade, melee, jump, aspect or fragment of another affinity; neutral and kinetic ones fit any, and Prismatic takes any | Blocking |
 | `<n> aspects equipped; at most 2.` · `'<name>' is equipped <n> times; aspects and fragments are unique.` · `<n> fragments equipped; the aspects grant <m> slots.` | Blocking |
 | `Fragment slots unknown for <aspects> — fragment count not checked.` | Info |
 | `Unknown (?): <slots> — not in the rule catalog yet, so they set nothing off.` | Info |
-| `Left out of the build: <n> items, <n> subclass plugs, … from the DIM loadout — not in the rule catalog yet.` — only the gaps: a stat or tuning mod (it changes only stats, which the build's stats count when they add up from the player's armor), a legendary armor piece (its set's bonuses count from the pieces worn) and a jump have no part in a loop and aren't counted | Info |
+| `Left out of the build: <n> items, <n> subclass plugs, … from the DIM loadout — not in the rule catalog yet.` — only the gaps: a stat or tuning mod (it changes only stats, which the build's stats count when they add up from the player's armor), a legendary armor piece (its set's bonuses count from the pieces worn) and a jump the rules don't have have no part in a loop and aren't counted | Info |
 | `<weapon>'s roll: <perks> — not in the rule catalog yet, so they set nothing off.` — perks named as "Slice (Enhanced Trait)" | Info |
 | `<weapon>'s roll: <perk> isn't a perk of its column <n> in the manifest excerpt.` — only when the excerpt has the weapon's columns | Warning |
 | `<weapon>: '<perk>' gives way to the other perk of its column — a column holds one perk.` — a perk `perks` names in a column the roll (or another named perk) already fills; it doesn't count | Warning |

@@ -6,8 +6,8 @@ namespace Loopsmith.Core.LoadoutImporting;
 
 /// <summary>
 /// Pure: a DIM loadout → a <see cref="Build"/> of what the rule catalog recognises by manifest hash, and the rest left
-/// out (<see cref="Build.LeftOut"/>). Nothing is guessed (ADRs D12): an ability the catalog has no hash for is "?", an
-/// item it doesn't know is listed, not matched by name. A weapon is equipped when the manifest excerpt knows its slot,
+/// out (<see cref="Build.LeftOut"/>). Nothing is guessed (ADRs D12): an ability the catalog has no hash for is "?", a jump
+/// it has no hash for and an item it doesn't know are listed, not matched by name. A weapon is equipped when the manifest excerpt knows its slot,
 /// name and damage type, with the perks its socket overrides pick in its trait columns (a loadout saved with them);
 /// any other weapon is left out. The armor's set
 /// perks the pieces grant (2 or 4 of a set, by the excerpt) are its set bonuses, where the catalog knows them.
@@ -95,7 +95,8 @@ public static class DimLoadoutMapping
                 FindAbility(placed, ElementKind.Super),
                 FindAbility(placed, ElementKind.Grenade),
                 FindAbility(placed, ElementKind.Melee),
-                FindAbility(placed, ElementKind.ClassAbility)),
+                FindAbility(placed, ElementKind.ClassAbility),
+                FindJump(placed)),
             ListAll(placed, LoadoutPart.SubclassPlug, ElementKind.Aspect),
             ListAll(placed, LoadoutPart.SubclassPlug, ElementKind.Fragment),
             FindFirst(placed, LoadoutPart.Item, ElementKind.ExoticArmor),
@@ -144,7 +145,7 @@ public static class DimLoadoutMapping
         entry with { Element = entry.Element.Bind(element => element.Fits(guardianClass, subclass) ? Optional.Some(element) : Optional.None<BuildElement>()) };
 
     /// <summary>
-    /// Where a recognised element can go: a subclass plug is an ability, aspect or fragment; an item an exotic armor; a
+    /// Where a recognised element can go: a subclass plug is an ability, a jump, an aspect or a fragment; an item an exotic armor; a
     /// mod a mod; an artifact perk an artifact perk. Anything else (an exotic weapon's perk) needs what isn't in a
     /// loadout, and is left out.
     /// </summary>
@@ -153,7 +154,7 @@ public static class DimLoadoutMapping
             some => (part, some.Value.Kind) switch
             {
                 (LoadoutPart.SubclassPlug, ElementKind.Super or ElementKind.Grenade or ElementKind.Melee or ElementKind.ClassAbility
-                    or ElementKind.Aspect or ElementKind.Fragment) => true,
+                    or ElementKind.Jump or ElementKind.Aspect or ElementKind.Fragment) => true,
                 (LoadoutPart.Item, ElementKind.ExoticArmor) => true,
                 (LoadoutPart.ArmorMod, ElementKind.ArmorMod) => true,
                 (LoadoutPart.ArtifactPerk, ElementKind.ArtifactPerk) => true,
@@ -168,6 +169,13 @@ public static class DimLoadoutMapping
     /// <summary>The loadout's ability of this kind; "?" when the rules don't know it (or the loadout names none).</summary>
     private static AbilityPlug FindAbility(ImmutableArray<(LoadoutPart Part, BuildElement Element, ItemHash Hash)> placed, ElementKind kind) =>
         FindFirst(placed, LoadoutPart.SubclassPlug, kind).Match<AbilityPlug>(found => new AbilityPlug.Known(found.Value), _ => new AbilityPlug.Unknown());
+
+    /// <summary>
+    /// The loadout's jump when the rules know it (the Arcstrider's); none otherwise: a jump the rules don't have stays in
+    /// <c>leftOut</c> (it has no part in a loop, so it is no gap and no "?").
+    /// </summary>
+    private static AbilityPlug FindJump(ImmutableArray<(LoadoutPart Part, BuildElement Element, ItemHash Hash)> placed) =>
+        FindFirst(placed, LoadoutPart.SubclassPlug, ElementKind.Jump).Match<AbilityPlug>(found => new AbilityPlug.Known(found.Value), _ => new AbilityPlug.Empty());
 
     private static ImmutableArray<ElementId> ListAll(
         ImmutableArray<(LoadoutPart Part, BuildElement Element, ItemHash Hash)> placed, LoadoutPart part, ElementKind kind) =>

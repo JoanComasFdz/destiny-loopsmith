@@ -26,7 +26,7 @@
                 <div class="subclass-emblem">
                     @if (view.Subclass.Subclass is Optional<IconTile>.Some subclassItem)
                     {
-                        @RenderTile(subclassItem.Value, "subclass-icon")
+                        @RenderTile(subclassItem.Value, "subclass-icon", gameText: true)
                     }
                     @RenderAbility(view.Subclass.Super, "super-icon")
                 </div>
@@ -37,11 +37,11 @@
                     }
                     @foreach (var tile in view.Subclass.Aspects)
                     {
-                        @RenderTile(tile, "aspect")
+                        @RenderTile(tile, "aspect", gameText: true)
                     }
                     @foreach (var tile in view.Subclass.Fragments)
                     {
-                        @RenderTile(tile, "fragment")
+                        @RenderTile(tile, "fragment", gameText: true)
                     }
                 </div>
             </div>
@@ -629,7 +629,7 @@
     {
         @if (ability is AbilityTile.Shown shown)
         {
-            @RenderTile(shown.Tile, kind)
+            @RenderTile(shown.Tile, kind, gameText: true)
         }
         else if (ability is AbilityTile.Empty empty)
         {
@@ -637,17 +637,19 @@
         }
     };
 
-    private RenderFragment RenderTile(IconTile tile, string kind, bool tappable = true) =>
-        RenderMarkedTile(tile, kind, LoadoutShaping.NoMarks, tappable);
+    /// <summary><paramref name="gameText"/>: a subclass plug, whose tooltip is Bungie's description.</summary>
+    private RenderFragment RenderTile(IconTile tile, string kind, bool tappable = true, bool gameText = false) =>
+        RenderMarkedTile(tile, kind, LoadoutShaping.NoMarks, tappable, gameText);
 
     /// <summary>A copy's square, with its marks drawn on it (TileMarks: the tier's diamonds, a masterwork's glow and border).</summary>
-    private RenderFragment RenderMarkedTile(IconTile tile, string kind, TileMarks marks, bool tappable = true) => __builder =>
+    private RenderFragment RenderMarkedTile(IconTile tile, string kind, TileMarks marks, bool tappable = true, bool gameText = false) => __builder =>
     {
+        var tooltip = gameText ? LoadoutShaping.DescribePlugTooltip(tile) : LoadoutShaping.AddMarks(DescribeTooltip(tile), marks);
         @if (tappable && tile.Details is Optional<ItemDetails>.Some tileDetails)
         {
             <button type="button" class="icon-tile tappable @kind @ToneStyling.ToAffinityClass(tile.Affinity) @DescribeTier(tile) @(tile.InRules ? "" : "out") @(tile.Enhanced ? "enhanced" : "") @LoadoutShaping.ToMasterworkClass(marks)"
                     data-tier="@LoadoutShaping.ToTierText(marks)" data-masterwork="@LoadoutShaping.ToMasterworkText(marks)"
-                    title="@LoadoutShaping.AddMarks(DescribeTooltip(tile), marks)" aria-label="@tile.Name" aria-haspopup="dialog" @onclick="() => OpenDetails(tileDetails.Value)">
+                    title="@tooltip" aria-label="@tile.Name" aria-haspopup="dialog" @onclick="() => OpenDetails(tileDetails.Value)">
                 @RenderTileFace(tile)
                 <TileOverlays Marks="marks" />
                 @if (!tile.InRules)
@@ -660,7 +662,7 @@
         {
             <span class="icon-tile @kind @ToneStyling.ToAffinityClass(tile.Affinity) @DescribeTier(tile) @(tile.InRules ? "" : "out") @(tile.Enhanced ? "enhanced" : "") @LoadoutShaping.ToMasterworkClass(marks)"
                   data-tier="@LoadoutShaping.ToTierText(marks)" data-masterwork="@LoadoutShaping.ToMasterworkText(marks)"
-                  title="@LoadoutShaping.AddMarks(DescribeTooltip(tile), marks)" aria-label="@tile.Name">
+                  title="@tooltip" aria-label="@tile.Name">
                 @RenderTileFace(tile)
                 <TileOverlays Marks="marks" />
                 @if (!tile.InRules)

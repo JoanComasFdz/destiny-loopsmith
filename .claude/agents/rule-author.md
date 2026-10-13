@@ -20,7 +20,8 @@ wrong trace, so you are precise and never guess.
    existing entry. Never add a duplicate.
 4. Gather every source you were given and rank them. The Compendium snapshot lives in
    `snapshots/compendium/<date>/` (gitignored and private, so **a new session doesn't have it**). If it
-   isn't there and you need it, say so and ask for it; don't author game numbers from memory.
+   isn't there and you need it, download it (`tools/compendium/README.md`, "In a cloud session"), or
+   say so and ask for it if that fails; don't author game numbers from memory.
 
 ## Source priority (highest wins)
 

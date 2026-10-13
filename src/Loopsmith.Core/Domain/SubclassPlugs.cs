@@ -5,7 +5,7 @@ namespace Loopsmith.Core.Domain;
 
 /// <summary>
 /// What a subclass holds, by manifest hash — the rules' elements and the plugs they don't know alike: its super,
-/// grenade, melee, class ability, jump (a jump has no part in a loop), aspects and fragments. The designer's subclass
+/// grenade, melee, class ability, jump, aspects and fragments. The designer's subclass
 /// editor reads a build's as these, and a saved edit writes them back.
 /// </summary>
 public sealed record SubclassPlugs(

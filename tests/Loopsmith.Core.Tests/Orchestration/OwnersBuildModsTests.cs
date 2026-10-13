@@ -10,8 +10,9 @@ using Loopsmith.Core.Tests.Support;
 namespace Loopsmith.Core.Tests.Orchestration;
 
 /// <summary>
-/// The owner's DIM build, item by item: what has no part in a loop says so (its legendary armor pieces, Triple Jump,
-/// Feeding Frenzy), the resistance mods show in the step's damage resistance, Powerful Attraction collects the orbs on the ground when you dodge, Ashes to Assets answers a
+/// The owner's DIM build, item by item: what has no part in a loop says so (its legendary armor pieces, Triple Jump
+/// (an inert element of the rules; a jump they don't have, left out), Feeding Frenzy), the resistance mods show in the
+/// step's damage resistance, Powerful Attraction collects the orbs on the ground when you dodge, Ashes to Assets answers a
 /// grenade kill, and Charged Up raises the Armor Charge cap the player declares reached.
 /// </summary>
 public sealed class OwnersBuildModsTests
@@ -30,7 +31,7 @@ public sealed class OwnersBuildModsTests
     {
         var build = Play().Build;
         var mask = new LeftOutItem(LoadoutPart.Item, ItemHash.From(593554567u));                // Luminopotent Mask
-        var tripleJump = new LeftOutItem(LoadoutPart.SubclassPlug, ItemHash.From(95544328u));
+        var tripleJump = new LeftOutItem(LoadoutPart.SubclassPlug, ItemHash.From(95544328u));       // as a build file from before jumps were elements lists it
         var grenadeMod = new LeftOutItem(LoadoutPart.ArmorMod, ItemHash.From(1435557120u));
         var balancedTuning = new LeftOutItem(LoadoutPart.ArmorMod, ItemHash.From(3122197216u));
 
@@ -45,6 +46,8 @@ public sealed class OwnersBuildModsTests
         Assert.StartsWith("Balanced Tuning (+1 to each stat where its piece has 0, one piece per tuning socket): it changes only stats", Assert.IsType<LeftOutReason.NoLoopEffect>(LoopDesigning.ClassifyLeftOut(build, balancedTuning)).Why, StringComparison.Ordinal);
         Assert.Equal((5, 2), (leftOut.Count(item => item == grenadeMod), leftOut.Count(item => item == balancedTuning)));
         Assert.Empty(missing);
+        Assert.Equal<AbilityPlug>(new AbilityPlug.Known(ElementId.From("triple-jump")), build.Build.Abilities.Jump);
+        Assert.DoesNotContain(tripleJump, leftOut);
         Assert.DoesNotContain(build.Issues, issue => issue.Message.StartsWith("Left out of the build:", StringComparison.Ordinal));
     }
 
@@ -63,7 +66,7 @@ public sealed class OwnersBuildModsTests
         var build = Play().Build;
         var inert = build.Equipped.Where(equipped => equipped.Element.Inert.IsSome()).Select(equipped => equipped.Element.Name).ToImmutableArray();
 
-        Assert.Equal(["Feeding Frenzy", "Skip Grenade"], inert.Order());
+        Assert.Equal(["Feeding Frenzy", "Skip Grenade", "Triple Jump"], inert.Order());
         Assert.DoesNotContain(build.Issues, issue => issue.Message.Contains("no authored rules", StringComparison.Ordinal));
     }
 
