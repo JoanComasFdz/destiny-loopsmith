@@ -28,6 +28,8 @@ public partial record ItemDetails
 /// One square of the DIM-style loadout: the item's icon (a bungie.net address) or none, its name, colour and rarity,
 /// whether the rules know it (an item the DIM loadout had but the build leaves out is shown, marked ⊘), and what tapping
 /// it opens (none: nothing to show). <see cref="Enhanced"/>: a weapon perk's enhanced trait, drawn as the game draws it.
+/// <see cref="GameText"/>: Bungie's description of the item (the manifest's), when the excerpt has it: a subclass plug's
+/// tooltip.
 /// </summary>
 public sealed record IconTile(
     string Name,
@@ -38,7 +40,10 @@ public sealed record IconTile(
     Optional<string> Description,
     int Copies,
     Optional<ItemDetails> Details,
-    bool Enhanced = false);
+    bool Enhanced = false)
+{
+    public Optional<string> GameText { get; init; } = Optional.None<string>();
+}
 
 /// <summary>An ability's square in the Subclass box: its plug's, or an empty slot (a build started from scratch), named for its kind.</summary>
 [Union]
@@ -435,7 +440,19 @@ public static class LoadoutShaping
             Optional.Some("Not in Loopsmith's rules or its manifest excerpt yet."), 1, Optional.None<ItemDetails>());
 
     private static IconTile DescribeItem(ManifestItem item, string name, bool inRules, Optional<string> description, Affinity affinity, Optional<ItemDetails> details) =>
-        new(name, item.Icon.Map(ToIconUrl), affinity, item.Tier, inRules, description, 1, details);
+        new(name, item.Icon.Map(ToIconUrl), affinity, item.Tier, inRules, description, 1, details) { GameText = item.Description };
+
+    /// <summary>
+    /// A subclass plug's tooltip: its name, then Bungie's description of it (the rules' when the manifest excerpt has none),
+    /// and for a plug the rules don't know, why it is marked ⊘.
+    /// </summary>
+    public static string DescribePlugTooltip(IconTile tile) =>
+        string.Join("\n", new[]
+        {
+            tile.Name,
+            tile.GameText.Match(text => text.Value, _ => tile.Description.UnwrapOr("")),
+            !tile.InRules && tile.GameText.IsSome() ? tile.Description.UnwrapOr("") : "",
+        }.Where(part => part.Length > 0));
 
     /// <summary>
     /// A hash the build left out: the manifest's name and icon when the excerpt has it, else just the hash — marked ⊘ when no

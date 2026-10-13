@@ -144,7 +144,7 @@
                     var elsewhere = !current && IsHeldElsewhere(open.Slot, hash);
                     <button type="button" class="perk-option @(current ? "picked" : "")" data-hash="@hash.Value"
                             disabled="@elsewhere" aria-pressed="@(current ? "true" : "false")"
-                            title="@(elsewhere ? $"{tile.Name} is already equipped" : tile.Name)" @onclick="() => Choose(open, hash)">
+                            title="@(elsewhere ? $"{LoadoutShaping.DescribePlugTooltip(tile)}\n(already equipped)" : LoadoutShaping.DescribePlugTooltip(tile))" @onclick="() => Choose(open, hash)">
                         @RenderTile(tile, "perk", false)
                         <span class="perk-option-text">
                             <span class="perk-option-name">@tile.Name</span>
@@ -162,7 +162,7 @@
         var classes = $"icon-tile {kind} {ToneStyling.ToAffinityClass(tile.Affinity)} {DescribeTier(tile)} {(tile.InRules ? "" : "out")}";
         @if (tappable && tile.Details is Optional<ItemDetails>.Some tileDetails)
         {
-            <button type="button" class="@classes tappable" title="@tile.Name — details" aria-label="@tile.Name" aria-haspopup="dialog" @onclick="() => OpenDetails(tileDetails.Value)">
+            <button type="button" class="@classes tappable" title="@LoadoutShaping.DescribePlugTooltip(tile)" aria-label="@tile.Name" aria-haspopup="dialog" @onclick="() => OpenDetails(tileDetails.Value)">
                 @RenderTileFace(tile)
                 @if (!tile.InRules)
                 {
@@ -172,7 +172,7 @@
         }
         else
         {
-            <span class="@classes" aria-label="@tile.Name">
+            <span class="@classes" title="@LoadoutShaping.DescribePlugTooltip(tile)" aria-label="@tile.Name">
                 @RenderTileFace(tile)
                 @if (!tile.InRules)
                 {

@@ -319,7 +319,9 @@ one option per line, with everything the subclass can hold there — Bungie's ma
 rules don't know carry ⊘ (every Arcstrider plug is known, its four jumps `inert`), except a jump the rules don't have
 (another subclass's), which carries none: it has no part in a loop. The dropdown floats over the slots after
 it, so none of them moves. One dropdown is open at a time; picking a plug puts it in the slot and closes it, and ⋯ again, a
-tap outside it or Escape closes it without a change (Escape closes only the dropdown, not the editor). An aspect
+tap outside it or Escape closes it without a change (Escape closes only the dropdown, not the editor). Hovering over
+a plug (an option, a slot of the editor, or a square of the Subclass box) shows its name and Bungie's description of it
+(the manifest's; the rules' when the excerpt has none), and for a ⊘ plug why it is marked. An aspect
 or a fragment can't be equipped twice; ✕ leaves a fragment's slot empty, while an aspect has no ✕: it is only swapped
 for another. The aspects open the fragment slots (`fragmentSlots` in the rules: Tempest Strike
 and Flow State 4, Tempest Strike and Ascension 5); the count follows the aspects at once. An aspect whose count the rules
