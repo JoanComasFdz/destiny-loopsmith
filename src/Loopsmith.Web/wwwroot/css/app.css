@@ -1036,25 +1036,51 @@ button.hud-chip:hover, button.hud-chip:focus-visible { background: color-mix(in 
 .loadout-label-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 6px; }
 .loadout-label-row .loadout-label { margin: 0; }
 .subclass-edit { flex: none; min-width: 28px; padding: 2px 6px; line-height: 1; font-size: 16px; letter-spacing: .05em; }
-.subclass-editor { display: flex; flex-direction: column; gap: 10px; }
-.sub-heading { margin: 4px 0 0; font-size: 13px; font-weight: 700; color: var(--text); }
+/* the subclass editor, laid out like the game's subclass screen: the subclass's icon, name and kind as the dialog's
+   header; the super on the left, Abilities and Aspects in one row beside it, Fragments under them; each group a grey
+   panel of squares, each square with a footer strip holding its ⋯ (and a fragment's ✕) */
+.sub-head { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.icon-tile.sub-head-icon { width: 44px; height: 44px; border: 0; background: none; }
+.sub-head-text { display: flex; flex-direction: column; min-width: 0; }
+.sub-head-name { margin: 0; font-size: 20px; font-weight: 750; line-height: 1.1; letter-spacing: .04em; text-transform: uppercase; overflow-wrap: anywhere; }
+.sub-head-kind { font-size: 11px; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; }
+.subclass-editor { --sub-tile: 56px; display: flex; flex-direction: column; gap: 14px; }
+.sub-layout { display: flex; align-items: flex-start; gap: 18px; }
+.sub-super { flex: none; padding-top: 26px; }
+.sub-super .sub-slot > .icon-tile { width: calc(var(--sub-tile) * 2); height: calc(var(--sub-tile) * 2); }
+.sub-super .sub-slot-foot { width: calc(var(--sub-tile) * 2); }
+.sub-sections { display: flex; flex-direction: column; gap: 14px; flex: 0 1 auto; min-width: 0; }
+.sub-row { display: flex; flex-wrap: wrap; gap: 14px 18px; }
+.sub-section { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.sub-heading { margin: 0; padding-bottom: 3px; border-bottom: 1px solid var(--line-2); font-size: 11px; font-weight: 700; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; }
+.sub-heading-note { font-weight: 500; letter-spacing: normal; text-transform: none; color: var(--dim); }
 .sub-note { margin: 0; font-size: 12px; }
-.sub-group { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 6px; }
-.sub-slot { position: relative; display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 6px; border: 1px solid var(--line-2); border-radius: var(--radius); background: var(--panel-2); }
-.sub-slot-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
-/* the open slot keeps its place and size; its dropdown floats over the slots after it (none of them moves) */
-.sub-slot.open { z-index: 3; border-color: var(--arc); }
-.sub-slot-text { display: flex; flex-direction: column; min-width: 0; flex: 1 1 auto; }
-.sub-slot-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
-.sub-slot-name { font-size: 12px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sub-slot-pick { flex: none; min-width: 28px; padding: 2px 6px; line-height: 1; font-size: 16px; letter-spacing: .05em; }
-/* the dropdown: under the slot, as wide as it (above it when there's no room below: data-drop, set once it is placed,
-   with its height capped to the room there; hidden until then), one option per line, only the options scroll */
+.sub-group { display: flex; flex-wrap: wrap; gap: 6px; padding: 6px; border-radius: var(--radius); background: rgba(160, 170, 190, .12); }
+.sub-group:not(:has(.sub-slot)) { display: none; }   /* no fragment slots open: no empty panel */
+.sub-slot { position: relative; display: flex; flex-direction: column; flex: none; }
+.sub-slot > .icon-tile { width: var(--sub-tile); height: var(--sub-tile); border-radius: 4px 4px 0 0; }
+.sub-slot-foot { display: flex; justify-content: flex-end; width: var(--sub-tile); background: rgba(0, 0, 0, .35); border-radius: 0 0 4px 4px; }
+.sub-slot-button { min-width: 24px; height: 20px; padding: 0 4px; border: 0; background: none; color: var(--muted); font: inherit; font-size: 14px; line-height: 1; letter-spacing: .05em; cursor: pointer; }
+.sub-slot-button:hover, .sub-slot-button:focus-visible { color: var(--text); }
+.sub-slot-button[data-action="remove-slot"] { font-size: 11px; }
+/* the open slot keeps its place and size; its dropdown floats over the slots after it (none of them moves) and over the
+   dialog's sticky header */
+.sub-slot.open { z-index: 6; }
+.sub-slot.open .sub-slot-foot { box-shadow: 0 0 0 1px var(--arc); }
+.sub-slot.open .sub-slot-pick { color: var(--arc); }
+@media (max-width: 640px) {
+    .sub-layout { flex-direction: column; gap: 14px; }
+    .sub-super { padding-top: 0; }
+}
+/* the dropdown: under the slot, 320px wide, free to spill out of the dialog (fixed to the screen, placed by
+   loopsmith.placeDropdown: under the slot, above it when the screen has more room there, shifted left to stay on the
+   screen, its height capped to the room; hidden until placed), one option per line, only the options scroll */
 .sub-drop {
-    position: absolute;
-    left: -1px;
-    right: -1px;
-    top: calc(100% + 4px);
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 320px;
+    max-width: calc(100vw - 16px);
     max-height: 360px;
     display: flex;
     flex-direction: column;
@@ -1066,7 +1092,6 @@ button.hud-chip:hover, button.hud-chip:focus-visible { background: color-mix(in 
     box-shadow: 0 12px 32px rgba(0, 0, 0, .55);
 }
 .sub-drop:not([data-drop]) { visibility: hidden; }
-.sub-drop[data-drop="up"] { top: auto; bottom: calc(100% + 4px); }
 .sub-drop:focus { outline: none; }
 .sub-drop-options { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: 2px; overflow-y: auto; overscroll-behavior: contain; }
 .sub-drop .perk-option { flex: none; }
@@ -1270,6 +1295,7 @@ a.weapon-line-name:hover { color: var(--arc); text-decoration: underline; }
     box-shadow: 0 20px 60px rgba(0, 0, 0, .55);
 }
 .modal.wide { width: min(1000px, 100%); }
+.modal.snug { width: fit-content; max-width: 100%; }   /* as wide as its content (the subclass editor) */
 /* a picker fits the screen: its header (✕), the item shown and the notes stay in view, only its grid scrolls (the body
    scrolls too only when even those don't fit) */
 .modal.fit { display: flex; flex-direction: column; overflow: hidden; }

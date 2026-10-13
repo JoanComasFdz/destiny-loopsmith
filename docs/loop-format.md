@@ -324,8 +324,13 @@ stay on Home as links, with "import a build.yaml" and "import a loop".
 ## Editing the subclass
 
 The designer's Subclass box has **⋯** next to its title, for every build (the Home cards stay read-only). It opens the
-subclass editor with the build's super, grenade, melee, class ability, jump, two aspects and fragments; tapping a plug's
-square opens its details, and the slot's **⋯** opens a dropdown under that slot (above it when there's no room below),
+subclass editor, laid out like the game's subclass screen: the subclass's icon, its name in capitals and "Hunter
+Subclass" as the header (the subclass's own name, Strand, and no icon when the manifest excerpt doesn't know its item);
+the super on the left; Abilities (class ability, jump, melee, grenade) and the two Aspects in one row beside it;
+Fragments under them. At phone width the super sits above the groups, and a group that doesn't fit its row wraps. Each
+group is a grey panel of squares, and each square has a footer with its **⋯** (and a fragment's ✕). Tapping a plug's
+square (or the subclass's icon) opens its details, and the slot's **⋯** opens a dropdown under that slot (above it when
+the screen has no room below; it may spill out of the editor),
 one option per line, with everything the subclass can hold there — Bungie's manifest, with icons and names. The ones the
 rules don't know carry ⊘ (every Arcstrider plug is known, its four jumps `inert`), except a jump the rules don't have
 (another subclass's), which carries none: it has no part in a loop. The dropdown floats over the slots after
@@ -333,11 +338,12 @@ it, so none of them moves. One dropdown is open at a time; picking a plug puts i
 tap outside it or Escape closes it without a change (Escape closes only the dropdown, not the editor). Hovering over
 a plug (an option, a slot of the editor, or a square of the Subclass box) shows its name and Bungie's description of it
 (the manifest's; the rules' when the excerpt has none), and for a ⊘ plug why it is marked. An aspect
-or a fragment can't be equipped twice; ✕ leaves a fragment's slot empty, while an aspect has no ✕: it is only swapped
-for another. The aspects open the fragment slots (`fragmentSlots` in the rules: Tempest Strike
+or a fragment can't be equipped twice; ✕ leaves a fragment's slot empty and the other fragments stay in their slots
+(Save writes them in slot order: the build keeps no places, so the editor shows them packed next time), while an aspect
+has no ✕: it is only swapped for another. The aspects open the fragment slots (`fragmentSlots` in the rules: Tempest Strike
 and Flow State 4, Tempest Strike and Ascension 5); the count follows the aspects at once. An aspect whose count the rules
 don't give shows "?" slots and limits nothing. An aspect change that closes slots takes out the last fragments and names
-them. **Cancel**, ✕ or Escape throws the changes away.
+them; the fragments left keep their slots, or are packed from the first one when a closed slot held one. **Cancel**, ✕ or Escape throws the changes away.
 
 **Save** rewrites only the embedded build file's `super`, `grenade`, `melee`, `classAbility`, `jump`, `aspects`,
 `fragments` and `leftOut` (a plug the rules don't know is in `leftOut.subclassPlugs`, shown ⊘ and listed under "Not in
