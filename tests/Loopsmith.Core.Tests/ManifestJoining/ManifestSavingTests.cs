@@ -31,7 +31,7 @@ public sealed class ManifestSavingTests
         var source = LoopDesigning.ChooseManifestSource(Optional.Some(WriteIndex("v1")), "pinned", saved);
 
         var fromSaved = Assert.IsType<ManifestSource.Saved>(source);
-        Assert.Equal(199_000_000, fromSaved.Copy.Bytes);
+        Assert.Equal(Optional.Some(199_000_000L), fromSaved.Copy.Bytes);
         Assert.Equal("https://www.bungie.net/common/destiny2_content/json/en/DestinyInventoryItemDefinition-v1.json", fromSaved.Copy.Urls["DestinyInventoryItemDefinition"]);
         Assert.Equal(fromSaved.Copy.Urls["DestinyInventoryItemDefinition"], fromSaved.Fallback["DestinyInventoryItemDefinition"]); // unreadable: download the same version
     }
@@ -72,7 +72,7 @@ public sealed class ManifestSavingTests
         Assert.False(LoopDesigning.ReadSavedManifest(Optional.Some("not json")).IsSome());
         Assert.False(LoopDesigning.ReadSavedManifest(Optional.None<string>()).IsSome());
         var withoutSize = Assert.IsType<Optional<SavedManifest>.Some>(LoopDesigning.ReadSavedManifest(Optional.Some(WriteSaved("v1", -5))));
-        Assert.Equal(0, withoutSize.Value.Bytes);                                                // a size that doesn't read: unknown
+        Assert.False(withoutSize.Value.Bytes.IsSome());                                          // a size that doesn't read: unknown
     }
 
     [Fact]

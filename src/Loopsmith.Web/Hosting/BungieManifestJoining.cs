@@ -196,13 +196,9 @@ public sealed class BungieManifestJoining(BrowserInterop browser, string apiKey,
         var savedJson = await browser.ReadSavedManifestAsync();                                  // impure
         var saved = LoopDesigning.ReadSavedManifest(savedJson);                                  // pure
         var source = LoopDesigning.ChooseManifestSource(index, pinnedContentId, saved);          // pure
-        if (source is ManifestSource.Saved fromSaved)
-        {
-            return await ReadSavedFilesAsync(fromSaved, withListing);                            // impure
-        }
-
-        var urls = ((ManifestSource.Download)source).Urls;                                       // pure
-        return await DownloadFilesAsync(urls);                                                   // impure
+        return await source.Match(
+            fromSaved => ReadSavedFilesAsync(fromSaved, withListing),
+            download => DownloadFilesAsync(download.Urls));                                      // impure
     }
 
     /// <summary>The components (and the listing, when asked and saved for this code) from the browser's saved copy; a download when it doesn't read.</summary>
@@ -210,9 +206,12 @@ public sealed class BungieManifestJoining(BrowserInterop browser, string apiKey,
     {
         var urls = fromSaved.Copy.Urls;                                                          // pure
         var key = LoopDesigning.ToListingKey(urls, codeVersion);                                 // pure
-        var savedText = withListing
-            ? await browser.ReadSavedListingAsync(key)                                           // impure
-            : Optional.None<string>();
+        var savedText = Optional.None<string>();                                                 // pure
+        if (withListing)
+        {
+            savedText = await browser.ReadSavedListingAsync(key);                                // impure
+        }
+
         var listing = LoopDesigning.ReadSavedListing(savedText);                                 // pure
         var reading = ManifestStartupShaping.BeginReadingSaved(fromSaved.Copy.Bytes, listing.IsSome()); // pure
         if (Startup is ManifestStartup.Checking)
@@ -291,12 +290,11 @@ public sealed class BungieManifestJoining(BrowserInterop browser, string apiKey,
     private async Task<Result<ItemListing, string>> LoadAndListItemsAsync()
     {
         var files = await LoadFilesAsync(withListing: true);                                     // impure
-        if (files is Result<HeldFiles, string>.Error failed)
+        if (files is not Result<HeldFiles, string>.Ok { Value: var loaded })
         {
-            return new Result<ItemListing, string>.Error(failed.Failure);
+            return files.Map(_ => new ItemListing([], ImmutableDictionary<ItemHash, ArmorSet>.Empty)); // pure (its failure)
         }
 
-        var loaded = ((Result<HeldFiles, string>.Ok)files).Value;                                // pure
         if (loaded.Listing is Optional<ItemListing>.Some saved)
         {
             return new Result<ItemListing, string>.Ok(saved.Value);
@@ -365,22 +363,15 @@ public sealed class BungieManifestJoining(BrowserInterop browser, string apiKey,
         var listing = unsavedListing;                                                            // pure
         unsavedFiles = Optional.None<ImmutableDictionary<string, string>>();                     // impure (tab state)
         unsavedListing = Optional.None<KeyValuePair<string, ItemListing>>();                     // impure (tab state)
-        try
+        if (files is Optional<ImmutableDictionary<string, string>>.Some downloaded)
         {
-            if (files is Optional<ImmutableDictionary<string, string>>.Some downloaded)
-            {
-                await browser.SaveManifestTablesAsync(downloaded.Value);                         // impure
-            }
-
-            if (listing is Optional<KeyValuePair<string, ItemListing>>.Some made)
-            {
-                var text = LoopDesigning.ToSavedListing(made.Value.Value);                       // pure
-                await browser.SaveListingAsync(made.Value.Key, text);                            // impure
-            }
+            _ = await browser.SaveManifestTablesAsync(downloaded.Value);                         // impure (not saved: the next visit downloads again)
         }
-        catch (JSException)
+
+        if (listing is Optional<KeyValuePair<string, ItemListing>>.Some made)
         {
-            // The browser refused (the page is closing): nothing is saved, and the next visit downloads again.
+            var text = LoopDesigning.ToSavedListing(made.Value.Value);                           // pure
+            _ = await browser.SaveListingAsync(made.Value.Key, text);                            // impure (not saved: the next visit lists again)
         }
     }
 

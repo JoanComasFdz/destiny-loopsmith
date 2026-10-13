@@ -109,8 +109,15 @@ public sealed class BrowserInterop(IJSRuntime js)
     public async Task<Result<Unit, string>> SaveManifestTablesAsync(IReadOnlyDictionary<string, string> urls)
     {
         var plain = new Dictionary<string, string>(urls);
-        var problem = await js.InvokeAsync<string?>("loopsmithManifest.saveTables", plain);
-        return ToOutcome(problem);
+        try
+        {
+            var problem = await js.InvokeAsync<string?>("loopsmithManifest.saveTables", plain);
+            return ToOutcome(problem);
+        }
+        catch (JSException exception)
+        {
+            return new Result<Unit, string>.Error(exception.Message);
+        }
     }
 
     /// <summary>The listing of every weapon and armor piece the browser saved under <paramref name="key"/>, or none.</summary>
@@ -123,8 +130,15 @@ public sealed class BrowserInterop(IJSRuntime js)
     /// <summary>Saves the listing under <paramref name="key"/>, in place of the one saved before; why it couldn't, when it couldn't.</summary>
     public async Task<Result<Unit, string>> SaveListingAsync(string key, string text)
     {
-        var problem = await js.InvokeAsync<string?>("loopsmithManifest.saveListing", key, text);
-        return ToOutcome(problem);
+        try
+        {
+            var problem = await js.InvokeAsync<string?>("loopsmithManifest.saveListing", key, text);
+            return ToOutcome(problem);
+        }
+        catch (JSException exception)
+        {
+            return new Result<Unit, string>.Error(exception.Message);
+        }
     }
 
     /// <summary>The raw JSON of the entries asked for, per component (<c>{ component: { hash: entry } }</c>).</summary>

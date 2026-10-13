@@ -18,7 +18,7 @@ public partial record ManifestStartup
     partial record Waiting();
     partial record Checking();
     partial record Downloading(ManifestDownload Download);
-    partial record ReadingSaved(long Bytes, long Total, bool ListingSaved);
+    partial record ReadingSaved(long Bytes, Optional<long> Total, bool ListingSaved);
     partial record Listing(int Round, int Rounds, bool FromSaved);
     partial record Failed(string Reason);
     partial record Ready();
@@ -54,8 +54,8 @@ public static class ManifestStartupShaping
     /// <summary>The files download (there's no saved copy of the current version, or it didn't read).</summary>
     public static readonly ManifestStartup DownloadBegun = new ManifestStartup.Downloading(ManifestProgressShaping.NoDownload);
 
-    /// <summary>The saved copy is read instead of a download: <paramref name="total"/> bytes, unpacked; its listing with it when it was saved.</summary>
-    public static ManifestStartup BeginReadingSaved(long total, bool listingSaved) =>
+    /// <summary>The saved copy is read instead of a download: <paramref name="total"/> bytes, unpacked (when known); its listing with it when it was saved.</summary>
+    public static ManifestStartup BeginReadingSaved(Optional<long> total, bool listingSaved) =>
         new ManifestStartup.ReadingSaved(0, total, listingSaved);
 
     /// <summary>The player went on without the manifest (after a failed load).</summary>
@@ -135,15 +135,15 @@ public static class ManifestStartupShaping
 
     /// <summary>The bytes read of the saved copy's ("84 of 199 MB"; just the bytes when its size wasn't saved).</summary>
     private static string DescribeSavedReading(ManifestStartup.ReadingSaved reading) =>
-        reading.Total > 0
-            ? $"{ToMegabytes(Math.Min(reading.Bytes, reading.Total))} of {ToMegabytes(reading.Total)} MB"
-            : $"{ToMegabytes(reading.Bytes)} MB";
+        reading.Total.Match(
+            total => $"{ToMegabytes(Math.Min(reading.Bytes, total.Value))} of {ToMegabytes(total.Value)} MB",
+            _ => $"{ToMegabytes(reading.Bytes)} MB");
 
-    /// <summary>The saved copy's bar: by its saved size, up to 99 % until the listing begins.</summary>
+    /// <summary>The saved copy's bar: by its saved size (else as a download's), up to 99 % until the listing begins.</summary>
     private static int ToSavedPercent(ManifestStartup.ReadingSaved reading) =>
-        reading.Total > 0
-            ? (int)Math.Min(99, Math.Round(100.0 * reading.Bytes / reading.Total))
-            : ToDownloadPercent(new ManifestDownload(reading.Bytes, Optional.None<ManifestRetry>()));
+        reading.Total.Match(
+            total => (int)Math.Min(99, Math.Round(100.0 * reading.Bytes / total.Value)),
+            _ => ToDownloadPercent(new ManifestDownload(reading.Bytes, Optional.None<ManifestRetry>())));
 
     private static string ToMegabytes(long bytes) =>
         (bytes / 1_000_000.0).ToString("0", CultureInfo.InvariantCulture);

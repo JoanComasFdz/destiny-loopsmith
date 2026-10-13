@@ -23,7 +23,8 @@ var configuredClientId = builder.Configuration["BungieClientId"];               
 var bungieApiKey = (configuredBungieKey ?? "").Trim();                                     // pure
 var manifestContentId = (configuredContentId ?? "").Trim();                                // pure
 var bungieClientId = (configuredClientId ?? "").Trim();                                    // pure
-var coreVersion = typeof(LoopDesigning).Assembly.ManifestModule.ModuleVersionId.ToString("N"); // impure (the Core build this app runs: a saved listing is its)
+var coreModuleId = typeof(LoopDesigning).Assembly.ManifestModule.ModuleVersionId;          // impure (the Core build this app runs: a saved listing is its)
+var coreVersion = coreModuleId.ToString("N");                                              // pure
 
 builder.Services.AddSingleton(workbench);                                                  // impure
 builder.Services.AddSingleton<BrowserInterop>();                                           // impure

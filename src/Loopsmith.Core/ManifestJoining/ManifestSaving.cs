@@ -9,8 +9,8 @@ using static Loopsmith.Core.ManifestJoining.ManifestEntryReading;
 
 namespace Loopsmith.Core.ManifestJoining;
 
-/// <summary>The copy of Bungie's manifest the browser saved: each component's URL (they name its version) and its size, unpacked.</summary>
-public sealed record SavedManifest(ImmutableDictionary<string, string> Urls, long Bytes);
+/// <summary>The copy of Bungie's manifest the browser saved: each component's URL (they name its version) and its size, unpacked (when it was saved).</summary>
+public sealed record SavedManifest(ImmutableDictionary<string, string> Urls, Optional<long> Bytes);
 
 /// <summary>
 /// Where the tab gets the manifest's components: the browser's saved copy (and the URLs to download when it can't be
@@ -97,10 +97,10 @@ public static class ManifestSaving
         return urls.Count == ManifestTransport.Components.Length ? Optional.Some(urls) : Optional.None<ImmutableDictionary<string, string>>();
     }
 
-    private static long ReadBytes(JsonElement root) =>
-        root.ReadPath("bytes").Bind(found => found.ValueKind == JsonValueKind.Number && found.TryGetInt64(out var bytes) && bytes >= 0
+    private static Optional<long> ReadBytes(JsonElement root) =>
+        root.ReadPath("bytes").Bind(found => found.ValueKind == JsonValueKind.Number && found.TryGetInt64(out var bytes) && bytes > 0
             ? Optional.Some(bytes)
-            : Optional.None<long>()).UnwrapOr(0);
+            : Optional.None<long>());
 
     // ── the listing, written: only weapons and armor (all a listing holds) ──────────
 
