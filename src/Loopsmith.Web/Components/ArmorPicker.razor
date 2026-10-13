@@ -1,78 +1,101 @@
-@* The armor picker for a slot of the build: the player's pieces for it (after their Bungie login), Bungie's icons. It
-   opens showing the piece the build wears; another piece's stats show on hover (a mouse) or a first tap; a click on a
-   piece already showing (or "Wear this piece") picks it, and the designer swaps it into the build
-   (LoopDesigning.PickArmorPiece). Picking the piece the build already wears just closes the picker. *@
+@* The armor picker for a slot of the build. Without a Bungie login it lists every piece of the game for the slot and
+   the build's class ("Every item": EveryItemList); after one, a switch shows the player's own pieces for it ("Yours",
+   first) or every piece. Yours shows Bungie's icons and opens showing the piece the build wears; another piece's stats
+   show on hover (a mouse) or a first tap; a click on a piece already showing (or "Wear this piece") picks it, and the
+   designer swaps it into the build (LoopDesigning.PickArmorPiece). Picking the piece the build already wears just
+   closes the picker. A piece of the game goes in with no copy (LoopDesigning.PickArmorItem: the stats stay). "Empty
+   this slot" takes the build's piece there off. *@
 @{
-    var view = ArmorPickerShaping.ShapePicker(Build, LoopDesigning.ListArmorOptions(Build, Profile, Slot));
-    var shown = view.Options.Where(option => focused == Optional.Some(option.Instance)).Select(Optional.Some).FindFirstSome();
+    var slotName = Slot.DescribeArmorSlot().ToLowerInvariant();
+    var yours = everyItem ? Optional.None<BungieProfile>() : Profile;
 }
-<Modal Title="@view.Title" Size="wide fit" OnClose="OnClose">
+<Modal Title="@(yours.IsSome() ? $"Pick your {slotName}" : $"Pick a {slotName}")" Size="wide fit" OnClose="OnClose">
     <div class="armor-picker" data-testid="armor-picker" data-slot="@Slot">
         <ManifestProgressBar />
-        @if (view.Options.IsEmpty)
+        @if (Profile.IsSome())
         {
-            <p class="muted" data-testid="armor-picker-empty">Your account has no @Slot.DescribeArmorSlot().ToLowerInvariant() for a @Build.Build.Class that Loopsmith can list.</p>
+            <PickerModeSwitch EveryItem="everyItem" OnChange="SwitchMode" />
         }
-        else
+        @if (yours is Optional<BungieProfile>.Some owned)
         {
-            <div class="icon-grid armor-options" role="listbox" aria-label="@view.Title">
-                @foreach (var option in view.Options)
-                {
-                    var instance = option.Instance;
-                    <div class="armor-option">
-                    <button type="button" role="option" aria-selected="@(focused == Optional.Some(instance) ? "true" : "false")"
-                            class="icon-tile tappable item @DescribeTier(option.Tile) @(option.Worn ? "worn" : "") @(focused == Optional.Some(instance) ? "focused" : "") @LoadoutShaping.ToMasterworkClass(option.Marks)"
-                            data-tier="@LoadoutShaping.ToTierText(option.Marks)" data-masterwork="@LoadoutShaping.ToMasterworkText(option.Marks)"
-                            title="@LoadoutShaping.AddMarks($"{option.Tile.Name} — {option.RollText}", option.Marks)" aria-label="@option.Tile.Name" data-instance="@instance.Value"
-                            @onpointerenter="e => Hover(instance, e)" @onclick="() => ChooseAsync(instance)">
-                        @if (option.Tile.Icon is Optional<string>.Some icon)
-                        {
-                            <img src="@icon.Value" alt="" loading="lazy" />
-                        }
-                        else
-                        {
-                            <span class="icon-initials">@(option.Tile.Name.Length > 0 ? option.Tile.Name[..1] : "?")</span>
-                        }
-                        <TileOverlays Marks="option.Marks" />
-                        @if (option.Worn)
-                        {
-                            <span class="armor-worn-mark" aria-hidden="true">✓</span>
-                        }
-                    </button>
-                    <TileFooter Marks="option.Marks" />
-                    </div>
-                }
-            </div>
-            @if (shown is Optional<ArmorOptionView>.Some details)
+            var view = ArmorPickerShaping.ShapePicker(Build, LoopDesigning.ListArmorOptions(Build, owned.Value, Slot));
+            var shown = view.Options.Where(option => focused == Optional.Some(option.Instance)).Select(Optional.Some).FindFirstSome();
+            if (view.Options.IsEmpty)
             {
-                var piece = details.Value;
-                <div class="armor-option-details" data-testid="armor-option-details">
-                    @* One line, its marks last: the panel keeps its height from one piece to the next, masterworked or not. *@
-                    <div class="armor-option-name">@piece.Tile.Name@(piece.Set is Optional<string>.Some set ? $" · {set.Value} set" : "")@if (LoadoutShaping.AddMarks("", piece.Marks) is { Length: > 0 } marked)
-                        {<span class="option-sep"> · </span><span class="armor-option-marks" data-testid="armor-option-marks">@marked</span>}</div>
-                    @if (piece.Roll is Optional<ImmutableArray<StatBar>>.Some roll)
-                    {
-                        <StatBars Bars="roll.Value" Class="compact" TestId="armor-option-roll" />
-                    }
-                    else
-                    {
-                        <div class="muted">@ArmorPickerShaping.UnreadRoll</div>
-                    }
-                    <div class="muted">@piece.Place@(piece.Worn ? " · the build wears this one" : "")</div>
-                    @if (!piece.Worn)
-                    {
-                        <button type="button" class="btn primary small" data-action="wear-piece" @onclick="() => PickAsync(piece.Instance)">Wear this piece</button>
-                    }
-                </div>
+                <p class="muted" data-testid="armor-picker-empty">Your account has no @Slot.DescribeArmorSlot().ToLowerInvariant() for a @Build.Build.Class that Loopsmith can list.</p>
             }
             else
             {
-                <p class="muted armor-picker-hint">Tap a piece to see its stats; tap it again to wear it.</p>
+                <div class="icon-grid armor-options" role="listbox" aria-label="@view.Title">
+                    @foreach (var option in view.Options)
+                    {
+                        var instance = option.Instance;
+                        <div class="armor-option @(focused == Optional.Some(instance) ? "focused" : "")">
+                        <button type="button" role="option" aria-selected="@(focused == Optional.Some(instance) ? "true" : "false")"
+                                class="icon-tile tappable item @DescribeTier(option.Tile) @(option.Worn ? "worn" : "") @(focused == Optional.Some(instance) ? "focused" : "") @LoadoutShaping.ToMasterworkClass(option.Marks)"
+                                data-tier="@LoadoutShaping.ToTierText(option.Marks)" data-masterwork="@LoadoutShaping.ToMasterworkText(option.Marks)"
+                                title="@LoadoutShaping.AddMarks($"{option.Tile.Name} — {option.RollText}", option.Marks)" aria-label="@option.Tile.Name" data-instance="@instance.Value"
+                                @onpointerenter="e => Hover(instance, e)" @onclick="() => ChooseAsync(instance)">
+                            @if (option.Tile.Icon is Optional<string>.Some icon)
+                            {
+                                <img src="@icon.Value" alt="" loading="lazy" />
+                            }
+                            else
+                            {
+                                <span class="icon-initials">@(option.Tile.Name.Length > 0 ? option.Tile.Name[..1] : "?")</span>
+                            }
+                            <TileOverlays Marks="option.Marks" />
+                            @if (option.Worn)
+                            {
+                                <span class="armor-worn-mark" aria-hidden="true">✓</span>
+                            }
+                        </button>
+                        <TileFooter Marks="option.Marks" />
+                        </div>
+                    }
+                </div>
+                @if (shown is Optional<ArmorOptionView>.Some details)
+                {
+                    var piece = details.Value;
+                    <div class="armor-option-details" data-testid="armor-option-details">
+                        @* One line, its marks last: the panel keeps its height from one piece to the next, masterworked or not. *@
+                        <div class="armor-option-name">@piece.Tile.Name@(piece.Set is Optional<string>.Some set ? $" · {set.Value} set" : "")@if (LoadoutShaping.AddMarks("", piece.Marks) is { Length: > 0 } marked)
+                            {<span class="option-sep"> · </span><span class="armor-option-marks" data-testid="armor-option-marks">@marked</span>}</div>
+                        @if (piece.Roll is Optional<ImmutableArray<StatBar>>.Some roll)
+                        {
+                            <StatBars Bars="roll.Value" Class="compact" TestId="armor-option-roll" />
+                        }
+                        else
+                        {
+                            <div class="muted">@ArmorPickerShaping.UnreadRoll</div>
+                        }
+                        <div class="muted">@piece.Place@(piece.Worn ? " · the build wears this one" : "")</div>
+                        @if (!piece.Worn)
+                        {
+                            <button type="button" class="btn primary small" data-action="wear-piece" @onclick="() => PickAsync(piece.Instance)">Wear this piece</button>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="muted armor-picker-hint">Tap a piece to see its stats; tap it again to wear it.</p>
+                }
+            }
+            foreach (var note in view.Notes)
+            {
+                <p class="muted armor-picker-note">@note</p>
             }
         }
-        @foreach (var note in view.Notes)
+        else
         {
-            <p class="muted armor-picker-note">@note</p>
+            <EveryItemList Shape="ShapeEveryItem" Noun="piece" UseLabel="Wear this piece" Pick="PickItemAsync" OnClose="OnClose"
+                           Detail="A piece of the game has no stats of its own: the build's stats stay as they are." />
+        }
+        @if (Filled && OnEmpty.HasDelegate)
+        {
+            <div class="picker-foot">
+                <button type="button" class="btn small" data-action="empty-slot" @onclick="() => OnEmpty.InvokeAsync(Slot)">Empty this slot</button>
+            </div>
         }
     </div>
 </Modal>
@@ -81,18 +104,34 @@
     [Parameter, EditorRequired]
     public ValidatedBuild Build { get; set; } = null!;
 
-    [Parameter, EditorRequired]
-    public BungieProfile Profile { get; set; } = null!;
+    /// <summary>The player's armor and weapons after their Bungie login: "Yours" lists their pieces; none: every piece of the game only.</summary>
+    [Parameter]
+    public Optional<BungieProfile> Profile { get; set; } = Optional.None<BungieProfile>();
 
     [Parameter, EditorRequired]
     public ArmorSlot Slot { get; set; }
 
-    /// <summary>A piece picked: the designer swaps it into the build.</summary>
+    /// <summary>The build wears a piece in this slot: "Empty this slot" can take it off.</summary>
+    [Parameter]
+    public bool Filled { get; set; }
+
+    /// <summary>One of the player's pieces picked: the designer swaps it into the build.</summary>
     [Parameter]
     public EventCallback<ArmorPick> OnPick { get; set; }
 
+    /// <summary>A piece of the game picked: the designer reads what it needs of it and puts it in the build, or says why not.</summary>
+    [Parameter, EditorRequired]
+    public Func<ArmorItemPick, Task<Result<Unit, string>>> PickItem { get; set; } = null!;
+
+    /// <summary>"Empty this slot": the designer takes the build's piece there off.</summary>
+    [Parameter]
+    public EventCallback<ArmorSlot> OnEmpty { get; set; }
+
     [Parameter]
     public EventCallback OnClose { get; set; }
+
+    /// <summary>"Every item" is shown (always without a login); else "Yours".</summary>
+    private bool everyItem;
 
     private Optional<ItemInstanceId> focused = Optional.None<ItemInstanceId>();
 
@@ -101,11 +140,24 @@
 
     protected override void OnInitialized()
     {
-        var options = LoopDesigning.ListArmorOptions(Build, Profile, Slot);                      // pure
-        var wearing = options.Options.Where(option => option.Worn).Select(option => Optional.Some(option.Armor.InstanceId)).FindFirstSome(); // pure
-        worn = wearing;                                                                          // impure (component state)
-        focused = wearing;                                                                       // impure (component state)
+        everyItem = !Profile.IsSome();                                                           // impure (component state)
+        if (Profile is Optional<BungieProfile>.Some owned)
+        {
+            var options = LoopDesigning.ListArmorOptions(Build, owned.Value, Slot);              // pure
+            var wearing = options.Options.Where(option => option.Worn).Select(option => Optional.Some(option.Armor.InstanceId)).FindFirstSome(); // pure
+            worn = wearing;                                                                      // impure (component state)
+            focused = wearing;                                                                   // impure (component state)
+        }
     }
+
+    private void SwitchMode(bool every) =>
+        everyItem = every;                                                                       // impure (component state)
+
+    private ItemListView ShapeEveryItem(ItemListing listing) =>
+        ItemListShaping.ShapeArmor(Build, LoopDesigning.ListArmorItems(Build, listing, Slot));
+
+    private Task<Result<Unit, string>> PickItemAsync(ItemHash item) =>
+        PickItem(new ArmorItemPick(Slot, item));                                                 // impure
 
     /// <summary>A mouse over a piece shows its details (a touch doesn't hover: its first tap does).</summary>
     private void Hover(ItemInstanceId instance, PointerEventArgs e)

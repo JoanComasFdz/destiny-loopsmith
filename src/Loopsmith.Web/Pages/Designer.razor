@@ -65,7 +65,10 @@
         <div class="designer-grid">
             <aside class="col-build">
                 <BuildPanel Build="session.Build" Issues="LoopDesigning.ListDesignIssues(session)" OnPickPerk="PickPerk" OnSetCatalyst="SetCatalyst" OnSetStats="SetStats"
-                            Profile="Workbench.Profile" LoginNote="Workbench.LoginNote" OnLoggedIn="UseBungieLoginAsync" OnLoggedOut="LogOut" OnPickArmor="PickArmor" OnPickWeapon="PickWeapon" OnEditSubclass="EditSubclass" />
+                            Profile="Workbench.Profile" LoginNote="Workbench.LoginNote" OnLoggedIn="UseBungieLoginAsync" OnLoggedOut="LogOut" OnPickArmor="PickArmor" OnPickWeapon="PickWeapon" OnEditSubclass="EditSubclass"
+                            PickWeaponItem="Optional.Some<Func<WeaponItemPick, Task<Result<Unit, string>>>>(PickWeaponItemAsync)"
+                            PickArmorItem="Optional.Some<Func<ArmorItemPick, Task<Result<Unit, string>>>>(PickArmorItemAsync)"
+                            OnEmptyWeapon="EmptyWeaponSlot" OnEmptyArmor="EmptyArmorSlot" />
             </aside>
             <div class="col-loop">
                 <ExplainPanel Build="session.Build" />
@@ -334,6 +337,69 @@
             ApplyBuildEdit(session => LoopDesigning.PickWeapon(session, profile.Value, pick.Target, pick.Instance)); // impure (UI state)
         }
     }
+
+    /// <summary>
+    /// A weapon of the game picked from "Every item": Bungie's manifest is read for it when the excerpt lacks it (its
+    /// perks, catalyst), then it goes into the embedded build (in place of a weapon, or into an empty slot) with no roll
+    /// and the steps replay. Or why not, for the picker to show (the build doesn't change).
+    /// </summary>
+    private async Task<Result<Unit, string>> PickWeaponItemAsync(WeaponItemPick pick)
+    {
+        var read = await JoinPickedItemAsync(pick.Item);                                         // impure
+        var picked = read.Bind(session => LoopDesigning.PickWeaponItem(session, pick.Target, pick.Item)); // pure
+        return UsePickedItem(picked);                                                            // impure (UI state)
+    }
+
+    /// <summary>A piece of the game picked from "Every item": as a weapon (above), its set read with it; the stats stay as they were.</summary>
+    private async Task<Result<Unit, string>> PickArmorItemAsync(ArmorItemPick pick)
+    {
+        var read = await JoinPickedItemAsync(pick.Item);                                         // impure
+        var picked = read.Bind(session => LoopDesigning.PickArmorItem(session, pick.Slot, pick.Item)); // pure
+        return UsePickedItem(picked);                                                            // impure (UI state)
+    }
+
+    /// <summary>
+    /// The open design with what Bungie's full manifest says of <paramref name="item"/> when the excerpt lacks it (read
+    /// even when it was asked for before in this tab: a pick is the player's ask); or why it couldn't be read.
+    /// </summary>
+    private async Task<Result<DesignSession, string>> JoinPickedItemAsync(ItemHash item)
+    {
+        if (Workbench.Session is not Optional<DesignSession>.Some open)
+        {
+            return new Result<DesignSession, string>.Error("No loop is open.");
+        }
+
+        var unknown = LoopDesigning.ListUnknownItemHashes(open.Value, item);                    // pure
+        if (unknown.IsEmpty)
+        {
+            return new Result<DesignSession, string>.Ok(open.Value);
+        }
+
+        var joined = await Manifest.JoinAsync(unknown, ManifestReadFor.PickedItem);             // impure
+        var current = Workbench.Session.ToResult(() => "No loop is open.");                      // impure (tab state: the design as it is now)
+        return current.Bind(session => LoopDesigning.UsePickedItemManifest(session, joined));   // pure
+    }
+
+    /// <summary>A pick's design, when it went in: the designer shows it (the picker's own event, so the page renders itself); its why, for the picker, when not.</summary>
+    private Result<Unit, string> UsePickedItem(Result<DesignSession, string> picked)
+    {
+        if (picked is Result<DesignSession, string>.Ok next)
+        {
+            Workbench.LoginNote = Optional.None<string>();                                       // impure (UI state)
+            EditSession(_ => next.Value, scrollToEnd: false, keepSelection: true);              // impure (UI state)
+            StateHasChanged();                                                                   // impure
+        }
+
+        return picked.Map(_ => (Unit)new Unit.Value());                                          // pure
+    }
+
+    /// <summary>"Empty this slot" on a weapon: it comes off the embedded build and the steps replay (one that uses its slot is blocked).</summary>
+    private void EmptyWeaponSlot(int weapon) =>
+        ApplyBuildEdit(session => LoopDesigning.EmptyWeaponSlot(session, weapon));
+
+    /// <summary>"Empty this slot" on an armor slot: its piece comes off the embedded build (its set bonuses follow) and the steps replay.</summary>
+    private void EmptyArmorSlot(ArmorSlot slot) =>
+        ApplyBuildEdit(session => LoopDesigning.EmptyArmorSlot(session, slot));
 
     /// <summary>Applies a pure edit to the open design (every edit is a new immutable session).</summary>
     private void EditSession(Func<DesignSession, DesignSession> edit, bool scrollToEnd, bool keepSelection = false)

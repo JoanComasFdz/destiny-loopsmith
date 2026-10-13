@@ -107,6 +107,68 @@ public sealed class BuildFileEditingTests
     }
 
     [Fact]
+    public void A_weapon_removed_from_a_block_list_takes_its_lines_and_the_rest_stays()
+    {
+        var file = new SourceText("b.yaml", Header + """
+            weapons:
+              # Slice per the video.
+              - { slot: kinetic, name: Festival Flight, type: strand, perks: [slice], hash: 4019651319 }   # the GL
+              - slot: energy
+                name: Any Arc weapon
+                type: arc
+            # Stats follow.
+            stats: { weapons: 47 }
+            """);
+
+        var first = RemoveWeapon(file, 0);
+        var second = RemoveWeapon(file, 1);
+
+        Assert.EndsWith("""
+            weapons:
+              # Slice per the video.
+              - slot: energy
+                name: Any Arc weapon
+                type: arc
+            # Stats follow.
+            stats: { weapons: 47 }
+            """, first, StringComparison.Ordinal);
+        Assert.EndsWith("""
+            weapons:
+              # Slice per the video.
+              - { slot: kinetic, name: Festival Flight, type: strand, perks: [slice], hash: 4019651319 }   # the GL
+            # Stats follow.
+            stats: { weapons: 47 }
+            """, second, StringComparison.Ordinal);
+        Assert.Equal(["Any Arc weapon"], ParseBuild(first).Weapons.Select(weapon => weapon.Name));
+        Assert.Equal(["Festival Flight"], ParseBuild(second).Weapons.Select(weapon => weapon.Name));
+    }
+
+    [Theory]
+    [InlineData(0, "weapons: [{ slot: power, name: Any Arc weapon, type: arc }]\n")]
+    [InlineData(1, "weapons: [{ slot: kinetic, name: Festival Flight, type: strand }]\n")]
+    public void A_weapon_removed_from_a_flow_list_takes_its_comma(int index, string kept)
+    {
+        var file = new SourceText("b.yaml", Header + "weapons: [{ slot: kinetic, name: Festival Flight, type: strand }, { slot: power, name: Any Arc weapon, type: arc }]\n");
+
+        var edited = RemoveWeapon(file, index);
+
+        Assert.Equal(Header + kept, edited);
+        Assert.Single(ParseBuild(edited).Weapons);
+    }
+
+    [Theory]
+    [InlineData("weapons:\n  - { slot: energy, name: Any Arc weapon, type: arc }\nstats: { weapons: 47 }\n")]
+    [InlineData("weapons: [{ slot: energy, name: Any Arc weapon, type: arc }]\nstats: { weapons: 47 }\n")]
+    public void The_last_weapon_removed_takes_the_weapons_entry_with_it(string weapons)
+    {
+        var edited = RemoveWeapon(new SourceText("b.yaml", Header + weapons), 0);
+
+        Assert.Equal(Header + "stats: { weapons: 47 }\n", edited);
+        Assert.Empty(ParseBuild(edited).Weapons);
+        Assert.IsType<Result<string, string>.Error>(BuildFileEditing.RemoveWeapon(new SourceText("b.yaml", Header + weapons), 1));
+    }
+
+    [Fact]
     public void A_weapon_the_file_does_not_have_is_an_error()
     {
         var file = new SourceText("b.yaml", Header + "weapons:\n  - { slot: energy, name: Any Arc weapon, type: arc }\n");
@@ -133,6 +195,9 @@ public sealed class BuildFileEditingTests
 
     private static string AddWeapon(SourceText file, WeaponLoadout weapon) =>
         BuildFileEditing.AddWeapon(file, weapon).Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
+
+    private static string RemoveWeapon(SourceText file, int index) =>
+        BuildFileEditing.RemoveWeapon(file, index).Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
 
     private static Build ParseBuild(string text) =>
         BuildFileParsing.ParseBuildFile(new SourceText("edited.yaml", text)).Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));

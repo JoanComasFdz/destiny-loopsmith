@@ -103,9 +103,10 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
 - **A preview card for a pasted link**: Home draws a DIM build card for the shares it ships with; a pasted
   link that carries its loadout could show the same card before "Start designing".
 - **Editing the rest of a build in the designer**: a weapon's perks can be picked (column by column, from
-  the manifest excerpt's trait columns) and the subclass edited (abilities, aspects and fragments, from the excerpt's
-  `plugs`, for each of the nine Light subclasses); changing the class or the subclass itself, mods or armor means a new
-  DIM link or build file. The rules author only Arcstrider's elements, so another subclass's plugs show ⊘ and set
+  the manifest excerpt's trait columns), the subclass edited (abilities, aspects and fragments, from the excerpt's
+  `plugs`, for each of the nine Light subclasses) and any weapon or armor slot filled, swapped or emptied (every item of
+  the game, or the player's own after a login); changing the class or the subclass itself, mods or the artifact means a
+  new DIM link or build file. The rules author only Arcstrider's elements, so another subclass's plugs show ⊘ and set
   nothing off until their rules are written.
 - **A weapon's roll from Bungie**: a DIM link never carries one, so it is picked by hand; reading the
   equipped character's weapons by Bungie name (their sockets are public) needs a Bungie API key (owner).
@@ -131,6 +132,13 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   hasn't published ("?"). DIM's runtime stat benefits (Font mods while Armor Charge) aren't added up.
 - **Armor picker, next**: the mods of a picked piece aren't read (the build keeps the loadout's mods); armor of
   another class's character isn't offered; an icon bungie.net doesn't serve shows broken.
+- **Exotic class items' spirits**: Relativism, Stoicism and Solipsism are listed in the armor picker's Every item, but
+  their two random perks (spirits) can't be picked and no rule authors them: the build wears the item without them.
+- **Every item, next**: filter chips by weapon type and damage type next to the search box; reading Bungie's manifest
+  once at startup and keeping it, as DIM does, so the pickers, DIM links and the login don't each read it (the first
+  opening of a picker reads the item table, ~8 MB, for the breakers' frames); the list (~7,500 items, ~5 MB of JSON
+  parsed in .NET once per tab) and its grid (up to ~930 squares for energy weapons) could be lighter on a phone (fewer
+  fields, or a grid that draws only the rows in view).
 
 ## Owner items
 

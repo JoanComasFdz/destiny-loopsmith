@@ -99,6 +99,16 @@ public sealed class BrowserInterop(IJSRuntime js)
         return await js.InvokeAsync<string>("loopsmithManifest.findEntriesContaining", search.Component, needles);
     }
 
+    /// <summary>
+    /// A component's entries holding <c>"key":value</c> for one of the query's values, each cut down to that value's paths,
+    /// grouped by value (<c>{ value: { hash: { …parts… } } }</c>).
+    /// </summary>
+    public async Task<string> ReadManifestPartsAsync(ManifestPartsQuery query)
+    {
+        var paths = query.Paths.ToDictionary(entry => entry.Key, entry => entry.Value.Select(path => path.ToArray()).ToArray());
+        return await js.InvokeAsync<string>("loopsmithManifest.readEntryParts", query.Component, query.Key, paths);
+    }
+
     /// <summary>A file the user picked with <c>InputFile</c>, as text (foreseeable failures become an error).</summary>
     public static async Task<Result<string, string>> ReadPickedFileAsync(IBrowserFile file)
     {

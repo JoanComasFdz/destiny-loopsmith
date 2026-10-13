@@ -33,6 +33,34 @@ public static class BuildFileEditing
             list => AddToList(buildFile, events, list.Value, BuildFileWriting.WriteWeapon(weapon)),
             _ => new Result<string, string>.Ok($"{buildFile.Text.TrimEnd('\n')}\nweapons:\n  - {BuildFileWriting.WriteWeapon(weapon)}\n")));
 
+    /// <summary>
+    /// The build file without its weapon number <paramref name="index"/> (0-based, in the file's order): the entry's lines
+    /// go from a block list (a comment above it stays), its text and a comma from a flow list; with no weapon left, the
+    /// <c>weapons:</c> entry goes. The rest of the file stays as it was.
+    /// </summary>
+    public static Result<string, string> RemoveWeapon(SourceText buildFile, int index) =>
+        ReadEvents(buildFile).Bind(events => FindTopLevelEntry(events, "weapons")
+            .Match(
+                entry => events[entry.Value.Value.First] is SequenceStart
+                    ? FindEntry(buildFile, ListChildren(events, entry.Value.Value.First), index).Map(weapon => RemoveFromList(buildFile.Text, events, entry.Value, weapon))
+                    : new Result<string, string>.Error($"{buildFile.Path}: its weapons aren't a list"),
+                _ => new Result<string, string>.Error($"{buildFile.Path}: the build has no weapons")));
+
+    /// <summary>A list's entry removed: the whole top-level entry when it is the list's only one, else its text (a flow list) or its lines (a block list).</summary>
+    private static string RemoveFromList(string text, ImmutableArray<ParsingEvent> events, EntrySpan list, EventSpan entry)
+    {
+        var children = ListChildren(events, list.Value.First);
+        var at = children.IndexOf(entry);
+        var span = ToTextSpan(events, entry);
+        return children.Length == 1
+            ? RemoveLines(text, (int)events[list.Key.First].Start.Index, ToTextSpan(events, list.Value).End)
+            : events[list.Value.First] is SequenceStart { Style: SequenceStyle.Flow }
+                ? at + 1 < children.Length
+                    ? text.Remove(span.Start, (int)events[children[at + 1].First].Start.Index - span.Start)       // "{…}, " before the next one
+                    : text.Remove(ToTextSpan(events, children[at - 1]).End, span.End - ToTextSpan(events, children[at - 1]).End) // ", {…}" after the one before
+                : RemoveLines(text, span.Start, span.End);
+    }
+
     /// <summary>An entry added at the end of a list: after its last entry's line (a block list), or before its "]" (a flow list).</summary>
     private static Result<string, string> AddToList(SourceText file, ImmutableArray<ParsingEvent> events, EventSpan list, string entry)
     {

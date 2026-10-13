@@ -1,15 +1,16 @@
 // Loopsmith web host — Bungie's manifest, downloaded on demand: each component file is fetched from bungie.net (the
 // browser's HTTP cache keeps it; the app stores nothing), its bytes kept as the download gave them (in its chunks, never
 // copied into one buffer) and every entry's place in them indexed by hash as the chunks arrive — in the same pass, which
-// entries hold each "plugCategoryIdentifier". Core asks for entries by hash (and for the entries whose JSON holds a
-// piece of text) and interprets the raw JSON itself: no game logic lives here. The download reports how far it got to
+// entries hold each "plugCategoryIdentifier". Core asks for entries by hash (for the entries whose JSON holds a piece of
+// text, and for the entries holding a key's value, cut down to the fields it names) and interprets the raw JSON itself:
+// no game logic lives here. The download reports how far it got to
 // .NET (a few times a second) and pauses every few megabytes, so the page keeps answering taps; once Core has what it
 // asked for, the tables are let go (a later read downloads them again, from the HTTP cache). Called from
 // Hosting/BrowserInterop.cs.
 window.loopsmithManifest = (() => {
   const tables = new Map();   // component name → { store, offsets: Map(hash → [start, end]), categories: Map(category → [hash]) }
   const decoder = new TextDecoder("utf-8");
-  const QUOTE = 34, BACKSLASH = 92, OPEN = 123, CLOSE = 125, COMMA = 44;
+  const QUOTE = 34, BACKSLASH = 92, OPEN = 123, CLOSE = 125, COMMA = 44, CLOSE_LIST = 93;
   const CATEGORY_KEY = new TextEncoder().encode("plugCategoryIdentifier");
   const CATEGORY_NEEDLE = /^"plugCategoryIdentifier":"([^"\\]*)"$/;
   const SLICE = 8 * 1024 * 1024;   // bytes indexed between two pauses, so the page keeps answering taps
@@ -215,7 +216,66 @@ window.loopsmithManifest = (() => {
       }
       return JSON.stringify(found);
     },
+
+    // The entries of a table that hold "key":value for one of the values `pathsByValue` names (each as Bungie's JSON
+    // writes it: 3, "x"), each cut down to that value's paths (arrays of property names, "*" for each element of an
+    // array; one an entry lacks is left out), grouped by the value: { value: { hash: { …parts… } } }. One pass over the
+    // bytes finds every "key":, however many values are asked; none asked, none read.
+    readEntryParts(table, key, pathsByValue) {
+      const groups = {};
+      const store = tables.get(table);
+      const wanted = new Map(Object.entries(pathsByValue));
+      if (!store || wanted.size === 0) return JSON.stringify(groups);
+      const starts = [...store.offsets].map(([hash, [start, end]]) => [start, end, hash]).sort((a, b) => a[0] - b[0]);
+      for (const at of findAll(store.store, new TextEncoder().encode(JSON.stringify(key) + ":"))) {
+        const value = readValue(store.store, at + key.length + 3);
+        const entry = wanted.has(value) ? findEntry(starts, at) : null;
+        if (!entry) continue;
+        const group = groups[value] || (groups[value] = {});
+        if (!group[entry[2]]) group[entry[2]] = cutEntry(JSON.parse(decoder.decode(readBytes(store.store, entry[0], entry[1]))), wanted.get(value)) || {};
+      }
+      return JSON.stringify(groups);
+    },
   };
+
+  // The scalar that starts at byte `from` (a key's value), as the JSON writes it: a string with its quotes, else up to
+  // the next comma or closing bracket. Values longer than a short scalar aren't asked for.
+  function readValue(store, from) {
+    const bytes = readBytes(store, from, Math.min(store.length, from + 64));
+    let end = 0;
+    if (bytes[0] === QUOTE) {
+      for (end = 1; end < bytes.length && bytes[end] !== QUOTE; end++) if (bytes[end] === BACKSLASH) end++;
+      end++;
+    } else {
+      while (end < bytes.length && bytes[end] !== COMMA && bytes[end] !== CLOSE && bytes[end] !== CLOSE_LIST) end++;
+    }
+    return decoder.decode(bytes.subarray(0, end));
+  }
+
+  // A value cut down to the paths it has, nested as they were: an object keeps the properties the paths name (one that
+  // keeps none is left out), an array maps "*" over its elements (an element that keeps nothing is null, so the
+  // elements keep their places), and an empty path keeps the value whole.
+  function cutEntry(value, paths) {
+    if (paths.some((path) => path.length === 0)) return value;
+    if (Array.isArray(value)) {
+      const rest = paths.filter((path) => path[0] === "*").map((path) => path.slice(1));
+      return rest.length ? value.map((element) => { const kept = cutEntry(element, rest); return kept === undefined ? null : kept; }) : undefined;
+    }
+    if (value === null || typeof value !== "object") return undefined;
+    const byName = new Map();
+    for (const path of paths) {
+      if (path[0] === "*") continue;
+      if (!byName.has(path[0])) byName.set(path[0], []);
+      byName.get(path[0]).push(path.slice(1));
+    }
+    const parts = {};
+    for (const [name, rest] of byName) {
+      if (!Object.prototype.hasOwnProperty.call(value, name)) continue;
+      const kept = cutEntry(value[name], rest);
+      if (kept !== undefined) parts[name] = kept;
+    }
+    return Object.keys(parts).length ? parts : undefined;
+  }
 
   function findEntry(starts, at) {
     let low = 0, high = starts.length - 1;
