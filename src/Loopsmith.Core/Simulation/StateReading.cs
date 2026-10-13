@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Loopsmith.Core.Domain;
+using Loopsmith.Core.Functional;
 
 namespace Loopsmith.Core.Simulation;
 
@@ -15,6 +16,10 @@ public static class StateReading
 
     public static bool TargetHas(this GameState state, StatusId status) =>
         state.Target.Debuffs.Contains(status);
+
+    /// <summary>The step casts this ability (<see cref="GameState.Casting"/>).</summary>
+    public static bool IsCasting(this GameState state, AbilityKind ability) =>
+        state.Casting is Optional<AbilityKind>.Some casting && casting.Value == ability;
 
     public static bool HasPickup(this GameState state, PickupId pickup) =>
         state.Pickups.Contains(pickup);
@@ -53,5 +58,6 @@ public static class StateReading
             hasBuff => state.HasBuff(hasBuff.Status),
             lacksBuff => !state.HasBuff(lacksBuff.Status),
             targetHas => state.TargetHas(targetHas.Status),
-            atMax => state.IsAtMax(atMax.Status)));
+            atMax => state.IsAtMax(atMax.Status),
+            during => state.IsCasting(during.Ability)));
 }

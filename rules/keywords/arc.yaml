@@ -61,3 +61,21 @@ elements:
           - { grantEnergy: { to: classAbility, amount: "13.5%" } }
         reason: "Every Ionic Trace you collect gives energy to all three abilities, not just one: 11.25% grenade and melee, 13.5% class ability."
     passives: []
+
+  - id: amplified
+    name: Amplified
+    kind: keyword
+    affinity: arc
+    # Not encoded: the intrinsic Arc-kill counter that grants it (25% minor, 50% elite or Guardian,
+    # 100% miniboss and up, kills within 6 s of each other: progress the game doesn't show as a
+    # stacking status, so it could only be a chance rule, ADRs D8, and a keyword applies to every
+    # build, not just Arc); +50 Mobility, longer slides and Speed Booster (its own 15% against
+    # combatants needs 2.5 s of sprinting): movement; +40 Handling: an "all weapons" archetype;
+    # combatants' worse accuracy. No PvP value: the resistance is against combatants only.
+    description: "Arc buff, 15 s: +50 Mobility, longer slides, +40 Handling, and combatants aim worse at you and deal 15% less damage to you. Sprinting 2.5 s while Amplified grants Speed Booster."
+    source: compendium/2026-10-13/Arc#4
+    rules: []
+    passives:
+      - effect: { resistCombatantDamage: { against: combatants, amount: "15%" } }
+        when: [ { has: amplified } ]
+        reason: "While you're Amplified combatants deal 15% less damage to you."

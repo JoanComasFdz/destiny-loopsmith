@@ -370,7 +370,7 @@ public class ActionResolutionTests
         var outcomes = resolution.Fired.Single().Outcomes;
         Assert.Equal([Certainty.Known, Certainty.Known], outcomes.Select(o => o.Certainty));
         Assert.All(outcomes, outcome => Assert.False(outcome.Caveat.IsSome()));
-        Assert.Equal(initial with { Step = 1 }, resolution.State with { Target = initial.Target });
+        Assert.Equal(initial with { Step = 1, Casting = Optional.Some(AbilityKind.Grenade) }, resolution.State with { Target = initial.Target });
     }
 
     [Fact]

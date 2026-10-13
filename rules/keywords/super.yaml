@@ -1,0 +1,19 @@
+# Being in your Super: active in every build (kind: keyword).
+elements:
+  - id: super
+    name: Super
+    kind: keyword
+    affinity: neutral
+    # Casting the Super puts you in it until the player declares it over (`end:super`, ADRs D3): its
+    # duration is the Super energy it drains (Arc Staff: 20 s base, 5% per second, Arc#44), which a
+    # loop doesn't count. A Super's damage resistance holds while you're in it: each Super's own
+    # passive, `when: [ { has: super } ]` (ADRs D29). Every Super step is a cast, so the status
+    # stays "already active" through a roaming Super's attacks.
+    description: "While your Super lasts you are in it: its damage resistance and its other effects hold until it ends."
+    source: compendium/2026-10-13/Arc#44
+    rules:
+      - on: { abilityCast: super }
+        then:
+          - { applyBuff: super }
+        reason: "Casting your Super puts you in it until it ends."
+    passives: []
