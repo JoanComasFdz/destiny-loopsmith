@@ -38,14 +38,15 @@ public sealed class KeywordInteractingTests
     }
 
     [Fact]
-    public void Amplified_is_given_by_Flow_State_and_Flashover_and_switches_on_two_passives()
+    public void Amplified_is_given_by_Flow_State_and_Flashover_and_switches_on_three_passives()
     {
         var groups = Explain(new KeywordRef.Status(StatusId.From("amplified")));
 
         Assert.Equal(["Gives Amplified", "While Amplified"], groups.Select(group => group.Heading));
         Assert.Equal(["Flow State", "Flashover"], groups[0].Interactions.Select(interaction => interaction.SourceName));
-        Assert.Equal(["Spark of Frequency", "Ionic Overclock"], groups[1].Interactions.Select(interaction => interaction.SourceName));
-        Assert.Equal(Optional.Some("No weapon in this build is one of them, so it does nothing here."), groups[1].Interactions[1].Note);
+        Assert.Equal(["Flow State", "Spark of Frequency", "Ionic Overclock"], groups[1].Interactions.Select(interaction => interaction.SourceName));
+        Assert.Equal("66% [PvP 32%] damage resistance (during your class ability)", groups[1].Interactions[0].Text);
+        Assert.Equal(Optional.Some("No weapon in this build is one of them, so it does nothing here."), groups[1].Interactions[2].Note);
     }
 
     [Fact]

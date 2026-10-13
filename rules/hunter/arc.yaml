@@ -36,8 +36,10 @@ elements:
       # Not expressible: x1 Bolt Charge per attack reflected while guarding (no block/reflect trigger),
       # and the Blind from the airborne heavy attack and Palm Strike (a rule can't name one of the
       # super's attacks; "super damage -> Blind" would blind on every light attack too).
-    # Not expressible: the super's damage resistance (no "while in your super" condition).
-    passives: []
+    passives:
+      - effect: { resistDamage: "90% [53%]" }
+        when: [ { has: super } ]
+        reason: "While you're in Arc Staff you take 90% less damage."
 
   - id: gathering-storm
     name: Gathering Storm
@@ -62,8 +64,10 @@ elements:
         then:
           - { debuffTarget: jolt }
         reason: "The thrown staff jolts what it hits on impact."
-    # Not expressible: the super's damage resistance (no "while in your super" condition).
-    passives: []
+    passives:
+      - effect: { resistDamage: "90% [49%]" }
+        when: [ { has: super } ]
+        reason: "While you're in Gathering Storm you take 90% less damage."
 
   - id: storms-edge
     name: Storm's Edge
@@ -76,12 +80,13 @@ elements:
     ability: { kind: super, charges: 1, chunkScalar: "?", baseCooldown: 625 }
     description: "Thrown Arc super with 90% [PvP 45%] damage resistance: up to 3 homing knives per cast. Each one hits for 90 impact and up to 171 damage within 3 m, then you teleport to it and spin, hitting twice for 1440 within 6 m."
     source: compendium/2026-10-13/Arc#46
-    # Not expressible: the teleport (movement has no part in a loop) and the super's damage
-    # resistance (no "while in your super" condition). The Compendium states no Bolt Charge, Jolt
-    # or Blind for it.
-    inert: "Damage only: its hits and kills are the super step itself, and the teleport to the knife is movement, which has no part in a loop."
+    # Not expressible: the teleport (movement has no part in a loop). The Compendium states no Bolt
+    # Charge, Jolt or Blind for it. Its damage resistance holds while you're in it (ADRs D29).
     rules: []
-    passives: []
+    passives:
+      - effect: { resistDamage: "90% [45%]" }
+        when: [ { has: super } ]
+        reason: "While you're in Storm's Edge you take 90% less damage."
 
   - id: skip-grenade
     name: Skip Grenade
@@ -334,10 +339,14 @@ elements:
         then:
           - { applyBuff: amplified }
         reason: "Killing a jolted enemy makes you Amplified."
-    # Not expressible: the Amplified benefits. There is no passive for ability regeneration rate
-    # (energy outcomes are facts, ADRs D5), resistance can't be scoped to "during the dodge
-    # animation", and modifyWeaponStats has no "all weapons" archetype.
-    passives: []
+    # The dodge's resistance holds at the end of a class ability step (`class`, and Ascension's
+    # `class:air`, which sets off the dodge's effects: Arc#48) while you're Amplified. Not
+    # expressible: the other Amplified benefits. There is no passive for ability regeneration rate
+    # (energy outcomes are facts, ADRs D5), and modifyWeaponStats has no "all weapons" archetype.
+    passives:
+      - effect: { resistDamage: "66% [32%]" }
+        when: [ { has: amplified }, { during: classAbility } ]
+        reason: "While you're Amplified you take 66% less damage during your dodge."
 
   - id: ascension
     name: Ascension

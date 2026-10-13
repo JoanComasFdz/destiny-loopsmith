@@ -182,7 +182,7 @@ public sealed class ArmorModMechanicsTests
 
         var dodge = ResolveOnce(build, Dodge);
 
-        Assert.Equal(ActionResolution.CreateInitialState() with { Step = 1 }, dodge.State);
+        Assert.Equal(ActionResolution.CreateInitialState() with { Step = 1, Casting = Optional.Some(AbilityKind.ClassAbility) }, dodge.State);
         Assert.Equal(
             "#1 Class ability\n  Class ability → +13% energy to your least-charged ability [Orbs Of Restoration] + +?% energy to your least-charged ability [Unknown Restoration]",
             DescribeTrace(build, dodge));

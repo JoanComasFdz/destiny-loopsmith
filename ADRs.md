@@ -395,8 +395,11 @@ decide what a step fires. It shows two columns: PvE (every source) and PvP (only
 each by its PvP value; one the source gives none for is "?"). A resistance against some combatants only (Arc
 Resistance, Melee or Sniper Damage Resistance, Concussive Dampener; Harmonic Resistance on its Super's element) is a
 line of its own, all damage's sources and its own together, PvE only. An unknown value makes its total "?".
-**Consequence.** A source that is only a description — a Super's resistance, Amplified's, a resistance during an
-animation — is not counted until it is authored as a resistance passive. A condition the format can't express is
+**Consequence.** A source that is only a description is not counted until it is authored as a resistance passive.
+(Product owner, later.) A Super's resistance holds while you are in your Super: casting it applies the `super` status,
+which the player ends (`end:super`, D3), since a roaming Super spans several steps. A resistance during an animation
+(Flow State's dodge) holds on the step that casts that ability (the `during` condition). Amplified's is its keyword
+element's, like Woven Mail's. A condition the format can't express is
 treated as holding, as for any passive (Spark of Resistance's "3+ enemies within 15 m", D7). Copies of one mod take
 the mod's own value by copies (15% | 25% | 30%); different mods multiply.
 
