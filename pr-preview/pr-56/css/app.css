@@ -1398,3 +1398,23 @@ a.weapon-line-name:hover { color: var(--arc); text-decoration: underline; }
 .step-icon { width: 1.3em; height: 1.3em; vertical-align: -0.28em; border-radius: 3px; }
 .event-weapon-icon { border-radius: 2px; }
 .hud-keyword-icon { width: 1.1em; height: 1.1em; margin-right: 0.15em; }
+
+/* ── the startup screen: Bungie's manifest loading (Components/ManifestStartupScreen.razor) ─────────── */
+.manifest-startup { max-width: 560px; margin: 32px auto; padding: 18px 20px; display: flex; flex-direction: column; gap: 12px; }
+.manifest-startup > .muted { margin: 0; font-size: 13px; }
+.manifest-startup .manifest-progress { flex: none; font-size: 13px; }
+.manifest-startup-problem { margin: 0; color: var(--warn); overflow-wrap: anywhere; }
+.manifest-startup-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+/* The bar at work: a sheen that moves by transform alone, so the browser keeps playing it while the page's thread is busy. */
+.manifest-progress-bar.active::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .28), transparent);
+    transform: translateX(-100%);
+    animation: manifest-sheen 1.4s linear infinite;
+    will-change: transform;
+}
+@keyframes manifest-sheen { to { transform: translateX(100%); } }
+@media (prefers-reduced-motion: reduce) { .manifest-progress-bar.active::after { animation: none; } }
+@media (max-width: 420px) { .manifest-startup { margin: 12px auto; padding: 14px; } }
