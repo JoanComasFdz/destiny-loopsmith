@@ -24,7 +24,7 @@
                 @foreach (var option in shown)
                 {
                     var hash = option.Hash;
-                    <div class="weapon-option" @key="hash">
+                    <div class="weapon-option @(focused == Optional.Some(hash) ? "focused" : "")" @key="hash">
                         <button type="button" role="option" aria-selected="@(focused == Optional.Some(hash) ? "true" : "false")"
                                 class="icon-tile tappable item @DescribeTier(option.Tile) @(option.Worn ? "worn" : "") @(focused == Optional.Some(hash) ? "focused" : "")"
                                 title="@($"{option.Tile.Name} — {option.Line}")" aria-label="@option.Tile.Name" data-hash="@hash.Value"

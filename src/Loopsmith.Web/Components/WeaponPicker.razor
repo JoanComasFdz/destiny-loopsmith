@@ -31,7 +31,7 @@
                     @foreach (var option in view.Options)
                     {
                         var instance = option.Instance;
-                        <div class="weapon-option">
+                        <div class="weapon-option @(focused == Optional.Some(instance) ? "focused" : "")">
                             <button type="button" role="option" aria-selected="@(focused == Optional.Some(instance) ? "true" : "false")"
                                     class="icon-tile tappable item @DescribeTier(option.Tile) @(option.Worn ? "worn" : "") @(focused == Optional.Some(instance) ? "focused" : "") @LoadoutShaping.ToMasterworkClass(option.Marks)"
                                     data-tier="@LoadoutShaping.ToTierText(option.Marks)" data-masterwork="@LoadoutShaping.ToMasterworkText(option.Marks)"
