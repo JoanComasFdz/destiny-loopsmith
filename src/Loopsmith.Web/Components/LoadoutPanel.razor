@@ -7,9 +7,14 @@
    player's Bungie login, theirs too); a slot that holds nothing (an ability of a build started from scratch, a weapon
    or armor slot) is a dashed square with its slot's name. After the login, the player's copies of its pieces and weapons
    (the share's when theirs, else their own) show their marks as DIM does: the tier's diamonds, a masterwork's glow and
-   gold border. A weapon shows its breaker and element under its square. *@
+   gold border. A weapon shows its breaker and element under its square. In the designer, once the listing of every
+   piece and mod has been read, each armor piece shows its mod sockets (empty ones dashed, named for what they take)
+   and its energy, and the General row every piece's general socket: tapping one opens the mod picker for it. *@
+@inject BungieManifestJoining Manifest
 @{
     var view = LoadoutShaping.ShapeLoadout(Build, Profile);
+    var listing = CanPickMods ? Manifest.Listing : Optional.None<ItemListing>();         // impure (the tab's listing)
+    var mods = listing.Map(found => ModShaping.ShapeMods(Build, LoopDesigning.LayOutMods(Build, found, Profile), found));   // pure
 }
 <div class="loadout @(Compact ? "compact" : "")" data-testid="loadout">
     <div class="loadout-row">
@@ -182,7 +187,7 @@
         </section>
     }
 
-    @if (!view.Armor.IsEmpty || !view.GeneralMods.IsEmpty || ShowsEverySlot)
+    @if (!view.Armor.IsEmpty || !view.GeneralMods.IsEmpty || ShowsEverySlot || mods.IsSome())
     {
         <section class="loadout-box" aria-label="Armor">
             <h4 class="loadout-label">Armor</h4>
@@ -208,16 +213,67 @@
                                     title="Pick a @slot.DescribeArmorSlot().ToLowerInvariant()" aria-label="Pick a @slot.DescribeArmorSlot().ToLowerInvariant()"
                                     aria-haspopup="dialog" @onclick="() => OpenArmorPicker(slot, piece.Piece.IsSome())">⋯</button>
                         }
-                        <div class="icon-grid mods">
-                            @foreach (var mod in piece.Mods)
+                        @if (mods is Optional<ModsView>.Some laidOut && laidOut.Value.Pieces.Where(row => row.Slot == slot).Select(Optional.Some).FindFirstSome() is Optional<PieceModsView>.Some sockets)
+                        {
+                            <div class="mod-sockets" data-testid="mod-sockets" data-slot="@slot">
+                                <div class="icon-grid mods sockets">
+                                    @foreach (var socket in sockets.Value.Sockets)
+                                    {
+                                        @RenderSocket(socket)
+                                    }
+                                </div>
+                                <span class="mod-energy @(sockets.Value.Over ? "over" : "")" data-testid="mod-energy">@sockets.Value.Energy</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="icon-grid mods">
+                                @foreach (var mod in piece.Mods)
+                                {
+                                    @RenderTile(mod, "mod")
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+            @if (mods is Optional<ModsView>.Some general)
+            {
+                <div class="general-mods" data-testid="general-mods">
+                    <span class="loadout-sublabel">General mods</span>
+                    <div class="icon-grid sockets">
+                        @foreach (var socket in general.Value.General)
+                        {
+                            @RenderSocket(socket)
+                        }
+                    </div>
+                </div>
+                @if (!general.Value.Other.IsEmpty)
+                {
+                    <div class="general-mods" data-testid="other-mods">
+                        <span class="loadout-sublabel" title="Mods that go in no mod socket: a tuning mod goes in a Tier 5 copy's tuning socket">Tuning and other mods</span>
+                        <div class="icon-grid">
+                            @foreach (var mod in general.Value.Other)
                             {
                                 @RenderTile(mod, "mod")
                             }
                         </div>
                     </div>
                 }
-            </div>
-            @if (!view.GeneralMods.IsEmpty)
+                @if (!general.Value.Unplaced.IsEmpty)
+                {
+                    <div class="general-mods unplaced-mods" data-testid="unplaced-mods">
+                        <span class="loadout-sublabel" title="The pieces the build wears have no free socket that takes these: wear other pieces, or clear a socket.">Mods with no socket</span>
+                        <div class="icon-grid">
+                            @foreach (var mod in general.Value.Unplaced)
+                            {
+                                @RenderTile(mod, "mod")
+                            }
+                        </div>
+                    </div>
+                }
+            }
+            else if (!view.GeneralMods.IsEmpty)
             {
                 <div class="general-mods">
                     <span class="loadout-sublabel">General mods</span>
@@ -278,6 +334,12 @@
     {
         <ArmorPicker Build="Build" Profile="Profile" Slot="armorOpen.Value.Slot" Filled="armorOpen.Value.Filled" OnPick="PickArmorAsync" PickItem="PickArmorItemAsync"
                      OnEmpty="EmptyArmorAsync" OnClose="CloseArmorPicker" />
+    }
+
+    @if (modPicker is Optional<ModSocketPlace>.Some place && CanPickMods && Manifest.Listing is Optional<ItemListing>.Some pickerListing)
+    {
+        <ModPicker Build="Build" Listing="pickerListing.Value" Profile="Profile" Place="place.Value" PickMod="PickModAsync" ClearMod="ClearModAsync" OnClose="CloseModPicker"
+                   OnDetails="OpenModDetails" />
     }
 
     @if (weaponPicker is Optional<WeaponTarget>.Some target && CanPickWeapons)
@@ -346,6 +408,102 @@
     public EventCallback<ArmorSlot> OnEmptyArmor { get; set; }
 
     private bool CanPickArmor => PickArmorItem.IsSome();
+
+    /// <summary>
+    /// Set by the designer: a mod picked for a socket is read from Bungie's manifest when the excerpt lacks it and put in
+    /// the build (the picker shows why when it can't be). Unset (the Home card): the mods show as they are, read-only.
+    /// </summary>
+    [Parameter]
+    public Optional<Func<ModPick, Task<Result<Unit, string>>>> PickMod { get; set; } = Optional.None<Func<ModPick, Task<Result<Unit, string>>>>();
+
+    /// <summary>Set by the designer: "Clear this socket" takes the mod there out of the build.</summary>
+    [Parameter]
+    public Optional<Func<ModSocketPlace, Task<Result<Unit, string>>>> ClearMod { get; set; } = Optional.None<Func<ModSocketPlace, Task<Result<Unit, string>>>>();
+
+    private bool CanPickMods => PickMod.IsSome() && ClearMod.IsSome();
+
+    /// <summary>The socket whose mod picker is open.</summary>
+    private Optional<ModSocketPlace> modPicker = Optional.None<ModSocketPlace>();
+
+    /// <summary>In the designer, the listing of every piece and mod is read when the tab doesn't have it yet (the app reads it when it opens).</summary>
+    protected override async Task OnParametersSetAsync()
+    {
+        if (CanPickMods && !Manifest.Listing.IsSome() && !askedForListing)
+        {
+            askedForListing = true;                                                              // impure (component state)
+            await Manifest.ListItemsAsync();                                                     // impure (the tab's listing)
+        }
+    }
+
+    private bool askedForListing;
+
+    private void OpenModPicker(ModSocketPlace place)
+    {
+        ClosePicker();                                                                           // impure (UI state)
+        modPicker = Optional.Some(place);                                                        // impure (UI state)
+    }
+
+    /// <summary>"About …" in the mod picker: the picker closes and the mod's details open.</summary>
+    private void OpenModDetails(ItemDetails shown)
+    {
+        modPicker = Optional.None<ModSocketPlace>();                                             // impure (UI state)
+        OpenDetails(shown);                                                                      // impure (UI state)
+    }
+
+    private void CloseModPicker() =>
+        modPicker = Optional.None<ModSocketPlace>();                                             // impure (UI state)
+
+    /// <summary>A mod picked: the designer puts it in; the picker closes when it did, else it says why.</summary>
+    private Task<Result<Unit, string>> PickModAsync(ModPick pick) =>
+        CloseOnSuccessAsync(PickMod.Match(
+            pickMod => pickMod.Value(pick),
+            _ => Task.FromResult<Result<Unit, string>>(new Result<Unit, string>.Error("Mods can't be picked here."))));   // impure
+
+    private Task<Result<Unit, string>> ClearModAsync(ModSocketPlace place) =>
+        CloseOnSuccessAsync(ClearMod.Match(
+            clearMod => clearMod.Value(place),
+            _ => Task.FromResult<Result<Unit, string>>(new Result<Unit, string>.Error("Mods can't be cleared here."))));  // impure
+
+    private async Task<Result<Unit, string>> CloseOnSuccessAsync(Task<Result<Unit, string>> edit)
+    {
+        var done = await edit;                                                                   // impure
+        if (done.IsOk())
+        {
+            modPicker = Optional.None<ModSocketPlace>();                                         // impure (UI state)
+            StateHasChanged();                                                                   // impure (the picker's own event: this panel renders the close)
+        }
+
+        return done;
+    }
+
+    /// <summary>A mod socket: its mod's square (a tap opens the mod picker for it), or a dashed square named for what it takes.</summary>
+    private RenderFragment RenderSocket(ModSocketView socket) => __builder =>
+    {
+        var title = socket.Mod.Match(
+            mod => $"{mod.Value.Name}{(socket.Cost is Optional<int>.Some cost ? $" · {cost.Value} energy" : "")} — tap to change it",
+            _ => $"Empty {socket.Takes.ToLowerInvariant()} socket — tap to pick a mod");
+        <button type="button" class="mod-socket @(socket.Mod.IsSome() ? "filled" : "empty")" data-action="pick-mod" data-socket="@socket.Place.Index"
+                title="@title" aria-label="@title" aria-haspopup="dialog" @onclick="() => OpenModPicker(socket.Place)">
+            @if (socket.Mod is Optional<IconTile>.Some held)
+            {
+                <span class="icon-tile mod @ToneStyling.ToAffinityClass(held.Value.Affinity) @(held.Value.InRules ? "" : "out")">
+                    @RenderTileFace(held.Value)
+                    @if (!held.Value.InRules)
+                    {
+                        <UnsupportedMark />
+                    }
+                </span>
+                @if (socket.Cost is Optional<int>.Some cost)
+                {
+                    <span class="mod-socket-cost" aria-hidden="true">@cost.Value</span>
+                }
+            }
+            else
+            {
+                <span class="icon-tile mod empty">@socket.ShortTakes</span>
+            }
+        </button>
+    };
 
     /// <summary>Set by the designer: a weapon picked from the player's weapons is swapped into the build (or added). Unset (the Home card): read-only.</summary>
     [Parameter]

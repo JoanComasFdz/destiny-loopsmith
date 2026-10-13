@@ -112,7 +112,19 @@ public static class DimLoadoutMapping
                 Optional.None<StatValue>(),
                 Optional.None<StatValue>()),
             leftOut,
-            ListArmorCopies(catalog.Manifest, loadout)));
+            ListArmorCopies(catalog.Manifest, loadout),
+            ListModPlugs(placed)));
+    }
+
+    /// <summary>
+    /// The copies of the loadout's mods the rules know, for each element one of whose copies isn't its first hash (the
+    /// cheaper artifact copy): every copy of it, in the loadout's order.
+    /// </summary>
+    private static ImmutableArray<ItemHash> ListModPlugs(ImmutableArray<(LoadoutPart Part, BuildElement Element, ItemHash Hash)> placed)
+    {
+        var mods = placed.Where(entry => entry.Part == LoadoutPart.ArmorMod && entry.Element.Kind == ElementKind.ArmorMod).ToImmutableArray();
+        var mixed = mods.Where(entry => !entry.Element.Hashes.IsEmpty && entry.Element.Hashes[0] != entry.Hash).Select(entry => entry.Element.Id).ToImmutableHashSet();
+        return [.. mods.Where(entry => mixed.Contains(entry.Element.Id)).Select(entry => entry.Hash)];
     }
 
     /// <summary>The copy of each armor piece the loadout wears, when it names one (a dim.gg share does): its instance id.</summary>

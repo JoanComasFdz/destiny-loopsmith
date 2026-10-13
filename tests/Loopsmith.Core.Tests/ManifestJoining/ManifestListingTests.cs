@@ -40,6 +40,25 @@ public sealed class ManifestListingTests
     }
 
     [Fact]
+    public void Armor_mods_are_listed_with_their_category_cost_and_requirements_and_each_piece_with_its_mod_sockets()
+    {
+        var listing = new ManifestStore(Fixture.Tables).List();
+
+        Assert.Equal(
+            ["Arc Siphon 911 enhancements.v2_head 3", "Arc Siphon 912 enhancements.v2_head 1", "Grenade Mod 910 enhancements.v2_general 3"],
+            listing.Mods.Select(mod => $"{mod.Item.Name} {mod.Item.Hash.Value} {mod.Category.Value} {mod.Cost.Value}"));   // the costlier copy first; no empty or locked plug
+        var cheap = listing.Mods.Single(mod => mod.Item.Hash.Value == 912u);
+        Assert.Equal(["Must Be Selected in the Seasonal Artifact"], cheap.Requirements);                                  // Guardian Rank aside
+        Assert.Equal(new ManifestKind.ArmorMod(Optional.Some(ArmorSlot.Helmet)), cheap.Item.Kind);
+        Assert.Equal(new ManifestKind.ArmorMod(Optional.None<ArmorSlot>()), listing.Mods.Single(mod => mod.Item.Hash.Value == 910u).Item.Kind);
+        Assert.Equal((Optional.Some("/siphon.png"), Optional.Some("Arc kills make orbs.")), (cheap.Item.Icon, cheap.Item.Description));
+        Assert.Equal(
+            ["enhancements.v2_general", "enhancements.v2_head", "enhancements.v2_head"],
+            listing.ModSockets[ItemHash.From(200u)].Select(category => category.Value));                                  // the tuning socket isn't a mod a build chooses
+        Assert.False(listing.ModSockets.ContainsKey(ItemHash.From(100u)));                                                // a weapon has none
+    }
+
+    [Fact]
     public void A_weapons_breaker_is_its_own_else_its_frames()
     {
         var listing = new ManifestStore(Fixture.Tables).List();
@@ -62,6 +81,8 @@ public sealed class ManifestListingTests
 
         Assert.Equal(listing.Items.Select(item => item.Hash), read.Items.Select(item => item.Hash));
         Assert.Equal(listing.Sets.Keys.Order(), read.Sets.Keys.Order());
+        Assert.Equal(listing.Mods.Select(mod => mod.Item.Hash), read.Mods.Select(mod => mod.Item.Hash));
+        Assert.Equal(listing.ModSockets.Keys.Order(), read.ModSockets.Keys.Order());
         Assert.Equal(saved, LoopDesigning.ToSavedListing(read));                                 // every field kept
     }
 
@@ -95,8 +116,8 @@ public sealed class ManifestListingTests
         var items = Assert.IsType<ListingStep.Ask>(Assert.IsType<Result<ListingStep, string>.Ok>(
             LoopDesigning.ContinueListing(start, $$"""{ "DestinyInventoryBucketDefinition": {{Fixture.Buckets}} }""", "{}")).Value);
         Assert.Equal(["1", "2"], items.Query.Parts.Paths.Keys.Order(StringComparer.Ordinal));
-        Assert.Contains(["sockets", "socketEntries", "*", "singleInitialItemHash"], items.Query.Parts.Paths["1"]);   // a weapon's sockets, for its frame
-        Assert.DoesNotContain(items.Query.Parts.Paths["2"], path => path[0] == "sockets");                               // armor needs none
+        Assert.Contains(["sockets", "socketEntries", "*", "singleInitialItemHash"], items.Query.Parts.Paths["1"]);   // a weapon's sockets, for its frame…
+        Assert.Contains(["sockets", "socketEntries", "*", "singleInitialItemHash"], items.Query.Parts.Paths["2"]);   // …armor's, for its mod sockets
         Assert.IsType<Result<ListingStep, string>.Error>(LoopDesigning.ContinueListing(items, "{}", "[]"));
         Assert.IsType<Result<ItemListing, string>.Error>(LoopDesigning.ToItemListing(new Result<ListingStep, string>.Ok(items)));
     }
@@ -122,6 +143,16 @@ public sealed class ManifestListingTests
         Assert.Equal(
             wearable.OrderBy(item => item.Hash.Value).Select(DescribeItem),
             wearable.OrderBy(item => item.Hash.Value).Select(item => listed.TryGetValue(item.Hash, out var found) ? DescribeItem(found) : $"{item.Hash.Value}: missing"));
+
+        // Every slot mod of the excerpt is a mod the picker lists, for that slot; an Armor 3.0 piece takes a general mod and three of its slot's.
+        var slotMods = bundled.Items.Values.Where(item => item.Kind is ManifestKind.ArmorMod { Slot: Optional<ArmorSlot>.Some }).OrderBy(item => item.Hash.Value).ToImmutableArray();
+        var mods = listing.Mods.ToImmutableDictionary(mod => mod.Item.Hash);
+        Assert.NotEmpty(slotMods);
+        Assert.Equal(
+            slotMods.Select(item => $"{item.Hash.Value}: {item.Name} {item.Kind}"),
+            slotMods.Select(item => mods.TryGetValue(item.Hash, out var found) ? $"{item.Hash.Value}: {found.Item.Name} {found.Item.Kind}" : $"{item.Hash.Value}: missing"));
+        var cloak = listing.ModSockets[ItemHash.From(2107326067u)];                              // Luminopotent Cloak
+        Assert.Equal(["enhancements.v2_general", "enhancements.v2_class_item", "enhancements.v2_class_item", "enhancements.v2_class_item"], cloak.Select(category => category.Value));
     }
 
     private static string DescribeItem(ManifestItem item) =>
@@ -138,7 +169,8 @@ public sealed class ManifestListingTests
     {
         internal const string Buckets = """{"1":{"displayProperties":{"name":"Kinetic Weapons"}},"2":{"displayProperties":{"name":"Helmet"}},"3":{"displayProperties":{"name":"Consumables"}}}""";
         private const string Sets = """{"500":{"displayProperties":{"name":"Testing"},"setPerks":[{"requiredSetCount":2,"sandboxPerkHash":600}]}}""";
-        private const string Categories = """{"8":{"displayProperties":{"name":"INTRINSIC TRAITS"}},"7":{"displayProperties":{"name":"WEAPON PERKS"}}}""";
+        private const string Categories = """{"8":{"displayProperties":{"name":"INTRINSIC TRAITS"}},"7":{"displayProperties":{"name":"WEAPON PERKS"}},"9":{"displayProperties":{"name":"ARMOR MODS"}}}""";
+        private const string ModSockets = """ "sockets": { "socketEntries": [ { "singleInitialItemHash": 900 }, { "singleInitialItemHash": 901 }, { "singleInitialItemHash": 901 }, { "singleInitialItemHash": 902 }, { "singleInitialItemHash": 0 } ], "socketCategories": [ { "socketCategoryHash": 9, "socketIndexes": [0, 1, 2, 3] } ] } """;
         private const string Breakers = """{"485622768":{"displayProperties":{"name":"Shield Piercing"}},"2611060930":{"displayProperties":{"name":"Disruption"}}}""";
         private const string Perks = """{"42":{"displayProperties":{"name":"[Shield-Piercing] Barrier"}},"43":{"displayProperties":{"name":"Faster"}},"44":{"displayProperties":{"name":"[Stagger] Unstoppable"}}}""";
         private const string Sockets = """ "sockets": { "socketEntries": [ { "singleInitialItemHash": 0 }, { "singleInitialItemHash": FRAME }, { "singleInitialItemHash": 10 } ], "socketCategories": [ { "socketCategoryHash": 7, "socketIndexes": [2] }, { "socketCategoryHash": 8, "socketIndexes": [1] } ] } """;
@@ -152,13 +184,21 @@ public sealed class ManifestListingTests
               "104": { "displayProperties": { "name": "Preview Rifle" }, "itemTypeDisplayName": "Auto Rifle", "itemType": 3, "equippable": false, "defaultDamageType": 1, "inventory": { "bucketTypeHash": 1, "tierType": 5 } },
               "105": { "displayProperties": { "name": "Rifle Ornament" }, "itemTypeDisplayName": "Ornament", "itemType": 19, "equippable": true, "inventory": { "bucketTypeHash": 1, "tierType": 5 } },
               "106": { "displayProperties": { "name": "" }, "itemTypeDisplayName": "Auto Rifle", "itemType": 3, "equippable": true, "defaultDamageType": 1, "inventory": { "bucketTypeHash": 1, "tierType": 5 } },
-              "200": { "displayProperties": { "name": "Test Mask" }, "itemTypeDisplayName": "Helmet", "itemType": 2, "equippable": true, "classType": 1, "inventory": { "bucketTypeHash": 2, "tierType": 5 }, "equippingBlock": { "equipableItemSetHash": 500 } },
+              "200": { "displayProperties": { "name": "Test Mask" }, "itemTypeDisplayName": "Helmet", "itemType": 2, "equippable": true, "classType": 1, "inventory": { "bucketTypeHash": 2, "tierType": 5 }, "equippingBlock": { "equipableItemSetHash": 500 }, MODSOCKETS },
               "201": { "displayProperties": { "name": "Test Mask" }, "itemTypeDisplayName": "Helmet", "itemType": 2, "equippable": true, "classType": 1, "inventory": { "bucketTypeHash": 14239492, "tierType": 5 } },
               "300": { "displayProperties": { "name": "Healing Potion" }, "itemType": 9, "equippable": false, "inventory": { "bucketTypeHash": 3, "tierType": 5 } },
               "10": { "displayProperties": { "name": "Lightning" }, "itemTypeDisplayName": "Trait", "plug": { "plugCategoryIdentifier": "frames" } },
               "20": { "displayProperties": { "name": "Adaptive Frame" }, "itemTypeDisplayName": "Intrinsic", "plug": { "plugCategoryIdentifier": "intrinsics" }, "perks": [ { "perkHash": 43 }, { "perkHash": 42 } ] },
               "21": { "displayProperties": { "name": "Plain Frame" }, "itemTypeDisplayName": "Intrinsic", "plug": { "plugCategoryIdentifier": "intrinsics" }, "perks": [ { "perkHash": 43 } ] },
-              "22": { "displayProperties": { "name": "Cannon's Own" }, "itemTypeDisplayName": "Intrinsic", "plug": { "plugCategoryIdentifier": "intrinsics" }, "perks": [ { "perkHash": 44 } ] }
+              "22": { "displayProperties": { "name": "Cannon's Own" }, "itemTypeDisplayName": "Intrinsic", "plug": { "plugCategoryIdentifier": "intrinsics" }, "perks": [ { "perkHash": 44 } ] },
+              "900": { "displayProperties": { "name": "Empty Mod Socket" }, "itemTypeDisplayName": "General Armor Mod", "plug": { "plugCategoryIdentifier": "enhancements.v2_general" } },
+              "901": { "displayProperties": { "name": "Empty Mod Socket" }, "itemTypeDisplayName": "Helmet Armor Mod", "plug": { "plugCategoryIdentifier": "enhancements.v2_head" } },
+              "902": { "displayProperties": { "name": "Empty Tuning Mod Socket" }, "itemTypeDisplayName": "General Armor Mod", "plug": { "plugCategoryIdentifier": "core.gear_systems.armor_tiering.plugs.tuning.mods" } },
+              "910": { "displayProperties": { "name": "Grenade Mod", "icon": "/grenade.png" }, "itemTypeDisplayName": "General Armor Mod", "inventory": { "tierType": 2 }, "plug": { "plugCategoryIdentifier": "enhancements.v2_general", "energyCost": { "energyCost": 3 } }, "investmentStats": [ { "statTypeHash": 1, "value": 10 } ] },
+              "911": { "displayProperties": { "name": "Arc Siphon", "icon": "/siphon.png" }, "itemTypeDisplayName": "Helmet Armor Mod", "inventory": { "tierType": 2 }, "plug": { "plugCategoryIdentifier": "enhancements.v2_head", "energyCost": { "energyCost": 3 }, "insertionRules": [ { "failureMessage": "Requires Guardian Rank 6: Vendor Challenges" }, { "failureMessage": "" } ] }, "perks": [ { "perkHash": 45 } ] },
+              "912": { "displayProperties": { "name": "Arc Siphon", "icon": "/siphon.png", "description": "Arc kills make orbs." }, "itemTypeDisplayName": "Helmet Armor Mod", "inventory": { "tierType": 2 }, "plug": { "plugCategoryIdentifier": "enhancements.v2_head", "energyCost": { "energyCost": 1 }, "insertionRules": [ { "failureMessage": "Requires Guardian Rank 6: Vendor Challenges" }, { "failureMessage": "Must Be Selected in the Seasonal Artifact" } ] }, "perks": [ { "perkHash": 45 } ] },
+              "913": { "displayProperties": { "name": "Locked Armor Mod" }, "itemTypeDisplayName": "Helmet Armor Mod", "plug": { "plugCategoryIdentifier": "enhancements.v2_head" } },
+              "914": { "displayProperties": { "name": "Balanced Tuning" }, "itemTypeDisplayName": "General Armor Mod", "plug": { "plugCategoryIdentifier": "core.gear_systems.armor_tiering.plugs.tuning.mods" }, "perks": [ { "perkHash": 46 } ] }
             }
             """;
 
@@ -167,7 +207,8 @@ public sealed class ManifestListingTests
             [ManifestTable.InventoryItem] = Items
                 .Replace("SOCKETS20", Sockets.Replace("FRAME", "20", StringComparison.Ordinal), StringComparison.Ordinal)
                 .Replace("SOCKETS21", Sockets.Replace("FRAME", "21", StringComparison.Ordinal), StringComparison.Ordinal)
-                .Replace("SOCKETS22", Sockets.Replace("FRAME", "22", StringComparison.Ordinal), StringComparison.Ordinal),
+                .Replace("SOCKETS22", Sockets.Replace("FRAME", "22", StringComparison.Ordinal), StringComparison.Ordinal)
+                .Replace("MODSOCKETS", ModSockets, StringComparison.Ordinal),
             [ManifestTable.InventoryBucket] = Buckets,
             [ManifestTable.EquipableItemSet] = Sets,
             [ManifestTable.SocketCategory] = Categories,

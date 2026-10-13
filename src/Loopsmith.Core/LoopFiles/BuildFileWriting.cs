@@ -66,6 +66,7 @@ public static class BuildFileWriting
         .. ToStatsEntry(build.Stats),
         .. ToLeftOutEntry(build.LeftOut),
         .. ToArmorCopiesEntry(build.ArmorCopies),
+        .. ToHashListEntry("armorModPlugs", build.ArmorModPlugs),
         new MappingEnd(),
         new DocumentEnd(true),
         new StreamEnd(),
@@ -175,6 +176,29 @@ public static class BuildFileWriting
             ? []
             : [ToKey("leftOut"), new MappingStart(null, null, true, MappingStyle.Flow), .. parts, new MappingEnd()];
     }
+
+    /// <summary><c>armorModPlugs: [3847471926]</c>; nothing when empty.</summary>
+    private static ImmutableArray<ParsingEvent> ToHashListEntry(string key, ImmutableArray<ItemHash> hashes) =>
+        hashes.IsEmpty ? [] : [ToKey(key), .. ToHashListValue(hashes)];
+
+    private static ImmutableArray<ParsingEvent> ToHashListValue(ImmutableArray<ItemHash> hashes) =>
+    [
+        new SequenceStart(null, null, true, SequenceStyle.Flow),
+        .. hashes.Select(hash => (ParsingEvent)ToValue(hash.Value.ToString(CultureInfo.InvariantCulture))),
+        new SequenceEnd(),
+    ];
+
+    /// <summary>
+    /// The build's mod entries as the build file writes them — <c>armorMods</c> (always, <c>[]</c> when none),
+    /// <c>leftOut</c> (its mods with the rest of what it leaves out) and <c>armorModPlugs</c> — an entry with none is
+    /// removed by an edit.
+    /// </summary>
+    internal static ImmutableArray<(string Key, Optional<string> Value)> WriteModEntries(Build build) =>
+    [
+        ("armorMods", Optional.Some(WriteValue([.. ToListEntry("armorMods", build.ArmorMods).Skip(1)]))),
+        ("leftOut", ToLeftOutEntry(build.LeftOut) is { IsEmpty: false } leftOut ? Optional.Some(WriteValue([.. leftOut.Skip(1)])) : Optional.None<string>()),
+        ("armorModPlugs", build.ArmorModPlugs.IsEmpty ? Optional.None<string>() : Optional.Some(WriteValue(ToHashListValue(build.ArmorModPlugs)))),
+    ];
 
     /// <summary><c>armorCopies: [{hash: 593554567, instance: "6917530185805135602"}, …]</c>; nothing when the build says none.</summary>
     private static ImmutableArray<ParsingEvent> ToArmorCopiesEntry(ImmutableArray<ArmorCopy> copies) =>

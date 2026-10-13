@@ -71,6 +71,11 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   State, Tempest Strike, Amplified's extras); an "all weapons" archetype. One "described fact" value and
   passive would cover them. The ability profiles (`charges`, `chunkScalar`, `baseCooldown`) are recorded
   but shown nowhere: show them in `explain`.
+- **Picking armor mods** (the designer's sockets and mod picker, [loop-format.md](loop-format.md#armor-mods), D30):
+  a tuning mod (a Tier 5 copy's tuning socket) can't be picked, only kept; a stat mod the manifest excerpt's
+  `statPlugs` lacks (the artifact's cheaper Grenade Mod) doesn't add to the stats; the build check doesn't warn about a
+  build already over a piece's energy (a DIM loadout's), only a pick is refused; a mod in an artifice socket shows the
+  artifice mods only (the game takes a general one there too).
 - **Armor mods** (all current ones of the five slots are in `rules/mods/`; raid, activity and seasonal mods
   aren't): no trigger for breaking a combatant's shield (Shield Break Charge, inert), for the damage you take or
   critical health (Emergency Reinforcement, inert) or for an ability's energy "fully expended" (the Kickstarts

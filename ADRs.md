@@ -3,8 +3,8 @@
 Each ADR explains **why**; [`CONVENTIONS.md`](./CONVENTIONS.md) says **what** and wins on any conflict.
 The requirements they serve are in [docs/requirements.md](docs/requirements.md). The list is the
 current set of decisions, in four groups: what the product is (D1–D9), sources and rules (D10–D15),
-architecture (D16–D23), hosts and tooling (D24–D26), starting from a DIM link (D27), the build's stats (D28) and the
-step's damage resistance (D29). D1 is the
+architecture (D16–D23), hosts and tooling (D24–D26), starting from a DIM link (D27), the build's stats (D28), the
+step's damage resistance (D29) and armor mods in their sockets (D30). D1 is the
 founding one: every other decision follows from it.
 
 | # | Decision | Why |
@@ -37,6 +37,7 @@ founding one: every other decision follows from it.
 | D26 | Verify.XunitV3 pinned to 32.0.1 | 33.x needs a licence decision |
 | D27 | A DIM link starts a build of what the catalog knows by hash; the rest is left out, listed | A player's build already lives in DIM; nothing is guessed, and what's missing stays visible |
 | D29 | The step's state shows its damage resistance, its sources multiplied, PvE and PvP | Builds are judged by how much damage they shrug off; the game stacks resistance by a known rule, so the total is a fact, never a decision |
+| D30 | Armor mods are picked in the pieces' sockets; the energy budget holds when its capacity is known | A build's mods are part of its loop and the game decides what fits; the sockets and costs are Bungie's, the capacity the player's copy's |
 
 ## What the product is
 
@@ -401,3 +402,21 @@ which the player ends (`end:super`, D3), since a roaming Super spans several ste
 element's, like Woven Mail's. A condition the format can't express is
 treated as holding, as for any passive (Spark of Resistance's "3+ enemies within 15 m", D7). Copies of one mod take
 the mod's own value by copies (15% | 25% | 30%); different mods multiply.
+
+### D30 — Armor mods are picked in the pieces' sockets; the energy budget holds when its capacity is known
+
+**Context.** Mods set much of a loop off (the Siphons, Elemental Charge, the Kickstarts), but a build got them only
+from a DIM link or a build file. The game decides what fits: each piece has its sockets (a general one, its slot's,
+maybe an artifice or a raid one), each mod an energy cost, each copy of a piece an energy capacity; many mods have a
+cheaper copy the seasonal artifact allows. A build holds its mods as a list, as a DIM loadout does. **Decision
+(product owner).** The designer shows each piece's mod sockets and a mod picker for each, from Bungie's manifest
+(the listing read when the app opens: every mod the pieces' sockets take, with its cost, and each piece's sockets).
+The build keeps its list (`armorMods`, the mods it leaves out) and, for a mod with a cheaper copy, which copy it holds
+(`armorModPlugs`); the designer places the list in the sockets, the general mods where the energy lets them, as DIM
+assigns them. The energy a piece's mods use is a build check, not game state: compared with the capacity of the
+player's copy (after a Bungie login, D28) it refuses a pick that takes the piece over it, and it never decides what a
+step fires. Without a login the capacity is "?" and nothing is refused (D13): a piece picked from every piece of the
+game has no copy to read it from. **Consequence.** Mods the rules don't know can be picked (⊘), like perks; a raid's
+or an activity's socket shows when the piece worn has one. A slot with no piece holds one free socket more than its
+mods, since it has no sockets to read. A tuning mod (a Tier 5 copy's tuning socket) isn't picked here; it stays in
+the build. A stat mod the manifest excerpt lacks (`statPlugs`) doesn't add to the stats yet.

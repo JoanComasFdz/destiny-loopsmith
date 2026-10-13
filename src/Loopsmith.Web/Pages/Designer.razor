@@ -68,7 +68,9 @@
                             Profile="Workbench.Profile" LoginNote="Workbench.LoginNote" OnLoggedIn="UseBungieLoginAsync" OnLoggedOut="LogOut" OnPickArmor="PickArmor" OnPickWeapon="PickWeapon" OnEditSubclass="EditSubclass"
                             PickWeaponItem="Optional.Some<Func<WeaponItemPick, Task<Result<Unit, string>>>>(PickWeaponItemAsync)"
                             PickArmorItem="Optional.Some<Func<ArmorItemPick, Task<Result<Unit, string>>>>(PickArmorItemAsync)"
-                            OnEmptyWeapon="EmptyWeaponSlot" OnEmptyArmor="EmptyArmorSlot" />
+                            OnEmptyWeapon="EmptyWeaponSlot" OnEmptyArmor="EmptyArmorSlot"
+                            PickMod="Optional.Some<Func<ModPick, Task<Result<Unit, string>>>>(PickModAsync)"
+                            ClearMod="Optional.Some<Func<ModSocketPlace, Task<Result<Unit, string>>>>(ClearModAsync)" />
             </aside>
             <div class="col-loop">
                 <ExplainPanel Build="session.Build" />
@@ -356,6 +358,28 @@
         var read = await JoinPickedItemAsync(pick.Item);                                         // impure
         var picked = read.Bind(session => LoopDesigning.PickArmorItem(session, pick.Slot, pick.Item)); // pure
         return UsePickedItem(picked);                                                            // impure (UI state)
+    }
+
+    /// <summary>
+    /// A mod picked for one of the build's sockets: Bungie's manifest is read for it when the excerpt lacks it (its name,
+    /// icon, slot), then it goes into the embedded build and the steps replay (its stats added up again when they were
+    /// from the player's armor). Or why not, for the picker to show (the build doesn't change).
+    /// </summary>
+    private async Task<Result<Unit, string>> PickModAsync(ModPick pick)
+    {
+        var read = await JoinPickedItemAsync(pick.Mod);                                          // impure
+        var listing = await Manifest.ListItemsAsync();                                           // impure (the tab's listing)
+        var picked = read.Bind(session => listing.Bind(listed => LoopDesigning.PickMod(session, listed, Workbench.Profile, pick.Place, pick.Mod))); // pure
+        return UsePickedItem(picked);                                                            // impure (UI state)
+    }
+
+    /// <summary>"Clear this socket": its mod comes out of the embedded build and the steps replay; or why not.</summary>
+    private async Task<Result<Unit, string>> ClearModAsync(ModSocketPlace place)
+    {
+        var listing = await Manifest.ListItemsAsync();                                           // impure (the tab's listing)
+        var current = Workbench.Session.ToResult(() => "No loop is open.");                      // impure (tab state)
+        var cleared = current.Bind(session => listing.Bind(listed => LoopDesigning.ClearMod(session, listed, Workbench.Profile, place))); // pure
+        return UsePickedItem(cleared);                                                           // impure (UI state)
     }
 
     /// <summary>

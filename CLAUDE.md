@@ -46,8 +46,8 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`).
   slices (`SourceFetching`, `RuleParsing`, `BuildParsing`, `LoopFiles`, `BuildComposition`,
   `Simulation`, `BuildExplanation`, `LoopGraphing`, `TraceRendering`, `ReportComparison`,
   `LoadoutImporting` (a DIM link → a build, by manifest hash), `ManifestJoining` (Bungie's full manifest,
-  read in the browser, → the excerpt of what a DIM link's other items need, and the list of every weapon and armor
-  piece the pickers offer; the browser saves the manifest and that list between visits, by the manifest's version), `StatLoading` (a Bungie login's
+  read in the browser, → the excerpt of what a DIM link's other items need, and the list of every weapon, armor
+  piece and armor mod the pickers offer, with each piece's mod sockets; the browser saves the manifest and that list between visits, by the manifest's version), `StatLoading` (a Bungie login's
   answers → the player's armor → the build's stats, added up like DIM), `Orchestration`).
 - `src/Loopsmith.Cli/` — host only: argv → shell → execute effects.
 - `src/Loopsmith.Web/` — Blazor WebAssembly loop designer (host only; calls

@@ -108,7 +108,17 @@ public sealed class ManifestSavingTests
             Optional.None<string>(),
             Optional.None<string>());
         var set = new ArmorSet(ItemHash.From(500u), "Testing", [new SetPerk(PieceCount.From(2), ItemHash.From(600u))]);
-        var listing = new ItemListing([weapon, armor], ImmutableDictionary<ItemHash, ArmorSet>.Empty.Add(set.Hash, set));
+        var mod = new ListedMod(
+            new ManifestItem(ItemHash.From(700u), "Arc Siphon", new ManifestKind.ArmorMod(Optional.Some(ArmorSlot.Helmet)), Optional.Some("Helmet Armor Mod"), Optional.Some(ItemTier.Common),
+                Optional.Some("Rapid Arc final blows create an Orb of Power."), Optional.Some("/siphon.png"), Optional.None<string>()),
+            PlugCategoryId.From("enhancements.v2_head"),
+            ArmorEnergy.From(1),
+            ["Must Be Selected in the Seasonal Artifact"]);
+        var listing = new ItemListing(
+            [weapon, armor],
+            ImmutableDictionary<ItemHash, ArmorSet>.Empty.Add(set.Hash, set),
+            [mod],
+            ImmutableDictionary<ItemHash, ImmutableArray<PlugCategoryId>>.Empty.Add(armor.Hash, [ArmorModCategories.General, PlugCategoryId.From("enhancements.v2_head")]));
 
         var text = LoopDesigning.ToSavedListing(listing);
         var read = Assert.IsType<Optional<ItemListing>.Some>(LoopDesigning.ReadSavedListing(Optional.Some(text))).Value;
@@ -121,6 +131,10 @@ public sealed class ManifestSavingTests
         Assert.Equal(armor.Kind, read.Items[1].Kind);
         Assert.Equal("Testing", read.Sets[ItemHash.From(500u)].Name);
         Assert.Equal(PieceCount.From(2), read.Sets[ItemHash.From(500u)].Perks.Single().Pieces);
+        var readMod = read.Mods.Single();
+        Assert.Equal((mod.Item, mod.Category, mod.Cost), (readMod.Item, readMod.Category, readMod.Cost));
+        Assert.Equal(mod.Requirements, readMod.Requirements);
+        Assert.Equal(["enhancements.v2_general", "enhancements.v2_head"], read.ModSockets[armor.Hash].Select(category => category.Value));
         Assert.False(LoopDesigning.ReadSavedListing(Optional.Some("{ \"items\": 3 }")).IsSome());
         Assert.False(LoopDesigning.ReadSavedListing(Optional.Some("not json")).IsSome());
     }
