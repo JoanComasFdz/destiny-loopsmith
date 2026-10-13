@@ -1037,6 +1037,7 @@ button.hud-chip:hover, button.hud-chip:focus-visible { background: color-mix(in 
 .sub-slot-text { display: flex; flex-direction: column; min-width: 0; flex: 1 1 auto; }
 .sub-slot-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
 .sub-slot-name { font-size: 12px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sub-slot-pick { flex: none; min-width: 28px; padding: 2px 6px; line-height: 1; font-size: 16px; letter-spacing: .05em; }
 .sub-picker .perk-options { max-height: 40vh; overflow-y: auto; }
 .sub-picker .perk-option:disabled { opacity: .45; cursor: not-allowed; }
 .sub-foot { display: flex; justify-content: flex-end; gap: 8px; }
