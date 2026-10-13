@@ -126,8 +126,10 @@ public static class BuildExplaining
         StyledLine RenderRow(string label, string value) => StyledText.ToLine(1, $"{label,-10}".ToSpan(Tone.Muted), value.ToSpan(Tone.Plain));
 
         var source = b.Author.Match(a => a.Value, _ => "") + b.SourceUrl.Match(u => $"  {u.Value}", _ => "");
+        string DescribeMod(ItemHash mod) => build.Catalog.FindElementByHash(mod).Match(e => e.Value.Name, _ => build.Catalog.Manifest.DescribeItemHash(mod));
         var weapons = b.Weapons.Select(w =>
-            $"{w.Name} ({w.Type}{w.Archetype.Match(a => $" {a.Value}", _ => "")})" + (w.Perks.IsEmpty ? "" : $": {DescribeElements(w.Perks)}"));
+            $"{w.Name} ({w.Type}{w.Archetype.Match(a => $" {a.Value}", _ => "")})" + (w.Perks.IsEmpty ? "" : $": {DescribeElements(w.Perks)}")
+            + w.Mod.Match(mod => $" — mod {DescribeMod(mod.Value)}", _ => ""));
         var stats = StatReading.GameOrder
             .SelectMany(stat => b.Stats.ReadStat(stat).Match(v => new[] { $"{stat} {v.Value.Value}" }, _ => []));
         var issues = build.Issues.Select(issue => StyledText.ToLine(1,
@@ -214,7 +216,8 @@ public static class BuildExplaining
             buffGained: _ => 40,
             stacksMaxed: _ => 50,
             finisher: _ => 25,
-            abilityCastAs: cast => RankAbility(cast.Kind));
+            abilityCastAs: cast => RankAbility(cast.Kind),
+            killFewer: _ => 24);
 
     private static int RankAbility(AbilityKind kind) =>
         kind switch
@@ -241,7 +244,8 @@ public static class BuildExplaining
             buffGained: buffGained => [buffGained.Status],
             stacksMaxed: stacksMaxed => [stacksMaxed.Status],
             finisher: _ => [],
-            abilityCastAs: _ => []);
+            abilityCastAs: _ => [],
+            killFewer: _ => []);
         var pickup = trigger is Trigger.PickUp pickUp && glossary.Pickups.TryGetValue(pickUp.Pickup, out var definition)
             ? definition.Affinity
             : Affinity.Neutral;

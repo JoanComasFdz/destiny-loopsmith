@@ -31,7 +31,7 @@
         </div>
     </header>
 
-    <LoadoutPanel Build="Build" OnPickPerk="OnPickPerk" OnSetCatalyst="OnSetCatalyst" Profile="Profile" OnPickArmor="OnPickArmor" OnPickWeapon="OnPickWeapon" OnEditSubclass="OnEditSubclass"
+    <LoadoutPanel Build="Build" OnPickPerk="OnPickPerk" OnPickMod="OnPickMod" OnSetCatalyst="OnSetCatalyst" Profile="Profile" OnPickArmor="OnPickArmor" OnPickWeapon="OnPickWeapon" OnEditSubclass="OnEditSubclass"
                   PickWeaponItem="PickWeaponItem" PickArmorItem="PickArmorItem" OnEmptyWeapon="OnEmptyWeapon" OnEmptyArmor="OnEmptyArmor" />
 
     <StatsPanel Build="Build" OnSetStats="OnSetStats" Profile="Profile" Note="LoginNote" OnLoggedIn="OnLoggedIn" OnLoggedOut="OnLoggedOut" />
@@ -83,6 +83,10 @@
     /// <summary>A perk picked in the loadout (the designer applies it to the design).</summary>
     [Parameter]
     public EventCallback<PerkPick> OnPickPerk { get; set; }
+
+    /// <summary>A weapon mod picked in the loadout (the designer applies it to the design).</summary>
+    [Parameter]
+    public EventCallback<ModPick> OnPickMod { get; set; }
 
     /// <summary>An exotic's catalyst turned on or off in its details (the designer applies it to the design).</summary>
     [Parameter]

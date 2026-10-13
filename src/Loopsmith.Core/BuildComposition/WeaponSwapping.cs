@@ -101,7 +101,7 @@ public static class WeaponSwapping
 
     /// <summary>
     /// A copy as a build weapon: the excerpt's slot, name, damage type and archetype; its perks (each trait column's plug
-    /// of its sockets); its catalyst on when its socket holds the catalyst; and its instance id. Or why it can't be one.
+    /// of its sockets); its catalyst on when its socket holds the catalyst; its mod; and its instance id. Or why it can't be one.
     /// </summary>
     public static Result<WeaponLoadout, string> ToWeapon(RuleCatalog catalog, OwnedWeapon copy) =>
         ToItemWeapon(catalog, copy.Hash, copy.Plugs, Optional.Some(copy.InstanceId));
@@ -119,13 +119,14 @@ public static class WeaponSwapping
                     Optional.Some(hash),
                     kind.Traits.ReadRoll(plugs),
                     kind.HoldsCatalyst(plugs),
-                    instance))
+                    instance,
+                    kind.ReadMod(plugs)))
                 : Refuse<WeaponLoadout>($"Loopsmith doesn't know {item.Value.Name} as a weapon with a damage type, so it can't put it in the build."),
             _ => Refuse<WeaponLoadout>("Loopsmith doesn't know that weapon yet (Bungie's manifest wasn't read for it), so it can't put it in the build."));
 
     /// <summary>
     /// The build with each of its weapons in <paramref name="copies"/> (by weapon number: the player's copy of it) holding
-    /// that copy's perks and catalyst; which weapons were loaded (a copy Loopsmith could read) and which of those changed.
+    /// that copy's perks, catalyst and mod; which weapons were loaded (a copy Loopsmith could read) and which of those changed.
     /// </summary>
     public static (Build Build, ImmutableArray<int> Loaded, ImmutableArray<int> Changed) LoadCopies(RuleCatalog catalog, Build build, ImmutableArray<(int Weapon, OwnedWeapon Copy)> copies)
     {
@@ -133,9 +134,9 @@ public static class WeaponSwapping
             .Where(entry => entry.Weapon >= 0 && entry.Weapon < build.Weapons.Length)
             .SelectMany(entry => ToWeapon(catalog, entry.Copy).Match(worn => new[] { (entry.Weapon, Worn: worn.Value) }, _ => []))
             .ToImmutableArray();
-        var loaded = read.Aggregate(build.Weapons, (weapons, entry) => weapons.SetItem(entry.Weapon, weapons[entry.Weapon] with { Roll = entry.Worn.Roll, Catalyst = entry.Worn.Catalyst }));
+        var loaded = read.Aggregate(build.Weapons, (weapons, entry) => weapons.SetItem(entry.Weapon, weapons[entry.Weapon] with { Roll = entry.Worn.Roll, Catalyst = entry.Worn.Catalyst, Mod = entry.Worn.Mod }));
         var changed = read
-            .Where(entry => !loaded[entry.Weapon].Roll.SequenceEqual(build.Weapons[entry.Weapon].Roll) || loaded[entry.Weapon].Catalyst != build.Weapons[entry.Weapon].Catalyst)
+            .Where(entry => !loaded[entry.Weapon].Roll.SequenceEqual(build.Weapons[entry.Weapon].Roll) || loaded[entry.Weapon].Catalyst != build.Weapons[entry.Weapon].Catalyst || loaded[entry.Weapon].Mod != build.Weapons[entry.Weapon].Mod)
             .Select(entry => entry.Weapon)
             .ToImmutableArray();
         return (build with { Weapons = loaded }, [.. read.Select(entry => entry.Weapon)], changed);

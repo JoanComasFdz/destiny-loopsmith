@@ -251,7 +251,8 @@ public static class ManifestListing
                 [],
                 Optional.None<ItemHash>(),
                 Optional.None<ItemHash>(),
-                parts.ReadHash("breakerTypeHash")))
+                parts.ReadHash("breakerTypeHash"),
+                []))
             : itemType == Optional.Some(ArmorItemType)
                 ? armorSlot.Map(slot => (ManifestKind)new ManifestKind.Armor(
                     slot,

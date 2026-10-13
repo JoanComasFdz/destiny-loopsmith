@@ -33,6 +33,13 @@ public static class TriggerPaletteShaping
     /// <summary>The target counts a row offers (the core accepts up to <see cref="TargetCount.Maximum"/>).</summary>
     public static readonly ImmutableArray<int> TargetCountChoices = [.. Enumerable.Range(1, 9)];
 
+    /// <summary>
+    /// The enemy counts a row offers: 1 to 9, and every count an equipped rule names ("kill 12 with this weapon": Synergy's
+    /// counter full), so a step that sets that rule off can be picked.
+    /// </summary>
+    public static ImmutableArray<int> ListTargetCountChoices(ValidatedBuild build) =>
+        [.. TargetCountChoices.Concat(LoopDesigning.ListNamedTargetCounts(build).Select(count => count.Value)).Distinct().Order()];
+
     /// <param name="counts">The target count picked per row <see cref="TriggerChoice.Key"/>; a row not in it aims at one enemy.</param>
     public static ImmutableArray<TriggerSection> ShapePalette(
         ImmutableArray<TriggerOption> options, ImmutableDictionary<string, TargetCount> counts, ValidatedBuild build) =>

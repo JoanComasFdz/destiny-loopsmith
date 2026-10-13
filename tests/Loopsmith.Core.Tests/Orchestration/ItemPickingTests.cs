@@ -85,7 +85,7 @@ public sealed class ItemPickingTests
         var session = OpenHandWrittenLoop(Catalog);
         var thunderlord = ToWeapon(ItemHash.From(3325463374u), "Thunderlord", WeaponSlot.Power, DamageType.Arc, ItemTier.Exotic, []) with
         {
-            Kind = new ManifestKind.Weapon(WeaponSlot.Power, Optional.Some(DamageType.Arc), [], Optional.Some(ItemHash.From(4148158229u)), Optional.None<ItemHash>(), Optional.None<ItemHash>()),
+            Kind = new ManifestKind.Weapon(WeaponSlot.Power, Optional.Some(DamageType.Arc), [], Optional.Some(ItemHash.From(4148158229u)), Optional.None<ItemHash>(), Optional.None<ItemHash>(), []),
         };                                                                                       // the rules name it by its intrinsic, Reign Havoc
         var shinobu = ToArmor(ItemHash.From(1053737370u), "Shinobu's Vow", ArmorSlot.Arms, ItemTier.Exotic, Optional.None<ItemHash>(), GuardianClass.Hunter);
         var unknownArms = ToArmor(ItemHash.From(9315u), "Unknown Grips", ArmorSlot.Arms, ItemTier.Exotic, Optional.None<ItemHash>(), GuardianClass.Hunter);
@@ -111,7 +111,7 @@ public sealed class ItemPickingTests
         var gun = picked.Build.Build.Weapons[^1];
 
         Assert.Equal((WeaponSlot.Power, "Alpha Machine Gun", Optional.Some(PowerExotic)), (gun.Slot, gun.Name, gun.Hash));
-        Assert.Equal((0, false, Optional.None<ItemInstanceId>()), (gun.Roll.Length, gun.Catalyst, gun.Instance));
+        Assert.Equal((0, false, Optional.None<ItemInstanceId>(), Optional.None<ItemHash>()), (gun.Roll.Length, gun.Catalyst, gun.Instance, gun.Mod));
         Assert.Contains("{slot: power, name: Alpha Machine Gun, type: arc, archetype: auto-rifle, perks: [], hash: 9303}", picked.Design.Build.Text, StringComparison.Ordinal);
         Assert.Equal(session.Design.Steps.Length, picked.Resolutions.Length);                    // the steps replay
         var energy = LoopDesigning.ListWeaponItems(picked.Build, Listing.Add(ToWeapon(ItemHash.From(9305u), "Beta Exotic", WeaponSlot.Energy, DamageType.Void, ItemTier.Exotic, [])), new WeaponTarget.InPlaceOf(1));
@@ -227,7 +227,7 @@ public sealed class ItemPickingTests
     private static ManifestItem ToWeapon(ItemHash hash, string name, WeaponSlot slot, DamageType type, ItemTier tier, uint[][] traits) =>
         new(hash, name,
             new ManifestKind.Weapon(slot, Optional.Some(type), [.. traits.Select(column => new TraitColumn([.. column.Select(ItemHash.From)]))],
-                Optional.None<ItemHash>(), Optional.None<ItemHash>(), Optional.None<ItemHash>()),
+                Optional.None<ItemHash>(), Optional.None<ItemHash>(), Optional.None<ItemHash>(), []),
             Optional.Some("Auto Rifle"), Optional.Some(tier), Optional.None<string>(), Optional.None<string>(), Optional.None<string>());
 
     private static ManifestItem ToArmor(ItemHash hash, string name, ArmorSlot slot, ItemTier tier, Optional<ItemHash> set, GuardianClass wornBy) =>

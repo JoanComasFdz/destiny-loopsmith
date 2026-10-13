@@ -15,14 +15,15 @@ public static class BuildValidation
 {
     private const int MaxAspects = 2;
 
-    private sealed record Slot(ElementId Id, string SlotName, ImmutableArray<ElementKind> Accepts);
+    /// <summary>A slot of the build; <see cref="Holder"/>: the weapon holding what it holds (a weapon's perk, catalyst or mod).</summary>
+    private sealed record Slot(ElementId Id, string SlotName, ImmutableArray<ElementKind> Accepts, Optional<WeaponLoadout> Holder);
 
     public static Result<ValidatedBuild, string> ValidateBuild(Build build, RuleCatalog catalog)
     {
         var slots = ListSlots(build, catalog);
         var resolved = slots.Select(slot => ResolveSlot(build, catalog, slot)).ToImmutableArray();
         var elements = resolved
-            .SelectMany(r => r.Element.Match(some => new[] { (r.Slot, Element: some.Value) }, _ => []))
+            .SelectMany(r => r.Element.Match(some => new[] { (r.Slot, Element: BindToHolder(some.Value, r.Slot.Holder), BoundTo: FindBinding(some.Value, r.Slot.Holder)) }, _ => []))
             .ToImmutableArray();
         var issues = resolved.SelectMany(r => r.Issues)
             .Concat(CheckUnknownAbilities(build))
@@ -44,7 +45,7 @@ public static class BuildValidation
             return new Result<ValidatedBuild, string>.Error($"Build '{build.Name}' is invalid:{Environment.NewLine}{message}");
         }
 
-        var equipped = GroupCopies(elements.Select(e => e.Element)).AddRange(ListKeywordElements(catalog));
+        var equipped = GroupCopies(elements).AddRange(ListKeywordElements(catalog));
         return new Result<ValidatedBuild, string>.Ok(new ValidatedBuild(build, catalog, equipped, issues));
     }
 
@@ -56,14 +57,17 @@ public static class BuildValidation
     private static ImmutableArray<Slot> ListSlots(Build build, RuleCatalog catalog)
     {
         static IEnumerable<Slot> CreateSlots(IEnumerable<ElementId> ids, string name, params ElementKind[] accepts) =>
-            ids.Select(id => new Slot(id, name, [.. accepts]));
+            ids.Select(id => new Slot(id, name, [.. accepts], Optional.None<WeaponLoadout>()));
         static IEnumerable<Slot> CreateOptionalSlot(Optional<ElementId> id, string name, ElementKind accepts) =>
             CreateSlots(id.Match(some => new[] { some.Value }, _ => []), name, accepts);
+        static IEnumerable<Slot> CreateWeaponSlots(WeaponLoadout weapon, IEnumerable<ElementId> ids, string name, params ElementKind[] accepts) =>
+            ids.Select(id => new Slot(id, $"{weapon.Name} {name}", [.. accepts], Optional.Some(weapon)));
 
         var exotic = CreateOptionalSlot(build.ExoticArmor, "exotic armor", ElementKind.ExoticArmor);
         var weaponPerks = build.Weapons.SelectMany(w =>
-            CreateSlots(ListWeaponPerks(catalog, w), $"{w.Name} perk", ElementKind.WeaponPerk, ElementKind.ExoticWeapon)
-                .Concat(CreateSlots(ListWeaponCatalysts(catalog, w), $"{w.Name} catalyst", ElementKind.Catalyst)));
+            CreateWeaponSlots(w, ListWeaponPerks(catalog, w), "perk", ElementKind.WeaponPerk, ElementKind.ExoticWeapon)
+                .Concat(CreateWeaponSlots(w, ListWeaponCatalysts(catalog, w), "catalyst", ElementKind.Catalyst))
+                .Concat(CreateWeaponSlots(w, ListWeaponMods(catalog, w), "mod", ElementKind.WeaponMod)));
         return
         [
             .. CreateOptionalSlot(build.Abilities.Super.ToElement(), "super", ElementKind.Super),
@@ -81,7 +85,7 @@ public static class BuildValidation
         ];
     }
 
-    /// <summary>The weapons (by index, in the build's order) whose perks or turned-on catalyst are this element, as the build check equips them.</summary>
+    /// <summary>The weapons (by index, in the build's order) whose perks, turned-on catalyst or mod are this element, as the build check equips them.</summary>
     public static ImmutableArray<int> ListWeaponsHolding(RuleCatalog catalog, Build build, ElementId element) =>
     [
         .. build.Weapons
@@ -91,7 +95,7 @@ public static class BuildValidation
     ];
 
     /// <summary>
-    /// The weapons (by index) one of whose perks or turned-on catalyst has a rule that gives this buff (Slice: the weapon
+    /// The weapons (by index) one of whose perks, turned-on catalyst or mod has a rule that gives this buff (Slice: the weapon
     /// that rolls Slice). None: no weapon's own perk gives it (Unraveling Rounds comes from an artifact perk).
     /// </summary>
     public static ImmutableArray<int> ListWeaponsGiving(RuleCatalog catalog, Build build, StatusId buff) =>
@@ -103,7 +107,24 @@ public static class BuildValidation
     ];
 
     private static IEnumerable<ElementId> ListHeldElements(RuleCatalog catalog, WeaponLoadout weapon) =>
-        ListWeaponPerks(catalog, weapon).Concat(ListWeaponCatalysts(catalog, weapon));
+        ListWeaponPerks(catalog, weapon).Concat(ListWeaponCatalysts(catalog, weapon)).Concat(ListWeaponMods(catalog, weapon));
+
+    /// <summary>The element of the weapon's mod, when the catalog knows it by hash.</summary>
+    private static IEnumerable<ElementId> ListWeaponMods(RuleCatalog catalog, WeaponLoadout weapon) =>
+        ListElement(catalog, weapon.Mod);
+
+    /// <summary>
+    /// An element as its weapon holds it: "this weapon" is that weapon (<see cref="WeaponBinding"/>); an element no weapon
+    /// holds, or one that names no "this weapon", as the rules author it.
+    /// </summary>
+    private static BuildElement BindToHolder(BuildElement element, Optional<WeaponLoadout> holder) =>
+        holder.Match(
+            weapon => element.IsNamingThisWeapon() ? element.BindToWeapon(weapon.Value.Slot, weapon.Value.Type) : element,
+            _ => element);
+
+    /// <summary>The slot of the weapon an element is bound to (<see cref="BindToHolder"/>); none when it isn't bound.</summary>
+    private static Optional<WeaponSlot> FindBinding(BuildElement element, Optional<WeaponLoadout> holder) =>
+        holder.Bind(weapon => element.IsNamingThisWeapon() ? Optional.Some(weapon.Slot) : Optional.None<WeaponSlot>());
 
     private static bool IsGiving(RuleCatalog catalog, ElementId element, StatusId buff) =>
         catalog.Elements.TryGetValue(element, out var found)
@@ -222,11 +243,13 @@ public static class BuildValidation
             .Select(id => new BuildIssue(Severity.Warning,
                 $"{weapon.Name}: '{(catalog.Elements.TryGetValue(id, out var element) ? element.Name : id.Value)}' gives way to the other perk of its column — a column holds one perk."));
         var catalyst = CheckCatalyst(catalog, weapon);
+        var mod = CheckMod(catalog, weapon);
         return
         [
             .. misplaced,
             .. displaced,
             .. catalyst,
+            .. mod,
             .. CheckUnknownRoll(catalog, weapon).Match(issue => new[] { issue.Value }, _ => []),
         ];
     }
@@ -256,6 +279,28 @@ public static class BuildValidation
                     ? []
                     : new[] { new BuildIssue(Severity.Info, $"{weapon.Name}'s catalyst: {catalog.Manifest.DescribeItemHash(plug.Value)} — not in the rule catalog yet, so it sets nothing off.") },
                 _ => [new BuildIssue(Severity.Warning, $"{weapon.Name} has no catalyst in the manifest excerpt, so catalyst: true does nothing.")]);
+
+    /// <summary>
+    /// A weapon's mod: one its mod socket doesn't take (only when the excerpt lists what it takes) is a warning; one the
+    /// catalog doesn't know sets nothing off.
+    /// </summary>
+    private static IEnumerable<BuildIssue> CheckMod(RuleCatalog catalog, WeaponLoadout weapon) =>
+        weapon.Mod.Match(
+            mod =>
+            {
+                var takes = catalog.Manifest.FindWeaponKind(weapon).Map(kind => kind.Mods).UnwrapOr([]);
+                var name = catalog.Manifest.DescribeTypedItemHash(mod.Value);
+                return new[]
+                {
+                    !takes.IsEmpty && !takes.Contains(mod.Value)
+                        ? Optional.Some(new BuildIssue(Severity.Warning, $"{weapon.Name}'s mod: {name} isn't a mod its mod socket takes in the manifest excerpt."))
+                        : Optional.None<BuildIssue>(),
+                    catalog.FindElementByHash(mod.Value).IsSome()
+                        ? Optional.None<BuildIssue>()
+                        : Optional.Some(new BuildIssue(Severity.Info, $"{weapon.Name}'s mod: {name} — not in the rule catalog yet, so it sets nothing off.")),
+                }.SelectMany(issue => issue.Match(some => new[] { some.Value }, _ => []));
+            },
+            _ => []);
 
     private static IEnumerable<BuildIssue> CheckAspects(Build build, RuleCatalog catalog)
     {
@@ -345,10 +390,14 @@ public static class BuildValidation
                 : new[] { new BuildIssue(Severity.Info, $"Build pinned catalog {pinned.Value}; using {catalog.Version}.") },
             _ => []);
 
-    private static ImmutableArray<EquippedElement> GroupCopies(IEnumerable<BuildElement> elements) =>
+    /// <summary>
+    /// Copies of one element stack (armor mods: the count picks the value by copies). An element bound to the weapon
+    /// holding it (its "this weapon") is that weapon's: two weapons holding it are two elements, each with its own rules.
+    /// </summary>
+    private static ImmutableArray<EquippedElement> GroupCopies(IEnumerable<(Slot Slot, BuildElement Element, Optional<WeaponSlot> BoundTo)> elements) =>
         elements
-            .GroupBy(e => e.Id)
-            .Select(group => new EquippedElement(group.First(), group.Count()))
+            .GroupBy(e => (e.Element.Id, e.BoundTo))
+            .Select(group => new EquippedElement(group.First().Element, group.Count()))
             .ToImmutableArray();
 
     private static ImmutableArray<EquippedElement> ListKeywordElements(RuleCatalog catalog) =>

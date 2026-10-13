@@ -22,7 +22,7 @@ internal static class RuleBodyParsing
 {
     private static readonly ImmutableArray<string> RuleKeys = ["on", "when", "then", "chance", "reason", "doesNotStackWith"];
     private static readonly ImmutableArray<string> PassiveRuleKeys = ["effect", "when", "reason"];
-    private static readonly ImmutableArray<string> KillKeys = ["via", "tier", "targetHas", "atLeast"];
+    private static readonly ImmutableArray<string> KillKeys = ["via", "tier", "targetHas", "atLeast", "fewerThan"];
     private static readonly ImmutableArray<string> DamageKeys = ["via", "targetHas", "atLeast"];
 
     private static readonly ImmutableArray<string> TriggerNames =
@@ -113,28 +113,52 @@ internal static class RuleBodyParsing
                 map.ReadOptional("tier", ReadVocabularyWord<EnemyTier>),
                 map.ReadOptional("targetHas", targetHas => ReadDebuffList(scope, targetHas)),
                 map.ReadOptional("atLeast", ReadTargetCount),
-                (_, via, tier, targetHas, atLeast) => (via, tier, targetHas, atLeast))
+                map.ReadOptional("fewerThan", ReadFewerThan),
+                (_, via, tier, targetHas, atLeast, fewerThan) => (via, tier, targetHas, atLeast, fewerThan))
             .Bind(kill => Combine(
-                CheckAtLeastStandsAlone(map, kill.atLeast, ("tier", kill.tier.IsSome()), ("targetHas", kill.targetHas.IsSome())),
-                ToKillTrigger(map, kill.via, kill.tier, kill.targetHas, kill.atLeast),
-                (_, trigger) => trigger)));
+                CheckAtLeastStandsAlone(map, kill.atLeast, ("tier", kill.tier.IsSome()), ("targetHas", kill.targetHas.IsSome()), ("fewerThan", kill.fewerThan.IsSome())),
+                CheckFewerThanStandsAlone(map, kill.fewerThan, ("tier", kill.tier.IsSome()), ("targetHas", kill.targetHas.IsSome())),
+                ToKillTrigger(map, kill.via, kill.tier, kill.targetHas, kill.atLeast, kill.fewerThan),
+                (_, _, trigger) => trigger)));
 
-    /// <summary>A kill is "of a tier", "of a debuffed target" or "of at least N in one action" — never two (not representable).</summary>
+    /// <summary>
+    /// A kill is "of a tier", "of a debuffed target", "of at least N in one action" or "of fewer than N in one action" —
+    /// never two (not representable).
+    /// </summary>
     private static Result<Trigger, Errors> ToKillTrigger(
         YamlMap map,
         DamageSource via,
         Optional<EnemyTier> tier,
         Optional<ImmutableArray<StatusId>> targetHas,
-        Optional<TargetCount> atLeast) =>
+        Optional<TargetCount> atLeast,
+        Optional<TargetCount> fewerThan) =>
         atLeast.Match(
             someCount => Succeed<Trigger>(new Trigger.KillMultiple(via, someCount.Value)),
-            _ => tier.Match(
-                someTier => targetHas.IsSome()
-                    ? map.FailAtKey<Trigger>("tier", $"{map.Label} cannot combine 'tier' and 'targetHas'")
-                    : Succeed<Trigger>(new Trigger.KillOfTier(via, someTier.Value)),
-                _ => targetHas.Match(
-                    someStatuses => Succeed<Trigger>(new Trigger.KillDebuffed(via, someStatuses.Value)),
-                    _ => Succeed<Trigger>(new Trigger.KillAny(via)))));
+            _ => fewerThan.Match(
+                someLimit => Succeed<Trigger>(new Trigger.KillFewer(via, someLimit.Value)),
+                _ => tier.Match(
+                    someTier => targetHas.IsSome()
+                        ? map.FailAtKey<Trigger>("tier", $"{map.Label} cannot combine 'tier' and 'targetHas'")
+                        : Succeed<Trigger>(new Trigger.KillOfTier(via, someTier.Value)),
+                    _ => targetHas.Match(
+                        someStatuses => Succeed<Trigger>(new Trigger.KillDebuffed(via, someStatuses.Value)),
+                        _ => Succeed<Trigger>(new Trigger.KillAny(via))))));
+
+    /// <summary><c>fewerThan</c>: kills in one action below this many, at least one; 2..20 (fewer than 1 would never happen).</summary>
+    private static Result<TargetCount, Errors> ReadFewerThan(YamlValue value) =>
+        ReadTargetCount(value).Bind(count => count.Value >= 2
+            ? Succeed(count)
+            : value.FailAt<TargetCount>($"{value.Label}: fewer than {count.Value} kills never happens (use 2..20)"));
+
+    /// <summary><c>fewerThan</c> ("fewer than N enemies in one action") is a trigger of its own, like <c>atLeast</c>.</summary>
+    private static Result<Unit, Errors> CheckFewerThanStandsAlone(YamlMap map, Optional<TargetCount> fewerThan, params (string Key, bool IsPresent)[] others) =>
+        fewerThan.IsSome()
+            ? others
+                .Where(other => other.IsPresent)
+                .Select(other => map.FailAtKey<Unit>(other.Key, $"{map.Label} cannot combine 'fewerThan' and '{other.Key}'"))
+                .CollectAll()
+                .Map(Unit (_) => new Unit.Value())
+            : Succeed<Unit>(new Unit.Value());
 
     private static Result<Trigger, Errors> ReadDamageTrigger(ReferenceScope scope, YamlValue value) =>
         value.ToMap().Bind(map => Combine(

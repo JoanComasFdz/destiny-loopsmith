@@ -125,6 +125,24 @@
                                     @RenderTile(catalyst.Value.Tile with { Name = $"{catalyst.Value.Tile.Name} ({(catalyst.Value.On ? "on" : "off")})" }, "perk catalyst")
                                 </span>
                             }
+                            @if (weapon.Mod is Optional<ModSquare>.Some modSquare)
+                            {
+                                @if (CanPickMod && !modSquare.Value.Options.IsEmpty)
+                                {
+                                    <button type="button" class="mod-slot @(IsOpen(weapon.Index, ModColumn) ? "open" : "")" data-testid="weapon-mod"
+                                            data-hash="@modSquare.Value.Held.Match(hash => hash.Value.Value.ToString(System.Globalization.CultureInfo.InvariantCulture), _ => "")"
+                                            aria-expanded="@(IsOpen(weapon.Index, ModColumn) ? "true" : "false")"
+                                            title="@DescribeModTitle(weapon, modSquare.Value)" @onclick="() => TogglePicker(weapon.Index, ModColumn)">
+                                        @RenderMod(modSquare.Value, false)
+                                    </button>
+                                }
+                                else
+                                {
+                                    <span class="mod-slot" data-testid="weapon-mod" data-hash="@modSquare.Value.Held.Match(hash => hash.Value.Value.ToString(System.Globalization.CultureInfo.InvariantCulture), _ => "")">
+                                        @RenderMod(modSquare.Value, true)
+                                    </span>
+                                }
+                            }
                         </div>
                         @RenderWeaponPick(new WeaponTarget.InPlaceOf(weapon.Index), weapon.Slot)
                     </li>
@@ -171,6 +189,45 @@
                                     @if (open.Value.Perk.IsSome())
                                     {
                                         <button type="button" class="btn" data-action="perk-clear" @onclick="() => PickPerkAsync(weapon.Index, open.Value.Column, Optional.None<ItemHash>())">Clear (?)</button>
+                                    }
+                                </div>
+                            </div>
+                        </li>
+                    }
+                    @if (IsOpen(weapon.Index, ModColumn) && weapon.Mod is Optional<ModSquare>.Some openMod)
+                    {
+                        <li class="perk-picker-row">
+                            <div class="perk-picker mod-picker" role="dialog" tabindex="-1" data-testid="mod-picker" data-weapon="@weapon.Index"
+                                 aria-label="@($"Pick {weapon.Weapon.Name}'s mod")" @ref="pickerElement" @onkeydown="ClosePickerOnEscape">
+                                <div class="perk-picker-head">
+                                    <span class="perk-picker-title">@weapon.Weapon.Name · mod</span>
+                                    <button type="button" class="btn ghost icon" title="Close" aria-label="Close" data-action="mod-picker-close" @onclick="ClosePicker">✕</button>
+                                </div>
+                                <div class="perk-options">
+                                    @foreach (var option in openMod.Value.Options)
+                                    {
+                                        var picked = openMod.Value.Held == Optional.Some(option.Hash);
+                                        <button type="button" class="perk-option mod-option @(picked ? "picked" : "") @(option.Tile.InRules ? "in-rules" : "") @(option.CanTake ? "" : "unavailable")"
+                                                data-hash="@option.Hash.Value" data-enhanced="@(option.Enhanced ? "true" : "false")" aria-pressed="@(picked ? "true" : "false")"
+                                                disabled="@(!option.CanTake)" aria-disabled="@(option.CanTake ? "false" : "true")"
+                                                title="@DescribeModOptionTooltip(option)" @onclick="() => PickModAsync(weapon.Index, Optional.Some(option.Hash))">
+                                            @RenderTile(option.Tile, "weapon-mod", false)
+                                            <span class="perk-option-text">
+                                                <span class="perk-option-name">@option.Tile.Name</span>
+                                                <span class="perk-option-type">@DescribeModOption(option)</span>
+                                            </span>
+                                        </button>
+                                    }
+                                </div>
+                                <div class="perk-picker-foot">
+                                    <span class="muted">@ModPickerNote</span>
+                                    @if (openMod.Value.Mod is Optional<IconTile>.Some heldMod && heldMod.Value.Details is Optional<ItemDetails>.Some heldModDetails)
+                                    {
+                                        <button type="button" class="btn ghost" data-action="mod-details" @onclick="() => OpenDetails(heldModDetails.Value)">About @heldMod.Value.Name</button>
+                                    }
+                                    @if (openMod.Value.Held.IsSome())
+                                    {
+                                        <button type="button" class="btn" data-action="mod-clear" @onclick="() => PickModAsync(weapon.Index, Optional.None<ItemHash>())">Remove mod</button>
                                     }
                                 </div>
                             </div>
@@ -298,6 +355,10 @@
     /// <summary>Set by the designer: a weapon's perk squares then open a picker of what each column rolls with. Unset (the Home card): read-only.</summary>
     [Parameter]
     public EventCallback<PerkPick> OnPickPerk { get; set; }
+
+    /// <summary>Set by the designer: a weapon's mod square then opens a picker of the mods its socket takes. Unset (the Home card): read-only.</summary>
+    [Parameter]
+    public EventCallback<ModPick> OnPickMod { get; set; }
 
     /// <summary>Set by the designer: an exotic's catalyst can be turned on or off from its details. Unset (the Home card): read-only.</summary>
     [Parameter]
@@ -549,6 +610,13 @@
 
     private bool CanPick => OnPickPerk.HasDelegate;
 
+    private bool CanPickMod => OnPickMod.HasDelegate;
+
+    /// <summary>The picker's "column" when it is a weapon's mod picker (a trait column is 0 or more).</summary>
+    private const int ModColumn = -1;
+
+    private const string ModPickerNote = "Green: the rules know it. An enhanced mod only fits a Tier 4 or 5 weapon: after a Bungie login, your copy's tier says.";
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (focusPicker && picker.IsSome())
@@ -588,6 +656,41 @@
         ClosePicker();
         await OnPickPerk.InvokeAsync(new PerkPick(weapon, column, perk));                        // impure
     }
+
+    private async Task PickModAsync(int weapon, Optional<ItemHash> mod)
+    {
+        ClosePicker();
+        await OnPickMod.InvokeAsync(new ModPick(weapon, mod));                                    // impure
+    }
+
+    /// <summary>A weapon's mod square: the mod it holds, else an empty socket; <paramref name="tappable"/> false inside the picker's button.</summary>
+    private RenderFragment RenderMod(ModSquare square, bool tappable) => __builder =>
+    {
+        @if (square.Mod is Optional<IconTile>.Some held)
+        {
+            @RenderTile(held.Value, "weapon-mod", tappable)
+        }
+        else
+        {
+            <span class="icon-tile weapon-mod empty-mod" title="@(CanPickMod ? "No mod: tap to pick one" : "No mod")" aria-label="No mod">+</span>
+        }
+    };
+
+    private static string DescribeModTitle(WeaponView weapon, ModSquare square) =>
+        $"{weapon.Weapon.Name}'s mod: {square.Mod.Match(mod => mod.Value.Name, _ => "none")} — pick a mod";
+
+    private static string DescribeModOption(ModOption option) =>
+        string.Join(" · ", new[]
+        {
+            option.Enhanced ? "Enhanced" : "",
+            option.CanTake ? "" : "Tier 4 or 5 weapons only",
+            option.Tile.InRules ? "in the rules" : "",
+        }.Where(part => part.Length > 0));
+
+    private static string DescribeModOptionTooltip(ModOption option) =>
+        option.CanTake
+            ? $"{option.Tile.Name}{option.Tile.Description.Match(text => $" — {text.Value}", _ => "")}"
+            : $"{option.Tile.Name}: only a Tier 4 or 5 weapon takes an enhanced mod, and this weapon isn't known to be one (log in with Bungie to read your copy's tier).";
 
     /// <summary>A perk square; <paramref name="tappable"/> false inside the picker's button (a button can't hold another).</summary>
     private RenderFragment RenderPerk(PerkSquare square, bool tappable) => __builder =>

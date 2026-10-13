@@ -102,6 +102,15 @@ pickups:
   # "you don't need to go pick them up ... They literally come to you."
   - { id: ionic-trace, name: Ionic Trace, affinity: arc, collectsAutomatically: true, trait: 3824458961 }
   - { id: orb-of-power, name: Orb of Power, affinity: neutral, collectsAutomatically: false }
+  # The other elemental pickups, which Synergy (rules/mods/weapons.yaml) spawns by the weapon's element. None is said to
+  # come to you as Ionic Traces do, so each lands on the ground until picked up: a Firesprite lasts 25 s
+  # (compendium/2026-10-13/Solar#5), a Void Breach 25 s (Void#7), a Stasis Shard 20 s (Stasis#4) and a Tangle can be
+  # picked up within 5 m for up to 20 s (Strand#4). What picking one up gives (grenade, class or melee energy; a Tangle's
+  # throw) has no keyword element yet.
+  - { id: firesprite, name: Firesprite, affinity: solar, collectsAutomatically: false, trait: 37177486 }
+  - { id: void-breach, name: Void Breach, affinity: void, collectsAutomatically: false, trait: 3328352616 }
+  - { id: stasis-shard, name: Stasis Shard, affinity: stasis, collectsAutomatically: false, trait: 4043161234 }
+  - { id: tangle, name: Tangle, affinity: strand, collectsAutomatically: false, trait: 1577394840 }
 
 summons:
   - { id: threadling, name: Threadling, damageType: strand, trait: 2724747993 }

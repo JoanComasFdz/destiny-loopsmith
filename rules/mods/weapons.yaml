@@ -1,0 +1,743 @@
+# Weapon mods: what a weapon's mod socket holds, one per weapon (docs/rule-format.md; the build file's `mod:`).
+# Every mod of the Compendium snapshot of 2026-10-13 (Weapon Perks tab, its "Weapon Mods" rows 251-288; a row is the
+# CSV record), each with the Bungie manifest's hash (`hash: [a, b]` where the manifest has copies with the same text).
+#
+# An enhanced weapon mod is its own plug in the manifest ("Enhanced Weapon Mod") and only a Tier 4 or 5 weapon takes it
+# (the tab's row 252). It is its own element here, `<id>-enhanced`, with the row's figures after the ↑; a figure the
+# row gives as "?" stays "?". The "Enhanced Accuracy"-like mods are enhanced mods with no base version.
+#
+# Almost every weapon mod changes a weapon's stats, its handling, its ammo or its radar, none of which a loop has: they
+# are `inert`, their figures facts in the description (ADRs D1). Synergy is the one with rules: its counter fills with
+# weapon kills and spawns a pickup of the weapon's element. "This weapon" (`weapon:this:<type>`) is the weapon holding
+# the mod, so each rule applies to the weapon of that element only (the build check binds it). The counter is progress
+# the game doesn't show as a stacking status (ADRs D8): kills in one action that fill it for sure (12 rank-and-file,
+# 8.34% each; the enhanced mod 8, 12.5% each — the pack in front of you is rank-and-file, ADRs D7) spawn the pickup;
+# fewer kills may fill it, with what earlier steps counted, so they spawn it as a chance (`fewerThan`).
+#
+# Not authored: the manifest's other weapon mods, which the tab doesn't list (the old Adept mods, Enhanced Heat
+# Generated and Vent Speed, Full Auto Retrofit, the bow and Taken mods such as Jumpshot or Fikrul's Friends). A weapon
+# can still hold one; it sets nothing off (docs/backlog.md).
+elements:
+  - id: abundant-ammo
+    name: Abundant Ammo
+    kind: weaponMod
+    affinity: neutral
+    hash: 1197814525
+    description: "+10 Ammo Generation."
+    source: "compendium/2026-10-13/Weapon Perks#253"
+    inert: "Ammo (ammo generation): Loopsmith counts no ammo or reloads, so no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: abundant-ammo-enhanced
+    name: Abundant Ammo (enhanced)
+    kind: weaponMod
+    affinity: neutral
+    hash: 325500297
+    description: "+12 Ammo Generation. Only a Tier 4 or 5 weapon takes it."
+    source: "compendium/2026-10-13/Weapon Perks#253"
+    inert: "Ammo (ammo generation): Loopsmith counts no ammo or reloads, so no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: aerodynamics
+    name: Aerodynamics
+    kind: weaponMod
+    affinity: neutral
+    hash: 2254149382
+    description: "+6 Blast Radius and +6 Velocity."
+    source: "compendium/2026-10-13/Weapon Perks#254"
+    inert: "Weapon stats (blast radius and velocity): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: aerodynamics-enhanced
+    name: Aerodynamics (enhanced)
+    kind: weaponMod
+    affinity: neutral
+    hash: 2136827418
+    description: "+7 Blast Radius and +7 Velocity. Only a Tier 4 or 5 weapon takes it."
+    source: "compendium/2026-10-13/Weapon Perks#254"
+    inert: "Weapon stats (blast radius and velocity): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: anti-flinch
+    name: Anti-Flinch
+    kind: weaponMod
+    affinity: neutral
+    hash: 3159358855
+    description: "15% flinch resistance with this weapon."
+    source: "compendium/2026-10-13/Weapon Perks#255"
+    inert: "Weapon handling (less flinch): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: anti-flinch-enhanced
+    name: Anti-Flinch (enhanced)
+    kind: weaponMod
+    affinity: neutral
+    hash: 967505927
+    description: "~20% flinch resistance with this weapon (the Compendium marks the figure as unsure). Only a Tier 4 or 5 weapon takes it."
+    source: "compendium/2026-10-13/Weapon Perks#255"
+    inert: "Weapon handling (less flinch): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: backup-mag
+    name: Backup Mag
+    kind: weaponMod
+    affinity: neutral
+    hash: 3336648220
+    description: "+30 Magazine stat (in effect like Extended Mag)."
+    source: "compendium/2026-10-13/Weapon Perks#256"
+    inert: "Ammo (magazine size): Loopsmith counts no ammo or reloads, so no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: backup-mag-enhanced
+    name: Backup Mag (enhanced)
+    kind: weaponMod
+    affinity: neutral
+    hash: 1523545668
+    description: "+40 Magazine stat (in effect like Extended Mag plus Tactical Mag). Only a Tier 4 or 5 weapon takes it."
+    source: "compendium/2026-10-13/Weapon Perks#256"
+    inert: "Ammo (magazine size): Loopsmith counts no ammo or reloads, so no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: ballistics
+    name: Ballistics
+    kind: weaponMod
+    affinity: neutral
+    hash: 3417406043
+    description: "+6 Range and +6 Stability."
+    source: "compendium/2026-10-13/Weapon Perks#257"
+    inert: "Weapon stats (range and stability): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: ballistics-enhanced
+    name: Ballistics (enhanced)
+    kind: weaponMod
+    affinity: neutral
+    hash: 414077027
+    description: "+7 Range and +7 Stability. Only a Tier 4 or 5 weapon takes it."
+    source: "compendium/2026-10-13/Weapon Perks#257"
+    inert: "Weapon stats (range and stability): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: bandolier
+    name: Bandolier
+    kind: weaponMod
+    affinity: neutral
+    hash: 2420924065
+    description: "+5 Ammo Generation and +15 Magazine stat."
+    source: "compendium/2026-10-13/Weapon Perks#258"
+    inert: "Ammo (ammo generation and magazine size): Loopsmith counts no ammo or reloads, so no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: bandolier-enhanced
+    name: Bandolier (enhanced)
+    kind: weaponMod
+    affinity: neutral
+    hash: 1350538053
+    description: "+7 Ammo Generation and +17 Magazine stat. Only a Tier 4 or 5 weapon takes it."
+    source: "compendium/2026-10-13/Weapon Perks#258"
+    inert: "Ammo (ammo generation and magazine size): Loopsmith counts no ammo or reloads, so no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: counterbalance-stock
+    name: Counterbalance Stock
+    kind: weaponMod
+    affinity: neutral
+    hash: 1588595445
+    description: "+15 Recoil Direction."
+    source: "compendium/2026-10-13/Weapon Perks#259"
+    inert: "Weapon stats (recoil direction): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: counterbalance-stock-enhanced
+    name: Counterbalance Stock (enhanced)
+    kind: weaponMod
+    affinity: neutral
+    hash: 285783873
+    description: "+35 Recoil Direction. Only a Tier 4 or 5 weapon takes it."
+    source: "compendium/2026-10-13/Weapon Perks#259"
+    inert: "Weapon stats (recoil direction): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: cqc-optics-high
+    name: "CQC Optics: High"
+    kind: weaponMod
+    affinity: neutral
+    hash: 52638289
+    description: "+1 Zoom."
+    source: "compendium/2026-10-13/Weapon Perks#260"
+    inert: "Weapon stats (zoom): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: cqc-optics-low
+    name: "CQC Optics: Low"
+    kind: weaponMod
+    affinity: neutral
+    hash: 3310993845
+    description: "-1 Zoom."
+    source: "compendium/2026-10-13/Weapon Perks#261"
+    inert: "Weapon stats (zoom): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: edge
+    name: Edge
+    kind: weaponMod
+    affinity: neutral
+    hash: 574010092
+    description: "Swords: +6 Charge Rate and +6 Guard Resistance."
+    source: "compendium/2026-10-13/Weapon Perks#262"
+    inert: "Weapon stats (a sword's charge rate and guard resistance): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: edge-enhanced
+    name: Edge (enhanced)
+    kind: weaponMod
+    affinity: neutral
+    hash: 3487893044
+    description: "Swords: +7 Charge Rate and +7 Guard Resistance. Only a Tier 4 or 5 weapon takes it."
+    source: "compendium/2026-10-13/Weapon Perks#262"
+    inert: "Weapon stats (a sword's charge rate and guard resistance): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: enhanced-accuracy
+    name: Enhanced Accuracy
+    kind: weaponMod
+    affinity: neutral
+    hash: 2243475693
+    description: "+10 Accuracy. Only a Tier 4 or 5 weapon takes it."
+    source: "compendium/2026-10-13/Weapon Perks#263"
+    inert: "Weapon stats (accuracy): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: enhanced-blast-radius
+    name: Enhanced Blast Radius
+    kind: weaponMod
+    affinity: neutral
+    hash: 1252257233
+    description: "+10 Blast Radius. Only a Tier 4 or 5 weapon takes it."
+    source: "compendium/2026-10-13/Weapon Perks#264"
+    inert: "Weapon stats (blast radius): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: enhanced-charge-time
+    name: Enhanced Charge Time
+    kind: weaponMod
+    affinity: neutral
+    hash: 3779301690
+    description: "-40 ms Charge Time (damage unchanged; the stats screen doesn't show it). Only a Tier 4 or 5 weapon takes it."
+    source: "compendium/2026-10-13/Weapon Perks#265"
+    inert: "Weapon stats (charge time): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: enhanced-draw-time
+    name: Enhanced Draw Time
+    kind: weaponMod
+    affinity: neutral
+    hash: 2274738792
+    description: "-40 ms Draw Time. Only a Tier 4 or 5 weapon takes it."
+    source: "compendium/2026-10-13/Weapon Perks#266"
+    inert: "Weapon stats (draw time): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: enhanced-handling
+    name: Enhanced Handling
+    kind: weaponMod
+    affinity: neutral
+    hash: 2924082573
+    description: "+10 Handling. Only a Tier 4 or 5 weapon takes it."
+    source: "compendium/2026-10-13/Weapon Perks#267"
+    inert: "Weapon stats (handling): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: enhanced-impact
+    name: Enhanced Impact
+    kind: weaponMod
+    affinity: neutral
+    hash: 81592656
+    description: "+5 Impact. Only a Tier 4 or 5 weapon takes it."
+    source: "compendium/2026-10-13/Weapon Perks#268"
+    inert: "Weapon stats (impact): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: enhanced-persistence
+    name: Enhanced Persistence
+    kind: weaponMod
+    affinity: neutral
+    hash: 4285947411
+    description: "+10 Persistence. Only a Tier 4 or 5 weapon takes it."
+    source: "compendium/2026-10-13/Weapon Perks#269"
+    inert: "Weapon stats (persistence): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: enhanced-projectile-speed
+    name: Enhanced Projectile Speed
+    kind: weaponMod
+    affinity: neutral
+    hash: 1653281839
+    description: "+10 Velocity. Only a Tier 4 or 5 weapon takes it."
+    source: "compendium/2026-10-13/Weapon Perks#270"
+    inert: "Weapon stats (velocity): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: enhanced-range
+    name: Enhanced Range
+    kind: weaponMod
+    affinity: neutral
+    hash: 260490301
+    description: "+10 Range. Only a Tier 4 or 5 weapon takes it."
+    source: "compendium/2026-10-13/Weapon Perks#271"
+    inert: "Weapon stats (range): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: enhanced-reload
+    name: Enhanced Reload
+    kind: weaponMod
+    affinity: neutral
+    hash: 711469637
+    description: "+10 Reload. Only a Tier 4 or 5 weapon takes it."
+    source: "compendium/2026-10-13/Weapon Perks#272"
+    inert: "Ammo (reload speed): Loopsmith counts no ammo or reloads, so no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: enhanced-shield-duration
+    name: Enhanced Shield Duration
+    kind: weaponMod
+    affinity: neutral
+    hash: 3392654408
+    description: "+10 Shield Duration. Only a Tier 4 or 5 weapon takes it."
+    source: "compendium/2026-10-13/Weapon Perks#273"
+    inert: "Weapon stats (shield duration): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: enhanced-stability
+    name: Enhanced Stability
+    kind: weaponMod
+    affinity: neutral
+    hash: 2057879635
+    description: "+10 Stability. Only a Tier 4 or 5 weapon takes it."
+    source: "compendium/2026-10-13/Weapon Perks#274"
+    inert: "Weapon stats (stability): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: flight
+    name: Flight
+    kind: weaponMod
+    affinity: neutral
+    hash: 624097433
+    description: "+6 Persistence and +6 Velocity."
+    source: "compendium/2026-10-13/Weapon Perks#275"
+    inert: "Weapon stats (persistence and velocity): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: flight-enhanced
+    name: Flight (enhanced)
+    kind: weaponMod
+    affinity: neutral
+    hash: 4268478333
+    description: "+7 Persistence and +7 Velocity. Only a Tier 4 or 5 weapon takes it."
+    source: "compendium/2026-10-13/Weapon Perks#275"
+    inert: "Weapon stats (persistence and velocity): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: freehand-grip
+    name: Freehand Grip
+    kind: weaponMod
+    affinity: neutral
+    hash: 736000386
+    description: "-30% hipfire accuracy cone size and a 0.95x ready animation duration."
+    source: "compendium/2026-10-13/Weapon Perks#276"
+    inert: "Weapon stats (hipfire accuracy and ready speed): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: freehand-grip-enhanced
+    name: Freehand Grip (enhanced)
+    kind: weaponMod
+    affinity: neutral
+    hash: 2268413950
+    description: "-30% hipfire accuracy cone size and a ready animation duration the Compendium doesn't give (?). Only a Tier 4 or 5 weapon takes it."
+    source: "compendium/2026-10-13/Weapon Perks#276"
+    inert: "Weapon stats (hipfire accuracy and ready speed): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: icarus-grip
+    name: Icarus Grip
+    kind: weaponMod
+    affinity: neutral
+    hash: 941997506
+    description: "+15 Airborne Effectiveness."
+    source: "compendium/2026-10-13/Weapon Perks#277"
+    inert: "Weapon stats (airborne effectiveness): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: icarus-grip-enhanced
+    name: Icarus Grip (enhanced)
+    kind: weaponMod
+    affinity: neutral
+    hash: 3656042814
+    description: "+15 Airborne Effectiveness and +5 Handling. Only a Tier 4 or 5 weapon takes it."
+    source: "compendium/2026-10-13/Weapon Perks#277"
+    inert: "Weapon stats (airborne effectiveness): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: marksman-optics-high
+    name: "Marksman Optics: High"
+    kind: weaponMod
+    affinity: neutral
+    hash: 1847129788
+    description: "+2 Zoom."
+    source: "compendium/2026-10-13/Weapon Perks#278"
+    inert: "Weapon stats (zoom): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: marksman-optics-low
+    name: "Marksman Optics: Low"
+    kind: weaponMod
+    affinity: neutral
+    hash: 2649250174
+    description: "-2 Zoom."
+    source: "compendium/2026-10-13/Weapon Perks#279"
+    inert: "Weapon stats (zoom): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: quick-access-sling
+    name: Quick Access Sling
+    kind: weaponMod
+    affinity: neutral
+    hash: 1334978104
+    description: "0.9x ready and stow animation duration."
+    source: "compendium/2026-10-13/Weapon Perks#280"
+    inert: "Weapon stats (ready and stow speed): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: quick-access-sling-enhanced
+    name: Quick Access Sling (enhanced)
+    kind: weaponMod
+    affinity: neutral
+    hash: 139132552
+    description: "Ready and stow animation duration shorter by a multiplier the Compendium doesn't give (?). Only a Tier 4 or 5 weapon takes it."
+    source: "compendium/2026-10-13/Weapon Perks#280"
+    inert: "Weapon stats (ready and stow speed): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: radar-booster
+    name: Radar Booster
+    kind: weaponMod
+    affinity: neutral
+    hash: 3785661089
+    description: "+8 m radar range (48 m to 56 m)."
+    source: "compendium/2026-10-13/Weapon Perks#281"
+    inert: "Radar: no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: radar-tuner
+    name: Radar Tuner
+    kind: weaponMod
+    affinity: neutral
+    hash: 371216963
+    description: "The radar comes back at once when you stop aiming down sights (normally after 1.5 s)."
+    source: "compendium/2026-10-13/Weapon Perks#282"
+    inert: "Radar: no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: radar-tuner-enhanced
+    name: Radar Tuner (enhanced)
+    kind: weaponMod
+    affinity: neutral
+    hash: 4068571787
+    description: "As Radar Tuner, with Radar Booster's +8 m radar range too. Only a Tier 4 or 5 weapon takes it."
+    source: "compendium/2026-10-13/Weapon Perks#282"
+    inert: "Radar: no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: sprint-grip
+    name: Sprint Grip
+    kind: weaponMod
+    affinity: neutral
+    hash: 518387148
+    description: "After sprinting for 1.5 s: +35 aim-down-sights and ready speed handling until you stop sprinting."
+    source: "compendium/2026-10-13/Weapon Perks#283"
+    inert: "Weapon stats (handling after sprinting): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: sprint-grip-enhanced
+    name: Sprint Grip (enhanced)
+    kind: weaponMod
+    affinity: neutral
+    hash: 890612500
+    description: "After sprinting for 1.5 s: more aim-down-sights and ready speed handling until you stop sprinting, by an amount the Compendium doesn't give (?). Only a Tier 4 or 5 weapon takes it."
+    source: "compendium/2026-10-13/Weapon Perks#283"
+    inert: "Weapon stats (handling after sprinting): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: stunloader
+    name: Stunloader
+    kind: weaponMod
+    affinity: neutral
+    hash: [3024601835, 3550545621]   # copies with the same text
+    description: "Stunning a Champion refills 50% of the magazine."
+    source: "compendium/2026-10-13/Weapon Perks#284"
+    inert: "Champions and ammo: the pack in front of you is rank-and-file (ADRs D7) and no ammo is counted, so no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: stunloader-enhanced
+    name: Stunloader (enhanced)
+    kind: weaponMod
+    affinity: neutral
+    hash: [1893041875, 2554933025]   # copies with the same text
+    description: "Stunning a Champion refills 60% of the magazine. Only a Tier 4 or 5 weapon takes it."
+    source: "compendium/2026-10-13/Weapon Perks#284"
+    inert: "Champions and ammo: the pack in front of you is rank-and-file (ADRs D7) and no ammo is counted, so no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: tactical
+    name: Tactical
+    kind: weaponMod
+    affinity: neutral
+    hash: [1596513538, 2400144052]   # copies with the same text
+    description: "+6 Handling and +6 Reload Speed."
+    source: "compendium/2026-10-13/Weapon Perks#286"
+    inert: "Weapon stats (handling and reload speed): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: tactical-enhanced
+    name: Tactical (enhanced)
+    kind: weaponMod
+    affinity: neutral
+    hash: [974161790, 1772241052]   # copies with the same text
+    description: "+7 Handling and +7 Reload Speed. Only a Tier 4 or 5 weapon takes it."
+    source: "compendium/2026-10-13/Weapon Perks#286"
+    inert: "Weapon stats (handling and reload speed): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: targeting-adjuster
+    name: Targeting Adjuster
+    kind: weaponMod
+    affinity: neutral
+    hash: 3228611386
+    description: "+5 Aim Assist."
+    source: "compendium/2026-10-13/Weapon Perks#287"
+    inert: "Weapon stats (aim assist): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: targeting-adjuster-enhanced
+    name: Targeting Adjuster (enhanced)
+    kind: weaponMod
+    affinity: neutral
+    hash: 3115937974
+    description: "+7 Aim Assist. Only a Tier 4 or 5 weapon takes it."
+    source: "compendium/2026-10-13/Weapon Perks#287"
+    inert: "Weapon stats (aim assist): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: tension
+    name: Tension
+    kind: weaponMod
+    affinity: neutral
+    hash: 1882549863
+    description: "+6 Draw Time and +6 Accuracy."
+    source: "compendium/2026-10-13/Weapon Perks#288"
+    inert: "Weapon stats (draw time and accuracy): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: tension-enhanced
+    name: Tension (enhanced)
+    kind: weaponMod
+    affinity: neutral
+    hash: 1592913511
+    description: "+7 Draw Time and +7 Accuracy. Only a Tier 4 or 5 weapon takes it."
+    source: "compendium/2026-10-13/Weapon Perks#288"
+    inert: "Weapon stats (draw time and accuracy): no step of a loop changes."
+    rules: []
+    passives: []
+
+  - id: synergy
+    name: Synergy
+    kind: weaponMod
+    affinity: neutral
+    hash: 3820243349
+    description: "Weapon kills fill a counter (kept through stow): 8.34% per rank-and-file kill, 16.7% elite, 34% miniboss, 50% boss, 16.7% Guardian. At 100% it spawns a pickup of the weapon's element (Arc: Ionic Trace, Solar: Firesprite, Void: Void Breach, Stasis: Stasis Shard, Strand: Tangle); a Kinetic weapon spawns an Orb of Power that grants 7.15% Super energy. It ignores the pickups' shared cooldown but starts it when it spawns one, and has its own cooldown by pickup (Ionic Trace 0 s; Firesprite, Void Breach and Stasis Shard 5 s; Tangle 12 s), during which kills don't count. Kills beyond a full counter at once don't carry over."
+    source: "compendium/2026-10-13/Weapon Perks#285"
+    rules:
+      # Kinetic: Orb of Power.
+      - on: { kill: { via: "weapon:this:kinetic", atLeast: 12 } }
+        then:
+          - { spawn: orb-of-power }
+        reason: "Twelve rank-and-file kills with this Kinetic weapon in one go fill Synergy's counter: it spawns an Orb of Power."
+      - on: { kill: { via: "weapon:this:kinetic", fewerThan: 12 } }
+        then:
+          - { spawn: orb-of-power }
+        chance: true
+        reason: "Kills with this Kinetic weapon fill Synergy's counter, which persists through stow; when it fills, it spawns an Orb of Power."
+      # Arc: Ionic Trace.
+      - on: { kill: { via: "weapon:this:arc", atLeast: 12 } }
+        then:
+          - { spawn: ionic-trace }
+        reason: "Twelve rank-and-file kills with this Arc weapon in one go fill Synergy's counter: it spawns an Ionic Trace."
+      - on: { kill: { via: "weapon:this:arc", fewerThan: 12 } }
+        then:
+          - { spawn: ionic-trace }
+        chance: true
+        reason: "Kills with this Arc weapon fill Synergy's counter, which persists through stow; when it fills, it spawns an Ionic Trace."
+      # Solar: Firesprite.
+      - on: { kill: { via: "weapon:this:solar", atLeast: 12 } }
+        then:
+          - { spawn: firesprite }
+        reason: "Twelve rank-and-file kills with this Solar weapon in one go fill Synergy's counter: it spawns a Firesprite."
+      - on: { kill: { via: "weapon:this:solar", fewerThan: 12 } }
+        then:
+          - { spawn: firesprite }
+        chance: true
+        reason: "Kills with this Solar weapon fill Synergy's counter, which persists through stow; when it fills, it spawns a Firesprite."
+      # Void: Void Breach.
+      - on: { kill: { via: "weapon:this:void", atLeast: 12 } }
+        then:
+          - { spawn: void-breach }
+        reason: "Twelve rank-and-file kills with this Void weapon in one go fill Synergy's counter: it spawns a Void Breach."
+      - on: { kill: { via: "weapon:this:void", fewerThan: 12 } }
+        then:
+          - { spawn: void-breach }
+        chance: true
+        reason: "Kills with this Void weapon fill Synergy's counter, which persists through stow; when it fills, it spawns a Void Breach."
+      # Stasis: Stasis Shard.
+      - on: { kill: { via: "weapon:this:stasis", atLeast: 12 } }
+        then:
+          - { spawn: stasis-shard }
+        reason: "Twelve rank-and-file kills with this Stasis weapon in one go fill Synergy's counter: it spawns a Stasis Shard."
+      - on: { kill: { via: "weapon:this:stasis", fewerThan: 12 } }
+        then:
+          - { spawn: stasis-shard }
+        chance: true
+        reason: "Kills with this Stasis weapon fill Synergy's counter, which persists through stow; when it fills, it spawns a Stasis Shard."
+      # Strand: Tangle.
+      - on: { kill: { via: "weapon:this:strand", atLeast: 12 } }
+        then:
+          - { spawn: tangle }
+        reason: "Twelve rank-and-file kills with this Strand weapon in one go fill Synergy's counter: it spawns a Tangle."
+      - on: { kill: { via: "weapon:this:strand", fewerThan: 12 } }
+        then:
+          - { spawn: tangle }
+        chance: true
+        reason: "Kills with this Strand weapon fill Synergy's counter, which persists through stow; when it fills, it spawns a Tangle."
+    passives: []
+
+  - id: synergy-enhanced
+    name: Synergy (enhanced)
+    kind: weaponMod
+    affinity: neutral
+    hash: 3634656993
+    description: "As Synergy, with 12.5% per rank-and-file kill, 20% elite, 34% miniboss, 50% boss and ~25% Guardian. The enhanced Synergy neither triggers nor waits on the pickups' shared cooldown. Only a Tier 4 or 5 weapon takes it."
+    source: "compendium/2026-10-13/Weapon Perks#285"
+    rules:
+      # Kinetic: Orb of Power.
+      - on: { kill: { via: "weapon:this:kinetic", atLeast: 8 } }
+        then:
+          - { spawn: orb-of-power }
+        reason: "Eight rank-and-file kills with this Kinetic weapon in one go fill Synergy's counter: it spawns an Orb of Power."
+      - on: { kill: { via: "weapon:this:kinetic", fewerThan: 8 } }
+        then:
+          - { spawn: orb-of-power }
+        chance: true
+        reason: "Kills with this Kinetic weapon fill Synergy's counter, which persists through stow; when it fills, it spawns an Orb of Power."
+      # Arc: Ionic Trace.
+      - on: { kill: { via: "weapon:this:arc", atLeast: 8 } }
+        then:
+          - { spawn: ionic-trace }
+        reason: "Eight rank-and-file kills with this Arc weapon in one go fill Synergy's counter: it spawns an Ionic Trace."
+      - on: { kill: { via: "weapon:this:arc", fewerThan: 8 } }
+        then:
+          - { spawn: ionic-trace }
+        chance: true
+        reason: "Kills with this Arc weapon fill Synergy's counter, which persists through stow; when it fills, it spawns an Ionic Trace."
+      # Solar: Firesprite.
+      - on: { kill: { via: "weapon:this:solar", atLeast: 8 } }
+        then:
+          - { spawn: firesprite }
+        reason: "Eight rank-and-file kills with this Solar weapon in one go fill Synergy's counter: it spawns a Firesprite."
+      - on: { kill: { via: "weapon:this:solar", fewerThan: 8 } }
+        then:
+          - { spawn: firesprite }
+        chance: true
+        reason: "Kills with this Solar weapon fill Synergy's counter, which persists through stow; when it fills, it spawns a Firesprite."
+      # Void: Void Breach.
+      - on: { kill: { via: "weapon:this:void", atLeast: 8 } }
+        then:
+          - { spawn: void-breach }
+        reason: "Eight rank-and-file kills with this Void weapon in one go fill Synergy's counter: it spawns a Void Breach."
+      - on: { kill: { via: "weapon:this:void", fewerThan: 8 } }
+        then:
+          - { spawn: void-breach }
+        chance: true
+        reason: "Kills with this Void weapon fill Synergy's counter, which persists through stow; when it fills, it spawns a Void Breach."
+      # Stasis: Stasis Shard.
+      - on: { kill: { via: "weapon:this:stasis", atLeast: 8 } }
+        then:
+          - { spawn: stasis-shard }
+        reason: "Eight rank-and-file kills with this Stasis weapon in one go fill Synergy's counter: it spawns a Stasis Shard."
+      - on: { kill: { via: "weapon:this:stasis", fewerThan: 8 } }
+        then:
+          - { spawn: stasis-shard }
+        chance: true
+        reason: "Kills with this Stasis weapon fill Synergy's counter, which persists through stow; when it fills, it spawns a Stasis Shard."
+      # Strand: Tangle.
+      - on: { kill: { via: "weapon:this:strand", atLeast: 8 } }
+        then:
+          - { spawn: tangle }
+        reason: "Eight rank-and-file kills with this Strand weapon in one go fill Synergy's counter: it spawns a Tangle."
+      - on: { kill: { via: "weapon:this:strand", fewerThan: 8 } }
+        then:
+          - { spawn: tangle }
+        chance: true
+        reason: "Kills with this Strand weapon fill Synergy's counter, which persists through stow; when it fills, it spawns a Tangle."
+    passives: []
+

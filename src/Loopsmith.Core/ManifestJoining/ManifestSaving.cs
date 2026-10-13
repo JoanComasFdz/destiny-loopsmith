@@ -186,7 +186,8 @@ public static class ManifestSaving
             [.. weapon.ReadArray("traits").Select(ReadTraitColumn)],
             weapon.ReadHash("intrinsic"),
             weapon.ReadHash("catalyst"),
-            weapon.ReadHash("breaker")));
+            weapon.ReadHash("breaker"),
+            []));
 
     private static TraitColumn ReadTraitColumn(JsonElement column) =>
         new(column.ValueKind == JsonValueKind.Array ? [.. column.EnumerateArray().SelectMany(hash => ToSequence(hash.ToItemHash()))] : []);

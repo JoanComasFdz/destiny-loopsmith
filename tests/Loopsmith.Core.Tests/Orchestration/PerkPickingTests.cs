@@ -115,7 +115,7 @@ public sealed class PerkPickingTests
     public void A_roll_pick_outside_its_column_is_a_warning()
     {
         var build = new WeaponLoadout(WeaponSlot.Kinetic, "Festival Flight", DamageType.Strand, Optional.None<string>(), [], Optional.Some(ItemHash.From(4019651319u)),
-            [Optional.Some(ItemHash.From(AttritionOrbs)), Optional.None<ItemHash>(), Optional.Some(ItemHash.From(Slice))], false, Optional.None<ItemInstanceId>());
+            [Optional.Some(ItemHash.From(AttritionOrbs)), Optional.None<ItemHash>(), Optional.Some(ItemHash.From(Slice))], false, Optional.None<ItemInstanceId>(), Optional.None<ItemHash>());
         var session = StartOwnersDimDesign();
 
         var validated = BuildValidation.ValidateBuild(session.Build.Build with { Weapons = [build] }, Catalog)

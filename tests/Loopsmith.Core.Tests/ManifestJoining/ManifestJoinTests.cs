@@ -159,7 +159,9 @@ public sealed class ManifestJoinTests
         {
             ManifestKind.Weapon weapon => $"weapon {weapon.Slot} {weapon.DamageType.Match(type => type.Value.ToString(), _ => "-")} "
                 + $"[{string.Join(" / ", weapon.Traits.Select(column => string.Join(",", column.Options.Select(hash => hash.Value))))}] "
-                + $"intrinsic {weapon.Intrinsic.Match(hash => hash.Value.Value.ToString(), _ => "-")} catalyst {weapon.Catalyst.Match(hash => hash.Value.Value.ToString(), _ => "-")}",
+                + $"intrinsic {weapon.Intrinsic.Match(hash => hash.Value.Value.ToString(), _ => "-")} catalyst {weapon.Catalyst.Match(hash => hash.Value.Value.ToString(), _ => "-")} "
+                + $"mods [{string.Join(",", weapon.Mods.Select(hash => hash.Value))}]",
+            ManifestKind.WeaponMod mod => $"weaponMod{(mod.Enhanced ? " enhanced" : "")}",
             ManifestKind.Armor armor => $"armor {armor.Slot} intrinsic {armor.Intrinsic.Match(hash => hash.Value.Value.ToString(), _ => "-")} set {armor.Set.Match(hash => hash.Value.Value.ToString(), _ => "-")}",
             ManifestKind.ArmorMod mod => $"armorMod {mod.Slot.Match(slot => slot.Value.ToString(), _ => "general")}",
             ManifestKind.ExoticCatalyst catalyst => $"catalyst [{string.Join(",", catalyst.Perks.Select(hash => hash.Value))}]",

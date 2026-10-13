@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Loopsmith.Core.Causality;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 using YamlDotNet.RepresentationModel;
@@ -79,8 +80,9 @@ internal static class ElementParsing
                 CheckFragmentSlots(map, element),
                 CheckAbilityProfile(map, element),
                 CheckInert(map, element),
+                CheckThisWeapon(map, element),
                 EnhancedPerkParsing.ReadEnhanced(map, element),
-                (_, _, _, enhanced) => (map.ToLocated(element), enhanced.Map(map.ToLocated)))));
+                (_, _, _, _, enhanced) => (map.ToLocated(element), enhanced.Map(map.ToLocated)))));
 
     /// <summary>
     /// <c>{ stat: melee, from: 50, below: 100, severity: info, says: "With {value} Melee, …" }</c>: <c>from</c> is optional,
@@ -106,6 +108,15 @@ internal static class ElementParsing
     private static Result<Unit, Errors> CheckInert(YamlMap map, BuildElement element) =>
         element.Inert.IsSome() && (!element.Rules.IsEmpty || !element.Passives.IsEmpty)
             ? map.FailAtKey<Unit>("inert", "inert is only for an element with no rules and no passives")
+            : Succeed<Unit>(new Unit.Value());
+
+    /// <summary>"This weapon" (<c>weapon:this</c>) is the weapon holding the element: only an element a weapon holds has one.</summary>
+    private static Result<Unit, Errors> CheckThisWeapon(YamlMap map, BuildElement element) =>
+        element.IsNamingThisWeapon() && !element.Kind.IsHeldByWeapon()
+            ? map.FailAtKey<Unit>(
+                "rules",
+                "weapon:this is the weapon holding the element: only a weaponPerk, weaponMod, exoticWeapon or catalyst has one, "
+                + $"not a {GameNotationParsing.ToVocabularyWord(element.Kind)}")
             : Succeed<Unit>(new Unit.Value());
 
     /// <summary>An omitted <c>source</c> means "authored here": the file and the element's first line.</summary>

@@ -18,7 +18,9 @@ icon in its top-left corner). A weapon also gets its breaker (`breaker`: the cha
 exotic's, else the one its intrinsic frame gives it — a frame's perk named with the breaker, "[Shield-Piercing]
 Barrier" on Adaptive Frame, as DIM reads it), its trait
 columns (`traits`: the "frames" sockets among its weapon perks), each the list of perks it can roll (one, for
-a column that doesn't roll: an exotic's), its intrinsic perk and, for an exotic, its catalyst; armor gets its
+a column that doesn't roll: an exotic's), its intrinsic perk, the weapon mods its mod socket takes (`mods`: the
+plugs of its mod socket's plug set, without the empty ones; each written as a `weaponMod` item, an "Enhanced Weapon
+Mod" one only on a Tier 4 or 5 weapon) and, for an exotic, its catalyst; armor gets its
 intrinsic perk (an exotic's) and the armor set it belongs to. Those perks, catalysts (with the perks they grant) and sets (with their 2- and 4-piece perks) are
 written too. Perks a catalyst or a set grants are the manifest's sandbox perks (`kind: perk`). The artifact an
 artifact perk belongs to (the artifact item whose sockets' plug sets hold it) is written with its perks
@@ -58,6 +60,8 @@ MOD_SLOTS = {"Helmet Armor Mod": "helmet", "Arms Armor Mod": "arms", "Chest Armo
 TIERS = {2: "basic", 3: "common", 4: "rare", 5: "legendary", 6: "exotic"}
 DAMAGE_TYPES = {1: "kinetic", 2: "arc", 3: "solar", 4: "void", 6: "stasis", 7: "strand"}
 EMPTY_CATALYST = "v400.empty.exotic.masterwork"  # the plug category of an exotic's empty catalyst socket
+MOD_SOCKET_CATEGORIES = {"v400.weapon.mod_guns", "v400.weapon.mod_damage", "v400.weapon.mod_magazine"}  # only a weapon's mod socket takes them
+EMPTY_MOD = "v400.weapon.mod_empty"  # the plug category of a mod socket's empty plugs ("Empty Mod Socket", "Random Masterwork")
 ARTIFACT_PERKS = "artifact_perks"                 # what an artifact's perk sockets take…
 ARTIFACT_RESET = "artifact_reset"                 # …and its reset socket too, with its Reset Artifact plug
 ARMOR_STATS = {2996146975: "weapons", 392767087: "health", 1943323491: "class", 1735777505: "grenade",
@@ -127,7 +131,7 @@ def classify(item, buckets):
         return "armorMod", MOD_SLOTS.get(type_name)
     exact = {"Super Ability": "super", "Class Ability": "classAbility", "Movement Ability": "movement",
              "Artifact Perk": "artifactPerk", "Artifact": "artifact", "Trait": "weaponPerk", "Enhanced Trait": "weaponPerk",
-             "Intrinsic": "intrinsic"}
+             "Weapon Mod": "weaponMod", "Enhanced Weapon Mod": "weaponMod", "Intrinsic": "intrinsic"}
     if type_name in exact:
         return exact[type_name], None
     for suffix, kind in ((" Grenade", "grenade"), (" Melee", "melee"), (" Aspect", "aspect"), (" Fragment", "fragment")):
@@ -151,6 +155,22 @@ def read_traits(item, socket_types, perk_category, plug_sets):
               and "frames" in [w.get("categoryIdentifier") for w in socket_types.get(str(entries[i].get("socketTypeHash")), {}).get("plugWhitelist", [])]]
     columns = [read_column(entry, plug_sets) for entry in traits]
     return None if any(not column for column in columns) else columns
+
+
+def read_mods(item, socket_types, mod_category, plug_sets, items):
+    """The weapon mods a weapon's mod socket takes (the socket of its WEAPON MODS category that takes weapon mods, not its
+    masterwork's): every plug of its plug set in order, each once, without the empty ones. None when it has no mod socket."""
+    sockets = item.get("sockets") or {}
+    entries = sockets.get("socketEntries", [])
+    indexes = [i for category in sockets.get("socketCategories", []) if category.get("socketCategoryHash") == mod_category
+               for i in category.get("socketIndexes", [])]
+    mod_sockets = [entries[i] for i in indexes if i < len(entries)
+                   and MOD_SOCKET_CATEGORIES & {w.get("categoryIdentifier") for w in socket_types.get(str(entries[i].get("socketTypeHash")), {}).get("plugWhitelist", [])}]
+    plugs = [plug["plugItemHash"] for entry in mod_sockets if entry.get("reusablePlugSetHash")
+             for plug in plug_sets.get(str(entry["reusablePlugSetHash"]), {}).get("reusablePlugItems", [])]
+    mods = [h for h in dict.fromkeys(plugs)
+            if str(h) in items and (items[str(h)].get("plug") or {}).get("plugCategoryIdentifier") != EMPTY_MOD]
+    return mods or None
 
 
 def read_column(entry, plug_sets):
@@ -307,6 +327,9 @@ def to_entry(item_hash, item, context):
     catalyst = context["weapon_catalysts"].get(item_hash)
     if catalyst:
         fields.append(("catalyst", str(catalyst)))
+    mods = context["weapon_mods"].get(item_hash)
+    if mods:
+        fields.append(("mods", "[" + ", ".join(str(h) for h in mods) + "]"))
     item_set = item.get("equippingBlock", {}).get("equipableItemSetHash") if kind == "armor" else None
     if item_set:
         fields.append(("set", str(item_set)))
@@ -392,6 +415,7 @@ def main():
     trait_definitions = read_json(source / "DestinyTraitDefinition.json")
     stat_definitions = read_json(source / "DestinyStatDefinition.json")
     perk_category = find_category(categories, "WEAPON PERKS")
+    mod_category = find_category(categories, "WEAPON MODS")
     intrinsic_categories = {"weapon": find_category(categories, "INTRINSIC TRAITS"), "armor": find_category(categories, "ARMOR PERKS")}
     plugs_by_category = {}
     for h, item in sorted(items.items(), key=lambda pair: int(pair[0])):
@@ -409,6 +433,8 @@ def main():
     intrinsics = {h: plug for h, plug in intrinsics.items() if plug}
     weapon_catalysts = {h: read_catalyst(items[str(h)], socket_types, plugs_by_category, items, perks) for h in weapons}
     weapon_catalysts = {h: plug for h, plug in weapon_catalysts.items() if plug}
+    weapon_mods = {h: read_mods(items[str(h)], socket_types, mod_category, plug_sets, items) for h in weapons}
+    weapon_mods = {h: mods for h, mods in weapon_mods.items() if mods}
     catalysts = set(weapon_catalysts.values())
     catalyst_perks = {perk for plug in catalysts for perk in read_granted_perks(items[str(plug)], perks)}
     wanted_sets = {items[str(h)].get("equippingBlock", {}).get("equipableItemSetHash") for h in named_items if kinds[h] == "armor"} - {None, 0}
@@ -430,9 +456,10 @@ def main():
                        and item.get("displayProperties", {}).get("name") in trait_names}
     context = {"buckets": buckets, "socket_types": socket_types, "perk_category": perk_category, "plug_sets": plug_sets,
                "intrinsics": intrinsics, "weapon_catalysts": weapon_catalysts, "catalysts": catalysts, "perks": perks,
-               "items": items, "breaker_types": breaker_types, "subclass_plugs": subclass_plugs}
+               "items": items, "breaker_types": breaker_types, "subclass_plugs": subclass_plugs, "weapon_mods": weapon_mods}
 
-    wanted_items = sorted(named_items | traits | set(intrinsics.values()) | catalysts | artifacts | enhanced_traits | {p for plugs in subclass_plugs.values() for p in plugs})
+    wanted_items = sorted(named_items | traits | set(intrinsics.values()) | catalysts | artifacts | enhanced_traits
+                          | {p for plugs in subclass_plugs.values() for p in plugs} | {m for mods in weapon_mods.values() for m in mods})
     wanted_perks = sorted(((named - named_items) & {int(h) for h in perks}) | catalyst_perks | set_perks)
     missing = sorted(named - named_items - set(wanted_perks))
     lines = [
