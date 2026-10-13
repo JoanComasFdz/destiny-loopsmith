@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 using Loopsmith.Core.Orchestration;
+using Loopsmith.Core.StatLoading;
 
 namespace Loopsmith.Core.Tests.StatLoading;
 
@@ -22,13 +23,13 @@ public sealed partial class StatLoadingTests
     [Fact]
     public void A_copys_sockets_hold_the_perk_in_them_then_those_they_can_switch_to()
     {
-        var profile = ReadProfile([FestivalWithTwoPerks()]);
+        var profile = ReadProfile([OwnFestivalWithTwoPerks()]);
 
         var copy = Assert.Single(profile.Weapons);
 
         Assert.Equal([EnhancedSlice, EnhancedElementalHoning, Shader], copy.Plugs);
         Assert.Equal([[EnhancedSlice], [EnhancedElementalHoning, AttritionOrbs], [Shader]], copy.Sockets.Select(socket => socket.ToArray()));
-        Assert.Equal([[EnhancedSlice], [EnhancedElementalHoning, AttritionOrbs]], FindColumns(Festival).ReadColumnPerks(copy.Sockets).Select(column => column.ToArray()));
+        Assert.Equal([[EnhancedSlice], [EnhancedElementalHoning, AttritionOrbs]], CopyFinding.ReadColumnPerks(FindColumns(Festival), copy.Sockets).Select(column => column.ToArray()));
     }
 
     [Fact]
@@ -37,10 +38,10 @@ public sealed partial class StatLoadingTests
         ImmutableArray<TraitColumn> columns = [new([ItemHash.From(1u), ItemHash.From(2u)]), new([ItemHash.From(2u), ItemHash.From(3u)])];
         ImmutableArray<ImmutableArray<ItemHash>> sockets = [[ItemHash.From(2u)], [ItemHash.From(3u), ItemHash.From(2u)], [ItemHash.From(9u)]];
 
-        var read = columns.ReadColumnPerks(sockets);
+        var read = CopyFinding.ReadColumnPerks(columns, sockets);
 
         Assert.Equal([[2u], [3u, 2u]], read.Select(column => column.Select(hash => hash.Value).ToArray()));
-        Assert.Equal([[], []], columns.ReadColumnPerks([]).Select(column => column.ToArray()));
+        Assert.Equal([[], []], CopyFinding.ReadColumnPerks(columns, []).Select(column => column.ToArray()));
     }
 
     [Fact]
@@ -49,7 +50,7 @@ public sealed partial class StatLoadingTests
         var session = OpenOwnersSession(Catalog);
         var festival = FindWeaponIndex(session, Festival);
 
-        var options = LoopDesigning.ListWeaponOptions(session.Build, ReadProfile([FestivalWithTwoPerks()]), new WeaponTarget.InPlaceOf(festival));
+        var options = LoopDesigning.ListWeaponOptions(session.Build, ReadProfile([OwnFestivalWithTwoPerks()]), new WeaponTarget.InPlaceOf(festival));
 
         var option = Assert.Single(options.Options);
         Assert.Equal([Optional.Some(EnhancedSlice), Optional.Some(EnhancedElementalHoning)], option.Roll);   // the build holds the one in it
@@ -59,7 +60,7 @@ public sealed partial class StatLoadingTests
     [Fact]
     public void A_perk_the_players_copy_doesnt_have_is_a_warning_and_one_it_can_switch_to_is_not()
     {
-        var profile = ReadProfile([.. OwnShare(tuningSockets: 0), .. OwnShareWeapons().Select(item => item.Hash == Festival ? FestivalWithTwoPerks() : item)]);
+        var profile = ReadProfile([.. OwnShare(tuningSockets: 0), .. OwnShareWeapons().Select(item => item.Hash == Festival ? OwnFestivalWithTwoPerks() : item)]);
         var session = LoopDesigning.ApplyBungieLogin(OpenOwnersSession(Catalog), profile).Session;
         var festival = FindWeaponIndex(session, Festival);
 
@@ -87,13 +88,16 @@ public sealed partial class StatLoadingTests
 
         var slice = PickPerk(enhanced, festival, 0, Optional.Some(Slice));
         var enhancedSlice = PickPerk(plain, festival, 0, Optional.Some(EnhancedSlice));
-        var columns = Assert.IsType<Optional<ImmutableArray<ImmutableArray<ItemHash>>>.Some>(LoopDesigning.ListCopyColumns(plain.Build, baseCopy, plain.Build.Build.Weapons[festival])).Value;
+        var plainMissing = LoopDesigning.ListPerksNotOnCopy(plain.Build, baseCopy, plain.Build.Build.Weapons[festival]);
+        var enhancedMissing = LoopDesigning.ListPerksNotOnCopy(enhanced.Build, enhancedCopy, enhanced.Build.Build.Weapons[festival]);
 
         Assert.Empty(ListCopyWarnings(slice, enhancedCopy));
         Assert.Equal(["Festival Flight: your copy doesn't have Slice (enhanced) in column 1 (it has Slice)."], ListCopyWarnings(enhancedSlice, baseCopy));
-        Assert.True(LoopDesigning.HasCopyPerk(plain.Build, columns[0], Slice));
-        Assert.False(LoopDesigning.HasCopyPerk(plain.Build, columns[0], EnhancedSlice));
-        Assert.True(LoopDesigning.HasCopyPerk(enhanced.Build, [EnhancedSlice], Slice));
+        Assert.Contains(new ColumnPerk(0, EnhancedSlice), plainMissing);        // the picker marks the enhanced Slice on a plain copy
+        Assert.DoesNotContain(new ColumnPerk(0, Slice), plainMissing);
+        Assert.DoesNotContain(new ColumnPerk(0, Slice), enhancedMissing);       // nor Slice on an enhanced one
+        Assert.DoesNotContain(new ColumnPerk(0, EnhancedSlice), enhancedMissing);
+        Assert.Contains(new ColumnPerk(1, Hatchling), enhancedMissing);          // column 2: the copy holds Elemental Honing
     }
 
     [Fact]
@@ -106,11 +110,11 @@ public sealed partial class StatLoadingTests
         var hatchling = PickPerk(LoopDesigning.ApplyBungieLogin(session, profile).Session, festival, 1, Optional.Some(Hatchling));
 
         Assert.Empty(ListCopyWarnings(hatchling, profile));
-        Assert.False(LoopDesigning.ListCopyColumns(hatchling.Build, profile, hatchling.Build.Build.Weapons[festival]).IsSome());
+        Assert.Empty(LoopDesigning.ListPerksNotOnCopy(hatchling.Build, profile, hatchling.Build.Build.Weapons[festival]));
     }
 
     /// <summary>The owner's Festival Flight, holding enhanced Slice and enhanced Elemental Honing, its second column able to switch to Attrition Orbs too.</summary>
-    private static FakeItem FestivalWithTwoPerks() =>
+    private static FakeItem OwnFestivalWithTwoPerks() =>
         new(Festival, FestivalCopy, "equipped", [EnhancedSlice, EnhancedElementalHoning, Shader], null, Tier: 4, DamageType: 7,
             Switchable: ImmutableDictionary.CreateRange([KeyValuePair.Create(1, ImmutableArray.Create(EnhancedElementalHoning, AttritionOrbs))]));
 

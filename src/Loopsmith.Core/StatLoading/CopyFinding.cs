@@ -52,7 +52,7 @@ public static class CopyFinding
         var options = named
             .SelectMany(entry => entry.Item.Match(item => new[] { (entry.Weapon, Item: item.Value) }, _ => []))
             .SelectMany(entry => entry.Item.Kind is ManifestKind.Weapon kind && Optional.Some(kind.Slot) == slot
-                ? new[] { new WeaponOption(entry.Weapon, entry.Item, kind.Traits.ReadRoll(entry.Weapon.Plugs), kind.Traits.ReadColumnPerks(entry.Weapon.Sockets), kind.HoldsCatalyst(entry.Weapon.Plugs), current.Bind(found => found.Instance) == Optional.Some(entry.Weapon.InstanceId)) }
+                ? new[] { new WeaponOption(entry.Weapon, entry.Item, kind.Traits.ReadRoll(entry.Weapon.Plugs), ReadColumnPerks(kind.Traits, entry.Weapon.Sockets), kind.HoldsCatalyst(entry.Weapon.Plugs), current.Bind(found => found.Instance) == Optional.Some(entry.Weapon.InstanceId)) }
                 : [])
             .OrderByDescending(option => option.Worn)
             .ThenByDescending(option => current.Bind(found => found.Hash) == Optional.Some(option.Weapon.Hash))
@@ -69,6 +69,28 @@ public static class CopyFinding
     [
         .. build.Weapons.SelectMany((weapon, index) => FindOwnCopy(profile, weapon).Match(copy => new[] { (index, copy.Value) }, _ => [])),
     ];
+
+    /// <summary>The perks the player's copy has in each of a build weapon's trait columns (the excerpt's), the one it holds first: <see cref="ReadColumnPerks"/>.</summary>
+    public static ImmutableArray<ImmutableArray<ItemHash>> ReadCopyColumns(ManifestExcerpt manifest, WeaponLoadout weapon, OwnedWeapon copy) =>
+        ReadColumnPerks(manifest.ListTraitColumns(weapon), copy.Sockets);
+
+    /// <summary>
+    /// The perks a copy has in each trait column, from its sockets' plugs (<see cref="OwnedWeapon.Sockets"/>): those of the
+    /// first of its sockets an earlier column didn't take that holds a perk the column rolls with — the one in it first,
+    /// then those it can switch to; none for a column no socket of it rolls with.
+    /// </summary>
+    public static ImmutableArray<ImmutableArray<ItemHash>> ReadColumnPerks(ImmutableArray<TraitColumn> columns, ImmutableArray<ImmutableArray<ItemHash>> sockets) =>
+        columns.Aggregate(
+            (Columns: ImmutableArray<ImmutableArray<ItemHash>>.Empty, Taken: ImmutableHashSet<int>.Empty),
+            (read, column) => sockets
+                .Select((plugs, index) => (Plugs: plugs, Index: index))
+                .Where(socket => !read.Taken.Contains(socket.Index) && socket.Plugs.Any(column.Options.Contains))
+                .Select(Optional.Some)
+                .FindFirstSome()
+                .Match(
+                    socket => (read.Columns.Add([.. socket.Value.Plugs.Where(column.Options.Contains)]), read.Taken.Add(socket.Value.Index)),
+                    _ => (read.Columns.Add([]), read.Taken)))
+            .Columns;
 
     /// <summary>The copy a build's weapon names (its instance id: a dim.gg share's, or picked), when it is in the player's account; none for a weapon that names none.</summary>
     public static Optional<OwnedWeapon> FindOwnCopy(BungieProfile profile, WeaponLoadout weapon) =>

@@ -71,6 +71,9 @@ public partial record WeaponPerkSlot
     partial record Catalyst(ItemHash Plug, bool On);
 }
 
+/// <summary>A perk in one of a weapon's trait columns (<see cref="Column"/> 0-based, in column order).</summary>
+public sealed record ColumnPerk(int Column, ItemHash Perk);
+
 /// <summary>How many pieces of an armor set some items are (a DIM loadout's armor).</summary>
 public sealed record WornSet(ArmorSet Set, PieceCount Pieces);
 

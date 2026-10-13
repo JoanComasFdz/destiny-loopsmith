@@ -61,6 +61,21 @@ public static class ManifestReading
             ? element.Hashes.Where(column.Options.Contains).Select(Optional.Some).FindFirstSome()
             : Optional.None<ItemHash>();
 
+    /// <summary>Whether Bungie types a plug as an enhanced trait ("Enhanced Trait", "Enhanced Origin Trait").</summary>
+    public static bool IsEnhancedPlug(this ManifestItem item) =>
+        item.Type.Match(type => EnhancedTypes.Contains(type.Value), _ => false);
+
+    /// <summary>
+    /// Whether a weapon perk is an enhanced trait, which the game and DIM draw over the base perk's icon (Bungie gives
+    /// both the same image): a plug Bungie types so (<see cref="IsEnhancedPlug"/>), or one of an enhanced element of the
+    /// rules (Slice (enhanced)).
+    /// </summary>
+    public static bool IsEnhancedPerk(this RuleCatalog catalog, ItemHash perk) =>
+        catalog.Manifest.FindItem(perk).Match(item => item.Value.IsEnhancedPlug(), _ => false)
+        || catalog.FindElementByHash(perk).Match(element => catalog.EnhancedPerks.ContainsValue(element.Value.Id), _ => false);
+
+    private static readonly ImmutableArray<string> EnhancedTypes = ["Enhanced Trait", "Enhanced Origin Trait"];
+
     /// <summary>True when one of an element's hashes is a perk of this trait column.</summary>
     public static bool IsInColumn(this RuleCatalog catalog, ElementId id, TraitColumn column) =>
         catalog.FindColumnHash(id, column).IsSome();
@@ -125,24 +140,6 @@ public static class ManifestReading
             .FindFirstSome()));
         return roll.Any(pick => pick.IsSome()) ? roll : [];
     }
-
-    /// <summary>
-    /// The perks a copy has in each trait column, from its sockets' plugs (<see cref="OwnedWeapon.Sockets"/>): those of the
-    /// first of its sockets an earlier column didn't take that holds a perk the column rolls with — the one in it first,
-    /// then those it can switch to; none for a column no socket of it rolls with.
-    /// </summary>
-    public static ImmutableArray<ImmutableArray<ItemHash>> ReadColumnPerks(this ImmutableArray<TraitColumn> columns, ImmutableArray<ImmutableArray<ItemHash>> sockets) =>
-        columns.Aggregate(
-            (Columns: ImmutableArray<ImmutableArray<ItemHash>>.Empty, Taken: ImmutableHashSet<int>.Empty),
-            (read, column) => sockets
-                .Select((plugs, index) => (Plugs: plugs, Index: index))
-                .Where(socket => !read.Taken.Contains(socket.Index) && socket.Plugs.Any(column.Options.Contains))
-                .Select(Optional.Some)
-                .FindFirstSome()
-                .Match(
-                    socket => (read.Columns.Add([.. socket.Value.Plugs.Where(column.Options.Contains)]), read.Taken.Add(socket.Value.Index)),
-                    _ => (read.Columns.Add([]), read.Taken)))
-            .Columns;
 
     /// <summary>True when a weapon's plugs hold its exotic catalyst (a catalyst completed and inserted in its socket).</summary>
     public static bool HoldsCatalyst(this ManifestKind.Weapon kind, IEnumerable<ItemHash> plugs) =>
