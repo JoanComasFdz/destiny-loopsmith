@@ -44,8 +44,9 @@ public sealed class JumpSlotTests
     [Fact]
     public void A_jump_is_equipped_without_a_warning_and_sets_nothing_off()
     {
-        var without = Validate(ReadBuildText());
-        var with = Validate($"{ReadBuildText()}\njump: triple-jump\n");
+        var text = ReadBuildText();                                   // impure
+        var without = Validate(text);
+        var with = Validate($"{text}\njump: triple-jump\n");
 
         var built = Assert.IsType<Result<ValidatedBuild, string>.Ok>(with).Value;
         var plain = Assert.IsType<Result<ValidatedBuild, string>.Ok>(without).Value;
