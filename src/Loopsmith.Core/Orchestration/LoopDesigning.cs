@@ -830,6 +830,35 @@ public static class LoopDesigning
     public static ImmutableArray<BuildIssue> ListDesignIssues(DesignSession session) =>
         [.. session.Build.Issues, .. FindCatalogMismatch(session).Match(issue => [issue.Value], _ => ImmutableArray<BuildIssue>.Empty)];
 
+    /// <summary>
+    /// The design's issues (<see cref="ListDesignIssues(DesignSession)"/>) and, after the player's Bungie login, a warning
+    /// for each column of a weapon whose copy is theirs that holds a perk the copy doesn't have (<see cref="ListCopyColumns"/>).
+    /// </summary>
+    public static ImmutableArray<BuildIssue> ListDesignIssues(DesignSession session, Optional<BungieProfile> profile) =>
+    [
+        .. ListDesignIssues(session),
+        .. profile.Match(owned => CheckCopyPerks(session.Build, owned.Value), _ => ImmutableArray<BuildIssue>.Empty),
+    ];
+
+    /// <summary>
+    /// The perks the player's copy of a build's weapon has in each of its trait columns, the one it holds first (a column
+    /// that rolled two or more: each), when the weapon's copy (its instance: picked from theirs, or their own dim.gg
+    /// share's) is in their account; none for any other weapon.
+    /// </summary>
+    public static Optional<ImmutableArray<ImmutableArray<ItemHash>>> ListCopyColumns(ValidatedBuild build, BungieProfile profile, WeaponLoadout weapon) =>
+        CopyFinding.FindOwnCopy(profile, weapon).Map(copy => CopyPerkChecking.ListCopyColumns(build.Catalog, weapon, copy));
+
+    /// <summary>Whether a column's perks on the player's copy (<see cref="ListCopyColumns"/>) give it this perk: that very perk, or an enhanced version of it.</summary>
+    public static bool HasCopyPerk(ValidatedBuild build, ImmutableArray<ItemHash> held, ItemHash perk) =>
+        CopyPerkChecking.HasPerk(build.Catalog, held, perk, hash => IsEnhancedPerk(build.Catalog, hash));
+
+    /// <summary>The build's weapons whose copies are the player's, each column whose perk the copy doesn't have as a warning.</summary>
+    private static ImmutableArray<BuildIssue> CheckCopyPerks(ValidatedBuild build, BungieProfile profile) =>
+    [
+        .. CopyFinding.ListOwnedCopies(build.Build, profile)
+            .SelectMany(owned => CopyPerkChecking.CheckCopyPerks(build.Catalog, build.Build.Weapons[owned.Weapon], owned.Copy, hash => IsEnhancedPerk(build.Catalog, hash))),
+    ];
+
     /// <summary>Info when the loop was designed against another catalog version than the one replaying it.</summary>
     public static Optional<BuildIssue> FindCatalogMismatch(DesignSession session)
     {

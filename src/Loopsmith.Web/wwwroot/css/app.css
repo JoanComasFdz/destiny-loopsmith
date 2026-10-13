@@ -1016,6 +1016,11 @@ button.hud-chip:hover, button.hud-chip:focus-visible { background: color-mix(in 
 .perk-option-text { display: flex; flex-direction: column; min-width: 0; }
 .perk-option-name { font-size: 12px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .perk-option-type { font-size: 10px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* after the login, a perk the player's copy doesn't have in that column: a small amber ! in its square's upper-right
+   corner (CopyWarningMark), clear of the ⊘ (lower right) and of an enhanced trait's arrow (left), and a line saying so */
+.perk-option-icon { position: relative; display: inline-flex; flex: none; }
+.copy-warning-mark { position: absolute; right: -3px; top: -3px; z-index: 2; width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; box-sizing: border-box; border-radius: 50%; background: var(--warn); border: 1.5px solid var(--panel); color: #1b1f27; font-size: 9px; font-weight: 800; line-height: 1; }
+.perk-option-warning { font-size: 10px; color: var(--warn); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .loadout-label-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 6px; }
 .loadout-label-row .loadout-label { margin: 0; }
 .subclass-edit { flex: none; min-width: 28px; padding: 2px 6px; line-height: 1; font-size: 16px; letter-spacing: .05em; }
@@ -1061,6 +1066,12 @@ button.hud-chip:hover, button.hud-chip:focus-visible { background: color-mix(in 
 .weapon-option-perks { display: flex; flex-wrap: wrap; gap: 6px 12px; }
 .weapon-option-perk { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; }
 .weapon-option-perk.in-rules .weapon-option-perk-name { color: var(--ok); }
+/* a column that rolled two perks or more: the one the copy holds on DIM's blue, those it can switch to on the dark
+   circle, the group framed together */
+.weapon-option-column { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+.weapon-option-column.switchable { padding: 2px 8px 2px 2px; border: 1px solid var(--line-2); border-radius: 999px; }
+.weapon-option-perk.alternate .icon-tile.perk { --perk-fill: #1f2633; }
+.weapon-option-perk.alternate .weapon-option-perk-name { opacity: .8; }
 /* "Every item": every weapon or armor piece of the game for a slot, a search box above them */
 .every-item { display: flex; flex-direction: column; gap: 10px; }
 .every-item-search { display: flex; align-items: center; gap: 6px 10px; flex-wrap: wrap; }

@@ -1,0 +1,9 @@
+@* A perk the player's copy of the weapon doesn't have in that column (the perk picker, after their Bungie login): a
+   small amber "!" in its square's upper-right corner, clear of the ⊘ (lower right) and of an enhanced trait's arrow
+   (left). *@
+<span class="copy-warning-mark" title="@Title" data-testid="copy-warning-mark" aria-hidden="true">!</span>
+
+@code {
+    /// <summary>What the mark means, as its tooltip says it.</summary>
+    public const string Title = "Not on your copy: your weapon doesn't have this perk in this column.";
+}

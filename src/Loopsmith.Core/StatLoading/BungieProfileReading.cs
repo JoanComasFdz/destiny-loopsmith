@@ -8,8 +8,9 @@ namespace Loopsmith.Core.StatLoading;
 
 /// <summary>
 /// Pure: what Loopsmith asks Bungie's API for once the player has logged in, and what it reads of the answers — their
-/// Destiny membership, then their profile's armor (with the plugs in its sockets) and weapons, worn, carried and in the
-/// vault, each copy with its marks (gear tier, masterwork, breaker), and the finisher each character has equipped.
+/// Destiny membership, then their profile's armor (with the plugs in its sockets) and weapons (with the plugs in their
+/// sockets and those they can switch to), worn, carried and in the vault, each copy with its marks (gear tier,
+/// masterwork, breaker), and the finisher each character has equipped.
 /// Everything else in the answers is left alone.
 /// </summary>
 public static class BungieProfileReading
@@ -22,10 +23,11 @@ public static class BungieProfileReading
     /// <summary>
     /// The profile's parts Loopsmith reads: the vault (102), characters (200: each one's class), what they carry (201) and
     /// wear (205; an item's <c>state</c>: masterworked; the item in its Finishers slot), item instances (300: an armor piece's energy, a weapon's damage
-    /// type, a copy's gear tier and breaker) and sockets (305: its plugs — an armor piece's stats, a weapon's perks).
+    /// type, a copy's gear tier and breaker), sockets (305: its plugs — an armor piece's stats, a weapon's perks) and
+    /// reusable plugs (310: the perks a weapon's socket can switch to — a column that rolled two perks or more).
     /// </summary>
     public static string ToProfileUrl(DestinyMembership membership) =>
-        $"{Platform}/Destiny2/{membership.Type.Value.ToString(CultureInfo.InvariantCulture)}/Profile/{membership.Id.Value}/?components=102,200,201,205,300,305";
+        $"{Platform}/Destiny2/{membership.Type.Value.ToString(CultureInfo.InvariantCulture)}/Profile/{membership.Id.Value}/?components=102,200,201,205,300,305,310";
 
     /// <summary>
     /// Bungie's answer to a request, as text: its JSON says what went wrong, even with an error status, so the readers
@@ -125,12 +127,27 @@ public static class BungieProfileReading
             .SelectMany(socket => ToSequence(socket.ReadHash("plugHash"))),
     ];
 
+    /// <summary>
+    /// A copy's plugs socket by socket: the one in it (an enabled socket's), then the reusable plugs Bungie lists for that
+    /// socket (310, by socket index) that can be inserted, each once.
+    /// </summary>
+    private static ImmutableArray<ImmutableArray<ItemHash>> ReadSockets(JsonElement response, string instance) =>
+    [
+        .. response.ReadArray("itemComponents", "sockets", "data", instance, "sockets")
+            .Select((socket, index) => ToSequence(socket.ReadFlag("isEnabled", true) ? socket.ReadHash("plugHash") : Optional.None<ItemHash>())
+                .Concat(response.ReadArray("itemComponents", "reusablePlugs", "data", instance, "plugs", index.ToString(CultureInfo.InvariantCulture))
+                    .Where(plug => plug.ReadFlag("canInsert", true))
+                    .SelectMany(plug => ToSequence(plug.ReadHash("plugItemHash"))))
+                .Distinct()
+                .ToImmutableArray()),
+    ];
+
     /// <summary>An item that is a weapon: it has an instance, and the instance a damage type (armor's has none).</summary>
     private static Optional<OwnedWeapon> ReadWeapon(JsonElement response, JsonElement item, ArmorPlace place) =>
         item.ReadString("itemInstanceId").Bind(instance => ItemInstanceId.TryFrom(instance).ToOptional().Bind(id => item.ReadHash("itemHash").Bind(hash =>
             response.ReadInteger("itemComponents", "instances", "data", instance, "damageType")
                 .Bind(type => type > 0 ? Optional.Some(type) : Optional.None<int>())
-                .Map(_ => new OwnedWeapon(id, hash, place, ReadMarks(response, item, instance), ReadPlugs(response, instance))))));
+                .Map(_ => new OwnedWeapon(id, hash, place, ReadMarks(response, item, instance), ReadPlugs(response, instance), ReadSockets(response, instance))))));
 
     /// <summary>
     /// A copy's marks: its instance's <c>gearTier</c> (1–5), the item's <c>state</c> masterwork flag (4), its instance's

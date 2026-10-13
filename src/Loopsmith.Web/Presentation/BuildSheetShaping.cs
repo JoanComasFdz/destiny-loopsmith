@@ -29,7 +29,8 @@ public sealed record BuildSheet(
 
 /// <summary>
 /// Pure: a validated build → its sheet. Names come from the catalog and its manifest excerpt; nothing is inferred. The
-/// issues are the design's (<c>LoopDesigning.ListDesignIssues</c>: the build's own plus a catalog mismatch).
+/// issues are the design's (<c>LoopDesigning.ListDesignIssues</c>: the build's own, a catalog mismatch and, after a
+/// Bungie login, the perks its weapons hold that the player's copies don't have).
 /// </summary>
 public static class BuildSheetShaping
 {

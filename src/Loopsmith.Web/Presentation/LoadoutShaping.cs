@@ -56,8 +56,12 @@ public sealed record SubclassView(
     ImmutableArray<IconTile> Aspects,
     ImmutableArray<IconTile> Fragments);
 
-/// <summary>One perk a weapon's trait column rolls with, as the picker offers it: its hash, its tile (the rules' element when they know it) and its type as the game words it ("Enhanced Trait").</summary>
-public sealed record PerkOption(ItemHash Hash, IconTile Tile, Optional<string> Type);
+/// <summary>
+/// One perk a weapon's trait column rolls with, as the picker offers it: its hash, its tile (the rules' element when they
+/// know it), its type as the game words it ("Enhanced Trait") and whether the player's copy of the weapon doesn't have
+/// it in that column (after their Bungie login, for a weapon whose copy is theirs; else false).
+/// </summary>
+public sealed record PerkOption(ItemHash Hash, IconTile Tile, Optional<string> Type, bool NotOnCopy);
 
 /// <summary>The perk a rolling column holds: its hash (which option it is) and its tile.</summary>
 public sealed record PickedPerk(ItemHash Hash, IconTile Tile);
@@ -481,6 +485,7 @@ public static class LoadoutShaping
         var damageIcon = FindDamageIcon(catalog, weapon.Type);
         var slots = LoopDesigning.ListPerkSlots(build, weapon);
         var marks = profile.Bind(owned => LoopDesigning.FindWeaponMarks(owned, weapon));
+        var copyColumns = profile.Bind(owned => LoopDesigning.ListCopyColumns(build, owned, weapon));
         return new WeaponView(
             index,
             tile,
@@ -490,13 +495,19 @@ public static class LoadoutShaping
             weapon.Archetype,
             weapon.Type,
             damageIcon,
-            [.. slots.SelectMany(slot => DescribePerkSlot(catalog, slot))],
+            [.. slots.SelectMany(slot => DescribePerkSlot(build, copyColumns, slot))],
             slots.OfType<WeaponPerkSlot.Catalyst>().Select(catalyst => Optional.Some(DescribeCatalyst(catalog, catalyst, index))).FindFirstSome());
     }
 
-    /// <summary>A perk square: the intrinsic and the catalyst have none (the weapon's details show the intrinsic; the catalyst has its own square).</summary>
-    private static IEnumerable<PerkSquare> DescribePerkSlot(RuleCatalog catalog, WeaponPerkSlot slot) =>
-        slot.Match<IEnumerable<PerkSquare>>(
+    /// <summary>
+    /// A perk square: the intrinsic and the catalyst have none (the weapon's details show the intrinsic; the catalyst has
+    /// its own square). A column that rolls offers what it rolls with, each marked when the player's copy
+    /// (<paramref name="copyColumns"/>: its perks by column, after the login) doesn't have it.
+    /// </summary>
+    private static IEnumerable<PerkSquare> DescribePerkSlot(ValidatedBuild build, Optional<ImmutableArray<ImmutableArray<ItemHash>>> copyColumns, WeaponPerkSlot slot)
+    {
+        var catalog = build.Catalog;
+        return slot.Match<IEnumerable<PerkSquare>>(
             _ => [],
             named => [new PerkSquare.Shown(DescribeElement(catalog, named.Perk) with { Enhanced = LoopDesigning.IsEnhancedPerk(catalog, named.Perk) })],
             fixedPerk => [new PerkSquare.Shown(DescribeTrait(catalog, fixedPerk.Perk))],
@@ -505,9 +516,14 @@ public static class LoadoutShaping
                 new PerkSquare.Pickable(
                     rolling.Column,
                     rolling.Perk.Map(hash => new PickedPerk(hash, DescribeTrait(catalog, hash))),
-                    [.. rolling.Options.Select(hash => new PerkOption(hash, DescribeTrait(catalog, hash), catalog.Manifest.FindItem(hash).Bind(item => item.Type)))]),
+                    [.. rolling.Options.Select(hash => new PerkOption(hash, DescribeTrait(catalog, hash), catalog.Manifest.FindItem(hash).Bind(item => item.Type), IsNotOnCopy(build, copyColumns, rolling.Column, hash)))]),
             ],
             _ => []);
+    }
+
+    /// <summary>Whether the player's copy (its perks by column) doesn't have this perk in this column; false without a copy of theirs.</summary>
+    private static bool IsNotOnCopy(ValidatedBuild build, Optional<ImmutableArray<ImmutableArray<ItemHash>>> copyColumns, int column, ItemHash perk) =>
+        copyColumns.Match(columns => column < columns.Value.Length && !LoopDesigning.HasCopyPerk(build, columns.Value[column], perk), _ => false);
 
     private static CatalystSquare DescribeCatalyst(RuleCatalog catalog, WeaponPerkSlot.Catalyst catalyst, int weapon)
     {

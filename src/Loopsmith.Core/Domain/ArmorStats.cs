@@ -95,8 +95,12 @@ public sealed record OwnedArmor(ItemInstanceId InstanceId, ItemHash Hash, ArmorP
 /// </summary>
 public sealed record GearMarks(Optional<GearTier> Tier, bool Masterworked, Optional<ItemHash> Breaker, Optional<PowerLevel> Power);
 
-/// <summary>A weapon the player owns: its instance, item hash, where it is, its marks and the plugs in its sockets (enabled ones, socket by socket: its perks, its catalyst).</summary>
-public sealed record OwnedWeapon(ItemInstanceId InstanceId, ItemHash Hash, ArmorPlace Place, GearMarks Marks, ImmutableArray<ItemHash> Plugs);
+/// <summary>
+/// A weapon the player owns: its instance, item hash, where it is, its marks, the plugs in its sockets (enabled ones,
+/// socket by socket: its perks, its catalyst) and each socket's plugs it has — the one in it, then those it can switch
+/// to (Bungie's reusable plugs: a perk column that rolled two perks or more has each of them).
+/// </summary>
+public sealed record OwnedWeapon(ItemInstanceId InstanceId, ItemHash Hash, ArmorPlace Place, GearMarks Marks, ImmutableArray<ItemHash> Plugs, ImmutableArray<ImmutableArray<ItemHash>> Sockets);
 
 /// <summary>The finisher a character of the player's has equipped (its Finishers slot): the character's class and the item.</summary>
 public sealed record EquippedFinisher(GuardianClass Class, ItemHash Hash);
@@ -130,9 +134,10 @@ public sealed record ArmorOptions(ArmorSlot Slot, ImmutableArray<ArmorOption> Op
 
 /// <summary>
 /// One of the player's weapons the weapon picker lists: the copy, its manifest item, the perks it holds (each trait
-/// column's plug of its sockets: what the build would hold), whether its catalyst is in, and whether the build wears it.
+/// column's plug of its sockets: what the build would hold), the perks it has in each trait column (the one it holds
+/// first, then those it can switch to), whether its catalyst is in, and whether the build wears it.
 /// </summary>
-public sealed record WeaponOption(OwnedWeapon Weapon, ManifestItem Item, ImmutableArray<Optional<ItemHash>> Roll, bool Catalyst, bool Worn);
+public sealed record WeaponOption(OwnedWeapon Weapon, ManifestItem Item, ImmutableArray<Optional<ItemHash>> Roll, ImmutableArray<ImmutableArray<ItemHash>> Columns, bool Catalyst, bool Worn);
 
 /// <summary>What the weapon picker lists for a slot (none: a weapon number the build hasn't), the copy the build names first, and what it leaves out and why.</summary>
 public sealed record WeaponOptions(Optional<WeaponSlot> Slot, ImmutableArray<WeaponOption> Options, ImmutableArray<string> Notes);
