@@ -76,7 +76,8 @@ public sealed class BuildFileWritingTests
             [],
             new StatLine(Optional.None<StatValue>(), Optional.None<StatValue>(), Optional.None<StatValue>(), Optional.None<StatValue>(), Optional.None<StatValue>(), Optional.None<StatValue>()),
             [new LeftOutItem(LoadoutPart.Item, ItemHash.From(2005u)), new LeftOutItem(LoadoutPart.ArmorMod, ItemHash.From(3007u)), new LeftOutItem(LoadoutPart.Item, ItemHash.From(2006u))],
-            []);
+            [],
+            [ItemHash.From(3008u)]);
 
         var written = BuildFileWriting.WriteBuildFile(build, ["From a DIM link.\nSecond line."]);
         var read = ParseBuild(new SourceText("written.yaml", written));
@@ -88,6 +89,8 @@ public sealed class BuildFileWritingTests
         Assert.Equal(build.SourceUrl, read.SourceUrl);
         Assert.Equal(build.Abilities, read.Abilities);
         Assert.Equal(["bomber", "bomber"], read.ArmorMods.Select(id => id.Value));
+        Assert.Contains("armorModPlugs: [3008]\n", written, StringComparison.Ordinal);
+        Assert.Equal(build.ArmorModPlugs, read.ArmorModPlugs);
         Assert.Equal(
             [(LoadoutPart.Item, 2005u), (LoadoutPart.Item, 2006u), (LoadoutPart.ArmorMod, 3007u)],
             read.LeftOut.Select(item => (item.Part, item.Hash.Value)));

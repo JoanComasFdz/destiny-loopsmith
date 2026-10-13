@@ -134,6 +134,15 @@ public readonly partial struct PlugCategoryId
         value.Length > 0 && !value.Any(char.IsWhiteSpace) ? Validation.Ok : Validation.Invalid("A plug category is one word, not empty");
 }
 
+/// <summary>Armor energy: what a mod costs (Bungie's plug <c>energyCost</c>; none given: 0) or what a copy holds (its <c>energyCapacity</c>).</summary>
+[ValueObject<int>]
+[Instance("Zero", 0)]
+public readonly partial struct ArmorEnergy
+{
+    private static Validation Validate(int value) =>
+        value >= 0 ? Validation.Ok : Validation.Invalid("Armor energy is never negative");
+}
+
 /// <summary>A copy's gear tier, 1 to 5 (Bungie's <c>gearTier</c>; DIM's diamonds).</summary>
 [ValueObject<int>]
 public readonly partial struct GearTier

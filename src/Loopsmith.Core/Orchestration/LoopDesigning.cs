@@ -109,6 +109,7 @@ public static class LoopDesigning
             [],
             new StatLine(noStat, noStat, noStat, noStat, noStat, noStat),
             [],
+            [],
             []);
     }
 

@@ -115,5 +115,20 @@ public sealed record ManifestExcerpt(
 /// season's reissue is an item of its own) — as the pickers' "Every item" lists them (read from the manifest's item
 /// table): each a manifest item with its slot, damage type (and a weapon's breaker: its own, else its frame's) or class,
 /// armor set and season watermark, without its perks (a pick reads those with the join); and the armor sets by hash.
+/// With them, every armor mod an armor piece's mod sockets take (the mod picker's list) and, by the piece's hash, the
+/// plug category of each of its mod sockets, in the game's order (a general socket, then those of its slot, then an
+/// artifice, raid or activity socket when it has one).
 /// </summary>
-public sealed record ItemListing(ImmutableArray<ManifestItem> Items, ImmutableDictionary<ItemHash, ArmorSet> Sets);
+public sealed record ItemListing(
+    ImmutableArray<ManifestItem> Items,
+    ImmutableDictionary<ItemHash, ArmorSet> Sets,
+    ImmutableArray<ListedMod> Mods,
+    ImmutableDictionary<ItemHash, ImmutableArray<PlugCategoryId>> ModSockets);
+
+/// <summary>
+/// An armor mod of the listing: its manifest item (an <see cref="ManifestKind.ArmorMod"/> with the slot its category
+/// fits; none for a general mod or one of a piece's own sockets), the plug category of the sockets it goes in, its
+/// energy cost (Bungie gives none: it costs none) and what Bungie says it needs before it can be slotted ("Must Be
+/// Selected in the Seasonal Artifact": the cheaper copy of a mod), Guardian Rank aside.
+/// </summary>
+public sealed record ListedMod(ManifestItem Item, PlugCategoryId Category, ArmorEnergy Cost, ImmutableArray<string> Requirements);
