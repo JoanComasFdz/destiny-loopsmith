@@ -54,6 +54,6 @@ starts without it**. A session downloads it itself: `docs.google.com` answers a 
 sheet URL is in `get-compendium.sh`). If that fails, upload the archive.
 
 ```bash
-pip install requests beautifulsoup4
+pip install requests beautifulsoup4   # a cloud session has them: the session-start hook installs them
 python3 tools/compendium/sheet_dump.py <sheet URL> snapshots/compendium/<date> --no-images
 ```

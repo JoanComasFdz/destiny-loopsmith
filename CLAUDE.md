@@ -38,7 +38,8 @@ dotnet run --project src/Loopsmith.Cli -- explain builds/skip-grenade-hunter/bui
 dotnet run --project src/Loopsmith.Web          # the loop designer in the browser
 ```
 Cloud sessions: `.claude/hooks/session-start.sh` installs `dotnet-sdk-10.0` from Ubuntu's
-repos (Microsoft's download hosts are blocked by the network policy) and restores.
+repos (Microsoft's download hosts are blocked by the network policy), restores, and installs the
+Python packages of the Compendium download (`requests`, `beautifulsoup4`).
 
 ## Where things live
 - `src/Loopsmith.Core/` — kernel (`Domain`, `Functional`, `Phrasing`, `Causality`) and
@@ -79,8 +80,8 @@ repos (Microsoft's download hosts are blocked by the network policy) and restore
 - `tools/compendium/` — Destiny Data Compendium download (`sheet_dump.py`; the owner runs it with
   `get-compendium.ps1` / `get-compendium.sh` / `get-compendium-docker.sh`; see its README). The
   snapshot lives in `snapshots/compendium/<date>/`: gitignored, so **a new session doesn't have it**.
-  A session downloads it itself (docs.google.com answers a session, 2026-10-13):
-  `pip install requests beautifulsoup4`, then `python3 tools/compendium/sheet_dump.py <sheet URL from
+  A session downloads it itself (docs.google.com answers a session, 2026-10-13; the session-start hook
+  installs its Python packages): `python3 tools/compendium/sheet_dump.py <sheet URL from
   get-compendium.sh> snapshots/compendium/<today> --no-images` (about a minute); if that fails, ask
   the owner for the zip. Cite rows as
   `compendium/<date>/<Tab>#<row>` ([docs/rule-format.md](docs/rule-format.md), Provenance);
