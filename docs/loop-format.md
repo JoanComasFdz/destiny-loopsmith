@@ -185,7 +185,7 @@ x5 · 8s") show on hover. Under them, the **damage resistance** right then (ADRs
 *All damage*, multiplies every resistance passive that holds — the Guardian's base 34.5% against combatants, Spark
 of Resistance, Woven Mail while it is on you — the way the game stacks them, 1 − (1 − a) × (1 − b) × …: 73% PvE and
 32.5% PvP with those three (the base does nothing in PvP). Each resistance against some combatants only adds a row of
-its own, PvE only (PvP "—"): *Arc combatants* (Arc Resistance, or Harmonic Resistance with an Arc Super), *Combatants
+its own, PvE only (PvP 0%): *Arc combatants* (Arc Resistance, or Harmonic Resistance with an Arc Super), *Combatants
 within 5 m*, *Combatants beyond 30 m*, *Combatants' area, blast and explosive damage*, all damage's sources and its own
 together. A source whose value is "?" makes its total "?". Tapping the title (*▸ Damage resistance*) lists each row's
 sources with their PvE and PvP values (each opens its details on a tap) and the formula; tapping it again hides them.

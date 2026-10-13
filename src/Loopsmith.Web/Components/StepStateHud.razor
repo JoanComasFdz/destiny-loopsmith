@@ -42,7 +42,7 @@
             @RenderResistanceRow("All damage", all.Pve.FormatPercent(), all.Pvp.FormatPercent())
             @foreach (var line in resistance.Value.AgainstSome)
             {
-                @RenderResistanceRow(DomainPhrasing.Capitalize(line.Against), line.Pve.FormatPercent(), "—")
+                @RenderResistanceRow(DomainPhrasing.Capitalize(line.Against), line.Pve.FormatPercent(), "0%")
             }
             @if (showResistance)
             {
@@ -128,7 +128,7 @@
 
     private bool showResistance;
 
-    /// <summary>A row of the resistance table: what it is against, its PvE and PvP totals ("—": nothing in PvP).</summary>
+    /// <summary>A row of the resistance table: what it is against, its PvE and PvP totals (0% in PvP for a row against combatants only).</summary>
     private static RenderFragment RenderResistanceRow(string name, string pve, string pvp) => __builder =>
     {
         <div class="hud-resistance-row" data-testid="resistance-line">
