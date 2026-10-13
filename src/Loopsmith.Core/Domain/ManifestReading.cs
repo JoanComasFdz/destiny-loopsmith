@@ -26,6 +26,16 @@ public static class ManifestReading
             .Select(Optional.Some)
             .FindFirstSome();
 
+    /// <summary>
+    /// Whether the rules know an item of the game: a legendary always (its perks and set bonuses show what the rules know
+    /// once it is worn); an exotic when an element has its hash or, a weapon's, its intrinsic perk's (the rules name an
+    /// exotic weapon by its intrinsic). The pickers mark one they don't with ⊘.
+    /// </summary>
+    public static bool IsItemInRules(this RuleCatalog catalog, ManifestItem item) =>
+        item.Tier != Optional.Some(ItemTier.Exotic)
+        || catalog.FindElementByHash(item.Hash).IsSome()
+        || (item.Kind is ManifestKind.Weapon { Intrinsic: Optional<ItemHash>.Some intrinsic } && catalog.FindElementByHash(intrinsic.Value).IsSome());
+
     /// <summary>An armor stat as the excerpt names and draws it (Weapons, Health…); none when it lacks the stat.</summary>
     public static Optional<ArmorStatIcon> FindArmorStat(this ManifestExcerpt manifest, StatKind stat) =>
         manifest.ArmorStats.TryGetValue(stat, out var found) ? Optional.Some(found) : Optional.None<ArmorStatIcon>();

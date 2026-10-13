@@ -10,9 +10,9 @@ namespace Loopsmith.Core.Tests.ManifestJoining;
 
 /// <summary>
 /// The listing of every weapon and armor piece a build can wear (the pickers' "Every item"), from Bungie's item table,
-/// each weapon with its breaker (its own, else its frame's). A fixture shaped like Bungie's JSON always runs; a downloaded
+/// each weapon with its intrinsic and its breaker (its own, else its frame's). A fixture shaped like Bungie's JSON always runs; a downloaded
 /// manifest (<c>LOOPSMITH_MANIFEST_DIR</c>) must list every weapon and armor piece of the bundled excerpt as the join
-/// reads it, breakers included.
+/// reads it, breakers and intrinsics included.
 /// </summary>
 public sealed class ManifestListingTests
 {
@@ -48,6 +48,18 @@ public sealed class ManifestListingTests
         Assert.Equal(485622768u, breakers[100u]);                                               // Adaptive Frame: "[Shield-Piercing] Barrier"
         Assert.Equal(0u, breakers[101u]);                                                       // its frame names no breaker
         Assert.Equal(2611060930u, breakers[102u]);                                              // its own (Disruption), whatever its frame says
+    }
+
+    [Fact]
+    public void A_weapons_intrinsic_is_its_first_named_intrinsic_plug()
+    {
+        var listing = new ManifestStore(Fixture.Tables).List();
+        var intrinsics = listing.Items
+            .Where(item => item.Kind is ManifestKind.Weapon)
+            .ToImmutableDictionary(item => item.Hash.Value, item => ((ManifestKind.Weapon)item.Kind).Intrinsic.Match(found => found.Value.Value, _ => 0u));
+
+        Assert.Equal(20u, intrinsics[100u]);                                                    // a legendary's frame
+        Assert.Equal(22u, intrinsics[102u]);                                                    // an exotic's own perk (the rules name an exotic weapon by it)
     }
 
     [Fact]
@@ -100,7 +112,7 @@ public sealed class ManifestListingTests
         $"{item.Hash.Value}: {item.Name} | {item.Type.UnwrapOr("-")} | {item.Tier.Match(tier => tier.Value.ToString(), _ => "-")} | {item.Icon.UnwrapOr("-")} | "
             + item.Kind switch
             {
-                ManifestKind.Weapon weapon => $"weapon {weapon.Slot} {weapon.DamageType.Match(type => type.Value.ToString(), _ => "-")} breaker {weapon.Breaker.Match(hash => hash.Value.Value.ToString(), _ => "-")}",
+                ManifestKind.Weapon weapon => $"weapon {weapon.Slot} {weapon.DamageType.Match(type => type.Value.ToString(), _ => "-")} breaker {weapon.Breaker.Match(hash => hash.Value.Value.ToString(), _ => "-")} intrinsic {weapon.Intrinsic.Match(hash => hash.Value.Value.ToString(), _ => "-")}",
                 ManifestKind.Armor armor => $"armor {armor.Slot} set {armor.Set.Match(hash => hash.Value.Value.ToString(), _ => "-")} class {armor.Class.Match(found => found.Value.ToString(), _ => "any")}",
                 _ => item.Kind.GetType().Name,
             };

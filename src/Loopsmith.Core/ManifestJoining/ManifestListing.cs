@@ -184,14 +184,14 @@ public static class ManifestListing
                 new ListingQuery(ManifestTransport.ToEntryRequest(new ManifestQuery([.. perks.Select(hash => new ManifestEntryKey(ManifestTable.SandboxPerk, hash))], [], [])), NoParts));
     }
 
-    /// <summary>The listing: the items by name (a name's versions side by side, by hash), each weapon with its breaker; and the sets.</summary>
+    /// <summary>The listing: the items by name (a name's versions side by side, by hash), each weapon with its intrinsic and breaker; and the sets.</summary>
     private static ItemListing BuildListing(
         ListingTables tables, ImmutableArray<ListedEntry> items, ImmutableDictionary<ItemHash, JsonElement> frames, ImmutableDictionary<ManifestEntryKey, JsonElement> perks) =>
         new(
             [
                 .. items
-                    .Select(entry => entry.Item.Kind is ManifestKind.Weapon { Breaker: Optional<ItemHash>.None } weapon
-                        ? entry.Item with { Kind = weapon with { Breaker = FindFrameBreaker(tables, entry.Intrinsics, frames, perks) } }
+                    .Select(entry => entry.Item.Kind is ManifestKind.Weapon weapon
+                        ? entry.Item with { Kind = ToListedWeapon(tables, weapon, FindFrame(entry.Intrinsics, frames), frames, perks) }
                         : entry.Item)
                     .OrderBy(item => item.Name, StringComparer.OrdinalIgnoreCase)
                     .ThenBy(item => item.Hash.Value),
@@ -275,19 +275,28 @@ public static class ManifestListing
     private static IEnumerable<ItemHash> ListPerks(JsonElement frame) =>
         frame.ReadArray("perks").SelectMany(perk => ToSequence(perk.ReadHash("perkHash")));
 
-    /// <summary>A weapon's frame's breaker: the breaker its first intrinsic frame's perks name ("[Shield-Piercing] Barrier"); none when they name none.</summary>
+    /// <summary>A weapon of the listing with its intrinsic (its first named intrinsic plug: a legendary's frame, an exotic's own perk) and, when it has no breaker of its own, its frame's.</summary>
+    private static ManifestKind.Weapon ToListedWeapon(
+        ListingTables tables, ManifestKind.Weapon weapon, Optional<ItemHash> frame, ImmutableDictionary<ItemHash, JsonElement> frames, ImmutableDictionary<ManifestEntryKey, JsonElement> perks) =>
+        weapon with
+        {
+            Intrinsic = frame,
+            Breaker = weapon.Breaker.IsSome() ? weapon.Breaker : frame.Bind(found => FindFrameBreaker(tables, found, frames, perks)),
+        };
+
+    /// <summary>A weapon's first intrinsic plug that is a named intrinsic (as the join takes a weapon's intrinsic).</summary>
+    private static Optional<ItemHash> FindFrame(ImmutableArray<ItemHash> intrinsics, ImmutableDictionary<ItemHash, JsonElement> frames) =>
+        intrinsics.Where(frames.ContainsKey).Select(Optional.Some).FindFirstSome();
+
+    /// <summary>A frame's breaker: the breaker its perks name ("[Shield-Piercing] Barrier"); none when they name none.</summary>
     private static Optional<ItemHash> FindFrameBreaker(
-        ListingTables tables, ImmutableArray<ItemHash> intrinsics, ImmutableDictionary<ItemHash, JsonElement> frames, ImmutableDictionary<ManifestEntryKey, JsonElement> perks) =>
-        intrinsics
-            .Where(frames.ContainsKey)
+        ListingTables tables, ItemHash frame, ImmutableDictionary<ItemHash, JsonElement> frames, ImmutableDictionary<ManifestEntryKey, JsonElement> perks) =>
+        ListPerks(frames[frame])
+            .SelectMany(perk => perks.TryGetValue(new ManifestEntryKey(ManifestTable.SandboxPerk, perk), out var found) ? ToSequence(found.ReadString("displayProperties", "name")) : [])
+            .SelectMany(ManifestJoin.ListBracketedNames)
+            .SelectMany(name => tables.Breakers.TryGetValue(name, out var breaker) ? new[] { breaker } : [])
             .Select(Optional.Some)
-            .FindFirstSome()
-            .Bind(frame => ListPerks(frames[frame])
-                .SelectMany(perk => perks.TryGetValue(new ManifestEntryKey(ManifestTable.SandboxPerk, perk), out var found) ? ToSequence(found.ReadString("displayProperties", "name")) : [])
-                .SelectMany(ManifestJoin.ListBracketedNames)
-                .SelectMany(name => tables.Breakers.TryGetValue(name, out var breaker) ? new[] { breaker } : [])
-                .Select(Optional.Some)
-                .FindFirstSome());
+            .FindFirstSome();
 
     private static IEnumerable<(ItemHash Hash, JsonElement Entry)> ListTable(ImmutableDictionary<ManifestEntryKey, JsonElement> entries, ManifestTable table) =>
         entries.Where(entry => entry.Key.Table == table).OrderBy(entry => entry.Key.Hash.Value).Select(entry => (entry.Key.Hash, entry.Value));

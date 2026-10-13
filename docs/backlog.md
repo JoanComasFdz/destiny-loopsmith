@@ -134,7 +134,7 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   another class's character isn't offered; an icon bungie.net doesn't serve shows broken.
 - **Exotic class items' spirits**: Relativism, Stoicism and Solipsism are listed in the armor picker's Every item, but
   their two random perks (spirits) can't be picked and no rule authors them: the build wears the item without them.
-- **Every item, next**: filter chips by weapon type and damage type next to the search box; reading Bungie's manifest
+- **Every item, next**: reading Bungie's manifest
   once at startup and keeping it, as DIM does, so the pickers, DIM links and the login don't each read it (the first
   opening of a picker reads the item table, ~8 MB, for the breakers' frames); the list (~7,500 items, ~5 MB of JSON
   parsed in .NET once per tab) and its grid (up to ~930 squares for energy weapons) could be lighter on a phone (fewer
