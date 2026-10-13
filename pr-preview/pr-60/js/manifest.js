@@ -284,10 +284,20 @@ window.loopsmithManifest = (() => {
       try {
         const progress = createProgress(reporter);
         for (const [name, url] of Object.entries(urls)) await loadTable(name, url, retries, progress);
+        progress.flush();
         return null;
       } catch (error) {
         return describe(error);
       }
+    },
+
+    // Resolves once the browser has painted the page (a frame, then a turn), so a bar's change shows before .NET's next
+    // long step; a hidden tab paints no frames, so it resolves after a moment anyway.
+    waitForPaint() {
+      return new Promise((resolve) => {
+        const fallback = setTimeout(resolve, 100);
+        requestAnimationFrame(() => setTimeout(() => { clearTimeout(fallback); resolve(); }, 0));
+      });
     },
 
     // The copy the browser saved, as { urls: { name: url }, bytes } (bytes: its size unpacked), or null when there's none.
