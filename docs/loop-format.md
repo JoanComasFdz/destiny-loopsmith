@@ -382,7 +382,8 @@ mods as before, each piece with the mods of its slot and the general mods togeth
   element first (Arc Siphon and Arc Targeting on an Arc build) with a filter for them only ("Arc only"; none for
   Prismatic or a socket without elemental mods), and a search box. Each shows its icon, its energy cost and what
   Bungie says it needs ("Must Be Selected in the Seasonal Artifact": the cheaper copy of a mod; Guardian Rank aside);
-  the ones the rules know are green, a mod they don't carries ⊘ (it sets nothing off), and a mod that changes only
+  a mod the rules don't know carries ⊘ (it sets nothing off), as in the loadout (no colour: every slot and general mod
+  is in the rules, so only what is missing is marked), and a mod that changes only
   stats (a general or artifice mod) needs no rule. A mod whose cost is more than the piece has left, when its copy's
   capacity is known, can't be picked and says why ("Solar Siphon costs 3 energy: the helmet has 2 left"; for a
   general mod, that no piece has that much left); without a login nothing is refused. Picking one puts it in that

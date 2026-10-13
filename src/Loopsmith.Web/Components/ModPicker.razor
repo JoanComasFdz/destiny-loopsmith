@@ -1,6 +1,6 @@
 @* The mod picker for one of the build's mod sockets: every mod of the game the socket takes (Bungie's manifest, read
    when the app opened), the subclass's element first, with its energy cost and what Bungie says it needs (the cheaper
-   copy of a mod: "Must Be Selected in the Seasonal Artifact"). The rules' mods are marked; one they don't know carries
+   copy of a mod: "Must Be Selected in the Seasonal Artifact"). A mod the rules don't know carries
    ⊘. A mod that would take the piece over its copy's energy (known after a Bungie login) can't be picked, and says
    why. A tap picks it: the designer reads what the excerpt lacks of it and puts it in the socket
    (LoopDesigning.PickMod). "Clear this socket" takes the mod there out. *@
@@ -38,7 +38,7 @@
                     {
                         var refused = option.Refused.IsSome();
                         <button type="button" role="option" aria-selected="@(option.Picked ? "true" : "false")"
-                                class="perk-option mod-option @(option.Picked ? "picked" : "") @(option.InRules ? "in-rules" : "") @(refused ? "refused" : "")"
+                                class="perk-option mod-option @(option.Picked ? "picked" : "") @(refused ? "refused" : "")"
                                 data-hash="@option.Hash.Value" disabled="@(refused || picking)" title="@DescribeOptionTooltip(option)"
                                 @onclick="() => PickAsync(option.Hash)">
                             <span class="perk-mark-anchor">
@@ -74,7 +74,7 @@
                 <p class="status error" role="alert" data-testid="mod-picker-problem">@failed.Value</p>
             }
             <div class="picker-foot">
-                <span class="muted">Green: Loopsmith's rules know it · ⊘: not in its rules yet (it sets nothing off)</span>
+                <span class="muted">⊘: not in Loopsmith's rules yet (it sets nothing off)</span>
                 @if (view.Held is Optional<IconTile>.Some held && held.Value.Details is Optional<ItemDetails>.Some heldDetails && OnDetails.HasDelegate)
                 {
                     <button type="button" class="btn ghost small" data-action="mod-details" @onclick="() => OnDetails.InvokeAsync(heldDetails.Value)">About @held.Value.Name</button>
