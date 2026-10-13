@@ -154,7 +154,8 @@ public sealed class DimLoadoutMappingTests
                 new AbilityPlug.Known(ElementId.From("gathering-storm")),
                 new AbilityPlug.Known(ElementId.From("skip-grenade")),
                 new AbilityPlug.Known(ElementId.From("combination-blow")),
-                new AbilityPlug.Known(ElementId.From("gamblers-dodge"))),
+                new AbilityPlug.Known(ElementId.From("gamblers-dodge")),
+                new AbilityPlug.Known(ElementId.From("triple-jump"))),
             build.Abilities);
         Assert.Equal(["flow-state", "tempest-strike"], build.Aspects.Select(id => id.Value));
         Assert.Equal(Optional.Some(ElementId.From("shinobus-vow")), build.ExoticArmor);
@@ -176,7 +177,29 @@ public sealed class DimLoadoutMappingTests
         Assert.All(build.Weapons, weapon => Assert.Empty(weapon.Perks));                                                      // a loadout carries no perks
         Assert.DoesNotContain(build.LeftOut, item => item.Hash == ItemHash.From(4019651319u));
         Assert.Contains(build.LeftOut, item => item == new LeftOutItem(LoadoutPart.Item, ItemHash.From(593554567u)));         // Luminopotent Mask
-        Assert.Contains(build.LeftOut, item => item == new LeftOutItem(LoadoutPart.SubclassPlug, ItemHash.From(95544328u))); // Triple Jump
+        Assert.DoesNotContain(build.LeftOut, item => item.Hash == ItemHash.From(95544328u));                                  // Triple Jump: the build's jump
+        Assert.Contains("jump: triple-jump", session.Design.Build.Text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_jump_the_rules_know_is_the_builds_jump_and_one_they_dont_is_left_out_with_no_part_in_a_loop()
+    {
+        // Arcstrider (2328211300) with Blink (95544329, in the rules); Gunslinger (2240888816) with its own Triple Jump (1128768652, not).
+        var arcstrider = MapLoadout("""{ "name": "x", "classType": 1, "equipped": [ { "hash": 2328211300, "socketOverrides": { "1": 95544329 } } ] }""");
+        var json = """{ "name": "x", "classType": 1, "equipped": [ { "hash": 2240888816, "socketOverrides": { "1": 1128768652 } } ] }""";
+        var session = LoopDesigning.ReadDimLink(Link).Bind(link => LoopDesigning.StartDimDesign(Catalog, link, json))
+            .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
+        var gunslinger = session.Build.Build;
+        var leftOutJump = new LeftOutItem(LoadoutPart.SubclassPlug, ItemHash.From(1128768652u));
+
+        Assert.Equal<AbilityPlug>(new AbilityPlug.Known(ElementId.From("hunter-blink")), arcstrider.Abilities.Jump);
+        Assert.DoesNotContain(arcstrider.LeftOut, item => item.Hash == ItemHash.From(95544329u));
+        Assert.Equal<AbilityPlug>(new AbilityPlug.Empty(), gunslinger.Abilities.Jump);
+        Assert.Equal([leftOutJump], gunslinger.LeftOut);
+        Assert.Equal(new LeftOutReason.NoLoopEffect("A jump: movement has no part in a loop."), LoopDesigning.ClassifyLeftOut(session.Build, leftOutJump));
+        Assert.Empty(LoopDesigning.ListMissing(session.Build));
+        Assert.DoesNotContain("jump:", session.Design.Build.Text, StringComparison.Ordinal);
+        Assert.Contains("subclassPlugs: [1128768652]", session.Design.Build.Text, StringComparison.Ordinal);
     }
 
     [Fact]

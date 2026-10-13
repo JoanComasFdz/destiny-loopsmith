@@ -101,6 +101,7 @@ public static class DomainPhrasing
             ElementKind.Grenade => "Grenade",
             ElementKind.Melee => "Melee",
             ElementKind.ClassAbility => "Class ability",
+            ElementKind.Jump => "Jump",
             ElementKind.Aspect => "Aspect",
             ElementKind.Fragment => "Fragment",
             ElementKind.ExoticArmor => "Exotic armor",

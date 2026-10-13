@@ -1,6 +1,7 @@
 @* The subclass editor: the build's super, grenade, melee, class ability, jump, aspects and fragments, each slot with its
    plug (tap the square for its details) and ⋯, which opens, inside the slot, the list of everything the subclass can
-   hold there (Bungie's manifest; the ones the rules know are marked, the rest carry ⊘, a jump none). A fragment's ✕
+   hold there (Bungie's manifest; the ones the rules know are marked, the rest carry ⊘, a jump the rules don't have none:
+   movement has no part in a loop). A fragment's ✕
    empties its slot; an aspect has none, it is only swapped for another. The aspects open the fragment slots; an aspect
    change that closes slots takes the last fragments out and names them. Save hands the plugs to the designer
    (LoopDesigning.EditSubclass); Cancel, ✕ or Escape throws the changes away. *@
@@ -200,13 +201,13 @@
 
     private string DescribeOption(ItemHash hash, bool elsewhere)
     {
-        var tile = LoadoutShaping.DescribeSubclassPlug(Build, hash);
         var type = LoadoutShaping.FindPlugType(Build, hash).UnwrapOr("");
-        return string.Join(" · ", new[] { type, tile.InRules && !IsJump(hash) ? "in the rules" : "", elsewhere ? "equipped" : "" }.Where(part => part.Length > 0));
+        return string.Join(" · ", new[] { type, IsElement(hash) ? "in the rules" : "", elsewhere ? "equipped" : "" }.Where(part => part.Length > 0));
     }
 
-    private bool IsJump(ItemHash hash) =>
-        LoopDesigning.ListSubclassOptions(Build, SubclassSlot.Jump).Contains(hash);
+    /// <summary>True when the rules know the plug for this build (a jump of another subclass shows no ⊘, but isn't one).</summary>
+    private bool IsElement(ItemHash hash) =>
+        LoopDesigning.FindSubclassElement(Build, hash).IsSome();
 
     private static string DescribeSlot(SubclassSlot slot) =>
         slot switch

@@ -291,3 +291,51 @@ elements:
         chance: true
         reason: "Rack up Arc weapon kills and every few of them drop an Ionic Trace (one per boss kill)."
     passives: []
+
+  # ================================================================ jumps
+  # The Compendium has no rows for jumps; names and descriptions are Bungie's manifest's
+  # (rules/manifest.yaml), and these are the Arcstrider copies' hashes.
+
+  - id: high-jump
+    name: High Jump
+    kind: jump
+    affinity: arc
+    class: hunter
+    hash: 95544330
+    description: "Jump a second time in the air to climb higher."
+    inert: "A jump: movement has no part in a loop."
+    rules: []
+    passives: []
+
+  - id: strafe-jump
+    name: Strafe Jump
+    kind: jump
+    affinity: arc
+    class: hunter
+    hash: 95544331
+    description: "Jump a second time in the air with strong control over where you go."
+    inert: "A jump: movement has no part in a loop."
+    rules: []
+    passives: []
+
+  - id: triple-jump
+    name: Triple Jump
+    kind: jump
+    affinity: arc
+    class: hunter
+    hash: 95544328
+    description: "Jump a second and a third time in the air to keep control of your movement."
+    inert: "A jump: movement has no part in a loop."
+    rules: []
+    passives: []
+
+  - id: hunter-blink
+    name: Blink
+    kind: jump
+    affinity: arc
+    class: hunter
+    hash: 95544329
+    description: "Jump in the air to teleport a short distance."
+    inert: "A jump: movement has no part in a loop."
+    rules: []
+    passives: []

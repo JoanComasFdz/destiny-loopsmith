@@ -9,7 +9,8 @@ namespace Loopsmith.Core.BuildComposition;
 /// Pure: what a DIM loadout's left-out item is — a gap (no rule knows it yet) or something with no part in a loop,
 /// by what the manifest says it is: a stat mod or a tuning mod (it changes only stats, which the build's stats count
 /// when they add up from the player's armor), a legendary armor piece (its set's bonuses already count from the pieces
-/// worn) or a jump. Anything else the rules don't know is a gap; nothing is guessed (ADRs D12).
+/// worn) or a jump the rules don't have (another subclass's). Anything else the rules don't know is a gap; nothing is
+/// guessed (ADRs D12).
 /// </summary>
 public static class LeftOutClassifying
 {

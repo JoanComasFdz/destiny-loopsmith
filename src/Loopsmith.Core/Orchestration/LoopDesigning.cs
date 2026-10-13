@@ -99,7 +99,7 @@ public static class LoopDesigning
             Optional.None<CatalogVersion>(),
             GuardianClass.Hunter,
             Subclass.Arc,
-            new AbilityLoadout(empty, empty, empty, empty),
+            new AbilityLoadout(empty, empty, empty, empty, empty),
             [],
             [],
             Optional.None<ElementId>(),
