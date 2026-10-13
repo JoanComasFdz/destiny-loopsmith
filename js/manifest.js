@@ -1,22 +1,24 @@
-// Loopsmith web host — Bungie's manifest, downloaded on demand: each component file is fetched from bungie.net (the
-// browser's HTTP cache keeps it; the app stores nothing), its bytes kept as the download gave them (in its chunks, never
-// copied into one buffer) and every entry's place in them indexed by hash as the chunks arrive — in the same pass, which
-// entries hold each "plugCategoryIdentifier". Core asks for entries by hash (for the entries whose JSON holds a piece of
-// text, and for the entries holding a key's value, cut down to the fields it names) and interprets the raw JSON itself:
-// no game logic lives here. The download reports how far it got to
-// .NET (a few times a second) and pauses every few megabytes, so the page keeps answering taps; once Core has what it
-// asked for, the tables are let go (a later read downloads them again, from the HTTP cache). Called from
-// Hosting/BrowserInterop.cs.
+// Loopsmith web host — Bungie's manifest, loaded when the app starts and kept for the tab: each component file is fetched
+// from bungie.net (the browser's HTTP cache keeps it; the app stores nothing), its bytes kept as the download gave them
+// (in its chunks, never copied into one buffer) and every entry's place in them indexed by hash as the chunks arrive — in
+// the same pass, which entries hold each "plugCategoryIdentifier". A download that breaks starts that file again from its
+// start, a few times, before the load gives up (the files already in stay). Core asks for entries by hash (for the
+// entries whose JSON holds a piece of text, and for the entries holding a key's value, cut down to the fields it names)
+// and interprets the raw JSON itself: no game logic lives here. The download reports how far it got to .NET (a few times
+// a second, and at once when a file starts again) and pauses every few megabytes, so the page keeps answering taps.
+// Called from Hosting/BrowserInterop.cs.
 window.loopsmithManifest = (() => {
-  const tables = new Map();   // component name → { store, offsets: Map(hash → [start, end]), categories: Map(category → [hash]) }
+  const tables = new Map();   // component name → { url, store, offsets: Map(hash → [start, end]), categories: Map(category → [hash]) }
   const decoder = new TextDecoder("utf-8");
   const QUOTE = 34, BACKSLASH = 92, OPEN = 123, CLOSE = 125, COMMA = 44, CLOSE_LIST = 93;
   const CATEGORY_KEY = new TextEncoder().encode("plugCategoryIdentifier");
   const CATEGORY_NEEDLE = /^"plugCategoryIdentifier":"([^"\\]*)"$/;
   const SLICE = 8 * 1024 * 1024;   // bytes indexed between two pauses, so the page keeps answering taps
   const REPORT_EVERY = 250;        // ms between two progress reports
+  const RETRY_WAIT = 1000;         // ms before a broken file's next try (times the try's number)
 
-  const pause = () => new Promise((resolve) => setTimeout(resolve, 0));
+  const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  const pause = () => wait(0);
 
   // ── a component's bytes, in the chunks the download gave ───────────────────────
 
@@ -106,21 +108,58 @@ window.loopsmithManifest = (() => {
 
   // ── the download ───────────────────────────────────────────────────────────────
 
-  // How far the reading got (the bytes received, all components, unpacked: the browser undoes bungie.net's compression),
-  // told to .NET a few times a second.
+  // How far the reading got (the bytes received, all components, unpacked: the browser undoes bungie.net's compression)
+  // and which try the file being read is on (0: its first), told to .NET a few times a second, and at once when a file
+  // starts again or comes in after a retry.
   function createProgress(reporter) {
-    let bytes = 0, last = 0;
+    let bytes = 0, attempt = 0, last = 0;
+    const report = () => {
+      last = performance.now();
+      if (reporter) reporter.invokeMethodAsync("ReportDownload", bytes, attempt).catch(() => {});
+    };
     return {
       add(count) {
         bytes += count;
-        const now = performance.now();
-        if (reporter && now - last >= REPORT_EVERY) { last = now; reporter.invokeMethodAsync("ReportDownload", bytes).catch(() => {}); }
+        if (performance.now() - last >= REPORT_EVERY) report();
+      },
+      // A file broke after `count` of its bytes: they no longer count, and it starts again, on its `next`-th try.
+      restart(count, next) {
+        bytes -= count;
+        attempt = next;
+        report();
+      },
+      // A file is in: the next one starts on its first try.
+      finish() {
+        if (attempt === 0) return;
+        attempt = 0;
+        report();
       },
     };
   }
 
-  async function loadTable(name, url, progress) {
-    if (tables.has(name)) return;
+  // A component, downloaded and indexed once (a later load of the same file keeps it). A download that breaks starts
+  // again from the file's start, up to `retries` more times, a moment later each time: bungie.net sends the files
+  // compressed, and a browser can ask for the rest of one only uncompressed (~12 times the bytes of starting again).
+  async function loadTable(name, url, retries, progress) {
+    const kept = tables.get(name);
+    if (kept && kept.url === url) return;
+    for (let attempt = 0; ; attempt++) {
+      let received = 0;
+      try {
+        const table = await downloadTable(name, url, (count) => { received += count; progress.add(count); });
+        tables.set(name, { url, ...table });
+        progress.finish();
+        return;
+      } catch (error) {
+        if (attempt >= retries) throw error;
+        progress.restart(received, attempt + 1);
+        await wait(RETRY_WAIT * (attempt + 1));
+      }
+    }
+  }
+
+  // One try at a component: its bytes, indexed as they come (`counted` is told how many came each time).
+  async function downloadTable(name, url, counted) {
     const response = await fetch(url, { mode: "cors", credentials: "omit" });
     if (!response.ok) throw new Error(`${name}: HTTP ${response.status}`);
     const store = createStore(), indexer = createIndexer(store);
@@ -130,7 +169,7 @@ window.loopsmithManifest = (() => {
         const piece = chunk.subarray(from, Math.min(chunk.length, from + SLICE));
         addChunk(store, piece);
         indexer.feed(piece, store.length - piece.length);
-        progress.add(piece.length);
+        counted(piece.length);
         sincePause += piece.length;
         if (sincePause >= SLICE) { sincePause = 0; await pause(); }
       }
@@ -141,7 +180,7 @@ window.loopsmithManifest = (() => {
     } else {
       await take(new Uint8Array(await response.arrayBuffer()));
     }
-    tables.set(name, { store, offsets: indexer.offsets, categories: indexer.categories });
+    return { store, offsets: indexer.offsets, categories: indexer.categories };
   }
 
   return {
@@ -155,21 +194,17 @@ window.loopsmithManifest = (() => {
       }
     },
 
-    // Fetch and index the components ({ name: url }), telling `reporter` (a .NET object, or null) how many bytes came;
-    // why one couldn't be, or null when all are in.
-    async loadTables(urls, reporter) {
+    // Fetch and index the components ({ name: url }) not in yet, each tried again up to `retries` times when its
+    // download breaks, telling `reporter` (a .NET object, or null) how many bytes came and which try a file is on; why
+    // one couldn't be, or null when all are in. They stay for the tab.
+    async loadTables(urls, retries, reporter) {
       try {
         const progress = createProgress(reporter);
-        for (const [name, url] of Object.entries(urls)) await loadTable(name, url, progress);
+        for (const [name, url] of Object.entries(urls)) await loadTable(name, url, retries, progress);
         return null;
       } catch (error) {
         return String(error && error.message ? error.message : error);
       }
-    },
-
-    // Let the components go (their bytes are most of the tab's memory); a later read downloads them again.
-    releaseTables() {
-      tables.clear();
     },
 
     // Each entry asked for, as the manifest has it ({ table: [hashes] } → { table: { hash: { …entry… } } }: the entries'
