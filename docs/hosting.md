@@ -88,38 +88,54 @@ allow them; a local run (`localhost`) needs an application registered for that o
 
 ## Bungie's manifest
 
-For a DIM link's items the bundled excerpt (`rules/manifest.yaml`) lacks, the browser reads Bungie's full
-manifest ([ADRs D14](../ADRs.md)): it downloads seven English component files from bungie.net (~9 MB
-compressed, the item table most of it; public, cross-origin, cached by the browser for hours — the app stores
-nothing itself), indexes them in the page (`wwwroot/js/manifest.js`), and Core reads the entries it needs.
-Their paths come from the manifest index (`https://www.bungie.net/Platform/Destiny2/Manifest/`, sent with
-`BungieApiKey` from `wwwroot/appsettings.json`: Loopsmith's key, registered for the site's origin, so it
-isn't a secret — it ships in the site and Bungie answers it from that origin); when the index doesn't
-answer, from `ManifestContentId` there — the content id of the manifest the excerpt was made from. Update it when you
-regenerate the excerpt (`tools/manifest/get-manifest.sh` prints it). Only paths in bungie.net's component
-folder are taken from the index. The tab remembers which items it read the manifest for, so the designer
-doesn't read again what Home just read (or failed to).
+When the app opens, the browser loads Bungie's full manifest ([ADRs D14](../ADRs.md)) and keeps it for as long as the
+tab is open, as DIM does: the weapon and armor pickers' **Every item**, a DIM link's items the bundled excerpt
+(`rules/manifest.yaml`) lacks, and a Bungie login's armor and weapons are all read from it, and no read downloads it
+again. It downloads eight English component files from bungie.net (~9 MB compressed, the item table most of it;
+public, cross-origin, cached by the browser for hours — the app stores nothing itself), indexes them in the page
+(`wwwroot/js/manifest.js`), and Core reads the entries it needs. Their paths come from the manifest index
+(`https://www.bungie.net/Platform/Destiny2/Manifest/`, sent with `BungieApiKey` from `wwwroot/appsettings.json`:
+Loopsmith's key, registered for the site's origin, so it isn't a secret — it ships in the site and Bungie answers it
+from that origin); when the index doesn't answer, from `ManifestContentId` there — the content id of the manifest the
+excerpt was made from. Update it when you regenerate the excerpt (`tools/manifest/get-manifest.sh` prints it). Only
+paths in bungie.net's component folder are taken from the index. The tab remembers which items it read the manifest
+for, so the designer doesn't read again what Home just read (or failed to).
+
+**The startup screen.** Until the load is done, a screen stands in for every page (Home, the designer opened from a
+share link, Compare) and the screen tabs are hidden: "Downloading Bungie's manifest", with a bar for its files ("40
+MB", unpacked: the bar can't know their size, bungie.net sends them compressed, so it fills ever more slowly towards
+the size they had in 2026) and one for the listing of every weapon and armor piece ("step 2 of 4"). A sheen runs over
+the bar at work: a CSS animation the browser keeps playing while .NET answers the listing's questions (the second takes
+a few seconds, the page's thread busy). Then the page the link points to opens. Measured from a session on a desktop:
+the screen shows for ~10 s (~4 s the download, ~5 s the listing), after the app's own start (~7 s, as before). Bungie's login
+redirect (`login`, should the host serve the app there instead of `login.html`) neither loads the manifest nor waits
+for it.
+
+**When the connection breaks.** A file whose download breaks is downloaded again from its start, up to 3 times, a
+moment later each time; the files already in stay, and the bar says so ("connection lost, trying again: 2 of 3"). A
+broken file isn't resumed where it stopped: bungie.net sends it compressed, and a browser can ask for the rest of a file
+only uncompressed (from the middle of the item table, ~99 MB instead of the whole file's 8.4 MB). When it still fails,
+the screen says why with **Try again** (the load runs again; the files already in stay) and **Continue without it**:
+the app opens with its bundled data, and the next read that needs the manifest (a DIM link, the login, Every item)
+loads it then, with the read's progress bar, and keeps it.
 
 The pickers' **Every item** ([loop-format.md](loop-format.md#every-item)) lists every weapon and armor piece of the
-game from the same files, read once per tab when a picker first opens: the item table, the sandbox perks and four small
-components (~8 MB compressed). Core asks, in four rounds, for the small components, then the items of the weapon and
-armor buckets, each cut down in the page to the fields a square needs and, for a weapon, the plugs its sockets start
-with (one pass over the file, `readEntryParts`: ~10,000 entries, ~5 MB of JSON), then the weapons' intrinsic frames and
-their perks — a weapon's intrinsic is its first named intrinsic plug (the rules know an exotic weapon by it), and its
-breaker is its own, else its frame's ("[Shield-Piercing] Barrier"), as the join reads them.
-The tab keeps the list it reads (a failed read is tried again at the next opening). A pick then reads the full manifest
-for that one item (its perks, catalyst or set), as above, even when the tab asked for it before.
+game from the item table, the sandbox perks and four small components. Core asks, in four rounds, for the small
+components, then the items of the weapon and armor buckets, each cut down in the page to the fields a square needs and,
+for a weapon, the plugs its sockets start with (one pass over the file, `readEntryParts`: ~10,000 entries, ~5 MB of
+JSON), then the weapons' intrinsic frames and their perks — a weapon's intrinsic is its first named intrinsic plug (the
+rules know an exotic weapon by it), and its breaker is its own, else its frame's ("[Shield-Piercing] Barrier"), as the
+join reads them. The startup load makes the list and the tab keeps it, so a picker opens at once (when the load was
+skipped, the first picker reads it, and a failed read is tried again at the next opening). A pick then reads the full
+manifest for that one item (its perks, catalyst or set), as above, even when the tab asked for it before.
 
-The page keeps answering taps while it reads: each file is indexed as its chunks arrive (~215 MB of JSON once
-unpacked, held once, never copied into one buffer), with a pause every 8 MB, and the join gives the browser a turn
-before each of its rounds (five for a vault of ~600 items). After a Bungie login, the **Bungie login section** shows a
-progress bar — "Reading Bungie's manifest for 609 of your items", "reading its files… 84 MB" (unpacked), then "naming
-them (step 2)" — and so does the ⋯ picker opened meanwhile (a DIM link's read says "of this build's items"; a
-picker's first opening "for every weapon and armor piece", a pick "for the item you picked"); the bar
-can't know the files' unpacked size (bungie.net sends them compressed), so it fills ever more slowly towards the size
-they had in 2026. One read runs at a time (a login during a DIM link's read waits for it). Once the join has what it
-asked for, the files are let go, unless another read waits for them: a later read downloads them again, from the
-browser's cache.
+The tab holds the files (~215 MB of JSON once unpacked, held once, never copied into one buffer) and their index for as
+long as it is open, as DIM holds its own copy. The page keeps answering taps while a read names items: the join gives
+the browser a turn before each of its rounds (five for a vault of ~600 items). After a Bungie login, the **Bungie login
+section** shows a progress bar — "Reading Bungie's manifest for 609 of your items", "naming them (step 2)" — and so does
+the ⋯ picker opened meanwhile (a DIM link's read says "of this build's items"; a pick "for the item you picked"). When
+the startup load was skipped, the first read also downloads the files ("reading its files… 84 MB"). One read runs at a
+time (a login during a DIM link's read waits for it).
 
 ## Alternatives
 

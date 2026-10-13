@@ -1,7 +1,8 @@
 @* The subclass editor: the build's super, grenade, melee, class ability, jump, aspects and fragments, each slot with its
-   plug (tap the square for its details) and ⋯, which opens, inside the slot, the list of everything the subclass can
-   hold there (Bungie's manifest; the ones the rules don't know carry ⊘, a jump the rules don't have none:
-   movement has no part in a loop). A fragment's ✕
+   plug (tap the square for its details) and ⋯, which opens a dropdown under the slot (above it when there's no room
+   below) with everything the subclass can hold there (Bungie's manifest; the ones the rules don't know carry ⊘, a jump
+   the rules don't have none: movement has no part in a loop). The dropdown floats over the slots after it, so none of them moves; ⋯ again, a tap outside it
+   or Escape closes it (Escape doesn't close the editor while a dropdown is open). A fragment's ✕
    empties its slot; an aspect has none, it is only swapped for another. The aspects open the fragment slots; an aspect
    change that closes slots takes the last fragments out and names them. Save hands the plugs to the designer
    (LoopDesigning.EditSubclass); Cancel, ✕ or Escape throws the changes away. *@
@@ -13,7 +14,7 @@
     var slotText = slots.Match(count => count.Value.ToString(CultureInfo.InvariantCulture), _ => DomainPhrasing.Unknown);
 }
 <Modal Title="Edit subclass" Size="wide" OnClose="OnClose">
-    <div class="subclass-editor" data-testid="subclass-editor">
+    <div class="subclass-editor" data-testid="subclass-editor" @onclick="ClosePicker" @onkeydown="CloseOnEscape" @onkeydown:stopPropagation="true">
         <div class="sub-group">
             @RenderSingle(SubclassSlot.Super, "Super", draft.Super)
             @RenderSingle(SubclassSlot.ClassAbility, "Class ability", draft.ClassAbility)
@@ -58,8 +59,8 @@
 @code {
     private const int AspectSlots = 2;
 
-    /// <summary>The id of the slot whose list is open: it is scrolled into view when the list opens.</summary>
-    private const string OpenSlotId = "subclass-open-slot";
+    /// <summary>The id of the open dropdown: it is placed under (or above) its slot once it is shown.</summary>
+    private const string OpenListId = "subclass-open-list";
 
     private sealed record OpenPick(SubclassSlot Slot, int Index);
 
@@ -93,7 +94,7 @@
     {
         var pick = new OpenPick(slot, index);
         var open = picker == Optional.Some(pick);
-        <div class="sub-slot @(open ? "open" : "")" id="@(open ? OpenSlotId : null)" data-slot="@slot" data-index="@index">
+        <div class="sub-slot @(open ? "open" : "")" data-slot="@slot" data-index="@index">
             <div class="sub-slot-row">
                 @if (plug is Optional<ItemHash>.Some held)
                 {
@@ -112,9 +113,10 @@
                         <span class="sub-slot-name muted" data-testid="slot-name">@(many ? "Empty" : DomainPhrasing.Unknown)</span>
                     </span>
                 }
-                <button type="button" class="btn ghost small sub-slot-pick" data-action="change-slot" aria-expanded="@(open ? "true" : "false")"
+                <button type="button" class="btn ghost small sub-slot-pick" id="@DescribePickButtonId(pick)" data-action="change-slot"
+                        aria-expanded="@(open ? "true" : "false")" aria-controls="@(open ? OpenListId : null)"
                         title="List what @DescribeSlot(slot).ToLowerInvariant() can be" aria-label="List what @label.ToLowerInvariant() can be"
-                        @onclick="() => TogglePicker(pick)">⋯</button>
+                        @onclick="() => TogglePicker(pick)" @onclick:stopPropagation="true">⋯</button>
                 @if (slot == SubclassSlot.Fragment && plug.IsSome())
                 {
                     <button type="button" class="btn ghost small" data-action="remove-slot" title="Remove @label" aria-label="Remove @label" @onclick="() => RemoveFragment(index)">✕</button>
@@ -127,16 +129,13 @@
         </div>
     };
 
-    /// <summary>The list of what the slot can hold, inside the slot's box under its plug: picking one puts it there and closes the list.</summary>
+    /// <summary>The dropdown of what the slot can hold, one per line, floating under the slot: picking one puts it there and closes the list.</summary>
     private RenderFragment RenderPicker(OpenPick open) => __builder =>
     {
         var options = LoopDesigning.ListSubclassOptions(Build, open.Slot);
-        <div class="perk-picker sub-picker" role="group" data-testid="subclass-picker" data-slot="@open.Slot" aria-label="@($"Pick {DescribeSlot(open.Slot).ToLowerInvariant()}")">
-            <div class="perk-picker-head">
-                <span class="perk-picker-title">Pick @DescribeSlot(open.Slot).ToLowerInvariant()</span>
-                <button type="button" class="btn ghost icon" title="Close the list" aria-label="Close the list" data-action="subclass-picker-close" @onclick="ClosePicker">✕</button>
-            </div>
-            <div class="perk-options">
+        <div class="sub-drop" id="@OpenListId" role="group" tabindex="-1" data-testid="subclass-picker" data-slot="@open.Slot"
+             aria-label="@($"Pick {DescribeSlot(open.Slot).ToLowerInvariant()}")" @onclick:stopPropagation="true">
+            <div class="sub-drop-options">
                 @foreach (var option in options)
                 {
                     var hash = option;
@@ -227,26 +226,57 @@
     private bool IsHeldElsewhere(SubclassSlot slot, ItemHash hash) =>
         slot == SubclassSlot.Aspect ? draft.Aspects.Contains(hash) : slot == SubclassSlot.Fragment && draft.Fragments.Contains(hash);
 
-    private bool revealPicker;
+    /// <summary>The ⋯ of a slot: its id, for the focus to come back to it when its dropdown closes.</summary>
+    private static string DescribePickButtonId(OpenPick pick) =>
+        $"subclass-pick-{pick.Slot}-{pick.Index}";
 
-    /// <summary>The list opens inside its slot: the slot is scrolled just far enough into view to show it, once it is shown.</summary>
+    private bool placePicker;
+    private Optional<string> refocus = Optional.None<string>();
+
+    /// <summary>A dropdown that just opened is placed under its slot (above it when there's no room below) and takes the
+    /// focus, so Escape reaches it; one that closed hands the focus back to its ⋯.</summary>
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (revealPicker && picker.IsSome())
+        if (placePicker && picker.IsSome())
         {
-            revealPicker = false;
-            await Browser.RevealElementAsync(OpenSlotId);                                        // impure
+            placePicker = false;
+            await Browser.PlaceDropdownAsync(OpenListId);                                        // impure
+        }
+        if (refocus is Optional<string>.Some button)
+        {
+            refocus = Optional.None<string>();
+            await Browser.FocusElementAsync(button.Value);                                       // impure
         }
     }
 
     private void TogglePicker(OpenPick pick)
     {
-        picker = picker == Optional.Some(pick) ? Optional.None<OpenPick>() : Optional.Some(pick);   // impure (UI state)
-        revealPicker = picker.IsSome();                                                          // impure (UI state)
+        var closing = picker == Optional.Some(pick);                                             // pure
+        picker = closing ? Optional.None<OpenPick>() : Optional.Some(pick);                      // impure (UI state)
+        placePicker = !closing;                                                                  // impure (UI state)
     }
 
+    /// <summary>A tap outside the open dropdown (in the editor) closes it.</summary>
     private void ClosePicker() =>
         picker = Optional.None<OpenPick>();                                                      // impure (UI state)
+
+    /// <summary>Escape with a dropdown open closes the dropdown only, and the focus goes back to its ⋯; with none open it
+    /// closes the editor. The editor handles Escape itself, the modal never sees it: Blazor reads a stopPropagation flag
+    /// after the handler's render, so a flag that follows the dropdown would already be off.</summary>
+    private async Task CloseOnEscape(KeyboardEventArgs e)
+    {
+        if (e.Key != "Escape")
+        {
+            return;
+        }
+        if (picker is Optional<OpenPick>.Some open)
+        {
+            refocus = Optional.Some(DescribePickButtonId(open.Value));                           // impure (UI state)
+            picker = Optional.None<OpenPick>();                                                  // impure (UI state)
+            return;
+        }
+        await OnClose.InvokeAsync();                                                             // impure
+    }
 
     private void Choose(OpenPick pick, ItemHash hash)
     {
@@ -260,6 +290,7 @@
             SubclassSlot.Aspect => SetAspects(Place(draft.Aspects, pick.Index, hash)),
             _ => draft with { Fragments = Place(draft.Fragments, pick.Index, hash) },
         };
+        refocus = Optional.Some(DescribePickButtonId(pick));                                     // impure (UI state)
         picker = Optional.None<OpenPick>();                                                      // impure (UI state)
     }
 

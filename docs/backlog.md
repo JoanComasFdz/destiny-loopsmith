@@ -30,10 +30,15 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   - **The CLI** reads only the excerpt; a build there with other items shows them by hash.
   - **The pinned content id** (`ManifestContentId`, used when the manifest index doesn't answer) has to be
     updated with the excerpt; Bungie may drop old component files.
-  - **Phones:** the item table is ~9 MB to download and ~215 MB in memory while a read lasts (let go after it), and
-    the join's rounds still hold the page for up to ~1 s each on a desktop (the last round, which builds the excerpt,
-    the longest): a phone feels them. Splitting the excerpt's build from the last round, or asking for fewer fields of
-    each item, would shorten them.
+  - **Phones:** the item table is ~9 MB to download and ~215 MB in memory, held for as long as the tab is open (as
+    DIM holds its copy), and the join's rounds still hold the page for up to ~1 s each on a desktop (the last round,
+    which builds the excerpt, the longest): a phone feels them. Splitting the excerpt's build from the last round, or
+    asking for fewer fields of each item, would shorten them; keeping only the fields Loopsmith reads (as DIM trims
+    its tables) would hold less.
+  - **Saving it across visits:** the app loads the manifest at every start (a new tab, a reload), behind its startup
+    screen; DIM saves it in the browser (IndexedDB) and checks the manifest index's version at start, so a visit with
+    the same version skips the download. Saving the list of every weapon and armor piece too would skip the listing,
+    the slowest part. It changes "the app stores nothing" (ADRs D25).
   - Hashes the excerpt can't give by a unique name: Horde Shuttle (two artifact perks of that name).
 
 ## Rule format gaps (what the Skip Grenade build couldn't express)
@@ -145,11 +150,9 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   another class's character isn't offered; an icon bungie.net doesn't serve shows broken.
 - **Exotic class items' spirits**: Relativism, Stoicism and Solipsism are listed in the armor picker's Every item, but
   their two random perks (spirits) can't be picked and no rule authors them: the build wears the item without them.
-- **Every item, next**: reading Bungie's manifest
-  once at startup and keeping it, as DIM does, so the pickers, DIM links and the login don't each read it (the first
-  opening of a picker reads the item table, ~8 MB, for the breakers' frames); the list (~7,500 items, ~5 MB of JSON
-  parsed in .NET once per tab) and its grid (up to ~930 squares for energy weapons) could be lighter on a phone (fewer
-  fields, or a grid that draws only the rows in view).
+- **Every item, next**: the list (~7,500 items, ~5 MB of JSON parsed in .NET at startup: its second step holds the
+  page's thread for ~5 s on a desktop) and its grid (up to ~930 squares for energy weapons) could be lighter on a phone
+  (fewer fields, the items read in batches, or a grid that draws only the rows in view).
 
 ## Owner items
 

@@ -30,6 +30,11 @@ public sealed class BrowserInterop(IJSRuntime js)
     public ValueTask RevealElementAsync(string elementId) =>
         js.InvokeVoidAsync("loopsmith.revealElement", elementId);
 
+    /// <summary>Places a dropdown under its slot, or above it when there's more room there and too little below, sized to
+    /// the dialog's visible part, and puts the focus in it (on the plug held, if listed).</summary>
+    public ValueTask PlaceDropdownAsync(string elementId) =>
+        js.InvokeVoidAsync("loopsmith.placeDropdown", elementId);
+
     /// <summary>Moves the keyboard focus to an element (a moved step's card) and scrolls it into view.</summary>
     public ValueTask FocusElementAsync(string elementId) =>
         js.InvokeVoidAsync("loopsmith.focusElement", elementId);
@@ -68,22 +73,20 @@ public sealed class BrowserInterop(IJSRuntime js)
     // copies into them.
 
     /// <summary>
-    /// Downloads and indexes each component (<c>{ component: url }</c>) not in yet, telling <paramref name="reporter"/>
-    /// how many bytes came; why it couldn't, when it couldn't.
+    /// Downloads and indexes each component (<c>{ component: url }</c>) not in yet, and keeps them for the tab: a file whose
+    /// download breaks starts again from its start, up to <paramref name="retries"/> more times. Tells
+    /// <paramref name="reporter"/> how many bytes came and which try a file is on (<c>ReportDownload</c>); why it couldn't,
+    /// when it couldn't.
     /// </summary>
-    public async Task<Result<Unit, string>> LoadManifestTablesAsync<TReporter>(IReadOnlyDictionary<string, string> urls, DotNetObjectReference<TReporter> reporter)
+    public async Task<Result<Unit, string>> LoadManifestTablesAsync<TReporter>(IReadOnlyDictionary<string, string> urls, int retries, DotNetObjectReference<TReporter> reporter)
         where TReporter : class
     {
         var plain = new Dictionary<string, string>(urls);
-        var problem = await js.InvokeAsync<string?>("loopsmithManifest.loadTables", plain, reporter);
+        var problem = await js.InvokeAsync<string?>("loopsmithManifest.loadTables", plain, retries, reporter);
         return Optional.FromNullable(problem).Match<Result<Unit, string>>(
             failed => new Result<Unit, string>.Error(failed.Value),
             _ => new Result<Unit, string>.Ok(new Unit.Value()));
     }
-
-    /// <summary>Lets the downloaded components go (most of the tab's memory); the next read downloads them again.</summary>
-    public ValueTask ReleaseManifestTablesAsync() =>
-        js.InvokeVoidAsync("loopsmithManifest.releaseTables");
 
     /// <summary>The raw JSON of the entries asked for, per component (<c>{ component: { hash: entry } }</c>).</summary>
     public async Task<string> ReadManifestEntriesAsync(IReadOnlyDictionary<string, ImmutableArray<ItemHash>> request)

@@ -11,14 +11,24 @@ namespace Loopsmith.Web.Presentation;
 /// </summary>
 public enum ManifestReadFor { YourItems, BuildItems, EveryItem, PickedItem }
 
+/// <summary>A file of the manifest broke while it came: it is downloaded again from its start, the <c>Attempt</c>-th time of at most <c>Limit</c>.</summary>
+public sealed record ManifestRetry(int Attempt, int Limit);
+
 /// <summary>
-/// Where a read of Bungie's manifest is: reading its files (the bytes come unpacked, so their total isn't known — bungie.net
-/// sends them compressed), or naming the items from them (the round of questions it is on).
+/// How far the download of the manifest's files got: the bytes that came, unpacked (their total isn't known: bungie.net
+/// sends them compressed), and the retry the file coming is on, when it broke before.
+/// </summary>
+public sealed record ManifestDownload(long Bytes, Optional<ManifestRetry> Retry);
+
+/// <summary>
+/// Where a read of Bungie's manifest is: reading its files (when the tab doesn't hold them yet), about to name the items
+/// from the files the tab holds, or naming them (the round of questions it is on, from 1).
 /// </summary>
 [Union]
 public partial record ManifestReadStage
 {
-    partial record Reading(long Bytes);
+    partial record Reading(ManifestDownload Download);
+    partial record Holding();
     partial record Naming(int Round);
 }
 
@@ -33,18 +43,30 @@ public sealed record ManifestReadProgress(ManifestReadFor For, int Items, Manife
 /// </summary>
 public sealed record ManifestProgressView(string Title, string Detail, string Hint, int Percent);
 
-/// <summary>Pure: a manifest read's progress → the progress bar (the Bungie login section, the ⋯ pickers).</summary>
+/// <summary>Pure: a manifest read's progress → the progress bar (the Bungie login section, the ⋯ pickers; the startup screen's download bar).</summary>
 public static class ManifestProgressShaping
 {
     /// <summary>The unpacked bytes the files are assumed to near (Bungie's item table and its companions, about 215 MB in 2026): the bar slows past it, it never stops.</summary>
     private const double ExpectedBytes = 215_000_000;
 
-    public static ManifestReadProgress StartReading(ManifestReadFor readFor, int items) =>
-        new(readFor, items, new ManifestReadStage.Reading(0));
+    /// <summary>The files nobody downloaded yet.</summary>
+    public static readonly ManifestDownload NoDownload = new(0, Optional.None<ManifestRetry>());
 
-    /// <summary>How many bytes of the files have come (unpacked); once the naming has begun, the read is past them.</summary>
-    public static ManifestReadProgress ReportBytes(ManifestReadProgress progress, long bytes) =>
-        progress.Stage is ManifestReadStage.Reading ? progress with { Stage = new ManifestReadStage.Reading(bytes) } : progress;
+    /// <summary>A read that downloads the manifest's files first (the tab doesn't have them: its startup load was skipped or failed).</summary>
+    public static ManifestReadProgress StartReading(ManifestReadFor readFor, int items) =>
+        new(readFor, items, new ManifestReadStage.Reading(NoDownload));
+
+    /// <summary>A read from the files the tab keeps: it names the items at once.</summary>
+    public static ManifestReadProgress StartNaming(ManifestReadFor readFor, int items) =>
+        new(readFor, items, new ManifestReadStage.Holding());
+
+    /// <summary>What manifest.js says of the download (the bytes, unpacked; 0 for a file's first try, else its retry of <paramref name="retries"/>).</summary>
+    public static ManifestDownload ToDownload(long bytes, int attempt, int retries) =>
+        new(bytes, attempt > 0 ? Optional.Some(new ManifestRetry(attempt, retries)) : Optional.None<ManifestRetry>());
+
+    /// <summary>How far the files' download got; once the naming has begun, the read is past them.</summary>
+    public static ManifestReadProgress ReportDownload(ManifestReadProgress progress, ManifestDownload download) =>
+        progress.Stage is ManifestReadStage.Reading ? progress with { Stage = new ManifestReadStage.Reading(download) } : progress;
 
     /// <summary>The next round of naming: the first after the files, then one more each time.</summary>
     public static ManifestReadProgress ReportRound(ManifestReadProgress progress) =>
@@ -52,14 +74,20 @@ public static class ManifestProgressShaping
         {
             Stage = progress.Stage.Match<ManifestReadStage>(
                 _ => new ManifestReadStage.Naming(1),
+                _ => new ManifestReadStage.Naming(1),
                 naming => new ManifestReadStage.Naming(naming.Round + 1)),
         };
+
+    /// <summary>The question a listing is on (its own count, 1 to 4), as the naming's round.</summary>
+    public static ManifestReadProgress ReportRound(ManifestReadProgress progress, int round) =>
+        progress with { Stage = new ManifestReadStage.Naming(round) };
 
     public static ManifestProgressView ShapeReading(ManifestReadProgress progress) =>
         new(
             DescribeTitle(progress),
             progress.Stage.Match(
-                reading => $"reading its files… {DescribeMegabytes(reading.Bytes)}",
+                reading => $"reading its files… {DescribeDownload(reading.Download)}",
+                _ => "naming them…",
                 naming => $"naming them (step {naming.Round.ToString(CultureInfo.InvariantCulture)})"),
             progress.For switch
             {
@@ -69,7 +97,8 @@ public static class ManifestProgressShaping
                 _ => "You can keep designing meanwhile; the build's items show by hash until it's done.",
             },
             progress.Stage.Match(
-                reading => (int)Math.Round(85 * (1 - Math.Exp(-1.6 * reading.Bytes / ExpectedBytes))),
+                reading => (int)Math.Round(85 * ToDownloadedShare(reading.Download)),
+                _ => 85,
                 naming => (int)Math.Round(99 - 14 * Math.Pow(0.5, naming.Round))));
 
     /// <summary>A read in progress, when there is one.</summary>
@@ -91,6 +120,16 @@ public static class ManifestProgressShaping
             _ => progress.Items == 1 ? "Reading Bungie's manifest for 1 of this build's items" : $"Reading Bungie's manifest for {count} of this build's items",
         };
     }
+
+    /// <summary>The bytes so far ("84 MB"), and the retry when a file broke ("84 MB · connection lost, trying again: 2 of 3").</summary>
+    public static string DescribeDownload(ManifestDownload download) =>
+        download.Retry.Match(
+            retry => $"{DescribeMegabytes(download.Bytes)} · connection lost, trying again: {retry.Value.Attempt.ToString(CultureInfo.InvariantCulture)} of {retry.Value.Limit.ToString(CultureInfo.InvariantCulture)}",
+            _ => DescribeMegabytes(download.Bytes));
+
+    /// <summary>How much of the files is in, from 0 to 1: four fifths by the size they are expected to have, then ever more slowly (their size isn't known).</summary>
+    public static double ToDownloadedShare(ManifestDownload download) =>
+        1 - Math.Exp(-1.6 * download.Bytes / ExpectedBytes);
 
     private static string DescribeMegabytes(long bytes) =>
         $"{(bytes / 1_000_000.0).ToString("0", CultureInfo.InvariantCulture)} MB";
