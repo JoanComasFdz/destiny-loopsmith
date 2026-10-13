@@ -135,9 +135,10 @@ elements:
     hash: [953234331, 3539253011]   # the second: a copy with identical text
     description: "Less Arc damage from combatants: 15% | 25% | 30% with 1|2|3 copies (different resistance sources multiply)."
     source: "compendium/2026-10-09/Armor Mods#7"
-    inert: "Damage resistance: Loopsmith doesn't model the damage you take, so no loop changes."
     rules: []
-    passives: []
+    passives:
+      - effect: { resistDamage: { amount: "15% | 25% | 30%", against: arc } }
+        reason: "You take less Arc damage from combatants."
 
   - id: solar-resistance
     name: Solar Resistance
@@ -146,9 +147,10 @@ elements:
     hash: [3194530172, 3846931924]   # the second: a copy with identical text
     description: "Less Solar damage from combatants: 15% | 25% | 30% with 1|2|3 copies (different resistance sources multiply)."
     source: "compendium/2026-10-09/Armor Mods#7"
-    inert: "Damage resistance: Loopsmith doesn't model the damage you take, so no loop changes."
     rules: []
-    passives: []
+    passives:
+      - effect: { resistDamage: { amount: "15% | 25% | 30%", against: solar } }
+        reason: "You take less Solar damage from combatants."
 
   - id: void-resistance
     name: Void Resistance
@@ -157,9 +159,10 @@ elements:
     hash: [3410844187, 2788997987]   # the second: a copy with identical text
     description: "Less Void damage from combatants: 15% | 25% | 30% with 1|2|3 copies (different resistance sources multiply)."
     source: "compendium/2026-10-09/Armor Mods#7"
-    inert: "Damage resistance: Loopsmith doesn't model the damage you take, so no loop changes."
     rules: []
-    passives: []
+    passives:
+      - effect: { resistDamage: { amount: "15% | 25% | 30%", against: void } }
+        reason: "You take less Void damage from combatants."
 
   - id: stasis-resistance
     name: Stasis Resistance
@@ -170,9 +173,10 @@ elements:
     hash: [638704972, 3456250548, 1176372075]   # the second: a copy with identical text
     description: "Less Stasis damage from combatants: 15% | 25% | 30% with 1|2|3 copies (different resistance sources multiply)."
     source: "compendium/2026-10-09/Armor Mods#7"
-    inert: "Damage resistance: Loopsmith doesn't model the damage you take, so no loop changes."
     rules: []
-    passives: []
+    passives:
+      - effect: { resistDamage: { amount: "15% | 25% | 30%", against: stasis } }
+        reason: "You take less Stasis damage from combatants."
 
   - id: strand-resistance
     name: Strand Resistance
@@ -181,9 +185,10 @@ elements:
     hash: 2959732323
     description: "Less Strand damage from combatants: 15% | 25% | 30% with 1|2|3 copies (different resistance sources multiply)."
     source: "compendium/2026-10-09/Armor Mods#7"
-    inert: "Damage resistance: Loopsmith doesn't model the damage you take, so no loop changes."
     rules: []
-    passives: []
+    passives:
+      - effect: { resistDamage: { amount: "15% | 25% | 30%", against: strand } }
+        reason: "You take less Strand damage from combatants."
 
   - id: melee-damage-resistance
     name: Melee Damage Resistance
@@ -192,9 +197,10 @@ elements:
     hash: [1763668984, 2562645296]   # the second: a copy with identical text
     description: "Less damage from combatants within 5 m: 15% | 25% | 30% with 1|2|3 copies (different resistance sources multiply)."
     source: "compendium/2026-10-09/Armor Mods#7"
-    inert: "Damage resistance: Loopsmith doesn't model the damage you take, so no loop changes."
     rules: []
-    passives: []
+    passives:
+      - effect: { resistDamage: { amount: "15% | 25% | 30%", against: closeRange } }
+        reason: "You take less damage from combatants within 5 m."
 
   - id: sniper-damage-resistance
     name: Sniper Damage Resistance
@@ -203,9 +209,10 @@ elements:
     hash: [707237917, 657773637]   # the second: a copy with identical text
     description: "Less damage from combatants beyond 30 m: 15% | 25% | 30% with 1|2|3 copies (different resistance sources multiply)."
     source: "compendium/2026-10-09/Armor Mods#7"
-    inert: "Damage resistance: Loopsmith doesn't model the damage you take, so no loop changes."
     rules: []
-    passives: []
+    passives:
+      - effect: { resistDamage: { amount: "15% | 25% | 30%", against: longRange } }
+        reason: "You take less damage from combatants beyond 30 m."
 
   - id: unflinching-arc-aim
     name: Unflinching Arc Aim

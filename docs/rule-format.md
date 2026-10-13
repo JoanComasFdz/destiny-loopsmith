@@ -211,7 +211,7 @@ elements:
           - { debuffTarget: jolt }
         reason: "Your Arc grenades jolt everything they hit."
     passives: []              # optional (default none)
-    # inert: "Damage resistance: Loopsmith doesn't model the damage you take, so no loop changes."
+    # inert: "Ammo: Loopsmith doesn't model ammo, so no loop changes."
                               # optional: why an element has no rules and no passives on purpose
 ```
 
@@ -229,7 +229,8 @@ Two keys belong to some kinds only (anywhere else they are an error):
   Compendium, changing nothing (ADRs D5).
 
 `kind: keyword` elements are active in every build, once; every other kind is equipped through its
-build slot ([Build check](#build-check)).
+build slot ([Build check](#build-check)). Besides the keywords, `keywords/guardian.yaml` holds the Guardian's own
+damage resistance (34.5% against combatants, compendium Game Mechanics#106), so every build's state counts it.
 
 `statChecks` say something about an element at some values of a build's stat — a fact of the game the build
 check states, never counted (the stat isn't simulated):
@@ -246,8 +247,8 @@ is the build's value. `from` and `below` are stat values (0..200) and `from` < `
 blocks a build). An unknown stat ("?") says nothing.
 
 `inert: "<why>"` marks an element that is known and has no part in a loop on purpose — Skip Grenade
-(its hits are the grenade step itself), Feeding Frenzy (no ammo or reloads are counted), the
-resistance mods (no damage taken is modelled). It takes no rules and no passives
+(its hits are the grenade step itself), Feeding Frenzy (no ammo or reloads are counted), Emergency
+Reinforcement (no damage taken is modelled, so nothing sets it off). It takes no rules and no passives
 (`inert is only for an element with no rules and no passives`), the build check gives it no "no
 authored rules" warning, and its details say "No rules needed." with the why.
 
@@ -307,7 +308,7 @@ tab's `NN_<Tab>.csv`, which is the spreadsheet's row. Archived `OLD …` tabs ar
 | `"+20 \| +40 \| +50"` | `PerModCount([20, 40, 50])` | plain numbers by copies (stat points: `modifyStat`) |
 | `"~25%"`, `"25%?"` | `Approximate(0.25)` | shown `~25%` |
 | `"?"`, `"?%"` | `Unknown()` | **never 0** |
-| `"300% [20%]"` | PvE part `Known(3.0)` | `[…]` is the PvP value: checked, then dropped |
+| `"300% [20%]"` | PvE part `Known(3.0)` | `[…]` is the PvP value: checked, then dropped (kept by `resistDamage`) |
 | `2`, `"2"` | `Known(2)` | plain number |
 
 Game values appear in `grantEnergy.amount` (or `full`), `convertStacksToEnergy.perStack`, `modifyDamage.change`,
@@ -539,7 +540,8 @@ passives:
 | `{ extraStacks: { status, extra } }` (`extra` ≥ 1) | `ExtraStacks` |
 | `{ extraCharges: { ability: grenade, extra: 1 } }` | `ExtraCharges` (a fact, ADRs D5) |
 | `{ modifyDamage: { against, change } }` | `ModifyDamage` |
-| `{ resistDamage: "25%" }` | `ResistDamage` |
+| `{ resistDamage: "25% [10%]" }` (any damage; `[…]` the PvP value) | `ResistDamage(amount, Any)` |
+| `{ resistDamage: { amount: "15% \| 25% \| 30%", against: arc } }` (combatants only; no `[…]`) | `ResistDamage(amount, Arc)` |
 | `{ modifyWeaponStats: { archetypes: [fusion-rifle], changes: [ { stat: handling, change: "?" } ] } }` | `ModifyWeaponStats` (non-empty lists; archetypes and stats are kebab-case words) |
 | `{ raiseMaxStacks: { status: armor-charge, max: "4 \| 5 \| 6" } }` (a status with `maxStacks`; no `when`) | `RaiseMaxStacks` — the cap with it equipped, by copies |
 | `{ modifyStat: { stat: grenade, change: "+20 \| +40 \| +50" } }` (`health\|melee\|grenade\|super\|class\|weapons`; stat points, not a percent) | `ModifyStat(stat, change)` — "+20 Grenade" |
@@ -556,6 +558,16 @@ raising the same cap make it `"?"`: no source says how they combine. It always h
 it takes no when`). The cap is a fact: it shows in the status's facts (`up to x4`), in the declared step
 (`Armor Charge at max (x4)`) and in `explain`'s max heading (`Max Bolt Charge (x10)`); the player still
 declares it reached (ADRs D3).
+
+`resistDamage` is a damage resistance, shown in `explain` and counted in the step's **damage resistance** (ADRs D29,
+[loop-format.md](loop-format.md#action-tokens)) while its `when` holds. Its string form reduces any damage: the
+`[…]` is its PvP value, and without one its PvP value is `?` (write `"20% [20%]"` when they are the same). Its map
+form reduces only combatants' damage, so it does nothing in PvP and takes no `[…]` (`a resistance against arc is
+against combatants only, so it has no PvP value: drop the [ ]`): `against` is `combatants` (all of it: the Guardian's
+base), a damage type (`arc`, `solar`, `void`, `stasis`, `strand`), `harmonic` (the Super's element), `closeRange`
+(within 5 m), `longRange` (beyond 30 m) or `blast` (area, blast and explosive damage), or `any` (the string form's).
+Copies of one mod take its value by copies (`"15% | 25% | 30%"`); different sources multiply what the others let
+through, 1 − (1 − a) × (1 − b) × … (compendium Armor Mods#7), never added up.
 
 `modifyStat` (the Font mods: `+20 | +40 | +50` Grenade while Armor Charge, `when: [ { has: armor-charge } ]`) is a fact
 shown in `explain` and, while its `when` holds, in the step's state (`+20 Grenade [Grenade Font]` under Armor Charge).

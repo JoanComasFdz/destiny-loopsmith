@@ -322,7 +322,7 @@ internal static class RuleBodyParsing
             "extraCharges" => ReadExtraCharges(entry.Value),
             "modifyDamage" => ReadDamageChange(scope, entry.Value)
                 .Map(Passive (change) => new Passive.ModifyDamage(change.Against, change.Change)),
-            "resistDamage" => ReadGameValue(entry.Value).Map(Passive (amount) => new Passive.ResistDamage(amount)),
+            "resistDamage" => ReadResistDamage(entry.Value),
             "modifyWeaponStats" => ReadModifyWeaponStats(entry.Value),
             "raiseMaxStacks" => ReadRaiseMaxStacks(scope, entry.Value),
             "modifyStat" => ReadModifyStat(entry.Value),
@@ -345,6 +345,26 @@ internal static class RuleBodyParsing
         value.ParseWith(text => text.Contains('%')
             ? new Result<GameValue, string>.Error($"'{text}' is a percent; a stat change is a number of points (e.g. +20, or \"+20 | +40 | +50\" by copies)")
             : GameNotationParsing.ParseGameValue(text));
+
+    /// <summary>
+    /// <c>resistDamage: "45% [25%]"</c> (any damage, the PvP value in brackets) or
+    /// <c>resistDamage: { amount: "15% | 25% | 30%", against: arc }</c> (by copies): a resistance against combatants
+    /// only (<c>against</c> other than <c>any</c>) does nothing in PvP, so it takes no PvP value.
+    /// </summary>
+    private static Result<Passive, Errors> ReadResistDamage(YamlValue value) =>
+        value.Node is YamlMappingNode
+            ? value.ToMap().Bind(map => Combine(
+                    map.CheckKeys(["amount", "against"]),
+                    map.ReadRequired("amount", ReadPveAndPvp),
+                    map.ReadRequired("against", ReadVocabularyWord<ResistanceScope>),
+                    (_, amount, against) => new Passive.ResistDamage(amount, against))
+                .Bind(resist => CheckResistancePvp(map, resist)))
+            : ReadPveAndPvp(value).Map(Passive (amount) => new Passive.ResistDamage(amount, ResistanceScope.Any));
+
+    private static Result<Passive, Errors> CheckResistancePvp(YamlMap map, Passive.ResistDamage resist) =>
+        resist.Against != ResistanceScope.Any && resist.Amount.Pvp.IsSome()
+            ? map.FailAtKey<Passive>("amount", $"a resistance against {GameNotationParsing.ToVocabularyWord(resist.Against)} is against combatants only, so it has no PvP value: drop the [ ]")
+            : Succeed<Passive>(resist);
 
     private static Result<Passive, Errors> ReadExtraStacks(ReferenceScope scope, YamlValue value) =>
         value.ToMap().Bind(map => Combine(

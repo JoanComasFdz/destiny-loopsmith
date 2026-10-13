@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Loopsmith.Core.Domain;
+using Loopsmith.Core.Functional;
 using Loopsmith.Core.Phrasing;
 
 namespace Loopsmith.Core.TraceRendering;
@@ -35,7 +36,8 @@ public static class TraceRenderer
 
     /// <summary>
     /// What is present — buffs on you ("at max" once declared), buffs on your weapons and the changes to their stats,
-    /// debuffs on the pack, pickups on the ground — then, for each status that switches other elements' passives on,
+    /// debuffs on the pack, pickups on the ground, your damage resistance (PvE and PvP, its sources multiplied; a line for
+    /// each resistance against some damage only) — then, for each status that switches other elements' passives on,
     /// what it switches on (<see cref="StepStateShaping"/>, as the designer shows it under each step).
     /// </summary>
     public static ImmutableArray<StyledLine> RenderState(ValidatedBuild build, GameState state, ImmutableArray<ActivePassive> passives)
@@ -61,8 +63,23 @@ public static class TraceRenderer
             new StyledLine(1, ["Weapons       ".ToSpan(Tone.Muted), .. RenderWeaponEntries(shaped.Weapons, weaponEffects)]),
             new StyledLine(1, ["Debuffs       ".ToSpan(Tone.Muted), .. RenderEntries(shaped.Debuffs)]),
             new StyledLine(1, ["Ground        ".ToSpan(Tone.Muted), .. RenderEntries(shaped.Ground)]),
+            .. shaped.Resistance.Select(RenderResistanceLine),
             .. switchedOn,
         ];
+    }
+
+    /// <summary>"Resistance    PvE 73% · PvP 32.5%  (Base resistance 34.5% × Woven Mail 45% [PvP 25%])"; a line against some damage only: "  against Arc combatants  PvE 81.1%  (× Arc Resistance 30%)".</summary>
+    private static StyledLine RenderResistanceLine(ResistanceLine line, int index)
+    {
+        var label = line.Against.Map(against => $"  against {against}  ").UnwrapOr("Resistance    ");
+        var totals = "PvE " + line.Pve.FormatPercent() + line.Pvp.Map(pvp => " · PvP " + pvp.FormatPercent()).UnwrapOr("");
+        var sources = line.Sources.SelectMany((source, at) => (ImmutableArray<StyledSpan>)
+        [
+            (at > 0 ? " × " : index > 0 ? "× " : "").ToSpan(Tone.Muted),
+            source.Name.ToSpan(source.Affinity.ToTone()),
+            (" " + source.Pve.FormatPercent() + source.Pvp.Map(pvp => $" [PvP {pvp.FormatPercent()}]").UnwrapOr("")).ToSpan(Tone.Plain),
+        ]);
+        return new StyledLine(1, [label.ToSpan(Tone.Muted), totals.ToSpan(Tone.Strong), "  (".ToSpan(Tone.Muted), .. sources, ")".ToSpan(Tone.Muted)]);
     }
 
     private static ImmutableArray<StyledSpan> RenderEntries(ImmutableArray<StateEntry> entries) =>

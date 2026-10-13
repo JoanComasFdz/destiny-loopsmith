@@ -340,7 +340,7 @@ public sealed class RuleCatalogParsingTests
         Assert.Equal(new DamageSource.SummonOf(SummonId.From("threadling")), modifyDamage.Against);
         Assert.Equal([0.12m, 0.17m, 0.20m], Assert.IsType<GameValue.PerModCount>(modifyDamage.Change).Values);
 
-        Assert.Equal(new Passive.ResistDamage(new GameValue.Known(0.25m)), passives[3].Modifier);
+        Assert.Equal(new Passive.ResistDamage(new PveAndPvp(new GameValue.Known(0.25m), Optional.None<GameValue>()), ResistanceScope.Any), passives[3].Modifier);
 
         var weaponStats = Assert.IsType<Passive.ModifyWeaponStats>(passives[4].Modifier);
         Assert.Equal(["fusion-rifle"], weaponStats.Archetypes);
@@ -532,6 +532,43 @@ public sealed class RuleCatalogParsingTests
         Assert.Equal([4m, 5m, 6m], Assert.IsType<GameValue.PerModCount>(raise.Max).Values);
         Assert.Contains("'amplified' doesn't stack (no maxStacks)", notStacking);
         Assert.Equal("mods.yaml:8: raiseMaxStacks raises the build's cap, which always holds, so it takes no when", guarded);
+    }
+
+    [Fact]
+    public void A_resistance_keeps_its_PvP_value_and_one_against_combatants_only_takes_none()
+    {
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToElementsFile("mods.yaml", """
+            elements:
+              - id: woven
+                name: Woven
+                kind: armorMod
+                affinity: strand
+                passives:
+                  - effect: { resistDamage: "45% [25%]" }
+              - id: arc-resistance
+                name: Arc Resistance
+                kind: armorMod
+                affinity: arc
+                passives:
+                  - effect: { resistDamage: { amount: "15% | 25% | 30%", against: arc } }
+            """)]));
+        var withPvp = ParseInvalidCatalog(Glossary, ToElementsFile("mods.yaml", """
+            elements:
+              - id: arc-resistance
+                name: Arc Resistance
+                kind: armorMod
+                affinity: arc
+                passives:
+                  - effect: { resistDamage: { amount: "15% [5%]", against: arc } }
+            """));
+
+        Assert.Equal(
+            new Passive.ResistDamage(new PveAndPvp(new GameValue.Known(0.45m), Optional.Some<GameValue>(new GameValue.Known(0.25m))), ResistanceScope.Any),
+            Assert.Single(catalog.Elements[ElementId.From("woven")].Passives).Modifier);
+        var arc = Assert.IsType<Passive.ResistDamage>(Assert.Single(catalog.Elements[ElementId.From("arc-resistance")].Passives).Modifier);
+        Assert.Equal((ResistanceScope.Arc, false), (arc.Against, arc.Amount.Pvp.IsSome()));
+        Assert.Equal([0.15m, 0.25m, 0.30m], Assert.IsType<GameValue.PerModCount>(arc.Amount.Pve).Values);
+        Assert.Contains("a resistance against arc is against combatants only, so it has no PvP value", withPvp);
     }
 
     [Fact]

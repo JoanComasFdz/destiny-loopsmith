@@ -50,4 +50,23 @@ public static class StateHudShaping
     /// <summary>"1 effect", "2 effects": how many other elements' effects the status switches on right then.</summary>
     public static string DescribeSwitchesCount(StateEntry entry) =>
         entry.SwitchesOn.Length == 1 ? "1 effect" : $"{entry.SwitchesOn.Length} effects";
+
+    /// <summary>"All damage", or what the line's resistance is against, as a heading ("Arc combatants").</summary>
+    public static string DescribeResistanceLine(ResistanceLine line) =>
+        line.Against.Map(CapitalizeFirst).UnwrapOr("All damage");
+
+    /// <summary>The PvP total; "—" for a line against combatants only (it does nothing in PvP).</summary>
+    public static string DescribeResistancePvp(ResistanceLine line) =>
+        line.Pvp.Map(pvp => pvp.FormatPercent()).UnwrapOr("—");
+
+    /// <summary>"All damage", or "Arc combatants: all damage ×" — a line against some damage only adds its sources to all damage's.</summary>
+    public static string DescribeResistanceSourcesHeading(ResistanceLine line) =>
+        line.Against.Map(against => $"{CapitalizeFirst(against)}: all damage ×").UnwrapOr("All damage");
+
+    /// <summary>"45% · PvP 25%"; a source against combatants only: "34.5% · not in PvP".</summary>
+    public static string DescribeResistanceSource(ResistanceSource source) =>
+        source.Pve.FormatPercent() + source.Pvp.Map(pvp => $" · PvP {pvp.FormatPercent()}").UnwrapOr(" · not in PvP");
+
+    private static string CapitalizeFirst(string text) =>
+        text.Length == 0 ? text : char.ToUpperInvariant(text[0]) + text[1..];
 }

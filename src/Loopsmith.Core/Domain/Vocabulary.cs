@@ -52,6 +52,14 @@ public enum KeywordKind
     Debuff,         // lives on the target (Jolt, Sever, Unravel, Blind…)
 }
 
+/// <summary>
+/// What damage a resistance reduces: <see cref="Any"/> damage (PvE and PvP: Woven Mail, Spark of Resistance), or only
+/// combatants' (PvE: the Guardian's base resistance) — all of it, or only some: one damage type (Arc Resistance), the
+/// Super's element (Harmonic Resistance), from within 5 m (Melee Damage Resistance), from beyond 30 m (Sniper Damage
+/// Resistance), area, blast and explosive damage (Concussive Dampener).
+/// </summary>
+public enum ResistanceScope { Any, Combatants, Arc, Solar, Void, Stasis, Strand, Harmonic, CloseRange, LongRange, Blast }
+
 public enum EnemyTier { Minor, Major, Boss, Champion }
 
 public enum HitOutcome { Damage, Kill }

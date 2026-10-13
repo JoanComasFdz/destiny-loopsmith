@@ -178,10 +178,21 @@ Frequency's extra Bolt Charge); its details list them under **While Amplified** 
 card, each with where it reaches. A passive that changes weapon stats (Ionic Overclock: Linear Fusion Rifles, Fusion Rifles and Heat
 Weapons) shows in the weapons column next to the build's weapons of those types while it holds; when none of
 them is one, the details say it does nothing here and Validation says so too. A status's own effect (Woven
-Mail's damage resistance) is in its details, not in the state. Every status opens its details on a tap — one the
+Mail's damage resistance) is in its details, not in the state's chips: it counts in the **damage resistance** below
+them. Every status opens its details on a tap — one the
 rules have no element for (Amplified) shows the glossary's facts and what it switches on — and its facts ("up to
-x5 · 8s") show on hover. The CLI's `--state` prints the same four lines, then one `While <status>` line for each
-status that switches something on.
+x5 · 8s") show on hover. Under them, the **damage resistance** right then (ADRs D29): a small table with a PvE and a PvP column. Its first row,
+*All damage*, multiplies every `resistDamage` passive that holds — the Guardian's base 34.5% against combatants, Spark
+of Resistance, Woven Mail while it is on you — the way the game stacks them, 1 − (1 − a) × (1 − b) × …: 73% PvE and
+32.5% PvP with those three (the base does nothing in PvP). Each resistance against some combatants only adds a row of
+its own, PvE only (PvP "—"): *Arc combatants* (Arc Resistance, or Harmonic Resistance with an Arc Super), *Combatants
+within 5 m*, *Combatants beyond 30 m*, *Combatants' area, blast and explosive damage*, all damage's sources and its own
+together. A source whose value is "?" makes its total "?". Tapping the title (*▸ Damage resistance*) lists each row's
+sources with their PvE and PvP values (each opens its details on a tap) and the formula; tapping it again hides them.
+The totals are facts, never read to decide what a step fires. The CLI's `--state` prints the same four lines, a
+`Resistance` line (`PvE 73% · PvP 32.5%  (Guardian 34.5% × Spark of Resistance 25% [PvP 10%] × Woven Mail 45% [PvP
+25%])`) and an `against …` line for each row of its own, then one `While <status>` line for each status that switches
+something on.
 Each step can be moved up or down, removed or dragged onto another step's place; the loop
 replays in its new order.
 

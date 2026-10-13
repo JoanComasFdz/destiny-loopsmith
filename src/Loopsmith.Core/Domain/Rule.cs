@@ -86,7 +86,7 @@ public partial record Passive
     partial record ExtraStacks(StatusId Status, StackCount Extra);           // Spark of Frequency: a caveat on each grant
     partial record ExtraCharges(AbilityKind Ability, int Extra);            // a fact (ADRs D5)
     partial record ModifyDamage(DamageSource Against, GameValue Change);     // Flashover, stat bonuses
-    partial record ResistDamage(GameValue Amount);                           // Spark of Resistance
+    partial record ResistDamage(PveAndPvp Amount, ResistanceScope Against);  // Spark of Resistance: "25% [10%]"; Arc Resistance: Arc combatants' only
     partial record ModifyWeaponStats(ImmutableArray<string> Archetypes, ImmutableArray<WeaponStatChange> Changes);
     partial record RaiseMaxStacks(StatusId Status, GameValue Max);           // Charged Up: the cap with it equipped, per copy ("4 | 5 | 6"), a fact (ADRs D3)
     partial record ModifyStat(StatKind Stat, GameValue Change);              // Grenade Font: "+20 Grenade" while it holds, a fact never added to the stats (ADRs D1)
