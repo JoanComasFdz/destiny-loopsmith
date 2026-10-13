@@ -24,7 +24,8 @@ public sealed record LeftOutItem(LoadoutPart Part, ItemHash Hash);
 
 /// <summary>
 /// Why a DIM loadout's item is outside its build: no rule knows it yet (a gap), or it has no part in a loop — a
-/// legendary armor piece (stats and mod slots; its set's bonuses count from the pieces worn), a jump — and why.
+/// legendary armor piece (stats and mod slots; its set's bonuses count from the pieces worn), a jump the rules don't have —
+/// and why.
 /// </summary>
 [Union]
 public partial record LeftOutReason

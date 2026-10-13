@@ -70,6 +70,7 @@ public static class BuildValidation
             .. CreateOptionalSlot(build.Abilities.Grenade.ToElement(), "grenade", ElementKind.Grenade),
             .. CreateOptionalSlot(build.Abilities.Melee.ToElement(), "melee", ElementKind.Melee),
             .. CreateOptionalSlot(build.Abilities.ClassAbility.ToElement(), "class ability", ElementKind.ClassAbility),
+            .. CreateOptionalSlot(build.Abilities.Jump.ToElement(), "jump", ElementKind.Jump),
             .. CreateSlots(build.Aspects, "aspect", ElementKind.Aspect),
             .. CreateSlots(build.Fragments, "fragment", ElementKind.Fragment),
             .. exotic,
@@ -163,7 +164,7 @@ public static class BuildValidation
         var unknown = new[]
             {
                 ("super", abilities.Super), ("grenade", abilities.Grenade), ("melee", abilities.Melee),
-                ("class ability", abilities.ClassAbility),
+                ("class ability", abilities.ClassAbility), ("jump", abilities.Jump),
             }
             .Where(slot => slot.Item2 is AbilityPlug.Unknown)
             .Select(slot => slot.Item1)
@@ -190,7 +191,7 @@ public static class BuildValidation
                         $"{element.Name} changes {DomainPhrasing.DescribeArchetypes(weapons.Archetypes)}, and no weapon in this build is one, so it does nothing here.")))
             : [];
 
-    /// <summary>What the DIM loadout had that no rule knows yet (a legendary armor piece or a jump has no part in a loop: not a gap).</summary>
+    /// <summary>What the DIM loadout had that no rule knows yet (a legendary armor piece or a jump the rules don't have has no part in a loop: not a gap).</summary>
     private static IEnumerable<BuildIssue> CheckLeftOut(Build build, RuleCatalog catalog)
     {
         var missing = LeftOutClassifying.ListMissing(catalog, build);
