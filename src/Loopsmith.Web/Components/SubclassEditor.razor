@@ -16,7 +16,7 @@
     var fragmentCapacity = slots.Match(count => count.Value, _ => draft.Fragments.Length + 1);
     var slotText = slots.Match(count => count.Value.ToString(CultureInfo.InvariantCulture), _ => DomainPhrasing.Unknown);
 }
-<Modal Title="@($"{heading.Name}, {heading.Kind}")" Size="wide" OnClose="OnClose">
+<Modal Title="@($"{heading.Name}, {heading.Kind}")" Size="snug" OnClose="OnClose">
     <Heading>
         <div class="sub-head" data-testid="subclass-head">
             @if (heading.Icon is Optional<IconTile>.Some subclassItem)

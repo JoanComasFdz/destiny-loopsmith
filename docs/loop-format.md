@@ -318,7 +318,8 @@ Subclass" as the header (the subclass's own name, Strand, and no icon when the m
 the super on the left; Abilities (class ability, jump, melee, grenade) and the two Aspects in one row beside it;
 Fragments under them. At phone width the super sits above the groups, and a group that doesn't fit its row wraps. Each
 group is a grey panel of squares, and each square has a footer with its **⋯** (and a fragment's ✕). Tapping a plug's
-square (or the subclass's icon) opens its details, and the slot's **⋯** opens a dropdown under that slot (above it when there's no room below),
+square (or the subclass's icon) opens its details, and the slot's **⋯** opens a dropdown under that slot (above it when
+the screen has no room below; it may spill out of the editor),
 one option per line, with everything the subclass can hold there — Bungie's manifest, with icons and names. The ones the
 rules don't know carry ⊘ (every Arcstrider plug is known, its four jumps `inert`), except a jump the rules don't have
 (another subclass's), which carries none: it has no part in a loop. The dropdown floats over the slots after
