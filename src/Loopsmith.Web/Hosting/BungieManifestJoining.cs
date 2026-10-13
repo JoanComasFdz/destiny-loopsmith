@@ -69,10 +69,7 @@ public sealed class BungieManifestJoining(BrowserInterop browser, string apiKey,
         await oneAtATime.WaitAsync();                                                            // impure
         try
         {
-            var files = await LoadFilesAsync();                                                  // impure
-            var listed = files is Result<Unit, string>.Error failed
-                ? new Result<ItemListing, string>.Error(failed.Failure)
-                : await ListAllItemsAsync(ReportStartupRound);                                   // impure
+            var listed = await LoadAndListItemsAsync();                                          // impure
             KeepListing(listed);                                                                 // impure (tab state)
             var ended = ManifestStartupShaping.EndStartup(listed);                               // pure
             ShowStartup(ended);                                                                  // impure (tab state)
@@ -214,23 +211,32 @@ public sealed class BungieManifestJoining(BrowserInterop browser, string apiKey,
             ? ManifestProgressShaping.StartNaming(ManifestReadFor.EveryItem, 0)
             : ManifestProgressShaping.StartReading(ManifestReadFor.EveryItem, 0);                // pure
         ShowReading(Optional.Some(started));                                                     // impure (tab state)
+        return await LoadAndListItemsAsync();                                                    // impure
+    }
+
+    /// <summary>The manifest's components (when the tab doesn't hold them yet), then every weapon and armor piece from them; or why not.</summary>
+    private async Task<Result<ItemListing, string>> LoadAndListItemsAsync()
+    {
         var files = await LoadFilesAsync();                                                      // impure
-        return files is Result<Unit, string>.Error failed
-            ? new Result<ItemListing, string>.Error(failed.Failure)
-            : await ListAllItemsAsync(ReportReadingRound);                                       // impure
+        if (files is Result<Unit, string>.Error failed)
+        {
+            return new Result<ItemListing, string>.Error(failed.Failure);
+        }
+
+        return await ListAllItemsAsync();                                                        // impure
     }
 
     /// <summary>
     /// Every weapon and armor piece, from the components the tab holds: the listing's questions, each answered by the page
-    /// (<paramref name="reportRound"/> is told which one, before the browser gets its turn), until it is done.
+    /// (the startup screen or the read's bar says which one, before the browser gets its turn), until it is done.
     /// </summary>
-    private async Task<Result<ItemListing, string>> ListAllItemsAsync(Action<int> reportRound)
+    private async Task<Result<ItemListing, string>> ListAllItemsAsync()
     {
         Result<ListingStep, string> step = new Result<ListingStep, string>.Ok(LoopDesigning.StartListing()); // pure
         while (step is Result<ListingStep, string>.Ok { Value: ListingStep.Ask ask })
         {
             var round = LoopDesigning.ToListingRound(ask);                                       // pure
-            reportRound(round);                                                                  // impure (tab state)
+            ReportListingRound(round);                                                           // impure (tab state)
             await Task.Delay(1);                                                                 // impure (the browser's turn: taps, the bar)
             var entries = await browser.ReadManifestEntriesAsync(ask.Query.Entries);            // impure
             var parts = await browser.ReadManifestPartsAsync(ask.Query.Parts);                  // impure
@@ -240,16 +246,20 @@ public sealed class BungieManifestJoining(BrowserInterop browser, string apiKey,
         return LoopDesigning.ToItemListing(step);                                                // pure
     }
 
-    private void ReportStartupRound(int round)
+    /// <summary>The listing's question the startup load (its screen) or the read in progress (its bar) is on.</summary>
+    private void ReportListingRound(int round)
     {
-        var listing = ManifestStartupShaping.ReportListing(round, LoopDesigning.ListingRounds); // pure
-        ShowStartup(listing);                                                                    // impure (tab state)
-    }
-
-    private void ReportReadingRound(int round)
-    {
+        var listing = ManifestStartupShaping.ReportListing(Startup, round, LoopDesigning.ListingRounds); // pure
         var naming = Reading.Map(progress => ManifestProgressShaping.ReportRound(progress, round)); // pure
-        ShowReading(naming);                                                                     // impure (tab state)
+        if (ManifestStartupShaping.IsLoading(Startup))
+        {
+            ShowStartup(listing);                                                                // impure (tab state)
+        }
+
+        if (Reading.IsSome())
+        {
+            ShowReading(naming);                                                                 // impure (tab state)
+        }
     }
 
     /// <summary>A listing read is kept for the tab; a failed one leaves none (the next opening tries again).</summary>

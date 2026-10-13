@@ -66,9 +66,13 @@ public static class ManifestStartupShaping
     public static ManifestStartup ReportDownload(ManifestStartup startup, ManifestDownload download) =>
         startup is ManifestStartup.Downloading ? new ManifestStartup.Downloading(download) : startup;
 
-    /// <summary>The listing's question the load is on (1 to <paramref name="rounds"/>).</summary>
-    public static ManifestStartup ReportListing(int round, int rounds) =>
-        new ManifestStartup.Listing(round, rounds);
+    /// <summary>The listing's question the load is on (1 to <paramref name="rounds"/>), while the load runs (else it stays where it is).</summary>
+    public static ManifestStartup ReportListing(ManifestStartup startup, int round, int rounds) =>
+        IsLoading(startup) ? new ManifestStartup.Listing(round, rounds) : startup;
+
+    /// <summary>Whether the load is downloading the files or listing the items.</summary>
+    public static bool IsLoading(ManifestStartup startup) =>
+        startup is ManifestStartup.Downloading or ManifestStartup.Listing;
 
     /// <summary>The load's end: done, or why it failed.</summary>
     public static ManifestStartup EndStartup<T>(Result<T, string> loaded) =>
