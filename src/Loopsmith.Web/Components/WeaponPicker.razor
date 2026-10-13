@@ -58,15 +58,23 @@
                 @if (shown is Optional<WeaponOptionView>.Some details)
                 {
                     var weapon = details.Value;
-                    <div class="armor-option-details" data-testid="weapon-option-details">
-                        @* One line, its marks last: the panel keeps its height from one weapon to the next, masterworked or not. *@
-                        <div class="armor-option-name">@weapon.Tile.Name@(weapon.Archetype.Length > 0 ? $" · {weapon.Archetype}" : "")@if (weapon.Damage is Optional<DamageType>.Some damage)
-                            {<span class="option-sep"> · </span><span class="option-damage @ToneStyling.ToToneClass(damage.Value.ToAffinity().ToTone())" data-testid="weapon-option-damage">@if (weapon.DamageIcon is Optional<string>.Some damageIcon)
-                                {<img class="inline-icon" src="@damageIcon.Value" alt="" loading="lazy" />}@damage.Value</span>}@if (LoadoutShaping.AddMarks("", weapon.Marks) is { Length: > 0 } marked)
-                            {<span class="option-sep"> · </span><span class="armor-option-marks" data-testid="weapon-option-marks">@marked</span>}</div>
-                        @if (!weapon.Columns.IsEmpty)
+                    <div class="armor-option-details weapon-option-details" data-testid="weapon-option-details" style="--perk-rows: @view.PerkRows">
+                        @* The name, then "Use this weapon" in the upper right corner. The panel keeps room for the most perks a column of
+                           the listed weapons holds (and for the catalyst line when one has it), so the button stays put from one to the next. *@
+                        <div class="weapon-option-head">
+                            @* One line, its marks last: the panel keeps its height from one weapon to the next, masterworked or not. *@
+                            <div class="armor-option-name">@weapon.Tile.Name@(weapon.Archetype.Length > 0 ? $" · {weapon.Archetype}" : "")@if (weapon.Damage is Optional<DamageType>.Some damage)
+                                {<span class="option-sep"> · </span><span class="option-damage @ToneStyling.ToToneClass(damage.Value.ToAffinity().ToTone())" data-testid="weapon-option-damage">@if (weapon.DamageIcon is Optional<string>.Some damageIcon)
+                                    {<img class="inline-icon" src="@damageIcon.Value" alt="" loading="lazy" />}@damage.Value</span>}@if (LoadoutShaping.AddMarks("", weapon.Marks) is { Length: > 0 } marked)
+                                {<span class="option-sep"> · </span><span class="armor-option-marks" data-testid="weapon-option-marks">@marked</span>}</div>
+                            @if (!weapon.Worn)
+                            {
+                                <button type="button" class="btn primary small" data-action="wear-weapon" @onclick="() => PickAsync(weapon.Instance)">Use this weapon</button>
+                            }
+                        </div>
+                        @if (!weapon.Columns.IsEmpty || view.PerkRows > 0)
                         {
-                            @* One group per column: the perk the copy holds, then (a column that rolled two or more) those it can switch to. *@
+                            @* One group per column, side by side: the perk the copy holds, then (a column that rolled two or more) those it can switch to, stacked under it. *@
                             <div class="weapon-option-perks" data-testid="weapon-option-perks">
                                 @foreach (var column in weapon.Columns)
                                 {
@@ -98,11 +106,11 @@
                         {
                             <div class="muted">Its catalyst is in: the build turns it on.</div>
                         }
-                        <div class="muted">@weapon.Place@(weapon.Worn ? " · the build wears this one" : "")</div>
-                        @if (!weapon.Worn)
+                        else if (view.CatalystLine)
                         {
-                            <button type="button" class="btn primary small" data-action="wear-weapon" @onclick="() => PickAsync(weapon.Instance)">Use this weapon</button>
+                            <div class="muted" aria-hidden="true">&nbsp;</div>
                         }
+                        <div class="muted">@weapon.Place@(weapon.Worn ? " · the build wears this one" : "")</div>
                     </div>
                 }
                 else

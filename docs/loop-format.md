@@ -407,9 +407,11 @@ rolled two perks or more has each of them):
   weapons for that slot, the copy the build names first (✓ when it is theirs; for someone
   else's share none is ticked, so their own copy can be used to load its perks), then that weapon's other copies, then
   the rest by name; each with its tier, masterwork, breaker and element as in the loadout. Hovering one (or a
-  first tap) shows its type, tier and its perks column by column (a column that rolled two or more shows them framed
-  together, the one it holds on DIM's blue), and where it is; a click (a second tap, or "Use this
-  weapon") puts it in the build: its entry is written anew (`{slot, name, type, archetype, perks: [], hash, roll,
+  first tap) shows its type, tier and its perks column by column, the columns side by side (a column that rolled two
+  or more stacks them top to bottom, framed together, the one it holds on top on DIM's blue; on a phone the perks show
+  as icons only, their names in their tooltips), and where it is — the details keep room for the most perks a column
+  of the listed weapons holds, so "Use this weapon", in their upper right corner, stays put from one weapon to the
+  next; a click (a second tap, or "Use this weapon") puts it in the build: its entry is written anew (`{slot, name, type, archetype, perks: [], hash, roll,
   catalyst, instance}`, from the manifest and its sockets), or added for an empty slot, and the steps replay. A build
   wears one exotic weapon (by its manifest item, or an exotic weapon element among a hand-written weapon's perks):
   another exotic isn't listed while it does (the picker says which to swap); and one weapon a slot. Weapons the
