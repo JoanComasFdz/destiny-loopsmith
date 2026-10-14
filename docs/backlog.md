@@ -143,9 +143,8 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   the manifest excerpt's trait columns), the subclass edited (abilities, aspects and fragments, from the excerpt's
   `plugs`, for each of the nine Light subclasses) and any weapon or armor slot filled, swapped or emptied (every item of
   the game, or the player's own after a login), the mods picked and the artifact changed with its perks; changing the
-  class or the subclass itself means a new DIM link or build file. Of the 147 artifact perks the rules author 7 (the
-  Tablet of Ruin's of the skip-grenade build): the others show ⊘ and set nothing off until their rules are written. The rules author only Arcstrider's elements, so another subclass's plugs show ⊘ and set
-  nothing off until their rules are written.
+  class or the subclass itself means a new DIM link or build file. The rules author only Arcstrider's elements, so
+  another subclass's plugs show ⊘ and set nothing off until their rules are written.
 - **A weapon's roll from Bungie**: a DIM link never carries one, so it is picked by hand; reading the
   equipped character's weapons by Bungie name (their sockets are public) needs a Bungie API key (owner).
 - **Exotic weapons beyond Thunderlord**: only Thunderlord's perks and catalyst are authored
@@ -156,7 +155,14 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   Frenzy are `inert`): Loopsmith isn't a simulator.
 - **The artifact of a DIM link made since Monument of Triumph**: the excerpt has all seven artifacts, but a DIM link
   is read for its artifact perks only (`parameters.artifactUnlocks`), so its build's artifact is the one that unlocks
-  the most of them; reading the artifact a loadout saves, if DIM records it, is still to do.
+  the most of them and each perk is placed in a slot by Loopsmith (the highest tiers first, each in the free slot that
+  takes the fewest tiers, [loop-format.md](loop-format.md#artifact)). Next: if DIM now saves the equipped artifact and
+  the perk in each slot with a loadout, read them, so the designer opens a DIM loadout with the same artifact and the
+  same perk in each slot (`artifact: { hash, slots }`); if DIM doesn't save them, say so and close this item.
+- **Artifact perks' rules**: of the 147 perks of the seven artifacts (`rules/manifest.yaml`, `kind: artifact`) the rules
+  author 7, the Tablet of Ruin's of the skip-grenade build (`rules/artifact/current.yaml`); the others show ⊘ in the
+  artifact editor and set nothing off. Next: the rest of the Tablet of Ruin's 21, then the artifact to do after it,
+  from the Compendium snapshot's Artifact Perks tab (`rule-author`; no invented numbers, D13).
 - **Weapon perks**: the rules author 3 (Slice, Attrition Orbs, Feeding Frenzy), each with its enhanced trait
   (rule-format.md, "Enhanced traits"); the game has ~226 enhanced traits and ~86 enhanced origin traits, whose base
   perks aren't authored either. A perk authored next gets its `enhanced` block (a test asks for it).
