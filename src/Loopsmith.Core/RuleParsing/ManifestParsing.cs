@@ -37,7 +37,7 @@ internal static class ManifestParsing
     private static readonly ImmutableArray<string> ArmorSetKeys = ["hash", "name", "perks"];
     private static readonly ImmutableArray<string> SetPerkKeys = ["pieces", "perk"];
     private static readonly ImmutableArray<string> ItemKeys =
-        ["hash", "name", "kind", "type", "tier", "slot", "damageType", "breaker", "traits", "intrinsic", "catalyst", "mods", "set", "class", "perks", "plugs", "description", "watermark", "icon"];
+        ["hash", "name", "kind", "type", "tier", "slot", "damageType", "breaker", "traits", "intrinsic", "catalyst", "mods", "set", "class", "perks", "tiers", "slots", "flavor", "plugs", "description", "watermark", "icon"];
 
     /// <summary>The keys only some kinds have, each with the kinds it belongs to (and how an error names them).</summary>
     private static readonly ImmutableArray<(string Key, ImmutableArray<KindWord> Kinds, string Where)> KindKeys =
@@ -51,7 +51,10 @@ internal static class ManifestParsing
         ("intrinsic", [KindWord.Weapon, KindWord.Armor], "a weapon or armor"),
         ("set", [KindWord.Armor], "armor"),
         ("class", [KindWord.Armor], "armor"),
-        ("perks", [KindWord.Catalyst, KindWord.Artifact], "a catalyst or an artifact"),
+        ("perks", [KindWord.Catalyst], "a catalyst"),
+        ("tiers", [KindWord.Artifact], "an artifact"),
+        ("slots", [KindWord.Artifact], "an artifact"),
+        ("flavor", [KindWord.Artifact], "an artifact"),
         ("plugs", [KindWord.Subclass], "a subclass"),
         ("watermark", [KindWord.Weapon, KindWord.Armor], "a weapon or armor"),
     ];
@@ -208,7 +211,7 @@ internal static class ManifestParsing
     /// <c>[[a, b], [c]]</c>), an <c>intrinsic</c> and a <c>catalyst</c> (hashes) and <c>mods</c> (the weapon mods its mod
     /// socket takes); a weapon mod typed "Enhanced Weapon Mod" is an enhanced one; armor needs its <c>slot</c> (an armor
     /// slot) and may have an <c>intrinsic</c> and a <c>set</c> (an armor set's hash); an armor mod may have a slot (none: a
-    /// general mod); a catalyst has the <c>perks</c> it grants, an artifact the perks it unlocks. Anywhere else these keys
+    /// general mod); a catalyst has the <c>perks</c> it grants; an artifact its <c>tiers</c> (each a list of perk hashes), <c>slots</c> (the highest tier each perk slot takes) and <c>flavor</c> (its flavour text). Anywhere else these keys
     /// are errors.
     /// </summary>
     private static Result<Located<ManifestItem>, Errors> ReadItem(YamlValue value) =>
@@ -247,8 +250,14 @@ internal static class ManifestParsing
             KindWord.ArmorMod => map.ReadOptional("slot", ReadVocabularyWord<ArmorSlot>).Map(slot => (ManifestKind)new ManifestKind.ArmorMod(slot)),
             KindWord.Catalyst => map.ReadOrDefault("perks", perks => perks.ReadEach("perk", ReadItemHash), [])
                 .Map(perks => (ManifestKind)new ManifestKind.ExoticCatalyst(perks)),
-            KindWord.Artifact => map.ReadOrDefault("perks", perks => perks.ReadEach("perk", ReadItemHash), [])
-                .Map(perks => (ManifestKind)new ManifestKind.Artifact(perks)),
+            KindWord.Artifact => Combine(
+                map.ReadOrDefault("tiers", tiers => tiers.ReadEach("artifact tier", ReadArtifactTier), []),
+                map.ReadOrDefault("slots", slots => slots.ReadEach("perk slot", ReadPositiveInteger), []),
+                map.ReadOptional("flavor", ReadName),
+                (tiers, slots, flavor) => (tiers, slots, flavor))
+                .Bind(read => read.slots.Any(slot => slot > read.tiers.Length)
+                    ? map.FailAtKey<ManifestKind>("slots", $"a perk slot takes a tier the artifact doesn't have (it has {read.tiers.Length})")
+                    : Succeed<ManifestKind>(new ManifestKind.Artifact(read.tiers, read.slots, read.flavor))),
             KindWord.Subclass => map.ReadOrDefault("plugs", plugs => plugs.ReadEach("plug", ReadItemHash), [])
                 .Map(plugs => (ManifestKind)new ManifestKind.Subclass(plugs)),
             _ => Succeed(ToPlainKind(word)),
@@ -259,6 +268,10 @@ internal static class ManifestParsing
         value.ReadEach("perk", ReadItemHash).Bind(options => options.IsEmpty
             ? value.FailAt<TraitColumn>("a trait column needs at least one perk hash")
             : Succeed(new TraitColumn(options)));
+
+    /// <summary>An artifact's tier: the hashes of its perks.</summary>
+    private static Result<ArtifactTier, Errors> ReadArtifactTier(YamlValue value) =>
+        value.ReadEach("perk", ReadItemHash).Map(perks => new ArtifactTier(perks));
 
     private static ManifestKind ToPlainKind(KindWord word) =>
         word switch

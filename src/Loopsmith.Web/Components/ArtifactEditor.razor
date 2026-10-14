@@ -1,0 +1,370 @@
+@* The artifact editor, laid out like the game's artifact screen since Monument of Triumph (Artifacts 2.0): the artifact's
+   icon, name and "Artifact" as its header, with ⋯ beside the name, which opens a dropdown of every artifact (and "No
+   artifact"); under it the artifact's flavour text and what it works best with (an element with its icon); then its
+   seven perk slots in three groups — two take Tier 1 (◆), three Tiers 1–2 (◆◆), two Tiers 1–3 (◆◆◆) — each a square
+   with a footer holding ⋯ and, when it holds a perk, ✕, like the subclass editor's fragments. ⋯ opens a dropdown under
+   the slot (above it when there's no room below), floating over the slots after it, with every perk the slot takes, by
+   tier; a perk in another slot is greyed out ("equipped"). Picking one puts it in the slot; ✕ empties the slot and the
+   others stay. Tapping a perk's square opens its details. A perk the rules don't know carries ⊘ and can still be picked.
+   Switching to another artifact shows the slots last picked for it while the loop is open (empty for one not set up
+   yet). Save hands the artifact, its slots and what was picked for each artifact to the designer
+   (LoopDesigning.EditArtifact); Cancel, ✕ or Escape throws the changes away (Escape closes only a dropdown when one is
+   open). *@
+@inject BrowserInterop Browser
+@{
+    var item = artifact.Bind(hash => Artifacts.Where(found => found.Hash == hash).Select(Optional.Some).FirstOrDefault(Optional.None<ManifestItem>()));
+    var groups = artifact.Bind(hash => ArtifactShaping.ShapeSlots(Build, hash, slots));
+}
+<Modal Title="@(item.Match(found => $"{found.Value.Name}, Artifact", _ => "Artifact"))" Size="snug" OnClose="OnClose">
+    <Heading>
+        <div class="sub-head art-head" data-testid="artifact-head" @onkeydown="CloseOnEscape" @onkeydown:stopPropagation="true">
+            @if (item is Optional<ManifestItem>.Some headItem)
+            {
+                @RenderTile(ArtifactShaping.DescribeArtifact(headItem.Value), "sub-head-icon art-head-icon", true)
+            }
+            else
+            {
+                <span class="icon-tile empty sub-head-icon art-head-icon" aria-hidden="true">?</span>
+            }
+            <div class="sub-head-text">
+                <h2 class="sub-head-name" data-testid="artifact-name">@item.Match(found => found.Value.Name, _ => "No artifact")</h2>
+                <span class="sub-head-kind" data-testid="artifact-kind">Artifact</span>
+            </div>
+            <div class="art-switch @(open == Optional.Some(SwitchList) ? "open" : "")">
+                <button type="button" class="btn ghost small art-switch-button" id="@SwitchButtonId" data-action="switch-artifact"
+                        aria-expanded="@(open == Optional.Some(SwitchList) ? "true" : "false")" aria-controls="@(open == Optional.Some(SwitchList) ? OpenListId : null)"
+                        title="Pick another artifact" aria-label="Pick another artifact" @onclick="() => ToggleList(SwitchList)" @onclick:stopPropagation="true">⋯</button>
+                @if (open == Optional.Some(SwitchList))
+                {
+                    <div class="sub-drop art-drop" id="@OpenListId" role="group" tabindex="-1" data-testid="artifact-picker" aria-label="Pick an artifact" @onclick:stopPropagation="true">
+                        <div class="sub-drop-options">
+                            @RenderArtifactOptions(true)
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </Heading>
+    <ChildContent>
+        <div class="artifact-editor" data-testid="artifact-editor" @onclick="CloseList" @onkeydown="CloseOnEscape" @onkeydown:stopPropagation="true">
+            @if (item is Optional<ManifestItem>.Some shownItem && groups is Optional<ImmutableArray<ArtifactSlotGroup>>.Some shownGroups)
+            {
+                var header = ArtifactShaping.DescribeHeader(Build, shownItem.Value);
+                @if (header.Flavor is Optional<string>.Some flavor)
+                {
+                    <p class="art-flavor" data-testid="artifact-flavor">@flavor.Value</p>
+                }
+                @if (!header.Focus.IsEmpty)
+                {
+                    <div class="art-focus" data-testid="artifact-focus">
+                        <span class="art-focus-title">Works best with:</span>
+                        @foreach (var line in header.Focus)
+                        {
+                            <div class="art-focus-line">
+                                <span class="art-focus-label">@line.Label:</span>
+                                @foreach (var chip in line.Chips)
+                                {
+                                    @if (chip.Icon is Optional<string>.Some icon)
+                                    {
+                                        <img class="art-focus-icon" src="@icon.Value" alt="@chip.Name" title="@chip.Name" />
+                                    }
+                                    else
+                                    {
+                                        <span class="art-focus-chip">@chip.Name</span>
+                                    }
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+                <div class="art-slots" data-testid="artifact-slots">
+                    @foreach (var group in shownGroups.Value)
+                    {
+                        <section class="art-slot-group" data-tier="@group.Tier" aria-label="@group.Label">
+                            <div class="art-slot-mark" title="@group.Label" aria-hidden="true">@group.Mark</div>
+                            <div class="sub-group art-slot-row">
+                                @foreach (var slot in group.Slots)
+                                {
+                                    @RenderSlot(slot, group.Label)
+                                }
+                            </div>
+                        </section>
+                    }
+                </div>
+            }
+            else
+            {
+                <p class="muted art-hint" data-testid="artifact-none">No artifact. Pick one:</p>
+                <div class="art-choices" data-testid="artifact-choices">
+                    @RenderArtifactOptions(false)
+                </div>
+            }
+            <div class="sub-foot">
+                <button type="button" class="btn" data-action="artifact-cancel" @onclick="OnClose">Cancel</button>
+                <button type="button" class="btn primary" data-action="artifact-save" @onclick="SaveAsync">Save</button>
+            </div>
+        </div>
+    </ChildContent>
+</Modal>
+
+@if (details is Optional<ItemDetails>.Some shown && ItemInfoShaping.ShapeInfo(Build, shown.Value) is Optional<ItemInfo>.Some info)
+{
+    <ItemInfoDialog Info="info.Value" OnClose="CloseDetails" />
+}
+
+@code {
+    /// <summary>The id of the open dropdown: it is placed under (or above) its ⋯ once it is shown.</summary>
+    private const string OpenListId = "artifact-open-list";
+    private const string SwitchButtonId = "artifact-switch";
+
+    /// <summary>The artifact list's place among the open dropdowns (a slot's is its index, 0 or more).</summary>
+    private const int SwitchList = -1;
+
+    [Parameter, EditorRequired]
+    public ValidatedBuild Build { get; set; } = null!;
+
+    /// <summary>The slots last picked for each artifact while the loop is open (the designer keeps them).</summary>
+    [Parameter]
+    public ImmutableDictionary<ItemHash, ImmutableArray<Optional<ItemHash>>> Remembered { get; set; } = ImmutableDictionary<ItemHash, ImmutableArray<Optional<ItemHash>>>.Empty;
+
+    /// <summary>Save: the artifact, its slots and what was picked for each artifact. The designer replays the loop with them.</summary>
+    [Parameter]
+    public EventCallback<ArtifactSave> OnSave { get; set; }
+
+    /// <summary>Cancel, ✕ or Escape: the editor closes and its changes are thrown away.</summary>
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    private ImmutableArray<ManifestItem> Artifacts = [];
+    private Optional<ItemHash> artifact = Optional.None<ItemHash>();
+    private ImmutableArray<Optional<ItemHash>> slots = [];
+    private ImmutableDictionary<ItemHash, ImmutableArray<Optional<ItemHash>>> remembered = ImmutableDictionary<ItemHash, ImmutableArray<Optional<ItemHash>>>.Empty;
+    private Optional<ItemDetails> details = Optional.None<ItemDetails>();
+    private Optional<int> open = Optional.None<int>();
+    private bool placeList;
+    private Optional<string> refocus = Optional.None<string>();
+
+    protected override void OnInitialized()
+    {
+        var held = LoopDesigning.ReadArtifactChoice(Build);                                     // pure
+        Artifacts = LoopDesigning.ListArtifacts(Build);                                         // pure
+        artifact = held.Artifact;                                                                // impure (UI state)
+        slots = held.Slots;                                                                      // impure (UI state)
+        remembered = held.Artifact.Match(found => Remembered.SetItem(found.Value, held.Slots), _ => Remembered); // pure
+    }
+
+    /// <summary>A slot: its perk's square (tap: its details) or an empty "+", and in the footer under it ✕ (when it holds one) and ⋯.</summary>
+    private RenderFragment RenderSlot(ArtifactSlotView slot, string label) => __builder =>
+    {
+        var isOpen = open == Optional.Some(slot.Index);
+        var name = $"{label} slot {slot.Index + 1}";
+        <div class="sub-slot art-slot @(isOpen ? "open" : "")" data-slot="@slot.Index" data-tier="@slot.Tier">
+            @if (slot.Perk is Optional<IconTile>.Some held)
+            {
+                @RenderTile(held.Value, "art-perk", true)
+            }
+            else
+            {
+                <span class="icon-tile empty art-perk" title="@name: empty" aria-label="@name: empty">+</span>
+            }
+            <div class="sub-slot-foot">
+                @if (slot.Perk.IsSome())
+                {
+                    <button type="button" class="sub-slot-button" data-action="clear-slot" title="Empty @name" aria-label="Empty @name" @onclick="() => ClearSlot(slot.Index)" @onclick:stopPropagation="true">✕</button>
+                }
+                <button type="button" class="sub-slot-button sub-slot-pick" id="@DescribePickButtonId(slot.Index)" data-action="pick-slot"
+                        aria-expanded="@(isOpen ? "true" : "false")" aria-controls="@(isOpen ? OpenListId : null)"
+                        title="List what @name can hold" aria-label="List what @name can hold"
+                        @onclick="() => ToggleList(slot.Index)" @onclick:stopPropagation="true">⋯</button>
+            </div>
+            @if (isOpen)
+            {
+                @RenderSlotOptions(slot.Index, name)
+            }
+        </div>
+    };
+
+    /// <summary>The dropdown of what a slot can hold, by tier, floating under the slot: picking one puts it there and closes the list.</summary>
+    private RenderFragment RenderSlotOptions(int index, string name) => __builder =>
+    {
+        var groups = artifact.Match(found => ArtifactShaping.ListOptions(Build, found.Value, slots, index), _ => ImmutableArray<ArtifactOptionGroup>.Empty);
+        <div class="sub-drop art-drop" id="@OpenListId" role="group" tabindex="-1" data-testid="artifact-slot-picker" data-slot="@index"
+             aria-label="@($"Pick a perk for {name}")" @onclick:stopPropagation="true">
+            <div class="sub-drop-options">
+                @foreach (var group in groups)
+                {
+                    <div class="art-drop-heading">@group.Heading</div>
+                    @foreach (var option in group.Perks)
+                    {
+                        var perk = option.Perk;
+                        <button type="button" class="perk-option @(option.Current ? "picked" : "")" data-hash="@perk.Value" data-tier="@option.Tier"
+                                disabled="@option.Elsewhere" aria-pressed="@(option.Current ? "true" : "false")"
+                                title="@(option.Elsewhere ? $"{LoadoutShaping.DescribePlugTooltip(option.Tile)}\n(equipped in another slot)" : LoadoutShaping.DescribePlugTooltip(option.Tile))"
+                                @onclick="() => PickPerk(index, perk)">
+                            @RenderTile(option.Tile, "perk", false)
+                            <span class="perk-option-text">
+                                <span class="perk-option-name">@option.Tile.Name</span>
+                                <span class="perk-option-type">@DescribeOption(option)</span>
+                            </span>
+                        </button>
+                    }
+                }
+            </div>
+        </div>
+    };
+
+    /// <summary>Every artifact, one per line with how many of its perks are picked, and (in the dropdown) "No artifact".</summary>
+    private RenderFragment RenderArtifactOptions(bool withNone) => __builder =>
+    {
+        @foreach (var option in Artifacts)
+        {
+            var hash = option.Hash;
+            var current = artifact == Optional.Some(hash);
+            var tile = ArtifactShaping.DescribeArtifact(option);
+            <button type="button" class="perk-option @(current ? "picked" : "")" data-hash="@hash.Value" aria-pressed="@(current ? "true" : "false")"
+                    title="@option.Name" @onclick="() => SwitchArtifact(Optional.Some(hash))">
+                @RenderTile(tile, "perk", false)
+                <span class="perk-option-text">
+                    <span class="perk-option-name">@option.Name</span>
+                    <span class="perk-option-type">@ArtifactShaping.DescribePicked(current ? slots : LoopDesigning.RecallArtifactSlots(Build, remembered, hash))</span>
+                </span>
+            </button>
+        }
+        @if (withNone)
+        {
+            <button type="button" class="perk-option @(artifact.IsSome() ? "" : "picked")" data-action="no-artifact" aria-pressed="@(artifact.IsSome() ? "false" : "true")"
+                    @onclick="() => SwitchArtifact(Optional.None<ItemHash>())">
+                <span class="icon-tile empty perk" aria-hidden="true"></span>
+                <span class="perk-option-text">
+                    <span class="perk-option-name">No artifact</span>
+                    <span class="perk-option-type">No artifact perks</span>
+                </span>
+            </button>
+        }
+    };
+
+    /// <summary>A square: a button that opens its details (tappable), else a plain square.</summary>
+    private RenderFragment RenderTile(IconTile tile, string kind, bool tappable) => __builder =>
+    {
+        var classes = $"icon-tile {kind} {(tile.InRules ? "" : "out")}";
+        @if (tappable && tile.Details is Optional<ItemDetails>.Some tileDetails)
+        {
+            <button type="button" class="@classes tappable" title="@LoadoutShaping.DescribePlugTooltip(tile)" aria-label="@tile.Name" aria-haspopup="dialog" @onclick="() => OpenDetails(tileDetails.Value)">
+                @RenderTileFace(tile)
+                @if (!tile.InRules)
+                {
+                    <UnsupportedMark />
+                }
+            </button>
+        }
+        else
+        {
+            <span class="@classes" title="@LoadoutShaping.DescribePlugTooltip(tile)" aria-label="@tile.Name">
+                @RenderTileFace(tile)
+                @if (!tile.InRules)
+                {
+                    <UnsupportedMark />
+                }
+            </span>
+        }
+    };
+
+    private RenderFragment RenderTileFace(IconTile tile) => __builder =>
+    {
+        @if (tile.Icon is Optional<string>.Some icon)
+        {
+            <img src="@icon.Value" alt="" loading="lazy" />
+        }
+        else
+        {
+            <span class="icon-initials">@string.Concat(tile.Name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(3).Select(word => char.ToUpperInvariant(word[0])))</span>
+        }
+    };
+
+    private static string DescribeOption(ArtifactPerkOption option) =>
+        string.Join(" · ", new[] { DomainPhrasing.DescribeArtifactTier(option.Tier), option.Tile.InRules ? "" : "not in the rules", option.Elsewhere ? "equipped" : "" }.Where(part => part.Length > 0));
+
+    /// <summary>The ⋯ of a slot: its id, for the focus to come back to it when its dropdown closes.</summary>
+    private static string DescribePickButtonId(int slot) =>
+        $"artifact-pick-{slot}";
+
+    private void PickPerk(int index, ItemHash perk)
+    {
+        slots = slots.SetItem(index, Optional.Some(perk));                                       // impure (UI state)
+        refocus = Optional.Some(DescribePickButtonId(index));                                    // impure (UI state)
+        open = Optional.None<int>();                                                             // impure (UI state)
+    }
+
+    /// <summary>✕ on a slot: it is left empty, the other perks stay in their slots.</summary>
+    private void ClearSlot(int index)
+    {
+        slots = slots.SetItem(index, Optional.None<ItemHash>());                                 // impure (UI state)
+        open = Optional.None<int>();                                                             // impure (UI state)
+    }
+
+    /// <summary>Another artifact: the slots of the one left are remembered, the new one shows the slots last picked for it (else empty ones).</summary>
+    private void SwitchArtifact(Optional<ItemHash> next)
+    {
+        remembered = artifact.Match(left => remembered.SetItem(left.Value, slots), _ => remembered); // impure (UI state)
+        slots = next.Match(found => LoopDesigning.RecallArtifactSlots(Build, remembered, found.Value), _ => ImmutableArray<Optional<ItemHash>>.Empty); // impure (UI state)
+        artifact = next;                                                                         // impure (UI state)
+        open = Optional.None<int>();                                                             // impure (UI state)
+        refocus = Optional.Some(SwitchButtonId);                                                 // impure (UI state)
+    }
+
+    /// <summary>A dropdown that just opened is placed under its ⋯ (above it when there's no room below) and takes the focus,
+    /// so Escape reaches it; one that closed hands the focus back to its ⋯.</summary>
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (placeList && open.IsSome())
+        {
+            placeList = false;
+            await Browser.PlaceDropdownAsync(OpenListId);                                        // impure
+        }
+        if (refocus is Optional<string>.Some button)
+        {
+            refocus = Optional.None<string>();
+            await Browser.FocusElementAsync(button.Value);                                       // impure
+        }
+    }
+
+    private void ToggleList(int list)
+    {
+        var closing = open == Optional.Some(list);                                               // pure
+        open = closing ? Optional.None<int>() : Optional.Some(list);                             // impure (UI state)
+        placeList = !closing;                                                                    // impure (UI state)
+    }
+
+    /// <summary>A tap outside the open dropdown (in the editor) closes it.</summary>
+    private void CloseList() =>
+        open = Optional.None<int>();                                                             // impure (UI state)
+
+    /// <summary>Escape with a dropdown open closes the dropdown only, and the focus goes back to its ⋯; with none open it
+    /// closes the editor (the editor handles Escape itself, as the subclass editor does).</summary>
+    private async Task CloseOnEscape(KeyboardEventArgs e)
+    {
+        if (e.Key != "Escape")
+        {
+            return;
+        }
+        if (open is Optional<int>.Some list)
+        {
+            refocus = Optional.Some(list.Value == SwitchList ? SwitchButtonId : DescribePickButtonId(list.Value)); // impure (UI state)
+            open = Optional.None<int>();                                                         // impure (UI state)
+            return;
+        }
+        await OnClose.InvokeAsync();                                                             // impure
+    }
+
+    private void OpenDetails(ItemDetails shown) =>
+        details = Optional.Some(shown);                                                          // impure (UI state)
+
+    private void CloseDetails() =>
+        details = Optional.None<ItemDetails>();                                                  // impure (UI state)
+
+    private Task SaveAsync()
+    {
+        var kept = artifact.Match(found => remembered.SetItem(found.Value, slots), _ => remembered); // pure
+        return OnSave.InvokeAsync(new ArtifactSave(new ArtifactChoice(artifact, slots), kept));  // impure
+    }
+}

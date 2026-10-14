@@ -127,6 +127,17 @@ public static class BuildFileEditing
             new Result<string, string>.Ok(buildFile.Text) as Result<string, string>,
             (text, entry) => text.Bind(current => ReplaceEntry(buildFile with { Text = current }, entry.Key, entry.Value)));
 
+    /// <summary>
+    /// The build file with its artifact entries — <c>artifact</c>, <c>artifactPerks</c>, <c>leftOut</c> — written anew as
+    /// <paramref name="build"/> has them (an artifact and its perks picked in the designer): each replaced where it was,
+    /// added at the end when the file has none, removed when the build has nothing for it. The rest of the file stays as
+    /// it was.
+    /// </summary>
+    public static Result<string, string> ReplaceArtifact(SourceText buildFile, Build build) =>
+        BuildFileWriting.WriteArtifactEntries(build).Aggregate(
+            new Result<string, string>.Ok(buildFile.Text) as Result<string, string>,
+            (text, entry) => text.Bind(current => ReplaceEntry(buildFile with { Text = current }, entry.Key, entry.Value)));
+
     /// <summary>A top-level entry's value replaced (or the entry added at the end), or the entry removed when there is no value.</summary>
     private static Result<string, string> ReplaceEntry(SourceText buildFile, string key, Optional<string> value) =>
         ReadEvents(buildFile).Map(events => FindTopLevelEntry(events, key).Match(
