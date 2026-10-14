@@ -38,8 +38,9 @@ dotnet run --project src/Loopsmith.Cli -- explain builds/skip-grenade-hunter/bui
 dotnet run --project src/Loopsmith.Web          # the loop designer in the browser
 ```
 Cloud sessions: `.claude/hooks/session-start.sh` installs `dotnet-sdk-10.0` from Ubuntu's
-repos (Microsoft's download hosts are blocked by the network policy), restores, and installs the
-Python packages of the Compendium download (`requests`, `beautifulsoup4`).
+repos (Microsoft's download hosts are blocked by the network policy), restores, installs the
+Python packages of the Compendium download (`requests`, `beautifulsoup4`), and installs `ffmpeg`
+(turns the e2e recordings into GIFs) when it is missing.
 
 ## Where things live
 - `src/Loopsmith.Core/` — kernel (`Domain`, `Functional`, `Phrasing`, `Causality`) and
