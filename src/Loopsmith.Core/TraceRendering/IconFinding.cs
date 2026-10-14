@@ -32,7 +32,7 @@ public static class IconFinding
             keyword => FindKeywordIcon(catalog, keyword.Value),
             _ => catalog.FindElementItem(element).Bind(item => item.Icon).Map(ToManifestIcon));
 
-    /// <summary>The icon of a step's action (Festival Flight for a kinetic hit, Skip Grenade for a grenade cast, Ionic Trace for picking one up).</summary>
+    /// <summary>The icon of a step's action (Festival Flight for a kinetic hit or reload, Skip Grenade for a grenade cast, Ionic Trace for picking one up).</summary>
     public static Optional<IconRef> FindActionIcon(RuleCatalog catalog, Build build, PlayerAction action) =>
         action.Match(
             cast => FindAbility(build.Abilities, cast.Kind).Bind(element => FindElementIcon(catalog, element)),
@@ -44,7 +44,8 @@ public static class IconFinding
                 end => FindKeywordIcon(catalog, new KeywordRef.Status(end.Status)),
                 _ => Optional.None<IconRef>(),
                 _ => Optional.None<IconRef>()),
-            _ => catalog.FindClassFinisher(build.Class).Bind(item => item.Icon).Map(ToManifestIcon));
+            _ => catalog.FindClassFinisher(build.Class).Bind(item => item.Icon).Map(ToManifestIcon),
+            reload => FindWeaponIcon(catalog, build, reload.Slot).Map(ToManifestIcon));
 
     /// <summary>The icon of the build's weapon in a slot (its manifest item's), when the build gives its hash.</summary>
     public static Optional<string> FindWeaponIcon(RuleCatalog catalog, Build build, WeaponSlot slot) =>

@@ -189,10 +189,14 @@ internal static class EnhancedPerkParsing
             _ => [],
             least => ListValues(least.Amount),
             _ => [],
+            _ => [],
             _ => []);
 
     private static IEnumerable<GameValue> ListValues(EnergyGrant grant) =>
-        grant.Match(fraction => new[] { fraction.Amount }, _ => []);
+        grant.Match(
+            fraction => new[] { fraction.Amount },
+            _ => [],
+            byArchetype => [byArchetype.Otherwise, byArchetype.OnArchetypes]);
 
     private static IEnumerable<GameValue> ListValues(Passive passive) =>
         passive.Match(
@@ -230,10 +234,18 @@ internal static class EnhancedPerkParsing
             collect => collect,
             least => least with { Amount = ReplaceValues(least.Amount, values) },
             spend => spend,
-            weapon => weapon);
+            weapon => weapon,
+            reload => reload);
 
     private static EnergyGrant ReplaceValues(EnergyGrant grant, EnhancedValues values) =>
-        grant.Match<EnergyGrant>(fraction => fraction with { Amount = Replace(fraction.Amount, values) }, full => full);
+        grant.Match<EnergyGrant>(
+            fraction => fraction with { Amount = Replace(fraction.Amount, values) },
+            full => full,
+            byArchetype => byArchetype with
+            {
+                Otherwise = Replace(byArchetype.Otherwise, values),
+                OnArchetypes = Replace(byArchetype.OnArchetypes, values),
+            });
 
     private static Passive ReplaceValues(Passive passive, EnhancedValues values) =>
         passive.Match<Passive>(

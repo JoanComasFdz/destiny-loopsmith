@@ -72,6 +72,7 @@ public partial record PlayerAction
     partial record CollectPickups(PickupId Pickup);
     partial record Declare(StateDeclaration Declaration);   // a state only play decides (ADRs D3)
     partial record PerformFinisher();                       // a finisher on one enemy of the pack: it kills it
+    partial record ReloadWeapon(WeaponSlot Slot);           // the player reloads that weapon: no ammo is counted (ADRs D37)
 }
 
 /// <summary>
@@ -102,6 +103,7 @@ public partial record GameEvent
     partial record CriticalHealth();              // only from a declared health:critical step
     partial record ShieldBroken(DamageOrigin Origin);   // a weapon step the player says breaks a combatant's shield (kinetic:kill:shield), after its first hit
     partial record EnergyExpended(AbilityKind Kind);    // a use that spends the ability's last charge: every use with one charge, a grenade:last with more (ADRs D36)
+    partial record Reloaded(DamageOrigin Origin);       // a weapon reloaded: a Reload step, or an outcome that reloads it (ADRs D37)
 }
 
 /// <summary>

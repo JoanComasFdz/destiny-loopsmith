@@ -331,6 +331,12 @@ public static class DomainPhrasing
     /// <summary>What reaching critical health is called everywhere: the declared step, its trigger and its event.</summary>
     public const string CriticalHealth = "Critical health";
 
+    /// <summary>What reloading a weapon is called: the step ("Reload Festival Flight"), its trigger ("Reload this weapon") and its button (ADRs D37).</summary>
+    public const string Reload = "Reload";
+
+    /// <summary>A Reload step's button, next to a weapon's hit and kill: "🔄 reload".</summary>
+    public const string ReloadCaption = "🔄 reload";
+
     /// <summary>What breaking a combatant's shield is called as a trigger (ADRs D36).</summary>
     public const string BreakShield = "Break a shield";
 
@@ -369,7 +375,10 @@ public static class DomainPhrasing
                 : $"{BreakShield} with {glossary.DescribeDamageSource(shieldBroken.Via, superType)}",
             energyExpended => DescribeEnergyExpended(energyExpended.Kind),
             damageFewer => DescribeFewHits(glossary, damageFewer.Via, damageFewer.FewerThan, superType),
-            killBetween => DescribeMultiKill(glossary, killBetween.Via, DescribeKillRange(killBetween.AtLeast, killBetween.FewerThan), superType));
+            killBetween => DescribeMultiKill(glossary, killBetween.Via, DescribeKillRange(killBetween.AtLeast, killBetween.FewerThan), superType),
+            reload => reload.Via is DamageSource.AnySource or DamageSource.AnyWeapon
+                ? Reload
+                : $"{Reload} {glossary.DescribeDamageSource(reload.Via, superType)}");
 
     /// <summary>" in 3s": the window a source gives the kills or hits it counts; nothing without one.</summary>
     private static string DescribeWithin(Optional<Seconds> within) =>
@@ -507,7 +516,9 @@ public static class DomainPhrasing
         outcome.Match(
             grant => grant.Amount.Match(
                 fraction => $"+{fraction.Amount.FormatPercent()} {grant.To.DescribeAbility()} energy",
-                _ => $"refills {grant.To.DescribeAbility()}"),
+                _ => $"refills {grant.To.DescribeAbility()}",
+                byArchetype => $"+{byArchetype.Otherwise.FormatPercent()} {grant.To.DescribeAbility()} energy "
+                    + $"({byArchetype.OnArchetypes.FormatPercent()} on {DescribeArchetypes(byArchetype.Archetypes)})"),
             convert => $"spends {glossary.DescribeStatus(convert.Consumed)} → {DescribeStackEnergy(convert)}",
             apply => DescribeBuff(glossary, apply),
             remove => $"consumes {glossary.DescribeStatus(remove.Status)}",
@@ -525,11 +536,20 @@ public static class DomainPhrasing
             collect => $"collects {glossary.DescribePickup(collect.Pickup)} from the ground",
             least => least.Amount.Match(
                 fraction => $"+{fraction.Amount.FormatPercent()} energy to your least-charged ability",
-                _ => "refills your least-charged ability"),
+                _ => "refills your least-charged ability",
+                byArchetype => $"+{byArchetype.Otherwise.FormatPercent()} energy to your least-charged ability "
+                    + $"({byArchetype.OnArchetypes.FormatPercent()} on {DescribeArchetypes(byArchetype.Archetypes)})"),
             spend => $"spends x{spend.Count.Value} {glossary.DescribeStatus(spend.Status)}",
             weapon => $"{glossary.DescribeDamageSource(weapon.Weapon, superType)} strike"
                 + weapon.Type.Match(type => $", {type.Value} damage", _ => "")
-                + (weapon.Hit == HitOutcome.Kill ? " (kills)" : ""));
+                + (weapon.Hit == HitOutcome.Kill ? " (kills)" : ""),
+            reload => DescribeReload(glossary, reload.Weapon, superType));
+
+    /// <summary>"reloads this weapon" (the catalog's text), "reloads your energy weapon" (bound to its slot): no ammo is counted (ADRs D37).</summary>
+    private static string DescribeReload(KeywordGlossary glossary, DamageSource weapon, Optional<DamageType> superType) =>
+        weapon is DamageSource.WeaponInSlot
+            ? $"reloads your {glossary.DescribeDamageSource(weapon, superType)}"
+            : $"reloads {glossary.DescribeDamageSource(weapon, superType)}";
 
     /// <summary>
     /// An outcome as it was applied: one that spent a counted buff's stacks says how many, and what they gave
@@ -925,12 +945,13 @@ public static class DomainPhrasing
             _ => Finisher,
             _ => CriticalHealth,
             broken => $"{glossary.DescribeOrigin(broken.Origin, build)} 🛡 broke a shield",
-            expended => expended.Kind.DescribeEnergyExpended());
+            expended => expended.Kind.DescribeEnergyExpended(),
+            reloaded => $"{glossary.DescribeOrigin(reloaded.Origin, build)} reloaded");
 
     /// <summary>
     /// "Grenade (💀 kill)", "Grenade (💀 kill 3)", "Grenade (💀 kill · ⬜ spend fully)", "Festival Flight (🥊 hit 5)",
     /// "Festival Flight (💀 kill · 🛡 shield)", "Class ability", "Class ability (⬜ spend fully)", "Pick up Orb of Power",
-    /// "Bolt Charge at max (x10)", "Amplified ends", "New pack", "Critical health", "Finisher".
+    /// "Bolt Charge at max (x10)", "Amplified ends", "New pack", "Critical health", "Finisher", "Reload Festival Flight".
     /// </summary>
     public static string DescribeAction(this ValidatedBuild build, PlayerAction action) =>
         action.Match(
@@ -945,7 +966,8 @@ public static class DomainPhrasing
             fire => $"{DescribeWeapon(build.Build, fire.Slot, fire.Slot.ToString())} ({DescribeHit(fire.Hit, fire.Targets)}{(fire.Shield == ShieldBreak.Breaks ? $" · {ShieldOption}" : "")})",
             collect => $"Pick up {build.Catalog.Glossary.DescribePickup(collect.Pickup)}",
             declare => build.DescribeDeclaration(declare.Declaration),
-            _ => Finisher);
+            _ => Finisher,
+            reload => $"{Reload} {DescribeWeapon(build.Build, reload.Slot, reload.Slot.ToString())}");
 
     /// <summary>"Armor Charge at max (x4)": the max names the build's cap (Charged Up raises it), a fact the player declares reached.</summary>
     private static string DescribeDeclaration(this ValidatedBuild build, StateDeclaration declaration) =>
@@ -973,7 +995,7 @@ public static class DomainPhrasing
     /// <summary>
     /// The action's token, the same everywhere (CLI, loop files, the web): <c>grenade:kill</c>, <c>grenade:kill:3</c>,
     /// <c>class</c>, <c>kinetic</c>, <c>kinetic:hit:5</c>, <c>pickup:orb-of-power</c>, <c>max:bolt-charge</c>,
-    /// <c>end:amplified</c>, <c>pack:new</c>, <c>health:critical</c>, <c>finisher</c>. The target count is written only when it is more than one; every
+    /// <c>end:amplified</c>, <c>pack:new</c>, <c>health:critical</c>, <c>finisher</c>, <c>kinetic:reload</c>. The target count is written only when it is more than one; every
     /// token round-trips. An option goes last: <c>:last</c> on an ability's last charge (<c>grenade:kill:last</c>),
     /// <c>:shield</c> on a weapon step that breaks a shield (<c>kinetic:kill:3:shield</c>) (ADRs D36).
     /// </summary>
@@ -988,7 +1010,8 @@ public static class DomainPhrasing
                 end => $"end:{end.Status}",
                 _ => "pack:new",
                 _ => "health:critical"),
-            _ => "finisher");
+            _ => "finisher",
+            reload => reload.Slot.ToString().ToLowerInvariant() + ":reload");
 
     /// <summary>":last" for the use that spends an ability's last charge; nothing for a plain use.</summary>
     private static string ToChargeSuffix(ChargeUse charge) =>

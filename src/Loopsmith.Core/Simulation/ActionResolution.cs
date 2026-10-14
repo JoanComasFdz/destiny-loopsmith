@@ -38,7 +38,7 @@ public static class ActionResolution
     /// <summary>
     /// Every ability (always, ADRs D5) and each of its secondary uses a rule reacts to (<see cref="ListSecondaryInputs"/>:
     /// Tempest Strike's sliding melee, Ascension's air move), a finisher (always, <see cref="ListFinisherActions"/>), every
-    /// equipped weapon, the pickups on the ground and the states the player can declare now (<see cref="ListDeclarations"/>).
+    /// equipped weapon's hit, kill and reload (always, as a finisher: ADRs D37), the pickups on the ground and the states the player can declare now (<see cref="ListDeclarations"/>).
     /// Abilities and weapons are listed against one enemy; a host may set any <see cref="TargetCount"/>.
     /// </summary>
     public static ImmutableArray<PlayerAction> ListAvailableActions(ValidatedBuild build, GameState state)
@@ -51,6 +51,7 @@ public static class ActionResolution
         {
             new PlayerAction.FireWeapon(weapon.Slot, HitOutcome.Kill, TargetCount.One),
             new PlayerAction.FireWeapon(weapon.Slot, HitOutcome.Damage, TargetCount.One),
+            new PlayerAction.ReloadWeapon(weapon.Slot),
         });
         var pickups = state.ListPickups().Select(pickup => (PlayerAction)new PlayerAction.CollectPickups(pickup));
         var declarations = ListDeclarations(build, state).Select(declaration => (PlayerAction)new PlayerAction.Declare(declaration));
@@ -91,6 +92,7 @@ public static class ActionResolution
             _ => Optional.None<AbilityKind>(),
             _ => Optional.None<AbilityKind>(),
             _ => Optional.None<AbilityKind>(),
+            _ => Optional.None<AbilityKind>(),
             _ => Optional.None<AbilityKind>());
 
     /// <summary>The passives whose guards hold now; a chance when they hold only by a counted buff's chance stacks (ADRs D33).</summary>
@@ -121,7 +123,8 @@ public static class ActionResolution
             fire => FireWeapon(build, state, fire),
             collect => CollectPickups(state, collect),
             declare => Declare(build, state, declare.Declaration),
-            _ => PerformFinisher(state));
+            _ => PerformFinisher(state),
+            reload => ReloadWeapon(build, state, reload));
 
     /// <summary>
     /// Never blocked: the finisher, then its hit and kill on one enemy of the pack. A finisher has no damage type and is
@@ -218,6 +221,18 @@ public static class ActionResolution
         return weapon.Match(
             some => new Opening(state, ListStrikeEvents(new DamageOrigin.Weapon(fire.Slot, some.Value.Type), fire.Hit, fire.Targets, fire.Shield), []),
             _ => BlockAction(state, $"No weapon in the {fire.Slot} slot — nothing happens."));
+    }
+
+    /// <summary>
+    /// The player reloads the weapon (ADRs D37): one reload event from it, so the rules on its reload fire. No ammo is
+    /// counted, so a reload is never needed and never blocked but for an empty slot.
+    /// </summary>
+    private static Opening ReloadWeapon(ValidatedBuild build, GameState state, PlayerAction.ReloadWeapon reload)
+    {
+        var weapon = build.Build.Weapons.Select(w => w.Slot == reload.Slot ? Optional.Some(w) : Optional.None<WeaponLoadout>()).FindFirstSome();
+        return weapon.Match(
+            some => new Opening(state, [new PendingEvent.Ready(new GameEvent.Reloaded(new DamageOrigin.Weapon(reload.Slot, some.Value.Type)))], []),
+            _ => BlockAction(state, $"No weapon in the {reload.Slot} slot — nothing happens."));
     }
 
     /// <summary>

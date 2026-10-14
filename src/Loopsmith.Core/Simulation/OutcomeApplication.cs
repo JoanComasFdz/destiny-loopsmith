@@ -40,13 +40,38 @@ public static class OutcomeApplication
             collect => Collect(state, outcome, collect),
             least => AnnotateFact(state, outcome, ReadGrantCertainty(least.Amount), "amount unknown"),
             spend => SpendStacks(build, state, outcome, spend, source),
-            weapon => StrikeWithWeapon(build, state, outcome, weapon));
+            weapon => StrikeWithWeapon(build, state, outcome, weapon),
+            reload => ReloadWeapon(build, state, outcome, reload));
 
-    /// <summary><c>full</c> is one whole charge (known); a fraction is as certain as its value.</summary>
+    /// <summary>
+    /// <c>full</c> is one whole charge (known); a fraction is as certain as its value; a fraction by archetype not bound to
+    /// the weapon's, as its two values together.
+    /// </summary>
     private static Certainty ReadGrantCertainty(EnergyGrant grant) =>
         grant.Match(
             fraction => fraction.Amount.ReadCertainty(),
-            _ => Certainty.Known);
+            _ => Certainty.Known,
+            byArchetype => byArchetype.Otherwise.ReadCertainty() == Certainty.Known && byArchetype.OnArchetypes.ReadCertainty() == Certainty.Known
+                ? Certainty.Known
+                : Certainty.Unknown);
+
+    /// <summary>
+    /// Reloads the weapon in the slot "this weapon" was bound to, or that the rule names (ADRs D37): a reload event from it,
+    /// so its reload rules fire as on a Reload step. No ammo is counted. With no weapon in that slot, or "this weapon" not
+    /// bound to one (the catalog's own text), nothing reloads.
+    /// </summary>
+    private static Application ReloadWeapon(ValidatedBuild build, GameState state, Outcome outcome, Outcome.ReloadWeapon reload) =>
+        FindReloadedWeapon(build, reload.Weapon).Match(
+            weapon => new Application(
+                state,
+                ToApplied(outcome, Certainty.Known, Optional.None<string>()),
+                [new PendingEvent.Ready(new GameEvent.Reloaded(new DamageOrigin.Weapon(weapon.Value.Slot, weapon.Value.Type)))]),
+            _ => KeepUnchanged(state, outcome, "no weapon to reload"));
+
+    private static Optional<WeaponLoadout> FindReloadedWeapon(ValidatedBuild build, DamageSource weapon) =>
+        weapon is DamageSource.WeaponInSlot inSlot
+            ? build.Build.Weapons.Select(w => w.Slot == inSlot.Slot ? Optional.Some(w) : Optional.None<WeaponLoadout>()).FindFirstSome()
+            : Optional.None<WeaponLoadout>();
 
     /// <summary>
     /// The buff is consumed when it is present (a real state change); the energy it converts into is a fact. A counted

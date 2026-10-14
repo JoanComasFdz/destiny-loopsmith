@@ -363,7 +363,8 @@ public static class LoopDesigning
                 shieldBroken: _ => [],
                 energyExpended: _ => [],
                 damageFewer: _ => [],   // fewer than N: the counts below already reach it
-                killBetween: kill => [kill.AtLeast]))
+                killBetween: kill => [kill.AtLeast],
+                reload: _ => []))
             .Distinct(),
     ];
 

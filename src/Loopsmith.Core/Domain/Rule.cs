@@ -27,6 +27,7 @@ public partial record Trigger
     partial record EnergyExpended(AbilityKind Kind);                           // the ability's energy fully expended: its last charge used (ADRs D36)
     partial record DamageFewer(DamageSource Via, TargetCount FewerThan);       // hit fewer than N enemies in one action (at least one)
     partial record KillBetween(DamageSource Via, TargetCount AtLeast, TargetCount FewerThan);   // kill at least N and fewer than M enemies in one action (Reaper's Tithe's x2 on exactly 2)
+    partial record Reload(DamageSource Via);                                   // a weapon reloaded: the player's Reload step, or an outcome that reloads it (ADRs D37)
 }
 
 /// <summary>A guard on the current state, checked after the trigger matched.</summary>
@@ -84,11 +85,17 @@ public partial record StackGrant
     partial record PerModCount(ImmutableArray<StackCount> Counts);
 }
 
+/// <summary>
+/// The energy a grant gives: a fraction of one charge, a full charge, or a fraction that goes by the archetype of the
+/// weapon holding the element (<see cref="ByArchetype"/>: Demolitionist's 10%, 20% on a Shotgun). The build check binds
+/// it to the weapon's archetype when that is known (<c>WeaponBinding</c>); unbound, it reads both.
+/// </summary>
 [Union]
 public partial record EnergyGrant
 {
     partial record Fraction(GameValue Amount);   // of one charge: 0.15 = 15 %
     partial record Full();
+    partial record ByArchetype(GameValue Otherwise, ImmutableArray<string> Archetypes, GameValue OnArchetypes);   // OnArchetypes on a weapon of one of those archetypes, Otherwise on any other
 }
 
 /// <summary>How much a heal restores: a share of your health ("?" when the source gives none), or HP (Unrelenting's 65).</summary>
@@ -123,6 +130,7 @@ public partial record Outcome
     partial record GrantLeastChargedEnergy(EnergyGrant Amount);   // to whichever ability has the least energy: the game picks, so a fact
     partial record SpendStacks(StatusId Status, StackCount Count);   // a fixed number of a counted buff's stacks (Healthy Finisher's x1, ADRs D33)
     partial record WeaponStrike(DamageSource Weapon, Optional<DamageType> Type, HitOutcome Hit);   // this weapon's damage dealt by an effect (Veteran's Wisdom's shockwave): Weapon is "this weapon" until bound to its slot; Type none: the weapon's own
+    partial record ReloadWeapon(DamageSource Weapon);   // reloads that weapon (weapon:this, slot:power): a reload, as if the player had reloaded it (ADRs D37)
 }
 
 /// <summary>
