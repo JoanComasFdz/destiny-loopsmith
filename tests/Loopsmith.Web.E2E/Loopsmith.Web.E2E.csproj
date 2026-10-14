@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- End-to-end tests of the Blazor web app in a real browser. Its own code rules: E2E-TEST-CODE-RULES.md. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Playwright" />
+    <PackageReference Include="JoanComasFdz.AssertingThat" />
+    <PackageReference Include="Humanizer.Core" />
+    <PackageReference Include="Dunet" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Loopsmith.Core\Loopsmith.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- A scenario's fixture files (minimal .build.yaml / .loop.yaml) sit next to its class. -->
+    <None Include="Scenarios\**\*.yaml" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

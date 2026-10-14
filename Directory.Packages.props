@@ -16,5 +16,11 @@
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
     <PackageVersion Include="Verify.XunitV3" Version="32.0.1" />
     <PackageVersion Include="NetArchTest.Rules" Version="1.3.2" />
+    <!-- End-to-end tests (tests/Loopsmith.Web.E2E). Playwright drives the Chromium the cloud image ships in
+         /opt/pw-browsers (chromium-1194; sessions never run `playwright install`): 1.56.0 is the release that expects
+         build 1194. If the image's Chromium changes, bump this pin to the Playwright release that matches it. -->
+    <PackageVersion Include="Microsoft.Playwright" Version="1.56.0" />
+    <PackageVersion Include="JoanComasFdz.AssertingThat" Version="1.0.0" />
+    <PackageVersion Include="Humanizer.Core" Version="3.0.10" />
   </ItemGroup>
 </Project>

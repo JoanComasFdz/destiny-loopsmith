@@ -48,6 +48,16 @@ itself, under `src/Loopsmith.Core/Domain/`.
   (clipboard, downloads, confirm, picked files, the URL) live in its `Hosting/BrowserInterop`.
   Any other host (an HTTP API, say) would do the same.
 
+- **The end-to-end tests have their own rules.** `tests/Loopsmith.Web.E2E` follows
+  [`E2E-TEST-CODE-RULES.md`](tests/Loopsmith.Web.E2E/E2E-TEST-CODE-RULES.md), not this file's coding rules.
+
+## Web host
+
+- **Every element a user acts on carries a `data-action`, every element a user reads a `data-testid`**, both
+  kebab-case and named for what the element is or does, never how it looks (`data-action="scratch-start"`,
+  `data-testid="weapon-slot"`). They are what the end-to-end tests locate by: renaming one updates its page object
+  (`tests/Loopsmith.Web.E2E/Infrastructure/Frontend/`) in the same PR.
+
 ## Functional design
 
 - **Pure/impure split — strict `impure → pure → impure` sandwich.** The
