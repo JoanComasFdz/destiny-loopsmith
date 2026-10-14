@@ -90,7 +90,9 @@ has ended, that the next enemies are a new pack — the player declares as a ste
 
 * `max:<status>` — "Bolt Charge at max (x10)": that buff is at its maximum. The label names the build's cap, a
   fact: the glossary's `maxStacks`, or the cap a `raiseMaxStacks` passive states for its copies (Charged Up: "Armor
-  Charge at max (x4)" with one copy — [rule-format.md](rule-format.md#passives)); the player declares it reached, nothing counts toward it.
+  Charge at max (x4)" with one copy — [rule-format.md](rule-format.md#passives)); the player declares it reached, nothing counts toward it
+  — but Armor Charge, which is counted (below, "Armor Charge is counted"): its `max:` is offered while its sure stacks are below the
+  cap, and makes them the cap (the player says the chance ones came, or more than the loop shows).
   It raises `StacksMaxed`, so every
   `stacksMaxed` rule fires and cascades, and the buff stays declared at max (the `atMax` condition reads
   it) until a rule consumes or removes it, or an `end:` step ends it. In the Skip Grenade build:
@@ -123,8 +125,20 @@ has ended, that the next enemies are a new pack — the player declares as a ste
   damage you take (ADRs D1), so the player declares it. It raises `CriticalHealth`, so every `criticalHealth` rule
   fires and cascades, and it always holds; it leaves nothing in the state. Emergency Reinforcement reacts to it: it
   spends your Armor Charge for its buff, whose 10% damage resistance (PvP `?`) counts in the step's damage
-  resistance until `end:emergency-reinforcement` — for sure while Armor Charge is declared at max, as a *(chance)*
-  below it ("x3 or more" is a count the state doesn't hold).
+  resistance until `end:emergency-reinforcement` — for sure with x3 or more sure Armor Charge, as a *(chance)* when
+  only chance stacks make it x3, not at all below (ADRs D33); its 6 | 9 | 12 s go by the stacks it spent.
+
+**Armor Charge is counted** (ADRs D33). Its stacks are part of the state: the **sure** ones, from rules that always
+fire, and the **chance** ones, from chance rules and from what they set off (an orb only a chance rule dropped — a
+Siphon's from one kill — gives a chance stack). "Dodge for Reaper → weapon kill → pick up the orb" shows **Armor
+Charge x1** (x2 with Stacks on Stacks); a Siphon's orb from one kill adds **+1 (chance)**: `x1 · +1 (chance)`. A grant
+stops at the build's cap (x3; x4–x6 with Charged Up), the rest wasted (caveat `at cap: +1 wasted`); sure stacks at
+the cap are at max. A Kickstart spends every stack and shows its energy for the copies and stacks
+(`spends Armor Charge x2 · +1 (chance) → +28.4% grenade energy (34.4% with the chance stack)`); a finisher that needs
+x3 fires for sure with x3 sure stacks, as a *(chance)* when the chance ones make it x3, and not at all below — the
+step says `Bulwark Finisher needs x3 Armor Charge, holds x1 — it doesn't fire.`; a fixed spend (Healthy Finisher's
+x1) takes sure stacks first. The decay (one stack every 10 s, slower with Time Dilation) is shown, never applied: time
+isn't modelled. The next pass starts from what the last one ended with.
 
 **Written form.** Written tokens are lower-case and carry the count only when it is more than one
 (`grenade:kill`, `kinetic`, `grenade:kill:3`, `finisher`, `max:bolt-charge`, `end:amplified`, `pack:new`, `health:critical`). Every token written
@@ -149,7 +163,9 @@ type) with the finisher's own icon: after a Bungie login the one the player's ch
 equipped (read from its Finishers slot; named from Bungie's full manifest when the excerpt doesn't have it), else the
 class's own, the one the game plays when none is equipped (Blade Carnival for a Hunter, the glossary's `finishers`) —
 then the three weapons with their icon, damage type's icon and colour. Tapping the Super, an ability or a weapon
-shows its actions under the HUD — hit or kill, and how many enemies that one action catches — and it stays picked
+shows its actions under the HUD — hit or kill, and how many enemies that one action catches, each count saying what
+it is for when an equipped rule needs that many from that ability or weapon ("1 enemy", "2 in 3 s · Arc Siphon", "3
+enemies" … "9 enemies", "12 · Synergy"; a count no rule of that ability or weapon needs is plain) — and it stays picked
 for the next step; a secondary's own hit and kill show the same way ("Sliding melee · Tempest Strike"); the class
 ability, its air move and the finisher act at one tap. Above the HUD, where the game lists your buffs, the states to declare are grouped by
 status — on you, on your weapons, on the pack (with **New pack**) — each with its own buttons ("Bolt Charge: at max
@@ -180,8 +196,12 @@ caveats. Each step ends with its **state** — what is present after it — laid
 on you on the left (Bolt Charge, Amplified, Woven Mail), your weapons' buffs in the middle (a glossary
 `weaponBuff`: Slice, Unraveling Rounds, each with the weapon whose own perk gives it — Slice with Festival Flight),
 the debuffs on the pack on the right (Jolt, Sever, Unravel), the pickups on the ground below them (an Orb of
-Power waiting for `pickup:orb-of-power`; an Ionic Trace never waits, it collects itself). A phone stacks the
-four. A status that switches other elements' passives on says how many ("Amplified · 1 effect": Spark of
+Power waiting for `pickup:orb-of-power`, "(chance)" when only chance rules dropped it; an Ionic Trace never waits, it
+collects itself). A phone stacks the four. Armor Charge shows its count on its chip ("Armor Charge x1 · +1 (chance)")
+and in a row under the ground; tapping the row (*▸ Armor Charge*) lists each step that gained or spent some since it
+was last gained from none ("#6 Orb of Power: +1 → x1", "#5 Elemental Charge: at cap, +1 wasted → x3", "the pass
+before: x2") and its decay, never applied; tapping it again hides them. The CLI's `--state` prints the same as an
+`Armor Charge` line. A status that switches other elements' passives on says how many ("Amplified · 1 effect": Spark of
 Frequency's extra Bolt Charge); its details list them under **While Amplified** in their **In this build**
 card, each with where it reaches. A passive that changes weapon stats (Ionic Overclock: Linear Fusion Rifles, Fusion Rifles and Heat
 Weapons) shows in the weapons column next to the build's weapons of those types while it holds; when none of
@@ -308,7 +328,7 @@ Almost every mod is inert (stats, handling, ammo, radar: "No rules needed."); **
 weapon's kills and spawns a pickup of the weapon's element — Kinetic an Orb of Power, Arc an Ionic Trace, Solar a
 Firesprite, Void a Void Breach, Stasis a Stasis Shard, Strand a Tangle. Twelve kills in one step (eight with the
 enhanced mod) fill it for sure; fewer spawn the pickup as *(chance)*, since earlier steps' kills count too. The trigger
-palette's enemy count offers 12 (and any count an equipped rule needs) beside 1 to 9.
+palette's enemy count offers 12 · Synergy on that weapon (and any count an equipped rule needs from it) beside 1 to 9.
 
 **An item's details.** Tapping a square opens its details, one card each: Bungie's text (from the manifest
 excerpt); where the rules' facts come from — for a Compendium row, Loopsmith's words for it (written from the row,

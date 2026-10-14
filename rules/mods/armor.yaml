@@ -5,10 +5,10 @@
 # plug copy); the most recently updated one is used and the other is noted. Resolve against the
 # manifest later.
 #
-# "2 kills within 3 s", "activation progress" and similar repeat-to-proc conditions are progress the
-# game doesn't show as a stacking status, so they are chance rules (`chance: true`, ADRs D8): they
-# fire, marked *(chance)*. `kill … atLeast: N` is for kills within one action (ADRs D4), so it
-# doesn't fit kills spread over several shots.
+# "Activation progress" and similar repeat-to-proc conditions are progress the game doesn't show as a
+# stacking status, so they are chance rules (`chance: true`, ADRs D8): they fire, marked *(chance)*.
+# "2 kills within 3 s" (the Siphons) fires for sure on two or more kills in one step (`atLeast: 2,
+# within: 3s`, kills within one action, ADRs D4) and as a chance on one (`fewerThan: 2`).
 elements:
   - id: elemental-charge
     name: Elemental Charge
@@ -35,12 +35,12 @@ elements:
     description: "When a grenade charge is used while you have Armor Charge: consumes all Armor Charge and grants grenade energy. Each mod and each Armor Charge stack counts as one 'charge'; energy with 2|3|...|9 charges: 16.2% | 21.7% | 28.4% | 34.4% | 38.4% | 41.3% | 43.4% | 45% (PvE). Affected by chunk energy scalars."
     source: "compendium/2026-10-09/Armor Mods#8"
     rules:
-      # The refund is indexed by (mods + stacks), not linear per stack, so perStack is "?".
+      # The refund is indexed by charges (mods + stacks spent), the Compendium's table (ADRs D33).
       # With 2 mods: 1|2|3 Armor Charge -> 21.7%|28.4%|34.4% of a charge.
       - on: { abilityCast: grenade }
         when: [ { has: armor-charge } ]
         then:
-          - { convertStacksToEnergy: { consumed: armor-charge, to: grenade, perStack: "?" } }
+          - { convertStacksToEnergy: { consumed: armor-charge, to: grenade, byCharges: { from: 2, values: "16.2% | 21.7% | 28.4% | 34.4% | 38.4% | 41.3% | 43.4% | 45%" } } }
         reason: "Throwing a grenade while you hold Armor Charges burns them all for grenade energy - the more charges and copies, the bigger the refund."
     passives: []
 
@@ -89,9 +89,13 @@ elements:
     source: "compendium/2026-10-09/Armor Mods#11"
     rules:
       # weapon:harmonic: a weapon of the build's Super's element (an Arc weapon with Arc Staff); with
-      # no Super known it matches nothing. Two kills within 3 s are progress the game doesn't show as
-      # a stacking status, so it is a chance rule (ADRs D8).
-      - on: { kill: { via: weapon:harmonic } }
+      # no Super known it matches nothing. Two kills in one step are within 3 s: the orb for sure; one
+      # kill is a chance (ADRs D8).
+      - on: { kill: { via: weapon:harmonic, atLeast: 2, within: 3s } }
+        then:
+          - { spawn: orb-of-power }
+        reason: "Two kills at once with a weapon of your Super's element and an Orb of Power drops."
+      - on: { kill: { via: weapon:harmonic, fewerThan: 2 } }
         then:
           - { spawn: orb-of-power }
         chance: true
@@ -108,7 +112,11 @@ elements:
     # Compendium's 3.75% is used.
     source: "compendium/2026-10-09/Armor Mods#11"
     rules:
-      - on: { kill: { via: weapon:strand } }
+      - on: { kill: { via: weapon:strand, atLeast: 2, within: 3s } }
+        then:
+          - { spawn: orb-of-power }
+        reason: "Two kills at once with a Strand weapon and an Orb of Power drops."
+      - on: { kill: { via: weapon:strand, fewerThan: 2 } }
         then:
           - { spawn: orb-of-power }
         chance: true

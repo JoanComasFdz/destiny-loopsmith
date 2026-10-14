@@ -22,18 +22,18 @@ internal static class RuleBodyParsing
 {
     private static readonly ImmutableArray<string> RuleKeys = ["on", "when", "then", "chance", "reason", "doesNotStackWith"];
     private static readonly ImmutableArray<string> PassiveRuleKeys = ["effect", "when", "reason"];
-    private static readonly ImmutableArray<string> KillKeys = ["via", "tier", "targetHas", "atLeast", "fewerThan"];
+    private static readonly ImmutableArray<string> KillKeys = ["via", "tier", "targetHas", "atLeast", "fewerThan", "within"];
     private static readonly ImmutableArray<string> DamageKeys = ["via", "targetHas", "atLeast"];
 
     private static readonly ImmutableArray<string> TriggerNames =
         ["abilityCast", "kill", "damage", "pickUp", "buffGained", "stacksMaxed", "finisher", "criticalHealth"];
 
-    private static readonly ImmutableArray<string> ConditionNames = ["has", "lacks", "targetHas", "atMax", "belowMax", "during"];
+    private static readonly ImmutableArray<string> ConditionNames = ["has", "lacks", "targetHas", "atMax", "belowMax", "during", "holds"];
 
     private static readonly ImmutableArray<string> OutcomeNames =
     [
         "grantEnergy", "convertStacksToEnergy", "applyBuff", "removeBuff", "debuffTarget", "spawn",
-        "summon", "strikeTarget", "modifyDamage", "restoreHealth", "resetCooldown", "collect",
+        "summon", "strikeTarget", "modifyDamage", "restoreHealth", "resetCooldown", "collect", "spendStacks",
     ];
 
     private static readonly ImmutableArray<string> PassiveNames =
@@ -121,12 +121,20 @@ internal static class RuleBodyParsing
                 map.ReadOptional("targetHas", targetHas => ReadDebuffList(scope, targetHas)),
                 map.ReadOptional("atLeast", ReadTargetCount),
                 map.ReadOptional("fewerThan", ReadFewerThan),
-                (_, via, tier, targetHas, atLeast, fewerThan) => (via, tier, targetHas, atLeast, fewerThan))
+                map.ReadOrDefault("within", ReadDuration, Optional.None<Seconds>()),
+                (_, via, tier, targetHas, atLeast, fewerThan, within) => (via, tier, targetHas, atLeast, fewerThan, within))
             .Bind(kill => Combine(
                 CheckAtLeastStandsAlone(map, kill.atLeast, ("tier", kill.tier.IsSome()), ("targetHas", kill.targetHas.IsSome()), ("fewerThan", kill.fewerThan.IsSome())),
                 CheckFewerThanStandsAlone(map, kill.fewerThan, ("tier", kill.tier.IsSome()), ("targetHas", kill.targetHas.IsSome())),
-                ToKillTrigger(map, kill.via, kill.tier, kill.targetHas, kill.atLeast, kill.fewerThan),
-                (_, _, trigger) => trigger)));
+                CheckWithinNeedsAtLeast(map, kill.within, kill.atLeast),
+                ToKillTrigger(map, kill.via, kill.tier, kill.targetHas, kill.atLeast, kill.fewerThan, kill.within),
+                (_, _, _, trigger) => trigger)));
+
+    /// <summary><c>within</c> is the window a source gives its kills ("2 kills within 3 s"): only a kill count has one.</summary>
+    private static Result<Unit, Errors> CheckWithinNeedsAtLeast(YamlMap map, Optional<Seconds> within, Optional<TargetCount> atLeast) =>
+        within.IsSome() && !atLeast.IsSome()
+            ? map.FailAtKey<Unit>("within", $"{map.Label}: 'within' is the window of a kill count, so it needs 'atLeast'")
+            : Succeed<Unit>(new Unit.Value());
 
     /// <summary>
     /// A kill is "of a tier", "of a debuffed target", "of at least N in one action" or "of fewer than N in one action" —
@@ -138,9 +146,10 @@ internal static class RuleBodyParsing
         Optional<EnemyTier> tier,
         Optional<ImmutableArray<StatusId>> targetHas,
         Optional<TargetCount> atLeast,
-        Optional<TargetCount> fewerThan) =>
+        Optional<TargetCount> fewerThan,
+        Optional<Seconds> within) =>
         atLeast.Match(
-            someCount => Succeed<Trigger>(new Trigger.KillMultiple(via, someCount.Value)),
+            someCount => Succeed<Trigger>(new Trigger.KillMultiple(via, someCount.Value, within)),
             _ => fewerThan.Match(
                 someLimit => Succeed<Trigger>(new Trigger.KillFewer(via, someLimit.Value)),
                 _ => tier.Match(
@@ -221,8 +230,17 @@ internal static class RuleBodyParsing
             "atMax" => scope.ReadStackingBuff(entry.Value).Map(Condition (status) => new Condition.AtMax(status)),
             "belowMax" => scope.ReadStackingBuff(entry.Value).Map(Condition (status) => new Condition.BelowMax(status)),
             "during" => ReadVocabularyWord<AbilityKind>(entry.Value).Map(Condition (ability) => new Condition.During(ability)),
+            "holds" => ReadHolds(scope, entry.Value),
             _ => entry.Value.FailAt<Condition>(DescribeUnknown("condition", entry.Key, ConditionNames)),
         });
+
+    /// <summary><c>{ holds: { status: armor-charge, atLeast: 3 } }</c>: a counted buff holds at least this many stacks (ADRs D33).</summary>
+    private static Result<Condition, Errors> ReadHolds(ReferenceScope scope, YamlValue value) =>
+        value.ToMap().Bind(map => Combine(
+            map.CheckKeys(["status", "atLeast"]),
+            map.ReadRequired("status", scope.ReadCountedBuff),
+            map.ReadRequired("atLeast", ReadStackCount),
+            Condition (_, status, atLeast) => new Condition.Holds(status, atLeast)));
 
     // ── Outcomes (then) ──────────────────────────────────────────────────────────────────
 
@@ -247,6 +265,7 @@ internal static class RuleBodyParsing
             "restoreHealth" => ReadRestoreHealth(entry.Value),
             "resetCooldown" => ReadVocabularyWord<AbilityKind>(entry.Value).Map(Outcome (kind) => new Outcome.ResetCooldown(kind)),
             "collect" => scope.ReadPickup(entry.Value).Map(Outcome (pickup) => new Outcome.Collect(pickup)),
+            "spendStacks" => ReadSpendStacks(scope, entry.Value),
             _ => entry.Value.FailAt<Outcome>(DescribeUnknown("outcome", entry.Key, OutcomeNames)),
         });
 
@@ -275,24 +294,82 @@ internal static class RuleBodyParsing
                 .Map(EnergyGrant (amount) => new EnergyGrant.Fraction(amount))
                 .MapError(message => $"{message}, or full"));
 
+    /// <summary>
+    /// <c>{ consumed, to, perStack: "?" }</c>, or — for a counted buff (ADRs D33) — a table by the stacks spent
+    /// (<c>bySpent: { from: 3, values: "70% | 80% | 90% | 100%" }</c>) or by charges, each copy and each stack spent counting
+    /// as one (<c>byCharges: { from: 2, values: "16.2% | 21.7% | …" }</c>). Exactly one of the three.
+    /// </summary>
     private static Result<Outcome, Errors> ReadConvertStacksToEnergy(ReferenceScope scope, YamlValue value) =>
         value.ToMap().Bind(map => Combine(
-            map.CheckKeys(["consumed", "to", "perStack"]),
-            map.ReadRequired("consumed", scope.ReadBuff),
-            map.ReadRequired("to", ReadVocabularyWord<AbilityKind>),
-            map.ReadRequired("perStack", ReadGameValue),
-            Outcome (_, consumed, to, perStack) => new Outcome.ConvertStacksToEnergy(consumed, to, perStack)));
+                map.CheckKeys(["consumed", "to", "perStack", "bySpent", "byCharges"]),
+                map.ReadRequired("consumed", scope.ReadBuff),
+                map.ReadRequired("to", ReadVocabularyWord<AbilityKind>),
+                map.ReadOptional("perStack", ReadGameValue),
+                map.ReadOptional("bySpent", ReadStackTable),
+                map.ReadOptional("byCharges", ReadStackTable),
+                (_, consumed, to, perStack, bySpent, byCharges) => (consumed, to, perStack, bySpent, byCharges))
+            .Bind(read => ToStackEnergy(map, read.perStack, read.bySpent, read.byCharges)
+                .Bind(energy => CheckTableOnCounted(scope, map, read.consumed, energy))
+                .Map(Outcome (energy) => new Outcome.ConvertStacksToEnergy(read.consumed, read.to, energy))));
 
-    /// <summary><c>{ applyBuff: amplified }</c> or <c>{ applyBuff: { status, stacks = 1, duration } }</c>.</summary>
+    private static Result<StackEnergy, Errors> ToStackEnergy(
+        YamlMap map, Optional<GameValue> perStack, Optional<StackTable> bySpent, Optional<StackTable> byCharges) =>
+        (perStack, bySpent, byCharges) switch
+        {
+            (Optional<GameValue>.Some amount, Optional<StackTable>.None, Optional<StackTable>.None) => Succeed<StackEnergy>(new StackEnergy.PerStack(amount.Value)),
+            (Optional<GameValue>.None, Optional<StackTable>.Some table, Optional<StackTable>.None) => Succeed<StackEnergy>(new StackEnergy.BySpent(table.Value)),
+            (Optional<GameValue>.None, Optional<StackTable>.None, Optional<StackTable>.Some table) => Succeed<StackEnergy>(new StackEnergy.ByCharges(table.Value)),
+            _ => map.FailAt<StackEnergy>($"{map.Label} needs exactly one of perStack, bySpent or byCharges"),
+        };
+
+    /// <summary>A table by stacks reads a count: only a counted buff has one (ADRs D33).</summary>
+    private static Result<StackEnergy, Errors> CheckTableOnCounted(ReferenceScope scope, YamlMap map, StatusId consumed, StackEnergy energy) =>
+        energy is StackEnergy.PerStack
+            ? Succeed(energy)
+            : map.ReadRequired("consumed", scope.ReadCountedBuff).Map(_ => energy);
+
+    /// <summary>
+    /// <c>{ from: 3, values: "70% | 80% | 90% | 100%" }</c>: a value for each count from <c>from</c> on (ADRs D33). The values
+    /// are numbers as a source gives them (a percent, or seconds without the s), every one known.
+    /// </summary>
+    private static Result<StackTable, Errors> ReadStackTable(YamlValue value) =>
+        value.ToMap().Bind(map => Combine(
+                map.CheckKeys(["from", "values"]),
+                map.ReadRequired("from", ReadStackCount),
+                map.ReadRequired("values", ReadGameValue),
+                (_, from, values) => (from, values))
+            .Bind(read => read.values switch
+            {
+                GameValue.PerModCount list => Succeed(new StackTable(read.from, list.Values)),
+                GameValue.Known one => Succeed(new StackTable(read.from, [one.Value])),
+                _ => map.FailAtKey<StackTable>("values", $"{map.Label}: the values must be known numbers, one per count (e.g. \"70% | 80% | 90%\")"),
+            }));
+
+    /// <summary><c>{ spendStacks: { status: armor-charge, count: 1 } }</c>: a fixed number of a counted buff's stacks (ADRs D33).</summary>
+    private static Result<Outcome, Errors> ReadSpendStacks(ReferenceScope scope, YamlValue value) =>
+        value.ToMap().Bind(map => Combine(
+            map.CheckKeys(["status", "count"]),
+            map.ReadRequired("status", scope.ReadCountedBuff),
+            map.ReadRequired("count", ReadStackCount),
+            Outcome (_, status, count) => new Outcome.SpendStacks(status, count)));
+
+    /// <summary>
+    /// <c>{ applyBuff: amplified }</c> or <c>{ applyBuff: { status, stacks = 1, duration } }</c>; <c>durationBySpent</c> in
+    /// place of <c>duration</c>: seconds by the stacks the same rule spent before it (Bulwark Finisher, ADRs D33).
+    /// </summary>
     private static Result<Outcome, Errors> ReadApplyBuff(ReferenceScope scope, YamlValue value) =>
         value.Node is YamlScalarNode
-            ? scope.ReadBuff(value).Map(Outcome (status) => new Outcome.ApplyBuff(status, Optional.None<Seconds>(), OneStack))
+            ? scope.ReadBuff(value).Map(Outcome (status) => new Outcome.ApplyBuff(status, Optional.None<Seconds>(), OneStack, Optional.None<StackTable>()))
             : value.ToMap().Bind(map => Combine(
-                map.CheckKeys(["status", "stacks", "duration"]),
-                map.ReadRequired("status", scope.ReadBuff),
-                map.ReadOrDefault("duration", ReadDuration, Optional.None<Seconds>()),
-                map.ReadOrDefault("stacks", ReadStackCount, OneStack),
-                Outcome (_, status, duration, stacks) => new Outcome.ApplyBuff(status, duration, stacks)));
+                    map.CheckKeys(["status", "stacks", "duration", "durationBySpent"]),
+                    map.ReadRequired("status", scope.ReadBuff),
+                    map.ReadOrDefault("duration", ReadDuration, Optional.None<Seconds>()),
+                    map.ReadOrDefault("stacks", ReadStackCount, OneStack),
+                    map.ReadOptional("durationBySpent", ReadStackTable),
+                    (_, status, duration, stacks, bySpent) => (status, duration, stacks, bySpent))
+                .Bind(read => read.duration.IsSome() && read.bySpent.IsSome()
+                    ? map.FailAtKey<Outcome>("durationBySpent", $"{map.Label} takes duration or durationBySpent, not both")
+                    : Succeed<Outcome>(new Outcome.ApplyBuff(read.status, read.duration, read.stacks, read.bySpent))));
 
     /// <summary><c>{ debuffTarget: jolt }</c> or <c>{ debuffTarget: { status, duration } }</c>.</summary>
     private static Result<Outcome, Errors> ReadDebuffTarget(ReferenceScope scope, YamlValue value) =>

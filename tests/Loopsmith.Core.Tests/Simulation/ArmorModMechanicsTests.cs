@@ -173,7 +173,7 @@ public sealed class ArmorModMechanicsTests
         Assert.Equal(Likelihood.Always, Assert.Single(atMax.Fired).Likelihood);
         Assert.Equal([Status("amplified")], below.State.Buffs.Select(buff => buff.Status));    // the Armor Charge is spent
         Assert.Equal([Status("amplified")], atMax.State.Buffs.Select(buff => buff.Status));
-        Assert.Equal("#2 Critical health\n  Critical health → consumes Armor Charge and Amplified (10s) [Reinforcement] (chance)", DescribeTrace(build, below));
+        Assert.Equal("#2 Critical health\n  Critical health → consumes Armor Charge x1 and Amplified (10s) [Reinforcement] (chance)", DescribeTrace(build, below));
     }
 
     [Fact]
@@ -207,7 +207,7 @@ public sealed class ArmorModMechanicsTests
         Assert.Equal(["grenade-font"], charged.ActivePassives.Select(passive => passive.Source.Value));
         Assert.Empty(plain.ActivePassives);
         var armorCharge = Assert.Single(state.Buffs);
-        Assert.Equal("Armor Charge", armorCharge.Text);
+        Assert.Equal("Armor Charge x1", armorCharge.Text);   // counted (ADRs D33)
         Assert.Equal(["+20 Grenade"], armorCharge.SwitchesOn.Select(effect => effect.Text));
         Assert.False(build.Build.Stats.Grenade.IsSome());   // a fact shown, never added to the build's stats (ADRs D1)
         Assert.Contains("While Armor Charge -> +20 Grenade [Grenade Font]", DescribeExplanation(build));

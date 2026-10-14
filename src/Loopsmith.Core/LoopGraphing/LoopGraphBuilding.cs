@@ -190,7 +190,8 @@ public static class LoopGraphBuilding
             _ => [],
             reset => LinkToEnergy(reset.Which),
             collect => LinkToTriggers([new GameEvent.PickedUp(collect.Pickup)]),   // what is on the ground, picked up
-            _ => []);   // the least-charged ability: the game picks it, so it leads to no one ability's energy
+            _ => [],   // the least-charged ability: the game picks it, so it leads to no one ability's energy
+            _ => []);   // spending stacks sets nothing off
     }
 
     private static string DescribeCastAction(AbilityKind kind) =>

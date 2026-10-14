@@ -149,7 +149,7 @@ public class SkipGrenadeHunterGoldenTests
 
         AssertFires(resolution, must: ["shinobus-vow", "flashover"], mustNot: ["bolt-charge", "defibrillating-blast"]);
         Assert.Equal(
-            [new ActiveBuff(StatusId.From("bolt-charge"), AtMax: true), new ActiveBuff(StatusId.From("new-tricks"), false), new ActiveBuff(StatusId.From("amplified"), false)],
+            [new ActiveBuff(StatusId.From("bolt-charge"), AtMax: true, Optional.None<StackTally>()), new ActiveBuff(StatusId.From("new-tricks"), false, Optional.None<StackTally>()), new ActiveBuff(StatusId.From("amplified"), false, Optional.None<StackTally>())],
             resolution.State.Buffs);
         Assert.Equal(Optional.Some("Bolt Charge isn't active — nothing to declare at max."), Resolve(Fresh, MaxBoltCharge).Blocked);
     }
@@ -168,7 +168,7 @@ public class SkipGrenadeHunterGoldenTests
         ], mustNot: ["harmonic-siphon", "photonic-flare"]);
         Assert.Single(resolution.Fired, f => f.Source.Value == "bolt-charge" && f.Outcomes.Any(o => o.Outcome is Outcome.StrikeTarget));
         Assert.False(HasBuff(resolution.State, "new-tricks"));
-        Assert.Contains(new ActiveBuff(StatusId.From("bolt-charge"), AtMax: false), resolution.State.Buffs);
+        Assert.Contains(new ActiveBuff(StatusId.From("bolt-charge"), AtMax: false, Optional.None<StackTally>()), resolution.State.Buffs);
     }
 
     // ── loop discovery: the build's headline loop must be found ─────────────────
@@ -233,7 +233,7 @@ public class SkipGrenadeHunterGoldenTests
         state.Buffs.Any(b => b.Status.Value == status);
 
     private static GameState WithBuffs(GameState state, params string[] buffs) =>
-        state with { Buffs = state.Buffs.AddRange(buffs.Select(b => new ActiveBuff(StatusId.From(b), AtMax: false))) };
+        state with { Buffs = state.Buffs.AddRange(buffs.Select(b => new ActiveBuff(StatusId.From(b), AtMax: false, Optional.None<StackTally>()))) };
 
     private static GameState WithTarget(GameState state, params string[] debuffs) =>
         state with { Target = state.Target with { Debuffs = [.. debuffs.Select(StatusId.From)] } };

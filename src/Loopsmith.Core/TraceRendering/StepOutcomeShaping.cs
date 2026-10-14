@@ -93,7 +93,7 @@ public static class StepOutcomeShaping
         var lines = rules.SelectMany(rule => ShapeOutcomeLines(glossary, catalog, rule, copies, superType));
         var reasons = options.ShowReasons ? rules.SelectMany(rule => ToSequence(rule.Reason)) : [];
         var caveats = options.ShowCaveats
-            ? rules.SelectMany(rule => rule.Outcomes.SelectMany(outcome => ToSequence(outcome.Caveat).Select(caveat => $"{glossary.DescribeOutcome(outcome.Outcome, superType)}: {caveat}")))
+            ? rules.SelectMany(rule => rule.Outcomes.SelectMany(outcome => ToSequence(outcome.Caveat).Select(caveat => $"{glossary.DescribeAppliedOutcome(outcome.Outcome, outcome.Spend, superType)}: {caveat}")))
             : [];
         return new SourceOutcomes(first.Source, first.SourceName, first.SourceKind, first.Affinity, [.. lines], [.. reasons], [.. caveats]);
     }
@@ -106,7 +106,7 @@ public static class StepOutcomeShaping
             partner => [ToLine(glossary, catalog, $"doesn't stack with {partner.Value}", Tone.Warning, chance)],
             _ => rule.Outcomes.IsEmpty
                 ? [ToLine(glossary, catalog, "(no effect)", Tone.Muted, chance)]
-                : glossary.ListOutcomePhrases(rule.Outcomes.Select(outcome => new OutcomeMention(outcome.Outcome, copies)), superType)
+                : glossary.ListOutcomePhrases(rule.Outcomes.Select(outcome => new OutcomeMention(outcome.Outcome, copies, outcome.Spend)), superType)
                     .Select(phrase => ToLine(glossary, catalog, phrase.Text, Tone.Plain, chance)));
     }
 

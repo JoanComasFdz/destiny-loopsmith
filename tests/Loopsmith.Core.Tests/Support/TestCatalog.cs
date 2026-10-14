@@ -15,10 +15,10 @@ public static class TestCatalog
     public static readonly KeywordGlossary Glossary = new(
         new[]
         {
-            new StatusDefinition(Status("bolt-charge"), "Bolt Charge", KeywordKind.Buff, Affinity.Arc, Optional.Some(StackCount.From(3)), Optional.None<Seconds>(), Optional.None<ItemHash>(), Optional.None<DrawnIcon>()),
-            new StatusDefinition(Status("amplified"), "Amplified", KeywordKind.Buff, Affinity.Arc, Optional.None<StackCount>(), Optional.Some(Seconds.From(10m)), Optional.None<ItemHash>(), Optional.None<DrawnIcon>()),
-            new StatusDefinition(Status("jolt"), "Jolt", KeywordKind.Debuff, Affinity.Arc, Optional.None<StackCount>(), Optional.Some(Seconds.From(4m)), Optional.None<ItemHash>(), Optional.None<DrawnIcon>()),
-            new StatusDefinition(Status("armor-charge"), "Armor Charge", KeywordKind.Buff, Affinity.Neutral, Optional.Some(StackCount.From(3)), Optional.None<Seconds>(), Optional.None<ItemHash>(), Optional.None<DrawnIcon>()),
+            new StatusDefinition(Status("bolt-charge"), "Bolt Charge", KeywordKind.Buff, Affinity.Arc, Optional.Some(StackCount.From(3)), Optional.None<Seconds>(), Optional.None<ItemHash>(), Optional.None<DrawnIcon>(), false, Optional.None<string>()),
+            new StatusDefinition(Status("amplified"), "Amplified", KeywordKind.Buff, Affinity.Arc, Optional.None<StackCount>(), Optional.Some(Seconds.From(10m)), Optional.None<ItemHash>(), Optional.None<DrawnIcon>(), false, Optional.None<string>()),
+            new StatusDefinition(Status("jolt"), "Jolt", KeywordKind.Debuff, Affinity.Arc, Optional.None<StackCount>(), Optional.Some(Seconds.From(4m)), Optional.None<ItemHash>(), Optional.None<DrawnIcon>(), false, Optional.None<string>()),
+            new StatusDefinition(Status("armor-charge"), "Armor Charge", KeywordKind.Buff, Affinity.Neutral, Optional.Some(StackCount.From(3)), Optional.None<Seconds>(), Optional.None<ItemHash>(), Optional.None<DrawnIcon>(), true, Optional.Some("1 stack every 10 s")),   // counted (ADRs D33)
         }.ToImmutableDictionary(s => s.Id),
         new[]
         {
@@ -40,7 +40,7 @@ public static class TestCatalog
         rule with { DoesNotStackWith = [ElementId.From(partner)] };
 
     public static Outcome Buff(string status, int stacks = 1) =>
-        new Outcome.ApplyBuff(Status(status), Optional.None<Seconds>(), StackCount.From(stacks));
+        new Outcome.ApplyBuff(Status(status), Optional.None<Seconds>(), StackCount.From(stacks), Optional.None<StackTable>());
 
     public static Outcome Debuff(string status) =>
         new Outcome.DebuffTarget(Status(status), Optional.None<Seconds>());

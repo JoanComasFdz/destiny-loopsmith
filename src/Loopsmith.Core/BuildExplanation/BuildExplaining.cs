@@ -261,5 +261,6 @@ public static class BuildExplaining
             targetHas => glossary.ReadStatusAffinity(targetHas.Status),
             atMax => glossary.ReadStatusAffinity(atMax.Status),
             _ => Affinity.Neutral,
-            belowMax => glossary.ReadStatusAffinity(belowMax.Status));
+            belowMax => glossary.ReadStatusAffinity(belowMax.Status),
+            holds => glossary.ReadStatusAffinity(holds.Status));
 }

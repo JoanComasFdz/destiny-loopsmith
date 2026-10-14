@@ -60,7 +60,13 @@ finishers:
 ```
 
 Each section is optional; ids are unique within a section. All keys shown are required except a
-status's `maxStacks` (a whole number ≥ 2), `duration` and `drawnIcon`, and `trait`.
+status's `maxStacks` (a whole number ≥ 2), `duration` and `drawnIcon`, `counted` and `decay`, and `trait`.
+
+* `counted: true` (a buff with `maxStacks` only; `the status 'x' is counted, so it must be a buff with maxStacks`
+  otherwise): the engine counts its stacks, sure and chance ones, and they decide what fires (ADRs D33). Armor Charge is
+  the one counted status; `holds`, `spendStacks` and a table by stacks (below) need it. `decay` is how it loses stacks
+  over time, as text from the source ("1 stack every 10 s while a passive Armor Charge mod is equipped …"): shown with
+  the count, never applied.
 
 * `trait`: Bungie's trait for the keyword (the manifest's `DestinyTraitDefinition`: the game's own keyword, as
   its tooltips name it — Jolted for Jolt), by hash. The manifest excerpt's `keywordTraits` give its name and icon
@@ -373,7 +379,7 @@ doesn't show as a stacking status (Elemental Charge's progress per Ionic Trace; 
 | `{ damage: { via: <source> } }` | `Damage(via)` |
 | `{ damage: { via: <source>, targetHas: [sever] } }` | `DamageDebuffed(via, statuses)` |
 | `{ damage: { via: weapon, atLeast: 3 } }` — hit at least N enemies with `via` in one action | `DamageMultiple(via, atLeast)` |
-| `{ kill: { via: grenade, atLeast: 2 } }` — kill at least N enemies with `via` in one action | `KillMultiple(via, atLeast)` |
+| `{ kill: { via: grenade, atLeast: 2 } }` — kill at least N enemies with `via` in one action; `within: 3s`: the window the source gives them (a Siphon's "2 kills within 3 s"), which one action meets | `KillMultiple(via, atLeast, within)` |
 | `{ kill: { via: "weapon:this", fewerThan: 12 } }` — kill fewer than N enemies (at least one) with `via` in one action | `KillFewer(via, fewerThan)` |
 | `{ pickUp: ionic-trace }` | `PickUp(pickup)` |
 | `{ buffGained: bolt-charge }` | `BuffGained(status)` |
@@ -403,8 +409,11 @@ action hits ("One For All: hitting three separate targets…" → `{ damage: { v
 `fewerThan` (a kill only) is 2..20 and stands alone like `atLeast` (`kill cannot combine 'atLeast' and 'fewerThan'`):
 the two split one count (ADRs D31), so a counter the game doesn't show fires for sure on the kills that fill it and as a chance
 on fewer — Synergy (`rules/mods/weapons.yaml`): `atLeast: 12` spawns its pickup, `fewerThan: 12` spawns it with
-`chance: true`, since the kills of earlier steps may have filled it. The designer's trigger palette offers every
-`atLeast` count an equipped rule names, beside 1 to 9.
+`chance: true`, since the kills of earlier steps may have filled it. The Siphons split "2 kills within 3 s" the same way:
+`{ kill: { via: weapon:arc, atLeast: 2, within: 3s } }` spawns the orb for sure, `fewerThan: 2` as a chance (`within` needs
+`atLeast`: `'within' is the window of a kill count, so it needs 'atLeast'`). The designer's trigger palette offers, for
+each ability and weapon, every `atLeast` count an equipped rule needs from it, named ("2 in 3 s · Arc Siphon"), beside
+1 to 9.
 A kill hits too, so a kill action also fires `damage … atLeast`. Only player actions (abilities and
 weapons) fire `atLeast` triggers, once per action — keyword strikes and summons hit one enemy each.
 
@@ -413,11 +422,11 @@ the `finisher` rules, then kills one enemy of the pack: a hit and a kill whose o
 no damage type and is no weapon or ability, so of the `damage` and `kill` rules only those whose `via` is `any` fire on
 it — `{ kill: { via: any, targetHas: [jolt] } }` on a finisher of a jolted enemy; `kill: { via: melee }` and
 `type:arc` never. `finisher` takes no keys (`{ finisher: {} }`; anything else in it is an error). The designer offers
-the step only when an equipped rule has a `finisher` trigger. What a finisher spends (the finisher mods' "consumes x3
-or more Armor Charge") is not counted — the state holds no stack count (ADRs D1): guard the rule with
-`when: [ { has: armor-charge } ]`, mark it `chance: true` when it needs more stacks than one (the player knows), and
-spend the buff with `convertStacksToEnergy` or `removeBuff`; for "consumes x1", leave the buff (stacks may remain)
-and say so in the `reason`.
+the step only when an equipped rule has a `finisher` trigger. What a finisher spends is counted (Armor Charge, ADRs D33):
+"x3 or more" is `when: [ { holds: { status: armor-charge, atLeast: 3 } } ]` and spends all of it (`convertStacksToEnergy`
+with a table `bySpent`, or `removeBuff` and an outcome whose `durationBySpent` reads what it spent); "spends x1 / x2" is
+`has` (or `holds` 2) and `{ spendStacks: { status: armor-charge, count: 1 } }`. No `chance: true`: the count says
+whether it fires for sure, as a chance or not at all.
 
 `buffGained` fires on every `applyBuff` of a stacking status (one with `maxStacks`), and on an
 `applyBuff` of a non-stacking status only when it wasn't active. `stacksMaxed` fires when the player
@@ -459,7 +468,13 @@ type: only `any` matches it. `weapon:harmonic` reads with the build's Super name
 when the Super is `?`.
 
 **Conditions (`when`)**: `{ has: <status> }` · `{ lacks: <status> }` · `{ targetHas: <status> }` ·
-`{ atMax: <status> }` · `{ belowMax: <status> }` · `{ during: <ability> }` — all must hold, checked against the state when the event is processed.
+`{ atMax: <status> }` · `{ belowMax: <status> }` · `{ during: <ability> }` · `{ holds: { status: <counted status>, atLeast: N } }`
+— all must hold, checked against the state when the event is processed. On a counted buff (ADRs D33) `has`, `lacks` and
+`holds` read its stacks: they hold for sure when the sure stacks meet them, by chance when only the chance ones do —
+the rule then fires marked *(chance)*, a passive holds as a chance — and not at all otherwise; a rule whose `holds`
+alone fails leaves a note on the step (`Bulwark Finisher needs x3 Armor Charge, holds x1 — it doesn't fire.`).
+`holds` on a status that isn't counted is an error (`'bolt-charge' isn't counted (no counted: true in glossary.yaml), …`).
+A rule fired by an event a chance rule raised, or by picking up a pickup only chance rules dropped, is a chance too.
 `during` (`grenade|melee|classAbility|super`) holds for the whole of a step that casts that ability, any use of it
 (`class` and `class:air` are both the class ability), and on no other step: what is under way at the step's end, such
 as Flow State's dodge (`when: [ { has: amplified }, { during: classAbility } ]`: 66% [PvP 32%] damage resistance on a
@@ -482,17 +497,15 @@ Flashover (Amplified 15s), and the next ability hit fires the strike, which spen
 
 `belowMax` (a status that stacks, like `atMax`) holds while the buff is on you and not declared at max; `explain` reads
 it `(while Armor Charge below max)`. With `atMax` it splits a threshold the state doesn't count (ADRs D1): a rule that
-needs "x3 or more Armor Charge" fires for sure at the declared max (the cap is x3 or more) and as a `chance` below it
-(ADRs D8). Emergency Reinforcement (`rules/mods/chest.yaml`):
+needs "x3 or more" of a status fires for sure at the declared max and as a `chance` below it (ADRs D8). Armor Charge is
+counted (ADRs D33), so its rules read the count instead — Emergency Reinforcement (`rules/mods/chest.yaml`):
 
 ```yaml
   - on: { criticalHealth: {} }
-    when: [ { atMax: armor-charge } ]
-    then: [ { removeBuff: armor-charge }, { applyBuff: emergency-reinforcement } ]
-  - on: { criticalHealth: {} }
-    when: [ { belowMax: armor-charge } ]
-    then: [ { removeBuff: armor-charge }, { applyBuff: emergency-reinforcement } ]
-    chance: true
+    when: [ { holds: { status: armor-charge, atLeast: 3 } } ]
+    then:
+      - { removeBuff: armor-charge }
+      - { applyBuff: { status: emergency-reinforcement, durationBySpent: { from: 3, values: "6 | 9 | 12" } } }
 ```
 
 A **critical health** step is the player's declaration (`health:critical`, "Critical health",
@@ -506,8 +519,12 @@ equipped rule has the trigger, and the loop graph draws it as a "Critical health
 |---|---|
 | `{ grantEnergy: { to: grenade, amount: "15%" } }` / `amount: full` | `GrantEnergy(to, Fraction(v) \| Full)` |
 | `{ grantEnergy: { to: leastCharged, amount: "10% \| 13% \| 15%" } }` — the ability with the least energy | `GrantLeastChargedEnergy(Fraction(v) \| Full)` |
-| `{ convertStacksToEnergy: { consumed: armor-charge, to: grenade, perStack: "?" } }` | `ConvertStacksToEnergy` |
+| `{ convertStacksToEnergy: { consumed: armor-charge, to: grenade, perStack: "?" } }` | `ConvertStacksToEnergy(…, PerStack)` |
+| `{ convertStacksToEnergy: { consumed: armor-charge, to: grenade, bySpent: { from: 3, values: "70% \| 80% \| 90% \| 100%" } } }` — the energy by the stacks spent (x3, x4…) | `ConvertStacksToEnergy(…, BySpent)` |
+| `{ convertStacksToEnergy: { consumed: armor-charge, to: grenade, byCharges: { from: 2, values: "16.2% \| 21.7% \| …" } } }` — by charges: each copy and each stack spent counts one (the Kickstarts) | `ConvertStacksToEnergy(…, ByCharges)` |
+| `{ spendStacks: { status: armor-charge, count: 1 } }` — a fixed number of a counted buff's stacks | `SpendStacks` |
 | `{ applyBuff: { status: bolt-charge, stacks: 1, duration: 10s } }` / `{ applyBuff: amplified }` | `ApplyBuff` (stacks default 1) |
+| `{ applyBuff: { status: void-overshield, durationBySpent: { from: 3, values: "8 \| 10 \| 12 \| 14" } } }` — seconds by the stacks the same rule spent before it (Bulwark Finisher); not with `duration` | `ApplyBuff(…, DurationBySpent)` |
 | `{ removeBuff: new-tricks }` | `RemoveBuff` |
 | `{ debuffTarget: { status: jolt, duration: 4s } }` / `{ debuffTarget: jolt }` | `DebuffTarget` |
 | `{ spawn: { pickup: orb-of-power, count: 1 } }` / `{ spawn: orb-of-power }` | `Spawn` (count default 1) |
@@ -527,10 +544,17 @@ must be glossary `buff`s; in `debuffTarget`/`targetHas` glossary `debuff`s
   A stacking status shows the grant — `+1 Bolt Charge`, `+1 Slice (8s)`; a non-stacking one shows the
   status — `Amplified (15s)` — and applying it while it is active changes nothing (caveat
   `already active`). The duration shown is the rule's, else the glossary's.
-* **`removeBuff`** removes the buff, and its declaration at max.
+  A counted buff's grant (ADRs D33) adds its stacks, and every `extraStacks` that holds (Stacks on Stacks), to the sure
+  stacks — to the chance ones when the rule fires as a chance — up to the build's cap; the rest is wasted (caveat
+  `at cap: +1 wasted`), and sure stacks at the cap put the buff at max, raising `StacksMaxed` as a declaration does.
+* **`removeBuff`** removes the buff, and its declaration at max; a counted buff spends every stack.
 * **`convertStacksToEnergy`** consumes the buff if it is active — removes it and its declaration — and
-  shows the energy as a fact: `spends Armor Charge → +?% grenade energy per stack`. With the buff not
-  active it carries the caveat `nothing to consume`.
+  shows the energy as a fact: `spends Armor Charge → +?% grenade energy per stack`. A table (a counted buff) gives
+  the value for the stacks it spent, and beside it the value with the chance ones:
+  `spends Armor Charge x2 · +1 (chance) → +28.4% grenade energy (34.4% with the chance stack)`; a count outside the
+  table is `?`. With the buff not active it carries the caveat `nothing to consume`.
+* **`spendStacks`** takes that many of a counted buff's stacks, sure ones first, then chance ones, never below none;
+  the buff ends when none are left. With none it carries the caveat `nothing to spend`.
 * **`grantEnergy` to `leastCharged`** (Orbs of Restoration, Restorative Finisher) is a fact like any energy grant:
   `+10% energy to your least-charged ability` (by copies). The game picks the ability, so the loop graph draws no
   arrow from it to one ability's energy.
@@ -542,7 +566,7 @@ must be glossary `buff`s; in `debuffTarget`/`targetHas` glossary `debuff`s
   loop analysis counts the pickup as a need of the step, provided by the step that dropped it.
 
 What changes the state or sets off events: `applyBuff`, `removeBuff`, `debuffTarget`, `spawn`,
-`summon`, `strikeTarget`, `collect`, and the consumption of `convertStacksToEnergy`. The rest are **facts**, shown with their value and
+`summon`, `strikeTarget`, `collect`, `spendStacks`, and the consumption of `convertStacksToEnergy`. The rest are **facts**, shown with their value and
 certainty and changing nothing: `grantEnergy` (to an ability or `leastCharged`), the energy of `convertStacksToEnergy`, `resetCooldown`,
 `modifyDamage` and `restoreHealth` (ADRs D1, D5).
 

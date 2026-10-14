@@ -65,17 +65,23 @@ public static partial class LoopRunning
             starts.Add(ToStateKey(start));
             var resolutions = ActionResolution.ResolveSequence(build, start, actions);
             passes.Add(new LoopPass(start, resolutions));
-            start = resolutions[^1].State with { Step = 0 };
+            start = resolutions[^1].State.StartNextPass();
         }
 
         return new PassRuns(passes.ToImmutable(), passes.Count - 1);
     }
 
-    /// <summary>What is present and declared, in a stable order (records holding arrays don't compare by content).</summary>
+    /// <summary>
+    /// What is present and declared, with a counted buff's stacks and the pickups only chance dropped, in a stable order
+    /// (records holding arrays don't compare by content). A counted buff's changes are its history, not its state.
+    /// </summary>
     private static string ToStateKey(GameState state) =>
-        $"{JoinSorted(state.Buffs.Select(buff => buff.Status.Value + (buff.AtMax ? "*" : "")))};"
+        $"{JoinSorted(state.Buffs.Select(buff => buff.Status.Value + ToTallyKey(buff.Tally) + (buff.AtMax ? "*" : "")))};"
         + $"{JoinSorted(state.Target.Debuffs.Select(debuff => debuff.Value))};"
-        + $"{JoinSorted(state.Pickups.Select(pickup => pickup.Value))};{state.Target.Tier}";
+        + $"{JoinSorted(state.Pickups.Select(pickup => pickup.Value + (state.ChancePickups.Contains(pickup) ? "?" : "")))};{state.Target.Tier}";
+
+    private static string ToTallyKey(Optional<StackTally> tally) =>
+        tally.Match(some => $"={some.Value.Sure.Value}+{some.Value.Chance.Value}", _ => "");
 
     private static string JoinSorted(IEnumerable<string> values) => string.Join(",", values.Order(StringComparer.Ordinal));
 
@@ -245,7 +251,8 @@ public static partial class LoopRunning
             targetHas => [new Need.Debuff(targetHas.Status)],
             atMax => [new Need.DeclaredMax(atMax.Status)],
             _ => [],
-            belowMax => [new Need.Buff(belowMax.Status)]));
+            belowMax => [new Need.Buff(belowMax.Status)],
+            holds => [new Need.Buff(holds.Status)]));
         var consumed = rule.Outcomes
             .Where(applied => !applied.Caveat.IsSome())
             .SelectMany(applied => ListConsumed(applied.Outcome));
@@ -267,7 +274,8 @@ public static partial class LoopRunning
             _ => [],
             _ => [],
             collect => [new Need.GroundPickup(collect.Pickup)],
-            _ => []);
+            _ => [],
+            spend => [new Need.Buff(spend.Status)]);
 
     private static bool IsPresent(GameState state, Need need) =>
         need.Match(

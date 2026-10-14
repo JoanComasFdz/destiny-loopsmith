@@ -9,7 +9,7 @@ New pack → Class ability → Grenade (kill) → Festival Flight (kill) → Any
 
 #3 Grenade (kill)
    needs            Armor Charge ← previous pass #6 [Orb of Power]
-   in this order    Grenade Kickstart
+   in this order    Grenade Kickstart (chance)
    on its own       Spark of Shock · Shinobu's Vow · Bolt Charge · Flow State · Dielectric · Shock and Clear · Spark of Discharge · Elemental Charge (chance) · Ionic Trace
    wasted           Tempest Strike — doesn't stack with Dielectric
 
@@ -21,7 +21,7 @@ New pack → Class ability → Grenade (kill) → Festival Flight (kill) → Any
 
 #5 Any Arc weapon (kill)
    needs            Sever ← #4 [Slice] · Unravel ← #4 [Unraveling Rounds] · Jolt ← #3 [Spark of Shock]
-   in this order    To Shreds · Horde Shuttle · Jolt · Photonic Flare · Flow State · Dielectric · Spark of Discharge · Shock and Clear · Shinobu's Vow · Bolt Charge · Elemental Charge (chance) · Ionic Trace
+   in this order    To Shreds · Horde Shuttle (chance) · Jolt · Photonic Flare · Flow State · Dielectric · Spark of Discharge · Shock and Clear · Shinobu's Vow · Bolt Charge · Elemental Charge (chance) · Ionic Trace
    on its own       Harmonic Siphon (chance)
    wasted           Tempest Strike — doesn't stack with Dielectric
 
@@ -34,18 +34,18 @@ New pack → Class ability → Grenade (kill) → Festival Flight (kill) → Any
    in this order    Shinobu's Vow · Flashover
 
 #8 Grenade (kill)
-   needs            New Tricks ← #7 [Shinobu's Vow] · Armor Charge ← #6 [Orb of Power] · Bolt Charge at max ← #7 · Bolt Charge ← #5 [Dielectric; Spark of Discharge] · Jolt ← #3 [Spark of Shock] · Sever ← #5 [Horde Shuttle]
+   needs            New Tricks ← #7 [Shinobu's Vow] · Armor Charge ← #6 [Orb of Power] · Bolt Charge at max ← #7 · Bolt Charge ← #5 [Dielectric; Spark of Discharge] · Jolt ← #3 [Spark of Shock] · Sever ← #4 [Slice]
    in this order    Shinobu's Vow · Grenade Kickstart · Bolt Charge · Jolt · Defibrillating Blast · Photonic Flare · Flow State · Dielectric · To Shreds · Shock and Clear · Spark of Discharge · Elemental Charge (chance) · Ionic Trace
    on its own       Spark of Shock
    wasted           Tempest Strike — doesn't stack with Dielectric
 
 First pass (from a fresh spawn, where it differs)
 #3 Grenade (kill)
-   doesn't set off  Grenade Kickstart
+   doesn't set off  Grenade Kickstart (chance)
 #4 Festival Flight (kill)
    doesn't set off  Unraveling Rounds
 #5 Any Arc weapon (kill)
-   doesn't set off  Horde Shuttle
+   doesn't set off  Horde Shuttle (chance)
 
 Steps
   The creator's loop: dodge to arm Slice and Reaper, skip grenade into the pack, clean up with

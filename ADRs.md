@@ -4,8 +4,8 @@ Each ADR explains **why**; [`CONVENTIONS.md`](./CONVENTIONS.md) says **what** an
 The requirements they serve are in [docs/requirements.md](docs/requirements.md). The list is the
 current set of decisions, in four groups: what the product is (D1–D9), sources and rules (D10–D15),
 architecture (D16–D23), hosts and tooling (D24–D26), starting from a DIM link (D27), the build's stats (D28), the
-step's damage resistance (D29) and armor mods in their sockets (D30). D1 is the
-founding one: every other decision follows from it.
+step's damage resistance (D29), armor mods in their sockets (D30), the artifact (D32) and the count of Armor Charge
+(D33). D1 is the founding one: every other decision follows from it.
 
 | # | Decision | Why |
 |---|---|---|
@@ -39,6 +39,7 @@ founding one: every other decision follows from it.
 | D29 | The step's state shows its damage resistance, its sources multiplied, PvE and PvP | Builds are judged by how much damage they shrug off; the game stacks resistance by a known rule, so the total is a fact, never a decision |
 | D30 | Armor mods are picked in the pieces' sockets; the energy budget holds when its capacity is known | A build's mods are part of its loop and the game decides what fits; the sockets and costs are Bungie's, the capacity the player's copy's |
 | D32 | A build names its artifact and the perk in each of its slots (Artifacts 2.0) | Since Monument of Triumph one of seven artifacts is equipped with up to seven perks, one per slot; the tiers and slots are Bungie's, read from the artifact's sockets |
+| D33 | Armor Charge is counted: sure stacks and chance stacks, and the count decides | Gaining, keeping and spending Armor Charge is a pillar of build crafting; most of its gains and spends are known steps of the loop, so the loop can say how many it surely holds |
 
 ## What the product is
 
@@ -57,7 +58,8 @@ how many, how often, how long or when.
   "up to x10", "refills melee"). They are never added up or compared to
   decide what happens.
 * **State is what is present**: a buff on you, a debuff on the pack, a pickup on the ground — and
-  what the player declared (D3). Nothing in it is counted: no stacks, energy or health.
+  what the player declared (D3). Nothing in it is counted: no stacks, energy or health — but a counted buff's
+  stacks (Armor Charge, D33).
 * **The player declares what only play can decide**: that a threshold is reached ("Bolt Charge at
   max", "Combination Blow at max"), that a buff has ended (D3), how many enemies one action hits (D4).
   The engine shows what the declared state sets off.
@@ -106,7 +108,7 @@ declare them; a counter the game doesn't show (To Shreds' 6 weapon hits) is a *(
 A declaration that doesn't hold is a **blocked step**, like a pickup that isn't on the ground:
 `max:` needs an active buff that stacks (`maxStacks` in the glossary) and isn't declared at max yet,
 `end:` an active status; `pack:new` and `health:critical` always hold. Nothing else reaches a maximum: an `applyBuff` makes the buff present and
-shows its grant ("+1 Bolt Charge"). A status ends only through a rule's `removeBuff` or consumption,
+shows its grant ("+1 Bolt Charge") — but a counted buff, whose sure stacks reaching the cap put it at max (D33). A status ends only through a rule's `removeBuff` or consumption,
 or an `end:`. **Consequence.** `stacksMaxed` fires only on a declaration;
 a rule that reacts to the next hit at the maximum uses the `atMax` condition (Bolt Charge discharges
 on the next ability hit at x10). A rule that needs a count below the cap ("x3 or more Armor Charge": Emergency
@@ -460,3 +462,33 @@ excerpt holds all seven artifacts with their `tiers`, `slots` and flavour text, 
 the editor shows the slots last picked for it while the loop is open (the tab's memory, D25: nothing is stored).
 **Consequence.** A perk the rules don't know can be picked (⊘, in `leftOut`), like a fragment or a mod. Artifact perks
 being off in Trials and Competitive Crucible isn't modelled.
+
+### D33 — Armor Charge is counted: sure stacks and chance stacks, and the count decides
+
+**Context.** Armor Charge is a pillar of build crafting: many parts of a build gain it, keep it or spend it. D1 left
+every stack uncounted and D3 had the player declare "at max", so a loop couldn't say how many stacks it holds, a
+Kickstart's refund was "?" and a finisher that needs x3 fired as a chance whatever came before. Yet most gains are
+steps of the loop the engine already plays — "dodge for Reaper, a weapon kill, pick up the orb" surely gives one — and
+the rest are chance rules (a Siphon's orb from one kill, Elemental Charge's progress), which D8 already marks.
+**Decision (product owner).** A buff the glossary marks `counted: true` (Armor Charge only, for now) holds its stacks
+in the state: the **sure** ones, from rules that always fire, and the **chance** ones, from chance rules and from what
+they set off — a pickup on the ground only chance rules dropped gives what it gives only by chance, and so does an
+event a chance rule raised. A grant adds its stacks and the passives' extra ones (Stacks on Stacks) to the sure or the
+chance stacks, up to the build's cap (x3, Charged Up's x4–x6); the rest is wasted ("at cap"), and sure stacks at the
+cap put the buff at its maximum, as a declaration would. A spend takes them off: every stack (a Kickstart, a removal,
+`end:`) or a fixed number (`spendStacks`: sure ones first, then chance ones), and the buff ends with none left. The
+count decides: a guard on the buff (`has`, `lacks`, `holds: { atLeast: N }`) holds for sure when the sure stacks meet
+it, by chance (the rule fires marked *(chance)*, a passive holds as a chance) when only the chance ones do, and not at
+all otherwise — the rule doesn't fire, and the step says what it needed ("Bulwark Finisher needs x3 Armor Charge,
+holds x1"). A table by the stacks spent (the finishers: x3 → 70%) or by charges, each copy and each stack counting one
+(the Kickstarts: 2 mods and x2 → 28.4%), gives the value for the sure stacks and, beside it, the value with the chance
+ones. `max:armor-charge` is offered while the sure stacks are below the cap and makes them the cap. The state shows
+the count ("Armor Charge x1 · +1 (chance)") and each change since the buff was last gained from none, with its step;
+the next pass of a loop starts from what the last one ended with. A kill count takes the window its source gives
+(`atLeast: 2, within: 3s`): the kills of one step are at once, so a Siphon's orb from two kills is sure and from one a
+chance (the split of D31); the enemy-count selector says what each count is for ("2 in 3 s · Arc Siphon").
+**Consequence.** The count is game state, the one number besides the step (`CausalStateTests` allows it and nothing
+else): it is a fact of the loop's order, not a simulation — time is still not modelled, so the decay (one stack every
+10 s, slower with Time Dilation) is a fact shown with the count, never applied, and "sure" means "if the player
+doesn't wait". Other stacking statuses (Bolt Charge, Combination Blow, Slice) stay declared (D3) until they are marked
+counted. Kills of earlier steps still don't add up (D31).

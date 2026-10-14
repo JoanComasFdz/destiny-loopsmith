@@ -8,13 +8,14 @@
 # orb-of-power keyword's rule (keywords/orb-of-power.yaml), active in every build, so no mod repeats it.
 #
 # Finishers (`on: { finisher: {} }`) also kill their enemy, so `kill … via: any` rules fire on them.
-# The Armor Charge a finisher spends (the state holds no stack count, ADRs D1):
+# The Armor Charge a finisher spends (the engine counts it, ADRs D33):
 #  - "x3 or more" spends all of it, for more energy or a longer duration per charge: guarded by
-#    `has: armor-charge` and a chance rule (it needs three or more, which the player knows, ADRs D8),
-#    and the outcome spends it (convertStacksToEnergy, or removeBuff + the outcome);
-#  - a fixed x1, x2 or x3 may leave stacks (x3 leaves none at the base cap of x3, some with Charged
-#    Up): `has: armor-charge` (+ chance when it needs more than one) and no removal, so the player
-#    declares `end:armor-charge` when none are left. The state can't hold "three fewer".
+#    `holds: { status: armor-charge, atLeast: 3 }`, and the outcome spends it (convertStacksToEnergy
+#    with its table by the stacks spent, or removeBuff + an outcome whose duration goes by them);
+#  - a fixed x1, x2 or x3 takes that many off: `holds` that many (or `has` for one) and
+#    `spendStacks`; the buff ends when none are left.
+# A finisher that needs more stacks than the loop holds doesn't fire; one that holds them only with
+# chance stacks fires as a chance (ADRs D8).
 elements:
   - id: benevolent-finisher
     name: Benevolent Finisher
@@ -23,7 +24,7 @@ elements:
     hash: 3064687909
     description: "A finisher with x3 Armor Charge spends three stacks to drop an Orb of Power for your allies (7.15% Super energy)."
     # The orb's 7.15% is also in Game Mechanics#238. It is for allies only, so nothing lands for
-    # you. The x3 Armor Charge it spends is a fixed count, so no rule removes it (header).
+    # you, and it stays inert: the x3 Armor Charge it spends isn't counted off.
     source: "compendium/2026-10-09/Armor Mods#2"
     inert: "It helps your allies only: a loop is yours, so nothing in it changes."
     rules: []
@@ -37,14 +38,13 @@ elements:
     description: "A finisher with x3 or more Armor Charge spends all of it on a Void Overshield, longer the more it spent: 8 | 10 | 12 | 14 s at x3 | x4 | x5 | x6."
     source: "compendium/2026-10-09/Armor Mods#4"
     rules:
-      # Needs x3 or more (chance, ADRs D8). The duration grows with the charges spent, not with
-      # copies, so it is a fact in the description (the glossary gives none).
+      # Needs x3 or more. The duration grows with the charges spent, not with copies: 8 | 10 | 12 |
+      # 14 s at x3 | x4 | x5 | x6 (ADRs D33).
       - on: { finisher: {} }
-        when: [ { has: armor-charge } ]
+        when: [ { holds: { status: armor-charge, atLeast: 3 } } ]
         then:
           - { removeBuff: armor-charge }
-          - { applyBuff: void-overshield }
-        chance: true
+          - { applyBuff: { status: void-overshield, durationBySpent: { from: 3, values: "8 | 10 | 12 | 14" } } }
         reason: "Finishing an enemy with three or more Armor Charges burns them all for a Void Overshield."
     passives: []
 
@@ -103,13 +103,11 @@ elements:
     description: "A finisher with x3 or more Armor Charge spends all of it on grenade energy: 70% | 80% | 90% | 100% at x3 | x4 | x5 | x6."
     source: "compendium/2026-10-09/Armor Mods#8"
     rules:
-      # Needs x3 or more (chance, ADRs D8). The energy goes by the charges spent (x3 = 70% … x6 =
-      # 100%), not an amount per stack, so perStack is "?".
+      # Needs x3 or more. The energy goes by the charges spent (x3 = 70% … x6 = 100%, ADRs D33).
       - on: { finisher: {} }
-        when: [ { has: armor-charge } ]
+        when: [ { holds: { status: armor-charge, atLeast: 3 } } ]
         then:
-          - { convertStacksToEnergy: { consumed: armor-charge, to: grenade, perStack: "?" } }
-        chance: true
+          - { convertStacksToEnergy: { consumed: armor-charge, to: grenade, bySpent: { from: 3, values: "70% | 80% | 90% | 100%" } } }
         reason: "Finishing an enemy with three or more Armor Charges burns them all for grenade energy, a full grenade at six."
     passives: []
 
@@ -121,10 +119,11 @@ elements:
     description: "A finisher with Armor Charge spends one stack to restore your health and shields in full."
     source: "compendium/2026-10-09/Armor Mods#9"
     rules:
-      # Spends x1, so stacks may remain: no removal (header). "Fully restores" is 100%.
+      # Spends x1 (header). "Fully restores" is 100%.
       - on: { finisher: {} }
         when: [ { has: armor-charge } ]
         then:
+          - { spendStacks: { status: armor-charge, count: 1 } }
           - { restoreHealth: { amount: "100%" } }
         reason: "Finishing an enemy while you hold Armor Charge spends one and heals you to full."
     passives: []
@@ -137,13 +136,11 @@ elements:
     description: "A finisher with x3 or more Armor Charge spends all of it on melee energy: 70% | 80% | 90% | 100% at x3 | x4 | x5 | x6."
     source: "compendium/2026-10-09/Armor Mods#10"
     rules:
-      # Needs x3 or more (chance, ADRs D8). The energy goes by the charges spent (x3 = 70% … x6 =
-      # 100%), not an amount per stack, so perStack is "?".
+      # Needs x3 or more. The energy goes by the charges spent (x3 = 70% … x6 = 100%, ADRs D33).
       - on: { finisher: {} }
-        when: [ { has: armor-charge } ]
+        when: [ { holds: { status: armor-charge, atLeast: 3 } } ]
         then:
-          - { convertStacksToEnergy: { consumed: armor-charge, to: melee, perStack: "?" } }
-        chance: true
+          - { convertStacksToEnergy: { consumed: armor-charge, to: melee, bySpent: { from: 3, values: "70% | 80% | 90% | 100%" } } }
         reason: "Finishing an enemy with three or more Armor Charges burns them all for melee energy, a full melee at six."
     passives: []
 
@@ -185,12 +182,12 @@ elements:
     description: "A finisher with x2 Armor Charge spends two stacks to give 50% energy to your least-charged ability."
     source: "compendium/2026-10-09/Armor Mods#15"
     rules:
-      # Needs x2 (chance, ADRs D8). Spends a fixed two, so stacks may remain: no removal (header).
+      # Needs x2 and spends a fixed two (header).
       - on: { finisher: {} }
-        when: [ { has: armor-charge } ]
+        when: [ { holds: { status: armor-charge, atLeast: 2 } } ]
         then:
+          - { spendStacks: { status: armor-charge, count: 2 } }
           - { grantEnergy: { to: leastCharged, amount: "50%" } }
-        chance: true
         reason: "Finishing an enemy with two Armor Charges spends them on half a charge of your least-charged ability."
     passives: []
 
@@ -200,10 +197,14 @@ elements:
     affinity: neutral
     hash: 4004774876
     description: "A finisher with Armor Charge spends one stack to reload all your weapons."
-    # It spends x1, so stacks may remain and the state doesn't change (header).
+    # The reload isn't modelled (no ammo, ADRs D1); the x1 it spends is (header).
     source: "compendium/2026-10-09/Armor Mods#16"
-    inert: "Ammo: Loopsmith doesn't model ammo or reloads, so no loop changes."
-    rules: []
+    rules:
+      - on: { finisher: {} }
+        when: [ { has: armor-charge } ]
+        then:
+          - { spendStacks: { status: armor-charge, count: 1 } }
+        reason: "Finishing an enemy while you hold Armor Charge spends one to reload your weapons."
     passives: []
 
   - id: special-finisher
@@ -212,10 +213,14 @@ elements:
     affinity: neutral
     hash: 4004774872
     description: "A finisher with x3 Armor Charge spends three stacks to make Special ammo for you and your fireteam."
-    # The x3 Armor Charge it spends is a fixed count, so no rule removes it (header).
+    # The ammo isn't modelled (ADRs D1); the x3 it spends is (header).
     source: "compendium/2026-10-09/Armor Mods#17"
-    inert: "Ammo: Loopsmith doesn't model ammo, so no loop changes."
-    rules: []
+    rules:
+      - on: { finisher: {} }
+        when: [ { holds: { status: armor-charge, atLeast: 3 } } ]
+        then:
+          - { spendStacks: { status: armor-charge, count: 3 } }
+        reason: "Finishing an enemy with three Armor Charges spends them on Special ammo for you and your fireteam."
     passives: []
 
   - id: time-dilation
@@ -226,7 +231,7 @@ elements:
     description: "Armor Charge loses a stack every 15 | 18 | 20 s with 1|2|3 mods, instead of every 10 s (its decay while a passive Armor Charge mod is equipped)."
     # Also Game Mechanics#94 (the 10 s default and the 15 | 18 | 20 s).
     source: "compendium/2026-10-09/Armor Mods#18"
-    inert: "A property (how long Armor Charge lasts before it decays): the player declares when Armor Charge ends, so no step of a loop changes."
+    inert: "A property (how long Armor Charge lasts before it decays): a loop never applies the decay (ADRs D33), and the player declares when Armor Charge ends, so no step of a loop changes."
     rules: []
     passives: []
 
@@ -238,13 +243,11 @@ elements:
     description: "A finisher with x3 or more Armor Charge spends all of it on class ability energy: 70% | 80% | 90% | 100% at x3 | x4 | x5 | x6."
     source: "compendium/2026-10-09/Armor Mods#19"
     rules:
-      # Needs x3 or more (chance, ADRs D8). The energy goes by the charges spent (x3 = 70% … x6 =
-      # 100%), not an amount per stack, so perStack is "?".
+      # Needs x3 or more. The energy goes by the charges spent (x3 = 70% … x6 = 100%, ADRs D33).
       - on: { finisher: {} }
-        when: [ { has: armor-charge } ]
+        when: [ { holds: { status: armor-charge, atLeast: 3 } } ]
         then:
-          - { convertStacksToEnergy: { consumed: armor-charge, to: classAbility, perStack: "?" } }
-        chance: true
+          - { convertStacksToEnergy: { consumed: armor-charge, to: classAbility, bySpent: { from: 3, values: "70% | 80% | 90% | 100%" } } }
         reason: "Finishing an enemy with three or more Armor Charges burns them all for class ability energy, a full one at six."
     passives: []
 
@@ -256,13 +259,13 @@ elements:
     description: "Using your class ability while you have Armor Charge consumes all of it for class ability energy. Each mod and each Armor Charge stack counts as one 'charge'; energy with 2|3|...|9 charges: 16.2% | 21.7% | 28.4% | 34.4% | 38.4% | 41.3% | 43.4% | 45% (PvP 12.5% … 31.6%)."
     source: "compendium/2026-10-09/Armor Mods#20"
     rules:
-      # The refund is indexed by (mods + stacks), not linear per stack, so perStack is "?".
+      # The refund is indexed by charges (mods + stacks spent), the Compendium's table (ADRs D33).
       # With 1 mod: 1|2|3 Armor Charge -> 16.2%|21.7%|28.4% of a charge. Bungie's text says it
       # fires when the class ability energy is fully expended; the Compendium's "on class ability
       # use" is encoded, as Grenade Kickstart's.
       - on: { abilityCast: classAbility }
         when: [ { has: armor-charge } ]
         then:
-          - { convertStacksToEnergy: { consumed: armor-charge, to: classAbility, perStack: "?" } }
+          - { convertStacksToEnergy: { consumed: armor-charge, to: classAbility, byCharges: { from: 2, values: "16.2% | 21.7% | 28.4% | 34.4% | 38.4% | 41.3% | 43.4% | 45%" } } }
         reason: "Using your class ability while you hold Armor Charges burns them all for class ability energy - the more charges and copies, the bigger the refund."
     passives: []

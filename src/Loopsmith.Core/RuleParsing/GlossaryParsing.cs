@@ -13,7 +13,7 @@ internal static class GlossaryParsing
     internal const string GlossaryPath = "glossary.yaml";
 
     private static readonly ImmutableArray<string> GlossaryKeys = ["statuses", "pickups", "summons", "subclasses", "finishers"];
-    private static readonly ImmutableArray<string> StatusKeys = ["id", "name", "kind", "affinity", "maxStacks", "duration", "trait", "drawnIcon"];
+    private static readonly ImmutableArray<string> StatusKeys = ["id", "name", "kind", "affinity", "maxStacks", "duration", "trait", "drawnIcon", "counted", "decay"];
     private static readonly ImmutableArray<string> PickupKeys = ["id", "name", "affinity", "collectsAutomatically", "trait"];
     private static readonly ImmutableArray<string> SummonKeys = ["id", "name", "damageType", "trait"];
     private static readonly ImmutableArray<string> SubclassKeys = ["class", "subclass", "name", "hash"];
@@ -57,9 +57,19 @@ internal static class GlossaryParsing
             map.ReadOrDefault("duration", ReadDuration, Optional.None<Seconds>()),
             map.ReadOptional("trait", ReadItemHash),
             map.ReadOptional("drawnIcon", ReadVocabularyWord<DrawnIcon>),
-            (_, id, name, kind, affinity, maxStacks, duration, trait, drawnIcon) => new StatusDefinition(id, name, kind, affinity, maxStacks, duration, trait, drawnIcon))
+            map.ReadOrDefault("counted", ReadBoolean, false),
+            map.ReadOptional("decay", YamlReading.ToText),
+            (_, id, name, kind, affinity, maxStacks, duration, trait, drawnIcon, counted, decay) =>
+                new StatusDefinition(id, name, kind, affinity, maxStacks, duration, trait, drawnIcon, counted, decay))
             .Bind(status => CheckDrawnIcon(map, status))
+            .Bind(status => CheckCounted(map, status))
             .Map(map.ToLocated));
+
+    /// <summary>Only a buff that stacks is counted (ADRs D33): its stacks go up to its <c>maxStacks</c>.</summary>
+    private static Result<StatusDefinition, Errors> CheckCounted(YamlMap map, StatusDefinition status) =>
+        status.Counted && !(status.MaxStacks.IsSome() && status.Kind.IsBuff())
+            ? map.FailAtKey<StatusDefinition>("counted", $"the status '{status.Id.Value}' is counted, so it must be a buff with maxStacks")
+            : Succeed(status);
 
     /// <summary>A drawn icon is for a keyword Bungie's data has no icon for: a status with a trait has the game's own.</summary>
     private static Result<StatusDefinition, Errors> CheckDrawnIcon(YamlMap map, StatusDefinition status) =>

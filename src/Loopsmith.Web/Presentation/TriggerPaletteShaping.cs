@@ -18,9 +18,13 @@ public sealed record TriggerButton(PlayerAction Action, string Token, string Lab
 /// the row ("cast:Grenade", "cast:Melee:Slide", "fire:Kinetic", "class", "class:Air", …) and stays the same from one step
 /// to the next.
 /// <see cref="Targets"/> is how many enemies the row's actions hit or kill — none for a row without targets (class
-/// ability, pickups, declared states).
+/// ability, pickups, declared states); <see cref="Counts"/> the counts it offers, each with its text ("1 enemy",
+/// "2 in 3 s · Arc Siphon").
 /// </summary>
-public sealed record TriggerChoice(string Key, string Title, Optional<TargetCount> Targets, ImmutableArray<TriggerButton> Buttons);
+public sealed record TriggerChoice(string Key, string Title, Optional<TargetCount> Targets, ImmutableArray<TargetCountOption> Counts, ImmutableArray<TriggerButton> Buttons);
+
+/// <summary>A count a row offers and its text: what it is for when an equipped rule needs it ("12 · Synergy").</summary>
+public sealed record TargetCountOption(int Value, string Text);
 
 public sealed record TriggerSection(TriggerGroup Group, ImmutableArray<TriggerChoice> Choices);
 
@@ -30,15 +34,15 @@ public sealed record TriggerSection(TriggerGroup Group, ImmutableArray<TriggerCh
 /// </summary>
 public static class TriggerPaletteShaping
 {
-    /// <summary>The target counts a row offers (the core accepts up to <see cref="TargetCount.Maximum"/>).</summary>
-    public static readonly ImmutableArray<int> TargetCountChoices = [.. Enumerable.Range(1, 9)];
-
     /// <summary>
-    /// The enemy counts a row offers: 1 to 9, and every count an equipped rule names ("kill 12 with this weapon": Synergy's
-    /// counter full), so a step that sets that rule off can be picked.
+    /// The enemy counts a row offers: 1 to 9, and every count an equipped rule needs from its ability or weapon ("kill 12
+    /// with this weapon": Synergy's counter full), each saying what it is for, so a step that sets that rule off can be picked.
     /// </summary>
-    public static ImmutableArray<int> ListTargetCountChoices(ValidatedBuild build) =>
-        [.. TargetCountChoices.Concat(LoopDesigning.ListNamedTargetCounts(build).Select(count => count.Value)).Distinct().Order()];
+    public static ImmutableArray<TargetCountOption> ListTargetCountOptions(ValidatedBuild build, PlayerAction action) =>
+    [
+        .. LoopDesigning.ListTargetCountChoices(build, action)
+            .Select(choice => new TargetCountOption(choice.Count.Value, DomainPhrasing.DescribeTargetCountChoice(choice))),
+    ];
 
     /// <param name="counts">The target count picked per row <see cref="TriggerChoice.Key"/>; a row not in it aims at one enemy.</param>
     public static ImmutableArray<TriggerSection> ShapePalette(
@@ -73,7 +77,8 @@ public static class TriggerPaletteShaping
         var buttons = pair
             .Select(option => ShapeButton(option, targets, pair.Length == 1 ? option.Label : ReadQualifier(option.Label), build))
             .ToImmutableArray();
-        return new TriggerChoice(key, title, targets, buttons);
+        var countOptions = targets.Match(_ => ListTargetCountOptions(build, pair[0].Action), _ => ImmutableArray<TargetCountOption>.Empty);
+        return new TriggerChoice(key, title, targets, countOptions, buttons);
     }
 
     private static TriggerButton ShapeButton(TriggerOption option, Optional<TargetCount> targets, string caption, ValidatedBuild build)

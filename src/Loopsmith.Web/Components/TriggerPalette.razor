@@ -128,16 +128,15 @@
             </div>
             @if (choice.Targets is Optional<TargetCount>.Some targets)
             {
-                <label class="target-count" title="How many enemies one hit or kill catches">
+                <label class="target-count" title="How many enemies one hit or kill catches, and what needs that many">
                     <span class="target-count-sign" aria-hidden="true">×</span>
                     <select value="@targets.Value.Value" @onchange="e => PickTargetCount(choice.Key, e)"
                             aria-label="@($"{choice.Title}: enemies per hit or kill")">
-                        @foreach (var count in TriggerPaletteShaping.ListTargetCountChoices(Build))
+                        @foreach (var count in choice.Counts)
                         {
-                            <option value="@count">@count</option>
+                            <option value="@count.Value">@count.Text</option>
                         }
                     </select>
-                    <span class="target-count-label">@(targets.Value.Value == 1 ? "enemy" : "enemies")</span>
                 </label>
             }
         }

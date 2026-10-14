@@ -133,7 +133,7 @@ public class ActionResolutionTests
         var resolutions = ActionResolution.ResolveSequence(build, ActionResolution.CreateInitialState(), actions);
 
         Assert.All(resolutions, resolution => Assert.Single(resolution.Fired, f => f.Trigger is GameEvent.BuffGained));
-        Assert.Equal([new ActiveBuff(Status("bolt-charge"), AtMax: false)], resolutions[^1].State.Buffs);
+        Assert.Equal([new ActiveBuff(Status("bolt-charge"), AtMax: false, Optional.None<StackTally>())], resolutions[^1].State.Buffs);
         Assert.DoesNotContain(resolutions.SelectMany(r => r.Fired), f => f.Source.Value == "maxed");
         Assert.Contains("+2 Bolt Charge [Charger]", DescribeTrace(build, resolutions[^1]));
     }
@@ -154,7 +154,7 @@ public class ActionResolutionTests
 
         Assert.False(declared.Blocked.IsSome());
         Assert.Equal([new GameEvent.StacksMaxed(Status("bolt-charge"))], declared.Fired.Select(f => f.Trigger));
-        Assert.Contains(new ActiveBuff(Status("bolt-charge"), AtMax: true), declared.State.Buffs);
+        Assert.Contains(new ActiveBuff(Status("bolt-charge"), AtMax: true, Optional.None<StackTally>()), declared.State.Buffs);
         Assert.Single(thrown.Fired, f => f.Source.Value == "discharge");
         Assert.DoesNotContain(thrown.State.Buffs, b => b.Status == Status("bolt-charge"));
         Assert.Equal("Bolt Charge at max (x3)", build.DescribeAction(DeclareMax("bolt-charge")));   // the test glossary's cap
@@ -171,7 +171,7 @@ public class ActionResolutionTests
         var declared = ActionResolution.ResolveAction(build, charged.State, DeclareMax("bolt-charge"));
         var gained = ActionResolution.ResolveAction(build, declared.State, Dodge);
 
-        Assert.Equal([new ActiveBuff(Status("bolt-charge"), AtMax: true)], gained.State.Buffs);
+        Assert.Equal([new ActiveBuff(Status("bolt-charge"), AtMax: true, Optional.None<StackTally>())], gained.State.Buffs);
         Assert.Equal([new GameEvent.BuffGained(Status("bolt-charge"))], gained.Fired.Select(f => f.Trigger).OfType<GameEvent.BuffGained>());
     }
 
@@ -263,7 +263,7 @@ public class ActionResolutionTests
         var yielded = resolution.Fired.Single(f => f.Source.Value == "yielder");
         Assert.Equal(Optional.Some("Giver"), yielded.NotStackedWith);
         Assert.Empty(yielded.Outcomes);
-        Assert.Equal([new ActiveBuff(Status("bolt-charge"), AtMax: false)], resolution.State.Buffs);
+        Assert.Equal([new ActiveBuff(Status("bolt-charge"), AtMax: false, Optional.None<StackTally>())], resolution.State.Buffs);
         Assert.Contains("+1 Bolt Charge [Giver] + doesn't stack with Giver [Yielder]", DescribeTrace(build, resolution));
     }
 
@@ -408,7 +408,7 @@ public class ActionResolutionTests
     {
         var charger = Element("charger", ElementKind.Fragment, [On(new Trigger.AbilityCast(AbilityKind.ClassAbility), Buff("bolt-charge", 2))]);
         var kickstart = Element("kickstart", ElementKind.ArmorMod,
-            [On(new Trigger.AbilityCast(AbilityKind.Grenade), new Outcome.ConvertStacksToEnergy(Status("bolt-charge"), AbilityKind.Grenade, new GameValue.Approximate(0.1m)))]);
+            [On(new Trigger.AbilityCast(AbilityKind.Grenade), new Outcome.ConvertStacksToEnergy(Status("bolt-charge"), AbilityKind.Grenade, new StackEnergy.PerStack(new GameValue.Approximate(0.1m))))]);
         var build = ValidateBuild([charger], [kickstart]);
 
         var charged = ResolveOnce(build, new PlayerAction.UseClassAbility());
@@ -571,7 +571,7 @@ public class ActionResolutionTests
     public void A_kill_at_least_N_trigger_needs_a_kill_action()
     {
         var multikill = Element("multikill", ElementKind.Fragment,
-            [On(new Trigger.KillMultiple(new DamageSource.AbilityOf(AbilityKind.Grenade), TargetCount.From(2)), new Outcome.Spawn(Pickup("orb-of-power"), 1))]);
+            [On(new Trigger.KillMultiple(new DamageSource.AbilityOf(AbilityKind.Grenade), TargetCount.From(2), Optional.None<Seconds>()), new Outcome.Spawn(Pickup("orb-of-power"), 1))]);
         var build = ValidateBuild([multikill]);
 
         var hitTwo = ResolveOnce(build, new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Damage, TargetCount.From(2)));

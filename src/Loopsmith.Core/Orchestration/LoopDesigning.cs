@@ -330,8 +330,14 @@ public static class LoopDesigning
             _ => ImmutableArray<WeaponModOption>.Empty);
 
     /// <summary>
+    /// The enemy counts a step's ability or weapon offers, each with what it is for: the equipped elements whose rules need
+    /// that many from it in one action ("2 in 3 s · Arc Siphon", "12 · Synergy"); 1 to 9 always.
+    /// </summary>
+    public static ImmutableArray<TargetCountChoice> ListTargetCountChoices(ValidatedBuild build, PlayerAction action) =>
+        TargetCountListing.ListTargetCountChoices(build, action);
+
+    /// <summary>
     /// The enemy counts the build's equipped rules need in one action: a kill or hit of at least N (Synergy's 12 kills).
-    /// The trigger palette offers them beside 1 to 9.
     /// </summary>
     public static ImmutableArray<TargetCount> ListNamedTargetCounts(ValidatedBuild build) =>
     [

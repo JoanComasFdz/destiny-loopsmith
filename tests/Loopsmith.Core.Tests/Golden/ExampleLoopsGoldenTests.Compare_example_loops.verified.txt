@@ -11,7 +11,7 @@ Festival Flight (kill)    only in A (#4)
 Any Arc weapon (kill)     A #5 · B #5
    A needs     Sever ← #4 · Unravel ← #4 · Jolt ← #3 (differs on A's first pass)
    B needs     Jolt ← #4 · Reaper ← previous pass #7 (differs on B's first pass)
-   only in A   To Shreds · Horde Shuttle · Photonic Flare
+   only in A   To Shreds · Horde Shuttle (chance) · Photonic Flare
    only in B   Reaper
 Pick up Orb of Power      A #6 · B #6: sets off the same
    A needs     Orb of Power ← #4
@@ -31,8 +31,9 @@ Links only in A
    #5 Any Arc weapon (kill) → #7 Bolt Charge at max (x10): Bolt Charge
    #7 Bolt Charge at max (x10) → #8 Grenade (kill): New Tricks · Bolt Charge at max
    #6 Pick up Orb of Power → #8 Grenade (kill): Armor Charge
-   #5 Any Arc weapon (kill) → #8 Grenade (kill): Bolt Charge · Sever
+   #5 Any Arc weapon (kill) → #8 Grenade (kill): Bolt Charge
    #3 Grenade (kill) → #8 Grenade (kill): Jolt
+   #4 Festival Flight (kill) → #8 Grenade (kill): Sever
 
 Links only in B
    #2 Sliding melee (kill) → #3 Bolt Charge at max (x10): Bolt Charge

@@ -63,10 +63,23 @@ public static class TraceRenderer
             new StyledLine(1, ["Weapons       ".ToSpan(Tone.Muted), .. RenderWeaponEntries(shaped.Weapons, weaponEffects)]),
             new StyledLine(1, ["Debuffs       ".ToSpan(Tone.Muted), .. RenderEntries(shaped.Debuffs)]),
             new StyledLine(1, ["Ground        ".ToSpan(Tone.Muted), .. RenderEntries(shaped.Ground)]),
+            .. shaped.Counts.Select(RenderCount),
             .. shaped.Resistance.Map(RenderResistance).UnwrapOr([]),
             .. switchedOn,
         ];
     }
+
+    /// <summary>
+    /// A counted buff's stacks and where they came from (ADRs D33): "Armor Charge  x1 · +1 (chance)  (#3 Elemental Charge: +1
+    /// (chance) → +1 (chance) · #6 Orb of Power: +1 → x1 · +1 (chance))".
+    /// </summary>
+    private static StyledLine RenderCount(StackCountEntry count) =>
+        new(1,
+        [
+            $"{count.Name}  ".ToSpan(Tone.Muted),
+            count.Count.ToSpan(count.Affinity.ToTone()),
+            $"  ({string.Join(" · ", count.Changes)})".ToSpan(Tone.Muted),
+        ]);
 
     /// <summary>
     /// "Resistance    PvE 73% · PvP 32.5%  (Guardian 34.5% × Woven Mail 45% [PvP 25%])", then a line for each resistance
@@ -168,7 +181,7 @@ public static class TraceRenderer
                     foreach (var caveat in outcome.Caveat.Match(some => new[] { some.Value }, _ => []))
                     {
                         yield return StyledText.ToLine(detailIndent,
-                            $"· {glossary.DescribeOutcome(outcome.Outcome, build.ReadSuperType())}: {caveat}".ToSpan(Tone.Muted));
+                            $"· {glossary.DescribeAppliedOutcome(outcome.Outcome, outcome.Spend, build.ReadSuperType())}: {caveat}".ToSpan(Tone.Muted));
                     }
                 }
             }
@@ -213,7 +226,7 @@ public static class TraceRenderer
             partner => $"doesn't stack with {partner.Value}".ToSpan(Tone.Warning),
             _ => (rule.Outcomes.IsEmpty
                 ? "(no effect)"
-                : glossary.DescribeOutcomes(rule.Outcomes.Select(o => new OutcomeMention(o.Outcome, copies)), build.ReadSuperType())).ToSpan(Tone.Plain));
+                : glossary.DescribeOutcomes(rule.Outcomes.Select(o => new OutcomeMention(o.Outcome, copies, o.Spend)), build.ReadSuperType())).ToSpan(Tone.Plain));
         ImmutableArray<StyledSpan> chance = rule.Likelihood == Likelihood.Chance ? [" (chance)".ToSpan(Tone.Muted)] : [];
         return
         [
