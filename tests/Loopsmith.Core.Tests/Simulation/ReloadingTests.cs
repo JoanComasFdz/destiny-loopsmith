@@ -21,11 +21,11 @@ public sealed class ReloadingTests
     private static readonly PlayerAction ReloadKinetic = new PlayerAction.ReloadWeapon(WeaponSlot.Kinetic);
     private static readonly PlayerAction GrenadeHit = new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Damage, TargetCount.One);
 
-    private static WeaponLoadout Weapon(WeaponSlot slot, string name, DamageType type, Optional<string> archetype, params string[] perks) =>
+    private static WeaponLoadout CreateWeapon(WeaponSlot slot, string name, DamageType type, Optional<string> archetype, params string[] perks) =>
         new(slot, name, type, archetype, [.. perks.Select(ElementId.From)], Optional.None<ItemHash>(), [], false, Optional.None<ItemInstanceId>(), Optional.None<ItemHash>());
 
     /// <summary>The test build with these weapons, and these perks in the catalog for them to roll.</summary>
-    private static ValidatedBuild WithWeapons(ValidatedBuild build, ImmutableArray<BuildElement> perks, params WeaponLoadout[] weapons)
+    private static ValidatedBuild ValidateWithWeapons(ValidatedBuild build, ImmutableArray<BuildElement> perks, params WeaponLoadout[] weapons)
     {
         var catalog = build.Catalog with { Elements = build.Catalog.Elements.SetItems(perks.Select(perk => KeyValuePair.Create(perk.Id, perk))) };
         return BuildValidation.ValidateBuild(build.Build with { Weapons = [.. weapons] }, catalog).Match(
@@ -39,19 +39,19 @@ public sealed class ReloadingTests
     private static string DescribeTrace(ValidatedBuild build, Resolution resolution) =>
         string.Join("\n", TraceRenderer.RenderResolution(build, resolution, new TraceOptions(false, false, false)).Select(line => line.ToPlainText()));
 
-    private static BuildElement Perk(string id, params Rule[] rules) =>
+    private static BuildElement CreatePerk(string id, params Rule[] rules) =>
         Element(id, ElementKind.WeaponPerk, [.. rules]) with { Affinity = Affinity.Neutral };
 
-    private static readonly BuildElement ReloadPerk = Perk("reload-perk", On(new Trigger.Reload(new DamageSource.ThisWeapon()), Buff("amplified")));
+    private static readonly BuildElement ReloadPerk = CreatePerk("reload-perk", On(new Trigger.Reload(new DamageSource.ThisWeapon()), Buff("amplified")));
 
-    private static readonly BuildElement GrenadeReloads = Perk("grenade-reloads", On(new Trigger.AbilityCast(AbilityKind.Grenade), new Outcome.ReloadWeapon(new DamageSource.ThisWeapon())));
+    private static readonly BuildElement GrenadeReloads = CreatePerk("grenade-reloads", On(new Trigger.AbilityCast(AbilityKind.Grenade), new Outcome.ReloadWeapon(new DamageSource.ThisWeapon())));
 
     [Fact]
     public void A_reload_step_fires_the_reload_rules_of_its_weapon_and_not_of_another()
     {
-        var build = WithWeapons(ValidateBuild([]), [ReloadPerk],
-            Weapon(WeaponSlot.Kinetic, "Pistol", DamageType.Kinetic, Optional.None<string>()),
-            Weapon(WeaponSlot.Energy, "Rifle", DamageType.Arc, Optional.None<string>(), "reload-perk"));
+        var build = ValidateWithWeapons(ValidateBuild([]), [ReloadPerk],
+            CreateWeapon(WeaponSlot.Kinetic, "Pistol", DamageType.Kinetic, Optional.None<string>()),
+            CreateWeapon(WeaponSlot.Energy, "Rifle", DamageType.Arc, Optional.None<string>(), "reload-perk"));
 
         var steps = ResolveSteps(build, ReloadKinetic, ReloadEnergy);
 
@@ -74,9 +74,9 @@ public sealed class ReloadingTests
     [Fact]
     public void A_reload_outcome_reloads_the_weapon_holding_the_element_and_fires_its_reload_rules()
     {
-        var build = WithWeapons(ValidateBuild([]), [ReloadPerk, GrenadeReloads],
-            Weapon(WeaponSlot.Kinetic, "Pistol", DamageType.Kinetic, Optional.None<string>(), "reload-perk"),
-            Weapon(WeaponSlot.Energy, "Rifle", DamageType.Arc, Optional.None<string>(), "grenade-reloads", "reload-perk"));
+        var build = ValidateWithWeapons(ValidateBuild([]), [ReloadPerk, GrenadeReloads],
+            CreateWeapon(WeaponSlot.Kinetic, "Pistol", DamageType.Kinetic, Optional.None<string>(), "reload-perk"),
+            CreateWeapon(WeaponSlot.Energy, "Rifle", DamageType.Arc, Optional.None<string>(), "grenade-reloads", "reload-perk"));
 
         var step = Assert.Single(ResolveSteps(build, GrenadeHit));
 
@@ -92,7 +92,7 @@ public sealed class ReloadingTests
     [Fact]
     public void This_weapons_reload_trigger_and_outcome_bind_to_the_weapon_holding_it()
     {
-        var weapon = Weapon(WeaponSlot.Power, "Machine Gun", DamageType.Arc, Optional.None<string>());
+        var weapon = CreateWeapon(WeaponSlot.Power, "Machine Gun", DamageType.Arc, Optional.None<string>());
 
         var trigger = Assert.Single(ReloadPerk.BindToWeapon(weapon).Rules).On;
         var outcome = Assert.Single(Assert.Single(GrenadeReloads.BindToWeapon(weapon).Rules).Then);
@@ -106,12 +106,12 @@ public sealed class ReloadingTests
     [Fact]
     public void An_energy_grant_by_archetype_takes_the_weapons_amount_and_reads_both_when_its_archetype_is_unknown()
     {
-        var perk = Perk("demolition", On(
+        var perk = CreatePerk("demolition", On(
             new Trigger.KillAny(new DamageSource.ThisWeapon()),
             new Outcome.GrantEnergy(AbilityKind.Grenade, new EnergyGrant.ByArchetype(new GameValue.Known(0.10m), ["shotgun", "sniper-rifle"], new GameValue.Known(0.20m)))));
 
         var amounts = new[] { Optional.Some("shotgun"), Optional.Some("hand-cannon"), Optional.None<string>() }
-            .Select(archetype => Assert.IsType<Outcome.GrantEnergy>(Assert.Single(Assert.Single(perk.BindToWeapon(Weapon(WeaponSlot.Energy, "Gun", DamageType.Arc, archetype)).Rules).Then)))
+            .Select(archetype => Assert.IsType<Outcome.GrantEnergy>(Assert.Single(Assert.Single(perk.BindToWeapon(CreateWeapon(WeaponSlot.Energy, "Gun", DamageType.Arc, archetype)).Rules).Then)))
             .Select(grant => Glossary.DescribeOutcome(grant, Optional.None<DamageType>()))
             .ToArray();
 
