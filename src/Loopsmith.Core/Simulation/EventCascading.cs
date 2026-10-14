@@ -136,7 +136,8 @@ public static class EventCascading
         var result = steps.Aggregate(seed, (acc, step) =>
         {
             var match = matches[step.MatchIndex];
-            var source = new OutcomeSource(match.Equipped, match.Likelihood, Optional.FromNullable(acc.Spent.GetValueOrDefault(step.MatchIndex)));
+            var spentBefore = acc.Spent.TryGetValue(step.MatchIndex, out var spentByRule) ? Optional.Some(spentByRule) : Optional.None<StackSpend>();
+            var source = new OutcomeSource(match.Equipped, match.Likelihood, spentBefore);
             var application = OutcomeApplication.ApplyOutcome(build, acc.State, step.Outcome, source);
             var byChance = match.Likelihood == Likelihood.Chance || application.ByChance;
             var raised = application.Derived.Select(pending => new RaisedEvent(pending, step.MatchIndex, byChance));

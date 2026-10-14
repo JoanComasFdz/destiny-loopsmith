@@ -10,7 +10,7 @@ public static class ActionResolution
 {
     /// <summary>Fresh spawn: no buffs, a clean pack, nothing on the ground (abilities are always available, ADRs D5).</summary>
     public static GameState CreateInitialState() =>
-        new(0, [], new TargetState(EnemyTier.Minor, []), [], Optional.None<AbilityKind>(), []);
+        new(0, [], new TargetState(EnemyTier.Minor, []), [], Optional.None<AbilityKind>());
 
     public static Resolution ResolveAction(ValidatedBuild build, GameState state, PlayerAction action)
     {
@@ -52,7 +52,7 @@ public static class ActionResolution
             new PlayerAction.FireWeapon(weapon.Slot, HitOutcome.Kill, TargetCount.One),
             new PlayerAction.FireWeapon(weapon.Slot, HitOutcome.Damage, TargetCount.One),
         });
-        var pickups = state.Pickups.Select(pickup => (PlayerAction)new PlayerAction.CollectPickups(pickup));
+        var pickups = state.ListPickups().Select(pickup => (PlayerAction)new PlayerAction.CollectPickups(pickup));
         var declarations = ListDeclarations(build, state).Select(declaration => (PlayerAction)new PlayerAction.Declare(declaration));
         return [.. offensive, .. classAbility, .. finisher, .. weapons, .. pickups, .. declarations];
     }
@@ -257,8 +257,7 @@ public static class ActionResolution
             (Optional<StackTally>.Some tally, Optional<GameValue>.Some { Value: GameValue.Known cap }) => state.PutTally(
                 status,
                 new StackTally(StackCount.From((int)cap.Value), StackCount.From(0), tally.Value.Changes.Add(new StackChange(
-                    state.Step, PreviousPass: false, Optional.None<ElementId>(), "you", Affinity.Neutral, new StackMove.DeclaredMax(),
-                    StackCount.From((int)cap.Value), StackCount.From(0)))),
+                    state.Step, new StackChangeOrigin.Player(), new StackMove.DeclaredMax(), StackCount.From((int)cap.Value), StackCount.From(0)))),
                 atMax: true),
             _ => state,
         };

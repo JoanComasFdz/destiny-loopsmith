@@ -519,13 +519,17 @@ public static class DomainPhrasing
     public static string DescribeStackChange(StackChange change)
     {
         var after = DescribeStacks(change.SureAfter, change.ChanceAfter);
+        var source = change.Origin.Match(
+            element => $"#{change.Step} {element.Name}",
+            _ => $"#{change.Step} you",
+            _ => "the pass before");
         return change.Move.Match(
             gained => gained.Sure.Value + gained.Chance.Value == 0
-                ? $"#{change.Step} {change.SourceName}: at cap, +{gained.Wasted.Value} wasted → {after}"
-                : $"#{change.Step} {change.SourceName}: {DescribeGain(gained)} → {after}" + (gained.Wasted.Value > 0 ? $" (at cap: +{gained.Wasted.Value} wasted)" : ""),
-            spent => $"#{change.Step} {change.SourceName}: spends {DescribeStacks(spent.Sure, spent.Chance)} → {after}",
-            _ => $"#{change.Step} {change.SourceName}: at max → {after}",
-            _ => $"{change.SourceName}: {after}");
+                ? $"{source}: at cap, +{gained.Wasted.Value} wasted → {after}"
+                : $"{source}: {DescribeGain(gained)} → {after}" + (gained.Wasted.Value > 0 ? $" (at cap: +{gained.Wasted.Value} wasted)" : ""),
+            spent => $"{source}: spends {DescribeStacks(spent.Sure, spent.Chance)} → {after}",
+            _ => $"{source}: at max → {after}",
+            _ => $"{source}: {after}");
     }
 
     private static string DescribeGain(StackMove.Gained gained) =>
@@ -650,11 +654,9 @@ public static class DomainPhrasing
     private static string DescribeBuff(KeywordGlossary glossary, Outcome.ApplyBuff apply)
     {
         var name = glossary.DescribeStatus(apply.Status);
-        var suffix = glossary.ReadShownDuration(apply.Status, apply.Duration).Match(
-            d => $" ({d.Value.FormatSeconds()})",
-            _ => apply.DurationBySpent.Match(
-                table => $" ({DescribeTableRange(table.Value, value => $"{value.ToString("0.#", Invariant)}s")} at {DescribeTableCounts(table.Value, "x")} spent)",
-                _ => ""));
+        var suffix = apply.Duration is BuffDuration.BySpent bySpent
+            ? $" ({DescribeTableRange(bySpent.Table, value => $"{value.ToString("0.#", Invariant)}s")} at {DescribeTableCounts(bySpent.Table, "x")} spent)"
+            : glossary.ReadShownDuration(apply.Status, apply.Duration.ReadFixedTime()).Match(d => $" ({d.Value.FormatSeconds()})", _ => "");
         return glossary.IsStacking(apply.Status) ? $"+{apply.Stacks.Value} {name}{suffix}" : $"{name}{suffix}";
     }
 

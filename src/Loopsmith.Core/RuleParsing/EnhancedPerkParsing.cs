@@ -157,7 +157,7 @@ internal static class EnhancedPerkParsing
     private static IEnumerable<Seconds> ListDurations(Outcome outcome) =>
         outcome switch
         {
-            Outcome.ApplyBuff buff => ToSequence(buff.Duration),
+            Outcome.ApplyBuff buff => ToSequence(buff.Duration.ReadFixedTime()),
             Outcome.DebuffTarget debuff => ToSequence(debuff.Duration),
             _ => [],
         };
@@ -199,7 +199,9 @@ internal static class EnhancedPerkParsing
             convert => convert.Energy is StackEnergy.PerStack perStack
                 ? convert with { Energy = new StackEnergy.PerStack(Replace(perStack.Amount, values)) }
                 : convert,
-            buff => buff with { Duration = Replace(buff.Duration, values) },
+            buff => buff.Duration is BuffDuration.Fixed fixedTime
+                ? buff with { Duration = new BuffDuration.Fixed(Replace(fixedTime.Time, values)) }
+                : buff,
             remove => remove,
             debuff => debuff with { Duration = Replace(debuff.Duration, values) },
             spawn => spawn,
@@ -229,8 +231,11 @@ internal static class EnhancedPerkParsing
             stat => stat with { Change = Replace(stat.Change, values) },
             combatant => combatant with { Amount = Replace(combatant.Amount, values) });
 
+    private static Seconds Replace(Seconds seconds, EnhancedValues values) =>
+        values.Durations.TryGetValue(seconds, out var enhanced) ? enhanced : seconds;
+
     private static Optional<Seconds> Replace(Optional<Seconds> duration, EnhancedValues values) =>
-        duration.Map(seconds => values.Durations.TryGetValue(seconds, out var enhanced) ? enhanced : seconds);
+        duration.Map(seconds => Replace(seconds, values));
 
     private static GameValue Replace(GameValue value, EnhancedValues values) =>
         values.Values.TryGetValue(value, out var enhanced) ? enhanced : value;

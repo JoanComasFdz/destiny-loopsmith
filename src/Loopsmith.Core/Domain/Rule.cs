@@ -57,6 +57,18 @@ public partial record StackEnergy
     partial record ByCharges(StackTable Table);
 }
 
+/// <summary>
+/// How long a buff a rule applies lasts, as its source says: not stated (the glossary's, if any), a fixed time, or a time
+/// by the stacks the same rule spent before it (Bulwark Finisher's overshield, ADRs D33).
+/// </summary>
+[Union]
+public partial record BuffDuration
+{
+    partial record Unstated();
+    partial record Fixed(Seconds Time);
+    partial record BySpent(StackTable Table);
+}
+
 [Union]
 public partial record EnergyGrant
 {
@@ -75,7 +87,7 @@ public partial record Outcome
 {
     partial record GrantEnergy(AbilityKind To, EnergyGrant Amount);
     partial record ConvertStacksToEnergy(StatusId Consumed, AbilityKind To, StackEnergy Energy);   // spends every stack
-    partial record ApplyBuff(StatusId Status, Optional<Seconds> Duration, StackCount Stacks, Optional<StackTable> DurationBySpent);   // Stacks: the grant ("+1 Bolt Charge"); DurationBySpent: seconds by the stacks the same rule spent (Bulwark Finisher)
+    partial record ApplyBuff(StatusId Status, BuffDuration Duration, StackCount Stacks);   // Stacks: the grant, a fact ("+1 Bolt Charge")
     partial record RemoveBuff(StatusId Status);
     partial record DebuffTarget(StatusId Status, Optional<Seconds> Duration);
     partial record Spawn(PickupId Pickup, int Count);

@@ -933,7 +933,7 @@ public static class LoopDesigning
             .Select(action => (action, TriggerGroup.Ability));
         var weapons = build.Build.Weapons
             .SelectMany(weapon => hits.Select(hit => ((PlayerAction)new PlayerAction.FireWeapon(weapon.Slot, hit, TargetCount.One), TriggerGroup.Weapon)));
-        var pickups = state.Pickups
+        var pickups = state.ListPickups()
             .Select(pickup => ((PlayerAction)new PlayerAction.CollectPickups(pickup), TriggerGroup.Pickup));
         var declarations = ActionResolution.ListDeclarations(build, state)
             .Select(declaration => ((PlayerAction)new PlayerAction.Declare(declaration), TriggerGroup.Declare));

@@ -309,7 +309,7 @@ internal static class RuleBodyParsing
                 map.ReadOptional("byCharges", ReadStackTable),
                 (_, consumed, to, perStack, bySpent, byCharges) => (consumed, to, perStack, bySpent, byCharges))
             .Bind(read => ToStackEnergy(map, read.perStack, read.bySpent, read.byCharges)
-                .Bind(energy => CheckTableOnCounted(scope, map, read.consumed, energy))
+                .Bind(energy => CheckTableOnCounted(scope, map, energy))
                 .Map(Outcome (energy) => new Outcome.ConvertStacksToEnergy(read.consumed, read.to, energy))));
 
     private static Result<StackEnergy, Errors> ToStackEnergy(
@@ -323,7 +323,7 @@ internal static class RuleBodyParsing
         };
 
     /// <summary>A table by stacks reads a count: only a counted buff has one (ADRs D33).</summary>
-    private static Result<StackEnergy, Errors> CheckTableOnCounted(ReferenceScope scope, YamlMap map, StatusId consumed, StackEnergy energy) =>
+    private static Result<StackEnergy, Errors> CheckTableOnCounted(ReferenceScope scope, YamlMap map, StackEnergy energy) =>
         energy is StackEnergy.PerStack
             ? Succeed(energy)
             : map.ReadRequired("consumed", scope.ReadCountedBuff).Map(_ => energy);
@@ -359,7 +359,7 @@ internal static class RuleBodyParsing
     /// </summary>
     private static Result<Outcome, Errors> ReadApplyBuff(ReferenceScope scope, YamlValue value) =>
         value.Node is YamlScalarNode
-            ? scope.ReadBuff(value).Map(Outcome (status) => new Outcome.ApplyBuff(status, Optional.None<Seconds>(), OneStack, Optional.None<StackTable>()))
+            ? scope.ReadBuff(value).Map(Outcome (status) => new Outcome.ApplyBuff(status, new BuffDuration.Unstated(), OneStack))
             : value.ToMap().Bind(map => Combine(
                     map.CheckKeys(["status", "stacks", "duration", "durationBySpent"]),
                     map.ReadRequired("status", scope.ReadBuff),
@@ -367,9 +367,13 @@ internal static class RuleBodyParsing
                     map.ReadOrDefault("stacks", ReadStackCount, OneStack),
                     map.ReadOptional("durationBySpent", ReadStackTable),
                     (_, status, duration, stacks, bySpent) => (status, duration, stacks, bySpent))
-                .Bind(read => read.duration.IsSome() && read.bySpent.IsSome()
-                    ? map.FailAtKey<Outcome>("durationBySpent", $"{map.Label} takes duration or durationBySpent, not both")
-                    : Succeed<Outcome>(new Outcome.ApplyBuff(read.status, read.duration, read.stacks, read.bySpent))));
+                .Bind(read => (read.duration, read.bySpent) switch
+                {
+                    (Optional<Seconds>.Some, Optional<StackTable>.Some) => map.FailAtKey<Outcome>("durationBySpent", $"{map.Label} takes duration or durationBySpent, not both"),
+                    (Optional<Seconds>.Some time, _) => Succeed<Outcome>(new Outcome.ApplyBuff(read.status, new BuffDuration.Fixed(time.Value), read.stacks)),
+                    (_, Optional<StackTable>.Some table) => Succeed<Outcome>(new Outcome.ApplyBuff(read.status, new BuffDuration.BySpent(table.Value), read.stacks)),
+                    _ => Succeed<Outcome>(new Outcome.ApplyBuff(read.status, new BuffDuration.Unstated(), read.stacks)),
+                }));
 
     /// <summary><c>{ debuffTarget: jolt }</c> or <c>{ debuffTarget: { status, duration } }</c>.</summary>
     private static Result<Outcome, Errors> ReadDebuffTarget(ReferenceScope scope, YamlValue value) =>

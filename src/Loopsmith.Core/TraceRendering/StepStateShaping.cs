@@ -69,7 +69,7 @@ public static class StepStateShaping
             [.. buffs.Where(buff => buff.OnWeapons).Select(buff => buff.Entry)],
             [.. reaching.Where(passive => !passive.Passive.Passive.When.IsEmpty).SelectMany(ToWeaponEffect)],
             [.. state.Target.Debuffs.Select(debuff => ShapeDebuff(build, reaching, debuff))],
-            [.. state.Pickups.Select(pickup => ShapePickup(glossary, catalog, state, pickup))],
+            [.. state.Pickups.Select(ground => ShapePickup(glossary, catalog, ground))],
             [.. state.Buffs.SelectMany(buff => buff.Tally.Match(tally => new[] { ShapeCount(glossary, buff.Status, tally.Value) }, _ => []))],
             ResistanceShaping.ShapeResistance(build, passives));
     }
@@ -110,11 +110,12 @@ public static class StepStateShaping
     }
 
     /// <summary>A pickup on the ground; one only chance rules dropped says so ("Orb of Power (chance)", ADRs D8).</summary>
-    private static StateEntry ShapePickup(KeywordGlossary glossary, RuleCatalog catalog, GameState state, PickupId pickup)
+    private static StateEntry ShapePickup(KeywordGlossary glossary, RuleCatalog catalog, GroundPickup ground)
     {
+        var pickup = ground.Pickup;
         var keyword = new KeywordRef.Pickup(pickup);
         var affinity = glossary.Pickups.TryGetValue(pickup, out var definition) ? definition.Affinity : Affinity.Neutral;
-        var text = glossary.DescribePickup(pickup) + (state.ChancePickups.Contains(pickup) ? " (chance)" : "");
+        var text = glossary.DescribePickup(pickup) + (ground.Likelihood == Likelihood.Chance ? " (chance)" : "");
         return new StateEntry(keyword, text, affinity, catalog.FindKeywordElement(keyword), Optional.None<string>(), []);
     }
 

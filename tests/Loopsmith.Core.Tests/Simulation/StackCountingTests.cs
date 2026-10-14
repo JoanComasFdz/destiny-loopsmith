@@ -65,7 +65,7 @@ public sealed class StackCountingTests
     [
         OnWhen(new Trigger.Finisher(), new Condition.Holds(ArmorCharge, StackCount.From(3)),
             new Outcome.RemoveBuff(ArmorCharge),
-            new Outcome.ApplyBuff(Status("amplified"), Optional.None<Seconds>(), StackCount.From(1), Optional.Some(new StackTable(StackCount.From(3), [8m, 10m, 12m, 14m])))),
+            new Outcome.ApplyBuff(Status("amplified"), new BuffDuration.BySpent(new StackTable(StackCount.From(3), [8m, 10m, 12m, 14m])), StackCount.From(1))),
     ]);
 
     private static readonly BuildElement Healthy = Mod("healthy-finisher",
@@ -185,7 +185,7 @@ public sealed class StackCountingTests
         Assert.Equal(Likelihood.Chance, Assert.Single(byChance[^1].Fired, fired => fired.Source.Value == "bulwark-finisher").Likelihood);
         var bulwark = Assert.Single(sure[^1].Fired, fired => fired.Source.Value == "bulwark-finisher");
         Assert.Equal(Likelihood.Always, bulwark.Likelihood);
-        Assert.Equal(Optional.Some(Seconds.From(8m)), Assert.IsType<Outcome.ApplyBuff>(bulwark.Outcomes[1].Outcome).Duration);   // x3 spent: 8 s
+        Assert.Equal(new BuffDuration.Fixed(Seconds.From(8m)), Assert.IsType<Outcome.ApplyBuff>(bulwark.Outcomes[1].Outcome).Duration);   // x3 spent: 8 s
         Assert.False(sure[^1].State.HasBuff(ArmorCharge));
     }
 

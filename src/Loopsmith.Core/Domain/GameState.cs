@@ -17,11 +17,17 @@ public sealed record ActiveBuff(StatusId Status, bool AtMax, Optional<StackTally
 /// </summary>
 public sealed record StackTally(StackCount Sure, StackCount Chance, ImmutableArray<StackChange> Changes);
 
-/// <summary>
-/// One change to a counted buff: at which step (of this pass, or the pass before when <see cref="PreviousPass"/>), from
-/// which element (none: the player's declaration, or the pass before), what it did, and the stacks after it.
-/// </summary>
-public sealed record StackChange(int Step, bool PreviousPass, Optional<ElementId> Source, string SourceName, Affinity Affinity, StackMove Move, StackCount SureAfter, StackCount ChanceAfter);
+/// <summary>One change to a counted buff: at which step of the pass, where it came from, what it did, and the stacks after it.</summary>
+public sealed record StackChange(int Step, StackChangeOrigin Origin, StackMove Move, StackCount SureAfter, StackCount ChanceAfter);
+
+/// <summary>Where a change to a counted buff came from: an element's rule, the player's declaration, or the pass before.</summary>
+[Union]
+public partial record StackChangeOrigin
+{
+    partial record Element(ElementId Id, string Name, Affinity Affinity);
+    partial record Player();
+    partial record PassBefore();
+}
 
 /// <summary>What a change did to a counted buff's stacks.</summary>
 [Union]
@@ -41,16 +47,20 @@ public sealed record TargetState(EnemyTier Tier, ImmutableArray<StatusId> Debuff
 /// player declared. It holds no number but the step and a counted buff's stacks (ADRs D1, D33); the Simulation slice
 /// plays steps against it, (state, step) → (state, fired). Abilities are always available (ADRs D5).
 /// <see cref="Casting"/> is the ability the step casts, under way right then (Flow State's dodge,
-/// <see cref="Condition.During"/>); none for any other step. <see cref="ChancePickups"/> are the pickups on the ground
-/// that only chance rules dropped (ADRs D8): what picking one up gives is a chance too.
+/// <see cref="Condition.During"/>); none for any other step.
 /// </summary>
 public sealed record GameState(
     int Step,
     ImmutableArray<ActiveBuff> Buffs,
     TargetState Target,
-    ImmutableArray<PickupId> Pickups,
-    Optional<AbilityKind> Casting,
-    ImmutableArray<PickupId> ChancePickups);
+    ImmutableArray<GroundPickup> Pickups,
+    Optional<AbilityKind> Casting);
+
+/// <summary>
+/// A pickup on the ground, and whether only chance rules dropped it (ADRs D8): what picking it up gives is then a chance
+/// too. One rule that always fires dropping it too makes it sure.
+/// </summary>
+public sealed record GroundPickup(PickupId Pickup, Likelihood Likelihood);
 
 /// <summary>What the player chooses to do next. Abilities and weapons say how many enemies they hit or kill (ADRs D4).</summary>
 [Union]

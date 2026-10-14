@@ -248,7 +248,7 @@ public class ActionResolutionTests
 
         Assert.Empty(fresh.State.Target.Debuffs);
         Assert.Equal([Status("amplified")], fresh.State.Buffs.Select(buff => buff.Status));
-        Assert.Equal([Pickup("orb-of-power")], fresh.State.Pickups);
+        Assert.Equal([Pickup("orb-of-power")], fresh.State.ListPickups());
         Assert.Empty(fresh.Fired);
         Assert.False(again.Blocked.IsSome());   // a clean pack can be new again: it always holds
     }
@@ -349,10 +349,10 @@ public class ActionResolutionTests
         var pickup = ActionResolution.ResolveAction(build, kill.State, new PlayerAction.CollectPickups(Pickup("orb-of-power")));
 
         Assert.Contains(kill.State.Buffs, b => b.Status == Status("amplified"));
-        Assert.Equal([Pickup("orb-of-power")], kill.State.Pickups);
+        Assert.Equal([Pickup("orb-of-power")], kill.State.ListPickups());
         Assert.Contains("2× Orb of Power [Spawner]", DescribeTrace(build, kill));
         Assert.Contains(new PlayerAction.CollectPickups(Pickup("orb-of-power")), kill.NowAvailable);
-        Assert.Empty(pickup.State.Pickups);
+        Assert.Empty(pickup.State.ListPickups());
         Assert.Single(pickup.Fired, f => f.Source.Value == "collector");
         Assert.Contains(pickup.State.Buffs, b => b.Status == Status("bolt-charge"));
     }
@@ -581,7 +581,7 @@ public class ActionResolutionTests
         Assert.Empty(hitTwo.Fired);
         Assert.Empty(killOne.Fired);
         Assert.Single(killTwo.Fired);
-        Assert.Equal([Pickup("orb-of-power")], killTwo.State.Pickups);
+        Assert.Equal([Pickup("orb-of-power")], killTwo.State.ListPickups());
     }
 
     [Fact]

@@ -35,11 +35,15 @@ public static class StateReading
         state.Casting is Optional<AbilityKind>.Some casting && casting.Value == ability;
 
     public static bool HasPickup(this GameState state, PickupId pickup) =>
-        state.Pickups.Contains(pickup);
+        state.Pickups.Any(ground => ground.Pickup == pickup);
+
+    /// <summary>The pickups on the ground, in the order they landed.</summary>
+    public static ImmutableArray<PickupId> ListPickups(this GameState state) =>
+        [.. state.Pickups.Select(ground => ground.Pickup)];
 
     /// <summary>The pickup is on the ground only because chance rules dropped it (ADRs D8): what it gives is a chance.</summary>
     public static bool HasOnlyByChance(this GameState state, PickupId pickup) =>
-        state.ChancePickups.Contains(pickup);
+        state.Pickups.Any(ground => ground.Pickup == pickup && ground.Likelihood == Likelihood.Chance);
 
     /// <summary>Makes the buff present; one already present keeps its place (and its declaration).</summary>
     public static GameState PutBuff(this GameState state, StatusId status) =>
@@ -74,14 +78,16 @@ public static class StateReading
     public static GameState PutPickup(this GameState state, PickupId pickup, Likelihood likelihood) =>
         (state.HasPickup(pickup), likelihood) switch
         {
-            (false, Likelihood.Chance) => state with { Pickups = state.Pickups.Add(pickup), ChancePickups = state.ChancePickups.Add(pickup) },
-            (false, _) => state with { Pickups = state.Pickups.Add(pickup) },
-            (true, Likelihood.Always) => state with { ChancePickups = state.ChancePickups.Remove(pickup) },
+            (false, _) => state with { Pickups = state.Pickups.Add(new GroundPickup(pickup, likelihood)) },
+            (true, Likelihood.Always) => state with
+            {
+                Pickups = [.. state.Pickups.Select(ground => ground.Pickup == pickup ? ground with { Likelihood = Likelihood.Always } : ground)],
+            },
             _ => state,
         };
 
     public static GameState DropPickup(this GameState state, PickupId pickup) =>
-        state with { Pickups = state.Pickups.Remove(pickup), ChancePickups = state.ChancePickups.Remove(pickup) };
+        state with { Pickups = state.Pickups.RemoveAll(ground => ground.Pickup == pickup) };
 
     public static ImmutableArray<StatusId> ListTargetStatuses(this GameState state) =>
         state.Target.Debuffs;
@@ -102,8 +108,7 @@ public static class StateReading
         {
             Changes =
             [
-                new StackChange(0, PreviousPass: true, Optional.None<ElementId>(), "the pass before", Affinity.Neutral,
-                    new StackMove.CarriedOver(), tally.Sure, tally.Chance),
+                new StackChange(0, new StackChangeOrigin.PassBefore(), new StackMove.CarriedOver(), tally.Sure, tally.Chance),
             ],
         };
 

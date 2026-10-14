@@ -78,7 +78,7 @@ public static partial class LoopRunning
     private static string ToStateKey(GameState state) =>
         $"{JoinSorted(state.Buffs.Select(buff => buff.Status.Value + ToTallyKey(buff.Tally) + (buff.AtMax ? "*" : "")))};"
         + $"{JoinSorted(state.Target.Debuffs.Select(debuff => debuff.Value))};"
-        + $"{JoinSorted(state.Pickups.Select(pickup => pickup.Value + (state.ChancePickups.Contains(pickup) ? "?" : "")))};{state.Target.Tier}";
+        + $"{JoinSorted(state.Pickups.Select(ground => ground.Pickup.Value + (ground.Likelihood == Likelihood.Chance ? "?" : "")))};{state.Target.Tier}";
 
     private static string ToTallyKey(Optional<StackTally> tally) =>
         tally.Match(some => $"={some.Value.Sure.Value}+{some.Value.Chance.Value}", _ => "");

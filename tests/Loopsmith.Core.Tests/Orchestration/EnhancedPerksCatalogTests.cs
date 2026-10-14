@@ -84,6 +84,6 @@ public sealed class EnhancedPerksCatalogTests
         Catalog.Elements[ElementId.From(id)].Rules
             .SelectMany(rule => rule.Then)
             .OfType<Outcome.ApplyBuff>()
-            .Select(buff => buff.Duration)
+            .Select(buff => buff.Duration.ReadFixedTime())
             .Distinct();
 }

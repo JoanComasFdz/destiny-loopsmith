@@ -249,8 +249,8 @@ public sealed class RuleCatalogParsingTests
             rule.When);
         Assert.Equal<Outcome>(
             [
-                new Outcome.ApplyBuff(ToStatus("amplified"), Optional.None<Seconds>(), StackCount.From(1), Optional.None<StackTable>()),
-                new Outcome.ApplyBuff(ToStatus("bolt-charge"), Optional.Some(Seconds.From(10m)), StackCount.From(2), Optional.None<StackTable>()),
+                new Outcome.ApplyBuff(ToStatus("amplified"), new BuffDuration.Unstated(), StackCount.From(1)),
+                new Outcome.ApplyBuff(ToStatus("bolt-charge"), new BuffDuration.Fixed(Seconds.From(10m)), StackCount.From(2)),
                 new Outcome.RemoveBuff(ToStatus("amplified")),
             ],
             rule.Then);
@@ -1005,7 +1005,7 @@ public sealed class RuleCatalogParsingTests
 
         var rule = catalog.Elements[ElementId.From("ascension")].Rules[0];
         Assert.Equal(new Trigger.AbilityCastAs(AbilityKind.ClassAbility, AbilityInput.Air), rule.On);
-        Assert.Equal(new Outcome.ApplyBuff(ToStatus("bolt-charge"), Optional.None<Seconds>(), StackCount.From(1), Optional.None<StackTable>()), rule.Then[0]);
+        Assert.Equal(new Outcome.ApplyBuff(ToStatus("bolt-charge"), new BuffDuration.Unstated(), StackCount.From(1)), rule.Then[0]);
     }
 
     [Fact]
@@ -1076,7 +1076,7 @@ public sealed class RuleCatalogParsingTests
         Assert.Equal(3, spent.Table.From.Value);
         Assert.Equal([0.7m, 0.8m], spent.Table.Values);
         Assert.Equal(new Outcome.SpendStacks(ToStatus("armor-charge"), StackCount.From(2)), rules[0].Then[1]);
-        Assert.Equal(new[] { 8m, 10m }, Assert.IsType<Outcome.ApplyBuff>(rules[0].Then[2]).DurationBySpent.Map(table => table.Values.ToArray()).UnwrapOr([]));
+        Assert.Equal([8m, 10m], Assert.IsType<BuffDuration.BySpent>(Assert.IsType<Outcome.ApplyBuff>(rules[0].Then[2]).Duration).Table.Values);
         Assert.IsType<StackEnergy.ByCharges>(Assert.IsType<Outcome.ConvertStacksToEnergy>(rules[1].Then[0]).Energy);
     }
 
@@ -1758,9 +1758,9 @@ public sealed class RuleCatalogParsingTests
         Assert.Equal("Slice (enhanced)", enhanced.Name);
         Assert.Equal([ItemHash.From(3422796781)], enhanced.Hashes);
         Assert.Equal(Optional.Some("Enhanced."), enhanced.Description);
-        Assert.Equal(new Outcome.ApplyBuff(ToStatus("amplified"), Optional.Some(Seconds.From(9m)), StackCount.From(1), Optional.None<StackTable>()), enhanced.Rules[0].Then[0]);
+        Assert.Equal(new Outcome.ApplyBuff(ToStatus("amplified"), new BuffDuration.Fixed(Seconds.From(9m)), StackCount.From(1)), enhanced.Rules[0].Then[0]);
         Assert.Equal(new Outcome.GrantEnergy(AbilityKind.Grenade, new EnergyGrant.Fraction(new GameValue.Known(0.12m))), enhanced.Rules[1].Then[0]);
-        Assert.Equal(new Outcome.ApplyBuff(ToStatus("amplified"), Optional.Some(Seconds.From(8m)), StackCount.From(1), Optional.None<StackTable>()), perk.Rules[0].Then[0]);   // the perk keeps its own
+        Assert.Equal(new Outcome.ApplyBuff(ToStatus("amplified"), new BuffDuration.Fixed(Seconds.From(8m)), StackCount.From(1)), perk.Rules[0].Then[0]);   // the perk keeps its own
         Assert.Equal(ElementId.From("slice-enhanced"), catalog.EnhancedPerks[ElementId.From("slice")]);
     }
 

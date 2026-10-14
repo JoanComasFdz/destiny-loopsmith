@@ -125,9 +125,9 @@ public static class OutcomeApplication
     /// stacks, else for the chance ones; the outcome as authored when it has none.
     /// </summary>
     private static (Outcome Outcome, Optional<StackSpend> Spend) ResolveSpentDuration(Outcome.ApplyBuff apply, Optional<StackSpend> spentBefore) =>
-        (apply.DurationBySpent, spentBefore) switch
+        (apply.Duration, spentBefore) switch
         {
-            (Optional<StackTable>.Some table, Optional<StackSpend>.Some spent) => ResolveSpentDuration(apply, table.Value, spent.Value),
+            (BuffDuration.BySpent bySpent, Optional<StackSpend>.Some spent) => ResolveSpentDuration(apply, bySpent.Table, spent.Value),
             _ => (apply, Optional.None<StackSpend>()),
         };
 
@@ -135,9 +135,11 @@ public static class OutcomeApplication
     {
         var values = ReadTableValues(table, 0, spent.Sure, spent.Chance);
         var seconds = values.AtSure.IsSome() ? values.AtSure : values.WithChance;
-        var duration = seconds.Bind(value => value is GameValue.Known known && Seconds.TryFrom(known.Value, out var resolved)
-            ? Optional.Some(resolved)
-            : Optional.None<Seconds>());
+        var duration = seconds.Match<BuffDuration>(
+            value => value.Value is GameValue.Known known && Seconds.TryFrom(known.Value, out var resolved)
+                ? new BuffDuration.Fixed(resolved)
+                : new BuffDuration.Unstated(),
+            _ => new BuffDuration.Unstated());
         return (apply with { Duration = duration }, Optional.Some(spent with { AtSure = values.AtSure, WithChance = values.WithChance }));
     }
 
@@ -153,14 +155,13 @@ public static class OutcomeApplication
         var grant = apply.Stacks.Value + ListExtraStacks(build, state, status).Sum(extra => extra.Extra);
         var byChance = source.Likelihood == Likelihood.Chance;
         var cap = ReadKnownCap(build, status);
-        var sure = Math.Min(before.Sure.Value + (byChance ? 0 : grant), cap);
-        var chance = Math.Min(before.Chance.Value + (byChance ? grant : 0), cap - sure);
+        var sure = LimitToCap(before.Sure.Value + (byChance ? 0 : grant), cap, 0);
+        var chance = LimitToCap(before.Chance.Value + (byChance ? grant : 0), cap, sure);   // a sure grant at the cap takes the chance stacks' place
         var wasted = before.Sure.Value + before.Chance.Value + grant - sure - chance;
         var wasAtMax = state.IsAtMax(status);
-        var atMax = wasAtMax || sure >= cap;
-        var element = source.Equipped.Element;
+        var atMax = wasAtMax || IsAtCap(sure, cap);
         var change = new StackChange(
-            state.Step, PreviousPass: false, Optional.Some(element.Id), element.Name, element.Affinity,
+            state.Step, ToOrigin(source.Equipped.Element),
             new StackMove.Gained(StackCount.From(Math.Max(0, sure - before.Sure.Value)), StackCount.From(Math.Max(0, chance - before.Chance.Value)), StackCount.From(Math.Max(0, wasted))),
             StackCount.From(sure), StackCount.From(chance));
         var tally = new StackTally(StackCount.From(sure), StackCount.From(chance), before.Changes.Add(change));
@@ -168,15 +169,23 @@ public static class OutcomeApplication
             ? ImmutableArray.Create<PendingEvent>(new PendingEvent.Ready(new GameEvent.StacksMaxed(status)))
             : [];
         var events = ImmutableArray.Create<PendingEvent>(new PendingEvent.Ready(new GameEvent.BuffGained(status))).AddRange(maxed);
-        var caveat = JoinCaveats(DescribeExtraStacks(build, state, status), wasted > 0 ? $"at cap: +{wasted} wasted" : "");   // a sure grant at the cap takes the chance stacks' place
+        var caveat = JoinCaveats(DescribeExtraStacks(build, state, status), wasted > 0 ? $"at cap: +{wasted} wasted" : "");
         return new Application(state.PutTally(status, tally, atMax), ToApplied(outcome, Certainty.Known, caveat), events);
     }
 
-    /// <summary>The build's cap of a counted buff (Charged Up raises Armor Charge's); none known ("?"): no cap is applied.</summary>
-    private static int ReadKnownCap(ValidatedBuild build, StatusId status) =>
-        build.ReadStackCap(status).Match(
-            cap => cap.Value is GameValue.Known known ? (int)known.Value : int.MaxValue,
-            _ => int.MaxValue);
+    /// <summary>The build's cap of a counted buff (Charged Up raises Armor Charge's); none when it isn't known ("?"): no cap applies.</summary>
+    private static Optional<int> ReadKnownCap(ValidatedBuild build, StatusId status) =>
+        build.ReadStackCap(status).Bind(cap => cap is GameValue.Known known ? Optional.Some((int)known.Value) : Optional.None<int>());
+
+    /// <summary>Stacks up to what the cap leaves beside <paramref name="taken"/>; all of them with no known cap.</summary>
+    private static int LimitToCap(int stacks, Optional<int> cap, int taken) =>
+        cap.Match(known => Math.Min(stacks, known.Value - taken), _ => stacks);
+
+    private static bool IsAtCap(int sure, Optional<int> cap) =>
+        cap.Match(known => sure >= known.Value, _ => false);
+
+    private static StackChangeOrigin ToOrigin(BuildElement element) =>
+        new StackChangeOrigin.Element(element.Id, element.Name, element.Affinity);
 
     /// <summary>
     /// Removes the buff and its declaration; a counted buff spends every stack, sure and chance ones (ADRs D33).
@@ -212,12 +221,11 @@ public static class OutcomeApplication
             return new Application(state.DropBuff(spend.Status), applied, []);
         }
 
-        var element = source.Equipped.Element;
         var change = new StackChange(
-            state.Step, PreviousPass: false, Optional.Some(element.Id), element.Name, element.Affinity,
+            state.Step, ToOrigin(source.Equipped.Element),
             new StackMove.Spent(StackCount.From(fromSure), StackCount.From(fromChance)), StackCount.From(sure), StackCount.From(chance));
         var left = new StackTally(StackCount.From(sure), StackCount.From(chance), tally.Changes.Add(change));
-        return new Application(state.PutTally(spend.Status, left, sure >= ReadKnownCap(build, spend.Status)), applied, []);
+        return new Application(state.PutTally(spend.Status, left, IsAtCap(sure, ReadKnownCap(build, spend.Status))), applied, []);
     }
 
     /// <summary>A pickup on the ground (only by chance when a chance dropped it, ADRs D8), or one that tracks to you at once.</summary>

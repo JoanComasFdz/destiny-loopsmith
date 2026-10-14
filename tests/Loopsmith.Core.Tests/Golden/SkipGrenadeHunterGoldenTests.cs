@@ -239,5 +239,5 @@ public class SkipGrenadeHunterGoldenTests
         state with { Target = state.Target with { Debuffs = [.. debuffs.Select(StatusId.From)] } };
 
     private static GameState WithGround(GameState state, params string[] pickups) =>
-        state with { Pickups = [.. pickups.Select(PickupId.From)] };
+        state with { Pickups = [.. pickups.Select(pickup => new GroundPickup(PickupId.From(pickup), Likelihood.Always))] };
 }

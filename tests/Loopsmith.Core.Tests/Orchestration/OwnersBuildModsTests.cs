@@ -4,6 +4,7 @@ using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 using Loopsmith.Core.Orchestration;
 using Loopsmith.Core.Phrasing;
+using Loopsmith.Core.Simulation;
 using Loopsmith.Core.SourceFetching;
 using Loopsmith.Core.Tests.Support;
 
@@ -80,8 +81,8 @@ public sealed class OwnersBuildModsTests
 
         var dodge = played.Resolutions[2];
 
-        Assert.Contains(Orb, played.Resolutions[1].State.Pickups);
-        Assert.DoesNotContain(Orb, dodge.State.Pickups);
+        Assert.Contains(Orb, played.Resolutions[1].State.ListPickups());
+        Assert.DoesNotContain(Orb, dodge.State.ListPickups());
         var attraction = Assert.Single(dodge.Fired, fired => fired.Source.Value == "powerful-attraction");
         Assert.Equal(new AppliedOutcome(new Outcome.Collect(Orb), Certainty.Known, Optional.None<string>(), Optional.None<StackSpend>()), Assert.Single(attraction.Outcomes));
         Assert.Contains(dodge.Fired, fired => fired.Source.Value == "recuperation" && fired.Trigger == new GameEvent.PickedUp(Orb));
