@@ -66,6 +66,7 @@
             <aside class="col-build">
                 <BuildPanel Build="session.Build" Issues="LoopDesigning.ListDesignIssues(session, Workbench.Profile)" OnPickPerk="PickPerk" OnPickWeaponMod="PickWeaponMod" OnSetCatalyst="SetCatalyst" OnSetStats="SetStats"
                             Profile="Workbench.Profile" LoginNote="Workbench.LoginNote" OnLoggedIn="UseBungieLoginAsync" OnLoggedOut="LogOut" OnPickArmor="PickArmor" OnPickWeapon="PickWeapon" OnEditSubclass="EditSubclass"
+                            OnEditArtifact="EditArtifact" RememberedArtifactPerks="Workbench.ArtifactPerks"
                             PickWeaponItem="Optional.Some<Func<WeaponItemPick, Task<Result<Unit, string>>>>(PickWeaponItemAsync)"
                             PickArmorItem="Optional.Some<Func<ArmorItemPick, Task<Result<Unit, string>>>>(PickArmorItemAsync)"
                             OnEmptyWeapon="EmptyWeaponSlot" OnEmptyArmor="EmptyArmorSlot"
@@ -332,6 +333,16 @@
     {
         var profile = Workbench.Profile;
         ApplyBuildEdit(session => LoopDesigning.EditSubclass(session, profile, plugs));         // impure (UI state)
+    }
+
+    /// <summary>
+    /// The artifact editor saved: the embedded build's artifact and perks change and the steps replay with them; what was
+    /// picked for each artifact is kept for the next time the editor opens (until another loop is opened).
+    /// </summary>
+    private void EditArtifact(ArtifactSave save)
+    {
+        Workbench.ArtifactPerks = save.Remembered;                                               // impure (UI state)
+        ApplyBuildEdit(session => LoopDesigning.EditArtifact(session, save.Choice));              // impure (UI state)
     }
 
     /// <summary>A weapon picked from the player's weapons: swapped into the embedded build with its perks (or added, for an empty slot).</summary>

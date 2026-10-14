@@ -77,7 +77,8 @@ public sealed class BuildFileWritingTests
             new StatLine(Optional.None<StatValue>(), Optional.None<StatValue>(), Optional.None<StatValue>(), Optional.None<StatValue>(), Optional.None<StatValue>(), Optional.None<StatValue>()),
             [new LeftOutItem(LoadoutPart.Item, ItemHash.From(2005u)), new LeftOutItem(LoadoutPart.ArmorMod, ItemHash.From(3007u)), new LeftOutItem(LoadoutPart.Item, ItemHash.From(2006u))],
             [],
-            [ItemHash.From(3008u)]);
+            [ItemHash.From(3008u)],
+            Optional.None<ArtifactLoadout>());
 
         var written = BuildFileWriting.WriteBuildFile(build, ["From a DIM link.\nSecond line."]);
         var read = ParseBuild(new SourceText("written.yaml", written));

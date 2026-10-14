@@ -38,6 +38,7 @@ founding one: every other decision follows from it.
 | D27 | A DIM link starts a build of what the catalog knows by hash; the rest is left out, listed | A player's build already lives in DIM; nothing is guessed, and what's missing stays visible |
 | D29 | The step's state shows its damage resistance, its sources multiplied, PvE and PvP | Builds are judged by how much damage they shrug off; the game stacks resistance by a known rule, so the total is a fact, never a decision |
 | D30 | Armor mods are picked in the pieces' sockets; the energy budget holds when its capacity is known | A build's mods are part of its loop and the game decides what fits; the sockets and costs are Bungie's, the capacity the player's copy's |
+| D32 | A build names its artifact and the perk in each of its slots (Artifacts 2.0) | Since Monument of Triumph one of seven artifacts is equipped with up to seven perks, one per slot; the tiers and slots are Bungie's, read from the artifact's sockets |
 
 ## What the product is
 
@@ -437,3 +438,21 @@ enhanced version, from the Compendium's per-kill share) fire for sure, fewer fir
 trigger palette offers the counts equipped rules name (12) beside 1 to 9. Kills of earlier steps don't add up (D1): a
 step of fewer kills stays a chance, whatever came before. An enhanced weapon mod is its own element and its own plug;
 the designer offers it only for a weapon known to be Tier 4 or 5 (after a Bungie login), as the game does.
+
+### D32 — A build names its artifact and the perk in each of its slots (Artifacts 2.0)
+
+**Context.** Monument of Triumph (Update 9.7.0, June 2026) replaced the seasonal artifact with seven artifacts, one
+equipped at a time, each with three tiers of seven perks, seven perk slots and no unlock thresholds. A build named its
+artifact perks, not its artifact, which was found from them (the one that unlocks the most), so it couldn't hold an
+artifact with no perks picked, and the perks couldn't be changed but by a new DIM link or build file. **Decision
+(product owner).** The designer's artifact editor changes the artifact and picks the perk in each slot, laid out like
+the game's screen: the slots in three groups under ◆, ◆◆ and ◆◆◆, each picked from a dropdown like a fragment. The
+slots are Bungie's, not authored: the artifact's seven perk sockets take three plug sets that reach one tier further
+each (two Tier 1, three Tiers 1–2, two Tiers 1–3), so a slot offers only the perks of its tiers and nothing is
+counted. A build names its artifact and the perk in each slot (`artifact: { hash, slots }`), so a perk comes back in
+the slot it was put in; `artifactPerks` and the left-out perks stay what it equips. One that doesn't (a build file, a
+DIM link) keeps the artifact its perks point to, each placed in the free slot that takes the fewest tiers. The manifest
+excerpt holds all seven artifacts with their `tiers`, `slots` and flavour text, and every perk. Switching artifact in
+the editor shows the slots last picked for it while the loop is open (the tab's memory, D25: nothing is stored).
+**Consequence.** A perk the rules don't know can be picked (⊘, in `leftOut`), like a fragment or a mod. Artifact perks
+being off in Trials and Competitive Crucible isn't modelled.

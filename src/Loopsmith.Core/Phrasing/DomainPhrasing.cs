@@ -841,6 +841,20 @@ public static class DomainPhrasing
             _ => "✓ Repeats",
             breaks => $"✗ Breaks at #{breaks.Blocked.StepIndex + 1}");
 
+    // ── the artifact (Artifacts 2.0) ───────────────────────────────────────────
+
+    /// <summary>"Tier 2": an artifact tier's column heading.</summary>
+    public static string DescribeArtifactTier(int tier) =>
+        $"Tier {tier.ToString(Invariant)}";
+
+    /// <summary>"Tier 1", "Tier 1–2": the tiers a perk slot takes (up to <paramref name="tier"/>).</summary>
+    public static string DescribeArtifactSlot(int tier) =>
+        tier == 1 ? DescribeArtifactTier(1) : $"Tier 1–{tier.ToString(Invariant)}";
+
+    /// <summary>"◆◆": the game's mark over a group of perk slots, one diamond for each tier the slots take.</summary>
+    public static string DescribeArtifactSlotMark(int tier) =>
+        new('◆', Math.Max(tier, 1));
+
     public static string Capitalize(string text) =>
         text.Length == 0 ? text : char.ToUpperInvariant(text[0]) + text[1..];
 }

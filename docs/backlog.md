@@ -129,8 +129,9 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
 - **Editing the rest of a build in the designer**: a weapon's perks can be picked (column by column, from
   the manifest excerpt's trait columns), the subclass edited (abilities, aspects and fragments, from the excerpt's
   `plugs`, for each of the nine Light subclasses) and any weapon or armor slot filled, swapped or emptied (every item of
-  the game, or the player's own after a login); changing the class or the subclass itself, mods or the artifact means a
-  new DIM link or build file. The rules author only Arcstrider's elements, so another subclass's plugs show ⊘ and set
+  the game, or the player's own after a login), the mods picked and the artifact changed with its perks; changing the
+  class or the subclass itself means a new DIM link or build file. Of the 147 artifact perks the rules author 7 (the
+  Tablet of Ruin's of the skip-grenade build): the others show ⊘ and set nothing off until their rules are written. The rules author only Arcstrider's elements, so another subclass's plugs show ⊘ and set
   nothing off until their rules are written.
 - **A weapon's roll from Bungie**: a DIM link never carries one, so it is picked by hand; reading the
   equipped character's weapons by Bungie name (their sockets are public) needs a Bungie API key (owner).
@@ -140,11 +141,9 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
 - **What the rules can't say yet** (each noted in its rule file): a weapon's own lightning strike as an event
   (Thunderlord's strikes are part of its kill and hit rules), ammo and reload (Return Stroke, Feeding Frenzy:
   it would need a glossary buff), stuns, "while holding the trigger".
-- **Another season's artifact from a DIM link**: the excerpt has the artifacts of the perks the rules and the
-  saved shares name (the Tablet of Ruin). A DIM link names its artifact perks, not the artifact, and the
-  browser's manifest join reads an artifact only by its own hash, so a link from another season shows its perks
-  without the artifact until the excerpt is regenerated with rules for that season (the extractor finds the
-  artifact from its perks).
+- **The artifact of a DIM link made since Monument of Triumph**: the excerpt has all seven artifacts, but a DIM link
+  is read for its artifact perks only (`parameters.artifactUnlocks`), so its build's artifact is the one that unlocks
+  the most of them; reading the artifact a loadout saves, if DIM records it, is still to do.
 - **Weapon perks**: the rules author 3 (Slice, Attrition Orbs, Feeding Frenzy), each with its enhanced trait
   (rule-format.md, "Enhanced traits"); the game has ~226 enhanced traits and ~86 enhanced origin traits, whose base
   perks aren't authored either. A perk authored next gets its `enhanced` block (a test asks for it).

@@ -481,6 +481,21 @@ public static class LoadoutShaping
             });
     }
 
+    /// <summary>
+    /// A perk of the artifact editor as its square shows it: the rules' artifact perk when they know it, else the
+    /// manifest's item marked ⊘. It opens its details either way.
+    /// </summary>
+    public static IconTile DescribeArtifactPerk(ValidatedBuild build, ItemHash hash)
+    {
+        var catalog = build.Catalog;
+        return LoopDesigning.FindArtifactPerkElement(build, hash).Match(
+            element => DescribeElement(catalog, element.Value.Id) with { GameText = catalog.Manifest.FindItem(hash).Bind(item => item.Description) },
+            _ => catalog.Manifest.FindItem(hash).Match(
+                item => DescribeItem(item.Value, item.Value.Name, false, Optional.Some("Not in Loopsmith's rules yet: it sets nothing off."), Affinity.Neutral,
+                    Optional.Some<ItemDetails>(new ItemDetails.OfItem(hash))),
+                _ => DescribeUnknownHash(catalog, hash)));
+    }
+
     /// <summary>The subclass editor's header for the build's class and subclass (the subclass item's name and type, else "Strand" and "Hunter Subclass").</summary>
     public static SubclassHeading DescribeSubclassHeading(ValidatedBuild build)
     {
