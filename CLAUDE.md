@@ -140,10 +140,10 @@ pull request:
 4. **When it's ready for review, open the pull request** into `main` (not a draft), with the task's
    title and the agreed spec as its description: tick the acceptance criteria you checked, and add
    what changed and how to check it on the preview at `…/pr-preview/pr-<PR number>/`. Then rename
-   the session: append ` #<PR number>` to its current title ("D2 damage resistance calculation" →
-   "D2 damage resistance calculation #59"), reading it with the claude-code-remote `get_session`
-   (no `session_id`) and writing it with `set_session_title`; skip it if the title already ends
-   with that suffix. If the tools aren't available or the rename fails, say so in the session and
+   the session: put `#<PR number> ` in front of its current title ("D2 damage resistance calculation" →
+   "#59 D2 damage resistance calculation"), reading it with the claude-code-remote `get_session`
+   (no `session_id`) and writing it with `set_session_title`; skip it if the title already starts
+   with that prefix. If the tools aren't available or the rename fails, say so in the session and
    carry on: it never blocks the PR. Watch it (auto-fix) at once, and give @JoanComasFdz its link
    in the session.
 5. **Keep watching until the PR is merged or closed,** however many rounds it takes: every message

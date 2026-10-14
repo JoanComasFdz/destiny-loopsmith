@@ -118,8 +118,8 @@ request use the slug branch.
 Once the pull request is open, rename this session so it shows the PR (CLAUDE.md, "Agent workflow",
 step 4):
 - Read the current title with the claude-code-remote `get_session` tool, with no `session_id`.
-- If the title already ends with ` #<PR number>`, leave it. Otherwise append that suffix with
-  `set_session_title`: "D2 damage resistance calculation" → "D2 damage resistance calculation #59".
+- If the title already starts with `#<PR number> `, leave it. Otherwise put that prefix in front with
+  `set_session_title`: "D2 damage resistance calculation" → "#59 D2 damage resistance calculation".
 - If the tools aren't available or the rename fails, say so in the session and carry on. The rename
   never blocks the PR.
 
