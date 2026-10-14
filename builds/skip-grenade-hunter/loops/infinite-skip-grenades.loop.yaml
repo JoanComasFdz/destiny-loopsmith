@@ -5,7 +5,7 @@ description: |-
   the Strand and Arc weapons, grab the orbs, skip grenade again. Every jolted kill feeds Bolt
   Charge and Ionic Traces, which give grenade energy back. Tempest Strike's Bolt Charge on those
   kills doesn't stack with Dielectric's, so the analysis lists it as wasted.
-catalog: authored-c372b88612e4
+catalog: authored-7a1329e0fb6e
 steps:
   - do: pack:new
     note: 'The next group of enemies: a new pack, nothing on it yet'
@@ -14,7 +14,7 @@ steps:
   - do: grenade:kill
     note: 'Skip grenade into the pack: Spark of Shock jolts, the jolted kill gives Amplified, Bolt Charge and an Ionic Trace'
   - do: kinetic:kill
-    note: 'Festival Flight: Slice severs, Reaper and Attrition Orbs drop orbs, To Shreds gives Woven Mail (and unravels once the pack is severed)'
+    note: 'Festival Flight: Slice severs, Reaper drops an orb, To Shreds gives Woven Mail (Attrition Orbs and its Unravel need a hit step first)'
   - do: energy:kill
     note: 'Arc weapon on the jolted pack: Spark of Discharge traces, Harmonic Siphon orb'
   - do: pickup:orb-of-power

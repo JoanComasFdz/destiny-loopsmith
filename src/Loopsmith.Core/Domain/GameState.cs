@@ -5,26 +5,62 @@ using Loopsmith.Core.Functional;
 namespace Loopsmith.Core.Domain;
 
 /// <summary>
-/// A buff on the player: present, and — for a status that stacks — whether the player declared it at its maximum
-/// (<c>max:</c>, ADRs D3). No stack count: the engine never counts (ADRs D1).
+/// A buff on the player: present, and — for a status that stacks — whether it is at its maximum (declared with
+/// <c>max:</c>, ADRs D3, or a counted buff's sure stacks at its cap). A counted buff (Armor Charge, ADRs D33) holds its
+/// <see cref="Tally"/>; any other buff none: the engine counts nothing else (ADRs D1).
 /// </summary>
-public sealed record ActiveBuff(StatusId Status, bool AtMax);
+public sealed record ActiveBuff(StatusId Status, bool AtMax, Optional<StackTally> Tally);
+
+/// <summary>
+/// The stacks of a counted buff (ADRs D33): those it surely holds after the steps so far, those it may hold besides
+/// (gained only from chance rules, ADRs D8), and each change since it was last gained from none.
+/// </summary>
+public sealed record StackTally(StackCount Sure, StackCount Chance, ImmutableArray<StackChange> Changes);
+
+/// <summary>One change to a counted buff: at which step of the pass, where it came from, what it did, and the stacks after it.</summary>
+public sealed record StackChange(int Step, StackChangeOrigin Origin, StackMove Move, StackCount SureAfter, StackCount ChanceAfter);
+
+/// <summary>Where a change to a counted buff came from: an element's rule, the player's declaration, or the pass before.</summary>
+[Union]
+public partial record StackChangeOrigin
+{
+    partial record Element(ElementId Id, string Name, Affinity Affinity);
+    partial record Player();
+    partial record PassBefore();
+}
+
+/// <summary>What a change did to a counted buff's stacks.</summary>
+[Union]
+public partial record StackMove
+{
+    partial record Gained(StackCount Sure, StackCount Chance, StackCount Wasted);   // Wasted: beyond the cap
+    partial record Spent(StackCount Sure, StackCount Chance);
+    partial record DeclaredMax();                                                   // the player said it is at its cap
+    partial record CarriedOver();                                                   // what the pass before ended with
+}
 
 /// <summary>"The pack in front of you" (ADRs D7): one tier plus the debuffs present on it.</summary>
 public sealed record TargetState(EnemyTier Tier, ImmutableArray<StatusId> Debuffs);
 
 /// <summary>
 /// Immutable snapshot of what is present — buffs on you, debuffs on the pack, pickups on the ground — and what the
-/// player declared. It holds no number but the step (ADRs D1); the Simulation slice plays steps against it,
-/// (state, step) → (state, fired). Abilities are always available (ADRs D5). <see cref="Casting"/> is the ability the
-/// step casts, under way right then (Flow State's dodge, <see cref="Condition.During"/>); none for any other step.
+/// player declared. It holds no number but the step and a counted buff's stacks (ADRs D1, D33); the Simulation slice
+/// plays steps against it, (state, step) → (state, fired). Abilities are always available (ADRs D5).
+/// <see cref="Casting"/> is the ability the step casts, under way right then (Flow State's dodge,
+/// <see cref="Condition.During"/>); none for any other step.
 /// </summary>
 public sealed record GameState(
     int Step,
     ImmutableArray<ActiveBuff> Buffs,
     TargetState Target,
-    ImmutableArray<PickupId> Pickups,
+    ImmutableArray<GroundPickup> Pickups,
     Optional<AbilityKind> Casting);
+
+/// <summary>
+/// A pickup on the ground, and whether only chance rules dropped it (ADRs D8): what picking it up gives is then a chance
+/// too. One rule that always fires dropping it too makes it sure.
+/// </summary>
+public sealed record GroundPickup(PickupId Pickup, Likelihood Likelihood);
 
 /// <summary>What the player chooses to do next. Abilities and weapons say how many enemies they hit or kill (ADRs D4).</summary>
 [Union]
@@ -56,7 +92,7 @@ public partial record StateDeclaration
 public partial record GameEvent
 {
     partial record AbilityCast(AbilityKind Kind, AbilityInput Input = AbilityInput.Press);
-    partial record Damaged(DamageOrigin Origin, EnemyTier Tier, ImmutableArray<StatusId> TargetHas);
+    partial record Damaged(DamageOrigin Origin, EnemyTier Tier, ImmutableArray<StatusId> TargetHas, DamageSpan Span = DamageSpan.Blow);   // Span: a hit step's is sustained (ADRs D34)
     partial record Killed(DamageOrigin Origin, EnemyTier Tier, ImmutableArray<StatusId> TargetHas);
     partial record TargetsHit(DamageOrigin Origin, TargetCount Targets, HitOutcome Hit);   // once per action, after its per-enemy events
     partial record PickedUp(PickupId Pickup);
@@ -66,8 +102,18 @@ public partial record GameEvent
     partial record CriticalHealth();              // only from a declared health:critical step
 }
 
-/// <summary>An outcome as it was applied, with how far to trust it (an energy grant only explains — ADRs D5).</summary>
-public sealed record AppliedOutcome(Outcome Outcome, Certainty Certainty, Optional<string> Caveat);
+/// <summary>
+/// An outcome as it was applied, with how far to trust it (an energy grant only explains — ADRs D5). <see cref="Spend"/>:
+/// the stacks of a counted buff it spent, and what a table gives for them (ADRs D33).
+/// </summary>
+public sealed record AppliedOutcome(Outcome Outcome, Certainty Certainty, Optional<string> Caveat, Optional<StackSpend> Spend);
+
+/// <summary>
+/// The stacks of a counted buff an outcome spent — sure and chance ones — and, for an outcome whose value goes by them
+/// (a Kickstart's energy, Bulwark Finisher's duration), the value for the sure stacks and the value with the chance ones
+/// too (ADRs D33). None of them when the stacks spent are outside the source's table.
+/// </summary>
+public sealed record StackSpend(StatusId Status, StackCount Sure, StackCount Chance, Optional<GameValue> AtSure, Optional<GameValue> WithChance);
 
 /// <summary>
 /// One bullet of a build note: source → trigger → outcomes (reason), at cascade depth.
@@ -94,8 +140,11 @@ public sealed record FiredRule(
     ImmutableArray<Condition> When,
     Optional<int> CausedBy);
 
-/// <summary>A passive whose conditions hold in the current state (shown next to the state, not as a bullet).</summary>
-public sealed record ActivePassive(ElementId Source, string SourceName, Affinity Affinity, PassiveRule Passive);
+/// <summary>
+/// A passive whose conditions hold in the current state (shown next to the state, not as a bullet); a chance when they
+/// hold only by a counted buff's chance stacks (ADRs D33).
+/// </summary>
+public sealed record ActivePassive(ElementId Source, string SourceName, Affinity Affinity, PassiveRule Passive, Likelihood Likelihood);
 
 /// <summary>
 /// Result of one step: new state, ordered fired rules, and what the player can do now.

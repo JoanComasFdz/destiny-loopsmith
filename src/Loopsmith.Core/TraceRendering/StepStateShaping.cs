@@ -29,9 +29,16 @@ public sealed record SwitchedOnEffect(string Text, ElementId Source, string Sour
 public sealed record WeaponEffect(string Text, ElementId Source, string SourceName, Affinity Affinity, ImmutableArray<int> Weapons);
 
 /// <summary>
+/// A counted buff on you (Armor Charge, ADRs D33): its stacks ("x1 · +1 (chance)"), each change since it was last gained
+/// from none, with its step ("#6 Orb of Power: +1 → x1"), and how it decays — a fact a loop never applies.
+/// </summary>
+public sealed record StackCountEntry(StatusId Status, string Name, Affinity Affinity, string Count, ImmutableArray<string> Changes, Optional<string> Decay);
+
+/// <summary>
 /// What is present at the end of a step, laid out like the game's HUD: the buffs on you, the buffs on your weapons
 /// (Slice, Unraveling Rounds) and the passives changing those weapons' stats, the debuffs on the pack, the pickups on
-/// the ground — and your damage resistance right then, PvE and PvP (<see cref="ResistanceShaping"/>; none without a source).
+/// the ground — the stacks of each counted buff and where they came from (<see cref="StackCountEntry"/>), and your damage
+/// resistance right then, PvE and PvP (<see cref="ResistanceShaping"/>; none without a source).
 /// </summary>
 public sealed record StepState(
     ImmutableArray<StateEntry> Buffs,
@@ -39,6 +46,7 @@ public sealed record StepState(
     ImmutableArray<WeaponEffect> WeaponEffects,
     ImmutableArray<StateEntry> Debuffs,
     ImmutableArray<StateEntry> Ground,
+    ImmutableArray<StackCountEntry> Counts,
     Optional<DamageResistance> Resistance);
 
 /// <summary>Pure: a <see cref="GameState"/> → what the state shows, in the glossary's words (the CLI's state lines, the designer's step state).</summary>
@@ -61,9 +69,19 @@ public static class StepStateShaping
             [.. buffs.Where(buff => buff.OnWeapons).Select(buff => buff.Entry)],
             [.. reaching.Where(passive => !passive.Passive.Passive.When.IsEmpty).SelectMany(ToWeaponEffect)],
             [.. state.Target.Debuffs.Select(debuff => ShapeDebuff(build, reaching, debuff))],
-            [.. state.Pickups.Select(pickup => ShapePickup(glossary, catalog, pickup))],
+            [.. state.Pickups.Select(ground => ShapePickup(glossary, catalog, ground))],
+            [.. state.Buffs.SelectMany(buff => buff.Tally.Match(tally => new[] { ShapeCount(glossary, buff.Status, tally.Value) }, _ => []))],
             ResistanceShaping.ShapeResistance(build, passives));
     }
+
+    private static StackCountEntry ShapeCount(KeywordGlossary glossary, StatusId status, StackTally tally) =>
+        new(
+            status,
+            glossary.DescribeStatus(status),
+            glossary.ReadStatusAffinity(status),
+            DomainPhrasing.DescribeStacks(tally.Sure, tally.Chance),
+            [.. tally.Changes.Select(DomainPhrasing.DescribeStackChange)],
+            glossary.FindStatus(status).Bind(definition => definition.Decay));
 
     /// <summary>A passive holding right then, what it reaches in the build, and what it does in the glossary's words.</summary>
     private sealed record ReachingPassive(ActivePassive Passive, PassiveReach Reach, string Text);
@@ -91,18 +109,23 @@ public static class StepStateShaping
             [.. ListSwitchedOn(reaching, status)]);
     }
 
-    private static StateEntry ShapePickup(KeywordGlossary glossary, RuleCatalog catalog, PickupId pickup)
+    /// <summary>A pickup on the ground; one only chance rules dropped says so ("Orb of Power (chance)", ADRs D8).</summary>
+    private static StateEntry ShapePickup(KeywordGlossary glossary, RuleCatalog catalog, GroundPickup ground)
     {
+        var pickup = ground.Pickup;
         var keyword = new KeywordRef.Pickup(pickup);
         var affinity = glossary.Pickups.TryGetValue(pickup, out var definition) ? definition.Affinity : Affinity.Neutral;
-        return new StateEntry(keyword, glossary.DescribePickup(pickup), affinity, catalog.FindKeywordElement(keyword), Optional.None<string>(), []);
+        var text = glossary.DescribePickup(pickup) + (ground.Likelihood == Likelihood.Chance ? " (chance)" : "");
+        return new StateEntry(keyword, text, affinity, catalog.FindKeywordElement(keyword), Optional.None<string>(), []);
     }
 
     /// <summary>What the status switches on that does something in this build (a weapon change none of its weapons takes does nothing).</summary>
     private static IEnumerable<SwitchedOnEffect> ListSwitchedOn(ImmutableArray<ReachingPassive> reaching, StatusId status) =>
         reaching
             .Where(passive => passive.Passive.IsSwitchedOnBy(status) && passive.Reach is not PassiveReach.NoWeapon)
-            .Select(passive => new SwitchedOnEffect(passive.Text, passive.Passive.Source, passive.Passive.SourceName, passive.Passive.Affinity));
+            .Select(passive => new SwitchedOnEffect(
+                passive.Text + (passive.Passive.Likelihood == Likelihood.Chance ? " (chance)" : ""),
+                passive.Passive.Source, passive.Passive.SourceName, passive.Passive.Affinity));
 
     private static IEnumerable<WeaponEffect> ToWeaponEffect(ReachingPassive passive) =>
         passive.Reach is PassiveReach.Weapons weapons

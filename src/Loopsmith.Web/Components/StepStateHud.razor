@@ -3,8 +3,10 @@
    stats right then, the debuffs on the pack on the right, the pickups on the ground below them. A phone stacks them.
    A status that switches other elements' effects on says how many; its details list them. Every status opens its
    details on a tap (Amplified, which has no element, its glossary facts); its facts ("up to x5 · 8s") show on hover.
-   Below them, the damage resistance right then: PvE and PvP for all damage, and a PvE line for each resistance against
-   some combatants only; tapping its title shows where each comes from and how they multiply. *@
+   Below them, each counted buff's stacks (Armor Charge: "x1 · +1 (chance)"); tapping its row lists each step that gained
+   or spent some, and how it decays (never applied, ADRs D33). Then the damage resistance right then: PvE and PvP for all
+   damage, and a PvE line for each resistance against some combatants only; tapping its title shows where each comes
+   from and how they multiply. *@
 <div class="step-hud" data-testid="step-state">
     <div class="hud-title">State after #@Number</div>
     <div class="hud-columns">
@@ -29,6 +31,30 @@
         @RenderGroup("debuffs", "Debuffs", State.Debuffs, false)
     </div>
     @RenderGroup("ground", "Ground", State.Ground, false)
+    @foreach (var count in State.Counts)
+    {
+        var open = openCounts.Contains(count.Status);
+        <div class="hud-resistance hud-count" data-testid="stack-count" data-status="@count.Status.Value">
+            <button type="button" class="hud-count-row hud-resistance-head" aria-expanded="@(open ? "true" : "false")"
+                    @onclick="() => ToggleCount(count.Status)" @onclick:stopPropagation="true">
+                <span class="hud-label">@(open ? "▾" : "▸") @count.Name</span>
+                <span class="hud-count-value @ToneStyling.ToAffinityClass(count.Affinity)" data-testid="stack-count-value">@count.Count</span>
+            </button>
+            @if (open)
+            {
+                <ul class="hud-count-changes" data-testid="stack-count-changes">
+                    @foreach (var change in count.Changes)
+                    {
+                        <li>@change</li>
+                    }
+                </ul>
+                @if (count.Decay is Optional<string>.Some decay)
+                {
+                    <span class="hud-resistance-formula">Decays @decay.Value — a loop never applies it.</span>
+                }
+            }
+        </div>
+    }
     @if (State.Resistance is Optional<DamageResistance>.Some resistance)
     {
         var all = resistance.Value.AllDamage;
@@ -166,6 +192,12 @@
 
     private void ToggleResistance() =>
         showResistance = !showResistance;
+
+    /// <summary>The counted buffs whose changes are shown, by status (each step's state keeps its own).</summary>
+    private ImmutableHashSet<StatusId> openCounts = [];
+
+    private void ToggleCount(StatusId status) =>
+        openCounts = openCounts.Contains(status) ? openCounts.Remove(status) : openCounts.Add(status);
 
     private async Task ShowElementAsync(ElementId element)
     {

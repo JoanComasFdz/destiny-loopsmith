@@ -5,7 +5,7 @@ description: |-
   throw those skip grenades down"): the air move jolts the pack and makes you Amplified before the
   skip grenade lands, then the same clean-up as the original loop. Without Flow State, jolted kills give
   no Amplified: Ascension and Flashover (when you declare Bolt Charge at max) make you Amplified.
-catalog: authored-c372b88612e4
+catalog: authored-7a1329e0fb6e
 steps:
   - do: pack:new
     note: 'The next group of enemies: a new pack, nothing on it yet'
@@ -14,7 +14,7 @@ steps:
   - do: grenade:kill
     note: 'Skip grenade down into the jolted pack: Bolt Charge (+1 more per gain while Amplified) and an Ionic Trace'
   - do: kinetic:kill
-    note: 'Festival Flight: Slice severs, Reaper and Attrition Orbs drop orbs, To Shreds gives Woven Mail'
+    note: 'Festival Flight: Slice severs, Reaper drops an orb, To Shreds gives Woven Mail'
   - do: energy:kill
     note: 'Arc weapon on the jolted pack: Spark of Discharge traces, Harmonic Siphon orb'
   - do: pickup:orb-of-power

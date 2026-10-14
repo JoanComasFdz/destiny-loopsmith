@@ -70,7 +70,11 @@ Tokens are read case-insensitively. Errors read `Unknown action '<token>'. Use �
 
 **Triggers.** An ability or weapon action without `:kill` only damages. `N` is how many enemies that
 one action hits (or kills), 1..20, default 1 — the player says it, the engine can't know (ADRs D4):
-`grenade:kill:3` kills three, `kinetic:hit:5` shoots five, `energy:kill:2` kills two. A count needs
+`grenade:kill:3` kills three, `kinetic:hit:5` shoots five, `energy:kill:2` kills two. A **hit** step is damage kept
+up on each enemy without killing it: a rule that needs several hits or a share of the enemy's health (To Shreds'
+Unravel, Horde Shuttle's Threadling, Attrition Orbs' orb, Lightning Rounds' strike) fires there for sure. A **kill**
+step's hit is the killing blow, one blow, so those rules don't fire on it: add a hit step before the kill when the loop
+keeps shooting (ADRs D34). A count needs
 `:hit` or `:kill` before it (`grenade:3` is an error), and `class` takes no count. A **secondary ability
 use** goes between the ability and its hit (ADRs D9): `melee:slide:kill` is the melee while sliding
 (Tempest Strike's uppercut), `melee:air` the melee in the air, `grenade:hold` the grenade held (Chaos
@@ -90,7 +94,9 @@ has ended, that the next enemies are a new pack — the player declares as a ste
 
 * `max:<status>` — "Bolt Charge at max (x10)": that buff is at its maximum. The label names the build's cap, a
   fact: the glossary's `maxStacks`, or the cap a `raiseMaxStacks` passive states for its copies (Charged Up: "Armor
-  Charge at max (x4)" with one copy — [rule-format.md](rule-format.md#passives)); the player declares it reached, nothing counts toward it.
+  Charge at max (x4)" with one copy — [rule-format.md](rule-format.md#passives)); the player declares it reached, nothing counts toward it
+  — but Armor Charge, which is counted (below, "Armor Charge is counted"): its `max:` is offered while its sure stacks are below the
+  cap, and makes them the cap (the player says the chance ones came, or more than the loop shows).
   It raises `StacksMaxed`, so every
   `stacksMaxed` rule fires and cascades, and the buff stays declared at max (the `atMax` condition reads
   it) until a rule consumes or removes it, or an `end:` step ends it. In the Skip Grenade build:
@@ -123,13 +129,26 @@ has ended, that the next enemies are a new pack — the player declares as a ste
   damage you take (ADRs D1), so the player declares it. It raises `CriticalHealth`, so every `criticalHealth` rule
   fires and cascades, and it always holds; it leaves nothing in the state. Emergency Reinforcement reacts to it: it
   spends your Armor Charge for its buff, whose 10% damage resistance (PvP `?`) counts in the step's damage
-  resistance until `end:emergency-reinforcement` — for sure while Armor Charge is declared at max, as a *(chance)*
-  below it ("x3 or more" is a count the state doesn't hold).
+  resistance until `end:emergency-reinforcement` — for sure with x3 or more sure Armor Charge, as a *(chance)* when
+  only chance stacks make it x3, not at all below (ADRs D33); its 6 | 9 | 12 s go by the stacks it spent.
+
+**Armor Charge is counted** (ADRs D33). Its stacks are part of the state: the **sure** ones, from rules that always
+fire, and the **chance** ones, from chance rules and from what they set off (an orb only a chance rule dropped — a
+Siphon's from one kill — gives a chance stack). "Dodge for Reaper → weapon kill → pick up the orb" shows **Armor
+Charge x1** (x2 with Stacks on Stacks); a Siphon's orb from one kill adds **+1 (chance)**: `x1 · +1 (chance)`. A grant
+stops at the build's cap (x3; x4–x6 with Charged Up), the rest wasted (caveat `at cap: +1 wasted`); sure stacks at
+the cap are at max. A Kickstart spends every stack and shows its energy for the copies and stacks
+(`spends Armor Charge x2 · +1 (chance) → +28.4% grenade energy (34.4% with the chance stack)`); a finisher that needs
+x3 fires for sure with x3 sure stacks, as a *(chance)* when the chance ones make it x3, and not at all below — the
+step says `Bulwark Finisher needs x3 Armor Charge, holds x1 — it doesn't fire.`; a fixed spend (Healthy Finisher's
+x1) takes sure stacks first. The decay (one stack every 10 s, slower with Time Dilation) is shown, never applied: time
+isn't modelled. The next pass starts from what the last one ended with.
 
 **Written form.** Written tokens are lower-case and carry the count only when it is more than one
 (`grenade:kill`, `kinetic`, `grenade:kill:3`, `finisher`, `max:bolt-charge`, `end:amplified`, `pack:new`, `health:critical`). Every token written
-reads back as the same action (`grenade:hit` is written `grenade`). Labels read "Grenade (kill 3)",
-"Festival Flight (hit 5)" (a weapon by its build name), "Sliding melee (kill)", "Class ability (in the air)",
+reads back as the same action (`grenade:hit` is written `grenade`). Labels read "Grenade (💀 kill 3)",
+"Festival Flight (🥊 hit 5)" (a weapon by its build name), "Sliding melee (💀 kill)" — 💀 marks a kill step and 🥊 a
+hit step, in the steps' titles and the HUD's buttons alike — "Class ability (in the air)",
 "Finisher", "Pick up Orb of Power", "Bolt Charge at max (x10)", "Amplified ends", "New pack", "Critical health".
 
 **What `play` and the web designer offer.** Only steps that can happen: the abilities, the equipped
@@ -149,7 +168,15 @@ type) with the finisher's own icon: after a Bungie login the one the player's ch
 equipped (read from its Finishers slot; named from Bungie's full manifest when the excerpt doesn't have it), else the
 class's own, the one the game plays when none is equipped (Blade Carnival for a Hunter, the glossary's `finishers`) —
 then the three weapons with their icon, damage type's icon and colour. Tapping the Super, an ability or a weapon
-shows its actions under the HUD — hit or kill, and how many enemies that one action catches — and it stays picked
+shows its actions under the HUD — hit or kill, and how many enemies that one action catches. The counts go up to the
+last one that still fills something the build can gain, from the state the step starts in: a buff that stacks below
+its cap (Bolt Charge x10, Armor Charge at the build's cap) or an ability's energy below a full charge (the Ionic Traces
+that refill the grenade); each count says what fills up there and what needs it — an equipped rule that needs that
+many from that ability or weapon in one action ("1 enemy", "2 in 3 s · Arc Siphon", "3 · Spark of Discharge",
+"4 enemies · Armor Charge x4, Bolt Charge x10", "7 enemies · grenade full", "12 · Synergy"; rules of one count with
+different windows each say theirs, "2 · Spark of Amplitude in 4 s, Harmonic Siphon in 3 s"). A larger count a rule needs
+is offered too, and so is a step's own count (a loop file's `grenade:kill:15`). The sums only bound the choices: they are
+never game state and decide nothing (ADRs D1, D5) — and it stays picked
 for the next step; a secondary's own hit and kill show the same way ("Sliding melee · Tempest Strike"); the class
 ability, its air move and the finisher act at one tap. Above the HUD, where the game lists your buffs, the states to declare are grouped by
 status — on you, on your weapons, on the pack (with **New pack**) — each with its own buttons ("Bolt Charge: at max
@@ -166,10 +193,19 @@ they first fired; under each, the elements from there
 each element every outcome it gave, as a bulleted list ("• +1 Bolt Charge"). A cascade ("↳ Bolt Charge gained")
 nests under the event that set it off — a pickup picked up shows a 📍 instead ("📍 Picked up Orb of Power"), on its
 own step as where Powerful Attraction collects it — and the same event several times in a row shows once, counted
-(×3). An
+(×3), with what the first one set off: an action against five enemies shows its first hit, then "Grenade 🥊 hit on Jolted
+target ×4" with the "Bolt Charge gained" under it once, not five hits each followed by its cascade. A later one that
+sets off less than the first shows in it too (Festival Flight's second kill, after the first consumed Reaper, only
+gives Woven Mail again: "Festival Flight 💀 kill on Severed + Unraveled target ×2" with Reaper's orb and Woven Mail once),
+whatever the earlier ones left on the target when it changes nothing they set off (a skip grenade's four kills, the
+last three on a target the first one's Photonic Flare blinded, show as one "Grenade 💀 kill … ×4"); one that sets off
+something new stays apart (the first grenade hit jolts the pack, the next ones on Jolted targets also set off Jolt's
+strike). Kills of several enemies in one action say the tightest window a rule
+they fired needs ("Festival Flight 💀 killed 2 enemies in 3 s": Strand Siphon). A hit is marked 🥊 and a kill 💀 in the event
+too, as in the step's title. An
 element's name shows a preview on hover and its details on a tap. Every keyword an event or outcome names — a
 status, a debuff by its adjective ("Jolted"), a pickup, a summon — is in its affinity's colour wherever it is in
-the line ("+1 **Bolt Charge**", "Grenade kill on **Jolted** target"), and the ones the rules have as an element
+the line ("+1 **Bolt Charge**", "Grenade 💀 kill on **Jolted** target"), and the ones the rules have as an element
 (Jolt, Bolt Charge, Ionic Trace, Combination Blow) preview and open the same way. A keyword shows the game's
 own icon before its name ([rule-format.md](rule-format.md#glossary-rulesglossaryyaml), `trait`) — in the step's
 text, in the state at its end and in its details (Unraveling Rounds, which Bungie's data has no icon for, shows the
@@ -180,8 +216,12 @@ caveats. Each step ends with its **state** — what is present after it — laid
 on you on the left (Bolt Charge, Amplified, Woven Mail), your weapons' buffs in the middle (a glossary
 `weaponBuff`: Slice, Unraveling Rounds, each with the weapon whose own perk gives it — Slice with Festival Flight),
 the debuffs on the pack on the right (Jolt, Sever, Unravel), the pickups on the ground below them (an Orb of
-Power waiting for `pickup:orb-of-power`; an Ionic Trace never waits, it collects itself). A phone stacks the
-four. A status that switches other elements' passives on says how many ("Amplified · 1 effect": Spark of
+Power waiting for `pickup:orb-of-power`, "(chance)" when only chance rules dropped it; an Ionic Trace never waits, it
+collects itself). A phone stacks the four. Armor Charge shows its count on its chip ("Armor Charge x1 · +1 (chance)")
+and in a row under the ground; tapping the row (*▸ Armor Charge*) lists each step that gained or spent some since it
+was last gained from none ("#6 Orb of Power: +1 → x1", "#5 Elemental Charge: at cap, +1 wasted → x3", "the pass
+before: x2") and its decay, never applied; tapping it again hides them. The CLI's `--state` prints the same as an
+`Armor Charge` line. A status that switches other elements' passives on says how many ("Amplified · 1 effect": Spark of
 Frequency's extra Bolt Charge); its details list them under **While Amplified** in their **In this build**
 card, each with where it reaches. A passive that changes weapon stats (Ionic Overclock: Linear Fusion Rifles, Fusion Rifles and Heat
 Weapons) shows in the weapons column next to the build's weapons of those types while it holds; when none of
@@ -308,7 +348,7 @@ Almost every mod is inert (stats, handling, ammo, radar: "No rules needed."); **
 weapon's kills and spawns a pickup of the weapon's element — Kinetic an Orb of Power, Arc an Ionic Trace, Solar a
 Firesprite, Void a Void Breach, Stasis a Stasis Shard, Strand a Tangle. Twelve kills in one step (eight with the
 enhanced mod) fill it for sure; fewer spawn the pickup as *(chance)*, since earlier steps' kills count too. The trigger
-palette's enemy count offers 12 (and any count an equipped rule needs) beside 1 to 9.
+palette's enemy count offers 12 · Synergy on that weapon (and any count an equipped rule needs from it) beside 1 to 9.
 
 **An item's details.** Tapping a square opens its details, one card each: Bungie's text (from the manifest
 excerpt); where the rules' facts come from — for a Compendium row, Loopsmith's words for it (written from the row,
@@ -628,7 +668,7 @@ has a blocked step (the first one, with its message).
 
 * **needs** — what was already there when the step began and the step uses, and which step provided
   it:
-  * a pickup it picks up: `Orb of Power ← #3 [Attrition Orbs (chance); Reaper; Strand Siphon (chance)]`
+  * a pickup it picks up: `Orb of Power ← #3 [Reaper; Strand Siphon (chance)]`
     (the step, then the elements that dropped it there);
   * a buff a rule consumes or a guard reads: `Reaper ← #2 [Reaper]`;
   * a debuff on the pack a trigger needs: `Jolt ← #3 [Spark of Shock]`;
@@ -672,7 +712,7 @@ happen.
 
 ```
 Dodge, then shoot — Skip Grenade Hunter · 4 steps
-New pack → Class ability → Festival Flight (kill) → Pick up Orb of Power
+New pack → Class ability → Festival Flight (💀 kill) → Pick up Orb of Power
 ✓ Repeats — each pass ends with what the next one needs
 
 #1 New pack
@@ -680,17 +720,17 @@ New pack → Class ability → Festival Flight (kill) → Pick up Orb of Power
 #2 Class ability
    on its own       Reaper · Slice · Gambler's Dodge · Bomber
 
-#3 Festival Flight (kill)
+#3 Festival Flight (💀 kill)
    needs            Slice ← #2 [Slice] · Unraveling Rounds ← previous pass #4 [Unraveling Orbs] · Reaper ← #2 [Reaper]
    in this order    Slice · Unraveling Rounds · Reaper · To Shreds
-   on its own       Attrition Orbs (chance) · Strand Siphon (chance)
+   on its own       Strand Siphon (chance)
 
 #4 Pick up Orb of Power
-   needs            Orb of Power ← #3 [Attrition Orbs (chance); Reaper; Strand Siphon (chance)]
+   needs            Orb of Power ← #3 [Reaper; Strand Siphon (chance)]
    in this order    Unraveling Orbs · Orb of Power
 
 First pass (from a fresh spawn, where it differs)
-#3 Festival Flight (kill)
+#3 Festival Flight (💀 kill)
    doesn't set off  Unraveling Rounds
 ```
 
@@ -714,12 +754,12 @@ before it gets them from the previous pass, so on B's first pass it sets off nei
 in one line each.
 
 ```
-A  Dodge, then shoot   New pack → Class ability → Festival Flight (kill) → Pick up Orb of Power   ✓ Repeats   (Skip Grenade Hunter)
-B  Shoot, then dodge   New pack → Festival Flight (kill) → Class ability → Pick up Orb of Power   ✓ Repeats   (Skip Grenade Hunter)
+A  Dodge, then shoot   New pack → Class ability → Festival Flight (💀 kill) → Pick up Orb of Power   ✓ Repeats   (Skip Grenade Hunter)
+B  Shoot, then dodge   New pack → Festival Flight (💀 kill) → Class ability → Pick up Orb of Power   ✓ Repeats   (Skip Grenade Hunter)
 
 New pack                A #1 · B #1: sets off the same
 Class ability           A #2 · B #3: sets off the same
-Festival Flight (kill)  A #3 · B #2: sets off the same
+Festival Flight (💀 kill)  A #3 · B #2: sets off the same
    A needs     Slice ← #2 · Unraveling Rounds ← previous pass #4 · Reaper ← #2 (differs on A's first pass)
    B needs     Slice ← previous pass #3 · Unraveling Rounds ← previous pass #4 · Reaper ← previous pass #3 (differs on B's first pass)
 Pick up Orb of Power    A #4 · B #4: sets off the same
@@ -727,10 +767,10 @@ Pick up Orb of Power    A #4 · B #4: sets off the same
    B needs     Orb of Power ← #2
 
 Links only in A
-   #2 Class ability → #3 Festival Flight (kill): Slice · Reaper
+   #2 Class ability → #3 Festival Flight (💀 kill): Slice · Reaper
 
 Links only in B
-   previous pass #3 Class ability → #2 Festival Flight (kill): Slice · Reaper
+   previous pass #3 Class ability → #2 Festival Flight (💀 kill): Slice · Reaper
 ```
 
 A trigger that sets off different elements in the two loops lists them as `only in A` / `only in B`;

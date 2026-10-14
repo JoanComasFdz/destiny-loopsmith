@@ -70,12 +70,11 @@ elements:
     description: "6 weapon damage instances against Severed enemies Unravel them. A Severed enemy's death releases 3 healing pulses, 2 s apart, each restoring 15 HP and granting Woven Mail for 10 s to you and allies nearby."
     source: "compendium/2026-10-09/Artifact Perks#51"
     rules:
-      # 6 weapon damage instances: progress the game doesn't show as a stacking status, so it is a
-      # chance rule (ADRs D8).
-      - on: { damage: { via: weapon, targetHas: [sever] } }
+      # 6 weapon damage instances: damage kept up on one enemy, which a hit step stands for, so it
+      # unravels for sure there and never on a kill step's killing blow (ADRs D34).
+      - on: { damage: { via: weapon, targetHas: [sever], sustained: true } }
         then:
           - { debuffTarget: unravel }
-        chance: true
         reason: "Keep shooting a severed enemy and it gets unraveled."
       # The pulses are simplified to one grant: you stand in them to get it. The heal is 15 HP per
       # pulse: restoreHealth amounts are percentages, so it stays "?".
@@ -94,13 +93,13 @@ elements:
     description: "Weapon damage worth 10% of an Unraveled enemy's health and shields spawns a Threadling (0.5 s cooldown). Those Threadlings Sever what they damage."
     source: "compendium/2026-10-09/Artifact Perks#45"
     rules:
-      # Damage-threshold based (10% of the enemy's health and shields): progress the game doesn't
-      # show as a stacking status, so it is a chance rule (ADRs D8).
-      - on: { damage: { via: weapon, targetHas: [unravel] } }
+      # Damage-threshold based (10% of the enemy's health and shields): damage kept up on one enemy,
+      # which a hit step stands for, so it spawns for sure there and never on a kill step's killing
+      # blow (ADRs D34).
+      - on: { damage: { via: weapon, targetHas: [unravel], sustained: true } }
         then:
           - { summon: threadling }
-        chance: true
-        reason: "Shooting unraveled enemies every so often spawns a Threadling."
+        reason: "Keep shooting an unraveled enemy and it spawns a Threadling."
       - on: { damage: { via: summon:threadling } }
         then:
           - { debuffTarget: sever }

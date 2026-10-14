@@ -7,9 +7,10 @@
 # variant: each variant is its own element citing that row, and Bungie's text says which weapon
 # elements it covers (a dual siphon lists two Siphon perks).
 #
-# "2 kills within 3 s" (the Siphons) is progress the game doesn't show as a stacking status, so it is
-# a chance rule (`chance: true`, ADRs D8), as the siphons in armor.yaml are. Cooldowns are facts in
-# the description.
+# "2 kills within 3 s" (the Siphons): two or more kills in one step happen at once, so they spawn the
+# orb for sure (`atLeast: 2, within: 3s`); a step of one kill spawns it as a chance (`fewerThan: 2`,
+# ADRs D8), since a kill of another step may pair with it — as the siphons in armor.yaml do. Cooldowns
+# are facts in the description.
 elements:
   # ---------------------------------------------------------------- Siphons (one element)
   - id: arc-siphon
@@ -20,7 +21,11 @@ elements:
     description: "Two kills within 3 s of each other with Arc weapons spawn an Orb of Power (kills within 1 s of an orb don't count). Orbs grant 2.5% | 3.75% | 4.4% super energy with 1|2|3 mods."
     source: "compendium/2026-10-09/Armor Mods#11"
     rules:
-      - on: { kill: { via: weapon:arc } }
+      - on: { kill: { via: weapon:arc, atLeast: 2, within: 3s } }
+        then:
+          - { spawn: orb-of-power }
+        reason: "Two kills at once with an Arc weapon and an Orb of Power drops."
+      - on: { kill: { via: weapon:arc, fewerThan: 2 } }
         then:
           - { spawn: orb-of-power }
         chance: true
@@ -35,7 +40,11 @@ elements:
     description: "Two kills within 3 s of each other with Solar weapons spawn an Orb of Power (kills within 1 s of an orb don't count). Orbs grant 2.5% | 3.75% | 4.4% super energy with 1|2|3 mods."
     source: "compendium/2026-10-09/Armor Mods#11"
     rules:
-      - on: { kill: { via: weapon:solar } }
+      - on: { kill: { via: weapon:solar, atLeast: 2, within: 3s } }
+        then:
+          - { spawn: orb-of-power }
+        reason: "Two kills at once with a Solar weapon and an Orb of Power drops."
+      - on: { kill: { via: weapon:solar, fewerThan: 2 } }
         then:
           - { spawn: orb-of-power }
         chance: true
@@ -50,7 +59,11 @@ elements:
     description: "Two kills within 3 s of each other with Void weapons spawn an Orb of Power (kills within 1 s of an orb don't count). Orbs grant 2.5% | 3.75% | 4.4% super energy with 1|2|3 mods."
     source: "compendium/2026-10-09/Armor Mods#11"
     rules:
-      - on: { kill: { via: weapon:void } }
+      - on: { kill: { via: weapon:void, atLeast: 2, within: 3s } }
+        then:
+          - { spawn: orb-of-power }
+        reason: "Two kills at once with a Void weapon and an Orb of Power drops."
+      - on: { kill: { via: weapon:void, fewerThan: 2 } }
         then:
           - { spawn: orb-of-power }
         chance: true
@@ -65,7 +78,11 @@ elements:
     description: "Two kills within 3 s of each other with Stasis weapons spawn an Orb of Power (kills within 1 s of an orb don't count). Orbs grant 2.5% | 3.75% | 4.4% super energy with 1|2|3 mods."
     source: "compendium/2026-10-09/Armor Mods#11"
     rules:
-      - on: { kill: { via: weapon:stasis } }
+      - on: { kill: { via: weapon:stasis, atLeast: 2, within: 3s } }
+        then:
+          - { spawn: orb-of-power }
+        reason: "Two kills at once with a Stasis weapon and an Orb of Power drops."
+      - on: { kill: { via: weapon:stasis, fewerThan: 2 } }
         then:
           - { spawn: orb-of-power }
         chance: true
@@ -80,7 +97,11 @@ elements:
     description: "Two kills within 3 s of each other with Kinetic weapons spawn an Orb of Power (kills within 1 s of an orb don't count). Orbs grant 2.5% | 3.75% | 4.4% super energy with 1|2|3 mods."
     source: "compendium/2026-10-09/Armor Mods#11"
     rules:
-      - on: { kill: { via: weapon:kinetic } }
+      - on: { kill: { via: weapon:kinetic, atLeast: 2, within: 3s } }
+        then:
+          - { spawn: orb-of-power }
+        reason: "Two kills at once with a Kinetic weapon and an Orb of Power drops."
+      - on: { kill: { via: weapon:kinetic, fewerThan: 2 } }
         then:
           - { spawn: orb-of-power }
         chance: true
@@ -89,8 +110,8 @@ elements:
 
   # ---------------------------------------------------------------- Siphons (two elements)
   # Bungie's text gives each of these two Siphon perks, one per weapon element, so each element is a
-  # rule of its own. Whether a kill of each element counts toward the same pair isn't stated; either
-  # way every such kill is a chance rule.
+  # rule of its own. Whether a kill of each element counts toward the same pair isn't stated: two kills
+  # of one element in one step spawn the orb for sure, one kill is a chance.
   - id: arc-stasis-dual-siphon
     name: Arc/Stasis Dual Siphon
     kind: armorMod
@@ -99,12 +120,20 @@ elements:
     description: "The Arc and the Stasis Siphon in one mod: two kills within 3 s of each other with Arc or with Stasis weapons spawn an Orb of Power (kills within 1 s of an orb don't count). Orbs grant 2.5% | 3.75% | 4.4% super energy with 1|2|3 mods."
     source: "compendium/2026-10-09/Armor Mods#11"
     rules:
-      - on: { kill: { via: weapon:arc } }
+      - on: { kill: { via: weapon:arc, atLeast: 2, within: 3s } }
+        then:
+          - { spawn: orb-of-power }
+        reason: "Two kills at once with an Arc weapon and an Orb of Power drops."
+      - on: { kill: { via: weapon:arc, fewerThan: 2 } }
         then:
           - { spawn: orb-of-power }
         chance: true
         reason: "Chain a couple of kills with an Arc weapon and an Orb of Power drops."
-      - on: { kill: { via: weapon:stasis } }
+      - on: { kill: { via: weapon:stasis, atLeast: 2, within: 3s } }
+        then:
+          - { spawn: orb-of-power }
+        reason: "Two kills at once with a Stasis weapon and an Orb of Power drops."
+      - on: { kill: { via: weapon:stasis, fewerThan: 2 } }
         then:
           - { spawn: orb-of-power }
         chance: true
@@ -119,12 +148,20 @@ elements:
     description: "The Arc and the Strand Siphon in one mod: two kills within 3 s of each other with Arc or with Strand weapons spawn an Orb of Power (kills within 1 s of an orb don't count). Orbs grant 2.5% | 3.75% | 4.4% super energy with 1|2|3 mods."
     source: "compendium/2026-10-09/Armor Mods#11"
     rules:
-      - on: { kill: { via: weapon:arc } }
+      - on: { kill: { via: weapon:arc, atLeast: 2, within: 3s } }
+        then:
+          - { spawn: orb-of-power }
+        reason: "Two kills at once with an Arc weapon and an Orb of Power drops."
+      - on: { kill: { via: weapon:arc, fewerThan: 2 } }
         then:
           - { spawn: orb-of-power }
         chance: true
         reason: "Chain a couple of kills with an Arc weapon and an Orb of Power drops."
-      - on: { kill: { via: weapon:strand } }
+      - on: { kill: { via: weapon:strand, atLeast: 2, within: 3s } }
+        then:
+          - { spawn: orb-of-power }
+        reason: "Two kills at once with a Strand weapon and an Orb of Power drops."
+      - on: { kill: { via: weapon:strand, fewerThan: 2 } }
         then:
           - { spawn: orb-of-power }
         chance: true
@@ -139,12 +176,20 @@ elements:
     description: "The Kinetic and the Arc Siphon in one mod: two kills within 3 s of each other with Kinetic or with Arc weapons spawn an Orb of Power (kills within 1 s of an orb don't count). Orbs grant 2.5% | 3.75% | 4.4% super energy with 1|2|3 mods."
     source: "compendium/2026-10-09/Armor Mods#11"
     rules:
-      - on: { kill: { via: weapon:kinetic } }
+      - on: { kill: { via: weapon:kinetic, atLeast: 2, within: 3s } }
+        then:
+          - { spawn: orb-of-power }
+        reason: "Two kills at once with a Kinetic weapon and an Orb of Power drops."
+      - on: { kill: { via: weapon:kinetic, fewerThan: 2 } }
         then:
           - { spawn: orb-of-power }
         chance: true
         reason: "Chain a couple of kills with a Kinetic weapon and an Orb of Power drops."
-      - on: { kill: { via: weapon:arc } }
+      - on: { kill: { via: weapon:arc, atLeast: 2, within: 3s } }
+        then:
+          - { spawn: orb-of-power }
+        reason: "Two kills at once with an Arc weapon and an Orb of Power drops."
+      - on: { kill: { via: weapon:arc, fewerThan: 2 } }
         then:
           - { spawn: orb-of-power }
         chance: true
@@ -159,12 +204,20 @@ elements:
     description: "The Kinetic and the Void Siphon in one mod: two kills within 3 s of each other with Kinetic or with Void weapons spawn an Orb of Power (kills within 1 s of an orb don't count). Orbs grant 2.5% | 3.75% | 4.4% super energy with 1|2|3 mods."
     source: "compendium/2026-10-09/Armor Mods#11"
     rules:
-      - on: { kill: { via: weapon:kinetic } }
+      - on: { kill: { via: weapon:kinetic, atLeast: 2, within: 3s } }
+        then:
+          - { spawn: orb-of-power }
+        reason: "Two kills at once with a Kinetic weapon and an Orb of Power drops."
+      - on: { kill: { via: weapon:kinetic, fewerThan: 2 } }
         then:
           - { spawn: orb-of-power }
         chance: true
         reason: "Chain a couple of kills with a Kinetic weapon and an Orb of Power drops."
-      - on: { kill: { via: weapon:void } }
+      - on: { kill: { via: weapon:void, atLeast: 2, within: 3s } }
+        then:
+          - { spawn: orb-of-power }
+        reason: "Two kills at once with a Void weapon and an Orb of Power drops."
+      - on: { kill: { via: weapon:void, fewerThan: 2 } }
         then:
           - { spawn: orb-of-power }
         chance: true
@@ -179,12 +232,20 @@ elements:
     description: "The Kinetic and the Solar Siphon in one mod: two kills within 3 s of each other with Kinetic or with Solar weapons spawn an Orb of Power (kills within 1 s of an orb don't count). Orbs grant 2.5% | 3.75% | 4.4% super energy with 1|2|3 mods."
     source: "compendium/2026-10-09/Armor Mods#11"
     rules:
-      - on: { kill: { via: weapon:kinetic } }
+      - on: { kill: { via: weapon:kinetic, atLeast: 2, within: 3s } }
+        then:
+          - { spawn: orb-of-power }
+        reason: "Two kills at once with a Kinetic weapon and an Orb of Power drops."
+      - on: { kill: { via: weapon:kinetic, fewerThan: 2 } }
         then:
           - { spawn: orb-of-power }
         chance: true
         reason: "Chain a couple of kills with a Kinetic weapon and an Orb of Power drops."
-      - on: { kill: { via: weapon:solar } }
+      - on: { kill: { via: weapon:solar, atLeast: 2, within: 3s } }
+        then:
+          - { spawn: orb-of-power }
+        reason: "Two kills at once with a Solar weapon and an Orb of Power drops."
+      - on: { kill: { via: weapon:solar, fewerThan: 2 } }
         then:
           - { spawn: orb-of-power }
         chance: true
@@ -199,12 +260,20 @@ elements:
     description: "The Solar and the Strand Siphon in one mod: two kills within 3 s of each other with Solar or with Strand weapons spawn an Orb of Power (kills within 1 s of an orb don't count). Orbs grant 2.5% | 3.75% | 4.4% super energy with 1|2|3 mods."
     source: "compendium/2026-10-09/Armor Mods#11"
     rules:
-      - on: { kill: { via: weapon:solar } }
+      - on: { kill: { via: weapon:solar, atLeast: 2, within: 3s } }
+        then:
+          - { spawn: orb-of-power }
+        reason: "Two kills at once with a Solar weapon and an Orb of Power drops."
+      - on: { kill: { via: weapon:solar, fewerThan: 2 } }
         then:
           - { spawn: orb-of-power }
         chance: true
         reason: "Chain a couple of kills with a Solar weapon and an Orb of Power drops."
-      - on: { kill: { via: weapon:strand } }
+      - on: { kill: { via: weapon:strand, atLeast: 2, within: 3s } }
+        then:
+          - { spawn: orb-of-power }
+        reason: "Two kills at once with a Strand weapon and an Orb of Power drops."
+      - on: { kill: { via: weapon:strand, fewerThan: 2 } }
         then:
           - { spawn: orb-of-power }
         chance: true
@@ -219,12 +288,20 @@ elements:
     description: "The Stasis and the Solar Siphon in one mod: two kills within 3 s of each other with Stasis or with Solar weapons spawn an Orb of Power (kills within 1 s of an orb don't count). Orbs grant 2.5% | 3.75% | 4.4% super energy with 1|2|3 mods."
     source: "compendium/2026-10-09/Armor Mods#11"
     rules:
-      - on: { kill: { via: weapon:stasis } }
+      - on: { kill: { via: weapon:stasis, atLeast: 2, within: 3s } }
+        then:
+          - { spawn: orb-of-power }
+        reason: "Two kills at once with a Stasis weapon and an Orb of Power drops."
+      - on: { kill: { via: weapon:stasis, fewerThan: 2 } }
         then:
           - { spawn: orb-of-power }
         chance: true
         reason: "Chain a couple of kills with a Stasis weapon and an Orb of Power drops."
-      - on: { kill: { via: weapon:solar } }
+      - on: { kill: { via: weapon:solar, atLeast: 2, within: 3s } }
+        then:
+          - { spawn: orb-of-power }
+        reason: "Two kills at once with a Solar weapon and an Orb of Power drops."
+      - on: { kill: { via: weapon:solar, fewerThan: 2 } }
         then:
           - { spawn: orb-of-power }
         chance: true
@@ -239,12 +316,20 @@ elements:
     description: "The Void and the Stasis Siphon in one mod: two kills within 3 s of each other with Void or with Stasis weapons spawn an Orb of Power (kills within 1 s of an orb don't count). Orbs grant 2.5% | 3.75% | 4.4% super energy with 1|2|3 mods."
     source: "compendium/2026-10-09/Armor Mods#11"
     rules:
-      - on: { kill: { via: weapon:void } }
+      - on: { kill: { via: weapon:void, atLeast: 2, within: 3s } }
+        then:
+          - { spawn: orb-of-power }
+        reason: "Two kills at once with a Void weapon and an Orb of Power drops."
+      - on: { kill: { via: weapon:void, fewerThan: 2 } }
         then:
           - { spawn: orb-of-power }
         chance: true
         reason: "Chain a couple of kills with a Void weapon and an Orb of Power drops."
-      - on: { kill: { via: weapon:stasis } }
+      - on: { kill: { via: weapon:stasis, atLeast: 2, within: 3s } }
+        then:
+          - { spawn: orb-of-power }
+        reason: "Two kills at once with a Stasis weapon and an Orb of Power drops."
+      - on: { kill: { via: weapon:stasis, fewerThan: 2 } }
         then:
           - { spawn: orb-of-power }
         chance: true
@@ -259,12 +344,20 @@ elements:
     description: "The Void and the Strand Siphon in one mod: two kills within 3 s of each other with Void or with Strand weapons spawn an Orb of Power (kills within 1 s of an orb don't count). Orbs grant 2.5% | 3.75% | 4.4% super energy with 1|2|3 mods."
     source: "compendium/2026-10-09/Armor Mods#11"
     rules:
-      - on: { kill: { via: weapon:void } }
+      - on: { kill: { via: weapon:void, atLeast: 2, within: 3s } }
+        then:
+          - { spawn: orb-of-power }
+        reason: "Two kills at once with a Void weapon and an Orb of Power drops."
+      - on: { kill: { via: weapon:void, fewerThan: 2 } }
         then:
           - { spawn: orb-of-power }
         chance: true
         reason: "Chain a couple of kills with a Void weapon and an Orb of Power drops."
-      - on: { kill: { via: weapon:strand } }
+      - on: { kill: { via: weapon:strand, atLeast: 2, within: 3s } }
+        then:
+          - { spawn: orb-of-power }
+        reason: "Two kills at once with a Strand weapon and an Orb of Power drops."
+      - on: { kill: { via: weapon:strand, fewerThan: 2 } }
         then:
           - { spawn: orb-of-power }
         chance: true

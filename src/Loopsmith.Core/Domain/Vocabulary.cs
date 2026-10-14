@@ -58,6 +58,13 @@ public enum EnemyTier { Minor, Major, Boss, Champion }
 
 public enum HitOutcome { Damage, Kill }
 
+/// <summary>
+/// How much damage one hit stands for (ADRs D34): <see cref="Blow"/>, one blow (a kill step's killing blow, a strike, a
+/// summon's hit, a finisher); <see cref="Sustained"/>, a hit step's — the player keeps shooting the enemy without killing
+/// it, enough for any number of hits or share of its health a source needs (To Shreds' 6 instances, Thunderlord's 10th hit).
+/// </summary>
+public enum DamageSpan { Blow, Sustained }
+
 public enum WeaponSlot { Kinetic, Energy, Power }
 
 public enum StatKind { Weapons, Health, Class, Grenade, Super, Melee }

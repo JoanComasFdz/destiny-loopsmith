@@ -47,12 +47,11 @@ elements:
     # is used.
     source: "compendium/2026-10-09/Weapon Perks#22"
     rules:
-      # Hit-count based, not kill based: progress the game doesn't show as a stacking status, so it
-      # is a chance rule (ADRs D8).
-      - on: { damage: { via: weapon:strand } }
+      # Hit-count based, not kill based: hits kept up on one enemy, which a hit step stands for, so
+      # it drops the orb for sure there and never on a kill step's killing blow (ADRs D34).
+      - on: { damage: { via: weapon:strand, sustained: true } }
         then:
           - { spawn: orb-of-power }
-        chance: true
         reason: "Keep landing hits with this weapon and every few hits it drops an Orb of Power."
     passives: []
     # The enhanced trait: the same hits make the orb, which gives 1.1% Super energy (the row's ↑ figure) instead of

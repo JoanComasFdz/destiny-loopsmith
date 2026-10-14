@@ -48,15 +48,14 @@ elements:
     description: "Thunderlord's trait. Holding the trigger fires faster: the fire recovery delay drops to 0.75x after the first 13 rounds and to 0.6x after 26 in total. Every 10th hit calls down a lightning strike that deals up to 232 [PvP 65] damage within 5 m and grants x1 Bolt Charge."
     source: "compendium/2026-10-09/Exotic Weapons#144"
     rules:
-      # "Every 10 hits" is progress the game doesn't show as a stacking status, so this is a chance
-      # rule (ADRs D8), like Attrition Orbs' hit count (weapons/perks.yaml). The x1 Bolt Charge comes
-      # from the strike (Bungie's Reign Havoc text: every lightning strike grants it). No strike event
-      # exists to attach it to, so this rule grants it. A kill is also a hit, so a Thunderlord kill fires
-      # this rule as well as Reign Havoc's.
-      - on: { damage: { via: slot:power } }
+      # "Every 10 hits": hits kept up on one enemy, which a hit step stands for, like Attrition Orbs'
+      # hit count (weapons/perks.yaml), so it strikes for sure there and never on a kill step's killing
+      # blow (ADRs D34): a Thunderlord kill fires Reign Havoc's rule only. The x1 Bolt Charge comes from
+      # the strike (Bungie's Reign Havoc text: every lightning strike grants it). No strike event exists
+      # to attach it to, so this rule grants it.
+      - on: { damage: { via: slot:power, sustained: true } }
         then:
           - { applyBuff: { status: bolt-charge, stacks: 1 } }
-        chance: true
         reason: "Keep hitting with Thunderlord: every 10th hit calls down a lightning strike that gives you a stack of Bolt Charge."
     # Not expressible: the faster fire while the trigger is held (0.75x / 0.6x fire recovery delay after
     # 13 / 26 rounds). There is no "while holding the trigger" condition, and no rule reacts to fire

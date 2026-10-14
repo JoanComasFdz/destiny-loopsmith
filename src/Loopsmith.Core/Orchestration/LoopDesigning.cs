@@ -330,8 +330,15 @@ public static class LoopDesigning
             _ => ImmutableArray<WeaponModOption>.Empty);
 
     /// <summary>
+    /// The enemy counts a step's ability or weapon offers from <paramref name="state"/>, each with what it is for: up to the
+    /// last count that still fills something (a buff to its cap, an ability's energy), the counts the equipped rules need
+    /// from it in one action ("2 in 3 s · Arc Siphon", "12 · Synergy") and the action's own count.
+    /// </summary>
+    public static ImmutableArray<TargetCountChoice> ListTargetCountChoices(ValidatedBuild build, GameState state, PlayerAction action) =>
+        TargetCountListing.ListTargetCountChoices(build, state, action);
+
+    /// <summary>
     /// The enemy counts the build's equipped rules need in one action: a kill or hit of at least N (Synergy's 12 kills).
-    /// The trigger palette offers them beside 1 to 9.
     /// </summary>
     public static ImmutableArray<TargetCount> ListNamedTargetCounts(ValidatedBuild build) =>
     [
@@ -927,7 +934,7 @@ public static class LoopDesigning
             .Select(action => (action, TriggerGroup.Ability));
         var weapons = build.Build.Weapons
             .SelectMany(weapon => hits.Select(hit => ((PlayerAction)new PlayerAction.FireWeapon(weapon.Slot, hit, TargetCount.One), TriggerGroup.Weapon)));
-        var pickups = state.Pickups
+        var pickups = state.ListPickups()
             .Select(pickup => ((PlayerAction)new PlayerAction.CollectPickups(pickup), TriggerGroup.Pickup));
         var declarations = ActionResolution.ListDeclarations(build, state)
             .Select(declaration => ((PlayerAction)new PlayerAction.Declare(declaration), TriggerGroup.Declare));
