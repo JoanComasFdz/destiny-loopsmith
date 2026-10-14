@@ -270,8 +270,8 @@ elements:
 
   # An origin trait (Episode: Echoes). A counter of weapon kills, each within 8 s of the last: 34% per rank-and-file
   # enemy, so 3 kills fill it. The explosion and the Radiolaria Pool count as this weapon's damage: two strikes by this
-  # weapon, the pool's of Arc damage. The Compendium names no type for the explosion, so it strikes with the weapon's
-  # own. Their damage (67.5, 15 every 0.65 s) is in the description.
+  # weapon, both of Arc damage (the Compendium names Arc for the pool and no type for the explosion, which the owner set to
+  # Arc like the pool, PR #79). Their damage (67.5, 15 every 0.65 s) is in the description.
   - id: radiolaria-transposer
     name: Radiolaria Transposer
     kind: weaponPerk
@@ -282,12 +282,12 @@ elements:
     rules:
       - on: { kill: { via: "weapon:this", atLeast: 3, within: 8s } }
         then:
-          - { strikeTarget: { via: "weapon:this", hit: damage } }
+          - { strikeTarget: { via: "weapon:this", type: arc, hit: damage } }
           - { strikeTarget: { via: "weapon:this", type: arc, hit: damage } }
         reason: "Three quick kills with this weapon make the enemy explode and leave a pool that keeps hurting the pack."
       - on: { kill: { via: "weapon:this", fewerThan: 3 } }
         then:
-          - { strikeTarget: { via: "weapon:this", hit: damage } }
+          - { strikeTarget: { via: "weapon:this", type: arc, hit: damage } }
           - { strikeTarget: { via: "weapon:this", type: arc, hit: damage } }
         chance: true
         reason: "Fewer than three kills in this step: the kills of the steps before may fill the counter."

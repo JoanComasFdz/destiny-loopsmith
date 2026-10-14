@@ -138,7 +138,7 @@ public sealed class MultiEnemyWeaponPerksCatalogTests
     }
 
     [Fact]
-    public void Radiolaria_transposers_explosion_and_arc_pool_strike_as_this_weapon()
+    public void Radiolaria_transposers_explosion_and_pool_strike_as_this_weapon_with_arc_damage()
     {
         var three = Kill(StartWithKineticPerk("radiolaria-transposer"), WeaponSlot.Kinetic, 3);
 
@@ -148,7 +148,7 @@ public sealed class MultiEnemyWeaponPerksCatalogTests
             .Select(strike => strike.Type)
             .ToImmutableArray();
 
-        Assert.Equal([Optional.None<DamageType>(), Optional.Some(DamageType.Arc)], strikes);
+        Assert.Equal([Optional.Some(DamageType.Arc), Optional.Some(DamageType.Arc)], strikes);
         Assert.False(Catalog.Elements[ElementId.From("radiolaria-transposer")].Inert.IsSome());
     }
 
