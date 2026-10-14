@@ -560,7 +560,10 @@ Super has none. In the designer each row shows its option when the build has a r
 charge, when the build gives the ability more than one: "🛡 shield" next to a weapon's hit and kill, "last charge" next
 to an ability's; on, it goes with every button of the row. A grant may give stacks by copies (`stacks: "1 | 2"`:
 Shield Break Charge's x1 with one copy, x2 with two).
-**Consequence.** Shield Break Charge feeds the Armor Charge count (D33), and a Kickstart in a two-charge build spends it
+**Consequence.** The ability's charges are a number of the build added up (its profile's and the `extraCharges`) and
+compared with one to decide what a step fires: CONVENTIONS.md names it as the fourth exception to "State is causal"
+(the owner's decision). It is never counted down: a use doesn't take a charge off. Shield Break Charge feeds the Armor
+Charge count (D33), and a Kickstart in a two-charge build spends it
 only where the loop says the last charge goes. The option is part of the step's token, so loop files and share links
 carry it, and the analysis and comparison tell `grenade:kill` from `grenade:kill:last`. An ability's energy is still not
 counted: a later decision may track it (a use empties it, each energy grant fills it), and the last charge would then
