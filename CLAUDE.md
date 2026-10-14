@@ -33,7 +33,8 @@ Open items: [docs/backlog.md](docs/backlog.md).
 ## Build & test
 ```bash
 dotnet build Loopsmith.slnx          # TreatWarningsAsErrors is on
-dotnet test                          # unit, golden and architecture tests
+dotnet test                          # unit, golden and architecture tests (the e2e scenarios skip without E2E_URL)
+tools/e2e/record.sh Starting         # e2e scenarios in Chromium → out/<domain>/<scenario>.gif + out/scenarios.json
 dotnet run --project src/Loopsmith.Cli -- explain builds/skip-grenade-hunter/build.yaml
 dotnet run --project src/Loopsmith.Web          # the loop designer in the browser
 ```
@@ -72,6 +73,15 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
   Creator transcripts are third-party content: keep them local as `transcript.txt` (gitignored),
   never commit them.
 - `tests/Loopsmith.Core.Tests/` — unit, golden (`Golden/*.verified.txt`) and architecture tests.
+- `tests/Loopsmith.Web.E2E/` — end-to-end scenarios of the web app (Playwright), one GIF each via `tools/e2e/record.sh`;
+  `Infrastructure/` (BaseE2E, page objects, vocabulary, assertions) and `Scenarios/<domain>/<Topic>Tests.cs`. Binding
+  rules: its [E2E-TEST-CODE-RULES.md](tests/Loopsmith.Web.E2E/E2E-TEST-CODE-RULES.md), not CONVENTIONS.md's coding
+  rules; how to run, isolation and the cache: its [README](tests/Loopsmith.Web.E2E/README.md). Playwright is pinned
+  (`Directory.Packages.props`) to the cloud image's Chromium (`/opt/pw-browsers/chromium-1194` → 1.56.0; never
+  `playwright install`): if the image's Chromium changes, bump the pin to match. The scenarios never reach bungie.net
+  except to fill `${E2E_MANIFEST_CACHE:-~/.cache/loopsmith/bungie-manifest}` once, and read the manifest version
+  pinned as `ManifestContentId` in `src/Loopsmith.Web/wwwroot/appsettings.json` (bumping it downloads the new version
+  once); the cache is Bungie's data, never committed.
 - `docs/requirements.md` — the requirements, starting with the level of abstraction (what Loopsmith
   does and doesn't), then FR-1…FR-13 with their status, the non-functional requirements and what is
   out of scope.

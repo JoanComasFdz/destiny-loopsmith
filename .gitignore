@@ -17,3 +17,6 @@ builds/*/transcript.txt
 
 # Compendium downloads made by tools/compendium/get-compendium.* (private — never commit)
 tools/compendium/compendium-*
+
+# End-to-end recordings (tools/e2e/record.sh)
+/out/

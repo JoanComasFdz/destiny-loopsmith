@@ -6,7 +6,7 @@
     var build = Session.Build;
     var steps = Session.Design.Steps;
 }
-<section class="timeline" aria-label="Loop timeline"
+<section class="timeline" aria-label="Loop timeline" data-testid="loop-timeline"
          @ondragenter="EnterTimeline" @ondragleave="LeaveTimeline" @ondragover:preventDefault="true" @ondrop="DropAsync" @ondrop:preventDefault="true">
     <article class="step-card spawn @(IsSelected(0) ? "selected" : "") @DescribeDropTarget(0)" data-step="0" tabindex="0"
              @onclick="() => SelectStep(0)" @onkeydown="e => SelectStepByKey(e, 0)"
@@ -33,7 +33,7 @@
         var resolution = Session.Resolutions[index];
         var blocked = resolution.Blocked.IsSome();
         <article class="step-card @(IsSelected(number) ? "selected" : "") @(blocked ? "blocked" : "") @(number == steps.Length ? "last" : "") @DescribeDropTarget(number) @(IsDragged(index) ? "dragged" : "")"
-                 id="step-@number" data-step="@number" tabindex="0"
+                 id="step-@number" data-testid="step" data-step="@number" tabindex="0"
                  @onclick="() => SelectStep(number)" @onkeydown="e => SelectStepByKey(e, number)"
                  @ondragenter="() => EnterDropTarget(number)">
             <header class="step-head">
