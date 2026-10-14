@@ -28,6 +28,34 @@ public static class BuildReading
     public static bool IsEmpty(this AbilityPlug plug) =>
         plug is AbilityPlug.Empty;
 
+    /// <summary>
+    /// The charges the build gives an ability (ADRs D36): its element's (one when the slot holds "?" or nothing, or the
+    /// catalog has no profile for it), plus what each equipped <c>extraCharges</c> adds (Shinobu's Vow: a second grenade).
+    /// A fact of the build: a loop never counts charges down, it only tells the last one apart.
+    /// </summary>
+    public static int CountCharges(this ValidatedBuild build, AbilityKind kind)
+    {
+        var own = build.Build.Abilities.FindPlug(kind).ToElement()
+            .Bind(id => build.Catalog.Elements.TryGetValue(id, out var element) ? element.Ability : Optional.None<AbilityProfile>())
+            .Match(profile => profile.Value.Charges, _ => 1);
+        var extra = build.Equipped
+            .SelectMany(equipped => equipped.Element.Passives.Select(passive => passive.Modifier))
+            .OfType<Passive.ExtraCharges>()
+            .Where(charges => charges.Ability == kind)
+            .Sum(charges => charges.Extra);
+        return own + extra;
+    }
+
+    /// <summary>The slot that holds the ability of this kind.</summary>
+    public static AbilityPlug FindPlug(this AbilityLoadout abilities, AbilityKind kind) =>
+        kind switch
+        {
+            AbilityKind.Super => abilities.Super,
+            AbilityKind.Grenade => abilities.Grenade,
+            AbilityKind.Melee => abilities.Melee,
+            _ => abilities.ClassAbility,
+        };
+
     /// <summary>The four ability slots in the format's order: super, grenade, melee, class ability (not the jump: it sets nothing off).</summary>
     public static ImmutableArray<AbilityPlug> ListPlugs(this AbilityLoadout abilities) =>
         [abilities.Super, abilities.Grenade, abilities.Melee, abilities.ClassAbility];

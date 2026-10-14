@@ -94,6 +94,8 @@ public static class KeywordInteracting
             _ => false,
             _ => false,
             fewer => IsVia(keyword, fewer.Via),
+            _ => false,
+            broken => IsVia(keyword, broken.Via),
             _ => false);
 
     /// <summary>A guard the keyword meets by being there (the kernel's: a "without it" guard doesn't need it).</summary>

@@ -63,6 +63,20 @@ internal static class ValueReading
     internal static Result<StackCount, Errors> ReadStackCount(YamlValue value) =>
         value.ParseWith(text => ParseWholeNumber(text, minimum: 1).Bind(count => StackCount.TryFrom(count).ToResult()));
 
+    /// <summary>
+    /// The stacks one grant gives (<c>stacks</c>): a count of at least one, or one per copies of the element, each at least
+    /// one (<c>"1 | 2"</c>: x1 with one copy, x2 with two).
+    /// </summary>
+    internal static Result<StackGrant, Errors> ReadStackGrant(YamlValue value) =>
+        value.ParseWith(text => text.Contains('|')
+            ? text.Split('|')
+                .Select(part => ParseWholeNumber(part.Trim(), minimum: 1).Bind(count => StackCount.TryFrom(count).ToResult()))
+                .Aggregate(
+                    new Result<ImmutableArray<StackCount>, string>.Ok([]) as Result<ImmutableArray<StackCount>, string>,
+                    (counts, next) => counts.Bind(read => next.Map(count => read.Add(count))))
+                .Map(StackGrant (counts) => new StackGrant.PerModCount(counts))
+            : ParseWholeNumber(text, minimum: 1).Bind(count => StackCount.TryFrom(count).ToResult()).Map(StackGrant (count) => new StackGrant.Fixed(count)));
+
     /// <summary>A stacking status's cap, at least 2 (<c>maxStacks</c>): a status that doesn't stack has none.</summary>
     internal static Result<StackCount, Errors> ReadMaxStacks(YamlValue value) =>
         value.ParseWith(text => ParseWholeNumber(text, minimum: 2).Bind(count => StackCount.TryFrom(count).ToResult()));

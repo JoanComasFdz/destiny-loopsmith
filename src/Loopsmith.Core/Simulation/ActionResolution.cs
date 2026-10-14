@@ -117,7 +117,7 @@ public static class ActionResolution
     private static Opening OpenAction(ValidatedBuild build, GameState state, PlayerAction action) =>
         action.Match(
             cast => CastAbility(build, state, cast),
-            use => UseClassAbility(state, use.Input),
+            use => UseClassAbility(build, state, use),
             fire => FireWeapon(build, state, fire),
             collect => CollectPickups(state, collect),
             declare => Declare(build, state, declare.Declaration),
@@ -133,18 +133,34 @@ public static class ActionResolution
         return new Opening(state, [new PendingEvent.Ready(new GameEvent.Finisher()), new PendingEvent.HitTarget(origin, DamageSpan.Blow), new PendingEvent.KillTarget(origin)], []);
     }
 
-    /// <summary>Never blocked: casting, then the strike on every target (ADRs D4, D5).</summary>
+    /// <summary>
+    /// Never blocked: casting, its energy fully expended when the use spends the last charge (<see cref="ListExpendedEvents"/>),
+    /// then the strike on every target (ADRs D4, D5).
+    /// </summary>
     private static Opening CastAbility(ValidatedBuild build, GameState state, PlayerAction.CastAbility cast)
     {
         var kind = cast.Kind.ToAbilityKind();
         var origin = new DamageOrigin.Ability(kind, build.Build.Subclass.ToDamageType(), cast.Input);
-        var strike = ListStrikeEvents(origin, cast.Hit, cast.Targets);
-        return new Opening(state, [new PendingEvent.Ready(new GameEvent.AbilityCast(kind, cast.Input)), .. strike], []);
+        var strike = ListStrikeEvents(origin, cast.Hit, cast.Targets, ShieldBreak.None);
+        return new Opening(state, [new PendingEvent.Ready(new GameEvent.AbilityCast(kind, cast.Input)), .. ListExpendedEvents(build, kind, cast.Charge), .. strike], []);
     }
 
-    /// <summary>On the ground or with its air move, the class ability is cast: every class ability rule fires either way.</summary>
-    private static Opening UseClassAbility(GameState state, AbilityInput input) =>
-        new(state, [new PendingEvent.Ready(new GameEvent.AbilityCast(AbilityKind.ClassAbility, input))], []);
+    /// <summary>
+    /// On the ground or with its air move, the class ability is cast: every class ability rule fires either way. Its energy
+    /// is fully expended when the use spends the last charge (<see cref="ListExpendedEvents"/>).
+    /// </summary>
+    private static Opening UseClassAbility(ValidatedBuild build, GameState state, PlayerAction.UseClassAbility use) =>
+        new(state, [new PendingEvent.Ready(new GameEvent.AbilityCast(AbilityKind.ClassAbility, use.Input)), .. ListExpendedEvents(build, AbilityKind.ClassAbility, use.Charge)], []);
+
+    /// <summary>
+    /// The grenade's, melee's or class ability's energy fully expended (ADRs D36): on every use when the build gives it one
+    /// charge, on the use the player marks as the last one (<c>grenade:last</c>) when it gives more (Shinobu's Vow). A Super
+    /// has no such trigger.
+    /// </summary>
+    private static ImmutableArray<PendingEvent> ListExpendedEvents(ValidatedBuild build, AbilityKind kind, ChargeUse charge) =>
+        kind != AbilityKind.Super && (charge == ChargeUse.Last || build.CountCharges(kind) <= 1)
+            ? [new PendingEvent.Ready(new GameEvent.EnergyExpended(kind))]
+            : [];
 
     /// <summary>The class ability, plus each secondary use an equipped rule reacts to (Ascension's air move).</summary>
     public static ImmutableArray<PlayerAction> ListClassAbilityActions(ValidatedBuild build) =>
@@ -200,7 +216,7 @@ public static class ActionResolution
     {
         var weapon = build.Build.Weapons.Select(w => w.Slot == fire.Slot ? Optional.Some(w) : Optional.None<WeaponLoadout>()).FindFirstSome();
         return weapon.Match(
-            some => new Opening(state, ListStrikeEvents(new DamageOrigin.Weapon(fire.Slot, some.Value.Type), fire.Hit, fire.Targets), []),
+            some => new Opening(state, ListStrikeEvents(new DamageOrigin.Weapon(fire.Slot, some.Value.Type), fire.Hit, fire.Targets, fire.Shield), []),
             _ => BlockAction(state, $"No weapon in the {fire.Slot} slot — nothing happens."));
     }
 
@@ -208,15 +224,16 @@ public static class ActionResolution
     /// One action against N enemies (ADRs D4): N per-enemy hits, then N kills for a kill — each cascades fully, so
     /// later hits see the debuffs earlier ones applied — then one <see cref="GameEvent.TargetsHit"/> for the
     /// multi-target triggers ("hit 3+ enemies"). A hit step's hits are sustained damage, a kill step's its killing blows
-    /// (ADRs D34).
+    /// (ADRs D34). A step the player says breaks a shield breaks one, with its first hit (ADRs D36).
     /// </summary>
-    private static ImmutableArray<PendingEvent> ListStrikeEvents(DamageOrigin origin, HitOutcome hit, TargetCount targets)
+    private static ImmutableArray<PendingEvent> ListStrikeEvents(DamageOrigin origin, HitOutcome hit, TargetCount targets, ShieldBreak shield)
     {
-        var hits = Enumerable.Repeat<PendingEvent>(new PendingEvent.HitTarget(origin, hit == HitOutcome.Kill ? DamageSpan.Blow : DamageSpan.Sustained), targets.Value);
+        var hits = Enumerable.Repeat<PendingEvent>(new PendingEvent.HitTarget(origin, hit == HitOutcome.Kill ? DamageSpan.Blow : DamageSpan.Sustained), targets.Value).ToImmutableArray();
+        var broken = shield == ShieldBreak.Breaks ? new PendingEvent[] { new PendingEvent.Ready(new GameEvent.ShieldBroken(origin)) } : [];
         var kills = hit == HitOutcome.Kill
             ? Enumerable.Repeat<PendingEvent>(new PendingEvent.KillTarget(origin), targets.Value)
             : [];
-        return [.. hits, .. kills, new PendingEvent.Ready(new GameEvent.TargetsHit(origin, targets, hit))];
+        return [hits[0], .. broken, .. hits[1..], .. kills, new PendingEvent.Ready(new GameEvent.TargetsHit(origin, targets, hit))];
     }
 
     /// <summary>

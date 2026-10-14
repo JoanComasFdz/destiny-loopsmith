@@ -738,6 +738,12 @@ textarea { resize: vertical; }
 .trig-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; min-height: 52px; margin-top: 12px; padding: 8px 12px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel-2); font-size: 13px; }
 .trig-actions-title { font-weight: 700; }
 .trig-actions .trigger { min-width: 78px; min-height: 36px; text-transform: lowercase; }
+/* a row's option (ADRs D36): a weapon's "🛡 shield", an ability's "last charge"; on, it goes with every button of the row */
+.trig-option { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 4px 10px; border: 1px solid var(--line); border-radius: 5px; background: transparent; color: var(--muted); font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.trig-option-box { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border: 1px solid currentColor; border-radius: 3px; font-size: 11px; line-height: 1; }
+.trig-option:hover { border-color: var(--arc); }
+.trig-option.on { color: var(--text); border-color: var(--arc); background: color-mix(in srgb, var(--arc) 10%, transparent); }
+.trig-option.on .trig-option-box { background: var(--arc); border-color: var(--arc); color: var(--bg); }
 @media (max-width: 420px) {
     /* the Super, three abilities and the finisher on one row down to a 320 px phone: the squares take a fifth of the
        screen less the page's and the panel's padding and the row's gaps (at most 58 px) */

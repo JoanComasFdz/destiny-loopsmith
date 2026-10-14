@@ -81,9 +81,10 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
 - **Armor mods** (all current ones of the five slots are in `rules/mods/`; raid, activity and seasonal mods aren't
   supported, by decision: no picker offers them and a DIM link's are ignored, ADRs D35 — supporting them, if asked
   for, takes declarations for an encounter's mechanics: the pack's race and tier, a relic carried, Flux of Darkness,
-  a plate stood on): no trigger for breaking a combatant's shield (Shield Break Charge, inert), for the damage you take (critical
-  health is a step the player declares, `health:critical`) or for an ability's energy "fully expended" (the Kickstarts
-  fire on any use while you hold Armor Charge, as the Compendium says); Benevolent Finisher's x3 isn't counted off (it
+  a plate stood on): no trigger for the damage you take (critical health is a step the player declares,
+  `health:critical`; breaking a shield and an ability's last charge are options of a step, `:shield` and `:last`, D36);
+  an ability's energy isn't tracked, so with more than one charge the player marks the use that spends the last one (a
+  later step: a use empties it, each energy grant fills it, and the last charge follows from the loop); Benevolent Finisher's x3 isn't counted off (it
   is inert: allies only); an overshield's HP
   (Proximity Ward); the order mods are slotted in (Firepower before Heavy Handed); two mods that can't both pay
   out on different events (Hands-On and Ashes to Assets); an amount by class (Dynamo); a cooldown between orbs
@@ -165,8 +166,7 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   (`counted: true` in the glossary, once their gains and spends are authored to be counted). The decay (one stack every
   10 s, slower with Time Dilation) is shown, never applied, so a loop that waits between gaining and spending holds
   fewer than it says. Elemental Charge's activation progress stays a chance (every 2nd Ionic Trace with two copies);
-  Emergency Reinforcement's fourth duration (15 s, unlabelled in the Compendium) is `?` at x6; Shield Break Charge's
-  Armor Charge waits on a shield-breaking trigger.
+  Emergency Reinforcement's fourth duration (15 s, unlabelled in the Compendium) is `?` at x6.
 - **Kill counts, next**: the enemy-count selector names only the counts authored rules need (the Siphons, Spark of
   Amplitude, Spark of Discharge, Synergy). The weapon perks that need several enemies in one action (One For All's three
   separate targets, Multikill Clip, Adrenaline Junkie…) aren't authored (`rules/weapons/perks.yaml` holds three perks), so

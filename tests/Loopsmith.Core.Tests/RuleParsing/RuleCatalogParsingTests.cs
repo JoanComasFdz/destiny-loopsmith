@@ -249,8 +249,8 @@ public sealed class RuleCatalogParsingTests
             rule.When);
         Assert.Equal<Outcome>(
             [
-                new Outcome.ApplyBuff(ToStatus("amplified"), new BuffDuration.Unstated(), StackCount.From(1)),
-                new Outcome.ApplyBuff(ToStatus("bolt-charge"), new BuffDuration.Fixed(Seconds.From(10m)), StackCount.From(2)),
+                new Outcome.ApplyBuff(ToStatus("amplified"), new BuffDuration.Unstated(), new StackGrant.Fixed(StackCount.From(1))),
+                new Outcome.ApplyBuff(ToStatus("bolt-charge"), new BuffDuration.Fixed(Seconds.From(10m)), new StackGrant.Fixed(StackCount.From(2))),
                 new Outcome.RemoveBuff(ToStatus("amplified")),
             ],
             rule.Then);
@@ -1007,7 +1007,7 @@ public sealed class RuleCatalogParsingTests
 
         var rule = catalog.Elements[ElementId.From("ascension")].Rules[0];
         Assert.Equal(new Trigger.AbilityCastAs(AbilityKind.ClassAbility, AbilityInput.Air), rule.On);
-        Assert.Equal(new Outcome.ApplyBuff(ToStatus("bolt-charge"), new BuffDuration.Unstated(), StackCount.From(1)), rule.Then[0]);
+        Assert.Equal(new Outcome.ApplyBuff(ToStatus("bolt-charge"), new BuffDuration.Unstated(), new StackGrant.Fixed(StackCount.From(1))), rule.Then[0]);
     }
 
     [Fact]
@@ -1702,6 +1702,36 @@ public sealed class RuleCatalogParsingTests
     }
 
     [Fact]
+    public void Parses_a_shield_broken_trigger_from_any_source_or_one_and_a_grant_of_stacks_by_copies()
+    {
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog(
+            [Glossary, ToProbeFile("{ on: { shieldBroken: {} }, then: [ { applyBuff: { status: armor-charge, stacks: \"1 | 2\" } } ] }")]));
+        var byWeapon = AssertOk(RuleCatalogParsing.ParseCatalog(
+            [Glossary, ToProbeFile("{ on: { shieldBroken: { via: weapon } }, then: [ { applyBuff: armor-charge } ] }")]));
+        var withTier = ParseInvalidCatalog(Glossary, ToProbeFile("{ on: { shieldBroken: { tier: major } }, then: [ { applyBuff: armor-charge } ] }"));
+        var zeroStacks = ParseInvalidCatalog(Glossary, ToProbeFile("{ on: { shieldBroken: {} }, then: [ { applyBuff: { status: armor-charge, stacks: \"1 | 0\" } } ] }"));
+
+        var rule = Assert.Single(catalog.Elements[ElementId.From("probe")].Rules);
+        Assert.Equal(new Trigger.ShieldBroken(new DamageSource.AnySource()), rule.On);
+        var grant = Assert.IsType<Outcome.ApplyBuff>(Assert.Single(rule.Then));
+        Assert.Equal([StackCount.From(1), StackCount.From(2)], Assert.IsType<StackGrant.PerModCount>(grant.Stacks).Counts);
+        Assert.Equal(new Trigger.ShieldBroken(new DamageSource.AnyWeapon()), Assert.Single(byWeapon.Elements[ElementId.From("probe")].Rules).On);
+        Assert.Contains("tier", withTier);
+        Assert.Contains("mods.yaml:7", zeroStacks);
+    }
+
+    [Fact]
+    public void Parses_an_energy_expended_trigger_for_a_grenade_melee_or_class_ability_but_not_a_super()
+    {
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog(
+            [Glossary, ToProbeFile("{ on: { energyExpended: classAbility }, when: [ { has: armor-charge } ], then: [ { removeBuff: armor-charge } ] }")]));
+        var super = ParseInvalidCatalog(Glossary, ToProbeFile("{ on: { energyExpended: super }, then: [ { removeBuff: armor-charge } ] }"));
+
+        Assert.Equal(new Trigger.EnergyExpended(AbilityKind.ClassAbility), Assert.Single(catalog.Elements[ElementId.From("probe")].Rules).On);
+        Assert.Contains("a Super has no energyExpended (use grenade, melee or classAbility)", super);
+    }
+
+    [Fact]
     public void Parses_an_energy_grant_to_the_least_charged_ability()
     {
         var catalog = AssertOk(RuleCatalogParsing.ParseCatalog(
@@ -1787,9 +1817,9 @@ public sealed class RuleCatalogParsingTests
         Assert.Equal("Slice (enhanced)", enhanced.Name);
         Assert.Equal([ItemHash.From(3422796781)], enhanced.Hashes);
         Assert.Equal(Optional.Some("Enhanced."), enhanced.Description);
-        Assert.Equal(new Outcome.ApplyBuff(ToStatus("amplified"), new BuffDuration.Fixed(Seconds.From(9m)), StackCount.From(1)), enhanced.Rules[0].Then[0]);
+        Assert.Equal(new Outcome.ApplyBuff(ToStatus("amplified"), new BuffDuration.Fixed(Seconds.From(9m)), new StackGrant.Fixed(StackCount.From(1))), enhanced.Rules[0].Then[0]);
         Assert.Equal(new Outcome.GrantEnergy(AbilityKind.Grenade, new EnergyGrant.Fraction(new GameValue.Known(0.12m))), enhanced.Rules[1].Then[0]);
-        Assert.Equal(new Outcome.ApplyBuff(ToStatus("amplified"), new BuffDuration.Fixed(Seconds.From(8m)), StackCount.From(1)), perk.Rules[0].Then[0]);   // the perk keeps its own
+        Assert.Equal(new Outcome.ApplyBuff(ToStatus("amplified"), new BuffDuration.Fixed(Seconds.From(8m)), new StackGrant.Fixed(StackCount.From(1))), perk.Rules[0].Then[0]);   // the perk keeps its own
         Assert.Equal(ElementId.From("slice-enhanced"), catalog.EnhancedPerks[ElementId.From("slice")]);
     }
 

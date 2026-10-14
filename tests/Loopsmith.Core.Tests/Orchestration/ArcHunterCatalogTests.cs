@@ -91,7 +91,7 @@ public sealed class ArcHunterCatalogTests
         var blow = Assert.Single(played.Resolutions[0].Fired, fired => fired.Source.Value == "disorienting-blow");
         Assert.Contains(blow.Outcomes, outcome => outcome.Outcome is Outcome.DebuffTarget { Status: var status } && status == Blind);
         Assert.Contains(blow.Outcomes, outcome => outcome.Outcome is Outcome.ApplyBuff { Status: var status } && status == Amplified);
-        Assert.Contains(blow.Outcomes, outcome => outcome.Outcome is Outcome.ApplyBuff { Status: var status, Stacks: var stacks } && status == BoltCharge && stacks.Value == 2);
+        Assert.Contains(blow.Outcomes, outcome => outcome.Outcome is Outcome.ApplyBuff { Status: var status, Stacks: StackGrant.Fixed { Count.Value: 2 } } && status == BoltCharge);
         Assert.Contains(Blind, played.Resolutions[0].State.Target.Debuffs);
         Assert.DoesNotContain(played.Resolutions[1].Fired, fired => fired.Source.Value == "disorienting-blow");
     }

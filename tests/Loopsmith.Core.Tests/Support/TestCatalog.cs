@@ -40,7 +40,7 @@ public static class TestCatalog
         rule with { DoesNotStackWith = [ElementId.From(partner)] };
 
     public static Outcome Buff(string status, int stacks = 1) =>
-        new Outcome.ApplyBuff(Status(status), new BuffDuration.Unstated(), StackCount.From(stacks));
+        new Outcome.ApplyBuff(Status(status), new BuffDuration.Unstated(), new StackGrant.Fixed(StackCount.From(stacks)));
 
     public static Outcome Debuff(string status) =>
         new Outcome.DebuffTarget(Status(status), Optional.None<Seconds>());

@@ -32,7 +32,7 @@ public sealed class KeywordInteractingTests
         Assert.Equal(["Elemental Charge", "Orb of Power"], groups[0].Interactions.Select(interaction => interaction.SourceName));
         Assert.Equal("Pick up Ionic Trace → +1 Armor Charge (chance)", groups[0].Interactions[0].Text);
         var kickstart = Assert.Single(groups[1].Interactions);
-        Assert.Equal(("Grenade Kickstart", "Grenade thrown → spends Armor Charge → +16.2% … 45% grenade energy by copies and stacks (2 … 9)"), (kickstart.SourceName, kickstart.Text));   // its "while Armor Charge" goes without saying here
+        Assert.Equal(("Grenade Kickstart", "Grenade energy fully expended → spends Armor Charge → +16.2% … 45% grenade energy by copies and stacks (2 … 9)"), (kickstart.SourceName, kickstart.Text));   // its "while Armor Charge" goes without saying here
         var chargedUp = Assert.Single(groups[2].Interactions);
         Assert.Equal(("Charged Up", "Armor Charge up to x4"), (chargedUp.SourceName, chargedUp.Text));   // one copy: its first cap
     }

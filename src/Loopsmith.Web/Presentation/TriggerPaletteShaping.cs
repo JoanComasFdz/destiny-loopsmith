@@ -19,8 +19,15 @@ public sealed record TriggerButton(PlayerAction Action, string Token, string Lab
 /// to the next.
 /// <see cref="Targets"/> is how many enemies the row's actions hit or kill — none for a row without targets (class
 /// ability, pickups, declared states); <see cref="ListTargetCountOptions"/> says which counts it offers.
+/// <see cref="Option"/> is the option its actions can carry in this build, and whether it is on (ADRs D36).
 /// </summary>
-public sealed record TriggerChoice(string Key, string Title, Optional<TargetCount> Targets, ImmutableArray<TriggerButton> Buttons);
+public sealed record TriggerChoice(string Key, string Title, Optional<TargetCount> Targets, ImmutableArray<TriggerButton> Buttons, Optional<TriggerOptionToggle> Option);
+
+/// <summary>
+/// An option the player turns on or off for a row's actions (ADRs D36): a weapon's "🛡 shield" (the step breaks a
+/// combatant's shield), an ability's "⬜ Spend fully" (the use spends its last charge); <see cref="Hint"/> says what it is for.
+/// </summary>
+public sealed record TriggerOptionToggle(StepOption Option, string Caption, string Hint, bool IsOn);
 
 /// <summary>A count a row offers and its text: what it is for when an equipped rule needs it ("12 · Synergy").</summary>
 public sealed record TargetCountOption(int Value, string Text);
@@ -53,13 +60,14 @@ public static class TriggerPaletteShaping
             .First();
 
     /// <param name="counts">The target count picked per row <see cref="TriggerChoice.Key"/>; a row not in it aims at one enemy.</param>
+    /// <param name="optionsOn">The rows (<see cref="TriggerChoice.Key"/>) whose option the player turned on.</param>
     public static ImmutableArray<TriggerSection> ShapePalette(
-        ImmutableArray<TriggerOption> options, ImmutableDictionary<string, TargetCount> counts, ValidatedBuild build) =>
+        ImmutableArray<TriggerOption> options, ImmutableDictionary<string, TargetCount> counts, ImmutableHashSet<string> optionsOn, ValidatedBuild build) =>
     [
         .. options
             .GroupBy(option => option.Group)
             .OrderBy(group => group.Key)
-            .Select(group => new TriggerSection(group.Key, ShapeChoices([.. group], counts, build))),
+            .Select(group => new TriggerSection(group.Key, ShapeChoices([.. group], counts, optionsOn, build))),
     ];
 
     /// <summary>A picked count ("3") as a <see cref="TargetCount"/>; none when it is not a whole number in range.</summary>
@@ -69,28 +77,36 @@ public static class TriggerPaletteShaping
             : Optional.None<TargetCount>();
 
     private static ImmutableArray<TriggerChoice> ShapeChoices(
-        ImmutableArray<TriggerOption> options, ImmutableDictionary<string, TargetCount> counts, ValidatedBuild build) =>
+        ImmutableArray<TriggerOption> options, ImmutableDictionary<string, TargetCount> counts, ImmutableHashSet<string> optionsOn, ValidatedBuild build) =>
     [
         .. options
             .GroupBy(option => ToPairKey(option.Action))
-            .Select(pair => ShapeChoice(pair.Key, [.. pair.OrderBy(option => ReadHitOrder(option.Action))], counts, build)),
+            .Select(pair => ShapeChoice(pair.Key, [.. pair.OrderBy(option => ReadHitOrder(option.Action))], counts, optionsOn, build)),
     ];
 
     private static TriggerChoice ShapeChoice(
-        string key, ImmutableArray<TriggerOption> pair, ImmutableDictionary<string, TargetCount> counts, ValidatedBuild build)
+        string key, ImmutableArray<TriggerOption> pair, ImmutableDictionary<string, TargetCount> counts, ImmutableHashSet<string> optionsOn, ValidatedBuild build)
     {
         var targets = LoopDesigning.ReadTargetCount(pair[0].Action)
             .Map(one => counts.TryGetValue(key, out var picked) ? picked : one);
+        var toggle = LoopDesigning.FindStepOption(build, pair[0].Action)
+            .Map(option => ShapeToggle(option, optionsOn.Contains(key)));
         var title = pair.Length == 1 ? pair[0].Label : ReadTitle(pair[0].Label);
         var buttons = pair
-            .Select(option => ShapeButton(option, targets, pair.Length == 1 ? option.Label : ReadQualifier(option.Label), build))
+            .Select(option => ShapeButton(option, targets, toggle, pair.Length == 1 ? option.Label : ReadQualifier(option.Label), build))
             .ToImmutableArray();
-        return new TriggerChoice(key, title, targets, buttons);
+        return new TriggerChoice(key, title, targets, buttons, toggle);
     }
 
-    private static TriggerButton ShapeButton(TriggerOption option, Optional<TargetCount> targets, string caption, ValidatedBuild build)
+    private static TriggerOptionToggle ShapeToggle(StepOption option, bool isOn) =>
+        option == StepOption.BreaksShield
+            ? new TriggerOptionToggle(option, DomainPhrasing.ShieldOption, "This hit or kill breaks a combatant's shield, with damage of its element", isOn)
+            : new TriggerOptionToggle(option, DomainPhrasing.LastChargeBox, "This use spends the ability's last charge: its energy is fully expended", isOn);
+
+    private static TriggerButton ShapeButton(TriggerOption option, Optional<TargetCount> targets, Optional<TriggerOptionToggle> toggle, string caption, ValidatedBuild build)
     {
-        var action = targets.Match(count => LoopDesigning.SetTargetCount(option.Action, count.Value), _ => option.Action);
+        var aimed = targets.Match(count => LoopDesigning.SetTargetCount(option.Action, count.Value), _ => option.Action);
+        var action = toggle.Match(on => LoopDesigning.SetStepOption(aimed, on.Value.Option, on.Value.IsOn), _ => aimed);
         return new TriggerButton(action, action.ToActionToken(), build.DescribeAction(action), caption, option.IsNew);
     }
 

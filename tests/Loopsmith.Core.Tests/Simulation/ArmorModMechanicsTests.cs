@@ -187,6 +187,125 @@ public sealed class ArmorModMechanicsTests
         Assert.DoesNotContain(without.Nodes, node => node.Key == "a:CriticalHealth");
     }
 
+    // ── Breaking a shield (ADRs D36) ─────────────────────────────────────────────────────
+
+    private static readonly PlayerAction ShieldKill = new PlayerAction.FireWeapon(WeaponSlot.Energy, HitOutcome.Kill, TargetCount.From(2), ShieldBreak.Breaks);
+
+    /// <summary>Shield Break Charge's shape: x1 | x2 Armor Charge by copies.</summary>
+    private static readonly BuildElement ShieldBreaker = Mod("shield-breaker",
+    [
+        On(new Trigger.ShieldBroken(new DamageSource.AnySource()),
+            new Outcome.ApplyBuff(Status("armor-charge"), new BuffDuration.Unstated(), new StackGrant.PerModCount([StackCount.From(1), StackCount.From(2)]))),
+    ]);
+
+    [Fact]
+    public void Breaking_a_shield_is_a_weapon_steps_option_with_its_token_label_and_trigger()
+    {
+        var build = ValidateBuild([], mods: [ShieldBreaker]);
+
+        Assert.Equal("energy:kill:2:shield", ShieldKill.ToActionToken());
+        Assert.Equal(new Result<PlayerAction, string>.Ok(ShieldKill), ActionTokenParsing.ParseActionToken("Energy:Kill:2:Shield"));
+        Assert.Equal(new Result<PlayerAction, string>.Ok(new PlayerAction.FireWeapon(WeaponSlot.Kinetic, HitOutcome.Damage, TargetCount.One, ShieldBreak.Breaks)),
+            ActionTokenParsing.ParseActionToken("kinetic:shield"));
+        Assert.IsType<Result<PlayerAction, string>.Error>(ActionTokenParsing.ParseActionToken("grenade:kill:shield"));   // a weapon's option only
+        Assert.IsType<Result<PlayerAction, string>.Error>(ActionTokenParsing.ParseActionToken("energy:shield:kill"));    // the option goes last
+        Assert.Equal("Test Rifle (💀 kill 2 · 🛡 shield)", build.DescribeAction(ShieldKill));
+        Assert.Equal("Break a shield", build.Catalog.Glossary.DescribeTrigger(new Trigger.ShieldBroken(new DamageSource.AnySource()), build.ReadSuperType()));
+        Assert.Contains("Break a shield -> +1 Armor Charge [Shield Breaker]", DescribeExplanation(build));
+    }
+
+    [Fact]
+    public void A_weapon_step_that_breaks_a_shield_breaks_one_after_its_first_hit_and_gives_Armor_Charge_by_copies()
+    {
+        var one = ResolveOnce(ValidateBuild([], mods: [ShieldBreaker]), ShieldKill);
+        var two = ResolveOnce(ValidateBuild([], mods: [ShieldBreaker, ShieldBreaker]), ShieldKill);
+        var plain = ResolveOnce(ValidateBuild([], mods: [ShieldBreaker]), RifleKill);
+
+        var fired = Assert.Single(one.Fired);
+        Assert.Equal(new GameEvent.ShieldBroken(new DamageOrigin.Weapon(WeaponSlot.Energy, DamageType.Arc)), fired.Trigger);
+        Assert.Equal(1, one.State.ReadTally(Status("armor-charge")).Match(tally => tally.Value.Sure.Value, _ => 0));
+        Assert.Equal(2, two.State.ReadTally(Status("armor-charge")).Match(tally => tally.Value.Sure.Value, _ => 0));
+        Assert.Empty(plain.Fired);
+        Assert.StartsWith("#1 Test Rifle (💀 kill 2 · 🛡 shield)\n  Test Rifle 🛡 broke a shield → +2 Armor Charge [Shield Breaker]", DescribeTrace(ValidateBuild([], mods: [ShieldBreaker, ShieldBreaker]), two));
+    }
+
+    [Fact]
+    public void The_loop_graph_leads_from_a_weapon_to_a_shield_breaking_rule()
+    {
+        var graph = LoopGraphBuilding.BuildLoopGraph(ValidateBuild([], mods: [ShieldBreaker]));
+
+        Assert.Contains(graph.Edges, edge => edge.From == "w:Energy" && edge.To == "t:Break a shield" && edge.Kind == EdgeKind.Player);
+    }
+
+    // ── An ability's energy fully expended (ADRs D36) ────────────────────────────────────
+
+    /// <summary>A Kickstart's shape: the last grenade charge spends every Armor Charge stack.</summary>
+    private static readonly BuildElement Kickstart = Mod("kickstart",
+        [OnWhen(new Trigger.EnergyExpended(AbilityKind.Grenade), new Condition.HasBuff(Status("armor-charge")), new Outcome.RemoveBuff(Status("armor-charge")))]);
+
+    /// <summary>Shinobu's Vow's second grenade charge.</summary>
+    private static readonly BuildElement SecondGrenade = Mod("second-grenade", [],
+        [new PassiveRule(new Passive.ExtraCharges(AbilityKind.Grenade, 1), [], Optional.None<string>())]);
+
+    private static readonly PlayerAction LastGrenadeHit = new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Damage, TargetCount.One, AbilityInput.Press, ChargeUse.Last);
+
+    [Fact]
+    public void The_last_charge_is_an_ability_steps_option_with_its_token_label_and_trigger()
+    {
+        var build = ValidateBuild([], mods: [Kickstart, SecondGrenade]);
+        var lastDodge = new PlayerAction.UseClassAbility(AbilityInput.Press, ChargeUse.Last);
+
+        Assert.Equal("grenade:last", LastGrenadeHit.ToActionToken());
+        Assert.Equal("grenade:kill:3:last", new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Kill, TargetCount.From(3), AbilityInput.Press, ChargeUse.Last).ToActionToken());
+        Assert.Equal("class:last", lastDodge.ToActionToken());
+        Assert.Equal(new Result<PlayerAction, string>.Ok(LastGrenadeHit), ActionTokenParsing.ParseActionToken("Grenade:Last"));
+        Assert.Equal(new Result<PlayerAction, string>.Ok(new PlayerAction.CastAbility(OffensiveAbility.Melee, HitOutcome.Kill, TargetCount.One, AbilityInput.Slide, ChargeUse.Last)),
+            ActionTokenParsing.ParseActionToken("melee:slide:kill:last"));
+        Assert.Equal(new Result<PlayerAction, string>.Ok(lastDodge), ActionTokenParsing.ParseActionToken("class:last"));
+        Assert.IsType<Result<PlayerAction, string>.Error>(ActionTokenParsing.ParseActionToken("super:last"));        // a Super has one charge
+        Assert.IsType<Result<PlayerAction, string>.Error>(ActionTokenParsing.ParseActionToken("kinetic:kill:last"));  // an ability's option only
+        Assert.IsType<Result<PlayerAction, string>.Error>(ActionTokenParsing.ParseActionToken("grenade:last:kill"));  // the option goes last
+        Assert.Equal("Grenade (🥊 hit · ⬜ spend fully)", build.DescribeAction(LastGrenadeHit));
+        Assert.Equal("Class ability (⬜ spend fully)", build.DescribeAction(lastDodge));
+        Assert.Equal("Grenade energy fully expended", build.Catalog.Glossary.DescribeTrigger(new Trigger.EnergyExpended(AbilityKind.Grenade), build.ReadSuperType()));
+        Assert.Equal(2, build.CountCharges(AbilityKind.Grenade));
+        Assert.Equal(1, build.CountCharges(AbilityKind.Melee));
+    }
+
+    [Fact]
+    public void With_one_charge_every_use_expends_the_ability()
+    {
+        var build = ValidateBuild([Charger], mods: [Kickstart]);
+
+        var steps = ResolveSteps(build, Dodge, GrenadeHit);
+
+        var fired = Assert.Single(steps[1].Fired, rule => rule.Source == ElementId.From("kickstart"));
+        Assert.Equal(new GameEvent.EnergyExpended(AbilityKind.Grenade), fired.Trigger);
+        Assert.False(steps[1].State.HasBuff(Status("armor-charge")));
+    }
+
+    [Fact]
+    public void With_more_charges_only_the_use_marked_as_the_last_one_expends_the_ability()
+    {
+        var build = ValidateBuild([Charger], mods: [Kickstart, SecondGrenade]);
+
+        var plain = ResolveSteps(build, Dodge, GrenadeHit)[1];
+        var last = ResolveSteps(build, Dodge, LastGrenadeHit)[1];
+
+        Assert.DoesNotContain(plain.Fired, rule => rule.Source == ElementId.From("kickstart"));
+        Assert.True(plain.State.HasBuff(Status("armor-charge")));
+        Assert.Contains(last.Fired, rule => rule.Source == ElementId.From("kickstart"));
+        Assert.False(last.State.HasBuff(Status("armor-charge")));
+    }
+
+    [Fact]
+    public void The_loop_graph_leads_from_an_ability_to_its_energy_fully_expended()
+    {
+        var graph = LoopGraphBuilding.BuildLoopGraph(ValidateBuild([Charger], mods: [Kickstart]));
+
+        Assert.Contains(graph.Edges, edge => edge.From == "a:Grenade" && edge.To == "t:Grenade energy fully expended" && edge.Kind == EdgeKind.Player);
+    }
+
     // ── A stat change while a buff holds ─────────────────────────────────────────────────
 
     private static readonly BuildElement Charger = Element("charger", ElementKind.Fragment,

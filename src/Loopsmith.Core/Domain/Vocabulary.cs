@@ -59,6 +59,22 @@ public enum EnemyTier { Minor, Major, Boss, Champion }
 public enum HitOutcome { Damage, Kill }
 
 /// <summary>
+/// Which charge of an ability a use spends (ADRs D36): <see cref="Plain"/>, any; <see cref="Last"/>, the one that leaves its
+/// energy fully expended — the player says it when the build gives the ability more than one charge (Shinobu's Vow's second
+/// grenade). With one charge every use is the last one.
+/// </summary>
+public enum ChargeUse { Plain, Last }
+
+/// <summary>Whether a weapon's hit or kill breaks a combatant's shield, with damage of its element (ADRs D36): the player says it.</summary>
+public enum ShieldBreak { None, Breaks }
+
+/// <summary>
+/// What the player can say about a step besides its hit and its count (ADRs D36): a weapon step <see cref="BreaksShield"/>,
+/// an ability step spends the <see cref="LastCharge"/>.
+/// </summary>
+public enum StepOption { BreaksShield, LastCharge }
+
+/// <summary>
 /// How much damage one hit stands for (ADRs D34): <see cref="Blow"/>, one blow (a kill step's killing blow, a strike, a
 /// summon's hit, a finisher); <see cref="Sustained"/>, a hit step's — the player keeps shooting the enemy without killing
 /// it, enough for any number of hits or share of its health a source needs (To Shreds' 6 instances, Thunderlord's 10th hit).

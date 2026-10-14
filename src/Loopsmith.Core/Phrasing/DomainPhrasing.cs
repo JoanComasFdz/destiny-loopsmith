@@ -331,6 +331,18 @@ public static class DomainPhrasing
     /// <summary>What reaching critical health is called everywhere: the declared step, its trigger and its event.</summary>
     public const string CriticalHealth = "Critical health";
 
+    /// <summary>What breaking a combatant's shield is called as a trigger (ADRs D36).</summary>
+    public const string BreakShield = "Break a shield";
+
+    /// <summary>A weapon step's option that it breaks a shield, in its label and its button: "🛡 shield".</summary>
+    public const string ShieldOption = "🛡 shield";
+
+    /// <summary>An ability step's option that it spends the last charge (its energy fully expended), in its label: "⬜ spend fully".</summary>
+    public const string LastChargeOption = "⬜ spend fully";
+
+    /// <summary>The same option on its box in the designer: "⬜ Spend fully".</summary>
+    public const string LastChargeBox = "⬜ Spend fully";
+
     // ── triggers, conditions, outcomes, passives ───────────────────────────────
 
     /// <summary>A rule's trigger as a player says it; <paramref name="superType"/>: see <see cref="DescribeDamageSource"/>.</summary>
@@ -351,7 +363,15 @@ public static class DomainPhrasing
             _ => Finisher,
             castAs => DescribeCast(castAs.Kind, castAs.Input),
             killFewer => DescribeFewKills(glossary, killFewer.Via, killFewer.FewerThan, superType),
-            _ => CriticalHealth);
+            _ => CriticalHealth,
+            shieldBroken => shieldBroken.Via is DamageSource.AnySource
+                ? BreakShield
+                : $"{BreakShield} with {glossary.DescribeDamageSource(shieldBroken.Via, superType)}",
+            energyExpended => DescribeEnergyExpended(energyExpended.Kind));
+
+    /// <summary>"Grenade energy fully expended": the ability's last charge used (ADRs D36), as Bungie's text of the Kickstarts says it.</summary>
+    public static string DescribeEnergyExpended(this AbilityKind kind) =>
+        $"{Capitalize(kind.DescribeAbility())} energy fully expended";
 
     private static string DescribeKill(KeywordGlossary glossary, DamageSource via, ImmutableArray<StatusId> targetHas, Optional<DamageType> superType)
     {
@@ -669,6 +689,7 @@ public static class DomainPhrasing
                 convert with { Energy = new StackEnergy.PerStack(perStack.Amount.NarrowToCopies(copies)) },
             Outcome.ModifyDamage modify => modify with { Change = modify.Change.NarrowToCopies(copies) },
             Outcome.RestoreHealth heal => heal with { Amount = heal.Amount.NarrowToCopies(copies) },
+            Outcome.ApplyBuff apply => apply with { Stacks = apply.Stacks.NarrowToCopies(copies) },
             _ => outcome,
         };
 
@@ -679,8 +700,14 @@ public static class DomainPhrasing
         var suffix = apply.Duration is BuffDuration.BySpent bySpent
             ? $" ({DescribeTableRange(bySpent.Table, value => $"{value.ToString("0.#", Invariant)}s")} at {DescribeTableCounts(bySpent.Table, "x")} spent)"
             : glossary.ReadShownDuration(apply.Status, apply.Duration.ReadFixedTime()).Match(d => $" ({d.Value.FormatSeconds()})", _ => "");
-        return glossary.IsStacking(apply.Status) ? $"+{apply.Stacks.Value} {name}{suffix}" : $"{name}{suffix}";
+        return glossary.IsStacking(apply.Status) ? $"{DescribeStackGrant(apply.Stacks)} {name}{suffix}" : $"{name}{suffix}";
     }
+
+    /// <summary>"+1", or by copies "+1 | +2" (an outcome not narrowed to the build's copies: the catalog's own text).</summary>
+    private static string DescribeStackGrant(StackGrant grant) =>
+        grant.Match(
+            fixedCount => $"+{fixedCount.Count.Value}",
+            perModCount => string.Join(" | ", perModCount.Counts.Select(count => $"+{count.Value}")));
 
     /// <summary>The duration an outcome shows: the rule's, else the glossary's — a fact, never counted down.</summary>
     private static Optional<Seconds> ReadShownDuration(this KeywordGlossary glossary, StatusId status, Optional<Seconds> stated) =>
@@ -852,21 +879,26 @@ public static class DomainPhrasing
             gained => $"{glossary.DescribeStatus(gained.Status)} gained",
             maxed => $"Max {glossary.DescribeStatus(maxed.Status)}",
             _ => Finisher,
-            _ => CriticalHealth);
+            _ => CriticalHealth,
+            broken => $"{glossary.DescribeOrigin(broken.Origin, build)} 🛡 broke a shield",
+            expended => expended.Kind.DescribeEnergyExpended());
 
     /// <summary>
-    /// "Grenade (💀 kill)", "Grenade (💀 kill 3)", "Festival Flight (🥊 hit 5)", "Class ability", "Pick up Orb of Power",
+    /// "Grenade (💀 kill)", "Grenade (💀 kill 3)", "Grenade (💀 kill · ⬜ spend fully)", "Festival Flight (🥊 hit 5)",
+    /// "Festival Flight (💀 kill · 🛡 shield)", "Class ability", "Class ability (⬜ spend fully)", "Pick up Orb of Power",
     /// "Bolt Charge at max (x10)", "Amplified ends", "New pack", "Critical health", "Finisher".
     /// </summary>
     public static string DescribeAction(this ValidatedBuild build, PlayerAction action) =>
         action.Match(
-            cast => $"{Capitalize(cast.Kind.ToAbilityKind().DescribeAbilityUse(cast.Input))} ({DescribeHit(cast.Hit, cast.Targets)})",
-            use => use.Input switch
+            cast => $"{Capitalize(cast.Kind.ToAbilityKind().DescribeAbilityUse(cast.Input))} ({DescribeHit(cast.Hit, cast.Targets)}{DescribeChargeOption(cast.Charge)})",
+            use => (use.Input, use.Charge) switch
             {
-                AbilityInput.Air => "Class ability (in the air)",
+                (AbilityInput.Air, ChargeUse.Last) => $"Class ability (in the air · {LastChargeOption})",
+                (AbilityInput.Air, _) => "Class ability (in the air)",
+                (_, ChargeUse.Last) => $"Class ability ({LastChargeOption})",
                 _ => "Class ability",
             },
-            fire => $"{DescribeWeapon(build.Build, fire.Slot, fire.Slot.ToString())} ({DescribeHit(fire.Hit, fire.Targets)})",
+            fire => $"{DescribeWeapon(build.Build, fire.Slot, fire.Slot.ToString())} ({DescribeHit(fire.Hit, fire.Targets)}{(fire.Shield == ShieldBreak.Breaks ? $" · {ShieldOption}" : "")})",
             collect => $"Pick up {build.Catalog.Glossary.DescribePickup(collect.Pickup)}",
             declare => build.DescribeDeclaration(declare.Declaration),
             _ => Finisher);
@@ -886,6 +918,10 @@ public static class DomainPhrasing
     private static string DescribeHit(HitOutcome hit, TargetCount targets) =>
         (hit == HitOutcome.Kill ? "💀 kill" : "🥊 hit") + (targets.Value > 1 ? $" {targets.Value}" : "");
 
+    /// <summary>" · ⬜ spend fully" for the use that spends an ability's last charge (ADRs D36); nothing for a plain use.</summary>
+    private static string DescribeChargeOption(ChargeUse charge) =>
+        charge == ChargeUse.Last ? $" · {LastChargeOption}" : "";
+
     /// <summary>"1 enemy", "3 enemies".</summary>
     private static string DescribeEnemies(TargetCount targets) =>
         targets.Value == 1 ? "1 enemy" : $"{targets.Value} enemies";
@@ -894,13 +930,14 @@ public static class DomainPhrasing
     /// The action's token, the same everywhere (CLI, loop files, the web): <c>grenade:kill</c>, <c>grenade:kill:3</c>,
     /// <c>class</c>, <c>kinetic</c>, <c>kinetic:hit:5</c>, <c>pickup:orb-of-power</c>, <c>max:bolt-charge</c>,
     /// <c>end:amplified</c>, <c>pack:new</c>, <c>health:critical</c>, <c>finisher</c>. The target count is written only when it is more than one; every
-    /// token round-trips.
+    /// token round-trips. An option goes last: <c>:last</c> on an ability's last charge (<c>grenade:kill:last</c>),
+    /// <c>:shield</c> on a weapon step that breaks a shield (<c>kinetic:kill:3:shield</c>) (ADRs D36).
     /// </summary>
     public static string ToActionToken(this PlayerAction action) =>
         action.Match(
-            cast => cast.Kind.ToString().ToLowerInvariant() + ToInputSuffix(cast.Input) + ToHitSuffix(cast.Hit, cast.Targets),
-            use => "class" + ToInputSuffix(use.Input),
-            fire => fire.Slot.ToString().ToLowerInvariant() + ToHitSuffix(fire.Hit, fire.Targets),
+            cast => cast.Kind.ToString().ToLowerInvariant() + ToInputSuffix(cast.Input) + ToHitSuffix(cast.Hit, cast.Targets) + ToChargeSuffix(cast.Charge),
+            use => "class" + ToInputSuffix(use.Input) + ToChargeSuffix(use.Charge),
+            fire => fire.Slot.ToString().ToLowerInvariant() + ToHitSuffix(fire.Hit, fire.Targets) + (fire.Shield == ShieldBreak.Breaks ? ":shield" : ""),
             collect => $"pickup:{collect.Pickup}",
             declare => declare.Declaration.Match(
                 max => $"max:{max.Status}",
@@ -908,6 +945,10 @@ public static class DomainPhrasing
                 _ => "pack:new",
                 _ => "health:critical"),
             _ => "finisher");
+
+    /// <summary>":last" for the use that spends an ability's last charge; nothing for a plain use.</summary>
+    private static string ToChargeSuffix(ChargeUse charge) =>
+        charge == ChargeUse.Last ? ":last" : "";
 
     /// <summary>":slide", ":air", ":hold" for a secondary; nothing for a press.</summary>
     private static string ToInputSuffix(AbilityInput input) =>

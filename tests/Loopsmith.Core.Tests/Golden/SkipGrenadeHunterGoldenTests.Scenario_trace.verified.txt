@@ -69,8 +69,9 @@
   Armor Charge  x1 · +2 (chance)  (#2 Elemental Charge: +1 (chance) → +1 (chance) · #3 Elemental Charge: +1 (chance) → +2 (chance) · #4 Orb of Power: +1 → x1 · +2 (chance) · #5 Elemental Charge: at cap, +1 wasted → x1 · +2 (chance))
   Resistance    PvE 77% · PvP 32.5%  (Amplified 15% × Guardian 34.5% × Spark of Resistance 25% [PvP 10%] × Woven Mail 45% [PvP 25%])
   While Amplified  +1 Bolt Charge per gain [Spark of Frequency]
-#7 Grenade (💀 kill)
-  Grenade thrown → consumes New Tricks [Shinobu's Vow] + spends Armor Charge x1 · +2 (chance) → +21.7% grenade energy (34.4% with the chance stacks) [Grenade Kickstart]
+#7 Grenade (💀 kill · ⬜ spend fully)
+  Grenade thrown → consumes New Tricks [Shinobu's Vow]
+  Grenade energy fully expended → spends Armor Charge x1 · +2 (chance) → +21.7% grenade energy (34.4% with the chance stacks) [Grenade Kickstart]
   Grenade 🥊 hit on Jolted + Severed + Blinded target → Jolt target (10s) [Spark of Shock] + +1 Bolt Charge and +4.2% grenade energy [Shinobu's Vow] + consumes Bolt Charge and Bolt Charge strike (kills) [Bolt Charge] + Jolt strike [Jolt]
     ↳ Bolt Charge gained → +?% grenade energy [Shinobu's Vow] + +2.5% melee energy [Bolt Charge]
     ↳ Bolt Charge 🥊 hit on Jolted + Severed + Blinded target → Jolt target (10s) and heals you [Defibrillating Blast]

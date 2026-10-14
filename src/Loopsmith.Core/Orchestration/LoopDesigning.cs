@@ -359,7 +359,9 @@ public static class LoopDesigning
                 finisher: _ => [],
                 abilityCastAs: _ => [],
                 killFewer: _ => [],   // fewer than N: 1 to 9 already reach it
-                criticalHealth: _ => []))
+                criticalHealth: _ => [],
+                shieldBroken: _ => [],
+                energyExpended: _ => []))
             .Distinct(),
     ];
 
@@ -967,6 +969,41 @@ public static class LoopDesigning
         {
             PlayerAction.CastAbility cast => cast with { Targets = targets },
             PlayerAction.FireWeapon fire => fire with { Targets = targets },
+            _ => action,
+        };
+
+    /// <summary>
+    /// The option a step can carry in this build (ADRs D36), when one sets something off: "breaks a shield" on a weapon step
+    /// when an equipped rule reacts to a broken shield; "spend fully" (its last charge) on a grenade, melee or class ability step when the
+    /// build gives that ability more than one charge (Shinobu's Vow) and an equipped rule reacts to its energy fully
+    /// expended — with one charge, every use is the last. None for any other step.
+    /// </summary>
+    public static Optional<StepOption> FindStepOption(ValidatedBuild build, PlayerAction action) =>
+        action switch
+        {
+            PlayerAction.FireWeapon when HasRule(build, rule => rule.On is Trigger.ShieldBroken) => Optional.Some(StepOption.BreaksShield),
+            PlayerAction.CastAbility cast when CanSpendLastCharge(build, cast.Kind.ToAbilityKind()) => Optional.Some(StepOption.LastCharge),
+            PlayerAction.UseClassAbility when CanSpendLastCharge(build, AbilityKind.ClassAbility) => Optional.Some(StepOption.LastCharge),
+            _ => Optional.None<StepOption>(),
+        };
+
+    /// <summary>True when the build gives the ability more than one charge and an equipped rule reacts to its last one.</summary>
+    private static bool CanSpendLastCharge(ValidatedBuild build, AbilityKind kind) =>
+        build.CountCharges(kind) > 1 && HasRule(build, rule => rule.On is Trigger.EnergyExpended expended && expended.Kind == kind);
+
+    private static bool HasRule(ValidatedBuild build, Func<Rule, bool> matches) =>
+        build.Equipped.Any(equipped => equipped.Element.Rules.Any(matches));
+
+    /// <summary>
+    /// The same step with the option on or off (ADRs D36): a weapon step that breaks a shield or not, an ability step that
+    /// spends the last charge or a plain one. A step the option isn't for comes back unchanged.
+    /// </summary>
+    public static PlayerAction SetStepOption(PlayerAction action, StepOption option, bool isOn) =>
+        (action, option) switch
+        {
+            (PlayerAction.FireWeapon fire, StepOption.BreaksShield) => fire with { Shield = isOn ? ShieldBreak.Breaks : ShieldBreak.None },
+            (PlayerAction.CastAbility cast, StepOption.LastCharge) => cast with { Charge = isOn ? ChargeUse.Last : ChargeUse.Plain },
+            (PlayerAction.UseClassAbility use, StepOption.LastCharge) => use with { Charge = isOn ? ChargeUse.Last : ChargeUse.Plain },
             _ => action,
         };
 

@@ -1,5 +1,6 @@
 ﻿Class ability -> +?% melee energy [Gambler's Dodge] + +12% grenade energy [Bomber] + Reaper (10s) [Reaper] + +1 Slice (8s) [Slice]
-Grenade thrown -> consumes New Tricks (while New Tricks) [Shinobu's Vow] + spends Armor Charge → +16.2% … 45% grenade energy by copies and stacks (2 … 9) (while Armor Charge) [Grenade Kickstart]
+Grenade thrown -> consumes New Tricks (while New Tricks) [Shinobu's Vow]
+Grenade energy fully expended -> spends Armor Charge → +16.2% … 45% grenade energy by copies and stacks (2 … 9) (while Armor Charge) [Grenade Kickstart]
 Super cast -> Super [Super] + consumes Woven Mail (while Woven Mail) [Woven Mail]
 Sliding melee damage -> Jolt target (10s) [Tempest Strike]
 Grenade damage -> Jolt target (10s) [Spark of Shock] + +1 Bolt Charge and +4.2% grenade energy [Shinobu's Vow]
