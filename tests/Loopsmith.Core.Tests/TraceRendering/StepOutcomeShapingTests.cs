@@ -35,6 +35,23 @@ public sealed class StepOutcomeShapingTests
     }
 
     [Fact]
+    public void One_action_against_five_enemies_shows_each_alike_hit_once_with_what_it_set_off_marked_x4()
+    {
+        var build = ValidateSparkBuild();
+        var session = Play(build, new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Damage, TargetCount.From(5)));
+        var resolution = session.Resolutions[^1];
+
+        var shaped = StepOutcomeShaping.ShapeStepOutcomes(build, resolution, Plain).Events;
+        var trace = TraceRenderer.RenderResolution(build, resolution, Plain).Select(line => line.ToPlainText()).ToImmutableArray();
+
+        Assert.Equal(
+            [("Grenade hit", 0, 1), ("Bolt Charge gained", 1, 1), ("Grenade hit on Jolted target", 0, 4), ("Bolt Charge gained", 1, 1)],
+            shaped.Select(e => (e.Event, e.Depth, e.Repeats)));
+        Assert.Contains(trace, line => line.Contains("Grenade hit on Jolted target ×4", StringComparison.Ordinal));
+        Assert.Equal(2, trace.Count(line => line.Contains("Bolt Charge gained", StringComparison.Ordinal)));
+    }
+
+    [Fact]
     public void Each_element_an_event_set_off_has_its_outcomes_on_lines_of_their_own()
     {
         var session = Play(ValidateSparkBuild(), GrenadeHit);

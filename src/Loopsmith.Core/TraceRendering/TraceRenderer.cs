@@ -25,7 +25,7 @@ public static class TraceRenderer
         var header = StyledText.ToLine(0,
             $"#{resolution.State.Step} ".ToSpan(Tone.Muted),
             build.DescribeAction(resolution.Action).ToSpan(Tone.Strong));
-        var fired = CollapseRepeats(GroupByEvent(resolution.Fired).Select(group => RenderGroup(build, group, options).ToImmutableArray()));
+        var fired = CollapseRepeats([.. GroupByEvent(resolution.Fired).Select(group => new RenderedEvent(group[0].Depth, [.. RenderGroup(build, group, options)], 1))]);
         var nothing = resolution.Fired.IsEmpty && resolution.Notes.IsEmpty
             ? [StyledText.ToLine(1, "nothing triggers".ToSpan(Tone.Muted))]
             : ImmutableArray<StyledLine>.Empty;
@@ -188,31 +188,44 @@ public static class TraceRenderer
         }
     }
 
-    /// <summary>Identical consecutive event blocks (six orbs picked up) become one line marked ×N.</summary>
-    private static ImmutableArray<StyledLine> CollapseRepeats(IEnumerable<ImmutableArray<StyledLine>> blocks)
+    /// <summary>An event's lines at its cascade depth, and how many times it happened in a row alike.</summary>
+    private sealed record RenderedEvent(int Depth, ImmutableArray<StyledLine> Lines, int Repeats);
+
+    /// <summary>
+    /// Identical events in a row become one line marked ×N — with what each set off: an event and the deeper events under it
+    /// are a block, and identical blocks in a row (five jolted hits of one grenade, each with its "Bolt Charge gained"; six
+    /// orbs picked up) show once. Blocks collapse at every depth.
+    /// </summary>
+    private static ImmutableArray<StyledLine> CollapseRepeats(ImmutableArray<RenderedEvent> events) =>
+        [.. CollapseRepeatedBlocks(events).SelectMany(rendered => rendered.Repeats == 1 ? rendered.Lines : [MarkRepeat(rendered.Lines[0], rendered.Repeats), .. rendered.Lines[1..]])];
+
+    private static ImmutableArray<RenderedEvent> CollapseRepeatedBlocks(ImmutableArray<RenderedEvent> events)
     {
-        var result = ImmutableArray.CreateBuilder<StyledLine>();
-        var pending = ImmutableArray<StyledLine>.Empty;
-        var count = 0;
-        foreach (var block in blocks.Append([]))
+        if (events.IsEmpty)
         {
-            if (count > 0 && block.Select(l => l.ToPlainText()).SequenceEqual(pending.Select(l => l.ToPlainText())))
-            {
-                count++;
-                continue;
-            }
-
-            if (count > 0)
-            {
-                result.AddRange(count == 1 ? pending : [MarkRepeat(pending[0], count), .. pending.Skip(1)]);
-            }
-
-            pending = block;
-            count = block.IsEmpty ? 0 : 1;
+            return events;
         }
 
-        return result.ToImmutable();
+        var depth = events.Min(rendered => rendered.Depth);
+        var blocks = events
+            .Aggregate(ImmutableArray<ImmutableArray<RenderedEvent>>.Empty, (split, rendered) =>
+                split.IsEmpty || rendered.Depth <= depth ? split.Add([rendered]) : split.SetItem(split.Length - 1, split[^1].Add(rendered)))
+            .Select(block => (ImmutableArray<RenderedEvent>)[block[0], .. CollapseRepeatedBlocks(block[1..])]);
+        return
+        [
+            .. blocks
+                .Aggregate(ImmutableArray<ImmutableArray<RenderedEvent>>.Empty, (collapsed, next) =>
+                    !collapsed.IsEmpty && DescribeBlockKey(collapsed[^1]) == DescribeBlockKey(next)
+                        ? collapsed.SetItem(collapsed.Length - 1, collapsed[^1].SetItem(0, collapsed[^1][0] with { Repeats = collapsed[^1][0].Repeats + next[0].Repeats }))
+                        : collapsed.Add(next))
+                .SelectMany(block => block),
+        ];
     }
+
+    /// <summary>A block's identity: the text of every event in it, the head's own count left out.</summary>
+    private static string DescribeBlockKey(ImmutableArray<RenderedEvent> block) =>
+        string.Join("\n", block.Select((rendered, index) =>
+            string.Join("\n", rendered.Lines.Select(line => line.ToPlainText())) + (index == 0 ? "" : $"×{rendered.Repeats}")));
 
     private static StyledLine MarkRepeat(StyledLine line, int count) =>
         line with { Spans = line.Spans.Insert(2, $" ×{count}".ToSpan(Tone.Strong)) };

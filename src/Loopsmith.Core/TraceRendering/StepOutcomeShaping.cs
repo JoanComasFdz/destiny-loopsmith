@@ -110,12 +110,43 @@ public static class StepOutcomeShaping
                     .Select(phrase => ToLine(glossary, catalog, phrase.Text, Tone.Plain, chance)));
     }
 
-    /// <summary>Identical events in a row (six orbs picked up) become one, counted.</summary>
-    private static ImmutableArray<EventOutcomes> CollapseRepeats(IEnumerable<EventOutcomes> events) =>
-        events.Aggregate(ImmutableArray<EventOutcomes>.Empty, (collapsed, next) =>
-            !collapsed.IsEmpty && DescribeRepeatKey(collapsed[^1]) == DescribeRepeatKey(next)
-                ? collapsed.SetItem(collapsed.Length - 1, collapsed[^1] with { Repeats = collapsed[^1].Repeats + 1 })
-                : collapsed.Add(next));
+    /// <summary>
+    /// Identical events in a row become one, counted — with what each set off: an event and the deeper events under it are
+    /// a block, and identical blocks in a row (five jolted hits of one grenade, each with its "Bolt Charge gained"; six orbs
+    /// picked up) show once, the event marked ×N. Blocks collapse at every depth.
+    /// </summary>
+    private static ImmutableArray<EventOutcomes> CollapseRepeats(IEnumerable<EventOutcomes> events)
+    {
+        var all = events.ToImmutableArray();
+        if (all.IsEmpty)
+        {
+            return all;
+        }
+
+        var depth = all.Min(shaped => shaped.Depth);
+        var blocks = SplitBlocks(all, depth)
+            .Select(block => (ImmutableArray<EventOutcomes>)[block[0], .. CollapseRepeats(block[1..])]);
+        return
+        [
+            .. blocks
+                .Aggregate(ImmutableArray<ImmutableArray<EventOutcomes>>.Empty, (collapsed, next) =>
+                    !collapsed.IsEmpty && DescribeBlockKey(collapsed[^1]) == DescribeBlockKey(next)
+                        ? collapsed.SetItem(collapsed.Length - 1, collapsed[^1].SetItem(0, collapsed[^1][0] with { Repeats = collapsed[^1][0].Repeats + next[0].Repeats }))
+                        : collapsed.Add(next))
+                .SelectMany(block => block),
+        ];
+    }
+
+    /// <summary>The events in blocks: each starts at an event of <paramref name="depth"/> and holds the deeper ones after it.</summary>
+    private static ImmutableArray<ImmutableArray<EventOutcomes>> SplitBlocks(ImmutableArray<EventOutcomes> events, int depth) =>
+        events.Aggregate(ImmutableArray<ImmutableArray<EventOutcomes>>.Empty, (blocks, shaped) =>
+            blocks.IsEmpty || shaped.Depth <= depth
+                ? blocks.Add([shaped])
+                : blocks.SetItem(blocks.Length - 1, blocks[^1].Add(shaped)));
+
+    /// <summary>A block's identity: every event in it, the head's own count left out (two blocks of ×1 and ×2 heads still match).</summary>
+    private static string DescribeBlockKey(ImmutableArray<EventOutcomes> block) =>
+        string.Join("\n", block.Select((shaped, index) => DescribeRepeatKey(shaped) + (index == 0 ? "" : $"×{shaped.Repeats}")));
 
     private static string DescribeRepeatKey(EventOutcomes shaped) =>
         $"{shaped.Depth}|{shaped.Event}|" + string.Join("|", shaped.Sources.Select(source =>

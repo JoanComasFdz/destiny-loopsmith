@@ -188,7 +188,8 @@ they first fired; under each, the elements from there
 each element every outcome it gave, as a bulleted list ("• +1 Bolt Charge"). A cascade ("↳ Bolt Charge gained")
 nests under the event that set it off — a pickup picked up shows a 📍 instead ("📍 Picked up Orb of Power"), on its
 own step as where Powerful Attraction collects it — and the same event several times in a row shows once, counted
-(×3). An
+(×3), with what each one set off: an action against five enemies shows its first hit, then "Grenade hit on Jolted
+target ×4" with the "Bolt Charge gained" under it once, not five hits each followed by its cascade. An
 element's name shows a preview on hover and its details on a tap. Every keyword an event or outcome names — a
 status, a debuff by its adjective ("Jolted"), a pickup, a summon — is in its affinity's colour wherever it is in
 the line ("+1 **Bolt Charge**", "Grenade kill on **Jolted** target"), and the ones the rules have as an element
