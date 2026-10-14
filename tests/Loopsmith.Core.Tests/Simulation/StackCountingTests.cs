@@ -43,7 +43,7 @@ public sealed class StackCountingTests
     /// <summary>A Siphon: two kills at once drop an orb for sure, one kill as a chance.</summary>
     private static readonly BuildElement Siphon = Mod("arc-siphon",
     [
-        On(new Trigger.KillMultiple(new DamageSource.WeaponOfType(DamageType.Arc), TargetCount.From(2), Optional.Some(Seconds.From(3m)), Optional.None<TargetCount>()), new Outcome.Spawn(Orb, 1)),
+        On(new Trigger.KillMultiple(new DamageSource.WeaponOfType(DamageType.Arc), TargetCount.From(2), Optional.Some(Seconds.From(3m))), new Outcome.Spawn(Orb, 1)),
         On(new Trigger.KillFewer(new DamageSource.WeaponOfType(DamageType.Arc), TargetCount.From(2)), new Outcome.Spawn(Orb, 1)) with { Likelihood = Likelihood.Chance },
     ]);
 

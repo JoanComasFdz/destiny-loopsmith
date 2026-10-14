@@ -352,7 +352,7 @@ public static class DomainPhrasing
             killAny => DescribeKill(glossary, killAny.Via, [], superType),
             killOfTier => $"{DescribeKill(glossary, killOfTier.Via, [], superType)} ({killOfTier.Tier})",
             killDebuffed => DescribeKill(glossary, killDebuffed.Via, killDebuffed.TargetHas, superType),
-            killMultiple => DescribeMultiKill(glossary, killMultiple.Via, killMultiple.AtLeast, killMultiple.FewerThan, superType)
+            killMultiple => DescribeMultiKill(glossary, killMultiple.Via, $"{killMultiple.AtLeast.Value.ToString(Invariant)}+", superType)
                 + DescribeWithin(killMultiple.Within),
             damage => DescribeDamage(glossary, damage.Via, [], superType) + DescribeSpan(damage.Needs),
             damageDebuffed => DescribeDamage(glossary, damageDebuffed.Via, damageDebuffed.TargetHas, superType) + DescribeSpan(damageDebuffed.Needs),
@@ -368,7 +368,8 @@ public static class DomainPhrasing
                 ? BreakShield
                 : $"{BreakShield} with {glossary.DescribeDamageSource(shieldBroken.Via, superType)}",
             energyExpended => DescribeEnergyExpended(energyExpended.Kind),
-            damageFewer => DescribeFewHits(glossary, damageFewer.Via, damageFewer.FewerThan, superType));
+            damageFewer => DescribeFewHits(glossary, damageFewer.Via, damageFewer.FewerThan, superType),
+            killBetween => DescribeMultiKill(glossary, killBetween.Via, DescribeKillRange(killBetween.AtLeast, killBetween.FewerThan), superType));
 
     /// <summary>" in 3s": the window a source gives the kills or hits it counts; nothing without one.</summary>
     private static string DescribeWithin(Optional<Seconds> within) =>
@@ -409,21 +410,17 @@ public static class DomainPhrasing
     }
 
     /// <summary>"Kill 2+ with grenade", "Kill 3+ enemies" (any source).</summary>
-    private static string DescribeMultiKill(KeywordGlossary glossary, DamageSource via, TargetCount atLeast, Optional<TargetCount> fewerThan, Optional<DamageType> superType)
-    {
-        var count = DescribeKillRange(atLeast, fewerThan);
-        return via is DamageSource.AnySource
+    /// <summary>"Kill 2+ with weapon", "Kill 2 enemies" (any source): <paramref name="count"/> is "2+", "2" or "2–3".</summary>
+    private static string DescribeMultiKill(KeywordGlossary glossary, DamageSource via, string count, Optional<DamageType> superType) =>
+        via is DamageSource.AnySource
             ? $"Kill {count} enemies"
             : $"Kill {count} with {glossary.DescribeDamageSource(via, superType)}";
-    }
 
-    /// <summary>"2+" (at least 2), "2" (at least 2, fewer than 3), "2–3" (at least 2, fewer than 4).</summary>
-    private static string DescribeKillRange(TargetCount atLeast, Optional<TargetCount> fewerThan) =>
-        fewerThan.Match(
-            limit => limit.Value.Value - 1 == atLeast.Value
-                ? atLeast.Value.ToString(Invariant)
-                : $"{atLeast.Value.ToString(Invariant)}–{(limit.Value.Value - 1).ToString(Invariant)}",
-            _ => $"{atLeast.Value.ToString(Invariant)}+");
+    /// <summary>"2" (at least 2, fewer than 3), "2–3" (at least 2, fewer than 4).</summary>
+    private static string DescribeKillRange(TargetCount atLeast, TargetCount fewerThan) =>
+        fewerThan.Value - 1 == atLeast.Value
+            ? atLeast.Value.ToString(Invariant)
+            : $"{atLeast.Value.ToString(Invariant)}–{(fewerThan.Value - 1).ToString(Invariant)}";
 
     /// <summary>"Kill 1–11 with this weapon", "Kill 1–11 enemies" (any source): fewer than N in one action, at least one.</summary>
     private static string DescribeFewKills(KeywordGlossary glossary, DamageSource via, TargetCount fewerThan, Optional<DamageType> superType)

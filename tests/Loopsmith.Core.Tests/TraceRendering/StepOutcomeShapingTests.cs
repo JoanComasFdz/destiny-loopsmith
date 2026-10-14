@@ -68,7 +68,7 @@ public sealed class StepOutcomeShapingTests
         ]);
         var shreds = Element("shreds", ElementKind.Fragment, [On(new Trigger.KillAny(Any), Energy(AbilityKind.Melee, new GameValue.Known(0.1m)))]);
         var siphon = Element("siphon", ElementKind.ArmorMod,
-            [On(new Trigger.KillMultiple(Any, TargetCount.From(2), Optional.Some(Seconds.From(3m)), Optional.None<TargetCount>()), new Outcome.Spawn(Pickup("orb-of-power"), 1))]);
+            [On(new Trigger.KillMultiple(Any, TargetCount.From(2), Optional.Some(Seconds.From(3m))), new Outcome.Spawn(Pickup("orb-of-power"), 1))]);
         var build = ValidateBuild([shreds], mods: [reaper, siphon]);
         var resolution = Play(build, new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Kill, TargetCount.From(3))).Resolutions[^1];
 

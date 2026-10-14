@@ -74,6 +74,7 @@ public static class TargetCountListing
         {
             Trigger.KillMultiple kill => [new NamedCount(name, kill.Via, kill.AtLeast, kill.Within)],
             Trigger.DamageMultiple damage => [new NamedCount(name, damage.Via, damage.AtLeast, damage.Within)],
+            Trigger.KillBetween kill => [new NamedCount(name, kill.Via, kill.AtLeast, Optional.None<Seconds>())],
             _ => [],
         };
 

@@ -89,7 +89,8 @@ public static class WeaponBinding
             criticalHealth => Optional.Some<Trigger>(criticalHealth),
             shieldBroken => BindSource(shieldBroken.Via, slot, type).Map(Trigger (via) => shieldBroken with { Via = via }),
             energyExpended => Optional.Some<Trigger>(energyExpended),
-            damageFewer => BindSource(damageFewer.Via, slot, type).Map(Trigger (via) => damageFewer with { Via = via }));
+            damageFewer => BindSource(damageFewer.Via, slot, type).Map(Trigger (via) => damageFewer with { Via = via }),
+            killBetween => BindSource(killBetween.Via, slot, type).Map(Trigger (via) => killBetween with { Via = via }));
 
     /// <summary>"This weapon" is the slot's weapon; "this weapon, when it is X" is it when its type is X, else nothing.</summary>
     private static Optional<DamageSource> BindSource(DamageSource source, WeaponSlot slot, DamageType type) =>

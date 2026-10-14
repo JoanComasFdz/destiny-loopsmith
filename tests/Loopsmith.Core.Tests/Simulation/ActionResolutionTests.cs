@@ -591,7 +591,7 @@ public class ActionResolutionTests
     public void A_kill_at_least_N_trigger_needs_a_kill_action()
     {
         var multikill = Element("multikill", ElementKind.Fragment,
-            [On(new Trigger.KillMultiple(new DamageSource.AbilityOf(AbilityKind.Grenade), TargetCount.From(2), Optional.None<Seconds>(), Optional.None<TargetCount>()), new Outcome.Spawn(Pickup("orb-of-power"), 1))]);
+            [On(new Trigger.KillMultiple(new DamageSource.AbilityOf(AbilityKind.Grenade), TargetCount.From(2), Optional.None<Seconds>()), new Outcome.Spawn(Pickup("orb-of-power"), 1))]);
         var build = ValidateBuild([multikill]);
 
         var hitTwo = ResolveOnce(build, new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Damage, TargetCount.From(2)));

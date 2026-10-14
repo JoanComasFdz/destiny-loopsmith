@@ -111,7 +111,7 @@ public class LoopFindingTests
         var oneForAll = Element("one-for-all", ElementKind.Fragment,
             [On(new Trigger.DamageMultiple(new DamageSource.AnyWeapon(), TargetCount.From(3), Optional.None<Seconds>()), Buff("amplified"))]);
         var multikill = Element("multikill", ElementKind.Fragment,
-            [On(new Trigger.KillMultiple(new DamageSource.AbilityOf(AbilityKind.Grenade), TargetCount.From(2), Optional.None<Seconds>(), Optional.None<TargetCount>()), Energy(AbilityKind.Grenade, new GameValue.Known(0.2m)))]);
+            [On(new Trigger.KillMultiple(new DamageSource.AbilityOf(AbilityKind.Grenade), TargetCount.From(2), Optional.None<Seconds>()), Energy(AbilityKind.Grenade, new GameValue.Known(0.2m)))]);
         var strike = Element("strike", ElementKind.Fragment,
             [On(new Trigger.BuffGained(Status("amplified")), new Outcome.StrikeTarget(Status("jolt"), HitOutcome.Kill))]);
         var build = ValidateBuild([oneForAll, multikill, strike]);

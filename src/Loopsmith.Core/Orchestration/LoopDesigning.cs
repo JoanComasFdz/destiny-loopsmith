@@ -362,7 +362,8 @@ public static class LoopDesigning
                 criticalHealth: _ => [],
                 shieldBroken: _ => [],
                 energyExpended: _ => [],
-                damageFewer: _ => []))   // fewer than N: the counts below already reach it
+                damageFewer: _ => [],   // fewer than N: the counts below already reach it
+                killBetween: kill => [kill.AtLeast]))
             .Distinct(),
     ];
 

@@ -385,7 +385,8 @@ doesn't show as a stacking status (Elemental Charge's progress per Ionic Trace; 
 | `{ damage: { via: weapon, targetHas: [sever], sustained: true } }` — damage kept up on one enemy: a source that needs several hits or a share of its health (To Shreds' 6 instances, Attrition Orbs' hits, Lightning Rounds' 10th hit, Horde Shuttle's 10%); fires for sure on a hit step's hits, never on a kill step's killing blow (ADRs D34) | `Damage(via, Sustained)` / `DamageDebuffed(via, statuses, Sustained)` |
 | `{ damage: { via: weapon, atLeast: 3 } }` — hit at least N enemies with `via` in one action; `within: 3s`: the window the source gives them (One for All's "3 separate enemies within 3 s"), which one action meets | `DamageMultiple(via, atLeast, within)` |
 | `{ damage: { via: "weapon:this", fewerThan: 3 } }` — hit fewer than N enemies (at least one) with `via` in one action | `DamageFewer(via, fewerThan)` |
-| `{ kill: { via: grenade, atLeast: 2 } }` — kill at least N enemies with `via` in one action; `within: 3s`: the window the source gives them (a Siphon's "2 kills within 3 s"), which one action meets; with `fewerThan: 3`, and fewer than that (Reaper's Tithe's x2 on exactly 2) | `KillMultiple(via, atLeast, within, fewerThan)` |
+| `{ kill: { via: grenade, atLeast: 2 } }` — kill at least N enemies with `via` in one action; `within: 3s`: the window the source gives them (a Siphon's "2 kills within 3 s"), which one action meets | `KillMultiple(via, atLeast, within)` |
+| `{ kill: { via: "weapon:this", atLeast: 2, fewerThan: 3 } }` — kill at least N and fewer than M enemies in one action (Reaper's Tithe's x2 on exactly 2); no `within` | `KillBetween(via, atLeast, fewerThan)` |
 | `{ kill: { via: "weapon:this", fewerThan: 12 } }` — kill fewer than N enemies (at least one) with `via` in one action | `KillFewer(via, fewerThan)` |
 | `{ pickUp: ionic-trace }` | `PickUp(pickup)` |
 | `{ buffGained: bolt-charge }` | `BuffGained(status)` |

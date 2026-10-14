@@ -1072,7 +1072,7 @@ public sealed class RuleCatalogParsingTests
         var rules = catalog.Elements[ElementId.From("probe")].Rules;
 
         Assert.True(catalog.Glossary.IsCounted(ToStatus("armor-charge")));
-        Assert.Equal(new Trigger.KillMultiple(new DamageSource.WeaponOfType(DamageType.Arc), TargetCount.From(2), Optional.Some(Seconds.From(3m)), Optional.None<TargetCount>()), rules[0].On);
+        Assert.Equal(new Trigger.KillMultiple(new DamageSource.WeaponOfType(DamageType.Arc), TargetCount.From(2), Optional.Some(Seconds.From(3m))), rules[0].On);
         Assert.Equal([new Condition.Holds(ToStatus("armor-charge"), StackCount.From(3))], rules[0].When);
         var spent = Assert.IsType<StackEnergy.BySpent>(Assert.IsType<Outcome.ConvertStacksToEnergy>(rules[0].Then[0]).Energy);
         Assert.Equal(3, spent.Table.From.Value);
@@ -1305,8 +1305,8 @@ public sealed class RuleCatalogParsingTests
 
         var rules = catalog.Elements[ElementId.From("one-for-all")].Rules;
         Assert.Equal(new Trigger.DamageMultiple(new DamageSource.AnyWeapon(), TargetCount.From(3), Optional.None<Seconds>()), rules[0].On);
-        Assert.Equal(new Trigger.KillMultiple(new DamageSource.AbilityOf(AbilityKind.Grenade), TargetCount.From(2), Optional.None<Seconds>(), Optional.None<TargetCount>()), rules[1].On);
-        Assert.Equal(new Trigger.KillMultiple(new DamageSource.AnySource(), TargetCount.One, Optional.None<Seconds>(), Optional.None<TargetCount>()), rules[2].On);
+        Assert.Equal(new Trigger.KillMultiple(new DamageSource.AbilityOf(AbilityKind.Grenade), TargetCount.From(2), Optional.None<Seconds>()), rules[1].On);
+        Assert.Equal(new Trigger.KillMultiple(new DamageSource.AnySource(), TargetCount.One, Optional.None<Seconds>()), rules[2].On);
     }
 
     [Theory]
@@ -1356,7 +1356,7 @@ public sealed class RuleCatalogParsingTests
         Assert.Equal(new Trigger.DamageMultiple(new DamageSource.ThisWeapon(), TargetCount.From(3), Optional.Some(Seconds.From(3m))), rules[0].On);
         Assert.Equal(new Trigger.DamageFewer(new DamageSource.ThisWeapon(), TargetCount.From(3)), rules[1].On);
         Assert.Equal(
-            new Trigger.KillMultiple(new DamageSource.ThisWeapon(), TargetCount.From(2), Optional.None<Seconds>(), Optional.Some(TargetCount.From(3))),
+            new Trigger.KillBetween(new DamageSource.ThisWeapon(), TargetCount.From(2), TargetCount.From(3)),
             rules[2].On);
     }
 
@@ -1416,7 +1416,7 @@ public sealed class RuleCatalogParsingTests
 
         var synergy = catalog.Elements[ElementId.From("synergy")];
         Assert.Equal(ElementKind.WeaponMod, synergy.Kind);
-        Assert.Equal(new Trigger.KillMultiple(new DamageSource.ThisWeaponOfType(DamageType.Arc), TargetCount.From(12), Optional.None<Seconds>(), Optional.None<TargetCount>()), synergy.Rules[0].On);
+        Assert.Equal(new Trigger.KillMultiple(new DamageSource.ThisWeaponOfType(DamageType.Arc), TargetCount.From(12), Optional.None<Seconds>()), synergy.Rules[0].On);
         Assert.Equal(new Trigger.KillFewer(new DamageSource.ThisWeapon(), TargetCount.From(12)), synergy.Rules[1].On);
     }
 
@@ -1424,6 +1424,7 @@ public sealed class RuleCatalogParsingTests
     [InlineData("kill: { via: weapon, fewerThan: 1 }", "hunter/arc.yaml:7: kill.fewerThan: fewer than 1 kills never happens (use 2..20)")]
     [InlineData("kill: { via: weapon, fewerThan: 2, atLeast: 2 }", "hunter/arc.yaml:7: kill: fewer than 2 and at least 2 never happens (fewerThan must be above atLeast)")]
     [InlineData("kill: { via: weapon, fewerThan: 3, tier: champion }", "hunter/arc.yaml:7: kill cannot combine 'fewerThan' and 'tier'")]
+    [InlineData("kill: { via: weapon, atLeast: 2, fewerThan: 3, within: 3s }", "hunter/arc.yaml:7: kill cannot combine 'fewerThan' and 'within'")]
     [InlineData("damage: { via: weapon, fewerThan: 1 }", "hunter/arc.yaml:7: damage.fewerThan: fewer than 1 enemies hit never happens (use 2..20)")]
     [InlineData("damage: { via: weapon, fewerThan: 3, atLeast: 2 }", "hunter/arc.yaml:7: damage cannot combine 'atLeast' and 'fewerThan'")]
     [InlineData("damage: { via: weapon, fewerThan: 3, sustained: true }", "hunter/arc.yaml:7: damage cannot combine 'fewerThan' and 'sustained'")]

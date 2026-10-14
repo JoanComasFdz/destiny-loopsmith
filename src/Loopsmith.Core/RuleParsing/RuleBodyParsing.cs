@@ -146,7 +146,7 @@ internal static class RuleBodyParsing
                 (_, via, tier, targetHas, atLeast, fewerThan, within) => (via, tier, targetHas, atLeast, fewerThan, within))
             .Bind(kill => Combine(
                 CheckAtLeastStandsAlone(map, kill.atLeast, ("tier", kill.tier.IsSome()), ("targetHas", kill.targetHas.IsSome())),
-                CheckFewerThanStandsAlone(map, kill.fewerThan, ("tier", kill.tier.IsSome()), ("targetHas", kill.targetHas.IsSome())),
+                CheckFewerThanStandsAlone(map, kill.fewerThan, ("tier", kill.tier.IsSome()), ("targetHas", kill.targetHas.IsSome()), ("within", kill.within.IsSome() && kill.atLeast.IsSome())),
                 CheckWithinNeedsAtLeast(map, kill.within, kill.atLeast, "kill"),
                 CheckFewerThanAboveAtLeast(map, kill.atLeast, kill.fewerThan),
                 ToKillTrigger(map, kill.via, kill.tier, kill.targetHas, kill.atLeast, kill.fewerThan, kill.within),
@@ -184,7 +184,9 @@ internal static class RuleBodyParsing
         Optional<TargetCount> fewerThan,
         Optional<Seconds> within) =>
         atLeast.Match(
-            someCount => Succeed<Trigger>(new Trigger.KillMultiple(via, someCount.Value, within, fewerThan)),
+            someCount => Succeed(fewerThan.Match<Trigger>(
+                someLimit => new Trigger.KillBetween(via, someCount.Value, someLimit.Value),
+                _ => new Trigger.KillMultiple(via, someCount.Value, within))),
             _ => fewerThan.Match(
                 someLimit => Succeed<Trigger>(new Trigger.KillFewer(via, someLimit.Value)),
                 _ => tier.Match(
