@@ -18,6 +18,9 @@
                     case InfoSection.Item item:
                         @RenderTexts(item.BungieText, item.Rules)
                         break;
+                    case InfoSection.Ignored ignored:
+                        @RenderTexts(ignored.BungieText, Optional.None<InfoRules>(), ignored.Why)
+                        break;
                     case InfoSection.Perk perk:
                         @RenderHeading(perk.Heading)
                         @RenderTexts(perk.BungieText, perk.Rules)
@@ -107,6 +110,9 @@
 </Modal>
 
 @code {
+    /// <summary>What the rules card says of an item no rule knows yet.</summary>
+    private const string NotInRules = "Not in Loopsmith's rules yet: it sets nothing off in a loop.";
+
     [Parameter, EditorRequired]
     public ItemInfo Info { get; set; } = null!;
 
@@ -135,7 +141,7 @@
         </h3>
     };
 
-    private static RenderFragment RenderTexts(Optional<string> bungieText, Optional<InfoRules> rules) => __builder =>
+    private static RenderFragment RenderTexts(Optional<string> bungieText, Optional<InfoRules> rules, string notInRules = NotInRules) => __builder =>
     {
         @if (bungieText is Optional<string>.Some bungie)
         {
@@ -171,7 +177,7 @@
         {
             <div class="info-card rules" data-testid="info-rules">
                 <div class="info-source">Loopsmith's rules</div>
-                <p class="muted info-note">Not in Loopsmith's rules yet: it sets nothing off in a loop.</p>
+                <p class="muted info-note" data-testid="not-in-rules">@notInRules</p>
             </div>
         }
     };

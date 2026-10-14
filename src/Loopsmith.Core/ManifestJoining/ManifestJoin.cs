@@ -350,6 +350,7 @@ public static partial class ManifestJoin
                     item.ReadInteger("classType").Bind(ToGuardianClass))),
             KindWord.ArmorMod => Optional.Some<ManifestKind>(new ManifestKind.ArmorMod(item.ReadText("itemTypeDisplayName")
                 .Bind(type => ModSlots.TryGetValue(type, out var slot) ? Optional.Some(slot) : Optional.None<ArmorSlot>()))),
+            KindWord.ActivityMod => Optional.Some<ManifestKind>(new ManifestKind.ActivityMod()),
             KindWord.Catalyst => Optional.Some<ManifestKind>(new ManifestKind.ExoticCatalyst(ListGrantedPerks(reading, item))),
             KindWord.Artifact => Optional.Some<ManifestKind>(ReadArtifact(reading, item)),
             KindWord.Subclass => Optional.Some<ManifestKind>(new ManifestKind.Subclass([])),
@@ -371,7 +372,7 @@ public static partial class ManifestJoin
     private enum KindWord
     {
         Subclass, Super, Grenade, Melee, ClassAbility, Movement, Aspect, Fragment, Weapon, WeaponPerk, WeaponMod, Intrinsic, Catalyst, Armor,
-        ArmorMod, ArtifactPerk, Artifact, Other,
+        ArmorMod, ActivityMod, ArtifactPerk, Artifact, Other,
     }
 
     private static readonly ImmutableDictionary<string, KindWord> ExactTypes = new Dictionary<string, KindWord>
@@ -385,14 +386,20 @@ public static partial class ManifestJoin
     private static readonly ImmutableArray<(string Suffix, KindWord Kind)> TypeSuffixes =
         [(" Grenade", KindWord.Grenade), (" Melee", KindWord.Melee), (" Aspect", KindWord.Aspect), (" Fragment", KindWord.Fragment)];
 
-    /// <summary>What Loopsmith calls the item: by its bucket (subclass, weapon, armor), else by its type as the game words it.</summary>
+    /// <summary>
+    /// What Loopsmith calls the item: by its bucket (subclass, weapon, armor), else a raid's or an activity's mod by its
+    /// plug category (whatever its type says: "Deep Stone Crypt Raid Mod", "General Armor Mod"), else by its type as the
+    /// game words it.
+    /// </summary>
     private static KindWord ClassifyItem(Reading reading, JsonElement item)
     {
         var bucket = ReadBucketName(reading, item).UnwrapOr("");
         var type = item.ReadString("itemTypeDisplayName").UnwrapOr("");
+        var activityMod = item.ReadString("plug", "plugCategoryIdentifier").Bind(ToPlugCategory).Match(category => ArmorModCategories.IsActivityMods(category.Value), _ => false);
         return bucket == "Subclass" ? KindWord.Subclass
             : WeaponBuckets.ContainsKey(bucket) ? KindWord.Weapon
             : ArmorBuckets.ContainsKey(bucket) ? KindWord.Armor
+            : activityMod ? KindWord.ActivityMod
             : type.EndsWith("Armor Mod", StringComparison.Ordinal) ? KindWord.ArmorMod
             : ExactTypes.TryGetValue(type, out var exact) ? exact
             : TypeSuffixes.Where(entry => type.EndsWith(entry.Suffix, StringComparison.Ordinal)).Select(entry => entry.Kind).DefaultIfEmpty(KindWord.Other).First();

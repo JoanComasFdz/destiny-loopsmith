@@ -78,8 +78,10 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   `statPlugs` lacks (the artifact's cheaper Grenade Mod) doesn't add to the stats; the build check doesn't warn about a
   build already over a piece's energy (a DIM loadout's), only a pick is refused; a mod in an artifice socket shows the
   artifice mods only (the game takes a general one there too).
-- **Armor mods** (all current ones of the five slots are in `rules/mods/`; raid, activity and seasonal mods
-  aren't): no trigger for breaking a combatant's shield (Shield Break Charge, inert), for the damage you take (critical
+- **Armor mods** (all current ones of the five slots are in `rules/mods/`; raid, activity and seasonal mods aren't
+  supported, by decision: no picker offers them and a DIM link's are ignored, ADRs D35 — supporting them, if asked
+  for, takes declarations for an encounter's mechanics: the pack's race and tier, a relic carried, Flux of Darkness,
+  a plate stood on): no trigger for breaking a combatant's shield (Shield Break Charge, inert), for the damage you take (critical
   health is a step the player declares, `health:critical`) or for an ability's energy "fully expended" (the Kickstarts
   fire on any use while you hold Armor Charge, as the Compendium says); Benevolent Finisher's x3 isn't counted off (it
   is inert: allies only); an overshield's HP

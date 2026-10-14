@@ -63,6 +63,8 @@ DAMAGE_TYPES = {1: "kinetic", 2: "arc", 3: "solar", 4: "void", 6: "stasis", 7: "
 EMPTY_CATALYST = "v400.empty.exotic.masterwork"  # the plug category of an exotic's empty catalyst socket
 MOD_SOCKET_CATEGORIES = {"v400.weapon.mod_guns", "v400.weapon.mod_damage", "v400.weapon.mod_magazine"}  # only a weapon's mod socket takes them
 EMPTY_MOD = "v400.weapon.mod_empty"  # the plug category of a mod socket's empty plugs ("Empty Mod Socket", "Random Masterwork")
+ACTIVITY_MOD_PREFIXES = ("enhancements.raid_", "enhancements.season_")  # a raid's, an activity's or a retired season's mods…
+ACTIVITY_MOD_CATEGORIES = {"enhancements.rivens_curse"}                   # …and the Dreaming City's: not supported (ADRs D35)
 ARTIFACT_PERKS = "artifact_perks"                 # what an artifact's perk sockets take…
 ARTIFACT_RESET = "artifact_reset"                 # …and its reset socket too, with its Reset Artifact plug
 ARMOR_STATS = {2996146975: "weapons", 392767087: "health", 1943323491: "class", 1735777505: "grenade",
@@ -128,6 +130,9 @@ def classify(item, buckets):
         return "weapon", WEAPON_BUCKETS[bucket]
     if bucket in ARMOR_BUCKETS:
         return "armor", ARMOR_BUCKETS[bucket]
+    category = (item.get("plug") or {}).get("plugCategoryIdentifier") or ""
+    if category.startswith(ACTIVITY_MOD_PREFIXES) or category in ACTIVITY_MOD_CATEGORIES:
+        return "activityMod", None
     if type_name.endswith("Armor Mod"):
         return "armorMod", MOD_SLOTS.get(type_name)
     exact = {"Super Ability": "super", "Class Ability": "classAbility", "Movement Ability": "movement",

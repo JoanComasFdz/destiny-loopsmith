@@ -9,8 +9,9 @@ namespace Loopsmith.Core.BuildComposition;
 /// Pure: a build's armor mods laid out in its pieces' mod sockets, and a mod picked into a socket or taken out of one
 /// (docs/loop-format.md "Armor mods", ADRs D30). The build holds its mods as a list (its <c>armorMods</c>, the copies
 /// <c>armorModPlugs</c> names and the mods it leaves out), as a DIM loadout does; the sockets come from the listing of
-/// every armor piece (Bungie's manifest): each piece's slot mods and own sockets (artifice, raid) in its row, every
-/// piece's general socket in the General row. A slot with no piece whose sockets Loopsmith can read holds what the build
+/// every armor piece (Bungie's manifest): each piece's slot mods and own socket (artifice) in its row, every piece's
+/// general socket in the General row; a raid's, an activity's or a retired season's mod is ignored, in no socket
+/// (ADRs D35). A slot with no piece whose sockets Loopsmith can read holds what the build
 /// has for it and one free socket of its slot's mods, and a general one. The mods fill the sockets in the build's order;
 /// the general mods go to the pieces with the most energy left, the costliest first, as DIM assigns them. A piece's
 /// energy is what its mods cost against its copy's capacity (after a Bungie login; else "?"): a pick that takes a piece
@@ -97,7 +98,11 @@ public static class ArmorModding
     private static ModLayout LayOut(
         RuleCatalog catalog, Build build, ImmutableDictionary<ItemHash, ListedMod> index, ItemListing listing, ImmutableDictionary<ArmorSlot, ArmorEnergy> capacities, ImmutableArray<HeldMod> held)
     {
-        var categorised = held.Select(mod => (Mod: mod, Listed: index.TryGetValue(mod.Plug, out var found) ? Optional.Some(found) : Optional.None<ListedMod>())).ToImmutableArray();
+        var ignored = held.Where(mod => !mod.Element.IsSome() && LeftOutClassifying.IsActivityMod(catalog.Manifest, mod.Plug)).ToImmutableArray();
+        var categorised = held
+            .Where(mod => !ignored.Contains(mod))
+            .Select(mod => (Mod: mod, Listed: index.TryGetValue(mod.Plug, out var found) ? Optional.Some(found) : Optional.None<ListedMod>()))
+            .ToImmutableArray();
         var sockets = Enum.GetValues<ArmorSlot>()
             .Select(slot => (Slot: slot, Sockets: FindPieceSockets(catalog, build, listing, slot)))
             .ToImmutableArray();
@@ -128,7 +133,8 @@ public static class ArmorModding
             ],
             [.. generalFilled.Sockets.Select((entry, at) => new ModSocket(entry.Socket.Category, entry.Mod, new ModSocketPlace(Optional.None<ArmorSlot>(), at)))],
             [.. filled.Left.Concat(generalFilled.Left).Where(mod => index.ContainsKey(mod.Plug))],
-            [.. filled.Left.Where(mod => !index.ContainsKey(mod.Plug))]);
+            [.. filled.Left.Where(mod => !index.ContainsKey(mod.Plug))],
+            ignored);
     }
 
     /// <summary>The mod sockets of the piece the build wears in a slot, by category, when the listing has them; none for no piece (or one it can't read).</summary>
@@ -209,7 +215,7 @@ public static class ArmorModding
         return Math.Max(0, energy.Capacity.Match(capacity => capacity.Value.Value, _ => 0) - energy.Used.Value + freed);
     }
 
-    /// <summary>The build's mods with the socket at <paramref name="place"/> holding <paramref name="mod"/> (none: empty), in the layout's order: the rows, the General row, then what no socket takes.</summary>
+    /// <summary>The build's mods with the socket at <paramref name="place"/> holding <paramref name="mod"/> (none: empty), in the layout's order: the rows, the General row, then what no socket takes and what is ignored.</summary>
     private static ImmutableArray<HeldMod> ReplaceMod(ModLayout layout, ModSocketPlace place, Optional<HeldMod> mod) =>
     [
         .. layout.Pieces.SelectMany(piece => piece.Sockets)
@@ -217,6 +223,7 @@ public static class ArmorModding
             .SelectMany(socket => ToSequence(socket.Place == place ? mod : socket.Mod)),
         .. layout.Unplaced,
         .. layout.Unsocketed,
+        .. layout.Ignored,
     ];
 
     /// <summary>

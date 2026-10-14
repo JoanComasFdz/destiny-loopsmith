@@ -71,5 +71,8 @@ shared as a link, replayed, analysed and compared with another order.
 
 * Simulating combat: quantities, time, cooldowns, energy, damage, health, DPS (D1).
 * PvP numbers (the `[PvP]` part of a value is read and dropped, but for damage resistance: FR-16), enemy AI, positioning.
+* Raid, activity and seasonal armor mods (an encounter's mechanics: the Relic, a Vex relay, Taken enemies; the seasonal
+  ones no longer work): no picker offers them, and a DIM link's are kept but ignored ([loop-format.md](loop-format.md#raid-activity-and-seasonal-mods),
+  ADRs D35). Supporting them would take declarations for an encounter's mechanics, a later iteration if asked for.
 * Importing a player's inventory (Bungie OAuth) — possible after the manifest join. A shared DIM loadout
   can start a build (FR-14).

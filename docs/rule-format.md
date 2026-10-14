@@ -138,7 +138,10 @@ items:
   - { hash: 3832366019, name: "Harmonic Siphon", kind: armorMod, type: "Helmet Armor Mod", tier: basic, slot: helmet, description: "…", icon: /common/…/c917….png }
 ```
 
-* `kind`: `subclass|super|grenade|melee|classAbility|movement|aspect|fragment|weapon|weaponPerk|weaponMod|intrinsic|catalyst|armor|armorMod|artifactPerk|artifact|perk|other`.
+* `kind`: `subclass|super|grenade|melee|classAbility|movement|aspect|fragment|weapon|weaponPerk|weaponMod|intrinsic|catalyst|armor|armorMod|activityMod|artifactPerk|artifact|perk|other`.
+  An `activityMod` is a mod of a raid's, an activity's or a retired season's socket (its plug category is
+  `enhancements.raid_*`, `enhancements.season_*` or `enhancements.rivens_curse`, whatever its type says): Loopsmith
+  doesn't support them ([loop-format.md](loop-format.md#raid-activity-and-seasonal-mods), ADRs D35).
   A `weaponMod` is a weapon mod (Bungie types it "Weapon Mod", or "Enhanced Weapon Mod" for an enhanced one, which only
   a Tier 4 or 5 weapon takes).
   A `perk` is one of the manifest's sandbox perks — what a catalyst or an armor set grants — and has no `type`.
@@ -767,7 +770,7 @@ stats: { weapons: 47, class: 104, grenade: 145, super: 27, melee: 79 }   # any s
 What the rules don't know yet — a `"?"` ability, a weapon perk, mod or catalyst the catalog has no element for,
 what a DIM link left out — is part of the build, not of the trace, and no line here: its square carries the ⊘
 ([above](#elements)), and the designer lists the left-out items under "Not in Loopsmith yet". An `inert` element says
-nothing either.
+nothing either. What Loopsmith doesn't support — a DIM link's raid, activity or seasonal mods — gets one info line.
 
 | Issue | Severity |
 |---|---|
@@ -784,6 +787,7 @@ nothing either.
 | an equipped element's `statChecks` that the build's stats meet ([Elements](#elements)): `With 40 Melee, a Gambler's Dodge gives back less than a full melee charge …` | as the check says |
 | a rule that doesn't stack with an equipped element ([above](#rules-that-dont-stack)) | Warning |
 | `Build pinned catalog <pinned>; using <current>.` | Info |
+| `Ignored from the DIM loadout: <mods> — raid, activity and seasonal mods aren't supported.` — the left-out mods the manifest says are an `activityMod`, each once with its copies (`Herd Thinner ×2`; [loop-format.md](loop-format.md#raid-activity-and-seasonal-mods)) | Info |
 
 ## Engine semantics (what an author can rely on)
 

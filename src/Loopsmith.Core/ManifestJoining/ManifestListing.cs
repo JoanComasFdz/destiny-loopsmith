@@ -350,13 +350,14 @@ public static class ManifestListing
                 .Bind(category => IsModSocket(category) ? Optional.Some((Plug: entry.Hash, Category: category)) : Optional.None<(ItemHash Plug, PlugCategoryId Category)>())))
             .ToImmutableDictionary(entry => entry.Plug, entry => entry.Category);
 
-    /// <summary>True when a socket that starts with a plug of this category is a mod socket a build chooses for (ArmorModCategories).</summary>
+    /// <summary>
+    /// True when a socket that starts with a plug of this category is a mod socket a build chooses for (ArmorModCategories):
+    /// a raid's or an activity's isn't (ADRs D35), so neither it nor its mods are listed.
+    /// </summary>
     private static bool IsModSocket(PlugCategoryId category) =>
         category == ArmorModCategories.General
         || ArmorModCategories.FindSlot(category).IsSome()
-        || category == ArmorModCategories.Artifice
-        || category.Value.StartsWith(ArmorModCategories.RaidPrefix, StringComparison.Ordinal)
-        || category.Value.StartsWith(ArmorModCategories.ActivityPrefix, StringComparison.Ordinal);
+        || category == ArmorModCategories.Artifice;
 
     /// <summary>
     /// The mods of the parts read: the entries of the categories asked for that are named and have a perk or a stat (an

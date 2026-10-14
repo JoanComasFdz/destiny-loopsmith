@@ -9,7 +9,8 @@ namespace Loopsmith.Core.Domain;
 /// its slot, damage type, trait columns (the perks a roll selects; none when the excerpt doesn't say), intrinsic perk
 /// (its frame, or an exotic's own perk), the weapon mods its mod socket takes and, for an exotic, its catalyst; armor its slot, intrinsic perk (an exotic's),
 /// the armor set it belongs to and the class that wears it (none: any class); an armor mod the slot it only fits (none: a general mod); a catalyst the perks it
-/// grants. A <see cref="Perk"/> is one of the manifest's sandbox perks: what a catalyst or an armor set grants.
+/// grants; an <see cref="ActivityMod"/> is a mod of a raid's, an activity's or a retired season's socket, which Loopsmith
+/// doesn't support (ADRs D35). A <see cref="Perk"/> is one of the manifest's sandbox perks: what a catalyst or an armor set grants.
 /// </summary>
 [Union]
 public partial record ManifestKind
@@ -36,6 +37,7 @@ public partial record ManifestKind
     partial record ExoticCatalyst(ImmutableArray<ItemHash> Perks);
     partial record Armor(ArmorSlot Slot, Optional<ItemHash> Intrinsic, Optional<ItemHash> Set, Optional<GuardianClass> Class);
     partial record ArmorMod(Optional<ArmorSlot> Slot);
+    partial record ActivityMod();   // a raid's, an activity's or a retired season's armor mod (ArmorModCategories.IsActivityMods): not supported, ADRs D35
     partial record ArtifactPerk();
     partial record Artifact(ImmutableArray<ArtifactTier> Tiers, ImmutableArray<int> Slots, Optional<string> Flavor);   // Artifacts 2.0: its perks by tier (Tier 1 first), the highest tier each perk slot takes (1-based), its flavour text
     partial record Perk();
@@ -122,7 +124,7 @@ public sealed record ManifestExcerpt(
 /// armor set and season watermark, without its perks (a pick reads those with the join); and the armor sets by hash.
 /// With them, every armor mod an armor piece's mod sockets take (the mod picker's list) and, by the piece's hash, the
 /// plug category of each of its mod sockets, in the game's order (a general socket, then those of its slot, then an
-/// artifice, raid or activity socket when it has one).
+/// artifice socket when it has one; a raid's or an activity's isn't listed, ADRs D35).
 /// </summary>
 public sealed record ItemListing(
     ImmutableArray<ManifestItem> Items,

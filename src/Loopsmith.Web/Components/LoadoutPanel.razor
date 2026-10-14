@@ -331,6 +331,18 @@
                         </div>
                     </div>
                 }
+                @if (!general.Value.Ignored.IsEmpty)
+                {
+                    <div class="general-mods ignored-mods" data-testid="ignored-mods">
+                        <span class="loadout-sublabel" title="@IgnoredMark.Title">Not supported</span>
+                        <div class="icon-grid">
+                            @foreach (var mod in general.Value.Ignored)
+                            {
+                                @RenderTile(mod, "mod")
+                            }
+                        </div>
+                    </div>
+                }
                 @if (!general.Value.Unplaced.IsEmpty)
                 {
                     <div class="general-mods unplaced-mods" data-testid="unplaced-mods">
@@ -950,12 +962,16 @@
         var tooltip = gameText ? LoadoutShaping.DescribePlugTooltip(tile) : LoadoutShaping.AddMarks(DescribeTooltip(tile), marks);
         @if (tappable && tile.Details is Optional<ItemDetails>.Some tileDetails)
         {
-            <button type="button" class="icon-tile tappable @kind @ToneStyling.ToAffinityClass(tile.Affinity) @DescribeTier(tile) @(tile.InRules ? "" : "out") @(tile.Enhanced ? "enhanced" : "") @LoadoutShaping.ToMasterworkClass(marks)"
+            <button type="button" class="icon-tile tappable @kind @ToneStyling.ToAffinityClass(tile.Affinity) @DescribeTier(tile) @(tile.InRules ? "" : "out") @(tile.Ignored ? "ignored" : "") @(tile.Enhanced ? "enhanced" : "") @LoadoutShaping.ToMasterworkClass(marks)"
                     data-tier="@LoadoutShaping.ToTierText(marks)" data-masterwork="@LoadoutShaping.ToMasterworkText(marks)"
                     title="@tooltip" aria-label="@tile.Name" aria-haspopup="dialog" @onclick="() => OpenDetails(tileDetails.Value)">
                 @RenderTileFace(tile)
                 <TileOverlays Marks="marks" />
-                @if (!tile.InRules)
+                @if (tile.Ignored)
+                {
+                    <IgnoredMark />
+                }
+                else if (!tile.InRules)
                 {
                     <UnsupportedMark />
                 }
@@ -963,12 +979,16 @@
         }
         else
         {
-            <span class="icon-tile @kind @ToneStyling.ToAffinityClass(tile.Affinity) @DescribeTier(tile) @(tile.InRules ? "" : "out") @(tile.Enhanced ? "enhanced" : "") @LoadoutShaping.ToMasterworkClass(marks)"
+            <span class="icon-tile @kind @ToneStyling.ToAffinityClass(tile.Affinity) @DescribeTier(tile) @(tile.InRules ? "" : "out") @(tile.Ignored ? "ignored" : "") @(tile.Enhanced ? "enhanced" : "") @LoadoutShaping.ToMasterworkClass(marks)"
                   data-tier="@LoadoutShaping.ToTierText(marks)" data-masterwork="@LoadoutShaping.ToMasterworkText(marks)"
                   title="@tooltip" aria-label="@tile.Name">
                 @RenderTileFace(tile)
                 <TileOverlays Marks="marks" />
-                @if (!tile.InRules)
+                @if (tile.Ignored)
+                {
+                    <IgnoredMark />
+                }
+                else if (!tile.InRules)
                 {
                     <UnsupportedMark />
                 }

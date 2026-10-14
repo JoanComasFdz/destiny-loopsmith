@@ -5,7 +5,8 @@ The requirements they serve are in [docs/requirements.md](docs/requirements.md).
 current set of decisions, in four groups: what the product is (D1–D9), sources and rules (D10–D15),
 architecture (D16–D23), hosts and tooling (D24–D26), starting from a DIM link (D27), the build's stats (D28), the
 step's damage resistance (D29), armor mods in their sockets (D30), the artifact (D32), the count of Armor Charge
-(D33) and what a hit step stands for (D34). D1 is the founding one: every other decision follows from it.
+(D33), what a hit step stands for (D34) and the raid and activity mods left out of the sockets (D35). D1 is the
+founding one: every other decision follows from it.
 
 | # | Decision | Why |
 |---|---|---|
@@ -40,6 +41,7 @@ step's damage resistance (D29), armor mods in their sockets (D30), the artifact 
 | D30 | Armor mods are picked in the pieces' sockets; the energy budget holds when its capacity is known | A build's mods are part of its loop and the game decides what fits; the sockets and costs are Bungie's, the capacity the player's copy's |
 | D32 | A build names its artifact and the perk in each of its slots (Artifacts 2.0) | Since Monument of Triumph one of seven artifacts is equipped with up to seven perks, one per slot; the tiers and slots are Bungie's, read from the artifact's sockets |
 | D33 | Armor Charge is counted: sure stacks and chance stacks, and the count decides | Gaining, keeping and spending Armor Charge is a pillar of build crafting; most of its gains and spends are known steps of the loop, so the loop can say how many it surely holds |
+| D35 | Raid, activity and seasonal armor mods aren't supported: a DIM link's are kept but ignored, and no picker offers them | They act on an encounter's mechanics (a relic, a plate, an enemy race), which a loop of triggers doesn't hold, or no longer work at all; what a loadout had stays visible |
 
 ## What the product is
 
@@ -425,7 +427,7 @@ assigns them. The energy a piece's mods use is a build check, not game state: co
 player's copy (after a Bungie login, D28) it refuses a pick that takes the piece over it, and it never decides what a
 step fires. Without a login the capacity is "?" and nothing is refused (D13): a piece picked from every piece of the
 game has no copy to read it from. **Consequence.** Mods the rules don't know can be picked (⊘), like perks; a raid's
-or an activity's socket shows when the piece worn has one. A slot with no piece holds one free socket more than its
+or an activity's socket isn't shown (D35). A slot with no piece holds one free socket more than its
 mods, since it has no sockets to read. A tuning mod (a Tier 5 copy's tuning socket) isn't picked here; it stays in
 the build. A stat mod the manifest excerpt lacks (`statPlugs`) doesn't add to the stats yet.
 
@@ -517,3 +519,22 @@ hit, the killing blow included.
 threshold, D3); a kill step shows only what killing does. The loop graph treats a weapon's or an ability's hits as
 possibly sustained, so these rules stay reachable. Kill counters the game doesn't show (Elemental Charge's progress,
 Synergy, Spark of Discharge) are kills, not damage, and stay as D31 says.
+
+### D35 — Raid, activity and seasonal armor mods aren't supported: a DIM link's are kept but ignored, and no picker offers them
+
+**Context.** Raid armor (and Last Wish's, the Nightmare Hunts', the Dreaming City's) has a socket of its own for mods that
+work only in that raid or activity: most act on its mechanics — carrying the Relic, Flux of Darkness, a Vex relay, Taken
+or Nightmare enemies — and the rest on what a loop already has (an elite's kill, a Strand weapon kill). The seasonal
+sockets of older armor (Black Armory, Opulence, Undying) hold mods Bungie has deprecated: "no longer functions". A loop
+of triggers holds none of an encounter's mechanics, and modelling them (declaring the pack's race, a relic carried, a
+plate stood on) is a lot of format for builds tuned to one encounter. **Decision (product owner).** Not supported, for
+now. What a mod is comes from its plug category in Bungie's manifest — `enhancements.raid_*`, `enhancements.season_*`
+and `enhancements.rivens_curse` — never from its name, so a new raid's mods are covered too: the join and the excerpt
+call such a mod an `activityMod`. The pickers don't offer them: a piece's raid or activity socket isn't one of its mod
+sockets, so the designer shows none and the mod picker lists none. A DIM link's are kept in the build's `leftOut`, as
+the loadout had them, but ignored: no socket, not a gap (not counted under "Not in Loopsmith yet"), their squares faded
+with a ✕ instead of ⊘, and the build check says so in one info line ("Ignored from the DIM loadout: Herd Thinner ×2 —
+raid, activity and seasonal mods aren't supported."). **Consequence.** A raid build's loop is designed without its raid
+mods. The CLI, which reads only the manifest excerpt, knows such a mod when a saved DIM share wears it (the excerpt then
+holds it); otherwise it is a hash no rule knows. Supporting them later means declarations for an encounter's mechanics
+(D3), a decision of its own.
