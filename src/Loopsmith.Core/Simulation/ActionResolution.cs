@@ -130,7 +130,7 @@ public static class ActionResolution
     private static Opening PerformFinisher(GameState state)
     {
         var origin = new DamageOrigin.Finisher();
-        return new Opening(state, [new PendingEvent.Ready(new GameEvent.Finisher()), new PendingEvent.HitTarget(origin), new PendingEvent.KillTarget(origin)], []);
+        return new Opening(state, [new PendingEvent.Ready(new GameEvent.Finisher()), new PendingEvent.HitTarget(origin, DamageSpan.Blow), new PendingEvent.KillTarget(origin)], []);
     }
 
     /// <summary>Never blocked: casting, then the strike on every target (ADRs D4, D5).</summary>
@@ -207,11 +207,12 @@ public static class ActionResolution
     /// <summary>
     /// One action against N enemies (ADRs D4): N per-enemy hits, then N kills for a kill — each cascades fully, so
     /// later hits see the debuffs earlier ones applied — then one <see cref="GameEvent.TargetsHit"/> for the
-    /// multi-target triggers ("hit 3+ enemies").
+    /// multi-target triggers ("hit 3+ enemies"). A hit step's hits are sustained damage, a kill step's its killing blows
+    /// (ADRs D34).
     /// </summary>
     private static ImmutableArray<PendingEvent> ListStrikeEvents(DamageOrigin origin, HitOutcome hit, TargetCount targets)
     {
-        var hits = Enumerable.Repeat<PendingEvent>(new PendingEvent.HitTarget(origin), targets.Value);
+        var hits = Enumerable.Repeat<PendingEvent>(new PendingEvent.HitTarget(origin, hit == HitOutcome.Kill ? DamageSpan.Blow : DamageSpan.Sustained), targets.Value);
         var kills = hit == HitOutcome.Kill
             ? Enumerable.Repeat<PendingEvent>(new PendingEvent.KillTarget(origin), targets.Value)
             : [];

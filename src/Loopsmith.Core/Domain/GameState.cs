@@ -92,7 +92,7 @@ public partial record StateDeclaration
 public partial record GameEvent
 {
     partial record AbilityCast(AbilityKind Kind, AbilityInput Input = AbilityInput.Press);
-    partial record Damaged(DamageOrigin Origin, EnemyTier Tier, ImmutableArray<StatusId> TargetHas);
+    partial record Damaged(DamageOrigin Origin, EnemyTier Tier, ImmutableArray<StatusId> TargetHas, DamageSpan Span = DamageSpan.Blow);   // Span: a hit step's is sustained (ADRs D34)
     partial record Killed(DamageOrigin Origin, EnemyTier Tier, ImmutableArray<StatusId> TargetHas);
     partial record TargetsHit(DamageOrigin Origin, TargetCount Targets, HitOutcome Hit);   // once per action, after its per-enemy events
     partial record PickedUp(PickupId Pickup);

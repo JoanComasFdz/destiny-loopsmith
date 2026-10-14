@@ -343,8 +343,8 @@ public static class DomainPhrasing
             killDebuffed => DescribeKill(glossary, killDebuffed.Via, killDebuffed.TargetHas, superType),
             killMultiple => DescribeMultiKill(glossary, killMultiple.Via, killMultiple.AtLeast, superType)
                 + killMultiple.Within.Match(within => $" in {within.Value.FormatSeconds()}", _ => ""),
-            damage => DescribeDamage(glossary, damage.Via, [], superType),
-            damageDebuffed => DescribeDamage(glossary, damageDebuffed.Via, damageDebuffed.TargetHas, superType),
+            damage => DescribeDamage(glossary, damage.Via, [], superType) + DescribeSpan(damage.Needs),
+            damageDebuffed => DescribeDamage(glossary, damageDebuffed.Via, damageDebuffed.TargetHas, superType) + DescribeSpan(damageDebuffed.Needs),
             damageMultiple => DescribeMultiHit(glossary, damageMultiple.Via, damageMultiple.AtLeast, superType),
             pickUp => $"Pick up {glossary.DescribePickup(pickUp.Pickup)}",
             buffGained => $"Gain {glossary.DescribeStatus(buffGained.Status)}",
@@ -367,6 +367,10 @@ public static class DomainPhrasing
             _ => $"Kill {target} with {glossary.DescribeDamageSource(via, superType)}",
         };
     }
+
+    /// <summary>" kept up (a hit step)": damage a source needs over several hits, which a hit step stands for (ADRs D34).</summary>
+    private static string DescribeSpan(DamageSpan needs) =>
+        needs == DamageSpan.Sustained ? " kept up (a hit step)" : "";
 
     /// <summary>"Arc weapon damage", "Damage target with Arc weapon (your Super's element)": a long source reads after the target.</summary>
     private static string DescribeDamage(KeywordGlossary glossary, DamageSource via, ImmutableArray<StatusId> targetHas, Optional<DamageType> superType)

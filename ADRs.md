@@ -4,8 +4,8 @@ Each ADR explains **why**; [`CONVENTIONS.md`](./CONVENTIONS.md) says **what** an
 The requirements they serve are in [docs/requirements.md](docs/requirements.md). The list is the
 current set of decisions, in four groups: what the product is (D1–D9), sources and rules (D10–D15),
 architecture (D16–D23), hosts and tooling (D24–D26), starting from a DIM link (D27), the build's stats (D28), the
-step's damage resistance (D29), armor mods in their sockets (D30), the artifact (D32) and the count of Armor Charge
-(D33). D1 is the founding one: every other decision follows from it.
+step's damage resistance (D29), armor mods in their sockets (D30), the artifact (D32), the count of Armor Charge
+(D33) and what a hit step stands for (D34). D1 is the founding one: every other decision follows from it.
 
 | # | Decision | Why |
 |---|---|---|
@@ -93,7 +93,8 @@ step, what each step needs and sets off. A loop designed against another catalog
 **Context.** Many rules react to a threshold: Shinobu's Vow and Flashover at x10 Bolt Charge,
 Slice after its 5 hits, Combination Blow at x3. When it is reached depends on play (D1). The game
 shows these counts as a stacking status (`maxStacks` in the glossary), so the player can see and
-declare them; a counter the game doesn't show (To Shreds' 6 weapon hits) is a *(chance)* rule (D8).
+declare them; a counter the game doesn't show is a *(chance)* rule (D8), except a count of hits or a share of the
+enemy's health (To Shreds' 6 weapon hits), which a hit step stands for (D34).
 **Decision.** A loop step can declare a state:
 
 * `max:<status>` — the buff is at its maximum ("Bolt Charge at max"). It raises `StacksMaxed`, so the
@@ -497,3 +498,22 @@ else): it is a fact of the loop's order, not a simulation — time is still not 
 10 s, slower with Time Dilation) is a fact shown with the count, never applied, and "sure" means "if the player
 doesn't wait". Other stacking statuses (Bolt Charge, Combination Blow, Slice) stay declared (D3) until they are marked
 counted. Kills of earlier steps still don't add up (D31).
+
+### D34 — A hit step is damage kept up; a kill step's killing blow is one blow
+
+**Context.** Some sources need several hits on one enemy or a share of its health: To Shreds unravels after 6 weapon
+damage instances on a Severed enemy, Horde Shuttle spawns a Threadling for weapon damage worth 10% of an Unraveled
+enemy's health, Attrition Orbs drops an orb after a magazine-based number of hits (3 for a grenade launcher), and
+Thunderlord's Lightning Rounds strikes every 10th hit. They were *(chance)* rules on any damage (D8), so they fired as a
+chance under every killing blow, cluttering each kill with effects the kill may not have earned: in easy content one
+shot kills, in hard content many hits come first.
+**Decision (product owner).** A step's hits stand for how much damage the player says it is. A **hit step**
+(`kinetic:hit`, `grenade`) is damage kept up on the enemy without killing it, enough for any number of hits or share
+of health a source needs: such a rule (`damage: { …, sustained: true }`) fires there **for sure**. A **kill step**'s hit
+is the killing blow, one blow: such a rule doesn't fire on it. A strike's, a summon's and a finisher's hits are one
+blow too. A rule that needs one hit (Shinobu's Vow's Bolt Charge, Spark of Shock's Jolt, Slice's Sever) fires on every
+hit, the killing blow included.
+**Consequence.** The player adds a hit step before the kill when the loop keeps shooting an enemy (as `max:` declares a
+threshold, D3); a kill step shows only what killing does. The loop graph treats a weapon's or an ability's hits as
+possibly sustained, so these rules stay reachable. Kill counters the game doesn't show (Elemental Charge's progress,
+Synergy, Spark of Discharge) are kills, not damage, and stay as D31 says.

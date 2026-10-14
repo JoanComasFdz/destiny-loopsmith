@@ -16,17 +16,17 @@ New pack → Class ability → Grenade (kill) → Festival Flight (kill) → Any
 #4 Festival Flight (kill)
    needs            Slice ← #2 [Slice] · Unraveling Rounds ← previous pass #6 [Unraveling Orbs] · Jolt ← #3 [Spark of Shock] · Reaper ← #2 [Reaper]
    in this order    Slice · Unraveling Rounds · Jolt · Flow State · Reaper · Dielectric · To Shreds · Shock and Clear · Shinobu's Vow · Bolt Charge · Spark of Discharge · Elemental Charge (chance) · Ionic Trace
-   on its own       Attrition Orbs (chance) · Strand Siphon (chance)
+   on its own       Strand Siphon (chance)
    wasted           Tempest Strike — doesn't stack with Dielectric
 
 #5 Any Arc weapon (kill)
-   needs            Sever ← #4 [Slice] · Unravel ← #4 [Unraveling Rounds] · Jolt ← #3 [Spark of Shock]
-   in this order    To Shreds · Horde Shuttle (chance) · Jolt · Photonic Flare · Flow State · Dielectric · Shock and Clear · Shinobu's Vow · Bolt Charge · Spark of Discharge · Elemental Charge (chance) · Ionic Trace
+   needs            Jolt ← #3 [Spark of Shock] · Sever ← #4 [Slice]
+   in this order    Jolt · Photonic Flare · Flow State · Dielectric · To Shreds · Shock and Clear · Shinobu's Vow · Bolt Charge · Spark of Discharge · Elemental Charge (chance) · Ionic Trace
    on its own       Harmonic Siphon (chance)
    wasted           Tempest Strike — doesn't stack with Dielectric
 
 #6 Pick up Orb of Power
-   needs            Orb of Power ← #4 [Attrition Orbs (chance); Reaper; Strand Siphon (chance)]
+   needs            Orb of Power ← #4 [Reaper; Strand Siphon (chance)]
    in this order    Unraveling Orbs · Orb of Power
 
 #7 Bolt Charge at max (x10)
@@ -44,8 +44,6 @@ First pass (from a fresh spawn, where it differs)
    doesn't set off  Grenade Kickstart (chance)
 #4 Festival Flight (kill)
    doesn't set off  Unraveling Rounds
-#5 Any Arc weapon (kill)
-   doesn't set off  Horde Shuttle (chance)
 
 Steps
   The creator's loop: dodge to arm Slice and Reaper, skip grenade into the pack, clean up with
@@ -55,7 +53,7 @@ Steps
   1. pack:new             The next group of enemies: a new pack, nothing on it yet
   2. class                Gambler's Dodge: arms Slice and Reaper; Bomber refunds grenade energy
   3. grenade:kill         Skip grenade into the pack: Spark of Shock jolts, the jolted kill gives Amplified, Bolt Charge and an Ionic Trace
-  4. kinetic:kill         Festival Flight: Slice severs, Reaper and Attrition Orbs drop orbs, To Shreds gives Woven Mail (and unravels once the pack is severed)
+  4. kinetic:kill         Festival Flight: Slice severs, Reaper drops an orb, To Shreds gives Woven Mail (Attrition Orbs and its Unravel need a hit step first)
   5. energy:kill          Arc weapon on the jolted pack: Spark of Discharge traces, Harmonic Siphon orb
   6. pickup:orb-of-power  Grab the orbs: Armor Charge for Grenade Kickstart, and Unraveling Rounds
   7. max:bolt-charge      Bolt Charge at x10 — Shinobu's Vow gives New Tricks and grenade energy, Flashover makes you Amplified

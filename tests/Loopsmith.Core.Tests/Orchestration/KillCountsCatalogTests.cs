@@ -46,8 +46,11 @@ public sealed class KillCountsCatalogTests
 
         var arcTexts = arc.Select(choice => glossary.DescribeTargetCountChoice(choice)).ToImmutableArray();
 
-        Assert.Equal(["1 enemy", "2 · Spark of Amplitude in 4 s, Harmonic Siphon in 3 s", "3 · Spark of Discharge", "4 enemies", "5 enemies · Bolt Charge x10"], arcTexts.Take(5));
-        Assert.Equal("18 enemies · melee full", arcTexts[^1]);   // each Bolt Charge gained gives 2.5% melee energy, at the cap too (Arc#5)
+        // A Thunderlord kill is one blow: Lightning Rounds' every 10th hit needs a hit step (ADRs D34), so Reign Havoc's
+        // strike is the kill's one Bolt Charge.
+        Assert.Equal(["1 enemy", "2 · Spark of Amplitude in 4 s, Harmonic Siphon in 3 s", "3 · Spark of Discharge", "4 enemies", "5 enemies"], arcTexts.Take(5));
+        Assert.Equal("9 enemies · Bolt Charge x10", arcTexts[8]);
+        Assert.Equal("20 enemies", arcTexts[^1]);   // each Bolt Charge gained gives 2.5% melee energy, at the cap too (Arc#5): still filling at the most a step offers
         Assert.Equal(
             ["1 enemy", "2 in 4 s · Spark of Amplitude", "3 enemies", "4 enemies · Armor Charge x4, Bolt Charge x10", "5 enemies", "6 enemies · melee full", "7 enemies · grenade full", "8 enemies · class ability full"],
             grenade.Select(choice => glossary.DescribeTargetCountChoice(choice)));

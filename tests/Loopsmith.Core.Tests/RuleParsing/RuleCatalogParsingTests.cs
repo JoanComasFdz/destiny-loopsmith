@@ -1252,6 +1252,32 @@ public sealed class RuleCatalogParsingTests
         Assert.StartsWith("hunter/arc.yaml:9: ", message);
     }
 
+    // ── Sustained damage: a source that needs several hits or a share of the enemy's health (ADRs D34) ──────
+
+    [Fact]
+    public void Parses_sustained_damage_on_any_target_and_on_a_debuffed_one()
+    {
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToElementsFile("weapons/perks.yaml", """
+            elements:
+              - id: shredder
+                name: Shredder
+                kind: weaponPerk
+                affinity: kinetic
+                rules:
+                  - on: { damage: { via: weapon, sustained: true } }
+                    then: [ { applyBuff: amplified } ]
+                  - on: { damage: { via: weapon, targetHas: [jolt], sustained: true } }
+                    then: [ { applyBuff: amplified } ]
+                  - on: { damage: { via: weapon, sustained: false } }
+                    then: [ { applyBuff: amplified } ]
+            """)]));
+
+        var rules = catalog.Elements[ElementId.From("shredder")].Rules;
+        Assert.Equal(new Trigger.Damage(new DamageSource.AnyWeapon(), DamageSpan.Sustained), rules[0].On);
+        Assert.Equal(DamageSpan.Sustained, Assert.IsType<Trigger.DamageDebuffed>(rules[1].On).Needs);
+        Assert.Equal(new Trigger.Damage(new DamageSource.AnyWeapon(), DamageSpan.Blow), rules[2].On);
+    }
+
     // ── Multi-target triggers: "hit / kill at least N enemies in one action" (ADRs D4) ──────
 
     private const string OneForAllYaml = """
@@ -1288,6 +1314,7 @@ public sealed class RuleCatalogParsingTests
     [InlineData("damage: { via: weapon, atLeast: 0 }", "hunter/arc.yaml:7: damage.atLeast: '0' is not a whole number ≥ 1")]
     [InlineData("damage: { via: weapon, atLeast: 21 }", "hunter/arc.yaml:7: damage.atLeast: Target count must be within 1..20")]
     [InlineData("kill: { atLeast: lots }", "hunter/arc.yaml:7: kill.atLeast: 'lots' is not a whole number ≥ 1")]
+    [InlineData("damage: { via: weapon, atLeast: 2, sustained: true }", "hunter/arc.yaml:7: damage cannot combine 'atLeast' and 'sustained'")]
     public void At_least_is_a_count_of_1_to_20_and_stands_alone(string trigger, string expected)
     {
         var message = ParseInvalidCatalog(Glossary, ToElementsFile("hunter/arc.yaml", $$"""

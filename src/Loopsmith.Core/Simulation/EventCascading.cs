@@ -58,7 +58,7 @@ public static class EventCascading
     public static GameEvent ToGameEvent(PendingEvent pending, GameState state) =>
         pending.Match(
             ready => ready.Event,
-            hit => (GameEvent)new GameEvent.Damaged(hit.Origin, state.Target.Tier, state.ListTargetStatuses()),
+            hit => (GameEvent)new GameEvent.Damaged(hit.Origin, state.Target.Tier, state.ListTargetStatuses(), hit.Span),
             kill => new GameEvent.Killed(kill.Origin, state.Target.Tier, state.ListTargetStatuses()));
 
     public static ImmutableArray<RuleMatch> FindMatchingRules(

@@ -23,7 +23,7 @@ internal static class RuleBodyParsing
     private static readonly ImmutableArray<string> RuleKeys = ["on", "when", "then", "chance", "reason", "doesNotStackWith"];
     private static readonly ImmutableArray<string> PassiveRuleKeys = ["effect", "when", "reason"];
     private static readonly ImmutableArray<string> KillKeys = ["via", "tier", "targetHas", "atLeast", "fewerThan", "within"];
-    private static readonly ImmutableArray<string> DamageKeys = ["via", "targetHas", "atLeast"];
+    private static readonly ImmutableArray<string> DamageKeys = ["via", "targetHas", "atLeast", "sustained"];
 
     private static readonly ImmutableArray<string> TriggerNames =
         ["abilityCast", "kill", "damage", "pickUp", "buffGained", "stacksMaxed", "finisher", "criticalHealth"];
@@ -182,14 +182,15 @@ internal static class RuleBodyParsing
                 map.ReadOrDefault("via", scope.ReadDamageSource, new DamageSource.AnySource()),
                 map.ReadOptional("targetHas", targetHas => ReadDebuffList(scope, targetHas)),
                 map.ReadOptional("atLeast", ReadTargetCount),
-                (_, via, targetHas, atLeast) => (via, targetHas, atLeast))
+                map.ReadOrDefault("sustained", ReadBoolean, false),
+                (_, via, targetHas, atLeast, sustained) => (via, targetHas, atLeast, needs: sustained ? DamageSpan.Sustained : DamageSpan.Blow))
             .Bind(damage => Combine(
-                CheckAtLeastStandsAlone(map, damage.atLeast, ("targetHas", damage.targetHas.IsSome())),
+                CheckAtLeastStandsAlone(map, damage.atLeast, ("targetHas", damage.targetHas.IsSome()), ("sustained", damage.needs == DamageSpan.Sustained)),
                 Succeed(damage.atLeast.Match<Trigger>(
                     someCount => new Trigger.DamageMultiple(damage.via, someCount.Value),
                     _ => damage.targetHas.Match<Trigger>(
-                        someStatuses => new Trigger.DamageDebuffed(damage.via, someStatuses.Value),
-                        _ => new Trigger.Damage(damage.via)))),
+                        someStatuses => new Trigger.DamageDebuffed(damage.via, someStatuses.Value, damage.needs),
+                        _ => new Trigger.Damage(damage.via, damage.needs)))),
                 (_, trigger) => trigger)));
 
     /// <summary>

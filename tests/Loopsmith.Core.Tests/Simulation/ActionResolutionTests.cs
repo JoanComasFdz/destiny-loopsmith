@@ -56,6 +56,26 @@ public class ActionResolutionTests
         Assert.DoesNotContain(AirMove, ActionResolution.ListAvailableActions(ValidateBuild([AnyUse]), initial));
     }
 
+    private static readonly BuildElement Shredder = Element("shredder", ElementKind.Fragment,
+        [On(new Trigger.Damage(new DamageSource.AnyAbility(), DamageSpan.Sustained), Buff("amplified"))]);
+
+    private static readonly BuildElement Striker = Element("striker", ElementKind.Fragment,
+        [On(new Trigger.Damage(new DamageSource.AnyAbility()), Buff("bolt-charge"))]);
+
+    [Fact]
+    public void Damage_a_source_needs_kept_up_fires_on_a_hit_step_and_not_on_a_kill_steps_killing_blow_and_one_hit_fires_on_both()
+    {
+        var build = ValidateBuild([Shredder, Striker]);
+
+        var hit = ResolveOnce(build, new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Damage, TargetCount.One));
+        var kill = ResolveOnce(build, GrenadeKill);
+
+        Assert.Equal(["shredder", "striker"], hit.Fired.Select(f => f.Source.Value).Order());
+        Assert.All(hit.Fired, f => Assert.Equal(Likelihood.Always, f.Likelihood));
+        Assert.Equal(["striker"], kill.Fired.Select(f => f.Source.Value));
+        Assert.Equal("Ability damage kept up (a hit step)", Glossary.DescribeTrigger(Shredder.Rules[0].On, Optional.None<DamageType>()));
+    }
+
     private static readonly BuildElement SlideOnly = Element("slide-only", ElementKind.Fragment,
         [On(new Trigger.Damage(new DamageSource.AbilityUsedAs(AbilityKind.Melee, AbilityInput.Slide)), Debuff("jolt"))]);
 

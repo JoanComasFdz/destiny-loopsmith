@@ -95,8 +95,9 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   picking up a Firesprite, Void Breach, Stasis Shard or Tangle gives has no keyword element yet. The perks of
   `rules/weapons/perks.yaml` could say `weapon:this` instead of their weapon's type, now that it exists.
 - **Written as declarations, *(chance)* or facts** (D3, D8), so they need no new format: progress the
-  game doesn't show as a stacking status (Spark of Discharge's kills per trace, To Shreds' 6 weapon hits,
-  Amplified's intrinsic kill counter) is *(chance)*; Slice's 5 hits end with `max:slice`; energy per
+  game doesn't show as a stacking status (Spark of Discharge's kills per trace, Amplified's intrinsic kill counter)
+  is *(chance)*; hits or damage kept up on one enemy (To Shreds' 6 weapon hits, Horde Shuttle's 10%, Attrition Orbs,
+  Lightning Rounds' 10th hit) are `sustained`, sure on a hit step and not on a kill step (D34); Slice's 5 hits end with `max:slice`; energy per
   stack, refunds, chunk scalars and rule cooldowns (Impact Induction, Photonic Flare) are facts; Spark of
   Resistance's "3+ enemies" always holds.
 

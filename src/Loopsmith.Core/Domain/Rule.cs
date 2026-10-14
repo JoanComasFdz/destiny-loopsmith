@@ -13,8 +13,8 @@ public partial record Trigger
     partial record KillOfTier(DamageSource Via, EnemyTier Tier);
     partial record KillDebuffed(DamageSource Via, ImmutableArray<StatusId> TargetHas);
     partial record KillMultiple(DamageSource Via, TargetCount AtLeast, Optional<Seconds> Within);   // kill at least N enemies in one action (within: the source's window, "2 in 3 s", a fact one action meets)
-    partial record Damage(DamageSource Via);
-    partial record DamageDebuffed(DamageSource Via, ImmutableArray<StatusId> TargetHas);
+    partial record Damage(DamageSource Via, DamageSpan Needs = DamageSpan.Blow);   // Needs: Sustained for a source that needs several hits or a share of the enemy's health (ADRs D34)
+    partial record DamageDebuffed(DamageSource Via, ImmutableArray<StatusId> TargetHas, DamageSpan Needs = DamageSpan.Blow);
     partial record DamageMultiple(DamageSource Via, TargetCount AtLeast);      // hit at least N enemies in one action
     partial record PickUp(PickupId Pickup);
     partial record BuffGained(StatusId Status);

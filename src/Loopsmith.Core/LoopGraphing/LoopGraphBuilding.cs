@@ -264,12 +264,16 @@ public static class LoopGraphBuilding
         yield return new GameEvent.TargetsHit(origin, TargetCount.Most, HitOutcome.Kill);
     }
 
-    /// <summary>Optimistic: the target may carry any debuff some rule can apply, and every tier.</summary>
+    /// <summary>
+    /// Optimistic: the target may carry any debuff some rule can apply, and every tier; a weapon's or an ability's hits may
+    /// be a hit step's sustained damage (ADRs D34), a strike's, a summon's or a finisher's are one blow.
+    /// </summary>
     private static IEnumerable<GameEvent> ListHitEvents(DamageOrigin origin, ImmutableArray<StatusId> debuffs, bool kills = true)
     {
+        var span = origin is DamageOrigin.Weapon or DamageOrigin.Ability ? DamageSpan.Sustained : DamageSpan.Blow;
         foreach (var tier in Enum.GetValues<EnemyTier>())
         {
-            yield return new GameEvent.Damaged(origin, tier, debuffs);
+            yield return new GameEvent.Damaged(origin, tier, debuffs, span);
             if (kills)
             {
                 yield return new GameEvent.Killed(origin, tier, debuffs);

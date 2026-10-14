@@ -27,6 +27,7 @@ public sealed class ArtifactPerkLoopTests
         {
             (new PlayerAction.UseClassAbility(), none),                                                              // arms Slice
             (new PlayerAction.FireWeapon(WeaponSlot.Kinetic, HitOutcome.Damage, TargetCount.One), none),             // Severs
+            (new PlayerAction.FireWeapon(WeaponSlot.Kinetic, HitOutcome.Damage, TargetCount.One), Optional.Some("to-shreds")),    // weapon damage kept up on a Severed target unravels it
             (new PlayerAction.FireWeapon(WeaponSlot.Kinetic, HitOutcome.Kill, TargetCount.One), Optional.Some("to-shreds")),      // a weapon kill on a Severed target
             (new PlayerAction.FireWeapon(WeaponSlot.Energy, HitOutcome.Kill, TargetCount.One), Optional.Some("photonic-flare")),  // an Arc kill on a Severed target
             (new PlayerAction.Declare(new StateDeclaration.ReachMax(StatusId.From("bolt-charge"))), Optional.Some("flashover")),

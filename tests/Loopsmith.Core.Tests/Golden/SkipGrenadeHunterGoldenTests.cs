@@ -39,7 +39,7 @@ public class SkipGrenadeHunterGoldenTests
 
         var resolution = Resolve(afterDodge, new PlayerAction.FireWeapon(WeaponSlot.Kinetic, HitOutcome.Kill, TargetCount.One));
 
-        AssertFires(resolution, must: ["slice", "attrition-orbs", "reaper", "strand-siphon", "to-shreds"], mustNot: ["horde-shuttle"]);
+        AssertFires(resolution, must: ["slice", "reaper", "strand-siphon", "to-shreds"], mustNot: ["horde-shuttle", "attrition-orbs"]);
         Assert.DoesNotContain(resolution.Fired, f => f.Source.Value == "to-shreds" && f.Trigger is GameEvent.Damaged);
     }
 
@@ -50,7 +50,19 @@ public class SkipGrenadeHunterGoldenTests
 
         var resolution = Resolve(start, new PlayerAction.FireWeapon(WeaponSlot.Kinetic, HitOutcome.Kill, TargetCount.One));
 
-        AssertFires(resolution, must: ["to-shreds", "horde-shuttle", "slice", "attrition-orbs", "reaper", "strand-siphon"]);
+        AssertFires(resolution, must: ["to-shreds", "slice", "reaper", "strand-siphon"], mustNot: ["horde-shuttle", "attrition-orbs"]);
+        Assert.DoesNotContain(resolution.Fired, f => f.Source.Value == "to-shreds" && f.Trigger is GameEvent.Damaged);   // a killing blow is one blow (ADRs D34)
+    }
+
+    [Fact]
+    public void Line2c_strand_hits_kept_up_on_a_severed_and_unraveled_pack()
+    {
+        var start = WithTarget(WithBuffs(Fresh, "slice"), "sever", "unravel");
+
+        var resolution = Resolve(start, new PlayerAction.FireWeapon(WeaponSlot.Kinetic, HitOutcome.Damage, TargetCount.One));
+
+        AssertFires(resolution, must: ["to-shreds", "horde-shuttle", "slice", "attrition-orbs"], mustNot: ["reaper", "strand-siphon"]);
+        Assert.All(resolution.Fired.Where(f => f.Source.Value is "to-shreds" or "horde-shuttle" or "attrition-orbs"), f => Assert.Equal(Likelihood.Always, f.Likelihood));
     }
 
     // ── note line 3: Arc grenade ────────────────────────────────────────────────
@@ -130,7 +142,7 @@ public class SkipGrenadeHunterGoldenTests
     {
         var resolution = Resolve(Fresh, new PlayerAction.FireWeapon(WeaponSlot.Kinetic, HitOutcome.Kill, TargetCount.One));
 
-        Assert.Equal(["attrition-orbs", "strand-siphon"], ListSources(resolution).Order());
+        Assert.Equal(["strand-siphon"], ListSources(resolution).Order());
     }
 
     // ── note line 9: Ionic trace ────────────────────────────────────────────────

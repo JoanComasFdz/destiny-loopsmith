@@ -70,7 +70,11 @@ Tokens are read case-insensitively. Errors read `Unknown action '<token>'. Use �
 
 **Triggers.** An ability or weapon action without `:kill` only damages. `N` is how many enemies that
 one action hits (or kills), 1..20, default 1 — the player says it, the engine can't know (ADRs D4):
-`grenade:kill:3` kills three, `kinetic:hit:5` shoots five, `energy:kill:2` kills two. A count needs
+`grenade:kill:3` kills three, `kinetic:hit:5` shoots five, `energy:kill:2` kills two. A **hit** step is damage kept
+up on each enemy without killing it: a rule that needs several hits or a share of the enemy's health (To Shreds'
+Unravel, Horde Shuttle's Threadling, Attrition Orbs' orb, Lightning Rounds' strike) fires there for sure. A **kill**
+step's hit is the killing blow, one blow, so those rules don't fire on it: add a hit step before the kill when the loop
+keeps shooting (ADRs D34). A count needs
 `:hit` or `:kill` before it (`grenade:3` is an error), and `class` takes no count. A **secondary ability
 use** goes between the ability and its hit (ADRs D9): `melee:slide:kill` is the melee while sliding
 (Tempest Strike's uppercut), `melee:air` the melee in the air, `grenade:hold` the grenade held (Chaos
@@ -662,7 +666,7 @@ has a blocked step (the first one, with its message).
 
 * **needs** — what was already there when the step began and the step uses, and which step provided
   it:
-  * a pickup it picks up: `Orb of Power ← #3 [Attrition Orbs (chance); Reaper; Strand Siphon (chance)]`
+  * a pickup it picks up: `Orb of Power ← #3 [Reaper; Strand Siphon (chance)]`
     (the step, then the elements that dropped it there);
   * a buff a rule consumes or a guard reads: `Reaper ← #2 [Reaper]`;
   * a debuff on the pack a trigger needs: `Jolt ← #3 [Spark of Shock]`;
@@ -717,10 +721,10 @@ New pack → Class ability → Festival Flight (kill) → Pick up Orb of Power
 #3 Festival Flight (kill)
    needs            Slice ← #2 [Slice] · Unraveling Rounds ← previous pass #4 [Unraveling Orbs] · Reaper ← #2 [Reaper]
    in this order    Slice · Unraveling Rounds · Reaper · To Shreds
-   on its own       Attrition Orbs (chance) · Strand Siphon (chance)
+   on its own       Strand Siphon (chance)
 
 #4 Pick up Orb of Power
-   needs            Orb of Power ← #3 [Attrition Orbs (chance); Reaper; Strand Siphon (chance)]
+   needs            Orb of Power ← #3 [Reaper; Strand Siphon (chance)]
    in this order    Unraveling Orbs · Orb of Power
 
 First pass (from a fresh spawn, where it differs)

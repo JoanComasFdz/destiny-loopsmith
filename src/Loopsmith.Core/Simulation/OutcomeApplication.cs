@@ -256,7 +256,7 @@ public static class OutcomeApplication
     private static Application SpawnSummon(ValidatedBuild build, GameState state, Outcome outcome, Outcome.SpawnSummon summon)
     {
         var type = build.Catalog.Glossary.ResolveSummonDamageType(summon.Summon);
-        var hits = Enumerable.Repeat<PendingEvent>(new PendingEvent.HitTarget(new DamageOrigin.Summoned(summon.Summon, type)), summon.Count);
+        var hits = Enumerable.Repeat<PendingEvent>(new PendingEvent.HitTarget(new DamageOrigin.Summoned(summon.Summon, type), DamageSpan.Blow), summon.Count);
         return new Application(state, ToApplied(outcome, Certainty.Known, Optional.None<string>()), hits.ToImmutableArray());
     }
 
@@ -264,7 +264,7 @@ public static class OutcomeApplication
     {
         var type = build.Catalog.Glossary.ResolveStrikeDamageType(strike.Via);
         var origin = new DamageOrigin.Keyword(strike.Via, type);
-        var hit = ImmutableArray.Create<PendingEvent>(new PendingEvent.HitTarget(origin));
+        var hit = ImmutableArray.Create<PendingEvent>(new PendingEvent.HitTarget(origin, DamageSpan.Blow));
         var events = strike.Hit == HitOutcome.Kill ? hit.Add(new PendingEvent.KillTarget(origin)) : hit;
         return new Application(state, ToApplied(outcome, Certainty.Known, Optional.None<string>()), events);
     }

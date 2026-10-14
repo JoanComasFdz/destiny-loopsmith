@@ -6,10 +6,11 @@ Grenade damage -> Jolt target (10s) [Spark of Shock] + +1 Bolt Charge and +4.2% 
 Melee damage -> +12% grenade energy [Impact Induction]
 Bolt Charge damage -> Jolt target (10s) and heals you [Defibrillating Blast]
 Threadling damage -> Sever target (10s) [Horde Shuttle]
-Strand weapon damage -> Sever target (10s) and +1 Slice (8s) (while Slice) [Slice] + Orb of Power [Attrition Orbs] (chance) + Unravel target (while Unraveling Rounds) [Unraveling Rounds]
+Strand weapon damage -> Sever target (10s) and +1 Slice (8s) (while Slice) [Slice] + Unravel target (while Unraveling Rounds) [Unraveling Rounds]
+Strand weapon damage kept up (a hit step) -> Orb of Power [Attrition Orbs]
 Ability damage -> consumes Bolt Charge and Bolt Charge strike (kills) (while Bolt Charge at max) [Bolt Charge]
-Weapon damage on Severed target -> Unravel target [To Shreds] (chance)
-Weapon damage on Unraveled target -> Threadling [Horde Shuttle] (chance)
+Weapon damage on Severed target kept up (a hit step) -> Unravel target [To Shreds]
+Weapon damage on Unraveled target kept up (a hit step) -> Threadling [Horde Shuttle]
 Weapon damage on Jolted target -> Jolt strike [Jolt]
 Ability damage on Jolted target -> Jolt strike [Jolt]
 Super kill -> +1 Bolt Charge [Arc Staff]

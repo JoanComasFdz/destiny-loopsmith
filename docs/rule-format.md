@@ -378,6 +378,7 @@ doesn't show as a stacking status (Elemental Charge's progress per Ionic Trace; 
 | `{ kill: { via: <source>, targetHas: [jolt, sever] } }` | `KillDebuffed(via, statuses)` |
 | `{ damage: { via: <source> } }` | `Damage(via)` |
 | `{ damage: { via: <source>, targetHas: [sever] } }` | `DamageDebuffed(via, statuses)` |
+| `{ damage: { via: weapon, targetHas: [sever], sustained: true } }` — damage kept up on one enemy: a source that needs several hits or a share of its health (To Shreds' 6 instances, Attrition Orbs' hits, Lightning Rounds' 10th hit, Horde Shuttle's 10%); fires for sure on a hit step's hits, never on a kill step's killing blow (ADRs D34) | `Damage(via, Sustained)` / `DamageDebuffed(via, statuses, Sustained)` |
 | `{ damage: { via: weapon, atLeast: 3 } }` — hit at least N enemies with `via` in one action | `DamageMultiple(via, atLeast)` |
 | `{ kill: { via: grenade, atLeast: 2 } }` — kill at least N enemies with `via` in one action; `within: 3s`: the window the source gives them (a Siphon's "2 kills within 3 s"), which one action meets | `KillMultiple(via, atLeast, within)` |
 | `{ kill: { via: "weapon:this", fewerThan: 12 } }` — kill fewer than N enemies (at least one) with `via` in one action | `KillFewer(via, fewerThan)` |
@@ -402,7 +403,9 @@ unknown key (write `input: air`). [loop-format.md](loop-format.md#action-tokens)
 
 `via` defaults to `any`. `targetHas` lists one or more debuffs, and the target must have all of them.
 `tier` and `targetHas` together is an error (`kill cannot combine 'tier' and 'targetHas'`), and so is
-`atLeast` with either of them; `damage` has no `tier`. The pack in front of you is `minor` (ADRs D7),
+`atLeast` with either of them, or with `sustained` (`damage cannot combine 'atLeast' and 'sustained'`); `damage` has no
+`tier`. `sustained` (default `false`) is for a count the game doesn't show of hits or damage on one enemy: write it
+instead of `chance: true` (ADRs D34). The pack in front of you is `minor` (ADRs D7),
 so a `major|boss|champion` kill shows in `explain` and the graph but doesn't fire in a loop.
 `atLeast` is a whole number 1..20 (`TargetCount`, ADRs D4): the player says how many enemies an
 action hits ("One For All: hitting three separate targets…" → `{ damage: { via: weapon, atLeast: 3 } }`).
