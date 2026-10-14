@@ -164,8 +164,9 @@ equipped (read from its Finishers slot; named from Bungie's full manifest when t
 class's own, the one the game plays when none is equipped (Blade Carnival for a Hunter, the glossary's `finishers`) —
 then the three weapons with their icon, damage type's icon and colour. Tapping the Super, an ability or a weapon
 shows its actions under the HUD — hit or kill, and how many enemies that one action catches, each count saying what
-it is for when an equipped rule needs that many from that ability or weapon ("1 enemy", "2 in 3 s · Arc Siphon", "3
-enemies" … "9 enemies", "12 · Synergy"; a count no rule of that ability or weapon needs is plain) — and it stays picked
+it is for when an equipped rule needs that many from that ability or weapon ("1 enemy", "2 in 3 s · Arc Siphon",
+"3 · Spark of Discharge", "4 enemies" … "9 enemies", "12 · Synergy"; rules of one count with different windows each say
+theirs, "2 · Spark of Amplitude in 4 s, Harmonic Siphon in 3 s"; a count no rule of that ability or weapon needs is plain) — and it stays picked
 for the next step; a secondary's own hit and kill show the same way ("Sliding melee · Tempest Strike"); the class
 ability, its air move and the finisher act at one tap. Above the HUD, where the game lists your buffs, the states to declare are grouped by
 status — on you, on your weapons, on the pack (with **New pack**) — each with its own buttons ("Bolt Charge: at max

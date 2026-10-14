@@ -486,7 +486,9 @@ ones. `max:armor-charge` is offered while the sure stacks are below the cap and 
 the count ("Armor Charge x1 · +1 (chance)") and each change since the buff was last gained from none, with its step;
 the next pass of a loop starts from what the last one ended with. A kill count takes the window its source gives
 (`atLeast: 2, within: 3s`): the kills of one step are at once, so a Siphon's orb from two kills is sure and from one a
-chance (the split of D31); the enemy-count selector says what each count is for ("2 in 3 s · Arc Siphon").
+chance (the split of D31), and so are Spark of Amplitude's two kills within 4 s and Spark of Discharge's three kills
+(its counter, as Synergy's); the enemy-count selector says what each count is for ("2 in 3 s · Arc Siphon",
+"3 · Spark of Discharge").
 **Consequence.** The count is game state, the one number besides the step (`CausalStateTests` allows it and nothing
 else): it is a fact of the loop's order, not a simulation — time is still not modelled, so the decay (one stack every
 10 s, slower with Time Dilation) is a fact shown with the count, never applied, and "sure" means "if the player

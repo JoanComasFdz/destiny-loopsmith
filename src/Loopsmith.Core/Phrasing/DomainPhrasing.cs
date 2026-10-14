@@ -504,12 +504,23 @@ public static class DomainPhrasing
 
     /// <summary>
     /// An enemy count as the designer offers it: "1 enemy", "3 enemies", or what it is for when an equipped rule needs it
-    /// from that ability or weapon — "2 in 3 s · Arc Siphon", "12 · Synergy" (ADRs D4).
+    /// from that ability or weapon — "2 in 3 s · Arc Siphon", "12 · Synergy" (ADRs D4); rules with different windows each
+    /// say their own: "2 · Harmonic Siphon in 3 s, Spark of Amplitude in 4 s".
     /// </summary>
-    public static string DescribeTargetCountChoice(TargetCountChoice choice) =>
-        choice.NamedBy.IsEmpty
-            ? $"{choice.Count.Value} {(choice.Count.Value == 1 ? "enemy" : "enemies")}"
-            : $"{choice.Count.Value}{choice.Within.Match(within => $" in {within.Value.Value.ToString("0.#", Invariant)} s", _ => "")} · {string.Join(", ", choice.NamedBy)}";
+    public static string DescribeTargetCountChoice(TargetCountChoice choice)
+    {
+        var count = choice.Count.Value;
+        var windows = choice.NamedBy.Select(need => need.Within).Distinct().ToImmutableArray();
+        return (choice.NamedBy.IsEmpty, windows.Length) switch
+        {
+            (true, _) => $"{count} {(count == 1 ? "enemy" : "enemies")}",
+            (false, 1) => $"{count}{DescribeWindow(windows[0])} · {string.Join(", ", choice.NamedBy.Select(need => need.Name))}",
+            _ => $"{count} · {string.Join(", ", choice.NamedBy.Select(need => need.Name + DescribeWindow(need.Within)))}",
+        };
+    }
+
+    private static string DescribeWindow(Optional<Seconds> within) =>
+        within.Match(some => $" in {some.Value.Value.ToString("0.#", Invariant)} s", _ => "");
 
     /// <summary>
     /// One change to a counted buff, with the step it came at and the stacks after it (ADRs D33): "#6 Orb of Power: +1 → x1",

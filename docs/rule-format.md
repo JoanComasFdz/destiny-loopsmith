@@ -409,11 +409,13 @@ action hits ("One For All: hitting three separate targets…" → `{ damage: { v
 `fewerThan` (a kill only) is 2..20 and stands alone like `atLeast` (`kill cannot combine 'atLeast' and 'fewerThan'`):
 the two split one count (ADRs D31), so a counter the game doesn't show fires for sure on the kills that fill it and as a chance
 on fewer — Synergy (`rules/mods/weapons.yaml`): `atLeast: 12` spawns its pickup, `fewerThan: 12` spawns it with
-`chance: true`, since the kills of earlier steps may have filled it. The Siphons split "2 kills within 3 s" the same way:
+`chance: true`, since the kills of earlier steps may have filled it; Spark of Discharge's counter (34% per minor kill)
+the same, at 3. The Siphons split "2 kills within 3 s" the same way, and Spark of Amplitude "2 kills within 4 s":
 `{ kill: { via: weapon:arc, atLeast: 2, within: 3s } }` spawns the orb for sure, `fewerThan: 2` as a chance (`within` needs
 `atLeast`: `'within' is the window of a kill count, so it needs 'atLeast'`). The designer's trigger palette offers, for
-each ability and weapon, every `atLeast` count an equipped rule needs from it, named ("2 in 3 s · Arc Siphon"), beside
-1 to 9.
+each ability and weapon, every `atLeast` count an equipped rule needs from it, named ("2 in 3 s · Arc Siphon",
+"3 · Spark of Discharge"; rules of one count with different windows each say theirs: "2 · Spark of Amplitude in 4 s,
+Harmonic Siphon in 3 s"), beside 1 to 9.
 A kill hits too, so a kill action also fires `damage … atLeast`. Only player actions (abilities and
 weapons) fire `atLeast` triggers, once per action — keyword strikes and summons hit one enemy each.
 

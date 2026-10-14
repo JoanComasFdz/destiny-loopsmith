@@ -21,7 +21,7 @@ New pack → Class ability → Grenade (kill) → Festival Flight (kill) → Any
 
 #5 Any Arc weapon (kill)
    needs            Sever ← #4 [Slice] · Unravel ← #4 [Unraveling Rounds] · Jolt ← #3 [Spark of Shock]
-   in this order    To Shreds · Horde Shuttle (chance) · Jolt · Photonic Flare · Flow State · Dielectric · Spark of Discharge · Shock and Clear · Shinobu's Vow · Bolt Charge · Elemental Charge (chance) · Ionic Trace
+   in this order    To Shreds · Horde Shuttle (chance) · Jolt · Photonic Flare · Flow State · Dielectric · Shock and Clear · Shinobu's Vow · Bolt Charge · Spark of Discharge · Elemental Charge (chance) · Ionic Trace
    on its own       Harmonic Siphon (chance)
    wasted           Tempest Strike — doesn't stack with Dielectric
 

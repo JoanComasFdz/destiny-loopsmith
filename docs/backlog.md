@@ -164,6 +164,10 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   fewer than it says. Elemental Charge's activation progress stays a chance (every 2nd Ionic Trace with two copies);
   Emergency Reinforcement's fourth duration (15 s, unlabelled in the Compendium) is `?` at x6; Shield Break Charge's
   Armor Charge waits on a shield-breaking trigger.
+- **Kill counts, next**: the enemy-count selector names only the counts authored rules need (the Siphons, Spark of
+  Amplitude, Spark of Discharge, Synergy). The weapon perks that need several enemies in one action (One For All's three
+  separate targets, Multikill Clip, Adrenaline Junkie…) aren't authored (`rules/weapons/perks.yaml` holds three perks), so
+  they show with their ⊘ and the selector can't name them.
 - **Armor picker, next**: the mods of a picked piece aren't read (the build keeps the loadout's mods); armor of
   another class's character isn't offered; an icon bungie.net doesn't serve shows broken.
 - **Exotic class items' spirits**: Relativism, Stoicism and Solipsism are listed in the armor picker's Every item, but

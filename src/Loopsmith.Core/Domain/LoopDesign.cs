@@ -20,7 +20,9 @@ public sealed record LoopDesign(
 
 /// <summary>
 /// A number of enemies a step's ability or weapon can hit or kill (ADRs D4), with what it is for: the equipped elements
-/// whose rules need that many in one action from that ability or weapon (Arc Siphon: two kills, within 3 s), none for a
-/// plain count.
+/// whose rules need that many in one action from that ability or weapon, none for a plain count.
 /// </summary>
-public sealed record TargetCountChoice(TargetCount Count, Optional<Seconds> Within, ImmutableArray<string> NamedBy);
+public sealed record TargetCountChoice(TargetCount Count, ImmutableArray<CountNeed> NamedBy);
+
+/// <summary>An element whose rule needs a count, and the window its source gives the kills (Arc Siphon: within 3 s), if any.</summary>
+public sealed record CountNeed(string Name, Optional<Seconds> Within);

@@ -412,9 +412,15 @@ elements:
     description: "While Amplified, 2 kills within 4 s of each other create an Orb of Power (2.5% Super energy), then 10 s of cooldown during which kills don't count. The kill that makes you Amplified counts."
     source: compendium/2026-10-13/Arc#10
     rules:
-      # Two kills within 4 s: progress the game doesn't show as a stacking status, so a chance rule
-      # (ADRs D8), like Spark of Discharge's counter.
-      - on: { kill: { via: any } }
+      # Two kills within 4 s, as the Siphons' two within 3 s: two kills in one step happen at once,
+      # so they drop the orb for sure; one kill is a chance, since a kill of another step may pair
+      # with it (ADRs D8). The 10 s cooldown is a fact in the description.
+      - on: { kill: { via: any, atLeast: 2, within: 4s } }
+        when: [ { has: amplified } ]
+        then:
+          - { spawn: orb-of-power }
+        reason: "While you're Amplified, two kills at once drop an Orb of Power (then 10 s before the next)."
+      - on: { kill: { via: any, fewerThan: 2 } }
         when: [ { has: amplified } ]
         then:
           - { spawn: orb-of-power }
@@ -644,9 +650,14 @@ elements:
         then:
           - { applyBuff: { status: bolt-charge, stacks: 1 } }
         reason: "Every Ionic Trace you collect gives you a Bolt Charge stack."
-      # Progress the game doesn't show as a stacking status (about 3 minor kills per trace), so it
-      # is a chance rule (ADRs D8).
-      - on: { kill: { via: weapon:arc } }
+      # A counter the game doesn't show (ADRs D31, as Synergy's): 3 minor kills in one step fill it
+      # (3 x 34%), so they spawn the trace for sure; fewer spawn it as a chance, since the kills of
+      # earlier steps may have filled it (ADRs D8).
+      - on: { kill: { via: weapon:arc, atLeast: 3 } }
+        then:
+          - { spawn: ionic-trace }
+        reason: "Three Arc weapon kills at once fill the counter and drop an Ionic Trace."
+      - on: { kill: { via: weapon:arc, fewerThan: 3 } }
         then:
           - { spawn: ionic-trace }
         chance: true

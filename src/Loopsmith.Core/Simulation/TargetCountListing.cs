@@ -36,8 +36,7 @@ public static class TargetCountListing
         [
             .. counts.Select(value => new TargetCountChoice(
                 TargetCount.From(value),
-                named.Where(count => count.AtLeast.Value == value).Select(count => count.Within).FindFirstSome(),
-                [.. named.Where(count => count.AtLeast.Value == value).Select(count => count.Name).Distinct()])),
+                [.. named.Where(count => count.AtLeast.Value == value).Select(count => new CountNeed(count.Name, count.Within)).Distinct()])),
         ];
     }
 

@@ -20,7 +20,7 @@ New pack → Sliding melee (kill) → Bolt Charge at max (x10) → Grenade (kill
 
 #5 Any Arc weapon (kill)
    needs            Jolt ← #4 [Spark of Shock; Defibrillating Blast] · Reaper ← previous pass #7 [Reaper]
-   in this order    Jolt · Flow State · Reaper · Dielectric · Spark of Discharge · Shock and Clear · Shinobu's Vow · Bolt Charge · Elemental Charge (chance) · Ionic Trace
+   in this order    Jolt · Flow State · Reaper · Dielectric · Shock and Clear · Shinobu's Vow · Bolt Charge · Spark of Discharge · Elemental Charge (chance) · Ionic Trace
    on its own       Harmonic Siphon (chance)
    wasted           Tempest Strike — doesn't stack with Dielectric
 
