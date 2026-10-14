@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 using Loopsmith.Core.Orchestration;
+using Loopsmith.Core.Phrasing;
 using Loopsmith.Core.SourceFetching;
 using Loopsmith.Core.Tests.Support;
 
@@ -42,6 +43,7 @@ public sealed class EnhancedPerksCatalogTests
     [InlineData("slice", 3422796781u)]
     [InlineData("attrition-orbs", 984655331u)]
     [InlineData("feeding-frenzy", 1171147302u)]
+    [InlineData("demolitionist", 1906147653u)]
     public void Each_authored_weapon_perk_has_its_enhanced_trait(string perk, uint enhancedHash)
     {
         var enhanced = Catalog.EnhancedPerks[ElementId.From(perk)];
@@ -86,4 +88,20 @@ public sealed class EnhancedPerksCatalogTests
             .OfType<Outcome.ApplyBuff>()
             .Select(buff => buff.Duration.ReadFixedTime())
             .Distinct();
+
+    [Fact]
+    public void The_enhanced_demolitionist_gives_the_compendiums_up_figures_by_archetype()
+    {
+        var amounts = new[] { "demolitionist", "demolitionist-enhanced" }
+            .Select(id => Catalog.Elements[ElementId.From(id)].Rules
+                .SelectMany(rule => rule.Then)
+                .OfType<Outcome.GrantEnergy>()
+                .Select(grant => Catalog.Glossary.DescribeOutcome(grant, Optional.None<DamageType>()))
+                .Single())
+            .ToArray();
+
+        Assert.Equal(
+            ["+10% grenade energy (20% on Fusion Rifles, Glaives, Shotguns and Sniper Rifles)", "+11% grenade energy (22% on Fusion Rifles, Glaives, Shotguns and Sniper Rifles)"],
+            amounts);
+    }
 }

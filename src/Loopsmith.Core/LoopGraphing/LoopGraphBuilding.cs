@@ -197,15 +197,20 @@ public static class LoopGraphBuilding
             weapon => build.Build.FindWeaponStrikeOrigin(weapon).Match(
                 origin => LinkToTriggers(ListHitEvents(origin.Value, appliedDebuffs, weapon.Hit == HitOutcome.Kill)),
                 _ => []),
-            reload => LinkToTriggers(ListReloadEvents(build, reload.Weapon)));   // the weapon reloaded, as by a Reload step (ADRs D37)
+            reload => LinkToTriggers(ListReloadEvents(build, reload.Weapon))   // the weapon reloaded, as by a Reload step (ADRs D37),
+                .Concat(ListReloadedWeapons(build, reload.Weapon).Select(slot => new RawEdge(from, ToWeaponKey(slot), source, EdgeKind.Rule))));   // and its magazine refilled, to shoot again (Demolitionist's loop)
     }
 
     /// <summary>The reload of the weapon an outcome names (its slot, once "this weapon" is bound); none for an empty slot.</summary>
     private static IEnumerable<GameEvent> ListReloadEvents(ValidatedBuild build, DamageSource weapon) =>
-        weapon is DamageSource.WeaponInSlot inSlot
-            ? build.Build.Weapons
-                .Where(w => w.Slot == inSlot.Slot)
-                .Select(w => (GameEvent)new GameEvent.Reloaded(new DamageOrigin.Weapon(w.Slot, w.Type)))
+        ListReloadedWeapons(build, weapon)
+            .SelectMany(slot => build.Build.Weapons.Where(w => w.Slot == slot))
+            .Select(w => (GameEvent)new GameEvent.Reloaded(new DamageOrigin.Weapon(w.Slot, w.Type)));
+
+    /// <summary>The slot of the build's weapon an outcome reloads; none for an empty slot or an unbound "this weapon".</summary>
+    private static IEnumerable<WeaponSlot> ListReloadedWeapons(ValidatedBuild build, DamageSource weapon) =>
+        weapon is DamageSource.WeaponInSlot inSlot && build.Build.Weapons.Any(w => w.Slot == inSlot.Slot)
+            ? [inSlot.Slot]
             : [];
 
     private static string DescribeCastAction(AbilityKind kind) =>

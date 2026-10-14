@@ -295,3 +295,30 @@ elements:
     enhanced:
       hash: 734193227
       description: "The enhanced Radiolaria Transposer: as Radiolaria Transposer, with figures the Compendium doesn't give."
+
+  # Both halves of the trait: grenade energy on a kill with this weapon, and the grenade reloading it.
+  - id: demolitionist
+    name: Demolitionist
+    kind: weaponPerk
+    affinity: neutral
+    hash: 3523296417
+    description: "Each kill with this weapon gives 10% grenade energy, 20% on Fusion Rifles, Glaives, Shotguns and Sniper Rifles. Using your grenade refills this weapon's magazine, at most once every 3 s."
+    source: "compendium/2026-10-14/Weapon Perks#62"
+    rules:
+      # The weapon's archetype picks the amount when the build is composed; with it unknown, both show.
+      - on: { kill: { via: "weapon:this" } }
+        then:
+          - { grantEnergy: { to: grenade, amount: "10%", byArchetype: { archetypes: [fusion-rifle, glaive, shotgun, sniper-rifle], amount: "20%" } } }
+        reason: "Every kill with this weapon gives you some grenade energy back."
+      # A reload, as if the player had reloaded (ADRs D37): this weapon's reload rules fire too. No ammo is
+      # counted; the 3 s between refills is a fact in the description.
+      - on: { abilityCast: grenade }
+        then:
+          - { reloadWeapon: "weapon:this" }
+        reason: "Throwing your grenade refills this weapon's magazine."
+    passives: []
+    # The enhanced trait: the row's ↑ figures, 11% instead of 10%, and 22% instead of 20%.
+    enhanced:
+      hash: 1906147653
+      values: { "10%": "11%", "20%": "22%" }
+      description: "The enhanced Demolitionist: as Demolitionist, with 11% grenade energy per kill (22% on Fusion Rifles, Glaives, Shotguns and Sniper Rifles) instead of 10% (20%)."

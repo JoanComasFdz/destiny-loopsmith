@@ -2056,4 +2056,86 @@ public sealed class RuleCatalogParsingTests
         Assert.Equal(Optional.Some(ElementId.From("slice-enhanced")), withLogin.FindElementByHash(ItemHash.From(555)).Map(element => element.Id));
         Assert.False(catalog.FindElementByHash(ItemHash.From(555)).IsSome());
     }
+
+    // ── Reloading (ADRs D37) and energy by archetype ───────────────────────────────────
+
+    /// <summary>One weapon perk (line 2) whose one rule (line 7) is <paramref name="rule"/>.</summary>
+    private static SourceText ToPerkProbeFile(string rule) =>
+        ToElementsFile("weapons/perks.yaml", $$"""
+            elements:
+              - id: probe
+                name: Probe
+                kind: weaponPerk
+                affinity: neutral
+                rules:
+                  - {{rule}}
+            """);
+
+    [Fact]
+    public void Parses_a_reload_trigger_of_any_weapon_or_this_one_and_refuses_an_ability()
+    {
+        var any = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToPerkProbeFile("{ on: { reload: {} }, then: [ { applyBuff: amplified } ] }")]));
+        var own = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToPerkProbeFile("{ on: { reload: { via: weapon:this } }, then: [ { applyBuff: amplified } ] }")]));
+        var ability = ParseInvalidCatalog(Glossary, ToPerkProbeFile("{ on: { reload: { via: grenade } }, then: [ { applyBuff: amplified } ] }"));
+        var onAMod = ParseInvalidCatalog(Glossary, ToProbeFile("{ on: { reload: { via: weapon:this } }, then: [ { applyBuff: amplified } ] }"));
+
+        Assert.Equal(new Trigger.Reload(new DamageSource.AnySource()), Assert.Single(any.Elements[ElementId.From("probe")].Rules).On);
+        Assert.Equal(new Trigger.Reload(new DamageSource.ThisWeapon()), Assert.Single(own.Elements[ElementId.From("probe")].Rules).On);
+        Assert.Contains("reload's via names a weapon", ability);
+        Assert.Contains("weapon:this is the weapon holding the element", onAMod);
+    }
+
+    [Fact]
+    public void Parses_a_reload_outcome_of_this_weapon_or_a_slot_and_refuses_any_weapon()
+    {
+        var own = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToPerkProbeFile("{ on: { abilityCast: grenade }, then: [ { reloadWeapon: weapon:this } ] }")]));
+        var slot = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToProbeFile("{ on: { abilityCast: grenade }, then: [ { reloadWeapon: slot:power } ] }")]));
+        var anyWeapon = ParseInvalidCatalog(Glossary, ToPerkProbeFile("{ on: { abilityCast: grenade }, then: [ { reloadWeapon: weapon } ] }"));
+
+        Assert.Equal(new Outcome.ReloadWeapon(new DamageSource.ThisWeapon()), Assert.Single(Assert.Single(own.Elements[ElementId.From("probe")].Rules).Then));
+        Assert.Equal(new Outcome.ReloadWeapon(new DamageSource.WeaponInSlot(WeaponSlot.Power)), Assert.Single(Assert.Single(slot.Elements[ElementId.From("probe")].Rules).Then));
+        Assert.Contains("reloads one weapon: weapon:this, weapon:this:<type> or slot:<slot>", anyWeapon);
+    }
+
+    [Fact]
+    public void Parses_an_energy_grant_by_the_archetype_of_this_weapon_and_its_enhanced_figures()
+    {
+        var file = ToElementsFile("weapons/perks.yaml", """
+            elements:
+              - id: probe
+                name: Probe
+                kind: weaponPerk
+                affinity: neutral
+                hash: 3523296417
+                rules:
+                  - on: { kill: { via: weapon:this } }
+                    then:
+                      - { grantEnergy: { to: grenade, amount: "10%", byArchetype: { archetypes: [shotgun, glaive], amount: "20%" } } }
+                enhanced: { hash: 1906147653, values: { "10%": "11%", "20%": "22%" } }
+            """);
+        var full = ParseInvalidCatalog(Glossary, ToPerkProbeFile(
+            "{ on: { kill: { via: weapon:this } }, then: [ { grantEnergy: { to: grenade, amount: full, byArchetype: { archetypes: [shotgun], amount: \"20%\" } } } ] }"));
+
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, file]));
+
+        var grant = Assert.IsType<Outcome.GrantEnergy>(Assert.Single(Assert.Single(catalog.Elements[ElementId.From("probe")].Rules).Then));
+        Assert.Equal(new EnergyGrant.ByArchetype(new GameValue.Known(0.10m), ["shotgun", "glaive"], new GameValue.Known(0.20m)), grant.Amount, new EnergyGrantComparer());
+        var enhanced = Assert.IsType<Outcome.GrantEnergy>(Assert.Single(Assert.Single(catalog.Elements[ElementId.From("probe-enhanced")].Rules).Then));
+        Assert.Equal(new EnergyGrant.ByArchetype(new GameValue.Known(0.11m), ["shotgun", "glaive"], new GameValue.Known(0.22m)), enhanced.Amount, new EnergyGrantComparer());
+        Assert.Contains("byArchetype needs an amount that is a fraction of one charge, not full", full);
+    }
+
+    /// <summary>Grants by archetype hold an array, which records don't compare by content.</summary>
+    private sealed class EnergyGrantComparer : IEqualityComparer<EnergyGrant>
+    {
+        public bool Equals(EnergyGrant? x, EnergyGrant? y) =>
+            (x, y) switch
+            {
+                (EnergyGrant.ByArchetype a, EnergyGrant.ByArchetype b) =>
+                    a.Otherwise == b.Otherwise && a.OnArchetypes == b.OnArchetypes && a.Archetypes.SequenceEqual(b.Archetypes),
+                _ => object.Equals(x, y),
+            };
+
+        public int GetHashCode(EnergyGrant obj) => 0;
+    }
 }

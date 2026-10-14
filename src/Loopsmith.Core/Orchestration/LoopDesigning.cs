@@ -938,7 +938,10 @@ public static class LoopDesigning
             .Concat(ActionResolution.ListFinisherActions())
             .Select(action => (action, TriggerGroup.Ability));
         var weapons = build.Build.Weapons
-            .SelectMany(weapon => hits.Select(hit => ((PlayerAction)new PlayerAction.FireWeapon(weapon.Slot, hit, TargetCount.One), TriggerGroup.Weapon)));
+            .SelectMany(weapon => hits
+                .Select(hit => (PlayerAction)new PlayerAction.FireWeapon(weapon.Slot, hit, TargetCount.One))
+                .Append(new PlayerAction.ReloadWeapon(weapon.Slot))   // a reload, the player's to declare (ADRs D37)
+                .Select(action => (action, TriggerGroup.Weapon)));
         var pickups = state.ListPickups()
             .Select(pickup => ((PlayerAction)new PlayerAction.CollectPickups(pickup), TriggerGroup.Pickup));
         var declarations = ActionResolution.ListDeclarations(build, state)
