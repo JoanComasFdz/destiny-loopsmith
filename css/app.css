@@ -616,8 +616,9 @@ textarea { resize: vertical; }
 .palette.disabled .trig-hud, .palette.disabled .trig-actions { opacity: .4; filter: grayscale(1); pointer-events: none; user-select: none; }
 .trigger-buttons { display: flex; flex-wrap: wrap; gap: 6px; }
 .target-count { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); font-size: 12px; font-weight: 700; }
-.target-count select { padding: 4px 4px 4px 6px; min-height: 34px; font-family: var(--mono); font-size: 13px; }
-.target-count-label { font-weight: 500; }
+.target-count { min-width: 0; max-width: 100%; }
+/* a count says what it is for ("2 in 3 s · Arc Siphon"): it may be long, so it shrinks with an ellipsis on a phone */
+.target-count select { padding: 4px 4px 4px 6px; min-height: 34px; min-width: 0; max-width: 100%; text-overflow: ellipsis; font-family: var(--mono); font-size: 13px; }
 .trigger {
     display: inline-flex;
     align-items: center;
@@ -773,6 +774,10 @@ button.hud-chip:hover, button.hud-chip:focus-visible { background: color-mix(in 
 .hud-resistance-sources { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
 .hud-resistance-source-line { display: flex; flex-direction: column; gap: 4px; }
 .hud-resistance-formula { color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+/* a counted buff's stacks (Armor Charge), and on a tap where they came from */
+.hud-count-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; gap: 8px; }
+.hud-count-value { text-align: right; font-weight: 650; font-variant-numeric: tabular-nums; }
+.hud-count-changes { margin: 4px 0 0; padding-left: 16px; display: flex; flex-direction: column; gap: 2px; font-size: 12px; overflow-wrap: anywhere; }
 @media (max-width: 640px) {
     .hud-columns { grid-template-columns: minmax(0, 1fr); gap: 8px; }
     .hud-group, .hud-group[data-group] { display: grid; grid-template-columns: 64px minmax(0, 1fr); align-items: start; gap: 8px; text-align: left; }
