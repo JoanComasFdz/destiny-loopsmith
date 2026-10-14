@@ -974,7 +974,7 @@ public static class LoopDesigning
 
     /// <summary>
     /// The option a step can carry in this build (ADRs D36), when one sets something off: "breaks a shield" on a weapon step
-    /// when an equipped rule reacts to a broken shield; "last charge" on a grenade, melee or class ability step when the
+    /// when an equipped rule reacts to a broken shield; "spend fully" (its last charge) on a grenade, melee or class ability step when the
     /// build gives that ability more than one charge (Shinobu's Vow) and an equipped rule reacts to its energy fully
     /// expended — with one charge, every use is the last. None for any other step.
     /// </summary>

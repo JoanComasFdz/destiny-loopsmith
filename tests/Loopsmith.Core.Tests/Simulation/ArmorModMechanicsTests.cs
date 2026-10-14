@@ -265,8 +265,8 @@ public sealed class ArmorModMechanicsTests
         Assert.IsType<Result<PlayerAction, string>.Error>(ActionTokenParsing.ParseActionToken("super:last"));        // a Super has one charge
         Assert.IsType<Result<PlayerAction, string>.Error>(ActionTokenParsing.ParseActionToken("kinetic:kill:last"));  // an ability's option only
         Assert.IsType<Result<PlayerAction, string>.Error>(ActionTokenParsing.ParseActionToken("grenade:last:kill"));  // the option goes last
-        Assert.Equal("Grenade (🥊 hit · last charge)", build.DescribeAction(LastGrenadeHit));
-        Assert.Equal("Class ability (last charge)", build.DescribeAction(lastDodge));
+        Assert.Equal("Grenade (🥊 hit · ⬜ spend fully)", build.DescribeAction(LastGrenadeHit));
+        Assert.Equal("Class ability (⬜ spend fully)", build.DescribeAction(lastDodge));
         Assert.Equal("Grenade energy fully expended", build.Catalog.Glossary.DescribeTrigger(new Trigger.EnergyExpended(AbilityKind.Grenade), build.ReadSuperType()));
         Assert.Equal(2, build.CountCharges(AbilityKind.Grenade));
         Assert.Equal(1, build.CountCharges(AbilityKind.Melee));

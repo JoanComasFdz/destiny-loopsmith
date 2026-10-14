@@ -553,11 +553,11 @@ neither a shield nor an ability's energy (D5).
 step may **break a shield** (`kinetic:kill:shield`, "Festival Flight (💀 kill · 🛡 shield)"): it breaks one, with its
 first hit, raising `ShieldBroken` from that weapon, which the `shieldBroken` trigger matches (`via` as a hit's). The
 player says it only when the weapon's element matches the shield's, so "with damage of its element" holds. A grenade,
-melee or class ability step may spend the **last charge** (`grenade:kill:last`, "Grenade (💀 kill · last charge)"):
+melee or class ability step may spend the **last charge** (`grenade:kill:last`, "Grenade (💀 kill · ⬜ spend fully)"):
 it raises `EnergyExpended` after the cast, which the `energyExpended` trigger matches. With one charge in the build every
 use raises it; with more (the ability's profile plus every equipped `extraCharges`) only a use the player marks. A
 Super has none. In the designer each row shows its option when the build has a rule that reacts to it and, for the last
-charge, when the build gives the ability more than one: "🛡 shield" next to a weapon's hit and kill, "last charge" next
+charge, when the build gives the ability more than one: "🛡 shield" next to a weapon's hit and kill, "⬜ Spend fully" next
 to an ability's; on, it goes with every button of the row. A grant may give stacks by copies (`stacks: "1 | 2"`:
 Shield Break Charge's x1 with one copy, x2 with two).
 **Consequence.** The ability's charges are a number of the build added up (its profile's and the `extraCharges`) and

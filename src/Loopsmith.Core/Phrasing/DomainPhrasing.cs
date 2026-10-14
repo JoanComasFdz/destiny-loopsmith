@@ -337,8 +337,11 @@ public static class DomainPhrasing
     /// <summary>A weapon step's option that it breaks a shield, in its label and its button: "🛡 shield".</summary>
     public const string ShieldOption = "🛡 shield";
 
-    /// <summary>An ability step's option that it spends the last charge, in its label and its button: "last charge".</summary>
-    public const string LastChargeOption = "last charge";
+    /// <summary>An ability step's option that it spends the last charge (its energy fully expended), in its label: "⬜ spend fully".</summary>
+    public const string LastChargeOption = "⬜ spend fully";
+
+    /// <summary>The same option on its box in the designer: "⬜ Spend fully".</summary>
+    public const string LastChargeBox = "⬜ Spend fully";
 
     // ── triggers, conditions, outcomes, passives ───────────────────────────────
 
@@ -881,8 +884,8 @@ public static class DomainPhrasing
             expended => expended.Kind.DescribeEnergyExpended());
 
     /// <summary>
-    /// "Grenade (💀 kill)", "Grenade (💀 kill 3)", "Grenade (💀 kill · last charge)", "Festival Flight (🥊 hit 5)",
-    /// "Festival Flight (💀 kill · 🛡 shield)", "Class ability", "Class ability (last charge)", "Pick up Orb of Power",
+    /// "Grenade (💀 kill)", "Grenade (💀 kill 3)", "Grenade (💀 kill · ⬜ spend fully)", "Festival Flight (🥊 hit 5)",
+    /// "Festival Flight (💀 kill · 🛡 shield)", "Class ability", "Class ability (⬜ spend fully)", "Pick up Orb of Power",
     /// "Bolt Charge at max (x10)", "Amplified ends", "New pack", "Critical health", "Finisher".
     /// </summary>
     public static string DescribeAction(this ValidatedBuild build, PlayerAction action) =>
@@ -915,7 +918,7 @@ public static class DomainPhrasing
     private static string DescribeHit(HitOutcome hit, TargetCount targets) =>
         (hit == HitOutcome.Kill ? "💀 kill" : "🥊 hit") + (targets.Value > 1 ? $" {targets.Value}" : "");
 
-    /// <summary>" · last charge" for the use that spends an ability's last charge (ADRs D36); nothing for a plain use.</summary>
+    /// <summary>" · ⬜ spend fully" for the use that spends an ability's last charge (ADRs D36); nothing for a plain use.</summary>
     private static string DescribeChargeOption(ChargeUse charge) =>
         charge == ChargeUse.Last ? $" · {LastChargeOption}" : "";
 

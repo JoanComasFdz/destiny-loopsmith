@@ -25,7 +25,7 @@ public sealed record TriggerChoice(string Key, string Title, Optional<TargetCoun
 
 /// <summary>
 /// An option the player turns on or off for a row's actions (ADRs D36): a weapon's "🛡 shield" (the step breaks a
-/// combatant's shield), an ability's "last charge" (the use spends its last charge); <see cref="Hint"/> says what it is for.
+/// combatant's shield), an ability's "⬜ Spend fully" (the use spends its last charge); <see cref="Hint"/> says what it is for.
 /// </summary>
 public sealed record TriggerOptionToggle(StepOption Option, string Caption, string Hint, bool IsOn);
 
@@ -101,7 +101,7 @@ public static class TriggerPaletteShaping
     private static TriggerOptionToggle ShapeToggle(StepOption option, bool isOn) =>
         option == StepOption.BreaksShield
             ? new TriggerOptionToggle(option, DomainPhrasing.ShieldOption, "This hit or kill breaks a combatant's shield, with damage of its element", isOn)
-            : new TriggerOptionToggle(option, DomainPhrasing.LastChargeOption, "This use spends the ability's last charge: its energy is fully expended", isOn);
+            : new TriggerOptionToggle(option, DomainPhrasing.LastChargeBox, "This use spends the ability's last charge: its energy is fully expended", isOn);
 
     private static TriggerButton ShapeButton(TriggerOption option, Optional<TargetCount> targets, Optional<TriggerOptionToggle> toggle, string caption, ValidatedBuild build)
     {

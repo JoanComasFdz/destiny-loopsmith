@@ -1,5 +1,5 @@
 ﻿Infinite skip grenades — Skip Grenade Hunter · 8 steps
-New pack → Class ability → Grenade (💀 kill) → Festival Flight (💀 kill) → Any Arc weapon (💀 kill) → Pick up Orb of Power → Bolt Charge at max (x10) → Grenade (💀 kill · last charge)
+New pack → Class ability → Grenade (💀 kill) → Festival Flight (💀 kill) → Any Arc weapon (💀 kill) → Pick up Orb of Power → Bolt Charge at max (x10) → Grenade (💀 kill · ⬜ spend fully)
 ✓ Repeats — each pass ends with what the next one needs
 
 #1 New pack
@@ -31,7 +31,7 @@ New pack → Class ability → Grenade (💀 kill) → Festival Flight (💀 kil
    needs            Bolt Charge ← #5 [Dielectric; Spark of Discharge]
    in this order    Shinobu's Vow · Flashover
 
-#8 Grenade (💀 kill · last charge)
+#8 Grenade (💀 kill · ⬜ spend fully)
    needs            New Tricks ← #7 [Shinobu's Vow] · Armor Charge ← #6 [Orb of Power] · Bolt Charge at max ← #7 · Bolt Charge ← #5 [Dielectric; Spark of Discharge] · Jolt ← #3 [Spark of Shock] · Sever ← #4 [Slice]
    in this order    Shinobu's Vow · Grenade Kickstart · Bolt Charge · Jolt · Defibrillating Blast · Photonic Flare · Flow State · Dielectric · To Shreds · Shock and Clear · Spark of Discharge · Elemental Charge (chance) · Ionic Trace
    on its own       Spark of Shock
