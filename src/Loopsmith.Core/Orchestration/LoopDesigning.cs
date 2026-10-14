@@ -330,11 +330,12 @@ public static class LoopDesigning
             _ => ImmutableArray<WeaponModOption>.Empty);
 
     /// <summary>
-    /// The enemy counts a step's ability or weapon offers, each with what it is for: the equipped elements whose rules need
-    /// that many from it in one action ("2 in 3 s · Arc Siphon", "12 · Synergy"); 1 to 9 always.
+    /// The enemy counts a step's ability or weapon offers from <paramref name="state"/>, each with what it is for: up to the
+    /// last count that still fills something (a buff to its cap, an ability's energy), the counts the equipped rules need
+    /// from it in one action ("2 in 3 s · Arc Siphon", "12 · Synergy") and the action's own count.
     /// </summary>
-    public static ImmutableArray<TargetCountChoice> ListTargetCountChoices(ValidatedBuild build, PlayerAction action) =>
-        TargetCountListing.ListTargetCountChoices(build, action);
+    public static ImmutableArray<TargetCountChoice> ListTargetCountChoices(ValidatedBuild build, GameState state, PlayerAction action) =>
+        TargetCountListing.ListTargetCountChoices(build, state, action);
 
     /// <summary>
     /// The enemy counts the build's equipped rules need in one action: a kill or hit of at least N (Synergy's 12 kills).

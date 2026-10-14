@@ -36,19 +36,21 @@ public sealed class KillCountsCatalogTests
     }
 
     [Fact]
-    public void The_count_selector_names_the_rules_that_need_that_many_from_that_weapon_or_ability()
+    public void The_count_selector_goes_up_to_what_fills_and_names_the_rules_that_need_a_count()
     {
         var session = StartOwnersDesign();
         var build = session.Build;
-        var arc = LoopDesigning.ListTargetCountChoices(build, new PlayerAction.FireWeapon(FindArcWeapon(build), HitOutcome.Kill, TargetCount.One));
-        var grenade = LoopDesigning.ListTargetCountChoices(build, new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Kill, TargetCount.One));
+        var glossary = build.Catalog.Glossary;
+        var arc = LoopDesigning.ListTargetCountChoices(build, session.Current, new PlayerAction.FireWeapon(FindArcWeapon(build), HitOutcome.Kill, TargetCount.One));
+        var grenade = LoopDesigning.ListTargetCountChoices(build, session.Current, new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Kill, TargetCount.One));
 
+        var arcTexts = arc.Select(choice => glossary.DescribeTargetCountChoice(choice)).ToImmutableArray();
+
+        Assert.Equal(["1 enemy", "2 · Spark of Amplitude in 4 s, Harmonic Siphon in 3 s", "3 · Spark of Discharge", "4 enemies", "5 enemies · Bolt Charge x10"], arcTexts.Take(5));
+        Assert.Equal("18 enemies · melee full", arcTexts[^1]);   // each Bolt Charge gained gives 2.5% melee energy, at the cap too (Arc#5)
         Assert.Equal(
-            ["1 enemy", "2 · Spark of Amplitude in 4 s, Harmonic Siphon in 3 s", "3 · Spark of Discharge", "4 enemies"],
-            arc.Take(4).Select(DomainPhrasing.DescribeTargetCountChoice));
-        Assert.Equal(
-            ["1 enemy", "2 in 4 s · Spark of Amplitude", "3 enemies"],
-            grenade.Take(3).Select(DomainPhrasing.DescribeTargetCountChoice));
+            ["1 enemy", "2 in 4 s · Spark of Amplitude", "3 enemies", "4 enemies · Armor Charge x4, Bolt Charge x10", "5 enemies", "6 enemies · melee full", "7 enemies · grenade full", "8 enemies · class ability full"],
+            grenade.Select(choice => glossary.DescribeTargetCountChoice(choice)));
     }
 
     [Fact]

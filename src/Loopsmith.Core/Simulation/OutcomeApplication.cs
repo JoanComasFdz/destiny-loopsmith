@@ -281,7 +281,7 @@ public static class OutcomeApplication
         new(outcome, certainty, caveat, Optional.None<StackSpend>());
 
     /// <summary>The passives whose extra stacks apply to a grant of this status now (Spark of Frequency, Stacks on Stacks).</summary>
-    private static IEnumerable<(string Name, int Extra)> ListExtraStacks(ValidatedBuild build, GameState state, StatusId status) =>
+    public static IEnumerable<(string Name, int Extra)> ListExtraStacks(ValidatedBuild build, GameState state, StatusId status) =>
         build.Equipped
             .SelectMany(e => e.Element.Passives.Select(p => (e.Element.Name, Passive: p)))
             .Where(x => x.Passive.When.IsSatisfiedBy(state))

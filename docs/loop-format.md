@@ -163,10 +163,15 @@ type) with the finisher's own icon: after a Bungie login the one the player's ch
 equipped (read from its Finishers slot; named from Bungie's full manifest when the excerpt doesn't have it), else the
 class's own, the one the game plays when none is equipped (Blade Carnival for a Hunter, the glossary's `finishers`) —
 then the three weapons with their icon, damage type's icon and colour. Tapping the Super, an ability or a weapon
-shows its actions under the HUD — hit or kill, and how many enemies that one action catches, each count saying what
-it is for when an equipped rule needs that many from that ability or weapon ("1 enemy", "2 in 3 s · Arc Siphon",
-"3 · Spark of Discharge", "4 enemies" … "9 enemies", "12 · Synergy"; rules of one count with different windows each say
-theirs, "2 · Spark of Amplitude in 4 s, Harmonic Siphon in 3 s"; a count no rule of that ability or weapon needs is plain) — and it stays picked
+shows its actions under the HUD — hit or kill, and how many enemies that one action catches. The counts go up to the
+last one that still fills something the build can gain, from the state the step starts in: a buff that stacks below
+its cap (Bolt Charge x10, Armor Charge at the build's cap) or an ability's energy below a full charge (the Ionic Traces
+that refill the grenade); each count says what fills up there and what needs it — an equipped rule that needs that
+many from that ability or weapon in one action ("1 enemy", "2 in 3 s · Arc Siphon", "3 · Spark of Discharge",
+"4 enemies · Armor Charge x4, Bolt Charge x10", "7 enemies · grenade full", "12 · Synergy"; rules of one count with
+different windows each say theirs, "2 · Spark of Amplitude in 4 s, Harmonic Siphon in 3 s"). A larger count a rule needs
+is offered too, and so is a step's own count (a loop file's `grenade:kill:15`). The sums only bound the choices: they are
+never game state and decide nothing (ADRs D1, D5) — and it stays picked
 for the next step; a secondary's own hit and kill show the same way ("Sliding melee · Tempest Strike"); the class
 ability, its air move and the finisher act at one tap. Above the HUD, where the game lists your buffs, the states to declare are grouped by
 status — on you, on your weapons, on the pack (with **New pack**) — each with its own buttons ("Bolt Charge: at max

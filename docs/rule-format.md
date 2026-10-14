@@ -415,7 +415,8 @@ the same, at 3. The Siphons split "2 kills within 3 s" the same way, and Spark o
 `atLeast`: `'within' is the window of a kill count, so it needs 'atLeast'`). The designer's trigger palette offers, for
 each ability and weapon, every `atLeast` count an equipped rule needs from it, named ("2 in 3 s · Arc Siphon",
 "3 · Spark of Discharge"; rules of one count with different windows each say theirs: "2 · Spark of Amplitude in 4 s,
-Harmonic Siphon in 3 s"), beside 1 to 9.
+Harmonic Siphon in 3 s"), beside the counts up to the last that still fills something
+([loop-format.md](loop-format.md#action-tokens)).
 A kill hits too, so a kill action also fires `damage … atLeast`. Only player actions (abilities and
 weapons) fire `atLeast` triggers, once per action — keyword strikes and summons hit one enemy each.
 

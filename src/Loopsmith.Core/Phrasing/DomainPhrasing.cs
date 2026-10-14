@@ -503,21 +503,29 @@ public static class DomainPhrasing
     }
 
     /// <summary>
-    /// An enemy count as the designer offers it: "1 enemy", "3 enemies", or what it is for when an equipped rule needs it
-    /// from that ability or weapon — "2 in 3 s · Arc Siphon", "12 · Synergy" (ADRs D4); rules with different windows each
-    /// say their own: "2 · Harmonic Siphon in 3 s, Spark of Amplitude in 4 s".
+    /// An enemy count as the designer offers it: "1 enemy", "3 enemies"; what it is for when an equipped rule needs it from
+    /// that ability or weapon — "2 in 3 s · Arc Siphon", "12 · Synergy", rules with different windows each saying theirs
+    /// ("2 · Spark of Amplitude in 4 s, Harmonic Siphon in 3 s") — and what fills up at it: "10 enemies · Bolt Charge x10",
+    /// "9 enemies · grenade full" (ADRs D4).
     /// </summary>
-    public static string DescribeTargetCountChoice(TargetCountChoice choice)
+    public static string DescribeTargetCountChoice(this KeywordGlossary glossary, TargetCountChoice choice)
     {
         var count = choice.Count.Value;
         var windows = choice.NamedBy.Select(need => need.Within).Distinct().ToImmutableArray();
-        return (choice.NamedBy.IsEmpty, windows.Length) switch
+        var named = (choice.NamedBy.IsEmpty, windows.Length) switch
         {
             (true, _) => $"{count} {(count == 1 ? "enemy" : "enemies")}",
             (false, 1) => $"{count}{DescribeWindow(windows[0])} · {string.Join(", ", choice.NamedBy.Select(need => need.Name))}",
             _ => $"{count} · {string.Join(", ", choice.NamedBy.Select(need => need.Name + DescribeWindow(need.Within)))}",
         };
+        return choice.Fills.IsEmpty ? named : $"{named} · {string.Join(", ", choice.Fills.Select(fill => glossary.DescribeCountFill(fill)))}";
     }
+
+    /// <summary>"Bolt Charge x10", "grenade full": what an action's enemies fill up at a count.</summary>
+    public static string DescribeCountFill(this KeywordGlossary glossary, CountFill fill) =>
+        fill.Match(
+            status => $"{glossary.DescribeStatus(status.Status)} x{status.Cap}",
+            ability => $"{ability.Ability.DescribeAbility()} full");
 
     private static string DescribeWindow(Optional<Seconds> within) =>
         within.Match(some => $" in {some.Value.Value.ToString("0.#", Invariant)} s", _ => "");

@@ -132,7 +132,7 @@
                     <span class="target-count-sign" aria-hidden="true">×</span>
                     <select value="@targets.Value.Value" @onchange="e => PickTargetCount(choice.Key, e)"
                             aria-label="@($"{choice.Title}: enemies per hit or kill")">
-                        @foreach (var count in choice.Counts)
+                        @foreach (var count in ListCounts(choice))
                         {
                             <option value="@count.Value">@count.Text</option>
                         }
@@ -156,6 +156,27 @@
 
     [Parameter, EditorRequired]
     public ImmutableArray<TriggerOption> Options { get; set; }
+
+    /// <summary>The state the next step starts in: the counts a row offers are those that still fill something from it.</summary>
+    [Parameter, EditorRequired]
+    public GameState State { get; set; } = null!;
+
+    /// <summary>The counts last listed, for the row and the state they were listed for (listing plays the step at each count).</summary>
+    private (GameState State, PlayerAction Action, ImmutableArray<TargetCountOption> Options)? listedCounts;
+
+    /// <summary>The counts a row offers, listed for its kill (a kill hits too, so it fills the most) when it has one.</summary>
+    private ImmutableArray<TargetCountOption> ListCounts(TriggerChoice choice)
+    {
+        var action = TriggerPaletteShaping.FindCountedAction(choice);
+        if (listedCounts is { } listed && ReferenceEquals(listed.State, State) && listed.Action == action)
+        {
+            return listed.Options;
+        }
+
+        var options = TriggerPaletteShaping.ListTargetCountOptions(Build, State, action);       // pure
+        listedCounts = (State, action, options);
+        return options;
+    }
 
     /// <summary>The player's Bungie profile, after a login: the finisher square shows the finisher they have equipped.</summary>
     [Parameter]

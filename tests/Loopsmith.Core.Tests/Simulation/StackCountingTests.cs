@@ -237,16 +237,41 @@ public sealed class StackCountingTests
     }
 
     [Fact]
-    public void An_enemy_count_says_what_needs_it_only_on_the_weapon_or_ability_it_comes_from()
+    public void An_enemy_count_says_what_needs_it_only_on_the_weapon_or_ability_it_comes_from_and_nothing_filling_ends_at_it()
     {
         var build = BuildOf([Siphon]);
 
         var rifle = ActionResolution.ListAvailableActions(build, ActionResolution.CreateInitialState()).OfType<PlayerAction.FireWeapon>().First();
         var grenade = ActionResolution.ListAvailableActions(build, ActionResolution.CreateInitialState()).OfType<PlayerAction.CastAbility>().First();
 
-        Assert.Equal(
-            ["1 enemy", "2 in 3 s · Arc Siphon", "3 enemies", "4 enemies", "5 enemies", "6 enemies", "7 enemies", "8 enemies", "9 enemies"],
-            TargetCountListing.ListTargetCountChoices(build, rifle).Select(DomainPhrasing.DescribeTargetCountChoice));
-        Assert.Equal("2 enemies", DomainPhrasing.DescribeTargetCountChoice(TargetCountListing.ListTargetCountChoices(build, grenade)[1]));
+        var initial = ActionResolution.CreateInitialState();
+        var glossary = build.Catalog.Glossary;
+
+        Assert.Equal(["1 enemy", "2 in 3 s · Arc Siphon"], TargetCountListing.ListTargetCountChoices(build, initial, rifle).Select(choice => glossary.DescribeTargetCountChoice(choice)));
+        Assert.Equal(["1 enemy"], TargetCountListing.ListTargetCountChoices(build, initial, grenade).Select(choice => glossary.DescribeTargetCountChoice(choice)));
+    }
+
+    [Fact]
+    public void The_counts_go_up_to_the_one_that_fills_a_buff_to_its_cap_and_keep_the_actions_own_count()
+    {
+        var charger = Element("charger", ElementKind.Fragment, [On(new Trigger.KillAny(new DamageSource.AnyWeapon()), Buff("bolt-charge"))]);
+        var build = ValidateBuild([charger]);
+        var glossary = build.Catalog.Glossary;
+        var initial = ActionResolution.CreateInitialState();
+
+        Assert.Equal(["1 enemy", "2 enemies", "3 enemies · Bolt Charge x3"], TargetCountListing.ListTargetCountChoices(build, initial, RifleKills(1)).Select(choice => glossary.DescribeTargetCountChoice(choice)));
+        Assert.Equal(7, TargetCountListing.ListTargetCountChoices(build, initial, RifleKills(7))[^1].Count.Value);   // a loop file's count stays
+    }
+
+    [Fact]
+    public void Armor_Charge_already_at_its_cap_fills_nothing_so_one_enemy_is_all_a_step_offers()
+    {
+        var charger = Mod("charger", [On(new Trigger.KillAny(new DamageSource.AnyWeapon()), Buff("armor-charge"))]);
+        var build = BuildOf([charger]);
+        var glossary = build.Catalog.Glossary;
+        var full = ActionResolution.ResolveAction(build, ActionResolution.CreateInitialState(), RifleKills(3)).State;
+
+        Assert.Equal(["1 enemy", "2 enemies", "3 enemies · Armor Charge x3"], TargetCountListing.ListTargetCountChoices(build, ActionResolution.CreateInitialState(), RifleKills(1)).Select(choice => glossary.DescribeTargetCountChoice(choice)));
+        Assert.Equal(["1 enemy"], TargetCountListing.ListTargetCountChoices(build, full, RifleKills(1)).Select(choice => glossary.DescribeTargetCountChoice(choice)));
     }
 }
