@@ -466,19 +466,48 @@ internal static class RuleBodyParsing
                 map.ReadOrDefault("count", ReadPositiveInteger, 1),
                 Outcome (_, summon, count) => new Outcome.SpawnSummon(summon, count)));
 
+    /// <summary>
+    /// <c>{ via: bolt-charge, hit: kill }</c> — a keyword's strike; or <c>{ via: "weapon:this", type: kinetic, hit: damage }</c> —
+    /// this weapon's damage dealt by an effect (Veteran's Wisdom's shockwave), of <c>type</c> or else the weapon's own.
+    /// </summary>
     private static Result<Outcome, Errors> ReadStrikeTarget(ReferenceScope scope, YamlValue value) =>
-        value.ToMap().Bind(map => Combine(
-            map.CheckKeys(["via", "hit"]),
-            map.ReadRequired("via", scope.ReadStatus),
-            map.ReadRequired("hit", ReadVocabularyWord<HitOutcome>),
-            Outcome (_, via, hit) => new Outcome.StrikeTarget(via, hit)));
+        value.ToMap().Bind(map => map.ReadRequired("via", YamlReading.ToText).Bind(via => via.StartsWith("weapon:", StringComparison.Ordinal)
+            ? ReadWeaponStrike(scope, map)
+            : Combine(
+                map.CheckKeys(["via", "hit"]),
+                map.ReadRequired("via", scope.ReadStatus),
+                map.ReadRequired("hit", ReadVocabularyWord<HitOutcome>),
+                Outcome (_, status, hit) => new Outcome.StrikeTarget(status, hit))));
 
+    private static Result<Outcome, Errors> ReadWeaponStrike(ReferenceScope scope, YamlMap map) =>
+        Combine(
+                map.CheckKeys(["via", "type", "hit"]),
+                map.ReadRequired("via", scope.ReadDamageSource),
+                map.ReadOrDefault("type", type => ReadVocabularyWord<DamageType>(type).Map(Optional.Some), Optional.None<DamageType>()),
+                map.ReadRequired("hit", ReadVocabularyWord<HitOutcome>),
+                (_, weapon, type, hit) => (weapon, type, hit))
+            .Bind(strike => strike.weapon is DamageSource.ThisWeapon
+                ? Succeed<Outcome>(new Outcome.WeaponStrike(strike.weapon, strike.type, strike.hit))
+                : map.FailAtKey<Outcome>("via", $"{map.Label}.via: only this weapon strikes (write \"weapon:this\")"));
+
+    /// <summary><c>{ amount: "40%" }</c> (a share of your health) or <c>{ hp: 65 }</c> (HP), and <c>allies</c>: exactly one amount.</summary>
     private static Result<Outcome, Errors> ReadRestoreHealth(YamlValue value) =>
         value.ToMap().Bind(map => Combine(
-            map.CheckKeys(["amount", "allies"]),
-            map.ReadRequired("amount", ReadGameValue),
-            map.ReadOrDefault("allies", ReadBoolean, false),
-            Outcome (_, amount, allies) => new Outcome.RestoreHealth(amount, allies)));
+                map.CheckKeys(["amount", "hp", "allies"]),
+                map.ReadOptional("amount", ReadGameValue),
+                map.ReadOptional("hp", ReadGameValue),
+                map.ReadOrDefault("allies", ReadBoolean, false),
+                (_, amount, hp, allies) => (amount, hp, allies))
+            .Bind(heal => (heal.amount.IsSome(), heal.hp.IsSome()) switch
+            {
+                (true, true) => map.FailAt<Outcome>($"{map.Label} takes amount or hp, not both"),
+                (false, false) => map.FailAt<Outcome>($"{map.Label} needs amount (a share of your health) or hp"),
+                _ => Succeed<Outcome>(new Outcome.RestoreHealth(
+                    heal.amount.Match<HealAmount>(
+                        share => new HealAmount.Share(share.Value),
+                        _ => heal.hp.Match<HealAmount>(points => new HealAmount.Points(points.Value), _ => new HealAmount.Share(new GameValue.Unknown()))),
+                    heal.allies)),
+            }));
 
     /// <summary><c>{ against: &lt;source&gt;, change: "+50%" }</c> — shared by the outcome and the passive.</summary>
     private static Result<(DamageSource Against, GameValue Change), Errors> ReadDamageChange(ReferenceScope scope, YamlValue value) =>

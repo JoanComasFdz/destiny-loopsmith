@@ -434,7 +434,7 @@ each ability and weapon, every `atLeast` count an equipped rule needs from it, n
 Harmonic Siphon in 3 s"), beside the counts up to the last that still fills something
 ([loop-format.md](loop-format.md#action-tokens)).
 A kill hits too, so a kill action also fires `damage … atLeast`. Only player actions (abilities and
-weapons) fire `atLeast` triggers, once per action — keyword strikes and summons hit one enemy each.
+weapons) fire `atLeast` triggers, once per action — keyword strikes, strikes by this weapon and summons hit one enemy each.
 
 A **finisher** is the player's step `finisher` ("Finisher", [loop-format.md](loop-format.md#action-tokens)). It fires
 the `finisher` rules, then kills one enemy of the pack: a hit and a kill whose origin is the finisher. A finisher has
@@ -569,14 +569,15 @@ The loop graph leads from each weapon to the `shieldBroken` rules and from each 
 | `{ spawn: { pickup: orb-of-power, count: 1 } }` / `{ spawn: orb-of-power }` | `Spawn` (count default 1) |
 | `{ summon: { summon: threadling, count: 1 } }` / `{ summon: threadling }` | `SpawnSummon` (count default 1) |
 | `{ strikeTarget: { via: bolt-charge, hit: kill } }` (`damage\|kill`; `via` names a status) | `StrikeTarget` |
+| `{ strikeTarget: { via: "weapon:this", type: kinetic, hit: damage } }` — this weapon's damage dealt by an effect (Veteran's Wisdom's shockwave, Radiolaria Transposer's explosion and pool): it hits as the weapon holding the element, so every rule on that weapon's damage reacts to it; `type` (optional) is the strike's damage type, else the weapon's own; only in an element a weapon holds, like `weapon:this` | `WeaponStrike` |
 | `{ modifyDamage: { against: keyword:bolt-charge, change: "+50%" } }` | `ModifyDamage` |
-| `{ restoreHealth: { amount: "?", allies: true } }` (`allies` default false) | `RestoreHealth` |
+| `{ restoreHealth: { amount: "?", allies: true } }` (`allies` default false) — `amount` a share of your health; `{ hp: 65 }` instead: HP (Unrelenting) | `RestoreHealth(Share \| Points, allies)` |
 | `{ resetCooldown: melee }` | `ResetCooldown` |
 | `{ collect: orb-of-power }` | `Collect` — picks the pickup up from the ground (Powerful Attraction) |
 
 Statuses in `applyBuff`/`removeBuff`/`convertStacksToEnergy.consumed`/`has`/`lacks`/`atMax`/`buffGained`/`stacksMaxed`/`extraStacks`
 must be glossary `buff`s; in `debuffTarget`/`targetHas` glossary `debuff`s
-(`'jolt' is a debuff, but this position needs a buff`); `strikeTarget.via` and `keyword:` take either.
+(`'jolt' is a debuff, but this position needs a buff`); `strikeTarget.via` and `keyword:` take either (or, for `strikeTarget`, `weapon:this`: `only this weapon strikes`).
 `spawn`/`pickUp`/`collect` name glossary pickups, `summon`/`summon:` glossary summons.
 
 * **`applyBuff`** makes the buff present; `stacks` is what one grant gives, as the source states it.

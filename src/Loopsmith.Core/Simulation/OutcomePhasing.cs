@@ -22,5 +22,6 @@ public static class OutcomePhasing
             resetCooldown: _ => Phase.Refund,
             collect: _ => Phase.Spawn,
             grantLeastChargedEnergy: _ => Phase.Refund,
-            spendStacks: _ => Phase.Empower);
+            spendStacks: _ => Phase.Empower,
+            weaponStrike: _ => Phase.Damage);
 }

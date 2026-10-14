@@ -518,13 +518,18 @@ public static class DomainPhrasing
             strike => $"{glossary.DescribeStatus(strike.Via)} strike" + (strike.Hit == HitOutcome.Kill ? " (kills)" : ""),
             modify => DescribeDamageChange(glossary, modify.Against, modify.Change, superType),
             heal => (heal.IncludesAllies ? "heals you and allies" : "heals you")
-                + (heal.Amount is GameValue.Unknown ? "" : $" {heal.Amount.FormatPercent()}"),
+                + heal.Amount.Match(
+                    share => share.Value is GameValue.Unknown ? "" : $" {share.Value.FormatPercent()}",
+                    points => $" {points.Value.FormatNumber()} HP"),
             reset => $"refills {reset.Which.DescribeAbility()}",
             collect => $"collects {glossary.DescribePickup(collect.Pickup)} from the ground",
             least => least.Amount.Match(
                 fraction => $"+{fraction.Amount.FormatPercent()} energy to your least-charged ability",
                 _ => "refills your least-charged ability"),
-            spend => $"spends x{spend.Count.Value} {glossary.DescribeStatus(spend.Status)}");
+            spend => $"spends x{spend.Count.Value} {glossary.DescribeStatus(spend.Status)}",
+            weapon => $"{glossary.DescribeDamageSource(weapon.Weapon, superType)} strike"
+                + weapon.Type.Match(type => $", {type.Value} damage", _ => "")
+                + (weapon.Hit == HitOutcome.Kill ? " (kills)" : ""));
 
     /// <summary>
     /// An outcome as it was applied: one that spent a counted buff's stacks says how many, and what they gave
@@ -712,7 +717,12 @@ public static class DomainPhrasing
             Outcome.ConvertStacksToEnergy { Energy: StackEnergy.PerStack perStack } convert =>
                 convert with { Energy = new StackEnergy.PerStack(perStack.Amount.NarrowToCopies(copies)) },
             Outcome.ModifyDamage modify => modify with { Change = modify.Change.NarrowToCopies(copies) },
-            Outcome.RestoreHealth heal => heal with { Amount = heal.Amount.NarrowToCopies(copies) },
+            Outcome.RestoreHealth heal => heal with
+            {
+                Amount = heal.Amount.Match<HealAmount>(
+                    share => new HealAmount.Share(share.Value.NarrowToCopies(copies)),
+                    points => new HealAmount.Points(points.Value.NarrowToCopies(copies))),
+            },
             Outcome.ApplyBuff apply => apply with { Stacks = apply.Stacks.NarrowToCopies(copies) },
             _ => outcome,
         };

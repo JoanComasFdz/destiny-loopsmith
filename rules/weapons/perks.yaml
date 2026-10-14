@@ -216,9 +216,9 @@ elements:
           reason: "When it hatches one, the enhanced trait may hatch a second."
       description: "The enhanced Hatchling: as Hatchling, and a second Threadling may hatch with the first (a ?% chance)."
 
-  # An origin trait (EDZ weapons). "A Precision Kill OR 3 Weapon Kills within 3 seconds of each", as Hatchling.
-  # Not expressible: the Kinetic shockwave's own damage (8 m, 9 m enhanced; 20 for Auto and Pulse Rifles, 23 for
-  # Snipers): no rule outcome deals this weapon's damage, so it is in the description and the reason only.
+  # An origin trait (EDZ weapons). "A Precision Kill OR 3 Weapon Kills within 3 seconds of each", as Hatchling. The
+  # Kinetic shockwave is this weapon's damage (a strike by this weapon, of Kinetic damage); its size (8 m, 9 m enhanced)
+  # and damage (20 for Auto and Pulse Rifles, 23 for Snipers) are in the description.
   - id: veterans-wisdom
     name: Veteran's Wisdom
     kind: weaponPerk
@@ -229,10 +229,12 @@ elements:
     rules:
       - on: { kill: { via: "weapon:this", atLeast: 3, within: 3s } }
         then:
+          - { strikeTarget: { via: "weapon:this", type: kinetic, hit: damage } }
           - { debuffTarget: { status: exhaust, duration: 10s } }
         reason: "Three quick kills with this weapon set off a shockwave that exhausts the enemies around."
       - on: { kill: { via: "weapon:this", fewerThan: 3 } }
         then:
+          - { strikeTarget: { via: "weapon:this", type: kinetic, hit: damage } }
           - { debuffTarget: { status: exhaust, duration: 10s } }
         chance: true
         reason: "Fewer than three kills in this step: a precision kill, or the kills of the steps before, may set it off."
@@ -242,7 +244,7 @@ elements:
       description: "The enhanced Veteran's Wisdom: as Veteran's Wisdom, with a 9 m shockwave instead of 8 m."
 
   # A counter of weapon kills, each within 5 s of the last: 34% per rank-and-file enemy (the pack, ADRs D7), so 3 kills
-  # fill it. Its heal is 65 HP (70 enhanced): restoreHealth amounts are percentages, so it stays "?".
+  # fill it. Its heal is 65 HP (70 enhanced).
   - id: unrelenting
     name: Unrelenting
     kind: weaponPerk
@@ -253,20 +255,23 @@ elements:
     rules:
       - on: { kill: { via: "weapon:this", atLeast: 3, within: 5s } }
         then:
-          - { restoreHealth: { amount: "?" } }
+          - { restoreHealth: { hp: 65 } }
         reason: "Three quick kills with this weapon fill its counter: you start healing."
       - on: { kill: { via: "weapon:this", fewerThan: 3 } }
         then:
-          - { restoreHealth: { amount: "?" } }
+          - { restoreHealth: { hp: 65 } }
         chance: true
         reason: "Fewer than three kills in this step: the kills of the steps before may fill the counter."
     passives: []
     enhanced:
       hash: 855168139
+      values: { 65: 70 }
       description: "The enhanced Unrelenting: as Unrelenting, restoring 70 HP instead of 65."
 
-  # An origin trait (Episode: Echoes). Not expressible: the explosion and its Radiolaria Pool only deal this weapon's
-  # damage (it counts as weapon damage), and no rule outcome deals a weapon's damage, so nothing in a loop reacts to it.
+  # An origin trait (Episode: Echoes). A counter of weapon kills, each within 8 s of the last: 34% per rank-and-file
+  # enemy, so 3 kills fill it. The explosion and the Radiolaria Pool count as this weapon's damage: two strikes by this
+  # weapon, the pool's of Arc damage. The Compendium names no type for the explosion, so it strikes with the weapon's
+  # own. Their damage (67.5, 15 every 0.65 s) is in the description.
   - id: radiolaria-transposer
     name: Radiolaria Transposer
     kind: weaponPerk
@@ -274,8 +279,18 @@ elements:
     hash: 253121539
     description: "Weapon kills, each within 8 s of the last, fill a counter (34% per rank-and-file enemy, 100% per elite or stronger); at 100% the enemy explodes for up to 67.5 damage over 3? m and leaves a Radiolaria Pool that deals 15 Arc damage every 0.65 s, up to 3? times. Counts as weapon damage. Stowing the weapon resets the counter."
     source: "compendium/2026-10-14/Weapon Perks#393"
-    inert: "Its explosion and pool only deal this weapon's damage, and no rule outcome can deal a weapon's damage yet, so nothing in a loop reacts to it."
-    rules: []
+    rules:
+      - on: { kill: { via: "weapon:this", atLeast: 3, within: 8s } }
+        then:
+          - { strikeTarget: { via: "weapon:this", hit: damage } }
+          - { strikeTarget: { via: "weapon:this", type: arc, hit: damage } }
+        reason: "Three quick kills with this weapon make the enemy explode and leave a pool that keeps hurting the pack."
+      - on: { kill: { via: "weapon:this", fewerThan: 3 } }
+        then:
+          - { strikeTarget: { via: "weapon:this", hit: damage } }
+          - { strikeTarget: { via: "weapon:this", type: arc, hit: damage } }
+        chance: true
+        reason: "Fewer than three kills in this step: the kills of the steps before may fill the counter."
     passives: []
     enhanced:
       hash: 734193227

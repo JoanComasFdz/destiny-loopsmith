@@ -91,6 +91,14 @@ public partial record EnergyGrant
     partial record Full();
 }
 
+/// <summary>How much a heal restores: a share of your health ("?" when the source gives none), or HP (Unrelenting's 65).</summary>
+[Union]
+public partial record HealAmount
+{
+    partial record Share(GameValue Value);   // 0.4 = 40 % of your health
+    partial record Points(GameValue Value);  // HP: 65
+}
+
 /// <summary>
 /// The game's consequences. ("Effect" is reserved for side effects described as data — see Orchestration.)
 /// Energy outcomes (<see cref="GrantEnergy"/>, <see cref="ConvertStacksToEnergy"/>'s energy, <see cref="ResetCooldown"/>,
@@ -109,11 +117,12 @@ public partial record Outcome
     partial record SpawnSummon(SummonId Summon, int Count);
     partial record StrikeTarget(StatusId Via, HitOutcome Hit);   // keyword damage: lightning strike, jolt chain…
     partial record ModifyDamage(DamageSource Against, GameValue Change);
-    partial record RestoreHealth(GameValue Amount, bool IncludesAllies);
+    partial record RestoreHealth(HealAmount Amount, bool IncludesAllies);
     partial record ResetCooldown(AbilityKind Which);
     partial record Collect(PickupId Pickup);   // picks it up from the ground when it is there (Powerful Attraction): a pickup event
     partial record GrantLeastChargedEnergy(EnergyGrant Amount);   // to whichever ability has the least energy: the game picks, so a fact
     partial record SpendStacks(StatusId Status, StackCount Count);   // a fixed number of a counted buff's stacks (Healthy Finisher's x1, ADRs D33)
+    partial record WeaponStrike(DamageSource Weapon, Optional<DamageType> Type, HitOutcome Hit);   // this weapon's damage dealt by an effect (Veteran's Wisdom's shockwave): Weapon is "this weapon" until bound to its slot; Type none: the weapon's own
 }
 
 /// <summary>

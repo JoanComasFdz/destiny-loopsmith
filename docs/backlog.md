@@ -173,8 +173,8 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   artifact editor and set nothing off. Next: the rest of the Tablet of Ruin's 21, then the artifact to do after it,
   from the Compendium snapshot's Artifact Perks tab (`rule-author`; no invented numbers, D13).
 - **Weapon perks**: the rules author 10 (Slice, Attrition Orbs, Feeding Frenzy, and the ones that need several enemies
-  in one action: One for All, Stats for All, Reaper's Tithe, Hatchling, Veteran's Wisdom, Unrelenting, and Radiolaria
-  Transposer as inert), each with its enhanced trait (rule-format.md, "Enhanced traits"); the game has ~226 enhanced
+  in one action: One for All, Stats for All, Reaper's Tithe, Hatchling, Veteran's Wisdom, Unrelenting and Radiolaria
+  Transposer), each with its enhanced trait (rule-format.md, "Enhanced traits"); the game has ~226 enhanced
   traits and ~86 enhanced origin traits, whose base perks aren't authored either. A perk authored next gets its
   `enhanced` block (a test asks for it). Every perk says "this weapon" (`weapon:this`), bound to the weapon that rolls
   it. Two tasks, in this order (the second needs the first merged):
@@ -211,11 +211,11 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   Emergency Reinforcement's fourth duration (15 s, unlabelled in the Compendium) is `?` at x6.
 - **Kill counts, next**: the enemy-count selector names the counts authored rules need (the Siphons, Spark of
   Amplitude, Spark of Discharge, Synergy, and the weapon perks One for All, Stats for All, Reaper's Tithe, Hatchling,
-  Veteran's Wisdom and Unrelenting). Not authored yet: Multikill Clip and Desperado (their kills count at a reload: the
+  Veteran's Wisdom, Unrelenting and Radiolaria Transposer). Not authored yet: Multikill Clip and Desperado (their kills count at a reload: the
   Reload step, "Weapon perks" task 1), and the perks that need enemies nearby rather than in one action (Surrounded,
-  Cornered, Danger Zone, Threat Detector, Extrovert). No outcome deals a weapon's damage, so Radiolaria Transposer's
-  explosion and pool are inert and Veteran's Wisdom's Kinetic shockwave is only its Exhaust; a precision hit isn't a
-  step, so Hatchling's and Veteran's Wisdom's "or a precision kill" is the chance on fewer than 3 kills.
+  Cornered, Danger Zone, Threat Detector, Extrovert). A precision hit isn't a step, so Hatchling's and Veteran's Wisdom's
+  "or a precision kill" is the chance on fewer than 3 kills; a strike by this weapon (Veteran's Wisdom's shockwave,
+  Radiolaria Transposer's explosion and pool) hits one enemy, and its damage is a fact in the perk's description.
 - **Armor picker, next**: the mods of a picked piece aren't read (the build keeps the loadout's mods); armor of
   another class's character isn't offered; an icon bungie.net doesn't serve shows broken.
 - **Exotic class items' spirits**: Relativism, Stoicism and Solipsism are listed in the armor picker's Every item, but

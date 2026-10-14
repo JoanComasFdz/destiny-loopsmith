@@ -54,6 +54,7 @@ public sealed class MultiEnemyWeaponPerksCatalogTests
         Assert.Contains("3 in 3 s · Hatchling", ListCountTexts("hatchling"));
         Assert.Contains("3 in 3 s · Veteran's Wisdom", ListCountTexts("veterans-wisdom"));
         Assert.Contains("3 in 5 s · Unrelenting", ListCountTexts("unrelenting"));
+        Assert.Contains("3 in 8 s · Radiolaria Transposer", ListCountTexts("radiolaria-transposer"));
         Assert.DoesNotContain(ListCountTexts("one-for-all", WeaponSlot.Energy), text => text.Contains("One for All"));
     }
 
@@ -95,6 +96,7 @@ public sealed class MultiEnemyWeaponPerksCatalogTests
     [InlineData("hatchling")]
     [InlineData("veterans-wisdom")]
     [InlineData("unrelenting")]
+    [InlineData("radiolaria-transposer")]
     public void A_kill_count_perk_fires_for_sure_on_three_kills_and_as_a_chance_on_fewer(string perk)
     {
         var session = StartWithKineticPerk(perk);
@@ -121,12 +123,46 @@ public sealed class MultiEnemyWeaponPerksCatalogTests
     }
 
     [Fact]
-    public void Veterans_wisdom_exhausts_the_pack_and_radiolaria_transposer_says_why_it_sets_nothing_off()
+    public void Veterans_wisdoms_shockwave_exhausts_the_pack_and_strikes_as_this_weapon_so_slice_severs()
     {
-        var three = Kill(StartWithKineticPerk("veterans-wisdom"), WeaponSlot.Kinetic, 3);
+        var armed = LoopDesigning.AppendStep(StartWithKineticPerk("slice, veterans-wisdom"), new PlayerAction.UseClassAbility(), Optional.None<string>());
+
+        var three = Kill(armed, WeaponSlot.Kinetic, 3);
 
         Assert.Contains(three.State.Target.Debuffs, debuff => debuff.Value == "exhaust");
-        Assert.True(Catalog.Elements[ElementId.From("radiolaria-transposer")].Inert.IsSome());
+        var strike = Assert.Single(
+            three.Fired.Where(fired => fired.Source.Value == "veterans-wisdom").SelectMany(fired => fired.Outcomes),
+            applied => applied.Outcome is Outcome.WeaponStrike);
+        Assert.Equal(Optional.Some(DamageType.Kinetic), ((Outcome.WeaponStrike)strike.Outcome).Type);
+        Assert.Contains(three.Fired, fired => fired.Source.Value == "slice" && fired.Depth > 0);   // the shockwave's hit, as Festival Flight's
+    }
+
+    [Fact]
+    public void Radiolaria_transposers_explosion_and_arc_pool_strike_as_this_weapon()
+    {
+        var three = Kill(StartWithKineticPerk("radiolaria-transposer"), WeaponSlot.Kinetic, 3);
+
+        var strikes = three.Fired
+            .Where(fired => fired.Source.Value == "radiolaria-transposer")
+            .SelectMany(fired => fired.Outcomes.Select(applied => applied.Outcome).OfType<Outcome.WeaponStrike>())
+            .Select(strike => strike.Type)
+            .ToImmutableArray();
+
+        Assert.Equal([Optional.None<DamageType>(), Optional.Some(DamageType.Arc)], strikes);
+        Assert.False(Catalog.Elements[ElementId.From("radiolaria-transposer")].Inert.IsSome());
+    }
+
+    [Theory]
+    [InlineData("unrelenting", 65)]
+    [InlineData("unrelenting-enhanced", 70)]
+    public void Unrelenting_heals_its_hp(string perk, int hp)
+    {
+        var three = Kill(StartWithKineticPerk(perk), WeaponSlot.Kinetic, 3);
+
+        var heal = Assert.Single(
+            three.Fired.Where(fired => fired.Source.Value == perk).SelectMany(fired => fired.Outcomes.Select(applied => applied.Outcome)).OfType<Outcome.RestoreHealth>());
+        Assert.Equal(new HealAmount.Points(new GameValue.Known(hp)), heal.Amount);
+        Assert.Equal($"heals you {hp} HP", Catalog.Glossary.DescribeOutcome(heal, Optional.None<DamageType>()));
     }
 
     private static Resolution Hit(DesignSession session, WeaponSlot slot, int count) =>
@@ -142,7 +178,7 @@ public sealed class MultiEnemyWeaponPerksCatalogTests
         return [.. choices.Select(choice => Catalog.Glossary.DescribeTargetCountChoice(choice))];
     }
 
-    /// <summary>The creator's build with only <paramref name="perk"/> on its Kinetic weapon (Festival Flight).</summary>
+    /// <summary>The creator's build with only <paramref name="perk"/> (one perk id, or several comma-separated) on its Kinetic weapon (Festival Flight).</summary>
     private static DesignSession StartWithKineticPerk(string perk)
     {
         var text = BuildText.Replace("perks: [slice, attrition-orbs]", $"perks: [{perk}]", StringComparison.Ordinal);

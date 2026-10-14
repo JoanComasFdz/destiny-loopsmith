@@ -184,10 +184,11 @@ internal static class EnhancedPerkParsing
             _ => [],
             _ => [],
             damage => [damage.Change],
-            health => [health.Amount],
+            health => [health.Amount.Match(share => share.Value, points => points.Value)],
             _ => [],
             _ => [],
             least => ListValues(least.Amount),
+            _ => [],
             _ => []);
 
     private static IEnumerable<GameValue> ListValues(EnergyGrant grant) =>
@@ -219,11 +220,17 @@ internal static class EnhancedPerkParsing
             summon => summon,
             strike => strike,
             damage => damage with { Change = Replace(damage.Change, values) },
-            health => health with { Amount = Replace(health.Amount, values) },
+            health => health with
+            {
+                Amount = health.Amount.Match<HealAmount>(
+                    share => new HealAmount.Share(Replace(share.Value, values)),
+                    points => new HealAmount.Points(Replace(points.Value, values))),
+            },
             reset => reset,
             collect => collect,
             least => least with { Amount = ReplaceValues(least.Amount, values) },
-            spend => spend);
+            spend => spend,
+            weapon => weapon);
 
     private static EnergyGrant ReplaceValues(EnergyGrant grant, EnhancedValues values) =>
         grant.Match<EnergyGrant>(fraction => fraction with { Amount = Replace(fraction.Amount, values) }, full => full);

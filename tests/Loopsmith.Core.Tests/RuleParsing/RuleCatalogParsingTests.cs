@@ -314,8 +314,8 @@ public sealed class RuleCatalogParsingTests
         Assert.Equal(new Trigger.StacksMaxed(ToStatus("bolt-charge")), rules[6].On);
         Assert.Equal<Outcome>(
             [
-                new Outcome.RestoreHealth(new GameValue.Unknown(), IncludesAllies: true),
-                new Outcome.RestoreHealth(new GameValue.Known(0.25m), IncludesAllies: false),
+                new Outcome.RestoreHealth(new HealAmount.Share(new GameValue.Unknown()), IncludesAllies: true),
+                new Outcome.RestoreHealth(new HealAmount.Share(new GameValue.Known(0.25m)), IncludesAllies: false),
                 new Outcome.ResetCooldown(AbilityKind.Melee),
             ],
             rules[6].Then);
@@ -1358,6 +1358,50 @@ public sealed class RuleCatalogParsingTests
         Assert.Equal(
             new Trigger.KillBetween(new DamageSource.ThisWeapon(), TargetCount.From(2), TargetCount.From(3)),
             rules[2].On);
+    }
+
+    [Fact]
+    public void Parses_a_strike_by_this_weapon_and_a_heal_in_hp()
+    {
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToElementsFile("weapons/perks.yaml", """
+            elements:
+              - id: veterans-wisdom
+                name: Veteran's Wisdom
+                kind: weaponPerk
+                affinity: kinetic
+                rules:
+                  - on: { kill: { via: "weapon:this", atLeast: 3 } }
+                    then:
+                      - { strikeTarget: { via: "weapon:this", type: kinetic, hit: damage } }
+                      - { strikeTarget: { via: "weapon:this", hit: kill } }
+                      - { restoreHealth: { hp: 65 } }
+            """)]));
+
+        var then = catalog.Elements[ElementId.From("veterans-wisdom")].Rules[0].Then;
+        Assert.Equal(new Outcome.WeaponStrike(new DamageSource.ThisWeapon(), Optional.Some(DamageType.Kinetic), HitOutcome.Damage), then[0]);
+        Assert.Equal(new Outcome.WeaponStrike(new DamageSource.ThisWeapon(), Optional.None<DamageType>(), HitOutcome.Kill), then[1]);
+        Assert.Equal(new Outcome.RestoreHealth(new HealAmount.Points(new GameValue.Known(65m)), false), then[2]);
+    }
+
+    [Theory]
+    [InlineData("{ strikeTarget: { via: \"weapon:arc\", hit: damage } }", "only this weapon strikes (write \"weapon:this\")")]
+    [InlineData("{ strikeTarget: { via: bolt-charge, type: arc, hit: damage } }", "unknown key 'type'")]
+    [InlineData("{ restoreHealth: { amount: \"?\", hp: 65 } }", "takes amount or hp, not both")]
+    [InlineData("{ restoreHealth: { allies: true } }", "needs amount (a share of your health) or hp")]
+    public void A_strike_by_a_weapon_is_this_weapons_and_a_heal_has_one_amount(string outcome, string expected)
+    {
+        var message = ParseInvalidCatalog(Glossary, ToElementsFile("weapons/perks.yaml", $$"""
+            elements:
+              - id: veterans-wisdom
+                name: Veteran's Wisdom
+                kind: weaponPerk
+                affinity: kinetic
+                rules:
+                  - on: { kill: { via: "weapon:this" } }
+                    then: [ {{outcome}} ]
+            """));
+
+        Assert.Contains(expected, message);
     }
 
     [Fact]

@@ -35,11 +35,12 @@ public static class OutcomeApplication
             spawnSummon => SpawnSummon(build, state, outcome, spawnSummon),
             strikeTarget => StrikeTarget(build, state, outcome, strikeTarget),
             modifyDamage => AnnotateFact(state, outcome, modifyDamage.Change.ReadCertainty(), "value unknown"),
-            restoreHealth => AnnotateFact(state, outcome, restoreHealth.Amount.ReadCertainty(), "value unknown"),
+            restoreHealth => AnnotateFact(state, outcome, restoreHealth.Amount.Match(share => share.Value, points => points.Value).ReadCertainty(), "value unknown"),
             resetCooldown => KeepUnchanged(state, outcome, ""),
             collect => Collect(state, outcome, collect),
             least => AnnotateFact(state, outcome, ReadGrantCertainty(least.Amount), "amount unknown"),
-            spend => SpendStacks(build, state, outcome, spend, source));
+            spend => SpendStacks(build, state, outcome, spend, source),
+            weapon => StrikeWithWeapon(build, state, outcome, weapon));
 
     /// <summary><c>full</c> is one whole charge (known); a fraction is as certain as its value.</summary>
     private static Certainty ReadGrantCertainty(EnergyGrant grant) =>
@@ -267,6 +268,21 @@ public static class OutcomeApplication
         var hit = ImmutableArray.Create<PendingEvent>(new PendingEvent.HitTarget(origin, DamageSpan.Blow));
         var events = strike.Hit == HitOutcome.Kill ? hit.Add(new PendingEvent.KillTarget(origin)) : hit;
         return new Application(state, ToApplied(outcome, Certainty.Known, Optional.None<string>()), events);
+    }
+
+    /// <summary>
+    /// This weapon's damage dealt by an effect (Veteran's Wisdom's shockwave): it hits, and kills when it says so, as the
+    /// weapon in its slot with the strike's own damage type. A weapon not in the build strikes nothing.
+    /// </summary>
+    private static Application StrikeWithWeapon(ValidatedBuild build, GameState state, Outcome outcome, Outcome.WeaponStrike strike) =>
+        build.Build.FindWeaponStrikeOrigin(strike).Match(
+            origin => new Application(state, ToApplied(outcome, Certainty.Known, Optional.None<string>()), ListStrikeEvents(origin.Value, strike.Hit)),
+            _ => KeepUnchanged(state, outcome, "no weapon to strike with"));
+
+    private static ImmutableArray<PendingEvent> ListStrikeEvents(DamageOrigin origin, HitOutcome hit)
+    {
+        var hits = ImmutableArray.Create<PendingEvent>(new PendingEvent.HitTarget(origin, DamageSpan.Blow));
+        return hit == HitOutcome.Kill ? hits.Add(new PendingEvent.KillTarget(origin)) : hits;
     }
 
     /// <summary>A fact shown with its certainty; <paramref name="unknownCaveat"/> marks it when the value is unknown.</summary>

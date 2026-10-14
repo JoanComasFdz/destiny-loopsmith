@@ -40,9 +40,26 @@ public static class WeaponBinding
             Passives = [.. element.Passives.SelectMany(passive => ToSequence(BindPassive(passive, slot, type)))],
         };
 
+    /// <summary>
+    /// Where a strike by this weapon comes from once bound: the build's weapon in its slot, with the strike's damage type,
+    /// else the weapon's own (Radiolaria Transposer's explosion); none while unbound or for an empty slot.
+    /// </summary>
+    public static Optional<DamageOrigin> FindWeaponStrikeOrigin(this Build build, Outcome.WeaponStrike strike) =>
+        strike.Weapon is DamageSource.WeaponInSlot inSlot
+            ? build.Weapons
+                .Where(weapon => weapon.Slot == inSlot.Slot)
+                .Select(weapon => Optional.Some<DamageOrigin>(new DamageOrigin.Weapon(inSlot.Slot, strike.Type.Match(type => type.Value, _ => weapon.Type))))
+                .FindFirstSome()
+            : Optional.None<DamageOrigin>();
+
     private static bool IsNamingThisWeapon(Rule rule) =>
         rule.On.FindVia().Match(via => IsThisWeapon(via.Value), _ => false)
-        || rule.Then.Any(outcome => outcome is Outcome.ModifyDamage modify && IsThisWeapon(modify.Against));
+        || rule.Then.Any(outcome => outcome switch
+        {
+            Outcome.ModifyDamage modify => IsThisWeapon(modify.Against),
+            Outcome.WeaponStrike strike => IsThisWeapon(strike.Weapon),
+            _ => false,
+        });
 
     private static bool IsThisWeapon(DamageSource source) =>
         source is DamageSource.ThisWeapon or DamageSource.ThisWeaponOfType;
@@ -66,9 +83,12 @@ public static class WeaponBinding
         };
 
     private static Optional<Outcome> BindOutcome(Outcome outcome, WeaponSlot slot, DamageType type) =>
-        outcome is Outcome.ModifyDamage modify
-            ? BindSource(modify.Against, slot, type).Map(Outcome (against) => modify with { Against = against })
-            : Optional.Some(outcome);
+        outcome switch
+        {
+            Outcome.ModifyDamage modify => BindSource(modify.Against, slot, type).Map(Outcome (against) => modify with { Against = against }),
+            Outcome.WeaponStrike strike => BindSource(strike.Weapon, slot, type).Map(Outcome (weapon) => strike with { Weapon = weapon }),
+            _ => Optional.Some(outcome),
+        };
 
     private static Optional<Trigger> BindTrigger(Trigger trigger, WeaponSlot slot, DamageType type) =>
         trigger.Match(
