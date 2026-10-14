@@ -12,10 +12,10 @@ public partial record Trigger
     partial record KillAny(DamageSource Via);
     partial record KillOfTier(DamageSource Via, EnemyTier Tier);
     partial record KillDebuffed(DamageSource Via, ImmutableArray<StatusId> TargetHas);
-    partial record KillMultiple(DamageSource Via, TargetCount AtLeast, Optional<Seconds> Within);   // kill at least N enemies in one action (within: the source's window, "2 in 3 s", a fact one action meets)
+    partial record KillMultiple(DamageSource Via, TargetCount AtLeast, Optional<Seconds> Within, Optional<TargetCount> FewerThan);   // kill at least N enemies in one action (within: the source's window, "2 in 3 s", a fact one action meets; fewerThan: and fewer than M, Reaper's Tithe's x2 on exactly 2)
     partial record Damage(DamageSource Via, DamageSpan Needs = DamageSpan.Blow);   // Needs: Sustained for a source that needs several hits or a share of the enemy's health (ADRs D34)
     partial record DamageDebuffed(DamageSource Via, ImmutableArray<StatusId> TargetHas, DamageSpan Needs = DamageSpan.Blow);
-    partial record DamageMultiple(DamageSource Via, TargetCount AtLeast);      // hit at least N enemies in one action
+    partial record DamageMultiple(DamageSource Via, TargetCount AtLeast, Optional<Seconds> Within);   // hit at least N enemies in one action (within: the source's window, "3 in 3 s")
     partial record PickUp(PickupId Pickup);
     partial record BuffGained(StatusId Status);
     partial record StacksMaxed(StatusId Status);
@@ -25,6 +25,7 @@ public partial record Trigger
     partial record CriticalHealth();                                           // the player declares they reached critical health (ADRs D3)
     partial record ShieldBroken(DamageSource Via);                             // a combatant's shield broken by that source (the player says which hit breaks it, ADRs D36)
     partial record EnergyExpended(AbilityKind Kind);                           // the ability's energy fully expended: its last charge used (ADRs D36)
+    partial record DamageFewer(DamageSource Via, TargetCount FewerThan);       // hit fewer than N enemies in one action (at least one)
 }
 
 /// <summary>A guard on the current state, checked after the trigger matched.</summary>
@@ -129,6 +130,18 @@ public sealed record Rule(
 
 public sealed record WeaponStatChange(string Stat, GameValue Change);
 
+/// <summary>
+/// The weapons a change to weapon stats reaches: the build's weapons of those archetypes (Ionic Overclock's fusions), or the
+/// weapon holding the element — "this weapon" as a rule says it (Stats for All), bound by the build check to its slot.
+/// </summary>
+[Union]
+public partial record ChangedWeapons
+{
+    partial record OfArchetypes(ImmutableArray<string> Archetypes);
+    partial record ThisWeapon();          // the weapon holding the element, until the build check binds it (WeaponBinding)
+    partial record InSlot(WeaponSlot Slot);   // the weapon in that slot: "this weapon", bound
+}
+
 /// <summary>Always-on modifiers while equipped (and while <see cref="PassiveRule.When"/> holds).</summary>
 [Union]
 public partial record Passive
@@ -137,7 +150,7 @@ public partial record Passive
     partial record ExtraCharges(AbilityKind Ability, int Extra);            // a fact (ADRs D5)
     partial record ModifyDamage(DamageSource Against, GameValue Change);     // Flashover, stat bonuses
     partial record ResistDamage(PveAndPvp Amount);                           // Spark of Resistance: any damage, "25% [10%]"
-    partial record ModifyWeaponStats(ImmutableArray<string> Archetypes, ImmutableArray<WeaponStatChange> Changes);
+    partial record ModifyWeaponStats(ChangedWeapons Weapons, ImmutableArray<WeaponStatChange> Changes);
     partial record RaiseMaxStacks(StatusId Status, GameValue Max);           // Charged Up: the cap with it equipped, per copy ("4 | 5 | 6"), a fact (ADRs D3)
     partial record ModifyStat(StatKind Stat, GameValue Change);              // Grenade Font: "+20 Grenade" while it holds, a fact never added to the stats (ADRs D1)
     partial record ResistCombatantDamage(CombatantDamage Against, GameValue Amount);   // Arc Resistance: combatants only, nothing in PvP

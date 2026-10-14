@@ -26,7 +26,8 @@ public static class TriggerMatching
                 && HasEveryStatus(killed.TargetHas, killDebuffed.TargetHas),
             killMultiple => gameEvent is GameEvent.TargetsHit { Hit: HitOutcome.Kill } struck
                 && killMultiple.Via.IsMatchedBy(struck.Origin, superType)
-                && struck.Targets.Value >= killMultiple.AtLeast.Value,
+                && struck.Targets.Value >= killMultiple.AtLeast.Value
+                && killMultiple.FewerThan.Match(limit => struck.Targets.Value < limit.Value.Value, _ => true),
             damage => gameEvent is GameEvent.Damaged damaged
                 && damage.Via.IsMatchedBy(damaged.Origin, superType)
                 && IsSpanMet(damage.Needs, damaged.Span),
@@ -47,7 +48,10 @@ public static class TriggerMatching
                 && struck.Targets.Value < killFewer.FewerThan.Value,
             _ => gameEvent is GameEvent.CriticalHealth,
             shieldBroken => gameEvent is GameEvent.ShieldBroken broken && shieldBroken.Via.IsMatchedBy(broken.Origin, superType),
-            energyExpended => gameEvent is GameEvent.EnergyExpended expended && expended.Kind == energyExpended.Kind);
+            energyExpended => gameEvent is GameEvent.EnergyExpended expended && expended.Kind == energyExpended.Kind,
+            damageFewer => gameEvent is GameEvent.TargetsHit struck   // a kill hits too
+                && damageFewer.Via.IsMatchedBy(struck.Origin, superType)
+                && struck.Targets.Value < damageFewer.FewerThan.Value);
 
     /// <summary>
     /// Whether the pattern matches the origin. A finisher has no damage type and is no weapon or ability: only "any
@@ -91,7 +95,8 @@ public static class TriggerMatching
             killFewer: _ => ImmutableArray<StatusId>.Empty,
             criticalHealth: _ => ImmutableArray<StatusId>.Empty,
             shieldBroken: _ => ImmutableArray<StatusId>.Empty,
-            energyExpended: _ => ImmutableArray<StatusId>.Empty);
+            energyExpended: _ => ImmutableArray<StatusId>.Empty,
+            damageFewer: _ => ImmutableArray<StatusId>.Empty);
 
     /// <summary>The damage source a hit or kill trigger names (its <c>via</c>); none for the other triggers.</summary>
     public static Optional<DamageSource> FindVia(this Trigger trigger) =>
@@ -112,7 +117,8 @@ public static class TriggerMatching
             killFewer: killFewer => Optional.Some(killFewer.Via),
             criticalHealth: _ => Optional.None<DamageSource>(),
             shieldBroken: shieldBroken => Optional.Some(shieldBroken.Via),
-            energyExpended: _ => Optional.None<DamageSource>());
+            energyExpended: _ => Optional.None<DamageSource>(),
+            damageFewer: damageFewer => Optional.Some(damageFewer.Via));
 
     /// <summary>
     /// The ability use a trigger names, when it names one: a cast of that use (<c>abilityCast: { ability: classAbility,

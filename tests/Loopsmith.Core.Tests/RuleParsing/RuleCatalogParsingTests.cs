@@ -343,7 +343,7 @@ public sealed class RuleCatalogParsingTests
         Assert.Equal(new Passive.ResistDamage(new PveAndPvp(new GameValue.Known(0.25m), Optional.None<GameValue>())), passives[3].Modifier);
 
         var weaponStats = Assert.IsType<Passive.ModifyWeaponStats>(passives[4].Modifier);
-        Assert.Equal(["fusion-rifle"], weaponStats.Archetypes);
+        Assert.Equal(["fusion-rifle"], Assert.IsType<ChangedWeapons.OfArchetypes>(weaponStats.Weapons).Archetypes);
         Assert.Equal([new WeaponStatChange("handling", new GameValue.Unknown())], weaponStats.Changes);
     }
 
@@ -1072,7 +1072,7 @@ public sealed class RuleCatalogParsingTests
         var rules = catalog.Elements[ElementId.From("probe")].Rules;
 
         Assert.True(catalog.Glossary.IsCounted(ToStatus("armor-charge")));
-        Assert.Equal(new Trigger.KillMultiple(new DamageSource.WeaponOfType(DamageType.Arc), TargetCount.From(2), Optional.Some(Seconds.From(3m))), rules[0].On);
+        Assert.Equal(new Trigger.KillMultiple(new DamageSource.WeaponOfType(DamageType.Arc), TargetCount.From(2), Optional.Some(Seconds.From(3m)), Optional.None<TargetCount>()), rules[0].On);
         Assert.Equal([new Condition.Holds(ToStatus("armor-charge"), StackCount.From(3))], rules[0].When);
         var spent = Assert.IsType<StackEnergy.BySpent>(Assert.IsType<Outcome.ConvertStacksToEnergy>(rules[0].Then[0]).Energy);
         Assert.Equal(3, spent.Table.From.Value);
@@ -1304,9 +1304,9 @@ public sealed class RuleCatalogParsingTests
         var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToElementsFile("weapons/perks.yaml", OneForAllYaml)]));
 
         var rules = catalog.Elements[ElementId.From("one-for-all")].Rules;
-        Assert.Equal(new Trigger.DamageMultiple(new DamageSource.AnyWeapon(), TargetCount.From(3)), rules[0].On);
-        Assert.Equal(new Trigger.KillMultiple(new DamageSource.AbilityOf(AbilityKind.Grenade), TargetCount.From(2), Optional.None<Seconds>()), rules[1].On);
-        Assert.Equal(new Trigger.KillMultiple(new DamageSource.AnySource(), TargetCount.One, Optional.None<Seconds>()), rules[2].On);
+        Assert.Equal(new Trigger.DamageMultiple(new DamageSource.AnyWeapon(), TargetCount.From(3), Optional.None<Seconds>()), rules[0].On);
+        Assert.Equal(new Trigger.KillMultiple(new DamageSource.AbilityOf(AbilityKind.Grenade), TargetCount.From(2), Optional.None<Seconds>(), Optional.None<TargetCount>()), rules[1].On);
+        Assert.Equal(new Trigger.KillMultiple(new DamageSource.AnySource(), TargetCount.One, Optional.None<Seconds>(), Optional.None<TargetCount>()), rules[2].On);
     }
 
     [Theory]
@@ -1334,6 +1334,70 @@ public sealed class RuleCatalogParsingTests
     }
 
     [Fact]
+    public void Parses_a_hit_count_with_its_window_a_hit_of_fewer_than_N_and_a_kill_count_with_an_upper_bound()
+    {
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToElementsFile("weapons/perks.yaml", """
+            elements:
+              - id: one-for-all
+                name: One for All
+                kind: weaponPerk
+                affinity: neutral
+                rules:
+                  - on: { damage: { via: "weapon:this", atLeast: 3, within: 3s } }
+                    then: [ { applyBuff: amplified } ]
+                  - on: { damage: { via: "weapon:this", fewerThan: 3 } }
+                    then: [ { applyBuff: amplified } ]
+                    chance: true
+                  - on: { kill: { via: "weapon:this", atLeast: 2, fewerThan: 3 } }
+                    then: [ { spawn: orb-of-power } ]
+            """)]));
+
+        var rules = catalog.Elements[ElementId.From("one-for-all")].Rules;
+        Assert.Equal(new Trigger.DamageMultiple(new DamageSource.ThisWeapon(), TargetCount.From(3), Optional.Some(Seconds.From(3m))), rules[0].On);
+        Assert.Equal(new Trigger.DamageFewer(new DamageSource.ThisWeapon(), TargetCount.From(3)), rules[1].On);
+        Assert.Equal(
+            new Trigger.KillMultiple(new DamageSource.ThisWeapon(), TargetCount.From(2), Optional.None<Seconds>(), Optional.Some(TargetCount.From(3))),
+            rules[2].On);
+    }
+
+    [Fact]
+    public void Parses_a_change_to_this_weapons_stats()
+    {
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToElementsFile("weapons/perks.yaml", """
+            elements:
+              - id: stats-for-all
+                name: Stats for All
+                kind: weaponPerk
+                affinity: neutral
+                passives:
+                  - effect: { modifyWeaponStats: { weapon: this, changes: [ { stat: handling, change: "+35" } ] } }
+                    when: [ { has: amplified } ]
+            """)]));
+
+        var stats = Assert.IsType<Passive.ModifyWeaponStats>(catalog.Elements[ElementId.From("stats-for-all")].Passives[0].Modifier);
+        Assert.IsType<ChangedWeapons.ThisWeapon>(stats.Weapons);
+    }
+
+    [Theory]
+    [InlineData("{ weapon: that, changes: [ { stat: handling, change: \"+35\" } ] }", "modifyWeaponStats.weapon: 'that' isn't a weapon a passive can name (write 'this': the weapon holding the element)")]
+    [InlineData("{ weapon: this, archetypes: [bow], changes: [ { stat: handling, change: \"+35\" } ] }", "modifyWeaponStats names 'archetypes' or 'weapon', not both")]
+    [InlineData("{ changes: [ { stat: handling, change: \"+35\" } ] }", "modifyWeaponStats needs 'archetypes' or 'weapon: this'")]
+    public void A_change_to_weapon_stats_names_its_archetypes_or_this_weapon(string effect, string expected)
+    {
+        var message = ParseInvalidCatalog(Glossary, ToElementsFile("weapons/perks.yaml", $$"""
+            elements:
+              - id: stats-for-all
+                name: Stats for All
+                kind: weaponPerk
+                affinity: neutral
+                passives:
+                  - effect: { modifyWeaponStats: {{effect}} }
+            """));
+
+        Assert.Contains(expected, message);
+    }
+
+    [Fact]
     public void Parses_a_weapon_mod_with_this_weapon_and_a_kill_of_fewer_than_N()
     {
         var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToElementsFile("mods/weapons.yaml", """
@@ -1352,16 +1416,19 @@ public sealed class RuleCatalogParsingTests
 
         var synergy = catalog.Elements[ElementId.From("synergy")];
         Assert.Equal(ElementKind.WeaponMod, synergy.Kind);
-        Assert.Equal(new Trigger.KillMultiple(new DamageSource.ThisWeaponOfType(DamageType.Arc), TargetCount.From(12), Optional.None<Seconds>()), synergy.Rules[0].On);
+        Assert.Equal(new Trigger.KillMultiple(new DamageSource.ThisWeaponOfType(DamageType.Arc), TargetCount.From(12), Optional.None<Seconds>(), Optional.None<TargetCount>()), synergy.Rules[0].On);
         Assert.Equal(new Trigger.KillFewer(new DamageSource.ThisWeapon(), TargetCount.From(12)), synergy.Rules[1].On);
     }
 
     [Theory]
     [InlineData("kill: { via: weapon, fewerThan: 1 }", "hunter/arc.yaml:7: kill.fewerThan: fewer than 1 kills never happens (use 2..20)")]
-    [InlineData("kill: { via: weapon, fewerThan: 3, atLeast: 2 }", "hunter/arc.yaml:7: kill cannot combine 'atLeast' and 'fewerThan'")]
+    [InlineData("kill: { via: weapon, fewerThan: 2, atLeast: 2 }", "hunter/arc.yaml:7: kill: fewer than 2 and at least 2 never happens (fewerThan must be above atLeast)")]
     [InlineData("kill: { via: weapon, fewerThan: 3, tier: champion }", "hunter/arc.yaml:7: kill cannot combine 'fewerThan' and 'tier'")]
-    [InlineData("damage: { via: weapon, fewerThan: 3 }", "hunter/arc.yaml:7: unknown key 'fewerThan' in damage")]
-    public void Fewer_than_is_a_count_of_2_to_20_on_a_kill_and_stands_alone(string trigger, string expected)
+    [InlineData("damage: { via: weapon, fewerThan: 1 }", "hunter/arc.yaml:7: damage.fewerThan: fewer than 1 enemies hit never happens (use 2..20)")]
+    [InlineData("damage: { via: weapon, fewerThan: 3, atLeast: 2 }", "hunter/arc.yaml:7: damage cannot combine 'atLeast' and 'fewerThan'")]
+    [InlineData("damage: { via: weapon, fewerThan: 3, sustained: true }", "hunter/arc.yaml:7: damage cannot combine 'fewerThan' and 'sustained'")]
+    [InlineData("damage: { via: weapon, within: 3s }", "hunter/arc.yaml:7: damage: 'within' is the window of a hit count, so it needs 'atLeast'")]
+    public void Fewer_than_is_a_count_of_2_to_20_that_stands_alone_but_bounds_a_kill_count(string trigger, string expected)
     {
         var message = ParseInvalidCatalog(Glossary, ToElementsFile("hunter/arc.yaml", $$"""
             elements:
@@ -1832,6 +1899,20 @@ public sealed class RuleCatalogParsingTests
             catalog.Elements[ElementId.From("slice")].Rules.SelectMany(rule => rule.Then),
             catalog.Elements[ElementId.From("slice-enhanced")].Rules.SelectMany(rule => rule.Then));
         Assert.Equal(catalog.Elements[ElementId.From("slice")].Description, catalog.Elements[ElementId.From("slice-enhanced")].Description);
+    }
+
+    [Fact]
+    public void An_enhanced_trait_adds_its_own_rules_after_the_perks()
+    {
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToSliceFile(
+            "{ hash: 3422796781, rules: [ { on: { kill: { via: weapon } }, then: [ { spawn: orb-of-power } ], chance: true } ] }")]));
+
+        var perk = catalog.Elements[ElementId.From("slice")];
+        var enhanced = catalog.Elements[ElementId.From("slice-enhanced")];
+        Assert.Equal(2, perk.Rules.Length);
+        Assert.Equal(3, enhanced.Rules.Length);
+        Assert.Equal([new Outcome.Spawn(PickupId.From("orb-of-power"), 1)], enhanced.Rules[2].Then);
+        Assert.Equal(Likelihood.Chance, enhanced.Rules[2].Likelihood);
     }
 
     [Theory]

@@ -220,7 +220,8 @@ public static class BuildExplaining
             killFewer: _ => 24,
             criticalHealth: _ => 60,
             shieldBroken: _ => 26,
-            energyExpended: expended => RankAbility(expended.Kind));
+            energyExpended: expended => RankAbility(expended.Kind),
+            damageFewer: _ => 13);
 
     private static int RankAbility(AbilityKind kind) =>
         kind switch
@@ -251,7 +252,8 @@ public static class BuildExplaining
             killFewer: _ => [],
             criticalHealth: _ => [],
             shieldBroken: _ => [],
-            energyExpended: _ => []);
+            energyExpended: _ => [],
+            damageFewer: _ => []);
         var pickup = trigger is Trigger.PickUp pickUp && glossary.Pickups.TryGetValue(pickUp.Pickup, out var definition)
             ? definition.Affinity
             : Affinity.Neutral;

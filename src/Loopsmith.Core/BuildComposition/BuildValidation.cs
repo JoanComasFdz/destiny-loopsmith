@@ -191,9 +191,10 @@ public static class BuildValidation
                     .Select(passive => passive.Modifier)
                     .OfType<Passive.ModifyWeaponStats>()
                     .Where(weapons => PassiveReaching.FindReach(build, weapons) is PassiveReach.NoWeapon)
-                    .Select(weapons => new BuildIssue(
+                    .SelectMany(weapons => weapons.Weapons is ChangedWeapons.OfArchetypes archetypes ? new[] { archetypes.Archetypes } : [])
+                    .Select(archetypes => new BuildIssue(
                         Severity.Info,
-                        $"{element.Name} changes {DomainPhrasing.DescribeArchetypes(weapons.Archetypes)}, and no weapon in this build is one, so it does nothing here.")))
+                        $"{element.Name} changes {DomainPhrasing.DescribeArchetypes(archetypes)}, and no weapon in this build is one, so it does nothing here.")))
             : [];
 
     /// <summary>

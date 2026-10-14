@@ -23,7 +23,7 @@ internal static class RuleBodyParsing
     private static readonly ImmutableArray<string> RuleKeys = ["on", "when", "then", "chance", "reason", "doesNotStackWith"];
     private static readonly ImmutableArray<string> PassiveRuleKeys = ["effect", "when", "reason"];
     private static readonly ImmutableArray<string> KillKeys = ["via", "tier", "targetHas", "atLeast", "fewerThan", "within"];
-    private static readonly ImmutableArray<string> DamageKeys = ["via", "targetHas", "atLeast", "sustained"];
+    private static readonly ImmutableArray<string> DamageKeys = ["via", "targetHas", "atLeast", "fewerThan", "within", "sustained"];
 
     private static readonly ImmutableArray<string> TriggerNames =
         ["abilityCast", "kill", "damage", "pickUp", "buffGained", "stacksMaxed", "finisher", "criticalHealth", "shieldBroken", "energyExpended"];
@@ -145,21 +145,35 @@ internal static class RuleBodyParsing
                 map.ReadOrDefault("within", ReadDuration, Optional.None<Seconds>()),
                 (_, via, tier, targetHas, atLeast, fewerThan, within) => (via, tier, targetHas, atLeast, fewerThan, within))
             .Bind(kill => Combine(
-                CheckAtLeastStandsAlone(map, kill.atLeast, ("tier", kill.tier.IsSome()), ("targetHas", kill.targetHas.IsSome()), ("fewerThan", kill.fewerThan.IsSome())),
+                CheckAtLeastStandsAlone(map, kill.atLeast, ("tier", kill.tier.IsSome()), ("targetHas", kill.targetHas.IsSome())),
                 CheckFewerThanStandsAlone(map, kill.fewerThan, ("tier", kill.tier.IsSome()), ("targetHas", kill.targetHas.IsSome())),
-                CheckWithinNeedsAtLeast(map, kill.within, kill.atLeast),
+                CheckWithinNeedsAtLeast(map, kill.within, kill.atLeast, "kill"),
+                CheckFewerThanAboveAtLeast(map, kill.atLeast, kill.fewerThan),
                 ToKillTrigger(map, kill.via, kill.tier, kill.targetHas, kill.atLeast, kill.fewerThan, kill.within),
-                (_, _, _, trigger) => trigger)));
+                (_, _, _, _, trigger) => trigger)));
 
-    /// <summary><c>within</c> is the window a source gives its kills ("2 kills within 3 s"): only a kill count has one.</summary>
-    private static Result<Unit, Errors> CheckWithinNeedsAtLeast(YamlMap map, Optional<Seconds> within, Optional<TargetCount> atLeast) =>
+    /// <summary><c>within</c> is the window a source gives its kills or hits ("2 kills within 3 s"): only a count has one.</summary>
+    private static Result<Unit, Errors> CheckWithinNeedsAtLeast(YamlMap map, Optional<Seconds> within, Optional<TargetCount> atLeast, string what) =>
         within.IsSome() && !atLeast.IsSome()
-            ? map.FailAtKey<Unit>("within", $"{map.Label}: 'within' is the window of a kill count, so it needs 'atLeast'")
+            ? map.FailAtKey<Unit>("within", $"{map.Label}: 'within' is the window of a {what} count, so it needs 'atLeast'")
             : Succeed<Unit>(new Unit.Value());
 
     /// <summary>
-    /// A kill is "of a tier", "of a debuffed target", "of at least N in one action" or "of fewer than N in one action" —
-    /// never two (not representable).
+    /// <c>atLeast</c> with <c>fewerThan</c> is a kill count from one to the other ("exactly 2": Reaper's Tithe's x2), so the upper
+    /// bound must be above the lower one.
+    /// </summary>
+    private static Result<Unit, Errors> CheckFewerThanAboveAtLeast(YamlMap map, Optional<TargetCount> atLeast, Optional<TargetCount> fewerThan) =>
+        atLeast.Match(
+            least => fewerThan.Match(
+                limit => limit.Value.Value > least.Value.Value
+                    ? Succeed<Unit>(new Unit.Value())
+                    : map.FailAtKey<Unit>("fewerThan", $"{map.Label}: fewer than {limit.Value.Value} and at least {least.Value.Value} never happens (fewerThan must be above atLeast)"),
+                _ => Succeed<Unit>(new Unit.Value())),
+            _ => Succeed<Unit>(new Unit.Value()));
+
+    /// <summary>
+    /// A kill is "of a tier", "of a debuffed target", "of at least N in one action" (and fewer than M) or "of fewer than N in
+    /// one action" — never two others (not representable).
     /// </summary>
     private static Result<Trigger, Errors> ToKillTrigger(
         YamlMap map,
@@ -170,7 +184,7 @@ internal static class RuleBodyParsing
         Optional<TargetCount> fewerThan,
         Optional<Seconds> within) =>
         atLeast.Match(
-            someCount => Succeed<Trigger>(new Trigger.KillMultiple(via, someCount.Value, within)),
+            someCount => Succeed<Trigger>(new Trigger.KillMultiple(via, someCount.Value, within, fewerThan)),
             _ => fewerThan.Match(
                 someLimit => Succeed<Trigger>(new Trigger.KillFewer(via, someLimit.Value)),
                 _ => tier.Match(
@@ -203,16 +217,39 @@ internal static class RuleBodyParsing
                 map.ReadOrDefault("via", scope.ReadDamageSource, new DamageSource.AnySource()),
                 map.ReadOptional("targetHas", targetHas => ReadDebuffList(scope, targetHas)),
                 map.ReadOptional("atLeast", ReadTargetCount),
+                map.ReadOptional("fewerThan", ReadFewerThanHits),
+                map.ReadOrDefault("within", ReadDuration, Optional.None<Seconds>()),
                 map.ReadOrDefault("sustained", ReadBoolean, false),
-                (_, via, targetHas, atLeast, sustained) => (via, targetHas, atLeast, needs: sustained ? DamageSpan.Sustained : DamageSpan.Blow))
+                (_, via, targetHas, atLeast, fewerThan, within, sustained) =>
+                    (via, targetHas, atLeast, fewerThan, within, needs: sustained ? DamageSpan.Sustained : DamageSpan.Blow))
             .Bind(damage => Combine(
-                CheckAtLeastStandsAlone(map, damage.atLeast, ("targetHas", damage.targetHas.IsSome()), ("sustained", damage.needs == DamageSpan.Sustained)),
-                Succeed(damage.atLeast.Match<Trigger>(
-                    someCount => new Trigger.DamageMultiple(damage.via, someCount.Value),
-                    _ => damage.targetHas.Match<Trigger>(
-                        someStatuses => new Trigger.DamageDebuffed(damage.via, someStatuses.Value, damage.needs),
-                        _ => new Trigger.Damage(damage.via, damage.needs)))),
-                (_, trigger) => trigger)));
+                CheckAtLeastStandsAlone(map, damage.atLeast, ("targetHas", damage.targetHas.IsSome()), ("sustained", damage.needs == DamageSpan.Sustained), ("fewerThan", damage.fewerThan.IsSome())),
+                CheckFewerThanStandsAlone(map, damage.fewerThan, ("targetHas", damage.targetHas.IsSome()), ("sustained", damage.needs == DamageSpan.Sustained)),
+                CheckWithinNeedsAtLeast(map, damage.within, damage.atLeast, "hit"),
+                Succeed(ToDamageTrigger(damage.via, damage.targetHas, damage.atLeast, damage.fewerThan, damage.within, damage.needs)),
+                (_, _, _, trigger) => trigger)));
+
+    /// <summary>A hit is "of at least N in one action", "of fewer than N in one action", "of a debuffed target" or any.</summary>
+    private static Trigger ToDamageTrigger(
+        DamageSource via,
+        Optional<ImmutableArray<StatusId>> targetHas,
+        Optional<TargetCount> atLeast,
+        Optional<TargetCount> fewerThan,
+        Optional<Seconds> within,
+        DamageSpan needs) =>
+        atLeast.Match<Trigger>(
+            someCount => new Trigger.DamageMultiple(via, someCount.Value, within),
+            _ => fewerThan.Match<Trigger>(
+                someLimit => new Trigger.DamageFewer(via, someLimit.Value),
+                _ => targetHas.Match<Trigger>(
+                    someStatuses => new Trigger.DamageDebuffed(via, someStatuses.Value, needs),
+                    _ => new Trigger.Damage(via, needs))));
+
+    /// <summary><c>fewerThan</c> on a hit: enemies hit in one action below this many, at least one; 2..20.</summary>
+    private static Result<TargetCount, Errors> ReadFewerThanHits(YamlValue value) =>
+        ReadTargetCount(value).Bind(count => count.Value >= 2
+            ? Succeed(count)
+            : value.FailAt<TargetCount>($"{value.Label}: fewer than {count.Value} enemies hit never happens (use 2..20)"));
 
     /// <summary>
     /// <c>atLeast</c> ("N enemies in one action", ADRs D4) is a trigger of its own: it can't be combined with a tier or a
@@ -521,10 +558,30 @@ internal static class RuleBodyParsing
 
     private static Result<Passive, Errors> ReadModifyWeaponStats(YamlValue value) =>
         value.ToMap().Bind(map => Combine(
-            map.CheckKeys(["archetypes", "changes"]),
-            map.ReadRequired("archetypes", archetypes => ReadNonEmpty(archetypes, archetypes.ReadEach("archetype", ReadSlug))),
+            map.CheckKeys(["archetypes", "weapon", "changes"]),
+            map.ReadOptional("archetypes", archetypes => ReadNonEmpty(archetypes, archetypes.ReadEach("archetype", ReadSlug))),
+            map.ReadOptional("weapon", ReadThisWeapon),
             map.ReadRequired("changes", changes => ReadNonEmpty(changes, changes.ReadEach("change", ReadWeaponStatChange))),
-            Passive (_, archetypes, changes) => new Passive.ModifyWeaponStats(archetypes, changes)));
+            (_, archetypes, weapon, changes) => (archetypes, weapon, changes))
+            .Bind(read => ToChangedWeapons(map, read.archetypes, read.weapon)
+                .Map(Passive (weapons) => new Passive.ModifyWeaponStats(weapons, read.changes))));
+
+    /// <summary><c>weapon: this</c>: the weapon holding the element (a weapon perk's own buff: Stats for All).</summary>
+    private static Result<Unit, Errors> ReadThisWeapon(YamlValue value) =>
+        value.ParseWith<Unit>(text => text == "this"
+            ? new Result<Unit, string>.Ok(new Unit.Value())
+            : new Result<Unit, string>.Error($"'{text}' isn't a weapon a passive can name (write 'this': the weapon holding the element)"));
+
+    /// <summary>The weapons a change to weapon stats reaches: its archetypes, or this weapon — exactly one of them.</summary>
+    private static Result<ChangedWeapons, Errors> ToChangedWeapons(YamlMap map, Optional<ImmutableArray<string>> archetypes, Optional<Unit> weapon) =>
+        (archetypes.IsSome(), weapon.IsSome()) switch
+        {
+            (true, true) => map.FailAt<ChangedWeapons>($"{map.Label} names 'archetypes' or 'weapon', not both"),
+            (false, false) => map.FailAt<ChangedWeapons>($"{map.Label} needs 'archetypes' or 'weapon: this'"),
+            _ => Succeed(archetypes.Match<ChangedWeapons>(
+                some => new ChangedWeapons.OfArchetypes(some.Value),
+                _ => new ChangedWeapons.ThisWeapon())),
+        };
 
     private static Result<WeaponStatChange, Errors> ReadWeaponStatChange(YamlValue value) =>
         value.ToMap().Bind(map => Combine(

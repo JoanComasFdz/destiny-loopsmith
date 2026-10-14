@@ -21,7 +21,12 @@ public static class WeaponBinding
     /// <summary>Whether a rule, an outcome or a passive of the element says "this weapon".</summary>
     public static bool IsNamingThisWeapon(this BuildElement element) =>
         element.Rules.Any(IsNamingThisWeapon)
-        || element.Passives.Any(passive => passive.Modifier is Passive.ModifyDamage modify && IsThisWeapon(modify.Against));
+        || element.Passives.Any(passive => passive.Modifier switch
+        {
+            Passive.ModifyDamage modify => IsThisWeapon(modify.Against),
+            Passive.ModifyWeaponStats { Weapons: ChangedWeapons.ThisWeapon } => true,
+            _ => false,
+        });
 
     /// <summary>
     /// The element as the weapon in <paramref name="slot"/>, of <paramref name="type"/>, holds it: each "this weapon" is
@@ -50,9 +55,15 @@ public static class WeaponBinding
     }
 
     private static Optional<PassiveRule> BindPassive(PassiveRule passive, WeaponSlot slot, DamageType type) =>
-        passive.Modifier is Passive.ModifyDamage modify
-            ? BindSource(modify.Against, slot, type).Map(against => passive with { Modifier = modify with { Against = against } })
-            : Optional.Some(passive);
+        passive.Modifier switch
+        {
+            Passive.ModifyDamage modify => BindSource(modify.Against, slot, type).Map(against => passive with { Modifier = modify with { Against = against } }),
+            Passive.ModifyWeaponStats { Weapons: ChangedWeapons.ThisWeapon } weapons => Optional.Some(passive with
+            {
+                Modifier = weapons with { Weapons = new ChangedWeapons.InSlot(slot) },
+            }),
+            _ => Optional.Some(passive),
+        };
 
     private static Optional<Outcome> BindOutcome(Outcome outcome, WeaponSlot slot, DamageType type) =>
         outcome is Outcome.ModifyDamage modify
@@ -77,7 +88,8 @@ public static class WeaponBinding
             killFewer => BindSource(killFewer.Via, slot, type).Map(Trigger (via) => killFewer with { Via = via }),
             criticalHealth => Optional.Some<Trigger>(criticalHealth),
             shieldBroken => BindSource(shieldBroken.Via, slot, type).Map(Trigger (via) => shieldBroken with { Via = via }),
-            energyExpended => Optional.Some<Trigger>(energyExpended));
+            energyExpended => Optional.Some<Trigger>(energyExpended),
+            damageFewer => BindSource(damageFewer.Via, slot, type).Map(Trigger (via) => damageFewer with { Via = via }));
 
     /// <summary>"This weapon" is the slot's weapon; "this weapon, when it is X" is it when its type is X, else nothing.</summary>
     private static Optional<DamageSource> BindSource(DamageSource source, WeaponSlot slot, DamageType type) =>

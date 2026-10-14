@@ -352,11 +352,11 @@ public static class DomainPhrasing
             killAny => DescribeKill(glossary, killAny.Via, [], superType),
             killOfTier => $"{DescribeKill(glossary, killOfTier.Via, [], superType)} ({killOfTier.Tier})",
             killDebuffed => DescribeKill(glossary, killDebuffed.Via, killDebuffed.TargetHas, superType),
-            killMultiple => DescribeMultiKill(glossary, killMultiple.Via, killMultiple.AtLeast, superType)
-                + killMultiple.Within.Match(within => $" in {within.Value.FormatSeconds()}", _ => ""),
+            killMultiple => DescribeMultiKill(glossary, killMultiple.Via, killMultiple.AtLeast, killMultiple.FewerThan, superType)
+                + DescribeWithin(killMultiple.Within),
             damage => DescribeDamage(glossary, damage.Via, [], superType) + DescribeSpan(damage.Needs),
             damageDebuffed => DescribeDamage(glossary, damageDebuffed.Via, damageDebuffed.TargetHas, superType) + DescribeSpan(damageDebuffed.Needs),
-            damageMultiple => DescribeMultiHit(glossary, damageMultiple.Via, damageMultiple.AtLeast, superType),
+            damageMultiple => DescribeMultiHit(glossary, damageMultiple.Via, damageMultiple.AtLeast, superType) + DescribeWithin(damageMultiple.Within),
             pickUp => $"Pick up {glossary.DescribePickup(pickUp.Pickup)}",
             buffGained => $"Gain {glossary.DescribeStatus(buffGained.Status)}",
             stacksMaxed => $"Max {glossary.DescribeStatus(stacksMaxed.Status)}",
@@ -367,7 +367,12 @@ public static class DomainPhrasing
             shieldBroken => shieldBroken.Via is DamageSource.AnySource
                 ? BreakShield
                 : $"{BreakShield} with {glossary.DescribeDamageSource(shieldBroken.Via, superType)}",
-            energyExpended => DescribeEnergyExpended(energyExpended.Kind));
+            energyExpended => DescribeEnergyExpended(energyExpended.Kind),
+            damageFewer => DescribeFewHits(glossary, damageFewer.Via, damageFewer.FewerThan, superType));
+
+    /// <summary>" in 3s": the window a source gives the kills or hits it counts; nothing without one.</summary>
+    private static string DescribeWithin(Optional<Seconds> within) =>
+        within.Match(some => $" in {some.Value.FormatSeconds()}", _ => "");
 
     /// <summary>"Grenade energy fully expended": the ability's last charge used (ADRs D36), as Bungie's text of the Kickstarts says it.</summary>
     public static string DescribeEnergyExpended(this AbilityKind kind) =>
@@ -404,10 +409,21 @@ public static class DomainPhrasing
     }
 
     /// <summary>"Kill 2+ with grenade", "Kill 3+ enemies" (any source).</summary>
-    private static string DescribeMultiKill(KeywordGlossary glossary, DamageSource via, TargetCount atLeast, Optional<DamageType> superType) =>
-        via is DamageSource.AnySource
-            ? $"Kill {atLeast.Value}+ enemies"
-            : $"Kill {atLeast.Value}+ with {glossary.DescribeDamageSource(via, superType)}";
+    private static string DescribeMultiKill(KeywordGlossary glossary, DamageSource via, TargetCount atLeast, Optional<TargetCount> fewerThan, Optional<DamageType> superType)
+    {
+        var count = DescribeKillRange(atLeast, fewerThan);
+        return via is DamageSource.AnySource
+            ? $"Kill {count} enemies"
+            : $"Kill {count} with {glossary.DescribeDamageSource(via, superType)}";
+    }
+
+    /// <summary>"2+" (at least 2), "2" (at least 2, fewer than 3), "2–3" (at least 2, fewer than 4).</summary>
+    private static string DescribeKillRange(TargetCount atLeast, Optional<TargetCount> fewerThan) =>
+        fewerThan.Match(
+            limit => limit.Value.Value - 1 == atLeast.Value
+                ? atLeast.Value.ToString(Invariant)
+                : $"{atLeast.Value.ToString(Invariant)}–{(limit.Value.Value - 1).ToString(Invariant)}",
+            _ => $"{atLeast.Value.ToString(Invariant)}+");
 
     /// <summary>"Kill 1–11 with this weapon", "Kill 1–11 enemies" (any source): fewer than N in one action, at least one.</summary>
     private static string DescribeFewKills(KeywordGlossary glossary, DamageSource via, TargetCount fewerThan, Optional<DamageType> superType)
@@ -417,6 +433,17 @@ public static class DomainPhrasing
         return via is DamageSource.AnySource
             ? $"Kill {range} {(most == 1 ? "enemy" : "enemies")}"
             : $"Kill {range} with {glossary.DescribeDamageSource(via, superType)}";
+    }
+
+    /// <summary>"Hit 1–2 enemies with this weapon", "Hit 1 enemy" (any source): fewer than N in one action, at least one.</summary>
+    private static string DescribeFewHits(KeywordGlossary glossary, DamageSource via, TargetCount fewerThan, Optional<DamageType> superType)
+    {
+        var most = fewerThan.Value - 1;
+        var range = most == 1 ? "1" : $"1–{most.ToString(Invariant)}";
+        var enemies = most == 1 ? "enemy" : "enemies";
+        return via is DamageSource.AnySource
+            ? $"Hit {range} {enemies}"
+            : $"Hit {range} {enemies} with {glossary.DescribeDamageSource(via, superType)}";
     }
 
     /// <summary>"Hit 3+ enemies with weapon", "Hit 3+ enemies" (any source).</summary>
@@ -784,7 +811,7 @@ public static class DomainPhrasing
             charges => $"+{charges.Extra} {charges.Ability.DescribeAbility()} charge",
             modify => DescribeDamageChange(glossary, modify.Against, modify.Change, superType),
             resist => DescribeResistance(resist),
-            weapons => $"{DescribeArchetypes(weapons.Archetypes)}: "
+            weapons => $"{DescribeChangedWeapons(glossary, weapons.Weapons, superType)}: "
                 + string.Join(", ", weapons.Changes.Select(change => DescribeStatChange(change))),
             raise => $"{glossary.DescribeStatus(raise.Status)} up to x{raise.Max.FormatNumber()}",
             stat => $"{FormatSignedNumber(stat.Change)} {stat.Stat}",
@@ -840,15 +867,20 @@ public static class DomainPhrasing
             ? value.FormatNumber()
             : "+" + value.FormatNumber();
 
+    /// <summary>"Linear Fusion Rifles, Fusion Rifles and Heat Weapons", "this weapon", "Kinetic weapon": what a change to weapon stats reaches.</summary>
+    public static string DescribeChangedWeapons(this KeywordGlossary glossary, ChangedWeapons weapons, Optional<DamageType> superType) =>
+        weapons.Match(
+            ofArchetypes => DescribeArchetypes(ofArchetypes.Archetypes),
+            _ => Capitalize(glossary.DescribeDamageSource(new DamageSource.ThisWeapon(), superType)),
+            inSlot => Capitalize(glossary.DescribeDamageSource(new DamageSource.WeaponInSlot(inSlot.Slot), superType)));
+
     /// <summary>"Linear Fusion Rifles, Fusion Rifles and Heat Weapons": weapon archetypes as the game names them, plural.</summary>
     public static string DescribeArchetypes(ImmutableArray<string> archetypes) =>
         JoinWithAnd(archetypes.Select(archetype => DescribeArchetype(archetype) + "s").ToImmutableArray());
 
-    /// <summary>"+? Handling" (the source gives no number: "?", never 0), else "Reload 20%".</summary>
+    /// <summary>"+35 Handling", "+? Handling" (the source gives no number: "?", never 0): stat points, as the game shows them.</summary>
     private static string DescribeStatChange(WeaponStatChange change) =>
-        change.Change is GameValue.Unknown
-            ? $"+{Unknown} {ToTitleWords(change.Stat)}"
-            : $"{ToTitleWords(change.Stat)} {change.Change.FormatPercent()}";
+        $"{FormatSignedNumber(change.Change)} {ToTitleWords(change.Stat)}";
 
     /// <summary>"a", "a and b", "a, b and c".</summary>
     private static string JoinWithAnd(ImmutableArray<string> parts) =>
@@ -857,14 +889,19 @@ public static class DomainPhrasing
     // ── events and actions ─────────────────────────────────────────────────────
 
     /// <summary>
-    /// An event with the rules it set off: the event, and for kills of several enemies in one action, the tightest window
-    /// a rule it fired needs ("Festival Flight killed 2 enemies in 3 s": Strand Siphon's two kills within 3 s; 2 kills
-    /// within 3 s are within 4 s too).
+    /// An event with the rules it set off: the event, and for kills or hits of several enemies in one action, the tightest
+    /// window a rule it fired needs ("Festival Flight killed 2 enemies in 3 s": Strand Siphon's two kills within 3 s; 2 kills
+    /// within 3 s are within 4 s too; "hit 3 enemies in 3 s": One For All).
     /// </summary>
     public static string DescribeFiredEvent(this KeywordGlossary glossary, ImmutableArray<FiredRule> rules, Build build) =>
         glossary.DescribeEvent(rules[0].Trigger, build)
             + DescribeWindow(rules
-                .Select(rule => rule.On is Trigger.KillMultiple kill ? kill.Within : Optional.None<Seconds>())
+                .Select(rule => rule.On switch
+                {
+                    Trigger.KillMultiple kill => kill.Within,
+                    Trigger.DamageMultiple hit => hit.Within,
+                    _ => Optional.None<Seconds>(),
+                })
                 .Where(within => within.IsSome())
                 .OrderBy(within => within.Match(some => some.Value.Value, _ => 0m))
                 .FirstOrDefault(Optional.None<Seconds>()));

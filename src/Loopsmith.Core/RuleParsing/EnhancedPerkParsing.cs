@@ -22,37 +22,39 @@ internal partial record EnhancedPair
 
 /// <summary>
 /// A weapon perk's <c>enhanced:</c> block — the enhanced trait an enhanced or crafted copy of a weapon rolls, its own plug:
-/// <c>{ hash, values: { 8s: 9s }, description }</c>. Its element (<c>&lt;id&gt;-enhanced</c>, "Slice (enhanced)") is the
+/// <c>{ hash, values: { 8s: 9s }, rules, description }</c>. Its element (<c>&lt;id&gt;-enhanced</c>, "Slice (enhanced)") is the
 /// perk — its kind, affinity, source, inert and stat checks — with the Compendium row's ↑ figures in place of the base
 /// ones: <c>values</c> maps a value the perk's rules or passives use (a duration such as <c>8s</c>, a game value such as
 /// <c>0.87%</c>) to the enhanced one; one they don't use is an error, so a typo can't leave the base figure in, and so is
 /// a reason that writes a replaced figure (it would say the base one). Without <c>values</c> the rules are the perk's
-/// (the enhanced figures are in its description only). Other plugs of the same enhanced trait are recognised by name
+/// (the enhanced figures are in its description only). <c>rules</c> are what only the enhanced trait does, after the perk's
+/// (Hatchling's second Threadling, at a chance). Other plugs of the same enhanced trait are recognised by name
 /// (<see cref="EnhancedPerkRecognition.RecognizeEnhancedPerks"/>).
 /// </summary>
 internal static class EnhancedPerkParsing
 {
-    private static readonly ImmutableArray<string> EnhancedKeys = ["hash", "values", "description"];
+    private static readonly ImmutableArray<string> EnhancedKeys = ["hash", "values", "rules", "description"];
 
     private static readonly EnhancedValues NoValues = new(ImmutableDictionary<Seconds, Seconds>.Empty, ImmutableDictionary<GameValue, GameValue>.Empty);
 
     /// <summary>The element of the perk's enhanced trait, when its YAML has an <c>enhanced:</c> block.</summary>
-    internal static Result<Optional<BuildElement>, Errors> ReadEnhanced(YamlMap map, BuildElement perk) =>
-        map.ReadOptional("enhanced", value => value.ToMap().Bind(block => ReadBlock(block, perk)));
+    internal static Result<Optional<BuildElement>, Errors> ReadEnhanced(ReferenceScope scope, YamlMap map, BuildElement perk) =>
+        map.ReadOptional("enhanced", value => value.ToMap().Bind(block => ReadBlock(scope, block, perk)));
 
-    private static Result<BuildElement, Errors> ReadBlock(YamlMap block, BuildElement perk) =>
+    private static Result<BuildElement, Errors> ReadBlock(ReferenceScope scope, YamlMap block, BuildElement perk) =>
         perk.Kind == ElementKind.WeaponPerk
             ? Combine(
                     block.CheckKeys(EnhancedKeys),
                     block.ReadRequired("hash", ReadItemHashes),
                     block.ReadOrDefault("values", ReadPairs, []),
+                    block.ReadOrDefault("rules", rules => rules.ReadEach("rule", rule => RuleBodyParsing.ReadRule(scope, rule)), []),
                     block.ReadOptional("description", YamlReading.ToText),
-                    (_, hashes, pairs, description) => (Hashes: hashes, Pairs: pairs, Description: description))
+                    (_, hashes, pairs, rules, description) => (Hashes: hashes, Pairs: pairs, Rules: rules, Description: description))
                 .Bind(read => Combine(
                     CheckUsed(block, perk, read.Pairs),
                     CheckOnce(block, read.Pairs),
                     CheckReasons(block, perk, read.Pairs),
-                    (_, _, _) => ToEnhanced(perk, read.Hashes, ToValues(read.Pairs), read.Description)))
+                    (_, _, _) => ToEnhanced(perk, read.Hashes, ToValues(read.Pairs), read.Rules, read.Description)))
             : block.FailAt<BuildElement>($"{block.Label}: only a weaponPerk has an enhanced trait, not a {GameNotationParsing.ToVocabularyWord(perk.Kind)}");
 
     /// <summary><c>{ 8s: 9s, 0.87%: 1.1% }</c>: each pair two durations, or two game values.</summary>
@@ -141,14 +143,23 @@ internal static class EnhancedPerkParsing
     private static string DescribeWritten(EnhancedPair pair) =>
         pair.Match(duration => duration.Written, value => value.Written);
 
-    private static BuildElement ToEnhanced(BuildElement perk, ImmutableArray<ItemHash> hashes, EnhancedValues values, Optional<string> description) =>
+    /// <summary>
+    /// The perk as its enhanced trait: its rules and passives with the enhanced figures, then the rules only the enhanced trait
+    /// has (Hatchling's second Threadling).
+    /// </summary>
+    private static BuildElement ToEnhanced(
+        BuildElement perk,
+        ImmutableArray<ItemHash> hashes,
+        EnhancedValues values,
+        ImmutableArray<Rule> added,
+        Optional<string> description) =>
         perk with
         {
             Id = ElementId.From($"{perk.Id.Value}-enhanced"),
             Name = $"{perk.Name} (enhanced)",
             Hashes = hashes,
             Description = description.Match(own => Optional.Some(own.Value), _ => perk.Description),
-            Rules = [.. perk.Rules.Select(rule => rule with { Then = [.. rule.Then.Select(outcome => ReplaceValues(outcome, values))] })],
+            Rules = [.. perk.Rules.Select(rule => rule with { Then = [.. rule.Then.Select(outcome => ReplaceValues(outcome, values))] }), .. added],
             Passives = [.. perk.Passives.Select(passive => passive with { Modifier = ReplaceValues(passive.Modifier, values) })],
         };
 

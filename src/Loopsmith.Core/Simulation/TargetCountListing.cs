@@ -73,7 +73,7 @@ public static class TargetCountListing
         trigger switch
         {
             Trigger.KillMultiple kill => [new NamedCount(name, kill.Via, kill.AtLeast, kill.Within)],
-            Trigger.DamageMultiple damage => [new NamedCount(name, damage.Via, damage.AtLeast, Optional.None<Seconds>())],
+            Trigger.DamageMultiple damage => [new NamedCount(name, damage.Via, damage.AtLeast, damage.Within)],
             _ => [],
         };
 

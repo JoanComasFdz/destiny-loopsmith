@@ -74,6 +74,14 @@ statuses:
   # A weapon buff (kind weaponBuff): the perk's window is on the weapon that rolls it.
   - { id: slice, name: Slice, kind: weaponBuff, affinity: strand, maxStacks: 5, duration: 8s }
 
+  # The weapon perks that need several enemies in one action (weapons/perks.yaml; compendium/2026-10-14/Weapon Perks).
+  # One for All (#153) and Stats for All (#206): 10 s (11 s enhanced), not refreshed while active. Reaper's Tithe
+  # (#175): x2 to x4 by the enemies killed at once, 15 s (17 s enhanced). Weapon buffs: the perk's buff is on the
+  # weapon that rolls it.
+  - { id: one-for-all, name: One for All, kind: weaponBuff, affinity: neutral, duration: 10s }
+  - { id: stats-for-all, name: Stats for All, kind: weaponBuff, affinity: neutral, duration: 10s }
+  - { id: reapers-tithe, name: Reaper's Tithe, kind: weaponBuff, affinity: neutral, maxStacks: 4, duration: 15s }
+
   # Reaper armed: the next weapon kill within 10 s of a class ability use (compendium/2026-10-09/
   # Armor Mods#14; Clarity 40751621 agrees).
   - { id: reaper, name: Reaper, kind: buff, affinity: neutral, duration: 10s }
@@ -113,6 +121,9 @@ statuses:
   - { id: sever, name: Sever, kind: debuff, affinity: strand, duration: 10s, trait: 2519102437 }
   - { id: unravel, name: Unravel, kind: debuff, affinity: strand, trait: 945613349 }
   - { id: blind, name: Blind, kind: debuff, affinity: arc, duration: 10s, trait: 500183315 }
+  # Exhaust: the enemies' damage cut by 25% (Veteran's Wisdom, compendium/2026-10-14/Weapon Perks#416: 10 s). No trait:
+  # Bungie's manifest has none by that name (2026-10-14).
+  - { id: exhaust, name: Exhaust, kind: debuff, affinity: neutral, duration: 10s }
 
 pickups:
   # Ionic Traces home in on you at 6 m/s (compendium/2026-10-09/Arc#6); the creator agrees:

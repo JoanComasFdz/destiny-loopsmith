@@ -81,7 +81,7 @@ internal static class ElementParsing
                 CheckAbilityProfile(map, element),
                 CheckInert(map, element),
                 CheckThisWeapon(map, element),
-                EnhancedPerkParsing.ReadEnhanced(map, element),
+                EnhancedPerkParsing.ReadEnhanced(scope, map, element),
                 (_, _, _, _, enhanced) => (map.ToLocated(element), enhanced.Map(map.ToLocated)))));
 
     /// <summary>

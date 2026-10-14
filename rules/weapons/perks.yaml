@@ -1,6 +1,5 @@
-# Weapon perks (traits).
-# Not expressible: a perk's rule cannot say "this weapon". Both perks here sit on a Strand weapon
-# in the skip-grenade build (Festival Flight), so they are written against `weapon:strand`.
+# Weapon perks (traits). A perk's rules say "this weapon" (`weapon:this`): the build check binds it to the weapon that
+# rolls the perk (docs/rule-format.md, "This weapon").
 elements:
   - id: slice
     name: Slice
@@ -17,12 +16,12 @@ elements:
           - { applyBuff: { status: slice, stacks: 1, duration: 8s } }
         reason: "Dodging arms Slice, even while the weapon is stowed."
       # Not expressible: "non-Severed targets only" (no target-lacks guard).
-      - on: { damage: { via: weapon:strand } }
+      - on: { damage: { via: "weapon:this" } }
         when: [ { has: slice } ]
         then:
           - { debuffTarget: sever }
           - { applyBuff: { status: slice, stacks: 1, duration: 8s } }
-        reason: "While Slice is up, every enemy you hit with a Strand weapon gets severed."
+        reason: "While Slice is up, every enemy you hit with this weapon gets severed."
       - on: { stacksMaxed: slice }
         then:
           - { removeBuff: slice }
@@ -36,7 +35,7 @@ elements:
       description: "The enhanced Slice: as Slice, with a 9 s window between hits instead of 8 s."
 
   # Clarity: a WEAPON TRAIT (base + enhanced), not an armor mod. The note credits it on strand
-  # weapon kills; which weapon carries it is inferred (Festival Flight).
+  # weapon kills; the build puts it on Festival Flight.
   - id: attrition-orbs
     name: Attrition Orbs
     kind: weaponPerk
@@ -49,7 +48,7 @@ elements:
     rules:
       # Hit-count based, not kill based: hits kept up on one enemy, which a hit step stands for, so
       # it drops the orb for sure there and never on a kill step's killing blow (ADRs D34).
-      - on: { damage: { via: weapon:strand, sustained: true } }
+      - on: { damage: { via: "weapon:this", sustained: true } }
         then:
           - { spawn: orb-of-power }
         reason: "Keep landing hits with this weapon and every few hits it drops an Orb of Power."
@@ -82,3 +81,202 @@ elements:
     enhanced:
       hash: 1171147302
       description: "The enhanced Feeding Frenzy: as Feeding Frenzy, with +13 / +55 / +65 / +85 / +100 Reload Speed at x1 to x5."
+
+  # ── the perks that need several enemies in one action (ADRs D4: the player says how many one step hits or kills) ──
+  # A count the game keeps over several seconds ("3 separate enemies within 3 seconds of each") fires for sure when one
+  # step reaches it, and as a chance on fewer, since earlier steps' hits or kills may have counted (ADRs D31, as the
+  # Siphons). `within` is the source's window, which the designer's enemy-count selector shows ("3 in 3 s · One for All").
+
+  - id: one-for-all
+    name: One for All
+    kind: weaponPerk
+    affinity: neutral
+    hash: 4049631843
+    description: "Damaging 3 separate enemies, each within 3 s of the last, gives 35% more damage for 10 s (11 s enhanced). The buff can't be refreshed until it ends, and stays through stow."
+    source: "compendium/2026-10-14/Weapon Perks#153"
+    # The damage is a fact of the step that gives the buff, as Reaper's Tithe's (a buff's own effect is in its details).
+    rules:
+      - on: { damage: { via: "weapon:this", atLeast: 3, within: 3s } }
+        then:
+          - { applyBuff: { status: one-for-all, duration: 10s } }
+          - { modifyDamage: { against: "weapon:this", change: "+35%" } }
+        reason: "Hitting three separate enemies with this weapon powers up its damage."
+      - on: { damage: { via: "weapon:this", fewerThan: 3 } }
+        then:
+          - { applyBuff: { status: one-for-all, duration: 10s } }
+          - { modifyDamage: { against: "weapon:this", change: "+35%" } }
+        chance: true
+        reason: "Fewer than three enemies in this step: the hits of the steps before may make up the three."
+    passives: []
+    enhanced:
+      hash: 859780267
+      values: { 10s: 11s }
+      description: "The enhanced One for All: as One for All, with the buff lasting 11 s instead of 10 s."
+
+  # The stats are points on this weapon's stats; the row's 5% damage falloff distance and 0.95x reload duration are in
+  # the description only.
+  - id: stats-for-all
+    name: Stats for All
+    kind: weaponPerk
+    affinity: neutral
+    hash: 1583705720
+    description: "Damaging 3 separate enemies, each within 3 s of the last, gives +10 Range, 5% more damage falloff distance, +10 Stability, +35 Handling, +35 Reload Speed and a 0.95x reload duration for 10 s (11 s enhanced). The buff can't be refreshed until it ends, and stays through stow."
+    source: "compendium/2026-10-14/Weapon Perks#206"
+    rules:
+      - on: { damage: { via: "weapon:this", atLeast: 3, within: 3s } }
+        then:
+          - { applyBuff: { status: stats-for-all, duration: 10s } }
+        reason: "Hitting three separate enemies with this weapon makes it handle, reload and hold steady better."
+      - on: { damage: { via: "weapon:this", fewerThan: 3 } }
+        then:
+          - { applyBuff: { status: stats-for-all, duration: 10s } }
+        chance: true
+        reason: "Fewer than three enemies in this step: the hits of the steps before may make up the three."
+    passives:
+      - effect:
+          modifyWeaponStats:
+            weapon: this
+            changes:
+              - { stat: range, change: "+10" }
+              - { stat: stability, change: "+10" }
+              - { stat: handling, change: "+35" }
+              - { stat: reload-speed, change: "+35" }
+        when: [ { has: stats-for-all } ]
+        reason: "While Stats for All is up, this weapon's range, stability, handling and reload speed go up."
+    enhanced:
+      hash: 1409206216
+      values: { 10s: 11s }
+      description: "The enhanced Stats for All: as Stats for All, with the buff lasting 11 s instead of 10 s."
+
+  # Kills "at once" (a 1 s grace past the 2nd), so only one step's kills count: no chance on fewer. Each count is its
+  # own rule, from atLeast to fewerThan, so a step of 3 kills gives x3 and nothing else.
+  - id: reapers-tithe
+    name: Reaper's Tithe
+    kind: weaponPerk
+    affinity: neutral
+    hash: 113508675
+    description: "Killing several enemies at once gives Reaper's Tithe by how many: 2 → x2 (+20% weapon damage), 3 → x3 (+30%), 4 → x4 (+40%), with a 1 s grace between kills past the 2nd. It lasts 15 s (17 s enhanced), its timer starting at the next shot; more weapon kills add 6 s, up to 15 s (17 s). A larger multikill doesn't upgrade an active Reaper's Tithe."
+    source: "compendium/2026-10-14/Weapon Perks#175"
+    rules:
+      - on: { kill: { via: "weapon:this", atLeast: 2, fewerThan: 3 } }
+        then:
+          - { applyBuff: { status: reapers-tithe, stacks: 2, duration: 15s } }
+          - { modifyDamage: { against: "weapon:this", change: "+20%" } }
+        reason: "Two enemies killed at once with this weapon: a smaller stacking damage buff."
+      - on: { kill: { via: "weapon:this", atLeast: 3, fewerThan: 4 } }
+        then:
+          - { applyBuff: { status: reapers-tithe, stacks: 3, duration: 15s } }
+          - { modifyDamage: { against: "weapon:this", change: "+30%" } }
+        reason: "Three enemies killed at once with this weapon: a bigger damage buff."
+      - on: { kill: { via: "weapon:this", atLeast: 4 } }
+        then:
+          - { applyBuff: { status: reapers-tithe, stacks: 4, duration: 15s } }
+          - { modifyDamage: { against: "weapon:this", change: "+40%" } }
+        reason: "Four or more enemies killed at once with this weapon: the biggest damage buff."
+    passives: []
+    enhanced:
+      hash: 177189259
+      values: { 15s: 17s }
+      description: "The enhanced Reaper's Tithe: as Reaper's Tithe, lasting up to 17 s instead of 15 s."
+
+  # "A Precision Kill OR 3 kills within 3 seconds of each": Loopsmith has no precision hits, so a step with fewer than
+  # 3 kills spawns the Threadling as a chance (one of them may be a precision kill, or earlier kills count).
+  - id: hatchling
+    name: Hatchling
+    kind: weaponPerk
+    affinity: strand
+    hash: 831391274
+    description: "A precision kill, or 3 kills each within 3 s of the last, spawns a Threadling where the enemy died; the enhanced trait spawns a second one at a ?% chance (the Compendium's 10?%)."
+    source: "compendium/2026-10-14/Weapon Perks#111"
+    rules:
+      - on: { kill: { via: "weapon:this", atLeast: 3, within: 3s } }
+        then:
+          - { summon: threadling }
+        reason: "Three quick kills with this weapon hatch a Threadling."
+      - on: { kill: { via: "weapon:this", fewerThan: 3 } }
+        then:
+          - { summon: threadling }
+        chance: true
+        reason: "Fewer than three kills in this step: a precision kill, or the kills of the steps before, may hatch it."
+    passives: []
+    # The enhanced trait's second Threadling comes at a chance the Compendium marks uncertain (10?%): one more Threadling
+    # as a chance, on the same kills as the first.
+    enhanced:
+      hash: 102912326
+      rules:
+        - on: { kill: { via: "weapon:this", atLeast: 3, within: 3s } }
+          then:
+            - { summon: threadling }
+          chance: true
+          reason: "When it hatches one, the enhanced trait may hatch a second."
+        - on: { kill: { via: "weapon:this", fewerThan: 3 } }
+          then:
+            - { summon: threadling }
+          chance: true
+          reason: "When it hatches one, the enhanced trait may hatch a second."
+      description: "The enhanced Hatchling: as Hatchling, and a second Threadling may hatch with the first (a ?% chance)."
+
+  # An origin trait (EDZ weapons). "A Precision Kill OR 3 Weapon Kills within 3 seconds of each", as Hatchling.
+  # Not expressible: the Kinetic shockwave's own damage (8 m, 9 m enhanced; 20 for Auto and Pulse Rifles, 23 for
+  # Snipers): no rule outcome deals this weapon's damage, so it is in the description and the reason only.
+  - id: veterans-wisdom
+    name: Veteran's Wisdom
+    kind: weaponPerk
+    affinity: kinetic
+    hash: 2897898513
+    description: "A precision kill, or 3 weapon kills each within 3 s of the last, sets off a Kinetic shockwave where the enemy died: damage over 8 m (9 m enhanced) without falloff, and Exhaust for 10 s, cutting the enemies' damage by 25%."
+    source: "compendium/2026-10-14/Weapon Perks#416"
+    rules:
+      - on: { kill: { via: "weapon:this", atLeast: 3, within: 3s } }
+        then:
+          - { debuffTarget: { status: exhaust, duration: 10s } }
+        reason: "Three quick kills with this weapon set off a shockwave that exhausts the enemies around."
+      - on: { kill: { via: "weapon:this", fewerThan: 3 } }
+        then:
+          - { debuffTarget: { status: exhaust, duration: 10s } }
+        chance: true
+        reason: "Fewer than three kills in this step: a precision kill, or the kills of the steps before, may set it off."
+    passives: []
+    enhanced:
+      hash: 4225294165
+      description: "The enhanced Veteran's Wisdom: as Veteran's Wisdom, with a 9 m shockwave instead of 8 m."
+
+  # A counter of weapon kills, each within 5 s of the last: 34% per rank-and-file enemy (the pack, ADRs D7), so 3 kills
+  # fill it. Its heal is 65 HP (70 enhanced): restoreHealth amounts are percentages, so it stays "?".
+  - id: unrelenting
+    name: Unrelenting
+    kind: weaponPerk
+    affinity: neutral
+    hash: 3108830275
+    description: "Weapon kills, each within 5 s of the last, fill a counter (34% per rank-and-file enemy, 100% per elite, miniboss or boss, 67% per Guardian); at 100% it starts health regeneration and restores 65 HP (70 HP enhanced)."
+    source: "compendium/2026-10-14/Weapon Perks#240"
+    rules:
+      - on: { kill: { via: "weapon:this", atLeast: 3, within: 5s } }
+        then:
+          - { restoreHealth: { amount: "?" } }
+        reason: "Three quick kills with this weapon fill its counter: you start healing."
+      - on: { kill: { via: "weapon:this", fewerThan: 3 } }
+        then:
+          - { restoreHealth: { amount: "?" } }
+        chance: true
+        reason: "Fewer than three kills in this step: the kills of the steps before may fill the counter."
+    passives: []
+    enhanced:
+      hash: 855168139
+      description: "The enhanced Unrelenting: as Unrelenting, restoring 70 HP instead of 65."
+
+  # An origin trait (Episode: Echoes). Not expressible: the explosion and its Radiolaria Pool only deal this weapon's
+  # damage (it counts as weapon damage), and no rule outcome deals a weapon's damage, so nothing in a loop reacts to it.
+  - id: radiolaria-transposer
+    name: Radiolaria Transposer
+    kind: weaponPerk
+    affinity: arc
+    hash: 253121539
+    description: "Weapon kills, each within 8 s of the last, fill a counter (34% per rank-and-file enemy, 100% per elite or stronger); at 100% the enemy explodes for up to 67.5 damage over 3? m and leaves a Radiolaria Pool that deals 15 Arc damage every 0.65 s, up to 3? times. Counts as weapon damage. Stowing the weapon resets the counter."
+    source: "compendium/2026-10-14/Weapon Perks#393"
+    inert: "Its explosion and pool only deal this weapon's damage, and no rule outcome can deal a weapon's damage yet, so nothing in a loop reacts to it."
+    rules: []
+    passives: []
+    enhanced:
+      hash: 734193227
+      description: "The enhanced Radiolaria Transposer: as Radiolaria Transposer, with figures the Compendium doesn't give."

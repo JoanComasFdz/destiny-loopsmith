@@ -307,7 +307,8 @@ and stat checks, its rules and passives — with the block's hashes and descript
 (`slice-enhanced` arms Slice for 9 s); the perk keeps its own. A reason is copied as it is, so it doesn't write a figure
 the block replaces (`Dodging arms Slice, even while the weapon is stowed.`: the outcome shows the 8 s or 9 s).
 Without `values` its rules are the perk's (Attrition Orbs: its ↑ figure, the orb's Super energy, is in no rule; Feeding
-Frenzy: inert, its ↑ figures in its description). A value the rules don't use is an error
+Frenzy: inert, its ↑ figures in its description). `rules` (optional) are what only the enhanced trait does, after the perk's
+(Hatchling's second Threadling, which the enhanced trait spawns at a chance). A value the rules don't use is an error
 (`enhanced.values: 7s isn't a value of slice's rules`), and so are a value given twice (`8s` and `8.0s`), a reason
 that writes a replaced figure (`a reason of slice writes 8s, which its enhanced trait replaces`), `"?"` (an unknown figure is left out, not written),
 `enhanced` on another kind (`only a weaponPerk has an enhanced trait, not a armorMod`) or a block without `hash`.
@@ -382,8 +383,9 @@ doesn't show as a stacking status (Elemental Charge's progress per Ionic Trace; 
 | `{ damage: { via: <source> } }` | `Damage(via)` |
 | `{ damage: { via: <source>, targetHas: [sever] } }` | `DamageDebuffed(via, statuses)` |
 | `{ damage: { via: weapon, targetHas: [sever], sustained: true } }` — damage kept up on one enemy: a source that needs several hits or a share of its health (To Shreds' 6 instances, Attrition Orbs' hits, Lightning Rounds' 10th hit, Horde Shuttle's 10%); fires for sure on a hit step's hits, never on a kill step's killing blow (ADRs D34) | `Damage(via, Sustained)` / `DamageDebuffed(via, statuses, Sustained)` |
-| `{ damage: { via: weapon, atLeast: 3 } }` — hit at least N enemies with `via` in one action | `DamageMultiple(via, atLeast)` |
-| `{ kill: { via: grenade, atLeast: 2 } }` — kill at least N enemies with `via` in one action; `within: 3s`: the window the source gives them (a Siphon's "2 kills within 3 s"), which one action meets | `KillMultiple(via, atLeast, within)` |
+| `{ damage: { via: weapon, atLeast: 3 } }` — hit at least N enemies with `via` in one action; `within: 3s`: the window the source gives them (One for All's "3 separate enemies within 3 s"), which one action meets | `DamageMultiple(via, atLeast, within)` |
+| `{ damage: { via: "weapon:this", fewerThan: 3 } }` — hit fewer than N enemies (at least one) with `via` in one action | `DamageFewer(via, fewerThan)` |
+| `{ kill: { via: grenade, atLeast: 2 } }` — kill at least N enemies with `via` in one action; `within: 3s`: the window the source gives them (a Siphon's "2 kills within 3 s"), which one action meets; with `fewerThan: 3`, and fewer than that (Reaper's Tithe's x2 on exactly 2) | `KillMultiple(via, atLeast, within, fewerThan)` |
 | `{ kill: { via: "weapon:this", fewerThan: 12 } }` — kill fewer than N enemies (at least one) with `via` in one action | `KillFewer(via, fewerThan)` |
 | `{ pickUp: ionic-trace }` | `PickUp(pickup)` |
 | `{ buffGained: bolt-charge }` | `BuffGained(status)` |
@@ -414,14 +416,19 @@ instead of `chance: true` (ADRs D34). The pack in front of you is `minor` (ADRs 
 so a `major|boss|champion` kill shows in `explain` and the graph but doesn't fire in a loop.
 `atLeast` is a whole number 1..20 (`TargetCount`, ADRs D4): the player says how many enemies an
 action hits ("One For All: hitting three separate targets…" → `{ damage: { via: weapon, atLeast: 3 } }`).
-`fewerThan` (a kill only) is 2..20 and stands alone like `atLeast` (`kill cannot combine 'atLeast' and 'fewerThan'`):
-the two split one count (ADRs D31), so a counter the game doesn't show fires for sure on the kills that fill it and as a chance
+`fewerThan` is 2..20 and stands alone like `atLeast` (`damage cannot combine 'atLeast' and 'fewerThan'`), but on a kill
+it can bound `atLeast` from above: `{ atLeast: 2, fewerThan: 3 }` is exactly 2 (`fewerThan` must be above `atLeast`: `fewer
+than 2 and at least 2 never happens`), so Reaper's Tithe gives x2 on 2 kills at once, x3 on 3 and x4 on 4 or more, one rule
+each. Alone, the two split one count (ADRs D31), so a counter the game doesn't show fires for sure on the kills that fill it and as a chance
 on fewer — Synergy (`rules/mods/weapons.yaml`): `atLeast: 12` spawns its pickup, `fewerThan: 12` spawns it with
 `chance: true`, since the kills of earlier steps may have filled it; Spark of Discharge's counter (34% per minor kill)
 the same, at 3. The Siphons split "2 kills within 3 s" the same way, and Spark of Amplitude "2 kills within 4 s":
 `{ kill: { via: weapon:arc, atLeast: 2, within: 3s } }` spawns the orb for sure, `fewerThan: 2` as a chance (`within` needs
-`atLeast`: `'within' is the window of a kill count, so it needs 'atLeast'`). The designer's trigger palette offers, for
-each ability and weapon, every `atLeast` count an equipped rule needs from it, named ("2 in 3 s · Arc Siphon",
+`atLeast`: `'within' is the window of a kill count, so it needs 'atLeast'`). Hits split the same way: One for All
+(`rules/weapons/perks.yaml`) gives its buff on `{ damage: { via: "weapon:this", atLeast: 3, within: 3s } }` for sure and on
+`fewerThan: 3` as a chance, since the hits of earlier steps may make up the three (`'within' is the window of a hit count,
+so it needs 'atLeast'`). The designer's trigger palette offers, for
+each ability and weapon, every `atLeast` count an equipped rule needs from it, named ("2 in 3 s · Arc Siphon", "3 in 3 s · One for All",
 "3 · Spark of Discharge"; rules of one count with different windows each say theirs: "2 · Spark of Amplitude in 4 s,
 Harmonic Siphon in 3 s"), beside the counts up to the last that still fills something
 ([loop-format.md](loop-format.md#action-tokens)).
@@ -664,7 +671,7 @@ passives:
 | `{ modifyDamage: { against, change } }` | `ModifyDamage` |
 | `{ resistDamage: "25% [10%]" }` (any damage; `[…]` the PvP value) | `ResistDamage` |
 | `{ resistCombatantDamage: { against: arc, amount: "15% \| 25% \| 30%" } }` (combatants only; no `[…]`) | `ResistCombatantDamage(CombatantDamage.OfType(Arc), amount)` |
-| `{ modifyWeaponStats: { archetypes: [fusion-rifle], changes: [ { stat: handling, change: "?" } ] } }` | `ModifyWeaponStats` (non-empty lists; archetypes and stats are kebab-case words) |
+| `{ modifyWeaponStats: { archetypes: [fusion-rifle], changes: [ { stat: handling, change: "?" } ] } }` — the build's weapons of those archetypes; `weapon: this` instead of `archetypes`: the weapon holding the element (Stats for All), bound like `weapon:this` | `ModifyWeaponStats(OfArchetypes \| ThisWeapon, changes)` (non-empty lists; archetypes and stats are kebab-case words; a change is stat points, `"+35"`) |
 | `{ raiseMaxStacks: { status: armor-charge, max: "4 \| 5 \| 6" } }` (a status with `maxStacks`; no `when`) | `RaiseMaxStacks` — the cap with it equipped, by copies |
 | `{ modifyStat: { stat: grenade, change: "+20 \| +40 \| +50" } }` (`health\|melee\|grenade\|super\|class\|weapons`; stat points, not a percent) | `ModifyStat(stat, change)` — "+20 Grenade" |
 
