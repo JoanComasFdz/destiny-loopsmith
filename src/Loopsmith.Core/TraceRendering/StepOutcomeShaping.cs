@@ -62,9 +62,13 @@ public static class StepOutcomeShaping
     public static StepOutcomes ShapeStepOutcomes(ValidatedBuild build, Resolution resolution, TraceOptions options)
     {
         var catalog = build.Catalog;
-        var events = TraceRenderer.GroupByEvent(resolution.Fired).Select(group => ShapeEvent(build, catalog, group, options));
-        return new StepOutcomes(CollapseRepeats(events), resolution.Notes);
+        var events = TraceRenderer.GroupByEvent(resolution.Fired)
+            .Select(group => new ShapedEvent(ShapeEvent(build, catalog, group, options), TraceRenderer.DescribeEventKind(build, group[0].Trigger)));
+        return new StepOutcomes([.. CollapseRepeats([.. events]).Select(shaped => shaped.Outcomes)], resolution.Notes);
     }
+
+    /// <summary>An event's outcomes, and the event without the statuses on its target (what alike events share).</summary>
+    private sealed record ShapedEvent(EventOutcomes Outcomes, string Kind);
 
     private static EventOutcomes ShapeEvent(ValidatedBuild build, RuleCatalog catalog, ImmutableArray<FiredRule> group, TraceOptions options)
     {
@@ -115,45 +119,49 @@ public static class StepOutcomeShaping
     /// a block, and a block that sets off nothing the block before it of the same event didn't shows in it, the event
     /// marked ×N. Identical blocks fold (five jolted hits of one grenade, each with its "Bolt Charge gained"; six orbs
     /// picked up), and so does a later one with less (the second kill of one action, after the first consumed Reaper, only
-    /// gives Woven Mail again). A block that sets off something new stays apart. Blocks collapse at every depth.
+    /// gives Woven Mail again). The statuses on the target don't keep blocks apart when they change nothing they set off
+    /// (the kills after the first one's Photonic Flare blinded the pack). A block that sets off something new stays
+    /// apart. Blocks collapse at every depth.
     /// </summary>
-    private static ImmutableArray<EventOutcomes> CollapseRepeats(IEnumerable<EventOutcomes> events)
+    private static ImmutableArray<ShapedEvent> CollapseRepeats(ImmutableArray<ShapedEvent> all)
     {
-        var all = events.ToImmutableArray();
         if (all.IsEmpty)
         {
             return all;
         }
 
-        var depth = all.Min(shaped => shaped.Depth);
+        var depth = all.Min(shaped => shaped.Outcomes.Depth);
         var blocks = SplitBlocks(all, depth)
-            .Select(block => (ImmutableArray<EventOutcomes>)[block[0], .. CollapseRepeats(block[1..])]);
+            .Select(block => (ImmutableArray<ShapedEvent>)[block[0], .. CollapseRepeats(block[1..])]);
         return
         [
             .. blocks
-                .Aggregate(ImmutableArray<ImmutableArray<EventOutcomes>>.Empty, (collapsed, next) =>
+                .Aggregate(ImmutableArray<ImmutableArray<ShapedEvent>>.Empty, (collapsed, next) =>
                     !collapsed.IsEmpty && IsFoldedInto(collapsed[^1], next)
-                        ? collapsed.SetItem(collapsed.Length - 1, collapsed[^1].SetItem(0, collapsed[^1][0] with { Repeats = collapsed[^1][0].Repeats + next[0].Repeats }))
+                        ? collapsed.SetItem(collapsed.Length - 1, collapsed[^1].SetItem(0, AddRepeats(collapsed[^1][0], next[0].Outcomes.Repeats)))
                         : collapsed.Add(next))
                 .SelectMany(block => block),
         ];
     }
 
+    private static ShapedEvent AddRepeats(ShapedEvent shaped, int repeats) =>
+        shaped with { Outcomes = shaped.Outcomes with { Repeats = shaped.Outcomes.Repeats + repeats } };
+
     /// <summary>The events in blocks: each starts at an event of <paramref name="depth"/> and holds the deeper ones after it.</summary>
-    private static ImmutableArray<ImmutableArray<EventOutcomes>> SplitBlocks(ImmutableArray<EventOutcomes> events, int depth) =>
-        events.Aggregate(ImmutableArray<ImmutableArray<EventOutcomes>>.Empty, (blocks, shaped) =>
-            blocks.IsEmpty || shaped.Depth <= depth
+    private static ImmutableArray<ImmutableArray<ShapedEvent>> SplitBlocks(ImmutableArray<ShapedEvent> events, int depth) =>
+        events.Aggregate(ImmutableArray<ImmutableArray<ShapedEvent>>.Empty, (blocks, shaped) =>
+            blocks.IsEmpty || shaped.Outcomes.Depth <= depth
                 ? blocks.Add([shaped])
                 : blocks.SetItem(blocks.Length - 1, blocks[^1].Add(shaped)));
 
     /// <summary>A block folds into the one before it when both start with the same event and it sets off nothing that one didn't.</summary>
-    private static bool IsFoldedInto(ImmutableArray<EventOutcomes> earlier, ImmutableArray<EventOutcomes> later) =>
+    private static bool IsFoldedInto(ImmutableArray<ShapedEvent> earlier, ImmutableArray<ShapedEvent> later) =>
         DescribeEventKey(earlier[0]) == DescribeEventKey(later[0])
         && ListBlockFacts(later).IsSubsetOf(ListBlockFacts(earlier));
 
     /// <summary>What a block shows: each event (a deeper one with its count) and each of its elements' outcomes, reasons and caveats.</summary>
-    private static ImmutableHashSet<string> ListBlockFacts(ImmutableArray<EventOutcomes> block) =>
-        [.. block.SelectMany((shaped, index) => ListEventFacts(shaped, index == 0 ? DescribeEventKey(shaped) : $"{DescribeEventKey(shaped)}×{shaped.Repeats}"))];
+    private static ImmutableHashSet<string> ListBlockFacts(ImmutableArray<ShapedEvent> block) =>
+        [.. block.SelectMany((shaped, index) => ListEventFacts(shaped.Outcomes, index == 0 ? DescribeEventKey(shaped) : $"{DescribeEventKey(shaped)}×{shaped.Outcomes.Repeats}"))];
 
     private static IEnumerable<string> ListEventFacts(EventOutcomes shaped, string key) =>
         shaped.Sources
@@ -163,8 +171,8 @@ public static class StepOutcomeShaping
                 .Select(fact => $"{key}|{source.Source.Value}|{fact}"))
             .Prepend(key);
 
-    private static string DescribeEventKey(EventOutcomes shaped) =>
-        $"{shaped.Depth}|{shaped.Event}";
+    private static string DescribeEventKey(ShapedEvent shaped) =>
+        $"{shaped.Outcomes.Depth}|{shaped.Kind}";
 
     private static OutcomeLine ToLine(KeywordGlossary glossary, RuleCatalog catalog, string text, Tone tone, bool chance) =>
         new(text, tone, SplitText(glossary, catalog, text), chance);

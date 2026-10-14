@@ -25,7 +25,7 @@ public static class TraceRenderer
         var header = StyledText.ToLine(0,
             $"#{resolution.State.Step} ".ToSpan(Tone.Muted),
             build.DescribeAction(resolution.Action).ToSpan(Tone.Strong));
-        var fired = CollapseRepeats([.. GroupByEvent(resolution.Fired).Select(group => new RenderedEvent(group[0].Depth, ListFacts(build, group, options), [.. RenderGroup(build, group, options)], 1))]);
+        var fired = CollapseRepeats([.. GroupByEvent(resolution.Fired).Select(group => new RenderedEvent(group[0].Depth, DescribeEventKind(build, group[0].Trigger), ListFacts(build, group, options), [.. RenderGroup(build, group, options)], 1))]);
         var nothing = resolution.Fired.IsEmpty && resolution.Notes.IsEmpty
             ? [StyledText.ToLine(1, "nothing triggers".ToSpan(Tone.Muted))]
             : ImmutableArray<StyledLine>.Empty;
@@ -189,14 +189,27 @@ public static class TraceRenderer
     }
 
     /// <summary>
-    /// An event's lines at its cascade depth, what it shows (its text, then each rule's outcomes and each reason and caveat
-    /// line), and how many times it happened in a row alike.
+    /// An event's lines at its cascade depth, the event without the statuses on its target (what alike events share), what
+    /// it shows (each rule's outcomes, each reason and caveat line), and how many times it happened in a row alike.
     /// </summary>
-    private sealed record RenderedEvent(int Depth, ImmutableArray<string> Facts, ImmutableArray<StyledLine> Lines, int Repeats);
+    private sealed record RenderedEvent(int Depth, string Kind, ImmutableArray<string> Facts, ImmutableArray<StyledLine> Lines, int Repeats);
+
+    /// <summary>
+    /// The event without the statuses on its target: "Grenade kill" for a kill on a Jolted target and one on a Jolted +
+    /// Blinded target, which fold when the second sets off nothing the first didn't.
+    /// </summary>
+    internal static string DescribeEventKind(ValidatedBuild build, GameEvent gameEvent) =>
+        build.Catalog.Glossary.DescribeEvent(
+            gameEvent switch
+            {
+                GameEvent.Damaged damaged => damaged with { TargetHas = [] },
+                GameEvent.Killed killed => killed with { TargetHas = [] },
+                _ => gameEvent,
+            },
+            build.Build);
 
     private static ImmutableArray<string> ListFacts(ValidatedBuild build, ImmutableArray<FiredRule> group, TraceOptions options) =>
     [
-        build.Catalog.Glossary.DescribeFiredEvent(group, build.Build),
         .. group.Select(rule => string.Concat(RenderFiredRule(build, rule, false).Select(span => span.Text))),
         .. RenderGroup(build, group, options).Skip(1).Select(line => line.ToPlainText()),
     ];
@@ -205,7 +218,9 @@ public static class TraceRenderer
     /// Alike events in a row become one line marked ×N — with what the first set off: an event and the deeper events under
     /// it are a block, and a block that sets off nothing the block before it of the same event didn't shows in it. Identical
     /// blocks fold (five jolted hits of one grenade, each with its "Bolt Charge gained"; six orbs picked up), and so does a
-    /// later one with less (the second kill of one action, after the first consumed Reaper). Blocks collapse at every depth.
+    /// later one with less (the second kill of one action, after the first consumed Reaper). The statuses on the target
+    /// don't keep blocks apart when they change nothing they set off (the kills after the first one's Photonic Flare
+    /// blinded the pack). Blocks collapse at every depth.
     /// </summary>
     private static ImmutableArray<StyledLine> CollapseRepeats(ImmutableArray<RenderedEvent> events) =>
         [.. CollapseRepeatedBlocks(events).SelectMany(rendered => rendered.Repeats == 1 ? rendered.Lines : [MarkRepeat(rendered.Lines[0], rendered.Repeats), .. rendered.Lines[1..]])];
@@ -236,12 +251,15 @@ public static class TraceRenderer
     /// <summary>A block folds into the one before it when both start with the same event and it shows nothing that one didn't.</summary>
     private static bool IsFoldedInto(ImmutableArray<RenderedEvent> earlier, ImmutableArray<RenderedEvent> later) =>
         earlier[0].Depth == later[0].Depth
-        && earlier[0].Facts[0] == later[0].Facts[0]
+        && earlier[0].Kind == later[0].Kind
         && ListBlockFacts(later).IsSubsetOf(ListBlockFacts(earlier));
 
-    /// <summary>What a block shows, each fact with its event's depth and text (a deeper event with its count).</summary>
+    /// <summary>What a block shows: each event (a deeper one with its count) and each fact under it.</summary>
     private static ImmutableHashSet<string> ListBlockFacts(ImmutableArray<RenderedEvent> block) =>
-        [.. block.SelectMany((rendered, index) => rendered.Facts.Select(fact => $"{rendered.Depth}|{rendered.Facts[0]}{(index == 0 ? "" : $"×{rendered.Repeats}")}|{fact}"))];
+        [.. block.SelectMany((rendered, index) => ListEventFacts(rendered, $"{rendered.Depth}|{rendered.Kind}{(index == 0 ? "" : $"×{rendered.Repeats}")}"))];
+
+    private static IEnumerable<string> ListEventFacts(RenderedEvent rendered, string key) =>
+        rendered.Facts.Select(fact => $"{key}|{fact}").Prepend(key);
 
     private static StyledLine MarkRepeat(StyledLine line, int count) =>
         line with { Spans = line.Spans.Insert(2, $" ×{count}".ToSpan(Tone.Strong)) };
