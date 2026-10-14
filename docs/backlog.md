@@ -205,15 +205,38 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   modelled), and the armor set bonuses' and artifact perks' (none of the authored ones has one; the Compendium lists
   about 15 set bonuses and 6 artifact perks with one, mostly a "Resist x1" buff on some trigger). Spark of
   Resistance's "3+ enemies within 15 m" is treated as always holding (D7).
-- **Counting, next** (D33): only Armor Charge is counted; Bolt Charge, Combination Blow and Slice stay declared
-  (`counted: true` in the glossary, once their gains and spends are authored to be counted). The decay (one stack every
-  10 s, slower with Time Dilation) is shown, never applied, so a loop that waits between gaining and spending holds
-  fewer than it says. Elemental Charge's activation progress stays a chance (every 2nd Ionic Trace with two copies);
-  Emergency Reinforcement's fourth duration (15 s, unlabelled in the Compendium) is `?` at x6.
+- **Counting, next** (D33): only Armor Charge is counted. The decay (one stack every 10 s, slower with Time Dilation) is
+  shown, never applied, so a loop that waits between gaining and spending holds fewer than it says. Elemental Charge's
+  activation progress stays a chance (every 2nd Ionic Trace with two copies); Emergency Reinforcement's fourth duration
+  (15 s, unlabelled in the Compendium) is `?` at x6. The next task (agreed in #70, which counted Armor Charge):
+  **Count Bolt Charge, Combination Blow and Slice through the loop.** They stay declared today: the player says
+  `max:bolt-charge`, `max:combination-blow`, `max:slice` when a threshold is reached (D3). Count them as #70 counts Armor
+  Charge (D33): mark them `counted: true` in the glossary, keep a tally of sure stacks (rules that always fire) and
+  chance stacks (chance rules and what they set off), capped at the glossary's `maxStacks` (a grant at the cap shows as
+  wasted, sure stacks at the cap put the buff at its max), with each gain and spend listed under the state's count. The
+  count decides: a rule that needs the max (Shinobu's Vow and Flashover at x10 Bolt Charge, Combination Blow's x3, Slice
+  ending after its 5 hits) fires for sure when the sure stacks reach it, as a chance when only the chance ones do, and
+  not otherwise; a spend takes stacks off (sure first), and `max:` stays offered while the sure stacks are below the cap.
+  Check each gain and spend against the Compendium (Bolt Charge's discharge resets it, Slice gains one per severing hit
+  and ends at its 5th) and the goldens of the creator's loop, which declare these maxes today.
 - **Kill counts, next**: the enemy-count selector names only the counts authored rules need (the Siphons, Spark of
-  Amplitude, Spark of Discharge, Synergy). The weapon perks that need several enemies in one action (One For All's three
-  separate targets, Multikill Clip, Adrenaline Junkie…) aren't authored (`rules/weapons/perks.yaml` holds three perks), so
-  they show with their ⊘ and the selector can't name them.
+  Amplitude, Spark of Discharge, Synergy). The next task:
+  **Author the weapon perks that need several enemies in one action.** One For All (three separate targets), Multikill
+  Clip, Adrenaline Junkie and the like aren't authored (`rules/weapons/perks.yaml` holds three perks), so they show
+  with their ⊘ and the selector can't name them. Author them from the Compendium's Weapon Perks tab with the counts
+  #70 added (`damage: { atLeast: N }`, `kill: { atLeast: N, within: Ns }`, and `fewerThan: N` as a chance for a counter
+  earlier steps may have filled, D31), so the selector offers their counts ("3 · One For All"). Their numbers come from
+  the snapshot (`"?"` where it has none).
+- **Cooldowns, next**: a rule fires on every event of a step, so a source with a cooldown fires once per kill of one
+  action when the game fires it once. The next task (raised in #70):
+  **Fire a rule with a cooldown at most once per action.** Within one step (one action's hits and kills), a rule whose
+  source has a cooldown fires once, and the step says so ("once: 6 s cooldown"); later steps aren't limited, as time
+  isn't modelled (D1, D5). The sources: Photonic Flare (~6 s), Firepower, Heavy Handed, the 7 s energy mods, Spark of
+  Ions (10 s between traces), Impact Induction, and the elemental pickups — one Firesprite (Solar#5) or Void Breach
+  (Void#7), 5 s each, and one Tangle (Strand#4, 12 s) per step instead of one per kill. Ionic Traces have no shared cooldown
+  (Arc#6): Shock and Clear and Spark of Discharge keep making one per jolted kill (an r/destiny2builds thread confirms
+  it for Luminopotent's 4-piece; `builds/skip-grenade-hunter/discrepancies.md` has the sources). The cooldown is a fact
+  of the rule (a new key, e.g. `cooldown: 6s`), shown with its outcome; check every value against the snapshot.
 - **Armor picker, next**: the mods of a picked piece aren't read (the build keeps the loadout's mods); armor of
   another class's character isn't offered; an icon bungie.net doesn't serve shows broken.
 - **Exotic class items' spirits**: Relativism, Stoicism and Solipsism are listed in the armor picker's Every item, but
