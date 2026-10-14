@@ -217,7 +217,8 @@ public static class BuildExplaining
             stacksMaxed: _ => 50,
             finisher: _ => 25,
             abilityCastAs: cast => RankAbility(cast.Kind),
-            killFewer: _ => 24);
+            killFewer: _ => 24,
+            criticalHealth: _ => 60);
 
     private static int RankAbility(AbilityKind kind) =>
         kind switch
@@ -245,7 +246,8 @@ public static class BuildExplaining
             stacksMaxed: stacksMaxed => [stacksMaxed.Status],
             finisher: _ => [],
             abilityCastAs: _ => [],
-            killFewer: _ => []);
+            killFewer: _ => [],
+            criticalHealth: _ => []);
         var pickup = trigger is Trigger.PickUp pickUp && glossary.Pickups.TryGetValue(pickUp.Pickup, out var definition)
             ? definition.Affinity
             : Affinity.Neutral;
@@ -258,5 +260,6 @@ public static class BuildExplaining
             lacksBuff => glossary.ReadStatusAffinity(lacksBuff.Status),
             targetHas => glossary.ReadStatusAffinity(targetHas.Status),
             atMax => glossary.ReadStatusAffinity(atMax.Status),
-            _ => Affinity.Neutral);
+            _ => Affinity.Neutral,
+            belowMax => glossary.ReadStatusAffinity(belowMax.Status));
 }

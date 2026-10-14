@@ -42,6 +42,7 @@ public static class IconFinding
             declare => declare.Declaration.Match(
                 max => FindKeywordIcon(catalog, new KeywordRef.Status(max.Status)),
                 end => FindKeywordIcon(catalog, new KeywordRef.Status(end.Status)),
+                _ => Optional.None<IconRef>(),
                 _ => Optional.None<IconRef>()),
             _ => catalog.FindClassFinisher(build.Class).Bind(item => item.Icon).Map(ToManifestIcon));
 

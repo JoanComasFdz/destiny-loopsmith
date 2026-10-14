@@ -74,7 +74,8 @@ public static class WeaponBinding
             stacksMaxed => Optional.Some<Trigger>(stacksMaxed),
             finisher => Optional.Some<Trigger>(finisher),
             castAs => Optional.Some<Trigger>(castAs),
-            killFewer => BindSource(killFewer.Via, slot, type).Map(Trigger (via) => killFewer with { Via = via }));
+            killFewer => BindSource(killFewer.Via, slot, type).Map(Trigger (via) => killFewer with { Via = via }),
+            criticalHealth => Optional.Some<Trigger>(criticalHealth));
 
     /// <summary>"This weapon" is the slot's weapon; "this weapon, when it is X" is it when its type is X, else nothing.</summary>
     private static Optional<DamageSource> BindSource(DamageSource source, WeaponSlot slot, DamageType type) =>

@@ -91,18 +91,22 @@ public static class LoopGraphBuilding
         // Reaching the max is the player's call (ADRs D3): one declared link per buff, never a grant's.
         var declaredEdges = maxedStatuses.Select(status => new RawEdge(
             ToKey(new Trigger.BuffGained(status)), ToKey(new Trigger.StacksMaxed(status)), YouDeclare, EdgeKind.Declared));
+        // Reaching critical health is the player's call too (ADRs D3): drawn where a rule reacts to it.
+        var criticalReach = Reach(new GameEvent.CriticalHealth()).ToImmutableArray();
+        GraphNode[] criticalNodes = criticalReach.IsEmpty ? [] : [new GraphNode(CriticalHealthKey, DomainPhrasing.CriticalHealth, NodeKind.Action, Affinity.Neutral)];
+        var criticalEdges = criticalReach.Select(to => new RawEdge(CriticalHealthKey, to, YouDeclare, EdgeKind.Declared));
         // A rule guarded "at max" leads from its own trigger ("while Bolt Charge at max"); the declared max is what it needs.
         var guardEdges = rules.SelectMany(r => r.Rule.When
             .OfType<Condition.AtMax>()
             .Where(atMax => glossary.IsStacking(atMax.Status))
             .Select(atMax => new RawEdge(ToKey(new Trigger.StacksMaxed(atMax.Status)), r.Key, r.Element.Name, EdgeKind.Enables)));
 
-        var edges = playerEdges.Concat(routed.Edges).Concat(declaredEdges).Concat(guardEdges)
+        var edges = playerEdges.Concat(routed.Edges).Concat(declaredEdges).Concat(criticalEdges).Concat(guardEdges)
             .GroupBy(e => (e.From, e.To, e.Kind))
             .Select(g => new GraphEdge(g.Key.From, g.Key.To, g.Select(e => e.Source).Distinct().ToImmutableArray(), g.Key.Kind))
             .ToImmutableArray();
         var used = edges.SelectMany(e => new[] { e.From, e.To }).ToImmutableHashSet();
-        var nodes = triggerNodes.Concat(energyNodes).Concat(castNodes).Concat(weaponNodes).Concat(finisherNodes).Concat(routed.Filters)
+        var nodes = triggerNodes.Concat(energyNodes).Concat(castNodes).Concat(weaponNodes).Concat(finisherNodes).Concat(criticalNodes).Concat(routed.Filters)
             .Where(n => used.Contains(n.Key))
             .ToImmutableArray();
         return new LoopGraph(nodes, edges);
@@ -296,6 +300,8 @@ public static class LoopGraphBuilding
         "t:" + glossary.DescribeTrigger(trigger, superType);
 
     private const string FinisherKey = "a:Finisher";
+
+    private const string CriticalHealthKey = "a:CriticalHealth";
 
     private static string ToEnergyKey(AbilityKind kind) => $"e:{kind}";
 

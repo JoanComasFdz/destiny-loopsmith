@@ -41,7 +41,8 @@ public static class TriggerMatching
             castAs => gameEvent is GameEvent.AbilityCast cast && cast.Kind == castAs.Kind && cast.Input == castAs.Input,
             killFewer => gameEvent is GameEvent.TargetsHit { Hit: HitOutcome.Kill } struck
                 && killFewer.Via.IsMatchedBy(struck.Origin, superType)
-                && struck.Targets.Value < killFewer.FewerThan.Value);
+                && struck.Targets.Value < killFewer.FewerThan.Value,
+            _ => gameEvent is GameEvent.CriticalHealth);
 
     /// <summary>
     /// Whether the pattern matches the origin. A finisher has no damage type and is no weapon or ability: only "any
@@ -82,7 +83,8 @@ public static class TriggerMatching
             stacksMaxed: _ => ImmutableArray<StatusId>.Empty,
             finisher: _ => ImmutableArray<StatusId>.Empty,
             abilityCastAs: _ => ImmutableArray<StatusId>.Empty,
-            killFewer: _ => ImmutableArray<StatusId>.Empty);
+            killFewer: _ => ImmutableArray<StatusId>.Empty,
+            criticalHealth: _ => ImmutableArray<StatusId>.Empty);
 
     /// <summary>The damage source a hit or kill trigger names (its <c>via</c>); none for the other triggers.</summary>
     public static Optional<DamageSource> FindVia(this Trigger trigger) =>
@@ -100,7 +102,8 @@ public static class TriggerMatching
             stacksMaxed: _ => Optional.None<DamageSource>(),
             finisher: _ => Optional.None<DamageSource>(),
             abilityCastAs: _ => Optional.None<DamageSource>(),
-            killFewer: killFewer => Optional.Some(killFewer.Via));
+            killFewer: killFewer => Optional.Some(killFewer.Via),
+            criticalHealth: _ => Optional.None<DamageSource>());
 
     /// <summary>
     /// The ability use a trigger names, when it names one: a cast of that use (<c>abilityCast: { ability: classAbility,

@@ -329,6 +329,9 @@ public static class DomainPhrasing
     /// <summary>What a finisher is called everywhere: the action, its trigger, its event and its hit.</summary>
     public const string Finisher = "Finisher";
 
+    /// <summary>What reaching critical health is called everywhere: the declared step, its trigger and its event.</summary>
+    public const string CriticalHealth = "Critical health";
+
     // ── triggers, conditions, outcomes, passives ───────────────────────────────
 
     /// <summary>A rule's trigger as a player says it; <paramref name="superType"/>: see <see cref="DescribeDamageSource"/>.</summary>
@@ -347,7 +350,8 @@ public static class DomainPhrasing
             stacksMaxed => $"Max {glossary.DescribeStatus(stacksMaxed.Status)}",
             _ => Finisher,
             castAs => DescribeCast(castAs.Kind, castAs.Input),
-            killFewer => DescribeFewKills(glossary, killFewer.Via, killFewer.FewerThan, superType));
+            killFewer => DescribeFewKills(glossary, killFewer.Via, killFewer.FewerThan, superType),
+            _ => CriticalHealth);
 
     private static string DescribeKill(KeywordGlossary glossary, DamageSource via, ImmutableArray<StatusId> targetHas, Optional<DamageType> superType)
     {
@@ -443,7 +447,8 @@ public static class DomainPhrasing
             lacksBuff => $"without {glossary.DescribeStatus(lacksBuff.Status)}",
             targetHas => $"if target {glossary.DescribeDebuffedAdjective(targetHas.Status)}",
             atMax => $"while {glossary.DescribeStatus(atMax.Status)} at max",
-            during => $"during your {during.Ability.DescribeAbility()}");
+            during => $"during your {during.Ability.DescribeAbility()}",
+            belowMax => $"while {glossary.DescribeStatus(belowMax.Status)} below max");
 
     public static string DescribeConditions(this KeywordGlossary glossary, ImmutableArray<Condition> conditions) =>
         string.Join(", ", conditions.Select(glossary.DescribeCondition));
@@ -696,11 +701,12 @@ public static class DomainPhrasing
             pickedUp => $"Picked up {glossary.DescribePickup(pickedUp.Pickup)}",
             gained => $"{glossary.DescribeStatus(gained.Status)} gained",
             maxed => $"Max {glossary.DescribeStatus(maxed.Status)}",
-            _ => Finisher);
+            _ => Finisher,
+            _ => CriticalHealth);
 
     /// <summary>
     /// "Grenade (kill)", "Grenade (kill 3)", "Festival Flight (hit 5)", "Class ability", "Pick up Orb of Power",
-    /// "Bolt Charge at max (x10)", "Amplified ends", "New pack", "Finisher".
+    /// "Bolt Charge at max (x10)", "Amplified ends", "New pack", "Critical health", "Finisher".
     /// </summary>
     public static string DescribeAction(this ValidatedBuild build, PlayerAction action) =>
         action.Match(
@@ -720,7 +726,8 @@ public static class DomainPhrasing
         declaration.Match(
             max => $"{build.Catalog.Glossary.DescribeStatus(max.Status)} at max" + build.DescribeStackCap(max.Status).Match(cap => $" ({cap.Value})", _ => ""),
             end => $"{build.Catalog.Glossary.DescribeStatus(end.Status)} ends",
-            _ => "New pack");
+            _ => "New pack",
+            _ => CriticalHealth);
 
     /// <summary>"kill", "hit", and with more than one target "kill 3", "hit 5".</summary>
     private static string DescribeHit(HitOutcome hit, TargetCount targets) =>
@@ -733,7 +740,7 @@ public static class DomainPhrasing
     /// <summary>
     /// The action's token, the same everywhere (CLI, loop files, the web): <c>grenade:kill</c>, <c>grenade:kill:3</c>,
     /// <c>class</c>, <c>kinetic</c>, <c>kinetic:hit:5</c>, <c>pickup:orb-of-power</c>, <c>max:bolt-charge</c>,
-    /// <c>end:amplified</c>, <c>pack:new</c>, <c>finisher</c>. The target count is written only when it is more than one; every
+    /// <c>end:amplified</c>, <c>pack:new</c>, <c>health:critical</c>, <c>finisher</c>. The target count is written only when it is more than one; every
     /// token round-trips.
     /// </summary>
     public static string ToActionToken(this PlayerAction action) =>
@@ -745,7 +752,8 @@ public static class DomainPhrasing
             declare => declare.Declaration.Match(
                 max => $"max:{max.Status}",
                 end => $"end:{end.Status}",
-                _ => "pack:new"),
+                _ => "pack:new",
+                _ => "health:critical"),
             _ => "finisher");
 
     /// <summary>":slide", ":air", ":hold" for a secondary; nothing for a press.</summary>

@@ -32,14 +32,15 @@ public static class PassiveReaching
     public static bool IsSwitchedOnBy(this PassiveRule passive, StatusId status) =>
         passive.When.Any(condition => condition.IsNaming(status));
 
-    /// <summary>A guard the status meets by being there: you have it, it is at max, the pack has it ("without it" is not one).</summary>
+    /// <summary>A guard the status meets by being there: you have it, it is at max or below it, the pack has it ("without it" is not one).</summary>
     public static bool IsNaming(this Condition condition, StatusId status) =>
         condition.Match(
             has => has.Status == status,
             _ => false,
             target => target.Status == status,
             atMax => atMax.Status == status,
-            _ => false);
+            _ => false,
+            belowMax => belowMax.Status == status);
 
     /// <summary>A change to weapon stats reaches the build's weapons of its archetypes (none: nothing here); anything else reaches you.</summary>
     public static PassiveReach FindReach(Build build, Passive passive) =>

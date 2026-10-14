@@ -50,8 +50,8 @@ public sealed record HudStatus(string Name, Affinity Affinity, ImmutableArray<Tr
 /// squares in the subclass's colour, each with its secondary uses below it (and the finisher's: the game has no HUD
 /// square for it, so it shows the finisher's own icon — the player's equipped one after a Bungie login, else the
 /// class's), then the weapons, each in its damage type's colour; above them, where the game
-/// lists your buffs, the states to declare — the buffs on you, on your weapons and the debuffs on the pack (with a new
-/// pack) — and what is on the ground to pick up.
+/// lists your buffs, the states to declare — the buffs on you (with critical health, when a rule reacts to it), on your
+/// weapons and the debuffs on the pack (with a new pack) — and what is on the ground to pick up.
 /// </summary>
 public sealed record TriggerHud(
     Affinity Subclass,
@@ -60,6 +60,7 @@ public sealed record TriggerHud(
     Optional<HudSlot> Finisher,
     ImmutableArray<HudWeapon> Weapons,
     ImmutableArray<HudStatus> OnYou,
+    ImmutableArray<TriggerButton> CriticalHealth,
     ImmutableArray<HudStatus> OnWeapons,
     ImmutableArray<HudStatus> OnPack,
     ImmutableArray<TriggerButton> NewPack,
@@ -96,6 +97,7 @@ public static class TriggerHudShaping
             ShapeFinisher(choices, LoopDesigning.FindFinisher(build, profile)),
             [.. weapons.SelectMany(weapon => ShapeWeapon(choices, weapon).Match(found => new[] { found.Value }, _ => []))],
             ListStatuses(statuses, KeywordKind.Buff),
+            [.. declared.Where(button => button.Action is PlayerAction.Declare { Declaration: StateDeclaration.CriticalHealth })],
             ListStatuses(statuses, KeywordKind.WeaponBuff),
             ListStatuses(statuses, KeywordKind.Debuff),
             [.. declared.Where(button => button.Action is PlayerAction.Declare { Declaration: StateDeclaration.NewPack })],
@@ -196,12 +198,13 @@ public static class TriggerHudShaping
     private static ImmutableArray<HudStatus> ListStatuses(ImmutableArray<(KeywordKind Kind, HudStatus Status)> statuses, KeywordKind kind) =>
         [.. statuses.Where(entry => entry.Kind == kind).Select(entry => entry.Status)];
 
-    /// <summary>The status a declaration is about (none: a new pack, or not a declaration).</summary>
+    /// <summary>The status a declaration is about (none: a new pack, critical health, or not a declaration).</summary>
     private static Optional<StatusId> ReadStatus(PlayerAction action) =>
         action is PlayerAction.Declare declare
             ? declare.Declaration.Match(
                 max => Optional.Some(max.Status),
                 end => Optional.Some(end.Status),
+                _ => Optional.None<StatusId>(),
                 _ => Optional.None<StatusId>())
             : Optional.None<StatusId>();
 

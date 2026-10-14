@@ -96,12 +96,31 @@ elements:
     affinity: neutral
     hash: [1024379611, 422994787]   # the second: a copy with identical text
     description: "Reaching critical health while you hold x3 or more Armor Charge consumes them for 10% damage resistance, lasting longer for more charges spent: 6 | 9 | 12 | 15 s (four values, though the Compendium labels only x3, x4 and x5). Bungie's text: when your shields break."
-    source: "compendium/2026-10-09/Armor Mods#4"
-    # Not expressible: its trigger is your health dropping to critical (Bungie's text: your shields
-    # breaking), and no step of a loop takes damage. It would consume the Armor Charge (x3 or more).
-    inert: "Damage resistance at critical health: Loopsmith doesn't model the damage you take, so no loop sets it off or spends its Armor Charge."
-    rules: []
-    passives: []
+    source: "compendium/2026-10-13/Armor Mods#4"
+    # Critical health is a step the player declares (`health:critical`, ADRs D3): no damage is modelled.
+    # "x3 or more" is a count the state doesn't hold (ADRs D1): Armor Charge declared at max is x3 or
+    # more (its cap is x3, x4-x6 with Charged Up), so the rule fires for sure; below the declared max it
+    # is a chance (ADRs D8, the split of D31). Either way it spends all of it. The buff's 6 | 9 | 12 | 15 s
+    # grows with the charges spent, so it is a fact in the description, not a duration (the glossary
+    # gives none): the player declares it ended. The Compendium gives no PvP value: "?".
+    rules:
+      - on: { criticalHealth: {} }
+        when: [ { atMax: armor-charge } ]
+        then:
+          - { removeBuff: armor-charge }
+          - { applyBuff: emergency-reinforcement }
+        reason: "Reaching critical health with your Armor Charge at max burns it all for 10% damage resistance."
+      - on: { criticalHealth: {} }
+        when: [ { belowMax: armor-charge } ]
+        then:
+          - { removeBuff: armor-charge }
+          - { applyBuff: emergency-reinforcement }
+        chance: true
+        reason: "Reaching critical health with three or more Armor Charges burns them all for 10% damage resistance."
+    passives:
+      - effect: { resistDamage: "10%" }
+        when: [ { has: emergency-reinforcement } ]
+        reason: "While Emergency Reinforcement is on you, you take 10% less damage."
 
   - id: health-font
     name: Health Font

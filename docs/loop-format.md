@@ -63,7 +63,7 @@ Same tokens everywhere: CLI `--actions a,b,…` and `--scenario <file>` (one tok
 comma-separated; `#` starts a comment), `play`, loop files and web share links:
 
 `grenade[:hold]|melee[:slide|air]|super[:hit|kill[:N]]` · `class[:air]` · `kinetic|energy|power[:hit|kill[:N]]` · `finisher` ·
-`pickup:<pickup-id>` · `max:<status-id>` · `end:<status-id>` · `pack:new`
+`pickup:<pickup-id>` · `max:<status-id>` · `end:<status-id>` · `pack:new` · `health:critical`
 
 Tokens are read case-insensitively. Errors read `Unknown action '<token>'. Use …` or
 `Invalid target count in '<token>': use a whole number from 1 to 20 …`.
@@ -119,15 +119,22 @@ has ended, that the next enemies are a new pack — the player declares as a ste
   always holds. A loop that meets a new group of enemies each pass starts with it, so the next pass's
   first hit isn't credited with debuffs the new group doesn't have; a loop against one boss leaves it
   out.
+* `health:critical` — "Critical health": you reached critical health (your shields broke). Loopsmith models no
+  damage you take (ADRs D1), so the player declares it. It raises `CriticalHealth`, so every `criticalHealth` rule
+  fires and cascades, and it always holds; it leaves nothing in the state. Emergency Reinforcement reacts to it: it
+  spends your Armor Charge for its buff, whose 10% damage resistance (PvP `?`) counts in the step's damage
+  resistance until `end:emergency-reinforcement` — for sure while Armor Charge is declared at max, as a *(chance)*
+  below it ("x3 or more" is a count the state doesn't hold).
 
 **Written form.** Written tokens are lower-case and carry the count only when it is more than one
-(`grenade:kill`, `kinetic`, `grenade:kill:3`, `finisher`, `max:bolt-charge`, `end:amplified`, `pack:new`). Every token written
+(`grenade:kill`, `kinetic`, `grenade:kill:3`, `finisher`, `max:bolt-charge`, `end:amplified`, `pack:new`, `health:critical`). Every token written
 reads back as the same action (`grenade:hit` is written `grenade`). Labels read "Grenade (kill 3)",
 "Festival Flight (hit 5)" (a weapon by its build name), "Sliding melee (kill)", "Class ability (in the air)",
-"Finisher", "Pick up Orb of Power", "Bolt Charge at max (x10)", "Amplified ends", "New pack".
+"Finisher", "Pick up Orb of Power", "Bolt Charge at max (x10)", "Amplified ends", "New pack", "Critical health".
 
 **What `play` and the web designer offer.** Only steps that can happen: the abilities, the equipped
-weapons, the pickups on the ground and the **states you declare** — `pack:new` always, `max:` for
+weapons, the pickups on the ground and the **states you declare** — `pack:new` always, `health:critical` when an
+equipped rule reacts to it (the designer shows it with the buffs **On you**), `max:` for
 each active buff that stacks and isn't at max yet, `end:` for each active status. A secondary (`melee:slide`, `class:air`)
 is offered only when an equipped rule names it (without one it fires exactly what the press fires); `finisher` (with
 the abilities) always, as the game always allows one — in a build where no rule reacts to a finisher and none fires on

@@ -42,9 +42,11 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
 - **The rest of the Arc Hunter** (`rules/hunter/arc.yaml`: every Arcstrider plug is authored, compendium/2026-10-13).
   What its elements couldn't express, so they are `inert` or fire on more than they should:
   - steps that don't exist: taking damage at critical health (Spark of Instinct's jolting burst — the only one that
-    would change a loop: its Jolt feeds Spark of Ions and Lethal Current; Spark of Recharge), being hit by a melee
+    would change a loop: its Jolt feeds Spark of Ions and Lethal Current), being hit by a melee
     attack (Spark of Feedback), sprinting (Spark of Haste and Focus: no loop would change, as with a jump), sliding over
-    an ammo brick (Spark of Momentum's x3 Bolt Charge);
+    an ammo brick (Spark of Momentum's x3 Bolt Charge). Reaching critical health is a step the player declares
+    (`health:critical`, Emergency Reinforcement): Spark of Recharge could react to it, but its faster regeneration is
+    still no outcome;
   - a weapon's ammo type (Spark of Beacons: Special and Heavy Arc kills only — a `chance` rule on every Arc weapon
     kill) and precision kills (Spark of Brilliance — `chance`);
   - kills within a time of each other (Spark of Amplitude's 2 kills within 4 s — `chance`) and a rule's cooldown
@@ -77,10 +79,12 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   build already over a piece's energy (a DIM loadout's), only a pick is refused; a mod in an artifice socket shows the
   artifice mods only (the game takes a general one there too).
 - **Armor mods** (all current ones of the five slots are in `rules/mods/`; raid, activity and seasonal mods
-  aren't): no trigger for breaking a combatant's shield (Shield Break Charge, inert), for the damage you take or
-  critical health (Emergency Reinforcement, inert) or for an ability's energy "fully expended" (the Kickstarts
+  aren't): no trigger for breaking a combatant's shield (Shield Break Charge, inert), for the damage you take (critical
+  health is a step the player declares, `health:critical`) or for an ability's energy "fully expended" (the Kickstarts
   fire on any use while you hold Armor Charge, as the Compendium says); spending a fixed number of stacks (a
-  finisher that takes x2 or x3 Armor Charge leaves the buff on; "x3 or more" spends it all, *(chance)*); energy
+  finisher that takes x2 or x3 Armor Charge leaves the buff on; "x3 or more" spends it all, *(chance)*; Emergency
+  Reinforcement splits it: for sure at the declared max, a chance below it with `belowMax`, which the finishers could
+  use too); energy
   or a duration by the stacks spent (Explosive, One-Two and Utility Finisher 70–100%, Bulwark's overshield
   8–14 s, the Kickstarts by mods + stacks: `?` with the table in the description); an overshield's HP
   (Proximity Ward); the order mods are slotted in (Firepower before Heavy Handed); two mods that can't both pay
@@ -154,8 +158,7 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   need a rule value that reads a build stat; refunds below 70 of their stat scale down by an amount Bungie
   hasn't published ("?"). DIM's runtime stat benefits (Font mods while Armor Charge) aren't added up.
 - **Damage resistance, next** (D29): only resistance passives count. Sources that are still only a description
-  aren't counted: Emergency Reinforcement's 10% at critical health (inert: critical health is no step, and its "x3 or
-  more Armor Charge" is a count the state doesn't hold), Speed Booster's 15% against combatants (sprinting isn't
+  aren't counted: Speed Booster's 15% against combatants (sprinting isn't
   modelled), and the armor set bonuses' and artifact perks' (none of the authored ones has one; the Compendium lists
   about 15 set bonuses and 6 artifact perks with one, mostly a "Resist x1" buff on some trigger). Spark of
   Resistance's "3+ enemies within 15 m" is treated as always holding (D7).

@@ -58,19 +58,30 @@ public static class ActionResolution
     }
 
     /// <summary>
-    /// The declarations that hold now (ADRs D3): a new pack (always, ADRs D7), <c>max:</c> for each active buff that
-    /// stacks and isn't at max yet, <c>end:</c> for each active buff and each debuff on the pack.
+    /// The declarations that hold now (ADRs D3): a new pack (always, ADRs D7), critical health when an equipped rule reacts
+    /// to it (<see cref="ListCriticalHealthDeclarations"/>), <c>max:</c> for each active buff that stacks and isn't at max
+    /// yet, <c>end:</c> for each active buff and each debuff on the pack.
     /// </summary>
     public static ImmutableArray<StateDeclaration> ListDeclarations(ValidatedBuild build, GameState state)
     {
+        var criticalHealth = ListCriticalHealthDeclarations(build);
         var glossary = build.Catalog.Glossary;
         var maxes = state.Buffs
             .Where(buff => glossary.IsStacking(buff.Status) && !buff.AtMax)
             .Select(buff => (StateDeclaration)new StateDeclaration.ReachMax(buff.Status));
         var ends = state.Buffs.Select(buff => buff.Status).Concat(state.Target.Debuffs)
             .Select(status => (StateDeclaration)new StateDeclaration.EndStatus(status));
-        return [new StateDeclaration.NewPack(), .. maxes, .. ends];
+        return [new StateDeclaration.NewPack(), .. criticalHealth, .. maxes, .. ends];
     }
+
+    /// <summary>
+    /// "Critical health" (<c>health:critical</c>), when an equipped rule reacts to it (<c>on: { criticalHealth: {} }</c>):
+    /// it always holds, but in a build where nothing reacts to it, it sets nothing off, so it isn't offered.
+    /// </summary>
+    public static ImmutableArray<StateDeclaration> ListCriticalHealthDeclarations(ValidatedBuild build) =>
+        build.Equipped.Any(equipped => equipped.Element.Rules.Any(rule => rule.On is Trigger.CriticalHealth))
+            ? [new StateDeclaration.CriticalHealth()]
+            : [];
 
     /// <summary>The ability a step casts (an offensive ability, the class ability), under way for the whole step; none for any other step.</summary>
     public static Optional<AbilityKind> ReadCast(PlayerAction action) =>
@@ -214,7 +225,8 @@ public static class ActionResolution
         declaration.Match(
             max => DeclareMax(build.Catalog.Glossary, state, max.Status),
             end => DeclareEnd(build.Catalog.Glossary, state, end.Status),
-            _ => new Opening(state.ReplacePack(), [], []));   // always holds: the next enemies are a new pack
+            _ => new Opening(state.ReplacePack(), [], []),   // always holds: the next enemies are a new pack
+            _ => new Opening(state, [new PendingEvent.Ready(new GameEvent.CriticalHealth())], []));   // always holds: no damage is modelled (ADRs D1)
 
     /// <summary>
     /// "Bolt Charge at max" (ADRs D3): the buff is declared at its maximum and <see cref="GameEvent.StacksMaxed"/>
