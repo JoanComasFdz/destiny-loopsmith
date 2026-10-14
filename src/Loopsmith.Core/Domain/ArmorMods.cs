@@ -6,9 +6,10 @@ namespace Loopsmith.Core.Domain;
 /// <summary>
 /// Pure: what Bungie's plug categories say of an armor piece's mod sockets (ADRs D30). A piece's socket takes the mods
 /// of one category: the general one (<c>enhancements.v2_general</c>: stat mods), its slot's
-/// (<c>enhancements.v2_head</c> … <c>enhancements.v2_class_item</c>), or one of its own — an artifice socket, a raid's
-/// or an activity's (<c>enhancements.raid_v800</c>, <c>enhancements.season_outlaw</c>). Other categories in the game's
-/// "ARMOR MODS" sockets aren't mods a build chooses (tuning, masterworks, Armor 1.0's and retired activity sockets).
+/// (<c>enhancements.v2_head</c> … <c>enhancements.v2_class_item</c>), or its artifice socket. A raid's, an activity's and
+/// a retired season's sockets (<see cref="IsActivityMods"/>) hold mods Loopsmith doesn't support: they work only in their
+/// raid or activity, or no longer work at all, so the designer has no socket for them (ADRs D33). Other categories in the
+/// game's "ARMOR MODS" sockets aren't mods a build chooses either (tuning, masterworks, Armor 1.0's).
 /// </summary>
 public static class ArmorModCategories
 {
@@ -27,11 +28,25 @@ public static class ArmorModCategories
     /// <summary>An artifice socket's mods (+3 to a stat).</summary>
     public static readonly PlugCategoryId Artifice = PlugCategoryId.From("enhancements.artifice");
 
-    /// <summary>How a raid's sockets' categories start (<c>enhancements.raid_v800</c>)…</summary>
-    public const string RaidPrefix = "enhancements.raid_";
+    /// <summary>How a raid's sockets' categories start (<c>enhancements.raid_v800</c>: Salvation's Edge)…</summary>
+    private const string RaidPrefix = "enhancements.raid_";
 
-    /// <summary>…and an activity's or an older raid's (<c>enhancements.season_outlaw</c>: Last Wish).</summary>
-    public const string ActivityPrefix = "enhancements.season_";
+    /// <summary>
+    /// …an activity's, an older raid's or a retired season's (<c>enhancements.season_outlaw</c>: Last Wish;
+    /// <c>enhancements.season_maverick</c>: Nightmare Hunts; <c>enhancements.season_opulence</c>: deprecated)…
+    /// </summary>
+    private const string ActivityPrefix = "enhancements.season_";
+
+    /// <summary>…and the Dreaming City's (Riven's Curse, Transcendent Blessing).</summary>
+    private static readonly PlugCategoryId DreamingCity = PlugCategoryId.From("enhancements.rivens_curse");
+
+    /// <summary>
+    /// True for the mods of a raid's, an activity's or a retired season's socket: Loopsmith doesn't support them (ADRs D33).
+    /// </summary>
+    public static bool IsActivityMods(PlugCategoryId category) =>
+        category.Value.StartsWith(RaidPrefix, StringComparison.Ordinal)
+        || category.Value.StartsWith(ActivityPrefix, StringComparison.Ordinal)
+        || category == DreamingCity;
 
     /// <summary>The category of a slot's own mods (Helmet: <c>enhancements.v2_head</c>).</summary>
     public static PlugCategoryId ToSlotCategory(ArmorSlot slot) =>
@@ -67,10 +82,16 @@ public sealed record PieceModSockets(ArmorSlot Slot, bool PieceKnown, ImmutableA
 /// <summary>
 /// The build's mods as the designer lays them out: each slot's sockets (its slot mods and own sockets), the General row
 /// (every piece's general socket; the general mods go wherever the energy lets them, as DIM assigns them), the mods no
-/// free socket takes (more than the pieces hold, or of a category no piece worn has) and the ones that aren't socket
-/// mods (a tuning mod, which goes in a Tier 5 copy's tuning socket; one the listing doesn't have).
+/// free socket takes (more than the pieces hold, or of a category no piece worn has), the ones that aren't socket
+/// mods (a tuning mod, which goes in a Tier 5 copy's tuning socket; one the listing doesn't have) and the ones Loopsmith
+/// ignores (a raid's, an activity's or a retired season's: no socket, ADRs D33).
 /// </summary>
-public sealed record ModLayout(ImmutableArray<PieceModSockets> Pieces, ImmutableArray<ModSocket> General, ImmutableArray<HeldMod> Unplaced, ImmutableArray<HeldMod> Unsocketed);
+public sealed record ModLayout(
+    ImmutableArray<PieceModSockets> Pieces,
+    ImmutableArray<ModSocket> General,
+    ImmutableArray<HeldMod> Unplaced,
+    ImmutableArray<HeldMod> Unsocketed,
+    ImmutableArray<HeldMod> Ignored);
 
 /// <summary>
 /// A mod the mod picker offers for a socket: the listing's mod, whether the rules know it (a mod that changes only

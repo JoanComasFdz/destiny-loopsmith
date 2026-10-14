@@ -26,7 +26,8 @@ public partial record ItemDetails
 
 /// <summary>
 /// One square of the DIM-style loadout: the item's icon (a bungie.net address) or none, its name, colour and rarity,
-/// whether the rules know it (an item the DIM loadout had but the build leaves out is shown, marked ⊘), and what tapping
+/// whether the rules know it (an item the DIM loadout had but the build leaves out is shown, marked ⊘; one Loopsmith
+/// ignores, faded and marked ✕: <see cref="Ignored"/>), and what tapping
 /// it opens (none: nothing to show). <see cref="Enhanced"/>: a weapon perk's enhanced trait, drawn as the game draws it.
 /// <see cref="GameText"/>: Bungie's description of the item (the manifest's), when the excerpt has it: a subclass plug's
 /// tooltip.
@@ -43,6 +44,9 @@ public sealed record IconTile(
     bool Enhanced = false)
 {
     public Optional<string> GameText { get; init; } = Optional.None<string>();
+
+    /// <summary>Ignored: a mod Loopsmith doesn't support (a raid's, an activity's or a retired season's, ADRs D33), drawn faded with a ✕.</summary>
+    public bool Ignored { get; init; }
 }
 
 /// <summary>An ability's square in the Subclass box: its plug's, or an empty slot (a build started from scratch), named for its kind.</summary>
@@ -538,7 +542,8 @@ public static class LoadoutShaping
 
     /// <summary>
     /// A hash the build left out: the manifest's name and icon when the excerpt has it, else just the hash — marked ⊘ when no
-    /// rule knows it yet, not when it has no part in a loop (a set's armor piece, a jump the rules don't have: known, not missing). It opens its
+    /// rule knows it yet, not when it has no part in a loop (a set's armor piece, a jump the rules don't have: known, not missing),
+    /// and faded with a ✕ when Loopsmith ignores it (a raid's or an activity's mod, ADRs D33). It opens its
     /// manifest details, unless it is legendary armor or a legendary weapon (DIM's perks and mods say more).
     /// </summary>
     private static IconTile DescribeLeftOut(RuleCatalog catalog, LeftOutEntry entry) =>
@@ -547,9 +552,9 @@ public static class LoadoutShaping
                 known.Value,
                 known.Value.Name,
                 !entry.Reason.IsMissing(),
-                Optional.Some(entry.Reason.Match(_ => "Not in Loopsmith's rules yet: left out of the build.", none => none.Why)),
+                Optional.Some(entry.Reason.Match(_ => "Not in Loopsmith's rules yet: left out of the build.", none => none.Why, ignored => ignored.Why)),
                 ToAffinity(known.Value),
-                IsLegendaryGear(known.Value) ? Optional.None<ItemDetails>() : Optional.Some<ItemDetails>(new ItemDetails.OfItem(known.Value.Hash))),
+                IsLegendaryGear(known.Value) ? Optional.None<ItemDetails>() : Optional.Some<ItemDetails>(new ItemDetails.OfItem(known.Value.Hash))) with { Ignored = entry.Reason.IsIgnored() },
             _ => DescribeUnknownHash(catalog, entry.Hash));
 
     private static bool IsLegendaryGear(ManifestItem item) =>

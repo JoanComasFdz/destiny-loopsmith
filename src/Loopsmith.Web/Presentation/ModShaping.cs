@@ -18,8 +18,11 @@ public sealed record ModSocketView(ModSocketPlace Place, Optional<IconTile> Mod,
 /// <summary>An armor slot's mod sockets and its energy line ("Energy 4 / 10", "4 / ?" when the capacity isn't known), over when its mods cost more than it holds.</summary>
 public sealed record PieceModsView(ArmorSlot Slot, ImmutableArray<ModSocketView> Sockets, string Energy, bool Over);
 
-/// <summary>The build's mods in its sockets: each slot's row, the General row, the mods no free socket takes, and the ones that go in no mod socket (tuning).</summary>
-public sealed record ModsView(ImmutableArray<PieceModsView> Pieces, ImmutableArray<ModSocketView> General, ImmutableArray<IconTile> Unplaced, ImmutableArray<IconTile> Other);
+/// <summary>
+/// The build's mods in its sockets: each slot's row, the General row, the mods no free socket takes, the ones that go in
+/// no mod socket (tuning) and the ones Loopsmith ignores (a raid's or an activity's, ADRs D33).
+/// </summary>
+public sealed record ModsView(ImmutableArray<PieceModsView> Pieces, ImmutableArray<ModSocketView> General, ImmutableArray<IconTile> Unplaced, ImmutableArray<IconTile> Other, ImmutableArray<IconTile> Ignored);
 
 /// <summary>A mod of the mod picker: its square, cost, what Bungie says it needs, whether the rules know it, whether it is in the socket, and why it can't go in.</summary>
 public sealed record ModOptionView(ItemHash Hash, IconTile Tile, int Cost, ImmutableArray<string> Requirements, bool InRules, bool OfElement, bool Picked, Optional<string> Refused);
@@ -44,7 +47,8 @@ public static class ModShaping
                 IsOver(piece.Energy)))],
             [.. layout.General.Select(socket => ShapeSocket(build, listing, index, socket))],
             [.. layout.Unplaced.Select(mod => LoadoutShaping.DescribeHeldMod(build, mod, Find(index, mod.Plug)))],
-            LoadoutShaping.GroupModCopies(layout.Unsocketed.Select(mod => LoadoutShaping.DescribeHeldMod(build, mod, Find(index, mod.Plug)))));
+            LoadoutShaping.GroupModCopies(layout.Unsocketed.Select(mod => LoadoutShaping.DescribeHeldMod(build, mod, Find(index, mod.Plug)))),
+            LoadoutShaping.GroupModCopies(layout.Ignored.Select(mod => LoadoutShaping.DescribeHeldMod(build, mod, Find(index, mod.Plug)))));
     }
 
     public static ModPickerView ShapePicker(ValidatedBuild build, ItemListing listing, ModOptions options) =>
@@ -67,7 +71,7 @@ public static class ModShaping
     public static string DescribeEnergy(ArmorEnergyUse energy) =>
         $"Energy {energy.Used.Value} / {energy.Capacity.Match(capacity => capacity.Value.Value.ToString(CultureInfo.InvariantCulture), _ => DomainPhrasing.Unknown)}";
 
-    /// <summary>What a socket takes, as the game words its mods: "Helmet mod", "General mod", "Artifice mod", or a raid's ("Vault of Glass Armor Mod").</summary>
+    /// <summary>What a socket takes, as the game words its mods: "Helmet mod", "General mod", "Artifice mod", else its mods' type.</summary>
     public static string DescribeTakes(ItemListing listing, PlugCategoryId category) =>
         category.DescribeModSocket().UnwrapOr(
             listing.Mods.Where(mod => mod.Category == category).SelectMany(mod => mod.Item.Type.Match(type => new[] { type.Value }, _ => [])).DefaultIfEmpty("Mod").First());

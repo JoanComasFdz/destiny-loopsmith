@@ -202,7 +202,7 @@ internal static class ManifestParsing
     private enum KindWord
     {
         Subclass, Super, Grenade, Melee, ClassAbility, Movement, Aspect, Fragment, Weapon, WeaponPerk, WeaponMod, Intrinsic, Catalyst, Armor,
-        ArmorMod, ArtifactPerk, Artifact, Perk, Other,
+        ArmorMod, ActivityMod, ArtifactPerk, Artifact, Perk, Other,
     }
 
     /// <summary>
@@ -286,6 +286,7 @@ internal static class ManifestParsing
             KindWord.WeaponPerk => new ManifestKind.WeaponPerk(),
             KindWord.Intrinsic => new ManifestKind.IntrinsicPerk(),
             KindWord.ArtifactPerk => new ManifestKind.ArtifactPerk(),
+            KindWord.ActivityMod => new ManifestKind.ActivityMod(),
             KindWord.Perk => new ManifestKind.Perk(),
             _ => new ManifestKind.Other(),
         };

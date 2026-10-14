@@ -50,6 +50,7 @@ public partial record InfoSection
     partial record Artifact(Optional<string> BungieText, ImmutableArray<SectionHeading> Perks);
     partial record Status(Optional<string> Facts);
     partial record InBuild(ImmutableArray<InBuildGroup> Groups);
+    partial record Ignored(Optional<string> BungieText, string Why);   // a mod Loopsmith doesn't support (a raid's or an activity's, ADRs D33)
 }
 
 /// <summary>One role of what interacts with a keyword in the build, under its heading ("Gives Armor Charge", "While Amplified").</summary>
@@ -103,7 +104,8 @@ public static class ItemInfoShaping
             catalyst => new[] { catalyst.BungieText, catalyst.Rules.Bind(rules => ReadParaphrase(rules.Source)) }.FindFirstSome(),
             artifact => artifact.BungieText,
             status => status.Facts,
-            _ => Optional.None<string>());
+            _ => Optional.None<string>(),
+            ignored => ignored.BungieText);
 
     private static Optional<ItemInfo> ShapeElement(ValidatedBuild build, ElementId id) =>
         build.Catalog.Elements.TryGetValue(id, out var element)
@@ -189,6 +191,8 @@ public static class ItemInfoShaping
                 [
                     item.Kind is ManifestKind.Artifact
                         ? DescribeArtifactSection(build, item)
+                        : LoopDesigning.ClassifyLeftOut(build, new LeftOutItem(LoadoutPart.ArmorMod, hash)) is LeftOutReason.NotSupported ignored
+                        ? new InfoSection.Ignored(item.Description, ignored.Why)
                         : build.Catalog.Manifest.FindIntrinsicPerk([hash]).Match<InfoSection>(
                             perk => new InfoSection.Perk(new SectionHeading(perk.Value.Name, ToIcon(perk.Value), "Exotic perk"), perk.Value.Description, Optional.None<InfoRules>()),
                             _ => new InfoSection.Item(item.Description, Optional.None<InfoRules>())),

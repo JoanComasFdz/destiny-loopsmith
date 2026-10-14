@@ -36,6 +36,7 @@ public static class BuildValidation
             .Concat(CheckUnreachedWeapons(build, elements.Select(e => e.Element)))
             .Concat(CheckNotStacking(catalog, build.ReadSuperType(catalog), elements.Select(e => e.Element).Concat(ListKeywordElements(catalog).Select(e => e.Element))))
             .Concat(CheckPinnedCatalog(build, catalog))
+            .Concat(CheckIgnoredMods(build, catalog))
             .ToImmutableArray();
 
         var blocking = issues.Where(issue => issue.Severity == Severity.Blocking).ToImmutableArray();
@@ -265,6 +266,21 @@ public static class BuildValidation
             var name = catalog.Elements.TryGetValue(duplicate.Key, out var element) ? element.Name : duplicate.Key.Value;
             yield return new BuildIssue(Severity.Blocking, $"'{name}' is equipped {duplicate.Count()} times; aspects and fragments are unique.");
         }
+    }
+
+    /// <summary>
+    /// The DIM loadout's raid, activity and retired seasonal mods the build ignores (ADRs D33): one info line naming
+    /// them, each once ("Herd Thinner ×2").
+    /// </summary>
+    private static IEnumerable<BuildIssue> CheckIgnoredMods(Build build, RuleCatalog catalog)
+    {
+        var ignored = LeftOutClassifying.ListIgnored(catalog, build)
+            .GroupBy(item => item.Hash)
+            .Select(copies => $"{catalog.Manifest.DescribeItemHash(copies.Key)}{(copies.Count() > 1 ? $" ×{copies.Count()}" : "")}")
+            .ToImmutableArray();
+        return ignored.IsEmpty
+            ? []
+            : [new BuildIssue(Severity.Info, $"Ignored from the DIM loadout: {string.Join(", ", ignored)} — {LeftOutClassifying.ActivityModsIgnored}.")];
     }
 
     private static IEnumerable<BuildIssue> CheckFragmentSlots(Build build, RuleCatalog catalog)

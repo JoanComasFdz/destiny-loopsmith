@@ -39,6 +39,17 @@ public sealed class ManifestJoinTests
     }
 
     [Fact]
+    public void A_raids_or_an_activitys_mod_is_an_activity_mod_by_its_plug_category_whatever_its_type_says()
+    {
+        var excerpt = new ManifestStore(Fixture.Tables).Join([ItemHash.From(700u), ItemHash.From(701u), ItemHash.From(702u), ItemHash.From(703u)]);
+
+        Assert.Equal(
+            ["ActivityMod", "ActivityMod", "ActivityMod", "ArmorMod"],
+            new[] { 700u, 701u, 702u, 703u }.Select(hash => excerpt.Items[ItemHash.From(hash)].Kind.GetType().Name));   // ADRs D33: not supported
+        Assert.Equal((Optional.Some("Deep Stone Crypt Raid Mod"), Optional.Some("Only in its raid.")), (excerpt.Items[ItemHash.From(700u)].Type, excerpt.Items[ItemHash.From(700u)].Description));
+    }
+
+    [Fact]
     public void An_artifact_brings_its_tiers_and_perk_slots_without_the_empty_plug_or_its_reset()
     {
         var store = new ManifestStore(Fixture.Tables);
@@ -195,6 +206,10 @@ public sealed class ManifestJoinTests
               "20": { "displayProperties": { "name": "Havoc", "description": "Kills strike." }, "itemTypeDisplayName": "Intrinsic", "plug": { "plugCategoryIdentifier": "intrinsics" }, "perks": [ { "perkHash": 42 } ] },
               "30": { "displayProperties": { "name": "Test Catalyst" }, "plug": { "plugCategoryIdentifier": "x.machinegun.masterwork" }, "perks": [ { "perkHash": 41 }, { "perkHash": 40 } ] },
               "31": { "displayProperties": { "name": "Empty Catalyst Socket" }, "plug": { "plugCategoryIdentifier": "v400.empty.exotic.masterwork" } },
+              "700": { "displayProperties": { "name": "Herd Thinner", "description": "Only in its raid." }, "itemTypeDisplayName": "Deep Stone Crypt Raid Mod", "inventory": { "tierType": 2 }, "plug": { "plugCategoryIdentifier": "enhancements.raid_descent" } },
+              "701": { "displayProperties": { "name": "Riven's Curse" }, "itemTypeDisplayName": "General Armor Mod", "inventory": { "tierType": 2 }, "plug": { "plugCategoryIdentifier": "enhancements.rivens_curse" } },
+              "702": { "displayProperties": { "name": "Taken Barrier" }, "itemTypeDisplayName": "Last Wish Raid Mod", "inventory": { "tierType": 2 }, "plug": { "plugCategoryIdentifier": "enhancements.season_outlaw" } },
+              "703": { "displayProperties": { "name": "Grenade Mod" }, "itemTypeDisplayName": "General Armor Mod", "inventory": { "tierType": 2 }, "plug": { "plugCategoryIdentifier": "enhancements.v2_general" } },
               "200": { "displayProperties": { "name": "Test Mask" }, "itemTypeDisplayName": "Helmet", "inventory": { "bucketTypeHash": 2, "tierType": 5 }, "equippingBlock": { "equipableItemSetHash": 500 } },
               "300": { "displayProperties": { "name": "Spark", "description": "" }, "itemTypeDisplayName": "Arc Fragment", "inventory": { "bucketTypeHash": 3 }, "perks": [ { "perkHash": 50 }, { "perkHash": 51 } ] },
               "400": { "displayProperties": { "name": "Test Tablet" }, "itemTypeDisplayName": "Artifact", "inventory": { "bucketTypeHash": 3, "tierType": 5 },

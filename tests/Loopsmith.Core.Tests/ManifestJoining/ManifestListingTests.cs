@@ -46,7 +46,7 @@ public sealed class ManifestListingTests
 
         Assert.Equal(
             ["Arc Siphon 911 enhancements.v2_head 3", "Arc Siphon 912 enhancements.v2_head 1", "Grenade Mod 910 enhancements.v2_general 3"],
-            listing.Mods.Select(mod => $"{mod.Item.Name} {mod.Item.Hash.Value} {mod.Category.Value} {mod.Cost.Value}"));   // the costlier copy first; no empty or locked plug
+            listing.Mods.Select(mod => $"{mod.Item.Name} {mod.Item.Hash.Value} {mod.Category.Value} {mod.Cost.Value}"));   // the costlier copy first; no empty or locked plug, no raid mod
         var cheap = listing.Mods.Single(mod => mod.Item.Hash.Value == 912u);
         Assert.Equal(["Must Be Selected in the Seasonal Artifact"], cheap.Requirements);                                  // Guardian Rank aside
         Assert.Equal(new ManifestKind.ArmorMod(Optional.Some(ArmorSlot.Helmet)), cheap.Item.Kind);
@@ -54,7 +54,7 @@ public sealed class ManifestListingTests
         Assert.Equal((Optional.Some("/siphon.png"), Optional.Some("Arc kills make orbs.")), (cheap.Item.Icon, cheap.Item.Description));
         Assert.Equal(
             ["enhancements.v2_general", "enhancements.v2_head", "enhancements.v2_head"],
-            listing.ModSockets[ItemHash.From(200u)].Select(category => category.Value));                                  // the tuning socket isn't a mod a build chooses
+            listing.ModSockets[ItemHash.From(200u)].Select(category => category.Value));                                  // the tuning socket isn't a mod a build chooses, the raid's isn't supported (ADRs D33)
         Assert.False(listing.ModSockets.ContainsKey(ItemHash.From(100u)));                                                // a weapon has none
     }
 
@@ -164,13 +164,13 @@ public sealed class ManifestListingTests
                 _ => item.Kind.GetType().Name,
             };
 
-    /// <summary>Bungie-shaped items: two versions of a legendary (one on a breaker frame), an exotic with its own breaker, a set's helmet, and what isn't listed.</summary>
+    /// <summary>Bungie-shaped items: two versions of a legendary (one on a breaker frame), an exotic with its own breaker, a set's helmet (with a raid's socket), and what isn't listed.</summary>
     private static class Fixture
     {
         internal const string Buckets = """{"1":{"displayProperties":{"name":"Kinetic Weapons"}},"2":{"displayProperties":{"name":"Helmet"}},"3":{"displayProperties":{"name":"Consumables"}}}""";
         private const string Sets = """{"500":{"displayProperties":{"name":"Testing"},"setPerks":[{"requiredSetCount":2,"sandboxPerkHash":600}]}}""";
         private const string Categories = """{"8":{"displayProperties":{"name":"INTRINSIC TRAITS"}},"7":{"displayProperties":{"name":"WEAPON PERKS"}},"9":{"displayProperties":{"name":"ARMOR MODS"}}}""";
-        private const string ModSockets = """ "sockets": { "socketEntries": [ { "singleInitialItemHash": 900 }, { "singleInitialItemHash": 901 }, { "singleInitialItemHash": 901 }, { "singleInitialItemHash": 902 }, { "singleInitialItemHash": 0 } ], "socketCategories": [ { "socketCategoryHash": 9, "socketIndexes": [0, 1, 2, 3] } ] } """;
+        private const string ModSockets = """ "sockets": { "socketEntries": [ { "singleInitialItemHash": 900 }, { "singleInitialItemHash": 901 }, { "singleInitialItemHash": 901 }, { "singleInitialItemHash": 902 }, { "singleInitialItemHash": 903 }, { "singleInitialItemHash": 0 } ], "socketCategories": [ { "socketCategoryHash": 9, "socketIndexes": [0, 1, 2, 3, 4] } ] } """;
         private const string Breakers = """{"485622768":{"displayProperties":{"name":"Shield Piercing"}},"2611060930":{"displayProperties":{"name":"Disruption"}}}""";
         private const string Perks = """{"42":{"displayProperties":{"name":"[Shield-Piercing] Barrier"}},"43":{"displayProperties":{"name":"Faster"}},"44":{"displayProperties":{"name":"[Stagger] Unstoppable"}}}""";
         private const string Sockets = """ "sockets": { "socketEntries": [ { "singleInitialItemHash": 0 }, { "singleInitialItemHash": FRAME }, { "singleInitialItemHash": 10 } ], "socketCategories": [ { "socketCategoryHash": 7, "socketIndexes": [2] }, { "socketCategoryHash": 8, "socketIndexes": [1] } ] } """;
@@ -194,11 +194,13 @@ public sealed class ManifestListingTests
               "900": { "displayProperties": { "name": "Empty Mod Socket" }, "itemTypeDisplayName": "General Armor Mod", "plug": { "plugCategoryIdentifier": "enhancements.v2_general" } },
               "901": { "displayProperties": { "name": "Empty Mod Socket" }, "itemTypeDisplayName": "Helmet Armor Mod", "plug": { "plugCategoryIdentifier": "enhancements.v2_head" } },
               "902": { "displayProperties": { "name": "Empty Tuning Mod Socket" }, "itemTypeDisplayName": "General Armor Mod", "plug": { "plugCategoryIdentifier": "core.gear_systems.armor_tiering.plugs.tuning.mods" } },
+              "903": { "displayProperties": { "name": "Empty Mod Socket" }, "itemTypeDisplayName": "Salvation's Edge Armor Mod", "plug": { "plugCategoryIdentifier": "enhancements.raid_v800" } },
               "910": { "displayProperties": { "name": "Grenade Mod", "icon": "/grenade.png" }, "itemTypeDisplayName": "General Armor Mod", "inventory": { "tierType": 2 }, "plug": { "plugCategoryIdentifier": "enhancements.v2_general", "energyCost": { "energyCost": 3 } }, "investmentStats": [ { "statTypeHash": 1, "value": 10 } ] },
               "911": { "displayProperties": { "name": "Arc Siphon", "icon": "/siphon.png" }, "itemTypeDisplayName": "Helmet Armor Mod", "inventory": { "tierType": 2 }, "plug": { "plugCategoryIdentifier": "enhancements.v2_head", "energyCost": { "energyCost": 3 }, "insertionRules": [ { "failureMessage": "Requires Guardian Rank 6: Vendor Challenges" }, { "failureMessage": "" } ] }, "perks": [ { "perkHash": 45 } ] },
               "912": { "displayProperties": { "name": "Arc Siphon", "icon": "/siphon.png", "description": "Arc kills make orbs." }, "itemTypeDisplayName": "Helmet Armor Mod", "inventory": { "tierType": 2 }, "plug": { "plugCategoryIdentifier": "enhancements.v2_head", "energyCost": { "energyCost": 1 }, "insertionRules": [ { "failureMessage": "Requires Guardian Rank 6: Vendor Challenges" }, { "failureMessage": "Must Be Selected in the Seasonal Artifact" } ] }, "perks": [ { "perkHash": 45 } ] },
               "913": { "displayProperties": { "name": "Locked Armor Mod" }, "itemTypeDisplayName": "Helmet Armor Mod", "plug": { "plugCategoryIdentifier": "enhancements.v2_head" } },
-              "914": { "displayProperties": { "name": "Balanced Tuning" }, "itemTypeDisplayName": "General Armor Mod", "plug": { "plugCategoryIdentifier": "core.gear_systems.armor_tiering.plugs.tuning.mods" }, "perks": [ { "perkHash": 46 } ] }
+              "914": { "displayProperties": { "name": "Balanced Tuning" }, "itemTypeDisplayName": "General Armor Mod", "plug": { "plugCategoryIdentifier": "core.gear_systems.armor_tiering.plugs.tuning.mods" }, "perks": [ { "perkHash": 46 } ] },
+              "915": { "displayProperties": { "name": "High-Tier Elimination" }, "itemTypeDisplayName": "Salvation's Edge Armor Mod", "inventory": { "tierType": 2 }, "plug": { "plugCategoryIdentifier": "enhancements.raid_v800", "energyCost": { "energyCost": 1 } }, "perks": [ { "perkHash": 47 } ] }
             }
             """;
 

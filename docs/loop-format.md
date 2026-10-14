@@ -279,7 +279,9 @@ which the build's stats count when they add up from the player's armor, [Stats](
 (its set's bonuses already count from the pieces worn; the piece carries stats and mod slots) or a jump the rules don't
 have. An element the rules mark `inert` ([rule-format.md](rule-format.md#elements): Skip Grenade, Feeding Frenzy, the
 ammo, weapon-handling and resistance mods, the Arcstrider's jumps) is known: its details say "No rules needed." and why, and the
-build check doesn't warn about it. A loadout for another class than its subclass's is an error, and so is text that
+build check doesn't warn about it. A raid's, an activity's or a seasonal mod isn't supported: it is kept in `leftOut`
+but ignored, faded with a ✕ instead of ⊘, not listed under **Not in Loopsmith yet**, and Validation says once what it
+ignored ([Raid, activity and seasonal mods](#raid-activity-and-seasonal-mods)). A loadout for another class than its subclass's is an error, and so is text that
 isn't a loadout.
 
 **Picking a weapon's perks.** A DIM link usually carries the weapon, not its roll, so the designer lets you pick
@@ -426,18 +428,19 @@ mods as before, each piece with the mods of its slot and the general mods togeth
 
 * **The sockets** are the game's, from Bungie's manifest (the listing read when the app opens, with every weapon and
   armor piece): a piece's general socket, the sockets of its slot's mods (three on an Armor 3.0 piece, two on an older
-  one) and its own (an artifice socket, a raid's or an activity's). A slot with no piece whose sockets Loopsmith can
+  one) and its artifice socket when it has one. A raid's or an activity's socket isn't shown: Loopsmith doesn't support
+  their mods ([Raid, activity and seasonal mods](#raid-activity-and-seasonal-mods)). A slot with no piece whose sockets Loopsmith can
   read — none worn (a loop from scratch), or a piece the listing lacks — holds the mods the build has for it and one free
   socket, and gives the General row one socket. An empty socket is a dashed square named for what it takes
-  ("Helmet", "General", "Artifice", "Raid"); a filled one shows its mod, ⊘ when the rules don't know it, and its
+  ("Helmet", "General", "Artifice"); a filled one shows its mod, ⊘ when the rules don't know it, and its
   energy cost in its corner. On a phone (640 px wide or less) the sockets are as big as a piece's square, four to a
   line, so a piece's artifice socket stays on its row.
 * **Placing.** A build holds its mods as a list, as a DIM loadout does (`armorMods`, `armorModPlugs` and the mods in
   `leftOut`), so the designer places them: each in the first free socket of the pieces that takes it, in the build's
   order; the general mods fill the General row and count against the pieces with the most energy left, the costliest
-  first (as DIM assigns them). A mod no free socket takes (more mods than the pieces hold, or of a raid no piece is
-  from) shows under **Mods with no socket**; one that goes in no mod socket (a tuning mod, in a Tier 5 copy's tuning
-  socket) under **Tuning and other mods**. Both stay in the build.
+  first (as DIM assigns them). A mod no free socket takes (more mods than the pieces hold) shows under **Mods with no
+  socket**; one that goes in no mod socket (a tuning mod, in a Tier 5 copy's tuning socket) under **Tuning and other
+  mods**; a raid's, an activity's or a seasonal one under **Not supported**. All stay in the build.
 * **The mod picker.** Tapping a socket opens it: every mod of the game the socket takes, by name, the subclass's
   element first (Arc Siphon and Arc Targeting on an Arc build) with a filter for them only ("Arc only"; none for
   Prismatic or a socket without elemental mods), and a search box. Each shows its icon, its energy cost and what
@@ -448,12 +451,31 @@ mods as before, each piece with the mods of its slot and the general mods togeth
   capacity is known, can't be picked and says why ("Solar Siphon costs 3 energy: the helmet has 2 left"; for a
   general mod, that no piece has that much left); without a login nothing is refused. Picking one puts it in that
   socket, in place of the one there; **Clear this socket** takes it out; **About …** opens the details of the mod in
-  the socket. Picking the same mod again stacks its copies (Elemental Charge ×2).
+  the socket. Picking the same mod again stacks its copies (Elemental Charge ×2). No picker offers a raid's, an
+  activity's or a seasonal mod.
 * **What changes.** Only the embedded build file's mod entries: `armorMods` (the rules' mods), `armorModPlugs` (the
   exact copy, for a mod with a cheaper one: [rule-format.md](rule-format.md#build-file-buildsbuildbuildyaml)) and the
   mods in `leftOut`; Bungie's manifest is read first for a mod the excerpt lacks (its name and icon). The build check
   runs again and the steps replay; stats added up from the player's armor are added up again (a stat mod changes
   them), typed ones stay. The export and the share link carry the mods.
+
+### Raid, activity and seasonal mods
+
+Loopsmith doesn't support the mods of a raid's socket (Salvation's Edge, Crota's End, Root of Nightmares, King's Fall,
+Vow of the Disciple, Vault of Glass, Garden of Salvation, Deep Stone Crypt), an activity's (Last Wish, the Nightmare
+Hunts, the Dreaming City) or a retired season's (Black Armory, Opulence, Undying: Bungie deprecated them, they no
+longer work) ([ADRs D33](../ADRs.md#d33--raid-activity-and-seasonal-armor-mods-arent-supported-a-dim-links-are-kept-but-ignored-and-no-picker-offers-them)).
+They act on an encounter's mechanics (the Relic, a Vex relay, Taken enemies), which a loop doesn't hold. Bungie's plug
+category says which mods they are (`enhancements.raid_*`, `enhancements.season_*`, `enhancements.rivens_curse`), not
+their names, so a new raid's are covered too.
+
+* **No picker offers them**: a piece's raid or activity socket isn't shown, and the mod picker lists none of their mods.
+* **A DIM link that has them** keeps them in the build's `leftOut`, as the loadout had them, so a shared loop still
+  shows them — but they are ignored: they set nothing off and take no socket. Their square is faded and grey, with a
+  small ✕ where ⊘ goes ("Not supported: raid, activity and seasonal mods are ignored."); on the Home card it sits with
+  the general mods, in the designer under **Not supported**; **About …** says the same. They aren't counted under
+  **Not in Loopsmith yet** (they aren't a gap), and the build check says once what it ignored, as info:
+  `Ignored from the DIM loadout: Herd Thinner ×2, Taken Barrier — raid, activity and seasonal mods aren't supported.`
 
 ## Stats
 

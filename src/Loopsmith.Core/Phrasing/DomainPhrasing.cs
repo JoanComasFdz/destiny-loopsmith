@@ -48,18 +48,17 @@ public static class DomainPhrasing
 
     /// <summary>"Helmet", "Arms", "Chest", "Legs", "Class item".</summary>
     /// <summary>
-    /// What a mod socket takes, in short (an empty socket's square): its slot ("Helmet"), "General", "Artifice", "Raid",
-    /// else "Special" (an activity's).
+    /// What a mod socket takes, in short (an empty socket's square): its slot ("Helmet"), "General", "Artifice", else
+    /// "Special" (a socket the designer doesn't list: a raid's or an activity's, ADRs D33).
     /// </summary>
     public static string DescribeModSocketShort(this PlugCategoryId category) =>
         ArmorModCategories.FindSlot(category).Match(
             slot => slot.Value.DescribeArmorSlot(),
             _ => category == ArmorModCategories.General ? "General"
                 : category == ArmorModCategories.Artifice ? "Artifice"
-                : category.Value.StartsWith(ArmorModCategories.RaidPrefix, StringComparison.Ordinal) ? "Raid"
                 : "Special");
 
-    /// <summary>What a mod socket takes, as the game words its mods ("Helmet mod", "General mod", "Artifice mod"); none for a raid's or an activity's (its mods' type says).</summary>
+    /// <summary>What a mod socket takes, as the game words its mods ("Helmet mod", "General mod", "Artifice mod"); none for another (its mods' type says).</summary>
     public static Optional<string> DescribeModSocket(this PlugCategoryId category) =>
         ArmorModCategories.FindSlot(category).Match(
             slot => Optional.Some($"{slot.Value.DescribeArmorSlot()} mod"),

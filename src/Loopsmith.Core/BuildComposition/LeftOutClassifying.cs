@@ -9,22 +9,35 @@ namespace Loopsmith.Core.BuildComposition;
 /// Pure: what a DIM loadout's left-out item is — a gap (no rule knows it yet) or something with no part in a loop,
 /// by what the manifest says it is: a stat mod or a tuning mod (it changes only stats, which the build's stats count
 /// when they add up from the player's armor), a legendary armor piece (its set's bonuses already count from the pieces
-/// worn) or a jump the rules don't have (another subclass's). Anything else the rules don't know is a gap; nothing is
-/// guessed (ADRs D12).
+/// worn) or a jump the rules don't have (another subclass's). A raid's, an activity's or a retired season's mod isn't
+/// supported: it is ignored (ADRs D33). Anything else the rules don't know is a gap; nothing is guessed (ADRs D12).
 /// </summary>
 public static class LeftOutClassifying
 {
     private const string StatsOnly =
         "it changes only stats, and the build's stats count it when they add up from your armor (after the Bungie login). It sets nothing off.";
 
-    /// <summary>What a left-out item is, by what the manifest says it is: a gap unless it has no part in a loop.</summary>
+    /// <summary>Why a raid's or an activity's mod is ignored: what its tile's tooltip and the build check say.</summary>
+    public const string ActivityModsIgnored = "raid, activity and seasonal mods aren't supported";
+
+    /// <summary>What a left-out item is, by what the manifest says it is: a gap unless it has no part in a loop or isn't supported.</summary>
     public static LeftOutReason ClassifyLeftOut(RuleCatalog catalog, LeftOutItem item) =>
-        FindNoLoopEffect(catalog.Manifest, item.Hash)
-            .Match<LeftOutReason>(why => new LeftOutReason.NoLoopEffect(why.Value), _ => new LeftOutReason.NotInRules());
+        IsActivityMod(catalog.Manifest, item.Hash)
+            ? new LeftOutReason.NotSupported("Not supported: raid, activity and seasonal mods are ignored. It sets nothing off.")
+            : FindNoLoopEffect(catalog.Manifest, item.Hash)
+                .Match<LeftOutReason>(why => new LeftOutReason.NoLoopEffect(why.Value), _ => new LeftOutReason.NotInRules());
 
     /// <summary>The left-out items no rule knows yet: the build's real gaps.</summary>
     public static ImmutableArray<LeftOutItem> ListMissing(RuleCatalog catalog, Build build) =>
         [.. build.LeftOut.Where(item => ClassifyLeftOut(catalog, item).IsMissing())];
+
+    /// <summary>The left-out items Loopsmith ignores: the raid's, activity's and retired season's mods (ADRs D33).</summary>
+    public static ImmutableArray<LeftOutItem> ListIgnored(RuleCatalog catalog, Build build) =>
+        [.. build.LeftOut.Where(item => ClassifyLeftOut(catalog, item).IsIgnored())];
+
+    /// <summary>True when the manifest says the hash is a raid's, an activity's or a retired season's mod.</summary>
+    public static bool IsActivityMod(ManifestExcerpt manifest, ItemHash hash) =>
+        manifest.FindItem(hash).Match(item => item.Value.Kind is ManifestKind.ActivityMod, _ => false);
 
     /// <summary>Why an item has no part in a loop: a stat or tuning mod by its stat plug, else by its manifest kind; none: a gap.</summary>
     private static Optional<string> FindNoLoopEffect(ManifestExcerpt manifest, ItemHash hash) =>

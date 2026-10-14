@@ -707,6 +707,7 @@ public sealed class RuleCatalogParsingTests
               - { hash: 593554567, name: "Luminopotent Mask", kind: armor, type: "Helmet", slot: helmet, set: 499993704 }
               - { hash: 3832366019, name: "Harmonic Siphon", kind: armorMod, type: "Helmet Armor Mod", slot: helmet }
               - { hash: 1435557120, name: "Grenade Mod", kind: armorMod, type: "General Armor Mod" }
+              - { hash: 2142852459, name: "Herd Thinner", kind: activityMod, type: "Deep Stone Crypt Raid Mod" }
               - { hash: 3821685388, name: "Tablet of Ruin", kind: artifact, type: "Artifact", tier: legendary, tiers: [[1319563986], [2596646301]], slots: [1, 2, 2] }
             """);
 
@@ -732,6 +733,7 @@ public sealed class RuleCatalogParsingTests
         Assert.Equal(Optional.Some(("Luminopotent", 2)), catalog.Manifest.FindSetOfPerk(ItemHash.From(2769443639u)).Map(found => (found.Set.Name, found.Perk.Pieces.Value)));
         Assert.Equal(Optional.Some(ArmorSlot.Helmet), items[ItemHash.From(3832366019u)].ReadArmorSlot());
         Assert.Equal(new ManifestKind.ArmorMod(Optional.None<ArmorSlot>()), items[ItemHash.From(1435557120u)].Kind);
+        Assert.Equal(new ManifestKind.ActivityMod(), items[ItemHash.From(2142852459u)].Kind);   // a raid's mod: not supported (ADRs D33)
         var tablet = Assert.IsType<ManifestKind.Artifact>(items[ItemHash.From(3821685388u)].Kind);
         Assert.Equal([[1319563986u], [2596646301u]], tablet.Tiers.Select(tier => tier.Perks.Select(hash => hash.Value)));
         Assert.Equal([1, 2, 2], tablet.Slots);

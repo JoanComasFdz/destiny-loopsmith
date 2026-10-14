@@ -932,6 +932,11 @@ button.hud-chip:hover, button.hud-chip:focus-visible { background: color-mix(in 
 .unsupported-mark { position: absolute; right: -3px; bottom: -3px; z-index: 1; width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; box-sizing: border-box; border-radius: 50%; background: #2a303c; border: 1.5px solid var(--panel); color: #c3c9d4; }
 .unsupported-mark svg { width: 8px; height: 8px; display: block; }
 .icon-tile.out .icon-count { right: auto; left: 1px; }
+/* A mod Loopsmith ignores (a raid's or an activity's, ADRs D33): faded and grey, with a ✕ where ⊘ goes. */
+.icon-tile.ignored { overflow: visible; }
+.icon-tile.ignored > img, .icon-tile.ignored > .icon-initials { filter: grayscale(1); opacity: 0.45; }
+.ignored-mark { position: absolute; right: -3px; bottom: -3px; z-index: 1; width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; box-sizing: border-box; border-radius: 50%; background: #2a303c; border: 1.5px solid var(--panel); color: #c3c9d4; }
+.ignored-mark svg { width: 8px; height: 8px; display: block; }
 .icon-tile.empty { border-style: dashed; color: var(--dim); font-size: 9px; text-align: center; background: transparent; }
 .icon-initials { font-size: 11px; font-weight: 750; color: var(--aff, var(--text)); letter-spacing: .02em; }
 .icon-count { position: absolute; right: 1px; bottom: 0; padding: 0 2px; font-size: 10px; font-weight: 750; color: #fff; background: rgba(0, 0, 0, .7); }
