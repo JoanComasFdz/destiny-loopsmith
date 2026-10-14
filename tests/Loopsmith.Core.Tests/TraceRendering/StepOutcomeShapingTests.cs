@@ -52,9 +52,9 @@ public sealed class StepOutcomeShapingTests
         var trace = TraceRenderer.RenderResolution(build, resolution, Plain).Select(line => line.ToPlainText()).ToImmutableArray();
 
         Assert.Equal(
-            [("Grenade hit", 0, 1), ("Bolt Charge gained", 1, 1), ("Grenade hit on Jolted target", 0, 4), ("Bolt Charge gained", 1, 1)],
+            [("Grenade 🥊 hit", 0, 1), ("Bolt Charge gained", 1, 1), ("Grenade 🥊 hit on Jolted target", 0, 4), ("Bolt Charge gained", 1, 1)],
             shaped.Select(e => (e.Event, e.Depth, e.Repeats)));
-        Assert.Contains(trace, line => line.Contains("Grenade hit on Jolted target ×4", StringComparison.Ordinal));
+        Assert.Contains(trace, line => line.Contains("Grenade 🥊 hit on Jolted target ×4", StringComparison.Ordinal));
         Assert.Equal(2, trace.Count(line => line.Contains("Bolt Charge gained", StringComparison.Ordinal)));
     }
 
@@ -75,13 +75,13 @@ public sealed class StepOutcomeShapingTests
         var shaped = StepOutcomeShaping.ShapeStepOutcomes(build, resolution, Plain).Events;
         var trace = TraceRenderer.RenderResolution(build, resolution, Plain).Select(line => line.ToPlainText()).ToImmutableArray();
 
-        var kill = Assert.Single(shaped, e => e.Event == "Grenade kill" || e.Event.StartsWith("Grenade kill on", StringComparison.Ordinal));
-        Assert.Equal("Grenade kill", kill.Event);   // the first one's: the later ones are on a Jolted target
+        var kill = Assert.Single(shaped, e => e.Event == "Grenade 💀 kill" || e.Event.StartsWith("Grenade 💀 kill on", StringComparison.Ordinal));
+        Assert.Equal("Grenade 💀 kill", kill.Event);   // the first one's: the later ones are on a Jolted target
         Assert.Equal(3, kill.Repeats);
         Assert.Equal(["Reaper", "Shreds"], kill.Sources.Select(source => source.Name).Distinct());
-        Assert.Contains(shaped, e => e.Event == "Grenade killed 3 enemies in 3 s");
-        Assert.Single(trace, line => line.Contains("Grenade kill ×3", StringComparison.Ordinal));
-        Assert.Contains(trace, line => line.Contains("Grenade killed 3 enemies in 3 s", StringComparison.Ordinal));
+        Assert.Contains(shaped, e => e.Event == "Grenade 💀 killed 3 enemies in 3 s");
+        Assert.Single(trace, line => line.Contains("Grenade 💀 kill ×3", StringComparison.Ordinal));
+        Assert.Contains(trace, line => line.Contains("Grenade 💀 killed 3 enemies in 3 s", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -92,7 +92,7 @@ public sealed class StepOutcomeShapingTests
         var shaped = LoopDesigning.ShapeStepOutcomes(session, session.Resolutions[0], Plain);
 
         var hit = shaped.Events[0];
-        Assert.Equal((0, "Grenade hit"), (hit.Depth, hit.Event));
+        Assert.Equal((0, "Grenade 🥊 hit"), (hit.Depth, hit.Event));
         Assert.Equal(["spark", "vow"], hit.Sources.Select(source => source.Source.Value));
         var jolted = Assert.Single(hit.Sources[0].Outcomes);
         Assert.StartsWith("Jolt target", jolted.Text);

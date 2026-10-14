@@ -99,7 +99,7 @@ public class ActionResolutionTests
 
         Assert.Equal(["any-melee", "slide-only"], slide.Fired.Where(f => f.Source.Value != "jolt").Select(f => f.Source.Value).Distinct().Order());
         Assert.Equal(["any-melee"], plain.Fired.Select(f => f.Source.Value).Distinct());
-        Assert.Contains("Sliding melee hit → Jolt target (4s) [Slide Only] + +12% grenade energy [Any Melee]", DescribeTrace(build, slide));
+        Assert.Contains("Sliding melee 🥊 hit → Jolt target (4s) [Slide Only] + +12% grenade energy [Any Melee]", DescribeTrace(build, slide));
     }
 
     [Fact]
@@ -583,7 +583,7 @@ public class ActionResolutionTests
         Assert.DoesNotContain(grenade.Fired, f => f.Source.Value == "one-for-all");   // not a weapon
         Assert.Equal("Hit 3+ enemies with weapon", build.Catalog.Glossary.DescribeTrigger(OneForAll.Rules[0].On, build.ReadSuperType()));
         Assert.Contains(
-            "  Test Rifle hit 3 enemies → Amplified (10s) [One For All]",
+            "  Test Rifle 🥊 hit 3 enemies → Amplified (10s) [One For All]",
             TraceRenderer.RenderResolution(build, three, new TraceOptions(false, false, false)).Select(line => line.ToPlainText()));
     }
 

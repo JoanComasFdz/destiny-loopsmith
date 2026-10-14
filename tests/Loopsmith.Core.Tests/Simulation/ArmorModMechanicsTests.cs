@@ -73,7 +73,7 @@ public sealed class ArmorModMechanicsTests
         Assert.Equal(EnemyTier.Minor, kill.Tier);
         Assert.Equal([Status("jolt")], kill.TargetHas);
         Assert.Equal(
-            "#2 Finisher\n  Finisher → Amplified (10s) [Finisher Mod]\n  Finisher kill on Jolted target → +1 Bolt Charge [Jolted Kill]",
+            "#2 Finisher\n  Finisher → Amplified (10s) [Finisher Mod]\n  Finisher 💀 kill on Jolted target → +1 Bolt Charge [Jolted Kill]",
             DescribeTrace(build, finisher));
     }
 

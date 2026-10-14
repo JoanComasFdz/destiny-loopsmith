@@ -846,9 +846,9 @@ public static class DomainPhrasing
     public static string DescribeEvent(this KeywordGlossary glossary, GameEvent gameEvent, Build build) =>
         gameEvent.Match(
             cast => DescribeCast(cast.Kind, cast.Input),
-            damaged => $"{glossary.DescribeOrigin(damaged.Origin, build)} hit{DescribeOnTarget(DescribeTargetPhrase(glossary, damaged.TargetHas))}",
-            killed => $"{glossary.DescribeOrigin(killed.Origin, build)} kill{DescribeOnTarget(DescribeTargetPhrase(glossary, killed.TargetHas))}",
-            struck => $"{glossary.DescribeOrigin(struck.Origin, build)} {(struck.Hit == HitOutcome.Kill ? "killed" : "hit")} {DescribeEnemies(struck.Targets)}",
+            damaged => $"{glossary.DescribeOrigin(damaged.Origin, build)} 🥊 hit{DescribeOnTarget(DescribeTargetPhrase(glossary, damaged.TargetHas))}",
+            killed => $"{glossary.DescribeOrigin(killed.Origin, build)} 💀 kill{DescribeOnTarget(DescribeTargetPhrase(glossary, killed.TargetHas))}",
+            struck => $"{glossary.DescribeOrigin(struck.Origin, build)} {(struck.Hit == HitOutcome.Kill ? "💀 killed" : "🥊 hit")} {DescribeEnemies(struck.Targets)}",
             pickedUp => $"Picked up {glossary.DescribePickup(pickedUp.Pickup)}",
             gained => $"{glossary.DescribeStatus(gained.Status)} gained",
             maxed => $"Max {glossary.DescribeStatus(maxed.Status)}",
@@ -856,7 +856,7 @@ public static class DomainPhrasing
             _ => CriticalHealth);
 
     /// <summary>
-    /// "Grenade (kill)", "Grenade (kill 3)", "Festival Flight (hit 5)", "Class ability", "Pick up Orb of Power",
+    /// "Grenade (💀 kill)", "Grenade (💀 kill 3)", "Festival Flight (🥊 hit 5)", "Class ability", "Pick up Orb of Power",
     /// "Bolt Charge at max (x10)", "Amplified ends", "New pack", "Critical health", "Finisher".
     /// </summary>
     public static string DescribeAction(this ValidatedBuild build, PlayerAction action) =>

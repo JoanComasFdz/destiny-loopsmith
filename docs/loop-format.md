@@ -193,18 +193,19 @@ they first fired; under each, the elements from there
 each element every outcome it gave, as a bulleted list ("• +1 Bolt Charge"). A cascade ("↳ Bolt Charge gained")
 nests under the event that set it off — a pickup picked up shows a 📍 instead ("📍 Picked up Orb of Power"), on its
 own step as where Powerful Attraction collects it — and the same event several times in a row shows once, counted
-(×3), with what the first one set off: an action against five enemies shows its first hit, then "Grenade hit on Jolted
+(×3), with what the first one set off: an action against five enemies shows its first hit, then "Grenade 🥊 hit on Jolted
 target ×4" with the "Bolt Charge gained" under it once, not five hits each followed by its cascade. A later one that
 sets off less than the first shows in it too (Festival Flight's second kill, after the first consumed Reaper, only
-gives Woven Mail again: "Festival Flight kill on Severed + Unraveled target ×2" with Reaper's orb and Woven Mail once),
+gives Woven Mail again: "Festival Flight 💀 kill on Severed + Unraveled target ×2" with Reaper's orb and Woven Mail once),
 whatever the earlier ones left on the target when it changes nothing they set off (a skip grenade's four kills, the
-last three on a target the first one's Photonic Flare blinded, show as one "Grenade kill … ×4"); one that sets off
+last three on a target the first one's Photonic Flare blinded, show as one "Grenade 💀 kill … ×4"); one that sets off
 something new stays apart (the first grenade hit jolts the pack, the next ones on Jolted targets also set off Jolt's
 strike). Kills of several enemies in one action say the tightest window a rule
-they fired needs ("Festival Flight killed 2 enemies in 3 s": Strand Siphon). An
+they fired needs ("Festival Flight 💀 killed 2 enemies in 3 s": Strand Siphon). A hit is marked 🥊 and a kill 💀 in the event
+too, as in the step's title. An
 element's name shows a preview on hover and its details on a tap. Every keyword an event or outcome names — a
 status, a debuff by its adjective ("Jolted"), a pickup, a summon — is in its affinity's colour wherever it is in
-the line ("+1 **Bolt Charge**", "Grenade kill on **Jolted** target"), and the ones the rules have as an element
+the line ("+1 **Bolt Charge**", "Grenade 💀 kill on **Jolted** target"), and the ones the rules have as an element
 (Jolt, Bolt Charge, Ionic Trace, Combination Blow) preview and open the same way. A keyword shows the game's
 own icon before its name ([rule-format.md](rule-format.md#glossary-rulesglossaryyaml), `trait`) — in the step's
 text, in the state at its end and in its details (Unraveling Rounds, which Bungie's data has no icon for, shows the
