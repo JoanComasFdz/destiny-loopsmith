@@ -138,9 +138,9 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
 - **Exotic weapons beyond Thunderlord**: only Thunderlord's perks and catalyst are authored
   (`rules/exotics/weapons.yaml`); other exotics show Bungie's text but set nothing off. Their rules use
   `slot:<slot>` for "this weapon".
-- **What the rules can't say yet** (each noted in its rule file): a weapon's own lightning strike as an event
-  (Thunderlord's strikes are part of its kill and hit rules), ammo and reload (Return Stroke, Feeding Frenzy:
-  it would need a glossary buff), stuns, "while holding the trigger".
+- **What the rules can't say yet** (each noted in its rule file): stuns, "while holding the trigger". Ammo, a
+  magazine refill and a weapon's own lightning strike are outside the loop on purpose (Return Stroke and Feeding
+  Frenzy are `inert`): Loopsmith isn't a simulator.
 - **The artifact of a DIM link made since Monument of Triumph**: the excerpt has all seven artifacts, but a DIM link
   is read for its artifact perks only (`parameters.artifactUnlocks`), so its build's artifact is the one that unlocks
   the most of them; reading the artifact a loadout saves, if DIM records it, is still to do.

@@ -70,8 +70,9 @@ elements:
     hash: 1550063955          # the catalyst plug item ("Thunderlord Catalyst")
     description: "Thunderlord's catalyst: each of its lightning strikes puts 5 rounds back in the magazine from reserves."
     source: "compendium/2026-10-09/Exotic Weapons#144"
-    # Not expressible: ammo and the magazine aren't modelled (there is no ammo or reload outcome).
+    # Outside the loop: ammo and the magazine aren't modelled (there is no ammo or reload outcome).
     # There is also no lightning-strike event to attach it to: the strikes are part of Reign Havoc's
     # and Lightning Rounds' rules.
+    inert: "Ammo and reloads: Loopsmith counts neither, so the rounds it puts back change no step of a loop."
     rules: []
     passives: []

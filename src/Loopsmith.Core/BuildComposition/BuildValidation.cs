@@ -9,7 +9,10 @@ namespace Loopsmith.Core.BuildComposition;
 
 /// <summary>
 /// The sole constructor of <see cref="ValidatedBuild"/> (architecture test). Blocking issues put the
-/// build on the failure track; warnings and info ride along on the validated build.
+/// build on the failure track; warnings and info ride along on the validated build. What the rules don't know yet (a
+/// "?" ability, a perk, mod or catalyst, what a DIM link left out) is no issue: its square carries the ⊘. An element
+/// the rules mark <c>inert</c> is outside the loop on purpose, and every other element has rules or passives (a test
+/// over <c>rules/</c> holds the catalog to it).
 /// </summary>
 public static class BuildValidation
 {
@@ -26,12 +29,9 @@ public static class BuildValidation
             .SelectMany(r => r.Element.Match(some => new[] { (r.Slot, Element: BindToHolder(some.Value, r.Slot.Holder), BoundTo: FindBinding(some.Value, r.Slot.Holder)) }, _ => []))
             .ToImmutableArray();
         var issues = resolved.SelectMany(r => r.Issues)
-            .Concat(CheckUnknownAbilities(build))
-            .Concat(CheckLeftOut(build, catalog))
             .Concat(CheckRolls(build, catalog))
             .Concat(CheckAspects(build, catalog))
             .Concat(CheckFragmentSlots(build, catalog))
-            .Concat(CheckInertElements(elements.Select(e => e.Element)))
             .Concat(CheckStats(build, elements.Select(e => e.Element)))
             .Concat(CheckUnreachedWeapons(build, elements.Select(e => e.Element)))
             .Concat(CheckNotStacking(catalog, build.ReadSuperType(catalog), elements.Select(e => e.Element).Concat(ListKeywordElements(catalog).Select(e => e.Element))))
@@ -52,7 +52,7 @@ public static class BuildValidation
     /// <summary>
     /// Every slot the build fills, in the format's order. A weapon's perks are what <see cref="WeaponRolling.ListPerkSlots"/>
     /// places: each column's perk the catalog knows by hash, and the named perks in no column (a perk the catalog doesn't
-    /// know sets nothing off; <see cref="CheckRolls"/> says so).
+    /// know sets nothing off, and its square carries the ⊘).
     /// </summary>
     private static ImmutableArray<Slot> ListSlots(Build build, RuleCatalog catalog)
     {
@@ -178,23 +178,6 @@ public static class BuildValidation
         return new ResolvedSlot(slot, Optional.Some(element), issues);
     }
 
-    /// <summary>An ability given as "?" is part of the build but not of the trace: it sets nothing off. An empty slot says nothing.</summary>
-    private static IEnumerable<BuildIssue> CheckUnknownAbilities(Build build)
-    {
-        var abilities = build.Abilities;
-        var unknown = new[]
-            {
-                ("super", abilities.Super), ("grenade", abilities.Grenade), ("melee", abilities.Melee),
-                ("class ability", abilities.ClassAbility), ("jump", abilities.Jump),
-            }
-            .Where(slot => slot.Item2 is AbilityPlug.Unknown)
-            .Select(slot => slot.Item1)
-            .ToImmutableArray();
-        return unknown.IsEmpty
-            ? []
-            : [new BuildIssue(Severity.Info, $"Unknown ({DomainPhrasing.Unknown}): {string.Join(", ", unknown)} — not in the rule catalog yet, so {(unknown.Length == 1 ? "it sets" : "they set")} nothing off.")];
-    }
-
     /// <summary>
     /// A passive that changes weapon stats for archetypes none of the build's weapons is ("Ionic Overclock changes Linear
     /// Fusion Rifles, Fusion Rifles and Heat Weapons"): it does nothing here. Not said while a weapon's archetype is unknown.
@@ -211,15 +194,6 @@ public static class BuildValidation
                         Severity.Info,
                         $"{element.Name} changes {DomainPhrasing.DescribeArchetypes(weapons.Archetypes)}, and no weapon in this build is one, so it does nothing here.")))
             : [];
-
-    /// <summary>What the DIM loadout had that no rule knows yet (a legendary armor piece or a jump the rules don't have has no part in a loop: not a gap).</summary>
-    private static IEnumerable<BuildIssue> CheckLeftOut(Build build, RuleCatalog catalog)
-    {
-        var missing = LeftOutClassifying.ListMissing(catalog, build);
-        return missing.IsEmpty
-            ? []
-            : [new BuildIssue(Severity.Info, $"Left out of the build: {missing.DescribeLeftOut()} from the DIM loadout — not in the rule catalog yet.")];
-    }
 
     /// <summary>
     /// A weapon's roll, against the manifest excerpt: a pick outside its column's perks (or past its last column) is a
@@ -250,55 +224,32 @@ public static class BuildValidation
             .. displaced,
             .. catalyst,
             .. mod,
-            .. CheckUnknownRoll(catalog, weapon).Match(issue => new[] { issue.Value }, _ => []),
         ];
     }
 
     /// <summary>
-    /// The info that a weapon's roll holds perks the catalog doesn't know ("Festival Flight's roll: Hatchling (Trait) —
-    /// not in the rule catalog yet, so it sets nothing off."); none when it knows them all. The build check lists it;
-    /// <see cref="CopyPerkChecking"/> turns it into the weapon's warning when the player's copy lacks a perk.
+    /// A catalyst turned on that the excerpt doesn't give the weapon is a warning. One the catalog doesn't know says
+    /// nothing here: its square carries the ⊘.
     /// </summary>
-    public static Optional<BuildIssue> CheckUnknownRoll(RuleCatalog catalog, WeaponLoadout weapon)
-    {
-        var unknown = ListPicks(weapon)
-            .Where(pick => !catalog.FindElementByHash(pick.Hash).IsSome())
-            .Select(pick => catalog.Manifest.DescribeTypedItemHash(pick.Hash))
-            .ToImmutableArray();
-        return unknown.IsEmpty
-            ? Optional.None<BuildIssue>()
-            : Optional.Some(new BuildIssue(Severity.Info, $"{weapon.Name}'s roll: {string.Join(", ", unknown)} — not in the rule catalog yet, so {(unknown.Length == 1 ? "it sets" : "they set")} nothing off."));
-    }
-
-    /// <summary>A catalyst turned on that the excerpt doesn't give the weapon is a warning; one the catalog doesn't know sets nothing off.</summary>
     private static IEnumerable<BuildIssue> CheckCatalyst(RuleCatalog catalog, WeaponLoadout weapon) =>
         !weapon.Catalyst
             ? []
             : catalog.Manifest.FindWeaponKind(weapon).Bind(kind => kind.Catalyst).Match(
-                plug => catalog.FindElementByHash(plug.Value).IsSome()
-                    ? []
-                    : new[] { new BuildIssue(Severity.Info, $"{weapon.Name}'s catalyst: {catalog.Manifest.DescribeItemHash(plug.Value)} — not in the rule catalog yet, so it sets nothing off.") },
-                _ => [new BuildIssue(Severity.Warning, $"{weapon.Name} has no catalyst in the manifest excerpt, so catalyst: true does nothing.")]);
+                _ => [],
+                _ => new[] { new BuildIssue(Severity.Warning, $"{weapon.Name} has no catalyst in the manifest excerpt, so catalyst: true does nothing.") });
 
     /// <summary>
-    /// A weapon's mod: one its mod socket doesn't take (only when the excerpt lists what it takes) is a warning; one the
-    /// catalog doesn't know sets nothing off.
+    /// A weapon's mod: one its mod socket doesn't take (only when the excerpt lists what it takes) is a warning. One the
+    /// catalog doesn't know says nothing here: its square carries the ⊘.
     /// </summary>
     private static IEnumerable<BuildIssue> CheckMod(RuleCatalog catalog, WeaponLoadout weapon) =>
         weapon.Mod.Match(
             mod =>
             {
                 var takes = catalog.Manifest.FindWeaponKind(weapon).Map(kind => kind.Mods).UnwrapOr([]);
-                var name = catalog.Manifest.DescribeTypedItemHash(mod.Value);
-                return new[]
-                {
-                    !takes.IsEmpty && !takes.Contains(mod.Value)
-                        ? Optional.Some(new BuildIssue(Severity.Warning, $"{weapon.Name}'s mod: {name} isn't a mod its mod socket takes in the manifest excerpt."))
-                        : Optional.None<BuildIssue>(),
-                    catalog.FindElementByHash(mod.Value).IsSome()
-                        ? Optional.None<BuildIssue>()
-                        : Optional.Some(new BuildIssue(Severity.Info, $"{weapon.Name}'s mod: {name} — not in the rule catalog yet, so it sets nothing off.")),
-                }.SelectMany(issue => issue.Match(some => new[] { some.Value }, _ => []));
+                return !takes.IsEmpty && !takes.Contains(mod.Value)
+                    ? new[] { new BuildIssue(Severity.Warning, $"{weapon.Name}'s mod: {catalog.Manifest.DescribeTypedItemHash(mod.Value)} isn't a mod its mod socket takes in the manifest excerpt.") }
+                    : [];
             },
             _ => []);
 
@@ -359,13 +310,6 @@ public static class BuildValidation
 
     private static Severity ToSeverity(StatCheckSeverity severity) =>
         severity == StatCheckSeverity.Warning ? Severity.Warning : Severity.Info;
-
-    /// <summary>An element with no rules is a gap, unless its rules file says why it needs none (<c>inert</c>: damage only, outside the model).</summary>
-    private static IEnumerable<BuildIssue> CheckInertElements(IEnumerable<BuildElement> elements) =>
-        elements
-            .DistinctBy(e => e.Id)
-            .Where(e => e.Rules.IsEmpty && e.Passives.IsEmpty && !e.Inert.IsSome())
-            .Select(e => new BuildIssue(Severity.Warning, $"'{e.Name}' has no authored rules yet — it is inert in the trace."));
 
     /// <summary>
     /// A rule that doesn't stack with another equipped element gives nothing when both fire: a note for the build
