@@ -1,5 +1,5 @@
 ﻿Infinite skip grenades — Skip Grenade Hunter · 8 steps
-New pack → Class ability → Grenade (kill) → Festival Flight (kill) → Any Arc weapon (kill) → Pick up Orb of Power → Bolt Charge at max (x10) → Grenade (kill)
+New pack → Class ability → Grenade (💀 kill) → Festival Flight (💀 kill) → Any Arc weapon (💀 kill) → Pick up Orb of Power → Bolt Charge at max (x10) → Grenade (💀 kill)
 ✓ Repeats — each pass ends with what the next one needs
 
 #1 New pack
@@ -7,19 +7,19 @@ New pack → Class ability → Grenade (kill) → Festival Flight (kill) → Any
 #2 Class ability
    on its own       Reaper · Slice · Gambler's Dodge · Bomber
 
-#3 Grenade (kill)
+#3 Grenade (💀 kill)
    needs            Armor Charge ← previous pass #6 [Orb of Power]
    in this order    Grenade Kickstart (chance)
    on its own       Spark of Shock · Shinobu's Vow · Bolt Charge · Flow State · Dielectric · Shock and Clear · Spark of Discharge · Elemental Charge (chance) · Ionic Trace
    wasted           Tempest Strike — doesn't stack with Dielectric
 
-#4 Festival Flight (kill)
+#4 Festival Flight (💀 kill)
    needs            Slice ← #2 [Slice] · Unraveling Rounds ← previous pass #6 [Unraveling Orbs] · Jolt ← #3 [Spark of Shock] · Reaper ← #2 [Reaper]
    in this order    Slice · Unraveling Rounds · Jolt · Flow State · Reaper · Dielectric · To Shreds · Shock and Clear · Shinobu's Vow · Bolt Charge · Spark of Discharge · Elemental Charge (chance) · Ionic Trace
    on its own       Strand Siphon (chance)
    wasted           Tempest Strike — doesn't stack with Dielectric
 
-#5 Any Arc weapon (kill)
+#5 Any Arc weapon (💀 kill)
    needs            Jolt ← #3 [Spark of Shock] · Sever ← #4 [Slice]
    in this order    Jolt · Photonic Flare · Flow State · Dielectric · To Shreds · Shock and Clear · Shinobu's Vow · Bolt Charge · Spark of Discharge · Elemental Charge (chance) · Ionic Trace
    on its own       Harmonic Siphon (chance)
@@ -33,16 +33,16 @@ New pack → Class ability → Grenade (kill) → Festival Flight (kill) → Any
    needs            Bolt Charge ← #5 [Dielectric; Spark of Discharge]
    in this order    Shinobu's Vow · Flashover
 
-#8 Grenade (kill)
+#8 Grenade (💀 kill)
    needs            New Tricks ← #7 [Shinobu's Vow] · Armor Charge ← #6 [Orb of Power] · Bolt Charge at max ← #7 · Bolt Charge ← #5 [Dielectric; Spark of Discharge] · Jolt ← #3 [Spark of Shock] · Sever ← #4 [Slice]
    in this order    Shinobu's Vow · Grenade Kickstart · Bolt Charge · Jolt · Defibrillating Blast · Photonic Flare · Flow State · Dielectric · To Shreds · Shock and Clear · Spark of Discharge · Elemental Charge (chance) · Ionic Trace
    on its own       Spark of Shock
    wasted           Tempest Strike — doesn't stack with Dielectric
 
 First pass (from a fresh spawn, where it differs)
-#3 Grenade (kill)
+#3 Grenade (💀 kill)
    doesn't set off  Grenade Kickstart (chance)
-#4 Festival Flight (kill)
+#4 Festival Flight (💀 kill)
    doesn't set off  Unraveling Rounds
 
 Steps

@@ -146,8 +146,9 @@ isn't modelled. The next pass starts from what the last one ended with.
 
 **Written form.** Written tokens are lower-case and carry the count only when it is more than one
 (`grenade:kill`, `kinetic`, `grenade:kill:3`, `finisher`, `max:bolt-charge`, `end:amplified`, `pack:new`, `health:critical`). Every token written
-reads back as the same action (`grenade:hit` is written `grenade`). Labels read "Grenade (kill 3)",
-"Festival Flight (hit 5)" (a weapon by its build name), "Sliding melee (kill)", "Class ability (in the air)",
+reads back as the same action (`grenade:hit` is written `grenade`). Labels read "Grenade (💀 kill 3)",
+"Festival Flight (🥊 hit 5)" (a weapon by its build name), "Sliding melee (💀 kill)" — 💀 marks a kill step and 🥊 a
+hit step, in the steps' titles and the HUD's buttons alike — "Class ability (in the air)",
 "Finisher", "Pick up Orb of Power", "Bolt Charge at max (x10)", "Amplified ends", "New pack", "Critical health".
 
 **What `play` and the web designer offer.** Only steps that can happen: the abilities, the equipped
@@ -710,7 +711,7 @@ happen.
 
 ```
 Dodge, then shoot — Skip Grenade Hunter · 4 steps
-New pack → Class ability → Festival Flight (kill) → Pick up Orb of Power
+New pack → Class ability → Festival Flight (💀 kill) → Pick up Orb of Power
 ✓ Repeats — each pass ends with what the next one needs
 
 #1 New pack
@@ -718,7 +719,7 @@ New pack → Class ability → Festival Flight (kill) → Pick up Orb of Power
 #2 Class ability
    on its own       Reaper · Slice · Gambler's Dodge · Bomber
 
-#3 Festival Flight (kill)
+#3 Festival Flight (💀 kill)
    needs            Slice ← #2 [Slice] · Unraveling Rounds ← previous pass #4 [Unraveling Orbs] · Reaper ← #2 [Reaper]
    in this order    Slice · Unraveling Rounds · Reaper · To Shreds
    on its own       Strand Siphon (chance)
@@ -728,7 +729,7 @@ New pack → Class ability → Festival Flight (kill) → Pick up Orb of Power
    in this order    Unraveling Orbs · Orb of Power
 
 First pass (from a fresh spawn, where it differs)
-#3 Festival Flight (kill)
+#3 Festival Flight (💀 kill)
    doesn't set off  Unraveling Rounds
 ```
 
@@ -752,12 +753,12 @@ before it gets them from the previous pass, so on B's first pass it sets off nei
 in one line each.
 
 ```
-A  Dodge, then shoot   New pack → Class ability → Festival Flight (kill) → Pick up Orb of Power   ✓ Repeats   (Skip Grenade Hunter)
-B  Shoot, then dodge   New pack → Festival Flight (kill) → Class ability → Pick up Orb of Power   ✓ Repeats   (Skip Grenade Hunter)
+A  Dodge, then shoot   New pack → Class ability → Festival Flight (💀 kill) → Pick up Orb of Power   ✓ Repeats   (Skip Grenade Hunter)
+B  Shoot, then dodge   New pack → Festival Flight (💀 kill) → Class ability → Pick up Orb of Power   ✓ Repeats   (Skip Grenade Hunter)
 
 New pack                A #1 · B #1: sets off the same
 Class ability           A #2 · B #3: sets off the same
-Festival Flight (kill)  A #3 · B #2: sets off the same
+Festival Flight (💀 kill)  A #3 · B #2: sets off the same
    A needs     Slice ← #2 · Unraveling Rounds ← previous pass #4 · Reaper ← #2 (differs on A's first pass)
    B needs     Slice ← previous pass #3 · Unraveling Rounds ← previous pass #4 · Reaper ← previous pass #3 (differs on B's first pass)
 Pick up Orb of Power    A #4 · B #4: sets off the same
@@ -765,10 +766,10 @@ Pick up Orb of Power    A #4 · B #4: sets off the same
    B needs     Orb of Power ← #2
 
 Links only in A
-   #2 Class ability → #3 Festival Flight (kill): Slice · Reaper
+   #2 Class ability → #3 Festival Flight (💀 kill): Slice · Reaper
 
 Links only in B
-   previous pass #3 Class ability → #2 Festival Flight (kill): Slice · Reaper
+   previous pass #3 Class ability → #2 Festival Flight (💀 kill): Slice · Reaper
 ```
 
 A trigger that sets off different elements in the two loops lists them as `only in A` / `only in B`;

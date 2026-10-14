@@ -544,9 +544,9 @@ public class ActionResolutionTests
         var killThree = new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Kill, TargetCount.From(3));
         var hitFive = new PlayerAction.FireWeapon(WeaponSlot.Energy, HitOutcome.Damage, TargetCount.From(5));
 
-        Assert.Equal("Grenade (kill 3)", build.DescribeAction(killThree));
-        Assert.Equal("Test Rifle (hit 5)", build.DescribeAction(hitFive));
-        Assert.Equal("Grenade (kill)", build.DescribeAction(GrenadeKill));
+        Assert.Equal("Grenade (💀 kill 3)", build.DescribeAction(killThree));
+        Assert.Equal("Test Rifle (🥊 hit 5)", build.DescribeAction(hitFive));
+        Assert.Equal("Grenade (💀 kill)", build.DescribeAction(GrenadeKill));
         Assert.Equal(["grenade:kill:3", "energy:hit:5", "grenade:kill"], new PlayerAction[] { killThree, hitFive, GrenadeKill }.Select(a => a.ToActionToken()));
     }
 

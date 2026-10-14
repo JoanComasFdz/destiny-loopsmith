@@ -10,7 +10,7 @@
   Debuffs       none
   Ground        none
   Resistance    PvE 50.9% · PvP 10%  (Guardian 34.5% × Spark of Resistance 25% [PvP 10%])
-#2 Grenade (kill)
+#2 Grenade (💀 kill)
   Grenade hit → Jolt target (10s) [Spark of Shock] + +1 Bolt Charge and +4.2% grenade energy [Shinobu's Vow]
     ↳ Bolt Charge gained → +?% grenade energy [Shinobu's Vow] + +2.5% melee energy [Bolt Charge]
   Grenade kill on Jolted target → Amplified (15s) [Flow State] + +1 Bolt Charge [Dielectric] + Ionic Trace [Shock and Clear] + doesn't stack with Dielectric [Tempest Strike]
@@ -24,7 +24,7 @@
   Armor Charge  +1 (chance)  (#2 Elemental Charge: +1 (chance) → +1 (chance))
   Resistance    PvE 58.2% · PvP 10%  (Amplified 15% × Guardian 34.5% × Spark of Resistance 25% [PvP 10%])
   While Amplified  +1 Bolt Charge per gain [Spark of Frequency]
-#3 Festival Flight (kill)
+#3 Festival Flight (💀 kill)
   Festival Flight hit on Jolted target → Sever target (10s) and +1 Slice (8s) [Slice] + Jolt strike [Jolt]
   Festival Flight kill on Jolted + Severed target → Amplified (15s) [Flow State] + consumes Reaper and Orb of Power [Reaper] + +1 Bolt Charge [Dielectric] + Woven Mail (10s) and heals you and allies [To Shreds] + Ionic Trace [Shock and Clear] + doesn't stack with Dielectric [Tempest Strike]
     ↳ Bolt Charge gained → +?% grenade energy [Shinobu's Vow] + +2.5% melee energy [Bolt Charge]
@@ -47,7 +47,7 @@
   Armor Charge  x1 · +2 (chance)  (#2 Elemental Charge: +1 (chance) → +1 (chance) · #3 Elemental Charge: +1 (chance) → +2 (chance) · #4 Orb of Power: +1 → x1 · +2 (chance))
   Resistance    PvE 77% · PvP 32.5%  (Amplified 15% × Guardian 34.5% × Spark of Resistance 25% [PvP 10%] × Woven Mail 45% [PvP 25%])
   While Amplified  +1 Bolt Charge per gain [Spark of Frequency]
-#5 Sliding melee (kill)
+#5 Sliding melee (💀 kill)
   Sliding melee hit on Jolted + Severed target → Jolt target (10s) [Tempest Strike] + Jolt strike [Jolt] + +12% grenade energy [Impact Induction]
   Sliding melee kill on Jolted + Severed target → Blind target (10s) [Photonic Flare] + +1 Combination Blow (20s) and +100% class ability energy and heals you [Combination Blow] + Amplified (15s) [Flow State] + +1 Bolt Charge [Dielectric] + Woven Mail (10s) and heals you and allies [To Shreds] + Ionic Trace [Shock and Clear] + doesn't stack with Dielectric [Tempest Strike]
     ↳ Bolt Charge gained → +?% grenade energy [Shinobu's Vow] + +2.5% melee energy [Bolt Charge]
@@ -69,7 +69,7 @@
   Armor Charge  x1 · +2 (chance)  (#2 Elemental Charge: +1 (chance) → +1 (chance) · #3 Elemental Charge: +1 (chance) → +2 (chance) · #4 Orb of Power: +1 → x1 · +2 (chance) · #5 Elemental Charge: at cap, +1 wasted → x1 · +2 (chance))
   Resistance    PvE 77% · PvP 32.5%  (Amplified 15% × Guardian 34.5% × Spark of Resistance 25% [PvP 10%] × Woven Mail 45% [PvP 25%])
   While Amplified  +1 Bolt Charge per gain [Spark of Frequency]
-#7 Grenade (kill)
+#7 Grenade (💀 kill)
   Grenade thrown → consumes New Tricks [Shinobu's Vow] + spends Armor Charge x1 · +2 (chance) → +21.7% grenade energy (34.4% with the chance stacks) [Grenade Kickstart]
   Grenade hit on Jolted + Severed + Blinded target → Jolt target (10s) [Spark of Shock] + +1 Bolt Charge and +4.2% grenade energy [Shinobu's Vow] + consumes Bolt Charge and Bolt Charge strike (kills) [Bolt Charge] + Jolt strike [Jolt]
     ↳ Bolt Charge gained → +?% grenade energy [Shinobu's Vow] + +2.5% melee energy [Bolt Charge]
@@ -89,7 +89,7 @@
   Armor Charge  +2 (chance)  (#7 Elemental Charge: +1 (chance) → +1 (chance) · #7 Elemental Charge: +1 (chance) → +2 (chance))
   Resistance    PvE 77% · PvP 32.5%  (Amplified 15% × Guardian 34.5% × Spark of Resistance 25% [PvP 10%] × Woven Mail 45% [PvP 25%])
   While Amplified  +1 Bolt Charge per gain [Spark of Frequency]
-#8 Any Arc weapon (kill)
+#8 Any Arc weapon (💀 kill)
   Any Arc weapon hit on Jolted + Severed + Blinded target → Jolt strike [Jolt]
   Any Arc weapon kill on Jolted + Severed + Blinded target → Blind target (10s) [Photonic Flare] + Amplified (15s) [Flow State] + +1 Bolt Charge [Dielectric] + Woven Mail (10s) and heals you and allies [To Shreds] + Ionic Trace [Shock and Clear] + doesn't stack with Dielectric [Tempest Strike]
     ↳ Bolt Charge gained → +?% grenade energy [Shinobu's Vow] + +2.5% melee energy [Bolt Charge]

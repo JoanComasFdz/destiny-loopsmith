@@ -9,7 +9,7 @@ namespace Loopsmith.Web.Presentation;
 
 /// <summary>
 /// One button of the palette: the action it appends (the option aimed at its row's target count), that action's token
-/// and label in the core's wording ("grenade:kill:3", "Grenade (kill 3)"), and the button's short caption ("hit", "kill").
+/// and label in the core's wording ("grenade:kill:3", "Grenade (💀 kill 3)"), and the button's short caption ("🥊 hit", "💀 kill").
 /// </summary>
 public sealed record TriggerButton(PlayerAction Action, string Token, string Label, string Caption, bool IsNew);
 
@@ -123,14 +123,14 @@ public static class TriggerPaletteShaping
             _ => 0,
             _ => 0);
 
-    /// <summary>"Grenade (kill)" → "Grenade".</summary>
+    /// <summary>"Grenade (💀 kill)" → "Grenade".</summary>
     private static string ReadTitle(string label)
     {
         var open = label.LastIndexOf(" (", StringComparison.Ordinal);
         return open < 0 ? label : label[..open];
     }
 
-    /// <summary>"Grenade (kill)" → "kill".</summary>
+    /// <summary>"Grenade (💀 kill)" → "💀 kill".</summary>
     private static string ReadQualifier(string label)
     {
         var open = label.LastIndexOf(" (", StringComparison.Ordinal);

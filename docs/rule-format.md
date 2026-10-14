@@ -722,7 +722,7 @@ stats: { weapons: 47, class: 104, grenade: 145, super: 27, melee: 79 }   # any s
 * A weapon: `slot` (`kinetic|energy|power`), `name` and `type` (`kinetic|arc|solar|void|stasis|strand`)
   are required; `archetype` (a kebab-case word), `perks` (element ids), `hash` (its manifest item: its icon,
   its trait columns, its intrinsic and catalyst), `roll`, `catalyst` and `instance` are optional. The name labels its
-  actions ("Festival Flight (hit 5)").
+  actions ("Festival Flight (🥊 hit 5)").
 * `instance`: the copy the build wears, by Bungie's instance id (a dim.gg share's, or one picked from the player's
   weapons; quoted: `instance: "6917529810172542011"`); after the player's Bungie login its tier and masterwork show on
   the weapon's square when it is theirs, and it holds that copy's perks

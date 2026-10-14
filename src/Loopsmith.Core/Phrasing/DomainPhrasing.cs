@@ -880,9 +880,12 @@ public static class DomainPhrasing
             _ => "New pack",
             _ => CriticalHealth);
 
-    /// <summary>"kill", "hit", and with more than one target "kill 3", "hit 5".</summary>
+    /// <summary>
+    /// "💀 kill", "🥊 hit", and with more than one target "💀 kill 3", "🥊 hit 5": the mark tells a kill step from a hit
+    /// step at a glance (a hit step is damage kept up, a kill step's hit the killing blow, ADRs D34).
+    /// </summary>
     private static string DescribeHit(HitOutcome hit, TargetCount targets) =>
-        (hit == HitOutcome.Kill ? "kill" : "hit") + (targets.Value > 1 ? $" {targets.Value}" : "");
+        (hit == HitOutcome.Kill ? "💀 kill" : "🥊 hit") + (targets.Value > 1 ? $" {targets.Value}" : "");
 
     /// <summary>"1 enemy", "3 enemies".</summary>
     private static string DescribeEnemies(TargetCount targets) =>
