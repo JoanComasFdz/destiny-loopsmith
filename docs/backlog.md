@@ -45,8 +45,18 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
     would change a loop: its Jolt feeds Spark of Ions and Lethal Current), being hit by a melee
     attack (Spark of Feedback), sprinting (Spark of Haste and Focus: no loop would change, as with a jump), sliding over
     an ammo brick (Spark of Momentum's x3 Bolt Charge). Reaching critical health is a step the player declares
-    (`health:critical`, Emergency Reinforcement): Spark of Recharge could react to it, but its faster regeneration is
-    still no outcome;
+    (`health:critical`, Emergency Reinforcement, #69); the next task builds on it:
+    **The critical-health Sparks react to "Critical health".** Both are `inert` today, and Spark of Recharge's reason
+    ("Critical health is no step") is out of date since #69.
+    1. **Spark of Recharge** (Arc#22): on reaching critical health, grenade and melee regenerate 400% [PvP 200%] faster
+       until your shields are full. Its faster regeneration shows as an outcome on the "Critical health" step (the
+       owner: it belongs in the step even though it sets nothing else off), so it is no longer `inert`; check against
+       the Compendium that it is ability regeneration, not health.
+    2. **Spark of Instinct** (Arc#18): taking damage *while* at critical health sends out an Arc burst that jolts nearby
+       enemies (its Jolt feeds Spark of Ions and Lethal Current). Decide how the player declares "taking damage at
+       critical health" (D3): critical health leaves nothing in the state today.
+    Use the Compendium snapshot for every value (`"?"` where it has none), record disagreements in the build's
+    `discrepancies.md`, and look for other authored elements that react to critical health;
   - a weapon's ammo type (Spark of Beacons: Special and Heavy Arc kills only — a `chance` rule on every Arc weapon
     kill) and precision kills (Spark of Brilliance — `chance`);
   - kills within a time of each other (Spark of Amplitude's 2 kills within 4 s — `chance`) and a rule's cooldown
