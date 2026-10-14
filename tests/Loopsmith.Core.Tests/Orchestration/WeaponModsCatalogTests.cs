@@ -77,7 +77,7 @@ public sealed class WeaponModsCatalogTests
     }
 
     [Fact]
-    public void A_mod_the_weapons_socket_doesnt_take_cant_be_picked_and_one_the_rules_dont_know_sets_nothing_off()
+    public void A_mod_the_weapons_socket_doesnt_take_cant_be_picked_and_one_the_rules_dont_know_is_held_without_a_line_under_validation()
     {
         var session = StartOwnersDimDesign();
 
@@ -85,8 +85,8 @@ public sealed class WeaponModsCatalogTests
         var unknown = PickMod(session, CrisisInverted, Optional.Some(ItemHash.From(AdeptRange)));
 
         Assert.Equal("Adept Range (Weapon Mod) isn't a mod Festival Flight's mod socket takes in the manifest excerpt.", refused.Failure);
-        Assert.Contains(unknown.Build.Issues, issue => issue.Severity == Severity.Info
-            && issue.Message == "Crisis Inverted's mod: Adept Range (Weapon Mod) — not in the rule catalog yet, so it sets nothing off.");
+        Assert.Equal(Optional.Some(ItemHash.From(AdeptRange)), unknown.Build.Build.Weapons[CrisisInverted].Mod);
+        Assert.DoesNotContain(unknown.Build.Issues, issue => issue.Message.Contains("Adept Range", StringComparison.Ordinal));
     }
 
     [Fact]

@@ -32,6 +32,7 @@
     </header>
 
     <LoadoutPanel Build="Build" OnPickPerk="OnPickPerk" OnPickWeaponMod="OnPickWeaponMod" OnSetCatalyst="OnSetCatalyst" Profile="Profile" OnPickArmor="OnPickArmor" OnPickWeapon="OnPickWeapon" OnEditSubclass="OnEditSubclass"
+                  OnEditArtifact="OnEditArtifact" RememberedArtifactPerks="RememberedArtifactPerks"
                   PickWeaponItem="PickWeaponItem" PickArmorItem="PickArmorItem" OnEmptyWeapon="OnEmptyWeapon" OnEmptyArmor="OnEmptyArmor"
                   PickMod="PickMod" ClearMod="ClearMod" />
 
@@ -148,6 +149,14 @@
     /// <summary>The subclass editor's Save: the plugs the subclass now holds.</summary>
     [Parameter]
     public EventCallback<SubclassPlugs> OnEditSubclass { get; set; }
+
+    /// <summary>The artifact editor's Save: the artifact and its perks, and what was picked for each artifact.</summary>
+    [Parameter]
+    public EventCallback<ArtifactSave> OnEditArtifact { get; set; }
+
+    /// <summary>The slots last picked for each artifact while the loop is open.</summary>
+    [Parameter]
+    public ImmutableDictionary<ItemHash, ImmutableArray<Optional<ItemHash>>> RememberedArtifactPerks { get; set; } = ImmutableDictionary<ItemHash, ImmutableArray<Optional<ItemHash>>>.Empty;
 
     /// <summary>light.gg's page for a manifest hash: what the item is, until Loopsmith reads the manifest itself.</summary>
     private static string ToLookupUrl(ItemHash hash) =>

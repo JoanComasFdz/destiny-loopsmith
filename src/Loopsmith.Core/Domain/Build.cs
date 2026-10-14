@@ -106,6 +106,19 @@ public sealed record BuildArtifact(ManifestItem Item, ImmutableArray<ArtifactPer
 /// <summary>One of the build's artifact perks: its hash in the artifact, and its element when the rules know it (else left out).</summary>
 public sealed record ArtifactPerkOfBuild(ItemHash Hash, Optional<ElementId> Element);
 
+/// <summary>
+/// The artifact a build equips and the perk in each of its perk slots, by manifest hash, in slot order (none: an empty
+/// slot): written by the designer's artifact editor (<c>artifact: { hash, slots }</c>), so each perk is read back into
+/// the slot it was put in.
+/// </summary>
+public sealed record ArtifactLoadout(ItemHash Hash, ImmutableArray<Optional<ItemHash>> Slots);
+
+/// <summary>
+/// An artifact and the perk in each of its slots as the designer's artifact editor holds them, by manifest hash, in slot
+/// order (no artifact: no slots).
+/// </summary>
+public sealed record ArtifactChoice(Optional<ItemHash> Artifact, ImmutableArray<Optional<ItemHash>> Slots);
+
 public sealed record StatLine(
     Optional<StatValue> Weapons,
     Optional<StatValue> Health,
@@ -127,7 +140,10 @@ public sealed record ArmorCopy(ItemHash Piece, ItemInstanceId Instance);
 /// <see cref="ArmorCopies"/> which copy of its armor pieces it wears, when it says (a dim.gg share's, or picked);
 /// <see cref="ArmorModPlugs"/> which copy of an armor mod the rules know it holds, for an element one of whose copies
 /// isn't its first hash (the cheaper copy the seasonal artifact allows): each of the element's mods, in order, holds the
-/// next of these that is one of its element's hashes, else the element's first hash.
+/// next of these that is one of its element's hashes, else the element's first hash; <see cref="Artifact"/> the artifact
+/// it equips and the perk in each of its slots, when it says (picked in the designer's artifact editor; none: the one
+/// that unlocks the most of its artifact perks, <c>BuildComposition.ArtifactFinding</c>, its perks placed in its slots).
+/// <see cref="ArtifactPerks"/> and the left-out artifact perks are what it equips either way.
 /// </summary>
 public sealed record Build(
     string Name,
@@ -147,7 +163,8 @@ public sealed record Build(
     StatLine Stats,
     ImmutableArray<LeftOutItem> LeftOut,
     ImmutableArray<ArmorCopy> ArmorCopies,
-    ImmutableArray<ItemHash> ArmorModPlugs);
+    ImmutableArray<ItemHash> ArmorModPlugs,
+    Optional<ArtifactLoadout> Artifact);
 
 public sealed record BuildIssue(Severity Severity, string Message);
 

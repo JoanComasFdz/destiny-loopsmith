@@ -110,7 +110,8 @@ public static class LoopDesigning
             new StatLine(noStat, noStat, noStat, noStat, noStat, noStat),
             [],
             [],
-            []);
+            [],
+            Optional.None<ArtifactLoadout>());
     }
 
     /// <summary>
@@ -366,6 +367,45 @@ public static class LoopDesigning
     /// <summary>The build's artifact and its perks of it: the excerpt's artifact that unlocks the most of them; none on a tie.</summary>
     public static Optional<BuildArtifact> FindArtifact(ValidatedBuild build) =>
         ArtifactFinding.FindArtifact(build.Catalog, build.Build);
+
+    // ── The artifact: which one and its perks (docs/loop-format.md, "Artifact") ───────────────────────────────
+
+    /// <summary>Every artifact the build can equip (the excerpt's, with perk slots), by name.</summary>
+    public static ImmutableArray<ManifestItem> ListArtifacts(ValidatedBuild build) =>
+        ArtifactEditing.ListArtifacts(build.Catalog);
+
+    /// <summary>An artifact's tiers and perk slots, when the excerpt has it.</summary>
+    public static Optional<ManifestKind.Artifact> FindArtifactTiers(ValidatedBuild build, ItemHash artifact) =>
+        ArtifactEditing.FindArtifact(build.Catalog, artifact);
+
+    /// <summary>The build's artifact and the perk in each of its slots, by manifest hash (no artifact: no slots).</summary>
+    public static ArtifactChoice ReadArtifactChoice(ValidatedBuild build) =>
+        ArtifactEditing.ReadChoice(build.Catalog, build.Build);
+
+    /// <summary>The slots to show for an artifact: the last picked for it here, else the build's own for its artifact, else empty ones.</summary>
+    public static ImmutableArray<Optional<ItemHash>> RecallArtifactSlots(ValidatedBuild build, ImmutableDictionary<ItemHash, ImmutableArray<Optional<ItemHash>>> remembered, ItemHash artifact) =>
+        ArtifactEditing.RecallSlots(build.Catalog, build.Build, remembered, artifact);
+
+    /// <summary>The tier a perk is in (1-based); none for a perk the artifact doesn't have.</summary>
+    public static Optional<int> FindArtifactTier(ManifestKind.Artifact artifact, ItemHash perk) =>
+        ArtifactEditing.FindTier(artifact, perk);
+
+    /// <summary>What an artifact's slot number <paramref name="slot"/> (0-based) can hold: the perks of the tiers it takes, Tier 1's first.</summary>
+    public static ImmutableArray<ItemHash> ListArtifactSlotOptions(ManifestKind.Artifact artifact, int slot) =>
+        ArtifactEditing.ListSlotOptions(artifact, slot);
+
+    /// <summary>The rules' artifact perk with this hash; none when the rules don't know it (⊘).</summary>
+    public static Optional<BuildElement> FindArtifactPerkElement(ValidatedBuild build, ItemHash perk) =>
+        ArtifactEditing.FindPerkElement(build.Catalog, perk);
+
+    /// <summary>
+    /// The design with this artifact and these perks: only the embedded build file's artifact entries change
+    /// (<c>artifact</c>, <c>artifactPerks</c> and the perks the rules don't know in <c>leftOut</c>); the build check runs
+    /// again and the steps replay.
+    /// </summary>
+    public static Result<DesignSession, string> EditArtifact(DesignSession session, ArtifactChoice choice) =>
+        RebuildWith(session, ArtifactEditing.ApplyChoice(session.Build.Catalog, session.Build.Build, choice)
+            .Bind(build => BuildFileEditing.ReplaceArtifact(session.Design.Build, build)));
 
     /// <summary>The build's set bonuses in none of the manifest excerpt's sets (shown on their own).</summary>
     public static ImmutableArray<ElementId> ListLooseSetBonuses(ValidatedBuild build) =>

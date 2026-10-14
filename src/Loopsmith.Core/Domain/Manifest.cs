@@ -37,7 +37,7 @@ public partial record ManifestKind
     partial record Armor(ArmorSlot Slot, Optional<ItemHash> Intrinsic, Optional<ItemHash> Set, Optional<GuardianClass> Class);
     partial record ArmorMod(Optional<ArmorSlot> Slot);
     partial record ArtifactPerk();
-    partial record Artifact(ImmutableArray<ItemHash> Perks);   // a season's artifact and every perk it unlocks
+    partial record Artifact(ImmutableArray<ArtifactTier> Tiers, ImmutableArray<int> Slots, Optional<string> Flavor);   // Artifacts 2.0: its perks by tier (Tier 1 first), the highest tier each perk slot takes (1-based), its flavour text
     partial record Perk();
     partial record Other();
 }
@@ -47,6 +47,9 @@ public partial record ManifestKind
 /// one perk it always has (an exotic's, or a column that doesn't roll).
 /// </summary>
 public sealed record TraitColumn(ImmutableArray<ItemHash> Options);
+
+/// <summary>One tier (column) of an artifact's perks, in the game's order: a perk slot that takes it takes the tiers before it too.</summary>
+public sealed record ArtifactTier(ImmutableArray<ItemHash> Perks);
 
 /// <summary>The armor slot of an armor piece, or of a mod that only fits that piece.</summary>
 public enum ArmorSlot { Helmet, Arms, Chest, Legs, ClassItem }

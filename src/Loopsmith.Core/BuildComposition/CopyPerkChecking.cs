@@ -10,8 +10,7 @@ namespace Loopsmith.Core.BuildComposition;
 /// "Weapons from your account"; StatLoading reads them: <c>CopyFinding.ReadCopyColumns</c>). The copy has a perk when it
 /// is one of that column's perks on it — any of a column that rolled two perks or more — or the base perk of an enhanced
 /// one there (the enhanced trait does all its base perk does); the enhanced version of a base perk there it hasn't. One
-/// rule gives both what the perk picker marks and what the build check warns about, one line per weapon: the line the
-/// check already has on its roll (perks the rules don't know) becomes the warning, else a warning of its own.
+/// rule gives both what the perk picker marks and what the build check warns about, one line per perk.
 /// </summary>
 public static class CopyPerkChecking
 {
@@ -31,43 +30,19 @@ public static class CopyPerkChecking
     /// <summary>
     /// The build check's <paramref name="issues"/> with what the player's copies lack (<paramref name="copies"/>: each
     /// weapon of the build whose copy is theirs, with the copy's perks by column), for each column that rolls whose perk
-    /// the build picks (or names in it) and the copy doesn't have. A perk the rules don't know is already named by the
-    /// line on the weapon's roll: that one line stays, in its place, as a warning that says it too ("Festival Flight's
-    /// roll: Hatchling (Trait) — not in the rule catalog yet, so it sets nothing off. Your copy doesn't have Hatchling in
-    /// column 2 (it has …)."). Any other gets a warning of its own at the end ("Hung Jury SR4: your copy doesn't have
-    /// Slice in column 3 (it has Rapid Hit or Outlaw).").
+    /// the build picks (or names in it) and the copy doesn't have: a warning each, at the end ("Hung Jury SR4: your copy
+    /// doesn't have Slice in column 3 (it has Rapid Hit or Outlaw)."), whether or not the rules know the perk.
     /// </summary>
     public static ImmutableArray<BuildIssue> AddCopyWarnings(
-        RuleCatalog catalog, ImmutableArray<BuildIssue> issues, ImmutableArray<(WeaponLoadout Weapon, ImmutableArray<ImmutableArray<ItemHash>> Columns)> copies)
-    {
-        var lacking = copies
-            .Select(copy => new LackingCopy(
-                copy.Weapon,
-                BuildValidation.CheckUnknownRoll(catalog, copy.Weapon).Bind(roll => issues.Contains(roll) ? Optional.Some(roll) : Optional.None<BuildIssue>()),
-                ListMissingPicks(catalog, copy.Weapon, copy.Columns)))
-            .ToImmutableArray();
-        var merged = lacking
-            .SelectMany(copy => copy.Roll.Match(
-                roll => copy.Missing.Where(pick => IsOnRollLine(catalog, copy, pick)).Select(pick => $"Your copy {pick.Text}.").ToImmutableArray() is { IsEmpty: false } said
-                    ? new[] { KeyValuePair.Create(roll.Value, new BuildIssue(Severity.Warning, $"{roll.Value.Message} {string.Join(" ", said)}")) }
-                    : [],
-                _ => []))
-            .ToImmutableDictionary();
-        var separate = lacking.SelectMany(copy => copy.Missing
-            .Where(pick => !IsOnRollLine(catalog, copy, pick))
-            .Select(pick => new BuildIssue(Severity.Warning, $"{copy.Weapon.Name}: your copy {pick.Text}.")));
-        return [.. issues.Select(issue => merged.TryGetValue(issue, out var warning) ? warning : issue), .. separate];
-    }
+        RuleCatalog catalog, ImmutableArray<BuildIssue> issues, ImmutableArray<(WeaponLoadout Weapon, ImmutableArray<ImmutableArray<ItemHash>> Columns)> copies) =>
+    [
+        .. issues,
+        .. copies.SelectMany(copy => ListMissingPicks(catalog, copy.Weapon, copy.Columns)
+            .Select(pick => new BuildIssue(Severity.Warning, $"{copy.Weapon.Name}: your copy {pick.Text}."))),
+    ];
 
     /// <summary>A pick the copy doesn't have and what to say of it: "doesn't have Slice in column 3 (it has Rapid Hit or Outlaw)".</summary>
     private sealed record MissingPick(ItemHash Perk, string Text);
-
-    /// <summary>A weapon whose copy is the player's: the line the build check has on its roll (when it lists one) and the picks the copy doesn't have.</summary>
-    private sealed record LackingCopy(WeaponLoadout Weapon, Optional<BuildIssue> Roll, ImmutableArray<MissingPick> Missing);
-
-    /// <summary>Whether the weapon's roll line names this pick (a perk the rules don't know), so it says what the copy lacks too.</summary>
-    private static bool IsOnRollLine(RuleCatalog catalog, LackingCopy copy, MissingPick pick) =>
-        copy.Roll.IsSome() && !catalog.FindElementByHash(pick.Perk).IsSome();
 
     /// <summary>The picks of the weapon's columns that roll that the copy doesn't have, a column at a time.</summary>
     private static ImmutableArray<MissingPick> ListMissingPicks(RuleCatalog catalog, WeaponLoadout weapon, ImmutableArray<ImmutableArray<ItemHash>> copyColumns) =>

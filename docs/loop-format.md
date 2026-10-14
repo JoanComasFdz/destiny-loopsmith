@@ -262,15 +262,17 @@ font: "Arc  - Skipp grenade" reads "Arc - Skipp grenade"). The build is written 
 file (comments say where it came from), so the loop
 embeds, exports, shares and replays it like any other ([rule-format.md](rule-format.md#build-file-buildsbuildbuildyaml)).
 The designer shows the build the way DIM shows a loadout — the subclass with its super, abilities,
-aspects and fragments, the artifact (the one that unlocks the most of the build's artifact perks — none on a
-tie — tappable for Bungie's text and which of its perks the build has) and its perks, the weapons (kinetic, energy, heavy) with their element and
+aspects and fragments, the artifact (the one the build names, else the one that unlocks the most of the build's
+artifact perks — none on a tie — tappable for Bungie's text and which of its perks the build has) and its perks, the weapons (kinetic, energy, heavy) with their element and
 one perk per trait column the manifest excerpt gives — the build's pick (`roll`), else the perk it names
 in that column, else the one perk a column that doesn't roll has (an exotic's), else "?" — each armor piece with the mods
 of its slot (the slot the manifest gives the mod; other mods are general) — with Bungie's icons from the
 manifest excerpt; what the rules don't know sits where DIM would show it, its icon as bright as any other's, with a
 small grey ⊘ in its lower-right corner ("Not in Loopsmith yet: it sets nothing off in your loop"). It also lists the
 left-out items under **Not in Loopsmith yet** (collapsed, with how many of each part: open it to see them), by their
-manifest name, each a link to its light.gg page; the build check adds `Unknown (?): …` and `Left out of the build: …` as info.
+manifest name, each a link to its light.gg page. The ⊘ and that list say it all: Validation adds no line for what the
+rules don't know yet ([rule-format.md](rule-format.md#elements): an element is in the loop, outside it on purpose, or
+not authored yet).
 What the manifest says has no part in a loop is not a gap, and it isn't listed: its tile in the loadout has no ⊘,
 and its tooltip says why — a stat or tuning mod (Grenade Mod: +10 Grenade; Balanced Tuning — it changes only stats,
 which the build's stats count when they add up from the player's armor, [Stats](#stats)), a legendary armor piece
@@ -326,8 +328,8 @@ loadout's) and its 2- and 4-piece perks, dimmed when not active, each with its o
 **An exotic's catalyst.** An exotic weapon with a catalyst shows it as a square after its perks, off until the
 build turns it on (a DIM link doesn't say). In the designer its details switch it on or off: the embedded
 build's weapon entry gets `catalyst: true`, the catalyst's element is equipped, and the steps replay. A
-catalyst whose effect the rules can't express yet (Thunderlord's Return Stroke refills ammo, which isn't
-modelled) is shown, and Validation says it sets nothing off.
+catalyst outside the loop (Thunderlord's Return Stroke refills ammo, which isn't modelled) is shown, and its details
+say "No rules needed." and why; one the rules don't know yet carries the ⊘. Validation says nothing of either.
 
 **Shared DIM builds on Home.** A share can ship with the app as `builds/<slug>/dim-loadout.json` —
 its link and the loadout as DIM's API hands it over (the share page's "Open Loadout in DIM" link holds
@@ -381,6 +383,39 @@ subclass. What the subclass can hold comes from the manifest excerpt (`plugs` of
 `tools/manifest/` for each of the glossary's nine subclasses). A plug is the rules' element only when the rules know it
 for the build's class: the rules author Skip Grenade and the Sparks for the Hunter, so on a Striker or a Stormcaller
 they are left out (⊘), in the editor and from a DIM link alike.
+
+## Artifact
+
+In the designer the **Artifact** box has ⋯ (also on a loop from scratch, whose box shows an empty artifact): it opens
+the **artifact editor**, laid out like the game's artifact screen since Monument of Triumph (Artifacts 2.0). The Home
+cards stay read-only.
+
+* **The artifact.** The header shows the artifact's icon, its name and "Artifact"; ⋯ beside the name opens a dropdown
+  of the seven artifacts (NPA Repulsion Regulator, Queensfoil Censer, Hunter's Journal, Slayer Baron Apothecary Satchel,
+  Tablet of Ruin, Implement of Curiosity, Encrypted Data Disk), each with how many of its perks are picked, and "No
+  artifact". With no artifact the editor lists them in its body. One artifact is equipped at a time.
+* **Under the header**, as in the game, its flavour text and what it works best with (an element with its icon, a
+  weapon type by name).
+* **Its seven perk slots** stand in three groups under the game's marks: two take Tier 1 (◆), three Tiers 1–2 (◆◆),
+  two Tiers 1–3 (◆◆◆) (the excerpt's `slots`, [rule-format.md](rule-format.md)). Each slot is a square with a footer
+  holding ⋯ and, when it holds a perk, ✕, like the subclass editor's fragments. **⋯** opens a dropdown under the slot
+  (above it when there's no room below), floating over the slots after it: every perk the slot takes, under a heading
+  per tier ("Tier 2 ◆◆"), each with its icon, name and tier; a perk in another slot is greyed out ("equipped"), a perk
+  the rules don't know carries ⊘ (it sets nothing off) and can still be picked. Picking one puts it in the slot; ⋯
+  again, a tap outside it or Escape closes it. **✕** empties the slot; the other perks stay in theirs. Tapping a perk's
+  square opens its details. A slot only offers what it takes, so nothing is counted: at most 7 perks, 5 of Tiers 2–3
+  and 2 of Tier 3 follow from the slots.
+* **Switching artifact** shows the slots last picked for that artifact while this loop is open in the designer
+  (starting from the loop's own artifact and slots); one not set up yet starts with empty slots. Switching back brings the
+  earlier picks back. They are remembered for the tab only, not saved in the loop file or the browser; opening another
+  loop starts afresh.
+* **Save** rewrites only the embedded build file's `artifact` (its hash and the perk in each slot, `"?"` for an empty
+  one; removed for no artifact), `artifactPerks` (the rules' perks) and the artifact perks in `leftOut` (the others),
+  each in slot order, so the perks come back in the slots they were put in; the build check runs again and the steps replay
+  (take Flashover out and maxing Bolt Charge no longer makes you Amplified). The export and the share link carry them.
+  **Cancel**, ✕ or Escape throws the changes away (Escape closes only the dropdown when it is open). A loop that
+  doesn't name its artifact (a build file, a DIM link) opens with the one that unlocks the most of its perks, each placed
+  in the free slot that takes the fewest tiers (the highest tiers first).
 
 ## Armor mods
 
@@ -508,11 +543,9 @@ rolled two perks or more has each of them):
   copy (its `instance`: picked from Yours, or the player's own dim.gg share's) is theirs, each perk the copy doesn't
   have in that column carries a small amber **!** in its square's upper-right corner (clear of the ⊘ in the lower
   right and of an enhanced trait's arrow on the left) and "Not on your copy" under its name. Picking one puts the same
-  **!** on the weapon's perk square and a warning under Validation, one line per perk: a perk the rules don't know
-  already has the grey line on the weapon's roll, which turns yellow in its place and says it ("Festival Flight's
-  roll: Hatchling (Trait) — not in the rule catalog yet, so it sets nothing off. Your copy doesn't have Hatchling in
-  column 2 (it has Elemental Honing (enhanced) or Attrition Orbs)."); one they know gets a yellow line of its own
-  ("Festival Flight: your copy doesn't have Slice (enhanced) in column 1 (it has Slice)."). Each perk of a column that rolled two or more is the copy's; so is a base perk whose
+  **!** on the weapon's perk square and a yellow warning under Validation, one line per perk, whether or not the rules
+  know it ("Festival Flight: your copy doesn't have Hatchling in column 2 (it has Elemental Honing (enhanced) or
+  Attrition Orbs)."; "Festival Flight: your copy doesn't have Slice (enhanced) in column 1 (it has Slice)."). Each perk of a column that rolled two or more is the copy's; so is a base perk whose
   enhanced version the copy has (the enhanced trait does all it does), but not an enhanced perk whose base the copy
   has. A weapon picked from Every item or written in the build file isn't compared, and nothing of it is saved: the
   marks and the warning go when the player logs out.

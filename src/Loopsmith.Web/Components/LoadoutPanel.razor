@@ -51,15 +51,29 @@
                 </div>
             </div>
         </section>
-        @if (view.Artifact.Item.IsSome() || !view.Artifact.Perks.IsEmpty)
+        @if (view.Artifact.Item.IsSome() || !view.Artifact.Perks.IsEmpty || CanEditArtifact)
         {
             <section class="loadout-box artifact-box" aria-label="Artifact" data-testid="artifact">
-                <h4 class="loadout-label">Artifact</h4>
+                <div class="loadout-label-row">
+                    <h4 class="loadout-label">Artifact</h4>
+                    @if (CanEditArtifact)
+                    {
+                        <button type="button" class="btn ghost small subclass-edit" data-action="edit-artifact" title="Change the artifact and its perks" aria-label="Change the artifact and its perks"
+                                aria-haspopup="dialog" @onclick="OpenArtifactEditor">⋯</button>
+                    }
+                </div>
                 @if (view.Artifact.Item is Optional<IconTile>.Some artifact)
                 {
                     <div class="artifact-item" data-testid="artifact-item">
                         @RenderTile(artifact.Value, "item artifact")
                         <span class="artifact-name">@artifact.Value.Name</span>
+                    </div>
+                }
+                else if (CanEditArtifact)
+                {
+                    <div class="artifact-item" data-testid="artifact-item">
+                        <span class="icon-tile empty item artifact" title="Artifact — empty: ⋯ picks one." aria-label="Artifact: empty" data-empty="true">Artifact</span>
+                        <span class="artifact-name muted">No artifact</span>
                     </div>
                 }
                 <div class="icon-grid">
@@ -387,6 +401,11 @@
         <SubclassEditor Build="Build" OnSave="SaveSubclassAsync" OnClose="CloseSubclassEditor" />
     }
 
+    @if (artifactEditor && CanEditArtifact)
+    {
+        <ArtifactEditor Build="Build" Remembered="RememberedArtifactPerks" OnSave="SaveArtifactAsync" OnClose="CloseArtifactEditor" />
+    }
+
     @if (armorPicker is Optional<ArmorPickerOpen>.Some armorOpen && CanPickArmor)
     {
         <ArmorPicker Build="Build" Profile="Profile" Slot="armorOpen.Value.Slot" Filled="armorOpen.Value.Filled" OnPick="PickArmorAsync" PickItem="PickArmorItemAsync"
@@ -455,6 +474,33 @@
     {
         subclassEditor = false;                                                                  // impure (UI state)
         await OnEditSubclass.InvokeAsync(plugs);                                                 // impure
+    }
+
+    /// <summary>Set by the designer: the Artifact box then has ⋯, which opens the artifact editor. Unset (the Home card): read-only.</summary>
+    [Parameter]
+    public EventCallback<ArtifactSave> OnEditArtifact { get; set; }
+
+    /// <summary>The slots last picked for each artifact while the loop is open (the designer keeps them for the editor).</summary>
+    [Parameter]
+    public ImmutableDictionary<ItemHash, ImmutableArray<Optional<ItemHash>>> RememberedArtifactPerks { get; set; } = ImmutableDictionary<ItemHash, ImmutableArray<Optional<ItemHash>>>.Empty;
+
+    private bool CanEditArtifact => OnEditArtifact.HasDelegate && !LoopDesigning.ListArtifacts(Build).IsEmpty;
+
+    private bool artifactEditor;
+
+    private void OpenArtifactEditor()
+    {
+        ClosePicker();                                                                           // impure (UI state)
+        artifactEditor = true;                                                                   // impure (UI state)
+    }
+
+    private void CloseArtifactEditor() =>
+        artifactEditor = false;                                                                  // impure (UI state)
+
+    private async Task SaveArtifactAsync(ArtifactSave save)
+    {
+        artifactEditor = false;                                                                  // impure (UI state)
+        await OnEditArtifact.InvokeAsync(save);                                                  // impure
     }
 
     /// <summary>

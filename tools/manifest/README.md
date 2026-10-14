@@ -3,7 +3,7 @@
 `rules/manifest.yaml` is Loopsmith's excerpt of the Bungie manifest: the official name, kind, type, Bungie's
 description, icon, rarity and (for weapons, armor and armor mods) slot and damage type — and a weapon's trait
 columns with the perks each can roll, its intrinsic perk, the weapon mods its mod socket takes and an exotic's catalyst, an exotic armor's perk, the
-armor sets with their 2- and 4-piece perks, and the artifacts with the perks they unlock — of every hash Loopsmith names — each
+armor sets with their 2- and 4-piece perks — of every hash Loopsmith names — each
 `hash:` in `rules/` and every hash a saved DIM share (`builds/*/dim-loadout.json`) wears, plus every perk those
 weapons' columns roll with, and every enhanced plug of a trait the rules author (by its name: "Enhanced Trait",
 "Enhanced Origin Trait"), so the tests can tell an authored perk that lacks its `enhanced` block
@@ -19,6 +19,8 @@ copies look as in DIM: the season icon top-left, a legendary weapon's frame or a
 tier and masterwork, and the breaker under the square. Icons are loaded from
 bungie.net; the data is Bungie's, used under its API terms. It also holds the traits the glossary's keywords name
 (`keywordTraits`: the game's own keywords, Jolted, Bolt Charge, Woven Mail), so each keyword shows its in-game icon.
+Every artifact of Artifacts 2.0 (the seven) is written with all its perks: its `tiers` (Tier 1 to 3, seven perks each) and the
+highest tier each of its seven perk slots takes (`slots`), and its flavour text (`flavor`), which the designer's artifact editor shows.
 Each subclass (the glossary's) also lists every plug it can hold (`plugs`: super, abilities, jump, aspects, fragments),
 which the designer's subclass editor offers.
 
