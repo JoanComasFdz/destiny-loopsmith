@@ -144,8 +144,9 @@ pull request:
    "#59 D2 damage resistance calculation"), reading it with the claude-code-remote `get_session`
    (no `session_id`) and writing it with `set_session_title`; skip it if the title already starts
    with that prefix. If the tools aren't available or the rename fails, say so in the session and
-   carry on: it never blocks the PR. Watch it (auto-fix) at once, and give @JoanComasFdz its link
-   in the session.
+   carry on: it never blocks the PR. Watch it (auto-fix) at once. Every message that reports work as
+   finished ends with the PR link and the preview link
+   (`https://joancomasfdz.github.io/destiny-loopsmith/pr-preview/pr-<PR number>/`) as bullet points.
 5. **Keep watching until the PR is merged or closed,** however many rounds it takes: every message
    in the session, every comment and review @JoanComasFdz writes on the PR (they wake you), every CI
    failure. Reply in a review thread when you address it, but don't resolve it: @JoanComasFdz

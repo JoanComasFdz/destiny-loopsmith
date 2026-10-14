@@ -123,6 +123,11 @@ step 4):
 - If the tools aren't available or the rename fails, say so in the session and carry on. The rename
   never blocks the PR.
 
+Every message that reports work as finished (the PR opened, a review round or a CI fix pushed) ends
+with both links as bullet points, with the real PR number:
+- PR: https://github.com/JoanComasFdz/destiny-loopsmith/pull/59
+- Preview: https://joancomasfdz.github.io/destiny-loopsmith/pr-preview/pr-59/
+
 The owner's files never go into the repository by themselves. When the work needs one in the
 repository, put it in its proper place, for example a loop file as a test case under `builds/` or
 `tests/`. Before it goes in, check it for personal data and secrets, and say what you found. The same
