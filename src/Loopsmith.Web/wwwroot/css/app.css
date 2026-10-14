@@ -934,6 +934,7 @@ button.hud-chip:hover, button.hud-chip:focus-visible { background: color-mix(in 
 .icon-tile.out .icon-count { right: auto; left: 1px; }
 /* A mod Loopsmith ignores (a raid's or an activity's, ADRs D33): faded and grey, with a ✕ where ⊘ goes. */
 .icon-tile.ignored { overflow: visible; }
+.icon-tile.ignored .icon-count { right: auto; left: 1px; }
 .icon-tile.ignored > img, .icon-tile.ignored > .icon-initials { filter: grayscale(1); opacity: 0.45; }
 .ignored-mark { position: absolute; right: -3px; bottom: -3px; z-index: 1; width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; box-sizing: border-box; border-radius: 50%; background: #2a303c; border: 1.5px solid var(--panel); color: #c3c9d4; }
 .ignored-mark svg { width: 8px; height: 8px; display: block; }
