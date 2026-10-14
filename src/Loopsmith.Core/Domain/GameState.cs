@@ -66,9 +66,9 @@ public sealed record GroundPickup(PickupId Pickup, Likelihood Likelihood);
 [Union]
 public partial record PlayerAction
 {
-    partial record CastAbility(OffensiveAbility Kind, HitOutcome Hit, TargetCount Targets, AbilityInput Input = AbilityInput.Press);   // a secondary: melee:slide, grenade:hold
-    partial record UseClassAbility(AbilityInput Input = AbilityInput.Press);   // a secondary: the air move that spends the charge (Ascension)
-    partial record FireWeapon(WeaponSlot Slot, HitOutcome Hit, TargetCount Targets);
+    partial record CastAbility(OffensiveAbility Kind, HitOutcome Hit, TargetCount Targets, AbilityInput Input = AbilityInput.Press, ChargeUse Charge = ChargeUse.Plain);   // a secondary: melee:slide, grenade:hold; its last charge: grenade:last
+    partial record UseClassAbility(AbilityInput Input = AbilityInput.Press, ChargeUse Charge = ChargeUse.Plain);   // a secondary: the air move that spends the charge (Ascension)
+    partial record FireWeapon(WeaponSlot Slot, HitOutcome Hit, TargetCount Targets, ShieldBreak Shield = ShieldBreak.None);   // breaking a combatant's shield: kinetic:kill:shield
     partial record CollectPickups(PickupId Pickup);
     partial record Declare(StateDeclaration Declaration);   // a state only play decides (ADRs D3)
     partial record PerformFinisher();                       // a finisher on one enemy of the pack: it kills it
@@ -100,6 +100,8 @@ public partial record GameEvent
     partial record StacksMaxed(StatusId Status);  // only from a declared max: step
     partial record Finisher();                    // before the finisher's hit and kill (origin DamageOrigin.Finisher)
     partial record CriticalHealth();              // only from a declared health:critical step
+    partial record ShieldBroken(DamageOrigin Origin);   // a weapon step the player says breaks a combatant's shield (kinetic:kill:shield), after its first hit
+    partial record EnergyExpended(AbilityKind Kind);    // a use that spends the ability's last charge: every use with one charge, a grenade:last with more (ADRs D36)
 }
 
 /// <summary>

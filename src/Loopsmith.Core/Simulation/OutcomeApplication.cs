@@ -152,7 +152,7 @@ public static class OutcomeApplication
     {
         var status = apply.Status;
         var before = state.ReadTally(status).UnwrapOr(new StackTally(StackCount.From(0), StackCount.From(0), []));
-        var grant = apply.Stacks.Value + ListExtraStacks(build, state, status).Sum(extra => extra.Extra);
+        var grant = apply.Stacks.ReadStacks(source.Equipped.Count).Value + ListExtraStacks(build, state, status).Sum(extra => extra.Extra);
         var byChance = source.Likelihood == Likelihood.Chance;
         var cap = ReadKnownCap(build, status);
         var sure = LimitToCap(before.Sure.Value + (byChance ? 0 : grant), cap, 0);

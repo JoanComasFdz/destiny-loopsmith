@@ -269,8 +269,8 @@ is the build's value. `from` and `below` are stat values (0..200) and `from` < `
 blocks a build). An unknown stat ("?") says nothing.
 
 `inert: "<why>"` marks an element that is known and has no part in a loop on purpose — Skip Grenade
-(its hits are the grenade step itself), Feeding Frenzy and Return Stroke (no ammo or reloads are counted), Shield Break
-Charge (no combatant's shield is modelled, so nothing sets it off). It takes no rules and no passives
+(its hits are the grenade step itself), Feeding Frenzy and Return Stroke (no ammo or reloads are counted), Fastball
+(how far and fast a grenade flies changes no step). It takes no rules and no passives
 (`inert is only for an element with no rules and no passives`), the build check says nothing of it, and its details
 say "No rules needed." with the why.
 
@@ -390,6 +390,8 @@ doesn't show as a stacking status (Elemental Charge's progress per Ionic Trace; 
 | `{ stacksMaxed: bolt-charge }` — the player declares the buff at max | `StacksMaxed(status)` |
 | `{ finisher: {} }` — the player does a finisher on an enemy of the pack (it kills it) | `Finisher()` |
 | `{ criticalHealth: {} }` — the player declares they reached critical health (`health:critical`) | `CriticalHealth()` |
+| `{ shieldBroken: {} }` / `{ shieldBroken: { via: weapon } }` — a combatant's shield broken by that source (`via` defaults to `any`); the player says which weapon step breaks one (`kinetic:kill:shield`) | `ShieldBroken(via)` |
+| `{ energyExpended: grenade }` (`grenade\|melee\|classAbility`) — the ability's energy fully expended: its last charge used (`grenade:last`) | `EnergyExpended(kind)` |
 
 A **secondary ability use** is the ability used another way, which an aspect makes do something else
 (ADRs D9): the melee while sliding (`slide`: Tempest Strike's uppercut, played as `melee:slide`) or in the
@@ -522,6 +524,25 @@ A **critical health** step is the player's declaration (`health:critical`, "Crit
 your shields broke. `criticalHealth` takes no keys (`{ criticalHealth: {} }`); the designer offers the step only when an
 equipped rule has the trigger, and the loop graph draws it as a "Critical health" node the player declares.
 
+A **broken shield** and an ability's **last charge** are options of a step the player turns on (ADRs D36,
+[loop-format.md](loop-format.md#action-tokens)). A weapon step that breaks a shield (`energy:kill:shield`) raises
+`ShieldBroken` from that weapon after its first hit: `shieldBroken` takes only `via`, matched as a hit's (Shield Break
+Charge says `{ shieldBroken: {} }`: the player breaks a shield only with a weapon of its element). A grenade, melee or
+class ability step raises `EnergyExpended` right after its cast when it spends the last charge: on every use when the
+build gives the ability one charge (its profile's `charges` plus every equipped `extraCharges`), on a use marked `:last`
+when it gives more (Shinobu's Vow). The Kickstarts fire on it, as Bungie's text says ("when your grenade energy is fully
+expended"):
+
+```yaml
+  - on: { energyExpended: grenade }       # Grenade Kickstart (rules/mods/armor.yaml)
+    when: [ { has: armor-charge } ]
+    then:
+      - { convertStacksToEnergy: { consumed: armor-charge, to: grenade, byCharges: { from: 2, values: "16.2% | 21.7% | …" } } }
+```
+
+A Super has no `energyExpended` (`energyExpended: a Super has no energyExpended (use grenade, melee or classAbility)`).
+The loop graph leads from each weapon to the `shieldBroken` rules and from each ability to its `energyExpended` ones.
+
 **Outcomes (`then`)** — exactly one key each:
 
 | YAML | Domain `Outcome` |
@@ -533,6 +554,7 @@ equipped rule has the trigger, and the loop graph draws it as a "Critical health
 | `{ convertStacksToEnergy: { consumed: armor-charge, to: grenade, byCharges: { from: 2, values: "16.2% \| 21.7% \| …" } } }` — by charges: each copy and each stack spent counts one (the Kickstarts) | `ConvertStacksToEnergy(…, ByCharges)` |
 | `{ spendStacks: { status: armor-charge, count: 1 } }` — a fixed number of a counted buff's stacks | `SpendStacks` |
 | `{ applyBuff: { status: bolt-charge, stacks: 1, duration: 10s } }` / `{ applyBuff: amplified }` | `ApplyBuff` (stacks default 1) |
+| `{ applyBuff: { status: armor-charge, stacks: "1 \| 2" } }` — stacks by copies of the element (Shield Break Charge: x1 with one copy, x2 with two; the last for more) | `ApplyBuff` (`StackGrant.PerModCount`) |
 | `{ applyBuff: { status: void-overshield, durationBySpent: { from: 3, values: "8 \| 10 \| 12 \| 14" } } }` — seconds by the stacks the same rule spent before it (Bulwark Finisher); not with `duration` | `ApplyBuff(…, DurationBySpent)` |
 | `{ removeBuff: new-tricks }` | `RemoveBuff` |
 | `{ debuffTarget: { status: jolt, duration: 4s } }` / `{ debuffTarget: jolt }` | `DebuffTarget` |
@@ -796,16 +818,19 @@ matches and cascades what those rules set off. The state a step plays against is
 buffs on you (and which of them the player declared at max), the debuffs on the pack, the pickups on
 the ground.
 
-* **Player actions → events.** `UseClassAbility` emits only `AbilityCast(classAbility)` — with the
+* **Player actions → events.** `UseClassAbility` emits `AbilityCast(classAbility)` (and `EnergyExpended(classAbility)` on its last charge) — with the
   input `air` for `class:air` (the air move that spends the charge), which every `abilityCast:
   classAbility` rule matches too; only the rules that name the input tell the two apart. A
   secondary cast (`melee:slide:kill`) emits the same events as its press, each carrying the input:
   `AbilityCast(melee, slide)`, then hits and kills whose origin is `Ability(melee, type, slide)` —
   `via: melee` matches them, `via: melee:slide` matches only them.
-  `CastAbility(k, hit, N)` (grenade, melee, super) emits `AbilityCast(k)`, then N
+  `CastAbility(k, hit, N)` (grenade, melee, super) emits `AbilityCast(k)`, then `EnergyExpended(k)` when the use spends
+  the last charge (grenade and melee: every use with one charge, a `:last` one with more; ADRs D36), then N
   `Damaged(Ability(k, subclass damage type))` — one per enemy — then N `Killed(…)` if `hit = kill`,
   then one `TargetsHit(origin, N, hit)` for the `atLeast` triggers. `FireWeapon(slot, hit, N)` emits
-  N `Damaged(Weapon(slot, type))`, N `Killed` if a kill, then `TargetsHit`. N (the target count, 1..20)
+  N `Damaged(Weapon(slot, type))` — with `ShieldBroken(Weapon(slot, type))` after the first when the step breaks a
+  shield (`:shield`) — N `Killed` if a kill, then `TargetsHit`. `UseClassAbility` emits `EnergyExpended(classAbility)`
+  after its cast the same way. N (the target count, 1..20)
   is the player's: the engine can't know how many enemies a hit catches (ADRs D4).
   `pickup:<id>` picks one pickup up: one `PickedUp(p)`, and that pickup is no longer on the ground.
   `PerformFinisher` (`finisher`) emits `Finisher`, then one `Damaged(Finisher)` and one `Killed(Finisher)` on the pack

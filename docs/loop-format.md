@@ -63,7 +63,8 @@ Same tokens everywhere: CLI `--actions a,b,…` and `--scenario <file>` (one tok
 comma-separated; `#` starts a comment), `play`, loop files and web share links:
 
 `grenade[:hold]|melee[:slide|air]|super[:hit|kill[:N]]` · `class[:air]` · `kinetic|energy|power[:hit|kill[:N]]` · `finisher` ·
-`pickup:<pickup-id>` · `max:<status-id>` · `end:<status-id>` · `pack:new` · `health:critical`
+`pickup:<pickup-id>` · `max:<status-id>` · `end:<status-id>` · `pack:new` · `health:critical` — and last, an option:
+`:last` on a grenade, melee or class ability step, `:shield` on a weapon step
 
 Tokens are read case-insensitively. Errors read `Unknown action '<token>'. Use …` or
 `Invalid target count in '<token>': use a whole number from 1 to 20 …`.
@@ -88,6 +89,18 @@ enemy; [rule-format.md](rule-format.md#rules)); it takes no count and is never b
 (any kebab-case id) picks that pickup up — one `PickedUp` event — and it is
 then no longer on the ground. A weapon action for an empty slot, or a pickup that isn't on the ground
 (`No orb-of-power on the ground — nothing happens.`), is a **blocked step**: it changes nothing.
+
+**Options of a step** (ADRs D36). What only play decides about a step itself goes last in its token:
+
+* `:shield` — a weapon step breaks a combatant's shield (`energy:kill:shield`, `kinetic:hit:3:shield`), with damage of
+  its element: say it only when the weapon's element matches the shield's. It breaks one, with the step's first hit,
+  and raises `ShieldBroken`, so the `shieldBroken` rules fire (Shield Break Charge: x1 Armor Charge, x2 with two
+  copies). An ability step takes no `:shield` (`grenade:kill:shield` is an error).
+* `:last` — a grenade, melee or class ability step spends the ability's last charge, its energy fully expended
+  (`grenade:kill:last`, `melee:slide:kill:last`, `class:last`), and raises `EnergyExpended`, so the `energyExpended`
+  rules fire (the Kickstarts spend your Armor Charge). With one charge in the build every use is the last one, so a
+  plain `grenade` raises it too; with more (Shinobu's Vow's second grenade) only the use marked `:last` does. A Super
+  and a weapon take no `:last` (`super:last`, `kinetic:last` are errors).
 
 **States you declare** (ADRs D3). What only play decides — that a threshold is reached, that a status
 has ended, that the next enemies are a new pack — the player declares as a step of its own:
@@ -148,7 +161,8 @@ isn't modelled. The next pass starts from what the last one ended with.
 (`grenade:kill`, `kinetic`, `grenade:kill:3`, `finisher`, `max:bolt-charge`, `end:amplified`, `pack:new`, `health:critical`). Every token written
 reads back as the same action (`grenade:hit` is written `grenade`). Labels read "Grenade (💀 kill 3)",
 "Festival Flight (🥊 hit 5)" (a weapon by its build name), "Sliding melee (💀 kill)" — 💀 marks a kill step and 🥊 a
-hit step, in the steps' titles and the HUD's buttons alike — "Class ability (in the air)",
+hit step, in the steps' titles and the HUD's buttons alike — "Festival Flight (💀 kill · 🛡 shield)", "Grenade (💀 kill ·
+last charge)", "Class ability (last charge)", "Class ability (in the air)",
 "Finisher", "Pick up Orb of Power", "Bolt Charge at max (x10)", "Amplified ends", "New pack", "Critical health".
 
 **What `play` and the web designer offer.** Only steps that can happen: the abilities, the equipped
@@ -178,7 +192,12 @@ different windows each say theirs, "2 · Spark of Amplitude in 4 s, Harmonic Sip
 is offered too, and so is a step's own count (a loop file's `grenade:kill:15`). The sums only bound the choices: they are
 never game state and decide nothing (ADRs D1, D5) — and it stays picked
 for the next step; a secondary's own hit and kill show the same way ("Sliding melee · Tempest Strike"); the class
-ability, its air move and the finisher act at one tap. Above the HUD, where the game lists your buffs, the states to declare are grouped by
+ability, its air move and the finisher act at one tap. A row's option (ADRs D36) shows beside its count, a box the
+player ticks: **🛡 shield** on each weapon when an equipped rule reacts to a broken shield (Shield Break Charge), and
+**last charge** on the grenade, melee or class ability when the build gives it more than one charge and an equipped
+rule reacts to its energy fully expended (Shinobu's Vow and Grenade Kickstart). Ticked, it goes with the row's hit and
+kill (`energy:kill:shield`, `grenade:kill:last`) and stays ticked for the next steps; a class ability with the option
+shows its button under the HUD instead of acting at one tap. Above the HUD, where the game lists your buffs, the states to declare are grouped by
 status — on you, on your weapons, on the pack (with **New pack**) — each with its own buttons ("Bolt Charge: at max
 (x10) · ends"), and what is on the ground to pick up.
 

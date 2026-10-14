@@ -192,7 +192,9 @@ public static class EventCascading
             gained => $"gain:{gained.Status}",
             maxed => $"max:{maxed.Status}",
             _ => "finisher",
-            _ => "critical-health");
+            _ => "critical-health",
+            broken => $"shield:{ToOriginKey(broken.Origin)}",
+            expended => $"expended:{expended.Kind}");
 
     private static string ToOriginKey(DamageOrigin origin) =>
         origin.Match(

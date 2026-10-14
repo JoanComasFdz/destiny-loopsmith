@@ -9,7 +9,7 @@
    things off (a build started from scratch, LoopDesigning.HasTriggerSource): then the panel is greyed out, nothing in it
    can be tapped, and a line says why. *@
 @{
-    var hud = TriggerHudShaping.ShapeHud(Options, counts, Build, Profile);
+    var hud = TriggerHudShaping.ShapeHud(Options, counts, optionsOn, Build, Profile);
     var disabled = !LoopDesigning.HasTriggerSource(Build);
     var picked = disabled ? Optional.None<HudSlot>() : FindPicked(hud);
 }
@@ -139,6 +139,15 @@
                     </select>
                 </label>
             }
+            @if (choice.Option is Optional<TriggerOptionToggle>.Some toggle)
+            {
+                <button type="button" class="trig-option @(toggle.Value.IsOn ? "on" : "")" data-option="@toggle.Value.Option"
+                        aria-pressed="@(toggle.Value.IsOn ? "true" : "false")" title="@toggle.Value.Hint"
+                        @onclick="() => ToggleOption(choice.Key)">
+                    <span class="trig-option-box" aria-hidden="true">@(toggle.Value.IsOn ? "✓" : "")</span>
+                    <span class="trig-option-caption">@toggle.Value.Caption</span>
+                </button>
+            }
         }
         else
         {
@@ -149,6 +158,7 @@
 
 @code {
     private ImmutableDictionary<string, TargetCount> counts = ImmutableDictionary<string, TargetCount>.Empty;
+    private ImmutableHashSet<string> optionsOn = ImmutableHashSet<string>.Empty;
     private Optional<string> pickedKey = Optional.None<string>();
 
     [Parameter, EditorRequired]
@@ -347,6 +357,13 @@
 
     private Task PickTrigger(PlayerAction action) =>
         OnPick.InvokeAsync(action);                                                              // impure
+
+    /// <summary>Turns a row's option (a weapon's shield, an ability's last charge) on or off for its next steps.</summary>
+    private void ToggleOption(string key)
+    {
+        var updated = optionsOn.Contains(key) ? optionsOn.Remove(key) : optionsOn.Add(key);     // pure
+        optionsOn = updated;                                                                     // impure (component state)
+    }
 
     private void PickTargetCount(string key, ChangeEventArgs e)
     {

@@ -5,7 +5,8 @@ The requirements they serve are in [docs/requirements.md](docs/requirements.md).
 current set of decisions, in four groups: what the product is (D1–D9), sources and rules (D10–D15),
 architecture (D16–D23), hosts and tooling (D24–D26), starting from a DIM link (D27), the build's stats (D28), the
 step's damage resistance (D29), armor mods in their sockets (D30), the artifact (D32), the count of Armor Charge
-(D33), what a hit step stands for (D34) and the raid and activity mods left out of the sockets (D35). D1 is the
+(D33), what a hit step stands for (D34), the raid and activity mods left out of the sockets (D35) and what the player
+says about a step besides its hit and count (D36). D1 is the
 founding one: every other decision follows from it.
 
 | # | Decision | Why |
@@ -42,6 +43,7 @@ founding one: every other decision follows from it.
 | D32 | A build names its artifact and the perk in each of its slots (Artifacts 2.0) | Since Monument of Triumph one of seven artifacts is equipped with up to seven perks, one per slot; the tiers and slots are Bungie's, read from the artifact's sockets |
 | D33 | Armor Charge is counted: sure stacks and chance stacks, and the count decides | Gaining, keeping and spending Armor Charge is a pillar of build crafting; most of its gains and spends are known steps of the loop, so the loop can say how many it surely holds |
 | D35 | Raid, activity and seasonal armor mods aren't supported: a DIM link's are kept but ignored, and no picker offers them | They act on an encounter's mechanics (a relic, a plate, an enemy race), which a loop of triggers doesn't hold, or no longer work at all; what a loadout had stays visible |
+| D36 | The player says when a weapon step breaks a shield and when an ability step spends its last charge | Shield Break Charge and the Kickstarts react to them; play decides both, and neither is counted |
 
 ## What the product is
 
@@ -538,3 +540,28 @@ raid, activity and seasonal mods aren't supported."). **Consequence.** A raid bu
 mods. The CLI, which reads only the manifest excerpt, knows such a mod when a saved DIM share wears it (the excerpt then
 holds it); otherwise it is a hash no rule knows. Supporting them later means declarations for an encounter's mechanics
 (D3), a decision of its own.
+
+### D36 — The player says when a weapon step breaks a shield and when an ability step spends its last charge
+
+**Context.** Shield Break Charge gives Armor Charge when you break a combatant's shield with damage of its element, and
+the Kickstarts (Grenade, Melee, Utility) spend it when the ability's energy is "fully expended", as Bungie's text says
+(the Compendium says "on use"). Neither could be said in a loop: no step broke a shield, so Shield Break Charge was
+inert, and the Kickstarts fired on every use, wrong for a build with two charges (Shinobu's Vow: only the second
+throw empties the grenade). Which enemy has a shield, and which charge a use spends, are play (D1): the engine counts
+neither a shield nor an ability's energy (D5).
+**Decision (product owner).** A step carries an option the player turns on, as it carries a target count (D4). A weapon
+step may **break a shield** (`kinetic:kill:shield`, "Festival Flight (💀 kill · 🛡 shield)"): it breaks one, with its
+first hit, raising `ShieldBroken` from that weapon, which the `shieldBroken` trigger matches (`via` as a hit's). The
+player says it only when the weapon's element matches the shield's, so "with damage of its element" holds. A grenade,
+melee or class ability step may spend the **last charge** (`grenade:kill:last`, "Grenade (💀 kill · last charge)"):
+it raises `EnergyExpended` after the cast, which the `energyExpended` trigger matches. With one charge in the build every
+use raises it; with more (the ability's profile plus every equipped `extraCharges`) only a use the player marks. A
+Super has none. In the designer each row shows its option when the build has a rule that reacts to it and, for the last
+charge, when the build gives the ability more than one: "🛡 shield" next to a weapon's hit and kill, "last charge" next
+to an ability's; on, it goes with every button of the row. A grant may give stacks by copies (`stacks: "1 | 2"`:
+Shield Break Charge's x1 with one copy, x2 with two).
+**Consequence.** Shield Break Charge feeds the Armor Charge count (D33), and a Kickstart in a two-charge build spends it
+only where the loop says the last charge goes. The option is part of the step's token, so loop files and share links
+carry it, and the analysis and comparison tell `grenade:kill` from `grenade:kill:last`. An ability's energy is still not
+counted: a later decision may track it (a use empties it, each energy grant fills it), and the last charge would then
+follow from the loop instead of the player.

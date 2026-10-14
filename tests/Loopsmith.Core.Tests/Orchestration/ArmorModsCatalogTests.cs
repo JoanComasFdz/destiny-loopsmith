@@ -3,6 +3,7 @@ using Loopsmith.Core.BuildComposition;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 using Loopsmith.Core.Orchestration;
+using Loopsmith.Core.Simulation;
 using Loopsmith.Core.SourceFetching;
 using Loopsmith.Core.Tests.Support;
 
@@ -129,6 +130,41 @@ public sealed class ArmorModsCatalogTests
     }
 
     /// <summary>The owner's DIM build wearing <paramref name="mods"/> too, played through <paramref name="actions"/>.</summary>
+    [Fact]
+    public void Shield_Break_Charge_gives_Armor_Charge_by_copies_on_a_weapon_step_that_breaks_a_shield()
+    {
+        var breaking = new PlayerAction.FireWeapon(WeaponSlot.Energy, HitOutcome.Kill, TargetCount.One, ShieldBreak.Breaks);
+
+        var one = Play(["shield-break-charge"], breaking);
+        var two = Play(["shield-break-charge", "shield-break-charge"], breaking);
+        var plain = Play(["shield-break-charge"], new PlayerAction.FireWeapon(WeaponSlot.Energy, HitOutcome.Kill, TargetCount.One));
+
+        Assert.False(Catalog.Elements[ElementId.From("shield-break-charge")].Inert.IsSome());
+        Assert.Contains(one.Resolutions[0].Fired, fired => fired.Source.Value == "shield-break-charge");
+        Assert.Equal(1, ReadSure(one.Resolutions[0].State));
+        Assert.Equal(2, ReadSure(two.Resolutions[0].State));
+        Assert.DoesNotContain(plain.Resolutions[0].Fired, fired => fired.Source.Value == "shield-break-charge");
+    }
+
+    [Fact]
+    public void Grenade_Kickstart_with_Shinobus_Vows_two_grenades_spends_Armor_Charge_only_on_the_last_one()
+    {
+        var orb = new PlayerAction.CollectPickups(PickupId.From("orb-of-power"));
+        PlayerAction[] reaped = [new PlayerAction.UseClassAbility(), new PlayerAction.FireWeapon(WeaponSlot.Kinetic, HitOutcome.Kill, TargetCount.One), orb];
+
+        var first = Play([], [.. reaped.Append(new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Damage, TargetCount.One))]);
+        var last = Play([], [.. reaped.Append(new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Damage, TargetCount.One, AbilityInput.Press, ChargeUse.Last))]);
+
+        Assert.Equal(2, first.Build.CountCharges(AbilityKind.Grenade));
+        Assert.DoesNotContain(first.Resolutions[^1].Fired, fired => fired.Source.Value == "grenade-kickstart");
+        Assert.True(ReadSure(first.Resolutions[^1].State) > 0);
+        Assert.Contains(last.Resolutions[^1].Fired, fired => fired.Source.Value == "grenade-kickstart");
+        Assert.Equal(0, ReadSure(last.Resolutions[^1].State));
+    }
+
+    private static int ReadSure(GameState state) =>
+        state.ReadTally(ArmorCharge).Match(tally => tally.Value.Sure.Value, _ => 0);
+
     private static DesignSession Play(ImmutableArray<string> mods, params PlayerAction[] actions)
     {
         const string path = "builds/skip-grenade-hunter/dim-loadout.json";

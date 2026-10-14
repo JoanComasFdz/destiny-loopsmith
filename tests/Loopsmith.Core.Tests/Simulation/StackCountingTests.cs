@@ -65,7 +65,7 @@ public sealed class StackCountingTests
     [
         OnWhen(new Trigger.Finisher(), new Condition.Holds(ArmorCharge, StackCount.From(3)),
             new Outcome.RemoveBuff(ArmorCharge),
-            new Outcome.ApplyBuff(Status("amplified"), new BuffDuration.BySpent(new StackTable(StackCount.From(3), [8m, 10m, 12m, 14m])), StackCount.From(1))),
+            new Outcome.ApplyBuff(Status("amplified"), new BuffDuration.BySpent(new StackTable(StackCount.From(3), [8m, 10m, 12m, 14m])), new StackGrant.Fixed(StackCount.From(1)))),
     ]);
 
     private static readonly BuildElement Healthy = Mod("healthy-finisher",

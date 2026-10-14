@@ -123,12 +123,21 @@ public class SkipGrenadeHunterGoldenTests
             must: ["orb-of-power", "unraveling-orbs"]);
 
     [Fact]
-    public void Line7b_grenade_kickstart_spends_armor_charge_on_the_next_grenade()
+    public void Line7b_grenade_kickstart_spends_armor_charge_on_the_last_grenade_charge()
     {
-        var resolution = Resolve(WithBuffs(Fresh, "armor-charge"), new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Damage, TargetCount.One));
+        var resolution = Resolve(WithBuffs(Fresh, "armor-charge"), new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Damage, TargetCount.One, AbilityInput.Press, ChargeUse.Last));
 
         AssertFires(resolution, must: ["grenade-kickstart", "spark-of-shock", "shinobus-vow", "bolt-charge"]);
         Assert.False(HasBuff(resolution.State, "armor-charge"));
+    }
+
+    [Fact]
+    public void Line7b_a_grenade_that_leaves_a_charge_keeps_armor_charge()
+    {
+        var resolution = Resolve(WithBuffs(Fresh, "armor-charge"), new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Damage, TargetCount.One));
+
+        AssertFires(resolution, must: ["spark-of-shock", "shinobus-vow", "bolt-charge"], mustNot: ["grenade-kickstart"]);
+        Assert.True(HasBuff(resolution.State, "armor-charge"));
     }
 
     // ── note line 8: Weapon kill ────────────────────────────────────────────────

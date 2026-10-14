@@ -19,6 +19,16 @@ public static class GameValueArithmetic
             ? new GameValue.Known(perModCount.Values[Math.Clamp(copies, 1, perModCount.Values.Length) - 1])
             : value;
 
+    /// <summary>The stacks a grant gives with <paramref name="copies"/> equipped copies (PerModCount → that copy's count, the last for more).</summary>
+    public static StackCount ReadStacks(this StackGrant grant, int copies) =>
+        grant.Match(
+            fixedCount => fixedCount.Count,
+            perModCount => perModCount.Counts[Math.Clamp(copies, 1, perModCount.Counts.Length) - 1]);
+
+    /// <summary>The same grant narrowed to <paramref name="copies"/> equipped copies (PerModCount → that copy's fixed count).</summary>
+    public static StackGrant NarrowToCopies(this StackGrant grant, int copies) =>
+        new StackGrant.Fixed(grant.ReadStacks(copies));
+
     /// <summary>
     /// Damage resistances together, the way the game stacks them: each multiplies what the others let through,
     /// 1 − (1 − a) × (1 − b) × … (compendium Armor Mods#7). An unknown one — or a per-copy one not yet narrowed to its

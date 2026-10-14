@@ -256,16 +256,17 @@ elements:
     kind: armorMod
     affinity: neutral
     hash: [3160387771, 1044888195]   # two copies: 3 and 1 energy
-    description: "Using your class ability while you have Armor Charge consumes all of it for class ability energy. Each mod and each Armor Charge stack counts as one 'charge'; energy with 2|3|...|9 charges: 16.2% | 21.7% | 28.4% | 34.4% | 38.4% | 41.3% | 43.4% | 45% (PvP 12.5% … 31.6%)."
+    description: "When your class ability energy is fully expended (its last charge used) while you have Armor Charge, consumes all of it for class ability energy. Each mod and each Armor Charge stack counts as one 'charge'; energy with 2|3|...|9 charges: 16.2% | 21.7% | 28.4% | 34.4% | 38.4% | 41.3% | 43.4% | 45% (PvP 12.5% … 31.6%)."
     source: "compendium/2026-10-09/Armor Mods#20"
     rules:
       # The refund is indexed by charges (mods + stacks spent), the Compendium's table (ADRs D33).
-      # With 1 mod: 1|2|3 Armor Charge -> 16.2%|21.7%|28.4% of a charge. Bungie's text says it
-      # fires when the class ability energy is fully expended; the Compendium's "on class ability
-      # use" is encoded, as Grenade Kickstart's.
-      - on: { abilityCast: classAbility }
+      # With 1 mod: 1|2|3 Armor Charge -> 16.2%|21.7%|28.4% of a charge. It fires when the class
+      # ability energy is fully expended, as Bungie's text says (the Compendium: on class ability
+      # use): with one charge every use, with more the use the player marks as the last one
+      # (`class:last`, ADRs D36).
+      - on: { energyExpended: classAbility }
         when: [ { has: armor-charge } ]
         then:
           - { convertStacksToEnergy: { consumed: armor-charge, to: classAbility, byCharges: { from: 2, values: "16.2% | 21.7% | 28.4% | 34.4% | 38.4% | 41.3% | 43.4% | 45%" } } }
-        reason: "Using your class ability while you hold Armor Charges burns them all for class ability energy - the more charges and copies, the bigger the refund."
+        reason: "Using your last class ability charge while you hold Armor Charges burns them all for class ability energy - the more charges and copies, the bigger the refund."
     passives: []

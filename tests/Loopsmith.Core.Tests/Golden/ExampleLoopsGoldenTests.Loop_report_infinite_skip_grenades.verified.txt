@@ -1,5 +1,5 @@
 ﻿Infinite skip grenades — Skip Grenade Hunter · 8 steps
-New pack → Class ability → Grenade (💀 kill) → Festival Flight (💀 kill) → Any Arc weapon (💀 kill) → Pick up Orb of Power → Bolt Charge at max (x10) → Grenade (💀 kill)
+New pack → Class ability → Grenade (💀 kill) → Festival Flight (💀 kill) → Any Arc weapon (💀 kill) → Pick up Orb of Power → Bolt Charge at max (x10) → Grenade (💀 kill · last charge)
 ✓ Repeats — each pass ends with what the next one needs
 
 #1 New pack
@@ -8,8 +8,6 @@ New pack → Class ability → Grenade (💀 kill) → Festival Flight (💀 kil
    on its own       Reaper · Slice · Gambler's Dodge · Bomber
 
 #3 Grenade (💀 kill)
-   needs            Armor Charge ← previous pass #6 [Orb of Power]
-   in this order    Grenade Kickstart (chance)
    on its own       Spark of Shock · Shinobu's Vow · Bolt Charge · Flow State · Dielectric · Shock and Clear · Spark of Discharge · Elemental Charge (chance) · Ionic Trace
    wasted           Tempest Strike — doesn't stack with Dielectric
 
@@ -33,15 +31,13 @@ New pack → Class ability → Grenade (💀 kill) → Festival Flight (💀 kil
    needs            Bolt Charge ← #5 [Dielectric; Spark of Discharge]
    in this order    Shinobu's Vow · Flashover
 
-#8 Grenade (💀 kill)
+#8 Grenade (💀 kill · last charge)
    needs            New Tricks ← #7 [Shinobu's Vow] · Armor Charge ← #6 [Orb of Power] · Bolt Charge at max ← #7 · Bolt Charge ← #5 [Dielectric; Spark of Discharge] · Jolt ← #3 [Spark of Shock] · Sever ← #4 [Slice]
    in this order    Shinobu's Vow · Grenade Kickstart · Bolt Charge · Jolt · Defibrillating Blast · Photonic Flare · Flow State · Dielectric · To Shreds · Shock and Clear · Spark of Discharge · Elemental Charge (chance) · Ionic Trace
    on its own       Spark of Shock
    wasted           Tempest Strike — doesn't stack with Dielectric
 
 First pass (from a fresh spawn, where it differs)
-#3 Grenade (💀 kill)
-   doesn't set off  Grenade Kickstart (chance)
 #4 Festival Flight (💀 kill)
    doesn't set off  Unraveling Rounds
 
@@ -57,4 +53,4 @@ Steps
   5. energy:kill          Arc weapon on the jolted pack: Spark of Discharge traces, Harmonic Siphon orb
   6. pickup:orb-of-power  Grab the orbs: Armor Charge for Grenade Kickstart, and Unraveling Rounds
   7. max:bolt-charge      Bolt Charge at x10 — Shinobu's Vow gives New Tricks and grenade energy, Flashover makes you Amplified
-  8. grenade:kill         Second skip grenade: Kickstart spends Armor Charge, New Tricks is spent, and its hit discharges Bolt Charge
+  8. grenade:kill:last    Second skip grenade, the last charge: Kickstart spends Armor Charge, New Tricks is spent, and its hit discharges Bolt Charge

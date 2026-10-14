@@ -28,7 +28,7 @@ flowchart LR
   n2("Pick up Ionic Trace"):::arc
   n3("Gain Bolt Charge"):::arc
   n4("Max Bolt Charge"):::arc
-  n5("Grenade thrown"):::arc
+  n5("Grenade energy fully expended"):::arc
   n6("Ability damage"):::arc
   n7(["Grenade energy"]):::arc
   n8(["Melee energy"]):::arc
@@ -63,7 +63,7 @@ flowchart LR
 Loop 1 · ability loop — gives grenade energy back · 3 steps
   Throw grenade → Grenade damage →[Shinobu's Vow] Grenade energy → ↺
 Loop 2 · ability loop — gives grenade energy back · 3 steps
-  Throw grenade → Grenade thrown →[Grenade Kickstart (while Armor Charge)] Grenade energy → ↺
+  Throw grenade → Grenade energy fully expended →[Grenade Kickstart (while Armor Charge)] Grenade energy → ↺
 Loop 3 · ability loop — gives grenade energy back · 4 steps
   Throw grenade → Grenade damage →[Shinobu's Vow] Gain Bolt Charge →[Shinobu's Vow] Grenade energy → ↺
 Loop 4 · ability loop — gives grenade energy back · 4 steps

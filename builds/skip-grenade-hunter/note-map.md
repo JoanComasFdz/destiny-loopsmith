@@ -222,11 +222,12 @@ This is the title and has no trigger.
   - While Unraveling Rounds is on you, Strand weapon hits unravel the target (the `unraveling-rounds` keyword), which in turn lets Horde Shuttle fire on the hits after.
 - **Scenario 7b: where Grenade Kickstart actually fires.**
   - Start: buffs Armor Charge.
-  - Action: `CastAbility(Grenade, damage)`.
-  - On `AbilityCast(Grenade)`: `grenade-kickstart` → spends Armor Charge → +?% grenade energy per stack (it consumes Armor Charge). Then `spark-of-shock`, `shinobus-vow` and `bolt-charge` fire as in line 3.
+  - Action: `CastAbility(Grenade, damage, last charge)` (`grenade:last`): Shinobu's Vow gives the build two grenade charges, so the player says which throw spends the last one (ADRs D36).
+  - On `AbilityCast(Grenade)`, then `EnergyExpended(Grenade)`: `grenade-kickstart` → spends Armor Charge → grenade energy by copies and stacks (it consumes Armor Charge). Then `spark-of-shock`, `shinobus-vow` and `bolt-charge` fire as in line 3.
   - Fired: **grenade-kickstart, spark-of-shock, shinobus-vow, bolt-charge**.
   - End state: buffs Bolt Charge; Armor Charge not present; target `[jolt]`.
-- **Not reproduced as written:** Grenade Kickstart doesn't grant Armor Charge on pickup. Picking up an Orb gives +1 Armor Charge while any Armor Charge mod is equipped (Compendium), and Grenade Kickstart consumes it on the next grenade (row 3).
+  - A throw that leaves a charge (`grenade`) keeps Armor Charge: Grenade Kickstart fires when the grenade energy is fully expended (Bungie's text; row 3).
+- **Not reproduced as written:** Grenade Kickstart doesn't grant Armor Charge on pickup. Picking up an Orb gives +1 Armor Charge while any Armor Charge mod is equipped (Compendium), and Grenade Kickstart consumes it on the throw that spends the last grenade charge (row 3).
 
 ## Line 8: "Weapon kill -> ionic trace [spark of discharge] + when strand weapon with severe: "
 
@@ -313,15 +314,15 @@ Its steps, with the note lines they play:
 4. `pickup:orb-of-power`: line 7a (Armor Charge, Unraveling Rounds).
 5. `melee:slide:kill`: line 4, with Combination Blow on the kill.
 6. `max:bolt-charge`: line 10a (Shinobu's Vow; Flashover's Amplified is already active, from #2).
-7. `grenade:kill`: lines 7b and 10b (New Tricks and Armor Charge consumed; the hit discharges Bolt Charge).
+7. `grenade:kill:last`: lines 7b and 10b (the second grenade, the last charge: New Tricks and Armor Charge consumed; the hit discharges Bolt Charge).
 8. `energy:kill`: line 8a (Spark of Discharge, Harmonic Siphon).
 
 The example loops declare Bolt Charge at max the same way, right before a skip grenade, so the throw
 spends New Tricks and its hit discharges Bolt Charge. Each starts with `pack:new`: every pass meets the
 next group of enemies, so its first hit isn't credited with the last group's debuffs (ADRs D7):
 
-- **Infinite skip grenades** (the creator's loop): `pack:new`, `class`, `grenade:kill`, `kinetic:kill`, `energy:kill`, `pickup:orb-of-power`, `max:bolt-charge`, `grenade:kill`.
-- **Melee first**: `pack:new`, `melee:slide:kill`, `max:bolt-charge`, `grenade:kill`, `energy:kill`, `pickup:orb-of-power`, `class`.
+- **Infinite skip grenades** (the creator's loop): `pack:new`, `class`, `grenade:kill`, `kinetic:kill`, `energy:kill`, `pickup:orb-of-power`, `max:bolt-charge`, `grenade:kill:last` (the second grenade spends the last charge, so Grenade Kickstart fires).
+- **Melee first**: `pack:new`, `melee:slide:kill`, `max:bolt-charge`, `grenade:kill`, `energy:kill`, `pickup:orb-of-power`, `class` (one grenade per pass, which leaves a charge: Grenade Kickstart doesn't fire, and Armor Charge is kept).
 - **Helicopter skip grenades** ([the Ascension variant](../skip-grenade-hunter-ascension/discrepancies.md)): Infinite skip grenades with `class:air` at #2.
 
 ## What the build does that the note doesn't mention

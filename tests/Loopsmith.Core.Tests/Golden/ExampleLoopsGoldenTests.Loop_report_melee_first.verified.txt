@@ -13,8 +13,8 @@ New pack → Sliding melee (💀 kill) → Bolt Charge at max (x10) → Grenade 
    in this order    Shinobu's Vow · Flashover
 
 #4 Grenade (💀 kill)
-   needs            New Tricks ← #3 [Shinobu's Vow] · Armor Charge ← previous pass #6 [Orb of Power] · Bolt Charge at max ← #3 · Bolt Charge ← #2 [Dielectric; Spark of Discharge] · Jolt ← #2 [Tempest Strike]
-   in this order    Shinobu's Vow · Grenade Kickstart · Bolt Charge · Jolt · Defibrillating Blast · Flow State · Dielectric · Shock and Clear · Spark of Discharge · Elemental Charge (chance) · Ionic Trace
+   needs            New Tricks ← #3 [Shinobu's Vow] · Bolt Charge at max ← #3 · Bolt Charge ← #2 [Dielectric; Spark of Discharge] · Jolt ← #2 [Tempest Strike]
+   in this order    Shinobu's Vow · Bolt Charge · Jolt · Defibrillating Blast · Flow State · Dielectric · Shock and Clear · Spark of Discharge · Elemental Charge (chance) · Ionic Trace
    on its own       Spark of Shock
    wasted           Tempest Strike — doesn't stack with Dielectric
 

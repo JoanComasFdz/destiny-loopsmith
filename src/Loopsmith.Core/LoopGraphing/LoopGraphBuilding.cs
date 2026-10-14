@@ -76,6 +76,7 @@ public static class LoopGraphBuilding
             .Concat(build.Build.Weapons.SelectMany(w =>
                 ListHitEvents(new DamageOrigin.Weapon(w.Slot, w.Type), appliedDebuffs)
                     .Concat(ListVolleyEvents(new DamageOrigin.Weapon(w.Slot, w.Type)))
+                    .Append(new GameEvent.ShieldBroken(new DamageOrigin.Weapon(w.Slot, w.Type)))   // the player may say the step breaks a shield (ADRs D36)
                     .SelectMany(Reach)
                     .Select(to => new RawEdge(ToWeaponKey(w.Slot), to, You, EdgeKind.Player))))
             .Concat(finisherReach.Select(to => new RawEdge(FinisherKey, to, You, EdgeKind.Player)));
@@ -232,6 +233,12 @@ public static class LoopGraphBuilding
 
     private static IEnumerable<GameEvent> ListCastEvents(AbilityKind kind, DamageType subclass, ImmutableArray<StatusId> debuffs)
     {
+        // its last charge, which the player may spend (ADRs D36): a Super has no such trigger
+        if (kind != AbilityKind.Super)
+        {
+            yield return new GameEvent.EnergyExpended(kind);
+        }
+
         // every use of the ability: its press and each secondary (the air move reaches Ascension's rules, the sliding
         // melee Tempest Strike's), as the player may use any of them
         foreach (var input in kind.ListSecondaryInputs().Prepend(AbilityInput.Press))

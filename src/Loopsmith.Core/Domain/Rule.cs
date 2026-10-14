@@ -23,6 +23,8 @@ public partial record Trigger
     partial record AbilityCastAs(AbilityKind Kind, AbilityInput Input);        // only that use of the ability: the melee while sliding, the class ability's air move
     partial record KillFewer(DamageSource Via, TargetCount FewerThan);         // kill fewer than N enemies in one action (at least one)
     partial record CriticalHealth();                                           // the player declares they reached critical health (ADRs D3)
+    partial record ShieldBroken(DamageSource Via);                             // a combatant's shield broken by that source (the player says which hit breaks it, ADRs D36)
+    partial record EnergyExpended(AbilityKind Kind);                           // the ability's energy fully expended: its last charge used (ADRs D36)
 }
 
 /// <summary>A guard on the current state, checked after the trigger matched.</summary>
@@ -69,6 +71,17 @@ public partial record BuffDuration
     partial record BySpent(StackTable Table);
 }
 
+/// <summary>
+/// The stacks one grant of a buff gives, as its source states it: a fixed count ("+1 Bolt Charge"), or one by the copies of
+/// the element equipped ("1 | 2": Shield Break Charge's x1 with one copy, x2 with two; the last for more copies).
+/// </summary>
+[Union]
+public partial record StackGrant
+{
+    partial record Fixed(StackCount Count);
+    partial record PerModCount(ImmutableArray<StackCount> Counts);
+}
+
 [Union]
 public partial record EnergyGrant
 {
@@ -87,7 +100,7 @@ public partial record Outcome
 {
     partial record GrantEnergy(AbilityKind To, EnergyGrant Amount);
     partial record ConvertStacksToEnergy(StatusId Consumed, AbilityKind To, StackEnergy Energy);   // spends every stack
-    partial record ApplyBuff(StatusId Status, BuffDuration Duration, StackCount Stacks);   // Stacks: the grant, a fact ("+1 Bolt Charge")
+    partial record ApplyBuff(StatusId Status, BuffDuration Duration, StackGrant Stacks);   // Stacks: the grant, a fact ("+1 Bolt Charge")
     partial record RemoveBuff(StatusId Status);
     partial record DebuffTarget(StatusId Status, Optional<Seconds> Duration);
     partial record Spawn(PickupId Pickup, int Count);

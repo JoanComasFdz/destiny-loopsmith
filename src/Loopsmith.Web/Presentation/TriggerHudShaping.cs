@@ -74,9 +74,9 @@ public sealed record TriggerHud(
 public static class TriggerHudShaping
 {
     public static TriggerHud ShapeHud(
-        ImmutableArray<TriggerOption> options, ImmutableDictionary<string, TargetCount> counts, ValidatedBuild build, Optional<BungieProfile> profile)
+        ImmutableArray<TriggerOption> options, ImmutableDictionary<string, TargetCount> counts, ImmutableHashSet<string> optionsOn, ValidatedBuild build, Optional<BungieProfile> profile)
     {
-        var sections = TriggerPaletteShaping.ShapePalette(options, counts, build);
+        var sections = TriggerPaletteShaping.ShapePalette(options, counts, optionsOn, build);
         var choices = sections.SelectMany(section => section.Choices).ToImmutableDictionary(choice => choice.Key);
         var abilities = build.Build.Abilities;
         var subclass = build.Build.Subclass.ToAffinity();
@@ -177,9 +177,9 @@ public static class TriggerHudShaping
     private static HudFace ToFace(Optional<string> icon) =>
         icon.Match<HudFace>(found => new HudFace.Pictured(found.Value), _ => new HudFace.Blank());
 
-    /// <summary>A row's one action, when it has one and no target count: a tap on its slot acts at once.</summary>
+    /// <summary>A row's one action, when it has one, no target count and no option: a tap on its slot acts at once.</summary>
     private static Optional<TriggerButton> FindAtOnce(TriggerChoice choice) =>
-        choice.Buttons.Length == 1 && !choice.Targets.IsSome() ? Optional.Some(choice.Buttons[0]) : Optional.None<TriggerButton>();
+        choice.Buttons.Length == 1 && !choice.Targets.IsSome() && !choice.Option.IsSome() ? Optional.Some(choice.Buttons[0]) : Optional.None<TriggerButton>();
 
     private static ImmutableArray<TriggerButton> ListButtons(ImmutableArray<TriggerSection> sections, TriggerGroup group) =>
         [.. sections.Where(section => section.Group == group).SelectMany(section => section.Choices).SelectMany(choice => choice.Buttons)];

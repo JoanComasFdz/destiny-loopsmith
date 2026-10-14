@@ -26,7 +26,7 @@ internal static class RuleBodyParsing
     private static readonly ImmutableArray<string> DamageKeys = ["via", "targetHas", "atLeast", "sustained"];
 
     private static readonly ImmutableArray<string> TriggerNames =
-        ["abilityCast", "kill", "damage", "pickUp", "buffGained", "stacksMaxed", "finisher", "criticalHealth"];
+        ["abilityCast", "kill", "damage", "pickUp", "buffGained", "stacksMaxed", "finisher", "criticalHealth", "shieldBroken", "energyExpended"];
 
     private static readonly ImmutableArray<string> ConditionNames = ["has", "lacks", "targetHas", "atMax", "belowMax", "during", "holds"];
 
@@ -79,6 +79,8 @@ internal static class RuleBodyParsing
             "stacksMaxed" => scope.ReadStackingBuff(entry.Value).Map(Trigger (status) => new Trigger.StacksMaxed(status)),
             "finisher" => ReadFinisherTrigger(entry.Value),
             "criticalHealth" => ReadCriticalHealthTrigger(entry.Value),
+            "shieldBroken" => ReadShieldBrokenTrigger(scope, entry.Value),
+            "energyExpended" => ReadEnergyExpendedTrigger(entry.Value),
             _ => entry.Value.FailAt<Trigger>(DescribeUnknown("trigger", entry.Key, TriggerNames)),
         });
 
@@ -93,6 +95,25 @@ internal static class RuleBodyParsing
         value.ToMap().Bind(map => map.Node.Children.Count == 0
             ? Succeed<Trigger>(new Trigger.CriticalHealth())
             : map.FailAt<Trigger>($"{map.Label} takes no keys: write {{ criticalHealth: {{}} }}"));
+
+    /// <summary>
+    /// <c>{ shieldBroken: {} }</c> or <c>{ shieldBroken: { via: weapon } }</c>: a combatant's shield broken by that source
+    /// (any, by default). The player says which weapon step breaks one (<c>kinetic:kill:shield</c>, ADRs D36).
+    /// </summary>
+    private static Result<Trigger, Errors> ReadShieldBrokenTrigger(ReferenceScope scope, YamlValue value) =>
+        value.ToMap().Bind(map => Combine(
+            map.CheckKeys(["via"]),
+            map.ReadOrDefault("via", scope.ReadDamageSource, new DamageSource.AnySource()),
+            (_, via) => (Trigger)new Trigger.ShieldBroken(via)));
+
+    /// <summary>
+    /// <c>{ energyExpended: grenade }</c> (<c>grenade|melee|classAbility</c>): the ability's last charge used, its energy
+    /// fully expended (the Kickstarts, ADRs D36). A Super has one charge and no such trigger.
+    /// </summary>
+    private static Result<Trigger, Errors> ReadEnergyExpendedTrigger(YamlValue value) =>
+        ReadVocabularyWord<AbilityKind>(value).Bind(kind => kind == AbilityKind.Super
+            ? value.FailAt<Trigger>($"{value.Label}: a Super has no energyExpended (use grenade, melee or classAbility)")
+            : Succeed<Trigger>(new Trigger.EnergyExpended(kind)));
 
     /// <summary>
     /// <c>{ abilityCast: grenade }</c> (any use of it), or <c>{ abilityCast: { ability: melee, input: slide } }</c> for one use
@@ -360,12 +381,12 @@ internal static class RuleBodyParsing
     /// </summary>
     private static Result<Outcome, Errors> ReadApplyBuff(ReferenceScope scope, YamlValue value) =>
         value.Node is YamlScalarNode
-            ? scope.ReadBuff(value).Map(Outcome (status) => new Outcome.ApplyBuff(status, new BuffDuration.Unstated(), OneStack))
+            ? scope.ReadBuff(value).Map(Outcome (status) => new Outcome.ApplyBuff(status, new BuffDuration.Unstated(), new StackGrant.Fixed(OneStack)))
             : value.ToMap().Bind(map => Combine(
                     map.CheckKeys(["status", "stacks", "duration", "durationBySpent"]),
                     map.ReadRequired("status", scope.ReadBuff),
                     map.ReadOrDefault("duration", ReadDuration, Optional.None<Seconds>()),
-                    map.ReadOrDefault("stacks", ReadStackCount, OneStack),
+                    map.ReadOrDefault("stacks", ReadStackGrant, new StackGrant.Fixed(OneStack)),
                     map.ReadOptional("durationBySpent", ReadStackTable),
                     (_, status, duration, stacks, bySpent) => (status, duration, stacks, bySpent))
                 .Bind(read => (read.duration, read.bySpent) switch

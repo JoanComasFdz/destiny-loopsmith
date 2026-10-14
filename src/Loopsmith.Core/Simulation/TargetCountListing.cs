@@ -144,11 +144,12 @@ public static class TargetCountListing
     {
         var glossary = build.Catalog.Glossary;
         var granted = applied
-            .Select(x => x.Applied.Outcome)
-            .OfType<Outcome.ApplyBuff>()
-            .Where(apply => glossary.IsStacking(apply.Status) && !glossary.IsCounted(apply.Status))
-            .GroupBy(apply => apply.Status)
-            .Select(group => (Status: group.Key, Stacks: group.Sum(apply => apply.Stacks.Value + OutcomeApplication.ListExtraStacks(build, after, apply.Status).Sum(extra => extra.Extra))));
+            .SelectMany(x => x.Applied.Outcome is Outcome.ApplyBuff apply
+                ? new[] { (Apply: apply, Stacks: apply.Stacks.ReadStacks(CountCopies(build, x.Source)).Value) }
+                : [])
+            .Where(x => glossary.IsStacking(x.Apply.Status) && !glossary.IsCounted(x.Apply.Status))
+            .GroupBy(x => x.Apply.Status)
+            .Select(group => (Status: group.Key, Stacks: group.Sum(x => x.Stacks + OutcomeApplication.ListExtraStacks(build, after, x.Apply.Status).Sum(extra => extra.Extra))));
         var counted = after.Buffs
             .SelectMany(buff => buff.Tally.Match(tally => new[] { (buff.Status, Stacks: tally.Value.Sure.Value + tally.Value.Chance.Value) }, _ => []));
         return granted.Concat(counted)

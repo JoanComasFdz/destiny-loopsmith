@@ -69,7 +69,8 @@ public static class CliArguments
           (without :kill the hit only damages; N = enemies hit or killed in that one action, 1..20, default 1:
            grenade:kill:3 kills three, kinetic:hit:5 shoots five; max:bolt-charge declares Bolt Charge at max,
            end:amplified that Amplified has ended, pack:new that the next enemies are a new pack,
-           health:critical that you reached critical health)
+           health:critical that you reached critical health; an option goes last: grenade:kill:last spends the
+           grenade's, melee's or class ability's last charge, kinetic:kill:shield breaks a combatant's shield)
           Loopsmith shows cause and effect: numbers are facts shown with their outcome, never added up.
         """;
 
