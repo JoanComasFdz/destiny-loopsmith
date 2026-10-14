@@ -86,10 +86,15 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   an ability's energy isn't tracked, so with more than one charge the player marks the use that spends the last one (a
   later step: a use empties it, each energy grant fills it, and the last charge follows from the loop); Benevolent Finisher's x3 isn't counted off (it
   is inert: allies only); an overshield's HP
-  (Proximity Ward); the order mods are slotted in (Firepower before Heavy Handed); two mods that can't both pay
-  out on different events (Hands-On and Ashes to Assets); an amount by class (Dynamo); a cooldown between orbs
-  (Firepower on `grenade:kill:3` drops three). Ammo, weapon handling, damage taken and allies-only mods are
-  inert by design (D1).
+  (Proximity Ward); two mods that can't both pay out on different events (Hands-On and Ashes to Assets); a cooldown
+  between orbs (Firepower on `grenade:kill:3` drops three). Ammo, weapon handling, damage taken and allies-only mods are
+  inert by design (D1). Two of them are tasks of their own, next:
+  - **Dynamo's Super energy by class** (`rules/mods/helmet.yaml`): 2.5% | 4% with 1 | 2 mods, times the class's
+    multiplier (Hunter x1, Titan x1.2, Warlock x2; Compendium Armor Mods#5). A rule can't read the build's class, so
+    the amount is `?`; a value by class would show the build's.
+  - **The order the mods are slotted in**: Firepower and Heavy Handed both drop their orb only when Firepower sits
+    before Heavy Handed (left to right, `rules/mods/arms.yaml`). No rule reads the order of the mods, so both always
+    fire; the order is only a fact in their descriptions.
 - **Weapon mods** (every one the Compendium lists is in `rules/mods/weapons.yaml`; all inert but Synergy): the
   manifest's other weapon mods aren't authored — the old Adept mods (Adept Range, Adept Mag…), Enhanced Heat Generated
   and Vent Speed, Full Auto Retrofit, the bow and activity mods (Jumpshot, Tungsten Bowstring, Fikrul's Friends…) —
@@ -120,6 +125,10 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
 
 ## Web
 
+- **An ability's charges in the HUD**: the game draws a small blue rectangle under the grenade's (melee's, class
+  ability's) icon for each charge, so Shinobu's Vow's second grenade shows as two. The designer's HUD could draw one
+  per charge the build gives the ability (its profile's `charges` plus every `extraCharges`, ADRs D36), next to the
+  "⬜ Spend fully" box. Only how many the build has: an ability's energy isn't tracked, so none of them is shown empty.
 - **First visit downloads ≈ 3 MB** (the .NET runtime as WebAssembly + the engine: 2.7 MB brotli,
   3.2 MB gzip in a Release publish; cached afterwards). The `wasm-tools` workload would shrink it;
   it can't be installed in cloud sessions, but the deploy workflows on GitHub's runners could
