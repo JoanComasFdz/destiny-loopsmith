@@ -1097,6 +1097,36 @@ button.hud-chip:hover, button.hud-chip:focus-visible { background: color-mix(in 
 .sub-drop .perk-option { flex: none; }
 .sub-drop .perk-option:disabled { opacity: .45; cursor: not-allowed; }
 .sub-foot { display: flex; justify-content: flex-end; gap: 8px; }
+/* the artifact editor, laid out like the game's artifact screen since Monument of Triumph: the artifact's icon, name and
+   "Artifact" as the dialog's header with ⋯ to pick another; its flavour text and what it works best with; then its seven
+   perk slots in three groups under the game's ◆ marks, each slot a teal square with a footer holding ✕ and ⋯, like the
+   subclass editor's fragments; ⋯ opens the slot's dropdown (.sub-drop), its perks under a heading per tier */
+.art-head { flex: 1 1 auto; }
+.art-switch { position: relative; flex: none; margin-left: 4px; }
+.art-switch-button { min-width: 28px; padding: 2px 6px; line-height: 1; font-size: 16px; letter-spacing: .05em; }
+.art-switch.open .art-switch-button { color: var(--arc); box-shadow: 0 0 0 1px var(--arc); }
+.artifact-editor { --sub-tile: 56px; --art-teal: #3fb8b0; display: flex; flex-direction: column; gap: 12px; }
+.art-flavor { margin: 0; max-width: 520px; font-size: 13px; font-style: italic; color: var(--muted); }
+.art-focus { display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+.art-focus-title { color: var(--text); }
+.art-focus-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.art-focus-label { color: var(--muted); }
+.art-focus-icon { width: 20px; height: 20px; }
+.art-focus-chip { padding: 1px 7px; border-radius: 999px; border: 1px solid var(--line-2); font-size: 12px; }
+.art-slots { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 14px; }
+.art-slot-group { display: flex; flex-direction: column; align-items: stretch; gap: 4px; }
+/* the game's bracket over a group: its diamonds centred on a line with ticks at both ends */
+.art-slot-mark { position: relative; text-align: center; font-size: 10px; line-height: 14px; letter-spacing: .2em; color: var(--muted); }
+.art-slot-mark::after { content: ""; position: absolute; left: 4px; right: 4px; top: 16px; height: 5px; border: 1px solid var(--line-2); border-bottom: 0; }
+.art-slot-row { margin-top: 8px; }
+.art-slot > .icon-tile { border-color: color-mix(in srgb, var(--art-teal) 55%, transparent); background: color-mix(in srgb, var(--art-teal) 14%, var(--panel-2)); }
+.art-slot > .icon-tile.empty { color: var(--art-teal); font-size: 18px; }
+.art-drop-heading { position: sticky; top: 0; z-index: 1; padding: 4px 6px 2px; font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); background: var(--panel); }
+.art-hint { margin: 0; font-size: 12px; }
+.art-choices { display: flex; flex-direction: column; gap: 2px; max-width: 420px; }
+@media (max-width: 640px) {
+    .artifact-editor { --sub-tile: 48px; }
+}
 .perk-picker-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-size: 11px; }
 .armor-row { display: flex; flex-wrap: wrap; gap: 10px; }
 .armor-piece { display: flex; gap: 4px; align-items: flex-start; }
