@@ -13,6 +13,10 @@ public static class GlossaryReading
     public static bool IsStacking(this KeywordGlossary glossary, StatusId status) =>
         glossary.Statuses.TryGetValue(status, out var definition) && definition.MaxStacks.IsSome();
 
+    /// <summary>The engine counts this status's stacks (<c>counted: true</c> in the glossary: Armor Charge, ADRs D33).</summary>
+    public static bool IsCounted(this KeywordGlossary glossary, StatusId status) =>
+        glossary.Statuses.TryGetValue(status, out var definition) && definition.Counted;
+
     /// <summary>
     /// The most stacks of a status this build holds, a fact the player reaches and declares, never counted toward (ADRs D3):
     /// the cap an equipped <c>raiseMaxStacks</c> states for its copies (Charged Up: Armor Charge "4 | 5 | 6", so x4 with one

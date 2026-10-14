@@ -15,7 +15,7 @@ public sealed class RuleCatalogParsingTests
         statuses:
           - { id: bolt-charge,  name: Bolt Charge,  kind: buff,   affinity: arc,     maxStacks: 10 }
           - { id: amplified,    name: Amplified,    kind: buff,   affinity: arc,     duration: 10s }
-          - { id: armor-charge, name: Armor Charge, kind: buff,   affinity: neutral, maxStacks: 3 }
+          - { id: armor-charge, name: Armor Charge, kind: buff,   affinity: neutral, maxStacks: 3, counted: true }
           - { id: jolt,         name: Jolt,         kind: debuff, affinity: arc,     duration: 4s }
           - { id: sever,        name: Sever,        kind: debuff, affinity: strand, duration: "?s" }
         pickups:
@@ -130,10 +130,10 @@ public sealed class RuleCatalogParsingTests
 
         Assert.Equal(5, glossary.Statuses.Count);
         Assert.Equal(
-            new StatusDefinition(ToStatus("bolt-charge"), "Bolt Charge", KeywordKind.Buff, Affinity.Arc, Optional.Some(StackCount.From(10)), Optional.None<Seconds>(), Optional.None<ItemHash>(), Optional.None<DrawnIcon>()),
+            new StatusDefinition(ToStatus("bolt-charge"), "Bolt Charge", KeywordKind.Buff, Affinity.Arc, Optional.Some(StackCount.From(10)), Optional.None<Seconds>(), Optional.None<ItemHash>(), Optional.None<DrawnIcon>(), false, Optional.None<string>()),
             glossary.Statuses[ToStatus("bolt-charge")]);
         Assert.Equal(
-            new StatusDefinition(ToStatus("jolt"), "Jolt", KeywordKind.Debuff, Affinity.Arc, Optional.None<StackCount>(), Optional.Some(Seconds.From(4m)), Optional.None<ItemHash>(), Optional.None<DrawnIcon>()),
+            new StatusDefinition(ToStatus("jolt"), "Jolt", KeywordKind.Debuff, Affinity.Arc, Optional.None<StackCount>(), Optional.Some(Seconds.From(4m)), Optional.None<ItemHash>(), Optional.None<DrawnIcon>(), false, Optional.None<string>()),
             glossary.Statuses[ToStatus("jolt")]);
         Assert.Equal(Optional.None<Seconds>(), glossary.Statuses[ToStatus("sever")].Duration);
         Assert.Equal(
@@ -249,8 +249,8 @@ public sealed class RuleCatalogParsingTests
             rule.When);
         Assert.Equal<Outcome>(
             [
-                new Outcome.ApplyBuff(ToStatus("amplified"), Optional.None<Seconds>(), StackCount.From(1)),
-                new Outcome.ApplyBuff(ToStatus("bolt-charge"), Optional.Some(Seconds.From(10m)), StackCount.From(2)),
+                new Outcome.ApplyBuff(ToStatus("amplified"), new BuffDuration.Unstated(), StackCount.From(1)),
+                new Outcome.ApplyBuff(ToStatus("bolt-charge"), new BuffDuration.Fixed(Seconds.From(10m)), StackCount.From(2)),
                 new Outcome.RemoveBuff(ToStatus("amplified")),
             ],
             rule.Then);
@@ -303,7 +303,7 @@ public sealed class RuleCatalogParsingTests
 
         Assert.Equal(new Trigger.PickUp(PickupId.From("ionic-trace")), rules[4].On);
         Assert.Equal<Outcome>(
-            [new Outcome.ConvertStacksToEnergy(ToStatus("armor-charge"), AbilityKind.Grenade, new GameValue.Unknown())],
+            [new Outcome.ConvertStacksToEnergy(ToStatus("armor-charge"), AbilityKind.Grenade, new StackEnergy.PerStack(new GameValue.Unknown()))],
             rules[4].Then);
 
         Assert.Equal(new Trigger.BuffGained(ToStatus("bolt-charge")), rules[5].On);
@@ -733,7 +733,7 @@ public sealed class RuleCatalogParsingTests
         Assert.Equal(Optional.Some(("Luminopotent", 2)), catalog.Manifest.FindSetOfPerk(ItemHash.From(2769443639u)).Map(found => (found.Set.Name, found.Perk.Pieces.Value)));
         Assert.Equal(Optional.Some(ArmorSlot.Helmet), items[ItemHash.From(3832366019u)].ReadArmorSlot());
         Assert.Equal(new ManifestKind.ArmorMod(Optional.None<ArmorSlot>()), items[ItemHash.From(1435557120u)].Kind);
-        Assert.Equal(new ManifestKind.ActivityMod(), items[ItemHash.From(2142852459u)].Kind);   // a raid's mod: not supported (ADRs D33)
+        Assert.Equal(new ManifestKind.ActivityMod(), items[ItemHash.From(2142852459u)].Kind);   // a raid's mod: not supported (ADRs D35)
         var tablet = Assert.IsType<ManifestKind.Artifact>(items[ItemHash.From(3821685388u)].Kind);
         Assert.Equal([[1319563986u], [2596646301u]], tablet.Tiers.Select(tier => tier.Perks.Select(hash => hash.Value)));
         Assert.Equal([1, 2, 2], tablet.Slots);
@@ -1007,7 +1007,7 @@ public sealed class RuleCatalogParsingTests
 
         var rule = catalog.Elements[ElementId.From("ascension")].Rules[0];
         Assert.Equal(new Trigger.AbilityCastAs(AbilityKind.ClassAbility, AbilityInput.Air), rule.On);
-        Assert.Equal(new Outcome.ApplyBuff(ToStatus("bolt-charge"), Optional.None<Seconds>(), StackCount.From(1)), rule.Then[0]);
+        Assert.Equal(new Outcome.ApplyBuff(ToStatus("bolt-charge"), new BuffDuration.Unstated(), StackCount.From(1)), rule.Then[0]);
     }
 
     [Fact]
@@ -1033,8 +1033,64 @@ public sealed class RuleCatalogParsingTests
     [Theory]
     [InlineData("{ on: { stacksMaxed: amplified }, then: [ { removeBuff: amplified } ] }", "'amplified' doesn't stack (no maxStacks), so it is never at max")]
     [InlineData("{ on: { abilityCast: grenade }, when: [ { atMax: amplified } ], then: [ { removeBuff: amplified } ] }", "'amplified' doesn't stack (no maxStacks), so it is never at max")]
-    [InlineData("{ on: { abilityCast: grenade }, then: [ { applyBuff: { status: amplified, restart: true } } ] }", "unknown key 'restart' in applyBuff (allowed: status, stacks, duration)")]
+    [InlineData("{ on: { abilityCast: grenade }, then: [ { applyBuff: { status: amplified, restart: true } } ] }", "unknown key 'restart' in applyBuff (allowed: status, stacks, duration, durationBySpent)")]
     public void Only_a_status_that_stacks_can_be_at_max_and_a_grant_has_no_restart(string rule, string expected)
+    {
+        var file = ToElementsFile("hunter/arc.yaml", $$"""
+            elements:
+              - id: probe
+                name: Probe
+                kind: fragment
+                affinity: arc
+                rules: [ {{rule}} ]
+            """);
+
+        Assert.Contains(expected, ParseInvalidCatalog(Glossary, file));
+    }
+
+    [Fact]
+    public void A_counted_buff_is_read_by_holds_spent_by_spendStacks_and_tables_and_a_kill_count_takes_its_window()
+    {
+        var file = ToElementsFile("hunter/arc.yaml", """
+            elements:
+              - id: probe
+                name: Probe
+                kind: fragment
+                affinity: arc
+                rules:
+                  - on: { kill: { via: weapon:arc, atLeast: 2, within: 3s } }
+                    when: [ { holds: { status: armor-charge, atLeast: 3 } } ]
+                    then:
+                      - { convertStacksToEnergy: { consumed: armor-charge, to: grenade, bySpent: { from: 3, values: "70% | 80%" } } }
+                      - { spendStacks: { status: armor-charge, count: 2 } }
+                      - { applyBuff: { status: amplified, durationBySpent: { from: 3, values: "8 | 10" } } }
+                  - on: { abilityCast: grenade }
+                    then: [ { convertStacksToEnergy: { consumed: armor-charge, to: grenade, byCharges: { from: 2, values: "16.2%" } } } ]
+            """);
+
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, file]));
+        var rules = catalog.Elements[ElementId.From("probe")].Rules;
+
+        Assert.True(catalog.Glossary.IsCounted(ToStatus("armor-charge")));
+        Assert.Equal(new Trigger.KillMultiple(new DamageSource.WeaponOfType(DamageType.Arc), TargetCount.From(2), Optional.Some(Seconds.From(3m))), rules[0].On);
+        Assert.Equal([new Condition.Holds(ToStatus("armor-charge"), StackCount.From(3))], rules[0].When);
+        var spent = Assert.IsType<StackEnergy.BySpent>(Assert.IsType<Outcome.ConvertStacksToEnergy>(rules[0].Then[0]).Energy);
+        Assert.Equal(3, spent.Table.From.Value);
+        Assert.Equal([0.7m, 0.8m], spent.Table.Values);
+        Assert.Equal(new Outcome.SpendStacks(ToStatus("armor-charge"), StackCount.From(2)), rules[0].Then[1]);
+        Assert.Equal([8m, 10m], Assert.IsType<BuffDuration.BySpent>(Assert.IsType<Outcome.ApplyBuff>(rules[0].Then[2]).Duration).Table.Values);
+        Assert.IsType<StackEnergy.ByCharges>(Assert.IsType<Outcome.ConvertStacksToEnergy>(rules[1].Then[0]).Energy);
+    }
+
+    [Theory]
+    [InlineData("{ on: { abilityCast: grenade }, when: [ { holds: { status: bolt-charge, atLeast: 2 } } ], then: [ { removeBuff: bolt-charge } ] }", "'bolt-charge' isn't counted (no counted: true in glossary.yaml)")]
+    [InlineData("{ on: { abilityCast: grenade }, then: [ { spendStacks: { status: bolt-charge, count: 1 } } ] }", "'bolt-charge' isn't counted (no counted: true in glossary.yaml)")]
+    [InlineData("{ on: { abilityCast: grenade }, then: [ { convertStacksToEnergy: { consumed: bolt-charge, to: grenade, bySpent: { from: 3, values: \"70%\" } } } ] }", "'bolt-charge' isn't counted (no counted: true in glossary.yaml)")]
+    [InlineData("{ on: { abilityCast: grenade }, then: [ { convertStacksToEnergy: { consumed: armor-charge, to: grenade, perStack: \"?\", bySpent: { from: 3, values: \"70%\" } } } ] }", "needs exactly one of perStack, bySpent or byCharges")]
+    [InlineData("{ on: { abilityCast: grenade }, then: [ { convertStacksToEnergy: { consumed: armor-charge, to: grenade, bySpent: { from: 3, values: \"?\" } } } ] }", "the values must be known numbers")]
+    [InlineData("{ on: { kill: { via: weapon, within: 3s } }, then: [ { removeBuff: armor-charge } ] }", "'within' is the window of a kill count, so it needs 'atLeast'")]
+    [InlineData("{ on: { abilityCast: grenade }, then: [ { applyBuff: { status: amplified, duration: 5s, durationBySpent: { from: 3, values: \"8\" } } } ] }", "takes duration or durationBySpent, not both")]
+    public void Only_a_counted_buff_has_stacks_to_read_or_spend_and_a_table_or_window_is_whole(string rule, string expected)
     {
         var file = ToElementsFile("hunter/arc.yaml", $$"""
             elements:
@@ -1198,6 +1254,32 @@ public sealed class RuleCatalogParsingTests
         Assert.StartsWith("hunter/arc.yaml:9: ", message);
     }
 
+    // ── Sustained damage: a source that needs several hits or a share of the enemy's health (ADRs D34) ──────
+
+    [Fact]
+    public void Parses_sustained_damage_on_any_target_and_on_a_debuffed_one()
+    {
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToElementsFile("weapons/perks.yaml", """
+            elements:
+              - id: shredder
+                name: Shredder
+                kind: weaponPerk
+                affinity: kinetic
+                rules:
+                  - on: { damage: { via: weapon, sustained: true } }
+                    then: [ { applyBuff: amplified } ]
+                  - on: { damage: { via: weapon, targetHas: [jolt], sustained: true } }
+                    then: [ { applyBuff: amplified } ]
+                  - on: { damage: { via: weapon, sustained: false } }
+                    then: [ { applyBuff: amplified } ]
+            """)]));
+
+        var rules = catalog.Elements[ElementId.From("shredder")].Rules;
+        Assert.Equal(new Trigger.Damage(new DamageSource.AnyWeapon(), DamageSpan.Sustained), rules[0].On);
+        Assert.Equal(DamageSpan.Sustained, Assert.IsType<Trigger.DamageDebuffed>(rules[1].On).Needs);
+        Assert.Equal(new Trigger.Damage(new DamageSource.AnyWeapon(), DamageSpan.Blow), rules[2].On);
+    }
+
     // ── Multi-target triggers: "hit / kill at least N enemies in one action" (ADRs D4) ──────
 
     private const string OneForAllYaml = """
@@ -1223,8 +1305,8 @@ public sealed class RuleCatalogParsingTests
 
         var rules = catalog.Elements[ElementId.From("one-for-all")].Rules;
         Assert.Equal(new Trigger.DamageMultiple(new DamageSource.AnyWeapon(), TargetCount.From(3)), rules[0].On);
-        Assert.Equal(new Trigger.KillMultiple(new DamageSource.AbilityOf(AbilityKind.Grenade), TargetCount.From(2)), rules[1].On);
-        Assert.Equal(new Trigger.KillMultiple(new DamageSource.AnySource(), TargetCount.One), rules[2].On);
+        Assert.Equal(new Trigger.KillMultiple(new DamageSource.AbilityOf(AbilityKind.Grenade), TargetCount.From(2), Optional.None<Seconds>()), rules[1].On);
+        Assert.Equal(new Trigger.KillMultiple(new DamageSource.AnySource(), TargetCount.One, Optional.None<Seconds>()), rules[2].On);
     }
 
     [Theory]
@@ -1234,6 +1316,7 @@ public sealed class RuleCatalogParsingTests
     [InlineData("damage: { via: weapon, atLeast: 0 }", "hunter/arc.yaml:7: damage.atLeast: '0' is not a whole number ≥ 1")]
     [InlineData("damage: { via: weapon, atLeast: 21 }", "hunter/arc.yaml:7: damage.atLeast: Target count must be within 1..20")]
     [InlineData("kill: { atLeast: lots }", "hunter/arc.yaml:7: kill.atLeast: 'lots' is not a whole number ≥ 1")]
+    [InlineData("damage: { via: weapon, atLeast: 2, sustained: true }", "hunter/arc.yaml:7: damage cannot combine 'atLeast' and 'sustained'")]
     public void At_least_is_a_count_of_1_to_20_and_stands_alone(string trigger, string expected)
     {
         var message = ParseInvalidCatalog(Glossary, ToElementsFile("hunter/arc.yaml", $$"""
@@ -1269,7 +1352,7 @@ public sealed class RuleCatalogParsingTests
 
         var synergy = catalog.Elements[ElementId.From("synergy")];
         Assert.Equal(ElementKind.WeaponMod, synergy.Kind);
-        Assert.Equal(new Trigger.KillMultiple(new DamageSource.ThisWeaponOfType(DamageType.Arc), TargetCount.From(12)), synergy.Rules[0].On);
+        Assert.Equal(new Trigger.KillMultiple(new DamageSource.ThisWeaponOfType(DamageType.Arc), TargetCount.From(12), Optional.None<Seconds>()), synergy.Rules[0].On);
         Assert.Equal(new Trigger.KillFewer(new DamageSource.ThisWeapon(), TargetCount.From(12)), synergy.Rules[1].On);
     }
 
@@ -1704,9 +1787,9 @@ public sealed class RuleCatalogParsingTests
         Assert.Equal("Slice (enhanced)", enhanced.Name);
         Assert.Equal([ItemHash.From(3422796781)], enhanced.Hashes);
         Assert.Equal(Optional.Some("Enhanced."), enhanced.Description);
-        Assert.Equal(new Outcome.ApplyBuff(ToStatus("amplified"), Optional.Some(Seconds.From(9m)), StackCount.From(1)), enhanced.Rules[0].Then[0]);
+        Assert.Equal(new Outcome.ApplyBuff(ToStatus("amplified"), new BuffDuration.Fixed(Seconds.From(9m)), StackCount.From(1)), enhanced.Rules[0].Then[0]);
         Assert.Equal(new Outcome.GrantEnergy(AbilityKind.Grenade, new EnergyGrant.Fraction(new GameValue.Known(0.12m))), enhanced.Rules[1].Then[0]);
-        Assert.Equal(new Outcome.ApplyBuff(ToStatus("amplified"), Optional.Some(Seconds.From(8m)), StackCount.From(1)), perk.Rules[0].Then[0]);   // the perk keeps its own
+        Assert.Equal(new Outcome.ApplyBuff(ToStatus("amplified"), new BuffDuration.Fixed(Seconds.From(8m)), StackCount.From(1)), perk.Rules[0].Then[0]);   // the perk keeps its own
         Assert.Equal(ElementId.From("slice-enhanced"), catalog.EnhancedPerks[ElementId.From("slice")]);
     }
 

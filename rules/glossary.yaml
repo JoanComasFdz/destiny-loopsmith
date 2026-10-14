@@ -36,7 +36,17 @@ statuses:
   # 4|5|6 by copies (the `charged-up` mod's raiseMaxStacks passive; Clarity 2577472338 agrees). Its
   # decay (1 stack every 10 s while a passive mod is equipped, same row) is a fact of the game:
   # Armor Charge ends when a rule consumes it (Grenade Kickstart) or the player declares it ended.
-  - { id: armor-charge, name: Armor Charge, kind: buff, affinity: neutral, maxStacks: 3 }
+  # Counted (ADRs D33): the engine counts its stacks, sure and chance ones, up to the cap; the decay
+  # (Game Mechanics#94, with Time Dilation's 15 | 18 | 20 s from Armor Mods#18, Class Item) is a fact
+  # shown with the count, never applied.
+  - id: armor-charge
+    name: Armor Charge
+    kind: buff
+    affinity: neutral
+    maxStacks: 3
+    counted: true
+    decay: "1 stack every 10 s while a passive Armor Charge mod is equipped (every 15 | 18 | 20 s with 1 | 2 | 3 Time Dilation)"
+
 
   # Duration 10 s: compendium/2026-10-09/Strand#7 (generic Woven Mail; To Shreds' Artifact Perks#51
   # also says 10 s). Clarity mentions other durations for other sources (5 s, 2-20 s); a rule can

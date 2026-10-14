@@ -45,7 +45,7 @@ public sealed class ManifestJoinTests
 
         Assert.Equal(
             ["ActivityMod", "ActivityMod", "ActivityMod", "ArmorMod"],
-            new[] { 700u, 701u, 702u, 703u }.Select(hash => excerpt.Items[ItemHash.From(hash)].Kind.GetType().Name));   // ADRs D33: not supported
+            new[] { 700u, 701u, 702u, 703u }.Select(hash => excerpt.Items[ItemHash.From(hash)].Kind.GetType().Name));   // ADRs D35: not supported
         Assert.Equal((Optional.Some("Deep Stone Crypt Raid Mod"), Optional.Some("Only in its raid.")), (excerpt.Items[ItemHash.From(700u)].Type, excerpt.Items[ItemHash.From(700u)].Description));
     }
 

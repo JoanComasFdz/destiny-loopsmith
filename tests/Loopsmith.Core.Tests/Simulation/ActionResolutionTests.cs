@@ -56,6 +56,26 @@ public class ActionResolutionTests
         Assert.DoesNotContain(AirMove, ActionResolution.ListAvailableActions(ValidateBuild([AnyUse]), initial));
     }
 
+    private static readonly BuildElement Shredder = Element("shredder", ElementKind.Fragment,
+        [On(new Trigger.Damage(new DamageSource.AnyAbility(), DamageSpan.Sustained), Buff("amplified"))]);
+
+    private static readonly BuildElement Striker = Element("striker", ElementKind.Fragment,
+        [On(new Trigger.Damage(new DamageSource.AnyAbility()), Buff("bolt-charge"))]);
+
+    [Fact]
+    public void Damage_a_source_needs_kept_up_fires_on_a_hit_step_and_not_on_a_kill_steps_killing_blow_and_one_hit_fires_on_both()
+    {
+        var build = ValidateBuild([Shredder, Striker]);
+
+        var hit = ResolveOnce(build, new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Damage, TargetCount.One));
+        var kill = ResolveOnce(build, GrenadeKill);
+
+        Assert.Equal(["shredder", "striker"], hit.Fired.Select(f => f.Source.Value).Order());
+        Assert.All(hit.Fired, f => Assert.Equal(Likelihood.Always, f.Likelihood));
+        Assert.Equal(["striker"], kill.Fired.Select(f => f.Source.Value));
+        Assert.Equal("Ability damage kept up (a hit step)", Glossary.DescribeTrigger(Shredder.Rules[0].On, Optional.None<DamageType>()));
+    }
+
     private static readonly BuildElement SlideOnly = Element("slide-only", ElementKind.Fragment,
         [On(new Trigger.Damage(new DamageSource.AbilityUsedAs(AbilityKind.Melee, AbilityInput.Slide)), Debuff("jolt"))]);
 
@@ -79,7 +99,7 @@ public class ActionResolutionTests
 
         Assert.Equal(["any-melee", "slide-only"], slide.Fired.Where(f => f.Source.Value != "jolt").Select(f => f.Source.Value).Distinct().Order());
         Assert.Equal(["any-melee"], plain.Fired.Select(f => f.Source.Value).Distinct());
-        Assert.Contains("Sliding melee hit → Jolt target (4s) [Slide Only] + +12% grenade energy [Any Melee]", DescribeTrace(build, slide));
+        Assert.Contains("Sliding melee 🥊 hit → Jolt target (4s) [Slide Only] + +12% grenade energy [Any Melee]", DescribeTrace(build, slide));
     }
 
     [Fact]
@@ -133,7 +153,7 @@ public class ActionResolutionTests
         var resolutions = ActionResolution.ResolveSequence(build, ActionResolution.CreateInitialState(), actions);
 
         Assert.All(resolutions, resolution => Assert.Single(resolution.Fired, f => f.Trigger is GameEvent.BuffGained));
-        Assert.Equal([new ActiveBuff(Status("bolt-charge"), AtMax: false)], resolutions[^1].State.Buffs);
+        Assert.Equal([new ActiveBuff(Status("bolt-charge"), AtMax: false, Optional.None<StackTally>())], resolutions[^1].State.Buffs);
         Assert.DoesNotContain(resolutions.SelectMany(r => r.Fired), f => f.Source.Value == "maxed");
         Assert.Contains("+2 Bolt Charge [Charger]", DescribeTrace(build, resolutions[^1]));
     }
@@ -154,7 +174,7 @@ public class ActionResolutionTests
 
         Assert.False(declared.Blocked.IsSome());
         Assert.Equal([new GameEvent.StacksMaxed(Status("bolt-charge"))], declared.Fired.Select(f => f.Trigger));
-        Assert.Contains(new ActiveBuff(Status("bolt-charge"), AtMax: true), declared.State.Buffs);
+        Assert.Contains(new ActiveBuff(Status("bolt-charge"), AtMax: true, Optional.None<StackTally>()), declared.State.Buffs);
         Assert.Single(thrown.Fired, f => f.Source.Value == "discharge");
         Assert.DoesNotContain(thrown.State.Buffs, b => b.Status == Status("bolt-charge"));
         Assert.Equal("Bolt Charge at max (x3)", build.DescribeAction(DeclareMax("bolt-charge")));   // the test glossary's cap
@@ -171,7 +191,7 @@ public class ActionResolutionTests
         var declared = ActionResolution.ResolveAction(build, charged.State, DeclareMax("bolt-charge"));
         var gained = ActionResolution.ResolveAction(build, declared.State, Dodge);
 
-        Assert.Equal([new ActiveBuff(Status("bolt-charge"), AtMax: true)], gained.State.Buffs);
+        Assert.Equal([new ActiveBuff(Status("bolt-charge"), AtMax: true, Optional.None<StackTally>())], gained.State.Buffs);
         Assert.Equal([new GameEvent.BuffGained(Status("bolt-charge"))], gained.Fired.Select(f => f.Trigger).OfType<GameEvent.BuffGained>());
     }
 
@@ -248,7 +268,7 @@ public class ActionResolutionTests
 
         Assert.Empty(fresh.State.Target.Debuffs);
         Assert.Equal([Status("amplified")], fresh.State.Buffs.Select(buff => buff.Status));
-        Assert.Equal([Pickup("orb-of-power")], fresh.State.Pickups);
+        Assert.Equal([Pickup("orb-of-power")], fresh.State.ListPickups());
         Assert.Empty(fresh.Fired);
         Assert.False(again.Blocked.IsSome());   // a clean pack can be new again: it always holds
     }
@@ -263,7 +283,7 @@ public class ActionResolutionTests
         var yielded = resolution.Fired.Single(f => f.Source.Value == "yielder");
         Assert.Equal(Optional.Some("Giver"), yielded.NotStackedWith);
         Assert.Empty(yielded.Outcomes);
-        Assert.Equal([new ActiveBuff(Status("bolt-charge"), AtMax: false)], resolution.State.Buffs);
+        Assert.Equal([new ActiveBuff(Status("bolt-charge"), AtMax: false, Optional.None<StackTally>())], resolution.State.Buffs);
         Assert.Contains("+1 Bolt Charge [Giver] + doesn't stack with Giver [Yielder]", DescribeTrace(build, resolution));
     }
 
@@ -349,10 +369,10 @@ public class ActionResolutionTests
         var pickup = ActionResolution.ResolveAction(build, kill.State, new PlayerAction.CollectPickups(Pickup("orb-of-power")));
 
         Assert.Contains(kill.State.Buffs, b => b.Status == Status("amplified"));
-        Assert.Equal([Pickup("orb-of-power")], kill.State.Pickups);
+        Assert.Equal([Pickup("orb-of-power")], kill.State.ListPickups());
         Assert.Contains("2× Orb of Power [Spawner]", DescribeTrace(build, kill));
         Assert.Contains(new PlayerAction.CollectPickups(Pickup("orb-of-power")), kill.NowAvailable);
-        Assert.Empty(pickup.State.Pickups);
+        Assert.Empty(pickup.State.ListPickups());
         Assert.Single(pickup.Fired, f => f.Source.Value == "collector");
         Assert.Contains(pickup.State.Buffs, b => b.Status == Status("bolt-charge"));
     }
@@ -408,7 +428,7 @@ public class ActionResolutionTests
     {
         var charger = Element("charger", ElementKind.Fragment, [On(new Trigger.AbilityCast(AbilityKind.ClassAbility), Buff("bolt-charge", 2))]);
         var kickstart = Element("kickstart", ElementKind.ArmorMod,
-            [On(new Trigger.AbilityCast(AbilityKind.Grenade), new Outcome.ConvertStacksToEnergy(Status("bolt-charge"), AbilityKind.Grenade, new GameValue.Approximate(0.1m)))]);
+            [On(new Trigger.AbilityCast(AbilityKind.Grenade), new Outcome.ConvertStacksToEnergy(Status("bolt-charge"), AbilityKind.Grenade, new StackEnergy.PerStack(new GameValue.Approximate(0.1m))))]);
         var build = ValidateBuild([charger], [kickstart]);
 
         var charged = ResolveOnce(build, new PlayerAction.UseClassAbility());
@@ -524,9 +544,9 @@ public class ActionResolutionTests
         var killThree = new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Kill, TargetCount.From(3));
         var hitFive = new PlayerAction.FireWeapon(WeaponSlot.Energy, HitOutcome.Damage, TargetCount.From(5));
 
-        Assert.Equal("Grenade (kill 3)", build.DescribeAction(killThree));
-        Assert.Equal("Test Rifle (hit 5)", build.DescribeAction(hitFive));
-        Assert.Equal("Grenade (kill)", build.DescribeAction(GrenadeKill));
+        Assert.Equal("Grenade (💀 kill 3)", build.DescribeAction(killThree));
+        Assert.Equal("Test Rifle (🥊 hit 5)", build.DescribeAction(hitFive));
+        Assert.Equal("Grenade (💀 kill)", build.DescribeAction(GrenadeKill));
         Assert.Equal(["grenade:kill:3", "energy:hit:5", "grenade:kill"], new PlayerAction[] { killThree, hitFive, GrenadeKill }.Select(a => a.ToActionToken()));
     }
 
@@ -563,7 +583,7 @@ public class ActionResolutionTests
         Assert.DoesNotContain(grenade.Fired, f => f.Source.Value == "one-for-all");   // not a weapon
         Assert.Equal("Hit 3+ enemies with weapon", build.Catalog.Glossary.DescribeTrigger(OneForAll.Rules[0].On, build.ReadSuperType()));
         Assert.Contains(
-            "  Test Rifle hit 3 enemies → Amplified (10s) [One For All]",
+            "  Test Rifle 🥊 hit 3 enemies → Amplified (10s) [One For All]",
             TraceRenderer.RenderResolution(build, three, new TraceOptions(false, false, false)).Select(line => line.ToPlainText()));
     }
 
@@ -571,7 +591,7 @@ public class ActionResolutionTests
     public void A_kill_at_least_N_trigger_needs_a_kill_action()
     {
         var multikill = Element("multikill", ElementKind.Fragment,
-            [On(new Trigger.KillMultiple(new DamageSource.AbilityOf(AbilityKind.Grenade), TargetCount.From(2)), new Outcome.Spawn(Pickup("orb-of-power"), 1))]);
+            [On(new Trigger.KillMultiple(new DamageSource.AbilityOf(AbilityKind.Grenade), TargetCount.From(2), Optional.None<Seconds>()), new Outcome.Spawn(Pickup("orb-of-power"), 1))]);
         var build = ValidateBuild([multikill]);
 
         var hitTwo = ResolveOnce(build, new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Damage, TargetCount.From(2)));
@@ -581,7 +601,7 @@ public class ActionResolutionTests
         Assert.Empty(hitTwo.Fired);
         Assert.Empty(killOne.Fired);
         Assert.Single(killTwo.Fired);
-        Assert.Equal([Pickup("orb-of-power")], killTwo.State.Pickups);
+        Assert.Equal([Pickup("orb-of-power")], killTwo.State.ListPickups());
     }
 
     [Fact]

@@ -9,7 +9,7 @@ using Loopsmith.Core.Tests.Support;
 namespace Loopsmith.Core.Tests.Orchestration;
 
 /// <summary>
-/// A raid's, an activity's or a retired season's armor mod isn't supported (ADRs D33): a DIM loadout that has one keeps
+/// A raid's, an activity's or a retired season's armor mod isn't supported (ADRs D35): a DIM loadout that has one keeps
 /// it in the build's <c>leftOut</c>, but it is ignored — not a gap ("Not in Loopsmith yet" doesn't count it), in no mod
 /// socket, and the build check says so in one info line. What it is comes from Bungie's manifest (the join gives it as an
 /// <see cref="ManifestKind.ActivityMod"/>).

@@ -25,7 +25,7 @@ public sealed record LeftOutItem(LoadoutPart Part, ItemHash Hash);
 /// <summary>
 /// Why a DIM loadout's item is outside its build: no rule knows it yet (a gap), it has no part in a loop — a
 /// legendary armor piece (stats and mod slots; its set's bonuses count from the pieces worn), a jump the rules don't have —
-/// and why, or Loopsmith doesn't support it and ignores it (a raid's, an activity's or a retired season's mod, ADRs D33).
+/// and why, or Loopsmith doesn't support it and ignores it (a raid's, an activity's or a retired season's mod, ADRs D35).
 /// </summary>
 [Union]
 public partial record LeftOutReason

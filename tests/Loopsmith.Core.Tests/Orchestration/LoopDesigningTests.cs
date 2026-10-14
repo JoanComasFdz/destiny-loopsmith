@@ -32,7 +32,7 @@ public sealed class LoopDesigningTests
             ["grenade:kill", "grenade", "melee:kill", "melee", "class", "super:kill", "super", "finisher", "energy:kill", "energy", "pack:new"],
             options.Select(option => option.Token));
         Assert.All(options, option => Assert.False(option.IsNew));
-        Assert.Equal("Grenade (kill)", options[0].Label);
+        Assert.Equal("Grenade (💀 kill)", options[0].Label);
     }
 
     [Fact]

@@ -45,7 +45,7 @@ public sealed record IconTile(
 {
     public Optional<string> GameText { get; init; } = Optional.None<string>();
 
-    /// <summary>Ignored: a mod Loopsmith doesn't support (a raid's, an activity's or a retired season's, ADRs D33), drawn faded with a ✕.</summary>
+    /// <summary>Ignored: a mod Loopsmith doesn't support (a raid's, an activity's or a retired season's, ADRs D35), drawn faded with a ✕.</summary>
     public bool Ignored { get; init; }
 }
 
@@ -543,7 +543,7 @@ public static class LoadoutShaping
     /// <summary>
     /// A hash the build left out: the manifest's name and icon when the excerpt has it, else just the hash — marked ⊘ when no
     /// rule knows it yet, not when it has no part in a loop (a set's armor piece, a jump the rules don't have: known, not missing),
-    /// and faded with a ✕ when Loopsmith ignores it (a raid's or an activity's mod, ADRs D33). It opens its
+    /// and faded with a ✕ when Loopsmith ignores it (a raid's or an activity's mod, ADRs D35). It opens its
     /// manifest details, unless it is legendary armor or a legendary weapon (DIM's perks and mods say more).
     /// </summary>
     private static IconTile DescribeLeftOut(RuleCatalog catalog, LeftOutEntry entry) =>

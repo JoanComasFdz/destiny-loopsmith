@@ -12,9 +12,9 @@ public partial record Trigger
     partial record KillAny(DamageSource Via);
     partial record KillOfTier(DamageSource Via, EnemyTier Tier);
     partial record KillDebuffed(DamageSource Via, ImmutableArray<StatusId> TargetHas);
-    partial record KillMultiple(DamageSource Via, TargetCount AtLeast);        // kill at least N enemies in one action
-    partial record Damage(DamageSource Via);
-    partial record DamageDebuffed(DamageSource Via, ImmutableArray<StatusId> TargetHas);
+    partial record KillMultiple(DamageSource Via, TargetCount AtLeast, Optional<Seconds> Within);   // kill at least N enemies in one action (within: the source's window, "2 in 3 s", a fact one action meets)
+    partial record Damage(DamageSource Via, DamageSpan Needs = DamageSpan.Blow);   // Needs: Sustained for a source that needs several hits or a share of the enemy's health (ADRs D34)
+    partial record DamageDebuffed(DamageSource Via, ImmutableArray<StatusId> TargetHas, DamageSpan Needs = DamageSpan.Blow);
     partial record DamageMultiple(DamageSource Via, TargetCount AtLeast);      // hit at least N enemies in one action
     partial record PickUp(PickupId Pickup);
     partial record BuffGained(StatusId Status);
@@ -35,6 +35,38 @@ public partial record Condition
     partial record AtMax(StatusId Status);   // the player declared this buff at its maximum (ADRs D3)
     partial record During(AbilityKind Ability);   // the step casts this ability: it is under way at the step's end (Flow State's dodge)
     partial record BelowMax(StatusId Status);   // this buff is on you, not declared at its maximum: a count below it may still do (ADRs D3, D8)
+    partial record Holds(StatusId Status, StackCount AtLeast);   // a counted buff (Armor Charge) holds at least this many stacks (ADRs D33)
+}
+
+/// <summary>
+/// A value by stacks, as a source gives it in a table (ADRs D33): the first value is for <see cref="From"/>, the next for one
+/// more, and so on ("70% | 80% | 90% | 100% at x3 | x4 | x5 | x6": from 3). A count outside the table has no value ("?").
+/// </summary>
+public sealed record StackTable(StackCount From, ImmutableArray<decimal> Values);
+
+/// <summary>
+/// The energy <see cref="Outcome.ConvertStacksToEnergy"/> gives for the stacks it spends: an amount per stack, a table by the
+/// stacks spent (the finishers: x3 → 70%), or a table by charges, each copy of the element and each stack spent counting
+/// as one (the Kickstarts: 2 mods and x2 → 4 charges → 28.4%).
+/// </summary>
+[Union]
+public partial record StackEnergy
+{
+    partial record PerStack(GameValue Amount);
+    partial record BySpent(StackTable Table);
+    partial record ByCharges(StackTable Table);
+}
+
+/// <summary>
+/// How long a buff a rule applies lasts, as its source says: not stated (the glossary's, if any), a fixed time, or a time
+/// by the stacks the same rule spent before it (Bulwark Finisher's overshield, ADRs D33).
+/// </summary>
+[Union]
+public partial record BuffDuration
+{
+    partial record Unstated();
+    partial record Fixed(Seconds Time);
+    partial record BySpent(StackTable Table);
 }
 
 [Union]
@@ -54,8 +86,8 @@ public partial record EnergyGrant
 public partial record Outcome
 {
     partial record GrantEnergy(AbilityKind To, EnergyGrant Amount);
-    partial record ConvertStacksToEnergy(StatusId Consumed, AbilityKind To, GameValue PerStack);
-    partial record ApplyBuff(StatusId Status, Optional<Seconds> Duration, StackCount Stacks);   // Stacks: the grant, a fact ("+1 Bolt Charge")
+    partial record ConvertStacksToEnergy(StatusId Consumed, AbilityKind To, StackEnergy Energy);   // spends every stack
+    partial record ApplyBuff(StatusId Status, BuffDuration Duration, StackCount Stacks);   // Stacks: the grant, a fact ("+1 Bolt Charge")
     partial record RemoveBuff(StatusId Status);
     partial record DebuffTarget(StatusId Status, Optional<Seconds> Duration);
     partial record Spawn(PickupId Pickup, int Count);
@@ -66,6 +98,7 @@ public partial record Outcome
     partial record ResetCooldown(AbilityKind Which);
     partial record Collect(PickupId Pickup);   // picks it up from the ground when it is there (Powerful Attraction): a pickup event
     partial record GrantLeastChargedEnergy(EnergyGrant Amount);   // to whichever ability has the least energy: the game picks, so a fact
+    partial record SpendStacks(StatusId Status, StackCount Count);   // a fixed number of a counted buff's stacks (Healthy Finisher's x1, ADRs D33)
 }
 
 /// <summary>

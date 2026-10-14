@@ -157,7 +157,7 @@ internal static class EnhancedPerkParsing
     private static IEnumerable<Seconds> ListDurations(Outcome outcome) =>
         outcome switch
         {
-            Outcome.ApplyBuff buff => ToSequence(buff.Duration),
+            Outcome.ApplyBuff buff => ToSequence(buff.Duration.ReadFixedTime()),
             Outcome.DebuffTarget debuff => ToSequence(debuff.Duration),
             _ => [],
         };
@@ -165,7 +165,7 @@ internal static class EnhancedPerkParsing
     private static IEnumerable<GameValue> ListValues(Outcome outcome) =>
         outcome.Match(
             energy => ListValues(energy.Amount),
-            convert => [convert.PerStack],
+            convert => convert.Energy is StackEnergy.PerStack perStack ? [perStack.Amount] : [],
             _ => [],
             _ => [],
             _ => [],
@@ -176,7 +176,8 @@ internal static class EnhancedPerkParsing
             health => [health.Amount],
             _ => [],
             _ => [],
-            least => ListValues(least.Amount));
+            least => ListValues(least.Amount),
+            _ => []);
 
     private static IEnumerable<GameValue> ListValues(EnergyGrant grant) =>
         grant.Match(fraction => new[] { fraction.Amount }, _ => []);
@@ -195,8 +196,12 @@ internal static class EnhancedPerkParsing
     private static Outcome ReplaceValues(Outcome outcome, EnhancedValues values) =>
         outcome.Match<Outcome>(
             energy => energy with { Amount = ReplaceValues(energy.Amount, values) },
-            convert => convert with { PerStack = Replace(convert.PerStack, values) },
-            buff => buff with { Duration = Replace(buff.Duration, values) },
+            convert => convert.Energy is StackEnergy.PerStack perStack
+                ? convert with { Energy = new StackEnergy.PerStack(Replace(perStack.Amount, values)) }
+                : convert,
+            buff => buff.Duration is BuffDuration.Fixed fixedTime
+                ? buff with { Duration = new BuffDuration.Fixed(Replace(fixedTime.Time, values)) }
+                : buff,
             remove => remove,
             debuff => debuff with { Duration = Replace(debuff.Duration, values) },
             spawn => spawn,
@@ -206,7 +211,8 @@ internal static class EnhancedPerkParsing
             health => health with { Amount = Replace(health.Amount, values) },
             reset => reset,
             collect => collect,
-            least => least with { Amount = ReplaceValues(least.Amount, values) });
+            least => least with { Amount = ReplaceValues(least.Amount, values) },
+            spend => spend);
 
     private static EnergyGrant ReplaceValues(EnergyGrant grant, EnhancedValues values) =>
         grant.Match<EnergyGrant>(fraction => fraction with { Amount = Replace(fraction.Amount, values) }, full => full);
@@ -225,8 +231,11 @@ internal static class EnhancedPerkParsing
             stat => stat with { Change = Replace(stat.Change, values) },
             combatant => combatant with { Amount = Replace(combatant.Amount, values) });
 
+    private static Seconds Replace(Seconds seconds, EnhancedValues values) =>
+        values.Durations.TryGetValue(seconds, out var enhanced) ? enhanced : seconds;
+
     private static Optional<Seconds> Replace(Optional<Seconds> duration, EnhancedValues values) =>
-        duration.Map(seconds => values.Durations.TryGetValue(seconds, out var enhanced) ? enhanced : seconds);
+        duration.Map(seconds => Replace(seconds, values));
 
     private static GameValue Replace(GameValue value, EnhancedValues values) =>
         values.Values.TryGetValue(value, out var enhanced) ? enhanced : value;

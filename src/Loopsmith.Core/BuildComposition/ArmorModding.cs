@@ -11,7 +11,7 @@ namespace Loopsmith.Core.BuildComposition;
 /// <c>armorModPlugs</c> names and the mods it leaves out), as a DIM loadout does; the sockets come from the listing of
 /// every armor piece (Bungie's manifest): each piece's slot mods and own socket (artifice) in its row, every piece's
 /// general socket in the General row; a raid's, an activity's or a retired season's mod is ignored, in no socket
-/// (ADRs D33). A slot with no piece whose sockets Loopsmith can read holds what the build
+/// (ADRs D35). A slot with no piece whose sockets Loopsmith can read holds what the build
 /// has for it and one free socket of its slot's mods, and a general one. The mods fill the sockets in the build's order;
 /// the general mods go to the pieces with the most energy left, the costliest first, as DIM assigns them. A piece's
 /// energy is what its mods cost against its copy's capacity (after a Bungie login; else "?"): a pick that takes a piece

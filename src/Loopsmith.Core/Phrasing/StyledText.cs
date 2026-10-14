@@ -11,8 +11,17 @@ public sealed record StyledSpan(string Text, Tone Tone);
 
 public sealed record StyledLine(int Indent, ImmutableArray<StyledSpan> Spans);
 
-/// <summary>An outcome to describe and the copies of its element equipped.</summary>
-public sealed record OutcomeMention(Outcome Outcome, int Copies);
+/// <summary>
+/// An outcome to describe and the copies of its element equipped; <see cref="Spend"/>: the stacks it spent where it was
+/// applied, and what they gave (ADRs D33), none for a rule's outcome described on its own.
+/// </summary>
+public sealed record OutcomeMention(Outcome Outcome, int Copies, Optional<StackSpend> Spend)
+{
+    public OutcomeMention(Outcome outcome, int copies)
+        : this(outcome, copies, Optional.None<StackSpend>())
+    {
+    }
+}
 
 /// <summary>An outcome and the phrase that describes it ("+1 Bolt Charge").</summary>
 public sealed record DescribedOutcome(Outcome Outcome, string Text);

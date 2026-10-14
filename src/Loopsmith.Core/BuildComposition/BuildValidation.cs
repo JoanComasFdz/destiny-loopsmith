@@ -269,7 +269,7 @@ public static class BuildValidation
     }
 
     /// <summary>
-    /// The DIM loadout's raid, activity and retired seasonal mods the build ignores (ADRs D33): one info line naming
+    /// The DIM loadout's raid, activity and retired seasonal mods the build ignores (ADRs D35): one info line naming
     /// them, each once ("Herd Thinner ×2").
     /// </summary>
     private static IEnumerable<BuildIssue> CheckIgnoredMods(Build build, RuleCatalog catalog)

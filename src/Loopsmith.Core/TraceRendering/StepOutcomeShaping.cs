@@ -62,15 +62,19 @@ public static class StepOutcomeShaping
     public static StepOutcomes ShapeStepOutcomes(ValidatedBuild build, Resolution resolution, TraceOptions options)
     {
         var catalog = build.Catalog;
-        var events = TraceRenderer.GroupByEvent(resolution.Fired).Select(group => ShapeEvent(build, catalog, group, options));
-        return new StepOutcomes(CollapseRepeats(events), resolution.Notes);
+        var events = TraceRenderer.GroupByEvent(resolution.Fired)
+            .Select(group => new ShapedEvent(ShapeEvent(build, catalog, group, options), TraceRenderer.DescribeEventKind(build, group[0].Trigger)));
+        return new StepOutcomes([.. CollapseRepeats([.. events]).Select(shaped => shaped.Outcomes)], resolution.Notes);
     }
+
+    /// <summary>An event's outcomes, and the event without the statuses on its target (what alike events share).</summary>
+    private sealed record ShapedEvent(EventOutcomes Outcomes, string Kind);
 
     private static EventOutcomes ShapeEvent(ValidatedBuild build, RuleCatalog catalog, ImmutableArray<FiredRule> group, TraceOptions options)
     {
         var first = group[0];
         var sources = GroupRuns(group).Select(rules => ShapeSource(build, catalog, rules, options));
-        var text = build.Catalog.Glossary.DescribeEvent(first.Trigger, build.Build);
+        var text = build.Catalog.Glossary.DescribeFiredEvent(group, build.Build);
         var weapon = FindEventWeapon(first.Trigger);
         var pickup = first.Trigger is GameEvent.PickedUp picked ? Optional.Some(picked.Pickup) : Optional.None<PickupId>();
         return new EventOutcomes(first.Depth, text, SplitText(build.Catalog.Glossary, catalog, text), weapon,
@@ -93,7 +97,7 @@ public static class StepOutcomeShaping
         var lines = rules.SelectMany(rule => ShapeOutcomeLines(glossary, catalog, rule, copies, superType));
         var reasons = options.ShowReasons ? rules.SelectMany(rule => ToSequence(rule.Reason)) : [];
         var caveats = options.ShowCaveats
-            ? rules.SelectMany(rule => rule.Outcomes.SelectMany(outcome => ToSequence(outcome.Caveat).Select(caveat => $"{glossary.DescribeOutcome(outcome.Outcome, superType)}: {caveat}")))
+            ? rules.SelectMany(rule => rule.Outcomes.SelectMany(outcome => ToSequence(outcome.Caveat).Select(caveat => $"{glossary.DescribeAppliedOutcome(outcome.Outcome, outcome.Spend, superType)}: {caveat}")))
             : [];
         return new SourceOutcomes(first.Source, first.SourceName, first.SourceKind, first.Affinity, [.. lines], [.. reasons], [.. caveats]);
     }
@@ -106,20 +110,69 @@ public static class StepOutcomeShaping
             partner => [ToLine(glossary, catalog, $"doesn't stack with {partner.Value}", Tone.Warning, chance)],
             _ => rule.Outcomes.IsEmpty
                 ? [ToLine(glossary, catalog, "(no effect)", Tone.Muted, chance)]
-                : glossary.ListOutcomePhrases(rule.Outcomes.Select(outcome => new OutcomeMention(outcome.Outcome, copies)), superType)
+                : glossary.ListOutcomePhrases(rule.Outcomes.Select(outcome => new OutcomeMention(outcome.Outcome, copies, outcome.Spend)), superType)
                     .Select(phrase => ToLine(glossary, catalog, phrase.Text, Tone.Plain, chance)));
     }
 
-    /// <summary>Identical events in a row (six orbs picked up) become one, counted.</summary>
-    private static ImmutableArray<EventOutcomes> CollapseRepeats(IEnumerable<EventOutcomes> events) =>
-        events.Aggregate(ImmutableArray<EventOutcomes>.Empty, (collapsed, next) =>
-            !collapsed.IsEmpty && DescribeRepeatKey(collapsed[^1]) == DescribeRepeatKey(next)
-                ? collapsed.SetItem(collapsed.Length - 1, collapsed[^1] with { Repeats = collapsed[^1].Repeats + 1 })
-                : collapsed.Add(next));
+    /// <summary>
+    /// Alike events in a row become one, counted — with what the first set off: an event and the deeper events under it are
+    /// a block, and a block that sets off nothing the block before it of the same event didn't shows in it, the event
+    /// marked ×N. Identical blocks fold (five jolted hits of one grenade, each with its "Bolt Charge gained"; six orbs
+    /// picked up), and so does a later one with less (the second kill of one action, after the first consumed Reaper, only
+    /// gives Woven Mail again). The statuses on the target don't keep blocks apart when they change nothing they set off
+    /// (the kills after the first one's Photonic Flare blinded the pack). A block that sets off something new stays
+    /// apart. Blocks collapse at every depth.
+    /// </summary>
+    private static ImmutableArray<ShapedEvent> CollapseRepeats(ImmutableArray<ShapedEvent> all)
+    {
+        if (all.IsEmpty)
+        {
+            return all;
+        }
 
-    private static string DescribeRepeatKey(EventOutcomes shaped) =>
-        $"{shaped.Depth}|{shaped.Event}|" + string.Join("|", shaped.Sources.Select(source =>
-            $"{source.Source.Value}:{string.Join(";", source.Outcomes.Select(line => $"{line.Text}{(line.Chance ? "?" : "")}"))}:{string.Join(";", source.Reasons)}:{string.Join(";", source.Caveats)}"));
+        var depth = all.Min(shaped => shaped.Outcomes.Depth);
+        var blocks = SplitBlocks(all, depth)
+            .Select(block => (ImmutableArray<ShapedEvent>)[block[0], .. CollapseRepeats(block[1..])]);
+        return
+        [
+            .. blocks
+                .Aggregate(ImmutableArray<ImmutableArray<ShapedEvent>>.Empty, (collapsed, next) =>
+                    !collapsed.IsEmpty && IsFoldedInto(collapsed[^1], next)
+                        ? collapsed.SetItem(collapsed.Length - 1, collapsed[^1].SetItem(0, AddRepeats(collapsed[^1][0], next[0].Outcomes.Repeats)))
+                        : collapsed.Add(next))
+                .SelectMany(block => block),
+        ];
+    }
+
+    private static ShapedEvent AddRepeats(ShapedEvent shaped, int repeats) =>
+        shaped with { Outcomes = shaped.Outcomes with { Repeats = shaped.Outcomes.Repeats + repeats } };
+
+    /// <summary>The events in blocks: each starts at an event of <paramref name="depth"/> and holds the deeper ones after it.</summary>
+    private static ImmutableArray<ImmutableArray<ShapedEvent>> SplitBlocks(ImmutableArray<ShapedEvent> events, int depth) =>
+        events.Aggregate(ImmutableArray<ImmutableArray<ShapedEvent>>.Empty, (blocks, shaped) =>
+            blocks.IsEmpty || shaped.Outcomes.Depth <= depth
+                ? blocks.Add([shaped])
+                : blocks.SetItem(blocks.Length - 1, blocks[^1].Add(shaped)));
+
+    /// <summary>A block folds into the one before it when both start with the same event and it sets off nothing that one didn't.</summary>
+    private static bool IsFoldedInto(ImmutableArray<ShapedEvent> earlier, ImmutableArray<ShapedEvent> later) =>
+        DescribeEventKey(earlier[0]) == DescribeEventKey(later[0])
+        && ListBlockFacts(later).IsSubsetOf(ListBlockFacts(earlier));
+
+    /// <summary>What a block shows: each event (a deeper one with its count) and each of its elements' outcomes, reasons and caveats.</summary>
+    private static ImmutableHashSet<string> ListBlockFacts(ImmutableArray<ShapedEvent> block) =>
+        [.. block.SelectMany((shaped, index) => ListEventFacts(shaped.Outcomes, index == 0 ? DescribeEventKey(shaped) : $"{DescribeEventKey(shaped)}×{shaped.Outcomes.Repeats}"))];
+
+    private static IEnumerable<string> ListEventFacts(EventOutcomes shaped, string key) =>
+        shaped.Sources
+            .SelectMany(source => source.Outcomes.Select(line => $"{line.Text}{(line.Chance ? "?" : "")}")
+                .Concat(source.Reasons.Select(reason => $"why {reason}"))
+                .Concat(source.Caveats.Select(caveat => $"· {caveat}"))
+                .Select(fact => $"{key}|{source.Source.Value}|{fact}"))
+            .Prepend(key);
+
+    private static string DescribeEventKey(ShapedEvent shaped) =>
+        $"{shaped.Outcomes.Depth}|{shaped.Kind}";
 
     private static OutcomeLine ToLine(KeywordGlossary glossary, RuleCatalog catalog, string text, Tone tone, bool chance) =>
         new(text, tone, SplitText(glossary, catalog, text), chance);

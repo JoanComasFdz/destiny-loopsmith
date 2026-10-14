@@ -1,18 +1,31 @@
 using System.Collections.Immutable;
 using System.Reflection;
 using Loopsmith.Core.Domain;
+using Loopsmith.Core.Functional;
 
 namespace Loopsmith.Core.Tests.Architecture;
 
 /// <summary>
 /// ADRs D1: the game state says what is present (a buff, a debuff on the pack, a pickup on the ground) and what the
 /// player declared — never a count, an amount or a time. Walks <see cref="GameState"/> member by member (through
-/// records, arrays and value objects) and fails on any number but the step's ordinal, so a stack counter, a clock or
-/// an energy gauge can't come back unnoticed.
+/// records, arrays, optionals and value objects) and fails on any number but the step's ordinal and a counted buff's
+/// stacks (ADRs D33: Armor Charge's, with the step of each change), so a clock, an energy gauge or another counter
+/// can't come back unnoticed.
 /// </summary>
 public sealed class CausalStateTests
 {
-    private static readonly ImmutableHashSet<string> Allowed = ["GameState.Step"];
+    private static readonly ImmutableHashSet<string> Allowed =
+    [
+        "GameState.Step",
+        "GameState.Buffs[].Tally?.Sure",
+        "GameState.Buffs[].Tally?.Chance",
+        "GameState.Buffs[].Tally?.Changes[].Step",
+        "GameState.Buffs[].Tally?.Changes[].SureAfter",
+        "GameState.Buffs[].Tally?.Changes[].ChanceAfter",
+        "GameState.Buffs[].Tally?.Changes[].Move.Sure",
+        "GameState.Buffs[].Tally?.Changes[].Move.Chance",
+        "GameState.Buffs[].Tally?.Changes[].Move.Wasted",
+    ];
 
     private static readonly ImmutableHashSet<Type> Numbers =
         [typeof(int), typeof(long), typeof(short), typeof(byte), typeof(uint), typeof(ulong), typeof(float), typeof(double), typeof(decimal)];
@@ -34,6 +47,21 @@ public sealed class CausalStateTests
         if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(ImmutableArray<>))
         {
             return ListLeaves(type.GetGenericArguments()[0], path + "[]", seen);
+        }
+
+        if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Optional<>))
+        {
+            return ListLeaves(type.GetGenericArguments()[0], path + "?", seen);
+        }
+
+        if (type.GetNestedTypes().Any(nested => nested.IsSubclassOf(type)))
+        {
+            // a union (StackMove): every case's own members, under the union's path
+            return type.GetNestedTypes()
+                .Where(nested => nested.IsSubclassOf(type))
+                .SelectMany(nested => nested.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+                    .Where(property => property.Name != "EqualityContract")
+                    .SelectMany(property => ListLeaves(property.PropertyType, $"{path}.{property.Name}", seen.Add(type))));
         }
 
         var wrapped = type.GetProperty("Value", BindingFlags.Public | BindingFlags.Instance);

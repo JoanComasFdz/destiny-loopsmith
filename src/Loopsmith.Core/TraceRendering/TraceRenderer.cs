@@ -25,7 +25,7 @@ public static class TraceRenderer
         var header = StyledText.ToLine(0,
             $"#{resolution.State.Step} ".ToSpan(Tone.Muted),
             build.DescribeAction(resolution.Action).ToSpan(Tone.Strong));
-        var fired = CollapseRepeats(GroupByEvent(resolution.Fired).Select(group => RenderGroup(build, group, options).ToImmutableArray()));
+        var fired = CollapseRepeats([.. GroupByEvent(resolution.Fired).Select(group => new RenderedEvent(group[0].Depth, DescribeEventKind(build, group[0].Trigger), ListFacts(build, group, options), [.. RenderGroup(build, group, options)], 1))]);
         var nothing = resolution.Fired.IsEmpty && resolution.Notes.IsEmpty
             ? [StyledText.ToLine(1, "nothing triggers".ToSpan(Tone.Muted))]
             : ImmutableArray<StyledLine>.Empty;
@@ -63,10 +63,23 @@ public static class TraceRenderer
             new StyledLine(1, ["Weapons       ".ToSpan(Tone.Muted), .. RenderWeaponEntries(shaped.Weapons, weaponEffects)]),
             new StyledLine(1, ["Debuffs       ".ToSpan(Tone.Muted), .. RenderEntries(shaped.Debuffs)]),
             new StyledLine(1, ["Ground        ".ToSpan(Tone.Muted), .. RenderEntries(shaped.Ground)]),
+            .. shaped.Counts.Select(RenderCount),
             .. shaped.Resistance.Map(RenderResistance).UnwrapOr([]),
             .. switchedOn,
         ];
     }
+
+    /// <summary>
+    /// A counted buff's stacks and where they came from (ADRs D33): "Armor Charge  x1 · +1 (chance)  (#3 Elemental Charge: +1
+    /// (chance) → +1 (chance) · #6 Orb of Power: +1 → x1 · +1 (chance))".
+    /// </summary>
+    private static StyledLine RenderCount(StackCountEntry count) =>
+        new(1,
+        [
+            $"{count.Name}  ".ToSpan(Tone.Muted),
+            count.Count.ToSpan(count.Affinity.ToTone()),
+            $"  ({string.Join(" · ", count.Changes)})".ToSpan(Tone.Muted),
+        ]);
 
     /// <summary>
     /// "Resistance    PvE 73% · PvP 32.5%  (Guardian 34.5% × Woven Mail 45% [PvP 25%])", then a line for each resistance
@@ -144,7 +157,7 @@ public static class TraceRenderer
         var lead = new[]
         {
             arrow.ToSpan(Tone.Muted),
-            glossary.DescribeEvent(first.Trigger, build.Build).ToSpan(Tone.Strong),
+            glossary.DescribeFiredEvent(group, build.Build).ToSpan(Tone.Strong),
             " → ".ToSpan(Tone.Muted),
         };
         var bullets = group.SelectMany((rule, index) => RenderFiredRule(build, rule, index > 0));
@@ -168,38 +181,85 @@ public static class TraceRenderer
                     foreach (var caveat in outcome.Caveat.Match(some => new[] { some.Value }, _ => []))
                     {
                         yield return StyledText.ToLine(detailIndent,
-                            $"· {glossary.DescribeOutcome(outcome.Outcome, build.ReadSuperType())}: {caveat}".ToSpan(Tone.Muted));
+                            $"· {glossary.DescribeAppliedOutcome(outcome.Outcome, outcome.Spend, build.ReadSuperType())}: {caveat}".ToSpan(Tone.Muted));
                     }
                 }
             }
         }
     }
 
-    /// <summary>Identical consecutive event blocks (six orbs picked up) become one line marked ×N.</summary>
-    private static ImmutableArray<StyledLine> CollapseRepeats(IEnumerable<ImmutableArray<StyledLine>> blocks)
+    /// <summary>
+    /// An event's lines at its cascade depth, the event without the statuses on its target (what alike events share), what
+    /// it shows (each rule's outcomes, each reason and caveat line), and how many times it happened in a row alike.
+    /// </summary>
+    private sealed record RenderedEvent(int Depth, string Kind, ImmutableArray<string> Facts, ImmutableArray<StyledLine> Lines, int Repeats);
+
+    /// <summary>
+    /// The event without the statuses on its target: "Grenade kill" for a kill on a Jolted target and one on a Jolted +
+    /// Blinded target, which fold when the second sets off nothing the first didn't.
+    /// </summary>
+    internal static string DescribeEventKind(ValidatedBuild build, GameEvent gameEvent) =>
+        build.Catalog.Glossary.DescribeEvent(
+            gameEvent switch
+            {
+                GameEvent.Damaged damaged => damaged with { TargetHas = [] },
+                GameEvent.Killed killed => killed with { TargetHas = [] },
+                _ => gameEvent,
+            },
+            build.Build);
+
+    private static ImmutableArray<string> ListFacts(ValidatedBuild build, ImmutableArray<FiredRule> group, TraceOptions options) =>
+    [
+        .. group.Select(rule => string.Concat(RenderFiredRule(build, rule, false).Select(span => span.Text))),
+        .. RenderGroup(build, group, options).Skip(1).Select(line => line.ToPlainText()),
+    ];
+
+    /// <summary>
+    /// Alike events in a row become one line marked ×N — with what the first set off: an event and the deeper events under
+    /// it are a block, and a block that sets off nothing the block before it of the same event didn't shows in it. Identical
+    /// blocks fold (five jolted hits of one grenade, each with its "Bolt Charge gained"; six orbs picked up), and so does a
+    /// later one with less (the second kill of one action, after the first consumed Reaper). The statuses on the target
+    /// don't keep blocks apart when they change nothing they set off (the kills after the first one's Photonic Flare
+    /// blinded the pack). Blocks collapse at every depth.
+    /// </summary>
+    private static ImmutableArray<StyledLine> CollapseRepeats(ImmutableArray<RenderedEvent> events) =>
+        [.. CollapseRepeatedBlocks(events).SelectMany(rendered => rendered.Repeats == 1 ? rendered.Lines : [MarkRepeat(rendered.Lines[0], rendered.Repeats), .. rendered.Lines[1..]])];
+
+    private static ImmutableArray<RenderedEvent> CollapseRepeatedBlocks(ImmutableArray<RenderedEvent> events)
     {
-        var result = ImmutableArray.CreateBuilder<StyledLine>();
-        var pending = ImmutableArray<StyledLine>.Empty;
-        var count = 0;
-        foreach (var block in blocks.Append([]))
+        if (events.IsEmpty)
         {
-            if (count > 0 && block.Select(l => l.ToPlainText()).SequenceEqual(pending.Select(l => l.ToPlainText())))
-            {
-                count++;
-                continue;
-            }
-
-            if (count > 0)
-            {
-                result.AddRange(count == 1 ? pending : [MarkRepeat(pending[0], count), .. pending.Skip(1)]);
-            }
-
-            pending = block;
-            count = block.IsEmpty ? 0 : 1;
+            return events;
         }
 
-        return result.ToImmutable();
+        var depth = events.Min(rendered => rendered.Depth);
+        var blocks = events
+            .Aggregate(ImmutableArray<ImmutableArray<RenderedEvent>>.Empty, (split, rendered) =>
+                split.IsEmpty || rendered.Depth <= depth ? split.Add([rendered]) : split.SetItem(split.Length - 1, split[^1].Add(rendered)))
+            .Select(block => (ImmutableArray<RenderedEvent>)[block[0], .. CollapseRepeatedBlocks(block[1..])]);
+        return
+        [
+            .. blocks
+                .Aggregate(ImmutableArray<ImmutableArray<RenderedEvent>>.Empty, (collapsed, next) =>
+                    !collapsed.IsEmpty && IsFoldedInto(collapsed[^1], next)
+                        ? collapsed.SetItem(collapsed.Length - 1, collapsed[^1].SetItem(0, collapsed[^1][0] with { Repeats = collapsed[^1][0].Repeats + next[0].Repeats }))
+                        : collapsed.Add(next))
+                .SelectMany(block => block),
+        ];
     }
+
+    /// <summary>A block folds into the one before it when both start with the same event and it shows nothing that one didn't.</summary>
+    private static bool IsFoldedInto(ImmutableArray<RenderedEvent> earlier, ImmutableArray<RenderedEvent> later) =>
+        earlier[0].Depth == later[0].Depth
+        && earlier[0].Kind == later[0].Kind
+        && ListBlockFacts(later).IsSubsetOf(ListBlockFacts(earlier));
+
+    /// <summary>What a block shows: each event (a deeper one with its count) and each fact under it.</summary>
+    private static ImmutableHashSet<string> ListBlockFacts(ImmutableArray<RenderedEvent> block) =>
+        [.. block.SelectMany((rendered, index) => ListEventFacts(rendered, $"{rendered.Depth}|{rendered.Kind}{(index == 0 ? "" : $"×{rendered.Repeats}")}"))];
+
+    private static IEnumerable<string> ListEventFacts(RenderedEvent rendered, string key) =>
+        rendered.Facts.Select(fact => $"{key}|{fact}").Prepend(key);
 
     private static StyledLine MarkRepeat(StyledLine line, int count) =>
         line with { Spans = line.Spans.Insert(2, $" ×{count}".ToSpan(Tone.Strong)) };
@@ -213,7 +273,7 @@ public static class TraceRenderer
             partner => $"doesn't stack with {partner.Value}".ToSpan(Tone.Warning),
             _ => (rule.Outcomes.IsEmpty
                 ? "(no effect)"
-                : glossary.DescribeOutcomes(rule.Outcomes.Select(o => new OutcomeMention(o.Outcome, copies)), build.ReadSuperType())).ToSpan(Tone.Plain));
+                : glossary.DescribeOutcomes(rule.Outcomes.Select(o => new OutcomeMention(o.Outcome, copies, o.Spend)), build.ReadSuperType())).ToSpan(Tone.Plain));
         ImmutableArray<StyledSpan> chance = rule.Likelihood == Likelihood.Chance ? [" (chance)".ToSpan(Tone.Muted)] : [];
         return
         [

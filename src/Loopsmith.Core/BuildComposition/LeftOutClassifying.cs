@@ -10,7 +10,7 @@ namespace Loopsmith.Core.BuildComposition;
 /// by what the manifest says it is: a stat mod or a tuning mod (it changes only stats, which the build's stats count
 /// when they add up from the player's armor), a legendary armor piece (its set's bonuses already count from the pieces
 /// worn) or a jump the rules don't have (another subclass's). A raid's, an activity's or a retired season's mod isn't
-/// supported: it is ignored (ADRs D33). Anything else the rules don't know is a gap; nothing is guessed (ADRs D12).
+/// supported: it is ignored (ADRs D35). Anything else the rules don't know is a gap; nothing is guessed (ADRs D12).
 /// </summary>
 public static class LeftOutClassifying
 {
@@ -31,7 +31,7 @@ public static class LeftOutClassifying
     public static ImmutableArray<LeftOutItem> ListMissing(RuleCatalog catalog, Build build) =>
         [.. build.LeftOut.Where(item => ClassifyLeftOut(catalog, item).IsMissing())];
 
-    /// <summary>The left-out items Loopsmith ignores: the raid's, activity's and retired season's mods (ADRs D33).</summary>
+    /// <summary>The left-out items Loopsmith ignores: the raid's, activity's and retired season's mods (ADRs D35).</summary>
     public static ImmutableArray<LeftOutItem> ListIgnored(RuleCatalog catalog, Build build) =>
         [.. build.LeftOut.Where(item => ClassifyLeftOut(catalog, item).IsIgnored())];
 

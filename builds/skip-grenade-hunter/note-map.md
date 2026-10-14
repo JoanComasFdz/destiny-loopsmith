@@ -46,7 +46,7 @@ Conventions:
 |---|---|---|---|---|
 | 0 | `# Skipp nade build` | (title, no trigger) | — | — |
 | 1 | Class ability | `AbilityCast(ClassAbility)` | gamblers-dodge, slice, reaper, bomber | "5s" on the sever |
-| 2 | Kill with strand weapon | `Damaged(Weapon strand)` then `Killed(Weapon strand)` target has [sever] | slice, attrition-orbs, strand-siphon, reaper, to-shreds; horde-shuttle only on an unraveled pack (2b) | Unravel and Threadling need an already severed or unraveled pack |
+| 2 | Kill with strand weapon | `Damaged(Weapon strand, blow)` then `Killed(Weapon strand)` target has [sever] | slice, strand-siphon, reaper, to-shreds; attrition-orbs, horde-shuttle and to-shreds' Unravel on a hit step (2c) | Unravel, Threadling and the Attrition orb need damage kept up: a hit step before the kill (ADRs D34) |
 | 3 | Arc grenade | `Damaged(Ability grenade arc)` | spark-of-shock, shinobus-vow | — |
 | 4 | Slide + melee | `Damaged(Ability melee arc slide)` | tempest-strike, impact-induction | — |
 | 5 | Kill jolted target | `Killed(…)` target has [jolt] (+[sever]) | flow-state, tempest-strike (gives way), harmonic-siphon, dielectric, photonic-flare | Tempest Strike → Amplified (and its Bolt Charge gives way to Dielectric's); Dielectric's orb; Photonic Flare needs an Arc kill of a severed target, not a jolted one |
@@ -86,37 +86,43 @@ This is the title and has no trigger.
 - **Scenario 2a: the first kill right after line 1.**
   - Start: the end state of scenario 1 (buffs Reaper, Slice); fresh pack.
   - Action: `FireWeapon(Kinetic, kill)` (`kinetic:kill`).
-  - On the `Damaged` event (target snapshot `[]`):
+  - On the `Damaged` event (the killing blow, target snapshot `[]`):
     - `slice` → Sever, +1 Slice (8s)
-    - `attrition-orbs` *(chance)* → Orb
   - On the `Killed` event (target `[sever]`):
     - `reaper` → consumes Reaper, Orb
     - `to-shreds` → Woven Mail (10s) and a heal `?` for you and allies
     - `strand-siphon` *(chance)* → Orb
-  - Fired: **slice, attrition-orbs, reaper, to-shreds, strand-siphon**.
+  - Fired: **slice, reaper, to-shreds, strand-siphon**.
   - End state: buffs Slice, Woven Mail (Reaper consumed); target `[sever]`; Orb of Power on the ground.
-  - Must NOT fire: `horde-shuttle`, and `to-shreds`' unravel rule. The pack wasn't severed when the hit landed.
+  - Must NOT fire: `horde-shuttle`, `attrition-orbs`, and `to-shreds`' unravel rule: a killing blow is one blow, and
+    they need damage kept up (ADRs D34).
 - **Scenario 2b: a later shot, once the pack is severed and unraveled.**
   - Start: buffs Slice, Reaper; target `[sever, unravel]`.
   - Action: `FireWeapon(Kinetic, kill)`.
-  - On the `Damaged` event:
-    - `to-shreds` *(chance)* → Unravel
+  - On the `Damaged` event (the killing blow): `slice` → Sever, +1 Slice (8s).
+  - On the `Killed` event: `reaper` → consumes Reaper, Orb; `to-shreds` → Woven Mail and a heal `?`; `strand-siphon` *(chance)* → Orb.
+  - Fired: **to-shreds, slice, reaper, strand-siphon**. Not `horde-shuttle`, `attrition-orbs` or `to-shreds`' unravel (2c).
+  - End state: buffs Slice, Woven Mail; target `[sever, unravel]`; Orb of Power on the ground.
+- **Scenario 2c: shooting the severed and unraveled pack without killing it.**
+  - Start: buff Slice; target `[sever, unravel]`.
+  - Action: `FireWeapon(Kinetic, damage)` (`kinetic:hit`): damage kept up (ADRs D34).
+  - On the `Damaged` event, all for sure:
+    - `to-shreds` → Unravel
     - `slice` → Sever, +1 Slice (8s)
-    - `horde-shuttle` *(chance)* → Threadling
-    - `attrition-orbs` *(chance)* → Orb
+    - `horde-shuttle` → Threadling
+    - `attrition-orbs` → Orb
   - At depth 1, on `Damaged(Summoned threadling)`: `horde-shuttle` → Sever. (`to-shreds` doesn't
     fire here: the Compendium counts weapon hits only.)
-  - On the `Killed` event: `reaper` → consumes Reaper, Orb; `to-shreds` → Woven Mail and a heal `?`; `strand-siphon` *(chance)* → Orb.
-  - Fired: **to-shreds, slice, horde-shuttle, attrition-orbs, reaper, strand-siphon**.
-  - End state: buffs Slice, Woven Mail; target `[sever, unravel]`; Orb of Power on the ground.
+  - Fired: **to-shreds, slice, horde-shuttle, attrition-orbs**. Not `reaper` or `strand-siphon` (no kill).
 - **Slice's 5 hits:** Slice stays on you, and every Strand weapon hit severs, until the player
   declares the 5 hits done: `max:slice` ("Slice at max") raises `StacksMaxed(slice)` and `slice`
   ends Slice. The next dodge arms it again (row 10).
-- **Reproduced:** "sever [slice]", "orb of power [attrition orbs, strand siphon]" (both *chance*: Attrition
-  Orbs counts hits and Strand Siphon needs 2 kills, rows 8 and 9), "orb of power [reaper]" and "woven mail [to schreds]".
+- **Reproduced:** "sever [slice]", "orb of power [strand siphon]" (*chance*: Strand Siphon needs 2 kills, row 9),
+  "orb of power [reaper]" and "woven mail [to schreds]".
 - **Reproduced differently:**
-  - **"unravels targets":** To Shreds unravels after 6 weapon hits on an *already severed* target (Compendium; marked chance, row 15), so a fresh target's killing shot only gets Woven Mail.
-  - **"threadling if severed":** encoded per the Compendium, which agrees with the video: "damaging *unraveled* targets with a weapon" (row 16). It still follows from a severed pack through To Shreds.
+  - **"orb of power [attrition orbs]":** Attrition Orbs counts hits (row 8), so it drops its orb on a hit step (2c), not on the kill.
+  - **"unravels targets":** To Shreds unravels after 6 weapon hits on an *already severed* target (Compendium, row 15): a hit step on a severed pack (2c), not the kill, whose killing blow is one blow (ADRs D34).
+  - **"threadling if severed":** encoded per the Compendium, which agrees with the video: "damaging *unraveled* targets with a weapon" (row 16), on a hit step (2c). It still follows from a severed pack through To Shreds.
 
 ## Line 3: "Arc grenade  -> jolt [spark of shock] + Bolt Charge [shinobu's vow] + skip grenade energy [shinobu's vow]"
 
@@ -155,10 +161,9 @@ This is the title and has no trigger.
 - **Scenario 5a: everything on the line.**
   - Start: target `[jolt, sever]`.
   - Action: `FireWeapon(Energy, kill)` (`energy:kill`) with the Arc weapon.
-  - On `Damaged(Weapon energy arc)`:
-    - `to-shreds` *(chance)* → Unravel
+  - On `Damaged(Weapon energy arc)` (the killing blow: To Shreds' Unravel needs a hit step, ADRs D34):
     - `jolt` → chain strike (its `Damaged(Keyword jolt)` at depth 1 fires nothing: To Shreds counts weapon hits only)
-  - On `Killed(Weapon energy arc)` (target `[jolt, sever, unravel]`):
+  - On `Killed(Weapon energy arc)` (target `[jolt, sever]`):
     - `photonic-flare` → Blind (an Arc kill of a severed target)
     - `flow-state` → Amplified
     - `dielectric` → +1 Bolt Charge, with the caveat "+1 from Spark of Frequency" because Flow State's Amplified lands first (no orb: the Tablet of Ruin version doesn't make one)
@@ -173,7 +178,7 @@ This is the title and has no trigger.
       `elemental-charge` *(chance)*, `ionic-trace`; depth 2, `BuffGained(bolt-charge)` → `shinobus-vow`, `bolt-charge`.
   - Passive: `spark-of-frequency`, active once Flow State has made you Amplified (every later Bolt Charge grant carries "+1 from Spark of Frequency").
   - Fired: **to-shreds, jolt, photonic-flare, flow-state, dielectric, spark-of-discharge, luminopotent-4pc, harmonic-siphon, tempest-strike, shinobus-vow, bolt-charge, elemental-charge, ionic-trace**, plus the passive spark-of-frequency.
-  - End state: buffs Amplified, Bolt Charge, Woven Mail, Armor Charge; target `[jolt, sever, unravel, blind]`; Orb of Power on the ground.
+  - End state: buffs Amplified, Bolt Charge, Woven Mail, Armor Charge; target `[jolt, sever, blind]`; Orb of Power on the ground.
 - **Scenario 5b: minimal.**
   - Start: fresh.
   - Action: `CastAbility(Grenade, kill)` (`grenade:kill`). Spark of Shock jolts on the hit, so the kill sees `[jolt]`.
@@ -235,7 +240,7 @@ This is the title and has no trigger.
   - Fired: **spark-of-discharge, harmonic-siphon, elemental-charge, ionic-trace, shinobus-vow, bolt-charge**.
   - End state: buffs Bolt Charge, Armor Charge; Orb of Power on the ground.
 - **Scenario 8b (negative):** fresh start, then `FireWeapon(Kinetic, kill)` with the Strand weapon.
-  - Fired: **attrition-orbs** *(chance)* on the hit, **strand-siphon** *(chance)* on the kill, and nothing else.
+  - Fired: **strand-siphon** *(chance)* on the kill, and nothing else (Attrition Orbs needs a hit step, ADRs D34).
   - `spark-of-discharge` must NOT fire.
 - **Not reproduced:**
   - **Strand weapon kills making traces:** the Compendium and Clarity require Arc weapon kills (row 7).

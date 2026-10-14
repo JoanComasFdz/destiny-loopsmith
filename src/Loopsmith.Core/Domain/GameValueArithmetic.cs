@@ -41,6 +41,10 @@ public static class GameValueArithmetic
     private static decimal MultiplyResistances(decimal first, decimal second) =>
         1m - ((1m - first) * (1m - second));
 
+    /// <summary>The fixed time a duration states; none when it states none, or goes by the stacks spent.</summary>
+    public static Optional<Seconds> ReadFixedTime(this BuffDuration duration) =>
+        duration is BuffDuration.Fixed fixedTime ? Optional.Some(fixedTime.Time) : Optional.None<Seconds>();
+
     public static DamageType ToDamageType(this Affinity affinity) =>
         affinity switch
         {

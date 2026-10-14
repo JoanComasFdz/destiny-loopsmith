@@ -20,7 +20,7 @@ public sealed record PieceModsView(ArmorSlot Slot, ImmutableArray<ModSocketView>
 
 /// <summary>
 /// The build's mods in its sockets: each slot's row, the General row, the mods no free socket takes, the ones that go in
-/// no mod socket (tuning) and the ones Loopsmith ignores (a raid's or an activity's, ADRs D33).
+/// no mod socket (tuning) and the ones Loopsmith ignores (a raid's or an activity's, ADRs D35).
 /// </summary>
 public sealed record ModsView(ImmutableArray<PieceModsView> Pieces, ImmutableArray<ModSocketView> General, ImmutableArray<IconTile> Unplaced, ImmutableArray<IconTile> Other, ImmutableArray<IconTile> Ignored);
 

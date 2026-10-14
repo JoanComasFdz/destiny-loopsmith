@@ -94,15 +94,32 @@ public sealed class ArmorModsCatalogTests
         var charged = Play(["utility-finisher"],
             new PlayerAction.UseClassAbility(),
             new PlayerAction.FireWeapon(WeaponSlot.Kinetic, HitOutcome.Kill, TargetCount.One),
-            new PlayerAction.UseClassAbility());
+            new PlayerAction.CollectPickups(PickupId.From("orb-of-power")),
+            new PlayerAction.Declare(new StateDeclaration.ReachMax(ArmorCharge)));
 
         var finished = LoopDesigning.AppendStep(charged, new PlayerAction.PerformFinisher(), Optional.None<string>());
         var finisher = finished.Resolutions[^1];
 
         Assert.Contains(LoopDesigning.ListTriggerOptions(charged), option => option.Token == "finisher");
         var utility = Assert.Single(finisher.Fired, fired => fired.Source.Value == "utility-finisher");
-        Assert.Contains(utility.Outcomes, outcome => outcome.Outcome is Outcome.ConvertStacksToEnergy { To: AbilityKind.ClassAbility });
+        var spent = Assert.Single(utility.Outcomes, outcome => outcome.Outcome is Outcome.ConvertStacksToEnergy { To: AbilityKind.ClassAbility });
+        Assert.Equal(Likelihood.Always, utility.Likelihood);
+        Assert.Equal(Optional.Some<GameValue>(new GameValue.Known(0.8m)), spent.Spend.Bind(spend => spend.AtSure));   // x4 spent (Charged Up's cap): 80%
         Assert.DoesNotContain(finisher.State.Buffs, buff => buff.Status == ArmorCharge);
+    }
+
+    [Fact]
+    public void Utility_Finisher_short_of_three_Armor_Charge_doesnt_fire_and_says_so()
+    {
+        var charged = Play(["utility-finisher"],
+            new PlayerAction.UseClassAbility(),
+            new PlayerAction.FireWeapon(WeaponSlot.Kinetic, HitOutcome.Kill, TargetCount.One),
+            new PlayerAction.CollectPickups(PickupId.From("orb-of-power")));
+
+        var finisher = LoopDesigning.AppendStep(charged, new PlayerAction.PerformFinisher(), Optional.None<string>()).Resolutions[^1];
+
+        Assert.DoesNotContain(finisher.Fired, fired => fired.Source.Value == "utility-finisher");
+        Assert.Contains(finisher.Notes, note => note.StartsWith("Utility Finisher needs x3 Armor Charge, holds x1", StringComparison.Ordinal));
     }
 
     [Fact]

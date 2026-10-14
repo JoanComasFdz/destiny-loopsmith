@@ -109,6 +109,17 @@ internal static class ReferenceChecking
                 : value.FailAt<StatusId>($"{value.Label}: '{id}' doesn't stack (no maxStacks), so it is never at max"),
             _ => Succeed(id)));
 
+    /// <summary>
+    /// A buff whose stacks the engine counts (<c>holds</c>, <c>spendStacks</c>, a table by stacks: <c>counted: true</c> in the
+    /// glossary, ADRs D33): any other status has no count to read or spend.
+    /// </summary>
+    internal static Result<StatusId, Errors> ReadCountedBuff(this ReferenceScope scope, YamlValue value) =>
+        scope.ReadBuff(value).Bind(id => scope.Glossary.Match(
+            glossary => glossary.Value.IsCounted(id)
+                ? Succeed(id)
+                : value.FailAt<StatusId>($"{value.Label}: '{id}' isn't counted (no counted: true in glossary.yaml), so it has no stacks to read or spend"),
+            _ => Succeed(id)));
+
     /// <summary>A status that lives on the target (<c>debuffTarget</c>, <c>targetHas</c>).</summary>
     internal static Result<StatusId, Errors> ReadDebuff(this ReferenceScope scope, YamlValue value) =>
         ValueReading.ReadStatusId(value).Bind(id => scope.CheckStatus(value, id, Optional.Some(KeywordKind.Debuff)));

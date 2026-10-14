@@ -79,16 +79,12 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   build already over a piece's energy (a DIM loadout's), only a pick is refused; a mod in an artifice socket shows the
   artifice mods only (the game takes a general one there too).
 - **Armor mods** (all current ones of the five slots are in `rules/mods/`; raid, activity and seasonal mods aren't
-  supported, by decision: no picker offers them and a DIM link's are ignored, ADRs D33 — supporting them, if asked
+  supported, by decision: no picker offers them and a DIM link's are ignored, ADRs D35 — supporting them, if asked
   for, takes declarations for an encounter's mechanics: the pack's race and tier, a relic carried, Flux of Darkness,
   a plate stood on): no trigger for breaking a combatant's shield (Shield Break Charge, inert), for the damage you take (critical
   health is a step the player declares, `health:critical`) or for an ability's energy "fully expended" (the Kickstarts
-  fire on any use while you hold Armor Charge, as the Compendium says); spending a fixed number of stacks (a
-  finisher that takes x2 or x3 Armor Charge leaves the buff on; "x3 or more" spends it all, *(chance)*; Emergency
-  Reinforcement splits it: for sure at the declared max, a chance below it with `belowMax`, which the finishers could
-  use too); energy
-  or a duration by the stacks spent (Explosive, One-Two and Utility Finisher 70–100%, Bulwark's overshield
-  8–14 s, the Kickstarts by mods + stacks: `?` with the table in the description); an overshield's HP
+  fire on any use while you hold Armor Charge, as the Compendium says); Benevolent Finisher's x3 isn't counted off (it
+  is inert: allies only); an overshield's HP
   (Proximity Ward); the order mods are slotted in (Firepower before Heavy Handed); two mods that can't both pay
   out on different events (Hands-On and Ashes to Assets); an amount by class (Dynamo); a cooldown between orbs
   (Firepower on `grenade:kill:3` drops three). Ammo, weapon handling, damage taken and allies-only mods are
@@ -101,8 +97,9 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   picking up a Firesprite, Void Breach, Stasis Shard or Tangle gives has no keyword element yet. The perks of
   `rules/weapons/perks.yaml` could say `weapon:this` instead of their weapon's type, now that it exists.
 - **Written as declarations, *(chance)* or facts** (D3, D8), so they need no new format: progress the
-  game doesn't show as a stacking status (Spark of Discharge's kills per trace, To Shreds' 6 weapon hits,
-  Amplified's intrinsic kill counter) is *(chance)*; Slice's 5 hits end with `max:slice`; energy per
+  game doesn't show as a stacking status (Spark of Discharge's kills per trace, Amplified's intrinsic kill counter)
+  is *(chance)*; hits or damage kept up on one enemy (To Shreds' 6 weapon hits, Horde Shuttle's 10%, Attrition Orbs,
+  Lightning Rounds' 10th hit) are `sustained`, sure on a hit step and not on a kill step (D34); Slice's 5 hits end with `max:slice`; energy per
   stack, refunds, chunk scalars and rule cooldowns (Impact Induction, Photonic Flare) are facts; Spark of
   Resistance's "3+ enemies" always holds.
 
@@ -164,6 +161,16 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   modelled), and the armor set bonuses' and artifact perks' (none of the authored ones has one; the Compendium lists
   about 15 set bonuses and 6 artifact perks with one, mostly a "Resist x1" buff on some trigger). Spark of
   Resistance's "3+ enemies within 15 m" is treated as always holding (D7).
+- **Counting, next** (D33): only Armor Charge is counted; Bolt Charge, Combination Blow and Slice stay declared
+  (`counted: true` in the glossary, once their gains and spends are authored to be counted). The decay (one stack every
+  10 s, slower with Time Dilation) is shown, never applied, so a loop that waits between gaining and spending holds
+  fewer than it says. Elemental Charge's activation progress stays a chance (every 2nd Ionic Trace with two copies);
+  Emergency Reinforcement's fourth duration (15 s, unlabelled in the Compendium) is `?` at x6; Shield Break Charge's
+  Armor Charge waits on a shield-breaking trigger.
+- **Kill counts, next**: the enemy-count selector names only the counts authored rules need (the Siphons, Spark of
+  Amplitude, Spark of Discharge, Synergy). The weapon perks that need several enemies in one action (One For All's three
+  separate targets, Multikill Clip, Adrenaline Junkie…) aren't authored (`rules/weapons/perks.yaml` holds three perks), so
+  they show with their ⊘ and the selector can't name them.
 - **Armor picker, next**: the mods of a picked piece aren't read (the build keeps the loadout's mods); armor of
   another class's character isn't offered; an icon bungie.net doesn't serve shows broken.
 - **Exotic class items' spirits**: Relativism, Stoicism and Solipsism are listed in the armor picker's Every item, but

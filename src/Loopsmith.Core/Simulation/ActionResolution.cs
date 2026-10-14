@@ -17,7 +17,7 @@ public static class ActionResolution
         var stepped = state with { Step = state.Step + 1, Casting = ReadCast(action) };
         var opening = OpenAction(build, stepped, action);
         var seed = new Cascade(opening.State, [], opening.Notes, 0);
-        var finished = opening.Events.Aggregate(seed, (acc, pending) => EventCascading.CascadeEvent(build, acc, pending, 0));
+        var finished = opening.Events.Aggregate(seed, (acc, pending) => EventCascading.CascadeEvent(build, acc, pending, 0, opening.ByChance));
         var passives = ListActivePassives(build, finished.State);
         var available = ListAvailableActions(build, finished.State);
         return new Resolution(action, finished.State, finished.Fired, passives, available, finished.Notes, opening.Blocked);
@@ -52,7 +52,7 @@ public static class ActionResolution
             new PlayerAction.FireWeapon(weapon.Slot, HitOutcome.Kill, TargetCount.One),
             new PlayerAction.FireWeapon(weapon.Slot, HitOutcome.Damage, TargetCount.One),
         });
-        var pickups = state.Pickups.Select(pickup => (PlayerAction)new PlayerAction.CollectPickups(pickup));
+        var pickups = state.ListPickups().Select(pickup => (PlayerAction)new PlayerAction.CollectPickups(pickup));
         var declarations = ListDeclarations(build, state).Select(declaration => (PlayerAction)new PlayerAction.Declare(declaration));
         return [.. offensive, .. classAbility, .. finisher, .. weapons, .. pickups, .. declarations];
     }
@@ -93,14 +93,17 @@ public static class ActionResolution
             _ => Optional.None<AbilityKind>(),
             _ => Optional.None<AbilityKind>());
 
+    /// <summary>The passives whose guards hold now; a chance when they hold only by a counted buff's chance stacks (ADRs D33).</summary>
     public static ImmutableArray<ActivePassive> ListActivePassives(ValidatedBuild build, GameState state) =>
         build.Equipped
-            .SelectMany(e => e.Element.Passives.Select(p => (e.Element, Passive: p)))
-            .Where(x => x.Passive.When.IsSatisfiedBy(state))
-            .Select(x => new ActivePassive(x.Element.Id, x.Element.Name, x.Element.Affinity, x.Passive))
+            .SelectMany(e => e.Element.Passives.Select(p => (e.Element, Passive: p, Guard: p.When.ReadGuard(state))))
+            .Where(x => x.Guard != GuardResult.Fails)
+            .Select(x => new ActivePassive(x.Element.Id, x.Element.Name, x.Element.Affinity, x.Passive,
+                x.Guard == GuardResult.ByChance ? Likelihood.Chance : Likelihood.Always))
             .ToImmutableArray();
 
-    private sealed record Opening(GameState State, ImmutableArray<PendingEvent> Events, ImmutableArray<string> Notes, Optional<string> Blocked)
+    /// <summary>A step's state, its own events, notes and why it is blocked; <see cref="ByChance"/>: its events happen only by chance (a pickup only chance dropped).</summary>
+    private sealed record Opening(GameState State, ImmutableArray<PendingEvent> Events, ImmutableArray<string> Notes, Optional<string> Blocked, bool ByChance = false)
     {
         public Opening(GameState state, ImmutableArray<PendingEvent> events, ImmutableArray<string> notes)
             : this(state, events, notes, Optional.None<string>())
@@ -127,7 +130,7 @@ public static class ActionResolution
     private static Opening PerformFinisher(GameState state)
     {
         var origin = new DamageOrigin.Finisher();
-        return new Opening(state, [new PendingEvent.Ready(new GameEvent.Finisher()), new PendingEvent.HitTarget(origin), new PendingEvent.KillTarget(origin)], []);
+        return new Opening(state, [new PendingEvent.Ready(new GameEvent.Finisher()), new PendingEvent.HitTarget(origin, DamageSpan.Blow), new PendingEvent.KillTarget(origin)], []);
     }
 
     /// <summary>Never blocked: casting, then the strike on every target (ADRs D4, D5).</summary>
@@ -204,43 +207,61 @@ public static class ActionResolution
     /// <summary>
     /// One action against N enemies (ADRs D4): N per-enemy hits, then N kills for a kill — each cascades fully, so
     /// later hits see the debuffs earlier ones applied — then one <see cref="GameEvent.TargetsHit"/> for the
-    /// multi-target triggers ("hit 3+ enemies").
+    /// multi-target triggers ("hit 3+ enemies"). A hit step's hits are sustained damage, a kill step's its killing blows
+    /// (ADRs D34).
     /// </summary>
     private static ImmutableArray<PendingEvent> ListStrikeEvents(DamageOrigin origin, HitOutcome hit, TargetCount targets)
     {
-        var hits = Enumerable.Repeat<PendingEvent>(new PendingEvent.HitTarget(origin), targets.Value);
+        var hits = Enumerable.Repeat<PendingEvent>(new PendingEvent.HitTarget(origin, hit == HitOutcome.Kill ? DamageSpan.Blow : DamageSpan.Sustained), targets.Value);
         var kills = hit == HitOutcome.Kill
             ? Enumerable.Repeat<PendingEvent>(new PendingEvent.KillTarget(origin), targets.Value)
             : [];
         return [.. hits, .. kills, new PendingEvent.Ready(new GameEvent.TargetsHit(origin, targets, hit))];
     }
 
-    /// <summary>Picks the pickup up: one <see cref="GameEvent.PickedUp"/>, and it is no longer on the ground.</summary>
+    /// <summary>
+    /// Picks the pickup up: one <see cref="GameEvent.PickedUp"/>, and it is no longer on the ground. One only chance rules
+    /// dropped gives what it gives only by chance (ADRs D8).
+    /// </summary>
     private static Opening CollectPickups(GameState state, PlayerAction.CollectPickups collect) =>
         state.HasPickup(collect.Pickup)
-            ? new Opening(state.DropPickup(collect.Pickup), [new PendingEvent.Ready(new GameEvent.PickedUp(collect.Pickup))], [])
+            ? new Opening(state.DropPickup(collect.Pickup), [new PendingEvent.Ready(new GameEvent.PickedUp(collect.Pickup))], [], Optional.None<string>(), state.HasOnlyByChance(collect.Pickup))
             : BlockAction(state, $"No {collect.Pickup} on the ground — nothing happens.");
 
     private static Opening Declare(ValidatedBuild build, GameState state, StateDeclaration declaration) =>
         declaration.Match(
-            max => DeclareMax(build.Catalog.Glossary, state, max.Status),
+            max => DeclareMax(build, state, max.Status),
             end => DeclareEnd(build.Catalog.Glossary, state, end.Status),
             _ => new Opening(state.ReplacePack(), [], []),   // always holds: the next enemies are a new pack
             _ => new Opening(state, [new PendingEvent.Ready(new GameEvent.CriticalHealth())], []));   // always holds: no damage is modelled (ADRs D1)
 
     /// <summary>
     /// "Bolt Charge at max" (ADRs D3): the buff is declared at its maximum and <see cref="GameEvent.StacksMaxed"/>
-    /// cascades. Blocked unless the buff stacks, is active and isn't declared at max already — checked in that order.
+    /// cascades. Blocked unless the buff stacks, is active and isn't at max already — checked in that order. A counted
+    /// buff (ADRs D33) then holds its cap in sure stacks: the player says the chance ones came, or more than the loop shows.
     /// </summary>
-    private static Opening DeclareMax(KeywordGlossary glossary, GameState state, StatusId status)
+    private static Opening DeclareMax(ValidatedBuild build, GameState state, StatusId status)
     {
+        var glossary = build.Catalog.Glossary;
         var blocker = glossary.FindStatus(status).Match(
             some => FindMaxBlocker(glossary, state, some.Value),
             _ => Optional.Some($"No buff '{status}' in the rules — nothing to declare."));
         return blocker.Match(
             reason => BlockAction(state, reason.Value),
-            _ => new Opening(state.DeclareAtMax(status), [new PendingEvent.Ready(new GameEvent.StacksMaxed(status))], []));
+            _ => new Opening(DeclareCountedMax(build, state.DeclareAtMax(status), status), [new PendingEvent.Ready(new GameEvent.StacksMaxed(status))], []));
     }
+
+    /// <summary>A counted buff declared at max holds its cap in sure stacks, when the cap is known; any other buff is unchanged.</summary>
+    private static GameState DeclareCountedMax(ValidatedBuild build, GameState state, StatusId status) =>
+        (state.ReadTally(status), build.ReadStackCap(status)) switch
+        {
+            (Optional<StackTally>.Some tally, Optional<GameValue>.Some { Value: GameValue.Known cap }) => state.PutTally(
+                status,
+                new StackTally(StackCount.From((int)cap.Value), StackCount.From(0), tally.Value.Changes.Add(new StackChange(
+                    state.Step, new StackChangeOrigin.Player(), new StackMove.DeclaredMax(), StackCount.From((int)cap.Value), StackCount.From(0)))),
+                atMax: true),
+            _ => state,
+        };
 
     private static Optional<string> FindMaxBlocker(KeywordGlossary glossary, GameState state, StatusDefinition definition) =>
         definition switch

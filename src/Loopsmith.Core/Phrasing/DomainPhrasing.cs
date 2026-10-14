@@ -49,7 +49,7 @@ public static class DomainPhrasing
     /// <summary>"Helmet", "Arms", "Chest", "Legs", "Class item".</summary>
     /// <summary>
     /// What a mod socket takes, in short (an empty socket's square): its slot ("Helmet"), "General", "Artifice", else
-    /// "Special" (a socket the designer doesn't list: a raid's or an activity's, ADRs D33).
+    /// "Special" (a socket the designer doesn't list: a raid's or an activity's, ADRs D35).
     /// </summary>
     public static string DescribeModSocketShort(this PlugCategoryId category) =>
         ArmorModCategories.FindSlot(category).Match(
@@ -340,9 +340,10 @@ public static class DomainPhrasing
             killAny => DescribeKill(glossary, killAny.Via, [], superType),
             killOfTier => $"{DescribeKill(glossary, killOfTier.Via, [], superType)} ({killOfTier.Tier})",
             killDebuffed => DescribeKill(glossary, killDebuffed.Via, killDebuffed.TargetHas, superType),
-            killMultiple => DescribeMultiKill(glossary, killMultiple.Via, killMultiple.AtLeast, superType),
-            damage => DescribeDamage(glossary, damage.Via, [], superType),
-            damageDebuffed => DescribeDamage(glossary, damageDebuffed.Via, damageDebuffed.TargetHas, superType),
+            killMultiple => DescribeMultiKill(glossary, killMultiple.Via, killMultiple.AtLeast, superType)
+                + killMultiple.Within.Match(within => $" in {within.Value.FormatSeconds()}", _ => ""),
+            damage => DescribeDamage(glossary, damage.Via, [], superType) + DescribeSpan(damage.Needs),
+            damageDebuffed => DescribeDamage(glossary, damageDebuffed.Via, damageDebuffed.TargetHas, superType) + DescribeSpan(damageDebuffed.Needs),
             damageMultiple => DescribeMultiHit(glossary, damageMultiple.Via, damageMultiple.AtLeast, superType),
             pickUp => $"Pick up {glossary.DescribePickup(pickUp.Pickup)}",
             buffGained => $"Gain {glossary.DescribeStatus(buffGained.Status)}",
@@ -365,6 +366,10 @@ public static class DomainPhrasing
             _ => $"Kill {target} with {glossary.DescribeDamageSource(via, superType)}",
         };
     }
+
+    /// <summary>" kept up (a hit step)": damage a source needs over several hits, which a hit step stands for (ADRs D34).</summary>
+    private static string DescribeSpan(DamageSpan needs) =>
+        needs == DamageSpan.Sustained ? " kept up (a hit step)" : "";
 
     /// <summary>"Arc weapon damage", "Damage target with Arc weapon (your Super's element)": a long source reads after the target.</summary>
     private static string DescribeDamage(KeywordGlossary glossary, DamageSource via, ImmutableArray<StatusId> targetHas, Optional<DamageType> superType)
@@ -447,7 +452,8 @@ public static class DomainPhrasing
             targetHas => $"if target {glossary.DescribeDebuffedAdjective(targetHas.Status)}",
             atMax => $"while {glossary.DescribeStatus(atMax.Status)} at max",
             during => $"during your {during.Ability.DescribeAbility()}",
-            belowMax => $"while {glossary.DescribeStatus(belowMax.Status)} below max");
+            belowMax => $"while {glossary.DescribeStatus(belowMax.Status)} below max",
+            holds => $"with x{holds.AtLeast.Value} or more {glossary.DescribeStatus(holds.Status)}");
 
     public static string DescribeConditions(this KeywordGlossary glossary, ImmutableArray<Condition> conditions) =>
         string.Join(", ", conditions.Select(glossary.DescribeCondition));
@@ -458,7 +464,7 @@ public static class DomainPhrasing
             grant => grant.Amount.Match(
                 fraction => $"+{fraction.Amount.FormatPercent()} {grant.To.DescribeAbility()} energy",
                 _ => $"refills {grant.To.DescribeAbility()}"),
-            convert => $"spends {glossary.DescribeStatus(convert.Consumed)} → +{convert.PerStack.FormatPercent()} {convert.To.DescribeAbility()} energy per stack",
+            convert => $"spends {glossary.DescribeStatus(convert.Consumed)} → {DescribeStackEnergy(convert)}",
             apply => DescribeBuff(glossary, apply),
             remove => $"consumes {glossary.DescribeStatus(remove.Status)}",
             debuff => $"{glossary.DescribeStatus(debuff.Status)} target"
@@ -473,7 +479,131 @@ public static class DomainPhrasing
             collect => $"collects {glossary.DescribePickup(collect.Pickup)} from the ground",
             least => least.Amount.Match(
                 fraction => $"+{fraction.Amount.FormatPercent()} energy to your least-charged ability",
-                _ => "refills your least-charged ability"));
+                _ => "refills your least-charged ability"),
+            spend => $"spends x{spend.Count.Value} {glossary.DescribeStatus(spend.Status)}");
+
+    /// <summary>
+    /// An outcome as it was applied: one that spent a counted buff's stacks says how many, and what they gave
+    /// ("spends Armor Charge x2 · +1 (chance) → +28.4% grenade energy (34.4% with the chance stack)", ADRs D33); any other
+    /// as <see cref="DescribeOutcome"/>.
+    /// </summary>
+    public static string DescribeAppliedOutcome(this KeywordGlossary glossary, Outcome outcome, Optional<StackSpend> spend, Optional<DamageType> superType) =>
+        spend.Match(
+            some => DescribeSpentOutcome(glossary, outcome, some.Value, superType),
+            _ => glossary.DescribeOutcome(outcome, superType));
+
+    private static string DescribeSpentOutcome(KeywordGlossary glossary, Outcome outcome, StackSpend spend, Optional<DamageType> superType)
+    {
+        var spent = $"{glossary.DescribeStatus(spend.Status)} {DescribeStacks(spend.Sure, spend.Chance)}";
+        return outcome switch
+        {
+            Outcome.ConvertStacksToEnergy convert => $"spends {spent} → {DescribeSpentValue(spend, value => $"+{value.FormatPercent()} {convert.To.DescribeAbility()} energy")}",
+            Outcome.RemoveBuff => $"consumes {spent}",
+            Outcome.SpendStacks => $"spends {spent}",
+            Outcome.ApplyBuff apply => DescribeBuff(glossary, apply) + DescribeChanceValue(spend, value => $"{value.FormatNumber()}s"),
+            _ => glossary.DescribeOutcome(outcome, superType),
+        };
+    }
+
+    /// <summary>
+    /// An enemy count as the designer offers it: "1 enemy", "3 enemies"; what it is for when an equipped rule needs it from
+    /// that ability or weapon — "2 in 3 s · Arc Siphon", "12 · Synergy", rules with different windows each saying theirs
+    /// ("2 · Spark of Amplitude in 4 s, Harmonic Siphon in 3 s") — and what fills up at it: "10 enemies · Bolt Charge x10",
+    /// "9 enemies · grenade full" (ADRs D4).
+    /// </summary>
+    public static string DescribeTargetCountChoice(this KeywordGlossary glossary, TargetCountChoice choice)
+    {
+        var count = choice.Count.Value;
+        var windows = choice.NamedBy.Select(need => need.Within).Distinct().ToImmutableArray();
+        var named = (choice.NamedBy.IsEmpty, windows.Length) switch
+        {
+            (true, _) => $"{count} {(count == 1 ? "enemy" : "enemies")}",
+            (false, 1) => $"{count}{DescribeWindow(windows[0])} · {string.Join(", ", choice.NamedBy.Select(need => need.Name))}",
+            _ => $"{count} · {string.Join(", ", choice.NamedBy.Select(need => need.Name + DescribeWindow(need.Within)))}",
+        };
+        return choice.Fills.IsEmpty ? named : $"{named} · {string.Join(", ", choice.Fills.Select(fill => glossary.DescribeCountFill(fill)))}";
+    }
+
+    /// <summary>"Bolt Charge x10", "grenade full": what an action's enemies fill up at a count.</summary>
+    public static string DescribeCountFill(this KeywordGlossary glossary, CountFill fill) =>
+        fill.Match(
+            status => $"{glossary.DescribeStatus(status.Status)} x{status.Cap}",
+            ability => $"{ability.Ability.DescribeAbility()} full");
+
+    private static string DescribeWindow(Optional<Seconds> within) =>
+        within.Match(some => $" in {some.Value.Value.ToString("0.#", Invariant)} s", _ => "");
+
+    /// <summary>
+    /// One change to a counted buff, with the step it came at and the stacks after it (ADRs D33): "#6 Orb of Power: +1 → x1",
+    /// "#5 Orb of Power: +1 (chance) → x1 · +1 (chance)", "#7 you: at max → x4", "#8 Healthy Finisher: spends x1 → x2",
+    /// "the pass before: x2" (what this pass started with).
+    /// </summary>
+    public static string DescribeStackChange(StackChange change)
+    {
+        var after = DescribeStacks(change.SureAfter, change.ChanceAfter);
+        var source = change.Origin.Match(
+            element => $"#{change.Step} {element.Name}",
+            _ => $"#{change.Step} you",
+            _ => "the pass before");
+        return change.Move.Match(
+            gained => gained.Sure.Value + gained.Chance.Value == 0
+                ? $"{source}: at cap, +{gained.Wasted.Value} wasted → {after}"
+                : $"{source}: {DescribeGain(gained)} → {after}" + (gained.Wasted.Value > 0 ? $" (at cap: +{gained.Wasted.Value} wasted)" : ""),
+            spent => $"{source}: spends {DescribeStacks(spent.Sure, spent.Chance)} → {after}",
+            _ => $"{source}: at max → {after}",
+            _ => $"{source}: {after}");
+    }
+
+    private static string DescribeGain(StackMove.Gained gained) =>
+        (gained.Sure.Value, gained.Chance.Value) switch
+        {
+            (var sure, 0) => $"+{sure}",
+            (0, var chance) => $"+{chance} (chance)",
+            (var sure, var chance) => $"+{sure} · +{chance} (chance)",
+        };
+
+    /// <summary>"x2", "x2 · +1 (chance)", "+1 (chance)": a counted buff's sure stacks and those it may hold besides (ADRs D33).</summary>
+    public static string DescribeStacks(StackCount sure, StackCount chance) =>
+        (sure.Value, chance.Value) switch
+        {
+            (0, 0) => "x0",
+            (var s, 0) => $"x{s}",
+            (0, var c) => $"+{c} (chance)",
+            (var s, var c) => $"x{s} · +{c} (chance)",
+        };
+
+    /// <summary>The value for the sure stacks, and the value with the chance ones too ("(34.4% with the chance stack)"); "?" when the table has neither.</summary>
+    private static string DescribeSpentValue(StackSpend spend, Func<GameValue, string> describe) =>
+        spend.AtSure.Match(
+            sure => describe(sure.Value) + DescribeChanceValue(spend, value => value.FormatPercent()),
+            _ => spend.WithChance.Match(
+                chance => describe(chance.Value),
+                _ => describe(new GameValue.Unknown())));
+
+    private static string DescribeChanceValue(StackSpend spend, Func<GameValue, string> describe) =>
+        spend.AtSure.IsSome() && spend.Chance.Value > 0
+            ? spend.WithChance.Match(
+                chance => $" ({describe(chance.Value)} with the chance {(spend.Chance.Value == 1 ? "stack" : "stacks")})",
+                _ => "")
+            : "";
+
+    /// <summary>"+?% grenade energy per stack", "+70% … 100% grenade energy at x3 … x6", "+16.2% … 45% grenade energy by copies and stacks (2 … 9)".</summary>
+    private static string DescribeStackEnergy(Outcome.ConvertStacksToEnergy convert) =>
+        convert.Energy.Match(
+            perStack => $"+{perStack.Amount.FormatPercent()} {convert.To.DescribeAbility()} energy per stack",
+            bySpent => $"+{DescribeTableRange(bySpent.Table, FormatTablePercent)} {convert.To.DescribeAbility()} energy at {DescribeTableCounts(bySpent.Table, "x")}",
+            byCharges => $"+{DescribeTableRange(byCharges.Table, FormatTablePercent)} {convert.To.DescribeAbility()} energy by copies and stacks ({DescribeTableCounts(byCharges.Table, "")})");
+
+    private static string FormatTablePercent(decimal value) =>
+        new GameValue.Known(value).FormatPercent();
+
+    private static string DescribeTableRange(StackTable table, Func<decimal, string> format) =>
+        table.Values.Length == 1 ? format(table.Values[0]) : $"{format(table.Values[0])} … {format(table.Values[^1])}";
+
+    private static string DescribeTableCounts(StackTable table, string prefix) =>
+        table.Values.Length == 1
+            ? $"{prefix}{table.From.Value}"
+            : $"{prefix}{table.From.Value} … {prefix}{table.From.Value + table.Values.Length - 1}";
 
     /// <summary>
     /// Several outcomes of one rule as one phrase, with values narrowed to the copies equipped and
@@ -491,11 +621,11 @@ public static class DomainPhrasing
         this KeywordGlossary glossary, IEnumerable<OutcomeMention> mentions, Optional<DamageType> superType)
     {
         var phrases = mentions
-            .Select(mention => NarrowOutcomeToCopies(mention.Outcome, mention.Copies))
-            .Select(outcome => new OutcomePhrase(
-                glossary.DescribeOutcome(outcome, superType),
-                outcome,
-                outcome is Outcome.GrantEnergy { Amount: EnergyGrant.Fraction fraction } grant
+            .Select(mention => (Outcome: NarrowOutcomeToCopies(mention.Outcome, mention.Copies), mention.Spend))
+            .Select(mention => new OutcomePhrase(
+                glossary.DescribeAppliedOutcome(mention.Outcome, mention.Spend, superType),
+                mention.Outcome,
+                mention.Outcome is Outcome.GrantEnergy { Amount: EnergyGrant.Fraction fraction } grant
                     ? Optional.Some(new EnergyPhrase(fraction.Amount.FormatPercent(), grant.To))
                     : Optional.None<EnergyPhrase>()))
             .ToImmutableArray();
@@ -535,7 +665,8 @@ public static class DomainPhrasing
                 grant with { Amount = new EnergyGrant.Fraction(fraction.Amount.NarrowToCopies(copies)) },
             Outcome.GrantLeastChargedEnergy { Amount: EnergyGrant.Fraction fraction } least =>
                 least with { Amount = new EnergyGrant.Fraction(fraction.Amount.NarrowToCopies(copies)) },
-            Outcome.ConvertStacksToEnergy convert => convert with { PerStack = convert.PerStack.NarrowToCopies(copies) },
+            Outcome.ConvertStacksToEnergy { Energy: StackEnergy.PerStack perStack } convert =>
+                convert with { Energy = new StackEnergy.PerStack(perStack.Amount.NarrowToCopies(copies)) },
             Outcome.ModifyDamage modify => modify with { Change = modify.Change.NarrowToCopies(copies) },
             Outcome.RestoreHealth heal => heal with { Amount = heal.Amount.NarrowToCopies(copies) },
             _ => outcome,
@@ -545,7 +676,9 @@ public static class DomainPhrasing
     private static string DescribeBuff(KeywordGlossary glossary, Outcome.ApplyBuff apply)
     {
         var name = glossary.DescribeStatus(apply.Status);
-        var suffix = glossary.ReadShownDuration(apply.Status, apply.Duration).Match(d => $" ({d.Value.FormatSeconds()})", _ => "");
+        var suffix = apply.Duration is BuffDuration.BySpent bySpent
+            ? $" ({DescribeTableRange(bySpent.Table, value => $"{value.ToString("0.#", Invariant)}s")} at {DescribeTableCounts(bySpent.Table, "x")} spent)"
+            : glossary.ReadShownDuration(apply.Status, apply.Duration.ReadFixedTime()).Match(d => $" ({d.Value.FormatSeconds()})", _ => "");
         return glossary.IsStacking(apply.Status) ? $"+{apply.Stacks.Value} {name}{suffix}" : $"{name}{suffix}";
     }
 
@@ -605,9 +738,14 @@ public static class DomainPhrasing
     private static string ToSentenceStart(string text) =>
         char.ToUpperInvariant(text[0]) + text[1..];
 
-    /// <summary>A buff on you as the state shows it: "Bolt Charge", or "Bolt Charge (at max)" once the player declared it.</summary>
+    /// <summary>
+    /// A buff on you as the state shows it: "Bolt Charge", or "Bolt Charge (at max)" once the player declared it; a
+    /// counted buff with its stacks, "Armor Charge x1 · +1 (chance)" (ADRs D33).
+    /// </summary>
     public static string DescribeActiveBuff(this KeywordGlossary glossary, ActiveBuff buff) =>
-        glossary.DescribeStatus(buff.Status) + (buff.AtMax ? " (at max)" : "");
+        glossary.DescribeStatus(buff.Status)
+        + buff.Tally.Match(tally => $" {DescribeStacks(tally.Value.Sure, tally.Value.Chance)}", _ => "")
+        + (buff.AtMax ? " (at max)" : "");
 
     /// <summary>
     /// A passive as a fact, its values narrowed to the <paramref name="copies"/> equipped (Weapon Surge with two copies:
@@ -691,12 +829,25 @@ public static class DomainPhrasing
 
     // ── events and actions ─────────────────────────────────────────────────────
 
+    /// <summary>
+    /// An event with the rules it set off: the event, and for kills of several enemies in one action, the tightest window
+    /// a rule it fired needs ("Festival Flight killed 2 enemies in 3 s": Strand Siphon's two kills within 3 s; 2 kills
+    /// within 3 s are within 4 s too).
+    /// </summary>
+    public static string DescribeFiredEvent(this KeywordGlossary glossary, ImmutableArray<FiredRule> rules, Build build) =>
+        glossary.DescribeEvent(rules[0].Trigger, build)
+            + DescribeWindow(rules
+                .Select(rule => rule.On is Trigger.KillMultiple kill ? kill.Within : Optional.None<Seconds>())
+                .Where(within => within.IsSome())
+                .OrderBy(within => within.Match(some => some.Value.Value, _ => 0m))
+                .FirstOrDefault(Optional.None<Seconds>()));
+
     public static string DescribeEvent(this KeywordGlossary glossary, GameEvent gameEvent, Build build) =>
         gameEvent.Match(
             cast => DescribeCast(cast.Kind, cast.Input),
-            damaged => $"{glossary.DescribeOrigin(damaged.Origin, build)} hit{DescribeOnTarget(DescribeTargetPhrase(glossary, damaged.TargetHas))}",
-            killed => $"{glossary.DescribeOrigin(killed.Origin, build)} kill{DescribeOnTarget(DescribeTargetPhrase(glossary, killed.TargetHas))}",
-            struck => $"{glossary.DescribeOrigin(struck.Origin, build)} {(struck.Hit == HitOutcome.Kill ? "killed" : "hit")} {DescribeEnemies(struck.Targets)}",
+            damaged => $"{glossary.DescribeOrigin(damaged.Origin, build)} 🥊 hit{DescribeOnTarget(DescribeTargetPhrase(glossary, damaged.TargetHas))}",
+            killed => $"{glossary.DescribeOrigin(killed.Origin, build)} 💀 kill{DescribeOnTarget(DescribeTargetPhrase(glossary, killed.TargetHas))}",
+            struck => $"{glossary.DescribeOrigin(struck.Origin, build)} {(struck.Hit == HitOutcome.Kill ? "💀 killed" : "🥊 hit")} {DescribeEnemies(struck.Targets)}",
             pickedUp => $"Picked up {glossary.DescribePickup(pickedUp.Pickup)}",
             gained => $"{glossary.DescribeStatus(gained.Status)} gained",
             maxed => $"Max {glossary.DescribeStatus(maxed.Status)}",
@@ -704,7 +855,7 @@ public static class DomainPhrasing
             _ => CriticalHealth);
 
     /// <summary>
-    /// "Grenade (kill)", "Grenade (kill 3)", "Festival Flight (hit 5)", "Class ability", "Pick up Orb of Power",
+    /// "Grenade (💀 kill)", "Grenade (💀 kill 3)", "Festival Flight (🥊 hit 5)", "Class ability", "Pick up Orb of Power",
     /// "Bolt Charge at max (x10)", "Amplified ends", "New pack", "Critical health", "Finisher".
     /// </summary>
     public static string DescribeAction(this ValidatedBuild build, PlayerAction action) =>
@@ -728,9 +879,12 @@ public static class DomainPhrasing
             _ => "New pack",
             _ => CriticalHealth);
 
-    /// <summary>"kill", "hit", and with more than one target "kill 3", "hit 5".</summary>
+    /// <summary>
+    /// "💀 kill", "🥊 hit", and with more than one target "💀 kill 3", "🥊 hit 5": the mark tells a kill step from a hit
+    /// step at a glance (a hit step is damage kept up, a kill step's hit the killing blow, ADRs D34).
+    /// </summary>
     private static string DescribeHit(HitOutcome hit, TargetCount targets) =>
-        (hit == HitOutcome.Kill ? "kill" : "hit") + (targets.Value > 1 ? $" {targets.Value}" : "");
+        (hit == HitOutcome.Kill ? "💀 kill" : "🥊 hit") + (targets.Value > 1 ? $" {targets.Value}" : "");
 
     /// <summary>"1 enemy", "3 enemies".</summary>
     private static string DescribeEnemies(TargetCount targets) =>

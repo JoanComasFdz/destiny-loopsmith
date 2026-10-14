@@ -352,7 +352,7 @@ public static class ManifestListing
 
     /// <summary>
     /// True when a socket that starts with a plug of this category is a mod socket a build chooses for (ArmorModCategories):
-    /// a raid's or an activity's isn't (ADRs D33), so neither it nor its mods are listed.
+    /// a raid's or an activity's isn't (ADRs D35), so neither it nor its mods are listed.
     /// </summary>
     private static bool IsModSocket(PlugCategoryId category) =>
         category == ArmorModCategories.General

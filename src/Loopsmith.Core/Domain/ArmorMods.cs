@@ -8,7 +8,7 @@ namespace Loopsmith.Core.Domain;
 /// of one category: the general one (<c>enhancements.v2_general</c>: stat mods), its slot's
 /// (<c>enhancements.v2_head</c> … <c>enhancements.v2_class_item</c>), or its artifice socket. A raid's, an activity's and
 /// a retired season's sockets (<see cref="IsActivityMods"/>) hold mods Loopsmith doesn't support: they work only in their
-/// raid or activity, or no longer work at all, so the designer has no socket for them (ADRs D33). Other categories in the
+/// raid or activity, or no longer work at all, so the designer has no socket for them (ADRs D35). Other categories in the
 /// game's "ARMOR MODS" sockets aren't mods a build chooses either (tuning, masterworks, Armor 1.0's).
 /// </summary>
 public static class ArmorModCategories
@@ -41,7 +41,7 @@ public static class ArmorModCategories
     private static readonly PlugCategoryId DreamingCity = PlugCategoryId.From("enhancements.rivens_curse");
 
     /// <summary>
-    /// True for the mods of a raid's, an activity's or a retired season's socket: Loopsmith doesn't support them (ADRs D33).
+    /// True for the mods of a raid's, an activity's or a retired season's socket: Loopsmith doesn't support them (ADRs D35).
     /// </summary>
     public static bool IsActivityMods(PlugCategoryId category) =>
         category.Value.StartsWith(RaidPrefix, StringComparison.Ordinal)
@@ -84,7 +84,7 @@ public sealed record PieceModSockets(ArmorSlot Slot, bool PieceKnown, ImmutableA
 /// (every piece's general socket; the general mods go wherever the energy lets them, as DIM assigns them), the mods no
 /// free socket takes (more than the pieces hold, or of a category no piece worn has), the ones that aren't socket
 /// mods (a tuning mod, which goes in a Tier 5 copy's tuning socket; one the listing doesn't have) and the ones Loopsmith
-/// ignores (a raid's, an activity's or a retired season's: no socket, ADRs D33).
+/// ignores (a raid's, an activity's or a retired season's: no socket, ADRs D35).
 /// </summary>
 public sealed record ModLayout(
     ImmutableArray<PieceModSockets> Pieces,

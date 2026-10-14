@@ -27,9 +27,12 @@ public static class TriggerMatching
             killMultiple => gameEvent is GameEvent.TargetsHit { Hit: HitOutcome.Kill } struck
                 && killMultiple.Via.IsMatchedBy(struck.Origin, superType)
                 && struck.Targets.Value >= killMultiple.AtLeast.Value,
-            damage => gameEvent is GameEvent.Damaged damaged && damage.Via.IsMatchedBy(damaged.Origin, superType),
+            damage => gameEvent is GameEvent.Damaged damaged
+                && damage.Via.IsMatchedBy(damaged.Origin, superType)
+                && IsSpanMet(damage.Needs, damaged.Span),
             damageDebuffed => gameEvent is GameEvent.Damaged damaged
                 && damageDebuffed.Via.IsMatchedBy(damaged.Origin, superType)
+                && IsSpanMet(damageDebuffed.Needs, damaged.Span)
                 && HasEveryStatus(damaged.TargetHas, damageDebuffed.TargetHas),
             damageMultiple => gameEvent is GameEvent.TargetsHit struck   // a kill hits too
                 && damageMultiple.Via.IsMatchedBy(struck.Origin, superType)
@@ -127,4 +130,8 @@ public static class TriggerMatching
 
     private static bool HasEveryStatus(ImmutableArray<StatusId> present, ImmutableArray<StatusId> required) =>
         required.All(present.Contains);
+
+    /// <summary>A source that needs sustained damage fires on a hit step's hits only; any other on every hit (ADRs D34).</summary>
+    private static bool IsSpanMet(DamageSpan needs, DamageSpan span) =>
+        needs == DamageSpan.Blow || span == DamageSpan.Sustained;
 }

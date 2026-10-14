@@ -54,7 +54,7 @@ public sealed class ManifestListingTests
         Assert.Equal((Optional.Some("/siphon.png"), Optional.Some("Arc kills make orbs.")), (cheap.Item.Icon, cheap.Item.Description));
         Assert.Equal(
             ["enhancements.v2_general", "enhancements.v2_head", "enhancements.v2_head"],
-            listing.ModSockets[ItemHash.From(200u)].Select(category => category.Value));                                  // the tuning socket isn't a mod a build chooses, the raid's isn't supported (ADRs D33)
+            listing.ModSockets[ItemHash.From(200u)].Select(category => category.Value));                                  // the tuning socket isn't a mod a build chooses, the raid's isn't supported (ADRs D35)
         Assert.False(listing.ModSockets.ContainsKey(ItemHash.From(100u)));                                                // a weapon has none
     }
 

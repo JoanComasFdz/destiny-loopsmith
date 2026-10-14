@@ -24,14 +24,64 @@ public sealed class StepOutcomeShapingTests
                 "Test", Optional.None<string>(), Optional.None<string>(), Optional.None<CatalogVersion>(), new SourceText("b", ""), [])),
             (session, action) => LoopDesigning.AppendStep(session, action, Optional.None<string>()));
 
-    private static ValidatedBuild ValidateSparkBuild()
+    private static ValidatedBuild ValidateSparkBuild() =>
+        ValidateSparkBuild([]);
+
+    /// <summary>The Spark build with Jolt striking on a hit on a jolted target: the hits after the first set off something new.</summary>
+    private static ValidatedBuild ValidateStrikingSparkBuild() =>
+        ValidateSparkBuild([On(new Trigger.DamageDebuffed(Any, [Status("jolt")]), Energy(AbilityKind.Melee, new GameValue.Known(0.01m)))]);
+
+    private static ValidatedBuild ValidateSparkBuild(ImmutableArray<Rule> joltRules)
     {
         var spark = Element("spark", ElementKind.Fragment, [On(new Trigger.Damage(Any), new Outcome.DebuffTarget(Status("jolt"), Optional.None<Seconds>()))]);
         var vow = Element("vow", ElementKind.Fragment,
             [On(new Trigger.Damage(Any), Buff("bolt-charge"), Energy(AbilityKind.Grenade, new GameValue.Unknown())) with { Reason = Optional.Some("Grenade hits charge you.") }]);
         var boltCharge = Element("bolt-charge", ElementKind.Keyword, [On(new Trigger.BuffGained(Status("bolt-charge")), Energy(AbilityKind.Melee, new GameValue.Known(0.025m)))]);
-        var jolt = Element("jolt", ElementKind.Keyword, []);
+        var jolt = Element("jolt", ElementKind.Keyword, joltRules);
         return ValidateBuild([spark, vow], keywords: [boltCharge, jolt]);
+    }
+
+    [Fact]
+    public void One_action_against_five_enemies_shows_each_alike_hit_once_with_what_it_set_off_marked_x4()
+    {
+        var build = ValidateStrikingSparkBuild();
+        var session = Play(build, new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Damage, TargetCount.From(5)));
+        var resolution = session.Resolutions[^1];
+
+        var shaped = StepOutcomeShaping.ShapeStepOutcomes(build, resolution, Plain).Events;
+        var trace = TraceRenderer.RenderResolution(build, resolution, Plain).Select(line => line.ToPlainText()).ToImmutableArray();
+
+        Assert.Equal(
+            [("Grenade 🥊 hit", 0, 1), ("Bolt Charge gained", 1, 1), ("Grenade 🥊 hit on Jolted target", 0, 4), ("Bolt Charge gained", 1, 1)],
+            shaped.Select(e => (e.Event, e.Depth, e.Repeats)));
+        Assert.Contains(trace, line => line.Contains("Grenade 🥊 hit on Jolted target ×4", StringComparison.Ordinal));
+        Assert.Equal(2, trace.Count(line => line.Contains("Bolt Charge gained", StringComparison.Ordinal)));
+    }
+
+    [Fact]
+    public void A_later_kill_of_one_action_that_sets_off_less_than_the_first_shows_in_it_whatever_the_first_left_on_the_pack_and_a_siphons_kills_say_their_window()
+    {
+        var reaper = Element("reaper", ElementKind.ArmorMod,
+        [
+            On(new Trigger.AbilityCast(AbilityKind.Grenade), Buff("amplified")),
+            OnWhen(new Trigger.KillAny(Any), new Condition.HasBuff(Status("amplified")), new Outcome.RemoveBuff(Status("amplified")), new Outcome.Spawn(Pickup("orb-of-power"), 1), Debuff("jolt")),
+        ]);
+        var shreds = Element("shreds", ElementKind.Fragment, [On(new Trigger.KillAny(Any), Energy(AbilityKind.Melee, new GameValue.Known(0.1m)))]);
+        var siphon = Element("siphon", ElementKind.ArmorMod,
+            [On(new Trigger.KillMultiple(Any, TargetCount.From(2), Optional.Some(Seconds.From(3m))), new Outcome.Spawn(Pickup("orb-of-power"), 1))]);
+        var build = ValidateBuild([shreds], mods: [reaper, siphon]);
+        var resolution = Play(build, new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Kill, TargetCount.From(3))).Resolutions[^1];
+
+        var shaped = StepOutcomeShaping.ShapeStepOutcomes(build, resolution, Plain).Events;
+        var trace = TraceRenderer.RenderResolution(build, resolution, Plain).Select(line => line.ToPlainText()).ToImmutableArray();
+
+        var kill = Assert.Single(shaped, e => e.Event == "Grenade 💀 kill" || e.Event.StartsWith("Grenade 💀 kill on", StringComparison.Ordinal));
+        Assert.Equal("Grenade 💀 kill", kill.Event);   // the first one's: the later ones are on a Jolted target
+        Assert.Equal(3, kill.Repeats);
+        Assert.Equal(["Reaper", "Shreds"], kill.Sources.Select(source => source.Name).Distinct());
+        Assert.Contains(shaped, e => e.Event == "Grenade 💀 killed 3 enemies in 3 s");
+        Assert.Single(trace, line => line.Contains("Grenade 💀 kill ×3", StringComparison.Ordinal));
+        Assert.Contains(trace, line => line.Contains("Grenade 💀 killed 3 enemies in 3 s", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -42,7 +92,7 @@ public sealed class StepOutcomeShapingTests
         var shaped = LoopDesigning.ShapeStepOutcomes(session, session.Resolutions[0], Plain);
 
         var hit = shaped.Events[0];
-        Assert.Equal((0, "Grenade hit"), (hit.Depth, hit.Event));
+        Assert.Equal((0, "Grenade 🥊 hit"), (hit.Depth, hit.Event));
         Assert.Equal(["spark", "vow"], hit.Sources.Select(source => source.Source.Value));
         var jolted = Assert.Single(hit.Sources[0].Outcomes);
         Assert.StartsWith("Jolt target", jolted.Text);

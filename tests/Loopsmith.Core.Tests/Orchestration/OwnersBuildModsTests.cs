@@ -4,6 +4,7 @@ using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 using Loopsmith.Core.Orchestration;
 using Loopsmith.Core.Phrasing;
+using Loopsmith.Core.Simulation;
 using Loopsmith.Core.SourceFetching;
 using Loopsmith.Core.Tests.Support;
 
@@ -80,10 +81,10 @@ public sealed class OwnersBuildModsTests
 
         var dodge = played.Resolutions[2];
 
-        Assert.Contains(Orb, played.Resolutions[1].State.Pickups);
-        Assert.DoesNotContain(Orb, dodge.State.Pickups);
+        Assert.Contains(Orb, played.Resolutions[1].State.ListPickups());
+        Assert.DoesNotContain(Orb, dodge.State.ListPickups());
         var attraction = Assert.Single(dodge.Fired, fired => fired.Source.Value == "powerful-attraction");
-        Assert.Equal(new AppliedOutcome(new Outcome.Collect(Orb), Certainty.Known, Optional.None<string>()), Assert.Single(attraction.Outcomes));
+        Assert.Equal(new AppliedOutcome(new Outcome.Collect(Orb), Certainty.Known, Optional.None<string>(), Optional.None<StackSpend>()), Assert.Single(attraction.Outcomes));
         Assert.Contains(dodge.Fired, fired => fired.Source.Value == "recuperation" && fired.Trigger == new GameEvent.PickedUp(Orb));
         Assert.Contains(dodge.State.Buffs, buff => buff.Status == ArmorCharge);                     // the orb's Armor Charge
     }
@@ -139,7 +140,7 @@ public sealed class OwnersBuildModsTests
         Assert.Equal(Optional.Some<GameValue>(new GameValue.Known(4)), played.Build.ReadStackCap(ArmorCharge));
         Assert.Equal("Armor Charge at max (x4)", played.Build.DescribeAction(played.Design.Steps[3].Action));
         var charge = Assert.Single(state.Buffs, entry => entry.Keyword == new KeywordRef.Status(ArmorCharge));
-        Assert.Equal(("Armor Charge (at max)", Optional.Some("up to x4")), (charge.Text, charge.Facts));
+        Assert.Equal(("Armor Charge x4 (at max)", Optional.Some("up to x4")), (charge.Text, charge.Facts));
         Assert.Equal(Optional.Some<GameValue>(new GameValue.Known(5)), twoCopies.ReadStackCap(ArmorCharge));            // the Compendium's "4 | 5 | 6"
         Assert.Equal(Optional.Some<GameValue>(new GameValue.Known(10)), played.Build.ReadStackCap(StatusId.From("bolt-charge")));   // nothing raises it
         Assert.Equal(Optional.None<GameValue>(), played.Build.ReadStackCap(StatusId.From("amplified")));                 // doesn't stack

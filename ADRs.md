@@ -4,7 +4,8 @@ Each ADR explains **why**; [`CONVENTIONS.md`](./CONVENTIONS.md) says **what** an
 The requirements they serve are in [docs/requirements.md](docs/requirements.md). The list is the
 current set of decisions, in four groups: what the product is (D1–D9), sources and rules (D10–D15),
 architecture (D16–D23), hosts and tooling (D24–D26), starting from a DIM link (D27), the build's stats (D28), the
-step's damage resistance (D29), armor mods in their sockets (D30) and the raid and activity mods left out of them (D33). D1 is the
+step's damage resistance (D29), armor mods in their sockets (D30), the artifact (D32), the count of Armor Charge
+(D33), what a hit step stands for (D34) and the raid and activity mods left out of the sockets (D35). D1 is the
 founding one: every other decision follows from it.
 
 | # | Decision | Why |
@@ -39,7 +40,8 @@ founding one: every other decision follows from it.
 | D29 | The step's state shows its damage resistance, its sources multiplied, PvE and PvP | Builds are judged by how much damage they shrug off; the game stacks resistance by a known rule, so the total is a fact, never a decision |
 | D30 | Armor mods are picked in the pieces' sockets; the energy budget holds when its capacity is known | A build's mods are part of its loop and the game decides what fits; the sockets and costs are Bungie's, the capacity the player's copy's |
 | D32 | A build names its artifact and the perk in each of its slots (Artifacts 2.0) | Since Monument of Triumph one of seven artifacts is equipped with up to seven perks, one per slot; the tiers and slots are Bungie's, read from the artifact's sockets |
-| D33 | Raid, activity and seasonal armor mods aren't supported: a DIM link's are kept but ignored, and no picker offers them | They act on an encounter's mechanics (a relic, a plate, an enemy race), which a loop of triggers doesn't hold, or no longer work at all; what a loadout had stays visible |
+| D33 | Armor Charge is counted: sure stacks and chance stacks, and the count decides | Gaining, keeping and spending Armor Charge is a pillar of build crafting; most of its gains and spends are known steps of the loop, so the loop can say how many it surely holds |
+| D35 | Raid, activity and seasonal armor mods aren't supported: a DIM link's are kept but ignored, and no picker offers them | They act on an encounter's mechanics (a relic, a plate, an enemy race), which a loop of triggers doesn't hold, or no longer work at all; what a loadout had stays visible |
 
 ## What the product is
 
@@ -58,7 +60,8 @@ how many, how often, how long or when.
   "up to x10", "refills melee"). They are never added up or compared to
   decide what happens.
 * **State is what is present**: a buff on you, a debuff on the pack, a pickup on the ground — and
-  what the player declared (D3). Nothing in it is counted: no stacks, energy or health.
+  what the player declared (D3). Nothing in it is counted: no stacks, energy or health — but a counted buff's
+  stacks (Armor Charge, D33).
 * **The player declares what only play can decide**: that a threshold is reached ("Bolt Charge at
   max", "Combination Blow at max"), that a buff has ended (D3), how many enemies one action hits (D4).
   The engine shows what the declared state sets off.
@@ -92,7 +95,8 @@ step, what each step needs and sets off. A loop designed against another catalog
 **Context.** Many rules react to a threshold: Shinobu's Vow and Flashover at x10 Bolt Charge,
 Slice after its 5 hits, Combination Blow at x3. When it is reached depends on play (D1). The game
 shows these counts as a stacking status (`maxStacks` in the glossary), so the player can see and
-declare them; a counter the game doesn't show (To Shreds' 6 weapon hits) is a *(chance)* rule (D8).
+declare them; a counter the game doesn't show is a *(chance)* rule (D8), except a count of hits or a share of the
+enemy's health (To Shreds' 6 weapon hits), which a hit step stands for (D34).
 **Decision.** A loop step can declare a state:
 
 * `max:<status>` — the buff is at its maximum ("Bolt Charge at max"). It raises `StacksMaxed`, so the
@@ -107,7 +111,7 @@ declare them; a counter the game doesn't show (To Shreds' 6 weapon hits) is a *(
 A declaration that doesn't hold is a **blocked step**, like a pickup that isn't on the ground:
 `max:` needs an active buff that stacks (`maxStacks` in the glossary) and isn't declared at max yet,
 `end:` an active status; `pack:new` and `health:critical` always hold. Nothing else reaches a maximum: an `applyBuff` makes the buff present and
-shows its grant ("+1 Bolt Charge"). A status ends only through a rule's `removeBuff` or consumption,
+shows its grant ("+1 Bolt Charge") — but a counted buff, whose sure stacks reaching the cap put it at max (D33). A status ends only through a rule's `removeBuff` or consumption,
 or an `end:`. **Consequence.** `stacksMaxed` fires only on a declaration;
 a rule that reacts to the next hit at the maximum uses the `atMax` condition (Bolt Charge discharges
 on the next ability hit at x10). A rule that needs a count below the cap ("x3 or more Armor Charge": Emergency
@@ -423,7 +427,7 @@ assigns them. The energy a piece's mods use is a build check, not game state: co
 player's copy (after a Bungie login, D28) it refuses a pick that takes the piece over it, and it never decides what a
 step fires. Without a login the capacity is "?" and nothing is refused (D13): a piece picked from every piece of the
 game has no copy to read it from. **Consequence.** Mods the rules don't know can be picked (⊘), like perks; a raid's
-or an activity's socket isn't shown (D33). A slot with no piece holds one free socket more than its
+or an activity's socket isn't shown (D35). A slot with no piece holds one free socket more than its
 mods, since it has no sockets to read. A tuning mod (a Tier 5 copy's tuning socket) isn't picked here; it stays in
 the build. A stat mod the manifest excerpt lacks (`statPlugs`) doesn't add to the stats yet.
 
@@ -462,7 +466,61 @@ the editor shows the slots last picked for it while the loop is open (the tab's 
 **Consequence.** A perk the rules don't know can be picked (⊘, in `leftOut`), like a fragment or a mod. Artifact perks
 being off in Trials and Competitive Crucible isn't modelled.
 
-### D33 — Raid, activity and seasonal armor mods aren't supported: a DIM link's are kept but ignored, and no picker offers them
+### D33 — Armor Charge is counted: sure stacks and chance stacks, and the count decides
+
+**Context.** Armor Charge is a pillar of build crafting: many parts of a build gain it, keep it or spend it. D1 left
+every stack uncounted and D3 had the player declare "at max", so a loop couldn't say how many stacks it holds, a
+Kickstart's refund was "?" and a finisher that needs x3 fired as a chance whatever came before. Yet most gains are
+steps of the loop the engine already plays — "dodge for Reaper, a weapon kill, pick up the orb" surely gives one — and
+the rest are chance rules (a Siphon's orb from one kill, Elemental Charge's progress), which D8 already marks.
+**Decision (product owner).** A buff the glossary marks `counted: true` (Armor Charge only, for now) holds its stacks
+in the state: the **sure** ones, from rules that always fire, and the **chance** ones, from chance rules and from what
+they set off — a pickup on the ground only chance rules dropped gives what it gives only by chance, and so does an
+event a chance rule raised. A grant adds its stacks and the passives' extra ones (Stacks on Stacks) to the sure or the
+chance stacks, up to the build's cap (x3, Charged Up's x4–x6); the rest is wasted ("at cap"), and sure stacks at the
+cap put the buff at its maximum, as a declaration would. A spend takes them off: every stack (a Kickstart, a removal,
+`end:`) or a fixed number (`spendStacks`: sure ones first, then chance ones), and the buff ends with none left. The
+count decides: a guard on the buff (`has`, `lacks`, `holds: { atLeast: N }`) holds for sure when the sure stacks meet
+it, by chance (the rule fires marked *(chance)*, a passive holds as a chance) when only the chance ones do, and not at
+all otherwise — the rule doesn't fire, and the step says what it needed ("Bulwark Finisher needs x3 Armor Charge,
+holds x1"). A table by the stacks spent (the finishers: x3 → 70%) or by charges, each copy and each stack counting one
+(the Kickstarts: 2 mods and x2 → 28.4%), gives the value for the sure stacks and, beside it, the value with the chance
+ones. `max:armor-charge` is offered while the sure stacks are below the cap and makes them the cap. The state shows
+the count ("Armor Charge x1 · +1 (chance)") and each change since the buff was last gained from none, with its step;
+the next pass of a loop starts from what the last one ended with. A kill count takes the window its source gives
+(`atLeast: 2, within: 3s`): the kills of one step are at once, so a Siphon's orb from two kills is sure and from one a
+chance (the split of D31), and so are Spark of Amplitude's two kills within 4 s and Spark of Discharge's three kills
+(its counter, as Synergy's); the enemy-count selector says what each count is for ("2 in 3 s · Arc Siphon",
+"3 · Spark of Discharge") and goes up to the last count that still fills something — playing the step with one enemy
+more each time from the state it starts in, until no buff that stacks gains more below its cap and no ability's energy
+below a full charge ("5 enemies · Bolt Charge x10", "7 enemies · grenade full"). Those sums bound the choices only:
+never game state, never read to decide what fires (D1, D5).
+**Consequence.** The count is game state, the one number besides the step (`CausalStateTests` allows it and nothing
+else): it is a fact of the loop's order, not a simulation — time is still not modelled, so the decay (one stack every
+10 s, slower with Time Dilation) is a fact shown with the count, never applied, and "sure" means "if the player
+doesn't wait". Other stacking statuses (Bolt Charge, Combination Blow, Slice) stay declared (D3) until they are marked
+counted. Kills of earlier steps still don't add up (D31).
+
+### D34 — A hit step is damage kept up; a kill step's killing blow is one blow
+
+**Context.** Some sources need several hits on one enemy or a share of its health: To Shreds unravels after 6 weapon
+damage instances on a Severed enemy, Horde Shuttle spawns a Threadling for weapon damage worth 10% of an Unraveled
+enemy's health, Attrition Orbs drops an orb after a magazine-based number of hits (3 for a grenade launcher), and
+Thunderlord's Lightning Rounds strikes every 10th hit. They were *(chance)* rules on any damage (D8), so they fired as a
+chance under every killing blow, cluttering each kill with effects the kill may not have earned: in easy content one
+shot kills, in hard content many hits come first.
+**Decision (product owner).** A step's hits stand for how much damage the player says it is. A **hit step**
+(`kinetic:hit`, `grenade`) is damage kept up on the enemy without killing it, enough for any number of hits or share
+of health a source needs: such a rule (`damage: { …, sustained: true }`) fires there **for sure**. A **kill step**'s hit
+is the killing blow, one blow: such a rule doesn't fire on it. A strike's, a summon's and a finisher's hits are one
+blow too. A rule that needs one hit (Shinobu's Vow's Bolt Charge, Spark of Shock's Jolt, Slice's Sever) fires on every
+hit, the killing blow included.
+**Consequence.** The player adds a hit step before the kill when the loop keeps shooting an enemy (as `max:` declares a
+threshold, D3); a kill step shows only what killing does. The loop graph treats a weapon's or an ability's hits as
+possibly sustained, so these rules stay reachable. Kill counters the game doesn't show (Elemental Charge's progress,
+Synergy, Spark of Discharge) are kills, not damage, and stay as D31 says.
+
+### D35 — Raid, activity and seasonal armor mods aren't supported: a DIM link's are kept but ignored, and no picker offers them
 
 **Context.** Raid armor (and Last Wish's, the Nightmare Hunts', the Dreaming City's) has a socket of its own for mods that
 work only in that raid or activity: most act on its mechanics — carrying the Relic, Flux of Darkness, a Vex relay, Taken

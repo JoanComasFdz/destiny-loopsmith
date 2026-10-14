@@ -128,7 +128,9 @@ itself, under `src/Loopsmith.Core/Domain/`.
   trace shows "?". Every element keeps its `Provenance` (its `source:`).
 - **State is causal** (ADRs D1). Game state says what is present (a buff, a
   debuff on the pack, a pickup on the ground) and what the player declared
-  ("Bolt Charge at max"); it holds no number but the step. A source's number
+  ("Bolt Charge at max"); it holds no number but the step and a counted buff's
+  stacks (ADRs D33: Armor Charge's sure and chance stacks, which do decide what
+  fires — the one counter of the game state). A source's number
   (`+1 Bolt Charge`, `15s`, `+12% grenade energy`) is a fact shown with its
   outcome — never accumulated, and never compared to decide what happens.
   Three exceptions, none of them game state: the build's stat line (ADRs D28) —

@@ -1,32 +1,36 @@
 ﻿Class ability -> +?% melee energy [Gambler's Dodge] + +12% grenade energy [Bomber] + Reaper (10s) [Reaper] + +1 Slice (8s) [Slice]
-Grenade thrown -> consumes New Tricks (while New Tricks) [Shinobu's Vow] + spends Armor Charge → +?% grenade energy per stack (while Armor Charge) [Grenade Kickstart]
+Grenade thrown -> consumes New Tricks (while New Tricks) [Shinobu's Vow] + spends Armor Charge → +16.2% … 45% grenade energy by copies and stacks (2 … 9) (while Armor Charge) [Grenade Kickstart]
 Super cast -> Super [Super] + consumes Woven Mail (while Woven Mail) [Woven Mail]
 Sliding melee damage -> Jolt target (10s) [Tempest Strike]
 Grenade damage -> Jolt target (10s) [Spark of Shock] + +1 Bolt Charge and +4.2% grenade energy [Shinobu's Vow]
 Melee damage -> +12% grenade energy [Impact Induction]
 Bolt Charge damage -> Jolt target (10s) and heals you [Defibrillating Blast]
 Threadling damage -> Sever target (10s) [Horde Shuttle]
-Strand weapon damage -> Sever target (10s) and +1 Slice (8s) (while Slice) [Slice] + Orb of Power [Attrition Orbs] (chance) + Unravel target (while Unraveling Rounds) [Unraveling Rounds]
+Strand weapon damage -> Sever target (10s) and +1 Slice (8s) (while Slice) [Slice] + Unravel target (while Unraveling Rounds) [Unraveling Rounds]
+Strand weapon damage kept up (a hit step) -> Orb of Power [Attrition Orbs]
 Ability damage -> consumes Bolt Charge and Bolt Charge strike (kills) (while Bolt Charge at max) [Bolt Charge]
-Weapon damage on Severed target -> Unravel target [To Shreds] (chance)
-Weapon damage on Unraveled target -> Threadling [Horde Shuttle] (chance)
+Weapon damage on Severed target kept up (a hit step) -> Unravel target [To Shreds]
+Weapon damage on Unraveled target kept up (a hit step) -> Threadling [Horde Shuttle]
 Weapon damage on Jolted target -> Jolt strike [Jolt]
 Ability damage on Jolted target -> Jolt strike [Jolt]
 Super kill -> +1 Bolt Charge [Arc Staff]
 Melee kill -> +1 Combination Blow (20s) and +100% class ability energy and heals you [Combination Blow]
-Kill target with Arc weapon -> Ionic Trace [Spark of Discharge] (chance)
 Kill target with weapon -> consumes Reaper and Orb of Power (while Reaper) [Reaper]
-Kill target with Arc weapon (your Super's element) -> Orb of Power [Harmonic Siphon] (chance)
-Kill target with Strand weapon -> Orb of Power [Strand Siphon] (chance)
 Kill Jolted target -> +1 Bolt Charge (doesn't stack with Dielectric) [Tempest Strike] + Amplified (15s) [Flow State] + Ionic Trace [Shock and Clear] + +1 Bolt Charge [Dielectric]
 Kill Severed target -> Woven Mail (10s) and heals you and allies [To Shreds]
 Arc kill on Severed target -> Blind target (10s) [Photonic Flare]
+Kill 3+ with Arc weapon -> Ionic Trace [Spark of Discharge]
+Kill 2+ with Arc weapon (your Super's element) in 3s -> Orb of Power [Harmonic Siphon]
+Kill 2+ with Strand weapon in 3s -> Orb of Power [Strand Siphon]
+Kill 1–2 with Arc weapon -> Ionic Trace [Spark of Discharge] (chance)
+Kill 1 with Arc weapon (your Super's element) -> Orb of Power [Harmonic Siphon] (chance)
+Kill 1 with Strand weapon -> Orb of Power [Strand Siphon] (chance)
 Pick up Ionic Trace -> +1 Bolt Charge [Spark of Discharge] + +1 Armor Charge [Elemental Charge] (chance) + +11.3% grenade and melee energy and +13.5% class ability energy [Ionic Trace]
 Pick up Orb of Power -> Unraveling Rounds (14s) [Unraveling Orbs] + +1 Armor Charge and +?% super energy [Orb of Power]
 Gain Bolt Charge -> +?% grenade energy [Shinobu's Vow] + +2.5% melee energy [Bolt Charge]
 Max Bolt Charge (x10) -> New Tricks and +~40% grenade energy and heals you and allies [Shinobu's Vow] + Amplified (15s) [Flashover]
 Max Slice (x5) -> consumes Slice [Slice]
-Critical health -> consumes Armor Charge and Emergency Reinforcement (while Armor Charge at max) [Emergency Reinforcement] + consumes Armor Charge and Emergency Reinforcement (while Armor Charge below max) [Emergency Reinforcement] (chance)
+Critical health -> consumes Armor Charge and Emergency Reinforcement (6s … 12s at x3 … x5 spent) (with x3 or more Armor Charge) [Emergency Reinforcement]
 While Super -> 90% [PvP 53%] damage resistance [Arc Staff]
 While Combination Blow -> +?% melee damage [Combination Blow]
 While Amplified, during your class ability -> 66% [PvP 32%] damage resistance [Flow State]
