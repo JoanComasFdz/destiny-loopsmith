@@ -166,7 +166,8 @@ session.
 
 Follow-ups (work the PR doesn't cover) never go into the PR. Offer them as a numbered list. When
 @JoanComasFdz says to launch one, start a new `/loopsmith-task` session for it with the
-claude-code-remote `create_session` tool, then reply with its name and its
+claude-code-remote `create_session` tool, titled `(#<PR number> follow-up) <task title>` (its own PR
+later makes it `#57 (#56 follow-up) <task title>`), then reply with its name and its
 `https://claude.ai/code/<session id>` link (`loopsmith-task` skill, section 6).
 
 Always:

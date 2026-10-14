@@ -141,7 +141,10 @@ proposed task title (CLAUDE.md, "Naming (agent work)") and one or two lines on w
 
 When the owner says to launch one ("launch", "launch 2", "launch all"), start a new session for
 each one with the claude-code-remote `create_session` tool:
-- `title`: the follow-up's task title.
+- `title`: `(#<n> follow-up) ` followed by the follow-up's task title, where `<n>` is this
+  session's PR: "(#56 follow-up) Show perk descriptions on phone". When the new session opens its
+  own PR, the rename in section 5 puts that PR's number in front: "#57 (#56 follow-up) Show perk
+  descriptions on phone".
 - `source_url`: `https://github.com/JoanComasFdz/destiny-loopsmith`. Leave the environment, model
   and permission mode as they are (the new session inherits them).
 - `prompt`: `/loopsmith-task ` followed by the follow-up in the owner's words. Add what the new
@@ -149,14 +152,13 @@ each one with the claude-code-remote `create_session` tool:
   and a description of any screenshot or file it depends on. The files themselves stay in this session
   (CLAUDE.md, "Agent workflow"). If a file is essential, say so in the prompt so the new session asks
   for it.
-- `tags`: `loopsmith-followup:pr-<n>`, so all of a PR's follow-ups can be found together.
 
 The new session agrees its own spec with the owner, on its own branch and pull request. Don't
 send it more messages: the owner talks to it directly.
 
 Then confirm in this session with one bullet per launched session, so the owner can see what was
 launched:
-- **<title>**: https://claude.ai/code/<session id>
+- **(#<n> follow-up) <title>**: https://claude.ai/code/<session id>
 
 Follow-ups that weren't launched stay on the list in your next message. If `create_session` isn't
 available or fails, say so and give the owner the prompt to paste into a new session.
