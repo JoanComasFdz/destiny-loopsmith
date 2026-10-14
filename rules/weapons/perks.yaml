@@ -74,7 +74,7 @@ elements:
     # trait a `slot:` rule would be wrong for the other weapons that roll it.
     # Nothing in a loop reacts to reload speed (see Spark of Frequency's reload buff,
     # hunter/arc.yaml).
-    inert: "Reload speed isn't part of a loop: Loopsmith counts no ammo and no reloads."
+    inert: "Reload speed isn't part of a loop: Loopsmith counts no ammo, and a reload is one step however fast it is."
     rules: []
     passives: []
     # The enhanced trait: the row's ↑ figures, in the description only (the perk has no rules).

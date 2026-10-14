@@ -159,9 +159,10 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
 - **Exotic weapons beyond Thunderlord**: only Thunderlord's perks and catalyst are authored
   (`rules/exotics/weapons.yaml`); other exotics show Bungie's text but set nothing off. Their rules use
   `slot:<slot>` for "this weapon".
-- **What the rules can't say yet** (each noted in its rule file): stuns, "while holding the trigger". Ammo, a
-  magazine refill and a weapon's own lightning strike are outside the loop on purpose (Return Stroke and Feeding
-  Frenzy are `inert`): Loopsmith isn't a simulator.
+- **What the rules can't say yet** (each noted in its rule file): stuns, "while holding the trigger". Ammo, reload
+  speed and a weapon's own lightning strike are outside the loop on purpose (Feeding Frenzy is `inert`; Return Stroke's
+  strike is Thunderlord's kill or hit step): Loopsmith isn't a simulator. A reload is a step the player declares, and an
+  outcome (D37).
 - **The artifact of a DIM link made since Monument of Triumph**: the excerpt has all seven artifacts, but a DIM link
   is read for its artifact perks only (`parameters.artifactUnlocks`), so its build's artifact is the one that unlocks
   the most of them and each perk is placed in a slot by Loopsmith (the highest tiers first, each in the free slot that
@@ -172,27 +173,19 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   author 7, the Tablet of Ruin's of the skip-grenade build (`rules/artifact/current.yaml`); the others show ⊘ in the
   artifact editor and set nothing off. Next: the rest of the Tablet of Ruin's 21, then the artifact to do after it,
   from the Compendium snapshot's Artifact Perks tab (`rule-author`; no invented numbers, D13).
-- **Weapon perks**: the rules author 10 (Slice, Attrition Orbs, Feeding Frenzy, and the ones that need several enemies
-  in one action: One for All, Stats for All, Reaper's Tithe, Hatchling, Veteran's Wisdom, Unrelenting and Radiolaria
-  Transposer), each with its enhanced trait (rule-format.md, "Enhanced traits"); the game has ~226 enhanced
-  traits and ~86 enhanced origin traits, whose base perks aren't authored either. A perk authored next gets its
-  `enhanced` block (a test asks for it). Every perk says "this weapon" (`weapon:this`), bound to the weapon that rolls
-  it. Two tasks, in this order (the second needs the first merged):
-  1. **A Reload step and Demolitionist.** A **Reload** button next to Kill in
-     the step HUD plays a reload as its own step: the player declares it, no ammo is counted (D1). A `reload` trigger
-     (with `via`, so "reload this weapon") lets rules react to it, and a reload outcome lets an effect say "this
-     reloads the weapon". Demolitionist with both halves: kills with this weapon give grenade energy (the
-     Compendium's number, `"?"` until known), and using your grenade reloads this weapon; with its enhanced trait.
-     Test case: a Solar Hunter loop with Healing Grenade and a Demolitionist weapon (Healing Grenade → kills with the
-     weapon → grenade energy back → Healing Grenade), like the one Tactics uses. Docs: rule-format.md (the source,
-     trigger and outcome) and loop-format.md (the Reload step).
-  2. **Every weapon perk that feeds the loop.** With `weapon:this`, the reload trigger and the reload outcome, author
-     every perk that gives or spends something a step needs (ability energy, a buff, a debuff, a pickup, an orb, a
-     summon, or a reload another perk reacts to), e.g. Wellspring, Pugilist, Voltshot (kill, then reload: the next
-     shots jolt), Incandescent, Destabilizing Rounds and Repulsor Brace, each with its enhanced trait; the
-     full list is agreed with the owner first. A perk that only changes stats, handling, damage or ammo gets an
-     `inert:` reason when it comes up, else stays ⊘. Sources: the Compendium snapshot and Clarity (`rule-author`,
-     provenance on every rule, `"?"` for what they don't give); rerun `tools/manifest/` for the new hashes.
+- **Weapon perks**: the rules author 11 (Slice, Attrition Orbs, Feeding Frenzy, Demolitionist, and the ones that need
+  several enemies in one action: One for All, Stats for All, Reaper's Tithe, Hatchling, Veteran's Wisdom, Unrelenting
+  and Radiolaria Transposer), each with its enhanced trait (rule-format.md, "Enhanced traits"); the game has ~226
+  enhanced traits and ~86 enhanced origin traits, whose base perks aren't authored either. A perk authored next gets
+  its `enhanced` block (a test asks for it). Every perk says "this weapon" (`weapon:this`), bound to the weapon that
+  rolls it; a perk reacts to a reload (`reload`) and reloads a weapon (`reloadWeapon`, D37). Next:
+  - **Every weapon perk that feeds the loop.** With `weapon:this`, the reload trigger and the reload outcome, author
+    every perk that gives or spends something a step needs (ability energy, a buff, a debuff, a pickup, an orb, a
+    summon, or a reload another perk reacts to), e.g. Wellspring, Pugilist, Voltshot (kill, then reload: the next
+    shots jolt), Incandescent, Destabilizing Rounds and Repulsor Brace, each with its enhanced trait; the
+    full list is agreed with the owner first. A perk that only changes stats, handling, damage or ammo gets an
+    `inert:` reason when it comes up, else stays ⊘. Sources: the Compendium snapshot and Clarity (`rule-author`,
+    provenance on every rule, `"?"` for what they don't give); rerun `tools/manifest/` for the new hashes.
 
 - **Stats, next** (D28): the stat facts the game gives with an outcome — an orb's heal by Health (0.7 HP per
   point, compendium/2026-10-09/Game Mechanics#119), a dodge's Overshield above 100 Class (#139), the damage

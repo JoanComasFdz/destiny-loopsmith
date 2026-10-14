@@ -62,8 +62,8 @@ build: |                                # required — the build file's full tex
 Same tokens everywhere: CLI `--actions a,b,…` and `--scenario <file>` (one token per line or
 comma-separated; `#` starts a comment), `play`, loop files and web share links:
 
-`grenade[:hold]|melee[:slide|air]|super[:hit|kill[:N]]` · `class[:air]` · `kinetic|energy|power[:hit|kill[:N]]` · `finisher` ·
-`pickup:<pickup-id>` · `max:<status-id>` · `end:<status-id>` · `pack:new` · `health:critical` — and last, an option:
+`grenade[:hold]|melee[:slide|air]|super[:hit|kill[:N]]` · `class[:air]` · `kinetic|energy|power[:hit|kill[:N]]` ·
+`kinetic|energy|power:reload` · `finisher` · `pickup:<pickup-id>` · `max:<status-id>` · `end:<status-id>` · `pack:new` · `health:critical` — and last, an option:
 `:last` on a grenade, melee or class ability step, `:shield` on a weapon step
 
 Tokens are read case-insensitively. Errors read `Unknown action '<token>'. Use …` or
@@ -89,6 +89,15 @@ enemy; [rule-format.md](rule-format.md#rules)); it takes no count and is never b
 (any kebab-case id) picks that pickup up — one `PickedUp` event — and it is
 then no longer on the ground. A weapon action for an empty slot, or a pickup that isn't on the ground
 (`No orb-of-power on the ground — nothing happens.`), is a **blocked step**: it changes nothing.
+
+**Reload** (ADRs D37). `kinetic:reload`, `energy:reload`, `power:reload` — "Reload Festival Flight": the player reloads
+that weapon, as a step of its own. No ammo is counted (Loopsmith isn't a simulator, ADRs D1), so a reload is never
+needed: the player declares it when the loop reloads, and it raises `Reloaded` from that weapon, so the `reload` rules
+fire ([rule-format.md](rule-format.md#rules)). It takes no count and no option (`energy:reload:3`, `energy:reload:shield`
+and `grenade:reload` are errors); a slot with no weapon is a blocked step (`No weapon in the Kinetic slot — nothing
+happens.`). A rule can reload a weapon too (`reloadWeapon`: Demolitionist's grenade, Return Stroke's lightning strike):
+the trace shows `reloads your energy weapon`, and that weapon's `reload` rules fire as on a Reload step. In the designer,
+tapping a weapon in the step HUD shows **🔄 reload** next to its 🥊 hit and 💀 kill, in every build.
 
 **Options of a step** (ADRs D36). What only play decides about a step itself goes last in its token:
 
@@ -389,9 +398,9 @@ loadout's) and its 2- and 4-piece perks, dimmed when not active, each with its o
 
 **An exotic's catalyst.** An exotic weapon with a catalyst shows it as a square after its perks, off until the
 build turns it on (a DIM link doesn't say). In the designer its details switch it on or off: the embedded
-build's weapon entry gets `catalyst: true`, the catalyst's element is equipped, and the steps replay. A
-catalyst outside the loop (Thunderlord's Return Stroke refills ammo, which isn't modelled) is shown, and its details
-say "No rules needed." and why; one the rules don't know yet carries the ⊘. Validation says nothing of either.
+build's weapon entry gets `catalyst: true`, the catalyst's element is equipped, and the steps replay. Thunderlord's
+Return Stroke reloads it on each lightning strike (a kill, or a hit step's 10th hit: ADRs D37). A catalyst outside the
+loop is shown, and its details say "No rules needed." and why; one the rules don't know yet carries the ⊘. Validation says nothing of either.
 
 **Shared DIM builds on Home.** A share can ship with the app as `builds/<slug>/dim-loadout.json` —
 its link and the loadout as DIM's API hands it over (the share page's "Open Loadout in DIM" link holds
