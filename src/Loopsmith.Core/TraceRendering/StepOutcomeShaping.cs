@@ -70,7 +70,7 @@ public static class StepOutcomeShaping
     {
         var first = group[0];
         var sources = GroupRuns(group).Select(rules => ShapeSource(build, catalog, rules, options));
-        var text = build.Catalog.Glossary.DescribeEvent(first.Trigger, build.Build);
+        var text = build.Catalog.Glossary.DescribeFiredEvent(group, build.Build);
         var weapon = FindEventWeapon(first.Trigger);
         var pickup = first.Trigger is GameEvent.PickedUp picked ? Optional.Some(picked.Pickup) : Optional.None<PickupId>();
         return new EventOutcomes(first.Depth, text, SplitText(build.Catalog.Glossary, catalog, text), weapon,
@@ -111,9 +111,11 @@ public static class StepOutcomeShaping
     }
 
     /// <summary>
-    /// Identical events in a row become one, counted — with what each set off: an event and the deeper events under it are
-    /// a block, and identical blocks in a row (five jolted hits of one grenade, each with its "Bolt Charge gained"; six orbs
-    /// picked up) show once, the event marked ×N. Blocks collapse at every depth.
+    /// Alike events in a row become one, counted — with what the first set off: an event and the deeper events under it are
+    /// a block, and a block that sets off nothing the block before it of the same event didn't shows in it, the event
+    /// marked ×N. Identical blocks fold (five jolted hits of one grenade, each with its "Bolt Charge gained"; six orbs
+    /// picked up), and so does a later one with less (the second kill of one action, after the first consumed Reaper, only
+    /// gives Woven Mail again). A block that sets off something new stays apart. Blocks collapse at every depth.
     /// </summary>
     private static ImmutableArray<EventOutcomes> CollapseRepeats(IEnumerable<EventOutcomes> events)
     {
@@ -130,7 +132,7 @@ public static class StepOutcomeShaping
         [
             .. blocks
                 .Aggregate(ImmutableArray<ImmutableArray<EventOutcomes>>.Empty, (collapsed, next) =>
-                    !collapsed.IsEmpty && DescribeBlockKey(collapsed[^1]) == DescribeBlockKey(next)
+                    !collapsed.IsEmpty && IsFoldedInto(collapsed[^1], next)
                         ? collapsed.SetItem(collapsed.Length - 1, collapsed[^1].SetItem(0, collapsed[^1][0] with { Repeats = collapsed[^1][0].Repeats + next[0].Repeats }))
                         : collapsed.Add(next))
                 .SelectMany(block => block),
@@ -144,13 +146,25 @@ public static class StepOutcomeShaping
                 ? blocks.Add([shaped])
                 : blocks.SetItem(blocks.Length - 1, blocks[^1].Add(shaped)));
 
-    /// <summary>A block's identity: every event in it, the head's own count left out (two blocks of ×1 and ×2 heads still match).</summary>
-    private static string DescribeBlockKey(ImmutableArray<EventOutcomes> block) =>
-        string.Join("\n", block.Select((shaped, index) => DescribeRepeatKey(shaped) + (index == 0 ? "" : $"×{shaped.Repeats}")));
+    /// <summary>A block folds into the one before it when both start with the same event and it sets off nothing that one didn't.</summary>
+    private static bool IsFoldedInto(ImmutableArray<EventOutcomes> earlier, ImmutableArray<EventOutcomes> later) =>
+        DescribeEventKey(earlier[0]) == DescribeEventKey(later[0])
+        && ListBlockFacts(later).IsSubsetOf(ListBlockFacts(earlier));
 
-    private static string DescribeRepeatKey(EventOutcomes shaped) =>
-        $"{shaped.Depth}|{shaped.Event}|" + string.Join("|", shaped.Sources.Select(source =>
-            $"{source.Source.Value}:{string.Join(";", source.Outcomes.Select(line => $"{line.Text}{(line.Chance ? "?" : "")}"))}:{string.Join(";", source.Reasons)}:{string.Join(";", source.Caveats)}"));
+    /// <summary>What a block shows: each event (a deeper one with its count) and each of its elements' outcomes, reasons and caveats.</summary>
+    private static ImmutableHashSet<string> ListBlockFacts(ImmutableArray<EventOutcomes> block) =>
+        [.. block.SelectMany((shaped, index) => ListEventFacts(shaped, index == 0 ? DescribeEventKey(shaped) : $"{DescribeEventKey(shaped)}×{shaped.Repeats}"))];
+
+    private static IEnumerable<string> ListEventFacts(EventOutcomes shaped, string key) =>
+        shaped.Sources
+            .SelectMany(source => source.Outcomes.Select(line => $"{line.Text}{(line.Chance ? "?" : "")}")
+                .Concat(source.Reasons.Select(reason => $"why {reason}"))
+                .Concat(source.Caveats.Select(caveat => $"· {caveat}"))
+                .Select(fact => $"{key}|{source.Source.Value}|{fact}"))
+            .Prepend(key);
+
+    private static string DescribeEventKey(EventOutcomes shaped) =>
+        $"{shaped.Depth}|{shaped.Event}";
 
     private static OutcomeLine ToLine(KeywordGlossary glossary, RuleCatalog catalog, string text, Tone tone, bool chance) =>
         new(text, tone, SplitText(glossary, catalog, text), chance);

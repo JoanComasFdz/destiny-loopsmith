@@ -52,6 +52,31 @@ public sealed class StepOutcomeShapingTests
     }
 
     [Fact]
+    public void A_later_kill_of_one_action_that_sets_off_less_than_the_first_shows_in_it_and_a_siphons_kills_say_their_window()
+    {
+        var reaper = Element("reaper", ElementKind.ArmorMod,
+        [
+            On(new Trigger.AbilityCast(AbilityKind.Grenade), Buff("amplified")),
+            OnWhen(new Trigger.KillAny(Any), new Condition.HasBuff(Status("amplified")), new Outcome.RemoveBuff(Status("amplified")), new Outcome.Spawn(Pickup("orb-of-power"), 1)),
+        ]);
+        var shreds = Element("shreds", ElementKind.Fragment, [On(new Trigger.KillAny(Any), Energy(AbilityKind.Melee, new GameValue.Known(0.1m)))]);
+        var siphon = Element("siphon", ElementKind.ArmorMod,
+            [On(new Trigger.KillMultiple(Any, TargetCount.From(2), Optional.Some(Seconds.From(3m))), new Outcome.Spawn(Pickup("orb-of-power"), 1))]);
+        var build = ValidateBuild([shreds], mods: [reaper, siphon]);
+        var resolution = Play(build, new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Kill, TargetCount.From(3))).Resolutions[^1];
+
+        var shaped = StepOutcomeShaping.ShapeStepOutcomes(build, resolution, Plain).Events;
+        var trace = TraceRenderer.RenderResolution(build, resolution, Plain).Select(line => line.ToPlainText()).ToImmutableArray();
+
+        var kill = Assert.Single(shaped, e => e.Event == "Grenade kill");
+        Assert.Equal(3, kill.Repeats);
+        Assert.Equal(["Reaper", "Shreds"], kill.Sources.Select(source => source.Name).Distinct());
+        Assert.Contains(shaped, e => e.Event == "Grenade killed 3 enemies in 3 s");
+        Assert.Single(trace, line => line.Contains("Grenade kill ×3", StringComparison.Ordinal));
+        Assert.Contains(trace, line => line.Contains("Grenade killed 3 enemies in 3 s", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void Each_element_an_event_set_off_has_its_outcomes_on_lines_of_their_own()
     {
         var session = Play(ValidateSparkBuild(), GrenadeHit);

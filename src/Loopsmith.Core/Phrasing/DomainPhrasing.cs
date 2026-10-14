@@ -826,6 +826,19 @@ public static class DomainPhrasing
 
     // ── events and actions ─────────────────────────────────────────────────────
 
+    /// <summary>
+    /// An event with the rules it set off: the event, and for kills of several enemies in one action, the tightest window
+    /// a rule it fired needs ("Festival Flight killed 2 enemies in 3 s": Strand Siphon's two kills within 3 s; 2 kills
+    /// within 3 s are within 4 s too).
+    /// </summary>
+    public static string DescribeFiredEvent(this KeywordGlossary glossary, ImmutableArray<FiredRule> rules, Build build) =>
+        glossary.DescribeEvent(rules[0].Trigger, build)
+            + DescribeWindow(rules
+                .Select(rule => rule.On is Trigger.KillMultiple kill ? kill.Within : Optional.None<Seconds>())
+                .Where(within => within.IsSome())
+                .OrderBy(within => within.Match(some => some.Value.Value, _ => 0m))
+                .FirstOrDefault(Optional.None<Seconds>()));
+
     public static string DescribeEvent(this KeywordGlossary glossary, GameEvent gameEvent, Build build) =>
         gameEvent.Match(
             cast => DescribeCast(cast.Kind, cast.Input),
