@@ -5,7 +5,7 @@ using Loopsmith.Web.E2E.Infrastructure.Vocabulary;
 
 namespace Loopsmith.Web.E2E.Scenarios.Starting;
 
-/// <summary>Starting a loop from scratch on Home.</summary>
+/// <summary>Starting a loop from scratch on Home: an Arc Hunter with nothing equipped and no loop steps.</summary>
 public sealed class StartFromScratchTests : BaseE2E
 {
     [Fact]

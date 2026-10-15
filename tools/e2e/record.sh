@@ -150,6 +150,7 @@ for path in records:
     entries.append({
         "domain": r["domain"],
         "class": r["class"],
+        "method": r["method"],
         "title": r["title"],
         "gif": f'{r["domain"]}/{r["gif"]}.gif',
         "startupSeconds": None if r["homeShownSeconds"] is None else round(r["homeShownSeconds"], 1),

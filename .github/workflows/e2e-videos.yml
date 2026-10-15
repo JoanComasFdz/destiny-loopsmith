@@ -1,0 +1,98 @@
+name: E2E videos
+
+# Every push to a pull request from a branch of this repository records the PR's end-to-end scenarios (the ones it
+# adds or changes under tests/Loopsmith.Web.E2E/Scenarios, from where it left its base branch) as GIFs, uploads them
+# to the `prs-resources` pre-release as pr-<n>-v<version>-<scenario>.gif and shows them on the PR: version 1 appended
+# to its description, every later one as a new comment. Closing the PR deletes its pr-<n>- assets.
+# A failing scenario is marked ❌ in the post and never turns this check red; only the workflow's own failures do
+# (no recording at all, an upload or a post that GitHub refused). docs/hosting.md, "E2E videos on pull requests".
+# Pull requests from forks are skipped (they never get a write token).
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, closed]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+# One run per PR at a time, never cancelled midway, so two runs can't both post the same version.
+concurrency:
+  group: e2e-videos-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  record:
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PR: ${{ github.event.pull_request.number }}
+      BASE: ${{ github.event.pull_request.base.ref }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The pushed commit itself (its message says what changed), with the history to find where it left the base.
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      - name: Find the scenarios this PR adds or changes
+        id: scenarios
+        run: |
+          changed=$(git diff --name-only "$(git merge-base "origin/$BASE" HEAD)" -- tests/Loopsmith.Web.E2E/Scenarios)
+          echo "any=$([ -n "$changed" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "${changed:-No scenario changed since origin/$BASE: nothing to record.}"
+      - uses: actions/setup-dotnet@v4
+        if: steps.scenarios.outputs.any == 'true'
+        with:
+          global-json-file: global.json
+      - name: Install ffmpeg
+        if: steps.scenarios.outputs.any == 'true'
+        run: sudo apt-get update -q && sudo apt-get install -y -q ffmpeg
+      - name: Install Chromium for the pinned Playwright
+        if: steps.scenarios.outputs.any == 'true'
+        run: |
+          dotnet build tests/Loopsmith.Web.E2E -c Release --nologo -v q
+          pwsh tests/Loopsmith.Web.E2E/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
+      - name: Read the pinned manifest version
+        if: steps.scenarios.outputs.any == 'true'
+        id: manifest
+        run: echo "version=$(jq -r .ManifestContentId src/Loopsmith.Web/wwwroot/appsettings.json)" >> "$GITHUB_OUTPUT"
+      - name: Cache Bungie's manifest
+        if: steps.scenarios.outputs.any == 'true'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/loopsmith/bungie-manifest
+          key: bungie-manifest-${{ steps.manifest.outputs.version }}
+      - name: Record the scenarios
+        if: steps.scenarios.outputs.any == 'true'
+        # A failing scenario still gets its GIF and is marked in the post: it doesn't fail this step.
+        run: tools/e2e/record.sh --changed-since "origin/$BASE" || echo "::warning::A scenario failed or none ran; see the post."
+      - name: Post them on the pull request
+        if: steps.scenarios.outputs.any == 'true'
+        run: python3 tools/e2e/post-scenarios.py --pr "$PR" --commit "$HEAD_SHA" --out out
+
+  clean:
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PR: ${{ github.event.pull_request.number }}
+    steps:
+      # No checkout: deleting needs nothing from the branch (which may predate this workflow).
+      - name: Delete the PR's GIFs from prs-resources
+        run: |
+          release=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/prs-resources" --jq .id)
+          # Listed in full before deleting, so a deletion never shifts a page that is still to be read.
+          assets=$(gh api --paginate "repos/$GITHUB_REPOSITORY/releases/$release/assets?per_page=100" \
+            --jq ".[] | select(.name | startswith(\"pr-$PR-\")) | \"\(.id) \(.name)\"")
+          while read -r id name; do
+            [ -n "$id" ] || continue
+            echo "Deleting $name"
+            gh api -X DELETE "repos/$GITHUB_REPOSITORY/releases/assets/$id"
+          done <<< "$assets"
+          echo "No asset starting with pr-$PR- is left in prs-resources."
