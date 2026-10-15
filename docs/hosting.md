@@ -175,7 +175,8 @@ on every push to the PR (opened, reopened, synchronize).
   `GITHUB_TOKEN` (contents and pull-requests write); no personal token.
 - **Naming:** `pr-<PR number>-v<version>-<scenario>.gif`, e.g.
   `pr-82-v1-given-app-is-open-on-home-when-i-click-start-from-scratch-then-the-designer-shows-an-arc-hunter-with-nothing-equipped.gif`.
-  - `pr-<n>-` first, so a PR's assets sit together and its cleanup deletes everything with that prefix;
+  - `pr-<n>-` first, so a PR's assets sit together and its cleanup finds them (the dash after the number keeps
+    `pr-7-` from matching `pr-70-`);
   - `v<version>`: 1, 2, 3… (no padding), one per push that recorded, before the scenario so one version's GIFs sit
     together. It is one more than the highest `## Scenarios (V<N>)` already in the workflow's comments on the PR
     (those by github-actions ending with its footer): nothing is stored anywhere else, and a reopened PR carries on
@@ -196,9 +197,18 @@ on every push to the PR (opened, reopened, synchronize).
 - **One run per PR at a time** (a concurrency group per PR, never cancelled midway), so two runs can't post the same
   version. GitHub keeps one waiting run per group: a push that is still waiting when a newer one arrives is skipped,
   and the newer one records for both.
-- **Cleanup:** when the PR is closed or merged, the workflow deletes every `prs-resources` asset whose name starts
-  with `pr-<n>-`. Its old posts then show broken images. The owner's own assets (not starting with `pr-`) are never
-  touched.
+- **Cleanup:** when the PR is closed or merged, the workflow keeps every GIF of the PR's newest version and deletes
+  its older versions' (`pr-<n>-v1-…` to `pr-<n>-v<N-1>-…`), so the PR's last `## Scenarios (V<N>)` post keeps showing
+  its GIFs for good, and the older posts show broken images. The newest version is the highest `v<N>` among the PR's
+  assets, read as a number (`v10` is newer than `v2`, and `v1` never matches `v10`). Only names of the form
+  `pr-<n>-v<N>-…` are ever deleted: the owner's own assets (not starting with `pr-`), other PRs' assets and any other
+  name are never touched. A reopened PR carries on from its last version, so closing it again keeps only its newest
+  version's GIFs. The job's log names each deleted asset, the version it kept and how many assets the release holds.
+- **The release's limit:** GitHub sets no total size limit on a release, but a release holds at most 1,000 assets. The
+  cleanup's log says how many `prs-resources` holds, with a warning above 900. Near the limit, the owner creates a new
+  pre-release (e.g. `prs-resources-2`) and points `RELEASE` in `tools/e2e/post-scenarios.py` and the `clean` job of
+  `.github/workflows/e2e-videos.yml` at it. The old release stays, so the posts that embed its GIFs keep showing
+  them. Nothing does this automatically yet.
 - Pull requests from forks are skipped (they never get a write token).
 
 ## Alternatives
