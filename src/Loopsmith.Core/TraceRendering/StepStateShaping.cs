@@ -9,7 +9,8 @@ namespace Loopsmith.Core.TraceRendering;
 /// <summary>
 /// Something present at the end of a step: the keyword it is (a status, a pickup), its name as the state says it
 /// ("Bolt Charge (at max)"), its affinity, the element it is when the catalog has one (its details), the glossary's
-/// facts about it ("up to x10 · 15s": shown, never counted down — ADRs D1), and what it switches on right then.
+/// facts about it ("up to x10 · 15s": shown, never counted down — ADRs D1), what it switches on right then, and what its
+/// own element changes on the build's weapons while it is there (Stats for All's stats on its weapon: one chip, not two).
 /// </summary>
 public sealed record StateEntry(
     KeywordRef Keyword,
@@ -17,7 +18,8 @@ public sealed record StateEntry(
     Affinity Affinity,
     Optional<ElementId> Element,
     Optional<string> Facts,
-    ImmutableArray<SwitchedOnEffect> SwitchesOn);
+    ImmutableArray<SwitchedOnEffect> SwitchesOn,
+    ImmutableArray<string> OwnWeaponEffects);
 
 /// <summary>
 /// Another element's passive that a status switches on right then ("+1 Bolt Charge per gain" from Spark of Frequency,
@@ -25,7 +27,10 @@ public sealed record StateEntry(
 /// </summary>
 public sealed record SwitchedOnEffect(string Text, ElementId Source, string SourceName, Affinity Affinity);
 
-/// <summary>A passive changing the stats of some of the build's weapons right then (by index): shown with those weapons.</summary>
+/// <summary>
+/// A passive changing the stats of some of the build's weapons right then (by index): shown with those weapons. A status's
+/// own (Stats for All's, while Stats for All is there) is shown with the status instead (<see cref="StateEntry.OwnWeaponEffects"/>).
+/// </summary>
 public sealed record WeaponEffect(string Text, ElementId Source, string SourceName, Affinity Affinity, ImmutableArray<int> Weapons);
 
 /// <summary>
@@ -64,10 +69,15 @@ public static class StepStateShaping
                 glossary.DescribePassive(passive.Passive.Modifier, TraceRenderer.CountCopies(build, passive.Source), superType)))
             .ToImmutableArray();
         var buffs = state.Buffs.Select(buff => (OnWeapons: IsOnWeapons(glossary, buff.Status), Entry: ShapeBuff(build, reaching, buff))).ToImmutableArray();
+        var statuses = state.Buffs.Select(buff => buff.Status).Concat(state.Target.Debuffs).ToImmutableArray();
         return new StepState(
             [.. buffs.Where(buff => !buff.OnWeapons).Select(buff => buff.Entry)],
             [.. buffs.Where(buff => buff.OnWeapons).Select(buff => buff.Entry)],
-            [.. reaching.Where(passive => !passive.Passive.Passive.When.IsEmpty).SelectMany(ToWeaponEffect)],
+            [
+                .. reaching
+                    .Where(passive => !passive.Passive.Passive.When.IsEmpty && !statuses.Any(status => passive.Passive.Source.IsStatusElement(status)))
+                    .SelectMany(ToWeaponEffect),
+            ],
             [.. state.Target.Debuffs.Select(debuff => ShapeDebuff(build, reaching, debuff))],
             [.. state.Pickups.Select(ground => ShapePickup(glossary, catalog, ground))],
             [.. state.Buffs.SelectMany(buff => buff.Tally.Match(tally => new[] { ShapeCount(glossary, buff.Status, tally.Value) }, _ => []))],
@@ -106,8 +116,15 @@ public static class StepStateShaping
             glossary.ReadStatusAffinity(status),
             build.Catalog.FindKeywordElement(keyword),
             facts,
-            [.. ListSwitchedOn(reaching, status)]);
+            [.. ListSwitchedOn(reaching, status)],
+            [.. ListOwnWeaponEffects(reaching, status)]);
     }
+
+    /// <summary>What the status's own element changes on the build's weapons while it is there (Stats for All's stats).</summary>
+    private static IEnumerable<string> ListOwnWeaponEffects(ImmutableArray<ReachingPassive> reaching, StatusId status) =>
+        reaching
+            .Where(passive => passive.Passive.Source.IsStatusElement(status) && passive.Reach is PassiveReach.Weapons)
+            .Select(passive => passive.Text + (passive.Passive.Likelihood == Likelihood.Chance ? " (chance)" : ""));
 
     /// <summary>A pickup on the ground; one only chance rules dropped says so ("Orb of Power (chance)", ADRs D8).</summary>
     private static StateEntry ShapePickup(KeywordGlossary glossary, RuleCatalog catalog, GroundPickup ground)
@@ -116,7 +133,7 @@ public static class StepStateShaping
         var keyword = new KeywordRef.Pickup(pickup);
         var affinity = glossary.Pickups.TryGetValue(pickup, out var definition) ? definition.Affinity : Affinity.Neutral;
         var text = glossary.DescribePickup(pickup) + (ground.Likelihood == Likelihood.Chance ? " (chance)" : "");
-        return new StateEntry(keyword, text, affinity, catalog.FindKeywordElement(keyword), Optional.None<string>(), []);
+        return new StateEntry(keyword, text, affinity, catalog.FindKeywordElement(keyword), Optional.None<string>(), [], []);
     }
 
     /// <summary>What the status switches on that does something in this build (a weapon change none of its weapons takes does nothing).</summary>

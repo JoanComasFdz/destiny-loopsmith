@@ -46,11 +46,12 @@ public static class TraceRenderer
         var weaponEffects = shaped.WeaponEffects.Select(effect =>
             $"{effect.SourceName} on {string.Join(", ", effect.Weapons.Select(index => build.Build.Weapons[index].Name))}".ToSpan(effect.Affinity.ToTone()));
         var switchedOn = shaped.Buffs.Concat(shaped.Weapons).Concat(shaped.Debuffs)
-            .Where(entry => !entry.SwitchesOn.IsEmpty)
+            .Select(entry => (Entry: entry, Effects: ListEntryEffects(entry)))
+            .Where(entry => !entry.Effects.IsEmpty)
             .Select(entry => new StyledLine(1,
             [
-                $"While {entry.Text}  ".ToSpan(Tone.Muted),
-                .. entry.SwitchesOn.SelectMany((effect, index) => (ImmutableArray<StyledSpan>)
+                $"While {entry.Entry.Text}  ".ToSpan(Tone.Muted),
+                .. entry.Effects.SelectMany((effect, index) => (ImmutableArray<StyledSpan>)
                 [
                     .. index > 0 ? [" · ".ToSpan(Tone.Muted)] : ImmutableArray<StyledSpan>.Empty,
                     effect.Text.ToSpan(Tone.Plain),
@@ -68,6 +69,13 @@ public static class TraceRenderer
             .. switchedOn,
         ];
     }
+
+    /// <summary>What a status does right then: its own weapon changes (Stats for All's stats), then what it switches on.</summary>
+    private static ImmutableArray<(string Text, string SourceName, Affinity Affinity)> ListEntryEffects(StateEntry entry) =>
+    [
+        .. entry.OwnWeaponEffects.Select(text => (text, entry.Text, entry.Affinity)),
+        .. entry.SwitchesOn.Select(effect => (effect.Text, effect.SourceName, effect.Affinity)),
+    ];
 
     /// <summary>
     /// A counted buff's stacks and where they came from (ADRs D33): "Armor Charge  x1 · +1 (chance)  (#3 Elemental Charge: +1

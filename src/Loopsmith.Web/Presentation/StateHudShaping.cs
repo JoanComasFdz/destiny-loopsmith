@@ -39,17 +39,25 @@ public static class StateHudShaping
                 ? Optional.Some<ItemDetails>(new ItemDetails.OfStatus(status.Id))
                 : Optional.None<ItemDetails>());
 
-    /// <summary>The tooltip: the glossary's facts ("up to x5 · 8s") and what it switches on ("switches on Spark of Frequency").</summary>
+    /// <summary>
+    /// The tooltip: the glossary's facts ("up to x5 · 8s"), what its own element changes on the weapons ("Energy weapon: +10
+    /// Range, …") and what it switches on ("switches on Spark of Frequency").
+    /// </summary>
     public static string DescribeEntryTitle(StateEntry entry) =>
         string.Join(" · ", new[]
         {
             entry.Facts.UnwrapOr(""),
+            string.Join(" · ", entry.OwnWeaponEffects),
             entry.SwitchesOn.IsEmpty ? "" : $"switches on {string.Join(", ", entry.SwitchesOn.Select(effect => effect.SourceName))}",
         }.Where(part => part.Length > 0));
 
-    /// <summary>"1 effect", "2 effects": how many other elements' effects the status switches on right then.</summary>
+    /// <summary>How many effects the status has right then: its own on the weapons and the other elements' it switches on.</summary>
+    public static int CountEffects(StateEntry entry) =>
+        entry.OwnWeaponEffects.Length + entry.SwitchesOn.Length;
+
+    /// <summary>"1 effect", "2 effects": its own on the weapons (Stats for All's stats) and the others' it switches on right then.</summary>
     public static string DescribeSwitchesCount(StateEntry entry) =>
-        entry.SwitchesOn.Length == 1 ? "1 effect" : $"{entry.SwitchesOn.Length} effects";
+        CountEffects(entry) == 1 ? "1 effect" : $"{CountEffects(entry)} effects";
 
     /// <summary>"45% · PvP 25%"; a source against combatants only: "34.5% · PvP 0%" (it does nothing in PvP).</summary>
     public static string DescribeResistanceSource(ResistanceSource source) =>

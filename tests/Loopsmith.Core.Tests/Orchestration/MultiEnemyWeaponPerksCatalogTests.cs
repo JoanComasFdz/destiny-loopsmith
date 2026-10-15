@@ -4,6 +4,7 @@ using Loopsmith.Core.Functional;
 using Loopsmith.Core.Orchestration;
 using Loopsmith.Core.Phrasing;
 using Loopsmith.Core.SourceFetching;
+using Loopsmith.Core.TraceRendering;
 using Loopsmith.Core.Tests.Support;
 
 namespace Loopsmith.Core.Tests.Orchestration;
@@ -70,6 +71,10 @@ public sealed class MultiEnemyWeaponPerksCatalogTests
         Assert.Equal(
             "Kinetic weapon: +10 Range, +10 Stability, +35 Handling, +35 Reload Speed",
             Catalog.Glossary.DescribePassive(passive.Passive.Modifier, 1, Optional.None<DamageType>()));
+        var shown = StepStateShaping.ShapeStepState(session.Build, three.State, three.ActivePassives);
+        var buff = Assert.Single(shown.Weapons);                                                     // one chip: the buff, with its stats
+        Assert.Equal(["Kinetic weapon: +10 Range, +10 Stability, +35 Handling, +35 Reload Speed"], buff.OwnWeaponEffects);
+        Assert.Empty(shown.WeaponEffects);
     }
 
     [Theory]
