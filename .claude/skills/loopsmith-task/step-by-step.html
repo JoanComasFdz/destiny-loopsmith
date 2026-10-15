@@ -195,8 +195,8 @@ button:focus-visible{outline:3px solid var(--main);outline-offset:2px}
       <div class="tag">§5<b>PR</b></div>
       <div class="body">
         <div class="node main">Open the PR, rename the session, subscribe<small>Messages end with the PR and preview links; a docs-only PR has no preview, so only the PR link.</small></div>
-        <div class="node cmd"><code>tools/e2e/push-gifs.sh</code><small>Only when scenarios were recorded: pushes their GIFs as a throwaway <code>e2e-gifs/pr-&lt;n&gt;-&lt;sha&gt;</code> tag; the "E2E videos" workflow posts them on the PR as <code>## Scenarios (V&lt;N&gt;)</code> and deletes the tag.</small></div>
-        <div class="why"><b>Why the session:</b> one writer to GitHub, so nothing is posted twice and every reply comes from the session that knows the whole history. <b>Why the GIFs travel on a tag:</b> a session can't upload a file to GitHub, but it can push (a tag, so GitHub shows no "had recent pushes" banner, as it does for a branch); the workflow only moves them into the <code>prs-resources</code> release and posts them, it builds and records nothing.</div>
+        <div class="node cmd"><code>tools/e2e/push-gifs.sh</code><small>Only when scenarios were recorded: pushes their GIFs to a throwaway <code>e2e-gifs/pr-&lt;n&gt;-&lt;sha&gt;</code> branch; the "E2E videos" workflow posts them on the PR as <code>## Scenarios (V&lt;N&gt;)</code> and deletes the branch.</small></div>
+        <div class="why"><b>Why the session:</b> one writer to GitHub, so nothing is posted twice and every reply comes from the session that knows the whole history. <b>Why the GIFs travel on a branch:</b> a session can't upload a file to GitHub, but it can push; the workflow only moves them into the <code>prs-resources</code> release and posts them, it builds and records nothing.</div>
       </div>
     </div>
     <div class="stage gate" role="listitem">
