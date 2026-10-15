@@ -5,12 +5,16 @@ them. They are the house style for **Loopsmith** (a .NET 10 / C# 14 project),
 carried over verbatim in substance from the owner's house style and adapted only
 in names and examples.
 
-They bind the C# code under `src/` and `tests/Loopsmith.Core.Tests/`; the
-end-to-end tests (`tests/Loopsmith.Web.E2E`) follow
+This file is the canonical, citable home for the coding rules. They bind the C#
+code under `src/` and `tests/Loopsmith.Core.Tests/`; the end-to-end tests
+(`tests/Loopsmith.Web.E2E`) follow
 [`E2E-TEST-CODE-RULES.md`](../tests/Loopsmith.Web.E2E/E2E-TEST-CODE-RULES.md) instead.
-Together with [`CONVENTIONS.md`](../CONVENTIONS.md) (the project's conventions
-across code, data and the UI) this file is binding, and it wins over any other
-document. The *reasoning* behind the cross-cutting choices is recorded in
+The same code also follows [`CONVENTIONS.md`](../CONVENTIONS.md), the rules it
+shares with the data and the UI: build elements are data, not code; unknowns are
+data (`GameValue.Unknown`, never 0; every element keeps its `Provenance`); state is
+causal (no number in game state but the step and a counted buff's stacks); and the
+web host's `data-action`/`data-testid`. Both files are binding, and they win over
+any other document. The *reasoning* behind the cross-cutting choices is recorded in
 **[`ADRs.md`](../ADRs.md)**; an ADR explains why, it never overrides what this
 file says. The domain model these rules produce is the code itself, under
 `src/Loopsmith.Core/Domain/`.

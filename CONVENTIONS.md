@@ -16,8 +16,10 @@ overrides what this file says.
   records, Dunet DUs, Vogen value objects at the boundary) and the API gotchas.
 - **The end-to-end tests have their own rules.** `tests/Loopsmith.Web.E2E` follows
   [`E2E-TEST-CODE-RULES.md`](tests/Loopsmith.Web.E2E/E2E-TEST-CODE-RULES.md), not the
-  coding rules; this file's conventions still bind the app it drives.
-- **Every convention below binds all of them.**
+  coding rules; this file's conventions bind the app it drives, not the test code,
+  and the tests locate by the web host's `data-action`/`data-testid`.
+- **The conventions below bind the app's code and its data** (`rules/`, builds,
+  loop files) alike.
 
 ## Cause and effect
 
