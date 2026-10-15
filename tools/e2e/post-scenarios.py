@@ -11,8 +11,8 @@ Reads <out>/scenarios.json (tools/e2e/record.sh), uploads each scenario's GIF to
 Nothing recorded (an empty scenarios.json) posts nothing.
 
 Uses the gh CLI (GH_TOKEN) on the repository in --repo or GITHUB_REPOSITORY. --dry-run prints instead of writing.
-.github/workflows/e2e-videos.yml runs it (and deletes the PR's assets when it closes); docs/hosting.md, "E2E videos on
-pull requests", explains it.
+.github/workflows/e2e-videos.yml runs it (and, when the PR closes, keeps its newest version's assets and deletes the
+older ones); docs/hosting.md, "E2E videos on pull requests", explains it.
 """
 import argparse
 import hashlib
