@@ -135,16 +135,15 @@ workflow", steps 3–4). Right before its first push:
    the scenario's title says.
 4. Push and open the pull request.
 5. With scenarios recorded, push their GIFs: `tools/e2e/push-gifs.sh` (it finds the PR from the
-   branch). It pushes a throwaway tag `e2e-gifs/pr-<n>-<short sha>`; the "E2E videos" workflow
-   uploads the GIFs, posts them on the PR as `## Scenarios (V<N>)` and deletes the tag. "What
+   branch). It pushes a throwaway branch `e2e-gifs/pr-<n>-<short sha>`; the "E2E videos" workflow
+   uploads the GIFs, posts them on the PR as `## Scenarios (V<N>)` and deletes the branch. "What
    changed" in that post is the body of the head commit's message, or `--message "<text>"`. Check
    the post appears with its GIFs (the PR's comments, a minute or so later); if the run failed, its
    log says why.
 
 Every later push that changes scenarios does the same: record before the push, `push-gifs.sh`
 right after it. CI doesn't run or record e2e scenarios: the session's recording is their only run.
-A session can't upload a file to GitHub, which is why the GIFs travel on a tag (a tag, not a branch, so
-GitHub shows no "had recent pushes" banner)
+A session can't upload a file to GitHub, which is why the GIFs travel on a branch
 ([docs/hosting.md](../../../docs/hosting.md), "E2E videos on pull requests").
 
 The rebase is only for the first push: once the branch is on GitHub, rebasing it would need a

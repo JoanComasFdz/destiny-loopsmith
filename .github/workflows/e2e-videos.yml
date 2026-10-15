@@ -1,22 +1,20 @@
 name: E2E videos
 
 # The session that works a PR records its added or changed end-to-end scenarios itself (tools/e2e/record.sh) and pushes
-# their GIFs with tools/e2e/push-gifs.sh as a throwaway tag e2e-gifs/pr-<n>-<short sha>: one commit on the PR's head
-# commit that adds e2e-gifs/scenarios.json and the GIFs (a tag, so GitHub shows no "had recent pushes" banner). A
-# session can't upload a file to GitHub, so this workflow does only that part: it checks the push, uploads the GIFs to
-# the `prs-resources` pre-release as
+# their GIFs with tools/e2e/push-gifs.sh to a throwaway branch e2e-gifs/pr-<n>-<short sha>: the PR's head commit plus
+# one commit that adds e2e-gifs/scenarios.json and the GIFs. A session can't upload a file to GitHub, so this workflow
+# does only that part: it checks the push, uploads the GIFs to the `prs-resources` pre-release as
 # pr-<n>-v<version>-<scenario>.gif, posts them on the PR as a new comment (it never touches the PR's description) and
-# deletes the tag. It builds, tests and records nothing. A push runs the workflow file inside the pushed commit, so
-# the tag carries the PR's own version of this file.
+# deletes the branch. It builds, tests and records nothing. A push runs the workflow file inside the pushed commit, so
+# the branch carries the PR's own version of this file.
 # A failing scenario is marked ❌ in the post and never turns this check red; only the workflow's own failures do (a push
 # that isn't a PR's GIFs, an upload or a post that GitHub refused). Closing the PR keeps its newest version's GIFs, so its
-# last post keeps showing them, and deletes its older versions' and any e2e-gifs/pr-<n>-… tag left behind (or branch,
-# from a PR that pushed its GIFs before they travelled as tags).
+# last post keeps showing them, and deletes its older versions' and any e2e-gifs/pr-<n>-… branch left behind.
 # docs/hosting.md, "E2E videos on pull requests".
 
 on:
   push:
-    tags: ['e2e-gifs/**']
+    branches: ['e2e-gifs/**']
   pull_request:
     types: [closed]
 
@@ -32,17 +30,17 @@ jobs:
       pr: ${{ steps.pr.outputs.number }}
     env:
       GH_TOKEN: ${{ github.token }}
-      TAG: ${{ github.ref_name }}
+      BRANCH: ${{ github.ref_name }}
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.sha }}
           fetch-depth: 2
-      - name: Read the PR from the tag's name
+      - name: Read the PR from the branch's name
         id: pr
         run: |
-          if [[ ! $TAG =~ ^e2e-gifs/pr-([0-9]+)-[0-9a-f]+$ ]]; then
-            echo "::error::$TAG isn't named e2e-gifs/pr-<n>-<short sha> (tools/e2e/push-gifs.sh)."
+          if [[ ! $BRANCH =~ ^e2e-gifs/pr-([0-9]+)-[0-9a-f]+$ ]]; then
+            echo "::error::$BRANCH isn't named e2e-gifs/pr-<n>-<short sha> (tools/e2e/push-gifs.sh)."
             exit 1
           fi
           echo "number=${BASH_REMATCH[1]}" >> "$GITHUB_OUTPUT"
@@ -92,17 +90,17 @@ jobs:
       - name: Upload the GIFs and post them on the pull request
         run: python3 tools/e2e/post-scenarios.py --pr "$PR" --commit "$GITHUB_SHA" --out e2e-gifs
 
-  delete-tag:
-    # Whatever happened, the throwaway tag goes (its log says why a run failed).
+  delete-branch:
+    # Whatever happened, the throwaway branch goes (its log says why a run failed).
     needs: [check, publish]
     if: always() && github.event_name == 'push' && !github.event.deleted
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
-      TAG: ${{ github.ref_name }}
+      BRANCH: ${{ github.ref_name }}
     steps:
-      - name: Delete the e2e-gifs tag
-        run: gh api -X DELETE "repos/$GITHUB_REPOSITORY/git/refs/tags/$TAG" && echo "Deleted the tag $TAG."
+      - name: Delete the e2e-gifs branch
+        run: gh api -X DELETE "repos/$GITHUB_REPOSITORY/git/refs/heads/$BRANCH" && echo "Deleted $BRANCH."
 
   clean:
     if: >-
@@ -114,16 +112,13 @@ jobs:
       PR: ${{ github.event.pull_request.number }}
     steps:
       # No checkout: deleting needs nothing from the branch (which may predate this workflow).
-      # Tags, and branches too: a PR opened before the GIFs travelled as tags pushed them as e2e-gifs/pr-<n>-… branches.
-      - name: Delete the PR's e2e-gifs tags and branches left behind
+      - name: Delete the PR's e2e-gifs branches left behind
         run: |
-          for kind in tags heads; do
-            for ref in $(gh api "repos/$GITHUB_REPOSITORY/git/matching-refs/$kind/e2e-gifs/pr-$PR-" --jq '.[].ref'); do
-              # matching-refs is a prefix match: pr-7- never catches pr-70-, but check the name in full anyway.
-              [[ $ref =~ ^refs/$kind/e2e-gifs/pr-$PR-[0-9a-f]+$ ]] || continue
-              echo "Deleting $ref"
-              gh api -X DELETE "repos/$GITHUB_REPOSITORY/git/$ref"
-            done
+          for ref in $(gh api "repos/$GITHUB_REPOSITORY/git/matching-refs/heads/e2e-gifs/pr-$PR-" --jq '.[].ref'); do
+            # matching-refs is a prefix match: pr-7- never catches pr-70-, but check the name in full anyway.
+            [[ $ref =~ ^refs/heads/e2e-gifs/pr-$PR-[0-9a-f]+$ ]] || continue
+            echo "Deleting ${ref#refs/heads/}"
+            gh api -X DELETE "repos/$GITHUB_REPOSITORY/git/$ref"
           done
       - name: Keep the PR's newest GIFs in prs-resources and delete its older versions
         run: |

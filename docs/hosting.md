@@ -170,24 +170,15 @@ running anything. The session that works the PR records them; CI doesn't run, re
   nothing, and runs no e2e workflow.
 - **How the GIFs get to GitHub:** a session can't upload a file to GitHub (its proxy only lets JSON request bodies
   through: a release upload answers 415), but it can push. Right after the push (the first one once the PR is open),
-  `tools/e2e/push-gifs.sh` pushes a throwaway tag **`e2e-gifs/pr-<n>-<short sha>`** on one commit that sits on the
-  branch's head, already on GitHub, and adds `e2e-gifs/scenarios.json` and the GIFs
-  (`e2e-gifs/<domain folder>/<gif name>.gif`). It finds the PR from the branch (or takes its number), stops when the
-  head isn't pushed yet or that tag already exists, and never touches the working tree or makes a local tag. The commit
-  sits on the PR's head, not on an empty history, because a push runs the workflow file inside the pushed commit: the
-  PR's own `.github/workflows/e2e-videos.yml`.
-- **Why a tag, not a branch:** GitHub's Pull requests page shows a "<branch> had recent pushes · Compare & pull
-  request" banner for about an hour after a push to any branch, even one deleted seconds later (the session pushes as
-  the owner); a tag push gets no banner. The PRs before this change pushed branches, which is why the cleanup still
-  deletes leftover `e2e-gifs/pr-<n>-…` branches too. No ruleset may cover `refs/tags/e2e-gifs/*` (or all tags): it
-  would refuse the session's push, or the workflow's deletion. On 2026-10-15 the only rulesets were "Protect gh-pages"
-  and "main-protection", both on branches. A PR whose branch left `main` before this change still carries the old
-  workflow, which only runs on branches: merge `main` into it before pushing its GIFs, or its tag triggers nothing (and
-  stays until the PR closes).
-- **What the workflow does** (`.github/workflows/e2e-videos.yml`, on a push of a tag `e2e-gifs/**`): it checks the push
+  `tools/e2e/push-gifs.sh` pushes a throwaway branch **`e2e-gifs/pr-<n>-<short sha>`**: the branch's head, already on
+  GitHub, plus one commit that adds `e2e-gifs/scenarios.json` and the GIFs (`e2e-gifs/<domain folder>/<gif name>.gif`).
+  It finds the PR from the branch (or takes its number), stops when the head isn't pushed yet or that branch already
+  exists, and never touches the working tree. The branch sits on the PR's head, not on an empty history, because a push
+  runs the workflow file inside the pushed commit: the PR's own `.github/workflows/e2e-videos.yml`.
+- **What the workflow does** (`.github/workflows/e2e-videos.yml`, on a push to `e2e-gifs/**`): it checks the push
   (the name is `e2e-gifs/pr-<n>-<hex>`; PR #n is open and from this repository; the commit sits on a commit of the PR
   and only adds `e2e-gifs/scenarios.json` and real GIFs), then `tools/e2e/post-scenarios.py --out e2e-gifs` uploads the
-  GIFs and posts them, and the tag is deleted whatever happened (the run's log says why one failed). A push that fails
+  GIFs and posts them, and the branch is deleted whatever happened (the run's log says why one failed). A push that fails
   the checks uploads and posts nothing. No `dotnet`, no Chromium, no ffmpeg: a run takes seconds.
 - **Where the GIFs go:** assets of the pre-release **`prs-resources`** (created once by the owner; never committed
   anywhere). A release asset embedded as `![title](https://github.com/<owner>/<repo>/releases/download/prs-resources/<name>)`
@@ -217,8 +208,8 @@ running anything. The session that works the PR records them; CI doesn't run, re
   GIFs, or GitHub refused an upload or a post.
 - **One post per PR at a time** (the posting job's concurrency group is per PR, never cancelled midway), so two runs
   can't post the same version. GitHub keeps one waiting job per group: a post that is still waiting when a newer one
-  arrives is skipped (its tag is deleted all the same), so push the GIFs once per round.
-- **Cleanup:** when the PR is closed or merged, the workflow deletes any `e2e-gifs/pr-<n>-…` tag or branch left behind, keeps every GIF of the PR's newest version and deletes
+  arrives is skipped (its branch is deleted all the same), so push the GIFs once per round.
+- **Cleanup:** when the PR is closed or merged, the workflow deletes any `e2e-gifs/pr-<n>-…` branch left behind, keeps every GIF of the PR's newest version and deletes
   its older versions' (`pr-<n>-v1-…` to `pr-<n>-v<N-1>-…`), so the PR's last `## Scenarios (V<N>)` post keeps showing
   its GIFs for good, and the older posts show broken images. The newest version is the highest `v<N>` among the PR's
   assets, read as a number (`v10` is newer than `v2`, and `v1` never matches `v10`). Only names of the form
