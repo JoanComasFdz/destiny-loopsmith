@@ -10,8 +10,10 @@ namespace Loopsmith.Web.Presentation;
 /// <summary>
 /// One button of the palette: the action it appends (the option aimed at its row's target count), that action's token
 /// and label in the core's wording ("grenade:kill:3", "Grenade (💀 kill 3)"), and the button's short caption ("🥊 hit", "💀 kill").
+/// <see cref="StandsApart"/>: the row's target count and option don't apply to it (a weapon's reload, ADRs D37), so it stands
+/// at the row's right end, away from them.
 /// </summary>
-public sealed record TriggerButton(PlayerAction Action, string Token, string Label, string Caption, bool IsNew);
+public sealed record TriggerButton(PlayerAction Action, string Token, string Label, string Caption, bool IsNew, bool StandsApart);
 
 /// <summary>
 /// A row of the palette: one trigger, or the hit / kill pair of the same ability use or weapon (a weapon's reload too). <see cref="Key"/> names
@@ -116,7 +118,7 @@ public static class TriggerPaletteShaping
     {
         var aimed = targets.Match(count => LoopDesigning.SetTargetCount(option.Action, count.Value), _ => option.Action);
         var action = toggle.Match(on => LoopDesigning.SetStepOption(aimed, on.Value.Option, on.Value.IsOn), _ => aimed);
-        return new TriggerButton(action, action.ToActionToken(), build.DescribeAction(action), caption, option.IsNew);
+        return new TriggerButton(action, action.ToActionToken(), build.DescribeAction(action), caption, option.IsNew, action is PlayerAction.ReloadWeapon);
     }
 
     /// <summary>

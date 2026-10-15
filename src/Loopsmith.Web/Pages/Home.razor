@@ -110,7 +110,7 @@
             <span class="chooser-sep"> · </span>
         }
         <label class="btn link file-link" title="Start from your own build.yaml (docs/rule-format.md)">
-            import a build.yaml<InputFile OnChange="ImportBuildAsync" accept=".yaml,.yml" />
+            import a build.yaml<InputFile OnChange="ImportBuildAsync" accept=".yaml,.yml" data-action="import-build" />
         </label>
         — or <button class="btn link" @onclick="OpenImportDialog">import a loop</button> (a <code>.loop.yaml</code> file or its YAML).
     </p>

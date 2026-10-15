@@ -47,7 +47,7 @@
                     }
                     @build.DescribeAction(step.Action)
                 </span>
-                <code class="token">@step.Action.ToActionToken()</code>
+                <code class="token" data-testid="step-token">@step.Action.ToActionToken()</code>
                 @if (blocked)
                 {
                     <span class="badge blocked" title="@resolution.Blocked.UnwrapOr("")">Blocked</span>
