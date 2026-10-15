@@ -48,11 +48,11 @@ jobs:
       group: gh-pages
       cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # A closed PR's merge ref is gone; removal only needs the repository, so use the default branch.
           ref: ${{ github.event.action == 'closed' && github.event.repository.default_branch || '' }}
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         if: github.event.action != 'closed'
         with:
           global-json-file: global.json

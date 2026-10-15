@@ -34,7 +34,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       TAG: ${{ github.ref_name }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.sha }}
           fetch-depth: 2
@@ -86,7 +86,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       PR: ${{ needs.check.outputs.pr }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.sha }}
       - name: Upload the GIFs and post them on the pull request
