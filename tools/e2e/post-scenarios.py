@@ -6,9 +6,9 @@
 Reads <out>/scenarios.json (tools/e2e/record.sh: one entry per run, a scenario played on a screen), uploads each run's
   GIF to the `prs-resources` release as pr-<n>-v<version>-<the run's GIF name>.gif and posts them as a new comment on
   the PR that starts with what changed (the body of --commit's message, or its subject). Each scenario shows once: its
-  title, its Gherkin, then a "🖥️ Desktop" and/or "📱 Mobile" subtitle with that screen's GIF. It never touches the PR's description. The version is one
-  more than the highest "## Scenarios (V<N>)" in this workflow's comments. A name longer than 200 characters keeps its
-  start and ends with a short hash of the scenario's method.
+  title, its Gherkin, then a "🖥️ Desktop" and/or "📱 Mobile" subtitle with that screen's GIF. It never touches the
+  PR's description. The version is one more than the highest "## Scenarios (V<N>)" in this workflow's comments. A
+  name longer than 200 characters keeps its start and ends with a short hash of the run's GIF name.
 Nothing recorded (an empty scenarios.json) posts nothing.
 
 Uses the gh CLI (GH_TOKEN) on the repository in --repo or GITHUB_REPOSITORY. --dry-run prints instead of writing.

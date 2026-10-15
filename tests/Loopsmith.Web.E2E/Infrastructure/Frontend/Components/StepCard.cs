@@ -39,7 +39,7 @@ public sealed class StepCard(IPage page, int number)
     private const string ReadScript = """
         card => {
           const text = el => (el ? el.innerText : '').replace(/\s+/g, ' ').trim();
-          const chips = group => [...card.querySelectorAll(`[data-testid=step-state] [data-group=${group}] [data-testid=state-chip]`)].map(chip => ({
+          const chips = group => [...card.querySelectorAll(`[data-testid=step-state] [data-testid=state-group][data-group=${group}] [data-testid=state-chip]`)].map(chip => ({
             text: [chip.querySelector('[data-testid=state-chip-name]'), chip.querySelector('[data-testid=switches-on]'), ...chip.querySelectorAll('[data-testid=buff-weapon]')]
               .map(text).filter(part => part.length > 0).join(' · '),
             tooltip: chip.getAttribute('title') || '',

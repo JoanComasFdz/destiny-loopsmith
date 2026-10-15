@@ -15,7 +15,8 @@ public sealed class WeaponRowLayoutTests : BaseE2E
           # Mobile only: the row only wraps at a phone's width.
           Given the build "festival-flight-one-for-all" is imported, with no steps
           When I tap "Festival Flight" in the trigger panel
-          Then none of "🥊 hit", "💀 kill", the "×" enemy count and "🔄 reload" overlap
+          Then the row wraps onto more than one line
+          And none of "🥊 hit", "💀 kill", the "×" enemy count and "🔄 reload" overlap
           And "🔄 reload" sits at the row's right end
           And the row fits inside the screen, with no sideways scroll
         """)]
@@ -32,6 +33,7 @@ public sealed class WeaponRowLayoutTests : BaseE2E
         // Then
         var layout = await Frontend.Designer.TriggerPalette.ReadLayoutAsync();
         Asserting.That(layout)
+            .WrapsOntoSeveralLines()
             .HasNoOverlap()
             .HasAtRightEnd(new StepTrigger.Reload())
             .FitsInsideTheScreen();

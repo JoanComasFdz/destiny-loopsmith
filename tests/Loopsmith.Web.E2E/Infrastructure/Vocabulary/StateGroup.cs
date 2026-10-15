@@ -10,6 +10,9 @@ public partial record StateGroup
     public partial record Weapons;
     public partial record Debuffs;
     public partial record Ground;
+
+    /// <summary>What the UI shows that no case names yet: a failing assertion names it as the UI shows it.</summary>
+    public partial record Unlisted(string Shown);
 }
 
 /// <summary>What the UI shows for each <see cref="StateGroup"/>: the only place those strings live.</summary>
@@ -21,5 +24,6 @@ public static class StateGroupShowing
             buffs => "BUFFS",
             weapons => "WEAPONS",
             debuffs => "DEBUFFS",
-            ground => "GROUND");
+            ground => "GROUND",
+            unlisted => unlisted.Shown);
 }

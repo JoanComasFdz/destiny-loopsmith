@@ -44,8 +44,8 @@ Scenario: Unrelenting heals for sure on 3 quick kills
 
 1. **Every acceptance criterion about how the app behaves is a Gherkin:** what someone does and sees on Home or in the
    designer. A criterion checked in a file (a doc, a rules YAML, a CLI's output, a workflow) stays a plain line.
-2. **Layout is a Gherkin too**, checked from where things are on the screen: two parts don't overlap, a button sits at
-   a row's right end, a row fits inside the screen with no sideways scroll, a text isn't cut off. "Looks right",
+2. **Layout is a Gherkin too**, checked from where things are on the screen: a row wraps, two parts don't overlap, a
+   button sits at a row's right end, a row fits inside the screen with no sideways scroll, a text isn't cut off. "Looks right",
    colours and spacing are never a Gherkin: nothing checks them but an eye.
 3. **Not yet:** what needs a Bungie login or a DIM link (no e2e scenario can reach either yet). Such a criterion stays
    a plain line, checked by hand on the preview, and says why.
@@ -79,8 +79,9 @@ Scenario: <what it proves, as a statement>
    the subject can't apply to one: a tooltip only shows on hover (desktop), a phone's layout only on a phone (mobile).
    A Gherkin with one screen says why in a `#` line right under its `Scenario:` line.
 2. **Title:** the `Scenario:` line, one line, a statement ("Reaper's Tithe gives a stack per enemy killed at once").
-   It is also the test's method name (each run of letters and digits a word, capitalized:
-   `ReapersTitheGivesAStackPerEnemyKilledAtOnce`), so it starts with a letter and reads well run together.
+   It is also the test's method name (each run of letters and digits a word, an apostrophe joining its word,
+   capitalized: `ReapersTitheGivesAStackPerEnemyKilledAtOnce`), so it starts with a letter and reads well run
+   together.
 3. **Given:** the build ("Given the build "ogma-pr6-unrelenting" is imported, with no steps", its fixture's name
    without `.build.yaml`) and the state of the loop: "with no steps", or the steps the test needs already played (each
    one named). Or "Given the app is open on Home".
@@ -122,7 +123,7 @@ Scenario: <what it proves, as a statement>
 6. **Explain anything that looks surprising** in a `#` line right above the check it explains: "# Two Threadlings: the
    one every Hatchling gives, and the extra one only the enhanced trait gives." Something that is expected but looks
    wrong gets a comment, never silence.
-7. **Layout checks** name the parts and what holds between them: `none of "🥊 hit", "💀 kill", the "×" enemy count
+7. **Layout checks** name the parts and what holds between them: `the row wraps onto more than one line`, `none of "🥊 hit", "💀 kill", the "×" enemy count
    and "🔄 reload" overlap`, `"🔄 reload" sits at the row's right end`, `the row fits inside the screen, with no
    sideways scroll`.
 

@@ -82,7 +82,8 @@ public sealed class ReloadTests : BaseE2E
     tags and `#` lines included;
   - one parameter, `Screen screen`: the screen its attribute plays it on. BaseE2E reads it; the body never does (the
     project's `NoWarn` says so to xunit's analyzer).
-- Its **name** is the Gherkin's `Scenario:` title, each run of letters and digits a word, capitalized
+- Its **name** is the Gherkin's `Scenario:` title, each run of letters and digits a word (an apostrophe joins its
+  word), capitalized
   (`ScenarioNaming.ToMethodName`): "Reaper's Tithe gives a stack per enemy killed at once" →
   `ReapersTitheGivesAStackPerEnemyKilledAtOnce`. Its **title** in the PR's comment is the Gherkin's title, as written.
   Its **GIF name** is the method name kebaberized, then its screen:
@@ -93,8 +94,8 @@ public sealed class ReloadTests : BaseE2E
 - The body is `// Given` once, then a `// When` and a `// Then` for each round of the Gherkin, in its order (rule i).
   It calls only `Frontend`, the exported loop and `Asserting.That`: no Playwright API, no selectors, no `Assert.*`,
   no delays.
-- Strings appear only for text the UI shows that is no game thing's name (an option, a line a card composes: rule e)
-  and fixture file names.
+- Strings appear only for text the UI composes around names and numbers (an option, a card's heading or line, a state
+  chip: rule e) and fixture file names.
 
 ## b. BaseE2E
 
@@ -129,9 +130,11 @@ A scenario never repeats any of that.
     `Tick…Async` (checkboxes), `Pick…Async` (pickers), `Import…Async`, `Export…Async`;
   - **Wait**: `WaitUntil<what the user expects>Async` (`Designer.WaitUntilShownAsync()`), always for something the user
     would see;
-  - **Read**: `ReadAsync()` returns an immutable record snapshot of what that part shows, holding vocabulary values
-    (rule e), never raw HTML; `ReadLayoutAsync()` returns where its parts are on the screen (their boxes, in CSS
-    pixels) for the layout checks (rule d).
+  - **Read**: `ReadAsync()` returns an immutable record snapshot of what that part shows, never raw HTML: vocabulary
+    values (rule e) where the part shows one kind of game thing (a trigger, a step's token), and the shown text where
+    it can show any kind or composes a line (a step card's sources, lines and chips), which its assertions match
+    against the vocabulary case's `ToShownText` or the quoted line; `ReadLayoutAsync()` returns where its parts are
+    on the screen (their boxes, in CSS pixels) for the layout checks (rule d).
 - **Show the box first.** Every Act and Read member goes through `OnScreen` (`OnScreen.PressAsync(box, target)` for a
   click or tap, `OnScreen.ActAsync(box, target, act)` for any other action, `OnScreen.ReadAsync(box, read)`), never
   straight to Playwright. The box is the part of the UI the user sees the action happen in or reads (the Next trigger
@@ -156,8 +159,9 @@ A scenario never repeats any of that.
 - A Gherkin's "must not be there" line has its own assertion: `DoesNotFire(new WeaponPerk.ReapersTithe())`,
   `HasNoChance()`, `ShowsNone(new StateGroup.Weapons())`, `OffersCounts("1 enemy")` (exactly those).
 - **Layout** assertions work on a `ReadLayoutAsync()` snapshot, from the boxes of its parts, never from a screenshot:
-  `HasNoOverlap()`, `HasAtRightEnd(new StepTrigger.Reload())`, `FitsInsideTheScreen()` (inside the window, and the
-  page doesn't scroll sideways). A box less than a pixel over another touches it; it doesn't overlap.
+  `HasNoOverlap()`, `HasAtRightEnd(new StepTrigger.Reload())`, `WrapsOntoSeveralLines()`, `FitsInsideTheScreen()`
+  (inside the window, and the page doesn't scroll sideways). A box less than a pixel over another touches it; it
+  doesn't overlap.
 - They return the `AssertingThat<T>` for chaining, use xunit's `Assert` inside, and their message says what the user
   sees against what was expected: "Under Unrelenting the card shows "heals you 65 HP", but "heals you 66 HP" was
   expected."
@@ -175,11 +179,13 @@ A scenario never repeats any of that.
   artifact perk, step trigger, state group…), one file per kind.
 - Each file has one function from a case to what the UI shows (`ToShownText`): the only place those strings live.
   `new Weapon.FestivalFlight()` is "Festival Flight" on the screen, so when the app renames something, one line
-  changes, not every test that uses it. The reverse (`Read<Kind>`) is derived from it: it gives the case the UI's text
-  names.
-- A Gherkin's quoted **name** of a game thing ("Festival Flight", "Unrelenting", "💀 kill") is a vocabulary case in the
-  scenario. A quoted **line the UI composes** around names and numbers (an option, "3 in 5 s · Unrelenting"; a card's
-  line, "heals you 65 HP (chance)"; a heading) is the quoted string itself, exactly as the Gherkin quotes it.
+  changes, not every test that uses it. The reverse (`Read<Kind>`), when a snapshot needs one, is derived
+  from it: it gives the case the UI's text names.
+- A Gherkin's quoted **name** of a game thing that a scenario acts on or names as a source ("Festival Flight",
+  "Unrelenting", "💀 kill", "WEAPONS") is a vocabulary case in the scenario. A quoted **text the UI composes** around
+  names and numbers is the quoted string itself, exactly as the Gherkin quotes it: an option ("3 in 5 s ·
+  Unrelenting"), a card's heading or line ("heals you 65 HP (chance)"), a state chip ("Orb of Power (chance)",
+  "One for All · Festival Flight", "Exhaust").
 - Every union has an `Unlisted(string Shown)` case: what the UI shows that no case names yet, so a failing assertion
   names it as the UI shows it.
 - A case is added when a scenario needs it; no up-front lists.
@@ -230,7 +236,7 @@ Line for line, in the Gherkin's order:
 | `I tap "💀 kill"` | `TriggerPalette.ClickAsync(new StepTrigger.Kill())`, `Loop.WaitUntilStepShownAsync(1)` |
 | `I remove step #1 with the "✕" on its card` | `Loop.ClickRemoveStepAsync(1)`, `Loop.WaitUntilNoStepsAsync()` |
 | `I tick "why" above the loop` | `Designer.TickWhyAsync()`, `Loop.Step(1).WaitUntilReasonsShownAsync()` |
-| A `Then`, and the `And` lines after it | One `// Then` block: one read, then one assertion per line, chained |
+| A `Then`, and the `And` lines after it | One `// Then` block: one read per part it checks, then one assertion per line, chained |
 | `card #1's heading is "#1 Ogma PR6 (💀 kill)"` | `HasHeading("#1 Ogma PR6 (💀 kill)")` |
 | `it reads "Ogma PR6 💀 killed 1 enemy"` / `it reads "nothing triggers"` | `Reads("Ogma PR6 💀 killed 1 enemy")` / `ReadsNothingTriggers()` |
 | `"Unrelenting" fires "heals you 65 HP (chance)"` | `Fires(new WeaponPerk.Unrelenting(), "heals you 65 HP (chance)")` |
@@ -238,7 +244,7 @@ Line for line, in the Gherkin's order:
 | `its DEBUFFS show only "Exhaust"` / `its WEAPONS show none` | `Shows(new StateGroup.Debuffs(), "Exhaust")` / `ShowsNone(new StateGroup.Weapons())` |
 | `the "×" enemy count offers "1 enemy" and "3 in 5 s · Unrelenting"` | `TriggerPalette.ReadAsync()`, `OffersCounts("1 enemy", "3 in 5 s · Unrelenting")` |
 | `the loop has no steps` | `Loop.ReadAsync()`, `HasNoSteps()` |
-| A layout line (`none of … overlap`, `… sits at the row's right end`, `the row fits inside the screen`) | `ReadLayoutAsync()`, `HasNoOverlap()`, `HasAtRightEnd(…)`, `FitsInsideTheScreen()` |
+| A layout line (`the row wraps onto more than one line`, `none of … overlap`, `… sits at the row's right end`, `the row fits inside the screen`) | `ReadLayoutAsync()`, `WrapsOntoSeveralLines()`, `HasNoOverlap()`, `HasAtRightEnd(…)`, `FitsInsideTheScreen()` |
 | A quoted game thing's name | A vocabulary case (rule e) |
 | A `#` line (why it surprises, why one screen) | Stays in the Gherkin; a `//` line above the read it explains, when it explains a check |
 

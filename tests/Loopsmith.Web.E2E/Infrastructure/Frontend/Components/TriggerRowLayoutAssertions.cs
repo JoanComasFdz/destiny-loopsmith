@@ -37,6 +37,17 @@ public static class TriggerRowLayoutAssertions
         return that;
     }
 
+    /// <summary>The row wraps: its buttons and its "×" enemy count sit on more than one line.</summary>
+    public static AssertingThat<TriggerRowLayout> WrapsOntoSeveralLines(this AssertingThat<TriggerRowLayout> that)
+    {
+        var shown = that.InstanceToAssert;
+        var parts = shown.Buttons.Select(button => button.Box).Concat(shown.Count is { } count ? [count] : []).ToArray();
+        // Two parts are on different lines when one starts below the other's bottom.
+        var wraps = parts.Any(first => parts.Any(second => second.Top >= first.Bottom - Tolerance));
+        Assert.True(wraps, $"The picked row's {parts.Length} parts sit on one line, but the row was expected to wrap.");
+        return that;
+    }
+
     /// <summary>The row fits inside the screen, and the page doesn't scroll sideways.</summary>
     public static AssertingThat<TriggerRowLayout> FitsInsideTheScreen(this AssertingThat<TriggerRowLayout> that)
     {

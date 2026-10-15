@@ -246,6 +246,7 @@ public sealed class EnemyCountTests : BaseE2E
           Given the build "bellowing-giant-reapers-tithe" is imported, with no steps
           When I tap "Bellowing Giant" in the trigger panel
           Then the "×" enemy count offers "1 enemy", "2 · Reaper's Tithe", "3 · Reaper's Tithe" and "4 · Reaper's Tithe · Reaper's Tithe x4"
+          # "· Reaper's Tithe x4": the buff reaches its cap at 4 kills.
           When I tap "Bellowing Giant" in the trigger panel
           And I select "1 enemy"
           And I tap "💀 kill"
@@ -674,6 +675,7 @@ public sealed class EnemyCountTests : BaseE2E
           Then card #1's heading is "#1 Festival Flight (💀 kill 3)"
           And it reads "Festival Flight 💀 killed 3 enemies in 3 s"
           And "Hatchling (enhanced)" fires "Threadling" and "Threadling (chance)"
+          # "why" is still ticked from the round before.
           And "Hatchling (enhanced)" gives the reasons "why: Three quick kills with this weapon hatch a Threadling." and "why: When it hatches one, the enhanced trait may hatch a second."
         """)]
     public async Task EnhancedHatchlingMayHatchASecondThreadling(Screen screen)
@@ -730,6 +732,7 @@ public sealed class EnemyCountTests : BaseE2E
         await Frontend.Designer.Loop.WaitUntilStepShownAsync(1);
 
         // Then
+        // "why" is still ticked from the round before.
         var threeKills = await Frontend.Designer.Loop.Step(1).ReadAsync();
         Asserting.That(threeKills)
             .HasHeading("#1 Festival Flight (💀 kill 3)")

@@ -31,7 +31,7 @@ while [ $# -gt 0 ]; do
     --action-gap) action_gap="$2"; shift 2 ;;
     --out) out="$2"; shift 2 ;;
     --no-publish) publish=0; shift ;;
-    -h|--help) sed -n '2,18p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,16p' "$0"; exit 0 ;;
     *) chosen+=("$1"); shift ;;
   esac
 done

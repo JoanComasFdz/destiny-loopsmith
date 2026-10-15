@@ -31,8 +31,8 @@ public sealed class Designer(IPage page)
     /// <summary>The loop's steps (Components/LoopTimeline.razor).</summary>
     public LoopTimeline Loop { get; } = new(page);
 
-    /// <summary>Ticks the "why" checkbox above the loop: each step card shows its "why:" reasons.</summary>
-    public Task TickWhyAsync() => OnScreen.PressAsync(ShowReasons, ShowReasons);
+    /// <summary>Ticks the "why" checkbox above the loop (it stays ticked when it already is): each step card shows its "why:" reasons.</summary>
+    public Task TickWhyAsync() => OnScreen.ActAsync(ShowReasons, ShowReasons, box => box.SetCheckedAsync(true));
 
     /// <summary>Waits until the designer shows an open loop.</summary>
     public Task WaitUntilShownAsync() => BuildIdentity.WaitForAsync(new() { State = WaitForSelectorState.Visible });

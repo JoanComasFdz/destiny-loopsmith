@@ -104,7 +104,7 @@ public static class StepCardSnapshotAssertions
         [.. card.Events.SelectMany(e => e.Sources).Where(source => source.Name == name)];
 
     private static ImmutableArray<StateChip> ReadGroup(StepState state, StateGroup group) =>
-        group.Match(buffs => state.Buffs, weapons => state.Weapons, debuffs => state.Debuffs, ground => state.Ground);
+        group.Match(buffs => state.Buffs, weapons => state.Weapons, debuffs => state.Debuffs, ground => state.Ground, unlisted => []);
 
     private static string Describe(ImmutableArray<FiredEvent> events) =>
         events.IsEmpty ? "nothing" : string.Join("; ", events.Select(e => $"\"{e.Text}\": {string.Join(", ", e.Sources.Select(s => $"{s.Name} {Describe(s.Lines)}"))}"));

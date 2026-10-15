@@ -12,7 +12,7 @@
     <div class="hud-title">State after #@Number</div>
     <div class="hud-columns">
         @RenderGroup("buffs", "Buffs", State.Buffs, false)
-        <div class="hud-group" data-group="weapons">
+        <div class="hud-group" data-testid="state-group" data-group="weapons">
             <span class="hud-label">Weapons</span>
             <span class="chips">
                 @if (State.Weapons.IsEmpty && State.WeaponEffects.IsEmpty)
@@ -102,7 +102,7 @@
 
     private RenderFragment RenderGroup(string group, string label, ImmutableArray<StateEntry> entries, bool withWeapons) => __builder =>
     {
-        <div class="hud-group" data-group="@group">
+        <div class="hud-group" data-testid="state-group" data-group="@group">
             <span class="hud-label">@label</span>
             <span class="chips">
                 @if (entries.IsEmpty)
