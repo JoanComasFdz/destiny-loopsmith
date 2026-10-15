@@ -10,6 +10,9 @@ The owner writes what they want however it comes out, in any language, and may p
 and files. You agree with them on what to build and how to check it, then you build it: in this
 session, on one branch and one pull request (CLAUDE.md, "Agent workflow").
 
+`step-by-step.html` next to this file draws the flow: which steps run side by side, and why each one
+is done by the session, by a subagent or in the background. Keep it in step with this file.
+
 - **Language.** Whatever language the owner writes in, reply in English and write everything in
   English, like the rest of the repository. Don't quote their original words in the PR: say it with
   the app's own names for its screens and parts (the names the UI and the code use: "perk picker",
