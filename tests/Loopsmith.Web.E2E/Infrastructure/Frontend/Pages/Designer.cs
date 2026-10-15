@@ -5,7 +5,7 @@ namespace Loopsmith.Web.E2E.Infrastructure.Frontend.Pages;
 
 /// <summary>
 /// The loop designer (Pages/Designer.razor): the build's loadout (Components/LoadoutPanel.razor: its Subclass, Artifact,
-/// Weapons and Armor boxes) and the loop (Components/LoopTimeline.razor).
+/// Weapons and Armor boxes), the trigger panel (Components/TriggerPalette.razor) and the loop (Components/LoopTimeline.razor).
 /// </summary>
 public sealed class Designer(IPage page)
 {
@@ -22,6 +22,9 @@ public sealed class Designer(IPage page)
 
     /// <summary>The Armor box: one piece per armor slot.</summary>
     public ArmorBox Armor { get; } = new(page);
+
+    /// <summary>The trigger panel: the step HUD and the picked one's buttons (Components/TriggerPalette.razor).</summary>
+    public TriggerPalette TriggerPalette { get; } = new(page);
 
     /// <summary>The loop's steps (Components/LoopTimeline.razor).</summary>
     public LoopTimeline Loop { get; } = new(page);

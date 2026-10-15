@@ -615,6 +615,7 @@ textarea { resize: vertical; }
 .palette-disabled { margin: 0 0 6px; font-size: 13px; color: var(--text); }
 .palette.disabled .trig-hud, .palette.disabled .trig-actions { opacity: .4; filter: grayscale(1); pointer-events: none; user-select: none; }
 .trigger-buttons { display: flex; flex-wrap: wrap; gap: 6px; }
+.trigger-buttons.apart { margin-left: auto; }
 .target-count { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); font-size: 12px; font-weight: 700; }
 .target-count { min-width: 0; max-width: 100%; }
 /* a count says what it is for ("2 in 3 s · Arc Siphon"): it may be long, so it shrinks with an ellipsis on a phone */

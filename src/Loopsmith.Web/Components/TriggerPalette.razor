@@ -82,7 +82,7 @@
                     var slot = weapon.Slot;
                     var isPicked = picked.Match(found => found.Value.Choice.Key == slot.Choice.Key, _ => false);
                     <button type="button" class="trig-weapon aff-@slot.Affinity.ToString().ToLowerInvariant() @(isPicked ? "picked" : "")"
-                            data-hud-slot="@slot.Choice.Key" aria-pressed="@(isPicked ? "true" : "false")"
+                            data-action="trigger-weapon" data-hud-slot="@slot.Choice.Key" aria-pressed="@(isPicked ? "true" : "false")"
                             aria-label="@($"{slot.Name} ({weapon.WeaponSlot})")" title="@slot.Name"
                             @onclick="() => Pick(slot)">
                         <span class="trig-weapon-icon">
@@ -113,24 +113,17 @@
         {
             var choice = shown.Value.Choice;
             <span class="trig-actions-title">@shown.Value.Name</span>
-            <div class="trigger-buttons">
-                @foreach (var button in choice.Buttons)
+            <div class="trigger-buttons" data-testid="trigger-buttons">
+                @foreach (var button in choice.Buttons.Where(button => !button.StandsApart))
                 {
-                    <button type="button" class="trigger" data-token="@button.Token" title="@($"{button.Label}  ({button.Token})")"
-                            @onclick="() => PickTrigger(button.Action)">
-                        <span class="trigger-caption">@button.Caption</span>
-                        @if (button.IsNew)
-                        {
-                            <span class="badge new" title="Unlocked by the last step">new</span>
-                        }
-                    </button>
+                    @RenderTrigger(button)
                 }
             </div>
             @if (choice.Targets is Optional<TargetCount>.Some targets)
             {
-                <label class="target-count" title="How many enemies one hit or kill catches, and what needs that many">
+                <label class="target-count" data-testid="target-count" title="How many enemies one hit or kill catches, and what needs that many">
                     <span class="target-count-sign" aria-hidden="true">×</span>
-                    <select value="@targets.Value.Value" @onchange="e => PickTargetCount(choice.Key, e)"
+                    <select value="@targets.Value.Value" data-action="target-count" @onchange="e => PickTargetCount(choice.Key, e)"
                             aria-label="@($"{choice.Title}: enemies per hit or kill")">
                         @foreach (var count in ListCounts(choice))
                         {
@@ -147,6 +140,16 @@
                     <span class="trig-option-box" aria-hidden="true">@(toggle.Value.IsOn ? "✓" : "")</span>
                     <span class="trig-option-caption">@toggle.Value.Caption</span>
                 </button>
+            }
+            @if (choice.Buttons.Any(button => button.StandsApart))
+            {
+                @* A reload takes no enemy count and no option (ADRs D37): it stands at the row's right end, away from them. *@
+                <div class="trigger-buttons apart" data-testid="trigger-buttons-apart">
+                    @foreach (var button in choice.Buttons.Where(button => button.StandsApart))
+                    {
+                        @RenderTrigger(button)
+                    }
+                </div>
             }
         }
         else
@@ -320,6 +323,19 @@
                 }
             </div>
         }
+    };
+
+    /// <summary>A button of the picked row: "🥊 hit", "💀 kill", "🔄 reload".</summary>
+    private RenderFragment RenderTrigger(TriggerButton button) => __builder =>
+    {
+        <button type="button" class="trigger" data-action="trigger" data-token="@button.Token" title="@($"{button.Label}  ({button.Token})")"
+                @onclick="() => PickTrigger(button.Action)">
+            <span class="trigger-caption" data-testid="trigger-caption">@button.Caption</span>
+            @if (button.IsNew)
+            {
+                <span class="badge new" title="Unlocked by the last step">new</span>
+            }
+        </button>
     };
 
     /// <summary>A trigger that acts at one tap: a declaration, a new pack, a pickup.</summary>
