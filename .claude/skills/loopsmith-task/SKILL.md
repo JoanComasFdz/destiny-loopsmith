@@ -140,12 +140,16 @@ work)"), even when this session was handed a generated branch name such as
 request use the slug branch.
 
 Commit as you go, but keep the branch local until the work is ready for review (CLAUDE.md, "Agent
-workflow", steps 3–4). Right before its first push:
+workflow", steps 3–4). While developing, run the e2e scenarios unrecorded, as often as you like:
+`tools/e2e/record.sh --no-video --changed-since origin/main` (or a class or domain folder; add
+`--no-publish` when only scenario code changed, not the web app). It writes no GIF and leaves the
+last recording's alone. Never record between pushes: a recording takes minutes, and only the one
+right before a push is posted. Right before its first push:
 1. `git fetch origin main` and `git rebase origin/main`. Resolve any conflict; when both sides
    changed the same logic, ask in the session.
 2. Run `dotnet build Loopsmith.slnx` and `dotnet test` again (and the browser check again for a
    web change, if the rebase brought in web changes).
-3. When the branch adds or changes e2e scenarios, record them:
+3. When the branch adds or changes e2e scenarios, record them, now and not before:
    `tools/e2e/record.sh --changed-since origin/main`. Every scenario passes on every screen it is
    played on before the push; a failing one is fixed first. Look at its GIFs under
    `out/<domain folder>/` (one per screen, `…-desktop.gif`, `…-mobile.gif`): each should show what
@@ -159,8 +163,9 @@ workflow", steps 3–4). Right before its first push:
    the post appears with its GIFs (the PR's comments, a minute or so later); if the run failed, its
    log says why.
 
-Every later push that changes scenarios does the same: record before the push, `push-gifs.sh`
-right after it. CI doesn't run or record e2e scenarios: the session's recording is their only run.
+Every later push that changes scenarios does the same: develop with `--no-video`, record right
+before the push, `push-gifs.sh` right after it. When a scenario or the web app changes after the
+recording and before the push, record again, so the posted GIFs match the pushed head. CI doesn't run or record e2e scenarios: the session's recording is their only run.
 A session can't upload a file to GitHub, which is why the GIFs travel on a branch
 ([docs/hosting.md](../../../docs/hosting.md), "E2E videos on pull requests").
 

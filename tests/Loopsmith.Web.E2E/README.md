@@ -8,11 +8,30 @@ here).
 
 ## Run and record
 
+While developing, run them **unrecorded** (fast; as often as you like):
+
+```bash
+tools/e2e/record.sh --no-video StartFromScratchTests            # any selection below, no video, no pacing, no GIF
+tools/e2e/record.sh --no-video --changed-since origin/main      # the scenarios this branch adds or changes
+tools/e2e/record.sh --no-video --no-publish ReloadTests         # reuse the last publish: only scenario code changed
+```
+
+`--no-video` runs the same selection against the same locally served publish, without `E2E_VIDEO_DIR`: no step
+waits for the next, no pointer glides, nothing is held on screen, and nothing is encoded. It prints each run's result
+and time and the requests that left for bungie.net, exits non-zero when a run failed, and leaves the GIFs and
+`scenarios.json` of the last recording in `out/` as they are. `--no-publish` skips the publish (about a minute): use
+it when only scenario code changed; a change to the web app needs a run without it. Measured on `StartFromScratchTests`
+(two runs, desktop and mobile, publish skipped, cache warm): about 14 s a run and 35 s in all unrecorded, 24–27 s a run
+and about a minute in all recorded.
+
+Record them only **right before a push** that adds or changes scenarios (CLAUDE.md, "Agent workflow"), so the GIFs
+posted on the PR match the pushed code:
+
 ```bash
 dotnet test                                         # without E2E_URL every scenario is skipped
+tools/e2e/record.sh --changed-since origin/main     # right before the push: the scenarios this branch adds or changes
 tools/e2e/record.sh Starting                        # a domain folder (or several, or `all`)
 tools/e2e/record.sh StartFromScratchTests           # a class
-tools/e2e/record.sh --changed-since origin/main     # the scenarios this branch adds or changes
 tools/e2e/record.sh Starting --action-gap 2         # at least 2 s between two steps (default 1)
 tools/e2e/push-gifs.sh                              # their GIFs, posted on the branch's PR (after the push)
 ```
@@ -39,14 +58,15 @@ draws none, so `BaseE2E` draws a big one, and a ring at each click; on a phone, 
 `--action-gap` seconds (`E2E_ACTION_GAP`, default 1) after the previous one ended, so the GIF doesn't scroll and click
 faster than the eye can follow. Without a recording it doesn't wait.
 
-CI doesn't run them. On a pull request, the session records them before each push that adds or changes scenarios
-(`--changed-since origin/main`) and, right after the push, `tools/e2e/push-gifs.sh` pushes the GIFs to a throwaway
+CI doesn't run them. On a pull request, the session records them once, right before each push that adds or changes
+scenarios (`--changed-since origin/main`; again if a scenario or the web app changes before the push, so the GIFs match
+the pushed head; never between pushes) and, right after the push, `tools/e2e/push-gifs.sh` pushes the GIFs to a throwaway
 `e2e-gifs/pr-<n>-<short sha>` branch, which `.github/workflows/e2e-videos.yml` posts on the PR
 ([docs/hosting.md](../../docs/hosting.md#e2e-videos-on-pull-requests)): each scenario once, its title and Gherkin, then
 its 🖥️ Desktop and/or 📱 Mobile GIF; a failing run is marked there, never red.
 
 Against a site you serve yourself: `E2E_URL=http://127.0.0.1:8000/destiny-loopsmith/ dotnet test tests/Loopsmith.Web.E2E`
-(add `E2E_VIDEO_DIR=<dir>` to keep the videos).
+(add `E2E_VIDEO_DIR=<dir>` to keep the videos, `E2E_BUNGIE_LOG=<file>` to log the requests that left for bungie.net).
 
 ## Where tests go
 

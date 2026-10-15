@@ -4,7 +4,8 @@ namespace Loopsmith.Web.E2E.Infrastructure;
 /// Where the run's site, recordings and manifest cache are, from the environment: <c>E2E_URL</c> (the running site's
 /// Home; without it every scenario is skipped), <c>E2E_VIDEO_DIR</c> (where each scenario's video and its record go;
 /// without it nothing is recorded), <c>E2E_ACTION_GAP</c> (the least time between two steps of a recorded scenario, in
-/// seconds) and <c>E2E_MANIFEST_CACHE</c> (Bungie's manifest files, outside the repository).
+/// seconds), <c>E2E_BUNGIE_LOG</c> (where the requests that left for bungie.net are logged) and
+/// <c>E2E_MANIFEST_CACHE</c> (Bungie's manifest files, outside the repository).
 /// </summary>
 public static class E2ESite
 {
@@ -27,8 +28,13 @@ public static class E2ESite
         ? Path.GetFullPath(dir)
         : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".cache", "loopsmith", "bungie-manifest");
 
-    /// <summary>Where every request that left for bungie.net, or was refused, is logged (one line each).</summary>
-    public static string? BungieLog => VideoDirectory is { } dir ? Path.Combine(dir, "bungie-requests.log") : null;
+    /// <summary>
+    /// Where every request that left for bungie.net, or was refused, is logged (one line each): <c>E2E_BUNGIE_LOG</c>
+    /// (record.sh <c>--no-video</c>), else next to the videos, else nowhere.
+    /// </summary>
+    public static string? BungieLog { get; } = ReadNonEmpty("E2E_BUNGIE_LOG") is { } log
+        ? Path.GetFullPath(log)
+        : VideoDirectory is { } dir ? Path.Combine(dir, "bungie-requests.log") : null;
 
     private static string? ReadUrl() =>
         ReadNonEmpty("E2E_URL") is { } url ? (url.EndsWith('/') ? url : url + "/") : null;
