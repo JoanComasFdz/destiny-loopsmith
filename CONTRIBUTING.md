@@ -47,6 +47,10 @@ resolving them. Names follow CLAUDE.md, "Naming (agent work)".
   The session checks its PR on every event and every few hours while it waits, and resolves a
   conflict by merging `main` into its branch. To have it done now, tell it "merge origin/main into
   this branch".
-- **Out of date.** A PR that is only behind `main` waits for you: click **Update branch**.
+- **Out of date.** A PR that is only behind `main` can be merged as it is: the ruleset doesn't
+  require it to be up to date, so there's no need to click **Update branch**. The `build` check is
+  still required and a conflict still blocks the merge.
+- **`main` goes red after merges.** `ci.yml` builds and tests every push to `main`, so two PRs that
+  only break when combined show up there. Start a `/loopsmith-task` to fix it.
 - **Dropping a task.** Tell the session, close the PR if it has one, click **Delete branch** (a
   session can't delete branches), and archive the session.

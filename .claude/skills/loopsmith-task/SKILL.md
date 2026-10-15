@@ -148,9 +148,9 @@ A session can't upload a file to GitHub, which is why the GIFs travel on a branc
 
 The rebase is only for the first push: once the branch is on GitHub, rebasing it would need a
 force-push, which CLAUDE.md forbids. After that, a conflict is fixed by merging `origin/main` into
-the branch, and a branch that is only behind waits for the owner's **Update branch** (CLAUDE.md,
-step 6). The rebase only makes a PR less likely to open behind `main`: anything merged while it
-waits for review still puts it behind.
+the branch, and a branch that is only behind `main` needs nothing: a PR doesn't have to be up to
+date to be merged (CLAUDE.md, step 6). The rebase finds a conflict in the session, before the PR
+opens, and makes the build and test run against the current `main`.
 
 Once the pull request is open, rename this session so it shows the PR (CLAUDE.md, "Agent workflow",
 step 4):
