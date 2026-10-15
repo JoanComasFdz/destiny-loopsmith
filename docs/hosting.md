@@ -175,6 +175,11 @@ running anything. The session that works the PR records them; CI doesn't run, re
   It finds the PR from the branch (or takes its number), stops when the head isn't pushed yet or that branch already
   exists, and never touches the working tree. The branch sits on the PR's head, not on an empty history, because a push
   runs the workflow file inside the pushed commit: the PR's own `.github/workflows/e2e-videos.yml`.
+- **Why a branch, not a tag:** a push to any branch makes GitHub's Pull requests page show a "<branch> had recent
+  pushes · Compare & pull request" banner for about an hour, even after the branch is deleted. A tag would avoid it, but
+  a session can't make one: on 2026-10-15 its git proxy refused a tag push (`HTTP 403`, PR #90), and GitHub's REST API
+  refused every Git-data write (`git/blobs`, `git/trees`, `git/refs`: "Write access to this GitHub API path is not
+  permitted through this proxy"). So the GIFs travel on a branch, and the banner is the accepted cost: ignore it.
 - **What the workflow does** (`.github/workflows/e2e-videos.yml`, on a push to `e2e-gifs/**`): it checks the push
   (the name is `e2e-gifs/pr-<n>-<hex>`; PR #n is open and from this repository; the commit sits on a commit of the PR
   and only adds `e2e-gifs/scenarios.json` and real GIFs), then `tools/e2e/post-scenarios.py --out e2e-gifs` uploads the
