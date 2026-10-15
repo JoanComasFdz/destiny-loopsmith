@@ -62,7 +62,7 @@ shared as a link, replayed, analysed and compared with another order.
 * **Honest about the unknown:** a "?" stays "?" — never 0 — and a rule that might not happen in game is
   marked *(chance)* (D8, D13).
 * **Enforced architecture:** architecture tests in CI guard slice boundaries, I/O, and that hosts
-  own no logic ([CONVENTIONS.md](../CONVENTIONS.md)).
+  own no logic ([CODING_RULES.md](CODING_RULES.md)).
 * **Serverless web app:** runs in the browser from static files; nothing is sent to a server or
   stored in the browser but Bungie's manifest, saved by its version (D25).
 * **Private sources stay private:** Compendium snapshots and creator transcripts are never committed or

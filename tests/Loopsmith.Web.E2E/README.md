@@ -2,7 +2,7 @@
 
 Scenarios that drive the Blazor loop designer in a real browser (Playwright, on the Chromium the cloud image ships), one
 GIF per scenario, so a PR can show its scenarios working. **How to write one:
-[E2E-TEST-CODE-RULES.md](E2E-TEST-CODE-RULES.md)** (binding for this project; CONVENTIONS.md's coding rules don't apply
+[E2E-TEST-CODE-RULES.md](E2E-TEST-CODE-RULES.md)** (binding for this project; the coding rules, docs/CODING_RULES.md, don't apply
 here).
 
 ## Run and record

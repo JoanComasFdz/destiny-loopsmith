@@ -1,6 +1,6 @@
 # Architecture decision records
 
-Each ADR explains **why**; [`CONVENTIONS.md`](./CONVENTIONS.md) says **what** and wins on any conflict.
+Each ADR explains **why**; [`CONVENTIONS.md`](./CONVENTIONS.md) and [`docs/CODING_RULES.md`](docs/CODING_RULES.md) say **what** and win on any conflict.
 The requirements they serve are in [docs/requirements.md](docs/requirements.md). The list is the
 current set of decisions, in four groups: what the product is (D1–D9), sources and rules (D10–D15),
 architecture (D16–D23), hosts and tooling (D24–D26), starting from a DIM link (D27), the build's stats (D28), the

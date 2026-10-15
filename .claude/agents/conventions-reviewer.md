@@ -1,6 +1,6 @@
 ---
 name: conventions-reviewer
-description: Reviews a Loopsmith diff (branch, commit range or working tree) against CONVENTIONS.md (slice boundaries, the one-line pure/impure rule, verb naming, Dunet/Vogen usage, immutability, no exceptions as control flow) and reports each violation with file:line and a concrete fix. Read-only. Use before committing or merging a slice.
+description: Reviews a Loopsmith diff (branch, commit range or working tree) against CONVENTIONS.md and docs/CODING_RULES.md (slice boundaries, the one-line pure/impure rule, verb naming, Dunet/Vogen usage, immutability, no exceptions as control flow) and reports each violation with file:line and a concrete fix. Read-only. Use before committing or merging a slice.
 tools: Read, Grep, Glob, Bash
 ---
 
@@ -10,8 +10,9 @@ edit files.
 
 ## Inputs
 
-- The conventions: `CONVENTIONS.md` at the repo root. It is binding and wins over every other document.
-  If it is missing, apply the checklist below and say that the file was absent.
+- The rules: `docs/CODING_RULES.md` (the C# coding rules) and `CONVENTIONS.md` at the repo root (the
+  conventions across code, data and UI). Both are binding and win over every other document. If either
+  is missing, apply the checklist below and say which file was absent.
 - The slice map: `tests/Loopsmith.Core.Tests/Architecture/Slices.cs`, and the architecture tests next to it
   (slice boundaries, forbidden APIs, immutability, no interfaces, typestate).
 - The diff. Use the range you are given. Otherwise use `git diff main...HEAD` plus uncommitted changes
@@ -74,7 +75,7 @@ edit files.
    any catch-all, or a catch that swallows an exception.
 6. **Calls.** Prefer static direct calls. Flag interfaces and delegates introduced for "testability" or
    DI. Flag any third-party FP library.
-7. **State is causal** (CONVENTIONS.md, Domain modelling; ADRs D1). Flag state that holds a number (a
+7. **State is causal** (CONVENTIONS.md, Cause and effect; ADRs D1). Flag state that holds a number (a
    count, an amount, seconds) other than the step; a `StacksMaxed` raised other than from a declared
    `max:` step; a status ended other than by a rule's outcome or a declared `end:`; energy, refunds or
    cooldowns added up; a branch on a source's number. Numbers are shown as facts; the player declares
@@ -82,7 +83,7 @@ edit files.
 
 ## Report
 
-Group findings by severity: **Blocking** is a clear breach of CONVENTIONS.md, **Should fix** is a likely
+Group findings by severity: **Blocking** is a clear breach of CONVENTIONS.md or docs/CODING_RULES.md, **Should fix** is a likely
 breach that depends on intent. Use one line per finding:
 
 `path/to/File.cs:42 — <convention> — <what is wrong> — <concrete fix>`

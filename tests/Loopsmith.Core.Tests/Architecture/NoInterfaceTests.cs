@@ -2,7 +2,7 @@ namespace Loopsmith.Core.Tests.Architecture;
 
 /// <summary>
 /// Rule 7: Core declares no interfaces — the domain is modelled with Dunet unions ("never ISomething + two
-/// classes") and behaviour is reached through static direct calls (CONVENTIONS.md). Interfaces emitted by the
+/// classes") and behaviour is reached through static direct calls (docs/CODING_RULES.md). Interfaces emitted by the
 /// compiler or a source generator (Vogen, Dunet) are exempt.
 /// </summary>
 public sealed class NoInterfaceTests

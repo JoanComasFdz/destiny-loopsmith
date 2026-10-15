@@ -91,5 +91,5 @@ public enum Likelihood { Always, Chance }
 /// <summary>How much we trust a number an outcome carries ("~" = approximate, "?" = unknown, never applied).</summary>
 public enum Certainty { Known, Approximate, Unknown }
 
-/// <summary>Only the distinctions the app branches on (see CONVENTIONS.md).</summary>
+/// <summary>Only the distinctions the app branches on (see docs/CODING_RULES.md).</summary>
 public enum Severity { Blocking, Warning, Info }
