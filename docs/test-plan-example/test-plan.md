@@ -1,7 +1,7 @@
 # PR #79: enemy-count test plan
 
 Preview: https://joancomasfdz.github.io/destiny-loopsmith/pr-preview/pr-79/ · written by the rules in
-[GIVEN-WHEN-THEN-TEST-RULES.md](../GIVEN-WHEN-THEN-TEST-RULES.md). The builds are in this folder, next to this plan.
+[given-when-then-test-rules.md](../given-when-then-test-rules.md). The builds are in this folder, next to this plan.
 
 This plan covers only what PR #79 changes about enemy counts:
 
