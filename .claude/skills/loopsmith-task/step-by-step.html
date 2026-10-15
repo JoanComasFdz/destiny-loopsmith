@@ -148,7 +148,7 @@ button:focus-visible{outline:3px solid var(--main);outline-offset:2px}
       <div class="tag">§3<b>Round 1</b></div>
       <div class="body">
         <div class="seq">
-          <div class="node main">What I understood, proposed criteria, and questions only if needed<small>A question only where a point has two readings that lead to different changes. None is fine.</small></div>
+          <div class="node main">What I understood, proposed criteria, and questions only if needed<small>Each criterion about the app is a Gherkin (its screens, its title, its rounds), and becomes one e2e scenario; one checked in a file stays a plain line, and so does one that needs a Bungie login or a DIM link (no e2e scenario reaches either yet). A question only where a point has two readings that lead to different changes. None is fine.</small></div>
           <div class="node gate">You answer</div>
         </div>
         <div class="why"><b>Why the session:</b> it's a conversation, and a subagent can't ask you anything. <b>Why questions are optional:</b> a question that changes nothing costs you a round for no gain.</div>
@@ -158,7 +158,7 @@ button:focus-visible{outline:3px solid var(--main);outline-offset:2px}
       <div class="tag">§4<b>Round 2: spec</b></div>
       <div class="body">
         <div class="seq">
-          <div class="node main">The spec as the PR will open, including <b>How the work splits</b><small>Which parts go to which subagent, in which folders, or "one session, no split".</small></div>
+          <div class="node main">The spec as the PR will open, including <b>How the work splits</b><small>Which parts go to which subagent, in which folders, or "one session, no split". Each Gherkin is one criterion line, its title and test class: its full text was agreed in round 1, and the PR's e2e comment shows it with its GIFs.</small></div>
           <div class="node gate">You say go, and agree the split</div>
         </div>
         <div class="why"><b>Why the split is in the spec:</b> you see and agree it before any tokens are spent on it, and the PR keeps a record of how the work was done.</div>
@@ -182,9 +182,9 @@ button:focus-visible{outline:3px solid var(--main);outline-offset:2px}
       <div class="body">
         <div class="fork" data-label="in parallel, before the first push">
           <div class="node read">conventions-reviewer<small>The diff against docs/CODING_RULES.md.</small></div>
-          <div class="node read">Criteria check<small>Each acceptance criterion against the diff.</small></div>
+          <div class="node read">Criteria check<small>Each acceptance criterion against the diff; each Gherkin is one scenario, word for word.</small></div>
           <div class="node read">Browser check<small>Only for a web change: publishes the app, checks it at desktop and 390 px and the console.</small></div>
-          <div class="node cmd"><code>tools/e2e/record.sh --changed-since origin/main</code> / <code>dotnet test</code><small>Long runs in the background meanwhile. Every scenario the branch adds or changes passes, and its GIF shows what its title says.</small></div>
+          <div class="node cmd"><code>tools/e2e/record.sh --changed-since origin/main</code> / <code>dotnet test</code><small>Long runs in the background meanwhile. Every scenario the branch adds or changes passes on each screen it is played on, and each GIF shows what its Gherkin says.</small></div>
         </div>
         <div class="node main">Fix what they found</div>
         <div class="node main">Rebase onto <code>origin/main</code>, build + test again, then the first push<small>The branch stays local until now. Only before the first push: after it, a rebase would need a force-push.</small></div>
@@ -195,7 +195,7 @@ button:focus-visible{outline:3px solid var(--main);outline-offset:2px}
       <div class="tag">§5<b>PR</b></div>
       <div class="body">
         <div class="node main">Open the PR, rename the session, subscribe<small>Messages end with the PR and preview links; a docs-only PR has no preview, so only the PR link.</small></div>
-        <div class="node cmd"><code>tools/e2e/push-gifs.sh</code><small>Only when scenarios were recorded: pushes their GIFs to a throwaway <code>e2e-gifs/pr-&lt;n&gt;-&lt;sha&gt;</code> branch; the "E2E videos" workflow posts them on the PR as <code>## Scenarios (V&lt;N&gt;)</code> and deletes the branch.</small></div>
+        <div class="node cmd"><code>tools/e2e/push-gifs.sh</code><small>Only when scenarios were recorded: pushes their GIFs to a throwaway <code>e2e-gifs/pr-&lt;n&gt;-&lt;sha&gt;</code> branch; the "E2E videos" workflow posts them on the PR as <code>## Scenarios (V&lt;N&gt;)</code> (each scenario's Gherkin, then its 🖥️ Desktop and/or 📱 Mobile GIF) and deletes the branch.</small></div>
         <div class="why"><b>Why the session:</b> one writer to GitHub, so nothing is posted twice and every reply comes from the session that knows the whole history. <b>Why the GIFs travel on a branch:</b> a session can't upload a file to GitHub, but it can push; the workflow only moves them into the <code>prs-resources</code> release and posts them, it builds and records nothing.</div>
       </div>
     </div>

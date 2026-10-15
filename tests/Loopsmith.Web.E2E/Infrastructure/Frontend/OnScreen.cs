@@ -14,7 +14,8 @@ namespace Loopsmith.Web.E2E.Infrastructure.Frontend;
 /// - when the run records, the scroll is smooth, a box that moved stays a moment on screen before the action or the
 ///   read, the drawn mouse pointer glides to the element an action uses before the action, and a step starts no sooner than <see cref="E2ESite.ActionGap"/> after the previous one ended (record.sh
 ///   <c>--action-gap</c>), so the GIF doesn't scroll and click faster than the eye follows. Without a recording it
-///   jumps and goes on at once.
+///   jumps and goes on at once;
+/// - on a phone (<see cref="Screen.Mobile"/>) a press is a tap, and no mouse pointer glides (a phone has none).
 /// </summary>
 public static class OnScreen
 {
@@ -26,13 +27,23 @@ public static class OnScreen
     // When each page's last step ended (one page per scenario, its steps one after another).
     private static readonly ConditionalWeakTable<IPage, Stopwatch> SinceLastStep = [];
 
+    // The screen each page is played on (BaseE2E notes it when it opens the page).
+    private static readonly ConditionalWeakTable<IPage, StrongBox<Screen>> Screens = [];
+
     private static bool Recording => E2ESite.VideoDirectory is not null;
+
+    /// <summary>Notes that <paramref name="page"/> is played on <paramref name="screen"/> (BaseE2E, when it opens the page).</summary>
+    public static void NoteScreen(IPage page, Screen screen) => Screens.AddOrUpdate(page, new StrongBox<Screen>(screen));
+
+    /// <summary>Shows <paramref name="box"/> (and <paramref name="target"/> in it), then presses the target: a click, or a tap on a phone.</summary>
+    public static Task PressAsync(ILocator box, ILocator target) =>
+        ActAsync(box, target, pressed => IsPhone(pressed.Page) ? pressed.TapAsync() : pressed.ClickAsync());
 
     /// <summary>Shows <paramref name="box"/> (and <paramref name="target"/> in it), then does <paramref name="act"/> on the target.</summary>
     public static async Task ActAsync(ILocator box, ILocator target, Func<ILocator, Task> act)
     {
         await ShowAsync(box, target);
-        if (Recording)
+        if (Recording && !IsPhone(box.Page))
         {
             await GlideMouseToAsync(target);
         }
@@ -92,6 +103,8 @@ public static class OnScreen
             await Task.Delay(E2ESite.ActionGap - since.Elapsed);
         }
     }
+
+    private static bool IsPhone(IPage page) => Screens.TryGetValue(page, out var screen) && screen.Value == Screen.Mobile;
 
     private static void NoteStepEnded(IPage page) => SinceLastStep.AddOrUpdate(page, Stopwatch.StartNew());
 

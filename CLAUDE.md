@@ -34,7 +34,7 @@ Open items: [docs/backlog.md](docs/backlog.md).
 ```bash
 dotnet build Loopsmith.slnx          # TreatWarningsAsErrors is on
 dotnet test                          # unit, golden and architecture tests (the e2e scenarios skip without E2E_URL)
-tools/e2e/record.sh Starting         # e2e scenarios in Chromium → out/<domain>/<scenario>.gif + out/scenarios.json
+tools/e2e/record.sh Starting         # e2e scenarios in Chromium → out/<domain>/<scenario>-<screen>.gif + out/scenarios.json
 dotnet run --project src/Loopsmith.Cli -- explain builds/skip-grenade-hunter/build.yaml
 dotnet run --project src/Loopsmith.Web          # the loop designer in the browser
 ```
@@ -73,7 +73,7 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
   Creator transcripts are third-party content: keep them local as `transcript.txt` (gitignored),
   never commit them.
 - `tests/Loopsmith.Core.Tests/` — unit, golden (`Golden/*.verified.txt`) and architecture tests.
-- `tests/Loopsmith.Web.E2E/` — end-to-end scenarios of the web app (Playwright), one GIF each via `tools/e2e/record.sh`;
+- `tests/Loopsmith.Web.E2E/` — end-to-end scenarios of the web app (Playwright), one per Gherkin, one GIF per screen via `tools/e2e/record.sh`;
   `Infrastructure/` (BaseE2E, page objects, vocabulary, assertions) and `Scenarios/<domain>/<Topic>Tests.cs`. Binding
   rules: its [E2E-TEST-CODE-RULES.md](tests/Loopsmith.Web.E2E/E2E-TEST-CODE-RULES.md), not
   [docs/CODING_RULES.md](docs/CODING_RULES.md); how to run, isolation and the cache: its [README](tests/Loopsmith.Web.E2E/README.md). Playwright is pinned
@@ -82,9 +82,10 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
   except to fill `${E2E_MANIFEST_CACHE:-~/.cache/loopsmith/bungie-manifest}` once, and read the manifest version
   pinned as `ManifestContentId` in `src/Loopsmith.Web/wwwroot/appsettings.json` (bumping it downloads the new version
   once); the cache is Bungie's data, never committed.
-- [docs/given-when-then-test-rules.md](docs/given-when-then-test-rules.md) — how to write a Given/When/Then test (a
-  PR's acceptance criteria, its test plan, an e2e scenario), click by click; `docs/test-plan-example/` is a plan written
-  by them, with its minimal builds.
+- [docs/given-when-then-test-rules.md](docs/given-when-then-test-rules.md) — how to write a Gherkin, click by click:
+  every acceptance criterion about how the app behaves is one, and every Gherkin is one e2e scenario (its
+  `[TestDescription]`), played on 🖥️ desktop and/or 📱 mobile (`[PlayInDesktop]` / `[PlayInMobile]`); the worked
+  example is `tests/Loopsmith.Web.E2E/Scenarios/Loop/Weapons/EnemyCountTests.cs`.
 - `docs/requirements.md` — the requirements, starting with the level of abstraction (what Loopsmith
   does and doesn't), then FR-1…FR-13 with their status, the non-functional requirements and what is
   out of scope.
@@ -169,7 +170,9 @@ pull request:
    conflict in the session, before the PR opens, and makes the build and test run against the
    current `main`. Then push and open the pull request into `main` (not a draft), with the task's
    title and the agreed spec as its description: tick the acceptance criteria you checked, and add
-   what changed and how to check it on the preview at `…/pr-preview/pr-<PR number>/`. A PR is
+   what changed and how to check it on the preview at `…/pr-preview/pr-<PR number>/`. A Gherkin is
+   one line there, its title and test class, never its full text: the PR's e2e comment shows it in
+   full with its GIFs ([docs/given-when-then-test-rules.md](docs/given-when-then-test-rules.md), section 8). A PR is
    **docs only** when every path it changes (a rename's old path too) is a Markdown file or under
    `docs/`, `.github/` or `.claude/`: the list `pr-preview.yml` and `ci.yml` use, which skip its
    preview and build. A docs-only PR has no preview, so its description and messages leave the
@@ -221,7 +224,8 @@ Always:
   for exactly that.
 - **e2e scenarios:** a PR that adds or changes e2e scenarios shows them on the PR, recorded by the session (CI doesn't run them):
   before the push, `tools/e2e/record.sh --changed-since origin/main` (every scenario passes, or the push waits for a
-  fix); after the push, `tools/e2e/push-gifs.sh`, which `e2e-videos.yml` posts as `## Scenarios (V<N>)`. Put a short
+  fix); after the push, `tools/e2e/push-gifs.sh`, which `e2e-videos.yml` posts as `## Scenarios (V<N>)` (each
+  scenario's Gherkin, then its 🖥️ Desktop and/or 📱 Mobile GIF). Put a short
   plain description of the round in the pushed commit's message body (the post's "What changed"), or pass it as
   `--message`.
 - In cloud sessions `gh issue` and `gh pr` fail (GitHub's GraphQL is blocked): use the built-in

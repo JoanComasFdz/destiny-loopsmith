@@ -1,6 +1,0 @@
-# PR #79 · Veteran's Wisdom (origin trait): 3 weapon kills within 3 s (or a precision kill).
-name: "PR 79 - Build 08: Veteran's Wisdom"
-class: hunter
-subclass: arc
-weapons:
-  - { slot: kinetic, name: Scathelocke, type: kinetic, perks: [veterans-wisdom] }

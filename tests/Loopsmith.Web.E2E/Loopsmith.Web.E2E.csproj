@@ -4,6 +4,9 @@
     <OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <!-- xUnit1026: a scenario's Screen parameter is read by BaseE2E (the browser opens as that screen), never by its body
+         (E2E-TEST-CODE-RULES.md, rule a). -->
+    <NoWarn>$(NoWarn);xUnit1026</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" />

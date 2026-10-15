@@ -112,7 +112,7 @@
         @if (picked is Optional<HudSlot>.Some shown)
         {
             var choice = shown.Value.Choice;
-            <span class="trig-actions-title">@shown.Value.Name</span>
+            <span class="trig-actions-title" data-testid="trig-actions-title">@shown.Value.Name</span>
             <div class="trigger-buttons" data-testid="trigger-buttons">
                 @foreach (var button in choice.Buttons.Where(button => !button.StandsApart))
                 {

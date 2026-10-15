@@ -189,23 +189,26 @@ running anything. The session that works the PR records them; CI doesn't run, re
   anywhere). A release asset embedded as `![title](https://github.com/<owner>/<repo>/releases/download/prs-resources/<name>)`
   shows inline in GitHub (an MP4 there only shows as a link, so they are GIFs). Uploads use the workflow's
   `GITHUB_TOKEN` (contents and pull-requests write); no personal token.
-- **Naming:** `pr-<PR number>-v<version>-<scenario>.gif`, e.g.
-  `pr-82-v1-given-app-is-open-on-home-when-i-click-start-from-scratch-then-the-designer-shows-an-arc-hunter-with-nothing-equipped.gif`.
+- **Naming:** `pr-<PR number>-v<version>-<run>.gif`, e.g.
+  `pr-82-v1-start-from-scratch-opens-an-arc-hunter-with-nothing-equipped-mobile.gif`.
   - `pr-<n>-` first, so a PR's assets sit together and its cleanup finds them (the dash after the number keeps
     `pr-7-` from matching `pr-70-`);
   - `v<version>`: 1, 2, 3… (no padding), one per `push-gifs.sh`, before the scenario so one version's GIFs sit
     together. It is one more than the highest `## Scenarios (V<N>)` already in the workflow's comments on the PR
     (those by github-actions ending with its footer): nothing is stored anywhere else, and a reopened PR carries on
     from its last number;
-  - `<scenario>`: the scenario's GIF name, the same as in `record.sh`'s output (`ScenarioNaming.ToGifName`: the
-    `Given…_When…_Then…` method name in kebab-case, only a–z, 0–9 and `-`, which GitHub keeps as they are). Only when
-    the whole name would pass 200 characters does it keep its start and end with `-<8 hex>`, the start of the SHA-256
-    of the method name, so it stays unique and the same on every push.
+  - `<run>`: the run's GIF name, the same as in `record.sh`'s output (`ScenarioNaming.ToGifName`: the scenario's
+    method name, its Gherkin's title, in kebab-case, then `-desktop` or `-mobile`; only a–z, 0–9 and `-`, which GitHub
+    keeps as they are). Only when the whole name would pass 200 characters does it keep its start and end with
+    `-<8 hex>`, the start of the SHA-256 of the GIF name, so it stays unique (a scenario's two screens apart) and the
+    same on every push.
 - **The posts:** every version, V1 included, is a new comment on the PR, `## Scenarios (V<N>)`, that starts with
   **What changed**: the body of the GIFs' commit message without its trailers, or its subject when it has no body.
   `push-gifs.sh` copies the PR head's commit message there (a session writes a short plain description of the round in
-  its body), or writes `--message "<text>"` as the body. Each scenario is its Given/When/Then title as a
-  small heading with its GIF below; a failed one has ❌ before its title. Every post ends with `---` and
+  its body), or writes `--message "<text>"` as the body. Each scenario shows once: its Gherkin's title as a small
+  heading, its Gherkin in a `gherkin` block, then a `🖥️ Desktop` and/or `📱 Mobile` subtitle (the screens it was played
+  on, desktop first) with that run's GIF below. A failed run has ❌ before its subtitle, and its scenario before its
+  title. Every post ends with `---` and
   `_Recorded by the e2e workflow · Claude Code_`. The workflow never touches the PR's description, so editing the
   description can't break a post.
 - **Failures:** a failing scenario still gets its GIF and its ❌ (the session fixes it before pushing, so it shouldn't

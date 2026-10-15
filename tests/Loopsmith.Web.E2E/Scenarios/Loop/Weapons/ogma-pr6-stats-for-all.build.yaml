@@ -1,5 +1,5 @@
-# PR #79 · Stats for All: hit 3 separate enemies within 3 s.
-name: "PR 79 - Build 02: Stats for All"
+# Stats for All (3 enemies hit within 3 s) on an Energy weapon.
+name: "E2E - Ogma PR6 with Stats for All"
 class: hunter
 subclass: arc
 weapons:

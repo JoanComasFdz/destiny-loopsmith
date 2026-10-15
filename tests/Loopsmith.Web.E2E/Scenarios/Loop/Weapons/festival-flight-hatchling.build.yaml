@@ -1,0 +1,6 @@
+# Hatchling (3 kills within 3 s, or a precision kill) on a Kinetic weapon.
+name: "E2E - Festival Flight with Hatchling"
+class: hunter
+subclass: arc
+weapons:
+  - { slot: kinetic, name: Festival Flight, type: strand, perks: [hatchling] }

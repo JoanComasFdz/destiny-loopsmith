@@ -8,8 +8,19 @@ namespace Loopsmith.Web.E2E.Scenarios.Starting;
 /// <summary>Starting a loop from scratch on Home: an Arc Hunter with nothing equipped and no loop steps.</summary>
 public sealed class StartFromScratchTests : BaseE2E
 {
-    [Fact]
-    public async Task GivenAppIsOpenOnHome_WhenIClickStartFromScratch_ThenTheDesignerShowsAnArcHunterWithNothingEquipped()
+    [Theory, PlayInDesktop, PlayInMobile]
+    [TestDescription("""
+        @desktop @mobile
+        Scenario: Start from scratch opens an Arc Hunter with nothing equipped
+          Given the app is open on Home
+          When I tap "Start from scratch"
+          Then the Subclass box shows a Hunter with the Arc subclass
+          And the Weapons box has nothing equipped
+          And the Armor box has nothing equipped
+          And the Artifact box has no artifact set
+          And the loop has no steps
+        """)]
+    public async Task StartFromScratchOpensAnArcHunterWithNothingEquipped(Screen screen)
     {
         // Given
         await Frontend.Home.WaitUntilShownAsync();

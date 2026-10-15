@@ -1,5 +1,5 @@
-# PR #79 · One for All: hit 3 separate enemies within 3 s. Ogma PR6 has no perk: it's "another weapon".
-name: "PR 79 - Build 01: One for All"
+# One for All (3 enemies hit within 3 s) on Festival Flight; Ogma PR6 has no perk: "another weapon".
+name: "E2E - Festival Flight with One for All, Ogma PR6 with none"
 class: hunter
 subclass: arc
 weapons:

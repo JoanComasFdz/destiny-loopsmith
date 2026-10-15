@@ -3,11 +3,12 @@
 
   post-scenarios.py --pr <n> --commit <sha> [--out <dir>] [--repo <owner/repo>] [--dry-run]
 
-Reads <out>/scenarios.json (tools/e2e/record.sh), uploads each scenario's GIF to the `prs-resources` release as
-  pr-<n>-v<version>-<the scenario's GIF name>.gif and posts them as a new comment on the PR that starts with what
-  changed (the body of --commit's message, or its subject). It never touches the PR's description. The version is one
-  more than the highest "## Scenarios (V<N>)" in this workflow's comments. A name longer than 200 characters keeps its
-  start and ends with a short hash of the scenario's method.
+Reads <out>/scenarios.json (tools/e2e/record.sh: one entry per run, a scenario played on a screen), uploads each run's
+  GIF to the `prs-resources` release as pr-<n>-v<version>-<the run's GIF name>.gif and posts them as a new comment on
+  the PR that starts with what changed (the body of --commit's message, or its subject). Each scenario shows once: its
+  title, its Gherkin, then a "🖥️ Desktop" and/or "📱 Mobile" subtitle with that screen's GIF. It never touches the
+  PR's description. The version is one more than the highest "## Scenarios (V<N>)" in this workflow's comments. A
+  name longer than 200 characters keeps its start and ends with a short hash of the run's GIF name.
 Nothing recorded (an empty scenarios.json) posts nothing.
 
 Uses the gh CLI (GH_TOKEN) on the repository in --repo or GITHUB_REPOSITORY. --dry-run prints instead of writing.
@@ -31,6 +32,7 @@ BOT = "github-actions[bot]"
 MAX_NAME = 200
 HEADING = re.compile(r"^## Scenarios \(V(\d+)\)[ \t]*$", re.MULTILINE)
 TRAILER = re.compile(r"^[A-Za-z][A-Za-z0-9-]*: \S")
+SCREENS = {"desktop": "🖥️ Desktop", "mobile": "📱 Mobile"}
 
 
 def main():
@@ -81,11 +83,11 @@ def find_last_version(comments):
 
 
 def name_asset(pr, version, scenario):
-    """pr-<n>-v<version>-<GIF name>.gif; past 200 characters, its start plus a hash of the method."""
+    """pr-<n>-v<version>-<GIF name>.gif; past 200 characters, its start plus a hash of the GIF name (a method and its screen)."""
     stem = f"pr-{pr}-v{version}-{os.path.splitext(os.path.basename(scenario['gif']))[0]}"
     if len(stem) + len(".gif") <= MAX_NAME:
         return stem + ".gif"
-    digest = hashlib.sha256(scenario["method"].encode("utf-8")).hexdigest()[:8]
+    digest = hashlib.sha256(scenario["gif"].encode("utf-8")).hexdigest()[:8]
     keep = MAX_NAME - len(f"-{digest}.gif")
     return f"{stem[:keep].rstrip('-')}-{digest}.gif"
 
@@ -108,16 +110,32 @@ def upload(args, scenarios):
             gh(["release", "upload", RELEASE, *files, "--clobber", "--repo", args.repo])
 
 
+def group_by_scenario(runs):
+    """The runs of each scenario (its class and method), in the order the scenarios first appear; desktop before mobile."""
+    groups = {}
+    for run in runs:
+        groups.setdefault((run["class"], run["method"]), []).append(run)
+    order = list(SCREENS)
+    return [sorted(group, key=lambda run: order.index(run.get("screen")) if run.get("screen") in order else len(order))
+            for group in groups.values()]
+
+
 def write_section(repo, version, scenarios, changed):
     lines = [f"## Scenarios (V{version})", "", "**What changed**", "", changed, ""]
-    for scenario in scenarios:
-        mark = "❌ " if not scenario["passed"] else ""
-        lines += [f"### {mark}{scenario['title']}", ""]
-        if os.path.exists(scenario["file"]):
-            url = f"https://github.com/{repo}/releases/download/{RELEASE}/{scenario['asset']}"
-            lines += [f"![{scenario['title']}]({url})", ""]
-        else:
-            lines += ["_No recording._", ""]
+    for runs in group_by_scenario(scenarios):
+        first = runs[0]
+        mark = "❌ " if any(not run["passed"] for run in runs) else ""
+        lines += [f"### {mark}{first['title']}", ""]
+        if first.get("gherkin"):
+            lines += ["```gherkin", first["gherkin"], "```", ""]
+        for run in runs:
+            screen = SCREENS.get(run.get("screen"), run.get("screen") or "")
+            lines += [f"#### {'❌ ' if not run['passed'] else ''}{screen}".rstrip(), ""]
+            if os.path.exists(run["file"]):
+                url = f"https://github.com/{repo}/releases/download/{RELEASE}/{run['asset']}"
+                lines += [f"![{first['title']} · {screen}]({url})", ""]
+            else:
+                lines += ["_No recording._", ""]
     lines += ["---", FOOTER, ""]
     return "\n".join(lines)
 
