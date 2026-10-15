@@ -163,10 +163,13 @@ Every pull request from a branch of this repository shows its end-to-end scenari
 ([tests/Loopsmith.Web.E2E](../tests/Loopsmith.Web.E2E/README.md)) as GIFs, so a reviewer sees them working without
 running anything. The session that works the PR records them; CI doesn't run, record or build anything for them.
 
-- **Who records:** the session, before each push that adds or changes scenarios:
+- **Who records:** the session, once, right before each push that adds or changes scenarios:
   `tools/e2e/record.sh --changed-since origin/main`, i.e. every scenario the branch adds or changes from where it left
   `main` (a class whose file changed, or that names a changed fixture file), not only those the push touched. Every
-  scenario passes before the push. A PR that changes nothing under `tests/Loopsmith.Web.E2E/Scenarios` records and posts
+  scenario passes before the push. While developing, the session runs them unrecorded
+  (`tools/e2e/record.sh --no-video …`: same selection and served publish, no video, no pacing, no GIF) and never
+  records between pushes; when a scenario or the web app changes after the recording and before the push, it records
+  again, so the posted GIFs match the pushed head. A PR that changes nothing under `tests/Loopsmith.Web.E2E/Scenarios` records and posts
   nothing, and runs no e2e workflow.
 - **How the GIFs get to GitHub:** a session can't upload a file to GitHub (its proxy only lets JSON request bodies
   through: a release upload answers 415), but it can push. Right after the push (the first one once the PR is open),

@@ -34,7 +34,8 @@ Open items: [docs/backlog.md](docs/backlog.md).
 ```bash
 dotnet build Loopsmith.slnx          # TreatWarningsAsErrors is on
 dotnet test                          # unit, golden and architecture tests (the e2e scenarios skip without E2E_URL)
-tools/e2e/record.sh Starting         # e2e scenarios in Chromium → out/<domain>/<scenario>-<screen>.gif + out/scenarios.json
+tools/e2e/record.sh --no-video Starting   # e2e scenarios in Chromium, unrecorded: the fast run while developing
+tools/e2e/record.sh Starting         # recorded → out/<domain>/<scenario>-<screen>.gif + out/scenarios.json (right before a push)
 dotnet run --project src/Loopsmith.Cli -- explain builds/skip-grenade-hunter/build.yaml
 dotnet run --project src/Loopsmith.Web          # the loop designer in the browser
 ```
@@ -158,10 +159,12 @@ pull request:
    complete, not after every edit, but keep the branch local until the work is ready for review:
    its first push is the one that opens the pull request (step 4). Before every push: `dotnet
    build Loopsmith.slnx` and `dotnet test` (warnings are errors; there is no separate linter),
-   check a web change in a browser too (How we work), and when the branch adds or changes e2e
-   scenarios, record them with `tools/e2e/record.sh --changed-since origin/main`; right after
-   every such push (the first one once its PR is open), `tools/e2e/push-gifs.sh` posts their GIFs
-   on the PR (Always, "e2e scenarios").
+   check a web change in a browser too (How we work). While developing, run the e2e scenarios
+   unrecorded: `tools/e2e/record.sh --no-video --changed-since origin/main` (fast; add
+   `--no-publish` when the web app didn't change). Record them only right before a push that adds
+   or changes e2e scenarios: `tools/e2e/record.sh --changed-since origin/main`; right after every
+   such push (the first one once its PR is open), `tools/e2e/push-gifs.sh` posts their GIFs on the
+   PR (Always, "e2e scenarios").
 4. **When it's ready for review, bring in `main`, push and open the pull request.** Right before
    the branch's first push, `git fetch origin main` and `git rebase origin/main` (resolve any
    conflict; ask in the session when both sides changed the same logic), then run `dotnet build
@@ -223,8 +226,10 @@ Always:
 - Don't change `.github/workflows/`, repository settings, rulesets or secrets unless the task asks
   for exactly that.
 - **e2e scenarios:** a PR that adds or changes e2e scenarios shows them on the PR, recorded by the session (CI doesn't run them):
-  before the push, `tools/e2e/record.sh --changed-since origin/main` (every scenario passes, or the push waits for a
-  fix); after the push, `tools/e2e/push-gifs.sh`, which `e2e-videos.yml` posts as `## Scenarios (V<N>)` (each
+  while developing, run them unrecorded with `tools/e2e/record.sh --no-video` (same selection, fast, no GIFs) and
+  never record between pushes; record once, right before the push, with `tools/e2e/record.sh --changed-since
+  origin/main` (every scenario passes, or the push waits for a fix), and record again if a scenario or the web app
+  changes after that and before the push, so the GIFs match the pushed head; after the push, `tools/e2e/push-gifs.sh`, which `e2e-videos.yml` posts as `## Scenarios (V<N>)` (each
   scenario's Gherkin, then its 🖥️ Desktop and/or 📱 Mobile GIF). Put a short
   plain description of the round in the pushed commit's message body (the post's "What changed"), or pass it as
   `--message`.

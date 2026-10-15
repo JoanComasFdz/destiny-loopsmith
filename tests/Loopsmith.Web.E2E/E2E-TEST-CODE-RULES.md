@@ -216,8 +216,10 @@ are separate contexts too.
    Never under `builds/`: the web app embeds `builds/` and would list them on Home.
 5. Grow `Infrastructure/` only by what this scenario needs: the page-object members, vocabulary cases and assertions it
    calls. Missing `data-action` / `data-testid` attributes are added to the app in the same PR.
-6. Record it: `tools/e2e/record.sh <its class>`. It passes on every screen it is played on, and each GIF shows what
-   the Gherkin says.
+6. Run it unrecorded while you work: `tools/e2e/record.sh --no-video <its class>` (fast; `--no-publish` when the web
+   app didn't change). It passes on every screen it is played on.
+7. Record it once, right before the push (README, "Run and record"): `tools/e2e/record.sh --changed-since origin/main`.
+   Each GIF shows what the Gherkin says.
 
 ## i. From a Gherkin to a scenario
 
