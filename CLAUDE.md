@@ -14,13 +14,10 @@ https://joancomasfdz.github.io/destiny-loopsmith/; the CLI is the scripting/test
 Open items: [docs/backlog.md](docs/backlog.md).
 
 ## Binding rules
-- **[docs/CODING_RULES.md](docs/CODING_RULES.md) and [CONVENTIONS.md](CONVENTIONS.md) are
-  binding and win over everything.** The coding rules bind the C# code (vertical slices,
-  kernel-only dependencies, impure → pure → impure with one pure-or-impure statement per
-  line, verb-named functions, immutable records, Dunet DUs, Vogen value objects at the
-  boundary, own Optional/Result/Unit, no exceptions as control flow); the conventions bind
-  code, data and UI alike (build elements are data, unknowns are data, state is causal,
-  `data-action`/`data-testid` on the web host) and say which rules bind what.
+- **[docs/CODING_RULES.md](docs/CODING_RULES.md) is binding and wins over everything** (vertical
+  slices, kernel-only dependencies, impure → pure → impure with one pure-or-impure
+  statement per line, verb-named functions, immutable records, Dunet DUs, Vogen value
+  objects at the boundary, own Optional/Result/Unit, no exceptions as control flow).
   [ADRs.md](ADRs.md) explains why and never overrides.
 - The architecture tests (`tests/Loopsmith.Core.Tests/Architecture/`) guard slice
   boundaries, that only `SourceFetching` touches files (and only to read), and that the hosts
@@ -251,7 +248,7 @@ keeps its extension: `01-perk-picker-phone.png`, `02-designer-console.log`,
 ## Project subagents (`.claude/agents/`)
 - `rule-author` — Compendium/Clarity/guide text → rules YAML (provenance, no invented numbers).
 - `build-extractor` — video transcript / note → `builds/<slug>/build.yaml` + `note-map.md`.
-- `conventions-reviewer` — reviews a diff against CONVENTIONS.md and docs/CODING_RULES.md.
+- `conventions-reviewer` — reviews a diff against docs/CODING_RULES.md.
 
 ## Source priority for mechanics
 Compendium snapshot / Clarity (game data) > the user's notes > a creator's claim.

@@ -1,7 +1,7 @@
 # End-to-end test code rules (binding)
 
-These rules are binding for `tests/Loopsmith.Web.E2E`. The coding rules ([docs/CODING_RULES.md](../../docs/CODING_RULES.md)) don't
-apply to this project; these do. [CONVENTIONS.md](../../CONVENTIONS.md)'s web host section still binds the app: what the tests locate by (`data-action`,
+These rules are binding for `tests/Loopsmith.Web.E2E`. [docs/CODING_RULES.md](../../docs/CODING_RULES.md) doesn't
+apply to this project; these do. Its web host section still binds the app: what the tests locate by (`data-action`,
 `data-testid`) is named there.
 
 The aim: a scenario reads like the acceptance criterion it checks, in the app's own words, and everything that isn't
@@ -96,7 +96,7 @@ A scenario never repeats any of that.
 - Snapshots don't retry: a scenario waits for what it expects before it reads.
 - Locators are private to their class and use only `data-action`, `data-testid` or role + accessible name (and the
   `data-*` attributes of an element found that way); never CSS classes, positions or XPath. The app's side of this
-  is CONVENTIONS.md's web host section: renaming a `data-action` or `data-testid` updates its page object in the same PR.
+  is docs/CODING_RULES.md's web host section: renaming a `data-action` or `data-testid` updates its page object in the same PR.
 
 ## d. Assertions
 

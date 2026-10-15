@@ -5,19 +5,12 @@ them. They are the house style for **Loopsmith** (a .NET 10 / C# 14 project),
 carried over verbatim in substance from the owner's house style and adapted only
 in names and examples.
 
-This file is the canonical, citable home for the coding rules. They bind the C#
-code under `src/` and `tests/Loopsmith.Core.Tests/`; the end-to-end tests
-(`tests/Loopsmith.Web.E2E`) follow
-[`E2E-TEST-CODE-RULES.md`](../tests/Loopsmith.Web.E2E/E2E-TEST-CODE-RULES.md) instead.
-The same code also follows [`CONVENTIONS.md`](../CONVENTIONS.md), the rules it
-shares with the data and the UI: build elements are data, not code; unknowns are
-data (`GameValue.Unknown`, never 0; every element keeps its `Provenance`); state is
-causal (no number in game state but the step and a counted buff's stacks); and the
-web host's `data-action`/`data-testid`. Both files are binding, and they win over
-any other document. The *reasoning* behind the cross-cutting choices is recorded in
-**[`ADRs.md`](../ADRs.md)**; an ADR explains why, it never overrides what this
-file says. The domain model these rules produce is the code itself, under
-`src/Loopsmith.Core/Domain/`.
+This file is the canonical, citable home for the coding rules — it is binding, and
+it wins over any other document. They bind the C# code under `src/` and
+`tests/Loopsmith.Core.Tests/`. The *reasoning* behind the cross-cutting choices
+is recorded in **[`ADRs.md`](../ADRs.md)**; an ADR explains why, it never overrides
+what this file says. The domain model these rules produce is the code
+itself, under `src/Loopsmith.Core/Domain/`.
 
 ## Architecture
 
@@ -40,6 +33,10 @@ file says. The domain model these rules produce is the code itself, under
   **`Causality`** (what a trigger *means*: trigger/damage-source matching, shared by
   `Simulation` and `LoopGraphing`). Both are guarded by architecture tests and may
   not depend on any feature slice.
+- **Build elements are data, not code.** A new aspect, fragment, mod, exotic,
+  artifact perk or weapon trait is **one YAML entry** under `rules/` — never an
+  edit to a shared classifier or a dispatch `switch`. A new trigger or outcome
+  kind is one Dunet case, and the compiler flags every `Match` that must handle it.
 - **`Domain` holds data + pure value arithmetic only** — no feature behaviour, no
   outward dependency, never depends on a feature slice or on `System.IO`. The
   allowed exception is pure, dependency-free value arithmetic (e.g.
@@ -51,6 +48,16 @@ file says. The domain model these rules produce is the code itself, under
   calls the same pure `Orchestration` API (`LoopDesigning`); browser side effects
   (clipboard, downloads, confirm, picked files, the URL) live in its `Hosting/BrowserInterop`.
   Any other host (an HTTP API, say) would do the same.
+
+- **The end-to-end tests have their own rules.** `tests/Loopsmith.Web.E2E` follows
+  [`E2E-TEST-CODE-RULES.md`](../tests/Loopsmith.Web.E2E/E2E-TEST-CODE-RULES.md), not this file.
+
+## Web host
+
+- **Every element a user acts on carries a `data-action`, every element a user reads a `data-testid`**, both
+  kebab-case and named for what the element is or does, never how it looks (`data-action="scratch-start"`,
+  `data-testid="weapon-slot"`). They are what the end-to-end tests locate by: renaming one updates its page object
+  (`tests/Loopsmith.Web.E2E/Infrastructure/Frontend/`) in the same PR.
 
 ## Functional design
 
@@ -128,6 +135,27 @@ file says. The domain model these rules produce is the code itself, under
   `StatValue`, `SnapshotDate`), constructed and validated **at the boundary**
   (`TryFrom` in the parsing slices) — once inside the pure core a value object is
   known-valid.
+- **Unknowns are data.** A source's "?" becomes `GameValue.Unknown`, never 0; the
+  trace shows "?". Every element keeps its `Provenance` (its `source:`).
+- **State is causal** (ADRs D1). Game state says what is present (a buff, a
+  debuff on the pack, a pickup on the ground) and what the player declared
+  ("Bolt Charge at max"); it holds no number but the step and a counted buff's
+  stacks (ADRs D33: Armor Charge's sure and chance stacks, which do decide what
+  fires — the one counter of the game state). A source's number
+  (`+1 Bolt Charge`, `15s`, `+12% grenade energy`) is a fact shown with its
+  outcome — never accumulated, and never compared to decide what happens.
+  Four exceptions, none of them game state: the build's stat line (ADRs D28) —
+  `StatLoading` may add it up from the player's armor the way DIM does, and the
+  build check may compare it with an element's declared `statChecks` to choose a
+  warning or a note — the step's damage resistance (ADRs D29), the resistance
+  passives holding right then multiplied by the game's rule, shown with its sources,
+  and the armor energy a piece's mods use (ADRs D30), added up per piece and compared
+  with its copy's capacity to refuse a mod picked in the designer that doesn't fit.
+  None of these three ever changes what a step fires. The fourth does: an ability's
+  charges in the build (ADRs D36), its profile's `charges` plus every equipped
+  `extraCharges` (Shinobu's Vow), compared with one to tell whether every use spends
+  the last charge (one charge) or only the use the player marks `:last` (more) — a
+  fact of the build, never counted down in a loop.
 - **Add a named failure/`Severity` case only when the app branches on it** (to
   recover or take a different path), never merely to carry a message. IO whose only
   outcome is "show the user what went wrong" uses `Result<_, string>`; the acted-on
