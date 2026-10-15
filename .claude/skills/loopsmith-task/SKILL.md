@@ -82,7 +82,8 @@ Files, rules, builds, related PRs, how the work splits, open questions.
   (where, and on what device or browser if they said).
 - **Acceptance criteria:**
   - Each one is what someone does and sees: on the preview at `…/pr-preview/pr-<n>/` (which
-    screen, what you tap, what you see), in a file, or in a test.
+    screen, what you tap, what you see), in a file, or in a test. A docs-only change (CLAUDE.md,
+    "Agent workflow", step 4) has no preview: its criteria are checked in a file.
   - A web change is checked on desktop and at phone width (390 px).
   - Say how the app behaves, not how the code does it.
   - No filler such as "code is clean" or "tests pass" (CI checks those).
@@ -119,6 +120,20 @@ work)"), even when this session was handed a generated branch name such as
 `claude/zealous-euler-qu8uiv`. Don't push to the generated one; every commit, push and the pull
 request use the slug branch.
 
+Commit as you go, but keep the branch local until the work is ready for review (CLAUDE.md, "Agent
+workflow", steps 3–4). Right before its first push:
+1. `git fetch origin main` and `git rebase origin/main`. Resolve any conflict; when both sides
+   changed the same logic, ask in the session.
+2. Run `dotnet build Loopsmith.slnx` and `dotnet test` again (and the browser check again for a
+   web change, if the rebase brought in web changes).
+3. Push and open the pull request.
+
+The rebase is only for the first push: once the branch is on GitHub, rebasing it would need a
+force-push, which CLAUDE.md forbids. After that, a conflict is fixed by merging `origin/main` into
+the branch, and a branch that is only behind waits for the owner's **Update branch** (CLAUDE.md,
+step 6). The rebase only makes a PR less likely to open behind `main`: anything merged while it
+waits for review still puts it behind.
+
 Once the pull request is open, rename this session so it shows the PR (CLAUDE.md, "Agent workflow",
 step 4):
 - Read the current title with the claude-code-remote `get_session` tool, with no `session_id`.
@@ -131,6 +146,10 @@ Every message that reports work as finished (the PR opened, a review round or a 
 with both links as bullet points, with the real PR number:
 - PR: https://github.com/JoanComasFdz/destiny-loopsmith/pull/59
 - Preview: https://joancomasfdz.github.io/destiny-loopsmith/pr-preview/pr-59/
+
+A docs-only PR (every changed path a Markdown file or under `docs/`, `.github/` or `.claude/`;
+CLAUDE.md, "Agent workflow", step 4) gets no preview, so its messages end with the PR bullet only,
+and its description has no "how to check it on the preview".
 
 The owner's files never go into the repository by themselves. When the work needs one in the
 repository, put it in its proper place, for example a loop file as a test case under `builds/` or
