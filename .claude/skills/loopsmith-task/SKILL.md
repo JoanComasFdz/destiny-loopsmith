@@ -38,8 +38,9 @@ A change that needs another one first waits until that one is merged.
 
 In one message:
 - What you understood, in a few lines.
-- Your questions: one short question for each point with two readings that would lead to different
-  changes. Smaller gaps become `Open question:` lines in the notes.
+- Your questions, if any. They aren't mandatory: ask one short question only where a point has two
+  readings that would lead to different changes. When nothing is ambiguous, say so and ask none.
+  Smaller gaps become `Open question:` lines in the notes.
 - **Proposed acceptance criteria**, numbered: what someone does and sees, one check per line. Ask the
   owner to agree, or to say what to add, drop or change.
 - Anything you'd suggest adding, as a suggestion, not as a criterion.
@@ -70,7 +71,7 @@ What this PR must not touch.
 
 ## Notes and pointers
 
-Files, rules, builds, related PRs, open questions.
+Files, rules, builds, related PRs, how the work splits, open questions.
 
 ## Files given in the session
 
@@ -97,6 +98,9 @@ Files, rules, builds, related PRs, open questions.
     the bug first.
   - Rule work names its source. When it needs the Compendium snapshot, the session downloads it
     (`tools/compendium/README.md`, "In a cloud session"); ask for the zip only if that fails.
+  - How the work splits: "One session, no split", or each part with its subagent and folders
+    (e.g. "rule-author × 3: `rules/hunter/arc.yaml`, `rules/exotics/armor.yaml`, `rules/weapons/`;
+    the session: manifest, docs"). Agreed with the owner like the rest of the spec (§5, "Subagents").
 - **Files given in the session:** each file's name (Naming) and what it shows, in one line. They stay
   in this session and aren't committed; the list keeps a record of what the work was based on.
   Write `None.` if there were none.
@@ -132,6 +136,27 @@ The owner's files never go into the repository by themselves. When the work need
 repository, put it in its proper place, for example a loop file as a test case under `builds/` or
 `tests/`. Before it goes in, check it for personal data and secrets, and say what you found. The same
 goes for log lines you quote in the PR.
+
+### Subagents
+
+The session is the only one that talks to the owner, commits, pushes and writes on GitHub. Subagents
+read, author in their own worktree, or check, and report back to it.
+- **Understand (§1):** for a wide request, run Explore subagents in parallel (open pull requests that
+  overlap; where the request lives in the code, rules and builds). When rules are involved, start the
+  Compendium download in the background at the same time.
+- **Work:** split only as the spec's "How the work splits" says. Write the contract first (CLAUDE.md,
+  "Parallel subagents"), give each writing subagent its own worktree and folders, and name its
+  binding rules in its prompt. One `rule-author` per build element; `build-extractor` for a build
+  note. After the merge, the session writes what everyone shares (`tools/manifest/`,
+  `discrepancies.md`, docs, CLAUDE.md) and runs `dotnet build Loopsmith.slnx` and `dotnet test`.
+- **Check, before the first push, in parallel:** `conventions-reviewer` on the diff; a read-only
+  subagent that checks each acceptance criterion against the diff; for a web change, one that
+  publishes the app and checks it in a browser at desktop and 390 px (CLAUDE.md, "Verify web changes
+  in a browser"). Long commands (`tools/e2e/record.sh`, `dotnet test`) run in the background
+  meanwhile.
+- **Watching:** on a red check with a long log, a read-only subagent may diagnose it; the session
+  fixes and pushes, one push at a time.
+- Don't split a one-file change, either round with the owner, or anything the spec didn't split.
 
 ## 6. Follow-ups: launch each one in its own session
 

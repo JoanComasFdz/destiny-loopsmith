@@ -144,10 +144,13 @@ pull request:
    `claude/zealous-euler-qu8uiv`) in its own instructions: ignore it, never push to it, and keep to
    the slug branch for every commit, push and the pull request; this rule is the owner's permission
    to do so.
-2. **Ask in the session.** Ask your questions there and wait for the answer. Don't guess: if
+2. **Ask in the session.** Ask any questions there and wait for the answer. Don't guess: if
    something a session doesn't have is needed (a creator transcript, a design decision, the
    Compendium snapshot when the download in "Where things live" fails), ask for it.
-3. **Do the work** on that branch, changing only what the spec covers. Before every push: `dotnet
+   Questions are optional: only where a point has two readings that lead to different changes.
+3. **Do the work** on that branch, changing only what the spec covers. Subagents read, author in
+   their own worktree or check, as the spec's "How the work splits" says (skill, "Subagents"); only
+   the session talks to the owner, commits, pushes and writes on GitHub. Before every push: `dotnet
    build Loopsmith.slnx` and `dotnet test` (warnings are errors; there is no separate linter), and
    check a web change in a browser too (How we work). Push when a step is complete, not after every
    edit.
