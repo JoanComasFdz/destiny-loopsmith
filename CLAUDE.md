@@ -54,7 +54,7 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
 - `src/Loopsmith.Cli/` — host only: argv → shell → execute effects.
 - `src/Loopsmith.Web/` — Blazor WebAssembly loop designer (host only; calls
   `Orchestration.LoopDesigning`). Deployed to GitHub Pages by `.github/workflows/pages.yml`;
-  every PR gets a preview at `…/pr-preview/pr-<n>/` (`pr-preview.yml`)
+  every PR that isn't docs only gets a preview at `…/pr-preview/pr-<n>/` (`pr-preview.yml`)
   ([docs/hosting.md](docs/hosting.md)). Home starts a loop from scratch (an Arc Hunter with nothing equipped) or from a DIM link; a dim.gg share is read from
   DIM's open share API with a plain GET, no key and no header (hosting.md "DIM links").
 - **The product is the designed loop**: `*.loop.yaml`, self-contained (embeds its build) —
@@ -104,8 +104,8 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
 ## How we work
 - **Branch → PR → merge.** Never push to `main` directly. One branch per piece of work, started
   from the latest `main` and named for that work — don't keep stacking unrelated work on an
-  unmerged branch. Every PR runs CI and gets a web preview at `…/pr-preview/pr-<n>/` (link
-  commented on the PR); merging redeploys the live site.
+  unmerged branch. Every PR that isn't docs only (Agent workflow, step 4) runs CI and gets a web
+  preview at `…/pr-preview/pr-<n>/` (link commented on the PR); merging redeploys the live site.
   The owner merges. A session opens a pull request when asked, or when it works a task
   (`/loopsmith-task`, Agent workflow below).
 - **`gh-pages` is generated** by `pages.yml` and `pr-preview.yml` (ruleset: no deletion, no
@@ -150,20 +150,32 @@ pull request:
    Questions are optional: only where a point has two readings that lead to different changes.
 3. **Do the work** on that branch, changing only what the spec covers. Subagents read, author in
    their own worktree or check, as the spec's "How the work splits" says (skill, "Subagents"); only
-   the session talks to the owner, commits, pushes and writes on GitHub. Before every push: `dotnet
+   the session talks to the owner, commits, pushes and writes on GitHub. Commit when a step is
+   complete, not after every edit, but keep the branch local until the work is ready for review:
+   its first push is the one that opens the pull request (step 4). Before every push: `dotnet
    build Loopsmith.slnx` and `dotnet test` (warnings are errors; there is no separate linter), and
-   check a web change in a browser too (How we work). Push when a step is complete, not after every
-   edit.
-4. **When it's ready for review, open the pull request** into `main` (not a draft), with the task's
+   check a web change in a browser too (How we work).
+4. **When it's ready for review, bring in `main`, push and open the pull request.** Right before
+   the branch's first push, `git fetch origin main` and `git rebase origin/main` (resolve any
+   conflict; ask in the session when both sides changed the same logic), then run `dotnet build
+   Loopsmith.slnx` and `dotnet test` again. Only before the first push: once the branch is on
+   GitHub, a rebase would need a force-push, so from then on step 6 applies. This only makes a PR
+   less likely to open behind `main`; anything merged while it waits for review still puts it
+   behind. Then push and open the pull request into `main` (not a draft), with the task's
    title and the agreed spec as its description: tick the acceptance criteria you checked, and add
-   what changed and how to check it on the preview at `…/pr-preview/pr-<PR number>/`. Then rename
+   what changed and how to check it on the preview at `…/pr-preview/pr-<PR number>/`. A PR is
+   **docs only** when every path it changes (a rename's old path too) is a Markdown file or under
+   `docs/`, `.github/` or `.claude/`: the list `pr-preview.yml` and `ci.yml` use, which skip its
+   preview and build. A docs-only PR has no preview, so its description and messages leave the
+   preview out. Then rename
    the session: put `#<PR number> ` in front of its current title ("D2 damage resistance calculation" →
    "#59 D2 damage resistance calculation"), reading it with the claude-code-remote `get_session`
    (no `session_id`) and writing it with `set_session_title`; skip it if the title already starts
    with that prefix. If the tools aren't available or the rename fails, say so in the session and
    carry on: it never blocks the PR. Watch it (auto-fix) at once. Every message that reports work as
    finished ends with the PR link and the preview link
-   (`https://joancomasfdz.github.io/destiny-loopsmith/pr-preview/pr-<PR number>/`) as bullet points.
+   (`https://joancomasfdz.github.io/destiny-loopsmith/pr-preview/pr-<PR number>/`) as bullet points;
+   a docs-only PR's end with the PR link only.
 5. **Keep watching until the PR is merged or closed,** however many rounds it takes: every message
    in the session, every comment and review @JoanComasFdz writes on the PR (they wake you), every CI
    failure. Reply in a review thread when you address it, but don't resolve it: @JoanComasFdz
@@ -173,7 +185,8 @@ pull request:
    in a row that found nothing new; the next event starts them again), look at its merge state. On a
    conflict, merge `origin/main` into the branch, resolve it, build and test, and push. A branch
    that is only behind `main` stays as it is: @JoanComasFdz clicks **Update branch**, so pull before
-   your next change.
+   your next change. Never rebase a branch that is already on GitHub (step 4's rebase is only for
+   the first push).
 
 The owner's screenshots and files stay in the session: they aren't committed, and no other session
 can see them. When the work needs one in the repository (a loop file as a test case), put it in its
@@ -193,8 +206,8 @@ Always:
 - One task, one branch, one pull request. Don't stack pull requests: a task that needs another one's
   change waits until that one is merged.
 - Never merge, approve or enable auto-merge on a pull request, and never push to `main` (the ruleset
-  refuses it anyway). Never force-push: to update a branch, merge `origin/main` into it; squash
-  merging flattens it.
+  refuses it anyway). Never force-push: to update a branch that is on GitHub, merge `origin/main`
+  into it; squash merging flattens it. The one rebase is step 4's, before the branch's first push.
 - Don't change `.github/workflows/`, repository settings, rulesets or secrets unless the task asks
   for exactly that.
 - A push that changes e2e scenarios gets them recorded on the PR (`e2e-videos.yml`): put a short plain
