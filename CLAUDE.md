@@ -35,7 +35,7 @@ Open items: [docs/backlog.md](docs/backlog.md).
 dotnet build Loopsmith.slnx          # TreatWarningsAsErrors is on
 dotnet test                          # unit, golden and architecture tests (the e2e scenarios skip without E2E_URL)
 tools/e2e/record.sh --no-video Starting   # e2e scenarios in Chromium, unrecorded: the fast run while developing
-tools/e2e/record.sh Starting         # recorded → out/<domain>/<scenario>-<screen>.gif + out/scenarios.json (right before a push)
+tools/e2e/record.sh --changed-since origin/main   # recorded → out/<domain>/<scenario>-<screen>.gif + out/scenarios.json (right before a push)
 dotnet run --project src/Loopsmith.Cli -- explain builds/skip-grenade-hunter/build.yaml
 dotnet run --project src/Loopsmith.Web          # the loop designer in the browser
 ```

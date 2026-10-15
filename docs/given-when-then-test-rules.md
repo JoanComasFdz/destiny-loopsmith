@@ -170,7 +170,9 @@ The criteria checked in a file stay plain checkbox lines next to them.
 
 1. **Copy every expected text from the screen** (the preview or a local publish), never from memory or from the code.
 2. **Its test passes on every screen its tags name:** while you work, `tools/e2e/record.sh --no-video <its class>`
-   plays it there fast, unrecorded; right before the push, `tools/e2e/record.sh --changed-since origin/main` records
-   it, and each GIF shows what the Gherkin says.
+   plays it there fast, unrecorded; right before the push (never between pushes), `tools/e2e/record.sh
+   --changed-since origin/main` records it, and each GIF shows what the Gherkin says; `tools/e2e/push-gifs.sh` posts
+   them right after the push. A scenario or web-app change after the recording and before the push means recording
+   again.
 3. **List anything you saw but didn't expect, and anything the owner has to decide,** in the message that hands the
    work over. Never fold either into a Gherkin as if it were expected.

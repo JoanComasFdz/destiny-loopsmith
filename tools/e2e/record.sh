@@ -17,7 +17,8 @@
 # the fast run while developing. It prints each run's result and time and the requests that left for bungie.net, exits
 # non-zero when a run failed, and leaves the last recording's GIFs and scenarios.json in <out> as they are. With
 # --no-publish it also skips the publish (about a minute): fine when only scenario code changed, not the web app.
-# Record (without --no-video) only right before a push that adds or changes scenarios, so the GIFs match the pushed code.
+# Right before a push that adds or changes scenarios (never between pushes): tools/e2e/record.sh --changed-since
+# origin/main, then tools/e2e/push-gifs.sh right after the push, so the GIFs posted match the pushed code.
 # The manifest's files come from ${E2E_MANIFEST_CACHE:-~/.cache/loopsmith/bungie-manifest} (filled once from bungie.net).
 set -euo pipefail
 
@@ -38,7 +39,7 @@ while [ $# -gt 0 ]; do
     --out) out="$2"; shift 2 ;;
     --no-publish) publish=0; shift ;;
     --no-video) video=0; shift ;;
-    -h|--help) sed -n '2,21p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,22p' "$0"; exit 0 ;;
     *) chosen+=("$1"); shift ;;
   esac
 done
@@ -123,16 +124,18 @@ if [ $video -eq 0 ]; then
   results="$out/.results"
   bungie_log="$out/.bungie-requests.log"
   rm -rf "$results" "$bungie_log"
-  E2E_URL="http://127.0.0.1:$port/destiny-loopsmith/" E2E_BUNGIE_LOG="$bungie_log" \
+  # A recording's variables left in the shell would record and pace this run too: unset.
+  env -u E2E_VIDEO_DIR -u E2E_ACTION_GAP E2E_URL="http://127.0.0.1:$port/destiny-loopsmith/" E2E_BUNGIE_LOG="$bungie_log" \
     dotnet test "$project" -c Release --nologo --filter "$filter" --results-directory "$results" \
       --logger "trx;LogFileName=runs.trx" --logger "console;verbosity=normal" || status=$?
   # Each run's result and time, from the test results: without a recording no scenario writes its record.
-  python3 - "$results/runs.trx" <<'PY'
+  # It fails when no run passed or failed (none matched, or all skipped), like a recording with no record.
+  PYTHONIOENCODING=utf-8 python3 - "$results/runs.trx" <<'PY' || status=1
 import json, os, re, sys, xml.etree.ElementTree as ET
 path = sys.argv[1]
 if not os.path.exists(path):
-    print("No test results were written.")
-    sys.exit(0)
+    print("No test results were written.", file=sys.stderr)
+    sys.exit(1)
 ns = {"t": "http://microsoft.com/schemas/VisualStudio/TeamTest/2010"}
 runs = ET.parse(path).getroot().findall(".//t:UnitTestResult", ns)
 def seconds(duration):
@@ -140,12 +143,15 @@ def seconds(duration):
     return int(h) * 3600 + int(m) * 60 + float(s)
 # The screen in a run's name ("[📱 Mobile]") comes escaped ("📱"): decoded back.
 def name_of(run):
-    return re.sub(r"(?:\\u[0-9a-fA-F]{4})+", lambda m: json.loads(f'"{m.group(0)}"'), run.get("testName"))
+    return re.sub(r"(?:\\u[0-9a-fA-F]{4})+", lambda m: json.loads(f'"{m.group(0)}"'), run.get("testName", ""))
 print()
 print("Runs (unrecorded):")
 for r in sorted(runs, key=name_of):
     outcome = {"Passed": "passed", "Failed": "FAILED", "NotExecuted": "skipped"}.get(r.get("outcome"), r.get("outcome"))
     print(f'  {outcome:>7}  {seconds(r.get("duration", "0:0:0")):5.1f} s  {name_of(r)}')
+if not any(r.get("outcome") in ("Passed", "Failed") for r in runs):
+    print("No scenario ran.", file=sys.stderr)
+    sys.exit(1)
 PY
   if [ -s "$bungie_log" ]; then
     echo "Requests that left for bungie.net, or were refused ($(wc -l < "$bungie_log")):"
