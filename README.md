@@ -3,7 +3,7 @@
 **See what your Destiny 2 build actually does.**
 
 Loopsmith describes the **cause and effect** in a Destiny 2 build; it doesn't simulate the game
-([requirements](docs/requirements.md), [ADRs D1](ADRs.md)). For each trigger it shows every
+([requirements](docs/requirements.md), [ADRs D1](docs/ADRs.md)). For each trigger it shows every
 outcome that fires, which element caused it, what that unlocks next and what doesn't work together.
 Numbers are facts shown with their outcome ("+12% grenade energy", "Amplified (15s)"); what only
 play decides — that Bolt Charge is at max, that a buff has ended, how many enemies a grenade kills —
@@ -68,7 +68,7 @@ semantics: [docs/rule-format.md](docs/rule-format.md). Designed loops — the `.
 share links, analysis and comparison: [docs/loop-format.md](docs/loop-format.md). Example loops:
 [builds/skip-grenade-hunter/loops/](builds/skip-grenade-hunter/loops/) and
 [builds/skip-grenade-hunter-ascension/loops/](builds/skip-grenade-hunter-ascension/loops/).
-Coding rules (binding): [docs/CODING_RULES.md](docs/CODING_RULES.md) · decisions: [ADRs.md](ADRs.md).
+Coding rules (binding): [docs/CODING_RULES.md](docs/CODING_RULES.md) · decisions: [docs/ADRs.md](docs/ADRs.md).
 
 ## Repository layout
 
@@ -132,8 +132,8 @@ work in detail in [docs/backlog.md](docs/backlog.md). Next:
 1. Fill a DIM build's gaps — rules for the supers,
    grenades, melees and exotics it wears, the other subclasses (FR-14).
 2. Ingest: Compendium snapshot parsers (tab registry) + Clarity enrichment + coverage report (FR-11).
-3. One reading of the manifest: the CLI writes the excerpt with the C# join (FR-13, [ADRs D14](ADRs.md)).
-4. Rule drafting from the Compendium's "On X:" phrasing (FR-12, [ADRs D10](ADRs.md)).
+3. One reading of the manifest: the CLI writes the excerpt with the C# join (FR-13, [ADRs D14](docs/ADRs.md)).
+4. Rule drafting from the Compendium's "On X:" phrasing (FR-12, [ADRs D10](docs/ADRs.md)).
 5. More builds; richer rules (the rule-format gaps in [docs/backlog.md](docs/backlog.md)).
 
 Destiny 2 is a trademark of Bungie. Loopsmith is a fan project, not affiliated with Bungie.

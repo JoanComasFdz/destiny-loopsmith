@@ -91,7 +91,7 @@ allow them; a local run (`localhost`) needs an application registered for that o
 
 ## Bungie's manifest
 
-When the app opens, the browser loads Bungie's full manifest ([ADRs D14](../ADRs.md)) and keeps it for as long as the
+When the app opens, the browser loads Bungie's full manifest ([ADRs D14](ADRs.md)) and keeps it for as long as the
 tab is open, as DIM does, and saves a copy for the next visit (below): the weapon and armor pickers' **Every item**, a DIM link's items the bundled excerpt
 (`rules/manifest.yaml`) lacks, and a Bungie login's armor and weapons are all read from it, and no read downloads it
 again. It downloads eight English component files from bungie.net (~9 MB compressed, the item table most of it;
@@ -106,7 +106,7 @@ for, so the designer doesn't read again what Home just read (or failed to).
 
 **The saved copy.** Once the load is done, the browser saves the files (gzipped: ~9 MB of the ~213 MB unpacked) and
 the listing of every weapon and armor piece in its IndexedDB (`loopsmith-manifest`), each in place of the one saved
-before ([ADRs D25](../ADRs.md)). The next visit (a reload, a new tab) asks the manifest index for the current version
+before ([ADRs D25](ADRs.md)). The next visit (a reload, a new tab) asks the manifest index for the current version
 first: when the saved files are that version, it reads them instead of downloading (unpacking and indexing them as a
 download does), and the listing too when the same build of Loopsmith's code made it (a deploy that changes the code
 lists again from the saved files; nothing is downloaded). A new version downloads and lists as a first visit does, and

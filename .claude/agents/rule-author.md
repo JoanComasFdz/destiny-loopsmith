@@ -15,7 +15,7 @@ wrong trace, so you are precise and never guess.
 1. Read `docs/rule-format.md` in full. It is the specification for every key, trigger, damage source,
    condition, outcome, passive, number and duration, for `doesNotStackWith`, and for the engine semantics
    (event cascade, phase order, stacked mods, target counts). Use only constructs it defines.
-2. Read ADRs D1 and D3–D9 in `ADRs.md`: they shape what a rule means (see "Engine model" below).
+2. Read ADRs D1 and D3–D9 in `docs/ADRs.md`: they shape what a rule means (see "Engine model" below).
 3. Read `rules/glossary.yaml` and grep `rules/` for the element's id and name. Extend or correct an
    existing entry. Never add a duplicate.
 4. Gather every source you were given and rank them. The Compendium snapshot lives in
