@@ -1,7 +1,7 @@
 # Architecture decision records
 
-Each ADR explains **why**; [`docs/CODING_RULES.md`](docs/CODING_RULES.md) says **what** and wins on any conflict.
-The requirements they serve are in [docs/requirements.md](docs/requirements.md). The list is the
+Each ADR explains **why**; [`docs/CODING_RULES.md`](CODING_RULES.md) says **what** and wins on any conflict.
+The requirements they serve are in [docs/requirements.md](requirements.md). The list is the
 current set of decisions, in four groups: what the product is (D1–D9), sources and rules (D10–D15),
 architecture (D16–D23), hosts and tooling (D24–D26), starting from a DIM link (D27), the build's stats (D28), the
 step's damage resistance (D29), armor mods in their sockets (D30), the artifact (D32), the count of Armor Charge
@@ -91,7 +91,7 @@ orb" against "grenade → dodge → pick up orb" — trigger by trigger: what ea
 and why it differs. `Orchestration.LoopDesigning` is the API behind both hosts. **Consequence.**
 Two slices, `LoopFiles` and `ReportComparison`; the analysis and the comparison report, step by
 step, what each step needs and sets off. A loop designed against another catalog version replays with an Info note
-(D15). Format, analysis and comparison: [docs/loop-format.md](docs/loop-format.md).
+(D15). Format, analysis and comparison: [docs/loop-format.md](loop-format.md).
 
 ### D3 — The player declares thresholds and endings
 
@@ -119,8 +119,8 @@ or an `end:`. **Consequence.** `stacksMaxed` fires only on a declaration;
 a rule that reacts to the next hit at the maximum uses the `atMax` condition (Bolt Charge discharges
 on the next ability hit at x10). A rule that needs a count below the cap ("x3 or more Armor Charge": Emergency
 Reinforcement) fires for sure at the declared max and as a *(chance)* below it (the `belowMax` condition, D8). The cap
-and the duration are facts the player reads when deciding to declare. Format: [docs/loop-format.md](docs/loop-format.md#action-tokens)
-and [docs/rule-format.md](docs/rule-format.md).
+and the duration are facts the player reads when deciding to declare. Format: [docs/loop-format.md](loop-format.md#action-tokens)
+and [docs/rule-format.md](rule-format.md).
 
 ### D4 — The player declares how many enemies an action hits
 
@@ -175,7 +175,7 @@ starts with `pack:new`; a loop against one boss leaves it out. **Consequence.** 
 builds are explained ("everything is jolted"), and a debuff the next group doesn't have isn't
 credited to the next pass's first hit. The tier is
 `minor`: a kill rule for a higher tier shows in `explain` and the graph but doesn't fire in a loop
-until the player can declare the tier ([docs/backlog.md](docs/backlog.md)).
+until the player can declare the tier ([docs/backlog.md](backlog.md)).
 
 ### D8 — Chance rules always fire, marked *(chance)*
 
@@ -203,7 +203,7 @@ secondary only when an equipped rule names it — without one it fires exactly w
 the HUD shows it below its ability's square, with the icon of the element that names it.
 **Consequence.** A new secondary from an aspect is an input on an existing ability, not a new action.
 Air moves that spend another ability's energy (Weavewalk's melee energy) are open
-([docs/backlog.md](docs/backlog.md)).
+([docs/backlog.md](backlog.md)).
 
 ## Sources and rules
 
@@ -214,7 +214,7 @@ always-on passives), authored in `rules/**/*.yaml` with provenance. Edges betwee
 stored: they appear when an outcome matches another rule's trigger. Drafts generated from the
 Compendium's "On X:" phrasing will be offered for a human to confirm, never loaded as rules.
 **Consequence.** A new element is one YAML entry, never code (docs/CODING_RULES.md). Format:
-[docs/rule-format.md](docs/rule-format.md).
+[docs/rule-format.md](rule-format.md).
 
 ### D11 — The Compendium is the primary mechanics source; Clarity the cross-check
 
@@ -331,14 +331,14 @@ of the engine against real build notes, and the golden tests, which snapshot the
 
 **Decision.** `Loopsmith.Web` is a Blazor WebAssembly host: the C# core runs in the browser (rules,
 builds and example loops are embedded), so there is no server and any static host works — GitHub
-Pages, with a preview per pull request ([docs/hosting.md](docs/hosting.md)). Shared loops travel in
+Pages, with a preview per pull request ([docs/hosting.md](hosting.md)). Shared loops travel in
 the URL fragment (`#loop=…`). The app stores nothing in the browser but Bungie's manifest (owner
 decisions): a loop is kept by exporting it or copying its link. Bungie's manifest (D14) and the listing of every weapon
 and armor piece made from it are saved in the browser's IndexedDB, as DIM saves its copy: the files gzipped, keyed by the
 manifest version (their URLs), the listing by that version and the Loopsmith code that made it, each in place of the
 one saved before. At startup the app asks the manifest index for the current version and reads the saved copy when it
 is that version (or the index doesn't answer); a browser that can't save downloads at every visit, as before.
-**Consequence.** No API or database; a saved library is open ([docs/backlog.md](docs/backlog.md)). The first visit downloads the .NET runtime (≈ 3 MB, then
+**Consequence.** No API or database; a saved library is open ([docs/backlog.md](backlog.md)). The first visit downloads the .NET runtime (≈ 3 MB, then
 cached).
 
 ### D26 — Verify.XunitV3 pinned to 32.0.1
@@ -369,7 +369,7 @@ without asking DIM. DIM offers no embeddable preview of a share (its page has on
 image), so Home draws its own card of what the catalog recognised. Items the manifest excerpt lacks are
 read from Bungie's full manifest first (D14), so the link's weapons, armor sets and left-out items have their
 names. **Consequence.** A Stasis, Strand or Prismatic loadout can't start a build yet (the glossary has the
-Light subclasses only); Loopsmith needs no registration with DIM ([docs/hosting.md](docs/hosting.md), "DIM links").
+Light subclasses only); Loopsmith needs no registration with DIM ([docs/hosting.md](hosting.md), "DIM links").
 
 ### D28 — A build's stats come from the player's own armor, added up like DIM, after a read-only Bungie login
 
@@ -392,7 +392,7 @@ line: no total of its own. A piece picked from the player's armor is worn by the
 piece — and its set bonuses follow the pieces it wears (`ArmorSwapping`), so the loop the stats come from is the
 loop that plays; a build wears one exotic. A piece whose roll the excerpt doesn't know (a newer manifest) leaves
 the stats as they were, never guessed (D12). The login's page is the site's
-`/login`, Bungie's one redirect URL ([docs/hosting.md](docs/hosting.md), "Bungie login").
+`/login`, Bungie's one redirect URL ([docs/hosting.md](hosting.md), "Bungie login").
 
 ### D29 — The step's state shows its damage resistance, its sources multiplied, PvE and PvP
 

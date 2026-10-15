@@ -117,20 +117,20 @@ Links only in B
 ```
 
 `?` = the source doesn't say (shown, never treated as 0) · `~` = approximate ·
-`(chance)` = may not happen in game; it always fires here and is marked ([ADRs D8](../../ADRs.md)) ·
+`(chance)` = may not happen in game; it always fires here and is marked ([ADRs D8](../../docs/ADRs.md)) ·
 `doesn't stack with X` = this rule gives nothing when X's fires on the same event
-([ADRs D6](../../ADRs.md)); `loop` lists it as wasted · `Reaper ← #2 [Reaper]` = this step needs Reaper,
+([ADRs D6](../../docs/ADRs.md)); `loop` lists it as wasted · `Reaper ← #2 [Reaper]` = this step needs Reaper,
 which step #2 gave (from the element in brackets) · *in this order* = fires because of an earlier step,
 *on its own* = fires wherever the step goes. Abilities are always available; an energy outcome
-is a fact about what gives energy back ([ADRs D5](../../ADRs.md)). The loop graph renders on GitHub:
+is a fact about what gives energy back ([ADRs D5](../../docs/ADRs.md)). The loop graph renders on GitHub:
 [builds/skip-grenade-hunter/loop-graph.md](../../builds/skip-grenade-hunter/loop-graph.md).
 
 Action tokens: `grenade[:hold]|melee[:slide|air]|super[:hit|kill[:N]]`, `class[:air]`, `kinetic|energy|power[:hit|kill[:N]]`, `finisher`,
 `pickup:<pickup-id>`, `max:<status-id>`, `end:<status-id>`, `pack:new` — `N` is how many enemies that one action
-hits or kills (1..20, default 1): `grenade:kill:3`, `kinetic:hit:5` ([ADRs D4](../../ADRs.md)); a secondary ability use
+hits or kills (1..20, default 1): `grenade:kill:3`, `kinetic:hit:5` ([ADRs D4](../../docs/ADRs.md)); a secondary ability use
 goes before the hit — `melee:slide:kill` is Tempest Strike's sliding uppercut, `class:air` Ascension's air move,
-`grenade:hold` a held grenade ([ADRs D9](../../ADRs.md)); `finisher` finishes one enemy of
+`grenade:hold` a held grenade ([ADRs D9](../../docs/ADRs.md)); `finisher` finishes one enemy of
 the pack (it kills it); `pickup:orb-of-power`
 picks up an orb that is on the ground; `max:bolt-charge` declares Bolt Charge at max, `end:amplified`
-that Amplified has ended, and `pack:new` that the next enemies are a new pack ([ADRs D3, D7](../../ADRs.md)). A step that can't happen is blocked and changes nothing
+that Amplified has ended, and `pack:new` that the next enemies are a new pack ([ADRs D3, D7](../../docs/ADRs.md)). A step that can't happen is blocked and changes nothing
 (`No orb-of-power on the ground — nothing happens.`).

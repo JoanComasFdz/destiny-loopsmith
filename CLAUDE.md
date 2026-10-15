@@ -1,7 +1,7 @@
 # Loopsmith — instructions for Claude
 
 Loopsmith describes **cause and effect** in a Destiny 2 build; it doesn't simulate the game
-([ADRs.md](ADRs.md) D1, [docs/requirements.md](docs/requirements.md)). Compose a build (DIM-like),
+([docs/ADRs.md](docs/ADRs.md) D1, [docs/requirements.md](docs/requirements.md)). Compose a build (DIM-like),
 then step through its gameplay loop and see every outcome each trigger fires, which element caused
 it, what it unlocks next and what doesn't work together. Numbers are facts shown with their outcome;
 the player declares what only play decides: a threshold reached ("Bolt Charge at max",
@@ -18,7 +18,7 @@ Open items: [docs/backlog.md](docs/backlog.md).
   slices, kernel-only dependencies, impure → pure → impure with one pure-or-impure
   statement per line, verb-named functions, immutable records, Dunet DUs, Vogen value
   objects at the boundary, own Optional/Result/Unit, no exceptions as control flow).
-  [ADRs.md](ADRs.md) explains why and never overrides.
+  [docs/ADRs.md](docs/ADRs.md) explains why and never overrides.
 - The architecture tests (`tests/Loopsmith.Core.Tests/Architecture/`) guard slice
   boundaries, that only `SourceFetching` touches files (and only to read), and that the hosts
   call only `Orchestration` and the kernel — never weaken them to make code fit; fix the code.
