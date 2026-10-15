@@ -2,7 +2,7 @@
 # Records the web app's end-to-end scenarios (tests/Loopsmith.Web.E2E) as GIFs: one per screen a scenario is played on
 # ([PlayInDesktop] / [PlayInMobile]).
 #   tools/e2e/record.sh [all | <domain folder> | <TestClass> ...] [--changed-since <git ref>] [--action-gap <seconds>]
-#                       [--out <dir>] [--no-publish]
+#                       [--out <dir>] [--no-publish] [--no-video]
 # A domain folder is a folder under Scenarios/ (Starting, Build/Subclass); a class is a scenario class (StartFromScratchTests).
 # --changed-since <ref>: the scenario classes added or changed since <ref> (from where the branch left it, working tree
 # included), plus those that use a changed fixture file: "this PR's scenarios" with origin/main.
@@ -13,6 +13,11 @@
 # 800 px wide, a phone run at its own 390 px; the GIF name ends in -desktop or -mobile). It prints each
 # scenario's startup time (page open → Home shown) and the requests that left for bungie.net, and writes
 # <out>/scenarios.json. Exits non-zero when a scenario failed (its GIF is still written).
+# --no-video: the same scenarios against the same locally served publish, unrecorded and unpaced (no E2E_VIDEO_DIR):
+# the fast run while developing. It prints each run's result and time and the requests that left for bungie.net, exits
+# non-zero when a run failed, and leaves the last recording's GIFs and scenarios.json in <out> as they are. With
+# --no-publish it also skips the publish (about a minute): fine when only scenario code changed, not the web app.
+# Record (without --no-video) only right before a push that adds or changes scenarios, so the GIFs match the pushed code.
 # The manifest's files come from ${E2E_MANIFEST_CACHE:-~/.cache/loopsmith/bungie-manifest} (filled once from bungie.net).
 set -euo pipefail
 
@@ -23,6 +28,7 @@ out="$repo/out"
 changed_since=""
 action_gap=1
 publish=1
+video=1
 chosen=()
 
 while [ $# -gt 0 ]; do
@@ -31,7 +37,8 @@ while [ $# -gt 0 ]; do
     --action-gap) action_gap="$2"; shift 2 ;;
     --out) out="$2"; shift 2 ;;
     --no-publish) publish=0; shift ;;
-    -h|--help) sed -n '2,16p' "$0"; exit 0 ;;
+    --no-video) video=0; shift ;;
+    -h|--help) sed -n '2,21p' "$0"; exit 0 ;;
     *) chosen+=("$1"); shift ;;
   esac
 done
@@ -62,7 +69,7 @@ if [ -n "$changed_since" ]; then
   done < <(list_changed_classes "$changed_since")
   if [ ${#filters[@]} -eq 0 ]; then
     echo "No scenario changed since $changed_since."
-    echo "[]" > "$out/scenarios.json"
+    if [ $video -eq 1 ]; then echo "[]" > "$out/scenarios.json"; fi
     exit 0
   fi
 fi
@@ -87,10 +94,12 @@ fi
 
 site="$out/.site"
 videos="$out/.videos"
-rm -rf "$videos"
-mkdir -p "$videos"
+if [ $video -eq 1 ]; then
+  rm -rf "$videos"
+  mkdir -p "$videos"
+fi
 
-if [ $publish -eq 1 ] || [ ! -d "$site/destiny-loopsmith" ]; then
+if [ $publish -eq 1 ] || [ ! -d "$site/root/destiny-loopsmith" ]; then
   echo "Publishing the web app (Release)…"
   rm -rf "$site"
   dotnet publish "$repo/src/Loopsmith.Web" -c Release -o "$site/publish" --nologo -v q
@@ -108,8 +117,47 @@ for _ in $(seq 50); do
   sleep 0.2
 done
 
-echo "Running the scenarios ($filter)…"
 status=0
+if [ $video -eq 0 ]; then
+  echo "Running the scenarios, unrecorded ($filter)…"
+  results="$out/.results"
+  bungie_log="$out/.bungie-requests.log"
+  rm -rf "$results" "$bungie_log"
+  E2E_URL="http://127.0.0.1:$port/destiny-loopsmith/" E2E_BUNGIE_LOG="$bungie_log" \
+    dotnet test "$project" -c Release --nologo --filter "$filter" --results-directory "$results" \
+      --logger "trx;LogFileName=runs.trx" --logger "console;verbosity=normal" || status=$?
+  # Each run's result and time, from the test results: without a recording no scenario writes its record.
+  python3 - "$results/runs.trx" <<'PY'
+import json, os, re, sys, xml.etree.ElementTree as ET
+path = sys.argv[1]
+if not os.path.exists(path):
+    print("No test results were written.")
+    sys.exit(0)
+ns = {"t": "http://microsoft.com/schemas/VisualStudio/TeamTest/2010"}
+runs = ET.parse(path).getroot().findall(".//t:UnitTestResult", ns)
+def seconds(duration):
+    h, m, s = duration.split(":")
+    return int(h) * 3600 + int(m) * 60 + float(s)
+# The screen in a run's name ("[📱 Mobile]") comes escaped ("📱"): decoded back.
+def name_of(run):
+    return re.sub(r"(?:\\u[0-9a-fA-F]{4})+", lambda m: json.loads(f'"{m.group(0)}"'), run.get("testName"))
+print()
+print("Runs (unrecorded):")
+for r in sorted(runs, key=name_of):
+    outcome = {"Passed": "passed", "Failed": "FAILED", "NotExecuted": "skipped"}.get(r.get("outcome"), r.get("outcome"))
+    print(f'  {outcome:>7}  {seconds(r.get("duration", "0:0:0")):5.1f} s  {name_of(r)}')
+PY
+  if [ -s "$bungie_log" ]; then
+    echo "Requests that left for bungie.net, or were refused ($(wc -l < "$bungie_log")):"
+    sed 's/^/  /' "$bungie_log"
+  else
+    echo "Requests that left for bungie.net: none."
+  fi
+  echo "Nothing recorded: the GIFs and scenarios.json in $out are still the last recording's."
+  exit $status
+fi
+
+echo "Running the scenarios ($filter)…"
 E2E_URL="http://127.0.0.1:$port/destiny-loopsmith/" E2E_VIDEO_DIR="$videos" E2E_ACTION_GAP="$action_gap" \
   dotnet test "$project" -c Release --nologo --filter "$filter" --logger "console;verbosity=normal" || status=$?
 
