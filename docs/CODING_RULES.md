@@ -1,14 +1,15 @@
-# Coding conventions (binding)
+# Coding rules (binding)
 
 These are **requirements, not suggestions** — the plan and the code must follow
 them. They are the house style for **Loopsmith** (a .NET 10 / C# 14 project),
 carried over verbatim in substance from the owner's house style and adapted only
 in names and examples.
 
-This file is the canonical, citable home for the conventions — it is binding, and
-it wins over any other document. The *reasoning* behind the cross-cutting choices
-is recorded in **[`ADRs.md`](./ADRs.md)**; an ADR explains why, it never overrides
-what this file says. The domain model these conventions produce is the code
+This file is the canonical, citable home for the coding rules — it is binding, and
+it wins over any other document. They bind the C# code under `src/` and
+`tests/Loopsmith.Core.Tests/`. The *reasoning* behind the cross-cutting choices
+is recorded in **[`ADRs.md`](../ADRs.md)**; an ADR explains why, it never overrides
+what this file says. The domain model these rules produce is the code
 itself, under `src/Loopsmith.Core/Domain/`.
 
 ## Architecture
@@ -49,7 +50,7 @@ itself, under `src/Loopsmith.Core/Domain/`.
   Any other host (an HTTP API, say) would do the same.
 
 - **The end-to-end tests have their own rules.** `tests/Loopsmith.Web.E2E` follows
-  [`E2E-TEST-CODE-RULES.md`](tests/Loopsmith.Web.E2E/E2E-TEST-CODE-RULES.md), not this file's coding rules.
+  [`E2E-TEST-CODE-RULES.md`](../tests/Loopsmith.Web.E2E/E2E-TEST-CODE-RULES.md), not this file.
 
 ## Web host
 

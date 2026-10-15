@@ -14,7 +14,7 @@ https://joancomasfdz.github.io/destiny-loopsmith/; the CLI is the scripting/test
 Open items: [docs/backlog.md](docs/backlog.md).
 
 ## Binding rules
-- **[CONVENTIONS.md](CONVENTIONS.md) is binding and wins over everything** (vertical
+- **[docs/CODING_RULES.md](docs/CODING_RULES.md) is binding and wins over everything** (vertical
   slices, kernel-only dependencies, impure → pure → impure with one pure-or-impure
   statement per line, verb-named functions, immutable records, Dunet DUs, Vogen value
   objects at the boundary, own Optional/Result/Unit, no exceptions as control flow).
@@ -75,8 +75,8 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
 - `tests/Loopsmith.Core.Tests/` — unit, golden (`Golden/*.verified.txt`) and architecture tests.
 - `tests/Loopsmith.Web.E2E/` — end-to-end scenarios of the web app (Playwright), one GIF each via `tools/e2e/record.sh`;
   `Infrastructure/` (BaseE2E, page objects, vocabulary, assertions) and `Scenarios/<domain>/<Topic>Tests.cs`. Binding
-  rules: its [E2E-TEST-CODE-RULES.md](tests/Loopsmith.Web.E2E/E2E-TEST-CODE-RULES.md), not CONVENTIONS.md's coding
-  rules; how to run, isolation and the cache: its [README](tests/Loopsmith.Web.E2E/README.md). Playwright is pinned
+  rules: its [E2E-TEST-CODE-RULES.md](tests/Loopsmith.Web.E2E/E2E-TEST-CODE-RULES.md), not
+  [docs/CODING_RULES.md](docs/CODING_RULES.md); how to run, isolation and the cache: its [README](tests/Loopsmith.Web.E2E/README.md). Playwright is pinned
   (`Directory.Packages.props`) to the cloud image's Chromium (`/opt/pw-browsers/chromium-1194` → 1.56.0; never
   `playwright install`): if the image's Chromium changes, bump the pin to match. The scenarios never reach bungie.net
   except to fill `${E2E_MANIFEST_CACHE:-~/.cache/loopsmith/bungie-manifest}` once, and read the manifest version
@@ -248,7 +248,7 @@ keeps its extension: `01-perk-picker-phone.png`, `02-designer-console.log`,
 ## Project subagents (`.claude/agents/`)
 - `rule-author` — Compendium/Clarity/guide text → rules YAML (provenance, no invented numbers).
 - `build-extractor` — video transcript / note → `builds/<slug>/build.yaml` + `note-map.md`.
-- `conventions-reviewer` — reviews a diff against CONVENTIONS.md.
+- `conventions-reviewer` — reviews a diff against docs/CODING_RULES.md.
 
 ## Source priority for mechanics
 Compendium snapshot / Clarity (game data) > the user's notes > a creator's claim.

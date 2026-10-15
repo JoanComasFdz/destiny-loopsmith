@@ -68,7 +68,7 @@ semantics: [docs/rule-format.md](docs/rule-format.md). Designed loops — the `.
 share links, analysis and comparison: [docs/loop-format.md](docs/loop-format.md). Example loops:
 [builds/skip-grenade-hunter/loops/](builds/skip-grenade-hunter/loops/) and
 [builds/skip-grenade-hunter-ascension/loops/](builds/skip-grenade-hunter-ascension/loops/).
-Coding conventions (binding): [CONVENTIONS.md](CONVENTIONS.md) · decisions: [ADRs.md](ADRs.md).
+Coding rules (binding): [docs/CODING_RULES.md](docs/CODING_RULES.md) · decisions: [ADRs.md](ADRs.md).
 
 ## Repository layout
 
