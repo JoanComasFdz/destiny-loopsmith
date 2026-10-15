@@ -6,7 +6,9 @@ namespace Loopsmith.Web.E2E.Infrastructure;
 
 /// <summary>
 /// One browser for the whole run (the Chromium the cloud image ships, found through <c>PLAYWRIGHT_BROWSERS_PATH</c>);
-/// each scenario opens its own context in it. Started only when the run has a site to test.
+/// each scenario opens its own context in it. Started only when the run has a site to test. It shows its scrollbars:
+/// Playwright starts headless Chromium with <c>--hide-scrollbars</c>, so a video of a page taller than the window would
+/// end at the window's bottom edge with nothing saying the page goes on.
 /// </summary>
 public sealed class BrowserRun : IAsyncLifetime
 {
@@ -25,7 +27,7 @@ public sealed class BrowserRun : IAsyncLifetime
         try
         {
             playwright ??= await Playwright.CreateAsync();
-            browser ??= await playwright.Chromium.LaunchAsync(new() { Headless = true });
+            browser ??= await playwright.Chromium.LaunchAsync(new() { Headless = true, IgnoreDefaultArgs = ["--hide-scrollbars"] });
             return browser;
         }
         finally

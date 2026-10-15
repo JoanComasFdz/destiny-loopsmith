@@ -93,6 +93,12 @@ A scenario never repeats any of that.
     would see;
   - **Read**: `ReadAsync()` returns an immutable record snapshot of what that part shows, holding vocabulary values
     (rule e), never raw HTML text.
+- **Show the box first.** Every Act and Read member goes through `OnScreen` (`OnScreen.ActAsync(box, target, act)`,
+  `OnScreen.ReadAsync(box, read)`), never straight to Playwright. The box is the part of the UI the user sees the
+  action happen in or reads (the Next trigger panel, the Weapons box, the loop), not only the element clicked: Playwright
+  scrolls a clicked element only just into view and doesn't scroll for a read, so without it the GIF would show part of
+  the box, or none of it. `OnScreen` also paces a recorded scenario: one step at least `--action-gap` seconds after
+  the previous one (README, "Run and record"). Waits don't go through it.
 - Snapshots don't retry: a scenario waits for what it expects before it reads.
 - Locators are private to their class and use only `data-action`, `data-testid` or role + accessible name (and the
   `data-*` attributes of an element found that way); never CSS classes, positions or XPath. The app's side of this

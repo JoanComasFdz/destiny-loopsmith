@@ -12,13 +12,14 @@ dotnet test                                         # without E2E_URL every scen
 tools/e2e/record.sh Starting                        # a domain folder (or several, or `all`)
 tools/e2e/record.sh StartFromScratchTests           # a class
 tools/e2e/record.sh --changed-since origin/main     # the scenarios this branch adds or changes
+tools/e2e/record.sh Starting --action-gap 2         # at least 2 s between two steps (default 1)
 tools/e2e/push-gifs.sh                              # their GIFs, posted on the branch's PR (after the push)
 ```
 
 `record.sh` publishes the web app (Release; `--no-publish` reuses the last one), prepares it for `/destiny-loopsmith/`
 with `tools/web/prepare-pages.sh`, serves it with `python3 -m http.server`, runs the chosen scenarios with `E2E_URL` set
 and video on, and writes to `out/` (`--out <dir>`; gitignored):
-- `out/<domain folder>/<gif name>.gif`: each scenario from Home on (the manifest's startup screen trimmed off), 8 fps,
+- `out/<domain folder>/<gif name>.gif`: each scenario from Home on (the manifest's startup screen trimmed off), 12 fps,
   800 px wide; a failing scenario gets its GIF too;
 - `out/scenarios.json`: one entry per scenario: domain folder, class, method, title, GIF path, startup time (page open
   → Home shown) and whether it passed.
@@ -26,6 +27,15 @@ and video on, and writes to `out/` (`--out <dir>`; gitignored):
 It prints each scenario's startup time and every request that left for bungie.net, and exits non-zero when a scenario
 failed. `--changed-since <ref>` picks the scenario classes added or changed since the branch left `<ref>` (working tree
 included), plus those that name a changed fixture file.
+
+What the GIF shows is the browser window, nothing more and nothing less: the video and the window are one size
+(1280×800, `BaseE2E`), and the window shows its scrollbar (Playwright hides it in headless Chromium; `BrowserRun` turns
+that off), so a page taller than the window says so. Before each action and each read, the page object scrolls the
+whole box it works on into view (`Infrastructure/Frontend/OnScreen.cs`; E2E-TEST-CODE-RULES.md, rule c). While
+recording, it scrolls smoothly, holds a box that moved a moment on screen, glides the mouse pointer (headless Chromium
+draws none, so `BaseE2E` draws a big one, and a ring at each click) to the element an action uses, and starts a step no sooner than
+`--action-gap` seconds (`E2E_ACTION_GAP`, default 1) after the previous one ended, so the GIF doesn't scroll and click
+faster than the eye can follow. Without a recording it doesn't wait.
 
 CI doesn't run them. On a pull request, the session records them before each push that adds or changes scenarios
 (`--changed-since origin/main`) and, right after the push, `tools/e2e/push-gifs.sh` pushes the GIFs to a throwaway

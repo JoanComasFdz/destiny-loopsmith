@@ -7,10 +7,14 @@ namespace Loopsmith.Web.E2E.Infrastructure.Frontend.Components;
 /// <summary>The Weapons box of the designer's loadout (Components/LoadoutPanel.razor).</summary>
 public sealed class WeaponsBox(IPage page)
 {
-    private ILocator Slots => page.Locator("[data-testid=weapon-slot]");
+    private ILocator Box => page.GetByRole(AriaRole.Region, new() { Name = "Weapons", Exact = true });
+
+    private ILocator Slots => Box.Locator("[data-testid=weapon-slot]");
 
     /// <summary>What the Weapons box shows now.</summary>
-    public async Task<WeaponsBoxSnapshot> ReadAsync()
+    public Task<WeaponsBoxSnapshot> ReadAsync() => OnScreen.ReadAsync(Box, ReadShownAsync);
+
+    private async Task<WeaponsBoxSnapshot> ReadShownAsync()
     {
         var slots = await Slots.EvaluateAllAsync<SlotShown[]>("rows => rows.map(row => ({ slot: row.dataset.slot ?? '', empty: row.dataset.empty === 'true' }))");
         return new WeaponsBoxSnapshot(
