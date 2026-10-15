@@ -20,7 +20,7 @@ public sealed class StartFromScratchTests : BaseE2E
 
         // Then
         var subclass = await Frontend.Designer.Subclass.ReadAsync();
-        Asserting.That(subclass).HasClass(new GuardianClass.Unlisted("Titan")).HasSubclass(new Subclass.Arc());
+        Asserting.That(subclass).HasClass(new GuardianClass.Hunter()).HasSubclass(new Subclass.Arc());
 
         var weapons = await Frontend.Designer.Weapons.ReadAsync();
         Asserting.That(weapons).HasNothingEquipped();
