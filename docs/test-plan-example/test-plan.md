@@ -52,7 +52,7 @@ confirmation. Every round below starts from an empty loop, so each step shows on
 
 Festival Flight has One for All. Ogma PR6 has no perk: it plays "another weapon".
 
-### T1 · Only Festival Flight's dropdown names One for All's count
+### T1 · One for All: only Festival Flight's dropdown names its count; a chance on 1 hit, sure on 3 hits and on a kill of 3, nothing from another weapon
 
 **Given** build 01 is imported, with no steps
 
@@ -76,15 +76,11 @@ Festival Flight has One for All. Ogma PR6 has no perk: it plays "another weapon"
 
 - The dropdown offers only "1 enemy".
 
-### T2 · One for All: a chance on 1 hit, sure on 3 hits and on a kill of 3, nothing from another weapon
-
-**Given** build 01 is imported, with no steps
-
 **When**
 
-1. I tap **Festival Flight** in the trigger panel.
-2. I select "1 enemy".
-3. I tap **🥊 hit**.
+5. I tap **Festival Flight** in the trigger panel.
+6. I select "1 enemy".
+7. I tap **🥊 hit**.
 
 **Then**
 
@@ -101,33 +97,6 @@ Festival Flight has One for All. Ogma PR6 has no perk: it plays "another weapon"
 
 **When**
 
-4. I remove step #1 with the **✕** at the top right of its card.
-
-**Then**
-
-- The LOOP heading reads "LOOP · 0 STEPS", and the list shows only "#0 Fresh spawn".
-
-**When**
-
-5. I tap **Festival Flight** in the trigger panel.
-6. I select "3 in 3 s · One for All".
-7. I tap **🥊 hit**.
-
-**Then**
-
-- The new card's heading is "#1 Festival Flight (🥊 hit 3)".
-- It reads "Festival Flight 🥊 hit 3 enemies in 3 s".
-- Under "One for All", neither with "(chance)":
-  - "One for All (10s)"
-  - "+35% kinetic weapon damage"
-- STATE AFTER #1:
-  - BUFFS: none
-  - WEAPONS: "One for All · Festival Flight"
-  - DEBUFFS: none
-  - GROUND: none
-
-**When**
-
 8. I remove step #1 with the **✕** at the top right of its card.
 
 **Then**
@@ -138,12 +107,12 @@ Festival Flight has One for All. Ogma PR6 has no perk: it plays "another weapon"
 
 9. I tap **Festival Flight** in the trigger panel.
 10. I select "3 in 3 s · One for All".
-11. I tap **💀 kill**.
+11. I tap **🥊 hit**.
 
 **Then**
 
-- The new card's heading is "#1 Festival Flight (💀 kill 3)".
-- It reads "Festival Flight 💀 killed 3 enemies in 3 s".
+- The new card's heading is "#1 Festival Flight (🥊 hit 3)".
+- It reads "Festival Flight 🥊 hit 3 enemies in 3 s".
 - Under "One for All", neither with "(chance)":
   - "One for All (10s)"
   - "+35% kinetic weapon damage"
@@ -163,9 +132,36 @@ Festival Flight has One for All. Ogma PR6 has no perk: it plays "another weapon"
 
 **When**
 
-13. I tap **Ogma PR6** in the trigger panel.
-14. I select "1 enemy".
-15. I tap **🥊 hit**.
+13. I tap **Festival Flight** in the trigger panel.
+14. I select "3 in 3 s · One for All".
+15. I tap **💀 kill**.
+
+**Then**
+
+- The new card's heading is "#1 Festival Flight (💀 kill 3)".
+- It reads "Festival Flight 💀 killed 3 enemies in 3 s".
+- Under "One for All", neither with "(chance)":
+  - "One for All (10s)"
+  - "+35% kinetic weapon damage"
+- STATE AFTER #1:
+  - BUFFS: none
+  - WEAPONS: "One for All · Festival Flight"
+  - DEBUFFS: none
+  - GROUND: none
+
+**When**
+
+16. I remove step #1 with the **✕** at the top right of its card.
+
+**Then**
+
+- The LOOP heading reads "LOOP · 0 STEPS", and the list shows only "#0 Fresh spawn".
+
+**When**
+
+17. I tap **Ogma PR6** in the trigger panel.
+18. I select "1 enemy".
+19. I tap **🥊 hit**.
 
 **Then**
 
@@ -179,7 +175,7 @@ Festival Flight has One for All. Ogma PR6 has no perk: it plays "another weapon"
 
 ## Build 02: Stats for All (`02-stats-for-all.build.yaml`)
 
-### T3 · The dropdown names Stats for All's count
+### T2 · Stats for All: the dropdown names its count; a chance on 1 hit, sure on 3; one chip with its stats
 
 **Given** build 02 is imported, with no steps
 
@@ -194,15 +190,11 @@ Festival Flight has One for All. Ogma PR6 has no perk: it plays "another weapon"
   - "1 enemy"
   - "3 in 3 s · Stats for All"
 
-### T4 · Stats for All: a chance on 1 hit, sure on 3; one chip with its stats
-
-**Given** build 02 is imported, with no steps
-
 **When**
 
-1. I tap **Ogma PR6** in the trigger panel.
-2. I select "1 enemy".
-3. I tap **🥊 hit**.
+3. I tap **Ogma PR6** in the trigger panel.
+4. I select "1 enemy".
+5. I tap **🥊 hit**.
 
 **Then**
 
@@ -217,7 +209,7 @@ Festival Flight has One for All. Ogma PR6 has no perk: it plays "another weapon"
 
 **When**
 
-4. I remove step #1 with the **✕** at the top right of its card.
+6. I remove step #1 with the **✕** at the top right of its card.
 
 **Then**
 
@@ -225,9 +217,9 @@ Festival Flight has One for All. Ogma PR6 has no perk: it plays "another weapon"
 
 **When**
 
-5. I tap **Ogma PR6** in the trigger panel.
-6. I select "3 in 3 s · Stats for All".
-7. I tap **🥊 hit**.
+7. I tap **Ogma PR6** in the trigger panel.
+8. I select "3 in 3 s · Stats for All".
+9. I tap **🥊 hit**.
 
 **Then**
 
@@ -242,7 +234,7 @@ Festival Flight has One for All. Ogma PR6 has no perk: it plays "another weapon"
 
 ## Build 03: Reaper's Tithe (`03-reapers-tithe.build.yaml`)
 
-### T5 · The dropdown offers each of Reaper's Tithe's counts
+### T3 · Reaper's Tithe: the dropdown offers each count; 1 kill gives nothing, 2, 3 and 4 kills at once give that many stacks; hits give nothing
 
 **Given** build 03 is imported, with no steps
 
@@ -261,15 +253,11 @@ Festival Flight has One for All. Ogma PR6 has no perk: it plays "another weapon"
 
 **Note:** "· Reaper's Tithe x4" says the buff reaches its cap at 4 kills.
 
-### T6 · Kills at once: 1 gives nothing, 2, 3 and 4 give that many stacks; hits give nothing
-
-**Given** build 03 is imported, with no steps
-
 **When**
 
-1. I tap **Bellowing Giant** in the trigger panel.
-2. I select "1 enemy".
-3. I tap **💀 kill**.
+3. I tap **Bellowing Giant** in the trigger panel.
+4. I select "1 enemy".
+5. I tap **💀 kill**.
 
 **Then**
 
@@ -283,7 +271,7 @@ Festival Flight has One for All. Ogma PR6 has no perk: it plays "another weapon"
 
 **When**
 
-4. I remove step #1 with the **✕** at the top right of its card.
+6. I remove step #1 with the **✕** at the top right of its card.
 
 **Then**
 
@@ -291,9 +279,9 @@ Festival Flight has One for All. Ogma PR6 has no perk: it plays "another weapon"
 
 **When**
 
-5. I tap **Bellowing Giant** in the trigger panel.
-6. I select "2 · Reaper's Tithe".
-7. I tap **💀 kill**.
+7. I tap **Bellowing Giant** in the trigger panel.
+8. I select "2 · Reaper's Tithe".
+9. I tap **💀 kill**.
 
 **Then**
 
@@ -310,7 +298,7 @@ Festival Flight has One for All. Ogma PR6 has no perk: it plays "another weapon"
 
 **When**
 
-8. I remove step #1 with the **✕** at the top right of its card.
+10. I remove step #1 with the **✕** at the top right of its card.
 
 **Then**
 
@@ -318,9 +306,9 @@ Festival Flight has One for All. Ogma PR6 has no perk: it plays "another weapon"
 
 **When**
 
-9. I tap **Bellowing Giant** in the trigger panel.
-10. I select "3 · Reaper's Tithe".
-11. I tap **💀 kill**.
+11. I tap **Bellowing Giant** in the trigger panel.
+12. I select "3 · Reaper's Tithe".
+13. I tap **💀 kill**.
 
 **Then**
 
@@ -337,7 +325,7 @@ Festival Flight has One for All. Ogma PR6 has no perk: it plays "another weapon"
 
 **When**
 
-12. I remove step #1 with the **✕** at the top right of its card.
+14. I remove step #1 with the **✕** at the top right of its card.
 
 **Then**
 
@@ -345,9 +333,9 @@ Festival Flight has One for All. Ogma PR6 has no perk: it plays "another weapon"
 
 **When**
 
-13. I tap **Bellowing Giant** in the trigger panel.
-14. I select "4 · Reaper's Tithe · Reaper's Tithe x4".
-15. I tap **💀 kill**.
+15. I tap **Bellowing Giant** in the trigger panel.
+16. I select "4 · Reaper's Tithe · Reaper's Tithe x4".
+17. I tap **💀 kill**.
 
 **Then**
 
@@ -364,7 +352,7 @@ Festival Flight has One for All. Ogma PR6 has no perk: it plays "another weapon"
 
 **When**
 
-16. I remove step #1 with the **✕** at the top right of its card.
+18. I remove step #1 with the **✕** at the top right of its card.
 
 **Then**
 
@@ -372,9 +360,9 @@ Festival Flight has One for All. Ogma PR6 has no perk: it plays "another weapon"
 
 **When**
 
-17. I tap **Bellowing Giant** in the trigger panel.
-18. I select "2 · Reaper's Tithe".
-19. I tap **🥊 hit**.
+19. I tap **Bellowing Giant** in the trigger panel.
+20. I select "2 · Reaper's Tithe".
+21. I tap **🥊 hit**.
 
 **Then**
 
@@ -388,7 +376,7 @@ Festival Flight has One for All. Ogma PR6 has no perk: it plays "another weapon"
 
 **When**
 
-20. I remove step #1 with the **✕** at the top right of its card.
+22. I remove step #1 with the **✕** at the top right of its card.
 
 **Then**
 
@@ -396,9 +384,9 @@ Festival Flight has One for All. Ogma PR6 has no perk: it plays "another weapon"
 
 **When**
 
-21. I tap **Bellowing Giant** in the trigger panel.
-22. I select "4 · Reaper's Tithe · Reaper's Tithe x4".
-23. I tap **🥊 hit**.
+23. I tap **Bellowing Giant** in the trigger panel.
+24. I select "4 · Reaper's Tithe · Reaper's Tithe x4".
+25. I tap **🥊 hit**.
 
 **Then**
 
@@ -415,7 +403,7 @@ Festival Flight has One for All. Ogma PR6 has no perk: it plays "another weapon"
 Crux Celeritas IV (a Strand rocket launcher) has Reaper's Tithe, and the build wears the Strand Siphon mod, which needs
 2 Strand weapon kills within 3 s.
 
-### T7 · One count names both rules, each with its own window
+### T4 · One count names both rules, each with its own window: 1 kill gives only Strand Siphon's chance; 2 kills give both, for sure
 
 **Given** build 04 is imported, with no steps
 
@@ -432,15 +420,11 @@ Crux Celeritas IV (a Strand rocket launcher) has Reaper's Tithe, and the build w
   - "3 · Reaper's Tithe"
   - "4 · Reaper's Tithe · Reaper's Tithe x4"
 
-### T8 · 1 kill gives only Strand Siphon's chance; 2 kills give both, for sure
-
-**Given** build 04 is imported, with no steps
-
 **When**
 
-1. I tap **Crux Celeritas IV** in the trigger panel.
-2. I select "1 enemy".
-3. I tap **💀 kill**.
+3. I tap **Crux Celeritas IV** in the trigger panel.
+4. I select "1 enemy".
+5. I tap **💀 kill**.
 
 **Then**
 
@@ -456,7 +440,7 @@ Crux Celeritas IV (a Strand rocket launcher) has Reaper's Tithe, and the build w
 
 **When**
 
-4. I remove step #1 with the **✕** at the top right of its card.
+6. I remove step #1 with the **✕** at the top right of its card.
 
 **Then**
 
@@ -464,9 +448,9 @@ Crux Celeritas IV (a Strand rocket launcher) has Reaper's Tithe, and the build w
 
 **When**
 
-5. I tap **Crux Celeritas IV** in the trigger panel.
-6. I select "2 · Strand Siphon in 3 s, Reaper's Tithe".
-7. I tap **💀 kill**.
+7. I tap **Crux Celeritas IV** in the trigger panel.
+8. I select "2 · Strand Siphon in 3 s, Reaper's Tithe".
+9. I tap **💀 kill**.
 
 **Then**
 
@@ -485,9 +469,11 @@ Crux Celeritas IV (a Strand rocket launcher) has Reaper's Tithe, and the build w
 
 ## Build 05: Hatchling (`05-hatchling.build.yaml`)
 
-### T9 · The dropdown names Hatchling's count
+### T5 · Hatchling: the dropdown names its count; hits never hatch; 1 kill hatches as a chance, 3 kills for sure
 
 **Given** build 05 is imported, with no steps
+
+In this test the four state groups stay at "none": a Threadling acts at once and isn't kept in the state.
 
 **When**
 
@@ -500,17 +486,11 @@ Crux Celeritas IV (a Strand rocket launcher) has Reaper's Tithe, and the build w
   - "1 enemy"
   - "3 in 3 s · Hatchling"
 
-### T10 · Hits never hatch; 1 kill hatches as a chance, 3 kills for sure
-
-**Given** build 05 is imported, with no steps
-
-In this test the four state groups stay at "none": a Threadling acts at once and isn't kept in the state.
-
 **When**
 
-1. I tap **Festival Flight** in the trigger panel.
-2. I select "1 enemy".
-3. I tap **🥊 hit**.
+3. I tap **Festival Flight** in the trigger panel.
+4. I select "1 enemy".
+5. I tap **🥊 hit**.
 
 **Then**
 
@@ -520,7 +500,7 @@ In this test the four state groups stay at "none": a Threadling acts at once and
 
 **When**
 
-4. I remove step #1 with the **✕** at the top right of its card.
+6. I remove step #1 with the **✕** at the top right of its card.
 
 **Then**
 
@@ -528,9 +508,9 @@ In this test the four state groups stay at "none": a Threadling acts at once and
 
 **When**
 
-5. I tap **Festival Flight** in the trigger panel.
-6. I select "3 in 3 s · Hatchling".
-7. I tap **🥊 hit**.
+7. I tap **Festival Flight** in the trigger panel.
+8. I select "3 in 3 s · Hatchling".
+9. I tap **🥊 hit**.
 
 **Then**
 
@@ -540,7 +520,7 @@ In this test the four state groups stay at "none": a Threadling acts at once and
 
 **When**
 
-8. I remove step #1 with the **✕** at the top right of its card.
+10. I remove step #1 with the **✕** at the top right of its card.
 
 **Then**
 
@@ -548,9 +528,9 @@ In this test the four state groups stay at "none": a Threadling acts at once and
 
 **When**
 
-9. I tap **Festival Flight** in the trigger panel.
-10. I select "1 enemy".
-11. I tap **💀 kill**.
+11. I tap **Festival Flight** in the trigger panel.
+12. I select "1 enemy".
+13. I tap **💀 kill**.
 
 **Then**
 
@@ -561,7 +541,7 @@ In this test the four state groups stay at "none": a Threadling acts at once and
 
 **When**
 
-12. I remove step #1 with the **✕** at the top right of its card.
+14. I remove step #1 with the **✕** at the top right of its card.
 
 **Then**
 
@@ -569,9 +549,9 @@ In this test the four state groups stay at "none": a Threadling acts at once and
 
 **When**
 
-13. I tap **Festival Flight** in the trigger panel.
-14. I select "3 in 3 s · Hatchling".
-15. I tap **💀 kill**.
+15. I tap **Festival Flight** in the trigger panel.
+16. I select "3 in 3 s · Hatchling".
+17. I tap **💀 kill**.
 
 **Then**
 
@@ -582,7 +562,7 @@ In this test the four state groups stay at "none": a Threadling acts at once and
 
 ## Build 06: Hatchling, enhanced (`06-hatchling-enhanced.build.yaml`)
 
-### T11 · The dropdown names the enhanced trait's count
+### T6 · Hatchling (enhanced): the dropdown names the enhanced trait's count, which adds a second Threadling, always as a chance
 
 **Given** build 06 is imported, with no steps
 
@@ -597,15 +577,11 @@ In this test the four state groups stay at "none": a Threadling acts at once and
   - "1 enemy"
   - "3 in 3 s · Hatchling (enhanced)"
 
-### T12 · The enhanced trait adds a second Threadling, always as a chance
-
-**Given** build 06 is imported, with no steps
-
 **When**
 
-1. I tap **Festival Flight** in the trigger panel.
-2. I select "1 enemy".
-3. I tap **💀 kill**.
+3. I tap **Festival Flight** in the trigger panel.
+4. I select "1 enemy".
+5. I tap **💀 kill**.
 
 **Then**
 
@@ -618,7 +594,7 @@ In this test the four state groups stay at "none": a Threadling acts at once and
 
 **When**
 
-4. I tick the **why** checkbox at the top right of the LOOP list.
+6. I tick the **why** checkbox at the top right of the LOOP list.
 
 **Then**
 
@@ -634,7 +610,7 @@ In this test the four state groups stay at "none": a Threadling acts at once and
 
 **When**
 
-5. I remove step #1 with the **✕** at the top right of its card.
+7. I remove step #1 with the **✕** at the top right of its card.
 
 **Then**
 
@@ -642,9 +618,9 @@ In this test the four state groups stay at "none": a Threadling acts at once and
 
 **When**
 
-6. I tap **Festival Flight** in the trigger panel.
-7. I select "3 in 3 s · Hatchling (enhanced)".
-8. I tap **💀 kill**.
+8. I tap **Festival Flight** in the trigger panel.
+9. I select "3 in 3 s · Hatchling (enhanced)".
+10. I tap **💀 kill**.
 
 **Then**
 
@@ -660,7 +636,7 @@ In this test the four state groups stay at "none": a Threadling acts at once and
 
 ## Build 07: Unrelenting (`07-unrelenting.build.yaml`)
 
-### T13 · The dropdown names Unrelenting's count and window
+### T7 · Unrelenting: the dropdown names its count and window; 1 kill heals as a chance, 3 kills heal 65 HP for sure
 
 **Given** build 07 is imported, with no steps
 
@@ -675,15 +651,11 @@ In this test the four state groups stay at "none": a Threadling acts at once and
   - "1 enemy"
   - "3 in 5 s · Unrelenting"
 
-### T14 · 1 kill heals as a chance, 3 kills heal 65 HP for sure
-
-**Given** build 07 is imported, with no steps
-
 **When**
 
-1. I tap **Ogma PR6** in the trigger panel.
-2. I select "1 enemy".
-3. I tap **💀 kill**.
+3. I tap **Ogma PR6** in the trigger panel.
+4. I select "1 enemy".
+5. I tap **💀 kill**.
 
 **Then**
 
@@ -695,7 +667,7 @@ In this test the four state groups stay at "none": a Threadling acts at once and
 
 **When**
 
-4. I remove step #1 with the **✕** at the top right of its card.
+6. I remove step #1 with the **✕** at the top right of its card.
 
 **Then**
 
@@ -703,9 +675,9 @@ In this test the four state groups stay at "none": a Threadling acts at once and
 
 **When**
 
-5. I tap **Ogma PR6** in the trigger panel.
-6. I select "3 in 5 s · Unrelenting".
-7. I tap **💀 kill**.
+7. I tap **Ogma PR6** in the trigger panel.
+8. I select "3 in 5 s · Unrelenting".
+9. I tap **💀 kill**.
 
 **Then**
 
@@ -717,7 +689,7 @@ In this test the four state groups stay at "none": a Threadling acts at once and
 
 ## Build 08: Veteran's Wisdom (`08-veterans-wisdom.build.yaml`)
 
-### T15 · The dropdown names Veteran's Wisdom's count
+### T8 · Veteran's Wisdom: the dropdown names its count; 1 kill sets off the shockwave as a chance, 3 kills for sure
 
 **Given** build 08 is imported, with no steps
 
@@ -732,15 +704,11 @@ In this test the four state groups stay at "none": a Threadling acts at once and
   - "1 enemy"
   - "3 in 3 s · Veteran's Wisdom"
 
-### T16 · 1 kill sets off the shockwave as a chance, 3 kills for sure
-
-**Given** build 08 is imported, with no steps
-
 **When**
 
-1. I tap **Scathelocke** in the trigger panel.
-2. I select "1 enemy".
-3. I tap **💀 kill**.
+3. I tap **Scathelocke** in the trigger panel.
+4. I select "1 enemy".
+5. I tap **💀 kill**.
 
 **Then**
 
@@ -757,7 +725,7 @@ In this test the four state groups stay at "none": a Threadling acts at once and
 
 **When**
 
-4. I remove step #1 with the **✕** at the top right of its card.
+6. I remove step #1 with the **✕** at the top right of its card.
 
 **Then**
 
@@ -765,9 +733,9 @@ In this test the four state groups stay at "none": a Threadling acts at once and
 
 **When**
 
-5. I tap **Scathelocke** in the trigger panel.
-6. I select "3 in 3 s · Veteran's Wisdom".
-7. I tap **💀 kill**.
+7. I tap **Scathelocke** in the trigger panel.
+8. I select "3 in 3 s · Veteran's Wisdom".
+9. I tap **💀 kill**.
 
 **Then**
 
@@ -784,7 +752,7 @@ In this test the four state groups stay at "none": a Threadling acts at once and
 
 ## Build 09: Radiolaria Transposer (`09-radiolaria-transposer.build.yaml`)
 
-### T17 · The dropdown names Radiolaria Transposer's count and window
+### T9 · Radiolaria Transposer: the dropdown names its count and window; 1 kill makes the two Arc strikes as a chance, 3 kills for sure
 
 **Given** build 09 is imported, with no steps
 
@@ -799,15 +767,11 @@ In this test the four state groups stay at "none": a Threadling acts at once and
   - "1 enemy"
   - "3 in 8 s · Radiolaria Transposer"
 
-### T18 · 1 kill makes the two Arc strikes as a chance, 3 kills for sure
-
-**Given** build 09 is imported, with no steps
-
 **When**
 
-1. I tap **Speleologist** in the trigger panel.
-2. I select "1 enemy".
-3. I tap **💀 kill**.
+3. I tap **Speleologist** in the trigger panel.
+4. I select "1 enemy".
+5. I tap **💀 kill**.
 
 **Then**
 
@@ -820,7 +784,7 @@ In this test the four state groups stay at "none": a Threadling acts at once and
 
 **When**
 
-4. I remove step #1 with the **✕** at the top right of its card.
+6. I remove step #1 with the **✕** at the top right of its card.
 
 **Then**
 
@@ -828,9 +792,9 @@ In this test the four state groups stay at "none": a Threadling acts at once and
 
 **When**
 
-5. I tap **Speleologist** in the trigger panel.
-6. I select "3 in 8 s · Radiolaria Transposer".
-7. I tap **💀 kill**.
+7. I tap **Speleologist** in the trigger panel.
+8. I select "3 in 8 s · Radiolaria Transposer".
+9. I tap **💀 kill**.
 
 **Then**
 
