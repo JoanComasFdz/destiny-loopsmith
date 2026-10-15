@@ -7,8 +7,8 @@ Reads <out>/scenarios.json (tools/e2e/record.sh: one entry per run, a scenario p
   GIF and MP4 to the `prs-resources` release as pr-<n>-v<version>-<the run's GIF name>.gif and .mp4 and posts them as a
   new comment on the PR that starts with what changed (the body of --commit's message, or its subject). Each scenario
   shows once: its title, its Gherkin, then a "🖥️ Desktop" and/or "📱 Mobile" subtitle with that screen's GIF and, below
-  it, "▶ Play MP4": a link to the site's player page (e2e-player.html?v=<the MP4's name>), since GitHub shows no player
-  for a video it didn't store itself. It never touches the PR's description. The version is one more than the highest
+  it, "▶ Play MP4": both link to the site's player page (e2e-player.html?v=<the MP4's name>), since GitHub shows no
+  player for a video it didn't store itself (a tap on a bare GIF would only download it). It never touches the PR's description. The version is one more than the highest
   "## Scenarios (V<N>)" in this workflow's comments. A name longer than 200 characters keeps its start and ends with a
   short hash of the run's GIF name, the same for its GIF and its MP4.
 Nothing recorded (an empty scenarios.json) posts nothing.
@@ -154,9 +154,12 @@ def write_section(repo, version, scenarios, changed):
             lines += [f"#### {'❌ ' if not run['passed'] else ''}{screen}".rstrip(), ""]
             if os.path.exists(run["file"]):
                 url = f"https://github.com/{repo}/releases/download/{RELEASE}/{run['asset']}"
-                lines += [f"![{first['title']} · {screen}]({url})", ""]
+                image = f"![{first['title']} · {screen}]({url})"
                 if has_mp4(run):
-                    lines += [f"[▶ Play MP4]({find_player(repo)}?v={run['mp4_asset']})", ""]
+                    player = f"{find_player(repo)}?v={run['mp4_asset']}"
+                    lines += [f"[{image}]({player})", "", f"[▶ Play MP4]({player})", ""]
+                else:
+                    lines += [image, ""]
             else:
                 lines += ["_No recording._", ""]
     lines += ["---", FOOTER, ""]
