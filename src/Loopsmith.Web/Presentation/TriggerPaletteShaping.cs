@@ -14,7 +14,7 @@ namespace Loopsmith.Web.Presentation;
 public sealed record TriggerButton(PlayerAction Action, string Token, string Label, string Caption, bool IsNew);
 
 /// <summary>
-/// A row of the palette: one trigger, or the hit / kill pair of the same ability use or weapon. <see cref="Key"/> names
+/// A row of the palette: one trigger, or the hit / kill pair of the same ability use or weapon (a weapon's reload too). <see cref="Key"/> names
 /// the row ("cast:Grenade", "cast:Melee:Slide", "fire:Kinetic", "class", "class:Air", …) and stays the same from one step
 /// to the next.
 /// <see cref="Targets"/> is how many enemies the row's actions hit or kill — none for a row without targets (class
@@ -93,10 +93,19 @@ public static class TriggerPaletteShaping
             .Map(option => ShapeToggle(option, optionsOn.Contains(key)));
         var title = pair.Length == 1 ? pair[0].Label : ReadTitle(pair[0].Label);
         var buttons = pair
-            .Select(option => ShapeButton(option, targets, toggle, pair.Length == 1 ? option.Label : ReadQualifier(option.Label), build))
+            .Select(option => ShapeButton(option, targets, toggle, ReadCaption(option, pair.Length), build))
             .ToImmutableArray();
         return new TriggerChoice(key, title, targets, buttons, toggle);
     }
+
+    /// <summary>A button's caption: "🥊 hit", "💀 kill", "🔄 reload" in a row of several; its whole label alone.</summary>
+    private static string ReadCaption(TriggerOption option, int buttons) =>
+        (option.Action, buttons) switch
+        {
+            (PlayerAction.ReloadWeapon, _) => DomainPhrasing.ReloadCaption,
+            (_, 1) => option.Label,
+            _ => ReadQualifier(option.Label),
+        };
 
     private static TriggerOptionToggle ShapeToggle(StepOption option, bool isOn) =>
         option == StepOption.BreaksShield
@@ -120,7 +129,7 @@ public static class TriggerPaletteShaping
         return input == AbilityInput.Press ? press : $"{press}:{input}";
     }
 
-    /// <summary>Hit and kill of the same ability use or weapon share a key; everything else stands alone.</summary>
+    /// <summary>Hit and kill of the same ability use or weapon share a key, and a weapon's reload its; everything else stands alone.</summary>
     private static string ToPairKey(PlayerAction action) =>
         action.Match(
             cast => ToAbilityKey(cast.Kind.ToAbilityKind(), cast.Input),
@@ -128,7 +137,8 @@ public static class TriggerPaletteShaping
             fire => $"fire:{fire.Slot}",
             collect => $"pickup:{collect.Pickup}",
             declare => ((PlayerAction)declare).ToActionToken(),
-            _ => "finisher");
+            _ => "finisher",
+            reload => $"fire:{reload.Slot}");
 
     private static int ReadHitOrder(PlayerAction action) =>
         action.Match(
@@ -137,7 +147,8 @@ public static class TriggerPaletteShaping
             fire => fire.Hit == HitOutcome.Kill ? 1 : 0,
             _ => 0,
             _ => 0,
-            _ => 0);
+            _ => 0,
+            _ => 2);
 
     /// <summary>"Grenade (💀 kill)" → "Grenade".</summary>
     private static string ReadTitle(string label)

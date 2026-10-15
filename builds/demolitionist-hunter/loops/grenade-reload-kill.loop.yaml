@@ -1,0 +1,28 @@
+# Loopsmith loop v1
+loop: Grenade, reload, kill
+description: |-
+  The Demolitionist loop: throw the grenade, which reloads the hand cannon (Demolitionist), then
+  kill with the hand cannon, each kill giving grenade energy back (Demolitionist, 10% on a hand
+  cannon) toward the next grenade.
+catalog: authored-91157ed1e345
+steps:
+  - do: pack:new
+    note: 'The next group of enemies: a new pack'
+  - do: grenade:kill
+    note: 'Grenade into the pack: Demolitionist reloads the hand cannon'
+  - do: energy:kill:3
+    note: 'Hand cannon kills: +10% grenade energy for each, from Demolitionist'
+build: |
+  # Demolitionist Hunter - the Demolitionist grenade loop: the grenade reloads an Arc Hand Cannon rolling
+  # Demolitionist, and that hand cannon's kills give grenade energy back for the next grenade.
+  # The loop Mactics plays with an Arc Hand Cannon rolling Demolitionist; the rest of that build isn't known
+  # (no DIM link), so this build holds only what the loop needs. See discrepancies.md.
+  name: Demolitionist Hunter
+  class: hunter
+  subclass: arc
+  super: "?"
+  grenade: skip-grenade
+  weapons:
+    # Placeholder: no source names the hand cannon. Its archetype picks Demolitionist's amount (10%; 20% only
+    # on Fusion Rifles, Glaives, Shotguns and Sniper Rifles).
+    - { slot: energy, name: Any Arc Hand Cannon, type: arc, archetype: hand-cannon, perks: [demolitionist] }

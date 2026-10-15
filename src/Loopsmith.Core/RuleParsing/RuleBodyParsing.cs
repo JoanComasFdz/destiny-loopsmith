@@ -26,7 +26,7 @@ internal static class RuleBodyParsing
     private static readonly ImmutableArray<string> DamageKeys = ["via", "targetHas", "atLeast", "fewerThan", "within", "sustained"];
 
     private static readonly ImmutableArray<string> TriggerNames =
-        ["abilityCast", "kill", "damage", "pickUp", "buffGained", "stacksMaxed", "finisher", "criticalHealth", "shieldBroken", "energyExpended"];
+        ["abilityCast", "kill", "damage", "pickUp", "buffGained", "stacksMaxed", "finisher", "criticalHealth", "shieldBroken", "energyExpended", "reload"];
 
     private static readonly ImmutableArray<string> ConditionNames = ["has", "lacks", "targetHas", "atMax", "belowMax", "during", "holds"];
 
@@ -34,6 +34,7 @@ internal static class RuleBodyParsing
     [
         "grantEnergy", "convertStacksToEnergy", "applyBuff", "removeBuff", "debuffTarget", "spawn",
         "summon", "strikeTarget", "modifyDamage", "restoreHealth", "resetCooldown", "collect", "spendStacks",
+        "reloadWeapon",
     ];
 
     private static readonly ImmutableArray<string> PassiveNames =
@@ -81,6 +82,7 @@ internal static class RuleBodyParsing
             "criticalHealth" => ReadCriticalHealthTrigger(entry.Value),
             "shieldBroken" => ReadShieldBrokenTrigger(scope, entry.Value),
             "energyExpended" => ReadEnergyExpendedTrigger(entry.Value),
+            "reload" => ReadReloadTrigger(scope, entry.Value),
             _ => entry.Value.FailAt<Trigger>(DescribeUnknown("trigger", entry.Key, TriggerNames)),
         });
 
@@ -105,6 +107,35 @@ internal static class RuleBodyParsing
             map.CheckKeys(["via"]),
             map.ReadOrDefault("via", scope.ReadDamageSource, new DamageSource.AnySource()),
             (_, via) => (Trigger)new Trigger.ShieldBroken(via)));
+
+    /// <summary>
+    /// <c>{ reload: {} }</c> or <c>{ reload: { via: weapon:this } }</c>: a weapon reloaded, by the player's Reload step
+    /// (<c>kinetic:reload</c>) or by an outcome that reloads it (ADRs D37). <c>via</c> names a weapon (any, by default).
+    /// </summary>
+    private static Result<Trigger, Errors> ReadReloadTrigger(ReferenceScope scope, YamlValue value) =>
+        value.ToMap().Bind(map => Combine(
+                map.CheckKeys(["via"]),
+                map.ReadOrDefault("via", scope.ReadDamageSource, new DamageSource.AnySource()),
+                (_, via) => via)
+            .Bind(via => IsWeaponSource(via) || via is DamageSource.AnySource
+                ? Succeed<Trigger>(new Trigger.Reload(via))
+                : map.FailAtKey<Trigger>("via", $"reload's via names a weapon: {WeaponSources}")));
+
+    /// <summary>The weapon sources a reload names: only a weapon reloads.</summary>
+    private const string WeaponSources = "any, weapon, weapon:<type>, weapon:harmonic, slot:<slot>, weapon:this or weapon:this:<type>";
+
+    private static bool IsWeaponSource(DamageSource source) =>
+        source is DamageSource.AnyWeapon or DamageSource.WeaponOfType or DamageSource.WeaponOfSuperType or DamageSource.WeaponInSlot
+            or DamageSource.ThisWeapon or DamageSource.ThisWeaponOfType;
+
+    /// <summary>
+    /// <c>{ reloadWeapon: weapon:this }</c> or <c>{ reloadWeapon: slot:power }</c>: reloads that one weapon — the one holding
+    /// the element, or the build's in that slot (ADRs D37). Its reload rules fire as on a Reload step; no ammo is counted.
+    /// </summary>
+    private static Result<Outcome, Errors> ReadReloadWeapon(ReferenceScope scope, YamlValue value) =>
+        scope.ReadDamageSource(value).Bind(weapon => weapon is DamageSource.ThisWeapon or DamageSource.ThisWeaponOfType or DamageSource.WeaponInSlot
+            ? Succeed<Outcome>(new Outcome.ReloadWeapon(weapon))
+            : value.FailAt<Outcome>($"{value.Label} reloads one weapon: weapon:this, weapon:this:<type> or slot:<slot>"));
 
     /// <summary>
     /// <c>{ energyExpended: grenade }</c> (<c>grenade|melee|classAbility</c>): the ability's last charge used, its energy
@@ -327,18 +358,44 @@ internal static class RuleBodyParsing
             "resetCooldown" => ReadVocabularyWord<AbilityKind>(entry.Value).Map(Outcome (kind) => new Outcome.ResetCooldown(kind)),
             "collect" => scope.ReadPickup(entry.Value).Map(Outcome (pickup) => new Outcome.Collect(pickup)),
             "spendStacks" => ReadSpendStacks(scope, entry.Value),
+            "reloadWeapon" => ReadReloadWeapon(scope, entry.Value),
             _ => entry.Value.FailAt<Outcome>(DescribeUnknown("outcome", entry.Key, OutcomeNames)),
         });
 
-    /// <summary><c>{ to: grenade, amount: "15%" }</c>, or <c>to: leastCharged</c> for the ability with the least energy (the game picks it).</summary>
+    /// <summary>
+    /// <c>{ to: grenade, amount: "15%" }</c>, or <c>to: leastCharged</c> for the ability with the least energy (the game picks
+    /// it). <c>byArchetype: { archetypes: [shotgun, glaive], amount: "20%" }</c> gives another amount on a weapon of those
+    /// archetypes (Demolitionist): the weapon holding the element, its amount picked when the build is composed.
+    /// </summary>
     private static Result<Outcome, Errors> ReadGrantEnergy(YamlValue value) =>
         value.ToMap().Bind(map => Combine(
-            map.CheckKeys(["to", "amount"]),
-            map.ReadRequired("to", ReadEnergyRecipient),
-            map.ReadRequired("amount", ReadEnergyGrant),
-            (_, to, amount) => to.Match<Outcome>(
+                map.CheckKeys(["to", "amount", "byArchetype"]),
+                map.ReadRequired("to", ReadEnergyRecipient),
+                map.ReadRequired("amount", ReadEnergyGrant),
+                map.ReadOptional("byArchetype", ReadArchetypeAmount),
+                (_, to, amount, byArchetype) => (to, amount, byArchetype))
+            .Bind(read => ToArchetypeGrant(map, read.amount, read.byArchetype).Map(amount => read.to.Match<Outcome>(
                 ability => new Outcome.GrantEnergy(ability.Kind, amount),
-                _ => new Outcome.GrantLeastChargedEnergy(amount))));
+                _ => new Outcome.GrantLeastChargedEnergy(amount)))));
+
+    /// <summary><c>{ archetypes: [fusion-rifle, shotgun], amount: "20%" }</c>: the amount on a weapon of one of those archetypes.</summary>
+    private static Result<(ImmutableArray<string> Archetypes, GameValue Amount), Errors> ReadArchetypeAmount(YamlValue value) =>
+        value.ToMap().Bind(map => Combine(
+            map.CheckKeys(["archetypes", "amount"]),
+            map.ReadRequired("archetypes", archetypes => ReadNonEmpty(archetypes, archetypes.ReadEach("archetype", ReadSlug))),
+            map.ReadRequired("amount", ReadGameValue),
+            (_, archetypes, amount) => (archetypes, amount)));
+
+    /// <summary>The grant, by archetype when <c>byArchetype</c> is there: both amounts are a fraction of one charge.</summary>
+    private static Result<EnergyGrant, Errors> ToArchetypeGrant(
+        YamlMap map, EnergyGrant amount, Optional<(ImmutableArray<string> Archetypes, GameValue Amount)> byArchetype) =>
+        (amount, byArchetype) switch
+        {
+            (_, Optional<(ImmutableArray<string>, GameValue)>.None) => Succeed(amount),
+            (EnergyGrant.Fraction fraction, Optional<(ImmutableArray<string> Archetypes, GameValue Amount)>.Some some) =>
+                Succeed<EnergyGrant>(new EnergyGrant.ByArchetype(fraction.Amount, some.Value.Archetypes, some.Value.Amount)),
+            _ => map.FailAtKey<EnergyGrant>("byArchetype", "byArchetype needs an amount that is a fraction of one charge, not full"),
+        };
 
     private static Result<EnergyRecipient, Errors> ReadEnergyRecipient(YamlValue value) =>
         value.ParseWith(text => text == "leastCharged"

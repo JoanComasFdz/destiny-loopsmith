@@ -5,8 +5,8 @@ The requirements they serve are in [docs/requirements.md](docs/requirements.md).
 current set of decisions, in four groups: what the product is (D1–D9), sources and rules (D10–D15),
 architecture (D16–D23), hosts and tooling (D24–D26), starting from a DIM link (D27), the build's stats (D28), the
 step's damage resistance (D29), armor mods in their sockets (D30), the artifact (D32), the count of Armor Charge
-(D33), what a hit step stands for (D34), the raid and activity mods left out of the sockets (D35) and what the player
-says about a step besides its hit and count (D36). D1 is the
+(D33), what a hit step stands for (D34), the raid and activity mods left out of the sockets (D35), what the player
+says about a step besides its hit and count (D36) and a reload (D37). D1 is the
 founding one: every other decision follows from it.
 
 | # | Decision | Why |
@@ -44,6 +44,7 @@ founding one: every other decision follows from it.
 | D33 | Armor Charge is counted: sure stacks and chance stacks, and the count decides | Gaining, keeping and spending Armor Charge is a pillar of build crafting; most of its gains and spends are known steps of the loop, so the loop can say how many it surely holds |
 | D35 | Raid, activity and seasonal armor mods aren't supported: a DIM link's are kept but ignored, and no picker offers them | They act on an encounter's mechanics (a relic, a plate, an enemy race), which a loop of triggers doesn't hold, or no longer work at all; what a loadout had stays visible |
 | D36 | The player says when a weapon step breaks a shield and when an ability step spends its last charge | Shield Break Charge and the Kickstarts react to them; play decides both, and neither is counted |
+| D37 | A reload is a step the player declares, and a rule can reload a weapon; no ammo is counted | Demolitionist's loop needs a reload and the perks that react to one; a magazine is time and ammo, which only play decides |
 
 ## What the product is
 
@@ -568,3 +569,24 @@ only where the loop says the last charge goes. The option is part of the step's 
 carry it, and the analysis and comparison tell `grenade:kill` from `grenade:kill:last`. An ability's energy is still not
 counted: a later decision may track it (a use empties it, each energy grant fills it), and the last charge would then
 follow from the loop instead of the player.
+
+### D37 — A reload is a step the player declares, and a rule can reload a weapon; no ammo is counted
+
+**Context.** Demolitionist's two halves make a loop: kills with the weapon give grenade energy, and using the grenade
+reloads the weapon. Other weapon perks react to a reload (Heal Clip, Voltshot: "reload after a kill"), and some effects
+put rounds back (Return Stroke's lightning strike). Loopsmith counted no ammo and had no reload, so Return Stroke was
+inert, and a perk's rules couldn't say "reload this weapon". When a weapon runs dry is play: the engine counts neither a
+magazine nor its reserves (D1).
+**Decision (product owner).** A reload is a step of its own the player declares, `kinetic|energy|power:reload` ("Reload
+Festival Flight"), offered for every weapon next to its hit and kill ("🔄 reload"): it takes no count and no option, and
+it raises `Reloaded` from that weapon, which the `reload` trigger matches (`via` names a weapon, `weapon:this` the one
+holding the element). An outcome reloads a weapon too (`reloadWeapon: weapon:this`, or a slot): it is a reload, so that
+weapon's `reload` rules fire as on the step (the owner: a reload that has an effect, like Heal Clip's heal, fires it),
+and a partial refill (Return Stroke's 5 rounds) is one reload, its rounds a fact. An energy grant may go by the archetype
+of the weapon holding the element (`byArchetype`: Demolitionist's 10%, 20% on Fusion Rifles, Glaives, Shotguns and
+Sniper Rifles): the build check picks the weapon's amount when its archetype is known, and shows both when it isn't.
+**Consequence.** A reload is never needed and never blocked (but for an empty slot): a loop shows a Reload step where
+the player reloads, and nothing checks the magazine. In the loop graph a `reloadWeapon` outcome leads to the weapon's
+`reload` rules and to the weapon itself, as energy leads to a cast: its magazine refilled, it shoots again, which closes
+Demolitionist's loop (grenade → reload → kills → grenade energy → grenade). Cooldowns between refills (Demolitionist's
+3 s) and the rounds put back are facts in the description. Reload speed stays outside the loop (Feeding Frenzy is inert).

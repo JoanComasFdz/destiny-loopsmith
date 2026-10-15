@@ -168,9 +168,9 @@ pull request:
    the branch's first push, `git fetch origin main` and `git rebase origin/main` (resolve any
    conflict; ask in the session when both sides changed the same logic), then run `dotnet build
    Loopsmith.slnx` and `dotnet test` again. Only before the first push: once the branch is on
-   GitHub, a rebase would need a force-push, so from then on step 6 applies. This only makes a PR
-   less likely to open behind `main`; anything merged while it waits for review still puts it
-   behind. Then push and open the pull request into `main` (not a draft), with the task's
+   GitHub, a rebase would need a force-push, so from then on step 6 applies. The rebase finds a
+   conflict in the session, before the PR opens, and makes the build and test run against the
+   current `main`. Then push and open the pull request into `main` (not a draft), with the task's
    title and the agreed spec as its description: tick the acceptance criteria you checked, and add
    what changed and how to check it on the preview at `…/pr-preview/pr-<PR number>/`. A PR is
    **docs only** when every path it changes (a rename's old path too) is a Markdown file or under
@@ -193,8 +193,11 @@ pull request:
    event, and on a check-in with `send_later` about every 4 hours while the PR waits (stop after 3
    in a row that found nothing new; the next event starts them again), look at its merge state. On a
    conflict, merge `origin/main` into the branch, resolve it, build and test, and push. A branch
-   that is only behind `main` stays as it is: @JoanComasFdz clicks **Update branch**, so pull before
-   your next change. Never rebase a branch that is already on GitHub (step 4's rebase is only for
+   that is only behind `main` needs nothing: the `main-protection` ruleset doesn't require a PR to
+   be up to date before merging, so neither the session nor @JoanComasFdz updates it. That is safe
+   because the `build` check is still required, a conflict still blocks the merge, and `ci.yml`
+   builds and tests every push to `main`, which catches two PRs that only break when combined.
+   Never rebase a branch that is already on GitHub (step 4's rebase is only for
    the first push).
 
 The owner's screenshots and files stay in the session: they aren't committed, and no other session
