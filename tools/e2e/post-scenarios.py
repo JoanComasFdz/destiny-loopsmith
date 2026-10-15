@@ -4,10 +4,10 @@
   post-scenarios.py --pr <n> --commit <sha> [--out <dir>] [--repo <owner/repo>] [--dry-run]
 
 Reads <out>/scenarios.json (tools/e2e/record.sh), uploads each scenario's GIF to the `prs-resources` release as
-  pr-<n>-v<version>-<the scenario's GIF name>.gif and posts them: version 1 appended to the PR's description, every
-  later version as a new comment that starts with what changed (the body of the pushed commit's message, or its
-  subject). The version is one more than the highest "## Scenarios (V<N>)" in the description and in this workflow's
-  comments. A name longer than 200 characters keeps its start and ends with a short hash of the scenario's method.
+  pr-<n>-v<version>-<the scenario's GIF name>.gif and posts them as a new comment on the PR that starts with what
+  changed (the body of the pushed commit's message, or its subject). It never touches the PR's description. The version
+  is one more than the highest "## Scenarios (V<N>)" in this workflow's comments. A name longer than 200 characters
+  keeps its start and ends with a short hash of the scenario's method.
 Nothing recorded (an empty scenarios.json) posts nothing.
 
 Uses the gh CLI (GH_TOKEN) on the repository in --repo or GITHUB_REPOSITORY. --dry-run prints instead of writing.
@@ -50,16 +50,12 @@ def post(args):
     if not scenarios:
         print("No scenario recorded: nothing to post.")
         return
-    pr = read_pr(args.repo, args.pr)
-    version = find_last_version(pr["body"] or "", read_workflow_comments(args.repo, args.pr)) + 1
+    version = find_last_version(read_workflow_comments(args.repo, args.pr)) + 1
     for scenario in scenarios:
         scenario["asset"] = name_asset(args.pr, version, scenario)
     upload(args, scenarios)
-    if version == 1:
-        append_to_description(args, write_section(args.repo, version, scenarios, None))
-    else:
-        changed = describe_commit(read_commit_message(args.commit))
-        add_comment(args, write_section(args.repo, version, scenarios, changed))
+    changed = describe_commit(read_commit_message(args.commit))
+    add_comment(args, write_section(args.repo, version, scenarios, changed))
 
 
 def read_scenarios(out):
@@ -73,17 +69,13 @@ def read_scenarios(out):
     return entries
 
 
-def read_pr(repo, number):
-    return gh_json(["api", f"repos/{repo}/pulls/{number}"])
-
-
 def read_workflow_comments(repo, number):
     pages = gh_json(["api", "--paginate", "--slurp", f"repos/{repo}/issues/{number}/comments?per_page=100"])
     return [c["body"] or "" for page in pages for c in page if c["user"]["login"] == BOT and FOOTER in (c["body"] or "")]
 
 
-def find_last_version(description, comments):
-    versions = [int(v) for text in [description, *comments] for v in HEADING.findall(text)]
+def find_last_version(comments):
+    versions = [int(v) for text in comments for v in HEADING.findall(text)]
     return max(versions, default=0)
 
 
@@ -116,9 +108,7 @@ def upload(args, scenarios):
 
 
 def write_section(repo, version, scenarios, changed):
-    lines = [f"## Scenarios (V{version})", ""]
-    if changed is not None:
-        lines += ["**What changed**", "", changed, ""]
+    lines = [f"## Scenarios (V{version})", "", "**What changed**", "", changed, ""]
     for scenario in scenarios:
         mark = "❌ " if not scenario["passed"] else ""
         lines += [f"### {mark}{scenario['title']}", ""]
@@ -144,16 +134,6 @@ def describe_commit(message):
     if body and all(TRAILER.match(line) for line in body[-1].splitlines()):
         body = body[:-1]
     return "\n\n".join(body) if body else subject
-
-
-def append_to_description(args, section):
-    # Read again right before writing: the description may have changed while the scenarios were recorded.
-    body = (read_pr(args.repo, args.pr)["body"] or "").rstrip()
-    updated = f"{body}\n\n{section}" if body else section
-    print(section)
-    if not args.dry_run:
-        gh(["api", "-X", "PATCH", f"repos/{args.repo}/pulls/{args.pr}", "--input", "-"], {"body": updated})
-    print(f"Appended to the description of #{args.pr}.")
 
 
 def add_comment(args, section):

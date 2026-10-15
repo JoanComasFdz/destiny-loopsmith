@@ -87,8 +87,8 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
   out of scope.
 - `.github/workflows/` — `ci.yml` (build + test on every PR that changes more than docs, and every
   push to `main`), `pages.yml`, `pr-preview.yml`, `e2e-videos.yml` (records the PR's added or changed
-  e2e scenarios on every push and posts the GIFs on the PR — V1 in its description, V2… as comments —
-  from the `prs-resources` pre-release; deletes them when the PR closes; [docs/hosting.md](docs/hosting.md)
+  e2e scenarios on every push and posts the GIFs on the PR as one comment per version (V1, V2…), from
+  the `prs-resources` pre-release; deletes them when the PR closes; [docs/hosting.md](docs/hosting.md)
   "E2E videos on pull requests"); `tools/web/prepare-pages.sh` readies a published site for Pages.
 - `tools/compendium/` — Destiny Data Compendium download (`sheet_dump.py`; the owner runs it with
   `get-compendium.ps1` / `get-compendium.sh` / `get-compendium-docker.sh`; see its README). The
@@ -194,8 +194,7 @@ Always:
 - Don't change `.github/workflows/`, repository settings, rulesets or secrets unless the task asks
   for exactly that.
 - A push that changes e2e scenarios gets them recorded on the PR (`e2e-videos.yml`): put a short plain
-  description of the round in its commit message's body (the post's "What changed"), and when editing the
-  PR description keep its `## Scenarios (V1)` section (saving the description replaces all of it).
+  description of the round in its commit message's body (the post's "What changed").
 - In cloud sessions `gh issue` and `gh pr` fail (GitHub's GraphQL is blocked): use the built-in
   GitHub tools or `gh api repos/<owner>/<repo>/...` (REST).
 

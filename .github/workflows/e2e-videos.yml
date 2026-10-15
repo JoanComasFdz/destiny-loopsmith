@@ -2,8 +2,8 @@ name: E2E videos
 
 # Every push to a pull request from a branch of this repository records the PR's end-to-end scenarios (the ones it
 # adds or changes under tests/Loopsmith.Web.E2E/Scenarios, from where it left its base branch) as GIFs, uploads them
-# to the `prs-resources` pre-release as pr-<n>-v<version>-<scenario>.gif and shows them on the PR: version 1 appended
-# to its description, every later one as a new comment. Closing the PR deletes its pr-<n>- assets.
+# to the `prs-resources` pre-release as pr-<n>-v<version>-<scenario>.gif and shows them on the PR, each version as a
+# new comment (it never touches the PR's description). Closing the PR deletes its pr-<n>- assets.
 # A failing scenario is marked ❌ in the post and never turns this check red; only the workflow's own failures do
 # (no recording at all, an upload or a post that GitHub refused). docs/hosting.md, "E2E videos on pull requests".
 # Pull requests from forks are skipped (they never get a write token).

@@ -177,20 +177,19 @@ on every push to the PR (opened, reopened, synchronize).
   `pr-82-v1-given-app-is-open-on-home-when-i-click-start-from-scratch-then-the-designer-shows-an-arc-hunter-with-nothing-equipped.gif`.
   - `pr-<n>-` first, so a PR's assets sit together and its cleanup deletes everything with that prefix;
   - `v<version>`: 1, 2, 3… (no padding), one per push that recorded, before the scenario so one version's GIFs sit
-    together. It is one more than the highest `## Scenarios (V<N>)` already in the PR's description and in the
-    workflow's comments (those ending with its footer): nothing is stored anywhere else, and a reopened PR carries on
+    together. It is one more than the highest `## Scenarios (V<N>)` already in the workflow's comments on the PR
+    (those by github-actions ending with its footer): nothing is stored anywhere else, and a reopened PR carries on
     from its last number;
   - `<scenario>`: the scenario's GIF name, the same as in `record.sh`'s output (`ScenarioNaming.ToGifName`: the
     `Given…_When…_Then…` method name in kebab-case, only a–z, 0–9 and `-`, which GitHub keeps as they are). Only when
     the whole name would pass 200 characters does it keep its start and end with `-<8 hex>`, the start of the SHA-256
     of the method name, so it stays unique and the same on every push.
-- **The posts:** version 1 is appended to the PR's description as `## Scenarios (V1)` (the description is read first
-  and kept; the workflow never writes a second V1 or rewrites the description). Every later version is a new comment,
-  `## Scenarios (V<N>)`, that starts with **What changed**: the body of the pushed commit's message without its
-  trailers (a session writes a short plain description of the round there), or its subject when it has no body. Each
-  scenario is its Given/When/Then title as a small heading with its GIF below; a failed one has ❌ before its title.
-  Every post ends with `---` and `_Recorded by the e2e workflow · Claude Code_`. Whoever edits the description later
-  keeps the `## Scenarios (V1)` section (saving the description replaces all of it).
+- **The posts:** every version, V1 included, is a new comment on the PR, `## Scenarios (V<N>)`, that starts with
+  **What changed**: the body of the pushed commit's message without its trailers (a session writes a short plain
+  description of the round there), or its subject when it has no body. Each scenario is its Given/When/Then title as a
+  small heading with its GIF below; a failed one has ❌ before its title. Every post ends with `---` and
+  `_Recorded by the e2e workflow · Claude Code_`. The workflow never touches the PR's description, so editing the
+  description can't break a post.
 - **Failures:** a failing scenario still gets its GIF and its ❌, and never turns the check red (the session runs the
   scenarios before pushing; CI isn't where they are tested). The check is red only when the workflow itself failed:
   nothing was recorded at all (e.g. the app didn't build), or GitHub refused an upload or a post.
