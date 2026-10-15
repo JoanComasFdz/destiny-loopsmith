@@ -35,14 +35,14 @@ Open items: [docs/backlog.md](docs/backlog.md).
 dotnet build Loopsmith.slnx          # TreatWarningsAsErrors is on
 dotnet test                          # unit, golden and architecture tests (the e2e scenarios skip without E2E_URL)
 tools/e2e/record.sh --no-video Starting   # e2e scenarios in Chromium, unrecorded: the fast run while developing
-tools/e2e/record.sh --changed-since origin/main   # recorded → out/<domain>/<scenario>-<screen>.gif + out/scenarios.json (right before a push)
+tools/e2e/record.sh --changed-since origin/main   # recorded → out/<domain>/<scenario>-<screen>.gif + .mp4 + out/scenarios.json (right before a push)
 dotnet run --project src/Loopsmith.Cli -- explain builds/skip-grenade-hunter/build.yaml
 dotnet run --project src/Loopsmith.Web          # the loop designer in the browser
 ```
 Cloud sessions: `.claude/hooks/session-start.sh` installs `dotnet-sdk-10.0` from Ubuntu's
 repos (Microsoft's download hosts are blocked by the network policy), restores, installs the
 Python packages of the Compendium download (`requests`, `beautifulsoup4`), and installs `ffmpeg`
-(turns the e2e recordings into GIFs) when it is missing.
+(turns the e2e recordings into GIFs and MP4s) when it is missing.
 
 ## Where things live
 - `src/Loopsmith.Core/` — kernel (`Domain`, `Functional`, `Phrasing`, `Causality`) and
@@ -92,9 +92,10 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
   out of scope.
 - `.github/workflows/` — `ci.yml` (build + test on every PR that changes more than docs, and every
   push to `main`), `pages.yml`, `pr-preview.yml`, `e2e-videos.yml` (records nothing: the session
-  records the PR's added or changed e2e scenarios and pushes their GIFs to a throwaway `e2e-gifs/pr-<n>-<sha>` branch
+  records the PR's added or changed e2e scenarios and pushes their GIFs and MP4s to a throwaway `e2e-gifs/pr-<n>-<sha>` branch
   with `tools/e2e/push-gifs.sh`; the workflow uploads them to the `prs-resources` pre-release, posts them on the PR as
-  one comment per version (V1, V2…) and deletes the branch; when the PR closes, keeps its newest version's GIFs and
+  one comment per version (V1, V2…; each GIF with a "▶ Play MP4" link to the site's `e2e-player.html`) and deletes the
+  branch; when the PR closes, keeps its newest version's GIFs and MP4s and
   deletes the older ones; [docs/hosting.md](docs/hosting.md) "E2E videos on pull requests"); `tools/web/prepare-pages.sh` readies a published site for Pages.
 - `tools/compendium/` — Destiny Data Compendium download (`sheet_dump.py`; the owner runs it with
   `get-compendium.ps1` / `get-compendium.sh` / `get-compendium-docker.sh`; see its README). The
