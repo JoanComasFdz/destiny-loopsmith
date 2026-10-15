@@ -225,6 +225,11 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   Cornered, Danger Zone, Threat Detector, Extrovert). A precision hit isn't a step, so Hatchling's and Veteran's Wisdom's
   "or a precision kill" is the chance on fewer than 3 kills; a strike by this weapon (Veteran's Wisdom's shockwave,
   Radiolaria Transposer's explosion and pool) hits one enemy, and its damage is a fact in the perk's description.
+  The next task (#79 follow-up):
+  **Add the weapon perks that need enemies nearby (Surrounded, Cornered, Danger Zone, Threat Detector, Extrovert).**
+  "Nearby" isn't one action's hits or kills, so the player declares how many enemies are near (D3, D4), the way the
+  enemy-count selector declares an action's count, and each perk names the count it needs there; each with its
+  enhanced trait, `weapon:this`, and the Compendium's numbers (`"?"` until known).
 - **Cooldowns, next**: a rule fires on every event of a step, so a source with a cooldown fires once per kill of one
   action when the game fires it once. The next task (raised in #70):
   **Fire a rule with a cooldown at most once per action.** Within one step (one action's hits and kills), a rule whose
@@ -242,6 +247,14 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
 - **Every item, next**: the list (~7,500 items, ~5 MB of JSON parsed in .NET at startup: its second step holds the
   page's thread for ~5 s on a desktop) and its grid (up to ~930 squares for energy weapons) could be lighter on a phone
   (fewer fields, the items read in batches, or a grid that draws only the rows in view).
+
+## Workflow
+
+- **Link the two sets of test rules**: [given-when-then-test-rules.md](given-when-then-test-rules.md) (how a PR's
+  acceptance criteria, test plan and e2e scenarios are written) and
+  [E2E-TEST-CODE-RULES.md](../tests/Loopsmith.Web.E2E/E2E-TEST-CODE-RULES.md) (how the e2e test code is written) don't
+  point to each other: link them both ways, and add a line to the `loopsmith-task` skill so a spec's acceptance criteria
+  follow the Given/When/Then rules.
 
 ## Owner items
 
