@@ -1,7 +1,7 @@
 # Backlog
 
 Open items. What Loopsmith is and how it behaves is in [requirements.md](requirements.md),
-[ADRs.md](../ADRs.md), [rule-format.md](rule-format.md) and [loop-format.md](loop-format.md); this
+[ADRs.md](ADRs.md), [rule-format.md](rule-format.md) and [loop-format.md](loop-format.md); this
 list is what the code doesn't do yet, what the format can't express yet, and what is still to decide.
 
 ## Data

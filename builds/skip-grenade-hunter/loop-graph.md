@@ -9,13 +9,13 @@ lightning strike on the next ability hit once you have declared Bolt Charge at m
 a trigger requires, the declared max a guard reads — labelled with their element.)
 
 The dotted edge labelled "you declare", Gain Bolt Charge → Max Bolt Charge, is the player's call
-([ADRs D3](../../ADRs.md#d3--the-player-declares-thresholds-and-endings)): a grant ("+1 Bolt Charge")
+([ADRs D3](../../docs/ADRs.md#d3--the-player-declares-thresholds-and-endings)): a grant ("+1 Bolt Charge")
 leads only to "Gain Bolt Charge", and Bolt Charge is at its max when you declare it
 (`max:bolt-charge` in a designed loop). It is a loop step like the things you do — loop 10 counts
 5 steps — and on a loop it is dotted, thick and pink.
 
 The rhombus is a "Doesn't stack" node
-([ADRs D6](../../ADRs.md#d6--rules-that-dont-stack-give-way-and-show-as-wasted)). On a jolted kill,
+([ADRs D6](../../docs/ADRs.md#d6--rules-that-dont-stack-give-way-and-show-as-wasted)). On a jolted kill,
 Tempest Strike's Bolt Charge doesn't stack with Dielectric's (discrepancies row 26): both rules' arrows
 go into the node and only Dielectric's leaves it, as in the trace, where Tempest Strike's rule gives way
 on every jolted kill. The node isn't a step, so loops 4 and 6 count 4 steps

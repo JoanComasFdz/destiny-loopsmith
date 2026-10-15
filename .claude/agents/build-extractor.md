@@ -18,7 +18,7 @@ short `discrepancies.md` for what differs, pointing to the parent's — see `bui
 ## Before you write anything
 
 1. Read the **Build file** and **Engine semantics** sections of `docs/rule-format.md`, the action tokens
-   of `docs/loop-format.md`, and ADRs D1 and D3–D9 in `ADRs.md` (the engine model, summarised below).
+   of `docs/loop-format.md`, and ADRs D1 and D3–D9 in `docs/ADRs.md` (the engine model, summarised below).
 2. Build an index of the elements that already exist: grep `rules/**/*.yaml` for `id:` and `name:`
    (abilities, aspects, fragments, exotics, armor-set bonuses, mods, artifact perks, weapon perks, keywords)
    and read `rules/glossary.yaml`. Reuse existing ids exactly. Match by name, and treat the user's typos

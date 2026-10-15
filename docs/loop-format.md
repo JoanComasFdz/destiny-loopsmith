@@ -1,11 +1,11 @@
 # Designed loops: file format (v1), starting from scratch or a DIM link, sharing, analysis, comparison
 
 **The product of Loopsmith is a loop someone designs**
-([ADRs D2](../ADRs.md#d2--the-designed-loop-is-the-product)): an ordered list of steps, each a trigger
+([ADRs D2](ADRs.md#d2--the-designed-loop-is-the-product)): an ordered list of steps, each a trigger
 ("dodge", "throw a grenade and kill three") or a state the player declares ("Bolt Charge at max",
 D3). You pick a build, choose a step, see everything it sets off and what is available next, choose
 again, and so on — the build can come from a DIM link, or start from scratch. Loopsmith describes cause and effect
-([ADRs D1](../ADRs.md#d1--loopsmith-describes-cause-and-effect-it-doesnt-simulate-the-game)), so a
+([ADRs D1](ADRs.md#d1--loopsmith-describes-cause-and-effect-it-doesnt-simulate-the-game)), so a
 loop is judged by its **order of triggers**: whether each step gets what it needs from the steps
 before it, and whether the order repeats. The loop is data: it can be saved, shared, imported,
 replayed and compared with another order.
@@ -143,7 +143,7 @@ has ended, that the next enemies are a new pack — the player declares as a ste
   unless the status is active: `Amplified isn't active — nothing ends.` ·
   `No buff or debuff 'amplifyed' in the rules — nothing ends.`
 * `pack:new` — "New pack": the next enemies are a new pack, with none of the old pack's debuffs; the
-  buffs on you and the pickups on the ground stay ([ADRs D7](../ADRs.md)). It raises no event and
+  buffs on you and the pickups on the ground stay ([ADRs D7](ADRs.md)). It raises no event and
   always holds. A loop that meets a new group of enemies each pass starts with it, so the next pass's
   first hit isn't credited with debuffs the new group doesn't have; a loop against one boss leaves it
   out.
@@ -297,7 +297,7 @@ possible in the game, ADRs D5, so it can still be cast — it sets off what reac
 
 ## Starting from a DIM link
 
-The web designer's Home starts a loop from a DIM link ([ADRs D27](../ADRs.md#d27--a-dim-link-starts-a-build-of-what-the-catalog-knows-by-hash-the-rest-is-left-out)):
+The web designer's Home starts a loop from a DIM link ([ADRs D27](ADRs.md#d27--a-dim-link-starts-a-build-of-what-the-catalog-knows-by-hash-the-rest-is-left-out)):
 paste it, press the button, and the designer opens with the loadout's build, named after the
 loadout, its link as the build's `source` (the designer shows both). It reads the two kinds of link
 DIM itself opens:
@@ -493,7 +493,7 @@ cards stay read-only.
 In the designer every armor piece shows its **mod sockets** next to it, and its energy under them ("Energy 7 / 10";
 "7 / ?" until the player's Bungie login gives the capacity of their copy of the piece, [Stats](#stats)); the
 **General mods** row under the armor holds every piece's general socket. The Home cards stay read-only: they show the
-mods as before, each piece with the mods of its slot and the general mods together ([ADRs D30](../ADRs.md#d30--armor-mods-are-picked-in-the-pieces-sockets-the-energy-budget-holds-when-its-capacity-is-known)).
+mods as before, each piece with the mods of its slot and the general mods together ([ADRs D30](ADRs.md#d30--armor-mods-are-picked-in-the-pieces-sockets-the-energy-budget-holds-when-its-capacity-is-known)).
 
 * **The sockets** are the game's, from Bungie's manifest (the listing read when the app opens, with every weapon and
   armor piece): a piece's general socket, the sockets of its slot's mods (three on an Armor 3.0 piece, two on an older
@@ -533,7 +533,7 @@ mods as before, each piece with the mods of its slot and the general mods togeth
 Loopsmith doesn't support the mods of a raid's socket (Salvation's Edge, Crota's End, Root of Nightmares, King's Fall,
 Vow of the Disciple, Vault of Glass, Garden of Salvation, Deep Stone Crypt), an activity's (Last Wish, the Nightmare
 Hunts, the Dreaming City) or a retired season's (Black Armory, Opulence, Undying: Bungie deprecated them, they no
-longer work) ([ADRs D35](../ADRs.md#d35--raid-activity-and-seasonal-armor-mods-arent-supported-a-dim-links-are-kept-but-ignored-and-no-picker-offers-them)).
+longer work) ([ADRs D35](ADRs.md#d35--raid-activity-and-seasonal-armor-mods-arent-supported-a-dim-links-are-kept-but-ignored-and-no-picker-offers-them)).
 They act on an encounter's mechanics (the Relic, a Vex relay, Taken enemies), which a loop doesn't hold. Bungie's plug
 category says which mods they are (`enhancements.raid_*`, `enhancements.season_*`, `enhancements.rivens_curse`), not
 their names, so a new raid's are covered too.

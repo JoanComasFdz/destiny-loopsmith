@@ -8,7 +8,7 @@ in names and examples.
 This file is the canonical, citable home for the coding rules — it is binding, and
 it wins over any other document. They bind the C# code under `src/` and
 `tests/Loopsmith.Core.Tests/`. The *reasoning* behind the cross-cutting choices
-is recorded in **[`ADRs.md`](../ADRs.md)**; an ADR explains why, it never overrides
+is recorded in **[`ADRs.md`](ADRs.md)**; an ADR explains why, it never overrides
 what this file says. The domain model these rules produce is the code
 itself, under `src/Loopsmith.Core/Domain/`.
 

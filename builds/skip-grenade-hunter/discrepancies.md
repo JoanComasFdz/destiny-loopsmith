@@ -1,7 +1,7 @@
 # Skip Grenade Hunter: where the sources disagree
 
 Every disagreement below is about what triggers what, or about the fact an outcome shows
-([ADRs D1](../../ADRs.md)): a grant ("+1 Bolt Charge"), a duration ("Amplified (15s)"), an amount
+([ADRs D1](../../docs/ADRs.md)): a grant ("+1 Bolt Charge"), a duration ("Amplified (15s)"), an amount
 ("+12% grenade energy"). When a threshold is reached ("Bolt Charge at max") is the player's
 declaration (D3).
 

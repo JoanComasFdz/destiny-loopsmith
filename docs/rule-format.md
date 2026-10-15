@@ -2,7 +2,7 @@
 
 Rules author cause and effect: the triggers a build reacts to and the outcomes they set off. A number
 in a rule is a fact shown with its outcome, never added up or used to decide what happens — Loopsmith
-doesn't simulate the game ([ADRs D1](../ADRs.md)).
+doesn't simulate the game ([ADRs D1](ADRs.md)).
 
 Causality is authored, not scraped: every build element is a YAML entry with **rules**
 (`on` trigger → `then` outcomes) and **passives** (always-on modifiers). The YAML is a
