@@ -15,8 +15,8 @@ by hand on the PR's preview, or by an end-to-end test.
 [PR #79](https://github.com/JoanComasFdz/destiny-loopsmith/pull/79) (the weapon perks that need several enemies in one
 action), in [test-plan.md](test-plan-example/test-plan.md), and the minimal build each of its tests imports
 (`01-one-for-all.build.yaml` … `09-radiolaria-transposer.build.yaml`). Start a new plan from its shape: the shared
-steps, one section per build, and the rounds of When and Then in each test. Its builds use the perks PR #79 adds, so
-they import once that PR is merged.
+steps, one section per build with its one test, and the rounds of When and Then in it. Its builds use the perks PR #79
+adds, so they import once that PR is merged.
 
 ## 1. Scope
 
@@ -52,22 +52,24 @@ step, removing a step, reading "(chance)". Tests then refer to them by name ("**
 1. **Title:** `T<n> · <what it proves>`, in one line, as a statement ("A kill of 3 counts as hitting 3").
 2. **Given:** the build, and the state of the loop: "with no steps", or the steps the test needs already played
    (each one named).
-3. **Rounds of When and Then.** A test is a sequence of rounds. Each round:
+3. **One test per Given.** Tests that start from the same build and the same steps are one test: what each one checks
+   becomes a round of it. Split a test only where its Given differs.
+4. **Rounds of When and Then.** A test is a sequence of rounds. Each round:
    - **When** is the clicks that lead to one thing to look at;
    - **Then** is what to look at, right after those clicks.
 
    Click, then check, then click again. A round never checks something its clicks haven't produced yet, and never
    saves all the checks for the end.
-4. **Number the When steps continuously** across the rounds of a test (1, 2, 3 in the first round; 4, 5, 6 in the
+5. **Number the When steps continuously** across the rounds of a test (1, 2, 3 in the first round; 4, 5, 6 in the
    next), so "step 5" means one thing.
-5. **Write one action per When step,** in the first person, with the control's exact on-screen name in bold:
+6. **Write one action per When step,** in the first person, with the control's exact on-screen name in bold:
    - "I tap **Festival Flight** in the trigger panel."
    - "I open the **×** dropdown."
    - "I select "3 in 3 s · One for All"."
    - "I tap **💀 kill**."
-6. **Select by the option's exact text,** never by position ("pick the second") and never by default ("leave 1
+7. **Select by the option's exact text,** never by position ("pick the second") and never by default ("leave 1
    enemy"). Write "I select "1 enemy"" even when it is already selected.
-7. **Keep checking and doing apart.** "I check that the dropdown offers…" is a Then. Selecting is a When. They are
+8. **Keep checking and doing apart.** "I check that the dropdown offers…" is a Then. Selecting is a When. They are
    never one step.
 
 ## 5. Then
@@ -96,7 +98,8 @@ step, removing a step, reading "(chance)". Tests then refer to them by name ("**
    - Keep a step only when the next one is about what it left: a buff it gave and the next one uses, or a pickup on the
      ground the next one picks up. Say so in that round's When ("keeping step #1: its Orb of Power is what #2 picks
      up").
-3. **Within a build, put the dropdown test first** (what the selector offers), then the tests that play the counts.
+3. **Within a build's test, put the dropdown round first** (what the selector offers), then the rounds that play the
+   counts.
 
 ## 7. Markdown
 

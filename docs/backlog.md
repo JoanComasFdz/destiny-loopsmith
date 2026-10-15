@@ -123,6 +123,18 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
 - **Prismatic** builds need per-ability elements; an ability takes the subclass's element.
 - **One pack** (D7) is optimistic for a single boss; single-target nuance would be a refinement.
 - **Rename the `Simulation` slice**: it plays steps and analyses a loop's order; it simulates nothing (D1).
+- **A folded step shows the total** (PR #80's test plan, T4): a step's identical events fold into one block marked ×N,
+  with each outcome once ("Crisis Inverted 💀 kill ×3" → "+10% grenade energy" for Demolitionist's three kills). The
+  owner wants the total there, "+30% grenade energy", and the per-event amount in the why ("10% per kill, 3 kills").
+  It changes every folded block (five folded "+1 Bolt Charge" would read "+5 Bolt Charge"), so it needs a line in
+  ADRs D1, which today says a number is shown with its outcome, never added up.
+- **Count the hits a source needs** (PR #80's test plan, T12; revisits D34): a hit step stands for damage kept up, so a
+  `sustained` source fires on any hit step, even of one enemy (Thunderlord's Lightning Rounds strikes, and Return
+  Stroke reloads, on "Thunderlord (🥊 hit)"). The owner wants the count: a source that needs N hits fires for sure on a
+  hit step of at least N (the enemy-count selector's number, up to 20), and not below; a kill still strikes
+  (Reign Havoc). The sources: Lightning Rounds every 10th hit (and Return Stroke with it), Attrition Orbs (a
+  magazine-based count, 3 for a Grenade Launcher), To Shreds' 6 hits, Horde Shuttle's 10% of the enemy's health (`?`
+  hits). ADRs D34 and the rules' `sustained` change with it.
 
 ## Deferred review items
 
@@ -146,6 +158,12 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   `.loop.yaml` or copying its share link, and loops imported on the Compare screen last until the tab
   closes. A library would need per-browser storage, or a backend to sync it across devices.
 - **A build picker** over the catalog instead of build files (FR-1).
+- **A weapon whose type isn't known is a parse error** (PR #80's test plan, T11): a build file's weapon with neither
+  `hash` nor `archetype` parses, and a perk that goes by the weapon's archetype (Demolitionist's 10%, 20% on Shotguns)
+  then shows both amounts. The designer never makes one (a picked weapon and a DIM link's take their type from Bungie's
+  manifest), so a build file should be refused too: "weapon 'Any Arc weapon' needs an `archetype` or a `hash`". The
+  repo's own builds give their placeholders one first (Skip Grenade Hunter's "Any Arc weapon"). A perk's details, on
+  no weapon, still show both amounts.
 - **A preview card for a pasted link**: Home draws a DIM build card for the shares it ships with; a pasted
   link that carries its loadout could show the same card before "Start designing".
 - **Editing the rest of a build in the designer**: a weapon's perks can be picked (column by column, from

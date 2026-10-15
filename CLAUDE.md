@@ -89,11 +89,11 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
   does and doesn't), then FR-1…FR-13 with their status, the non-functional requirements and what is
   out of scope.
 - `.github/workflows/` — `ci.yml` (build + test on every PR that changes more than docs, and every
-  push to `main`), `pages.yml`, `pr-preview.yml`, `e2e-videos.yml` (records the PR's added or changed
-  e2e scenarios on every push and posts the GIFs on the PR as one comment per version (V1, V2…), from
-  the `prs-resources` pre-release; when the PR closes, keeps its newest version's GIFs and deletes the older ones;
-  [docs/hosting.md](docs/hosting.md)
-  "E2E videos on pull requests"); `tools/web/prepare-pages.sh` readies a published site for Pages.
+  push to `main`), `pages.yml`, `pr-preview.yml`, `e2e-videos.yml` (records nothing: the session
+  records the PR's added or changed e2e scenarios and pushes their GIFs to a throwaway `e2e-gifs/pr-<n>-<sha>` branch
+  with `tools/e2e/push-gifs.sh`; the workflow uploads them to the `prs-resources` pre-release, posts them on the PR as
+  one comment per version (V1, V2…) and deletes the branch; when the PR closes, keeps its newest version's GIFs and
+  deletes the older ones; [docs/hosting.md](docs/hosting.md) "E2E videos on pull requests"); `tools/web/prepare-pages.sh` readies a published site for Pages.
 - `tools/compendium/` — Destiny Data Compendium download (`sheet_dump.py`; the owner runs it with
   `get-compendium.ps1` / `get-compendium.sh` / `get-compendium-docker.sh`; see its README). The
   snapshot lives in `snapshots/compendium/<date>/`: gitignored, so **a new session doesn't have it**.
@@ -156,15 +156,18 @@ pull request:
    the session talks to the owner, commits, pushes and writes on GitHub. Commit when a step is
    complete, not after every edit, but keep the branch local until the work is ready for review:
    its first push is the one that opens the pull request (step 4). Before every push: `dotnet
-   build Loopsmith.slnx` and `dotnet test` (warnings are errors; there is no separate linter), and
-   check a web change in a browser too (How we work).
+   build Loopsmith.slnx` and `dotnet test` (warnings are errors; there is no separate linter),
+   check a web change in a browser too (How we work), and when the branch adds or changes e2e
+   scenarios, record them with `tools/e2e/record.sh --changed-since origin/main`; right after
+   every such push (the first one once its PR is open), `tools/e2e/push-gifs.sh` posts their GIFs
+   on the PR (Always, "e2e scenarios").
 4. **When it's ready for review, bring in `main`, push and open the pull request.** Right before
    the branch's first push, `git fetch origin main` and `git rebase origin/main` (resolve any
    conflict; ask in the session when both sides changed the same logic), then run `dotnet build
    Loopsmith.slnx` and `dotnet test` again. Only before the first push: once the branch is on
-   GitHub, a rebase would need a force-push, so from then on step 6 applies. This only makes a PR
-   less likely to open behind `main`; anything merged while it waits for review still puts it
-   behind. Then push and open the pull request into `main` (not a draft), with the task's
+   GitHub, a rebase would need a force-push, so from then on step 6 applies. The rebase finds a
+   conflict in the session, before the PR opens, and makes the build and test run against the
+   current `main`. Then push and open the pull request into `main` (not a draft), with the task's
    title and the agreed spec as its description: tick the acceptance criteria you checked, and add
    what changed and how to check it on the preview at `…/pr-preview/pr-<PR number>/`. A PR is
    **docs only** when every path it changes (a rename's old path too) is a Markdown file or under
@@ -187,8 +190,11 @@ pull request:
    event, and on a check-in with `send_later` about every 4 hours while the PR waits (stop after 3
    in a row that found nothing new; the next event starts them again), look at its merge state. On a
    conflict, merge `origin/main` into the branch, resolve it, build and test, and push. A branch
-   that is only behind `main` stays as it is: @JoanComasFdz clicks **Update branch**, so pull before
-   your next change. Never rebase a branch that is already on GitHub (step 4's rebase is only for
+   that is only behind `main` needs nothing: the `main-protection` ruleset doesn't require a PR to
+   be up to date before merging, so neither the session nor @JoanComasFdz updates it. That is safe
+   because the `build` check is still required, a conflict still blocks the merge, and `ci.yml`
+   builds and tests every push to `main`, which catches two PRs that only break when combined.
+   Never rebase a branch that is already on GitHub (step 4's rebase is only for
    the first push).
 
 The owner's screenshots and files stay in the session: they aren't committed, and no other session
@@ -213,8 +219,11 @@ Always:
   into it; squash merging flattens it. The one rebase is step 4's, before the branch's first push.
 - Don't change `.github/workflows/`, repository settings, rulesets or secrets unless the task asks
   for exactly that.
-- A push that changes e2e scenarios gets them recorded on the PR (`e2e-videos.yml`): put a short plain
-  description of the round in its commit message's body (the post's "What changed").
+- **e2e scenarios:** a PR that adds or changes e2e scenarios shows them on the PR, recorded by the session (CI doesn't run them):
+  before the push, `tools/e2e/record.sh --changed-since origin/main` (every scenario passes, or the push waits for a
+  fix); after the push, `tools/e2e/push-gifs.sh`, which `e2e-videos.yml` posts as `## Scenarios (V<N>)`. Put a short
+  plain description of the round in the pushed commit's message body (the post's "What changed"), or pass it as
+  `--message`.
 - In cloud sessions `gh issue` and `gh pr` fail (GitHub's GraphQL is blocked): use the built-in
   GitHub tools or `gh api repos/<owner>/<repo>/...` (REST).
 

@@ -13,8 +13,8 @@ The site is served from the **`gh-pages` branch**:
 | `main` — the live app | `https://<owner>.github.io/<repo>/` | `.github/workflows/pages.yml` (push to `main`, or run by hand) |
 | every open pull request — its dev preview | `https://<owner>.github.io/<repo>/pr-preview/pr-<number>/` | `.github/workflows/pr-preview.yml` (PR opened / updated; removed when closed) |
 
-Every pull request also gets its recorded end-to-end scenarios posted on it ([E2E videos on pull
-requests](#e2e-videos-on-pull-requests)).
+Every pull request that adds or changes end-to-end scenarios also gets them posted on it, recorded by the session that
+works it ([E2E videos on pull requests](#e2e-videos-on-pull-requests)).
 
 For this repository: https://joancomasfdz.github.io/destiny-loopsmith/ and
 `https://joancomasfdz.github.io/destiny-loopsmith/pr-preview/pr-<number>/`.
@@ -161,14 +161,30 @@ time (a login during a DIM link's read waits for it).
 
 Every pull request from a branch of this repository shows its end-to-end scenarios
 ([tests/Loopsmith.Web.E2E](../tests/Loopsmith.Web.E2E/README.md)) as GIFs, so a reviewer sees them working without
-running anything. A session can't attach a file to GitHub, so CI posts them: `.github/workflows/e2e-videos.yml` runs
-on every push to the PR (opened, reopened, synchronize).
+running anything. The session that works the PR records them; CI doesn't run, record or build anything for them.
 
-- **What it records:** `tools/e2e/record.sh --changed-since origin/<base branch>`, i.e. every scenario the PR adds or
-  changes from where it left its base (a class whose file changed, or that names a changed fixture file), on every
-  push, not only those the push touched. A PR that changes nothing under `tests/Loopsmith.Web.E2E/Scenarios` gets no
-  recording and no post. The workflow installs ffmpeg, the Chromium of the pinned Playwright and caches Bungie's
-  manifest between runs (keyed by `ManifestContentId`).
+- **Who records:** the session, before each push that adds or changes scenarios:
+  `tools/e2e/record.sh --changed-since origin/main`, i.e. every scenario the branch adds or changes from where it left
+  `main` (a class whose file changed, or that names a changed fixture file), not only those the push touched. Every
+  scenario passes before the push. A PR that changes nothing under `tests/Loopsmith.Web.E2E/Scenarios` records and posts
+  nothing, and runs no e2e workflow.
+- **How the GIFs get to GitHub:** a session can't upload a file to GitHub (its proxy only lets JSON request bodies
+  through: a release upload answers 415), but it can push. Right after the push (the first one once the PR is open),
+  `tools/e2e/push-gifs.sh` pushes a throwaway branch **`e2e-gifs/pr-<n>-<short sha>`**: the branch's head, already on
+  GitHub, plus one commit that adds `e2e-gifs/scenarios.json` and the GIFs (`e2e-gifs/<domain folder>/<gif name>.gif`).
+  It finds the PR from the branch (or takes its number), stops when the head isn't pushed yet or that branch already
+  exists, and never touches the working tree. The branch sits on the PR's head, not on an empty history, because a push
+  runs the workflow file inside the pushed commit: the PR's own `.github/workflows/e2e-videos.yml`.
+- **Why a branch, not a tag:** a push to any branch makes GitHub's Pull requests page show a "<branch> had recent
+  pushes · Compare & pull request" banner for about an hour, even after the branch is deleted. A tag would avoid it, but
+  a session can't make one: on 2026-10-15 its git proxy refused a tag push (`HTTP 403`, PR #90), and GitHub's REST API
+  refused every Git-data write (`git/blobs`, `git/trees`, `git/refs`: "Write access to this GitHub API path is not
+  permitted through this proxy"). So the GIFs travel on a branch, and the banner is the accepted cost: ignore it.
+- **What the workflow does** (`.github/workflows/e2e-videos.yml`, on a push to `e2e-gifs/**`): it checks the push
+  (the name is `e2e-gifs/pr-<n>-<hex>`; PR #n is open and from this repository; the commit sits on a commit of the PR
+  and only adds `e2e-gifs/scenarios.json` and real GIFs), then `tools/e2e/post-scenarios.py --out e2e-gifs` uploads the
+  GIFs and posts them, and the branch is deleted whatever happened (the run's log says why one failed). A push that fails
+  the checks uploads and posts nothing. No `dotnet`, no Chromium, no ffmpeg: a run takes seconds.
 - **Where the GIFs go:** assets of the pre-release **`prs-resources`** (created once by the owner; never committed
   anywhere). A release asset embedded as `![title](https://github.com/<owner>/<repo>/releases/download/prs-resources/<name>)`
   shows inline in GitHub (an MP4 there only shows as a link, so they are GIFs). Uploads use the workflow's
@@ -177,7 +193,7 @@ on every push to the PR (opened, reopened, synchronize).
   `pr-82-v1-given-app-is-open-on-home-when-i-click-start-from-scratch-then-the-designer-shows-an-arc-hunter-with-nothing-equipped.gif`.
   - `pr-<n>-` first, so a PR's assets sit together and its cleanup finds them (the dash after the number keeps
     `pr-7-` from matching `pr-70-`);
-  - `v<version>`: 1, 2, 3… (no padding), one per push that recorded, before the scenario so one version's GIFs sit
+  - `v<version>`: 1, 2, 3… (no padding), one per `push-gifs.sh`, before the scenario so one version's GIFs sit
     together. It is one more than the highest `## Scenarios (V<N>)` already in the workflow's comments on the PR
     (those by github-actions ending with its footer): nothing is stored anywhere else, and a reopened PR carries on
     from its last number;
@@ -186,18 +202,19 @@ on every push to the PR (opened, reopened, synchronize).
     the whole name would pass 200 characters does it keep its start and end with `-<8 hex>`, the start of the SHA-256
     of the method name, so it stays unique and the same on every push.
 - **The posts:** every version, V1 included, is a new comment on the PR, `## Scenarios (V<N>)`, that starts with
-  **What changed**: the body of the pushed commit's message without its trailers (a session writes a short plain
-  description of the round there), or its subject when it has no body. Each scenario is its Given/When/Then title as a
+  **What changed**: the body of the GIFs' commit message without its trailers, or its subject when it has no body.
+  `push-gifs.sh` copies the PR head's commit message there (a session writes a short plain description of the round in
+  its body), or writes `--message "<text>"` as the body. Each scenario is its Given/When/Then title as a
   small heading with its GIF below; a failed one has ❌ before its title. Every post ends with `---` and
   `_Recorded by the e2e workflow · Claude Code_`. The workflow never touches the PR's description, so editing the
   description can't break a post.
-- **Failures:** a failing scenario still gets its GIF and its ❌, and never turns the check red (the session runs the
-  scenarios before pushing; CI isn't where they are tested). The check is red only when the workflow itself failed:
-  nothing was recorded at all (e.g. the app didn't build), or GitHub refused an upload or a post.
-- **One run per PR at a time** (a concurrency group per PR, never cancelled midway), so two runs can't post the same
-  version. GitHub keeps one waiting run per group: a push that is still waiting when a newer one arrives is skipped,
-  and the newer one records for both.
-- **Cleanup:** when the PR is closed or merged, the workflow keeps every GIF of the PR's newest version and deletes
+- **Failures:** a failing scenario still gets its GIF and its ❌ (the session fixes it before pushing, so it shouldn't
+  happen), and never turns the run red. The run is red only when the workflow itself failed: a push that isn't a PR's
+  GIFs, or GitHub refused an upload or a post.
+- **One post per PR at a time** (the posting job's concurrency group is per PR, never cancelled midway), so two runs
+  can't post the same version. GitHub keeps one waiting job per group: a post that is still waiting when a newer one
+  arrives is skipped (its branch is deleted all the same), so push the GIFs once per round.
+- **Cleanup:** when the PR is closed or merged, the workflow deletes any `e2e-gifs/pr-<n>-…` branch left behind, keeps every GIF of the PR's newest version and deletes
   its older versions' (`pr-<n>-v1-…` to `pr-<n>-v<N-1>-…`), so the PR's last `## Scenarios (V<N>)` post keeps showing
   its GIFs for good, and the older posts show broken images. The newest version is the highest `v<N>` among the PR's
   assets, read as a number (`v10` is newer than `v2`, and `v1` never matches `v10`). Only names of the form

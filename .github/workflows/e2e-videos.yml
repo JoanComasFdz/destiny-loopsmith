@@ -1,90 +1,125 @@
 name: E2E videos
 
-# Every push to a pull request from a branch of this repository records the PR's end-to-end scenarios (the ones it
-# adds or changes under tests/Loopsmith.Web.E2E/Scenarios, from where it left its base branch) as GIFs, uploads them
-# to the `prs-resources` pre-release as pr-<n>-v<version>-<scenario>.gif and shows them on the PR, each version as a
-# new comment (it never touches the PR's description). Closing the PR keeps its newest version's GIFs, so its last post
-# keeps showing them, and deletes its older versions'.
-# A failing scenario is marked ❌ in the post and never turns this check red; only the workflow's own failures do
-# (no recording at all, an upload or a post that GitHub refused). docs/hosting.md, "E2E videos on pull requests".
-# Pull requests from forks are skipped (they never get a write token).
+# The session that works a PR records its added or changed end-to-end scenarios itself (tools/e2e/record.sh) and pushes
+# their GIFs with tools/e2e/push-gifs.sh to a throwaway branch e2e-gifs/pr-<n>-<short sha>: the PR's head commit plus
+# one commit that adds e2e-gifs/scenarios.json and the GIFs. A session can't upload a file to GitHub, so this workflow
+# does only that part: it checks the push, uploads the GIFs to the `prs-resources` pre-release as
+# pr-<n>-v<version>-<scenario>.gif, posts them on the PR as a new comment (it never touches the PR's description) and
+# deletes the branch. It builds, tests and records nothing. A push runs the workflow file inside the pushed commit, so
+# the branch carries the PR's own version of this file.
+# A failing scenario is marked ❌ in the post and never turns this check red; only the workflow's own failures do (a push
+# that isn't a PR's GIFs, an upload or a post that GitHub refused). Closing the PR keeps its newest version's GIFs, so its
+# last post keeps showing them, and deletes its older versions' and any e2e-gifs/pr-<n>-… branch left behind.
+# docs/hosting.md, "E2E videos on pull requests".
 
 on:
+  push:
+    branches: ['e2e-gifs/**']
   pull_request:
-    types: [opened, reopened, synchronize, closed]
+    types: [closed]
 
 permissions:
   contents: write
   pull-requests: write
 
-# One run per PR at a time, never cancelled midway, so two runs can't both post the same version.
-concurrency:
-  group: e2e-videos-${{ github.event.pull_request.number }}
-  cancel-in-progress: false
-
 jobs:
-  record:
-    if: >-
-      github.event.pull_request.head.repo.full_name == github.repository &&
-      github.event.action != 'closed'
+  check:
+    if: github.event_name == 'push' && !github.event.deleted
+    runs-on: ubuntu-latest
+    outputs:
+      pr: ${{ steps.pr.outputs.number }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      BRANCH: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+      - name: Read the PR from the branch's name
+        id: pr
+        run: |
+          if [[ ! $BRANCH =~ ^e2e-gifs/pr-([0-9]+)-[0-9a-f]+$ ]]; then
+            echo "::error::$BRANCH isn't named e2e-gifs/pr-<n>-<short sha> (tools/e2e/push-gifs.sh)."
+            exit 1
+          fi
+          echo "number=${BASH_REMATCH[1]}" >> "$GITHUB_OUTPUT"
+      - name: Check the PR is open and from this repository
+        env:
+          PR: ${{ steps.pr.outputs.number }}
+        run: |
+          pr=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR" --jq '"\(.state) \(.head.repo.full_name) \(.head.sha)"') ||
+            { echo "::error::There is no PR #$PR."; exit 1; }
+          read -r state head_repo head_sha <<< "$pr"
+          [ "$state" = open ] || { echo "::error::PR #$PR is $state."; exit 1; }
+          [ "$head_repo" = "$GITHUB_REPOSITORY" ] || { echo "::error::PR #$PR comes from $head_repo, a fork."; exit 1; }
+          # The GIFs' commit sits on a commit of the PR (its head, or an earlier one when the PR moved on since).
+          parent=$(git rev-parse HEAD^)
+          relation=$(gh api "repos/$GITHUB_REPOSITORY/compare/$parent...$head_sha" --jq .status)
+          [ "$relation" = identical ] || [ "$relation" = ahead ] ||
+            { echo "::error::The GIFs' commit sits on $parent, which isn't in the history of PR #$PR."; exit 1; }
+      - name: Check the commit only adds scenarios.json and GIFs
+        run: |
+          bad=0
+          while IFS=$'\t' read -r status path; do
+            if [ "$status" != A ] || [[ ! $path =~ ^e2e-gifs/(scenarios\.json|[A-Za-z0-9_/-]+\.gif)$ ]]; then
+              echo "::error::Not a GIF or scenarios.json added under e2e-gifs/: $status $path"
+              bad=1
+            elif [[ $path == *.gif ]] && [ "$(head -c 4 "$path")" != GIF8 ]; then
+              echo "::error::Not a GIF: $path"
+              bad=1
+            fi
+          done < <(git diff --name-status --no-renames HEAD^ HEAD)
+          [ -f e2e-gifs/scenarios.json ] || { echo "::error::e2e-gifs/scenarios.json is missing."; bad=1; }
+          exit $bad
+
+  publish:
+    needs: check
+    runs-on: ubuntu-latest
+    # One post per PR at a time, never cancelled midway, so two runs can't both post the same version.
+    concurrency:
+      group: e2e-videos-${{ needs.check.outputs.pr }}
+      cancel-in-progress: false
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PR: ${{ needs.check.outputs.pr }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+      - name: Upload the GIFs and post them on the pull request
+        run: python3 tools/e2e/post-scenarios.py --pr "$PR" --commit "$GITHUB_SHA" --out e2e-gifs
+
+  delete-branch:
+    # Whatever happened, the throwaway branch goes (its log says why a run failed).
+    needs: [check, publish]
+    if: always() && github.event_name == 'push' && !github.event.deleted
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
-      PR: ${{ github.event.pull_request.number }}
-      BASE: ${{ github.event.pull_request.base.ref }}
-      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      BRANCH: ${{ github.ref_name }}
     steps:
-      - uses: actions/checkout@v4
-        with:
-          # The pushed commit itself (its message says what changed), with the history to find where it left the base.
-          ref: ${{ github.event.pull_request.head.sha }}
-          fetch-depth: 0
-      - name: Find the scenarios this PR adds or changes
-        id: scenarios
-        run: |
-          changed=$(git diff --name-only "$(git merge-base "origin/$BASE" HEAD)" -- tests/Loopsmith.Web.E2E/Scenarios)
-          echo "any=$([ -n "$changed" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
-          echo "${changed:-No scenario changed since origin/$BASE: nothing to record.}"
-      - uses: actions/setup-dotnet@v4
-        if: steps.scenarios.outputs.any == 'true'
-        with:
-          global-json-file: global.json
-      - name: Install ffmpeg
-        if: steps.scenarios.outputs.any == 'true'
-        run: sudo apt-get update -q && sudo apt-get install -y -q ffmpeg
-      - name: Install Chromium for the pinned Playwright
-        if: steps.scenarios.outputs.any == 'true'
-        run: |
-          dotnet build tests/Loopsmith.Web.E2E -c Release --nologo -v q
-          pwsh tests/Loopsmith.Web.E2E/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
-      - name: Read the pinned manifest version
-        if: steps.scenarios.outputs.any == 'true'
-        id: manifest
-        run: echo "version=$(jq -r .ManifestContentId src/Loopsmith.Web/wwwroot/appsettings.json)" >> "$GITHUB_OUTPUT"
-      - name: Cache Bungie's manifest
-        if: steps.scenarios.outputs.any == 'true'
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/loopsmith/bungie-manifest
-          key: bungie-manifest-${{ steps.manifest.outputs.version }}
-      - name: Record the scenarios
-        if: steps.scenarios.outputs.any == 'true'
-        # A failing scenario still gets its GIF and is marked in the post: it doesn't fail this step.
-        run: tools/e2e/record.sh --changed-since "origin/$BASE" || echo "::warning::A scenario failed or none ran; see the post."
-      - name: Post them on the pull request
-        if: steps.scenarios.outputs.any == 'true'
-        run: python3 tools/e2e/post-scenarios.py --pr "$PR" --commit "$HEAD_SHA" --out out
+      - name: Delete the e2e-gifs branch
+        run: gh api -X DELETE "repos/$GITHUB_REPOSITORY/git/refs/heads/$BRANCH" && echo "Deleted $BRANCH."
 
   clean:
     if: >-
-      github.event.pull_request.head.repo.full_name == github.repository &&
-      github.event.action == 'closed'
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
       PR: ${{ github.event.pull_request.number }}
     steps:
       # No checkout: deleting needs nothing from the branch (which may predate this workflow).
+      - name: Delete the PR's e2e-gifs branches left behind
+        run: |
+          for ref in $(gh api "repos/$GITHUB_REPOSITORY/git/matching-refs/heads/e2e-gifs/pr-$PR-" --jq '.[].ref'); do
+            # matching-refs is a prefix match: pr-7- never catches pr-70-, but check the name in full anyway.
+            [[ $ref =~ ^refs/heads/e2e-gifs/pr-$PR-[0-9a-f]+$ ]] || continue
+            echo "Deleting ${ref#refs/heads/}"
+            gh api -X DELETE "repos/$GITHUB_REPOSITORY/git/$ref"
+          done
       - name: Keep the PR's newest GIFs in prs-resources and delete its older versions
         run: |
           release=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/prs-resources" --jq .id)
