@@ -96,7 +96,9 @@ public static class KeywordInteracting
             fewer => IsVia(keyword, fewer.Via),
             _ => false,
             broken => IsVia(keyword, broken.Via),
-            _ => false);
+            _ => false,
+            fewerHit => IsVia(keyword, fewerHit.Via),
+            between => IsVia(keyword, between.Via));
 
     /// <summary>A guard the keyword meets by being there (the kernel's: a "without it" guard doesn't need it).</summary>
     private static bool IsNamedBy(KeywordRef keyword, Condition condition) =>
@@ -133,7 +135,8 @@ public static class KeywordInteracting
             _ => false,
             _ => false,
             _ => false,
-            spend => IsStatus(keyword, spend.Status));
+            spend => IsStatus(keyword, spend.Status),
+            _ => false);
 
     private static bool IsGiving(KeywordRef keyword, Outcome outcome) =>
         outcome.Match(
@@ -144,6 +147,7 @@ public static class KeywordInteracting
             debuff => IsStatus(keyword, debuff.Status),
             spawn => keyword is KeywordRef.Pickup pickup && pickup.Id == spawn.Pickup,
             spawn => keyword is KeywordRef.Summon summon && summon.Id == spawn.Summon,
+            _ => false,
             _ => false,
             _ => false,
             _ => false,
@@ -167,6 +171,7 @@ public static class KeywordInteracting
             _ => false,
             collect => keyword is KeywordRef.Pickup pickup && pickup.Id == collect.Pickup,
             _ => false,
+            _ => false,
             _ => false);
 
     private static bool IsStriking(KeywordRef keyword, Outcome outcome) =>
@@ -179,6 +184,7 @@ public static class KeywordInteracting
             _ => false,
             _ => false,
             strike => IsStatus(keyword, strike.Via),
+            _ => false,
             _ => false,
             _ => false,
             _ => false,

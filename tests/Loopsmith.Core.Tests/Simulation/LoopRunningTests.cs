@@ -174,7 +174,7 @@ public class LoopRunningTests
         var plain = Element("plain", ElementKind.Fragment,
             [On(new Trigger.AbilityCast(AbilityKind.Grenade), new Outcome.DebuffTarget(Status("jolt"), Optional.None<Seconds>()))]);
         var watcher = Element("watcher", ElementKind.Fragment,
-            [On(new Trigger.BuffGained(Status("bolt-charge")), new Outcome.RestoreHealth(new GameValue.Unknown(), false))]);
+            [On(new Trigger.BuffGained(Status("bolt-charge")), new Outcome.RestoreHealth(new HealAmount.Share(new GameValue.Unknown()), false))]);
 
         var report = RunLoop(ValidateBuild([DodgeAmplifies, AmplifiedGrenade, plain, watcher]), Dodge, GrenadeKill, AmplifiedEnds);
 
@@ -277,7 +277,7 @@ public class LoopRunningTests
         var mixed = Element("mixed", ElementKind.Fragment,
         [
             new Rule(new Trigger.AbilityCast(AbilityKind.Grenade), [], [Buff("bolt-charge")], Optional.None<string>(), Likelihood.Chance, []),
-            On(new Trigger.Damage(new DamageSource.AbilityOf(AbilityKind.Grenade)), new Outcome.RestoreHealth(new GameValue.Unknown(), false)),
+            On(new Trigger.Damage(new DamageSource.AbilityOf(AbilityKind.Grenade)), new Outcome.RestoreHealth(new HealAmount.Share(new GameValue.Unknown()), false)),
         ]);
 
         var report = RunLoop(ValidateBuild([lucky, mixed]), GrenadeKill);

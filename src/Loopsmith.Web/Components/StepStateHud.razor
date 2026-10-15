@@ -1,7 +1,8 @@
 @* What is present at the end of a step (LoopDesigning.ShapeStepState), laid out like the game's HUD: the buffs on you on
    the left, your weapons' buffs in the middle (each with the weapon whose perk gives it) and what changes those weapons'
    stats right then, the debuffs on the pack on the right, the pickups on the ground below them. A phone stacks them.
-   A status that switches other elements' effects on says how many; its details list them. Every status opens its
+   A status with effects says how many: its own element's changes to the weapons (Stats for All's stats: one chip, not two)
+   and the other elements' effects it switches on; its tooltip lists its own, its details all of them. Every status opens its
    details on a tap (Amplified, which has no element, its glossary facts); its facts ("up to x5 · 8s") show on hover.
    Below them, each counted buff's stacks (Armor Charge: "x1 · +1 (chance)"); tapping its row lists each step that gained
    or spent some, and how it decays (never applied, ADRs D33). Then the damage resistance right then: PvE and PvP for all
@@ -219,7 +220,7 @@
 
     private static RenderFragment RenderSwitches(StateEntry entry) => __builder =>
     {
-        if (!entry.SwitchesOn.IsEmpty)
+        if (StateHudShaping.CountEffects(entry) > 0)
         {
             <span class="hud-switches" data-testid="switches-on">@StateHudShaping.DescribeSwitchesCount(entry)</span>
         }

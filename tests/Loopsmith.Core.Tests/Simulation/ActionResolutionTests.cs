@@ -505,7 +505,7 @@ public class ActionResolutionTests
 
     /// <summary>One For All: "hitting three separate targets … grants increased damage" — inline, not from the rules.</summary>
     private static readonly BuildElement OneForAll = Element("one-for-all", ElementKind.Fragment,   // a weapon perk in game; the test catalog equips fragments
-        [On(new Trigger.DamageMultiple(new DamageSource.AnyWeapon(), TargetCount.From(3)), Buff("amplified"))]);
+        [On(new Trigger.DamageMultiple(new DamageSource.AnyWeapon(), TargetCount.From(3), Optional.None<Seconds>()), Buff("amplified"))]);
 
     private static PlayerAction RifleAt(HitOutcome hit, int targets) =>
         new PlayerAction.FireWeapon(WeaponSlot.Energy, hit, TargetCount.From(targets));
@@ -518,7 +518,7 @@ public class ActionResolutionTests
             On(new Trigger.AbilityCast(AbilityKind.Grenade), Buff("amplified")),
             On(new Trigger.Damage(new DamageSource.AnySource()), Buff("amplified")),
             On(new Trigger.KillAny(new DamageSource.AnySource()), Buff("amplified")),
-            On(new Trigger.DamageMultiple(new DamageSource.AnySource(), TargetCount.One), Buff("amplified")),
+            On(new Trigger.DamageMultiple(new DamageSource.AnySource(), TargetCount.One, Optional.None<Seconds>()), Buff("amplified")),
         ]);
         var build = ValidateBuild([probe]);
 

@@ -110,8 +110,7 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   and Vent Speed, Full Auto Retrofit, the bow and activity mods (Jumpshot, Tungsten Bowstring, Fikrul's Friends…) —
   so they show with their ⊘ and set nothing off. Synergy's cooldowns (the pickups' 0–12 s, its own) and the counter's
   other enemy tiers (elite 16.7%, boss 50%: the pack is rank-and-file, ADRs D7) are facts in its description. What
-  picking up a Firesprite, Void Breach, Stasis Shard or Tangle gives has no keyword element yet. The perks of
-  `rules/weapons/perks.yaml` could say `weapon:this` instead of their weapon's type, now that it exists.
+  picking up a Firesprite, Void Breach, Stasis Shard or Tangle gives has no keyword element yet.
 - **Written as declarations, *(chance)* or facts** (D3, D8), so they need no new format: progress the
   game doesn't show as a stacking status (Spark of Discharge's kills per trace, Amplified's intrinsic kill counter)
   is *(chance)*; hits or damage kept up on one enemy (To Shreds' 6 weapon hits, Horde Shuttle's 10%, Attrition Orbs,
@@ -173,13 +172,13 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   author 7, the Tablet of Ruin's of the skip-grenade build (`rules/artifact/current.yaml`); the others show ⊘ in the
   artifact editor and set nothing off. Next: the rest of the Tablet of Ruin's 21, then the artifact to do after it,
   from the Compendium snapshot's Artifact Perks tab (`rule-author`; no invented numbers, D13).
-- **Weapon perks**: the rules author 3 (Slice, Attrition Orbs, Feeding Frenzy), each with its enhanced trait
-  (rule-format.md, "Enhanced traits"); the game has ~226 enhanced traits and ~86 enhanced origin traits, whose base
-  perks aren't authored either. A perk authored next gets its `enhanced` block (a test asks for it). Two tasks, in
-  this order (the second needs the first merged):
-  1. **"This weapon", a Reload step and Demolitionist.** A weapon perk's rules say "this weapon" with a `via: this`
-     damage source, bound when the build is composed to the weapon that rolls the perk (`rules/weapons/perks.yaml`
-     fakes it with `weapon:strand` today: move Slice and Attrition Orbs to it). A **Reload** button next to Kill in
+- **Weapon perks**: the rules author 10 (Slice, Attrition Orbs, Feeding Frenzy, and the ones that need several enemies
+  in one action: One for All, Stats for All, Reaper's Tithe, Hatchling, Veteran's Wisdom, Unrelenting and Radiolaria
+  Transposer), each with its enhanced trait (rule-format.md, "Enhanced traits"); the game has ~226 enhanced
+  traits and ~86 enhanced origin traits, whose base perks aren't authored either. A perk authored next gets its
+  `enhanced` block (a test asks for it). Every perk says "this weapon" (`weapon:this`), bound to the weapon that rolls
+  it. Two tasks, in this order (the second needs the first merged):
+  1. **A Reload step and Demolitionist.** A **Reload** button next to Kill in
      the step HUD plays a reload as its own step: the player declares it, no ammo is counted (D1). A `reload` trigger
      (with `via`, so "reload this weapon") lets rules react to it, and a reload outcome lets an effect say "this
      reloads the weapon". Demolitionist with both halves: kills with this weapon give grenade energy (the
@@ -187,10 +186,10 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
      Test case: a Solar Hunter loop with Healing Grenade and a Demolitionist weapon (Healing Grenade → kills with the
      weapon → grenade energy back → Healing Grenade), like the one Tactics uses. Docs: rule-format.md (the source,
      trigger and outcome) and loop-format.md (the Reload step).
-  2. **Every weapon perk that feeds the loop.** With `via: this`, the reload trigger and the reload outcome, author
+  2. **Every weapon perk that feeds the loop.** With `weapon:this`, the reload trigger and the reload outcome, author
      every perk that gives or spends something a step needs (ability energy, a buff, a debuff, a pickup, an orb, a
      summon, or a reload another perk reacts to), e.g. Wellspring, Pugilist, Voltshot (kill, then reload: the next
-     shots jolt), Incandescent, Destabilizing Rounds, Repulsor Brace and Hatchling, each with its enhanced trait; the
+     shots jolt), Incandescent, Destabilizing Rounds and Repulsor Brace, each with its enhanced trait; the
      full list is agreed with the owner first. A perk that only changes stats, handling, damage or ammo gets an
      `inert:` reason when it comes up, else stays ⊘. Sources: the Compendium snapshot and Clarity (`rule-author`,
      provenance on every rule, `"?"` for what they don't give); rerun `tools/manifest/` for the new hashes.
@@ -219,14 +218,13 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   not otherwise; a spend takes stacks off (sure first), and `max:` stays offered while the sure stacks are below the cap.
   Check each gain and spend against the Compendium (Bolt Charge's discharge resets it, Slice gains one per severing hit
   and ends at its 5th) and the goldens of the creator's loop, which declare these maxes today.
-- **Kill counts, next**: the enemy-count selector names only the counts authored rules need (the Siphons, Spark of
-  Amplitude, Spark of Discharge, Synergy). The next task:
-  **Author the weapon perks that need several enemies in one action.** One For All (three separate targets), Multikill
-  Clip, Adrenaline Junkie and the like aren't authored (`rules/weapons/perks.yaml` holds three perks), so they show
-  with their ⊘ and the selector can't name them. Author them from the Compendium's Weapon Perks tab with the counts
-  #70 added (`damage: { atLeast: N }`, `kill: { atLeast: N, within: Ns }`, and `fewerThan: N` as a chance for a counter
-  earlier steps may have filled, D31), so the selector offers their counts ("3 · One For All"). Their numbers come from
-  the snapshot (`"?"` where it has none).
+- **Kill counts, next**: the enemy-count selector names the counts authored rules need (the Siphons, Spark of
+  Amplitude, Spark of Discharge, Synergy, and the weapon perks One for All, Stats for All, Reaper's Tithe, Hatchling,
+  Veteran's Wisdom, Unrelenting and Radiolaria Transposer). Not authored yet: Multikill Clip and Desperado (their kills count at a reload: the
+  Reload step, "Weapon perks" task 1), and the perks that need enemies nearby rather than in one action (Surrounded,
+  Cornered, Danger Zone, Threat Detector, Extrovert). A precision hit isn't a step, so Hatchling's and Veteran's Wisdom's
+  "or a precision kill" is the chance on fewer than 3 kills; a strike by this weapon (Veteran's Wisdom's shockwave,
+  Radiolaria Transposer's explosion and pool) hits one enemy, and its damage is a fact in the perk's description.
 - **Cooldowns, next**: a rule fires on every event of a step, so a source with a cooldown fires once per kill of one
   action when the game fires it once. The next task (raised in #70):
   **Fire a rule with a cooldown at most once per action.** Within one step (one action's hits and kills), a rule whose

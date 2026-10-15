@@ -15,7 +15,7 @@ public partial record Trigger
     partial record KillMultiple(DamageSource Via, TargetCount AtLeast, Optional<Seconds> Within);   // kill at least N enemies in one action (within: the source's window, "2 in 3 s", a fact one action meets)
     partial record Damage(DamageSource Via, DamageSpan Needs = DamageSpan.Blow);   // Needs: Sustained for a source that needs several hits or a share of the enemy's health (ADRs D34)
     partial record DamageDebuffed(DamageSource Via, ImmutableArray<StatusId> TargetHas, DamageSpan Needs = DamageSpan.Blow);
-    partial record DamageMultiple(DamageSource Via, TargetCount AtLeast);      // hit at least N enemies in one action
+    partial record DamageMultiple(DamageSource Via, TargetCount AtLeast, Optional<Seconds> Within);   // hit at least N enemies in one action (within: the source's window, "3 in 3 s")
     partial record PickUp(PickupId Pickup);
     partial record BuffGained(StatusId Status);
     partial record StacksMaxed(StatusId Status);
@@ -25,6 +25,8 @@ public partial record Trigger
     partial record CriticalHealth();                                           // the player declares they reached critical health (ADRs D3)
     partial record ShieldBroken(DamageSource Via);                             // a combatant's shield broken by that source (the player says which hit breaks it, ADRs D36)
     partial record EnergyExpended(AbilityKind Kind);                           // the ability's energy fully expended: its last charge used (ADRs D36)
+    partial record DamageFewer(DamageSource Via, TargetCount FewerThan);       // hit fewer than N enemies in one action (at least one)
+    partial record KillBetween(DamageSource Via, TargetCount AtLeast, TargetCount FewerThan);   // kill at least N and fewer than M enemies in one action (Reaper's Tithe's x2 on exactly 2)
 }
 
 /// <summary>A guard on the current state, checked after the trigger matched.</summary>
@@ -89,6 +91,14 @@ public partial record EnergyGrant
     partial record Full();
 }
 
+/// <summary>How much a heal restores: a share of your health ("?" when the source gives none), or HP (Unrelenting's 65).</summary>
+[Union]
+public partial record HealAmount
+{
+    partial record Share(GameValue Value);   // 0.4 = 40 % of your health
+    partial record Points(GameValue Value);  // HP: 65
+}
+
 /// <summary>
 /// The game's consequences. ("Effect" is reserved for side effects described as data — see Orchestration.)
 /// Energy outcomes (<see cref="GrantEnergy"/>, <see cref="ConvertStacksToEnergy"/>'s energy, <see cref="ResetCooldown"/>,
@@ -107,11 +117,12 @@ public partial record Outcome
     partial record SpawnSummon(SummonId Summon, int Count);
     partial record StrikeTarget(StatusId Via, HitOutcome Hit);   // keyword damage: lightning strike, jolt chain…
     partial record ModifyDamage(DamageSource Against, GameValue Change);
-    partial record RestoreHealth(GameValue Amount, bool IncludesAllies);
+    partial record RestoreHealth(HealAmount Amount, bool IncludesAllies);
     partial record ResetCooldown(AbilityKind Which);
     partial record Collect(PickupId Pickup);   // picks it up from the ground when it is there (Powerful Attraction): a pickup event
     partial record GrantLeastChargedEnergy(EnergyGrant Amount);   // to whichever ability has the least energy: the game picks, so a fact
     partial record SpendStacks(StatusId Status, StackCount Count);   // a fixed number of a counted buff's stacks (Healthy Finisher's x1, ADRs D33)
+    partial record WeaponStrike(DamageSource Weapon, Optional<DamageType> Type, HitOutcome Hit);   // this weapon's damage dealt by an effect (Veteran's Wisdom's shockwave): Weapon is "this weapon" until bound to its slot; Type none: the weapon's own
 }
 
 /// <summary>
@@ -129,6 +140,18 @@ public sealed record Rule(
 
 public sealed record WeaponStatChange(string Stat, GameValue Change);
 
+/// <summary>
+/// The weapons a change to weapon stats reaches: the build's weapons of those archetypes (Ionic Overclock's fusions), or the
+/// weapon holding the element — "this weapon" as a rule says it (Stats for All), bound by the build check to its slot.
+/// </summary>
+[Union]
+public partial record ChangedWeapons
+{
+    partial record OfArchetypes(ImmutableArray<string> Archetypes);
+    partial record ThisWeapon();          // the weapon holding the element, until the build check binds it (WeaponBinding)
+    partial record InSlot(WeaponSlot Slot);   // the weapon in that slot: "this weapon", bound
+}
+
 /// <summary>Always-on modifiers while equipped (and while <see cref="PassiveRule.When"/> holds).</summary>
 [Union]
 public partial record Passive
@@ -137,7 +160,7 @@ public partial record Passive
     partial record ExtraCharges(AbilityKind Ability, int Extra);            // a fact (ADRs D5)
     partial record ModifyDamage(DamageSource Against, GameValue Change);     // Flashover, stat bonuses
     partial record ResistDamage(PveAndPvp Amount);                           // Spark of Resistance: any damage, "25% [10%]"
-    partial record ModifyWeaponStats(ImmutableArray<string> Archetypes, ImmutableArray<WeaponStatChange> Changes);
+    partial record ModifyWeaponStats(ChangedWeapons Weapons, ImmutableArray<WeaponStatChange> Changes);
     partial record RaiseMaxStacks(StatusId Status, GameValue Max);           // Charged Up: the cap with it equipped, per copy ("4 | 5 | 6"), a fact (ADRs D3)
     partial record ModifyStat(StatKind Stat, GameValue Change);              // Grenade Font: "+20 Grenade" while it holds, a fact never added to the stats (ADRs D1)
     partial record ResistCombatantDamage(CombatantDamage Against, GameValue Amount);   // Arc Resistance: combatants only, nothing in PvP

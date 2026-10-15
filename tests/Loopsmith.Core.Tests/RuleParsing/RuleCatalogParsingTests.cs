@@ -314,8 +314,8 @@ public sealed class RuleCatalogParsingTests
         Assert.Equal(new Trigger.StacksMaxed(ToStatus("bolt-charge")), rules[6].On);
         Assert.Equal<Outcome>(
             [
-                new Outcome.RestoreHealth(new GameValue.Unknown(), IncludesAllies: true),
-                new Outcome.RestoreHealth(new GameValue.Known(0.25m), IncludesAllies: false),
+                new Outcome.RestoreHealth(new HealAmount.Share(new GameValue.Unknown()), IncludesAllies: true),
+                new Outcome.RestoreHealth(new HealAmount.Share(new GameValue.Known(0.25m)), IncludesAllies: false),
                 new Outcome.ResetCooldown(AbilityKind.Melee),
             ],
             rules[6].Then);
@@ -343,7 +343,7 @@ public sealed class RuleCatalogParsingTests
         Assert.Equal(new Passive.ResistDamage(new PveAndPvp(new GameValue.Known(0.25m), Optional.None<GameValue>())), passives[3].Modifier);
 
         var weaponStats = Assert.IsType<Passive.ModifyWeaponStats>(passives[4].Modifier);
-        Assert.Equal(["fusion-rifle"], weaponStats.Archetypes);
+        Assert.Equal(["fusion-rifle"], Assert.IsType<ChangedWeapons.OfArchetypes>(weaponStats.Weapons).Archetypes);
         Assert.Equal([new WeaponStatChange("handling", new GameValue.Unknown())], weaponStats.Changes);
     }
 
@@ -1304,7 +1304,7 @@ public sealed class RuleCatalogParsingTests
         var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToElementsFile("weapons/perks.yaml", OneForAllYaml)]));
 
         var rules = catalog.Elements[ElementId.From("one-for-all")].Rules;
-        Assert.Equal(new Trigger.DamageMultiple(new DamageSource.AnyWeapon(), TargetCount.From(3)), rules[0].On);
+        Assert.Equal(new Trigger.DamageMultiple(new DamageSource.AnyWeapon(), TargetCount.From(3), Optional.None<Seconds>()), rules[0].On);
         Assert.Equal(new Trigger.KillMultiple(new DamageSource.AbilityOf(AbilityKind.Grenade), TargetCount.From(2), Optional.None<Seconds>()), rules[1].On);
         Assert.Equal(new Trigger.KillMultiple(new DamageSource.AnySource(), TargetCount.One, Optional.None<Seconds>()), rules[2].On);
     }
@@ -1334,6 +1334,114 @@ public sealed class RuleCatalogParsingTests
     }
 
     [Fact]
+    public void Parses_a_hit_count_with_its_window_a_hit_of_fewer_than_N_and_a_kill_count_with_an_upper_bound()
+    {
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToElementsFile("weapons/perks.yaml", """
+            elements:
+              - id: one-for-all
+                name: One for All
+                kind: weaponPerk
+                affinity: neutral
+                rules:
+                  - on: { damage: { via: "weapon:this", atLeast: 3, within: 3s } }
+                    then: [ { applyBuff: amplified } ]
+                  - on: { damage: { via: "weapon:this", fewerThan: 3 } }
+                    then: [ { applyBuff: amplified } ]
+                    chance: true
+                  - on: { kill: { via: "weapon:this", atLeast: 2, fewerThan: 3 } }
+                    then: [ { spawn: orb-of-power } ]
+            """)]));
+
+        var rules = catalog.Elements[ElementId.From("one-for-all")].Rules;
+        Assert.Equal(new Trigger.DamageMultiple(new DamageSource.ThisWeapon(), TargetCount.From(3), Optional.Some(Seconds.From(3m))), rules[0].On);
+        Assert.Equal(new Trigger.DamageFewer(new DamageSource.ThisWeapon(), TargetCount.From(3)), rules[1].On);
+        Assert.Equal(
+            new Trigger.KillBetween(new DamageSource.ThisWeapon(), TargetCount.From(2), TargetCount.From(3)),
+            rules[2].On);
+    }
+
+    [Fact]
+    public void Parses_a_strike_by_this_weapon_and_a_heal_in_hp()
+    {
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToElementsFile("weapons/perks.yaml", """
+            elements:
+              - id: veterans-wisdom
+                name: Veteran's Wisdom
+                kind: weaponPerk
+                affinity: kinetic
+                rules:
+                  - on: { kill: { via: "weapon:this", atLeast: 3 } }
+                    then:
+                      - { strikeTarget: { via: "weapon:this", type: kinetic, hit: damage } }
+                      - { strikeTarget: { via: "weapon:this", hit: kill } }
+                      - { restoreHealth: { hp: 65 } }
+            """)]));
+
+        var then = catalog.Elements[ElementId.From("veterans-wisdom")].Rules[0].Then;
+        Assert.Equal(new Outcome.WeaponStrike(new DamageSource.ThisWeapon(), Optional.Some(DamageType.Kinetic), HitOutcome.Damage), then[0]);
+        Assert.Equal(new Outcome.WeaponStrike(new DamageSource.ThisWeapon(), Optional.None<DamageType>(), HitOutcome.Kill), then[1]);
+        Assert.Equal(new Outcome.RestoreHealth(new HealAmount.Points(new GameValue.Known(65m)), false), then[2]);
+    }
+
+    [Theory]
+    [InlineData("{ strikeTarget: { via: \"weapon:arc\", hit: damage } }", "only this weapon strikes (write \"weapon:this\")")]
+    [InlineData("{ strikeTarget: { via: bolt-charge, type: arc, hit: damage } }", "unknown key 'type'")]
+    [InlineData("{ restoreHealth: { amount: \"?\", hp: 65 } }", "takes amount or hp, not both")]
+    [InlineData("{ restoreHealth: { allies: true } }", "needs amount (a share of your health) or hp")]
+    public void A_strike_by_a_weapon_is_this_weapons_and_a_heal_has_one_amount(string outcome, string expected)
+    {
+        var message = ParseInvalidCatalog(Glossary, ToElementsFile("weapons/perks.yaml", $$"""
+            elements:
+              - id: veterans-wisdom
+                name: Veteran's Wisdom
+                kind: weaponPerk
+                affinity: kinetic
+                rules:
+                  - on: { kill: { via: "weapon:this" } }
+                    then: [ {{outcome}} ]
+            """));
+
+        Assert.Contains(expected, message);
+    }
+
+    [Fact]
+    public void Parses_a_change_to_this_weapons_stats()
+    {
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToElementsFile("weapons/perks.yaml", """
+            elements:
+              - id: stats-for-all
+                name: Stats for All
+                kind: weaponPerk
+                affinity: neutral
+                passives:
+                  - effect: { modifyWeaponStats: { weapon: this, changes: [ { stat: handling, change: "+35" } ] } }
+                    when: [ { has: amplified } ]
+            """)]));
+
+        var stats = Assert.IsType<Passive.ModifyWeaponStats>(catalog.Elements[ElementId.From("stats-for-all")].Passives[0].Modifier);
+        Assert.IsType<ChangedWeapons.ThisWeapon>(stats.Weapons);
+    }
+
+    [Theory]
+    [InlineData("{ weapon: that, changes: [ { stat: handling, change: \"+35\" } ] }", "modifyWeaponStats.weapon: 'that' isn't a weapon a passive can name (write 'this': the weapon holding the element)")]
+    [InlineData("{ weapon: this, archetypes: [bow], changes: [ { stat: handling, change: \"+35\" } ] }", "modifyWeaponStats names 'archetypes' or 'weapon', not both")]
+    [InlineData("{ changes: [ { stat: handling, change: \"+35\" } ] }", "modifyWeaponStats needs 'archetypes' or 'weapon: this'")]
+    public void A_change_to_weapon_stats_names_its_archetypes_or_this_weapon(string effect, string expected)
+    {
+        var message = ParseInvalidCatalog(Glossary, ToElementsFile("weapons/perks.yaml", $$"""
+            elements:
+              - id: stats-for-all
+                name: Stats for All
+                kind: weaponPerk
+                affinity: neutral
+                passives:
+                  - effect: { modifyWeaponStats: {{effect}} }
+            """));
+
+        Assert.Contains(expected, message);
+    }
+
+    [Fact]
     public void Parses_a_weapon_mod_with_this_weapon_and_a_kill_of_fewer_than_N()
     {
         var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToElementsFile("mods/weapons.yaml", """
@@ -1358,10 +1466,14 @@ public sealed class RuleCatalogParsingTests
 
     [Theory]
     [InlineData("kill: { via: weapon, fewerThan: 1 }", "hunter/arc.yaml:7: kill.fewerThan: fewer than 1 kills never happens (use 2..20)")]
-    [InlineData("kill: { via: weapon, fewerThan: 3, atLeast: 2 }", "hunter/arc.yaml:7: kill cannot combine 'atLeast' and 'fewerThan'")]
+    [InlineData("kill: { via: weapon, fewerThan: 2, atLeast: 2 }", "hunter/arc.yaml:7: kill: fewer than 2 and at least 2 never happens (fewerThan must be above atLeast)")]
     [InlineData("kill: { via: weapon, fewerThan: 3, tier: champion }", "hunter/arc.yaml:7: kill cannot combine 'fewerThan' and 'tier'")]
-    [InlineData("damage: { via: weapon, fewerThan: 3 }", "hunter/arc.yaml:7: unknown key 'fewerThan' in damage")]
-    public void Fewer_than_is_a_count_of_2_to_20_on_a_kill_and_stands_alone(string trigger, string expected)
+    [InlineData("kill: { via: weapon, atLeast: 2, fewerThan: 3, within: 3s }", "hunter/arc.yaml:7: kill cannot combine 'fewerThan' and 'within'")]
+    [InlineData("damage: { via: weapon, fewerThan: 1 }", "hunter/arc.yaml:7: damage.fewerThan: fewer than 1 enemies hit never happens (use 2..20)")]
+    [InlineData("damage: { via: weapon, fewerThan: 3, atLeast: 2 }", "hunter/arc.yaml:7: damage cannot combine 'atLeast' and 'fewerThan'")]
+    [InlineData("damage: { via: weapon, fewerThan: 3, sustained: true }", "hunter/arc.yaml:7: damage cannot combine 'fewerThan' and 'sustained'")]
+    [InlineData("damage: { via: weapon, within: 3s }", "hunter/arc.yaml:7: damage: 'within' is the window of a hit count, so it needs 'atLeast'")]
+    public void Fewer_than_is_a_count_of_2_to_20_that_stands_alone_but_bounds_a_kill_count(string trigger, string expected)
     {
         var message = ParseInvalidCatalog(Glossary, ToElementsFile("hunter/arc.yaml", $$"""
             elements:
@@ -1832,6 +1944,20 @@ public sealed class RuleCatalogParsingTests
             catalog.Elements[ElementId.From("slice")].Rules.SelectMany(rule => rule.Then),
             catalog.Elements[ElementId.From("slice-enhanced")].Rules.SelectMany(rule => rule.Then));
         Assert.Equal(catalog.Elements[ElementId.From("slice")].Description, catalog.Elements[ElementId.From("slice-enhanced")].Description);
+    }
+
+    [Fact]
+    public void An_enhanced_trait_adds_its_own_rules_after_the_perks()
+    {
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToSliceFile(
+            "{ hash: 3422796781, rules: [ { on: { kill: { via: weapon } }, then: [ { spawn: orb-of-power } ], chance: true } ] }")]));
+
+        var perk = catalog.Elements[ElementId.From("slice")];
+        var enhanced = catalog.Elements[ElementId.From("slice-enhanced")];
+        Assert.Equal(2, perk.Rules.Length);
+        Assert.Equal(3, enhanced.Rules.Length);
+        Assert.Equal([new Outcome.Spawn(PickupId.From("orb-of-power"), 1)], enhanced.Rules[2].Then);
+        Assert.Equal(Likelihood.Chance, enhanced.Rules[2].Likelihood);
     }
 
     [Theory]

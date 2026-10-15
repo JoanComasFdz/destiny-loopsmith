@@ -186,7 +186,8 @@ shows its actions under the HUD — hit or kill, and how many enemies that one a
 last one that still fills something the build can gain, from the state the step starts in: a buff that stacks below
 its cap (Bolt Charge x10, Armor Charge at the build's cap) or an ability's energy below a full charge (the Ionic Traces
 that refill the grenade); each count says what fills up there and what needs it — an equipped rule that needs that
-many from that ability or weapon in one action ("1 enemy", "2 in 3 s · Arc Siphon", "3 · Spark of Discharge",
+many from that ability or weapon in one action ("1 enemy", "2 in 3 s · Arc Siphon", "3 · Spark of Discharge", "3 in 3 s ·
+One for All", "2 · Reaper's Tithe",
 "4 enemies · Armor Charge x4, Bolt Charge x10", "7 enemies · grenade full", "12 · Synergy"; rules of one count with
 different windows each say theirs, "2 · Spark of Amplitude in 4 s, Harmonic Siphon in 3 s"). A larger count a rule needs
 is offered too, and so is a step's own count (a loop file's `grenade:kill:15`). The sums only bound the choices: they are

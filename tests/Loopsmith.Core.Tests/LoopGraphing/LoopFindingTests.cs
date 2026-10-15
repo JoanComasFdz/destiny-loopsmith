@@ -109,7 +109,7 @@ public class LoopFindingTests
     {
         // One For All on the rifle; a grenade that refunds itself when it kills two (both inline examples).
         var oneForAll = Element("one-for-all", ElementKind.Fragment,
-            [On(new Trigger.DamageMultiple(new DamageSource.AnyWeapon(), TargetCount.From(3)), Buff("amplified"))]);
+            [On(new Trigger.DamageMultiple(new DamageSource.AnyWeapon(), TargetCount.From(3), Optional.None<Seconds>()), Buff("amplified"))]);
         var multikill = Element("multikill", ElementKind.Fragment,
             [On(new Trigger.KillMultiple(new DamageSource.AbilityOf(AbilityKind.Grenade), TargetCount.From(2), Optional.None<Seconds>()), Energy(AbilityKind.Grenade, new GameValue.Known(0.2m)))]);
         var strike = Element("strike", ElementKind.Fragment,

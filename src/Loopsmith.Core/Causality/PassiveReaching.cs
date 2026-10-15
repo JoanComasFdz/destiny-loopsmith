@@ -50,7 +50,7 @@ public static class PassiveReaching
             _ => new PassiveReach.Player(),
             _ => new PassiveReach.Player(),
             _ => new PassiveReach.Player(),
-            weapons => ToWeaponReach(ListWeaponsOf(build, weapons.Archetypes)),
+            weapons => ToWeaponReach(ListWeaponsReached(build, weapons.Weapons)),
             _ => new PassiveReach.Player(),
             _ => new PassiveReach.Player(),
             _ => new PassiveReach.Player());
@@ -58,6 +58,13 @@ public static class PassiveReaching
     /// <summary>Whether every weapon's archetype is known, so "no weapon is one of them" is a fact, not a guess.</summary>
     public static bool HasKnownArchetypes(this Build build) =>
         build.Weapons.All(weapon => weapon.Archetype.IsSome());
+
+    /// <summary>The build's weapons of the archetypes, or the one in the slot "this weapon" was bound to (unbound: none).</summary>
+    private static ImmutableArray<int> ListWeaponsReached(Build build, ChangedWeapons weapons) =>
+        weapons.Match(
+            ofArchetypes => ListWeaponsOf(build, ofArchetypes.Archetypes),
+            _ => ImmutableArray<int>.Empty,
+            inSlot => [.. build.Weapons.Select((weapon, index) => (weapon.Slot, Index: index)).Where(weapon => weapon.Slot == inSlot.Slot).Select(weapon => weapon.Index)]);
 
     private static ImmutableArray<int> ListWeaponsOf(Build build, ImmutableArray<string> archetypes) =>
     [

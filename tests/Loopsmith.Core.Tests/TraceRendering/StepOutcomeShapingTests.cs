@@ -138,7 +138,7 @@ public sealed class StepOutcomeShapingTests
     public void A_pickup_picked_up_says_which_pickup_and_other_events_none()
     {
         var spawner = Element("spawner", ElementKind.Fragment, [On(new Trigger.KillAny(Any), new Outcome.Spawn(Pickup("orb-of-power"), 1))]);
-        var healer = Element("healer", ElementKind.Fragment, [On(new Trigger.PickUp(Pickup("orb-of-power")), new Outcome.RestoreHealth(new GameValue.Unknown(), false))]);
+        var healer = Element("healer", ElementKind.Fragment, [On(new Trigger.PickUp(Pickup("orb-of-power")), new Outcome.RestoreHealth(new HealAmount.Share(new GameValue.Unknown()), false))]);
         var kill = new PlayerAction.FireWeapon(WeaponSlot.Energy, HitOutcome.Kill, TargetCount.One);
         var session = Play(ValidateBuild([spawner, healer]), kill, new PlayerAction.CollectPickups(Pickup("orb-of-power")));
 
