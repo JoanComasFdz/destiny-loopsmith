@@ -19,12 +19,15 @@ with `tools/web/prepare-pages.sh`, serves it with `python3 -m http.server`, runs
 and video on, and writes to `out/` (`--out <dir>`; gitignored):
 - `out/<domain folder>/<gif name>.gif`: each scenario from Home on (the manifest's startup screen trimmed off), 8 fps,
   800 px wide; a failing scenario gets its GIF too;
-- `out/scenarios.json`: one entry per scenario: domain folder, class, title, GIF path, startup time (page open → Home
-  shown) and whether it passed.
+- `out/scenarios.json`: one entry per scenario: domain folder, class, method, title, GIF path, startup time (page open
+  → Home shown) and whether it passed.
 
 It prints each scenario's startup time and every request that left for bungie.net, and exits non-zero when a scenario
 failed. `--changed-since <ref>` picks the scenario classes added or changed since the branch left `<ref>` (working tree
 included), plus those that name a changed fixture file.
+
+On a pull request, CI records them the same way on every push and posts the GIFs on it (`.github/workflows/e2e-videos.yml`;
+[docs/hosting.md](../../docs/hosting.md#e2e-videos-on-pull-requests)): a failing scenario is marked there, never red.
 
 Against a site you serve yourself: `E2E_URL=http://127.0.0.1:8000/destiny-loopsmith/ dotnet test tests/Loopsmith.Web.E2E`
 (add `E2E_VIDEO_DIR=<dir>` to keep the videos).
