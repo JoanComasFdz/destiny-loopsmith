@@ -1,0 +1,233 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>loopsmith-task, step by step</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a vertical flow of the skill's sections down a rail; forks show what runs side by side. */
+:root{
+  --bg:#f6f7f9; --surface:#ffffff; --fg:#1b2129; --muted:#5b6573; --line:#d5dae1;
+  --main:#1f5f8b; --main-soft:#e3eef6;
+  --read:#2e7d6b; --read-soft:#e1f2ed;
+  --write:#7a4bb3; --write-soft:#efe7f8;
+  --bg-cmd:#6b7280; --bg-cmd-soft:#eef0f3;
+  --gate:#b26b00; --gate-soft:#fbefd9;
+  --serif:"Source Serif 4", Georgia, serif;
+  --sans:"Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#12161b; --surface:#1a2027; --fg:#e4e8ee; --muted:#9aa4b1; --line:#2d3540;
+  --main:#6fb2e0; --main-soft:#1b3142;
+  --read:#5cc3a9; --read-soft:#173229;
+  --write:#b893e6; --write-soft:#2b2140;
+  --bg-cmd:#a3aab5; --bg-cmd-soft:#242a32;
+  --gate:#f0a845; --gate-soft:#3a2a12; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12161b; --surface:#1a2027; --fg:#e4e8ee; --muted:#9aa4b1; --line:#2d3540;
+  --main:#6fb2e0; --main-soft:#1b3142;
+  --read:#5cc3a9; --read-soft:#173229;
+  --write:#b893e6; --write-soft:#2b2140;
+  --bg-cmd:#a3aab5; --bg-cmd-soft:#242a32;
+  --gate:#f0a845; --gate-soft:#3a2a12; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font:16px/1.55 var(--sans)}
+.wrap{max-width:1040px;margin:0 auto;padding-block:32px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--serif);text-wrap:balance;line-height:1.2}
+h1{font-size:2rem;margin:0 0 8px}
+h2{font-size:1.4rem;margin:48px 0 12px}
+h3{font-size:1.05rem;margin:0 0 6px;font-family:var(--sans);font-weight:700}
+p{margin:0 0 12px;max-width:68ch}
+.lede{color:var(--muted);font-size:1.05rem}
+code{font-family:var(--mono);font-size:.85em;background:var(--bg-cmd-soft);padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+.eyebrow{font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+
+/* legend */
+.legend{display:flex;flex-wrap:wrap;gap:8px 16px;margin:20px 0 8px;font-size:.88rem}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:14px;height:14px;border-radius:3px;border:2px solid;flex:none}
+.sw.main{background:var(--main-soft);border-color:var(--main)}
+.sw.read{background:var(--read-soft);border-color:var(--read)}
+.sw.write{background:var(--write-soft);border-color:var(--write)}
+.sw.cmd{background:var(--bg-cmd-soft);border-color:var(--bg-cmd);border-style:dashed}
+.sw.gate{background:var(--gate-soft);border-color:var(--gate)}
+
+/* flow */
+.flow{margin-top:16px;position:relative}
+.stage{display:grid;grid-template-columns:150px minmax(0,1fr);gap:16px;position:relative;padding-bottom:22px}
+.stage::before{content:"";position:absolute;left:150px;margin-left:7px;top:22px;bottom:0;border-left:2px solid var(--line)}
+.stage:last-child::before{display:none}
+.tag{font-family:var(--mono);font-size:.78rem;color:var(--muted);padding-top:8px;text-align:right}
+.tag b{display:block;font-family:var(--sans);font-size:.95rem;color:var(--fg);font-weight:700}
+.body{display:flex;flex-direction:column;gap:8px;min-width:0;padding-left:18px;position:relative}
+.body::before{content:"";position:absolute;left:-1px;top:12px;width:12px;height:12px;border-radius:50%;background:var(--surface);border:2px solid var(--main)}
+.stage.gate .body::before{border-color:var(--gate)}
+.node{border:2px solid;border-radius:6px;padding:7px 11px;font-size:.92rem;background:var(--surface)}
+.node small{display:block;color:var(--muted);font-size:.8rem;line-height:1.4}
+.node.main{border-color:var(--main);background:var(--main-soft)}
+.node.read{border-color:var(--read);background:var(--read-soft)}
+.node.write{border-color:var(--write);background:var(--write-soft)}
+.node.cmd{border-color:var(--bg-cmd);border-style:dashed;background:var(--bg-cmd-soft)}
+.node.gate{border-color:var(--gate);background:var(--gate-soft)}
+.fork{border:1px dashed var(--line);border-radius:8px;padding:10px;display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;position:relative;margin-top:14px}
+.fork::before{content:attr(data-label);position:absolute;top:-10px;left:10px;background:var(--bg);padding:0 6px;font-size:.72rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.new{font-family:var(--mono);font-size:.68rem;font-weight:600;color:var(--write);border:1px solid var(--write);border-radius:3px;padding:0 4px;margin-left:6px;vertical-align:1px;white-space:nowrap}
+.seq{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch}
+.seq .node{flex:1 1 200px}
+
+/* tables */
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:.92rem}
+th,td{text-align:left;vertical-align:top;padding:10px 12px;border-bottom:1px solid var(--line)}
+th{font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;background:var(--bg)}
+tr:last-child td{border-bottom:0}
+.pill{display:inline-block;font-size:.75rem;font-weight:600;padding:1px 8px;border-radius:99px;border:1px solid;white-space:nowrap}
+.pill.read{color:var(--read);border-color:var(--read)}
+.pill.write{color:var(--write);border-color:var(--write)}
+.pill.cmd{color:var(--bg-cmd);border-color:var(--bg-cmd)}
+.pill.main{color:var(--main);border-color:var(--main)}
+
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-top:8px}
+.rule{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px}
+.rule p{font-size:.93rem;margin:0;color:var(--fg)}
+.callout{border-left:4px solid var(--main);background:var(--surface);padding:12px 16px;border-radius:0 8px 8px 0;margin:12px 0}
+pre{font-family:var(--mono);font-size:.82rem;line-height:1.5;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px;overflow-x:auto;white-space:pre-wrap;overflow-wrap:anywhere}
+.copyrow{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:20px}
+button{font:600 .85rem var(--sans);color:var(--main);background:var(--surface);border:1px solid var(--main);border-radius:6px;padding:5px 12px;cursor:pointer}
+button:focus-visible{outline:3px solid var(--main);outline-offset:2px}
+
+@media (max-width:640px){
+  .stage{grid-template-columns:1fr;gap:6px}
+  .stage::before{left:0;margin-left:7px;top:52px}
+  .tag{text-align:left;padding-left:18px}
+  h1{font-size:1.6rem}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+.why{font-size:.88rem;color:var(--muted);border-left:3px solid var(--line);padding:2px 0 2px 10px;margin-top:2px;max-width:72ch}
+.why b{color:var(--fg);font-weight:600}
+.principles{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-top:8px}
+.principle{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px}
+.principle p{font-size:.93rem;margin:0}
+</style>
+
+<div class="wrap">
+  <div class="eyebrow">.claude/skills/loopsmith-task</div>
+  <h1>loopsmith-task, step by step</h1>
+  <p class="lede">How a task goes from your words to a merged pull request, which steps run side by side, and why each one is done by the session, by a subagent or in the background.</p>
+
+  <div class="legend" aria-label="Legend">
+    <span><i class="sw main"></i>The session</span>
+    <span><i class="sw read"></i>Read-only subagent</span>
+    <span><i class="sw write"></i>Writing subagent (own worktree)</span>
+    <span><i class="sw cmd"></i>Background command</span>
+    <span><i class="sw gate"></i>Waits for you</span>
+  </div>
+
+  <div class="flow" role="list">
+    <div class="stage" role="listitem">
+      <div class="tag">§1<b>Understand</b></div>
+      <div class="body">
+        <div class="node main">Read your text, open every file you pasted, read CLAUDE.md's Agent workflow</div>
+        <div class="node main">Search the open PRs and the code, rules and builds the request names<small>For a narrow request the session does this itself.</small></div>
+        <div class="fork" data-label="for a wide request: in parallel">
+          <div class="node read">Explore: open PRs<small>Does one already cover this? Which ones touch the same files?</small></div>
+          <div class="node read">Explore: where it lives<small>The files, rule ids, builds and screens the request names, and whether they exist.</small></div>
+          <div class="node cmd">Compendium download<small>Only when rules are involved, about a minute.</small></div>
+        </div>
+        <div class="why"><b>Why in parallel:</b> the searches and the download don't depend on each other, and each answers its own question. <b>Why subagents:</b> a wide sweep reads dozens of files the session never needs again; a subagent reads them and hands back only the answer, so the session's context stays free for the conversation with you. <b>Why your files stay in the session:</b> your screenshots and files exist only on its disk.</div>
+      </div>
+    </div>
+    <div class="stage" role="listitem">
+      <div class="tag">§2<b>One task</b></div>
+      <div class="body">
+        <div class="node main">Pick one task; give the others as ready-to-paste lines</div>
+        <div class="why"><b>Why the session:</b> deciding what you asked for first is a judgement about your words, and it takes seconds.</div>
+      </div>
+    </div>
+    <div class="stage gate" role="listitem">
+      <div class="tag">§3<b>Round 1</b></div>
+      <div class="body">
+        <div class="seq">
+          <div class="node main">What I understood, proposed criteria, and questions only if needed<small>A question only where a point has two readings that lead to different changes. None is fine.</small></div>
+          <div class="node gate">You answer</div>
+        </div>
+        <div class="why"><b>Why the session:</b> it's a conversation, and a subagent can't ask you anything. <b>Why questions are optional:</b> a question that changes nothing costs you a round for no gain.</div>
+      </div>
+    </div>
+    <div class="stage gate" role="listitem">
+      <div class="tag">§4<b>Round 2: spec</b></div>
+      <div class="body">
+        <div class="seq">
+          <div class="node main">The spec as the PR will open, including <b>How the work splits</b><small>Which parts go to which subagent, in which folders, or "one session, no split".</small></div>
+          <div class="node gate">You say go, and agree the split</div>
+        </div>
+        <div class="why"><b>Why the split is in the spec:</b> you see and agree it before any tokens are spent on it, and the PR keeps a record of how the work was done.</div>
+      </div>
+    </div>
+    <div class="stage" role="listitem">
+      <div class="tag">§5<b>Work</b></div>
+      <div class="body">
+        <div class="node main">Branch <code>claude/&lt;slug&gt;</code>; when splitting, write the contract first<small>Domain types or a short doc each subagent builds against.</small></div>
+        <div class="fork" data-label="as the spec splits it, in parallel">
+          <div class="node write">rule-author × N<small>One per build element. Each writes only its own <code>rules/…</code> files.</small></div>
+          <div class="node write">build-extractor<small>A new or changed build note → <code>build.yaml</code>, <code>note-map.md</code>.</small></div>
+          <div class="node write">Other writing subagent<small>Only for a part the spec's "How the work splits" names.</small></div>
+        </div>
+        <div class="node main">Merge the worktrees, then everything shared, once<small><code>tools/manifest/</code>, <code>discrepancies.md</code>, docs, CLAUDE.md. Then <code>dotnet build Loopsmith.slnx</code> + <code>dotnet test</code>.</small></div>
+        <div class="why"><b>Why in parallel:</b> build elements are independent by design: each rule file describes one element, with its own provenance. Several rule-authors can run side by side. <b>Why each prompt names its binding rules:</b> a subagent starts without the conversation, so it only follows the rules it is told. <b>Why worktrees and disjoint folders:</b> two agents never write the same file, so the merge is mechanical. <b>Why the contract first:</b> without it, two writing subagents drift apart and the merge costs more than the split saved. <b>Why the shared files wait:</b> <code>rules/manifest.yaml</code> is generated from every rule, and <code>discrepancies.md</code> collects every agent's findings, so each is written once, after all of them.</div>
+      </div>
+    </div>
+    <div class="stage" role="listitem">
+      <div class="tag">§5<b>Check</b></div>
+      <div class="body">
+        <div class="fork" data-label="in parallel, before the first push">
+          <div class="node read">conventions-reviewer<small>The diff against CONVENTIONS.md.</small></div>
+          <div class="node read">Criteria check<small>Each acceptance criterion against the diff.</small></div>
+          <div class="node read">Browser check<small>Only for a web change: publishes the app, checks it at desktop and 390 px and the console.</small></div>
+          <div class="node cmd"><code>tools/e2e/record.sh</code> / <code>dotnet test</code><small>Long runs in the background meanwhile.</small></div>
+        </div>
+        <div class="node main">Fix what they found</div>
+        <div class="node main">Rebase onto <code>origin/main</code>, build + test again, then the first push<small>The branch stays local until now. Only before the first push: after it, a rebase would need a force-push.</small></div>
+        <div class="why"><b>Why the rebase:</b> the PR then opens up to date with <code>main</code>, so it is less likely to need <b>Update branch</b>; anything merged while it waits for review can still put it behind. <b>Why subagents:</b> a fresh reader sees what the author overlooks, because it doesn't share the session's assumptions. <b>Why in parallel:</b> the checkers only read, so they can't get in each other's way. <b>Why before the push:</b> every push runs CI, and one that changes e2e scenarios records them on the PR; a fix found now saves a round on the PR.</div>
+      </div>
+    </div>
+    <div class="stage" role="listitem">
+      <div class="tag">§5<b>PR</b></div>
+      <div class="body">
+        <div class="node main">Open the PR, rename the session, subscribe<small>Messages end with the PR and preview links; a docs-only PR has no preview, so only the PR link.</small></div>
+        <div class="why"><b>Why the session:</b> one writer to GitHub, so nothing is posted twice and every reply comes from the session that knows the whole history.</div>
+      </div>
+    </div>
+    <div class="stage gate" role="listitem">
+      <div class="tag">Watch<b>Until merged</b></div>
+      <div class="body">
+        <div class="seq">
+          <div class="node gate">Your review, comment or message</div>
+          <div class="node main">A CI result, a conflict, a check-in about every 4 h<small>On a conflict: merge <code>origin/main</code>, build, test, push.</small></div>
+          <div class="node read">CI diagnoser<small>Only on a red check with a long log.</small></div>
+          <div class="node main">Fix, reply on the thread, push<small>Never resolve the thread: you resolve it.</small></div>
+        </div>
+        <div class="why"><b>Why a diagnoser:</b> a long CI log would fill the session's context; a subagent reads it and names the cause. <b>Why pushes stay sequential:</b> each push runs CI and may record a new e2e version (V1, V2…), and the PR's history should read in order. <b>Why you resolve threads:</b> it's your sign-off before merging.</div>
+      </div>
+    </div>
+    <div class="stage" role="listitem">
+      <div class="tag">§6<b>Follow-ups</b></div>
+      <div class="body">
+        <div class="node main">Each one launched as its own session when you say so</div>
+        <div class="why"><b>Why separate sessions, not subagents:</b> a follow-up needs its own spec agreed with you and its own PR. It's a different task, not a part of this one.</div>
+      </div>
+    </div>
+  </div>
+
+  <h2>Why it's built this way</h2>
+  <div class="principles">
+    <div class="principle"><h3>The session is the only writer</h3><p>It alone talks to you, commits, pushes and posts on GitHub. Whatever a subagent does comes back to the session first, so there is one history, one voice on the PR and nothing is pushed twice.</p></div>
+    <div class="principle"><h3>Context is the scarce thing</h3><p>The session carries your words, the spec and every round of review. Subagents do the reading-heavy work (wide searches, long logs, second looks) and return only conclusions, so that context stays sharp.</p></div>
+    <div class="principle"><h3>Parallel only where work is independent</h3><p>Searches, checks and separate build elements don't depend on each other, so running them side by side saves time and risks nothing. The rounds with you, the pushes and the shared files depend on what came before, so they stay in order.</p></div>
+    <div class="principle"><h3>Split only what's worth splitting</h3><p>Each subagent starts without the conversation and must be told the rules. That briefing costs time and tokens, so a one-file change stays in the session, and so does anything the spec didn't split.</p></div>
+    <div class="principle"><h3>A fresh reader catches more</h3><p>The author of a change reads it with its own assumptions. A subagent that only knows the spec and the diff checks what is actually there.</p></div>
+    <div class="principle"><h3>The merged result is what counts</h3><p>Each worktree may pass on its own, but only the merged branch ships. The session runs the full build and test suite on it before any push.</p></div>
+  </div>
+</div>
+
+</body></html>

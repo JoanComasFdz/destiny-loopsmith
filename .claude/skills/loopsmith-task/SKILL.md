@@ -10,6 +10,9 @@ The owner writes what they want however it comes out, in any language, and may p
 and files. You agree with them on what to build and how to check it, then you build it: in this
 session, on one branch and one pull request (CLAUDE.md, "Agent workflow").
 
+`step-by-step.html` next to this file draws the flow: which steps run side by side, and why each one
+is done by the session, by a subagent or in the background. Keep it in step with this file.
+
 - **Language.** Whatever language the owner writes in, reply in English and write everything in
   English, like the rest of the repository. Don't quote their original words in the PR: say it with
   the app's own names for its screens and parts (the names the UI and the code use: "perk picker",
@@ -38,8 +41,9 @@ A change that needs another one first waits until that one is merged.
 
 In one message:
 - What you understood, in a few lines.
-- Your questions: one short question for each point with two readings that would lead to different
-  changes. Smaller gaps become `Open question:` lines in the notes.
+- Your questions, if any. They aren't mandatory: ask one short question only where a point has two
+  readings that would lead to different changes. When nothing is ambiguous, say so and ask none.
+  Smaller gaps become `Open question:` lines in the notes.
 - **Proposed acceptance criteria**, numbered: what someone does and sees, one check per line. Ask the
   owner to agree, or to say what to add, drop or change.
 - Anything you'd suggest adding, as a suggestion, not as a criterion.
@@ -70,7 +74,7 @@ What this PR must not touch.
 
 ## Notes and pointers
 
-Files, rules, builds, related PRs, open questions.
+Files, rules, builds, related PRs, how the work splits, open questions.
 
 ## Files given in the session
 
@@ -81,7 +85,8 @@ Files, rules, builds, related PRs, open questions.
   (where, and on what device or browser if they said).
 - **Acceptance criteria:**
   - Each one is what someone does and sees: on the preview at `…/pr-preview/pr-<n>/` (which
-    screen, what you tap, what you see), in a file, or in a test.
+    screen, what you tap, what you see), in a file, or in a test. A docs-only change (CLAUDE.md,
+    "Agent workflow", step 4) has no preview: its criteria are checked in a file.
   - A web change is checked on desktop and at phone width (390 px).
   - Say how the app behaves, not how the code does it.
   - No filler such as "code is clean" or "tests pass" (CI checks those).
@@ -97,6 +102,9 @@ Files, rules, builds, related PRs, open questions.
     the bug first.
   - Rule work names its source. When it needs the Compendium snapshot, the session downloads it
     (`tools/compendium/README.md`, "In a cloud session"); ask for the zip only if that fails.
+  - How the work splits: "One session, no split", or each part with its subagent and folders
+    (e.g. "rule-author × 3: `rules/hunter/arc.yaml`, `rules/exotics/armor.yaml`, `rules/weapons/`;
+    the session: manifest, docs"). Agreed with the owner like the rest of the spec (§5, "Subagents").
 - **Files given in the session:** each file's name (Naming) and what it shows, in one line. They stay
   in this session and aren't committed; the list keeps a record of what the work was based on.
   Write `None.` if there were none.
@@ -115,6 +123,20 @@ work)"), even when this session was handed a generated branch name such as
 `claude/zealous-euler-qu8uiv`. Don't push to the generated one; every commit, push and the pull
 request use the slug branch.
 
+Commit as you go, but keep the branch local until the work is ready for review (CLAUDE.md, "Agent
+workflow", steps 3–4). Right before its first push:
+1. `git fetch origin main` and `git rebase origin/main`. Resolve any conflict; when both sides
+   changed the same logic, ask in the session.
+2. Run `dotnet build Loopsmith.slnx` and `dotnet test` again (and the browser check again for a
+   web change, if the rebase brought in web changes).
+3. Push and open the pull request.
+
+The rebase is only for the first push: once the branch is on GitHub, rebasing it would need a
+force-push, which CLAUDE.md forbids. After that, a conflict is fixed by merging `origin/main` into
+the branch, and a branch that is only behind waits for the owner's **Update branch** (CLAUDE.md,
+step 6). The rebase only makes a PR less likely to open behind `main`: anything merged while it
+waits for review still puts it behind.
+
 Once the pull request is open, rename this session so it shows the PR (CLAUDE.md, "Agent workflow",
 step 4):
 - Read the current title with the claude-code-remote `get_session` tool, with no `session_id`.
@@ -128,10 +150,35 @@ with both links as bullet points, with the real PR number:
 - PR: https://github.com/JoanComasFdz/destiny-loopsmith/pull/59
 - Preview: https://joancomasfdz.github.io/destiny-loopsmith/pr-preview/pr-59/
 
+A docs-only PR (every changed path a Markdown file or under `docs/`, `.github/` or `.claude/`;
+CLAUDE.md, "Agent workflow", step 4) gets no preview, so its messages end with the PR bullet only,
+and its description has no "how to check it on the preview".
+
 The owner's files never go into the repository by themselves. When the work needs one in the
 repository, put it in its proper place, for example a loop file as a test case under `builds/` or
 `tests/`. Before it goes in, check it for personal data and secrets, and say what you found. The same
 goes for log lines you quote in the PR.
+
+### Subagents
+
+The session is the only one that talks to the owner, commits, pushes and writes on GitHub. Subagents
+read, author in their own worktree, or check, and report back to it.
+- **Understand (§1):** for a wide request, run Explore subagents in parallel (open pull requests that
+  overlap; where the request lives in the code, rules and builds). When rules are involved, start the
+  Compendium download in the background at the same time.
+- **Work:** split only as the spec's "How the work splits" says. Write the contract first (CLAUDE.md,
+  "Parallel subagents"), give each writing subagent its own worktree and folders, and name its
+  binding rules in its prompt. One `rule-author` per build element; `build-extractor` for a build
+  note. After the merge, the session writes what everyone shares (`tools/manifest/`,
+  `discrepancies.md`, docs, CLAUDE.md) and runs `dotnet build Loopsmith.slnx` and `dotnet test`.
+- **Check, before the first push, in parallel:** `conventions-reviewer` on the diff; a read-only
+  subagent that checks each acceptance criterion against the diff; for a web change, one that
+  publishes the app and checks it in a browser at desktop and 390 px (CLAUDE.md, "Verify web changes
+  in a browser"). Long commands (`tools/e2e/record.sh`, `dotnet test`) run in the background
+  meanwhile.
+- **Watching:** on a red check with a long log, a read-only subagent may diagnose it; the session
+  fixes and pushes, one push at a time.
+- Don't split a one-file change, either round with the owner, or anything the spec didn't split.
 
 ## 6. Follow-ups: launch each one in its own session
 

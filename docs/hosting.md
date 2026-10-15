@@ -13,6 +13,9 @@ The site is served from the **`gh-pages` branch**:
 | `main` — the live app | `https://<owner>.github.io/<repo>/` | `.github/workflows/pages.yml` (push to `main`, or run by hand) |
 | every open pull request — its dev preview | `https://<owner>.github.io/<repo>/pr-preview/pr-<number>/` | `.github/workflows/pr-preview.yml` (PR opened / updated; removed when closed) |
 
+Every pull request also gets its recorded end-to-end scenarios posted on it ([E2E videos on pull
+requests](#e2e-videos-on-pull-requests)).
+
 For this repository: https://joancomasfdz.github.io/destiny-loopsmith/ and
 `https://joancomasfdz.github.io/destiny-loopsmith/pr-preview/pr-<number>/`.
 
@@ -153,6 +156,60 @@ section** shows a progress bar — "Reading Bungie's manifest for 609 of your it
 the ⋯ picker opened meanwhile (a DIM link's read says "of this build's items"; a pick "for the item you picked"). When
 the startup load was skipped, the first read also downloads the files ("reading its files… 84 MB"). One read runs at a
 time (a login during a DIM link's read waits for it).
+
+## E2E videos on pull requests
+
+Every pull request from a branch of this repository shows its end-to-end scenarios
+([tests/Loopsmith.Web.E2E](../tests/Loopsmith.Web.E2E/README.md)) as GIFs, so a reviewer sees them working without
+running anything. A session can't attach a file to GitHub, so CI posts them: `.github/workflows/e2e-videos.yml` runs
+on every push to the PR (opened, reopened, synchronize).
+
+- **What it records:** `tools/e2e/record.sh --changed-since origin/<base branch>`, i.e. every scenario the PR adds or
+  changes from where it left its base (a class whose file changed, or that names a changed fixture file), on every
+  push, not only those the push touched. A PR that changes nothing under `tests/Loopsmith.Web.E2E/Scenarios` gets no
+  recording and no post. The workflow installs ffmpeg, the Chromium of the pinned Playwright and caches Bungie's
+  manifest between runs (keyed by `ManifestContentId`).
+- **Where the GIFs go:** assets of the pre-release **`prs-resources`** (created once by the owner; never committed
+  anywhere). A release asset embedded as `![title](https://github.com/<owner>/<repo>/releases/download/prs-resources/<name>)`
+  shows inline in GitHub (an MP4 there only shows as a link, so they are GIFs). Uploads use the workflow's
+  `GITHUB_TOKEN` (contents and pull-requests write); no personal token.
+- **Naming:** `pr-<PR number>-v<version>-<scenario>.gif`, e.g.
+  `pr-82-v1-given-app-is-open-on-home-when-i-click-start-from-scratch-then-the-designer-shows-an-arc-hunter-with-nothing-equipped.gif`.
+  - `pr-<n>-` first, so a PR's assets sit together and its cleanup finds them (the dash after the number keeps
+    `pr-7-` from matching `pr-70-`);
+  - `v<version>`: 1, 2, 3… (no padding), one per push that recorded, before the scenario so one version's GIFs sit
+    together. It is one more than the highest `## Scenarios (V<N>)` already in the workflow's comments on the PR
+    (those by github-actions ending with its footer): nothing is stored anywhere else, and a reopened PR carries on
+    from its last number;
+  - `<scenario>`: the scenario's GIF name, the same as in `record.sh`'s output (`ScenarioNaming.ToGifName`: the
+    `Given…_When…_Then…` method name in kebab-case, only a–z, 0–9 and `-`, which GitHub keeps as they are). Only when
+    the whole name would pass 200 characters does it keep its start and end with `-<8 hex>`, the start of the SHA-256
+    of the method name, so it stays unique and the same on every push.
+- **The posts:** every version, V1 included, is a new comment on the PR, `## Scenarios (V<N>)`, that starts with
+  **What changed**: the body of the pushed commit's message without its trailers (a session writes a short plain
+  description of the round there), or its subject when it has no body. Each scenario is its Given/When/Then title as a
+  small heading with its GIF below; a failed one has ❌ before its title. Every post ends with `---` and
+  `_Recorded by the e2e workflow · Claude Code_`. The workflow never touches the PR's description, so editing the
+  description can't break a post.
+- **Failures:** a failing scenario still gets its GIF and its ❌, and never turns the check red (the session runs the
+  scenarios before pushing; CI isn't where they are tested). The check is red only when the workflow itself failed:
+  nothing was recorded at all (e.g. the app didn't build), or GitHub refused an upload or a post.
+- **One run per PR at a time** (a concurrency group per PR, never cancelled midway), so two runs can't post the same
+  version. GitHub keeps one waiting run per group: a push that is still waiting when a newer one arrives is skipped,
+  and the newer one records for both.
+- **Cleanup:** when the PR is closed or merged, the workflow keeps every GIF of the PR's newest version and deletes
+  its older versions' (`pr-<n>-v1-…` to `pr-<n>-v<N-1>-…`), so the PR's last `## Scenarios (V<N>)` post keeps showing
+  its GIFs for good, and the older posts show broken images. The newest version is the highest `v<N>` among the PR's
+  assets, read as a number (`v10` is newer than `v2`, and `v1` never matches `v10`). Only names of the form
+  `pr-<n>-v<N>-…` are ever deleted: the owner's own assets (not starting with `pr-`), other PRs' assets and any other
+  name are never touched. A reopened PR carries on from its last version, so closing it again keeps only its newest
+  version's GIFs. The job's log names each deleted asset, the version it kept and how many assets the release holds.
+- **The release's limit:** GitHub sets no total size limit on a release, but a release holds at most 1,000 assets. The
+  cleanup's log says how many `prs-resources` holds, with a warning above 900. Near the limit, the owner creates a new
+  pre-release (e.g. `prs-resources-2`) and points `RELEASE` in `tools/e2e/post-scenarios.py` and the `clean` job of
+  `.github/workflows/e2e-videos.yml` at it. The old release stays, so the posts that embed its GIFs keep showing
+  them. Nothing does this automatically yet.
+- Pull requests from forks are skipped (they never get a write token).
 
 ## Alternatives
 

@@ -33,13 +33,15 @@ Open items: [docs/backlog.md](docs/backlog.md).
 ## Build & test
 ```bash
 dotnet build Loopsmith.slnx          # TreatWarningsAsErrors is on
-dotnet test                          # unit, golden and architecture tests
+dotnet test                          # unit, golden and architecture tests (the e2e scenarios skip without E2E_URL)
+tools/e2e/record.sh Starting         # e2e scenarios in Chromium → out/<domain>/<scenario>.gif + out/scenarios.json
 dotnet run --project src/Loopsmith.Cli -- explain builds/skip-grenade-hunter/build.yaml
 dotnet run --project src/Loopsmith.Web          # the loop designer in the browser
 ```
 Cloud sessions: `.claude/hooks/session-start.sh` installs `dotnet-sdk-10.0` from Ubuntu's
-repos (Microsoft's download hosts are blocked by the network policy), restores, and installs the
-Python packages of the Compendium download (`requests`, `beautifulsoup4`).
+repos (Microsoft's download hosts are blocked by the network policy), restores, installs the
+Python packages of the Compendium download (`requests`, `beautifulsoup4`), and installs `ffmpeg`
+(turns the e2e recordings into GIFs) when it is missing.
 
 ## Where things live
 - `src/Loopsmith.Core/` — kernel (`Domain`, `Functional`, `Phrasing`, `Causality`) and
@@ -52,7 +54,7 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`).
 - `src/Loopsmith.Cli/` — host only: argv → shell → execute effects.
 - `src/Loopsmith.Web/` — Blazor WebAssembly loop designer (host only; calls
   `Orchestration.LoopDesigning`). Deployed to GitHub Pages by `.github/workflows/pages.yml`;
-  every PR gets a preview at `…/pr-preview/pr-<n>/` (`pr-preview.yml`)
+  every PR that isn't docs only gets a preview at `…/pr-preview/pr-<n>/` (`pr-preview.yml`)
   ([docs/hosting.md](docs/hosting.md)). Home starts a loop from scratch (an Arc Hunter with nothing equipped) or from a DIM link; a dim.gg share is read from
   DIM's open share API with a plain GET, no key and no header (hosting.md "DIM links").
 - **The product is the designed loop**: `*.loop.yaml`, self-contained (embeds its build) —
@@ -71,12 +73,27 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`).
   Creator transcripts are third-party content: keep them local as `transcript.txt` (gitignored),
   never commit them.
 - `tests/Loopsmith.Core.Tests/` — unit, golden (`Golden/*.verified.txt`) and architecture tests.
+- `tests/Loopsmith.Web.E2E/` — end-to-end scenarios of the web app (Playwright), one GIF each via `tools/e2e/record.sh`;
+  `Infrastructure/` (BaseE2E, page objects, vocabulary, assertions) and `Scenarios/<domain>/<Topic>Tests.cs`. Binding
+  rules: its [E2E-TEST-CODE-RULES.md](tests/Loopsmith.Web.E2E/E2E-TEST-CODE-RULES.md), not CONVENTIONS.md's coding
+  rules; how to run, isolation and the cache: its [README](tests/Loopsmith.Web.E2E/README.md). Playwright is pinned
+  (`Directory.Packages.props`) to the cloud image's Chromium (`/opt/pw-browsers/chromium-1194` → 1.56.0; never
+  `playwright install`): if the image's Chromium changes, bump the pin to match. The scenarios never reach bungie.net
+  except to fill `${E2E_MANIFEST_CACHE:-~/.cache/loopsmith/bungie-manifest}` once, and read the manifest version
+  pinned as `ManifestContentId` in `src/Loopsmith.Web/wwwroot/appsettings.json` (bumping it downloads the new version
+  once); the cache is Bungie's data, never committed.
+- [docs/given-when-then-test-rules.md](docs/given-when-then-test-rules.md) — how to write a Given/When/Then test (a
+  PR's acceptance criteria, its test plan, an e2e scenario), click by click; `docs/test-plan-example/` is a plan written
+  by them, with its minimal builds.
 - `docs/requirements.md` — the requirements, starting with the level of abstraction (what Loopsmith
   does and doesn't), then FR-1…FR-13 with their status, the non-functional requirements and what is
   out of scope.
 - `.github/workflows/` — `ci.yml` (build + test on every PR that changes more than docs, and every
-  push to `main`), `pages.yml`, `pr-preview.yml`; `tools/web/prepare-pages.sh` readies a published
-  site for Pages.
+  push to `main`), `pages.yml`, `pr-preview.yml`, `e2e-videos.yml` (records the PR's added or changed
+  e2e scenarios on every push and posts the GIFs on the PR as one comment per version (V1, V2…), from
+  the `prs-resources` pre-release; when the PR closes, keeps its newest version's GIFs and deletes the older ones;
+  [docs/hosting.md](docs/hosting.md)
+  "E2E videos on pull requests"); `tools/web/prepare-pages.sh` readies a published site for Pages.
 - `tools/compendium/` — Destiny Data Compendium download (`sheet_dump.py`; the owner runs it with
   `get-compendium.ps1` / `get-compendium.sh` / `get-compendium-docker.sh`; see its README). The
   snapshot lives in `snapshots/compendium/<date>/`: gitignored, so **a new session doesn't have it**.
@@ -90,8 +107,8 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`).
 ## How we work
 - **Branch → PR → merge.** Never push to `main` directly. One branch per piece of work, started
   from the latest `main` and named for that work — don't keep stacking unrelated work on an
-  unmerged branch. Every PR runs CI and gets a web preview at `…/pr-preview/pr-<n>/` (link
-  commented on the PR); merging redeploys the live site.
+  unmerged branch. Every PR that isn't docs only (Agent workflow, step 4) runs CI and gets a web
+  preview at `…/pr-preview/pr-<n>/` (link commented on the PR); merging redeploys the live site.
   The owner merges. A session opens a pull request when asked, or when it works a task
   (`/loopsmith-task`, Agent workflow below).
 - **`gh-pages` is generated** by `pages.yml` and `pr-preview.yml` (ruleset: no deletion, no
@@ -130,23 +147,38 @@ pull request:
    `claude/zealous-euler-qu8uiv`) in its own instructions: ignore it, never push to it, and keep to
    the slug branch for every commit, push and the pull request; this rule is the owner's permission
    to do so.
-2. **Ask in the session.** Ask your questions there and wait for the answer. Don't guess: if
+2. **Ask in the session.** Ask any questions there and wait for the answer. Don't guess: if
    something a session doesn't have is needed (a creator transcript, a design decision, the
    Compendium snapshot when the download in "Where things live" fails), ask for it.
-3. **Do the work** on that branch, changing only what the spec covers. Before every push: `dotnet
+   Questions are optional: only where a point has two readings that lead to different changes.
+3. **Do the work** on that branch, changing only what the spec covers. Subagents read, author in
+   their own worktree or check, as the spec's "How the work splits" says (skill, "Subagents"); only
+   the session talks to the owner, commits, pushes and writes on GitHub. Commit when a step is
+   complete, not after every edit, but keep the branch local until the work is ready for review:
+   its first push is the one that opens the pull request (step 4). Before every push: `dotnet
    build Loopsmith.slnx` and `dotnet test` (warnings are errors; there is no separate linter), and
-   check a web change in a browser too (How we work). Push when a step is complete, not after every
-   edit.
-4. **When it's ready for review, open the pull request** into `main` (not a draft), with the task's
+   check a web change in a browser too (How we work).
+4. **When it's ready for review, bring in `main`, push and open the pull request.** Right before
+   the branch's first push, `git fetch origin main` and `git rebase origin/main` (resolve any
+   conflict; ask in the session when both sides changed the same logic), then run `dotnet build
+   Loopsmith.slnx` and `dotnet test` again. Only before the first push: once the branch is on
+   GitHub, a rebase would need a force-push, so from then on step 6 applies. This only makes a PR
+   less likely to open behind `main`; anything merged while it waits for review still puts it
+   behind. Then push and open the pull request into `main` (not a draft), with the task's
    title and the agreed spec as its description: tick the acceptance criteria you checked, and add
-   what changed and how to check it on the preview at `…/pr-preview/pr-<PR number>/`. Then rename
+   what changed and how to check it on the preview at `…/pr-preview/pr-<PR number>/`. A PR is
+   **docs only** when every path it changes (a rename's old path too) is a Markdown file or under
+   `docs/`, `.github/` or `.claude/`: the list `pr-preview.yml` and `ci.yml` use, which skip its
+   preview and build. A docs-only PR has no preview, so its description and messages leave the
+   preview out. Then rename
    the session: put `#<PR number> ` in front of its current title ("D2 damage resistance calculation" →
    "#59 D2 damage resistance calculation"), reading it with the claude-code-remote `get_session`
    (no `session_id`) and writing it with `set_session_title`; skip it if the title already starts
    with that prefix. If the tools aren't available or the rename fails, say so in the session and
    carry on: it never blocks the PR. Watch it (auto-fix) at once. Every message that reports work as
    finished ends with the PR link and the preview link
-   (`https://joancomasfdz.github.io/destiny-loopsmith/pr-preview/pr-<PR number>/`) as bullet points.
+   (`https://joancomasfdz.github.io/destiny-loopsmith/pr-preview/pr-<PR number>/`) as bullet points;
+   a docs-only PR's end with the PR link only.
 5. **Keep watching until the PR is merged or closed,** however many rounds it takes: every message
    in the session, every comment and review @JoanComasFdz writes on the PR (they wake you), every CI
    failure. Reply in a review thread when you address it, but don't resolve it: @JoanComasFdz
@@ -156,7 +188,8 @@ pull request:
    in a row that found nothing new; the next event starts them again), look at its merge state. On a
    conflict, merge `origin/main` into the branch, resolve it, build and test, and push. A branch
    that is only behind `main` stays as it is: @JoanComasFdz clicks **Update branch**, so pull before
-   your next change.
+   your next change. Never rebase a branch that is already on GitHub (step 4's rebase is only for
+   the first push).
 
 The owner's screenshots and files stay in the session: they aren't committed, and no other session
 can see them. When the work needs one in the repository (a loop file as a test case), put it in its
@@ -176,10 +209,12 @@ Always:
 - One task, one branch, one pull request. Don't stack pull requests: a task that needs another one's
   change waits until that one is merged.
 - Never merge, approve or enable auto-merge on a pull request, and never push to `main` (the ruleset
-  refuses it anyway). Never force-push: to update a branch, merge `origin/main` into it; squash
-  merging flattens it.
+  refuses it anyway). Never force-push: to update a branch that is on GitHub, merge `origin/main`
+  into it; squash merging flattens it. The one rebase is step 4's, before the branch's first push.
 - Don't change `.github/workflows/`, repository settings, rulesets or secrets unless the task asks
   for exactly that.
+- A push that changes e2e scenarios gets them recorded on the PR (`e2e-videos.yml`): put a short plain
+  description of the round in its commit message's body (the post's "What changed").
 - In cloud sessions `gh issue` and `gh pr` fail (GitHub's GraphQL is blocked): use the built-in
   GitHub tools or `gh api repos/<owner>/<repo>/...` (REST).
 

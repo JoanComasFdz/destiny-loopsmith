@@ -18,7 +18,7 @@
 }
 <div class="loadout @(Compact ? "compact" : "")" data-testid="loadout">
     <div class="loadout-row">
-        <section class="loadout-box subclass-box" aria-label="Subclass">
+        <section class="loadout-box subclass-box" aria-label="Subclass" data-testid="subclass" data-class="@Build.Build.Class" data-subclass="@Build.Build.Subclass">
             <div class="loadout-label-row">
                 <h4 class="loadout-label">Subclass</h4>
                 @if (CanEditSubclass)
@@ -66,7 +66,7 @@
                 {
                     <div class="artifact-item" data-testid="artifact-item">
                         @RenderTile(artifact.Value, "item artifact")
-                        <span class="artifact-name">@artifact.Value.Name</span>
+                        <span class="artifact-name" data-testid="artifact-item-name">@artifact.Value.Name</span>
                     </div>
                 }
                 else if (CanEditArtifact)
@@ -96,7 +96,7 @@
                     @if (row is WeaponRow.Empty empty)
                     {
                         var rowSlot = empty.Slot;
-                        <li class="weapon-line empty" data-slot="@rowSlot">
+                        <li class="weapon-line empty" data-testid="weapon-slot" data-slot="@rowSlot" data-empty="true">
                             <div class="weapon-icon"><span class="icon-tile empty" title="@rowSlot.DescribeWeaponSlot(): no weapon">@rowSlot.DescribeWeaponSlot()</span></div>
                             <div class="weapon-text"><span class="weapon-line-sub">No @rowSlot.DescribeWeaponSlot().ToLowerInvariant() weapon in the build</span></div>
                             @RenderWeaponPick(new WeaponTarget.IntoEmpty(rowSlot), rowSlot)
@@ -105,7 +105,7 @@
                     else if (row is WeaponRow.Worn worn)
                     {
                     var weapon = worn.Weapon;
-                    <li class="weapon-line" data-slot="@weapon.Slot">
+                    <li class="weapon-line" data-testid="weapon-slot" data-slot="@weapon.Slot">
                         <div class="weapon-icon weapon-preview-anchor" tabindex="@(weapon.Weapon.Details.IsSome() ? null : "0")" data-testid="weapon-anchor" aria-label="@weapon.Weapon.Name">
                             @RenderMarkedTile(weapon.Weapon, "item", weapon.Marks)
                             <TileFooter Marks="weapon.Marks" DamageIcon="weapon.DamageIcon" DamageName="@weapon.Type.ToString()" TestId="weapon-badge" />
@@ -266,7 +266,7 @@
                 @foreach (var piece in LoadoutShaping.ListArmorRows(view, ShowsEverySlot))
                 {
                     var slot = piece.Slot;
-                    <div class="armor-piece" data-slot="@slot">
+                    <div class="armor-piece" data-testid="armor-slot" data-slot="@slot" data-empty="@(piece.Piece.IsSome() ? null : "true")">
                         @if (piece.Piece is Optional<IconTile>.Some item)
                         {
                             <div class="armor-icon">
