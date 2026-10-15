@@ -20,6 +20,7 @@ public class ExampleLoopsGoldenTests
     private const string SkipGrenadesPath = "builds/skip-grenade-hunter/loops/infinite-skip-grenades.loop.yaml";
     private const string MeleeFirstPath = "builds/skip-grenade-hunter/loops/melee-first.loop.yaml";
     private const string HelicopterPath = "builds/skip-grenade-hunter-ascension/loops/helicopter-skip-grenades.loop.yaml";
+    private const string DemolitionistPath = "builds/demolitionist-hunter/loops/grenade-reload-kill.loop.yaml";
     private const string BuildPath = "builds/skip-grenade-hunter/build.yaml";
 
     private static readonly RuleCatalog Catalog = LoadCatalog();
@@ -41,6 +42,7 @@ public class ExampleLoopsGoldenTests
     [InlineData(SkipGrenadesPath)]
     [InlineData(MeleeFirstPath)]
     [InlineData(HelicopterPath)]
+    [InlineData(DemolitionistPath)]
     public void Import_then_export_gives_back_the_file_byte_for_byte(string path)
     {
         var file = ReadRepoFile(path);
@@ -54,6 +56,7 @@ public class ExampleLoopsGoldenTests
     [InlineData(SkipGrenadesPath)]
     [InlineData(MeleeFirstPath)]
     [InlineData(HelicopterPath)]
+    [InlineData(DemolitionistPath)]
     public void Example_loops_have_a_description_and_a_note_on_every_step(string path)
     {
         var design = ImportLoop(path).Design;
@@ -86,6 +89,22 @@ public class ExampleLoopsGoldenTests
         Assert.Contains(airMove.Fired, rule => rule.Source.Value == "gamblers-dodge");   // the dodge's effects fire too
         Assert.Contains(airMove.State.Buffs, buff => buff.Status.Value == "amplified");
         Assert.Contains(airMove.State.Target.Debuffs, debuff => debuff.Value == "jolt");
+    }
+
+    [Fact]
+    public void The_demolitionist_loop_repeats_the_grenade_reloads_the_hand_cannon_and_its_kills_give_grenade_energy()
+    {
+        var session = ImportLoop(DemolitionistPath);
+        var report = LoopDesigning.AnalyzeDesign(session);
+
+        Assert.IsType<LoopVerdict.Repeats>(report.Verdict);
+        var grenade = Assert.Single(session.Resolutions[1].Fired, rule => rule.Source.Value == "demolitionist");
+        Assert.Equal(new Outcome.ReloadWeapon(new DamageSource.WeaponInSlot(WeaponSlot.Energy)), Assert.Single(grenade.Outcomes).Outcome);
+        var kills = session.Resolutions[2].Fired.Where(rule => rule.Source.Value == "demolitionist").ToImmutableArray();
+        Assert.Equal(3, kills.Length);   // one grant per kill
+        Assert.All(kills, kill => Assert.Equal(
+            new Outcome.GrantEnergy(AbilityKind.Grenade, new EnergyGrant.Fraction(new GameValue.Known(0.10m))),
+            Assert.Single(kill.Outcomes).Outcome));
     }
 
     [Fact]
@@ -174,6 +193,9 @@ public class ExampleLoopsGoldenTests
 
     [Fact]
     public Task Loop_report_melee_first() => VerifyLoopReport(MeleeFirstPath);
+
+    [Fact]
+    public Task Loop_report_grenade_reload_kill() => VerifyLoopReport(DemolitionistPath);
 
     [Fact]
     public Task Compare_example_loops()

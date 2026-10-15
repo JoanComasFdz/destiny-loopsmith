@@ -1,0 +1,19 @@
+﻿Grenade, reload, kill — Demolitionist Hunter · 3 steps
+New pack → Grenade (💀 kill) → Any Arc Hand Cannon (💀 kill 3)
+✓ Repeats — each pass ends with what the next one needs
+
+#1 New pack
+
+#2 Grenade (💀 kill)
+   on its own       Demolitionist
+
+#3 Any Arc Hand Cannon (💀 kill 3)
+   on its own       Demolitionist
+
+Steps
+  The Demolitionist loop: throw the grenade, which reloads the hand cannon (Demolitionist), then
+  kill with the hand cannon, each kill giving grenade energy back (Demolitionist, 10% on a hand
+  cannon) toward the next grenade.
+  1. pack:new       The next group of enemies: a new pack
+  2. grenade:kill   Grenade into the pack: Demolitionist reloads the hand cannon
+  3. energy:kill:3  Hand cannon kills: +10% grenade energy for each, from Demolitionist

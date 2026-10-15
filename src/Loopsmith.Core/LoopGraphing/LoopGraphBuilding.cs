@@ -77,6 +77,7 @@ public static class LoopGraphBuilding
                 ListHitEvents(new DamageOrigin.Weapon(w.Slot, w.Type), appliedDebuffs)
                     .Concat(ListVolleyEvents(new DamageOrigin.Weapon(w.Slot, w.Type)))
                     .Append(new GameEvent.ShieldBroken(new DamageOrigin.Weapon(w.Slot, w.Type)))   // the player may say the step breaks a shield (ADRs D36)
+                    .Append(new GameEvent.Reloaded(new DamageOrigin.Weapon(w.Slot, w.Type)))       // or reload the weapon (ADRs D37)
                     .SelectMany(Reach)
                     .Select(to => new RawEdge(ToWeaponKey(w.Slot), to, You, EdgeKind.Player))))
             .Concat(finisherReach.Select(to => new RawEdge(FinisherKey, to, You, EdgeKind.Player)));
@@ -195,8 +196,22 @@ public static class LoopGraphBuilding
             _ => [],   // spending stacks sets nothing off
             weapon => build.Build.FindWeaponStrikeOrigin(weapon).Match(
                 origin => LinkToTriggers(ListHitEvents(origin.Value, appliedDebuffs, weapon.Hit == HitOutcome.Kill)),
-                _ => []));
+                _ => []),
+            reload => LinkToTriggers(ListReloadEvents(build, reload.Weapon))   // the weapon reloaded, as by a Reload step (ADRs D37),
+                .Concat(ListReloadedWeapons(build, reload.Weapon).Select(slot => new RawEdge(from, ToWeaponKey(slot), source, EdgeKind.Rule))));   // and its magazine refilled, to shoot again (Demolitionist's loop)
     }
+
+    /// <summary>The reload of the weapon an outcome names (its slot, once "this weapon" is bound); none for an empty slot.</summary>
+    private static IEnumerable<GameEvent> ListReloadEvents(ValidatedBuild build, DamageSource weapon) =>
+        ListReloadedWeapons(build, weapon)
+            .SelectMany(slot => build.Build.Weapons.Where(w => w.Slot == slot))
+            .Select(w => (GameEvent)new GameEvent.Reloaded(new DamageOrigin.Weapon(w.Slot, w.Type)));
+
+    /// <summary>The slot of the build's weapon an outcome reloads; none for an empty slot or an unbound "this weapon".</summary>
+    private static IEnumerable<WeaponSlot> ListReloadedWeapons(ValidatedBuild build, DamageSource weapon) =>
+        weapon is DamageSource.WeaponInSlot inSlot && build.Build.Weapons.Any(w => w.Slot == inSlot.Slot)
+            ? [inSlot.Slot]
+            : [];
 
     private static string DescribeCastAction(AbilityKind kind) =>
         kind switch

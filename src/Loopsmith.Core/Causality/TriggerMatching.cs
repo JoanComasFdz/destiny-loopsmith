@@ -54,7 +54,8 @@ public static class TriggerMatching
             killBetween => gameEvent is GameEvent.TargetsHit { Hit: HitOutcome.Kill } struck
                 && killBetween.Via.IsMatchedBy(struck.Origin, superType)
                 && struck.Targets.Value >= killBetween.AtLeast.Value
-                && struck.Targets.Value < killBetween.FewerThan.Value);
+                && struck.Targets.Value < killBetween.FewerThan.Value,
+            reload => gameEvent is GameEvent.Reloaded reloaded && reload.Via.IsMatchedBy(reloaded.Origin, superType));
 
     /// <summary>
     /// Whether the pattern matches the origin. A finisher has no damage type and is no weapon or ability: only "any
@@ -100,9 +101,10 @@ public static class TriggerMatching
             shieldBroken: _ => ImmutableArray<StatusId>.Empty,
             energyExpended: _ => ImmutableArray<StatusId>.Empty,
             damageFewer: _ => ImmutableArray<StatusId>.Empty,
-            killBetween: _ => ImmutableArray<StatusId>.Empty);
+            killBetween: _ => ImmutableArray<StatusId>.Empty,
+            reload: _ => ImmutableArray<StatusId>.Empty);
 
-    /// <summary>The damage source a hit or kill trigger names (its <c>via</c>); none for the other triggers.</summary>
+    /// <summary>The damage source a hit, kill, shield or reload trigger names (its <c>via</c>); none for the other triggers.</summary>
     public static Optional<DamageSource> FindVia(this Trigger trigger) =>
         trigger.Match(
             abilityCast: _ => Optional.None<DamageSource>(),
@@ -123,7 +125,8 @@ public static class TriggerMatching
             shieldBroken: shieldBroken => Optional.Some(shieldBroken.Via),
             energyExpended: _ => Optional.None<DamageSource>(),
             damageFewer: damageFewer => Optional.Some(damageFewer.Via),
-            killBetween: killBetween => Optional.Some(killBetween.Via));
+            killBetween: killBetween => Optional.Some(killBetween.Via),
+            reload: reload => Optional.Some(reload.Via));
 
     /// <summary>
     /// The ability use a trigger names, when it names one: a cast of that use (<c>abilityCast: { ability: classAbility,

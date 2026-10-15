@@ -95,7 +95,9 @@ public sealed class ItemDetailsTests
         Assert.Equal((0, "Kill target with heavy weapon"), lines[0]);
         Assert.Equal((1, "+1 Bolt Charge"), lines[1]);
         Assert.Equal(2, lines[2].Indent);
-        Assert.Empty(LoopDesigning.ExplainElement(session.Build, Catalog.Elements[ElementId.From("thunderlord-catalyst")]));   // no rule written
+        Assert.Contains(
+            LoopDesigning.ExplainElement(session.Build, Catalog.Elements[ElementId.From("thunderlord-catalyst")]),
+            line => string.Concat(line.Spans.Select(span => span.Text)).Contains("reloads", StringComparison.Ordinal));   // a strike reloads it
         Assert.True(LoopDesigning.IsEquipped(session.Build, ElementId.From("reign-havoc")));
         Assert.False(LoopDesigning.IsEquipped(session.Build, ElementId.From("thunderlord-catalyst")));        // off
         var source = Catalog.Elements[ElementId.From("reign-havoc")].Source;

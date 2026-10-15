@@ -13,7 +13,7 @@ public static class ActionTokenParsing
     private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
 
     public const string Grammar =
-        "grenade[:hold]|melee[:slide|air]|super[:hit|kill[:N]] (grenade and melee [:last]), class[:air][:last], kinetic|energy|power[:hit|kill[:N]][:shield], finisher, pickup:<id>, max:<status>, end:<status>, pack:new, health:critical";
+        "grenade[:hold]|melee[:slide|air]|super[:hit|kill[:N]] (grenade and melee [:last]), class[:air][:last], kinetic|energy|power[:hit|kill[:N]][:shield], kinetic|energy|power:reload, finisher, pickup:<id>, max:<status>, end:<status>, pack:new, health:critical";
 
     /// <summary>
     /// <c>grenade</c>, <c>grenade:kill</c>, <c>grenade:kill:3</c>, <c>kinetic:hit:5</c>, <c>class</c>, <c>class:air</c> (an air move
@@ -26,7 +26,7 @@ public static class ActionTokenParsing
     /// boundary (<see cref="TargetCount"/>: 1..20); whether a declaration holds is the engine's (a blocked step).
     /// An option goes last (ADRs D36): <c>:last</c>, the use that spends the grenade's, melee's or class ability's last
     /// charge (<c>grenade:kill:last</c>, <c>class:last</c>); <c>:shield</c>, a weapon step that breaks a combatant's shield
-    /// (<c>kinetic:kill:3:shield</c>).
+    /// (<c>kinetic:kill:3:shield</c>). <c>kinetic:reload</c> reloads that weapon (ADRs D37): it takes no count and no option.
     /// </summary>
     public static Result<PlayerAction, string> ParseActionToken(string token)
     {
@@ -43,6 +43,8 @@ public static class ActionTokenParsing
             ("class", not "shield") when parts.Length == 1 => Ok(new PlayerAction.UseClassAbility(AbilityInput.Press, charge)),
             ("class", not "shield") when parts.Length == 2 && FindSecondaryInput(AbilityKind.ClassAbility, parts[1]) is Optional<AbilityInput>.Some input =>
                 Ok(new PlayerAction.UseClassAbility(input.Value, charge)),
+            (_, "reload") when all.Length == 2 && FindWeaponSlot(all[0]) is Optional<WeaponSlot>.Some slot =>
+                Ok(new PlayerAction.ReloadWeapon(slot.Value)),
             ("kinetic", not "last") => ParseAimedAction(token, parts, (hit, targets) => new PlayerAction.FireWeapon(WeaponSlot.Kinetic, hit, targets, shield)),
             ("energy", not "last") => ParseAimedAction(token, parts, (hit, targets) => new PlayerAction.FireWeapon(WeaponSlot.Energy, hit, targets, shield)),
             ("power", not "last") => ParseAimedAction(token, parts, (hit, targets) => new PlayerAction.FireWeapon(WeaponSlot.Power, hit, targets, shield)),
@@ -89,6 +91,16 @@ public static class ActionTokenParsing
                     $"Invalid target count in '{token}': use a whole number from 1 to {TargetCount.Maximum} (enemies hit or killed).");
 
     private static Result<PlayerAction, string> Ok(PlayerAction action) => new Result<PlayerAction, string>.Ok(action);
+
+    /// <summary>The slot a token names: <c>kinetic</c>, <c>energy</c>, <c>power</c>.</summary>
+    private static Optional<WeaponSlot> FindWeaponSlot(string word) =>
+        word switch
+        {
+            "kinetic" => Optional.Some(WeaponSlot.Kinetic),
+            "energy" => Optional.Some(WeaponSlot.Energy),
+            "power" => Optional.Some(WeaponSlot.Power),
+            _ => Optional.None<WeaponSlot>(),
+        };
 
     private static Result<PlayerAction, string> FailUnknown(string token) =>
         new Result<PlayerAction, string>.Error($"Unknown action '{token}'. Use {Grammar} (N = enemies hit or killed, 1..{TargetCount.Maximum}).");

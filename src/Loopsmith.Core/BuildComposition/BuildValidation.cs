@@ -120,7 +120,7 @@ public static class BuildValidation
     /// </summary>
     private static BuildElement BindToHolder(BuildElement element, Optional<WeaponLoadout> holder) =>
         holder.Match(
-            weapon => element.IsNamingThisWeapon() ? element.BindToWeapon(weapon.Value.Slot, weapon.Value.Type) : element,
+            weapon => element.IsNamingThisWeapon() ? element.BindToWeapon(weapon.Value) : element,
             _ => element);
 
     /// <summary>The slot of the weapon an element is bound to (<see cref="BindToHolder"/>); none when it isn't bound.</summary>

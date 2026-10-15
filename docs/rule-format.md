@@ -269,7 +269,7 @@ is the build's value. `from` and `below` are stat values (0..200) and `from` < `
 blocks a build). An unknown stat ("?") says nothing.
 
 `inert: "<why>"` marks an element that is known and has no part in a loop on purpose — Skip Grenade
-(its hits are the grenade step itself), Feeding Frenzy and Return Stroke (no ammo or reloads are counted), Fastball
+(its hits are the grenade step itself), Feeding Frenzy (reload speed changes no step: no ammo is counted), Fastball
 (how far and fast a grenade flies changes no step). It takes no rules and no passives
 (`inert is only for an element with no rules and no passives`), the build check says nothing of it, and its details
 say "No rules needed." with the why.
@@ -395,6 +395,7 @@ doesn't show as a stacking status (Elemental Charge's progress per Ionic Trace; 
 | `{ criticalHealth: {} }` — the player declares they reached critical health (`health:critical`) | `CriticalHealth()` |
 | `{ shieldBroken: {} }` / `{ shieldBroken: { via: weapon } }` — a combatant's shield broken by that source (`via` defaults to `any`); the player says which weapon step breaks one (`kinetic:kill:shield`) | `ShieldBroken(via)` |
 | `{ energyExpended: grenade }` (`grenade\|melee\|classAbility`) — the ability's energy fully expended: its last charge used (`grenade:last`) | `EnergyExpended(kind)` |
+| `{ reload: {} }` / `{ reload: { via: weapon:this } }` — a weapon reloaded: the player's Reload step (`energy:reload`) or a `reloadWeapon` outcome; `via` names a weapon (defaults to `any`) | `Reload(via)` |
 
 A **secondary ability use** is the ability used another way, which an aspect makes do something else
 (ADRs D9): the melee while sliding (`slide`: Tempest Strike's uppercut, played as `melee:slide`) or in the
@@ -477,7 +478,8 @@ binds it (`Causality.WeaponBinding`): it equips the element as that weapon's —
 `weapon:this:<type>` too when the weapon is of that type, and a rule, passive or damage change for another type is left
 out — so two weapons holding Synergy are two elements, each with its own weapon's rules (not stacked copies). Unbound
 (the catalog's own text: an item's details), it reads "this weapon" and matches nothing. The perks of
-`weapons/perks.yaml` still name their weapon's type (`weapon:strand`) as they did before it existed.
+`weapons/perks.yaml` say `weapon:this` (Slice, Attrition Orbs, Demolitionist). A `reloadWeapon: weapon:this` and an energy
+grant `byArchetype` are bound too: the reload is that weapon's, and the grant takes the amount for its archetype.
 
 Types are `kinetic|arc|solar|void|stasis|strand`. A weapon deals its build `type`; an ability the
 subclass's (kinetic on Prismatic: per-ability types aren't modelled); a keyword strike its status's
@@ -551,12 +553,36 @@ expended"):
 A Super has no `energyExpended` (`energyExpended: a Super has no energyExpended (use grenade, melee or classAbility)`).
 The loop graph leads from each weapon to the `shieldBroken` rules and from each ability to its `energyExpended` ones.
 
+A **reload** (ADRs D37) is the player's Reload step (`kinetic:reload`, "Reload Festival Flight",
+[loop-format.md](loop-format.md#action-tokens)) or a `reloadWeapon` outcome: either raises `Reloaded` from that weapon,
+which the `reload` trigger matches. No ammo is counted, so a reload is never needed and never blocked (but for an empty
+slot), and what a weapon does to its magazine (Demolitionist's refill, Return Stroke's 5 rounds) is one reload, its
+numbers a fact. `reload` takes only `via`, and it names a weapon: `any`, `weapon`, `weapon:<type>`, `weapon:harmonic`,
+`slot:<slot>`, `weapon:this` or `weapon:this:<type>` (`reload: { via: grenade }` is an error,
+`reload's via names a weapon: …`). Demolitionist (`rules/weapons/perks.yaml`, Compendium Weapon Perks#62) has both
+halves of its loop:
+
+```yaml
+    rules:
+      - on: { kill: { via: weapon:this } }
+        then:
+          - { grantEnergy: { to: grenade, amount: "10%", byArchetype: { archetypes: [fusion-rifle, glaive, shotgun, sniper-rifle], amount: "20%" } } }
+      - on: { abilityCast: grenade }
+        then:
+          - { reloadWeapon: weapon:this }
+```
+
+The loop graph leads from each weapon to its `reload` rules, and from a `reloadWeapon` outcome both to them and to the
+weapon's "Shoot" node: its magazine refilled, it shoots again (Demolitionist's loop: grenade → reload → kills → grenade
+energy → grenade).
+
 **Outcomes (`then`)** — exactly one key each:
 
 | YAML | Domain `Outcome` |
 |---|---|
 | `{ grantEnergy: { to: grenade, amount: "15%" } }` / `amount: full` | `GrantEnergy(to, Fraction(v) \| Full)` |
 | `{ grantEnergy: { to: leastCharged, amount: "10% \| 13% \| 15%" } }` — the ability with the least energy | `GrantLeastChargedEnergy(Fraction(v) \| Full)` |
+| `{ grantEnergy: { to: grenade, amount: "10%", byArchetype: { archetypes: [shotgun, glaive], amount: "20%" } } }` — another amount on a weapon of those archetypes (Demolitionist); `amount` is a fraction, not `full` | `GrantEnergy(to, ByArchetype(v, archetypes, w))` |
 | `{ convertStacksToEnergy: { consumed: armor-charge, to: grenade, perStack: "?" } }` | `ConvertStacksToEnergy(…, PerStack)` |
 | `{ convertStacksToEnergy: { consumed: armor-charge, to: grenade, bySpent: { from: 3, values: "70% \| 80% \| 90% \| 100%" } } }` — the energy by the stacks spent (x3, x4…) | `ConvertStacksToEnergy(…, BySpent)` |
 | `{ convertStacksToEnergy: { consumed: armor-charge, to: grenade, byCharges: { from: 2, values: "16.2% \| 21.7% \| …" } } }` — by charges: each copy and each stack spent counts one (the Kickstarts) | `ConvertStacksToEnergy(…, ByCharges)` |
@@ -574,6 +600,7 @@ The loop graph leads from each weapon to the `shieldBroken` rules and from each 
 | `{ restoreHealth: { amount: "?", allies: true } }` (`allies` default false) — `amount` a share of your health; `{ hp: 65 }` instead: HP (Unrelenting) | `RestoreHealth(Share \| Points, allies)` |
 | `{ resetCooldown: melee }` | `ResetCooldown` |
 | `{ collect: orb-of-power }` | `Collect` — picks the pickup up from the ground (Powerful Attraction) |
+| `{ reloadWeapon: weapon:this }` / `{ reloadWeapon: slot:power }` — reloads that one weapon: `weapon:this`, `weapon:this:<type>` or `slot:<slot>` | `ReloadWeapon` |
 
 Statuses in `applyBuff`/`removeBuff`/`convertStacksToEnergy.consumed`/`has`/`lacks`/`atMax`/`buffGained`/`stacksMaxed`/`extraStacks`
 must be glossary `buff`s; in `debuffTarget`/`targetHas` glossary `debuff`s
@@ -604,9 +631,19 @@ must be glossary `buff`s; in `debuffTarget`/`targetHas` glossary `debuff`s
   event follows, so every `pickUp` rule fires as if the player had picked it up (Recuperation, Orb of
   Power's Armor Charge). With none on the ground it carries the caveat `nothing on the ground`. The
   loop analysis counts the pickup as a need of the step, provided by the step that dropped it.
+* **`grantEnergy` `byArchetype`** is the amount of the weapon holding the element: bound to a weapon of a named archetype
+  it is `amount` of `byArchetype` (`+20% grenade energy`), to any other weapon the plain `amount` (`+10% grenade
+  energy`). A weapon whose archetype isn't known (a build file without `archetype`, a weapon picked without its
+  manifest type) and the catalog's own text show both: `+10% grenade energy (20% on Fusion Rifles, Glaives, Shotguns
+  and Sniper Rifles)`. An enhanced trait's `values` replace both amounts.
+* **`reloadWeapon`** reloads the weapon "this weapon" is bound to, or the build's in that slot: `reloads your energy
+  weapon`, and a `Reloaded` event from it follows, so its `reload` rules fire as on a Reload step (ADRs D37). With no
+  weapon there, or "this weapon" not bound (the catalog's own text, `reloads this weapon`), it carries the caveat
+  `no weapon to reload`.
 
 What changes the state or sets off events: `applyBuff`, `removeBuff`, `debuffTarget`, `spawn`,
-`summon`, `strikeTarget`, `collect`, `spendStacks`, and the consumption of `convertStacksToEnergy`. The rest are **facts**, shown with their value and
+`summon`, `strikeTarget`, `collect`, `spendStacks`, `reloadWeapon` (its reload event), and the consumption of
+`convertStacksToEnergy`. The rest are **facts**, shown with their value and
 certainty and changing nothing: `grantEnergy` (to an ability or `leastCharged`), the energy of `convertStacksToEnergy`, `resetCooldown`,
 `modifyDamage` and `restoreHealth` (ADRs D1, D5).
 
@@ -754,7 +791,8 @@ stats: { weapons: 47, class: 104, grenade: 145, super: 27, melee: 79 }   # any s
 * Optional: `author`, `source` (an absolute http(s) URL), `catalog`, `exoticArmor`, `artifact`, and the lists
   `aspects`, `fragments`, `armorSetBonuses`, `armorMods`, `artifactPerks`, `weapons` (default empty).
 * A weapon: `slot` (`kinetic|energy|power`), `name` and `type` (`kinetic|arc|solar|void|stasis|strand`)
-  are required; `archetype` (a kebab-case word), `perks` (element ids), `hash` (its manifest item: its icon,
+  are required; `archetype` (a kebab-case word, the manifest's type: `hand-cannon`; it picks a perk's energy grant
+  `byArchetype`, Demolitionist's), `perks` (element ids), `hash` (its manifest item: its icon,
   its trait columns, its intrinsic and catalyst), `roll`, `catalyst` and `instance` are optional. The name labels its
   actions ("Festival Flight (🥊 hit 5)").
 * `instance`: the copy the build wears, by Bungie's instance id (a dim.gg share's, or one picked from the player's

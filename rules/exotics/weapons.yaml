@@ -69,9 +69,16 @@ elements:
     hash: 1550063955          # the catalyst plug item ("Thunderlord Catalyst")
     description: "Thunderlord's catalyst: each of its lightning strikes puts 5 rounds back in the magazine from reserves."
     source: "compendium/2026-10-09/Exotic Weapons#144"
-    # Outside the loop: ammo and the magazine aren't modelled (there is no ammo or reload outcome).
-    # There is also no lightning-strike event to attach it to: the strikes are part of Reign Havoc's
-    # and Lightning Rounds' rules.
-    inert: "Ammo and reloads: Loopsmith counts neither, so the rounds it puts back change no step of a loop."
-    rules: []
+    # No lightning-strike event exists to attach it to: the strikes are part of Reign Havoc's (a kill)
+    # and Lightning Rounds' (every 10th hit, a hit step) rules, so these are the same two triggers.
+    # The 5 rounds are a fact: no ammo is counted, and a refill is a reload (ADRs D37).
+    rules:
+      - on: { kill: { via: slot:power } }
+        then:
+          - { reloadWeapon: slot:power }
+        reason: "Every Thunderlord kill calls down a lightning strike, and the strike puts 5 rounds back in the magazine."
+      - on: { damage: { via: slot:power, sustained: true } }
+        then:
+          - { reloadWeapon: slot:power }
+        reason: "Keep hitting with Thunderlord: every 10th hit's lightning strike puts 5 rounds back in the magazine."
     passives: []

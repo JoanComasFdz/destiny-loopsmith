@@ -29,15 +29,15 @@ public static class WeaponBinding
         });
 
     /// <summary>
-    /// The element as the weapon in <paramref name="slot"/>, of <paramref name="type"/>, holds it: each "this weapon" is
-    /// that slot's weapon; a rule, outcome or passive for "this weapon, when it is" another type goes (a rule left with no
-    /// outcome goes too).
+    /// The element as <paramref name="weapon"/> holds it: each "this weapon" is that slot's weapon; a rule, outcome or
+    /// passive for "this weapon, when it is" another type goes (a rule left with no outcome goes too). An energy grant by
+    /// archetype (Demolitionist's) becomes the weapon's amount when its archetype is known, and stays as both when it isn't.
     /// </summary>
-    public static BuildElement BindToWeapon(this BuildElement element, WeaponSlot slot, DamageType type) =>
+    public static BuildElement BindToWeapon(this BuildElement element, WeaponLoadout weapon) =>
         element with
         {
-            Rules = [.. element.Rules.SelectMany(rule => ToSequence(BindRule(rule, slot, type)))],
-            Passives = [.. element.Passives.SelectMany(passive => ToSequence(BindPassive(passive, slot, type)))],
+            Rules = [.. element.Rules.SelectMany(rule => ToSequence(BindRule(rule, weapon)))],
+            Passives = [.. element.Passives.SelectMany(passive => ToSequence(BindPassive(passive, weapon.Slot, weapon.Type)))],
         };
 
     /// <summary>
@@ -54,20 +54,26 @@ public static class WeaponBinding
 
     private static bool IsNamingThisWeapon(Rule rule) =>
         rule.On.FindVia().Match(via => IsThisWeapon(via.Value), _ => false)
-        || rule.Then.Any(outcome => outcome switch
+        || rule.Then.Any(IsNamingThisWeapon);
+
+    /// <summary>An outcome that acts on "this weapon": a damage change for it, its strike, a reload of it, an energy grant by its archetype.</summary>
+    private static bool IsNamingThisWeapon(Outcome outcome) =>
+        outcome switch
         {
             Outcome.ModifyDamage modify => IsThisWeapon(modify.Against),
             Outcome.WeaponStrike strike => IsThisWeapon(strike.Weapon),
+            Outcome.ReloadWeapon reload => IsThisWeapon(reload.Weapon),
+            Outcome.GrantEnergy { Amount: EnergyGrant.ByArchetype } => true,
             _ => false,
-        });
+        };
 
     private static bool IsThisWeapon(DamageSource source) =>
         source is DamageSource.ThisWeapon or DamageSource.ThisWeaponOfType;
 
-    private static Optional<Rule> BindRule(Rule rule, WeaponSlot slot, DamageType type)
+    private static Optional<Rule> BindRule(Rule rule, WeaponLoadout weapon)
     {
-        var trigger = BindTrigger(rule.On, slot, type);
-        var outcomes = rule.Then.SelectMany(outcome => ToSequence(BindOutcome(outcome, slot, type))).ToImmutableArray();
+        var trigger = BindTrigger(rule.On, weapon.Slot, weapon.Type);
+        var outcomes = rule.Then.SelectMany(outcome => ToSequence(BindOutcome(outcome, weapon))).ToImmutableArray();
         return trigger.Bind(on => outcomes.IsEmpty ? Optional.None<Rule>() : Optional.Some(rule with { On = on, Then = outcomes }));
     }
 
@@ -82,13 +88,22 @@ public static class WeaponBinding
             _ => Optional.Some(passive),
         };
 
-    private static Optional<Outcome> BindOutcome(Outcome outcome, WeaponSlot slot, DamageType type) =>
+    private static Optional<Outcome> BindOutcome(Outcome outcome, WeaponLoadout weapon) =>
         outcome switch
         {
-            Outcome.ModifyDamage modify => BindSource(modify.Against, slot, type).Map(Outcome (against) => modify with { Against = against }),
-            Outcome.WeaponStrike strike => BindSource(strike.Weapon, slot, type).Map(Outcome (weapon) => strike with { Weapon = weapon }),
+            Outcome.ModifyDamage modify => BindSource(modify.Against, weapon.Slot, weapon.Type).Map(Outcome (against) => modify with { Against = against }),
+            Outcome.WeaponStrike strike => BindSource(strike.Weapon, weapon.Slot, weapon.Type).Map(Outcome (bound) => strike with { Weapon = bound }),
+            Outcome.ReloadWeapon reload => BindSource(reload.Weapon, weapon.Slot, weapon.Type).Map(Outcome (bound) => reload with { Weapon = bound }),
+            Outcome.GrantEnergy { Amount: EnergyGrant.ByArchetype byArchetype } grant =>
+                Optional.Some<Outcome>(grant with { Amount = BindArchetype(byArchetype, weapon.Archetype) }),
             _ => Optional.Some(outcome),
         };
+
+    /// <summary>The weapon's amount when its archetype is known (one of the named ones, or any other); both when it isn't.</summary>
+    private static EnergyGrant BindArchetype(EnergyGrant.ByArchetype grant, Optional<string> archetype) =>
+        archetype.Match<EnergyGrant>(
+            known => new EnergyGrant.Fraction(grant.Archetypes.Contains(known.Value) ? grant.OnArchetypes : grant.Otherwise),
+            _ => grant);
 
     private static Optional<Trigger> BindTrigger(Trigger trigger, WeaponSlot slot, DamageType type) =>
         trigger.Match(
@@ -110,7 +125,8 @@ public static class WeaponBinding
             shieldBroken => BindSource(shieldBroken.Via, slot, type).Map(Trigger (via) => shieldBroken with { Via = via }),
             energyExpended => Optional.Some<Trigger>(energyExpended),
             damageFewer => BindSource(damageFewer.Via, slot, type).Map(Trigger (via) => damageFewer with { Via = via }),
-            killBetween => BindSource(killBetween.Via, slot, type).Map(Trigger (via) => killBetween with { Via = via }));
+            killBetween => BindSource(killBetween.Via, slot, type).Map(Trigger (via) => killBetween with { Via = via }),
+            reload => BindSource(reload.Via, slot, type).Map(Trigger (via) => reload with { Via = via }));
 
     /// <summary>"This weapon" is the slot's weapon; "this weapon, when it is X" is it when its type is X, else nothing.</summary>
     private static Optional<DamageSource> BindSource(DamageSource source, WeaponSlot slot, DamageType type) =>

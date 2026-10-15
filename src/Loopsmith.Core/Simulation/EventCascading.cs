@@ -194,7 +194,8 @@ public static class EventCascading
             _ => "finisher",
             _ => "critical-health",
             broken => $"shield:{ToOriginKey(broken.Origin)}",
-            expended => $"expended:{expended.Kind}");
+            expended => $"expended:{expended.Kind}",
+            reloaded => $"reload:{ToOriginKey(reloaded.Origin)}");
 
     private static string ToOriginKey(DamageOrigin origin) =>
         origin.Match(
