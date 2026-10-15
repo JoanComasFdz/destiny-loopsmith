@@ -1,0 +1,6 @@
+# PR #79 · Hatchling's enhanced trait: a second Threadling, at a chance, on the same kills.
+name: "PR 79 - Build 06: Hatchling enhanced"
+class: hunter
+subclass: arc
+weapons:
+  - { slot: kinetic, name: Festival Flight, type: strand, perks: [hatchling-enhanced] }
