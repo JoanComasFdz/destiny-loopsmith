@@ -135,6 +135,11 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   (Reign Havoc). The sources: Lightning Rounds every 10th hit (and Return Stroke with it), Attrition Orbs (a
   magazine-based count, 3 for a Grenade Launcher), To Shreds' 6 hits, Horde Shuttle's 10% of the enemy's health (`?`
   hits). ADRs D34 and the rules' `sustained` change with it.
+- **One heading per weapon for a perk on two weapons** (PR #80's test plan, T3): with the enhanced Demolitionist on
+  Astral Horizon and Crisis Inverted, a grenade step shows both reloads ("reloads your kinetic weapon", "reloads your
+  energy weapon") under "WEAPON PERK · ASTRAL HORIZON"; Crisis Inverted's copy gets no heading of its own. Each weapon's
+  copy of a perk is its own element (D31), so each should show under its own weapon: "WEAPON PERK · CRISIS INVERTED" /
+  "Demolitionist (enhanced)" / "reloads your energy weapon".
 
 ## Deferred review items
 
