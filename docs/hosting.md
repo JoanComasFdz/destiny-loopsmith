@@ -181,7 +181,9 @@ running anything. The session that works the PR records them; CI doesn't run, re
   the owner); a tag push gets no banner. The PRs before this change pushed branches, which is why the cleanup still
   deletes leftover `e2e-gifs/pr-<n>-…` branches too. No ruleset may cover `refs/tags/e2e-gifs/*` (or all tags): it
   would refuse the session's push, or the workflow's deletion. On 2026-10-15 the only rulesets were "Protect gh-pages"
-  and "main-protection", both on branches.
+  and "main-protection", both on branches. A PR whose branch left `main` before this change still carries the old
+  workflow, which only runs on branches: merge `main` into it before pushing its GIFs, or its tag triggers nothing (and
+  stays until the PR closes).
 - **What the workflow does** (`.github/workflows/e2e-videos.yml`, on a push of a tag `e2e-gifs/**`): it checks the push
   (the name is `e2e-gifs/pr-<n>-<hex>`; PR #n is open and from this repository; the commit sits on a commit of the PR
   and only adds `e2e-gifs/scenarios.json` and real GIFs), then `tools/e2e/post-scenarios.py --out e2e-gifs` uploads the

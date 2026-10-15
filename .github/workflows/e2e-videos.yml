@@ -2,8 +2,9 @@ name: E2E videos
 
 # The session that works a PR records its added or changed end-to-end scenarios itself (tools/e2e/record.sh) and pushes
 # their GIFs with tools/e2e/push-gifs.sh as a throwaway tag e2e-gifs/pr-<n>-<short sha>: one commit on the PR's head
-# commit that adds e2e-gifs/scenarios.json and the GIFs (a tag, so GitHub shows no "had recent pushes" banner). A session can't upload a file to GitHub, so this workflow
-# does only that part: it checks the push, uploads the GIFs to the `prs-resources` pre-release as
+# commit that adds e2e-gifs/scenarios.json and the GIFs (a tag, so GitHub shows no "had recent pushes" banner). A
+# session can't upload a file to GitHub, so this workflow does only that part: it checks the push, uploads the GIFs to
+# the `prs-resources` pre-release as
 # pr-<n>-v<version>-<scenario>.gif, posts them on the PR as a new comment (it never touches the PR's description) and
 # deletes the tag. It builds, tests and records nothing. A push runs the workflow file inside the pushed commit, so
 # the tag carries the PR's own version of this file.
