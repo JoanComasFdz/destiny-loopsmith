@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 # Records the web app's end-to-end scenarios (tests/Loopsmith.Web.E2E) as GIFs.
-#   tools/e2e/record.sh [all | <domain folder> | <TestClass> ...] [--changed-since <git ref>] [--out <dir>] [--no-publish]
+#   tools/e2e/record.sh [all | <domain folder> | <TestClass> ...] [--changed-since <git ref>] [--action-gap <seconds>]
+#                       [--out <dir>] [--no-publish]
 # A domain folder is a folder under Scenarios/ (Starting, Build/Subclass); a class is a scenario class (StartFromScratchTests).
 # --changed-since <ref>: the scenario classes added or changed since <ref> (from where the branch left it, working tree
 # included), plus those that use a changed fixture file: "this PR's scenarios" with origin/main.
+# --action-gap <seconds>: the least time between two steps (an action or a read) of a recorded scenario (default 1).
 # It publishes the web app (Release), prepares it for /destiny-loopsmith/ (tools/web/prepare-pages.sh), serves it
 # locally, runs the chosen scenarios with E2E_URL set and video on, trims each video from when Home was shown (the
 # manifest's startup screen left out) and turns it into a GIF under <out>/<domain folder>/<gif name>.gif. It prints each
@@ -17,15 +19,17 @@ project="$repo/tests/Loopsmith.Web.E2E"
 scenarios_dir="$project/Scenarios"
 out="$repo/out"
 changed_since=""
+action_gap=1
 publish=1
 chosen=()
 
 while [ $# -gt 0 ]; do
   case "$1" in
     --changed-since) changed_since="$2"; shift 2 ;;
+    --action-gap) action_gap="$2"; shift 2 ;;
     --out) out="$2"; shift 2 ;;
     --no-publish) publish=0; shift ;;
-    -h|--help) sed -n '2,13p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,15p' "$0"; exit 0 ;;
     *) chosen+=("$1"); shift ;;
   esac
 done
@@ -104,7 +108,7 @@ done
 
 echo "Running the scenarios ($filter)…"
 status=0
-E2E_URL="http://127.0.0.1:$port/destiny-loopsmith/" E2E_VIDEO_DIR="$videos" \
+E2E_URL="http://127.0.0.1:$port/destiny-loopsmith/" E2E_VIDEO_DIR="$videos" E2E_ACTION_GAP="$action_gap" \
   dotnet test "$project" -c Release --nologo --filter "$filter" --logger "console;verbosity=normal" || status=$?
 
 # When Home shows in a video: the video's clock runs up to a second apart from the test's, so the time the test noted
@@ -128,7 +132,7 @@ PY
 }
 
 # Each recorded scenario: trimmed from when Home was shown, as a GIF next to its domain folder's others.
-palette="fps=8,scale=800:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=128:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle"
+palette="fps=12,scale=800:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=128:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle"
 # The last run's GIFs go (only the folders named like Scenarios/' domain folders).
 for folder in "$scenarios_dir"/*/; do rm -rf "${out:?}/$(basename "$folder")"; done
 records=()

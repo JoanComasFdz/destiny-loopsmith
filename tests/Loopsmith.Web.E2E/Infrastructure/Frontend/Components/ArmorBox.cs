@@ -7,10 +7,14 @@ namespace Loopsmith.Web.E2E.Infrastructure.Frontend.Components;
 /// <summary>The Armor box of the designer's loadout (Components/LoadoutPanel.razor).</summary>
 public sealed class ArmorBox(IPage page)
 {
-    private ILocator Slots => page.Locator("[data-testid=armor-slot]");
+    private ILocator Box => page.GetByRole(AriaRole.Region, new() { Name = "Armor", Exact = true });
+
+    private ILocator Slots => Box.Locator("[data-testid=armor-slot]");
 
     /// <summary>What the Armor box shows now.</summary>
-    public async Task<ArmorBoxSnapshot> ReadAsync()
+    public Task<ArmorBoxSnapshot> ReadAsync() => OnScreen.ReadAsync(Box, ReadShownAsync);
+
+    private async Task<ArmorBoxSnapshot> ReadShownAsync()
     {
         var slots = await Slots.EvaluateAllAsync<SlotShown[]>("pieces => pieces.map(piece => ({ slot: piece.dataset.slot ?? '', empty: piece.dataset.empty === 'true' }))");
         return new ArmorBoxSnapshot(

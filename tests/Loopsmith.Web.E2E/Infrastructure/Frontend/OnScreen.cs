@@ -1,0 +1,129 @@
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
+using Microsoft.Playwright;
+
+namespace Loopsmith.Web.E2E.Infrastructure.Frontend;
+
+/// <summary>
+/// Every Act and Read member of a page object goes through here (E2E-TEST-CODE-RULES.md, rule c), so the video shows
+/// what the scenario does, one step at a time:
+/// - it brings the box the member acts on or reads into view first, so the video shows the whole box, not only the
+///   element Playwright clicks (it scrolls that only just into view) or nothing at all (a read doesn't scroll). A box
+///   that fits in the window is scrolled, as little as needed, until all of it shows below the sticky top bar; a taller
+///   one until its top shows under the top bar, then, when the member uses an element inside it, until that shows too;
+/// - when the run records, the scroll is smooth, a box that moved stays a moment on screen before the action or the
+///   read, and a step starts no sooner than <see cref="E2ESite.ActionGap"/> after the previous one ended (record.sh
+///   <c>--action-gap</c>), so the GIF doesn't scroll and click faster than the eye follows. Without a recording it
+///   jumps and goes on at once.
+/// </summary>
+public static class OnScreen
+{
+    private static readonly TimeSpan ShownBeforeStep = TimeSpan.FromMilliseconds(500);
+
+    // When each page's last step ended (one page per scenario, its steps one after another).
+    private static readonly ConditionalWeakTable<IPage, Stopwatch> SinceLastStep = [];
+
+    private static bool Recording => E2ESite.VideoDirectory is not null;
+
+    /// <summary>Shows <paramref name="box"/> (and <paramref name="target"/> in it), then does <paramref name="act"/> on the target.</summary>
+    public static async Task ActAsync(ILocator box, ILocator target, Func<ILocator, Task> act)
+    {
+        await ShowAsync(box, target);
+        await act(target);
+        NoteStepEnded(box.Page);
+    }
+
+    /// <summary>Shows <paramref name="box"/>, then reads it with <paramref name="read"/>.</summary>
+    public static async Task<T> ReadAsync<T>(ILocator box, Func<Task<T>> read)
+    {
+        await ShowAsync(box, null);
+        var shown = await read();
+        NoteStepEnded(box.Page);
+        return shown;
+    }
+
+    private static async Task ShowAsync(ILocator box, ILocator? target)
+    {
+        if (Recording)
+        {
+            await WaitForActionGapAsync(box.Page);
+        }
+
+        var targetElement = target is null ? null : await target.ElementHandleAsync();
+        var moved = await box.EvaluateAsync<bool>(ScrollScript, new Dictionary<string, object?>
+        {
+            ["target"] = targetElement,
+            ["smooth"] = Recording,
+        });
+        if (targetElement is not null)
+        {
+            await targetElement.DisposeAsync();
+        }
+
+        if (Recording && moved)
+        {
+            await Task.Delay(ShownBeforeStep);
+        }
+    }
+
+    private static async Task WaitForActionGapAsync(IPage page)
+    {
+        if (SinceLastStep.TryGetValue(page, out var since) && since.Elapsed < E2ESite.ActionGap)
+        {
+            await Task.Delay(E2ESite.ActionGap - since.Elapsed);
+        }
+    }
+
+    private static void NoteStepEnded(IPage page) => SinceLastStep.AddOrUpdate(page, Stopwatch.StartNew());
+
+    // Scrolls the box (and the target) into view below the sticky top bar, waits until the page stops moving, and answers
+    // whether it moved. The top bar is whatever sticky or fixed strip covers the top of the window (a dialog's backdrop,
+    // which covers it all, is no top bar).
+    private const string ScrollScript = """
+        async (box, { target, smooth }) => {
+          const margin = 8;
+          const coveringTop = () => {
+            for (let el = document.elementFromPoint(window.innerWidth / 2, 1); el && el !== document.documentElement; el = el.parentElement) {
+              const position = getComputedStyle(el).position;
+              const bounds = el.getBoundingClientRect();
+              if ((position === 'sticky' || position === 'fixed') && bounds.top <= 0 && bounds.height < window.innerHeight / 3) {
+                return bounds.bottom;
+              }
+            }
+            return 0;
+          };
+          const top = coveringTop();
+          const room = window.innerHeight - top - 2 * margin;
+          const where = () => box.getBoundingClientRect().top;
+          const before = where();
+          const settle = async () => {
+            let last = NaN, still = 0;
+            const until = performance.now() + 3000;
+            while (still < 5 && performance.now() < until) {
+              await new Promise(requestAnimationFrame);
+              const now = where();
+              still = now === last ? still + 1 : 0;
+              last = now;
+            }
+          };
+          const scroll = async (el, block) => {
+            const [marginTop, marginBottom] = [el.style.scrollMarginTop, el.style.scrollMarginBottom];
+            el.style.scrollMarginTop = `${top + margin}px`;
+            el.style.scrollMarginBottom = `${margin}px`;
+            el.scrollIntoView({ block, inline: 'nearest', behavior: smooth ? 'smooth' : 'instant' });
+            await settle();
+            el.style.scrollMarginTop = marginTop;
+            el.style.scrollMarginBottom = marginBottom;
+          };
+          if (box.getBoundingClientRect().height <= room) {
+            await scroll(box, 'nearest');
+          } else {
+            await scroll(box, 'start');
+            if (target) {
+              await scroll(target, 'nearest');
+            }
+          }
+          return where() !== before;
+        }
+        """;
+}

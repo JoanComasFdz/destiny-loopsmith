@@ -9,7 +9,9 @@ public sealed class SubclassBox(IPage page)
     private ILocator Box => page.Locator("[data-testid=subclass]");
 
     /// <summary>What the Subclass box shows now.</summary>
-    public async Task<SubclassBoxSnapshot> ReadAsync()
+    public Task<SubclassBoxSnapshot> ReadAsync() => OnScreen.ReadAsync(Box, ReadShownAsync);
+
+    private async Task<SubclassBoxSnapshot> ReadShownAsync()
     {
         var shownClass = await Box.GetAttributeAsync("data-class") ?? "";
         var shownSubclass = await Box.GetAttributeAsync("data-subclass") ?? "";
