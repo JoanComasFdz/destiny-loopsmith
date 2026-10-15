@@ -1,7 +1,8 @@
 # Loopsmith.Web.E2E — end-to-end tests of the web app
 
-Scenarios that drive the Blazor loop designer in a real browser (Playwright, on the Chromium the cloud image ships), one
-GIF per scenario, so a PR can show its scenarios working. **How to write one:
+Scenarios that drive the Blazor loop designer in a real browser (Playwright, on the Chromium the cloud image ships),
+each one the Gherkin of an acceptance criterion ([docs/given-when-then-test-rules.md](../../docs/given-when-then-test-rules.md)),
+played on a desktop window and/or a phone, one GIF per screen, so a PR can show its scenarios working. **How to write one:
 [E2E-TEST-CODE-RULES.md](E2E-TEST-CODE-RULES.md)** (binding for this project; the coding rules, docs/CODING_RULES.md, don't apply
 here).
 
@@ -19,28 +20,30 @@ tools/e2e/push-gifs.sh                              # their GIFs, posted on the 
 `record.sh` publishes the web app (Release; `--no-publish` reuses the last one), prepares it for `/destiny-loopsmith/`
 with `tools/web/prepare-pages.sh`, serves it with `python3 -m http.server`, runs the chosen scenarios with `E2E_URL` set
 and video on, and writes to `out/` (`--out <dir>`; gitignored):
-- `out/<domain folder>/<gif name>.gif`: each scenario from Home on (the manifest's startup screen trimmed off), 12 fps,
-  800 px wide; a failing scenario gets its GIF too;
-- `out/scenarios.json`: one entry per scenario: domain folder, class, method, title, GIF path, startup time (page open
-  → Home shown) and whether it passed.
+- `out/<domain folder>/<gif name>.gif`: each run of a scenario from Home on (the manifest's startup screen trimmed
+  off), 12 fps; a desktop run 800 px wide, a phone run at its own 390 px; the GIF name ends in `-desktop` or
+  `-mobile`; a failing run gets its GIF too;
+- `out/scenarios.json`: one entry per run: domain folder, class, method, title, Gherkin, screen (`desktop` /
+  `mobile`), GIF path, startup time (page open → Home shown) and whether it passed.
 
 It prints each scenario's startup time and every request that left for bungie.net, and exits non-zero when a scenario
 failed. `--changed-since <ref>` picks the scenario classes added or changed since the branch left `<ref>` (working tree
 included), plus those that name a changed fixture file.
 
 What the GIF shows is the browser window, nothing more and nothing less: the video and the window are one size
-(1280×800, `BaseE2E`), and the window shows its scrollbar (Playwright hides it in headless Chromium; `BrowserRun` turns
+(1280×800 on desktop, 390×844 on a phone; `BaseE2E`, E2E-TEST-CODE-RULES.md rule b), and the window shows its scrollbar (Playwright hides it in headless Chromium; `BrowserRun` turns
 that off), so a page taller than the window says so. Before each action and each read, the page object scrolls the
 whole box it works on into view (`Infrastructure/Frontend/OnScreen.cs`; E2E-TEST-CODE-RULES.md, rule c). While
 recording, it scrolls smoothly, holds a box that moved a moment on screen, glides the mouse pointer (headless Chromium
-draws none, so `BaseE2E` draws a big one, and a ring at each click) to the element an action uses, and starts a step no sooner than
+draws none, so `BaseE2E` draws a big one, and a ring at each click; on a phone, only the ring at each tap) to the element an action uses, and starts a step no sooner than
 `--action-gap` seconds (`E2E_ACTION_GAP`, default 1) after the previous one ended, so the GIF doesn't scroll and click
 faster than the eye can follow. Without a recording it doesn't wait.
 
 CI doesn't run them. On a pull request, the session records them before each push that adds or changes scenarios
 (`--changed-since origin/main`) and, right after the push, `tools/e2e/push-gifs.sh` pushes the GIFs to a throwaway
 `e2e-gifs/pr-<n>-<short sha>` branch, which `.github/workflows/e2e-videos.yml` posts on the PR
-([docs/hosting.md](../../docs/hosting.md#e2e-videos-on-pull-requests)): a failing scenario is marked there, never red.
+([docs/hosting.md](../../docs/hosting.md#e2e-videos-on-pull-requests)): each scenario once, its title and Gherkin, then
+its 🖥️ Desktop and/or 📱 Mobile GIF; a failing run is marked there, never red.
 
 Against a site you serve yourself: `E2E_URL=http://127.0.0.1:8000/destiny-loopsmith/ dotnet test tests/Loopsmith.Web.E2E`
 (add `E2E_VIDEO_DIR=<dir>` to keep the videos).
@@ -49,7 +52,7 @@ Against a site you serve yourself: `E2E_URL=http://127.0.0.1:8000/destiny-loopsm
 
 `Infrastructure/` holds everything that isn't a scenario: `BaseE2E`, the `Frontend` page objects, the `Vocabulary`
 unions, the Bungie routing, the assertions. `Scenarios/` is organized by domain, never by PR or task: folder = domain
-area, class = a topic in it (`<Topic>Tests.cs`), method = one scenario.
+area, class = a topic in it (`<Topic>Tests.cs`), method = one scenario (one Gherkin), played once per screen attribute.
 
 ```
 Scenarios/Starting/          start from scratch, from a DIM link
@@ -59,6 +62,7 @@ Scenarios/Build/Weapons/     the same for weapons and their perks
 Scenarios/Build/Armor/       the same for armor, sets, mods
 Scenarios/ImportExport/      build.yaml and loop import, loop export, share links
 Scenarios/Loop/Arc/          each Arc interaction with a minimal build (then Solar/, Void/, Strand/, Stasis/, Prismatic/)
+Scenarios/Loop/Weapons/      a weapon's steps: reload, the "×" enemy count, its row in the trigger panel
 ```
 
 A folder exists once it has a scenario. A scenario's fixture files (a minimal `.build.yaml` / `.loop.yaml`) sit next to

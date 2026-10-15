@@ -1,0 +1,8 @@
+# Two rules that need the same count from one weapon: Strand Siphon (2 kills in 3 s with a Strand weapon) and Reaper's
+# Tithe (2 kills at once) on a Strand rocket launcher.
+name: "E2E - Crux Celeritas IV with Reaper's Tithe, Strand Siphon"
+class: hunter
+subclass: arc
+armorMods: [strand-siphon]
+weapons:
+  - { slot: power, name: Crux Celeritas IV, type: strand, perks: [reapers-tithe] }

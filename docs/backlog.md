@@ -264,14 +264,6 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   page's thread for ~5 s on a desktop) and its grid (up to ~930 squares for energy weapons) could be lighter on a phone
   (fewer fields, the items read in batches, or a grid that draws only the rows in view).
 
-## Workflow
-
-- **Link the two sets of test rules**: [given-when-then-test-rules.md](given-when-then-test-rules.md) (how a PR's
-  acceptance criteria, test plan and e2e scenarios are written) and
-  [E2E-TEST-CODE-RULES.md](../tests/Loopsmith.Web.E2E/E2E-TEST-CODE-RULES.md) (how the e2e test code is written) don't
-  point to each other: link them both ways, and add a line to the `loopsmith-task` skill so a spec's acceptance criteria
-  follow the Given/When/Then rules.
-
 ## Owner items
 
 - The DIM logo on Home is DIM's (MIT-licensed repository, credited in the file and the README): fine

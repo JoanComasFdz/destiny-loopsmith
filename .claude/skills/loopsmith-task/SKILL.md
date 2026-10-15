@@ -44,8 +44,11 @@ In one message:
 - Your questions, if any. They aren't mandatory: ask one short question only where a point has two
   readings that would lead to different changes. When nothing is ambiguous, say so and ask none.
   Smaller gaps become `Open question:` lines in the notes.
-- **Proposed acceptance criteria**, numbered: what someone does and sees, one check per line. Ask the
-  owner to agree, or to say what to add, drop or change.
+- **Proposed acceptance criteria**, numbered: what someone does and sees. Each criterion about how the
+  app behaves is a Gherkin, written by [docs/given-when-then-test-rules.md](../../../docs/given-when-then-test-rules.md)
+  (its screens, its title, its rounds of When and Then), layout included (no overlap, at the right end,
+  inside the screen); each one becomes one e2e scenario. A criterion checked in a file stays a plain line.
+  Ask the owner to agree, or to say what to add, drop or change.
 - Anything you'd suggest adding, as a suggestion, not as a criterion.
 
 Then wait for their answer. Change the criteria as often as they want.
@@ -66,7 +69,15 @@ What is true when this is done, from the player's or the owner's side, in one to
 
 ## Acceptance criteria
 
-- [ ] The agreed criteria, one per line.
+- [ ] <A Gherkin's title> (`<its test class>`)
+  ```gherkin
+  @desktop @mobile
+  Scenario: <its title>
+    Given …
+    When …
+    Then …
+  ```
+- [ ] <A criterion checked in a file, one line.>
 
 ## Out of scope
 
@@ -84,10 +95,18 @@ Files, rules, builds, related PRs, how the work splits, open questions.
 - **Goal:** their intent in plain words. For a bug: what should happen, and what happens now
   (where, and on what device or browser if they said).
 - **Acceptance criteria:**
-  - Each one is what someone does and sees: on the preview at `…/pr-preview/pr-<n>/` (which
-    screen, what you tap, what you see), in a file, or in a test. A docs-only change (CLAUDE.md,
-    "Agent workflow", step 4) has no preview: its criteria are checked in a file.
-  - A web change is checked on desktop and at phone width (390 px).
+  - Each one is what someone does and sees: on the preview at `…/pr-preview/pr-<n>/`, in a file, or in
+    a test. A docs-only change (CLAUDE.md, "Agent workflow", step 4) has no preview: its criteria are
+    checked in a file.
+  - **Every criterion about how the app behaves is a Gherkin** (docs/given-when-then-test-rules.md),
+    and **every Gherkin is one e2e scenario** that holds it word for word in its `[TestDescription]`
+    (tests/Loopsmith.Web.E2E/E2E-TEST-CODE-RULES.md, rule i). Its tags name the screens it is played on:
+    `@desktop @mobile`, unless the subject can't apply to one (a tooltip shows on hover only; a phone's
+    layout on a phone only), and then a `#` line says why. Layout (no overlap, at a row's end, inside
+    the screen, text not cut off) is a Gherkin too; "looks right" and colours are never criteria.
+  - Not yet a Gherkin: what needs a Bungie login or a DIM link (no e2e scenario can reach either yet).
+    Such a criterion is a plain line, checked by hand on the preview, that says why.
+  - A criterion checked in a file (a doc, a rules YAML, a CLI's output, a workflow) is a plain line.
   - Say how the app behaves, not how the code does it.
   - No filler such as "code is clean" or "tests pass" (CI checks those).
 - **Out of scope:**
@@ -130,13 +149,15 @@ workflow", steps 3–4). Right before its first push:
 2. Run `dotnet build Loopsmith.slnx` and `dotnet test` again (and the browser check again for a
    web change, if the rebase brought in web changes).
 3. When the branch adds or changes e2e scenarios, record them:
-   `tools/e2e/record.sh --changed-since origin/main`. Every scenario passes before the push; a
-   failing one is fixed first. Look at its GIF under `out/<domain folder>/`: it should show what
-   the scenario's title says.
+   `tools/e2e/record.sh --changed-since origin/main`. Every scenario passes on every screen it is
+   played on before the push; a failing one is fixed first. Look at its GIFs under
+   `out/<domain folder>/` (one per screen, `…-desktop.gif`, `…-mobile.gif`): each should show what
+   its Gherkin says.
 4. Push and open the pull request.
 5. With scenarios recorded, push their GIFs: `tools/e2e/push-gifs.sh` (it finds the PR from the
    branch). It pushes a throwaway branch `e2e-gifs/pr-<n>-<short sha>`; the "E2E videos" workflow
-   uploads the GIFs, posts them on the PR as `## Scenarios (V<N>)` and deletes the branch. "What
+   uploads the GIFs, posts them on the PR as `## Scenarios (V<N>)` (each scenario's title and Gherkin,
+   then its `🖥️ Desktop` and/or `📱 Mobile` GIF) and deletes the branch. "What
    changed" in that post is the body of the head commit's message, or `--message "<text>"`. Check
    the post appears with its GIFs (the PR's comments, a minute or so later); if the run failed, its
    log says why.
@@ -187,7 +208,8 @@ read, author in their own worktree, or check, and report back to it.
   note. After the merge, the session writes what everyone shares (`tools/manifest/`,
   `discrepancies.md`, docs, CLAUDE.md) and runs `dotnet build Loopsmith.slnx` and `dotnet test`.
 - **Check, before the first push, in parallel:** `conventions-reviewer` on the diff; a read-only
-  subagent that checks each acceptance criterion against the diff; for a web change, one that
+  subagent that checks each acceptance criterion against the diff, and that each Gherkin is one
+  scenario holding it word for word; for a web change, one that
   publishes the app and checks it in a browser at desktop and 390 px (CLAUDE.md, "Verify web changes
   in a browser"). Long commands (`tools/e2e/record.sh`, `dotnet test`) run in the background
   meanwhile.

@@ -1,0 +1,6 @@
+# Veteran's Wisdom (origin trait: 3 weapon kills within 3 s, or a precision kill) on a Kinetic weapon.
+name: "E2E - Scathelocke with Veteran's Wisdom"
+class: hunter
+subclass: arc
+weapons:
+  - { slot: kinetic, name: Scathelocke, type: kinetic, perks: [veterans-wisdom] }

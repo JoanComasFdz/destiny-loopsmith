@@ -27,6 +27,17 @@ public static class TriggerPaletteSnapshotAssertions
         return that;
     }
 
+    /// <summary>The "×" enemy count offers exactly <paramref name="counts"/>, in that order ("1 enemy", "3 in 3 s · One for All").</summary>
+    public static AssertingThat<TriggerPaletteSnapshot> OffersCounts(this AssertingThat<TriggerPaletteSnapshot> that, params string[] counts)
+    {
+        var shown = that.InstanceToAssert.TargetCounts;
+        var listed = string.Join(", ", shown.Select(count => $"\"{count}\""));
+        Assert.True(
+            shown.SequenceEqual(counts),
+            $"The \"×\" enemy count offers {(listed.Length == 0 ? "nothing" : listed)}, but {string.Join(", ", counts.Select(count => $"\"{count}\""))} was expected.");
+        return that;
+    }
+
     private static string Describe(IEnumerable<StepTrigger> triggers)
     {
         var listed = string.Join(", ", triggers.Select(trigger => $"\"{trigger.ToShownText()}\""));

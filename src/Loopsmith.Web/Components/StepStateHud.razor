@@ -124,19 +124,19 @@
         var title = StateHudShaping.DescribeEntryTitle(entry);
         if (StateHudShaping.FindEntryDetails(entry) is Optional<ItemDetails>.Some shown)
         {
-            <button type="button" class="chip hud-chip @ToneStyling.ToAffinityClass(entry.Affinity)" data-keyword="@entry.Keyword.DescribeKeywordId()" title="@title"
+            <button type="button" class="chip hud-chip @ToneStyling.ToAffinityClass(entry.Affinity)" data-testid="state-chip" data-keyword="@entry.Keyword.DescribeKeywordId()" title="@title"
                     @onclick="() => ShowDetailsAsync(shown.Value)" @onclick:stopPropagation="true">
                 @RenderEntryIcon(entry)
-                <span>@entry.Text</span>
+                <span data-testid="state-chip-name">@entry.Text</span>
                 @RenderSwitches(entry)
                 @RenderWeapons(weapons)
             </button>
         }
         else
         {
-            <span class="chip hud-chip @ToneStyling.ToAffinityClass(entry.Affinity)" data-keyword="@entry.Keyword.DescribeKeywordId()" title="@title">
+            <span class="chip hud-chip @ToneStyling.ToAffinityClass(entry.Affinity)" data-testid="state-chip" data-keyword="@entry.Keyword.DescribeKeywordId()" title="@title">
                 @RenderEntryIcon(entry)
-                <span>@entry.Text</span>
+                <span data-testid="state-chip-name">@entry.Text</span>
                 @RenderSwitches(entry)
                 @RenderWeapons(weapons)
             </span>
@@ -146,9 +146,9 @@
     /// <summary>A change to the stats of some of the build's weapons right then (Ionic Overclock on a Fusion Rifle), with those weapons.</summary>
     private RenderFragment RenderWeaponEffect(WeaponEffect effect) => __builder =>
     {
-        <button type="button" class="chip hud-chip @ToneStyling.ToAffinityClass(effect.Affinity)" data-effect="@effect.Source.Value" title="@effect.Text"
+        <button type="button" class="chip hud-chip @ToneStyling.ToAffinityClass(effect.Affinity)" data-testid="state-chip" data-effect="@effect.Source.Value" title="@effect.Text"
                 @onclick="() => ShowElementAsync(effect.Source)" @onclick:stopPropagation="true">
-            <span>@effect.SourceName</span>
+            <span data-testid="state-chip-name">@effect.SourceName</span>
             @RenderWeapons(StateHudShaping.ListWeapons(Build, effect.Weapons))
         </button>
     };

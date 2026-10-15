@@ -1,0 +1,6 @@
+# Hatchling's enhanced trait: a second Threadling, at a chance, on the same kills.
+name: "E2E - Festival Flight with Hatchling (enhanced)"
+class: hunter
+subclass: arc
+weapons:
+  - { slot: kinetic, name: Festival Flight, type: strand, perks: [hatchling-enhanced] }

@@ -19,7 +19,7 @@ public sealed class Home(IPage page)
         StartFromScratch.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = (float)timeout.TotalMilliseconds });
 
     /// <summary>Clicks "Start from scratch": a new loop for an Arc Hunter with nothing equipped.</summary>
-    public Task ClickStartFromScratchAsync() => OnScreen.ActAsync(StartFromScratch, StartFromScratch, button => button.ClickAsync());
+    public Task ClickStartFromScratchAsync() => OnScreen.PressAsync(StartFromScratch, StartFromScratch);
 
     /// <summary>Imports the build.yaml fixture <paramref name="fixture"/> (a file next to a scenario class): a new loop for it.</summary>
     public Task ImportBuildAsync(string fixture) =>

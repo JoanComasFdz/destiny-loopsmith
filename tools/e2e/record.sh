@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Records the web app's end-to-end scenarios (tests/Loopsmith.Web.E2E) as GIFs.
+# Records the web app's end-to-end scenarios (tests/Loopsmith.Web.E2E) as GIFs: one per screen a scenario is played on
+# ([PlayInDesktop] / [PlayInMobile]).
 #   tools/e2e/record.sh [all | <domain folder> | <TestClass> ...] [--changed-since <git ref>] [--action-gap <seconds>]
 #                       [--out <dir>] [--no-publish]
 # A domain folder is a folder under Scenarios/ (Starting, Build/Subclass); a class is a scenario class (StartFromScratchTests).
@@ -8,7 +9,8 @@
 # --action-gap <seconds>: the least time between two steps (an action or a read) of a recorded scenario (default 1).
 # It publishes the web app (Release), prepares it for /destiny-loopsmith/ (tools/web/prepare-pages.sh), serves it
 # locally, runs the chosen scenarios with E2E_URL set and video on, trims each video from when Home was shown (the
-# manifest's startup screen left out) and turns it into a GIF under <out>/<domain folder>/<gif name>.gif. It prints each
+# manifest's startup screen left out) and turns it into a GIF under <out>/<domain folder>/<gif name>.gif (a desktop run
+# 800 px wide, a phone run at its own 390 px; the GIF name ends in -desktop or -mobile). It prints each
 # scenario's startup time (page open → Home shown) and the requests that left for bungie.net, and writes
 # <out>/scenarios.json. Exits non-zero when a scenario failed (its GIF is still written).
 # The manifest's files come from ${E2E_MANIFEST_CACHE:-~/.cache/loopsmith/bungie-manifest} (filled once from bungie.net).
@@ -29,7 +31,7 @@ while [ $# -gt 0 ]; do
     --action-gap) action_gap="$2"; shift 2 ;;
     --out) out="$2"; shift 2 ;;
     --no-publish) publish=0; shift ;;
-    -h|--help) sed -n '2,15p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,18p' "$0"; exit 0 ;;
     *) chosen+=("$1"); shift ;;
   esac
 done
@@ -131,18 +133,23 @@ print(f"{(cut + 0.1) if cut is not None else noted + 0.2:.3f}")
 PY
 }
 
-# Each recorded scenario: trimmed from when Home was shown, as a GIF next to its domain folder's others.
-palette="fps=12,scale=800:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=128:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle"
+# Each recorded run: trimmed from when Home was shown, as a GIF next to its domain folder's others; a desktop window
+# scaled to 800 px wide, a phone kept at its own 390 px.
+palette_at() {
+  echo "fps=12,scale=$1:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=128:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle"
+}
 # The last run's GIFs go (only the folders named like Scenarios/' domain folders).
 for folder in "$scenarios_dir"/*/; do rm -rf "${out:?}/$(basename "$folder")"; done
 records=()
 while IFS= read -r record; do
   records+=("$record")
   video="${record%.json}.webm"
-  read -r domain gif noted < <(python3 -c 'import json,sys; r=json.load(open(sys.argv[1])); s=r["homeShownSeconds"]; print(r["domain"], r["gif"], 0 if s is None else s)' "$record")
+  read -r domain gif screen noted < <(python3 -c 'import json,sys; r=json.load(open(sys.argv[1])); s=r["homeShownSeconds"]; print(r["domain"], r["gif"], r["screen"], 0 if s is None else s)' "$record")
+  width=800
+  if [ "$screen" = mobile ]; then width=390; fi
   offset="$(find_home_in_video "$video" "$noted")"
   mkdir -p "$out/$domain"
-  ffmpeg -nostdin -loglevel error -y -ss "$offset" -i "$video" -vf "$palette" "$out/$domain/$gif.gif"
+  ffmpeg -nostdin -loglevel error -y -ss "$offset" -i "$video" -vf "$(palette_at $width)" "$out/$domain/$gif.gif"
 done < <(find "$videos" -path "$videos/.raw" -prune -o -name '*.json' -print | sort)
 
 python3 - "$out" "${records[@]}" <<'PY'
@@ -156,6 +163,8 @@ for path in records:
         "class": r["class"],
         "method": r["method"],
         "title": r["title"],
+        "gherkin": r["gherkin"],
+        "screen": r["screen"],
         "gif": f'{r["domain"]}/{r["gif"]}.gif',
         "startupSeconds": None if r["homeShownSeconds"] is None else round(r["homeShownSeconds"], 1),
         "passed": r["passed"],

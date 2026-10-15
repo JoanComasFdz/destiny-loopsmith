@@ -1,0 +1,6 @@
+# Radiolaria Transposer (origin trait: 3 weapon kills, each within 8 s of the last) on a Power weapon.
+name: "E2E - Speleologist with Radiolaria Transposer"
+class: hunter
+subclass: arc
+weapons:
+  - { slot: power, name: Speleologist, type: solar, perks: [radiolaria-transposer] }

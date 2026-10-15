@@ -6,14 +6,14 @@
 <div class="outcomes">
     @if (Outcomes.Events.IsEmpty && Outcomes.Notes.IsEmpty)
     {
-        <div class="outcome-none tone-muted">nothing triggers</div>
+        <div class="outcome-none tone-muted" data-testid="outcome-none">nothing triggers</div>
     }
     @for (var e = 0; e < Outcomes.Events.Length; e++)
     {
         var shaped = Outcomes.Events[e];
         var eventKey = $"e{e}";
-        <div class="outcome-event" style="--depth:@shaped.Depth" data-depth="@shaped.Depth">
-            <div class="outcome-event-head">
+        <div class="outcome-event" style="--depth:@shaped.Depth" data-depth="@shaped.Depth" data-testid="outcome-event">
+            <div class="outcome-event-head" data-testid="outcome-event-head">
                 @if (shaped.Pickup.IsSome())
                 {
                     <span class="outcome-pickup-mark" aria-hidden="true">📍 </span>
@@ -48,7 +48,7 @@
                     {
                         var source = group.Sources[s];
                         var sourceKey = $"{eventKey}g{g}s{s}";
-                        <div class="outcome-source" data-source="@source.Source.Value">
+                        <div class="outcome-source" data-source="@source.Source.Value" data-testid="outcome-source">
                             @RenderElement(source, sourceKey)
                             @if (!source.Outcomes.IsEmpty)
                             {
@@ -56,7 +56,7 @@
                                     @for (var l = 0; l < source.Outcomes.Length; l++)
                                     {
                                         var line = source.Outcomes[l];
-                                        <li class="outcome-line">
+                                        <li class="outcome-line" data-testid="outcome-line">
                                             @RenderParts(line.Parts, ToneStyling.ToToneClass(line.Tone), $"{sourceKey}l{l}")
                                             @if (line.Chance)
                                             {
@@ -68,7 +68,7 @@
                             }
                             @foreach (var reason in source.Reasons)
                             {
-                                <div class="outcome-detail tone-muted">why: @reason</div>
+                                <div class="outcome-detail tone-muted" data-testid="outcome-reason">why: @reason</div>
                             }
                             @foreach (var caveat in source.Caveats)
                             {
@@ -133,7 +133,7 @@
                 {
                     <span class="outcome-icon placeholder" aria-hidden="true"></span>
                 }
-                <span>@source.Name</span>
+                <span data-testid="outcome-element-name">@source.Name</span>
             </button>
             @RenderPreview(source.Source, key)
         </span>

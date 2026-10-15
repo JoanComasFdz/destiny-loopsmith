@@ -11,6 +11,8 @@ public sealed class Designer(IPage page)
 {
     private ILocator BuildIdentity => page.Locator("[data-testid=build-identity]");
 
+    private ILocator ShowReasons => page.Locator("[data-action=show-reasons]");
+
     /// <summary>The Subclass box: the class, the subclass, its super, abilities, aspects and fragments.</summary>
     public SubclassBox Subclass { get; } = new(page);
 
@@ -28,6 +30,9 @@ public sealed class Designer(IPage page)
 
     /// <summary>The loop's steps (Components/LoopTimeline.razor).</summary>
     public LoopTimeline Loop { get; } = new(page);
+
+    /// <summary>Ticks the "why" checkbox above the loop: each step card shows its "why:" reasons.</summary>
+    public Task TickWhyAsync() => OnScreen.PressAsync(ShowReasons, ShowReasons);
 
     /// <summary>Waits until the designer shows an open loop.</summary>
     public Task WaitUntilShownAsync() => BuildIdentity.WaitForAsync(new() { State = WaitForSelectorState.Visible });
