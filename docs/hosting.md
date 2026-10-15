@@ -192,6 +192,18 @@ running anything. The session that works the PR records them; CI doesn't run, re
   anywhere). A release asset embedded as `![title](https://github.com/<owner>/<repo>/releases/download/prs-resources/<name>)`
   shows inline in GitHub (an MP4 there only shows as a link, so they are GIFs). Uploads use the workflow's
   `GITHUB_TOKEN` (contents and pull-requests write); no personal token.
+- **The player page for MP4s:** GitHub draws a video player only for a video it stored itself, from a file dropped
+  into its web editor (`github.com/user-attachments/…`, which only a logged-in browser can upload). Its pages' content
+  security policy lets them play media only from GitHub's own hosts, and a release asset redirects to one that isn't
+  among them, so no markdown can show a player for an MP4 in `prs-resources` or anywhere else. The site has a page
+  that plays one: **`…/destiny-loopsmith/e2e-player.html?v=<asset>`** (`src/Loopsmith.Web/wwwroot/e2e-player.html`,
+  published with the app on the live site and every preview), with the browser's own controls (play/pause, seeking,
+  fullscreen). `v` is an asset's name only, `pr-<n>-v<k>-<run>.mp4` (letters, digits and `-` in `<run>`); the page
+  builds the URL itself, `https://github.com/<owner>/<repo>/releases/download/prs-resources/<v>`, so it never plays a
+  URL someone else chose, and any other `v` shows a short message. GitHub sends release assets as downloads, but a
+  `<video>` element reads the file itself and plays it. Above the video: the scenario's name from `<run>`, a link to
+  PR #n, the version and the screen. An asset that is gone (an older version, deleted when its PR closed) shows a
+  message instead.
 - **Naming:** `pr-<PR number>-v<version>-<run>.gif`, e.g.
   `pr-82-v1-start-from-scratch-opens-an-arc-hunter-with-nothing-equipped-mobile.gif`.
   - `pr-<n>-` first, so a PR's assets sit together and its cleanup finds them (the dash after the number keeps
@@ -229,8 +241,8 @@ running anything. The session that works the PR records them; CI doesn't run, re
   version's GIFs. The job's log names each deleted asset, the version it kept and how many assets the release holds.
 - **The release's limit:** GitHub sets no total size limit on a release, but a release holds at most 1,000 assets. The
   cleanup's log says how many `prs-resources` holds, with a warning above 900. Near the limit, the owner creates a new
-  pre-release (e.g. `prs-resources-2`) and points `RELEASE` in `tools/e2e/post-scenarios.py` and the `clean` job of
-  `.github/workflows/e2e-videos.yml` at it. The old release stays, so the posts that embed its GIFs keep showing
+  pre-release (e.g. `prs-resources-2`) and points `RELEASE` in `tools/e2e/post-scenarios.py`, the `clean` job of
+  `.github/workflows/e2e-videos.yml` and `release` in `src/Loopsmith.Web/wwwroot/e2e-player.html` at it. The old release stays, so the posts that embed its GIFs keep showing
   them. Nothing does this automatically yet.
 - Pull requests from forks are skipped (they never get a write token).
 
