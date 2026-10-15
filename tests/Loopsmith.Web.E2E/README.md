@@ -12,6 +12,7 @@ dotnet test                                         # without E2E_URL every scen
 tools/e2e/record.sh Starting                        # a domain folder (or several, or `all`)
 tools/e2e/record.sh StartFromScratchTests           # a class
 tools/e2e/record.sh --changed-since origin/main     # the scenarios this branch adds or changes
+tools/e2e/push-gifs.sh                              # their GIFs, posted on the branch's PR (after the push)
 ```
 
 `record.sh` publishes the web app (Release; `--no-publish` reuses the last one), prepares it for `/destiny-loopsmith/`
@@ -26,8 +27,10 @@ It prints each scenario's startup time and every request that left for bungie.ne
 failed. `--changed-since <ref>` picks the scenario classes added or changed since the branch left `<ref>` (working tree
 included), plus those that name a changed fixture file.
 
-On a pull request, CI records them the same way on every push and posts the GIFs on it (`.github/workflows/e2e-videos.yml`;
-[docs/hosting.md](../../docs/hosting.md#e2e-videos-on-pull-requests)): a failing scenario is marked there, never red.
+CI doesn't run them. On a pull request, the session records them before each push that adds or changes scenarios
+(`--changed-since origin/main`) and, right after the push, `tools/e2e/push-gifs.sh` pushes the GIFs to a throwaway
+`e2e-gifs/pr-<n>-<short sha>` branch, which `.github/workflows/e2e-videos.yml` posts on the PR
+([docs/hosting.md](../../docs/hosting.md#e2e-videos-on-pull-requests)): a failing scenario is marked there, never red.
 
 Against a site you serve yourself: `E2E_URL=http://127.0.0.1:8000/destiny-loopsmith/ dotnet test tests/Loopsmith.Web.E2E`
 (add `E2E_VIDEO_DIR=<dir>` to keep the videos).
