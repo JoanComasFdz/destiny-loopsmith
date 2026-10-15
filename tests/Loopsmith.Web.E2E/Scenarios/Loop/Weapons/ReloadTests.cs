@@ -33,7 +33,7 @@ public sealed class ReloadTests : BaseE2E
 
         // Then
         var reloaded = await Frontend.Designer.Loop.ReadAsync();
-        Asserting.That(reloaded).HasReloadAt(1, new WeaponSlot.Kinetic());
+        Asserting.That(reloaded).HasStep(1, new LoopStep.Reload(new WeaponSlot.Kinetic()));
 
         // When
         await Frontend.Designer.TriggerPalette.ClickAsync(new StepTrigger.Hit());
@@ -41,6 +41,6 @@ public sealed class ReloadTests : BaseE2E
 
         // Then
         var hit = await Frontend.Designer.Loop.ReadAsync();
-        Asserting.That(hit).HasHitAt(2, new WeaponSlot.Kinetic(), 3);
+        Asserting.That(hit).HasStep(2, new LoopStep.Hit(new WeaponSlot.Kinetic(), 3));
     }
 }

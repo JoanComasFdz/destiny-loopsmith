@@ -20,7 +20,7 @@ public sealed class TriggerPalette(IPage page)
 
     private ILocator TargetCount => Row.Locator("[data-action=target-count]");
 
-    private ILocator Weapon(WeaponSlot slot) => page.Locator($"[data-action=trigger-weapon][data-hud-slot='fire:{slot.ToShownText()}']");
+    private ILocator Weapon(WeaponSlot slot) => page.Locator($"[data-action=trigger-weapon][aria-label$='({slot.ToShownText()})']");
 
     private ILocator Trigger(StepTrigger trigger) =>
         Row.Locator("[data-action=trigger]")
