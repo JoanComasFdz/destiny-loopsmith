@@ -233,9 +233,10 @@ works the PR records them; CI doesn't run, record or build anything for them.
   `push-gifs.sh` copies the PR head's commit message there (a session writes a short plain description of the round in
   its body), or writes `--message "<text>"` as the body. Each scenario shows once: its Gherkin's title as a small
   heading, its Gherkin in a `gherkin` block, then a `🖥️ Desktop` and/or `📱 Mobile` subtitle (the screens it was played
-  on, desktop first) with that run's GIF below, and below it **▶ Play MP4**, a link to the player page with that run's
-  MP4 (`https://<owner, lowercase>.github.io/<repo>/e2e-player.html?v=<MP4 name>`; GitHub can't make a link open a new
-  tab, so a long-press does). A run with no MP4 (a `scenarios.json` from before the MP4s) shows its GIF only. A failed run has ❌ before its subtitle, and its scenario before its
+  on, desktop first) with that run's GIF below, and below it **▶ Play MP4**. The GIF and that line both link to the
+  player page with that run's MP4 (`https://<owner, lowercase>.github.io/<repo>/e2e-player.html?v=<MP4 name>`), so a tap
+  on the GIF opens the video instead of downloading the GIF (GitHub can't make a link open a new tab, so a long-press
+  does). A run with no MP4 (a `scenarios.json` from before the MP4s) shows its GIF only. A failed run has ❌ before its subtitle, and its scenario before its
   title. Every post ends with `---` and
   `_Recorded by the e2e workflow · Claude Code_`. The workflow never touches the PR's description, so editing the
   description can't break a post.
