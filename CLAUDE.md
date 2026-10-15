@@ -170,7 +170,9 @@ pull request:
    conflict in the session, before the PR opens, and makes the build and test run against the
    current `main`. Then push and open the pull request into `main` (not a draft), with the task's
    title and the agreed spec as its description: tick the acceptance criteria you checked, and add
-   what changed and how to check it on the preview at `…/pr-preview/pr-<PR number>/`. A PR is
+   what changed and how to check it on the preview at `…/pr-preview/pr-<PR number>/`. A Gherkin is
+   one line there, its title and test class, never its full text: the PR's e2e comment shows it in
+   full with its GIFs ([docs/given-when-then-test-rules.md](docs/given-when-then-test-rules.md), section 8). A PR is
    **docs only** when every path it changes (a rename's old path too) is a Markdown file or under
    `docs/`, `.github/` or `.claude/`: the list `pr-preview.yml` and `ci.yml` use, which skip its
    preview and build. A docs-only PR has no preview, so its description and messages leave the

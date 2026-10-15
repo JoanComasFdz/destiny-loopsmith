@@ -55,7 +55,9 @@ Then wait for their answer. Change the criteria as often as they want.
 
 ## 4. Round 2: the spec
 
-Show the spec exactly as it will open the PR description, and ask whether to start.
+Show the spec exactly as it will open the PR description, and ask whether to start. Its Gherkins
+are one line each, title and test class: their full text was agreed in round 1, and the PR's e2e
+comment shows it with the GIFs, so the description never repeats it.
 
 **Title:** an imperative sentence of at most about 70 characters, e.g.
 `Show the perk descriptions in the perk picker on the phone`.
