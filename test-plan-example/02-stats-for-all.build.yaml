@@ -1,0 +1,6 @@
+# PR #79 · Stats for All: hit 3 separate enemies within 3 s.
+name: "PR 79 - Build 02: Stats for All"
+class: hunter
+subclass: arc
+weapons:
+  - { slot: energy, name: Ogma PR6, type: solar, perks: [stats-for-all] }

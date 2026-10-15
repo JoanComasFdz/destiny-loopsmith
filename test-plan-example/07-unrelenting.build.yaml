@@ -1,0 +1,6 @@
+# PR #79 · Unrelenting: 3 kills, each within 5 s of the last.
+name: "PR 79 - Build 07: Unrelenting"
+class: hunter
+subclass: arc
+weapons:
+  - { slot: energy, name: Ogma PR6, type: solar, perks: [unrelenting] }

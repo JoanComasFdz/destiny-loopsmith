@@ -1,0 +1,6 @@
+# PR #79 · Reaper's Tithe: 2, 3 or 4+ enemies killed at once.
+name: "PR 79 - Build 03: Reaper's Tithe"
+class: hunter
+subclass: arc
+weapons:
+  - { slot: power, name: Bellowing Giant, type: void, perks: [reapers-tithe] }

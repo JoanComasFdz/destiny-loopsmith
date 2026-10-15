@@ -1,0 +1,6 @@
+# PR #79 · Hatchling: 3 kills within 3 s (or a precision kill).
+name: "PR 79 - Build 05: Hatchling"
+class: hunter
+subclass: arc
+weapons:
+  - { slot: kinetic, name: Festival Flight, type: strand, perks: [hatchling] }

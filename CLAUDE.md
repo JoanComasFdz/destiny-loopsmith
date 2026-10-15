@@ -82,6 +82,9 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
   except to fill `${E2E_MANIFEST_CACHE:-~/.cache/loopsmith/bungie-manifest}` once, and read the manifest version
   pinned as `ManifestContentId` in `src/Loopsmith.Web/wwwroot/appsettings.json` (bumping it downloads the new version
   once); the cache is Bungie's data, never committed.
+- [GIVEN-WHEN-THEN-TEST-RULES.md](GIVEN-WHEN-THEN-TEST-RULES.md) — how to write a Given/When/Then test (a PR's
+  acceptance criteria, its test plan, an e2e scenario), click by click; `test-plan-example/` is a plan written by them,
+  with its minimal builds.
 - `docs/requirements.md` — the requirements, starting with the level of abstraction (what Loopsmith
   does and doesn't), then FR-1…FR-13 with their status, the non-functional requirements and what is
   out of scope.
