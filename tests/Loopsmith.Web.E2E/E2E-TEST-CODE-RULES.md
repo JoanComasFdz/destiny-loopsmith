@@ -78,7 +78,7 @@ public sealed class ReloadTests : BaseE2E
 - **One Gherkin is one scenario:** one method, a `[Theory]` with:
   - `[PlayInDesktop]` and/or `[PlayInMobile]`: each plays it once, on that screen (rule b). They match the Gherkin's
     `@desktop` / `@mobile` tags. Each attribute can be there at most once (a second one doesn't compile);
-  - `[TestDescription("""…""")]`: the Gherkin it implements, word for word as the PR's acceptance criterion writes it,
+  - `[TestDescription("""…""")]`: the Gherkin it implements, word for word as agreed with the owner,
     tags and `#` lines included;
   - one parameter, `Screen screen`: the screen its attribute plays it on. BaseE2E reads it; the body never does (the
     project's `NoWarn` says so to xunit's analyzer).

@@ -70,13 +70,6 @@ What is true when this is done, from the player's or the owner's side, in one to
 ## Acceptance criteria
 
 - [ ] <A Gherkin's title> (`<its test class>`)
-  ```gherkin
-  @desktop @mobile
-  Scenario: <its title>
-    Given …
-    When …
-    Then …
-  ```
 - [ ] <A criterion checked in a file, one line.>
 
 ## Out of scope
@@ -100,7 +93,9 @@ Files, rules, builds, related PRs, how the work splits, open questions.
     checked in a file.
   - **Every criterion about how the app behaves is a Gherkin** (docs/given-when-then-test-rules.md),
     and **every Gherkin is one e2e scenario** that holds it word for word in its `[TestDescription]`
-    (tests/Loopsmith.Web.E2E/E2E-TEST-CODE-RULES.md, rule i). Its tags name the screens it is played on:
+    (tests/Loopsmith.Web.E2E/E2E-TEST-CODE-RULES.md, rule i). Round 1 shows each Gherkin in full; the
+    spec and the PR description list it by its title and test class only, because the PR's e2e
+    comment shows the full Gherkin with its GIFs (rules, section 8). Its tags name the screens it is played on:
     `@desktop @mobile`, unless the subject can't apply to one (a tooltip shows on hover only; a phone's
     layout on a phone only), and then a `#` line says why. Layout (no overlap, at a row's end, inside
     the screen, text not cut off) is a Gherkin too; "looks right" and colours are never criteria.

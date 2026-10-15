@@ -156,18 +156,13 @@ rule h). Builds are made for the tests only.
 
 ## 8. In the pull request
 
-Under the PR description's **Acceptance criteria**, each Gherkin is a checkbox with its title and its test class,
-followed by its block, indented under it:
+The full Gherkins are agreed with the owner in the session. After that they live in their tests' `[TestDescription]`,
+and the PR's e2e comment shows each one with its GIFs, so the PR description doesn't repeat them: under its
+**Acceptance criteria**, each Gherkin is one checkbox line with its title and its test class.
 
-````markdown
+```markdown
 - [ ] Unrelenting heals for sure on 3 quick kills (`EnemyCountTests`)
-  ```gherkin
-  @desktop @mobile
-  Scenario: Unrelenting heals for sure on 3 quick kills
-    Given the build "ogma-pr6-unrelenting" is imported, with no steps
-    …
-  ```
-````
+```
 
 The criteria checked in a file stay plain checkbox lines next to them.
 
