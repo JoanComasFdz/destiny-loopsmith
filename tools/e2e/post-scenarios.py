@@ -5,14 +5,15 @@
 
 Reads <out>/scenarios.json (tools/e2e/record.sh), uploads each scenario's GIF to the `prs-resources` release as
   pr-<n>-v<version>-<the scenario's GIF name>.gif and posts them as a new comment on the PR that starts with what
-  changed (the body of the pushed commit's message, or its subject). It never touches the PR's description. The version
-  is one more than the highest "## Scenarios (V<N>)" in this workflow's comments. A name longer than 200 characters
-  keeps its start and ends with a short hash of the scenario's method.
+  changed (the body of --commit's message, or its subject). It never touches the PR's description. The version is one
+  more than the highest "## Scenarios (V<N>)" in this workflow's comments. A name longer than 200 characters keeps its
+  start and ends with a short hash of the scenario's method.
 Nothing recorded (an empty scenarios.json) posts nothing.
 
 Uses the gh CLI (GH_TOKEN) on the repository in --repo or GITHUB_REPOSITORY. --dry-run prints instead of writing.
-.github/workflows/e2e-videos.yml runs it (and, when the PR closes, keeps its newest version's assets and deletes the
-older ones); docs/hosting.md, "E2E videos on pull requests", explains it.
+.github/workflows/e2e-videos.yml runs it on the GIFs a session pushed with tools/e2e/push-gifs.sh (--out e2e-gifs,
+--commit the GIFs' commit); when the PR closes, the workflow keeps its newest version's assets and deletes the older
+ones. docs/hosting.md, "E2E videos on pull requests", explains it.
 """
 import argparse
 import hashlib
@@ -36,7 +37,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--pr", type=int, required=True)
     parser.add_argument("--repo", default=os.environ.get("GITHUB_REPOSITORY"))
-    parser.add_argument("--commit", required=True, help="the pushed head commit, for what changed")
+    parser.add_argument("--commit", required=True, help="the commit whose message says what changed")
     parser.add_argument("--out", default="out", help="record.sh's output folder")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()

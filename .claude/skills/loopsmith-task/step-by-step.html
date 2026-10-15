@@ -184,18 +184,19 @@ button:focus-visible{outline:3px solid var(--main);outline-offset:2px}
           <div class="node read">conventions-reviewer<small>The diff against CONVENTIONS.md.</small></div>
           <div class="node read">Criteria check<small>Each acceptance criterion against the diff.</small></div>
           <div class="node read">Browser check<small>Only for a web change: publishes the app, checks it at desktop and 390 px and the console.</small></div>
-          <div class="node cmd"><code>tools/e2e/record.sh</code> / <code>dotnet test</code><small>Long runs in the background meanwhile.</small></div>
+          <div class="node cmd"><code>tools/e2e/record.sh --changed-since origin/main</code> / <code>dotnet test</code><small>Long runs in the background meanwhile. Every scenario the branch adds or changes passes, and its GIF shows what its title says.</small></div>
         </div>
         <div class="node main">Fix what they found</div>
         <div class="node main">Rebase onto <code>origin/main</code>, build + test again, then the first push<small>The branch stays local until now. Only before the first push: after it, a rebase would need a force-push.</small></div>
-        <div class="why"><b>Why the rebase:</b> the PR then opens up to date with <code>main</code>, so it is less likely to need <b>Update branch</b>; anything merged while it waits for review can still put it behind. <b>Why subagents:</b> a fresh reader sees what the author overlooks, because it doesn't share the session's assumptions. <b>Why in parallel:</b> the checkers only read, so they can't get in each other's way. <b>Why before the push:</b> every push runs CI, and one that changes e2e scenarios records them on the PR; a fix found now saves a round on the PR.</div>
+        <div class="why"><b>Why the rebase:</b> the PR then opens up to date with <code>main</code>, so it is less likely to need <b>Update branch</b>; anything merged while it waits for review can still put it behind. <b>Why subagents:</b> a fresh reader sees what the author overlooks, because it doesn't share the session's assumptions. <b>Why in parallel:</b> the checkers only read, so they can't get in each other's way. <b>Why before the push:</b> every push runs CI; a fix found now saves a round on the PR. <b>Why the session records the e2e scenarios:</b> CI doesn't run them, so the session's recording is their only run, and it is the proof the session checked its own work.</div>
       </div>
     </div>
     <div class="stage" role="listitem">
       <div class="tag">§5<b>PR</b></div>
       <div class="body">
         <div class="node main">Open the PR, rename the session, subscribe<small>Messages end with the PR and preview links; a docs-only PR has no preview, so only the PR link.</small></div>
-        <div class="why"><b>Why the session:</b> one writer to GitHub, so nothing is posted twice and every reply comes from the session that knows the whole history.</div>
+        <div class="node cmd"><code>tools/e2e/push-gifs.sh</code><small>Only when scenarios were recorded: pushes their GIFs to a throwaway <code>e2e-gifs/pr-&lt;n&gt;-&lt;sha&gt;</code> branch; the "E2E videos" workflow posts them on the PR as <code>## Scenarios (V&lt;N&gt;)</code> and deletes the branch.</small></div>
+        <div class="why"><b>Why the session:</b> one writer to GitHub, so nothing is posted twice and every reply comes from the session that knows the whole history. <b>Why the GIFs travel on a branch:</b> a session can't upload a file to GitHub, but it can push; the workflow only moves them into the <code>prs-resources</code> release and posts them, it builds and records nothing.</div>
       </div>
     </div>
     <div class="stage gate" role="listitem">
@@ -205,9 +206,9 @@ button:focus-visible{outline:3px solid var(--main);outline-offset:2px}
           <div class="node gate">Your review, comment or message</div>
           <div class="node main">A CI result, a conflict, a check-in about every 4 h<small>On a conflict: merge <code>origin/main</code>, build, test, push.</small></div>
           <div class="node read">CI diagnoser<small>Only on a red check with a long log.</small></div>
-          <div class="node main">Fix, reply on the thread, push<small>Never resolve the thread: you resolve it.</small></div>
+          <div class="node main">Fix, reply on the thread, push<small>Never resolve the thread: you resolve it. A push that changes e2e scenarios: record them before it, <code>tools/e2e/push-gifs.sh</code> after it.</small></div>
         </div>
-        <div class="why"><b>Why a diagnoser:</b> a long CI log would fill the session's context; a subagent reads it and names the cause. <b>Why pushes stay sequential:</b> each push runs CI and may record a new e2e version (V1, V2…), and the PR's history should read in order. <b>Why you resolve threads:</b> it's your sign-off before merging.</div>
+        <div class="why"><b>Why a diagnoser:</b> a long CI log would fill the session's context; a subagent reads it and names the cause. <b>Why pushes stay sequential:</b> each push runs CI and may post a new e2e version (V1, V2…), and the PR's history should read in order. <b>Why you resolve threads:</b> it's your sign-off before merging.</div>
       </div>
     </div>
     <div class="stage" role="listitem">
