@@ -12,13 +12,16 @@ namespace Loopsmith.Web.E2E.Infrastructure.Frontend;
 ///   that fits in the window is scrolled, as little as needed, until all of it shows below the sticky top bar; a taller
 ///   one until its top shows under the top bar, then, when the member uses an element inside it, until that shows too;
 /// - when the run records, the scroll is smooth, a box that moved stays a moment on screen before the action or the
-///   read, and a step starts no sooner than <see cref="E2ESite.ActionGap"/> after the previous one ended (record.sh
+///   read, the drawn mouse pointer glides to the element an action uses before the action, and a step starts no sooner than <see cref="E2ESite.ActionGap"/> after the previous one ended (record.sh
 ///   <c>--action-gap</c>), so the GIF doesn't scroll and click faster than the eye follows. Without a recording it
 ///   jumps and goes on at once.
 /// </summary>
 public static class OnScreen
 {
     private static readonly TimeSpan ShownBeforeStep = TimeSpan.FromMilliseconds(500);
+
+    // As long as the drawn pointer's glide (BaseE2E's pointer script), and a moment to see it arrive.
+    private static readonly TimeSpan PointerGlide = TimeSpan.FromMilliseconds(800);
 
     // When each page's last step ended (one page per scenario, its steps one after another).
     private static readonly ConditionalWeakTable<IPage, Stopwatch> SinceLastStep = [];
@@ -29,6 +32,11 @@ public static class OnScreen
     public static async Task ActAsync(ILocator box, ILocator target, Func<ILocator, Task> act)
     {
         await ShowAsync(box, target);
+        if (Recording)
+        {
+            await GlideMouseToAsync(target);
+        }
+
         await act(target);
         NoteStepEnded(box.Page);
     }
@@ -63,6 +71,17 @@ public static class OnScreen
         if (Recording && moved)
         {
             await Task.Delay(ShownBeforeStep);
+        }
+    }
+
+    // Moves the mouse to the target's centre (where Playwright clicks) and waits while the drawn pointer glides there
+    // (BaseE2E's pointer script), so the video shows where the next action happens before it does.
+    private static async Task GlideMouseToAsync(ILocator target)
+    {
+        if (await target.BoundingBoxAsync() is { } bounds)
+        {
+            await target.Page.Mouse.MoveAsync(bounds.X + bounds.Width / 2, bounds.Y + bounds.Height / 2);
+            await Task.Delay(PointerGlide);
         }
     }
 

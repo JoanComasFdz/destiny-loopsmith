@@ -32,7 +32,8 @@ What the GIF shows is the browser window, nothing more and nothing less: the vid
 (1280×800, `BaseE2E`), and the window shows its scrollbar (Playwright hides it in headless Chromium; `BrowserRun` turns
 that off), so a page taller than the window says so. Before each action and each read, the page object scrolls the
 whole box it works on into view (`Infrastructure/Frontend/OnScreen.cs`; E2E-TEST-CODE-RULES.md, rule c). While
-recording, it scrolls smoothly, holds a box that moved a moment on screen, and starts a step no sooner than
+recording, it scrolls smoothly, holds a box that moved a moment on screen, glides the mouse pointer (headless Chromium
+draws none, so `BaseE2E` draws a big one, and a ring at each click) to the element an action uses, and starts a step no sooner than
 `--action-gap` seconds (`E2E_ACTION_GAP`, default 1) after the previous one ended, so the GIF doesn't scroll and click
 faster than the eye can follow. Without a recording it doesn't wait.
 
