@@ -40,16 +40,18 @@ tools/e2e/push-gifs.sh                              # their GIFs, posted on the 
 with `tools/web/prepare-pages.sh`, serves it with `python3 -m http.server`, runs the chosen scenarios with `E2E_URL` set
 and video on, and writes to `out/` (`--out <dir>`; gitignored):
 - `out/<domain folder>/<gif name>.gif`: each run of a scenario from Home on (the manifest's startup screen trimmed
-  off), 12 fps; a desktop run 800 px wide, a phone run at its own 390 px; the GIF name ends in `-desktop` or
-  `-mobile`; a failing run gets its GIF too;
+  off), its last frame held 3 s, 20 fps; a desktop run 800 px wide, a phone run at its own 390 px; the GIF name ends in
+  `-desktop` or `-mobile`; a failing run gets its GIF too;
+- `out/<domain folder>/<gif name>.mp4`: the same run as an H.264 MP4 at the recording's own size and frame rate
+  (1280×800; a phone's 390×844), its last frame held 3 s too: the PR comment links it to the site's player page;
 - `out/scenarios.json`: one entry per run: domain folder, class, method, title, Gherkin, screen (`desktop` /
-  `mobile`), GIF path, startup time (page open → Home shown) and whether it passed.
+  `mobile`), GIF path, MP4 path, startup time (page open → Home shown) and whether it passed.
 
 It prints each scenario's startup time and every request that left for bungie.net, and exits non-zero when a scenario
 failed. `--changed-since <ref>` picks the scenario classes added or changed since the branch left `<ref>` (working tree
 included), plus those that name a changed fixture file.
 
-What the GIF shows is the browser window, nothing more and nothing less: the video and the window are one size
+What the GIF and the MP4 show is the browser window, nothing more and nothing less: the video and the window are one size
 (1280×800 on desktop, 390×844 on a phone; `BaseE2E`, E2E-TEST-CODE-RULES.md rule b), and the window shows its scrollbar (Playwright hides it in headless Chromium; `BrowserRun` turns
 that off), so a page taller than the window says so. Before each action and each read, the page object scrolls the
 whole box it works on into view (`Infrastructure/Frontend/OnScreen.cs`; E2E-TEST-CODE-RULES.md, rule c). While
@@ -63,7 +65,7 @@ scenarios (`--changed-since origin/main`; again if a scenario or the web app cha
 the pushed head; never between pushes) and, right after the push, `tools/e2e/push-gifs.sh` pushes the GIFs to a throwaway
 `e2e-gifs/pr-<n>-<short sha>` branch, which `.github/workflows/e2e-videos.yml` posts on the PR
 ([docs/hosting.md](../../docs/hosting.md#e2e-videos-on-pull-requests)): each scenario once, its title and Gherkin, then
-its 🖥️ Desktop and/or 📱 Mobile GIF; a failing run is marked there, never red.
+its 🖥️ Desktop and/or 📱 Mobile GIF with a ▶ Play MP4 link under it; a failing run is marked there, never red.
 
 Against a site you serve yourself: `E2E_URL=http://127.0.0.1:8000/destiny-loopsmith/ dotnet test tests/Loopsmith.Web.E2E`
 (add `E2E_VIDEO_DIR=<dir>` to keep the videos, `E2E_BUNGIE_LOG=<file>` to log the requests that left for bungie.net).

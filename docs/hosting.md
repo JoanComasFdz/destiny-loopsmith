@@ -160,8 +160,17 @@ time (a login during a DIM link's read waits for it).
 ## E2E videos on pull requests
 
 Every pull request from a branch of this repository shows its end-to-end scenarios
-([tests/Loopsmith.Web.E2E](../tests/Loopsmith.Web.E2E/README.md)) as GIFs, so a reviewer sees them working without
-running anything. The session that works the PR records them; CI doesn't run, record or build anything for them.
+([tests/Loopsmith.Web.E2E](../tests/Loopsmith.Web.E2E/README.md)) as GIFs, each with a **▶ Play MP4** link to the
+same run as a sharp video with controls, so a reviewer sees them working without running anything. The session that
+works the PR records them; CI doesn't run, record or build anything for them.
+
+- **What is recorded:** each run (a scenario played on a screen) from Home on, its last frame held 3 s, as a GIF (20 fps;
+  800 px wide on desktop, 390 px on a phone) and as an MP4 (H.264 at the recording's own size and frame rate: 1280×800
+  on desktop, 390×844 on a phone, 25 fps from Playwright's recorder). The GIF shows in the comment; the MP4 can be
+  paused, sought and seen full screen in the player page below. Playwright's recorder takes Chromium's screencast,
+  which hands it the phone at its 390×844 CSS pixels even though the page is drawn at twice that (asking it for a
+  780×1688 video only pads it with grey), so a phone's MP4 is no sharper than that; only screenshots come at the
+  device's pixels.
 
 - **Who records:** the session, once, right before each push that adds or changes scenarios:
   `tools/e2e/record.sh --changed-since origin/main`, i.e. every scenario the branch adds or changes from where it left
@@ -174,7 +183,8 @@ running anything. The session that works the PR records them; CI doesn't run, re
 - **How the GIFs get to GitHub:** a session can't upload a file to GitHub (its proxy only lets JSON request bodies
   through: a release upload answers 415), but it can push. Right after the push (the first one once the PR is open),
   `tools/e2e/push-gifs.sh` pushes a throwaway branch **`e2e-gifs/pr-<n>-<short sha>`**: the branch's head, already on
-  GitHub, plus one commit that adds `e2e-gifs/scenarios.json` and the GIFs (`e2e-gifs/<domain folder>/<gif name>.gif`).
+  GitHub, plus one commit that adds `e2e-gifs/scenarios.json`, the GIFs and the MP4s
+  (`e2e-gifs/<domain folder>/<gif name>.gif` and `.mp4`; the branch keeps its `e2e-gifs/` name).
   It finds the PR from the branch (or takes its number), stops when the head isn't pushed yet or that branch already
   exists, and never touches the working tree. The branch sits on the PR's head, not on an empty history, because a push
   runs the workflow file inside the pushed commit: the PR's own `.github/workflows/e2e-videos.yml`.
@@ -185,12 +195,13 @@ running anything. The session that works the PR records them; CI doesn't run, re
   permitted through this proxy"). So the GIFs travel on a branch, and the banner is the accepted cost: ignore it.
 - **What the workflow does** (`.github/workflows/e2e-videos.yml`, on a push to `e2e-gifs/**`): it checks the push
   (the name is `e2e-gifs/pr-<n>-<hex>`; PR #n is open and from this repository; the commit sits on a commit of the PR
-  and only adds `e2e-gifs/scenarios.json` and real GIFs), then `tools/e2e/post-scenarios.py --out e2e-gifs` uploads the
-  GIFs and posts them, and the branch is deleted whatever happened (the run's log says why one failed). A push that fails
+  and only adds `e2e-gifs/scenarios.json`, real GIFs (they start with `GIF8`) and real MP4s (an `ftyp` box first)), then
+  `tools/e2e/post-scenarios.py --out e2e-gifs` uploads the GIFs and MP4s and posts them, and the branch is deleted whatever happened (the run's log says why one failed). A push that fails
   the checks uploads and posts nothing. No `dotnet`, no Chromium, no ffmpeg: a run takes seconds.
-- **Where the GIFs go:** assets of the pre-release **`prs-resources`** (created once by the owner; never committed
+- **Where the GIFs and MP4s go:** assets of the pre-release **`prs-resources`** (created once by the owner; never committed
   anywhere). A release asset embedded as `![title](https://github.com/<owner>/<repo>/releases/download/prs-resources/<name>)`
-  shows inline in GitHub (an MP4 there only shows as a link, so they are GIFs). Uploads use the workflow's
+  shows inline in GitHub (an MP4 there only shows as a link, so the comment shows the GIF and links the MP4 to the
+  player page below). Uploads use the workflow's
   `GITHUB_TOKEN` (contents and pull-requests write); no personal token.
 - **The player page for MP4s:** GitHub draws a video player only for a video it stored itself, from a file dropped
   into its web editor (`github.com/user-attachments/…`, which only a logged-in browser can upload). Its pages' content
@@ -204,8 +215,8 @@ running anything. The session that works the PR records them; CI doesn't run, re
   `<video>` element reads the file itself and plays it. Above the video: the scenario's name from `<run>`, a link to
   PR #n, the version and the screen. An asset that is gone (an older version, deleted when its PR closed) shows a
   message instead.
-- **Naming:** `pr-<PR number>-v<version>-<run>.gif`, e.g.
-  `pr-82-v1-start-from-scratch-opens-an-arc-hunter-with-nothing-equipped-mobile.gif`.
+- **Naming:** `pr-<PR number>-v<version>-<run>.gif`, and the same name ending in `.mp4` for its MP4, e.g.
+  `pr-82-v1-start-from-scratch-opens-an-arc-hunter-with-nothing-equipped-mobile.gif` and `….mp4`.
   - `pr-<n>-` first, so a PR's assets sit together and its cleanup finds them (the dash after the number keeps
     `pr-7-` from matching `pr-70-`);
   - `v<version>`: 1, 2, 3… (no padding), one per `push-gifs.sh`, before the scenario so one version's GIFs sit
@@ -222,7 +233,9 @@ running anything. The session that works the PR records them; CI doesn't run, re
   `push-gifs.sh` copies the PR head's commit message there (a session writes a short plain description of the round in
   its body), or writes `--message "<text>"` as the body. Each scenario shows once: its Gherkin's title as a small
   heading, its Gherkin in a `gherkin` block, then a `🖥️ Desktop` and/or `📱 Mobile` subtitle (the screens it was played
-  on, desktop first) with that run's GIF below. A failed run has ❌ before its subtitle, and its scenario before its
+  on, desktop first) with that run's GIF below, and below it **▶ Play MP4**, a link to the player page with that run's
+  MP4 (`https://<owner, lowercase>.github.io/<repo>/e2e-player.html?v=<MP4 name>`; GitHub can't make a link open a new
+  tab, so a long-press does). A run with no MP4 (a `scenarios.json` from before the MP4s) shows its GIF only. A failed run has ❌ before its subtitle, and its scenario before its
   title. Every post ends with `---` and
   `_Recorded by the e2e workflow · Claude Code_`. The workflow never touches the PR's description, so editing the
   description can't break a post.
@@ -232,18 +245,19 @@ running anything. The session that works the PR records them; CI doesn't run, re
 - **One post per PR at a time** (the posting job's concurrency group is per PR, never cancelled midway), so two runs
   can't post the same version. GitHub keeps one waiting job per group: a post that is still waiting when a newer one
   arrives is skipped (its branch is deleted all the same), so push the GIFs once per round.
-- **Cleanup:** when the PR is closed or merged, the workflow deletes any `e2e-gifs/pr-<n>-…` branch left behind, keeps every GIF of the PR's newest version and deletes
-  its older versions' (`pr-<n>-v1-…` to `pr-<n>-v<N-1>-…`), so the PR's last `## Scenarios (V<N>)` post keeps showing
-  its GIFs for good, and the older posts show broken images. The newest version is the highest `v<N>` among the PR's
+- **Cleanup:** when the PR is closed or merged, the workflow deletes any `e2e-gifs/pr-<n>-…` branch left behind, keeps every GIF and MP4 of the PR's newest version and
+  deletes its older versions' (`pr-<n>-v1-…` to `pr-<n>-v<N-1>-…`), so the PR's last `## Scenarios (V<N>)` post keeps
+  showing its GIFs and playing its MP4s for good, and the older posts show broken images (their player links say the
+  recording is gone). The newest version is the highest `v<N>` among the PR's
   assets, read as a number (`v10` is newer than `v2`, and `v1` never matches `v10`). Only names of the form
   `pr-<n>-v<N>-…` are ever deleted: the owner's own assets (not starting with `pr-`), other PRs' assets and any other
   name are never touched. A reopened PR carries on from its last version, so closing it again keeps only its newest
-  version's GIFs. The job's log names each deleted asset, the version it kept and how many assets the release holds.
-- **The release's limit:** GitHub sets no total size limit on a release, but a release holds at most 1,000 assets. The
-  cleanup's log says how many `prs-resources` holds, with a warning above 900. Near the limit, the owner creates a new
+  version's GIFs and MP4s. The job's log names each deleted asset, the version it kept and how many assets the release holds.
+- **The release's limit:** GitHub sets no total size limit on a release, but a release holds at most 1,000 assets (a
+  run takes two: its GIF and its MP4). The cleanup's log says how many `prs-resources` holds, with a warning above 900. Near the limit, the owner creates a new
   pre-release (e.g. `prs-resources-2`) and points `RELEASE` in `tools/e2e/post-scenarios.py`, the `clean` job of
   `.github/workflows/e2e-videos.yml` and `release` in `src/Loopsmith.Web/wwwroot/e2e-player.html` at it. The old release stays, so the posts that embed its GIFs keep showing
-  them. Nothing does this automatically yet.
+  them; their player links look in the new release, so their MP4s no longer play. Nothing does this automatically yet.
 - Pull requests from forks are skipped (they never get a write token).
 
 ## Alternatives

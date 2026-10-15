@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Records the web app's end-to-end scenarios (tests/Loopsmith.Web.E2E) as GIFs: one per screen a scenario is played on
-# ([PlayInDesktop] / [PlayInMobile]).
+# Records the web app's end-to-end scenarios (tests/Loopsmith.Web.E2E) as GIFs and MP4s: one of each per screen a
+# scenario is played on ([PlayInDesktop] / [PlayInMobile]).
 #   tools/e2e/record.sh [all | <domain folder> | <TestClass> ...] [--changed-since <git ref>] [--action-gap <seconds>]
 #                       [--out <dir>] [--no-publish] [--no-video]
 # A domain folder is a folder under Scenarios/ (Starting, Build/Subclass); a class is a scenario class (StartFromScratchTests).
@@ -9,13 +9,15 @@
 # --action-gap <seconds>: the least time between two steps (an action or a read) of a recorded scenario (default 1).
 # It publishes the web app (Release), prepares it for /destiny-loopsmith/ (tools/web/prepare-pages.sh), serves it
 # locally, runs the chosen scenarios with E2E_URL set and video on, trims each video from when Home was shown (the
-# manifest's startup screen left out) and turns it into a GIF under <out>/<domain folder>/<gif name>.gif (a desktop run
-# 800 px wide, a phone run at its own 390 px; the GIF name ends in -desktop or -mobile). It prints each
+# manifest's startup screen left out) and turns it into a GIF under <out>/<domain folder>/<gif name>.gif (20 fps; a
+# desktop run 800 px wide, a phone run at its own 390 px; the GIF name ends in -desktop or -mobile) and an MP4 next to
+# it, <gif name>.mp4 (H.264 at the video's own size: 1280×800, a phone's 390×844). Both hold their last frame 3 s
+# before they end. It prints each
 # scenario's startup time (page open → Home shown) and the requests that left for bungie.net, and writes
 # <out>/scenarios.json. Exits non-zero when a scenario failed (its GIF is still written).
 # --no-video: the same scenarios against the same locally served publish, unrecorded and unpaced (no E2E_VIDEO_DIR):
 # the fast run while developing. It prints each run's result and time and the requests that left for bungie.net, exits
-# non-zero when a run failed, and leaves the last recording's GIFs and scenarios.json in <out> as they are. With
+# non-zero when a run failed, and leaves the last recording's GIFs, MP4s and scenarios.json in <out> as they are. With
 # --no-publish it also skips the publish (about a minute): fine when only scenario code changed, not the web app.
 # Right before a push that adds or changes scenarios (never between pushes): tools/e2e/record.sh --changed-since
 # origin/main, then tools/e2e/push-gifs.sh right after the push, so the GIFs posted match the pushed code.
@@ -39,7 +41,7 @@ while [ $# -gt 0 ]; do
     --out) out="$2"; shift 2 ;;
     --no-publish) publish=0; shift ;;
     --no-video) video=0; shift ;;
-    -h|--help) sed -n '2,22p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,24p' "$0"; exit 0 ;;
     *) chosen+=("$1"); shift ;;
   esac
 done
@@ -159,7 +161,7 @@ PY
   else
     echo "Requests that left for bungie.net: none."
   fi
-  echo "Nothing recorded: the GIFs and scenarios.json in $out are still the last recording's."
+  echo "Nothing recorded: the GIFs, MP4s and scenarios.json in $out are still the last recording's."
   exit $status
 fi
 
@@ -187,10 +189,12 @@ print(f"{(cut + 0.1) if cut is not None else noted + 0.2:.3f}")
 PY
 }
 
-# Each recorded run: trimmed from when Home was shown, as a GIF next to its domain folder's others; a desktop window
-# scaled to 800 px wide, a phone kept at its own 390 px.
+# Each recorded run: trimmed from when Home was shown, its last frame held 3 s, as a GIF next to its domain folder's
+# others (20 fps; a desktop window scaled to 800 px wide, a phone to its own 390 px) and as an MP4 (H.264 at the
+# video's own size and frame rate, for the player page: docs/hosting.md, "E2E videos on pull requests").
+hold_end="tpad=stop_mode=clone:stop_duration=3"
 palette_at() {
-  echo "fps=12,scale=$1:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=128:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle"
+  echo "$hold_end,fps=20,scale=$1:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=128:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle"
 }
 # The last run's GIFs go (only the folders named like Scenarios/' domain folders).
 for folder in "$scenarios_dir"/*/; do rm -rf "${out:?}/$(basename "$folder")"; done
@@ -204,6 +208,8 @@ while IFS= read -r record; do
   offset="$(find_home_in_video "$video" "$noted")"
   mkdir -p "$out/$domain"
   ffmpeg -nostdin -loglevel error -y -ss "$offset" -i "$video" -vf "$(palette_at $width)" "$out/$domain/$gif.gif"
+  ffmpeg -nostdin -loglevel error -y -ss "$offset" -i "$video" -vf "$hold_end" -an \
+    -c:v libx264 -preset slow -crf 18 -pix_fmt yuv420p -movflags +faststart "$out/$domain/$gif.mp4"
 done < <(find "$videos" -path "$videos/.raw" -prune -o -name '*.json' -print | sort)
 
 python3 - "$out" "${records[@]}" <<'PY'
@@ -220,6 +226,7 @@ for path in records:
         "gherkin": r["gherkin"],
         "screen": r["screen"],
         "gif": f'{r["domain"]}/{r["gif"]}.gif',
+        "mp4": f'{r["domain"]}/{r["gif"]}.mp4',
         "startupSeconds": None if r["homeShownSeconds"] is None else round(r["homeShownSeconds"], 1),
         "passed": r["passed"],
     })
@@ -238,7 +245,7 @@ if [ -s "$log" ]; then
 else
   echo "Requests that left for bungie.net: none."
 fi
-echo "GIFs and scenarios.json in $out"
+echo "GIFs, MP4s and scenarios.json in $out"
 
 if [ $status -eq 0 ] && grep -q '"passed": false' "$out/scenarios.json"; then status=1; fi
 if [ $status -eq 0 ] && [ ${#records[@]} -eq 0 ]; then echo "No scenario ran." >&2; status=1; fi

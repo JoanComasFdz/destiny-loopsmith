@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-# Pushes the GIFs record.sh made to GitHub, for .github/workflows/e2e-videos.yml to post them on the pull request.
+# Pushes the GIFs and MP4s record.sh made to GitHub, for .github/workflows/e2e-videos.yml to post them on the pull request.
 #   tools/e2e/push-gifs.sh [<PR number>] [--out <dir>] [--message <what changed>] [--dry-run]
 # A session can't upload a file to GitHub, but it can push: this pushes e2e-gifs/pr-<n>-<short sha>, the branch's head
-# (already pushed) plus one commit that adds <out>/scenarios.json and its GIFs under e2e-gifs/. The workflow uploads them
-# to the prs-resources release, posts them on the PR as "## Scenarios (V<N>)" and deletes that branch.
+# (already pushed) plus one commit that adds <out>/scenarios.json and its GIFs and MP4s under e2e-gifs/. The workflow
+# uploads them to the prs-resources release, posts them on the PR as "## Scenarios (V<N>)" (each GIF with a link to its
+# MP4 in the site's player page) and deletes that branch.
 # The PR is the open one of the current branch unless given. "What changed" in the post is --message, or else the body of
 # the head commit's message (its subject when it has none). An empty scenarios.json pushes nothing. Never touches the
 # working tree or the index. --dry-run builds the commit and says what it would push.
@@ -21,7 +22,7 @@ while [ $# -gt 0 ]; do
     --out) out="$2"; shift 2 ;;
     --message) message="$2"; shift 2 ;;
     --dry-run) dry_run=1; shift ;;
-    -h|--help) sed -n '2,10p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,11p' "$0"; exit 0 ;;
     *) pr="$1"; shift ;;
   esac
 done
@@ -32,8 +33,9 @@ if [ ! -f "$scenarios" ]; then
   echo "$scenarios is missing: run tools/e2e/record.sh first." >&2
   exit 2
 fi
-gifs="$(python3 -c 'import json,sys; [print(e["gif"]) for e in json.load(open(sys.argv[1]))]' "$scenarios")"
-if [ -z "$gifs" ]; then
+# Each run's GIF, then its MP4 (a scenarios.json from before the MP4s has none).
+files="$(python3 -c 'import json,sys; [print(e[k]) for e in json.load(open(sys.argv[1])) for k in ("gif", "mp4") if e.get(k)]' "$scenarios")"
+if [ -z "$files" ]; then
   echo "No scenario recorded ($scenarios is empty): nothing to push."
   exit 0
 fi
@@ -86,15 +88,18 @@ add_file() {
   git update-index --add --cacheinfo "100644,$blob,e2e-gifs/$2"
 }
 add_file "$scenarios" scenarios.json
-count=0
-while IFS= read -r gif; do
-  if [ -f "$out/$gif" ]; then
-    add_file "$out/$gif" "$gif"
-    count=$((count + 1))
+gifs=0
+mp4s=0
+while IFS= read -r file; do
+  if [ -f "$out/$file" ]; then
+    add_file "$out/$file" "$file"
+    case "$file" in *.mp4) mp4s=$((mp4s + 1)) ;; *) gifs=$((gifs + 1)) ;; esac
+  elif [[ $file == *.mp4 ]]; then
+    echo "No MP4 at $out/$file: its GIF has no player link."
   else
-    echo "No GIF at $out/$gif: its post says \"No recording\"."
+    echo "No GIF at $out/$file: its post says \"No recording\"."
   fi
-done <<< "$gifs"
+done <<< "$files"
 tree="$(git write-tree)"
 unset GIT_INDEX_FILE
 
@@ -105,7 +110,7 @@ else
 fi
 commit="$(git commit-tree "$tree" -p HEAD -F "$work/message")"
 
-echo "$count GIF(s) of PR #$pr in $(git rev-parse --short "$commit") on $head."
+echo "$gifs GIF(s) and $mp4s MP4(s) of PR #$pr in $(git rev-parse --short "$commit") on $head."
 if [ $dry_run -eq 1 ]; then
   git diff --stat "$head" "$commit"
   echo "Dry run: would push it to $target."
