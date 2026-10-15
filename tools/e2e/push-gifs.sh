@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # Pushes the GIFs record.sh made to GitHub, for .github/workflows/e2e-videos.yml to post them on the pull request.
 #   tools/e2e/push-gifs.sh [<PR number>] [--out <dir>] [--message <what changed>] [--dry-run]
-# A session can't upload a file to GitHub, but it can push: this pushes e2e-gifs/pr-<n>-<short sha>, the branch's head
-# (already pushed) plus one commit that adds <out>/scenarios.json and its GIFs under e2e-gifs/. The workflow uploads them
-# to the prs-resources release, posts them on the PR as "## Scenarios (V<N>)" and deletes that branch.
+# A session can't upload a file to GitHub, but it can push: this pushes the tag e2e-gifs/pr-<n>-<short sha> on one commit
+# that sits on the branch's head (already pushed) and adds <out>/scenarios.json and its GIFs under e2e-gifs/. A tag, not a
+# branch: GitHub shows no "had recent pushes" banner for it. The workflow uploads them to the prs-resources release, posts
+# them on the PR as "## Scenarios (V<N>)" and deletes that tag. No local tag is made.
 # The PR is the open one of the current branch unless given. "What changed" in the post is --message, or else the body of
 # the head commit's message (its subject when it has none). An empty scenarios.json pushes nothing. Never touches the
 # working tree or the index. --dry-run builds the commit and says what it would push.
@@ -21,7 +22,7 @@ while [ $# -gt 0 ]; do
     --out) out="$2"; shift 2 ;;
     --message) message="$2"; shift 2 ;;
     --dry-run) dry_run=1; shift ;;
-    -h|--help) sed -n '2,10p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,11p' "$0"; exit 0 ;;
     *) pr="$1"; shift ;;
   esac
 done
@@ -70,8 +71,8 @@ else
 fi
 
 target="e2e-gifs/pr-$pr-$(git rev-parse --short=7 HEAD)"
-if git ls-remote --exit-code -q origin "refs/heads/$target" > /dev/null; then
-  echo "$target is already on GitHub: its workflow run deletes it when it's done (Actions, \"E2E videos\")." >&2
+if git ls-remote --exit-code -q origin "refs/tags/$target" > /dev/null; then
+  echo "The tag $target is already on GitHub: its workflow run deletes it when it's done (Actions, \"E2E videos\")." >&2
   exit 1
 fi
 
@@ -108,9 +109,9 @@ commit="$(git commit-tree "$tree" -p HEAD -F "$work/message")"
 echo "$count GIF(s) of PR #$pr in $(git rev-parse --short "$commit") on $head."
 if [ $dry_run -eq 1 ]; then
   git diff --stat "$head" "$commit"
-  echo "Dry run: would push it to $target."
+  echo "Dry run: would push it as the tag $target."
   exit 0
 fi
-git push -q origin "$commit:refs/heads/$target"
-echo "Pushed $target: the \"E2E videos\" workflow posts them on https://github.com/$slug/pull/$pr and deletes the branch."
+git push -q --no-follow-tags origin "$commit:refs/tags/$target"
+echo "Pushed the tag $target: the \"E2E videos\" workflow posts them on https://github.com/$slug/pull/$pr and deletes the tag."
 echo "Its runs: https://github.com/$slug/actions/workflows/e2e-videos.yml"

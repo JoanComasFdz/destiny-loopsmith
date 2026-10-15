@@ -90,9 +90,9 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
   out of scope.
 - `.github/workflows/` — `ci.yml` (build + test on every PR that changes more than docs, and every
   push to `main`), `pages.yml`, `pr-preview.yml`, `e2e-videos.yml` (records nothing: the session
-  records the PR's added or changed e2e scenarios and pushes their GIFs to a throwaway `e2e-gifs/pr-<n>-<sha>` branch
+  records the PR's added or changed e2e scenarios and pushes their GIFs as a throwaway `e2e-gifs/pr-<n>-<sha>` tag
   with `tools/e2e/push-gifs.sh`; the workflow uploads them to the `prs-resources` pre-release, posts them on the PR as
-  one comment per version (V1, V2…) and deletes the branch; when the PR closes, keeps its newest version's GIFs and
+  one comment per version (V1, V2…) and deletes the tag; when the PR closes, keeps its newest version's GIFs and
   deletes the older ones; [docs/hosting.md](docs/hosting.md) "E2E videos on pull requests"); `tools/web/prepare-pages.sh` readies a published site for Pages.
 - `tools/compendium/` — Destiny Data Compendium download (`sheet_dump.py`; the owner runs it with
   `get-compendium.ps1` / `get-compendium.sh` / `get-compendium-docker.sh`; see its README). The

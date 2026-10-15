@@ -28,8 +28,8 @@ failed. `--changed-since <ref>` picks the scenario classes added or changed sinc
 included), plus those that name a changed fixture file.
 
 CI doesn't run them. On a pull request, the session records them before each push that adds or changes scenarios
-(`--changed-since origin/main`) and, right after the push, `tools/e2e/push-gifs.sh` pushes the GIFs to a throwaway
-`e2e-gifs/pr-<n>-<short sha>` branch, which `.github/workflows/e2e-videos.yml` posts on the PR
+(`--changed-since origin/main`) and, right after the push, `tools/e2e/push-gifs.sh` pushes the GIFs as a throwaway
+`e2e-gifs/pr-<n>-<short sha>` tag, which `.github/workflows/e2e-videos.yml` posts on the PR
 ([docs/hosting.md](../../docs/hosting.md#e2e-videos-on-pull-requests)): a failing scenario is marked there, never red.
 
 Against a site you serve yourself: `E2E_URL=http://127.0.0.1:8000/destiny-loopsmith/ dotnet test tests/Loopsmith.Web.E2E`
