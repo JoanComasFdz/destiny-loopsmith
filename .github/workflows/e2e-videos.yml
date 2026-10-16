@@ -2,7 +2,8 @@ name: E2E videos
 
 # The session that works a PR records its added or changed end-to-end scenarios itself (tools/e2e/record.sh) and pushes
 # their GIFs and MP4s with tools/e2e/push-gifs.sh to a throwaway branch e2e-gifs/pr-<n>-<short sha>: the PR's head
-# commit plus one commit that adds e2e-gifs/scenarios.json, the GIFs and the MP4s. A session can't upload a file to
+# commit plus one commit that adds e2e-gifs/scenarios.json, the GIFs and the MP4s (and e2e-gifs/what-changed.md, the
+# post's "What changed", when the session gave one). A session can't upload a file to
 # GitHub, so this workflow does only that part: it checks the push, uploads them to the `prs-resources` pre-release as
 # pr-<n>-v<version>-<scenario>.gif and .mp4, posts them on the PR as a new comment (each GIF with a "▶ Play MP4" link to
 # the site's player page; it never touches the PR's description) and deletes the branch. It builds, tests and records
@@ -59,12 +60,12 @@ jobs:
           relation=$(gh api "repos/$GITHUB_REPOSITORY/compare/$parent...$head_sha" --jq .status)
           [ "$relation" = identical ] || [ "$relation" = ahead ] ||
             { echo "::error::The GIFs' commit sits on $parent, which isn't in the history of PR #$PR."; exit 1; }
-      - name: Check the commit only adds scenarios.json, GIFs and MP4s
+      - name: Check the commit only adds scenarios.json, what-changed.md, GIFs and MP4s
         run: |
           bad=0
           while IFS=$'\t' read -r status path; do
-            if [ "$status" != A ] || [[ ! $path =~ ^e2e-gifs/(scenarios\.json|[A-Za-z0-9_/-]+\.(gif|mp4))$ ]]; then
-              echo "::error::Not a GIF, an MP4 or scenarios.json added under e2e-gifs/: $status $path"
+            if [ "$status" != A ] || [[ ! $path =~ ^e2e-gifs/(scenarios\.json|what-changed\.md|[A-Za-z0-9_/-]+\.(gif|mp4))$ ]]; then
+              echo "::error::Not a GIF, an MP4, scenarios.json or what-changed.md added under e2e-gifs/: $status $path"
               bad=1
             elif [[ $path == *.gif ]] && [ "$(head -c 4 "$path")" != GIF8 ]; then
               echo "::error::Not a GIF: $path"

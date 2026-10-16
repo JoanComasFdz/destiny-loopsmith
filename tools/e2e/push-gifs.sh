@@ -2,12 +2,14 @@
 # Pushes the GIFs and MP4s record.sh made to GitHub, for .github/workflows/e2e-videos.yml to post them on the pull request.
 #   tools/e2e/push-gifs.sh [<PR number>] [--out <dir>] [--message <what changed>] [--dry-run]
 # A session can't upload a file to GitHub, but it can push: this pushes e2e-gifs/pr-<n>-<short sha>, the branch's head
-# (already pushed) plus one commit that adds <out>/scenarios.json and its GIFs and MP4s under e2e-gifs/. The workflow
+# (already pushed) plus one commit that adds <out>/scenarios.json and its GIFs and MP4s under e2e-gifs/ (and, with
+# --message, e2e-gifs/what-changed.md holding it as it is). The workflow
 # uploads them to the prs-resources release, posts them on the PR as "## Scenarios (V<N>)" (each GIF with a link to its
 # MP4 in the site's player page) and deletes that branch.
-# The PR is the open one of the current branch unless given. "What changed" in the post is --message, or else the body of
-# the head commit's message (its subject when it has none). An empty scenarios.json pushes nothing. Never touches the
-# working tree or the index. --dry-run builds the commit and says what it would push.
+# The PR is the open one of the current branch unless given. "What changed" in the post is --message, word for word, or
+# else the body of the head commit's message without its trailers (its subject when it has none). An empty
+# scenarios.json pushes nothing. Never touches the working tree or the index. --dry-run builds the commit and says what
+# it would push.
 # docs/hosting.md, "E2E videos on pull requests".
 set -euo pipefail
 
@@ -22,7 +24,7 @@ while [ $# -gt 0 ]; do
     --out) out="$2"; shift 2 ;;
     --message) message="$2"; shift 2 ;;
     --dry-run) dry_run=1; shift ;;
-    -h|--help) sed -n '2,11p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,13p' "$0"; exit 0 ;;
     *) pr="$1"; shift ;;
   esac
 done
@@ -88,6 +90,12 @@ add_file() {
   git update-index --add --cacheinfo "100644,$blob,e2e-gifs/$2"
 }
 add_file "$scenarios" scenarios.json
+# The workflow posts this file as it is: a commit message's last paragraph can look like trailers ("AFTER: …") and be
+# dropped, a file never is.
+if [ -n "$message" ]; then
+  printf '%s\n' "$message" > "$work/what-changed.md"
+  add_file "$work/what-changed.md" what-changed.md
+fi
 gifs=0
 mp4s=0
 while IFS= read -r file; do
