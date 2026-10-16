@@ -137,7 +137,8 @@ description when the work is ready for review.
 The work branch is always `claude/<slug>`, named from the agreed title (CLAUDE.md, "Naming (agent
 work)"), even when this session was handed a generated branch name such as
 `claude/zealous-euler-qu8uiv`. Don't push to the generated one; every commit, push and the pull
-request use the slug branch.
+request use the slug branch. A follow-up session is handed its slug branch by the session that
+launched it (section 6, `outcome_branch`): keep that one, even if the agreed title changes.
 
 Commit as you go, but keep the branch local until the work is ready for review (CLAUDE.md, "Agent
 workflow", steps 3–4). While developing, run the e2e scenarios unrecorded, as often as you like:
@@ -242,6 +243,10 @@ each one with the claude-code-remote `create_session` tool:
   descriptions on phone".
 - `source_url`: `https://github.com/JoanComasFdz/destiny-loopsmith`. Leave the environment, model
   and permission mode as they are (the new session inherits them).
+- `outcome_branch`: `claude/<slug>`, named from the follow-up's task title (CLAUDE.md, "Naming
+  (agent work)"): "claude/perk-descriptions-on-phone". It gives the new session the repository as
+  its outcome, which files it under destiny-loopsmith in the owner's session list instead of
+  "Other", and it becomes the new session's work branch (section 5).
 - `prompt`: `/loopsmith-task ` followed by the follow-up in the owner's words. Add what the new
   session can't see: that it comes from PR #<n> (link it), the paths, rule ids and findings it needs,
   and a description of any screenshot or file it depends on. The files themselves stay in this session
