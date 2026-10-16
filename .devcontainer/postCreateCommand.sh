@@ -11,7 +11,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 for step in \
   1-install-dotnet.sh \
   2-install-ffmpeg.sh \
-  3-install-compendium-python.sh \
+  3-install-python-packages.sh \
   4-install-playwright-chromium.sh \
   5-install-zsh-config.sh \
   6-install-tmux.sh; do

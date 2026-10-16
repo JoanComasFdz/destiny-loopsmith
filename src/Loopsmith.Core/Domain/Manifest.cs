@@ -99,7 +99,7 @@ public sealed record KeywordTrait(ItemHash Hash, string Name, string Icon);
 public sealed record ArmorStatIcon(StatKind Stat, string Name, string Icon);
 
 /// <summary>
-/// Loopsmith's excerpt of the Bungie manifest: the items the rules and the saved DIM shares name (and the perks,
+/// Loopsmith's excerpt of the Bungie manifest: the items the rules, the saved DIM shares and the repo's builds' weapons name (and the perks,
 /// catalysts and sets those have), the armor sets, the damage types' icons, every plug that changes an armor stat
 /// (<see cref="StatPlugs"/>, for adding up a player's own armor), the breaker types, the overlays of an item's icon,
 /// the traits the glossary's keywords are (<see cref="KeywordTraits"/>: their icons) and the armor stats' names and icons
