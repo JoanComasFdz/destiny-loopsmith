@@ -80,7 +80,8 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
   vscode.dev installs it from a local container (its `Dockerfile`: vscode.dev fetches only from `localhost` and its own
   hosts) ([docs/hosting.md](docs/hosting.md) "The VS Code extension", its [README](src/Loopsmith.VsCodeExtension/README.md)).
 - `.devcontainer/` — the dev container for a GitHub Codespace or desktop VS Code's Dev Containers: .NET 10, Node 22,
-  ffmpeg, the Compendium download's Python packages and Playwright's Chromium (`Dockerfile`, `post-create.sh`), and the
+  ffmpeg, the Compendium download's Python packages, Playwright's Chromium and tmux (`Dockerfile`, `post-create.sh`,
+  `setup-tmux.sh`), and the
   VS Code extension installed from its source each time VS Code attaches (`install-extension.sh`; its
   [README](src/Loopsmith.VsCodeExtension/README.md), "Codespaces and Dev Containers").
 - `tests/Loopsmith.Core.Tests/` — unit, golden (`Golden/*.verified.txt`) and architecture tests.

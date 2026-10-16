@@ -39,7 +39,8 @@ it (`install-extension.sh`: it packs the `.vsix` as the site's is packed and ins
 there is nothing to install: no Marketplace, no container of your own, no download. The extension is always the
 checkout's own, so a branch's Codespace runs that branch's extension. The same container is a full dev environment for
 the repository: .NET 10, Node 22, ffmpeg, the Compendium download's Python packages, and the Chromium the e2e scenarios
-drive (`post-create.sh`), so `dotnet build Loopsmith.slnx`, `dotnet test` and `tools/e2e/record.sh` run in it.
+drive (`post-create.sh`), plus tmux with its configuration (prefix Ctrl+A) and the `t`, `tl`, `tk`, `tn`, `ta` aliases
+(`setup-tmux.sh`), so `dotnet build Loopsmith.slnx`, `dotnet test` and `tools/e2e/record.sh` run in it.
 
 - **GitHub Codespaces:** on the repository's page, **Code** → **Codespaces** → **⋯** → **New with options…**, pick the
   branch, then **Create codespace** (a 4-core machine at least). Creating it takes a few minutes the first time.
