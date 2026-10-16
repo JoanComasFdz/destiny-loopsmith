@@ -756,6 +756,7 @@ It is never added to the build's stats: the build's stat line and the `statCheck
 
 ## Build file (`builds/<build>/build.yaml`)
 
+<!-- BuildFileParsingTests reads the next yaml block -->
 ```yaml
 # abridged and illustrative — the real one is builds/skip-grenade-hunter/build.yaml
 name: Skip Grenade Hunter
