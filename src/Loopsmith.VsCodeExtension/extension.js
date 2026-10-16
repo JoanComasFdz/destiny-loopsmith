@@ -93,7 +93,8 @@ function toScreenLabel(screen) {
 /**
  * The scenarios of a C# file: each method with a [TestDescription("""…""")] (tests/*E2E/E2E-TEST-CODE-RULES.md, rule a),
  * with its Gherkin's title, the screens its [PlayInDesktop] / [PlayInMobile] name, its class and domain folder, the line
- * its attributes start on (where its CodeLens goes) and where its name is (what its hover covers).
+ * its attributes start on (where "Play e2e recording of this scenario" finds it from) and where its name is (its CodeLens
+ * goes on that line, between the attributes and the declaration, with other extensions' CodeLens; its hover covers the name).
  */
 function findScenarios(text) {
   const lines = text.split(/\r?\n/);
@@ -563,7 +564,7 @@ function activate(context) {
       const text = document.getText();
       const scenarios = findScenarios(text);
       const described = await Promise.all(scenarios.map(async (scenario) => {
-        const range = new vscode.Range(scenario.attributesLine, 0, scenario.attributesLine, 0);
+        const range = new vscode.Range(scenario.nameLine, 0, scenario.nameLine, 0);
         const recordings = await readRecordings(scenario);
         const items = describeLenses(catalog, recordings);
         return items.map((item) => new vscode.CodeLens(range, {

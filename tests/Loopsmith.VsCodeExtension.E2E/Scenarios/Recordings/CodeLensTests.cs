@@ -5,7 +5,7 @@ using Loopsmith.VsCodeExtension.E2E.Infrastructure.Workbench;
 
 namespace Loopsmith.VsCodeExtension.E2E.Scenarios.Recordings;
 
-/// <summary>The CodeLens above a scenario: its newest recording's screens, or that it has none.</summary>
+/// <summary>The CodeLens above a scenario's method: its newest recording's screens, or that it has none.</summary>
 public sealed class CodeLensTests : BaseE2E
 {
     [Theory, PlayInDesktop]
@@ -15,7 +15,7 @@ public sealed class CodeLensTests : BaseE2E
           # Desktop only: the extension runs in VS Code on a desktop.
           Given the release holds the recordings of "StartFromScratchTests.cs" from PR #104 · V1 and PR #109 · V1
           When I open "Scenarios/Starting/StartFromScratchTests.cs" in the explorer
-          Then the CodeLens above its scenario reads "Play desktop recording", "Play mobile recording" and "PR #109 · V1"
+          Then the CodeLens above its method reads "Play desktop recording", "Play mobile recording" and "PR #109 · V1"
           And no other line has a CodeLens
         """)]
     public async Task TheCodeLensPlaysEachScreenOfTheNewestRecording(Screen screen)
@@ -68,7 +68,7 @@ public sealed class CodeLensTests : BaseE2E
           # Desktop only: the extension runs in VS Code on a desktop.
           Given the release holds no recording of "ReloadTests.cs"
           When I open "Scenarios/Loop/Weapons/ReloadTests.cs" in the explorer
-          Then the CodeLens above its scenario reads "No recording yet"
+          Then the CodeLens above its method reads "No recording yet"
         """)]
     public async Task AScenarioWithNoRecordingSaysSo(Screen screen)
     {
@@ -92,7 +92,7 @@ public sealed class CodeLensTests : BaseE2E
           Given the release holds the recordings of "LongNameTests.cs" from PR #112 · V3
           When I open "Scenarios/Recordings/LongNameTests.cs" in the explorer
           # Its assets' names would pass 200 characters: the workflow cuts them and ends them with a hash of the GIF's path.
-          Then the CodeLens above its scenario reads "Play desktop recording" and "PR #112 · V3"
+          Then the CodeLens above its method reads "Play desktop recording" and "PR #112 · V3"
         """)]
     public async Task AScenarioNamedPastTwoHundredCharactersFindsItsRecording(Screen screen)
     {

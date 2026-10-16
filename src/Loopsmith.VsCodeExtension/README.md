@@ -5,7 +5,8 @@ a `[TestDescription("""…""")]` in a `Scenarios/**/*Tests.cs` file (`tests/Loop
 `tests/Loopsmith.VsCodeExtension.E2E`). Its recordings are the GIFs and MP4s the "E2E videos" workflow keeps in the
 `prs-resources` release ([docs/hosting.md](../../docs/hosting.md), "E2E videos on pull requests").
 
-- **CodeLens** above the scenario: `Play desktop recording | Play mobile recording | PR #109 · V1`, for each screen of
+- **CodeLens** above the scenario's method, between its attributes and its declaration (next to other extensions' CodeLens,
+  such as C# Dev Kit's "0 references"): `Play desktop recording | Play mobile recording | PR #109 · V1`, for each screen of
   its newest recording (the highest PR, then its highest version), or `No recording yet`.
 - **Panel** beside the editor, opened by "Play … recording": the Gherkin's title, its class, domain folder, PR and
   version, a **Desktop** / **Mobile** tab per screen, the MP4 with the browser's controls (the GIF when the run has no

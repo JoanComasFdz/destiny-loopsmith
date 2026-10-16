@@ -5,14 +5,17 @@ namespace Loopsmith.VsCodeExtension.E2E.Infrastructure.Workbench;
 /// <summary>What a test checks on the editor's CodeLens.</summary>
 public static class CodeLensSnapshotAssertions
 {
-    /// <summary>The CodeLens above the file's scenario (the row right above its [Theory, …] line) reads exactly <paramref name="items"/>.</summary>
+    /// <summary>
+    /// The CodeLens above the file's scenario's method (the row right above its "public async Task" line, between its
+    /// attributes and its declaration, where VS Code also shows other extensions' CodeLens) reads exactly <paramref name="items"/>.
+    /// </summary>
     public static AssertingThat<CodeLensSnapshot> ReadsAboveTheScenario(this AssertingThat<CodeLensSnapshot> that, params string[] items)
     {
         var above = that.InstanceToAssert.Rows.Where(IsAboveAScenario).ToArray();
-        Assert.True(above.Length == 1, $"The editor shows {above.Length} CodeLens rows above a scenario, but one was expected.");
+        Assert.True(above.Length == 1, $"The editor shows {above.Length} CodeLens rows above a scenario's method, but one was expected.");
         Assert.True(
             above[0].Items.SequenceEqual(items),
-            $"The CodeLens above the scenario reads {Quote(above[0].Items)}, but {Quote(items)} was expected.");
+            $"The CodeLens above the scenario's method reads {Quote(above[0].Items)}, but {Quote(items)} was expected.");
         return that;
     }
 
@@ -36,7 +39,7 @@ public static class CodeLensSnapshotAssertions
         return that;
     }
 
-    private static bool IsAboveAScenario(CodeLensRow row) => row.LineBelow.StartsWith("[Theory", StringComparison.Ordinal);
+    private static bool IsAboveAScenario(CodeLensRow row) => row.LineBelow.StartsWith("public async Task", StringComparison.Ordinal);
 
     private static string Quote(IEnumerable<string> items) => string.Join(" | ", items.Select(item => $"\"{item}\""));
 }
