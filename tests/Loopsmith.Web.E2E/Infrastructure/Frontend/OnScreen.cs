@@ -15,7 +15,10 @@ namespace Loopsmith.Web.E2E.Infrastructure.Frontend;
 ///   read, the drawn mouse pointer glides to the element an action uses before the action, and a step starts no sooner than <see cref="E2ESite.ActionGap"/> after the previous one ended (record.sh
 ///   <c>--action-gap</c>), so the GIF doesn't scroll and click faster than the eye follows. Without a recording it
 ///   jumps and goes on at once;
-/// - on a phone (<see cref="Screen.Mobile"/>) a press is a tap, and no mouse pointer glides (a phone has none).
+/// - on a phone (<see cref="Screen.Mobile"/>) a press is a tap, and no mouse pointer glides (a phone has none): when the run
+///   records, a pink dot shows where the finger lands instead, held a moment before the action, so the video shows where
+///   the tap happens before the screen changes (the tap's ring, BaseE2E's ring script, only shows once the app has
+///   already re-rendered).
 /// </summary>
 public static class OnScreen
 {
@@ -23,6 +26,9 @@ public static class OnScreen
 
     // As long as the drawn pointer's glide (BaseE2E's pointer script), and a moment to see it arrive.
     private static readonly TimeSpan PointerGlide = TimeSpan.FromMilliseconds(800);
+
+    // How long the phone's dot shows where the finger lands before the tap (its fade-in included).
+    private static readonly TimeSpan TapMarkerHold = TimeSpan.FromMilliseconds(600);
 
     // When each page's last step ended (one page per scenario, its steps one after another).
     private static readonly ConditionalWeakTable<IPage, Stopwatch> SinceLastStep = [];
@@ -43,7 +49,11 @@ public static class OnScreen
     public static async Task ActAsync(ILocator box, ILocator target, Func<ILocator, Task> act)
     {
         await ShowAsync(box, target);
-        if (Recording && !IsPhone(box.Page))
+        if (Recording && IsPhone(box.Page))
+        {
+            await MarkTapAsync(target);
+        }
+        else if (Recording)
         {
             await GlideMouseToAsync(target);
         }
@@ -96,6 +106,23 @@ public static class OnScreen
         }
     }
 
+    // Draws a pink dot where the finger lands (the target's centre, where Playwright taps) and holds it there, so the
+    // video shows where the next action happens before it does. The dot goes when the finger goes down, as the tap's ring
+    // takes its place (or a moment after the hold, for an action that is no tap).
+    private static async Task MarkTapAsync(ILocator target)
+    {
+        if (await target.BoundingBoxAsync() is { } bounds)
+        {
+            await target.Page.EvaluateAsync(TapMarkerScript, new[]
+            {
+                (double)(bounds.X + bounds.Width / 2),
+                (double)(bounds.Y + bounds.Height / 2),
+                TapMarkerHold.TotalMilliseconds,
+            });
+            await Task.Delay(TapMarkerHold);
+        }
+    }
+
     private static async Task WaitForActionGapAsync(IPage page)
     {
         if (SinceLastStep.TryGetValue(page, out var since) && since.Elapsed < E2ESite.ActionGap)
@@ -107,6 +134,21 @@ public static class OnScreen
     private static bool IsPhone(IPage page) => Screens.TryGetValue(page, out var screen) && screen.Value == Screen.Mobile;
 
     private static void NoteStepEnded(IPage page) => SinceLastStep.AddOrUpdate(page, Stopwatch.StartNew());
+
+    // The phone's dot: the tap ring's pink, filled, faded in over 150 ms.
+    private const string TapMarkerScript = """
+        ([x, y, hold]) => {
+          const dot = document.createElement('div');
+          dot.style.cssText = 'position:fixed;z-index:2147483647;pointer-events:none;width:40px;height:40px;margin:-20px 0 0 -20px;'
+            + 'border-radius:50%;background:rgba(255,61,127,.55);border:2px solid #ff3d7f;box-shadow:0 0 0 4px rgba(255,61,127,.3);'
+            + `opacity:0;transition:opacity .15s;left:${x}px;top:${y}px`;
+          document.documentElement.appendChild(dot);
+          requestAnimationFrame(() => { dot.style.opacity = '1'; });
+          const remove = () => { dot.remove(); window.removeEventListener('pointerdown', remove, true); };
+          window.addEventListener('pointerdown', remove, true);
+          setTimeout(remove, hold + 400);
+        }
+        """;
 
     // Scrolls the box (and the target) into view below the sticky top bar, waits until the page stops moving, and answers
     // whether it moved. The top bar is whatever sticky or fixed strip covers the top of the window (a dialog's backdrop,

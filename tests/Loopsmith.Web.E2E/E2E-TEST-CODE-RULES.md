@@ -143,7 +143,8 @@ A scenario never repeats any of that.
   panel, the Weapons box, the loop), not only the element clicked: Playwright scrolls a clicked element only just into
   view and doesn't scroll for a read, so without it the GIF would show part of the box, or none of it. `OnScreen` also
   paces a recorded scenario: one step at least `--action-gap` seconds after the previous one (README, "Run and
-  record"). On a phone a press is a tap, and no mouse pointer glides to it. Waits don't go through it.
+  record"). On a phone a press is a tap, and no mouse pointer glides to it: while recording, a pink dot
+  shows where the finger lands for 0.6 s before each action, so the video shows the tap before the screen changes. Waits don't go through it.
 - Snapshots don't retry: a scenario waits for what it expects before it reads.
 - Locators are private to their class and use only `data-action`, `data-testid` or role + accessible name (and the
   `data-*` attributes of an element found that way); never CSS classes, positions or XPath. A script a page object

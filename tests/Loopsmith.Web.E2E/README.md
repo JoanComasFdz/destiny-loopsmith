@@ -57,7 +57,9 @@ What the GIF and the MP4 show is the browser window, nothing more and nothing le
 that off), so a page taller than the window says so. Before each action and each read, the page object scrolls the
 whole box it works on into view (`Infrastructure/Frontend/OnScreen.cs`; E2E-TEST-CODE-RULES.md, rule c). While
 recording, it scrolls smoothly, holds a box that moved a moment on screen, glides the mouse pointer (headless Chromium
-draws none, so `BaseE2E` draws a big one, and a ring at each click; on a phone, only the ring at each tap) to the element an action uses, and starts a step no sooner than
+draws none, so `BaseE2E` draws a big one, and a ring at each click) to the element an action uses (on a phone, which
+has no pointer, it shows a pink dot where the finger lands for 0.6 s instead, then the ring at the tap: the app
+re-renders before the ring is drawn, so without the dot the video would show the new screen before the tap), and starts a step no sooner than
 `--action-gap` seconds (`E2E_ACTION_GAP`, default 1) after the previous one ended, so the GIF doesn't scroll and click
 faster than the eye can follow. Without a recording it doesn't wait.
 
