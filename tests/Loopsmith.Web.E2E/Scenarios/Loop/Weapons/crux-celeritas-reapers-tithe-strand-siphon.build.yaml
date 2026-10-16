@@ -5,4 +5,4 @@ class: hunter
 subclass: arc
 armorMods: [strand-siphon]
 weapons:
-  - { slot: power, name: Crux Celeritas IV, type: strand, archetype: rocket-launcher, perks: [reapers-tithe] }
+  - { hash: 391069235, perks: [reapers-tithe] } # Crux Celeritas IV

@@ -29,6 +29,13 @@ public sealed class RepoFileValidationTests
     private static readonly ImmutableDictionary<string, ImmutableArray<uint>> FullManifestOnly = new Dictionary<string, ImmutableArray<uint>>
     {
         ["tests/Loopsmith.Web.E2E/Scenarios/ImportExport/ogma-pr6-by-hash.build.yaml"] = [2342054803],
+        ["tests/Loopsmith.Web.E2E/Scenarios/Loop/Weapons/bellowing-giant-reapers-tithe.build.yaml"] = [412265080],
+        ["tests/Loopsmith.Web.E2E/Scenarios/Loop/Weapons/crux-celeritas-reapers-tithe-strand-siphon.build.yaml"] = [391069235],
+        ["tests/Loopsmith.Web.E2E/Scenarios/Loop/Weapons/festival-flight-one-for-all-ogma-pr6.build.yaml"] = [2342054803],
+        ["tests/Loopsmith.Web.E2E/Scenarios/Loop/Weapons/ogma-pr6-stats-for-all.build.yaml"] = [2342054803],
+        ["tests/Loopsmith.Web.E2E/Scenarios/Loop/Weapons/ogma-pr6-unrelenting.build.yaml"] = [2342054803],
+        ["tests/Loopsmith.Web.E2E/Scenarios/Loop/Weapons/scathelocke-veterans-wisdom.build.yaml"] = [3332538050],
+        ["tests/Loopsmith.Web.E2E/Scenarios/Loop/Weapons/speleologist-radiolaria-transposer.build.yaml"] = [412251536],
     }.ToImmutableDictionary();
 
     public static TheoryData<string> Opening
