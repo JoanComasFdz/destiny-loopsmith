@@ -11,7 +11,9 @@ DestinyInventoryItemConstantsDefinition.json, DestinyTraitDefinition.json and De
 string (written into the file).
 
 The excerpt holds every hash Loopsmith names: each `hash:` in rules/ (elements, the glossary's subclasses,
-armor set perks) and every hash in the saved DIM shares (builds/*/dim-loadout.json). For each: its name,
+armor set perks), every hash in the saved DIM shares (builds/*/dim-loadout.json) and every hash a weapon of the repo's
+builds and loops gives (its `hash`, its `roll` picks and its `mod`, in builds/*/build.yaml and in the build each
+builds/*/loops/*.loop.yaml embeds), so the CLI and the tests, which read only the excerpt, know each of those weapons. For each: its name,
 kind, type, icon, tier, Bungie's description and, for weapons, armor and armor mods, its slot and damage
 type, and a weapon's or armor piece's season watermark (`watermark`: the overlay with its season's or expansion's
 icon in its top-left corner). A weapon also gets its breaker (`breaker`: the champion it breaks of its own, an
@@ -53,6 +55,8 @@ import json
 import pathlib
 import re
 import sys
+
+import yaml
 
 WEAPON_BUCKETS = {"Kinetic Weapons": "kinetic", "Energy Weapons": "energy", "Power Weapons": "power"}
 ARMOR_BUCKETS = {"Helmet": "helmet", "Gauntlets": "arms", "Chest Armor": "chest", "Leg Armor": "legs", "Class Armor": "classItem"}
@@ -117,6 +121,20 @@ def list_share_hashes(root):
         hashes.update(int(perk) for perk in parameters.get("artifactUnlocks", {}).get("unlockedItemHashes", []))
         if int(parameters.get("exoticArmorHash", 0)) > 0:
             hashes.add(int(parameters["exoticArmorHash"]))
+    return hashes
+
+
+def list_build_hashes(root):
+    """Every hash a weapon of the repo's builds gives: its `hash`, its `roll` picks and its `mod`, in builds/*/build.yaml and
+    in the build each builds/*/loops/*.loop.yaml embeds (its `build:` text)."""
+    builds = [path.read_text(encoding="utf-8") for path in sorted((root / "builds").glob("*/build.yaml"))]
+    builds += [(yaml.safe_load(path.read_text(encoding="utf-8")) or {}).get("build") or ""
+               for path in sorted((root / "builds").glob("*/loops/*.loop.yaml"))]
+    hashes = set()
+    for build in builds:
+        for weapon in (yaml.safe_load(build) or {}).get("weapons") or []:
+            picks = [weapon.get("hash"), weapon.get("mod"), *(weapon.get("roll") or [])]
+            hashes.update(pick for pick in picks if isinstance(pick, int))
     return hashes
 
 
@@ -453,7 +471,7 @@ def main():
             plugs_by_category.setdefault(category, []).append(int(h))
     set_of_perk = {perk["sandboxPerkHash"]: int(h) for h, item_set in item_sets.items() for perk in item_set.get("setPerks", [])}
 
-    named = list_rule_hashes(root) | list_share_hashes(root)
+    named = list_rule_hashes(root) | list_share_hashes(root) | list_build_hashes(root)
     named_items = {h for h in named if str(h) in items}
     kinds = {h: classify(items[str(h)], buckets)[0] for h in named_items}
     weapons = {h for h in named_items if kinds[h] == "weapon"}

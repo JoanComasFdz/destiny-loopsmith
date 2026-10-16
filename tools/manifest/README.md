@@ -4,7 +4,9 @@
 description, icon, rarity and (for weapons, armor and armor mods) slot and damage type — and a weapon's trait
 columns with the perks each can roll, its intrinsic perk, the weapon mods its mod socket takes and an exotic's catalyst, an exotic armor's perk, the
 armor sets with their 2- and 4-piece perks — of every hash Loopsmith names — each
-`hash:` in `rules/` and every hash a saved DIM share (`builds/*/dim-loadout.json`) wears, plus every perk those
+`hash:` in `rules/`, every hash a saved DIM share (`builds/*/dim-loadout.json`) wears and every hash a weapon of the
+repo's builds and loops gives (its `hash`, its `roll` picks and its `mod`, in `builds/*/build.yaml` and in the build each
+`builds/*/loops/*.loop.yaml` embeds: the CLI and the tests read a weapon given by hash only from the excerpt), plus every perk those
 weapons' columns roll with, and every enhanced plug of a trait the rules author (by its name: "Enhanced Trait",
 "Enhanced Origin Trait"), so the tests can tell an authored perk that lacks its `enhanced` block
 ([docs/rule-format.md](../../docs/rule-format.md#enhanced-traits-enhanced)). The web app shows a build the way DIM shows a loadout from it, a DIM link's weapons
@@ -24,11 +26,13 @@ highest tier each of its seven perk slots takes (`slots`), and its flavour text 
 Each subclass (the glossary's) also lists every plug it can hold (`plugs`: super, abilities, jump, aspects, fragments),
 which the designer's subclass editor offers.
 
-Regenerate it after adding a hash to the rules, a saved DIM share, or when Bungie publishes a new manifest:
+Regenerate it after adding a hash to the rules, a saved DIM share, a weapon to a build or a loop (a loop designed in the
+web app with a new weapon, then committed), or when Bungie publishes a new manifest. A Core test
+(`RepoWeaponHashesTests`) fails, naming the file and the hash, when a weapon of `builds/` or its loops isn't in the excerpt:
 
 ```bash
 tools/manifest/get-manifest.sh /tmp/manifest            # downloads eleven English components (~11 MB compressed, ~215 MB on disk)
-python3 -I tools/manifest/extract_manifest.py /tmp/manifest "$(cat /tmp/manifest/version.txt)"
+python3 -I tools/manifest/extract_manifest.py /tmp/manifest "$(cat /tmp/manifest/version.txt)"   # needs PyYAML (python3-yaml)
 dotnet test                                             # the catalog version changes: re-pin the example loops
 ```
 
