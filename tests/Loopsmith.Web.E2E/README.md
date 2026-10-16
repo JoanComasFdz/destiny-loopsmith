@@ -38,25 +38,22 @@ tools/e2e/push-gifs.sh                              # their GIFs, posted on the 
 
 `record.sh` publishes the web app (Release; `--no-publish` reuses the last one), prepares it for `/destiny-loopsmith/`
 with `tools/web/prepare-pages.sh`, serves it with `python3 -m http.server`, runs the chosen scenarios with `E2E_URL` set
-and video on (`BaseE2E`'s `ScreenRecorder` films each run from screenshots at the device's pixels, about 25 a second,
-each timed on the test's clock; `record.sh` turns them into a 25 fps video), and writes to `out/` (`--out <dir>`;
-gitignored):
+and video on, and writes to `out/` (`--out <dir>`; gitignored):
 - `out/<domain folder>/<gif name>.gif`: each run of a scenario from Home on (the manifest's startup screen trimmed
   off), its last frame held 3 s, 20 fps; a desktop run 800 px wide, a phone run at its 390 CSS pixels; the GIF name ends in
   `-desktop` or `-mobile`; a failing run gets its GIF too;
-- `out/<domain folder>/<gif name>.mp4`: the same run as an H.264 MP4 at the recording's own size, 25 fps
-  (1280×800; a phone's 780×1688, its device pixels), its last frame held 3 s too: the PR comment links it to the site's
-  player page;
+- `out/<domain folder>/<gif name>.mp4`: the same run as an H.264 MP4 at the recording's own size and frame rate
+  (1280×800; a phone's 780×1688, its pixels), its last frame held 3 s too: the PR comment links it to the site's player
+  page;
 - `out/scenarios.json`: one entry per run: domain folder, class, method, title, Gherkin, screen (`desktop` /
   `mobile`), GIF path, MP4 path, startup time (page open → Home shown) and whether it passed.
 
-It prints each scenario's startup time and how many screenshots a second it took (below 25, the video repeats frames:
-motion steps, the picture stays sharp), and every request that left for bungie.net, and exits non-zero when a scenario
+It prints each scenario's startup time and every request that left for bungie.net, and exits non-zero when a scenario
 failed. `--changed-since <ref>` picks the scenario classes added or changed since the branch left `<ref>` (working tree
 included), plus those that name a changed fixture file.
 
-What the GIF and the MP4 show is the browser window, nothing more and nothing less: the video is the window at its device
-pixels (1280×800 on desktop; a 390×844 phone drawn at twice that, 780×1688; `BaseE2E`, E2E-TEST-CODE-RULES.md rule b), and the window shows its scrollbar (Playwright hides it in headless Chromium; `BrowserRun` turns
+What the GIF and the MP4 show is the browser window, nothing more and nothing less: the video is the window at its pixels
+(1280×800 on desktop; a 390×844 phone drawn at twice that, 780×1688; `BaseE2E`, `BrowserRun`, E2E-TEST-CODE-RULES.md rule b), and the window shows its scrollbar (Playwright hides it in headless Chromium; `BrowserRun` turns
 that off), so a page taller than the window says so. Before each action and each read, the page object scrolls the
 whole box it works on into view (`Infrastructure/Frontend/OnScreen.cs`; E2E-TEST-CODE-RULES.md, rule c). While
 recording, it scrolls smoothly, holds a box that moved a moment on screen, glides the mouse pointer (headless Chromium

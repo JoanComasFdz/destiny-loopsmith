@@ -108,14 +108,13 @@ public sealed class ReloadTests : BaseE2E
   `[PlayInMobile]` names. Desktop is a 1280×800 window with a mouse. Mobile is Chromium's phone emulation: 390×844,
   touch, a phone's pixel density, so the page is laid out for a phone and matches `(hover: none)` and
   `(pointer: coarse)` (the app's touch styles: no hover previews, no drag handle). The video is the window at its
-  device pixels: 1280×800, a phone's 780×1688 (twice its CSS pixels, as the phone draws it);
+  pixels: 1280×800, a phone's 780×1688 (`BrowserRun` starts the phone's browser drawing at the phone's density, so
+  Playwright's recorder gets the phone's pixels, not its CSS pixels);
 - the Bungie routing (`BungieRouting`: no scenario reaches bungie.net except to fill the cache; README, "The manifest cache");
 - the recorded page: it opens Home and waits until it is shown (behind the manifest's startup screen), noting when, so
   `tools/e2e/record.sh` trims the startup screen off the video;
-- the video: while recording, `ScreenRecorder` films the page from screenshots at the device's pixels (Playwright's
-  recorder takes Chromium's screencast, which hands a phone over at its CSS pixels), each one timed on the clock
-  Home's time is noted on; it saves the frames, also when the run fails, with its record next to them (title, Gherkin,
-  screen, GIF name, domain folder, when Home was shown, how many frames a second it took, whether it passed);
+- saving the video, also when the run fails, with its record next to it (title, Gherkin, screen, GIF name, domain
+  folder, when Home was shown, whether it passed);
 - the `Frontend` property.
 
 A scenario never repeats any of that.
