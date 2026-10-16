@@ -147,8 +147,8 @@ summons:
 # The manifest hash of each subclass item, so a DIM loadout's subclass is recognised (ADRs D27,
 # docs/loop-format.md "Starting from a DIM link"). The nine Light subclasses, as DIM's own source
 # lists them (src/app/loadout-drawer/loadout-utils.ts, `oldToNewItems`, DIM commit d7c02e5); the
-# owner's DIM loadout names Arcstrider as 2328211300. Stasis, Strand and Prismatic wait on the
-# manifest join (requirements FR-13).
+# owner's DIM loadout names Arcstrider as 2328211300. Stasis, Strand and Prismatic wait on this
+# glossary (requirements FR-14).
 subclasses:
   - { class: hunter,  subclass: arc,   name: Arcstrider,   hash: 2328211300 }
   - { class: titan,   subclass: arc,   name: Striker,      hash: 2932390016 }

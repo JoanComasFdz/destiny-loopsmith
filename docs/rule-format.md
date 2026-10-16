@@ -243,8 +243,10 @@ Two keys belong to some kinds only (anywhere else they are an error):
   Bungie's manifest (Flow State and Tempest Strike 2, Ascension 3).
 * `ability: { kind: grenade, charges: 1, chunkScalar: 0.75, baseCooldown: 151.5 }` — super, grenade, melee
   and classAbility elements only, and `kind` must be the element's kind. `charges` defaults to 1,
-  `chunkScalar` and `baseCooldown` (game values) to `"?"`. The ability's profile: facts recorded from the
-  Compendium, changing nothing (ADRs D5).
+  `chunkScalar` and `baseCooldown` (game values) to `"?"`. The ability's profile, recorded from the Compendium:
+  `chunkScalar` and `baseCooldown` are facts changing nothing (ADRs D5); `charges`, with every equipped
+  `extraCharges`, says whether a use always spends the ability's last charge or the player marks the one that does
+  (ADRs D36).
 
 `kind: keyword` elements are active in every build, once; every other kind is equipped through its
 build slot ([Build check](#build-check)). A `kind: jump` element is a subclass's jump (High Jump, Blink): it is
@@ -370,6 +372,16 @@ rules:                                  # Reaper (rules/mods/armor.yaml)
 traces with `--why`; `doesNotStackWith` is [below](#rules-that-dont-stack). `chance: true` (default
 false) marks a rule that may not happen in game: "chance to / occasionally", or progress the game
 doesn't show as a stacking status (Elemental Charge's progress per Ionic Trace; ADRs D8).
+
+What the format can't count is written in one of three ways, and needs no new format (ADRs D3, D8):
+* **a declaration** — a threshold the player says is reached: Slice's 5 hits end with `max:slice`;
+* **a split count or *(chance)*** — progress the game doesn't show as a stacking status: a counter that kills or hits
+  fill fires for sure on the count that fills it and as a chance on fewer (Spark of Discharge's 3 Arc weapon kills,
+  below), and hits or damage kept up on one enemy are `sustained` (To Shreds' 6 weapon hits, Horde Shuttle's 10%,
+  Attrition Orbs, Lightning Rounds' 10th hit; ADRs D34);
+* **a fact** — energy per stack, refunds, chunk scalars and rule cooldowns (Impact Induction, Photonic Flare) are
+  in the description or shown with the outcome; a condition the pack always meets is left out of `when` (Spark of
+  Resistance's "3+ enemies within 15 m", ADRs D7).
 
 **Triggers (`on`)** — exactly one key:
 
@@ -928,6 +940,6 @@ the ground.
 * **Facts** (ADRs D1, D5): energy outcomes (`leastCharged` too), `modifyDamage` and `restoreHealth` are shown with their
   value, certainty and a caveat when the value is missing (`amount unknown` / `value unknown`), and
   change no state. An `Unknown` value stays `?` (never 0). Ability profiles and
-  `extraCharges` are facts recorded from the Compendium.
+  `extraCharges` are recorded from the Compendium; only their charges are read, for the last charge (ADRs D36).
 * `chance: true` rules fire and are marked *(chance)* in every view (ADRs D8) — on every enemy of a
   multi-target action.
