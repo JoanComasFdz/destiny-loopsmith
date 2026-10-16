@@ -20,3 +20,7 @@ tools/compendium/compendium-*
 
 # End-to-end recordings (tools/e2e/record.sh)
 /out/
+
+# Python bytecode caches (written whenever a tool script runs)
+__pycache__/
+*.pyc
