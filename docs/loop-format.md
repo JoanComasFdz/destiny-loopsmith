@@ -15,6 +15,7 @@ replayed and compared with another order.
 A loop file is **self-contained**: it embeds the full text of the build file it was designed
 with, so it replays anywhere that has the rule catalog.
 
+<!-- LoopFileParsingTests reads the next yaml block -->
 ```yaml
 # Loopsmith loop v1
 loop: Dodge, grenade, shoot             # required — the loop's name
