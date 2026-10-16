@@ -21,8 +21,9 @@
   "postAttachCommand": "bash .devcontainer/install-extension.sh",
   "customizations": {
     "vscode": {
-      // C# Dev Kit (it brings the C# extension): the solution explorer and the test explorer.
-      "extensions": ["ms-dotnettools.csdevkit"],
+      // C# Dev Kit (it brings the C# extension): the solution explorer and the test explorer. Container Tools: the
+      // Dockerfiles' language support and the containers view.
+      "extensions": ["ms-dotnettools.csdevkit", "ms-azuretools.vscode-containers"],
       "settings": {
         // The secondary side bar, where VS Code opens its chat, starts hidden (View → Appearance → Secondary Side Bar
         // shows it).
