@@ -10,7 +10,8 @@ recordings extension in it: [src/Loopsmith.VsCodeExtension/README.md](../src/Loo
 - **.NET 10**, restored: `dotnet build Loopsmith.slnx`, `dotnet test`.
 - **Node 22** (the dev container's `node` feature).
 - **ffmpeg** and **Playwright's Chromium**: `tools/e2e/record.sh` records the e2e scenarios.
-- **The Compendium download's Python packages**: `tools/compendium/sheet_dump.py`.
+- **The Python packages** of the Compendium download (`tools/compendium/sheet_dump.py`) and the manifest extractor
+  (`tools/manifest/extract_manifest.py`).
 - **Zsh**, as in [my-claude-code-setup](https://github.com/JoanComasFdz/my-claude-code-setup/tree/main/.devcontainer):
   Oh My Zsh + the Spaceship prompt, with `git`, `zsh-autosuggestions`, `zsh-syntax-highlighting`, `sudo`, `zoxide` (`z`
   to jump around), `extract`, `history`, `docker` and `npm`; `eza` (the `l` alias). It is the terminal's shell.
@@ -38,7 +39,8 @@ Without one, the prompt still works, with boxes in place of its icons. A phone's
   the first that fails.
 - `1-install-dotnet.sh`: `dotnet-sdk-10.0` from Ubuntu's archive, then `dotnet restore`.
 - `2-install-ffmpeg.sh`: ffmpeg.
-- `3-install-compendium-python.sh`: `requests` and `beautifulsoup4` (Ubuntu's packages).
+- `3-install-python-packages.sh`: `requests` and `beautifulsoup4` (the Compendium download) and PyYAML (the manifest
+  extractor), Ubuntu's packages.
 - `4-install-playwright-chromium.sh`: the Chromium the pinned Playwright (`Directory.Packages.props`) expects, with its
   system libraries.
 - `5-install-zsh-config.sh`: zsh, Oh My Zsh, Spaceship, the plugins, zoxide, eza and `~/.zshrc`.

@@ -37,6 +37,20 @@ if ! python3 -c 'import requests, bs4' >/dev/null 2>&1; then
   python3 -m pip install -q requests beautifulsoup4 >/dev/null 2>&1 || true
 fi
 
+# PyYAML (Ubuntu's python3-yaml) for tools/manifest/extract_manifest.py, which runs with python3 -I: that sees only the
+# system's packages, not a pip install into the user's home. The image has it today, but nothing guarantees it stays.
+# Not fatal: the build doesn't need it.
+if ! python3 -I -c 'import yaml' >/dev/null 2>&1; then
+  sudo=""
+  if [ "$(id -u)" -ne 0 ]; then
+    sudo="sudo"
+  fi
+  {
+    $sudo apt-get update -qq >/dev/null
+    DEBIAN_FRONTEND=noninteractive $sudo apt-get install -y -qq python3-yaml >/dev/null
+  } 2>/dev/null || true
+fi
+
 # ffmpeg turns the web app's e2e recordings into GIFs; the image has it today, but nothing guarantees it stays.
 # Not fatal: the build doesn't need it.
 if ! command -v ffmpeg >/dev/null 2>&1; then

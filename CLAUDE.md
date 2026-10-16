@@ -42,8 +42,8 @@ dotnet run --project src/Loopsmith.Web          # the loop designer in the brows
 ```
 Cloud sessions: `.claude/hooks/session-start.sh` installs `dotnet-sdk-10.0` from Ubuntu's
 repos (Microsoft's download hosts are blocked by the network policy), restores, installs the
-Python packages of the Compendium download (`requests`, `beautifulsoup4`), and installs `ffmpeg`
-(turns the e2e recordings into GIFs and MP4s) when it is missing.
+Python packages of the Compendium download (`requests`, `beautifulsoup4`), and installs the manifest extractor's PyYAML
+(`python3-yaml`) and `ffmpeg` (turns the e2e recordings into GIFs and MP4s) when they are missing.
 
 ## Where things live
 - `src/Loopsmith.Core/` — kernel (`Domain`, `Functional`, `Phrasing`, `Causality`) and
@@ -81,7 +81,7 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
   vscode.dev installs it from a local container (its `Dockerfile`: vscode.dev fetches only from `localhost` and its own
   hosts) ([docs/hosting.md](docs/hosting.md) "The VS Code extension", its [README](src/Loopsmith.VsCodeExtension/README.md)).
 - `.devcontainer/` — the dev container for a GitHub Codespace or desktop VS Code's Dev Containers: one numbered script
-  per feature (.NET 10, ffmpeg, the Compendium download's Python packages, Playwright's Chromium, zsh, tmux), run by
+  per feature (.NET 10, ffmpeg, the Python packages of the Compendium download and the manifest extractor, Playwright's Chromium, zsh, tmux), run by
   `postCreateCommand.sh`, and the VS Code extension installed from its source each time VS Code attaches
   (`7-install-e2e-recordings-extension.sh`) ([.devcontainer/README.md](.devcontainer/README.md)).
 - `tests/Loopsmith.Core.Tests/` — unit, golden (`Golden/*.verified.txt`) and architecture tests.
