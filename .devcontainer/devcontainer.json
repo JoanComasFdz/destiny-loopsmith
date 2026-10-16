@@ -27,6 +27,9 @@
       // Dockerfiles' language support and the containers view.
       "extensions": ["ms-dotnettools.csdevkit", "ms-azuretools.vscode-containers"],
       "settings": {
+        // VS Code's default dark theme, forced: a Codespace otherwise opens in GitHub Dark Default. Set here (the
+        // container's settings), it wins over a theme picked in VS Code while in the container.
+        "workbench.colorTheme": "Default Dark Modern",
         // zsh (5-install-zsh-config.sh) in the terminal; its Spaceship prompt and eza's icons need a Nerd Font, installed
         // on the computer VS Code draws on (README.md here).
         "terminal.integrated.defaultProfile.linux": "zsh",

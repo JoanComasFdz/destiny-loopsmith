@@ -28,28 +28,6 @@ public static class VsCodeDom
     /// <summary>Any CodeLens item: a command's link, or a span for one that runs none.</summary>
     public const string CodeLensItem = "a, span";
 
-    /// <summary>A hover that shows (VS Code keeps hidden ones in the page).</summary>
-    public const string Hover = ".monaco-hover:not(.hidden)";
-
-    // The hover's Markdown, as VS Code draws it: its sanitizer keeps no attribute to find a part by (the extension's
-    // writeHover writes the title in bold, each line a paragraph, the GIFs in a table's first row and their labels in its
-    // second), so the parts are found by their tags.
-
-    /// <summary>A link of the hover (VS Code keeps a command link's target in data-href, with no href).</summary>
-    public const string HoverLink = "a";
-
-    /// <summary>The hover's title: its first bold text.</summary>
-    public const string HoverTitle = "strong";
-
-    /// <summary>A line of the hover.</summary>
-    public const string HoverLine = "p";
-
-    /// <summary>A cell of the hover's GIFs.</summary>
-    public const string HoverGif = "tr:first-child td";
-
-    /// <summary>A cell of the hover's GIFs' labels.</summary>
-    public const string HoverLabel = "tr:nth-child(2) td";
-
     /// <summary>The title bar of the editor that has focus: its tabs and its buttons (an extension's among them).</summary>
     public const string EditorTitleBar = ".editor-group-container.active .title";
 

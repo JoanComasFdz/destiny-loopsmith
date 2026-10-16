@@ -18,6 +18,8 @@ recordings extension in it: [src/Loopsmith.VsCodeExtension/README.md](../src/Loo
   `ta <name>` (attach).
 - **The Loopsmith e2e recordings extension**, installed from `src/Loopsmith.VsCodeExtension` each time VS Code attaches.
 - **C# Dev Kit** and **Container Tools**, from the Marketplace.
+- **Dark Modern**, VS Code's default dark theme (a Codespace otherwise opens in GitHub Dark Default), forced by
+  `devcontainer.json`: a theme picked in the Codespace doesn't apply.
 - **No chat pop-up**: VS Code's secondary side bar, where it opens its chat, starts hidden.
 
 ## One-time setup on your computer: a terminal font

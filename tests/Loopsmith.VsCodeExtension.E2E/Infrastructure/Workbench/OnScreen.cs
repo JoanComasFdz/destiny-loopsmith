@@ -37,30 +37,6 @@ public static class OnScreen
             await target.ClickAsync();
         });
 
-    /// <summary>Glides the pointer away from what it is on, to the middle of the window's right half (out of a hover).</summary>
-    public static async Task MoveAwayAsync(IPage page)
-    {
-        var window = page.ViewportSize!;
-        await page.Mouse.MoveAsync(window.Width * 3 / 4f, window.Height / 2f, new() { Steps = 8 });
-        if (Recording)
-        {
-            await Task.Delay(PointerGlide);
-        }
-    }
-
-    /// <summary>Glides the pointer to a point and rests it there (VS Code shows the hover of what is under it).</summary>
-    public static async Task HoverAtAsync(IPage page, double x, double y)
-    {
-        await WaitForActionGapAsync(page);
-        await page.Mouse.MoveAsync((float)x, (float)y, new() { Steps = 8 });
-        if (Recording)
-        {
-            await Task.Delay(PointerGlide);
-        }
-
-        NoteStepEnded(page);
-    }
-
     /// <summary>Presses keys on the page with <paramref name="press"/> (or types): no pointer moves.</summary>
     public static async Task KeyAsync(IPage page, Func<Task> press)
     {

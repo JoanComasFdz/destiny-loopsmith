@@ -127,3 +127,6 @@ public sealed record PanelVersion(string Text, bool Picked);
 
 /// <summary>Where the scenario file's editor and the panel are (CSS pixels), or null for one not shown.</summary>
 public sealed record RecordingPanelLayout(ShownBox? Code, ShownBox? Panel);
+
+/// <summary>Where a part is on the screen, in CSS pixels.</summary>
+public sealed record ShownBox(double Left, double Top, double Right, double Bottom);

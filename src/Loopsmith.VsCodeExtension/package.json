@@ -1,7 +1,7 @@
 {
   "name": "loopsmith-e2e-recordings",
   "displayName": "Loopsmith e2e recordings",
-  "description": "Shows each Loopsmith e2e scenario's recordings next to its code: a CodeLens, a hover and a panel that plays the MP4.",
+  "description": "Shows each Loopsmith e2e scenario's recordings next to its code: a CodeLens, a play button and a panel that plays the MP4.",
   "version": "0.2.0",
   "publisher": "loopsmith",
   "license": "MIT",

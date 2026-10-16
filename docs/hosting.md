@@ -54,7 +54,7 @@ vscode.dev can't install it from the site: its content security policy lets the 
 few hosts of its own (`github.io` isn't one: "Cannot find a valid extension from the location"), and it has no "Install
 from VSIX". It installs it from `http://localhost:5000`, served by a container the owner builds from the extension's
 folder (`Dockerfile`, `serve.js`; the README's "Install"). Once installed, the extension itself runs in vscode.dev: its
-extension host may fetch any `https` address (GitHub's API), its hover's images any `https` one, and its panel loads
+extension host may fetch any `https` address (GitHub's API), and its panel loads
 what its own policy allows.
 
 A GitHub Codespace or desktop VS Code's Dev Containers needs neither: VS Code runs a server in the container, which

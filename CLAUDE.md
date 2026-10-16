@@ -75,7 +75,7 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
   Creator transcripts are third-party content: keep them local as `transcript.txt` (gitignored),
   never commit them.
 - `src/Loopsmith.VsCodeExtension/` — the VS Code extension (plain JavaScript, no build, no dependencies): a CodeLens, a
-  hover and a panel beside the code show each e2e scenario's recordings from the `prs-resources` release, in vscode.dev
+  play button and a panel beside the code show each e2e scenario's recordings from the `prs-resources` release, in vscode.dev
   and desktop VS Code; its `.vsix` is published with the site in `vscode-extension/` by `Loopsmith.Web.csproj`, and
   vscode.dev installs it from a local container (its `Dockerfile`: vscode.dev fetches only from `localhost` and its own
   hosts) ([docs/hosting.md](docs/hosting.md) "The VS Code extension", its [README](src/Loopsmith.VsCodeExtension/README.md)).

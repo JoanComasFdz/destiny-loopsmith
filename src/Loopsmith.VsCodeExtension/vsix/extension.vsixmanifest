@@ -5,7 +5,7 @@
   <Metadata>
     <Identity Language="en-US" Id="loopsmith-e2e-recordings" Version="0.2.0" Publisher="loopsmith" />
     <DisplayName>Loopsmith e2e recordings</DisplayName>
-    <Description xml:space="preserve">Shows each Loopsmith e2e scenario's recordings next to its code: a CodeLens, a hover and a panel that plays the MP4.</Description>
+    <Description xml:space="preserve">Shows each Loopsmith e2e scenario's recordings next to its code: a CodeLens, a play button and a panel that plays the MP4.</Description>
     <Categories>Testing,Visualization</Categories>
     <GalleryFlags>Public</GalleryFlags>
     <Properties>

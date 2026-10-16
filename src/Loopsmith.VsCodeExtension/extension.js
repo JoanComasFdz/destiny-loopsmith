@@ -1,6 +1,6 @@
 // Loopsmith e2e recordings: shows each e2e scenario's recordings (the GIFs and MP4s the "E2E videos" workflow keeps in
-// the prs-resources release) next to its code in VS Code: a CodeLens above the scenario, a hover on its method name and
-// a panel beside the editor that plays the MP4 (README.md).
+// the prs-resources release) next to its code in VS Code: a CodeLens above the scenario's method, a ▷ button in
+// the editor's title bar and a panel beside the editor that plays the MP4 (README.md).
 // One file, no build and no dependencies: VS Code loads it as it is, in a browser (vscode.dev) and on the desktop.
 // The pure functions come first (test/extension.test.js tests them); activate() is the shell around them: it reads the
 // release from GitHub, the scenario files from the editor, and draws what the pure functions describe.
@@ -93,8 +93,8 @@ function toScreenLabel(screen) {
 /**
  * The scenarios of a C# file: each method with a [TestDescription("""…""")] (tests/*E2E/E2E-TEST-CODE-RULES.md, rule a),
  * with its Gherkin's title, the screens its [PlayInDesktop] / [PlayInMobile] name, its class and domain folder, the line
- * its attributes start on (where "Play e2e recording of this scenario" finds it from) and where its name is (its CodeLens
- * goes on that line, between the attributes and the declaration, with other extensions' CodeLens; its hover covers the name).
+ * its attributes start on (where "Play e2e recording of this scenario" finds it from) and the line of its declaration
+ * (its CodeLens goes there, between the attributes and the declaration, with other extensions' CodeLens).
  */
 function findScenarios(text) {
   const lines = text.split(/\r?\n/);
@@ -117,7 +117,6 @@ function readScenario(lines, described, domain) {
   const first = findAttributesStart(lines, described);
   const attributes = [...lines.slice(first, open + 1), ...lines.slice(close, declared)].join('\n');
   const title = lines.slice(open + 1, close).map((line) => line.trim()).find((line) => line.startsWith('Scenario:'));
-  const nameStart = declaration.index + declaration[0].lastIndexOf(method);
   return Object.freeze({
     method,
     title: title ? title.slice('Scenario:'.length).trim() : method,
@@ -126,8 +125,6 @@ function readScenario(lines, described, domain) {
     screens: SCREENS.filter((screen) => new RegExp(`\\bPlayIn${toScreenLabel(screen)}\\b`).test(attributes)),
     attributesLine: first,
     nameLine: declared,
-    nameStart,
-    nameEnd: nameStart + method.length,
   });
 }
 
@@ -145,11 +142,6 @@ function findAttributesStart(lines, described) {
 function findClassName(lines, before) {
   const classes = lines.slice(0, before).map((line) => /\bclass\s+(\w+)/.exec(line)).filter((found) => found !== null);
   return classes.length === 0 ? '' : classes[classes.length - 1][1];
-}
-
-/** The scenario whose method name covers a position, or null. */
-function findScenarioAt(scenarios, line, character) {
-  return scenarios.find((s) => s.nameLine === line && character >= s.nameStart && character <= s.nameEnd) ?? null;
 }
 
 /**
@@ -221,37 +213,6 @@ function describeLenses(catalog, recordings) {
     })),
     { title: toVersionLabel(newest) },
   ];
-}
-
-/**
- * The hover on a scenario's method name, as Markdown with HTML: its title, the newest recording's PR and version and
- * the class, a link that plays each screen's MP4 in the panel (playUri gives the command link) and one to the site's
- * player page, then each screen's GIF side by side with its label (120 px tall). The links come before the GIFs: VS Code's
- * hover is at most 250 px tall, and on a phone the GIFs below them would push them out of sight.
- */
-function writeHover(scenario, catalog, recordings, repository, playUri) {
-  const heading = `**▶ ${escapeMarkdown(scenario.title)}**`;
-  if (catalog.state !== 'read' || recordings.length === 0) {
-    const why = catalog.state === 'reading' ? 'Reading the e2e recordings…'
-      : catalog.state === 'failed' ? `No e2e recordings: ${catalog.reason}` : 'No recording yet';
-    return `${heading}\n\n${escapeMarkdown(why)}`;
-  }
-  const newest = recordings[0];
-  const screens = SCREENS.filter((screen) => newest.runs[screen]);
-  const gifs = screens.map((screen) => newest.runs[screen].gif
-    ? `<td><img src="${escapeHtml(newest.runs[screen].gif.url)}" height="120" alt="${toScreenLabel(screen)} recording"></td>`
-    : `<td>(no GIF)</td>`);
-  const labels = screens.map((screen) => `<td>${toScreenLabel(screen)}</td>`);
-  const plays = screens.filter((screen) => newest.runs[screen].mp4)
-    .map((screen) => `[▶ Play ${screen} MP4](${playUri(screen)})`);
-  const mp4 = screens.map((screen) => newest.runs[screen].mp4).find((asset) => asset);
-  const links = [...plays, ...(mp4 ? [`[Open in e2e player ↗](${toPlayerUrl(repository, mp4.name)})`] : [])];
-  return [
-    heading,
-    `${toVersionLabel(newest)} · ${escapeMarkdown(scenario.className)}`,
-    ...(links.length > 0 ? [links.join(' · ')] : []),
-    `<table><tr>${gifs.join('')}</tr><tr>${labels.join('')}</tr></table>`,
-  ].join('\n\n');
 }
 
 /**
@@ -388,14 +349,6 @@ const PANEL_STYLE = `
   [data-action=version][aria-pressed=true] { border-color: var(--vscode-focusBorder); background: var(--vscode-list-activeSelectionBackground); color: var(--vscode-list-activeSelectionForeground); }
   [data-testid=source] { margin-top: 12px; color: var(--vscode-descriptionForeground); font-family: var(--vscode-editor-font-family); font-size: 12px; word-break: break-all; }
 `;
-
-function escapeMarkdown(text) {
-  return text.replace(/[\\`*_{}[\]()#+\-.!|<>]/g, '\\$&');
-}
-
-function escapeHtml(text) {
-  return text.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
 
 // ---- Impure: GitHub -----------------------------------------------------------------------------------------------
 
@@ -542,7 +495,7 @@ function activate(context) {
   };
 
   // The scenario the cursor is in, played on its first screen: what the editor's play button and the Command Palette
-  // run, and what a phone can tap (a CodeLens or a hover's link is hard to reach with a finger).
+  // run, and what a phone can tap (a CodeLens is hard to reach with a finger).
   const playHere = async () => {
     const editor = vscode.window.activeTextEditor;
     const scenarios = editor ? findScenarios(editor.document.getText()) : [];
@@ -553,9 +506,6 @@ function activate(context) {
     }
     await play({ uri: editor.document.uri.toString(), method: scenario.method });
   };
-
-  const toPlayUri = (document, scenario) => (screen) =>
-    `command:${PLAY_COMMAND}?${encodeURIComponent(JSON.stringify([{ uri: document.uri.toString(), method: scenario.method, screen }]))}`;
 
   const lenses = {
     onDidChangeCodeLenses: changed.event,
@@ -577,24 +527,6 @@ function activate(context) {
     },
   };
 
-  const hovers = {
-    async provideHover(document, position) {
-      const text = document.getText();
-      const scenario = findScenarioAt(findScenarios(text), position.line, position.character);
-      if (scenario === null) {
-        return null;
-      }
-      const recordings = await readRecordings(scenario);
-      const { repository } = readSettings();
-      const hover = writeHover(scenario, catalog, recordings, repository, toPlayUri(document, scenario));
-      const markdown = new vscode.MarkdownString(hover);
-      markdown.supportHtml = true;
-      markdown.isTrusted = { enabledCommands: [PLAY_COMMAND] };
-      const range = new vscode.Range(scenario.nameLine, scenario.nameStart, scenario.nameLine, scenario.nameEnd);
-      return new vscode.Hover(markdown, range);
-    },
-  };
-
   const signIn = async () => {
     const asked = Promise.resolve(vscode.authentication.getSession('github', SIGN_IN_SCOPES, { createIfNone: true }));
     const signedIn = await asked.then(() => ({ ok: true }), (error) => ({ ok: false, reason: String(error?.message ?? error) }));
@@ -609,7 +541,6 @@ function activate(context) {
   context.subscriptions.push(
     changed,
     vscode.languages.registerCodeLensProvider(selector, lenses),
-    vscode.languages.registerHoverProvider(selector, hovers),
     vscode.commands.registerCommand(PLAY_COMMAND, play),
     vscode.commands.registerCommand(PLAY_HERE_COMMAND, playHere),
     vscode.commands.registerCommand(REFRESH_COMMAND, refresh),
@@ -635,11 +566,9 @@ module.exports = {
   nameAsset,
   toPlayerUrl,
   findScenarios,
-  findScenarioAt,
   findScenarioAround,
   findRecordings,
   describeLenses,
-  writeHover,
   writePanel,
   digestText,
 };
