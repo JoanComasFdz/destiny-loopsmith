@@ -24,12 +24,12 @@ public sealed class RefreshTests : BaseE2E
         // Given
         GitHub.Release.HasNoRecordingOf(new ScenarioFile.Reload());
         await Workbench.Explorer.OpenAsync(new ScenarioFile.Reload());
-        await Workbench.Editor.WaitUntilCodeLensReadsAsync("No recording yet");
+        await Workbench.Editor.WaitUntilCodeLensShowsAsync("No recording yet");
 
         // When
         GitHub.Release.AddRecordingsOf(new ScenarioFile.Reload(), new Recording(113, 1));
         await Workbench.CommandPalette.RunAsync("Loopsmith: Refresh e2e recordings");
-        await Workbench.Editor.WaitUntilCodeLensReadsAsync("PR #113 · V1");
+        await Workbench.Editor.WaitUntilCodeLensShowsAsync("PR #113 · V1");
 
         // Then
         var codeLens = await Workbench.Editor.ReadCodeLensAsync();

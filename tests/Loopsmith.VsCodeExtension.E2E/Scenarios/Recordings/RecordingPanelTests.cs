@@ -20,7 +20,7 @@ public sealed class RecordingPanelTests : BaseE2E
           And its title is "Start from scratch opens an Arc Hunter with nothing equipped"
           And it reads "StartFromScratchTests · Starting · PR #109 · V1"
           And its tabs are "Desktop" and "Mobile", "Desktop" selected
-          And it plays "pr-109-v1-start-from-scratch-opens-an-arc-hunter-with-nothing-equipped-desktop.mp4"
+          And it plays "pr-109-v1-start-from-scratch-opens-an-arc-hunter-with-nothing-equipped-desktop.mp4", with its controls
           And "Open in e2e player ↗" goes to "https://joancomasfdz.github.io/destiny-loopsmith/e2e-player.html?v=pr-109-v1-start-from-scratch-opens-an-arc-hunter-with-nothing-equipped-desktop.mp4"
           When I tap its "Mobile" tab
           Then its tabs are "Desktop" and "Mobile", "Mobile" selected
@@ -31,7 +31,7 @@ public sealed class RecordingPanelTests : BaseE2E
         // Given
         GitHub.Release.AddRecordingsOf(new ScenarioFile.StartFromScratch(), new Recording(104, 1), new Recording(109, 1));
         await Workbench.Explorer.OpenAsync(new ScenarioFile.StartFromScratch());
-        await Workbench.Editor.WaitUntilCodeLensReadAsync();
+        await Workbench.Editor.WaitUntilRecordingsShownAsync();
 
         // When
         await Workbench.Editor.ClickCodeLensAsync("Play desktop recording");
@@ -47,10 +47,12 @@ public sealed class RecordingPanelTests : BaseE2E
             .Reads("StartFromScratchTests · Starting · PR #109 · V1")
             .HasTabSelected("Desktop", "Desktop", "Mobile")
             .Plays("pr-109-v1-start-from-scratch-opens-an-arc-hunter-with-nothing-equipped-desktop.mp4")
+            .HasVideoControls()
             .LinksToThePlayer("https://joancomasfdz.github.io/destiny-loopsmith/e2e-player.html?v=pr-109-v1-start-from-scratch-opens-an-arc-hunter-with-nothing-equipped-desktop.mp4");
 
         // When
         await Workbench.RecordingPanel.ClickTabAsync("Mobile");
+        await Workbench.RecordingPanel.WaitUntilPlayingAsync();
 
         // Then
         var mobile = await Workbench.RecordingPanel.ReadAsync();
@@ -76,7 +78,7 @@ public sealed class RecordingPanelTests : BaseE2E
         // Given
         GitHub.Release.AddRecordingsOf(new ScenarioFile.StartFromScratch(), new Recording(104, 1), new Recording(109, 1));
         await Workbench.Explorer.OpenAsync(new ScenarioFile.StartFromScratch());
-        await Workbench.Editor.WaitUntilCodeLensReadAsync();
+        await Workbench.Editor.WaitUntilRecordingsShownAsync();
 
         // When
         await Workbench.Editor.ClickCodeLensAsync("Play mobile recording");
@@ -117,7 +119,7 @@ public sealed class RecordingPanelTests : BaseE2E
         GitHub.Release.AddRecordingsOf(new ScenarioFile.StartFromScratch(), new Recording(104, 1), new Recording(109, 1));
         GitHub.Release.AddRecordingsOf(new ScenarioFile.StartFromScratch(), new Recording(101, 1, HasMp4s: false));
         await Workbench.Explorer.OpenAsync(new ScenarioFile.StartFromScratch());
-        await Workbench.Editor.WaitUntilCodeLensReadAsync();
+        await Workbench.Editor.WaitUntilRecordingsShownAsync();
 
         // When
         await Workbench.Editor.ClickCodeLensAsync("Play desktop recording");
@@ -131,6 +133,7 @@ public sealed class RecordingPanelTests : BaseE2E
 
         // When
         await Workbench.RecordingPanel.ClickVersionAsync("PR #104 · V1");
+        await Workbench.RecordingPanel.WaitUntilPlayingAsync();
 
         // Then
         var older = await Workbench.RecordingPanel.ReadAsync();
@@ -141,6 +144,7 @@ public sealed class RecordingPanelTests : BaseE2E
 
         // When
         await Workbench.RecordingPanel.ClickVersionAsync("PR #101 · V1");
+        await Workbench.RecordingPanel.WaitUntilPlayingAsync();
 
         // Then
         var gifsOnly = await Workbench.RecordingPanel.ReadAsync();

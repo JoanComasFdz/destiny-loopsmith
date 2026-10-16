@@ -18,7 +18,7 @@ public sealed class Hover(IPage page)
     /// <summary>Clicks the hover's link <paramref name="link"/> ("▶ Play mobile MP4"), then moves the mouse off it, so it closes.</summary>
     public async Task ClickLinkAsync(string link)
     {
-        await OnScreen.ClickAsync(page, Shown.Locator("a").Filter(new() { HasText = link }).First);
+        await OnScreen.ClickAsync(page, Shown.Locator(VsCodeDom.HoverLink).Filter(new() { HasText = link }).First);
         await OnScreen.MoveAwayAsync(page);
     }
 
@@ -26,23 +26,30 @@ public sealed class Hover(IPage page)
     public Task<HoverSnapshot> ReadAsync() => OnScreen.ReadAsync(page, ReadShownAsync);
 
     private async Task<HoverSnapshot> ReadShownAsync() =>
-        ShownJson.Read<HoverSnapshot>(await Shown.EvaluateAsync<string>(ReadScript));
+        ShownJson.Read<HoverSnapshot>(await Shown.EvaluateAsync<string>(ReadScript, new
+        {
+            title = VsCodeDom.HoverTitle,
+            line = VsCodeDom.HoverLine,
+            gif = VsCodeDom.HoverGif,
+            label = VsCodeDom.HoverLabel,
+            link = VsCodeDom.HoverLink,
+        }));
 
-    // The title is the first bold text; the lines are the paragraphs; the GIFs are the images of the table's first row,
-    // their labels its second row's cells; a link's target is its data-href (VS Code keeps a command link's there).
+    // Its parts as VsCodeDom finds them (the title, the lines, the GIFs' and labels' cells, the links); a link's target is
+    // its data-href (VS Code keeps a command link's there), else its href.
     private const string ReadScript = """
-        hover => {
+        (hover, { title, line, gif, label, link }) => {
           const box = el => { const r = el.getBoundingClientRect(); return { left: r.left, top: r.top, right: r.right, bottom: r.bottom }; };
           const asset = src => decodeURIComponent((src ?? '').split('/').pop());
-          const labels = [...hover.querySelectorAll('tr:nth-child(2) td')].map(td => td.textContent.trim());
+          const labels = [...hover.querySelectorAll(label)].map(td => td.textContent.trim());
           return JSON.stringify({
-            title: hover.querySelector('strong')?.textContent.trim() ?? '',
-            lines: [...hover.querySelectorAll('p')].map(p => p.textContent.trim()).filter(text => text.length > 0),
-            gifs: [...hover.querySelectorAll('tr:first-child td')].map((td, at) => {
+            title: hover.querySelector(title)?.textContent.trim() ?? '',
+            lines: [...hover.querySelectorAll(line)].map(p => p.textContent.trim()).filter(text => text.length > 0),
+            gifs: [...hover.querySelectorAll(gif)].map((td, at) => {
               const img = td.querySelector('img');
               return { asset: img ? asset(img.getAttribute('src')) : '', label: labels[at] ?? '', box: box(img ?? td) };
             }),
-            links: [...hover.querySelectorAll('a')].map(a => ({ text: a.textContent.trim(), target: a.getAttribute('data-href') ?? a.getAttribute('href') ?? '' })),
+            links: [...hover.querySelectorAll(link)].map(a => ({ text: a.textContent.trim(), target: a.getAttribute('data-href') ?? a.getAttribute('href') ?? '' })),
           });
         }
         """;

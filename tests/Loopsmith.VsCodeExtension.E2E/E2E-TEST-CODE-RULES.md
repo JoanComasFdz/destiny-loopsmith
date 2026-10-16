@@ -38,7 +38,7 @@ public sealed class CodeLensTests : BaseE2E
 
         // When
         await Workbench.Explorer.OpenAsync(new ScenarioFile.Reload());
-        await Workbench.Editor.WaitUntilCodeLensReadAsync();
+        await Workbench.Editor.WaitUntilRecordingsShownAsync();
 
         // Then
         var codeLens = await Workbench.Editor.ReadCodeLensAsync();
@@ -98,8 +98,8 @@ As the web rules' rule d: one `<Type>Assertions` class next to each snapshot, in
 `Infrastructure/Vocabulary/` holds what a scenario sets up: `ScenarioFile` (a Dunet union, one case per scenario file of
 `Workspace/`: its path, its scenario's method, domain folder and screens, the only place they live) and `Recording`
 (`new Recording(109, 1)`: "PR #109 · V1", GIFs and MP4s; `HasMp4s: false` for GIFs only). An asset's name is never
-written by hand in the fake: `FakeRelease` names each run as the workflow does (`AssetNaming`, checked against
-`tools/e2e/post-scenarios.py` by `AssetNamingTests`). A Gherkin's quoted asset name or URL is the quoted string itself.
+written by hand in the fake: `FakeRelease` names each run as the workflow does (`AssetNaming`; `AssetNamingTests` checks it against names
+`tools/e2e/post-scenarios.py`'s `name_asset` wrote). A Gherkin's quoted asset name or URL is the quoted string itself.
 
 ## f. The workspace
 
@@ -126,13 +126,16 @@ files, and `tools/e2e/record.sh --no-video <its class>` (it serves VS Code for t
 | `Given the release holds the recordings of "StartFromScratchTests.cs" from PR #104 · V1 and PR #109 · V1` | `GitHub.Release.AddRecordingsOf(new ScenarioFile.StartFromScratch(), new Recording(104, 1), new Recording(109, 1))` |
 | `… from PR #101 · V1, as GIFs only` | `new Recording(101, 1, HasMp4s: false)` |
 | `Given the release holds no recording of "ReloadTests.cs"` | `GitHub.Release.HasNoRecordingOf(new ScenarioFile.Reload())` |
-| `"Scenarios/Starting/StartFromScratchTests.cs" is open` / `I open … in the explorer` | `Explorer.OpenAsync(new ScenarioFile.StartFromScratch())`, `Editor.WaitUntilCodeLensReadAsync()` |
+| `"Scenarios/Starting/StartFromScratchTests.cs" is open` / `I open … in the explorer` | `Explorer.OpenAsync(new ScenarioFile.StartFromScratch())`, `Editor.WaitUntilRecordingsShownAsync()` |
 | `I tap "Play desktop recording" in its CodeLens` | `Editor.ClickCodeLensAsync("Play desktop recording")`, `RecordingPanel.WaitUntilPlayingAsync()` |
 | `I rest the mouse on "StartFromScratchOpens…"` | `Editor.HoverMethodNameAsync(new ScenarioFile.StartFromScratch())`, `Hover.WaitUntilShownAsync()` |
 | `I tap "▶ Play mobile MP4" in the hover` | `Hover.ClickLinkAsync("▶ Play mobile MP4")`, `RecordingPanel.WaitUntilPlayingAsync()` |
-| `I tap its "Mobile" tab` / `I tap "PR #104 · V1" in "Recorded in"` | `RecordingPanel.ClickTabAsync("Mobile")` / `RecordingPanel.ClickVersionAsync("PR #104 · V1")` |
+| `I tap its "Mobile" tab` / `I tap "PR #104 · V1" in "Recorded in"` | `RecordingPanel.ClickTabAsync("Mobile")` / `RecordingPanel.ClickVersionAsync("PR #104 · V1")`, then `RecordingPanel.WaitUntilPlayingAsync()` |
+| `"…" is open, its CodeLens reading "PR #109 · V1"` | `Explorer.OpenAsync(…)`, `Editor.WaitUntilCodeLensShowsAsync("PR #109 · V1")` |
 | `I run "Loopsmith: Refresh e2e recordings" from the Command Palette` | `CommandPalette.RunAsync("Loopsmith: Refresh e2e recordings")` |
 | `the CodeLens above its scenario reads "…", "…" and "…"` / `no other line has a CodeLens` | `Editor.ReadCodeLensAsync()`, `ReadsAboveTheScenario("…", "…", "…")` / `HasNoOtherCodeLens()` |
+| `no line has a CodeLens` (a file that gets none) | When ends with `Editor.WaitUntilCodeLensSettledAsync()` (VS Code draws a CodeLens a moment after a file opens); `ReadCodeLensAsync()`, `HasNoCodeLens()` |
+| `it plays "….mp4", with its controls` | `Plays("….mp4")`, `HasVideoControls()` |
 | `the panel "Recording · …" shows beside the code` | `RecordingPanel.ReadLayoutAsync()`, `IsBesideTheCode()`; `RecordingPanel.ReadAsync()`, `HasEditorTab("Recording · …")` |
 | `its tabs are "Desktop" and "Mobile", "Desktop" selected` / `it plays "….mp4"` | `HasTabSelected("Desktop", "Desktop", "Mobile")` / `Plays("….mp4")` |
 | `the hover shows "….gif" labelled "Desktop" and "….gif" labelled "Mobile", side by side` | `Hover.ReadAsync()`, `ShowsGifsSideBySide(("….gif", "Desktop"), ("….gif", "Mobile"))` |

@@ -13,6 +13,12 @@ public partial record ScenarioFile
     /// <summary>Scenarios/Starting/StartFromScratchTests.cs: a web scenario played on both screens, and a helper method.</summary>
     public partial record StartFromScratch;
 
+    /// <summary>
+    /// Scenarios/Starting/StartFromScratchDraft.cs: no scenario file (its name doesn't end in "Tests"), though it holds
+    /// StartFromScratch's method and [TestDescription].
+    /// </summary>
+    public partial record StartFromScratchDraft;
+
     /// <summary>Scenarios/Loop/Weapons/ReloadTests.cs: a web scenario played on both screens.</summary>
     public partial record Reload;
 
@@ -30,6 +36,7 @@ public static class ScenarioFileShowing
     public static string ToPath(this ScenarioFile file) =>
         file.Match(
             startFromScratch => "Scenarios/Starting/StartFromScratchTests.cs",
+            startFromScratchDraft => "Scenarios/Starting/StartFromScratchDraft.cs",
             reload => "Scenarios/Loop/Weapons/ReloadTests.cs",
             unrelenting => "Scenarios/Loop/Weapons/UnrelentingTests.cs",
             longName => "Scenarios/Recordings/LongNameTests.cs");
@@ -41,6 +48,7 @@ public static class ScenarioFileShowing
     public static string ToMethod(this ScenarioFile file) =>
         file.Match(
             startFromScratch => "StartFromScratchOpensAnArcHunterWithNothingEquipped",
+            startFromScratchDraft => "StartFromScratchOpensAnArcHunterWithNothingEquipped",
             reload => "ReloadStandsApartFromTheCountAndTakesNone",
             unrelenting => "UnrelentingHealsForSureOn3QuickKills",
             longName => "AScenarioWhoseTitleGoesOnAndOnPastTwoHundredCharactersStillFindsItsRecordingBecauseTheWorkflowShortensItsAssetNamesWithAHashAndTheExtensionShortensThemTheSameWay");
@@ -49,6 +57,7 @@ public static class ScenarioFileShowing
     public static string ToDomain(this ScenarioFile file) =>
         file.Match(
             startFromScratch => "Starting",
+            startFromScratchDraft => "Starting",
             reload => "Loop/Weapons",
             unrelenting => "Loop/Weapons",
             longName => "Recordings");
@@ -57,6 +66,7 @@ public static class ScenarioFileShowing
     public static ImmutableArray<Screen> ToScreens(this ScenarioFile file) =>
         file.Match(
             startFromScratch => ImmutableArray.Create(Screen.Desktop, Screen.Mobile),
+            startFromScratchDraft => ImmutableArray.Create(Screen.Desktop, Screen.Mobile),
             reload => ImmutableArray.Create(Screen.Desktop, Screen.Mobile),
             unrelenting => ImmutableArray.Create(Screen.Desktop, Screen.Mobile),
             longName => ImmutableArray.Create(Screen.Desktop));

@@ -31,7 +31,7 @@ public sealed class HoverTests : BaseE2E
         // Given
         GitHub.Release.AddRecordingsOf(new ScenarioFile.StartFromScratch(), new Recording(104, 1), new Recording(109, 1));
         await Workbench.Explorer.OpenAsync(new ScenarioFile.StartFromScratch());
-        await Workbench.Editor.WaitUntilCodeLensReadAsync();
+        await Workbench.Editor.WaitUntilRecordingsShownAsync();
 
         // When
         await Workbench.Editor.HoverMethodNameAsync(new ScenarioFile.StartFromScratch());
@@ -77,7 +77,7 @@ public sealed class HoverTests : BaseE2E
         // Given
         GitHub.Release.AddRecordingsOf(new ScenarioFile.Unrelenting(), new Recording(101, 1, HasMp4s: false));
         await Workbench.Explorer.OpenAsync(new ScenarioFile.Unrelenting());
-        await Workbench.Editor.WaitUntilCodeLensReadAsync();
+        await Workbench.Editor.WaitUntilRecordingsShownAsync();
 
         // When
         await Workbench.Editor.HoverMethodNameAsync(new ScenarioFile.Unrelenting());

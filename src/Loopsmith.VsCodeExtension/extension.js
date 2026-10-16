@@ -277,7 +277,7 @@ function writePanel(scenario, recordings, chosen, repository, release, nonce, cs
 <style nonce="${nonce}">${PANEL_STYLE}</style>
 </head>
 <body>
-<main>
+<main data-testid="panel">
   <header>
     <div>
       <h1 data-testid="title"></h1>
@@ -337,9 +337,9 @@ function drawPanel(data) {
   const drawMedia = (run) => {
     const note = find('note');
     note.hidden = true;
-    const gif = () => make('img', { 'data-testid': 'gif', src: run.gif.url, alt: `${run.label} recording` });
+    const makeGif = () => make('img', { 'data-testid': 'gif', src: run.gif.url, alt: `${run.label} recording` });
     if (run.mp4 === null) {
-      find('media').replaceChildren(gif());
+      find('media').replaceChildren(makeGif());
       return;
     }
     const video = make('video', { 'data-testid': 'video', src: run.mp4.url, controls: '', autoplay: '', muted: '', playsinline: '', loop: '' });
@@ -349,7 +349,7 @@ function drawPanel(data) {
         note.textContent = "This VS Code can't play the MP4, and the recording has no GIF.";
       } else {
         note.textContent = "This VS Code can't play the MP4, so its GIF shows instead.";
-        find('media').replaceChildren(gif());
+        find('media').replaceChildren(makeGif());
       }
       note.hidden = false;
     });
@@ -413,7 +413,10 @@ async function fetchJson(url, headers, release) {
     return { ok: false, reason: "GitHub can't be reached", limited: false };
   }
   if (response.ok) {
-    return { ok: true, value: await response.json() };
+    const value = await response.json().catch(() => undefined);
+    return value === undefined
+      ? { ok: false, reason: "GitHub's answer isn't JSON", limited: false }
+      : { ok: true, value };
   }
   const limited = (response.status === 403 || response.status === 429) && response.headers.get('x-ratelimit-remaining') === '0';
   const reason = limited ? "GitHub's hourly limit is used up"
@@ -422,10 +425,14 @@ async function fetchJson(url, headers, release) {
   return { ok: false, reason, limited };
 }
 
-/** A GitHub sign-in VS Code already holds, asked silently (no prompt), or undefined. */
+/**
+ * A GitHub sign-in VS Code already holds, asked silently (no prompt), or undefined. A silent ask fails when VS Code has
+ * no GitHub sign-in to offer (no GitHub provider, as in VS Code for the web without one): that is no token, not an error.
+ */
 async function findGitHubToken(vscode) {
   for (const scopes of KNOWN_GITHUB_SCOPES) {
-    const session = await Promise.resolve(vscode.authentication.getSession('github', scopes, { silent: true })).catch(() => undefined);
+    const asked = Promise.resolve(vscode.authentication.getSession('github', scopes, { silent: true }));
+    const session = await asked.catch(() => undefined);
     if (session) {
       return session.accessToken;
     }
@@ -433,13 +440,17 @@ async function findGitHubToken(vscode) {
   return undefined;
 }
 
-async function digest(text) {
+async function digestText(text) {
   const bytes = await globalThis.crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
   return [...new Uint8Array(bytes)].map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 8);
 }
 
 async function digestScreens(scenario) {
-  const pairs = await Promise.all(SCREENS.map(async (screen) => [screen, await digest(toGifPath(scenario.domain, toGifName(scenario.method, screen)))]));
+  const pairs = await Promise.all(SCREENS.map(async (screen) => {
+    const path = toGifPath(scenario.domain, toGifName(scenario.method, screen));
+    const digest = await digestText(path);
+    return [screen, digest];
+  }));
   return Object.fromEntries(pairs);
 }
 
@@ -454,6 +465,7 @@ function activate(context) {
   const changed = new vscode.EventEmitter();
   let catalog = { state: 'reading' };
   let readAt = 0;
+  let reads = 0;
   let panel = null;
 
   const readSettings = () => {
@@ -461,12 +473,17 @@ function activate(context) {
     return { repository: settings.get('repository'), release: settings.get('release') };
   };
 
+  // A read started while another is on its way wins: the older one's answer is dropped.
   const refresh = async () => {
+    const mine = ++reads;
     catalog = { state: 'reading' };
     changed.fire();
     const { repository, release } = readSettings();
     const token = await findGitHubToken(vscode);
     const read = await readReleaseAssets(repository, release, token);
+    if (mine !== reads) {
+      return;
+    }
     readAt = Date.now();
     catalog = read.ok ? { state: 'read', assets: read.assets } : { state: 'failed', reason: read.reason, canSignIn: read.limited && !token };
     changed.fire();
@@ -478,12 +495,19 @@ function activate(context) {
     }
   };
 
-  const readRecordings = async (scenario) =>
-    catalog.state === 'read' ? findRecordings(scenario, catalog.assets, await digestScreens(scenario)) : [];
+  const readRecordings = async (scenario) => {
+    const read = catalog;
+    if (read.state !== 'read') {
+      return [];
+    }
+    const digests = await digestScreens(scenario);
+    return findRecordings(scenario, read.assets, digests);
+  };
 
   const findScenario = async (uri, method) => {
     const document = await vscode.workspace.openTextDocument(vscode.Uri.parse(uri));
-    return findScenarios(document.getText()).find((scenario) => scenario.method === method) ?? null;
+    const text = document.getText();
+    return findScenarios(text).find((scenario) => scenario.method === method) ?? null;
   };
 
   const play = async (args) => {
@@ -500,7 +524,9 @@ function activate(context) {
     }
     const { repository, release } = readSettings();
     panel.title = `Recording · ${scenario.method}`;
-    panel.webview.html = writePanel(scenario, recordings, chosen, repository, release, makeNonce(), panel.webview.cspSource);
+    const nonce = makeNonce();
+    const html = writePanel(scenario, recordings, chosen, repository, release, nonce, panel.webview.cspSource);
+    panel.webview.html = html;
     panel.reveal(vscode.ViewColumn.Beside);
   };
 
@@ -511,10 +537,12 @@ function activate(context) {
     onDidChangeCodeLenses: changed.event,
     async provideCodeLenses(document) {
       refreshWhenStale();
-      const scenarios = findScenarios(document.getText());
+      const text = document.getText();
+      const scenarios = findScenarios(text);
       const described = await Promise.all(scenarios.map(async (scenario) => {
         const range = new vscode.Range(scenario.attributesLine, 0, scenario.attributesLine, 0);
-        const items = describeLenses(catalog, await readRecordings(scenario));
+        const recordings = await readRecordings(scenario);
+        const items = describeLenses(catalog, recordings);
         return items.map((item) => new vscode.CodeLens(range, {
           title: item.title,
           command: item.play ? PLAY_COMMAND : item.command ?? '',
@@ -527,12 +555,15 @@ function activate(context) {
 
   const hovers = {
     async provideHover(document, position) {
-      const scenario = findScenarioAt(findScenarios(document.getText()), position.line, position.character);
+      const text = document.getText();
+      const scenario = findScenarioAt(findScenarios(text), position.line, position.character);
       if (scenario === null) {
         return null;
       }
-      const markdown = new vscode.MarkdownString(
-        writeHover(scenario, catalog, await readRecordings(scenario), readSettings().repository, toPlayUri(document, scenario)));
+      const recordings = await readRecordings(scenario);
+      const { repository } = readSettings();
+      const hover = writeHover(scenario, catalog, recordings, repository, toPlayUri(document, scenario));
+      const markdown = new vscode.MarkdownString(hover);
       markdown.supportHtml = true;
       markdown.isTrusted = { enabledCommands: [PLAY_COMMAND] };
       const range = new vscode.Range(scenario.nameLine, scenario.nameStart, scenario.nameLine, scenario.nameEnd);
@@ -541,10 +572,13 @@ function activate(context) {
   };
 
   const signIn = async () => {
-    const session = await Promise.resolve(vscode.authentication.getSession('github', SIGN_IN_SCOPES, { createIfNone: true })).catch(() => undefined);
-    if (session) {
-      await refresh();
+    const asked = Promise.resolve(vscode.authentication.getSession('github', SIGN_IN_SCOPES, { createIfNone: true }));
+    const signedIn = await asked.then(() => ({ ok: true }), (error) => ({ ok: false, reason: String(error?.message ?? error) }));
+    if (!signedIn.ok) {
+      vscode.window.showWarningMessage(`GitHub sign-in didn't finish: ${signedIn.reason}`);
+      return;
     }
+    await refresh();
   };
 
   const selector = { language: 'csharp', pattern: SCENARIO_FILES };
@@ -581,5 +615,5 @@ module.exports = {
   describeLenses,
   writeHover,
   writePanel,
-  digest,
+  digestText,
 };

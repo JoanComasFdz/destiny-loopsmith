@@ -26,22 +26,13 @@ public sealed class RecordingPanel(IPage page)
         }
     }
 
-    /// <summary>Clicks the screen's tab ("Mobile"), and waits until its recording plays.</summary>
-    public async Task ClickTabAsync(string tab)
-    {
-        await OnScreen.ClickAsync(page, Content.GetByRole(AriaRole.Tab, new() { Name = tab, Exact = true }), inPanel: true);
-        await Content.GetByRole(AriaRole.Tab, new() { Name = tab, Exact = true, Selected = true }).WaitForAsync();
-        await WaitUntilPlayingAsync();
-    }
+    /// <summary>Clicks the screen's tab ("Mobile").</summary>
+    public Task ClickTabAsync(string tab) =>
+        OnScreen.ClickAsync(page, Content.GetByRole(AriaRole.Tab, new() { Name = tab, Exact = true }), inPanel: true);
 
-    /// <summary>Clicks a version of "Recorded in" ("PR #104 · V1"), and waits until its recording plays.</summary>
-    public async Task ClickVersionAsync(string version)
-    {
-        var button = Content.Locator("[data-action=version]").Filter(new() { HasText = version });
-        await OnScreen.ClickAsync(page, button, inPanel: true);
-        await Content.Locator("[data-action=version][aria-pressed=true]").Filter(new() { HasText = version }).WaitForAsync();
-        await WaitUntilPlayingAsync();
-    }
+    /// <summary>Clicks a version of "Recorded in" ("PR #104 · V1").</summary>
+    public Task ClickVersionAsync(string version) =>
+        OnScreen.ClickAsync(page, Content.Locator("[data-action=version]").Filter(new() { HasText = version }), inPanel: true);
 
     /// <summary>What the panel shows: its editor tab, its title and line, its tabs, its video or GIF, its links and versions.</summary>
     public Task<RecordingPanelSnapshot> ReadAsync() => OnScreen.ReadAsync(page, ReadShownAsync);
@@ -51,8 +42,8 @@ public sealed class RecordingPanel(IPage page)
 
     private async Task<RecordingPanelSnapshot> ReadShownAsync()
     {
-        var tab = await page.Locator($"{VsCodeDom.EditorTab}.active").Filter(new() { HasText = "Recording" }).Last.InnerTextAsync();
-        var shown = ShownJson.Read<RecordingPanelShown>(await Content.Locator("main").EvaluateAsync<string>(ReadScript));
+        var tab = await page.Locator(VsCodeDom.ActiveEditorTab).Filter(new() { HasText = "Recording" }).Last.InnerTextAsync();
+        var shown = ShownJson.Read<RecordingPanelShown>(await Content.Locator("[data-testid=panel]").EvaluateAsync<string>(ReadScript));
         return new RecordingPanelSnapshot(tab.Trim(), shown.Title, shown.About, shown.Tabs, shown.Video, shown.Gif, shown.Note, shown.PlayerLink, shown.Versions, shown.Source);
     }
 
@@ -87,7 +78,7 @@ public sealed class RecordingPanel(IPage page)
             title: find('title').textContent.trim(),
             about: find('about').textContent.trim(),
             tabs: [...main.querySelectorAll('[role=tab]')].map(tab => ({ text: tab.textContent.trim(), selected: tab.getAttribute('aria-selected') === 'true' })),
-            video: video ? { asset: asset(video.currentSrc || video.getAttribute('src')), plays: video.readyState >= 2 && !video.error && !video.paused } : null,
+            video: video ? { asset: asset(video.currentSrc || video.getAttribute('src')), plays: video.readyState >= 2 && !video.error && !video.paused, controls: video.controls } : null,
             gif: gif ? asset(gif.getAttribute('src')) : null,
             note: find('note').hidden ? null : find('note').textContent.trim(),
             playerLink: link.hidden ? null : link.getAttribute('href'),
@@ -125,8 +116,11 @@ public sealed record RecordingPanelSnapshot(
 /// <summary>A screen's tab: its label and whether it is selected.</summary>
 public sealed record PanelTab(string Text, bool Selected);
 
-/// <summary>The panel's video: its MP4's asset name, and whether it plays (has its frames, no error, not paused).</summary>
-public sealed record PanelVideo(string Asset, bool Plays);
+/// <summary>
+/// The panel's video: its MP4's asset name, whether it plays (has its frames, no error, not paused) and whether it shows
+/// the browser's controls (play and pause, seeking, fullscreen).
+/// </summary>
+public sealed record PanelVideo(string Asset, bool Plays, bool Controls);
 
 /// <summary>A version of "Recorded in": its label and whether it is the one picked.</summary>
 public sealed record PanelVersion(string Text, bool Picked);

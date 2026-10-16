@@ -48,6 +48,15 @@ public static class RecordingPanelSnapshotAssertions
         return that;
     }
 
+    /// <summary>The panel's video shows the browser's controls: play and pause, seeking, fullscreen.</summary>
+    public static AssertingThat<RecordingPanelSnapshot> HasVideoControls(this AssertingThat<RecordingPanelSnapshot> that)
+    {
+        var video = that.InstanceToAssert.Video;
+        Assert.True(video is not null, "The panel shows no video, but one with its controls was expected.");
+        Assert.True(video.Controls, $"The panel's video \"{video.Asset}\" shows no controls.");
+        return that;
+    }
+
     /// <summary>The panel shows the GIF <paramref name="asset"/>, and no video.</summary>
     public static AssertingThat<RecordingPanelSnapshot> ShowsGif(this AssertingThat<RecordingPanelSnapshot> that, string asset)
     {

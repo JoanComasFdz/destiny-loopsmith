@@ -59,5 +59,10 @@ public static class HoverSnapshotAssertions
     }
 
     /// <summary>The hover has no link at all (none plays an MP4, none opens the player).</summary>
-    public static AssertingThat<HoverSnapshot> HasNoLinks(this AssertingThat<HoverSnapshot> that) => that.Links();
+    public static AssertingThat<HoverSnapshot> HasNoLinks(this AssertingThat<HoverSnapshot> that)
+    {
+        var shown = that.InstanceToAssert.Links;
+        Assert.True(shown.IsEmpty, $"The hover links {string.Join(", ", shown.Select(link => $"\"{link.Text}\""))}, but no link was expected.");
+        return that;
+    }
 }

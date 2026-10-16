@@ -11,10 +11,10 @@ public sealed class CommandPalette(IPage page)
     public async Task RunAsync(string title)
     {
         await OnScreen.KeyAsync(page, () => page.Keyboard.PressAsync("F1"));
-        await Widget.Locator("input").WaitForAsync();
+        await Widget.Locator(VsCodeDom.QuickInputBox).WaitForAsync();
         await OnScreen.KeyAsync(page, () => page.Keyboard.TypeAsync(title, new() { Delay = 40 }));
         await Widget.GetByRole(AriaRole.Option, new() { Name = title }).First.WaitForAsync();
         await OnScreen.KeyAsync(page, () => page.Keyboard.PressAsync("Enter"));
-        await Widget.Locator("input").WaitForAsync(new() { State = WaitForSelectorState.Hidden });
+        await Widget.Locator(VsCodeDom.QuickInputBox).WaitForAsync(new() { State = WaitForSelectorState.Hidden });
     }
 }

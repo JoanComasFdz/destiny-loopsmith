@@ -240,7 +240,7 @@ works the PR records them; CI doesn't run, record or build anything for them.
   - `<run>`: the run's GIF name, the same as in `record.sh`'s output (`ScenarioNaming.ToGifName`: the scenario's
     method name, its Gherkin's title, in kebab-case, then `-desktop` or `-mobile`; only a–z, 0–9 and `-`, which GitHub
     keeps as they are). Only when the whole name would pass 200 characters does it keep its start and end with
-    `-<8 hex>`, the start of the SHA-256 of the GIF name, so it stays unique (a scenario's two screens apart) and the
+    `-<8 hex>`, the start of the SHA-256 of the GIF's path (`<domain folder>/<GIF name>.gif`), so it stays unique (a scenario's two screens apart) and the
     same on every push.
 - **The posts:** every version, V1 included, is a new comment on the PR, `## Scenarios (V<N>)`, that starts with
   **What changed**: `push-gifs.sh --message "<text>"`'s text, word for word, or else the body of the PR head's commit

@@ -72,7 +72,7 @@ async function findStartFromScratch() {
 async function findRecordingsOf(scenario, assets) {
   const digests = {};
   for (const screen of ['desktop', 'mobile']) {
-    digests[screen] = await extension.digest(extension.toGifPath(scenario.domain, extension.toGifName(scenario.method, screen)));
+    digests[screen] = await extension.digestText(extension.toGifPath(scenario.domain, extension.toGifName(scenario.method, screen)));
   }
   return extension.findRecordings(scenario, assets, digests);
 }
@@ -136,7 +136,7 @@ test('finds a scenario\'s recordings, newest PR first, each version with the ass
 test('names a run past 200 characters like the workflow: its start, then the hash of its GIF path', async () => {
   const method = 'AScenarioWhoseNameGoesOnAndOn'.repeat(5) + 'PastTwoHundredCharacters';
   const gif = extension.toGifName(method, 'desktop');
-  const hash = await extension.digest(extension.toGifPath('Recordings', gif));
+  const hash = await extension.digestText(extension.toGifPath('Recordings', gif));
   // Written by tools/e2e/post-scenarios.py's name_asset for the same GIF.
   const expected = 'pr-112-v3-' + 'a-scenario-whose-name-goes-on-and-on-'.repeat(4) + 'a-scenario-whose-name-goes-on-860a961a';
   assert.equal(extension.nameAsset(112, 3, gif, '.gif', hash), `${expected}.gif`);

@@ -25,13 +25,40 @@ public sealed class CodeLensTests : BaseE2E
 
         // When
         await Workbench.Explorer.OpenAsync(new ScenarioFile.StartFromScratch());
-        await Workbench.Editor.WaitUntilCodeLensReadAsync();
+        await Workbench.Editor.WaitUntilRecordingsShownAsync();
 
         // Then
         var codeLens = await Workbench.Editor.ReadCodeLensAsync();
         Asserting.That(codeLens)
             .ReadsAboveTheScenario("Play desktop recording", "Play mobile recording", "PR #109 · V1")
             .HasNoOtherCodeLens();
+    }
+
+    [Theory, PlayInDesktop]
+    [TestDescription("""
+        @desktop
+        Scenario: A file that isn't a scenario file has no CodeLens
+          # Desktop only: the extension runs in VS Code on a desktop.
+          Given the release holds the recordings of "StartFromScratchTests.cs" from PR #109 · V1
+          And "Scenarios/Starting/StartFromScratchTests.cs" is open, its CodeLens reading "PR #109 · V1"
+          # Its name doesn't end in "Tests", so it holds no scenario, though it has the same method and [TestDescription].
+          When I open "Scenarios/Starting/StartFromScratchDraft.cs" in the explorer
+          Then no line has a CodeLens
+        """)]
+    public async Task AFileThatIsntAScenarioFileHasNoCodeLens(Screen screen)
+    {
+        // Given
+        GitHub.Release.AddRecordingsOf(new ScenarioFile.StartFromScratch(), new Recording(109, 1));
+        await Workbench.Explorer.OpenAsync(new ScenarioFile.StartFromScratch());
+        await Workbench.Editor.WaitUntilCodeLensShowsAsync("PR #109 · V1");
+
+        // When
+        await Workbench.Explorer.OpenAsync(new ScenarioFile.StartFromScratchDraft());
+        await Workbench.Editor.WaitUntilCodeLensSettledAsync();
+
+        // Then
+        var codeLens = await Workbench.Editor.ReadCodeLensAsync();
+        Asserting.That(codeLens).HasNoCodeLens();
     }
 
     [Theory, PlayInDesktop]
@@ -50,7 +77,7 @@ public sealed class CodeLensTests : BaseE2E
 
         // When
         await Workbench.Explorer.OpenAsync(new ScenarioFile.Reload());
-        await Workbench.Editor.WaitUntilCodeLensReadAsync();
+        await Workbench.Editor.WaitUntilRecordingsShownAsync();
 
         // Then
         var codeLens = await Workbench.Editor.ReadCodeLensAsync();
@@ -74,7 +101,7 @@ public sealed class CodeLensTests : BaseE2E
 
         // When
         await Workbench.Explorer.OpenAsync(new ScenarioFile.LongName());
-        await Workbench.Editor.WaitUntilCodeLensReadAsync();
+        await Workbench.Editor.WaitUntilRecordingsShownAsync();
 
         // Then
         // Its assets' names would pass 200 characters: the workflow cuts them and ends them with a hash of the GIF's path.

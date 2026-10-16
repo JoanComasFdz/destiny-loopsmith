@@ -26,6 +26,16 @@ public static class CodeLensSnapshotAssertions
         return that;
     }
 
+    /// <summary>No line of the file has a CodeLens.</summary>
+    public static AssertingThat<CodeLensSnapshot> HasNoCodeLens(this AssertingThat<CodeLensSnapshot> that)
+    {
+        var rows = that.InstanceToAssert.Rows;
+        Assert.True(
+            rows.IsEmpty,
+            $"The editor shows a CodeLens above {string.Join(", ", rows.Select(row => $"\"{row.LineBelow}\""))}, but none was expected.");
+        return that;
+    }
+
     private static bool IsAboveAScenario(CodeLensRow row) => row.LineBelow.StartsWith("[Theory", StringComparison.Ordinal);
 
     private static string Quote(IEnumerable<string> items) => string.Join(" | ", items.Select(item => $"\"{item}\""));

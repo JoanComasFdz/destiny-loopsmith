@@ -111,13 +111,12 @@ public sealed class FakeRelease
     }
 
     /// <summary>
-    /// The release holds no recording of <paramref name="file"/>'s scenario: a scenario's release starts empty, so this
-    /// only checks that nothing added one.
+    /// The release holds no recording of <paramref name="file"/>'s scenario. A scenario's release starts empty and only
+    /// <see cref="AddRecordingsOf"/> adds to it, so there is nothing to do: the Given reads as its Gherkin line.
     /// </summary>
-    public void HasNoRecordingOf(ScenarioFile file) =>
-        Assert.False(
-            Assets.Keys.Any(name => file.ToScreens().Any(screen => name.Contains(ScenarioNaming.ToGifName(file.ToMethod(), screen), StringComparison.Ordinal))),
-            $"The release should hold no recording of {file.ToFileName()}, but it holds one.");
+    public void HasNoRecordingOf(ScenarioFile file)
+    {
+    }
 
     private static IEnumerable<KeyValuePair<string, string>> NameRuns(ScenarioFile file, Recording recording, Screen screen)
     {

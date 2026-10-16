@@ -19,8 +19,11 @@ a `[TestDescription("""…""")]` in a `Scenarios/**/*Tests.cs` file (`tests/Loop
 It finds a scenario's assets by their names: `pr-<n>-v<version>-<GIF name>.gif` / `.mp4`, the GIF name being the method's
 name kebab-cased (Humanizer's rules) and its screen, shortened with a hash past 200 characters
 (`tools/e2e/post-scenarios.py`, `name_asset`). It reads the release from GitHub's API: 60 requests an hour without a
-sign-in, 5,000 with one. When VS Code already holds a GitHub sign-in (vscode.dev does once you open a repository) it uses
-it without asking; when the hourly limit is used up, the CodeLens offers **Sign in to GitHub**.
+sign-in, 5,000 with one. It asks VS Code for a GitHub sign-in silently, never with a prompt: VS Code hands an extension a
+sign-in only once you have let it use one, so until then it reads the release without one. To let it, run **Loopsmith:
+Sign in to GitHub to read e2e recordings** once (or click **Sign in to GitHub** on the CodeLens, which shows when the
+hourly limit is used up) and pick your account (on vscode.dev, the one you opened the repository with); from then on it
+uses it without asking.
 
 ## Install
 
