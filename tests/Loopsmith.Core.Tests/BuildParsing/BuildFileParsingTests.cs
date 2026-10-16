@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Loopsmith.Core.BuildParsing;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
@@ -10,30 +11,9 @@ public sealed class BuildFileParsingTests
 {
     private const string BuildPath = "builds/skip-grenade-hunter/build.yaml";
 
-    /// <summary>The example of docs/rule-format.md, verbatim.</summary>
-    private const string SpecExampleYaml = """
-        # abridged and illustrative — the real one is builds/skip-grenade-hunter/build.yaml
-        name: Skip Grenade Hunter
-        author: Plunderthabooty                      # optional
-        source: https://www.youtube.com/watch?v=zvd6sNS463E   # optional
-        catalog: authored-0123456789ab               # optional pin (ADRs D15)
-        class: hunter
-        subclass: arc                                # arc|solar|void|stasis|strand|prismatic
-        super: arc-staff
-        grenade: skip-grenade
-        melee: combination-blow
-        classAbility: gamblers-dodge
-        jump: triple-jump                            # optional
-        aspects: [tempest-strike, flow-state]
-        fragments: [spark-of-resistance, spark-of-frequency, spark-of-shock, spark-of-discharge]
-        exoticArmor: shinobus-vow                    # optional
-        armorSetBonuses: [luminopotent-2pc, luminopotent-4pc]
-        armorMods: [elemental-charge, elemental-charge, grenade-kickstart, grenade-kickstart, bomber]   # repeat = stacked copies
-        artifactPerks: [defibrillating-blast, flashover]
-        weapons:
-          - { slot: kinetic, name: Festival Flight, type: strand, archetype: grenade-launcher, perks: [slice] }
-        stats: { weapons: 47, class: 104, grenade: 145, super: 27, melee: 79 }   # any subset; 0..200
-        """;
+    private const string SpecPath = "docs/rule-format.md";
+
+    private const string SpecExampleMarker = "<!-- BuildFileParsingTests reads the next yaml block -->";
 
     private const string MinimalYaml = """
         name: Bare Hunter
@@ -51,14 +31,39 @@ public sealed class BuildFileParsingTests
     private static string ParseInvalidBuild(string yaml) =>
         AssertError(BuildFileParsing.ParseBuildFile(new SourceText(BuildPath, yaml), RepoCatalog.Manifest));
 
+    /// <summary>The build file example of docs/rule-format.md: the ```yaml block right after its marker comment.</summary>
+    private static SourceText ReadSpecExample()
+    {
+        var file = RepoFiles.ToPath(SpecPath);                                                                      // pure
+        var lines = File.ReadAllLines(file);                                                                        // impure
+        var example = FindSpecExample(lines);                                                                       // pure
+        Assert.True(example.Length > 0, $"{SpecPath}: no ```yaml block right after '{SpecExampleMarker}'.");        // impure
+        return new SourceText(SpecPath, string.Join('\n', example));                                              // pure
+    }
+
+    private static ImmutableArray<string> FindSpecExample(IReadOnlyList<string> lines)
+    {
+        var marker = lines.Select(line => line.Trim()).ToList().IndexOf(SpecExampleMarker);
+        var opens = marker >= 0 && marker + 1 < lines.Count && lines[marker + 1].Trim() == "```yaml";
+        return opens ? [.. lines.Skip(marker + 2).TakeWhile(line => line.Trim() != "```")] : [];
+    }
+
+    private static Build ParseSpecExample()
+    {
+        var source = ReadSpecExample();                                                                             // impure
+        return AssertOk(BuildFileParsing.ParseBuildFile(source, RepoCatalog.Manifest));                            // pure
+    }
+
     private static IEnumerable<string> ToNames(IEnumerable<ElementId> ids) => ids.Select(id => id.Value);
 
     private static Optional<StatValue> ToStat(int value) => Optional.Some(StatValue.From(value));
 
+    private static Optional<ItemHash> ToHash(uint hash) => Optional.Some(ItemHash.From(hash));
+
     [Fact]
-    public void Parses_the_spec_example()
+    public void Parses_the_build_file_example_of_the_spec()
     {
-        var build = ParseValidBuild(SpecExampleYaml);
+        var build = ParseSpecExample();
 
         Assert.Equal("Skip Grenade Hunter", build.Name);
         Assert.Equal(Optional.Some("Plunderthabooty"), build.Author);
@@ -82,12 +87,45 @@ public sealed class BuildFileParsingTests
         Assert.Equal(["luminopotent-2pc", "luminopotent-4pc"], ToNames(build.ArmorSetBonuses));
         Assert.Equal(["defibrillating-blast", "flashover"], ToNames(build.ArtifactPerks));
 
-        var weapon = Assert.Single(build.Weapons);
-        Assert.Equal(WeaponSlot.Kinetic, weapon.Slot);
-        Assert.Equal("Festival Flight", weapon.Name);
-        Assert.Equal(DamageType.Strand, weapon.Type);
-        Assert.Equal(Optional.Some("grenade-launcher"), weapon.Archetype);
-        Assert.Equal(["slice"], ToNames(weapon.Perks));
+        Assert.Equal(Optional.Some(ItemHash.From(3821685388)), build.Artifact.Map(artifact => artifact.Hash));
+        Assert.Equal(
+            [
+                ToHash(3585856470), ToHash(3585856464), ToHash(2596646298), Optional.None<ItemHash>(),
+                Optional.None<ItemHash>(), ToHash(1319563986), Optional.None<ItemHash>(),
+            ],
+            build.Artifact.Map(artifact => artifact.Slots).UnwrapOr([]));
+
+        Assert.Equal(4, build.Weapons.Length);
+
+        var byArchetype = build.Weapons[0];
+        Assert.Equal(WeaponSlot.Kinetic, byArchetype.Slot);
+        Assert.Equal("Festival Flight", byArchetype.Name);
+        Assert.Equal(DamageType.Strand, byArchetype.Type);
+        Assert.Equal(Optional.Some("grenade-launcher"), byArchetype.Archetype);
+        Assert.Equal(["slice"], ToNames(byArchetype.Perks));
+        Assert.Equal(Optional.None<ItemHash>(), byArchetype.Hash);
+
+        var thunderlord = build.Weapons[1];
+        Assert.Equal(ToHash(3325463374), thunderlord.Hash);
+        Assert.Equal(WeaponSlot.Power, thunderlord.Slot);
+        Assert.Equal("Thunderlord", thunderlord.Name);
+        Assert.Equal(DamageType.Arc, thunderlord.Type);
+        Assert.True(thunderlord.Catalyst);
+
+        var festivalFlight = build.Weapons[2];
+        Assert.Equal(ToHash(4019651319), festivalFlight.Hash);
+        Assert.Equal(WeaponSlot.Kinetic, festivalFlight.Slot);
+        Assert.Equal("Festival Flight", festivalFlight.Name);
+        Assert.Equal(DamageType.Strand, festivalFlight.Type);
+        Assert.Equal(ToHash(3820243349), festivalFlight.Mod);
+        Assert.False(festivalFlight.Catalyst);
+
+        var crisisInverted = build.Weapons[3];
+        Assert.Equal(ToHash(2888266564), crisisInverted.Hash);
+        Assert.Equal(WeaponSlot.Energy, crisisInverted.Slot);
+        Assert.Equal("Crisis Inverted", crisisInverted.Name);
+        Assert.Equal(DamageType.Arc, crisisInverted.Type);
+        Assert.Equal([Optional.None<ItemHash>(), ToHash(2209918983)], crisisInverted.Roll);
 
         Assert.Equal(
             new StatLine(ToStat(47), Optional.None<StatValue>(), ToStat(104), ToStat(145), ToStat(27), ToStat(79)),
@@ -97,7 +135,7 @@ public sealed class BuildFileParsingTests
     [Fact]
     public void Repeated_mods_are_kept_in_order()
     {
-        var build = ParseValidBuild(SpecExampleYaml);
+        var build = ParseSpecExample();
 
         Assert.Equal(
             ["elemental-charge", "elemental-charge", "grenade-kickstart", "grenade-kickstart", "bomber"],
