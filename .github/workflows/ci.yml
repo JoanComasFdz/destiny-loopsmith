@@ -9,29 +9,36 @@ permissions:
   contents: read
 
 jobs:
-  # Whether a pull request changes a file that dotnet build or test reads: anything but Markdown,
-  # docs/, .github/, .claude/, .devcontainer/ and the Python and shell tools in tools/e2e/,
-  # tools/compendium/ and tools/manifest/ (a rename counts its old path too; a PR with no changed
-  # files builds nothing). If not, `build` is skipped, and a skipped required check counts as
-  # passed. If this job fails, `build` runs. Pushes to main always build. pr-preview.yml uses the
-  # same list plus tests/ (test files, e2e fixtures among them, are built here but never published).
+  # What a pull request changes (a rename counts its old path too; a PR with no changed files
+  # changes nothing):
+  # - code: a file that dotnet build or test reads, i.e. anything but Markdown, docs/, .github/,
+  #   .claude/, .devcontainer/ and the Python and shell tools in tools/e2e/, tools/compendium/ and
+  #   tools/manifest/. If not, `build` is skipped, and a skipped required check counts as passed.
+  # - site: a file the published site is built from, i.e. anything on that list but tests/ too
+  #   (test files, e2e fixtures among them, are built and tested but never published). If so,
+  #   `build` publishes the web app and `preview` deploys what it published (pr-preview.yml).
+  # If this job fails, both run. Pushes to main always build and never preview (pages.yml deploys).
   changes:
     runs-on: ubuntu-latest
     permissions:
       pull-requests: read
     outputs:
       code: ${{ steps.files.outputs.code }}
+      site: ${{ steps.files.outputs.site }}
     steps:
       - id: files
         env:
           GH_TOKEN: ${{ github.token }}
           PR: ${{ github.event.pull_request.number }}
         run: |
-          if [ "$GITHUB_EVENT_NAME" != pull_request ]; then echo "code=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          if [ "$GITHUB_EVENT_NAME" != pull_request ]; then printf 'code=true\nsite=false\n' >> "$GITHUB_OUTPUT"; exit 0; fi
           files=$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR/files" \
             --jq '.[] | .filename, (.previous_filename // empty)')
-          n=$(printf '%s' "$files" | grep -cvE '\.md$|^docs/|^\.github/|^\.claude/|^\.devcontainer/|^tools/(e2e|compendium|manifest)/' || true)
-          echo "code=$([ "$n" -gt 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          unread='\.md$|^docs/|^\.github/|^\.claude/|^\.devcontainer/|^tools/(e2e|compendium|manifest)/'
+          code=$(printf '%s' "$files" | grep -cvE "$unread" || true)
+          site=$(printf '%s' "$files" | grep -cvE "$unread|^tests/" || true)
+          echo "code=$([ "$code" -gt 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "site=$([ "$site" -gt 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
 
   build:
     needs: changes
@@ -45,3 +52,27 @@ jobs:
       - run: dotnet restore
       - run: dotnet build --no-restore -c Release
       - run: dotnet test --no-build -c Release
+      # Publishing builds again, incrementally (`--no-build` would leave index.html's asset placeholders unfilled).
+      - name: Publish the web app
+        if: needs.changes.outputs.site != 'false'
+        run: dotnet publish src/Loopsmith.Web -c Release --no-restore -o publish
+      - uses: actions/upload-artifact@v7
+        if: needs.changes.outputs.site != 'false'
+        with:
+          name: site
+          path: publish/wwwroot
+          include-hidden-files: true # .nojekyll
+          retention-days: 1
+
+  # The PR's preview, from the site `build` published once it built and passed its tests.
+  preview:
+    needs: [changes, build]
+    if: >-
+      ${{ !cancelled() && needs.build.result == 'success' &&
+      needs.changes.outputs.site != 'false' &&
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository }}
+    permissions:
+      contents: write
+      pull-requests: write
+    uses: ./.github/workflows/pr-preview.yml

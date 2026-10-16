@@ -11,7 +11,7 @@ The site is served from the **`gh-pages` branch**:
 | What | Where | Workflow |
 |---|---|---|
 | `main` — the live app | `https://<owner>.github.io/<repo>/` | `.github/workflows/pages.yml` (push to `main`, or run by hand) |
-| every open pull request — its dev preview | `https://<owner>.github.io/<repo>/pr-preview/pr-<number>/` | `.github/workflows/pr-preview.yml` (PR opened / updated; removed when closed) |
+| every open pull request — its dev preview | `https://<owner>.github.io/<repo>/pr-preview/pr-<number>/` | `.github/workflows/pr-preview.yml`, called by `ci.yml` with the site its `build` job built, tested and published (PR opened / updated, when it changes a file the site is built from; removed when closed) |
 
 Every pull request that adds or changes end-to-end scenarios also gets them posted on it, recorded by the session that
 works it ([E2E videos on pull requests](#e2e-videos-on-pull-requests)).
@@ -48,7 +48,7 @@ but no Compendium snapshot text and no transcripts.
 Every deploy publishes the VS Code extension (`src/Loopsmith.VsCodeExtension`, its
 [README](../src/Loopsmith.VsCodeExtension/README.md)) for desktop VS Code as `vscode-extension/loopsmith-e2e-recordings.vsix`:
 `Loopsmith.Web.csproj` zips it after `dotnet publish` (the `PublishVsCodeExtension` target), so `pages.yml` and
-`pr-preview.yml` publish it unchanged, the live site's and each PR's preview's (`…/pr-preview/pr-<n>/vscode-extension/`).
+`ci.yml` (for `pr-preview.yml`) publish it unchanged, the live site's and each PR's preview's (`…/pr-preview/pr-<n>/vscode-extension/`).
 
 vscode.dev can't install it from the site: its content security policy lets the page fetch only from `localhost` and a
 few hosts of its own (`github.io` isn't one: "Cannot find a valid extension from the location"), and it has no "Install

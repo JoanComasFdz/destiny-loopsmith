@@ -107,7 +107,8 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
   does and doesn't), then FR-1…FR-13 with their status, the non-functional requirements and what is
   out of scope.
 - `.github/workflows/` — `ci.yml` (build + test on every PR that changes what `dotnet` reads, and every
-  push to `main`), `pages.yml`, `pr-preview.yml`, `e2e-videos.yml` (records nothing: the session
+  push to `main`; on a PR that changes the site it also publishes the web app and hands it to `pr-preview.yml`, so a
+  PR is built once), `pages.yml`, `pr-preview.yml` (deploys that site; removes it when the PR closes), `e2e-videos.yml` (records nothing: the session
   records the PR's added or changed e2e scenarios and pushes their GIFs and MP4s to a throwaway `e2e-gifs/pr-<n>-<sha>` branch
   with `tools/e2e/push-gifs.sh`; the workflow uploads them to the `prs-resources` pre-release, posts them on the PR as
   one comment per version (V1, V2…; each GIF with a "▶ Play MP4" link to the site's `e2e-player.html`; a new one collapses
@@ -198,7 +199,7 @@ pull request:
    `docs/`, `.github/`, `.claude/`, `.devcontainer/`, `tools/e2e/`, `tools/compendium/` or
    `tools/manifest/` (nothing `dotnet build` or `dotnet test` reads: `ci.yml` skips `build`), and
    **no preview** when every path is on that list or under `tests/` (nothing the published site is
-   built from: `pr-preview.yml` skips it; a test or e2e fixture change still builds and tests). A
+   built from: `ci.yml` neither publishes it nor calls `pr-preview.yml`; a test or e2e fixture change still builds and tests). A
    PR with no preview leaves the preview out of its description and messages. Then rename
    the session: put `#<PR number> ` in front of its current title ("D2 damage resistance calculation" →
    "#59 D2 damage resistance calculation"), reading it with the claude-code-remote `get_session`
