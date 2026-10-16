@@ -91,8 +91,8 @@ Files, rules, builds, related PRs, how the work splits, open questions.
   (where, and on what device or browser if they said).
 - **Acceptance criteria:**
   - Each one is what someone does and sees: on the preview at `…/pr-preview/pr-<n>/`, in a file, or in
-    a test. A docs-only change (CLAUDE.md, "Agent workflow", step 4) has no preview: its criteria are
-    checked in a file.
+    a test. A change with no preview (docs, tooling or tests only: CLAUDE.md, "Agent workflow", step 4) has none: its criteria are
+    checked in a file or a test.
   - **Every criterion about how the app behaves is a Gherkin** (docs/given-when-then-test-rules.md),
     and **every Gherkin is one e2e scenario** that holds it word for word in its `[TestDescription]`
     (tests/Loopsmith.Web.E2E/E2E-TEST-CODE-RULES.md, rule i). Round 1 shows each Gherkin in full; the
@@ -199,8 +199,9 @@ No other message repeats the links: CI running, passing or failing; the preview 
 posted; check-ins; a conflict merge or a CI fix nobody asked for; waiting on review. The PR merged
 or closed is one line with no links.
 
-A docs-only PR (every changed path a Markdown file or under `docs/`, `.github/` or `.claude/`;
-CLAUDE.md, "Agent workflow", step 4) gets no preview, so those two messages end with the PR bullet only,
+A PR with no preview (every changed path a Markdown file or under `docs/`, `.github/`, `.claude/`,
+`.devcontainer/`, `tools/e2e/`, `tools/compendium/`, `tools/manifest/` or `tests/`; CLAUDE.md, "Agent
+workflow", step 4) gets none, so those two messages end with the PR bullet only,
 and its description has no "how to check it on the preview".
 
 The owner's files never go into the repository by themselves. When the work needs one in the

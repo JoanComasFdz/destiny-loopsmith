@@ -1,49 +1,27 @@
 name: PR preview
 
-# Every pull request from a branch of this repository gets the web app deployed to
+# Every pull request from a branch of this repository that changes the site gets the web app deployed to
 #   https://<owner>.github.io/<repo>/pr-preview/pr-<number>/
 # and a comment with the link. The preview is removed when the PR is closed or merged.
+# ci.yml calls this workflow once its `build` job has built, tested and published the PR's site (the `site`
+# artifact), and only when the PR changes a file the site is built from (ci.yml, `changes`), so a PR is built once.
 # Pull requests from forks are skipped (they never get write access to gh-pages).
 
 on:
+  workflow_call:
   pull_request:
-    types: [opened, reopened, synchronize, closed]
+    types: [closed]
 
 permissions:
   contents: write
   pull-requests: write
 
 jobs:
-  # Whether a pull request changes more than Markdown, docs/, .github/ and .claude/ (a rename
-  # counts its old path too; a PR with no changed files counts as docs-only). If not, it gets no
-  # preview; closing a PR still removes its preview, in case an earlier push had one. If this job
-  # fails, the preview runs. Same list in ci.yml.
-  changes:
-    runs-on: ubuntu-latest
-    permissions:
-      pull-requests: read
-    outputs:
-      code: ${{ steps.files.outputs.code }}
-    steps:
-      - id: files
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PR: ${{ github.event.pull_request.number }}
-        run: |
-          files=$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR/files" \
-            --jq '.[] | .filename, (.previous_filename // empty)')
-          n=$(printf '%s' "$files" | grep -cvE '\.md$|^docs/|^\.github/|^\.claude/' || true)
-          echo "code=$([ "$n" -gt 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
-
   preview:
-    needs: changes
-    if: >-
-      ${{ !cancelled() &&
-      github.event.pull_request.head.repo.full_name == github.repository &&
-      (needs.changes.outputs.code != 'false' || github.event.action == 'closed') }}
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
     runs-on: ubuntu-latest
-    # One gh-pages deploy at a time (pages.yml uses the same group); only the job waits, so a docs-only
-    # pull request doesn't take a place in the queue.
+    # One gh-pages deploy at a time (pages.yml uses the same group); only the job waits, so a pull request
+    # with no preview doesn't take a place in the queue.
     concurrency:
       group: gh-pages
       cancel-in-progress: false
@@ -52,16 +30,13 @@ jobs:
         with:
           # A closed PR's merge ref is gone; removal only needs the repository, so use the default branch.
           ref: ${{ github.event.action == 'closed' && github.event.repository.default_branch || '' }}
-      - uses: actions/setup-dotnet@v6
+          sparse-checkout: tools/web
+      - name: Take the site ci.yml published
         if: github.event.action != 'closed'
+        uses: actions/download-artifact@v8
         with:
-          global-json-file: global.json
-      - name: Test the engine before publishing it
-        if: github.event.action != 'closed'
-        run: dotnet test -c Release
-      - name: Publish the web app
-        if: github.event.action != 'closed'
-        run: dotnet publish src/Loopsmith.Web -c Release -o publish
+          name: site
+          path: publish/wwwroot
       - name: Prepare for GitHub Pages
         if: github.event.action != 'closed'
         run: tools/web/prepare-pages.sh publish/wwwroot "/${GITHUB_REPOSITORY#*/}/pr-preview/pr-${{ github.event.number }}/"

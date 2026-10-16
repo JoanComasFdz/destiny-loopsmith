@@ -55,7 +55,7 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
   answers → the player's armor → the build's stats, added up like DIM), `Orchestration`).
 - `src/Loopsmith.Web/` — Blazor WebAssembly loop designer (host only; calls
   `Orchestration.LoopDesigning`). Deployed to GitHub Pages by `.github/workflows/pages.yml`;
-  every PR that isn't docs only gets a preview at `…/pr-preview/pr-<n>/` (`pr-preview.yml`)
+  every PR that can change the site (not only docs, tooling or tests) gets a preview at `…/pr-preview/pr-<n>/` (`pr-preview.yml`)
   ([docs/hosting.md](docs/hosting.md)). Home starts a loop from scratch (an Arc Hunter with nothing equipped) or from a DIM link; a dim.gg share is read from
   DIM's open share API with a plain GET, no key and no header (hosting.md "DIM links").
 - **The product is the designed loop**: `*.loop.yaml`, self-contained (embeds its build) —
@@ -108,8 +108,9 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
 - `docs/requirements.md` — the requirements, starting with the level of abstraction (what Loopsmith
   does and doesn't), then FR-1…FR-13 with their status, the non-functional requirements and what is
   out of scope.
-- `.github/workflows/` — `ci.yml` (build + test on every PR that changes more than docs, and every
-  push to `main`), `pages.yml`, `pr-preview.yml`, `e2e-videos.yml` (records nothing: the session
+- `.github/workflows/` — `ci.yml` (build + test on every PR that changes what `dotnet` reads, and every
+  push to `main`; on a PR that changes the site it also publishes the web app and hands it to `pr-preview.yml`, so a
+  PR is built once), `pages.yml`, `pr-preview.yml` (deploys that site; removes it when the PR closes), `e2e-videos.yml` (records nothing: the session
   records the PR's added or changed e2e scenarios and pushes their GIFs and MP4s to a throwaway `e2e-gifs/pr-<n>-<sha>` branch
   with `tools/e2e/push-gifs.sh`; the workflow uploads them to the `prs-resources` pre-release, posts them on the PR as
   one comment per version (V1, V2…; each GIF with a "▶ Play MP4" link to the site's `e2e-player.html`; a new one collapses
@@ -129,8 +130,8 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
 ## How we work
 - **Branch → PR → merge.** Never push to `main` directly. One branch per piece of work, started
   from the latest `main` and named for that work — don't keep stacking unrelated work on an
-  unmerged branch. Every PR that isn't docs only (Agent workflow, step 4) runs CI and gets a web
-  preview at `…/pr-preview/pr-<n>/` (link commented on the PR); merging redeploys the live site.
+  unmerged branch. Every PR that changes what `dotnet` reads runs CI, and every one that can change the site gets a web
+  preview (Agent workflow, step 4) at `…/pr-preview/pr-<n>/` (link commented on the PR); merging redeploys the live site.
   The owner merges. A session opens a pull request when asked, or when it works a task
   (`/loopsmith-task`, Agent workflow below).
 - **`gh-pages` is generated** by `pages.yml` and `pr-preview.yml` (ruleset: no deletion, no
@@ -195,11 +196,13 @@ pull request:
    title and the agreed spec as its description: tick the acceptance criteria you checked, and add
    what changed and how to check it on the preview at `…/pr-preview/pr-<PR number>/`. A Gherkin is
    one line there, its title and test class, never its full text: the PR's e2e comment shows it in
-   full with its GIFs ([docs/given-when-then-test-rules.md](docs/given-when-then-test-rules.md), section 8). A PR is
-   **docs only** when every path it changes (a rename's old path too) is a Markdown file or under
-   `docs/`, `.github/` or `.claude/`: the list `pr-preview.yml` and `ci.yml` use, which skip its
-   preview and build. A docs-only PR has no preview, so its description and messages leave the
-   preview out. Then rename
+   full with its GIFs ([docs/given-when-then-test-rules.md](docs/given-when-then-test-rules.md), section 8). A PR gets
+   **no build** when every path it changes (a rename's old path too) is a Markdown file or under
+   `docs/`, `.github/`, `.claude/`, `.devcontainer/`, `tools/e2e/`, `tools/compendium/` or
+   `tools/manifest/` (nothing `dotnet build` or `dotnet test` reads: `ci.yml` skips `build`), and
+   **no preview** when every path is on that list or under `tests/` (nothing the published site is
+   built from: `ci.yml` neither publishes it nor calls `pr-preview.yml`; a test or e2e fixture change still builds and tests). A
+   PR with no preview leaves the preview out of its description and messages. Then rename
    the session: put `#<PR number> ` in front of its current title ("D2 damage resistance calculation" →
    "#59 D2 damage resistance calculation"), reading it with the claude-code-remote `get_session`
    (no `session_id`) and writing it with `set_session_title`; skip it if the title already starts
@@ -207,8 +210,8 @@ pull request:
    carry on: it never blocks the PR. Watch it (auto-fix) at once. The PR link and the preview link
    (`https://joancomasfdz.github.io/destiny-loopsmith/pr-preview/pr-<PR number>/`), as bullet points,
    end only two kinds of message: the one that reports the PR opened, and the one after a push that
-   answers @JoanComasFdz (a review round, or a change they asked for in the session). A docs-only
-   PR's end with the PR link only. No other message repeats them: CI running, passing or failing;
+   answers @JoanComasFdz (a review round, or a change they asked for in the session). A PR with no
+   preview ends them with the PR link only. No other message repeats them: CI running, passing or failing;
    the preview built; e2e GIFs posted; check-ins; a conflict merge or a CI fix nobody asked for;
    waiting on review; and the PR merged or closed, which is one line with no links.
 5. **Keep watching until the PR is merged or closed,** however many rounds it takes: every message
