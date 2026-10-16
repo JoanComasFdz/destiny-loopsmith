@@ -3,7 +3,7 @@ using Loopsmith.Web.E2E.Infrastructure;
 using Loopsmith.Web.E2E.Infrastructure.Frontend.Components;
 using Loopsmith.Web.E2E.Infrastructure.Frontend.Pages;
 
-namespace Loopsmith.Web.E2E.Scenarios.Starting;
+namespace Loopsmith.Web.E2E.Scenarios.ImportExport;
 
 /// <summary>Importing a build.yaml on Home (docs/rule-format.md, "Build file"): a file Loopsmith can't read is refused there.</summary>
 public sealed class BuildImportTests : BaseE2E
