@@ -27,16 +27,39 @@ uses it without asking.
 
 ## Install
 
-The site serves the extension with every deploy: the live site at
-`https://joancomasfdz.github.io/destiny-loopsmith/vscode-extension/`, a pull request's preview at
-`https://joancomasfdz.github.io/destiny-loopsmith/pr-preview/pr-<n>/vscode-extension/`.
+### vscode.dev: from a container on your computer
 
-- **vscode.dev:** open the repository (`https://vscode.dev/github/JoanComasFdz/destiny-loopsmith`), run **Developer:
-  Install Extension from Location…** from the Command Palette and paste the folder's link above. It works in Restricted
-  Mode too. vscode.dev keeps it until you uninstall it (Extensions view); to update, install from the link again.
-- **Desktop VS Code:** download `loopsmith-e2e-recordings.vsix` from that folder, then **Extensions: Install from
-  VSIX…**, or `code --install-extension loopsmith-e2e-recordings.vsix`. Its panel plays the recordings' H.264 MP4s
-  (checked on VS Code 1.142.0 for Linux, 2026-10-16); a VS Code that can't shows the run's GIF instead and says so.
+vscode.dev fetches only from `localhost` and a few hosts of its own (its content security policy), so it can't install the
+extension from the site, and plain vscode.dev has no "Install from VSIX". It installs it from `http://localhost:5000`,
+served by a container built from this folder (`Dockerfile`, `serve.js`): Docker builds it straight from GitHub, with
+nothing else to install or clone.
+
+1. Build it and start it (once; `--restart unless-stopped` starts it again with Docker):
+   ```
+   docker build -t loopsmith-vscode-extension "https://github.com/JoanComasFdz/destiny-loopsmith.git#main:src/Loopsmith.VsCodeExtension"
+   docker run -d --name loopsmith-vscode-extension --restart unless-stopped -p 127.0.0.1:5000:5000 loopsmith-vscode-extension
+   ```
+   To try a branch's version, put the branch's name in place of `main`.
+2. In vscode.dev, run **Developer: Install Extension from Location…** from the Command Palette and paste
+   `http://localhost:5000`. It works in Restricted Mode too.
+
+What to know:
+- **Keep the container running** whenever you use vscode.dev: vscode.dev keeps only the extension's `package.json` and
+  loads `extension.js` from `http://localhost:5000` each time it starts it; with the container stopped the extension
+  stays "Activating…" (checked on vscode.dev, 2026-10-16).
+- **One browser at a time:** vscode.dev keeps it in that browser's storage, on that computer. Settings Sync doesn't
+  carry it (on another computer it installs each synced extension from the Marketplace, and this one isn't there), and a phone can't reach a container on your computer, so each
+  computer needs its container and its install, and a phone none.
+- **To update:** build and start it again (`docker rm -f loopsmith-vscode-extension`, then step 1), and reload
+  vscode.dev. **To remove:** uninstall it in the Extensions view, then `docker rm -f loopsmith-vscode-extension`.
+
+### Desktop VS Code: the .vsix
+
+The site has it with every deploy: `https://joancomasfdz.github.io/destiny-loopsmith/vscode-extension/loopsmith-e2e-recordings.vsix`
+(a pull request's preview at `https://joancomasfdz.github.io/destiny-loopsmith/pr-preview/pr-<n>/vscode-extension/loopsmith-e2e-recordings.vsix`).
+Download it, then **Extensions: Install from VSIX…**, or `code --install-extension loopsmith-e2e-recordings.vsix`. Its
+panel plays the recordings' H.264 MP4s (checked on VS Code 1.142.0 for Linux, 2026-10-16); a VS Code that can't shows
+the run's GIF instead and says so.
 
 ## Settings
 

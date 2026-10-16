@@ -46,14 +46,16 @@ but no Compendium snapshot text and no transcripts.
 ## The VS Code extension
 
 Every deploy publishes the VS Code extension (`src/Loopsmith.VsCodeExtension`, its
-[README](../src/Loopsmith.VsCodeExtension/README.md)) with the site, in `vscode-extension/`: its files as they are
-(`package.json`, `extension.js`, `README.md`, `LICENSE.txt`), the folder vscode.dev installs it from ("Developer:
-Install Extension from Location…" and the folder's link), and `loopsmith-e2e-recordings.vsix` for desktop VS Code.
-`Loopsmith.Web.csproj` copies them and zips the `.vsix` after `dotnet publish` (the `PublishVsCodeExtension` target),
-so `pages.yml` and `pr-preview.yml` publish them unchanged: the live site at
-`https://joancomasfdz.github.io/destiny-loopsmith/vscode-extension/`, each PR's preview at
-`…/pr-preview/pr-<n>/vscode-extension/`, so a PR that changes the extension can be tried from its preview. GitHub Pages
-answers any origin (`Access-Control-Allow-Origin: *`), which vscode.dev needs to read the folder.
+[README](../src/Loopsmith.VsCodeExtension/README.md)) for desktop VS Code as `vscode-extension/loopsmith-e2e-recordings.vsix`:
+`Loopsmith.Web.csproj` zips it after `dotnet publish` (the `PublishVsCodeExtension` target), so `pages.yml` and
+`pr-preview.yml` publish it unchanged, the live site's and each PR's preview's (`…/pr-preview/pr-<n>/vscode-extension/`).
+
+vscode.dev can't install it from the site: its content security policy lets the page fetch only from `localhost` and a
+few hosts of its own (`github.io` isn't one: "Cannot find a valid extension from the location"), and it has no "Install
+from VSIX". It installs it from `http://localhost:5000`, served by a container the owner builds from the extension's
+folder (`Dockerfile`, `serve.js`; the README's "Install"). Once installed, the extension itself runs in vscode.dev: its
+extension host may fetch any `https` address (GitHub's API), its hover's images any `https` one, and its panel loads
+what its own policy allows.
 
 ## DIM links
 

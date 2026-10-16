@@ -38,9 +38,10 @@
                       Link="data/builds/%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 
-  <!-- The VS Code extension (src/Loopsmith.VsCodeExtension), published with the site in vscode-extension/: vscode.dev
-       installs it from that folder ("Developer: Install Extension from Location…"), desktop VS Code from the .vsix next
-       to it, zipped here as vsce would (its manifest in vsix/). The extension has no build of its own. -->
+  <!-- The VS Code extension (src/Loopsmith.VsCodeExtension), published with the site as the .vsix in vscode-extension/ for
+       desktop VS Code, zipped here as vsce would (its manifest in vsix/). The extension has no build of its own.
+       vscode.dev can't install it from the site (its content security policy): it installs it from a local container
+       (the extension's Dockerfile; docs/hosting.md, "The VS Code extension"). -->
   <PropertyGroup>
     <VsCodeExtension>$(LoopsmithRoot)src/Loopsmith.VsCodeExtension/</VsCodeExtension>
   </PropertyGroup>
@@ -53,8 +54,7 @@
       <VsCodeExtensionFile Include="$(VsCodeExtension)package.json;$(VsCodeExtension)extension.js;$(VsCodeExtension)README.md" />
     </ItemGroup>
     <RemoveDir Directories="$(VsCodeExtensionStage)" />
-    <Copy SourceFiles="@(VsCodeExtensionFile)" DestinationFolder="$(VsCodeExtensionSite)" />
-    <Copy SourceFiles="$(LoopsmithRoot)LICENSE" DestinationFiles="$(VsCodeExtensionSite)LICENSE.txt" />
+    <MakeDir Directories="$(VsCodeExtensionSite)" />
     <Copy SourceFiles="@(VsCodeExtensionFile)" DestinationFolder="$(VsCodeExtensionStage)extension/" />
     <Copy SourceFiles="$(LoopsmithRoot)LICENSE" DestinationFiles="$(VsCodeExtensionStage)extension/LICENSE.txt" />
     <Copy SourceFiles="$(VsCodeExtension)vsix/extension.vsixmanifest" DestinationFolder="$(VsCodeExtensionStage)" />
