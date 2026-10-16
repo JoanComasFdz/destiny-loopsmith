@@ -35,12 +35,12 @@ uses it without asking.
 ### Codespaces and Dev Containers: already installed
 
 The repository's dev container (`.devcontainer/`) installs the extension from this folder each time VS Code attaches to
-it (`install-extension.sh`: it packs the `.vsix` as the site's is packed and installs it with VS Code's own CLI), so
+it (`7-install-e2e-recordings-extension.sh`: it packs the `.vsix` as the site's is packed and installs it with VS Code's own CLI), so
 there is nothing to install: no Marketplace, no container of your own, no download. The extension is always the
 checkout's own, so a branch's Codespace runs that branch's extension. The same container is a full dev environment for
-the repository: .NET 10, Node 22, ffmpeg, the Compendium download's Python packages, and the Chromium the e2e scenarios
-drive (`post-create.sh`), plus tmux with its configuration (prefix Ctrl+A) and the `t`, `tl`, `tk`, `tn`, `ta` aliases
-(`setup-tmux.sh`), so `dotnet build Loopsmith.slnx`, `dotnet test` and `tools/e2e/record.sh` run in it.
+the repository, so `dotnet build Loopsmith.slnx`, `dotnet test` and `tools/e2e/record.sh` run in it: .NET 10, Node 22,
+ffmpeg, the Compendium download's Python packages, the Chromium the e2e scenarios drive, zsh with Oh My Zsh and the
+Spaceship prompt, and tmux (one script per feature: [.devcontainer/README.md](../../.devcontainer/README.md)).
 
 - **GitHub Codespaces:** on the repository's page, **Code** → **Codespaces** → **⋯** → **New with options…**, pick the
   branch, then **Create codespace** (a 4-core machine at least). Creating it takes a few minutes the first time.

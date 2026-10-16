@@ -60,8 +60,9 @@ what its own policy allows.
 A GitHub Codespace or desktop VS Code's Dev Containers needs neither: VS Code runs a server in the container, which
 installs a `.vsix`. The repository's dev container (`.devcontainer/`) packs the extension from its folder, as the
 `PublishVsCodeExtension` target packs the site's, and installs it with VS Code's CLI each time VS Code attaches
-(`install-extension.sh`), so a branch's Codespace has that branch's extension and nothing comes from the Marketplace.
-The dev container also holds everything the repository builds, tests and records with (`Dockerfile`, `post-create.sh`).
+(`7-install-e2e-recordings-extension.sh`), so a branch's Codespace has that branch's extension and nothing comes from the Marketplace.
+The dev container also holds everything the repository builds, tests and records with
+([.devcontainer/README.md](../.devcontainer/README.md)).
 
 ## DIM links
 

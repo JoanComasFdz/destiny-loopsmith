@@ -1,7 +1,12 @@
 #!/bin/bash
-# Run by post-create.sh: tmux's configuration (~/.tmux.conf) and its aliases in ~/.zshrc (the image's shell is zsh).
-# tmux itself is installed by the Dockerfile.
+# tmux, its configuration (~/.tmux.conf) and its aliases in ~/.zshrc. Runs after 5-install-zsh-config.sh, which writes
+# ~/.zshrc. The configuration and aliases are the owner's script, as given.
 set -e  # Exit on any error - fail fast for reproducible devcontainer
+
+if ! command -v tmux >/dev/null 2>&1; then
+    sudo apt-get update -qq
+    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends tmux
+fi
 
 echo "Setting up tmux configuration..."
 

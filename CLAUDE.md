@@ -79,11 +79,10 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
   and desktop VS Code; its `.vsix` is published with the site in `vscode-extension/` by `Loopsmith.Web.csproj`, and
   vscode.dev installs it from a local container (its `Dockerfile`: vscode.dev fetches only from `localhost` and its own
   hosts) ([docs/hosting.md](docs/hosting.md) "The VS Code extension", its [README](src/Loopsmith.VsCodeExtension/README.md)).
-- `.devcontainer/` — the dev container for a GitHub Codespace or desktop VS Code's Dev Containers: .NET 10, Node 22,
-  ffmpeg, the Compendium download's Python packages, Playwright's Chromium and tmux (`Dockerfile`, `post-create.sh`,
-  `setup-tmux.sh`), and the
-  VS Code extension installed from its source each time VS Code attaches (`install-extension.sh`; its
-  [README](src/Loopsmith.VsCodeExtension/README.md), "Codespaces and Dev Containers").
+- `.devcontainer/` — the dev container for a GitHub Codespace or desktop VS Code's Dev Containers: one numbered script
+  per feature (.NET 10, ffmpeg, the Compendium download's Python packages, Playwright's Chromium, zsh, tmux), run by
+  `postCreateCommand.sh`, and the VS Code extension installed from its source each time VS Code attaches
+  (`7-install-e2e-recordings-extension.sh`) ([.devcontainer/README.md](.devcontainer/README.md)).
 - `tests/Loopsmith.Core.Tests/` — unit, golden (`Golden/*.verified.txt`) and architecture tests.
 - `tests/Loopsmith.Web.E2E/` — end-to-end scenarios of the web app (Playwright), one per Gherkin, one GIF per screen via `tools/e2e/record.sh`;
   `Infrastructure/` (BaseE2E, page objects, vocabulary, assertions) and `Scenarios/<domain>/<Topic>Tests.cs`; what it

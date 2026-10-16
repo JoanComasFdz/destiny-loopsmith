@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
-# Runs each time VS Code attaches to the dev container (devcontainer.json, postAttachCommand): packs the Loopsmith e2e
-# recordings extension from src/Loopsmith.VsCodeExtension into a .vsix, laid out as Loopsmith.Web.csproj's
+# The Loopsmith e2e recordings extension. Runs each time VS Code attaches to the dev container (devcontainer.json,
+# "postAttachCommand"; not from postCreateCommand.sh: it needs VS Code attached): packs it from
+# src/Loopsmith.VsCodeExtension into a .vsix, laid out as Loopsmith.Web.csproj's
 # PublishVsCodeExtension target lays out the site's (extension/ with package.json, extension.js, README.md and the
 # repository's LICENSE as LICENSE.txt; extension.vsixmanifest; [Content_Types].xml), and installs it in the VS Code
 # attached, replacing the one there: no Marketplace, no download.
-#   .devcontainer/install-extension.sh [--pack-only <vsix>]
+#   .devcontainer/7-install-e2e-recordings-extension.sh [--pack-only <vsix>]
 set -euo pipefail
 
 repo="$(cd "$(dirname "$0")/.." && pwd)"
