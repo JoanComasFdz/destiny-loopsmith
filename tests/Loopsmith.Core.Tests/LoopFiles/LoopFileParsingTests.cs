@@ -2,6 +2,7 @@ using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 using Loopsmith.Core.LoopFiles;
 using static Loopsmith.Core.Tests.RuleParsing.ParsingAssertions;
+using Loopsmith.Core.Tests.Support;
 
 namespace Loopsmith.Core.Tests.LoopFiles;
 
@@ -9,27 +10,9 @@ public sealed class LoopFileParsingTests
 {
     private const string LoopPath = "builds/x/loops/test.loop.yaml";
 
-    /// <summary>The example of docs/loop-format.md, verbatim.</summary>
-    private const string SpecExampleYaml = """
-        # Loopsmith loop v1
-        loop: Dodge, grenade, shoot             # required — the loop's name
-        author: Joan                            # optional
-        description: |                          # optional, free text
-          Dodge to arm Slice and Reaper, skip grenade into the pack, shoot, grab Reaper's orb.
-        catalog: authored-e4426d03166b          # optional — catalog version it was designed against
-        steps:                                  # required (may be empty), in order
-          - do: class                           # an action token (below)
-            note: Arm Slice + Reaper            # optional
-          - do: grenade:kill
-          - do: kinetic:kill
-          - do: pickup:orb-of-power
-          - do: max:bolt-charge
-            note: Shinobu's Vow and Flashover; the next grenade hit strikes
-        build: |                                # required — the build file's full text (docs/rule-format.md)
-          name: Skip Grenade Hunter
-          class: hunter
-          ...
-        """;
+    private const string SpecPath = "docs/loop-format.md";
+
+    private const string SpecExampleMarker = "<!-- LoopFileParsingTests reads the next yaml block -->";
 
     private static LoopDesign ParseValidLoop(string yaml) =>
         AssertOk(LoopFileParsing.ParseLoopFile(new SourceText(LoopPath, yaml)));
@@ -40,7 +23,8 @@ public sealed class LoopFileParsingTests
     [Fact]
     public void Parses_the_spec_example()
     {
-        var design = ParseValidLoop(SpecExampleYaml);
+        var example = DocExamples.ReadYamlBlock(SpecPath, SpecExampleMarker);
+        var design = AssertOk(LoopFileParsing.ParseLoopFile(example.ToSourceText()));
 
         Assert.Equal("Dodge, grenade, shoot", design.Name);
         Assert.Equal(Optional.Some("Joan"), design.Author);
@@ -59,7 +43,7 @@ public sealed class LoopFileParsingTests
             [Optional.Some("Arm Slice + Reaper"), Optional.None<string>(), Optional.None<string>(), Optional.None<string>(), Optional.Some("Shinobu's Vow and Flashover; the next grenade hit strikes")],
             design.Steps.Select(step => step.Note));
         Assert.Equal("name: Skip Grenade Hunter\nclass: hunter\n...", design.Build.Text);   // the example has no final line break
-        Assert.Equal(LoopPath + "#build", design.Build.Path);
+        Assert.Equal(SpecPath + "#build", design.Build.Path);
     }
 
     [Fact]

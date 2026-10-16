@@ -43,6 +43,7 @@ The catalog version is `authored-<first 12 hex chars of SHA-256 over the (path, 
 
 ## Glossary (`rules/glossary.yaml`)
 
+<!-- RuleExampleTests reads the next yaml block as a glossary -->
 ```yaml
 statuses:
   - { id: bolt-charge, name: Bolt Charge, kind: buff,   affinity: arc, maxStacks: 10, trait: 2935077680 }
@@ -114,6 +115,7 @@ holds what the Bungie manifest says about every hash Loopsmith names (each `hash
 saved DIM share wears and every hash a weapon of the repo's builds and loops gives), so the web app shows a build the way DIM shows a loadout, an item's details carry
 Bungie's text, and a DIM link's weapons and armor sets become the build's:
 
+<!-- abridged: no test reads the next yaml block -->
 ```yaml
 version: "244213.26.06.29.2000-1-bnet.65864"
 damageTypes:
@@ -189,6 +191,7 @@ items:
 * `statPlugs`: every plug of the manifest that changes an armor stat, for adding up a build's stats from a
   player's own armor the way DIM does ([loop-format.md](loop-format.md#stats)):
 
+  <!-- abridged: no test reads the next yaml block -->
   ```yaml
   statPlugs:
     - { hash: 311219525, kind: base, stats: [{ stat: weapons, value: 1 }] }
@@ -210,6 +213,7 @@ items:
 
 ## Elements
 
+<!-- RuleExampleTests reads the next yaml block as an elements file -->
 ```yaml
 elements:
   - id: spark-of-shock
@@ -258,6 +262,7 @@ state counts it.
 `statChecks` say something about an element at some values of a build's stat — a fact of the game the build
 check states, never counted (the stat isn't simulated):
 
+<!-- RuleExampleTests reads the next yaml block as an element's keys -->
 ```yaml
 statChecks:
   - { stat: melee, below: 50, severity: warning, says: "With {value} Melee, a Gambler's Dodge gives back less than a full melee charge, even near an enemy: …" }
@@ -292,11 +297,18 @@ A weapon trait's **enhanced trait** — the one a weapon's enhanced or crafted c
 own hash, and the Compendium gives its figures after a ↑ in the perk's row ("8 ↑9 seconds"). A `weaponPerk` writes
 it as a block, not as a second element:
 
+<!-- RuleExampleTests reads the next yaml block as an element -->
 ```yaml
   - id: slice
+    name: Slice
     kind: weaponPerk
+    affinity: strand
     hash: 923806249
-    rules: [ … { applyBuff: { status: slice, duration: 8s } } … ]
+    rules:
+      - on: { abilityCast: classAbility }
+        then:
+          - { applyBuff: { status: slice, stacks: 1, duration: 8s } }
+        reason: "Dodging arms Slice, even while the weapon is stowed."
     enhanced:
       hash: 3422796781          # its plug (a list when there are more)
       values: { 8s: 9s }        # the ↑ figures: a value the rules use → the enhanced one (durations, game values)
@@ -357,6 +369,7 @@ shows the glossary's.
 
 ### Rules
 
+<!-- RuleExampleTests reads the next yaml block as an element's keys -->
 ```yaml
 rules:                                  # Reaper (rules/mods/armor.yaml)
   - on: { kill: { via: weapon } }
@@ -518,6 +531,7 @@ keyword element) until the player declares `end:super`, and a Super's resistance
 `(while Bolt Charge at max)`. It is how a rule reacts to the next hit at the maximum: Bolt Charge
 (Compendium Arc#5) discharges on the next ability hit at x10.
 
+<!-- RuleExampleTests reads the next yaml block as a rule -->
 ```yaml
   - on: { damage: { via: ability } }
     when: [ { atMax: bolt-charge } ]
@@ -532,6 +546,7 @@ it `(while Armor Charge below max)`. With `atMax` it splits a threshold the stat
 needs "x3 or more" of a status fires for sure at the declared max and as a `chance` below it (ADRs D8). Armor Charge is
 counted (ADRs D33), so its rules read the count instead — Emergency Reinforcement (`rules/mods/chest.yaml`):
 
+<!-- RuleExampleTests reads the next yaml block as a rule -->
 ```yaml
   - on: { criticalHealth: {} }
     when: [ { holds: { status: armor-charge, atLeast: 3 } } ]
@@ -554,11 +569,12 @@ build gives the ability one charge (its profile's `charges` plus every equipped 
 when it gives more (Shinobu's Vow). The Kickstarts fire on it, as Bungie's text says ("when your grenade energy is fully
 expended"):
 
+<!-- RuleExampleTests reads the next yaml block as a rule -->
 ```yaml
   - on: { energyExpended: grenade }       # Grenade Kickstart (rules/mods/armor.yaml)
     when: [ { has: armor-charge } ]
     then:
-      - { convertStacksToEnergy: { consumed: armor-charge, to: grenade, byCharges: { from: 2, values: "16.2% | 21.7% | …" } } }
+      - { convertStacksToEnergy: { consumed: armor-charge, to: grenade, byCharges: { from: 2, values: "16.2% | 21.7% | 28.4% | 34.4% | 38.4% | 41.3% | 43.4% | 45%" } } }
 ```
 
 A Super has no `energyExpended` (`energyExpended: a Super has no energyExpended (use grenade, melee or classAbility)`).
@@ -572,6 +588,7 @@ numbers a fact. `reload` takes only `via`, and it names a weapon: `any`, `weapon
 `reload's via names a weapon: …`). Demolitionist (`rules/weapons/perks.yaml`, Compendium Weapon Perks#62) has both
 halves of its loop:
 
+<!-- RuleExampleTests reads the next yaml block as an element's keys -->
 ```yaml
     rules:
       - on: { kill: { via: weapon:this } }
@@ -657,8 +674,13 @@ certainty and changing nothing: `grantEnergy` (to an ability or `leastCharged`),
 **`doesNotStackWith`** — optional, a list of element ids. When the game says
 two elements' grants don't stack, say it on the rule of the side that gives nothing (ADRs D6):
 
+<!-- RuleExampleTests reads the next yaml block as an element -->
 ```yaml
   - id: tempest-strike                  # rules/hunter/arc.yaml — Compendium Arc#51
+    name: Tempest Strike
+    kind: aspect
+    affinity: arc
+    class: hunter
     rules:
       - on: { kill: { via: any, targetHas: [jolt] } }
         then:
@@ -693,6 +715,7 @@ An empty list is an error at its own line: `rule.doesNotStackWith must list at l
 
 ### Passives
 
+<!-- RuleExampleTests reads the next yaml block as an element's keys -->
 ```yaml
 passives:
   - effect: { extraStacks: { status: bolt-charge, extra: 1 } }
