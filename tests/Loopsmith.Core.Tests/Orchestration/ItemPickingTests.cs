@@ -122,14 +122,14 @@ public sealed class ItemPickingTests
     }
 
     [Fact]
-    public void A_weapon_of_the_game_replaces_a_hand_written_placeholder()
+    public void A_weapon_of_the_game_replaces_a_hand_written_one()
     {
         var session = OpenHandWrittenLoop(Catalog with { Manifest = Catalog.Manifest.AddExcerpt(Joined) });
 
         var picked = Assert.IsType<Result<DesignSession, string>.Ok>(LoopDesigning.PickWeaponItem(session, new WeaponTarget.InPlaceOf(1), EnergyRifle)).Value;
 
         Assert.Equal(["Festival Flight", "Lightning Rifle"], picked.Build.Build.Weapons.Select(weapon => weapon.Name));
-        Assert.DoesNotContain("Any Arc weapon", picked.Design.Build.Text, StringComparison.Ordinal);
+        Assert.DoesNotContain("Crisis Inverted", picked.Design.Build.Text, StringComparison.Ordinal);
         Assert.Contains("Loopsmith doesn't know that weapon yet",
             Assert.IsType<Result<DesignSession, string>.Error>(LoopDesigning.PickWeaponItem(OpenHandWrittenLoop(Catalog), new WeaponTarget.InPlaceOf(1), EnergyRifle)).Failure,
             StringComparison.Ordinal);                                                           // not joined yet: the build doesn't change

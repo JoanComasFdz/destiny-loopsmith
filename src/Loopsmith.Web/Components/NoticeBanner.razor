@@ -4,7 +4,7 @@
 @if (Workbench.Notice is Optional<string>.Some notice)
 {
     <div class="banner warn" role="alert" data-testid="notice">
-        <pre class="banner-text">@notice.Value</pre>
+        <pre class="banner-text" data-testid="notice-text">@notice.Value</pre>
         <button class="btn ghost icon" title="Dismiss" aria-label="Dismiss" @onclick="DismissNotice">✕</button>
     </div>
 }

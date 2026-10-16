@@ -7,6 +7,8 @@ public sealed class NoticeBanner(IPage page)
 {
     private ILocator Box => page.Locator("[data-testid=notice]");
 
+    private ILocator Text => Box.Locator("[data-testid=notice-text]");
+
     /// <summary>Waits until the notice is shown.</summary>
     public Task WaitUntilShownAsync() =>
         Box.WaitForAsync(new() { State = WaitForSelectorState.Visible });
@@ -15,7 +17,7 @@ public sealed class NoticeBanner(IPage page)
     public Task<NoticeBannerSnapshot> ReadAsync() => OnScreen.ReadAsync(Box, ReadShownAsync);
 
     private async Task<NoticeBannerSnapshot> ReadShownAsync() =>
-        new((await Box.InnerTextAsync()).Trim());
+        new((await Text.InnerTextAsync()).Trim());
 }
 
 /// <summary>What the notice says.</summary>
