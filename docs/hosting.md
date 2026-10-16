@@ -184,7 +184,8 @@ works the PR records them; CI doesn't run, record or build anything for them.
   through: a release upload answers 415), but it can push. Right after the push (the first one once the PR is open),
   `tools/e2e/push-gifs.sh` pushes a throwaway branch **`e2e-gifs/pr-<n>-<short sha>`**: the branch's head, already on
   GitHub, plus one commit that adds `e2e-gifs/scenarios.json`, the GIFs and the MP4s
-  (`e2e-gifs/<domain folder>/<gif name>.gif` and `.mp4`; the branch keeps its `e2e-gifs/` name).
+  (`e2e-gifs/<domain folder>/<gif name>.gif` and `.mp4`; the branch keeps its `e2e-gifs/` name), and with `--message`
+  `e2e-gifs/what-changed.md`, the post's "What changed".
   It finds the PR from the branch (or takes its number), stops when the head isn't pushed yet or that branch already
   exists, and never touches the working tree. The branch sits on the PR's head, not on an empty history, because a push
   runs the workflow file inside the pushed commit: the PR's own `.github/workflows/e2e-videos.yml`.
@@ -195,7 +196,7 @@ works the PR records them; CI doesn't run, record or build anything for them.
   permitted through this proxy"). So the GIFs travel on a branch, and the banner is the accepted cost: ignore it.
 - **What the workflow does** (`.github/workflows/e2e-videos.yml`, on a push to `e2e-gifs/**`): it checks the push
   (the name is `e2e-gifs/pr-<n>-<hex>`; PR #n is open and from this repository; the commit sits on a commit of the PR
-  and only adds `e2e-gifs/scenarios.json`, real GIFs (they start with `GIF8`) and real MP4s (an `ftyp` box first)), then
+  and only adds `e2e-gifs/scenarios.json`, `e2e-gifs/what-changed.md`, real GIFs (they start with `GIF8`) and real MP4s (an `ftyp` box first)), then
   `tools/e2e/post-scenarios.py --out e2e-gifs` uploads the GIFs and MP4s and posts them, and the branch is deleted whatever happened (the run's log says why one failed). A push that fails
   the checks uploads and posts nothing. No `dotnet`, no Chromium, no ffmpeg: a run takes seconds.
 - **Where the GIFs and MP4s go:** assets of the pre-release **`prs-resources`** (created once by the owner; never committed
@@ -229,9 +230,12 @@ works the PR records them; CI doesn't run, record or build anything for them.
     `-<8 hex>`, the start of the SHA-256 of the GIF name, so it stays unique (a scenario's two screens apart) and the
     same on every push.
 - **The posts:** every version, V1 included, is a new comment on the PR, `## Scenarios (V<N>)`, that starts with
-  **What changed**: the body of the GIFs' commit message without its trailers, or its subject when it has no body.
-  `push-gifs.sh` copies the PR head's commit message there (a session writes a short plain description of the round in
-  its body), or writes `--message "<text>"` as the body. Each scenario shows once: its Gherkin's title as a small
+  **What changed**: `push-gifs.sh --message "<text>"`'s text, word for word, or else the body of the PR head's commit
+  message without its trailers (a session writes a short plain description of the round in its body), or its subject
+  when it has no body. `--message` travels as `e2e-gifs/what-changed.md`, posted as it is, not in the commit message:
+  there a one-paragraph text like `AFTER: …` looks like a trailer (`Key: value`) and was dropped, so the post fell back
+  to the subject (PR #106's V2). Each post reads only its own push's commit, so two posts from the same head commit,
+  or posts on several PRs at once, each show their own text. Each scenario shows once: its Gherkin's title as a small
   heading, its Gherkin in a `gherkin` block, then a `🖥️ Desktop` and/or `📱 Mobile` subtitle (the screens it was played
   on, desktop first) with that run's GIF below, and below it **▶ Play MP4**. The GIF and that line both link to the
   player page with that run's MP4 (`https://<owner, lowercase>.github.io/<repo>/e2e-player.html?v=<MP4 name>`), so a tap

@@ -5,7 +5,8 @@
 
 Reads <out>/scenarios.json (tools/e2e/record.sh: one entry per run, a scenario played on a screen), uploads each run's
   GIF and MP4 to the `prs-resources` release as pr-<n>-v<version>-<the run's GIF name>.gif and .mp4 and posts them as a
-  new comment on the PR that starts with what changed (the body of --commit's message, or its subject). Each scenario
+  new comment on the PR that starts with what changed: <out>/what-changed.md as it is (push-gifs.sh --message), or else
+  the body of --commit's message without its trailers, or its subject. Each scenario
   shows once: its title, its Gherkin, then a "🖥️ Desktop" and/or "📱 Mobile" subtitle with that screen's GIF and, below
   it, "▶ Play MP4": both link to the site's player page (e2e-player.html?v=<the MP4's name>), since GitHub shows no
   player for a video it didn't store itself (a tap on a bare GIF would only download it). It never touches the PR's description. The version is one more than the highest
@@ -60,7 +61,7 @@ def post(args):
         scenario["asset"] = name_asset(args.pr, version, scenario, ".gif")
         scenario["mp4_asset"] = name_asset(args.pr, version, scenario, ".mp4")
     upload(args, scenarios)
-    changed = describe_commit(read_commit_message(args.commit))
+    changed = read_what_changed(args.out) or describe_commit(read_commit_message(args.commit))
     add_comment(args, write_section(args.repo, version, scenarios, changed))
 
 
@@ -164,6 +165,15 @@ def write_section(repo, version, scenarios, changed):
                 lines += ["_No recording._", ""]
     lines += ["---", FOOTER, ""]
     return "\n".join(lines)
+
+
+def read_what_changed(out):
+    """The text a session gave push-gifs.sh --message, as it is; empty when it gave none."""
+    path = os.path.join(out, "what-changed.md")
+    if not os.path.exists(path):
+        return ""
+    with open(path, encoding="utf-8") as file:
+        return file.read().strip()
 
 
 def read_commit_message(commit):
