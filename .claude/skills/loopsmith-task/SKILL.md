@@ -159,7 +159,8 @@ right before a push is posted. Right before its first push:
 5. With scenarios recorded, push their GIFs: `tools/e2e/push-gifs.sh` (it finds the PR from the
    branch). It pushes a throwaway branch `e2e-gifs/pr-<n>-<short sha>`; the "E2E videos" workflow
    uploads the GIFs, posts them on the PR as `## Scenarios (V<N>)` (each scenario's title and Gherkin,
-   then its `🖥️ Desktop` and/or `📱 Mobile` GIF) and deletes the branch. "What
+   then its `🖥️ Desktop` and/or `📱 Mobile` GIF; the scenarios only re-recorded because a fixture file
+   they use changed come last, under "Re-recorded: their fixtures changed") and deletes the branch. "What
    changed" in that post is the body of the head commit's message, or `--message "<text>"`. Check
    the post appears with its GIFs (the PR's comments, a minute or so later); if the run failed, its
    log says why.

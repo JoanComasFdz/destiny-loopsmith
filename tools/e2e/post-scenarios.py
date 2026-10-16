@@ -12,6 +12,9 @@ Reads <out>/scenarios.json (tools/e2e/record.sh: one entry per run, a scenario p
   player for a video it didn't store itself (a tap on a bare GIF would only download it). It never touches the PR's description. The version is one more than the highest
   "## Scenarios (V<N>)" in this workflow's comments. A name longer than 200 characters keeps its start and ends with a
   short hash of the run's GIF path (<domain>/<GIF name>.gif), the same for its GIF and its MP4.
+The scenarios the PR added or changed come first; those only re-recorded because a fixture file they use changed
+  (record.sh's "selected": "fixtures") follow under "### Re-recorded: their fixtures changed", each naming its changed
+  fixtures. With only the first kind the post has no section headings.
 Nothing recorded (an empty scenarios.json) posts nothing.
 
 Uses the gh CLI (GH_TOKEN) on the repository in --repo or GITHUB_REPOSITORY. --dry-run prints instead of writing.
@@ -143,28 +146,57 @@ def group_by_scenario(runs):
 
 
 def write_section(repo, version, scenarios, changed):
+    """The post. The scenarios the PR added or changed come first, then those only re-recorded because a fixture file they
+    use changed ("selected": "fixtures"), each naming its changed fixtures. With only the first kind (a scenarios.json
+    without "selected" included) there are no section headings, and a scenario's title is ### and its screens ####."""
     lines = [f"## Scenarios (V{version})", "", "**What changed**", "", changed, ""]
-    for runs in group_by_scenario(scenarios):
-        first = runs[0]
-        mark = "❌ " if any(not run["passed"] for run in runs) else ""
-        lines += [f"### {mark}{first['title']}", ""]
-        if first.get("gherkin"):
-            lines += ["```gherkin", first["gherkin"], "```", ""]
-        for run in runs:
-            screen = SCREENS.get(run.get("screen"), run.get("screen") or "")
-            lines += [f"#### {'❌ ' if not run['passed'] else ''}{screen}".rstrip(), ""]
-            if os.path.exists(run["file"]):
-                url = f"https://github.com/{repo}/releases/download/{RELEASE}/{run['asset']}"
-                image = f"![{first['title']} · {screen}]({url})"
-                if has_mp4(run):
-                    player = f"{find_player(repo)}?v={run['mp4_asset']}"
-                    lines += [f"[{image}]({player})", "", f"[▶ Play MP4]({player})", ""]
-                else:
-                    lines += [image, ""]
-            else:
-                lines += ["_No recording._", ""]
+    groups = group_by_scenario(scenarios)
+    own = [runs for runs in groups if not is_rerecorded(runs[0])]
+    rerecorded = [runs for runs in groups if is_rerecorded(runs[0])]
+    if not rerecorded:
+        for runs in own:
+            lines += write_scenario(repo, runs, "###")
+    else:
+        if own:
+            lines += ["### Added or changed by this PR", ""]
+            for runs in own:
+                lines += write_scenario(repo, runs, "####")
+        lines += ["### Re-recorded: their fixtures changed", "",
+                  "Their code didn't change, a fixture file they use did: they should behave as before.", ""]
+        for runs in rerecorded:
+            fixtures = ", ".join(f"`{path}`" for path in runs[0].get("fixtures") or [])
+            lines += write_scenario(repo, runs, "####", f"_{fixtures} changed._" if fixtures else "")
     lines += ["---", FOOTER, ""]
     return "\n".join(lines)
+
+
+def is_rerecorded(scenario):
+    return scenario.get("selected") == "fixtures"
+
+
+def write_scenario(repo, runs, level, why=""):
+    """A scenario's title at <level>, why it is there, its Gherkin, then each screen one level down with its GIF."""
+    first = runs[0]
+    mark = "❌ " if any(not run["passed"] for run in runs) else ""
+    lines = [f"{level} {mark}{first['title']}", ""]
+    if why:
+        lines += [why, ""]
+    if first.get("gherkin"):
+        lines += ["```gherkin", first["gherkin"], "```", ""]
+    for run in runs:
+        screen = SCREENS.get(run.get("screen"), run.get("screen") or "")
+        lines += [f"{level}# {'❌ ' if not run['passed'] else ''}{screen}".rstrip(), ""]
+        if os.path.exists(run["file"]):
+            url = f"https://github.com/{repo}/releases/download/{RELEASE}/{run['asset']}"
+            image = f"![{first['title']} · {screen}]({url})"
+            if has_mp4(run):
+                player = f"{find_player(repo)}?v={run['mp4_asset']}"
+                lines += [f"[{image}]({player})", "", f"[▶ Play MP4]({player})", ""]
+            else:
+                lines += [image, ""]
+        else:
+            lines += ["_No recording._", ""]
+    return lines
 
 
 def read_what_changed(out):

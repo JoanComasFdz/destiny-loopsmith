@@ -253,7 +253,8 @@ Always:
   never record between pushes; record once, right before the push, with `tools/e2e/record.sh --changed-since
   origin/main` (every scenario passes, or the push waits for a fix), and record again if a scenario or the web app
   changes after that and before the push, so the GIFs match the pushed head; after the push, `tools/e2e/push-gifs.sh`, which `e2e-videos.yml` posts as `## Scenarios (V<N>)` (each
-  scenario's Gherkin, then its 🖥️ Desktop and/or 📱 Mobile GIF). Put a short
+  scenario's Gherkin, then its 🖥️ Desktop and/or 📱 Mobile GIF; those only re-recorded because a fixture file they use
+  changed come last, under "Re-recorded: their fixtures changed"). Put a short
   plain description of the round in the pushed commit's message body (the post's "What changed"), or pass it as
   `--message`.
 - In cloud sessions `gh issue` and `gh pr` fail (GitHub's GraphQL is blocked): use the built-in

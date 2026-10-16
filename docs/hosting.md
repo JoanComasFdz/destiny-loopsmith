@@ -196,7 +196,11 @@ works the PR records them; CI doesn't run, record or build anything for them.
 
 - **Who records:** the session, once, right before each push that adds or changes scenarios:
   `tools/e2e/record.sh --changed-since origin/main`, i.e. every scenario the branch adds or changes from where it left
-  `main` (a class whose file changed, or that names a changed fixture file), not only those the push touched. Every
+  `main` (a class whose file changed, or that names a changed fixture file), not only those the push touched.
+  `out/scenarios.json` keeps why each was picked: `"selected": "changed"` (its own file changed, or it was named on
+  the command line), or `"selected": "fixtures"` with the changed `"fixtures"` (paths in its project:
+  `Scenarios/Loop/Weapons/….build.yaml`, `Workspace/…`) when only a fixture it uses changed; a class that did both is
+  `changed`. Every
   scenario passes before the push. While developing, the session runs them unrecorded
   (`tools/e2e/record.sh --no-video …`: same selection and served publish, no video, no pacing, no GIF) and never
   records between pushes; when a scenario or the web app changes after the recording and before the push, it records
@@ -264,7 +268,14 @@ works the PR records them; CI doesn't run, record or build anything for them.
   player page with that run's MP4 (`https://<owner, lowercase>.github.io/<repo>/e2e-player.html?v=<MP4 name>`), so a tap
   on the GIF opens the video instead of downloading the GIF (GitHub can't make a link open a new tab, so a long-press
   does). A run with no MP4 (a `scenarios.json` from before the MP4s) shows its GIF only. A failed run has ❌ before its subtitle, and its scenario before its
-  title. Every post ends with `---` and
+  title. The scenarios the PR added or changed come first; those only re-recorded because a fixture they use changed
+  (`"selected": "fixtures"`) follow under `### Re-recorded: their fixtures changed`, each with a line naming its changed
+  fixtures, so the owner can check that the fixture change left their behaviour as it was (PR #113's post listed the
+  Weapons scenarios its `*.build.yaml` changes re-recorded like its own, and read as another PR's). With both kinds,
+  the first sits under `### Added or changed by this PR`, a scenario's title is `####` and its screens `#####`; a
+  section with no scenarios isn't shown. With only the PR's own (or a `scenarios.json` from before `selected`), there
+  are no section headings: titles `###`, screens `####`. `tools/e2e/test_post_scenarios.py` tests the layout
+  (`python3 -m unittest tools/e2e/test_post_scenarios.py`; CI doesn't run it). Every post ends with `---` and
   `_Recorded by the e2e workflow · Claude Code_`. The workflow never touches the PR's description, so editing the
   description can't break a post.
 - **Failures:** a failing scenario still gets its GIF and its ❌ (the session fixes it before pushing, so it shouldn't
