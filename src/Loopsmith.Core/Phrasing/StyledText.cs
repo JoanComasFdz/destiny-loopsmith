@@ -4,7 +4,7 @@ using Loopsmith.Core.Functional;
 
 namespace Loopsmith.Core.Phrasing;
 
-/// <summary>How a span should look. The hosts map tones to colours (CLI: ANSI escapes, web: CSS classes); tests read the plain text.</summary>
+/// <summary>How a span should look. The host maps tones to colours (CSS classes); tests read the plain text.</summary>
 public enum Tone { Plain, Muted, Strong, Warning, Kinetic, Arc, Solar, Void, Stasis, Strand, Prismatic }
 
 public sealed record StyledSpan(string Text, Tone Tone);

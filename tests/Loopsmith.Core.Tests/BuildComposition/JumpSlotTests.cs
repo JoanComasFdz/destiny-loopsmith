@@ -2,7 +2,6 @@ using Loopsmith.Core.BuildComposition;
 using Loopsmith.Core.BuildParsing;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
-using Loopsmith.Core.LoopGraphing;
 using Loopsmith.Core.Orchestration;
 using Loopsmith.Core.Simulation;
 using Loopsmith.Core.SourceFetching;
@@ -51,15 +50,10 @@ public sealed class JumpSlotTests
         var built = Assert.IsType<Result<ValidatedBuild, string>.Ok>(with).Value;
         var plain = Assert.IsType<Result<ValidatedBuild, string>.Ok>(without).Value;
         var initial = ActionResolution.CreateInitialState();
-        var graph = LoopGraphBuilding.BuildLoopGraph(built);
-        var plainGraph = LoopGraphBuilding.BuildLoopGraph(plain);
 
         Assert.Contains(built.Equipped, equipped => equipped.Element.Id == ElementId.From("triple-jump"));
         Assert.Equal(plain.Issues, built.Issues);
         Assert.Equal(ActionResolution.ListAvailableActions(plain, initial), ActionResolution.ListAvailableActions(built, initial));
-        Assert.Equal(plainGraph.Nodes, graph.Nodes);
-        Assert.Equal(plainGraph.Edges.Select(edge => (edge.From, edge.To, edge.Kind)), graph.Edges.Select(edge => (edge.From, edge.To, edge.Kind)));
-        Assert.DoesNotContain(graph.Edges, edge => edge.Sources.Contains("triple-jump"));
     }
 
     [Fact]

@@ -44,10 +44,9 @@ Open the web loop designer on GitHub Pages: https://joancomasfdz.github.io/desti
 ## How it works
 
 ```
-rules/*.yaml ─┐                         ┌─ explain          (static: trigger → outcomes)
-build.yaml ───┼─ parse → validate ──────┼─ trace / play     (pure state machine: (state, step) → (state, fired))
-*.loop.yaml ──┘   (railway, typestate)  ├─ loop / compare   (a designed loop's order: needs, sets off, wasted)
-                                        └─ loops / graph    (cycles in the cause → effect graph)
+rules/*.yaml ─┐                         ┌─ explain            (static: trigger → outcomes)
+build.yaml ───┼─ parse → validate ──────┼─ play a step       (pure state machine: (state, step) → (state, fired))
+*.loop.yaml ──┘   (railway, typestate)  └─ analyse / compare (a designed loop's order: needs, sets off, wasted)
 ```
 
 * Every build element is "an element with rules": `on` trigger → `then` outcomes (+ always-on
@@ -74,11 +73,10 @@ Coding rules (binding): [docs/CODING_RULES.md](docs/CODING_RULES.md) · decision
 
 ```
 src/Loopsmith.Core/      one project, slices = folders (kernel: Domain, Functional, Phrasing, Causality)
-src/Loopsmith.Cli/       host: argv → Orchestration shell → effects
 src/Loopsmith.Web/       host: Blazor WebAssembly loop designer (Home, Designer, Compare)
 tests/Loopsmith.Core.Tests/   unit, golden and architecture tests
 rules/                   authored causality (glossary, keywords, hunter, exotics, armor sets, mods, artifact, weapon perks)
-builds/<slug>/           build.yaml, discrepancies, loop-graph.md, loops/*.loop.yaml, dim-loadout.json (+ the original note, note-map and
+builds/<slug>/           build.yaml, discrepancies, loops/*.loop.yaml, dim-loadout.json (+ the original note, note-map and
                          scenario.txt where the user wrote a note): skip-grenade-hunter and its Ascension variant
 docs/                    requirements, rule format, loop format, hosting, backlog
 tools/compendium/        Destiny Data Compendium download: sheet_dump.py + Docker/Python scripts
@@ -88,7 +86,8 @@ tools/web/               prepare-pages.sh — readies a published site for GitHu
 .claude/                 cloud-session hook + project subagents
 ```
 
-The CLI's commands, options and output: [src/Loopsmith.Cli/README.md](src/Loopsmith.Cli/README.md).
+Every build, loop and e2e fixture file is checked against the rules by a Core test:
+`dotnet test --filter RepoFileValidationTests` names each file that doesn't open and its error.
 
 ## Data sources
 
@@ -132,7 +131,7 @@ work in detail in [docs/backlog.md](docs/backlog.md). Next:
 1. Fill a DIM build's gaps — rules for the supers,
    grenades, melees and exotics it wears, the other subclasses (FR-14).
 2. Ingest: Compendium snapshot parsers (tab registry) + Clarity enrichment + coverage report (FR-11).
-3. One reading of the manifest: the CLI writes the excerpt with the C# join (FR-13, [ADRs D14](docs/ADRs.md)).
+3. One reading of the manifest: the excerpt written with the C# join (FR-13, [ADRs D14](docs/ADRs.md)).
 4. Rule drafting from the Compendium's "On X:" phrasing (FR-12, [ADRs D10](docs/ADRs.md)).
 5. More builds; richer rules (the rule-format gaps in [docs/backlog.md](docs/backlog.md)).
 

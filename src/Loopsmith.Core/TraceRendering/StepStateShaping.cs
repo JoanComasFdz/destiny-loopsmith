@@ -54,7 +54,7 @@ public sealed record StepState(
     ImmutableArray<StackCountEntry> Counts,
     Optional<DamageResistance> Resistance);
 
-/// <summary>Pure: a <see cref="GameState"/> → what the state shows, in the glossary's words (the CLI's state lines, the designer's step state).</summary>
+/// <summary>Pure: a <see cref="GameState"/> → what the state shows, in the glossary's words (the trace's state lines, the designer's step state).</summary>
 public static class StepStateShaping
 {
     public static StepState ShapeStepState(ValidatedBuild build, GameState state, ImmutableArray<ActivePassive> passives)

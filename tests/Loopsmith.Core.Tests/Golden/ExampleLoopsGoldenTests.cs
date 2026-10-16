@@ -12,8 +12,8 @@ using static VerifyXunit.Verifier;
 namespace Loopsmith.Core.Tests.Golden;
 
 /// <summary>
-/// The example loops of builds/skip-grenade-hunter/loops/ (designed with <c>loopsmith play --save</c>): they import,
-/// export back byte for byte, and their <c>loop</c> report and <c>compare</c> table are snapshots.
+/// The example loops of builds/*/loops/: they import, export back byte for byte, and their loop report and
+/// comparison table are snapshots.
 /// </summary>
 public class ExampleLoopsGoldenTests
 {

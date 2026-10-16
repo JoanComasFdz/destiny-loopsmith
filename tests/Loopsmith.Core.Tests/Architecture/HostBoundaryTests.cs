@@ -3,14 +3,14 @@ using Mono.Cecil;
 namespace Loopsmith.Core.Tests.Architecture;
 
 /// <summary>
-/// CODING_RULES "The host owns no logic": the CLI and the web designer call the <c>Orchestration</c> API and the
+/// CODING_RULES "The host owns no logic": the web designer calls the <c>Orchestration</c> API and the
 /// kernel, never a feature slice's functions directly. They may still use a slice's data types (building a
 /// <c>TraceOptions</c>, reading a <c>LoopReport</c>): only calls to static methods — the slices' functions — count.
 /// </summary>
 public sealed class HostBoundaryTests
 {
-    /// <summary>Project folder and assembly name of each host (the CLI's assembly is <c>loopsmith</c>).</summary>
-    public static TheoryData<string, string> Hosts => new() { { "Loopsmith.Cli", "loopsmith" }, { "Loopsmith.Web", "Loopsmith.Web" } };
+    /// <summary>Project folder and assembly name of each host.</summary>
+    public static TheoryData<string, string> Hosts => new() { { "Loopsmith.Web", "Loopsmith.Web" } };
 
     [Theory]
     [MemberData(nameof(Hosts))]

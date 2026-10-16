@@ -103,7 +103,7 @@ Files, rules, builds, related PRs, how the work splits, open questions.
     the screen, text not cut off) is a Gherkin too; "looks right" and colours are never criteria.
   - Not yet a Gherkin: what needs a Bungie login or a DIM link (no e2e scenario can reach either yet).
     Such a criterion is a plain line, checked by hand on the preview, that says why.
-  - A criterion checked in a file (a doc, a rules YAML, a CLI's output, a workflow) is a plain line.
+  - A criterion checked in a file (a doc, a rules YAML, a test, a workflow) is a plain line.
   - Say how the app behaves, not how the code does it.
   - No filler such as "code is clean" or "tests pass" (CI checks those).
 - **Out of scope:**

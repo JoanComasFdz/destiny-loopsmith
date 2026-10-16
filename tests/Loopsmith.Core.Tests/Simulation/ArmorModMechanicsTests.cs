@@ -3,7 +3,6 @@ using Loopsmith.Core.BuildExplanation;
 using Loopsmith.Core.Causality;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
-using Loopsmith.Core.LoopGraphing;
 using Loopsmith.Core.Phrasing;
 using Loopsmith.Core.Simulation;
 using Loopsmith.Core.TraceRendering;
@@ -101,21 +100,6 @@ public sealed class ArmorModMechanicsTests
         Assert.False(ResolveOnce(without, Finisher).Blocked.IsSome());
     }
 
-    [Fact]
-    public void The_loop_graph_draws_a_finisher_action_where_it_sets_something_off()
-    {
-        var anyKill = Element("any-kill", ElementKind.Fragment, [On(new Trigger.KillAny(new DamageSource.AnySource()), Buff("bolt-charge"))]);
-        var with = LoopGraphBuilding.BuildLoopGraph(ValidateBuild([JoltedKill], mods: [FinisherMod]));
-        var killing = LoopGraphBuilding.BuildLoopGraph(ValidateBuild([anyKill]));
-        var without = LoopGraphBuilding.BuildLoopGraph(ValidateBuild([JoltedKill]));   // nothing in it jolts: a finisher's kill reaches no rule
-
-        Assert.Contains(with.Nodes, node => node.Key == "a:Finisher" && node.Label == "Finisher" && node.Kind == NodeKind.Action);
-        Assert.Contains(with.Edges, edge => edge.From == "a:Finisher" && edge.To == "t:Finisher");
-        Assert.Contains(killing.Nodes, node => node.Key == "a:Finisher");
-        Assert.Contains(killing.Edges, edge => edge.From == "a:Finisher");
-        Assert.DoesNotContain(without.Nodes, node => node.Key == "a:Finisher");
-    }
-
     // ── Critical health ──────────────────────────────────────────────────────────────────
 
     private static readonly PlayerAction CriticalHealth = new PlayerAction.Declare(new StateDeclaration.CriticalHealth());
@@ -176,17 +160,6 @@ public sealed class ArmorModMechanicsTests
         Assert.Equal("#2 Critical health\n  Critical health → consumes Armor Charge x1 and Amplified (10s) [Reinforcement] (chance)", DescribeTrace(build, below));
     }
 
-    [Fact]
-    public void The_loop_graph_draws_critical_health_as_a_declaration_where_a_rule_reacts_to_it()
-    {
-        var with = LoopGraphBuilding.BuildLoopGraph(ValidateBuild([Charger], mods: [Reinforcement]));
-        var without = LoopGraphBuilding.BuildLoopGraph(ValidateBuild([Charger]));
-
-        Assert.Contains(with.Nodes, node => node.Key == "a:CriticalHealth" && node.Label == "Critical health" && node.Kind == NodeKind.Action);
-        Assert.Contains(with.Edges, edge => edge.From == "a:CriticalHealth" && edge.To == "t:Critical health" && edge.Kind == EdgeKind.Declared);
-        Assert.DoesNotContain(without.Nodes, node => node.Key == "a:CriticalHealth");
-    }
-
     // ── Breaking a shield (ADRs D36) ─────────────────────────────────────────────────────
 
     private static readonly PlayerAction ShieldKill = new PlayerAction.FireWeapon(WeaponSlot.Energy, HitOutcome.Kill, TargetCount.From(2), ShieldBreak.Breaks);
@@ -227,14 +200,6 @@ public sealed class ArmorModMechanicsTests
         Assert.Equal(2, two.State.ReadTally(Status("armor-charge")).Match(tally => tally.Value.Sure.Value, _ => 0));
         Assert.Empty(plain.Fired);
         Assert.StartsWith("#1 Test Rifle (💀 kill 2 · 🛡 shield)\n  Test Rifle 🛡 broke a shield → +2 Armor Charge [Shield Breaker]", DescribeTrace(ValidateBuild([], mods: [ShieldBreaker, ShieldBreaker]), two));
-    }
-
-    [Fact]
-    public void The_loop_graph_leads_from_a_weapon_to_a_shield_breaking_rule()
-    {
-        var graph = LoopGraphBuilding.BuildLoopGraph(ValidateBuild([], mods: [ShieldBreaker]));
-
-        Assert.Contains(graph.Edges, edge => edge.From == "w:Energy" && edge.To == "t:Break a shield" && edge.Kind == EdgeKind.Player);
     }
 
     // ── An ability's energy fully expended (ADRs D36) ────────────────────────────────────
@@ -296,14 +261,6 @@ public sealed class ArmorModMechanicsTests
         Assert.True(plain.State.HasBuff(Status("armor-charge")));
         Assert.Contains(last.Fired, rule => rule.Source == ElementId.From("kickstart"));
         Assert.False(last.State.HasBuff(Status("armor-charge")));
-    }
-
-    [Fact]
-    public void The_loop_graph_leads_from_an_ability_to_its_energy_fully_expended()
-    {
-        var graph = LoopGraphBuilding.BuildLoopGraph(ValidateBuild([Charger], mods: [Kickstart]));
-
-        Assert.Contains(graph.Edges, edge => edge.From == "a:Grenade" && edge.To == "t:Grenade energy fully expended" && edge.Kind == EdgeKind.Player);
     }
 
     // ── A stat change while a buff holds ─────────────────────────────────────────────────
@@ -380,7 +337,6 @@ public sealed class ArmorModMechanicsTests
         Assert.Equal(Certainty.Unknown, applied.Certainty);
         Assert.Equal(Optional.Some("amount unknown"), applied.Caveat);
         Assert.Contains("Class ability -> +13% energy to your least-charged ability [Orbs Of Restoration]", DescribeExplanation(build));
-        Assert.DoesNotContain(LoopGraphBuilding.BuildLoopGraph(build).Edges, edge => edge.To.StartsWith("e:", StringComparison.Ordinal) && edge.Kind == EdgeKind.Rule);
     }
 
     // ── A weapon of your Super's element ─────────────────────────────────────────────────
