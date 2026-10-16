@@ -31,7 +31,7 @@ public sealed class BuildFileEditingTests
             weapons:
               # Slice per the video.
               - { slot: kinetic, name: Festival Flight, type: strand, perks: [slice], hash: 4019651319 }   # the GL
-              - { slot: energy, name: Any Arc weapon, type: arc }
+              - { slot: energy, name: Crisis Inverted, type: arc, hash: 2888266564 }
             stats: { weapons: 47 }
             """);
 
@@ -49,7 +49,7 @@ public sealed class BuildFileEditingTests
     {
         var file = new SourceText("b.yaml", Header + """
             weapons:
-              - { slot: energy, name: Any Arc weapon, type: arc }
+              - { slot: energy, name: Crisis Inverted, type: arc, hash: 2888266564 }
               - slot: kinetic
                 name: "Festival Flight"
                 perks:
@@ -62,7 +62,7 @@ public sealed class BuildFileEditingTests
 
         Assert.EndsWith("""
             weapons:
-              - { slot: energy, name: Any Arc weapon, type: arc }
+              - { slot: energy, name: Crisis Inverted, type: arc, hash: 2888266564 }
               - {slot: kinetic, name: Festival Flight, type: strand, perks: [], hash: 4019651319, roll: [923806249]}
             # Stats follow.
             stats: { weapons: 47 }
@@ -76,7 +76,7 @@ public sealed class BuildFileEditingTests
     {
         var file = new SourceText("b.yaml", Header + """
             weapons:
-              - { slot: energy, name: Any Arc weapon, type: arc }   # the energy one
+              - { slot: energy, name: Crisis Inverted, type: arc, hash: 2888266564 }   # the energy one
             # Stats follow.
             stats: { weapons: 47 }
             """);
@@ -85,7 +85,7 @@ public sealed class BuildFileEditingTests
 
         Assert.EndsWith("""
             weapons:
-              - { slot: energy, name: Any Arc weapon, type: arc }   # the energy one
+              - { slot: energy, name: Crisis Inverted, type: arc, hash: 2888266564 }   # the energy one
               - {slot: kinetic, name: Festival Flight, type: strand, perks: [], hash: 4019651319, roll: [923806249]}
             # Stats follow.
             stats: { weapons: 47 }
@@ -94,9 +94,9 @@ public sealed class BuildFileEditingTests
     }
 
     [Theory]
-    [InlineData("weapons: [{ slot: energy, name: Any Arc weapon, type: arc }]\n", 2)]
+    [InlineData("weapons: [{ slot: energy, name: Crisis Inverted, type: arc, hash: 2888266564 }]\n", 2)]
     [InlineData("weapons: []\n", 1)]
-    [InlineData("weapons: [{ slot: energy, name: Any Arc weapon, type: arc }, ]\n", 2)]
+    [InlineData("weapons: [{ slot: energy, name: Crisis Inverted, type: arc, hash: 2888266564 }, ]\n", 2)]
     [InlineData("stats: { weapons: 47 }\n", 1)]
     public void A_weapon_is_added_to_a_flow_list_or_as_a_new_weapons_entry(string weapons, int count)
     {
@@ -114,8 +114,9 @@ public sealed class BuildFileEditingTests
               # Slice per the video.
               - { slot: kinetic, name: Festival Flight, type: strand, perks: [slice], hash: 4019651319 }   # the GL
               - slot: energy
-                name: Any Arc weapon
+                name: Crisis Inverted
                 type: arc
+                hash: 2888266564
             # Stats follow.
             stats: { weapons: 47 }
             """);
@@ -127,8 +128,9 @@ public sealed class BuildFileEditingTests
             weapons:
               # Slice per the video.
               - slot: energy
-                name: Any Arc weapon
+                name: Crisis Inverted
                 type: arc
+                hash: 2888266564
             # Stats follow.
             stats: { weapons: 47 }
             """, first, StringComparison.Ordinal);
@@ -139,16 +141,16 @@ public sealed class BuildFileEditingTests
             # Stats follow.
             stats: { weapons: 47 }
             """, second, StringComparison.Ordinal);
-        Assert.Equal(["Any Arc weapon"], ParseBuild(first).Weapons.Select(weapon => weapon.Name));
+        Assert.Equal(["Crisis Inverted"], ParseBuild(first).Weapons.Select(weapon => weapon.Name));
         Assert.Equal(["Festival Flight"], ParseBuild(second).Weapons.Select(weapon => weapon.Name));
     }
 
     [Theory]
-    [InlineData(0, "weapons: [{ slot: power, name: Any Arc weapon, type: arc }]\n")]
-    [InlineData(1, "weapons: [{ slot: kinetic, name: Festival Flight, type: strand }]\n")]
+    [InlineData(0, "weapons: [{ slot: power, name: Thunderlord, type: arc, hash: 3325463374 }]\n")]
+    [InlineData(1, "weapons: [{ slot: kinetic, name: Festival Flight, type: strand, hash: 4019651319 }]\n")]
     public void A_weapon_removed_from_a_flow_list_takes_its_comma(int index, string kept)
     {
-        var file = new SourceText("b.yaml", Header + "weapons: [{ slot: kinetic, name: Festival Flight, type: strand }, { slot: power, name: Any Arc weapon, type: arc }]\n");
+        var file = new SourceText("b.yaml", Header + "weapons: [{ slot: kinetic, name: Festival Flight, type: strand, hash: 4019651319 }, { slot: power, name: Thunderlord, type: arc, hash: 3325463374 }]\n");
 
         var edited = RemoveWeapon(file, index);
 
@@ -157,8 +159,8 @@ public sealed class BuildFileEditingTests
     }
 
     [Theory]
-    [InlineData("weapons:\n  - { slot: energy, name: Any Arc weapon, type: arc }\nstats: { weapons: 47 }\n")]
-    [InlineData("weapons: [{ slot: energy, name: Any Arc weapon, type: arc }]\nstats: { weapons: 47 }\n")]
+    [InlineData("weapons:\n  - { slot: energy, name: Crisis Inverted, type: arc, hash: 2888266564 }\nstats: { weapons: 47 }\n")]
+    [InlineData("weapons: [{ slot: energy, name: Crisis Inverted, type: arc, hash: 2888266564 }]\nstats: { weapons: 47 }\n")]
     public void The_last_weapon_removed_takes_the_weapons_entry_with_it(string weapons)
     {
         var edited = RemoveWeapon(new SourceText("b.yaml", Header + weapons), 0);
@@ -171,7 +173,7 @@ public sealed class BuildFileEditingTests
     [Fact]
     public void A_weapon_the_file_does_not_have_is_an_error()
     {
-        var file = new SourceText("b.yaml", Header + "weapons:\n  - { slot: energy, name: Any Arc weapon, type: arc }\n");
+        var file = new SourceText("b.yaml", Header + "weapons:\n  - { slot: energy, name: Crisis Inverted, type: arc, hash: 2888266564 }\n");
 
         var past = Assert.IsType<Result<string, string>.Error>(BuildFileEditing.ReplaceWeapon(file, 1, Picked));
         var none = Assert.IsType<Result<string, string>.Error>(BuildFileEditing.ReplaceWeapon(new SourceText("b.yaml", Header), 0, Picked));

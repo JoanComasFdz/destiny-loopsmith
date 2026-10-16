@@ -181,6 +181,25 @@ public sealed class BuildFileParsingTests
     }
 
     [Fact]
+    public void A_weapon_needs_an_archetype_or_a_hash()
+    {
+        var message = ParseInvalidBuild(MinimalYaml + """
+
+            weapons:
+              - { slot: energy, name: Any Arc weapon, type: arc }
+            """);
+        var build = ParseValidBuild(MinimalYaml + """
+
+            weapons:
+              - { slot: kinetic, name: Festival Flight, type: strand, hash: 4019651319 }
+              - { slot: power, name: Speleologist, type: solar, archetype: machine-gun }
+            """);
+
+        Assert.Equal($"{BuildPath}:9: weapon 'Any Arc weapon' needs an `archetype` or a `hash`", message);
+        Assert.Equal(["Festival Flight", "Speleologist"], build.Weapons.Select(weapon => weapon.Name));
+    }
+
+    [Fact]
     public void An_ability_given_as_a_question_mark_is_unknown_and_left_out_hashes_are_kept_by_part()
     {
         var build = ParseValidBuild("""

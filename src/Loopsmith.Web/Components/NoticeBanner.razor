@@ -1,15 +1,21 @@
-@* The banner for Workbench.Notice: an import that failed, a link that could not be opened. Dismissing it clears it. *@
-@inject Workbench Workbench
+@* The banner for Workbench.Notice: an import that failed, a link that could not be opened. Dismissing it clears it.
+   The page passes the notice in, so the banner shows a notice set after the page first rendered (a failed import on
+   Home): a component with no parameters isn't rendered again when its page is. *@
 
-@if (Workbench.Notice is Optional<string>.Some notice)
+@if (Notice is Optional<string>.Some notice)
 {
     <div class="banner warn" role="alert" data-testid="notice">
-        <pre class="banner-text">@notice.Value</pre>
-        <button class="btn ghost icon" title="Dismiss" aria-label="Dismiss" @onclick="DismissNotice">✕</button>
+        <pre class="banner-text" data-testid="notice-text">@notice.Value</pre>
+        <button class="btn ghost icon" title="Dismiss" aria-label="Dismiss" @onclick="OnDismiss">✕</button>
     </div>
 }
 
 @code {
-    private void DismissNotice() =>
-        Workbench.Notice = Optional.None<string>();
+    /// <summary>The page's Workbench.Notice.</summary>
+    [Parameter, EditorRequired]
+    public Optional<string> Notice { get; set; } = Optional.None<string>();
+
+    /// <summary>Clears the page's Workbench.Notice (the page renders again, and the banner with it).</summary>
+    [Parameter]
+    public EventCallback OnDismiss { get; set; }
 }

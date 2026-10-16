@@ -645,8 +645,8 @@ must be glossary `buff`s; in `debuffTarget`/`targetHas` glossary `debuff`s
   loop analysis counts the pickup as a need of the step, provided by the step that dropped it.
 * **`grantEnergy` `byArchetype`** is the amount of the weapon holding the element: bound to a weapon of a named archetype
   it is `amount` of `byArchetype` (`+20% grenade energy`), to any other weapon the plain `amount` (`+10% grenade
-  energy`). A weapon whose archetype isn't known (a build file without `archetype`, a weapon picked without its
-  manifest type) and the catalog's own text show both: `+10% grenade energy (20% on Fusion Rifles, Glaives, Shotguns
+  energy`). A weapon whose archetype isn't known (one whose hash the manifest excerpt doesn't know, or a weapon picked
+  without its manifest type) and the catalog's own text show both: `+10% grenade energy (20% on Fusion Rifles, Glaives, Shotguns
   and Sniper Rifles)`. An enhanced trait's `values` replace both amounts.
 * **`reloadWeapon`** reloads the weapon "this weapon" is bound to, or the build's in that slot: `reloads your energy
   weapon`, and a `Reloaded` event from it follows, so its `reload` rules fire as on a Reload step (ADRs D37). With no
@@ -803,9 +803,12 @@ stats: { weapons: 47, class: 104, grenade: 145, super: 27, melee: 79 }   # any s
 * Optional: `author`, `source` (an absolute http(s) URL), `catalog`, `exoticArmor`, `artifact`, and the lists
   `aspects`, `fragments`, `armorSetBonuses`, `armorMods`, `artifactPerks`, `weapons` (default empty).
 * A weapon: `slot` (`kinetic|energy|power`), `name` and `type` (`kinetic|arc|solar|void|stasis|strand`)
-  are required; `archetype` (a kebab-case word, the manifest's type: `hand-cannon`; it picks a perk's energy grant
-  `byArchetype`, Demolitionist's), `perks` (element ids), `hash` (its manifest item: its icon,
-  its trait columns, its intrinsic and catalyst), `roll`, `catalyst` and `instance` are optional. The name labels its
+  are required, and so is one of `hash` and `archetype`: a weapon with neither is refused ("weapon 'Any Arc weapon'
+  needs an \`archetype\` or a \`hash\`"), since a perk that goes by its archetype would show both amounts. `hash` is its
+  manifest item: its icon, its trait columns, its intrinsic and catalyst, and its archetype, which the build check reads
+  from Bungie's manifest (the source of truth: it wins over an `archetype` the file names). `archetype` (a kebab-case
+  word, the manifest's type: `hand-cannon`; it picks a perk's energy grant `byArchetype`, Demolitionist's) is for a
+  weapon named without a hash. `perks` (element ids), `roll`, `catalyst` and `instance` are optional. The name labels its
   actions ("Festival Flight (🥊 hit 5)").
 * `instance`: the copy the build wears, by Bungie's instance id (a dim.gg share's, or one picked from the player's
   weapons; quoted: `instance: "6917529810172542011"`); after the player's Bungie login its tier and masterwork show on

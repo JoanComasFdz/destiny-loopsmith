@@ -3,4 +3,4 @@ name: "E2E - Speleologist with Radiolaria Transposer"
 class: hunter
 subclass: arc
 weapons:
-  - { slot: power, name: Speleologist, type: solar, perks: [radiolaria-transposer] }
+  - { slot: power, name: Speleologist, type: solar, archetype: machine-gun, perks: [radiolaria-transposer] }

@@ -1,5 +1,5 @@
 ﻿Infinite skip grenades — Skip Grenade Hunter · 8 steps
-New pack → Class ability → Grenade (💀 kill) → Festival Flight (💀 kill) → Any Arc weapon (💀 kill) → Pick up Orb of Power → Bolt Charge at max (x10) → Grenade (💀 kill · ⬜ spend fully)
+New pack → Class ability → Grenade (💀 kill) → Festival Flight (💀 kill) → Crisis Inverted (💀 kill) → Pick up Orb of Power → Bolt Charge at max (x10) → Grenade (💀 kill · ⬜ spend fully)
 ✓ Repeats — each pass ends with what the next one needs
 
 #1 New pack
@@ -17,7 +17,7 @@ New pack → Class ability → Grenade (💀 kill) → Festival Flight (💀 kil
    on its own       Strand Siphon (chance)
    wasted           Tempest Strike — doesn't stack with Dielectric
 
-#5 Any Arc weapon (💀 kill)
+#5 Crisis Inverted (💀 kill)
    needs            Jolt ← #3 [Spark of Shock] · Sever ← #4 [Slice]
    in this order    Jolt · Photonic Flare · Flow State · Dielectric · To Shreds · Shock and Clear · Shinobu's Vow · Bolt Charge · Spark of Discharge · Elemental Charge (chance) · Ionic Trace
    on its own       Harmonic Siphon (chance)

@@ -115,7 +115,7 @@ public static class BuildFileParsing
             : ElementId.TryFrom(text).ToResult().Map(id => (AbilityPlug)new AbilityPlug.Known(id)));
 
     /// <summary>
-    /// <c>{ slot, name, type, archetype?, perks?, hash?, roll?, catalyst?, instance?, mod? }</c>; <c>roll: ["?", 243981275]</c> is
+    /// <c>{ slot, name, type, archetype?, perks?, hash?, roll?, catalyst?, instance?, mod? }</c>, with an <c>archetype</c> or a <c>hash</c>; <c>roll: ["?", 243981275]</c> is
     /// the perk picked in each trait column, by manifest hash, in column order ("?": not picked); <c>catalyst: true</c>
     /// turns an exotic's catalyst on (default false); <c>instance: "6917…"</c> is the copy it is (a quoted instance id);
     /// <c>mod: 3820243349</c> is the weapon mod in its mod socket, by manifest hash.
@@ -133,7 +133,17 @@ public static class BuildFileParsing
             map.ReadOrDefault("catalyst", ReadBoolean, false),
             map.ReadOptional("instance", instance => instance.ParseWith(text => ItemInstanceId.TryFrom(text).ToResult())),
             map.ReadOptional("mod", ReadItemHash),
-            (_, slot, name, type, archetype, perks, hash, roll, catalyst, instance, mod) => new WeaponLoadout(slot, name, type, archetype, perks, hash, roll, catalyst, instance, mod)));
+            (_, slot, name, type, archetype, perks, hash, roll, catalyst, instance, mod) => new WeaponLoadout(slot, name, type, archetype, perks, hash, roll, catalyst, instance, mod)))
+            .Bind(weapon => RequireArchetypeOrHash(value, weapon));
+
+    /// <summary>
+    /// A weapon whose archetype no one knows is refused: its <c>hash</c> gives it (from Bungie's manifest, when the build is
+    /// composed), or else its <c>archetype</c> says it. A perk that goes by the archetype (Demolitionist's) would show both amounts.
+    /// </summary>
+    private static Result<WeaponLoadout, Errors> RequireArchetypeOrHash(YamlValue value, WeaponLoadout weapon) =>
+        weapon.Archetype.IsSome() || weapon.Hash.IsSome()
+            ? Succeed(weapon)
+            : value.FailAt<WeaponLoadout>($"weapon '{weapon.Name}' needs an `archetype` or a `hash`");
 
     private static Result<bool, Errors> ReadBoolean(YamlValue value) =>
         value.ParseWith<bool>(text => text switch

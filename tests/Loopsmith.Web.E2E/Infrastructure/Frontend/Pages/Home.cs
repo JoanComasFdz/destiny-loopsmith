@@ -1,3 +1,4 @@
+using Loopsmith.Web.E2E.Infrastructure.Frontend.Components;
 using Microsoft.Playwright;
 
 namespace Loopsmith.Web.E2E.Infrastructure.Frontend.Pages;
@@ -10,6 +11,14 @@ public sealed class Home(IPage page)
     private ILocator HandWritten => page.Locator("[data-testid=hand-written]");
 
     private ILocator ImportBuild => HandWritten.Locator("[data-action=import-build]");
+
+    /// <summary>The banner over Home: an import that failed.</summary>
+    public NoticeBanner Notice { get; } = new(page);
+
+    /// <summary>Whether Home is the page shown now (its hand-written imports, where a build file is imported).</summary>
+    public Task<HomeSnapshot> ReadAsync() => OnScreen.ReadAsync(HandWritten, ReadShownAsync);
+
+    private async Task<HomeSnapshot> ReadShownAsync() => new(await StartFromScratch.IsVisibleAsync());
 
     /// <summary>Waits until Home is shown (after the manifest's startup screen).</summary>
     public Task WaitUntilShownAsync() => WaitUntilShownAsync(TimeSpan.FromSeconds(30));
@@ -28,3 +37,6 @@ public sealed class Home(IPage page)
     private static string FindFixture(string fixture) =>
         Directory.EnumerateFiles(Path.Combine(AppContext.BaseDirectory, "Scenarios"), fixture, SearchOption.AllDirectories).Single();
 }
+
+/// <summary>What Home shows: whether it is the page shown.</summary>
+public sealed record HomeSnapshot(bool IsShown);

@@ -3,4 +3,4 @@ name: "E2E - Ogma PR6 with Unrelenting"
 class: hunter
 subclass: arc
 weapons:
-  - { slot: energy, name: Ogma PR6, type: solar, perks: [unrelenting] }
+  - { slot: energy, name: Ogma PR6, type: solar, archetype: pulse-rifle, perks: [unrelenting] }

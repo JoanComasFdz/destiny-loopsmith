@@ -83,7 +83,7 @@ public sealed class StepStateShapingTests
     public void A_weapon_of_its_types_shows_Ionic_Overclock_with_that_weapon_while_Amplified()
     {
         var owners = Play().Build;
-        var fusion = owners.Build.Weapons[2] with { Archetype = Optional.Some("fusion-rifle") };
+        var fusion = owners.Build.Weapons[2] with { Archetype = Optional.Some("fusion-rifle"), Hash = Optional.None<ItemHash>() };   // no hash: its manifest archetype would win
         var build = BuildValidation.ValidateBuild(owners.Build with { Weapons = owners.Build.Weapons.SetItem(2, fusion) }, Catalog)
             .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
         var played = PlayOn(build,

@@ -3,5 +3,5 @@ name: "E2E - Festival Flight with One for All, Ogma PR6 with none"
 class: hunter
 subclass: arc
 weapons:
-  - { slot: kinetic, name: Festival Flight, type: strand, perks: [one-for-all] }
-  - { slot: energy, name: Ogma PR6, type: solar, perks: [] }
+  - { slot: kinetic, name: Festival Flight, type: strand, archetype: grenade-launcher, perks: [one-for-all] }
+  - { slot: energy, name: Ogma PR6, type: solar, archetype: pulse-rifle, perks: [] }
