@@ -305,7 +305,7 @@ This is the title and has no trigger.
 ## The scenario and the example loops
 
 `scenario.txt` is one engagement as the video plays it; the `Scenario_trace` golden test snapshots its
-trace (`dotnet run --project src/Loopsmith.Cli -- trace builds/skip-grenade-hunter/build.yaml --scenario builds/skip-grenade-hunter/scenario.txt --state`).
+trace with each step's state (`dotnet test --filter Scenario_trace`).
 Its steps, with the note lines they play:
 
 1. `class`: line 1 (Reaper and Slice armed, Bomber).

@@ -7,7 +7,7 @@ namespace Loopsmith.Core.Causality;
 /// <summary>
 /// Kernel: "this weapon" (<c>weapon:this</c>, <c>weapon:this:arc</c>) in an element a weapon holds — a weapon mod, a
 /// perk, an exotic's perk or its catalyst. The rules name no weapon; the build check binds the element to the weapon
-/// holding it, by its slot (one weapon per slot), so the engine and the loop graph match an ordinary
+/// holding it, by its slot (one weapon per slot), so the engine matches an ordinary
 /// <see cref="DamageSource.WeaponInSlot"/>. "This weapon, when it is Arc" binds only on an Arc weapon: on another one
 /// the rule (or the passive, or the damage change) is not part of the build — Synergy's Ionic Trace on an Arc weapon,
 /// its Orb of Power on a Kinetic one.

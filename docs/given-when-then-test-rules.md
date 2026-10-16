@@ -48,7 +48,7 @@ Scenario: Unrelenting heals for sure on 3 quick kills
 ## 1. What is a Gherkin
 
 1. **Every acceptance criterion about how the app behaves is a Gherkin:** what someone does and sees on Home or in the
-   designer. A criterion checked in a file (a doc, a rules YAML, a CLI's output, a workflow) stays a plain line.
+   designer. A criterion checked in a file (a doc, a rules YAML, a test, a workflow) stays a plain line.
 2. **Layout is a Gherkin too**, checked from where things are on the screen: a row wraps, two parts don't overlap, a
    button sits at a row's right end, a row fits inside the screen with no sideways scroll, a text isn't cut off. "Looks right",
    colours and spacing are never a Gherkin: nothing checks them but an eye.
@@ -157,7 +157,8 @@ rule h). Builds are made for the tests only.
    `.build.yaml`.
 4. **Build name:** `"E2E - <what it holds>"` (`"E2E - Ogma PR6 with Unrelenting"`), quoted.
 5. **Header comment:** one line with what the build holds and what it is for.
-6. Check it with `dotnet run --project src/Loopsmith.Cli -- validate <file>`.
+6. Check it with `dotnet test --filter RepoFileValidationTests`: every fixture must open against the rules, and one
+   meant to be refused is listed in that test with the error it must give.
 
 ## 8. In the pull request
 

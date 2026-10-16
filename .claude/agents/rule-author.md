@@ -104,12 +104,12 @@ also mention it in the rule's `reason`. Something that only a creator says becom
 
 ## Check your work
 
-Run `dotnet build Loopsmith.slnx` and `dotnet test`. Then run
-`dotnet run --project src/Loopsmith.Cli -- validate builds/<slug>/build.yaml`: it parses the whole rule
-catalog and prints every `file:line` error (fix them all), then the build's warnings (for example a
-`doesNotStackWith` pair that is wasted with both equipped). `explain` on the same build shows what each
-trigger sets off, and `trace builds/<slug>/build.yaml --actions "grenade:kill,max:bolt-charge,grenade:kill" --why`
-shows a rule firing in its cascade, declared steps included. If a golden snapshot changes (a `*.received.txt` appears), don't accept it yourself:
+Run `dotnet build Loopsmith.slnx` and `dotnet test`. `dotnet test --filter RepoFileValidationTests` alone
+parses the whole rule catalog and opens every build and loop file of the repository against it: a failure names
+the file and its `file:line` error (fix them all). To see a rule fire in its cascade, declared steps included, play
+the steps in a Core test the way `tests/Loopsmith.Core.Tests/Golden/SkipGrenadeHunterGoldenTests.cs` does
+(`ActionResolution.ResolveAction` on the build, then assert what fired), or in the web designer
+(`dotnet run --project src/Loopsmith.Web`). If a golden snapshot changes (a `*.received.txt` appears), don't accept it yourself:
 report the difference for review.
 
 ## Report back

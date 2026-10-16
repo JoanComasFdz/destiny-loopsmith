@@ -31,9 +31,8 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   - **One reading of the manifest:** the Python extractor writes the excerpt; the C# join builds the same items, armor
     sets and perks for the browser, but leaves the rest of an excerpt empty (the version, the damage types' icons, the
     stat plugs, breaker types, item overlays, keyword traits and armor stats) and writes no YAML. Two tests compare them
-    against a downloaded manifest (`LOOPSMITH_MANIFEST_DIR`). For the CLI to write the excerpt with the join and
-    retire the Python, the join needs those parts and a YAML writer.
-  - **The CLI** reads only the excerpt; a build there with other items shows them by hash.
+    against a downloaded manifest (`LOOPSMITH_MANIFEST_DIR`). To write the excerpt with the join and retire the
+    Python, the join needs those parts, a YAML writer and a tool to run it (the CLI is gone, ADRs D38).
   - **The pinned content id** (`ManifestContentId`, used when the manifest index doesn't answer) has to be
     updated with the excerpt; Bungie may drop old component files.
 
@@ -81,7 +80,7 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   spawned it; ability regeneration (Flow State's, and Spark of Recharge's, whose task above is the first);
   Amplified's other extras (+40 Handling: an "all weapons" archetype). One "described fact" value and passive would
   cover them. Amounts that scale with a stat are in "Stats, next".
-  The ability profiles (`charges`, `chunkScalar`, `baseCooldown`) aren't shown in `explain`: show them there. `charges`
+  The ability profiles (`charges`, `chunkScalar`, `baseCooldown`) aren't shown in the build's explanation: show them there. `charges`
   is read (an ability with more than one charge offers "spend fully", D36); the other two change nothing (D5). The
   designer's HUD could draw the charges too ("An ability's charges in the HUD", Web).
 - **Picking armor mods** (the designer's sockets and mod picker, [loop-format.md](loop-format.md#armor-mods), D30):
@@ -171,7 +170,7 @@ the part is a fact in the description.
   ability's) icon for each charge, so Shinobu's Vow's second grenade shows as two. The designer's HUD could draw one
   per charge the build gives the ability (its profile's `charges` plus every `extraCharges`, ADRs D36), next to the
   "⬜ Spend fully" box. Only how many the build has: an ability's energy isn't tracked, so none of them is shown empty.
-  `explain` doesn't show the charges either (Facts, Rule format gaps).
+  The build's explanation doesn't show the charges either (Facts, Rule format gaps).
 - **First visit downloads ≈ 12 MB**: the .NET runtime as WebAssembly + the engine (2.7 MB brotli, 3.2 MB gzip in a
   Release publish; cached afterwards) and Bungie's manifest (~9 MB; saved in the browser afterwards, D25). The
   `wasm-tools` workload would shrink the runtime; it can't be installed in cloud sessions, but the deploy workflows on

@@ -7,7 +7,7 @@ namespace Loopsmith.Core.Tests.BuildParsing;
 
 /// <summary>
 /// Every hash a weapon of the repo's builds and loops gives (its <c>hash</c>, its <c>roll</c> picks and its <c>mod</c>) is
-/// in the manifest excerpt (rules/manifest.yaml), which is all the CLI and the tests read a weapon given by hash from:
+/// in the manifest excerpt (rules/manifest.yaml), which is all the tests read a weapon given by hash from:
 /// a committed build or loop with a new weapon needs <c>tools/manifest/</c> rerun (tools/manifest/README.md).
 /// </summary>
 public sealed class RepoWeaponHashesTests
