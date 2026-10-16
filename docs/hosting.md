@@ -166,11 +166,11 @@ works the PR records them; CI doesn't run, record or build anything for them.
 
 - **What is recorded:** each run (a scenario played on a screen) from Home on, its last frame held 3 s, as a GIF (20 fps;
   800 px wide on desktop, 390 px on a phone) and as an MP4 (H.264 at the recording's own size and frame rate: 1280×800
-  on desktop, 390×844 on a phone, 25 fps from Playwright's recorder). The GIF shows in the comment; the MP4 can be
+  on desktop, 780×1688 on a phone, 25 fps from Playwright's recorder). The GIF shows in the comment; the MP4 can be
   paused, sought and seen full screen in the player page below. Playwright's recorder takes Chromium's screencast,
-  which hands it the phone at its 390×844 CSS pixels even though the page is drawn at twice that (asking it for a
-  780×1688 video only pads it with grey), so a phone's MP4 is no sharper than that; only screenshots come at the
-  device's pixels.
+  which hands it a phone emulated at twice the pixels at its 390×844 CSS pixels (blurry on a phone; asking for a
+  780×1688 video only pads it with grey), so the phone's browser is started drawing at twice the pixels itself
+  (`--force-device-scale-factor=2`, `BrowserRun`), and its screencast is the phone's 780×1688.
 
 - **Who records:** the session, once, right before each push that adds or changes scenarios:
   `tools/e2e/record.sh --changed-since origin/main`, i.e. every scenario the branch adds or changes from where it left

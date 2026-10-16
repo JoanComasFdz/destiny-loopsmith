@@ -10,8 +10,8 @@
 # It publishes the web app (Release), prepares it for /destiny-loopsmith/ (tools/web/prepare-pages.sh), serves it
 # locally, runs the chosen scenarios with E2E_URL set and video on, trims each video from when Home was shown (the
 # manifest's startup screen left out) and turns it into a GIF under <out>/<domain folder>/<gif name>.gif (20 fps; a
-# desktop run 800 px wide, a phone run at its own 390 px; the GIF name ends in -desktop or -mobile) and an MP4 next to
-# it, <gif name>.mp4 (H.264 at the video's own size: 1280×800, a phone's 390×844). Both hold their last frame 3 s
+# desktop run 800 px wide, a phone run at its 390 CSS pixels; the GIF name ends in -desktop or -mobile) and an MP4 next to
+# it, <gif name>.mp4 (H.264 at the video's own size: 1280×800, a phone's 780×1688). Both hold their last frame 3 s
 # before they end. It prints each
 # scenario's startup time (page open → Home shown) and the requests that left for bungie.net, and writes
 # <out>/scenarios.json. Exits non-zero when a scenario failed (its GIF is still written).
@@ -190,7 +190,7 @@ PY
 }
 
 # Each recorded run: trimmed from when Home was shown, its last frame held 3 s, as a GIF next to its domain folder's
-# others (20 fps; a desktop window scaled to 800 px wide, a phone to its own 390 px) and as an MP4 (H.264 at the
+# others (20 fps; a desktop window scaled to 800 px wide, a phone to its 390 CSS pixels) and as an MP4 (H.264 at the
 # video's own size and frame rate, for the player page: docs/hosting.md, "E2E videos on pull requests").
 hold_end="tpad=stop_mode=clone:stop_duration=3"
 palette_at() {

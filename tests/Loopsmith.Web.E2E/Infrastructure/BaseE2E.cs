@@ -13,7 +13,8 @@ namespace Loopsmith.Web.E2E.Infrastructure;
 /// - one browser for the whole run (<see cref="BrowserRun"/>), a fresh context per scenario with its own storage, so
 ///   scenarios share nothing (it checks the site's IndexedDB and local storage are empty before opening Home);
 /// - opens that context as the screen the scenario is played on (its <c>[PlayInDesktop]</c> / <c>[PlayInMobile]</c>):
-///   a 1280×800 window with a mouse, or a 390×844 phone with touch, its video the same size;
+///   a 1280×800 window with a mouse, its video the same size, or a 390×844 phone with touch, its video at the phone's
+///   pixels (780×1688: <see cref="BrowserRun"/>);
 /// - routes the context's bungie.net requests (<see cref="BungieRouting"/>);
 /// - opens Home on a recorded page and waits until it is shown (behind the manifest's startup screen), noting when, so
 ///   record.sh trims the startup screen off the video;
@@ -45,9 +46,9 @@ public abstract class BaseE2E : IAsyncLifetime
         Assert.SkipWhen(E2ESite.Url is null, "E2E_URL isn't set: end-to-end tests need a running site (tools/e2e/record.sh).");
 
         var run = (BrowserRun)(await TestContext.Current.GetFixture(typeof(BrowserRun)))!;
-        var browser = await run.OpenBrowserAsync();
-        videoFolder = E2ESite.VideoDirectory is { } videos ? Path.Combine(videos, ".raw", Guid.NewGuid().ToString("N")) : null;
         screen = ReadScreen();
+        var browser = await run.OpenBrowserAsync(screen);
+        videoFolder = E2ESite.VideoDirectory is { } videos ? Path.Combine(videos, ".raw", Guid.NewGuid().ToString("N")) : null;
         context = await browser.NewContextAsync(OpenAs(screen, videoFolder));
         context.SetDefaultTimeout((float)ActionTimeout.TotalMilliseconds);
         await BungieRouting.RouteAsync(context, DescribeScenario());
@@ -117,18 +118,20 @@ public abstract class BaseE2E : IAsyncLifetime
         TestContext.Current.Test is IXunitTest { TestMethodArguments: [Screen played] } ? played : Screen.Desktop;
 
     // A desktop window with a mouse, or a phone with touch (Chromium's phone emulation: the page is laid out for the
-    // phone's width and matches (hover: none) and (pointer: coarse)); the video is the window's size.
+    // phone's width and matches (hover: none) and (pointer: coarse)), drawn at the phone's density. The video is the
+    // window at its pixels: 1280×800, a phone's 780×1688 (its browser draws at that density: BrowserRun).
     private static BrowserNewContextOptions OpenAs(Screen screen, string? videoFolder)
     {
         var window = screen == Screen.Mobile ? Phone : DesktopWindow;
+        var density = screen == Screen.Mobile ? BrowserRun.PhoneDensity : 1;
         return new()
         {
             ViewportSize = window,
             IsMobile = screen == Screen.Mobile,
             HasTouch = screen == Screen.Mobile,
-            DeviceScaleFactor = screen == Screen.Mobile ? 2 : 1,
+            DeviceScaleFactor = density,
             RecordVideoDir = videoFolder,
-            RecordVideoSize = videoFolder is null ? null : new RecordVideoSize { Width = window.Width, Height = window.Height },
+            RecordVideoSize = videoFolder is null ? null : new RecordVideoSize { Width = window.Width * density, Height = window.Height * density },
             AcceptDownloads = true,
         };
     }
