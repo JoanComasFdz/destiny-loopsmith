@@ -8,7 +8,9 @@
 # class (StartFromScratchTests).
 # --changed-since <ref>: the scenario classes added or changed since <ref> (from where the branch left it, working tree
 # included), plus those that use a changed fixture file (for the extension's scenarios, any file of its Workspace/):
-# "this PR's scenarios" with origin/main.
+# "this PR's scenarios" with origin/main. scenarios.json says why each was picked ("selected": "changed", or "fixtures"
+# with the changed "fixtures", each a path in its project: Scenarios/Loop/Weapons/…, Workspace/…); a class that changed
+# and uses a changed fixture, and a class or domain folder named here, is "changed".
 # --action-gap <seconds>: the least time between two steps (an action or a read) of a recorded scenario (default 1).
 # For web scenarios it publishes the web app (Release), prepares it for /destiny-loopsmith/ (tools/web/prepare-pages.sh)
 # and serves it locally. For the extension's scenarios it serves VS Code for the web (@vscode/test-web, pinned with the
@@ -48,7 +50,7 @@ while [ $# -gt 0 ]; do
     --out) out="$2"; shift 2 ;;
     --no-publish) publish=0; shift ;;
     --no-video) video=0; shift ;;
-    -h|--help) sed -n '2,29p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,32p' "$0"; exit 0 ;;
     *) chosen+=("$1"); shift ;;
   esac
 done
@@ -61,32 +63,39 @@ find_class_project() {
   if [ -n "$(find "$vscode_project/Scenarios" -name "$1.cs" -print -quit)" ]; then echo vscode; fi
 }
 
-# The scenario classes changed since a ref, and those whose fixture files changed, in both projects. The extension's
-# scenarios all open the files of its project's Workspace/: a change there selects every one of them.
+# The scenario classes changed since a ref, and those whose fixture files changed, in both projects, each on a line with
+# why it was picked: "<class>\tchanged", or "<class>\tfixtures\t<the fixture's path in its project>" (one line per
+# changed fixture). The extension's scenarios all open the files of its project's Workspace/: a change there selects
+# every one of them.
 list_changed_classes() {
   local base
   base="$(git -C "$repo" merge-base "$1" HEAD)"
-  local project file
-  {
-    for project in "${projects[@]}"; do
-      local scenarios="${project#"$repo"/}/Scenarios"
-      local files
-      files="$( { git -C "$repo" diff --name-only --diff-filter=AMR "$base" -- "$scenarios";
-                  git -C "$repo" ls-files --others --exclude-standard -- "$scenarios"; } | sort -u)"
-      for file in $files; do
-        case "$file" in
-          *Tests.cs) basename "$file" .cs ;;
-          *.cs) ;;
-          *) grep -rlF --include='*Tests.cs' "$(basename "$file")" "$project/Scenarios" | xargs -r -n1 basename | sed 's/\.cs$//' ;;
-        esac
-      done
+  local project file class
+  for project in "${projects[@]}"; do
+    local scenarios="${project#"$repo"/}/Scenarios"
+    local files
+    files="$( { git -C "$repo" diff --name-only --diff-filter=AMR "$base" -- "$scenarios";
+                git -C "$repo" ls-files --others --exclude-standard -- "$scenarios"; } | sort -u)"
+    for file in $files; do
+      case "$file" in
+        *Tests.cs) printf '%s\tchanged\n' "$(basename "$file" .cs)" ;;
+        *.cs) ;;
+        *)
+          for class in $(grep -rlF --include='*Tests.cs' "$(basename "$file")" "$project/Scenarios" | xargs -r -n1 basename | sed 's/\.cs$//'); do
+            printf '%s\tfixtures\t%s\n' "$class" "${file#"${project#"$repo"/}"/}"
+          done ;;
+      esac
     done
-    local workspace="${vscode_project#"$repo"/}/Workspace"
-    if [ -n "$( { git -C "$repo" diff --name-only "$base" -- "$workspace";
-                 git -C "$repo" ls-files --others --exclude-standard -- "$workspace"; } | head -n1)" ]; then
-      find "$vscode_project/Scenarios" -name '*Tests.cs' -exec basename {} .cs \;
-    fi
-  } | sort -u
+  done
+  local workspace="${vscode_project#"$repo"/}/Workspace"
+  local changed_workspace
+  changed_workspace="$( { git -C "$repo" diff --name-only "$base" -- "$workspace";
+                         git -C "$repo" ls-files --others --exclude-standard -- "$workspace"; } | sort -u)"
+  for file in $changed_workspace; do
+    for class in $(find "$vscode_project/Scenarios" -name '*Tests.cs' -exec basename {} .cs \;); do
+      printf '%s\tfixtures\t%s\n' "$class" "${file#"${vscode_project#"$repo"/}"/}"
+    done
+  done
 }
 
 # Each project's filters, joined into one ('|' is "or" to dotnet test); a project with none doesn't run.
@@ -99,10 +108,15 @@ add_class() {
   done
 }
 everything=0
+# Why each class was picked (list_changed_classes' lines), for scenarios.json: a class not in it was named on the command
+# line, and counts as changed.
+selection="$out/.selection.tsv"
+: > "$selection"
 if [ -n "$changed_since" ]; then
+  list_changed_classes "$changed_since" | sort -u > "$selection"
   while IFS= read -r class; do
     if [ -n "$class" ]; then add_class "$class"; fi
-  done < <(list_changed_classes "$changed_since")
+  done < <(cut -f1 "$selection" | sort -u)
   if [ ${#web_filters[@]} -eq 0 ] && [ ${#vscode_filters[@]} -eq 0 ] && [ ${#chosen[@]} -eq 0 ]; then
     echo "No scenario changed since $changed_since."
     if [ $video -eq 1 ]; then echo "[]" > "$out/scenarios.json"; fi
@@ -310,13 +324,28 @@ while IFS= read -r record; do
     -c:v libx264 -preset slow -crf 18 -pix_fmt yuv420p -movflags +faststart "$out/$domain/$gif.mp4"
 done < <(find "$videos" -path "$videos/.raw" -prune -o -name '*.json' -print | sort)
 
-python3 - "$out" "${records[@]}" <<'PY'
+python3 - "$out" "$selection" "${records[@]}" <<'PY'
 import json, os, sys
-out, records = sys.argv[1], sys.argv[2:]
+out, selection, records = sys.argv[1], sys.argv[2], sys.argv[3:]
+# A class changed itself, or only a fixture it uses changed (and which ones); changed wins over fixtures.
+fixtures, changed = {}, set()
+for line in open(selection, encoding="utf-8").read().splitlines():
+    parts = line.split("\t")
+    if len(parts) >= 2 and parts[1] == "changed":
+        changed.add(parts[0])
+    elif len(parts) == 3 and parts[1] == "fixtures":
+        fixtures.setdefault(parts[0], []).append(parts[2])
+def select(entry, cls):
+    if cls in fixtures and cls not in changed:
+        entry["selected"] = "fixtures"
+        entry["fixtures"] = sorted(set(fixtures[cls]))
+    else:
+        entry["selected"] = "changed"
+    return entry
 entries = []
 for path in records:
     r = json.load(open(path))
-    entries.append({
+    entries.append(select({
         "domain": r["domain"],
         "class": r["class"],
         "method": r["method"],
@@ -327,13 +356,14 @@ for path in records:
         "mp4": f'{r["domain"]}/{r["gif"]}.mp4',
         "startupSeconds": None if r["homeShownSeconds"] is None else round(r["homeShownSeconds"], 1),
         "passed": r["passed"],
-    })
+    }, r["class"]))
 json.dump(entries, open(os.path.join(out, "scenarios.json"), "w"), indent=2)
 print()
 print("Scenarios:")
 for e in entries:
     startup = "Home never shown" if e["startupSeconds"] is None else f'startup {e["startupSeconds"]} s'
-    print(f'  {"passed" if e["passed"] else "FAILED"}  {startup:>16}  {e["gif"]}')
+    why = "" if e["selected"] == "changed" else f'  (re-recorded: {", ".join(e["fixtures"])} changed)'
+    print(f'  {"passed" if e["passed"] else "FAILED"}  {startup:>16}  {e["gif"]}{why}')
 PY
 
 log="$videos/bungie-requests.log"

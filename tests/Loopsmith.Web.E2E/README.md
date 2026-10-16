@@ -46,7 +46,9 @@ and video on, and writes to `out/` (`--out <dir>`; gitignored):
   (1280×800; a phone's 780×1688, its pixels), its last frame held 3 s too: the PR comment links it to the site's player
   page;
 - `out/scenarios.json`: one entry per run: domain folder, class, method, title, Gherkin, screen (`desktop` /
-  `mobile`), GIF path, MP4 path, startup time (page open → Home shown) and whether it passed.
+  `mobile`), GIF path, MP4 path, startup time (page open → Home shown), whether it passed, and why its class was
+  picked: `selected` is `changed` (its file changed, or it was named), or `fixtures` with `fixtures`, the changed
+  fixture files it uses (the post shows these under "Re-recorded: their fixtures changed").
 
 It prints each scenario's startup time and every request that left for bungie.net, and exits non-zero when a scenario
 failed. `--changed-since <ref>` picks the scenario classes added or changed since the branch left `<ref>` (working tree
