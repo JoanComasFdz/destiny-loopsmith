@@ -1,0 +1,27 @@
+// A GitHub Codespace, or desktop VS Code's Dev Containers, on this repository: everything it builds, tests and records
+// with (Dockerfile, post-create.sh), and the Loopsmith e2e recordings extension installed from its source
+// (install-extension.sh). src/Loopsmith.VsCodeExtension/README.md, "Codespaces and Dev Containers", says how to use it.
+{
+  "name": "Loopsmith",
+  "build": { "dockerfile": "Dockerfile" },
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": { "version": "22", "pnpmVersion": "none" }
+  },
+  "containerEnv": {
+    "DOTNET_NOLOGO": "1",
+    "DOTNET_CLI_TELEMETRY_OPTOUT": "1",
+    "DOTNET_SKIP_FIRST_TIME_EXPERIENCE": "1"
+  },
+  // The web app and VS Code for the web build and run in it: below 4 cores and 8 GB it is slow.
+  "hostRequirements": { "cpus": 4, "memory": "8gb" },
+  // Once, when the container is created: restore, and Playwright's Chromium for the e2e scenarios.
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  // Each time VS Code attaches: pack the extension from src/Loopsmith.VsCodeExtension and install it, so it is always
+  // this checkout's.
+  "postAttachCommand": "bash .devcontainer/install-extension.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": ["ms-dotnettools.csharp"]
+    }
+  }
+}
