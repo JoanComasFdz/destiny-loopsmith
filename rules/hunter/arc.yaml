@@ -508,8 +508,9 @@ elements:
     hash: 3478354816
     description: "At critical health, taking damage sends out an Arc burst: up to 46 [PvP 20] damage and Jolt on nearby enemies (radius not given), about 15 s between bursts."
     source: compendium/2026-10-13/Arc#18
-    # Not expressible yet: its Jolt would matter to a loop (Spark of Ions, Lethal Current), but no step
-    # takes damage or declares critical health (docs/backlog.md, Rule format gaps).
+    # Not expressible yet: its Jolt would matter to a loop (Spark of Ions, Lethal Current). Reaching
+    # critical health is a step (`health:critical`), but no step takes damage while at it
+    # (docs/backlog.md, Rule format gaps).
     inert: "Taking damage at critical health is no step in Loopsmith yet, so no loop sets off its jolting burst."
     rules: []
     passives: []
@@ -555,9 +556,9 @@ elements:
     hash: 1727069365
     description: "Sliding over an ammo brick (when not full of that ammo) refills your equipped weapon and gives you x3 Bolt Charge."
     source: compendium/2026-10-13/Arc#21
-    # Not expressible yet: its x3 Bolt Charge would matter to a loop, but no step slides over ammo
-    # (docs/backlog.md, Rule format gaps).
-    inert: "Sliding over an ammo brick is no step in Loopsmith yet, so no loop sets off its x3 Bolt Charge."
+    # Movement and ammo are outside the loop by design (ADRs D1; docs/backlog.md): no step slides
+    # over an ammo brick.
+    inert: "Sliding over an ammo brick is no step in Loopsmith, so no loop sets off its x3 Bolt Charge."
     rules: []
     passives: []
 
@@ -569,7 +570,7 @@ elements:
     hash: 1727069375
     description: "On reaching critical health, your grenade and melee regenerate 400% [PvP 200%] faster until your shields are full again."
     source: compendium/2026-10-13/Arc#22
-    inert: "Critical health is no step in Loopsmith (it doesn't model the damage you take), and a faster regeneration is a rate, which a loop doesn't count."
+    inert: "A faster regeneration is a rate, which Loopsmith doesn't show yet, so reaching critical health shows nothing for it."
     rules: []
     passives: []
 
