@@ -2,6 +2,7 @@
 """Posts a pull request's recorded end-to-end scenarios to it.
 
   post-scenarios.py --pr <n> --commit <sha> [--out <dir>] [--repo <owner/repo>] [--dry-run]
+  post-scenarios.py --pr <n> --closed [--repo <owner/repo>] [--dry-run]
 
 Reads <out>/scenarios.json (tools/e2e/record.sh: one entry per run, a scenario played on a screen), uploads each run's
   GIF and MP4 to the `prs-resources` release as pr-<n>-v<version>-<the run's GIF name>.gif and .mp4 and posts them as a
@@ -16,6 +17,11 @@ The scenarios the PR added or changed come first; those only re-recorded because
   (record.sh's "selected": "fixtures") follow under "### Re-recorded: their fixtures changed", each naming its changed
   fixtures. With only the first kind the post has no section headings.
 Nothing recorded (an empty scenarios.json) posts nothing.
+Once the new post is up, every earlier post still open is collapsed into a closed <details> block, unchanged inside, whose
+  summary reads "Scenarios (V1) · 12 scenarios · replaced by V2"; a post already collapsed or shrunk is left as it is.
+--closed (the workflow, when the PR closes and its older versions' GIFs and MP4s are deleted) shrinks every post but the
+  newest to that line plus "· recordings deleted when the PR closed". A post GitHub refuses to edit (a body past 65,536
+  characters) is a warning, never a failure.
 
 Uses the gh CLI (GH_TOKEN) on the repository in --repo or GITHUB_REPOSITORY. --dry-run prints instead of writing.
 .github/workflows/e2e-videos.yml runs it on the GIFs a session pushed with tools/e2e/push-gifs.sh (--out e2e-gifs,
@@ -37,6 +43,10 @@ FOOTER = "_Recorded by the e2e workflow · Claude Code_"
 BOT = "github-actions[bot]"
 MAX_NAME = 200
 HEADING = re.compile(r"^## Scenarios \(V(\d+)\)[ \t]*$", re.MULTILINE)
+# A shrunk post has no heading left: its version is in its one line.
+SHRUNK = re.compile(r"^\*\*Scenarios \(V(\d+)\)\*\*")
+COLLAPSED = "<details>"
+SECTIONS = re.compile(r"^### (Added or changed by this PR|Re-recorded: their fixtures changed)[ \t]*$", re.MULTILINE)
 TRAILER = re.compile(r"^[A-Za-z][A-Za-z0-9-]*: \S")
 SCREENS = {"desktop": "🖥️ Desktop", "mobile": "📱 Mobile"}
 
@@ -45,12 +55,18 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--pr", type=int, required=True)
     parser.add_argument("--repo", default=os.environ.get("GITHUB_REPOSITORY"))
-    parser.add_argument("--commit", required=True, help="the commit whose message says what changed")
+    parser.add_argument("--commit", help="the commit whose message says what changed")
     parser.add_argument("--out", default="out", help="record.sh's output folder")
+    parser.add_argument("--closed", action="store_true", help="the PR closed: shrink every post but the newest to one line")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
     if not args.repo:
         sys.exit("No repository: pass --repo or set GITHUB_REPOSITORY.")
+    if args.closed:
+        shrink(args)
+        return
+    if not args.commit:
+        sys.exit("No commit: pass --commit (or --closed).")
     post(args)
 
 
@@ -59,13 +75,26 @@ def post(args):
     if not scenarios:
         print("No scenario recorded: nothing to post.")
         return
-    version = find_last_version(read_workflow_comments(args.repo, args.pr)) + 1
+    comments = read_workflow_comments(args.repo, args.pr)
+    version = find_last_version(comments) + 1
     for scenario in scenarios:
         scenario["asset"] = name_asset(args.pr, version, scenario, ".gif")
         scenario["mp4_asset"] = name_asset(args.pr, version, scenario, ".mp4")
     upload(args, scenarios)
     changed = read_what_changed(args.out) or describe_commit(read_commit_message(args.commit))
     add_comment(args, write_section(args.repo, version, scenarios, changed))
+    for comment, body in plan_collapses(comments, version):
+        edit_comment(args, comment, body)
+
+
+def shrink(args):
+    """The PR closed: every post but the newest becomes its one line, its recordings deleted with its version."""
+    comments = read_workflow_comments(args.repo, args.pr)
+    edits = plan_shrinks(comments)
+    if not edits:
+        print(f"No earlier post on #{args.pr} to shrink.")
+    for comment, body in edits:
+        edit_comment(args, comment, body)
 
 
 def read_scenarios(out):
@@ -82,12 +111,72 @@ def read_scenarios(out):
 
 def read_workflow_comments(repo, number):
     pages = gh_json(["api", "--paginate", "--slurp", f"repos/{repo}/issues/{number}/comments?per_page=100"])
-    return [c["body"] or "" for page in pages for c in page if c["user"]["login"] == BOT and FOOTER in (c["body"] or "")]
+    return [{"id": c["id"], "body": c["body"] or ""} for page in pages for c in page
+            if c["user"]["login"] == BOT and FOOTER in (c["body"] or "")]
 
 
 def find_last_version(comments):
-    versions = [int(v) for text in comments for v in HEADING.findall(text)]
-    return max(versions, default=0)
+    return max((v for v in map(read_version, comments) if v is not None), default=0)
+
+
+def read_version(comment):
+    """The post's version: its "## Scenarios (V<N>)" heading, open or collapsed, or its shrunk line; None for another
+    comment of the workflow."""
+    found = HEADING.search(comment["body"]) or SHRUNK.match(comment["body"])
+    return int(found.group(1)) if found else None
+
+
+def is_shrunk(comment):
+    return SHRUNK.match(comment["body"]) is not None
+
+
+def is_collapsed(comment):
+    return comment["body"].startswith(COLLAPSED)
+
+
+def count_scenarios(body):
+    """A scenario's title is ### in a post without sections, #### under "Added or changed…" / "Re-recorded…" (its
+    screens one level down, so never counted)."""
+    level = "####" if SECTIONS.search(body) else "###"
+    return len(re.findall(rf"^{level} ", body, re.MULTILINE))
+
+
+def describe_version(version, count, replaced_by):
+    return f"Scenarios (V{version}) · {count} scenario{'' if count == 1 else 's'} · replaced by V{replaced_by}"
+
+
+def find_next_version(version, versions):
+    return min(v for v in versions if v > version)
+
+
+def plan_collapses(comments, newest):
+    """(comment, new body) for each earlier post still open: a closed <details> holding it as it was."""
+    versions = [v for v in map(read_version, comments) if v is not None] + [newest]
+    edits = []
+    for comment in comments:
+        version = read_version(comment)
+        if version is None or version >= newest or is_collapsed(comment) or is_shrunk(comment):
+            continue
+        summary = describe_version(version, count_scenarios(comment["body"]), find_next_version(version, versions))
+        summary = summary.replace(f"Scenarios (V{version})", f"<b>Scenarios (V{version})</b>", 1)
+        edits.append((comment, f"{COLLAPSED}<summary>{summary}</summary>\n\n{comment['body'].rstrip()}\n\n</details>\n"))
+    return edits
+
+
+def plan_shrinks(comments):
+    """(comment, new body) for each post but the newest not shrunk yet, open or collapsed: its one line, with the footer
+    kept out of sight so the post still reads as the workflow's (read_workflow_comments)."""
+    versions = [v for v in map(read_version, comments) if v is not None]
+    newest = max(versions, default=0)
+    edits = []
+    for comment in comments:
+        version = read_version(comment)
+        if version is None or version >= newest or is_shrunk(comment):
+            continue
+        line = describe_version(version, count_scenarios(comment["body"]), find_next_version(version, versions))
+        line = line.replace(f"Scenarios (V{version})", f"**Scenarios (V{version})**", 1)
+        edits.append((comment, f"{line} · recordings deleted when the PR closed\n\n<!-- {FOOTER} -->\n"))
+    return edits
 
 
 def name_asset(pr, version, scenario, extension):
@@ -230,10 +319,25 @@ def add_comment(args, section):
     print(f"Commented on #{args.pr}.")
 
 
+def edit_comment(args, comment, body):
+    """Replaces a post's body; a refusal (a body past GitHub's 65,536 characters) is a warning: the new post is up."""
+    print(f"Editing comment {comment['id']}: {body.splitlines()[0]}")
+    if args.dry_run:
+        return
+    done = run_gh(["api", "-X", "PATCH", f"repos/{args.repo}/issues/comments/{comment['id']}", "--input", "-"],
+                  {"body": body})
+    if done.returncode != 0:
+        print(f"::warning::Couldn't edit comment {comment['id']} on #{args.pr}: {done.stderr.strip()}")
+
+
+def run_gh(arguments, payload=None):
+    return subprocess.run(["gh", *arguments], capture_output=True, text=True,
+                          input=None if payload is None else json.dumps(payload))
+
+
 def gh(arguments, payload=None):
     """Runs gh; on failure, stops with what gh said."""
-    done = subprocess.run(["gh", *arguments], capture_output=True, text=True,
-                          input=None if payload is None else json.dumps(payload))
+    done = run_gh(arguments, payload)
     if done.returncode != 0:
         sys.exit(f"gh {' '.join(arguments)} failed:\n{done.stderr.strip()}")
     return done.stdout
