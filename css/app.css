@@ -269,6 +269,18 @@ textarea { resize: vertical; }
 }
 .banner.warn { border-color: var(--warn); background: rgba(255, 207, 90, .07); color: var(--warn); }
 .banner-text { font-family: var(--font); }
+/* Home's notice, pinned under the top bar over the page: a failed import at the bottom of Home shows where the player is */
+.banner.floating {
+    position: fixed;
+    top: calc(var(--topbar) + 8px);
+    left: 16px;
+    right: 16px;
+    z-index: 19;
+    max-width: 880px;
+    margin: 0 auto;
+    background: color-mix(in srgb, var(--warn) 10%, var(--panel));
+    box-shadow: 0 6px 20px rgba(0, 0, 0, .5);
+}
 
 .notice { padding: 10px 12px; border-radius: 6px; border: 1px dashed var(--line-2); color: var(--muted); margin: 10px 0; }
 .notice.warn { border-color: rgba(255, 207, 90, .5); color: var(--warn); }
