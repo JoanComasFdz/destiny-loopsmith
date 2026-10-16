@@ -31,27 +31,10 @@ public sealed class BuildFileParsingTests
     private static string ParseInvalidBuild(string yaml) =>
         AssertError(BuildFileParsing.ParseBuildFile(new SourceText(BuildPath, yaml), RepoCatalog.Manifest));
 
-    /// <summary>The build file example of docs/rule-format.md: the ```yaml block right after its marker comment.</summary>
-    private static SourceText ReadSpecExample()
-    {
-        var file = RepoFiles.ToPath(SpecPath);                                                                      // pure
-        var lines = File.ReadAllLines(file);                                                                        // impure
-        var example = FindSpecExample(lines);                                                                       // pure
-        Assert.True(example.Length > 0, $"{SpecPath}: no ```yaml block right after '{SpecExampleMarker}'.");        // impure
-        return new SourceText(SpecPath, string.Join('\n', example));                                              // pure
-    }
-
-    private static ImmutableArray<string> FindSpecExample(IReadOnlyList<string> lines)
-    {
-        var marker = lines.Select(line => line.Trim()).ToList().IndexOf(SpecExampleMarker);
-        var opens = marker >= 0 && marker + 1 < lines.Count && lines[marker + 1].Trim() == "```yaml";
-        return opens ? [.. lines.Skip(marker + 2).TakeWhile(line => line.Trim() != "```")] : [];
-    }
-
     private static Build ParseSpecExample()
     {
-        var source = ReadSpecExample();                                                                             // impure
-        return AssertOk(BuildFileParsing.ParseBuildFile(source, RepoCatalog.Manifest));                            // pure
+        var example = DocExamples.ReadYamlBlock(SpecPath, SpecExampleMarker);                                      // impure
+        return AssertOk(BuildFileParsing.ParseBuildFile(DocExamples.ToSourceText(example), RepoCatalog.Manifest));            // pure
     }
 
     private static IEnumerable<string> ToNames(IEnumerable<ElementId> ids) => ids.Select(id => id.Value);

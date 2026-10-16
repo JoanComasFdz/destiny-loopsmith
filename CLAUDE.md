@@ -82,7 +82,9 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
   per feature (.NET 10, ffmpeg, the Python packages of the Compendium download and the manifest extractor, Playwright's Chromium, zsh, tmux), run by
   `postCreateCommand.sh`, and the VS Code extension installed from its source each time VS Code attaches
   (`7-install-e2e-recordings-extension.sh`) ([.devcontainer/README.md](.devcontainer/README.md)).
-- `tests/Loopsmith.Core.Tests/` — unit, golden (`Golden/*.verified.txt`) and architecture tests.
+- `tests/Loopsmith.Core.Tests/` — unit, golden (`Golden/*.verified.txt`) and architecture tests; the docs' ```yaml examples
+  are read by tests from the docs themselves, through a marker comment on the line above each fence
+  (`<!-- <TestClass> reads the next yaml block … -->`, or `<!-- abridged: no test reads the next yaml block -->`; `Support/DocExamples.cs`).
 - `tests/Loopsmith.Web.E2E/` — end-to-end scenarios of the web app (Playwright), one per Gherkin, one GIF per screen via `tools/e2e/record.sh`;
   `Infrastructure/` (BaseE2E, page objects, vocabulary, assertions) and `Scenarios/<domain>/<Topic>Tests.cs`; what it
   shares with the extension's e2e project (Gherkin, `[TestDescription]`, screens, naming) is `tests/Loopsmith.E2E.Shared`. Binding

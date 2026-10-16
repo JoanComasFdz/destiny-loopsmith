@@ -3,4 +3,4 @@ name: "E2E - Festival Flight with Hatchling (enhanced)"
 class: hunter
 subclass: arc
 weapons:
-  - { slot: kinetic, name: Festival Flight, type: strand, archetype: grenade-launcher, perks: [hatchling-enhanced] }
+  - { hash: 4019651319, perks: [hatchling-enhanced] } # Festival Flight
