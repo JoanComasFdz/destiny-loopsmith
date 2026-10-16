@@ -12,7 +12,7 @@
 
 <PageTitle>Loopsmith</PageTitle>
 
-<NoticeBanner Notice="Workbench.Notice" OnDismiss="() => Workbench.Notice = Optional.None<string>()" />
+<NoticeBanner Floating="true" Notice="Workbench.Notice" OnDismiss="() => Workbench.Notice = Optional.None<string>()" />
 
 <section class="chooser">
     <div class="chooser-intro">
@@ -109,7 +109,7 @@
             <button class="btn link" data-slug="@build.Slug" @onclick="() => OpenFreshDesignAsync(build.Fresh)">@DescribeBuildName(build)</button>
             <span class="chooser-sep"> · </span>
         }
-        <label class="btn link file-link" title="Start from your own build.yaml (docs/rule-format.md)">
+        <label class="btn link file-link" data-testid="import-build-link" title="Start from your own build.yaml (docs/rule-format.md)">
             import a build.yaml<InputFile OnChange="ImportBuildAsync" accept=".yaml,.yml" data-action="import-build" />
         </label>
         — or <button class="btn link" @onclick="OpenImportDialog">import a loop</button> (a <code>.loop.yaml</code> file or its YAML).

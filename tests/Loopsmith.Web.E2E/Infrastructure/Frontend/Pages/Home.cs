@@ -12,8 +12,8 @@ public sealed class Home(IPage page)
 
     private ILocator ImportBuild => HandWritten.Locator("[data-action=import-build]");
 
-    /// <summary>The banner over Home: an import that failed.</summary>
-    public NoticeBanner Notice { get; } = new(page);
+    /// <summary>The banner floating over Home, under the header: an import that failed.</summary>
+    public NoticeBanner Notice { get; } = new(page, page.Locator("[data-testid=hand-written] [data-testid=import-build-link]"));
 
     /// <summary>Whether Home is the page shown now (its hand-written imports, where a build file is imported).</summary>
     public Task<HomeSnapshot> ReadAsync() => OnScreen.ReadAsync(HandWritten, ReadShownAsync);

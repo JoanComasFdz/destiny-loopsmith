@@ -5,7 +5,10 @@ using Loopsmith.Web.E2E.Infrastructure.Frontend.Pages;
 
 namespace Loopsmith.Web.E2E.Scenarios.ImportExport;
 
-/// <summary>Importing a build.yaml on Home (docs/rule-format.md, "Build file"): a file Loopsmith can't read is refused there.</summary>
+/// <summary>
+/// Importing a build.yaml on Home (docs/rule-format.md, "Build file"): a file Loopsmith can't read is refused there, and
+/// the notice floats under the header, where the player is.
+/// </summary>
 public sealed class BuildImportTests : BaseE2E
 {
     [Theory, PlayInDesktop, PlayInMobile]
@@ -28,9 +31,85 @@ public sealed class BuildImportTests : BaseE2E
 
         // Then
         var notice = await Frontend.Home.Notice.ReadAsync();
-        Asserting.That(notice).Reads("crisis-inverted-without-archetype-or-hash.build.yaml:6: weapon 'Crisis Inverted' needs an `archetype` or a `hash`");
-
         var home = await Frontend.Home.ReadAsync();
+        Asserting.That(notice).Reads("crisis-inverted-without-archetype-or-hash.build.yaml:6: weapon 'Crisis Inverted' needs an `archetype` or a `hash`");
         Asserting.That(home).IsShown();
+    }
+
+    [Theory, PlayInDesktop, PlayInMobile]
+    [TestDescription("""
+        @desktop @mobile
+        Scenario: A refused build file's notice floats right under the header, inside the screen
+          Given the app is open on Home
+          When I import the build "crisis-inverted-without-archetype-or-hash"
+          Then the notice sits right under the header
+          And the notice fits inside the screen, with no sideways scroll
+          And the "import a build.yaml" link is still in view
+        """)]
+    public async Task ARefusedBuildFilesNoticeFloatsRightUnderTheHeaderInsideTheScreen(Screen screen)
+    {
+        // Given
+        await Frontend.Home.WaitUntilShownAsync();
+
+        // When
+        await Frontend.Home.ImportBuildAsync("crisis-inverted-without-archetype-or-hash.build.yaml");
+        await Frontend.Home.Notice.WaitUntilShownAsync();
+
+        // Then
+        var layout = await Frontend.Home.Notice.ReadLayoutAsync();
+        Asserting.That(layout)
+            .SitsRightUnderTheHeader()
+            .FitsInsideTheScreen()
+            .KeepsTheImportLinkInView();
+    }
+
+    [Theory, PlayInDesktop, PlayInMobile]
+    [TestDescription("""
+        @desktop @mobile
+        Scenario: Importing again shows the build file's notice once
+          Given the app is open on Home
+          And I imported the build "crisis-inverted-without-archetype-or-hash"
+          When I import the build "crisis-inverted-without-archetype-or-hash" again
+          Then exactly one notice is shown
+        """)]
+    public async Task ImportingAgainShowsTheBuildFilesNoticeOnce(Screen screen)
+    {
+        // Given
+        await Frontend.Home.WaitUntilShownAsync();
+        await Frontend.Home.ImportBuildAsync("crisis-inverted-without-archetype-or-hash.build.yaml");
+        await Frontend.Home.Notice.WaitUntilShownAsync();
+
+        // When
+        await Frontend.Home.ImportBuildAsync("crisis-inverted-without-archetype-or-hash.build.yaml");
+        await Frontend.Home.Notice.WaitUntilShownAsync();
+
+        // Then
+        var notice = await Frontend.Home.Notice.ReadAsync();
+        Asserting.That(notice).IsShownOnce();
+    }
+
+    [Theory, PlayInDesktop, PlayInMobile]
+    [TestDescription("""
+        @desktop @mobile
+        Scenario: Dismissing a refused build file's notice hides it
+          Given the app is open on Home
+          And I imported the build "crisis-inverted-without-archetype-or-hash"
+          When I dismiss the notice
+          Then the notice is not shown
+        """)]
+    public async Task DismissingARefusedBuildFilesNoticeHidesIt(Screen screen)
+    {
+        // Given
+        await Frontend.Home.WaitUntilShownAsync();
+        await Frontend.Home.ImportBuildAsync("crisis-inverted-without-archetype-or-hash.build.yaml");
+        await Frontend.Home.Notice.WaitUntilShownAsync();
+
+        // When
+        await Frontend.Home.Notice.ClickDismissAsync();
+        await Frontend.Home.Notice.WaitUntilGoneAsync();
+
+        // Then
+        var notice = await Frontend.Home.Notice.ReadAsync();
+        Asserting.That(notice).IsNotShown();
     }
 }
