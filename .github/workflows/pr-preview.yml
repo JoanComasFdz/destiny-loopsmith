@@ -14,10 +14,12 @@ permissions:
   pull-requests: write
 
 jobs:
-  # Whether a pull request changes more than Markdown, docs/, .github/ and .claude/ (a rename
-  # counts its old path too; a PR with no changed files counts as docs-only). If not, it gets no
-  # preview; closing a PR still removes its preview, in case an earlier push had one. If this job
-  # fails, the preview runs. Same list in ci.yml.
+  # Whether a pull request changes a file the published site is built from: anything but ci.yml's
+  # list (Markdown, docs/, .github/, .claude/, .devcontainer/, tools/e2e/, tools/compendium/,
+  # tools/manifest/) and tests/ (a rename counts its old path too; a PR with no changed files gets
+  # none). If not, it gets no preview: ci.yml still builds and tests a change under tests/. Closing
+  # a PR still removes its preview, in case an earlier push had one. If this job fails, the preview
+  # runs.
   changes:
     runs-on: ubuntu-latest
     permissions:
@@ -32,7 +34,7 @@ jobs:
         run: |
           files=$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR/files" \
             --jq '.[] | .filename, (.previous_filename // empty)')
-          n=$(printf '%s' "$files" | grep -cvE '\.md$|^docs/|^\.github/|^\.claude/' || true)
+          n=$(printf '%s' "$files" | grep -cvE '\.md$|^docs/|^\.github/|^\.claude/|^\.devcontainer/|^tools/(e2e|compendium|manifest)/|^tests/' || true)
           echo "code=$([ "$n" -gt 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
 
   preview:
@@ -42,8 +44,8 @@ jobs:
       github.event.pull_request.head.repo.full_name == github.repository &&
       (needs.changes.outputs.code != 'false' || github.event.action == 'closed') }}
     runs-on: ubuntu-latest
-    # One gh-pages deploy at a time (pages.yml uses the same group); only the job waits, so a docs-only
-    # pull request doesn't take a place in the queue.
+    # One gh-pages deploy at a time (pages.yml uses the same group); only the job waits, so a pull request
+    # with no preview doesn't take a place in the queue.
     concurrency:
       group: gh-pages
       cancel-in-progress: false
