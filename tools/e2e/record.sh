@@ -8,11 +8,12 @@
 # included), plus those that use a changed fixture file: "this PR's scenarios" with origin/main.
 # --action-gap <seconds>: the least time between two steps (an action or a read) of a recorded scenario (default 1).
 # It publishes the web app (Release), prepares it for /destiny-loopsmith/ (tools/web/prepare-pages.sh), serves it
-# locally, runs the chosen scenarios with E2E_URL set and video on, trims each video from when Home was shown (the
-# manifest's startup screen left out) and turns it into a GIF under <out>/<domain folder>/<gif name>.gif (20 fps; a
-# desktop run 800 px wide, a phone run at its own 390 px; the GIF name ends in -desktop or -mobile) and an MP4 next to
-# it, <gif name>.mp4 (H.264 at the video's own size: 1280×800, a phone's 390×844). Both hold their last frame 3 s
-# before they end. It prints each
+# locally, runs the chosen scenarios with E2E_URL set and video on (screenshots at the device's pixels), turns each
+# run's screenshots into a 25 fps video, trims it from when Home was shown (the manifest's startup screen left out) and
+# turns it into a GIF under <out>/<domain folder>/<gif name>.gif (20 fps; a desktop run 800 px wide, a phone run at its
+# 390 CSS pixels; the GIF name ends in -desktop or -mobile) and an MP4 next to it, <gif name>.mp4 (H.264 at 25 fps and
+# the video's own size: 1280×800, a phone's 780×1688). Both hold their last frame 3 s
+# before they end, and it prints how many frames a second each run took. It prints each
 # scenario's startup time (page open → Home shown) and the requests that left for bungie.net, and writes
 # <out>/scenarios.json. Exits non-zero when a scenario failed (its GIF is still written).
 # --no-video: the same scenarios against the same locally served publish, unrecorded and unpaced (no E2E_VIDEO_DIR):
@@ -169,9 +170,10 @@ echo "Running the scenarios ($filter)…"
 E2E_URL="http://127.0.0.1:$port/destiny-loopsmith/" E2E_VIDEO_DIR="$videos" E2E_ACTION_GAP="$action_gap" \
   dotnet test "$project" -c Release --nologo --filter "$filter" --logger "console;verbosity=normal" || status=$?
 
-# When Home shows in a video: the video's clock runs up to a second apart from the test's, so the time the test noted
-# only says where to look. The first big change of picture from a second before it to three after (the startup screen
-# giving way to Home; the click comes at least two seconds after Home) is where Home starts; without one, the noted time.
+# When Home shows in a video: the test notes it on the frames' own clock, but a frame can come up to one frame gap late,
+# so the noted time only says where to look. The first big change of picture from a second before it to three after (the
+# startup screen giving way to Home; the click comes at least two seconds after Home) is where Home starts; without one,
+# the noted time.
 find_home_in_video() {
   local video="$1" noted="$2"
   python3 - "$video" "$noted" <<'PY'
@@ -189,9 +191,11 @@ print(f"{(cut + 0.1) if cut is not None else noted + 0.2:.3f}")
 PY
 }
 
-# Each recorded run: trimmed from when Home was shown, its last frame held 3 s, as a GIF next to its domain folder's
-# others (20 fps; a desktop window scaled to 800 px wide, a phone to its own 390 px) and as an MP4 (H.264 at the
-# video's own size and frame rate, for the player page: docs/hosting.md, "E2E videos on pull requests").
+# Each recorded run: its screenshots (BaseE2E, ScreenRecorder: each frame timed on the test's clock, at the device's
+# pixels) as a 25 fps video, losslessly, an odd width or height padded to even (H.264's yuv420p needs it);
+# then trimmed from when Home was shown, its last frame held 3 s, as a GIF next to its domain folder's others (20 fps; a
+# desktop window scaled to 800 px wide, a phone to its 390 CSS pixels) and as an MP4 (H.264 at 25 fps and the video's
+# own size, 1280×800 or 780×1688, for the player page: docs/hosting.md, "E2E videos on pull requests").
 hold_end="tpad=stop_mode=clone:stop_duration=3"
 palette_at() {
   echo "$hold_end,fps=20,scale=$1:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=128:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle"
@@ -201,7 +205,9 @@ for folder in "$scenarios_dir"/*/; do rm -rf "${out:?}/$(basename "$folder")"; d
 records=()
 while IFS= read -r record; do
   records+=("$record")
-  video="${record%.json}.webm"
+  video="${record%.json}.mkv"
+  ffmpeg -nostdin -loglevel error -y -f concat -safe 0 -i "${record%.json}.frames/frames.ffconcat" \
+    -vf "fps=25,pad=ceil(iw/2)*2:ceil(ih/2)*2" -c:v libx264 -preset ultrafast -qp 0 "$video"
   read -r domain gif screen noted < <(python3 -c 'import json,sys; r=json.load(open(sys.argv[1])); s=r["homeShownSeconds"]; print(r["domain"], r["gif"], r["screen"], 0 if s is None else s)' "$record")
   width=800
   if [ "$screen" = mobile ]; then width=390; fi
@@ -216,6 +222,7 @@ python3 - "$out" "${records[@]}" <<'PY'
 import json, os, sys
 out, records = sys.argv[1], sys.argv[2:]
 entries = []
+fps = []
 for path in records:
     r = json.load(open(path))
     entries.append({
@@ -230,12 +237,13 @@ for path in records:
         "startupSeconds": None if r["homeShownSeconds"] is None else round(r["homeShownSeconds"], 1),
         "passed": r["passed"],
     })
+    fps.append(r["framesPerSecond"])
 json.dump(entries, open(os.path.join(out, "scenarios.json"), "w"), indent=2)
 print()
 print("Scenarios:")
-for e in entries:
+for e, taken in zip(entries, fps):
     startup = "Home never shown" if e["startupSeconds"] is None else f'startup {e["startupSeconds"]} s'
-    print(f'  {"passed" if e["passed"] else "FAILED"}  {startup:>16}  {e["gif"]}')
+    print(f'  {"passed" if e["passed"] else "FAILED"}  {startup:>16}  {taken:>4} frames/s taken  {e["gif"]}')
 PY
 
 log="$videos/bungie-requests.log"

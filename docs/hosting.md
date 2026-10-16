@@ -165,12 +165,14 @@ same run as a sharp video with controls, so a reviewer sees them working without
 works the PR records them; CI doesn't run, record or build anything for them.
 
 - **What is recorded:** each run (a scenario played on a screen) from Home on, its last frame held 3 s, as a GIF (20 fps;
-  800 px wide on desktop, 390 px on a phone) and as an MP4 (H.264 at the recording's own size and frame rate: 1280×800
-  on desktop, 390×844 on a phone, 25 fps from Playwright's recorder). The GIF shows in the comment; the MP4 can be
-  paused, sought and seen full screen in the player page below. Playwright's recorder takes Chromium's screencast,
-  which hands it the phone at its 390×844 CSS pixels even though the page is drawn at twice that (asking it for a
-  780×1688 video only pads it with grey), so a phone's MP4 is no sharper than that; only screenshots come at the
-  device's pixels.
+  800 px wide on desktop, 390 px on a phone) and as an MP4 (H.264, 25 fps, at the window's device pixels: 1280×800 on
+  desktop, 780×1688 on a phone). The GIF shows in the comment; the MP4 can be paused, sought and seen full screen in
+  the player page below. The video is filmed from screenshots, not Playwright's recorder: that one takes Chromium's
+  screencast, which hands the phone over at its 390×844 CSS pixels although the page is drawn at twice that, and only
+  screenshots come at the device's pixels. While a run records, `BaseE2E`'s `ScreenRecorder` takes a JPEG about every
+  40 ms (Chromium's `Page.captureScreenshot`), each timed on the clock the test notes Home's time on; `record.sh` lays
+  each frame down until the next one and samples that at 25 fps, and prints how
+  many frames a second each run took: below 25, frames repeat and motion steps, the picture stays sharp.
 
 - **Who records:** the session, once, right before each push that adds or changes scenarios:
   `tools/e2e/record.sh --changed-since origin/main`, i.e. every scenario the branch adds or changes from where it left
