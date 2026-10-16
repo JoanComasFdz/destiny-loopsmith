@@ -23,8 +23,8 @@ public sealed class LoopFileParsingTests
     [Fact]
     public void Parses_the_spec_example()
     {
-        var example = DocExamples.ReadYamlBlock(SpecPath, SpecExampleMarker);
-        var design = AssertOk(LoopFileParsing.ParseLoopFile(example.ToSourceText()));
+        var example = DocExamples.ReadYamlBlock(SpecPath, SpecExampleMarker);                                      // impure
+        var design = AssertOk(LoopFileParsing.ParseLoopFile(DocExamples.ToSourceText(example)));                   // pure
 
         Assert.Equal("Dodge, grenade, shoot", design.Name);
         Assert.Equal(Optional.Some("Joan"), design.Author);

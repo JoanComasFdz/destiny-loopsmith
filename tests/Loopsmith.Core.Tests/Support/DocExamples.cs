@@ -16,7 +16,8 @@ public static class DocExamples
     /// <summary>The ```yaml block right after <paramref name="marker"/>, which must be the only one of its kind in the doc.</summary>
     public static DocExample ReadYamlBlock(string docPath, string marker)
     {
-        var lines = File.ReadAllLines(RepoFiles.ToPath(docPath));                                                 // impure
+        var file = RepoFiles.ToPath(docPath);                                                                      // pure
+        var lines = File.ReadAllLines(file);                                                                       // impure
         var example = FindYamlBlocks(docPath, lines).Where(block => block.Marker == Optional.Some(marker)).ToList(); // pure
         Assert.True(example.Count == 1, $"{docPath}: no single ```yaml block right after '{marker}'.");          // impure
         return example[0];                                                                                         // pure
@@ -25,7 +26,8 @@ public static class DocExamples
     /// <summary>Every ```yaml block of the doc, in order, with the comment on the line above its fence, if any.</summary>
     public static ImmutableArray<DocExample> ReadYamlBlocks(string docPath)
     {
-        var lines = File.ReadAllLines(RepoFiles.ToPath(docPath));                                                 // impure
+        var file = RepoFiles.ToPath(docPath);                                                                      // pure
+        var lines = File.ReadAllLines(file);                                                                       // impure
         return FindYamlBlocks(docPath, lines);                                                                     // pure
     }
 
@@ -51,24 +53,24 @@ public static class DocExamples
         var indent = block.Where(line => line.Trim().Length > 0).Select(line => line.Length - line.TrimStart().Length).DefaultIfEmpty(0).Min();
         return [.. block.Select(line => line.Length >= indent ? line[indent..] : line.TrimStart())];
     }
-}
 
-/// <summary>A ```yaml block of a doc: its first line's number in the doc (1-based), the marker above its fence, its lines.</summary>
-public sealed record DocExample(string DocPath, int FirstLine, Optional<string> Marker, ImmutableArray<string> Lines)
-{
     /// <summary>The block as a source of the doc, its lines at the doc's own line numbers, so a parser's error names the doc's line.</summary>
-    public SourceText ToSourceText() => ToSourceText(DocPath, [], 0);
+    public static SourceText ToSourceText(DocExample example) => ToSourceText(example, example.DocPath, [], 0);
 
     /// <summary>
     /// The block under <paramref name="header"/> (the smallest file that holds a fragment), every block line indented by
     /// <paramref name="indent"/> spaces; blank lines before the header keep the block's lines at the doc's own line numbers.
     /// </summary>
-    public SourceText ToSourceText(string path, ImmutableArray<string> header, int indent)
+    public static SourceText ToSourceText(DocExample example, string path, ImmutableArray<string> header, int indent)
     {
-        var padding = Enumerable.Repeat("", Math.Max(0, FirstLine - 1 - header.Length));
-        var body = Lines.Select(line => line.Length > 0 ? new string(' ', indent) + line : line);
+        var padding = Enumerable.Repeat("", Math.Max(0, example.FirstLine - 1 - header.Length));
+        var body = example.Lines.Select(line => line.Length > 0 ? new string(' ', indent) + line : line);
         return new SourceText(path, string.Join('\n', [.. padding, .. header, .. body]));
     }
 
-    public override string ToString() => $"{DocPath}:{FirstLine}";
+    /// <summary><c>docs/rule-format.md:48</c>: the doc and the block's first line, for a failure message.</summary>
+    public static string ToLocation(DocExample example) => $"{example.DocPath}:{example.FirstLine}";
 }
+
+/// <summary>A ```yaml block of a doc: its first line's number in the doc (1-based), the marker above its fence, its lines.</summary>
+public sealed record DocExample(string DocPath, int FirstLine, Optional<string> Marker, ImmutableArray<string> Lines);

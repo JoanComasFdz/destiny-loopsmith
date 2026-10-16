@@ -17,9 +17,8 @@ public sealed partial class DocExampleMarkerTests
     [InlineData("docs/loop-format.md")]
     public void Every_yaml_example_is_read_by_a_test_or_says_why_not(string docPath)
     {
-        var unmarked = DocExamples.ReadYamlBlocks(docPath)
-            .Where(example => !IsMarked(example.Marker.UnwrapOr("")))
-            .Select(example => example.ToString());
+        var examples = DocExamples.ReadYamlBlocks(docPath);                                                        // impure
+        var unmarked = examples.Where(example => !IsMarked(example.Marker.UnwrapOr(""))).Select(DocExamples.ToLocation);  // pure
 
         Assert.True(
             !unmarked.Any(),

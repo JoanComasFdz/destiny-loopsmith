@@ -32,14 +32,18 @@ public sealed partial class RuleExampleTests
         "    affinity: neutral",
     ];
 
-    public static TheoryData<int, string> Examples() =>
-        [.. DocExamples.ReadYamlBlocks(SpecPath).SelectMany(ToCase)];
+    public static TheoryData<int, string> ReadExamples()
+    {
+        var examples = DocExamples.ReadYamlBlocks(SpecPath);                                                      // impure
+        return [.. examples.SelectMany(ToCase)];                                                                  // pure
+    }
 
     [Theory]
-    [MemberData(nameof(Examples))]
+    [MemberData(nameof(ReadExamples))]
     public void Parses_the_example_of_the_spec(int line, string shape)
     {
-        var example = DocExamples.ReadYamlBlocks(SpecPath).Single(block => block.FirstLine == line);               // impure
+        var examples = DocExamples.ReadYamlBlocks(SpecPath);                                                      // impure
+        var example = examples.Single(block => block.FirstLine == line);                                           // pure
         var glossary = ReadRepoGlossary();                                                                         // impure
         var files = ToRuleFiles(example, shape, glossary);                                                         // pure
         var parsed = RuleCatalogParsing.ParseCatalog(files);                                                       // pure
@@ -49,7 +53,7 @@ public sealed partial class RuleExampleTests
     /// <summary>A marker misspelt would leave its block unread: the count says how many the spec marks for this class.</summary>
     [Fact]
     public void Reads_every_example_the_spec_marks_for_it() =>
-        Assert.Equal(11, Examples().Count);
+        Assert.Equal(11, ReadExamples().Count);
 
     private static IEnumerable<TheoryDataRow<int, string>> ToCase(DocExample example)
     {
@@ -58,19 +62,23 @@ public sealed partial class RuleExampleTests
         return reads ? [new TheoryDataRow<int, string>(example.FirstLine, marker[MarkerStart.Length..^MarkerEnd.Length])] : [];
     }
 
-    private static SourceText ReadRepoGlossary() =>
-        new(GlossaryParsing.GlossaryPath, File.ReadAllText(RepoFiles.ToPath("rules/" + GlossaryParsing.GlossaryPath)));
+    private static SourceText ReadRepoGlossary()
+    {
+        var file = RepoFiles.ToPath("rules/" + GlossaryParsing.GlossaryPath);                                      // pure
+        var text = File.ReadAllText(file);                                                                         // impure
+        return new SourceText(GlossaryParsing.GlossaryPath, text);                                                 // pure
+    }
 
     /// <summary>The example in the smallest rules file that holds it, the repo's glossary, and a stub for every element it says it doesn't stack with.</summary>
     private static ImmutableArray<SourceText> ToRuleFiles(DocExample example, string shape, SourceText glossary) =>
         shape switch
         {
-            "a glossary" => [example.ToSourceText(GlossaryParsing.GlossaryPath, [], 0)],
-            "an elements file" => [glossary, example.ToSourceText(), ToStubs(example)],
-            "an element" => [glossary, example.ToSourceText(SpecPath, ["elements:"], 2), ToStubs(example)],
-            "an element's keys" => [glossary, example.ToSourceText(SpecPath, ElementHeader, 4), ToStubs(example)],
-            "a rule" => [glossary, example.ToSourceText(SpecPath, [.. ElementHeader, "    rules:"], 6), ToStubs(example)],
-            _ => throw new XunitException($"{example}: unknown marker '{MarkerStart}{shape}{MarkerEnd}' (a glossary, an elements file, an element, an element's keys or a rule)."),
+            "a glossary" => [DocExamples.ToSourceText(example, GlossaryParsing.GlossaryPath, [], 0)],
+            "an elements file" => [glossary, DocExamples.ToSourceText(example), ToStubs(example)],
+            "an element" => [glossary, DocExamples.ToSourceText(example, SpecPath, ["elements:"], 2), ToStubs(example)],
+            "an element's keys" => [glossary, DocExamples.ToSourceText(example, SpecPath, ElementHeader, 4), ToStubs(example)],
+            "a rule" => [glossary, DocExamples.ToSourceText(example, SpecPath, [.. ElementHeader, "    rules:"], 6), ToStubs(example)],
+            _ => throw new XunitException($"{DocExamples.ToLocation(example)}: unknown marker '{MarkerStart}{shape}{MarkerEnd}' (a glossary, an elements file, an element, an element's keys or a rule)."),
         };
 
     /// <summary>The elements named by the example's <c>doesNotStackWith</c>, which the catalog checks exist.</summary>
@@ -86,7 +94,7 @@ public sealed partial class RuleExampleTests
     private static void AssertParses(DocExample example, string shape, Result<RuleCatalog, string> parsed) =>
         parsed.Match(
             _ => new Unit.Value(),
-            error => throw new XunitException($"{example}, read as {shape}, doesn't parse:\n{error.Failure}"));
+            error => throw new XunitException($"{DocExamples.ToLocation(example)}, read as {shape}, doesn't parse:\n{error.Failure}"));
 
     [GeneratedRegex(@"doesNotStackWith:\s*\[([^\]]*)\]")]
     private static partial Regex DoesNotStackWith();

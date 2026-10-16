@@ -34,7 +34,7 @@ public sealed class BuildFileParsingTests
     private static Build ParseSpecExample()
     {
         var example = DocExamples.ReadYamlBlock(SpecPath, SpecExampleMarker);                                      // impure
-        return AssertOk(BuildFileParsing.ParseBuildFile(example.ToSourceText(), RepoCatalog.Manifest));            // pure
+        return AssertOk(BuildFileParsing.ParseBuildFile(DocExamples.ToSourceText(example), RepoCatalog.Manifest));            // pure
     }
 
     private static IEnumerable<string> ToNames(IEnumerable<ElementId> ids) => ids.Select(id => id.Value);
