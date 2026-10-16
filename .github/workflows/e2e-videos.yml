@@ -9,9 +9,10 @@ name: E2E videos
 # the site's player page; it never touches the PR's description) and deletes the branch. It builds, tests and records
 # nothing. A push runs the workflow file inside the pushed commit, so the branch carries the PR's own version of this file.
 # A failing scenario is marked ❌ in the post and never turns this check red; only the workflow's own failures do (a push
-# that isn't a PR's GIFs, an upload or a post that GitHub refused). Closing the PR keeps its newest version's GIFs and
-# MP4s, so its last post keeps showing and playing them, and deletes its older versions' and any e2e-gifs/pr-<n>-…
-# branch left behind.
+# that isn't a PR's GIFs, an upload or a post that GitHub refused). A new post collapses the PR's earlier posts into a
+# closed <details> each ("Scenarios (V1) · 12 scenarios · replaced by V2"). Closing the PR keeps its newest version's GIFs
+# and MP4s, so its last post keeps showing and playing them, deletes its older versions' and any e2e-gifs/pr-<n>-…
+# branch left behind, and shrinks each older post to its summary line, its recordings gone.
 # docs/hosting.md, "E2E videos on pull requests".
 
 on:
@@ -117,7 +118,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       PR: ${{ github.event.pull_request.number }}
     steps:
-      # No checkout: deleting needs nothing from the branch (which may predate this workflow).
+      # Deleting needs nothing from the branch (which may predate this workflow); only the last step checks out main.
       - name: Delete the PR's e2e-gifs branches left behind
         run: |
           for ref in $(gh api "repos/$GITHUB_REPOSITORY/git/matching-refs/heads/e2e-gifs/pr-$PR-" --jq '.[].ref'); do
@@ -161,3 +162,10 @@ jobs:
           if (( left > 900 )); then
             echo "::warning::prs-resources holds $left of at most 1,000 assets: start a new release (docs/hosting.md)."
           fi
+      # main's script, not the PR's: its branch may predate the shrinking, or be gone.
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          sparse-checkout: tools/e2e
+      - name: Shrink the PR's older posts to one line, their recordings deleted
+        run: python3 tools/e2e/post-scenarios.py --pr "$PR" --closed

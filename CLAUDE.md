@@ -110,9 +110,10 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
   push to `main`), `pages.yml`, `pr-preview.yml`, `e2e-videos.yml` (records nothing: the session
   records the PR's added or changed e2e scenarios and pushes their GIFs and MP4s to a throwaway `e2e-gifs/pr-<n>-<sha>` branch
   with `tools/e2e/push-gifs.sh`; the workflow uploads them to the `prs-resources` pre-release, posts them on the PR as
-  one comment per version (V1, V2…; each GIF with a "▶ Play MP4" link to the site's `e2e-player.html`) and deletes the
-  branch; when the PR closes, keeps its newest version's GIFs and MP4s and
-  deletes the older ones; [docs/hosting.md](docs/hosting.md) "E2E videos on pull requests"); `tools/web/prepare-pages.sh` readies a published site for Pages.
+  one comment per version (V1, V2…; each GIF with a "▶ Play MP4" link to the site's `e2e-player.html`; a new one collapses
+  the earlier ones into a closed `<details>` each) and deletes the
+  branch; when the PR closes, keeps its newest version's GIFs and MP4s,
+  deletes the older ones and shrinks their posts to one line; [docs/hosting.md](docs/hosting.md) "E2E videos on pull requests"); `tools/web/prepare-pages.sh` readies a published site for Pages.
 - `tools/compendium/` — Destiny Data Compendium download (`sheet_dump.py`; the owner runs it with
   `get-compendium.ps1` / `get-compendium.sh` / `get-compendium-docker.sh`; see its README). The
   snapshot lives in `snapshots/compendium/<date>/`: gitignored, so **a new session doesn't have it**.
