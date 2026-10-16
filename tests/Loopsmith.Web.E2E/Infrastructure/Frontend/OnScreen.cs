@@ -113,11 +113,11 @@ public static class OnScreen
     {
         if (await target.BoundingBoxAsync() is { } bounds)
         {
-            await target.Page.EvaluateAsync(TapMarkerScript, new Dictionary<string, object?>
+            await target.Page.EvaluateAsync(TapMarkerScript, new[]
             {
-                ["x"] = bounds.X + bounds.Width / 2,
-                ["y"] = bounds.Y + bounds.Height / 2,
-                ["hold"] = TapMarkerHold.TotalMilliseconds,
+                (double)(bounds.X + bounds.Width / 2),
+                (double)(bounds.Y + bounds.Height / 2),
+                TapMarkerHold.TotalMilliseconds,
             });
             await Task.Delay(TapMarkerHold);
         }
@@ -137,7 +137,7 @@ public static class OnScreen
 
     // The phone's dot: the tap ring's pink, filled, faded in over 150 ms.
     private const string TapMarkerScript = """
-        ({ x, y, hold }) => {
+        ([x, y, hold]) => {
           const dot = document.createElement('div');
           dot.style.cssText = 'position:fixed;z-index:2147483647;pointer-events:none;width:40px;height:40px;margin:-20px 0 0 -20px;'
             + 'border-radius:50%;background:rgba(255,61,127,.55);border:2px solid #ff3d7f;box-shadow:0 0 0 4px rgba(255,61,127,.3);'
