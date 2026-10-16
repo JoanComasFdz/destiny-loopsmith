@@ -1,6 +1,8 @@
+using Loopsmith.Core.BuildComposition;
+using Loopsmith.Core.BuildParsing;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
-using Loopsmith.Core.Orchestration;
+using Loopsmith.Core.SourceFetching;
 
 namespace Loopsmith.Core.Tests.Support;
 
@@ -11,8 +13,11 @@ public static class RepoFiles
 
     public static string ToPath(string relative) => Path.Combine(Root, relative);
 
+    /// <summary>A build file of the repository, parsed and validated against its rules (<see cref="RepoCatalog"/>).</summary>
     public static ValidatedBuild LoadBuild(string relativeBuildPath) =>
-        BuildLoading.LoadValidatedBuild(new LoadRequest(ToPath(relativeBuildPath), Optional.Some(ToPath("rules"))))
+        FileSourceFetching.ReadTextFile(ToPath(relativeBuildPath))   // impure
+            .Bind(file => BuildFileParsing.ParseBuildFile(file, RepoCatalog.Manifest))
+            .Bind(build => BuildValidation.ValidateBuild(build, RepoCatalog.Catalog))
             .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
 
     private static string FindRoot()

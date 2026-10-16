@@ -5,23 +5,10 @@ using Loopsmith.Core.Functional;
 namespace Loopsmith.Core.SourceFetching;
 
 /// <summary>
-/// Impure boundary: the only slice that touches the file system, and it only reads — writing is the host's job
-/// (<c>Effect.SaveFile</c>). Foreseeable I/O failures become <c>Result&lt;_, string&gt;</c>; anything unrecoverable bubbles.
+/// Impure boundary: the only slice that touches the file system, and it only reads. Foreseeable I/O failures become <c>Result&lt;_, string&gt;</c>; anything unrecoverable bubbles.
 /// </summary>
 public static class FileSourceFetching
 {
-    public const string GlossaryFileName = "glossary.yaml";
-
-    /// <summary>Rules for a build: the explicit directory, else the nearest <c>rules/</c> above the build file or the current directory.</summary>
-    public static Result<ImmutableArray<SourceText>, string> ReadRuleFilesFor(Optional<string> rulesDirectory, string buildPath)
-    {
-        var located = rulesDirectory.IsSome() ? rulesDirectory : FindRulesDirectoryFor(buildPath);
-        return located.Match(
-            some => ReadRuleFiles(some.Value),
-            _ => new Result<ImmutableArray<SourceText>, string>.Error(
-                "No rules directory found (a 'rules/' folder with glossary.yaml above the build or the current directory). Use --rules <dir>."));
-    }
-
     public static Result<ImmutableArray<SourceText>, string> ReadRuleFiles(string rulesDirectory)
     {
         try
@@ -58,39 +45,5 @@ public static class FileSourceFetching
         {
             return new Result<SourceText, string>.Error($"Cannot read '{path}': {exception.Message}");
         }
-    }
-
-    /// <summary>Reads the file when a path is given; no path is not an error.</summary>
-    public static Result<Optional<SourceText>, string> ReadOptionalTextFile(Optional<string> path) =>
-        path.Match(
-            some => ReadTextFile(some.Value).Map(Optional.Some),
-            _ => new Result<Optional<SourceText>, string>.Ok(Optional.None<SourceText>()));
-
-    /// <summary>Nearest <c>rules/</c> folder (containing glossary.yaml) at or above any of the start directories.</summary>
-    public static Optional<string> FindRulesDirectory(ImmutableArray<string> startDirectories)
-    {
-        foreach (var start in startDirectories)
-        {
-            var directory = new DirectoryInfo(Path.GetFullPath(start));
-            while (directory is not null)
-            {
-                var candidate = Path.Combine(directory.FullName, "rules");
-                if (File.Exists(Path.Combine(candidate, GlossaryFileName)))
-                {
-                    return Optional.Some(candidate);
-                }
-
-                directory = directory.Parent;
-            }
-        }
-
-        return Optional.None<string>();
-    }
-
-    public static Optional<string> FindRulesDirectoryFor(string buildPath)
-    {
-        var buildDirectory = Path.GetDirectoryName(Path.GetFullPath(buildPath)) ?? ".";
-        var currentDirectory = Directory.GetCurrentDirectory();
-        return FindRulesDirectory([buildDirectory, currentDirectory]);
     }
 }
