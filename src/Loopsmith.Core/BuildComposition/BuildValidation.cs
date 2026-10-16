@@ -21,7 +21,24 @@ public static class BuildValidation
     /// <summary>A slot of the build; <see cref="Holder"/>: the weapon holding what it holds (a weapon's perk, catalyst or mod).</summary>
     private sealed record Slot(ElementId Id, string SlotName, ImmutableArray<ElementKind> Accepts, Optional<WeaponLoadout> Holder);
 
-    public static Result<ValidatedBuild, string> ValidateBuild(Build build, RuleCatalog catalog)
+    public static Result<ValidatedBuild, string> ValidateBuild(Build build, RuleCatalog catalog) =>
+        ValidateTypedBuild(build with { Weapons = [.. build.Weapons.Select(weapon => ReadArchetype(catalog, weapon))] }, catalog);
+
+    /// <summary>
+    /// A weapon's archetype from Bungie's manifest when the excerpt knows its hash (the manifest is the source of truth),
+    /// otherwise the one its build file names.
+    /// </summary>
+    private static WeaponLoadout ReadArchetype(RuleCatalog catalog, WeaponLoadout weapon) =>
+        weapon with
+        {
+            Archetype = new[]
+            {
+                weapon.Hash.Bind(hash => catalog.Manifest.FindItem(hash)).Bind(item => item.Type).Bind(ManifestReading.ToArchetype),
+                weapon.Archetype,
+            }.FindFirstSome(),
+        };
+
+    private static Result<ValidatedBuild, string> ValidateTypedBuild(Build build, RuleCatalog catalog)
     {
         var slots = ListSlots(build, catalog);
         var resolved = slots.Select(slot => ResolveSlot(build, catalog, slot)).ToImmutableArray();

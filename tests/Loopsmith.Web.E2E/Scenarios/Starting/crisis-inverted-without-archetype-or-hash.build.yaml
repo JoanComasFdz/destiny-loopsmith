@@ -1,0 +1,6 @@
+# Crisis Inverted named without its archetype or its hash: no one knows its type, so the file is refused.
+name: "E2E - Crisis Inverted without archetype or hash"
+class: hunter
+subclass: arc
+weapons:
+  - { slot: energy, name: Crisis Inverted, type: arc }

@@ -1,5 +1,5 @@
 ﻿Melee first — Skip Grenade Hunter · 7 steps
-New pack → Sliding melee (💀 kill) → Bolt Charge at max (x10) → Grenade (💀 kill) → Any Arc weapon (💀 kill) → Pick up Orb of Power → Class ability
+New pack → Sliding melee (💀 kill) → Bolt Charge at max (x10) → Grenade (💀 kill) → Crisis Inverted (💀 kill) → Pick up Orb of Power → Class ability
 ✓ Repeats — each pass ends with what the next one needs
 
 #1 New pack
@@ -18,7 +18,7 @@ New pack → Sliding melee (💀 kill) → Bolt Charge at max (x10) → Grenade 
    on its own       Spark of Shock
    wasted           Tempest Strike — doesn't stack with Dielectric
 
-#5 Any Arc weapon (💀 kill)
+#5 Crisis Inverted (💀 kill)
    needs            Jolt ← #4 [Spark of Shock; Defibrillating Blast] · Reaper ← previous pass #7 [Reaper]
    in this order    Jolt · Flow State · Reaper · Dielectric · Shock and Clear · Shinobu's Vow · Bolt Charge · Spark of Discharge · Elemental Charge (chance) · Ionic Trace
    on its own       Harmonic Siphon (chance)
@@ -32,7 +32,7 @@ New pack → Sliding melee (💀 kill) → Bolt Charge at max (x10) → Grenade 
    on its own       Reaper · Slice · Gambler's Dodge · Bomber
 
 First pass (from a fresh spawn, where it differs)
-#5 Any Arc weapon (💀 kill)
+#5 Crisis Inverted (💀 kill)
    doesn't set off  Reaper
 
 Steps

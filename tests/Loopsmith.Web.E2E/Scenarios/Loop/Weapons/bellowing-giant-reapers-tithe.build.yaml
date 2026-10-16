@@ -3,4 +3,4 @@ name: "E2E - Bellowing Giant with Reaper's Tithe"
 class: hunter
 subclass: arc
 weapons:
-  - { slot: power, name: Bellowing Giant, type: void, perks: [reapers-tithe] }
+  - { slot: power, name: Bellowing Giant, type: void, archetype: rocket-launcher, perks: [reapers-tithe] }

@@ -163,12 +163,6 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   `.loop.yaml` or copying its share link, and loops imported on the Compare screen last until the tab
   closes. A library would need per-browser storage, or a backend to sync it across devices.
 - **A build picker** over the catalog instead of build files (FR-1).
-- **A weapon whose type isn't known is a parse error** (PR #80's test plan, T11): a build file's weapon with neither
-  `hash` nor `archetype` parses, and a perk that goes by the weapon's archetype (Demolitionist's 10%, 20% on Shotguns)
-  then shows both amounts. The designer never makes one (a picked weapon and a DIM link's take their type from Bungie's
-  manifest), so a build file should be refused too: "weapon 'Any Arc weapon' needs an `archetype` or a `hash`". The
-  repo's own builds give their placeholders one first (Skip Grenade Hunter's "Any Arc weapon"). A perk's details, on
-  no weapon, still show both amounts.
 - **A preview card for a pasted link**: Home draws a DIM build card for the shares it ships with; a pasted
   link that carries its loadout could show the same card before "Start designing".
 - **Editing the rest of a build in the designer**: a weapon's perks can be picked (column by column, from

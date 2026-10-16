@@ -3,4 +3,4 @@ name: "E2E - Festival Flight with One for All"
 class: hunter
 subclass: arc
 weapons:
-  - { slot: kinetic, name: Festival Flight, type: strand, perks: [one-for-all] }
+  - { slot: kinetic, name: Festival Flight, type: strand, archetype: grenade-launcher, perks: [one-for-all] }

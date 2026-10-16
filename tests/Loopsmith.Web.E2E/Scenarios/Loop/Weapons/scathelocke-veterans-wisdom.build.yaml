@@ -3,4 +3,4 @@ name: "E2E - Scathelocke with Veteran's Wisdom"
 class: hunter
 subclass: arc
 weapons:
-  - { slot: kinetic, name: Scathelocke, type: kinetic, perks: [veterans-wisdom] }
+  - { slot: kinetic, name: Scathelocke, type: kinetic, archetype: auto-rifle, perks: [veterans-wisdom] }
