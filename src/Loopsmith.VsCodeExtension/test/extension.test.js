@@ -98,7 +98,7 @@ test('kebab-cases like Humanizer 3.0.10 (its output for every web scenario and s
   }
 });
 
-test('reads a scenario file: its scenarios, their titles, screens, class, domain and where the CodeLens and hover go', () => {
+test('reads a scenario file: its scenarios, their titles, screens, class, domain and where the CodeLens goes', () => {
   const [scratch, tooltip, ...others] = extension.findScenarios(START_FROM_SCRATCH);
   assert.equal(others.length, 0, 'the private method has no [TestDescription]: it is no scenario');
   assert.deepEqual({ ...scratch }, {
@@ -109,13 +109,19 @@ test('reads a scenario file: its scenarios, their titles, screens, class, domain
     screens: ['desktop', 'mobile'],
     attributesLine: 8,
     nameLine: 16,
-    nameStart: 22,
-    nameEnd: 73,
   });
   assert.deepEqual(tooltip.screens, ['desktop']);
   assert.equal(tooltip.attributesLine, 22);
-  assert.equal(extension.findScenarioAt([scratch, tooltip], 16, 30), scratch);
-  assert.equal(extension.findScenarioAt([scratch, tooltip], 16, 10), null);
+});
+
+test('finds the scenario the cursor is in: the last one starting on or above its line, else the first', () => {
+  const [scratch, tooltip] = extension.findScenarios(START_FROM_SCRATCH);
+  assert.equal(extension.findScenarioAround([scratch, tooltip], 2), scratch, 'above every scenario: the first');
+  assert.equal(extension.findScenarioAround([scratch, tooltip], 8), scratch);
+  assert.equal(extension.findScenarioAround([scratch, tooltip], 21), scratch);
+  assert.equal(extension.findScenarioAround([scratch, tooltip], 22), tooltip);
+  assert.equal(extension.findScenarioAround([scratch, tooltip], 40), tooltip);
+  assert.equal(extension.findScenarioAround([], 3), null);
 });
 
 test('a file outside Scenarios has the domain folder "Unsorted", and a file with no scenario has none', () => {
@@ -158,24 +164,6 @@ test('the CodeLens plays each screen of the newest recording, then names it', as
     { title: 'Refresh', command: 'loopsmith.e2eRecordings.refresh' },
     { title: 'Sign in to GitHub', command: 'loopsmith.e2eRecordings.signIn' },
   ]);
-});
-
-test('the hover shows both GIFs, a link per MP4 and the player page', async () => {
-  const { scenario, recordings } = await findStartFromScratch();
-  const hover = extension.writeHover(scenario, read, recordings, 'JoanComasFdz/destiny-loopsmith', (screen) => `command:play-${screen}`);
-  assert.match(hover, /^\*\*▶ Start from scratch opens an Arc Hunter with nothing equipped\*\*/);
-  assert.match(hover, /PR #109 · V1 · StartFromScratchTests/);
-  assert.match(hover, /<img src="https:\/\/github\.com\/o\/r\/releases\/download\/prs-resources\/pr-109-v1-start-from-scratch-opens-an-arc-hunter-with-nothing-equipped-desktop\.gif" height="120" alt="Desktop recording">/);
-  assert.match(hover, /<td>Desktop<\/td><td>Mobile<\/td>/);
-  assert.match(hover, /\[▶ Play desktop MP4\]\(command:play-desktop\) · \[▶ Play mobile MP4\]\(command:play-mobile\) · \[Open in e2e player ↗\]\(https:\/\/joancomasfdz\.github\.io\/destiny-loopsmith\/e2e-player\.html\?v=pr-109-v1-start-from-scratch-opens-an-arc-hunter-with-nothing-equipped-desktop\.mp4\)/);
-});
-
-test('the hover of a recording with GIFs only links no MP4', async () => {
-  const { scenario } = await findStartFromScratch();
-  const gifsOnly = await findRecordingsOf(scenario, RELEASE.filter((asset) => asset.name.startsWith('pr-101-')));
-  const hover = extension.writeHover(scenario, read, gifsOnly, 'JoanComasFdz/destiny-loopsmith', () => 'command:play');
-  assert.doesNotMatch(hover, /MP4|e2e player/);
-  assert.match(hover, /PR #101 · V1/);
 });
 
 test('the panel holds every version and opens on the one and the screen chosen', async () => {

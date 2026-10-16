@@ -54,8 +54,15 @@ vscode.dev can't install it from the site: its content security policy lets the 
 few hosts of its own (`github.io` isn't one: "Cannot find a valid extension from the location"), and it has no "Install
 from VSIX". It installs it from `http://localhost:5000`, served by a container the owner builds from the extension's
 folder (`Dockerfile`, `serve.js`; the README's "Install"). Once installed, the extension itself runs in vscode.dev: its
-extension host may fetch any `https` address (GitHub's API), its hover's images any `https` one, and its panel loads
+extension host may fetch any `https` address (GitHub's API), and its panel loads
 what its own policy allows.
+
+A GitHub Codespace or desktop VS Code's Dev Containers needs neither: VS Code runs a server in the container, which
+installs a `.vsix`. The repository's dev container (`.devcontainer/`) packs the extension from its folder, as the
+`PublishVsCodeExtension` target packs the site's, and installs it with VS Code's CLI each time VS Code attaches
+(`7-install-e2e-recordings-extension.sh`), so a branch's Codespace has that branch's extension and nothing comes from the Marketplace.
+The dev container also holds everything the repository builds, tests and records with
+([.devcontainer/README.md](../.devcontainer/README.md)).
 
 ## DIM links
 

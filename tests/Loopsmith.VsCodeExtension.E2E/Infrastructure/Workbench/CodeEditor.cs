@@ -48,13 +48,13 @@ public sealed class CodeEditor(IPage page)
     public Task ClickCodeLensAsync(string item) =>
         OnScreen.ClickAsync(page, CodeLens.Locator(VsCodeDom.CodeLensCommand).Filter(new() { HasText = item }).First);
 
-    /// <summary>Rests the mouse on the scenario's method name, where VS Code shows its hover.</summary>
-    public async Task HoverMethodNameAsync(ScenarioFile file)
-    {
-        var line = Editor.Locator(VsCodeDom.Line).Filter(new() { HasText = $"Task {file.ToMethod()}(" });
-        var point = ShownJson.Read<ShownPoint>(await line.EvaluateAsync<string>(FindTextScript, file.ToMethod()));
-        await OnScreen.HoverAtAsync(page, point.X, point.Y);
-    }
+    /// <summary>Clicks the line that shows <paramref name="text"/>, so the cursor is on it.</summary>
+    public Task ClickLineAsync(string text) =>
+        OnScreen.ClickAsync(page, Editor.Locator(VsCodeDom.Line).Filter(new() { HasText = text }).First);
+
+    /// <summary>Clicks the button <paramref name="title"/> in the editor's title bar (by its tooltip: the button shows an icon).</summary>
+    public Task ClickTitleBarButtonAsync(string title) =>
+        OnScreen.ClickAsync(page, page.Locator(VsCodeDom.EditorTitleBar).GetByRole(AriaRole.Button, new() { Name = title, Exact = true }));
 
     /// <summary>Each CodeLens row the editor shows, with its items and the line right below it.</summary>
     public Task<CodeLensSnapshot> ReadCodeLensAsync() => OnScreen.ReadAsync(page, ReadShownAsync);
@@ -64,31 +64,6 @@ public sealed class CodeEditor(IPage page)
         var json = await Editor.EvaluateAsync<string>(ReadScript, new { codeLens = VsCodeDom.CodeLens, lines = VsCodeDom.Line });
         return new CodeLensSnapshot([.. ShownJson.Read<CodeLensRow[]>(json)]);
     }
-
-    // The middle of the first place the line shows the text: VS Code draws a line as spans of tokens, and a name can
-    // share its span with what is around it.
-    private const string FindTextScript = """
-        (line, text) => {
-          const walker = document.createTreeWalker(line, NodeFilter.SHOW_TEXT);
-          const nodes = [];
-          for (let node = walker.nextNode(); node; node = walker.nextNode()) nodes.push(node);
-          const shown = nodes.map(node => node.textContent).join('');
-          const at = shown.indexOf(text);
-          const middle = at + Math.floor(text.length / 2);
-          let start = 0;
-          for (const node of nodes) {
-            if (middle < start + node.textContent.length) {
-              const range = document.createRange();
-              range.setStart(node, middle - start);
-              range.setEnd(node, middle - start + 1);
-              const box = range.getBoundingClientRect();
-              return JSON.stringify({ x: box.left + box.width / 2, y: box.top + box.height / 2 });
-            }
-            start += node.textContent.length;
-          }
-          return JSON.stringify({ x: 0, y: 0 });
-        }
-        """;
 
     // Each row's items (VS Code draws each as a link, or a span when it runs no command; their icons hold no text; the
     // "|" between them is a span of its own), and the text of the first line drawn below the row.
@@ -106,9 +81,6 @@ public sealed class CodeEditor(IPage page)
         }
         """;
 }
-
-/// <summary>A point on the screen, in CSS pixels.</summary>
-public sealed record ShownPoint(double X, double Y);
 
 /// <summary>The CodeLens rows the editor shows.</summary>
 public sealed record CodeLensSnapshot(ImmutableArray<CodeLensRow> Rows);

@@ -17,7 +17,7 @@ public sealed class RefreshTests : BaseE2E
           And "Scenarios/Loop/Weapons/ReloadTests.cs" is open, its CodeLens reading "No recording yet"
           When the release gets the recordings of "ReloadTests.cs" from PR #113 · V1
           And I run "Loopsmith: Refresh e2e recordings" from the Command Palette
-          Then the CodeLens above its scenario reads "Play desktop recording", "Play mobile recording" and "PR #113 · V1"
+          Then the CodeLens above its method reads "Play desktop recording", "Play mobile recording" and "PR #113 · V1"
         """)]
     public async Task RefreshingFindsARecordingPostedAfterTheFileWasOpened(Screen screen)
     {

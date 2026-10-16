@@ -1,7 +1,7 @@
 # Loopsmith.VsCodeExtension.E2E — end-to-end tests of the VS Code extension
 
 The e2e scenarios of the VS Code extension (`src/Loopsmith.VsCodeExtension`): each Gherkin about what it shows in VS
-Code (its CodeLens, hover and recording panel) is one scenario here, played in VS Code for the web in Chromium, on the
+Code (its CodeLens, play button and recording panel) is one scenario here, played in VS Code for the web in Chromium, on the
 desktop. Their code rules: [E2E-TEST-CODE-RULES.md](E2E-TEST-CODE-RULES.md). A PR that adds or changes them shows them
 on the PR like the web app's: their Gherkins and their GIFs and MP4s, posted by the "E2E videos" workflow
 ([docs/hosting.md](../../docs/hosting.md), "E2E videos on pull requests").
@@ -36,7 +36,7 @@ To update VS Code: set `config.vscodeCommit` and `config.vscodeVersion` in `vsco
 ## Where tests go
 
 `Scenarios/<domain folder>/<Topic>Tests.cs`, by what the developer does with the extension: `Recordings/` (seeing a
-scenario's recordings: `CodeLensTests`, `HoverTests`, `RecordingPanelTests`, `RefreshTests`). The domain folder is the
+scenario's recordings: `CodeLensTests`, `PlayHereTests`, `RecordingPanelTests`, `RefreshTests`). The domain folder is the
 namespace after `.Scenarios.`, and the folder their GIFs go in under `out/`: a new one must not take a web domain
 folder's name (`Starting`, `Loop`, …).
 

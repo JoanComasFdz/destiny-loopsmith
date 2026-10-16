@@ -4,7 +4,7 @@ namespace Loopsmith.VsCodeExtension.E2E.Infrastructure.Workbench;
 
 /// <summary>
 /// VS Code for the web as the user sees it, opened on Workspace/ with the extension: its explorer, the scenario file's
-/// editor (its CodeLens), the hover on a name, the extension's recording panel and the Command Palette. Locators stay
+/// editor (its CodeLens, its title bar's buttons), the extension's recording panel and the Command Palette. Locators stay
 /// private to their class (role + accessible name, the panel's data-testid and data-action, VS Code's classes in
 /// <see cref="VsCodeDom"/>).
 /// </summary>
@@ -15,9 +15,6 @@ public sealed class Workbench(IPage page)
 
     /// <summary>The scenario file's editor: its lines and the CodeLens above them.</summary>
     public CodeEditor Editor { get; } = new(page);
-
-    /// <summary>The hover on a name in the editor.</summary>
-    public Hover Hover { get; } = new(page);
 
     /// <summary>The extension's panel beside the code: a scenario's recording.</summary>
     public RecordingPanel RecordingPanel { get; } = new(page);

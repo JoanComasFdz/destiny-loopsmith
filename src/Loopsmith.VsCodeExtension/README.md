@@ -5,14 +5,17 @@ a `[TestDescription("""…""")]` in a `Scenarios/**/*Tests.cs` file (`tests/Loop
 `tests/Loopsmith.VsCodeExtension.E2E`). Its recordings are the GIFs and MP4s the "E2E videos" workflow keeps in the
 `prs-resources` release ([docs/hosting.md](../../docs/hosting.md), "E2E videos on pull requests").
 
-- **CodeLens** above the scenario: `Play desktop recording | Play mobile recording | PR #109 · V1`, for each screen of
+- **CodeLens** above the scenario's method, between its attributes and its declaration (next to other extensions' CodeLens,
+  such as C# Dev Kit's "0 references"): `Play desktop recording | Play mobile recording | PR #109 · V1`, for each screen of
   its newest recording (the highest PR, then its highest version), or `No recording yet`.
 - **Panel** beside the editor, opened by "Play … recording": the Gherkin's title, its class, domain folder, PR and
   version, a **Desktop** / **Mobile** tab per screen, the MP4 with the browser's controls (the GIF when the run has no
   MP4, or when this VS Code can't play it), **Recorded in** with every PR and version of the scenario, newest first, and
   **Open in e2e player ↗** (the site's `e2e-player.html`).
-- **Hover** on the method's name: the title, the newest PR and version, each screen's GIF side by side, then
-  **▶ Play desktop MP4**, **▶ Play mobile MP4** (they open the panel) and **Open in e2e player ↗**.
+- **Play e2e recording of this scenario**: the ▷ button in the editor's title bar of a scenario file, and **Loopsmith: Play
+  e2e recording of this scenario** in the Command Palette, open the panel on the scenario the cursor is in (the file's
+  first one when the cursor is above them all), on its first screen. (On a phone's browser, neither the CodeLens nor
+  this button plays it: checked in a Codespace, 2026-10-16.)
 - **Loopsmith: Refresh e2e recordings** (Command Palette) reads the release again: a recording posted after the files
   were opened shows up. The read is also renewed when it is ten minutes old.
 
@@ -26,6 +29,26 @@ hourly limit is used up) and pick your account (on vscode.dev, the one you opene
 uses it without asking.
 
 ## Install
+
+### Codespaces and Dev Containers: already installed
+
+The repository's dev container (`.devcontainer/`) installs the extension from this folder each time VS Code attaches to
+it (`7-install-e2e-recordings-extension.sh`: it packs the `.vsix` as the site's is packed and installs it with VS Code's own CLI), so
+there is nothing to install: no Marketplace, no container of your own, no download. The extension is always the
+checkout's own, so a branch's Codespace runs that branch's extension. The same container is a full dev environment for
+the repository, so `dotnet build Loopsmith.slnx`, `dotnet test` and `tools/e2e/record.sh` run in it: .NET 10, Node 22,
+ffmpeg, the Compendium download's Python packages, the Chromium the e2e scenarios drive, zsh with Oh My Zsh and the
+Spaceship prompt, and tmux (one script per feature: [.devcontainer/README.md](../../.devcontainer/README.md)).
+
+- **GitHub Codespaces:** on the repository's page, **Code** → **Codespaces** → **⋯** → **New with options…**, pick the
+  branch, then **Create codespace** (a 4-core machine at least). Creating it takes a few minutes the first time.
+- **Desktop VS Code** (with Docker on your computer and the Dev Containers extension): open a clone, then **Dev
+  Containers: Reopen in Container**.
+
+Once the container's setup has finished (its terminal says so), the Extensions view lists **Loopsmith e2e recordings**.
+If a scenario file shows no CodeLens yet, run **Developer: Reload Window** once. In a Codespace, VS Code may already
+have your GitHub sign-in, so the extension can read the release with it from the start. On a phone, put the cursor in a
+scenario and tap the ▷ button in the editor's title bar.
 
 ### vscode.dev: from a container on your computer
 

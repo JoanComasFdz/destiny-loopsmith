@@ -74,7 +74,7 @@ As the web rules' rule a, except:
 `Infrastructure/Workbench/` is an object model of VS Code as the user sees it, with the web rules' rule c's members
 (Act, Wait, Read, `ReadLayoutAsync`), each going through `OnScreen`:
 - `Workbench.Explorer` (the tree of `Workspace/`), `Workbench.Editor` (the scenario file's editor: its CodeLens, a
-  rest of the mouse on a name), `Workbench.Hover`, `Workbench.RecordingPanel` (the extension's panel, a webview),
+  click on a line, its title bar's buttons), `Workbench.RecordingPanel` (the extension's panel, a webview),
   `Workbench.CommandPalette`;
 - **locators:** role + accessible name where VS Code gives one (a tree item, a tab, a command); the extension's own panel
   by its `data-testid` and `data-action` attributes (`extension.js`, `writePanel`); and VS Code's own class names, which
@@ -128,14 +128,11 @@ files, and `tools/e2e/record.sh --no-video <its class>` (it serves VS Code for t
 | `Given the release holds no recording of "ReloadTests.cs"` | `GitHub.Release.HasNoRecordingOf(new ScenarioFile.Reload())` |
 | `"Scenarios/Starting/StartFromScratchTests.cs" is open` / `I open … in the explorer` | `Explorer.OpenAsync(new ScenarioFile.StartFromScratch())`, `Editor.WaitUntilRecordingsShownAsync()` |
 | `I tap "Play desktop recording" in its CodeLens` | `Editor.ClickCodeLensAsync("Play desktop recording")`, `RecordingPanel.WaitUntilPlayingAsync()` |
-| `I rest the mouse on "StartFromScratchOpens…"` | `Editor.HoverMethodNameAsync(new ScenarioFile.StartFromScratch())`, `Hover.WaitUntilShownAsync()` |
-| `I tap "▶ Play mobile MP4" in the hover` | `Hover.ClickLinkAsync("▶ Play mobile MP4")`, `RecordingPanel.WaitUntilPlayingAsync()` |
 | `I tap its "Mobile" tab` / `I tap "PR #104 · V1" in "Recorded in"` | `RecordingPanel.ClickTabAsync("Mobile")` / `RecordingPanel.ClickVersionAsync("PR #104 · V1")`, then `RecordingPanel.WaitUntilPlayingAsync()` |
 | `"…" is open, its CodeLens reading "PR #109 · V1"` | `Explorer.OpenAsync(…)`, `Editor.WaitUntilCodeLensShowsAsync("PR #109 · V1")` |
 | `I run "Loopsmith: Refresh e2e recordings" from the Command Palette` | `CommandPalette.RunAsync("Loopsmith: Refresh e2e recordings")` |
-| `the CodeLens above its scenario reads "…", "…" and "…"` / `no other line has a CodeLens` | `Editor.ReadCodeLensAsync()`, `ReadsAboveTheScenario("…", "…", "…")` / `HasNoOtherCodeLens()` |
+| `the CodeLens above its method reads "…", "…" and "…"` / `no other line has a CodeLens` | `Editor.ReadCodeLensAsync()`, `ReadsAboveTheScenario("…", "…", "…")` / `HasNoOtherCodeLens()` |
 | `no line has a CodeLens` (a file that gets none) | When ends with `Editor.WaitUntilCodeLensSettledAsync()` (VS Code draws a CodeLens a moment after a file opens); `ReadCodeLensAsync()`, `HasNoCodeLens()` |
 | `it plays "….mp4", with its controls` | `Plays("….mp4")`, `HasVideoControls()` |
 | `the panel "Recording · …" shows beside the code` | `RecordingPanel.ReadLayoutAsync()`, `IsBesideTheCode()`; `RecordingPanel.ReadAsync()`, `HasEditorTab("Recording · …")` |
 | `its tabs are "Desktop" and "Mobile", "Desktop" selected` / `it plays "….mp4"` | `HasTabSelected("Desktop", "Desktop", "Mobile")` / `Plays("….mp4")` |
-| `the hover shows "….gif" labelled "Desktop" and "….gif" labelled "Mobile", side by side` | `Hover.ReadAsync()`, `ShowsGifsSideBySide(("….gif", "Desktop"), ("….gif", "Mobile"))` |

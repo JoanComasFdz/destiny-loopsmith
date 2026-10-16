@@ -8,7 +8,7 @@ work out on their own. These rules apply to every Gherkin a session writes. A Gh
   Gherkin word for word in its `[TestDescription]` and does what it says, line by line. How a Gherkin becomes C# is
   [E2E-TEST-CODE-RULES.md](../tests/Loopsmith.Web.E2E/E2E-TEST-CODE-RULES.md), rule i. The VS Code extension
   (`src/Loopsmith.VsCodeExtension`) follows the same rules: each Gherkin about what it shows in VS Code (its CodeLens,
-  hover and recording panel) is one scenario in `tests/Loopsmith.VsCodeExtension.E2E`, played in VS Code for the web on
+  play button and recording panel) is one scenario in `tests/Loopsmith.VsCodeExtension.E2E`, played in VS Code for the web on
   the desktop only (its
   [E2E-TEST-CODE-RULES.md](../tests/Loopsmith.VsCodeExtension.E2E/E2E-TEST-CODE-RULES.md)), and its PR shows its GIFs
   the same way.

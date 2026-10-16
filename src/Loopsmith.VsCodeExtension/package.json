@@ -1,8 +1,8 @@
 {
   "name": "loopsmith-e2e-recordings",
   "displayName": "Loopsmith e2e recordings",
-  "description": "Shows each Loopsmith e2e scenario's recordings next to its code: a CodeLens, a hover and a panel that plays the MP4.",
-  "version": "0.1.0",
+  "description": "Shows each Loopsmith e2e scenario's recordings next to its code: a CodeLens, a play button and a panel that plays the MP4.",
+  "version": "0.2.0",
   "publisher": "loopsmith",
   "license": "MIT",
   "repository": {
@@ -30,6 +30,11 @@
   "contributes": {
     "commands": [
       {
+        "command": "loopsmith.e2eRecordings.playHere",
+        "title": "Loopsmith: Play e2e recording of this scenario",
+        "icon": "$(play-circle)"
+      },
+      {
         "command": "loopsmith.e2eRecordings.refresh",
         "title": "Loopsmith: Refresh e2e recordings"
       },
@@ -47,6 +52,17 @@
         {
           "command": "loopsmith.e2eRecordings.play",
           "when": "false"
+        },
+        {
+          "command": "loopsmith.e2eRecordings.playHere",
+          "when": "editorLangId == csharp"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "loopsmith.e2eRecordings.playHere",
+          "when": "resourceLangId == csharp && resource =~ /\\/Scenarios\\/.*Tests\\.cs$/",
+          "group": "navigation"
         }
       ]
     },
