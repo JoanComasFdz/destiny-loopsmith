@@ -25,6 +25,7 @@ const KNOWN_GITHUB_SCOPES = [
 ];
 const SIGN_IN_SCOPES = ['read:user'];
 const PLAY_COMMAND = 'loopsmith.e2eRecordings.play';
+const PLAY_HERE_COMMAND = 'loopsmith.e2eRecordings.playHere';
 const REFRESH_COMMAND = 'loopsmith.e2eRecordings.refresh';
 const SIGN_IN_COMMAND = 'loopsmith.e2eRecordings.signIn';
 const SCENARIO_FILES = '**/Scenarios/**/*Tests.cs';
@@ -150,6 +151,15 @@ function findScenarioAt(scenarios, line, character) {
   return scenarios.find((s) => s.nameLine === line && character >= s.nameStart && character <= s.nameEnd) ?? null;
 }
 
+/**
+ * The scenario the cursor is in, for "Play e2e recording of this scenario": the last one whose attributes start on or
+ * above the line, or the file's first one when the line is above them all (the class's lines). Null when the file has none.
+ */
+function findScenarioAround(scenarios, line) {
+  const above = scenarios.filter((scenario) => scenario.attributesLine <= line);
+  return above.length > 0 ? above[above.length - 1] : scenarios[0] ?? null;
+}
+
 // ---- Pure: recordings ---------------------------------------------------------------------------------------------
 
 /**
@@ -214,9 +224,9 @@ function describeLenses(catalog, recordings) {
 
 /**
  * The hover on a scenario's method name, as Markdown with HTML: its title, the newest recording's PR and version and
- * the class, each screen's GIF side by side with its label (120 px tall: VS Code's hover is at most 250 px, and the links
- * under them must show), then a link that plays each screen's MP4 in the panel (playUri gives the command link) and one
- * to the site's player page.
+ * the class, a link that plays each screen's MP4 in the panel (playUri gives the command link) and one to the site's
+ * player page, then each screen's GIF side by side with its label (120 px tall). The links come before the GIFs: VS Code's
+ * hover is at most 250 px tall, and on a phone the GIFs below them would push them out of sight.
  */
 function writeHover(scenario, catalog, recordings, repository, playUri) {
   const heading = `**▶ ${escapeMarkdown(scenario.title)}**`;
@@ -238,8 +248,8 @@ function writeHover(scenario, catalog, recordings, repository, playUri) {
   return [
     heading,
     `${toVersionLabel(newest)} · ${escapeMarkdown(scenario.className)}`,
+    ...(links.length > 0 ? [links.join(' · ')] : []),
     `<table><tr>${gifs.join('')}</tr><tr>${labels.join('')}</tr></table>`,
-    links.join(' · '),
   ].join('\n\n');
 }
 
@@ -530,6 +540,19 @@ function activate(context) {
     panel.reveal(vscode.ViewColumn.Beside);
   };
 
+  // The scenario the cursor is in, played on its first screen: what the editor's play button and the Command Palette
+  // run, and what a phone can tap (a CodeLens or a hover's link is hard to reach with a finger).
+  const playHere = async () => {
+    const editor = vscode.window.activeTextEditor;
+    const scenarios = editor ? findScenarios(editor.document.getText()) : [];
+    const scenario = editor ? findScenarioAround(scenarios, editor.selection.active.line) : null;
+    if (scenario === null) {
+      vscode.window.showInformationMessage('No e2e scenario in this file.');
+      return;
+    }
+    await play({ uri: editor.document.uri.toString(), method: scenario.method });
+  };
+
   const toPlayUri = (document, scenario) => (screen) =>
     `command:${PLAY_COMMAND}?${encodeURIComponent(JSON.stringify([{ uri: document.uri.toString(), method: scenario.method, screen }]))}`;
 
@@ -587,6 +610,7 @@ function activate(context) {
     vscode.languages.registerCodeLensProvider(selector, lenses),
     vscode.languages.registerHoverProvider(selector, hovers),
     vscode.commands.registerCommand(PLAY_COMMAND, play),
+    vscode.commands.registerCommand(PLAY_HERE_COMMAND, playHere),
     vscode.commands.registerCommand(REFRESH_COMMAND, refresh),
     vscode.commands.registerCommand(SIGN_IN_COMMAND, signIn),
     vscode.workspace.onDidChangeConfiguration((event) => {
@@ -611,6 +635,7 @@ module.exports = {
   toPlayerUrl,
   findScenarios,
   findScenarioAt,
+  findScenarioAround,
   findRecordings,
   describeLenses,
   writeHover,

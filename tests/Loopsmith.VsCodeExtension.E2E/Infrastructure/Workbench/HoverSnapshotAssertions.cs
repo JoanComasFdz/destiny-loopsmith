@@ -58,6 +58,20 @@ public static class HoverSnapshotAssertions
         return that;
     }
 
+    /// <summary>Every link of the hover shows above its GIFs: each ends above the top of the highest GIF.</summary>
+    public static AssertingThat<HoverSnapshot> ShowsItsLinksAboveTheGifs(this AssertingThat<HoverSnapshot> that)
+    {
+        var gifsTop = that.InstanceToAssert.Gifs.Min(gif => gif.Box.Top);
+        foreach (var link in that.InstanceToAssert.Links)
+        {
+            Assert.True(
+                link.Box.Bottom <= gifsTop + 1,
+                $"The hover's \"{link.Text}\" link ends at {link.Box.Bottom}, below the top of its GIFs ({gifsTop}): it should show above them.");
+        }
+
+        return that;
+    }
+
     /// <summary>The hover has no link at all (none plays an MP4, none opens the player).</summary>
     public static AssertingThat<HoverSnapshot> HasNoLinks(this AssertingThat<HoverSnapshot> that)
     {

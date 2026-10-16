@@ -11,8 +11,13 @@ a `[TestDescription("""…""")]` in a `Scenarios/**/*Tests.cs` file (`tests/Loop
   version, a **Desktop** / **Mobile** tab per screen, the MP4 with the browser's controls (the GIF when the run has no
   MP4, or when this VS Code can't play it), **Recorded in** with every PR and version of the scenario, newest first, and
   **Open in e2e player ↗** (the site's `e2e-player.html`).
-- **Hover** on the method's name: the title, the newest PR and version, each screen's GIF side by side, then
-  **▶ Play desktop MP4**, **▶ Play mobile MP4** (they open the panel) and **Open in e2e player ↗**.
+- **Hover** on the method's name: the title, the newest PR and version, **▶ Play desktop MP4**, **▶ Play mobile MP4**
+  (they open the panel) and **Open in e2e player ↗**, then each screen's GIF side by side (the links come first: VS
+  Code's hover is at most 250 px tall, and on a phone the GIFs would push them out of sight).
+- **Play e2e recording of this scenario**: the ▷ button in the editor's title bar of a scenario file, and **Loopsmith: Play
+  e2e recording of this scenario** in the Command Palette, open the panel on the scenario the cursor is in (the file's
+  first one when the cursor is above them all), on its first screen. It's the way to play on a phone, where a CodeLens
+  or a hover's link is hard to tap.
 - **Loopsmith: Refresh e2e recordings** (Command Palette) reads the release again: a recording posted after the files
   were opened shows up. The read is also renewed when it is ten minutes old.
 
@@ -43,7 +48,8 @@ drive (`post-create.sh`), so `dotnet build Loopsmith.slnx`, `dotnet test` and `t
 
 Once the container's setup has finished (its terminal says so), the Extensions view lists **Loopsmith e2e recordings**.
 If a scenario file shows no CodeLens yet, run **Developer: Reload Window** once. In a Codespace, VS Code may already
-have your GitHub sign-in, so the extension can read the release with it from the start.
+have your GitHub sign-in, so the extension can read the release with it from the start. On a phone, put the cursor in a
+scenario and tap the ▷ button in the editor's title bar.
 
 ### vscode.dev: from a container on your computer
 

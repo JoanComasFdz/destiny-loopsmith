@@ -19,7 +19,7 @@ public sealed class HoverTests : BaseE2E
           Then the hover's title is "▶ Start from scratch opens an Arc Hunter with nothing equipped"
           And it reads "PR #109 · V1 · StartFromScratchTests"
           And it shows "pr-109-v1-start-from-scratch-opens-an-arc-hunter-with-nothing-equipped-desktop.gif" labelled "Desktop" and "pr-109-v1-start-from-scratch-opens-an-arc-hunter-with-nothing-equipped-mobile.gif" labelled "Mobile", side by side
-          And it links "▶ Play desktop MP4", "▶ Play mobile MP4" and "Open in e2e player ↗"
+          And it links "▶ Play desktop MP4", "▶ Play mobile MP4" and "Open in e2e player ↗", above the GIFs
           And "Open in e2e player ↗" goes to "https://joancomasfdz.github.io/destiny-loopsmith/e2e-player.html?v=pr-109-v1-start-from-scratch-opens-an-arc-hunter-with-nothing-equipped-desktop.mp4"
           When I tap "▶ Play mobile MP4" in the hover
           Then the panel "Recording · StartFromScratchOpensAnArcHunterWithNothingEquipped" shows beside the code
@@ -44,6 +44,7 @@ public sealed class HoverTests : BaseE2E
             .Reads("PR #109 · V1 · StartFromScratchTests")
             .ShowsGifsSideBySide(("pr-109-v1-start-from-scratch-opens-an-arc-hunter-with-nothing-equipped-desktop.gif", "Desktop"), ("pr-109-v1-start-from-scratch-opens-an-arc-hunter-with-nothing-equipped-mobile.gif", "Mobile"))
             .Links("▶ Play desktop MP4", "▶ Play mobile MP4", "Open in e2e player ↗")
+            .ShowsItsLinksAboveTheGifs()
             .LinksTo("Open in e2e player ↗", "https://joancomasfdz.github.io/destiny-loopsmith/e2e-player.html?v=pr-109-v1-start-from-scratch-opens-an-arc-hunter-with-nothing-equipped-desktop.mp4");
 
         // When

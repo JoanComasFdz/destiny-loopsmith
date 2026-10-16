@@ -118,6 +118,16 @@ test('reads a scenario file: its scenarios, their titles, screens, class, domain
   assert.equal(extension.findScenarioAt([scratch, tooltip], 16, 10), null);
 });
 
+test('finds the scenario the cursor is in: the last one starting on or above its line, else the first', () => {
+  const [scratch, tooltip] = extension.findScenarios(START_FROM_SCRATCH);
+  assert.equal(extension.findScenarioAround([scratch, tooltip], 2), scratch, 'above every scenario: the first');
+  assert.equal(extension.findScenarioAround([scratch, tooltip], 8), scratch);
+  assert.equal(extension.findScenarioAround([scratch, tooltip], 21), scratch);
+  assert.equal(extension.findScenarioAround([scratch, tooltip], 22), tooltip);
+  assert.equal(extension.findScenarioAround([scratch, tooltip], 40), tooltip);
+  assert.equal(extension.findScenarioAround([], 3), null);
+});
+
 test('a file outside Scenarios has the domain folder "Unsorted", and a file with no scenario has none', () => {
   assert.equal(extension.toDomainFolder('Loopsmith.Web.E2E.Infrastructure'), 'Unsorted');
   assert.equal(extension.toDomainFolder('Loopsmith.Web.E2E.Scenarios.Build.Subclass'), 'Build/Subclass');
@@ -167,6 +177,7 @@ test('the hover shows both GIFs, a link per MP4 and the player page', async () =
   assert.match(hover, /PR #109 · V1 · StartFromScratchTests/);
   assert.match(hover, /<img src="https:\/\/github\.com\/o\/r\/releases\/download\/prs-resources\/pr-109-v1-start-from-scratch-opens-an-arc-hunter-with-nothing-equipped-desktop\.gif" height="120" alt="Desktop recording">/);
   assert.match(hover, /<td>Desktop<\/td><td>Mobile<\/td>/);
+  assert.ok(hover.indexOf('[▶ Play desktop MP4]') < hover.indexOf('<table>'), 'the links come before the GIFs');
   assert.match(hover, /\[▶ Play desktop MP4\]\(command:play-desktop\) · \[▶ Play mobile MP4\]\(command:play-mobile\) · \[Open in e2e player ↗\]\(https:\/\/joancomasfdz\.github\.io\/destiny-loopsmith\/e2e-player\.html\?v=pr-109-v1-start-from-scratch-opens-an-arc-hunter-with-nothing-equipped-desktop\.mp4\)/);
 });
 

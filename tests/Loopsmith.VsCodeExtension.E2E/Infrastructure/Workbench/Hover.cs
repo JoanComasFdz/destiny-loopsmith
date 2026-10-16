@@ -22,7 +22,7 @@ public sealed class Hover(IPage page)
         await OnScreen.MoveAwayAsync(page);
     }
 
-    /// <summary>What the hover shows: its title, its lines, each GIF with its label and where it is, and its links.</summary>
+    /// <summary>What the hover shows: its title, its lines, each GIF with its label and where it is, and its links and where they are.</summary>
     public Task<HoverSnapshot> ReadAsync() => OnScreen.ReadAsync(page, ReadShownAsync);
 
     private async Task<HoverSnapshot> ReadShownAsync() =>
@@ -49,7 +49,7 @@ public sealed class Hover(IPage page)
               const img = td.querySelector('img');
               return { asset: img ? asset(img.getAttribute('src')) : '', label: labels[at] ?? '', box: box(img ?? td) };
             }),
-            links: [...hover.querySelectorAll(link)].map(a => ({ text: a.textContent.trim(), target: a.getAttribute('data-href') ?? a.getAttribute('href') ?? '' })),
+            links: [...hover.querySelectorAll(link)].map(a => ({ text: a.textContent.trim(), target: a.getAttribute('data-href') ?? a.getAttribute('href') ?? '', box: box(a) })),
           });
         }
         """;
@@ -61,8 +61,8 @@ public sealed record HoverSnapshot(string Title, ImmutableArray<string> Lines, I
 /// <summary>A GIF of the hover: its asset's name, its label and where it is (CSS pixels).</summary>
 public sealed record HoverGif(string Asset, string Label, ShownBox Box);
 
-/// <summary>A link of the hover: its text and its target.</summary>
-public sealed record HoverLink(string Text, string Target);
+/// <summary>A link of the hover: its text, its target and where it is (CSS pixels).</summary>
+public sealed record HoverLink(string Text, string Target, ShownBox Box);
 
 /// <summary>Where a part is on the screen, in CSS pixels.</summary>
 public sealed record ShownBox(double Left, double Top, double Right, double Bottom);

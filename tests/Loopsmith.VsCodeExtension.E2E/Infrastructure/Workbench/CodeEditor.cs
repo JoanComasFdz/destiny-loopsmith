@@ -48,6 +48,14 @@ public sealed class CodeEditor(IPage page)
     public Task ClickCodeLensAsync(string item) =>
         OnScreen.ClickAsync(page, CodeLens.Locator(VsCodeDom.CodeLensCommand).Filter(new() { HasText = item }).First);
 
+    /// <summary>Clicks the line that shows <paramref name="text"/>, so the cursor is on it.</summary>
+    public Task ClickLineAsync(string text) =>
+        OnScreen.ClickAsync(page, Editor.Locator(VsCodeDom.Line).Filter(new() { HasText = text }).First);
+
+    /// <summary>Clicks the button <paramref name="title"/> in the editor's title bar (by its tooltip: the button shows an icon).</summary>
+    public Task ClickTitleBarButtonAsync(string title) =>
+        OnScreen.ClickAsync(page, page.Locator(VsCodeDom.EditorTitleBar).GetByRole(AriaRole.Button, new() { Name = title, Exact = true }));
+
     /// <summary>Rests the mouse on the scenario's method name, where VS Code shows its hover.</summary>
     public async Task HoverMethodNameAsync(ScenarioFile file)
     {

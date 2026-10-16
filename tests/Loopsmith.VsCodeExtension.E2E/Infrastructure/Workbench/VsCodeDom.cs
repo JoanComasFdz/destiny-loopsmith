@@ -50,6 +50,9 @@ public static class VsCodeDom
     /// <summary>A cell of the hover's GIFs' labels.</summary>
     public const string HoverLabel = "tr:nth-child(2) td";
 
+    /// <summary>The title bar of the editor that has focus: its tabs and its buttons (an extension's among them).</summary>
+    public const string EditorTitleBar = ".editor-group-container.active .title";
+
     /// <summary>An editor tab (the file's, the panel's).</summary>
     public const string EditorTab = ".tabs-container .tab";
 
