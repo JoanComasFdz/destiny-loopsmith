@@ -183,13 +183,22 @@ step 4):
 - If the tools aren't available or the rename fails, say so in the session and carry on. The rename
   never blocks the PR.
 
-Every message that reports work as finished (the PR opened, a review round or a CI fix pushed) ends
-with both links as bullet points, with the real PR number:
+Only two kinds of message end with both links as bullet points, with the real PR number (CLAUDE.md,
+"Agent workflow", step 4):
+- the one that reports the PR opened;
+- the one after a push that answers the owner: a review round, or a change they asked for in the
+  session.
+
+They end like this:
 - PR: https://github.com/JoanComasFdz/destiny-loopsmith/pull/59
 - Preview: https://joancomasfdz.github.io/destiny-loopsmith/pr-preview/pr-59/
 
+No other message repeats the links: CI running, passing or failing; the preview built; e2e GIFs
+posted; check-ins; a conflict merge or a CI fix nobody asked for; waiting on review. The PR merged
+or closed is one line with no links.
+
 A docs-only PR (every changed path a Markdown file or under `docs/`, `.github/` or `.claude/`;
-CLAUDE.md, "Agent workflow", step 4) gets no preview, so its messages end with the PR bullet only,
+CLAUDE.md, "Agent workflow", step 4) gets no preview, so those two messages end with the PR bullet only,
 and its description has no "how to check it on the preview".
 
 The owner's files never go into the repository by themselves. When the work needs one in the
