@@ -57,6 +57,12 @@ folder (`Dockerfile`, `serve.js`; the README's "Install"). Once installed, the e
 extension host may fetch any `https` address (GitHub's API), its hover's images any `https` one, and its panel loads
 what its own policy allows.
 
+A GitHub Codespace or desktop VS Code's Dev Containers needs neither: VS Code runs a server in the container, which
+installs a `.vsix`. The repository's dev container (`.devcontainer/`) packs the extension from its folder, as the
+`PublishVsCodeExtension` target packs the site's, and installs it with VS Code's CLI each time VS Code attaches
+(`install-extension.sh`), so a branch's Codespace has that branch's extension and nothing comes from the Marketplace.
+The dev container also holds everything the repository builds, tests and records with (`Dockerfile`, `post-create.sh`).
+
 ## DIM links
 
 Home starts a loop from a DIM link ([loop-format.md](loop-format.md#starting-from-a-dim-link)). A link

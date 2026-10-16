@@ -27,6 +27,24 @@ uses it without asking.
 
 ## Install
 
+### Codespaces and Dev Containers: already installed
+
+The repository's dev container (`.devcontainer/`) installs the extension from this folder each time VS Code attaches to
+it (`install-extension.sh`: it packs the `.vsix` as the site's is packed and installs it with VS Code's own CLI), so
+there is nothing to install: no Marketplace, no container of your own, no download. The extension is always the
+checkout's own, so a branch's Codespace runs that branch's extension. The same container is a full dev environment for
+the repository: .NET 10, Node 22, ffmpeg, the Compendium download's Python packages, and the Chromium the e2e scenarios
+drive (`post-create.sh`), so `dotnet build Loopsmith.slnx`, `dotnet test` and `tools/e2e/record.sh` run in it.
+
+- **GitHub Codespaces:** on the repository's page, **Code** → **Codespaces** → **⋯** → **New with options…**, pick the
+  branch, then **Create codespace** (a 4-core machine at least). Creating it takes a few minutes the first time.
+- **Desktop VS Code** (with Docker on your computer and the Dev Containers extension): open a clone, then **Dev
+  Containers: Reopen in Container**.
+
+Once the container's setup has finished (its terminal says so), the Extensions view lists **Loopsmith e2e recordings**.
+If a scenario file shows no CodeLens yet, run **Developer: Reload Window** once. In a Codespace, VS Code may already
+have your GitHub sign-in, so the extension can read the release with it from the start.
+
 ### vscode.dev: from a container on your computer
 
 vscode.dev fetches only from `localhost` and a few hosts of its own (its content security policy), so it can't install the

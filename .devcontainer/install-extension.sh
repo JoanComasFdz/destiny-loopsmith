@@ -30,17 +30,16 @@ if [ $pack_only -eq 1 ]; then
   exit 0
 fi
 
-# The VS Code attached: its `code` command when this runs in its terminal's environment, else its server's own CLI
-# (where Codespaces and Dev Containers put it), the newest first.
-code=""
-if command -v code >/dev/null 2>&1; then
-  code="code"
-else
-  code="$(ls -t "$HOME"/.vscode-remote/bin/*/bin/code-server "$HOME"/.vscode-server/bin/*/bin/code-server \
-                "$HOME"/.vscode-server/cli/servers/*/server/bin/code-server 2>/dev/null | head -n1 || true)"
+# The VS Code attached: its `code` command when this runs where VS Code's terminals do (it tells the running VS Code,
+# so the extension starts without a reload), else its server's own CLI, the newest one (where Codespaces and Dev
+# Containers put it).
+if [ -n "${VSCODE_IPC_HOOK_CLI:-}" ] && command -v code >/dev/null 2>&1 && code --install-extension "$vsix" --force; then
+  exit 0
 fi
-if [ -z "$code" ]; then
+server="$(ls -t "$HOME"/.vscode-remote/bin/*/bin/code-server "$HOME"/.vscode-server/bin/*/bin/code-server \
+                "$HOME"/.vscode-server/cli/servers/*/server/bin/code-server 2>/dev/null | head -n1 || true)"
+if [ -z "$server" ]; then
   echo "No VS Code attached: the extension is packed in $vsix but not installed." >&2
   exit 0
 fi
-"$code" --install-extension "$vsix" --force
+"$server" --install-extension "$vsix" --force
