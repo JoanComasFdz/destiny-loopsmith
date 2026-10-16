@@ -6,7 +6,7 @@ namespace Loopsmith.Core.Phrasing;
 
 /// <summary>
 /// Kernel: the textual form of a player action, read back (inverse of <c>DomainPhrasing.ToActionToken</c>).
-/// Shared by the CLI, the loop-file parser and the web host, so all accept exactly the same tokens.
+/// Read by the loop-file parser, so a loop file takes exactly the tokens the designer writes.
 /// </summary>
 public static class ActionTokenParsing
 {

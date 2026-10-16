@@ -1,7 +1,7 @@
 namespace Loopsmith.Core.Tests.Architecture;
 
 /// <summary>
-/// Rules 2 (API part), 3 and 4: I/O stays in <c>SourceFetching</c>, the console in the CLI host,
+/// Rules 2 (API part), 3 and 4: I/O stays in <c>SourceFetching</c>, the console out of the core,
 /// YamlDotNet in the parsing slices, and the kernel touches none of them.
 /// </summary>
 public sealed class ForbiddenApiTests
@@ -78,7 +78,7 @@ public sealed class ForbiddenApiTests
             select $"{CoreAssembly.FindOutermost(type).FullName} -> {called.DeclaringType.FullName}.{called.Name}";
 
         Violations.AssertNone(
-            $"'{Slices.SourceFetching}' only reads; writing files is the host's job (Effect.SaveFile).",
+            $"'{Slices.SourceFetching}' only reads; writing files is the host's job.",
             violations);
     }
 
@@ -96,7 +96,7 @@ public sealed class ForbiddenApiTests
             _ => true,
             (_, dependency) => dependency.FullName == SystemConsole);
 
-        Violations.AssertNone($"No Loopsmith.Core type may use {SystemConsole}: console I/O belongs to the CLI host.", violations);
+        Violations.AssertNone($"No Loopsmith.Core type may use {SystemConsole}: the core writes to no console.", violations);
     }
 
     [Fact]

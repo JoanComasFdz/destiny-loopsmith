@@ -37,8 +37,7 @@ The folders are a convention: every `*.yaml` under the rules root is read (the w
 are unique across all of them (`duplicate element id '<id>' (first defined at <file>:<line>)`). The root
 holds exactly one `glossary.yaml`; every other file has the shape `elements: [ … ]`. When the glossary
 is missing or broken, the other files are still checked for their own errors, but their references
-aren't. The CLI uses the nearest `rules/` folder with a `glossary.yaml` above the build (or loop) file,
-then above the current directory; `--rules <dir>` overrides it.
+aren't.
 The catalog version is `authored-<first 12 hex chars of SHA-256 over the (path, text) pairs sorted by path>`
 (paths relative to the rules root), so any edit to any rule file changes it.
 
@@ -280,7 +279,7 @@ say "No rules needed." with the why.
 
 | State | In the rule files | What the player sees |
 |---|---|---|
-| In the loop | `rules` or `passives` | what it sets off, in the trace and the graph |
+| In the loop | `rules` or `passives` | what it sets off, in the loop's steps |
 | Outside the loop on purpose | `inert: "<why>"` | nothing under Validation; its details say "No rules needed." and why |
 | Not authored yet | no element (the manifest knows it, the rules don't) | its square carries a small grey ⊘; nothing under Validation |
 
@@ -427,7 +426,7 @@ unknown key (write `input: air`). [loop-format.md](loop-format.md#action-tokens)
 `atLeast` with either of them, or with `sustained` (`damage cannot combine 'atLeast' and 'sustained'`); `damage` has no
 `tier`. `sustained` (default `false`) is for a count the game doesn't show of hits or damage on one enemy: write it
 instead of `chance: true` (ADRs D34). The pack in front of you is `minor` (ADRs D7),
-so a `major|boss|champion` kill shows in `explain` and the graph but doesn't fire in a loop.
+so a `major|boss|champion` kill shows in the build's explanation but doesn't fire in a loop.
 `atLeast` is a whole number 1..20 (`TargetCount`, ADRs D4): the player says how many enemies an
 action hits ("One For All: hitting three separate targets…" → `{ damage: { via: weapon, atLeast: 3 } }`).
 `fewerThan` is 2..20 and stands alone like `atLeast` (`damage cannot combine 'atLeast' and 'fewerThan'`), but on a kill
@@ -463,7 +462,7 @@ whether it fires for sure, as a chance or not at all.
 `buffGained` fires on every `applyBuff` of a stacking status (one with `maxStacks`), and on an
 `applyBuff` of a non-stacking status only when it wasn't active. `stacksMaxed` fires when the player
 declares the buff at its maximum (`max:bolt-charge`, "Bolt Charge at max" —
-[loop-format.md](loop-format.md#action-tokens), ADRs D3), never from a grant; `explain` heads its
+[loop-format.md](loop-format.md#action-tokens), ADRs D3), never from a grant; the build's explanation heads its
 rules "Max Bolt Charge". A `stacksMaxed` (or `atMax`) on a status without `maxStacks` is a parse error:
 `'amplified' doesn't stack (no maxStacks), so it is never at max`.
 
@@ -511,11 +510,11 @@ A rule fired by an event a chance rule raised, or by picking up a pickup only ch
 `during` (`grenade|melee|classAbility|super`) holds for the whole of a step that casts that ability, any use of it
 (`class` and `class:air` are both the class ability), and on no other step: what is under way at the step's end, such
 as Flow State's dodge (`when: [ { has: amplified }, { during: classAbility } ]`: 66% [PvP 32%] damage resistance on a
-`class` step while Amplified, Compendium Arc#49). `explain` reads it `(during your class ability)`. Being in your
+`class` step while Amplified, Compendium Arc#49). The build's explanation reads it `(during your class ability)`. Being in your
 Super is not a `during`: a Super lasts for several steps, so casting it applies the `super` status (the `super`
 keyword element) until the player declares `end:super`, and a Super's resistance is `when: [ { has: super } ]`
 (Arc Staff: 90% [PvP 53%], Arc#44).
-`atMax` holds while the player has that buff declared at max; `explain` reads a guarded rule
+`atMax` holds while the player has that buff declared at max; the build's explanation reads a guarded rule
 `(while Bolt Charge at max)`. It is how a rule reacts to the next hit at the maximum: Bolt Charge
 (Compendium Arc#5) discharges on the next ability hit at x10.
 
@@ -528,7 +527,7 @@ keyword element) until the player declares `end:super`, and a Super's resistance
 So declaring "Bolt Charge at max" fires Shinobu's Vow (New Tricks, ~40% grenade energy, a heal) and
 Flashover (Amplified 15s), and the next ability hit fires the strike, which spends the buff.
 
-`belowMax` (a status that stacks, like `atMax`) holds while the buff is on you and not declared at max; `explain` reads
+`belowMax` (a status that stacks, like `atMax`) holds while the buff is on you and not declared at max; the build's explanation reads
 it `(while Armor Charge below max)`. With `atMax` it splits a threshold the state doesn't count (ADRs D1): a rule that
 needs "x3 or more" of a status fires for sure at the declared max and as a `chance` below it (ADRs D8). Armor Charge is
 counted (ADRs D33), so its rules read the count instead — Emergency Reinforcement (`rules/mods/chest.yaml`):
@@ -544,7 +543,7 @@ counted (ADRs D33), so its rules read the count instead — Emergency Reinforcem
 A **critical health** step is the player's declaration (`health:critical`, "Critical health",
 [loop-format.md](loop-format.md#action-tokens), ADRs D3): no damage you take is modelled, so only the player can say
 your shields broke. `criticalHealth` takes no keys (`{ criticalHealth: {} }`); the designer offers the step only when an
-equipped rule has the trigger, and the loop graph draws it as a "Critical health" node the player declares.
+equipped rule has the trigger.
 
 A **broken shield** and an ability's **last charge** are options of a step the player turns on (ADRs D36,
 [loop-format.md](loop-format.md#action-tokens)). A weapon step that breaks a shield (`energy:kill:shield`) raises
@@ -563,7 +562,6 @@ expended"):
 ```
 
 A Super has no `energyExpended` (`energyExpended: a Super has no energyExpended (use grenade, melee or classAbility)`).
-The loop graph leads from each weapon to the `shieldBroken` rules and from each ability to its `energyExpended` ones.
 
 A **reload** (ADRs D37) is the player's Reload step (`kinetic:reload`, "Reload Festival Flight",
 [loop-format.md](loop-format.md#action-tokens)) or a `reloadWeapon` outcome: either raises `Reloaded` from that weapon,
@@ -583,10 +581,6 @@ halves of its loop:
         then:
           - { reloadWeapon: weapon:this }
 ```
-
-The loop graph leads from each weapon to its `reload` rules, and from a `reloadWeapon` outcome both to them and to the
-weapon's "Shoot" node: its magazine refilled, it shoots again (Demolitionist's loop: grenade → reload → kills → grenade
-energy → grenade).
 
 **Outcomes (`then`)** — exactly one key each:
 
@@ -635,8 +629,7 @@ must be glossary `buff`s; in `debuffTarget`/`targetHas` glossary `debuff`s
 * **`spendStacks`** takes that many of a counted buff's stacks, sure ones first, then chance ones, never below none;
   the buff ends when none are left. With none it carries the caveat `nothing to spend`.
 * **`grantEnergy` to `leastCharged`** (Orbs of Restoration, Restorative Finisher) is a fact like any energy grant:
-  `+10% energy to your least-charged ability` (by copies). The game picks the ability, so the loop graph draws no
-  arrow from it to one ability's energy.
+  `+10% energy to your least-charged ability` (by copies). The game picks the ability.
 * **`debuffTarget`** puts the debuff on the pack, where it stays until the player ends it; no rule
   removes a debuff.
 * **`collect`** picks the pickup up when it is on the ground — it leaves the ground and its pickup
@@ -680,17 +673,11 @@ two elements' grants don't stack, say it on the rule of the side that gives noth
   `doesn't stack with Dielectric [Tempest Strike]`. It gives way even if that element's rule itself
   gave way to a third one.
 * Without a listed element equipped, or on an event no rule of it matches, the rule applies as usual.
-* With both equipped, the build check notes it (info, in every build summary: `explain`, `validate`, the web…) —
+* With both equipped, the build check notes it (info, in the build summary) —
   `'Tempest Strike': +1 Bolt Charge on "Kill Jolted target" doesn't stack with 'Dielectric'.` — a fact for the
   build crafter, who may keep both for what else each gives;
-  `explain` annotates the bullet (`+1 Bolt Charge (doesn't stack with Dielectric) [Tempest Strike]`),
+  the build's explanation annotates the bullet (`+1 Bolt Charge (doesn't stack with Dielectric) [Tempest Strike]`),
   and a loop's analysis shows it as **wasted** at each step where it happens ([loop-format.md](loop-format.md)).
-* In the loop graph (`graph`, `loops`), where this rule and the rule it gives way to lead from the same
-  trigger to the same node, both arrows go into a **Doesn't stack** node and only the partner's arrow
-  leaves it (`Kill Jolted target →[Tempest Strike, Dielectric] Doesn't stack →[Dielectric] Gain Bolt Charge`);
-  rules of other elements on that trigger and target keep their direct arrow. The graph is static, so it
-  pairs only rules with the *same trigger* — an approximation of the engine's same-event rule. The node
-  isn't a step: a loop's length limit, its "N steps" and the loop order don't count it.
 * The whole rule gives way, not one outcome: an outcome that does stack goes in a rule of its own.
 
 Parse errors are checked over the whole catalog once every file is read, and reported at the
@@ -729,17 +716,17 @@ passives:
 Passives are facts and change no state. Each is shown with the value for the copies equipped (Weapon Surge
 `"+10% | +17% | +22% | +25%"` with two copies: `+17% Arc weapon damage`; Charged Up with one: `Armor Charge up to x4`).
 While its `when` holds, `extraStacks` adds a caveat to every
-`applyBuff` of that status (`+1 from Spark of Frequency`); the others are shown in `explain`, and,
+`applyBuff` of that status (`+1 from Spark of Frequency`); the others are shown in the build's explanation, and,
 when they have a `when`, in the trace's state while it holds. `raiseMaxStacks` states the build's cap
 of a stacking status while it is equipped, as the source gives it by copies (Charged Up: Armor Charge
 `"4 | 5 | 6"`, so x4 with one copy; the glossary's x3 without it) — never added up (ADRs D1). Two elements
 raising the same cap make it `"?"`: no source says how they combine. It always holds, so a
 `raiseMaxStacks` with a `when` is an error (`raiseMaxStacks raises the build's cap, which always holds, so
 it takes no when`). The cap is a fact: it shows in the status's facts (`up to x4`), in the declared step
-(`Armor Charge at max (x4)`) and in `explain`'s max heading (`Max Bolt Charge (x10)`); the player still
+(`Armor Charge at max (x4)`) and in the build explanation's max heading (`Max Bolt Charge (x10)`); the player still
 declares it reached (ADRs D3).
 
-`resistDamage` and `resistCombatantDamage` are damage resistances, shown in `explain` and counted in the step's
+`resistDamage` and `resistCombatantDamage` are damage resistances, shown in the build's explanation and counted in the step's
 **damage resistance** (ADRs D29, [loop-format.md](loop-format.md#action-tokens)) while their `when` holds.
 `resistDamage` reduces any damage: the `[…]` is its PvP value, and without one its PvP value is `?` (write
 `"20% [20%]"` when they are the same). `resistCombatantDamage` reduces only combatants' damage, so it does nothing in
@@ -751,11 +738,12 @@ Copies of one mod take its value by copies (`"15% | 25% | 30%"`); different sour
 through, 1 − (1 − a) × (1 − b) × … (compendium Armor Mods#7), never added up.
 
 `modifyStat` (the Font mods: `+20 | +40 | +50` Grenade while Armor Charge, `when: [ { has: armor-charge } ]`) is a fact
-shown in `explain` and, while its `when` holds, in the step's state (`+20 Grenade [Grenade Font]` under Armor Charge).
+shown in the build's explanation and, while its `when` holds, in the step's state (`+20 Grenade [Grenade Font]` under Armor Charge).
 It is never added to the build's stats: the build's stat line and the `statChecks` that read it don't count it (ADRs D1, D28).
 
 ## Build file (`builds/<build>/build.yaml`)
 
+<!-- BuildFileParsingTests reads the next yaml block -->
 ```yaml
 # abridged and illustrative — the real one is builds/skip-grenade-hunter/build.yaml
 name: Skip Grenade Hunter
@@ -807,7 +795,7 @@ stats: { weapons: 47, class: 104, grenade: 145, super: 27, melee: 79 }   # any s
     file is read, and so are its icon, its trait columns, its intrinsic and catalyst. The manifest is the source of
     truth, so the file doesn't copy them: a `slot`, `name`, `type` or `archetype` given with a hash (a file written
     before) is ignored. A hash the manifest doesn't know as a weapon with a damage type is refused ("weapon hash 1234567
-    isn't in the manifest, so the file can't be imported"). The CLI reads the excerpt (`rules/manifest.yaml`; rerun
+    isn't in the manifest, so the file can't be imported"). The Core tests read the excerpt (`rules/manifest.yaml`; rerun
     [tools/manifest/](../tools/manifest/README.md) for a weapon it lacks); the designer reads Bungie's full manifest for
     the hashes the excerpt lacks before it imports a build or loop file, or opens a shared loop. The file writer writes
     a weapon given by hash as its hash and what the build chooses for it, with its name in a comment after it on its

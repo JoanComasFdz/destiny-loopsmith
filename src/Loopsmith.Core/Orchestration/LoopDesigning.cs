@@ -53,7 +53,7 @@ public sealed record BungieLogin(DesignSession Session, string Message);
 /// <summary>A catalog with what Bungie's full manifest said added; <see cref="Note"/> says when it couldn't be read.</summary>
 public sealed record JoinedCatalog(RuleCatalog Catalog, Optional<string> Note);
 
-/// <summary>Pure API the hosts (CLI, web) use to design, export, import, analyse and compare loops.</summary>
+/// <summary>Pure API the host (the web designer) uses to design, export, import, analyse and compare loops.</summary>
 public static class LoopDesigning
 {
     public static Result<DesignSession, string> StartDesign(RuleCatalog catalog, SourceText buildFile, string name) =>
@@ -1104,7 +1104,7 @@ public static class LoopDesigning
 
     /// <summary>
     /// What one step fired as a tree: each event, the elements it set off, each of their outcomes on a line of its own
-    /// (the CLI's wording), and the keywords they name.
+    /// (the trace's wording), and the keywords they name.
     /// </summary>
     public static StepOutcomes ShapeStepOutcomes(DesignSession session, Resolution resolution, TraceOptions options) =>
         StepOutcomeShaping.ShapeStepOutcomes(session.Build, resolution, options);

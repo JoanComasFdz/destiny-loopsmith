@@ -59,8 +59,8 @@ build: |                                # required — the build file's full tex
 
 ### Action tokens
 
-Same tokens everywhere: CLI `--actions a,b,…` and `--scenario <file>` (one token per line or
-comma-separated; `#` starts a comment), `play`, loop files and web share links:
+Same tokens everywhere: loop files, web share links and a golden test's scenario file
+(`builds/skip-grenade-hunter/scenario.txt`: one token per line or comma-separated; `#` starts a comment):
 
 `grenade[:hold]|melee[:slide|air]|super[:hit|kill[:N]]` · `class[:air]` · `kinetic|energy|power[:hit|kill[:N]]` ·
 `kinetic|energy|power:reload` · `finisher` · `pickup:<pickup-id>` · `max:<status-id>` · `end:<status-id>` · `pack:new` · `health:critical` — and last, an option:
@@ -174,14 +174,14 @@ hit step, in the steps' titles and the HUD's buttons alike — "Festival Flight 
 ⬜ spend fully)", "Class ability (⬜ spend fully)", "Class ability (in the air)",
 "Finisher", "Pick up Orb of Power", "Bolt Charge at max (x10)", "Amplified ends", "New pack", "Critical health".
 
-**What `play` and the web designer offer.** Only steps that can happen: the abilities, the equipped
+**What the web designer offers.** Only steps that can happen: the abilities, the equipped
 weapons, the pickups on the ground and the **states you declare** — `pack:new` always, `health:critical` when an
 equipped rule reacts to it (the designer shows it with the buffs **On you**), `max:` for
 each active buff that stacks and isn't at max yet, `end:` for each active status. A secondary (`melee:slide`, `class:air`)
 is offered only when an equipped rule names it (without one it fires exactly what the press fires); `finisher` (with
 the abilities) always, as the game always allows one — in a build where no rule reacts to a finisher and none fires on
 a kill from any source, it sets nothing off. Every token still reads anywhere
-(CLI, loop files, share links).
+(loop files, share links).
 
 The web designer's **Next trigger** is laid out like Destiny's HUD: the Super's diamond, then the grenade, melee and
 class ability squares with the build's own icons in the subclass's colour, each with the secondary uses the build's
@@ -211,7 +211,7 @@ shows its button under the HUD instead of acting at one tap. Above the HUD, wher
 status — on you, on your weapons, on the pack (with **New pack**) — each with its own buttons ("Bolt Charge: at max
 (x10) · ends"), and what is on the ground to pick up.
 
-**How the designer shows a step.** The same facts and wording as the CLI's `trace`, one line each: the
+**How the designer shows a step.** The same facts and wording as the trace as text (`TraceRenderer`), one line each: the
 event ("Grenade hit"); under it, where what it set off comes from, with that item's icon — "Fragment ·
 Arcstrider" (the subclass), "Weapon perk · Festival Flight", "Armor mod · Luminopotent Cloak" (the piece in
 the mod's slot the build shows, else the slot), "Artifact perk · Tablet of Ruin", "Armor set ·
@@ -249,7 +249,7 @@ Power waiting for `pickup:orb-of-power`, "(chance)" when only chance rules dropp
 collects itself). A phone stacks the four. Armor Charge shows its count on its chip ("Armor Charge x1 · +1 (chance)")
 and in a row under the ground; tapping the row (*▸ Armor Charge*) lists each step that gained or spent some since it
 was last gained from none ("#6 Orb of Power: +1 → x1", "#5 Elemental Charge: at cap, +1 wasted → x3", "the pass
-before: x2") and its decay, never applied; tapping it again hides them. The CLI's `--state` prints the same as an
+before: x2") and its decay, never applied; tapping it again hides them. The trace as text with its state prints the same as an
 `Armor Charge` line. A status that switches other elements' passives on says how many ("Amplified · 1 effect": Spark of
 Frequency's extra Bolt Charge); its details list them under **While Amplified** in their **In this build**
 card, each with where it reaches. A passive that changes weapon stats (Ionic Overclock: Linear Fusion Rifles, Fusion Rifles and Heat
@@ -267,7 +267,7 @@ its own, PvE only (PvP 0%): *Arc combatants* (Arc Resistance, or Harmonic Resist
 within 5 m*, *Combatants beyond 30 m*, *Combatants' area, blast and explosive damage*, all damage's sources and its own
 together. A source whose value is "?" makes its total "?". Tapping the title (*▸ Damage resistance*) lists each row's
 sources with their PvE and PvP values (each opens its details on a tap) and the formula; tapping it again hides them.
-The totals are facts, never read to decide what a step fires. The CLI's `--state` prints the same four lines, a
+The totals are facts, never read to decide what a step fires. The trace as text with its state prints the same four lines, a
 `Resistance` line (`PvE 73% · PvP 32.5%  (Guardian 34.5% × Spark of Resistance 25% [PvP 10%] × Woven Mail 45% [PvP
 25%])`) and an `against …` line for each row of its own, then one `While <status>` line for each status that switches
 something on.
@@ -689,7 +689,7 @@ The steps replay after each change, and the loop's build carries it (export, sha
 
 ## Analysis
 
-The analysis follows the loop's order (CLI `loop`, `a` in `play`, the web designer's Analysis view).
+The analysis follows the loop's order (the web designer's Analysis view).
 Each step resolves as in [rule-format.md](rule-format.md#engine-semantics-what-an-author-can-rely-on).
 
 1. **First pass** — the steps in order from a fresh spawn: no buffs, a clean pack, nothing on the
@@ -758,7 +758,7 @@ repeating pass but not yet on the first) and *only here* (what fires only on the
 sources don't give (`?`, ADRs D13) and a *(chance)* rule show on the bullets of the trace, where they
 happen.
 
-**The report as text** (CLI `loop`, `a` in `play`; the web lays the same out and shows this text under
+**The report as text** (the web lays the same out and shows this text under
 *The report as text*). Illustrative, `…` elides:
 
 ```
@@ -787,7 +787,7 @@ First pass (from a fresh spawn, where it differs)
 
 ## Comparison
 
-Two loops' **orders** side by side (CLI `compare`, the web Compare page). The loops may use different
+Two loops' **orders** side by side (the web Compare page). The loops may use different
 builds; both replay with the same catalog. The comparison uses each loop's repeating pass:
 
 * each loop's order on one line, with its verdict;
@@ -826,27 +826,3 @@ Links only in B
 
 A trigger that sets off different elements in the two loops lists them as `only in A` / `only in B`;
 one only a loop has reads `only in A (#7)`.
-
-## CLI
-
-```bash
-loopsmith play    builds/skip-grenade-hunter/build.yaml --save my.loop.yaml --name "My loop"
-loopsmith loop    builds/skip-grenade-hunter/loops/infinite-skip-grenades.loop.yaml [--trace] [--why] [--caveats]
-loopsmith compare builds/skip-grenade-hunter/loops/infinite-skip-grenades.loop.yaml \
-                  builds/skip-grenade-hunter/loops/melee-first.loop.yaml
-```
-
-`loop` prints the build summary, the order, the verdict and the steps (needs / in this order / on its own / wasted, and
-the first pass where it differs); `--trace` adds the full trace of the first pass, and of the
-repeating pass when it differs (`--why` and `--caveats` add reasons and caveats to it, `--verbose`
-both). `compare` prints the comparison above. The rules are found from the loop file (`compare`: the
-first one) as from a build file ([rule-format.md](rule-format.md#files)), or `--rules <dir>`.
-
-In `play` (the loop is named `<build name> loop` unless `--name` says otherwise), everything played
-becomes a step: type its number in the list (abilities, weapons, pickups on the ground and the states
-you can declare) or a token (with a count, `grenade:kill:3`, to aim at several enemies;
-`max:bolt-charge` to declare a state). `u` undoes the last step, `n <note>` notes it, `d <text>` sets
-the description (`\n` = new line), `a` analyses the loop so far, `e` explains the build, `s` shows the
-state, `r` starts over. `w` saves now and `q` saves on quit, both only once a step is designed
-("No steps designed — nothing saved."), so an empty design never overwrites a loop file. Saving needs
-`--save`.

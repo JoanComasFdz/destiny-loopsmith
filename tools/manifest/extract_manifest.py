@@ -13,7 +13,7 @@ string (written into the file).
 The excerpt holds every hash Loopsmith names: each `hash:` in rules/ (elements, the glossary's subclasses,
 armor set perks), every hash in the saved DIM shares (builds/*/dim-loadout.json) and every hash a weapon of the repo's
 builds and loops gives (its `hash`, its `roll` picks and its `mod`, in builds/*/build.yaml and in the build each
-builds/*/loops/*.loop.yaml embeds), so the CLI and the tests, which read only the excerpt, know each of those weapons. For each: its name,
+builds/*/loops/*.loop.yaml embeds), so the Core tests, which read only the excerpt, know each of those weapons. For each: its name,
 kind, type, icon, tier, Bungie's description and, for weapons, armor and armor mods, its slot and damage
 type, and a weapon's or armor piece's season watermark (`watermark`: the overlay with its season's or expansion's
 icon in its top-left corner). A weapon also gets its breaker (`breaker`: the champion it breaks of its own, an

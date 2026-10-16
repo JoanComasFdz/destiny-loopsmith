@@ -117,7 +117,7 @@ public sealed class StepStateShapingTests
     }
 
     [Fact]
-    public void The_CLIs_state_lines_follow_the_same_layout()
+    public void The_traces_state_lines_follow_the_same_layout()
     {
         var played = Play(new PlayerAction.UseClassAbility());
 
@@ -257,7 +257,7 @@ public sealed class StepStateShapingTests
     }
 
     [Fact]
-    public void The_CLI_says_what_a_status_switches_on_under_its_state()
+    public void The_trace_says_what_a_status_switches_on_under_its_state()
     {
         var played = Play(
             new PlayerAction.UseClassAbility(),

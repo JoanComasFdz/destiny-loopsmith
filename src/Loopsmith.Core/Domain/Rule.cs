@@ -107,7 +107,7 @@ public partial record HealAmount
 }
 
 /// <summary>
-/// The game's consequences. ("Effect" is reserved for side effects described as data — see Orchestration.)
+/// The game's consequences.
 /// Energy outcomes (<see cref="GrantEnergy"/>, <see cref="ConvertStacksToEnergy"/>'s energy, <see cref="ResetCooldown"/>,
 /// <see cref="GrantLeastChargedEnergy"/>), <see cref="ModifyDamage"/> and <see cref="RestoreHealth"/> are facts shown with
 /// their value (ADRs D1, D5).

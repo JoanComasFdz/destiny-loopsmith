@@ -2,8 +2,6 @@ using System.Collections.Immutable;
 using Loopsmith.Core.BuildExplanation;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
-using Loopsmith.Core.LoopGraphing;
-using Loopsmith.Core.Orchestration;
 using Loopsmith.Core.Phrasing;
 using Loopsmith.Core.Simulation;
 using Loopsmith.Core.Tests.Support;
@@ -192,19 +190,6 @@ public class SkipGrenadeHunterGoldenTests
         Assert.Contains(new ActiveBuff(StatusId.From("bolt-charge"), AtMax: false, Optional.None<StackTally>()), resolution.State.Buffs);
     }
 
-    // ── loop discovery: the build's headline loop must be found ─────────────────
-    [Fact]
-    public void Loop_discovery_finds_the_infinite_skip_grenade_loop()
-    {
-        var graph = LoopGraphBuilding.BuildLoopGraph(Build);
-        var loops = LoopFinding.FindLoops(graph);
-
-        Assert.Contains(loops, loop => loop.GivesEnergyBack
-            && loop.NodeKeys.Contains("a:Grenade")
-            && loop.NodeKeys.Contains("e:Grenade")
-            && loop.Edges.Any(e => e.Sources.Contains("Shinobu's Vow")));
-    }
-
     // ── snapshots of the full outputs (review the diff when rules change) ───────
     [Fact]
     public Task Explain_note_style()
@@ -217,23 +202,25 @@ public class SkipGrenadeHunterGoldenTests
     [Fact]
     public Task Scenario_trace()
     {
-        var scenario = File.ReadAllText(RepoFiles.ToPath("builds/skip-grenade-hunter/scenario.txt"));
-        var actions = CommandShells.ParseActions([], Optional.Some(scenario)).Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
+        var scenarioPath = RepoFiles.ToPath("builds/skip-grenade-hunter/scenario.txt");   // pure
+        var scenario = File.ReadAllText(scenarioPath);                                     // impure
+        var actions = ParseScenario(scenario);
         var resolutions = ActionResolution.ResolveSequence(Build, Fresh, actions);
         var text = TraceRenderer.RenderSequence(Build, Fresh, resolutions, new TraceOptions(true, false, false)).ToPlainText();
         return Verify(text);
     }
 
-    [Fact]
-    public Task Loops()
-    {
-        var graph = LoopGraphBuilding.BuildLoopGraph(Build);
-        var loops = LoopFinding.FindLoops(graph);
-        var text = LoopRendering.RenderLoops(graph, loops, 10).ToPlainText();
-        return Verify(text);
-    }
-
     // ── helpers ─────────────────────────────────────────────────────────────────
+
+    /// <summary>A scenario file's action tokens: one per line or comma separated, <c>#</c> starts a comment.</summary>
+    private static ImmutableArray<PlayerAction> ParseScenario(string scenario) =>
+        scenario
+            .Split('\n')
+            .Select(line => line.Split('#')[0])
+            .SelectMany(line => line.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            .Select(ActionTokenParsing.ParseActionToken)
+            .CombineAll()
+            .Match(ok => ok.Value, error => throw new InvalidOperationException(string.Join(Environment.NewLine, error.Failure)));
 
     private static Resolution Resolve(GameState state, PlayerAction action) =>
         ActionResolution.ResolveAction(Build, state, action);

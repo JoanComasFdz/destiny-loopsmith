@@ -196,7 +196,11 @@ works the PR records them; CI doesn't run, record or build anything for them.
 
 - **Who records:** the session, once, right before each push that adds or changes scenarios:
   `tools/e2e/record.sh --changed-since origin/main`, i.e. every scenario the branch adds or changes from where it left
-  `main` (a class whose file changed, or that names a changed fixture file), not only those the push touched. Every
+  `main` (a class whose file changed, or that names a changed fixture file), not only those the push touched.
+  `out/scenarios.json` keeps why each was picked: `"selected": "changed"` (its own file changed, or it was named on
+  the command line), or `"selected": "fixtures"` with the changed `"fixtures"` (paths in its project:
+  `Scenarios/Loop/Weapons/….build.yaml`, `Workspace/…`) when only a fixture it uses changed; a class that did both is
+  `changed`. Every
   scenario passes before the push. While developing, the session runs them unrecorded
   (`tools/e2e/record.sh --no-video …`: same selection and served publish, no video, no pacing, no GIF) and never
   records between pushes; when a scenario or the web app changes after the recording and before the push, it records
@@ -264,9 +268,23 @@ works the PR records them; CI doesn't run, record or build anything for them.
   player page with that run's MP4 (`https://<owner, lowercase>.github.io/<repo>/e2e-player.html?v=<MP4 name>`), so a tap
   on the GIF opens the video instead of downloading the GIF (GitHub can't make a link open a new tab, so a long-press
   does). A run with no MP4 (a `scenarios.json` from before the MP4s) shows its GIF only. A failed run has ❌ before its subtitle, and its scenario before its
-  title. Every post ends with `---` and
+  title. The scenarios the PR added or changed come first; those only re-recorded because a fixture they use changed
+  (`"selected": "fixtures"`) follow under `### Re-recorded: their fixtures changed`, each with a line naming its changed
+  fixtures, so the owner can check that the fixture change left their behaviour as it was (PR #113's post listed the
+  Weapons scenarios its `*.build.yaml` changes re-recorded like its own, and read as another PR's). With both kinds,
+  the first sits under `### Added or changed by this PR`, a scenario's title is `####` and its screens `#####`; a
+  section with no scenarios isn't shown. With only the PR's own (or a `scenarios.json` from before `selected`), there
+  are no section headings: titles `###`, screens `####`. `tools/e2e/test_post_scenarios.py` tests the layout
+  (`python3 -m unittest tools/e2e/test_post_scenarios.py`; CI doesn't run it). Every post ends with `---` and
   `_Recorded by the e2e workflow · Claude Code_`. The workflow never touches the PR's description, so editing the
   description can't break a post.
+- **Earlier versions collapse:** once a new post is up, `post-scenarios.py` edits each earlier post still open into a
+  closed `<details>` block holding it unchanged, whose summary reads **Scenarios (V1)** · 12 scenarios · replaced by V2,
+  so the newest version is the only one open and the owner doesn't scroll past an old version's GIFs to reach it (PR
+  #113). A post already collapsed is left alone: V1 keeps "replaced by V2" when V3 arrives. Only the workflow's own
+  posts (`github-actions[bot]`, with its footer) are edited. An edit GitHub refuses (a body past 65,536 characters) is
+  a warning in the run's log: the new post is up all the same. The `## Scenarios (V<N>)` heading stays inside the
+  block, so the versions count on.
 - **Failures:** a failing scenario still gets its GIF and its ❌ (the session fixes it before pushing, so it shouldn't
   happen), and never turns the run red. The run is red only when the workflow itself failed: a push that isn't a PR's
   GIFs, or GitHub refused an upload or a post.
@@ -275,12 +293,15 @@ works the PR records them; CI doesn't run, record or build anything for them.
   arrives is skipped (its branch is deleted all the same), so push the GIFs once per round.
 - **Cleanup:** when the PR is closed or merged, the workflow deletes any `e2e-gifs/pr-<n>-…` branch left behind, keeps every GIF and MP4 of the PR's newest version and
   deletes its older versions' (`pr-<n>-v1-…` to `pr-<n>-v<N-1>-…`), so the PR's last `## Scenarios (V<N>)` post keeps
-  showing its GIFs and playing its MP4s for good, and the older posts show broken images (their player links say the
-  recording is gone). The newest version is the highest `v<N>` among the PR's
+  showing its GIFs and playing its MP4s for good. Its older posts would open onto broken images, so the job then runs
+  main's `post-scenarios.py --closed`, which shrinks each to one line: **Scenarios (V1)** · 12 scenarios · replaced by
+  V2 · recordings deleted when the PR closed (its footer kept as a hidden comment, its version still counted). Their
+  Gherkins go with them: across the PRs before this (#101–#116), versions added or replaced scenarios but only once
+  reworded one, and the test files hold the current ones. The newest version is the highest `v<N>` among the PR's
   assets, read as a number (`v10` is newer than `v2`, and `v1` never matches `v10`). Only names of the form
   `pr-<n>-v<N>-…` are ever deleted: the owner's own assets (not starting with `pr-`), other PRs' assets and any other
   name are never touched. A reopened PR carries on from its last version, so closing it again keeps only its newest
-  version's GIFs and MP4s. The job's log names each deleted asset, the version it kept and how many assets the release holds.
+  version's GIFs and MP4s and shrinks the post it replaced. The job's log names each deleted asset, the version it kept and how many assets the release holds.
 - **The release's limit:** GitHub sets no total size limit on a release, but a release holds at most 1,000 assets (a
   run takes two: its GIF and its MP4). The cleanup's log says how many `prs-resources` holds, with a warning above 900. Near the limit, the owner creates a new
   pre-release (e.g. `prs-resources-2`) and points `RELEASE` in `tools/e2e/post-scenarios.py`, the `clean` job of

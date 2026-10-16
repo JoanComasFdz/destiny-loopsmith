@@ -83,9 +83,10 @@ The note map is the contract between the user's note and the engine: the golden 
     the `discrepancies.md` row.
 - Break a compound claim ("X -> A + B + C") into one expectation per element. Use the format's vocabulary
   (`kill via weapon:strand`, `spawn orb-of-power`, `applyBuff amplified`).
-- Check expectations against the engine where you can: `dotnet run --project src/Loopsmith.Cli --
-  trace builds/<slug>/build.yaml --actions "class,kinetic:kill,max:slice" --state --why` plays the steps
-  that lead to a start state and then the scenario's step.
+- Check expectations against the engine where you can: `dotnet test --filter RepoFileValidationTests` checks
+  that the build opens against the rules, and the steps that lead to a start state, then the scenario's step,
+  can be played in the web designer (`dotnet run --project src/Loopsmith.Web`) or in a scratch Core test the
+  way `tests/Loopsmith.Core.Tests/Golden/SkipGrenadeHunterGoldenTests.cs` plays them (report, don't commit it).
 - End with **Missing elements to author** (grouped by target rules file; for each: id, name, kind, the
   claims it must satisfy and the source quotes — the `rule-author` agent works from this list) and
   **Open questions** (unconfirmed slots, claims the rule format cannot express). Leave out a section that
@@ -105,6 +106,6 @@ data.
 
 Write only those three files. Do not author rules, do not edit `rules/`, `src/` or tests, and never invent
 numbers or loadout pieces. Never commit `transcript.txt`. Designed loops (`builds/<slug>/loops/*.loop.yaml`)
-are made by the user with `loopsmith play --save` or the web designer's Export — not yours to write unless
+are made by the user with the web designer's Export — not yours to write unless
 asked. Finish with a short summary: the note lines mapped (fully reproduced / differently / not
 reproduced), the missing elements, the discrepancy rows and the open questions.
