@@ -7,7 +7,10 @@ apply to this project; these do. Its web host section still binds the app: what 
 The aim: a scenario is one Gherkin, line for line. Every acceptance criterion about the app is a Gherkin, written by
 [docs/given-when-then-test-rules.md](../../docs/given-when-then-test-rules.md), and every Gherkin is one scenario here,
 played on the screens its tags name. A scenario reads like the Gherkin it implements, in the app's own words, and
-everything that isn't the scenario lives in `Infrastructure/`.
+everything that isn't the scenario lives in `Infrastructure/`. What this project shares with the VS Code extension's e2e
+project (`tests/Loopsmith.VsCodeExtension.E2E`: a Gherkin and its `[TestDescription]`, the screens and their
+attributes, `ScenarioNaming`, the record next to a video, what a recording draws over the page) lives in
+`tests/Loopsmith.E2E.Shared`, a global using of both.
 
 ## A full example
 
@@ -87,7 +90,7 @@ public sealed class ReloadTests : BaseE2E
   (`ScenarioNaming.ToMethodName`): "Reaper's Tithe gives a stack per enemy killed at once" →
   `ReapersTitheGivesAStackPerEnemyKilledAtOnce`. Its **title** in the PR's comment is the Gherkin's title, as written.
   Its **GIF name** is the method name kebaberized, then its screen:
-  `reapers-tithe-gives-a-stack-per-enemy-killed-at-once-mobile` (`Infrastructure/ScenarioNaming.cs`).
+  `reapers-tithe-gives-a-stack-per-enemy-killed-at-once-mobile` (`ScenarioNaming`, in `tests/Loopsmith.E2E.Shared`).
 - `ScenarioShapeTests` (`dotnet test`, no browser) fails a scenario that isn't a `[Theory]` with at least one screen
   attribute and its `Screen` parameter, has no `[TestDescription]`, isn't named after its Gherkin's title, or whose
   screen attributes aren't its Gherkin's tags.
@@ -104,7 +107,7 @@ public sealed class ReloadTests : BaseE2E
 - one browser for the whole run (`BrowserRun`, an assembly fixture);
 - a fresh browser context per run of a scenario, with its own storage, so runs share nothing; it checks the site's
   IndexedDB and local storage are empty before opening Home;
-- **the screen** (`Infrastructure/Screens.cs`): the context opens as the screen the run's `[PlayInDesktop]` /
+- **the screen** (`Screens.cs`, in `tests/Loopsmith.E2E.Shared`): the context opens as the screen the run's `[PlayInDesktop]` /
   `[PlayInMobile]` names. Desktop is a 1280×800 window with a mouse. Mobile is Chromium's phone emulation: 390×844,
   touch, a phone's pixel density, so the page is laid out for a phone and matches `(hover: none)` and
   `(pointer: coarse)` (the app's touch styles: no hover previews, no drag handle). The video is the window at its

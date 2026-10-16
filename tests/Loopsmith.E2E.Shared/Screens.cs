@@ -1,12 +1,13 @@
 using System.Reflection;
+using Xunit;
 using Xunit.Sdk;
 using Xunit.v3;
 
-namespace Loopsmith.Web.E2E.Infrastructure;
+namespace Loopsmith.E2E.Shared;
 
 /// <summary>
 /// The screen a scenario is played on (E2E-TEST-CODE-RULES.md, rule a): a scenario's <c>[PlayInDesktop]</c> and
-/// <c>[PlayInMobile]</c> each play it once, and <see cref="BaseE2E"/> opens the browser as that screen.
+/// <c>[PlayInMobile]</c> each play it once, and the project's <c>BaseE2E</c> opens the browser as that screen.
 /// </summary>
 public enum Screen
 {

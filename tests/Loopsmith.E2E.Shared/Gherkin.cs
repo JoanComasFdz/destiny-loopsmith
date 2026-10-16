@@ -1,6 +1,6 @@
 using System.Collections.Immutable;
 
-namespace Loopsmith.Web.E2E.Infrastructure;
+namespace Loopsmith.E2E.Shared;
 
 /// <summary>
 /// A scenario's Gherkin (<see cref="TestDescriptionAttribute"/>), read: the tags before its <c>Scenario:</c> line,

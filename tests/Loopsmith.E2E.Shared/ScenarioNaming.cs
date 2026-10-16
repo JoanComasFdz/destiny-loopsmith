@@ -1,12 +1,12 @@
 using System.Text;
 using Humanizer;
 
-namespace Loopsmith.Web.E2E.Infrastructure;
+namespace Loopsmith.E2E.Shared;
 
 /// <summary>A scenario's names, from its Gherkin's title, its method's name and its class's namespace.</summary>
 public static class ScenarioNaming
 {
-    private const string ScenariosNamespace = "Loopsmith.Web.E2E.Scenarios";
+    private const string ScenariosNamespace = ".Scenarios.";
 
     /// <summary>
     /// "Reaper's Tithe gives 3 stacks for a kill of 3" → "ReapersTitheGives3StacksForAKillOf3": the method's name for a
@@ -35,9 +35,12 @@ public static class ScenarioNaming
     public static string ToGifName(string methodName, Screen screen) =>
         $"{methodName.Kebaberize()}-{screen.ToString().ToLowerInvariant()}";
 
-    /// <summary>"Starting", "Build/Subclass": the class's domain folder under Scenarios/.</summary>
+    /// <summary>
+    /// "Starting", "Build/Subclass": the class's domain folder under its project's Scenarios/, its namespace after
+    /// ".Scenarios." (the VS Code extension reads it from a scenario file the same way, to find its recordings).
+    /// </summary>
     public static string ToDomainFolder(Type testClass) =>
-        (testClass.Namespace ?? "") is var name && name.StartsWith(ScenariosNamespace + ".", StringComparison.Ordinal)
-            ? name[(ScenariosNamespace.Length + 1)..].Replace('.', '/')
+        (testClass.Namespace ?? "") is var name && name.IndexOf(ScenariosNamespace, StringComparison.Ordinal) is var at && at >= 0
+            ? name[(at + ScenariosNamespace.Length)..].Replace('.', '/')
             : "Unsorted";
 }

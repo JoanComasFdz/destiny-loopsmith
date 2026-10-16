@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- What both end-to-end projects share (tests/Loopsmith.Web.E2E, tests/Loopsmith.VsCodeExtension.E2E): a scenario's
+       Gherkin and [TestDescription], the screens it is played on, its names, the record record.sh reads next to its
+       video, and what a recording draws over the page. Their own code rules: each project's E2E-TEST-CODE-RULES.md. -->
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="xunit.v3.extensibility.core" />
+    <PackageReference Include="Humanizer.Core" />
+  </ItemGroup>
+</Project>

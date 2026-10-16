@@ -6,7 +6,12 @@ work out on their own. These rules apply to every Gherkin a session writes. A Gh
 - **an acceptance criterion** of a pull request: every criterion about how the app behaves is one (section 1);
 - **one end-to-end test**: each Gherkin is exactly one C# scenario in `tests/Loopsmith.Web.E2E`, which holds the
   Gherkin word for word in its `[TestDescription]` and does what it says, line by line. How a Gherkin becomes C# is
-  [E2E-TEST-CODE-RULES.md](../tests/Loopsmith.Web.E2E/E2E-TEST-CODE-RULES.md), rule i.
+  [E2E-TEST-CODE-RULES.md](../tests/Loopsmith.Web.E2E/E2E-TEST-CODE-RULES.md), rule i. The VS Code extension
+  (`src/Loopsmith.VsCodeExtension`) follows the same rules: each Gherkin about what it shows in VS Code (its CodeLens,
+  hover and recording panel) is one scenario in `tests/Loopsmith.VsCodeExtension.E2E`, played in VS Code for the web on
+  the desktop only (its
+  [E2E-TEST-CODE-RULES.md](../tests/Loopsmith.VsCodeExtension.E2E/E2E-TEST-CODE-RULES.md)), and its PR shows its GIFs
+  the same way.
 
 The PR's e2e comment shows each scenario's title, its Gherkin, and a GIF of it played on each screen its tags name
 (🖥️ Desktop, 📱 Mobile) ([hosting.md](hosting.md), "E2E videos on pull requests").

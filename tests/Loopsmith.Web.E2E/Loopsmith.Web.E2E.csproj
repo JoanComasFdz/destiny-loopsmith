@@ -19,9 +19,13 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Loopsmith.Core\Loopsmith.Core.csproj" />
+    <ProjectReference Include="..\Loopsmith.E2E.Shared\Loopsmith.E2E.Shared.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Using Include="Xunit" />
+    <!-- Gherkin, [TestDescription], Screen and [PlayInDesktop] / [PlayInMobile], ScenarioNaming: shared with the VS Code
+         extension's e2e project. -->
+    <Using Include="Loopsmith.E2E.Shared" />
   </ItemGroup>
   <ItemGroup>
     <!-- A scenario's fixture files (minimal .build.yaml / .loop.yaml) sit next to its class. -->

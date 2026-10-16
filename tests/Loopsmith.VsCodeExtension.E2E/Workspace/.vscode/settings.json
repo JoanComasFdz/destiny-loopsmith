@@ -1,0 +1,13 @@
+{
+  "workbench.colorTheme": "Default Dark Modern",
+  "workbench.startupEditor": "none",
+  "workbench.tips.enabled": false,
+  "workbench.secondarySideBar.defaultVisibility": "hidden",
+  "chat.disableAIFeatures": true,
+  "editor.minimap.enabled": false,
+  "editor.fontSize": 15,
+  "explorer.compactFolders": false,
+  "editor.hover.delay": 300,
+  "telemetry.telemetryLevel": "off",
+  "extensions.ignoreRecommendations": true
+}

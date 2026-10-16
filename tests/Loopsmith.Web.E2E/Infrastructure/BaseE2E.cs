@@ -54,7 +54,9 @@ public abstract class BaseE2E : IAsyncLifetime
         await BungieRouting.RouteAsync(context, DescribeScenario());
         if (videoFolder is not null)
         {
-            await context.AddInitScriptAsync(screen == Screen.Mobile ? TapRingScript : PointerScript + TapRingScript);
+            await context.AddInitScriptAsync(screen == Screen.Mobile
+                ? RecordingOverlay.TapRingScript
+                : RecordingOverlay.PointerScript + RecordingOverlay.TapRingScript);
         }
 
         // Started before the page (and its video): the time Home is noted at is never earlier than Home in the video.
@@ -172,55 +174,5 @@ public abstract class BaseE2E : IAsyncLifetime
     private string DescribeScenario() => $"{GetType().Name}.{TestContext.Current.TestMethod?.MethodName} ({screen})";
 
     private static readonly JsonSerializerOptions RecordingJson = new() { WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
-
-    // Headless Chromium draws no mouse pointer: a big arrow (twice the usual size, white with a dark outline) follows the
-    // mouse, gliding to where it moves (OnScreen moves it to an action's target before the action, and waits for the
-    // glide). TapRingScript adds the ring at each click.
-    private const string PointerScript = """
-        (() => {
-          const glide = 600;
-          let pointer;
-          const place = (x, y) => { if (pointer) pointer.style.transform = `translate(${x}px, ${y}px)`; };
-          const create = () => {
-            pointer = document.createElement('div');
-            pointer.style.cssText = 'position:fixed;left:0;top:0;z-index:2147483647;pointer-events:none;width:30px;height:44px;'
-              + `transition:transform ${glide}ms ease-in-out;filter:drop-shadow(0 2px 3px rgba(0,0,0,.6))`;
-            pointer.innerHTML = '<svg width="30" height="44" viewBox="0 0 15 22" xmlns="http://www.w3.org/2000/svg">'
-              + '<path d="M1 1 L1 17 L5 13.5 L8 20.5 L10.6 19.4 L7.7 12.6 L13 12.6 Z" fill="#fff" stroke="#111" stroke-width="1.2" stroke-linejoin="round"/></svg>';
-            document.documentElement.appendChild(pointer);
-            place(window.innerWidth / 2, window.innerHeight / 2);
-          };
-          if (document.documentElement) create(); else document.addEventListener('DOMContentLoaded', create);
-          window.addEventListener('mousemove', (event) => place(event.clientX, event.clientY), true);
-        })();
-        """;
-
-    // A ring where the pointer goes down (a click, or a tap on the phone, which draws no pointer), so each one shows in
-    // the video.
-    private const string TapRingScript = """
-        window.addEventListener('pointerdown', (event) => {
-          const ring = document.createElement('div');
-          ring.style.cssText = 'position:fixed;z-index:2147483646;pointer-events:none;width:36px;height:36px;margin:-18px 0 0 -18px;'
-            + 'border:4px solid #ff3d7f;border-radius:50%;box-shadow:0 0 0 4px rgba(255,61,127,.35);transition:transform .6s,opacity .6s;'
-            + `left:${event.clientX}px;top:${event.clientY}px`;
-          document.documentElement.appendChild(ring);
-          requestAnimationFrame(() => { ring.style.transform = 'scale(1.8)'; ring.style.opacity = '0'; });
-          setTimeout(() => ring.remove(), 1200);
-        }, true);
-        """;
 }
 
-/// <summary>
-/// What record.sh reads next to a run's video: the scenario's names and Gherkin, the screen it was played on, when Home
-/// was shown and whether it passed.
-/// </summary>
-public sealed record ScenarioRecording(
-    string Domain,
-    string Class,
-    string Method,
-    string Title,
-    string Gherkin,
-    string Screen,
-    string Gif,
-    double? HomeShownSeconds,
-    bool Passed);

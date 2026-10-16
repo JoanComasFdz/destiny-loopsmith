@@ -43,6 +43,18 @@ The site is public on the internet (the repository is public). It contains the a
 numbers from Clarity and the Compendium snapshot, with paraphrased descriptions and row citations —
 but no Compendium snapshot text and no transcripts.
 
+## The VS Code extension
+
+Every deploy publishes the VS Code extension (`src/Loopsmith.VsCodeExtension`, its
+[README](../src/Loopsmith.VsCodeExtension/README.md)) with the site, in `vscode-extension/`: its files as they are
+(`package.json`, `extension.js`, `README.md`, `LICENSE.txt`), the folder vscode.dev installs it from ("Developer:
+Install Extension from Location…" and the folder's link), and `loopsmith-e2e-recordings.vsix` for desktop VS Code.
+`Loopsmith.Web.csproj` copies them and zips the `.vsix` after `dotnet publish` (the `PublishVsCodeExtension` target),
+so `pages.yml` and `pr-preview.yml` publish them unchanged: the live site at
+`https://joancomasfdz.github.io/destiny-loopsmith/vscode-extension/`, each PR's preview at
+`…/pr-preview/pr-<n>/vscode-extension/`, so a PR that changes the extension can be tried from its preview. GitHub Pages
+answers any origin (`Access-Control-Allow-Origin: *`), which vscode.dev needs to read the folder.
+
 ## DIM links
 
 Home starts a loop from a DIM link ([loop-format.md](loop-format.md#starting-from-a-dim-link)). A link
@@ -160,7 +172,8 @@ time (a login during a DIM link's read waits for it).
 ## E2E videos on pull requests
 
 Every pull request from a branch of this repository shows its end-to-end scenarios
-([tests/Loopsmith.Web.E2E](../tests/Loopsmith.Web.E2E/README.md)) as GIFs, each with a **▶ Play MP4** link to the
+([tests/Loopsmith.Web.E2E](../tests/Loopsmith.Web.E2E/README.md), the web app's, and
+[tests/Loopsmith.VsCodeExtension.E2E](../tests/Loopsmith.VsCodeExtension.E2E/README.md), the VS Code extension's) as GIFs, each with a **▶ Play MP4** link to the
 same run as a sharp video with controls, so a reviewer sees them working without running anything. The session that
 works the PR records them; CI doesn't run, record or build anything for them.
 
@@ -178,8 +191,8 @@ works the PR records them; CI doesn't run, record or build anything for them.
   scenario passes before the push. While developing, the session runs them unrecorded
   (`tools/e2e/record.sh --no-video …`: same selection and served publish, no video, no pacing, no GIF) and never
   records between pushes; when a scenario or the web app changes after the recording and before the push, it records
-  again, so the posted GIFs match the pushed head. A PR that changes nothing under `tests/Loopsmith.Web.E2E/Scenarios` records and posts
-  nothing, and runs no e2e workflow.
+  again, so the posted GIFs match the pushed head. A PR that changes nothing under `tests/Loopsmith.Web.E2E/Scenarios`
+  or `tests/Loopsmith.VsCodeExtension.E2E/Scenarios` records and posts nothing, and runs no e2e workflow.
 - **How the GIFs get to GitHub:** a session can't upload a file to GitHub (its proxy only lets JSON request bodies
   through: a release upload answers 415), but it can push. Right after the push (the first one once the PR is open),
   `tools/e2e/push-gifs.sh` pushes a throwaway branch **`e2e-gifs/pr-<n>-<short sha>`**: the branch's head, already on

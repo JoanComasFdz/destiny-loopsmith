@@ -6,6 +6,8 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Loopsmith.Core.Tests/Loopsmith.Core.Tests.csproj" />
+    <Project Path="tests/Loopsmith.E2E.Shared/Loopsmith.E2E.Shared.csproj" />
+    <Project Path="tests/Loopsmith.VsCodeExtension.E2E/Loopsmith.VsCodeExtension.E2E.csproj" />
     <Project Path="tests/Loopsmith.Web.E2E/Loopsmith.Web.E2E.csproj" />
   </Folder>
 </Solution>
