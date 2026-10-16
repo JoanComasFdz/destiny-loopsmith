@@ -1,0 +1,6 @@
+# Ogma PR6 given only by its hash, which only Bungie's full manifest knows (not the bundled excerpt).
+name: "E2E - Ogma PR6 by its hash"
+class: hunter
+subclass: arc
+weapons:
+  - { hash: 2342054803 } # Ogma PR6

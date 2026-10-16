@@ -77,7 +77,7 @@ public sealed class WeaponArchetypeTests
     }
 
     private static ValidatedBuild Validate(string text) =>
-        BuildFileParsing.ParseBuildFile(new SourceText("archetypes.build.yaml", text))
+        BuildFileParsing.ParseBuildFile(new SourceText("archetypes.build.yaml", text), Catalog.Manifest)
             .Bind(build => BuildValidation.ValidateBuild(build, Catalog))
             .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
 }

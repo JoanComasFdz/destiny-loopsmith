@@ -778,9 +778,9 @@ artifact: { hash: 3821685388, slots: [3585856470, 3585856464, 2596646298, "?", "
 artifactPerks: [defibrillating-blast, flashover]
 weapons:
   - { slot: kinetic, name: Festival Flight, type: strand, archetype: grenade-launcher, perks: [slice] }
-  - { slot: power, name: Thunderlord, type: arc, hash: 3325463374, catalyst: true }           # its catalyst on
-  - { slot: kinetic, name: Festival Flight, type: strand, hash: 4019651319, mod: 3820243349 }   # Synergy in its mod socket
-  - { slot: energy, name: Crisis Inverted, type: arc, hash: 2888266564, roll: ["?", 2209918983] }   # a perk per trait column
+  - { hash: 3325463374, catalyst: true }                   # Thunderlord, its catalyst on
+  - { hash: 4019651319, mod: 3820243349 }                  # Festival Flight, Synergy in its mod socket
+  - { hash: 2888266564, roll: ["?", 2209918983] }          # Crisis Inverted, a perk per trait column
 stats: { weapons: 47, class: 104, grenade: 145, super: 27, melee: 79 }   # any subset; 0..200
 ```
 
@@ -802,14 +802,23 @@ stats: { weapons: 47, class: 104, grenade: 145, super: 27, melee: 79 }   # any s
   fewest tiers); so are slots that no longer hold exactly the build's perks.
 * Optional: `author`, `source` (an absolute http(s) URL), `catalog`, `exoticArmor`, `artifact`, and the lists
   `aspects`, `fragments`, `armorSetBonuses`, `armorMods`, `artifactPerks`, `weapons` (default empty).
-* A weapon: `slot` (`kinetic|energy|power`), `name` and `type` (`kinetic|arc|solar|void|stasis|strand`)
-  are required, and so is one of `hash` and `archetype`: a weapon with neither is refused ("weapon 'Any Arc weapon'
-  needs an \`archetype\` or a \`hash\`"), since a perk that goes by its archetype would show both amounts. `hash` is its
-  manifest item: its icon, its trait columns, its intrinsic and catalyst, and its archetype, which the build check reads
-  from Bungie's manifest (the source of truth: it wins over an `archetype` the file names). `archetype` (a kebab-case
-  word, the manifest's type: `hand-cannon`; it picks a perk's energy grant `byArchetype`, Demolitionist's) is for a
-  weapon named without a hash. `perks` (element ids), `roll`, `catalyst` and `instance` are optional. The name labels its
-  actions ("Festival Flight (🥊 hit 5)").
+* A weapon is given by its `hash` or named in full.
+  * By `hash`, its manifest item: its slot, name, damage type and archetype are read from Bungie's manifest when the
+    file is read, and so are its icon, its trait columns, its intrinsic and catalyst. The manifest is the source of
+    truth, so the file doesn't copy them: a `slot`, `name`, `type` or `archetype` given with a hash (a file written
+    before) is ignored. A hash the manifest doesn't know as a weapon with a damage type is refused ("weapon hash 1234567
+    isn't in the manifest, so the file can't be imported"). The CLI reads the excerpt (`rules/manifest.yaml`; rerun
+    [tools/manifest/](../tools/manifest/README.md) for a weapon it lacks); the designer reads Bungie's full manifest for
+    the hashes the excerpt lacks before it imports a build or loop file, or opens a shared loop. The file writer writes
+    a weapon given by hash as its hash and what the build chooses for it, with its name in a comment after it on its
+    line (`- {hash: 4019651319, perks: [slice]} # Festival Flight`; not in a flow list, which has no room for one).
+  * Named in full, without a hash: `slot` (`kinetic|energy|power`), `name`, `type`
+    (`kinetic|arc|solar|void|stasis|strand`) and `archetype` are required: a weapon without an archetype is refused
+    ("weapon 'Any Arc weapon' needs an \`archetype\` or a \`hash\`"), since a perk that goes by its archetype would show
+    both amounts. `archetype` is a kebab-case word, the manifest's type (`hand-cannon`); it picks a perk's energy grant
+    `byArchetype` (Demolitionist's).
+  * `perks` (element ids), `roll`, `catalyst`, `instance` and `mod` are optional either way. The name labels its
+    actions ("Festival Flight (🥊 hit 5)").
 * `instance`: the copy the build wears, by Bungie's instance id (a dim.gg share's, or one picked from the player's
   weapons; quoted: `instance: "6917529810172542011"`); after the player's Bungie login its tier and masterwork show on
   the weapon's square when it is theirs, and it holds that copy's perks

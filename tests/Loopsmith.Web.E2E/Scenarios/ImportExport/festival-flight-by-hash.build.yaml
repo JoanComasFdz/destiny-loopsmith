@@ -1,0 +1,6 @@
+# Festival Flight given only by its hash: its slot, name and damage type come from the manifest.
+name: "E2E - Festival Flight by its hash"
+class: hunter
+subclass: arc
+weapons:
+  - { hash: 4019651319 } # Festival Flight

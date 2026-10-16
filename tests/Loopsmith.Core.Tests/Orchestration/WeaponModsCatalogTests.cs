@@ -183,7 +183,7 @@ public sealed class WeaponModsCatalogTests
         var build = PickMod(StartOwnersDimDesign(), FestivalFlight, Optional.Some(ItemHash.From(Synergy))).Build.Build;
 
         var written = BuildFileWriting.WriteBuildFile(build, []);
-        var read = Loopsmith.Core.BuildParsing.BuildFileParsing.ParseBuildFile(new SourceText("written.yaml", written))
+        var read = Loopsmith.Core.BuildParsing.BuildFileParsing.ParseBuildFile(new SourceText("written.yaml", written), Catalog.Manifest)
             .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
 
         Assert.Equal(Optional.Some(ItemHash.From(Synergy)), read.Weapons[FestivalFlight].Mod);

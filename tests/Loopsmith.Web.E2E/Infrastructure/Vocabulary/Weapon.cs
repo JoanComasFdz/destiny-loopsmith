@@ -20,6 +20,9 @@ public partial record Weapon
 /// <summary>What the UI shows for each <see cref="Weapon"/>: the only place those strings live.</summary>
 public static class WeaponShowing
 {
+    private static readonly Weapon[] Listed =
+        [new Weapon.FestivalFlight(), new Weapon.OgmaPr6(), new Weapon.BellowingGiant(), new Weapon.CruxCeleritasIv(), new Weapon.Scathelocke(), new Weapon.Speleologist()];
+
     /// <summary>What the UI shows for <paramref name="value"/>.</summary>
     public static string ToShownText(this Weapon value) =>
         value.Match(
@@ -30,4 +33,8 @@ public static class WeaponShowing
             scathelocke => "Scathelocke",
             speleologist => "Speleologist",
             unlisted => unlisted.Shown);
+
+    /// <summary>The case the UI's <paramref name="shown"/> text names, or <see cref="Weapon.Unlisted"/>.</summary>
+    public static Weapon ReadWeapon(string shown) =>
+        Listed.FirstOrDefault(value => value.ToShownText() == shown) ?? new Weapon.Unlisted(shown);
 }

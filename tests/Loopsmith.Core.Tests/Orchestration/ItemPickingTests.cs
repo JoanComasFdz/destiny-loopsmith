@@ -114,7 +114,7 @@ public sealed class ItemPickingTests
 
         Assert.Equal((WeaponSlot.Power, "Alpha Machine Gun", Optional.Some(PowerExotic)), (gun.Slot, gun.Name, gun.Hash));
         Assert.Equal((0, false, Optional.None<ItemInstanceId>(), Optional.None<ItemHash>()), (gun.Roll.Length, gun.Catalyst, gun.Instance, gun.Mod));
-        Assert.Contains("{slot: power, name: Alpha Machine Gun, type: arc, archetype: auto-rifle, perks: [], hash: 9303}", picked.Design.Build.Text, StringComparison.Ordinal);
+        Assert.Contains("{hash: 9303, perks: []} # Alpha Machine Gun", picked.Design.Build.Text, StringComparison.Ordinal);
         Assert.Equal(session.Design.Steps.Length, picked.Resolutions.Length);                    // the steps replay
         var energy = LoopDesigning.ListWeaponItems(picked.Build, Listing.Add(ToWeapon(ItemHash.From(9305u), "Beta Exotic", WeaponSlot.Energy, DamageType.Void, ItemTier.Exotic, [])), new WeaponTarget.InPlaceOf(1));
         Assert.DoesNotContain(energy.Options, option => option.Item.Tier == Optional.Some(ItemTier.Exotic));

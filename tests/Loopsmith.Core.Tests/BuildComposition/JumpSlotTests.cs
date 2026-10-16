@@ -99,6 +99,6 @@ public sealed class JumpSlotTests
         Validate($"name: Hunter\nclass: hunter\nsubclass: arc\n{line}\n");
 
     private static Result<ValidatedBuild, string> Validate(string text) =>
-        BuildFileParsing.ParseBuildFile(new SourceText(BuildPath, text))
+        BuildFileParsing.ParseBuildFile(new SourceText(BuildPath, text), Catalog.Manifest)
             .Bind(build => BuildValidation.ValidateBuild(build, Catalog));
 }

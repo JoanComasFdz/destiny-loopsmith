@@ -3,6 +3,7 @@ using Loopsmith.Core.BuildParsing;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 using Loopsmith.Core.RuleParsing;
+using Loopsmith.Core.Tests.Support;
 
 namespace Loopsmith.Core.Tests.Regression;
 
@@ -18,7 +19,7 @@ public class UnclosedFlowCollectionTests
     [Fact]
     public void Build_file_with_an_unclosed_flow_collection_is_an_error()
     {
-        var result = BuildFileParsing.ParseBuildFile(new SourceText("bad/build.yaml", Unclosed));
+        var result = BuildFileParsing.ParseBuildFile(new SourceText("bad/build.yaml", Unclosed), RepoCatalog.Manifest);
 
         var error = Assert.IsType<Result<Build, string>.Error>(result);
         Assert.Contains("bad/build.yaml", error.Failure);

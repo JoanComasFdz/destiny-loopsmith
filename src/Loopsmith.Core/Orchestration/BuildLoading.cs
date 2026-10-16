@@ -26,6 +26,6 @@ public static class BuildLoading
         ruleFiles
             .Bind(RuleCatalogParsing.ParseCatalog)
             .Bind(catalog => buildFile
-                .Bind(BuildFileParsing.ParseBuildFile)
+                .Bind(file => BuildFileParsing.ParseBuildFile(file, catalog.Manifest))
                 .Bind(build => BuildValidation.ValidateBuild(build, catalog)));
 }

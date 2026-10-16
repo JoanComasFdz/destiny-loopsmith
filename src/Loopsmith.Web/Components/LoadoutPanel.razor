@@ -114,11 +114,11 @@
                         <div class="weapon-text">
                             @if (weapon.Page is Optional<string>.Some rowPage)
                             {
-                                <a class="weapon-line-name" href="@rowPage.Value" target="_blank" rel="noopener noreferrer" title="@weapon.Weapon.Name on light.gg">@weapon.Weapon.Name</a>
+                                <a class="weapon-line-name" data-testid="weapon-name" href="@rowPage.Value" target="_blank" rel="noopener noreferrer" title="@weapon.Weapon.Name on light.gg">@weapon.Weapon.Name</a>
                             }
                             else
                             {
-                                <span class="weapon-line-name">@weapon.Weapon.Name</span>
+                                <span class="weapon-line-name" data-testid="weapon-name">@weapon.Weapon.Name</span>
                             }
                             <span class="weapon-line-sub">@weapon.Slot.DescribeWeaponSlot()@(weapon.Archetype is Optional<string>.Some rowArchetype ? $" · {DomainPhrasing.DescribeArchetype(rowArchetype.Value)}" : "")</span>
                         </div>
