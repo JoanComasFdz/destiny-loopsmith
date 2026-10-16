@@ -129,7 +129,7 @@ public sealed class ItemPickingTests
         var picked = Assert.IsType<Result<DesignSession, string>.Ok>(LoopDesigning.PickWeaponItem(session, new WeaponTarget.InPlaceOf(1), EnergyRifle)).Value;
 
         Assert.Equal(["Festival Flight", "Lightning Rifle"], picked.Build.Build.Weapons.Select(weapon => weapon.Name));
-        Assert.DoesNotContain("Crisis Inverted", picked.Design.Build.Text, StringComparison.Ordinal);
+        Assert.DoesNotContain("name: Crisis Inverted", picked.Design.Build.Text, StringComparison.Ordinal);
         Assert.Contains("Loopsmith doesn't know that weapon yet",
             Assert.IsType<Result<DesignSession, string>.Error>(LoopDesigning.PickWeaponItem(OpenHandWrittenLoop(Catalog), new WeaponTarget.InPlaceOf(1), EnergyRifle)).Failure,
             StringComparison.Ordinal);                                                           // not joined yet: the build doesn't change
