@@ -7,7 +7,8 @@
 # A domain folder is a folder under a project's Scenarios/ (Starting, Build/Subclass, Recordings); a class is a scenario
 # class (StartFromScratchTests).
 # --changed-since <ref>: the scenario classes added or changed since <ref> (from where the branch left it, working tree
-# included), plus those that use a changed fixture file: "this PR's scenarios" with origin/main.
+# included), plus those that use a changed fixture file (for the extension's scenarios, any file of its Workspace/):
+# "this PR's scenarios" with origin/main.
 # --action-gap <seconds>: the least time between two steps (an action or a read) of a recorded scenario (default 1).
 # For web scenarios it publishes the web app (Release), prepares it for /destiny-loopsmith/ (tools/web/prepare-pages.sh)
 # and serves it locally. For the extension's scenarios it serves VS Code for the web (@vscode/test-web, pinned with the
@@ -60,24 +61,32 @@ find_class_project() {
   if [ -n "$(find "$vscode_project/Scenarios" -name "$1.cs" -print -quit)" ]; then echo vscode; fi
 }
 
-# The scenario classes changed since a ref, and those whose fixture files changed, in both projects.
+# The scenario classes changed since a ref, and those whose fixture files changed, in both projects. The extension's
+# scenarios all open the files of its project's Workspace/: a change there selects every one of them.
 list_changed_classes() {
   local base
   base="$(git -C "$repo" merge-base "$1" HEAD)"
   local project file
-  for project in "${projects[@]}"; do
-    local scenarios="${project#"$repo"/}/Scenarios"
-    local files
-    files="$( { git -C "$repo" diff --name-only --diff-filter=AMR "$base" -- "$scenarios";
-                git -C "$repo" ls-files --others --exclude-standard -- "$scenarios"; } | sort -u)"
-    for file in $files; do
-      case "$file" in
-        *Tests.cs) basename "$file" .cs ;;
-        *.cs) ;;
-        *) grep -rlF --include='*Tests.cs' "$(basename "$file")" "$project/Scenarios" | xargs -r -n1 basename | sed 's/\.cs$//' ;;
-      esac
+  {
+    for project in "${projects[@]}"; do
+      local scenarios="${project#"$repo"/}/Scenarios"
+      local files
+      files="$( { git -C "$repo" diff --name-only --diff-filter=AMR "$base" -- "$scenarios";
+                  git -C "$repo" ls-files --others --exclude-standard -- "$scenarios"; } | sort -u)"
+      for file in $files; do
+        case "$file" in
+          *Tests.cs) basename "$file" .cs ;;
+          *.cs) ;;
+          *) grep -rlF --include='*Tests.cs' "$(basename "$file")" "$project/Scenarios" | xargs -r -n1 basename | sed 's/\.cs$//' ;;
+        esac
+      done
     done
-  done | sort -u
+    local workspace="${vscode_project#"$repo"/}/Workspace"
+    if [ -n "$( { git -C "$repo" diff --name-only "$base" -- "$workspace";
+                 git -C "$repo" ls-files --others --exclude-standard -- "$workspace"; } | head -n1)" ]; then
+      find "$vscode_project/Scenarios" -name '*Tests.cs' -exec basename {} .cs \;
+    fi
+  } | sort -u
 }
 
 # Each project's filters, joined into one ('|' is "or" to dotnet test); a project with none doesn't run.

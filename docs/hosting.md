@@ -191,8 +191,9 @@ works the PR records them; CI doesn't run, record or build anything for them.
   scenario passes before the push. While developing, the session runs them unrecorded
   (`tools/e2e/record.sh --no-video …`: same selection and served publish, no video, no pacing, no GIF) and never
   records between pushes; when a scenario or the web app changes after the recording and before the push, it records
-  again, so the posted GIFs match the pushed head. A PR that changes nothing under `tests/Loopsmith.Web.E2E/Scenarios`
-  or `tests/Loopsmith.VsCodeExtension.E2E/Scenarios` records and posts nothing, and runs no e2e workflow.
+  again, so the posted GIFs match the pushed head. A PR that changes nothing under `tests/Loopsmith.Web.E2E/Scenarios`,
+  `tests/Loopsmith.VsCodeExtension.E2E/Scenarios` or `tests/Loopsmith.VsCodeExtension.E2E/Workspace` (the files the
+  extension's scenarios open) records and posts nothing, and runs no e2e workflow.
 - **How the GIFs get to GitHub:** a session can't upload a file to GitHub (its proxy only lets JSON request bodies
   through: a release upload answers 415), but it can push. Right after the push (the first one once the PR is open),
   `tools/e2e/push-gifs.sh` pushes a throwaway branch **`e2e-gifs/pr-<n>-<short sha>`**: the branch's head, already on
