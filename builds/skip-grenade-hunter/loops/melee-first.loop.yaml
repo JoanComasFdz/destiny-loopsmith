@@ -62,11 +62,11 @@ build: |
   weapons:
     # Slice per the video. Attrition Orbs placement is INFERRED: the note credits it on strand weapon
     # kills, Clarity says it is a weapon trait, and Festival Flight is the only Strand weapon named.
-    # Its archetype (a grenade launcher) is its hash's, from Bungie's manifest.
-    - { slot: kinetic, name: Festival Flight, type: strand, perks: [slice, attrition-orbs], hash: 4019651319 }
+    # Its slot, name, damage type and archetype (a Strand grenade launcher) are its hash's, from Bungie's manifest.
+    - { hash: 4019651319, perks: [slice, attrition-orbs] } # Festival Flight
     # Crisis Inverted, the Arc hand cannon of the build's DIM link (dim-loadout.json): neither source names the energy
-    # weapon, but Harmonic Siphon's orbs and Spark of Discharge's Ionic Traces need Arc weapon kills. Its archetype is
-    # its hash's (Bungie's manifest). No perks: the link names none.
-    - { slot: energy, name: Crisis Inverted, type: arc, perks: [], hash: 2888266564 }
+    # weapon, but Harmonic Siphon's orbs and Spark of Discharge's Ionic Traces need Arc weapon kills. Its slot,
+    # name, damage type and archetype are its hash's (Bungie's manifest). No perks: the link names none.
+    - { hash: 2888266564, perks: [] } # Crisis Inverted
   # Health is not given in the video. (It also says "a 100 class ability" once; 104 is the stated stat.)
   stats: { weapons: 47, class: 104, grenade: 145, super: 27, melee: 79 }

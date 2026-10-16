@@ -57,7 +57,7 @@ public sealed record JoinedCatalog(RuleCatalog Catalog, Optional<string> Note);
 public static class LoopDesigning
 {
     public static Result<DesignSession, string> StartDesign(RuleCatalog catalog, SourceText buildFile, string name) =>
-        BuildFileParsing.ParseBuildFile(buildFile)
+        BuildFileParsing.ParseBuildFile(buildFile, catalog.Manifest)
             .Bind(build => BuildValidation.ValidateBuild(build, catalog))
             .Map(validated => CreateSession(validated, new LoopDesign(
                 name,
@@ -169,6 +169,20 @@ public static class LoopDesigning
     /// <summary>The hashes an open design's build names that the excerpt lacks (its weapons, picks, what it left out).</summary>
     public static ImmutableArray<ItemHash> ListUnknownHashes(DesignSession session) =>
         ManifestJoin.ListUnknownBuildHashes(session.Build.Catalog.Manifest, session.Build.Build);
+
+    /// <summary>
+    /// The hashes of the weapons a build file gives by hash that the excerpt lacks: what the host reads the full manifest
+    /// for before it parses the file (a weapon's hash the manifest doesn't know is refused). None when the file doesn't
+    /// read: importing it says why.
+    /// </summary>
+    public static ImmutableArray<ItemHash> ListUnknownBuildFileHashes(RuleCatalog catalog, SourceText buildFile) =>
+        BuildFileParsing.ListWeaponHashes(buildFile)
+            .Match(ok => ManifestJoin.ListUnknown(catalog.Manifest, ok.Value), _ => []);
+
+    /// <summary>The same for the build a <c>.loop.yaml</c> embeds.</summary>
+    public static ImmutableArray<ItemHash> ListUnknownLoopFileHashes(RuleCatalog catalog, SourceText loopFile) =>
+        LoopFileParsing.ParseLoopFile(loopFile)
+            .Match(ok => ListUnknownBuildFileHashes(catalog, ok.Value.Build), _ => []);
 
     /// <summary>Of <paramref name="hashes"/>, those the host hasn't read the manifest for yet (<paramref name="asked"/>: found, missing or failed).</summary>
     public static ImmutableArray<ItemHash> ListUnaskedHashes(ImmutableHashSet<ItemHash> asked, IEnumerable<ItemHash> hashes) =>
@@ -282,9 +296,13 @@ public static class LoopDesigning
     private static string DescribeManifestProblem(string problem) =>
         $"Couldn't read Bungie's manifest ({problem}). Items Loopsmith doesn't know show by hash.";
 
-    /// <summary>The design with its build validated again against a catalog (one with more of the manifest), its steps replayed.</summary>
+    /// <summary>
+    /// The design with its build file parsed and validated again against a catalog (one with more of the manifest: what
+    /// it says of the weapons the file gives by hash is read again), its steps replayed.
+    /// </summary>
     private static Result<DesignSession, string> UseCatalog(DesignSession session, RuleCatalog catalog) =>
-        BuildValidation.ValidateBuild(session.Build.Build, catalog)
+        BuildFileParsing.ParseBuildFile(session.Design.Build, catalog.Manifest)
+            .Bind(build => BuildValidation.ValidateBuild(build, catalog))
             .Map(validated => CreateSession(validated, session.Design));
 
     /// <summary>True when a build's source is a DIM link (the designer calls it one).</summary>
@@ -454,7 +472,7 @@ public static class LoopDesigning
     /// <summary>The design with its embedded build file's text changed: the build parsed and validated again, the steps replayed.</summary>
     private static Result<DesignSession, string> RebuildWith(DesignSession session, Result<string, string> text) =>
         text.Map(changed => session.Design.Build with { Text = changed })
-            .Bind(file => BuildFileParsing.ParseBuildFile(file)
+            .Bind(file => BuildFileParsing.ParseBuildFile(file, session.Build.Catalog.Manifest)
                 .Bind(build => BuildValidation.ValidateBuild(build, session.Build.Catalog))
                 .Map(validated => CreateSession(validated, session.Design with { Build = file })));
 
@@ -1026,7 +1044,7 @@ public static class LoopDesigning
     /// </summary>
     public static Result<DesignSession, string> ImportLoop(RuleCatalog catalog, SourceText loopFile) =>
         LoopFileParsing.ParseLoopFile(loopFile)
-            .Bind(design => BuildFileParsing.ParseBuildFile(design.Build)
+            .Bind(design => BuildFileParsing.ParseBuildFile(design.Build, catalog.Manifest)
                 .Bind(build => BuildValidation.ValidateBuild(build, catalog))
                 .Map(validated => CreateSession(validated, design)));
 

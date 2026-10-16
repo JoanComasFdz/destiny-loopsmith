@@ -40,7 +40,7 @@ public sealed class BuildFileWritingTests
 
         var written = BuildFileWriting.WriteBuildFile(MinimalBuild with { Weapons = [weapon] }, []);
 
-        Assert.Contains("- {slot: kinetic, name: Festival Flight, type: strand, perks: [], hash: 4019651319, roll: [\"?\", 243981275]}\n", written, StringComparison.Ordinal);
+        Assert.Contains("- {hash: 4019651319, perks: [], roll: [\"?\", 243981275]} # Festival Flight\n", written, StringComparison.Ordinal);
         Assert.Equal(weapon.Roll, Assert.Single(ParseBuild(new SourceText("written.yaml", written)).Weapons).Roll);
     }
 
@@ -52,7 +52,7 @@ public sealed class BuildFileWritingTests
 
         var written = BuildFileWriting.WriteBuildFile(MinimalBuild with { Weapons = [weapon] }, []);
 
-        Assert.Contains("hash: 3325463374, instance: \"6917529810172542011\"}\n", written, StringComparison.Ordinal);
+        Assert.Contains("- {hash: 3325463374, perks: [], instance: \"6917529810172542011\"} # Thunderlord\n", written, StringComparison.Ordinal);
         Assert.Equal(weapon.Instance, Assert.Single(ParseBuild(new SourceText("written.yaml", written)).Weapons).Instance);
     }
 
@@ -114,5 +114,5 @@ public sealed class BuildFileWritingTests
     }
 
     private static Build ParseBuild(SourceText file) =>
-        BuildFileParsing.ParseBuildFile(file).Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
+        BuildFileParsing.ParseBuildFile(file, RepoCatalog.Manifest).Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
 }

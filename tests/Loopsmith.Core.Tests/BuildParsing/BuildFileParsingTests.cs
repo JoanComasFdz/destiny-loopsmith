@@ -3,6 +3,8 @@ using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 using static Loopsmith.Core.Tests.RuleParsing.ParsingAssertions;
 
+using Loopsmith.Core.Tests.Support;
+
 namespace Loopsmith.Core.Tests.BuildParsing;
 
 public sealed class BuildFileParsingTests
@@ -45,10 +47,10 @@ public sealed class BuildFileParsingTests
         """;
 
     private static Build ParseValidBuild(string yaml) =>
-        AssertOk(BuildFileParsing.ParseBuildFile(new SourceText(BuildPath, yaml)));
+        AssertOk(BuildFileParsing.ParseBuildFile(new SourceText(BuildPath, yaml), RepoCatalog.Manifest));
 
     private static string ParseInvalidBuild(string yaml) =>
-        AssertError(BuildFileParsing.ParseBuildFile(new SourceText(BuildPath, yaml)));
+        AssertError(BuildFileParsing.ParseBuildFile(new SourceText(BuildPath, yaml), RepoCatalog.Manifest));
 
     private static IEnumerable<string> ToNames(IEnumerable<ElementId> ids) => ids.Select(id => id.Value);
 

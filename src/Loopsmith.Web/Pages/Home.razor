@@ -175,11 +175,15 @@
         }
 
         var text = await BrowserInterop.ReadPickedFileAsync(e.File);                             // impure
+        var file = text.Map(value => new SourceText(e.File.Name, value));                        // pure
+        var unknown = file.Match(ok => LoopDesigning.ListUnknownBuildFileHashes(Bundle.Catalog, ok.Value), _ => []); // pure
+        var catalog = await JoinManifestAsync(Bundle.Catalog, unknown);                          // impure
 
-        var started = text.Bind(value => BundleComposing.StartNamedDesign(Bundle.Catalog, new SourceText(e.File.Name, value))); // pure
+        var started = file.Bind(read => BundleComposing.StartNamedDesign(catalog.Catalog, read)); // pure
+        var note = catalog.Note.Match(problem => $" {problem.Value}", _ => "");                  // pure
         started.Match(                                                                           // impure
-            ok => OpenDesign(ok.Value, $"New loop for {ok.Value.Build.Build.Name}."),
-            error => ShowNotice(error.Failure));
+            ok => OpenDesign(ok.Value, $"New loop for {ok.Value.Build.Build.Name}.{note}"),
+            error => ShowNotice($"{error.Failure}{note}"));
     }
 
     /// <summary>A new loop for a build with nothing equipped (an Arc Hunter), opened in the designer.</summary>
@@ -286,10 +290,13 @@
 
     private async Task ImportLoopAsync(SourceText file)
     {
-        var imported = LoopDesigning.ImportLoop(Bundle.Catalog, file);                           // pure
+        var unknown = LoopDesigning.ListUnknownLoopFileHashes(Bundle.Catalog, file);             // pure
+        var catalog = await JoinManifestAsync(Bundle.Catalog, unknown);                          // impure
+        var imported = LoopDesigning.ImportLoop(catalog.Catalog, file);                          // pure
+        var note = catalog.Note.Match(problem => $" {problem.Value}", _ => "");                  // pure
         if (imported is Result<DesignSession, string>.Error error)
         {
-            importProblem = Optional.Some(error.Failure);
+            importProblem = Optional.Some(error.Failure + note);
             return;
         }
 
@@ -309,12 +316,16 @@
             return;
         }
 
-        var imported = ShareLinkCoding.DecodeLoopPayload(some.Value)                             // pure
-            .Bind(file => LoopDesigning.ImportLoop(Bundle.Catalog, new SourceText("shared.loop.yaml", file)));
+        var decoded = ShareLinkCoding.DecodeLoopPayload(some.Value)                              // pure
+            .Map(file => new SourceText("shared.loop.yaml", file));
+        var unknown = decoded.Match(ok => LoopDesigning.ListUnknownLoopFileHashes(Bundle.Catalog, ok.Value), _ => []); // pure
+        var catalog = await JoinManifestAsync(Bundle.Catalog, unknown);                          // impure
+        var imported = decoded.Bind(file => LoopDesigning.ImportLoop(catalog.Catalog, file));    // pure
+        var note = catalog.Note.Match(problem => $" {problem.Value}", _ => "");                  // pure
         await Browser.ClearLocationHashAsync();                                                  // impure
         imported.Match(                                                                          // impure
-            ok => OpenDesign(ok.Value, $"Opened the shared loop “{ok.Value.Design.Name}”."),
-            error => ShowNotice($"Couldn't open the shared loop:{Environment.NewLine}{error.Failure}"));
+            ok => OpenDesign(ok.Value, $"Opened the shared loop “{ok.Value.Design.Name}”.{note}"),
+            error => ShowNotice($"Couldn't open the shared loop:{Environment.NewLine}{error.Failure}{note}"));
     }
 
     private void OpenSharedLoopOnNavigation(object? sender, LocationChangedEventArgs e) =>

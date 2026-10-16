@@ -3,6 +3,8 @@ using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 using Loopsmith.Core.LoopFiles;
 
+using Loopsmith.Core.Tests.Support;
+
 namespace Loopsmith.Core.Tests.LoopFiles;
 
 /// <summary>Changing one weapon of a build file in place: everything else, comments included, stays as its author wrote it.</summary>
@@ -25,7 +27,7 @@ public sealed class BuildFileEditingTests
         [Optional.Some(ItemHash.From(923806249u))], false, Optional.None<ItemInstanceId>(), Optional.None<ItemHash>());
 
     [Fact]
-    public void A_flow_weapon_entry_is_replaced_and_every_other_line_kept()
+    public void A_flow_weapon_entry_is_replaced_with_its_name_after_it_and_every_other_line_kept()
     {
         var file = new SourceText("b.yaml", Header + """
             weapons:
@@ -37,9 +39,10 @@ public sealed class BuildFileEditingTests
 
         var edited = ReplaceWeapon(file, 0, Picked);
 
+        // The comment after the entry on its line is the entry's: a weapon given by hash is followed by its name.
         Assert.Equal(file.Text.Replace(
-            "{ slot: kinetic, name: Festival Flight, type: strand, perks: [slice], hash: 4019651319 }",
-            "{slot: kinetic, name: Festival Flight, type: strand, perks: [], hash: 4019651319, roll: [923806249]}",
+            "{ slot: kinetic, name: Festival Flight, type: strand, perks: [slice], hash: 4019651319 }   # the GL",
+            "{hash: 4019651319, perks: [], roll: [923806249]} # Festival Flight",
             StringComparison.Ordinal), edited);
         Assert.Equal(Picked.Roll, ParseBuild(edited).Weapons[0].Roll);
     }
@@ -63,7 +66,7 @@ public sealed class BuildFileEditingTests
         Assert.EndsWith("""
             weapons:
               - { slot: energy, name: Crisis Inverted, type: arc, hash: 2888266564 }
-              - {slot: kinetic, name: Festival Flight, type: strand, perks: [], hash: 4019651319, roll: [923806249]}
+              - {hash: 4019651319, perks: [], roll: [923806249]} # Festival Flight
             # Stats follow.
             stats: { weapons: 47 }
             """, edited, StringComparison.Ordinal);
@@ -86,7 +89,7 @@ public sealed class BuildFileEditingTests
         Assert.EndsWith("""
             weapons:
               - { slot: energy, name: Crisis Inverted, type: arc, hash: 2888266564 }   # the energy one
-              - {slot: kinetic, name: Festival Flight, type: strand, perks: [], hash: 4019651319, roll: [923806249]}
+              - {hash: 4019651319, perks: [], roll: [923806249]} # Festival Flight
             # Stats follow.
             stats: { weapons: 47 }
             """, edited, StringComparison.Ordinal);
@@ -104,6 +107,27 @@ public sealed class BuildFileEditingTests
 
         Assert.Equal(count, ParseBuild(edited).Weapons.Length);
         Assert.Equal(Picked.Roll, ParseBuild(edited).Weapons[^1].Roll);
+    }
+
+    [Fact]
+    public void A_weapon_given_by_hash_replaced_twice_keeps_one_name_after_it()
+    {
+        var file = new SourceText("b.yaml", Header + "weapons:\n  - { hash: 2888266564 } # Crisis Inverted\nstats: { weapons: 47 }\n");
+
+        var once = ReplaceWeapon(file, 0, Picked);
+        var twice = ReplaceWeapon(file with { Text = once }, 0, Picked with { Roll = [] });
+
+        Assert.EndsWith("weapons:\n  - {hash: 4019651319, perks: []} # Festival Flight\nstats: { weapons: 47 }\n", twice, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_weapon_given_by_hash_in_a_flow_list_has_no_name_after_it()
+    {
+        var file = new SourceText("b.yaml", Header + "weapons: [{ hash: 2888266564 }, { hash: 3325463374 }]\n");
+
+        var edited = ReplaceWeapon(file, 0, Picked);
+
+        Assert.EndsWith("weapons: [{hash: 4019651319, perks: [], roll: [923806249]}, { hash: 3325463374 }]\n", edited, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -202,5 +226,5 @@ public sealed class BuildFileEditingTests
         BuildFileEditing.RemoveWeapon(file, index).Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
 
     private static Build ParseBuild(string text) =>
-        BuildFileParsing.ParseBuildFile(new SourceText("edited.yaml", text)).Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
+        BuildFileParsing.ParseBuildFile(new SourceText("edited.yaml", text), RepoCatalog.Manifest).Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
 }

@@ -38,6 +38,16 @@ public static class BuildFileWriting
         return EmitYaml(events).TrimEnd('\n');
     }
 
+    /// <summary>
+    /// The comment after a weapon entry on its line in a block list, <c> # Festival Flight</c>: the name of a weapon given
+    /// by hash, for whoever reads the file (the reader ignores it); none for a weapon named in full.
+    /// </summary>
+    internal static string WriteNameComment(WeaponLoadout weapon) =>
+        weapon.Hash.Match(_ => $" # {weapon.Name}", _ => "");
+
+    private static ImmutableArray<ParsingEvent> ToNameComment(WeaponLoadout weapon) =>
+        weapon.Hash.Match(_ => (ImmutableArray<ParsingEvent>)[new Comment(weapon.Name, true)], _ => []);
+
     /// <summary>Keys in the order of the format: identity, class and subclass, abilities, the lists, weapons, stats.</summary>
     private static ImmutableArray<ParsingEvent> ListEvents(Build build, ImmutableArray<string> notes) =>
     [
@@ -98,19 +108,27 @@ public static class BuildFileWriting
             [
                 ToKey("weapons"),
                 new SequenceStart(null, null, true, SequenceStyle.Block),
-                .. weapons.SelectMany(weapon => ToWeaponEvents(weapon)),
+                .. weapons.SelectMany(weapon => (ImmutableArray<ParsingEvent>)[.. ToWeaponEvents(weapon), .. ToNameComment(weapon)]),
                 new SequenceEnd(),
             ];
 
+    /// <summary>
+    /// A weapon given by hash is its hash and what the build chooses for it (perks, roll, catalyst, copy, mod): its slot,
+    /// name, damage type and archetype are the manifest's, never copied into the file. A weapon without one is named in full.
+    /// </summary>
     private static ImmutableArray<ParsingEvent> ToWeaponEvents(WeaponLoadout weapon) =>
     [
         new MappingStart(null, null, true, MappingStyle.Flow),
-        .. ToEntry("slot", ToVocabularyWord(weapon.Slot)),
-        .. ToEntry("name", weapon.Name),
-        .. ToEntry("type", ToVocabularyWord(weapon.Type)),
-        .. weapon.Archetype.Match(archetype => ToEntry("archetype", archetype.Value), _ => []),
+        .. weapon.Hash.Match(
+            hash => ToEntry("hash", hash.Value.Value.ToString(CultureInfo.InvariantCulture)),
+            _ =>
+            [
+                .. ToEntry("slot", ToVocabularyWord(weapon.Slot)),
+                .. ToEntry("name", weapon.Name),
+                .. ToEntry("type", ToVocabularyWord(weapon.Type)),
+                .. weapon.Archetype.Match(archetype => ToEntry("archetype", archetype.Value), _ => []),
+            ]),
         .. ToListEntry("perks", weapon.Perks),
-        .. weapon.Hash.Match(hash => ToEntry("hash", hash.Value.Value.ToString(CultureInfo.InvariantCulture)), _ => []),
         .. ToRollEntry(weapon.Roll),
         .. weapon.Catalyst ? ToEntry("catalyst", "true") : [],
         .. weapon.Instance.Match(instance => (ImmutableArray<ParsingEvent>)[ToKey("instance"), new Scalar(null, null, instance.Value.Value, ScalarStyle.DoubleQuoted, false, true)], _ => []),

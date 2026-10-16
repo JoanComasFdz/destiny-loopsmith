@@ -49,7 +49,7 @@ public sealed partial class StatLoadingTests
         Assert.EndsWith("Its weapons are yours too, with their perks.", login.Message, StringComparison.Ordinal);
         Assert.Equal([Optional.Some(festival[0].Options[^1]), Optional.Some(festival[1].Options[^1])], weapons.Single(weapon => weapon.Hash == Optional.Some(Festival)).Roll);
         Assert.True(weapons.Single(weapon => weapon.Hash == Optional.Some(Thunderlord)).Catalyst);
-        Assert.Contains("hash: 3325463374, roll: [1419069769, 2779035018], catalyst: true, instance: \"6917529810172542011\"}", login.Session.Design.Build.Text, StringComparison.Ordinal);
+        Assert.Contains("{hash: 3325463374, perks: [], roll: [1419069769, 2779035018], catalyst: true, instance: \"6917529810172542011\"} # Thunderlord", login.Session.Design.Build.Text, StringComparison.Ordinal);
         Assert.Contains(login.Session.Build.Equipped, equipped => equipped.Element.Id.Value == "thunderlord-catalyst");
     }
 
@@ -116,7 +116,7 @@ public sealed partial class StatLoadingTests
 
         Assert.Equal(("Kinetic Rifle", DamageType.Kinetic, Optional.Some(KineticRifle), Optional.Some(ItemInstanceId.From("4001"))), (rifle.Name, rifle.Type, rifle.Hash, rifle.Instance));
         Assert.Equal([Optional.Some(ItemHash.From(9222u)), Optional.Some(ItemHash.From(9232u))], rifle.Roll);
-        Assert.Contains("{slot: kinetic, name: Kinetic Rifle, type: kinetic, archetype: auto-rifle, perks: [], hash: 9202, roll: [9222, 9232], instance: \"4001\"}", picked.Design.Build.Text, StringComparison.Ordinal);
+        Assert.Contains("{hash: 9202, perks: [], roll: [9222, 9232], instance: \"4001\"} # Kinetic Rifle", picked.Design.Build.Text, StringComparison.Ordinal);
         Assert.Equal(session.Build.Build.Weapons.Length, picked.Build.Build.Weapons.Length);
         Assert.DoesNotContain("Festival Flight", picked.Design.Build.Text, StringComparison.Ordinal);
     }

@@ -15,13 +15,25 @@ public static class BuildFileEditing
 {
     /// <summary>
     /// The build file with its weapon number <paramref name="index"/> (0-based, in the file's order) written anew as
-    /// <paramref name="weapon"/>: one flow mapping (<c>{slot: …, roll: […]}</c>) where that entry was. Comments inside the
-    /// entry itself go with it.
+    /// <paramref name="weapon"/>: one flow mapping (<c>{hash: …, roll: […]}</c>) where that entry was. Comments inside the
+    /// entry itself go with it, and so does a comment after it on its line: on a line of a block list, the entry of a
+    /// weapon given by hash is followed by its name (<c> # Festival Flight</c>).
     /// </summary>
     public static Result<string, string> ReplaceWeapon(SourceText buildFile, int index, WeaponLoadout weapon) =>
         ReadEvents(buildFile)
             .Bind(events => FindWeapon(buildFile, events, index).Map(entry => ToTextSpan(events, entry)))
-            .Map(span => string.Concat(buildFile.Text.AsSpan(0, span.Start), BuildFileWriting.WriteWeapon(weapon), buildFile.Text.AsSpan(span.End)));
+            .Map(span => ReplaceWeaponText(buildFile.Text, span, weapon));
+
+    private static string ReplaceWeaponText(string text, TextSpan span, WeaponLoadout weapon)
+    {
+        var lineStart = text.LastIndexOf('\n', Math.Max(span.Start - 1, 0)) + 1;
+        var lineEnd = text.IndexOf('\n', span.End) is var end and >= 0 ? end : text.Length;
+        var rest = text[span.End..lineEnd].TrimStart();
+        var isBlockLine = text[lineStart..span.Start].Trim() == "-" && (rest.Length == 0 || rest.StartsWith('#'));
+        var replaced = isBlockLine ? new TextSpan(span.Start, lineEnd) : span;
+        var written = isBlockLine ? BuildFileWriting.WriteWeapon(weapon) + BuildFileWriting.WriteNameComment(weapon) : BuildFileWriting.WriteWeapon(weapon);
+        return string.Concat(text.AsSpan(0, replaced.Start), written, text.AsSpan(replaced.End));
+    }
 
     /// <summary>
     /// The build file with <paramref name="weapon"/> added as its last weapon (one flow mapping): on a line of its own
@@ -30,8 +42,8 @@ public static class BuildFileEditing
     /// </summary>
     public static Result<string, string> AddWeapon(SourceText buildFile, WeaponLoadout weapon) =>
         ReadEvents(buildFile).Bind(events => FindTopLevelValue(events, "weapons").Match(
-            list => AddToList(buildFile, events, list.Value, BuildFileWriting.WriteWeapon(weapon)),
-            _ => new Result<string, string>.Ok($"{buildFile.Text.TrimEnd('\n')}\nweapons:\n  - {BuildFileWriting.WriteWeapon(weapon)}\n")));
+            list => AddToList(buildFile, events, list.Value, BuildFileWriting.WriteWeapon(weapon), BuildFileWriting.WriteNameComment(weapon)),
+            _ => new Result<string, string>.Ok($"{buildFile.Text.TrimEnd('\n')}\nweapons:\n  - {BuildFileWriting.WriteWeapon(weapon)}{BuildFileWriting.WriteNameComment(weapon)}\n")));
 
     /// <summary>
     /// The build file without its weapon number <paramref name="index"/> (0-based, in the file's order): the entry's lines
@@ -61,8 +73,11 @@ public static class BuildFileEditing
                 : RemoveLines(text, span.Start, span.End);
     }
 
-    /// <summary>An entry added at the end of a list: after its last entry's line (a block list), or before its "]" (a flow list).</summary>
-    private static Result<string, string> AddToList(SourceText file, ImmutableArray<ParsingEvent> events, EventSpan list, string entry)
+    /// <summary>
+    /// An entry added at the end of a list: after its last entry's line (a block list, with <paramref name="comment"/> after
+    /// it on its line), or before its "]" (a flow list, which has no room for a comment).
+    /// </summary>
+    private static Result<string, string> AddToList(SourceText file, ImmutableArray<ParsingEvent> events, EventSpan list, string entry, string comment)
     {
         var text = file.Text;
         var children = ListChildren(events, list.First);
@@ -82,7 +97,7 @@ public static class BuildFileEditing
         var prefix = text[(text.LastIndexOf('\n', Math.Max(start - 1, 0)) + 1)..start];         // "  - "
         var lineEnd = text.IndexOf('\n', ToTextSpan(events, children[^1]).End);
         return prefix.Trim() == "-"
-            ? new Result<string, string>.Ok(lineEnd < 0 ? $"{text}\n{prefix}{entry}\n" : text.Insert(lineEnd, $"\n{prefix}{entry}"))
+            ? new Result<string, string>.Ok(lineEnd < 0 ? $"{text}\n{prefix}{entry}{comment}\n" : text.Insert(lineEnd, $"\n{prefix}{entry}{comment}"))
             : new Result<string, string>.Error($"{file.Path}: its weapons aren't a list Loopsmith can add to");
     }
 

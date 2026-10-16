@@ -320,7 +320,7 @@ the build holds what the catalog recognises by hash, and nothing is guessed:
 |---|---|
 | the subclass item | `class` and `subclass` — the glossary's `subclasses` ([rule-format.md](rule-format.md#glossary-rulesglossaryyaml): the nine Light ones so far, whose hashes DIM's source lists); a Stasis, Strand or Prismatic loadout, or one without a subclass, can't start a build yet |
 | the subclass's plugs, in socket order | the super, grenade, melee and class ability, the jump, aspects and fragments the catalog has a hash for, for the loadout's class and subclass (another class's, such as the Hunter's Spark of Shock on a Striker, is left out); an ability it has none for is `"?"`, a jump it has none for is left out (it has no part in a loop) |
-| the other equipped items (and the Loadout Optimizer's exotic) | `exoticArmor`; a weapon the manifest excerpt knows ([rule-format.md](rule-format.md#manifest-excerpt-rulesmanifestyaml)) becomes one of `weapons` — its slot, name, damage type, archetype and `hash`, and as its `roll` the perk each trait column rolls with among the item's `socketOverrides` (a loadout saved with its perks; most name the weapon only) |
+| the other equipped items (and the Loadout Optimizer's exotic) | `exoticArmor`; a weapon the manifest excerpt knows ([rule-format.md](rule-format.md#manifest-excerpt-rulesmanifestyaml)) becomes one of `weapons` — its `hash` (its slot, name, damage type and archetype are the manifest's), and as its `roll` the perk each trait column rolls with among the item's `socketOverrides` (a loadout saved with its perks; most name the weapon only) |
 | the armor pieces, by their manifest set | `armorSetBonuses`: each set perk the pieces grant (2 or 4 of a set) that the catalog has a hash for; the pieces themselves (legendary armor) are left out |
 | `parameters.mods` (repeats are stacked copies) | `armorMods` |
 | `parameters.artifactUnlocks` | `artifactPerks` |
@@ -623,8 +623,8 @@ rolled two perks or more has each of them):
   or more stacks them top to bottom, framed together, the one it holds on top on DIM's blue; on a phone the perks show
   as icons only, their names in their tooltips), and where it is — the details keep room for the most perks a column
   of the listed weapons holds, so "Use this weapon", in their upper right corner, stays put from one weapon to the
-  next; a click (a second tap, or "Use this weapon") puts it in the build: its entry is written anew (`{slot, name, type, archetype, perks: [], hash, roll,
-  catalyst, instance, mod}`, from the manifest and its sockets), or added for an empty slot, and the steps replay. A build
+  next; a click (a second tap, or "Use this weapon") puts it in the build: its entry is written anew (`{hash, perks: [], roll,
+  catalyst, instance, mod} # <its name>`, from the manifest and its sockets), or added for an empty slot, and the steps replay. A build
   wears one exotic weapon (by its manifest item, or an exotic weapon element among a hand-written weapon's perks):
   another exotic isn't listed while it does (the picker says which to swap); and one weapon a slot. Weapons the
   excerpt doesn't know are named by Bungie's full manifest, which the tab holds, once after the login with the armor
@@ -667,7 +667,7 @@ picks between the player's own items (above) and these, starting on Yours:
   second tap, or "Use this weapon" / "Wear this piece") puts it in. Bungie's full manifest is read for it first when
   the excerpt lacks it (its trait columns, catalyst or set): the picker shows the bar and stays open, and when it can't
   be read it says so and the build doesn't change. A **weapon**'s entry is then written anew, or added for an empty
-  slot, as `{slot, name, type, archetype, perks: [], hash}`: no roll (each rolling column shows "?", picked with the
+  slot, as `{hash, perks: []} # <its name>`: no roll (each rolling column shows "?", picked with the
   perk picker; a column that doesn't roll shows its perk) and its catalyst off. A **piece** goes into its slot as one
   picked from the player's armor does (an exotic the rules know is the build's exotic, any other piece a left-out item,
   the set bonuses following the pieces), with no copy: the stats stay as they were.

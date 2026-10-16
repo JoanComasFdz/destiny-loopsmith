@@ -357,7 +357,7 @@ public sealed partial class StatLoadingTests
     }
 
     private static ValidatedBuild OpenHandWrittenBuild() =>
-        BuildFileParsing.ParseBuildFile(ReadBuildFile())
+        BuildFileParsing.ParseBuildFile(ReadBuildFile(), Catalog.Manifest)
             .Bind(build => BuildValidation.ValidateBuild(build, Catalog))
             .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
 }
