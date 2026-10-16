@@ -202,13 +202,13 @@ public class SkipGrenadeHunterGoldenTests
     [Fact]
     public Task Scenario_trace()
     {
-        var scenario = File.ReadAllText(RepoFiles.ToPath("builds/skip-grenade-hunter/scenario.txt"));
+        var scenarioPath = RepoFiles.ToPath("builds/skip-grenade-hunter/scenario.txt");   // pure
+        var scenario = File.ReadAllText(scenarioPath);                                     // impure
         var actions = ParseScenario(scenario);
         var resolutions = ActionResolution.ResolveSequence(Build, Fresh, actions);
         var text = TraceRenderer.RenderSequence(Build, Fresh, resolutions, new TraceOptions(true, false, false)).ToPlainText();
         return Verify(text);
     }
-
 
     // ── helpers ─────────────────────────────────────────────────────────────────
 

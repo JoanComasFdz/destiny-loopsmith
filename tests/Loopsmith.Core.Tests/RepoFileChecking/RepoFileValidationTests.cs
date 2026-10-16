@@ -31,7 +31,15 @@ public sealed class RepoFileValidationTests
         ["tests/Loopsmith.Web.E2E/Scenarios/ImportExport/ogma-pr6-by-hash.build.yaml"] = [2342054803],
     }.ToImmutableDictionary();
 
-    public static TheoryData<string> Opening => [.. ListRepoFiles().Where(path => !Refused.ContainsKey(path) && !FullManifestOnly.ContainsKey(path))];
+    public static TheoryData<string> Opening
+    {
+        get
+        {
+            var files = ListRepoFiles();                                                            // impure
+
+            return [.. files.Where(path => !Refused.ContainsKey(path) && !FullManifestOnly.ContainsKey(path))];
+        }
+    }
 
     public static TheoryData<string> Refusing => [.. Refused.Keys.Order(StringComparer.Ordinal)];
 
@@ -41,7 +49,8 @@ public sealed class RepoFileValidationTests
     [MemberData(nameof(Opening))]
     public void A_repository_file_opens_against_the_rules(string path)
     {
-        var file = FileSourceFetching.ReadTextFile(RepoFiles.ToPath(path));   // impure
+        var fullPath = RepoFiles.ToPath(path);                    // pure
+        var file = FileSourceFetching.ReadTextFile(fullPath);     // impure
 
         var opened = file.Bind(read => OpenFile(read with { Path = path }));
 
@@ -52,7 +61,8 @@ public sealed class RepoFileValidationTests
     [MemberData(nameof(Refusing))]
     public void A_fixture_meant_to_be_refused_is_refused_with_its_error(string path)
     {
-        var file = FileSourceFetching.ReadTextFile(RepoFiles.ToPath(path));   // impure
+        var fullPath = RepoFiles.ToPath(path);                    // pure
+        var file = FileSourceFetching.ReadTextFile(fullPath);     // impure
 
         var opened = file.Bind(read => OpenFile(read with { Path = path }));
 
@@ -65,7 +75,8 @@ public sealed class RepoFileValidationTests
     [MemberData(nameof(NeedingTheFullManifest))]
     public void A_fixture_read_from_the_full_manifest_lacks_only_its_listed_hashes(string path)
     {
-        var file = FileSourceFetching.ReadTextFile(RepoFiles.ToPath(path));   // impure
+        var fullPath = RepoFiles.ToPath(path);                    // pure
+        var file = FileSourceFetching.ReadTextFile(fullPath);     // impure
 
         var read = file.Map(text => text with { Path = path });
         var unknown = read.Match(ok => ListUnknownHashes(ok.Value), _ => []);
@@ -79,7 +90,7 @@ public sealed class RepoFileValidationTests
     [Fact]
     public void Every_kind_of_repository_file_is_found()
     {
-        var files = ListRepoFiles();
+        var files = ListRepoFiles();   // impure
 
         Assert.Contains(files, path => path.StartsWith("builds/", StringComparison.Ordinal) && path.EndsWith("/build.yaml", StringComparison.Ordinal));
         Assert.Contains(files, path => path.StartsWith("builds/", StringComparison.Ordinal) && path.EndsWith(".loop.yaml", StringComparison.Ordinal));
@@ -101,15 +112,23 @@ public sealed class RepoFileValidationTests
             ? LoopDesigning.ListUnknownLoopFileHashes(RepoCatalog.Catalog, file)
             : LoopDesigning.ListUnknownBuildFileHashes(RepoCatalog.Catalog, file);
 
+    /// <summary>The repository's build, loop and fixture files, relative to its root and sorted.</summary>
     private static ImmutableArray<string> ListRepoFiles()
     {
-        var builds = Directory.EnumerateDirectories(RepoFiles.ToPath("builds"))
-            .SelectMany(build => Directory.EnumerateFiles(build, "build.yaml")
-                .Concat(Directory.Exists(Path.Combine(build, "loops")) ? Directory.EnumerateFiles(Path.Combine(build, "loops"), "*.loop.yaml") : []));
-        var fixtures = Directory.EnumerateFiles(RepoFiles.ToPath("tests/Loopsmith.Web.E2E/Scenarios"), "*.yaml", SearchOption.AllDirectories)
-            .Where(file => file.EndsWith(".build.yaml", StringComparison.Ordinal) || file.EndsWith(".loop.yaml", StringComparison.Ordinal));
-        return [.. builds.Concat(fixtures)
+        var buildsRoot = RepoFiles.ToPath("builds");                                                // pure
+        var scenariosRoot = RepoFiles.ToPath("tests/Loopsmith.Web.E2E/Scenarios");                  // pure
+        var builds = Directory.EnumerateFiles(buildsRoot, "build.yaml", SearchOption.AllDirectories).ToImmutableArray();   // impure
+        var loops = Directory.EnumerateFiles(buildsRoot, "*.loop.yaml", SearchOption.AllDirectories).ToImmutableArray();   // impure
+        var fixtures = Directory.EnumerateFiles(scenariosRoot, "*.yaml", SearchOption.AllDirectories).ToImmutableArray();  // impure
+
+        return [.. builds.Concat(loops)                                                              // pure
+            .Concat(fixtures.Where(file => file.EndsWith(".build.yaml", StringComparison.Ordinal) || file.EndsWith(".loop.yaml", StringComparison.Ordinal)))
             .Select(file => Path.GetRelativePath(RepoFiles.Root, file).Replace('\\', '/'))
+            .Where(path => IsBuildOrLoopOfBuilds(path) || path.StartsWith("tests/", StringComparison.Ordinal))
             .Order(StringComparer.Ordinal)];
     }
+
+    /// <summary><c>builds/&lt;slug&gt;/build.yaml</c> or <c>builds/&lt;slug&gt;/loops/&lt;name&gt;.loop.yaml</c>.</summary>
+    private static bool IsBuildOrLoopOfBuilds(string path) =>
+        path.Split('/') is ["builds", _, "build.yaml"] or ["builds", _, "loops", _];
 }

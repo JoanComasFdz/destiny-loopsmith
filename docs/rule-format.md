@@ -510,7 +510,7 @@ A rule fired by an event a chance rule raised, or by picking up a pickup only ch
 `during` (`grenade|melee|classAbility|super`) holds for the whole of a step that casts that ability, any use of it
 (`class` and `class:air` are both the class ability), and on no other step: what is under way at the step's end, such
 as Flow State's dodge (`when: [ { has: amplified }, { during: classAbility } ]`: 66% [PvP 32%] damage resistance on a
-`class` step while Amplified, Compendium Arc#49). the build's explanation reads it `(during your class ability)`. Being in your
+`class` step while Amplified, Compendium Arc#49). The build's explanation reads it `(during your class ability)`. Being in your
 Super is not a `during`: a Super lasts for several steps, so casting it applies the `super` status (the `super`
 keyword element) until the player declares `end:super`, and a Super's resistance is `when: [ { has: super } ]`
 (Arc Staff: 90% [PvP 53%], Arc#44).

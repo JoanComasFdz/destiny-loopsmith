@@ -154,7 +154,7 @@ on the side that gives nothing. When a rule of a listed element fires on the sam
 declaring rule gives way: it is reported as fired with no outcomes, naming that element
 (`FiredRule.NotStackedWith`; the trace reads "doesn't stack with Dielectric [Tempest Strike]"). With
 both elements equipped the build check notes it ("… doesn't stack with 'Dielectric'.", info: a crafter may keep
-both for what else each gives), `explain`
+both for what else each gives), the build's explanation
 annotates the bullet, and a loop's analysis shows it at each step where it happens. Parsing rejects an id that isn't an element of
 the rules, the rule's own element, an empty list, and a `doesNotStackWith` that leads back to its
 own element, directly or through a longer circle (none of those rules would apply).

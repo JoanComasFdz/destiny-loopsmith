@@ -43,9 +43,11 @@ itself, under `src/Loopsmith.Core/Domain/`.
   `GameValueArithmetic.ResolveForCopies`, `ToDamageType`, the `Functional`
   primitives' generic `Map`/`Bind`).
 - **The host owns no logic.** `Loopsmith.Web` (Blazor WebAssembly), the only host,
-  holds UI state and calls the pure `Orchestration` API (`LoopDesigning`); browser side
-  effects (clipboard, downloads, confirm, picked files, the URL) live in its
-  `Hosting/BrowserInterop`. Any other host (an HTTP API, say) would do the same.
+  holds UI state and calls the pure `Orchestration` API (`LoopDesigning`); its side
+  effects live in `Hosting/`: the browser's (clipboard, downloads, confirm, picked files,
+  the URL) in `BrowserInterop` (and `wwwroot/js/loopsmith.js`), its HTTP requests (DIM
+  shares, the Bungie login and manifest) in `DimLoadoutFetching`, `BungieAccount` and
+  `BungieManifestJoining`. Any other host (an HTTP API, say) would do the same.
 
 - **The end-to-end tests have their own rules.** `tests/Loopsmith.Web.E2E` follows
   [`E2E-TEST-CODE-RULES.md`](../tests/Loopsmith.Web.E2E/E2E-TEST-CODE-RULES.md), not this file.
@@ -81,7 +83,8 @@ itself, under `src/Loopsmith.Core/Domain/`.
   The extra line/variable is an accepted cost. It makes the sandwich readable
   vertically — you can scan straight down and see exactly where each pure↔impure
   boundary is — and it makes those boundary jumps easy to step through when
-  debugging. Shells mark each line `// pure` or `// impure`.
+  debugging. Impure code (the host's handlers, a test's file reads) marks each line
+  `// pure` or `// impure`.
 - **Pure functions return values, the host acts on them.** `Orchestration` returns
   what the host shows or saves (a `Result`, a session, a text); the host's handler
   performs the side effect in its own `// impure` line ([ADRs D38](ADRs.md)).

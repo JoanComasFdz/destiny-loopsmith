@@ -14,11 +14,16 @@ public static class RepoFiles
     public static string ToPath(string relative) => Path.Combine(Root, relative);
 
     /// <summary>A build file of the repository, parsed and validated against its rules (<see cref="RepoCatalog"/>).</summary>
-    public static ValidatedBuild LoadBuild(string relativeBuildPath) =>
-        FileSourceFetching.ReadTextFile(ToPath(relativeBuildPath))   // impure
-            .Bind(file => BuildFileParsing.ParseBuildFile(file, RepoCatalog.Manifest))
-            .Bind(build => BuildValidation.ValidateBuild(build, RepoCatalog.Catalog))
-            .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
+    public static ValidatedBuild LoadBuild(string relativeBuildPath)
+    {
+        var path = ToPath(relativeBuildPath);                                                       // pure
+        var file = FileSourceFetching.ReadTextFile(path);                                           // impure
+
+        var built = file                                                                            // pure
+            .Bind(read => BuildFileParsing.ParseBuildFile(read, RepoCatalog.Manifest))
+            .Bind(build => BuildValidation.ValidateBuild(build, RepoCatalog.Catalog));
+        return built.Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
+    }
 
     private static string FindRoot()
     {

@@ -38,8 +38,9 @@ edit files.
      `rules/`, never an edit to a shared classifier or a dispatch `switch`; a new trigger or outcome kind is
      one Dunet case.
    - The host owns no logic. `Loopsmith.Web`, the only host, holds UI state and calls the pure
-     `Orchestration` API (`LoopDesigning`); its browser side effects (clipboard, downloads, confirm, picked files, the URL)
-     live in `Hosting/BrowserInterop` (and `wwwroot/js/loopsmith.js`).
+     `Orchestration` API (`LoopDesigning`); its side effects live in `Hosting/`: the browser's (clipboard, downloads,
+     confirm, picked files, the URL) in `BrowserInterop` (and `wwwroot/js/loopsmith.js`), its HTTP requests (DIM shares,
+     the Bungie login and manifest) in `DimLoadoutFetching`, `BungieAccount` and `BungieManifestJoining`.
    - The architecture tests catch compiled dependencies. You catch what they cannot: behaviour in the
      wrong slice or in a host, game-specific behaviour coded in C# instead of YAML, or a new top-level
      namespace that is missing from `Slices.cs`.
