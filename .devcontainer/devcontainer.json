@@ -21,7 +21,13 @@
   "postAttachCommand": "bash .devcontainer/install-extension.sh",
   "customizations": {
     "vscode": {
-      "extensions": ["ms-dotnettools.csharp"]
+      // C# Dev Kit (it brings the C# extension): the solution explorer and the test explorer.
+      "extensions": ["ms-dotnettools.csdevkit"],
+      "settings": {
+        // The secondary side bar, where VS Code opens its chat, starts hidden (View → Appearance → Secondary Side Bar
+        // shows it).
+        "workbench.secondarySideBar.defaultVisibility": "hidden"
+      }
     }
   }
 }
