@@ -19,7 +19,7 @@ itself, under `src/Loopsmith.Core/Domain/`.
   live under `src/Loopsmith.Core/` (`SourceFetching`, `RuleParsing`,
   `BuildParsing`, `LoopFiles` (reads and writes loop files, and writes the build
   files they embed), `BuildComposition`, `Simulation` (plays steps against the
-  state), `BuildExplanation`, `LoopGraphing`, `TraceRendering`,
+  state), `BuildExplanation`, `TraceRendering`,
   `ReportComparison`, `LoadoutImporting` (a DIM link → a build), `ManifestJoining` (Bungie's full
   manifest → the excerpt some hashes need), `StatLoading` (a Bungie login's answers → the player's armor
   → the build's stats), `Orchestration`).
@@ -31,7 +31,7 @@ itself, under `src/Loopsmith.Core/Domain/`.
   slices but is not pure value arithmetic: **`Phrasing`** (plain-English descriptions
   of Domain values plus the styled-text model every renderer and the host use) and
   **`Causality`** (what a trigger *means*: trigger/damage-source matching, shared by
-  `Simulation` and `LoopGraphing`). Both are guarded by architecture tests and may
+  `Simulation` and the slices that read a rule's trigger). Both are guarded by architecture tests and may
   not depend on any feature slice.
 - **Build elements are data, not code.** A new aspect, fragment, mod, exotic,
   artifact perk or weapon trait is **one YAML entry** under `rules/` — never an
@@ -42,12 +42,10 @@ itself, under `src/Loopsmith.Core/Domain/`.
   allowed exception is pure, dependency-free value arithmetic (e.g.
   `GameValueArithmetic.ResolveForCopies`, `ToDamageType`, the `Functional`
   primitives' generic `Map`/`Bind`).
-- **The host owns no logic.** `Loopsmith.Cli` maps argv in, calls an
-  `Orchestration` shell, and executes the returned effects (console I/O lives
-  only in the host). `Loopsmith.Web` (Blazor WebAssembly) holds UI state and
-  calls the same pure `Orchestration` API (`LoopDesigning`); browser side effects
-  (clipboard, downloads, confirm, picked files, the URL) live in its `Hosting/BrowserInterop`.
-  Any other host (an HTTP API, say) would do the same.
+- **The host owns no logic.** `Loopsmith.Web` (Blazor WebAssembly), the only host,
+  holds UI state and calls the pure `Orchestration` API (`LoopDesigning`); browser side
+  effects (clipboard, downloads, confirm, picked files, the URL) live in its
+  `Hosting/BrowserInterop`. Any other host (an HTTP API, say) would do the same.
 
 - **The end-to-end tests have their own rules.** `tests/Loopsmith.Web.E2E` follows
   [`E2E-TEST-CODE-RULES.md`](../tests/Loopsmith.Web.E2E/E2E-TEST-CODE-RULES.md), not this file.
@@ -64,7 +62,7 @@ itself, under `src/Loopsmith.Core/Domain/`.
 - **Pure/impure split — strict `impure → pure → impure` sandwich.** The
   boundary (`SourceFetching`) reads files (rules, builds, loop files, and the
   sources it ingests: the manifest, the Compendium snapshot, Clarity); the host
-  writes. Everything between is pure. Read at the start, compute in the middle,
+  performs every other side effect (the browser's). Everything between is pure. Read at the start, compute in the middle,
   write at the end.
 - **Never mix or nest pure and impure calls on one line.** A statement is either
   pure or impure, never both — don't wrap an impure call around a pure one (or
@@ -72,21 +70,21 @@ itself, under `src/Loopsmith.Core/Domain/`.
   intermediate even when it feels redundant:
 
   ```csharp
-  // No — pure Render nested inside impure WriteLine
-  Console.WriteLine(AnsiRendering.ToTerminalText(line, useColor));
+  // No — pure Export nested inside impure CopyText
+  await Browser.CopyTextAsync(LoopDesigning.ExportLoop(session));
 
   // Yes — one line pure, the next impure
-  var text = AnsiRendering.ToTerminalText(line, useColor);   // pure
-  Console.WriteLine(text);                                    // impure
+  var text = LoopDesigning.ExportLoop(session);   // pure
+  await Browser.CopyTextAsync(text);              // impure
   ```
 
   The extra line/variable is an accepted cost. It makes the sandwich readable
   vertically — you can scan straight down and see exactly where each pure↔impure
   boundary is — and it makes those boundary jumps easy to step through when
   debugging. Shells mark each line `// pure` or `// impure`.
-- **Effects as data.** Pure functions return an `Effect` DU describing the side
-  effects to perform (`WriteLines`, `WriteText`, `SaveFile`, `ShowFailure`); the impure shell
-  `Match`es it and executes them.
+- **Pure functions return values, the host acts on them.** `Orchestration` returns
+  what the host shows or saves (a `Result`, a session, a text); the host's handler
+  performs the side effect in its own `// impure` line ([ADRs D38](ADRs.md)).
 - **Honest, total signatures** via our own `Optional<T>`, `Result<T, F>`, and
   `Unit` (in `Functional/`) — defined as Dunet DUs with `Map`/`Bind`/`Match` as
   extension methods. **No third-party FP library.** No partial functions, no
@@ -119,8 +117,7 @@ itself, under `src/Loopsmith.Core/Domain/`.
   `Parse`/`ToX`/`FromX` / the union-case constructor names (`ToDamageType`,
   `Optional.Some`, `Optional.FromNullable`).
 - **Naming clash resolved:** the game's consequences (energy, buffs, orbs,
-  debuffs) are called **`Outcome`**. **`Effect`** is reserved for side effects
-  described as data (`WriteLines`, `WriteText`, `SaveFile`, `ShowFailure`).
+  debuffs) are called **`Outcome`**, never `Effect`.
 - **Immutability everywhere.** All domain types are immutable `record`s.
 - **Domain via discriminated unions, not inheritance.** DUs are generated with
   **Dunet**. Behaviour is static/extension functions over the DU that

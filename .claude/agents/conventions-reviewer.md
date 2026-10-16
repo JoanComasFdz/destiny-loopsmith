@@ -25,7 +25,7 @@ edit files.
    - Kernel: `Domain`, `Functional`, `Phrasing`, `Causality`. `Functional` depends on nothing, `Domain`
      on `Functional`, and `Phrasing`/`Causality` on `Domain` + `Functional` (not on each other).
    - `SourceFetching` (impure boundary) and the feature slices (`RuleParsing`, `BuildParsing`, `LoopFiles`,
-     `BuildComposition`, `Simulation`, `BuildExplanation`, `LoopGraphing`, `TraceRendering`,
+     `BuildComposition`, `Simulation`, `BuildExplanation`, `TraceRendering`,
      `ReportComparison`) depend only on the kernel and themselves. They never depend on each other or on
      `Orchestration`. Only `Orchestration` may depend on every slice.
    - Only `SourceFetching` does file or network I/O (`System.IO`, `System.Net.Http`); the YAML slices may
@@ -37,8 +37,7 @@ edit files.
    - Build elements are data, not code: a new aspect, mod, perk or other element is one YAML entry under
      `rules/`, never an edit to a shared classifier or a dispatch `switch`; a new trigger or outcome kind is
      one Dunet case.
-   - The hosts own no logic. `Loopsmith.Cli` maps argv in, calls an `Orchestration` shell and executes the
-     returned effects (console I/O only there). `Loopsmith.Web` holds UI state and calls the pure
+   - The host owns no logic. `Loopsmith.Web`, the only host, holds UI state and calls the pure
      `Orchestration` API (`LoopDesigning`); its browser side effects (clipboard, downloads, confirm, picked files, the URL)
      live in `Hosting/BrowserInterop` (and `wwwroot/js/loopsmith.js`).
    - The architecture tests catch compiled dependencies. You catch what they cannot: behaviour in the
@@ -48,8 +47,8 @@ edit files.
    that wraps a pure one or the reverse, for example `Console.WriteLine(Render(x))`,
    `File.WriteAllText(path, Format(r))` or `return Parse(await File.ReadAllTextAsync(p))`. The fix is a
    named intermediate on its own line. Also check the `impure → pure → impure` sandwich and that shells
-   mark each line `// pure` or `// impure`. Side effects are described as data (the `Effect` DU:
-   `WriteLines`, `WriteText`, `SaveFile`, `ShowFailure`) and executed by the host.
+   mark each line `// pure` or `// impure`. The pure core returns values; the host performs the side
+   effect in its own `// impure` line.
 3. **Verb naming.** Every method, local function and named delegate contains a verb (`ReadRules`,
    `ResolveAction`, `FindSlice`). The allowed idioms are `Is`/`Has`/`Can` predicates, `Parse`/`ToX`/`FromX`
    conversions, and union-case constructor names (`Optional.Some`, `Ok`/`Error`). Flag bare nouns

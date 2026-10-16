@@ -1104,7 +1104,7 @@ public static class LoopDesigning
 
     /// <summary>
     /// What one step fired as a tree: each event, the elements it set off, each of their outcomes on a line of its own
-    /// (the CLI's wording), and the keywords they name.
+    /// (the trace's wording), and the keywords they name.
     /// </summary>
     public static StepOutcomes ShapeStepOutcomes(DesignSession session, Resolution resolution, TraceOptions options) =>
         StepOutcomeShaping.ShapeStepOutcomes(session.Build, resolution, options);

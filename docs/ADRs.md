@@ -6,7 +6,7 @@ current set of decisions, in four groups: what the product is (D1–D9), sources
 architecture (D16–D23), hosts and tooling (D24–D26), starting from a DIM link (D27), the build's stats (D28), the
 step's damage resistance (D29), armor mods in their sockets (D30), the artifact (D32), the count of Armor Charge
 (D33), what a hit step stands for (D34), the raid and activity mods left out of the sockets (D35), what the player
-says about a step besides its hit and count (D36) and a reload (D37). D1 is the
+says about a step besides its hit and count (D36), a reload (D37) and the web designer as the only host (D38). D1 is the
 founding one: every other decision follows from it.
 
 | # | Decision | Why |
@@ -34,7 +34,7 @@ founding one: every other decision follows from it.
 | D21 | Railway (ROP) for parsing, validating and playing; `Severity` only where the app branches | Short-circuit on the first blocking error, no app-state object |
 | D22 | Two kernel modules besides `Domain`: `Phrasing` and `Causality` | "How we say it" and "what a trigger means" each have one home |
 | D23 | Cascade termination is per causal chain | A global "once per step" guard would suppress sibling events |
-| D24 | Hosts own no logic; the CLI is the scripting and golden-test host | Both hosts share every line of logic through `Orchestration` |
+| D24 | ~~Hosts own no logic; the CLI is the scripting and golden-test host~~ Superseded by D38 | Both hosts shared every line of logic through `Orchestration` |
 | D25 | The web designer runs in the browser, as static files | No server: any static host works, and a loop travels in its link; only Bungie's manifest is saved in the browser |
 | D26 | Verify.XunitV3 pinned to 32.0.1 | 33.x needs a licence decision |
 | D27 | A DIM link starts a build of what the catalog knows by hash; the rest is left out, listed | A player's build already lives in DIM; nothing is guessed, and what's missing stays visible |
@@ -45,6 +45,7 @@ founding one: every other decision follows from it.
 | D35 | Raid, activity and seasonal armor mods aren't supported: a DIM link's are kept but ignored, and no picker offers them | They act on an encounter's mechanics (a relic, a plate, an enemy race), which a loop of triggers doesn't hold, or no longer work at all; what a loadout had stays visible |
 | D36 | The player says when a weapon step breaks a shield and when an ability step spends its last charge | Shield Break Charge and the Kickstarts react to them; play decides both, and neither is counted |
 | D37 | A reload is a step the player declares, and a rule can reload a weapon; no ammo is counted | Demolitionist's loop needs a reload and the perks that react to one; a magazine is time and ammo, which only play decides |
+| D38 | The web designer is the only host; the CLI and the loop graph are removed | Nobody used the CLI: the web app, recorded on every PR, is how Loopsmith is iterated on; what the CLI checked is a Core test |
 
 ## What the product is
 
@@ -140,9 +141,8 @@ every enemy (D8).
 Tracking it is a simulation (D1). **Decision (product owner).** Grenade, melee, super and class
 ability can always be used; no step is blocked for lack of energy. `grantEnergy`, `resetCooldown`
 and the energy of `convertStacksToEnergy` are shown with their value and certainty ("+12% grenade
-energy [Bomber]") and change nothing. **Consequence.** The cause-and-effect graph still finds
-loops that give energy back ("ability loop — gives grenade energy back"), as causality, never as an
-amount. The Compendium's base cooldowns, chunk scalars and `extraCharges` are recorded in the rules
+energy [Bomber]") and change nothing. **Consequence.** A loop's analysis still shows where a step
+gives energy back, as causality, never as an amount. The Compendium's base cooldowns, chunk scalars and `extraCharges` are recorded in the rules
 as facts.
 
 ### D6 — Rules that don't stack give way and show as wasted
@@ -155,14 +155,12 @@ declaring rule gives way: it is reported as fired with no outcomes, naming that 
 (`FiredRule.NotStackedWith`; the trace reads "doesn't stack with Dielectric [Tempest Strike]"). With
 both elements equipped the build check notes it ("… doesn't stack with 'Dielectric'.", info: a crafter may keep
 both for what else each gives), `explain`
-annotates the bullet, a loop's analysis shows it at each step where it happens, and the loop graph
-routes both arrows through a "Doesn't stack" node. Parsing rejects an id that isn't an element of
+annotates the bullet, and a loop's analysis shows it at each step where it happens. Parsing rejects an id that isn't an element of
 the rules, the rule's own element, an empty list, and a `doesNotStackWith` that leads back to its
 own element, directly or through a longer circle (none of those rules would apply).
 **Consequence.** The granularity is the whole rule: an outcome that does stack needs a rule of its
 own. Only rules matching the same event interact, and a rule gives way when any listed element's rule
-matched that event, even if that rule itself gave way. The graph is static, so it pairs only rules on
-the same trigger — an approximation of the same-event rule — and its node is not a step.
+matched that event, even if that rule itself gave way.
 
 ### D7 — One target: the pack in front of you, until the player declares a new one
 
@@ -174,7 +172,7 @@ debuffs; the buffs on you and the pickups on the ground stay. A loop that meets 
 starts with `pack:new`; a loop against one boss leaves it out. **Consequence.** It matches how add-clear
 builds are explained ("everything is jolted"), and a debuff the next group doesn't have isn't
 credited to the next pass's first hit. The tier is
-`minor`: a kill rule for a higher tier shows in `explain` and the graph but doesn't fire in a loop
+`minor`: a kill rule for a higher tier shows in the build's explanation but doesn't fire in a loop
 until the player can declare the tier ([docs/backlog.md](backlog.md)).
 
 ### D8 — Chance rules always fire, marked *(chance)*
@@ -198,7 +196,7 @@ game has (`AbilityInputs`: a melee slides or is airborne, the class ability has 
 is held; a Super has none) — any other is a parse error, in a token and in a rule. A secondary is still
 that ability, so every rule on the ability fires for it too (a sliding melee is a melee for Combination
 Blow); only a rule that names the input tells them apart: `abilityCast: { ability: classAbility, input:
-air }` and `via: melee:slide`. Every token parses anywhere, but `play`, the palette and the HUD offer a
+air }` and `via: melee:slide`. Every token parses anywhere, but the palette and the HUD offer a
 secondary only when an equipped rule names it — without one it fires exactly what the press fires — and
 the HUD shows it below its ability's square, with the icon of the element that names it.
 **Consequence.** A new secondary from an aspect is an input on an existing ability, not a new action.
@@ -259,7 +257,7 @@ hashes without changing build files; a DIM loadout is read by hash (D27), and a 
 hash among its columns' perks (a build's `roll`). Opening the app the first time (and after Bungie publishes a new
 version) costs a ~9 MB download and some seconds behind a startup screen; a later visit checks the version and reads
 the saved copy (~9 MB gzipped on disk, a few seconds); after that a link, a login or a pick reads from the files the
-tab holds. The CLI knows only the excerpt.
+tab holds. The Core tests know only the excerpt.
 
 ### D15 — Builds and loops pin a catalog version
 
@@ -278,8 +276,8 @@ and boundaries can't silently rot.
 
 ### D17 — Strict impure → pure → impure; effects as data
 
-Read first, compute, write last. Side effects are described as data (`Effect`) and executed by the
-host. The pure core is deterministic — same build, state and step give the same output — replayable
+Read first, compute, write last. The pure core returns what the host shows or saves, and the host performs
+the side effect (the CLI's `Effect` union went with the CLI, D38). The pure core is deterministic — same build, state and step give the same output — replayable
 and testable without infrastructure (golden tests from real build notes).
 
 ### D18 — Closed vocabulary as Dunet unions; behaviour in static functions
@@ -307,8 +305,8 @@ IO whose only outcome is "tell the user" is `Result<_, string>`.
 
 ### D22 — Two kernel modules besides `Domain`: `Phrasing` and `Causality`
 
-**Context.** Explanation, trace and graph renderers and the web designer need the same English for
-triggers and outcomes; the engine and the loop graph need the same trigger-matching semantics; slices
+**Context.** Explanation and trace renderers and the web designer need the same English for
+triggers and outcomes; every slice that reads a rule's trigger needs the same trigger-matching semantics; slices
 may not depend sideways. **Decision.** Both live in the kernel as small non-`Domain` modules, guarded
 by architecture tests. **Consequence.** "What a trigger means" and "how we say it" each have exactly
 one home.
@@ -322,6 +320,8 @@ pickup rule once).
 ## Hosts and tooling
 
 ### D24 — Hosts own no logic; the CLI is the scripting and golden-test host
+
+**Superseded by [D38](#d38--the-web-designer-is-the-only-host-the-cli-and-the-loop-graph-are-removed).** Kept as it was decided:
 
 Shells in `Orchestration` return `Effect`s that any host executes, so every host shares every line
 of logic. The web designer (D25) is the main UI; the CLI (`loopsmith`) is for scripting, quick checks
@@ -443,7 +443,7 @@ progress the game doesn't show as a stacking status (D8: a chance rule), yet the
 for sure, as a kill count, and each enhanced mod as its own element, offered only where the game allows it.
 **Decision.** A rule says `weapon:this` (or `weapon:this:<type>`), and only an element a weapon
 holds may; the build check binds it to the weapon holding it — its slot, and its type for the typed form, a rule for
-another type left out — so the engine and the loop graph see an ordinary weapon-in-slot source, and the same element
+another type left out — so the engine sees an ordinary weapon-in-slot source, and the same element
 on two weapons is two elements, not stacked copies. A kill trigger takes `fewerThan` beside `atLeast`, so one count
 splits the kills of one action: the kills that fill the counter on their own (12 rank-and-file for Synergy, 8 for its
 enhanced version, from the Compendium's per-kill share) fire for sure, fewer fire as a chance. **Consequence.** The
@@ -519,8 +519,7 @@ is the killing blow, one blow: such a rule doesn't fire on it. A strike's, a sum
 blow too. A rule that needs one hit (Shinobu's Vow's Bolt Charge, Spark of Shock's Jolt, Slice's Sever) fires on every
 hit, the killing blow included.
 **Consequence.** The player adds a hit step before the kill when the loop keeps shooting an enemy (as `max:` declares a
-threshold, D3); a kill step shows only what killing does. The loop graph treats a weapon's or an ability's hits as
-possibly sustained, so these rules stay reachable. Kill counters the game doesn't show (Elemental Charge's progress,
+threshold, D3); a kill step shows only what killing does. Kill counters the game doesn't show (Elemental Charge's progress,
 Synergy, Spark of Discharge) are kills, not damage, and stay as D31 says.
 
 ### D35 — Raid, activity and seasonal armor mods aren't supported: a DIM link's are kept but ignored, and no picker offers them
@@ -538,8 +537,8 @@ sockets, so the designer shows none and the mod picker lists none. A DIM link's 
 the loadout had them, but ignored: no socket, not a gap (not counted under "Not in Loopsmith yet"), their squares faded
 with a ✕ instead of ⊘, and the build check says so in one info line ("Ignored from the DIM loadout: Herd Thinner ×2 —
 raid, activity and seasonal mods aren't supported."). **Consequence.** A raid build's loop is designed without its raid
-mods. The CLI, which reads only the manifest excerpt, knows such a mod when a saved DIM share wears it (the excerpt then
-holds it); otherwise it is a hash no rule knows. Supporting them later means declarations for an encounter's mechanics
+mods. The Core tests, which read only the manifest excerpt, know such a mod when a saved DIM share wears it (the excerpt
+then holds it); otherwise it is a hash no rule knows. Supporting them later means declarations for an encounter's mechanics
 (D3), a decision of its own.
 
 ### D36 — The player says when a weapon step breaks a shield and when an ability step spends its last charge
@@ -586,7 +585,21 @@ and a partial refill (Return Stroke's 5 rounds) is one reload, its rounds a fact
 of the weapon holding the element (`byArchetype`: Demolitionist's 10%, 20% on Fusion Rifles, Glaives, Shotguns and
 Sniper Rifles): the build check picks the weapon's amount when its archetype is known, and shows both when it isn't.
 **Consequence.** A reload is never needed and never blocked (but for an empty slot): a loop shows a Reload step where
-the player reloads, and nothing checks the magazine. In the loop graph a `reloadWeapon` outcome leads to the weapon's
-`reload` rules and to the weapon itself, as energy leads to a cast: its magazine refilled, it shoots again, which closes
-Demolitionist's loop (grenade → reload → kills → grenade energy → grenade). Cooldowns between refills (Demolitionist's
+the player reloads, and nothing checks the magazine. A `reloadWeapon` outcome fires the weapon's `reload` rules, and
+the weapon shoots again in the next step, which closes Demolitionist's loop (grenade → reload → kills → grenade energy
+→ grenade). Cooldowns between refills (Demolitionist's
 3 s) and the rounds put back are facts in the description. Reload speed stays outside the loop (Feeding Frenzy is inert).
+
+### D38 — The web designer is the only host; the CLI and the loop graph are removed
+
+**Context.** The CLI (`loopsmith`: `explain`, `validate`, `trace`, `play`, `loop`, `compare`, `graph`, `loops`) was the
+scripting and golden-test host of D24. The owner doesn't use it: the web designer (D25), with each PR's e2e scenarios
+recorded as GIFs and MP4s, is how Loopsmith is iterated on, and the golden tests call the core directly.
+**Decision (product owner).** `Loopsmith.Web` is the only host. The CLI goes, with the core code only it used: the
+command shells, the interactive `play` session, the `Effect` union its shells returned, and the `LoopGraphing` slice
+(the cause → effect graph and its cycles, `graph` / `loops`, and the generated `builds/*/loop-graph.md`); git history
+keeps them. What the CLI gave sessions and agents stays as Core tests: `RepoFileValidationTests` opens every build and
+loop file of `builds/` and every e2e fixture against the repository's rules, as the designer's import does, and names
+the file and the error of each one that doesn't (`dotnet test --filter RepoFileValidationTests`). **Consequence.** A
+loop is found by designing it (D2): the designer's analysis judges its order (FR-6); nothing discovers cycles any
+more (FR-8 dropped). The host boundary test checks the web host only, and the core's pure API is unchanged.
