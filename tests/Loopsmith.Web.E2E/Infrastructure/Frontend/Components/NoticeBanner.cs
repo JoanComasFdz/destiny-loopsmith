@@ -2,8 +2,11 @@ using Microsoft.Playwright;
 
 namespace Loopsmith.Web.E2E.Infrastructure.Frontend.Components;
 
-/// <summary>The banner over a page (Components/NoticeBanner.razor): an import that failed, a link that could not be opened.</summary>
-public sealed class NoticeBanner(IPage page)
+/// <summary>
+/// The banner over a page (Components/NoticeBanner.razor): a link that could not be opened. With no notice, a read shows
+/// <paramref name="pageTop"/>, the first part of the page under where the banner would be.
+/// </summary>
+public sealed class NoticeBanner(IPage page, ILocator pageTop)
 {
     private ILocator Box => page.Locator("[data-testid=notice]");
 
@@ -13,12 +16,15 @@ public sealed class NoticeBanner(IPage page)
     public Task WaitUntilShownAsync() =>
         Box.WaitForAsync(new() { State = WaitForSelectorState.Visible });
 
-    /// <summary>What the notice says now.</summary>
-    public Task<NoticeBannerSnapshot> ReadAsync() => OnScreen.ReadAsync(Box, ReadShownAsync);
+    /// <summary>Whether the notice shows now, and what it says.</summary>
+    public async Task<NoticeBannerSnapshot> ReadAsync() =>
+        await Box.IsVisibleAsync()
+            ? await OnScreen.ReadAsync(Box, ReadShownAsync)
+            : await OnScreen.ReadAsync(pageTop, () => Task.FromResult(new NoticeBannerSnapshot(false, "")));
 
     private async Task<NoticeBannerSnapshot> ReadShownAsync() =>
-        new((await Text.InnerTextAsync()).Trim());
+        new(true, (await Text.InnerTextAsync()).Trim());
 }
 
-/// <summary>What the notice says.</summary>
-public sealed record NoticeBannerSnapshot(string Text);
+/// <summary>Whether the notice shows, and what it says (nothing when it doesn't show).</summary>
+public sealed record NoticeBannerSnapshot(bool IsShown, string Text);

@@ -1,0 +1,24 @@
+@* A problem shown where the player acted (Home: under the hand-written imports, under the example loops), so a failed
+   import shows next to the link that started it, not only in the banner at the top. Dismissing it clears it. *@
+
+@if (Problem is Optional<string>.Some problem)
+{
+    <div class="inline-problem" role="alert" id="@Id" data-testid="@Id">
+        <pre class="inline-problem-text" data-testid="@($"{Id}-text")">@problem.Value</pre>
+        <button class="btn ghost icon" title="Dismiss" aria-label="Dismiss" data-action="@($"dismiss-{Id}")" @onclick="OnDismiss">✕</button>
+    </div>
+}
+
+@code {
+    /// <summary>The problem's element id and test id (its text's is "&lt;Id&gt;-text", its ✕'s action "dismiss-&lt;Id&gt;").</summary>
+    [Parameter, EditorRequired]
+    public string Id { get; set; } = "";
+
+    /// <summary>The page's problem for this place.</summary>
+    [Parameter, EditorRequired]
+    public Optional<string> Problem { get; set; } = Optional.None<string>();
+
+    /// <summary>Clears the page's problem for this place.</summary>
+    [Parameter]
+    public EventCallback OnDismiss { get; set; }
+}

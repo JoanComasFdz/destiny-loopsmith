@@ -270,6 +270,21 @@ textarea { resize: vertical; }
 .banner.warn { border-color: var(--warn); background: rgba(255, 207, 90, .07); color: var(--warn); }
 .banner-text { font-family: var(--font); }
 
+/* a problem shown where the player acted (Home: under the hand-written imports, under the example loops) */
+.inline-problem {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 10px 0 0;
+    padding: 10px 12px;
+    border: 1px solid color-mix(in srgb, var(--warn) 50%, transparent);
+    border-radius: 6px;
+    color: var(--warn);
+    background: color-mix(in srgb, var(--warn) 7%, transparent);
+}
+.inline-problem-text { font-family: var(--font); min-width: 0; }
+
 .notice { padding: 10px 12px; border-radius: 6px; border: 1px dashed var(--line-2); color: var(--muted); margin: 10px 0; }
 .notice.warn { border-color: rgba(255, 207, 90, .5); color: var(--warn); }
 

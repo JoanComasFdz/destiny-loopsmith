@@ -101,6 +101,7 @@
                 </button>
             }
         </div>
+        <InlineProblem Id="example-problem" Problem="exampleProblem" OnDismiss="() => exampleProblem = Optional.None<string>()" />
     }
     <p class="chooser-more muted" data-testid="hand-written">
         Or start from a build written by hand:
@@ -109,11 +110,12 @@
             <button class="btn link" data-slug="@build.Slug" @onclick="() => OpenFreshDesignAsync(build.Fresh)">@DescribeBuildName(build)</button>
             <span class="chooser-sep"> · </span>
         }
-        <label class="btn link file-link" title="Start from your own build.yaml (docs/rule-format.md)">
+        <label class="btn link file-link" data-testid="import-build-link" title="Start from your own build.yaml (docs/rule-format.md)">
             import a build.yaml<InputFile OnChange="ImportBuildAsync" accept=".yaml,.yml" data-action="import-build" />
         </label>
         — or <button class="btn link" @onclick="OpenImportDialog">import a loop</button> (a <code>.loop.yaml</code> file or its YAML).
     </p>
+    <InlineProblem Id="import-problem" Problem="buildProblem" OnDismiss="() => buildProblem = Optional.None<string>()" />
 </section>
 
 @if (importing)
@@ -131,6 +133,9 @@
     private const string ReadingLink = "Reading the DIM link…";
     private Optional<string> dimProblem = Optional.None<string>();
     private Optional<string> importProblem = Optional.None<string>();
+    private Optional<string> buildProblem = Optional.None<string>();
+    private Optional<string> exampleProblem = Optional.None<string>();
+    private Optional<string> revealProblem = Optional.None<string>();
 
     [CascadingParameter]
     public LoopsmithBundle Bundle { get; set; } = null!;
@@ -141,33 +146,46 @@
         await OpenSharedLoopAsync(Navigation.Uri);
     }
 
+    /// <summary>A problem just shown under the link that started it is scrolled into view, if the screen ends above it.</summary>
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (revealProblem is Optional<string>.Some problem)
+        {
+            revealProblem = Optional.None<string>();                                              // impure (UI state)
+            await Browser.RevealElementAsync(problem.Value);                                     // impure
+        }
+    }
+
     public void Dispose() =>
         Navigation.LocationChanged -= OpenSharedLoopOnNavigation;
 
     private async Task OpenFreshDesignAsync(Result<DesignSession, string> fresh)
     {
+        ClearProblems();                                                                         // impure (UI state)
         var proceed = await DiscardConfirming.ConfirmDiscardAsync(Workbench, Browser, "Start a new loop?"); // impure
         if (proceed)
         {
             fresh.Match(                                                                         // impure
                 ok => OpenDesign(ok.Value, $"New loop for {ok.Value.Build.Build.Name}."),
-                error => ShowNotice(error.Failure));
+                error => ShowBuildProblem(error.Failure));
         }
     }
 
     private async Task OpenExampleLoopAsync(BundledLoop example)
     {
+        ClearProblems();                                                                         // impure (UI state)
         var proceed = await DiscardConfirming.ConfirmDiscardAsync(Workbench, Browser, "Open this example?"); // impure
         if (proceed)
         {
             example.Opened.Match(                                                                // impure
                 ok => OpenDesign(ok.Value, $"Opened the example “{ok.Value.Design.Name}”."),
-                error => ShowNotice(error.Failure));
+                error => ShowExampleProblem(error.Failure));
         }
     }
 
     private async Task ImportBuildAsync(InputFileChangeEventArgs e)
     {
+        ClearProblems();                                                                         // impure (UI state)
         var proceed = await DiscardConfirming.ConfirmDiscardAsync(Workbench, Browser, "Start a new loop from this build?"); // impure
         if (!proceed)
         {
@@ -179,7 +197,7 @@
         var started = text.Bind(value => BundleComposing.StartNamedDesign(Bundle.Catalog, new SourceText(e.File.Name, value))); // pure
         started.Match(                                                                           // impure
             ok => OpenDesign(ok.Value, $"New loop for {ok.Value.Build.Build.Name}."),
-            error => ShowNotice(error.Failure));
+            error => ShowBuildProblem(error.Failure));
     }
 
     /// <summary>A new loop for a build with nothing equipped (an Arc Hunter), opened in the designer.</summary>
@@ -338,6 +356,29 @@
     {
         Workbench.Notice = Optional.Some(message);
         return new Unit.Value();
+    }
+
+    /// <summary>A hand-written build that doesn't open or a build.yaml that doesn't import: shown under their links.</summary>
+    private Unit ShowBuildProblem(string problem)
+    {
+        buildProblem = Optional.Some(problem);
+        revealProblem = Optional.Some("import-problem");
+        return new Unit.Value();
+    }
+
+    /// <summary>An example loop that doesn't open: shown under the example loops.</summary>
+    private Unit ShowExampleProblem(string problem)
+    {
+        exampleProblem = Optional.Some(problem);
+        revealProblem = Optional.Some("example-problem");
+        return new Unit.Value();
+    }
+
+    /// <summary>A new attempt starts with no problem from the last one shown.</summary>
+    private void ClearProblems()
+    {
+        buildProblem = Optional.None<string>();
+        exampleProblem = Optional.None<string>();
     }
 
     /// <summary>" (Loop designed against catalog …; replaying with ….)" when the loop came from another catalog.</summary>
