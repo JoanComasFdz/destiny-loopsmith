@@ -33,8 +33,9 @@ Open items: [docs/backlog.md](docs/backlog.md).
 ## Build & test
 ```bash
 dotnet build Loopsmith.slnx          # TreatWarningsAsErrors is on
-dotnet test                          # unit, golden and architecture tests (the e2e scenarios skip without E2E_URL)
-tools/e2e/record.sh --no-video Starting   # e2e scenarios in Chromium, unrecorded: the fast run while developing
+dotnet test                          # unit, golden and architecture tests (the e2e scenarios skip without E2E_URL / E2E_VSCODE_URL)
+node --test src/Loopsmith.VsCodeExtension/test/*.test.js   # the VS Code extension's unit tests
+tools/e2e/record.sh --no-video Starting   # e2e scenarios in Chromium, unrecorded: the fast run while developing (Recordings: the extension's)
 tools/e2e/record.sh --changed-since origin/main   # recorded → out/<domain>/<scenario>-<screen>.gif + .mp4 + out/scenarios.json (right before a push)
 dotnet run --project src/Loopsmith.Cli -- explain builds/skip-grenade-hunter/build.yaml
 dotnet run --project src/Loopsmith.Web          # the loop designer in the browser
@@ -73,9 +74,15 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
   own; its header and `discrepancies.md` point to the parent's.
   Creator transcripts are third-party content: keep them local as `transcript.txt` (gitignored),
   never commit them.
+- `src/Loopsmith.VsCodeExtension/` — the VS Code extension (plain JavaScript, no build, no dependencies): a CodeLens, a
+  hover and a panel beside the code show each e2e scenario's recordings from the `prs-resources` release, in vscode.dev
+  and desktop VS Code; its `.vsix` is published with the site in `vscode-extension/` by `Loopsmith.Web.csproj`, and
+  vscode.dev installs it from a local container (its `Dockerfile`: vscode.dev fetches only from `localhost` and its own
+  hosts) ([docs/hosting.md](docs/hosting.md) "The VS Code extension", its [README](src/Loopsmith.VsCodeExtension/README.md)).
 - `tests/Loopsmith.Core.Tests/` — unit, golden (`Golden/*.verified.txt`) and architecture tests.
 - `tests/Loopsmith.Web.E2E/` — end-to-end scenarios of the web app (Playwright), one per Gherkin, one GIF per screen via `tools/e2e/record.sh`;
-  `Infrastructure/` (BaseE2E, page objects, vocabulary, assertions) and `Scenarios/<domain>/<Topic>Tests.cs`. Binding
+  `Infrastructure/` (BaseE2E, page objects, vocabulary, assertions) and `Scenarios/<domain>/<Topic>Tests.cs`; what it
+  shares with the extension's e2e project (Gherkin, `[TestDescription]`, screens, naming) is `tests/Loopsmith.E2E.Shared`. Binding
   rules: its [E2E-TEST-CODE-RULES.md](tests/Loopsmith.Web.E2E/E2E-TEST-CODE-RULES.md), not
   [docs/CODING_RULES.md](docs/CODING_RULES.md); how to run, isolation and the cache: its [README](tests/Loopsmith.Web.E2E/README.md). Playwright is pinned
   (`Directory.Packages.props`) to the cloud image's Chromium (`/opt/pw-browsers/chromium-1194` → 1.56.0; never
@@ -83,6 +90,12 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
   except to fill `${E2E_MANIFEST_CACHE:-~/.cache/loopsmith/bungie-manifest}` once, and read the manifest version
   pinned as `ManifestContentId` in `src/Loopsmith.Web/wwwroot/appsettings.json` (bumping it downloads the new version
   once); the cache is Bungie's data, never committed.
+- `tests/Loopsmith.VsCodeExtension.E2E/` — end-to-end scenarios of the VS Code extension, one per Gherkin, played in VS
+  Code for the web (`@vscode/test-web`, pinned in its `vscode-web/package.json` with the VS Code build; `record.sh` serves
+  it, `npm ci` once, its build cached in `${E2E_VSCODE_CACHE:-~/.cache/loopsmith/vscode-web}`), desktop only, GitHub
+  faked; their GIFs post on the PR like the web app's. Binding rules: its
+  [E2E-TEST-CODE-RULES.md](tests/Loopsmith.VsCodeExtension.E2E/E2E-TEST-CODE-RULES.md); how to run: its
+  [README](tests/Loopsmith.VsCodeExtension.E2E/README.md).
 - [docs/given-when-then-test-rules.md](docs/given-when-then-test-rules.md) — how to write a Gherkin, click by click:
   every acceptance criterion about how the app behaves is one, and every Gherkin is one e2e scenario (its
   `[TestDescription]`), played on 🖥️ desktop and/or 📱 mobile (`[PlayInDesktop]` / `[PlayInMobile]`); the worked

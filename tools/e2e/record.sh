@@ -1,15 +1,21 @@
 #!/usr/bin/env bash
-# Records the web app's end-to-end scenarios (tests/Loopsmith.Web.E2E) as GIFs and MP4s: one of each per screen a
-# scenario is played on ([PlayInDesktop] / [PlayInMobile]).
+# Records the end-to-end scenarios as GIFs and MP4s: one of each per screen a scenario is played on ([PlayInDesktop] /
+# [PlayInMobile]). Two projects hold scenarios: tests/Loopsmith.Web.E2E (the web app) and
+# tests/Loopsmith.VsCodeExtension.E2E (the VS Code extension, played in VS Code for the web).
 #   tools/e2e/record.sh [all | <domain folder> | <TestClass> ...] [--changed-since <git ref>] [--action-gap <seconds>]
 #                       [--out <dir>] [--no-publish] [--no-video]
-# A domain folder is a folder under Scenarios/ (Starting, Build/Subclass); a class is a scenario class (StartFromScratchTests).
+# A domain folder is a folder under a project's Scenarios/ (Starting, Build/Subclass, Recordings); a class is a scenario
+# class (StartFromScratchTests).
 # --changed-since <ref>: the scenario classes added or changed since <ref> (from where the branch left it, working tree
-# included), plus those that use a changed fixture file: "this PR's scenarios" with origin/main.
+# included), plus those that use a changed fixture file (for the extension's scenarios, any file of its Workspace/):
+# "this PR's scenarios" with origin/main.
 # --action-gap <seconds>: the least time between two steps (an action or a read) of a recorded scenario (default 1).
-# It publishes the web app (Release), prepares it for /destiny-loopsmith/ (tools/web/prepare-pages.sh), serves it
-# locally, runs the chosen scenarios with E2E_URL set and video on, trims each video from when Home was shown (the
-# manifest's startup screen left out) and turns it into a GIF under <out>/<domain folder>/<gif name>.gif (20 fps; a
+# For web scenarios it publishes the web app (Release), prepares it for /destiny-loopsmith/ (tools/web/prepare-pages.sh)
+# and serves it locally. For the extension's scenarios it serves VS Code for the web (@vscode/test-web, pinned with the
+# VS Code build in tests/Loopsmith.VsCodeExtension.E2E/vscode-web/package.json; the build is cached in
+# ${E2E_VSCODE_CACHE:-~/.cache/loopsmith/vscode-web}) with src/Loopsmith.VsCodeExtension, opened on that project's
+# Workspace/. It runs the chosen scenarios with video on, trims each video from when Home (or VS Code's workbench) was
+# shown (the startup screen left out) and turns it into a GIF under <out>/<domain folder>/<gif name>.gif (20 fps; a
 # desktop run 800 px wide, a phone run at its 390 CSS pixels; the GIF name ends in -desktop or -mobile) and an MP4 next to
 # it, <gif name>.mp4 (H.264 at the video's own size: 1280×800, a phone's 780×1688). Both hold their last frame 3 s
 # before they end. It prints each
@@ -25,8 +31,9 @@
 set -euo pipefail
 
 repo="$(cd "$(dirname "$0")/../.." && pwd)"
-project="$repo/tests/Loopsmith.Web.E2E"
-scenarios_dir="$project/Scenarios"
+web_project="$repo/tests/Loopsmith.Web.E2E"
+vscode_project="$repo/tests/Loopsmith.VsCodeExtension.E2E"
+projects=("$web_project" "$vscode_project")
 out="$repo/out"
 changed_since=""
 action_gap=1
@@ -41,36 +48,62 @@ while [ $# -gt 0 ]; do
     --out) out="$2"; shift 2 ;;
     --no-publish) publish=0; shift ;;
     --no-video) video=0; shift ;;
-    -h|--help) sed -n '2,24p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,29p' "$0"; exit 0 ;;
     *) chosen+=("$1"); shift ;;
   esac
 done
 mkdir -p "$out"
 out="$(cd "$out" && pwd)"
 
-# The scenario classes changed since a ref, and those whose fixture files changed.
+# The project (web, vscode) whose Scenarios/ holds a scenario class's file, or nothing.
+find_class_project() {
+  if [ -n "$(find "$web_project/Scenarios" -name "$1.cs" -print -quit)" ]; then echo web; fi
+  if [ -n "$(find "$vscode_project/Scenarios" -name "$1.cs" -print -quit)" ]; then echo vscode; fi
+}
+
+# The scenario classes changed since a ref, and those whose fixture files changed, in both projects. The extension's
+# scenarios all open the files of its project's Workspace/: a change there selects every one of them.
 list_changed_classes() {
   local base
   base="$(git -C "$repo" merge-base "$1" HEAD)"
-  local files
-  files="$( { git -C "$repo" diff --name-only --diff-filter=AMR "$base" -- tests/Loopsmith.Web.E2E/Scenarios;
-              git -C "$repo" ls-files --others --exclude-standard -- tests/Loopsmith.Web.E2E/Scenarios; } | sort -u)"
-  local file
-  for file in $files; do
-    case "$file" in
-      *Tests.cs) basename "$file" .cs ;;
-      *.cs) ;;
-      *) grep -rlF --include='*Tests.cs' "$(basename "$file")" "$scenarios_dir" | xargs -r -n1 basename | sed 's/\.cs$//' ;;
-    esac
-  done | sort -u
+  local project file
+  {
+    for project in "${projects[@]}"; do
+      local scenarios="${project#"$repo"/}/Scenarios"
+      local files
+      files="$( { git -C "$repo" diff --name-only --diff-filter=AMR "$base" -- "$scenarios";
+                  git -C "$repo" ls-files --others --exclude-standard -- "$scenarios"; } | sort -u)"
+      for file in $files; do
+        case "$file" in
+          *Tests.cs) basename "$file" .cs ;;
+          *.cs) ;;
+          *) grep -rlF --include='*Tests.cs' "$(basename "$file")" "$project/Scenarios" | xargs -r -n1 basename | sed 's/\.cs$//' ;;
+        esac
+      done
+    done
+    local workspace="${vscode_project#"$repo"/}/Workspace"
+    if [ -n "$( { git -C "$repo" diff --name-only "$base" -- "$workspace";
+                 git -C "$repo" ls-files --others --exclude-standard -- "$workspace"; } | head -n1)" ]; then
+      find "$vscode_project/Scenarios" -name '*Tests.cs' -exec basename {} .cs \;
+    fi
+  } | sort -u
 }
 
-filters=()
+# Each project's filters, joined into one ('|' is "or" to dotnet test); a project with none doesn't run.
+web_filters=()
+vscode_filters=()
+add_class() {
+  local where
+  for where in $(find_class_project "$1"); do
+    if [ "$where" = web ]; then web_filters+=("FullyQualifiedName~.$1."); else vscode_filters+=("FullyQualifiedName~.$1."); fi
+  done
+}
+everything=0
 if [ -n "$changed_since" ]; then
   while IFS= read -r class; do
-    [ -n "$class" ] && filters+=("FullyQualifiedName~.$class.")
+    if [ -n "$class" ]; then add_class "$class"; fi
   done < <(list_changed_classes "$changed_since")
-  if [ ${#filters[@]} -eq 0 ]; then
+  if [ ${#web_filters[@]} -eq 0 ] && [ ${#vscode_filters[@]} -eq 0 ] && [ ${#chosen[@]} -eq 0 ]; then
     echo "No scenario changed since $changed_since."
     if [ $video -eq 1 ]; then echo "[]" > "$out/scenarios.json"; fi
     exit 0
@@ -78,21 +111,32 @@ if [ -n "$changed_since" ]; then
 fi
 for choice in "${chosen[@]}"; do
   if [ "$choice" = "all" ]; then
-    filters=()
-    break
-  elif [ -d "$scenarios_dir/$choice" ]; then
-    filters+=("FullyQualifiedName~Loopsmith.Web.E2E.Scenarios.${choice//\//.}.")
-  elif [ -n "$(find "$scenarios_dir" -name "$choice.cs" -print -quit)" ]; then
-    filters+=("FullyQualifiedName~.$choice.")
+    everything=1
+  elif [ -d "$web_project/Scenarios/$choice" ] || [ -d "$vscode_project/Scenarios/$choice" ]; then
+    if [ -d "$web_project/Scenarios/$choice" ]; then
+      web_filters+=("FullyQualifiedName~Loopsmith.Web.E2E.Scenarios.${choice//\//.}.")
+    fi
+    if [ -d "$vscode_project/Scenarios/$choice" ]; then
+      vscode_filters+=("FullyQualifiedName~Loopsmith.VsCodeExtension.E2E.Scenarios.${choice//\//.}.")
+    fi
+  elif [ -n "$(find_class_project "$choice")" ]; then
+    add_class "$choice"
   else
-    echo "No domain folder or scenario class named '$choice' under $scenarios_dir" >&2
+    echo "No domain folder or scenario class named '$choice' under $web_project/Scenarios or $vscode_project/Scenarios" >&2
     exit 2
   fi
 done
-# The filters are joined into one: dotnet test reads '|' as "or".
-filter="FullyQualifiedName~Loopsmith.Web.E2E.Scenarios."
-if [ ${#filters[@]} -gt 0 ]; then
-  filter="$(IFS='|'; echo "${filters[*]}")"
+if [ -z "$changed_since" ] && [ ${#chosen[@]} -eq 0 ]; then
+  everything=1
+fi
+web_filter=""
+vscode_filter=""
+if [ $everything -eq 1 ]; then
+  web_filter="FullyQualifiedName~Loopsmith.Web.E2E.Scenarios."
+  vscode_filter="FullyQualifiedName~Loopsmith.VsCodeExtension.E2E.Scenarios."
+else
+  if [ ${#web_filters[@]} -gt 0 ]; then web_filter="$(IFS='|'; echo "${web_filters[*]}")"; fi
+  if [ ${#vscode_filters[@]} -gt 0 ]; then vscode_filter="$(IFS='|'; echo "${vscode_filters[*]}")"; fi
 fi
 
 site="$out/.site"
@@ -102,48 +146,93 @@ if [ $video -eq 1 ]; then
   mkdir -p "$videos"
 fi
 
-if [ $publish -eq 1 ] || [ ! -d "$site/root/destiny-loopsmith" ]; then
-  echo "Publishing the web app (Release)…"
-  rm -rf "$site"
-  dotnet publish "$repo/src/Loopsmith.Web" -c Release -o "$site/publish" --nologo -v q
-  mkdir -p "$site/root"
-  cp -r "$site/publish/wwwroot" "$site/root/destiny-loopsmith"
-  "$repo/tools/web/prepare-pages.sh" "$site/root/destiny-loopsmith" /destiny-loopsmith/ --root
+free_port() {
+  python3 -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1", 0)); print(s.getsockname()[1]); s.close()'
+}
+servers=()
+trap 'for pid in "${servers[@]}"; do kill "$pid" 2>/dev/null || true; done' EXIT
+
+web_url=""
+if [ -n "$web_filter" ]; then
+  if [ $publish -eq 1 ] || [ ! -d "$site/root/destiny-loopsmith" ]; then
+    echo "Publishing the web app (Release)…"
+    rm -rf "$site"
+    dotnet publish "$repo/src/Loopsmith.Web" -c Release -o "$site/publish" --nologo -v q
+    mkdir -p "$site/root"
+    cp -r "$site/publish/wwwroot" "$site/root/destiny-loopsmith"
+    "$repo/tools/web/prepare-pages.sh" "$site/root/destiny-loopsmith" /destiny-loopsmith/ --root
+  fi
+  port="$(free_port)"
+  python3 -m http.server "$port" --bind 127.0.0.1 --directory "$site/root" > "$out/.server.log" 2>&1 &
+  servers+=($!)
+  for _ in $(seq 50); do
+    curl -sf "http://127.0.0.1:$port/destiny-loopsmith/" > /dev/null && break
+    sleep 0.2
+  done
+  web_url="http://127.0.0.1:$port/destiny-loopsmith/"
 fi
 
-port="$(python3 -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1", 0)); print(s.getsockname()[1]); s.close()')"
-python3 -m http.server "$port" --bind 127.0.0.1 --directory "$site/root" > "$out/.server.log" 2>&1 &
-server=$!
-trap 'kill $server 2>/dev/null || true' EXIT
-for _ in $(seq 50); do
-  curl -sf "http://127.0.0.1:$port/destiny-loopsmith/" > /dev/null && break
-  sleep 0.2
-done
+vscode_url=""
+if [ -n "$vscode_filter" ]; then
+  runner="$vscode_project/vscode-web"
+  if [ ! -d "$runner/node_modules/@vscode/test-web" ] || [ "$runner/package-lock.json" -nt "$runner/node_modules" ]; then
+    echo "Installing VS Code for the web's runner (npm ci)…"
+    npm ci --prefix "$runner" --silent --no-audit --no-fund
+    touch "$runner/node_modules"
+  fi
+  commit="$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1]))["config"]["vscodeCommit"])' "$runner/package.json")"
+  cache="${E2E_VSCODE_CACHE:-$HOME/.cache/loopsmith/vscode-web}"
+  mkdir -p "$cache"
+  vport="$(free_port)"
+  echo "Serving VS Code for the web (build ${commit:0:7}) with the extension…"
+  "$runner/node_modules/.bin/vscode-test-web" --browser=none --quality stable --commit "$commit" --port "$vport" \
+    --testRunnerDataDir "$cache" --extensionDevelopmentPath="$repo/src/Loopsmith.VsCodeExtension" \
+    "$vscode_project/Workspace" > "$out/.vscode-web.log" 2>&1 &
+  servers+=($!)
+  for _ in $(seq 600); do
+    curl -sf "http://localhost:$vport/" > /dev/null && break
+    sleep 0.5
+  done
+  curl -sf "http://localhost:$vport/" > /dev/null || { echo "VS Code for the web didn't start: see $out/.vscode-web.log" >&2; exit 1; }
+  vscode_url="http://localhost:$vport/"
+fi
 
 status=0
 if [ $video -eq 0 ]; then
-  echo "Running the scenarios, unrecorded ($filter)…"
   results="$out/.results"
   bungie_log="$out/.bungie-requests.log"
   rm -rf "$results" "$bungie_log"
+  trx=()
   # A recording's variables left in the shell would record and pace this run too: unset.
-  env -u E2E_VIDEO_DIR -u E2E_ACTION_GAP E2E_URL="http://127.0.0.1:$port/destiny-loopsmith/" E2E_BUNGIE_LOG="$bungie_log" \
-    dotnet test "$project" -c Release --nologo --filter "$filter" --results-directory "$results" \
-      --logger "trx;LogFileName=runs.trx" --logger "console;verbosity=normal" || status=$?
+  if [ -n "$web_filter" ]; then
+    echo "Running the web scenarios, unrecorded ($web_filter)…"
+    env -u E2E_VIDEO_DIR -u E2E_ACTION_GAP E2E_URL="$web_url" E2E_BUNGIE_LOG="$bungie_log" \
+      dotnet test "$web_project" -c Release --nologo --filter "$web_filter" --results-directory "$results" \
+        --logger "trx;LogFileName=web.trx" --logger "console;verbosity=normal" || status=$?
+    trx+=("$results/web.trx")
+  fi
+  if [ -n "$vscode_filter" ]; then
+    echo "Running the extension's scenarios, unrecorded ($vscode_filter)…"
+    env -u E2E_VIDEO_DIR -u E2E_ACTION_GAP E2E_VSCODE_URL="$vscode_url" \
+      dotnet test "$vscode_project" -c Release --nologo --filter "$vscode_filter" --results-directory "$results" \
+        --logger "trx;LogFileName=vscode.trx" --logger "console;verbosity=normal" || status=$?
+    trx+=("$results/vscode.trx")
+  fi
   # Each run's result and time, from the test results: without a recording no scenario writes its record.
   # It fails when no run passed or failed (none matched, or all skipped), like a recording with no record.
-  PYTHONIOENCODING=utf-8 python3 - "$results/runs.trx" <<'PY' || status=1
+  PYTHONIOENCODING=utf-8 python3 - "${trx[@]}" <<'PY' || status=1
 import json, os, re, sys, xml.etree.ElementTree as ET
-path = sys.argv[1]
-if not os.path.exists(path):
-    print("No test results were written.", file=sys.stderr)
-    sys.exit(1)
 ns = {"t": "http://microsoft.com/schemas/VisualStudio/TeamTest/2010"}
-runs = ET.parse(path).getroot().findall(".//t:UnitTestResult", ns)
+runs = []
+for path in sys.argv[1:]:
+    if not os.path.exists(path):
+        print(f"No test results were written ({os.path.basename(path)}).", file=sys.stderr)
+        sys.exit(1)
+    runs += ET.parse(path).getroot().findall(".//t:UnitTestResult", ns)
 def seconds(duration):
     h, m, s = duration.split(":")
     return int(h) * 3600 + int(m) * 60 + float(s)
-# The screen in a run's name ("[📱 Mobile]") comes escaped ("📱"): decoded back.
+# The screen in a run's name ("[📱 Mobile]") comes escaped: decoded back.
 def name_of(run):
     return re.sub(r"(?:\\u[0-9a-fA-F]{4})+", lambda m: json.loads(f'"{m.group(0)}"'), run.get("testName", ""))
 print()
@@ -155,19 +244,28 @@ if not any(r.get("outcome") in ("Passed", "Failed") for r in runs):
     print("No scenario ran.", file=sys.stderr)
     sys.exit(1)
 PY
-  if [ -s "$bungie_log" ]; then
-    echo "Requests that left for bungie.net, or were refused ($(wc -l < "$bungie_log")):"
-    sed 's/^/  /' "$bungie_log"
-  else
-    echo "Requests that left for bungie.net: none."
+  if [ -n "$web_filter" ]; then
+    if [ -s "$bungie_log" ]; then
+      echo "Requests that left for bungie.net, or were refused ($(wc -l < "$bungie_log")):"
+      sed 's/^/  /' "$bungie_log"
+    else
+      echo "Requests that left for bungie.net: none."
+    fi
   fi
   echo "Nothing recorded: the GIFs, MP4s and scenarios.json in $out are still the last recording's."
   exit $status
 fi
 
-echo "Running the scenarios ($filter)…"
-E2E_URL="http://127.0.0.1:$port/destiny-loopsmith/" E2E_VIDEO_DIR="$videos" E2E_ACTION_GAP="$action_gap" \
-  dotnet test "$project" -c Release --nologo --filter "$filter" --logger "console;verbosity=normal" || status=$?
+if [ -n "$web_filter" ]; then
+  echo "Running the web scenarios ($web_filter)…"
+  E2E_URL="$web_url" E2E_VIDEO_DIR="$videos" E2E_ACTION_GAP="$action_gap" \
+    dotnet test "$web_project" -c Release --nologo --filter "$web_filter" --logger "console;verbosity=normal" || status=$?
+fi
+if [ -n "$vscode_filter" ]; then
+  echo "Running the extension's scenarios ($vscode_filter)…"
+  E2E_VSCODE_URL="$vscode_url" E2E_VIDEO_DIR="$videos" E2E_ACTION_GAP="$action_gap" \
+    dotnet test "$vscode_project" -c Release --nologo --filter "$vscode_filter" --logger "console;verbosity=normal" || status=$?
+fi
 
 # When Home shows in a video: the video's clock runs up to a second apart from the test's, so the time the test noted
 # only says where to look. The first big change of picture from a second before it to three after (the startup screen
@@ -196,8 +294,8 @@ hold_end="tpad=stop_mode=clone:stop_duration=3"
 palette_at() {
   echo "$hold_end,fps=20,scale=$1:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=128:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle"
 }
-# The last run's GIFs go (only the folders named like Scenarios/' domain folders).
-for folder in "$scenarios_dir"/*/; do rm -rf "${out:?}/$(basename "$folder")"; done
+# The last run's GIFs go (only the folders named like the projects' Scenarios/ domain folders).
+for folder in "$web_project/Scenarios"/*/ "$vscode_project/Scenarios"/*/; do rm -rf "${out:?}/$(basename "$folder")"; done
 records=()
 while IFS= read -r record; do
   records+=("$record")

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The .vsix's manifest (Loopsmith.Web.csproj zips it with the extension, as vsce would): keep its Version, Engine and
+     DisplayName in step with ../package.json (test/extension.test.js checks the version). -->
+<PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
+  <Metadata>
+    <Identity Language="en-US" Id="loopsmith-e2e-recordings" Version="0.1.0" Publisher="loopsmith" />
+    <DisplayName>Loopsmith e2e recordings</DisplayName>
+    <Description xml:space="preserve">Shows each Loopsmith e2e scenario's recordings next to its code: a CodeLens, a hover and a panel that plays the MP4.</Description>
+    <Categories>Testing,Visualization</Categories>
+    <GalleryFlags>Public</GalleryFlags>
+    <Properties>
+      <Property Id="Microsoft.VisualStudio.Code.Engine" Value="^1.90.0" />
+      <Property Id="Microsoft.VisualStudio.Code.ExtensionKind" Value="workspace,web" />
+    </Properties>
+    <License>extension/LICENSE.txt</License>
+  </Metadata>
+  <Installation>
+    <InstallationTarget Id="Microsoft.VisualStudio.Code" />
+  </Installation>
+  <Dependencies />
+  <Assets>
+    <Asset Type="Microsoft.VisualStudio.Code.Manifest" Path="extension/package.json" Addressable="true" />
+    <Asset Type="Microsoft.VisualStudio.Services.Content.Details" Path="extension/README.md" Addressable="true" />
+    <Asset Type="Microsoft.VisualStudio.Services.Content.License" Path="extension/LICENSE.txt" Addressable="true" />
+  </Assets>
+</PackageManifest>

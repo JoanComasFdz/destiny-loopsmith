@@ -11,7 +11,7 @@ Reads <out>/scenarios.json (tools/e2e/record.sh: one entry per run, a scenario p
   it, "▶ Play MP4": both link to the site's player page (e2e-player.html?v=<the MP4's name>), since GitHub shows no
   player for a video it didn't store itself (a tap on a bare GIF would only download it). It never touches the PR's description. The version is one more than the highest
   "## Scenarios (V<N>)" in this workflow's comments. A name longer than 200 characters keeps its start and ends with a
-  short hash of the run's GIF name, the same for its GIF and its MP4.
+  short hash of the run's GIF path (<domain>/<GIF name>.gif), the same for its GIF and its MP4.
 Nothing recorded (an empty scenarios.json) posts nothing.
 
 Uses the gh CLI (GH_TOKEN) on the repository in --repo or GITHUB_REPOSITORY. --dry-run prints instead of writing.
@@ -88,7 +88,7 @@ def find_last_version(comments):
 
 
 def name_asset(pr, version, scenario, extension):
-    """pr-<n>-v<version>-<GIF name><extension>; past 200 characters, its start plus a hash of the GIF name (a method and
+    """pr-<n>-v<version>-<GIF name><extension>; past 200 characters, its start plus a hash of the GIF's path (<domain>/<GIF name>.gif: a method and
     its screen). A run's .gif and .mp4 share their stem."""
     stem = f"pr-{pr}-v{version}-{os.path.splitext(os.path.basename(scenario['gif']))[0]}"
     if len(stem) + len(extension) <= MAX_NAME:

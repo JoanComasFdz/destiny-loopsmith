@@ -24,3 +24,6 @@ tools/compendium/compendium-*
 # Python bytecode caches (written whenever a tool script runs)
 __pycache__/
 *.pyc
+
+# npm packages (tests/Loopsmith.VsCodeExtension.E2E/vscode-web: npm ci)
+node_modules/

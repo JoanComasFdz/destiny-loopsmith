@@ -43,6 +43,20 @@ The site is public on the internet (the repository is public). It contains the a
 numbers from Clarity and the Compendium snapshot, with paraphrased descriptions and row citations —
 but no Compendium snapshot text and no transcripts.
 
+## The VS Code extension
+
+Every deploy publishes the VS Code extension (`src/Loopsmith.VsCodeExtension`, its
+[README](../src/Loopsmith.VsCodeExtension/README.md)) for desktop VS Code as `vscode-extension/loopsmith-e2e-recordings.vsix`:
+`Loopsmith.Web.csproj` zips it after `dotnet publish` (the `PublishVsCodeExtension` target), so `pages.yml` and
+`pr-preview.yml` publish it unchanged, the live site's and each PR's preview's (`…/pr-preview/pr-<n>/vscode-extension/`).
+
+vscode.dev can't install it from the site: its content security policy lets the page fetch only from `localhost` and a
+few hosts of its own (`github.io` isn't one: "Cannot find a valid extension from the location"), and it has no "Install
+from VSIX". It installs it from `http://localhost:5000`, served by a container the owner builds from the extension's
+folder (`Dockerfile`, `serve.js`; the README's "Install"). Once installed, the extension itself runs in vscode.dev: its
+extension host may fetch any `https` address (GitHub's API), its hover's images any `https` one, and its panel loads
+what its own policy allows.
+
 ## DIM links
 
 Home starts a loop from a DIM link ([loop-format.md](loop-format.md#starting-from-a-dim-link)). A link
@@ -160,7 +174,8 @@ time (a login during a DIM link's read waits for it).
 ## E2E videos on pull requests
 
 Every pull request from a branch of this repository shows its end-to-end scenarios
-([tests/Loopsmith.Web.E2E](../tests/Loopsmith.Web.E2E/README.md)) as GIFs, each with a **▶ Play MP4** link to the
+([tests/Loopsmith.Web.E2E](../tests/Loopsmith.Web.E2E/README.md), the web app's, and
+[tests/Loopsmith.VsCodeExtension.E2E](../tests/Loopsmith.VsCodeExtension.E2E/README.md), the VS Code extension's) as GIFs, each with a **▶ Play MP4** link to the
 same run as a sharp video with controls, so a reviewer sees them working without running anything. The session that
 works the PR records them; CI doesn't run, record or build anything for them.
 
@@ -178,8 +193,9 @@ works the PR records them; CI doesn't run, record or build anything for them.
   scenario passes before the push. While developing, the session runs them unrecorded
   (`tools/e2e/record.sh --no-video …`: same selection and served publish, no video, no pacing, no GIF) and never
   records between pushes; when a scenario or the web app changes after the recording and before the push, it records
-  again, so the posted GIFs match the pushed head. A PR that changes nothing under `tests/Loopsmith.Web.E2E/Scenarios` records and posts
-  nothing, and runs no e2e workflow.
+  again, so the posted GIFs match the pushed head. A PR that changes nothing under `tests/Loopsmith.Web.E2E/Scenarios`,
+  `tests/Loopsmith.VsCodeExtension.E2E/Scenarios` or `tests/Loopsmith.VsCodeExtension.E2E/Workspace` (the files the
+  extension's scenarios open) records and posts nothing, and runs no e2e workflow.
 - **How the GIFs get to GitHub:** a session can't upload a file to GitHub (its proxy only lets JSON request bodies
   through: a release upload answers 415), but it can push. Right after the push (the first one once the PR is open),
   `tools/e2e/push-gifs.sh` pushes a throwaway branch **`e2e-gifs/pr-<n>-<short sha>`**: the branch's head, already on
@@ -227,7 +243,7 @@ works the PR records them; CI doesn't run, record or build anything for them.
   - `<run>`: the run's GIF name, the same as in `record.sh`'s output (`ScenarioNaming.ToGifName`: the scenario's
     method name, its Gherkin's title, in kebab-case, then `-desktop` or `-mobile`; only a–z, 0–9 and `-`, which GitHub
     keeps as they are). Only when the whole name would pass 200 characters does it keep its start and end with
-    `-<8 hex>`, the start of the SHA-256 of the GIF name, so it stays unique (a scenario's two screens apart) and the
+    `-<8 hex>`, the start of the SHA-256 of the GIF's path (`<domain folder>/<GIF name>.gif`), so it stays unique (a scenario's two screens apart) and the
     same on every push.
 - **The posts:** every version, V1 included, is a new comment on the PR, `## Scenarios (V<N>)`, that starts with
   **What changed**: `push-gifs.sh --message "<text>"`'s text, word for word, or else the body of the PR head's commit
