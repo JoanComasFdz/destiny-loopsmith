@@ -3,7 +3,6 @@ using Loopsmith.Core.BuildParsing;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 using Loopsmith.Core.RuleParsing;
-
 using Loopsmith.Core.Tests.Support;
 
 namespace Loopsmith.Core.Tests.Regression;

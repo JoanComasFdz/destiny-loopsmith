@@ -9,7 +9,7 @@
         }
         @if (DamageIcon is Optional<string>.Some damage)
         {
-            <img class="damage-icon" src="@damage.Value" alt="@DamageName" title="@DamageName" loading="lazy" />
+            <img class="damage-icon" src="@damage.Value" alt="@DamageName" title="@DamageName" loading="lazy" data-testid="damage-type" data-damage="@DamageName" />
         }
         @if (Marks.Power is Optional<PowerLevel>.Some power)
         {

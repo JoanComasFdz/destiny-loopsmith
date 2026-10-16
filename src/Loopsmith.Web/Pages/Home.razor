@@ -181,9 +181,10 @@
 
         var started = file.Bind(read => BundleComposing.StartNamedDesign(catalog.Catalog, read)); // pure
         var note = catalog.Note.Match(problem => $" {problem.Value}", _ => "");                  // pure
+        var message = started.Match(ok => $"New loop for {ok.Value.Build.Build.Name}.{note}", error => $"{error.Failure}{note}"); // pure
         started.Match(                                                                           // impure
-            ok => OpenDesign(ok.Value, $"New loop for {ok.Value.Build.Build.Name}.{note}"),
-            error => ShowNotice($"{error.Failure}{note}"));
+            ok => OpenDesign(ok.Value, message),
+            _ => ShowNotice(message));
     }
 
     /// <summary>A new loop for a build with nothing equipped (an Arc Hunter), opened in the designer.</summary>
@@ -296,7 +297,8 @@
         var note = catalog.Note.Match(problem => $" {problem.Value}", _ => "");                  // pure
         if (imported is Result<DesignSession, string>.Error error)
         {
-            importProblem = Optional.Some(error.Failure + note);
+            var problem = error.Failure + note;                                                  // pure
+            importProblem = Optional.Some(problem);                                              // impure (UI state)
             return;
         }
 
@@ -322,10 +324,13 @@
         var catalog = await JoinManifestAsync(Bundle.Catalog, unknown);                          // impure
         var imported = decoded.Bind(file => LoopDesigning.ImportLoop(catalog.Catalog, file));    // pure
         var note = catalog.Note.Match(problem => $" {problem.Value}", _ => "");                  // pure
+        var message = imported.Match(                                                            // pure
+            ok => $"Opened the shared loop “{ok.Value.Design.Name}”.{note}",
+            error => $"Couldn't open the shared loop:{Environment.NewLine}{error.Failure}{note}");
         await Browser.ClearLocationHashAsync();                                                  // impure
         imported.Match(                                                                          // impure
-            ok => OpenDesign(ok.Value, $"Opened the shared loop “{ok.Value.Design.Name}”.{note}"),
-            error => ShowNotice($"Couldn't open the shared loop:{Environment.NewLine}{error.Failure}{note}"));
+            ok => OpenDesign(ok.Value, message),
+            _ => ShowNotice(message));
     }
 
     private void OpenSharedLoopOnNavigation(object? sender, LocationChangedEventArgs e) =>

@@ -2,7 +2,6 @@ using Loopsmith.Core.BuildParsing;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 using Loopsmith.Core.LoopFiles;
-
 using Loopsmith.Core.Tests.Support;
 
 namespace Loopsmith.Core.Tests.LoopFiles;

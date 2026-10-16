@@ -1,0 +1,6 @@
+# A weapon hash no manifest knows: the file is refused.
+name: "E2E - A weapon hash no manifest knows"
+class: hunter
+subclass: arc
+weapons:
+  - { hash: 1234567 }

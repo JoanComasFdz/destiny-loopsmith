@@ -2,7 +2,6 @@ using Loopsmith.Core.BuildParsing;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 using static Loopsmith.Core.Tests.RuleParsing.ParsingAssertions;
-
 using Loopsmith.Core.Tests.Support;
 
 namespace Loopsmith.Core.Tests.BuildParsing;

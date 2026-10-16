@@ -1,0 +1,6 @@
+# Festival Flight's hash with another slot, name and damage type: the manifest's win.
+name: "E2E - Festival Flight's hash under another name"
+class: hunter
+subclass: arc
+weapons:
+  - { slot: energy, name: Old Name, type: arc, hash: 4019651319 }
