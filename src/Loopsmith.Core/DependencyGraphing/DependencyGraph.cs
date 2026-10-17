@@ -37,9 +37,10 @@ public sealed record ElementFacts(string File, Optional<string> Source, Optional
 /// <summary>
 /// A node: an element (<see cref="Element"/> holds its facts), a status, pickup, summon, strike, effect, trigger or weapon. A
 /// keyword element whose id is a glossary status, pickup or summon is two nodes: its state (that id, <see cref="IsKeyword"/>,
-/// no facts) and its rules (<c>rule:&lt;id&gt;</c>, with the facts).
+/// no facts) and its rules (<c>rule:&lt;id&gt;</c>, with the facts). <see cref="Icon"/>: the address of the icon the web app
+/// would show for it (a bungie.net URL); none when there is none.
 /// </summary>
-public sealed record GraphNode(string Id, string Name, GraphNodeType Type, bool IsKeyword, Optional<ElementFacts> Element);
+public sealed record GraphNode(string Id, string Name, GraphNodeType Type, bool IsKeyword, Optional<ElementFacts> Element, Optional<string> Icon);
 
 /// <summary>
 /// <see cref="Gives"/>: an element → the status, pickup, summon, strike or effect it gives (the only kind the columns

@@ -67,6 +67,7 @@ public static class GraphRendering
             ["name"] = node.Name,
             ["type"] = ToTypeName(node.Type),
             ["slot"] = node.Type is GraphNodeType.SubclassAbility ability ? ToCamelCase(ability.Slot.ToString()) : null,
+            ["icon"] = node.Icon.Match<string?>(icon => icon.Value, _ => null),
             ["keyword"] = node.IsKeyword,
             ["file"] = node.Element.Match<string?>(facts => facts.Value.File, _ => null),
             ["source"] = node.Element.Bind(facts => facts.Source).Match<string?>(source => source.Value, _ => null),

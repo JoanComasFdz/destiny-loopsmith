@@ -326,7 +326,7 @@ public sealed class DependencyGraphTests
         var json = DependencyGraphs.RenderGraphJson(graph);
 
         Assert.StartsWith("""{"title":"Arc Hunter","nodes":{""", json);
-        Assert.Contains("""{"id":"spark","name":"Spark","type":"subclassFragment","slot":null,"keyword":false,"file":"rules/test","source":null,""", json);
+        Assert.Contains("""{"id":"spark","name":"Spark","type":"subclassFragment","slot":null,"icon":null,"keyword":false,"file":"rules/test","source":null,""", json);
         Assert.Contains("""{"id":"withDependents","name":"\u002B what builds on it","nodes":[""", json);   // escaped: the page embeds it in a script
         Assert.Contains(""" "columns":{"amplified":2,"spark":1,"trigger:grenade":0}""".Trim(), json);
     }

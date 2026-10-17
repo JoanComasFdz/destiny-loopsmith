@@ -46,6 +46,9 @@ internal static class DependencyMapping
 {
     private const string RulesFolder = "rules";
 
+    /// <summary>Where a manifest icon path is served, as the web app reads it (its <c>LoadoutShaping.ToIconUrl</c>).</summary>
+    private const string IconHost = "https://www.bungie.net";
+
     /// <summary>
     /// The ability uses <c>via: ability</c> stands for, each its own trigger node: only those whose step deals damage. A
     /// class ability is used, not aimed (<see cref="OffensiveAbility"/>; StepPlaying's <c>ActionResolution</c> resolves
@@ -178,15 +181,15 @@ internal static class DependencyMapping
             pickUp: pickUp => [ToPickupNode(context, pickUp.Pickup)],
             buffGained: gained => [ToStatusNode(context, gained.Status)],
             stacksMaxed: maxed => [ToStatusNode(context, maxed.Status)],
-            finisher: _ => [ToTriggerNode("Finisher")],
+            finisher: _ => [ToTriggerNode("Finisher", context.Catalog.FindClassFinisher(context.Class).Bind(item => item.Icon).Map(ToIconUrl))],
             abilityCastAs: cast => [ToTriggerNode(context, cast.Kind, cast.Input)],
             killFewer: _ => [],
-            criticalHealth: _ => [ToTriggerNode("Critical health")],
-            shieldBroken: _ => [ToTriggerNode("Shield broken")],
+            criticalHealth: _ => [ToTriggerNode("Critical health", FindStatIcon(context, StatKind.Health))],
+            shieldBroken: _ => [ToTriggerNode("Shield broken", Optional.None<string>())],
             energyExpended: expended => [ToTriggerNode(context, expended.Kind, AbilityInput.Press)],
             damageFewer: _ => [],
             killBetween: _ => [],
-            reload: _ => [ToTriggerNode("Reload")]);
+            reload: _ => [ToTriggerNode("Reload", Optional.None<string>())]);
 
     /// <summary>
     /// The nodes a damage source needs: the weapon or ability trigger, the strike or summon dealing it; any ability is one
@@ -195,15 +198,17 @@ internal static class DependencyMapping
     private static ImmutableArray<GraphNode> ListSourceNodes(GraphContext context, DamageSource source) =>
         source.Match<ImmutableArray<GraphNode>>(
             anySource: _ => [],
-            anyWeapon: _ => [ToWeaponNode("Weapon")],
-            weaponOfType: weapon => [ToWeaponNode($"{weapon.Type} weapon")],
-            weaponInSlot: weapon => [ToWeaponNode($"{weapon.Slot} weapon")],
+            anyWeapon: _ => [ToWeaponNode("Weapon", FindStatIcon(context, StatKind.Weapons))],
+            weaponOfType: weapon => [ToWeaponNode($"{weapon.Type} weapon", FindDamageTypeIcon(context, weapon.Type))],
+            weaponInSlot: weapon => [ToWeaponNode($"{weapon.Slot} weapon", Optional.None<string>())],   // a slot has no damage type
             anyAbility: _ => [.. DamagingAbilityUses.Select(use => ToTriggerNode(context, use.Kind, use.Input))],
             abilityOf: ability => [ToTriggerNode(context, ability.Kind, AbilityInput.Press)],
-            ofType: type => [ToWeaponNode($"{type.Type} damage")],
+            ofType: type => [ToWeaponNode($"{type.Type} damage", FindDamageTypeIcon(context, type.Type))],
             keywordOf: keyword => [ToStrikeNode(context, keyword.Status)],
             summonOf: summon => [ToSummonNode(context, summon.Summon)],
-            weaponOfSuperType: _ => [ToWeaponNode(context.Subclass == Subclass.Prismatic ? "Weapon of your Super's element" : $"{context.Subclass.ToDamageType()} weapon")],
+            weaponOfSuperType: _ => [context.Subclass == Subclass.Prismatic
+                ? ToWeaponNode("Weapon of your Super's element", Optional.None<string>())
+                : ToWeaponNode($"{context.Subclass.ToDamageType()} weapon", FindDamageTypeIcon(context, context.Subclass.ToDamageType()))],
             abilityUsedAs: used => [ToTriggerNode(context, used.Kind, used.Input)],
             thisWeapon: _ => [],
             thisWeaponOfType: _ => []);
@@ -214,11 +219,11 @@ internal static class DependencyMapping
     /// </summary>
     private static ImmutableArray<Effect> ListOutcomeEffects(GraphContext context, Outcome outcome) =>
         outcome.Match<ImmutableArray<Effect>>(
-            grantEnergy: grant => [Give(ToEnergyNode(grant.To), DescribeEnergy(grant.Amount))],
+            grantEnergy: grant => [Give(ToEnergyNode(context, grant.To), DescribeEnergy(grant.Amount))],
             convertStacksToEnergy: convert =>
             [
                 new Effect(ToStatusNode(context, convert.Consumed), EdgeKind.Ends, "spends all"),
-                Give(ToEnergyNode(convert.To), DescribeStackEnergy(convert.Energy)),
+                Give(ToEnergyNode(context, convert.To), DescribeStackEnergy(convert.Energy)),
             ],
             applyBuff: apply => [Give(ToStatusNode(context, apply.Status), "")],
             removeBuff: remove => [new Effect(ToStatusNode(context, remove.Status), EdgeKind.Ends, "ends")],
@@ -227,8 +232,8 @@ internal static class DependencyMapping
             spawnSummon: summon => [Give(ToSummonNode(context, summon.Summon), "")],
             strikeTarget: strike => [Give(ToStrikeNode(context, strike.Via), "")],
             modifyDamage: modify => [Give(ToEffectNode("damage-bonus", "Damage bonus"), DescribeDamageChange(context, modify.Against, modify.Change))],
-            restoreHealth: heal => [Give(ToEffectNode("health", "Health"), DescribeHeal(heal))],
-            resetCooldown: reset => [Give(ToEnergyNode(reset.Which), "full")],
+            restoreHealth: heal => [Give(ToEffectNode("health", "Health", FindStatIcon(context, StatKind.Health)), DescribeHeal(heal))],
+            resetCooldown: reset => [Give(ToEnergyNode(context, reset.Which), "full")],
             collect: collect => [new Effect(ToPickupNode(context, collect.Pickup), EdgeKind.Collects, "collects")],
             grantLeastChargedEnergy: least => [Give(ToEffectNode("energy-least-charged", "Least-charged ability energy"), DescribeEnergy(least.Amount))],
             spendStacks: spend => [new Effect(ToStatusNode(context, spend.Status), EdgeKind.Ends, $"spends {spend.Count.Value.ToString(CultureInfo.InvariantCulture)}")],
@@ -250,7 +255,7 @@ internal static class DependencyMapping
                 ToEffectNode("weapon-stats", "Weapon stats"),
                 string.Join(", ", weapons.Changes.Select(change => $"{change.Stat} {FormatSigned(change.Change)}")))],
             raiseMaxStacks: raise => [new Effect(ToStatusNode(context, raise.Status), EdgeKind.Boosts, $"max {raise.Max.ToNumberText()}")],
-            modifyStat: stat => [Give(ToEffectNode($"stat-{ToKebab(stat.Stat.ToString())}", $"{stat.Stat} stat"), FormatSigned(stat.Change))],
+            modifyStat: stat => [Give(ToEffectNode($"stat-{ToKebab(stat.Stat.ToString())}", $"{stat.Stat} stat", FindStatIcon(context, stat.Stat)), FormatSigned(stat.Change))],
             resistCombatantDamage: resist => [Give(
                 ToEffectNode("damage-resistance", "Damage resistance"),
                 $"{resist.Amount.ToPercentText()} vs {resist.Against.DescribeCombatantDamage(Optional.None<DamageType>())}")]);
@@ -287,11 +292,13 @@ internal static class DependencyMapping
     }
 
     /// <summary>The energy an ability gets (<c>effect:energy-grenade</c>, "Grenade energy").</summary>
-    private static GraphNode ToEnergyNode(AbilityKind ability) =>
-        ToEffectNode($"energy-{ToKebab(ability.DescribeAbility())}", $"{ToSentenceStart(ability.DescribeAbility())} energy");
+    private static GraphNode ToEnergyNode(GraphContext context, AbilityKind ability) =>
+        ToEffectNode($"energy-{ToKebab(ability.DescribeAbility())}", $"{ToSentenceStart(ability.DescribeAbility())} energy", FindStatIcon(context, ToStat(ability)));
 
-    private static GraphNode ToEffectNode(string id, string name) =>
-        new($"effect:{id}", name, new GraphNodeType.ShownEffect(), false, Optional.None<ElementFacts>());
+    private static GraphNode ToEffectNode(string id, string name) => ToEffectNode(id, name, Optional.None<string>());
+
+    private static GraphNode ToEffectNode(string id, string name, Optional<string> icon) =>
+        new($"effect:{id}", name, new GraphNodeType.ShownEffect(), false, Optional.None<ElementFacts>(), icon);
 
     /// <summary>A fraction as the rules author it: 0.1125 → "11.25%", "12% | 17% | 20%" by copies, "~25%", "?".</summary>
     private static string ToPercentText(this GameValue value) =>
@@ -316,8 +323,15 @@ internal static class DependencyMapping
     /// <summary>An element's node; a keyword with a glossary state is its rule node (<c>rule:jolt</c>), the state a node of its own.</summary>
     private static GraphNode ToElementNode(GraphContext context, BuildElement element) =>
         FindKeywordState(context, element).Match(
-            state => new GraphNode($"rule:{state.Value}", element.Name, new GraphNodeType.KeywordRule(), true, Optional.Some(ToFacts(element))),
-            _ => new GraphNode(element.Id.Value, element.Name, ToElementType(context, element), element.Kind == ElementKind.Keyword, Optional.Some(ToFacts(element))));
+            state => new GraphNode(
+                $"rule:{state.Value}", element.Name, new GraphNodeType.KeywordRule(), true, Optional.Some(ToFacts(element)), FindGlossaryIcon(context, state.Value)),
+            _ => new GraphNode(
+                element.Id.Value,
+                element.Name,
+                ToElementType(context, element),
+                element.Kind == ElementKind.Keyword,
+                Optional.Some(ToFacts(element)),
+                FindElementIcon(context, element.Id)));
 
     /// <summary>The glossary status, pickup or summon a keyword element is the rules of; none for any other element (and for Guardian).</summary>
     private static Optional<string> FindKeywordState(GraphContext context, BuildElement element) =>
@@ -377,7 +391,8 @@ internal static class DependencyMapping
             context.Catalog.Glossary.DescribeStatus(status),
             context.Catalog.Glossary.Statuses.TryGetValue(status, out var definition) ? ToStatusType(definition.Kind) : new GraphNodeType.BuffStatus(),
             HasKeywordRules(context, status.Value),
-            Optional.None<ElementFacts>());
+            Optional.None<ElementFacts>(),
+            FindStateIcon(context, status.Value));
 
     private static GraphNode ToPickupNode(GraphContext context, PickupId pickup) =>
         new(
@@ -385,7 +400,8 @@ internal static class DependencyMapping
             context.Catalog.Glossary.DescribePickup(pickup),
             new GraphNodeType.PickupDrop(),
             HasKeywordRules(context, pickup.Value),
-            Optional.None<ElementFacts>());
+            Optional.None<ElementFacts>(),
+            FindStateIcon(context, pickup.Value));
 
     private static GraphNode ToSummonNode(GraphContext context, SummonId summon) =>
         new(
@@ -393,7 +409,8 @@ internal static class DependencyMapping
             context.Catalog.Glossary.DescribeSummon(summon),
             new GraphNodeType.SummonedAlly(),
             HasKeywordRules(context, summon.Value),
-            Optional.None<ElementFacts>());
+            Optional.None<ElementFacts>(),
+            FindStateIcon(context, summon.Value));
 
     private static bool HasKeywordRules(GraphContext context, string id) =>
         context.Catalog.Elements.TryGetValue(ElementId.From(id), out var element) && element.Kind == ElementKind.Keyword;
@@ -407,16 +424,64 @@ internal static class DependencyMapping
 
     /// <summary>The strike a keyword deals (<c>strike:bolt-charge</c>, "Bolt Charge strike").</summary>
     private static GraphNode ToStrikeNode(GraphContext context, StatusId via) =>
-        new($"strike:{via.Value}", $"{context.Catalog.Glossary.DescribeStatus(via)} strike", new GraphNodeType.KeywordStrike(), false, Optional.None<ElementFacts>());
+        new($"strike:{via.Value}", $"{context.Catalog.Glossary.DescribeStatus(via)} strike", new GraphNodeType.KeywordStrike(), false, Optional.None<ElementFacts>(),
+            FindGlossaryIcon(context, via.Value));
 
+    /// <summary>An ability trigger, with the icon of the ability's armor stat (the dodge: Class).</summary>
     private static GraphNode ToTriggerNode(GraphContext context, AbilityKind kind, AbilityInput input) =>
-        ToTriggerNode(NameAbilityTrigger(context.Class, kind, input));
+        ToTriggerNode(NameAbilityTrigger(context.Class, kind, input), FindStatIcon(context, ToStat(kind)));
 
-    private static GraphNode ToTriggerNode(string name) =>
-        new($"trigger:{ToKebab(name)}", name, new GraphNodeType.ActionTrigger(), false, Optional.None<ElementFacts>());
+    private static GraphNode ToTriggerNode(string name, Optional<string> icon) =>
+        new($"trigger:{ToKebab(name)}", name, new GraphNodeType.ActionTrigger(), false, Optional.None<ElementFacts>(), icon);
 
-    private static GraphNode ToWeaponNode(string name) =>
-        new($"weapon:{ToKebab(name)}", name, new GraphNodeType.NeededWeapon(), false, Optional.None<ElementFacts>());
+    private static GraphNode ToWeaponNode(string name, Optional<string> icon) =>
+        new($"weapon:{ToKebab(name)}", name, new GraphNodeType.NeededWeapon(), false, Optional.None<ElementFacts>(), icon);
+
+    /// <summary>The armor stat an ability's energy goes by.</summary>
+    private static StatKind ToStat(AbilityKind kind) =>
+        kind switch
+        {
+            AbilityKind.Grenade => StatKind.Grenade,
+            AbilityKind.Melee => StatKind.Melee,
+            AbilityKind.ClassAbility => StatKind.Class,
+            _ => StatKind.Super,
+        };
+
+    private static Optional<string> FindStatIcon(GraphContext context, StatKind stat) =>
+        context.Catalog.Manifest.FindArmorStat(stat).Map(found => ToIconUrl(found.Icon));
+
+    private static Optional<string> FindDamageTypeIcon(GraphContext context, DamageType type) =>
+        context.Catalog.Manifest.DamageTypeIcons.TryGetValue(type, out var icon) ? Optional.Some(ToIconUrl(icon)) : Optional.None<string>();
+
+    /// <summary>An element's icon: its manifest item's.</summary>
+    private static Optional<string> FindElementIcon(GraphContext context, ElementId element) =>
+        context.Catalog.FindElementItem(element).Bind(item => item.Icon).Map(ToIconUrl);
+
+    /// <summary>
+    /// A state's icon: its glossary trait's; one without a trait whose id an element shares (the Lethal Current aspect's buff)
+    /// takes that element's.
+    /// </summary>
+    private static Optional<string> FindStateIcon(GraphContext context, string id) =>
+        new[]
+        {
+            FindGlossaryIcon(context, id),
+            HasKeywordRules(context, id) ? Optional.None<string>() : FindElementIcon(context, ElementId.From(id)),
+        }.FindFirstSome();
+
+    /// <summary>The icon of the trait the glossary gives a status, pickup or summon of this id.</summary>
+    private static Optional<string> FindGlossaryIcon(GraphContext context, string id)
+    {
+        var glossary = context.Catalog.Glossary;
+        var trait = glossary.Statuses.TryGetValue(StatusId.From(id), out var status)
+            ? status.Trait
+            : glossary.Pickups.TryGetValue(PickupId.From(id), out var pickup)
+                ? pickup.Trait
+                : glossary.Summons.TryGetValue(SummonId.From(id), out var summon) ? summon.Trait : Optional.None<ItemHash>();
+        return trait.Bind(context.Catalog.Manifest.FindTraitIcon).Map(ToIconUrl);
+    }
+
+    /// <summary>A manifest icon path as the address the web app shows it at.</summary>
+    private static string ToIconUrl(string path) => IconHost + path;
 
     /// <summary>An ability use as the player says it: a Hunter's class ability is their dodge.</summary>
     private static string NameAbilityTrigger(GuardianClass guardianClass, AbilityKind kind, AbilityInput input) =>
