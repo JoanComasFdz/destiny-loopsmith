@@ -67,6 +67,29 @@ public static class KeywordResolution
             pickup => glossary.Pickups.TryGetValue(pickup.Id, out var found) ? found.Trait : Optional.None<ItemHash>(),
             summon => glossary.Summons.TryGetValue(summon.Id, out var found) ? found.Trait : Optional.None<ItemHash>());
 
+    /// <summary>
+    /// A keyword's icon: its trait's, the game's own keyword icon; else its element's manifest item's (the element of its id:
+    /// Slice's weapon perk, the Lethal Current aspect for its buff); else the shape the game draws for it (a status's
+    /// <c>drawnIcon</c>, in its affinity); none when there is none of those. The designer, the trace and the dependency
+    /// graph all show this one.
+    /// </summary>
+    public static Optional<IconRef> FindKeywordIcon(this RuleCatalog catalog, KeywordRef keyword) =>
+        new[]
+        {
+            catalog.Glossary.FindKeywordTrait(keyword).Bind(catalog.Manifest.FindTraitIcon).Map(path => (IconRef)new IconRef.Manifest(path)),
+            catalog.FindKeywordElement(keyword).Bind(catalog.FindElementItem).Bind(item => item.Icon).Map(path => (IconRef)new IconRef.Manifest(path)),
+            FindDrawnIcon(catalog.Glossary, keyword),
+        }.FindFirstSome();
+
+    /// <summary>The shape the game draws for a status Bungie's data has no icon for (the glossary's <c>drawnIcon</c>), in its affinity.</summary>
+    private static Optional<IconRef> FindDrawnIcon(KeywordGlossary glossary, KeywordRef keyword) =>
+        keyword.Match(
+            status => glossary.Statuses.TryGetValue(status.Id, out var definition)
+                ? definition.DrawnIcon.Map(shape => (IconRef)new IconRef.Drawn(shape, definition.Affinity))
+                : Optional.None<IconRef>(),
+            _ => Optional.None<IconRef>(),
+            _ => Optional.None<IconRef>());
+
     /// <summary>The one rule both lookups follow: a keyword's element is the element of its id — its own effects.</summary>
     public static bool IsStatusElement(this ElementId element, StatusId status) =>
         IsKeywordElement(element, status.Value);

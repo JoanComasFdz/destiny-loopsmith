@@ -51,8 +51,30 @@ public sealed class DependencyGraphIconTests
         Assert.Equal(ElementIcon("lethal-current"), FindIcon(Graph, "status:lethal-current"));
 
     [Fact]
-    public void A_status_with_no_trait_and_no_element_has_no_icon() =>
-        Assert.Null(FindIcon(Graph, "super"));
+    public void A_status_with_no_trait_and_no_element_item_has_no_icon()
+    {
+        Assert.Null(FindIcon(Graph, "super"));   // its keyword element has no manifest item
+        Assert.Null(FindIcon(Graph, "rule:super"));
+    }
+
+    [Fact]
+    public void A_keyword_with_no_trait_has_its_elements_item_icon()
+    {
+        var flashbang = Catalog.Elements[ElementId.From("flashbang-grenade")];
+        var orb = Catalog.Elements[ElementId.From("orb-of-power")] with { Hashes = flashbang.Hashes };
+        var graph = Draw(Fragment("spark", On(new Trigger.AbilityCast(AbilityKind.Grenade), new Outcome.Spawn(Pickup("orb-of-power"), 1))), orb);
+
+        Assert.Equal(ElementIcon("flashbang-grenade"), FindIcon(graph, "orb-of-power"));
+        Assert.Equal(ElementIcon("flashbang-grenade"), FindIcon(graph, "rule:orb-of-power"));
+    }
+
+    [Fact]
+    public void A_strike_with_no_trait_has_the_icon_of_the_element_it_is_named_for() =>
+        Assert.Equal(ElementIcon("lethal-current"), FindIcon(Graph, "strike:lethal-current"));
+
+    [Fact]
+    public void A_status_the_game_draws_has_no_address_so_no_icon() =>
+        Assert.Null(FindIcon(Graph, "unraveling-rounds"));
 
     [Fact]
     public void A_strike_has_the_icon_of_what_it_strikes_with() =>

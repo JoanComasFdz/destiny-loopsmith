@@ -182,7 +182,7 @@ public static class StepOutcomeShaping
     [
         .. glossary.SplitKeywords(text).Select(part => new TextPart(
             part.Text,
-            part.Keyword.Map(keyword => new KeywordPart(keyword.Affinity, catalog.FindKeywordElement(keyword.Keyword), IconFinding.FindKeywordIcon(catalog, keyword.Keyword))))),
+            part.Keyword.Map(keyword => new KeywordPart(keyword.Affinity, catalog.FindKeywordElement(keyword.Keyword), catalog.FindKeywordIcon(keyword.Keyword))))),
     ];
 
     private static Optional<WeaponSlot> FindEventWeapon(GameEvent gameEvent) =>

@@ -1165,7 +1165,7 @@ public static class LoopDesigning
 
     /// <summary>A keyword's icon: the game's own (Jolted, Woven Mail), else its element's, else the shape the game draws for it (Unraveling Rounds); none without any.</summary>
     public static Optional<IconRef> FindKeywordIcon(ValidatedBuild build, KeywordRef keyword) =>
-        IconFinding.FindKeywordIcon(build.Catalog, keyword);
+        build.Catalog.FindKeywordIcon(keyword);
 
     /// <summary>
     /// Whether a weapon perk is an enhanced trait, which the game and DIM draw over the base perk's icon (Bungie gives

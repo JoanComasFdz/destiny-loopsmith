@@ -324,7 +324,7 @@ internal static class DependencyMapping
     private static GraphNode ToElementNode(GraphContext context, BuildElement element) =>
         FindKeywordState(context, element).Match(
             state => new GraphNode(
-                $"rule:{state.Value}", element.Name, new GraphNodeType.KeywordRule(), true, Optional.Some(ToFacts(element)), FindGlossaryIcon(context, state.Value)),
+                $"rule:{state.Value}", element.Name, new GraphNodeType.KeywordRule(), true, Optional.Some(ToFacts(element)), FindKeywordIcon(context, ToKeywordRef(context, state.Value))),
             _ => new GraphNode(
                 element.Id.Value,
                 element.Name,
@@ -392,7 +392,7 @@ internal static class DependencyMapping
             context.Catalog.Glossary.Statuses.TryGetValue(status, out var definition) ? ToStatusType(definition.Kind) : new GraphNodeType.BuffStatus(),
             HasKeywordRules(context, status.Value),
             Optional.None<ElementFacts>(),
-            FindStateIcon(context, status.Value));
+            FindKeywordIcon(context, new KeywordRef.Status(status)));
 
     private static GraphNode ToPickupNode(GraphContext context, PickupId pickup) =>
         new(
@@ -401,7 +401,7 @@ internal static class DependencyMapping
             new GraphNodeType.PickupDrop(),
             HasKeywordRules(context, pickup.Value),
             Optional.None<ElementFacts>(),
-            FindStateIcon(context, pickup.Value));
+            FindKeywordIcon(context, new KeywordRef.Pickup(pickup)));
 
     private static GraphNode ToSummonNode(GraphContext context, SummonId summon) =>
         new(
@@ -410,7 +410,7 @@ internal static class DependencyMapping
             new GraphNodeType.SummonedAlly(),
             HasKeywordRules(context, summon.Value),
             Optional.None<ElementFacts>(),
-            FindStateIcon(context, summon.Value));
+            FindKeywordIcon(context, new KeywordRef.Summon(summon)));
 
     private static bool HasKeywordRules(GraphContext context, string id) =>
         context.Catalog.Elements.TryGetValue(ElementId.From(id), out var element) && element.Kind == ElementKind.Keyword;
@@ -425,7 +425,7 @@ internal static class DependencyMapping
     /// <summary>The strike a keyword deals (<c>strike:bolt-charge</c>, "Bolt Charge strike").</summary>
     private static GraphNode ToStrikeNode(GraphContext context, StatusId via) =>
         new($"strike:{via.Value}", $"{context.Catalog.Glossary.DescribeStatus(via)} strike", new GraphNodeType.KeywordStrike(), false, Optional.None<ElementFacts>(),
-            FindGlossaryIcon(context, via.Value));
+            FindKeywordIcon(context, new KeywordRef.Status(via)));
 
     /// <summary>An ability trigger, with the icon of the ability's armor stat (the dodge: Class).</summary>
     private static GraphNode ToTriggerNode(GraphContext context, AbilityKind kind, AbilityInput input) =>
@@ -458,27 +458,20 @@ internal static class DependencyMapping
         context.Catalog.FindElementItem(element).Bind(item => item.Icon).Map(ToIconUrl);
 
     /// <summary>
-    /// A state's icon: its glossary trait's; one without a trait whose id an element shares (the Lethal Current aspect's buff)
-    /// takes that element's.
+    /// A keyword's icon as the web app finds it (Causality's <c>FindKeywordIcon</c>): its trait's, else the item of the
+    /// element of its id (Orb of Power's, the Lethal Current aspect's for its buff and its strike); a shape the game draws
+    /// has no address, so none.
     /// </summary>
-    private static Optional<string> FindStateIcon(GraphContext context, string id) =>
-        new[]
-        {
-            FindGlossaryIcon(context, id),
-            HasKeywordRules(context, id) ? Optional.None<string>() : FindElementIcon(context, ElementId.From(id)),
-        }.FindFirstSome();
+    private static Optional<string> FindKeywordIcon(GraphContext context, KeywordRef keyword) =>
+        context.Catalog.FindKeywordIcon(keyword).Bind(icon => icon is IconRef.Manifest manifest ? Optional.Some(ToIconUrl(manifest.Path)) : Optional.None<string>());
 
-    /// <summary>The icon of the trait the glossary gives a status, pickup or summon of this id.</summary>
-    private static Optional<string> FindGlossaryIcon(GraphContext context, string id)
-    {
-        var glossary = context.Catalog.Glossary;
-        var trait = glossary.Statuses.TryGetValue(StatusId.From(id), out var status)
-            ? status.Trait
-            : glossary.Pickups.TryGetValue(PickupId.From(id), out var pickup)
-                ? pickup.Trait
-                : glossary.Summons.TryGetValue(SummonId.From(id), out var summon) ? summon.Trait : Optional.None<ItemHash>();
-        return trait.Bind(context.Catalog.Manifest.FindTraitIcon).Map(ToIconUrl);
-    }
+    /// <summary>The glossary keyword of an id: its status, else its pickup, else its summon (a status when the glossary has none).</summary>
+    private static KeywordRef ToKeywordRef(GraphContext context, string id) =>
+        context.Catalog.Glossary.Pickups.ContainsKey(PickupId.From(id)) && !context.Catalog.Glossary.Statuses.ContainsKey(StatusId.From(id))
+            ? new KeywordRef.Pickup(PickupId.From(id))
+            : context.Catalog.Glossary.Summons.ContainsKey(SummonId.From(id)) && !context.Catalog.Glossary.Statuses.ContainsKey(StatusId.From(id))
+                ? new KeywordRef.Summon(SummonId.From(id))
+                : new KeywordRef.Status(StatusId.From(id));
 
     /// <summary>A manifest icon path as the address the web app shows it at.</summary>
     private static string ToIconUrl(string path) => IconHost + path;
