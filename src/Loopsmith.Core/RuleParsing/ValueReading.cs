@@ -50,9 +50,6 @@ internal static class ValueReading
     internal static Result<int, Errors> ReadPositiveInteger(YamlValue value) =>
         value.ParseWith(text => ParseWholeNumber(text, minimum: 1));
 
-    internal static Result<int, Errors> ReadNonNegativeInteger(YamlValue value) =>
-        value.ParseWith(text => ParseWholeNumber(text, minimum: 0));
-
     /// <summary>A whole number that may be negative (a stat plug's <c>value: -10</c>).</summary>
     internal static Result<int, Errors> ReadSignedInteger(YamlValue value) =>
         value.ParseWith<int>(text => int.TryParse(text, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var number)

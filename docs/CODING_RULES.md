@@ -137,7 +137,8 @@ itself, under `src/Loopsmith.Core/Domain/`.
   `ItemHash`, `CatalogVersion`, `Seconds`, `TargetCount`, `StackCount`,
   `ChargeCount`, `CopyCount`, `FragmentSlots`, `StatValue`, `SnapshotDate`),
   constructed and validated **at the boundary** (`TryFrom` in the parsing slices;
-  a build's `CopyCount` comes from grouping its equipped elements) — once inside
+  a build's `CopyCount` comes from grouping its equipped elements, a `ChargeCount`
+  or `FragmentSlots` total from adding known-valid ones) — once inside
   the pure core a value object is known-valid.
 - **Unknowns are data.** A source's "?" becomes `GameValue.Unknown`, never 0; the
   trace shows "?". Every element keeps its `Provenance` (its `source:`).
