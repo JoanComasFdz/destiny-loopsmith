@@ -177,6 +177,9 @@ pull request:
    something a session doesn't have is needed (a creator transcript, a design decision, the
    Compendium snapshot when the download in "Where things live" fails), ask for it.
    Questions are optional: only where a point has two readings that lead to different changes.
+   Every question and suggestion, in any round, carries its own context: the problem with a concrete example,
+   the choices with what each changes, a marked default, and a numbered list of the answers needed (`loopsmith-task`
+   skill, "How to write a question or a suggestion").
 3. **Do the work** on that branch, changing only what the spec covers. Subagents read, author in
    their own worktree or check, as the spec's "How the work splits" says (skill, "Subagents"); only
    the session talks to the owner, commits, pushes and writes on GitHub. Commit when a step is

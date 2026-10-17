@@ -41,15 +41,38 @@ A change that needs another one first waits until that one is merged.
 
 In one message:
 - What you understood, in a few lines.
-- Your questions, if any. They aren't mandatory: ask one short question only where a point has two
-  readings that would lead to different changes. When nothing is ambiguous, say so and ask none.
-  Smaller gaps become `Open question:` lines in the notes.
+- Your questions, if any. They aren't mandatory: ask only where a point has two readings that would
+  lead to different changes. When nothing is ambiguous, say so and ask none. Smaller gaps become
+  `Open question:` lines in the notes. Each question is written as "How to write a question or a
+  suggestion" below says, never as a one-liner.
 - **Proposed acceptance criteria**, numbered: what someone does and sees. Each criterion about how the
   app behaves is a Gherkin, written by [docs/given-when-then-test-rules.md](../../../docs/given-when-then-test-rules.md)
   (its screens, its title, its rounds of When and Then), layout included (no overlap, at the right end,
   inside the screen); each one becomes one e2e scenario. A criterion checked in a file stays a plain line.
   Ask the owner to agree, or to say what to add, drop or change.
-- Anything you'd suggest adding, as a suggestion, not as a criterion.
+- Anything you'd suggest adding, as a suggestion, not as a criterion, written the same way.
+
+### How to write a question or a suggestion
+
+The owner answers from their phone, between other things, and hasn't read what you read: not the code, not the
+investigation, not your earlier messages' shorthand. A question they can't answer without asking back costs a whole
+round. So each question and each suggestion stands on its own:
+
+1. **Its own heading**, numbered, saying what is being decided in plain words ("Where the list of name matches
+   lives"), never a file name or an internal term alone.
+2. **The problem, with context:** what the thing is and what it does today, in the app's own words; then why it
+   comes up now, with a concrete example from this task (real names: "our rules say *Spark of Amplitude*, the
+   Compendium's Arc tab says *Amplitude*"). Say what a term means the first time you use it (an ADR, a slice, a
+   file, an option named earlier in the session): "D12, the decision that the Compendium is joined by name".
+3. **The choices**, as a short list or a small table: for each, what changes for the owner or the app and what it
+   costs. Mark the one you'd pick as **(my default)** and say why. Leave out a choice that can't work, or name it
+   in one line with the reason it can't.
+4. **For a suggestion:** what it adds, what it costs (a bigger PR, another round), and what happens if they say
+   no (a follow-up, or nothing lost).
+
+End the message with what you need back, as a numbered list matching the headings ("1. Is the default fine?
+2. Artifact Perks in this PR, yes or no?"), so the owner can answer "1 ok, 2 yes". When a question goes through
+`AskUserQuestion`, its question and each option's description carry the same context: the owner sees only them.
 
 Then wait for their answer. Change the criteria as often as they want.
 
@@ -234,7 +257,8 @@ read, author in their own worktree, or check, and report back to it.
 ## 6. Follow-ups: launch each one in its own session
 
 Work that this PR doesn't cover (something you noticed, or something the owner asks for after the PR)
-is a follow-up. It never goes into this PR (section 2). Offer each one as a numbered item with a
+is a follow-up. It never goes into this PR (section 2). Offer each one as a numbered item, written so the owner
+can decide without asking back ("How to write a question or a suggestion", section 3), with a
 proposed task title (CLAUDE.md, "Naming (agent work)") and one or two lines on what it is.
 
 When the owner says to launch one ("launch", "launch 2", "launch all"), start a new session for
