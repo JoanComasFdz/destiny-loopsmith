@@ -1,0 +1,52 @@
+# How a rule element's name finds its Destiny Data Compendium entry when the two differ (ADRs D12), and how a section's
+# numbers read where it says so itself, used by the
+# Compendium check (src/Loopsmith.Core/CompendiumReading, tests/Loopsmith.Core.Tests/CompendiumReading). Names and
+# numbers only: never the Compendium's text (README, Licensing). Every entry says why.
+#
+# prefixes / suffixes: in that tab, an entry's name lacks this start or end of the element's name.
+# dropWords: in that tab, an entry's name lacks these words of the element's name.
+# names: the element's entry is named this (when the rules above don't get there).
+# worded: a number the element holds that its row says in words ("100%" is 1 as the rules hold it).
+# alternativeBrackets: in that tab's section, […] is another PvE value, not the PvP value it is everywhere else.
+
+alternativeBrackets:
+  - { tab: Arc, section: Grenade Abilities, why: "The section's note says its bracketed numbers are with Spark of Magnitude equipped." }
+
+prefixes:
+  - { tab: Arc, prefix: "Spark of", why: "The subclass tab lists its fragments without their element's prefix." }
+  - { tab: Solar, prefix: "Ember of", why: "The subclass tab lists its fragments without their element's prefix." }
+  - { tab: Void, prefix: "Echo of", why: "The subclass tab lists its fragments without their element's prefix." }
+  - { tab: Stasis, prefix: "Whisper of", why: "The subclass tab lists its fragments without their element's prefix." }
+  - { tab: Strand, prefix: "Thread of", why: "The subclass tab lists its fragments without their element's prefix." }
+  - { tab: Prismatic, prefix: "Facet of", why: "The subclass tab lists its fragments without their element's prefix." }
+
+suffixes:
+  - { tab: Weapon Perks, suffix: "(enhanced)", why: "An enhanced weapon mod shares its base mod's row, its values after the ↑." }
+
+dropWords:
+  - tab: Armor Mods
+    words: [Arc, Solar, Void, Stasis, Strand, Kinetic, Harmonic]
+    why: "One row stands for every element's version of a mod (Siphon, Loader, Targeting, Dexterity, Holster, …)."
+
+names:
+  - { element: arc-stasis-dual-siphon, name: Siphon, why: "A two-element Siphon is on the one Siphon row." }
+  - { element: arc-strand-siphon-combo, name: Siphon, why: "A two-element Siphon is on the one Siphon row." }
+  - { element: solar-strand-dual-siphon, name: Siphon, why: "A two-element Siphon is on the one Siphon row." }
+  - { element: void-stasis-dual-siphon, name: Siphon, why: "A two-element Siphon is on the one Siphon row." }
+  - { element: void-strand-dual-siphon, name: Siphon, why: "A two-element Siphon is on the one Siphon row." }
+  - { element: kinetic-charge-siphon, name: Siphon, why: "A two-element Siphon is on the one Siphon row." }
+  - { element: kinetic-entropy-siphon, name: Siphon, why: "A two-element Siphon is on the one Siphon row." }
+  - { element: kinetic-thermal-siphon, name: Siphon, why: "A two-element Siphon is on the one Siphon row." }
+  - { element: thermodynamic-siphon, name: Siphon, why: "A two-element Siphon is on the one Siphon row." }
+  - { element: heavy-ammo-finder, name: Ammo Finder, why: "One Ammo Finder row gives the Heavy and the Special version." }
+  - { element: special-ammo-finder, name: Ammo Finder, why: "One Ammo Finder row gives the Heavy and the Special version." }
+  - { element: heavy-ammo-scout, name: Ammo Scout, why: "One Ammo Scout row gives the Heavy and the Special version." }
+  - { element: special-ammo-scout, name: Ammo Scout, why: "One Ammo Scout row gives the Heavy and the Special version." }
+  - { element: melee-damage-resistance, name: Resistance, why: "The Resistance row covers the melee and sniper versions too." }
+  - { element: sniper-damage-resistance, name: Resistance, why: "The Resistance row covers the melee and sniper versions too." }
+  - { element: concussive-dampener, name: Resistance, why: "The Resistance row covers Concussive Dampener's blast resistance too." }
+  - { element: jolt, name: Jolted, why: "The Arc glossary names the debuff by its adjective." }
+  - { element: super, name: Arc Staff, why: "The Super keyword cites Arc Staff's row for the super information every super shares." }
+
+worded:
+  - { element: healthy-finisher, value: "100%", why: "The row says it restores health and shields in full." }

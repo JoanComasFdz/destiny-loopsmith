@@ -10,8 +10,11 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   the 2026-10-13 one into the rest of the Arcstrider (`rules/hunter/arc.yaml`), the weapon mods
   (`rules/mods/weapons.yaml`), `rules/mods/chest.yaml` and some keywords (`compendium/<date>/<tab>#<row>` provenance;
   source disagreements in [builds/skip-grenade-hunter/discrepancies.md](../builds/skip-grenade-hunter/discrepancies.md)).
-  Next: a parser slice (a registry of per-tab parsers) instead of hand copying, and the coverage report
-  (requirements FR-11). To refresh, run `tools/compendium/get-compendium.ps1` (Windows) or `.sh` locally
+  The Compendium check (`CompendiumReading`, requirements FR-11) reads the subclass tabs, Class Abilities, Armor Mods,
+  Artifact Perks and Weapon Perks and checks every rule citing them against a snapshot, with `LOOPSMITH_COMPENDIUM_DIR`
+  set ([tools/compendium/README.md](../tools/compendium/README.md)). Next: parsers for Exotic Weapons, Exotic Armors,
+  Armor Perks and Game Mechanics (their citations are listed as not checked), and the coverage report (elements without
+  rules, names that don't resolve to the manifest). To refresh, run `tools/compendium/get-compendium.ps1` (Windows) or `.sh` locally
   and hand the zip to a session, or let the session run `sheet_dump.py` itself
   ([tools/compendium/README.md](../tools/compendium/README.md)).
   The raw snapshot stays private (`snapshots/` is gitignored).

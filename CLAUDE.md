@@ -38,6 +38,7 @@ node --test src/Loopsmith.VsCodeExtension/test/*.test.js   # the VS Code extensi
 tools/e2e/record.sh --no-video Starting   # e2e scenarios in Chromium, unrecorded: the fast run while developing (Recordings: the extension's)
 tools/e2e/record.sh --changed-since origin/main   # recorded → out/<domain>/<scenario>-<screen>.gif + .mp4 + out/scenarios.json (right before a push)
 dotnet test --filter RepoFileValidationTests   # every build, loop and e2e fixture file opens against the rules (names the file and the error)
+LOOPSMITH_COMPENDIUM_DIR=$PWD/snapshots/compendium/<date> dotnet test --filter CompendiumCheckTests   # the rules' citations and numbers against a Compendium snapshot (skipped without it)
 dotnet run --project src/Loopsmith.Web          # the loop designer in the browser
 ```
 Cloud sessions: `.claude/hooks/session-start.sh` installs `dotnet-sdk-10.0` from Ubuntu's
@@ -53,7 +54,8 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
   `LoadoutImporting` (a DIM link → a build, by manifest hash), `ManifestJoining` (Bungie's full manifest,
   read in the browser, → the excerpt of what a DIM link's other items need, and the list of every weapon, armor
   piece and armor mod the pickers offer, with each piece's mod sockets; the browser saves the manifest and that list between visits, by the manifest's version), `StatLoading` (a Bungie login's
-  answers → the player's armor → the build's stats, added up like DIM), `Orchestration`).
+  answers → the player's armor → the build's stats, added up like DIM), `CompendiumReading` (a Compendium snapshot's tabs → the
+  check of the rules' citations and numbers against it, with `tools/compendium/aliases.yaml`; run by a test only), `Orchestration`).
 - `src/Loopsmith.Web/` — Blazor WebAssembly loop designer (host only; calls
   `Orchestration.LoopDesigning`). Deployed to GitHub Pages by `.github/workflows/pages.yml`;
   every PR that can change the site (not only docs, tooling or tests) gets a preview at `…/pr-preview/pr-<n>/` (`pr-preview.yml`)

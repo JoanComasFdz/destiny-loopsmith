@@ -46,4 +46,31 @@ public static class FileSourceFetching
             return new Result<SourceText, string>.Error($"Cannot read '{path}': {exception.Message}");
         }
     }
+
+    /// <summary>
+    /// A Compendium snapshot's tab files (<c>snapshots/compendium/&lt;date&gt;/NN_&lt;Tab&gt;.csv</c>), each named by its file name.
+    /// </summary>
+    public static Result<ImmutableArray<SourceText>, string> ReadCompendiumSnapshot(string snapshotDirectory)
+    {
+        try
+        {
+            var paths = Directory.EnumerateFiles(snapshotDirectory, "*.csv", SearchOption.TopDirectoryOnly)
+                .Order(StringComparer.Ordinal)
+                .ToImmutableArray();
+            var files = ImmutableArray.CreateBuilder<SourceText>();
+            foreach (var path in paths)
+            {
+                var text = File.ReadAllText(path);
+                files.Add(new SourceText(Path.GetFileName(path), text));
+            }
+
+            return files.Count == 0
+                ? new Result<ImmutableArray<SourceText>, string>.Error($"No tab files (*.csv) in '{snapshotDirectory}': is it a snapshot folder (tools/compendium/README.md)?")
+                : new Result<ImmutableArray<SourceText>, string>.Ok(files.ToImmutable());
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            return new Result<ImmutableArray<SourceText>, string>.Error($"Cannot read the Compendium snapshot '{snapshotDirectory}': {exception.Message}");
+        }
+    }
 }
