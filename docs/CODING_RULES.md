@@ -23,7 +23,8 @@ itself, under `src/Loopsmith.Core/Domain/`.
   by its order of triggers), `BuildExplanation`, `TraceRendering`,
   `ReportComparison`, `LoadoutImporting` (a DIM link → a build), `ManifestJoining` (Bungie's full
   manifest → the excerpt some hashes need), `StatLoading` (a Bungie login's answers → the player's armor
-  → the build's stats), `Orchestration`).
+  → the build's stats), `CompendiumReading` (a Compendium snapshot → the check of the rules' citations
+  and numbers against it), `Orchestration`).
 - **Feature slices depend only on the shared kernel** (`Domain` / `Functional` /
   `Phrasing` / `Causality`) — never sideways on each other. The only cross-slice
   dependency is `Orchestration` → every slice. An **architecture test** enforces

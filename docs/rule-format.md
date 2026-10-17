@@ -349,7 +349,12 @@ generator adds every enhanced plug of a trait the rules author, and a test fails
 Compendium rows: `<date>` is the snapshot folder (`snapshots/compendium/<date>/`), `<tab>` the tab name
 as `INDEX.md` lists it (`Arc`, `Class Abilities`, `Artifact Perks` — quote the YAML value when it has a
 space: `source: "compendium/2026-10-09/Class Abilities#5"`), and `<row>` the 1-based record number in that
-tab's `NN_<Tab>.csv`, which is the spreadsheet's row. Archived `OLD …` tabs are never a source.
+tab's `NN_<Tab>.csv`, which is the spreadsheet's row. Archived `OLD …` tabs are never a source. Some tabs hold
+several elements in one row (Armor Mods: one mod per slot column; Artifact Perks: three perks, their names in the row
+above the cited description row), and one row may stand for several elements (the Siphon row for every element's Siphon):
+the element's name, or its alias in `tools/compendium/aliases.yaml`, picks it out. The Compendium's `[…]` is the PvP value
+almost everywhere, but a tab's note can say otherwise (Arc's grenades: the value with Spark of Magnitude); `{…}` is a third
+tier. The Compendium check (tools/compendium/README.md) checks each citation and number against a snapshot.
 
 ### Numbers (`GameValue`)
 

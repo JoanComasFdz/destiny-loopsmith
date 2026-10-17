@@ -12,6 +12,23 @@ recorded in the rules as facts about their element (ADRs D1, D5).
 **Keep it private.** The Compendium is one person's donation-supported work: the raw snapshot is
 never committed (`snapshots/` and `tools/compendium/compendium-*` are gitignored) and never served.
 
+## Checking the rules against a snapshot
+
+The Compendium check reads a snapshot's tabs (the subclass tabs, Class Abilities, Armor Mods, Artifact Perks and Weapon
+Perks; `src/Loopsmith.Core/CompendiumReading`) and checks every rule citing one of them: its cited row must name the element,
+and every number the element takes from its source must be one that row states. The snapshot checked against may be newer
+than the one a rule cites: a row that moved or a number that changed shows up, and the rule is re-cited to the new date.
+
+```bash
+LOOPSMITH_COMPENDIUM_DIR=$PWD/snapshots/compendium/<date> dotnet test --filter CompendiumCheckTests
+```
+
+Without `LOOPSMITH_COMPENDIUM_DIR` the test is skipped, so CI (which never has the snapshot) skips it. A failing run names
+each element, its citation and what is wrong ("row 11 of Armor Mods names 'Siphon', …, not 'Arc Siphon'", "ability.baseCooldown
+151.5 is not a number 'Skip Grenade' states"), then lists the citations into tabs it doesn't read yet. When the Compendium
+names an element differently, add it to [`aliases.yaml`](aliases.yaml) (ADRs D12) with its reason; an alias for an element
+that no longer exists fails the check too.
+
 ## Windows (PowerShell)
 
 Needs Docker Desktop (running) or Python 3.10+ (python.org).

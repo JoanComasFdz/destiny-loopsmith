@@ -31,6 +31,7 @@ internal static class Slices
     public const string LoadoutImporting = "LoadoutImporting";
     public const string ManifestJoining = "ManifestJoining";
     public const string StatLoading = "StatLoading";
+    public const string CompendiumReading = "CompendiumReading";
 
     public const string Orchestration = "Orchestration";
 
@@ -40,7 +41,7 @@ internal static class Slices
     /// <summary>Pure feature slices.</summary>
     public static readonly ImmutableArray<string> Features =
         [RuleParsing, BuildParsing, BuildComposition, StepPlaying, LoopAnalyzing, BuildExplanation, TraceRendering, LoopFiles, ReportComparison,
-            LoadoutImporting, ManifestJoining, StatLoading];
+            LoadoutImporting, ManifestJoining, StatLoading, CompendiumReading];
 
     /// <summary>Every known slice, kernel included.</summary>
     public static readonly ImmutableArray<string> All = [.. Kernel, SourceFetching, .. Features, Orchestration];
@@ -48,8 +49,8 @@ internal static class Slices
     /// <summary>Slices that must depend only on the kernel and themselves: the feature slices and the impure boundary.</summary>
     public static readonly ImmutableArray<string> KernelOnly = [SourceFetching, .. Features];
 
-    /// <summary>The only slices allowed to reference YamlDotNet (LoopFiles both reads and writes loop files).</summary>
-    public static readonly ImmutableArray<string> YamlParsers = [RuleParsing, BuildParsing, LoopFiles];
+    /// <summary>The only slices allowed to reference YamlDotNet (LoopFiles both reads and writes loop files; CompendiumReading reads its alias table).</summary>
+    public static readonly ImmutableArray<string> YamlParsers = [RuleParsing, BuildParsing, LoopFiles, CompendiumReading];
 
     /// <summary>
     /// The only slice that emits YAML — loop files and the build files they embed (a build from a DIM link) — so it may
