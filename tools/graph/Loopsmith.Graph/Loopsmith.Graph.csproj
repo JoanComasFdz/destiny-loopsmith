@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The rules' dependency graph tool (tools/graph/README.md): reads rules/, writes out/graph/. A host: no logic of its own. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Loopsmith.Graph</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Loopsmith.Core\Loopsmith.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- The page template: the graph's JSON goes where it says __DATA__. -->
+    <EmbeddedResource Include="graph.html" LogicalName="graph.html" />
+  </ItemGroup>
+</Project>

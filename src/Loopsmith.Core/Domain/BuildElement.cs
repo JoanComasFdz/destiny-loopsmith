@@ -15,7 +15,8 @@ public sealed record AbilityProfile(AbilityKind Kind, ChargeCount Charges, GameV
 /// the same item with the same text (a mod's artifice copy, a class ability's copy on each subclass). Empty when not
 /// known yet. <see cref="Inert"/>: why it has no rules on purpose (damage only, outside the model), so the build check
 /// doesn't take it for a gap. <see cref="StatChecks"/>: what the build check says about it at some values of a stat
-/// (Gambler's Dodge below 50 Melee).
+/// (Gambler's Dodge below 50 Melee). <see cref="RuleFile"/>: the rule file it is authored in, relative to the rules folder
+/// (<c>hunter/arc.yaml</c>).
 /// </summary>
 public sealed record BuildElement(
     ElementId Id,
@@ -31,7 +32,8 @@ public sealed record BuildElement(
     Optional<FragmentSlots> FragmentSlots,
     Provenance Source,
     Optional<string> Inert,
-    ImmutableArray<StatCheck> StatChecks);
+    ImmutableArray<StatCheck> StatChecks,
+    string RuleFile);
 
 /// <summary>
 /// "With {value} Melee, a Gambler's Dodge gives back less than a full melee charge…": what the build check says when

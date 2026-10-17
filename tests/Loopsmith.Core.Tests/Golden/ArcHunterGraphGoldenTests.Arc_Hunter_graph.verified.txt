@@ -1,0 +1,576 @@
+﻿# Arc Hunter
+
+## Arc subclass (subclass): 40 nodes, 65 edges
+column 0
+  trigger Air dodge
+  trigger Dodge
+  trigger Finisher
+  trigger Grenade
+  trigger Melee
+  trigger Sliding melee
+  trigger Super
+column 1
+  buff Super
+  subclassAbility Combination Blow
+  subclassAbility Disorienting Blow
+  subclassAbility Flashbang Grenade
+  subclassAbility Gambler's Dodge
+  subclassAspect Ascension
+  subclassAspect Lethal Current
+  subclassAspect Tempest Strike
+  subclassFragment Spark of Resistance
+  subclassFragment Spark of Shock
+  subclassFragment Spark of Volts
+  subclassSuper Arc Staff
+  subclassSuper Gathering Storm
+column 2
+  buff Amplified
+  buff Bolt Charge
+  buff Combination Blow
+  buff Lethal Current
+  debuff Blind
+  debuff Jolt
+  strike Lethal Current strike
+column 3
+  subclassAspect Flow State
+  subclassFragment Spark of Amplitude
+  subclassFragment Spark of Brilliance
+  subclassFragment Spark of Frequency
+  subclassFragment Spark of Ions
+  subclassSuper Storm's Edge
+column 4
+  pickup Ionic Trace
+  pickup Orb of Power
+  strike Bolt Charge strike
+  strike Jolt strike
+column 5
+  subclassFragment Spark of Discharge
+column 6
+  buff Armor Charge
+no column
+  subclassFragment Spark of Beacons
+edges
+  amplified -[needs while]-> flow-state
+  amplified -[needs while]-> spark-of-amplitude
+  amplified -[needs while]-> spark-of-beacons
+  amplified -[needs while]-> spark-of-frequency
+  arc-staff -[gives]-> bolt-charge
+  ascension -[gives]-> amplified
+  ascension -[gives]-> jolt
+  blind -[needs kill on Blinded]-> spark-of-brilliance
+  bolt-charge -[gives]-> strike:bolt-charge
+  combination-blow -[gives]-> status:combination-blow
+  disorienting-blow -[gives]-> amplified
+  disorienting-blow -[gives]-> blind
+  disorienting-blow -[gives]-> bolt-charge
+  flashbang-grenade -[gives]-> blind
+  flow-state -[gives]-> amplified
+  gathering-storm -[gives]-> jolt
+  ionic-trace -[needs pick up]-> spark-of-discharge
+  jolt -[gives]-> strike:jolt
+  jolt -[needs hit on Jolted]-> lethal-current
+  jolt -[needs kill on Jolted]-> flow-state
+  jolt -[needs kill on Jolted]-> spark-of-ions
+  jolt -[needs kill on Jolted]-> tempest-strike
+  lethal-current -[gives]-> blind
+  lethal-current -[gives]-> jolt
+  lethal-current -[gives]-> status:lethal-current
+  lethal-current -[gives]-> strike:lethal-current
+  orb-of-power -[gives]-> armor-charge
+  spark-of-amplitude -[gives]-> orb-of-power
+  spark-of-beacons -[gives]-> blind
+  spark-of-brilliance -[gives]-> blind
+  spark-of-discharge -[gives]-> bolt-charge
+  spark-of-discharge -[gives]-> ionic-trace
+  spark-of-ions -[gives]-> ionic-trace
+  spark-of-shock -[gives]-> jolt
+  spark-of-volts -[gives]-> amplified
+  spark-of-volts -[gives]-> bolt-charge
+  status:combination-blow -[needs while]-> combination-blow
+  status:lethal-current -[needs while]-> lethal-current
+  strike:bolt-charge -[needs kill]-> spark-of-ions
+  super -[needs while]-> arc-staff
+  super -[needs while]-> gathering-storm
+  super -[needs while]-> storms-edge
+  tempest-strike -[gives]-> bolt-charge
+  tempest-strike -[gives]-> jolt
+  trigger:air-dodge -[needs cast]-> ascension
+  trigger:dodge -[needs cast]-> gamblers-dodge
+  trigger:dodge -[needs cast]-> lethal-current
+  trigger:finisher -[needs finisher]-> spark-of-volts
+  trigger:grenade -[needs hit]-> bolt-charge
+  trigger:grenade -[needs hit]-> flashbang-grenade
+  trigger:grenade -[needs hit]-> jolt
+  trigger:grenade -[needs hit]-> spark-of-shock
+  trigger:melee -[needs hit]-> bolt-charge
+  trigger:melee -[needs hit]-> disorienting-blow
+  trigger:melee -[needs hit]-> jolt
+  trigger:melee -[needs hit]-> lethal-current
+  trigger:melee -[needs kill]-> combination-blow
+  trigger:sliding-melee -[needs hit]-> bolt-charge
+  trigger:sliding-melee -[needs hit]-> jolt
+  trigger:sliding-melee -[needs hit]-> tempest-strike
+  trigger:super -[needs cast]-> super
+  trigger:super -[needs hit]-> bolt-charge
+  trigger:super -[needs hit]-> gathering-storm
+  trigger:super -[needs hit]-> jolt
+  trigger:super -[needs kill]-> arc-staff
+
+## + what it needs from outside (withNeeds): 42 nodes, 69 edges
+column 0
+  trigger Air dodge
+  trigger Dodge
+  trigger Finisher
+  trigger Grenade
+  trigger Melee
+  trigger Sliding melee
+  trigger Super
+  weapon Arc weapon
+  weapon Weapon
+column 1
+  buff Super
+  subclassAbility Combination Blow
+  subclassAbility Disorienting Blow
+  subclassAbility Flashbang Grenade
+  subclassAbility Gambler's Dodge
+  subclassAspect Ascension
+  subclassAspect Lethal Current
+  subclassAspect Tempest Strike
+  subclassFragment Spark of Discharge
+  subclassFragment Spark of Resistance
+  subclassFragment Spark of Shock
+  subclassFragment Spark of Volts
+  subclassSuper Arc Staff
+  subclassSuper Gathering Storm
+column 2
+  buff Amplified
+  buff Bolt Charge
+  buff Combination Blow
+  buff Lethal Current
+  debuff Blind
+  debuff Jolt
+  pickup Ionic Trace
+  strike Lethal Current strike
+column 3
+  subclassAspect Flow State
+  subclassFragment Spark of Amplitude
+  subclassFragment Spark of Beacons
+  subclassFragment Spark of Brilliance
+  subclassFragment Spark of Frequency
+  subclassFragment Spark of Ions
+  subclassSuper Storm's Edge
+column 4
+  pickup Orb of Power
+  strike Bolt Charge strike
+  strike Jolt strike
+column 6
+  buff Armor Charge
+edges
+  amplified -[needs while]-> flow-state
+  amplified -[needs while]-> spark-of-amplitude
+  amplified -[needs while]-> spark-of-beacons
+  amplified -[needs while]-> spark-of-frequency
+  arc-staff -[gives]-> bolt-charge
+  ascension -[gives]-> amplified
+  ascension -[gives]-> jolt
+  blind -[needs kill on Blinded]-> spark-of-brilliance
+  bolt-charge -[gives]-> strike:bolt-charge
+  combination-blow -[gives]-> status:combination-blow
+  disorienting-blow -[gives]-> amplified
+  disorienting-blow -[gives]-> blind
+  disorienting-blow -[gives]-> bolt-charge
+  flashbang-grenade -[gives]-> blind
+  flow-state -[gives]-> amplified
+  gathering-storm -[gives]-> jolt
+  ionic-trace -[needs pick up]-> spark-of-discharge
+  jolt -[gives]-> strike:jolt
+  jolt -[needs hit on Jolted]-> lethal-current
+  jolt -[needs kill on Jolted]-> flow-state
+  jolt -[needs kill on Jolted]-> spark-of-ions
+  jolt -[needs kill on Jolted]-> tempest-strike
+  lethal-current -[gives]-> blind
+  lethal-current -[gives]-> jolt
+  lethal-current -[gives]-> status:lethal-current
+  lethal-current -[gives]-> strike:lethal-current
+  orb-of-power -[gives]-> armor-charge
+  spark-of-amplitude -[gives]-> orb-of-power
+  spark-of-beacons -[gives]-> blind
+  spark-of-brilliance -[gives]-> blind
+  spark-of-discharge -[gives]-> bolt-charge
+  spark-of-discharge -[gives]-> ionic-trace
+  spark-of-ions -[gives]-> ionic-trace
+  spark-of-shock -[gives]-> jolt
+  spark-of-volts -[gives]-> amplified
+  spark-of-volts -[gives]-> bolt-charge
+  status:combination-blow -[needs while]-> combination-blow
+  status:lethal-current -[needs while]-> lethal-current
+  strike:bolt-charge -[needs kill]-> spark-of-ions
+  super -[needs while]-> arc-staff
+  super -[needs while]-> gathering-storm
+  super -[needs while]-> storms-edge
+  tempest-strike -[gives]-> bolt-charge
+  tempest-strike -[gives]-> jolt
+  trigger:air-dodge -[needs cast]-> ascension
+  trigger:dodge -[needs cast]-> gamblers-dodge
+  trigger:dodge -[needs cast]-> lethal-current
+  trigger:finisher -[needs finisher]-> spark-of-volts
+  trigger:grenade -[needs hit]-> bolt-charge
+  trigger:grenade -[needs hit]-> flashbang-grenade
+  trigger:grenade -[needs hit]-> jolt
+  trigger:grenade -[needs hit]-> spark-of-shock
+  trigger:melee -[needs hit]-> bolt-charge
+  trigger:melee -[needs hit]-> disorienting-blow
+  trigger:melee -[needs hit]-> jolt
+  trigger:melee -[needs hit]-> lethal-current
+  trigger:melee -[needs kill]-> combination-blow
+  trigger:sliding-melee -[needs hit]-> bolt-charge
+  trigger:sliding-melee -[needs hit]-> jolt
+  trigger:sliding-melee -[needs hit]-> tempest-strike
+  trigger:super -[needs cast]-> super
+  trigger:super -[needs hit]-> bolt-charge
+  trigger:super -[needs hit]-> gathering-storm
+  trigger:super -[needs hit]-> jolt
+  trigger:super -[needs kill]-> arc-staff
+  weapon:arc-weapon -[needs 3+ kills]-> spark-of-discharge
+  weapon:arc-weapon -[needs kill]-> spark-of-beacons
+  weapon:arc-weapon -[needs kill]-> spark-of-discharge
+  weapon:weapon -[needs hit]-> jolt
+
+## + what builds on it (withDependents): 124 nodes, 205 edges
+column 0
+  trigger Air dodge
+  trigger Critical health
+  trigger Dodge
+  trigger Finisher
+  trigger Grenade
+  trigger Melee
+  trigger Sliding melee
+  trigger Super
+  weapon Arc weapon
+  weapon Kinetic weapon
+  weapon Stasis weapon
+  weapon Strand weapon
+  weapon Weapon
+column 1
+  armorMod Arc Siphon
+  armorMod Arc/Stasis Dual Siphon
+  armorMod Arc/Strand Siphon Combo
+  armorMod Ashes to Assets
+  armorMod Bolstering Detonation
+  armorMod Bomber
+  armorMod Distribution
+  armorMod Dynamo
+  armorMod Empowered Finish
+  armorMod Firepower
+  armorMod Focusing Strike
+  armorMod Hands-On
+  armorMod Harmonic Siphon
+  armorMod Heavy Handed
+  armorMod Impact Induction
+  armorMod Kinetic Charge Siphon
+  armorMod Momentum Transfer
+  armorMod Outreach
+  armorMod Powerful Attraction
+  armorMod Proximity Ward
+  armorMod Reaper
+  artifactPerk Flashover
+  buff Super
+  exoticArmor Shinobu's Vow
+  subclassAbility Combination Blow
+  subclassAbility Disorienting Blow
+  subclassAbility Flashbang Grenade
+  subclassAbility Gambler's Dodge
+  subclassAspect Ascension
+  subclassAspect Lethal Current
+  subclassAspect Tempest Strike
+  subclassFragment Spark of Discharge
+  subclassFragment Spark of Resistance
+  subclassFragment Spark of Shock
+  subclassFragment Spark of Volts
+  subclassSuper Arc Staff
+  subclassSuper Gathering Storm
+  weaponPerk Demolitionist
+  weaponPerk Demolitionist (enhanced)
+  weaponPerk Slice
+  weaponPerk Slice (enhanced)
+column 2
+  buff Amplified
+  buff Armor Charge
+  buff Bolt Charge
+  buff Combination Blow
+  buff Lethal Current
+  buff New Tricks
+  buff Overshield
+  buff Reaper
+  buff Slice
+  debuff Blind
+  debuff Jolt
+  debuff Sever
+  pickup Ionic Trace
+  pickup Orb of Power
+  strike Lethal Current strike
+column 3
+  armorMod Absolution
+  armorMod Arc Weapon Surge
+  armorMod Better Already
+  armorMod Bulwark Finisher
+  armorMod Class Font
+  armorMod Elemental Charge
+  armorMod Emergency Reinforcement
+  armorMod Explosive Finisher
+  armorMod Grenade Font
+  armorMod Grenade Kickstart
+  armorMod Health Font
+  armorMod Healthy Finisher
+  armorMod Innervation
+  armorMod Insulation
+  armorMod Invigoration
+  armorMod Kinetic Weapon Surge
+  armorMod Melee Font
+  armorMod Melee Kickstart
+  armorMod One-Two Finisher
+  armorMod Orbs of Restoration
+  armorMod Radiant Light
+  armorMod Recuperation
+  armorMod Restorative Finisher
+  armorMod Snapload Finisher
+  armorMod Solar Weapon Surge
+  armorMod Special Finisher
+  armorMod Stasis Weapon Surge
+  armorMod Strand Weapon Surge
+  armorMod Super Font
+  armorMod Utility Finisher
+  armorMod Utility Kickstart
+  armorMod Void Weapon Surge
+  armorMod Weapons Font
+  armorSetBonus Ionic Overclock
+  armorSetBonus Shock and Clear
+  artifactPerk Dielectric
+  artifactPerk To Shreds
+  artifactPerk Unraveling Orbs
+  subclassAspect Flow State
+  subclassFragment Spark of Amplitude
+  subclassFragment Spark of Beacons
+  subclassFragment Spark of Brilliance
+  subclassFragment Spark of Frequency
+  subclassFragment Spark of Ions
+  subclassSuper Storm's Edge
+column 4
+  buff Emergency Reinforcement
+  buff Unraveling Rounds
+  buff Void Overshield
+  buff Woven Mail
+  debuff Unravel
+  strike Bolt Charge strike
+  strike Jolt strike
+column 5
+  artifactPerk Defibrillating Blast
+  artifactPerk Horde Shuttle
+column 6
+  summon Threadling
+edges
+  amplified -[needs while]-> flow-state
+  amplified -[needs while]-> luminopotent-2pc
+  amplified -[needs while]-> spark-of-amplitude
+  amplified -[needs while]-> spark-of-beacons
+  amplified -[needs while]-> spark-of-frequency
+  arc-siphon -[gives]-> orb-of-power
+  arc-staff -[gives]-> bolt-charge
+  arc-stasis-dual-siphon -[gives]-> orb-of-power
+  arc-strand-siphon-combo -[gives]-> orb-of-power
+  armor-charge -[needs 2+ stacks]-> restorative-finisher
+  armor-charge -[needs 3+ stacks]-> bulwark-finisher
+  armor-charge -[needs 3+ stacks]-> emergency-reinforcement
+  armor-charge -[needs 3+ stacks]-> explosive-finisher
+  armor-charge -[needs 3+ stacks]-> one-two-finisher
+  armor-charge -[needs 3+ stacks]-> special-finisher
+  armor-charge -[needs 3+ stacks]-> utility-finisher
+  armor-charge -[needs while]-> arc-weapon-surge
+  armor-charge -[needs while]-> class-font
+  armor-charge -[needs while]-> grenade-font
+  armor-charge -[needs while]-> grenade-kickstart
+  armor-charge -[needs while]-> health-font
+  armor-charge -[needs while]-> healthy-finisher
+  armor-charge -[needs while]-> kinetic-weapon-surge
+  armor-charge -[needs while]-> melee-font
+  armor-charge -[needs while]-> melee-kickstart
+  armor-charge -[needs while]-> radiant-light
+  armor-charge -[needs while]-> snapload-finisher
+  armor-charge -[needs while]-> solar-weapon-surge
+  armor-charge -[needs while]-> stasis-weapon-surge
+  armor-charge -[needs while]-> strand-weapon-surge
+  armor-charge -[needs while]-> super-font
+  armor-charge -[needs while]-> utility-kickstart
+  armor-charge -[needs while]-> void-weapon-surge
+  armor-charge -[needs while]-> weapons-font
+  ascension -[gives]-> amplified
+  ascension -[gives]-> jolt
+  blind -[needs kill on Blinded]-> spark-of-brilliance
+  bolt-charge -[gives]-> strike:bolt-charge
+  bolt-charge -[needs at max]-> flashover
+  bolt-charge -[needs at max]-> shinobus-vow
+  bolt-charge -[needs gained]-> shinobus-vow
+  bulwark-finisher -[gives]-> void-overshield
+  combination-blow -[gives]-> status:combination-blow
+  defibrillating-blast -[gives]-> jolt
+  dielectric -[gives]-> bolt-charge
+  disorienting-blow -[gives]-> amplified
+  disorienting-blow -[gives]-> blind
+  disorienting-blow -[gives]-> bolt-charge
+  elemental-charge -[gives]-> armor-charge
+  emergency-reinforcement -[gives]-> status:emergency-reinforcement
+  empowered-finish -[gives]-> armor-charge
+  firepower -[gives]-> orb-of-power
+  flashbang-grenade -[gives]-> blind
+  flashover -[gives]-> amplified
+  flow-state -[gives]-> amplified
+  gathering-storm -[gives]-> jolt
+  harmonic-siphon -[gives]-> orb-of-power
+  heavy-handed -[gives]-> orb-of-power
+  horde-shuttle -[gives]-> sever
+  horde-shuttle -[gives]-> threadling
+  ionic-trace -[needs pick up]-> elemental-charge
+  ionic-trace -[needs pick up]-> spark-of-discharge
+  jolt -[gives]-> strike:jolt
+  jolt -[needs hit on Jolted]-> lethal-current
+  jolt -[needs kill on Jolted]-> dielectric
+  jolt -[needs kill on Jolted]-> flow-state
+  jolt -[needs kill on Jolted]-> luminopotent-4pc
+  jolt -[needs kill on Jolted]-> spark-of-ions
+  jolt -[needs kill on Jolted]-> tempest-strike
+  kinetic-charge-siphon -[gives]-> orb-of-power
+  lethal-current -[gives]-> blind
+  lethal-current -[gives]-> jolt
+  lethal-current -[gives]-> status:lethal-current
+  lethal-current -[gives]-> strike:lethal-current
+  luminopotent-4pc -[gives]-> ionic-trace
+  new-tricks -[needs while]-> shinobus-vow
+  orb-of-power -[gives]-> armor-charge
+  orb-of-power -[needs pick up]-> absolution
+  orb-of-power -[needs pick up]-> better-already
+  orb-of-power -[needs pick up]-> innervation
+  orb-of-power -[needs pick up]-> insulation
+  orb-of-power -[needs pick up]-> invigoration
+  orb-of-power -[needs pick up]-> orbs-of-restoration
+  orb-of-power -[needs pick up]-> recuperation
+  orb-of-power -[needs pick up]-> unraveling-orbs
+  proximity-ward -[gives]-> overshield
+  radiant-light -[gives]-> armor-charge
+  reaper -[gives]-> orb-of-power
+  reaper -[gives]-> status:reaper
+  sever -[needs kill on Severed]-> to-shreds
+  sever -[needs sustained hit on Severed]-> to-shreds
+  shinobus-vow -[gives]-> bolt-charge
+  shinobus-vow -[gives]-> new-tricks
+  slice -[gives]-> sever
+  slice -[gives]-> status:slice
+  slice-enhanced -[gives]-> sever
+  slice-enhanced -[gives]-> status:slice
+  spark-of-amplitude -[gives]-> orb-of-power
+  spark-of-beacons -[gives]-> blind
+  spark-of-brilliance -[gives]-> blind
+  spark-of-discharge -[gives]-> bolt-charge
+  spark-of-discharge -[gives]-> ionic-trace
+  spark-of-ions -[gives]-> ionic-trace
+  spark-of-shock -[gives]-> jolt
+  spark-of-volts -[gives]-> amplified
+  spark-of-volts -[gives]-> bolt-charge
+  status:combination-blow -[needs while]-> combination-blow
+  status:emergency-reinforcement -[needs while]-> emergency-reinforcement
+  status:lethal-current -[needs while]-> lethal-current
+  status:reaper -[needs while]-> reaper
+  status:slice -[needs at max]-> slice
+  status:slice -[needs at max]-> slice-enhanced
+  status:slice -[needs while]-> slice
+  status:slice -[needs while]-> slice-enhanced
+  strike:bolt-charge -[needs hit]-> defibrillating-blast
+  strike:bolt-charge -[needs kill]-> spark-of-ions
+  super -[needs while]-> arc-staff
+  super -[needs while]-> gathering-storm
+  super -[needs while]-> storms-edge
+  tempest-strike -[gives]-> bolt-charge
+  tempest-strike -[gives]-> jolt
+  threadling -[needs hit]-> horde-shuttle
+  to-shreds -[gives]-> unravel
+  to-shreds -[gives]-> woven-mail
+  trigger:air-dodge -[needs cast]-> ascension
+  trigger:critical-health -[needs critical health]-> emergency-reinforcement
+  trigger:dodge -[needs cast]-> bomber
+  trigger:dodge -[needs cast]-> distribution
+  trigger:dodge -[needs cast]-> dynamo
+  trigger:dodge -[needs cast]-> gamblers-dodge
+  trigger:dodge -[needs cast]-> lethal-current
+  trigger:dodge -[needs cast]-> outreach
+  trigger:dodge -[needs cast]-> powerful-attraction
+  trigger:dodge -[needs cast]-> reaper
+  trigger:dodge -[needs cast]-> slice
+  trigger:dodge -[needs cast]-> slice-enhanced
+  trigger:dodge -[needs last charge]-> utility-kickstart
+  trigger:finisher -[needs finisher]-> bulwark-finisher
+  trigger:finisher -[needs finisher]-> empowered-finish
+  trigger:finisher -[needs finisher]-> explosive-finisher
+  trigger:finisher -[needs finisher]-> healthy-finisher
+  trigger:finisher -[needs finisher]-> one-two-finisher
+  trigger:finisher -[needs finisher]-> proximity-ward
+  trigger:finisher -[needs finisher]-> restorative-finisher
+  trigger:finisher -[needs finisher]-> snapload-finisher
+  trigger:finisher -[needs finisher]-> spark-of-volts
+  trigger:finisher -[needs finisher]-> special-finisher
+  trigger:finisher -[needs finisher]-> utility-finisher
+  trigger:grenade -[needs cast]-> demolitionist
+  trigger:grenade -[needs cast]-> demolitionist-enhanced
+  trigger:grenade -[needs cast]-> shinobus-vow
+  trigger:grenade -[needs hit]-> bolstering-detonation
+  trigger:grenade -[needs hit]-> bolt-charge
+  trigger:grenade -[needs hit]-> flashbang-grenade
+  trigger:grenade -[needs hit]-> jolt
+  trigger:grenade -[needs hit]-> momentum-transfer
+  trigger:grenade -[needs hit]-> shinobus-vow
+  trigger:grenade -[needs hit]-> spark-of-shock
+  trigger:grenade -[needs kill]-> ashes-to-assets
+  trigger:grenade -[needs kill]-> firepower
+  trigger:grenade -[needs last charge]-> grenade-kickstart
+  trigger:melee -[needs hit]-> bolt-charge
+  trigger:melee -[needs hit]-> disorienting-blow
+  trigger:melee -[needs hit]-> focusing-strike
+  trigger:melee -[needs hit]-> impact-induction
+  trigger:melee -[needs hit]-> jolt
+  trigger:melee -[needs hit]-> lethal-current
+  trigger:melee -[needs kill]-> combination-blow
+  trigger:melee -[needs kill]-> hands-on
+  trigger:melee -[needs kill]-> heavy-handed
+  trigger:melee -[needs last charge]-> melee-kickstart
+  trigger:sliding-melee -[needs hit]-> bolt-charge
+  trigger:sliding-melee -[needs hit]-> jolt
+  trigger:sliding-melee -[needs hit]-> tempest-strike
+  trigger:super -[needs cast]-> radiant-light
+  trigger:super -[needs cast]-> super
+  trigger:super -[needs hit]-> bolt-charge
+  trigger:super -[needs hit]-> gathering-storm
+  trigger:super -[needs hit]-> jolt
+  trigger:super -[needs kill]-> arc-staff
+  unravel -[needs sustained hit on Unraveled]-> horde-shuttle
+  unraveling-orbs -[gives]-> unraveling-rounds
+  weapon:arc-weapon -[needs 2+ kills]-> arc-siphon
+  weapon:arc-weapon -[needs 2+ kills]-> arc-stasis-dual-siphon
+  weapon:arc-weapon -[needs 2+ kills]-> arc-strand-siphon-combo
+  weapon:arc-weapon -[needs 2+ kills]-> harmonic-siphon
+  weapon:arc-weapon -[needs 2+ kills]-> kinetic-charge-siphon
+  weapon:arc-weapon -[needs 3+ kills]-> spark-of-discharge
+  weapon:arc-weapon -[needs kill]-> arc-siphon
+  weapon:arc-weapon -[needs kill]-> arc-stasis-dual-siphon
+  weapon:arc-weapon -[needs kill]-> arc-strand-siphon-combo
+  weapon:arc-weapon -[needs kill]-> harmonic-siphon
+  weapon:arc-weapon -[needs kill]-> kinetic-charge-siphon
+  weapon:arc-weapon -[needs kill]-> spark-of-beacons
+  weapon:arc-weapon -[needs kill]-> spark-of-discharge
+  weapon:kinetic-weapon -[needs 2+ kills]-> kinetic-charge-siphon
+  weapon:kinetic-weapon -[needs kill]-> kinetic-charge-siphon
+  weapon:stasis-weapon -[needs 2+ kills]-> arc-stasis-dual-siphon
+  weapon:stasis-weapon -[needs kill]-> arc-stasis-dual-siphon
+  weapon:strand-weapon -[needs 2+ kills]-> arc-strand-siphon-combo
+  weapon:strand-weapon -[needs kill]-> arc-strand-siphon-combo
+  weapon:weapon -[needs hit]-> jolt
+  weapon:weapon -[needs kill]-> reaper
+  weapon:weapon -[needs sustained hit]-> horde-shuttle
+  weapon:weapon -[needs sustained hit]-> to-shreds
