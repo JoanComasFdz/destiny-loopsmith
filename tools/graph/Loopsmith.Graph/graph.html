@@ -40,6 +40,7 @@ button:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .scroller{overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px;max-height:78vh;-webkit-overflow-scrolling:touch}
 svg{display:block}
 .node rect{stroke-width:1.5}
+.node.sel > rect:first-child{stroke-width:3.5}
 .node{cursor:pointer}
 .node .t{font:500 9.5px var(--mono);letter-spacing:.04em;text-transform:uppercase}
 .node .n{font:500 12.5px var(--body);fill:var(--fg)}
@@ -169,7 +170,7 @@ function select(id, quiet){
   selected = id;
   const svg = document.getElementById('svg');
   svg.classList.toggle('dim', !!id);
-  svg.querySelectorAll('.on').forEach(x => x.classList.remove('on'));
+  svg.querySelectorAll('.on, .sel').forEach(x => x.classList.remove('on', 'sel'));
   const labels = svg.querySelector('#labels'); labels.innerHTML = '';
   if (!id){ if (!quiet) document.getElementById('card').innerHTML = '<h2>Pick a box</h2><p class="lede">Tap any box in the graph to see what it needs, what it gives and what its rules say.</p>'; return; }
   // The whole chain: everything upstream (what it needs, and what that needs…) and downstream (what it gives, and what that gives…).
@@ -179,6 +180,7 @@ function select(id, quiet){
       svg._edges.forEach((e,i) => { if (e[from] !== at) return; onEdges.add(i); chain.add(e[to]); if (!seen.has(e[to])){ seen.add(e[to]); queue.push(e[to]); } }); } };
   walk('to', 'from'); walk('from', 'to');
   chain.forEach(n => svg.querySelector(`.node[data-id="${CSS.escape(n)}"]`)?.classList.add('on'));
+  svg.querySelector(`.node[data-id="${CSS.escape(id)}"]`)?.classList.add('sel');
   svg.querySelectorAll('.edge').forEach(p => {
     const i = +p.dataset.i; if (!onEdges.has(i)) return;
     p.classList.add('on');
