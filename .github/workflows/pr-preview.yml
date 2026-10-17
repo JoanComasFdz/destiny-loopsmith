@@ -30,7 +30,8 @@ jobs:
         with:
           # A closed PR's merge ref is gone; removal only needs the repository, so use the default branch.
           ref: ${{ github.event.action == 'closed' && github.event.repository.default_branch || '' }}
-          sparse-checkout: tools/web
+          # No sparse-checkout: checkout makes it a blob:none partial clone, and the deploy action's re-added origin
+          # then can't fetch gh-pages ("missing blob object").
       - name: Take the site ci.yml published
         if: github.event.action != 'closed'
         uses: actions/download-artifact@v8
