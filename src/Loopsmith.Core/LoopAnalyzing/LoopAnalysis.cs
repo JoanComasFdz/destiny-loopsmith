@@ -4,86 +4,35 @@ using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 using Loopsmith.Core.Phrasing;
 
-namespace Loopsmith.Core.StepPlaying;
+namespace Loopsmith.Core.LoopAnalyzing;
 
 /// <summary>
-/// Analyses a designed loop by its order of triggers (docs/loop-format.md, "Analysis"; ADRs D2). Pure: same build and
-/// steps ⇒ same report. The loop is played from a fresh spawn, then again from where it ended until a pass starts the
-/// way an earlier pass started; the state is only what is present and declared (ADRs D1), so this settles within a few
-/// passes. Nothing is counted: each step says what it needs and which step provided it, what it sets off, what is wasted.
+/// Analyses a designed loop by its order of triggers (docs/loop-format.md, "Analysis"; ADRs D2), from the passes
+/// <c>StepPlaying.LoopPlaying</c> played. Pure: same build, steps and passes ⇒ same report. Nothing is counted: each step
+/// says what it needs and which step provided it, what it sets off, what is wasted.
 /// </summary>
-public static partial class LoopRunning
+public static partial class LoopAnalysis
 {
-    /// <summary>A safety cap on the passes played, never reached by a loop whose state settles.</summary>
-    private const int MaxPasses = 16;
+    public static LoopReport AnalyzeLoop(ValidatedBuild build, LoopDesign design, PlayedLoop played) =>
+        AnalyzeLoop(build, design.Name, design.Steps, played);
 
-    public static LoopReport RunLoop(ValidatedBuild build, LoopDesign design) =>
-        RunLoop(build, design.Name, design.Steps);
-
-    public static LoopReport RunLoop(ValidatedBuild build, string loopName, ImmutableArray<LoopStep> steps)
+    public static LoopReport AnalyzeLoop(ValidatedBuild build, string loopName, ImmutableArray<LoopStep> steps, PlayedLoop played)
     {
-        var glossary = build.Catalog.Glossary;
-        var actions = steps.Select(step => step.Action).ToImmutableArray();
-        var labels = actions.Select(action => build.DescribeAction(action)).ToImmutableArray();
-        var initial = ActionResolution.CreateInitialState();
-        if (actions.IsEmpty)
+        var labels = steps.Select(step => build.DescribeAction(step.Action)).ToImmutableArray();
+        var first = played.Passes[0];
+        if (steps.IsEmpty)
         {
-            var empty = new LoopPass(initial, []);
-            return new LoopReport(loopName, build.Build.Name, labels, new LoopVerdict.NoSteps(), empty, empty, true, [], [], []);
+            return new LoopReport(loopName, build.Build.Name, labels, new LoopVerdict.NoSteps(), first, first, true, [], [], []);
         }
 
-        var runs = RunPasses(build, initial, actions);
-        var first = runs.Passes[0];
-        var repeating = runs.Passes[runs.RepeatingIndex];
-        var analysed = AnalyzePass(build, repeating, Optional.Some(runs.Passes[^1]), labels);
+        var repeating = played.Passes[played.RepeatingIndex];
+        var analysed = AnalyzePass(build, repeating, Optional.Some(played.Passes[^1]), labels);
         var firstAnalysed = AnalyzePass(build, first, Optional.None<LoopPass>(), labels);
-        var differences = runs.RepeatingIndex == 0 ? [] : ListDifferences(firstAnalysed, analysed);
+        var differences = played.RepeatingIndex == 0 ? [] : ListDifferences(firstAnalysed, analysed);
         var verdict = JudgeVerdict(firstAnalysed, analysed);
         return new LoopReport(
-            loopName, build.Build.Name, labels, verdict, first, repeating, runs.RepeatingIndex == 0, analysed, ListLinks(analysed), differences);
+            loopName, build.Build.Name, labels, verdict, first, repeating, played.RepeatingIndex == 0, analysed, ListLinks(analysed), differences);
     }
-
-    private sealed record PassRuns(ImmutableArray<LoopPass> Passes, int RepeatingIndex);
-
-    /// <summary>
-    /// Passes from the fresh spawn until one starts in a state an earlier pass started in: that earlier pass is the
-    /// repeating one, and the last pass played is the one before it. Each pass numbers its steps from #1.
-    /// </summary>
-    private static PassRuns RunPasses(ValidatedBuild build, GameState initial, ImmutableArray<PlayerAction> actions)
-    {
-        var passes = ImmutableArray.CreateBuilder<LoopPass>();
-        var starts = new List<string>();
-        var start = initial;
-        while (passes.Count < MaxPasses)
-        {
-            var seen = starts.IndexOf(ToStateKey(start));
-            if (seen >= 0)
-            {
-                return new PassRuns(passes.ToImmutable(), seen);
-            }
-
-            starts.Add(ToStateKey(start));
-            var resolutions = ActionResolution.ResolveSequence(build, start, actions);
-            passes.Add(new LoopPass(start, resolutions));
-            start = resolutions[^1].State.StartNextPass();
-        }
-
-        return new PassRuns(passes.ToImmutable(), passes.Count - 1);
-    }
-
-    /// <summary>
-    /// What is present and declared, with a counted buff's stacks and the pickups only chance dropped, in a stable order
-    /// (records holding arrays don't compare by content). A counted buff's changes are its history, not its state.
-    /// </summary>
-    private static string ToStateKey(GameState state) =>
-        $"{JoinSorted(state.Buffs.Select(buff => buff.Status.Value + ToTallyKey(buff.Tally) + (buff.AtMax ? "*" : "")))};"
-        + $"{JoinSorted(state.Target.Debuffs.Select(debuff => debuff.Value))};"
-        + $"{JoinSorted(state.Pickups.Select(ground => ground.Pickup.Value + (ground.Likelihood == Likelihood.Chance ? "?" : "")))};{state.Target.Tier}";
-
-    private static string ToTallyKey(Optional<StackTally> tally) =>
-        tally.Match(some => $"={some.Value.Sure.Value}+{some.Value.Chance.Value}", _ => "");
-
-    private static string JoinSorted(IEnumerable<string> values) => string.Join(",", values.Order(StringComparer.Ordinal));
 
     private static ImmutableArray<StepAnalysis> AnalyzePass(
         ValidatedBuild build, LoopPass pass, Optional<LoopPass> previous, ImmutableArray<string> labels) =>

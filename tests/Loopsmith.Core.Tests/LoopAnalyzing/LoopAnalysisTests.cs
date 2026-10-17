@@ -1,15 +1,16 @@
 using System.Collections.Immutable;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
+using Loopsmith.Core.LoopAnalyzing;
 using Loopsmith.Core.Phrasing;
 using Loopsmith.Core.StepPlaying;
 using Loopsmith.Core.TraceRendering;
 using static Loopsmith.Core.Tests.Support.TestCatalog;
 
-namespace Loopsmith.Core.Tests.StepPlaying;
+namespace Loopsmith.Core.Tests.LoopAnalyzing;
 
 /// <summary>docs/loop-format.md "Analysis" on the tiny hand-built catalog: the passes, the needs and their providers, the verdict.</summary>
-public class LoopRunningTests
+public class LoopAnalysisTests
 {
     private static readonly PlayerAction GrenadeKill = new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Kill, TargetCount.One);
     private static readonly PlayerAction RifleKill = new PlayerAction.FireWeapon(WeaponSlot.Energy, HitOutcome.Kill, TargetCount.One);
@@ -23,7 +24,10 @@ public class LoopRunningTests
         [.. actions.Select(action => new LoopStep(action, Optional.None<string>()))];
 
     private static LoopReport RunLoop(ValidatedBuild build, params PlayerAction[] actions) =>
-        LoopRunning.RunLoop(build, "Test loop", ToSteps(actions));
+        AnalyzeLoop(build, "Test loop", ToSteps(actions));
+
+    private static LoopReport AnalyzeLoop(ValidatedBuild build, string loopName, ImmutableArray<LoopStep> steps) =>
+        LoopAnalysis.AnalyzeLoop(build, loopName, steps, LoopPlaying.PlayLoop(build, steps));
 
     /// <summary>A kill drops an Orb of Power.</summary>
     private static readonly BuildElement Spawner = Element("spawner", ElementKind.Fragment,
@@ -289,7 +293,7 @@ public class LoopRunningTests
     [Fact]
     public void An_empty_loop_has_no_steps_and_says_so()
     {
-        var report = LoopRunning.RunLoop(ValidateBuild([]), "Empty", []);
+        var report = AnalyzeLoop(ValidateBuild([]), "Empty", []);
 
         Assert.IsType<LoopVerdict.NoSteps>(report.Verdict);
         Assert.Empty(report.Steps);
@@ -303,7 +307,9 @@ public class LoopRunningTests
         var design = new LoopDesign("Designed", Optional.None<string>(), Optional.None<string>(), Optional.None<CatalogVersion>(),
             new SourceText("b", ""), ToSteps(GrenadeKill, RifleKill));
 
-        var report = LoopRunning.RunLoop(ValidateBuild([]), design);
+        var build = ValidateBuild([]);
+
+        var report = LoopAnalysis.AnalyzeLoop(build, design, LoopPlaying.PlayLoop(build, design.Steps));
 
         Assert.Equal(("Designed", 2), (report.LoopName, report.Steps.Length));
     }

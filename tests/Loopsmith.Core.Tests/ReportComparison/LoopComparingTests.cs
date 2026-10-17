@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
+using Loopsmith.Core.LoopAnalyzing;
 using Loopsmith.Core.Phrasing;
 using Loopsmith.Core.ReportComparison;
 using Loopsmith.Core.StepPlaying;
@@ -25,7 +26,10 @@ public sealed class LoopComparingTests
     ]);
 
     private static LoopReport RunLoop(string name, params PlayerAction[] actions) =>
-        LoopRunning.RunLoop(Build, name, [.. actions.Select(action => new LoopStep(action, Optional.None<string>()))]);
+        AnalyzeLoop(name, [.. actions.Select(action => new LoopStep(action, Optional.None<string>()))]);
+
+    private static LoopReport AnalyzeLoop(string name, ImmutableArray<LoopStep> steps) =>
+        LoopAnalysis.AnalyzeLoop(Build, name, steps, LoopPlaying.PlayLoop(Build, steps));
 
     /// <summary>The trigger's step index in each loop, -1 where that loop doesn't have it.</summary>
     private static (int Left, int Right) ReadSteps(TriggerComparison trigger) =>
@@ -67,7 +71,7 @@ public sealed class LoopComparingTests
     [Fact]
     public void A_trigger_only_one_loop_has_lists_no_differences()
     {
-        var comparison = LoopComparing.CompareLoops(RunLoop("A", GrenadeKill), LoopRunning.RunLoop(Build, "Empty", []));
+        var comparison = LoopComparing.CompareLoops(RunLoop("A", GrenadeKill), AnalyzeLoop("Empty", []));
 
         var trigger = Assert.Single(comparison.Triggers);
         Assert.Equal(0, Assert.IsType<TriggerPlacement.OnlyInLeft>(trigger.Placement).Step.Step.StepIndex);

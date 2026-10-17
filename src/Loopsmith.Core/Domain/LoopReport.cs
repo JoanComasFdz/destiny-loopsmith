@@ -79,6 +79,13 @@ public partial record LoopVerdict
 public sealed record LoopPass(GameState Start, ImmutableArray<Resolution> Resolutions);
 
 /// <summary>
+/// A designed loop as played for its analysis: from a fresh spawn, then again from where it ended, until a pass starts the
+/// way an earlier one did. <see cref="RepeatingIndex"/> is that earlier pass; the last one in <see cref="Passes"/> is the
+/// one before it. A loop with no steps is one empty pass.
+/// </summary>
+public sealed record PlayedLoop(ImmutableArray<LoopPass> Passes, int RepeatingIndex);
+
+/// <summary>
 /// A designed loop analysed by its order of triggers (ADRs D2): played from a fresh spawn (<see cref="FirstPass"/>), then
 /// again from where it ended until a pass starts the way an earlier one did (<see cref="RepeatingPass"/>; the same pass
 /// as the first when <see cref="FirstPassRepeats"/>). For each step of the repeating pass: what it needs and which step

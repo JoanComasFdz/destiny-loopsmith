@@ -10,41 +10,12 @@ namespace Loopsmith.Core.StepPlaying;
 /// </summary>
 public enum GuardResult { Fails, ByChance, Holds }
 
-/// <summary>Pure reads and immutable updates over <see cref="GameState"/>: what is present, and what the player declared.</summary>
+/// <summary>
+/// Immutable updates over <see cref="GameState"/> (what becomes present or goes, what the player declares) and whether a
+/// rule's guards hold in it. The reads of what is present are <see cref="GameStateReading"/>'s.
+/// </summary>
 public static class StateReading
 {
-    public static bool HasBuff(this GameState state, StatusId status) =>
-        state.Buffs.Any(buff => buff.Status == status);
-
-    /// <summary>The buff is at its maximum: declared (<c>max:</c>), or a counted buff's sure stacks at its cap, and nothing has consumed or ended it since.</summary>
-    public static bool IsAtMax(this GameState state, StatusId status) =>
-        state.Buffs.Any(buff => buff.Status == status && buff.AtMax);
-
-    /// <summary>A counted buff's stacks (ADRs D33); none when it isn't on you or isn't counted.</summary>
-    public static Optional<StackTally> ReadTally(this GameState state, StatusId status) =>
-        state.Buffs
-            .Where(buff => buff.Status == status)
-            .Select(buff => buff.Tally)
-            .FindFirstSome();
-
-    public static bool TargetHas(this GameState state, StatusId status) =>
-        state.Target.Debuffs.Contains(status);
-
-    /// <summary>The step casts this ability (<see cref="GameState.Casting"/>).</summary>
-    public static bool IsCasting(this GameState state, AbilityKind ability) =>
-        state.Casting is Optional<AbilityKind>.Some casting && casting.Value == ability;
-
-    public static bool HasPickup(this GameState state, PickupId pickup) =>
-        state.Pickups.Any(ground => ground.Pickup == pickup);
-
-    /// <summary>The pickups on the ground, in the order they landed.</summary>
-    public static ImmutableArray<PickupId> ListPickups(this GameState state) =>
-        [.. state.Pickups.Select(ground => ground.Pickup)];
-
-    /// <summary>The pickup is on the ground only because chance rules dropped it (ADRs D8): what it gives is a chance.</summary>
-    public static bool HasOnlyByChance(this GameState state, PickupId pickup) =>
-        state.Pickups.Any(ground => ground.Pickup == pickup && ground.Likelihood == Likelihood.Chance);
-
     /// <summary>Makes the buff present; one already present keeps its place (and its declaration).</summary>
     public static GameState PutBuff(this GameState state, StatusId status) =>
         state.HasBuff(status) ? state : state with { Buffs = state.Buffs.Add(new ActiveBuff(status, AtMax: false, Optional.None<StackTally>())) };
@@ -88,9 +59,6 @@ public static class StateReading
 
     public static GameState DropPickup(this GameState state, PickupId pickup) =>
         state with { Pickups = state.Pickups.RemoveAll(ground => ground.Pickup == pickup) };
-
-    public static ImmutableArray<StatusId> ListTargetStatuses(this GameState state) =>
-        state.Target.Debuffs;
 
     /// <summary>
     /// The state the next pass of a loop starts in: its steps number from #1 again, and a counted buff's changes become one
