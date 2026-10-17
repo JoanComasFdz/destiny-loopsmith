@@ -100,7 +100,7 @@ const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;
 const SLOTS = {grenade:'Grenade', melee:'Melee', classAbility:'Class ability'};
 const titleOf = n => (TYPES[n.type]?.[0] ?? n.type) + (n.slot ? ' · ' + (SLOTS[n.slot] ?? n.slot) : '') + (n.keyword && !['keyword','keywordRule'].includes(n.type) ? ' · keyword' : '');
 const colorOf = n => TYPES[n.type]?.[1] ?? '--outside';
-const W = 212, H = 44, GAPX = 96, GAPY = 12, TOP = 40, LEFT = 16;
+const W = 244, H = 44, TX = 46, GAPX = 96, GAPY = 12, TOP = 40, LEFT = 16;
 
 function visibleNodes(){ return scope.nodes.filter(id => !hidden.has(G.nodes[id].type)); }
 function layout(ids){
@@ -146,8 +146,9 @@ function draw(){
     const n = G.nodes[id], p = pos[id], col = css(colorOf(n));
     s += `<g class="node" data-id="${esc(id)}" transform="translate(${p.x},${p.y})" tabindex="0" role="button" aria-label="${esc(titleOf(n) + ': ' + n.name)}">
       <rect width="${W}" height="${H}" rx="4" fill="color-mix(in srgb, ${col} 10%, ${css('--surface')})" stroke="${col}"/>
-      <text class="t" x="9" y="15" fill="${col}">${esc(titleOf(n))}</text>
-      <text class="n" x="9" y="33">${esc(fit(n.name))}</text></g>`;
+      ${n.icon ? `<rect x="6" y="6" width="${H-12}" height="${H-12}" rx="3" fill="#1c232c"/><image href="${esc(n.icon)}" x="6" y="6" width="${H-12}" height="${H-12}" preserveAspectRatio="xMidYMid meet"/>` : `<rect x="6.5" y="6.5" width="${H-13}" height="${H-13}" rx="3" fill="none" stroke="${col}" stroke-opacity=".35" stroke-dasharray="2 2"/>`}
+      <text class="t" x="${TX}" y="15" fill="${col}">${esc(titleOf(n))}</text>
+      <text class="n" x="${TX}" y="33">${esc(fit(n.name))}</text></g>`;
   }
   s += '<g id="labels"></g>';
   svg.innerHTML = s;
@@ -180,7 +181,7 @@ function card(id){
   const li = (xs, end) => '<ul>' + xs.map(e => `<li>${esc(G.nodes[e[end]].name)} <span class="mono">${esc(titleOf(G.nodes[e[end]]).toLowerCase())}${e.label ? ' · ' + esc(e.label) : ''}${e.kind !== 'gives' && e.kind !== 'needs' ? ' · ' + e.kind : ''}</span></li>`).join('') + '</ul>';
   const row = (label, xs, end) => xs.length ? `<dt>${label}</dt><dd>${li(xs, end)}</dd>` : '';
   const c = scope.columns[id];
-  document.getElementById('card').innerHTML = `<h2>${esc(n.name)}</h2><dl>
+  document.getElementById('card').innerHTML = `<h2 style="display:flex;gap:10px;align-items:center">${n.icon ? `<img src="${esc(n.icon)}" alt="" width="40" height="40" style="background:#1c232c;border-radius:4px">` : ''}${esc(n.name)}</h2><dl>
     <dt>Kind</dt><dd style="color:var(${colorOf(n)})">${esc(titleOf(n))}</dd>
     <dt>Column</dt><dd>${c === undefined ? 'needs something outside this tab' : head(c)}</dd>
     ${n.file ? `<dt>Rules file</dt><dd class="mono">${esc(n.file)}</dd>` : ''}
