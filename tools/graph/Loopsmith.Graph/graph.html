@@ -40,6 +40,7 @@ button:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .scroller{overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px;max-height:78vh;-webkit-overflow-scrolling:touch}
 svg{display:block}
 .node rect{stroke-width:1.5}
+.node.sel > rect:first-child{stroke-width:3.5}
 .node{cursor:pointer}
 .node .t{font:500 9.5px var(--mono);letter-spacing:.04em;text-transform:uppercase}
 .node .n{font:500 12.5px var(--body);fill:var(--fg)}
@@ -65,7 +66,7 @@ svg{display:block}
 <div class="wrap">
   <header style="display:flex;flex-direction:column;gap:8px">
     <h1 id="title">Dependency graph</h1>
-    <p class="lede">What each element needs before it can fire, and what it gives, read from Loopsmith's rules. Columns run left to right in test order: the triggers a player uses, then the elements that need only those (layer 1), what they give, the elements that need that (layer 2), and so on. Tap a box to see its links and their numbers.</p>
+    <p class="lede">What each element needs before it can fire, and what it gives, read from Loopsmith's rules. Columns run left to right in test order: the triggers a player uses, then the elements that need only those (layer 1), what they give, the elements that need that (layer 2), and so on. Tap boxes to light up their links and numbers, one step at a time.</p>
   </header>
   <div class="tabs" role="tablist" id="tabs"></div>
   <p class="tabnote" id="tabnote"></p>
@@ -73,7 +74,7 @@ svg{display:block}
   <div class="legend" id="legend"></div>
   <div class="lines" id="lines"></div>
   <div class="scroller" id="scroller"><svg id="svg" role="img" aria-label="Dependency graph"></svg></div>
-  <section class="card" id="card"><h2>Pick a box</h2><p class="lede">Tap any box in the graph to see what it needs, what it gives and what its rules say.</p></section>
+  <section class="card" id="card"></section>
 </div>
 <script>
 const G = __DATA__;
@@ -94,7 +95,10 @@ const NOTES = {
 const TRIGGER_ORDER = ['Dodge','Air dodge','Melee','Sliding melee','Grenade','Finisher','Weapon','Arc weapon','Super','Shield broken','Critical health'];
 const TYPE_ORDER = ['trigger','weapon','subclassAbility','subclassAspect','subclassFragment','subclassSuper','keywordRule','buff','debuff','pickup','strike','summon','effect','keyword',...OUTSIDE];
 const hidden = new Set();
-let scope = G.scopes[0], selected = null;
+// Each box is normal, highlighted or selected. Tapping a box selects it: its links and the boxes at their other end light up,
+// on top of what is lit already. Tapping a selected box again leaves it highlighted, without its links. Tapping the background clears all.
+let scope = G.scopes[0], shown = null;
+const selected = new Set(), kept = new Set();
 const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const SLOTS = {grenade:'Grenade', melee:'Melee', classAbility:'Class ability'};
@@ -162,25 +166,34 @@ function draw(){
   svg._pos = pos; svg._edges = edges;
   svg.querySelectorAll('.node').forEach(g => { g.onclick = () => select(g.dataset.id); g.onkeydown = ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); select(g.dataset.id); } }; });
   svg.onclick = ev => { if (ev.target === svg) select(null); };
-  if (selected && ids.includes(selected)) select(selected, true); else select(null, true);
+  for (const id of [...selected, ...kept]) if (!ids.includes(id)) { selected.delete(id); kept.delete(id); }
+  paint();
+  if (!shown || !ids.includes(shown)) clearCard();
 }
 function fit(t){ return t.length > 28 ? t.slice(0, 27) + '…' : t; }
-function select(id, quiet){
-  selected = id;
+function select(id){
+  if (!id){ selected.clear(); kept.clear(); shown = null; paint(); clearCard(); return; }
+  if (selected.has(id)){ selected.delete(id); kept.add(id); }
+  else { kept.delete(id); selected.add(id); }
+  shown = id; paint(); card(id);
+}
+function clearCard(){ document.getElementById('card').innerHTML = '<h2>Pick a box</h2><p class="lede">Tap a box to light up its links. Tap more boxes to add theirs; tap a lit box again to drop its links. Tap the background to clear.</p>'; }
+function paint(){
   const svg = document.getElementById('svg');
-  svg.classList.toggle('dim', !!id);
-  svg.querySelectorAll('.on').forEach(x => x.classList.remove('on'));
+  svg.querySelectorAll('.on, .sel').forEach(x => x.classList.remove('on', 'sel'));
   const labels = svg.querySelector('#labels'); labels.innerHTML = '';
-  if (!id){ if (!quiet) document.getElementById('card').innerHTML = '<h2>Pick a box</h2><p class="lede">Tap any box in the graph to see what it needs, what it gives and what its rules say.</p>'; return; }
-  svg.querySelector(`.node[data-id="${CSS.escape(id)}"]`)?.classList.add('on');
+  const lit = new Set(kept);
   svg.querySelectorAll('.edge').forEach(p => {
-    if (p.dataset.a !== id && p.dataset.b !== id) return;
-    p.classList.add('on');
-    svg.querySelector(`.node[data-id="${CSS.escape(p.dataset.a === id ? p.dataset.b : p.dataset.a)}"]`)?.classList.add('on');
+    const touches = selected.has(p.dataset.a) || selected.has(p.dataset.b);
+    if (!touches) return;
+    p.classList.add('on'); lit.add(p.dataset.a); lit.add(p.dataset.b);
     const e = svg._edges[+p.dataset.i];
     if (e.label){ const len = p.getTotalLength(), pt = p.getPointAtLength(len/2); labels.insertAdjacentHTML('beforeend', `<text class="elabel" x="${pt.x}" y="${pt.y+4}" text-anchor="middle">${esc(e.label)}</text>`); }
   });
-  card(id);
+  selected.forEach(id => lit.add(id));
+  svg.classList.toggle('dim', lit.size > 0);
+  lit.forEach(id => svg.querySelector(`.node[data-id="${CSS.escape(id)}"]`)?.classList.add('on'));
+  selected.forEach(id => svg.querySelector(`.node[data-id="${CSS.escape(id)}"]`)?.classList.add('sel'));
 }
 function card(id){
   const n = G.nodes[id];
@@ -204,7 +217,7 @@ function card(id){
 function tabs(){
   const t = document.getElementById('tabs'); t.innerHTML = '';
   G.scopes.forEach((sc,i) => { const b = document.createElement('button'); b.className = 'tab'; b.setAttribute('role','tab'); b.setAttribute('aria-selected', sc === scope); b.textContent = `${i+1} · ${sc.name}`;
-    b.onclick = () => { scope = sc; selected = null; tabs(); filters(); legend(); draw(); document.getElementById('tabnote').textContent = NOTES[sc.id] ?? ''; }; t.appendChild(b); });
+    b.onclick = () => { scope = sc; selected.clear(); kept.clear(); shown = null; tabs(); filters(); legend(); draw(); document.getElementById('tabnote').textContent = NOTES[sc.id] ?? ''; }; t.appendChild(b); });
 }
 function filters(){
   const f = document.getElementById('filters'); f.innerHTML = '';
