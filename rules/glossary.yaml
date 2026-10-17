@@ -132,8 +132,9 @@ statuses:
   # Exhaust: the enemies' damage cut by 25% (Veteran's Wisdom, compendium/2026-10-14/Weapon Perks#416: 10 s). No trait:
   # Bungie's manifest has none by that name (2026-10-14).
   - { id: exhaust, name: Exhaust, kind: debuff, affinity: neutral, duration: 10s }
-  # The Stasis debuffs (compendium/2026-10-17/Stasis#7-8). Slow: a slowed enemy moves 50% slower and aims worse; it
-  # stacks, and x100 Slow freezes it, but no maxStacks until a rule freezes on max Slow. No duration is stated. Freeze:
+  # The Stasis debuffs (compendium/2026-10-17/Stasis#7-8). Slow: a slowed enemy moves 50% slower and aims worse. In the
+  # game it stacks and x100 Slow freezes it; here it doesn't stack (no maxStacks) until a rule freezes on max Slow. No
+  # duration is stated. Freeze:
   # a frozen combatant can't move, shoot or use abilities for 6 s (Guardians 1.35 to 4.75 s); bosses shatter out of it
   # after 3 s. "Frozen", not "Freezed": its adjective. Shatter (Stasis#9) is damage, not a status, and isn't here.
   - { id: slow, name: Slow, kind: debuff, affinity: stasis, trait: 4239423954 }
