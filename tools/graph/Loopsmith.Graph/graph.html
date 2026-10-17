@@ -40,13 +40,15 @@ button:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .scroller{overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px;max-height:78vh;-webkit-overflow-scrolling:touch}
 svg{display:block}
 .node rect{stroke-width:1.5}
-.node.sel > rect:first-child{stroke-width:3.5}
+.node.sel > rect:first-child{stroke-width:2.5}
+.node:focus{outline:none}
+.node:focus-visible > rect:first-child{stroke-dasharray:4 2}
 .node{cursor:pointer}
 .node .t{font:500 9.5px var(--mono);letter-spacing:.04em;text-transform:uppercase}
 .node .n{font:500 12.5px var(--body);fill:var(--fg)}
 .edge{fill:none;stroke:var(--edge);stroke-width:1.2;opacity:.6}
 .stub{fill:none;stroke:var(--edge);stroke-width:1.6;opacity:.75;marker-end:url(#arrow)}
-.stub.on{stroke:var(--fg);stroke-width:2.2;opacity:1;marker-end:url(#arrow-on)}
+.stub.on{stroke:var(--fg);stroke-width:1.6;opacity:1;marker-end:url(#arrow-on)}
 .dim .stub:not(.on){opacity:.06}
 .edge.gives{stroke-dasharray:none}
 .edge.needs{stroke-dasharray:4 3}
@@ -156,7 +158,7 @@ function draw(){
   const svg = document.getElementById('svg');
   svg.setAttribute('width', width); svg.setAttribute('height', height); svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
   // The lines into a box meet a little left of it, and one short horizontal line with an arrow carries them in.
-  let s = `<defs>${['arrow','arrow-on'].map(m => `<marker id="${m}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="11" markerHeight="11" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="${css(m === 'arrow' ? '--edge' : '--fg')}"/></marker>`).join('')}</defs>`;
+  let s = `<defs>${['arrow','arrow-on'].map(m => `<marker id="${m}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="${css(m === 'arrow' ? '--edge' : '--fg')}"/></marker>`).join('')}</defs>`;
   keys.forEach((c,i) => s += `<text class="colhead" x="${LEFT + i*(W+GAPX)}" y="22">${head(c, outside)}</text>`);
   let back = 0;
   edges.forEach((e,i) => {
@@ -174,8 +176,6 @@ function draw(){
     }
     s += `<path class="edge ${e.kind}" data-i="${i}" data-a="${esc(e.from)}" data-b="${esc(e.to)}" d="${d}"/>`;
   });
-  for (const id of new Set(edges.map(e => e.to))){ const b = pos[id], y = b.y + H/2;
-    s += `<path class="stub" data-b="${esc(id)}" d="M${b.x - MERGE},${y} L${b.x},${y}"/>`; }
   for (const id of ids){
     const n = G.nodes[id], p = pos[id], col = css(colorOf(n));
     s += `<g class="node" data-id="${esc(id)}" transform="translate(${p.x},${p.y})" tabindex="0" role="button" aria-label="${esc(titleOf(n) + ': ' + n.name)}">
@@ -184,6 +184,9 @@ function draw(){
       <text class="t" x="${TX}" y="15" fill="${col}">${esc(titleOf(n))}</text>
       <text class="n" x="${TX}" y="33">${esc(fit(n.name))}</text></g>`;
   }
+  // The arrows into each box, drawn over the boxes so a box's border never hides its arrow.
+  for (const id of new Set(edges.map(e => e.to))){ const b = pos[id], y = b.y + H/2;
+    s += `<path class="stub" data-b="${esc(id)}" d="M${b.x - MERGE},${y} L${b.x - 1.5},${y}"/>`; }
   s += '<g id="labels"></g>';
   svg.innerHTML = s;
   svg._pos = pos; svg._edges = edges;
