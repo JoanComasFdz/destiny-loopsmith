@@ -78,7 +78,7 @@ public static class SubclassEditing
     public static FragmentSlotCount CountFragmentSlots(RuleCatalog catalog, ImmutableArray<ItemHash> aspects)
     {
         var slots = aspects.Select(aspect => catalog.FindElementByHash(aspect).Bind(element => element.FragmentSlots)).ToImmutableArray();
-        return new FragmentSlotCount(slots.All(count => count.IsSome()) ? Optional.Some(slots.Sum(count => count.UnwrapOr(0))) : Optional.None<int>());
+        return new FragmentSlotCount(slots.All(count => count.IsSome()) ? Optional.Some(FragmentSlots.From(slots.Sum(count => count.UnwrapOr(FragmentSlots.Zero).Value))) : Optional.None<FragmentSlots>());
     }
 
     /// <summary>
@@ -88,7 +88,7 @@ public static class SubclassEditing
     public static SubclassTrim SetAspects(RuleCatalog catalog, SubclassPlugs plugs, ImmutableArray<ItemHash> aspects)
     {
         var slots = CountFragmentSlots(catalog, aspects).Slots;
-        var kept = slots.Match(count => plugs.Fragments.Take(count.Value).ToImmutableArray(), _ => plugs.Fragments);
+        var kept = slots.Match(count => plugs.Fragments.Take(count.Value.Value).ToImmutableArray(), _ => plugs.Fragments);
         return new SubclassTrim(plugs with { Aspects = aspects, Fragments = kept }, [.. plugs.Fragments.Skip(kept.Length)]);
     }
 
@@ -122,9 +122,9 @@ public static class SubclassEditing
             return Refuse("A subclass holds two aspects.");
         }
 
-        if (slots.Match(count => plugs.Fragments.Length > count.Value, _ => false))
+        if (slots.Match(count => plugs.Fragments.Length > count.Value.Value, _ => false))
         {
-            return Refuse($"{plugs.Fragments.Length} fragments don't fit the {slots.UnwrapOr(0)} slots the aspects open.");
+            return Refuse($"{plugs.Fragments.Length} fragments don't fit the {slots.UnwrapOr(FragmentSlots.Zero)} slots the aspects open.");
         }
 
         return new Result<Build, string>.Ok(Write(catalog, build, plugs));

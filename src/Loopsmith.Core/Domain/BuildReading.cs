@@ -33,18 +33,22 @@ public static class BuildReading
     /// catalog has no profile for it), plus what each equipped <c>extraCharges</c> adds (Shinobu's Vow: a second grenade).
     /// A fact of the build: a loop never counts charges down, it only tells the last one apart.
     /// </summary>
-    public static int CountCharges(this ValidatedBuild build, AbilityKind kind)
+    public static ChargeCount CountCharges(this ValidatedBuild build, AbilityKind kind)
     {
         var own = build.Build.Abilities.FindPlug(kind).ToElement()
             .Bind(id => build.Catalog.Elements.TryGetValue(id, out var element) ? element.Ability : Optional.None<AbilityProfile>())
-            .Match(profile => profile.Value.Charges, _ => 1);
+            .Match(profile => profile.Value.Charges, _ => ChargeCount.One);
         var extra = build.Equipped
             .SelectMany(equipped => equipped.Element.Passives.Select(passive => passive.Modifier))
             .OfType<Passive.ExtraCharges>()
             .Where(charges => charges.Ability == kind)
-            .Sum(charges => charges.Extra);
-        return own + extra;
+            .Sum(charges => charges.Extra.Value);
+        return ChargeCount.From(own.Value + extra);
     }
+
+    /// <summary>The copies of an element the build equips (one for an element every build has: a keyword).</summary>
+    public static CopyCount CountCopies(this ValidatedBuild build, ElementId source) =>
+        build.Equipped.Where(equipped => equipped.Element.Id == source).Select(equipped => equipped.Count).DefaultIfEmpty(CopyCount.One).First();
 
     /// <summary>The slot that holds the ability of this kind.</summary>
     public static AbilityPlug FindPlug(this AbilityLoadout abilities, AbilityKind kind) =>

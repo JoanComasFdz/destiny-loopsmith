@@ -66,13 +66,13 @@ public static class TestCatalog
             rules,
             passives.IsDefault ? [] : passives,
             ability ?? Optional.None<AbilityProfile>(),
-            fragmentSlots is { } slots ? Optional.Some(slots) : Optional.None<int>(),
+            fragmentSlots is { } slots ? Optional.Some(FragmentSlots.From(slots)) : Optional.None<FragmentSlots>(),
             new Provenance.Authored("test", 1),
             Optional.None<string>(),
             []);
 
     public static AbilityProfile Profile(AbilityKind kind, int charges = 1, GameValue? chunkScalar = null) =>
-        new(kind, charges, chunkScalar ?? new GameValue.Unknown(), new GameValue.Unknown());
+        new(kind, ChargeCount.From(charges), chunkScalar ?? new GameValue.Unknown(), new GameValue.Unknown());
 
     /// <summary>
     /// Arc hunter with the given extra elements equipped as fragments / mods (and keywords in the catalog: every build has

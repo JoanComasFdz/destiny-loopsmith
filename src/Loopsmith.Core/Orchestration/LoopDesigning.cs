@@ -1014,7 +1014,7 @@ public static class LoopDesigning
 
     /// <summary>True when the build gives the ability more than one charge and an equipped rule reacts to its last one.</summary>
     private static bool CanSpendLastCharge(ValidatedBuild build, AbilityKind kind) =>
-        build.CountCharges(kind) > 1 && HasRule(build, rule => rule.On is Trigger.EnergyExpended expended && expended.Kind == kind);
+        build.CountCharges(kind) != ChargeCount.One && HasRule(build, rule => rule.On is Trigger.EnergyExpended expended && expended.Kind == kind);
 
     private static bool HasRule(ValidatedBuild build, Func<Rule, bool> matches) =>
         build.Equipped.Any(equipped => equipped.Element.Rules.Any(matches));

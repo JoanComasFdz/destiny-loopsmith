@@ -147,7 +147,7 @@ public static class TargetCountListing
         var glossary = build.Catalog.Glossary;
         var granted = applied
             .SelectMany(x => x.Applied.Outcome is Outcome.ApplyBuff apply
-                ? new[] { (Apply: apply, Stacks: apply.Stacks.ReadStacks(CountCopies(build, x.Source)).Value) }
+                ? new[] { (Apply: apply, Stacks: apply.Stacks.ReadStacks(build.CountCopies(x.Source)).Value) }
                 : [])
             .Where(x => glossary.IsStacking(x.Apply.Status) && !glossary.IsCounted(x.Apply.Status))
             .GroupBy(x => x.Apply.Status)
@@ -168,11 +168,11 @@ public static class TargetCountListing
     /// </summary>
     private static ImmutableDictionary<AbilityKind, decimal> ReadEnergy(ValidatedBuild build, ImmutableArray<(ElementId Source, AppliedOutcome Applied)> applied) =>
         applied
-            .SelectMany(x => ReadGrant(x.Applied, CountCopies(build, x.Source)))
+            .SelectMany(x => ReadGrant(x.Applied, build.CountCopies(x.Source)))
             .GroupBy(grant => grant.Ability)
             .ToImmutableDictionary(group => group.Key, group => Math.Min(group.Sum(grant => grant.Amount), 1m));
 
-    private static IEnumerable<(AbilityKind Ability, decimal Amount)> ReadGrant(AppliedOutcome applied, int copies) =>
+    private static IEnumerable<(AbilityKind Ability, decimal Amount)> ReadGrant(AppliedOutcome applied, CopyCount copies) =>
         applied.Outcome switch
         {
             Outcome.GrantEnergy { Amount: EnergyGrant.Full } grant => [(grant.To, 1m)],
@@ -192,9 +192,6 @@ public static class TargetCountListing
             GameValue.Approximate approximate => [approximate.Value],
             _ => [],
         };
-
-    private static int CountCopies(ValidatedBuild build, ElementId source) =>
-        build.Equipped.Where(equipped => equipped.Element.Id == source).Select(equipped => equipped.Count).DefaultIfEmpty(1).First();
 
     /// <summary>One more enemy filled something more: a buff's stacks or an ability's energy, below their caps.</summary>
     private static bool IsGrowing(Filling before, Filling after) =>

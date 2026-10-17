@@ -161,7 +161,7 @@ public static class ActionResolution
     /// has no such trigger.
     /// </summary>
     private static ImmutableArray<PendingEvent> ListExpendedEvents(ValidatedBuild build, AbilityKind kind, ChargeUse charge) =>
-        kind != AbilityKind.Super && (charge == ChargeUse.Last || build.CountCharges(kind) <= 1)
+        kind != AbilityKind.Super && (charge == ChargeUse.Last || build.CountCharges(kind) == ChargeCount.One)
             ? [new PendingEvent.Ready(new GameEvent.EnergyExpended(kind))]
             : [];
 

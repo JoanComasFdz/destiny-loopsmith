@@ -61,12 +61,12 @@ public sealed class SubclassEditingTests
     {
         var build = OpenLoop("helicopter-skip-grenades").Build;
 
-        Assert.Equal(Optional.Some(4), LoopDesigning.CountFragmentSlots(build, [TempestStrike, FlowState]).Slots);
-        Assert.Equal(Optional.Some(5), LoopDesigning.CountFragmentSlots(build, [TempestStrike, Ascension]).Slots);
-        Assert.Equal(Optional.Some(2), LoopDesigning.CountFragmentSlots(build, [TempestStrike]).Slots);
-        Assert.Equal(Optional.Some(0), LoopDesigning.CountFragmentSlots(build, []).Slots);
-        Assert.Equal(Optional.Some(4), LoopDesigning.CountFragmentSlots(build, [TempestStrike, LethalCurrent]).Slots);
-        Assert.Equal(Optional.None<int>(), LoopDesigning.CountFragmentSlots(build, [TempestStrike, Knockout]).Slots);
+        Assert.Equal(Optional.Some(FragmentSlots.From(4)), LoopDesigning.CountFragmentSlots(build, [TempestStrike, FlowState]).Slots);
+        Assert.Equal(Optional.Some(FragmentSlots.From(5)), LoopDesigning.CountFragmentSlots(build, [TempestStrike, Ascension]).Slots);
+        Assert.Equal(Optional.Some(FragmentSlots.From(2)), LoopDesigning.CountFragmentSlots(build, [TempestStrike]).Slots);
+        Assert.Equal(Optional.Some(FragmentSlots.From(0)), LoopDesigning.CountFragmentSlots(build, []).Slots);
+        Assert.Equal(Optional.Some(FragmentSlots.From(4)), LoopDesigning.CountFragmentSlots(build, [TempestStrike, LethalCurrent]).Slots);
+        Assert.Equal(Optional.None<FragmentSlots>(), LoopDesigning.CountFragmentSlots(build, [TempestStrike, Knockout]).Slots);
     }
 
     [Fact]

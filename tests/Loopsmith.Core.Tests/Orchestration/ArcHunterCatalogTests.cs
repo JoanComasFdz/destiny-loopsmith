@@ -74,7 +74,7 @@ public sealed class ArcHunterCatalogTests
     {
         var build = Play(build => build).Build;
         int? Count(params uint[] aspects) =>
-            LoopDesigning.CountFragmentSlots(build, [.. aspects.Select(ItemHash.From)]).Slots.Match<int?>(some => some.Value, _ => null);
+            LoopDesigning.CountFragmentSlots(build, [.. aspects.Select(ItemHash.From)]).Slots.Match<int?>(some => some.Value.Value, _ => null);
 
         Assert.Equal(4, Count(4194622038u, 4194622036u));   // Flow State
         Assert.Equal(4, Count(4194622038u, 4194622037u));   // Tempest Strike

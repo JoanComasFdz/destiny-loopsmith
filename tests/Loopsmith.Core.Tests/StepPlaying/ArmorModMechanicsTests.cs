@@ -210,7 +210,7 @@ public sealed class ArmorModMechanicsTests
 
     /// <summary>Shinobu's Vow's second grenade charge.</summary>
     private static readonly BuildElement SecondGrenade = Mod("second-grenade", [],
-        [new PassiveRule(new Passive.ExtraCharges(AbilityKind.Grenade, 1), [], Optional.None<string>())]);
+        [new PassiveRule(new Passive.ExtraCharges(AbilityKind.Grenade, ChargeCount.One), [], Optional.None<string>())]);
 
     private static readonly PlayerAction LastGrenadeHit = new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Damage, TargetCount.One, AbilityInput.Press, ChargeUse.Last);
 
@@ -233,8 +233,8 @@ public sealed class ArmorModMechanicsTests
         Assert.Equal("Grenade (🥊 hit · ⬜ spend fully)", build.DescribeAction(LastGrenadeHit));
         Assert.Equal("Class ability (⬜ spend fully)", build.DescribeAction(lastDodge));
         Assert.Equal("Grenade energy fully expended", build.Catalog.Glossary.DescribeTrigger(new Trigger.EnergyExpended(AbilityKind.Grenade), build.ReadSuperType()));
-        Assert.Equal(2, build.CountCharges(AbilityKind.Grenade));
-        Assert.Equal(1, build.CountCharges(AbilityKind.Melee));
+        Assert.Equal(2, build.CountCharges(AbilityKind.Grenade).Value);
+        Assert.Equal(1, build.CountCharges(AbilityKind.Melee).Value);
     }
 
     [Fact]
@@ -311,8 +311,8 @@ public sealed class ArmorModMechanicsTests
     {
         var glossary = ValidateBuild([]).Catalog.Glossary;
 
-        Assert.Equal("-10 Health", glossary.DescribePassive(new Passive.ModifyStat(StatKind.Health, new GameValue.Known(-10m)), 1, Optional.None<DamageType>()));
-        Assert.Equal("+? Melee", glossary.DescribePassive(new Passive.ModifyStat(StatKind.Melee, new GameValue.Unknown()), 1, Optional.None<DamageType>()));
+        Assert.Equal("-10 Health", glossary.DescribePassive(new Passive.ModifyStat(StatKind.Health, new GameValue.Known(-10m)), CopyCount.One, Optional.None<DamageType>()));
+        Assert.Equal("+? Melee", glossary.DescribePassive(new Passive.ModifyStat(StatKind.Melee, new GameValue.Unknown()), CopyCount.One, Optional.None<DamageType>()));
     }
 
     // ── Energy to the least-charged ability ──────────────────────────────────────────────
@@ -387,6 +387,6 @@ public sealed class ArmorModMechanicsTests
         Assert.Contains("Kill target with Arc weapon (your Super's element) -> Orb of Power [Harmonic Siphon]", DescribeExplanation(arc));
         Assert.Contains("Kill target with weapon of your Super's element -> Orb of Power [Harmonic Siphon]", DescribeExplanation(unknown));
         Assert.Equal("Damage target with Arc weapon (your Super's element)", glossary.DescribeTrigger(damage, arc.ReadSuperType()));
-        Assert.Equal("+20% damage with weapon of your Super's element", glossary.DescribePassive(boost, 1, unknown.ReadSuperType()));
+        Assert.Equal("+20% damage with weapon of your Super's element", glossary.DescribePassive(boost, CopyCount.One, unknown.ReadSuperType()));
     }
 }

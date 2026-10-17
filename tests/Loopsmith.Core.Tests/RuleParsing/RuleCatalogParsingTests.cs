@@ -170,7 +170,7 @@ public sealed class RuleCatalogParsingTests
         Assert.Equal(Optional.Some("Your Arc grenades jolt targets."), sparkOfShock.Description);
         Assert.Equal(new Provenance.Clarity(ItemHash.From(1727069364u), "2.0625"), sparkOfShock.Source);
         Assert.Equal(Optional.None<AbilityProfile>(), sparkOfShock.Ability);
-        Assert.Equal(Optional.None<int>(), sparkOfShock.FragmentSlots);
+        Assert.Equal(Optional.None<FragmentSlots>(), sparkOfShock.FragmentSlots);
         Assert.Empty(sparkOfShock.Passives);
     }
 
@@ -180,9 +180,9 @@ public sealed class RuleCatalogParsingTests
         var elements = ParseValidCatalog().Elements;
 
         Assert.Equal(
-            Optional.Some(new AbilityProfile(AbilityKind.Grenade, 1, new GameValue.Unknown(), new GameValue.Unknown())),
+            Optional.Some(new AbilityProfile(AbilityKind.Grenade, ChargeCount.One, new GameValue.Unknown(), new GameValue.Unknown())),
             elements[ElementId.From("skip-grenade")].Ability);
-        Assert.Equal(Optional.Some(2), elements[ElementId.From("flow-state")].FragmentSlots);
+        Assert.Equal(Optional.Some(FragmentSlots.From(2)), elements[ElementId.From("flow-state")].FragmentSlots);
     }
 
     [Fact]
@@ -332,7 +332,7 @@ public sealed class RuleCatalogParsingTests
         Assert.Equal<Condition>([new Condition.HasBuff(ToStatus("amplified"))], passives[0].When);
         Assert.Equal(Optional.Some("While Amplified, Bolt Charge sources grant one extra stack."), passives[0].Reason);
 
-        Assert.Equal(new Passive.ExtraCharges(AbilityKind.Grenade, 1), passives[1].Modifier);
+        Assert.Equal(new Passive.ExtraCharges(AbilityKind.Grenade, ChargeCount.One), passives[1].Modifier);
         Assert.Empty(passives[1].When);
         Assert.Equal(Optional.None<string>(), passives[1].Reason);
 

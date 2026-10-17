@@ -36,7 +36,7 @@ public static class BuildExplaining
     /// </summary>
     public static ImmutableArray<ExplanationGroup> ExplainElement(ValidatedBuild build, BuildElement element) =>
         ExplainEquipped(build, [build.Equipped.Where(equipped => equipped.Element.Id == element.Id).Select(Optional.Some).FindFirstSome()
-            .UnwrapOr(new EquippedElement(element, 1))]);
+            .UnwrapOr(new EquippedElement(element, CopyCount.One))]);
 
     /// <summary>One element's explanation as lines: each trigger, then what it sets off, its condition and its reason.</summary>
     public static ImmutableArray<StyledLine> RenderElementExplanation(KeywordGlossary glossary, ImmutableArray<ExplanationGroup> groups) =>

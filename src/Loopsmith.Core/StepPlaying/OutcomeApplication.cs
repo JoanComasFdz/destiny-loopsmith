@@ -97,7 +97,7 @@ public static class OutcomeApplication
         var values = convert.Energy.Match(
             perStack => (AtSure: Optional.None<GameValue>(), WithChance: Optional.None<GameValue>()),
             bySpent => ReadTableValues(bySpent.Table, 0, tally.Sure, tally.Chance),
-            byCharges => ReadTableValues(byCharges.Table, source.Equipped.Count, tally.Sure, tally.Chance));
+            byCharges => ReadTableValues(byCharges.Table, source.Equipped.Count.Value, tally.Sure, tally.Chance));
         var spend = new StackSpend(convert.Consumed, tally.Sure, tally.Chance, values.AtSure, values.WithChance);
         var certainty = convert.Energy is StackEnergy.PerStack perStackEnergy
             ? perStackEnergy.Amount.ReadCertainty()

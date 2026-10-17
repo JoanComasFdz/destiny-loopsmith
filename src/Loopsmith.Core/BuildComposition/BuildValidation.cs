@@ -304,7 +304,7 @@ public static class BuildValidation
             yield break;
         }
 
-        var slots = aspects.Sum(a => a.FragmentSlots.UnwrapOr(0));
+        var slots = aspects.Sum(a => a.FragmentSlots.UnwrapOr(FragmentSlots.Zero).Value);
         if (build.Fragments.Length > slots)
         {
             yield return new BuildIssue(Severity.Blocking, $"{build.Fragments.Length} fragments equipped; the aspects grant {slots} slots.");
@@ -343,7 +343,7 @@ public static class BuildValidation
                 .Where(partner => partner.Id != element.Id && rule.DoesNotStackWith.Contains(partner.Id))
                 .Select(partner => new BuildIssue(
                     Severity.Info,
-                    $"'{element.Name}': {catalog.Glossary.DescribeOutcomes(rule.Then.Select(o => new OutcomeMention(o, 1)), superType)} on "
+                    $"'{element.Name}': {catalog.Glossary.DescribeOutcomes(rule.Then.Select(o => new OutcomeMention(o, CopyCount.One)), superType)} on "
                     + $"\"{catalog.Glossary.DescribeTrigger(rule.On, superType)}\" doesn't stack with '{partner.Name}'."))));
     }
 
@@ -361,13 +361,13 @@ public static class BuildValidation
     private static ImmutableArray<EquippedElement> GroupCopies(IEnumerable<(Slot Slot, BuildElement Element, Optional<WeaponSlot> BoundTo)> elements) =>
         elements
             .GroupBy(e => (e.Element.Id, e.BoundTo))
-            .Select(group => new EquippedElement(group.First().Element, group.Count()))
+            .Select(group => new EquippedElement(group.First().Element, CopyCount.From(group.Count())))
             .ToImmutableArray();
 
     private static ImmutableArray<EquippedElement> ListKeywordElements(RuleCatalog catalog) =>
         catalog.Elements.Values
             .Where(e => e.Kind == ElementKind.Keyword)
             .OrderBy(e => e.Id.Value, StringComparer.Ordinal)
-            .Select(e => new EquippedElement(e, 1))
+            .Select(e => new EquippedElement(e, CopyCount.One))
             .ToImmutableArray();
 }

@@ -58,7 +58,7 @@ public static class ResistanceShaping
 
     private static IEnumerable<ScopedSource> ToResistance(ValidatedBuild build, ActivePassive passive, Optional<DamageType> superType)
     {
-        var copies = TraceRenderer.CountCopies(build, passive.Source);
+        var copies = build.CountCopies(passive.Source);
         return passive.Passive.Modifier switch
         {
             Passive.ResistDamage any => [new ScopedSource(

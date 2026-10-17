@@ -7,7 +7,7 @@ namespace Loopsmith.Core.Domain;
 /// Cost model of an ability, straight from the Compendium (e.g. Threaded Spike: 145.2 s · 0.8x). Parsed and kept as
 /// data; the engine doesn't use it while ability energy isn't simulated (ADRs D5).
 /// </summary>
-public sealed record AbilityProfile(AbilityKind Kind, int Charges, GameValue ChunkScalar, GameValue BaseCooldownSeconds);
+public sealed record AbilityProfile(AbilityKind Kind, ChargeCount Charges, GameValue ChunkScalar, GameValue BaseCooldownSeconds);
 
 /// <summary>
 /// An ability, aspect, fragment, exotic, armor-set bonus, mod, artifact perk, weapon trait or keyword: all "an element
@@ -28,7 +28,7 @@ public sealed record BuildElement(
     ImmutableArray<Rule> Rules,
     ImmutableArray<PassiveRule> Passives,
     Optional<AbilityProfile> Ability,
-    Optional<int> FragmentSlots,
+    Optional<FragmentSlots> FragmentSlots,
     Provenance Source,
     Optional<string> Inert,
     ImmutableArray<StatCheck> StatChecks);

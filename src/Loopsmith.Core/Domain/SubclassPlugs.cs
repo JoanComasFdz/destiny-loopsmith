@@ -24,7 +24,7 @@ public enum SubclassSlot { Super, Grenade, Melee, ClassAbility, Jump, Aspect, Fr
 /// How many fragment slots the picked aspects open: a number when every aspect's is known, else not known (the editor
 /// shows "?" and doesn't limit the fragments).
 /// </summary>
-public sealed record FragmentSlotCount(Optional<int> Slots);
+public sealed record FragmentSlotCount(Optional<FragmentSlots> Slots);
 
 /// <summary>A plug an aspect change took out because its fragment slot closed.</summary>
 public sealed record SubclassTrim(SubclassPlugs Plugs, ImmutableArray<ItemHash> Removed);

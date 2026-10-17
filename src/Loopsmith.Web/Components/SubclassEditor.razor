@@ -13,8 +13,8 @@
 @inject BrowserInterop Browser
 @{
     var slots = LoopDesigning.CountFragmentSlots(Build, draft.Aspects).Slots;
-    var fragmentCapacity = slots.Match(count => count.Value, _ => fragmentSlots.Count(slot => slot.IsSome()) + 1);
-    var slotText = slots.Match(count => count.Value.ToString(CultureInfo.InvariantCulture), _ => DomainPhrasing.Unknown);
+    var fragmentCapacity = slots.Match(count => count.Value.Value, _ => fragmentSlots.Count(slot => slot.IsSome()) + 1);
+    var slotText = slots.Match(count => count.Value.Value.ToString(CultureInfo.InvariantCulture), _ => DomainPhrasing.Unknown);
 }
 <Modal Title="@($"{heading.Name}, {heading.Kind}")" Size="snug" OnClose="OnClose">
     <Heading>
@@ -353,10 +353,10 @@
     /// The fragment slots after an aspect change: the fragments <paramref name="kept"/> stay in their slots when every one
     /// of them is in a slot still open, else they are packed from the first slot; the slots past the count close.
     /// </summary>
-    private static ImmutableArray<Optional<ItemHash>> KeepFragmentPlaces(ImmutableArray<Optional<ItemHash>> slots, ImmutableArray<ItemHash> kept, Optional<int> count)
+    private static ImmutableArray<Optional<ItemHash>> KeepFragmentPlaces(ImmutableArray<Optional<ItemHash>> slots, ImmutableArray<ItemHash> kept, Optional<FragmentSlots> count)
     {
         var placed = slots.Select(slot => slot.Bind(hash => kept.Contains(hash) ? Optional.Some(hash) : Optional.None<ItemHash>())).ToImmutableArray();
-        var open = count.UnwrapOr(placed.Length);
+        var open = count.Match(slots => slots.Value.Value, _ => placed.Length);
         return placed.Skip(open).Any(slot => slot.IsSome()) ? [.. kept.Select(Optional.Some)] : [.. placed.Take(open)];
     }
 
@@ -366,7 +366,7 @@
         var trimmed = LoopDesigning.SetSubclassAspects(Build, ReadPlugs(), aspects);             // pure
         var names = trimmed.Removed.Select(hash => LoadoutShaping.DescribeSubclassPlug(Build, hash).Name).ToImmutableArray();
         var count = LoopDesigning.CountFragmentSlots(Build, aspects).Slots;
-        var slots = count.UnwrapOr(0);
+        var slots = count.UnwrapOr(FragmentSlots.Zero).Value;
         fragmentSlots = KeepFragmentPlaces(fragmentSlots, trimmed.Plugs.Fragments, count);      // impure (UI state)
         trimNote = names.IsEmpty                                                                 // impure (UI state)
             ? ""

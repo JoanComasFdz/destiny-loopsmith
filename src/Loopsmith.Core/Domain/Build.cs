@@ -169,7 +169,7 @@ public sealed record Build(
 public sealed record BuildIssue(Severity Severity, string Message);
 
 /// <summary>An element as equipped: mods stack (<see cref="Count"/> = how many copies).</summary>
-public sealed record EquippedElement(BuildElement Element, int Count);
+public sealed record EquippedElement(BuildElement Element, CopyCount Count);
 
 /// <summary>
 /// Typestate: the only input StepPlaying accepts. Constructed only by BuildComposition

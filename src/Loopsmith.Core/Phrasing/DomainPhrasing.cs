@@ -727,7 +727,7 @@ public static class DomainPhrasing
                 : phrase.Text,
             _ => phrase.Text);
 
-    private static Outcome NarrowOutcomeToCopies(Outcome outcome, int copies) =>
+    private static Outcome NarrowOutcomeToCopies(Outcome outcome, CopyCount copies) =>
         outcome switch
         {
             Outcome.GrantEnergy { Amount: EnergyGrant.Fraction fraction } grant =>
@@ -832,7 +832,7 @@ public static class DomainPhrasing
     /// A passive as a fact, its values narrowed to the <paramref name="copies"/> equipped (Weapon Surge with two copies:
     /// "+17% Arc weapon damage"), as a rule's outcomes are; <paramref name="superType"/>: see <see cref="DescribeDamageSource"/>.
     /// </summary>
-    public static string DescribePassive(this KeywordGlossary glossary, Passive passive, int copies, Optional<DamageType> superType) =>
+    public static string DescribePassive(this KeywordGlossary glossary, Passive passive, CopyCount copies, Optional<DamageType> superType) =>
         NarrowPassiveToCopies(passive, copies).Match(
             extra => $"+{extra.Extra.Value} {glossary.DescribeStatus(extra.Status)} per gain",
             charges => $"+{charges.Extra} {charges.Ability.DescribeAbility()} charge",
@@ -866,7 +866,7 @@ public static class DomainPhrasing
             _ => "combatants' area, blast and explosive damage");
 
     /// <summary>The same passive with each of its per-copy values narrowed to the copies equipped (<see cref="GameValueArithmetic.NarrowToCopies"/>).</summary>
-    private static Passive NarrowPassiveToCopies(Passive passive, int copies) =>
+    private static Passive NarrowPassiveToCopies(Passive passive, CopyCount copies) =>
         passive switch
         {
             Passive.ModifyDamage modify => modify with { Change = modify.Change.NarrowToCopies(copies) },
