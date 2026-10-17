@@ -44,7 +44,7 @@ public sealed record TargetState(EnemyTier Tier, ImmutableArray<StatusId> Debuff
 
 /// <summary>
 /// Immutable snapshot of what is present — buffs on you, debuffs on the pack, pickups on the ground — and what the
-/// player declared. It holds no number but the step and a counted buff's stacks (ADRs D1, D33); the Simulation slice
+/// player declared. It holds no number but the step and a counted buff's stacks (ADRs D1, D33); the StepPlaying slice
 /// plays steps against it, (state, step) → (state, fired). Abilities are always available (ADRs D5).
 /// <see cref="Casting"/> is the ability the step casts, under way right then (Flow State's dodge,
 /// <see cref="Condition.During"/>); none for any other step.

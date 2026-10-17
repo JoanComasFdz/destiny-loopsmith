@@ -3,7 +3,7 @@ using Loopsmith.Core.BuildExplanation;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 using Loopsmith.Core.Phrasing;
-using Loopsmith.Core.Simulation;
+using Loopsmith.Core.StepPlaying;
 using Loopsmith.Core.Tests.Support;
 using Loopsmith.Core.TraceRendering;
 using static VerifyXunit.Verifier;

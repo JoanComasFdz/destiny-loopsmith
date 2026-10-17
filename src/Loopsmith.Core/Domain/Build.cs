@@ -172,7 +172,7 @@ public sealed record BuildIssue(Severity Severity, string Message);
 public sealed record EquippedElement(BuildElement Element, int Count);
 
 /// <summary>
-/// Typestate: the only input Simulation accepts. Constructed only by BuildComposition
+/// Typestate: the only input StepPlaying accepts. Constructed only by BuildComposition
 /// (architecture test), so "play steps before validation" cannot happen.
 /// </summary>
 public sealed record ValidatedBuild(

@@ -6,12 +6,13 @@ using Loopsmith.Core.Causality;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 using Loopsmith.Core.LoadoutImporting;
+using Loopsmith.Core.LoopAnalyzing;
 using Loopsmith.Core.ManifestJoining;
 using Loopsmith.Core.LoopFiles;
 using Loopsmith.Core.Phrasing;
 using Loopsmith.Core.ReportComparison;
 using Loopsmith.Core.RuleParsing;
-using Loopsmith.Core.Simulation;
+using Loopsmith.Core.StepPlaying;
 using Loopsmith.Core.StatLoading;
 using Loopsmith.Core.TraceRendering;
 
@@ -1031,7 +1032,7 @@ public static class LoopDesigning
             _ => action,
         };
 
-    // ── export, import, analyse, compare (LoopFiles, Simulation.LoopRunning, ReportComparison) ──
+    // ── export, import, analyse, compare (LoopFiles, StepPlaying.LoopPlaying, LoopAnalyzing, ReportComparison) ──
 
     /// <summary>The design as a <c>.loop.yaml</c> file (docs/loop-format.md).</summary>
     public static string ExportLoop(DesignSession session) =>
@@ -1052,8 +1053,11 @@ public static class LoopDesigning
     /// The design analysed by its order of triggers: played from a fresh spawn, then again from where it ended until
     /// it repeats — what each step needs and from which step, what it sets off, what is wasted (ADRs D2).
     /// </summary>
-    public static LoopReport AnalyzeDesign(DesignSession session) =>
-        LoopRunning.RunLoop(session.Build, session.Design);
+    public static LoopReport AnalyzeDesign(DesignSession session)
+    {
+        var played = LoopPlaying.PlayLoop(session.Build, session.Design.Steps);
+        return LoopAnalysis.AnalyzeLoop(session.Build, session.Design, played);
+    }
 
     public static LoopComparison CompareLoops(LoopReport left, LoopReport right) =>
         LoopComparing.CompareLoops(left, right);

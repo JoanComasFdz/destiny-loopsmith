@@ -1,6 +1,6 @@
 using Loopsmith.Core.Domain;
 
-namespace Loopsmith.Core.Simulation;
+namespace Loopsmith.Core.StepPlaying;
 
 /// <summary>Order inside one event: debuffs land before damage bonuses are counted, refunds come last.</summary>
 public enum Phase { Debuff, Empower, Damage, Spawn, Refund }

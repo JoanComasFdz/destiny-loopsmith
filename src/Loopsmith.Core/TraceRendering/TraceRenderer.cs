@@ -7,7 +7,7 @@ namespace Loopsmith.Core.TraceRendering;
 
 public sealed record TraceOptions(bool ShowState, bool ShowReasons, bool ShowCaveats);
 
-/// <summary>Renders simulation steps the way build notes read: event → outcome [source] + outcome [source].</summary>
+/// <summary>Renders played steps the way build notes read: event → outcome [source] + outcome [source].</summary>
 public static class TraceRenderer
 {
     public static ImmutableArray<StyledLine> RenderSequence(
