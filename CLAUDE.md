@@ -48,7 +48,8 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
 ## Where things live
 - `src/Loopsmith.Core/` — kernel (`Domain`, `Functional`, `Phrasing`, `Causality`) and
   slices (`SourceFetching`, `RuleParsing`, `BuildParsing`, `LoopFiles`, `BuildComposition`,
-  `Simulation`, `BuildExplanation`, `TraceRendering`, `ReportComparison`,
+  `StepPlaying` (plays steps, and a loop's passes until it repeats), `LoopAnalyzing` (judges a played loop by its
+  order of triggers), `BuildExplanation`, `TraceRendering`, `ReportComparison`,
   `LoadoutImporting` (a DIM link → a build, by manifest hash), `ManifestJoining` (Bungie's full manifest,
   read in the browser, → the excerpt of what a DIM link's other items need, and the list of every weapon, armor
   piece and armor mod the pickers offer, with each piece's mod sockets; the browser saves the manifest and that list between visits, by the manifest's version), `StatLoading` (a Bungie login's

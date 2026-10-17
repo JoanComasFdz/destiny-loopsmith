@@ -5,7 +5,7 @@ using Loopsmith.Core.Functional;
 namespace Loopsmith.Core.Causality;
 
 /// <summary>
-/// Kernel: what a trigger <em>means</em>. Shared by Simulation (does this event fire the rule?) and the slices that
+/// Kernel: what a trigger <em>means</em>. Shared by StepPlaying (does this event fire the rule?) and the slices that
 /// read a rule's trigger, so all read the same semantics.
 /// </summary>
 public static class TriggerMatching

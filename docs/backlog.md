@@ -131,7 +131,6 @@ the part is a fact in the description.
   or already wears two exotic weapons: the designer refuses such a pick ([loop-format.md](loop-format.md#armor-mods),
   D30), the build check doesn't say a build is over.
 - **One pack** (D7) is optimistic for a single boss; single-target nuance would be a refinement.
-- **Rename the `Simulation` slice**: it plays steps and analyses a loop's order; it simulates nothing (D1).
 - **A folded step shows the total** (PR #80's test plan, T4): a step's identical events fold into one block marked ×N,
   with each outcome once ("Crisis Inverted 💀 kill ×3" → "+10% grenade energy" for Demolitionist's three kills). The
   owner wants the total there, "+30% grenade energy", and the per-event amount in the why ("10% per kill, 3 kills").

@@ -18,8 +18,9 @@ itself, under `src/Loopsmith.Core/Domain/`.
   never by kind. A behaviour change touches one slice, not a layer. The slices
   live under `src/Loopsmith.Core/` (`SourceFetching`, `RuleParsing`,
   `BuildParsing`, `LoopFiles` (reads and writes loop files, and writes the build
-  files they embed), `BuildComposition`, `Simulation` (plays steps against the
-  state), `BuildExplanation`, `TraceRendering`,
+  files they embed), `BuildComposition`, `StepPlaying` (plays steps against the
+  state, and a loop's passes until it repeats), `LoopAnalyzing` (judges a played loop
+  by its order of triggers), `BuildExplanation`, `TraceRendering`,
   `ReportComparison`, `LoadoutImporting` (a DIM link → a build), `ManifestJoining` (Bungie's full
   manifest → the excerpt some hashes need), `StatLoading` (a Bungie login's answers → the player's armor
   → the build's stats), `Orchestration`).
@@ -31,7 +32,7 @@ itself, under `src/Loopsmith.Core/Domain/`.
   slices but is not pure value arithmetic: **`Phrasing`** (plain-English descriptions
   of Domain values plus the styled-text model every renderer and the host use) and
   **`Causality`** (what a trigger *means*: trigger/damage-source matching, shared by
-  `Simulation` and the slices that read a rule's trigger). Both are guarded by architecture tests and may
+  `StepPlaying` and the slices that read a rule's trigger). Both are guarded by architecture tests and may
   not depend on any feature slice.
 - **Build elements are data, not code.** A new aspect, fragment, mod, exotic,
   artifact perk or weapon trait is **one YAML entry** under `rules/` — never an
@@ -39,9 +40,11 @@ itself, under `src/Loopsmith.Core/Domain/`.
   kind is one Dunet case, and the compiler flags every `Match` that must handle it.
 - **`Domain` holds data + pure value arithmetic only** — no feature behaviour, no
   outward dependency, never depends on a feature slice or on `System.IO`. The
-  allowed exception is pure, dependency-free value arithmetic (e.g.
+  allowed exceptions are pure, dependency-free value arithmetic (e.g.
   `GameValueArithmetic.ResolveForCopies`, `ToDamageType`, the `Functional`
-  primitives' generic `Map`/`Bind`).
+  primitives' generic `Map`/`Bind`) and pure reads of its records that slices share
+  (`BuildReading`, `GlossaryReading`, `GameStateReading`: what a build, the glossary
+  or a state holds).
 - **The host owns no logic.** `Loopsmith.Web` (Blazor WebAssembly), the only host,
   holds UI state and calls the pure `Orchestration` API (`LoopDesigning`); its side
   effects live in `Hosting/`: the browser's (clipboard, downloads, confirm, picked files,
@@ -99,10 +102,10 @@ itself, under `src/Loopsmith.Core/Domain/`.
 - **Typestate when call order matters** (validation must precede playing). It
   composes with ROP: `ValidatedBuild` is constructible only by
   `BuildComposition.BuildValidation.ValidateBuild` and is the success-track
-  payload `Simulation` consumes, so "play before validation" cannot happen
+  payload `StepPlaying` consumes, so "play before validation" cannot happen
   (architecture test on `newobj` / `<Clone>$`).
 - **Pure state machine** is reserved for genuinely stateful situations with more
-  than two states — `GameState` in `Simulation`, the slice that plays steps
+  than two states — `GameState`, played by `StepPlaying`, the slice that plays steps
   ((state, step) → (state, fired)), *not* the linear app flow, which is a
   railway, not a machine.
 
