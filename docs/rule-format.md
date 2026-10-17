@@ -60,7 +60,7 @@ finishers:
 ```
 
 Each section is optional; ids are unique within a section. All keys shown are required except a
-status's `maxStacks` (a whole number ≥ 2), `duration` and `drawnIcon`, `counted` and `decay`, and `trait`.
+status's `maxStacks` (a whole number ≥ 2), `duration` and `drawnIcon`, `counted` and `decay`, `adjective`, and `trait`.
 
 * `counted: true` (a buff with `maxStacks` only; `the status 'x' is counted, so it must be a buff with maxStacks`
   otherwise): the engine counts its stacks, sure and chance ones, and they decide what fires (ADRs D33). Armor Charge is
@@ -97,9 +97,15 @@ status's `maxStacks` (a whole number ≥ 2), `duration` and `drawnIcon`, `counte
   on the pack until the player declares it ended (`end:jolt`) or declares a new pack (`pack:new`).
 * `collectsAutomatically: true` — collected the moment it spawns (Ionic Traces track to you);
   `false` — it lands on the ground until a `pickup:<id>` step ([loop-format.md](loop-format.md)).
+* `adjective` (a debuff): the word for a target that has it, where adding "ed" to the name gets it wrong —
+  `{ id: freeze, name: Freeze, kind: debuff, affinity: stasis, adjective: Frozen }` reads "if target Frozen" and
+  "on Frozen target", and the designer finds "Frozen" as the keyword in a text. Without one, the name takes "ed" ("d"
+  after an "e"; a name with a space, or already ending in "ed", stays as it is): Jolt → Jolted, Sever → Severed. Only
+  a debuff is on a target (`the status 'frost-armor' isn't a debuff, so no target has it: an adjective is for a debuff`).
 * `damageType` (summons): `kinetic|arc|solar|void|stasis|strand`.
 * `subclasses`: the manifest hash of each subclass item a source gives (one number or a list of
-  copies), so a DIM loadout's subclass is recognised
+  copies), so a DIM loadout's subclass is recognised: the nine Light ones and the six Stasis and Strand ones (Prismatic
+  waits on an element per ability)
   ([loop-format.md](loop-format.md#starting-from-a-dim-link)); a hash names one subclass (`hash 1002 of the
   subclass 'Stormcaller' is already on 'Striker'`). A manifest hash is never 0, here or on an element.
 * `finishers`: each class's own finisher, by its manifest hash — the one the game plays when the player has none

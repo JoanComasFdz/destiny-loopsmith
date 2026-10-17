@@ -124,9 +124,12 @@ the part is a fact in the description.
 
 ## Engine
 
-- **Stasis, Strand and Prismatic subclasses** (requirements FR-14): the glossary first (their subclass hashes, keywords
-  and statuses), then a DIM link with one of them, then the designer. Prismatic also needs an element per ability:
-  today an ability takes the subclass's element.
+- **The Prismatic subclass** (requirements FR-14): the glossary has the Stasis and Strand subclasses and their
+  keywords (Slow, Freeze, Suspend, Frost Armor), so a DIM link with one of them starts a build; Prismatic's subclass
+  items and Transcendence wait on an element per ability: today an ability takes the subclass's element (Prismatic's
+  would be Kinetic). No rule applies a Stasis or Strand keyword yet: each subclass's abilities, aspects and fragments
+  are authored one subclass at a time. Shatter (damage), Stasis Crystal (an object that freezes) and Grapple Tangle
+  (not picked up) aren't in the glossary: none is a status, a pickup or a summon as the format has them.
 - **The build check** (FR-2) doesn't report a build file or a DIM loadout that is already over a piece's armor energy,
   or already wears two exotic weapons: the designer refuses such a pick ([loop-format.md](loop-format.md#armor-mods),
   D30), the build check doesn't say a build is over.
@@ -190,7 +193,7 @@ the part is a fact in the description.
   link that carries its loadout could show the same card before "Start designing".
 - **Editing the rest of a build in the designer**: a weapon's perks can be picked (column by column, from
   the manifest excerpt's trait columns), the subclass edited (abilities, aspects and fragments, from the excerpt's
-  `plugs`, for each of the nine Light subclasses) and any weapon or armor slot filled, swapped or emptied (every item of
+  `plugs`, for each of the glossary's fifteen subclasses) and any weapon or armor slot filled, swapped or emptied (every item of
   the game, or the player's own after a login), the mods picked and the artifact changed with its perks. What remains:
   switching the class or the subclass (today a new DIM link or build file), and starting from scratch with any class or
   subclass (from scratch is an Arc Hunter today). The rules author only Arcstrider's elements, so another subclass's
