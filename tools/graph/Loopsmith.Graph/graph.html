@@ -172,18 +172,13 @@ function select(id, quiet){
   svg.querySelectorAll('.on').forEach(x => x.classList.remove('on'));
   const labels = svg.querySelector('#labels'); labels.innerHTML = '';
   if (!id){ if (!quiet) document.getElementById('card').innerHTML = '<h2>Pick a box</h2><p class="lede">Tap any box in the graph to see what it needs, what it gives and what its rules say.</p>'; return; }
-  // The whole chain: everything upstream (what it needs, and what that needs…) and downstream (what it gives, and what that gives…).
-  const chain = new Set([id]), onEdges = new Set();
-  const walk = (from, to) => { const seen = new Set([id]), queue = [id];
-    while (queue.length){ const at = queue.shift();
-      svg._edges.forEach((e,i) => { if (e[from] !== at) return; onEdges.add(i); chain.add(e[to]); if (!seen.has(e[to])){ seen.add(e[to]); queue.push(e[to]); } }); } };
-  walk('to', 'from'); walk('from', 'to');
-  chain.forEach(n => svg.querySelector(`.node[data-id="${CSS.escape(n)}"]`)?.classList.add('on'));
+  svg.querySelector(`.node[data-id="${CSS.escape(id)}"]`)?.classList.add('on');
   svg.querySelectorAll('.edge').forEach(p => {
-    const i = +p.dataset.i; if (!onEdges.has(i)) return;
+    if (p.dataset.a !== id && p.dataset.b !== id) return;
     p.classList.add('on');
-    const e = svg._edges[i];
-    if (e.label && (e.from === id || e.to === id)){ const len = p.getTotalLength(), pt = p.getPointAtLength(len/2); labels.insertAdjacentHTML('beforeend', `<text class="elabel" x="${pt.x}" y="${pt.y+4}" text-anchor="middle">${esc(e.label)}</text>`); }
+    svg.querySelector(`.node[data-id="${CSS.escape(p.dataset.a === id ? p.dataset.b : p.dataset.a)}"]`)?.classList.add('on');
+    const e = svg._edges[+p.dataset.i];
+    if (e.label){ const len = p.getTotalLength(), pt = p.getPointAtLength(len/2); labels.insertAdjacentHTML('beforeend', `<text class="elabel" x="${pt.x}" y="${pt.y+4}" text-anchor="middle">${esc(e.label)}</text>`); }
   });
   card(id);
 }
