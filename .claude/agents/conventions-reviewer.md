@@ -31,7 +31,7 @@ edit files.
    - Only `SourceFetching` does file or network I/O (`System.IO`, `System.Net.Http`); the YAML slices may
      wrap a string in a `StringReader`/`TextReader`, and `LoopFiles` (which also writes loop files) may
      collect its output in a `StringWriter`. No Core code uses `System.Console`. YamlDotNet appears only in
-     `RuleParsing`, `BuildParsing` and `LoopFiles`. Only `BuildComposition` constructs `ValidatedBuild`
+     `RuleParsing`, `BuildParsing`, `LoopFiles` and `CompendiumReading` (its alias table, `tools/compendium/aliases.yaml`). Only `BuildComposition` constructs `ValidatedBuild`
      (`new` or `with`).
    - `Domain` holds data and pure value arithmetic only. It holds no feature behaviour.
    - Build elements are data, not code: a new aspect, mod, perk or other element is one YAML entry under

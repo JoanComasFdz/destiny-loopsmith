@@ -19,14 +19,15 @@ public static class SubclassTabParsing
         new[] { "Glossary", "Fragments", "Grenade Abilities", "Melee Abilities", "Super Abilities", "Class Abilities", "Aspect", "Aspects" }
             .ToImmutableHashSet(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>The one section whose <c>[…]</c> is the value with Spark of Magnitude, not the PvP value (its note says so).</summary>
-    private static readonly (string Tab, string Section) MagnitudeSection = ("Arc", "Grenade Abilities");
-
-    public static ImmutableArray<CompendiumEntry> ParseSubclassTab(string tab, ImmutableArray<TabRow> rows) =>
+    /// <summary>
+    /// <paramref name="alternativeBrackets"/>: the sections whose <c>[…]</c> holds another PvE value, not the PvP one
+    /// (Arc's grenades: with Spark of Magnitude, as the section's note says; <c>tools/compendium/aliases.yaml</c>).
+    /// </summary>
+    public static ImmutableArray<CompendiumEntry> ParseSubclassTab(string tab, ImmutableArray<TabRow> rows, ImmutableArray<AlternativeBrackets> alternativeBrackets) =>
         [.. rows
             .Aggregate(
                 (Section: "", Entries: ImmutableArray<CompendiumEntry>.Empty),
-                (read, row) => ReadRow(tab, row, read.Section) switch
+                (read, row) => ReadRow(tab, row, read.Section, alternativeBrackets) switch
                 {
                     SubclassRow.Heading heading => (heading.Section, read.Entries),
                     SubclassRow.Entry entry => (read.Section, read.Entries.Add(entry.Read)),
@@ -34,7 +35,7 @@ public static class SubclassTabParsing
                 })
             .Entries];
 
-    private static SubclassRow ReadRow(string tab, TabRow row, string section)
+    private static SubclassRow ReadRow(string tab, TabRow row, string section, ImmutableArray<AlternativeBrackets> alternativeBrackets)
     {
         var filled = row.FindFilledColumns();
         var name = TabRows.ReadFirstLine(row.ReadCell(NameColumn));
@@ -45,14 +46,16 @@ public static class SubclassTabParsing
             (_, "", _, _) => new SubclassRow.Skipped(),
             (_, _, true, _) => new SubclassRow.Heading(name),
             (_, _, _, 1) => new SubclassRow.Skipped(),
-            _ => new SubclassRow.Entry(ToEntry(tab, row, section, name, filled)),
+            _ => new SubclassRow.Entry(ToEntry(tab, row, section, name, filled, alternativeBrackets)),
         };
     }
 
-    private static CompendiumEntry ToEntry(string tab, TabRow row, string section, string name, ImmutableArray<int> filled)
+    private static CompendiumEntry ToEntry(
+        string tab, TabRow row, string section, string name, ImmutableArray<int> filled, ImmutableArray<AlternativeBrackets> alternativeBrackets)
     {
         var text = string.Join("\n", filled.Where(column => column > NameColumn).Select(column => row.Cells[column]));
-        var brackets = (tab, section) == MagnitudeSection ? BracketMeaning.AlternativeValue : BracketMeaning.PvpValue;
+        var alternative = alternativeBrackets.Any(each => each.Tab == tab && string.Equals(each.Section, section, StringComparison.OrdinalIgnoreCase));
+        var brackets = alternative ? BracketMeaning.AlternativeValue : BracketMeaning.PvpValue;
         return new CompendiumEntry(tab, [row.Number], section, name, NumberReading.ReadNumbers(text, brackets));
     }
 }

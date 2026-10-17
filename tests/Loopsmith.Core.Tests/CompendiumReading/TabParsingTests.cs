@@ -54,12 +54,12 @@ public sealed class TabParsingTests
             ",Melee Abilities,,,,,",
             ",Testing Punch,,\"Deals 40 [20] damage.\",,,Base Cooldown: 50 seconds"));
 
-        var entries = SubclassTabParsing.ParseSubclassTab("Arc", rows);
+        var entries = SubclassTabParsing.ParseSubclassTab("Arc", rows, [new AlternativeBrackets("Arc", "Grenade Abilities", "its note")]);
 
         Assert.Equal(["Testing Buff", "Testing Grenade", "Touch of Testing", "Testing Punch"], entries.Select(entry => entry.Name));
         Assert.Equal([4, 7, 8, 11], entries.Select(entry => entry.Rows.Single()));
         Assert.Equal(["Glossary", "Grenade Abilities", "Grenade Abilities", "Melee Abilities"], entries.Select(entry => entry.Section));
-        Assert.Contains(120m, entries[1].Numbers.Pve);                                            // Arc's grenade brackets: the alternative value
+        Assert.Contains(120m, entries[1].Numbers.Pve);                                            // the named section's brackets: the alternative value
         Assert.Contains(90m, entries[1].Numbers.Pve);
         Assert.Contains(0.5m, entries[1].Numbers.Pve);
         Assert.DoesNotContain(3m, entries[0].Numbers.Pve);                                         // anywhere else: the PvP value
@@ -130,7 +130,7 @@ public sealed class TabParsingTests
             new SourceText("06_Arc.csv", ",Fragments,,,\n,Testing,,Lasts 3 seconds.,"),
             new SourceText("16_Game_Mechanics.csv", "anything"),
             new SourceText("20_OLD_Armor_Mods.csv", ",Helmet,Effect\n,Old Mod,Old effect 1."),
-            new SourceText("INDEX.md", "not a tab")]);
+            new SourceText("INDEX.md", "not a tab")], []);
 
         Assert.Equal(["Arc"], snapshot.ReadTabs);
         Assert.Equal(["Game Mechanics"], snapshot.UnreadTabs);

@@ -1,4 +1,5 @@
-# How a rule element's name finds its Destiny Data Compendium entry when the two differ (ADRs D12), read by the
+# How a rule element's name finds its Destiny Data Compendium entry when the two differ (ADRs D12), and how a section's
+# numbers read where it says so itself, used by the
 # Compendium check (src/Loopsmith.Core/CompendiumReading, tests/Loopsmith.Core.Tests/CompendiumReading). Names and
 # numbers only: never the Compendium's text (README, Licensing). Every entry says why.
 #
@@ -6,6 +7,10 @@
 # dropWords: in that tab, an entry's name lacks these words of the element's name.
 # names: the element's entry is named this (when the rules above don't get there).
 # worded: a number the element holds that its row says in words ("100%" is 1 as the rules hold it).
+# alternativeBrackets: in that tab's section, […] is another PvE value, not the PvP value it is everywhere else.
+
+alternativeBrackets:
+  - { tab: Arc, section: Grenade Abilities, why: "The section's note says its bracketed numbers are with Spark of Magnitude equipped." }
 
 prefixes:
   - { tab: Arc, prefix: "Spark of", why: "The subclass tab lists its fragments without their element's prefix." }

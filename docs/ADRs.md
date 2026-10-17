@@ -226,7 +226,8 @@ user's notes come next and a creator's claim last. Every disagreement is recorde
 
 **Decision.** The Compendium has no hashes, so its entries are joined to the manifest by name,
 scoped by kind and class, with an alias table in git (`tools/compendium/aliases.yaml`: a tab's prefixes, suffixes and
-dropped words, an element's entry name, and numbers a row says in words, each with its reason). Unresolved names are
+dropped words, an element's entry name, numbers a row says in words, and the sections whose `[…]` isn't the PvP value,
+each with its reason). Unresolved names are
 reported, never guessed: the Compendium check (FR-11) names every element its cited row doesn't name.
 
 ### D13 — Every number is a `GameValue` with `Provenance`; unknown stays `?`

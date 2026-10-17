@@ -54,13 +54,19 @@ public static class FileSourceFetching
     {
         try
         {
-            var files = Directory.EnumerateFiles(snapshotDirectory, "*.csv", SearchOption.TopDirectoryOnly)
+            var paths = Directory.EnumerateFiles(snapshotDirectory, "*.csv", SearchOption.TopDirectoryOnly)
                 .Order(StringComparer.Ordinal)
-                .Select(path => new SourceText(Path.GetFileName(path), File.ReadAllText(path)))
                 .ToImmutableArray();
-            return files.IsEmpty
+            var files = ImmutableArray.CreateBuilder<SourceText>();
+            foreach (var path in paths)
+            {
+                var text = File.ReadAllText(path);
+                files.Add(new SourceText(Path.GetFileName(path), text));
+            }
+
+            return files.Count == 0
                 ? new Result<ImmutableArray<SourceText>, string>.Error($"No tab files (*.csv) in '{snapshotDirectory}': is it a snapshot folder (tools/compendium/README.md)?")
-                : new Result<ImmutableArray<SourceText>, string>.Ok(files);
+                : new Result<ImmutableArray<SourceText>, string>.Ok(files.ToImmutable());
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {

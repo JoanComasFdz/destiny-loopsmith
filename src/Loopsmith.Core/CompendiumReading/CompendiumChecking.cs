@@ -102,11 +102,11 @@ public static partial class CompendiumChecking
 
     /// <summary>Case, curly apostrophes and spacing don't matter: "Mothkeeper’s  Wraps" is "mothkeeper's wraps".</summary>
     public static string NormalizeName(string name) =>
-        Spaces().Replace(name.Replace('’', '\'').Replace('‘', '\'').Trim().ToLowerInvariant(), " ");
+        CreateSpacePattern().Replace(name.Replace('’', '\'').Replace('‘', '\'').Trim().ToLowerInvariant(), " ");
 
     private static string ToCitation(Provenance.Compendium citation) =>
         $"compendium/{citation.Snapshot.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}/{citation.Tab}#{citation.Row}";
 
     [GeneratedRegex(@"\s+")]
-    private static partial Regex Spaces();
+    private static partial Regex CreateSpacePattern();
 }

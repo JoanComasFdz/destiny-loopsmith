@@ -6,8 +6,8 @@ using System.Text.RegularExpressions;
 namespace Loopsmith.Core.CompendiumReading;
 
 /// <summary>
-/// What a tab's <c>[…]</c> holds. Almost everywhere the PvP value ("25% [10%]"); in Arc's grenade section, by the note
-/// heading it, the value with Spark of Magnitude equipped, which holds in PvE too. <c>{…}</c> (a third tier, Armor Mods'
+/// What a tab's <c>[…]</c> holds. Almost everywhere the PvP value ("25% [10%]"); in a section the alias table names
+/// (Arc's grenades, by the note heading them), another PvE value (with Spark of Magnitude equipped). <c>{…}</c> (a third tier, Armor Mods'
 /// activity mods) always holds in PvE.
 /// </summary>
 public enum BracketMeaning { PvpValue, AlternativeValue }
@@ -26,15 +26,18 @@ public static partial class NumberReading
     }
 
     private static ImmutableArray<decimal> ReadAll(string text) =>
-        [.. NumberPattern().Matches(text)
+        [.. CreateNumberPattern().Matches(text)
             .SelectMany(match => ToValues(match.Groups["number"].Value.Replace(",", ""), match.Groups["percent"].Success))
             .Distinct()];
 
-    private static IEnumerable<decimal> ToValues(string number, bool percent)
-    {
-        var value = decimal.Parse(number, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture);
-        return percent ? [value, value / 100m] : [value];
-    }
+    /// <summary>A number and, for a percent, its fraction; none for a number too long for a decimal.</summary>
+    private static IEnumerable<decimal> ToValues(string number, bool percent) =>
+        (decimal.TryParse(number, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var value), percent) switch
+        {
+            (false, _) => [],
+            (true, true) => [value, value / 100m],
+            (true, false) => [value],
+        };
 
     /// <summary>Drops every <c>[…]</c>, nested ones too ("1,245 [530 [690]]" → "1,245 ").</summary>
     private static string RemoveBracketed(string text)
@@ -54,6 +57,6 @@ public static partial class NumberReading
         return kept.ToString();
     }
 
-    [GeneratedRegex(@"(?<![\w.])(?<number>\d{1,3}(?:,\d{3})+(?!\d)|\d+(?:\.\d+)?)(?<percent>\s?%)?")]
-    private static partial Regex NumberPattern();
+    [GeneratedRegex(@"(?<![\w.])(?<number>[0-9]{1,3}(?:,[0-9]{3})+(?![0-9])|[0-9]+(?:\.[0-9]+)?)(?<percent>\s?%)?")]
+    private static partial Regex CreateNumberPattern();
 }

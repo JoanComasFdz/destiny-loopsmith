@@ -21,9 +21,9 @@ public sealed class CompendiumCheckingTests
         new SourceText("05_Armor_Mods.csv", string.Join("\n",
             ",Helmet,Effect,Arms,Effect",
             ",\"Siphon\n[1 Energy]\",\"Two kills within 3 seconds spawn an orb.\",\"Testing Finisher\n[1 Energy]\",\"Restores health in full.\"")),
-        new SourceText("16_Game_Mechanics.csv", "anything")]);
+        new SourceText("16_Game_Mechanics.csv", "anything")], []);
 
-    private static readonly CompendiumAliases NoAliases = new([], [], [], [], []);
+    private static readonly CompendiumAliases NoAliases = new([], [], [], [], [], []);
 
     [Fact]
     public void An_element_its_cited_row_names_with_its_numbers_has_no_problem()
@@ -76,7 +76,8 @@ public sealed class CompendiumCheckingTests
             [],
             [new DroppedWords("Armor Mods", ["Arc"], "one row for every element")],
             [new EntryName(ElementId.From("testing-combo-siphon"), "Siphon", "a two-element Siphon")],
-            [new WordedNumber(ElementId.From("testing-finisher"), 1m, "the row says it in words")]);
+            [new WordedNumber(ElementId.From("testing-finisher"), 1m, "the row says it in words")],
+            []);
         var finisher = Element("testing-finisher", "Testing Finisher", "compendium/2026-01-01/Armor Mods#2") with
         {
             Rules = [TestCatalog.On(new Trigger.Finisher(), new Outcome.RestoreHealth(new HealAmount.Share(new GameValue.Known(1m)), false))],

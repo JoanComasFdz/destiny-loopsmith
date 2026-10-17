@@ -8,7 +8,7 @@ using YamlDotNet.RepresentationModel;
 namespace Loopsmith.Core.CompendiumReading;
 
 /// <summary>
-/// Reads <c>tools/compendium/aliases.yaml</c> into <see cref="CompendiumAliases"/>. Its five lists are optional; every
+/// Reads <c>tools/compendium/aliases.yaml</c> into <see cref="CompendiumAliases"/>. Its six lists are optional; every
 /// entry needs its keys and a <c>why</c>. The first problem found is the error, naming the list and the entry.
 /// </summary>
 public static class AliasParsing
@@ -31,17 +31,18 @@ public static class AliasParsing
 
     private static Result<CompendiumAliases, string> ReadAliases(string path, YamlMappingNode root)
     {
-        var unknown = root.Children.Keys.Select(ReadScalar).Except(["prefixes", "suffixes", "dropWords", "names", "worded"]).ToImmutableArray();
+        var unknown = root.Children.Keys.Select(ReadScalar).Except(["prefixes", "suffixes", "dropWords", "names", "worded", "alternativeBrackets"]).ToImmutableArray();
         var prefixes = ReadList(path, root, "prefixes", entry => ReadAffix(entry, "prefix"));
         var suffixes = ReadList(path, root, "suffixes", entry => ReadAffix(entry, "suffix"));
         var dropped = ReadList(path, root, "dropWords", ReadDroppedWords);
         var names = ReadList(path, root, "names", ReadEntryName);
         var worded = ReadList(path, root, "worded", ReadWordedNumber);
+        var brackets = ReadList(path, root, "alternativeBrackets", ReadAlternativeBrackets);
         ImmutableArray<string> errors = [.. unknown.Select(key => $"{path}: unknown list '{key}'"),
-            .. ReadErrors(prefixes), .. ReadErrors(suffixes), .. ReadErrors(dropped), .. ReadErrors(names), .. ReadErrors(worded)];
+            .. ReadErrors(prefixes), .. ReadErrors(suffixes), .. ReadErrors(dropped), .. ReadErrors(names), .. ReadErrors(worded), .. ReadErrors(brackets)];
         return errors.IsEmpty
             ? new Result<CompendiumAliases, string>.Ok(new CompendiumAliases(
-                ReadValue(prefixes), ReadValue(suffixes), ReadValue(dropped), ReadValue(names), ReadValue(worded)))
+                ReadValue(prefixes), ReadValue(suffixes), ReadValue(dropped), ReadValue(names), ReadValue(worded), ReadValue(brackets)))
             : new Result<CompendiumAliases, string>.Error(string.Join("\n", errors));
     }
 
@@ -96,6 +97,13 @@ public static class AliasParsing
         {
             (Optional<ElementId>.Some element, Optional<decimal>.Some value, Optional<string>.Some why) => new Result<WordedNumber, string>.Ok(new WordedNumber(element.Value, value.Value, why.Value)),
             _ => new Result<WordedNumber, string>.Error("needs element (an element id), value (\"100%\", \"1\") and why"),
+        };
+
+    private static Result<AlternativeBrackets, string> ReadAlternativeBrackets(YamlMappingNode entry) =>
+        (ReadText(entry, "tab"), ReadText(entry, "section"), ReadText(entry, "why")) switch
+        {
+            (Optional<string>.Some tab, Optional<string>.Some section, Optional<string>.Some why) => new Result<AlternativeBrackets, string>.Ok(new AlternativeBrackets(tab.Value, section.Value, why.Value)),
+            _ => new Result<AlternativeBrackets, string>.Error("needs tab, section and why"),
         };
 
     /// <summary>"100%" → 1 (a percent as the rules hold it), "1" → 1.</summary>

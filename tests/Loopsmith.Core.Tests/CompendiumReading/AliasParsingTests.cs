@@ -10,7 +10,7 @@ namespace Loopsmith.Core.Tests.CompendiumReading;
 public sealed class AliasParsingTests
 {
     [Fact]
-    public void The_alias_table_reads_its_five_lists()
+    public void The_alias_table_reads_its_six_lists()
     {
         var aliases = Parse("""
             prefixes: [ { tab: Arc, prefix: "Spark of", why: fragments } ]
@@ -18,6 +18,7 @@ public sealed class AliasParsingTests
             dropWords: [ { tab: Armor Mods, words: [Arc, Void], why: one row } ]
             names: [ { element: jolt, name: Jolted, why: adjective } ]
             worded: [ { element: healthy-finisher, value: "100%", why: in words } ]
+            alternativeBrackets: [ { tab: Arc, section: Grenade Abilities, why: its note } ]
             """).Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
 
         Assert.Equal("Spark of", aliases.Prefixes.Single().Text);
@@ -25,6 +26,7 @@ public sealed class AliasParsingTests
         Assert.Equal(["Arc", "Void"], aliases.DroppedWords.Single().Words);
         Assert.Equal(new EntryName(ElementId.From("jolt"), "Jolted", "adjective"), aliases.Names.Single());
         Assert.Equal(1m, aliases.Worded.Single().Value);
+        Assert.Equal(new AlternativeBrackets("Arc", "Grenade Abilities", "its note"), aliases.AlternativeBrackets.Single());
     }
 
     [Theory]

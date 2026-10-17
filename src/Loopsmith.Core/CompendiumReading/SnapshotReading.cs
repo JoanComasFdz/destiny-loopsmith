@@ -12,14 +12,14 @@ namespace Loopsmith.Core.CompendiumReading;
 /// </summary>
 public static partial class SnapshotReading
 {
-    public static CompendiumSnapshot ReadSnapshot(ImmutableArray<SourceText> files)
+    public static CompendiumSnapshot ReadSnapshot(ImmutableArray<SourceText> files, ImmutableArray<AlternativeBrackets> alternativeBrackets)
     {
         var tabs = files
             .Select(ToSnapshotFile)
             .OfType<Optional<SnapshotFile>.Some>()
             .Select(found => found.Value)
             .Where(file => !file.Tab.StartsWith("OLD ", StringComparison.Ordinal))
-            .Select(file => (file.Tab, Entries: ParseTab(file)))
+            .Select(file => (file.Tab, Entries: ParseTab(file, alternativeBrackets)))
             .ToImmutableArray();
         return new CompendiumSnapshot(
             [.. tabs.SelectMany(tab => tab.Entries.Match(some => some.Value, _ => []))],
@@ -31,20 +31,20 @@ public static partial class SnapshotReading
     public static Optional<SnapshotFile> ToSnapshotFile(SourceText file)
     {
         var name = file.Path[(file.Path.LastIndexOfAny(['/', '\\']) + 1)..];
-        var match = TabFileName().Match(name);
+        var match = CreateTabFileNamePattern().Match(name);
         return match.Success
             ? Optional.Some(new SnapshotFile(match.Groups["tab"].Value.Replace('_', ' '), file))
             : Optional.None<SnapshotFile>();
     }
 
     /// <summary>The registry of tab parsers: a tab without one is read as no entries (its citations aren't checked).</summary>
-    public static Optional<ImmutableArray<CompendiumEntry>> ParseTab(SnapshotFile file)
+    public static Optional<ImmutableArray<CompendiumEntry>> ParseTab(SnapshotFile file, ImmutableArray<AlternativeBrackets> alternativeBrackets)
     {
         var rows = TabRows.ReadTabRows(file.Csv.Text);
         return file.Tab switch
         {
             "Arc" or "Solar" or "Void" or "Stasis" or "Strand" or "Prismatic" or "Class Abilities" =>
-                Optional.Some(SubclassTabParsing.ParseSubclassTab(file.Tab, rows)),
+                Optional.Some(SubclassTabParsing.ParseSubclassTab(file.Tab, rows, alternativeBrackets)),
             "Armor Mods" => Optional.Some(ArmorModsParsing.ParseArmorModsTab(file.Tab, rows)),
             "Artifact Perks" => Optional.Some(ArtifactPerksParsing.ParseArtifactPerksTab(file.Tab, rows)),
             "Weapon Perks" => Optional.Some(WeaponPerksParsing.ParseWeaponPerksTab(file.Tab, rows)),
@@ -53,5 +53,5 @@ public static partial class SnapshotReading
     }
 
     [GeneratedRegex(@"^\d+_(?<tab>.+)\.csv$")]
-    private static partial Regex TabFileName();
+    private static partial Regex CreateTabFileNamePattern();
 }

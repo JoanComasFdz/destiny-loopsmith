@@ -33,8 +33,8 @@ public static partial class ArmorModsParsing
 
     /// <summary>"Melee\n Kickstart\n[3 Energy]" → "Melee Kickstart": the lines before the energy cost.</summary>
     private static string ReadModName(string cell) =>
-        string.Join(" ", cell.Split('\n').Select(line => line.Trim()).TakeWhile(line => !EnergyCost().IsMatch(line)).Where(line => line.Length > 0));
+        string.Join(" ", cell.Split('\n').Select(line => line.Trim()).TakeWhile(line => !CreateEnergyCostPattern().IsMatch(line)).Where(line => line.Length > 0));
 
     [GeneratedRegex(@"^\[.*Energ")]
-    private static partial Regex EnergyCost();
+    private static partial Regex CreateEnergyCostPattern();
 }
