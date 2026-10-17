@@ -155,7 +155,7 @@ public sealed class ArmorModsCatalogTests
         var first = Play([], [.. reaped.Append(new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Damage, TargetCount.One))]);
         var last = Play([], [.. reaped.Append(new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Damage, TargetCount.One, AbilityInput.Press, ChargeUse.Last))]);
 
-        Assert.Equal(2, first.Build.CountCharges(AbilityKind.Grenade));
+        Assert.Equal(2, first.Build.CountCharges(AbilityKind.Grenade).Value);
         Assert.DoesNotContain(first.Resolutions[^1].Fired, fired => fired.Source.Value == "grenade-kickstart");
         Assert.True(ReadSure(first.Resolutions[^1].State) > 0);
         Assert.Contains(last.Resolutions[^1].Fired, fired => fired.Source.Value == "grenade-kickstart");

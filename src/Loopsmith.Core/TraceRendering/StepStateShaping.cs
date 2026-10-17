@@ -66,7 +66,7 @@ public static class StepStateShaping
             .Select(passive => new ReachingPassive(
                 passive,
                 PassiveReaching.FindReach(build.Build, passive.Passive.Modifier),
-                glossary.DescribePassive(passive.Passive.Modifier, TraceRenderer.CountCopies(build, passive.Source), superType)))
+                glossary.DescribePassive(passive.Passive.Modifier, build.CountCopies(passive.Source), superType)))
             .ToImmutableArray();
         var buffs = state.Buffs.Select(buff => (OnWeapons: IsOnWeapons(glossary, buff.Status), Entry: ShapeBuff(build, reaching, buff))).ToImmutableArray();
         var statuses = state.Buffs.Select(buff => buff.Status).Concat(state.Target.Debuffs).ToImmutableArray();

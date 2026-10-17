@@ -126,6 +126,36 @@ public readonly partial struct StackCount
         value >= 0 ? Validation.Ok : Validation.Invalid("Stacks must not be negative");
 }
 
+/// <summary>
+/// How many charges an ability holds (Shinobu's Vow: two grenades), at least one: its profile's, or that plus every
+/// <c>extraCharges</c>. A fact of the build, added up and compared with one, never counted down (ADRs D36).
+/// </summary>
+[ValueObject<int>]
+[Instance("One", 1)]
+public readonly partial struct ChargeCount
+{
+    private static Validation Validate(int value) =>
+        value >= 1 ? Validation.Ok : Validation.Invalid("A charge count is at least 1");
+}
+
+/// <summary>How many copies of an element a build equips (mods stack: two Grenade Kickstarts), at least one.</summary>
+[ValueObject<int>]
+[Instance("One", 1)]
+public readonly partial struct CopyCount
+{
+    private static Validation Validate(int value) =>
+        value >= 1 ? Validation.Ok : Validation.Invalid("A copy count is at least 1");
+}
+
+/// <summary>How many fragments an aspect makes room for (none or more); a subclass's room is its aspects' added up.</summary>
+[ValueObject<int>]
+[Instance("Zero", 0)]
+public readonly partial struct FragmentSlots
+{
+    private static Validation Validate(int value) =>
+        value >= 0 ? Validation.Ok : Validation.Invalid("Fragment slots are never negative");
+}
+
 /// <summary>A plug category of Bungie's manifest (<c>v404.repackage.machinegun0.masterwork</c>: what a socket takes).</summary>
 [ValueObject<string>]
 public readonly partial struct PlugCategoryId

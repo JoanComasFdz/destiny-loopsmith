@@ -14,19 +14,19 @@ public static class GameValueArithmetic
             _ => Certainty.Unknown);
 
     /// <summary>The same value narrowed to <paramref name="copies"/> equipped copies (PerModCount → that copy's Known value).</summary>
-    public static GameValue NarrowToCopies(this GameValue value, int copies) =>
+    public static GameValue NarrowToCopies(this GameValue value, CopyCount copies) =>
         value is GameValue.PerModCount perModCount
-            ? new GameValue.Known(perModCount.Values[Math.Clamp(copies, 1, perModCount.Values.Length) - 1])
+            ? new GameValue.Known(perModCount.Values[Math.Min(copies.Value, perModCount.Values.Length) - 1])
             : value;
 
     /// <summary>The stacks a grant gives with <paramref name="copies"/> equipped copies (PerModCount → that copy's count, the last for more).</summary>
-    public static StackCount ReadStacks(this StackGrant grant, int copies) =>
+    public static StackCount ReadStacks(this StackGrant grant, CopyCount copies) =>
         grant.Match(
             fixedCount => fixedCount.Count,
-            perModCount => perModCount.Counts[Math.Clamp(copies, 1, perModCount.Counts.Length) - 1]);
+            perModCount => perModCount.Counts[Math.Min(copies.Value, perModCount.Counts.Length) - 1]);
 
     /// <summary>The same grant narrowed to <paramref name="copies"/> equipped copies (PerModCount → that copy's fixed count).</summary>
-    public static StackGrant NarrowToCopies(this StackGrant grant, int copies) =>
+    public static StackGrant NarrowToCopies(this StackGrant grant, CopyCount copies) =>
         new StackGrant.Fixed(grant.ReadStacks(copies));
 
     /// <summary>

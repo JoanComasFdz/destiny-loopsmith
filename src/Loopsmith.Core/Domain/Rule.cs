@@ -165,7 +165,7 @@ public partial record ChangedWeapons
 public partial record Passive
 {
     partial record ExtraStacks(StatusId Status, StackCount Extra);           // Spark of Frequency: a caveat on each grant
-    partial record ExtraCharges(AbilityKind Ability, int Extra);            // a fact (ADRs D5)
+    partial record ExtraCharges(AbilityKind Ability, ChargeCount Extra);            // a fact (ADRs D5)
     partial record ModifyDamage(DamageSource Against, GameValue Change);     // Flashover, stat bonuses
     partial record ResistDamage(PveAndPvp Amount);                           // Spark of Resistance: any damage, "25% [10%]"
     partial record ModifyWeaponStats(ChangedWeapons Weapons, ImmutableArray<WeaponStatChange> Changes);

@@ -135,9 +135,10 @@ itself, under `src/Loopsmith.Core/Domain/`.
   data-carrying case over a flat "tag + optionals" shape.
 - **Value objects via Vogen** (`ElementId`, `StatusId`, `PickupId`, `SummonId`,
   `ItemHash`, `CatalogVersion`, `Seconds`, `TargetCount`, `StackCount`,
-  `StatValue`, `SnapshotDate`), constructed and validated **at the boundary**
-  (`TryFrom` in the parsing slices) — once inside the pure core a value object is
-  known-valid.
+  `ChargeCount`, `CopyCount`, `FragmentSlots`, `StatValue`, `SnapshotDate`),
+  constructed and validated **at the boundary** (`TryFrom` in the parsing slices;
+  a build's `CopyCount` comes from grouping its equipped elements) — once inside
+  the pure core a value object is known-valid.
 - **Unknowns are data.** A source's "?" becomes `GameValue.Unknown`, never 0; the
   trace shows "?". Every element keeps its `Provenance` (its `source:`).
 - **State is causal** (ADRs D1). Game state says what is present (a buff, a

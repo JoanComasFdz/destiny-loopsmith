@@ -69,7 +69,7 @@ internal static class ElementParsing
                     passives => passives.ReadEach("passive", passive => RuleBodyParsing.ReadPassiveRule(scope, passive)),
                     []),
                 map.ReadOptional("ability", ReadAbilityProfile),
-                map.ReadOptional("fragmentSlots", ReadNonNegativeInteger),
+                map.ReadOptional("fragmentSlots", ReadFragmentSlots),
                 map.ReadOrDefault("source", ReadProvenance, ToAuthored(map)),
                 map.ReadOptional("inert", YamlReading.ToText),
                 map.ReadOrDefault("statChecks", checks => checks.ReadEach("stat check", ReadStatCheck), []),
@@ -139,7 +139,7 @@ internal static class ElementParsing
         value.ToMap().Bind(map => Combine(
             map.CheckKeys(AbilityKeys),
             map.ReadRequired("kind", ReadVocabularyWord<AbilityKind>),
-            map.ReadOrDefault("charges", ReadPositiveInteger, 1),
+            map.ReadOrDefault("charges", ReadChargeCount, ChargeCount.One),
             map.ReadOrDefault("chunkScalar", ReadGameValue, new GameValue.Unknown()),
             map.ReadOrDefault("baseCooldown", ReadGameValue, new GameValue.Unknown()),
             (_, kind, charges, chunkScalar, baseCooldown) => new AbilityProfile(kind, charges, chunkScalar, baseCooldown)));

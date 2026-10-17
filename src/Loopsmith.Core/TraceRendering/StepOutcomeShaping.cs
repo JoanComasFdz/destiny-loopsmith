@@ -92,7 +92,7 @@ public static class StepOutcomeShaping
     {
         var first = rules[0];
         var glossary = build.Catalog.Glossary;
-        var copies = TraceRenderer.CountCopies(build, first.Source);
+        var copies = build.CountCopies(first.Source);
         var superType = build.ReadSuperType();
         var lines = rules.SelectMany(rule => ShapeOutcomeLines(glossary, catalog, rule, copies, superType));
         var reasons = options.ShowReasons ? rules.SelectMany(rule => ToSequence(rule.Reason)) : [];
@@ -103,7 +103,7 @@ public static class StepOutcomeShaping
     }
 
     private static IEnumerable<OutcomeLine> ShapeOutcomeLines(
-        KeywordGlossary glossary, RuleCatalog catalog, FiredRule rule, int copies, Optional<DamageType> superType)
+        KeywordGlossary glossary, RuleCatalog catalog, FiredRule rule, CopyCount copies, Optional<DamageType> superType)
     {
         var chance = rule.Likelihood == Likelihood.Chance;
         return rule.NotStackedWith.Match(

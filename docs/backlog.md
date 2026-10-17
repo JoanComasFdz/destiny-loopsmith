@@ -160,7 +160,6 @@ the part is a fact in the description.
 
 ## Deferred review items
 
-- A `ChargeCount` value object instead of raw `int` for charges/copies/fragment slots.
 - An optional glossary `adjective` ("Frozen") instead of the suffix rule in `DescribeDebuffedAdjective`.
 
 ## Web

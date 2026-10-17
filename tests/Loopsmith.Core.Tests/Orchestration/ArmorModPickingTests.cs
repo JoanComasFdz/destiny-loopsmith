@@ -76,7 +76,7 @@ public sealed class ArmorModPickingTests
         Assert.Contains("armorModPlugs: [2724068510, 3847471926]", second.Design.Build.Text, StringComparison.Ordinal);
         Assert.Equal([Optional.Some(ArcSiphon), Optional.Some(CheapArcSiphon), Optional.None<ItemHash>()], helmet.Sockets.Select(socket => socket.Mod.Map(mod => mod.Plug)));
         Assert.Equal(4, helmet.Energy.Used.Value);
-        Assert.Equal(2, second.Build.Equipped.Single(element => element.Element.Id.Value == "arc-siphon").Count);  // stacked copies
+        Assert.Equal(2, second.Build.Equipped.Single(element => element.Element.Id.Value == "arc-siphon").Count.Value);  // stacked copies
         var reopened = LoopDesigning.ImportLoop(Catalog, new SourceText("a.loop.yaml", LoopDesigning.ExportLoop(second))).Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
         Assert.Equal(second.Build.Build.ArmorModPlugs, reopened.Build.Build.ArmorModPlugs);
     }

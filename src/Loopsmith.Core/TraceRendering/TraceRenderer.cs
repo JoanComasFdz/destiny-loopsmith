@@ -275,7 +275,7 @@ public static class TraceRenderer
     private static IEnumerable<StyledSpan> RenderFiredRule(ValidatedBuild build, FiredRule rule, bool isContinuation)
     {
         var glossary = build.Catalog.Glossary;
-        var copies = CountCopies(build, rule.Source);
+        var copies = build.CountCopies(rule.Source);
         ImmutableArray<StyledSpan> joiner = isContinuation ? [" + ".ToSpan(Tone.Muted)] : [];
         var outcomes = rule.NotStackedWith.Match(
             partner => $"doesn't stack with {partner.Value}".ToSpan(Tone.Warning),
@@ -293,10 +293,6 @@ public static class TraceRenderer
             .. chance,
         ];
     }
-
-    /// <summary>The copies of an element equipped (one for an element every build has: a keyword).</summary>
-    internal static int CountCopies(ValidatedBuild build, ElementId source) =>
-        build.Equipped.Where(e => e.Element.Id == source).Select(e => e.Count).DefaultIfEmpty(1).First();
 
     private static ImmutableArray<StyledSpan> ToSingleSpanList(this StyledSpan span) => [span];
 

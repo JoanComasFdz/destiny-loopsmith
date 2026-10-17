@@ -77,6 +77,14 @@ internal static class ValueReading
                 .Map(StackGrant (counts) => new StackGrant.PerModCount(counts))
             : ParseWholeNumber(text, minimum: 1).Bind(count => StackCount.TryFrom(count).ToResult()).Map(StackGrant (count) => new StackGrant.Fixed(count)));
 
+    /// <summary>An ability's charges, at least one (<c>charges</c>, <c>extraCharges</c>'s <c>extra</c>).</summary>
+    internal static Result<ChargeCount, Errors> ReadChargeCount(YamlValue value) =>
+        value.ParseWith(text => ParseWholeNumber(text, minimum: 1).Bind(count => ChargeCount.TryFrom(count).ToResult()));
+
+    /// <summary>The fragments an aspect makes room for, none or more (<c>fragmentSlots</c>).</summary>
+    internal static Result<FragmentSlots, Errors> ReadFragmentSlots(YamlValue value) =>
+        value.ParseWith(text => ParseWholeNumber(text, minimum: 0).Bind(count => FragmentSlots.TryFrom(count).ToResult()));
+
     /// <summary>A stacking status's cap, at least 2 (<c>maxStacks</c>): a status that doesn't stack has none.</summary>
     internal static Result<StackCount, Errors> ReadMaxStacks(YamlValue value) =>
         value.ParseWith(text => ParseWholeNumber(text, minimum: 2).Bind(count => StackCount.TryFrom(count).ToResult()));

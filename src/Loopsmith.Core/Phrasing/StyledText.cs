@@ -15,9 +15,9 @@ public sealed record StyledLine(int Indent, ImmutableArray<StyledSpan> Spans);
 /// An outcome to describe and the copies of its element equipped; <see cref="Spend"/>: the stacks it spent where it was
 /// applied, and what they gave (ADRs D33), none for a rule's outcome described on its own.
 /// </summary>
-public sealed record OutcomeMention(Outcome Outcome, int Copies, Optional<StackSpend> Spend)
+public sealed record OutcomeMention(Outcome Outcome, CopyCount Copies, Optional<StackSpend> Spend)
 {
-    public OutcomeMention(Outcome outcome, int copies)
+    public OutcomeMention(Outcome outcome, CopyCount copies)
         : this(outcome, copies, Optional.None<StackSpend>())
     {
     }

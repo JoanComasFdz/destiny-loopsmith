@@ -641,7 +641,7 @@ internal static class RuleBodyParsing
         value.ToMap().Bind(map => Combine(
             map.CheckKeys(["ability", "extra"]),
             map.ReadRequired("ability", ReadVocabularyWord<AbilityKind>),
-            map.ReadRequired("extra", ReadPositiveInteger),
+            map.ReadRequired("extra", ReadChargeCount),
             Passive (_, ability, extra) => new Passive.ExtraCharges(ability, extra)));
 
     private static Result<Passive, Errors> ReadModifyWeaponStats(YamlValue value) =>
