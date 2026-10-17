@@ -3,14 +3,17 @@
 # Semantics: maxStacks (>= 2) means the status stacks, up to that cap (a fact shown with the buff,
 # "up to x10"), and can be declared at max (`max:<status>`, ADRs D3). A status without it doesn't
 # stack: applying it while it is active changes nothing. The stacking statuses are bolt-charge,
-# armor-charge, combination-blow and slice. A duration is a fact shown on the outcome, given only
+# armor-charge, combination-blow, slice and frost-armor. A duration is a fact shown on the outcome, given only
 # where a source states it. A status ends when a rule removes or consumes it, or when the player
 # declares it ended (`end:<status>`). `trait` is Bungie's trait for the keyword (the manifest's
 # DestinyTraitDefinition: the game's own keyword, as its tooltips name it): the manifest excerpt's
 # `keywordTraits` give its icon, which shows next to the keyword's name. A keyword without one has none.
+# `adjective` (a debuff) is the word for a target that has it, where adding "ed" to the name gets it wrong
+# (Freeze → Frozen); without one the name takes "ed" (Jolted, Severed).
 # Sources: the Destiny Data Compendium snapshot of 2026-10-09 ("compendium/2026-10-09/<Tab>#<row>"
 # below; it has glossary rows for the Arc and Strand keywords) and Clarity 2.0625, which has no
-# status entries and only mentions them inside other entries.
+# status entries and only mentions them inside other entries. The Stasis keywords and Suspend come from the snapshot
+# of 2026-10-17 ("compendium/2026-10-17/<Tab>#<row>").
 
 statuses:
   # ---------------------------------------------------------------- buffs (on the player; weaponBuff: on your weapons)
@@ -105,6 +108,11 @@ statuses:
   # aftershock (compendium/2026-10-13/Arc#50). No trait: the game shows it as no keyword.
   - { id: lethal-current, name: Lethal Current, kind: buff, affinity: arc, duration: 10s }
 
+  # Frost Armor: damage resistance per stack, up to x5 (compendium/2026-10-17/Stasis#6; x7 with Whisper of Rime, a
+  # fragment no rule names yet). It loses 1 stack every 5 s: not encoded, since only a counted status shows its decay
+  # (ADRs D33) and the player declares it ended (`end:frost-armor`). No duration is stated.
+  - { id: frost-armor, name: Frost Armor, kind: buff, affinity: stasis, maxStacks: 5, trait: 106947924 }
+
   # ---------------------------------------------------------------- debuffs (on the target)
   # Durations against combatants (PvE) from the Compendium 2026-10-09:
   #  - jolt 10 s [PvP 5 s]: Arc#8 (refreshed by re-jolting);
@@ -124,6 +132,15 @@ statuses:
   # Exhaust: the enemies' damage cut by 25% (Veteran's Wisdom, compendium/2026-10-14/Weapon Perks#416: 10 s). No trait:
   # Bungie's manifest has none by that name (2026-10-14).
   - { id: exhaust, name: Exhaust, kind: debuff, affinity: neutral, duration: 10s }
+  # The Stasis debuffs (compendium/2026-10-17/Stasis#7-8). Slow: a slowed enemy moves 50% slower and aims worse; it
+  # stacks, and x100 Slow freezes it, but no maxStacks until a rule freezes on max Slow. No duration is stated. Freeze:
+  # a frozen combatant can't move, shoot or use abilities for 6 s (Guardians 1.35 to 4.75 s); bosses shatter out of it
+  # after 3 s. "Frozen", not "Freezed": its adjective. Shatter (Stasis#9) is damage, not a status, and isn't here.
+  - { id: slow, name: Slow, kind: debuff, affinity: stasis, trait: 4239423954 }
+  - { id: freeze, name: Freeze, kind: debuff, affinity: stasis, duration: 6s, adjective: Frozen, trait: 2968599152 }
+  # Suspend: a suspended combatant can't move, shoot or use abilities (compendium/2026-10-17/Strand#9). No duration:
+  # the Compendium gives "up to 6+2 s" for rank-and-file and elites and 3+1 s for minibosses, not one figure.
+  - { id: suspend, name: Suspend, kind: debuff, affinity: strand, trait: 2679722414 }
 
 pickups:
   # Ionic Traces home in on you at 6 m/s (compendium/2026-10-09/Arc#6); the creator agrees:
@@ -147,8 +164,9 @@ summons:
 # The manifest hash of each subclass item, so a DIM loadout's subclass is recognised (ADRs D27,
 # docs/loop-format.md "Starting from a DIM link"). The nine Light subclasses, as DIM's own source
 # lists them (src/app/loadout-drawer/loadout-utils.ts, `oldToNewItems`, DIM commit d7c02e5); the
-# owner's DIM loadout names Arcstrider as 2328211300. Stasis, Strand and Prismatic wait on this
-# glossary (requirements FR-14).
+# owner's DIM loadout names Arcstrider as 2328211300. The six Stasis and Strand ones are the Subclass bucket's items
+# of those names in Bungie's manifest (244213.26.06.29.2000-1-bnet.65864). Prismatic waits on an element per ability
+# (requirements FR-14).
 subclasses:
   - { class: hunter,  subclass: arc,   name: Arcstrider,   hash: 2328211300 }
   - { class: titan,   subclass: arc,   name: Striker,      hash: 2932390016 }
@@ -159,6 +177,12 @@ subclasses:
   - { class: hunter,  subclass: void,  name: Nightstalker, hash: 2453351420 }
   - { class: titan,   subclass: void,  name: Sentinel,     hash: 2842471112 }
   - { class: warlock, subclass: void,  name: Voidwalker,   hash: 2849050827 }
+  - { class: hunter,  subclass: stasis, name: Revenant,    hash: 873720784 }
+  - { class: titan,   subclass: stasis, name: Behemoth,    hash: 613647804 }
+  - { class: warlock, subclass: stasis, name: Shadebinder, hash: 3291545503 }
+  - { class: hunter,  subclass: strand, name: Threadrunner, hash: 3785442599 }
+  - { class: titan,   subclass: strand, name: Berserker,    hash: 242419885 }
+  - { class: warlock, subclass: strand, name: Broodweaver,  hash: 4204413574 }
 
 # ---------------------------------------------------------------- class finishers
 # Each class's own finisher, which the game plays when the player has none equipped (the manifest's "Finishers" item:

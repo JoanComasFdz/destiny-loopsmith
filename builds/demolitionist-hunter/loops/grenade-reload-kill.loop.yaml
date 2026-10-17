@@ -4,7 +4,7 @@ description: |-
   The Demolitionist loop: throw the grenade, which reloads the hand cannon (Demolitionist), then
   kill with the hand cannon, each kill giving grenade energy back (Demolitionist, 10% on a hand
   cannon) toward the next grenade.
-catalog: authored-f8ac845f0219
+catalog: authored-54659914c5bb
 steps:
   - do: pack:new
     note: 'The next group of enemies: a new pack'

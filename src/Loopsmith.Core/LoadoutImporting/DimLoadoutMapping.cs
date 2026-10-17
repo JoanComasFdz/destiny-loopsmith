@@ -198,7 +198,7 @@ public static class DimLoadoutMapping
         loadout.Equipped.IsEmpty
             ? "The DIM loadout has no equipped items, so there is no subclass to start from."
             : "Loopsmith can't tell this DIM loadout's subclass: the rule catalog knows the subclass hashes of "
-              + $"{DescribeSubclasses(catalog)} so far (the others need the Bungie manifest, which Loopsmith doesn't read yet).";
+              + $"{DescribeSubclasses(catalog)} so far.";
 
     /// <summary>"Arc, Solar and Void": the subclasses the glossary has a hash for, in vocabulary order.</summary>
     private static string DescribeSubclasses(RuleCatalog catalog)

@@ -4,6 +4,7 @@ using System.Text;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 using Loopsmith.Core.Orchestration;
+using Loopsmith.Core.Phrasing;
 using Loopsmith.Core.RuleParsing;
 using static Loopsmith.Core.Tests.RuleParsing.ParsingAssertions;
 
@@ -130,10 +131,10 @@ public sealed class RuleCatalogParsingTests
 
         Assert.Equal(5, glossary.Statuses.Count);
         Assert.Equal(
-            new StatusDefinition(ToStatus("bolt-charge"), "Bolt Charge", KeywordKind.Buff, Affinity.Arc, Optional.Some(StackCount.From(10)), Optional.None<Seconds>(), Optional.None<ItemHash>(), Optional.None<DrawnIcon>(), false, Optional.None<string>()),
+            new StatusDefinition(ToStatus("bolt-charge"), "Bolt Charge", KeywordKind.Buff, Affinity.Arc, Optional.Some(StackCount.From(10)), Optional.None<Seconds>(), Optional.None<ItemHash>(), Optional.None<DrawnIcon>(), false, Optional.None<string>(), Optional.None<string>()),
             glossary.Statuses[ToStatus("bolt-charge")]);
         Assert.Equal(
-            new StatusDefinition(ToStatus("jolt"), "Jolt", KeywordKind.Debuff, Affinity.Arc, Optional.None<StackCount>(), Optional.Some(Seconds.From(4m)), Optional.None<ItemHash>(), Optional.None<DrawnIcon>(), false, Optional.None<string>()),
+            new StatusDefinition(ToStatus("jolt"), "Jolt", KeywordKind.Debuff, Affinity.Arc, Optional.None<StackCount>(), Optional.Some(Seconds.From(4m)), Optional.None<ItemHash>(), Optional.None<DrawnIcon>(), false, Optional.None<string>(), Optional.None<string>()),
             glossary.Statuses[ToStatus("jolt")]);
         Assert.Equal(Optional.None<Seconds>(), glossary.Statuses[ToStatus("sever")].Duration);
         Assert.Equal(
@@ -826,6 +827,26 @@ public sealed class RuleCatalogParsingTests
             "the status 'jolt' has a trait, so the game's own icon",
             ParseInvalidCatalog(new SourceText("glossary.yaml", "statuses:\n  - { id: jolt, name: Jolt, kind: debuff, affinity: arc, trait: 3221118171, drawnIcon: rounds }\n")));
         Assert.Contains("drawnIcon", ParseInvalidCatalog(new SourceText("glossary.yaml", "statuses:\n  - { id: x, name: X, kind: buff, affinity: arc, drawnIcon: hexagon }\n")));
+    }
+
+    [Fact]
+    public void A_debuff_names_its_target_by_its_adjective_else_by_the_suffix_rule()
+    {
+        var glossary = new SourceText("glossary.yaml", """
+            statuses:
+              - { id: freeze, name: Freeze, kind: debuff, affinity: stasis, adjective: Frozen }
+              - { id: jolt, name: Jolt, kind: debuff, affinity: arc }
+            """);
+
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([glossary]));
+
+        Assert.Equal(Optional.Some("Frozen"), catalog.Glossary.Statuses[ToStatus("freeze")].Adjective);
+        Assert.Equal("if target Frozen", catalog.Glossary.DescribeCondition(new Condition.TargetHas(ToStatus("freeze"))));
+        Assert.Equal("if target Jolted", catalog.Glossary.DescribeCondition(new Condition.TargetHas(ToStatus("jolt"))));
+        Assert.Equal(["Kill on ", "Frozen", " target"], catalog.Glossary.SplitKeywords("Kill on Frozen target").Select(part => part.Text));
+        Assert.Contains(
+            "the status 'frost-armor' isn't a debuff, so no target has it",
+            ParseInvalidCatalog(new SourceText("glossary.yaml", "statuses:\n  - { id: frost-armor, name: Frost Armor, kind: buff, affinity: stasis, adjective: Frosted }\n")));
     }
 
     [Fact]

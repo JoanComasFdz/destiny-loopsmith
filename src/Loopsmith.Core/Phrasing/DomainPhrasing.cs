@@ -278,18 +278,23 @@ public static class DomainPhrasing
         && (at == 0 || !char.IsLetterOrDigit(text[at - 1]))
         && (at + word.Length == text.Length || !char.IsLetterOrDigit(text[at + word.Length]));
 
-    /// <summary>"Jolt" → "Jolted", "Sever" → "Severed" — the adjective a player uses for a debuffed target.</summary>
-    public static string DescribeDebuffedAdjective(this KeywordGlossary glossary, StatusId status)
-    {
-        var name = glossary.DescribeStatus(status);
-        return name switch
+    /// <summary>
+    /// "Jolt" → "Jolted", "Sever" → "Severed" — the adjective a player uses for a debuffed target: the glossary's
+    /// <c>adjective</c> when it has one ("Freeze" → "Frozen"), else the name with "ed" (or "d") added.
+    /// </summary>
+    public static string DescribeDebuffedAdjective(this KeywordGlossary glossary, StatusId status) =>
+        glossary.Statuses.TryGetValue(status, out var definition)
+            ? definition.Adjective.UnwrapOr(AddPastSuffix(definition.Name))
+            : AddPastSuffix(glossary.DescribeStatus(status));
+
+    private static string AddPastSuffix(string name) =>
+        name switch
         {
             _ when name.Contains(' ') => name,
             _ when name.EndsWith('e') => name + "d",
             _ when name.EndsWith("ed", StringComparison.Ordinal) => name,
             _ => name + "ed",
         };
-    }
 
     public static Affinity ReadStatusAffinity(this KeywordGlossary glossary, StatusId status) =>
         glossary.Statuses.TryGetValue(status, out var definition) ? definition.Affinity : Affinity.Neutral;
