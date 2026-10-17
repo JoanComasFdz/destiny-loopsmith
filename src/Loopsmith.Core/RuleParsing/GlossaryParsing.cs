@@ -13,7 +13,7 @@ internal static class GlossaryParsing
     internal const string GlossaryPath = "glossary.yaml";
 
     private static readonly ImmutableArray<string> GlossaryKeys = ["statuses", "pickups", "summons", "subclasses", "finishers"];
-    private static readonly ImmutableArray<string> StatusKeys = ["id", "name", "kind", "affinity", "maxStacks", "duration", "trait", "drawnIcon", "counted", "decay"];
+    private static readonly ImmutableArray<string> StatusKeys = ["id", "name", "kind", "affinity", "maxStacks", "duration", "trait", "drawnIcon", "counted", "decay", "adjective"];
     private static readonly ImmutableArray<string> PickupKeys = ["id", "name", "affinity", "collectsAutomatically", "trait"];
     private static readonly ImmutableArray<string> SummonKeys = ["id", "name", "damageType", "trait"];
     private static readonly ImmutableArray<string> SubclassKeys = ["class", "subclass", "name", "hash"];
@@ -59,9 +59,11 @@ internal static class GlossaryParsing
             map.ReadOptional("drawnIcon", ReadVocabularyWord<DrawnIcon>),
             map.ReadOrDefault("counted", ReadBoolean, false),
             map.ReadOptional("decay", YamlReading.ToText),
-            (_, id, name, kind, affinity, maxStacks, duration, trait, drawnIcon, counted, decay) =>
-                new StatusDefinition(id, name, kind, affinity, maxStacks, duration, trait, drawnIcon, counted, decay))
+            map.ReadOptional("adjective", ReadName),
+            (_, id, name, kind, affinity, maxStacks, duration, trait, drawnIcon, counted, decay, adjective) =>
+                new StatusDefinition(id, name, kind, affinity, maxStacks, duration, trait, drawnIcon, counted, decay, adjective))
             .Bind(status => CheckDrawnIcon(map, status))
+            .Bind(status => CheckAdjective(map, status))
             .Bind(status => CheckCounted(map, status))
             .Map(map.ToLocated));
 
@@ -69,6 +71,12 @@ internal static class GlossaryParsing
     private static Result<StatusDefinition, Errors> CheckCounted(YamlMap map, StatusDefinition status) =>
         status.Counted && !(status.MaxStacks.IsSome() && status.Kind.IsBuff())
             ? map.FailAtKey<StatusDefinition>("counted", $"the status '{status.Id.Value}' is counted, so it must be a buff with maxStacks")
+            : Succeed(status);
+
+    /// <summary>An adjective names a target that has the status ("Frozen"): only a debuff is on a target.</summary>
+    private static Result<StatusDefinition, Errors> CheckAdjective(YamlMap map, StatusDefinition status) =>
+        status.Adjective.IsSome() && status.Kind != KeywordKind.Debuff
+            ? map.FailAtKey<StatusDefinition>("adjective", $"the status '{status.Id.Value}' isn't a debuff, so no target has it: an adjective is for a debuff")
             : Succeed(status);
 
     /// <summary>A drawn icon is for a keyword Bungie's data has no icon for: a status with a trait has the game's own.</summary>

@@ -319,7 +319,7 @@ the build holds what the catalog recognises by hash, and nothing is guessed:
 
 | From the loadout | Becomes |
 |---|---|
-| the subclass item | `class` and `subclass` — the glossary's `subclasses` ([rule-format.md](rule-format.md#glossary-rulesglossaryyaml): the nine Light ones so far, whose hashes DIM's source lists); a Stasis, Strand or Prismatic loadout, or one without a subclass, can't start a build yet |
+| the subclass item | `class` and `subclass` — the glossary's `subclasses` ([rule-format.md](rule-format.md#glossary-rulesglossaryyaml): the nine Light ones, whose hashes DIM's source lists, and the six Stasis and Strand ones); a Prismatic loadout, or one without a subclass, can't start a build yet |
 | the subclass's plugs, in socket order | the super, grenade, melee and class ability, the jump, aspects and fragments the catalog has a hash for, for the loadout's class and subclass (another class's, such as the Hunter's Spark of Shock on a Striker, is left out); an ability it has none for is `"?"`, a jump it has none for is left out (it has no part in a loop) |
 | the other equipped items (and the Loadout Optimizer's exotic) | `exoticArmor`; a weapon the manifest excerpt knows ([rule-format.md](rule-format.md#manifest-excerpt-rulesmanifestyaml)) becomes one of `weapons` — its `hash` (its slot, name, damage type and archetype are the manifest's), and as its `roll` the perk each trait column rolls with among the item's `socketOverrides` (a loadout saved with its perks; most name the weapon only) |
 | the armor pieces, by their manifest set | `armorSetBonuses`: each set perk the pieces grant (2 or 4 of a set) that the catalog has a hash for; the pieces themselves (legendary armor) are left out |
@@ -452,7 +452,7 @@ trigger HUD, the Validation list and **Analyze** follow it. When the stats were 
 (they equal what that armor gives for the old subclass), they are added up again with the new fragments (Spark of Shock
 gone gives back its −10 Grenade); stats the player typed stay as typed. The export and the share link carry the new
 subclass. What the subclass can hold comes from the manifest excerpt (`plugs` of the subclass item, written by
-`tools/manifest/` for each of the glossary's nine subclasses). A plug is the rules' element only when the rules know it
+`tools/manifest/` for each of the glossary's fifteen subclasses). A plug is the rules' element only when the rules know it
 for the build's class: the rules author Skip Grenade and the Sparks for the Hunter, so on a Striker or a Stormcaller
 they are left out (⊘), in the editor and from a DIM link alike.
 

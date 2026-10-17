@@ -222,6 +222,24 @@ public sealed class DimLoadoutMappingTests
         Assert.True(LoopDesigning.CanEditSubclass(session.Build));
     }
 
+    [Theory]
+    [InlineData(1, 873720784u, GuardianClass.Hunter, Subclass.Stasis)]     // Revenant
+    [InlineData(0, 613647804u, GuardianClass.Titan, Subclass.Stasis)]      // Behemoth
+    [InlineData(2, 3291545503u, GuardianClass.Warlock, Subclass.Stasis)]   // Shadebinder
+    [InlineData(1, 3785442599u, GuardianClass.Hunter, Subclass.Strand)]    // Threadrunner
+    [InlineData(0, 242419885u, GuardianClass.Titan, Subclass.Strand)]      // Berserker
+    [InlineData(2, 4204413574u, GuardianClass.Warlock, Subclass.Strand)]   // Broodweaver
+    public void A_Stasis_or_Strand_loadout_starts_a_design_whose_subclass_can_be_edited(int dimClassType, uint subclassHash, GuardianClass guardianClass, Subclass subclass)
+    {
+        var json = $$"""{ "name": "x", "classType": {{dimClassType}}, "equipped": [ { "hash": {{subclassHash}} } ] }""";
+
+        var session = LoopDesigning.ReadDimLink(Link).Bind(link => LoopDesigning.StartDimDesign(Catalog, link, json))
+            .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
+
+        Assert.Equal((guardianClass, subclass), (session.Build.Build.Class, session.Build.Build.Subclass));
+        Assert.True(LoopDesigning.CanEditSubclass(session.Build));
+    }
+
     private static Build MapLoadout(string json) =>
         DimLoadoutMapping.MapLoadout(Catalog, Link, json).Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
 }

@@ -356,7 +356,7 @@ Loadouts page carrying the loadout as JSON (D2ArmorPicker, guardian.report). A l
 items only by manifest hash, and the manifest isn't read yet (D14): the catalog has hashes for most
 aspects, fragments, mods and exotics it holds, none for supers, grenades, melees or weapons. **Decision.**
 `LoadoutImporting` (pure) reads the link and maps the loadout by hash: the subclass from the glossary's
-`subclasses` (the nine Light ones so far, whose hashes DIM's own source lists), every other item to the
+`subclasses` (the nine Light ones, whose hashes DIM's own source lists, and the six Stasis and Strand ones, by Bungie's manifest), every other item to the
 catalog element with that hash. An
 ability the catalog has no hash for is `"?"` in the build (D13: unknown is data, never guessed —
 D12), and every item it doesn't recognise goes in the build's `leftOut` by hash, so whoever opens
@@ -368,8 +368,8 @@ its registered apps); links that carry their loadout need nothing, and a share s
 without asking DIM. DIM offers no embeddable preview of a share (its page has only a stock link
 image), so Home draws its own card of what the catalog recognised. Items the manifest excerpt lacks are
 read from Bungie's full manifest first (D14), so the link's weapons, armor sets and left-out items have their
-names. **Consequence.** A Stasis, Strand or Prismatic loadout can't start a build yet (the glossary has the
-Light subclasses only); Loopsmith needs no registration with DIM ([docs/hosting.md](hosting.md), "DIM links").
+names. **Consequence.** A Prismatic loadout can't start a build yet (the glossary has no Prismatic subclass:
+it waits on an element per ability); Loopsmith needs no registration with DIM ([docs/hosting.md](hosting.md), "DIM links").
 
 ### D28 — A build's stats come from the player's own armor, added up like DIM, after a read-only Bungie login
 
