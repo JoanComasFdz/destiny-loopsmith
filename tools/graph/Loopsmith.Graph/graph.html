@@ -115,7 +115,7 @@ function layout(ids){
   for (const c of keys){
     let list = cols[c];
     if (c === 0) list.sort((a,b) => rank(a) - rank(b));
-    else if (c % 2 === 1) list.sort((a,b) => groupRank(a) - groupRank(b) || G.nodes[a].name.localeCompare(G.nodes[b].name));
+    else if (c % 2 === 1) list.sort((a,b) => groupRank(a) - groupRank(b) || slotRank(a) - slotRank(b) || G.nodes[a].name.localeCompare(G.nodes[b].name));
     else {
       const bary = id => { const ys = edges.filter(e => (e.to === id && pos[e.from]) || (e.from === id && pos[e.to])).map(e => pos[e.to === id ? e.from : e.to].row); return ys.length ? ys.reduce((s,y) => s+y, 0) / ys.length : 1e3; };
       list.sort((a,b) => bary(a) - bary(b) || TYPE_ORDER.indexOf(G.nodes[a].type) - TYPE_ORDER.indexOf(G.nodes[b].type) || G.nodes[a].name.localeCompare(G.nodes[b].name));
@@ -126,6 +126,9 @@ function layout(ids){
 }
 // A layer column lists the subclass's supers, then its abilities, aspects and fragments, then everything else; each group by name.
 const LAYER_ORDER = ['subclassSuper','subclassAbility','subclassAspect','subclassFragment'];
+// Abilities in the game's order on the subclass screen, left to right: class ability, (jump,) melee, grenade.
+const SLOT_ORDER = ['classAbility','melee','grenade'];
+function slotRank(id){ const i = SLOT_ORDER.indexOf(G.nodes[id].slot); return i < 0 ? SLOT_ORDER.length : i; }
 function groupRank(id){ const i = LAYER_ORDER.indexOf(G.nodes[id].type); return i < 0 ? LAYER_ORDER.length : i; }
 function rank(id){ const n = G.nodes[id]; const i = TRIGGER_ORDER.indexOf(n.name); return i < 0 ? 50 + (n.type === 'weapon' ? 0 : 10) : i; }
 function head(c, outside){ return c === 0 ? 'Triggers' : c === outside ? 'Needs outside' : c % 2 ? 'Layer ' + (c+1)/2 : 'Gives'; }
