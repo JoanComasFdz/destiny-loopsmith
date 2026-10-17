@@ -22,7 +22,7 @@ public static class DependencyGraphDrawing
             .Where(element => DependencyMapping.IsDrawn(context, element))
             .OrderBy(element => element.Id.Value, StringComparer.Ordinal)
             .ToImmutableArray();
-        var links = drawn.ToImmutableDictionary(element => element.Id.Value, element => DependencyMapping.MapElement(context, element));
+        var links = drawn.Select(element => DependencyMapping.MapElement(context, element)).ToImmutableDictionary(link => link.Node.Id);
         var nodes = CollectNodes(links);
         var edges = links.Values.SelectMany(link => link.Edges).Distinct().ToImmutableArray();
         var subclassParts = drawn.Where(element => DependencyMapping.IsSubclassPart(context, element)).Select(element => element.Id.Value).ToImmutableHashSet();
@@ -44,9 +44,9 @@ public static class DependencyGraphDrawing
     }
 
     /// <summary>
-    /// The nodes of each scope. Subclass: its elements, the keywords they touch, and the statuses, pickups, strikes and
-    /// triggers either touches (no weapon). With needs: those and the weapons their elements need. With dependents: those,
-    /// every other element that needs one of them, and the nodes those elements need or give.
+    /// The nodes of each scope. Subclass: its elements, the rules of the keywords whose states they touch, and the nodes
+    /// either touches but weapons. With needs: those and the weapons their elements need. With dependents: those, every
+    /// other element that needs one of them (and the rules of the keywords whose states it touches), and their nodes.
     /// </summary>
     private static ImmutableArray<(ScopeKind Kind, ImmutableHashSet<string> Nodes)> ListScopeMembers(
         ImmutableDictionary<string, ElementLinks> links,
@@ -55,23 +55,36 @@ public static class DependencyGraphDrawing
         ImmutableHashSet<string> subclassParts)
     {
         var pairs = edges.SelectMany(edge => new[] { (Near: edge.From, Far: edge.To), (Near: edge.To, Far: edge.From) }).ToImmutableArray();
-        var keywords = pairs
-            .Where(pair => subclassParts.Contains(pair.Near) && links.TryGetValue(pair.Far, out var far) && far.IsKeyword)
-            .Select(pair => pair.Far);
-        var core = subclassParts.Union(keywords);
-        var subclass = core.Union(pairs
-            .Where(pair => core.Contains(pair.Near) && !links.ContainsKey(pair.Far) && !IsWeapon(nodes, pair.Far))
-            .Select(pair => pair.Far));
+        var core = AddKeywordRules(subclassParts, links, pairs);
+        var subclass = core.Union(ListTouched(core, links, pairs).Where(id => !IsWeapon(nodes, id)));
         var withNeeds = subclass.Union(edges.Where(edge => IsWeapon(nodes, edge.From) && subclass.Contains(edge.To)).Select(edge => edge.From));
         var dependents = edges
             .Where(edge => edge.Kind == EdgeKind.Needs && withNeeds.Contains(edge.From) && links.ContainsKey(edge.To) && !withNeeds.Contains(edge.To))
             .Select(edge => edge.To)
             .ToImmutableHashSet();
-        var withDependents = withNeeds.Union(dependents).Union(pairs
-            .Where(pair => dependents.Contains(pair.Near) && !links.ContainsKey(pair.Far))
-            .Select(pair => pair.Far));
+        var added = AddKeywordRules(dependents, links, pairs).Except(withNeeds);
+        var withDependents = withNeeds.Union(added).Union(ListTouched(added, links, pairs));
         return [(ScopeKind.Subclass, subclass), (ScopeKind.WithNeeds, withNeeds), (ScopeKind.WithDependents, withDependents)];
     }
+
+    /// <summary>The elements and the rule nodes of the keywords whose states they touch (Arc Staff gives Bolt Charge: rule:bolt-charge).</summary>
+    private static ImmutableHashSet<string> AddKeywordRules(
+        ImmutableHashSet<string> elements,
+        ImmutableDictionary<string, ElementLinks> links,
+        ImmutableArray<(string Near, string Far)> pairs)
+    {
+        var touched = ListTouched(elements, links, pairs).ToImmutableHashSet();
+        return elements.Union(links.Values
+            .Where(link => link.StateId.Match(state => touched.Contains(state.Value), _ => false))
+            .Select(link => link.Node.Id));
+    }
+
+    /// <summary>The nodes that aren't elements next to these elements.</summary>
+    private static IEnumerable<string> ListTouched(
+        ImmutableHashSet<string> elements,
+        ImmutableDictionary<string, ElementLinks> links,
+        ImmutableArray<(string Near, string Far)> pairs) =>
+        pairs.Where(pair => elements.Contains(pair.Near) && !links.ContainsKey(pair.Far)).Select(pair => pair.Far);
 
     private static GraphScope DrawScope(
         GraphContext context,
@@ -102,8 +115,8 @@ public static class DependencyGraphDrawing
 
     /// <summary>
     /// Each node's column: a trigger or weapon is column 0; an element of layer L is column 2L − 1 and a given node of
-    /// layer L column 2L. A keyword that something else in the scope gives is placed as a given node, one nothing else
-    /// gives as an element. None: it needs something outside this scope.
+    /// layer L column 2L (a keyword's rule node is an element, its state a given node). Only gives edges count. None: it
+    /// needs something outside this scope.
     /// </summary>
     private static ImmutableDictionary<string, Optional<int>> PlaceColumns(
         ImmutableHashSet<string> members,
@@ -123,14 +136,11 @@ public static class DependencyGraphDrawing
         Layers layers) =>
         IsTriggerOrWeapon(nodes, member)
             ? Optional.Some(0)
-            : links.TryGetValue(member, out var link) && !(link.IsKeyword && HasOtherGivers(member, givers))
+            : links.ContainsKey(member)
                 ? FindLayer(layers.Elements, member).Map(layer => (2 * layer) - 1)
                 : FindLayer(layers.Nodes, member).Map(layer => 2 * layer);
 
-    private static bool HasOtherGivers(string member, ImmutableDictionary<string, ImmutableArray<string>> givers) =>
-        givers.TryGetValue(member, out var found) && found.Any(giver => giver != member);
-
-    /// <summary>The elements of the scope that give each node (a keyword that gives its own status among them).</summary>
+    /// <summary>The elements of the scope that give each node.</summary>
     private static ImmutableDictionary<string, ImmutableArray<string>> ListGivers(
         ImmutableHashSet<string> members,
         ImmutableDictionary<string, ElementLinks> links) =>

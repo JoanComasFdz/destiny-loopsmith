@@ -1,7 +1,8 @@
 # Dependency graph tool
 
 Draws the rules' dependency graph of the Arc Hunter: which element needs what before it can fire (a trigger, a
-weapon, a buff, a debuff, a pickup, a strike) and what it gives. Its columns put the elements in the order to test
+weapon, a buff, a debuff, a pickup, a strike) and what it gives, ends, collects or boosts, effects included (energy,
+health, damage, resistance). A keyword is two nodes: its state (`jolt`) and its rules (`rule:jolt`). Its columns put the elements in the order to test
 them, left to right. Three scopes: the subclass alone, plus what it needs from outside (weapons), plus what builds on
 it (mods, perks, exotics, artifact perks that need one of its nodes).
 

@@ -116,15 +116,120 @@ public sealed class DependencyGraphTests
     }
 
     [Fact]
-    public void A_keyword_element_is_the_node_of_its_status()
+    public void A_keyword_element_is_its_state_node_and_its_rule_node()
     {
-        var graph = Draw(Fragment("spark", OnGrenadeCast(Debuff("jolt"))), Keyword("jolt"));
+        var jolt = Keyword("jolt", On(new Trigger.DamageDebuffed(new DamageSource.AnyAbility(), [Status("jolt")]), new Outcome.StrikeTarget(Status("jolt"), HitOutcome.Damage)));
+        var graph = Draw(Fragment("spark", OnGrenadeCast(Debuff("jolt"))), jolt);
 
-        var jolt = graph.Nodes["jolt"];
+        var state = graph.Nodes["jolt"];
+        var rule = graph.Nodes["rule:jolt"];
+        var edges = ListEdges(graph);
 
-        Assert.True(jolt.IsKeyword);
-        Assert.IsType<GraphNodeType.DebuffStatus>(jolt.Type);
-        Assert.Contains("spark -[Gives]-> jolt", ListEdges(graph));
+        Assert.True(state.IsKeyword);
+        Assert.IsType<GraphNodeType.DebuffStatus>(state.Type);
+        Assert.False(state.Element.IsSome());
+        Assert.IsType<GraphNodeType.KeywordRule>(rule.Type);
+        Assert.Equal("Jolt", rule.Name);
+        Assert.True(rule.Element.IsSome());
+        Assert.Contains("spark -[Gives]-> jolt", edges);
+        Assert.Contains("jolt -[Needs hit on Jolted]-> rule:jolt", edges);
+        Assert.Contains("trigger:grenade -[Needs hit]-> rule:jolt", edges);
+        Assert.Contains("rule:jolt -[Gives]-> strike:jolt", edges);
+        Assert.Equal(2, FindColumn(graph, "jolt"));
+        Assert.Equal(3, FindColumn(graph, "rule:jolt"));
+        Assert.Equal(4, FindColumn(graph, "strike:jolt"));
+    }
+
+    [Fact]
+    public void A_keyword_with_no_glossary_entry_stays_one_keyword_node()
+    {
+        var graph = Draw(Fragment("spark", OnGrenadeCast(Buff("amplified"))), Keyword("guardian", OnGrenadeCast(Buff("amplified"))));
+
+        Assert.IsType<GraphNodeType.UnlistedKeyword>(graph.Nodes["guardian"].Type);
+        Assert.False(graph.Nodes.ContainsKey("rule:guardian"));
+    }
+
+    public static TheoryData<string, string> OutcomeEffects => new()
+    {
+        { "energy", "spark -[Gives 12.5%]-> effect:energy-grenade" },
+        { "full energy", "spark -[Gives full]-> effect:energy-class-ability" },
+        { "least charged", "spark -[Gives 10%]-> effect:energy-least-charged" },
+        { "convert", "spark -[Gives 5% per stack]-> effect:energy-melee" },
+        { "convert ends", "spark -[Ends spends all]-> armor-charge" },
+        { "spend", "spark -[Ends spends 2]-> armor-charge" },
+        { "remove", "spark -[Ends ends]-> amplified" },
+        { "health", "spark -[Gives 40% + allies]-> effect:health" },
+        { "damage", "spark -[Gives +25% vs melee]-> effect:damage-bonus" },
+        { "weapon strike", "spark -[Gives kill]-> effect:extra-strike" },
+        { "reload", "spark -[Gives]-> effect:reload" },
+        { "collect", "spark -[Collects collects]-> orb-of-power" },
+        { "spawn", "spark -[Gives]-> ionic-trace" },
+    };
+
+    [Theory]
+    [MemberData(nameof(OutcomeEffects))]
+    public void Every_outcome_is_drawn(string what, string edge)
+    {
+        var graph = Draw(Fragment(
+            "spark",
+            OnGrenadeCast(
+                Energy(AbilityKind.Grenade, new GameValue.Known(0.125m)),
+                new Outcome.GrantEnergy(AbilityKind.ClassAbility, new EnergyGrant.Full()),
+                new Outcome.GrantLeastChargedEnergy(new EnergyGrant.Fraction(new GameValue.Known(0.1m))),
+                new Outcome.ConvertStacksToEnergy(Status("armor-charge"), AbilityKind.Melee, new StackEnergy.PerStack(new GameValue.Known(0.05m))),
+                new Outcome.SpendStacks(Status("armor-charge"), StackCount.From(2)),
+                new Outcome.RemoveBuff(Status("amplified")),
+                new Outcome.RestoreHealth(new HealAmount.Share(new GameValue.Known(0.4m)), true),
+                new Outcome.ModifyDamage(new DamageSource.AbilityOf(AbilityKind.Melee), new GameValue.Known(0.25m)),
+                new Outcome.WeaponStrike(new DamageSource.ThisWeapon(), Optional.None<DamageType>(), HitOutcome.Kill),
+                new Outcome.ReloadWeapon(new DamageSource.ThisWeapon()),
+                new Outcome.Collect(Pickup("orb-of-power")),
+                new Outcome.Spawn(Pickup("ionic-trace"), 1))));
+
+        Assert.True(ListEdges(graph).Contains(edge), what);
+    }
+
+    public static TheoryData<string, string> PassiveEffects => new()
+    {
+        { "resist", "spark -[Gives 25% [PvP 10%]]-> effect:damage-resistance" },
+        { "combatant resist", "spark -[Gives 15% vs combatants]-> effect:damage-resistance" },
+        { "stat", "spark -[Gives +20]-> effect:stat-grenade" },
+        { "charges", "spark -[Gives +1]-> effect:extra-charge-grenade" },
+        { "extra stacks", "spark -[Boosts +1 stack]-> bolt-charge" },
+        { "max stacks", "spark -[Boosts max 4 | 5 | 6]-> armor-charge" },
+        { "weapon stats", "spark -[Gives Reload Speed +50]-> effect:weapon-stats" },
+    };
+
+    [Theory]
+    [MemberData(nameof(PassiveEffects))]
+    public void Every_passive_is_drawn(string what, string edge)
+    {
+        static PassiveRule Always(Passive passive) => new(passive, [], Optional.None<string>());
+        var spark = Fragment("spark", OnGrenadeCast(Buff("amplified"))) with
+        {
+            Passives =
+            [
+                Always(new Passive.ResistDamage(new PveAndPvp(new GameValue.Known(0.25m), Optional.Some<GameValue>(new GameValue.Known(0.1m))))),
+                Always(new Passive.ResistCombatantDamage(new CombatantDamage.All(), new GameValue.Known(0.15m))),
+                Always(new Passive.ModifyStat(StatKind.Grenade, new GameValue.Known(20m))),
+                Always(new Passive.ExtraCharges(AbilityKind.Grenade, ChargeCount.From(1))),
+                Always(new Passive.ExtraStacks(Status("bolt-charge"), StackCount.From(1))),
+                Always(new Passive.RaiseMaxStacks(Status("armor-charge"), new GameValue.PerModCount([4m, 5m, 6m]))),
+                Always(new Passive.ModifyWeaponStats(new ChangedWeapons.ThisWeapon(), [new WeaponStatChange("Reload Speed", new GameValue.Known(50m))])),
+            ],
+        };
+
+        var graph = Draw(spark);
+
+        Assert.True(ListEdges(graph).Contains(edge), what);
+    }
+
+    [Fact]
+    public void Only_gives_edges_place_a_node()
+    {
+        var graph = Draw(Fragment("spark", OnGrenadeCast(new Outcome.RemoveBuff(Status("amplified")))));
+
+        Assert.Null(FindColumn(graph, "amplified"));
     }
 
     [Fact]

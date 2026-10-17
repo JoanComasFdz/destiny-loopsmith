@@ -113,6 +113,8 @@ public static class GraphRendering
             pickupDrop: _ => "pickup",
             summonedAlly: _ => "summon",
             unlistedKeyword: _ => "keyword",
+            keywordRule: _ => "keywordRule",
+            shownEffect: _ => "effect",
             keywordStrike: _ => "strike",
             outsideElement: outside => ToCamelCase(outside.Kind.ToString()));
 

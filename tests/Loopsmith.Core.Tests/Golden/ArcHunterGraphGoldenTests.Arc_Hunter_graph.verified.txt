@@ -1,6 +1,6 @@
 ﻿# Arc Hunter
 
-## Arc subclass (subclass): 40 nodes, 65 edges
+## Arc subclass (subclass): 53 nodes, 90 edges
 column 0
   trigger Air dodge
   trigger Dodge
@@ -10,7 +10,7 @@ column 0
   trigger Sliding melee
   trigger Super
 column 1
-  buff Super
+  keywordRule Super
   subclassAbility Combination Blow
   subclassAbility Disorienting Blow
   subclassAbility Flashbang Grenade
@@ -28,10 +28,19 @@ column 2
   buff Bolt Charge
   buff Combination Blow
   buff Lethal Current
+  buff Super
   debuff Blind
   debuff Jolt
+  effect Class ability energy
+  effect Damage bonus
+  effect Damage resistance
+  effect Health
+  effect Melee energy
   strike Lethal Current strike
 column 3
+  keywordRule Amplified
+  keywordRule Bolt Charge
+  keywordRule Jolt
   subclassAspect Flow State
   subclassFragment Spark of Amplitude
   subclassFragment Spark of Brilliance
@@ -44,50 +53,79 @@ column 4
   strike Bolt Charge strike
   strike Jolt strike
 column 5
+  keywordRule Ionic Trace
+  keywordRule Orb of Power
   subclassFragment Spark of Discharge
 column 6
   buff Armor Charge
+  effect Grenade energy
+  effect Super energy
 no column
   subclassFragment Spark of Beacons
 edges
   amplified -[needs while]-> flow-state
+  amplified -[needs while]-> rule:amplified
   amplified -[needs while]-> spark-of-amplitude
   amplified -[needs while]-> spark-of-beacons
   amplified -[needs while]-> spark-of-frequency
+  arc-staff -[gives 90% [PvP 53%]]-> effect:damage-resistance
   arc-staff -[gives]-> bolt-charge
   ascension -[gives]-> amplified
   ascension -[gives]-> jolt
   blind -[needs kill on Blinded]-> spark-of-brilliance
-  bolt-charge -[gives]-> strike:bolt-charge
+  bolt-charge -[needs at max]-> rule:bolt-charge
+  bolt-charge -[needs gained]-> rule:bolt-charge
+  combination-blow -[gives 100%]-> effect:energy-class-ability
+  combination-blow -[gives ? vs melee]-> effect:damage-bonus
+  combination-blow -[gives ?]-> effect:health
   combination-blow -[gives]-> status:combination-blow
   disorienting-blow -[gives]-> amplified
   disorienting-blow -[gives]-> blind
   disorienting-blow -[gives]-> bolt-charge
   flashbang-grenade -[gives]-> blind
+  flow-state -[gives 66% [PvP 32%]]-> effect:damage-resistance
   flow-state -[gives]-> amplified
+  gamblers-dodge -[gives ?]-> effect:energy-melee
+  gathering-storm -[gives 90% [PvP 49%]]-> effect:damage-resistance
   gathering-storm -[gives]-> jolt
+  ionic-trace -[needs pick up]-> rule:ionic-trace
   ionic-trace -[needs pick up]-> spark-of-discharge
-  jolt -[gives]-> strike:jolt
   jolt -[needs hit on Jolted]-> lethal-current
+  jolt -[needs hit on Jolted]-> rule:jolt
   jolt -[needs kill on Jolted]-> flow-state
   jolt -[needs kill on Jolted]-> spark-of-ions
   jolt -[needs kill on Jolted]-> tempest-strike
+  lethal-current -[ends ends]-> status:lethal-current
   lethal-current -[gives]-> blind
   lethal-current -[gives]-> jolt
   lethal-current -[gives]-> status:lethal-current
   lethal-current -[gives]-> strike:lethal-current
-  orb-of-power -[gives]-> armor-charge
+  orb-of-power -[needs pick up]-> rule:orb-of-power
+  rule:amplified -[gives 15% vs combatants]-> effect:damage-resistance
+  rule:bolt-charge -[ends ends]-> bolt-charge
+  rule:bolt-charge -[gives 2.5%]-> effect:energy-melee
+  rule:bolt-charge -[gives]-> strike:bolt-charge
+  rule:ionic-trace -[gives 11.25%]-> effect:energy-grenade
+  rule:ionic-trace -[gives 11.25%]-> effect:energy-melee
+  rule:ionic-trace -[gives 13.5%]-> effect:energy-class-ability
+  rule:jolt -[gives]-> strike:jolt
+  rule:orb-of-power -[gives ?]-> effect:energy-super
+  rule:orb-of-power -[gives]-> armor-charge
+  rule:super -[gives]-> super
   spark-of-amplitude -[gives]-> orb-of-power
   spark-of-beacons -[gives]-> blind
   spark-of-brilliance -[gives]-> blind
   spark-of-discharge -[gives]-> bolt-charge
   spark-of-discharge -[gives]-> ionic-trace
+  spark-of-frequency -[boosts +1 stack]-> bolt-charge
   spark-of-ions -[gives]-> ionic-trace
+  spark-of-resistance -[gives 25% [PvP 10%]]-> effect:damage-resistance
   spark-of-shock -[gives]-> jolt
   spark-of-volts -[gives]-> amplified
   spark-of-volts -[gives]-> bolt-charge
   status:combination-blow -[needs while]-> combination-blow
   status:lethal-current -[needs while]-> lethal-current
+  storms-edge -[gives 90% [PvP 45%]]-> effect:damage-resistance
   strike:bolt-charge -[needs kill]-> spark-of-ions
   super -[needs while]-> arc-staff
   super -[needs while]-> gathering-storm
@@ -98,25 +136,25 @@ edges
   trigger:dodge -[needs cast]-> gamblers-dodge
   trigger:dodge -[needs cast]-> lethal-current
   trigger:finisher -[needs finisher]-> spark-of-volts
-  trigger:grenade -[needs hit]-> bolt-charge
   trigger:grenade -[needs hit]-> flashbang-grenade
-  trigger:grenade -[needs hit]-> jolt
+  trigger:grenade -[needs hit]-> rule:bolt-charge
+  trigger:grenade -[needs hit]-> rule:jolt
   trigger:grenade -[needs hit]-> spark-of-shock
-  trigger:melee -[needs hit]-> bolt-charge
   trigger:melee -[needs hit]-> disorienting-blow
-  trigger:melee -[needs hit]-> jolt
   trigger:melee -[needs hit]-> lethal-current
+  trigger:melee -[needs hit]-> rule:bolt-charge
+  trigger:melee -[needs hit]-> rule:jolt
   trigger:melee -[needs kill]-> combination-blow
-  trigger:sliding-melee -[needs hit]-> bolt-charge
-  trigger:sliding-melee -[needs hit]-> jolt
+  trigger:sliding-melee -[needs hit]-> rule:bolt-charge
+  trigger:sliding-melee -[needs hit]-> rule:jolt
   trigger:sliding-melee -[needs hit]-> tempest-strike
-  trigger:super -[needs cast]-> super
-  trigger:super -[needs hit]-> bolt-charge
+  trigger:super -[needs cast]-> rule:super
   trigger:super -[needs hit]-> gathering-storm
-  trigger:super -[needs hit]-> jolt
+  trigger:super -[needs hit]-> rule:bolt-charge
+  trigger:super -[needs hit]-> rule:jolt
   trigger:super -[needs kill]-> arc-staff
 
-## + what it needs from outside (withNeeds): 42 nodes, 69 edges
+## + what it needs from outside (withNeeds): 55 nodes, 94 edges
 column 0
   trigger Air dodge
   trigger Dodge
@@ -128,7 +166,7 @@ column 0
   weapon Arc weapon
   weapon Weapon
 column 1
-  buff Super
+  keywordRule Super
   subclassAbility Combination Blow
   subclassAbility Disorienting Blow
   subclassAbility Flashbang Grenade
@@ -147,11 +185,21 @@ column 2
   buff Bolt Charge
   buff Combination Blow
   buff Lethal Current
+  buff Super
   debuff Blind
   debuff Jolt
+  effect Class ability energy
+  effect Damage bonus
+  effect Damage resistance
+  effect Health
+  effect Melee energy
   pickup Ionic Trace
   strike Lethal Current strike
 column 3
+  keywordRule Amplified
+  keywordRule Bolt Charge
+  keywordRule Ionic Trace
+  keywordRule Jolt
   subclassAspect Flow State
   subclassFragment Spark of Amplitude
   subclassFragment Spark of Beacons
@@ -160,50 +208,79 @@ column 3
   subclassFragment Spark of Ions
   subclassSuper Storm's Edge
 column 4
+  effect Grenade energy
   pickup Orb of Power
   strike Bolt Charge strike
   strike Jolt strike
+column 5
+  keywordRule Orb of Power
 column 6
   buff Armor Charge
+  effect Super energy
 edges
   amplified -[needs while]-> flow-state
+  amplified -[needs while]-> rule:amplified
   amplified -[needs while]-> spark-of-amplitude
   amplified -[needs while]-> spark-of-beacons
   amplified -[needs while]-> spark-of-frequency
+  arc-staff -[gives 90% [PvP 53%]]-> effect:damage-resistance
   arc-staff -[gives]-> bolt-charge
   ascension -[gives]-> amplified
   ascension -[gives]-> jolt
   blind -[needs kill on Blinded]-> spark-of-brilliance
-  bolt-charge -[gives]-> strike:bolt-charge
+  bolt-charge -[needs at max]-> rule:bolt-charge
+  bolt-charge -[needs gained]-> rule:bolt-charge
+  combination-blow -[gives 100%]-> effect:energy-class-ability
+  combination-blow -[gives ? vs melee]-> effect:damage-bonus
+  combination-blow -[gives ?]-> effect:health
   combination-blow -[gives]-> status:combination-blow
   disorienting-blow -[gives]-> amplified
   disorienting-blow -[gives]-> blind
   disorienting-blow -[gives]-> bolt-charge
   flashbang-grenade -[gives]-> blind
+  flow-state -[gives 66% [PvP 32%]]-> effect:damage-resistance
   flow-state -[gives]-> amplified
+  gamblers-dodge -[gives ?]-> effect:energy-melee
+  gathering-storm -[gives 90% [PvP 49%]]-> effect:damage-resistance
   gathering-storm -[gives]-> jolt
+  ionic-trace -[needs pick up]-> rule:ionic-trace
   ionic-trace -[needs pick up]-> spark-of-discharge
-  jolt -[gives]-> strike:jolt
   jolt -[needs hit on Jolted]-> lethal-current
+  jolt -[needs hit on Jolted]-> rule:jolt
   jolt -[needs kill on Jolted]-> flow-state
   jolt -[needs kill on Jolted]-> spark-of-ions
   jolt -[needs kill on Jolted]-> tempest-strike
+  lethal-current -[ends ends]-> status:lethal-current
   lethal-current -[gives]-> blind
   lethal-current -[gives]-> jolt
   lethal-current -[gives]-> status:lethal-current
   lethal-current -[gives]-> strike:lethal-current
-  orb-of-power -[gives]-> armor-charge
+  orb-of-power -[needs pick up]-> rule:orb-of-power
+  rule:amplified -[gives 15% vs combatants]-> effect:damage-resistance
+  rule:bolt-charge -[ends ends]-> bolt-charge
+  rule:bolt-charge -[gives 2.5%]-> effect:energy-melee
+  rule:bolt-charge -[gives]-> strike:bolt-charge
+  rule:ionic-trace -[gives 11.25%]-> effect:energy-grenade
+  rule:ionic-trace -[gives 11.25%]-> effect:energy-melee
+  rule:ionic-trace -[gives 13.5%]-> effect:energy-class-ability
+  rule:jolt -[gives]-> strike:jolt
+  rule:orb-of-power -[gives ?]-> effect:energy-super
+  rule:orb-of-power -[gives]-> armor-charge
+  rule:super -[gives]-> super
   spark-of-amplitude -[gives]-> orb-of-power
   spark-of-beacons -[gives]-> blind
   spark-of-brilliance -[gives]-> blind
   spark-of-discharge -[gives]-> bolt-charge
   spark-of-discharge -[gives]-> ionic-trace
+  spark-of-frequency -[boosts +1 stack]-> bolt-charge
   spark-of-ions -[gives]-> ionic-trace
+  spark-of-resistance -[gives 25% [PvP 10%]]-> effect:damage-resistance
   spark-of-shock -[gives]-> jolt
   spark-of-volts -[gives]-> amplified
   spark-of-volts -[gives]-> bolt-charge
   status:combination-blow -[needs while]-> combination-blow
   status:lethal-current -[needs while]-> lethal-current
+  storms-edge -[gives 90% [PvP 45%]]-> effect:damage-resistance
   strike:bolt-charge -[needs kill]-> spark-of-ions
   super -[needs while]-> arc-staff
   super -[needs while]-> gathering-storm
@@ -214,29 +291,29 @@ edges
   trigger:dodge -[needs cast]-> gamblers-dodge
   trigger:dodge -[needs cast]-> lethal-current
   trigger:finisher -[needs finisher]-> spark-of-volts
-  trigger:grenade -[needs hit]-> bolt-charge
   trigger:grenade -[needs hit]-> flashbang-grenade
-  trigger:grenade -[needs hit]-> jolt
+  trigger:grenade -[needs hit]-> rule:bolt-charge
+  trigger:grenade -[needs hit]-> rule:jolt
   trigger:grenade -[needs hit]-> spark-of-shock
-  trigger:melee -[needs hit]-> bolt-charge
   trigger:melee -[needs hit]-> disorienting-blow
-  trigger:melee -[needs hit]-> jolt
   trigger:melee -[needs hit]-> lethal-current
+  trigger:melee -[needs hit]-> rule:bolt-charge
+  trigger:melee -[needs hit]-> rule:jolt
   trigger:melee -[needs kill]-> combination-blow
-  trigger:sliding-melee -[needs hit]-> bolt-charge
-  trigger:sliding-melee -[needs hit]-> jolt
+  trigger:sliding-melee -[needs hit]-> rule:bolt-charge
+  trigger:sliding-melee -[needs hit]-> rule:jolt
   trigger:sliding-melee -[needs hit]-> tempest-strike
-  trigger:super -[needs cast]-> super
-  trigger:super -[needs hit]-> bolt-charge
+  trigger:super -[needs cast]-> rule:super
   trigger:super -[needs hit]-> gathering-storm
-  trigger:super -[needs hit]-> jolt
+  trigger:super -[needs hit]-> rule:bolt-charge
+  trigger:super -[needs hit]-> rule:jolt
   trigger:super -[needs kill]-> arc-staff
   weapon:arc-weapon -[needs 3+ kills]-> spark-of-discharge
   weapon:arc-weapon -[needs kill]-> spark-of-beacons
   weapon:arc-weapon -[needs kill]-> spark-of-discharge
-  weapon:weapon -[needs hit]-> jolt
+  weapon:weapon -[needs hit]-> rule:jolt
 
-## + what builds on it (withDependents): 124 nodes, 205 edges
+## + what builds on it (withDependents): 147 nodes, 303 edges
 column 0
   trigger Air dodge
   trigger Critical health
@@ -274,8 +351,8 @@ column 1
   armorMod Proximity Ward
   armorMod Reaper
   artifactPerk Flashover
-  buff Super
   exoticArmor Shinobu's Vow
+  keywordRule Super
   subclassAbility Combination Blow
   subclassAbility Disorienting Blow
   subclassAbility Flashbang Grenade
@@ -303,9 +380,19 @@ column 2
   buff Overshield
   buff Reaper
   buff Slice
+  buff Super
   debuff Blind
   debuff Jolt
   debuff Sever
+  effect Class ability energy
+  effect Damage bonus
+  effect Damage resistance
+  effect Extra grenade charge
+  effect Grenade energy
+  effect Health
+  effect Melee energy
+  effect Reload
+  effect Super energy
   pickup Ionic Trace
   pickup Orb of Power
   strike Lethal Current strike
@@ -348,6 +435,11 @@ column 3
   artifactPerk Dielectric
   artifactPerk To Shreds
   artifactPerk Unraveling Orbs
+  keywordRule Amplified
+  keywordRule Bolt Charge
+  keywordRule Ionic Trace
+  keywordRule Jolt
+  keywordRule Orb of Power
   subclassAspect Flow State
   subclassFragment Spark of Amplitude
   subclassFragment Spark of Beacons
@@ -361,6 +453,14 @@ column 4
   buff Void Overshield
   buff Woven Mail
   debuff Unravel
+  effect Class stat
+  effect Grenade stat
+  effect Health stat
+  effect Least-charged ability energy
+  effect Melee stat
+  effect Super stat
+  effect Weapon stats
+  effect Weapons stat
   strike Bolt Charge strike
   strike Jolt strike
 column 5
@@ -369,15 +469,21 @@ column 5
 column 6
   summon Threadling
 edges
+  absolution -[gives 5% | 7.5% | 10%]-> effect:energy-class-ability
+  absolution -[gives 5% | 7.5% | 10%]-> effect:energy-grenade
+  absolution -[gives 5% | 7.5% | 10%]-> effect:energy-melee
   amplified -[needs while]-> flow-state
   amplified -[needs while]-> luminopotent-2pc
+  amplified -[needs while]-> rule:amplified
   amplified -[needs while]-> spark-of-amplitude
   amplified -[needs while]-> spark-of-beacons
   amplified -[needs while]-> spark-of-frequency
   arc-siphon -[gives]-> orb-of-power
+  arc-staff -[gives 90% [PvP 53%]]-> effect:damage-resistance
   arc-staff -[gives]-> bolt-charge
   arc-stasis-dual-siphon -[gives]-> orb-of-power
   arc-strand-siphon-combo -[gives]-> orb-of-power
+  arc-weapon-surge -[gives +10% | 17% | 22% | 25% vs Arc weapon]-> effect:damage-bonus
   armor-charge -[needs 2+ stacks]-> restorative-finisher
   armor-charge -[needs 3+ stacks]-> bulwark-finisher
   armor-charge -[needs 3+ stacks]-> emergency-reinforcement
@@ -405,47 +511,96 @@ edges
   armor-charge -[needs while]-> weapons-font
   ascension -[gives]-> amplified
   ascension -[gives]-> jolt
+  ashes-to-assets -[gives ?]-> effect:energy-super
+  better-already -[gives ?]-> effect:health
   blind -[needs kill on Blinded]-> spark-of-brilliance
-  bolt-charge -[gives]-> strike:bolt-charge
+  bolstering-detonation -[gives 12% | 17% | 20%]-> effect:energy-class-ability
   bolt-charge -[needs at max]-> flashover
+  bolt-charge -[needs at max]-> rule:bolt-charge
   bolt-charge -[needs at max]-> shinobus-vow
+  bolt-charge -[needs gained]-> rule:bolt-charge
   bolt-charge -[needs gained]-> shinobus-vow
+  bomber -[gives 12% | 17% | 20%]-> effect:energy-grenade
+  bulwark-finisher -[ends ends]-> armor-charge
   bulwark-finisher -[gives]-> void-overshield
+  class-font -[gives +20 | 40 | 50]-> effect:stat-class
+  combination-blow -[gives 100%]-> effect:energy-class-ability
+  combination-blow -[gives ? vs melee]-> effect:damage-bonus
+  combination-blow -[gives ?]-> effect:health
   combination-blow -[gives]-> status:combination-blow
+  defibrillating-blast -[gives ?]-> effect:health
   defibrillating-blast -[gives]-> jolt
+  demolitionist -[gives 10% (20% on fusion-rifle, glaive, shotgun, sniper-rifle)]-> effect:energy-grenade
+  demolitionist -[gives]-> effect:reload
+  demolitionist-enhanced -[gives 11% (22% on fusion-rifle, glaive, shotgun, sniper-rifle)]-> effect:energy-grenade
+  demolitionist-enhanced -[gives]-> effect:reload
   dielectric -[gives]-> bolt-charge
   disorienting-blow -[gives]-> amplified
   disorienting-blow -[gives]-> blind
   disorienting-blow -[gives]-> bolt-charge
+  distribution -[gives 2% | 3% | 4%]-> effect:energy-super
+  distribution -[gives 4% | 6% | 7%]-> effect:energy-class-ability
+  distribution -[gives 4% | 6% | 7%]-> effect:energy-grenade
+  distribution -[gives 4% | 6% | 7%]-> effect:energy-melee
+  dynamo -[gives ?]-> effect:energy-super
   elemental-charge -[gives]-> armor-charge
+  emergency-reinforcement -[ends ends]-> armor-charge
+  emergency-reinforcement -[gives 10%]-> effect:damage-resistance
   emergency-reinforcement -[gives]-> status:emergency-reinforcement
   empowered-finish -[gives]-> armor-charge
+  explosive-finisher -[ends spends all]-> armor-charge
+  explosive-finisher -[gives 70% | 80% | 90% | 100% by stacks spent from x3]-> effect:energy-grenade
   firepower -[gives]-> orb-of-power
   flashbang-grenade -[gives]-> blind
+  flashover -[gives +50% vs Bolt Charge]-> effect:damage-bonus
   flashover -[gives]-> amplified
+  flow-state -[gives 66% [PvP 32%]]-> effect:damage-resistance
   flow-state -[gives]-> amplified
+  focusing-strike -[gives 12% | 17% | 20%]-> effect:energy-class-ability
+  gamblers-dodge -[gives ?]-> effect:energy-melee
+  gathering-storm -[gives 90% [PvP 49%]]-> effect:damage-resistance
   gathering-storm -[gives]-> jolt
+  grenade-font -[gives +20 | 40 | 50]-> effect:stat-grenade
+  grenade-kickstart -[ends spends all]-> armor-charge
+  grenade-kickstart -[gives 16.2% | 21.7% | 28.4% | 34.4% | 38.4% | 41.3% | 43.4% | 45% by charges from 2]-> effect:energy-grenade
+  hands-on -[gives ?]-> effect:energy-super
   harmonic-siphon -[gives]-> orb-of-power
+  health-font -[gives +20 | 40 | 50]-> effect:stat-health
+  healthy-finisher -[ends spends 1]-> armor-charge
+  healthy-finisher -[gives 100%]-> effect:health
   heavy-handed -[gives]-> orb-of-power
   horde-shuttle -[gives]-> sever
   horde-shuttle -[gives]-> threadling
+  impact-induction -[gives 12% | 17% | 20%]-> effect:energy-grenade
+  innervation -[gives 10% | 13% | 15%]-> effect:energy-grenade
+  insulation -[gives 4% | 5% | 6%]-> effect:energy-class-ability
+  invigoration -[gives 10% | 13% | 15%]-> effect:energy-melee
   ionic-trace -[needs pick up]-> elemental-charge
+  ionic-trace -[needs pick up]-> rule:ionic-trace
   ionic-trace -[needs pick up]-> spark-of-discharge
-  jolt -[gives]-> strike:jolt
   jolt -[needs hit on Jolted]-> lethal-current
+  jolt -[needs hit on Jolted]-> rule:jolt
   jolt -[needs kill on Jolted]-> dielectric
   jolt -[needs kill on Jolted]-> flow-state
   jolt -[needs kill on Jolted]-> luminopotent-4pc
   jolt -[needs kill on Jolted]-> spark-of-ions
   jolt -[needs kill on Jolted]-> tempest-strike
   kinetic-charge-siphon -[gives]-> orb-of-power
+  kinetic-weapon-surge -[gives +10% | 17% | 22% | 25% vs Kinetic weapon]-> effect:damage-bonus
+  lethal-current -[ends ends]-> status:lethal-current
   lethal-current -[gives]-> blind
   lethal-current -[gives]-> jolt
   lethal-current -[gives]-> status:lethal-current
   lethal-current -[gives]-> strike:lethal-current
+  luminopotent-2pc -[gives handling ?, reload ?]-> effect:weapon-stats
   luminopotent-4pc -[gives]-> ionic-trace
+  melee-font -[gives +20 | 40 | 50]-> effect:stat-melee
+  melee-kickstart -[ends spends all]-> armor-charge
+  melee-kickstart -[gives 16.2% | 21.7% | 28.4% | 34.4% | 38.4% | 41.3% | 43.4% | 45% by charges from 2]-> effect:energy-melee
+  momentum-transfer -[gives 12% | 17% | 20%]-> effect:energy-melee
   new-tricks -[needs while]-> shinobus-vow
-  orb-of-power -[gives]-> armor-charge
+  one-two-finisher -[ends spends all]-> armor-charge
+  one-two-finisher -[gives 70% | 80% | 90% | 100% by stacks spent from x3]-> effect:energy-melee
   orb-of-power -[needs pick up]-> absolution
   orb-of-power -[needs pick up]-> better-already
   orb-of-power -[needs pick up]-> innervation
@@ -453,28 +608,61 @@ edges
   orb-of-power -[needs pick up]-> invigoration
   orb-of-power -[needs pick up]-> orbs-of-restoration
   orb-of-power -[needs pick up]-> recuperation
+  orb-of-power -[needs pick up]-> rule:orb-of-power
   orb-of-power -[needs pick up]-> unraveling-orbs
+  orbs-of-restoration -[gives 10% | 13% | 15%]-> effect:energy-least-charged
+  outreach -[gives 12% | 17% | 20%]-> effect:energy-melee
+  powerful-attraction -[collects collects]-> orb-of-power
   proximity-ward -[gives]-> overshield
   radiant-light -[gives]-> armor-charge
+  reaper -[ends ends]-> status:reaper
   reaper -[gives]-> orb-of-power
   reaper -[gives]-> status:reaper
+  recuperation -[gives ?]-> effect:health
+  restorative-finisher -[ends spends 2]-> armor-charge
+  restorative-finisher -[gives 50%]-> effect:energy-least-charged
+  rule:amplified -[gives 15% vs combatants]-> effect:damage-resistance
+  rule:bolt-charge -[ends ends]-> bolt-charge
+  rule:bolt-charge -[gives 2.5%]-> effect:energy-melee
+  rule:bolt-charge -[gives]-> strike:bolt-charge
+  rule:ionic-trace -[gives 11.25%]-> effect:energy-grenade
+  rule:ionic-trace -[gives 11.25%]-> effect:energy-melee
+  rule:ionic-trace -[gives 13.5%]-> effect:energy-class-ability
+  rule:jolt -[gives]-> strike:jolt
+  rule:orb-of-power -[gives ?]-> effect:energy-super
+  rule:orb-of-power -[gives]-> armor-charge
+  rule:super -[gives]-> super
   sever -[needs kill on Severed]-> to-shreds
   sever -[needs sustained hit on Severed]-> to-shreds
+  shinobus-vow -[ends ends]-> new-tricks
+  shinobus-vow -[gives +1]-> effect:extra-charge-grenade
+  shinobus-vow -[gives 4.2%]-> effect:energy-grenade
+  shinobus-vow -[gives ? + allies]-> effect:health
+  shinobus-vow -[gives ?]-> effect:energy-grenade
+  shinobus-vow -[gives ~40%]-> effect:energy-grenade
   shinobus-vow -[gives]-> bolt-charge
   shinobus-vow -[gives]-> new-tricks
+  slice -[ends ends]-> status:slice
   slice -[gives]-> sever
   slice -[gives]-> status:slice
+  slice-enhanced -[ends ends]-> status:slice
   slice-enhanced -[gives]-> sever
   slice-enhanced -[gives]-> status:slice
+  snapload-finisher -[ends spends 1]-> armor-charge
+  solar-weapon-surge -[gives +10% | 17% | 22% | 25% vs Solar weapon]-> effect:damage-bonus
   spark-of-amplitude -[gives]-> orb-of-power
   spark-of-beacons -[gives]-> blind
   spark-of-brilliance -[gives]-> blind
   spark-of-discharge -[gives]-> bolt-charge
   spark-of-discharge -[gives]-> ionic-trace
+  spark-of-frequency -[boosts +1 stack]-> bolt-charge
   spark-of-ions -[gives]-> ionic-trace
+  spark-of-resistance -[gives 25% [PvP 10%]]-> effect:damage-resistance
   spark-of-shock -[gives]-> jolt
   spark-of-volts -[gives]-> amplified
   spark-of-volts -[gives]-> bolt-charge
+  special-finisher -[ends spends 3]-> armor-charge
+  stasis-weapon-surge -[gives +10% | 17% | 22% | 25% vs Stasis weapon]-> effect:damage-bonus
   status:combination-blow -[needs while]-> combination-blow
   status:emergency-reinforcement -[needs while]-> emergency-reinforcement
   status:lethal-current -[needs while]-> lethal-current
@@ -483,14 +671,18 @@ edges
   status:slice -[needs at max]-> slice-enhanced
   status:slice -[needs while]-> slice
   status:slice -[needs while]-> slice-enhanced
+  storms-edge -[gives 90% [PvP 45%]]-> effect:damage-resistance
+  strand-weapon-surge -[gives +10% | 17% | 22% | 25% vs Strand weapon]-> effect:damage-bonus
   strike:bolt-charge -[needs hit]-> defibrillating-blast
   strike:bolt-charge -[needs kill]-> spark-of-ions
   super -[needs while]-> arc-staff
   super -[needs while]-> gathering-storm
   super -[needs while]-> storms-edge
+  super-font -[gives +20 | 40 | 50]-> effect:stat-super
   tempest-strike -[gives]-> bolt-charge
   tempest-strike -[gives]-> jolt
   threadling -[needs hit]-> horde-shuttle
+  to-shreds -[gives ? + allies]-> effect:health
   to-shreds -[gives]-> unravel
   to-shreds -[gives]-> woven-mail
   trigger:air-dodge -[needs cast]-> ascension
@@ -521,36 +713,41 @@ edges
   trigger:grenade -[needs cast]-> demolitionist-enhanced
   trigger:grenade -[needs cast]-> shinobus-vow
   trigger:grenade -[needs hit]-> bolstering-detonation
-  trigger:grenade -[needs hit]-> bolt-charge
   trigger:grenade -[needs hit]-> flashbang-grenade
-  trigger:grenade -[needs hit]-> jolt
   trigger:grenade -[needs hit]-> momentum-transfer
+  trigger:grenade -[needs hit]-> rule:bolt-charge
+  trigger:grenade -[needs hit]-> rule:jolt
   trigger:grenade -[needs hit]-> shinobus-vow
   trigger:grenade -[needs hit]-> spark-of-shock
   trigger:grenade -[needs kill]-> ashes-to-assets
   trigger:grenade -[needs kill]-> firepower
   trigger:grenade -[needs last charge]-> grenade-kickstart
-  trigger:melee -[needs hit]-> bolt-charge
   trigger:melee -[needs hit]-> disorienting-blow
   trigger:melee -[needs hit]-> focusing-strike
   trigger:melee -[needs hit]-> impact-induction
-  trigger:melee -[needs hit]-> jolt
   trigger:melee -[needs hit]-> lethal-current
+  trigger:melee -[needs hit]-> rule:bolt-charge
+  trigger:melee -[needs hit]-> rule:jolt
   trigger:melee -[needs kill]-> combination-blow
   trigger:melee -[needs kill]-> hands-on
   trigger:melee -[needs kill]-> heavy-handed
   trigger:melee -[needs last charge]-> melee-kickstart
-  trigger:sliding-melee -[needs hit]-> bolt-charge
-  trigger:sliding-melee -[needs hit]-> jolt
+  trigger:sliding-melee -[needs hit]-> rule:bolt-charge
+  trigger:sliding-melee -[needs hit]-> rule:jolt
   trigger:sliding-melee -[needs hit]-> tempest-strike
   trigger:super -[needs cast]-> radiant-light
-  trigger:super -[needs cast]-> super
-  trigger:super -[needs hit]-> bolt-charge
+  trigger:super -[needs cast]-> rule:super
   trigger:super -[needs hit]-> gathering-storm
-  trigger:super -[needs hit]-> jolt
+  trigger:super -[needs hit]-> rule:bolt-charge
+  trigger:super -[needs hit]-> rule:jolt
   trigger:super -[needs kill]-> arc-staff
   unravel -[needs sustained hit on Unraveled]-> horde-shuttle
   unraveling-orbs -[gives]-> unraveling-rounds
+  utility-finisher -[ends spends all]-> armor-charge
+  utility-finisher -[gives 70% | 80% | 90% | 100% by stacks spent from x3]-> effect:energy-class-ability
+  utility-kickstart -[ends spends all]-> armor-charge
+  utility-kickstart -[gives 16.2% | 21.7% | 28.4% | 34.4% | 38.4% | 41.3% | 43.4% | 45% by charges from 2]-> effect:energy-class-ability
+  void-weapon-surge -[gives +10% | 17% | 22% | 25% vs Void weapon]-> effect:damage-bonus
   weapon:arc-weapon -[needs 2+ kills]-> arc-siphon
   weapon:arc-weapon -[needs 2+ kills]-> arc-stasis-dual-siphon
   weapon:arc-weapon -[needs 2+ kills]-> arc-strand-siphon-combo
@@ -570,7 +767,8 @@ edges
   weapon:stasis-weapon -[needs kill]-> arc-stasis-dual-siphon
   weapon:strand-weapon -[needs 2+ kills]-> arc-strand-siphon-combo
   weapon:strand-weapon -[needs kill]-> arc-strand-siphon-combo
-  weapon:weapon -[needs hit]-> jolt
+  weapon:weapon -[needs hit]-> rule:jolt
   weapon:weapon -[needs kill]-> reaper
   weapon:weapon -[needs sustained hit]-> horde-shuttle
   weapon:weapon -[needs sustained hit]-> to-shreds
+  weapons-font -[gives +20 | 40 | 50]-> effect:stat-weapons

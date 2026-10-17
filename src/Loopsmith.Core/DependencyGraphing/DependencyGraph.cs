@@ -9,7 +9,7 @@ namespace Loopsmith.Core.DependencyGraphing;
 /// What a node of the dependency graph is. A player action (<see cref="ActionTrigger"/>: a grenade, a dodge, a
 /// finisher) or the equipment a trigger names (<see cref="NeededWeapon"/>: an Arc weapon) needs nothing; the
 /// subclass's parts, the outside elements and the keywords fire on what they need; the statuses, pickups, summons and
-/// strikes are what the elements give.
+/// strikes are what the elements give, and the effects what they change without the graph counting it.
 /// </summary>
 [Union]
 public partial record GraphNodeType
@@ -25,6 +25,8 @@ public partial record GraphNodeType
     partial record PickupDrop();
     partial record SummonedAlly();
     partial record UnlistedKeyword();                   // a keyword element the glossary has no status, pickup or summon for (Guardian)
+    partial record KeywordRule();                       // a keyword's rules (rule:jolt), apart from its state (jolt)
+    partial record ShownEffect();                       // what Loopsmith shows but doesn't count: energy, health, damage, resistance…
     partial record KeywordStrike();                     // the damage a keyword deals (Bolt Charge's lightning strike)
     partial record OutsideElement(ElementKind Kind);    // a mod, perk, exotic, artifact perk, catalyst or armor set bonus
 }
@@ -33,18 +35,21 @@ public partial record GraphNodeType
 public sealed record ElementFacts(string File, Optional<string> Source, Optional<string> Description, ImmutableArray<string> Reasons);
 
 /// <summary>
-/// A node: an element (<see cref="Element"/> holds its facts), a status, pickup, summon, strike, trigger or weapon. A keyword
-/// element whose id is a glossary status, pickup or summon is that one node (<see cref="IsKeyword"/>).
+/// A node: an element (<see cref="Element"/> holds its facts), a status, pickup, summon, strike, effect, trigger or weapon. A
+/// keyword element whose id is a glossary status, pickup or summon is two nodes: its state (that id, <see cref="IsKeyword"/>,
+/// no facts) and its rules (<c>rule:&lt;id&gt;</c>, with the facts).
 /// </summary>
 public sealed record GraphNode(string Id, string Name, GraphNodeType Type, bool IsKeyword, Optional<ElementFacts> Element);
 
-public enum EdgeKind { Gives, Needs }
-
 /// <summary>
-/// "<see cref="From"/> gives <see cref="To"/>" (an element → the status, pickup, summon or strike it gives) or
-/// "<see cref="To"/> needs <see cref="From"/>" (what is needed → the element), with a short <see cref="Label"/>
-/// ("kill on Jolted", "while", "cast").
+/// <see cref="Gives"/>: an element → the status, pickup, summon, strike or effect it gives (the only kind the columns
+/// count). <see cref="Needs"/>: what is needed → the element. <see cref="Ends"/>: an element → the status it removes or
+/// spends. <see cref="Collects"/>: an element → the pickup it picks up from the ground. <see cref="Boosts"/>: an element →
+/// the status it gives more stacks of, or a higher cap.
 /// </summary>
+public enum EdgeKind { Gives, Needs, Ends, Collects, Boosts }
+
+/// <summary>An edge from <see cref="From"/> to <see cref="To"/> of that kind, with a short <see cref="Label"/> ("kill on Jolted", "while", "12%").</summary>
 public sealed record GraphEdge(string From, string To, EdgeKind Kind, string Label);
 
 public enum ScopeKind { Subclass, WithNeeds, WithDependents }
