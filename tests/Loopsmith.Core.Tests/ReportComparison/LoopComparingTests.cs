@@ -29,7 +29,7 @@ public sealed class LoopComparingTests
         AnalyzeLoop(name, [.. actions.Select(action => new LoopStep(action, Optional.None<string>()))]);
 
     private static LoopReport AnalyzeLoop(string name, ImmutableArray<LoopStep> steps) =>
-        LoopAnalysis.AnalyzeLoop(Build, name, steps, LoopPlaying.PlayLoop(Build, steps));
+        LoopAnalysis.AnalyzeLoop(Build, name, LoopPlaying.PlayLoop(Build, steps));
 
     /// <summary>The trigger's step index in each loop, -1 where that loop doesn't have it.</summary>
     private static (int Left, int Right) ReadSteps(TriggerComparison trigger) =>

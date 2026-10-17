@@ -27,7 +27,7 @@ public class LoopAnalysisTests
         AnalyzeLoop(build, "Test loop", ToSteps(actions));
 
     private static LoopReport AnalyzeLoop(ValidatedBuild build, string loopName, ImmutableArray<LoopStep> steps) =>
-        LoopAnalysis.AnalyzeLoop(build, loopName, steps, LoopPlaying.PlayLoop(build, steps));
+        LoopAnalysis.AnalyzeLoop(build, loopName, LoopPlaying.PlayLoop(build, steps));
 
     /// <summary>A kill drops an Orb of Power.</summary>
     private static readonly BuildElement Spawner = Element("spawner", ElementKind.Fragment,

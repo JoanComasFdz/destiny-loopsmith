@@ -8,19 +8,19 @@ namespace Loopsmith.Core.LoopAnalyzing;
 
 /// <summary>
 /// Analyses a designed loop by its order of triggers (docs/loop-format.md, "Analysis"; ADRs D2), from the passes
-/// <c>StepPlaying.LoopPlaying</c> played. Pure: same build, steps and passes ⇒ same report. Nothing is counted: each step
+/// <c>StepPlaying.LoopPlaying</c> played. Pure: same build and played loop ⇒ same report. Nothing is counted: each step
 /// says what it needs and which step provided it, what it sets off, what is wasted.
 /// </summary>
 public static partial class LoopAnalysis
 {
     public static LoopReport AnalyzeLoop(ValidatedBuild build, LoopDesign design, PlayedLoop played) =>
-        AnalyzeLoop(build, design.Name, design.Steps, played);
+        AnalyzeLoop(build, design.Name, played);
 
-    public static LoopReport AnalyzeLoop(ValidatedBuild build, string loopName, ImmutableArray<LoopStep> steps, PlayedLoop played)
+    public static LoopReport AnalyzeLoop(ValidatedBuild build, string loopName, PlayedLoop played)
     {
-        var labels = steps.Select(step => build.DescribeAction(step.Action)).ToImmutableArray();
+        var labels = played.Steps.Select(step => build.DescribeAction(step.Action)).ToImmutableArray();
         var first = played.Passes[0];
-        if (steps.IsEmpty)
+        if (played.Steps.IsEmpty)
         {
             return new LoopReport(loopName, build.Build.Name, labels, new LoopVerdict.NoSteps(), first, first, true, [], [], []);
         }

@@ -20,15 +20,15 @@ public static class LoopPlaying
         var actions = steps.Select(step => step.Action).ToImmutableArray();
         var initial = ActionResolution.CreateInitialState();
         return actions.IsEmpty
-            ? new PlayedLoop([new LoopPass(initial, [])], 0)
-            : PlayPasses(build, initial, actions);
+            ? new PlayedLoop(steps, [new LoopPass(initial, [])], 0)
+            : PlayPasses(build, steps, initial, actions);
     }
 
     /// <summary>
     /// Passes from the fresh spawn until one starts in a state an earlier pass started in: that earlier pass is the
     /// repeating one, and the last pass played is the one before it. Each pass numbers its steps from #1.
     /// </summary>
-    private static PlayedLoop PlayPasses(ValidatedBuild build, GameState initial, ImmutableArray<PlayerAction> actions)
+    private static PlayedLoop PlayPasses(ValidatedBuild build, ImmutableArray<LoopStep> steps, GameState initial, ImmutableArray<PlayerAction> actions)
     {
         var passes = ImmutableArray.CreateBuilder<LoopPass>();
         var starts = new List<string>();
@@ -38,7 +38,7 @@ public static class LoopPlaying
             var seen = starts.IndexOf(ToStateKey(start));
             if (seen >= 0)
             {
-                return new PlayedLoop(passes.ToImmutable(), seen);
+                return new PlayedLoop(steps, passes.ToImmutable(), seen);
             }
 
             starts.Add(ToStateKey(start));
@@ -47,7 +47,7 @@ public static class LoopPlaying
             start = resolutions[^1].State.StartNextPass();
         }
 
-        return new PlayedLoop(passes.ToImmutable(), passes.Count - 1);
+        return new PlayedLoop(steps, passes.ToImmutable(), passes.Count - 1);
     }
 
     /// <summary>
