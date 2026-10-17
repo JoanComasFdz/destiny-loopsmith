@@ -44,7 +44,8 @@ svg{display:block}
 .node{cursor:pointer}
 .node .t{font:500 9.5px var(--mono);letter-spacing:.04em;text-transform:uppercase}
 .node .n{font:500 12.5px var(--body);fill:var(--fg)}
-.edge{fill:none;stroke:var(--edge);stroke-width:1.2;opacity:.6}
+.edge{fill:none;stroke:var(--edge);stroke-width:1.2;opacity:.6;marker-end:url(#arrow)}
+.edge.on{marker-end:url(#arrow-on)}
 .edge.gives{stroke-dasharray:none}
 .edge.needs{stroke-dasharray:4 3}
 .edge.ends{stroke-dasharray:1 3;stroke-linecap:round;stroke-width:1.6}
@@ -143,7 +144,8 @@ function draw(){
   const height = TOP + Math.max(...keys.map(c => cols[c].length)) * (H + GAPY) + 16;
   const svg = document.getElementById('svg');
   svg.setAttribute('width', width); svg.setAttribute('height', height); svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-  let s = '';
+  // Every line ends in an arrow at the box it leads to: a need points at what needs it, a gift at what is given.
+  let s = `<defs>${['arrow','arrow-on'].map(m => `<marker id="${m}" viewBox="0 0 10 10" refX="9.5" refY="5" markerWidth="7" markerHeight="7" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="${css(m === 'arrow' ? '--edge' : '--fg')}"/></marker>`).join('')}</defs>`;
   keys.forEach((c,i) => s += `<text class="colhead" x="${LEFT + i*(W+GAPX)}" y="22">${head(c, outside)}</text>`);
   edges.forEach((e,i) => {
     const a = pos[e.from], b = pos[e.to];
