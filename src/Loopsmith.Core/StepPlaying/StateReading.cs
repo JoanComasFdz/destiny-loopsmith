@@ -2,7 +2,7 @@ using System.Collections.Immutable;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 
-namespace Loopsmith.Core.Simulation;
+namespace Loopsmith.Core.StepPlaying;
 
 /// <summary>
 /// Whether a rule's guards hold in the state: not at all, only by a counted buff's chance stacks (the rule fires as a

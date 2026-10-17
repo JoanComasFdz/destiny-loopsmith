@@ -4,7 +4,7 @@ using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 using Loopsmith.Core.Phrasing;
 
-namespace Loopsmith.Core.Simulation;
+namespace Loopsmith.Core.StepPlaying;
 
 /// <summary>
 /// Analyses a designed loop by its order of triggers (docs/loop-format.md, "Analysis"; ADRs D2). Pure: same build and

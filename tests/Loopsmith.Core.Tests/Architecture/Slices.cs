@@ -22,7 +22,7 @@ internal static class Slices
     public const string RuleParsing = "RuleParsing";
     public const string BuildParsing = "BuildParsing";
     public const string BuildComposition = "BuildComposition";
-    public const string Simulation = "Simulation";
+    public const string StepPlaying = "StepPlaying";
     public const string BuildExplanation = "BuildExplanation";
     public const string TraceRendering = "TraceRendering";
     public const string LoopFiles = "LoopFiles";
@@ -38,7 +38,7 @@ internal static class Slices
 
     /// <summary>Pure feature slices.</summary>
     public static readonly ImmutableArray<string> Features =
-        [RuleParsing, BuildParsing, BuildComposition, Simulation, BuildExplanation, TraceRendering, LoopFiles, ReportComparison,
+        [RuleParsing, BuildParsing, BuildComposition, StepPlaying, BuildExplanation, TraceRendering, LoopFiles, ReportComparison,
             LoadoutImporting, ManifestJoining, StatLoading];
 
     /// <summary>Every known slice, kernel included.</summary>
@@ -72,7 +72,7 @@ internal static class Slices
             new(Orchestration, All),
         ]);
 
-    /// <summary>The slice a namespace belongs to: <c>Loopsmith.Core.Simulation.Phases</c> → <c>Simulation</c>.</summary>
+    /// <summary>The slice a namespace belongs to: <c>Loopsmith.Core.StepPlaying.Phases</c> → <c>StepPlaying</c>.</summary>
     public static string? FindSlice(string @namespace)
     {
         if (!@namespace.StartsWith(Root + ".", StringComparison.Ordinal))

@@ -3,7 +3,7 @@ using Loopsmith.Core.Causality;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 
-namespace Loopsmith.Core.Simulation;
+namespace Loopsmith.Core.StepPlaying;
 
 /// <summary>
 /// Pure: the enemy counts a step's ability or weapon offers (ADRs D4). It plays the step from the state with one enemy

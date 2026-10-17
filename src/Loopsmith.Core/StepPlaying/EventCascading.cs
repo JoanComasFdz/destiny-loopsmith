@@ -4,7 +4,7 @@ using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 using Loopsmith.Core.Phrasing;
 
-namespace Loopsmith.Core.Simulation;
+namespace Loopsmith.Core.StepPlaying;
 
 /// <summary>Accumulator of one step: state so far, bullets so far, notes, events processed so far.</summary>
 public sealed record Cascade(GameState State, ImmutableArray<FiredRule> Fired, ImmutableArray<string> Notes, int EventCount);

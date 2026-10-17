@@ -1,7 +1,7 @@
 using Dunet;
 using Loopsmith.Core.Domain;
 
-namespace Loopsmith.Core.Simulation;
+namespace Loopsmith.Core.StepPlaying;
 
 /// <summary>
 /// An event waiting to be emitted. Hits and kills snapshot the target only when emitted, so a kill

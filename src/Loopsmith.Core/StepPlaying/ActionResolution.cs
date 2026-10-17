@@ -3,7 +3,7 @@ using Loopsmith.Core.Causality;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 
-namespace Loopsmith.Core.Simulation;
+namespace Loopsmith.Core.StepPlaying;
 
 /// <summary>Pure entry point: no I/O, no randomness. Same build + state + step ⇒ same resolution.</summary>
 public static class ActionResolution

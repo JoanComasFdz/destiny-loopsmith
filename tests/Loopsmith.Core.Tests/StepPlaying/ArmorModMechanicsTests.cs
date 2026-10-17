@@ -4,11 +4,11 @@ using Loopsmith.Core.Causality;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 using Loopsmith.Core.Phrasing;
-using Loopsmith.Core.Simulation;
+using Loopsmith.Core.StepPlaying;
 using Loopsmith.Core.TraceRendering;
 using static Loopsmith.Core.Tests.Support.TestCatalog;
 
-namespace Loopsmith.Core.Tests.Simulation;
+namespace Loopsmith.Core.Tests.StepPlaying;
 
 /// <summary>
 /// What the armor mods need of the engine: a finisher (it kills one enemy of the pack, and only "any source" kills react

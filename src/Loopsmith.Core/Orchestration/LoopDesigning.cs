@@ -11,7 +11,7 @@ using Loopsmith.Core.LoopFiles;
 using Loopsmith.Core.Phrasing;
 using Loopsmith.Core.ReportComparison;
 using Loopsmith.Core.RuleParsing;
-using Loopsmith.Core.Simulation;
+using Loopsmith.Core.StepPlaying;
 using Loopsmith.Core.StatLoading;
 using Loopsmith.Core.TraceRendering;
 

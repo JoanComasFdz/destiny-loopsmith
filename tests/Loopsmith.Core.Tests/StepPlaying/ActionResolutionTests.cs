@@ -2,11 +2,11 @@ using System.Collections.Immutable;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 using Loopsmith.Core.Phrasing;
-using Loopsmith.Core.Simulation;
+using Loopsmith.Core.StepPlaying;
 using Loopsmith.Core.TraceRendering;
 using static Loopsmith.Core.Tests.Support.TestCatalog;
 
-namespace Loopsmith.Core.Tests.Simulation;
+namespace Loopsmith.Core.Tests.StepPlaying;
 
 public class ActionResolutionTests
 {

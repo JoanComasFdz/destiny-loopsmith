@@ -3,7 +3,7 @@ using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 using Loopsmith.Core.Phrasing;
 using Loopsmith.Core.ReportComparison;
-using Loopsmith.Core.Simulation;
+using Loopsmith.Core.StepPlaying;
 using static Loopsmith.Core.Tests.Support.TestCatalog;
 
 namespace Loopsmith.Core.Tests.ReportComparison;

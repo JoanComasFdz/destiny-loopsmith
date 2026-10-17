@@ -3,7 +3,7 @@ using Loopsmith.Core.Causality;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 
-namespace Loopsmith.Core.Simulation;
+namespace Loopsmith.Core.StepPlaying;
 
 /// <summary>
 /// The state after one outcome, how it was applied, and the events it caused. <see cref="ByChance"/>: those events are a
