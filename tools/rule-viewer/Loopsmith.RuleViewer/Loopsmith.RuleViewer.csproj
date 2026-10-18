@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The rule viewer (tools/rule-viewer/README.md): reads rules/, writes out/rule-viewer/. A host: its logic is Loopsmith.RuleViewer.Core. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Loopsmith.RuleViewer</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Loopsmith.Core\Loopsmith.Core.csproj" />
+    <ProjectReference Include="..\Loopsmith.RuleViewer.Core\Loopsmith.RuleViewer.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- The lanes page's style and script, put into the page as they are. -->
+    <EmbeddedResource Include="Page/lanes.css" LogicalName="lanes.css" />
+    <EmbeddedResource Include="Page/lanes.js" LogicalName="lanes.js" />
+  </ItemGroup>
+</Project>

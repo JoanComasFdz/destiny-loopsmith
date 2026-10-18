@@ -47,7 +47,7 @@ founding one: every other decision follows from it.
 | D36 | The player says when a weapon step breaks a shield and when an ability step spends its last charge | Shield Break Charge and the Kickstarts react to them; play decides both, and neither is counted |
 | D37 | A reload is a step the player declares, and a rule can reload a weapon; no ammo is counted | Demolitionist's loop needs a reload and the perks that react to one; a magazine is time and ammo, which only play decides |
 | D38 | The web designer is the only host; the CLI and the loop graph are removed | Nobody used the CLI: the web app, recorded on every PR, is how Loopsmith is iterated on; what the CLI checked is a Core test |
-| D39 | Developer tools under `tools/` are hosts too: they call only `Orchestration` and the kernel, and nothing ships them | The rules lanes tool draws every rule as one claim, the list of e2e scenarios to write; a tool is a host like the web app, so it keeps the same boundary |
+| D39 | Developer tools under `tools/` are hosts too: they call only `Orchestration` and the kernel, their own logic is a pure project of their own, and nothing ships them | The rule viewer draws every rule as one claim, the list of e2e scenarios to write; a tool is a host like the web app, so it keeps the same boundary, and Core keeps only what a player's host uses |
 
 ## What the product is
 
@@ -615,10 +615,14 @@ the developer tools under `tools/` as hosts: the web designer stays the only one
 **Context.** Writing the e2e scenarios one claim at a time needs the list of the claims: every rule of a subclass, and
 of what it needs and what builds on it, as one lane (what sets it off ➜ what must be in place ➜ what it gives). That
 list is drawn from the rules, for whoever writes the scenarios, not for a player. **Decision (product owner).** A
-developer tool under `tools/` is a host, as the web app is (D38): the rules lanes tool (`tools/graph/Loopsmith.Graph`)
+developer tool under `tools/` is a host, as the web app is (D38): the rule viewer (`tools/rule-viewer/Loopsmith.RuleViewer`)
 reads `rules/` itself (a host calls only `Orchestration` and the kernel, so it keeps its own short copy of
-`SourceFetching`'s file reading), calls `Orchestration.DependencyGraphs` and writes its page and JSON under `out/`;
-its page's parts (box, lane, group) are its own presentation. The host boundary test checks it with the web app.
-Nothing deploys or ships a tool. **Consequence.** The lane mapping is Core (`DependencyGraphing`), unit-tested and
-golden-tested (`ArcHunterLanesGoldenTests`), so a rules change shows its lanes in the PR diff; the web designer stays
-the only host a player uses.
+`SourceFetching`'s file reading) and writes its page and JSON under `out/`; its page's parts (box, lane, group) are its
+own presentation. A tool's logic, which no player's host uses, is not Core: it is the tool's own pure project
+(`tools/rule-viewer/Loopsmith.RuleViewer.Core`: the dependency graph and its lanes), which follows
+[CODING_RULES](CODING_RULES.md) like a slice, references only Core, and uses only its kernel and `Orchestration`
+(`CatalogLoading.ParseCatalog` reads the rules). The host boundary test checks the tool and its pure project with the
+web app; the tool's own tests check that its pure project touches no files and uses no other part of Core. Nothing
+deploys or ships a tool. **Consequence.** The lane mapping is unit-tested and golden-tested in the tool's own tests
+(`tools/rule-viewer/Loopsmith.RuleViewer.Tests`, `ArcHunterLanesGoldenTests`), so a rules change shows its lanes in the
+PR diff; Core holds only what the web designer, the only host a player uses, needs.
