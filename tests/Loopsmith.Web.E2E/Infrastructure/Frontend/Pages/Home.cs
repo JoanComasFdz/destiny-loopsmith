@@ -35,7 +35,9 @@ public sealed class Home(IPage page)
         OnScreen.ActAsync(HandWritten, ImportBuild, input => input.SetInputFilesAsync(FindFixture(fixture)));
 
     private static string FindFixture(string fixture) =>
-        Directory.EnumerateFiles(Path.Combine(AppContext.BaseDirectory, "Scenarios"), fixture, SearchOption.AllDirectories).Single();
+        new[] { "Scenarios", "Rules" }
+            .SelectMany(root => Directory.EnumerateFiles(Path.Combine(AppContext.BaseDirectory, root), fixture, SearchOption.AllDirectories))
+            .Single();
 }
 
 /// <summary>What Home shows: whether it is the page shown.</summary>

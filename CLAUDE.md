@@ -106,7 +106,8 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
   (`<!-- <TestClass> reads the next yaml block … -->`, or `<!-- abridged: no test reads the next yaml block -->`; `Support/DocExamples.cs`).
 - `tests/Loopsmith.Web.E2E/` — end-to-end scenarios of the web app (Playwright), one per Gherkin, one GIF per screen via `tools/e2e/record.sh`;
   `Infrastructure/` (BaseE2E, page objects, vocabulary, assertions), `Scenarios/<domain>/<Topic>Tests.cs` and
-  `Rules/<Class>/<Subclass>/<Area>/<Rule>Tests.cs` (one scenario per rule claim, mirroring `rules/`); what it
+  `Rules/<Class>/<Subclass>/<Area>/<Rule>/<Rule>Tests.cs` (one scenario per rule claim, mirroring `rules/`; each class in a
+  folder of its own with its fixtures, its namespace the domain folder's); what it
   shares with the extension's e2e project (Gherkin, `[TestDescription]`, screens, naming) is `tests/Loopsmith.E2E.Shared`. Binding
   rules: its [E2E-TEST-CODE-RULES.md](tests/Loopsmith.Web.E2E/E2E-TEST-CODE-RULES.md), not
   [docs/CODING_RULES.md](docs/CODING_RULES.md); how to run, isolation and the cache: its [README](tests/Loopsmith.Web.E2E/README.md). Playwright is pinned
@@ -123,8 +124,12 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
   [README](tests/Loopsmith.VsCodeExtension.E2E/README.md).
 - [docs/given-when-then-test-rules.md](docs/given-when-then-test-rules.md) — how to write a Gherkin, click by click:
   every acceptance criterion about how the app behaves is one, and every Gherkin is one e2e scenario (its
-  `[TestDescription]`), played on 🖥️ desktop and/or 📱 mobile (`[PlayInDesktop]` / `[PlayInMobile]`); the worked
-  example is `tests/Loopsmith.Web.E2E/Scenarios/Loop/Weapons/EnemyCountTests.cs`.
+  `[TestDescription]`), played on 🖥️ desktop and/or 📱 mobile (`[PlayInDesktop]` / `[PlayInMobile]`). It holds what
+  every Gherkin shares; its two children add what each kind does differently:
+  [loop scenarios](docs/given-when-then-loop-scenarios.md) (`Scenarios/`, what a PR changes; worked example
+  `tests/Loopsmith.Web.E2E/Scenarios/Loop/Weapons/EnemyCountTests.cs`) and
+  [rule scenarios](docs/given-when-then-rule-scenarios.md) (`Rules/`, one per claim of a rule, grouped like `rules/`;
+  worked example `tests/Loopsmith.Web.E2E/Rules/Hunter/Arc/Aspects/LethalCurrent/LethalCurrentTests.cs`).
 - `docs/requirements.md` — the requirements, starting with the level of abstraction (what Loopsmith
   does and doesn't), then FR-1…FR-13 with their status, the non-functional requirements and what is
   out of scope.

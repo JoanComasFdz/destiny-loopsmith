@@ -60,7 +60,7 @@
     {
         var all = resistance.Value.AllDamage;
         <div class="hud-resistance" data-testid="resistance">
-            <button type="button" class="hud-resistance-row hud-resistance-head" aria-expanded="@(showResistance ? "true" : "false")"
+            <button type="button" class="hud-resistance-row hud-resistance-head" data-action="resistance-toggle" aria-expanded="@(showResistance ? "true" : "false")"
                     @onclick="ToggleResistance" @onclick:stopPropagation="true">
                 <span class="hud-label">@(showResistance ? "▾" : "▸") Damage resistance</span>
                 <span class="hud-label hud-resistance-value">PvE</span>
@@ -159,7 +159,7 @@
     private static RenderFragment RenderResistanceRow(string name, string pve, string pvp) => __builder =>
     {
         <div class="hud-resistance-row" data-testid="resistance-line">
-            <span class="hud-resistance-name">@name</span>
+            <span class="hud-resistance-name" data-testid="resistance-line-name">@name</span>
             <span class="hud-resistance-value" data-column="pve">@pve</span>
             <span class="hud-resistance-value muted" data-column="pvp">@pvp</span>
         </div>
@@ -173,14 +173,14 @@
             <span class="chips">
                 @foreach (var source in sources)
                 {
-                    <button type="button" class="chip hud-chip @ToneStyling.ToAffinityClass(source.Affinity)" data-effect="@source.Element.Value"
+                    <button type="button" class="chip hud-chip @ToneStyling.ToAffinityClass(source.Affinity)" data-testid="resistance-source" data-effect="@source.Element.Value"
                             @onclick="() => ShowElementAsync(source.Element)" @onclick:stopPropagation="true">
                         @if (LoadoutShaping.FindElementIcon(Build.Catalog, source.Element) is Optional<string>.Some icon)
                         {
                             <img class="inline-icon hud-keyword-icon" src="@icon.Value" alt="" loading="lazy" />
                         }
-                        <span>@source.Name</span>
-                        <span class="hud-switches">@StateHudShaping.DescribeResistanceSource(source)</span>
+                        <span data-testid="resistance-source-name">@source.Name</span>
+                        <span class="hud-switches" data-testid="resistance-source-value">@StateHudShaping.DescribeResistanceSource(source)</span>
                     </button>
                 }
             </span>

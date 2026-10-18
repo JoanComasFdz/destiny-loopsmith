@@ -15,8 +15,20 @@ public sealed class StepCard(IPage page, int number)
 
     private ILocator Reasons => Card.Locator("[data-testid=outcome-reason]");
 
+    private ILocator Resistance => Card.Locator("[data-testid=resistance]");
+
+    private ILocator ResistanceToggle => Resistance.Locator("[data-action=resistance-toggle]");
+
+    private ILocator ResistanceSources => Resistance.Locator("[data-testid=resistance-sources]");
+
     /// <summary>Waits until the card shows its "why:" reasons (after the "why" checkbox is ticked).</summary>
     public Task WaitUntilReasonsShownAsync() => Reasons.First.WaitForAsync(new() { State = WaitForSelectorState.Visible });
+
+    /// <summary>Clicks the "▸ DAMAGE RESISTANCE" title of the card's state: where each resistance comes from shows below its rows.</summary>
+    public Task ClickDamageResistanceAsync() => OnScreen.PressAsync(Resistance, ResistanceToggle);
+
+    /// <summary>Waits until the card's damage resistance shows where each of its resistances comes from.</summary>
+    public Task WaitUntilResistanceSourcesShownAsync() => ResistanceSources.WaitForAsync(new() { State = WaitForSelectorState.Visible });
 
     /// <summary>What the card shows now.</summary>
     public Task<StepCardSnapshot> ReadAsync() => OnScreen.ReadAsync(Card, ReadShownAsync);
@@ -28,14 +40,18 @@ public sealed class StepCard(IPage page, int number)
             shown.Heading,
             [.. shown.Events.Select(e => new FiredEvent(e.Text, [.. e.Sources.Select(s => new FiredSource(s.Name, [.. s.Lines], [.. s.Reasons]))]))],
             shown.NothingTriggers,
-            new StepState(ToChips(shown.Buffs), ToChips(shown.Weapons), ToChips(shown.Debuffs), ToChips(shown.Ground)));
+            new StepState(ToChips(shown.Buffs), ToChips(shown.Weapons), ToChips(shown.Debuffs), ToChips(shown.Ground)),
+            new DamageResistance(
+                [.. shown.Resistance.Select(row => new ResistanceRow(row.Name, row.Pve, row.Pvp))],
+                [.. shown.ResistanceSources.Select(source => new ResistanceSource(source.Name, source.Value))]));
     }
 
     private static ImmutableArray<StateChip> ToChips(ShownChip[] chips) => [.. chips.Select(chip => new StateChip(chip.Text, chip.Tooltip))];
 
     // The card's texts as the user reads them, white space collapsed. A chip reads as its parts (its name, how many
     // effects it switches on, its weapons) joined by " · " ("One for All · Festival Flight"), as the card draws them
-    // apart, and its tooltip is its title.
+    // apart, and its tooltip is its title. The damage resistance reads as its rows ("All damage", PvE, PvP) and, once its
+    // title is clicked, the sources below them (each "<name>" and "<its values>").
     private const string ReadScript = """
         card => {
           const text = el => (el ? el.innerText : '').replace(/\s+/g, ' ').trim();
@@ -59,11 +75,26 @@ public sealed class StepCard(IPage page, int number)
             weapons: chips('weapons'),
             debuffs: chips('debuffs'),
             ground: chips('ground'),
+            resistance: [...card.querySelectorAll('[data-testid=resistance] [data-testid=resistance-line]')].map(row => ({
+              name: text(row.querySelector('[data-testid=resistance-line-name]')),
+              pve: text(row.querySelector('[data-column=pve]')),
+              pvp: text(row.querySelector('[data-column=pvp]')),
+            })),
+            resistanceSources: [...card.querySelectorAll('[data-testid=resistance-sources] [data-testid=resistance-source]')].map(source => ({
+              name: text(source.querySelector('[data-testid=resistance-source-name]')),
+              value: text(source.querySelector('[data-testid=resistance-source-value]')),
+            })),
           };
         }
         """;
 
-    private sealed record ShownCard(string Heading, ShownEvent[] Events, bool NothingTriggers, ShownChip[] Buffs, ShownChip[] Weapons, ShownChip[] Debuffs, ShownChip[] Ground);
+    private sealed record ShownCard(
+        string Heading, ShownEvent[] Events, bool NothingTriggers, ShownChip[] Buffs, ShownChip[] Weapons, ShownChip[] Debuffs, ShownChip[] Ground,
+        ShownResistanceRow[] Resistance, ShownResistanceSource[] ResistanceSources);
+
+    private sealed record ShownResistanceRow(string Name, string Pve, string Pvp);
+
+    private sealed record ShownResistanceSource(string Name, string Value);
 
     private sealed record ShownEvent(string Text, ShownSource[] Sources);
 
@@ -74,9 +105,9 @@ public sealed class StepCard(IPage page, int number)
 
 /// <summary>
 /// What a step card shows: its heading ("#1 Festival Flight (🥊 hit)"), the events it fired with what fired from each,
-/// whether it reads "nothing triggers", and its "State after #N".
+/// whether it reads "nothing triggers", its "State after #N" and its damage resistance.
 /// </summary>
-public sealed record StepCardSnapshot(string Heading, ImmutableArray<FiredEvent> Events, bool NothingTriggers, StepState State);
+public sealed record StepCardSnapshot(string Heading, ImmutableArray<FiredEvent> Events, bool NothingTriggers, StepState State, DamageResistance Resistance);
 
 /// <summary>An event the step fired ("Festival Flight 🥊 hit 1 enemy") and the elements that fired from it.</summary>
 public sealed record FiredEvent(string Text, ImmutableArray<FiredSource> Sources);
@@ -89,3 +120,15 @@ public sealed record StepState(ImmutableArray<StateChip> Buffs, ImmutableArray<S
 
 /// <summary>A chip of the state ("One for All · Festival Flight") and its tooltip ("10s").</summary>
 public sealed record StateChip(string Text, string Tooltip);
+
+/// <summary>
+/// The card's damage resistance: its rows ("All damage" and each against some combatants only) and, once its title is
+/// clicked, the sources of each ("Arc Staff" "90% · PvP 53%"); none until then.
+/// </summary>
+public sealed record DamageResistance(ImmutableArray<ResistanceRow> Rows, ImmutableArray<ResistanceSource> Sources);
+
+/// <summary>A row of the damage resistance: what it is against ("All damage"), its PvE and its PvP ("93.5%", "53%").</summary>
+public sealed record ResistanceRow(string Name, string Pve, string Pvp);
+
+/// <summary>A source of the damage resistance: its name ("Arc Staff") and its values ("90% · PvP 53%").</summary>
+public sealed record ResistanceSource(string Name, string Value);

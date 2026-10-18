@@ -1,0 +1,7 @@
+# Lethal Current armed by Marksman's Dodge (no rules of its own), with Tempest Strike for the sliding melee and Combination Blow (rules on kills only) to slide with.
+name: "E2E - Lethal Current with Tempest Strike, Marksman's Dodge and Combination Blow"
+class: hunter
+subclass: arc
+melee: combination-blow
+classAbility: marksmans-dodge
+aspects: [lethal-current, tempest-strike]

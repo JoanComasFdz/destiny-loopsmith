@@ -7,8 +7,8 @@ using Microsoft.Playwright;
 namespace Loopsmith.Web.E2E.Infrastructure.Frontend.Components;
 
 /// <summary>
-/// The trigger panel (Components/TriggerPalette.razor): the step HUD (Super, abilities, weapons) and the picked one's row
-/// of buttons ("🥊 hit", "💀 kill", "🔄 reload") with its "×" enemy count.
+/// The trigger panel (Components/TriggerPalette.razor): the step HUD (Super, abilities with their secondary uses, weapons)
+/// and the picked one's row of buttons ("🥊 hit", "💀 kill", "🔄 reload") with its "×" enemy count.
 /// </summary>
 public sealed class TriggerPalette(IPage page)
 {
@@ -33,12 +33,34 @@ public sealed class TriggerPalette(IPage page)
         Panel.Locator("[data-action=trigger-weapon]")
             .And(page.GetByRole(AriaRole.Button, new() { NameRegex = new Regex($"^{Regex.Escape(weapon.ToShownText())} \\(") }));
 
+    // An ability's square is named "<its kind>: <its name>" ("Melee: Combination Blow").
+    private ILocator AbilityButton(Ability ability) =>
+        Panel.Locator("[data-action=trigger-ability]")
+            .And(page.GetByRole(AriaRole.Button, new() { NameRegex = new Regex($"^[^:]+: {Regex.Escape(ability.ToShownText())}$") }));
+
+    // A secondary use's caption is drawn in capitals ("SLIDE"); its text may not be.
+    private ILocator SecondaryButton(SecondaryUse use) =>
+        Panel.Locator("[data-action=trigger-secondary]")
+            .Filter(new() { Has = page.Locator("[data-testid=secondary-caption]").GetByText(new Regex($"^{Regex.Escape(use.ToShownText())}$", RegexOptions.IgnoreCase)) });
+
     private ILocator Trigger(StepTrigger trigger) =>
         Row.Locator("[data-action=trigger]")
             .Filter(new() { Has = page.Locator("[data-testid=trigger-caption]").GetByText(trigger.ToShownText(), new() { Exact = true }) });
 
     /// <summary>Clicks <paramref name="weapon"/> in the step HUD: its row of buttons shows.</summary>
     public Task ClickWeaponAsync(Weapon weapon) => OnScreen.PressAsync(Panel, WeaponButton(weapon));
+
+    /// <summary>
+    /// Clicks <paramref name="ability"/>'s square in the step HUD: its row of buttons shows, or, for an ability with one
+    /// action (a class ability), the loop gets a step.
+    /// </summary>
+    public Task ClickAbilityAsync(Ability ability) => OnScreen.PressAsync(Panel, AbilityButton(ability));
+
+    /// <summary>
+    /// Clicks <paramref name="use"/> under its ability's square ("SLIDE", "AIR"): its row of buttons shows, or, for a use
+    /// with one action (the air move), the loop gets a step.
+    /// </summary>
+    public Task ClickSecondaryAsync(SecondaryUse use) => OnScreen.PressAsync(Panel, SecondaryButton(use));
 
     /// <summary>Selects the "×" enemy count whose text is <paramref name="shown"/> ("3 in 3 s · One for All").</summary>
     public Task SelectTargetCountAsync(string shown) =>
@@ -51,6 +73,16 @@ public sealed class TriggerPalette(IPage page)
     public async Task WaitUntilRowShownAsync(Weapon weapon)
     {
         await RowTitle.GetByText(weapon.ToShownText(), new() { Exact = true }).WaitForAsync(new() { State = WaitForSelectorState.Visible });
+        await CountedButtons.WaitForAsync(new() { State = WaitForSelectorState.Visible });
+    }
+
+    /// <summary>Waits until the picked row is <paramref name="ability"/>'s: its title names it, its buttons show.</summary>
+    public Task WaitUntilRowShownAsync(Ability ability) => WaitUntilRowShownAsync(ability.ToShownText());
+
+    /// <summary>Waits until the picked row is the one titled <paramref name="title"/> ("Combination Blow", "Sliding melee · Tempest Strike"): its buttons show.</summary>
+    public async Task WaitUntilRowShownAsync(string title)
+    {
+        await RowTitle.GetByText(title, new() { Exact = true }).WaitForAsync(new() { State = WaitForSelectorState.Visible });
         await CountedButtons.WaitForAsync(new() { State = WaitForSelectorState.Visible });
     }
 

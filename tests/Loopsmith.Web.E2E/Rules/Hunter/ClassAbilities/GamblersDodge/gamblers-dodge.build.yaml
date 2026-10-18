@@ -1,0 +1,5 @@
+# Gambler's Dodge as the class ability, for its dodge's melee energy.
+name: "E2E - Gambler's Dodge"
+class: hunter
+subclass: arc
+classAbility: gamblers-dodge

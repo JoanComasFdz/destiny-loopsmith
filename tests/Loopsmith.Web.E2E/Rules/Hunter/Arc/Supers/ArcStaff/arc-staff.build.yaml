@@ -1,0 +1,5 @@
+# Arc Staff as the super, for its kills and its damage resistance.
+name: "E2E - Arc Staff"
+class: hunter
+subclass: arc
+super: arc-staff

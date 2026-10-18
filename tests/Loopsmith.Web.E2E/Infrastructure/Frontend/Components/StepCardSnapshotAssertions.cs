@@ -44,6 +44,43 @@ public static class StepCardSnapshotAssertions
     public static AssertingThat<StepCardSnapshot> Fires(this AssertingThat<StepCardSnapshot> that, ArmorMod mod, params string[] lines) =>
         that.FiresFrom(mod.ToShownText(), lines);
 
+    /// <summary><paramref name="ability"/> fired exactly <paramref name="lines"/>, in that order, each with its "(chance)" as shown.</summary>
+    public static AssertingThat<StepCardSnapshot> Fires(this AssertingThat<StepCardSnapshot> that, Ability ability, params string[] lines) =>
+        that.FiresFrom(ability.ToShownText(), lines);
+
+    /// <summary><paramref name="aspect"/> fired exactly <paramref name="lines"/>, in that order, each with its "(chance)" as shown.</summary>
+    public static AssertingThat<StepCardSnapshot> Fires(this AssertingThat<StepCardSnapshot> that, Aspect aspect, params string[] lines) =>
+        that.FiresFrom(aspect.ToShownText(), lines);
+
+    /// <summary>The card's damage resistance row <paramref name="row"/> ("All damage") reads <paramref name="pve"/> PvE and <paramref name="pvp"/> PvP.</summary>
+    public static AssertingThat<StepCardSnapshot> HasResistance(this AssertingThat<StepCardSnapshot> that, string row, string pve, string pvp)
+    {
+        var shown = that.InstanceToAssert.Resistance.Rows.Where(found => found.Name == row).ToArray();
+        Assert.True(shown.Length == 1, $"The card's damage resistance shows the rows {Describe(that.InstanceToAssert.Resistance.Rows.Select(found => found.Name))}, but one \"{row}\" row was expected.");
+        Assert.True(
+            shown[0].Pve == pve && shown[0].Pvp == pvp,
+            $"The card's \"{row}\" resistance reads \"{shown[0].Pve}\" PvE and \"{shown[0].Pvp}\" PvP, but \"{pve}\" PvE and \"{pvp}\" PvP were expected.");
+        return that;
+    }
+
+    /// <summary><paramref name="ability"/> is a source of the card's damage resistance, with the values <paramref name="values"/> ("90% · PvP 53%").</summary>
+    public static AssertingThat<StepCardSnapshot> HasResistanceFrom(this AssertingThat<StepCardSnapshot> that, Ability ability, string values) =>
+        that.HasResistanceFrom(ability.ToShownText(), values);
+
+    /// <summary><paramref name="aspect"/> is a source of the card's damage resistance, with the values <paramref name="values"/> ("66% · PvP 32%").</summary>
+    public static AssertingThat<StepCardSnapshot> HasResistanceFrom(this AssertingThat<StepCardSnapshot> that, Aspect aspect, string values) =>
+        that.HasResistanceFrom(aspect.ToShownText(), values);
+
+    private static AssertingThat<StepCardSnapshot> HasResistanceFrom(this AssertingThat<StepCardSnapshot> that, string name, string values)
+    {
+        var sources = that.InstanceToAssert.Resistance.Sources;
+        var shown = sources.Where(source => source.Name == name).Select(source => source.Value).ToArray();
+        Assert.True(
+            shown.Contains(values),
+            $"The card's damage resistance comes from {Describe(sources.Select(source => $"{source.Name} {source.Value}"))}, but \"{name} {values}\" was expected among them.");
+        return that;
+    }
+
     /// <summary>The card has no line from <paramref name="perk"/>.</summary>
     public static AssertingThat<StepCardSnapshot> DoesNotFire(this AssertingThat<StepCardSnapshot> that, WeaponPerk perk)
     {
