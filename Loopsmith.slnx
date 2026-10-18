@@ -9,4 +9,7 @@
     <Project Path="tests/Loopsmith.VsCodeExtension.E2E/Loopsmith.VsCodeExtension.E2E.csproj" />
     <Project Path="tests/Loopsmith.Web.E2E/Loopsmith.Web.E2E.csproj" />
   </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/graph/Loopsmith.Graph/Loopsmith.Graph.csproj" />
+  </Folder>
 </Solution>

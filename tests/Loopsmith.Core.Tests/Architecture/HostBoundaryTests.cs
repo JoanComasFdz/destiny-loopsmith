@@ -3,14 +3,18 @@ using Mono.Cecil;
 namespace Loopsmith.Core.Tests.Architecture;
 
 /// <summary>
-/// CODING_RULES "The host owns no logic": the web designer calls the <c>Orchestration</c> API and the
+/// CODING_RULES "The host owns no logic": the web designer (and the rules lanes tool, ADRs D39) calls the <c>Orchestration</c> API and the
 /// kernel, never a feature slice's functions directly. They may still use a slice's data types (building a
 /// <c>TraceOptions</c>, reading a <c>LoopReport</c>): only calls to static methods — the slices' functions — count.
 /// </summary>
 public sealed class HostBoundaryTests
 {
-    /// <summary>Project folder and assembly name of each host.</summary>
-    public static TheoryData<string, string> Hosts => new() { { "Loopsmith.Web", "Loopsmith.Web" } };
+    /// <summary>Project folder (from the repository root) and assembly name of each host.</summary>
+    public static TheoryData<string, string> Hosts => new()
+    {
+        { "src/Loopsmith.Web", "Loopsmith.Web" },
+        { "tools/graph/Loopsmith.Graph", "Loopsmith.Graph" },
+    };
 
     [Theory]
     [MemberData(nameof(Hosts))]
@@ -29,7 +33,7 @@ public sealed class HostBoundaryTests
 
         Violations.AssertNone(
             $"{host} may call only {Slices.Orchestration} and the kernel ({string.Join(", ", Slices.Kernel)}), "
-                + "not a feature slice: add an Orchestration function (e.g. LoopDesigning) and call that.",
+                + "not a feature slice: add an Orchestration function (e.g. LoopDesigning, DependencyGraphs) and call that.",
             violations);
     }
 
@@ -63,7 +67,7 @@ internal static class HostAssemblies
         var testsBin = new DirectoryInfo(AppContext.BaseDirectory);
         var framework = testsBin.Name;
         var configuration = testsBin.Parent!.Name;
-        var path = Path.Combine(Support.RepoFiles.Root, "src", host, "bin", configuration, framework, $"{assembly}.dll");
+        var path = Path.Combine(Support.RepoFiles.Root, host, "bin", configuration, framework, $"{assembly}.dll");
         Assert.True(File.Exists(path), $"{path} not found: build the solution (the test project builds the hosts first).");
         return ModuleDefinition.ReadModule(path);
     }

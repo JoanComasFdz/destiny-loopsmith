@@ -46,11 +46,11 @@ public sealed class KeywordIconsTests
         var slice = new KeywordRef.Status(StatusId.From("slice"));
         var orb = new KeywordRef.Pickup(PickupId.From("orb-of-power"));
 
-        Assert.Equal(ToManifestIcon(Catalog.Manifest.KeywordTraits[ItemHash.From(3221118171u)].Icon), IconFinding.FindKeywordIcon(Catalog, Jolt));
-        Assert.Equal(Catalog.FindKeywordElement(slice).Bind(Catalog.FindElementItem).Bind(item => item.Icon).Map(IconFinding.ToManifestIcon), IconFinding.FindKeywordIcon(Catalog, slice));
-        Assert.True(IconFinding.FindKeywordIcon(Catalog, slice).IsSome());
-        Assert.False(IconFinding.FindKeywordIcon(Catalog, orb).IsSome());
-        Assert.Equal(IconFinding.FindKeywordIcon(Catalog, Jolt), IconFinding.FindElementIcon(Catalog, ElementId.From("jolt")));   // a keyword's element: the keyword's icon
+        Assert.Equal(ToManifestIcon(Catalog.Manifest.KeywordTraits[ItemHash.From(3221118171u)].Icon), Catalog.FindKeywordIcon(Jolt));
+        Assert.Equal(Catalog.FindKeywordElement(slice).Bind(Catalog.FindElementItem).Bind(item => item.Icon).Map(IconFinding.ToManifestIcon), Catalog.FindKeywordIcon(slice));
+        Assert.True(Catalog.FindKeywordIcon(slice).IsSome());
+        Assert.False(Catalog.FindKeywordIcon(orb).IsSome());
+        Assert.Equal(Catalog.FindKeywordIcon(Jolt), IconFinding.FindElementIcon(Catalog, ElementId.From("jolt")));   // a keyword's element: the keyword's icon
     }
 
     [Fact]
@@ -61,7 +61,7 @@ public sealed class KeywordIconsTests
         var unraveling = new KeywordRef.Status(StatusId.From("unraveling-rounds"));
         var drawn = Optional.Some<IconRef>(new IconRef.Drawn(DrawnIcon.Rounds, Affinity.Strand));
 
-        Assert.Equal(drawn, IconFinding.FindKeywordIcon(Catalog, unraveling));
+        Assert.Equal(drawn, Catalog.FindKeywordIcon(unraveling));
         Assert.Equal(drawn, IconFinding.FindElementIcon(Catalog, ElementId.From("unraveling-rounds")));   // its element's: the keyword's
         Assert.Equal(drawn, LoopDesigning.FindActionIcon(Play().Build, new PlayerAction.Declare(new StateDeclaration.EndStatus(StatusId.From("unraveling-rounds")))));
         Assert.All(

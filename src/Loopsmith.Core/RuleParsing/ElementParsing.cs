@@ -75,7 +75,7 @@ internal static class ElementParsing
                 map.ReadOrDefault("statChecks", checks => checks.ReadEach("stat check", ReadStatCheck), []),
                 (_, id, name, kind, affinity, guardianClass, hashes, description, rules, passives, ability, fragmentSlots, source, inert, statChecks) =>
                     new BuildElement(
-                        id, name, kind, affinity, guardianClass, hashes, description, rules, passives, ability, fragmentSlots, source, inert, statChecks))
+                        id, name, kind, affinity, guardianClass, hashes, description, rules, passives, ability, fragmentSlots, source, inert, statChecks, map.Path))
             .Bind(element => Combine(
                 CheckFragmentSlots(map, element),
                 CheckAbilityProfile(map, element),
