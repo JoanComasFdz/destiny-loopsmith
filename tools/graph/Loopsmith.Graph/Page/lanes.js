@@ -1,8 +1,6 @@
 // The lanes page's behaviour: the scope chips show one scope's lanes, and each lane's wires are drawn after layout from
-// where its boxes landed (again on resize and when the theme changes): the triggers meet in one arrow into the first
+// where its boxes landed (again on resize and when the theme changes; the arrowhead is the page's one marker): the triggers meet in one arrow into the first
 // condition, the conditions are joined by "and", and from the last condition one line splits into an arrow per result.
-const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-const head = () => `<defs><marker id="lhead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,0 L10,5 L0,10 L3,5 z" fill="${css('--fg')}"/></marker></defs>`;
 const curve = (x1, y1, x2, y2) => { const k = (x2 - x1) / 2; return `M${x1},${y1} C${x1 + k},${y1} ${x2 - k},${y2} ${x2},${y2}`; };
 
 // An odd number of results lines its middle one up with the last condition, so the middle arrow runs straight: the
@@ -34,7 +32,7 @@ function wireLane(lane){
   const sx = from.r + 16;
   s += `<path class="w" d="M${from.r},${from.m} L${sx},${from.m}"/>`;
   res.forEach(r => s += `<path class="w arrow" d="${curve(sx, from.m, r.l - 2, r.m)}"/>`);
-  svg.innerHTML = head() + s;
+  svg.innerHTML = s;
 }
 
 function wireLanes(){

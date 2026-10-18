@@ -14,12 +14,21 @@ public static class LanePage
     private const string Fonts =
         "https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap";
 
+    /// <summary>
+    /// The one notched arrowhead every wire ends in. A lane's own SVG can't hold it: a scope that is hidden would hide the
+    /// marker the shown scopes' wires point to.
+    /// </summary>
+    private const string ArrowheadDefinition =
+        "<svg class=\"defs\" aria-hidden=\"true\" width=\"0\" height=\"0\"><defs><marker id=\"lhead\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" "
+        + "markerWidth=\"9\" markerHeight=\"9\" markerUnits=\"userSpaceOnUse\" orient=\"auto\"><path d=\"M0,0 L10,5 L0,10 L3,5 z\"/></marker></defs></svg>\n";
+
     public static string RenderPage(RuleLanes lanes, PageAssets assets) =>
         "<!doctype html>\n<html lang=\"en\">\n<meta charset=\"utf-8\">\n"
         + "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\">\n"
         + $"<title>{LaneBoxView.Encode(lanes.Title)} lanes</title>\n"
         + $"<link rel=\"stylesheet\" href=\"{Fonts}\">\n"
         + $"<style>\n{assets.Style}</style>\n"
+        + ArrowheadDefinition
         + "<div class=\"wrap\">\n"
         + "  <header style=\"display:flex;flex-direction:column;gap:8px\">\n"
         + $"    <h1>{LaneBoxView.Encode(lanes.Title)} lanes</h1>\n"

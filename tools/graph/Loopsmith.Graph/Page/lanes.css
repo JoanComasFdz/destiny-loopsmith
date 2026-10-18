@@ -39,6 +39,8 @@ svg{display:block}
 .lane3 .tcol,.lane3 .rcol{flex-direction:column;align-items:stretch}
 .lane3 .ccol{flex-direction:row;align-items:center;gap:40px}
 .lane3 .ccol.none{align-self:flex-start}
+.defs{position:absolute}
+.defs path{fill:var(--fg)}
 .wires{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
 .wires .w{fill:none;stroke:var(--fg);stroke-width:1.8;stroke-linecap:round;opacity:.75}
 .wires .w.arrow{marker-end:url(#lhead)}
