@@ -7,6 +7,7 @@ namespace Loopsmith.E2E.Shared;
 public static class ScenarioNaming
 {
     private const string ScenariosNamespace = ".Scenarios.";
+    private const string RulesNamespace = ".Rules.";
 
     /// <summary>
     /// "Reaper's Tithe gives 3 stacks for a kill of 3" → "ReapersTitheGives3StacksForAKillOf3": the method's name for a
@@ -36,11 +37,18 @@ public static class ScenarioNaming
         $"{methodName.Kebaberize()}-{screen.ToString().ToLowerInvariant()}";
 
     /// <summary>
-    /// "Starting", "Build/Subclass": the class's domain folder under its project's Scenarios/, its namespace after
-    /// ".Scenarios." (the VS Code extension reads it from a scenario file the same way, to find its recordings).
+    /// "Starting", "Build/Subclass": a scenario class's domain folder under its project's Scenarios/, its namespace after
+    /// ".Scenarios."; "Rules/Hunter/Arc/Melees": a rule scenario's, under Rules/, its namespace from "Rules" on (the
+    /// VS Code extension reads it from a scenario file the same way, to find its recordings; the "E2E videos" workflow
+    /// names a rule scenario's release after it: docs/hosting.md, "E2E videos on pull requests").
     /// </summary>
-    public static string ToDomainFolder(Type testClass) =>
-        (testClass.Namespace ?? "") is var name && name.IndexOf(ScenariosNamespace, StringComparison.Ordinal) is var at && at >= 0
+    public static string ToDomainFolder(Type testClass) => ToDomainFolder(testClass.Namespace);
+
+    /// <inheritdoc cref="ToDomainFolder(Type)"/>
+    public static string ToDomainFolder(string? @namespace) =>
+        (@namespace ?? "") is var name && name.IndexOf(ScenariosNamespace, StringComparison.Ordinal) is var at && at >= 0
             ? name[(at + ScenariosNamespace.Length)..].Replace('.', '/')
-            : "Unsorted";
+            : name.IndexOf(RulesNamespace, StringComparison.Ordinal) is var rules && rules >= 0
+                ? name[(rules + 1)..].Replace('.', '/')
+                : "Unsorted";
 }

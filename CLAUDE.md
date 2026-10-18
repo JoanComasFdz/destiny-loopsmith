@@ -92,7 +92,8 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
   `Loopsmith.RuleViewer.Tests` its unit, golden and architecture tests ([tools/rule-viewer/README.md](tools/rule-viewer/README.md)).
   `tools/rule-viewer/prototype/` is the page the owner designed, kept as the reference the tool reproduces.
 - `src/Loopsmith.VsCodeExtension/` — the VS Code extension (plain JavaScript, no build, no dependencies): a CodeLens, a
-  play button and a panel beside the code show each e2e scenario's recordings from the `prs-resources` release, in vscode.dev
+  play button and a panel beside the code show each e2e scenario's recordings from its release (`prs-resources`, or a rule
+  scenario's `rules-<group>-resources`), in vscode.dev
   and desktop VS Code; its `.vsix` is published with the site in `vscode-extension/` by `Loopsmith.Web.csproj`, and
   vscode.dev installs it from a local container (its `Dockerfile`: vscode.dev fetches only from `localhost` and its own
   hosts) ([docs/hosting.md](docs/hosting.md) "The VS Code extension", its [README](src/Loopsmith.VsCodeExtension/README.md)).
@@ -104,7 +105,8 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
   are read by tests from the docs themselves, through a marker comment on the line above each fence
   (`<!-- <TestClass> reads the next yaml block … -->`, or `<!-- abridged: no test reads the next yaml block -->`; `Support/DocExamples.cs`).
 - `tests/Loopsmith.Web.E2E/` — end-to-end scenarios of the web app (Playwright), one per Gherkin, one GIF per screen via `tools/e2e/record.sh`;
-  `Infrastructure/` (BaseE2E, page objects, vocabulary, assertions) and `Scenarios/<domain>/<Topic>Tests.cs`; what it
+  `Infrastructure/` (BaseE2E, page objects, vocabulary, assertions), `Scenarios/<domain>/<Topic>Tests.cs` and
+  `Rules/<Class>/<Subclass>/<Area>/<Rule>Tests.cs` (one scenario per rule claim, mirroring `rules/`); what it
   shares with the extension's e2e project (Gherkin, `[TestDescription]`, screens, naming) is `tests/Loopsmith.E2E.Shared`. Binding
   rules: its [E2E-TEST-CODE-RULES.md](tests/Loopsmith.Web.E2E/E2E-TEST-CODE-RULES.md), not
   [docs/CODING_RULES.md](docs/CODING_RULES.md); how to run, isolation and the cache: its [README](tests/Loopsmith.Web.E2E/README.md). Playwright is pinned
@@ -130,11 +132,14 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
   push to `main`; on a PR that changes the site it also publishes the web app and hands it to `pr-preview.yml`, so a
   PR is built once), `pages.yml`, `pr-preview.yml` (deploys that site; removes it when the PR closes), `e2e-videos.yml` (records nothing: the session
   records the PR's added or changed e2e scenarios and pushes their GIFs and MP4s to a throwaway `e2e-gifs/pr-<n>-<sha>` branch
-  with `tools/e2e/push-gifs.sh`; the workflow uploads them to the `prs-resources` pre-release, posts them on the PR as
+  with `tools/e2e/push-gifs.sh`; the workflow uploads them to their pre-release (a rule scenario's, under
+  `tests/Loopsmith.Web.E2E/Rules/<…>/`, to its rule file's `rules-<…>-resources`, created on its first upload and keeping
+  each rule's latest recording; any other to `prs-resources`), posts them on the PR as
   one comment per version (V1, V2…; each GIF with a "▶ Play MP4" link to the site's `e2e-player.html`; a new one collapses
   the earlier ones into a closed `<details>` each) and deletes the
-  branch; when the PR closes, keeps its newest version's GIFs and MP4s,
-  deletes the older ones and shrinks their posts to one line; [docs/hosting.md](docs/hosting.md) "E2E videos on pull requests"); `tools/web/prepare-pages.sh` readies a published site for Pages.
+  branch; when the PR closes, keeps its newest version's GIFs and MP4s in `prs-resources`,
+  deletes the older ones, keeps each rule's latest recording in the rule releases (a merged PR's replace closed PRs'; one
+  closed without merging loses its own) and shrinks the posts whose recordings went to one line; [docs/hosting.md](docs/hosting.md) "E2E videos on pull requests"); `tools/web/prepare-pages.sh` readies a published site for Pages.
 - `tools/compendium/` — Destiny Data Compendium download (`sheet_dump.py`; the owner runs it with
   `get-compendium.ps1` / `get-compendium.sh` / `get-compendium-docker.sh`; see its README). The
   snapshot lives in `snapshots/compendium/<date>/`: gitignored, so **a new session doesn't have it**.

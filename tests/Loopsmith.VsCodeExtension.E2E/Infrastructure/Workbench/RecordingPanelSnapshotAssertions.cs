@@ -48,6 +48,14 @@ public static class RecordingPanelSnapshotAssertions
         return that;
     }
 
+    /// <summary>The panel plays the MP4 <paramref name="asset"/> of the release <paramref name="release"/>.</summary>
+    public static AssertingThat<RecordingPanelSnapshot> Plays(this AssertingThat<RecordingPanelSnapshot> that, string asset, string release)
+    {
+        that.Plays(asset);
+        Assert.True(that.InstanceToAssert.Video!.Release == release, $"The panel's video comes from the release \"{that.InstanceToAssert.Video.Release}\", but \"{release}\" was expected.");
+        return that;
+    }
+
     /// <summary>The panel's video shows the browser's controls: play and pause, seeking, fullscreen.</summary>
     public static AssertingThat<RecordingPanelSnapshot> HasVideoControls(this AssertingThat<RecordingPanelSnapshot> that)
     {

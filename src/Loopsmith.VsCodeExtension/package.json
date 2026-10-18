@@ -2,7 +2,7 @@
   "name": "loopsmith-e2e-recordings",
   "displayName": "Loopsmith e2e recordings",
   "description": "Shows each Loopsmith e2e scenario's recordings next to its code: a CodeLens, a play button and a panel that plays the MP4.",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "publisher": "loopsmith",
   "license": "MIT",
   "repository": {
@@ -61,7 +61,7 @@
       "editor/title": [
         {
           "command": "loopsmith.e2eRecordings.playHere",
-          "when": "resourceLangId == csharp && resource =~ /\\/Scenarios\\/.*Tests\\.cs$/",
+          "when": "resourceLangId == csharp && resource =~ /\\/(Scenarios|Rules)\\/.*Tests\\.cs$/",
           "group": "navigation"
         }
       ]
@@ -72,12 +72,12 @@
         "loopsmith.e2eRecordings.repository": {
           "type": "string",
           "default": "JoanComasFdz/destiny-loopsmith",
-          "description": "The GitHub repository (owner/name) whose release holds the e2e recordings."
+          "description": "The GitHub repository (owner/name) whose releases hold the e2e recordings."
         },
         "loopsmith.e2eRecordings.release": {
           "type": "string",
           "default": "prs-resources",
-          "description": "The release's tag: the \"E2E videos\" workflow uploads every recording to it."
+          "description": "The release's tag for the scenarios under Scenarios/: the \"E2E videos\" workflow uploads their recordings to it. A rule scenario's (under Rules/) are in its rule group's release, rules-<group>-resources."
         }
       }
     }

@@ -1,9 +1,9 @@
 // Loopsmith e2e recordings: shows each e2e scenario's recordings (the GIFs and MP4s the "E2E videos" workflow keeps in
-// the prs-resources release) next to its code in VS Code: a CodeLens above the scenario's method, a ▷ button in
+// the prs-resources release, or a rule scenario's in its rule group's rules-<group>-resources) next to its code in VS Code: a CodeLens above the scenario's method, a ▷ button in
 // the editor's title bar and a panel beside the editor that plays the MP4 (README.md).
 // One file, no build and no dependencies: VS Code loads it as it is, in a browser (vscode.dev) and on the desktop.
 // The pure functions come first (test/extension.test.js tests them); activate() is the shell around them: it reads the
-// release from GitHub, the scenario files from the editor, and draws what the pure functions describe.
+// releases from GitHub, the scenario files from the editor, and draws what the pure functions describe.
 'use strict';
 
 /** The longest asset name the workflow writes (tools/e2e/post-scenarios.py, MAX_NAME). */
@@ -12,7 +12,9 @@ const MAX_ASSET_NAME = 200;
 const SCREENS = ['desktop', 'mobile'];
 /** pr-<n>-v<version>-<run>.gif / .mp4 (docs/hosting.md, "E2E videos on pull requests", "Naming"). */
 const ASSET_NAME = /^pr-(\d+)-v(\d+)-.+\.(gif|mp4)$/;
-/** How long a read of the release stays fresh before the next CodeLens reads it again. */
+/** The release the player page reads when its link names none (e2e-player.html). */
+const PLAYER_RELEASE = 'prs-resources';
+/** How long a read of a release stays fresh before the next CodeLens reads it again. */
 const FRESH_FOR_MS = 10 * 60 * 1000;
 /** The GitHub sign-ins VS Code may already hold (vscode.dev, the GitHub extensions): any of them reads a public release. */
 const KNOWN_GITHUB_SCOPES = [
@@ -28,7 +30,7 @@ const PLAY_COMMAND = 'loopsmith.e2eRecordings.play';
 const PLAY_HERE_COMMAND = 'loopsmith.e2eRecordings.playHere';
 const REFRESH_COMMAND = 'loopsmith.e2eRecordings.refresh';
 const SIGN_IN_COMMAND = 'loopsmith.e2eRecordings.signIn';
-const SCENARIO_FILES = '**/Scenarios/**/*Tests.cs';
+const SCENARIO_FILES = '**/{Scenarios,Rules}/**/*Tests.cs';
 
 // ---- Pure: names --------------------------------------------------------------------------------------------------
 
@@ -47,11 +49,26 @@ function toGifName(method, screen) {
   return `${toKebabCase(method)}-${screen}`;
 }
 
-/** "Starting", "Build/Subclass": the namespace after its ".Scenarios." (ScenarioNaming.ToDomainFolder). */
+/**
+ * "Starting", "Build/Subclass": the namespace after its ".Scenarios."; "Rules/Hunter/Arc/Melees": a rule scenario's, its
+ * namespace from "Rules" on (ScenarioNaming.ToDomainFolder).
+ */
 function toDomainFolder(namespace) {
-  const marker = '.Scenarios.';
-  const at = namespace.indexOf(marker);
-  return at < 0 ? 'Unsorted' : namespace.slice(at + marker.length).replace(/\./g, '/');
+  const scenarios = namespace.indexOf('.Scenarios.');
+  if (scenarios >= 0) {
+    return namespace.slice(scenarios + '.Scenarios.'.length).replace(/\./g, '/');
+  }
+  const rules = namespace.indexOf('.Rules.');
+  return rules < 0 ? 'Unsorted' : namespace.slice(rules + 1).replace(/\./g, '/');
+}
+
+/**
+ * The release that holds a scenario's recordings (post-scenarios.py, find_release): a rule scenario's (Rules/Hunter/Arc/Melees)
+ * is its rule group's, rules-hunter-arc-melees-resources; any other's is the setting's (prs-resources).
+ */
+function toRelease(domain, release) {
+  const folders = domain.split('/');
+  return folders.length < 2 || folders[0] !== 'Rules' ? release : `rules-${folders.slice(1).map(toKebabCase).join('-')}-resources`;
 }
 
 /** "Starting/start-from-scratch-…-desktop.gif": what the workflow hashes for a name past 200 characters. */
@@ -72,10 +89,14 @@ function nameAsset(pr, version, gifName, extension, digest) {
   return `${stem.slice(0, keep).replace(/-+$/, '')}-${digest}${extension}`;
 }
 
-/** https://<owner, lowercase>.github.io/<repo>/e2e-player.html?v=<MP4>: the site's player page (find_player). */
-function toPlayerUrl(repository, mp4Name) {
+/**
+ * https://<owner, lowercase>.github.io/<repo>/e2e-player.html?v=<MP4>, and &r=<release> when it isn't prs-resources: the
+ * site's player page (link_player).
+ */
+function toPlayerUrl(repository, mp4Name, release) {
   const [owner, repo] = repository.split('/');
-  return `https://${owner.toLowerCase()}.github.io/${repo}/e2e-player.html?v=${encodeURIComponent(mp4Name)}`;
+  const from = release === PLAYER_RELEASE ? '' : `&r=${encodeURIComponent(release)}`;
+  return `https://${owner.toLowerCase()}.github.io/${repo}/e2e-player.html?v=${encodeURIComponent(mp4Name)}${from}`;
 }
 
 /** "PR #109 · V1". */
@@ -227,7 +248,7 @@ function writePanel(scenario, recordings, chosen, repository, release, nonce, cs
       label: toScreenLabel(screen),
       gif: recording.runs[screen].gif ?? null,
       mp4: recording.runs[screen].mp4 ?? null,
-      player: recording.runs[screen].mp4 ? toPlayerUrl(repository, recording.runs[screen].mp4.name) : null,
+      player: recording.runs[screen].mp4 ? toPlayerUrl(repository, recording.runs[screen].mp4.name, release) : null,
     })),
   }));
   const at = Math.max(0, recordings.findIndex((r) => r.pr === chosen.pr && r.version === chosen.version));
@@ -352,12 +373,15 @@ const PANEL_STYLE = `
 
 // ---- Impure: GitHub -----------------------------------------------------------------------------------------------
 
-/** The release's assets ({ name, url }), read from GitHub's API: { ok: true, assets } or { ok: false, reason, limited }. */
+/**
+ * The release's assets ({ name, url }), read from GitHub's API: { ok: true, assets } or { ok: false, reason, limited }. A
+ * rule release that doesn't exist yet holds no recording: the workflow creates it on its first upload.
+ */
 async function readReleaseAssets(repository, release, token) {
   const headers = { Accept: 'application/vnd.github+json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
   const found = await fetchJson(`https://api.github.com/repos/${repository}/releases/tags/${encodeURIComponent(release)}`, headers, release);
   if (!found.ok) {
-    return found;
+    return found.missing && release.startsWith('rules-') ? { ok: true, assets: [] } : found;
   }
   return readAssetPages(`https://api.github.com/repos/${repository}/releases/${found.value.id}/assets?per_page=100`, headers, release, 1, []);
 }
@@ -386,7 +410,7 @@ async function fetchJson(url, headers, release) {
   const reason = limited ? "GitHub's hourly limit is used up"
     : response.status === 404 ? `GitHub has no release "${release}"`
       : `GitHub answered ${response.status}`;
-  return { ok: false, reason, limited };
+  return { ok: false, reason, limited, missing: response.status === 404 };
 }
 
 /**
@@ -427,9 +451,8 @@ function makeNonce() {
 function activate(context) {
   const vscode = require('vscode');
   const changed = new vscode.EventEmitter();
-  let catalog = { state: 'reading' };
-  let readAt = 0;
-  let reads = 0;
+  // Each release read so far (prs-resources, and each rule release a scenario file needed): { catalog, readAt, reads }.
+  const releases = new Map();
   let panel = null;
 
   const readSettings = () => {
@@ -437,30 +460,43 @@ function activate(context) {
     return { repository: settings.get('repository'), release: settings.get('release') };
   };
 
-  // A read started while another is on its way wins: the older one's answer is dropped.
-  const refresh = async () => {
-    const mine = ++reads;
-    catalog = { state: 'reading' };
+  // A read of a release started while another is on its way wins: the older one's answer is dropped.
+  const readRelease = async (release) => {
+    const held = releases.get(release) ?? { catalog: { state: 'reading' }, readAt: 0, reads: 0 };
+    const mine = held.reads + 1;
+    releases.set(release, { ...held, catalog: { state: 'reading' }, reads: mine });
     changed.fire();
-    const { repository, release } = readSettings();
+    const { repository } = readSettings();
     const token = await findGitHubToken(vscode);
     const read = await readReleaseAssets(repository, release, token);
-    if (mine !== reads) {
+    if (releases.get(release)?.reads !== mine) {
       return;
     }
-    readAt = Date.now();
-    catalog = read.ok ? { state: 'read', assets: read.assets } : { state: 'failed', reason: read.reason, canSignIn: read.limited && !token };
+    const catalog = read.ok ? { state: 'read', assets: read.assets } : { state: 'failed', reason: read.reason, canSignIn: read.limited && !token };
+    releases.set(release, { catalog, readAt: Date.now(), reads: mine });
     changed.fire();
   };
 
-  const refreshWhenStale = () => {
-    if (catalog.state !== 'reading' && Date.now() - readAt > FRESH_FOR_MS) {
-      refresh();
+  // Reads every release again: prs-resources, and each rule release read so far.
+  const refresh = async () => {
+    const { release } = readSettings();
+    await Promise.all([...new Set([release, ...releases.keys()])].map(readRelease));
+  };
+
+  const findRelease = (scenario) => toRelease(scenario.domain, readSettings().release);
+
+  // The scenario's release as read so far; a release not read yet, or read too long ago, is read (again).
+  const readCatalog = (scenario) => {
+    const release = findRelease(scenario);
+    const held = releases.get(release);
+    if (held === undefined || (held.catalog.state !== 'reading' && Date.now() - held.readAt > FRESH_FOR_MS)) {
+      readRelease(release);
     }
+    return releases.get(release).catalog;
   };
 
   const readRecordings = async (scenario) => {
-    const read = catalog;
+    const read = readCatalog(scenario);
     if (read.state !== 'read') {
       return [];
     }
@@ -486,10 +522,10 @@ function activate(context) {
       panel = vscode.window.createWebviewPanel('loopsmith.e2eRecording', '', { viewColumn: vscode.ViewColumn.Beside, preserveFocus: false }, { enableScripts: true, localResourceRoots: [] });
       panel.onDidDispose(() => { panel = null; });
     }
-    const { repository, release } = readSettings();
+    const { repository } = readSettings();
     panel.title = `Recording · ${scenario.method}`;
     const nonce = makeNonce();
-    const html = writePanel(scenario, recordings, chosen, repository, release, nonce, panel.webview.cspSource);
+    const html = writePanel(scenario, recordings, chosen, repository, findRelease(scenario), nonce, panel.webview.cspSource);
     panel.webview.html = html;
     panel.reveal(vscode.ViewColumn.Beside);
   };
@@ -510,13 +546,12 @@ function activate(context) {
   const lenses = {
     onDidChangeCodeLenses: changed.event,
     async provideCodeLenses(document) {
-      refreshWhenStale();
       const text = document.getText();
       const scenarios = findScenarios(text);
       const described = await Promise.all(scenarios.map(async (scenario) => {
         const range = new vscode.Range(scenario.nameLine, 0, scenario.nameLine, 0);
         const recordings = await readRecordings(scenario);
-        const items = describeLenses(catalog, recordings);
+        const items = describeLenses(readCatalog(scenario), recordings);
         return items.map((item) => new vscode.CodeLens(range, {
           title: item.title,
           command: item.play ? PLAY_COMMAND : item.command ?? '',
@@ -562,6 +597,7 @@ module.exports = {
   toKebabCase,
   toGifName,
   toDomainFolder,
+  toRelease,
   toGifPath,
   nameAsset,
   toPlayerUrl,

@@ -7,17 +7,17 @@ namespace Loopsmith.VsCodeExtension.E2E.Infrastructure.Fakes;
 
 /// <summary>
 /// GitHub as the extension sees it, faked per scenario: no scenario reaches GitHub. It answers the context's requests for
-/// the prs-resources release (api.github.com: the release, then its assets) with the recordings the scenario put in it
-/// (<see cref="Release"/>), and their downloads (github.com/…/releases/download/…) with the fake recordings of Media/
-/// (a "Desktop" or "Mobile" card). Every answer allows any origin, as GitHub's API does: VS Code for the web runs on
-/// another origin.
+/// a release (api.github.com: the release by its tag, then its assets) with the recordings the scenario put in it
+/// (<see cref="Release"/>, prs-resources, which always exists; <see cref="ReleaseNamed"/>, a rule group's, which exists
+/// once the scenario names it), and their downloads (github.com/…/releases/download/&lt;tag&gt;/…) with the fake
+/// recordings of Media/ (a "Desktop" or "Mobile" card). A release it doesn't hold answers 404. Every answer allows any
+/// origin, as GitHub's API does: VS Code for the web runs on another origin.
 /// </summary>
 public sealed class FakeGitHub
 {
     private const string Repository = "JoanComasFdz/destiny-loopsmith";
     private const string Tag = "prs-resources";
-    private const int ReleaseId = 1;
-    private static readonly string Downloads = $"https://github.com/{Repository}/releases/download/{Tag}/";
+    private static readonly string Downloads = $"https://github.com/{Repository}/releases/download/";
     private static readonly string Media = Path.Combine(AppContext.BaseDirectory, "Infrastructure", "Fakes", "Media");
 
     private static readonly Dictionary<string, string> Cors = new()
@@ -27,8 +27,22 @@ public sealed class FakeGitHub
         ["access-control-expose-headers"] = "x-ratelimit-remaining",
     };
 
+    private ImmutableDictionary<string, FakeRelease> releases = ImmutableDictionary<string, FakeRelease>.Empty.Add(Tag, new FakeRelease(1));
+
     /// <summary>The prs-resources release, as the scenario fills it.</summary>
-    public FakeRelease Release { get; } = new();
+    public FakeRelease Release => ReleaseNamed(Tag);
+
+    /// <summary>The release tagged <paramref name="tag"/> (a rule group's, rules-…-resources), made empty the first time.</summary>
+    public FakeRelease ReleaseNamed(string tag) =>
+        ImmutableInterlocked.GetOrAdd(ref releases, tag, _ => new FakeRelease(Volatile.Read(ref releases).Count + 1));
+
+    /// <summary>
+    /// GitHub has no release tagged <paramref name="tag"/>. Only <see cref="ReleaseNamed"/> adds a release, so there is
+    /// nothing to do: the Given reads as its Gherkin line.
+    /// </summary>
+    public void HasNoRelease(string tag)
+    {
+    }
 
     /// <summary>Answers the context's GitHub requests from <see cref="Release"/>.</summary>
     public async Task RouteAsync(IBrowserContext context)
@@ -46,13 +60,15 @@ public sealed class FakeGitHub
         }
 
         var url = new Uri(route.Request.Url);
-        var assets = Release.Assets;
-        object? answer = url.AbsolutePath switch
-        {
-            $"/repos/{Repository}/releases/tags/{Tag}" => new { id = ReleaseId, tag_name = Tag },
-            var path when path == $"/repos/{Repository}/releases/{ReleaseId}/assets" => ReadPage(assets, url.Query),
-            _ => null,
-        };
+        var held = Volatile.Read(ref releases);
+        var tags = $"/repos/{Repository}/releases/tags/";
+        var path = url.AbsolutePath;
+        object? answer = path.StartsWith(tags, StringComparison.Ordinal)
+            && held.TryGetValue(Uri.UnescapeDataString(path[tags.Length..]), out var tagged)
+                ? new { id = tagged.Id, tag_name = Uri.UnescapeDataString(path[tags.Length..]) }
+                : held.FirstOrDefault(release => path == $"/repos/{Repository}/releases/{release.Value.Id}/assets") is { Value: { } listed } found
+                    ? ReadPage(found.Key, listed.Assets, url.Query)
+                    : null;
         await route.FulfillAsync(new()
         {
             Status = answer is null ? 404 : 200,
@@ -63,18 +79,21 @@ public sealed class FakeGitHub
     }
 
     // One page of the assets, 100 a page as the extension asks (?per_page=100&page=<n>).
-    private static object[] ReadPage(ImmutableDictionary<string, string> assets, string query)
+    private static object[] ReadPage(string tag, ImmutableDictionary<string, string> assets, string query)
     {
         var page = System.Web.HttpUtility.ParseQueryString(query)["page"] is { } asked && int.TryParse(asked, out var number) ? number : 1;
         return [.. assets.Keys.Order(StringComparer.Ordinal).Skip((page - 1) * 100).Take(100)
-            .Select(name => new { name, browser_download_url = Downloads + name })];
+            .Select(name => new { name, browser_download_url = $"{Downloads}{tag}/{name}" })];
     }
 
     private async Task AnswerDownloadAsync(IRoute route)
     {
         var url = route.Request.Url;
-        var name = url.StartsWith(Downloads, StringComparison.Ordinal) ? Uri.UnescapeDataString(url[Downloads.Length..]) : null;
-        if (name is null || !Release.Assets.TryGetValue(name, out var media))
+        var download = url.StartsWith(Downloads, StringComparison.Ordinal) ? url[Downloads.Length..].Split('/', 2) : [];
+        var media = "";
+        if (download.Length != 2
+            || !Volatile.Read(ref releases).TryGetValue(Uri.UnescapeDataString(download[0]), out var release)
+            || !release.Assets.TryGetValue(Uri.UnescapeDataString(download[1]), out media))
         {
             await route.FulfillAsync(new() { Status = 404, Headers = Cors, Body = "Not Found" });
             return;
@@ -91,11 +110,14 @@ public sealed class FakeGitHub
 }
 
 /// <summary>
-/// The release's assets: each recording of a scenario is a GIF (and an MP4) per screen it is played on, named as the
+/// A release's assets: each recording of a scenario is a GIF (and an MP4) per screen it is played on, named as the
 /// workflow names them (<see cref="AssetNaming"/>).
 /// </summary>
-public sealed class FakeRelease
+public sealed class FakeRelease(int id)
 {
+    /// <summary>Its id in GitHub's API (the URL of its assets names it).</summary>
+    public int Id { get; } = id;
+
     private ImmutableDictionary<string, string> assets = ImmutableDictionary<string, string>.Empty;
 
     /// <summary>Each asset's name, and the file of Media/ its download answers with.</summary>

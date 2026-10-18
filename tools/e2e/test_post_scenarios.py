@@ -1,4 +1,5 @@
-"""Tests of post-scenarios.py's post (write_section) and of how it collapses and shrinks the earlier ones:
+"""Tests of post-scenarios.py's post (write_section), of how it collapses and shrinks the earlier ones, of which release
+each run goes to and of what each release keeps when the PR closes:
 python3 -m unittest tools/e2e/test_post_scenarios.py
 
 CI doesn't run them (it runs dotnet test): run them after changing the post.
@@ -79,6 +80,86 @@ class WriteSectionTests(unittest.TestCase):
         self.assertIn("#### ❌ Imports title", post)
         self.assertIn("#### ❌ Reloads title", post)
         self.assertEqual(post.count("##### ❌ 🖥️ Desktop"), 2)
+
+    def test_a_rule_runs_gif_and_player_link_point_at_its_rule_release(self):
+        run = self.run_of("CombinationBlowTests", "Hits", "desktop", release="rules-hunter-arc-melees-resources")
+        open(run["file"].replace(".gif", ".mp4"), "wb").close()
+        run["mp4_file"] = run["file"].replace(".gif", ".mp4")
+        post = post_scenarios.write_section(REPO, 1, [run], "Text.")
+        self.assertIn("https://github.com/Owner/repo/releases/download/rules-hunter-arc-melees-resources/pr-1-v1-Hits-desktop.gif",
+                      post)
+        self.assertIn("(https://owner.github.io/repo/e2e-player.html?v=pr-1-v1-Hits-desktop.mp4"
+                      "&r=rules-hunter-arc-melees-resources)", post)
+
+    def test_any_other_runs_gif_and_player_link_point_at_prs_resources_with_no_release_in_the_link(self):
+        run = self.run_of("ReloadTests", "Reloads", "desktop", release="prs-resources")
+        open(run["file"].replace(".gif", ".mp4"), "wb").close()
+        run["mp4_file"] = run["file"].replace(".gif", ".mp4")
+        post = post_scenarios.write_section(REPO, 1, [run], "Text.")
+        self.assertIn("/releases/download/prs-resources/pr-1-v1-Reloads-desktop.gif", post)
+        self.assertIn("(https://owner.github.io/repo/e2e-player.html?v=pr-1-v1-Reloads-desktop.mp4)", post)
+
+
+class FindReleaseTests(unittest.TestCase):
+    def test_a_rule_scenarios_release_is_its_folders_under_rules_kebab_cased(self):
+        self.assertEqual(post_scenarios.find_release("Rules/Hunter/Arc/Melees/hits-desktop.gif"),
+                         "rules-hunter-arc-melees-resources")
+        self.assertEqual(post_scenarios.find_release("Rules/AllClasses/Arc/Fragments/x-mobile.gif"),
+                         "rules-all-classes-arc-fragments-resources")
+        self.assertEqual(post_scenarios.find_release("Rules/Hunter/ClassAbilities/x-desktop.gif"),
+                         "rules-hunter-class-abilities-resources")
+        self.assertEqual(post_scenarios.find_release("Rules/Mods/Arms/x-desktop.gif"), "rules-mods-arms-resources")
+
+    def test_any_other_scenarios_release_is_prs_resources(self):
+        self.assertEqual(post_scenarios.find_release("Starting/x-desktop.gif"), "prs-resources")
+        self.assertEqual(post_scenarios.find_release("Loop/Weapons/x-mobile.gif"), "prs-resources")
+        self.assertEqual(post_scenarios.find_release("Recordings/x-desktop.gif"), "prs-resources")
+
+    def test_rule_releases_are_told_apart_from_any_other_tag(self):
+        self.assertTrue(post_scenarios.is_rule_release("rules-hunter-arc-melees-resources"))
+        self.assertFalse(post_scenarios.is_rule_release("prs-resources"))
+        self.assertFalse(post_scenarios.is_rule_release("rules-resources"))
+        self.assertFalse(post_scenarios.is_rule_release("v1.0"))
+
+
+def assets(*names):
+    return [{"id": at, "name": name} for at, name in enumerate(names)]
+
+
+def names(deleted):
+    return sorted(asset["name"] for asset in deleted)
+
+
+class CleanTests(unittest.TestCase):
+    def test_prs_resources_keeps_the_prs_newest_version_only(self):
+        held = assets("pr-7-v1-a-desktop.gif", "pr-7-v2-a-desktop.gif", "pr-7-v10-b-desktop.gif",
+                      "pr-70-v1-a-desktop.gif", "owners-own.png")
+        self.assertEqual(names(post_scenarios.plan_pr_deletions(held, 7)), ["pr-7-v1-a-desktop.gif", "pr-7-v2-a-desktop.gif"])
+
+    def test_a_merged_pr_keeps_its_newest_recording_of_each_rule_and_deletes_older_ones_of_closed_prs(self):
+        held = assets("pr-5-v1-hits-desktop.gif",   # a closed PR's, replaced
+                      "pr-6-v1-hits-desktop.gif",   # an open PR's, kept for its posts
+                      "pr-7-v1-hits-desktop.gif",   # this PR's older one
+                      "pr-7-v2-hits-desktop.gif",
+                      "pr-7-v1-only-in-v1-mobile.gif",  # a rule V2 didn't re-record: still its newest
+                      "pr-5-v1-other-rule-desktop.gif",  # a rule this PR didn't touch
+                      "owners-own.png")
+        deleted = post_scenarios.plan_rule_deletions(held, 7, merged=True, open_prs={6})
+        self.assertEqual(names(deleted), ["pr-5-v1-hits-desktop.gif", "pr-7-v1-hits-desktop.gif"])
+
+    def test_a_pr_closed_without_merging_deletes_all_its_rule_recordings(self):
+        held = assets("pr-7-v1-hits-desktop.gif", "pr-7-v2-hits-desktop.mp4", "pr-5-v1-hits-desktop.gif", "pr-70-v1-x.gif")
+        deleted = post_scenarios.plan_rule_deletions(held, 7, merged=False, open_prs=set())
+        self.assertEqual(names(deleted), ["pr-7-v1-hits-desktop.gif", "pr-7-v2-hits-desktop.mp4"])
+
+    def test_closing_without_merging_with_rule_recordings_shrinks_the_newest_post_too(self):
+        v1 = comment(1, post_of(1, "A"))
+        v2 = comment(2, post_of(2, "A", "B"))
+        edits = post_scenarios.plan_shrinks([v1, v2], newest_too=True)
+        self.assertEqual([edited["id"] for edited, _ in edits], [1, 2])
+        self.assertEqual(edits[1][1].splitlines()[0],
+                         "**Scenarios (V2)** · 2 scenarios · recordings deleted when the PR closed without merging")
+        self.assertEqual(post_scenarios.find_last_version([comment(2, edits[1][1])]), 2)
 
 
 def post_of(version, *titles, sections=False):

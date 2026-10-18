@@ -63,8 +63,10 @@ As the web rules' rule a, except:
   `Workspace/` (`tools/e2e/record.sh` serves it: README, "Run and record");
 - the window is the desktop's 1280×800, with a mouse, its video the same size;
 - **GitHub is faked** (`Infrastructure/Fakes/FakeGitHub.cs`), per scenario, never reached: the context's requests to
-  `api.github.com` (the `prs-resources` release, then its assets) and to `github.com/…/releases/download/…` (a GIF or
-  an MP4) are answered from the release the scenario fills. Its release starts empty;
+  `api.github.com` (a release by its tag, then its assets) and to `github.com/…/releases/download/<tag>/…` (a GIF or
+  an MP4) are answered from the releases the scenario fills: `prs-resources` (`GitHub.Release`) always exists and
+  starts empty; a rule group's (`GitHub.ReleaseNamed("rules-…-resources")`) exists once the scenario names it, and
+  any other answers 404;
 - it opens VS Code and waits until its workbench is shown, noting when, so `record.sh` trims VS Code's loading screen
   off the video (the record's `homeShownSeconds`);
 - it gives the scenario its `Workbench` and its `GitHub`.
@@ -126,6 +128,9 @@ files, and `tools/e2e/record.sh --no-video <its class>` (it serves VS Code for t
 | `Given the release holds the recordings of "StartFromScratchTests.cs" from PR #104 · V1 and PR #109 · V1` | `GitHub.Release.AddRecordingsOf(new ScenarioFile.StartFromScratch(), new Recording(104, 1), new Recording(109, 1))` |
 | `… from PR #101 · V1, as GIFs only` | `new Recording(101, 1, HasMp4s: false)` |
 | `Given the release holds no recording of "ReloadTests.cs"` | `GitHub.Release.HasNoRecordingOf(new ScenarioFile.Reload())` |
+| `Given the release "rules-hunter-arc-melees-resources" holds a recording of "CombinationBlowTests.cs" made by PR #140 · V2` | `GitHub.ReleaseNamed("rules-hunter-arc-melees-resources").AddRecordingsOf(new ScenarioFile.CombinationBlow(), new Recording(140, 2))` |
+| `And the release "prs-resources" holds no recording of it` | `GitHub.Release.HasNoRecordingOf(new ScenarioFile.CombinationBlow())` |
+| `Given GitHub has no release "rules-hunter-arc-melees-resources"` | `GitHub.HasNoRelease("rules-hunter-arc-melees-resources")` |
 | `"Scenarios/Starting/StartFromScratchTests.cs" is open` / `I open … in the explorer` | `Explorer.OpenAsync(new ScenarioFile.StartFromScratch())`, `Editor.WaitUntilRecordingsShownAsync()` |
 | `I tap "Play desktop recording" in its CodeLens` | `Editor.ClickCodeLensAsync("Play desktop recording")`, `RecordingPanel.WaitUntilPlayingAsync()` |
 | `I tap its "Mobile" tab` / `I tap "PR #104 · V1" in "Recorded in"` | `RecordingPanel.ClickTabAsync("Mobile")` / `RecordingPanel.ClickVersionAsync("PR #104 · V1")`, then `RecordingPanel.WaitUntilPlayingAsync()` |
@@ -136,3 +141,4 @@ files, and `tools/e2e/record.sh --no-video <its class>` (it serves VS Code for t
 | `it plays "….mp4", with its controls` | `Plays("….mp4")`, `HasVideoControls()` |
 | `the panel "Recording · …" shows beside the code` | `RecordingPanel.ReadLayoutAsync()`, `IsBesideTheCode()`; `RecordingPanel.ReadAsync()`, `HasEditorTab("Recording · …")` |
 | `its tabs are "Desktop" and "Mobile", "Desktop" selected` / `it plays "….mp4"` | `HasTabSelected("Desktop", "Desktop", "Mobile")` / `Plays("….mp4")` |
+| `it plays "….mp4" from "rules-…-resources"` | `Plays("….mp4", "rules-…-resources")` |

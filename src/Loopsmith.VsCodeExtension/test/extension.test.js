@@ -130,6 +130,22 @@ test('a file outside Scenarios has the domain folder "Unsorted", and a file with
   assert.deepEqual(extension.findScenarios('namespace X;\npublic sealed class A { public void B() { } }\n'), []);
 });
 
+test('a rule scenario\'s domain folder is its namespace from Rules on, and its release its rule group\'s', () => {
+  assert.equal(extension.toDomainFolder('Loopsmith.Web.E2E.Rules.Hunter.Arc.Melees'), 'Rules/Hunter/Arc/Melees');
+  assert.equal(extension.toRelease('Rules/Hunter/Arc/Melees', 'prs-resources'), 'rules-hunter-arc-melees-resources');
+  assert.equal(extension.toRelease('Rules/AllClasses/Arc/Fragments', 'prs-resources'), 'rules-all-classes-arc-fragments-resources');
+  assert.equal(extension.toRelease('Rules/Hunter/ClassAbilities', 'prs-resources'), 'rules-hunter-class-abilities-resources');
+  assert.equal(extension.toRelease('Loop/Weapons', 'prs-resources'), 'prs-resources');
+  assert.equal(extension.toRelease('Starting', 'my-release'), 'my-release');
+});
+
+test('the player link names the release only when it isn\'t prs-resources', () => {
+  assert.equal(extension.toPlayerUrl('JoanComasFdz/destiny-loopsmith', 'pr-1-v1-a-desktop.mp4', 'prs-resources'),
+    'https://joancomasfdz.github.io/destiny-loopsmith/e2e-player.html?v=pr-1-v1-a-desktop.mp4');
+  assert.equal(extension.toPlayerUrl('JoanComasFdz/destiny-loopsmith', 'pr-1-v1-a-desktop.mp4', 'rules-mods-arms-resources'),
+    'https://joancomasfdz.github.io/destiny-loopsmith/e2e-player.html?v=pr-1-v1-a-desktop.mp4&r=rules-mods-arms-resources');
+});
+
 test('finds a scenario\'s recordings, newest PR first, each version with the assets it has', async () => {
   const { recordings } = await findStartFromScratch();
   assert.deepEqual(recordings.map((r) => `${r.pr}-${r.version}`), ['109-1', '106-3', '104-1', '101-1', '11-1']);

@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 # Records the end-to-end scenarios as GIFs and MP4s: one of each per screen a scenario is played on ([PlayInDesktop] /
-# [PlayInMobile]). Two projects hold scenarios: tests/Loopsmith.Web.E2E (the web app) and
-# tests/Loopsmith.VsCodeExtension.E2E (the VS Code extension, played in VS Code for the web).
+# [PlayInMobile]). Two projects hold scenarios: tests/Loopsmith.Web.E2E (the web app: its Scenarios/, and its Rules/, one
+# scenario per rule claim) and tests/Loopsmith.VsCodeExtension.E2E (the VS Code extension, played in VS Code for the web).
 #   tools/e2e/record.sh [all | <domain folder> | <TestClass> ...] [--changed-since <git ref>] [--action-gap <seconds>]
 #                       [--out <dir>] [--no-publish] [--no-video]
-# A domain folder is a folder under a project's Scenarios/ (Starting, Build/Subclass, Recordings); a class is a scenario
-# class (StartFromScratchTests).
+# A domain folder is a folder under a project's Scenarios/ (Starting, Build/Subclass, Recordings), or the web project's
+# Rules/ or a folder under it (Rules, Rules/Hunter/Arc); a class is a scenario class (StartFromScratchTests). A rule
+# scenario's GIF lands under <out>/Rules/<…>/ and the "E2E videos" workflow keeps it in its rule group's release
+# (docs/hosting.md, "E2E videos on pull requests").
 # --changed-since <ref>: the scenario classes added or changed since <ref> (from where the branch left it, working tree
 # included), plus those that use a changed fixture file (for the extension's scenarios, any file of its Workspace/):
 # "this PR's scenarios" with origin/main. scenarios.json says why each was picked ("selected": "changed", or "fixtures"
@@ -36,6 +38,10 @@ repo="$(cd "$(dirname "$0")/../.." && pwd)"
 web_project="$repo/tests/Loopsmith.Web.E2E"
 vscode_project="$repo/tests/Loopsmith.VsCodeExtension.E2E"
 projects=("$web_project" "$vscode_project")
+# The folders a project's scenario classes live in, relative to it: the web project's rule scenarios sit in Rules/.
+scenario_roots() {
+  if [ "$1" = "$web_project" ]; then echo Scenarios Rules; else echo Scenarios; fi
+}
 out="$repo/out"
 changed_since=""
 action_gap=1
@@ -50,16 +56,16 @@ while [ $# -gt 0 ]; do
     --out) out="$2"; shift 2 ;;
     --no-publish) publish=0; shift ;;
     --no-video) video=0; shift ;;
-    -h|--help) sed -n '2,32p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,35p' "$0"; exit 0 ;;
     *) chosen+=("$1"); shift ;;
   esac
 done
 mkdir -p "$out"
 out="$(cd "$out" && pwd)"
 
-# The project (web, vscode) whose Scenarios/ holds a scenario class's file, or nothing.
+# The project (web, vscode) whose Scenarios/ (or Rules/, the web project's) holds a scenario class's file, or nothing.
 find_class_project() {
-  if [ -n "$(find "$web_project/Scenarios" -name "$1.cs" -print -quit)" ]; then echo web; fi
+  if [ -n "$(find "$web_project/Scenarios" "$web_project/Rules" -name "$1.cs" -print -quit 2> /dev/null)" ]; then echo web; fi
   if [ -n "$(find "$vscode_project/Scenarios" -name "$1.cs" -print -quit)" ]; then echo vscode; fi
 }
 
@@ -70,21 +76,24 @@ find_class_project() {
 list_changed_classes() {
   local base
   base="$(git -C "$repo" merge-base "$1" HEAD)"
-  local project file class
+  local project root file class
   for project in "${projects[@]}"; do
-    local scenarios="${project#"$repo"/}/Scenarios"
-    local files
-    files="$( { git -C "$repo" diff --name-only --diff-filter=AMR "$base" -- "$scenarios";
-                git -C "$repo" ls-files --others --exclude-standard -- "$scenarios"; } | sort -u)"
-    for file in $files; do
-      case "$file" in
-        *Tests.cs) printf '%s\tchanged\n' "$(basename "$file" .cs)" ;;
-        *.cs) ;;
-        *)
-          for class in $(grep -rlF --include='*Tests.cs' "$(basename "$file")" "$project/Scenarios" | xargs -r -n1 basename | sed 's/\.cs$//'); do
-            printf '%s\tfixtures\t%s\n' "$class" "${file#"${project#"$repo"/}"/}"
-          done ;;
-      esac
+    for root in $(scenario_roots "$project"); do
+      local scenarios="${project#"$repo"/}/$root"
+      [ -d "$repo/$scenarios" ] || continue
+      local files
+      files="$( { git -C "$repo" diff --name-only --diff-filter=AMR "$base" -- "$scenarios";
+                  git -C "$repo" ls-files --others --exclude-standard -- "$scenarios"; } | sort -u)"
+      for file in $files; do
+        case "$file" in
+          *Tests.cs) printf '%s\tchanged\n' "$(basename "$file" .cs)" ;;
+          *.cs) ;;
+          *)
+            for class in $(grep -rlF --include='*Tests.cs' "$(basename "$file")" "$project/$root" | xargs -r -n1 basename | sed 's/\.cs$//'); do
+              printf '%s\tfixtures\t%s\n' "$class" "${file#"${project#"$repo"/}"/}"
+            done ;;
+        esac
+      done
     done
   done
   local workspace="${vscode_project#"$repo"/}/Workspace"
@@ -126,6 +135,8 @@ fi
 for choice in "${chosen[@]}"; do
   if [ "$choice" = "all" ]; then
     everything=1
+  elif [[ $choice == Rules || $choice == Rules/* ]] && [ -d "$web_project/$choice" ]; then
+    web_filters+=("FullyQualifiedName~Loopsmith.Web.E2E.${choice//\//.}.")
   elif [ -d "$web_project/Scenarios/$choice" ] || [ -d "$vscode_project/Scenarios/$choice" ]; then
     if [ -d "$web_project/Scenarios/$choice" ]; then
       web_filters+=("FullyQualifiedName~Loopsmith.Web.E2E.Scenarios.${choice//\//.}.")
@@ -136,7 +147,7 @@ for choice in "${chosen[@]}"; do
   elif [ -n "$(find_class_project "$choice")" ]; then
     add_class "$choice"
   else
-    echo "No domain folder or scenario class named '$choice' under $web_project/Scenarios or $vscode_project/Scenarios" >&2
+    echo "No domain folder or scenario class named '$choice' under $web_project/Scenarios, $web_project/Rules or $vscode_project/Scenarios" >&2
     exit 2
   fi
 done
@@ -146,7 +157,7 @@ fi
 web_filter=""
 vscode_filter=""
 if [ $everything -eq 1 ]; then
-  web_filter="FullyQualifiedName~Loopsmith.Web.E2E.Scenarios."
+  web_filter="FullyQualifiedName~Loopsmith.Web.E2E.Scenarios.|FullyQualifiedName~Loopsmith.Web.E2E.Rules."
   vscode_filter="FullyQualifiedName~Loopsmith.VsCodeExtension.E2E.Scenarios."
 else
   if [ ${#web_filters[@]} -gt 0 ]; then web_filter="$(IFS='|'; echo "${web_filters[*]}")"; fi
@@ -308,8 +319,9 @@ hold_end="tpad=stop_mode=clone:stop_duration=3"
 palette_at() {
   echo "$hold_end,fps=20,scale=$1:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=128:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle"
 }
-# The last run's GIFs go (only the folders named like the projects' Scenarios/ domain folders).
+# The last run's GIFs go (only the folders named like the projects' Scenarios/ domain folders, and Rules/).
 for folder in "$web_project/Scenarios"/*/ "$vscode_project/Scenarios"/*/; do rm -rf "${out:?}/$(basename "$folder")"; done
+rm -rf "${out:?}/Rules"
 records=()
 while IFS= read -r record; do
   records+=("$record")

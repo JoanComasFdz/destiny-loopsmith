@@ -4,15 +4,18 @@ name: E2E videos
 # their GIFs and MP4s with tools/e2e/push-gifs.sh to a throwaway branch e2e-gifs/pr-<n>-<short sha>: the PR's head
 # commit plus one commit that adds e2e-gifs/scenarios.json, the GIFs and the MP4s (and e2e-gifs/what-changed.md, the
 # post's "What changed", when the session gave one). A session can't upload a file to
-# GitHub, so this workflow does only that part: it checks the push, uploads them to the `prs-resources` pre-release as
-# pr-<n>-v<version>-<scenario>.gif and .mp4, posts them on the PR as a new comment (each GIF with a "▶ Play MP4" link to
+# GitHub, so this workflow does only that part: it checks the push, uploads them as pr-<n>-v<version>-<scenario>.gif
+# and .mp4 to their release (a rule scenario's, under Rules/<…>/, to its rule group's rules-<…>-resources pre-release,
+# created on its first upload; any other to `prs-resources`), posts them on the PR as a new comment (each GIF with a "▶ Play MP4" link to
 # the site's player page; it never touches the PR's description) and deletes the branch. It builds, tests and records
 # nothing. A push runs the workflow file inside the pushed commit, so the branch carries the PR's own version of this file.
 # A failing scenario is marked ❌ in the post and never turns this check red; only the workflow's own failures do (a push
 # that isn't a PR's GIFs, an upload or a post that GitHub refused). A new post collapses the PR's earlier posts into a
-# closed <details> each ("Scenarios (V1) · 12 scenarios · replaced by V2"). Closing the PR keeps its newest version's GIFs
-# and MP4s, so its last post keeps showing and playing them, deletes its older versions' and any e2e-gifs/pr-<n>-…
-# branch left behind, and shrinks each older post to its summary line, its recordings gone.
+# closed <details> each ("Scenarios (V1) · 12 scenarios · replaced by V2"). Closing the PR deletes any e2e-gifs/pr-<n>-…
+# branch left behind; in prs-resources it keeps its newest version's GIFs and MP4s, so its last post keeps showing and
+# playing them, and deletes its older versions'; in each rule release it keeps the latest recording of every rule (a
+# merged PR's replace those of closed PRs; a PR closed without merging loses its own). Then it shrinks each post whose
+# recordings went to its summary line.
 # docs/hosting.md, "E2E videos on pull requests".
 
 on:
@@ -118,7 +121,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       PR: ${{ github.event.pull_request.number }}
     steps:
-      # Deleting needs nothing from the branch (which may predate this workflow); only the last step checks out main.
+      # Deleting needs nothing from the branch (which may predate this workflow); only the cleanup checks out main.
       - name: Delete the PR's e2e-gifs branches left behind
         run: |
           for ref in $(gh api "repos/$GITHUB_REPOSITORY/git/matching-refs/heads/e2e-gifs/pr-$PR-" --jq '.[].ref'); do
@@ -127,45 +130,16 @@ jobs:
             echo "Deleting ${ref#refs/heads/}"
             gh api -X DELETE "repos/$GITHUB_REPOSITORY/git/$ref"
           done
-      - name: Keep the PR's newest GIFs and MP4s in prs-resources and delete its older versions
-        run: |
-          release=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/prs-resources" --jq .id)
-          # Listed in full before deleting, so a deletion never shifts a page that is still to be read.
-          assets=$(gh api --paginate "repos/$GITHUB_REPOSITORY/releases/$release/assets?per_page=100" \
-            --jq '.[] | "\(.id) \(.name)"')
-          # Only pr-<n>-v<version>-…, with the version read as a number: the dashes keep pr-7- from catching pr-70-, and
-          # v1 from catching v10. Any other name (the owner's own assets) is never touched.
-          pattern="^pr-$PR-v([0-9]+)-"
-          newest=0
-          while read -r id name; do
-            if [[ $name =~ $pattern ]] && (( 10#${BASH_REMATCH[1]} > newest )); then newest=$((10#${BASH_REMATCH[1]})); fi
-          done <<< "$assets"
-          left=0
-          kept=0
-          while read -r id name; do
-            [ -n "$id" ] || continue
-            if [[ $name =~ $pattern ]] && (( 10#${BASH_REMATCH[1]} < newest )); then
-              echo "Deleting $name"
-              gh api -X DELETE "repos/$GITHUB_REPOSITORY/releases/assets/$id"
-              continue
-            fi
-            left=$((left + 1))
-            if [[ $name =~ $pattern ]]; then kept=$((kept + 1)); fi
-          done <<< "$assets"
-          if (( newest == 0 )); then
-            echo "No asset of PR #$PR in prs-resources: nothing to keep or delete."
-          else
-            echo "Kept pr-$PR-v$newest-* ($kept assets), the GIFs and MP4s of its last post; no older version of PR #$PR is left."
-          fi
-          # A release holds at most 1,000 assets (docs/hosting.md, "E2E videos on pull requests", "The release's limit").
-          echo "prs-resources holds $left of at most 1,000 assets."
-          if (( left > 900 )); then
-            echo "::warning::prs-resources holds $left of at most 1,000 assets: start a new release (docs/hosting.md)."
-          fi
-      # main's script, not the PR's: its branch may predate the shrinking, or be gone.
+      # main's script, not the PR's: its branch may predate the cleanup, or be gone.
       - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.repository.default_branch }}
           sparse-checkout: tools/e2e
-      - name: Shrink the PR's older posts to one line, their recordings deleted
-        run: python3 tools/e2e/post-scenarios.py --pr "$PR" --closed
+      # prs-resources keeps the PR's newest version; each rule release keeps the latest recording of every rule (merged:
+      # the PR's replace closed PRs'; closed without merging: the PR's go). Then the posts whose recordings went shrink.
+      - name: Clean the releases and shrink the PR's posts whose recordings were deleted
+        env:
+          MERGED: ${{ github.event.pull_request.merged }}
+        run: |
+          if [ "$MERGED" = true ]; then merged=--merged; else merged=; fi
+          python3 tools/e2e/post-scenarios.py --pr "$PR" --closed $merged

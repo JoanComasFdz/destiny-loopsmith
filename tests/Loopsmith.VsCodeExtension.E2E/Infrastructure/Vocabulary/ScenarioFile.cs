@@ -4,7 +4,8 @@ using Dunet;
 namespace Loopsmith.VsCodeExtension.E2E.Infrastructure.Vocabulary;
 
 /// <summary>
-/// A scenario file of the workspace VS Code for the web opens (Workspace/Scenarios/): one scenario each. A case is added
+/// A scenario file of the workspace VS Code for the web opens (Workspace/Scenarios/, and Workspace/Rules/ for a rule
+/// scenario): one scenario each. A case is added
 /// when a test needs it.
 /// </summary>
 [Union]
@@ -27,6 +28,12 @@ public partial record ScenarioFile
 
     /// <summary>Scenarios/Recordings/LongNameTests.cs: a desktop scenario whose asset names pass 200 characters.</summary>
     public partial record LongName;
+
+    /// <summary>
+    /// Rules/Hunter/Arc/Melees/CombinationBlowTests.cs: a rule scenario played on both screens, its recordings in
+    /// rules-hunter-arc-melees-resources.
+    /// </summary>
+    public partial record CombinationBlow;
 }
 
 /// <summary>Each <see cref="ScenarioFile"/>'s path, its scenario's method, domain folder and screens: the only place they live.</summary>
@@ -39,7 +46,8 @@ public static class ScenarioFileShowing
             startFromScratchDraft => "Scenarios/Starting/StartFromScratchDraft.cs",
             reload => "Scenarios/Loop/Weapons/ReloadTests.cs",
             unrelenting => "Scenarios/Loop/Weapons/UnrelentingTests.cs",
-            longName => "Scenarios/Recordings/LongNameTests.cs");
+            longName => "Scenarios/Recordings/LongNameTests.cs",
+            combinationBlow => "Rules/Hunter/Arc/Melees/CombinationBlowTests.cs");
 
     /// <summary>"StartFromScratchTests.cs": its name, as its editor tab shows it.</summary>
     public static string ToFileName(this ScenarioFile file) => file.ToPath().Split('/')[^1];
@@ -51,16 +59,18 @@ public static class ScenarioFileShowing
             startFromScratchDraft => "StartFromScratchOpensAnArcHunterWithNothingEquipped",
             reload => "ReloadStandsApartFromTheCountAndTakesNone",
             unrelenting => "UnrelentingHealsForSureOn3QuickKills",
-            longName => "AScenarioWhoseTitleGoesOnAndOnPastTwoHundredCharactersStillFindsItsRecordingBecauseTheWorkflowShortensItsAssetNamesWithAHashAndTheExtensionShortensThemTheSameWay");
+            longName => "AScenarioWhoseTitleGoesOnAndOnPastTwoHundredCharactersStillFindsItsRecordingBecauseTheWorkflowShortensItsAssetNamesWithAHashAndTheExtensionShortensThemTheSameWay",
+            combinationBlow => "CombinationBlowStacksOnAPoweredMeleeKill");
 
-    /// <summary>Its scenario's domain folder: its namespace after ".Scenarios.".</summary>
+    /// <summary>Its scenario's domain folder: its namespace after ".Scenarios.", or from "Rules" on for a rule scenario.</summary>
     public static string ToDomain(this ScenarioFile file) =>
         file.Match(
             startFromScratch => "Starting",
             startFromScratchDraft => "Starting",
             reload => "Loop/Weapons",
             unrelenting => "Loop/Weapons",
-            longName => "Recordings");
+            longName => "Recordings",
+            combinationBlow => "Rules/Hunter/Arc/Melees");
 
     /// <summary>The screens its scenario is played on.</summary>
     public static ImmutableArray<Screen> ToScreens(this ScenarioFile file) =>
@@ -69,5 +79,6 @@ public static class ScenarioFileShowing
             startFromScratchDraft => ImmutableArray.Create(Screen.Desktop, Screen.Mobile),
             reload => ImmutableArray.Create(Screen.Desktop, Screen.Mobile),
             unrelenting => ImmutableArray.Create(Screen.Desktop, Screen.Mobile),
-            longName => ImmutableArray.Create(Screen.Desktop));
+            longName => ImmutableArray.Create(Screen.Desktop),
+            combinationBlow => ImmutableArray.Create(Screen.Desktop, Screen.Mobile));
 }
