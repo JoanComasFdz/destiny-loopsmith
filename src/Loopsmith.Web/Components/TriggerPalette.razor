@@ -214,7 +214,7 @@
         var affinity = slot.Affinity.ToString().ToLowerInvariant();
         @if (slot.AtOnce is Optional<TriggerButton>.Some once)
         {
-            <button type="button" class="@kind trigger aff-@affinity @(slot.Face is HudFace.EmptySlot ? "empty" : "")" data-hud-slot="@slot.Choice.Key" data-token="@once.Value.Token"
+            <button type="button" class="@kind trigger aff-@affinity @(slot.Face is HudFace.EmptySlot ? "empty" : "")" data-action="trigger-ability" data-hud-slot="@slot.Choice.Key" data-token="@once.Value.Token"
                     aria-label="@($"{slot.Kind}: {slot.Name}")" title="@($"{slot.Kind}: {slot.Name}  ({once.Value.Token})")"
                     @onclick="() => PickTrigger(once.Value.Action)">
                 @RenderIcon(slot, caption)
@@ -222,7 +222,7 @@
         }
         else
         {
-            <button type="button" class="@kind aff-@affinity @(isPicked ? "picked" : "") @(slot.Face is HudFace.EmptySlot ? "empty" : "")" data-hud-slot="@slot.Choice.Key"
+            <button type="button" class="@kind aff-@affinity @(isPicked ? "picked" : "") @(slot.Face is HudFace.EmptySlot ? "empty" : "")" data-action="trigger-ability" data-hud-slot="@slot.Choice.Key"
                     aria-pressed="@(isPicked ? "true" : "false")" aria-label="@($"{slot.Kind}: {slot.Name}")" title="@($"{slot.Kind}: {slot.Name}")"
                     @onclick="() => Pick(slot)">
                 @RenderIcon(slot, caption)
@@ -242,7 +242,7 @@
         var title = $"{secondary.Gesture}: {secondary.NamedBy}";
         @if (slot.AtOnce is Optional<TriggerButton>.Some once)
         {
-            <button type="button" class="trig-secondary trigger aff-@affinity" data-hud-slot="@slot.Choice.Key" data-token="@once.Value.Token"
+            <button type="button" class="trig-secondary trigger aff-@affinity" data-action="trigger-secondary" data-hud-slot="@slot.Choice.Key" data-token="@once.Value.Token"
                     aria-label="@($"{secondary.Gesture}: {slot.Name}")" title="@($"{title}  ({once.Value.Token})")"
                     @onclick="() => PickTrigger(once.Value.Action)">
                 @RenderSecondaryFace(secondary)
@@ -250,7 +250,7 @@
         }
         else
         {
-            <button type="button" class="trig-secondary aff-@affinity @(isPicked ? "picked" : "")" data-hud-slot="@slot.Choice.Key"
+            <button type="button" class="trig-secondary aff-@affinity @(isPicked ? "picked" : "")" data-action="trigger-secondary" data-hud-slot="@slot.Choice.Key"
                     aria-pressed="@(isPicked ? "true" : "false")" aria-label="@($"{secondary.Gesture}: {slot.Name}")" title="@title"
                     @onclick="() => Pick(slot)">
                 @RenderSecondaryFace(secondary)
@@ -266,7 +266,7 @@
                 <img src="@face.Icon" alt="" loading="lazy" />
             }
         </span>
-        <span class="trig-secondary-caption">@secondary.Caption</span>
+        <span class="trig-secondary-caption" data-testid="secondary-caption">@secondary.Caption</span>
         @if (secondary.Slot.IsNew)
         {
             <span class="trig-new" title="Unlocked by the last step"></span>

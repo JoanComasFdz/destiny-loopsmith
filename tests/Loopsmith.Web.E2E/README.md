@@ -92,7 +92,7 @@ Scenarios/Loop/Arc/          each Arc interaction with a minimal build (then Sol
 Scenarios/Loop/Weapons/      a weapon's steps: reload, the "×" enemy count, its row in the trigger panel
 ```
 
-`Rules/` holds one scenario per rule claim, mirroring `rules/`: `rules/hunter/arc/melees.yaml` →
+`Rules/` holds one scenario per rule claim, mirroring `rules/` ([docs/given-when-then-rule-scenarios.md](../../docs/given-when-then-rule-scenarios.md)): `rules/hunter/arc/melees.yaml` →
 `Rules/Hunter/Arc/Melees/<Rule>Tests.cs` (namespace `Loopsmith.Web.E2E.Rules.Hunter.Arc.Melees`, its domain folder
 `Rules/Hunter/Arc/Melees`). `tools/e2e/record.sh` selects and records them like `Scenarios/` (`record.sh Rules/Hunter/Arc`
 for a folder), and the "E2E videos" workflow keeps the latest recording of each in its rule file's release,

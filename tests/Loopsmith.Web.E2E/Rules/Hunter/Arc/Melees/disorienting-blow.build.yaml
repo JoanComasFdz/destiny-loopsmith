@@ -1,0 +1,5 @@
+# Disorienting Blow as the melee, for its hit.
+name: "E2E - Disorienting Blow"
+class: hunter
+subclass: arc
+melee: disorienting-blow

@@ -1,0 +1,8 @@
+# Flow State, with Skip Grenade and Spark of Shock to become Amplified and Marksman's Dodge (no rules of its own) to dodge.
+name: "E2E - Flow State with Spark of Shock and Marksman's Dodge"
+class: hunter
+subclass: arc
+grenade: skip-grenade
+classAbility: marksmans-dodge
+aspects: [flow-state]
+fragments: [spark-of-shock]

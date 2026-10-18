@@ -1,0 +1,6 @@
+# Tempest Strike, with Combination Blow (rules on kills only) for its sliding melee.
+name: "E2E - Tempest Strike with Combination Blow"
+class: hunter
+subclass: arc
+melee: combination-blow
+aspects: [tempest-strike]

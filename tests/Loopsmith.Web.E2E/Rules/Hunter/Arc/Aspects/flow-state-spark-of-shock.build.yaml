@@ -1,0 +1,7 @@
+# Flow State, with Skip Grenade and Spark of Shock to jolt the target and kill it.
+name: "E2E - Flow State with Spark of Shock"
+class: hunter
+subclass: arc
+grenade: skip-grenade
+aspects: [flow-state]
+fragments: [spark-of-shock]

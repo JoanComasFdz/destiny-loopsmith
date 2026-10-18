@@ -1,0 +1,6 @@
+# Ascension, with Marksman's Dodge (no rules of its own) for its air move.
+name: "E2E - Ascension with Marksman's Dodge"
+class: hunter
+subclass: arc
+classAbility: marksmans-dodge
+aspects: [ascension]

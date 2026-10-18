@@ -1,0 +1,5 @@
+# Storm's Edge as the super, for its damage resistance.
+name: "E2E - Storm's Edge"
+class: hunter
+subclass: arc
+super: storms-edge

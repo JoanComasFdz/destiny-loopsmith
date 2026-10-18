@@ -123,8 +123,12 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
   [README](tests/Loopsmith.VsCodeExtension.E2E/README.md).
 - [docs/given-when-then-test-rules.md](docs/given-when-then-test-rules.md) — how to write a Gherkin, click by click:
   every acceptance criterion about how the app behaves is one, and every Gherkin is one e2e scenario (its
-  `[TestDescription]`), played on 🖥️ desktop and/or 📱 mobile (`[PlayInDesktop]` / `[PlayInMobile]`); the worked
-  example is `tests/Loopsmith.Web.E2E/Scenarios/Loop/Weapons/EnemyCountTests.cs`.
+  `[TestDescription]`), played on 🖥️ desktop and/or 📱 mobile (`[PlayInDesktop]` / `[PlayInMobile]`). It holds what
+  every Gherkin shares; its two children add what each kind does differently:
+  [loop scenarios](docs/given-when-then-loop-scenarios.md) (`Scenarios/`, what a PR changes; worked example
+  `tests/Loopsmith.Web.E2E/Scenarios/Loop/Weapons/EnemyCountTests.cs`) and
+  [rule scenarios](docs/given-when-then-rule-scenarios.md) (`Rules/`, one per claim of a rule, grouped like `rules/`;
+  worked example `tests/Loopsmith.Web.E2E/Rules/Hunter/Arc/Aspects/LethalCurrentTests.cs`).
 - `docs/requirements.md` — the requirements, starting with the level of abstraction (what Loopsmith
   does and doesn't), then FR-1…FR-13 with their status, the non-functional requirements and what is
   out of scope.

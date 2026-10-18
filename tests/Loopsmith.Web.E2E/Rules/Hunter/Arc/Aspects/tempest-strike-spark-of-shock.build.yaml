@@ -1,0 +1,7 @@
+# Tempest Strike, with Skip Grenade and Spark of Shock to jolt the target and kill it.
+name: "E2E - Tempest Strike with Spark of Shock"
+class: hunter
+subclass: arc
+grenade: skip-grenade
+aspects: [tempest-strike]
+fragments: [spark-of-shock]

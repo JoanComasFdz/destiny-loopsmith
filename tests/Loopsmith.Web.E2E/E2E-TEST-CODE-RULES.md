@@ -216,6 +216,8 @@ are separate contexts too.
 2. Find its **domain folder** under `Scenarios/` (README, "Where tests go"): by what the player does, never by PR or task.
    A new area gets a new folder.
 3. Find its **class**: a topic in that folder (`<Topic>Tests.cs`); add one when no topic fits.
+   A rule scenario's folder is its rule file's, and its class is its element's (`Rules/Hunter/Arc/Aspects/LethalCurrentTests.cs`:
+   [docs/given-when-then-rule-scenarios.md](../../docs/given-when-then-rule-scenarios.md), "Where it goes").
 4. Write the scenario (rules a–g, and rule i for the translation). Its **fixture files** (a minimal `.build.yaml` /
    `.loop.yaml`, named for what they hold: `ogma-pr6-unrelenting.build.yaml`, its build named
    `"E2E - Ogma PR6 with Unrelenting"`) sit next to the class, committed; the project copies them to the test output.

@@ -1,0 +1,5 @@
+# Gathering Storm as the super, for its hit and its damage resistance.
+name: "E2E - Gathering Storm"
+class: hunter
+subclass: arc
+super: gathering-storm

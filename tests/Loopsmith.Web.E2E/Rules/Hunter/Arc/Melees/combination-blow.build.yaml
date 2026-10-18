@@ -1,0 +1,5 @@
+# Combination Blow as the melee, for its kills and its buff.
+name: "E2E - Combination Blow"
+class: hunter
+subclass: arc
+melee: combination-blow
