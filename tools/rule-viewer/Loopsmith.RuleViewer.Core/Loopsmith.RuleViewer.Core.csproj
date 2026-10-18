@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The rule viewer's logic (tools/rule-viewer/README.md): pure, follows docs/CODING_RULES.md; uses only Core's kernel and Orchestration. -->
+  <PropertyGroup>
+    <RootNamespace>Loopsmith.RuleViewer.Core</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Dunet" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Loopsmith.Core\Loopsmith.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Loopsmith.RuleViewer.Tests" />
+  </ItemGroup>
+</Project>

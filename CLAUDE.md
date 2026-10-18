@@ -57,9 +57,7 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
   piece and armor mod the pickers offer, with each piece's mod sockets; the browser saves the manifest and that list between visits, by the manifest's version), `StatLoading` (a Bungie login's
   answers → the player's armor → the build's stats, added up like DIM), `CompendiumReading` (a Compendium snapshot's tabs → the
   check of the rules' citations and numbers against it, with `tools/compendium/aliases.yaml`; run by a test only),
-  `DependencyGraphing` (the rules → a subclass's dependency graph, with three scopes: the subclass, + what it needs from
-  outside, + what builds on it → its lanes: every rule and passive as one claim, trigger ➜ what must be in place ➜ what it
-  gives, one per trigger when a rule names several; read by the rules lanes tool), `Orchestration`).
+  `Orchestration`).
 - `src/Loopsmith.Web/` — Blazor WebAssembly loop designer (host only; calls
   `Orchestration.LoopDesigning`). Deployed to GitHub Pages by `.github/workflows/pages.yml`;
   every PR that can change the site (not only docs, tooling or tests) gets a preview at `…/pr-preview/pr-<n>/` (`pr-preview.yml`)
@@ -80,10 +78,14 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
   own; its header and `discrepancies.md` point to the parent's.
   Creator transcripts are third-party content: keep them local as `transcript.txt` (gitignored),
   never commit them.
-- `tools/graph/Loopsmith.Graph/` — the rules lanes tool (a host, ADRs D39): `dotnet run --project tools/graph/Loopsmith.Graph`
-  writes `out/graph/arc-hunter-lanes.html` and `.json`, the Arc Hunter's rules as lanes, the list of the atomic e2e
-  scenarios to write; its page's parts are components in `Page/` ([tools/graph/README.md](tools/graph/README.md)).
-  `tools/graph/prototype/` is the page the owner designed, kept as the reference the tool reproduces.
+- `tools/rule-viewer/` — the rule viewer (ADRs D39): `dotnet run --project tools/rule-viewer/Loopsmith.RuleViewer`
+  writes `out/rule-viewer/arc-hunter-lanes.html` and `.json`, the Arc Hunter's rules as lanes, the list of the atomic e2e
+  scenarios to write. `Loopsmith.RuleViewer` is the host (its page's parts are components in `Page/`);
+  `Loopsmith.RuleViewer.Core` its pure logic (the rules → a subclass's dependency graph, with three scopes: the subclass,
+  + what it needs from outside, + what builds on it → its lanes: every rule and passive as one claim, trigger ➜ what must
+  be in place ➜ what it gives, one per trigger when a rule names several), using only Core's kernel and `Orchestration`;
+  `Loopsmith.RuleViewer.Tests` its unit, golden and architecture tests ([tools/rule-viewer/README.md](tools/rule-viewer/README.md)).
+  `tools/rule-viewer/prototype/` is the page the owner designed, kept as the reference the tool reproduces.
 - `src/Loopsmith.VsCodeExtension/` — the VS Code extension (plain JavaScript, no build, no dependencies): a CodeLens, a
   play button and a panel beside the code show each e2e scenario's recordings from the `prs-resources` release, in vscode.dev
   and desktop VS Code; its `.vsix` is published with the site in `vscode-extension/` by `Loopsmith.Web.csproj`, and

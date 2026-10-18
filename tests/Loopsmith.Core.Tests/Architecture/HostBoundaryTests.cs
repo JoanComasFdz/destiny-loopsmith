@@ -3,17 +3,18 @@ using Mono.Cecil;
 namespace Loopsmith.Core.Tests.Architecture;
 
 /// <summary>
-/// CODING_RULES "The host owns no logic": the web designer (and the rules lanes tool, ADRs D39) calls the <c>Orchestration</c> API and the
+/// CODING_RULES "The host owns no logic": the web designer and the rule viewer (its host and its pure project, ADRs D39) call the <c>Orchestration</c> API and the
 /// kernel, never a feature slice's functions directly. They may still use a slice's data types (building a
 /// <c>TraceOptions</c>, reading a <c>LoopReport</c>): only calls to static methods — the slices' functions — count.
 /// </summary>
 public sealed class HostBoundaryTests
 {
-    /// <summary>Project folder (from the repository root) and assembly name of each host.</summary>
+    /// <summary>Project folder (from the repository root) and assembly name of each host, and of the rule viewer's pure project.</summary>
     public static TheoryData<string, string> Hosts => new()
     {
         { "src/Loopsmith.Web", "Loopsmith.Web" },
-        { "tools/graph/Loopsmith.Graph", "Loopsmith.Graph" },
+        { "tools/rule-viewer/Loopsmith.RuleViewer", "Loopsmith.RuleViewer" },
+        { "tools/rule-viewer/Loopsmith.RuleViewer.Core", "Loopsmith.RuleViewer.Core" },
     };
 
     [Theory]
@@ -33,7 +34,7 @@ public sealed class HostBoundaryTests
 
         Violations.AssertNone(
             $"{host} may call only {Slices.Orchestration} and the kernel ({string.Join(", ", Slices.Kernel)}), "
-                + "not a feature slice: add an Orchestration function (e.g. LoopDesigning, DependencyGraphs) and call that.",
+                + "not a feature slice: add an Orchestration function (e.g. LoopDesigning) and call that.",
             violations);
     }
 
