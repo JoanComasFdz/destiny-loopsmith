@@ -1,0 +1,112 @@
+# Arc grenades: every class's. Each has the same manifest hash on Arcstrider, Striker and Stormcaller
+# (rules/manifest.yaml, the subclasses' plugs), so no class is named.
+#
+# Numbers from the Destiny Data Compendium snapshots of 2026-10-09 and 2026-10-13 (source:
+# compendium/<date>/<Tab>#<row>; the elements added with the 2026-10-13 snapshot cite it). Hashes are
+# Clarity 2.0625's for the elements of the 2026-10-09 snapshot unless a comment says they are the
+# manifest's (Clarity has no grenade, melee or super entries); the elements of the 2026-10-13
+# snapshot take the manifest's (244213.26.06.29.2000-1-bnet.65864: the Arcstrider's plugs).
+#
+# Ability energy amounts are base values: chunk energy scalars and stats are not applied, and
+# chunkScalar / baseCooldown are facts recorded from the Compendium that change nothing (ADRs D5).
+#
+# Format gaps that shape these rules (see builds/skip-grenade-hunter/discrepancies.md):
+#  - an ability damage source cannot name a specific ability or its damage type ("Arc grenades",
+#    "Skip Grenade drones" -> `grenade`);
+#  - movement qualifiers are the abilities' secondary uses only (ADRs D9): the melee while sliding
+#    (`melee:slide`, Tempest Strike's uppercut) and the class ability's air move (`class:air`,
+#    Ascension). A rule on the plain ability fires for its secondary uses too.
+#
+# Where a rule file sits, and each rule's id: docs/rule-format.md, "Files" (ADRs D40).
+elements:
+  - id: skip-grenade
+    name: Skip Grenade
+    kind: grenade
+    affinity: arc
+    # The manifest's hash (light.gg, 2026-10-10): what a DIM loadout names.
+    hash: 146194908
+    ability: { kind: grenade, charges: 1, chunkScalar: 0.75, baseCooldown: 151.5 }
+    description: "Arc grenade that splits on impact into 4 seekers that chase enemies within 6 m; each seeker hits twice on impact, then explodes. Its interactions in this build come from Shinobu's Vow."
+    source: compendium/2026-10-09/Arc#36
+    inert: "Damage only: its hits and kills are the grenade step itself, and what reacts to them (Shinobu's Vow) has the rules."
+    rules: []
+    passives: []
+
+  - id: arcbolt-grenade
+    name: Arcbolt Grenade
+    kind: grenade
+    affinity: arc
+    hash: 1582574009
+    ability: { kind: grenade, charges: 1, chunkScalar: 0.75, baseCooldown: 151.5 }
+    description: "Arc grenade that, 1 s after impact, sends lightning at the nearest enemy in sight within 12 m; it chains to the next enemy within 10 m, up to 4 enemies, 521 [PvP 85] damage each."
+    source: compendium/2026-10-13/Arc#28
+    inert: "Damage only: its hits and kills are the grenade step itself, and what reacts to grenade hits (Spark of Shock) has the rules."
+    rules: []
+    passives: []
+
+  - id: flashbang-grenade
+    name: Flashbang Grenade
+    kind: grenade
+    affinity: arc
+    hash: 2909720723
+    ability: { kind: grenade, charges: 1, chunkScalar: 0.875, baseCooldown: 131.7 }
+    description: "Arc grenade that explodes once it slows down: up to 684 [PvP 120] damage within 7.5 m, and Blind for up to 5 [3] s on enemies within 10 m. You can't blind yourself."
+    source: compendium/2026-10-13/Arc#29
+    rules:
+      # The blind is shorter than the glossary's 10 s (Arc#7, every Blind against combatants): this
+      # grenade's is "up to 5 s".
+      - id: flashbang-grenade-1
+        on: { damage: { via: grenade } }
+        then:
+          - { debuffTarget: { status: blind, duration: 5s } }
+        reason: "Your Flashbang blinds the enemies around its explosion."
+    passives: []
+
+  - id: flux-grenade
+    name: Flux Grenade
+    kind: grenade
+    affinity: arc
+    hash: 4198689901
+    ability: { kind: grenade, charges: 1, chunkScalar: 0.875, baseCooldown: 105.4 }
+    description: "Arc grenade that sticks to enemies or surfaces and explodes 1.7 s later: up to 901 [PvP 150] damage within 6 m, or 1500 [250] when it sticks to an enemy."
+    source: compendium/2026-10-13/Arc#31
+    inert: "Damage only: its hits and kills are the grenade step itself, and what reacts to grenade hits (Spark of Shock) has the rules."
+    rules: []
+    passives: []
+
+  - id: lightning-grenade
+    name: Lightning Grenade
+    kind: grenade
+    affinity: arc
+    hash: 2994412667
+    # One charge: the Compendium gives a second only with Touch of Thunder (a Titan aspect, Arc#33).
+    ability: { kind: grenade, charges: 1, chunkScalar: 0.5, baseCooldown: 219.5 }
+    description: "Arc grenade that sticks to surfaces and enemies and, after 1 s, strikes a lightning bolt every 1.67 s, 4 times (5 with Spark of Magnitude): 373 [PvP 120] damage each, 1492 in all (1865 with Spark of Magnitude)."
+    source: compendium/2026-10-13/Arc#32
+    inert: "Damage only: its hits and kills are the grenade step itself, and what reacts to grenade hits (Spark of Shock) has the rules."
+    rules: []
+    passives: []
+
+  - id: pulse-grenade
+    name: Pulse Grenade
+    kind: grenade
+    affinity: arc
+    hash: 1713935764
+    ability: { kind: grenade, charges: 1, chunkScalar: 0.625, baseCooldown: 175.6 }
+    description: "Arc grenade that bursts on impact for up to 156 [PvP 50] damage within 6 m, then pulses every 0.7 s, 5 more times (7 with Spark of Magnitude), for up to 249 [80] each: 1245 in all (1743 with Spark of Magnitude)."
+    source: compendium/2026-10-13/Arc#34
+    inert: "Damage only: its hits and kills are the grenade step itself, and what reacts to grenade hits (Spark of Shock) has the rules."
+    rules: []
+    passives: []
+
+  - id: storm-grenade
+    name: Storm Grenade
+    kind: grenade
+    affinity: arc
+    hash: 2481624867
+    ability: { kind: grenade, charges: 1, chunkScalar: 0.625, baseCooldown: 175.6 }
+    description: "Arc grenade that calls a lightning strike 0.85 s after impact (up to 440 [PvP 70] damage within 7 m), then a barrage of bolts in an X over 7 m 0.6 s later (up to 311 [50]); Spark of Magnitude adds a second barrage in a +. A combatant takes each barrage once: up to 751 in all (1062 with Spark of Magnitude)."
+    source: compendium/2026-10-13/Arc#37
+    inert: "Damage only: its hits and kills are the grenade step itself, and what reacts to grenade hits (Spark of Shock) has the rules."
+    rules: []
+    passives: []

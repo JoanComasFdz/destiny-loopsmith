@@ -134,11 +134,13 @@ public partial record Outcome
 }
 
 /// <summary>
-/// "When <see cref="On"/> happens and every <see cref="When"/> holds, then <see cref="Then"/>."
+/// "When <see cref="On"/> happens and every <see cref="When"/> holds, then <see cref="Then"/>." <see cref="Id"/>: the
+/// rule's own id, its element's id and a number (<c>combination-blow-2</c>, ADRs D40).
 /// <see cref="DoesNotStackWith"/>: when a rule of one of these elements fires on the same event, this rule gives
 /// nothing — the game doesn't stack the two (Tempest Strike's Bolt Charge with Dielectric's).
 /// </summary>
 public sealed record Rule(
+    RuleId Id,
     Trigger On,
     ImmutableArray<Condition> When,
     ImmutableArray<Outcome> Then,
@@ -190,4 +192,5 @@ public partial record CombatantDamage
     partial record Blast();
 }
 
-public sealed record PassiveRule(Passive Modifier, ImmutableArray<Condition> When, Optional<string> Reason);
+/// <summary>A passive and when it holds; <see cref="Id"/> as a rule's (<c>spark-of-resistance-1</c>).</summary>
+public sealed record PassiveRule(RuleId Id, Passive Modifier, ImmutableArray<Condition> When, Optional<string> Reason);

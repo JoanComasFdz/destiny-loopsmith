@@ -15,7 +15,8 @@ elements:
     description: "Picking up an Orb of Power grants Super energy (amount depends on what spawned it) and, with any Armor Charge mod equipped, 1 stack of Armor Charge."
     source: "compendium/2026-10-09/Game Mechanics#94"
     rules:
-      - on: { pickUp: orb-of-power }
+      - id: orb-of-power-1
+        on: { pickUp: orb-of-power }
         then:
           - { applyBuff: { status: armor-charge, stacks: 1 } }
           - { grantEnergy: { to: super, amount: "?" } }

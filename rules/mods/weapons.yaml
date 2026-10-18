@@ -610,61 +610,73 @@ elements:
     source: "compendium/2026-10-13/Weapon Perks#285"
     rules:
       # Kinetic: Orb of Power.
-      - on: { kill: { via: "weapon:this:kinetic", atLeast: 12 } }
+      - id: synergy-1
+        on: { kill: { via: "weapon:this:kinetic", atLeast: 12 } }
         then:
           - { spawn: orb-of-power }
         reason: "Twelve rank-and-file kills with this Kinetic weapon in one go fill Synergy's counter: it spawns an Orb of Power."
-      - on: { kill: { via: "weapon:this:kinetic", fewerThan: 12 } }
+      - id: synergy-2
+        on: { kill: { via: "weapon:this:kinetic", fewerThan: 12 } }
         then:
           - { spawn: orb-of-power }
         chance: true
         reason: "Kills with this Kinetic weapon fill Synergy's counter, which persists through stow; when it fills, it spawns an Orb of Power."
       # Arc: Ionic Trace.
-      - on: { kill: { via: "weapon:this:arc", atLeast: 12 } }
+      - id: synergy-3
+        on: { kill: { via: "weapon:this:arc", atLeast: 12 } }
         then:
           - { spawn: ionic-trace }
         reason: "Twelve rank-and-file kills with this Arc weapon in one go fill Synergy's counter: it spawns an Ionic Trace."
-      - on: { kill: { via: "weapon:this:arc", fewerThan: 12 } }
+      - id: synergy-4
+        on: { kill: { via: "weapon:this:arc", fewerThan: 12 } }
         then:
           - { spawn: ionic-trace }
         chance: true
         reason: "Kills with this Arc weapon fill Synergy's counter, which persists through stow; when it fills, it spawns an Ionic Trace."
       # Solar: Firesprite.
-      - on: { kill: { via: "weapon:this:solar", atLeast: 12 } }
+      - id: synergy-5
+        on: { kill: { via: "weapon:this:solar", atLeast: 12 } }
         then:
           - { spawn: firesprite }
         reason: "Twelve rank-and-file kills with this Solar weapon in one go fill Synergy's counter: it spawns a Firesprite."
-      - on: { kill: { via: "weapon:this:solar", fewerThan: 12 } }
+      - id: synergy-6
+        on: { kill: { via: "weapon:this:solar", fewerThan: 12 } }
         then:
           - { spawn: firesprite }
         chance: true
         reason: "Kills with this Solar weapon fill Synergy's counter, which persists through stow; when it fills, it spawns a Firesprite."
       # Void: Void Breach.
-      - on: { kill: { via: "weapon:this:void", atLeast: 12 } }
+      - id: synergy-7
+        on: { kill: { via: "weapon:this:void", atLeast: 12 } }
         then:
           - { spawn: void-breach }
         reason: "Twelve rank-and-file kills with this Void weapon in one go fill Synergy's counter: it spawns a Void Breach."
-      - on: { kill: { via: "weapon:this:void", fewerThan: 12 } }
+      - id: synergy-8
+        on: { kill: { via: "weapon:this:void", fewerThan: 12 } }
         then:
           - { spawn: void-breach }
         chance: true
         reason: "Kills with this Void weapon fill Synergy's counter, which persists through stow; when it fills, it spawns a Void Breach."
       # Stasis: Stasis Shard.
-      - on: { kill: { via: "weapon:this:stasis", atLeast: 12 } }
+      - id: synergy-9
+        on: { kill: { via: "weapon:this:stasis", atLeast: 12 } }
         then:
           - { spawn: stasis-shard }
         reason: "Twelve rank-and-file kills with this Stasis weapon in one go fill Synergy's counter: it spawns a Stasis Shard."
-      - on: { kill: { via: "weapon:this:stasis", fewerThan: 12 } }
+      - id: synergy-10
+        on: { kill: { via: "weapon:this:stasis", fewerThan: 12 } }
         then:
           - { spawn: stasis-shard }
         chance: true
         reason: "Kills with this Stasis weapon fill Synergy's counter, which persists through stow; when it fills, it spawns a Stasis Shard."
       # Strand: Tangle.
-      - on: { kill: { via: "weapon:this:strand", atLeast: 12 } }
+      - id: synergy-11
+        on: { kill: { via: "weapon:this:strand", atLeast: 12 } }
         then:
           - { spawn: tangle }
         reason: "Twelve rank-and-file kills with this Strand weapon in one go fill Synergy's counter: it spawns a Tangle."
-      - on: { kill: { via: "weapon:this:strand", fewerThan: 12 } }
+      - id: synergy-12
+        on: { kill: { via: "weapon:this:strand", fewerThan: 12 } }
         then:
           - { spawn: tangle }
         chance: true
@@ -680,61 +692,73 @@ elements:
     source: "compendium/2026-10-13/Weapon Perks#285"
     rules:
       # Kinetic: Orb of Power.
-      - on: { kill: { via: "weapon:this:kinetic", atLeast: 8 } }
+      - id: synergy-enhanced-1
+        on: { kill: { via: "weapon:this:kinetic", atLeast: 8 } }
         then:
           - { spawn: orb-of-power }
         reason: "Eight rank-and-file kills with this Kinetic weapon in one go fill Synergy's counter: it spawns an Orb of Power."
-      - on: { kill: { via: "weapon:this:kinetic", fewerThan: 8 } }
+      - id: synergy-enhanced-2
+        on: { kill: { via: "weapon:this:kinetic", fewerThan: 8 } }
         then:
           - { spawn: orb-of-power }
         chance: true
         reason: "Kills with this Kinetic weapon fill Synergy's counter, which persists through stow; when it fills, it spawns an Orb of Power."
       # Arc: Ionic Trace.
-      - on: { kill: { via: "weapon:this:arc", atLeast: 8 } }
+      - id: synergy-enhanced-3
+        on: { kill: { via: "weapon:this:arc", atLeast: 8 } }
         then:
           - { spawn: ionic-trace }
         reason: "Eight rank-and-file kills with this Arc weapon in one go fill Synergy's counter: it spawns an Ionic Trace."
-      - on: { kill: { via: "weapon:this:arc", fewerThan: 8 } }
+      - id: synergy-enhanced-4
+        on: { kill: { via: "weapon:this:arc", fewerThan: 8 } }
         then:
           - { spawn: ionic-trace }
         chance: true
         reason: "Kills with this Arc weapon fill Synergy's counter, which persists through stow; when it fills, it spawns an Ionic Trace."
       # Solar: Firesprite.
-      - on: { kill: { via: "weapon:this:solar", atLeast: 8 } }
+      - id: synergy-enhanced-5
+        on: { kill: { via: "weapon:this:solar", atLeast: 8 } }
         then:
           - { spawn: firesprite }
         reason: "Eight rank-and-file kills with this Solar weapon in one go fill Synergy's counter: it spawns a Firesprite."
-      - on: { kill: { via: "weapon:this:solar", fewerThan: 8 } }
+      - id: synergy-enhanced-6
+        on: { kill: { via: "weapon:this:solar", fewerThan: 8 } }
         then:
           - { spawn: firesprite }
         chance: true
         reason: "Kills with this Solar weapon fill Synergy's counter, which persists through stow; when it fills, it spawns a Firesprite."
       # Void: Void Breach.
-      - on: { kill: { via: "weapon:this:void", atLeast: 8 } }
+      - id: synergy-enhanced-7
+        on: { kill: { via: "weapon:this:void", atLeast: 8 } }
         then:
           - { spawn: void-breach }
         reason: "Eight rank-and-file kills with this Void weapon in one go fill Synergy's counter: it spawns a Void Breach."
-      - on: { kill: { via: "weapon:this:void", fewerThan: 8 } }
+      - id: synergy-enhanced-8
+        on: { kill: { via: "weapon:this:void", fewerThan: 8 } }
         then:
           - { spawn: void-breach }
         chance: true
         reason: "Kills with this Void weapon fill Synergy's counter, which persists through stow; when it fills, it spawns a Void Breach."
       # Stasis: Stasis Shard.
-      - on: { kill: { via: "weapon:this:stasis", atLeast: 8 } }
+      - id: synergy-enhanced-9
+        on: { kill: { via: "weapon:this:stasis", atLeast: 8 } }
         then:
           - { spawn: stasis-shard }
         reason: "Eight rank-and-file kills with this Stasis weapon in one go fill Synergy's counter: it spawns a Stasis Shard."
-      - on: { kill: { via: "weapon:this:stasis", fewerThan: 8 } }
+      - id: synergy-enhanced-10
+        on: { kill: { via: "weapon:this:stasis", fewerThan: 8 } }
         then:
           - { spawn: stasis-shard }
         chance: true
         reason: "Kills with this Stasis weapon fill Synergy's counter, which persists through stow; when it fills, it spawns a Stasis Shard."
       # Strand: Tangle.
-      - on: { kill: { via: "weapon:this:strand", atLeast: 8 } }
+      - id: synergy-enhanced-11
+        on: { kill: { via: "weapon:this:strand", atLeast: 8 } }
         then:
           - { spawn: tangle }
         reason: "Eight rank-and-file kills with this Strand weapon in one go fill Synergy's counter: it spawns a Tangle."
-      - on: { kill: { via: "weapon:this:strand", fewerThan: 8 } }
+      - id: synergy-enhanced-12
+        on: { kill: { via: "weapon:this:strand", fewerThan: 8 } }
         then:
           - { spawn: tangle }
         chance: true

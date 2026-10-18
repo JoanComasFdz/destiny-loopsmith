@@ -32,10 +32,10 @@ public static class TestCatalog
         []);
 
     public static Rule On(Trigger trigger, params Outcome[] then) =>
-        new(trigger, [], [.. then], Optional.None<string>(), Likelihood.Always, []);
+        new(RuleId.From("test-rule-1"), trigger, [], [.. then], Optional.None<string>(), Likelihood.Always, []);
 
     public static Rule OnWhen(Trigger trigger, Condition condition, params Outcome[] then) =>
-        new(trigger, [condition], [.. then], Optional.None<string>(), Likelihood.Always, []);
+        new(RuleId.From("test-rule-1"), trigger, [condition], [.. then], Optional.None<string>(), Likelihood.Always, []);
 
     public static Outcome Buff(string status, int stacks = 1) =>
         new Outcome.ApplyBuff(Status(status), new BuffDuration.Unstated(), new StackGrant.Fixed(StackCount.From(stacks)));

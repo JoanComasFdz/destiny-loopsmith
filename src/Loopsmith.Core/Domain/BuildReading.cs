@@ -66,7 +66,7 @@ public static class BuildReading
 
     /// <summary>
     /// True when the element can go on a build of this class and subclass (<see cref="FitsClass"/> and
-    /// <see cref="FitsSubclass"/>): an Arc fragment the rules author for the Hunter doesn't fit a Striker.
+    /// <see cref="FitsSubclass"/>): an Arc aspect the rules author for the Hunter doesn't fit a Striker.
     /// </summary>
     public static bool Fits(this BuildElement element, GuardianClass guardianClass, Subclass subclass) =>
         element.FitsClass(guardianClass) && element.FitsSubclass(subclass);

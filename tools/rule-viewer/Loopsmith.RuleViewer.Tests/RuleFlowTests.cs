@@ -38,7 +38,7 @@ public sealed class RuleFlowTests
 
     private static Rule OnHit(DamageSource via, params Outcome[] then) => On(new Trigger.Damage(via), then);
 
-    private static PassiveRule Always(Passive passive, params Condition[] when) => new(passive, [.. when], Optional.None<string>());
+    private static PassiveRule Always(Passive passive, params Condition[] when) => new(RuleId.From("test-rule-1"), passive, [.. when], Optional.None<string>());
 
     [Fact]
     public void Each_rule_and_each_passive_is_one_flow()
@@ -128,6 +128,7 @@ public sealed class RuleFlowTests
         var spark = Fragment(
             "spark",
             new Rule(
+                RuleId.From("spark-1"),
                 new Trigger.KillDebuffed(AnySource, [Status("jolt")]),
                 [
                     new Condition.HasBuff(Status("amplified")),
@@ -285,7 +286,7 @@ public sealed class RuleFlowTests
         var json = RuleViewing.RenderRulesJson(Draw(Fragment("spark", OnGrenadeCast(Buff("amplified")))));
 
         Assert.StartsWith("""{"title":"Arc Hunter","scopes":[{"id":"subclass","name":"Arc subclass","groups":[{"key":"trigger:grenade","name":"Grenade",""", json);
-        Assert.Contains(""""flows":[{"id":"spark#0","element":"spark","file":null,"reason":null,"chance":false,"trigger":{"node":"trigger:grenade","title":"Trigger","name":"Grenade cast","""", json);
+        Assert.Contains(""""flows":[{"id":"spark#0","element":"spark","rule":"test-rule-1","file":null,"reason":null,"chance":false,"trigger":{"node":"trigger:grenade","title":"Trigger","name":"Grenade cast","""", json);
         Assert.Contains(""""tone":"fragment","role":"condition","icon":{"kind":"blank"}"""", json);
     }
 }

@@ -11,7 +11,8 @@ elements:
     rules:
       # At x10 (declared: max:bolt-charge) the next ability hit discharges it; the strike is assumed to
       # finish the pack in front of you (hit: kill). The unpowered melee hit isn't a separate source.
-      - on: { damage: { via: ability } }
+      - id: bolt-charge-1
+        on: { damage: { via: ability } }
         when: [ { atMax: bolt-charge } ]
         then:
           - { removeBuff: bolt-charge }
@@ -19,7 +20,8 @@ elements:
         reason: "With Bolt Charge at max, your next ability hit calls down a lightning strike on that enemy, using up the stacks."
       # 2.5% per stack gained (also past x10): a fact shown on every Bolt Charge gain. Not encoded:
       # the weapon-hit counter that also grants stacks.
-      - on: { buffGained: bolt-charge }
+      - id: bolt-charge-2
+        on: { buffGained: bolt-charge }
         then:
           - { grantEnergy: { to: melee, amount: "2.5%" } }
         reason: "Every Bolt Charge stack you gain gives you 2.5% melee energy."
@@ -35,11 +37,13 @@ elements:
       # Authored on weapon and ability damage only, NOT keyword damage: otherwise the jolt chain
       # (itself keyword damage) would re-trigger Jolt and feed itself. The 115-damage threshold and
       # the 0.8 s cooldown are facts in the description: every hit on a jolted target chains.
-      - on: { damage: { via: weapon, targetHas: [jolt] } }
+      - id: jolt-1
+        on: { damage: { via: weapon, targetHas: [jolt] } }
         then:
           - { strikeTarget: { via: jolt, hit: damage } }
         reason: "Shooting a jolted enemy makes the jolt chain lightning into the enemies around it."
-      - on: { damage: { via: ability, targetHas: [jolt] } }
+      - id: jolt-2
+        on: { damage: { via: ability, targetHas: [jolt] } }
         then:
           - { strikeTarget: { via: jolt, hit: damage } }
         reason: "Hitting a jolted enemy with an ability makes the jolt chain lightning into the enemies around it."
@@ -54,7 +58,8 @@ elements:
     description: "Arc pickup that homes in on you at 6 m/s. Collecting it grants 11.25% grenade and melee energy and 13.5% class ability energy. Allies don't get your traces."
     source: compendium/2026-10-09/Arc#6
     rules:
-      - on: { pickUp: ionic-trace }
+      - id: ionic-trace-1
+        on: { pickUp: ionic-trace }
         then:
           - { grantEnergy: { to: grenade, amount: "11.25%" } }
           - { grantEnergy: { to: melee, amount: "11.25%" } }
@@ -76,6 +81,7 @@ elements:
     source: compendium/2026-10-13/Arc#4
     rules: []
     passives:
-      - effect: { resistCombatantDamage: { against: combatants, amount: "15%" } }
+      - id: amplified-1
+        effect: { resistCombatantDamage: { against: combatants, amount: "15%" } }
         when: [ { has: amplified } ]
         reason: "While you're Amplified combatants deal 15% less damage to you."

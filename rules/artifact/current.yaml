@@ -18,7 +18,8 @@ elements:
     rules:
       # Not expressible: "Stunning a Champion grants x10 Bolt Charge" (no stun trigger).
       # The heal is ~55 HP: restoreHealth amounts are percentages, so it stays "?".
-      - on: { damage: { via: keyword:bolt-charge } }
+      - id: defibrillating-blast-1
+        on: { damage: { via: keyword:bolt-charge } }
         then:
           - { debuffTarget: jolt }
           - { restoreHealth: { amount: "?" } }
@@ -33,12 +34,14 @@ elements:
     description: "Reaching x10 Bolt Charge makes you Amplified for 15 s. Bolt Charge discharges deal 50% more damage against combatants (675 -> 1014)."
     source: "compendium/2026-10-09/Artifact Perks#43"
     rules:
-      - on: { stacksMaxed: bolt-charge }
+      - id: flashover-1
+        on: { stacksMaxed: bolt-charge }
         then:
           - { applyBuff: { status: amplified, duration: 15s } }
         reason: "Maxing out Bolt Charge makes you Amplified for 15 seconds."
     passives:
-      - effect: { modifyDamage: { against: keyword:bolt-charge, change: "+50%" } }
+      - id: flashover-2
+        effect: { modifyDamage: { against: keyword:bolt-charge, change: "+50%" } }
         reason: "Bolt Charge lightning strikes hit 50% harder."
 
   - id: dielectric
@@ -56,7 +59,8 @@ elements:
       # "Arc-debuffed" = Jolt here (Blind also counts, but targetHas is all-of, and a second rule
       # for Blind would double-fire on targets that are both). Tempest Strike's x1 doesn't stack with
       # this one in game (Arc#51): tempest-strike's rule says so (doesNotStackWith).
-      - on: { kill: { via: any, targetHas: [jolt] } }
+      - id: dielectric-1
+        on: { kill: { via: any, targetHas: [jolt] } }
         then:
           - { applyBuff: bolt-charge }
         reason: "Killing an Arc-debuffed (jolted) enemy gives you a stack of Bolt Charge."
@@ -72,13 +76,15 @@ elements:
     rules:
       # 6 weapon damage instances: damage kept up on one enemy, which a hit step stands for, so it
       # unravels for sure there and never on a kill step's killing blow (ADRs D34).
-      - on: { damage: { via: weapon, targetHas: [sever], sustained: true } }
+      - id: to-shreds-1
+        on: { damage: { via: weapon, targetHas: [sever], sustained: true } }
         then:
           - { debuffTarget: unravel }
         reason: "Keep shooting a severed enemy and it gets unraveled."
       # The pulses are simplified to one grant: you stand in them to get it. The heal is 15 HP per
       # pulse: restoreHealth amounts are percentages, so it stays "?".
-      - on: { kill: { via: any, targetHas: [sever] } }
+      - id: to-shreds-2
+        on: { kill: { via: any, targetHas: [sever] } }
         then:
           - { applyBuff: { status: woven-mail, duration: 10s } }
           - { restoreHealth: { amount: "?", allies: true } }
@@ -96,11 +102,13 @@ elements:
       # Damage-threshold based (10% of the enemy's health and shields): damage kept up on one enemy,
       # which a hit step stands for, so it spawns for sure there and never on a kill step's killing
       # blow (ADRs D34).
-      - on: { damage: { via: weapon, targetHas: [unravel], sustained: true } }
+      - id: horde-shuttle-1
+        on: { damage: { via: weapon, targetHas: [unravel], sustained: true } }
         then:
           - { summon: threadling }
         reason: "Keep shooting an unraveled enemy and it spawns a Threadling."
-      - on: { damage: { via: summon:threadling } }
+      - id: horde-shuttle-2
+        on: { damage: { via: summon:threadling } }
         then:
           - { debuffTarget: sever }
         reason: "Those Threadlings sever whatever they hit."
@@ -114,7 +122,8 @@ elements:
     description: "Picking up an Orb of Power (or throwing a Tangle) gives your Strand weapons Unraveling Rounds for 14 s."
     source: "compendium/2026-10-09/Artifact Perks#45"
     rules:
-      - on: { pickUp: orb-of-power }
+      - id: unraveling-orbs-1
+        on: { pickUp: orb-of-power }
         then:
           - { applyBuff: { status: unraveling-rounds, duration: 14s } }
         reason: "Grabbing an Orb of Power loads your Strand weapons with Unraveling Rounds for 14 seconds."
@@ -133,7 +142,8 @@ elements:
       # "Exhausted" is not in the glossary and nothing in this build applies it, so only Severed is
       # encoded (a second rule would double-fire on targets with both). The ~6 s cooldown is a fact
       # in the description.
-      - on: { kill: { via: type:arc, targetHas: [sever] } }
+      - id: photonic-flare-1
+        on: { kill: { via: type:arc, targetHas: [sever] } }
         then:
           - { debuffTarget: blind }
         reason: "Killing a severed enemy with Arc damage blinds the enemies around it."

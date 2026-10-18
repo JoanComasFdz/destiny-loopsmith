@@ -117,7 +117,7 @@ public sealed class DependencyGraphIconTests
     {
         var graph = Draw(Fragment("spark", On(new Trigger.AbilityCast(AbilityKind.Grenade))) with
         {
-            Passives = [new PassiveRule(new Passive.ModifyStat(StatKind.Melee, new GameValue.Known(20m)), [], Optional.None<string>())],
+            Passives = [new PassiveRule(RuleId.From("test-rule-1"), new Passive.ModifyStat(StatKind.Melee, new GameValue.Known(20m)), [], Optional.None<string>())],
         });
 
         Assert.Equal(StatIcon(StatKind.Melee), FindIcon(graph, "effect:stat-melee"));

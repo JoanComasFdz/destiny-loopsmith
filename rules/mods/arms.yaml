@@ -21,7 +21,8 @@ elements:
     source: "compendium/2026-10-09/Armor Mods#2"
     rules:
       # The 7 s cooldown is a fact in the description.
-      - on: { damage: { via: grenade } }
+      - id: bolstering-detonation-1
+        on: { damage: { via: grenade } }
         then:
           - { grantEnergy: { to: classAbility, amount: "12% | 17% | 20%" } }
         reason: "Hitting enemies with your grenade gives you some class ability energy."
@@ -36,7 +37,8 @@ elements:
     source: "compendium/2026-10-09/Armor Mods#6"
     rules:
       # The 7 s cooldown is a fact in the description.
-      - on: { damage: { via: melee } }
+      - id: focusing-strike-1
+        on: { damage: { via: melee } }
         then:
           - { grantEnergy: { to: classAbility, amount: "12% | 17% | 20%" } }
         reason: "Landing your powered melee gives you some class ability energy."
@@ -53,7 +55,8 @@ elements:
       # The 7 s cooldown is a fact in the description. Not expressible: "doesn't work with Grapple" -
       # a damage source names the grenade ability, not which grenade it is, so with Grapple equipped
       # this rule still fires; the exception is a fact in the description.
-      - on: { damage: { via: grenade } }
+      - id: momentum-transfer-1
+        on: { damage: { via: grenade } }
         then:
           - { grantEnergy: { to: melee, amount: "12% | 17% | 20%" } }
         reason: "Hitting enemies with your grenade gives you some melee energy."
@@ -72,7 +75,8 @@ elements:
       # energy is fully expended, as Bungie's text says (the Compendium: on melee use): with one
       # melee charge every use, with more the use the player marks as the last one (`melee:last`,
       # ADRs D36).
-      - on: { energyExpended: melee }
+      - id: melee-kickstart-1
+        on: { energyExpended: melee }
         when: [ { has: armor-charge } ]
         then:
           - { convertStacksToEnergy: { consumed: armor-charge, to: melee, byCharges: { from: 2, values: "16.2% | 21.7% | 28.4% | 34.4% | 38.4% | 41.3% | 43.4% | 45%" } } }
@@ -90,7 +94,8 @@ elements:
     rules:
       # The cooldown between orbs is a fact in the description, and so is the order with Heavy
       # Handed: no rule reads the order of the mods.
-      - on: { kill: { via: grenade } }
+      - id: firepower-1
+        on: { kill: { via: grenade } }
         then:
           - { spawn: orb-of-power }
         reason: "Your grenade kills drop Orbs of Power."
@@ -106,7 +111,8 @@ elements:
     rules:
       # The cooldown between orbs is a fact in the description, and so is the order with Firepower:
       # no rule reads the order of the mods.
-      - on: { kill: { via: melee } }
+      - id: heavy-handed-1
+        on: { kill: { via: melee } }
         then:
           - { spawn: orb-of-power }
         reason: "Your powered melee kills drop Orbs of Power."
@@ -124,7 +130,8 @@ elements:
     passives:
       # A fact shown while Armor Charge is on you, never added to the build's stats (ADRs D1). The
       # decay is a fact too: the player declares Armor Charge ended.
-      - effect: { modifyStat: { stat: grenade, change: "+20 | +40 | +50" } }
+      - id: grenade-font-1
+        effect: { modifyStat: { stat: grenade, change: "+20 | +40 | +50" } }
         when: [ { has: armor-charge } ]
         reason: "While you hold Armor Charge, your Grenade stat is higher: +20 with one copy, up to +50 with three."
 
@@ -139,7 +146,8 @@ elements:
     passives:
       # A fact shown while Armor Charge is on you, never added to the build's stats (ADRs D1). The
       # decay is a fact too: the player declares Armor Charge ended.
-      - effect: { modifyStat: { stat: melee, change: "+20 | +40 | +50" } }
+      - id: melee-font-1
+        effect: { modifyStat: { stat: melee, change: "+20 | +40 | +50" } }
         when: [ { has: armor-charge } ]
         reason: "While you hold Armor Charge, your Melee stat is higher: +20 with one copy, up to +50 with three."
 
@@ -153,7 +161,8 @@ elements:
     rules:
       # The player says which weapon step breaks a shield (`kinetic:kill:shield`, ADRs D36), and says
       # it only when the weapon's element matches the shield's, so "with damage of its element" holds.
-      - on: { shieldBroken: {} }
+      - id: shield-break-charge-1
+        on: { shieldBroken: {} }
         then:
           - { applyBuff: { status: armor-charge, stacks: "1 | 2" } }
         reason: "Breaking a combatant's shield with damage of its element gives you Armor Charge."

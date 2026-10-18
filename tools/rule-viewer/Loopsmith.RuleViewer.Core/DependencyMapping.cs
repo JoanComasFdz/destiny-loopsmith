@@ -79,13 +79,14 @@ internal static class DependencyMapping
     }
 
     /// <summary>
-    /// A super, grenade, melee, class ability, aspect or fragment of the class and the subclass's element: the subclass's
-    /// own elements (jumps are left out: movement has no part in a loop).
+    /// A super, grenade, melee, class ability, aspect or fragment of the class (or of every class: the subclass's grenades
+    /// and fragments) and the subclass's element: the subclass's own elements (jumps are left out: movement has no part in a
+    /// loop).
     /// </summary>
     public static bool IsSubclassPart(GraphContext context, BuildElement element) =>
         element.Kind is ElementKind.Super or ElementKind.Grenade or ElementKind.Melee or ElementKind.ClassAbility
             or ElementKind.Aspect or ElementKind.Fragment
-        && element.Class == Optional.Some(context.Class)
+        && element.FitsClass(context.Class)
         && element.Affinity == context.Subclass.ToAffinity();
 
     /// <summary>

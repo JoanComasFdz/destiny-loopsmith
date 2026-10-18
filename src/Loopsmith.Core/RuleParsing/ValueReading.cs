@@ -21,6 +21,9 @@ internal static class ValueReading
     internal static Result<ElementId, Errors> ReadElementId(YamlValue value) =>
         value.ParseWith(text => ElementId.TryFrom(text).ToResult());
 
+    internal static Result<RuleId, Errors> ReadRuleId(YamlValue value) =>
+        value.ParseWith(text => RuleId.TryFrom(text).ToResult());
+
     internal static Result<StatusId, Errors> ReadStatusId(YamlValue value) =>
         value.ParseWith(text => StatusId.TryFrom(text).ToResult());
 

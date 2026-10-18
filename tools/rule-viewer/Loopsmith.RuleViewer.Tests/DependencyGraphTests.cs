@@ -194,7 +194,7 @@ public sealed class DependencyGraphTests
     [MemberData(nameof(PassiveEffects))]
     public void Every_passive_is_drawn(string what, string edge)
     {
-        static PassiveRule Always(Passive passive) => new(passive, [], Optional.None<string>());
+        static PassiveRule Always(Passive passive) => new(RuleId.From("test-rule-1"), passive, [], Optional.None<string>());
         var spark = Fragment("spark", OnGrenadeCast(Buff("amplified"))) with
         {
             Passives =

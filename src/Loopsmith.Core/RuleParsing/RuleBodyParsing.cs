@@ -20,8 +20,8 @@ internal partial record EnergyRecipient
 /// <summary>An element's <c>rules</c> (on → when → then) and <c>passives</c>, with every id checked against the glossary.</summary>
 internal static class RuleBodyParsing
 {
-    private static readonly ImmutableArray<string> RuleKeys = ["on", "when", "then", "chance", "reason", "doesNotStackWith"];
-    private static readonly ImmutableArray<string> PassiveRuleKeys = ["effect", "when", "reason"];
+    private static readonly ImmutableArray<string> RuleKeys = ["id", "on", "when", "then", "chance", "reason", "doesNotStackWith"];
+    private static readonly ImmutableArray<string> PassiveRuleKeys = ["id", "effect", "when", "reason"];
     private static readonly ImmutableArray<string> KillKeys = ["via", "tier", "targetHas", "atLeast", "fewerThan", "within"];
     private static readonly ImmutableArray<string> DamageKeys = ["via", "targetHas", "atLeast", "fewerThan", "within", "sustained"];
 
@@ -43,22 +43,24 @@ internal static class RuleBodyParsing
     internal static Result<Rule, Errors> ReadRule(ReferenceScope scope, YamlValue value) =>
         value.ToMap().Bind(map => Combine(
             map.CheckKeys(RuleKeys),
+            map.ReadRequired("id", ReadRuleId),
             map.ReadRequired("on", on => ReadTrigger(scope, on)),
             map.ReadOrDefault("when", when => ReadConditions(scope, when), []),
             map.ReadRequired("then", then => ReadOutcomes(scope, then)),
             map.ReadOrDefault("chance", ReadBoolean, false),
             map.ReadOptional("reason", YamlReading.ToText),
             map.ReadOrDefault("doesNotStackWith", ReadElementList, []),
-            (_, on, when, then, chance, reason, doesNotStackWith) =>
-                new Rule(on, when, then, reason, chance ? Likelihood.Chance : Likelihood.Always, doesNotStackWith)));
+            (_, id, on, when, then, chance, reason, doesNotStackWith) =>
+                new Rule(id, on, when, then, reason, chance ? Likelihood.Chance : Likelihood.Always, doesNotStackWith)));
 
     internal static Result<PassiveRule, Errors> ReadPassiveRule(ReferenceScope scope, YamlValue value) =>
         value.ToMap().Bind(map => Combine(
             map.CheckKeys(PassiveRuleKeys),
+            map.ReadRequired("id", ReadRuleId),
             map.ReadRequired("effect", effect => ReadPassive(scope, effect)),
             map.ReadOrDefault("when", when => ReadConditions(scope, when), []),
             map.ReadOptional("reason", YamlReading.ToText),
-            (_, effect, when, reason) => new PassiveRule(effect, when, reason))
+            (_, id, effect, when, reason) => new PassiveRule(id, effect, when, reason))
             .Bind(passive => CheckAlwaysRaised(map, passive)));
 
     /// <summary>A raised cap is the build's, a fact that always holds (ADRs D3): a <c>raiseMaxStacks</c> takes no <c>when</c>.</summary>

@@ -231,14 +231,14 @@ public sealed class SubclassEditingTests
     }
 
     [Fact]
-    public void A_Striker_saves_the_Arc_plugs_the_rules_author_for_the_Hunter_as_left_out_and_reopens_with_them()
+    public void A_Striker_keeps_the_Arc_plugs_every_class_shares_and_reopens_with_them()
     {
         var session = StartBuild(GuardianClass.Titan, Subclass.Arc);
         ItemHash Find(SubclassSlot slot, string name) =>
             LoopDesigning.ListSubclassOptions(session.Build, slot).Single(hash => Catalog.Manifest.FindItem(hash).Map(item => item.Name) == Optional.Some(name));
         var plugs = new SubclassPlugs(
             Optional.Some(Find(SubclassSlot.Super, "Thundercrash")),
-            Optional.Some(SkipGrenade),                                                          // the Hunter's Skip Grenade in the rules: the same plug
+            Optional.Some(SkipGrenade),                                                          // every class's (rules/all-classes/arc/)
             Optional.Some(Find(SubclassSlot.Melee, "Thunderclap")),
             Optional.Some(Find(SubclassSlot.ClassAbility, "Thruster")),
             Optional.None<ItemHash>(),
@@ -249,11 +249,9 @@ public sealed class SubclassEditingTests
         var reopened = LoopDesigning.ImportLoop(Catalog, new SourceText("x.loop.yaml", LoopDesigning.ExportLoop(saved)))
             .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
 
-        Assert.Equal<AbilityPlug>(new AbilityPlug.Unknown(), saved.Build.Build.Abilities.Grenade);
-        Assert.Empty(saved.Build.Build.Fragments);
-        Assert.Contains(saved.Build.Build.LeftOut, item => item == new LeftOutItem(LoadoutPart.SubclassPlug, SkipGrenade));
-        Assert.Contains(saved.Build.Build.LeftOut, item => item == new LeftOutItem(LoadoutPart.SubclassPlug, SparkOfShock));
-        Assert.Equal(Optional.None<BuildElement>(), LoopDesigning.FindSubclassElement(saved.Build, SparkOfShock));
+        Assert.Equal<AbilityPlug>(new AbilityPlug.Known(ElementId.From("skip-grenade")), saved.Build.Build.Abilities.Grenade);
+        Assert.Equal([ElementId.From("spark-of-shock"), ElementId.From("spark-of-volts")], saved.Build.Build.Fragments);
+        Assert.DoesNotContain(saved.Build.Build.LeftOut, item => item.Hash == SkipGrenade || item.Hash == SparkOfShock || item.Hash == SparkOfVolts);
         var after = LoopDesigning.ReadSubclassPlugs(reopened.Build);
         Assert.Equal([plugs.Super, plugs.Grenade, plugs.Melee, plugs.ClassAbility], [after.Super, after.Grenade, after.Melee, after.ClassAbility]);
         Assert.Equal(plugs.Aspects, after.Aspects);

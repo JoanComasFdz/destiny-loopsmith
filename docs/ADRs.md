@@ -6,8 +6,8 @@ current set of decisions, in four groups: what the product is (D1–D9), sources
 architecture (D16–D23), hosts and tooling (D24–D26), starting from a DIM link (D27), the build's stats (D28), the
 step's damage resistance (D29), armor mods in their sockets (D30), the artifact (D32), the count of Armor Charge
 (D33), what a hit step stands for (D34), the raid and activity mods left out of the sockets (D35), what the player
-says about a step besides its hit and count (D36), a reload (D37), the web designer as the only host (D38) and the
-developer tools as hosts too (D39). D1 is the
+says about a step besides its hit and count (D36), a reload (D37), the web designer as the only host (D38), the
+developer tools as hosts too (D39) and the rules grouped by class, subclass and area, each rule with its own id (D40). D1 is the
 founding one: every other decision follows from it.
 
 | # | Decision | Why |
@@ -48,6 +48,7 @@ founding one: every other decision follows from it.
 | D37 | A reload is a step the player declares, and a rule can reload a weapon; no ammo is counted | Demolitionist's loop needs a reload and the perks that react to one; a magazine is time and ammo, which only play decides |
 | D38 | The web designer is the only host; the CLI and the loop graph are removed | Nobody used the CLI: the web app, recorded on every PR, is how Loopsmith is iterated on; what the CLI checked is a Core test |
 | D39 | Developer tools under `tools/` are hosts too: they call only `Orchestration` and the kernel, their own logic is a pure project of their own, and nothing ships them | The rule viewer draws every rule as one claim, the list of e2e scenarios to write; a tool is a host like the web app, so it keeps the same boundary, and Core keeps only what a player's host uses |
+| D40 | The rules are grouped by class, then subclass, then area, with what every class shares in `all-classes/`; every rule has an id, and its full name is its file's path and that id | It is how the game presents a build, a shared element is written once, and the e2e rule tests and their recordings are named by it; the trigger is a view, not a folder |
 
 ## What the product is
 
@@ -626,3 +627,34 @@ web app; the tool's own tests check that its pure project touches no files and u
 deploys or ships a tool. **Consequence.** The flow mapping is unit-tested and golden-tested in the tool's own tests
 (`tools/rule-viewer/Loopsmith.RuleViewer.Tests`, `ArcHunterRulesGoldenTests`), so a rules change shows its flows in the
 PR diff; Core holds only what the web designer, the only host a player uses, needs.
+
+### D40 — The rules are grouped by class, subclass and area; every rule has an id
+
+**Context.** `rules/` was grouped by where an element comes from, with one file per class and subclass
+(`hunter/arc.yaml`, 38 elements), and the Arc fragments and grenades in it although every class has them. The rules will
+grow to every class and subclass (a thousand rules or more, some of no class or subclass), and the e2e rule tests, one
+scenario per rule's claim, and the releases that keep their recordings are to be organised and named as the rules are.
+A rule had no name of its own: the rule viewer named a flow by its element and its place (`gamblers-dodge#0`).
+**Decision (product owner).** The rules follow the game's menus: a class (the character you pick), then a subclass, then
+an area, the slot an element goes in: `hunter/arc/melees.yaml`, with `supers`, `aspects`, `jumps`. What a class has on
+every subclass is in the class's folder (`hunter/class-abilities.yaml`, `hunter/exotic-armor.yaml`); what every class
+gets on a subclass, its grenades and fragments (the same manifest hash on each class's subclass item), is in
+`all-classes/<subclass>/` and names no class; the rest stays by where it comes from (`keywords/`, `mods/`,
+`weapons/perks.yaml`, `exotics/weapons.yaml`, `artifact/`, `armor-sets/`). An element's kind, class and affinity name
+its file (docs/rule-format.md, "Files"), and `RuleFileGroupingTests` holds every element there. The unit is the
+element: its rules go where it goes. What sets a rule off (Class ability, Melee, Grenade, Always on…) is a view the rule
+viewer draws, not a folder: one element's rules have different triggers (Spark of Ions' kills by anything), and a
+folder per trigger would split an element or file it twice. A passive and a count rule (2+ kills at once against fewer
+than 2, as a chance) are features of a rule, kept with its element. A shared grenade differs on two classes only through
+each class's aspects, which are in that class's folder (Touch of Thunder in `titan/arc/aspects.yaml`), so the grenade is
+written once. Every rule and passive has an `id`: its element's id, a dash and a number, one numbering per element
+across its rules, passives and enhanced trait's rules, never reused (`combination-blow-2`). Its **full name** is computed,
+never written: the file's path without `.yaml`, dashes for slashes, then the id (`hunter-arc-melees-combination-blow-2`).
+The id is short and stable, written once; the full name says where the rule is and follows its file. **Consequence.**
+The rule viewer shows each flow's full name; the e2e rule tests mirror the path
+(`tests/Loopsmith.Web.E2E/Rules/Hunter/Arc/Melees/CombinationBlowTests.cs`, one scenario per claim of each rule) and their
+recordings' releases are named by it (`rules-hunter-arc-melees-resources`). The 23 Arc grenades and fragments name no
+class any more, so a Titan's or a Warlock's Arc build holds them (a Striker's DIM loadout keeps its Spark of Shock).
+Moving a file changes the catalog version (D15), as any edit does. Prismatic's grenades and fragments go in
+`all-classes/prismatic/` or under a class, by whether each class's Prismatic item has the same hash; that is checked when
+Prismatic is authored.

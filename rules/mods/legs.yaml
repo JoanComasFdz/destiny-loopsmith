@@ -22,7 +22,8 @@ elements:
     source: "compendium/2026-10-09/Armor Mods#2"
     rules:
       # The Compendium lists grenade, melee and class ability energy; no Super energy.
-      - on: { pickUp: orb-of-power }
+      - id: absolution-1
+        on: { pickUp: orb-of-power }
         then:
           - { grantEnergy: { to: grenade, amount: "5% | 7.5% | 10%" } }
           - { grantEnergy: { to: melee, amount: "5% | 7.5% | 10%" } }
@@ -39,7 +40,8 @@ elements:
     source: "compendium/2026-10-09/Armor Mods#3"
     rules:
       # A regeneration that starts, not a set heal: the amount is "?" (no source gives one).
-      - on: { pickUp: orb-of-power }
+      - id: better-already-1
+        on: { pickUp: orb-of-power }
         then:
           - { restoreHealth: { amount: "?" } }
         reason: "Picking up an Orb of Power starts your health regenerating right away."
@@ -141,7 +143,8 @@ elements:
     description: "Picking up an Orb of Power gives 10% | 13% | 15% grenade energy with 1|2|3 mods."
     source: "compendium/2026-10-09/Armor Mods#7"
     rules:
-      - on: { pickUp: orb-of-power }
+      - id: innervation-1
+        on: { pickUp: orb-of-power }
         then:
           - { grantEnergy: { to: grenade, amount: "10% | 13% | 15%" } }
         reason: "Every Orb of Power you pick up gives you some grenade energy."
@@ -155,7 +158,8 @@ elements:
     description: "Picking up an Orb of Power gives 4% | 5% | 6% class ability energy with 1|2|3 mods."
     source: "compendium/2026-10-09/Armor Mods#8"
     rules:
-      - on: { pickUp: orb-of-power }
+      - id: insulation-1
+        on: { pickUp: orb-of-power }
         then:
           - { grantEnergy: { to: classAbility, amount: "4% | 5% | 6%" } }
         reason: "Every Orb of Power you pick up gives you some class ability energy."
@@ -169,7 +173,8 @@ elements:
     description: "Picking up an Orb of Power gives 10% | 13% | 15% melee energy with 1|2|3 mods."
     source: "compendium/2026-10-09/Armor Mods#9"
     rules:
-      - on: { pickUp: orb-of-power }
+      - id: invigoration-1
+        on: { pickUp: orb-of-power }
         then:
           - { grantEnergy: { to: melee, amount: "10% | 13% | 15%" } }
         reason: "Every Orb of Power you pick up gives you some melee energy."
@@ -184,7 +189,8 @@ elements:
     source: "compendium/2026-10-09/Armor Mods#10"
     rules:
       # Which ability is least charged is play, so the grant names no ability (ADRs D5: a fact).
-      - on: { pickUp: orb-of-power }
+      - id: orbs-of-restoration-1
+        on: { pickUp: orb-of-power }
         then:
           - { grantEnergy: { to: leastCharged, amount: "10% | 13% | 15%" } }
         reason: "Every Orb of Power you pick up gives some energy to whichever ability is the least charged."
@@ -279,7 +285,8 @@ elements:
       # The Compendium's "every source" is used over Bungie's "Orb of Power pickups". No rule in the
       # catalog says it doesn't benefit, so the extra stack holds for every grant. Whether more copies
       # add more stacks isn't stated, so it is one.
-      - effect: { extraStacks: { status: armor-charge, extra: 1 } }
+      - id: stacks-on-stacks-1
+        effect: { extraStacks: { status: armor-charge, extra: 1 } }
         reason: "Every Armor Charge you gain comes with one extra stack."
 
   - id: weapons-font
@@ -292,7 +299,8 @@ elements:
     rules: []
     passives:
       # A fact shown while Armor Charge is on you; never added to the build's stats (ADRs D1).
-      - effect: { modifyStat: { stat: weapons, change: "+20 | +40 | +50" } }
+      - id: weapons-font-1
+        effect: { modifyStat: { stat: weapons, change: "+20 | +40 | +50" } }
         when: [ { has: armor-charge } ]
         reason: "While you hold any Armor Charge, your Weapons stat is higher."
 
@@ -305,7 +313,8 @@ elements:
     source: "compendium/2026-10-09/Armor Mods#15"
     rules: []
     passives:
-      - effect: { modifyDamage: { against: weapon:arc, change: "+10% | +17% | +22% | +25%" } }
+      - id: arc-weapon-surge-1
+        effect: { modifyDamage: { against: weapon:arc, change: "+10% | +17% | +22% | +25%" } }
         when: [ { has: armor-charge } ]
         reason: "While you hold any Armor Charge, your Arc weapons hit harder."
 
@@ -318,7 +327,8 @@ elements:
     source: "compendium/2026-10-09/Armor Mods#15"
     rules: []
     passives:
-      - effect: { modifyDamage: { against: weapon:solar, change: "+10% | +17% | +22% | +25%" } }
+      - id: solar-weapon-surge-1
+        effect: { modifyDamage: { against: weapon:solar, change: "+10% | +17% | +22% | +25%" } }
         when: [ { has: armor-charge } ]
         reason: "While you hold any Armor Charge, your Solar weapons hit harder."
 
@@ -331,7 +341,8 @@ elements:
     source: "compendium/2026-10-09/Armor Mods#15"
     rules: []
     passives:
-      - effect: { modifyDamage: { against: weapon:void, change: "+10% | +17% | +22% | +25%" } }
+      - id: void-weapon-surge-1
+        effect: { modifyDamage: { against: weapon:void, change: "+10% | +17% | +22% | +25%" } }
         when: [ { has: armor-charge } ]
         reason: "While you hold any Armor Charge, your Void weapons hit harder."
 
@@ -344,7 +355,8 @@ elements:
     source: "compendium/2026-10-09/Armor Mods#15"
     rules: []
     passives:
-      - effect: { modifyDamage: { against: weapon:stasis, change: "+10% | +17% | +22% | +25%" } }
+      - id: stasis-weapon-surge-1
+        effect: { modifyDamage: { against: weapon:stasis, change: "+10% | +17% | +22% | +25%" } }
         when: [ { has: armor-charge } ]
         reason: "While you hold any Armor Charge, your Stasis weapons hit harder."
 
@@ -357,7 +369,8 @@ elements:
     source: "compendium/2026-10-09/Armor Mods#15"
     rules: []
     passives:
-      - effect: { modifyDamage: { against: weapon:strand, change: "+10% | +17% | +22% | +25%" } }
+      - id: strand-weapon-surge-1
+        effect: { modifyDamage: { against: weapon:strand, change: "+10% | +17% | +22% | +25%" } }
         when: [ { has: armor-charge } ]
         reason: "While you hold any Armor Charge, your Strand weapons hit harder."
 
@@ -370,6 +383,7 @@ elements:
     source: "compendium/2026-10-09/Armor Mods#15"
     rules: []
     passives:
-      - effect: { modifyDamage: { against: weapon:kinetic, change: "+10% | +17% | +22% | +25%" } }
+      - id: kinetic-weapon-surge-1
+        effect: { modifyDamage: { against: weapon:kinetic, change: "+10% | +17% | +22% | +25%" } }
         when: [ { has: armor-charge } ]
         reason: "While you hold any Armor Charge, your Kinetic weapons hit harder."

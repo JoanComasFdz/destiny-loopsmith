@@ -30,10 +30,10 @@ public static class TestCatalog
         []);
 
     public static Rule On(Trigger trigger, params Outcome[] then) =>
-        new(trigger, [], [.. then], Optional.None<string>(), Likelihood.Always, []);
+        new(RuleId.From("test-rule-1"), trigger, [], [.. then], Optional.None<string>(), Likelihood.Always, []);
 
     public static Rule OnWhen(Trigger trigger, Condition condition, params Outcome[] then) =>
-        new(trigger, [condition], [.. then], Optional.None<string>(), Likelihood.Always, []);
+        new(RuleId.From("test-rule-1"), trigger, [condition], [.. then], Optional.None<string>(), Likelihood.Always, []);
 
     /// <summary>A rule that gives way to <paramref name="partner"/>'s rules on the same event.</summary>
     public static Rule NotStackingWith(this Rule rule, string partner) =>

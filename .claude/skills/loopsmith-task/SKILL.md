@@ -142,7 +142,7 @@ Files, rules, builds, related PRs, how the work splits, open questions.
   - Rule work names its source. When it needs the Compendium snapshot, the session downloads it
     (`tools/compendium/README.md`, "In a cloud session"); ask for the zip only if that fails.
   - How the work splits: "One session, no split", or each part with its subagent and folders
-    (e.g. "rule-author × 3: `rules/hunter/arc.yaml`, `rules/exotics/armor.yaml`, `rules/weapons/`;
+    (e.g. "rule-author × 3: `rules/hunter/arc/`, `rules/hunter/exotic-armor.yaml`, `rules/weapons/`;
     the session: manifest, docs"). Agreed with the owner like the rest of the spec (§5, "Subagents").
 - **Files given in the session:** each file's name (Naming) and what it shows, in one line. They stay
   in this session and aren't committed; the list keeps a record of what the work was based on.

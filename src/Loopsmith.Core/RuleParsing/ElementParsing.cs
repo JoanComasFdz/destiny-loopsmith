@@ -81,8 +81,9 @@ internal static class ElementParsing
                 CheckAbilityProfile(map, element),
                 CheckInert(map, element),
                 CheckThisWeapon(map, element),
+                RuleIdChecking.CheckRuleIds(map, element.Id),
                 EnhancedPerkParsing.ReadEnhanced(scope, map, element),
-                (_, _, _, _, enhanced) => (map.ToLocated(element), enhanced.Map(map.ToLocated)))));
+                (_, _, _, _, _, enhanced) => (map.ToLocated(element), enhanced.Map(map.ToLocated)))));
 
     /// <summary>
     /// <c>{ stat: melee, from: 50, below: 100, severity: info, says: "With {value} Melee, …" }</c>: <c>from</c> is optional,

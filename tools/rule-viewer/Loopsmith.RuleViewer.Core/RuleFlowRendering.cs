@@ -25,9 +25,9 @@ public static class RuleFlowRendering
             .Concat(scope.Groups.SelectMany(group => new[] { "", $"### {group.Name} ({FormatNumber(group.Flows.Length)})" }
                 .Concat(group.Flows.Select(RenderFlowLine))));
 
-    /// <summary>"gamblers-dodge#0: [Trigger] Dodge ➜ [Subclass ability · Class ability] Gambler's Dodge (equipped) ➜ [Effect] Melee energy (?)".</summary>
+    /// <summary>"gamblers-dodge#0 hunter-class-abilities-gamblers-dodge-1: [Trigger] Dodge ➜ [Subclass ability · Class ability] Gambler's Dodge (equipped) ➜ [Effect] Melee energy (?)".</summary>
     private static string RenderFlowLine(RuleFlow flow) =>
-        $"{flow.Id}: {RenderBox(flow.Trigger)} ➜ "
+        $"{flow.Id} {flow.Rule}: {RenderBox(flow.Trigger)} ➜ "
         + (flow.Conditions.IsEmpty ? "always" : string.Join(" + ", flow.Conditions.Select(RenderBox)))
         + $" ➜ {string.Join(", ", flow.Results.Select(RenderBox))}"
         + (flow.ByChance ? " (chance)" : "");
@@ -36,7 +36,7 @@ public static class RuleFlowRendering
         $"[{box.Title}] {box.Name}" + (box.Caption.Length == 0 ? "" : $" ({box.Caption})");
 
     /// <summary>
-    /// <c>{"title", "scopes": [{id, name, groups: [{key, name, icon, flows: [{id, element, file, reason, chance, trigger,
+    /// <c>{"title", "scopes": [{id, name, groups: [{key, name, icon, flows: [{id, element, rule, file, reason, chance, trigger,
     /// conditions, results}]}]}]}</c>; a box is <c>{node, title, name, caption, tone, role, icon: {kind, url | text}}</c>.
     /// </summary>
     public static string RenderJson(SubclassRules rules) =>
@@ -68,6 +68,7 @@ public static class RuleFlowRendering
         {
             ["id"] = flow.Id,
             ["element"] = flow.Element,
+            ["rule"] = flow.Rule,
             ["file"] = ToText(flow.File),
             ["reason"] = ToText(flow.Reason),
             ["chance"] = flow.ByChance,

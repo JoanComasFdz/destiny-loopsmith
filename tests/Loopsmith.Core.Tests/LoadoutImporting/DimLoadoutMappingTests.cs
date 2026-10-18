@@ -205,19 +205,20 @@ public sealed class DimLoadoutMappingTests
     }
 
     [Fact]
-    public void An_Arc_plug_the_rules_author_for_the_Hunter_is_left_out_of_a_Striker_and_the_loadout_opens()
+    public void An_Arc_plug_every_class_shares_goes_on_a_Striker_and_one_the_rules_author_for_the_Hunter_is_left_out()
     {
-        // Striker (2932390016): Knockout (an aspect the rules don't know), Spark of Shock and Skip Grenade (the Hunter's in the rules).
-        var json = """{ "name": "x", "classType": 0, "equipped": [ { "hash": 2932390016, "socketOverrides": { "3": 146194908, "5": 1656549674, "7": 1727069364 } } ] }""";
+        // Striker (2932390016): Knockout (an aspect the rules don't know), Spark of Shock and Skip Grenade (every class's,
+        // rules/all-classes/arc/) and Disorienting Blow (the Hunter's melee, rules/hunter/arc/melees.yaml).
+        var json = """{ "name": "x", "classType": 0, "equipped": [ { "hash": 2932390016, "socketOverrides": { "3": 146194908, "4": 2716335210, "5": 1656549674, "7": 1727069364 } } ] }""";
 
         var session = LoopDesigning.ReadDimLink(Link).Bind(link => LoopDesigning.StartDimDesign(Catalog, link, json))
             .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
 
         Assert.Equal((GuardianClass.Titan, Subclass.Arc), (session.Build.Build.Class, session.Build.Build.Subclass));
-        Assert.Equal<AbilityPlug>(new AbilityPlug.Unknown(), session.Build.Build.Abilities.Grenade);
-        Assert.Empty(session.Build.Build.Fragments);
+        Assert.Equal<AbilityPlug>(new AbilityPlug.Known(ElementId.From("skip-grenade")), session.Build.Build.Abilities.Grenade);
+        Assert.Equal([ElementId.From("spark-of-shock")], session.Build.Build.Fragments);
         Assert.Equal(
-            [146194908u, 1656549674u, 1727069364u],
+            [1656549674u, 2716335210u],
             session.Build.Build.LeftOut.Where(item => item.Part == LoadoutPart.SubclassPlug).Select(item => item.Hash.Value).Order());
         Assert.True(LoopDesigning.CanEditSubclass(session.Build));
     }

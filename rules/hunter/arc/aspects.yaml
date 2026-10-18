@@ -1,0 +1,132 @@
+# Hunter, Arc (Arcstrider): aspects.
+#
+# Numbers from the Destiny Data Compendium snapshots of 2026-10-09 and 2026-10-13 (source:
+# compendium/<date>/<Tab>#<row>; the elements added with the 2026-10-13 snapshot cite it). Hashes are
+# Clarity 2.0625's for the elements of the 2026-10-09 snapshot unless a comment says they are the
+# manifest's (Clarity has no grenade, melee or super entries); the elements of the 2026-10-13
+# snapshot take the manifest's (244213.26.06.29.2000-1-bnet.65864: the Arcstrider's plugs).
+#
+# Format gaps that shape these rules (see builds/skip-grenade-hunter/discrepancies.md):
+#  - an ability damage source cannot name a specific ability or its damage type ("Arc grenades",
+#    "Skip Grenade drones" -> `grenade`);
+#  - movement qualifiers are the abilities' secondary uses only (ADRs D9): the melee while sliding
+#    (`melee:slide`, Tempest Strike's uppercut) and the class ability's air move (`class:air`,
+#    Ascension). A rule on the plain ability fires for its secondary uses too.
+#
+# fragmentSlots: Bungie's manifest (244213.26.06.29.2000-1-bnet.65864), each aspect plug's energy
+# capacity — the fragment slots it opens (the Compendium's column for them is empty in the snapshot).
+#
+# Where a rule file sits, and each rule's id: docs/rule-format.md, "Files" (ADRs D40).
+elements:
+  - id: tempest-strike
+    name: Tempest Strike
+    kind: aspect
+    affinity: arc
+    class: hunter
+    hash: 4194622037
+    fragmentSlots: 2
+    description: "Killing Jolted enemies grants x1 Bolt Charge (does not stack with Dielectric's). Charged melee while sliding sends a 22 m Arc wave along the ground that Jolts enemies hit and grants 75% damage resistance against combatants for about 4 s. Can trigger and benefits from Combination Blow."
+    source: compendium/2026-10-09/Arc#51
+    rules:
+      # The Compendium says this x1 does not stack with Dielectric's x1 on the same kill: with
+      # Dielectric equipped, this rule gives nothing (and the build check flags it as wasted).
+      - id: tempest-strike-1
+        on: { kill: { via: any, targetHas: [jolt] } }
+        then:
+          - { applyBuff: { status: bolt-charge, stacks: 1 } }
+        doesNotStackWith: [dielectric]
+        reason: "Killing a jolted enemy gives you a stack of Bolt Charge."
+      # The uppercut is the melee ability used while sliding (`melee:slide`, a secondary ability): only
+      # its hits Jolt; a plain melee doesn't. It is still a melee, so every melee rule fires for it too
+      # (Combination Blow's, as the Compendium says: it triggers its effects and gets its damage). The
+      # Compendium also says it doesn't interact with Disorienting Blow — not in the rules, nothing to
+      # keep apart. The damage resistance after it (75%, about 4 s) is a fact in the description; no
+      # rule reacts to it.
+      - id: tempest-strike-2
+        on: { damage: { via: melee:slide } }
+        then:
+          - { debuffTarget: jolt }
+        reason: "Slide into your charged melee and the Arc uppercut jolts every enemy it hits."
+    passives: []
+
+  - id: flow-state
+    name: Flow State
+    kind: aspect
+    affinity: arc
+    class: hunter
+    hash: 4194622036
+    fragmentSlots: 2
+    description: "Killing a Jolted enemy grants Amplified. While Amplified: 200% faster base class ability regeneration, 66% [PvP 32%] damage resistance during the dodge animation, +50 Reload Speed and a 0.8x reload duration."
+    source: compendium/2026-10-09/Arc#49
+    rules:
+      - id: flow-state-1
+        on: { kill: { via: any, targetHas: [jolt] } }
+        then:
+          - { applyBuff: amplified }
+        reason: "Killing a jolted enemy makes you Amplified."
+    # The dodge's resistance holds at the end of a class ability step (`class`, and Ascension's
+    # `class:air`, which sets off the dodge's effects: Arc#48) while you're Amplified. Not
+    # expressible: the other Amplified benefits. There is no passive for ability regeneration rate
+    # (energy outcomes are facts, ADRs D5), and modifyWeaponStats has no "all weapons" archetype.
+    passives:
+      - id: flow-state-2
+        effect: { resistDamage: "66% [32%]" }
+        when: [ { has: amplified }, { during: classAbility } ]
+        reason: "While you're Amplified you take 66% less damage during your dodge."
+
+  - id: ascension
+    name: Ascension
+    kind: aspect
+    affinity: arc
+    class: hunter
+    hash: 4194622039
+    fragmentSlots: 3
+    description: "While airborne with a class ability charge, [Air Move] spends the charge on an upward Arc Staff twirl: up to 181 damage and Jolt to enemies within 10 m, Amplified for you and allies within 10 m, and your dodge's effects trigger. Damage scales with Class above 100, up to +65% at 200."
+    source: compendium/2026-10-09/Arc#48
+    rules:
+      # The air move (`class:air`, a secondary ability) spends the class ability charge, so it is a
+      # class ability cast: the dodge's own effects (and every other class ability rule) fire too, as
+      # the Compendium says. This rule fires only on that airborne use, never on a ground dodge. Used
+      # by the skip-grenade-hunter-ascension build (the creator's alternative to Flow State).
+      - id: ascension-1
+        on: { abilityCast: { ability: classAbility, input: air } }
+        then:
+          - { debuffTarget: jolt }
+          - { applyBuff: amplified }
+        reason: "Air-casting your class ability launches you up, jolting enemies within 10 m and making you Amplified."
+    passives: []
+
+  - id: lethal-current
+    name: Lethal Current
+    kind: aspect
+    affinity: arc
+    class: hunter
+    hash: 4194622038
+    fragmentSlots: 2
+    description: "Your direct melee hits blind jolted enemies. Using your class ability extends your melee lunge to 7 m, and your next melee or Tempest Strike hit within 10 s jolts the enemy and sets off an aftershock (195 damage within 6 m)."
+    source: compendium/2026-10-13/Arc#50
+    rules:
+      # "Direct" melee hits: the plain press (`melee:press`), not Tempest Strike's ground wave.
+      - id: lethal-current-1
+        on: { damage: { via: melee:press, targetHas: [jolt] } }
+        then:
+          - { debuffTarget: blind }
+        reason: "Punching a jolted enemy blinds it."
+      # Every class ability use arms it (Ascension's air move is one too); the longer lunge is a fact
+      # in the description.
+      - id: lethal-current-2
+        on: { abilityCast: classAbility }
+        then:
+          - { applyBuff: lethal-current }
+        reason: "Using your class ability arms your next melee hit."
+      # "The next Melee/Tempest Strike hit": any melee use, the sliding uppercut too. The aftershock is
+      # its own strike (Arc damage from the aspect), so it is a keyword strike, not a second melee hit.
+      - id: lethal-current-3
+        on: { damage: { via: melee } }
+        when: [ { has: lethal-current } ]
+        then:
+          - { removeBuff: lethal-current }
+          - { debuffTarget: jolt }
+          - { strikeTarget: { via: lethal-current, hit: damage } }
+        reason: "Your armed melee hit jolts the enemy and sets off a damaging aftershock around it."
+    passives: []

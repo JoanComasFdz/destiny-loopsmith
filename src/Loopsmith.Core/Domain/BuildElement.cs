@@ -16,7 +16,7 @@ public sealed record AbilityProfile(AbilityKind Kind, ChargeCount Charges, GameV
 /// known yet. <see cref="Inert"/>: why it has no rules on purpose (damage only, outside the model), so the build check
 /// doesn't take it for a gap. <see cref="StatChecks"/>: what the build check says about it at some values of a stat
 /// (Gambler's Dodge below 50 Melee). <see cref="RuleFile"/>: the rule file it is authored in, relative to the rules folder
-/// (<c>hunter/arc.yaml</c>); empty for an element no rule file holds (a test's).
+/// (<c>hunter/arc/melees.yaml</c>; ADRs D40); empty for an element no rule file holds (a test's).
 /// </summary>
 public sealed record BuildElement(
     ElementId Id,
