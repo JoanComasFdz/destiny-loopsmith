@@ -57,7 +57,7 @@ public sealed class RuleFlowTests
     }
 
     [Fact]
-    public void Any_ability_is_one_flow_per_ability_that_deals_damage_never_a_dodge()
+    public void Any_ability_is_one_flow_per_ability_that_deals_damage_never_the_class_ability()
     {
         var rules = Draw(Fragment("spark", On(new Trigger.KillAny(new DamageSource.AnyAbility()), Buff("amplified"))));
 
