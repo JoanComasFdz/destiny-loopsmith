@@ -8,10 +8,11 @@
     <meta name="darkreader-lock" />
     <meta name="robots" content="noindex" />
     <title>Loopsmith · e2e recording</title>
-    <!-- Plays one e2e recording MP4 of the prs-resources release with the browser's own video controls:
-         …/e2e-player.html?v=pr-<n>-v<k>-<run>.mp4. GitHub shows no player for a video it didn't store itself, so the
-         PR comments link here (docs/hosting.md, "E2E videos on pull requests"). The video's URL is built from v alone,
-         which must be such a name, so the page never plays a URL someone else chose. Plain HTML, styles and script
+    <!-- Plays one e2e recording MP4 with the browser's own video controls: …/e2e-player.html?v=pr-<n>-v<k>-<run>.mp4
+         from the prs-resources release, or …&r=rules-<group>-resources from a rule group's release. GitHub shows no
+         player for a video it didn't store itself, so the PR comments link here (docs/hosting.md, "E2E videos on pull
+         requests"). The video's URL is built from v and r alone, each of which must be such a name, so the page never
+         plays a URL someone else chose. Plain HTML, styles and script
          inline: nothing here can meet a cached copy of another deploy. -->
     <style>
         :root { --bg: #0a0d13; --panel: #111620; --line: #263046; --text: #e7eaf0; --muted: #8a94a8; --arc: #6fe3ff; --warn: #ffcf5a; }
@@ -41,11 +42,13 @@
     <script>
         (function () {
             var repo = "JoanComasFdz/destiny-loopsmith";
-            var release = "prs-resources";
+            var releases = /^(prs-resources|rules-[a-z0-9]+(-[a-z0-9]+)*-resources)$/;
             var name = /^pr-(\d+)-v(\d+)-([A-Za-z0-9-]+)\.mp4$/;
             var screens = { desktop: "🖥️ Desktop", mobile: "📱 Mobile" };
 
-            var asset = new URLSearchParams(location.search).get("v") || "";
+            var query = new URLSearchParams(location.search);
+            var asset = query.get("v") || "";
+            var release = query.get("r") || "prs-resources";
             var parts = asset.match(name);
             var video = document.getElementById("video");
             var note = document.getElementById("note");
@@ -60,9 +63,14 @@
                 note.hidden = false;
             }
 
+            if (!releases.test(release)) {
+                say("This page plays only the e2e recordings of the prs-resources release or of a rule group's rules-<group>-resources, not:", release);
+                return;
+            }
+
             if (!parts) {
                 say(asset
-                    ? "This page plays only the e2e recordings of the " + release + " release, named pr-<n>-v<k>-<run>.mp4, not:"
+                    ? "This page plays only the e2e recordings named pr-<n>-v<k>-<run>.mp4, not:"
                     : "No recording named: open this page from a pull request's e2e comment (…/e2e-player.html?v=pr-<n>-v<k>-<run>.mp4).",
                     asset);
                 return;
@@ -78,11 +86,14 @@
             var link = document.createElement("a");
             link.href = "https://github.com/" + repo + "/pull/" + pr;
             link.textContent = "PR #" + pr;
-            meta.append(link, " · V" + version + (screen ? " · " + screens[screen[1]] : ""));
+            meta.append(link, " · V" + version + (screen ? " · " + screens[screen[1]] : "") + " · " + release);
 
             video.addEventListener("error", function () {
                 video.hidden = true;
-                say("This recording can't be loaded. Closing a pull request keeps only its newest version's recordings, so an older version's are gone:", asset);
+                say(release === "prs-resources"
+                    ? "This recording can't be loaded. Closing a pull request keeps only its newest version's recordings, so an older version's are gone:"
+                    : "This recording can't be loaded. A rule group's release keeps only the latest recording of each rule, so one replaced by a newer pull request's, or of a pull request closed without merging, is gone:",
+                    asset);
             });
             video.src = "https://github.com/" + repo + "/releases/download/" + release + "/" + asset;
             video.hidden = false;

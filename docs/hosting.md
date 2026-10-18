@@ -55,7 +55,9 @@ few hosts of its own (`github.io` isn't one: "Cannot find a valid extension from
 from VSIX". It installs it from `http://localhost:5000`, served by a container the owner builds from the extension's
 folder (`Dockerfile`, `serve.js`; the README's "Install"). Once installed, the extension itself runs in vscode.dev: its
 extension host may fetch any `https` address (GitHub's API), and its panel loads
-what its own policy allows.
+what its own policy allows. It reads each scenario's recordings from the scenario's release: `prs-resources` for a
+scenario under `Scenarios/`, the rule group's `rules-<group>-resources` for a rule scenario under `Rules/` (a rule release
+that doesn't exist yet reads as "No recording yet"), as [E2E videos on pull requests](#e2e-videos-on-pull-requests) says.
 
 A GitHub Codespace or desktop VS Code's Dev Containers needs neither: VS Code runs a server in the container, which
 installs a `.vsix`. The repository's dev container (`.devcontainer/`) packs the extension from its folder, as the
@@ -204,7 +206,7 @@ works the PR records them; CI doesn't run, record or build anything for them.
   scenario passes before the push. While developing, the session runs them unrecorded
   (`tools/e2e/record.sh --no-video …`: same selection and served publish, no video, no pacing, no GIF) and never
   records between pushes; when a scenario or the web app changes after the recording and before the push, it records
-  again, so the posted GIFs match the pushed head. A PR that changes nothing under `tests/Loopsmith.Web.E2E/Scenarios`,
+  again, so the posted GIFs match the pushed head. A PR that changes nothing under `tests/Loopsmith.Web.E2E/Scenarios`, `tests/Loopsmith.Web.E2E/Rules`,
   `tests/Loopsmith.VsCodeExtension.E2E/Scenarios` or `tests/Loopsmith.VsCodeExtension.E2E/Workspace` (the files the
   extension's scenarios open) records and posts nothing, and runs no e2e workflow.
 - **How the GIFs get to GitHub:** a session can't upload a file to GitHub (its proxy only lets JSON request bodies
@@ -224,25 +226,39 @@ works the PR records them; CI doesn't run, record or build anything for them.
 - **What the workflow does** (`.github/workflows/e2e-videos.yml`, on a push to `e2e-gifs/**`): it checks the push
   (the name is `e2e-gifs/pr-<n>-<hex>`; PR #n is open and from this repository; the commit sits on a commit of the PR
   and only adds `e2e-gifs/scenarios.json`, `e2e-gifs/what-changed.md`, real GIFs (they start with `GIF8`) and real MP4s (an `ftyp` box first)), then
-  `tools/e2e/post-scenarios.py --out e2e-gifs` uploads the GIFs and MP4s and posts them, and the branch is deleted whatever happened (the run's log says why one failed). A push that fails
+  `tools/e2e/post-scenarios.py --out e2e-gifs` uploads the GIFs and MP4s, each to its release (below), and posts them, and the branch is deleted whatever happened (the run's log says why one failed). A push that fails
   the checks uploads and posts nothing. No `dotnet`, no Chromium, no ffmpeg: a run takes seconds.
-- **Where the GIFs and MP4s go:** assets of the pre-release **`prs-resources`** (created once by the owner; never committed
-  anywhere). A release asset embedded as `![title](https://github.com/<owner>/<repo>/releases/download/prs-resources/<name>)`
-  shows inline in GitHub (an MP4 there only shows as a link, so the comment shows the GIF and links the MP4 to the
-  player page below). Uploads use the workflow's
-  `GITHUB_TOKEN` (contents and pull-requests write); no personal token.
+- **Where the GIFs and MP4s go:** assets of a pre-release, never committed anywhere. Which one is the run's GIF's folder
+  (its scenario's domain folder):
+  - **a rule scenario's** (`tests/Loopsmith.Web.E2E/Rules/<…>/`, one scenario per rule claim, its GIF under `Rules/<…>/`)
+    go to its **rule group's release**, one per rule file: `rules-` + the folders under `Rules/`, kebab-cased and joined
+    by dashes, + `-resources`. `rules/hunter/arc/melees.yaml` → `Rules/Hunter/Arc/Melees/CombinationBlowTests.cs` →
+    `rules-hunter-arc-melees-resources`; likewise `rules-all-classes-arc-fragments-resources`,
+    `rules-hunter-class-abilities-resources`, `rules-mods-arms-resources`. The workflow creates a rule release on its
+    first upload, as a pre-release titled with its tag (its `GITHUB_TOKEN` can; a session can't), so nobody creates them
+    by hand. Each keeps the latest recording of every rule of its file (Cleanup, below);
+  - **any other** (`Scenarios/`, the web app's loop scenarios and the extension's) go to **`prs-resources`** (created once
+    by the owner).
+
+  One push can feed several releases: the workflow uploads to each in turn. A release asset embedded as
+  `![title](https://github.com/<owner>/<repo>/releases/download/<release>/<name>)` shows inline in GitHub (an MP4 there
+  only shows as a link, so the comment shows the GIF and links the MP4 to the player page below). Uploads use the
+  workflow's `GITHUB_TOKEN` (contents and pull-requests write); no personal token.
 - **The player page for MP4s:** GitHub draws a video player only for a video it stored itself, from a file dropped
   into its web editor (`github.com/user-attachments/…`, which only a logged-in browser can upload). Its pages' content
   security policy lets them play media only from GitHub's own hosts, and a release asset redirects to one that isn't
-  among them, so no markdown can show a player for an MP4 in `prs-resources` or anywhere else. The site has a page
-  that plays one: **`…/destiny-loopsmith/e2e-player.html?v=<asset>`** (`src/Loopsmith.Web/wwwroot/e2e-player.html`,
+  among them, so no markdown can show a player for an MP4 in a release. The site has a page
+  that plays one: **`…/destiny-loopsmith/e2e-player.html?v=<asset>[&r=<release>]`** (`src/Loopsmith.Web/wwwroot/e2e-player.html`,
   published with the app on the live site and every preview), with the browser's own controls (play/pause, seeking,
-  fullscreen). `v` is an asset's name only, `pr-<n>-v<k>-<run>.mp4` (letters, digits and `-` in `<run>`); the page
-  builds the URL itself, `https://github.com/<owner>/<repo>/releases/download/prs-resources/<v>`, so it never plays a
-  URL someone else chose, and any other `v` shows a short message. GitHub sends release assets as downloads, but a
+  fullscreen). `v` is an asset's name only, `pr-<n>-v<k>-<run>.mp4` (letters, digits and `-` in `<run>`); `r` is the
+  release, `prs-resources` or a rule group's `rules-<group>-resources`, and `prs-resources` when left out, so the links
+  posted before rule releases keep playing (the posts give `r` only for a rule release). The page builds the URL itself,
+  `https://github.com/<owner>/<repo>/releases/download/<r>/<v>`, so it never plays a URL someone else chose, and any
+  other `v` or `r` shows a short message. GitHub sends release assets as downloads, but a
   `<video>` element reads the file itself and plays it. Above the video: the scenario's name from `<run>`, a link to
-  PR #n, the version and the screen. An asset that is gone (an older version, deleted when its PR closed) shows a
-  message instead.
+  PR #n, the version, the screen and the release. An asset that is gone shows a message instead: in `prs-resources`, an
+  older version deleted when its PR closed; in a rule release, a recording replaced by a newer PR's, or of a PR closed
+  without merging.
 - **Naming:** `pr-<PR number>-v<version>-<run>.gif`, and the same name ending in `.mp4` for its MP4, e.g.
   `pr-82-v1-start-from-scratch-opens-an-arc-hunter-with-nothing-equipped-mobile.gif` and `….mp4`.
   - `pr-<n>-` first, so a PR's assets sit together and its cleanup finds them (the dash after the number keeps
@@ -291,22 +307,42 @@ works the PR records them; CI doesn't run, record or build anything for them.
 - **One post per PR at a time** (the posting job's concurrency group is per PR, never cancelled midway), so two runs
   can't post the same version. GitHub keeps one waiting job per group: a post that is still waiting when a newer one
   arrives is skipped (its branch is deleted all the same), so push the GIFs once per round.
-- **Cleanup:** when the PR is closed or merged, the workflow deletes any `e2e-gifs/pr-<n>-…` branch left behind, keeps every GIF and MP4 of the PR's newest version and
+- **Cleanup:** when the PR is closed or merged, the workflow deletes any `e2e-gifs/pr-<n>-…` branch left behind, then runs
+  main's `post-scenarios.py --closed` (with `--merged` for a merged PR), which cleans the releases and shrinks the posts:
+  - **`prs-resources`:** it keeps every GIF and MP4 of the PR's newest version and
   deletes its older versions' (`pr-<n>-v1-…` to `pr-<n>-v<N-1>-…`), so the PR's last `## Scenarios (V<N>)` post keeps
-  showing its GIFs and playing its MP4s for good. Its older posts would open onto broken images, so the job then runs
-  main's `post-scenarios.py --closed`, which shrinks each to one line: **Scenarios (V1)** · 12 scenarios · replaced by
+  showing its GIFs and playing its MP4s for good.
+  - **Each rule release** keeps the latest recording of every rule, so the extension and the player always have one per
+    rule. Names keep the form `pr-<n>-v<k>-<run>`, so a PR's posts and versions work as above while it is open. A
+    **merged** PR keeps, for each run it recorded there, its newest recording of it (per run, not per version: a rule its
+    V2 didn't re-record keeps its V1); its older ones go, and so do other PRs' recordings of those runs, unless that PR
+    is still open (its posts need them; whichever merges last wins; one cleanup runs at a time, so two PRs merged
+    together can't each delete the other's). An older merged PR's post then shows a broken
+    image for a rule a later PR re-recorded, and its player link says the recording was replaced. A PR **closed
+    without merging** loses all its recordings there: they never became the rules' behaviour.
+  - **The posts:** the PR's older posts would open onto broken images, so each is shrunk to one line: **Scenarios (V1)** · 12 scenarios · replaced by
   V2 · recordings deleted when the PR closed (its footer kept as a hidden comment, its version still counted). Their
   Gherkins go with them: across the PRs before this (#101–#116), versions added or replaced scenarios but only once
-  reworded one, and the test files hold the current ones. The newest version is the highest `v<N>` among the PR's
-  assets, read as a number (`v10` is newer than `v2`, and `v1` never matches `v10`). Only names of the form
-  `pr-<n>-v<N>-…` are ever deleted: the owner's own assets (not starting with `pr-`), other PRs' assets and any other
-  name are never touched. A reopened PR carries on from its last version, so closing it again keeps only its newest
-  version's GIFs and MP4s and shrinks the post it replaced. The job's log names each deleted asset, the version it kept and how many assets the release holds.
-- **The release's limit:** GitHub sets no total size limit on a release, but a release holds at most 1,000 assets (a
-  run takes two: its GIF and its MP4). The cleanup's log says how many `prs-resources` holds, with a warning above 900. Near the limit, the owner creates a new
-  pre-release (e.g. `prs-resources-2`) and points `RELEASE` in `tools/e2e/post-scenarios.py`, the `clean` job of
-  `.github/workflows/e2e-videos.yml` and `release` in `src/Loopsmith.Web/wwwroot/e2e-player.html` at it. The old release stays, so the posts that embed its GIFs keep showing
-  them; their player links look in the new release, so their MP4s no longer play. Nothing does this automatically yet.
+  reworded one, and the test files hold the current ones. When a PR closed without merging lost rule recordings, its
+  newest post is shrunk too: **Scenarios (V2)** · 12 scenarios · recordings deleted when the PR closed without merging.
+  - The newest version is the highest `v<N>` among the PR's assets, read as a number (`v10` is newer than `v2`, and `v1`
+  never matches `v10`). Only names of the form `pr-<n>-v<N>-…` are ever deleted, and only in `prs-resources` and the
+  `rules-<group>-resources` releases: the owner's own assets (not starting with `pr-`), other PRs' assets in
+  `prs-resources` and any other name or release are never touched. A reopened PR carries on from its last version, so
+  closing it again keeps only its newest version's GIFs and MP4s and shrinks the post it replaced. The job's log names
+  each deleted asset (with its release), how many of the PR's it kept and how many assets each release holds.
+  `tools/e2e/test_post_scenarios.py` tests what each release keeps.
+- **The releases' limit:** GitHub sets no total size limit on a release, but a release holds at most 1,000 assets (a
+  run takes two: its GIF and its MP4). This is why rule recordings have a release per rule file: a rule played on both
+  screens takes four assets, so even a file of 100 rules leaves room for open PRs' recordings, and the cleanup keeps one
+  recording per rule. The cleanup's log says how many each release holds, with a warning above 900. Near the limit:
+  - `prs-resources`: the owner creates a new pre-release (e.g. `prs-resources-2`) and points `RELEASE` in
+    `tools/e2e/post-scenarios.py` and the `release` setting's default in `src/Loopsmith.VsCodeExtension`
+    and the default `release` in `src/Loopsmith.Web/wwwroot/e2e-player.html` at it. The old release stays, so the posts
+    that embed its GIFs keep showing them; their player links look in the new release, so their MP4s no longer play.
+    Nothing does this automatically yet.
+  - a rule release: split its rule file (`rules/<…>/<area>.yaml` into two files, ADRs D40), so its scenarios move to two
+    folders and two releases.
 - Pull requests from forks are skipped (they never get a write token).
 
 ## Alternatives

@@ -71,6 +71,7 @@ public sealed class RecordingPanel(IPage page)
         main => {
           const find = id => main.querySelector(`[data-testid="${id}"]`);
           const asset = src => decodeURIComponent((src ?? '').split('/').pop());
+          const release = src => decodeURIComponent((src ?? '').split('/').slice(-2, -1)[0] ?? '');
           const video = main.querySelector('[data-testid=video]');
           const gif = main.querySelector('[data-testid=gif]');
           const link = find('player-link');
@@ -78,7 +79,7 @@ public sealed class RecordingPanel(IPage page)
             title: find('title').textContent.trim(),
             about: find('about').textContent.trim(),
             tabs: [...main.querySelectorAll('[role=tab]')].map(tab => ({ text: tab.textContent.trim(), selected: tab.getAttribute('aria-selected') === 'true' })),
-            video: video ? { asset: asset(video.currentSrc || video.getAttribute('src')), plays: video.readyState >= 2 && !video.error && !video.paused, controls: video.controls } : null,
+            video: video ? { asset: asset(video.currentSrc || video.getAttribute('src')), release: release(video.currentSrc || video.getAttribute('src')), plays: video.readyState >= 2 && !video.error && !video.paused, controls: video.controls } : null,
             gif: gif ? asset(gif.getAttribute('src')) : null,
             note: find('note').hidden ? null : find('note').textContent.trim(),
             playerLink: link.hidden ? null : link.getAttribute('href'),
@@ -117,10 +118,10 @@ public sealed record RecordingPanelSnapshot(
 public sealed record PanelTab(string Text, bool Selected);
 
 /// <summary>
-/// The panel's video: its MP4's asset name, whether it plays (has its frames, no error, not paused) and whether it shows
-/// the browser's controls (play and pause, seeking, fullscreen).
+/// The panel's video: its MP4's asset name, the release it comes from, whether it plays (has its frames, no error, not
+/// paused) and whether it shows the browser's controls (play and pause, seeking, fullscreen).
 /// </summary>
-public sealed record PanelVideo(string Asset, bool Plays, bool Controls);
+public sealed record PanelVideo(string Asset, string Release, bool Plays, bool Controls);
 
 /// <summary>A version of "Recorded in": its label and whether it is the one picked.</summary>
 public sealed record PanelVersion(string Text, bool Picked);

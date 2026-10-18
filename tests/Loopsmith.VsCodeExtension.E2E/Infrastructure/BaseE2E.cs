@@ -38,7 +38,7 @@ public abstract class BaseE2E : IAsyncLifetime
     /// <summary>VS Code for the web as the user sees it, opened on Workspace/ with the extension.</summary>
     protected Workbench.Workbench Workbench { get; private set; } = null!;
 
-    /// <summary>GitHub as the extension sees it: the prs-resources release, filled by the scenario.</summary>
+    /// <summary>GitHub as the extension sees it: its releases (prs-resources, a rule group's), filled by the scenario.</summary>
     protected Fakes.FakeGitHub GitHub { get; } = new();
 
     public async ValueTask InitializeAsync()

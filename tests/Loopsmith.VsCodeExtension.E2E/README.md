@@ -42,12 +42,13 @@ folder's name (`Starting`, `Loop`, …).
 
 ## The fake GitHub and the workspace
 
-No scenario reaches GitHub. `Infrastructure/Fakes/FakeGitHub.cs` answers the extension's requests for the
-`prs-resources` release with the recordings the scenario's Given put there, named as the workflow names them, and their
+No scenario reaches GitHub. `Infrastructure/Fakes/FakeGitHub.cs` answers the extension's requests for a release
+(`prs-resources`, which always exists, or a rule group's `rules-<group>-resources`, which exists once the Given names it)
+with the recordings the scenario's Given put there, named as the workflow names them, and their
 downloads with the cards in `Infrastructure/Fakes/Media/` ("Desktop" / "Mobile", "fake e2e recording": small GIFs, and
 MP4s in VP9, which the image's Chromium plays; the real recordings are H.264, which only Chrome and VS Code's own
-builds play). `Workspace/` holds the scenario files the scenarios open: copies of web scenarios cut short, and one
-whose asset names pass 200 characters.
+builds play). `Workspace/` holds the scenario files the scenarios open: copies of web scenarios cut short, one
+whose asset names pass 200 characters, and a rule scenario (`Workspace/Rules/Hunter/Arc/Melees/`).
 
 ## Isolation and parallelism
 

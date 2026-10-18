@@ -28,8 +28,9 @@
     <Using Include="Loopsmith.E2E.Shared" />
   </ItemGroup>
   <ItemGroup>
-    <!-- A scenario's fixture files (minimal .build.yaml / .loop.yaml) sit next to its class. -->
+    <!-- A scenario's fixture files (minimal .build.yaml / .loop.yaml) sit next to its class, under Scenarios/ or Rules/. -->
     <None Include="Scenarios\**\*.yaml" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Rules\**\*.yaml" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

@@ -2,8 +2,11 @@
 
 Shows each e2e scenario's recordings next to its code, in vscode.dev and in desktop VS Code. A scenario is a method with
 a `[TestDescription("""…""")]` in a `Scenarios/**/*Tests.cs` file (`tests/Loopsmith.Web.E2E`,
-`tests/Loopsmith.VsCodeExtension.E2E`). Its recordings are the GIFs and MP4s the "E2E videos" workflow keeps in the
-`prs-resources` release ([docs/hosting.md](../../docs/hosting.md), "E2E videos on pull requests").
+`tests/Loopsmith.VsCodeExtension.E2E`), or a rule scenario's `Rules/**/*Tests.cs` (`tests/Loopsmith.Web.E2E`). Its
+recordings are the GIFs and MP4s the "E2E videos" workflow keeps in the `prs-resources` release, or, for a rule
+scenario, in its rule group's release, named after its folder: `Rules/Hunter/Arc/Melees/` →
+`rules-hunter-arc-melees-resources` ([docs/hosting.md](../../docs/hosting.md), "E2E videos on pull requests"). A rule
+release that doesn't exist yet (the workflow creates it on its first upload) reads as `No recording yet`.
 
 - **CodeLens** above the scenario's method, between its attributes and its declaration (next to other extensions' CodeLens,
   such as C# Dev Kit's "0 references"): `Play desktop recording | Play mobile recording | PR #109 · V1`, for each screen of
@@ -11,17 +14,19 @@ a `[TestDescription("""…""")]` in a `Scenarios/**/*Tests.cs` file (`tests/Loop
 - **Panel** beside the editor, opened by "Play … recording": the Gherkin's title, its class, domain folder, PR and
   version, a **Desktop** / **Mobile** tab per screen, the MP4 with the browser's controls (the GIF when the run has no
   MP4, or when this VS Code can't play it), **Recorded in** with every PR and version of the scenario, newest first, and
-  **Open in e2e player ↗** (the site's `e2e-player.html`).
+  **Open in e2e player ↗** (the site's `e2e-player.html`, with `&r=<release>` for a rule release).
 - **Play e2e recording of this scenario**: the ▷ button in the editor's title bar of a scenario file, and **Loopsmith: Play
   e2e recording of this scenario** in the Command Palette, open the panel on the scenario the cursor is in (the file's
   first one when the cursor is above them all), on its first screen. (On a phone's browser, neither the CodeLens nor
   this button plays it: checked in a Codespace, 2026-10-16.)
-- **Loopsmith: Refresh e2e recordings** (Command Palette) reads the release again: a recording posted after the files
-  were opened shows up. The read is also renewed when it is ten minutes old.
+- **Loopsmith: Refresh e2e recordings** (Command Palette) reads the releases again (`prs-resources`, and each rule
+  release a file needed): a recording posted after the files were opened shows up. A release's read is also renewed when
+  it is ten minutes old.
 
 It finds a scenario's assets by their names: `pr-<n>-v<version>-<GIF name>.gif` / `.mp4`, the GIF name being the method's
 name kebab-cased (Humanizer's rules) and its screen, shortened with a hash past 200 characters
-(`tools/e2e/post-scenarios.py`, `name_asset`). It reads the release from GitHub's API: 60 requests an hour without a
+(`tools/e2e/post-scenarios.py`, `name_asset`). It reads each release from GitHub's API (two requests and one per 100
+assets, the first time a file needs it): 60 requests an hour without a
 sign-in, 5,000 with one. It asks VS Code for a GitHub sign-in silently, never with a prompt: VS Code hands an extension a
 sign-in only once you have let it use one, so until then it reads the release without one. To let it, run **Loopsmith:
 Sign in to GitHub to read e2e recordings** once (or click **Sign in to GitHub** on the CodeLens, which shows when the
@@ -86,8 +91,9 @@ the run's GIF instead and says so.
 
 ## Settings
 
-- `loopsmith.e2eRecordings.repository`: the repository whose release holds the recordings (`JoanComasFdz/destiny-loopsmith`).
-- `loopsmith.e2eRecordings.release`: the release's tag (`prs-resources`).
+- `loopsmith.e2eRecordings.repository`: the repository whose releases hold the recordings (`JoanComasFdz/destiny-loopsmith`).
+- `loopsmith.e2eRecordings.release`: the release's tag for the scenarios under `Scenarios/` (`prs-resources`). A rule
+  scenario's release comes from its folder, never from a setting.
 
 ## Develop
 

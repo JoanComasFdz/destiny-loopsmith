@@ -26,6 +26,14 @@ public sealed class ScenarioNamingTests
         Assert.Equal("Starting", ScenarioNaming.ToDomainFolder(typeof(Scenarios.Starting.StartFromScratchTests)));
 
     [Fact]
+    public void DomainFolder_OfARuleScenarioIsItsNamespaceFromRulesOn() =>
+        Assert.Equal("Rules/Hunter/Arc/Melees", ScenarioNaming.ToDomainFolder("Loopsmith.Web.E2E.Rules.Hunter.Arc.Melees"));
+
+    [Fact]
+    public void DomainFolder_OfANamespaceOutsideScenariosAndRulesIsUnsorted() =>
+        Assert.Equal("Unsorted", ScenarioNaming.ToDomainFolder("Loopsmith.Web.E2E.Infrastructure"));
+
+    [Fact]
     public void Gherkin_ReadsItsTagsTitleAndDedentedText()
     {
         var gherkin = Gherkin.Read("""

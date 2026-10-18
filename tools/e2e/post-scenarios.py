@@ -2,14 +2,18 @@
 """Posts a pull request's recorded end-to-end scenarios to it.
 
   post-scenarios.py --pr <n> --commit <sha> [--out <dir>] [--repo <owner/repo>] [--dry-run]
-  post-scenarios.py --pr <n> --closed [--repo <owner/repo>] [--dry-run]
+  post-scenarios.py --pr <n> --closed [--merged] [--repo <owner/repo>] [--dry-run]
 
 Reads <out>/scenarios.json (tools/e2e/record.sh: one entry per run, a scenario played on a screen), uploads each run's
-  GIF and MP4 to the `prs-resources` release as pr-<n>-v<version>-<the run's GIF name>.gif and .mp4 and posts them as a
-  new comment on the PR that starts with what changed: <out>/what-changed.md as it is (push-gifs.sh --message), or else
+  GIF and MP4 to its release as pr-<n>-v<version>-<the run's GIF name>.gif and .mp4 and posts them as a
+  new comment on the PR that starts with what changed. A run's release: a rule scenario's (its GIF under Rules/<…>/) is its
+  rule group's, rules-<the folders under Rules/, kebab-cased, joined by dashes>-resources (Rules/Hunter/Arc/Melees →
+  rules-hunter-arc-melees-resources, one per rule file: rules/hunter/arc/melees.yaml), created as a pre-release when it
+  doesn't exist yet; any other run's is `prs-resources`. The post then shows <out>/what-changed.md as it is (push-gifs.sh --message), or else
   the body of --commit's message without its trailers, or its subject. Each scenario
   shows once: its title, its Gherkin, then a "🖥️ Desktop" and/or "📱 Mobile" subtitle with that screen's GIF and, below
-  it, "▶ Play MP4": both link to the site's player page (e2e-player.html?v=<the MP4's name>), since GitHub shows no
+  it, "▶ Play MP4": both link to the site's player page (e2e-player.html?v=<the MP4's name>, and &r=<its release> for a
+  rule release), since GitHub shows no
   player for a video it didn't store itself (a tap on a bare GIF would only download it). It never touches the PR's description. The version is one more than the highest
   "## Scenarios (V<N>)" in this workflow's comments. A name longer than 200 characters keeps its start and ends with a
   short hash of the run's GIF path (<domain>/<GIF name>.gif), the same for its GIF and its MP4.
@@ -19,14 +23,18 @@ The scenarios the PR added or changed come first; those only re-recorded because
 Nothing recorded (an empty scenarios.json) posts nothing.
 Once the new post is up, every earlier post still open is collapsed into a closed <details> block, unchanged inside, whose
   summary reads "Scenarios (V1) · 12 scenarios · replaced by V2"; a post already collapsed or shrunk is left as it is.
---closed (the workflow, when the PR closes and its older versions' GIFs and MP4s are deleted) shrinks every post but the
-  newest to that line plus "· recordings deleted when the PR closed". A post GitHub refuses to edit (a body past 65,536
-  characters) is a warning, never a failure.
+--closed (the workflow, when the PR closes) cleans the releases, then shrinks every post but the newest to that line plus
+  "· recordings deleted when the PR closed". In `prs-resources` it keeps the PR's newest version and deletes its older
+  ones. In each rule release it keeps the latest recording of every rule: with --merged (the PR was merged), for each run
+  of the PR the PR's newest recording of it, deleting its older ones and those of other PRs no longer open; without it
+  (closed without merging), it deletes all the PR's recordings there, which never became the rules' behaviour, and then
+  shrinks the newest post too. Only names pr-<n>-v<version>-… are ever deleted. Each release's asset count is logged, with
+  a warning above 900 of its 1,000. A post GitHub refuses to edit (a body past 65,536 characters) is a warning, never a
+  failure.
 
 Uses the gh CLI (GH_TOKEN) on the repository in --repo or GITHUB_REPOSITORY. --dry-run prints instead of writing.
 .github/workflows/e2e-videos.yml runs it on the GIFs a session pushed with tools/e2e/push-gifs.sh (--out e2e-gifs,
---commit the GIFs' commit); when the PR closes, the workflow keeps its newest version's assets and deletes the older
-ones. docs/hosting.md, "E2E videos on pull requests", explains it.
+--commit the GIFs' commit), and --closed when the PR closes. docs/hosting.md, "E2E videos on pull requests", explains it.
 """
 import argparse
 import hashlib
@@ -39,6 +47,12 @@ import sys
 import tempfile
 
 RELEASE = "prs-resources"
+RULES_FOLDER = "Rules"
+RULE_RELEASE = re.compile(r"^rules-[a-z0-9]+(?:-[a-z0-9]+)*-resources$")
+ASSET = re.compile(r"^pr-(\d+)-v(\d+)-(.+)$")
+HASHED = re.compile(r"-([0-9a-f]{8})(\.[a-z0-9]+)$")
+MAX_ASSETS = 1000
+WARN_ASSETS = 900
 FOOTER = "_Recorded by the e2e workflow · Claude Code_"
 BOT = "github-actions[bot]"
 MAX_NAME = 200
@@ -57,13 +71,16 @@ def main():
     parser.add_argument("--repo", default=os.environ.get("GITHUB_REPOSITORY"))
     parser.add_argument("--commit", help="the commit whose message says what changed")
     parser.add_argument("--out", default="out", help="record.sh's output folder")
-    parser.add_argument("--closed", action="store_true", help="the PR closed: shrink every post but the newest to one line")
+    parser.add_argument("--closed", action="store_true",
+                        help="the PR closed: clean the releases, shrink every post but the newest to one line")
+    parser.add_argument("--merged", action="store_true", help="with --closed: the PR was merged")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
     if not args.repo:
         sys.exit("No repository: pass --repo or set GITHUB_REPOSITORY.")
     if args.closed:
-        shrink(args)
+        unmerged_rules = clean(args)
+        shrink(args, unmerged_rules)
         return
     if not args.commit:
         sys.exit("No commit: pass --commit (or --closed).")
@@ -78,6 +95,7 @@ def post(args):
     comments = read_workflow_comments(args.repo, args.pr)
     version = find_last_version(comments) + 1
     for scenario in scenarios:
+        scenario["release"] = find_release(scenario["gif"])
         scenario["asset"] = name_asset(args.pr, version, scenario, ".gif")
         scenario["mp4_asset"] = name_asset(args.pr, version, scenario, ".mp4")
     upload(args, scenarios)
@@ -87,10 +105,11 @@ def post(args):
         edit_comment(args, comment, body)
 
 
-def shrink(args):
-    """The PR closed: every post but the newest becomes its one line, its recordings deleted with its version."""
+def shrink(args, newest_too=False):
+    """The PR closed: every post but the newest becomes its one line, its recordings deleted with its version; the newest
+    too when its rule recordings were deleted (closed without merging)."""
     comments = read_workflow_comments(args.repo, args.pr)
-    edits = plan_shrinks(comments)
+    edits = plan_shrinks(comments, newest_too)
     if not edits:
         print(f"No earlier post on #{args.pr} to shrink.")
     for comment, body in edits:
@@ -163,20 +182,118 @@ def plan_collapses(comments, newest):
     return edits
 
 
-def plan_shrinks(comments):
+def plan_shrinks(comments, newest_too=False):
     """(comment, new body) for each post but the newest not shrunk yet, open or collapsed: its one line, with the footer
-    kept out of sight so the post still reads as the workflow's (read_workflow_comments)."""
+    kept out of sight so the post still reads as the workflow's (read_workflow_comments). With newest_too (the PR closed
+    without merging, its rule recordings deleted) the newest post too."""
     versions = [v for v in map(read_version, comments) if v is not None]
     newest = max(versions, default=0)
     edits = []
     for comment in comments:
         version = read_version(comment)
-        if version is None or version >= newest or is_shrunk(comment):
+        if version is None or (version >= newest and not newest_too) or is_shrunk(comment):
             continue
-        line = describe_version(version, count_scenarios(comment["body"]), find_next_version(version, versions))
-        line = line.replace(f"Scenarios (V{version})", f"**Scenarios (V{version})**", 1)
-        edits.append((comment, f"{line} · recordings deleted when the PR closed\n\n<!-- {FOOTER} -->\n"))
+        count = count_scenarios(comment["body"])
+        if version >= newest:
+            line = (f"**Scenarios (V{version})** · {count} scenario{'' if count == 1 else 's'}"
+                    " · recordings deleted when the PR closed without merging")
+        else:
+            line = describe_version(version, count, find_next_version(version, versions))
+            line = line.replace(f"Scenarios (V{version})", f"**Scenarios (V{version})**", 1)
+            line += " · recordings deleted when the PR closed"
+        edits.append((comment, f"{line}\n\n<!-- {FOOTER} -->\n"))
     return edits
+
+
+def to_kebab_case(name):
+    """"AllClasses" → "all-classes": Humanizer's Kebaberize, as ScenarioNaming.ToGifName and the extension's toKebabCase."""
+    name = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1_\2", name)
+    name = re.sub(r"([a-z\d])([A-Z])", r"\1_\2", name)
+    return re.sub(r"[-\s]", "_", name).lower().replace("_", "-")
+
+
+def find_release(gif):
+    """A run's release, from its GIF's path (<domain folder>/<GIF name>.gif): a rule scenario's (Rules/Hunter/Arc/Melees/…)
+    is rules-hunter-arc-melees-resources, any other prs-resources."""
+    folders = gif.split("/")[:-1]
+    if len(folders) < 2 or folders[0] != RULES_FOLDER:
+        return RELEASE
+    return f"rules-{'-'.join(to_kebab_case(folder) for folder in folders[1:])}-resources"
+
+
+def is_rule_release(tag):
+    return RULE_RELEASE.match(tag) is not None
+
+
+def read_asset(name):
+    """(pr, version, run) of a name pr-<n>-v<version>-<run>, the run with its extension; None for any other name. A name
+    shortened to 200 characters (name_asset) keeps less of its run the longer its PR number and version are, so its run
+    is its hash and extension, the same for every PR and version."""
+    found = ASSET.match(name)
+    if not found:
+        return None
+    hashed = HASHED.search(name) if len(name) == MAX_NAME else None
+    run = f"#{hashed.group(1)}{hashed.group(2)}" if hashed else found.group(3)
+    return int(found.group(1)), int(found.group(2)), run
+
+
+def plan_pr_deletions(assets, pr):
+    """The PR's assets of prs-resources to delete when it closes: every version older than its newest. assets are
+    {"id", "name"}; a name not of the form pr-<n>-v<version>-… is never deleted."""
+    own = [(asset, read_asset(asset["name"])) for asset in assets]
+    own = [(asset, parsed) for asset, parsed in own if parsed is not None and parsed[0] == pr]
+    newest = max((parsed[1] for _, parsed in own), default=0)
+    return [asset for asset, parsed in own if parsed[1] < newest]
+
+
+def plan_rule_deletions(assets, pr, merged, open_prs):
+    """The assets of a rule release to delete when the PR closes, so each rule keeps its latest recording. Merged: for
+    each run the PR recorded, its newest recording stays; its older ones go, and so do other PRs' recordings of that run,
+    unless that PR is still open (its posts need them; the one merged last wins). Closed without merging: all of the
+    PR's go. A name not of the form pr-<n>-v<version>-… is never deleted."""
+    parsed = [(asset, read_asset(asset["name"])) for asset in assets]
+    parsed = [(asset, found) for asset, found in parsed if found is not None]
+    own = [(asset, found) for asset, found in parsed if found[0] == pr]
+    if not merged:
+        return [asset for asset, _ in own]
+    newest = {}
+    for _, (_, version, run) in own:
+        newest[run] = max(newest.get(run, 0), version)
+    return [asset for asset, (owner, version, run) in parsed
+            if run in newest and ((owner == pr and version < newest[run]) or (owner != pr and owner not in open_prs))]
+
+
+def clean(args):
+    """The PR closed: deletes what plan_pr_deletions and plan_rule_deletions say in each release, logging each name and
+    each release's count. True when it deleted rule recordings of a PR closed without merging (its newest post shrinks)."""
+    releases = gh_json(["api", "--paginate", "--slurp", f"repos/{args.repo}/releases?per_page=100"])
+    releases = [release for page in releases for release in page
+                if release["tag_name"] == RELEASE or is_rule_release(release["tag_name"])]
+    open_prs = set() if not args.merged else {
+        pull["number"] for page in gh_json(["api", "--paginate", "--slurp", f"repos/{args.repo}/pulls?state=open&per_page=100"])
+        for pull in page}
+    unmerged_rules = False
+    for release in sorted(releases, key=lambda release: release["tag_name"] != RELEASE):
+        tag = release["tag_name"]
+        pages = gh_json(["api", "--paginate", "--slurp", f"repos/{args.repo}/releases/{release['id']}/assets?per_page=100"])
+        assets = [{"id": asset["id"], "name": asset["name"]} for page in pages for asset in page]
+        if tag == RELEASE:
+            deleted = plan_pr_deletions(assets, args.pr)
+        else:
+            deleted = plan_rule_deletions(assets, args.pr, args.merged, open_prs)
+            unmerged_rules = unmerged_rules or (not args.merged and bool(deleted))
+        for asset in deleted:
+            print(f"{tag}: deleting {asset['name']}")
+            if not args.dry_run:
+                gh(["api", "-X", "DELETE", f"repos/{args.repo}/releases/assets/{asset['id']}"])
+        left = len(assets) - len(deleted)
+        kept = sum(1 for asset in assets if asset not in deleted and (read_asset(asset["name"]) or (0,))[0] == args.pr)
+        print(f"{tag}: kept {kept} asset(s) of PR #{args.pr}; it holds {left} of at most {MAX_ASSETS:,} assets.")
+        if left > WARN_ASSETS:
+            print(f"::warning::{tag} holds {left} of at most {MAX_ASSETS:,} assets (docs/hosting.md, \"The releases' limit\").")
+    if not any(release["tag_name"] == RELEASE for release in releases):
+        print(f"There is no {RELEASE} release: nothing to clean there.")
+    return unmerged_rules
 
 
 def name_asset(pr, version, scenario, extension):
@@ -191,27 +308,49 @@ def name_asset(pr, version, scenario, extension):
 
 
 def upload(args, scenarios):
-    present = []
+    """Each run's GIF and MP4 to its release, one upload per release, a rule release created first when it is missing."""
+    present = {}
     for scenario in scenarios:
+        files = present.setdefault(scenario["release"], [])
         if os.path.exists(scenario["file"]):
-            present.append((scenario["file"], scenario["asset"]))
+            files.append((scenario["file"], scenario["asset"]))
         else:
             print(f"No GIF for {scenario['title']} ({scenario['file']}).")
         if has_mp4(scenario):
-            present.append((scenario["mp4_file"], scenario["mp4_asset"]))
+            files.append((scenario["mp4_file"], scenario["mp4_asset"]))
         else:
             print(f"No MP4 for {scenario['title']} ({scenario['mp4_file'] or 'none recorded'}).")
-    if not present:
+    for release, files in present.items():
+        if not files:
+            continue
+        if is_rule_release(release):
+            ensure_release(args, release, next(s["gif"] for s in scenarios if s["release"] == release))
+        with tempfile.TemporaryDirectory() as folder:
+            targets = []
+            for source, asset in files:
+                target = os.path.join(folder, asset)
+                shutil.copyfile(source, target)
+                targets.append(target)
+                print(f"Uploading {asset} to {release}")
+            if not args.dry_run:
+                gh(["release", "upload", release, *targets, "--clobber", "--repo", args.repo])
+
+
+def ensure_release(args, release, gif):
+    """Creates a rule release that doesn't exist yet, as a pre-release; gif is one of its runs' GIF path, which names its
+    rule file. Another PR's run may create it at the same time: a creation GitHub refuses is fine when the release is
+    there after it."""
+    if run_gh(["release", "view", release, "--repo", args.repo, "--json", "tagName"]).returncode == 0:
         return
-    with tempfile.TemporaryDirectory() as folder:
-        files = []
-        for source, asset in present:
-            target = os.path.join(folder, asset)
-            shutil.copyfile(source, target)
-            files.append(target)
-            print(f"Uploading {asset}")
-        if not args.dry_run:
-            gh(["release", "upload", RELEASE, *files, "--clobber", "--repo", args.repo])
+    print(f"Creating the pre-release {release}")
+    if args.dry_run:
+        return
+    rule_file = "/".join(to_kebab_case(folder) for folder in gif.split("/")[1:-1])
+    notes = (f"The latest e2e recordings (GIFs and MP4s) of the rules of rules/{rule_file}.yaml, "
+             "kept by the E2E videos workflow (docs/hosting.md, \"E2E videos on pull requests\"). Created by it: don't edit.")
+    made = run_gh(["release", "create", release, "--prerelease", "--title", release, "--notes", notes, "--repo", args.repo])
+    if made.returncode != 0 and run_gh(["release", "view", release, "--repo", args.repo, "--json", "tagName"]).returncode != 0:
+        sys.exit(f"Couldn't create the release {release}:\n{made.stderr.strip()}")
 
 
 def has_mp4(scenario):
@@ -222,6 +361,11 @@ def find_player(repo):
     """The site's player page: GitHub Pages serves <owner>/<repo> at https://<owner, lowercase>.github.io/<repo>/."""
     owner, name = repo.split("/", 1)
     return f"https://{owner.lower()}.github.io/{name}/e2e-player.html"
+
+
+def link_player(repo, mp4_asset, release):
+    """The player page on an MP4: ?v=<its name>, and &r=<its release> when that isn't prs-resources (the page's default)."""
+    return f"{find_player(repo)}?v={mp4_asset}" + ("" if release == RELEASE else f"&r={release}")
 
 
 def group_by_scenario(runs):
@@ -276,10 +420,11 @@ def write_scenario(repo, runs, level, why=""):
         screen = SCREENS.get(run.get("screen"), run.get("screen") or "")
         lines += [f"{level}# {'❌ ' if not run['passed'] else ''}{screen}".rstrip(), ""]
         if os.path.exists(run["file"]):
-            url = f"https://github.com/{repo}/releases/download/{RELEASE}/{run['asset']}"
+            release = run.get("release", RELEASE)
+            url = f"https://github.com/{repo}/releases/download/{release}/{run['asset']}"
             image = f"![{first['title']} · {screen}]({url})"
             if has_mp4(run):
-                player = f"{find_player(repo)}?v={run['mp4_asset']}"
+                player = link_player(repo, run["mp4_asset"], release)
                 lines += [f"[{image}]({player})", "", f"[▶ Play MP4]({player})", ""]
             else:
                 lines += [image, ""]
