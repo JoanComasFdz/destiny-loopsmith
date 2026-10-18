@@ -1,0 +1,8 @@
+# Jolt, with Skip Grenade and Spark of Shock to jolt the target, and Festival Flight (no perks) to shoot it.
+name: "E2E - Jolt with Spark of Shock and Festival Flight"
+class: hunter
+subclass: arc
+grenade: skip-grenade
+fragments: [spark-of-shock]
+weapons:
+  - { hash: 4019651319 } # Festival Flight

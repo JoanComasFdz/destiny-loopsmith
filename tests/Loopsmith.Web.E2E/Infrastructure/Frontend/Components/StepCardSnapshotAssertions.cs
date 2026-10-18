@@ -60,9 +60,22 @@ public static class StepCardSnapshotAssertions
     /// Under the event that reads <paramref name="happened"/> ("📍 Picked up Ionic Trace"), <paramref name="fragment"/> fired
     /// exactly <paramref name="lines"/>, in that order, each with its "(chance)" as shown.
     /// </summary>
-    public static AssertingThat<StepCardSnapshot> FiresOn(this AssertingThat<StepCardSnapshot> that, string happened, Fragment fragment, params string[] lines)
+    public static AssertingThat<StepCardSnapshot> FiresOn(this AssertingThat<StepCardSnapshot> that, string happened, Fragment fragment, params string[] lines) =>
+        that.FiresOn(happened, fragment.ToShownText(), lines);
+
+    /// <summary><paramref name="keyword"/> fired exactly <paramref name="lines"/>, in that order, each with its "(chance)" as shown.</summary>
+    public static AssertingThat<StepCardSnapshot> Fires(this AssertingThat<StepCardSnapshot> that, Keyword keyword, params string[] lines) =>
+        that.FiresFrom(keyword.ToShownText(), lines);
+
+    /// <summary>
+    /// Under the event that reads <paramref name="happened"/> ("📍 Picked up Ionic Trace"), <paramref name="keyword"/> fired
+    /// exactly <paramref name="lines"/>, in that order, each with its "(chance)" as shown.
+    /// </summary>
+    public static AssertingThat<StepCardSnapshot> FiresOn(this AssertingThat<StepCardSnapshot> that, string happened, Keyword keyword, params string[] lines) =>
+        that.FiresOn(happened, keyword.ToShownText(), lines);
+
+    private static AssertingThat<StepCardSnapshot> FiresOn(this AssertingThat<StepCardSnapshot> that, string happened, string name, string[] lines)
     {
-        var name = fragment.ToShownText();
         var events = that.InstanceToAssert.Events.Where(e => e.Text == happened).ToArray();
         Assert.True(events.Length == 1, $"The card reads {Describe(that.InstanceToAssert.Events)}, but one \"{happened}\" event was expected.");
         var shown = events[0].Sources.Where(source => source.Name == name).SelectMany(source => source.Lines).ToArray();
@@ -101,6 +114,10 @@ public static class StepCardSnapshotAssertions
     /// <summary><paramref name="fragment"/> is a source of the card's damage resistance, with the values <paramref name="values"/> ("25% · PvP 10%").</summary>
     public static AssertingThat<StepCardSnapshot> HasResistanceFrom(this AssertingThat<StepCardSnapshot> that, Fragment fragment, string values) =>
         that.HasResistanceFrom(fragment.ToShownText(), values);
+
+    /// <summary><paramref name="keyword"/> is a source of the card's damage resistance, with the values <paramref name="values"/> ("15% · PvP 0%").</summary>
+    public static AssertingThat<StepCardSnapshot> HasResistanceFrom(this AssertingThat<StepCardSnapshot> that, Keyword keyword, string values) =>
+        that.HasResistanceFrom(keyword.ToShownText(), values);
 
     private static AssertingThat<StepCardSnapshot> HasResistanceFrom(this AssertingThat<StepCardSnapshot> that, string name, string values)
     {

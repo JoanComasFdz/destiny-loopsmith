@@ -1,0 +1,6 @@
+# Ionic Trace, with Skip Grenade and Spark of Shock to kill a jolted target, and Spark of Ions to drop the trace.
+name: "E2E - Ionic Trace with Spark of Shock and Spark of Ions"
+class: hunter
+subclass: arc
+grenade: skip-grenade
+fragments: [spark-of-shock, spark-of-ions]

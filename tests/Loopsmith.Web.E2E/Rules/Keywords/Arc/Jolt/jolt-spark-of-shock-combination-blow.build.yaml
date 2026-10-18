@@ -1,0 +1,7 @@
+# Jolt, with Skip Grenade and Spark of Shock to jolt the target, and Combination Blow (rules on kills only) to punch it.
+name: "E2E - Jolt with Spark of Shock and Combination Blow"
+class: hunter
+subclass: arc
+grenade: skip-grenade
+melee: combination-blow
+fragments: [spark-of-shock]

@@ -1,0 +1,5 @@
+# Super, with Storm's Edge (no rules on its cast) to cast.
+name: "E2E - Super with Storm's Edge"
+class: hunter
+subclass: arc
+super: storms-edge

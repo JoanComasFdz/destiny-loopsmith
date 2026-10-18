@@ -51,6 +51,11 @@ public sealed class TriggerPalette(IPage page)
             .Locator("[data-action=trigger-at-once]")
             .Filter(new() { Has = page.Locator("[data-testid=trigger-caption]").GetByText(declaration, new() { Exact = true }) });
 
+    // A pickup's chip in the panel's "On the ground" group reads "Pick up <its name>".
+    private ILocator Pickup(Keyword pickup) =>
+        Panel.Locator("[data-group=ground] [data-action=trigger-at-once]")
+            .Filter(new() { Has = page.Locator("[data-testid=trigger-caption]").GetByText($"Pick up {pickup.ToShownText()}", new() { Exact = true }) });
+
     // A secondary use's caption is drawn in capitals ("SLIDE"); its text may not be.
     private ILocator SecondaryButton(SecondaryUse use) =>
         Panel.Locator("[data-action=trigger-secondary]")
@@ -80,6 +85,9 @@ public sealed class TriggerPalette(IPage page)
     /// loop gets a step that declares it.
     /// </summary>
     public Task ClickDeclarationAsync(Status status, string declaration) => OnScreen.PressAsync(Panel, Declaration(status, declaration));
+
+    /// <summary>Clicks "Pick up <paramref name="pickup"/>" under "On the ground": the loop gets a step that picks it up.</summary>
+    public Task ClickPickupAsync(Keyword pickup) => OnScreen.PressAsync(Panel, Pickup(pickup));
 
     /// <summary>Selects the "×" enemy count whose text is <paramref name="shown"/> ("3 in 3 s · One for All").</summary>
     public Task SelectTargetCountAsync(string shown) =>
