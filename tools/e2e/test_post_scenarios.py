@@ -147,6 +147,15 @@ class CleanTests(unittest.TestCase):
         deleted = post_scenarios.plan_rule_deletions(held, 7, merged=True, open_prs={6})
         self.assertEqual(names(deleted), ["pr-5-v1-hits-desktop.gif", "pr-7-v1-hits-desktop.gif"])
 
+    def test_a_long_named_rule_recording_of_another_pr_is_the_same_run_by_its_hash(self):
+        def long(pr, version, extension=".gif"):
+            stem = f"pr-{pr}-v{version}-" + "a-rule-whose-title-goes-on-" * 8
+            return stem[:200 - len(f"-7cec2320{extension}")].rstrip("-") + f"-7cec2320{extension}"
+        held = assets(long(5, 1), long(140, 12), long(140, 9), long(140, 12, ".mp4"))
+        self.assertEqual(len({post_scenarios.read_asset(asset["name"])[2] for asset in held[:3]}), 1)
+        deleted = post_scenarios.plan_rule_deletions(held, 140, merged=True, open_prs=set())
+        self.assertEqual(names(deleted), sorted([long(5, 1), long(140, 9)]))
+
     def test_a_pr_closed_without_merging_deletes_all_its_rule_recordings(self):
         held = assets("pr-7-v1-hits-desktop.gif", "pr-7-v2-hits-desktop.mp4", "pr-5-v1-hits-desktop.gif", "pr-70-v1-x.gif")
         deleted = post_scenarios.plan_rule_deletions(held, 7, merged=False, open_prs=set())

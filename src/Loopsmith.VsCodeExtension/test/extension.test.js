@@ -139,11 +139,13 @@ test('a rule scenario\'s domain folder is its namespace from Rules on, and its r
   assert.equal(extension.toRelease('Starting', 'my-release'), 'my-release');
 });
 
-test('the player link names the release only when it isn\'t prs-resources', () => {
+test('the player link names the release only for a rule group\'s', () => {
   assert.equal(extension.toPlayerUrl('JoanComasFdz/destiny-loopsmith', 'pr-1-v1-a-desktop.mp4', 'prs-resources'),
     'https://joancomasfdz.github.io/destiny-loopsmith/e2e-player.html?v=pr-1-v1-a-desktop.mp4');
   assert.equal(extension.toPlayerUrl('JoanComasFdz/destiny-loopsmith', 'pr-1-v1-a-desktop.mp4', 'rules-mods-arms-resources'),
     'https://joancomasfdz.github.io/destiny-loopsmith/e2e-player.html?v=pr-1-v1-a-desktop.mp4&r=rules-mods-arms-resources');
+  assert.equal(extension.toPlayerUrl('JoanComasFdz/destiny-loopsmith', 'pr-1-v1-a-desktop.mp4', 'my-release'),
+    'https://joancomasfdz.github.io/destiny-loopsmith/e2e-player.html?v=pr-1-v1-a-desktop.mp4', 'the player plays from no other release');
 });
 
 test('finds a scenario\'s recordings, newest PR first, each version with the assets it has', async () => {

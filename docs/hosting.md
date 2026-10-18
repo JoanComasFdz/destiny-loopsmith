@@ -316,7 +316,8 @@ works the PR records them; CI doesn't run, record or build anything for them.
     rule. Names keep the form `pr-<n>-v<k>-<run>`, so a PR's posts and versions work as above while it is open. A
     **merged** PR keeps, for each run it recorded there, its newest recording of it (per run, not per version: a rule its
     V2 didn't re-record keeps its V1); its older ones go, and so do other PRs' recordings of those runs, unless that PR
-    is still open (its posts need them; whichever merges last wins). An older merged PR's post then shows a broken
+    is still open (its posts need them; whichever merges last wins; one cleanup runs at a time, so two PRs merged
+    together can't each delete the other's). An older merged PR's post then shows a broken
     image for a rule a later PR re-recorded, and its player link says the recording was replaced. A PR **closed
     without merging** loses all its recordings there: they never became the rules' behaviour.
   - **The posts:** the PR's older posts would open onto broken images, so each is shrunk to one line: **Scenarios (V1)** · 12 scenarios · replaced by
@@ -336,7 +337,7 @@ works the PR records them; CI doesn't run, record or build anything for them.
   screens takes four assets, so even a file of 100 rules leaves room for open PRs' recordings, and the cleanup keeps one
   recording per rule. The cleanup's log says how many each release holds, with a warning above 900. Near the limit:
   - `prs-resources`: the owner creates a new pre-release (e.g. `prs-resources-2`) and points `RELEASE` in
-    `tools/e2e/post-scenarios.py`, `PLAYER_RELEASE` and the `release` setting's default in `src/Loopsmith.VsCodeExtension`
+    `tools/e2e/post-scenarios.py` and the `release` setting's default in `src/Loopsmith.VsCodeExtension`
     and the default `release` in `src/Loopsmith.Web/wwwroot/e2e-player.html` at it. The old release stays, so the posts
     that embed its GIFs keep showing them; their player links look in the new release, so their MP4s no longer play.
     Nothing does this automatically yet.

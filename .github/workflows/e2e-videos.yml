@@ -117,6 +117,11 @@ jobs:
       github.event_name == 'pull_request' &&
       github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
+    # One cleanup at a time, across PRs: two PRs merged together would each read the other as closed and delete the
+    # other's recording of a rule they both recorded, leaving it none.
+    concurrency:
+      group: e2e-videos-clean
+      cancel-in-progress: false
     env:
       GH_TOKEN: ${{ github.token }}
       PR: ${{ github.event.pull_request.number }}

@@ -50,6 +50,7 @@ RELEASE = "prs-resources"
 RULES_FOLDER = "Rules"
 RULE_RELEASE = re.compile(r"^rules-[a-z0-9]+(?:-[a-z0-9]+)*-resources$")
 ASSET = re.compile(r"^pr-(\d+)-v(\d+)-(.+)$")
+HASHED = re.compile(r"-([0-9a-f]{8})(\.[a-z0-9]+)$")
 MAX_ASSETS = 1000
 WARN_ASSETS = 900
 FOOTER = "_Recorded by the e2e workflow · Claude Code_"
@@ -225,9 +226,15 @@ def is_rule_release(tag):
 
 
 def read_asset(name):
-    """(pr, version, run) of a name pr-<n>-v<version>-<run>, the run with its extension; None for any other name."""
+    """(pr, version, run) of a name pr-<n>-v<version>-<run>, the run with its extension; None for any other name. A name
+    shortened to 200 characters (name_asset) keeps less of its run the longer its PR number and version are, so its run
+    is its hash and extension, the same for every PR and version."""
     found = ASSET.match(name)
-    return (int(found.group(1)), int(found.group(2)), found.group(3)) if found else None
+    if not found:
+        return None
+    hashed = HASHED.search(name) if len(name) == MAX_NAME else None
+    run = f"#{hashed.group(1)}{hashed.group(2)}" if hashed else found.group(3)
+    return int(found.group(1)), int(found.group(2)), run
 
 
 def plan_pr_deletions(assets, pr):
@@ -317,7 +324,7 @@ def upload(args, scenarios):
         if not files:
             continue
         if is_rule_release(release):
-            ensure_release(args, release)
+            ensure_release(args, release, next(s["gif"] for s in scenarios if s["release"] == release))
         with tempfile.TemporaryDirectory() as folder:
             targets = []
             for source, asset in files:
@@ -329,16 +336,17 @@ def upload(args, scenarios):
                 gh(["release", "upload", release, *targets, "--clobber", "--repo", args.repo])
 
 
-def ensure_release(args, release):
-    """Creates a rule release that doesn't exist yet, as a pre-release. Another PR's run may create it at the same time:
-    a creation GitHub refuses is fine when the release is there after it."""
+def ensure_release(args, release, gif):
+    """Creates a rule release that doesn't exist yet, as a pre-release; gif is one of its runs' GIF path, which names its
+    rule file. Another PR's run may create it at the same time: a creation GitHub refuses is fine when the release is
+    there after it."""
     if run_gh(["release", "view", release, "--repo", args.repo, "--json", "tagName"]).returncode == 0:
         return
     print(f"Creating the pre-release {release}")
     if args.dry_run:
         return
-    group = release.removeprefix("rules-").removesuffix("-resources")
-    notes = (f"The latest e2e recordings (GIFs and MP4s) of the rules of rules/{group.replace('-', '/')}…, "
+    rule_file = "/".join(to_kebab_case(folder) for folder in gif.split("/")[1:-1])
+    notes = (f"The latest e2e recordings (GIFs and MP4s) of the rules of rules/{rule_file}.yaml, "
              "kept by the E2E videos workflow (docs/hosting.md, \"E2E videos on pull requests\"). Created by it: don't edit.")
     made = run_gh(["release", "create", release, "--prerelease", "--title", release, "--notes", notes, "--repo", args.repo])
     if made.returncode != 0 and run_gh(["release", "view", release, "--repo", args.repo, "--json", "tagName"]).returncode != 0:

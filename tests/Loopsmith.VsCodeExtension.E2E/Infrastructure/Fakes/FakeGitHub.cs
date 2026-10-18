@@ -37,12 +37,11 @@ public sealed class FakeGitHub
         ImmutableInterlocked.GetOrAdd(ref releases, tag, _ => new FakeRelease(Volatile.Read(ref releases).Count + 1));
 
     /// <summary>
-    /// GitHub has no release tagged <paramref name="tag"/>. Only <see cref="ReleaseNamed"/> adds a release, so there is
-    /// nothing to do: the Given reads as its Gherkin line.
+    /// GitHub has no release tagged <paramref name="tag"/>: only <see cref="ReleaseNamed"/> adds one, so it checks that
+    /// nothing did, and the Given reads as its Gherkin line.
     /// </summary>
-    public void HasNoRelease(string tag)
-    {
-    }
+    public void HasNoRelease(string tag) =>
+        Assert.False(Volatile.Read(ref releases).ContainsKey(tag), $"The fake GitHub already has a release \"{tag}\".");
 
     /// <summary>Answers the context's GitHub requests from <see cref="Release"/>.</summary>
     public async Task RouteAsync(IBrowserContext context)

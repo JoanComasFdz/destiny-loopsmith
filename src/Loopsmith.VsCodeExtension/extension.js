@@ -12,8 +12,6 @@ const MAX_ASSET_NAME = 200;
 const SCREENS = ['desktop', 'mobile'];
 /** pr-<n>-v<version>-<run>.gif / .mp4 (docs/hosting.md, "E2E videos on pull requests", "Naming"). */
 const ASSET_NAME = /^pr-(\d+)-v(\d+)-.+\.(gif|mp4)$/;
-/** The release the player page reads when its link names none (e2e-player.html). */
-const PLAYER_RELEASE = 'prs-resources';
 /** How long a read of a release stays fresh before the next CodeLens reads it again. */
 const FRESH_FOR_MS = 10 * 60 * 1000;
 /** The GitHub sign-ins VS Code may already hold (vscode.dev, the GitHub extensions): any of them reads a public release. */
@@ -90,12 +88,12 @@ function nameAsset(pr, version, gifName, extension, digest) {
 }
 
 /**
- * https://<owner, lowercase>.github.io/<repo>/e2e-player.html?v=<MP4>, and &r=<release> when it isn't prs-resources: the
- * site's player page (link_player).
+ * https://<owner, lowercase>.github.io/<repo>/e2e-player.html?v=<MP4>, and &r=<release> for a rule group's release (the
+ * page reads prs-resources when it names none, and plays from no other): the site's player page (link_player).
  */
 function toPlayerUrl(repository, mp4Name, release) {
   const [owner, repo] = repository.split('/');
-  const from = release === PLAYER_RELEASE ? '' : `&r=${encodeURIComponent(release)}`;
+  const from = release.startsWith('rules-') ? `&r=${encodeURIComponent(release)}` : '';
   return `https://${owner.toLowerCase()}.github.io/${repo}/e2e-player.html?v=${encodeURIComponent(mp4Name)}${from}`;
 }
 

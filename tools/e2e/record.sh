@@ -89,7 +89,7 @@ list_changed_classes() {
           *Tests.cs) printf '%s\tchanged\n' "$(basename "$file" .cs)" ;;
           *.cs) ;;
           *)
-            for class in $(grep -rlF --include='*Tests.cs' "$(basename "$file")" "$project/$root" | xargs -r -n1 basename | sed 's/\.cs$//'); do
+            for class in $(cd "$project" && grep -rlF --include='*Tests.cs' "$(basename "$file")" $(scenario_roots "$project") 2> /dev/null | xargs -r -n1 basename | sed 's/\.cs$//'); do
               printf '%s\tfixtures\t%s\n' "$class" "${file#"${project#"$repo"/}"/}"
             done ;;
         esac
@@ -133,6 +133,7 @@ if [ -n "$changed_since" ]; then
   fi
 fi
 for choice in "${chosen[@]}"; do
+  choice="${choice%/}"
   if [ "$choice" = "all" ]; then
     everything=1
   elif [[ $choice == Rules || $choice == Rules/* ]] && [ -d "$web_project/$choice" ]; then

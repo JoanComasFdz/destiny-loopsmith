@@ -142,3 +142,5 @@ files, and `tools/e2e/record.sh --no-video <its class>` (it serves VS Code for t
 | `the panel "Recording · …" shows beside the code` | `RecordingPanel.ReadLayoutAsync()`, `IsBesideTheCode()`; `RecordingPanel.ReadAsync()`, `HasEditorTab("Recording · …")` |
 | `its tabs are "Desktop" and "Mobile", "Desktop" selected` / `it plays "….mp4"` | `HasTabSelected("Desktop", "Desktop", "Mobile")` / `Plays("….mp4")` |
 | `it plays "….mp4" from "rules-…-resources"` | `Plays("….mp4", "rules-…-resources")` |
+| `the panel reads "…"` / `it reads "…"` | `RecordingPanel.ReadAsync()`, `Reads("…")` |
+| `"Open in e2e player ↗" goes to "…"` | `LinksToThePlayer("…")` |
