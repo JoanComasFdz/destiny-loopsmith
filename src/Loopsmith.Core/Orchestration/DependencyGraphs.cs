@@ -6,26 +6,24 @@ using Loopsmith.Core.RuleParsing;
 
 namespace Loopsmith.Core.Orchestration;
 
-/// <summary>The graph's two files: the JSON the page reads, and the page with it inside.</summary>
-public sealed record GraphPages(string Json, string Html);
-
 /// <summary>
-/// Pure API the graph tool (<c>tools/graph</c>) uses: the rules' dependency graph of a class's subclass — which element
-/// needs what before it can fire, and what it gives — as JSON, as its page and as text.
+/// Pure API the lanes tool (<c>tools/graph</c>) uses: the rules' dependency graph of a class's subclass (which element
+/// needs what before it can fire, and what it gives) and its lanes (every rule as one claim: what sets it off ➜ what
+/// must be in place ➜ what it gives), as data, as text and as JSON.
 /// </summary>
 public static class DependencyGraphs
 {
     public static DependencyGraph DrawGraph(RuleCatalog catalog, GuardianClass guardianClass, Subclass subclass) =>
         DependencyGraphDrawing.DrawGraph(catalog, guardianClass, subclass);
 
-    public static string RenderGraphText(DependencyGraph graph) => GraphRendering.RenderText(graph);
+    public static RuleLanes DrawLanes(RuleCatalog catalog, GuardianClass guardianClass, Subclass subclass) =>
+        LaneDrawing.DrawLanes(catalog, guardianClass, subclass);
 
-    public static string RenderGraphJson(DependencyGraph graph) => GraphRendering.RenderJson(graph);
+    /// <summary>The rule files → the lanes; the parse error when the rules don't parse.</summary>
+    public static Result<RuleLanes, string> DrawLanes(ImmutableArray<SourceText> ruleFiles, GuardianClass guardianClass, Subclass subclass) =>
+        RuleCatalogParsing.ParseCatalog(ruleFiles).Map(catalog => LaneDrawing.DrawLanes(catalog, guardianClass, subclass));
 
-    /// <summary>The rule files → the graph's JSON and its page (<paramref name="pageTemplate"/> with the JSON at <c>__DATA__</c>).</summary>
-    public static Result<GraphPages, string> DrawGraphPages(
-        ImmutableArray<SourceText> ruleFiles, string pageTemplate, GuardianClass guardianClass, Subclass subclass) =>
-        RuleCatalogParsing.ParseCatalog(ruleFiles)
-            .Map(catalog => DependencyGraphDrawing.DrawGraph(catalog, guardianClass, subclass))
-            .Map(graph => new GraphPages(GraphRendering.RenderJson(graph), GraphRendering.RenderPage(pageTemplate, graph)));
+    public static string RenderLanesText(RuleLanes lanes) => LaneRendering.RenderText(lanes);
+
+    public static string RenderLanesJson(RuleLanes lanes) => LaneRendering.RenderJson(lanes);
 }

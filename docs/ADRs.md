@@ -6,7 +6,8 @@ current set of decisions, in four groups: what the product is (D1–D9), sources
 architecture (D16–D23), hosts and tooling (D24–D26), starting from a DIM link (D27), the build's stats (D28), the
 step's damage resistance (D29), armor mods in their sockets (D30), the artifact (D32), the count of Armor Charge
 (D33), what a hit step stands for (D34), the raid and activity mods left out of the sockets (D35), what the player
-says about a step besides its hit and count (D36), a reload (D37) and the web designer as the only host (D38). D1 is the
+says about a step besides its hit and count (D36), a reload (D37), the web designer as the only host (D38) and the
+developer tools as hosts too (D39). D1 is the
 founding one: every other decision follows from it.
 
 | # | Decision | Why |
@@ -46,6 +47,7 @@ founding one: every other decision follows from it.
 | D36 | The player says when a weapon step breaks a shield and when an ability step spends its last charge | Shield Break Charge and the Kickstarts react to them; play decides both, and neither is counted |
 | D37 | A reload is a step the player declares, and a rule can reload a weapon; no ammo is counted | Demolitionist's loop needs a reload and the perks that react to one; a magazine is time and ammo, which only play decides |
 | D38 | The web designer is the only host; the CLI and the loop graph are removed | Nobody used the CLI: the web app, recorded on every PR, is how Loopsmith is iterated on; what the CLI checked is a Core test |
+| D39 | Developer tools under `tools/` are hosts too: they call only `Orchestration` and the kernel, and nothing ships them | The rules lanes tool draws every rule as one claim, the list of e2e scenarios to write; a tool is a host like the web app, so it keeps the same boundary |
 
 ## What the product is
 
@@ -605,4 +607,18 @@ keeps them. What the CLI gave sessions and agents stays as Core tests: `RepoFile
 loop file of `builds/` and every e2e fixture against the repository's rules, as the designer's import does, and names
 the file and the error of each one that doesn't (`dotnet test --filter RepoFileValidationTests`). **Consequence.** A
 loop is found by designing it (D2): the designer's analysis judges its order (FR-6); nothing discovers cycles any
-more (FR-8 dropped). The host boundary test checks the web host only, and the core's pure API is unchanged.
+more (FR-8 dropped). The host boundary test checks the web host only, and the core's pure API is unchanged. D39 adds
+the developer tools under `tools/` as hosts: the web designer stays the only one a player uses.
+
+### D39 — Developer tools under `tools/` are hosts too
+
+**Context.** Writing the e2e scenarios one claim at a time needs the list of the claims: every rule of a subclass, and
+of what it needs and what builds on it, as one lane (what sets it off ➜ what must be in place ➜ what it gives). That
+list is drawn from the rules, for whoever writes the scenarios, not for a player. **Decision (product owner).** A
+developer tool under `tools/` is a host, as the web app is (D38): the rules lanes tool (`tools/graph/Loopsmith.Graph`)
+reads `rules/` itself (a host calls only `Orchestration` and the kernel, so it keeps its own short copy of
+`SourceFetching`'s file reading), calls `Orchestration.DependencyGraphs` and writes its page and JSON under `out/`;
+its page's parts (box, lane, group) are its own presentation. The host boundary test checks it with the web app.
+Nothing deploys or ships a tool. **Consequence.** The lane mapping is Core (`DependencyGraphing`), unit-tested and
+golden-tested (`ArcHunterLanesGoldenTests`), so a rules change shows its lanes in the PR diff; the web designer stays
+the only host a player uses.

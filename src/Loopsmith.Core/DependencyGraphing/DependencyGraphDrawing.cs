@@ -4,14 +4,11 @@ using Loopsmith.Core.Functional;
 
 namespace Loopsmith.Core.DependencyGraphing;
 
-/// <summary>The layers reached so far: each element's (the fewest steps to fire it) and each needed node's.</summary>
-internal sealed record Layers(ImmutableDictionary<string, int> Elements, ImmutableDictionary<string, int> Nodes);
-
 /// <summary>
 /// Draws the dependency graph of a class's subclass from the rules: which element needs what before it can fire, and what
 /// it gives. Pure: same rules ⇒ same graph. Three scopes: the subclass alone, with what it needs from outside (the
-/// weapons), and with what builds on it (every outside element that needs one of its nodes). Each scope places its nodes
-/// in columns, left to right in the order to test them.
+/// weapons), and with what builds on it (every outside element that needs one of its nodes). The lanes take each
+/// scope's elements (<see cref="LaneDrawing"/>).
 /// </summary>
 public static class DependencyGraphDrawing
 {
@@ -27,7 +24,7 @@ public static class DependencyGraphDrawing
         var edges = links.Values.SelectMany(link => link.Edges).Distinct().ToImmutableArray();
         var subclassParts = drawn.Where(element => DependencyMapping.IsSubclassPart(context, element)).Select(element => element.Id.Value).ToImmutableHashSet();
         var members = ListScopeMembers(links, nodes, edges, subclassParts);
-        var scopes = members.Select(member => DrawScope(context, member.Kind, member.Nodes, links, nodes, edges)).ToImmutableArray();
+        var scopes = members.Select(member => DrawScope(context, member.Kind, member.Nodes, edges)).ToImmutableArray();
         var shown = members.SelectMany(member => member.Nodes).ToImmutableHashSet();
         return new DependencyGraph(
             $"{subclass} {guardianClass}",
@@ -90,8 +87,6 @@ public static class DependencyGraphDrawing
         GraphContext context,
         ScopeKind kind,
         ImmutableHashSet<string> members,
-        ImmutableDictionary<string, ElementLinks> links,
-        ImmutableDictionary<string, GraphNode> nodes,
         ImmutableArray<GraphEdge> edges) =>
         new(
             kind,
@@ -102,8 +97,7 @@ public static class DependencyGraphDrawing
                 .OrderBy(edge => edge.From, StringComparer.Ordinal)
                 .ThenBy(edge => edge.To, StringComparer.Ordinal)
                 .ThenBy(edge => edge.Kind)
-                .ThenBy(edge => edge.Label, StringComparer.Ordinal)],
-            PlaceColumns(members, links, nodes));
+                .ThenBy(edge => edge.Label, StringComparer.Ordinal)]);
 
     private static string NameScope(GraphContext context, ScopeKind kind) =>
         kind switch
@@ -113,121 +107,6 @@ public static class DependencyGraphDrawing
             _ => "+ what builds on it",
         };
 
-    /// <summary>
-    /// Each node's column: a trigger or weapon is column 0; an element of layer L is column 2L − 1 and a given node of
-    /// layer L column 2L (a keyword's rule node is an element, its state a given node). Only gives edges count. None: it
-    /// needs something outside this scope.
-    /// </summary>
-    private static ImmutableDictionary<string, Optional<int>> PlaceColumns(
-        ImmutableHashSet<string> members,
-        ImmutableDictionary<string, ElementLinks> links,
-        ImmutableDictionary<string, GraphNode> nodes)
-    {
-        var givers = ListGivers(members, links);
-        var layers = ComputeLayers(members, links, nodes, givers);
-        return members.ToImmutableDictionary(member => member, member => PlaceColumn(member, links, nodes, givers, layers));
-    }
-
-    private static Optional<int> PlaceColumn(
-        string member,
-        ImmutableDictionary<string, ElementLinks> links,
-        ImmutableDictionary<string, GraphNode> nodes,
-        ImmutableDictionary<string, ImmutableArray<string>> givers,
-        Layers layers) =>
-        IsTriggerOrWeapon(nodes, member)
-            ? Optional.Some(0)
-            : links.ContainsKey(member)
-                ? FindLayer(layers.Elements, member).Map(layer => (2 * layer) - 1)
-                : FindLayer(layers.Nodes, member).Map(layer => 2 * layer);
-
-    /// <summary>The elements of the scope that give each node.</summary>
-    private static ImmutableDictionary<string, ImmutableArray<string>> ListGivers(
-        ImmutableHashSet<string> members,
-        ImmutableDictionary<string, ElementLinks> links) =>
-        links.Values
-            .Where(link => members.Contains(link.Node.Id))
-            .SelectMany(link => link.Gives.Where(members.Contains).Select(given => (Given: given, Giver: link.Node.Id)))
-            .GroupBy(pair => pair.Given)
-            .ToImmutableDictionary(group => group.Key, group => group.Select(pair => pair.Giver).ToImmutableArray());
-
-    /// <summary>
-    /// The layers, iterated from none to a fixed point: each step can only lower a layer, so a cycle (an element that needs
-    /// what it gives) ends.
-    /// </summary>
-    private static Layers ComputeLayers(
-        ImmutableHashSet<string> members,
-        ImmutableDictionary<string, ElementLinks> links,
-        ImmutableDictionary<string, GraphNode> nodes,
-        ImmutableDictionary<string, ImmutableArray<string>> givers)
-    {
-        var empty = new Layers(ImmutableDictionary<string, int>.Empty, ImmutableDictionary<string, int>.Empty);
-        return IterateLayers(empty, members, links, nodes, givers);
-    }
-
-    private static Layers IterateLayers(
-        Layers current,
-        ImmutableHashSet<string> members,
-        ImmutableDictionary<string, ElementLinks> links,
-        ImmutableDictionary<string, GraphNode> nodes,
-        ImmutableDictionary<string, ImmutableArray<string>> givers)
-    {
-        var next = StepLayers(current, members, links, nodes, givers);
-        return IsSame(current.Elements, next.Elements) && IsSame(current.Nodes, next.Nodes)
-            ? current
-            : IterateLayers(next, members, links, nodes, givers);
-    }
-
-    private static Layers StepLayers(
-        Layers current,
-        ImmutableHashSet<string> members,
-        ImmutableDictionary<string, ElementLinks> links,
-        ImmutableDictionary<string, GraphNode> nodes,
-        ImmutableDictionary<string, ImmutableArray<string>> givers)
-    {
-        var elements = links.Values
-            .Where(link => members.Contains(link.Node.Id))
-            .SelectMany(link => ComputeElementLayer(link, current.Nodes).Match(
-                layer => new[] { KeyValuePair.Create(link.Node.Id, layer.Value) },
-                _ => []));
-        var triggers = members.Where(member => IsTriggerOrWeapon(nodes, member)).Select(member => KeyValuePair.Create(member, 0));
-        var given = givers.SelectMany(entry => FindMinimum(entry.Value.SelectMany(giver => FindLayer(current.Elements, giver).Match(
-                layer => new[] { layer.Value },
-                _ => []))).Match(
-            layer => new[] { KeyValuePair.Create(entry.Key, layer.Value) },
-            _ => []));
-        return new Layers(elements.ToImmutableDictionary(), triggers.Concat(given).ToImmutableDictionary());
-    }
-
-    /// <summary>The fewest layers over the ways it fires: one more than the highest of what the way needs.</summary>
-    private static Optional<int> ComputeElementLayer(ElementLinks link, ImmutableDictionary<string, int> nodes) =>
-        FindMinimum(link.Ways.SelectMany(way => ComputeWayLayer(way, nodes).Match(layer => new[] { layer.Value }, _ => [])));
-
-    private static Optional<int> ComputeWayLayer(FiringWay way, ImmutableDictionary<string, int> nodes)
-    {
-        var all = way.AllOf.Select(needed => FindLayer(nodes, needed)).ToImmutableArray();
-        var any = way.AnyOf.Select(group => FindMinimum(group.SelectMany(needed => FindLayer(nodes, needed).Match(layer => new[] { layer.Value }, _ => []))))
-            .ToImmutableArray();
-        var needed = all.Concat(any).ToImmutableArray();
-        return needed.All(layer => layer.IsSome())
-            ? Optional.Some(1 + needed.SelectMany(layer => layer.Match(found => new[] { found.Value }, _ => [])).DefaultIfEmpty(0).Max())
-            : Optional.None<int>();
-    }
-
-    private static Optional<int> FindLayer(ImmutableDictionary<string, int> layers, string id) =>
-        layers.TryGetValue(id, out var layer) ? Optional.Some(layer) : Optional.None<int>();
-
-    private static Optional<int> FindMinimum(IEnumerable<int> layers)
-    {
-        var all = layers.ToImmutableArray();
-        return all.IsEmpty ? Optional.None<int>() : Optional.Some(all.Min());
-    }
-
-    private static bool IsSame(ImmutableDictionary<string, int> left, ImmutableDictionary<string, int> right) =>
-        left.Count == right.Count && left.All(entry => right.TryGetValue(entry.Key, out var other) && other == entry.Value);
-
     private static bool IsWeapon(ImmutableDictionary<string, GraphNode> nodes, string id) =>
         nodes.TryGetValue(id, out var node) && node.Type is GraphNodeType.NeededWeapon;
-
-    private static bool IsTriggerOrWeapon(ImmutableDictionary<string, GraphNode> nodes, string id) =>
-        nodes.TryGetValue(id, out var node) && node.Type is GraphNodeType.NeededWeapon or GraphNodeType.ActionTrigger;
 }

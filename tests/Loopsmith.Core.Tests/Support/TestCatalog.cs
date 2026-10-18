@@ -69,8 +69,7 @@ public static class TestCatalog
             fragmentSlots is { } slots ? Optional.Some(FragmentSlots.From(slots)) : Optional.None<FragmentSlots>(),
             new Provenance.Authored("test", 1),
             Optional.None<string>(),
-            [],
-            "test");
+            []);
 
     public static AbilityProfile Profile(AbilityKind kind, int charges = 1, GameValue? chunkScalar = null) =>
         new(kind, ChargeCount.From(charges), chunkScalar ?? new GameValue.Unknown(), new GameValue.Unknown());

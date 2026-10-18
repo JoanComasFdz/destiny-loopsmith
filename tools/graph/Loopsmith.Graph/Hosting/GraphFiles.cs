@@ -2,18 +2,20 @@ using System.Collections.Immutable;
 using System.Reflection;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
+using Loopsmith.Graph.Page;
 
 namespace Loopsmith.Graph.Hosting;
 
 /// <summary>
-/// Impure boundary of the graph tool: finds the repository, reads the rule files and the page template embedded in this
-/// assembly, writes the graph's files and tells the console. A host calls only Orchestration and the kernel
+/// Impure boundary of the lanes tool: finds the repository, reads the rule files and the page's style and script embedded
+/// in this assembly, writes the lanes' files and tells the console. A host calls only Orchestration and the kernel
 /// (HostBoundaryTests), so it reads the rule files itself, as Core's SourceFetching does: every <c>*.yaml</c> under the
 /// folder, named by its path from it.
 /// </summary>
 public static class GraphFiles
 {
-    private const string TemplateName = "graph.html";
+    private const string StyleName = "lanes.css";
+    private const string ScriptName = "lanes.js";
     private const string SolutionFile = "Loopsmith.slnx";
 
     /// <summary>The repository root: the nearest folder up from <paramref name="start"/> holding the solution, else <paramref name="start"/>.</summary>
@@ -47,12 +49,15 @@ public static class GraphFiles
         }
     }
 
-    public static Result<string, string> ReadPageTemplate(Assembly assembly)
+    public static Result<PageAssets, string> ReadPageAssets(Assembly assembly) =>
+        ReadResource(assembly, StyleName).Bind(style => ReadResource(assembly, ScriptName).Map(script => new PageAssets(style, script)));
+
+    private static Result<string, string> ReadResource(Assembly assembly, string name)
     {
-        using var stream = assembly.GetManifestResourceStream(TemplateName);
+        using var stream = assembly.GetManifestResourceStream(name);
         if (stream is null)
         {
-            return new Result<string, string>.Error($"The page template '{TemplateName}' is not embedded in the tool.");
+            return new Result<string, string>.Error($"The page's '{name}' is not embedded in the tool.");
         }
 
         using var reader = new StreamReader(stream);

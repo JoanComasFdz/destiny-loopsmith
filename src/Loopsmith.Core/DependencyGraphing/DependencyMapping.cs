@@ -16,26 +16,17 @@ internal sealed record GraphContext(RuleCatalog Catalog, GuardianClass Class, Su
 /// </summary>
 internal sealed record Need(ImmutableArray<GraphNode> Alternatives, string Label);
 
-/// <summary>
-/// One way an element fires (a rule, or a passive): every node of <see cref="AllOf"/>, and one node of each group of
-/// <see cref="AnyOf"/>.
-/// </summary>
-internal sealed record FiringWay(ImmutableArray<string> AllOf, ImmutableArray<ImmutableArray<string>> AnyOf);
-
 /// <summary>What an outcome or a passive does to a node: gives it, ends it, collects it or boosts it, with the edge's label.</summary>
 internal sealed record Effect(GraphNode Node, EdgeKind Kind, string Label);
 
 /// <summary>
 /// An element as the graph reads it: its node (a keyword's rule node, <c>rule:jolt</c>), its keyword state's id when it has
-/// one (<c>jolt</c>), the ways it fires, its edges (none to itself), what it gives (the only edges the columns count) and
-/// every other node it touches.
+/// one (<c>jolt</c>), its edges (none to itself) and every other node it touches.
 /// </summary>
 internal sealed record ElementLinks(
     GraphNode Node,
     Optional<string> StateId,
-    ImmutableArray<FiringWay> Ways,
     ImmutableArray<GraphEdge> Edges,
-    ImmutableHashSet<string> Gives,
     ImmutableArray<GraphNode> Touched);
 
 /// <summary>
@@ -71,22 +62,19 @@ internal static class DependencyMapping
     public static ElementLinks MapElement(GraphContext context, BuildElement element)
     {
         var node = ToElementNode(context, element);
-        var ruleNeeds = element.Rules.Select(rule => ListRuleNeeds(context, rule)).ToImmutableArray();
-        var passiveNeeds = element.Passives.Select(passive => ListConditionNeeds(context, passive.When)).ToImmutableArray();
-        var wayNeeds = ruleNeeds.Concat(passiveNeeds).ToImmutableArray();
+        var needs = element.Rules.SelectMany(rule => ListRuleNeeds(context, rule))
+            .Concat(element.Passives.SelectMany(passive => ListConditionNeeds(context, passive.When)))
+            .ToImmutableArray();
         var effects = element.Rules.SelectMany(rule => rule.Then).SelectMany(outcome => ListOutcomeEffects(context, outcome))
             .Concat(element.Passives.SelectMany(passive => ListPassiveEffects(context, passive.Modifier)))
             .Where(effect => effect.Node.Id != node.Id)
             .ToImmutableArray();
-        var needs = wayNeeds.SelectMany(way => way).ToImmutableArray();
         var needEdges = needs.SelectMany(need => need.Alternatives.Select(needed => new GraphEdge(needed.Id, node.Id, EdgeKind.Needs, need.Label)));
         var effectEdges = effects.Select(effect => new GraphEdge(node.Id, effect.Node.Id, effect.Kind, effect.Label));
         return new ElementLinks(
             node,
             FindKeywordState(context, element),
-            wayNeeds.IsEmpty ? [new FiringWay([], [])] : [.. wayNeeds.Select(ToFiringWay)],
             [.. needEdges.Concat(effectEdges).Where(edge => edge.From != edge.To).Distinct()],
-            [.. effects.Where(effect => effect.Kind == EdgeKind.Gives).Select(effect => effect.Node.Id)],
             [.. needs.SelectMany(need => need.Alternatives).Concat(effects.Select(effect => effect.Node)).Where(touched => touched.Id != node.Id)]);
     }
 
@@ -112,11 +100,6 @@ internal static class DependencyMapping
             || element.Affinity is Affinity.Neutral or Affinity.Kinetic
             || element.Affinity == context.Subclass.ToAffinity());
 
-    private static FiringWay ToFiringWay(ImmutableArray<Need> needs) =>
-        new(
-            [.. needs.Where(need => need.Alternatives.Length == 1).Select(need => need.Alternatives[0].Id)],
-            [.. needs.Where(need => need.Alternatives.Length > 1).Select(need => need.Alternatives.Select(node => node.Id).ToImmutableArray())]);
-
     private static ImmutableArray<Need> ListRuleNeeds(GraphContext context, Rule rule)
     {
         var label = DescribeTriggerLabel(rule.On);
@@ -141,7 +124,7 @@ internal static class DependencyMapping
     private static Need ToNeed(GraphNode node, string label) => new([node], label);
 
     /// <summary>The edge label of a trigger: what happens to set it off ("kill", "3+ kills", "sustained hit", "cast").</summary>
-    private static string DescribeTriggerLabel(Trigger trigger) =>
+    internal static string DescribeTriggerLabel(Trigger trigger) =>
         trigger.Match(
             abilityCast: _ => "cast",
             killAny: _ => "kill",
@@ -168,7 +151,7 @@ internal static class DependencyMapping
         span == DamageSpan.Sustained ? "sustained hit" : "hit";
 
     /// <summary>What a trigger needs besides its damage source: the player's action, or the pickup or buff it reacts to.</summary>
-    private static ImmutableArray<GraphNode> ListActionNodes(GraphContext context, Trigger trigger) =>
+    internal static ImmutableArray<GraphNode> ListActionNodes(GraphContext context, Trigger trigger) =>
         trigger.Match<ImmutableArray<GraphNode>>(
             abilityCast: cast => [ToTriggerNode(context, cast.Kind, AbilityInput.Press)],
             killAny: _ => [],
@@ -195,14 +178,14 @@ internal static class DependencyMapping
     /// The nodes a damage source needs: the weapon or ability trigger, the strike or summon dealing it; any ability is one
     /// of each ability trigger; any source and "this weapon" (the element sits on it) need none.
     /// </summary>
-    private static ImmutableArray<GraphNode> ListSourceNodes(GraphContext context, DamageSource source) =>
+    internal static ImmutableArray<GraphNode> ListSourceNodes(GraphContext context, DamageSource source) =>
         source.Match<ImmutableArray<GraphNode>>(
             anySource: _ => [],
             anyWeapon: _ => [ToWeaponNode("Weapon", FindStatIcon(context, StatKind.Weapons))],
             weaponOfType: weapon => [ToWeaponNode($"{weapon.Type} weapon", FindDamageTypeIcon(context, weapon.Type))],
             weaponInSlot: weapon => [ToWeaponNode($"{weapon.Slot} weapon", Optional.None<string>())],   // a slot has no damage type
             anyAbility: _ => [.. DamagingAbilityUses.Select(use => ToTriggerNode(context, use.Kind, use.Input))],
-            abilityOf: ability => [ToTriggerNode(context, ability.Kind, AbilityInput.Press)],
+            abilityOf: ability => [.. ListDamagingUses(ability.Kind).Select(use => ToTriggerNode(context, use.Kind, use.Input))],
             ofType: type => [ToWeaponNode($"{type.Type} damage", FindDamageTypeIcon(context, type.Type))],
             keywordOf: keyword => [ToStrikeNode(context, keyword.Status)],
             summonOf: summon => [ToSummonNode(context, summon.Summon)],
@@ -214,10 +197,17 @@ internal static class DependencyMapping
             thisWeaponOfType: _ => []);
 
     /// <summary>
+    /// The uses of one ability a hit or kill "by that ability" matches, however it's used (Causality matches any input):
+    /// the melee's press and its slide; a grenade only thrown (a held grenade is a cast, not a hit).
+    /// </summary>
+    private static IEnumerable<(AbilityKind Kind, AbilityInput Input)> ListDamagingUses(AbilityKind kind) =>
+        DamagingAbilityUses.Where(use => use.Kind == kind).DefaultIfEmpty((kind, AbilityInput.Press));
+
+    /// <summary>
     /// What an outcome does: gives a status, pickup, summon, strike or effect (energy, health, a damage bonus, an extra
     /// strike, a reload), ends a status (removes or spends it) or collects a pickup. Every case is drawn.
     /// </summary>
-    private static ImmutableArray<Effect> ListOutcomeEffects(GraphContext context, Outcome outcome) =>
+    internal static ImmutableArray<Effect> ListOutcomeEffects(GraphContext context, Outcome outcome) =>
         outcome.Match<ImmutableArray<Effect>>(
             grantEnergy: grant => [Give(ToEnergyNode(context, grant.To), DescribeEnergy(grant.Amount))],
             convertStacksToEnergy: convert =>
@@ -225,23 +215,23 @@ internal static class DependencyMapping
                 new Effect(ToStatusNode(context, convert.Consumed), EdgeKind.Ends, "spends all"),
                 Give(ToEnergyNode(context, convert.To), DescribeStackEnergy(convert.Energy)),
             ],
-            applyBuff: apply => [Give(ToStatusNode(context, apply.Status), "")],
-            removeBuff: remove => [new Effect(ToStatusNode(context, remove.Status), EdgeKind.Ends, "ends")],
-            debuffTarget: debuff => [Give(ToStatusNode(context, debuff.Status), "")],
-            spawn: spawn => [Give(ToPickupNode(context, spawn.Pickup), "")],
-            spawnSummon: summon => [Give(ToSummonNode(context, summon.Summon), "")],
+            applyBuff: apply => [Give(ToStatusNode(context, apply.Status), DescribeBuffGrant(apply))],
+            removeBuff: remove => [new Effect(ToStatusNode(context, remove.Status), EdgeKind.Ends, "")],
+            debuffTarget: debuff => [Give(ToStatusNode(context, debuff.Status), debuff.Duration.Map(duration => duration.FormatSeconds()).UnwrapOr(""))],
+            spawn: spawn => [Give(ToPickupNode(context, spawn.Pickup), DescribeCount(spawn.Count))],
+            spawnSummon: summon => [Give(ToSummonNode(context, summon.Summon), DescribeCount(summon.Count))],
             strikeTarget: strike => [Give(ToStrikeNode(context, strike.Via), "")],
             modifyDamage: modify => [Give(ToEffectNode("damage-bonus", "Damage bonus"), DescribeDamageChange(context, modify.Against, modify.Change))],
             restoreHealth: heal => [Give(ToEffectNode("health", "Health", FindStatIcon(context, StatKind.Health)), DescribeHeal(heal))],
             resetCooldown: reset => [Give(ToEnergyNode(context, reset.Which), "full")],
-            collect: collect => [new Effect(ToPickupNode(context, collect.Pickup), EdgeKind.Collects, "collects")],
+            collect: collect => [new Effect(ToPickupNode(context, collect.Pickup), EdgeKind.Collects, "")],
             grantLeastChargedEnergy: least => [Give(ToEffectNode("energy-least-charged", "Least-charged ability energy"), DescribeEnergy(least.Amount))],
             spendStacks: spend => [new Effect(ToStatusNode(context, spend.Status), EdgeKind.Ends, $"spends {spend.Count.Value.ToString(CultureInfo.InvariantCulture)}")],
             weaponStrike: strike => [Give(ToEffectNode("extra-strike", "Extra strike"), strike.Hit == HitOutcome.Kill ? "kill" : "hit")],
             reloadWeapon: _ => [Give(ToEffectNode("reload", "Reload"), "")]);
 
     /// <summary>What a passive does while it holds: an effect it gives (resistance, a damage bonus, stats, a charge), or the status it boosts.</summary>
-    private static ImmutableArray<Effect> ListPassiveEffects(GraphContext context, Passive passive) =>
+    internal static ImmutableArray<Effect> ListPassiveEffects(GraphContext context, Passive passive) =>
         passive.Match<ImmutableArray<Effect>>(
             extraStacks: extra => [new Effect(ToStatusNode(context, extra.Status), EdgeKind.Boosts, $"+{extra.Extra.Value.ToString(CultureInfo.InvariantCulture)} stack")],
             extraCharges: charges => [Give(
@@ -261,6 +251,24 @@ internal static class DependencyMapping
                 $"{resist.Amount.ToPercentText()} vs {resist.Against.DescribeCombatantDamage(Optional.None<DamageType>())}")]);
 
     private static Effect Give(GraphNode node, string label) => new(node, EdgeKind.Gives, label);
+
+    /// <summary>A buff's grant as authored: its stacks when not one ("×2", "×1 | ×2 | ×3" by copies) and its duration ("8.5s").</summary>
+    private static string DescribeBuffGrant(Outcome.ApplyBuff apply) =>
+        string.Join(' ', new[] { DescribeStacks(apply.Stacks), DescribeDuration(apply.Duration) }.Where(part => part.Length > 0));
+
+    private static string DescribeStacks(StackGrant stacks) =>
+        stacks.Match(
+            fixedCount => fixedCount.Count.Value == 1 ? "" : $"×{fixedCount.Count.Value.ToString(CultureInfo.InvariantCulture)}",
+            perModCount => string.Join(" | ", perModCount.Counts.Select(count => $"×{count.Value.ToString(CultureInfo.InvariantCulture)}")));
+
+    private static string DescribeDuration(BuffDuration duration) =>
+        duration.Match(
+            _ => "",
+            fixedTime => fixedTime.Time.FormatSeconds(),
+            bySpent => $"{string.Join(" | ", bySpent.Table.Values.Select(seconds => seconds.ToString("0.#", CultureInfo.InvariantCulture) + "s"))} by stacks spent");
+
+    private static string DescribeCount(int count) =>
+        count == 1 ? "" : $"×{count.ToString(CultureInfo.InvariantCulture)}";
 
     private static string DescribeEnergy(EnergyGrant grant) =>
         grant.Match(
@@ -284,11 +292,11 @@ internal static class DependencyMapping
         heal.Amount.Match(share => share.Value.ToPercentText(), points => $"{points.Value.ToNumberText()} HP")
         + (heal.IncludesAllies ? " + allies" : "");
 
-    /// <summary>"+20", "-10", "+12%|17%|20%", "?": a change as the game shows it.</summary>
+    /// <summary>"+20", "-10", "+12% | +17% | +20%", "?": a change as the game shows it, each copy's figure signed.</summary>
     private static string FormatSigned(GameValue value, bool percent = false)
     {
         var text = percent ? value.ToPercentText() : value.ToNumberText();
-        return text.StartsWith('-') || text.StartsWith('?') ? text : "+" + text;
+        return string.Join(" | ", text.Split(" | ").Select(part => part.StartsWith('-') || part.StartsWith('?') ? part : "+" + part));
     }
 
     /// <summary>The energy an ability gets (<c>effect:energy-grenade</c>, "Grenade energy").</summary>
@@ -321,7 +329,7 @@ internal static class DependencyMapping
     private static string ToSentenceStart(string text) => string.Concat(text[..1].ToUpperInvariant(), text[1..]);
 
     /// <summary>An element's node; a keyword with a glossary state is its rule node (<c>rule:jolt</c>), the state a node of its own.</summary>
-    private static GraphNode ToElementNode(GraphContext context, BuildElement element) =>
+    internal static GraphNode ToElementNode(GraphContext context, BuildElement element) =>
         FindKeywordState(context, element).Match(
             state => new GraphNode(
                 $"rule:{state.Value}", element.Name, new GraphNodeType.KeywordRule(), true, Optional.Some(ToFacts(element)), FindKeywordIcon(context, ToKeywordRef(context, state.Value))),
@@ -367,7 +375,7 @@ internal static class DependencyMapping
 
     private static ElementFacts ToFacts(BuildElement element) =>
         new(
-            $"{RulesFolder}/{element.RuleFile}",
+            element.RuleFile.Length == 0 ? Optional.None<string>() : Optional.Some($"{RulesFolder}/{element.RuleFile}"),
             CiteSource(element.Source),
             element.Description,
             [
@@ -385,7 +393,7 @@ internal static class DependencyMapping
             creator => Optional.Some(creator.SourceUrl));
 
     /// <summary>A status's node, the glossary's (its state when a keyword element has its rules: <see cref="GraphNode.IsKeyword"/>).</summary>
-    private static GraphNode ToStatusNode(GraphContext context, StatusId status) =>
+    internal static GraphNode ToStatusNode(GraphContext context, StatusId status) =>
         new(
             ToGlossaryNodeId(context, "status", status.Value),
             context.Catalog.Glossary.DescribeStatus(status),
@@ -428,7 +436,7 @@ internal static class DependencyMapping
             FindKeywordIcon(context, new KeywordRef.Status(via)));
 
     /// <summary>An ability trigger, with the icon of the ability's armor stat (the dodge: Class).</summary>
-    private static GraphNode ToTriggerNode(GraphContext context, AbilityKind kind, AbilityInput input) =>
+    internal static GraphNode ToTriggerNode(GraphContext context, AbilityKind kind, AbilityInput input) =>
         ToTriggerNode(NameAbilityTrigger(context.Class, kind, input), FindStatIcon(context, ToStat(kind)));
 
     private static GraphNode ToTriggerNode(string name, Optional<string> icon) =>
@@ -447,7 +455,7 @@ internal static class DependencyMapping
             _ => StatKind.Super,
         };
 
-    private static Optional<string> FindStatIcon(GraphContext context, StatKind stat) =>
+    internal static Optional<string> FindStatIcon(GraphContext context, StatKind stat) =>
         context.Catalog.Manifest.FindArmorStat(stat).Map(found => ToIconUrl(found.Icon));
 
     private static Optional<string> FindDamageTypeIcon(GraphContext context, DamageType type) =>

@@ -24,7 +24,8 @@ itself, under `src/Loopsmith.Core/Domain/`.
   `ReportComparison`, `LoadoutImporting` (a DIM link → a build), `ManifestJoining` (Bungie's full
   manifest → the excerpt some hashes need), `StatLoading` (a Bungie login's answers → the player's armor
   → the build's stats), `CompendiumReading` (a Compendium snapshot → the check of the rules' citations
-  and numbers against it), `Orchestration`).
+  and numbers against it), `DependencyGraphing` (the rules → a subclass's dependency graph and its lanes, for the
+  rules lanes tool), `Orchestration`).
 - **Feature slices depend only on the shared kernel** (`Domain` / `Functional` /
   `Phrasing` / `Causality`) — never sideways on each other. The only cross-slice
   dependency is `Orchestration` → every slice. An **architecture test** enforces
@@ -51,7 +52,9 @@ itself, under `src/Loopsmith.Core/Domain/`.
   effects live in `Hosting/`: the browser's (clipboard, downloads, confirm, picked files,
   the URL) in `BrowserInterop` (and `wwwroot/js/loopsmith.js`), its HTTP requests (DIM
   shares, the Bungie login and manifest) in `DimLoadoutFetching`, `BungieAccount` and
-  `BungieManifestJoining`. Any other host (an HTTP API, say) would do the same.
+  `BungieManifestJoining`. Any other host (an HTTP API, say) would do the same, and so does each developer tool under
+  `tools/` (the rules lanes tool, [ADRs D39](ADRs.md)): it reads its files and writes its output itself and calls
+  only `Orchestration` and the kernel; its page's markup is its own presentation.
 
 - **The end-to-end tests have their own rules.** `tests/Loopsmith.Web.E2E` follows
   [`E2E-TEST-CODE-RULES.md`](../tests/Loopsmith.Web.E2E/E2E-TEST-CODE-RULES.md), not this file.

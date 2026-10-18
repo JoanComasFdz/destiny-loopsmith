@@ -31,8 +31,8 @@ public partial record GraphNodeType
     partial record OutsideElement(ElementKind Kind);    // a mod, perk, exotic, artifact perk, catalyst or armor set bonus
 }
 
-/// <summary>An element's facts the graph shows: its rule file, its source's citation, its description and its rules' reasons.</summary>
-public sealed record ElementFacts(string File, Optional<string> Source, Optional<string> Description, ImmutableArray<string> Reasons);
+/// <summary>An element's facts: its rule file (none for an element no file holds), its source's citation, its description and its rules' reasons.</summary>
+public sealed record ElementFacts(Optional<string> File, Optional<string> Source, Optional<string> Description, ImmutableArray<string> Reasons);
 
 /// <summary>
 /// A node: an element (<see cref="Element"/> holds its facts), a status, pickup, summon, strike, effect, trigger or weapon. A
@@ -43,28 +43,19 @@ public sealed record ElementFacts(string File, Optional<string> Source, Optional
 public sealed record GraphNode(string Id, string Name, GraphNodeType Type, bool IsKeyword, Optional<ElementFacts> Element, Optional<string> Icon);
 
 /// <summary>
-/// <see cref="Gives"/>: an element → the status, pickup, summon, strike or effect it gives (the only kind the columns
-/// count). <see cref="Needs"/>: what is needed → the element. <see cref="Ends"/>: an element → the status it removes or
+/// <see cref="Gives"/>: an element → the status, pickup, summon, strike or effect it gives. <see cref="Needs"/>: what is needed → the element. <see cref="Ends"/>: an element → the status it removes or
 /// spends. <see cref="Collects"/>: an element → the pickup it picks up from the ground. <see cref="Boosts"/>: an element →
 /// the status it gives more stacks of, or a higher cap.
 /// </summary>
 public enum EdgeKind { Gives, Needs, Ends, Collects, Boosts }
 
-/// <summary>An edge from <see cref="From"/> to <see cref="To"/> of that kind, with a short <see cref="Label"/> ("kill on Jolted", "while", "12%").</summary>
+/// <summary>An edge from <see cref="From"/> to <see cref="To"/> of that kind, with a short <see cref="Label"/> ("kill on Jolted", "while", "12%", "×2").</summary>
 public sealed record GraphEdge(string From, string To, EdgeKind Kind, string Label);
 
 public enum ScopeKind { Subclass, WithNeeds, WithDependents }
 
-/// <summary>
-/// One view of the graph: its nodes, the edges between them and each node's column, left to right in the order to test
-/// them (none: it needs something outside this scope).
-/// </summary>
-public sealed record GraphScope(
-    ScopeKind Kind,
-    string Name,
-    ImmutableArray<string> Nodes,
-    ImmutableArray<GraphEdge> Edges,
-    ImmutableDictionary<string, Optional<int>> Columns);
+/// <summary>One view of the graph: its nodes and the edges between them.</summary>
+public sealed record GraphScope(ScopeKind Kind, string Name, ImmutableArray<string> Nodes, ImmutableArray<GraphEdge> Edges);
 
 /// <summary>The dependency graph of a class's subclass ("Arc Hunter"): every node any scope holds, and the three scopes.</summary>
 public sealed record DependencyGraph(string Title, ImmutableSortedDictionary<string, GraphNode> Nodes, ImmutableArray<GraphScope> Scopes);

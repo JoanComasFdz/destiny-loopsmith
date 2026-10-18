@@ -129,12 +129,4 @@ public sealed class DependencyGraphIconTests
         Assert.Null(FindIcon(graph, "effect:reload"));
         Assert.Null(FindIcon(graph, "effect:damage-bonus"));
     }
-
-    [Fact]
-    public void The_json_puts_the_icon_after_the_slot() =>
-        Assert.Contains(
-            $$"""
-            "slot":"grenade","icon":"{{ElementIcon("flashbang-grenade")}}","keyword":false
-            """,
-            DependencyGraphs.RenderGraphJson(Graph));
 }

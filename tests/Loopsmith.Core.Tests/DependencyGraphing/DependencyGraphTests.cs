@@ -9,8 +9,8 @@ using static Loopsmith.Core.Tests.Support.TestCatalog;
 namespace Loopsmith.Core.Tests.DependencyGraphing;
 
 /// <summary>
-/// The rules' dependency graph: what each rule needs and gives as edges, the columns (the order to test the elements in)
-/// and the three scopes (the subclass, what it needs from outside, what builds on it).
+/// The rules' dependency graph: what each rule needs and gives as edges, and the three scopes (the subclass, what it
+/// needs from outside, what builds on it).
 /// </summary>
 public sealed class DependencyGraphTests
 {
@@ -34,13 +34,7 @@ public sealed class DependencyGraphTests
     private static ImmutableArray<string> ListEdges(DependencyGraph graph, ScopeKind kind = ScopeKind.WithDependents) =>
         [.. FindScope(graph, kind).Edges.Select(edge => $"{edge.From} -[{edge.Kind} {edge.Label}]-> {edge.To}".Replace(" ]", "]", StringComparison.Ordinal))];
 
-    private static int? FindColumn(DependencyGraph graph, string id, ScopeKind kind = ScopeKind.Subclass) =>
-        FindScope(graph, kind).Columns.TryGetValue(id, out var column) ? column.Match<int?>(some => some.Value, _ => null) : null;
-
     private static Rule OnGrenadeCast(params Outcome[] then) => On(new Trigger.AbilityCast(AbilityKind.Grenade), then);
-
-    private static Rule WhileHas(string status, params Outcome[] then) =>
-        OnWhen(new Trigger.KillAny(AnySource), new Condition.HasBuff(Status(status)), then);
 
     [Fact]
     public void A_kill_on_a_Jolted_enemy_needs_Jolt()
@@ -135,9 +129,6 @@ public sealed class DependencyGraphTests
         Assert.Contains("jolt -[Needs hit on Jolted]-> rule:jolt", edges);
         Assert.Contains("trigger:grenade -[Needs hit]-> rule:jolt", edges);
         Assert.Contains("rule:jolt -[Gives]-> strike:jolt", edges);
-        Assert.Equal(2, FindColumn(graph, "jolt"));
-        Assert.Equal(3, FindColumn(graph, "rule:jolt"));
-        Assert.Equal(4, FindColumn(graph, "strike:jolt"));
     }
 
     [Fact]
@@ -157,12 +148,12 @@ public sealed class DependencyGraphTests
         { "convert", "spark -[Gives 5% per stack]-> effect:energy-melee" },
         { "convert ends", "spark -[Ends spends all]-> armor-charge" },
         { "spend", "spark -[Ends spends 2]-> armor-charge" },
-        { "remove", "spark -[Ends ends]-> amplified" },
+        { "remove", "spark -[Ends]-> amplified" },
         { "health", "spark -[Gives 40% + allies]-> effect:health" },
         { "damage", "spark -[Gives +25% vs melee]-> effect:damage-bonus" },
         { "weapon strike", "spark -[Gives kill]-> effect:extra-strike" },
         { "reload", "spark -[Gives]-> effect:reload" },
-        { "collect", "spark -[Collects collects]-> orb-of-power" },
+        { "collect", "spark -[Collects]-> orb-of-power" },
         { "spawn", "spark -[Gives]-> ionic-trace" },
     };
 
@@ -225,76 +216,13 @@ public sealed class DependencyGraphTests
     }
 
     [Fact]
-    public void Only_gives_edges_place_a_node()
-    {
-        var graph = Draw(Fragment("spark", OnGrenadeCast(new Outcome.RemoveBuff(Status("amplified")))));
-
-        Assert.Null(FindColumn(graph, "amplified"));
-    }
-
-    [Fact]
-    public void An_element_that_needs_only_triggers_is_in_column_1_and_what_it_gives_in_column_2()
-    {
-        var graph = Draw(Fragment("spark", OnGrenadeCast(Buff("amplified"))));
-
-        Assert.Equal(0, FindColumn(graph, "trigger:grenade"));
-        Assert.Equal(1, FindColumn(graph, "spark"));
-        Assert.Equal(2, FindColumn(graph, "amplified"));
-    }
-
-    [Fact]
-    public void An_element_that_needs_what_a_first_layer_element_gives_is_in_column_3()
-    {
-        var graph = Draw(Fragment("spark", OnGrenadeCast(Buff("amplified"))), Fragment("ember", WhileHas("amplified", Debuff("jolt"))));
-
-        Assert.Equal(3, FindColumn(graph, "ember"));
-        Assert.Equal(4, FindColumn(graph, "jolt"));
-    }
-
-    [Fact]
-    public void An_element_takes_the_lowest_layer_over_its_rules()
-    {
-        var graph = Draw(
-            Fragment("spark", OnGrenadeCast(Buff("amplified"))),
-            Fragment("ember", WhileHas("amplified", Debuff("jolt")), On(new Trigger.Finisher(), Debuff("jolt"))));
-
-        Assert.Equal(1, FindColumn(graph, "ember"));
-    }
-
-    [Fact]
-    public void A_cycle_ends_with_no_column_when_nothing_starts_it()
-    {
-        var graph = Draw(
-            Fragment("spark", OnGrenadeCast(Debuff("jolt"))),
-            Fragment("ember", WhileHas("amplified", Buff("bolt-charge"))),
-            Fragment("flare", WhileHas("bolt-charge", Buff("amplified"))));
-
-        Assert.Null(FindColumn(graph, "ember"));
-        Assert.Null(FindColumn(graph, "flare"));
-    }
-
-    [Fact]
-    public void A_cycle_with_a_way_in_is_placed_in_order()
-    {
-        var graph = Draw(
-            Fragment("ember", WhileHas("amplified", Buff("bolt-charge")), OnGrenadeCast(Buff("bolt-charge"))),
-            Fragment("flare", WhileHas("bolt-charge", Buff("amplified"))));
-
-        Assert.Equal(1, FindColumn(graph, "ember"));
-        Assert.Equal(2, FindColumn(graph, "bolt-charge"));
-        Assert.Equal(3, FindColumn(graph, "flare"));
-        Assert.Equal(4, FindColumn(graph, "amplified"));
-    }
-
-    [Fact]
-    public void An_element_that_needs_a_weapon_has_no_column_in_the_subclass_but_one_with_its_needs()
+    public void An_element_that_needs_a_weapon_is_in_the_subclass_and_the_weapon_only_with_its_needs()
     {
         var graph = Draw(Fragment("beacon", On(new Trigger.KillAny(new DamageSource.WeaponOfType(DamageType.Arc)), Debuff("jolt"))));
 
-        Assert.True(FindScope(graph, ScopeKind.Subclass).Columns.ContainsKey("beacon"));
-        Assert.Null(FindColumn(graph, "beacon"));
-        Assert.Equal(1, FindColumn(graph, "beacon", ScopeKind.WithNeeds));
-        Assert.Equal(0, FindColumn(graph, "weapon:arc-weapon", ScopeKind.WithNeeds));
+        Assert.Contains("beacon", FindScope(graph, ScopeKind.Subclass).Nodes);
+        Assert.DoesNotContain("weapon:arc-weapon", FindScope(graph, ScopeKind.Subclass).Nodes);
+        Assert.Contains("weapon:arc-weapon", FindScope(graph, ScopeKind.WithNeeds).Nodes);
     }
 
     [Fact]
@@ -304,8 +232,7 @@ public sealed class DependencyGraphTests
 
         Assert.DoesNotContain("weapon:arc-weapon", FindScope(graph, ScopeKind.Subclass).Nodes);
         Assert.Contains("weapon:arc-weapon", FindScope(graph, ScopeKind.WithNeeds).Nodes);
-        Assert.Equal(3, FindColumn(graph, "spark-of-beacons", ScopeKind.WithNeeds));
-        Assert.Null(FindColumn(graph, "spark-of-beacons"));
+        Assert.Contains("spark-of-beacons", FindScope(graph, ScopeKind.Subclass).Nodes);
     }
 
     [Fact]
@@ -316,18 +243,5 @@ public sealed class DependencyGraphTests
         Assert.DoesNotContain("dielectric", FindScope(graph, ScopeKind.WithNeeds).Nodes);
         Assert.Contains("dielectric", FindScope(graph, ScopeKind.WithDependents).Nodes);
         Assert.Contains(FindScope(graph, ScopeKind.WithDependents).Edges, edge => edge.From == "jolt" && edge.To == "dielectric" && edge.Kind == EdgeKind.Needs);
-    }
-
-    [Fact]
-    public void The_json_holds_the_title_the_nodes_and_the_three_scopes()
-    {
-        var graph = Draw(Fragment("spark", OnGrenadeCast(Buff("amplified"))));
-
-        var json = DependencyGraphs.RenderGraphJson(graph);
-
-        Assert.StartsWith("""{"title":"Arc Hunter","nodes":{""", json);
-        Assert.Contains("""{"id":"spark","name":"Spark","type":"subclassFragment","slot":null,"icon":null,"keyword":false,"file":"rules/test","source":null,""", json);
-        Assert.Contains("""{"id":"withDependents","name":"\u002B what builds on it","nodes":[""", json);   // escaped: the page embeds it in a script
-        Assert.Contains(""" "columns":{"amplified":2,"spark":1,"trigger:grenade":0}""".Trim(), json);
     }
 }

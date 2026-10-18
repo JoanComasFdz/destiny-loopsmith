@@ -1,5 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <!-- The rules' dependency graph tool (tools/graph/README.md): reads rules/, writes out/graph/. A host: no logic of its own. -->
+  <!-- The rules lanes tool (tools/graph/README.md): reads rules/, writes out/graph/. A host: no logic of its own. -->
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <RootNamespace>Loopsmith.Graph</RootNamespace>
@@ -9,7 +9,8 @@
     <ProjectReference Include="..\..\..\src\Loopsmith.Core\Loopsmith.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <!-- The page template: the graph's JSON goes where it says __DATA__. -->
-    <EmbeddedResource Include="graph.html" LogicalName="graph.html" />
+    <!-- The lanes page's style and script, put into the page as they are. -->
+    <EmbeddedResource Include="Page/lanes.css" LogicalName="lanes.css" />
+    <EmbeddedResource Include="Page/lanes.js" LogicalName="lanes.js" />
   </ItemGroup>
 </Project>

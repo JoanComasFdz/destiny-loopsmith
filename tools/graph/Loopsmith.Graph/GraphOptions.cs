@@ -2,7 +2,7 @@ using Loopsmith.Core.Functional;
 
 namespace Loopsmith.Graph;
 
-/// <summary>Where the tool reads the rules and writes the graph: <c>--rules &lt;dir&gt;</c> and <c>--out &lt;dir&gt;</c>, by default the repository's <c>rules/</c> and <c>out/graph/</c>.</summary>
+/// <summary>Where the tool reads the rules and writes the lanes: <c>--rules &lt;dir&gt;</c> and <c>--out &lt;dir&gt;</c>, by default the repository's <c>rules/</c> and <c>out/graph/</c>.</summary>
 public sealed record GraphOptions(string RulesDirectory, string OutDirectory)
 {
     public const string Usage = "usage: dotnet run --project tools/graph/Loopsmith.Graph [-- --rules <dir>] [--out <dir>]";
