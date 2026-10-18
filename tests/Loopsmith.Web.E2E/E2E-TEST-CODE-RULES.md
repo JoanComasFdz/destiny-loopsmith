@@ -77,7 +77,8 @@ public sealed class ReloadTests : BaseE2E
 
 ## a. Test shape
 
-- A class is `public sealed class <Topic>Tests : BaseE2E`, in `Scenarios/<domain folder>/` (rule h).
+- A class is `public sealed class <Topic>Tests : BaseE2E`, in a folder of its own under its domain folder, with its
+  fixture files (rule h).
 - **One Gherkin is one scenario:** one method, a `[Theory]` with:
   - `[PlayInDesktop]` and/or `[PlayInMobile]`: each plays it once, on that screen (rule b). They match the Gherkin's
     `@desktop` / `@mobile` tags. Each attribute can be there at most once (a second one doesn't compile);
@@ -216,11 +217,15 @@ are separate contexts too.
 2. Find its **domain folder** under `Scenarios/` (README, "Where tests go"): by what the player does, never by PR or task.
    A new area gets a new folder.
 3. Find its **class**: a topic in that folder (`<Topic>Tests.cs`); add one when no topic fits.
-   A rule scenario's folder is its rule file's, and its class is its element's (`Rules/Hunter/Arc/Aspects/LethalCurrentTests.cs`:
+   A rule scenario's folder is its rule file's, and its class is its element's (`Rules/Hunter/Arc/Aspects/LethalCurrent/LethalCurrentTests.cs`:
    [docs/given-when-then-rule-scenarios.md](../../docs/given-when-then-rule-scenarios.md), "Where it goes").
 4. Write the scenario (rules a–g, and rule i for the translation). Its **fixture files** (a minimal `.build.yaml` /
    `.loop.yaml`, named for what they hold: `ogma-pr6-unrelenting.build.yaml`, its build named
    `"E2E - Ogma PR6 with Unrelenting"`) sit next to the class, committed; the project copies them to the test output.
+   **The class and its fixture files have a folder of their own,** named for the class without `Tests`
+   (`Rules/Hunter/Arc/Aspects/FlowState/FlowStateTests.cs` and its `.build.yaml` files), so a folder reads as one class
+   and what it imports. The class's namespace stays its domain folder's (`Loopsmith.Web.E2E.Rules.Hunter.Arc.Aspects`):
+   the recordings' folder, a rule scenario's release and the VS Code extension's lookup are named by it.
    Never under `builds/`: the web app embeds `builds/` and would list them on Home.
 5. Grow `Infrastructure/` only by what this scenario needs: the page-object members, vocabulary cases and assertions it
    calls. Missing `data-action` / `data-testid` attributes are added to the app in the same PR.

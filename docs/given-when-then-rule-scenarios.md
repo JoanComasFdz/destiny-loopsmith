@@ -11,7 +11,7 @@ differently: its scope, where it goes, its build, its state and the order of its
 
 ## Example
 
-The worked example is [LethalCurrentTests.cs](../tests/Loopsmith.Web.E2E/Rules/Hunter/Arc/Aspects/LethalCurrentTests.cs):
+The worked example is [LethalCurrentTests.cs](../tests/Loopsmith.Web.E2E/Rules/Hunter/Arc/Aspects/LethalCurrent/LethalCurrentTests.cs):
 Lethal Current's four claims, each a Gherkin and its C#, with the minimal build each one imports next to it. One:
 
 ```gherkin
@@ -53,13 +53,15 @@ The rules are grouped by file (ADRs D40, [rule-format.md](rule-format.md), "File
 
 | The rule | Its scenarios | Their recordings |
 |---|---|---|
-| `rules/hunter/arc/melees.yaml` | `Rules/Hunter/Arc/Melees/<Element>Tests.cs` | `rules-hunter-arc-melees-resources` |
-| `rules/hunter/class-abilities.yaml` | `Rules/Hunter/ClassAbilities/<Element>Tests.cs` | `rules-hunter-class-abilities-resources` |
-| `rules/all-classes/arc/fragments.yaml` | `Rules/AllClasses/Arc/Fragments/<Element>Tests.cs` | `rules-all-classes-arc-fragments-resources` |
+| `rules/hunter/arc/melees.yaml` | `Rules/Hunter/Arc/Melees/<Element>/<Element>Tests.cs` | `rules-hunter-arc-melees-resources` |
+| `rules/hunter/class-abilities.yaml` | `Rules/Hunter/ClassAbilities/<Element>/<Element>Tests.cs` | `rules-hunter-class-abilities-resources` |
+| `rules/all-classes/arc/fragments.yaml` | `Rules/AllClasses/Arc/Fragments/<Element>/<Element>Tests.cs` | `rules-all-classes-arc-fragments-resources` |
 
 - **Folders:** each folder of the rule file's path, in PascalCase (`all-classes` → `AllClasses`), then its file's name
-  (`class-abilities.yaml` → `ClassAbilities`); namespace `Loopsmith.Web.E2E.Rules.<the same>`.
-- **Class:** one per element, named for it (`LethalCurrentTests`); one method per claim.
+  (`class-abilities.yaml` → `ClassAbilities`); namespace `Loopsmith.Web.E2E.Rules.<the same>`, which names the
+  recordings' release.
+- **Class:** one per element, named for it (`LethalCurrentTests`), in a folder of its own with its builds, named for
+  the element too (`Aspects/LethalCurrent/`: E2E-TEST-CODE-RULES.md, rule h); one method per claim.
 - **Recordings:** the "E2E videos" workflow keeps the latest of each in its rule file's release
   ([hosting.md](hosting.md), "E2E videos on pull requests").
 

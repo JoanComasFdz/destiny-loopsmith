@@ -93,12 +93,14 @@ Scenarios/Loop/Weapons/      a weapon's steps: reload, the "×" enemy count, its
 ```
 
 `Rules/` holds one scenario per rule claim, mirroring `rules/` ([docs/given-when-then-rule-scenarios.md](../../docs/given-when-then-rule-scenarios.md)): `rules/hunter/arc/melees.yaml` →
-`Rules/Hunter/Arc/Melees/<Rule>Tests.cs` (namespace `Loopsmith.Web.E2E.Rules.Hunter.Arc.Melees`, its domain folder
+`Rules/Hunter/Arc/Melees/<Rule>/<Rule>Tests.cs` (namespace `Loopsmith.Web.E2E.Rules.Hunter.Arc.Melees`, its domain folder
 `Rules/Hunter/Arc/Melees`). `tools/e2e/record.sh` selects and records them like `Scenarios/` (`record.sh Rules/Hunter/Arc`
 for a folder), and the "E2E videos" workflow keeps the latest recording of each in its rule file's release,
 `rules-hunter-arc-melees-resources` ([docs/hosting.md](../../docs/hosting.md), "E2E videos on pull requests").
 
-A folder exists once it has a scenario. A scenario's fixture files (a minimal `.build.yaml` / `.loop.yaml`) sit next to
+A folder exists once it has a scenario. A class has a folder of its own, named for it without `Tests`
+(`Rules/Hunter/Arc/Aspects/FlowState/FlowStateTests.cs`), and its namespace is its domain folder's
+(E2E-TEST-CODE-RULES.md, rule h). A scenario's fixture files (a minimal `.build.yaml` / `.loop.yaml`) sit next to
 its class and are copied to the test output; never under `builds/` (the web app would list them on Home).
 
 ## Isolation and parallelism
