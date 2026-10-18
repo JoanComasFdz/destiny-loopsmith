@@ -232,6 +232,12 @@ repository, put it in its proper place, for example a loop file as a test case u
 `tests/`. Before it goes in, check it for personal data and secrets, and say what you found. The same
 goes for log lines you quote in the PR.
 
+**Long-running commands.** A command that runs for more than about a minute (`tools/e2e/record.sh`, `dotnet test`,
+`dotnet publish`, the Compendium download) runs in the background, and the session reports its progress in the session
+about once a minute until it ends: one short line saying what is done and what is left ("7 of 36 runs recorded, all
+passed"), read from the command's output (a Monitor on its log, for example), never guessed. When it ends, one line says
+how: passed, failed (with what failed), or stopped.
+
 ### Subagents
 
 The session is the only one that talks to the owner, commits, pushes and writes on GitHub. Subagents
