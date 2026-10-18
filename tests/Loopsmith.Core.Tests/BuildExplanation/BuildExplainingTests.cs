@@ -46,7 +46,7 @@ public class BuildExplainingTests
     public void Conditional_passives_are_grouped_under_their_state()
     {
         var frequency = Element("spark-of-frequency", ElementKind.Fragment, [],
-            [new PassiveRule(new Passive.ExtraStacks(Status("bolt-charge"), StackCount.From(1)), [new Condition.HasBuff(Status("amplified"))], Optional.None<string>())]);
+            [new PassiveRule(RuleId.From("test-rule-1"), new Passive.ExtraStacks(Status("bolt-charge"), StackCount.From(1)), [new Condition.HasBuff(Status("amplified"))], Optional.None<string>())]);
         var build = ValidateBuild([frequency]);
 
         var groups = BuildExplaining.ExplainBuild(build);

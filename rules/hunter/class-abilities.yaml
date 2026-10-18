@@ -1,0 +1,69 @@
+# Hunter: class abilities, the same on every Hunter subclass (each lists one hash per subclass).
+#
+# Numbers from the Destiny Data Compendium snapshots of 2026-10-09 and 2026-10-13 (source:
+# compendium/<date>/<Tab>#<row>; the elements added with the 2026-10-13 snapshot cite it). Hashes are
+# Clarity 2.0625's for the elements of the 2026-10-09 snapshot unless a comment says they are the
+# manifest's (Clarity has no grenade, melee or super entries); the elements of the 2026-10-13
+# snapshot take the manifest's (244213.26.06.29.2000-1-bnet.65864: the Arcstrider's plugs).
+#
+# Ability energy amounts are base values: chunk energy scalars and stats are not applied, and
+# chunkScalar / baseCooldown are facts recorded from the Compendium that change nothing (ADRs D5).
+#
+# Format gaps that shape these rules (see builds/skip-grenade-hunter/discrepancies.md):
+#  - an ability damage source cannot name a specific ability or its damage type ("Arc grenades",
+#    "Skip Grenade drones" -> `grenade`);
+#  - movement qualifiers are the abilities' secondary uses only (ADRs D9): the melee while sliding
+#    (`melee:slide`, Tempest Strike's uppercut) and the class ability's air move (`class:air`,
+#    Ascension). A rule on the plain ability fires for its secondary uses too.
+#
+# Where a rule file sits, and each rule's id: docs/rule-format.md, "Files" (ADRs D40).
+elements:
+  - id: gamblers-dodge
+    name: Gambler's Dodge
+    kind: classAbility
+    affinity: arc
+    class: hunter
+    # Clarity has 6 Gambler's Dodge hashes with identical text (one per subclass) and does not say
+    # which is Arc; 426473317 is the most recently uploaded, so it comes first. All six are this
+    # class ability, so a DIM loadout's Gambler's Dodge is recognised whichever copy it names.
+    hash: [426473317, 1282157890, 2711519340, 2816982785, 3636300855, 3933525367]
+    ability: { kind: classAbility, charges: 1, chunkScalar: 0.8, baseCooldown: 56 }
+    description: "Ground dodge. Grants 1% [PvP 0.35%] melee energy per Melee stat point (max 100% at 100 Melee), doubled within 15 m of an enemy. No chunk or stat scalar applies to that energy."
+    source: "compendium/2026-10-09/Class Abilities#5"
+    rules:
+      # The refund scales with the Melee stat (79 Melee near an enemy = 158%, a full charge), but a
+      # rule amount cannot depend on a stat, so it is "?" rather than a build-specific number.
+      - id: gamblers-dodge-1
+        on: { abilityCast: classAbility }
+        then:
+          - { grantEnergy: { to: melee, amount: "?" } }
+        reason: "Dodging near enemies refunds melee energy - 1% per Melee stat point, doubled within 15 m - so with enough Melee your punch comes straight back."
+    passives: []
+    statChecks:
+      # Class Abilities#5: 1% of a melee charge per Melee point, doubled within 15 m of an enemy, so a
+      # full charge needs 50 Melee near an enemy and 100 anywhere.
+      - stat: melee
+        below: 50
+        severity: warning
+        says: "With {value} Melee, a Gambler's Dodge gives back less than a full melee charge, even near an enemy: it gives 1% per Melee point, twice that within 15 m of one, so a full charge needs 50 Melee near enemies (100 anywhere)."
+      - stat: melee
+        from: 50
+        below: 100
+        severity: info
+        says: "With {value} Melee, a Gambler's Dodge gives back a full melee charge only within 15 m of an enemy ({value}% of one farther away; 100 Melee for a full charge anywhere)."
+
+  - id: marksmans-dodge
+    name: Marksman's Dodge
+    kind: classAbility
+    affinity: arc
+    class: hunter
+    # One copy per Hunter subclass, all with this text (Bungie's manifest: hunter.<subclass>.
+    # class_abilities); 426473316 is the Arcstrider's. As with Gambler's Dodge, a DIM loadout's
+    # Marksman's Dodge is recognised whichever copy it names.
+    hash: [426473316, 1282157891, 2711519341, 2816982784, 3636300854, 3933525366]
+    ability: { kind: classAbility, charges: 1, chunkScalar: 1, baseCooldown: 42 }
+    description: "Evasive dodge that reloads all your weapons and picks up ammo bricks within 15 m. While dodging, combatants' projectiles stop tracking you."
+    source: "compendium/2026-10-13/Class Abilities#6"
+    inert: "Reloads and ammo only: Loopsmith counts neither, and the dodge itself is the class ability step, which every rule on a class ability use reacts to."
+    rules: []
+    passives: []

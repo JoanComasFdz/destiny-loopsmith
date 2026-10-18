@@ -36,12 +36,14 @@ public sealed record RuleBox(Optional<string> Node, string Title, string Name, s
 /// must be in place (the element itself, "equipped", unless it is a keyword every build has; then each state it needs),
 /// and it gives every <see cref="Results"/> box, in the order strikes, other effects, buffs, debuffs, pickups, summons,
 /// then what it ends, collects or adds to. <see cref="Id"/>: the element's node, the rule's place (<c>#0</c>, a
-/// passive's <c>#p0</c>) and, for a rule split by its trigger, the trigger's place (<c>.1</c>).
+/// passive's <c>#p0</c>) and, for a rule split by its trigger, the trigger's place (<c>.1</c>). <see cref="Rule"/>: the
+/// rule's full name (<c>hunter-arc-melees-combination-blow-1</c>, ADRs D40), the same on every flow of a split rule.
 /// <see cref="ByChance"/>: the rule only may fire (its <c>chance</c>).
 /// </summary>
 public sealed record RuleFlow(
     string Id,
     string Element,
+    string Rule,
     RuleBox Trigger,
     ImmutableArray<RuleBox> Conditions,
     ImmutableArray<RuleBox> Results,

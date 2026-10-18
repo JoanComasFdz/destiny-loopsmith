@@ -1,4 +1,6 @@
-# Exotic armor.
+# Hunter: exotic armor.
+#
+# Where a rule file sits, and each rule's id: docs/rule-format.md, "Files" (ADRs D40).
 elements:
   - id: shinobus-vow
     name: Shinobu's Vow
@@ -16,29 +18,34 @@ elements:
       # Not expressible: "Skip Grenade hits" (a rule can't name one ability), so any grenade damage
       # counts. A seeker hits up to 3 times (2 impacts + 1 explosion, Arc#36), a fact in the
       # description: a grenade action hits each enemy once, and that hit sets off the same rules.
-      - on: { damage: { via: grenade } }
+      - id: shinobus-vow-1
+        on: { damage: { via: grenade } }
         then:
           - { applyBuff: { status: bolt-charge, stacks: 1 } }
           - { grantEnergy: { to: grenade, amount: "4.2% [1.4%]" } }
         reason: "Every Skip Grenade hit gives you a Bolt Charge stack and a little grenade energy back."
       # The source gives it per stack gained ("?%" in both Compendium and Clarity): a fact shown on
       # every Bolt Charge gain.
-      - on: { buffGained: bolt-charge }
+      - id: shinobus-vow-2
+        on: { buffGained: bolt-charge }
         then:
           - { grantEnergy: { to: grenade, amount: "?" } }
         reason: "Gaining Bolt Charge from any source feeds energy back into your Skip Grenade."
       # The Compendium writes "~40%" (Clarity "40?%"): approximate either way.
-      - on: { stacksMaxed: bolt-charge }
+      - id: shinobus-vow-3
+        on: { stacksMaxed: bolt-charge }
         then:
           - { applyBuff: new-tricks }
           - { grantEnergy: { to: grenade, amount: "~40%" } }
           - { restoreHealth: { amount: "?", allies: true } }
         reason: "Hitting 10 Bolt Charge refunds a big chunk of grenade energy, heals you and nearby allies, and readies an enhanced Skip Grenade (New Tricks)."
-      - on: { abilityCast: grenade }
+      - id: shinobus-vow-4
+        on: { abilityCast: grenade }
         when: [ { has: new-tricks } ]
         then:
           - { removeBuff: new-tricks }
         reason: "Throwing the enhanced Skip Grenade spends New Tricks."
     passives:
-      - effect: { extraCharges: { ability: grenade, extra: 1 } }
+      - id: shinobus-vow-5
+        effect: { extraCharges: { ability: grenade, extra: 1 } }
         reason: "Shinobu's Vow gives Skip Grenade a second charge."

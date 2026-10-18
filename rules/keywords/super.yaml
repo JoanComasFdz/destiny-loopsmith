@@ -12,7 +12,8 @@ elements:
     description: "While your Super lasts you are in it: its damage resistance and its other effects hold until it ends."
     source: compendium/2026-10-13/Arc#44
     rules:
-      - on: { abilityCast: super }
+      - id: super-1
+        on: { abilityCast: super }
         then:
           - { applyBuff: super }
         reason: "Casting your Super puts you in it until it ends."

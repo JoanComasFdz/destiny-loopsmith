@@ -460,7 +460,7 @@ public class ActionResolutionTests
     {
         var frequency = Element("frequency", ElementKind.Fragment,
             [On(new Trigger.AbilityCast(AbilityKind.ClassAbility), Buff("amplified"))],
-            [new PassiveRule(new Passive.ExtraStacks(Status("bolt-charge"), StackCount.From(1)), [new Condition.HasBuff(Status("amplified"))], Optional.None<string>())]);
+            [new PassiveRule(RuleId.From("test-rule-1"), new Passive.ExtraStacks(Status("bolt-charge"), StackCount.From(1)), [new Condition.HasBuff(Status("amplified"))], Optional.None<string>())]);
         var source = Element("source", ElementKind.Fragment,
             [On(new Trigger.AbilityCast(AbilityKind.Grenade), Buff("bolt-charge"))]);
         var build = ValidateBuild([frequency, source]);

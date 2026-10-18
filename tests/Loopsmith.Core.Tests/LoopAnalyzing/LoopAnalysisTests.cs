@@ -155,7 +155,7 @@ public class LoopAnalysisTests
     {
         var sure = Element("sure", ElementKind.Fragment, [On(new Trigger.AbilityCast(AbilityKind.ClassAbility), new Outcome.Spawn(Pickup("orb-of-power"), 1))]);
         var lucky = Element("lucky", ElementKind.Fragment,
-            [new Rule(new Trigger.AbilityCast(AbilityKind.Grenade), [], [new Outcome.Spawn(Pickup("orb-of-power"), 1)], Optional.None<string>(), Likelihood.Chance, [])]);
+            [new Rule(RuleId.From("test-rule-1"), new Trigger.AbilityCast(AbilityKind.Grenade), [], [new Outcome.Spawn(Pickup("orb-of-power"), 1)], Optional.None<string>(), Likelihood.Chance, [])]);
         var build = ValidateBuild([sure, lucky]);
 
         var both = RunLoop(build, Dodge, GrenadeKill, PickUpOrbs);
@@ -221,7 +221,7 @@ public class LoopAnalysisTests
     public void A_link_whose_needs_came_only_from_chance_rules_is_chance()
     {
         var lucky = Element("lucky", ElementKind.Fragment,
-            [new Rule(new Trigger.AbilityCast(AbilityKind.Grenade), [], [new Outcome.Spawn(Pickup("orb-of-power"), 1)], Optional.None<string>(), Likelihood.Chance, [])]);
+            [new Rule(RuleId.From("test-rule-1"), new Trigger.AbilityCast(AbilityKind.Grenade), [], [new Outcome.Spawn(Pickup("orb-of-power"), 1)], Optional.None<string>(), Likelihood.Chance, [])]);
 
         var report = RunLoop(ValidateBuild([lucky]), GrenadeKill, PickUpOrbs);
 
@@ -277,10 +277,10 @@ public class LoopAnalysisTests
     public void An_element_is_chance_only_when_every_rule_of_it_that_fired_is_chance()
     {
         var lucky = Element("lucky", ElementKind.Fragment,
-            [new Rule(new Trigger.AbilityCast(AbilityKind.Grenade), [], [Buff("amplified")], Optional.None<string>(), Likelihood.Chance, [])]);
+            [new Rule(RuleId.From("test-rule-1"), new Trigger.AbilityCast(AbilityKind.Grenade), [], [Buff("amplified")], Optional.None<string>(), Likelihood.Chance, [])]);
         var mixed = Element("mixed", ElementKind.Fragment,
         [
-            new Rule(new Trigger.AbilityCast(AbilityKind.Grenade), [], [Buff("bolt-charge")], Optional.None<string>(), Likelihood.Chance, []),
+            new Rule(RuleId.From("test-rule-1"), new Trigger.AbilityCast(AbilityKind.Grenade), [], [Buff("bolt-charge")], Optional.None<string>(), Likelihood.Chance, []),
             On(new Trigger.Damage(new DamageSource.AbilityOf(AbilityKind.Grenade)), new Outcome.RestoreHealth(new HealAmount.Share(new GameValue.Unknown()), false)),
         ]);
 

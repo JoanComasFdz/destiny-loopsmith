@@ -23,14 +23,26 @@ public sealed partial class RuleExampleTests
 
     private const string StubsPath = "doc-example-stubs.yaml";
 
-    private static readonly ImmutableArray<string> ElementHeader =
+    /// <summary>
+    /// The element a fragment of keys or a rule is parsed in: the one its rule ids name (<c>reaper-2</c> → <c>reaper</c>,
+    /// as a rule's id starts with its element's), or <c>doc-example</c>.
+    /// </summary>
+    private static ImmutableArray<string> ToElementHeader(DocExample example) =>
     [
         "elements:",
-        "  - id: doc-example",
+        $"  - id: {ToOwnerId(example)}",
         "    name: Doc example",
         "    kind: weaponPerk",
         "    affinity: neutral",
     ];
+
+    private static string ToOwnerId(DocExample example) =>
+        example.Lines
+            .Select(line => MatchRuleIdLine().Match(line))
+            .Where(match => match.Success)
+            .Select(match => match.Groups[1].Value)
+            .DefaultIfEmpty("doc-example")
+            .First();
 
     public static TheoryData<int, string> ReadExamples()
     {
@@ -76,8 +88,8 @@ public sealed partial class RuleExampleTests
             "a glossary" => [DocExamples.ToSourceText(example, GlossaryParsing.GlossaryPath, [], 0)],
             "an elements file" => [glossary, DocExamples.ToSourceText(example), ToStubs(example)],
             "an element" => [glossary, DocExamples.ToSourceText(example, SpecPath, ["elements:"], 2), ToStubs(example)],
-            "an element's keys" => [glossary, DocExamples.ToSourceText(example, SpecPath, ElementHeader, 4), ToStubs(example)],
-            "a rule" => [glossary, DocExamples.ToSourceText(example, SpecPath, [.. ElementHeader, "    rules:"], 6), ToStubs(example)],
+            "an element's keys" => [glossary, DocExamples.ToSourceText(example, SpecPath, ToElementHeader(example), 4), ToStubs(example)],
+            "a rule" => [glossary, DocExamples.ToSourceText(example, SpecPath, [.. ToElementHeader(example), "    rules:"], 6), ToStubs(example)],
             _ => throw new XunitException($"{DocExamples.ToLocation(example)}: unknown marker '{MarkerStart}{shape}{MarkerEnd}' (a glossary, an elements file, an element, an element's keys or a rule)."),
         };
 
@@ -98,4 +110,7 @@ public sealed partial class RuleExampleTests
 
     [GeneratedRegex(@"doesNotStackWith:\s*\[([^\]]*)\]")]
     private static partial Regex DoesNotStackWith();
+
+    [GeneratedRegex(@"^\s*- id: ([a-z0-9-]+)-[0-9]+\b")]
+    private static partial Regex MatchRuleIdLine();
 }

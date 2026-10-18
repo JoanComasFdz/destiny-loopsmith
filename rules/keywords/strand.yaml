@@ -10,7 +10,8 @@ elements:
     description: "Strand weapon buff: while active, your Strand weapon hits Unravel targets."
     source: compendium/2026-10-09/Strand#11
     rules:
-      - on: { damage: { via: weapon:strand } }
+      - id: unraveling-rounds-1
+        on: { damage: { via: weapon:strand } }
         when: [ { has: unraveling-rounds } ]
         then:
           - { debuffTarget: unravel }
@@ -26,12 +27,14 @@ elements:
     description: "Strand buff: 45% [PvP 25%] damage resistance for 10 s. Guardians' precision hits and melee ignore it. Casting any Super removes it."
     source: compendium/2026-10-09/Strand#7
     rules:
-      - on: { abilityCast: super }
+      - id: woven-mail-1
+        on: { abilityCast: super }
         when: [ { has: woven-mail } ]
         then:
           - { removeBuff: woven-mail }
         reason: "Casting a Super takes your Woven Mail away."
     passives:
-      - effect: { resistDamage: "45% [25%]" }
+      - id: woven-mail-2
+        effect: { resistDamage: "45% [25%]" }
         when: [ { has: woven-mail } ]
         reason: "While you have Woven Mail you take 45% less damage."

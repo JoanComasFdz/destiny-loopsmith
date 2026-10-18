@@ -1,0 +1,276 @@
+# Arc fragments: every class's. Each has the same manifest hash on Arcstrider, Striker and Stormcaller
+# (rules/manifest.yaml, the subclasses' plugs), so no class is named.
+#
+# Numbers from the Destiny Data Compendium snapshots of 2026-10-09 and 2026-10-13 (source:
+# compendium/<date>/<Tab>#<row>; the elements added with the 2026-10-13 snapshot cite it). Hashes are
+# Clarity 2.0625's for the elements of the 2026-10-09 snapshot unless a comment says they are the
+# manifest's (Clarity has no grenade, melee or super entries); the elements of the 2026-10-13
+# snapshot take the manifest's (244213.26.06.29.2000-1-bnet.65864: the Arcstrider's plugs).
+#
+# Format gaps that shape these rules (see builds/skip-grenade-hunter/discrepancies.md):
+#  - an ability damage source cannot name a specific ability or its damage type ("Arc grenades",
+#    "Skip Grenade drones" -> `grenade`);
+#  - movement qualifiers are the abilities' secondary uses only (ADRs D9): the melee while sliding
+#    (`melee:slide`, Tempest Strike's uppercut) and the class ability's air move (`class:air`,
+#    Ascension). A rule on the plain ability fires for its secondary uses too.
+#
+# Where a rule file sits, and each rule's id: docs/rule-format.md, "Files" (ADRs D40).
+elements:
+  - id: spark-of-amplitude
+    name: Spark of Amplitude
+    kind: fragment
+    affinity: arc
+    hash: 3277705906
+    description: "While Amplified, 2 kills within 4 s of each other create an Orb of Power (2.5% Super energy), then 10 s of cooldown during which kills don't count. The kill that makes you Amplified counts."
+    source: compendium/2026-10-13/Arc#10
+    rules:
+      # Two kills within 4 s, as the Siphons' two within 3 s: two kills in one step happen at once,
+      # so they drop the orb for sure; one kill is a chance, since a kill of another step may pair
+      # with it (ADRs D8). The 10 s cooldown is a fact in the description.
+      - id: spark-of-amplitude-1
+        on: { kill: { via: any, atLeast: 2, within: 4s } }
+        when: [ { has: amplified } ]
+        then:
+          - { spawn: orb-of-power }
+        reason: "While you're Amplified, two kills at once drop an Orb of Power (then 10 s before the next)."
+      - id: spark-of-amplitude-2
+        on: { kill: { via: any, fewerThan: 2 } }
+        when: [ { has: amplified } ]
+        then:
+          - { spawn: orb-of-power }
+        chance: true
+        reason: "While you're Amplified, two quick kills drop an Orb of Power (then 10 s before the next)."
+    passives: []
+
+  - id: spark-of-beacons
+    name: Spark of Beacons
+    kind: fragment
+    affinity: arc
+    hash: 1727069367
+    description: "While Amplified, kills with Special or Heavy ammo Arc weapons set off a blinding blast: Blind on enemies within 7.5 m."
+    source: compendium/2026-10-13/Arc#11
+    rules:
+      # A damage source can't name a weapon's ammo type, so this fires on every Arc weapon kill and
+      # is marked chance: a Primary weapon's kill doesn't set it off in the game.
+      - id: spark-of-beacons-1
+        on: { kill: { via: weapon:arc } }
+        when: [ { has: amplified } ]
+        then:
+          - { debuffTarget: blind }
+        chance: true
+        reason: "While you're Amplified, a Special or Heavy Arc weapon kill blinds the enemies around it."
+    passives: []
+
+  - id: spark-of-brilliance
+    name: Spark of Brilliance
+    kind: fragment
+    affinity: arc
+    hash: 3277705905
+    description: "Precision kills on blinded enemies set off a blinding blast: Blind on enemies within 7.5 m."
+    source: compendium/2026-10-13/Arc#12
+    rules:
+      # Loopsmith doesn't tell precision kills from body kills, so the rule is marked chance.
+      - id: spark-of-brilliance-1
+        on: { kill: { via: any, targetHas: [blind] } }
+        then:
+          - { debuffTarget: blind }
+        chance: true
+        reason: "A precision kill on a blinded enemy blinds the enemies around it."
+    passives: []
+
+  - id: spark-of-feedback
+    name: Spark of Feedback
+    kind: fragment
+    affinity: arc
+    hash: 3277705907
+    description: "Being hit by a melee attack gives your next melee hit within 5 s +100% damage [PvP 50%, 15% with Knockout]; not refreshed while active."
+    source: compendium/2026-10-13/Arc#14
+    inert: "Being hit by a melee attack is no step in Loopsmith (it doesn't model the damage you take), so no loop sets it off."
+    rules: []
+    passives: []
+
+  - id: spark-of-focus
+    name: Spark of Focus
+    kind: fragment
+    affinity: arc
+    hash: 1727069360
+    description: "After 1.25 s of sprinting at 5 m/s or more, your class ability regenerates 150% [PvP 75%] faster, until it has a charge ready."
+    source: compendium/2026-10-13/Arc#15
+    inert: "Sprinting is no step in Loopsmith, and a faster regeneration is a rate, which a loop doesn't count."
+    rules: []
+    passives: []
+
+  - id: spark-of-haste
+    name: Spark of Haste
+    kind: fragment
+    affinity: arc
+    hash: 3478354817
+    description: "After 1.25 s of sprinting at 5 m/s or more, +50 Health stat while you keep sprinting."
+    source: compendium/2026-10-13/Arc#17
+    inert: "Sprinting is no step in Loopsmith, and the Health it raises only changes the damage you can take, which Loopsmith doesn't model."
+    rules: []
+    passives: []
+
+  - id: spark-of-instinct
+    name: Spark of Instinct
+    kind: fragment
+    affinity: arc
+    hash: 3478354816
+    description: "At critical health, taking damage sends out an Arc burst: up to 46 [PvP 20] damage and Jolt on nearby enemies (radius not given), about 15 s between bursts."
+    source: compendium/2026-10-13/Arc#18
+    # Not expressible yet: its Jolt would matter to a loop (Spark of Ions, Lethal Current). Reaching
+    # critical health is a step (`health:critical`), but no step takes damage while at it
+    # (docs/backlog.md, Rule format gaps).
+    inert: "Taking damage at critical health is no step in Loopsmith yet, so no loop sets off its jolting burst."
+    rules: []
+    passives: []
+
+  - id: spark-of-ions
+    name: Spark of Ions
+    kind: fragment
+    affinity: arc
+    hash: 1727069363
+    description: "Killing a jolted enemy, or a kill with Bolt Charge's strike, creates an Ionic Trace; 10 s between traces."
+    source: compendium/2026-10-13/Arc#19
+    rules:
+      # The 10 s cooldown between traces is a fact in the description: a loop's steps don't measure
+      # time, so the rule fires on every such kill.
+      - id: spark-of-ions-1
+        on: { kill: { via: any, targetHas: [jolt] } }
+        then:
+          - { spawn: ionic-trace }
+        reason: "Killing a jolted enemy creates an Ionic Trace (at most one every 10 s)."
+      - id: spark-of-ions-2
+        on: { kill: { via: keyword:bolt-charge } }
+        then:
+          - { spawn: ionic-trace }
+        reason: "A kill with Bolt Charge's lightning strike creates an Ionic Trace (at most one every 10 s)."
+    passives: []
+
+  - id: spark-of-magnitude
+    name: Spark of Magnitude
+    kind: fragment
+    affinity: arc
+    hash: 1727069374
+    description: "Lingering Arc grenades last longer: Lightning Grenade strikes one more bolt (5), Pulse Grenade pulses twice more (8 in all), Storm Grenade adds a second barrage."
+    source: compendium/2026-10-13/Arc#20
+    inert: "More hits from the same grenade: they are the grenade step itself, so no loop changes."
+    rules: []
+    passives: []
+
+  - id: spark-of-momentum
+    name: Spark of Momentum
+    kind: fragment
+    affinity: arc
+    hash: 1727069365
+    description: "Sliding over an ammo brick (when not full of that ammo) refills your equipped weapon and gives you x3 Bolt Charge."
+    source: compendium/2026-10-13/Arc#21
+    # Movement and ammo are outside the loop by design (ADRs D1; docs/backlog.md): no step slides
+    # over an ammo brick.
+    inert: "Sliding over an ammo brick is no step in Loopsmith, so no loop sets off its x3 Bolt Charge."
+    rules: []
+    passives: []
+
+  - id: spark-of-recharge
+    name: Spark of Recharge
+    kind: fragment
+    affinity: arc
+    hash: 1727069375
+    description: "On reaching critical health, your grenade and melee regenerate 400% [PvP 200%] faster until your shields are full again."
+    source: compendium/2026-10-13/Arc#22
+    inert: "A faster regeneration is a rate, which Loopsmith doesn't show yet, so reaching critical health shows nothing for it."
+    rules: []
+    passives: []
+
+  - id: spark-of-volts
+    name: Spark of Volts
+    kind: fragment
+    affinity: arc
+    hash: 3277705904
+    description: "Finishers make you Amplified and give you x1 Bolt Charge."
+    source: compendium/2026-10-13/Arc#25
+    rules:
+      - id: spark-of-volts-1
+        on: { finisher: {} }
+        then:
+          - { applyBuff: amplified }
+          - { applyBuff: { status: bolt-charge, stacks: 1 } }
+        reason: "Every finisher makes you Amplified and gives you a Bolt Charge stack."
+    passives: []
+
+  - id: spark-of-resistance
+    name: Spark of Resistance
+    kind: fragment
+    affinity: arc
+    hash: 1727069366
+    description: "Grants 25% [PvP 10%] damage resistance while within 15 m of 3+ enemies; lingers 2 s."
+    source: compendium/2026-10-09/Arc#23
+    rules: []
+    passives:
+      # Not expressible: the "3+ enemies within 15 m" condition. The target is the pack in front of
+      # you (ADRs D7), so you are treated as always surrounded.
+      - id: spark-of-resistance-1
+        effect: { resistDamage: "25% [10%]" }
+        reason: "When you're surrounded by three or more enemies you take 25% less damage."
+
+  - id: spark-of-frequency
+    name: Spark of Frequency
+    kind: fragment
+    affinity: arc
+    hash: 1727069361
+    # The melee-hit reload buff (15 Stability, 50 Reload, 0.8x reload duration for 5.25 s) is not
+    # encoded: it is not part of any loop, and it would need its own glossary buff plus an "all
+    # weapons" archetype, which modifyWeaponStats doesn't have (the same gap as Flow State's).
+    description: "Melee hits grant 15 Stability, 50 Reload Speed and a 0.8x reload duration for 5.25 s. While Amplified, (almost) all Bolt Charge sources grant an additional stack."
+    source: compendium/2026-10-09/Arc#16
+    rules: []
+    passives:
+      - id: spark-of-frequency-1
+        effect: { extraStacks: { status: bolt-charge, extra: 1 } }
+        when: [ { has: amplified } ]
+        reason: "While you're Amplified, almost every Bolt Charge source gives you one extra stack."
+
+  - id: spark-of-shock
+    name: Spark of Shock
+    kind: fragment
+    affinity: arc
+    hash: 1727069364
+    description: "Arc grenades apply Jolt on hit."
+    source: compendium/2026-10-09/Arc#24
+    rules:
+      # "Arc grenades": an ability source can't be typed; on the Arc subclass every grenade is Arc.
+      - id: spark-of-shock-1
+        on: { damage: { via: grenade } }
+        then:
+          - { debuffTarget: jolt }
+        reason: "Your Arc grenades jolt everything they hit."
+    passives: []
+
+  - id: spark-of-discharge
+    name: Spark of Discharge
+    kind: fragment
+    affinity: arc
+    hash: 1727069362
+    description: "Collecting Ionic Traces grants a stack of Bolt Charge. Multiple Arc weapon kills spawn an Ionic Trace (progress per kill: minors 34%, elites and Guardians 67%, minibosses and bosses 100%)."
+    source: compendium/2026-10-09/Arc#13
+    rules:
+      - id: spark-of-discharge-1
+        on: { pickUp: ionic-trace }
+        then:
+          - { applyBuff: { status: bolt-charge, stacks: 1 } }
+        reason: "Every Ionic Trace you collect gives you a Bolt Charge stack."
+      # A counter the game doesn't show (ADRs D31, as Synergy's): 3 minor kills in one step fill it
+      # (3 x 34%), so they spawn the trace for sure; fewer spawn it as a chance, since the kills of
+      # earlier steps may have filled it (ADRs D8).
+      - id: spark-of-discharge-2
+        on: { kill: { via: weapon:arc, atLeast: 3 } }
+        then:
+          - { spawn: ionic-trace }
+        reason: "Three Arc weapon kills at once fill the counter and drop an Ionic Trace."
+      - id: spark-of-discharge-3
+        on: { kill: { via: weapon:arc, fewerThan: 3 } }
+        then:
+          - { spawn: ionic-trace }
+        chance: true
+        reason: "Rack up Arc weapon kills and every few of them drop an Ionic Trace (one per boss kill)."
+    passives: []

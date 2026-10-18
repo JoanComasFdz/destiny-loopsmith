@@ -37,8 +37,8 @@ internal static class RuleFlowMapping
         var owner = DependencyMapping.ToElementNode(context, element);
         var equipped = element.Kind == ElementKind.Keyword ? [] : ImmutableArray.Create(ToBox(context, owner, "equipped", BoxRole.Condition));
         var facts = owner.Element.Bind(found => found.File);
-        var rules = element.Rules.SelectMany((rule, place) => MapRule(context, owner, equipped, facts, rule, place));
-        var passives = element.Passives.Select((passive, place) => MapPassive(context, owner, equipped, facts, passive, place));
+        var rules = element.Rules.SelectMany((rule, place) => MapRule(context, element, owner, equipped, facts, rule, place));
+        var passives = element.Passives.Select((passive, place) => MapPassive(context, element, owner, equipped, facts, passive, place));
         return [.. rules, .. passives];
     }
 
@@ -46,7 +46,7 @@ internal static class RuleFlowMapping
     public static bool IsAlwaysGroup(string key) => key == AlwaysKey;
 
     private static IEnumerable<MappedFlow> MapRule(
-        GraphContext context, GraphNode owner, ImmutableArray<RuleBox> equipped, Optional<string> file, Rule rule, int place)
+        GraphContext context, BuildElement element, GraphNode owner, ImmutableArray<RuleBox> equipped, Optional<string> file, Rule rule, int place)
     {
         var triggers = ListTriggerParts(context, rule.On);
         var onTarget = rule.On.ListRequiredTargetStatuses().Select(status => ToBox(context, DependencyMapping.ToStatusNode(context, status), "on the target", BoxRole.Condition));
@@ -57,6 +57,7 @@ internal static class RuleFlowMapping
             new RuleFlow(
                 triggers.Length == 1 ? id : $"{id}.{at.ToString(CultureInfo.InvariantCulture)}",
                 owner.Id,
+                element.ToRuleName(rule.Id),
                 ToTriggerBox(context, trigger),
                 conditions,
                 results,
@@ -68,11 +69,12 @@ internal static class RuleFlowMapping
     }
 
     private static MappedFlow MapPassive(
-        GraphContext context, GraphNode owner, ImmutableArray<RuleBox> equipped, Optional<string> file, PassiveRule passive, int place) =>
+        GraphContext context, BuildElement element, GraphNode owner, ImmutableArray<RuleBox> equipped, Optional<string> file, PassiveRule passive, int place) =>
         new(
             new RuleFlow(
                 $"{owner.Id}#p{place.ToString(CultureInfo.InvariantCulture)}",
                 owner.Id,
+                element.ToRuleName(passive.Id),
                 ToTriggerBox(context, new TriggerPart(Optional.None<GraphNode>(), "Always", "Always on")),
                 [.. equipped, .. passive.When.Select(condition => ToConditionBox(context, condition))],
                 OrderResults(DependencyMapping.ListPassiveEffects(context, passive.Modifier).Select(effect => ToResultBox(context, effect))),

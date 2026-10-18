@@ -37,11 +37,13 @@ public sealed class RuleCatalogParsingTests
             description: "Your Arc grenades jolt targets."
             source: clarity/1727069364@2.0625
             rules:
-              - on: { abilityCast: grenade }
+              - id: spark-of-shock-1
+                on: { abilityCast: grenade }
                 then:
                   - { grantEnergy: { to: melee, amount: "15%" } }
                   - { grantEnergy: { to: super, amount: full } }
-              - on: { damage: { via: grenade } }
+              - id: spark-of-shock-2
+                on: { damage: { via: grenade } }
                 then:
                   - { debuffTarget: jolt }
                   - { debuffTarget: { status: jolt, duration: 4s } }
@@ -53,36 +55,48 @@ public sealed class RuleCatalogParsingTests
             class: hunter
             fragmentSlots: 2
             rules:
-              - on: { kill: { via: any, targetHas: [jolt] } }
+              - id: flow-state-1
+                on: { kill: { via: any, targetHas: [jolt] } }
                 when: [ { has: amplified }, { lacks: bolt-charge }, { targetHas: sever } ]
                 then:
                   - { applyBuff: amplified }
                   - { applyBuff: { status: bolt-charge, stacks: 2, duration: 10s } }
                   - { removeBuff: amplified }
                 chance: true
-              - on: { kill: { via: "weapon:strand", tier: champion } }
+              - id: flow-state-2
+                on: { kill: { via: "weapon:strand", tier: champion } }
                 then: [ { spawn: orb-of-power }, { spawn: { pickup: ionic-trace, count: 2 } } ]
-              - on: { kill: { via: ability } }
+              - id: flow-state-3
+                on: { kill: { via: ability } }
                 then: [ { summon: threadling }, { summon: { summon: threadling, count: 3 } } ]
-              - on: { damage: { via: "type:arc", targetHas: [sever] } }
+              - id: flow-state-4
+                on: { damage: { via: "type:arc", targetHas: [sever] } }
                 then: [ { strikeTarget: { via: bolt-charge, hit: kill } } ]
-              - on: { pickUp: ionic-trace }
+              - id: flow-state-5
+                on: { pickUp: ionic-trace }
                 then: [ { convertStacksToEnergy: { consumed: armor-charge, to: grenade, perStack: "?" } } ]
-              - on: { buffGained: bolt-charge }
+              - id: flow-state-6
+                on: { buffGained: bolt-charge }
                 then: [ { modifyDamage: { against: "keyword:bolt-charge", change: "+50%" } } ]
-              - on: { stacksMaxed: bolt-charge }
+              - id: flow-state-7
+                on: { stacksMaxed: bolt-charge }
                 then:
                   - { restoreHealth: { amount: "?", allies: true } }
                   - { restoreHealth: { amount: "25%" } }
                   - { resetCooldown: melee }
             passives:
-              - effect: { extraStacks: { status: bolt-charge, extra: 1 } }
+              - id: flow-state-8
+                effect: { extraStacks: { status: bolt-charge, extra: 1 } }
                 when: [ { has: amplified } ]
                 reason: "While Amplified, Bolt Charge sources grant one extra stack."
-              - effect: { extraCharges: { ability: grenade, extra: 1 } }
-              - effect: { modifyDamage: { against: "summon:threadling", change: "12% | 17% | 20%" } }
-              - effect: { resistDamage: "25%" }
-              - effect: { modifyWeaponStats: { archetypes: [fusion-rifle], changes: [ { stat: handling, change: "?" } ] } }
+              - id: flow-state-9
+                effect: { extraCharges: { ability: grenade, extra: 1 } }
+              - id: flow-state-10
+                effect: { modifyDamage: { against: "summon:threadling", change: "12% | 17% | 20%" } }
+              - id: flow-state-11
+                effect: { resistDamage: "25%" }
+              - id: flow-state-12
+                effect: { modifyWeaponStats: { archetypes: [fusion-rifle], changes: [ { stat: handling, change: "?" } ] } }
         """;
 
     private const string KeywordsArcYaml = """
@@ -92,7 +106,8 @@ public sealed class RuleCatalogParsingTests
             kind: keyword
             affinity: arc
             rules:
-              - on: { stacksMaxed: bolt-charge }
+              - id: bolt-charge-1
+                on: { stacksMaxed: bolt-charge }
                 then: [ { strikeTarget: { via: bolt-charge, hit: damage } }, { removeBuff: bolt-charge } ]
           - id: skip-grenade
             name: Skip Grenade
@@ -198,7 +213,7 @@ public sealed class RuleCatalogParsingTests
             new Provenance.CreatorClaim("https://www.youtube.com/watch?v=zvd6sNS463E", "Skip grenades refund energy"),
             elements[ElementId.From("shinobus-vow")].Source);
         Assert.Equal(new Provenance.Authored("keywords/arc.yaml", 2), elements[ElementId.From("bolt-charge")].Source);
-        Assert.Equal(new Provenance.Authored("hunter/arc.yaml", 20), elements[ElementId.From("flow-state")].Source);
+        Assert.Equal(new Provenance.Authored("hunter/arc.yaml", 22), elements[ElementId.From("flow-state")].Source);
     }
 
     [Fact]
@@ -458,7 +473,8 @@ public sealed class RuleCatalogParsingTests
                 affinity: neutral
                 inert: "Heals only."
                 rules:
-                  - on: { pickUp: orb-of-power }
+                  - id: recuperation-1
+                    on: { pickUp: orb-of-power }
                     then: [ { restoreHealth: { amount: "?" } } ]
             """));
 
@@ -476,7 +492,8 @@ public sealed class RuleCatalogParsingTests
                 kind: armorMod
                 affinity: neutral
                 rules:
-                  - on: { abilityCast: classAbility }
+                  - id: powerful-attraction-1
+                    on: { abilityCast: classAbility }
                     then: [ { collect: orb-of-power } ]
             """)]));
         var message = ParseInvalidCatalog(Glossary, ToElementsFile("mods.yaml", """
@@ -486,7 +503,8 @@ public sealed class RuleCatalogParsingTests
                 kind: armorMod
                 affinity: neutral
                 rules:
-                  - on: { abilityCast: classAbility }
+                  - id: powerful-attraction-1
+                    on: { abilityCast: classAbility }
                     then: [ { collect: firesprite } ]
             """));
 
@@ -505,7 +523,8 @@ public sealed class RuleCatalogParsingTests
                 kind: armorMod
                 affinity: neutral
                 passives:
-                  - effect: { raiseMaxStacks: { status: armor-charge, max: "4 | 5 | 6" } }
+                  - id: charged-up-1
+                    effect: { raiseMaxStacks: { status: armor-charge, max: "4 | 5 | 6" } }
             """)]));
         var notStacking = ParseInvalidCatalog(Glossary, ToElementsFile("mods.yaml", """
             elements:
@@ -514,7 +533,8 @@ public sealed class RuleCatalogParsingTests
                 kind: armorMod
                 affinity: neutral
                 passives:
-                  - effect: { raiseMaxStacks: { status: amplified, max: 4 } }
+                  - id: charged-up-1
+                    effect: { raiseMaxStacks: { status: amplified, max: 4 } }
             """));
         var guarded = ParseInvalidCatalog(Glossary, ToElementsFile("mods.yaml", """
             elements:
@@ -523,7 +543,8 @@ public sealed class RuleCatalogParsingTests
                 kind: armorMod
                 affinity: neutral
                 passives:
-                  - effect: { raiseMaxStacks: { status: armor-charge, max: "4 | 5 | 6" } }
+                  - id: charged-up-1
+                    effect: { raiseMaxStacks: { status: armor-charge, max: "4 | 5 | 6" } }
                     when: [ { has: amplified } ]
             """));
 
@@ -532,7 +553,7 @@ public sealed class RuleCatalogParsingTests
         Assert.Equal(ToStatus("armor-charge"), raise.Status);
         Assert.Equal([4m, 5m, 6m], Assert.IsType<GameValue.PerModCount>(raise.Max).Values);
         Assert.Contains("'amplified' doesn't stack (no maxStacks)", notStacking);
-        Assert.Equal("mods.yaml:8: raiseMaxStacks raises the build's cap, which always holds, so it takes no when", guarded);
+        Assert.Equal("mods.yaml:9: raiseMaxStacks raises the build's cap, which always holds, so it takes no when", guarded);
     }
 
     [Fact]
@@ -545,19 +566,22 @@ public sealed class RuleCatalogParsingTests
                 kind: armorMod
                 affinity: strand
                 passives:
-                  - effect: { resistDamage: "45% [25%]" }
+                  - id: woven-1
+                    effect: { resistDamage: "45% [25%]" }
               - id: arc-resistance
                 name: Arc Resistance
                 kind: armorMod
                 affinity: arc
                 passives:
-                  - effect: { resistCombatantDamage: { against: arc, amount: "15% | 25% | 30%" } }
+                  - id: arc-resistance-1
+                    effect: { resistCombatantDamage: { against: arc, amount: "15% | 25% | 30%" } }
               - id: melee-damage-resistance
                 name: Melee Damage Resistance
                 kind: armorMod
                 affinity: neutral
                 passives:
-                  - effect: { resistCombatantDamage: { against: "within:5", amount: "15%" } }
+                  - id: melee-damage-resistance-1
+                    effect: { resistCombatantDamage: { against: "within:5", amount: "15%" } }
             """)]));
         var withPvp = ParseInvalidCatalog(Glossary, ToElementsFile("mods.yaml", """
             elements:
@@ -566,7 +590,8 @@ public sealed class RuleCatalogParsingTests
                 kind: armorMod
                 affinity: arc
                 passives:
-                  - effect: { resistCombatantDamage: { against: arc, amount: "15% [5%]" } }
+                  - id: arc-resistance-1
+                    effect: { resistCombatantDamage: { against: arc, amount: "15% [5%]" } }
             """));
         var unknownScope = ParseInvalidCatalog(Glossary, ToElementsFile("mods.yaml", """
             elements:
@@ -575,7 +600,8 @@ public sealed class RuleCatalogParsingTests
                 kind: armorMod
                 affinity: arc
                 passives:
-                  - effect: { resistCombatantDamage: { against: "near:5", amount: "15%" } }
+                  - id: arc-resistance-1
+                    effect: { resistCombatantDamage: { against: "near:5", amount: "15%" } }
             """));
 
         Assert.Equal(
@@ -915,11 +941,12 @@ public sealed class RuleCatalogParsingTests
                 kind: fragment
                 affinity: arc
                 rules:
-                  - on: { abilityCast: grenade }
+                  - id: spark-of-shock-1
+                    on: { abilityCast: grenade }
                     then: [ { applyBuff: { status: amplified, stack: 2 } } ]
             """));
 
-        Assert.Contains("hunter/arc.yaml:8: unknown key 'stack' in applyBuff", message);
+        Assert.Contains("hunter/arc.yaml:9: unknown key 'stack' in applyBuff", message);
     }
 
     [Fact]
@@ -932,12 +959,13 @@ public sealed class RuleCatalogParsingTests
                 kind: fragment
                 affinity: arc
                 rules:
-                  - on: { abilityCast: grenade }
+                  - id: spark-of-shock-1
+                    on: { abilityCast: grenade }
                     then:
                       - { applyBuff: overcharged }
             """));
 
-        Assert.Equal("hunter/arc.yaml:9: applyBuff: unknown status 'overcharged' (not in glossary.yaml)", message);
+        Assert.Equal("hunter/arc.yaml:10: applyBuff: unknown status 'overcharged' (not in glossary.yaml)", message);
     }
 
     [Fact]
@@ -950,13 +978,14 @@ public sealed class RuleCatalogParsingTests
                 kind: fragment
                 affinity: arc
                 rules:
-                  - on: { abilityCast: grenade }
+                  - id: spark-of-shock-1
+                    on: { abilityCast: grenade }
                     then:
                       - { debuffTarget: { status: amplified, duration: 4s } }
             """));
 
         Assert.Equal(
-            "hunter/arc.yaml:9: debuffTarget.status: 'amplified' is a buff, but this position needs a debuff",
+            "hunter/arc.yaml:10: debuffTarget.status: 'amplified' is a buff, but this position needs a debuff",
             message);
     }
 
@@ -970,7 +999,8 @@ public sealed class RuleCatalogParsingTests
                 kind: fragment
                 affinity: arc
                 rules:
-                  - on: { kill: { targetHas: [amplified] } }
+                  - id: spark-of-shock-1
+                    on: { kill: { targetHas: [amplified] } }
                     when: [ { has: jolt } ]
                     then: [ { removeBuff: sever } ]
             """));
@@ -978,9 +1008,9 @@ public sealed class RuleCatalogParsingTests
         Assert.Equal(
             string.Join(
                 "\n",
-                "hunter/arc.yaml:7: kill.targetHas: 'amplified' is a buff, but this position needs a debuff",
-                "hunter/arc.yaml:8: has: 'jolt' is a debuff, but this position needs a buff",
-                "hunter/arc.yaml:9: removeBuff: 'sever' is a debuff, but this position needs a buff"),
+                "hunter/arc.yaml:8: kill.targetHas: 'amplified' is a buff, but this position needs a debuff",
+                "hunter/arc.yaml:9: has: 'jolt' is a debuff, but this position needs a buff",
+                "hunter/arc.yaml:10: removeBuff: 'sever' is a debuff, but this position needs a buff"),
             message);
     }
 
@@ -994,16 +1024,18 @@ public sealed class RuleCatalogParsingTests
                 kind: fragment
                 affinity: arc
                 rules:
-                  - on: { pickUp: firesprite }
+                  - id: spark-of-shock-1
+                    on: { pickUp: firesprite }
                     then: [ { summon: arc-soul } ]
-                  - on: { damage: { via: "keyword:scorch" } }
+                  - id: spark-of-shock-2
+                    on: { damage: { via: "keyword:scorch" } }
                     then: [ { spawn: { pickup: tangle } } ]
             """));
 
-        Assert.Contains("hunter/arc.yaml:7: pickUp: unknown pickup 'firesprite'", message);
-        Assert.Contains("hunter/arc.yaml:8: summon: unknown summon 'arc-soul'", message);
-        Assert.Contains("hunter/arc.yaml:9: damage.via: unknown status 'scorch'", message);
-        Assert.Contains("hunter/arc.yaml:10: spawn.pickup: unknown pickup 'tangle'", message);
+        Assert.Contains("hunter/arc.yaml:8: pickUp: unknown pickup 'firesprite'", message);
+        Assert.Contains("hunter/arc.yaml:9: summon: unknown summon 'arc-soul'", message);
+        Assert.Contains("hunter/arc.yaml:11: damage.via: unknown status 'scorch'", message);
+        Assert.Contains("hunter/arc.yaml:12: spawn.pickup: unknown pickup 'tangle'", message);
     }
 
     // ── Airborne class ability use and restarting buffs ──────────────────────────────────
@@ -1016,7 +1048,8 @@ public sealed class RuleCatalogParsingTests
                 kind: aspect
                 affinity: arc
                 rules:
-                  - on: TRIGGER
+                  - id: ascension-1
+                    on: TRIGGER
                     then: [ BUFF ]
             """.Replace("TRIGGER", trigger).Replace("BUFF", buff));
 
@@ -1041,7 +1074,8 @@ public sealed class RuleCatalogParsingTests
                 kind: keyword
                 affinity: arc
                 rules:
-                  - on: { damage: { via: ability } }
+                  - id: bolt-charge-1
+                    on: { damage: { via: ability } }
                     when: [ { atMax: bolt-charge } ]
                     then: [ { removeBuff: bolt-charge } ]
             """);
@@ -1052,9 +1086,9 @@ public sealed class RuleCatalogParsingTests
     }
 
     [Theory]
-    [InlineData("{ on: { stacksMaxed: amplified }, then: [ { removeBuff: amplified } ] }", "'amplified' doesn't stack (no maxStacks), so it is never at max")]
-    [InlineData("{ on: { abilityCast: grenade }, when: [ { atMax: amplified } ], then: [ { removeBuff: amplified } ] }", "'amplified' doesn't stack (no maxStacks), so it is never at max")]
-    [InlineData("{ on: { abilityCast: grenade }, then: [ { applyBuff: { status: amplified, restart: true } } ] }", "unknown key 'restart' in applyBuff (allowed: status, stacks, duration, durationBySpent)")]
+    [InlineData("{ id: probe-1, on: { stacksMaxed: amplified }, then: [ { removeBuff: amplified } ] }", "'amplified' doesn't stack (no maxStacks), so it is never at max")]
+    [InlineData("{ id: probe-1, on: { abilityCast: grenade }, when: [ { atMax: amplified } ], then: [ { removeBuff: amplified } ] }", "'amplified' doesn't stack (no maxStacks), so it is never at max")]
+    [InlineData("{ id: probe-1, on: { abilityCast: grenade }, then: [ { applyBuff: { status: amplified, restart: true } } ] }", "unknown key 'restart' in applyBuff (allowed: status, stacks, duration, durationBySpent)")]
     public void Only_a_status_that_stacks_can_be_at_max_and_a_grant_has_no_restart(string rule, string expected)
     {
         var file = ToElementsFile("hunter/arc.yaml", $$"""
@@ -1079,13 +1113,15 @@ public sealed class RuleCatalogParsingTests
                 kind: fragment
                 affinity: arc
                 rules:
-                  - on: { kill: { via: weapon:arc, atLeast: 2, within: 3s } }
+                  - id: probe-1
+                    on: { kill: { via: weapon:arc, atLeast: 2, within: 3s } }
                     when: [ { holds: { status: armor-charge, atLeast: 3 } } ]
                     then:
                       - { convertStacksToEnergy: { consumed: armor-charge, to: grenade, bySpent: { from: 3, values: "70% | 80%" } } }
                       - { spendStacks: { status: armor-charge, count: 2 } }
                       - { applyBuff: { status: amplified, durationBySpent: { from: 3, values: "8 | 10" } } }
-                  - on: { abilityCast: grenade }
+                  - id: probe-2
+                    on: { abilityCast: grenade }
                     then: [ { convertStacksToEnergy: { consumed: armor-charge, to: grenade, byCharges: { from: 2, values: "16.2%" } } } ]
             """);
 
@@ -1104,13 +1140,13 @@ public sealed class RuleCatalogParsingTests
     }
 
     [Theory]
-    [InlineData("{ on: { abilityCast: grenade }, when: [ { holds: { status: bolt-charge, atLeast: 2 } } ], then: [ { removeBuff: bolt-charge } ] }", "'bolt-charge' isn't counted (no counted: true in glossary.yaml)")]
-    [InlineData("{ on: { abilityCast: grenade }, then: [ { spendStacks: { status: bolt-charge, count: 1 } } ] }", "'bolt-charge' isn't counted (no counted: true in glossary.yaml)")]
-    [InlineData("{ on: { abilityCast: grenade }, then: [ { convertStacksToEnergy: { consumed: bolt-charge, to: grenade, bySpent: { from: 3, values: \"70%\" } } } ] }", "'bolt-charge' isn't counted (no counted: true in glossary.yaml)")]
-    [InlineData("{ on: { abilityCast: grenade }, then: [ { convertStacksToEnergy: { consumed: armor-charge, to: grenade, perStack: \"?\", bySpent: { from: 3, values: \"70%\" } } } ] }", "needs exactly one of perStack, bySpent or byCharges")]
-    [InlineData("{ on: { abilityCast: grenade }, then: [ { convertStacksToEnergy: { consumed: armor-charge, to: grenade, bySpent: { from: 3, values: \"?\" } } } ] }", "the values must be known numbers")]
-    [InlineData("{ on: { kill: { via: weapon, within: 3s } }, then: [ { removeBuff: armor-charge } ] }", "'within' is the window of a kill count, so it needs 'atLeast'")]
-    [InlineData("{ on: { abilityCast: grenade }, then: [ { applyBuff: { status: amplified, duration: 5s, durationBySpent: { from: 3, values: \"8\" } } } ] }", "takes duration or durationBySpent, not both")]
+    [InlineData("{ id: probe-1, on: { abilityCast: grenade }, when: [ { holds: { status: bolt-charge, atLeast: 2 } } ], then: [ { removeBuff: bolt-charge } ] }", "'bolt-charge' isn't counted (no counted: true in glossary.yaml)")]
+    [InlineData("{ id: probe-1, on: { abilityCast: grenade }, then: [ { spendStacks: { status: bolt-charge, count: 1 } } ] }", "'bolt-charge' isn't counted (no counted: true in glossary.yaml)")]
+    [InlineData("{ id: probe-1, on: { abilityCast: grenade }, then: [ { convertStacksToEnergy: { consumed: bolt-charge, to: grenade, bySpent: { from: 3, values: \"70%\" } } } ] }", "'bolt-charge' isn't counted (no counted: true in glossary.yaml)")]
+    [InlineData("{ id: probe-1, on: { abilityCast: grenade }, then: [ { convertStacksToEnergy: { consumed: armor-charge, to: grenade, perStack: \"?\", bySpent: { from: 3, values: \"70%\" } } } ] }", "needs exactly one of perStack, bySpent or byCharges")]
+    [InlineData("{ id: probe-1, on: { abilityCast: grenade }, then: [ { convertStacksToEnergy: { consumed: armor-charge, to: grenade, bySpent: { from: 3, values: \"?\" } } } ] }", "the values must be known numbers")]
+    [InlineData("{ id: probe-1, on: { kill: { via: weapon, within: 3s } }, then: [ { removeBuff: armor-charge } ] }", "'within' is the window of a kill count, so it needs 'atLeast'")]
+    [InlineData("{ id: probe-1, on: { abilityCast: grenade }, then: [ { applyBuff: { status: amplified, duration: 5s, durationBySpent: { from: 3, values: \"8\" } } } ] }", "takes duration or durationBySpent, not both")]
     public void Only_a_counted_buff_has_stacks_to_read_or_spend_and_a_table_or_window_is_whole(string rule, string expected)
     {
         var file = ToElementsFile("hunter/arc.yaml", $$"""
@@ -1171,7 +1207,8 @@ public sealed class RuleCatalogParsingTests
                 kind: aspect
                 affinity: arc
                 rules:
-                  - on: { abilityCast: grenade }
+                  - id: tempest-strike-1
+                    on: { abilityCast: grenade }
                     then: [ { applyBuff: bolt-charge } ]
                     doesNotStackWith: PARTNER
                     reason: "Jolted kills give Bolt Charge."
@@ -1180,7 +1217,8 @@ public sealed class RuleCatalogParsingTests
                 kind: artifactPerk
                 affinity: arc
                 rules:
-                  - on: { abilityCast: grenade }
+                  - id: dielectric-1
+                    on: { abilityCast: grenade }
                     then: [ { applyBuff: bolt-charge } ]
                     DIELECTRIC
             """.Replace("PARTNER", partner).Replace("DIELECTRIC", dielectricSays));
@@ -1217,7 +1255,7 @@ public sealed class RuleCatalogParsingTests
 
         Assert.Equal(
             "hunter/arc.yaml:2: 'tempest-strike': doesNotStackWith 'dielectric' leads back to 'tempest-strike', so none of those rules would apply; say it only on the side that gives nothing\n"
-            + "hunter/arc.yaml:11: 'dielectric': doesNotStackWith 'tempest-strike' leads back to 'dielectric', so none of those rules would apply; say it only on the side that gives nothing",
+            + "hunter/arc.yaml:12: 'dielectric': doesNotStackWith 'tempest-strike' leads back to 'dielectric', so none of those rules would apply; say it only on the side that gives nothing",
             message);
     }
 
@@ -1231,7 +1269,8 @@ public sealed class RuleCatalogParsingTests
                 kind: armorMod
                 affinity: neutral
                 rules:
-                  - on: { abilityCast: grenade }
+                  - id: bomber-1
+                    on: { abilityCast: grenade }
                     then: [ { applyBuff: bolt-charge } ]
                     doesNotStackWith: [tempest-strike]
             """);
@@ -1241,7 +1280,7 @@ public sealed class RuleCatalogParsingTests
         Assert.Equal(
             [
                 "hunter/arc.yaml:2: 'tempest-strike': doesNotStackWith 'dielectric' leads back to 'tempest-strike', so none of those rules would apply; say it only on the side that gives nothing",
-                "hunter/arc.yaml:11: 'dielectric': doesNotStackWith 'bomber' leads back to 'dielectric', so none of those rules would apply; say it only on the side that gives nothing",
+                "hunter/arc.yaml:12: 'dielectric': doesNotStackWith 'bomber' leads back to 'dielectric', so none of those rules would apply; say it only on the side that gives nothing",
                 "mods/armor.yaml:2: 'bomber': doesNotStackWith 'tempest-strike' leads back to 'bomber', so none of those rules would apply; say it only on the side that gives nothing",
             ],
             message.Split('\n'));
@@ -1257,7 +1296,8 @@ public sealed class RuleCatalogParsingTests
                 kind: armorMod
                 affinity: neutral
                 rules:
-                  - on: { abilityCast: grenade }
+                  - id: bomber-1
+                    on: { abilityCast: grenade }
                     then: [ { applyBuff: bolt-charge } ]
             """);
 
@@ -1272,7 +1312,7 @@ public sealed class RuleCatalogParsingTests
         var message = ParseInvalidCatalog(Glossary, ToStackingFile("[]"));
 
         Assert.Contains("must list at least one element", message);
-        Assert.StartsWith("hunter/arc.yaml:9: ", message);
+        Assert.StartsWith("hunter/arc.yaml:10: ", message);
     }
 
     // ── Sustained damage: a source that needs several hits or a share of the enemy's health (ADRs D34) ──────
@@ -1287,11 +1327,14 @@ public sealed class RuleCatalogParsingTests
                 kind: weaponPerk
                 affinity: kinetic
                 rules:
-                  - on: { damage: { via: weapon, sustained: true } }
+                  - id: shredder-1
+                    on: { damage: { via: weapon, sustained: true } }
                     then: [ { applyBuff: amplified } ]
-                  - on: { damage: { via: weapon, targetHas: [jolt], sustained: true } }
+                  - id: shredder-2
+                    on: { damage: { via: weapon, targetHas: [jolt], sustained: true } }
                     then: [ { applyBuff: amplified } ]
-                  - on: { damage: { via: weapon, sustained: false } }
+                  - id: shredder-3
+                    on: { damage: { via: weapon, sustained: false } }
                     then: [ { applyBuff: amplified } ]
             """)]));
 
@@ -1310,12 +1353,15 @@ public sealed class RuleCatalogParsingTests
             kind: weaponPerk
             affinity: kinetic
             rules:
-              - on: { damage: { via: weapon, atLeast: 3 } }
+              - id: one-for-all-1
+                on: { damage: { via: weapon, atLeast: 3 } }
                 then: [ { applyBuff: amplified } ]
                 reason: "Hitting three separate targets within a short time grants increased damage."
-              - on: { kill: { via: grenade, atLeast: 2 } }
+              - id: one-for-all-2
+                on: { kill: { via: grenade, atLeast: 2 } }
                 then: [ { spawn: orb-of-power } ]
-              - on: { kill: { atLeast: 1 } }
+              - id: one-for-all-3
+                on: { kill: { atLeast: 1 } }
                 then: [ { applyBuff: amplified } ]
         """;
 
@@ -1331,13 +1377,13 @@ public sealed class RuleCatalogParsingTests
     }
 
     [Theory]
-    [InlineData("kill: { via: weapon, atLeast: 2, tier: champion }", "hunter/arc.yaml:7: kill cannot combine 'atLeast' and 'tier'")]
-    [InlineData("kill: { via: weapon, atLeast: 2, targetHas: [jolt] }", "hunter/arc.yaml:7: kill cannot combine 'atLeast' and 'targetHas'")]
-    [InlineData("damage: { via: weapon, atLeast: 2, targetHas: [jolt] }", "hunter/arc.yaml:7: damage cannot combine 'atLeast' and 'targetHas'")]
-    [InlineData("damage: { via: weapon, atLeast: 0 }", "hunter/arc.yaml:7: damage.atLeast: '0' is not a whole number ≥ 1")]
-    [InlineData("damage: { via: weapon, atLeast: 21 }", "hunter/arc.yaml:7: damage.atLeast: Target count must be within 1..20")]
-    [InlineData("kill: { atLeast: lots }", "hunter/arc.yaml:7: kill.atLeast: 'lots' is not a whole number ≥ 1")]
-    [InlineData("damage: { via: weapon, atLeast: 2, sustained: true }", "hunter/arc.yaml:7: damage cannot combine 'atLeast' and 'sustained'")]
+    [InlineData("kill: { via: weapon, atLeast: 2, tier: champion }", "hunter/arc.yaml:8: kill cannot combine 'atLeast' and 'tier'")]
+    [InlineData("kill: { via: weapon, atLeast: 2, targetHas: [jolt] }", "hunter/arc.yaml:8: kill cannot combine 'atLeast' and 'targetHas'")]
+    [InlineData("damage: { via: weapon, atLeast: 2, targetHas: [jolt] }", "hunter/arc.yaml:8: damage cannot combine 'atLeast' and 'targetHas'")]
+    [InlineData("damage: { via: weapon, atLeast: 0 }", "hunter/arc.yaml:8: damage.atLeast: '0' is not a whole number ≥ 1")]
+    [InlineData("damage: { via: weapon, atLeast: 21 }", "hunter/arc.yaml:8: damage.atLeast: Target count must be within 1..20")]
+    [InlineData("kill: { atLeast: lots }", "hunter/arc.yaml:8: kill.atLeast: 'lots' is not a whole number ≥ 1")]
+    [InlineData("damage: { via: weapon, atLeast: 2, sustained: true }", "hunter/arc.yaml:8: damage cannot combine 'atLeast' and 'sustained'")]
     public void At_least_is_a_count_of_1_to_20_and_stands_alone(string trigger, string expected)
     {
         var message = ParseInvalidCatalog(Glossary, ToElementsFile("hunter/arc.yaml", $$"""
@@ -1347,7 +1393,8 @@ public sealed class RuleCatalogParsingTests
                 kind: weaponPerk
                 affinity: kinetic
                 rules:
-                  - on: { {{trigger}} }
+                  - id: one-for-all-1
+                    on: { {{trigger}} }
                     then: [ { spawn: orb-of-power } ]
             """));
 
@@ -1364,12 +1411,15 @@ public sealed class RuleCatalogParsingTests
                 kind: weaponPerk
                 affinity: neutral
                 rules:
-                  - on: { damage: { via: "weapon:this", atLeast: 3, within: 3s } }
+                  - id: one-for-all-1
+                    on: { damage: { via: "weapon:this", atLeast: 3, within: 3s } }
                     then: [ { applyBuff: amplified } ]
-                  - on: { damage: { via: "weapon:this", fewerThan: 3 } }
+                  - id: one-for-all-2
+                    on: { damage: { via: "weapon:this", fewerThan: 3 } }
                     then: [ { applyBuff: amplified } ]
                     chance: true
-                  - on: { kill: { via: "weapon:this", atLeast: 2, fewerThan: 3 } }
+                  - id: one-for-all-3
+                    on: { kill: { via: "weapon:this", atLeast: 2, fewerThan: 3 } }
                     then: [ { spawn: orb-of-power } ]
             """)]));
 
@@ -1391,7 +1441,8 @@ public sealed class RuleCatalogParsingTests
                 kind: weaponPerk
                 affinity: kinetic
                 rules:
-                  - on: { kill: { via: "weapon:this", atLeast: 3 } }
+                  - id: veterans-wisdom-1
+                    on: { kill: { via: "weapon:this", atLeast: 3 } }
                     then:
                       - { strikeTarget: { via: "weapon:this", type: kinetic, hit: damage } }
                       - { strikeTarget: { via: "weapon:this", hit: kill } }
@@ -1418,7 +1469,8 @@ public sealed class RuleCatalogParsingTests
                 kind: weaponPerk
                 affinity: kinetic
                 rules:
-                  - on: { kill: { via: "weapon:this" } }
+                  - id: veterans-wisdom-1
+                    on: { kill: { via: "weapon:this" } }
                     then: [ {{outcome}} ]
             """));
 
@@ -1435,7 +1487,8 @@ public sealed class RuleCatalogParsingTests
                 kind: weaponPerk
                 affinity: neutral
                 passives:
-                  - effect: { modifyWeaponStats: { weapon: this, changes: [ { stat: handling, change: "+35" } ] } }
+                  - id: stats-for-all-1
+                    effect: { modifyWeaponStats: { weapon: this, changes: [ { stat: handling, change: "+35" } ] } }
                     when: [ { has: amplified } ]
             """)]));
 
@@ -1456,7 +1509,8 @@ public sealed class RuleCatalogParsingTests
                 kind: weaponPerk
                 affinity: neutral
                 passives:
-                  - effect: { modifyWeaponStats: {{effect}} }
+                  - id: stats-for-all-1
+                    effect: { modifyWeaponStats: {{effect}} }
             """));
 
         Assert.Contains(expected, message);
@@ -1472,9 +1526,11 @@ public sealed class RuleCatalogParsingTests
                 kind: weaponMod
                 affinity: neutral
                 rules:
-                  - on: { kill: { via: "weapon:this:arc", atLeast: 12 } }
+                  - id: synergy-1
+                    on: { kill: { via: "weapon:this:arc", atLeast: 12 } }
                     then: [ { spawn: ionic-trace } ]
-                  - on: { kill: { via: "weapon:this", fewerThan: 12 } }
+                  - id: synergy-2
+                    on: { kill: { via: "weapon:this", fewerThan: 12 } }
                     then: [ { spawn: orb-of-power } ]
                     chance: true
             """)]));
@@ -1486,14 +1542,14 @@ public sealed class RuleCatalogParsingTests
     }
 
     [Theory]
-    [InlineData("kill: { via: weapon, fewerThan: 1 }", "hunter/arc.yaml:7: kill.fewerThan: fewer than 1 kills never happens (use 2..20)")]
-    [InlineData("kill: { via: weapon, fewerThan: 2, atLeast: 2 }", "hunter/arc.yaml:7: kill: fewer than 2 and at least 2 never happens (fewerThan must be above atLeast)")]
-    [InlineData("kill: { via: weapon, fewerThan: 3, tier: champion }", "hunter/arc.yaml:7: kill cannot combine 'fewerThan' and 'tier'")]
-    [InlineData("kill: { via: weapon, atLeast: 2, fewerThan: 3, within: 3s }", "hunter/arc.yaml:7: kill cannot combine 'fewerThan' and 'within'")]
-    [InlineData("damage: { via: weapon, fewerThan: 1 }", "hunter/arc.yaml:7: damage.fewerThan: fewer than 1 enemies hit never happens (use 2..20)")]
-    [InlineData("damage: { via: weapon, fewerThan: 3, atLeast: 2 }", "hunter/arc.yaml:7: damage cannot combine 'atLeast' and 'fewerThan'")]
-    [InlineData("damage: { via: weapon, fewerThan: 3, sustained: true }", "hunter/arc.yaml:7: damage cannot combine 'fewerThan' and 'sustained'")]
-    [InlineData("damage: { via: weapon, within: 3s }", "hunter/arc.yaml:7: damage: 'within' is the window of a hit count, so it needs 'atLeast'")]
+    [InlineData("kill: { via: weapon, fewerThan: 1 }", "hunter/arc.yaml:8: kill.fewerThan: fewer than 1 kills never happens (use 2..20)")]
+    [InlineData("kill: { via: weapon, fewerThan: 2, atLeast: 2 }", "hunter/arc.yaml:8: kill: fewer than 2 and at least 2 never happens (fewerThan must be above atLeast)")]
+    [InlineData("kill: { via: weapon, fewerThan: 3, tier: champion }", "hunter/arc.yaml:8: kill cannot combine 'fewerThan' and 'tier'")]
+    [InlineData("kill: { via: weapon, atLeast: 2, fewerThan: 3, within: 3s }", "hunter/arc.yaml:8: kill cannot combine 'fewerThan' and 'within'")]
+    [InlineData("damage: { via: weapon, fewerThan: 1 }", "hunter/arc.yaml:8: damage.fewerThan: fewer than 1 enemies hit never happens (use 2..20)")]
+    [InlineData("damage: { via: weapon, fewerThan: 3, atLeast: 2 }", "hunter/arc.yaml:8: damage cannot combine 'atLeast' and 'fewerThan'")]
+    [InlineData("damage: { via: weapon, fewerThan: 3, sustained: true }", "hunter/arc.yaml:8: damage cannot combine 'fewerThan' and 'sustained'")]
+    [InlineData("damage: { via: weapon, within: 3s }", "hunter/arc.yaml:8: damage: 'within' is the window of a hit count, so it needs 'atLeast'")]
     public void Fewer_than_is_a_count_of_2_to_20_that_stands_alone_but_bounds_a_kill_count(string trigger, string expected)
     {
         var message = ParseInvalidCatalog(Glossary, ToElementsFile("hunter/arc.yaml", $$"""
@@ -1503,7 +1559,8 @@ public sealed class RuleCatalogParsingTests
                 kind: weaponPerk
                 affinity: kinetic
                 rules:
-                  - on: { {{trigger}} }
+                  - id: one-for-all-1
+                    on: { {{trigger}} }
                     then: [ { spawn: orb-of-power } ]
             """));
 
@@ -1520,7 +1577,8 @@ public sealed class RuleCatalogParsingTests
                 kind: armorMod
                 affinity: neutral
                 rules:
-                  - on: { kill: { via: "weapon:this" } }
+                  - id: reaper-1
+                    on: { kill: { via: "weapon:this" } }
                     then: [ { spawn: orb-of-power } ]
             """));
 
@@ -1540,7 +1598,8 @@ public sealed class RuleCatalogParsingTests
                 kind: fragment
                 affinity: arc
                 rules:
-                  - on:
+                  - id: spark-of-shock-1
+                    on:
                       kill:
                         via: weapon
                         tier: champion
@@ -1548,7 +1607,7 @@ public sealed class RuleCatalogParsingTests
                     then: [ { spawn: orb-of-power } ]
             """));
 
-        Assert.Equal("hunter/arc.yaml:10: kill cannot combine 'tier' and 'targetHas'", message);
+        Assert.Equal("hunter/arc.yaml:11: kill cannot combine 'tier' and 'targetHas'", message);
     }
 
     [Fact]
@@ -1616,14 +1675,15 @@ public sealed class RuleCatalogParsingTests
                 kind: fragment
                 affinity: arc
                 rules:
-                  - on: { abilityCast: grenade }
+                  - id: spark-of-shock-1
+                    on: { abilityCast: grenade }
                     then: [ { debuffTarget: jolt }, { teleport: far } ]
             """);
 
         var message = ParseInvalidCatalog(brokenGlossary, elements);
 
         Assert.Contains("glossary.yaml:2: status.affinity: 'arcane' is not one of:", message);
-        Assert.Contains("hunter/arc.yaml:8: unknown outcome 'teleport'", message);
+        Assert.Contains("hunter/arc.yaml:9: unknown outcome 'teleport'", message);
         Assert.DoesNotContain("unknown status", message);
     }
 
@@ -1704,23 +1764,26 @@ public sealed class RuleCatalogParsingTests
                 kind: fragment
                 affinity: arc
                 rules:
-                  - on: { abilityCast: grenade, pickUp: ionic-trace }
+                  - id: spark-of-shock-1
+                    on: { abilityCast: grenade, pickUp: ionic-trace }
                     then: []
-                  - on: { jump: high }
+                  - id: spark-of-shock-2
+                    on: { jump: high }
                     then: [ { grantEnergy: { to: grenade, amount: lots } } ]
-                  - on: { damage: { via: laser, tier: boss } }
+                  - id: spark-of-shock-3
+                    on: { damage: { via: laser, tier: boss } }
                     then: [ { spawn: { pickup: orb-of-power, count: 0 } } ]
                     chance: sometimes
             """));
 
-        Assert.Contains("hunter/arc.yaml:7: rule.on must have exactly one key, found 2: abilityCast, pickUp", message);
-        Assert.Contains("hunter/arc.yaml:8: rule.then must list at least one outcome", message);
-        Assert.Contains("hunter/arc.yaml:9: unknown trigger 'jump'", message);
-        Assert.Contains("hunter/arc.yaml:10: grantEnergy.amount: 'lots' is not a game value", message);
-        Assert.Contains("hunter/arc.yaml:11: damage.via: 'laser' is not a damage source", message);
-        Assert.Contains("hunter/arc.yaml:11: unknown key 'tier' in damage", message);
-        Assert.Contains("hunter/arc.yaml:12: spawn.count: '0' is not a whole number ≥ 1", message);
-        Assert.Contains("hunter/arc.yaml:13: rule.chance: 'sometimes' is not true or false", message);
+        Assert.Contains("hunter/arc.yaml:8: rule.on must have exactly one key, found 2: abilityCast, pickUp", message);
+        Assert.Contains("hunter/arc.yaml:9: rule.then must list at least one outcome", message);
+        Assert.Contains("hunter/arc.yaml:11: unknown trigger 'jump'", message);
+        Assert.Contains("hunter/arc.yaml:12: grantEnergy.amount: 'lots' is not a game value", message);
+        Assert.Contains("hunter/arc.yaml:14: damage.via: 'laser' is not a damage source", message);
+        Assert.Contains("hunter/arc.yaml:14: unknown key 'tier' in damage", message);
+        Assert.Contains("hunter/arc.yaml:15: spawn.count: '0' is not a whole number ≥ 1", message);
+        Assert.Contains("hunter/arc.yaml:16: rule.chance: 'sometimes' is not true or false", message);
     }
 
     [Fact]
@@ -1807,9 +1870,9 @@ public sealed class RuleCatalogParsingTests
     public void Parses_a_finisher_trigger_which_takes_no_keys()
     {
         var catalog = AssertOk(RuleCatalogParsing.ParseCatalog(
-            [Glossary, ToProbeFile("{ on: { finisher: {} }, when: [ { has: armor-charge } ], then: [ { spawn: orb-of-power } ], chance: true }")]));
-        var withKeys = ParseInvalidCatalog(Glossary, ToProbeFile("{ on: { finisher: { via: any } }, then: [ { spawn: orb-of-power } ] }"));
-        var notAMap = ParseInvalidCatalog(Glossary, ToProbeFile("{ on: { finisher: true }, then: [ { spawn: orb-of-power } ] }"));
+            [Glossary, ToProbeFile("{ id: probe-1, on: { finisher: {} }, when: [ { has: armor-charge } ], then: [ { spawn: orb-of-power } ], chance: true }")]));
+        var withKeys = ParseInvalidCatalog(Glossary, ToProbeFile("{ id: probe-1, on: { finisher: { via: any } }, then: [ { spawn: orb-of-power } ] }"));
+        var notAMap = ParseInvalidCatalog(Glossary, ToProbeFile("{ id: probe-1, on: { finisher: true }, then: [ { spawn: orb-of-power } ] }"));
 
         var rule = Assert.Single(catalog.Elements[ElementId.From("probe")].Rules);
         Assert.Equal(new Trigger.Finisher(), rule.On);
@@ -1823,9 +1886,9 @@ public sealed class RuleCatalogParsingTests
     public void Parses_a_critical_health_trigger_which_takes_no_keys_and_a_belowMax_condition_on_a_status_that_stacks()
     {
         var catalog = AssertOk(RuleCatalogParsing.ParseCatalog(
-            [Glossary, ToProbeFile("{ on: { criticalHealth: {} }, when: [ { belowMax: armor-charge } ], then: [ { removeBuff: armor-charge } ], chance: true }")]));
-        var withKeys = ParseInvalidCatalog(Glossary, ToProbeFile("{ on: { criticalHealth: { via: any } }, then: [ { removeBuff: armor-charge } ] }"));
-        var notStacking = ParseInvalidCatalog(Glossary, ToProbeFile("{ on: { criticalHealth: {} }, when: [ { belowMax: amplified } ], then: [ { removeBuff: amplified } ] }"));
+            [Glossary, ToProbeFile("{ id: probe-1, on: { criticalHealth: {} }, when: [ { belowMax: armor-charge } ], then: [ { removeBuff: armor-charge } ], chance: true }")]));
+        var withKeys = ParseInvalidCatalog(Glossary, ToProbeFile("{ id: probe-1, on: { criticalHealth: { via: any } }, then: [ { removeBuff: armor-charge } ] }"));
+        var notStacking = ParseInvalidCatalog(Glossary, ToProbeFile("{ id: probe-1, on: { criticalHealth: {} }, when: [ { belowMax: amplified } ], then: [ { removeBuff: amplified } ] }"));
 
         var rule = Assert.Single(catalog.Elements[ElementId.From("probe")].Rules);
         Assert.Equal(new Trigger.CriticalHealth(), rule.On);
@@ -1838,11 +1901,11 @@ public sealed class RuleCatalogParsingTests
     public void Parses_a_shield_broken_trigger_from_any_source_or_one_and_a_grant_of_stacks_by_copies()
     {
         var catalog = AssertOk(RuleCatalogParsing.ParseCatalog(
-            [Glossary, ToProbeFile("{ on: { shieldBroken: {} }, then: [ { applyBuff: { status: armor-charge, stacks: \"1 | 2\" } } ] }")]));
+            [Glossary, ToProbeFile("{ id: probe-1, on: { shieldBroken: {} }, then: [ { applyBuff: { status: armor-charge, stacks: \"1 | 2\" } } ] }")]));
         var byWeapon = AssertOk(RuleCatalogParsing.ParseCatalog(
-            [Glossary, ToProbeFile("{ on: { shieldBroken: { via: weapon } }, then: [ { applyBuff: armor-charge } ] }")]));
-        var withTier = ParseInvalidCatalog(Glossary, ToProbeFile("{ on: { shieldBroken: { tier: major } }, then: [ { applyBuff: armor-charge } ] }"));
-        var zeroStacks = ParseInvalidCatalog(Glossary, ToProbeFile("{ on: { shieldBroken: {} }, then: [ { applyBuff: { status: armor-charge, stacks: \"1 | 0\" } } ] }"));
+            [Glossary, ToProbeFile("{ id: probe-1, on: { shieldBroken: { via: weapon } }, then: [ { applyBuff: armor-charge } ] }")]));
+        var withTier = ParseInvalidCatalog(Glossary, ToProbeFile("{ id: probe-1, on: { shieldBroken: { tier: major } }, then: [ { applyBuff: armor-charge } ] }"));
+        var zeroStacks = ParseInvalidCatalog(Glossary, ToProbeFile("{ id: probe-1, on: { shieldBroken: {} }, then: [ { applyBuff: { status: armor-charge, stacks: \"1 | 0\" } } ] }"));
 
         var rule = Assert.Single(catalog.Elements[ElementId.From("probe")].Rules);
         Assert.Equal(new Trigger.ShieldBroken(new DamageSource.AnySource()), rule.On);
@@ -1857,8 +1920,8 @@ public sealed class RuleCatalogParsingTests
     public void Parses_an_energy_expended_trigger_for_a_grenade_melee_or_class_ability_but_not_a_super()
     {
         var catalog = AssertOk(RuleCatalogParsing.ParseCatalog(
-            [Glossary, ToProbeFile("{ on: { energyExpended: classAbility }, when: [ { has: armor-charge } ], then: [ { removeBuff: armor-charge } ] }")]));
-        var super = ParseInvalidCatalog(Glossary, ToProbeFile("{ on: { energyExpended: super }, then: [ { removeBuff: armor-charge } ] }"));
+            [Glossary, ToProbeFile("{ id: probe-1, on: { energyExpended: classAbility }, when: [ { has: armor-charge } ], then: [ { removeBuff: armor-charge } ] }")]));
+        var super = ParseInvalidCatalog(Glossary, ToProbeFile("{ id: probe-1, on: { energyExpended: super }, then: [ { removeBuff: armor-charge } ] }"));
 
         Assert.Equal(new Trigger.EnergyExpended(AbilityKind.ClassAbility), Assert.Single(catalog.Elements[ElementId.From("probe")].Rules).On);
         Assert.Contains("a Super has no energyExpended (use grenade, melee or classAbility)", super);
@@ -1868,8 +1931,8 @@ public sealed class RuleCatalogParsingTests
     public void Parses_an_energy_grant_to_the_least_charged_ability()
     {
         var catalog = AssertOk(RuleCatalogParsing.ParseCatalog(
-            [Glossary, ToProbeFile("{ on: { pickUp: orb-of-power }, then: [ { grantEnergy: { to: leastCharged, amount: \"10% | 13% | 15%\" } }, { grantEnergy: { to: leastCharged, amount: full } } ] }")]));
-        var unknown = ParseInvalidCatalog(Glossary, ToProbeFile("{ on: { pickUp: orb-of-power }, then: [ { grantEnergy: { to: lowest, amount: \"10%\" } } ] }"));
+            [Glossary, ToProbeFile("{ id: probe-1, on: { pickUp: orb-of-power }, then: [ { grantEnergy: { to: leastCharged, amount: \"10% | 13% | 15%\" } }, { grantEnergy: { to: leastCharged, amount: full } } ] }")]));
+        var unknown = ParseInvalidCatalog(Glossary, ToProbeFile("{ id: probe-1, on: { pickUp: orb-of-power }, then: [ { grantEnergy: { to: lowest, amount: \"10%\" } } ] }"));
 
         var rule = Assert.Single(catalog.Elements[ElementId.From("probe")].Rules);
         var least = Assert.IsType<Outcome.GrantLeastChargedEnergy>(rule.Then[0]);
@@ -1883,11 +1946,11 @@ public sealed class RuleCatalogParsingTests
     public void Parses_a_stat_change_in_points_with_a_guard_and_refuses_a_percent()
     {
         var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToPassiveProbeFile(
-            "{ effect: { modifyStat: { stat: grenade, change: \"+20 | +40 | +50\" } }, when: [ { has: armor-charge } ] }")]));
+            "{ id: probe-1, effect: { modifyStat: { stat: grenade, change: \"+20 | +40 | +50\" } }, when: [ { has: armor-charge } ] }")]));
         var plain = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToPassiveProbeFile(
-            "{ effect: { modifyStat: { stat: health, change: \"+20\" } } }")]));
-        var percent = ParseInvalidCatalog(Glossary, ToPassiveProbeFile("{ effect: { modifyStat: { stat: grenade, change: \"+20%\" } } }"));
-        var stat = ParseInvalidCatalog(Glossary, ToPassiveProbeFile("{ effect: { modifyStat: { stat: mobility, change: \"+20\" } } }"));
+            "{ id: probe-1, effect: { modifyStat: { stat: health, change: \"+20\" } } }")]));
+        var percent = ParseInvalidCatalog(Glossary, ToPassiveProbeFile("{ id: probe-1, effect: { modifyStat: { stat: grenade, change: \"+20%\" } } }"));
+        var stat = ParseInvalidCatalog(Glossary, ToPassiveProbeFile("{ id: probe-1, effect: { modifyStat: { stat: mobility, change: \"+20\" } } }"));
 
         var passive = Assert.Single(catalog.Elements[ElementId.From("probe")].Passives);
         var modify = Assert.IsType<Passive.ModifyStat>(passive.Modifier);
@@ -1903,8 +1966,8 @@ public sealed class RuleCatalogParsingTests
     public void Parses_a_guard_on_the_ability_the_step_casts_and_refuses_an_unknown_ability()
     {
         var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToPassiveProbeFile(
-            "{ effect: { resistDamage: \"66% [32%]\" }, when: [ { has: amplified }, { during: classAbility } ] }")]));
-        var unknown = ParseInvalidCatalog(Glossary, ToPassiveProbeFile("{ effect: { resistDamage: \"66% [32%]\" }, when: [ { during: dodge } ] }"));
+            "{ id: probe-1, effect: { resistDamage: \"66% [32%]\" }, when: [ { has: amplified }, { during: classAbility } ] }")]));
+        var unknown = ParseInvalidCatalog(Glossary, ToPassiveProbeFile("{ id: probe-1, effect: { resistDamage: \"66% [32%]\" }, when: [ { during: dodge } ] }"));
 
         var passive = Assert.Single(catalog.Elements[ElementId.From("probe")].Passives);
         Assert.Equal<Condition>([new Condition.HasBuff(ToStatus("amplified")), new Condition.During(AbilityKind.ClassAbility)], passive.When);
@@ -1915,7 +1978,7 @@ public sealed class RuleCatalogParsingTests
     public void Parses_a_weapon_of_your_supers_element()
     {
         var catalog = AssertOk(RuleCatalogParsing.ParseCatalog(
-            [Glossary, ToProbeFile("{ on: { kill: { via: \"weapon:harmonic\" } }, then: [ { spawn: orb-of-power } ] }")]));
+            [Glossary, ToProbeFile("{ id: probe-1, on: { kill: { via: \"weapon:harmonic\" } }, then: [ { spawn: orb-of-power } ] }")]));
 
         Assert.Equal(new Trigger.KillAny(new DamageSource.WeaponOfSuperType()), Assert.Single(catalog.Elements[ElementId.From("probe")].Rules).On);
     }
@@ -1931,10 +1994,12 @@ public sealed class RuleCatalogParsingTests
                 affinity: strand
                 hash: 923806249
                 rules:
-                  - on: { abilityCast: classAbility }
+                  - id: slice-1
+                    on: { abilityCast: classAbility }
                     then:
                       - { applyBuff: { status: amplified, duration: 8s } }
-                  - on: { kill: { via: weapon } }
+                  - id: slice-2
+                    on: { kill: { via: weapon } }
                     then:
                       - { grantEnergy: { to: grenade, amount: 10% } }
                 enhanced: {{enhanced}}
@@ -1971,7 +2036,7 @@ public sealed class RuleCatalogParsingTests
     public void An_enhanced_trait_adds_its_own_rules_after_the_perks()
     {
         var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToSliceFile(
-            "{ hash: 3422796781, rules: [ { on: { kill: { via: weapon } }, then: [ { spawn: orb-of-power } ], chance: true } ] }")]));
+            "{ hash: 3422796781, rules: [ { id: slice-3, on: { kill: { via: weapon } }, then: [ { spawn: orb-of-power } ], chance: true } ] }")]));
 
         var perk = catalog.Elements[ElementId.From("slice")];
         var enhanced = catalog.Elements[ElementId.From("slice-enhanced")];
@@ -2004,7 +2069,8 @@ public sealed class RuleCatalogParsingTests
                 affinity: strand
                 hash: 923806249
                 rules:
-                  - on: { abilityCast: classAbility }
+                  - id: slice-1
+                    on: { abilityCast: classAbility }
                     then:
                       - { applyBuff: { status: amplified, duration: 8s } }
                     reason: "Dodging arms it for 8 seconds."
@@ -2095,10 +2161,10 @@ public sealed class RuleCatalogParsingTests
     [Fact]
     public void Parses_a_reload_trigger_of_any_weapon_or_this_one_and_refuses_an_ability()
     {
-        var any = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToPerkProbeFile("{ on: { reload: {} }, then: [ { applyBuff: amplified } ] }")]));
-        var own = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToPerkProbeFile("{ on: { reload: { via: weapon:this } }, then: [ { applyBuff: amplified } ] }")]));
-        var ability = ParseInvalidCatalog(Glossary, ToPerkProbeFile("{ on: { reload: { via: grenade } }, then: [ { applyBuff: amplified } ] }"));
-        var onAMod = ParseInvalidCatalog(Glossary, ToProbeFile("{ on: { reload: { via: weapon:this } }, then: [ { applyBuff: amplified } ] }"));
+        var any = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToPerkProbeFile("{ id: probe-1, on: { reload: {} }, then: [ { applyBuff: amplified } ] }")]));
+        var own = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToPerkProbeFile("{ id: probe-1, on: { reload: { via: weapon:this } }, then: [ { applyBuff: amplified } ] }")]));
+        var ability = ParseInvalidCatalog(Glossary, ToPerkProbeFile("{ id: probe-1, on: { reload: { via: grenade } }, then: [ { applyBuff: amplified } ] }"));
+        var onAMod = ParseInvalidCatalog(Glossary, ToProbeFile("{ id: probe-1, on: { reload: { via: weapon:this } }, then: [ { applyBuff: amplified } ] }"));
 
         Assert.Equal(new Trigger.Reload(new DamageSource.AnySource()), Assert.Single(any.Elements[ElementId.From("probe")].Rules).On);
         Assert.Equal(new Trigger.Reload(new DamageSource.ThisWeapon()), Assert.Single(own.Elements[ElementId.From("probe")].Rules).On);
@@ -2109,9 +2175,9 @@ public sealed class RuleCatalogParsingTests
     [Fact]
     public void Parses_a_reload_outcome_of_this_weapon_or_a_slot_and_refuses_any_weapon()
     {
-        var own = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToPerkProbeFile("{ on: { abilityCast: grenade }, then: [ { reloadWeapon: weapon:this } ] }")]));
-        var slot = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToProbeFile("{ on: { abilityCast: grenade }, then: [ { reloadWeapon: slot:power } ] }")]));
-        var anyWeapon = ParseInvalidCatalog(Glossary, ToPerkProbeFile("{ on: { abilityCast: grenade }, then: [ { reloadWeapon: weapon } ] }"));
+        var own = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToPerkProbeFile("{ id: probe-1, on: { abilityCast: grenade }, then: [ { reloadWeapon: weapon:this } ] }")]));
+        var slot = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToProbeFile("{ id: probe-1, on: { abilityCast: grenade }, then: [ { reloadWeapon: slot:power } ] }")]));
+        var anyWeapon = ParseInvalidCatalog(Glossary, ToPerkProbeFile("{ id: probe-1, on: { abilityCast: grenade }, then: [ { reloadWeapon: weapon } ] }"));
 
         Assert.Equal(new Outcome.ReloadWeapon(new DamageSource.ThisWeapon()), Assert.Single(Assert.Single(own.Elements[ElementId.From("probe")].Rules).Then));
         Assert.Equal(new Outcome.ReloadWeapon(new DamageSource.WeaponInSlot(WeaponSlot.Power)), Assert.Single(Assert.Single(slot.Elements[ElementId.From("probe")].Rules).Then));
@@ -2129,13 +2195,14 @@ public sealed class RuleCatalogParsingTests
                 affinity: neutral
                 hash: 3523296417
                 rules:
-                  - on: { kill: { via: weapon:this } }
+                  - id: probe-1
+                    on: { kill: { via: weapon:this } }
                     then:
                       - { grantEnergy: { to: grenade, amount: "10%", byArchetype: { archetypes: [shotgun, glaive], amount: "20%" } } }
                 enhanced: { hash: 1906147653, values: { "10%": "11%", "20%": "22%" } }
             """);
         var full = ParseInvalidCatalog(Glossary, ToPerkProbeFile(
-            "{ on: { kill: { via: weapon:this } }, then: [ { grantEnergy: { to: grenade, amount: full, byArchetype: { archetypes: [shotgun], amount: \"20%\" } } } ] }"));
+            "{ id: probe-1, on: { kill: { via: weapon:this } }, then: [ { grantEnergy: { to: grenade, amount: full, byArchetype: { archetypes: [shotgun], amount: \"20%\" } } } ] }"));
 
         var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, file]));
 
@@ -2144,6 +2211,91 @@ public sealed class RuleCatalogParsingTests
         var enhanced = Assert.IsType<Outcome.GrantEnergy>(Assert.Single(Assert.Single(catalog.Elements[ElementId.From("probe-enhanced")].Rules).Then));
         Assert.Equal(new EnergyGrant.ByArchetype(new GameValue.Known(0.11m), ["shotgun", "glaive"], new GameValue.Known(0.22m)), enhanced.Amount, new EnergyGrantComparer());
         Assert.Contains("byArchetype needs an amount that is a fraction of one charge, not full", full);
+    }
+
+    // ── Rule ids (ADRs D40) ──────────────────────────────────────────────────────────────
+
+    [Fact]
+    public void Every_rule_and_passive_has_its_elements_id_and_a_number_and_a_gap_is_fine()
+    {
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToElementsFile("mods/armor.yaml", """
+            elements:
+              - id: probe
+                name: Probe
+                kind: armorMod
+                affinity: neutral
+                rules:
+                  - id: probe-1
+                    on: { abilityCast: grenade }
+                    then: [ { spawn: orb-of-power } ]
+                  - id: probe-3
+                    on: { abilityCast: melee }
+                    then: [ { spawn: orb-of-power } ]
+                passives:
+                  - id: probe-4
+                    effect: { resistDamage: "10%" }
+            """)]));
+
+        var probe = catalog.Elements[ElementId.From("probe")];
+        Assert.Equal([RuleId.From("probe-1"), RuleId.From("probe-3")], probe.Rules.Select(rule => rule.Id));
+        Assert.Equal(RuleId.From("probe-4"), Assert.Single(probe.Passives).Id);
+    }
+
+    [Fact]
+    public void A_rule_or_passive_without_an_id_is_an_error()
+    {
+        var rule = ParseInvalidCatalog(Glossary, ToElementsFile("mods/armor.yaml", """
+            elements:
+              - id: probe
+                name: Probe
+                kind: armorMod
+                affinity: neutral
+                rules:
+                  - on: { abilityCast: grenade }
+                    then: [ { spawn: orb-of-power } ]
+            """));
+        var passive = ParseInvalidCatalog(Glossary, ToPassiveProbeFile("{ effect: { resistDamage: \"10%\" } }"));
+
+        Assert.Equal("mods/armor.yaml:7: rule is missing 'id'", rule);
+        Assert.Contains("passive is missing 'id'", passive);
+    }
+
+    [Theory]
+    [InlineData("other-1", "rule.id: 'other-1' is not probe-<number> (its element's id, a dash and a number from 1: probe-1)")]
+    [InlineData("probe", "rule.id: 'probe' is not probe-<number>")]
+    [InlineData("probe-0", "rule.id: 'probe-0' is not probe-<number>")]
+    [InlineData("probe-01", "rule.id: 'probe-01' is not probe-<number>")]
+    [InlineData("probe-x", "rule.id: 'probe-x' is not probe-<number>")]
+    [InlineData("Probe-1", "is not a kebab-case rule id")]
+    public void A_rule_id_is_its_elements_id_a_dash_and_a_number_from_1(string id, string expected)
+    {
+        var message = ParseInvalidCatalog(Glossary, ToProbeFile($"{{ id: {id}, on: {{ abilityCast: grenade }}, then: [ {{ spawn: orb-of-power }} ] }}"));
+
+        Assert.Contains(expected, message);
+    }
+
+    [Fact]
+    public void A_number_given_twice_in_an_element_is_an_error_at_the_second_even_in_its_passives_or_enhanced_trait()
+    {
+        var passive = ParseInvalidCatalog(Glossary, ToElementsFile("mods/armor.yaml", """
+            elements:
+              - id: probe
+                name: Probe
+                kind: armorMod
+                affinity: neutral
+                rules:
+                  - id: probe-1
+                    on: { abilityCast: grenade }
+                    then: [ { spawn: orb-of-power } ]
+                passives:
+                  - id: probe-1
+                    effect: { resistDamage: "10%" }
+            """));
+        var enhanced = ParseInvalidCatalog(Glossary, ToSliceFile(
+            "{ hash: 3422796781, rules: [ { id: slice-2, on: { kill: { via: weapon } }, then: [ { spawn: orb-of-power } ] } ] }"));
+
+        Assert.Equal("mods/armor.yaml:11: passive.id: 'probe-1' is given twice in 'probe': each of its rules and passives has a number of its own", passive);
+        Assert.Contains("enhanced rule.id: 'slice-2' is given twice in 'slice'", enhanced);
     }
 
     /// <summary>Grants by archetype hold an array, which records don't compare by content.</summary>

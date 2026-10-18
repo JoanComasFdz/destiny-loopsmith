@@ -65,10 +65,14 @@ also mention it in the rule's `reason`. Something that only a creator says becom
   comment. A count the game shows as a stacking status gets `maxStacks`, and its threshold is a
   `stacksMaxed` trigger or an `atMax` condition (D3).
   Each `reason` is a short paraphrase of the source sentence the rule encodes. Ids are kebab-case slugs.
-  Keys are camelCase. Put the element in the file the format prescribes (`rules/<class>/<subclass>.yaml`
-  for abilities, aspects and fragments, `rules/exotics/armor.yaml`, `rules/armor-sets/*.yaml`,
-  `rules/mods/armor.yaml`, `rules/artifact/current.yaml`, `rules/weapons/perks.yaml`,
-  `rules/keywords/*.yaml`).
+  Keys are camelCase. Put the element in the file its own keys name (docs/rule-format.md, "Files"; ADRs D40;
+  `RuleFileGroupingTests` holds it): a class's super, melee, aspect or jump in `rules/<class>/<subclass>/<area>.yaml`
+  (`rules/hunter/arc/melees.yaml`), a subclass's grenade or fragment every class gets in
+  `rules/all-classes/<subclass>/<area>.yaml` with no `class`, a class ability in `rules/<class>/class-abilities.yaml`, a
+  class's exotic armor in `rules/<class>/exotic-armor.yaml`; the rest by where it comes from (`rules/keywords/`,
+  `rules/mods/`, `rules/weapons/perks.yaml`, `rules/exotics/weapons.yaml`, `rules/artifact/current.yaml`,
+  `rules/armor-sets/`). Give every rule and passive an `id`: the element's id, a dash and the next number of its element
+  (`combination-blow-3`), never reusing one.
 - **Do not bend the format.** If a cause and effect cannot be expressed (an unsupported trigger such as a
   Champion stun, a condition such as "target lacks a debuff", a stack level below the max), do not
   approximate it with a misleading rule. Report it as a format gap, include the source text (paraphrased

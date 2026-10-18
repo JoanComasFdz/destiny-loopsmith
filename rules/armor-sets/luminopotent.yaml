@@ -12,7 +12,8 @@ elements:
     source: "compendium/2026-10-09/Armor Perks#57"
     rules: []
     passives:
-      - effect:
+      - id: luminopotent-2pc-1
+        effect:
           modifyWeaponStats:
             archetypes: [linear-fusion-rifle, fusion-rifle, heat-weapon]
             changes:
@@ -33,7 +34,8 @@ elements:
     rules:
       # "with Jolt" kills are covered too: Jolt only chains off a jolted pack, and the target is
       # that pack (ADRs D7).
-      - on: { kill: { via: any, targetHas: [jolt] } }
+      - id: luminopotent-4pc-1
+        on: { kill: { via: any, targetHas: [jolt] } }
         then:
           - { spawn: ionic-trace }
         reason: "Anything that dies while jolted, or to Jolt itself, drops an Ionic Trace, with no cooldown."

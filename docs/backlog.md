@@ -7,7 +7,7 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
 ## Data
 
 - **Compendium parser** — the snapshots were ingested by hand: the 2026-10-09 one into the Skip Grenade build's rules,
-  the 2026-10-13 one into the rest of the Arcstrider (`rules/hunter/arc.yaml`), the weapon mods
+  the 2026-10-13 one into the rest of the Arcstrider (`rules/hunter/`, `rules/all-classes/arc/`), the weapon mods
   (`rules/mods/weapons.yaml`), `rules/mods/chest.yaml` and some keywords (`compendium/<date>/<tab>#<row>` provenance;
   source disagreements in [builds/skip-grenade-hunter/discrepancies.md](../builds/skip-grenade-hunter/discrepancies.md)).
   The Compendium check (`CompendiumReading`, requirements FR-11) reads the subclass tabs, Class Abilities, Armor Mods,
@@ -41,7 +41,7 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
 
 ## Rule format gaps (what the Skip Grenade build couldn't express)
 
-- **The rest of the Arc Hunter** (`rules/hunter/arc.yaml`: every Arcstrider plug is authored, compendium/2026-10-13).
+- **The rest of the Arc Hunter** (`rules/hunter/` and `rules/all-classes/arc/`: every Arcstrider plug is authored, compendium/2026-10-13).
   What its elements couldn't express, so they are `inert` or fire on more than they should:
   - steps that don't exist: taking damage at critical health (Spark of Instinct's jolting burst — the only one that
     would change a loop: its Jolt feeds Spark of Ions and Lethal Current), being hit by a melee

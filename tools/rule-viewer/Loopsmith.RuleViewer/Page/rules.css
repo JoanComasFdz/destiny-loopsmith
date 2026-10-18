@@ -34,7 +34,8 @@ svg{display:block}
 .rgroup h3 .bmask img{inset:4px;width:14px;height:14px}
 .rgroup h3 .bmask svg{width:22px;height:22px}
 .rgroup h3 small{font:500 11px var(--mono);letter-spacing:0}
-.flow{position:relative;display:flex;align-items:center;gap:52px;padding:10px 2px;border-top:1px solid var(--line);width:max-content}
+.flow{position:relative;display:flex;align-items:center;gap:52px;padding:26px 2px 10px;border-top:1px solid var(--line);width:max-content}
+.flow .rname{position:absolute;top:6px;left:2px;font:500 11px var(--mono);color:var(--muted)}
 .flow .seg{position:relative;z-index:1;display:flex;gap:8px}
 .flow .tcol,.flow .rcol{flex-direction:column;align-items:stretch}
 .flow .ccol{flex-direction:row;align-items:center;gap:40px}

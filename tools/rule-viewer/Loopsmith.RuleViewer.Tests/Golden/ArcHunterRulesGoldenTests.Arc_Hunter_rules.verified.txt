@@ -61,189 +61,189 @@
 ## Every rule of + what builds on it
 
 ### Class ability (11)
-gamblers-dodge#0: [Trigger] Class ability (Dodge) ➜ [Subclass ability · Class ability] Gambler's Dodge (equipped) ➜ [Effect] Melee energy (?)
-lethal-current#1: [Trigger] Class ability (Dodge) ➜ [Subclass aspect] Lethal Current (equipped) ➜ [Buff] Lethal Current
-bomber#0: [Trigger] Class ability (Dodge) ➜ [Armor mod] Bomber (equipped) ➜ [Effect] Grenade energy (12% | 17% | 20%)
-distribution#0: [Trigger] Class ability (Dodge) ➜ [Armor mod] Distribution (equipped) ➜ [Effect] Grenade energy (4% | 6% | 7%), [Effect] Melee energy (4% | 6% | 7%), [Effect] Class ability energy (4% | 6% | 7%), [Effect] Super energy (2% | 3% | 4%)
-dynamo#0: [Trigger] Class ability (Dodge) ➜ [Armor mod] Dynamo (equipped) ➜ [Effect] Super energy (?)
-outreach#0: [Trigger] Class ability (Dodge) ➜ [Armor mod] Outreach (equipped) ➜ [Effect] Melee energy (12% | 17% | 20%)
-powerful-attraction#0: [Trigger] Class ability (Dodge) ➜ [Armor mod] Powerful Attraction (equipped) ➜ [Pickup] Orb of Power (collects)
-reaper#0: [Trigger] Class ability (Dodge) ➜ [Armor mod] Reaper (equipped) ➜ [Buff] Reaper (10s)
-slice#0: [Trigger] Class ability (Dodge) ➜ [Weapon perk] Slice (equipped) ➜ [Buff] Slice (8s)
-slice-enhanced#0: [Trigger] Class ability (Dodge) ➜ [Weapon perk] Slice (enhanced) (equipped) ➜ [Buff] Slice (9s)
-utility-kickstart#0: [Trigger] Class ability (last charge) (Dodge) ➜ [Armor mod] Utility Kickstart (equipped) + [Buff] Armor Charge (on you) ➜ [Effect] Class ability energy (16.2% | 21.7% | 28.4% | 34.4% | 38.4% | 41.3% | 43.4% | 45% by charges from 2), [Buff] Armor Charge (ends · spends all)
+gamblers-dodge#0 hunter-class-abilities-gamblers-dodge-1: [Trigger] Class ability (Dodge) ➜ [Subclass ability · Class ability] Gambler's Dodge (equipped) ➜ [Effect] Melee energy (?)
+lethal-current#1 hunter-arc-aspects-lethal-current-2: [Trigger] Class ability (Dodge) ➜ [Subclass aspect] Lethal Current (equipped) ➜ [Buff] Lethal Current
+bomber#0 mods-armor-bomber-1: [Trigger] Class ability (Dodge) ➜ [Armor mod] Bomber (equipped) ➜ [Effect] Grenade energy (12% | 17% | 20%)
+distribution#0 mods-class-item-distribution-1: [Trigger] Class ability (Dodge) ➜ [Armor mod] Distribution (equipped) ➜ [Effect] Grenade energy (4% | 6% | 7%), [Effect] Melee energy (4% | 6% | 7%), [Effect] Class ability energy (4% | 6% | 7%), [Effect] Super energy (2% | 3% | 4%)
+dynamo#0 mods-helmet-dynamo-1: [Trigger] Class ability (Dodge) ➜ [Armor mod] Dynamo (equipped) ➜ [Effect] Super energy (?)
+outreach#0 mods-class-item-outreach-1: [Trigger] Class ability (Dodge) ➜ [Armor mod] Outreach (equipped) ➜ [Effect] Melee energy (12% | 17% | 20%)
+powerful-attraction#0 mods-armor-powerful-attraction-1: [Trigger] Class ability (Dodge) ➜ [Armor mod] Powerful Attraction (equipped) ➜ [Pickup] Orb of Power (collects)
+reaper#0 mods-armor-reaper-1: [Trigger] Class ability (Dodge) ➜ [Armor mod] Reaper (equipped) ➜ [Buff] Reaper (10s)
+slice#0 weapons-perks-slice-1: [Trigger] Class ability (Dodge) ➜ [Weapon perk] Slice (equipped) ➜ [Buff] Slice (8s)
+slice-enhanced#0 weapons-perks-slice-1: [Trigger] Class ability (Dodge) ➜ [Weapon perk] Slice (enhanced) (equipped) ➜ [Buff] Slice (9s)
+utility-kickstart#0 mods-class-item-utility-kickstart-1: [Trigger] Class ability (last charge) (Dodge) ➜ [Armor mod] Utility Kickstart (equipped) + [Buff] Armor Charge (on you) ➜ [Effect] Class ability energy (16.2% | 21.7% | 28.4% | 34.4% | 38.4% | 41.3% | 43.4% | 45% by charges from 2), [Buff] Armor Charge (ends · spends all)
 
 ### Air class ability (1)
-ascension#0: [Trigger] Air class ability (Air dodge) ➜ [Subclass aspect] Ascension (equipped) ➜ [Buff] Amplified, [Debuff] Jolt
+ascension#0 hunter-arc-aspects-ascension-1: [Trigger] Air class ability (Air dodge) ➜ [Subclass aspect] Ascension (equipped) ➜ [Buff] Amplified, [Debuff] Jolt
 
 ### Melee (11)
-combination-blow#0.0: [Trigger] Melee kill ➜ [Subclass ability · Melee] Combination Blow (equipped) ➜ [Effect] Class ability energy (100%), [Effect] Health (?), [Buff] Combination Blow
-disorienting-blow#0: [Trigger] Melee hit ➜ [Subclass ability · Melee] Disorienting Blow (equipped) ➜ [Buff] Amplified, [Buff] Bolt Charge (×2), [Debuff] Blind (8.5s)
-lethal-current#0: [Trigger] Melee hit ➜ [Subclass aspect] Lethal Current (equipped) + [Debuff] Jolt (on the target) ➜ [Debuff] Blind
-lethal-current#2.0: [Trigger] Melee hit ➜ [Subclass aspect] Lethal Current (equipped) + [Buff] Lethal Current (on you) ➜ [Strike] Lethal Current strike, [Debuff] Jolt, [Buff] Lethal Current (ends)
-rule:bolt-charge#0.1: [Trigger] Melee hit ➜ [Buff] Bolt Charge (at max stacks) ➜ [Strike] Bolt Charge strike, [Buff] Bolt Charge (ends)
-rule:jolt#1.1: [Trigger] Melee hit ➜ [Debuff] Jolt (on the target) ➜ [Strike] Jolt strike
-focusing-strike#0.0: [Trigger] Melee hit ➜ [Armor mod] Focusing Strike (equipped) ➜ [Effect] Class ability energy (12% | 17% | 20%)
-hands-on#0.0: [Trigger] Melee kill ➜ [Armor mod] Hands-On (equipped) ➜ [Effect] Super energy (?)
-heavy-handed#0.0: [Trigger] Melee kill ➜ [Armor mod] Heavy Handed (equipped) ➜ [Pickup] Orb of Power
-impact-induction#0.0: [Trigger] Melee hit ➜ [Armor mod] Impact Induction (equipped) ➜ [Effect] Grenade energy (12% | 17% | 20%)
-melee-kickstart#0: [Trigger] Melee (last charge) ➜ [Armor mod] Melee Kickstart (equipped) + [Buff] Armor Charge (on you) ➜ [Effect] Melee energy (16.2% | 21.7% | 28.4% | 34.4% | 38.4% | 41.3% | 43.4% | 45% by charges from 2), [Buff] Armor Charge (ends · spends all)
+combination-blow#0.0 hunter-arc-melees-combination-blow-1: [Trigger] Melee kill ➜ [Subclass ability · Melee] Combination Blow (equipped) ➜ [Effect] Class ability energy (100%), [Effect] Health (?), [Buff] Combination Blow
+disorienting-blow#0 hunter-arc-melees-disorienting-blow-1: [Trigger] Melee hit ➜ [Subclass ability · Melee] Disorienting Blow (equipped) ➜ [Buff] Amplified, [Buff] Bolt Charge (×2), [Debuff] Blind (8.5s)
+lethal-current#0 hunter-arc-aspects-lethal-current-1: [Trigger] Melee hit ➜ [Subclass aspect] Lethal Current (equipped) + [Debuff] Jolt (on the target) ➜ [Debuff] Blind
+lethal-current#2.0 hunter-arc-aspects-lethal-current-3: [Trigger] Melee hit ➜ [Subclass aspect] Lethal Current (equipped) + [Buff] Lethal Current (on you) ➜ [Strike] Lethal Current strike, [Debuff] Jolt, [Buff] Lethal Current (ends)
+rule:bolt-charge#0.1 keywords-arc-bolt-charge-1: [Trigger] Melee hit ➜ [Buff] Bolt Charge (at max stacks) ➜ [Strike] Bolt Charge strike, [Buff] Bolt Charge (ends)
+rule:jolt#1.1 keywords-arc-jolt-2: [Trigger] Melee hit ➜ [Debuff] Jolt (on the target) ➜ [Strike] Jolt strike
+focusing-strike#0.0 mods-arms-focusing-strike-1: [Trigger] Melee hit ➜ [Armor mod] Focusing Strike (equipped) ➜ [Effect] Class ability energy (12% | 17% | 20%)
+hands-on#0.0 mods-helmet-hands-on-1: [Trigger] Melee kill ➜ [Armor mod] Hands-On (equipped) ➜ [Effect] Super energy (?)
+heavy-handed#0.0 mods-arms-heavy-handed-1: [Trigger] Melee kill ➜ [Armor mod] Heavy Handed (equipped) ➜ [Pickup] Orb of Power
+impact-induction#0.0 mods-armor-impact-induction-1: [Trigger] Melee hit ➜ [Armor mod] Impact Induction (equipped) ➜ [Effect] Grenade energy (12% | 17% | 20%)
+melee-kickstart#0 mods-arms-melee-kickstart-1: [Trigger] Melee (last charge) ➜ [Armor mod] Melee Kickstart (equipped) + [Buff] Armor Charge (on you) ➜ [Effect] Melee energy (16.2% | 21.7% | 28.4% | 34.4% | 38.4% | 41.3% | 43.4% | 45% by charges from 2), [Buff] Armor Charge (ends · spends all)
 
 ### Sliding melee (9)
-combination-blow#0.1: [Trigger] Sliding melee kill ➜ [Subclass ability · Melee] Combination Blow (equipped) ➜ [Effect] Class ability energy (100%), [Effect] Health (?), [Buff] Combination Blow
-lethal-current#2.1: [Trigger] Sliding melee hit ➜ [Subclass aspect] Lethal Current (equipped) + [Buff] Lethal Current (on you) ➜ [Strike] Lethal Current strike, [Debuff] Jolt, [Buff] Lethal Current (ends)
-tempest-strike#1: [Trigger] Sliding melee hit ➜ [Subclass aspect] Tempest Strike (equipped) ➜ [Debuff] Jolt
-rule:bolt-charge#0.2: [Trigger] Sliding melee hit ➜ [Buff] Bolt Charge (at max stacks) ➜ [Strike] Bolt Charge strike, [Buff] Bolt Charge (ends)
-rule:jolt#1.2: [Trigger] Sliding melee hit ➜ [Debuff] Jolt (on the target) ➜ [Strike] Jolt strike
-focusing-strike#0.1: [Trigger] Sliding melee hit ➜ [Armor mod] Focusing Strike (equipped) ➜ [Effect] Class ability energy (12% | 17% | 20%)
-hands-on#0.1: [Trigger] Sliding melee kill ➜ [Armor mod] Hands-On (equipped) ➜ [Effect] Super energy (?)
-heavy-handed#0.1: [Trigger] Sliding melee kill ➜ [Armor mod] Heavy Handed (equipped) ➜ [Pickup] Orb of Power
-impact-induction#0.1: [Trigger] Sliding melee hit ➜ [Armor mod] Impact Induction (equipped) ➜ [Effect] Grenade energy (12% | 17% | 20%)
+combination-blow#0.1 hunter-arc-melees-combination-blow-1: [Trigger] Sliding melee kill ➜ [Subclass ability · Melee] Combination Blow (equipped) ➜ [Effect] Class ability energy (100%), [Effect] Health (?), [Buff] Combination Blow
+lethal-current#2.1 hunter-arc-aspects-lethal-current-3: [Trigger] Sliding melee hit ➜ [Subclass aspect] Lethal Current (equipped) + [Buff] Lethal Current (on you) ➜ [Strike] Lethal Current strike, [Debuff] Jolt, [Buff] Lethal Current (ends)
+tempest-strike#1 hunter-arc-aspects-tempest-strike-2: [Trigger] Sliding melee hit ➜ [Subclass aspect] Tempest Strike (equipped) ➜ [Debuff] Jolt
+rule:bolt-charge#0.2 keywords-arc-bolt-charge-1: [Trigger] Sliding melee hit ➜ [Buff] Bolt Charge (at max stacks) ➜ [Strike] Bolt Charge strike, [Buff] Bolt Charge (ends)
+rule:jolt#1.2 keywords-arc-jolt-2: [Trigger] Sliding melee hit ➜ [Debuff] Jolt (on the target) ➜ [Strike] Jolt strike
+focusing-strike#0.1 mods-arms-focusing-strike-1: [Trigger] Sliding melee hit ➜ [Armor mod] Focusing Strike (equipped) ➜ [Effect] Class ability energy (12% | 17% | 20%)
+hands-on#0.1 mods-helmet-hands-on-1: [Trigger] Sliding melee kill ➜ [Armor mod] Hands-On (equipped) ➜ [Effect] Super energy (?)
+heavy-handed#0.1 mods-arms-heavy-handed-1: [Trigger] Sliding melee kill ➜ [Armor mod] Heavy Handed (equipped) ➜ [Pickup] Orb of Power
+impact-induction#0.1 mods-armor-impact-induction-1: [Trigger] Sliding melee hit ➜ [Armor mod] Impact Induction (equipped) ➜ [Effect] Grenade energy (12% | 17% | 20%)
 
 ### Grenade (13)
-flashbang-grenade#0: [Trigger] Grenade hit ➜ [Subclass ability · Grenade] Flashbang Grenade (equipped) ➜ [Debuff] Blind (5s)
-spark-of-shock#0: [Trigger] Grenade hit ➜ [Subclass fragment] Spark of Shock (equipped) ➜ [Debuff] Jolt
-rule:bolt-charge#0.0: [Trigger] Grenade hit ➜ [Buff] Bolt Charge (at max stacks) ➜ [Strike] Bolt Charge strike, [Buff] Bolt Charge (ends)
-rule:jolt#1.0: [Trigger] Grenade hit ➜ [Debuff] Jolt (on the target) ➜ [Strike] Jolt strike
-ashes-to-assets#0: [Trigger] Grenade kill ➜ [Armor mod] Ashes to Assets (equipped) ➜ [Effect] Super energy (?)
-bolstering-detonation#0: [Trigger] Grenade hit ➜ [Armor mod] Bolstering Detonation (equipped) ➜ [Effect] Class ability energy (12% | 17% | 20%)
-demolitionist#1: [Trigger] Grenade cast ➜ [Weapon perk] Demolitionist (equipped) ➜ [Effect] Reload
-demolitionist-enhanced#1: [Trigger] Grenade cast ➜ [Weapon perk] Demolitionist (enhanced) (equipped) ➜ [Effect] Reload
-firepower#0: [Trigger] Grenade kill ➜ [Armor mod] Firepower (equipped) ➜ [Pickup] Orb of Power
-grenade-kickstart#0: [Trigger] Grenade (last charge) ➜ [Armor mod] Grenade Kickstart (equipped) + [Buff] Armor Charge (on you) ➜ [Effect] Grenade energy (16.2% | 21.7% | 28.4% | 34.4% | 38.4% | 41.3% | 43.4% | 45% by charges from 2), [Buff] Armor Charge (ends · spends all)
-momentum-transfer#0: [Trigger] Grenade hit ➜ [Armor mod] Momentum Transfer (equipped) ➜ [Effect] Melee energy (12% | 17% | 20%)
-shinobus-vow#0: [Trigger] Grenade hit ➜ [Exotic armor] Shinobu's Vow (equipped) ➜ [Effect] Grenade energy (4.2%), [Buff] Bolt Charge
-shinobus-vow#3: [Trigger] Grenade cast ➜ [Exotic armor] Shinobu's Vow (equipped) + [Buff] New Tricks (on you) ➜ [Buff] New Tricks (ends)
+flashbang-grenade#0 all-classes-arc-grenades-flashbang-grenade-1: [Trigger] Grenade hit ➜ [Subclass ability · Grenade] Flashbang Grenade (equipped) ➜ [Debuff] Blind (5s)
+spark-of-shock#0 all-classes-arc-fragments-spark-of-shock-1: [Trigger] Grenade hit ➜ [Subclass fragment] Spark of Shock (equipped) ➜ [Debuff] Jolt
+rule:bolt-charge#0.0 keywords-arc-bolt-charge-1: [Trigger] Grenade hit ➜ [Buff] Bolt Charge (at max stacks) ➜ [Strike] Bolt Charge strike, [Buff] Bolt Charge (ends)
+rule:jolt#1.0 keywords-arc-jolt-2: [Trigger] Grenade hit ➜ [Debuff] Jolt (on the target) ➜ [Strike] Jolt strike
+ashes-to-assets#0 mods-armor-ashes-to-assets-1: [Trigger] Grenade kill ➜ [Armor mod] Ashes to Assets (equipped) ➜ [Effect] Super energy (?)
+bolstering-detonation#0 mods-arms-bolstering-detonation-1: [Trigger] Grenade hit ➜ [Armor mod] Bolstering Detonation (equipped) ➜ [Effect] Class ability energy (12% | 17% | 20%)
+demolitionist#1 weapons-perks-demolitionist-2: [Trigger] Grenade cast ➜ [Weapon perk] Demolitionist (equipped) ➜ [Effect] Reload
+demolitionist-enhanced#1 weapons-perks-demolitionist-2: [Trigger] Grenade cast ➜ [Weapon perk] Demolitionist (enhanced) (equipped) ➜ [Effect] Reload
+firepower#0 mods-arms-firepower-1: [Trigger] Grenade kill ➜ [Armor mod] Firepower (equipped) ➜ [Pickup] Orb of Power
+grenade-kickstart#0 mods-armor-grenade-kickstart-1: [Trigger] Grenade (last charge) ➜ [Armor mod] Grenade Kickstart (equipped) + [Buff] Armor Charge (on you) ➜ [Effect] Grenade energy (16.2% | 21.7% | 28.4% | 34.4% | 38.4% | 41.3% | 43.4% | 45% by charges from 2), [Buff] Armor Charge (ends · spends all)
+momentum-transfer#0 mods-arms-momentum-transfer-1: [Trigger] Grenade hit ➜ [Armor mod] Momentum Transfer (equipped) ➜ [Effect] Melee energy (12% | 17% | 20%)
+shinobus-vow#0 hunter-exotic-armor-shinobus-vow-1: [Trigger] Grenade hit ➜ [Exotic armor] Shinobu's Vow (equipped) ➜ [Effect] Grenade energy (4.2%), [Buff] Bolt Charge
+shinobus-vow#3 hunter-exotic-armor-shinobus-vow-4: [Trigger] Grenade cast ➜ [Exotic armor] Shinobu's Vow (equipped) + [Buff] New Tricks (on you) ➜ [Buff] New Tricks (ends)
 
 ### Finisher (11)
-spark-of-volts#0: [Trigger] Finisher ➜ [Subclass fragment] Spark of Volts (equipped) ➜ [Buff] Amplified, [Buff] Bolt Charge
-bulwark-finisher#0: [Trigger] Finisher ➜ [Armor mod] Bulwark Finisher (equipped) + [Buff] Armor Charge (3+ stacks) ➜ [Buff] Void Overshield (8s | 10s | 12s | 14s by stacks spent), [Buff] Armor Charge (ends)
-empowered-finish#0: [Trigger] Finisher ➜ [Armor mod] Empowered Finish (equipped) + [Buff] Armor Charge (not on you) ➜ [Buff] Armor Charge
-explosive-finisher#0: [Trigger] Finisher ➜ [Armor mod] Explosive Finisher (equipped) + [Buff] Armor Charge (3+ stacks) ➜ [Effect] Grenade energy (70% | 80% | 90% | 100% by stacks spent from x3), [Buff] Armor Charge (ends · spends all)
-healthy-finisher#0: [Trigger] Finisher ➜ [Armor mod] Healthy Finisher (equipped) + [Buff] Armor Charge (on you) ➜ [Effect] Health (100%), [Buff] Armor Charge (ends · spends 1)
-one-two-finisher#0: [Trigger] Finisher ➜ [Armor mod] One-Two Finisher (equipped) + [Buff] Armor Charge (3+ stacks) ➜ [Effect] Melee energy (70% | 80% | 90% | 100% by stacks spent from x3), [Buff] Armor Charge (ends · spends all)
-proximity-ward#0: [Trigger] Finisher ➜ [Armor mod] Proximity Ward (equipped) ➜ [Buff] Overshield
-restorative-finisher#0: [Trigger] Finisher ➜ [Armor mod] Restorative Finisher (equipped) + [Buff] Armor Charge (2+ stacks) ➜ [Effect] Least-charged ability energy (50%), [Buff] Armor Charge (ends · spends 2)
-snapload-finisher#0: [Trigger] Finisher ➜ [Armor mod] Snapload Finisher (equipped) + [Buff] Armor Charge (on you) ➜ [Buff] Armor Charge (ends · spends 1)
-special-finisher#0: [Trigger] Finisher ➜ [Armor mod] Special Finisher (equipped) + [Buff] Armor Charge (3+ stacks) ➜ [Buff] Armor Charge (ends · spends 3)
-utility-finisher#0: [Trigger] Finisher ➜ [Armor mod] Utility Finisher (equipped) + [Buff] Armor Charge (3+ stacks) ➜ [Effect] Class ability energy (70% | 80% | 90% | 100% by stacks spent from x3), [Buff] Armor Charge (ends · spends all)
+spark-of-volts#0 all-classes-arc-fragments-spark-of-volts-1: [Trigger] Finisher ➜ [Subclass fragment] Spark of Volts (equipped) ➜ [Buff] Amplified, [Buff] Bolt Charge
+bulwark-finisher#0 mods-class-item-bulwark-finisher-1: [Trigger] Finisher ➜ [Armor mod] Bulwark Finisher (equipped) + [Buff] Armor Charge (3+ stacks) ➜ [Buff] Void Overshield (8s | 10s | 12s | 14s by stacks spent), [Buff] Armor Charge (ends)
+empowered-finish#0 mods-class-item-empowered-finish-1: [Trigger] Finisher ➜ [Armor mod] Empowered Finish (equipped) + [Buff] Armor Charge (not on you) ➜ [Buff] Armor Charge
+explosive-finisher#0 mods-class-item-explosive-finisher-1: [Trigger] Finisher ➜ [Armor mod] Explosive Finisher (equipped) + [Buff] Armor Charge (3+ stacks) ➜ [Effect] Grenade energy (70% | 80% | 90% | 100% by stacks spent from x3), [Buff] Armor Charge (ends · spends all)
+healthy-finisher#0 mods-class-item-healthy-finisher-1: [Trigger] Finisher ➜ [Armor mod] Healthy Finisher (equipped) + [Buff] Armor Charge (on you) ➜ [Effect] Health (100%), [Buff] Armor Charge (ends · spends 1)
+one-two-finisher#0 mods-class-item-one-two-finisher-1: [Trigger] Finisher ➜ [Armor mod] One-Two Finisher (equipped) + [Buff] Armor Charge (3+ stacks) ➜ [Effect] Melee energy (70% | 80% | 90% | 100% by stacks spent from x3), [Buff] Armor Charge (ends · spends all)
+proximity-ward#0 mods-class-item-proximity-ward-1: [Trigger] Finisher ➜ [Armor mod] Proximity Ward (equipped) ➜ [Buff] Overshield
+restorative-finisher#0 mods-class-item-restorative-finisher-1: [Trigger] Finisher ➜ [Armor mod] Restorative Finisher (equipped) + [Buff] Armor Charge (2+ stacks) ➜ [Effect] Least-charged ability energy (50%), [Buff] Armor Charge (ends · spends 2)
+snapload-finisher#0 mods-class-item-snapload-finisher-1: [Trigger] Finisher ➜ [Armor mod] Snapload Finisher (equipped) + [Buff] Armor Charge (on you) ➜ [Buff] Armor Charge (ends · spends 1)
+special-finisher#0 mods-class-item-special-finisher-1: [Trigger] Finisher ➜ [Armor mod] Special Finisher (equipped) + [Buff] Armor Charge (3+ stacks) ➜ [Buff] Armor Charge (ends · spends 3)
+utility-finisher#0 mods-class-item-utility-finisher-1: [Trigger] Finisher ➜ [Armor mod] Utility Finisher (equipped) + [Buff] Armor Charge (3+ stacks) ➜ [Effect] Class ability energy (70% | 80% | 90% | 100% by stacks spent from x3), [Buff] Armor Charge (ends · spends all)
 
 ### Super (6)
-arc-staff#0: [Trigger] Super kill ➜ [Subclass super] Arc Staff (equipped) ➜ [Buff] Bolt Charge
-gathering-storm#0: [Trigger] Super hit ➜ [Subclass super] Gathering Storm (equipped) ➜ [Debuff] Jolt
-rule:bolt-charge#0.3: [Trigger] Super hit ➜ [Buff] Bolt Charge (at max stacks) ➜ [Strike] Bolt Charge strike, [Buff] Bolt Charge (ends)
-rule:jolt#1.3: [Trigger] Super hit ➜ [Debuff] Jolt (on the target) ➜ [Strike] Jolt strike
-rule:super#0: [Trigger] Super cast ➜ always ➜ [Buff] Super
-radiant-light#0: [Trigger] Super cast ➜ [Armor mod] Radiant Light (equipped) + [Buff] Armor Charge (on you) ➜ [Buff] Armor Charge
+arc-staff#0 hunter-arc-supers-arc-staff-1: [Trigger] Super kill ➜ [Subclass super] Arc Staff (equipped) ➜ [Buff] Bolt Charge
+gathering-storm#0 hunter-arc-supers-gathering-storm-1: [Trigger] Super hit ➜ [Subclass super] Gathering Storm (equipped) ➜ [Debuff] Jolt
+rule:bolt-charge#0.3 keywords-arc-bolt-charge-1: [Trigger] Super hit ➜ [Buff] Bolt Charge (at max stacks) ➜ [Strike] Bolt Charge strike, [Buff] Bolt Charge (ends)
+rule:jolt#1.3 keywords-arc-jolt-2: [Trigger] Super hit ➜ [Debuff] Jolt (on the target) ➜ [Strike] Jolt strike
+rule:super#0 keywords-super-super-1: [Trigger] Super cast ➜ always ➜ [Buff] Super
+radiant-light#0 mods-helmet-radiant-light-1: [Trigger] Super cast ➜ [Armor mod] Radiant Light (equipped) + [Buff] Armor Charge (on you) ➜ [Buff] Armor Charge
 
 ### Weapon (4)
-rule:jolt#0: [Trigger] Weapon hit ➜ [Debuff] Jolt (on the target) ➜ [Strike] Jolt strike
-horde-shuttle#0: [Trigger] Weapon sustained hit ➜ [Artifact perk] Horde Shuttle (equipped) + [Debuff] Unravel (on the target) ➜ [Summon] Threadling
-reaper#1: [Trigger] Weapon kill ➜ [Armor mod] Reaper (equipped) + [Buff] Reaper (on you) ➜ [Pickup] Orb of Power, [Buff] Reaper (ends)
-to-shreds#0: [Trigger] Weapon sustained hit ➜ [Artifact perk] To Shreds (equipped) + [Debuff] Sever (on the target) ➜ [Debuff] Unravel
+rule:jolt#0 keywords-arc-jolt-1: [Trigger] Weapon hit ➜ [Debuff] Jolt (on the target) ➜ [Strike] Jolt strike
+horde-shuttle#0 artifact-current-horde-shuttle-1: [Trigger] Weapon sustained hit ➜ [Artifact perk] Horde Shuttle (equipped) + [Debuff] Unravel (on the target) ➜ [Summon] Threadling
+reaper#1 mods-armor-reaper-2: [Trigger] Weapon kill ➜ [Armor mod] Reaper (equipped) + [Buff] Reaper (on you) ➜ [Pickup] Orb of Power, [Buff] Reaper (ends)
+to-shreds#0 artifact-current-to-shreds-1: [Trigger] Weapon sustained hit ➜ [Artifact perk] To Shreds (equipped) + [Debuff] Sever (on the target) ➜ [Debuff] Unravel
 
 ### Arc weapon (13)
-spark-of-beacons#0: [Trigger] Arc weapon kill ➜ [Subclass fragment] Spark of Beacons (equipped) + [Buff] Amplified (on you) ➜ [Debuff] Blind (chance)
-spark-of-discharge#1: [Trigger] Arc weapon 3+ kills ➜ [Subclass fragment] Spark of Discharge (equipped) ➜ [Pickup] Ionic Trace
-spark-of-discharge#2: [Trigger] Arc weapon fewer than 3 kills ➜ [Subclass fragment] Spark of Discharge (equipped) ➜ [Pickup] Ionic Trace (chance)
-arc-siphon#0: [Trigger] Arc weapon 2+ kills within 3s ➜ [Armor mod] Arc Siphon (equipped) ➜ [Pickup] Orb of Power
-arc-siphon#1: [Trigger] Arc weapon fewer than 2 kills ➜ [Armor mod] Arc Siphon (equipped) ➜ [Pickup] Orb of Power (chance)
-arc-stasis-dual-siphon#0: [Trigger] Arc weapon 2+ kills within 3s ➜ [Armor mod] Arc/Stasis Dual Siphon (equipped) ➜ [Pickup] Orb of Power
-arc-stasis-dual-siphon#1: [Trigger] Arc weapon fewer than 2 kills ➜ [Armor mod] Arc/Stasis Dual Siphon (equipped) ➜ [Pickup] Orb of Power (chance)
-arc-strand-siphon-combo#0: [Trigger] Arc weapon 2+ kills within 3s ➜ [Armor mod] Arc/Strand Siphon Combo (equipped) ➜ [Pickup] Orb of Power
-arc-strand-siphon-combo#1: [Trigger] Arc weapon fewer than 2 kills ➜ [Armor mod] Arc/Strand Siphon Combo (equipped) ➜ [Pickup] Orb of Power (chance)
-harmonic-siphon#0: [Trigger] Arc weapon 2+ kills within 3s ➜ [Armor mod] Harmonic Siphon (equipped) ➜ [Pickup] Orb of Power
-harmonic-siphon#1: [Trigger] Arc weapon fewer than 2 kills ➜ [Armor mod] Harmonic Siphon (equipped) ➜ [Pickup] Orb of Power (chance)
-kinetic-charge-siphon#2: [Trigger] Arc weapon 2+ kills within 3s ➜ [Armor mod] Kinetic Charge Siphon (equipped) ➜ [Pickup] Orb of Power
-kinetic-charge-siphon#3: [Trigger] Arc weapon fewer than 2 kills ➜ [Armor mod] Kinetic Charge Siphon (equipped) ➜ [Pickup] Orb of Power (chance)
+spark-of-beacons#0 all-classes-arc-fragments-spark-of-beacons-1: [Trigger] Arc weapon kill ➜ [Subclass fragment] Spark of Beacons (equipped) + [Buff] Amplified (on you) ➜ [Debuff] Blind (chance)
+spark-of-discharge#1 all-classes-arc-fragments-spark-of-discharge-2: [Trigger] Arc weapon 3+ kills ➜ [Subclass fragment] Spark of Discharge (equipped) ➜ [Pickup] Ionic Trace
+spark-of-discharge#2 all-classes-arc-fragments-spark-of-discharge-3: [Trigger] Arc weapon fewer than 3 kills ➜ [Subclass fragment] Spark of Discharge (equipped) ➜ [Pickup] Ionic Trace (chance)
+arc-siphon#0 mods-helmet-arc-siphon-1: [Trigger] Arc weapon 2+ kills within 3s ➜ [Armor mod] Arc Siphon (equipped) ➜ [Pickup] Orb of Power
+arc-siphon#1 mods-helmet-arc-siphon-2: [Trigger] Arc weapon fewer than 2 kills ➜ [Armor mod] Arc Siphon (equipped) ➜ [Pickup] Orb of Power (chance)
+arc-stasis-dual-siphon#0 mods-helmet-arc-stasis-dual-siphon-1: [Trigger] Arc weapon 2+ kills within 3s ➜ [Armor mod] Arc/Stasis Dual Siphon (equipped) ➜ [Pickup] Orb of Power
+arc-stasis-dual-siphon#1 mods-helmet-arc-stasis-dual-siphon-2: [Trigger] Arc weapon fewer than 2 kills ➜ [Armor mod] Arc/Stasis Dual Siphon (equipped) ➜ [Pickup] Orb of Power (chance)
+arc-strand-siphon-combo#0 mods-helmet-arc-strand-siphon-combo-1: [Trigger] Arc weapon 2+ kills within 3s ➜ [Armor mod] Arc/Strand Siphon Combo (equipped) ➜ [Pickup] Orb of Power
+arc-strand-siphon-combo#1 mods-helmet-arc-strand-siphon-combo-2: [Trigger] Arc weapon fewer than 2 kills ➜ [Armor mod] Arc/Strand Siphon Combo (equipped) ➜ [Pickup] Orb of Power (chance)
+harmonic-siphon#0 mods-armor-harmonic-siphon-1: [Trigger] Arc weapon 2+ kills within 3s ➜ [Armor mod] Harmonic Siphon (equipped) ➜ [Pickup] Orb of Power
+harmonic-siphon#1 mods-armor-harmonic-siphon-2: [Trigger] Arc weapon fewer than 2 kills ➜ [Armor mod] Harmonic Siphon (equipped) ➜ [Pickup] Orb of Power (chance)
+kinetic-charge-siphon#2 mods-helmet-kinetic-charge-siphon-3: [Trigger] Arc weapon 2+ kills within 3s ➜ [Armor mod] Kinetic Charge Siphon (equipped) ➜ [Pickup] Orb of Power
+kinetic-charge-siphon#3 mods-helmet-kinetic-charge-siphon-4: [Trigger] Arc weapon fewer than 2 kills ➜ [Armor mod] Kinetic Charge Siphon (equipped) ➜ [Pickup] Orb of Power (chance)
 
 ### Kinetic weapon (2)
-kinetic-charge-siphon#0: [Trigger] Kinetic weapon 2+ kills within 3s ➜ [Armor mod] Kinetic Charge Siphon (equipped) ➜ [Pickup] Orb of Power
-kinetic-charge-siphon#1: [Trigger] Kinetic weapon fewer than 2 kills ➜ [Armor mod] Kinetic Charge Siphon (equipped) ➜ [Pickup] Orb of Power (chance)
+kinetic-charge-siphon#0 mods-helmet-kinetic-charge-siphon-1: [Trigger] Kinetic weapon 2+ kills within 3s ➜ [Armor mod] Kinetic Charge Siphon (equipped) ➜ [Pickup] Orb of Power
+kinetic-charge-siphon#1 mods-helmet-kinetic-charge-siphon-2: [Trigger] Kinetic weapon fewer than 2 kills ➜ [Armor mod] Kinetic Charge Siphon (equipped) ➜ [Pickup] Orb of Power (chance)
 
 ### Stasis weapon (2)
-arc-stasis-dual-siphon#2: [Trigger] Stasis weapon 2+ kills within 3s ➜ [Armor mod] Arc/Stasis Dual Siphon (equipped) ➜ [Pickup] Orb of Power
-arc-stasis-dual-siphon#3: [Trigger] Stasis weapon fewer than 2 kills ➜ [Armor mod] Arc/Stasis Dual Siphon (equipped) ➜ [Pickup] Orb of Power (chance)
+arc-stasis-dual-siphon#2 mods-helmet-arc-stasis-dual-siphon-3: [Trigger] Stasis weapon 2+ kills within 3s ➜ [Armor mod] Arc/Stasis Dual Siphon (equipped) ➜ [Pickup] Orb of Power
+arc-stasis-dual-siphon#3 mods-helmet-arc-stasis-dual-siphon-4: [Trigger] Stasis weapon fewer than 2 kills ➜ [Armor mod] Arc/Stasis Dual Siphon (equipped) ➜ [Pickup] Orb of Power (chance)
 
 ### Strand weapon (2)
-arc-strand-siphon-combo#2: [Trigger] Strand weapon 2+ kills within 3s ➜ [Armor mod] Arc/Strand Siphon Combo (equipped) ➜ [Pickup] Orb of Power
-arc-strand-siphon-combo#3: [Trigger] Strand weapon fewer than 2 kills ➜ [Armor mod] Arc/Strand Siphon Combo (equipped) ➜ [Pickup] Orb of Power (chance)
+arc-strand-siphon-combo#2 mods-helmet-arc-strand-siphon-combo-3: [Trigger] Strand weapon 2+ kills within 3s ➜ [Armor mod] Arc/Strand Siphon Combo (equipped) ➜ [Pickup] Orb of Power
+arc-strand-siphon-combo#3 mods-helmet-arc-strand-siphon-combo-4: [Trigger] Strand weapon fewer than 2 kills ➜ [Armor mod] Arc/Strand Siphon Combo (equipped) ➜ [Pickup] Orb of Power (chance)
 
 ### Critical health (1)
-emergency-reinforcement#0: [Trigger] Critical health ➜ [Armor mod] Emergency Reinforcement (equipped) + [Buff] Armor Charge (3+ stacks) ➜ [Buff] Emergency Reinforcement (6s | 9s | 12s by stacks spent), [Buff] Armor Charge (ends)
+emergency-reinforcement#0 mods-chest-emergency-reinforcement-1: [Trigger] Critical health ➜ [Armor mod] Emergency Reinforcement (equipped) + [Buff] Armor Charge (3+ stacks) ➜ [Buff] Emergency Reinforcement (6s | 9s | 12s by stacks spent), [Buff] Armor Charge (ends)
 
 ### Any (9)
-flow-state#0: [Trigger] Any kill ➜ [Subclass aspect] Flow State (equipped) + [Debuff] Jolt (on the target) ➜ [Buff] Amplified
-tempest-strike#0: [Trigger] Any kill ➜ [Subclass aspect] Tempest Strike (equipped) + [Debuff] Jolt (on the target) ➜ [Buff] Bolt Charge
-spark-of-amplitude#0: [Trigger] Any 2+ kills within 4s ➜ [Subclass fragment] Spark of Amplitude (equipped) + [Buff] Amplified (on you) ➜ [Pickup] Orb of Power
-spark-of-amplitude#1: [Trigger] Any fewer than 2 kills ➜ [Subclass fragment] Spark of Amplitude (equipped) + [Buff] Amplified (on you) ➜ [Pickup] Orb of Power (chance)
-spark-of-brilliance#0: [Trigger] Any kill ➜ [Subclass fragment] Spark of Brilliance (equipped) + [Debuff] Blind (on the target) ➜ [Debuff] Blind (chance)
-spark-of-ions#0: [Trigger] Any kill ➜ [Subclass fragment] Spark of Ions (equipped) + [Debuff] Jolt (on the target) ➜ [Pickup] Ionic Trace
-dielectric#0: [Trigger] Any kill ➜ [Artifact perk] Dielectric (equipped) + [Debuff] Jolt (on the target) ➜ [Buff] Bolt Charge
-luminopotent-4pc#0: [Trigger] Any kill ➜ [Armor set bonus] Shock and Clear (equipped) + [Debuff] Jolt (on the target) ➜ [Pickup] Ionic Trace
-to-shreds#1: [Trigger] Any kill ➜ [Artifact perk] To Shreds (equipped) + [Debuff] Sever (on the target) ➜ [Effect] Health (? + allies), [Buff] Woven Mail (10s)
+flow-state#0 hunter-arc-aspects-flow-state-1: [Trigger] Any kill ➜ [Subclass aspect] Flow State (equipped) + [Debuff] Jolt (on the target) ➜ [Buff] Amplified
+tempest-strike#0 hunter-arc-aspects-tempest-strike-1: [Trigger] Any kill ➜ [Subclass aspect] Tempest Strike (equipped) + [Debuff] Jolt (on the target) ➜ [Buff] Bolt Charge
+spark-of-amplitude#0 all-classes-arc-fragments-spark-of-amplitude-1: [Trigger] Any 2+ kills within 4s ➜ [Subclass fragment] Spark of Amplitude (equipped) + [Buff] Amplified (on you) ➜ [Pickup] Orb of Power
+spark-of-amplitude#1 all-classes-arc-fragments-spark-of-amplitude-2: [Trigger] Any fewer than 2 kills ➜ [Subclass fragment] Spark of Amplitude (equipped) + [Buff] Amplified (on you) ➜ [Pickup] Orb of Power (chance)
+spark-of-brilliance#0 all-classes-arc-fragments-spark-of-brilliance-1: [Trigger] Any kill ➜ [Subclass fragment] Spark of Brilliance (equipped) + [Debuff] Blind (on the target) ➜ [Debuff] Blind (chance)
+spark-of-ions#0 all-classes-arc-fragments-spark-of-ions-1: [Trigger] Any kill ➜ [Subclass fragment] Spark of Ions (equipped) + [Debuff] Jolt (on the target) ➜ [Pickup] Ionic Trace
+dielectric#0 artifact-current-dielectric-1: [Trigger] Any kill ➜ [Artifact perk] Dielectric (equipped) + [Debuff] Jolt (on the target) ➜ [Buff] Bolt Charge
+luminopotent-4pc#0 armor-sets-luminopotent-luminopotent-4pc-1: [Trigger] Any kill ➜ [Armor set bonus] Shock and Clear (equipped) + [Debuff] Jolt (on the target) ➜ [Pickup] Ionic Trace
+to-shreds#1 artifact-current-to-shreds-2: [Trigger] Any kill ➜ [Artifact perk] To Shreds (equipped) + [Debuff] Sever (on the target) ➜ [Effect] Health (? + allies), [Buff] Woven Mail (10s)
 
 ### Bolt Charge (4)
-rule:bolt-charge#1: [Trigger] Bolt Charge gained ➜ always ➜ [Effect] Melee energy (2.5%)
-flashover#0: [Trigger] Bolt Charge at max ➜ [Artifact perk] Flashover (equipped) ➜ [Buff] Amplified (15s)
-shinobus-vow#1: [Trigger] Bolt Charge gained ➜ [Exotic armor] Shinobu's Vow (equipped) ➜ [Effect] Grenade energy (?)
-shinobus-vow#2: [Trigger] Bolt Charge at max ➜ [Exotic armor] Shinobu's Vow (equipped) ➜ [Effect] Grenade energy (~40%), [Effect] Health (? + allies), [Buff] New Tricks
+rule:bolt-charge#1 keywords-arc-bolt-charge-2: [Trigger] Bolt Charge gained ➜ always ➜ [Effect] Melee energy (2.5%)
+flashover#0 artifact-current-flashover-1: [Trigger] Bolt Charge at max ➜ [Artifact perk] Flashover (equipped) ➜ [Buff] Amplified (15s)
+shinobus-vow#1 hunter-exotic-armor-shinobus-vow-2: [Trigger] Bolt Charge gained ➜ [Exotic armor] Shinobu's Vow (equipped) ➜ [Effect] Grenade energy (?)
+shinobus-vow#2 hunter-exotic-armor-shinobus-vow-3: [Trigger] Bolt Charge at max ➜ [Exotic armor] Shinobu's Vow (equipped) ➜ [Effect] Grenade energy (~40%), [Effect] Health (? + allies), [Buff] New Tricks
 
 ### Bolt Charge strike (2)
-spark-of-ions#1: [Trigger] Bolt Charge strike kill ➜ [Subclass fragment] Spark of Ions (equipped) ➜ [Pickup] Ionic Trace
-defibrillating-blast#0: [Trigger] Bolt Charge strike hit ➜ [Artifact perk] Defibrillating Blast (equipped) ➜ [Effect] Health (?), [Debuff] Jolt
+spark-of-ions#1 all-classes-arc-fragments-spark-of-ions-2: [Trigger] Bolt Charge strike kill ➜ [Subclass fragment] Spark of Ions (equipped) ➜ [Pickup] Ionic Trace
+defibrillating-blast#0 artifact-current-defibrillating-blast-1: [Trigger] Bolt Charge strike hit ➜ [Artifact perk] Defibrillating Blast (equipped) ➜ [Effect] Health (?), [Debuff] Jolt
 
 ### Ionic Trace (3)
-spark-of-discharge#0: [Trigger] Pick up Ionic Trace ➜ [Subclass fragment] Spark of Discharge (equipped) ➜ [Buff] Bolt Charge
-rule:ionic-trace#0: [Trigger] Pick up Ionic Trace ➜ always ➜ [Effect] Grenade energy (11.25%), [Effect] Melee energy (11.25%), [Effect] Class ability energy (13.5%)
-elemental-charge#0: [Trigger] Pick up Ionic Trace ➜ [Armor mod] Elemental Charge (equipped) ➜ [Buff] Armor Charge (chance)
+spark-of-discharge#0 all-classes-arc-fragments-spark-of-discharge-1: [Trigger] Pick up Ionic Trace ➜ [Subclass fragment] Spark of Discharge (equipped) ➜ [Buff] Bolt Charge
+rule:ionic-trace#0 keywords-arc-ionic-trace-1: [Trigger] Pick up Ionic Trace ➜ always ➜ [Effect] Grenade energy (11.25%), [Effect] Melee energy (11.25%), [Effect] Class ability energy (13.5%)
+elemental-charge#0 mods-armor-elemental-charge-1: [Trigger] Pick up Ionic Trace ➜ [Armor mod] Elemental Charge (equipped) ➜ [Buff] Armor Charge (chance)
 
 ### Orb of Power (9)
-rule:orb-of-power#0: [Trigger] Pick up Orb of Power ➜ always ➜ [Effect] Super energy (?), [Buff] Armor Charge
-absolution#0: [Trigger] Pick up Orb of Power ➜ [Armor mod] Absolution (equipped) ➜ [Effect] Grenade energy (5% | 7.5% | 10%), [Effect] Melee energy (5% | 7.5% | 10%), [Effect] Class ability energy (5% | 7.5% | 10%)
-better-already#0: [Trigger] Pick up Orb of Power ➜ [Armor mod] Better Already (equipped) ➜ [Effect] Health (?)
-innervation#0: [Trigger] Pick up Orb of Power ➜ [Armor mod] Innervation (equipped) ➜ [Effect] Grenade energy (10% | 13% | 15%)
-insulation#0: [Trigger] Pick up Orb of Power ➜ [Armor mod] Insulation (equipped) ➜ [Effect] Class ability energy (4% | 5% | 6%)
-invigoration#0: [Trigger] Pick up Orb of Power ➜ [Armor mod] Invigoration (equipped) ➜ [Effect] Melee energy (10% | 13% | 15%)
-orbs-of-restoration#0: [Trigger] Pick up Orb of Power ➜ [Armor mod] Orbs of Restoration (equipped) ➜ [Effect] Least-charged ability energy (10% | 13% | 15%)
-recuperation#0: [Trigger] Pick up Orb of Power ➜ [Armor mod] Recuperation (equipped) ➜ [Effect] Health (?)
-unraveling-orbs#0: [Trigger] Pick up Orb of Power ➜ [Artifact perk] Unraveling Orbs (equipped) ➜ [Buff] Unraveling Rounds (14s)
+rule:orb-of-power#0 keywords-orb-of-power-orb-of-power-1: [Trigger] Pick up Orb of Power ➜ always ➜ [Effect] Super energy (?), [Buff] Armor Charge
+absolution#0 mods-legs-absolution-1: [Trigger] Pick up Orb of Power ➜ [Armor mod] Absolution (equipped) ➜ [Effect] Grenade energy (5% | 7.5% | 10%), [Effect] Melee energy (5% | 7.5% | 10%), [Effect] Class ability energy (5% | 7.5% | 10%)
+better-already#0 mods-legs-better-already-1: [Trigger] Pick up Orb of Power ➜ [Armor mod] Better Already (equipped) ➜ [Effect] Health (?)
+innervation#0 mods-legs-innervation-1: [Trigger] Pick up Orb of Power ➜ [Armor mod] Innervation (equipped) ➜ [Effect] Grenade energy (10% | 13% | 15%)
+insulation#0 mods-legs-insulation-1: [Trigger] Pick up Orb of Power ➜ [Armor mod] Insulation (equipped) ➜ [Effect] Class ability energy (4% | 5% | 6%)
+invigoration#0 mods-legs-invigoration-1: [Trigger] Pick up Orb of Power ➜ [Armor mod] Invigoration (equipped) ➜ [Effect] Melee energy (10% | 13% | 15%)
+orbs-of-restoration#0 mods-legs-orbs-of-restoration-1: [Trigger] Pick up Orb of Power ➜ [Armor mod] Orbs of Restoration (equipped) ➜ [Effect] Least-charged ability energy (10% | 13% | 15%)
+recuperation#0 mods-armor-recuperation-1: [Trigger] Pick up Orb of Power ➜ [Armor mod] Recuperation (equipped) ➜ [Effect] Health (?)
+unraveling-orbs#0 artifact-current-unraveling-orbs-1: [Trigger] Pick up Orb of Power ➜ [Artifact perk] Unraveling Orbs (equipped) ➜ [Buff] Unraveling Rounds (14s)
 
 ### Slice (2)
-slice#2: [Trigger] Slice at max ➜ [Weapon perk] Slice (equipped) ➜ [Buff] Slice (ends)
-slice-enhanced#2: [Trigger] Slice at max ➜ [Weapon perk] Slice (enhanced) (equipped) ➜ [Buff] Slice (ends)
+slice#2 weapons-perks-slice-3: [Trigger] Slice at max ➜ [Weapon perk] Slice (equipped) ➜ [Buff] Slice (ends)
+slice-enhanced#2 weapons-perks-slice-3: [Trigger] Slice at max ➜ [Weapon perk] Slice (enhanced) (equipped) ➜ [Buff] Slice (ends)
 
 ### This weapon (4)
-demolitionist#0: [Trigger] This weapon kill ➜ [Weapon perk] Demolitionist (equipped) ➜ [Effect] Grenade energy (10% (20% on fusion-rifle, glaive, shotgun, sniper-rifle))
-demolitionist-enhanced#0: [Trigger] This weapon kill ➜ [Weapon perk] Demolitionist (enhanced) (equipped) ➜ [Effect] Grenade energy (11% (22% on fusion-rifle, glaive, shotgun, sniper-rifle))
-slice#1: [Trigger] This weapon hit ➜ [Weapon perk] Slice (equipped) + [Buff] Slice (on you) ➜ [Buff] Slice (8s), [Debuff] Sever
-slice-enhanced#1: [Trigger] This weapon hit ➜ [Weapon perk] Slice (enhanced) (equipped) + [Buff] Slice (on you) ➜ [Buff] Slice (9s), [Debuff] Sever
+demolitionist#0 weapons-perks-demolitionist-1: [Trigger] This weapon kill ➜ [Weapon perk] Demolitionist (equipped) ➜ [Effect] Grenade energy (10% (20% on fusion-rifle, glaive, shotgun, sniper-rifle))
+demolitionist-enhanced#0 weapons-perks-demolitionist-1: [Trigger] This weapon kill ➜ [Weapon perk] Demolitionist (enhanced) (equipped) ➜ [Effect] Grenade energy (11% (22% on fusion-rifle, glaive, shotgun, sniper-rifle))
+slice#1 weapons-perks-slice-2: [Trigger] This weapon hit ➜ [Weapon perk] Slice (equipped) + [Buff] Slice (on you) ➜ [Buff] Slice (8s), [Debuff] Sever
+slice-enhanced#1 weapons-perks-slice-2: [Trigger] This weapon hit ➜ [Weapon perk] Slice (enhanced) (equipped) + [Buff] Slice (on you) ➜ [Buff] Slice (9s), [Debuff] Sever
 
 ### Threadling (1)
-horde-shuttle#1: [Trigger] Threadling hit ➜ [Artifact perk] Horde Shuttle (equipped) ➜ [Debuff] Sever
+horde-shuttle#1 artifact-current-horde-shuttle-2: [Trigger] Threadling hit ➜ [Artifact perk] Horde Shuttle (equipped) ➜ [Debuff] Sever
 
 ### Always on (24)
-combination-blow#p0: [Trigger] Always ➜ [Subclass ability · Melee] Combination Blow (equipped) + [Buff] Combination Blow (on you) ➜ [Effect] Damage bonus (? vs melee)
-arc-staff#p0: [Trigger] Always ➜ [Subclass super] Arc Staff (equipped) + [Buff] Super (on you) ➜ [Effect] Damage resistance (90% [PvP 53%])
-gathering-storm#p0: [Trigger] Always ➜ [Subclass super] Gathering Storm (equipped) + [Buff] Super (on you) ➜ [Effect] Damage resistance (90% [PvP 49%])
-storms-edge#p0: [Trigger] Always ➜ [Subclass super] Storm's Edge (equipped) + [Buff] Super (on you) ➜ [Effect] Damage resistance (90% [PvP 45%])
-flow-state#p0: [Trigger] Always ➜ [Subclass aspect] Flow State (equipped) + [Buff] Amplified (on you) + [Trigger] Class ability (under way) ➜ [Effect] Damage resistance (66% [PvP 32%])
-spark-of-frequency#p0: [Trigger] Always ➜ [Subclass fragment] Spark of Frequency (equipped) + [Buff] Amplified (on you) ➜ [Buff] Bolt Charge (adds to · +1 stack)
-spark-of-resistance#p0: [Trigger] Always ➜ [Subclass fragment] Spark of Resistance (equipped) ➜ [Effect] Damage resistance (25% [PvP 10%])
-rule:amplified#p0: [Trigger] Always ➜ [Buff] Amplified (on you) ➜ [Effect] Damage resistance (15% vs combatants)
-arc-weapon-surge#p0: [Trigger] Always ➜ [Armor mod] Arc Weapon Surge (equipped) + [Buff] Armor Charge (on you) ➜ [Effect] Damage bonus (+10% | +17% | +22% | +25% vs Arc weapon)
-class-font#p0: [Trigger] Always ➜ [Armor mod] Class Font (equipped) + [Buff] Armor Charge (on you) ➜ [Effect] Class stat (+20 | +40 | +50)
-emergency-reinforcement#p0: [Trigger] Always ➜ [Armor mod] Emergency Reinforcement (equipped) + [Buff] Emergency Reinforcement (on you) ➜ [Effect] Damage resistance (10%)
-flashover#p0: [Trigger] Always ➜ [Artifact perk] Flashover (equipped) ➜ [Effect] Damage bonus (+50% vs Bolt Charge)
-grenade-font#p0: [Trigger] Always ➜ [Armor mod] Grenade Font (equipped) + [Buff] Armor Charge (on you) ➜ [Effect] Grenade stat (+20 | +40 | +50)
-health-font#p0: [Trigger] Always ➜ [Armor mod] Health Font (equipped) + [Buff] Armor Charge (on you) ➜ [Effect] Health stat (+20 | +40 | +50)
-luminopotent-2pc#p0: [Trigger] Always ➜ [Armor set bonus] Ionic Overclock (equipped) + [Buff] Amplified (on you) ➜ [Effect] Weapon stats (handling ?, reload ?)
-kinetic-weapon-surge#p0: [Trigger] Always ➜ [Armor mod] Kinetic Weapon Surge (equipped) + [Buff] Armor Charge (on you) ➜ [Effect] Damage bonus (+10% | +17% | +22% | +25% vs Kinetic weapon)
-melee-font#p0: [Trigger] Always ➜ [Armor mod] Melee Font (equipped) + [Buff] Armor Charge (on you) ➜ [Effect] Melee stat (+20 | +40 | +50)
-shinobus-vow#p0: [Trigger] Always ➜ [Exotic armor] Shinobu's Vow (equipped) ➜ [Effect] Extra grenade charge (+1)
-solar-weapon-surge#p0: [Trigger] Always ➜ [Armor mod] Solar Weapon Surge (equipped) + [Buff] Armor Charge (on you) ➜ [Effect] Damage bonus (+10% | +17% | +22% | +25% vs Solar weapon)
-stasis-weapon-surge#p0: [Trigger] Always ➜ [Armor mod] Stasis Weapon Surge (equipped) + [Buff] Armor Charge (on you) ➜ [Effect] Damage bonus (+10% | +17% | +22% | +25% vs Stasis weapon)
-strand-weapon-surge#p0: [Trigger] Always ➜ [Armor mod] Strand Weapon Surge (equipped) + [Buff] Armor Charge (on you) ➜ [Effect] Damage bonus (+10% | +17% | +22% | +25% vs Strand weapon)
-super-font#p0: [Trigger] Always ➜ [Armor mod] Super Font (equipped) + [Buff] Armor Charge (on you) ➜ [Effect] Super stat (+20 | +40 | +50)
-void-weapon-surge#p0: [Trigger] Always ➜ [Armor mod] Void Weapon Surge (equipped) + [Buff] Armor Charge (on you) ➜ [Effect] Damage bonus (+10% | +17% | +22% | +25% vs Void weapon)
-weapons-font#p0: [Trigger] Always ➜ [Armor mod] Weapons Font (equipped) + [Buff] Armor Charge (on you) ➜ [Effect] Weapons stat (+20 | +40 | +50)
+combination-blow#p0 hunter-arc-melees-combination-blow-2: [Trigger] Always ➜ [Subclass ability · Melee] Combination Blow (equipped) + [Buff] Combination Blow (on you) ➜ [Effect] Damage bonus (? vs melee)
+arc-staff#p0 hunter-arc-supers-arc-staff-2: [Trigger] Always ➜ [Subclass super] Arc Staff (equipped) + [Buff] Super (on you) ➜ [Effect] Damage resistance (90% [PvP 53%])
+gathering-storm#p0 hunter-arc-supers-gathering-storm-2: [Trigger] Always ➜ [Subclass super] Gathering Storm (equipped) + [Buff] Super (on you) ➜ [Effect] Damage resistance (90% [PvP 49%])
+storms-edge#p0 hunter-arc-supers-storms-edge-1: [Trigger] Always ➜ [Subclass super] Storm's Edge (equipped) + [Buff] Super (on you) ➜ [Effect] Damage resistance (90% [PvP 45%])
+flow-state#p0 hunter-arc-aspects-flow-state-2: [Trigger] Always ➜ [Subclass aspect] Flow State (equipped) + [Buff] Amplified (on you) + [Trigger] Class ability (under way) ➜ [Effect] Damage resistance (66% [PvP 32%])
+spark-of-frequency#p0 all-classes-arc-fragments-spark-of-frequency-1: [Trigger] Always ➜ [Subclass fragment] Spark of Frequency (equipped) + [Buff] Amplified (on you) ➜ [Buff] Bolt Charge (adds to · +1 stack)
+spark-of-resistance#p0 all-classes-arc-fragments-spark-of-resistance-1: [Trigger] Always ➜ [Subclass fragment] Spark of Resistance (equipped) ➜ [Effect] Damage resistance (25% [PvP 10%])
+rule:amplified#p0 keywords-arc-amplified-1: [Trigger] Always ➜ [Buff] Amplified (on you) ➜ [Effect] Damage resistance (15% vs combatants)
+arc-weapon-surge#p0 mods-legs-arc-weapon-surge-1: [Trigger] Always ➜ [Armor mod] Arc Weapon Surge (equipped) + [Buff] Armor Charge (on you) ➜ [Effect] Damage bonus (+10% | +17% | +22% | +25% vs Arc weapon)
+class-font#p0 mods-class-item-class-font-1: [Trigger] Always ➜ [Armor mod] Class Font (equipped) + [Buff] Armor Charge (on you) ➜ [Effect] Class stat (+20 | +40 | +50)
+emergency-reinforcement#p0 mods-chest-emergency-reinforcement-2: [Trigger] Always ➜ [Armor mod] Emergency Reinforcement (equipped) + [Buff] Emergency Reinforcement (on you) ➜ [Effect] Damage resistance (10%)
+flashover#p0 artifact-current-flashover-2: [Trigger] Always ➜ [Artifact perk] Flashover (equipped) ➜ [Effect] Damage bonus (+50% vs Bolt Charge)
+grenade-font#p0 mods-arms-grenade-font-1: [Trigger] Always ➜ [Armor mod] Grenade Font (equipped) + [Buff] Armor Charge (on you) ➜ [Effect] Grenade stat (+20 | +40 | +50)
+health-font#p0 mods-chest-health-font-1: [Trigger] Always ➜ [Armor mod] Health Font (equipped) + [Buff] Armor Charge (on you) ➜ [Effect] Health stat (+20 | +40 | +50)
+luminopotent-2pc#p0 armor-sets-luminopotent-luminopotent-2pc-1: [Trigger] Always ➜ [Armor set bonus] Ionic Overclock (equipped) + [Buff] Amplified (on you) ➜ [Effect] Weapon stats (handling ?, reload ?)
+kinetic-weapon-surge#p0 mods-legs-kinetic-weapon-surge-1: [Trigger] Always ➜ [Armor mod] Kinetic Weapon Surge (equipped) + [Buff] Armor Charge (on you) ➜ [Effect] Damage bonus (+10% | +17% | +22% | +25% vs Kinetic weapon)
+melee-font#p0 mods-arms-melee-font-1: [Trigger] Always ➜ [Armor mod] Melee Font (equipped) + [Buff] Armor Charge (on you) ➜ [Effect] Melee stat (+20 | +40 | +50)
+shinobus-vow#p0 hunter-exotic-armor-shinobus-vow-5: [Trigger] Always ➜ [Exotic armor] Shinobu's Vow (equipped) ➜ [Effect] Extra grenade charge (+1)
+solar-weapon-surge#p0 mods-legs-solar-weapon-surge-1: [Trigger] Always ➜ [Armor mod] Solar Weapon Surge (equipped) + [Buff] Armor Charge (on you) ➜ [Effect] Damage bonus (+10% | +17% | +22% | +25% vs Solar weapon)
+stasis-weapon-surge#p0 mods-legs-stasis-weapon-surge-1: [Trigger] Always ➜ [Armor mod] Stasis Weapon Surge (equipped) + [Buff] Armor Charge (on you) ➜ [Effect] Damage bonus (+10% | +17% | +22% | +25% vs Stasis weapon)
+strand-weapon-surge#p0 mods-legs-strand-weapon-surge-1: [Trigger] Always ➜ [Armor mod] Strand Weapon Surge (equipped) + [Buff] Armor Charge (on you) ➜ [Effect] Damage bonus (+10% | +17% | +22% | +25% vs Strand weapon)
+super-font#p0 mods-helmet-super-font-1: [Trigger] Always ➜ [Armor mod] Super Font (equipped) + [Buff] Armor Charge (on you) ➜ [Effect] Super stat (+20 | +40 | +50)
+void-weapon-surge#p0 mods-legs-void-weapon-surge-1: [Trigger] Always ➜ [Armor mod] Void Weapon Surge (equipped) + [Buff] Armor Charge (on you) ➜ [Effect] Damage bonus (+10% | +17% | +22% | +25% vs Void weapon)
+weapons-font#p0 mods-legs-weapons-font-1: [Trigger] Always ➜ [Armor mod] Weapons Font (equipped) + [Buff] Armor Charge (on you) ➜ [Effect] Weapons stat (+20 | +40 | +50)

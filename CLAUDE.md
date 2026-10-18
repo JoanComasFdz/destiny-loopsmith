@@ -66,7 +66,12 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
 - **The product is the designed loop**: `*.loop.yaml`, self-contained (embeds its build) —
   format, share links, analysis and comparison in [docs/loop-format.md](docs/loop-format.md).
 - `rules/` — authored causality YAML; format + engine semantics in
-  [docs/rule-format.md](docs/rule-format.md). `rules/manifest.yaml` is generated (the Bungie manifest's
+  [docs/rule-format.md](docs/rule-format.md). Grouped by class, then subclass, then area (`hunter/arc/melees.yaml`), with
+  what every class gets on a subclass in `all-classes/<subclass>/` and the rest by where it comes from (`mods/`, `weapons/`,
+  `keywords/`…): an element's kind, class and affinity name its file, and `RuleFileGroupingTests` holds it there. Every rule
+  and passive has an `id` (`combination-blow-2`); its full name is its file's path then that id
+  (`hunter-arc-melees-combination-blow-2`), what the rule viewer, the e2e rule tests and their recordings are named by
+  (ADRs D40). `rules/manifest.yaml` is generated (the Bungie manifest's
   names, descriptions, icons, slots, perks and armor sets for every hash in the rules, the saved DIM shares and the weapons of
   the builds and their loops, and the seven artifacts with all their perks): rerun `tools/manifest/` after adding a hash, or
   a weapon to a build or loop ([tools/manifest/README.md](tools/manifest/README.md)), never edit it.

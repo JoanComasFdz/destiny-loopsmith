@@ -8,6 +8,9 @@ scenario ([ADRs D39](../../docs/ADRs.md)).
   flow per ability that deals damage: Grenade, Melee, Sliding melee, Super, never the class ability (it deals no damage).
   A rule on any melee (`via: melee`) is a Melee flow and a Sliding melee flow; `melee:press` is Melee only. The rules
   file keeps one rule; only the flows split it.
+- **The rule's name.** Above each flow, the rule's full name: its file's path and its id
+  (`hunter-arc-melees-combination-blow-2`, [ADRs D40](../../docs/ADRs.md)), the same on every flow of a split rule, and
+  what its e2e scenario and the scenario's recordings are named by. The JSON gives it as each flow's `rule`.
 - **What must be in place.** The element, "equipped" (not for a keyword: Jolt, Bolt Charge, Amplified, Ionic Trace, Orb
   of Power, Super and Guardian are in every build), then each state the rule needs, with its caption ("on the target",
   "on you", "at max stacks", "3+ stacks"). A flow needing nothing beyond its trigger says "always produces".

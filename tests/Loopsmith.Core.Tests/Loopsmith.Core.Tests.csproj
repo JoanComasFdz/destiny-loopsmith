@@ -10,6 +10,7 @@
     <PackageReference Include="xunit.runner.visualstudio" PrivateAssets="all" />
     <PackageReference Include="Verify.XunitV3" />
     <PackageReference Include="NetArchTest.Rules" />
+    <PackageReference Include="Dunet" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Loopsmith.Core\Loopsmith.Core.csproj" />

@@ -14,7 +14,7 @@ elements:
   #  - Its lightning strike is the weapon's own, not a glossary status, and `strikeTarget` names a
   #    status. `via: bolt-charge` would read as Bolt Charge's discharge: Defibrillating Blast would
   #    jolt and heal on it, and Flashover would add its +50% (artifact/current.yaml), and neither
-  #    applies to this strike. So the strike is written the way Gathering Storm's is (hunter/arc.yaml):
+  #    applies to this strike. So the strike is written the way Gathering Storm's is (hunter/arc/supers.yaml):
   #    it is part of the weapon's action, and its damage (up to 232 [PvP 65] within 5 m) is a fact in
   #    the description. The player says how many enemies the action catches, strike included (ADRs D4).
   #    The strike's x1 Bolt Charge is the rule's outcome.
@@ -32,7 +32,8 @@ elements:
     description: "Thunderlord's intrinsic. Each kill calls down a lightning strike that deals up to 232 [PvP 65] damage within 5 m and grants x1 Bolt Charge. The weapon also sways much less and its reticle barely drifts, with no hits needed."
     source: "compendium/2026-10-09/Exotic Weapons#144"
     rules:
-      - on: { kill: { via: slot:power } }
+      - id: reign-havoc-1
+        on: { kill: { via: slot:power } }
         then:
           - { applyBuff: { status: bolt-charge, stacks: 1 } }
         reason: "Every Thunderlord kill calls down a lightning strike, and the strike gives you a stack of Bolt Charge."
@@ -53,7 +54,8 @@ elements:
       # blow (ADRs D34): a Thunderlord kill fires Reign Havoc's rule only. The x1 Bolt Charge comes from
       # the strike (Bungie's Reign Havoc text: every lightning strike grants it). No strike event exists
       # to attach it to, so this rule grants it.
-      - on: { damage: { via: slot:power, sustained: true } }
+      - id: lightning-rounds-1
+        on: { damage: { via: slot:power, sustained: true } }
         then:
           - { applyBuff: { status: bolt-charge, stacks: 1 } }
         reason: "Keep hitting with Thunderlord: every 10th hit calls down a lightning strike that gives you a stack of Bolt Charge."
@@ -73,11 +75,13 @@ elements:
     # and Lightning Rounds' (every 10th hit, a hit step) rules, so these are the same two triggers.
     # The 5 rounds are a fact: no ammo is counted, and a refill is a reload (ADRs D37).
     rules:
-      - on: { kill: { via: slot:power } }
+      - id: thunderlord-catalyst-1
+        on: { kill: { via: slot:power } }
         then:
           - { reloadWeapon: slot:power }
         reason: "Every Thunderlord kill calls down a lightning strike, and the strike puts 5 rounds back in the magazine."
-      - on: { damage: { via: slot:power, sustained: true } }
+      - id: thunderlord-catalyst-2
+        on: { damage: { via: slot:power, sustained: true } }
         then:
           - { reloadWeapon: slot:power }
         reason: "Keep hitting with Thunderlord: every 10th hit's lightning strike puts 5 rounds back in the magazine."

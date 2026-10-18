@@ -210,7 +210,7 @@ public sealed class ArmorModMechanicsTests
 
     /// <summary>Shinobu's Vow's second grenade charge.</summary>
     private static readonly BuildElement SecondGrenade = Mod("second-grenade", [],
-        [new PassiveRule(new Passive.ExtraCharges(AbilityKind.Grenade, ChargeCount.One), [], Optional.None<string>())]);
+        [new PassiveRule(RuleId.From("test-rule-1"), new Passive.ExtraCharges(AbilityKind.Grenade, ChargeCount.One), [], Optional.None<string>())]);
 
     private static readonly PlayerAction LastGrenadeHit = new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Damage, TargetCount.One, AbilityInput.Press, ChargeUse.Last);
 
@@ -269,7 +269,7 @@ public sealed class ArmorModMechanicsTests
         [On(new Trigger.AbilityCast(AbilityKind.ClassAbility), Buff("armor-charge"))]);
 
     private static readonly BuildElement GrenadeFont = Mod("grenade-font", [],
-        [new PassiveRule(new Passive.ModifyStat(StatKind.Grenade, new GameValue.PerModCount([20m, 40m, 50m])), [new Condition.HasBuff(Status("armor-charge"))], Optional.None<string>())]);
+        [new PassiveRule(RuleId.From("test-rule-1"), new Passive.ModifyStat(StatKind.Grenade, new GameValue.PerModCount([20m, 40m, 50m])), [new Condition.HasBuff(Status("armor-charge"))], Optional.None<string>())]);
 
     [Fact]
     public void A_stat_change_holds_while_its_buff_does_and_shows_with_the_buff_never_added_to_the_stats()
@@ -293,7 +293,7 @@ public sealed class ArmorModMechanicsTests
     public void A_passive_shows_the_value_for_the_copies_equipped()
     {
         var surge = Mod("weapon-surge", [],
-            [new PassiveRule(new Passive.ModifyDamage(new DamageSource.WeaponOfType(DamageType.Arc), new GameValue.PerModCount([0.10m, 0.17m, 0.22m, 0.25m])), [], Optional.None<string>())]);
+            [new PassiveRule(RuleId.From("test-rule-1"), new Passive.ModifyDamage(new DamageSource.WeaponOfType(DamageType.Arc), new GameValue.PerModCount([0.10m, 0.17m, 0.22m, 0.25m])), [], Optional.None<string>())]);
         var build = ValidateBuild([Charger], mods: [GrenadeFont, surge],
             modOrder: [ElementId.From("grenade-font"), ElementId.From("grenade-font"), ElementId.From("weapon-surge"), ElementId.From("weapon-surge")]);
 

@@ -20,7 +20,8 @@ elements:
     rules:
       # Progress the game doesn't show as a stacking status (with 2 copies: every 2nd Ionic Trace),
       # so it is a chance rule (ADRs D8).
-      - on: { pickUp: ionic-trace }
+      - id: elemental-charge-1
+        on: { pickUp: ionic-trace }
         then:
           - { applyBuff: { status: armor-charge, stacks: 1 } }
         chance: true
@@ -40,7 +41,8 @@ elements:
       # energy is fully expended, as Bungie's text says (the Compendium: on grenade use): with one
       # grenade charge every throw, with more (Shinobu's Vow) the throw the player marks as the last
       # one (`grenade:last`, ADRs D36).
-      - on: { energyExpended: grenade }
+      - id: grenade-kickstart-1
+        on: { energyExpended: grenade }
         when: [ { has: armor-charge } ]
         then:
           - { convertStacksToEnergy: { consumed: armor-charge, to: grenade, byCharges: { from: 2, values: "16.2% | 21.7% | 28.4% | 34.4% | 38.4% | 41.3% | 43.4% | 45%" } } }
@@ -55,7 +57,8 @@ elements:
     description: "Class ability use grants grenade energy: 12% | 17% | 20% with 1|2|3 mods (PvP 6% | 8.5% | 10%). Affected by chunk energy scalars."
     source: "compendium/2026-10-09/Armor Mods#3"
     rules:
-      - on: { abilityCast: classAbility }
+      - id: bomber-1
+        on: { abilityCast: classAbility }
         then:
           - { grantEnergy: { to: grenade, amount: "12% | 17% | 20%" } }
         reason: "Every dodge gives you some grenade energy."
@@ -69,12 +72,14 @@ elements:
     description: "The next weapon kill within 10 s of using your class ability spawns an Orb of Power (0.8%|1.1%|1.25%|1.5% super energy with 1|2|3|4 mods). 10|5|1 s cooldown between orbs with 1|2|3 mods."
     source: "compendium/2026-10-09/Armor Mods#14"
     rules:
-      - on: { abilityCast: classAbility }
+      - id: reaper-1
+        on: { abilityCast: classAbility }
         then:
           - { applyBuff: { status: reaper, duration: 10s } }
         reason: "Dodging arms Reaper for 10 seconds."
       # The 10 s cooldown between orbs (1 copy) is a fact in the description.
-      - on: { kill: { via: weapon } }
+      - id: reaper-2
+        on: { kill: { via: weapon } }
         when: [ { has: reaper } ]
         then:
           - { removeBuff: reaper }
@@ -94,11 +99,13 @@ elements:
       # weapon:harmonic: a weapon of the build's Super's element (an Arc weapon with Arc Staff); with
       # no Super known it matches nothing. Two kills in one step are within 3 s: the orb for sure; one
       # kill is a chance (ADRs D8).
-      - on: { kill: { via: weapon:harmonic, atLeast: 2, within: 3s } }
+      - id: harmonic-siphon-1
+        on: { kill: { via: weapon:harmonic, atLeast: 2, within: 3s } }
         then:
           - { spawn: orb-of-power }
         reason: "Two kills at once with a weapon of your Super's element and an Orb of Power drops."
-      - on: { kill: { via: weapon:harmonic, fewerThan: 2 } }
+      - id: harmonic-siphon-2
+        on: { kill: { via: weapon:harmonic, fewerThan: 2 } }
         then:
           - { spawn: orb-of-power }
         chance: true
@@ -115,11 +122,13 @@ elements:
     # Compendium's 3.75% is used.
     source: "compendium/2026-10-09/Armor Mods#11"
     rules:
-      - on: { kill: { via: weapon:strand, atLeast: 2, within: 3s } }
+      - id: strand-siphon-1
+        on: { kill: { via: weapon:strand, atLeast: 2, within: 3s } }
         then:
           - { spawn: orb-of-power }
         reason: "Two kills at once with a Strand weapon and an Orb of Power drops."
-      - on: { kill: { via: weapon:strand, fewerThan: 2 } }
+      - id: strand-siphon-2
+        on: { kill: { via: weapon:strand, fewerThan: 2 } }
         then:
           - { spawn: orb-of-power }
         chance: true
@@ -135,7 +144,8 @@ elements:
     source: "compendium/2026-10-09/Armor Mods#10"
     rules:
       # The 7 s cooldown is a fact in the description.
-      - on: { damage: { via: melee } }
+      - id: impact-induction-1
+        on: { damage: { via: melee } }
         then:
           - { grantEnergy: { to: grenade, amount: "12% | 17% | 20%" } }
         reason: "Landing your Arc melee gives you some grenade energy back."
@@ -150,7 +160,8 @@ elements:
     source: "compendium/2026-10-09/Armor Mods#4"
     rules:
       # The amount per enemy tier is unknown ("?"); the Compendium's tier-1 1% is itself marked uncertain.
-      - on: { kill: { via: grenade } }
+      - id: ashes-to-assets-1
+        on: { kill: { via: grenade } }
         then:
           - { grantEnergy: { to: super, amount: "?" } }
         reason: "Every grenade kill tops up your Super."
@@ -165,7 +176,8 @@ elements:
     source: "compendium/2026-10-09/Armor Mods#11"
     rules:
       # The HP amounts are a fact in the description: restoreHealth amounts are percentages.
-      - on: { pickUp: orb-of-power }
+      - id: recuperation-1
+        on: { pickUp: orb-of-power }
         then:
           - { restoreHealth: { amount: "?" } }
         reason: "Every Orb of Power you pick up heals you a little."
@@ -180,7 +192,8 @@ elements:
     source: "compendium/2026-10-09/Armor Mods#12"
     rules:
       # The range is a fact: the orbs on the ground are the pack's in front of you (ADRs D7), so in reach.
-      - on: { abilityCast: classAbility }
+      - id: powerful-attraction-1
+        on: { abilityCast: classAbility }
         then:
           - { collect: orb-of-power }
         reason: "Dodging pulls the Orbs of Power on the ground to you."
@@ -198,7 +211,8 @@ elements:
     source: "compendium/2026-10-09/Armor Mods#7"
     rules: []
     passives:
-      - effect: { resistCombatantDamage: { against: harmonic, amount: "15% | 25% | 30%" } }
+      - id: harmonic-resistance-1
+        effect: { resistCombatantDamage: { against: harmonic, amount: "15% | 25% | 30%" } }
         reason: "You take less damage from combatants of your Super's element."
 
   - id: concussive-dampener
@@ -210,7 +224,8 @@ elements:
     source: "compendium/2026-10-09/Armor Mods#7"
     rules: []
     passives:
-      - effect: { resistCombatantDamage: { against: blast, amount: "15% | 25% | 30%" } }
+      - id: concussive-dampener-1
+        effect: { resistCombatantDamage: { against: blast, amount: "15% | 25% | 30%" } }
         reason: "You take less area, blast and explosive damage from combatants."
 
   - id: charged-up
@@ -224,5 +239,6 @@ elements:
     passives:
       # Also Game Mechanics#94. The cap is a fact by copies equipped, and the player still declares
       # when Armor Charge is at max (ADRs D3).
-      - effect: { raiseMaxStacks: { status: armor-charge, max: "4 | 5 | 6" } }
+      - id: charged-up-1
+        effect: { raiseMaxStacks: { status: armor-charge, max: "4 | 5 | 6" } }
         reason: "You can hold more Armor Charge before it is at max: four with one copy, up to six with three."

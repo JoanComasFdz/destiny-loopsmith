@@ -1,0 +1,96 @@
+# Hunter, Arc (Arcstrider): supers.
+#
+# Numbers from the Destiny Data Compendium snapshots of 2026-10-09 and 2026-10-13 (source:
+# compendium/<date>/<Tab>#<row>; the elements added with the 2026-10-13 snapshot cite it). Hashes are
+# Clarity 2.0625's for the elements of the 2026-10-09 snapshot unless a comment says they are the
+# manifest's (Clarity has no grenade, melee or super entries); the elements of the 2026-10-13
+# snapshot take the manifest's (244213.26.06.29.2000-1-bnet.65864: the Arcstrider's plugs).
+#
+# Ability energy amounts are base values: chunk energy scalars and stats are not applied, and
+# chunkScalar / baseCooldown are facts recorded from the Compendium that change nothing (ADRs D5).
+#
+# Format gaps that shape these rules (see builds/skip-grenade-hunter/discrepancies.md):
+#  - an ability damage source cannot name a specific ability or its damage type ("Arc grenades",
+#    "Skip Grenade drones" -> `grenade`);
+#  - movement qualifiers are the abilities' secondary uses only (ADRs D9): the melee while sliding
+#    (`melee:slide`, Tempest Strike's uppercut) and the class ability's air move (`class:air`,
+#    Ascension). A rule on the plain ability fires for its secondary uses too.
+#
+# Where a rule file sits, and each rule's id: docs/rule-format.md, "Files" (ADRs D40).
+elements:
+  - id: arc-staff
+    name: Arc Staff
+    kind: super
+    affinity: arc
+    class: hunter
+    # The manifest's hash (244213.26.06.29.2000-1-bnet.65864: the one super of that name).
+    hash: 3769507633
+    # Tier 2 super, 556 s. Supers have no chunk energy scalar (Game Mechanics#12), so chunkScalar
+    # stays "?" rather than a made-up 1.
+    ability: { kind: super, charges: 1, chunkScalar: "?", baseCooldown: 556 }
+    description: "Roaming Arc super: a staff of Arc Light with 90% [PvP 53%] damage resistance for 20 s base. Kills grant x1 Bolt Charge; guarding reflects attacks, each for x1 Bolt Charge."
+    source: compendium/2026-10-09/Arc#44
+    rules:
+      - id: arc-staff-1
+        on: { kill: { via: super } }
+        then:
+          - { applyBuff: { status: bolt-charge, stacks: 1 } }
+        reason: "Every Arc Staff kill gives you a stack of Bolt Charge."
+      # Not expressible: x1 Bolt Charge per attack reflected while guarding (no block/reflect trigger),
+      # and the Blind from the airborne heavy attack and Palm Strike (a rule can't name one of the
+      # super's attacks; "super damage -> Blind" would blind on every light attack too).
+    passives:
+      - id: arc-staff-2
+        effect: { resistDamage: "90% [53%]" }
+        when: [ { has: super } ]
+        reason: "While you're in Arc Staff you take 90% less damage."
+
+  - id: gathering-storm
+    name: Gathering Storm
+    kind: super
+    affinity: arc
+    class: hunter
+    # The manifest's hash (light.gg, 2026-10-10): what a DIM loadout names (the owner's Skip Grenade
+    # loadout plugs it).
+    hash: 3769507632
+    # Tier 3 super, 500 s. Supers have no chunk energy scalar (Game Mechanics#12), so chunkScalar
+    # stays "?" rather than a made-up 1.
+    ability: { kind: super, charges: 1, chunkScalar: "?", baseCooldown: 500 }
+    description: "Thrown Arc super with 90% [PvP 49%] damage resistance. The staff blows up and sticks in whatever it hits: 544 [300] impact damage that jolts, and an explosion of up to 608 [?] within 10 m. 2 s later lightning strikes it for up to 1350 [500] within 10 m; 1.2 s after that it pulses 446 [60] damage within 10 m every 0.7 s for 8 s."
+    source: compendium/2026-10-09/Arc#45
+    rules:
+      # The Jolt is the impact's. A rule can't name one part of the super, but every throw begins
+      # with that impact, so any super damage jolts the pack in front of you (ADRs D7) - unlike
+      # Arc Staff's Blind, which only some of its attacks apply. The explosion, the lightning strike
+      # and the field are the same super action (`super:hit` / `super:kill`): their damage and
+      # timing are facts in the description. The Compendium states no Bolt Charge on its kills.
+      - id: gathering-storm-1
+        on: { damage: { via: super } }
+        then:
+          - { debuffTarget: jolt }
+        reason: "The thrown staff jolts what it hits on impact."
+    passives:
+      - id: gathering-storm-2
+        effect: { resistDamage: "90% [49%]" }
+        when: [ { has: super } ]
+        reason: "While you're in Gathering Storm you take 90% less damage."
+
+  - id: storms-edge
+    name: Storm's Edge
+    kind: super
+    affinity: arc
+    class: hunter
+    hash: 3769507635
+    # Tier 1 super, 625 s. Supers have no chunk energy scalar (Game Mechanics#12), so chunkScalar
+    # stays "?". Its duration and drain per knife are "?" in the Compendium too.
+    ability: { kind: super, charges: 1, chunkScalar: "?", baseCooldown: 625 }
+    description: "Thrown Arc super with 90% [PvP 45%] damage resistance: up to 3 homing knives per cast. Each one hits for 90 impact and up to 171 damage within 3 m, then you teleport to it and spin, hitting twice for 1440 within 6 m."
+    source: compendium/2026-10-13/Arc#46
+    # Not expressible: the teleport (movement has no part in a loop). The Compendium states no Bolt
+    # Charge, Jolt or Blind for it. Its damage resistance holds while you're in it (ADRs D29).
+    rules: []
+    passives:
+      - id: storms-edge-1
+        effect: { resistDamage: "90% [45%]" }
+        when: [ { has: super } ]
+        reason: "While you're in Storm's Edge you take 90% less damage."

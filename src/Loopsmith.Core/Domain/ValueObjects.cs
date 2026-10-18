@@ -20,6 +20,17 @@ public readonly partial struct ElementId
         && value[^1] != '-';
 }
 
+/// <summary>
+/// Stable authored identity of a rule or a passive: its element's id and a number, never reused within the element
+/// ("combination-blow-2"). The rule file's path in front of it names it where people read it (ADRs D40).
+/// </summary>
+[ValueObject<string>]
+public readonly partial struct RuleId
+{
+    private static Validation Validate(string value) =>
+        ElementId.IsSlug(value) ? Validation.Ok : Validation.Invalid($"'{value}' is not a kebab-case rule id");
+}
+
 /// <summary>Buff or debuff in the keyword vocabulary ("bolt-charge", "jolt").</summary>
 [ValueObject<string>]
 public readonly partial struct StatusId

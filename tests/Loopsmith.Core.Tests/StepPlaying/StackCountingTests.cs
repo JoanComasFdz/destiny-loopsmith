@@ -48,10 +48,10 @@ public sealed class StackCountingTests
     ]);
 
     private static readonly BuildElement StacksOnStacks = Mod("stacks-on-stacks", [],
-        [new PassiveRule(new Passive.ExtraStacks(ArmorCharge, StackCount.From(1)), [], Optional.None<string>())]);
+        [new PassiveRule(RuleId.From("test-rule-1"), new Passive.ExtraStacks(ArmorCharge, StackCount.From(1)), [], Optional.None<string>())]);
 
     private static readonly BuildElement ChargedUp = Mod("charged-up", [],
-        [new PassiveRule(new Passive.RaiseMaxStacks(ArmorCharge, new GameValue.PerModCount([4m, 5m, 6m])), [], Optional.None<string>())]);
+        [new PassiveRule(RuleId.From("test-rule-1"), new Passive.RaiseMaxStacks(ArmorCharge, new GameValue.PerModCount([4m, 5m, 6m])), [], Optional.None<string>())]);
 
     private static readonly StackTable KickstartTable = new(StackCount.From(2), [0.162m, 0.217m, 0.284m, 0.344m, 0.384m, 0.413m, 0.434m, 0.45m]);
 
@@ -75,7 +75,7 @@ public sealed class StackCountingTests
         [OnWhen(new Trigger.Finisher(), new Condition.LacksBuff(ArmorCharge), Buff("bolt-charge"))]);
 
     private static readonly BuildElement Font = Mod("grenade-font", [],
-        [new PassiveRule(new Passive.ModifyStat(StatKind.Grenade, new GameValue.Known(20m)), [new Condition.HasBuff(ArmorCharge)], Optional.None<string>())]);
+        [new PassiveRule(RuleId.From("test-rule-1"), new Passive.ModifyStat(StatKind.Grenade, new GameValue.Known(20m)), [new Condition.HasBuff(ArmorCharge)], Optional.None<string>())]);
 
     private static ImmutableArray<Resolution> Play(ImmutableArray<BuildElement> mods, params PlayerAction[] actions) =>
         ActionResolution.ResolveSequence(ValidateBuild([], mods, keywords: [OrbOfPower]), ActionResolution.CreateInitialState(), [.. actions]);
