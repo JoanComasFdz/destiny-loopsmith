@@ -2,7 +2,7 @@ using Loopsmith.Core.Functional;
 
 namespace Loopsmith.RuleViewer;
 
-/// <summary>Where the tool reads the rules and writes the lanes: <c>--rules &lt;dir&gt;</c> and <c>--out &lt;dir&gt;</c>, by default the repository's <c>rules/</c> and <c>out/rule-viewer/</c>.</summary>
+/// <summary>Where the tool reads the rules and writes the flows: <c>--rules &lt;dir&gt;</c> and <c>--out &lt;dir&gt;</c>, by default the repository's <c>rules/</c> and <c>out/rule-viewer/</c>.</summary>
 public sealed record RuleViewerOptions(string RulesDirectory, string OutDirectory)
 {
     public const string Usage = "usage: dotnet run --project tools/rule-viewer/Loopsmith.RuleViewer [-- --rules <dir>] [--out <dir>]";

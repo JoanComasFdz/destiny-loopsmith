@@ -613,16 +613,16 @@ the developer tools under `tools/` as hosts: the web designer stays the only one
 ### D39 — Developer tools under `tools/` are hosts too
 
 **Context.** Writing the e2e scenarios one claim at a time needs the list of the claims: every rule of a subclass, and
-of what it needs and what builds on it, as one lane (what sets it off ➜ what must be in place ➜ what it gives). That
+of what it needs and what builds on it, as one flow (what sets it off ➜ what must be in place ➜ what it gives). That
 list is drawn from the rules, for whoever writes the scenarios, not for a player. **Decision (product owner).** A
 developer tool under `tools/` is a host, as the web app is (D38): the rule viewer (`tools/rule-viewer/Loopsmith.RuleViewer`)
 reads `rules/` itself (a host calls only `Orchestration` and the kernel, so it keeps its own short copy of
-`SourceFetching`'s file reading) and writes its page and JSON under `out/`; its page's parts (box, lane, group) are its
+`SourceFetching`'s file reading) and writes its page and JSON under `out/`; its page's parts (box, flow, group) are its
 own presentation. A tool's logic, which no player's host uses, is not Core: it is the tool's own pure project
-(`tools/rule-viewer/Loopsmith.RuleViewer.Core`: the dependency graph and its lanes), which follows
+(`tools/rule-viewer/Loopsmith.RuleViewer.Core`: the dependency graph and its rules, each as a flow), which follows
 [CODING_RULES](CODING_RULES.md) like a slice, references only Core, and uses only its kernel and `Orchestration`
 (`CatalogLoading.ParseCatalog` reads the rules). The host boundary test checks the tool and its pure project with the
 web app; the tool's own tests check that its pure project touches no files and uses no other part of Core. Nothing
-deploys or ships a tool. **Consequence.** The lane mapping is unit-tested and golden-tested in the tool's own tests
-(`tools/rule-viewer/Loopsmith.RuleViewer.Tests`, `ArcHunterLanesGoldenTests`), so a rules change shows its lanes in the
+deploys or ships a tool. **Consequence.** The flow mapping is unit-tested and golden-tested in the tool's own tests
+(`tools/rule-viewer/Loopsmith.RuleViewer.Tests`, `ArcHunterRulesGoldenTests`), so a rules change shows its flows in the
 PR diff; Core holds only what the web designer, the only host a player uses, needs.

@@ -79,10 +79,10 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
   Creator transcripts are third-party content: keep them local as `transcript.txt` (gitignored),
   never commit them.
 - `tools/rule-viewer/` — the rule viewer (ADRs D39): `dotnet run --project tools/rule-viewer/Loopsmith.RuleViewer`
-  writes `out/rule-viewer/arc-hunter-lanes.html` and `.json`, the Arc Hunter's rules as lanes, the list of the atomic e2e
+  writes `out/rule-viewer/arc-hunter-rules.html` and `.json`, every Arc Hunter rule as one flow, the list of the atomic e2e
   scenarios to write. `Loopsmith.RuleViewer` is the host (its page's parts are components in `Page/`);
   `Loopsmith.RuleViewer.Core` its pure logic (the rules → a subclass's dependency graph, with three scopes: the subclass,
-  + what it needs from outside, + what builds on it → its lanes: every rule and passive as one claim, trigger ➜ what must
+  + what it needs from outside, + what builds on it → its rules: every rule and passive as one flow, trigger ➜ what must
   be in place ➜ what it gives, one per trigger when a rule names several), using only Core's kernel and `Orchestration`;
   `Loopsmith.RuleViewer.Tests` its unit, golden and architecture tests ([tools/rule-viewer/README.md](tools/rule-viewer/README.md)).
   `tools/rule-viewer/prototype/` is the page the owner designed, kept as the reference the tool reproduces.

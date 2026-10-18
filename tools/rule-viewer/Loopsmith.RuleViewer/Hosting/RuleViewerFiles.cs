@@ -8,14 +8,14 @@ namespace Loopsmith.RuleViewer.Hosting;
 
 /// <summary>
 /// Impure boundary of the rule viewer: finds the repository, reads the rule files and the page's style and script embedded
-/// in this assembly, writes the lanes' files and tells the console. A host calls only Orchestration, the kernel and its own pure project
+/// in this assembly, writes the flows' files and tells the console. A host calls only Orchestration, the kernel and its own pure project
 /// (HostBoundaryTests), so it reads the rule files itself, as Core's SourceFetching does: every <c>*.yaml</c> under the
 /// folder, named by its path from it.
 /// </summary>
 public static class RuleViewerFiles
 {
-    private const string StyleName = "lanes.css";
-    private const string ScriptName = "lanes.js";
+    private const string StyleName = "rules.css";
+    private const string ScriptName = "rules.js";
     private const string SolutionFile = "Loopsmith.slnx";
 
     /// <summary>The repository root: the nearest folder up from <paramref name="start"/> holding the solution, else <paramref name="start"/>.</summary>

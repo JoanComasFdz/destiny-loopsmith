@@ -7,8 +7,8 @@ namespace Loopsmith.RuleViewer.Core;
 /// <summary>
 /// Draws the dependency graph of a class's subclass from the rules: which element needs what before it can fire, and what
 /// it gives. Pure: same rules ⇒ same graph. Three scopes: the subclass alone, with what it needs from outside (the
-/// weapons), and with what builds on it (every outside element that needs one of its nodes). The lanes take each
-/// scope's elements (<see cref="LaneDrawing"/>).
+/// weapons), and with what builds on it (every outside element that needs one of its nodes). The flows take each
+/// scope's elements (<see cref="RuleFlowDrawing"/>).
 /// </summary>
 public static class DependencyGraphDrawing
 {
