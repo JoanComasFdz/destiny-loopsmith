@@ -26,7 +26,7 @@ differs (its scope, the order of its rounds and its worked example):
 
 ## Example
 
-Each kind has its worked example: [EnemyCountTests.cs](../tests/Loopsmith.Web.E2E/Scenarios/Loop/Weapons/EnemyCountTests.cs)
+Each kind has its worked example: [EnemyCountTests.cs](../tests/Loopsmith.Web.E2E/Scenarios/Loop/Weapons/EnemyCount/EnemyCountTests.cs)
 for a loop scenario ([its document](given-when-then-loop-scenarios.md)), and
 [LethalCurrentTests.cs](../tests/Loopsmith.Web.E2E/Rules/Hunter/Arc/Aspects/LethalCurrent/LethalCurrentTests.cs) for a rule scenario
 ([its document](given-when-then-rule-scenarios.md)).

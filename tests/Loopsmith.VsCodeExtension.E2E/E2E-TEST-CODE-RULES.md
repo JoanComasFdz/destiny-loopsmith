@@ -119,6 +119,8 @@ GitHub; the workspace is only read.
 
 As the web rules' rule h, with `Scenarios/<domain folder>/` of this project (today `Recordings`), `Workspace/` for its
 files, and `tools/e2e/record.sh --no-video <its class>` (it serves VS Code for the web instead of the web app).
+Except step 4's folder of its own: a class stays in its domain folder (`Scenarios/Recordings/CodeLensTests.cs`), since
+the files its scenarios open are in `Workspace/`, the folder VS Code for the web opens, and nothing could sit beside it.
 
 ## i. From a Gherkin to a scenario
 

@@ -201,7 +201,7 @@ works the PR records them; CI doesn't run, record or build anything for them.
   `main` (a class whose file changed, or that names a changed fixture file), not only those the push touched.
   `out/scenarios.json` keeps why each was picked: `"selected": "changed"` (its own file changed, or it was named on
   the command line), or `"selected": "fixtures"` with the changed `"fixtures"` (paths in its project:
-  `Scenarios/Loop/Weapons/….build.yaml`, `Workspace/…`) when only a fixture it uses changed; a class that did both is
+  `Scenarios/Loop/Weapons/EnemyCount/….build.yaml`, `Workspace/…`) when only a fixture it uses changed; a class that did both is
   `changed`. Every
   scenario passes before the push. While developing, the session runs them unrecorded
   (`tools/e2e/record.sh --no-video …`: same selection and served publish, no video, no pacing, no GIF) and never

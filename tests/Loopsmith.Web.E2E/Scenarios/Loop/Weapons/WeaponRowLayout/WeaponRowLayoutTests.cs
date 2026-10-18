@@ -13,7 +13,7 @@ public sealed class WeaponRowLayoutTests : BaseE2E
         @mobile
         Scenario: The weapon row fits a phone with reload at its right end
           # Mobile only: the row only wraps at a phone's width.
-          Given the build "festival-flight-one-for-all" is imported, with no steps
+          Given the build "festival-flight-one-for-all-row-layout" is imported, with no steps
           When I tap "Festival Flight" in the trigger panel
           Then the row wraps onto more than one line
           And none of "🥊 hit", "💀 kill", the "×" enemy count and "🔄 reload" overlap
@@ -23,7 +23,7 @@ public sealed class WeaponRowLayoutTests : BaseE2E
     public async Task TheWeaponRowFitsAPhoneWithReloadAtItsRightEnd(Screen screen)
     {
         // Given
-        await Frontend.Home.ImportBuildAsync("festival-flight-one-for-all.build.yaml");
+        await Frontend.Home.ImportBuildAsync("festival-flight-one-for-all-row-layout.build.yaml");
         await Frontend.Designer.WaitUntilShownAsync();
 
         // When

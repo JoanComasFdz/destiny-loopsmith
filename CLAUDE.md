@@ -127,7 +127,7 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
   `[TestDescription]`), played on 🖥️ desktop and/or 📱 mobile (`[PlayInDesktop]` / `[PlayInMobile]`). It holds what
   every Gherkin shares; its two children add what each kind does differently:
   [loop scenarios](docs/given-when-then-loop-scenarios.md) (`Scenarios/`, what a PR changes; worked example
-  `tests/Loopsmith.Web.E2E/Scenarios/Loop/Weapons/EnemyCountTests.cs`) and
+  `tests/Loopsmith.Web.E2E/Scenarios/Loop/Weapons/EnemyCount/EnemyCountTests.cs`) and
   [rule scenarios](docs/given-when-then-rule-scenarios.md) (`Rules/`, one per claim of a rule, grouped like `rules/`;
   worked example `tests/Loopsmith.Web.E2E/Rules/Hunter/Arc/Aspects/LethalCurrent/LethalCurrentTests.cs`).
 - `docs/requirements.md` — the requirements, starting with the level of abstraction (what Loopsmith

@@ -1,0 +1,6 @@
+# A Kinetic weapon whose perk needs an enemy count: One for All (3 enemies hit within 3 s).
+name: "E2E - Festival Flight with One for All"
+class: hunter
+subclass: arc
+weapons:
+  - { hash: 4019651319, perks: [one-for-all] } # Festival Flight
