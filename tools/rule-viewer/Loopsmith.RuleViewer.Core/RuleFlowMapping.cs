@@ -7,19 +7,19 @@ using Loopsmith.Core.Phrasing;
 
 namespace Loopsmith.RuleViewer.Core;
 
-/// <summary>A lane and the trigger group it goes in: its key (the trigger's node, or its text) and name.</summary>
-internal sealed record MappedLane(RuleLane Lane, string GroupKey, string GroupName);
+/// <summary>A flow and the trigger group it goes in: its key (the trigger's node, or its text) and name.</summary>
+internal sealed record MappedFlow(RuleFlow Flow, string GroupKey, string GroupName);
 
-/// <summary>A lane's trigger before the split: its node (none: "Any", "This weapon", "Always"), its text and its group's name.</summary>
+/// <summary>A flow's trigger before the split: its node (none: "Any", "This weapon", "Always"), its text and its group's name.</summary>
 internal sealed record TriggerPart(Optional<GraphNode> Node, string Text, string GroupName);
 
 /// <summary>
-/// Reads an element's rules and passives as lanes, one claim each: what sets it off ➜ what must be in place ➜ what it
-/// gives. A rule whose trigger names several (any ability) becomes one lane per trigger; the rules file keeps one rule.
-/// The boxes are the graph's nodes (<see cref="DependencyMapping"/>), so a lane names, colours and draws a node as the
+/// Reads an element's rules and passives as flows, one claim each: what sets it off ➜ what must be in place ➜ what it
+/// gives. A rule whose trigger names several (any ability) becomes one flow per trigger; the rules file keeps one rule.
+/// The boxes are the graph's nodes (<see cref="DependencyMapping"/>), so a flow names, colours and draws a node as the
 /// graph does.
 /// </summary>
-internal static class LaneMapping
+internal static class RuleFlowMapping
 {
     private const string AlwaysKey = "always";
 
@@ -32,7 +32,7 @@ internal static class LaneMapping
         ["rule:armor-charge"] = "🟨🔳🔳",
     }.ToImmutableDictionary();
 
-    public static ImmutableArray<MappedLane> MapLanes(GraphContext context, BuildElement element)
+    public static ImmutableArray<MappedFlow> MapFlows(GraphContext context, BuildElement element)
     {
         var owner = DependencyMapping.ToElementNode(context, element);
         var equipped = element.Kind == ElementKind.Keyword ? [] : ImmutableArray.Create(ToBox(context, owner, "equipped", BoxRole.Condition));
@@ -42,19 +42,19 @@ internal static class LaneMapping
         return [.. rules, .. passives];
     }
 
-    /// <summary>Whether a group is the lanes that are always on (the passives'), which comes last.</summary>
+    /// <summary>Whether a group is the flows that are always on (the passives'), which comes last.</summary>
     public static bool IsAlwaysGroup(string key) => key == AlwaysKey;
 
-    private static IEnumerable<MappedLane> MapRule(
-        GraphContext context, GraphNode owner, ImmutableArray<LaneBox> equipped, Optional<string> file, Rule rule, int place)
+    private static IEnumerable<MappedFlow> MapRule(
+        GraphContext context, GraphNode owner, ImmutableArray<RuleBox> equipped, Optional<string> file, Rule rule, int place)
     {
         var triggers = ListTriggerParts(context, rule.On);
         var onTarget = rule.On.ListRequiredTargetStatuses().Select(status => ToBox(context, DependencyMapping.ToStatusNode(context, status), "on the target", BoxRole.Condition));
         var conditions = equipped.Concat(onTarget).Concat(rule.When.Select(condition => ToConditionBox(context, condition))).ToImmutableArray();
         var results = OrderResults(rule.Then.SelectMany(outcome => DependencyMapping.ListOutcomeEffects(context, outcome)).Select(effect => ToResultBox(context, effect)));
         var id = $"{owner.Id}#{place.ToString(CultureInfo.InvariantCulture)}";
-        return triggers.Select((trigger, at) => new MappedLane(
-            new RuleLane(
+        return triggers.Select((trigger, at) => new MappedFlow(
+            new RuleFlow(
                 triggers.Length == 1 ? id : $"{id}.{at.ToString(CultureInfo.InvariantCulture)}",
                 owner.Id,
                 ToTriggerBox(context, trigger),
@@ -67,10 +67,10 @@ internal static class LaneMapping
             trigger.GroupName));
     }
 
-    private static MappedLane MapPassive(
-        GraphContext context, GraphNode owner, ImmutableArray<LaneBox> equipped, Optional<string> file, PassiveRule passive, int place) =>
+    private static MappedFlow MapPassive(
+        GraphContext context, GraphNode owner, ImmutableArray<RuleBox> equipped, Optional<string> file, PassiveRule passive, int place) =>
         new(
-            new RuleLane(
+            new RuleFlow(
                 $"{owner.Id}#p{place.ToString(CultureInfo.InvariantCulture)}",
                 owner.Id,
                 ToTriggerBox(context, new TriggerPart(Optional.None<GraphNode>(), "Always", "Always on")),
@@ -83,7 +83,7 @@ internal static class LaneMapping
             "Always on");
 
     /// <summary>
-    /// What sets a rule off, as the player says it: an ability cast ("Grenade cast", "Dodge"), a hit or kill by each source
+    /// What sets a rule off, as the player says it: an ability cast ("Grenade cast", "Class ability"), a hit or kill by each source
     /// it names ("Melee hit", "Sliding melee hit", "Arc weapon 3+ kills"), a pickup, a buff gained or maxed, a finisher…
     /// </summary>
     private static ImmutableArray<TriggerPart> ListTriggerParts(GraphContext context, Trigger trigger) =>
@@ -109,7 +109,7 @@ internal static class LaneMapping
             killBetween: kill => ListHitParts(context, kill.Via, $"{FormatCount(kill.AtLeast)}+ kills, fewer than {FormatCount(kill.FewerThan)}"),
             reload: _ => ListActionParts(context, trigger, name => name));
 
-    /// <summary>A cast: "Grenade cast", "Super cast"; a Hunter's dodge is the cast itself ("Dodge", "Air dodge").</summary>
+    /// <summary>A cast: "Grenade cast", "Super cast"; the class ability is the cast itself ("Class ability", "Air class ability").</summary>
     private static ImmutableArray<TriggerPart> ListCastParts(GraphContext context, Trigger trigger, AbilityKind kind) =>
         ListActionParts(context, trigger, name => kind == AbilityKind.ClassAbility ? name : $"{name} cast");
 
@@ -136,13 +136,14 @@ internal static class LaneMapping
 
     private static string FormatCount(TargetCount count) => count.Value.ToString(CultureInfo.InvariantCulture);
 
-    private static LaneBox ToTriggerBox(GraphContext context, TriggerPart trigger) =>
+    /// <summary>A trigger box: its words as the player says them; a class ability's caption is the class's own word ("Dodge").</summary>
+    private static RuleBox ToTriggerBox(GraphContext context, TriggerPart trigger) =>
         trigger.Node.Match(
-            node => ToBox(context, node.Value, "", BoxRole.Trigger) with { Title = "Trigger", Name = trigger.Text },
-            _ => new LaneBox(Optional.None<string>(), "Trigger", trigger.Text, "", BoxTone.Trigger, new LaneIcon.Blank(), BoxRole.Trigger));
+            node => ToBox(context, node.Value, DependencyMapping.FindClassMove(context, node.Value).UnwrapOr(""), BoxRole.Trigger) with { Title = "Trigger", Name = trigger.Text },
+            _ => new RuleBox(Optional.None<string>(), "Trigger", trigger.Text, "", BoxTone.Trigger, new RuleIcon.Blank(), BoxRole.Trigger));
 
     /// <summary>A state a rule or passive needs, with a short caption: "on you", "at max stacks", "3+ stacks", "on the target"…</summary>
-    private static LaneBox ToConditionBox(GraphContext context, Condition condition) =>
+    private static RuleBox ToConditionBox(GraphContext context, Condition condition) =>
         condition.Match(
             hasBuff: has => ToStatusBox(context, has.Status, "on you"),
             lacksBuff: lacks => ToStatusBox(context, lacks.Status, "not on you"),
@@ -152,11 +153,11 @@ internal static class LaneMapping
             belowMax: below => ToStatusBox(context, below.Status, "below max stacks"),
             holds: holds => ToStatusBox(context, holds.Status, $"{holds.AtLeast.Value.ToString(CultureInfo.InvariantCulture)}+ stacks"));
 
-    private static LaneBox ToStatusBox(GraphContext context, StatusId status, string caption) =>
+    private static RuleBox ToStatusBox(GraphContext context, StatusId status, string caption) =>
         ToBox(context, DependencyMapping.ToStatusNode(context, status), caption, BoxRole.Condition);
 
     /// <summary>A result: what it gives with its amount as authored ("×2", "100%", "8.5s"), or what it ends, collects or adds to.</summary>
-    private static LaneBox ToResultBox(GraphContext context, Effect effect)
+    private static RuleBox ToResultBox(GraphContext context, Effect effect)
     {
         var role = effect.Kind switch
         {
@@ -175,11 +176,11 @@ internal static class LaneMapping
         return ToBox(context, effect.Node, string.Join(" · ", new[] { word, effect.Label }.Where(part => part.Length > 0)), role);
     }
 
-    /// <summary>Strikes, other effects (energy, health, resistance…), buffs, debuffs, pickups, summons; then what the lane ends, collects or adds to.</summary>
-    private static ImmutableArray<LaneBox> OrderResults(IEnumerable<LaneBox> results) =>
+    /// <summary>Strikes, other effects (energy, health, resistance…), buffs, debuffs, pickups, summons; then what the flow ends, collects or adds to.</summary>
+    private static ImmutableArray<RuleBox> OrderResults(IEnumerable<RuleBox> results) =>
         [.. results.OrderBy(RankResult)];
 
-    private static int RankResult(LaneBox box) =>
+    private static int RankResult(RuleBox box) =>
         box.Role != BoxRole.Gives
             ? 10
             : box.Tone switch
@@ -193,8 +194,8 @@ internal static class LaneMapping
                 _ => 9,
             };
 
-    private static LaneBox ToBox(GraphContext context, GraphNode node, string caption, BoxRole role) =>
-        new(Optional.Some(node.Id), ToTitle(node.Type), node.Name, caption, ToTone(node.Type), ToLaneIcon(context, node), role);
+    private static RuleBox ToBox(GraphContext context, GraphNode node, string caption, BoxRole role) =>
+        new(Optional.Some(node.Id), ToTitle(node.Type), node.Name, caption, ToTone(node.Type), ToRuleIcon(context, node), role);
 
     /// <summary>A box's kind title: "Subclass ability · Grenade", "Subclass aspect", "Buff", "Strike", "Armor mod"…</summary>
     private static string ToTitle(GraphNodeType type) =>
@@ -238,12 +239,12 @@ internal static class LaneMapping
     /// green diamond) is its picture — its element's, or the stat icon its id names (the Super) — clipped to a diamond;
     /// else its picture, or nothing.
     /// </summary>
-    private static LaneIcon ToLaneIcon(GraphContext context, GraphNode node) =>
+    private static RuleIcon ToRuleIcon(GraphContext context, GraphNode node) =>
         EmojiIcons.TryGetValue(node.Id, out var emoji)
-            ? new LaneIcon.Emoji(emoji)
+            ? new RuleIcon.Emoji(emoji)
             : node.Type is GraphNodeType.BuffStatus && !HasKeywordTrait(context, node)
-                ? FindBuffPicture(context, node).Match<LaneIcon>(url => new LaneIcon.MaskedBuff(url.Value), _ => new LaneIcon.Blank())
-                : node.Icon.Match<LaneIcon>(url => new LaneIcon.Picture(url.Value), _ => new LaneIcon.Blank());
+                ? FindBuffPicture(context, node).Match<RuleIcon>(url => new RuleIcon.MaskedBuff(url.Value), _ => new RuleIcon.Blank())
+                : node.Icon.Match<RuleIcon>(url => new RuleIcon.Picture(url.Value), _ => new RuleIcon.Blank());
 
     private static bool HasKeywordTrait(GraphContext context, GraphNode node) =>
         context.Catalog.Glossary.Statuses.TryGetValue(ToStatusId(node), out var status) && status.Trait.IsSome();

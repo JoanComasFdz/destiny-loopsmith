@@ -435,12 +435,45 @@ internal static class DependencyMapping
         new($"strike:{via.Value}", $"{context.Catalog.Glossary.DescribeStatus(via)} strike", new GraphNodeType.KeywordStrike(), false, Optional.None<ElementFacts>(),
             FindKeywordIcon(context, new KeywordRef.Status(via)));
 
-    /// <summary>An ability trigger, with the icon of the ability's armor stat (the dodge: Class).</summary>
+    /// <summary>
+    /// An ability trigger, with the icon of the ability's armor stat; the class ability's is the icon of the subclass's
+    /// first class ability in the rules, by id (a dodge, a barricade or a rift), else the Class stat's.
+    /// </summary>
     internal static GraphNode ToTriggerNode(GraphContext context, AbilityKind kind, AbilityInput input) =>
-        ToTriggerNode(NameAbilityTrigger(context.Class, kind, input), FindStatIcon(context, ToStat(kind)));
+        ToTriggerNode(
+            NameAbilityTrigger(kind, input),
+            kind == AbilityKind.ClassAbility ? new[] { FindClassAbilityIcon(context), FindStatIcon(context, StatKind.Class) }.FindFirstSome() : FindStatIcon(context, ToStat(kind)));
+
+    /// <summary>
+    /// The class's own word for a class ability trigger: a Hunter's dodge, a Titan's barricade, a Warlock's rift ("Air
+    /// dodge" in the air); none for any other node.
+    /// </summary>
+    internal static Optional<string> FindClassMove(GraphContext context, GraphNode node)
+    {
+        var move = context.Class switch
+        {
+            GuardianClass.Hunter => "dodge",
+            GuardianClass.Titan => "barricade",
+            _ => "rift",
+        };
+        return node.Id == ToTriggerNodeId(NameAbilityTrigger(AbilityKind.ClassAbility, AbilityInput.Press))
+            ? Optional.Some(ToSentenceStart(move))
+            : node.Id == ToTriggerNodeId(NameAbilityTrigger(AbilityKind.ClassAbility, AbilityInput.Air))
+                ? Optional.Some($"Air {move}")
+                : Optional.None<string>();
+    }
+
+    private static Optional<string> FindClassAbilityIcon(GraphContext context) =>
+        context.Catalog.Elements.Values
+            .Where(element => element.Kind == ElementKind.ClassAbility && element.Fits(context.Class, context.Subclass))
+            .OrderBy(element => element.Id.Value, StringComparer.Ordinal)
+            .Select(element => FindElementIcon(context, element.Id))
+            .FindFirstSome();
 
     private static GraphNode ToTriggerNode(string name, Optional<string> icon) =>
-        new($"trigger:{ToKebab(name)}", name, new GraphNodeType.ActionTrigger(), false, Optional.None<ElementFacts>(), icon);
+        new(ToTriggerNodeId(name), name, new GraphNodeType.ActionTrigger(), false, Optional.None<ElementFacts>(), icon);
+
+    private static string ToTriggerNodeId(string name) => $"trigger:{ToKebab(name)}";
 
     private static GraphNode ToWeaponNode(string name, Optional<string> icon) =>
         new($"weapon:{ToKebab(name)}", name, new GraphNodeType.NeededWeapon(), false, Optional.None<ElementFacts>(), icon);
@@ -484,8 +517,8 @@ internal static class DependencyMapping
     /// <summary>A manifest icon path as the address the web app shows it at.</summary>
     private static string ToIconUrl(string path) => IconHost + path;
 
-    /// <summary>An ability use as the player says it: a Hunter's class ability is their dodge.</summary>
-    private static string NameAbilityTrigger(GuardianClass guardianClass, AbilityKind kind, AbilityInput input) =>
+    /// <summary>An ability use as the player says it; the class ability is named the same for every class (its own word is <see cref="FindClassMove"/>).</summary>
+    private static string NameAbilityTrigger(AbilityKind kind, AbilityInput input) =>
         (kind, input) switch
         {
             (AbilityKind.Grenade, AbilityInput.Press) => "Grenade",
@@ -493,8 +526,8 @@ internal static class DependencyMapping
             (AbilityKind.Melee, AbilityInput.Press) => "Melee",
             (AbilityKind.Melee, AbilityInput.Slide) => "Sliding melee",
             (AbilityKind.Melee, AbilityInput.Air) => "Air melee",
-            (AbilityKind.ClassAbility, AbilityInput.Press) => guardianClass == GuardianClass.Hunter ? "Dodge" : "Class ability",
-            (AbilityKind.ClassAbility, AbilityInput.Air) => guardianClass == GuardianClass.Hunter ? "Air dodge" : "Air class ability",
+            (AbilityKind.ClassAbility, AbilityInput.Press) => "Class ability",
+            (AbilityKind.ClassAbility, AbilityInput.Air) => "Air class ability",
             (AbilityKind.Super, AbilityInput.Press) => "Super",
             _ => $"{kind} ({input.ToString().ToLowerInvariant()})",
         };

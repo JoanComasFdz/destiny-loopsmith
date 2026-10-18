@@ -66,7 +66,7 @@ public sealed class DependencyGraphTests
     }
 
     [Fact]
-    public void A_damage_via_ability_rule_gets_no_edge_from_Dodge_or_Air_dodge()
+    public void A_damage_via_ability_rule_gets_no_edge_from_the_class_ability_or_its_air_move()
     {
         var graph = Draw(
             Fragment("spark", On(new Trigger.KillAny(new DamageSource.AnyAbility()), Buff("amplified"))),
@@ -75,18 +75,18 @@ public sealed class DependencyGraphTests
 
         var edges = ListEdges(graph);
 
-        Assert.DoesNotContain("trigger:dodge -[Needs kill]-> spark", edges);
-        Assert.DoesNotContain("trigger:air-dodge -[Needs kill]-> spark", edges);
-        Assert.Contains("trigger:dodge -[Needs cast]-> dodge", edges);
+        Assert.DoesNotContain("trigger:class-ability -[Needs kill]-> spark", edges);
+        Assert.DoesNotContain("trigger:air-class-ability -[Needs kill]-> spark", edges);
+        Assert.Contains("trigger:class-ability -[Needs cast]-> dodge", edges);
     }
 
     [Fact]
-    public void The_class_abilitys_air_move_is_the_Air_dodge()
+    public void The_class_abilitys_air_move_is_the_Air_class_ability()
     {
         var graph = Draw(Part("leap", ElementKind.Aspect, On(new Trigger.AbilityCastAs(AbilityKind.ClassAbility, AbilityInput.Air), Debuff("jolt"))));
 
-        Assert.Contains("trigger:air-dodge -[Needs cast]-> leap", ListEdges(graph));
-        Assert.Equal("Air dodge", graph.Nodes["trigger:air-dodge"].Name);
+        Assert.Contains("trigger:air-class-ability -[Needs cast]-> leap", ListEdges(graph));
+        Assert.Equal("Air class ability", graph.Nodes["trigger:air-class-ability"].Name);
     }
 
     [Fact]

@@ -4,55 +4,55 @@ using Loopsmith.Core.Domain;
 namespace Loopsmith.RuleViewer.Core;
 
 /// <summary>
-/// Draws the lanes of a class's subclass: every rule and passive of the elements each scope of the dependency graph
-/// holds, one lane per claim, grouped by what sets it off. Pure: same rules ⇒ same lanes. The lanes are the list of the
-/// atomic scenarios the rules make: one lane, one claim, one scenario.
+/// Draws the flows of a class's subclass: every rule and passive of the elements each scope of the dependency graph
+/// holds, one flow per claim, grouped by what sets it off. Pure: same rules ⇒ same flows. The flows are the list of the
+/// atomic scenarios the rules make: one flow, one claim, one scenario.
 /// </summary>
-public static class LaneDrawing
+public static class RuleFlowDrawing
 {
     /// <summary>The groups that come first, in the order a player reaches for them; the weapons come after the Super.</summary>
     private static readonly ImmutableArray<string> LeadingGroups =
-        ["trigger:dodge", "trigger:air-dodge", "trigger:melee", "trigger:sliding-melee", "trigger:grenade", "trigger:finisher", "trigger:super"];
+        ["trigger:class-ability", "trigger:air-class-ability", "trigger:melee", "trigger:sliding-melee", "trigger:grenade", "trigger:finisher", "trigger:super"];
 
     private const string AnyWeaponGroup = "weapon:weapon";
 
     private const string CriticalHealthGroup = "trigger:critical-health";
 
-    public static RuleLanes DrawLanes(RuleCatalog catalog, GuardianClass guardianClass, Subclass subclass)
+    public static SubclassRules DrawRules(RuleCatalog catalog, GuardianClass guardianClass, Subclass subclass)
     {
         var context = new GraphContext(catalog, guardianClass, subclass);
         var graph = DependencyGraphDrawing.DrawGraph(catalog, guardianClass, subclass);
-        var lanes = catalog.Elements.Values
+        var flows = catalog.Elements.Values
             .Where(element => DependencyMapping.IsDrawn(context, element))
-            .SelectMany(element => LaneMapping.MapLanes(context, element))
+            .SelectMany(element => RuleFlowMapping.MapFlows(context, element))
             .ToImmutableArray();
-        return new RuleLanes(
+        return new SubclassRules(
             graph.Title,
-            [.. graph.Scopes.Select(scope => DrawScope(graph, scope, lanes))]);
+            [.. graph.Scopes.Select(scope => DrawScope(graph, scope, flows))]);
     }
 
-    private static LaneScope DrawScope(DependencyGraph graph, GraphScope scope, ImmutableArray<MappedLane> lanes)
+    private static RuleScope DrawScope(DependencyGraph graph, GraphScope scope, ImmutableArray<MappedFlow> flows)
     {
         var members = scope.Nodes.ToImmutableHashSet();
-        var groups = lanes
-            .Where(mapped => members.Contains(mapped.Lane.Element))
+        var groups = flows
+            .Where(mapped => members.Contains(mapped.Flow.Element))
             .GroupBy(mapped => mapped.GroupKey)
-            .Select(group => new LaneGroup(
+            .Select(group => new RuleGroup(
                 group.Key,
                 group.First().GroupName,
-                group.First().Lane.Trigger.Icon,
+                group.First().Flow.Trigger.Icon,
                 [.. group
-                    .Select(mapped => mapped.Lane)
-                    .OrderBy(lane => RankOwner(graph.Nodes[lane.Element].Type))
-                    .ThenBy(lane => graph.Nodes[lane.Element].Name, StringComparer.Ordinal)
-                    .ThenBy(lane => lane.Id, StringComparer.Ordinal)]))
+                    .Select(mapped => mapped.Flow)
+                    .OrderBy(flow => RankOwner(graph.Nodes[flow.Element].Type))
+                    .ThenBy(flow => graph.Nodes[flow.Element].Name, StringComparer.Ordinal)
+                    .ThenBy(flow => flow.Id, StringComparer.Ordinal)]))
             .OrderBy(group => RankGroup(group.Key))
             .ThenBy(group => group.Name, StringComparer.Ordinal);
-        return new LaneScope(scope.Kind, scope.Name, [.. groups]);
+        return new RuleScope(scope.Kind, scope.Name, [.. groups]);
     }
 
     /// <summary>
-    /// Dodge, Air dodge, Melee, Sliding melee, Grenade, Finisher, Super; then the weapons (any weapon first); Critical
+    /// Class ability, Air class ability, Melee, Sliding melee, Grenade, Finisher, Super; then the weapons (any weapon first); Critical
     /// health; every other trigger (a pickup, a buff gained, a strike…) by name; the passives ("Always on") last.
     /// </summary>
     private static int RankGroup(string key) =>
@@ -64,7 +64,7 @@ public static class LaneDrawing
                     ? LeadingGroups.Length + 1
                     : key == CriticalHealthGroup
                         ? LeadingGroups.Length + 2
-                        : LaneMapping.IsAlwaysGroup(key)
+                        : RuleFlowMapping.IsAlwaysGroup(key)
                             ? LeadingGroups.Length + 4
                             : LeadingGroups.Length + 3;
 

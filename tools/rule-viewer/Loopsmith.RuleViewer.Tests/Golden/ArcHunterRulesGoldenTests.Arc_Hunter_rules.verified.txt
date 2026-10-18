@@ -1,8 +1,8 @@
-﻿# Arc Hunter lanes
+﻿# Arc Hunter rules
 
-## Arc subclass (subclass): 47 lanes
-  Dodge: 2
-  Air dodge: 1
+## Arc subclass (subclass): 47 rules
+  Class ability: 2
+  Air class ability: 1
   Melee: 6
   Sliding melee: 5
   Grenade: 4
@@ -17,9 +17,9 @@
   Orb of Power: 1
   Always on: 8
 
-## + what it needs from outside (withNeeds): 47 lanes
-  Dodge: 2
-  Air dodge: 1
+## + what it needs from outside (withNeeds): 47 rules
+  Class ability: 2
+  Air class ability: 1
   Melee: 6
   Sliding melee: 5
   Grenade: 4
@@ -34,9 +34,9 @@
   Orb of Power: 1
   Always on: 8
 
-## + what builds on it (withDependents): 144 lanes
-  Dodge: 11
-  Air dodge: 1
+## + what builds on it (withDependents): 144 rules
+  Class ability: 11
+  Air class ability: 1
   Melee: 11
   Sliding melee: 9
   Grenade: 13
@@ -58,23 +58,23 @@
   Threadling: 1
   Always on: 24
 
-## Every lane of + what builds on it
+## Every rule of + what builds on it
 
-### Dodge (11)
-gamblers-dodge#0: [Trigger] Dodge ➜ [Subclass ability · Class ability] Gambler's Dodge (equipped) ➜ [Effect] Melee energy (?)
-lethal-current#1: [Trigger] Dodge ➜ [Subclass aspect] Lethal Current (equipped) ➜ [Buff] Lethal Current
-bomber#0: [Trigger] Dodge ➜ [Armor mod] Bomber (equipped) ➜ [Effect] Grenade energy (12% | 17% | 20%)
-distribution#0: [Trigger] Dodge ➜ [Armor mod] Distribution (equipped) ➜ [Effect] Grenade energy (4% | 6% | 7%), [Effect] Melee energy (4% | 6% | 7%), [Effect] Class ability energy (4% | 6% | 7%), [Effect] Super energy (2% | 3% | 4%)
-dynamo#0: [Trigger] Dodge ➜ [Armor mod] Dynamo (equipped) ➜ [Effect] Super energy (?)
-outreach#0: [Trigger] Dodge ➜ [Armor mod] Outreach (equipped) ➜ [Effect] Melee energy (12% | 17% | 20%)
-powerful-attraction#0: [Trigger] Dodge ➜ [Armor mod] Powerful Attraction (equipped) ➜ [Pickup] Orb of Power (collects)
-reaper#0: [Trigger] Dodge ➜ [Armor mod] Reaper (equipped) ➜ [Buff] Reaper (10s)
-slice#0: [Trigger] Dodge ➜ [Weapon perk] Slice (equipped) ➜ [Buff] Slice (8s)
-slice-enhanced#0: [Trigger] Dodge ➜ [Weapon perk] Slice (enhanced) (equipped) ➜ [Buff] Slice (9s)
-utility-kickstart#0: [Trigger] Dodge (last charge) ➜ [Armor mod] Utility Kickstart (equipped) + [Buff] Armor Charge (on you) ➜ [Effect] Class ability energy (16.2% | 21.7% | 28.4% | 34.4% | 38.4% | 41.3% | 43.4% | 45% by charges from 2), [Buff] Armor Charge (ends · spends all)
+### Class ability (11)
+gamblers-dodge#0: [Trigger] Class ability (Dodge) ➜ [Subclass ability · Class ability] Gambler's Dodge (equipped) ➜ [Effect] Melee energy (?)
+lethal-current#1: [Trigger] Class ability (Dodge) ➜ [Subclass aspect] Lethal Current (equipped) ➜ [Buff] Lethal Current
+bomber#0: [Trigger] Class ability (Dodge) ➜ [Armor mod] Bomber (equipped) ➜ [Effect] Grenade energy (12% | 17% | 20%)
+distribution#0: [Trigger] Class ability (Dodge) ➜ [Armor mod] Distribution (equipped) ➜ [Effect] Grenade energy (4% | 6% | 7%), [Effect] Melee energy (4% | 6% | 7%), [Effect] Class ability energy (4% | 6% | 7%), [Effect] Super energy (2% | 3% | 4%)
+dynamo#0: [Trigger] Class ability (Dodge) ➜ [Armor mod] Dynamo (equipped) ➜ [Effect] Super energy (?)
+outreach#0: [Trigger] Class ability (Dodge) ➜ [Armor mod] Outreach (equipped) ➜ [Effect] Melee energy (12% | 17% | 20%)
+powerful-attraction#0: [Trigger] Class ability (Dodge) ➜ [Armor mod] Powerful Attraction (equipped) ➜ [Pickup] Orb of Power (collects)
+reaper#0: [Trigger] Class ability (Dodge) ➜ [Armor mod] Reaper (equipped) ➜ [Buff] Reaper (10s)
+slice#0: [Trigger] Class ability (Dodge) ➜ [Weapon perk] Slice (equipped) ➜ [Buff] Slice (8s)
+slice-enhanced#0: [Trigger] Class ability (Dodge) ➜ [Weapon perk] Slice (enhanced) (equipped) ➜ [Buff] Slice (9s)
+utility-kickstart#0: [Trigger] Class ability (last charge) (Dodge) ➜ [Armor mod] Utility Kickstart (equipped) + [Buff] Armor Charge (on you) ➜ [Effect] Class ability energy (16.2% | 21.7% | 28.4% | 34.4% | 38.4% | 41.3% | 43.4% | 45% by charges from 2), [Buff] Armor Charge (ends · spends all)
 
-### Air dodge (1)
-ascension#0: [Trigger] Air dodge ➜ [Subclass aspect] Ascension (equipped) ➜ [Buff] Amplified, [Debuff] Jolt
+### Air class ability (1)
+ascension#0: [Trigger] Air class ability (Air dodge) ➜ [Subclass aspect] Ascension (equipped) ➜ [Buff] Amplified, [Debuff] Jolt
 
 ### Melee (11)
 combination-blow#0.0: [Trigger] Melee kill ➜ [Subclass ability · Melee] Combination Blow (equipped) ➜ [Effect] Class ability energy (100%), [Effect] Health (?), [Buff] Combination Blow
@@ -227,7 +227,7 @@ combination-blow#p0: [Trigger] Always ➜ [Subclass ability · Melee] Combinatio
 arc-staff#p0: [Trigger] Always ➜ [Subclass super] Arc Staff (equipped) + [Buff] Super (on you) ➜ [Effect] Damage resistance (90% [PvP 53%])
 gathering-storm#p0: [Trigger] Always ➜ [Subclass super] Gathering Storm (equipped) + [Buff] Super (on you) ➜ [Effect] Damage resistance (90% [PvP 49%])
 storms-edge#p0: [Trigger] Always ➜ [Subclass super] Storm's Edge (equipped) + [Buff] Super (on you) ➜ [Effect] Damage resistance (90% [PvP 45%])
-flow-state#p0: [Trigger] Always ➜ [Subclass aspect] Flow State (equipped) + [Buff] Amplified (on you) + [Trigger] Dodge (under way) ➜ [Effect] Damage resistance (66% [PvP 32%])
+flow-state#p0: [Trigger] Always ➜ [Subclass aspect] Flow State (equipped) + [Buff] Amplified (on you) + [Trigger] Class ability (under way) ➜ [Effect] Damage resistance (66% [PvP 32%])
 spark-of-frequency#p0: [Trigger] Always ➜ [Subclass fragment] Spark of Frequency (equipped) + [Buff] Amplified (on you) ➜ [Buff] Bolt Charge (adds to · +1 stack)
 spark-of-resistance#p0: [Trigger] Always ➜ [Subclass fragment] Spark of Resistance (equipped) ➜ [Effect] Damage resistance (25% [PvP 10%])
 rule:amplified#p0: [Trigger] Always ➜ [Buff] Amplified (on you) ➜ [Effect] Damage resistance (15% vs combatants)

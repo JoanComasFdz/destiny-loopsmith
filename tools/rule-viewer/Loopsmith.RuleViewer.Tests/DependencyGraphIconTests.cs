@@ -83,8 +83,6 @@ public sealed class DependencyGraphIconTests
     [InlineData("trigger:grenade", StatKind.Grenade)]
     [InlineData("trigger:melee", StatKind.Melee)]
     [InlineData("trigger:sliding-melee", StatKind.Melee)]
-    [InlineData("trigger:dodge", StatKind.Class)]
-    [InlineData("trigger:air-dodge", StatKind.Class)]
     [InlineData("trigger:super", StatKind.Super)]
     [InlineData("trigger:critical-health", StatKind.Health)]
     [InlineData("weapon:weapon", StatKind.Weapons)]
@@ -95,6 +93,16 @@ public sealed class DependencyGraphIconTests
     [InlineData("effect:health", StatKind.Health)]
     public void A_trigger_weapon_or_effect_has_its_stats_icon(string id, StatKind stat) =>
         Assert.Equal(StatIcon(stat), FindIcon(Graph, id));
+
+    [Theory]
+    [InlineData("trigger:class-ability")]
+    [InlineData("trigger:air-class-ability")]
+    public void The_class_ability_has_the_icon_of_the_classs_first_class_ability(string id) =>
+        Assert.Equal(ElementIcon("gamblers-dodge"), FindIcon(Graph, id));
+
+    [Fact]
+    public void The_class_ability_has_the_Class_stats_icon_when_the_rules_have_no_class_ability() =>
+        Assert.Equal(StatIcon(StatKind.Class), FindIcon(Draw(Fragment("spark", On(new Trigger.AbilityCast(AbilityKind.ClassAbility)))), "trigger:class-ability"));
 
     [Fact]
     public void The_finisher_has_the_classs_finisher_icon() =>

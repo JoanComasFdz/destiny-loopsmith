@@ -10,8 +10,8 @@
     <ProjectReference Include="..\Loopsmith.RuleViewer.Core\Loopsmith.RuleViewer.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <!-- The lanes page's style and script, put into the page as they are. -->
-    <EmbeddedResource Include="Page/lanes.css" LogicalName="lanes.css" />
-    <EmbeddedResource Include="Page/lanes.js" LogicalName="lanes.js" />
+    <!-- The rules page's style and script, put into the page as they are. -->
+    <EmbeddedResource Include="Page/rules.css" LogicalName="rules.css" />
+    <EmbeddedResource Include="Page/rules.js" LogicalName="rules.js" />
   </ItemGroup>
 </Project>

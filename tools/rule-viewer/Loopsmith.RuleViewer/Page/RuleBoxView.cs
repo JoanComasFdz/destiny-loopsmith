@@ -3,12 +3,12 @@ using Loopsmith.RuleViewer.Core;
 
 namespace Loopsmith.RuleViewer.Page;
 
-/// <summary>A lane box: its icon, its kind title in its colour, its name and its caption; a box the lane ends has a dashed border.</summary>
-public static class LaneBoxView
+/// <summary>A flow box: its icon, its kind title in its colour, its name and its caption; a box the flow ends has a dashed border.</summary>
+public static class RuleBoxView
 {
-    public static string RenderBox(LaneBox box) =>
-        $"<div class=\"lbox{ToRoleClass(box.Role)}\" style=\"--c:var(--{ToToneName(box.Tone)})\">"
-        + LaneIconView.RenderIcon(box.Icon)
+    public static string RenderBox(RuleBox box) =>
+        $"<div class=\"rbox{ToRoleClass(box.Role)}\" style=\"--c:var(--{ToToneName(box.Tone)})\">"
+        + RuleIconView.RenderIcon(box.Icon)
         + $"<div><b>{Encode(box.Title)}</b><span>{Encode(box.Name)}</span>"
         + (box.Caption.Length == 0 ? "" : $"<small>{Encode(box.Caption)}</small>")
         + "</div></div>";
