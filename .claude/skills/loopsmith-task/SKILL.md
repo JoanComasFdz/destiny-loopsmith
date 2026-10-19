@@ -234,9 +234,12 @@ goes for log lines you quote in the PR.
 
 **Long-running commands.** A command that runs for more than about a minute (`tools/e2e/record.sh`, `dotnet test`,
 `dotnet publish`, the Compendium download) runs in the background, and the session reports its progress in the session
-about once a minute until it ends: one short line saying what is done and what is left ("7 of 36 runs recorded, all
-passed"), read from the command's output (a Monitor on its log, for example), never guessed. When it ends, one line says
-how: passed, failed (with what failed), or stopped.
+about once a minute until it ends: one short line saying how many are done out of how many in all, and how they went
+("7 of 36 runs recorded, all passed"; "3 of 4 test projects done, 1 failed"), read from the command's output (a Monitor
+on its log, for example), never guessed. Every line gives the total, whatever is counted (runs, tests, files, steps):
+work it out before the command starts, from what it will run (a recording's runs are its selected scenarios times the
+screens each is played on), and when no total can be known, say so in the first line. When it ends, one line says how:
+passed, failed (with what failed), or stopped.
 
 ### Subagents
 
