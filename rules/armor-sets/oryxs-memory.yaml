@@ -2,7 +2,7 @@
 # Compendium snapshot of 2026-10-19 (Armor Perks tab, the set's name in the first column of row 65).
 # "Elite+" is an elite or stronger enemy (Game Mechanics#179: elite, then miniboss and champion, then boss):
 # `tier: elite+`, which a kill step the player says is of an elite, miniboss, champion or boss meets
-# (`energy:kill:elite`, `finisher:boss`, ADRs D44).
+# (`energy:kill:elite`, `finisher:boss`, ADRs D45).
 elements:
   # The Guardian kills are PvP (Loopsmith plays PvE packs, ADRs D7). Ammo isn't counted (ADRs D37):
   # the progress is a fact shown with the outcome.

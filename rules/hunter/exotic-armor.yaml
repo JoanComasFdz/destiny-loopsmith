@@ -49,3 +49,42 @@ elements:
       - id: shinobus-vow-5
         effect: { extraCharges: { ability: grenade, extra: 1 } }
         reason: "Shinobu's Vow gives Skip Grenade a second charge."
+
+  - id: mechaneers-tricksleeves
+    name: Mechaneer's Tricksleeves
+    kind: exoticArmor
+    affinity: neutral
+    class: hunter
+    # The gauntlets' manifest hashes: 2574019120 is the collectible one; the manifest has three more
+    # copies of the item under the same name, so a DIM loadout's Tricksleeves is recognised whichever
+    # it names. Bungie calls the exotic perk Spring-Loaded Mounting (481860151).
+    hash: [2574019120, 1734144409, 3969198262, 4284305243]
+    description: "Spring-Loaded Mounting: Sidearms get +50 Airborne Effectiveness, +100 Handling and +100 Reload Speed. Readying a Sidearm while at critical health refills its ammo and gives a damage buff: 100% [PvP 10%] more Sidearm damage, and Sidearm kills refill the magazine. The buff has no timer while you are at critical health and lasts 5 s once your shields recover; each Sidearm kill refreshes it by 3 s."
+    source: "compendium/2026-10-19/Exotic Armors#52"
+    rules:
+      # The ammo refill on readying and the magazine refill on a kill are facts in the description:
+      # a refill is no reload, and sets off no on-reload perk (compendium/2026-10-19/Weapon Perks#250,
+      # "Reload Perk Notes"; ADRs D42), and `refillWeapon` names this weapon or a slot, not "the
+      # sidearm readied". Bungie's perk text says the swap "reloads" the Sidearm.
+      # The buff outlasts critical health by 5 s and no time is counted (ADRs D1): it doesn't end
+      # with critical health, the player declares its end (`end:spring-loaded-mounting`).
+      - id: mechaneers-tricksleeves-2
+        on: { ready: { via: weapon:sidearm } }
+        when: [ { has: critical-health } ]
+        then:
+          - { applyBuff: spring-loaded-mounting }
+        reason: "Swapping to a sidearm while critically wounded refills it and powers up your sidearm damage."
+    passives:
+      - id: mechaneers-tricksleeves-1
+        effect:
+          modifyWeaponStats:
+            archetypes: [sidearm]
+            changes:
+              - { stat: airborne-effectiveness, change: "+50" }
+              - { stat: handling, change: "+100" }
+              - { stat: reload-speed, change: "+100" }
+        reason: "Your sidearms are steadier in the air, ready faster and reload faster."
+      - id: mechaneers-tricksleeves-3
+        effect: { modifyDamage: { against: weapon:sidearm, change: "+100% [10%]" } }
+        when: [ { has: spring-loaded-mounting } ]
+        reason: "While Spring-Loaded Mounting is up, your sidearms hit twice as hard."

@@ -10,8 +10,9 @@ public partial record StepTrigger
     public partial record Kill;
     public partial record Reload;
     public partial record PickUp(Brick Ammo);   // an ammo brick's button: "special", "heavy" (ADRs D43)
+    public partial record Ready;
 
-    /// <summary>The finisher's one button when it takes a rank: "Finisher (Elite)" (ADRs D44).</summary>
+    /// <summary>The finisher's one button when it takes a rank: "Finisher (Elite)" (ADRs D45).</summary>
     public partial record FinisherOf(EnemyRank Rank);
 
     /// <summary>What the UI shows that no case names yet: a failing assertion names it as the UI shows it.</summary>
@@ -21,7 +22,7 @@ public partial record StepTrigger
 /// <summary>What the UI shows for each <see cref="StepTrigger"/>: the only place those strings live.</summary>
 public static class StepTriggerShowing
 {
-    private static readonly StepTrigger[] Listed = [new StepTrigger.Hit(), new StepTrigger.Kill(), new StepTrigger.Reload(), new StepTrigger.PickUp(new Brick.Special()), new StepTrigger.PickUp(new Brick.Heavy())];
+    private static readonly StepTrigger[] Listed = [new StepTrigger.Hit(), new StepTrigger.Kill(), new StepTrigger.Reload(), new StepTrigger.PickUp(new Brick.Special()), new StepTrigger.PickUp(new Brick.Heavy()), new StepTrigger.Ready()];
 
     /// <summary>What the UI shows for <paramref name="value"/>.</summary>
     public static string ToShownText(this StepTrigger value) =>
@@ -30,6 +31,7 @@ public static class StepTriggerShowing
             kill => "💀 kill",
             reload => "🔄 reload",
             pickUp => pickUp.Ammo.ToShownText(),
+            ready => "✋ ready",
             finisherOf => $"Finisher ({finisherOf.Rank.ToShownText()})",
             unlisted => unlisted.Shown);
 

@@ -1,0 +1,8 @@
+# Mechaneer's Tricksleeves, with Buzzard (a Kinetic sidearm) to ready and Thunderlord (a Heavy machine gun, no sidearm).
+name: "E2E - Mechaneer's Tricksleeves with Buzzard and Thunderlord"
+class: hunter
+subclass: arc
+exoticArmor: mechaneers-tricksleeves
+weapons:
+  - { hash: 805677041, perks: [] } # Buzzard
+  - { hash: 3325463374, perks: [] } # Thunderlord

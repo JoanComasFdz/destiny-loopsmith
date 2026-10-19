@@ -229,9 +229,10 @@ public static class GameNotationParsing
             "weapon" when argument.StartsWith("this:", StringComparison.Ordinal) => ParseVocabularyWord<DamageType>(argument["this:".Length..])
                 .Map(DamageSource (type) => new DamageSource.ThisWeaponOfType(type)),
             "weapon" when ParseVocabularyWord<AmmoType>(argument.Split(':')[0]).IsOk() => ToAmmoDamageSource(argument),
+            "weapon" when WeaponArchetypes.Known.Contains(argument) => new Result<DamageSource, string>.Ok(new DamageSource.WeaponOfArchetype(argument)),
             "weapon" => ParseVocabularyWord<DamageType>(argument)
                 .Map(DamageSource (type) => new DamageSource.WeaponOfType(type))
-                .MapError(message => $"{message}, primary, special, heavy, harmonic or this"),
+                .MapError(message => $"{message}, primary, special, heavy, a weapon type ({string.Join(", ", WeaponArchetypes.Known)}), harmonic or this"),
             "slot" => ParseVocabularyWord<WeaponSlot>(argument).Map(DamageSource (slot) => new DamageSource.WeaponInSlot(slot)),
             "type" => ParseVocabularyWord<DamageType>(argument).Map(DamageSource (type) => new DamageSource.OfType(type)),
             "keyword" => StatusId.TryFrom(argument).ToResult().Map(DamageSource (status) => new DamageSource.KeywordOf(status)),

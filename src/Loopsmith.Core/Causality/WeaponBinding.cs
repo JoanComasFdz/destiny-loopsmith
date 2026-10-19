@@ -48,7 +48,7 @@ public static class WeaponBinding
         strike.Weapon is DamageSource.WeaponInSlot inSlot
             ? build.Weapons
                 .Where(weapon => weapon.Slot == inSlot.Slot)
-                .Select(weapon => Optional.Some<DamageOrigin>(new DamageOrigin.Weapon(inSlot.Slot, strike.Type.Match(type => type.Value, _ => weapon.Type), weapon.Ammo)))
+                .Select(weapon => Optional.Some<DamageOrigin>(new DamageOrigin.Weapon(inSlot.Slot, strike.Type.Match(type => type.Value, _ => weapon.Type), weapon.Ammo, weapon.Archetype)))
                 .FindFirstSome()
             : Optional.None<DamageOrigin>();
 
@@ -130,7 +130,8 @@ public static class WeaponBinding
             killBetween => BindSource(killBetween.Via, slot, type).Map(Trigger (via) => killBetween with { Via = via }),
             reload => BindSource(reload.Via, slot, type).Map(Trigger (via) => reload with { Via = via }),
             hitAtCriticalHealth => Optional.Some<Trigger>(hitAtCriticalHealth),
-            pickUpAmmo => Optional.Some<Trigger>(pickUpAmmo));
+            pickUpAmmo => Optional.Some<Trigger>(pickUpAmmo),
+            readyWeapon => BindSource(readyWeapon.Via, slot, type).Map(Trigger (via) => readyWeapon with { Via = via }));
 
     /// <summary>"This weapon" is the slot's weapon; "this weapon, when it is X" is it when its type is X, else nothing.</summary>
     private static Optional<DamageSource> BindSource(DamageSource source, WeaponSlot slot, DamageType type) =>
@@ -151,7 +152,8 @@ public static class WeaponBinding
                 ? Optional.Some<DamageSource>(new DamageSource.WeaponInSlot(slot))
                 : Optional.None<DamageSource>(),
             weaponOfAmmo: _ => Optional.Some(source),
-            weaponOfAmmoAndType: _ => Optional.Some(source));
+            weaponOfAmmoAndType: _ => Optional.Some(source),
+            weaponOfArchetype: _ => Optional.Some(source));
 
     private static IEnumerable<T> ToSequence<T>(Optional<T> optional) =>
         optional.Match(some => new[] { some.Value }, _ => []);

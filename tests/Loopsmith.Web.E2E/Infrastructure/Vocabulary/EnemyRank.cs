@@ -2,7 +2,7 @@ using Dunet;
 
 namespace Loopsmith.Web.E2E.Infrastructure.Vocabulary;
 
-/// <summary>The rank of the enemy a kill kills, as the trigger palette's "Rank" picker names it (ADRs D44). A case is added when a test needs it.</summary>
+/// <summary>The rank of the enemy a kill kills, as the trigger palette's "Rank" picker names it (ADRs D45). A case is added when a test needs it.</summary>
 [Union]
 public partial record EnemyRank
 {

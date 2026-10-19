@@ -6,7 +6,7 @@
    an ability or a weapon picks it: its actions show below the HUD — hit or kill, and how many enemies that one action
    catches — and stay there for the next step. One that only has one action (the class ability, its air move, the
    finisher, a pickup, a declared state) acts at once. A row with a kill has a Rank picker (the enemy it kills: the pack's
-   minors, or an elite, miniboss, champion or boss, ADRs D44), enabled only when an equipped rule reacts to a rank; then the
+   minors, or an elite, miniboss, champion or boss, ADRs D45), enabled only when an equipped rule reacts to a rank; then the
    finisher takes one too, and picks like a weapon instead of acting at once. Every trigger is pickable — except while the build equips nothing
    (a build started from scratch, LoopDesigning.HasTriggerSource): then the panel is greyed out, nothing in it
    can be tapped, and a line says why. *@
@@ -349,7 +349,8 @@
     /// <summary>A button of the picked row: "🥊 hit", "💀 kill", "🔄 reload", an ammo brick's "special" and "heavy".</summary>
     private RenderFragment RenderTrigger(TriggerButton button) => __builder =>
     {
-        <button type="button" class="trigger" data-action="trigger" data-token="@button.Token" title="@($"{button.Label}  ({button.Token})")"
+        <button type="button" class="trigger" data-action="trigger" data-token="@button.Token" data-enabled="@(button.IsEnabled ? "true" : "false")" disabled="@(!button.IsEnabled)"
+                title="@(button.IsEnabled ? $"{button.Label}  ({button.Token})" : $"{button.Label}: no rule of this build reacts to it")"
                 @onclick="() => PickTrigger(button.Action)">
             <span class="trigger-caption" data-testid="trigger-caption">@button.Caption</span>
             @if (button.IsNew)

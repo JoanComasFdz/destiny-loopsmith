@@ -128,7 +128,7 @@ public sealed class DependencyGraphIconTests
     {
         var graph = Draw(
             Fragment("spark", On(new Trigger.ShieldBroken(new DamageSource.WeaponInSlot(WeaponSlot.Power)), new Outcome.ReloadWeapon(new DamageSource.ThisWeapon()))),
-            Fragment("ember", On(new Trigger.Reload(new DamageSource.ThisWeapon()), new Outcome.ModifyDamage(new DamageSource.AnySource(), new GameValue.Known(0.1m)))));
+            Fragment("ember", On(new Trigger.Reload(new DamageSource.ThisWeapon()), new Outcome.ModifyDamage(new DamageSource.AnySource(), new GameValue.Known(0.1m), Optional.None<GameValue>()))));
 
         Assert.Null(FindIcon(graph, "trigger:shield-broken"));
         Assert.Null(FindIcon(graph, "trigger:reload"));

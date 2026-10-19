@@ -58,7 +58,7 @@ public enum KeywordKind
 /// <summary>
 /// An enemy's rank (compendium/2026-10-19/Game Mechanics#176-179): rank-and-file (<see cref="Minor"/>), <see cref="Elite"/>,
 /// then <see cref="Miniboss"/> and <see cref="Champion"/> (one tier), then <see cref="Boss"/>. The pack in front of you is minor
-/// (ADRs D7); a kill step the player says is of a stronger enemy (<c>energy:kill:elite</c>, ADRs D44) kills one of that rank.
+/// (ADRs D7); a kill step the player says is of a stronger enemy (<c>energy:kill:elite</c>, ADRs D45) kills one of that rank.
 /// </summary>
 public enum EnemyTier { Minor, Elite, Miniboss, Champion, Boss }
 

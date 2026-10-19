@@ -10,10 +10,11 @@ namespace Loopsmith.Web.Presentation;
 /// <summary>
 /// One button of the palette: the action it appends (the option aimed at its row's target count), that action's token
 /// and label in the core's wording ("grenade:kill:3", "Grenade (💀 kill 3)"), and the button's short caption ("🥊 hit", "💀 kill").
-/// <see cref="StandsApart"/>: the row's target count and option don't apply to it (a weapon's reload, ADRs D37), so it stands
-/// at the row's right end, away from them.
+/// <see cref="StandsApart"/>: the row's target count and option don't apply to it (a weapon's reload, ADRs D37, and its
+/// Ready step, D44), so it stands at the row's right end, away from them. <see cref="IsEnabled"/>: false for a button shown
+/// though no rule of the build reacts to it (a Ready step without Mechaneer's Tricksleeves).
 /// </summary>
-public sealed record TriggerButton(PlayerAction Action, string Token, string Label, string Caption, bool IsNew, bool StandsApart);
+public sealed record TriggerButton(PlayerAction Action, string Token, string Label, string Caption, bool IsNew, bool StandsApart, bool IsEnabled = true);
 
 /// <summary>
 /// A row of the palette: one trigger, or the hit / kill pair of the same ability use or weapon (a weapon's reload too), or the
@@ -30,7 +31,7 @@ public sealed record TriggerChoice(
     string Key, string Title, Optional<TargetCount> Targets, ImmutableArray<TriggerButton> Buttons, ImmutableArray<TriggerOptionToggle> Options, Optional<RankPick> Rank);
 
 /// <summary>
-/// The rank a row's kill kills (ADRs D44): <see cref="Picked"/>, the one the player picked (the pack's minors until then);
+/// The rank a row's kill kills (ADRs D45): <see cref="Picked"/>, the one the player picked (the pack's minors until then);
 /// <see cref="IsEnabled"/>, false while no equipped rule reacts to a rank — the picker shows, at Minor, and can't change.
 /// </summary>
 public sealed record RankPick(EnemyTier Picked, bool IsEnabled);
@@ -121,7 +122,7 @@ public static class TriggerPaletteShaping
     }
 
     /// <summary>
-    /// A row's rank picker (ADRs D44): on every row with a kill, enabled only when an equipped rule reacts to a rank; on the
+    /// A row's rank picker (ADRs D45): on every row with a kill, enabled only when an equipped rule reacts to a rank; on the
     /// finisher only then, so that otherwise it still acts at one tap. None on any other row.
     /// </summary>
     private static Optional<RankPick> ShapeRank(string key, ImmutableArray<TriggerOption> pair, ImmutableDictionary<string, EnemyTier> ranks, bool reacts)
@@ -144,6 +145,7 @@ public static class TriggerPaletteShaping
         {
             (PlayerAction.ReloadWeapon, _) => DomainPhrasing.ReloadCaption,
             (PlayerAction.PickUpAmmo ammo, _) => ammo.Brick.ToString().ToLowerInvariant(),
+            (PlayerAction.ReadyWeapon, _) => DomainPhrasing.ReadyWeaponCaption,
             (_, 1) => label,
             _ => ReadQualifier(label),
         };
@@ -165,7 +167,7 @@ public static class TriggerPaletteShaping
         var action = rank.Match(pick => LoopDesigning.SetKillRank(toggled, pick.Value.Picked), _ => toggled);
         var label = build.DescribeAction(action);
         var caption = ReadCaption(action, buttons == 1 ? label : option.Label, buttons);   // a row's only button says its whole step ("Finisher (Elite)"); a pair's, only its hit or kill
-        return new TriggerButton(action, action.ToActionToken(), label, caption, option.IsNew, action is PlayerAction.ReloadWeapon);
+        return new TriggerButton(action, action.ToActionToken(), label, caption, option.IsNew, action is PlayerAction.ReloadWeapon or PlayerAction.ReadyWeapon, option.IsEnabled);
     }
 
     /// <summary>
@@ -188,7 +190,8 @@ public static class TriggerPaletteShaping
             declare => ((PlayerAction)declare).ToActionToken(),
             _ => "finisher",
             reload => $"fire:{reload.Slot}",
-            _ => AmmoBrickKey);
+            _ => AmmoBrickKey,
+            ready => $"fire:{ready.Slot}");
 
     private static int ReadHitOrder(PlayerAction action) =>
         action.Match(
@@ -199,7 +202,8 @@ public static class TriggerPaletteShaping
             _ => 0,
             _ => 0,
             _ => 3,   // a reload stays at the row's right end
-            ammo => ammo.Brick == AmmoBrick.Special ? 0 : 1);
+            ammo => ammo.Brick == AmmoBrick.Special ? 0 : 1,
+            _ => 2);   // a Ready step, before the reload
 
     /// <summary>"Grenade (💀 kill)" → "Grenade".</summary>
     private static string ReadTitle(string label)

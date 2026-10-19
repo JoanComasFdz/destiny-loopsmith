@@ -1,6 +1,6 @@
 ﻿# Arc Hunter rules
 
-## Arc subclass (subclass): 55 rules
+## Arc subclass (subclass): 56 rules
   Class ability: 2
   Air class ability: 1
   Melee: 6
@@ -23,9 +23,9 @@
   Slide over an ammo brick: 1
   Super guard: 1
   Super heavy combo: 1
-  Always on: 9
+  Always on: 10
 
-## + what it needs from outside (withNeeds): 55 rules
+## + what it needs from outside (withNeeds): 56 rules
   Class ability: 2
   Air class ability: 1
   Melee: 6
@@ -48,9 +48,9 @@
   Slide over an ammo brick: 1
   Super guard: 1
   Super heavy combo: 1
-  Always on: 9
+  Always on: 10
 
-## + what builds on it (withDependents): 161 rules
+## + what builds on it (withDependents): 162 rules
   Class ability: 11
   Air class ability: 1
   Melee: 11
@@ -79,7 +79,7 @@
   Super heavy combo: 1
   This weapon: 4
   Threadling: 1
-  Always on: 28
+  Always on: 29
 
 ## Every rule of + what builds on it
 
@@ -272,12 +272,13 @@ slice-enhanced#1 weapons-perks-slice-2: [Trigger] This weapon hit ➜ [Weapon pe
 ### Threadling (1)
 horde-shuttle#1 artifact-current-horde-shuttle-2: [Trigger] Threadling hit ➜ [Artifact perk] Horde Shuttle (equipped) ➜ [Debuff] Sever
 
-### Always on (28)
+### Always on (29)
 combination-blow#p0 hunter-arc-melees-combination-blow-2: [Trigger] Always ➜ [Subclass ability · Melee] Combination Blow (equipped) + [Buff] Combination Blow (on you) ➜ [Effect] Damage bonus (? vs melee)
 arc-staff#p0 hunter-arc-supers-arc-staff-2: [Trigger] Always ➜ [Subclass super] Arc Staff (equipped) + [Buff] Super (on you) ➜ [Effect] Damage resistance (90% [PvP 53%])
 gathering-storm#p0 hunter-arc-supers-gathering-storm-2: [Trigger] Always ➜ [Subclass super] Gathering Storm (equipped) + [Buff] Super (on you) ➜ [Effect] Damage resistance (90% [PvP 49%])
 storms-edge#p0 hunter-arc-supers-storms-edge-1: [Trigger] Always ➜ [Subclass super] Storm's Edge (equipped) + [Buff] Super (on you) ➜ [Effect] Damage resistance (90% [PvP 45%])
 flow-state#p0 hunter-arc-aspects-flow-state-2: [Trigger] Always ➜ [Subclass aspect] Flow State (equipped) + [Buff] Amplified (on you) + [Trigger] Class ability (under way) ➜ [Effect] Damage resistance (66% [PvP 32%])
+flow-state#p1 hunter-arc-aspects-flow-state-3: [Trigger] Always ➜ [Subclass aspect] Flow State (equipped) + [Buff] Amplified (on you) ➜ [Effect] Class ability energy (200% faster regeneration)
 spark-of-frequency#p0 all-classes-arc-fragments-spark-of-frequency-1: [Trigger] Always ➜ [Subclass fragment] Spark of Frequency (equipped) + [Buff] Amplified (on you) ➜ [Buff] Bolt Charge (adds to · +1 stack)
 spark-of-recharge#p0 all-classes-arc-fragments-spark-of-recharge-2: [Trigger] Always ➜ [Subclass fragment] Spark of Recharge (equipped) + [Buff] Spark of Recharge (on you) ➜ [Effect] Grenade energy (400% [PvP 200%] faster regeneration), [Effect] Melee energy (400% [PvP 200%] faster regeneration)
 spark-of-resistance#p0 all-classes-arc-fragments-spark-of-resistance-1: [Trigger] Always ➜ [Subclass fragment] Spark of Resistance (equipped) ➜ [Effect] Damage resistance (25% [PvP 10%])

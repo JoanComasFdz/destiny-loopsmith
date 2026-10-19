@@ -476,7 +476,7 @@ What the format can't count is written in one of three ways, and needs no new fo
 | `{ abilityCast: grenade }` (`grenade\|melee\|classAbility\|super`) | `AbilityCast(kind)` |
 | `{ abilityCast: { ability: classAbility, input: air } }` — only that use of the ability (a secondary; `input` is `press\|slide\|air\|hold`) | `AbilityCastAs(classAbility, air)` |
 | `{ kill: { via: <source> } }` | `KillAny(via)` |
-| `{ kill: { via: <source>, tier: boss } }` (`minor\|elite\|miniboss\|champion\|boss`) — the kill of an enemy of that rank; `tier: elite+`, of an elite or stronger (the Compendium's "Elite+": elite, miniboss, champion or boss), `tier: miniboss+` of a miniboss, champion or boss (ADRs D44) | `KillOfTier(via, Exactly(rank) \| AtLeast(rank))` |
+| `{ kill: { via: <source>, tier: boss } }` (`minor\|elite\|miniboss\|champion\|boss`) — the kill of an enemy of that rank; `tier: elite+`, of an elite or stronger (the Compendium's "Elite+": elite, miniboss, champion or boss), `tier: miniboss+` of a miniboss, champion or boss (ADRs D45) | `KillOfTier(via, Exactly(rank) \| AtLeast(rank))` |
 | `{ kill: { via: <source>, targetHas: [jolt, sever] } }` | `KillDebuffed(via, statuses)` |
 | `{ damage: { via: <source> } }` | `Damage(via)` |
 | `{ damage: { via: <source>, targetHas: [sever] } }` | `DamageDebuffed(via, statuses)` |
@@ -497,6 +497,7 @@ What the format can't count is written in one of three ways, and needs no new fo
 | `{ energyExpended: grenade }` (`grenade\|melee\|classAbility`) — the ability's energy fully expended: its last charge used (`grenade:last`) | `EnergyExpended(kind)` |
 | `{ reload: {} }` / `{ reload: { via: weapon:this } }` — a weapon reloaded: the player's Reload step (`energy:reload`) or a `reloadWeapon` outcome; `via` names a weapon (defaults to `any`) | `Reload(via)` |
 | `{ ammoPickedUp: {} }` / `{ ammoPickedUp: { brick: heavy } }` / `{ ammoPickedUp: { by: slide } }` — an ammo brick the player picks up (`ammo:heavy`, ADRs D43): any, or only that brick (`special\|heavy`); with `by: slide`, only one they slide over (`ammo:heavy:slide`) | `PickUpAmmo(brick, needs)` |
+| `{ ready: {} }` / `{ ready: { via: weapon:sidearm } }` — the player readies (swaps to) that weapon (`kinetic:ready`); `via` names a weapon (defaults to `any`) | `ReadyWeapon(via)` |
 
 A **secondary ability use** is the ability used another way, which an aspect makes do something else
 (ADRs D9): the melee while sliding (`slide`: Tempest Strike's uppercut, played as `melee:slide`) or in the
@@ -520,7 +521,7 @@ unknown key (write `input: air`). [loop-format.md](loop-format.md#action-tokens)
 `atLeast` with either of them, or with `sustained` (`damage cannot combine 'atLeast' and 'sustained'`); `damage` has no
 `tier`. `sustained` (default `false`) is for a count the game doesn't show of hits or damage on one enemy: write it
 instead of `chance: true` (ADRs D34). The pack in front of you is `minor` (ADRs D7): a kill of a stronger enemy is a
-kill step or finisher the player says is of one (`energy:kill:elite`, `finisher:boss`; ADRs D44), so a `tier:` rule fires
+kill step or finisher the player says is of one (`energy:kill:elite`, `finisher:boss`; ADRs D45), so a `tier:` rule fires
 on it and on no minor's kill. `champion+` isn't a tier (champions share their tier with minibosses), and `major`, the old
 word for an elite, is an error (`'major' is no tier: an elite is 'elite'`).
 `atLeast` is a whole number 1..20 (`TargetCount`, ADRs D4): the player says how many enemies an
@@ -571,6 +572,7 @@ rules "Max Bolt Charge". A `stacksMaxed` (or `atMax`) on a status without `maxSt
 | `weapon:strand` | `WeaponOfType(Strand)` |
 | `weapon:special` (`primary\|special\|heavy`) | `WeaponOfAmmo(Special)` — a weapon of that ammo type, the manifest's: of its item's `ammo` ([manifest excerpt](#manifest-excerpt-rulesmanifestyaml)); a weapon whose ammo type the manifest doesn't say matches no ammo type |
 | `weapon:special:arc` (`<ammo>:<type>`) | `WeaponOfAmmoAndType(Special, Arc)` — a weapon of that ammo type and that damage type (Spark of Beacons's "Special or Heavy Arc weapon kills": a rule each) |
+| `weapon:sidearm` (`<weapon type>`) | `WeaponOfArchetype("sidearm")` — a weapon of that weapon type, the manifest's item type in kebab-case: `auto-rifle`, `combat-bow`, `fusion-rifle`, `glaive`, `grenade-launcher`, `hand-cannon`, `linear-fusion-rifle`, `machine-gun`, `pulse-rifle`, `rocket-launcher`, `scout-rifle`, `shotgun`, `sidearm`, `sniper-rifle`, `submachine-gun`, `sword`, `trace-rifle` (any other word is an error); a weapon whose type the manifest doesn't say matches none (Mechaneer's Tricksleeves's sidearms) |
 | `weapon:harmonic` | `WeaponOfSuperType` — a weapon of your Super's element (the Harmonic mods): of the build's Super's `affinity` in the catalog; with the Super `?` (or one of no element) it matches nothing |
 | `slot:power` | `WeaponInSlot(Power)` — the build's weapon in that slot (`kinetic\|energy\|power`): an exotic weapon's "this weapon", since an exotic always sits in its own slot |
 | `weapon:this` | `ThisWeapon` — the weapon holding the element: only in a `weaponPerk`, `weaponMod`, `exoticWeapon` or `catalyst` (`weapon:this is the weapon holding the element: only a weaponPerk, weaponMod, exoticWeapon or catalyst has one, not a armorMod`) |
@@ -692,7 +694,7 @@ which the `reload` trigger matches. No ammo is counted, so a reload is never nee
 slot). A **refill** is no reload (ADRs D42): the Compendium's "Reload Perk Notes" (Weapon Perks#250) say a refill puts
 rounds back without the animation and sets off no on-reload perk, so what puts rounds back without a reload
 (Demolitionist's refill, Return Stroke's 5 rounds) is a `refillWeapon`, which raises no `Reloaded`; its numbers are a fact.
-`reload` takes only `via`, and it names a weapon: `any`, `weapon`, `weapon:<type>`, `weapon:harmonic`,
+`reload` takes only `via`, and it names a weapon: `any`, `weapon`, `weapon:<type>`, `weapon:<ammo>`, `weapon:<weapon type>`, `weapon:harmonic`,
 `slot:<slot>`, `weapon:this` or `weapon:this:<type>` (`reload: { via: grenade }` is an error,
 `reload's via names a weapon: …`). Demolitionist (`rules/weapons/perks.yaml`, Compendium Weapon Perks#62) has both
 halves of its loop, its grenade's refill no reload:
@@ -730,6 +732,27 @@ Arc#21):
           - { applyBuff: { status: bolt-charge, stacks: 3 } }
 ```
 
+**Readying a weapon** (ADRs D44) is the player's step (`kinetic:ready`, "Ready Buzzard",
+[loop-format.md](loop-format.md#action-tokens)): it raises `WeaponReadied` from that weapon, which the `ready` trigger
+matches. Like a reload it takes only `via`, which names a weapon (`ready's via names a weapon: …`); which weapon is in
+hand isn't kept. Mechaneer's Tricksleeves (`rules/hunter/exotic-armor.yaml`, Exotic Armors#52) readies a sidearm at
+critical health; its damage bonus names the sidearms by weapon type and gives its PvP value, and its refill of the
+sidearm is a fact in its description, as Spark of Momentum's is:
+
+<!-- RuleExampleTests reads the next yaml block as an element's keys -->
+```yaml
+    rules:
+      - id: mechaneers-tricksleeves-2
+        on: { ready: { via: weapon:sidearm } }
+        when: [ { has: critical-health } ]
+        then:
+          - { applyBuff: spring-loaded-mounting }
+    passives:
+      - id: mechaneers-tricksleeves-3
+        effect: { modifyDamage: { against: weapon:sidearm, change: "+100% [10%]" } }
+        when: [ { has: spring-loaded-mounting } ]
+```
+
 **Outcomes (`then`)** — exactly one key each:
 
 | YAML | Domain `Outcome` |
@@ -750,7 +773,7 @@ Arc#21):
 | `{ summon: { summon: threadling, count: 1 } }` / `{ summon: threadling }` | `SpawnSummon` (count default 1) |
 | `{ strikeTarget: { via: bolt-charge, hit: kill } }` (`damage\|kill`; `via` names a status) | `StrikeTarget` |
 | `{ strikeTarget: { via: "weapon:this", type: kinetic, hit: damage } }` — this weapon's damage dealt by an effect (Veteran's Wisdom's shockwave, Radiolaria Transposer's explosion and pool): it hits as the weapon holding the element, so every rule on that weapon's damage reacts to it; `type` (optional) is the strike's damage type, else the weapon's own; only in an element a weapon holds, like `weapon:this` | `WeaponStrike` |
-| `{ modifyDamage: { against: keyword:bolt-charge, change: "+50%" } }` | `ModifyDamage` |
+| `{ modifyDamage: { against: keyword:bolt-charge, change: "+50%" } }` — `"+100% [10%]"`: with its PvP value, like `resistDamage`'s, shown `+100% [PvP 10%]` | `ModifyDamage` |
 | `{ restoreHealth: { amount: "?", allies: true } }` (`allies` default false) — `amount` a share of your health; `{ hp: 65 }` instead: HP (Unrelenting) | `RestoreHealth(Share \| Points, allies)` |
 | `{ resetCooldown: melee }` | `ResetCooldown` |
 | `{ collect: orb-of-power }` | `Collect` — picks the pickup up from the ground (Powerful Attraction) |
@@ -868,7 +891,7 @@ passives:                               # Spark of Frequency (rules/all-classes/
 |---|---|
 | `{ extraStacks: { status, extra } }` (`extra` ≥ 1) | `ExtraStacks` |
 | `{ extraCharges: { ability: grenade, extra: 1 } }` | `ExtraCharges` (a fact, ADRs D5) |
-| `{ modifyDamage: { against, change } }` | `ModifyDamage` |
+| `{ modifyDamage: { against, change } }` (`change` may give its PvP value: `"+100% [10%]"`) | `ModifyDamage` |
 | `{ resistDamage: "25% [10%]" }` (any damage; `[…]` the PvP value) | `ResistDamage` |
 | `{ resistCombatantDamage: { against: arc, amount: "15% \| 25% \| 30%" } }` (combatants only; no `[…]`) | `ResistCombatantDamage(CombatantDamage.OfType(Arc), amount)` |
 | `{ modifyWeaponStats: { archetypes: [fusion-rifle], changes: [ { stat: handling, change: "?" } ] } }` — the build's weapons of those archetypes; `weapon: this` instead of `archetypes`: the weapon holding the element (Stats for All), bound like `weapon:this` | `ModifyWeaponStats(OfArchetypes \| ThisWeapon, changes)` (non-empty lists; archetypes and stats are kebab-case words; a change is stat points, `"+35"`) |

@@ -5,7 +5,7 @@ using Loopsmith.Web.E2E.Infrastructure.Vocabulary;
 
 namespace Loopsmith.Web.E2E.Scenarios.Loop;
 
-/// <summary>The rank of the enemy a kill kills (ADRs D44): the "Rank" picker on a kill row, and on the finisher when a rule reacts to it.</summary>
+/// <summary>The rank of the enemy a kill kills (ADRs D45): the "Rank" picker on a kill row, and on the finisher when a rule reacts to it.</summary>
 public sealed class EnemyRankTests : BaseE2E
 {
     [Theory, PlayInDesktop, PlayInMobile]

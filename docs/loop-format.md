@@ -64,7 +64,7 @@ Same tokens everywhere: loop files, web share links and a golden test's scenario
 (`builds/skip-grenade-hunter/scenario.txt`: one token per line or comma-separated; `#` starts a comment):
 
 `grenade[:hold]|melee[:slide|air]|super[:air|combo|guard][:hit|kill[:N]]` · `class[:air]` · `kinetic|energy|power[:hit|kill[:N]]` ·
-`kinetic|energy|power:reload` · `ammo:special|heavy[:slide]` · `finisher` · `pickup:<pickup-id>` · `max:<status-id>` · `end:<status-id>` · `pack:new` · `health:critical` · `health:hit` — and last, an option:
+`kinetic|energy|power:reload` · `kinetic|energy|power:ready` · `ammo:special|heavy[:slide]` · `finisher` · `pickup:<pickup-id>` · `max:<status-id>` · `end:<status-id>` · `pack:new` · `health:critical` · `health:hit` — and last, an option:
 `:last` on a grenade, melee or class ability step, `:shield` and `:precision` on a weapon step, and
 `:elite|miniboss|champion|boss` on a kill step or a finisher
 
@@ -116,6 +116,13 @@ the slide (`ammo:heavy:3`, `ammo:primary`, `energy:ammo` are errors). In the des
 weapons in every build; tapping it shows **special** and **heavy**, and **🛝 by sliding** next to them when a rule of
 the build reacts to a slide.
 
+**Ready a weapon** (ADRs D44). `kinetic:ready`, `energy:ready`, `power:ready` — "Ready Buzzard": the player readies
+(swaps to) that weapon, as a step of its own. Which weapon is in hand isn't kept; it raises `WeaponReadied` from that
+weapon, so the `ready` rules fire (Mechaneer's Tricksleeves: Spring-Loaded Mounting on a sidearm at critical health).
+Like a reload it takes no count and no option (`energy:ready:3`, `energy:ready:shield` are errors), and a slot with no
+weapon is a blocked step. In the designer, tapping a weapon shows **✋ ready** before 🔄 reload,
+in every build, enabled only when a rule of the build reacts to readying that weapon.
+
 **Options of a step** (ADRs D36). What only play decides about a step itself goes last in its token:
 
 * `:shield` — a weapon step breaks a combatant's shield (`energy:kill:shield`, `kinetic:hit:3:shield`), with damage of
@@ -137,7 +144,7 @@ the build reacts to a slide.
   plain `grenade` raises it too; with more (Shinobu's Vow's second grenade) only the use marked `:last` does. A Super
   and a weapon take no `:last` (`super:last`, `kinetic:last` are errors).
 * `:elite`, `:miniboss`, `:champion`, `:boss` — the rank of the enemy a kill step or a finisher kills, when it is stronger
-  than the pack's minors (ADRs D44): `energy:kill:elite`, `grenade:kill:last:boss`, `super:kill:2:champion`,
+  than the pack's minors (ADRs D45): `energy:kill:elite`, `grenade:kill:last:boss`, `super:kill:2:champion`,
   `finisher:elite`. With a count, one kill is of that rank and the others are minors (`kinetic:kill:3:elite`: an elite and
   two minors). Its kill raises `Killed` of that rank, so the kill rules with a `tier:` it meets fire (`tier: elite+`:
   Oryx's Memory's Ascendant Escape and Iron Sharpens Iron), and every other kill rule fires as on any kill. One rank per
@@ -256,7 +263,7 @@ rule reacts to its energy fully expended (Shinobu's Vow and Grenade Kickstart). 
 kill (`energy:kill:shield`, `energy:kill:precision`, `grenade:kill:last`) and stays ticked for the next steps; a class ability with the option
 shows its button under the HUD instead of acting at one tap. Every row with a kill (a weapon's, the grenade's, the melee's,
 a secondary's, the Super's) also has a **Rank** picker — Minor, Elite, Miniboss, Champion, Boss: the enemy its kill kills
-(ADRs D44) — always shown and enabled only when an equipped rule reacts to a rank (Oryx's Memory's "Elite+"); greyed out,
+(ADRs D45) — always shown and enabled only when an equipped rule reacts to a rank (Oryx's Memory's "Elite+"); greyed out,
 it stays at Minor. Picked, it goes with the row's kill (`energy:kill:elite`) and stays picked for the next steps. When a
 rule reacts to a rank, the finisher takes one too: its square then shows its button and the picker under the HUD
 ("Finisher (Elite)") instead of acting at one tap. Above the HUD, where the game lists your buffs, the states to declare are grouped by

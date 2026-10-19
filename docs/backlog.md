@@ -48,13 +48,12 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
     being damaged while at it is a step of its own (`health:hit`, "Hit at critical health": Spark of Instinct's jolting
     burst; ADRs D3). Spark of Recharge gives its buff on "Critical health", and the buff ends with it (the glossary's
     `endsWith`), its faster regeneration a fact (`fasterRegeneration`).
-    Elements that react to critical health and wait on something else (compendium/2026-10-19): Mechaneer's Tricksleeves (Exotic Armors#52:
-    readying a sidearm is no step, and no damage source names a weapon type; the follow-up "Add a Ready a weapon step
-    for Mechaneer's Tricksleeves") and Frost Renewal (Artifact Perks#27: combatants breaking your shield while Frost Armor is
+    Elements that react to critical health and wait on something else (compendium/2026-10-19): Frost Renewal (Artifact Perks#27: combatants breaking your shield while Frost Armor is
     on you; nothing gives Frost Armor yet, so it waits on a Stasis source such as Wind Chill, Artifact Perks#55).
     Enhanced Operator Augment (Armor Mods#30) is a raid mod, which Loopsmith doesn't support (ADRs D35). Authored:
-    Thunderous Retort, Echo of Vigilance, the Iron Panoply set (Vigilant Watch, Iron Conviction) and the Oryx's Memory set
-    (Iron Sharpens Iron, Ascendant Escape: an Elite+ kill is a kill step's rank, ADRs D44);
+    Mechaneer's Tricksleeves (readying a sidearm is a step, ADRs D44), Thunderous Retort, Echo of Vigilance, the Iron Panoply
+    set (Vigilant Watch, Iron Conviction) and the Oryx's Memory set (Iron Sharpens Iron, Ascendant Escape: an Elite+ kill is
+    a kill step's rank, ADRs D45);
   - no longer gaps: a weapon's ammo type is its manifest item's (`weapon:special:arc`, `weapon:heavy:arc`): Spark of
     Beacons fires for sure on a Special or Heavy Arc weapon kill; precision kills are a weapon step's option
     (`energy:kill:precision`, `hit: precision`, D36): Spark of Brilliance, Hatchling and Veteran's Wisdom fire on them
@@ -78,9 +77,7 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   readable): health in HP (`restoreHealth` reads as a percentage, so Combination Blow 100 → 40 HP,
   Defibrillating Blast ~55 HP, To Shreds 15 HP per pulse stay `?`); values by level (Combination Blow +133% / +266% /
   +400% melee damage: once it is counted, "Counting, next", its count picks the value); an orb's energy by what
-  spawned it; Flow State's faster class ability regeneration while Amplified (a `fasterRegeneration` passive now
-  shows one: Spark of Recharge's);
-  Amplified's other extras (+40 Handling: an "all weapons" archetype). One "described fact" value and passive would
+  spawned it; Amplified's other extras (+40 Handling: an "all weapons" archetype). One "described fact" value and passive would
   cover them. Amounts that scale with a stat are in "Stats, next".
   The ability profiles (`charges`, `chunkScalar`, `baseCooldown`) aren't shown in the build's explanation: show them there. `charges`
   is read (an ability with more than one charge offers "spend fully", D36); the other two change nothing (D5). The

@@ -13,7 +13,7 @@ public static class ActionTokenParsing
     private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
 
     public const string Grammar =
-        "grenade[:hold]|melee[:slide|air]|super[:air|combo|guard][:hit|kill[:N]] (grenade and melee [:last]), class[:air][:last], kinetic|energy|power[:hit|kill[:N]][:shield][:precision], a kill or a finisher [:elite|miniboss|champion|boss], kinetic|energy|power:reload, ammo:special|heavy[:slide], finisher, pickup:<id>, max:<status>, end:<status>, pack:new, health:critical, health:hit";
+        "grenade[:hold]|melee[:slide|air]|super[:air|combo|guard][:hit|kill[:N]] (grenade and melee [:last]), class[:air][:last], kinetic|energy|power[:hit|kill[:N]][:shield][:precision], a kill or a finisher [:elite|miniboss|champion|boss], kinetic|energy|power:reload, kinetic|energy|power:ready, ammo:special|heavy[:slide], finisher, pickup:<id>, max:<status>, end:<status>, pack:new, health:critical, health:hit";
 
     /// <summary>
     /// <c>grenade</c>, <c>grenade:kill</c>, <c>grenade:kill:3</c>, <c>kinetic:hit:5</c>, <c>class</c>, <c>class:air</c> (an air move
@@ -32,7 +32,7 @@ public static class ActionTokenParsing
     /// (<c>energy:kill:precision</c>), with <c>:shield</c> too (<c>energy:kill:shield:precision</c>, in either order); and the rank
     /// of a stronger enemy than the pack's minors that a kill step or a finisher kills (<c>energy:kill:elite</c>,
     /// <c>grenade:kill:3:last:boss</c>, <c>finisher:champion</c>), with the other options, in any order.
-    /// <c>kinetic:reload</c> reloads that weapon (ADRs D37): it takes no count or option. <c>ammo:special</c> and
+    /// <c>kinetic:reload</c> reloads that weapon (ADRs D37): like <c>kinetic:ready</c>, which readies it (ADRs D44), it takes no count or option. <c>ammo:special</c> and
     /// <c>ammo:heavy</c> pick up an ammo brick of that ammo, <c>ammo:heavy:slide</c> by sliding over it (Spark of Momentum,
     /// ADRs D42).
     /// </summary>
@@ -58,6 +58,8 @@ public static class ActionTokenParsing
                 Ok(new PlayerAction.UseClassAbility(input.Value, charge)),
             (_, OptionKind.None) when parts.Length == 2 && parts[1] == "reload" && FindWeaponSlot(parts[0]) is Optional<WeaponSlot>.Some slot =>
                 Ok(new PlayerAction.ReloadWeapon(slot.Value)),
+            (_, OptionKind.None) when parts.Length == 2 && parts[1] == "ready" && FindWeaponSlot(parts[0]) is Optional<WeaponSlot>.Some readied =>
+                Ok(new PlayerAction.ReadyWeapon(readied.Value)),
             ("kinetic", not OptionKind.Charge) => ParseAimedAction(token, parts, (hit, targets) => new PlayerAction.FireWeapon(WeaponSlot.Kinetic, hit, targets, shield, zone)),
             ("energy", not OptionKind.Charge) => ParseAimedAction(token, parts, (hit, targets) => new PlayerAction.FireWeapon(WeaponSlot.Energy, hit, targets, shield, zone)),
             ("power", not OptionKind.Charge) => ParseAimedAction(token, parts, (hit, targets) => new PlayerAction.FireWeapon(WeaponSlot.Power, hit, targets, shield, zone)),
@@ -92,7 +94,7 @@ public static class ActionTokenParsing
             _ => FailUnknown(token),
         };
 
-    /// <summary>The rank words of a kill (ADRs D44): <c>elite</c>, <c>miniboss</c>, <c>champion</c>, <c>boss</c>; a minor is said by none.</summary>
+    /// <summary>The rank words of a kill (ADRs D45): <c>elite</c>, <c>miniboss</c>, <c>champion</c>, <c>boss</c>; a minor is said by none.</summary>
     private static bool IsRankWord(string word) =>
         word is "elite" or "miniboss" or "champion" or "boss";
 

@@ -52,6 +52,12 @@ statuses:
   # (compendium/2026-10-19/Armor Perks#50). No stacks are stated.
   - { id: iron-conviction, name: Iron Conviction, kind: buff, affinity: neutral, duration: 7s }
 
+  # Mechaneer's Tricksleeves's damage buff (Bungie's perk name; the Compendium calls it "Damage
+  # Buff", compendium/2026-10-19/Exotic Armors#52): no timer while at critical health, 5 s once
+  # shields recover, +3 s per Sidearm kill. No time is counted (ADRs D1): the player declares its
+  # end (`end:spring-loaded-mounting`).
+  - { id: spring-loaded-mounting, name: Spring-Loaded Mounting, kind: buff, affinity: neutral }
+
   # Oryx's Memory's 4-piece buff (compendium/2026-10-19/Armor Perks#66): from an Elite+ kill, used up by
   # the invisibility it gives at critical health. No duration is stated. Bungie's manifest shows it as the
   # set's perk (846599598).

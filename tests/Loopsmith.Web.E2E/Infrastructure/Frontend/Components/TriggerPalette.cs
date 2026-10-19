@@ -27,6 +27,8 @@ public sealed class TriggerPalette(IPage page)
 
     private ILocator ApartCaptions => Row.Locator("[data-testid=trigger-buttons-apart] [data-testid=trigger-caption]");
 
+    private ILocator DisabledCaptions => Row.Locator("[data-action=trigger][data-enabled=false] [data-testid=trigger-caption]");
+
     private ILocator TargetCount => Row.Locator("[data-action=target-count]");
 
     private ILocator TargetCountOptions => TargetCount.GetByRole(AriaRole.Option);
@@ -178,6 +180,7 @@ public sealed class TriggerPalette(IPage page)
             await TargetCount.CountAsync() > 0,
             [.. (await TargetCountOptions.AllInnerTextsAsync()).Select(shown => shown.Trim())],
             [.. (await ApartCaptions.AllInnerTextsAsync()).Select(shown => StepTriggerShowing.ReadStepTrigger(shown.Trim()))],
+            [.. (await DisabledCaptions.AllInnerTextsAsync()).Select(shown => StepTriggerShowing.ReadStepTrigger(shown.Trim()))],
             [.. (await OptionCaptions.AllInnerTextsAsync()).Select(shown => RowOptionShowing.ReadRowOption(shown.Trim()))],
             await Panel.GetAttributeAsync("aria-disabled") == "true",
             await DisabledNote.CountAsync() > 0 ? (await DisabledNote.InnerTextAsync()).Trim() : "",
@@ -236,8 +239,9 @@ public sealed class TriggerPalette(IPage page)
 
 /// <summary>
 /// What the panel shows: the picked row's buttons the "×" enemy count goes with, whether that count shows, the counts it
-/// offers (as its options read, in order), the buttons at the row's right end, apart from it, and the boxes the player
-/// ticks (its options); whether the whole panel
+/// offers (as its options read, in order), the buttons at the row's right end, apart from it, the buttons shown but
+/// disabled (no rule of the build reacts to them: a weapon's Ready step), and the boxes the player ticks (its options);
+/// whether the whole panel
 /// is greyed out (nothing in it can be tapped), and the line that says why (empty when it isn't); the chips of its
 /// "On you" group, in order; and the row's "Rank" picker (none when the row has no kill).
 /// </summary>
@@ -246,13 +250,14 @@ public sealed record TriggerPaletteSnapshot(
     bool ShowsTheCount,
     ImmutableArray<string> TargetCounts,
     ImmutableArray<StepTrigger> ApartFromTheCount,
+    ImmutableArray<StepTrigger> Disabled,
     ImmutableArray<RowOption> Options,
     bool IsGreyedOut,
     string DisabledNote,
     ImmutableArray<OnYouChip> OnYou,
     RankPickerShown? Rank);
 
-/// <summary>The picked row's "Rank" picker (ADRs D44): the rank it is at, and whether it can be changed (greyed out when no rule reacts to a rank).</summary>
+/// <summary>The picked row's "Rank" picker (ADRs D45): the rank it is at, and whether it can be changed (greyed out when no rule reacts to a rank).</summary>
 public sealed record RankPickerShown(EnemyRank Picked, bool IsEnabled);
 
 /// <summary>

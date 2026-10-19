@@ -158,7 +158,7 @@ public static class TriggerHudShaping
 
     /// <summary>
     /// The finisher's square, when the palette offers one: the finisher's name and icon (none known: "Finisher" and no
-    /// icon), no element and no damage type (neutral); one tap does it, unless it takes a rank to pick (ADRs D44).
+    /// icon), no element and no damage type (neutral); one tap does it, unless it takes a rank to pick (ADRs D45).
     /// </summary>
     private static Optional<HudSlot> ShapeFinisher(ImmutableDictionary<string, TriggerChoice> choices, Optional<ManifestItem> finisher) =>
         choices.TryGetValue("finisher", out var choice)
