@@ -19,6 +19,8 @@ public static class RuleFlowDrawing
 
     private const string CriticalHealthGroup = "trigger:critical-health";
 
+    private const string HitAtCriticalHealthGroup = "trigger:hit-at-critical-health";
+
     public static SubclassRules DrawRules(RuleCatalog catalog, GuardianClass guardianClass, Subclass subclass)
     {
         var context = new GraphContext(catalog, Optional.Some(guardianClass), subclass);
@@ -54,7 +56,7 @@ public static class RuleFlowDrawing
 
     /// <summary>
     /// Class ability, Air class ability, Melee, Sliding melee, Grenade, Finisher, Super; then the weapons (any weapon first); Critical
-    /// health; every other trigger (a pickup, a buff gained, a strike…) by name; the passives ("Always on") last.
+    /// health, then Hit at critical health; every other trigger (a pickup, a buff gained, a strike…) by name; the passives ("Always on") last.
     /// </summary>
     private static int RankGroup(string key) =>
         LeadingGroups.IndexOf(key) is var leading and >= 0
@@ -63,7 +65,7 @@ public static class RuleFlowDrawing
                 ? LeadingGroups.Length
                 : key.StartsWith("weapon:", StringComparison.Ordinal)
                     ? LeadingGroups.Length + 1
-                    : key == CriticalHealthGroup
+                    : key is CriticalHealthGroup or HitAtCriticalHealthGroup
                         ? LeadingGroups.Length + 2
                         : RuleFlowMapping.IsAlwaysGroup(key)
                             ? LeadingGroups.Length + 4

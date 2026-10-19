@@ -150,7 +150,8 @@ internal static class DependencyMapping
             energyExpended: _ => "last charge",
             damageFewer: _ => "hit",
             killBetween: kill => DescribeKillLabel(kill.Needs, $"{kill.AtLeast.Value.ToString(CultureInfo.InvariantCulture)}+ kills"),
-            reload: _ => "reload");
+            reload: _ => "reload",
+            hitAtCriticalHealth: _ => "hit at critical health");
 
     /// <summary>"precision kill", "body kill": where a source needs its kill to land (ADRs D36).</summary>
     internal static string DescribeKillLabel(ZoneNeed needs, string kill) =>
@@ -184,7 +185,8 @@ internal static class DependencyMapping
             energyExpended: expended => [ToTriggerNode(context, expended.Kind, AbilityInput.Press)],
             damageFewer: _ => [],
             killBetween: _ => [],
-            reload: _ => [ToTriggerNode("Reload", Optional.None<string>())]);
+            reload: _ => [ToTriggerNode("Reload", Optional.None<string>())],
+            hitAtCriticalHealth: _ => [ToTriggerNode("Hit at critical health", FindStatIcon(context, StatKind.Health))]);
 
     /// <summary>
     /// The nodes a damage source needs: the weapon or ability trigger, the strike or summon dealing it; any ability is one

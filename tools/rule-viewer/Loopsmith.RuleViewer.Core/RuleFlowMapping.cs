@@ -109,7 +109,8 @@ internal static class RuleFlowMapping
             energyExpended: _ => ListActionParts(context, trigger, name => $"{name} (last charge)"),
             damageFewer: damage => ListHitParts(context, damage.Via, $"fewer than {FormatCount(damage.FewerThan)} hits"),
             killBetween: kill => ListHitParts(context, kill.Via, DependencyMapping.DescribeKillLabel(kill.Needs, $"{FormatCount(kill.AtLeast)}+ kills, fewer than {FormatCount(kill.FewerThan)}")),
-            reload: _ => ListActionParts(context, trigger, name => name));
+            reload: _ => ListActionParts(context, trigger, name => name),
+            hitAtCriticalHealth: _ => ListActionParts(context, trigger, name => name));
 
     /// <summary>A cast: "Grenade cast", "Super cast"; the class ability is the cast itself ("Class ability", "Air class ability").</summary>
     private static ImmutableArray<TriggerPart> ListCastParts(GraphContext context, Trigger trigger, AbilityKind kind) =>

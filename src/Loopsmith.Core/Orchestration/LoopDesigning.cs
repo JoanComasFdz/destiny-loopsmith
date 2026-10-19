@@ -399,7 +399,8 @@ public static class LoopDesigning
                 energyExpended: _ => [],
                 damageFewer: _ => [],   // fewer than N: the counts below already reach it
                 killBetween: kill => [kill.AtLeast],
-                reload: _ => []))
+                reload: _ => [],
+                hitAtCriticalHealth: _ => []))
             .Distinct(),
     ];
 

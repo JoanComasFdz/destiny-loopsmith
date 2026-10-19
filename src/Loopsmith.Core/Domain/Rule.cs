@@ -46,6 +46,7 @@ public partial record Trigger
         public KillBetween(DamageSource via, TargetCount atLeast, TargetCount fewerThan) : this(via, atLeast, fewerThan, new ZoneNeed.AnyZone()) { }
     }
     partial record Reload(DamageSource Via);                                   // a weapon reloaded: the player's Reload step, or an outcome that reloads it (ADRs D37)
+    partial record HitAtCriticalHealth();                                      // the player declares they are damaged while at critical health (ADRs D3)
 }
 
 /// <summary>

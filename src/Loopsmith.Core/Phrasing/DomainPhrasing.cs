@@ -354,6 +354,12 @@ public static class DomainPhrasing
     /// <summary>What reaching critical health is called everywhere: the declared step, its trigger and its event.</summary>
     public const string CriticalHealth = "Critical health";
 
+    /// <summary>What being damaged while at critical health is called everywhere: the declared step, its trigger and its event.</summary>
+    public const string HitAtCriticalHealth = "Hit at critical health";
+
+    /// <summary>Its button, beside "Critical health" among the buffs on you: "hit".</summary>
+    public const string HitAtCriticalHealthCaption = "hit";
+
     /// <summary>What reloading a weapon is called: the step ("Reload Festival Flight"), its trigger ("Reload this weapon") and its button (ADRs D37).</summary>
     public const string Reload = "Reload";
 
@@ -405,7 +411,8 @@ public static class DomainPhrasing
                 + DescribeZone(killBetween.Needs),
             reload => reload.Via is DamageSource.AnySource or DamageSource.AnyWeapon
                 ? Reload
-                : $"{Reload} {glossary.DescribeDamageSource(reload.Via, superType)}");
+                : $"{Reload} {glossary.DescribeDamageSource(reload.Via, superType)}",
+            _ => HitAtCriticalHealth);
 
     /// <summary>" in 3s": the window a source gives the kills or hits it counts; nothing without one.</summary>
     private static string DescribeWithin(Optional<Seconds> within) =>
@@ -983,12 +990,13 @@ public static class DomainPhrasing
             _ => CriticalHealth,
             broken => $"{glossary.DescribeOrigin(broken.Origin, build)} 🛡 broke a shield",
             expended => expended.Kind.DescribeEnergyExpended(),
-            reloaded => $"{glossary.DescribeOrigin(reloaded.Origin, build)} reloaded");
+            reloaded => $"{glossary.DescribeOrigin(reloaded.Origin, build)} reloaded",
+            _ => HitAtCriticalHealth);
 
     /// <summary>
     /// "Grenade (💀 kill)", "Grenade (💀 kill 3)", "Grenade (💀 kill · ⬜ spend fully)", "Festival Flight (🥊 hit 5)",
     /// "Festival Flight (💀 kill · 🛡 shield)", "Festival Flight (💀 kill · 🎯 precision)", "Class ability", "Class ability (⬜ spend fully)", "Pick up Orb of Power",
-    /// "Bolt Charge at max (x10)", "Amplified ends", "New pack", "Critical health", "Finisher", "Reload Festival Flight".
+    /// "Bolt Charge at max (x10)", "Amplified ends", "New pack", "Critical health", "Hit at critical health", "Finisher", "Reload Festival Flight".
     /// </summary>
     public static string DescribeAction(this ValidatedBuild build, PlayerAction action) =>
         action.Match(
@@ -1012,7 +1020,8 @@ public static class DomainPhrasing
             max => $"{build.Catalog.Glossary.DescribeStatus(max.Status)} at max" + build.DescribeStackCap(max.Status).Match(cap => $" ({cap.Value})", _ => ""),
             end => $"{build.Catalog.Glossary.DescribeStatus(end.Status)} ends",
             _ => "New pack",
-            _ => CriticalHealth);
+            _ => CriticalHealth,
+            _ => HitAtCriticalHealth);
 
     /// <summary>
     /// "💀 kill", "🥊 hit", and with more than one target "💀 kill 3", "🥊 hit 5": the mark tells a kill step from a hit
@@ -1032,7 +1041,7 @@ public static class DomainPhrasing
     /// <summary>
     /// The action's token, the same everywhere (loop files, share links, the web): <c>grenade:kill</c>, <c>grenade:kill:3</c>,
     /// <c>class</c>, <c>kinetic</c>, <c>kinetic:hit:5</c>, <c>pickup:orb-of-power</c>, <c>max:bolt-charge</c>,
-    /// <c>end:amplified</c>, <c>pack:new</c>, <c>health:critical</c>, <c>finisher</c>, <c>kinetic:reload</c>. The target count is written only when it is more than one; every
+    /// <c>end:amplified</c>, <c>pack:new</c>, <c>health:critical</c>, <c>health:hit</c>, <c>finisher</c>, <c>kinetic:reload</c>. The target count is written only when it is more than one; every
     /// token round-trips. An option goes last: <c>:last</c> on an ability's last charge (<c>grenade:kill:last</c>),
     /// <c>:shield</c> on a weapon step that breaks a shield (<c>kinetic:kill:3:shield</c>), then <c>:precision</c> on one whose
     /// hits and kills are precision ones (<c>energy:kill:precision</c>, <c>energy:kill:shield:precision</c>) (ADRs D36).
@@ -1047,7 +1056,8 @@ public static class DomainPhrasing
                 max => $"max:{max.Status}",
                 end => $"end:{end.Status}",
                 _ => "pack:new",
-                _ => "health:critical"),
+                _ => "health:critical",
+                _ => "health:hit"),
             _ => "finisher",
             reload => reload.Slot.ToString().ToLowerInvariant() + ":reload");
 
