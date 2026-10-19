@@ -35,10 +35,13 @@ public sealed class TriggerPalette(IPage page)
         Panel.Locator("[data-action=trigger-weapon]")
             .And(page.GetByRole(AriaRole.Button, new() { NameRegex = new Regex($"^{Regex.Escape(weapon.ToShownText())} \\(") }));
 
-    // An ability's square is named "<its kind>: <its name>" ("Melee: Combination Blow").
+    // An ability's square is named "<its kind>: <its name>" ("Melee: Combination Blow"); the finisher's is named for the
+    // equipped finisher (after a Bungie login), so it is found by its HUD slot.
     private ILocator AbilityButton(Ability ability) =>
-        Panel.Locator("[data-action=trigger-ability]")
-            .And(page.GetByRole(AriaRole.Button, new() { NameRegex = new Regex($"^[^:]+: {Regex.Escape(ability.ToShownText())}$") }));
+        ability is Ability.Finisher
+            ? Panel.Locator("[data-action=trigger-ability][data-hud-slot=finisher]")
+            : Panel.Locator("[data-action=trigger-ability]")
+                .And(page.GetByRole(AriaRole.Button, new() { NameRegex = new Regex($"^[^:]+: {Regex.Escape(ability.ToShownText())}$") }));
 
     // A secondary use's caption is drawn in capitals ("SLIDE"); its text may not be.
     private ILocator SecondaryButton(SecondaryUse use) =>
