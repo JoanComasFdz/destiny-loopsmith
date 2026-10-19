@@ -152,7 +152,7 @@ internal static class DependencyMapping
             killBetween: kill => DescribeKillLabel(kill.Needs, $"{kill.AtLeast.Value.ToString(CultureInfo.InvariantCulture)}+ kills"),
             reload: _ => "reload",
             hitAtCriticalHealth: _ => "hit at critical health",
-            slideOverAmmo: _ => "slide over ammo");
+            pickUpAmmo: ammo => ammo.Needs == BrickNeed.Slide ? "slide over ammo" : "ammo pickup");
 
     /// <summary>"precision kill", "body kill": where a source needs its kill to land (ADRs D36).</summary>
     internal static string DescribeKillLabel(ZoneNeed needs, string kill) =>
@@ -188,7 +188,7 @@ internal static class DependencyMapping
             killBetween: _ => [],
             reload: _ => [ToTriggerNode("Reload", Optional.None<string>())],
             hitAtCriticalHealth: _ => [ToTriggerNode("Hit at critical health", FindStatIcon(context, StatKind.Health))],
-            slideOverAmmo: _ => [ToTriggerNode(DomainPhrasing.SlideOverAmmo, Optional.None<string>())]);
+            pickUpAmmo: ammo => [ToTriggerNode(DomainPhrasing.DescribeAmmoPickup(ammo.Brick, ammo.Needs == BrickNeed.Slide ? BrickPickup.Slide : BrickPickup.Plain), Optional.None<string>())]);
 
     /// <summary>
     /// The nodes a damage source needs: the weapon or ability trigger, the strike or summon dealing it; any ability is one

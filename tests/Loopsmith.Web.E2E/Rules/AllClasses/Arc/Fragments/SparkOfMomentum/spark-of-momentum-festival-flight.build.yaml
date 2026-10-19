@@ -1,7 +1,0 @@
-# Spark of Momentum, with Festival Flight (a Kinetic grenade launcher) in hand to slide over an ammo brick with.
-name: "E2E - Spark of Momentum with Festival Flight"
-class: hunter
-subclass: arc
-fragments: [spark-of-momentum]
-weapons:
-  - { hash: 4019651319, perks: [] } # Festival Flight

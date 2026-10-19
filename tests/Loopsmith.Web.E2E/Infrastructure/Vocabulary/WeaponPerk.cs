@@ -15,6 +15,8 @@ public partial record WeaponPerk
     public partial record VeteransWisdom;
     public partial record RadiolariaTransposer;
     public partial record Demolitionist;
+    public partial record AllStar;
+    public partial record AdhesiveOrdnance;
 
     /// <summary>What the UI shows that no case names yet: a failing assertion names it as the UI shows it.</summary>
     public partial record Unlisted(string Shown);
@@ -35,5 +37,7 @@ public static class WeaponPerkShowing
             veteransWisdom => "Veteran's Wisdom",
             radiolariaTransposer => "Radiolaria Transposer",
             demolitionist => "Demolitionist",
+            allStar => "All-Star",
+            adhesiveOrdnance => "Adhesive Ordnance",
             unlisted => unlisted.Shown);
 }

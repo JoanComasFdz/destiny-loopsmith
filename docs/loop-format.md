@@ -64,7 +64,7 @@ Same tokens everywhere: loop files, web share links and a golden test's scenario
 (`builds/skip-grenade-hunter/scenario.txt`: one token per line or comma-separated; `#` starts a comment):
 
 `grenade[:hold]|melee[:slide|air]|super[:air|combo|guard][:hit|kill[:N]]` · `class[:air]` · `kinetic|energy|power[:hit|kill[:N]]` ·
-`kinetic|energy|power:reload` · `kinetic|energy|power:ammo` · `finisher` · `pickup:<pickup-id>` · `max:<status-id>` · `end:<status-id>` · `pack:new` · `health:critical` · `health:hit` — and last, an option:
+`kinetic|energy|power:reload` · `ammo:special|heavy[:slide]` · `finisher` · `pickup:<pickup-id>` · `max:<status-id>` · `end:<status-id>` · `pack:new` · `health:critical` · `health:hit` — and last, an option:
 `:last` on a grenade, melee or class ability step, `:shield` and `:precision` on a weapon step
 
 Tokens are read case-insensitively. Errors read `Unknown action '<token>'. Use …` or
@@ -104,13 +104,16 @@ Stroke's lightning strike refill the weapon (`refillWeapon`), the trace shows `r
 `reload` rule fires. In the designer,
 tapping a weapon in the step HUD shows **🔄 reload** next to its 🥊 hit and 💀 kill, in every build.
 
-**Slide over an ammo brick** (ADRs D41). `kinetic:ammo`, `energy:ammo`, `power:ammo` — "Slide over an ammo brick with
-Festival Flight": the player slides over an ammo brick with that weapon in hand, as a step of its own. No ammo is
-counted, so the player declares it when the loop slides over a brick they aren't full on; it raises `SlidOverAmmo` from
-that weapon, so the `slideOverAmmo` rules fire (Spark of Momentum: +3 Bolt Charge; its refill of the weapon is a fact,
-no reload: no `reload` rule fires). Like a reload it takes no count and no option (`energy:ammo:3`, `energy:ammo:shield`
-are errors), and a slot with no weapon is a blocked step. In the designer, tapping a weapon shows **📦 slide over ammo**
-before 🔄 reload, in every build, enabled only when a rule of the build reacts to a slide with that weapon.
+**Pick up an ammo brick** (ADRs D43). `ammo:special`, `ammo:heavy` — "Pick up a Heavy ammo brick"; with `:slide`
+(`ammo:special:slide`), "Slide over a Special ammo brick": the player picks up a brick of that ammo, walking or sliding
+over it, as a step of its own. Bricks drop from enemies, which only play decides, so the step is always available and
+never blocked, and it names no weapon. No ammo is counted, so the player declares it when the loop picks up a brick
+they aren't full on; it raises `AmmoPickedUp`, so the `ammoPickedUp` rules fire: on any brick (All-Star, Adhesive
+Ordnance), on that brick, and on a slide only those without `by:` and those with `by: slide` (Spark of Momentum: +3
+Bolt Charge). A refill a perk gives is a fact, no reload: no `reload` rule fires. It takes no count and no option but
+the slide (`ammo:heavy:3`, `ammo:primary`, `energy:ammo` are errors). In the designer, **📦 Ammo brick** sits below the
+weapons in every build; tapping it shows **special** and **heavy**, and **🛝 by sliding** next to them when a rule of
+the build reacts to a slide.
 
 **Options of a step** (ADRs D36). What only play decides about a step itself goes last in its token:
 

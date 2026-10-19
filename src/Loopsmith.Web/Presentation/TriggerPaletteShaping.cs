@@ -10,14 +10,14 @@ namespace Loopsmith.Web.Presentation;
 /// <summary>
 /// One button of the palette: the action it appends (the option aimed at its row's target count), that action's token
 /// and label in the core's wording ("grenade:kill:3", "Grenade (💀 kill 3)"), and the button's short caption ("🥊 hit", "💀 kill").
-/// <see cref="StandsApart"/>: the row's target count and option don't apply to it (a weapon's reload, ADRs D37, and its slide
-/// over an ammo brick), so it stands at the row's right end, away from them. <see cref="IsEnabled"/>: false for a button shown
-/// though no rule of the build reacts to it (a slide over an ammo brick without Spark of Momentum).
+/// <see cref="StandsApart"/>: the row's target count and option don't apply to it (a weapon's reload, ADRs D37), so it stands
+/// at the row's right end, away from them.
 /// </summary>
-public sealed record TriggerButton(PlayerAction Action, string Token, string Label, string Caption, bool IsNew, bool StandsApart, bool IsEnabled = true);
+public sealed record TriggerButton(PlayerAction Action, string Token, string Label, string Caption, bool IsNew, bool StandsApart);
 
 /// <summary>
-/// A row of the palette: one trigger, or the hit / kill pair of the same ability use or weapon (a weapon's reload and slide over an ammo brick too). <see cref="Key"/> names
+/// A row of the palette: one trigger, or the hit / kill pair of the same ability use or weapon (a weapon's reload too), or the
+/// Special and Heavy ammo bricks ("ammo", ADRs D43). <see cref="Key"/> names
 /// the row ("cast:Grenade", "cast:Melee:Slide", "fire:Kinetic", "class", "class:Air", …) and stays the same from one step
 /// to the next.
 /// <see cref="Targets"/> is how many enemies the row's actions hit or kill — none for a row without targets (class
@@ -29,7 +29,7 @@ public sealed record TriggerChoice(string Key, string Title, Optional<TargetCoun
 /// <summary>
 /// An option the player turns on or off for a row's actions (ADRs D36): a weapon's "🛡 shield" (the step breaks a
 /// combatant's shield) and "🎯 precision" (its hits and kills are precision ones), an ability's "⬜ Spend fully" (the use
-/// spends its last charge); <see cref="Hint"/> says what it is for.
+/// spends its last charge), an ammo brick's "🛝 by sliding" (picked up by sliding over it, ADRs D43); <see cref="Hint"/> says what it is for.
 /// </summary>
 public sealed record TriggerOptionToggle(StepOption Option, string Caption, string Hint, bool IsOn);
 
@@ -96,22 +96,25 @@ public static class TriggerPaletteShaping
         var toggles = LoopDesigning.ListStepOptions(build, pair[0].Action)
             .Select(option => ShapeToggle(option, optionsOn.Contains(ToOptionKey(key, option))))
             .ToImmutableArray();
-        var title = pair.Length == 1 ? pair[0].Label : ReadTitle(pair[0].Label);
+        var title = pair[0].Action is PlayerAction.PickUpAmmo ? DomainPhrasing.AmmoBrick : pair.Length == 1 ? pair[0].Label : ReadTitle(pair[0].Label);
         var buttons = pair
             .Select(option => ShapeButton(option, targets, toggles, ReadCaption(option, pair.Length), build))
             .ToImmutableArray();
         return new TriggerChoice(key, title, targets, buttons, toggles);
     }
 
+    /// <summary>The ammo bricks' row (ADRs D43): its key and its title.</summary>
+    public const string AmmoBrickKey = "ammo";
+
     /// <summary>An option of a row, as the player turns it on: "fire:Energy:Precision".</summary>
     public static string ToOptionKey(string rowKey, StepOption option) => $"{rowKey}:{option}";
 
-    /// <summary>A button's caption: "🥊 hit", "💀 kill", "🔄 reload", "📦 slide over ammo" in a row of several; its whole label alone.</summary>
+    /// <summary>A button's caption: "🥊 hit", "💀 kill", "🔄 reload", an ammo brick's "special" or "heavy" in a row of several; its whole label alone.</summary>
     private static string ReadCaption(TriggerOption option, int buttons) =>
         (option.Action, buttons) switch
         {
             (PlayerAction.ReloadWeapon, _) => DomainPhrasing.ReloadCaption,
-            (PlayerAction.SlideOverAmmo, _) => DomainPhrasing.SlideOverAmmoCaption,
+            (PlayerAction.PickUpAmmo ammo, _) => ammo.Brick.ToString().ToLowerInvariant(),
             (_, 1) => option.Label,
             _ => ReadQualifier(option.Label),
         };
@@ -121,6 +124,7 @@ public static class TriggerPaletteShaping
         {
             StepOption.BreaksShield => new TriggerOptionToggle(option, DomainPhrasing.ShieldOption, "This hit or kill breaks a combatant's shield, with damage of its element", isOn),
             StepOption.Precision => new TriggerOptionToggle(option, DomainPhrasing.PrecisionOption, "This hit or kill lands on the enemy's weak spot: a precision hit or kill", isOn),
+            StepOption.Slide => new TriggerOptionToggle(option, DomainPhrasing.SlideOption, "You pick the brick up by sliding over it", isOn),
             _ => new TriggerOptionToggle(option, DomainPhrasing.LastChargeBox, "This use spends the ability's last charge: its energy is fully expended", isOn),
         };
 
@@ -128,7 +132,7 @@ public static class TriggerPaletteShaping
     {
         var aimed = targets.Match(count => LoopDesigning.SetTargetCount(option.Action, count.Value), _ => option.Action);
         var action = toggles.Aggregate(aimed, (step, toggle) => LoopDesigning.SetStepOption(step, toggle.Option, toggle.IsOn));
-        return new TriggerButton(action, action.ToActionToken(), build.DescribeAction(action), caption, option.IsNew, action is PlayerAction.ReloadWeapon or PlayerAction.SlideOverAmmo, option.IsEnabled);
+        return new TriggerButton(action, action.ToActionToken(), build.DescribeAction(action), caption, option.IsNew, action is PlayerAction.ReloadWeapon);
     }
 
     /// <summary>
@@ -141,7 +145,7 @@ public static class TriggerPaletteShaping
         return input == AbilityInput.Press ? press : $"{press}:{input}";
     }
 
-    /// <summary>Hit and kill of the same ability use or weapon share a key, and a weapon's reload and slide over an ammo brick its; everything else stands alone.</summary>
+    /// <summary>Hit and kill of the same ability use or weapon share a key, and a weapon's reload its; the two ammo bricks share one; everything else stands alone.</summary>
     private static string ToPairKey(PlayerAction action) =>
         action.Match(
             cast => ToAbilityKey(cast.Kind.ToAbilityKind(), cast.Input),
@@ -151,7 +155,7 @@ public static class TriggerPaletteShaping
             declare => ((PlayerAction)declare).ToActionToken(),
             _ => "finisher",
             reload => $"fire:{reload.Slot}",
-            slide => $"fire:{slide.Slot}");
+            _ => AmmoBrickKey);
 
     private static int ReadHitOrder(PlayerAction action) =>
         action.Match(
@@ -162,7 +166,7 @@ public static class TriggerPaletteShaping
             _ => 0,
             _ => 0,
             _ => 3,   // a reload stays at the row's right end
-            _ => 2);
+            ammo => ammo.Brick == AmmoBrick.Special ? 0 : 1);
 
     /// <summary>"Grenade (💀 kill)" → "Grenade".</summary>
     private static string ReadTitle(string label)

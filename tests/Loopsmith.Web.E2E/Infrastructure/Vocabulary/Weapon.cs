@@ -15,6 +15,7 @@ public partial record Weapon
     public partial record CrisisInverted;
     public partial record Thunderlord;
     public partial record Matador64;
+    public partial record BattleScar;
 
     /// <summary>What the UI shows that no case names yet: a failing assertion names it as the UI shows it.</summary>
     public partial record Unlisted(string Shown);
@@ -27,6 +28,7 @@ public static class WeaponShowing
         [
             new Weapon.FestivalFlight(), new Weapon.OgmaPr6(), new Weapon.BellowingGiant(), new Weapon.CruxCeleritasIv(), new Weapon.Scathelocke(),
             new Weapon.Speleologist(), new Weapon.CrisisInverted(), new Weapon.Thunderlord(), new Weapon.Matador64(),
+            new Weapon.BattleScar(),
         ];
 
     /// <summary>What the UI shows for <paramref name="value"/>.</summary>
@@ -41,6 +43,7 @@ public static class WeaponShowing
             crisisInverted => "Crisis Inverted",
             thunderlord => "Thunderlord",
             matador64 => "Matador 64",
+            battleScar => "Battle Scar",
             unlisted => unlisted.Shown);
 
     /// <summary>The case the UI's <paramref name="shown"/> text names, or <see cref="Weapon.Unlisted"/>.</summary>

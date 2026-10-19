@@ -102,6 +102,13 @@ statuses:
   - { id: stats-for-all, name: Stats for All, kind: weaponBuff, affinity: neutral, duration: 10s }
   - { id: reapers-tithe, name: Reaper's Tithe, kind: weaponBuff, affinity: neutral, maxStacks: 4, duration: 15s }
 
+  # The weapon perks an ammo brick sets off (weapons/perks.yaml; compendium/2026-10-19/Weapon Perks). All-Star (#14):
+  # 35% [15%] more damage and +100? Reload Speed for 6 s (7 s enhanced; 9 s, 10 s enhanced, from a Heavy brick). Sticky
+  # Bomb (Adhesive Ordnance, #9): the next shot's bomb, until that shot; no duration is stated. Weapon buffs: on the
+  # weapon that rolls the perk. No trait: Bungie's manifest has none by either name (2026-10-19).
+  - { id: all-star, name: All-Star, kind: weaponBuff, affinity: neutral, duration: 6s }
+  - { id: sticky-bomb, name: Sticky Bomb, kind: weaponBuff, affinity: kinetic }
+
   # Reaper armed: the next weapon kill within 10 s of a class ability use (compendium/2026-10-09/
   # Armor Mods#14; Clarity 40751621 agrees).
   - { id: reaper, name: Reaper, kind: buff, affinity: neutral, duration: 10s }
@@ -146,9 +153,11 @@ statuses:
   - { id: sever, name: Sever, kind: debuff, affinity: strand, duration: 10s, trait: 2519102437 }
   - { id: unravel, name: Unravel, kind: debuff, affinity: strand, trait: 945613349 }
   - { id: blind, name: Blind, kind: debuff, affinity: arc, duration: 10s, trait: 500183315 }
-  # Exhaust: the enemies' damage cut by 25% (Veteran's Wisdom, compendium/2026-10-14/Weapon Perks#416: 10 s). No trait:
+  # Exhaust: the enemies' damage cut by 25% (Veteran's Wisdom, compendium/2026-10-14/Weapon Perks#416). No generic
+  # duration: it depends on the source (compendium/2026-10-19/Weapon Perks: 10 s from Veteran's Wisdom, #416, set in its
+  # rules; 5 s from Problem Solver, #391; ? from Psychohack, #392; none stated for Adhesive Ordnance, #9). No trait:
   # Bungie's manifest has none by that name (2026-10-14).
-  - { id: exhaust, name: Exhaust, kind: debuff, affinity: neutral, duration: 10s }
+  - { id: exhaust, name: Exhaust, kind: debuff, affinity: neutral }
   # The Stasis debuffs (compendium/2026-10-17/Stasis#7-8). Slow: a slowed enemy moves 50% slower and aims worse. In the
   # game it stacks and x100 Slow freezes it; here it doesn't stack (no maxStacks) until a rule freezes on max Slow. No
   # duration is stated. Freeze:

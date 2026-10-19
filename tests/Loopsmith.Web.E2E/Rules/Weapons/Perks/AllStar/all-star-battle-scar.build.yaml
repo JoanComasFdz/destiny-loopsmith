@@ -1,0 +1,6 @@
+# All-Star (an ammo brick picked up: All-Star on this weapon) on Battle Scar, a Kinetic Pulse Rifle that rolls it.
+name: "E2E - All-Star on Battle Scar"
+class: hunter
+subclass: arc
+weapons:
+  - { hash: 1525080480, perks: [all-star] } # Battle Scar
