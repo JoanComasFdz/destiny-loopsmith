@@ -19,7 +19,8 @@ public sealed class FlowStateTests : BaseE2E
           Then card #1's heading is "#1 Grenade (💀 kill)"
           # One step: the grenade's hit jolts the target (Spark of Shock) before its kill reads it.
           And "Flow State" fires "Amplified (15s)"
-          And its BUFFS show only "Amplified"
+          # "1 effect": Flow State's faster class ability regeneration (the last scenario).
+          And its BUFFS show only "Amplified · 1 effect"
         """)]
     public async Task FlowStateAmplifiesYouOnAJoltedTargetsKill(Screen screen)
     {
@@ -39,7 +40,7 @@ public sealed class FlowStateTests : BaseE2E
         Asserting.That(killed)
             .HasHeading("#1 Grenade (💀 kill)")
             .Fires(new Aspect.FlowState(), "Amplified (15s)")
-            .Shows(new StateGroup.Buffs(), "Amplified");
+            .Shows(new StateGroup.Buffs(), "Amplified · 1 effect");
     }
 
     [Theory, PlayInDesktop, PlayInMobile]
@@ -51,7 +52,7 @@ public sealed class FlowStateTests : BaseE2E
           When I tap "Skip Grenade" in the trigger panel
           And I tap "💀 kill"
           Then card #1's heading is "#1 Grenade (💀 kill)"
-          And its BUFFS show only "Amplified"
+          And its BUFFS show only "Amplified · 1 effect"
           # keeping step #1: its Amplified is what #2 dodges with
           When I tap "Marksman's Dodge" in the trigger panel
           And I tap "▸ DAMAGE RESISTANCE" on card #2
@@ -75,7 +76,7 @@ public sealed class FlowStateTests : BaseE2E
         var amplified = await Frontend.Designer.Loop.Step(1).ReadAsync();
         Asserting.That(amplified)
             .HasHeading("#1 Grenade (💀 kill)")
-            .Shows(new StateGroup.Buffs(), "Amplified");
+            .Shows(new StateGroup.Buffs(), "Amplified · 1 effect");
 
         // When
         await Frontend.Designer.TriggerPalette.ClickAbilityAsync(new Ability.MarksmansDodge());
@@ -89,5 +90,48 @@ public sealed class FlowStateTests : BaseE2E
             .HasHeading("#2 Class ability")
             .HasResistance("All damage", "81.07%", "32%")
             .HasResistanceFrom(new Aspect.FlowState(), "66% · PvP 32%");
+    }
+
+    [Theory, PlayInDesktop, PlayInMobile]
+    [TestDescription("""
+        @desktop @mobile
+        Scenario: Flow State speeds up class ability regeneration while you're Amplified
+          # Rule hunter-arc-aspects-flow-state-3: Always ➜ Flow State equipped and Amplified on you ➜ Class ability energy (200% faster regeneration)
+          Given the build "flow-state-spark-of-shock" is imported, with no steps
+          When I tap "Skip Grenade" in the trigger panel
+          And I tap "💀 kill"
+          Then card #1's heading is "#1 Grenade (💀 kill)"
+          And its BUFFS show only "Amplified · 1 effect"
+          When I tap "Amplified · 1 effect" in its BUFFS
+          Then the item details popup is titled "Amplified"
+          And under "While Amplified" "Flow State" reads "66% [PvP 32%] damage resistance (during your class ability)" and "200% faster class ability regeneration"
+        """)]
+    public async Task FlowStateSpeedsUpClassAbilityRegenerationWhileYoureAmplified(Screen screen)
+    {
+        // Given
+        await Frontend.Home.ImportBuildAsync("flow-state-spark-of-shock.build.yaml");
+        await Frontend.Designer.WaitUntilShownAsync();
+
+        // When
+        await Frontend.Designer.TriggerPalette.ClickAbilityAsync(new Ability.SkipGrenade());
+        await Frontend.Designer.TriggerPalette.WaitUntilRowShownAsync(new Ability.SkipGrenade());
+        await Frontend.Designer.TriggerPalette.ClickAsync(new StepTrigger.Kill());
+        await Frontend.Designer.Loop.WaitUntilStepShownAsync(1);
+
+        // Then
+        var amplified = await Frontend.Designer.Loop.Step(1).ReadAsync();
+        Asserting.That(amplified)
+            .HasHeading("#1 Grenade (💀 kill)")
+            .Shows(new StateGroup.Buffs(), "Amplified · 1 effect");
+
+        // When
+        await Frontend.Designer.Loop.Step(1).ClickStateChipAsync(new StateGroup.Buffs(), "Amplified · 1 effect");
+        await Frontend.Designer.ItemDetails.WaitUntilShownAsync();
+
+        // Then
+        var details = await Frontend.Designer.ItemDetails.ReadAsync();
+        Asserting.That(details)
+            .IsTitled(new Keyword.Amplified())
+            .ReadsUnder("While Amplified", new Aspect.FlowState(), "66% [PvP 32%] damage resistance (during your class ability)", "200% faster class ability regeneration");
     }
 }

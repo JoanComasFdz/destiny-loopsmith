@@ -57,7 +57,7 @@ elements:
     hash: 4194622036
     fragmentSlots: 2
     description: "Killing a Jolted enemy grants Amplified. While Amplified: 200% faster base class ability regeneration, 66% [PvP 32%] damage resistance during the dodge animation, +50 Reload Speed and a 0.8x reload duration."
-    source: compendium/2026-10-09/Arc#49
+    source: compendium/2026-10-19/Arc#49
     rules:
       - id: flow-state-1
         on: { kill: { via: any, targetHas: [jolt] } }
@@ -65,14 +65,19 @@ elements:
           - { applyBuff: amplified }
         reason: "Killing a jolted enemy makes you Amplified."
     # The dodge's resistance holds at the end of a class ability step (`class`, and Ascension's
-    # `class:air`, which sets off the dodge's effects: Arc#48) while you're Amplified. Not
-    # expressible: the other Amplified benefits. There is no passive for ability regeneration rate
-    # (energy outcomes are facts, ADRs D5), and modifyWeaponStats has no "all weapons" archetype.
+    # `class:air`, which sets off the dodge's effects: Arc#48) while you're Amplified. The faster
+    # class ability regeneration is a fact (no ability energy is tracked, ADRs D5); the Compendium
+    # gives no PvP value, so its PvP value is `?` and its text names none. Not expressible: the
+    # reload benefits (modifyWeaponStats has no "all weapons" archetype).
     passives:
       - id: flow-state-2
         effect: { resistDamage: "66% [32%]" }
         when: [ { has: amplified }, { during: classAbility } ]
         reason: "While you're Amplified you take 66% less damage during your dodge."
+      - id: flow-state-3
+        effect: { fasterRegeneration: { abilities: [classAbility], rate: "200%" } }
+        when: [ { has: amplified } ]
+        reason: "While you're Amplified your class ability regenerates 200% faster."
 
   - id: ascension
     name: Ascension

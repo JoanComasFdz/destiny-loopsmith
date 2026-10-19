@@ -27,37 +27,56 @@ public sealed class ItemInfoDialog(IPage page)
     {
         var shown = (await Dialog.EvaluateAsync<JsonElement>(ReadScript)).Deserialize<ShownDialog>(ShownJson.Options)!;
         return new ItemInfoDialogSnapshot(
-            shown.Title,
+            await Dialog.GetAttributeAsync("aria-label") ?? "",
             shown.TypeLine,
+            [.. shown.InBuild.Select(role => new InBuildRole(role.Heading, [.. role.Items.Select(item => new InBuildItem(item.Source, item.Text))]))],
             [.. shown.RightThen.Select(card => new RightThenCard(card.Title, [.. card.Lines]))]);
     }
 
-    // The popup's texts, white space collapsed. A "Right then" card's title is read as written, not as the page
-    // capitalises it.
+    // The type line; the "In this build" section: each role's heading ("While Amplified") and its items, each the
+    // element it comes from ("Flow State") and what it does there ("200% faster class ability regeneration"); and, opened
+    // from a state chip, the "Right then" card: its title, read as written, not as the page capitalises it, and its lines.
     private const string ReadScript = """
         dialog => {
-          const text = el => (el ? el.textContent : '').replace(/\s+/g, ' ').trim();
+          const text = el => (el ? el.innerText : '').replace(/\s+/g, ' ').trim();
+          const written = el => (el ? el.textContent : '').replace(/\s+/g, ' ').trim();
           return {
-            title: dialog.getAttribute('aria-label') ?? '',
             typeLine: text(dialog.querySelector('[data-testid=item-info-type]')),
+            inBuild: [...dialog.querySelectorAll('[data-testid=info-in-build] [data-testid=in-build-role]')].map(role => ({
+              heading: text(role.querySelector('[data-testid=in-build-role-head]')),
+              items: [...role.querySelectorAll('[data-testid=in-build-item]')].map(item => ({
+                source: item.getAttribute('data-source') || '',
+                text: text(item.querySelector('[data-testid=in-build-text]')),
+              })),
+            })),
             rightThen: [...dialog.querySelectorAll('[data-testid=info-right-then]')].map(card => ({
-              title: text(card.querySelector('[data-testid=info-right-then-title]')),
-              lines: [...card.querySelectorAll('[data-testid=info-right-then-line]')].map(text),
+              title: written(card.querySelector('[data-testid=info-right-then-title]')),
+              lines: [...card.querySelectorAll('[data-testid=info-right-then-line]')].map(written),
             })),
           };
         }
         """;
 
-    private sealed record ShownDialog(string Title, string TypeLine, ShownRightThen[] RightThen);
+    private sealed record ShownDialog(string TypeLine, ShownRole[] InBuild, ShownRightThen[] RightThen);
+
+    private sealed record ShownRole(string Heading, ShownItem[] Items);
+
+    private sealed record ShownItem(string Source, string Text);
 
     private sealed record ShownRightThen(string Title, string[] Lines);
 }
 
 /// <summary>
-/// What the item details popup shows: its title (the item's name), the type line under it and, opened from a state
-/// chip, its "Right then, after #N" card.
+/// What the item details popup shows: its title (the item's name), the type line under it, its "In this build"
+/// section, role by role (none when it has no such section) and, opened from a state chip, its "Right then, after #N" card.
 /// </summary>
-public sealed record ItemInfoDialogSnapshot(string Title, string TypeLine, ImmutableArray<RightThenCard> RightThen);
+public sealed record ItemInfoDialogSnapshot(string Title, string TypeLine, ImmutableArray<InBuildRole> InBuild, ImmutableArray<RightThenCard> RightThen);
+
+/// <summary>A role of the "In this build" section: its heading ("While Amplified") and its items.</summary>
+public sealed record InBuildRole(string Heading, ImmutableArray<InBuildItem> Items);
+
+/// <summary>An item of a role: the element it comes from ("Flow State") and what it does ("200% faster class ability regeneration").</summary>
+public sealed record InBuildItem(string Source, string Text);
 
 /// <summary>A "Right then, after #1" card: its title and its lines ("400% [PvP 200%] faster grenade and melee regeneration").</summary>
 public sealed record RightThenCard(string Title, ImmutableArray<string> Lines);

@@ -84,5 +84,9 @@ public static class StateHudShaping
 
     /// <summary>A damage bonus row's values, each source's own, never added up: "?", "+50% · +10%".</summary>
     public static string DescribeDamageBonusLine(DamageBonusLine line) =>
-        string.Join(" · ", line.Sources.Select(source => source.Change.FormatSignedPercent()));
+        string.Join(" · ", line.Sources.Select(DescribeDamageBonus));
+
+    /// <summary>"+20%", "+100% [PvP 10%]": one source's damage bonus, with its PvP value when the source gives one.</summary>
+    public static string DescribeDamageBonus(DamageBonusSource source) =>
+        source.Change.FormatSignedPercent() + DomainPhrasing.DescribePvp(source.Pvp);
 }

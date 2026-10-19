@@ -85,7 +85,7 @@ public sealed class SparkOfRechargeTests : BaseE2E
             .Shows(new StateGroup.Buffs(), "Critical health", "Spark of Recharge · 1 effect");
 
         // When
-        await Frontend.Designer.Loop.Step(1).ClickChipAsync(new StateGroup.Buffs(), "Spark of Recharge · 1 effect");
+        await Frontend.Designer.Loop.Step(1).ClickStateChipAsync(new StateGroup.Buffs(), "Spark of Recharge · 1 effect");
         await Frontend.Designer.ItemDetails.WaitUntilShownAsync();
 
         // Then

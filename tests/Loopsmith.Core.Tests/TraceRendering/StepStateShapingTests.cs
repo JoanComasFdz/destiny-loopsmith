@@ -57,7 +57,7 @@ public sealed class StepStateShapingTests
     }
 
     [Fact]
-    public void Amplified_switches_on_Spark_of_Frequency_and_Ionic_Overclock_does_nothing_without_a_weapon_of_its_types()
+    public void Amplified_switches_on_Flow_State_and_Spark_of_Frequency_and_Ionic_Overclock_does_nothing_without_a_weapon_of_its_types()
     {
         var played = Play(
             new PlayerAction.UseClassAbility(),
@@ -68,13 +68,13 @@ public sealed class StepStateShapingTests
         var details = Assert.Single(LoopDesigning.ExplainInteractions(played.Build, new KeywordRef.Status(amplified)), group => group.Heading == "While Amplified").Interactions;
 
         var entry = Assert.Single(state.Buffs, buff => buff.Text == "Amplified");
-        Assert.Equal(["Spark of Frequency"], entry.SwitchesOn.Select(effect => effect.SourceName));
-        Assert.Equal("+1 Bolt Charge per gain", entry.SwitchesOn[0].Text);
+        Assert.Equal(["Flow State", "Spark of Frequency"], entry.SwitchesOn.Select(effect => effect.SourceName));
+        Assert.Equal(["200% faster class ability regeneration", "+1 Bolt Charge per gain"], entry.SwitchesOn.Select(effect => effect.Text));
         Assert.Empty(state.WeaponEffects);
-        Assert.Equal(["Flow State", "Spark of Frequency", "Ionic Overclock"], details.Select(line => line.SourceName));
+        Assert.Equal(["Flow State", "Flow State", "Spark of Frequency", "Ionic Overclock"], details.Select(line => line.SourceName));
         Assert.Equal(
             ("Linear Fusion Rifles, Fusion Rifles and Heat Weapons: +? Handling, +? Reload", Optional.Some("No weapon in this build is one of them, so it does nothing here.")),
-            (details[2].Text, details[2].Note));
+            (details[3].Text, details[3].Note));
         Assert.Contains(played.Build.Issues, issue => issue.Severity == Severity.Info
             && issue.Message == "Ionic Overclock changes Linear Fusion Rifles, Fusion Rifles and Heat Weapons, and no weapon in this build is one, so it does nothing here.");
     }
@@ -97,7 +97,7 @@ public sealed class StepStateShapingTests
         Assert.Equal([2], effect.Weapons);
         Assert.Contains(state.Buffs.Single(buff => buff.Text == "Amplified").SwitchesOn, switched => switched.SourceName == "Ionic Overclock");
         var whileAmplified = Assert.Single(LoopDesigning.ExplainInteractions(build, new KeywordRef.Status(StatusId.From("amplified"))), group => group.Heading == "While Amplified");
-        Assert.Equal(Optional.Some($"On {fusion.Name}."), whileAmplified.Interactions[2].Note);
+        Assert.Equal(Optional.Some($"On {fusion.Name}."), whileAmplified.Interactions[3].Note);
         Assert.DoesNotContain(build.Issues, issue => issue.Message.StartsWith("Ionic Overclock", StringComparison.Ordinal));
         Assert.Empty(LoopDesigning.ShapeStepState(played, played.Resolutions[0]).WeaponEffects);    // not Amplified yet
     }
@@ -294,7 +294,7 @@ public sealed class StepStateShapingTests
 
         var lines = TraceRenderer.RenderState(played.Build, played.Resolutions[1].State, played.Resolutions[1].ActivePassives).Select(line => line.ToPlainText().Trim()).ToArray();
 
-        Assert.Contains("While Amplified  +1 Bolt Charge per gain [Spark of Frequency]", lines);
+        Assert.Contains("While Amplified  200% faster class ability regeneration [Flow State] · +1 Bolt Charge per gain [Spark of Frequency]", lines);
         Assert.DoesNotContain(lines, line => line.StartsWith("Active", StringComparison.Ordinal));
     }
 

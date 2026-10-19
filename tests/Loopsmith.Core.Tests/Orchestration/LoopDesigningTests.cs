@@ -29,10 +29,10 @@ public sealed class LoopDesigningTests
         var options = LoopDesigning.ListTriggerOptions(session);
 
         Assert.Equal(
-            ["grenade:kill", "grenade", "melee:kill", "melee", "class", "super:kill", "super", "finisher", "energy:kill", "energy", "energy:reload", "energy:ammo", "pack:new"],
+            ["grenade:kill", "grenade", "melee:kill", "melee", "class", "super:kill", "super", "finisher", "energy:kill", "energy", "energy:reload", "energy:ready", "ammo:special", "ammo:heavy", "pack:new"],
             options.Select(option => option.Token));
         Assert.All(options, option => Assert.False(option.IsNew));
-        Assert.Equal(["energy:ammo"], options.Where(option => !option.IsEnabled).Select(option => option.Token));   // no rule reacts to a slide over an ammo brick
+        Assert.Equal(["energy:ready"], options.Where(option => !option.IsEnabled).Select(option => option.Token));   // no rule reacts to readying it
         Assert.Equal("Grenade (💀 kill)", options[0].Label);
     }
 

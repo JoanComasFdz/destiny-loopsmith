@@ -37,7 +37,7 @@ public sealed class StateDetailsTests : BaseE2E
             .Shows(new StateGroup.Buffs(), "Amplified · 1 effect", "Bolt Charge");
 
         // When
-        await Frontend.Designer.Loop.Step(1).ClickChipAsync(new StateGroup.Buffs(), "Amplified · 1 effect");
+        await Frontend.Designer.Loop.Step(1).ClickStateChipAsync(new StateGroup.Buffs(), "Amplified · 1 effect");
         await Frontend.Designer.ItemDetails.WaitUntilShownAsync();
 
         // Then

@@ -23,7 +23,7 @@ public sealed class AmmoTypeMatchingTests
     [InlineData(AmmoType.Heavy, DamageType.Arc, false, false)]
     public void A_weapon_of_an_ammo_type_matches_that_ammo_and_when_named_that_element(AmmoType ammo, DamageType type, bool special, bool specialArc)
     {
-        var origin = new DamageOrigin.Weapon(WeaponSlot.Energy, type, Optional.Some(ammo));
+        var origin = new DamageOrigin.Weapon(WeaponSlot.Energy, type, Optional.Some(ammo), Optional.None<string>());
 
         Assert.Equal(special, Special.IsMatchedBy(origin, Optional.None<DamageType>()));
         Assert.Equal(specialArc, SpecialArc.IsMatchedBy(origin, Optional.None<DamageType>()));
@@ -32,7 +32,7 @@ public sealed class AmmoTypeMatchingTests
     [Fact]
     public void A_weapon_whose_ammo_type_is_unknown_or_no_weapon_matches_no_ammo_type()
     {
-        Assert.False(SpecialArc.IsMatchedBy(new DamageOrigin.Weapon(WeaponSlot.Energy, DamageType.Arc, Optional.None<AmmoType>()), Optional.None<DamageType>()));
+        Assert.False(SpecialArc.IsMatchedBy(new DamageOrigin.Weapon(WeaponSlot.Energy, DamageType.Arc, Optional.None<AmmoType>(), Optional.None<string>()), Optional.None<DamageType>()));
         Assert.False(SpecialArc.IsMatchedBy(new DamageOrigin.Ability(AbilityKind.Grenade, DamageType.Arc), Optional.None<DamageType>()));
     }
 

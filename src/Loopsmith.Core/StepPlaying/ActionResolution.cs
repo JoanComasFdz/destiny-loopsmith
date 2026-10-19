@@ -38,7 +38,8 @@ public static class ActionResolution
     /// <summary>
     /// Every ability (always, ADRs D5) and each of its secondary uses a rule reacts to (<see cref="ListSecondaryInputs"/>:
     /// Tempest Strike's sliding melee, Ascension's air move), a finisher (always, <see cref="ListFinisherActions"/>), every
-    /// equipped weapon's hit, kill, reload and slide over an ammo brick (always, as a finisher: ADRs D37), the pickups on the ground and the states the player can declare now (<see cref="ListDeclarations"/>).
+    /// equipped weapon's hit, kill, reload and Ready step (always, as a finisher: ADRs D37), a Special and a Heavy ammo brick picked up (always:
+    /// bricks drop from enemies, ADRs D43), the pickups on the ground and the states the player can declare now (<see cref="ListDeclarations"/>).
     /// Abilities and weapons are listed against one enemy; a host may set any <see cref="TargetCount"/>.
     /// </summary>
     public static ImmutableArray<PlayerAction> ListAvailableActions(ValidatedBuild build, GameState state)
@@ -52,12 +53,20 @@ public static class ActionResolution
             new PlayerAction.FireWeapon(weapon.Slot, HitOutcome.Kill, TargetCount.One),
             new PlayerAction.FireWeapon(weapon.Slot, HitOutcome.Damage, TargetCount.One),
             new PlayerAction.ReloadWeapon(weapon.Slot),
-            new PlayerAction.SlideOverAmmo(weapon.Slot),
+            new PlayerAction.ReadyWeapon(weapon.Slot),
         });
+        var bricks = ListAmmoBrickActions();
         var pickups = state.ListPickups().Select(pickup => (PlayerAction)new PlayerAction.CollectPickups(pickup));
         var declarations = ListDeclarations(build, state).Select(declaration => (PlayerAction)new PlayerAction.Declare(declaration));
-        return [.. offensive, .. classAbility, .. finisher, .. weapons, .. pickups, .. declarations];
+        return [.. offensive, .. classAbility, .. finisher, .. weapons, .. bricks, .. pickups, .. declarations];
     }
+
+    /// <summary>
+    /// An ammo brick picked up, a Special and a Heavy one (ADRs D43): always available, as a finisher, since bricks drop from
+    /// enemies, which only play decides. Sliding over it is the step's option (<c>ammo:heavy:slide</c>).
+    /// </summary>
+    public static ImmutableArray<PlayerAction> ListAmmoBrickActions() =>
+        [new PlayerAction.PickUpAmmo(AmmoBrick.Special), new PlayerAction.PickUpAmmo(AmmoBrick.Heavy)];
 
     /// <summary>
     /// The declarations that hold now (ADRs D3): a new pack (always, ADRs D7), critical health or a hit at it when an
@@ -99,26 +108,28 @@ public static class ActionResolution
         };
     }
 
-    /// <summary>
-    /// Whether an equipped rule reacts to sliding over an ammo brick with this weapon in hand (Spark of Momentum): the step
-    /// always holds, but with nothing reacting to it, it sets nothing off.
-    /// </summary>
-    public static bool IsAmmoSlideReactedTo(ValidatedBuild build, WeaponLoadout weapon)
-    {
-        var slid = new GameEvent.SlidOverAmmo(new DamageOrigin.Weapon(weapon.Slot, weapon.Type, weapon.Ammo));
-        var superType = build.ReadSuperType();
-        return build.Equipped.Any(equipped => equipped.Element.Rules.Any(rule => rule.On.IsTriggeredBy(slid, superType)));
-    }
-
     /// <summary>A guard that holds only while critical health is on you (<c>has: critical-health</c>).</summary>
     private static bool NeedsCriticalHealth(ImmutableArray<Condition> when) =>
         when.Any(condition => condition is Condition.HasBuff { Status: var status } && status == DeclaredStatuses.CriticalHealth);
+
+    /// <summary>
+    /// Whether an equipped rule reacts to readying this weapon (Mechaneer's Tricksleeves on a sidearm, ADRs D44): the step
+    /// always holds, but with nothing reacting to it, it sets nothing off. A rule's guard isn't read: what it needs may come
+    /// from the steps before (critical health).
+    /// </summary>
+    public static bool IsReadyReactedTo(ValidatedBuild build, WeaponLoadout weapon)
+    {
+        var readied = new GameEvent.WeaponReadied(new DamageOrigin.Weapon(weapon.Slot, weapon.Type, weapon.Ammo, weapon.Archetype));
+        var superType = build.ReadSuperType();
+        return build.Equipped.Any(equipped => equipped.Element.Rules.Any(rule => rule.On.IsTriggeredBy(readied, superType)));
+    }
 
     /// <summary>The ability a step casts (an offensive ability, the class ability), under way for the whole step; none for any other step.</summary>
     public static Optional<AbilityKind> ReadCast(PlayerAction action) =>
         action.Match(
             cast => Optional.Some(cast.Kind.ToAbilityKind()),
             _ => Optional.Some(AbilityKind.ClassAbility),
+            _ => Optional.None<AbilityKind>(),
             _ => Optional.None<AbilityKind>(),
             _ => Optional.None<AbilityKind>(),
             _ => Optional.None<AbilityKind>(),
@@ -156,7 +167,8 @@ public static class ActionResolution
             declare => Declare(build, state, declare.Declaration),
             _ => PerformFinisher(state),
             reload => ReloadWeapon(build, state, reload),
-            slide => SlideOverAmmo(build, state, slide));
+            ammo => PickUpAmmo(state, ammo),
+            ready => ReadyWeapon(build, state, ready));
 
     /// <summary>
     /// Never blocked: the finisher, then its hit and kill on one enemy of the pack. A finisher has no damage type and is
@@ -251,7 +263,7 @@ public static class ActionResolution
     {
         var weapon = build.Build.Weapons.Select(w => w.Slot == fire.Slot ? Optional.Some(w) : Optional.None<WeaponLoadout>()).FindFirstSome();
         return weapon.Match(
-            some => new Opening(state, ListStrikeEvents(new DamageOrigin.Weapon(fire.Slot, some.Value.Type, some.Value.Ammo), fire.Hit, fire.Targets, fire.Shield, fire.Zone), []),
+            some => new Opening(state, ListStrikeEvents(new DamageOrigin.Weapon(fire.Slot, some.Value.Type, some.Value.Ammo, some.Value.Archetype), fire.Hit, fire.Targets, fire.Shield, fire.Zone), []),
             _ => BlockAction(state, $"No weapon in the {fire.Slot} slot — nothing happens."));
     }
 
@@ -263,21 +275,28 @@ public static class ActionResolution
     {
         var weapon = build.Build.Weapons.Select(w => w.Slot == reload.Slot ? Optional.Some(w) : Optional.None<WeaponLoadout>()).FindFirstSome();
         return weapon.Match(
-            some => new Opening(state, [new PendingEvent.Ready(new GameEvent.Reloaded(new DamageOrigin.Weapon(reload.Slot, some.Value.Type, some.Value.Ammo)))], []),
+            some => new Opening(state, [new PendingEvent.Ready(new GameEvent.Reloaded(new DamageOrigin.Weapon(reload.Slot, some.Value.Type, some.Value.Ammo, some.Value.Archetype)))], []),
             _ => BlockAction(state, $"No weapon in the {reload.Slot} slot — nothing happens."));
     }
 
     /// <summary>
-    /// The player slides over an ammo brick with the weapon in hand: one event from that weapon, so the rules on it fire
-    /// (Spark of Momentum). No ammo is counted, so whether the brick is of an ammo you aren't full on is the player's call;
-    /// never blocked but for an empty slot.
+    /// The player picks up an ammo brick, or slides over it (ADRs D43): one event, so the rules on a pickup fire (All-Star),
+    /// and on a slide those on a slide too (Spark of Momentum). Never blocked: bricks drop from enemies, which only play decides,
+    /// and no ammo is counted (ADRs D37), so whether you aren't full on that ammo is the player's call.
     /// </summary>
-    private static Opening SlideOverAmmo(ValidatedBuild build, GameState state, PlayerAction.SlideOverAmmo slide)
+    private static Opening PickUpAmmo(GameState state, PlayerAction.PickUpAmmo ammo) =>
+        new(state, [new PendingEvent.Ready(new GameEvent.AmmoPickedUp(ammo.Brick, ammo.Pickup))], []);
+
+    /// <summary>
+    /// The player readies (swaps to) a weapon: one event from that weapon, so the rules on it fire (Mechaneer's
+    /// Tricksleeves). Which weapon is in hand isn't kept (ADRs D43); never blocked but for an empty slot.
+    /// </summary>
+    private static Opening ReadyWeapon(ValidatedBuild build, GameState state, PlayerAction.ReadyWeapon ready)
     {
-        var weapon = build.Build.Weapons.Select(w => w.Slot == slide.Slot ? Optional.Some(w) : Optional.None<WeaponLoadout>()).FindFirstSome();
+        var weapon = build.Build.Weapons.Select(w => w.Slot == ready.Slot ? Optional.Some(w) : Optional.None<WeaponLoadout>()).FindFirstSome();
         return weapon.Match(
-            some => new Opening(state, [new PendingEvent.Ready(new GameEvent.SlidOverAmmo(new DamageOrigin.Weapon(slide.Slot, some.Value.Type, some.Value.Ammo)))], []),
-            _ => BlockAction(state, $"No weapon in the {slide.Slot} slot — nothing happens."));
+            some => new Opening(state, [new PendingEvent.Ready(new GameEvent.WeaponReadied(new DamageOrigin.Weapon(ready.Slot, some.Value.Type, some.Value.Ammo, some.Value.Archetype)))], []),
+            _ => BlockAction(state, $"No weapon in the {ready.Slot} slot — nothing happens."));
     }
 
     /// <summary>

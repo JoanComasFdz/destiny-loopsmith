@@ -218,7 +218,7 @@ public sealed class EnemyCountTests : BaseE2E
             .Shows(new StateGroup.Weapons(), "Stats for All · 1 effect · Ogma PR6");
 
         // When
-        await Frontend.Designer.Loop.Step(1).ClickChipAsync(new StateGroup.Weapons(), "Stats for All · 1 effect · Ogma PR6");
+        await Frontend.Designer.Loop.Step(1).ClickStateChipAsync(new StateGroup.Weapons(), "Stats for All · 1 effect · Ogma PR6");
         await Frontend.Designer.ItemDetails.WaitUntilShownAsync();
 
         // Then
@@ -253,7 +253,7 @@ public sealed class EnemyCountTests : BaseE2E
             .Shows(new StateGroup.Weapons(), "Stats for All · 1 effect · Ogma PR6");
 
         // When
-        await Frontend.Designer.Loop.Step(1).ClickChipAsync(new StateGroup.Weapons(), "Stats for All · 1 effect · Ogma PR6");
+        await Frontend.Designer.Loop.Step(1).ClickStateChipAsync(new StateGroup.Weapons(), "Stats for All · 1 effect · Ogma PR6");
         await Frontend.Designer.ItemDetails.WaitUntilShownAsync();
 
         // Then
