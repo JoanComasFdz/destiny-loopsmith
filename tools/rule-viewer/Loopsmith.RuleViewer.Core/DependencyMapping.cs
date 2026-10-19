@@ -7,8 +7,11 @@ using Loopsmith.Core.Phrasing;
 
 namespace Loopsmith.RuleViewer.Core;
 
-/// <summary>The rules a graph is drawn from, and the class and subclass it is drawn for.</summary>
-internal sealed record GraphContext(RuleCatalog Catalog, GuardianClass Class, Subclass Subclass);
+/// <summary>
+/// The rules a graph is drawn from, and the class (none: a rule of every class, drawn as itself) and subclass it is drawn
+/// for.
+/// </summary>
+internal sealed record GraphContext(RuleCatalog Catalog, Optional<GuardianClass> Class, Subclass Subclass);
 
 /// <summary>
 /// What one part of a rule needs: one node, or one of several (<c>via: ability</c>: any ability trigger), with the edge's
@@ -86,7 +89,7 @@ internal static class DependencyMapping
     public static bool IsSubclassPart(GraphContext context, BuildElement element) =>
         element.Kind is ElementKind.Super or ElementKind.Grenade or ElementKind.Melee or ElementKind.ClassAbility
             or ElementKind.Aspect or ElementKind.Fragment
-        && element.FitsClass(context.Class)
+        && FitsClass(context, element)
         && element.Affinity == context.Subclass.ToAffinity();
 
     /// <summary>
@@ -96,7 +99,8 @@ internal static class DependencyMapping
     public static bool IsDrawn(GraphContext context, BuildElement element) =>
         !element.Inert.IsSome()
         && element.Kind != ElementKind.Jump
-        && element.Fits(context.Class, context.Subclass)
+        && FitsClass(context, element)
+        && element.FitsSubclass(context.Subclass)
         && (element.Kind != ElementKind.Keyword
             || element.Affinity is Affinity.Neutral or Affinity.Kinetic
             || element.Affinity == context.Subclass.ToAffinity());
@@ -165,7 +169,7 @@ internal static class DependencyMapping
             pickUp: pickUp => [ToPickupNode(context, pickUp.Pickup)],
             buffGained: gained => [ToStatusNode(context, gained.Status)],
             stacksMaxed: maxed => [ToStatusNode(context, maxed.Status)],
-            finisher: _ => [ToTriggerNode("Finisher", context.Catalog.FindClassFinisher(context.Class).Bind(item => item.Icon).Map(ToIconUrl))],
+            finisher: _ => [ToTriggerNode("Finisher", context.Class.Bind(context.Catalog.FindClassFinisher).Bind(item => item.Icon).Map(ToIconUrl))],
             abilityCastAs: cast => [ToTriggerNode(context, cast.Kind, cast.Input)],
             killFewer: _ => [],
             criticalHealth: _ => [ToTriggerNode("Critical health", FindStatIcon(context, StatKind.Health))],
@@ -449,9 +453,12 @@ internal static class DependencyMapping
     /// The class's own word for a class ability trigger: a Hunter's dodge, a Titan's barricade, a Warlock's rift ("Air
     /// dodge" in the air); none for any other node.
     /// </summary>
-    internal static Optional<string> FindClassMove(GraphContext context, GraphNode node)
+    internal static Optional<string> FindClassMove(GraphContext context, GraphNode node) =>
+        context.Class.Bind(guardianClass => FindClassMove(guardianClass, node));
+
+    private static Optional<string> FindClassMove(GuardianClass guardianClass, GraphNode node)
     {
-        var move = context.Class switch
+        var move = guardianClass switch
         {
             GuardianClass.Hunter => "dodge",
             GuardianClass.Titan => "barricade",
@@ -464,9 +471,13 @@ internal static class DependencyMapping
                 : Optional.None<string>();
     }
 
+    /// <summary>True when the element is the context's class's, or any class's; every element fits a context of no class.</summary>
+    private static bool FitsClass(GraphContext context, BuildElement element) =>
+        context.Class.Match(guardianClass => element.FitsClass(guardianClass.Value), _ => true);
+
     private static Optional<string> FindClassAbilityIcon(GraphContext context) =>
         context.Catalog.Elements.Values
-            .Where(element => element.Kind == ElementKind.ClassAbility && element.Fits(context.Class, context.Subclass))
+            .Where(element => element.Kind == ElementKind.ClassAbility && context.Class.Match(guardianClass => element.Fits(guardianClass.Value, context.Subclass), _ => false))
             .OrderBy(element => element.Id.Value, StringComparer.Ordinal)
             .Select(element => FindElementIcon(context, element.Id))
             .FindFirstSome();

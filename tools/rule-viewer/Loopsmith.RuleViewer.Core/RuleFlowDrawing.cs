@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Loopsmith.Core.Domain;
+using Loopsmith.Core.Functional;
 
 namespace Loopsmith.RuleViewer.Core;
 
@@ -20,7 +21,7 @@ public static class RuleFlowDrawing
 
     public static SubclassRules DrawRules(RuleCatalog catalog, GuardianClass guardianClass, Subclass subclass)
     {
-        var context = new GraphContext(catalog, guardianClass, subclass);
+        var context = new GraphContext(catalog, Optional.Some(guardianClass), subclass);
         var graph = DependencyGraphDrawing.DrawGraph(catalog, guardianClass, subclass);
         var flows = catalog.Elements.Values
             .Where(element => DependencyMapping.IsDrawn(context, element))

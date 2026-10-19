@@ -47,8 +47,10 @@ The files:
   theme, at twice the pixels. The host renders a page of just those flows (`Page/RuleFlowPage`, with the same components,
   style and script) and takes its picture with Playwright's headless Chromium (`Hosting/RuleFlowShot`): the
   `Microsoft.Playwright` the e2e tests pin (`Directory.Packages.props`), which finds the Chromium in `/opt/pw-browsers`
-  in a cloud session and in the dev container. A rule the page doesn't draw (outside the Arc Hunter and what builds on
-  it) is an error.
+  in a cloud session and in the dev container. Any rule or passive in `rules/` has its PNG, wherever its file sits (a
+  folder added later too): the tool finds the element whose rule has that name and draws it as itself, with its own
+  class and subclass (its affinity's; Prismatic for a neutral or kinetic one). A rule of every class names no class move
+  (its class ability reads "Class ability", not "Dodge"), and "a weapon of your Super's element" stays that.
 
 ```bash
 dotnet run --project tools/rule-viewer/Loopsmith.RuleViewer               # rules/ → out/rule-viewer/
@@ -57,8 +59,8 @@ dotnet run --project tools/rule-viewer/Loopsmith.RuleViewer -- --rule hunter-arc
 dotnet test tools/rule-viewer/Loopsmith.RuleViewer.Tests                  # also part of `dotnet test`
 ```
 
-It exits with 1 and the error text when the rules don't parse, when no rule has the `--rule` name ("No Arc Hunter rule
-is named '…'.") or when the PNG can't be taken, and with 2 on an unknown option. `out/` is gitignored.
+It exits with 1 and the error text when the rules don't parse, when no rule has the `--rule` name ("No rule is named
+'…'.") or when the PNG can't be taken, and with 2 on an unknown option. `out/` is gitignored.
 The icons load from bungie.net. `ArcHunterRulesGoldenTests` keeps the flows as text, so a rules change shows its flows
 in the PR diff.
 
