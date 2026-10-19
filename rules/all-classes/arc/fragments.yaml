@@ -121,11 +121,16 @@ elements:
     hash: 3478354816
     description: "At critical health, taking damage sends out an Arc burst: up to 46 [PvP 20] damage and Jolt on nearby enemies (radius not given), about 15 s between bursts."
     source: compendium/2026-10-13/Arc#18
-    # Not expressible yet: its Jolt would matter to a loop (Spark of Ions, Lethal Current). Reaching
-    # critical health is a step (`health:critical`), but no step takes damage while at it
-    # (docs/backlog.md, Rule format gaps).
-    inert: "Taking damage at critical health is no step in Loopsmith yet, so no loop sets off its jolting burst."
-    rules: []
+    rules:
+      # Being damaged while at critical health is the `health:hit` step (it holds only while Critical
+      # health is on you). The burst's 46 [PvP 20] damage and the "15?" s cooldown between bursts are
+      # facts in the description: a loop's steps don't measure time, so the rule fires on every
+      # declared hit.
+      - id: spark-of-instinct-1
+        on: { hitAtCriticalHealth: {} }
+        then:
+          - { debuffTarget: jolt }
+        reason: "Taking damage at critical health releases an Arc burst that jolts nearby enemies (about 15 s between bursts)."
     passives: []
 
   - id: spark-of-ions
