@@ -86,7 +86,7 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
 - `tools/rule-viewer/` — the rule viewer (ADRs D39): `dotnet run --project tools/rule-viewer/Loopsmith.RuleViewer`
   writes `out/rule-viewer/arc-hunter-rules.html` and `.json`, every Arc Hunter rule as one flow, the list of the atomic e2e
   scenarios to write; `-- --rule <rule name>` writes that one rule's flows (any rule in `rules/`, whatever its folder) as `out/rule-viewer/<rule name>.png` instead
-  (Playwright's Chromium). `Loopsmith.RuleViewer` is the host (its page's parts are components in `Page/`);
+  (Playwright's Chromium; `--theme dark` draws it dark, as the PRs' e2e posts and the `loopsmith-task` session show it). `Loopsmith.RuleViewer` is the host (its page's parts are components in `Page/`);
   `Loopsmith.RuleViewer.Core` its pure logic (the rules → a subclass's dependency graph, with three scopes: the subclass,
   + what it needs from outside, + what builds on it → its rules: every rule and passive as one flow, trigger ➜ what must
   be in place ➜ what it gives, one per trigger when a rule names several), using only Core's kernel and `Orchestration`;
@@ -137,7 +137,7 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
 - `.github/workflows/` — `ci.yml` (build + test on every PR that changes what `dotnet` reads, and every
   push to `main`; on a PR that changes the site it also publishes the web app and hands it to `pr-preview.yml`, so a
   PR is built once), `pages.yml`, `pr-preview.yml` (deploys that site; removes it when the PR closes), `e2e-videos.yml` (records nothing: the session
-  records the PR's added or changed e2e scenarios and pushes their GIFs and MP4s to a throwaway `e2e-gifs/pr-<n>-<sha>` branch
+  records the PR's added or changed e2e scenarios and pushes their GIFs, MP4s and rules' flow PNGs to a throwaway `e2e-gifs/pr-<n>-<sha>` branch
   with `tools/e2e/push-gifs.sh`; the workflow uploads them to their pre-release (a rule scenario's, under
   `tests/Loopsmith.Web.E2E/Rules/<…>/`, to its rule file's `rules-<…>-resources`, created on its first upload and keeping
   each rule's latest recording; any other to `prs-resources`), posts them on the PR as
@@ -289,7 +289,7 @@ Always:
   never record between pushes; record once, right before the push, with `tools/e2e/record.sh --changed-since
   origin/main` (every scenario passes, or the push waits for a fix), and record again if a scenario or the web app
   changes after that and before the push, so the GIFs match the pushed head; after the push, `tools/e2e/push-gifs.sh`, which `e2e-videos.yml` posts as `## Scenarios (V<N>)` (each
-  scenario's Gherkin, then its 🖥️ Desktop and/or 📱 Mobile GIF; those only re-recorded because a fixture file they use
+  scenario's title, the flow PNG of the rule a rule scenario names, its Gherkin, then its 🖥️ Desktop and/or 📱 Mobile GIF; those only re-recorded because a fixture file they use
   changed come last, under "Re-recorded: their fixtures changed"). Put a short
   plain description of the round in the pushed commit's message body (the post's "What changed"), or pass it as
   `--message`.

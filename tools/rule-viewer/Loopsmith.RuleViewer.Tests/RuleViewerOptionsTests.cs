@@ -1,8 +1,9 @@
 using Loopsmith.Core.Functional;
+using Loopsmith.RuleViewer.Page;
 
 namespace Loopsmith.RuleViewer.Tests;
 
-/// <summary>The tool's options: the rules folder, the output folder and the one rule to draw as a PNG.</summary>
+/// <summary>The tool's options: the rules folder, the output folder, the one rule to draw as a PNG and its theme.</summary>
 public sealed class RuleViewerOptionsTests
 {
     private static RuleViewerOptions ReadOk(params string[] args) =>
@@ -16,6 +17,24 @@ public sealed class RuleViewerOptionsTests
         Assert.Equal(Path.Combine("/repo", "rules"), options.RulesDirectory);
         Assert.Equal(Path.Combine("/repo", "out", "rule-viewer"), options.OutDirectory);
         Assert.False(options.Rule.IsSome());
+        Assert.Equal(FlowTheme.Light, options.Theme);
+    }
+
+    [Fact]
+    public void Theme_dark_draws_the_png_in_the_dark_theme()
+    {
+        var options = ReadOk("--rule", "keywords-arc-jolt-2", "--theme", "dark");
+
+        Assert.Equal(FlowTheme.Dark, options.Theme);
+    }
+
+    [Fact]
+    public void A_theme_other_than_light_or_dark_is_an_error()
+    {
+        var read = RuleViewerOptions.ReadOptions(["--theme", "blue"], "/repo");
+
+        var error = Assert.IsType<Result<RuleViewerOptions, string>.Error>(read);
+        Assert.StartsWith("'--theme' is light or dark, not 'blue'.", error.Failure);
     }
 
     [Fact]

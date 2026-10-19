@@ -75,7 +75,7 @@ elements:
     rules:
       # Only a precision kill sets it off: the player says which kill step is one (energy:kill:precision).
       - id: spark-of-brilliance-1
-        on: { kill: { via: any, targetHas: [blind], precision: true } }
+        on: { kill: { via: any, targetHas: [blind], hit: precision } }
         then:
           - { debuffTarget: blind }
         reason: "A precision kill on a blinded enemy blinds the enemies around it."

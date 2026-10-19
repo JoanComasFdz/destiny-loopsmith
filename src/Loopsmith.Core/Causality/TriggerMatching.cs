@@ -90,14 +90,17 @@ public static class TriggerMatching
                 && weapon.Ammo.Match(ammo => ammo.Value == ofAmmoAndType.Ammo, _ => false)
                 && weapon.Type == ofAmmoAndType.Type);
 
-    /// <summary>Whether the trigger is a kill that needs a precision kill (<c>precision: true</c>, ADRs D36).</summary>
-    public static bool NeedsPrecisionKill(this Trigger trigger) =>
+    /// <summary>
+    /// Whether the trigger is a kill that needs a precision or a body kill (<c>hit:</c>, ADRs D36): where its kills land
+    /// decides whether it fires.
+    /// </summary>
+    public static bool NeedsKillZone(this Trigger trigger) =>
         trigger.Match(
             abilityCast: _ => false,
-            killAny: kill => kill.Needs == HitZone.Precision,
-            killOfTier: kill => kill.Needs == HitZone.Precision,
-            killDebuffed: kill => kill.Needs == HitZone.Precision,
-            killMultiple: kill => kill.Needs == HitZone.Precision,
+            killAny: kill => kill.Needs is not ZoneNeed.AnyZone,
+            killOfTier: kill => kill.Needs is not ZoneNeed.AnyZone,
+            killDebuffed: kill => kill.Needs is not ZoneNeed.AnyZone,
+            killMultiple: kill => kill.Needs is not ZoneNeed.AnyZone,
             damage: _ => false,
             damageDebuffed: _ => false,
             damageMultiple: _ => false,
@@ -106,12 +109,12 @@ public static class TriggerMatching
             stacksMaxed: _ => false,
             finisher: _ => false,
             abilityCastAs: _ => false,
-            killFewer: kill => kill.Needs == HitZone.Precision,
+            killFewer: kill => kill.Needs is not ZoneNeed.AnyZone,
             criticalHealth: _ => false,
             shieldBroken: _ => false,
             energyExpended: _ => false,
             damageFewer: _ => false,
-            killBetween: kill => kill.Needs == HitZone.Precision,
+            killBetween: kill => kill.Needs is not ZoneNeed.AnyZone,
             reload: _ => false);
 
     /// <summary>The statuses a trigger needs on the target (empty when it doesn't care).</summary>
@@ -189,7 +192,13 @@ public static class TriggerMatching
     private static bool IsSpanMet(DamageSpan needs, DamageSpan span) =>
         needs == DamageSpan.Blow || span == DamageSpan.Sustained;
 
-    /// <summary>A source that needs a precision kill fires on the kills the player says are precision ones only; any other on every kill (ADRs D36).</summary>
-    private static bool IsZoneMet(HitZone needs, HitZone zone) =>
-        needs == HitZone.Body || zone == HitZone.Precision;
+    /// <summary>
+    /// A source that needs a precision kill fires on the kills the player says are precision ones only, one that needs a body
+    /// kill on the others only, any other on every kill (ADRs D36).
+    /// </summary>
+    private static bool IsZoneMet(ZoneNeed needs, HitZone zone) =>
+        needs.Match(
+            _ => true,
+            _ => zone == HitZone.Body,
+            _ => zone == HitZone.Precision);
 }

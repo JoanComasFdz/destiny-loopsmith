@@ -13,7 +13,8 @@ work out on their own. These rules apply to every Gherkin a session writes. A Gh
   [E2E-TEST-CODE-RULES.md](../tests/Loopsmith.VsCodeExtension.E2E/E2E-TEST-CODE-RULES.md)), and its PR shows its GIFs
   the same way.
 
-The PR's e2e comment shows each scenario's title, its Gherkin, and a GIF of it played on each screen its tags name
+The PR's e2e comment shows each scenario's title, the flow of the rule it names (a rule scenario's `# Rule` line,
+drawn by the rule viewer), its Gherkin, and a GIF of it played on each screen its tags name
 (🖥️ Desktop, 📱 Mobile) ([hosting.md](hosting.md), "E2E videos on pull requests").
 
 This document holds what every Gherkin shares. Two kinds of scenario build on it, each with its own document for what

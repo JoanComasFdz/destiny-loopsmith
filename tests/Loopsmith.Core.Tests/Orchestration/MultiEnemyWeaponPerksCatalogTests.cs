@@ -114,6 +114,19 @@ public sealed class MultiEnemyWeaponPerksCatalogTests
         Assert.DoesNotContain(one.Fired, fired => fired.Source.Value == perk && fired.Likelihood == Likelihood.Always);
     }
 
+    [Theory]
+    [InlineData("hatchling")]
+    [InlineData("veterans-wisdom")]
+    public void A_precision_kill_perk_fires_for_sure_on_fewer_than_three_precision_kills_and_never_as_a_chance(string perk)
+    {
+        var session = StartWithKineticPerk(perk);
+
+        var precise = LoopDesigning.AppendStep(session, new PlayerAction.FireWeapon(WeaponSlot.Kinetic, HitOutcome.Kill, TargetCount.One, Zone: HitZone.Precision), Optional.None<string>()).Resolutions[^1];
+
+        Assert.Equal([Likelihood.Always], precise.Fired.Where(fired => fired.Source.Value == perk).Select(fired => fired.Likelihood));
+        Assert.Contains(StepOption.Precision, LoopDesigning.ListStepOptions(session.Build, new PlayerAction.FireWeapon(WeaponSlot.Kinetic, HitOutcome.Kill, TargetCount.One)));
+    }
+
     [Fact]
     public void Hatchlings_enhanced_trait_may_hatch_a_second_threadling()
     {

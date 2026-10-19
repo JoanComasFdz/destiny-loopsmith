@@ -152,9 +152,12 @@ internal static class DependencyMapping
             killBetween: kill => DescribeKillLabel(kill.Needs, $"{kill.AtLeast.Value.ToString(CultureInfo.InvariantCulture)}+ kills"),
             reload: _ => "reload");
 
-    /// <summary>"precision kill", "precision 3+ kills": a kill a source needs on the enemy's weak spot (ADRs D36).</summary>
-    internal static string DescribeKillLabel(HitZone needs, string kill) =>
-        needs == HitZone.Precision ? $"precision {kill}" : kill;
+    /// <summary>"precision kill", "body kill": where a source needs its kill to land (ADRs D36).</summary>
+    internal static string DescribeKillLabel(ZoneNeed needs, string kill) =>
+        needs.Match(
+            _ => kill,
+            _ => $"body {kill}",
+            _ => $"precision {kill}");
 
     private static string DescribeHitLabel(DamageSpan span) =>
         span == DamageSpan.Sustained ? "sustained hit" : "hit";

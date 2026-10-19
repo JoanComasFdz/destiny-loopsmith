@@ -582,14 +582,19 @@ follow from the loop instead of the player.
 **precision** kill (Compendium Arc#12); Loopsmith couldn't tell a precision kill from a body kill, so its rule fired as a
 chance on any kill. Where a hit lands is play too, so a weapon step takes a third option, **precision**
 (`energy:kill:precision`, "Festival Flight (💀 kill · 🎯 precision)"): its kills are precision kills, every one of them,
-and a kill trigger may need one (`precision: true`), matched on those kills only — the rule then fires for sure on a
+and a kill trigger may need one (`hit: precision`), matched on those kills only — the rule then fires for sure on a
 precision kill step and not on a body kill. A hit step takes it too, since the game has precision hits, though no
 trigger reads one yet. It goes with `:shield` (`energy:kill:shield:precision`): a shield takes no precision damage while
 it holds (Destiny's guides and wikis say so; no Bungie note does), but the step breaks it with its first hit and its
 killing blow can then be a headshot. Abilities and Supers take no precision option: no authored rule needs one (Golden
 Gun's precision hits would). The designer shows "🎯 precision" next to a weapon's hit and kill when an equipped rule needs
-a precision kill, beside "🛡 shield" when both apply. Hatchling's and Veteran's Wisdom's "a precision kill, or 3 kills
-within 3 s" stay a chance on fewer than 3 kills until a follow-up moves them (docs/backlog.md).
+a precision or a body kill, beside "🛡 shield" when both apply. Hatchling's and Veteran's Wisdom's "a precision kill, or 3
+kills within 3 s" (product owner, 2026-10, the follow-up of #146) needs the other side too: a kill trigger names where its
+kills land with `hit:`, one of a union rather than a yes or no — `hit: precision`, only precision kills; `hit: body`, only
+the others; no `hit:`, any kill (the owner chose the key over `precision: false` meaning "body only", and accepted
+renaming Spark of Brilliance's `precision: true`). Each perk then fires for sure on 3 quick kills (`atLeast: 3`) and on
+fewer precision kills (`fewerThan: 3, hit: precision`), and as a chance on fewer body kills (`fewerThan: 3, hit: body`:
+the kills of the steps before may count) — once per step, never a sure and a chance side by side.
 
 ### D37 — A reload is a step the player declares, and a rule can reload a weapon; no ammo is counted
 

@@ -429,9 +429,12 @@ public static class DomainPhrasing
         };
     }
 
-    /// <summary>" (precision)": a kill a source needs on the enemy's weak spot, which the player says (ADRs D36).</summary>
-    private static string DescribeZone(HitZone needs) =>
-        needs == HitZone.Precision ? " (precision)" : "";
+    /// <summary>" (precision)", " (body)": where a source needs its kill to land, which the player says (ADRs D36).</summary>
+    private static string DescribeZone(ZoneNeed needs) =>
+        needs.Match(
+            _ => "",
+            _ => " (body)",
+            _ => " (precision)");
 
     /// <summary>" kept up (a hit step)": damage a source needs over several hits, which a hit step stands for (ADRs D34).</summary>
     private static string DescribeSpan(DamageSpan needs) =>

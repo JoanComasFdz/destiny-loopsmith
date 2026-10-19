@@ -1346,7 +1346,7 @@ public sealed class RuleCatalogParsingTests
     }
 
     [Fact]
-    public void Parses_a_precision_kill_on_every_kind_of_kill()
+    public void Parses_a_precision_or_body_kill_on_every_kind_of_kill()
     {
         var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToElementsFile("all-classes/arc/fragments.yaml", """
             elements:
@@ -1356,39 +1356,44 @@ public sealed class RuleCatalogParsingTests
                 affinity: arc
                 rules:
                   - id: brilliance-1
-                    on: { kill: { via: any, targetHas: [jolt], precision: true } }
+                    on: { kill: { via: any, targetHas: [jolt], hit: precision } }
                     then: [ { debuffTarget: jolt } ]
                   - id: brilliance-2
-                    on: { kill: { via: weapon, precision: true } }
+                    on: { kill: { via: weapon, hit: precision } }
                     then: [ { debuffTarget: jolt } ]
                   - id: brilliance-3
-                    on: { kill: { via: weapon, tier: champion, precision: true } }
+                    on: { kill: { via: weapon, tier: champion, hit: precision } }
                     then: [ { debuffTarget: jolt } ]
                   - id: brilliance-4
-                    on: { kill: { via: weapon, atLeast: 3, precision: true } }
+                    on: { kill: { via: weapon, atLeast: 3, hit: precision } }
                     then: [ { debuffTarget: jolt } ]
                   - id: brilliance-5
-                    on: { kill: { via: weapon, fewerThan: 3, precision: true } }
+                    on: { kill: { via: weapon, fewerThan: 3, hit: precision } }
                     then: [ { debuffTarget: jolt } ]
                   - id: brilliance-6
-                    on: { kill: { via: weapon, atLeast: 2, fewerThan: 3, precision: true } }
+                    on: { kill: { via: weapon, atLeast: 2, fewerThan: 3, hit: precision } }
                     then: [ { debuffTarget: jolt } ]
                   - id: brilliance-7
-                    on: { kill: { via: weapon, precision: false } }
+                    on: { kill: { via: weapon, hit: body } }
+                    then: [ { debuffTarget: jolt } ]
+                  - id: brilliance-8
+                    on: { kill: { via: weapon } }
                     then: [ { debuffTarget: jolt } ]
             """)]));
 
         var rules = catalog.Elements[ElementId.From("brilliance")].Rules;
         var debuffed = Assert.IsType<Trigger.KillDebuffed>(rules[0].On);
         Assert.Equal([StatusId.From("jolt")], debuffed.TargetHas);
-        Assert.Equal(HitZone.Precision, debuffed.Needs);
-        Assert.Equal(new Trigger.KillAny(new DamageSource.AnyWeapon(), HitZone.Precision), rules[1].On);
-        Assert.All(rules[..6], rule => Assert.True(rule.On.NeedsPrecisionKill()));
-        Assert.Equal(new Trigger.KillAny(new DamageSource.AnyWeapon(), HitZone.Body), rules[6].On);
+        Assert.Equal(new ZoneNeed.PrecisionOnly(), debuffed.Needs);
+        Assert.Equal(new Trigger.KillAny(new DamageSource.AnyWeapon(), new ZoneNeed.PrecisionOnly()), rules[1].On);
+        Assert.All(rules[..7], rule => Assert.True(rule.On.NeedsKillZone()));
+        Assert.Equal(new Trigger.KillAny(new DamageSource.AnyWeapon(), new ZoneNeed.BodyOnly()), rules[6].On);
+        Assert.Equal(new Trigger.KillAny(new DamageSource.AnyWeapon(), new ZoneNeed.AnyZone()), rules[7].On);
+        Assert.False(rules[7].On.NeedsKillZone());
     }
 
     [Fact]
-    public void A_precision_key_that_is_not_true_or_false_is_an_error_at_its_line()
+    public void A_hit_key_that_is_not_body_or_precision_is_an_error_at_its_line()
     {
         var message = ParseInvalidCatalog(Glossary, ToElementsFile("hunter/arc.yaml", """
             elements:
@@ -1398,11 +1403,11 @@ public sealed class RuleCatalogParsingTests
                 affinity: arc
                 rules:
                   - id: brilliance-1
-                    on: { kill: { via: any, precision: headshot } }
+                    on: { kill: { via: any, hit: headshot } }
                     then: [ { debuffTarget: jolt } ]
             """));
 
-        Assert.Contains("hunter/arc.yaml:8: kill.precision: 'headshot' is not true or false", message);
+        Assert.Contains("hunter/arc.yaml:8: kill.hit: 'headshot' is not one", message);
     }
 
     // ── Multi-target triggers: "hit / kill at least N enemies in one action" (ADRs D4) ──────

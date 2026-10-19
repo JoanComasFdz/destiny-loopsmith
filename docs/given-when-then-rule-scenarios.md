@@ -71,7 +71,10 @@ The rules are grouped by file (ADRs D40, [rule-format.md](rule-format.md), "File
 2. **Title:** the claim as a statement, with its element's name ("Lethal Current's dodge arms the next melee hit").
 3. **The rule line:** right under `Scenario:`, a `#` line with the claim's full name (its file's path, then the rule's
    id: `hunter-arc-aspects-lethal-current-3`) and its flow as the rule viewer draws it, so the scenario can be found
-   from the rule and the rule from the scenario.
+   from the rule and the rule from the scenario. The same name draws the flow as a picture
+   (`dotnet run --project tools/rule-viewer/Loopsmith.RuleViewer -- --rule <its name> --theme dark` →
+   `out/rule-viewer/<its name>.png`): the session shows it to the owner under the Gherkin when they agree on it, and the
+   recording draws it for the PR's e2e comment, between the scenario's title and its Gherkin.
 
 ## Its build
 
