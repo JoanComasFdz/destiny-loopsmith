@@ -56,7 +56,7 @@ public sealed class GatheringStormTests : BaseE2E
           Then card #1's heading is "#1 Super (🥊 hit)"
           # A super's first hit casts it: Super is on you from then on.
           And its BUFFS show only "Super · 1 effect"
-          And its "All damage" resistance reads "93.5%" PvE and "49%" PvP
+          And its "All damage" resistance reads "93.45%" PvE and "49%" PvP
           And "Gathering Storm" gives "90% · PvP 49%" of it
         """)]
     public async Task GatheringStormGivesDamageResistanceWhileItsSuperIsOn(Screen screen)
@@ -79,7 +79,7 @@ public sealed class GatheringStormTests : BaseE2E
         Asserting.That(cast)
             .HasHeading("#1 Super (🥊 hit)")
             .Shows(new StateGroup.Buffs(), "Super · 1 effect")
-            .HasResistance("All damage", "93.5%", "49%")
+            .HasResistance("All damage", "93.45%", "49%")
             .HasResistanceFrom(new Ability.GatheringStorm(), "90% · PvP 49%");
     }
 }

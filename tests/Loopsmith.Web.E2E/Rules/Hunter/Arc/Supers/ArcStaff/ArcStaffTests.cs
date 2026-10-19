@@ -54,7 +54,7 @@ public sealed class ArcStaffTests : BaseE2E
           Then card #1's heading is "#1 Super (🥊 hit)"
           # A super's first hit casts it: Super is on you from then on.
           And its BUFFS show only "Super · 1 effect"
-          And its "All damage" resistance reads "93.5%" PvE and "53%" PvP
+          And its "All damage" resistance reads "93.45%" PvE and "53%" PvP
           And "Arc Staff" gives "90% · PvP 53%" of it
         """)]
     public async Task ArcStaffGivesDamageResistanceWhileItsSuperIsOn(Screen screen)
@@ -77,7 +77,7 @@ public sealed class ArcStaffTests : BaseE2E
         Asserting.That(cast)
             .HasHeading("#1 Super (🥊 hit)")
             .Shows(new StateGroup.Buffs(), "Super · 1 effect")
-            .HasResistance("All damage", "93.5%", "53%")
+            .HasResistance("All damage", "93.45%", "53%")
             .HasResistanceFrom(new Ability.ArcStaff(), "90% · PvP 53%");
     }
 }
