@@ -482,6 +482,7 @@ What the format can't count is written in one of three ways, and needs no new fo
 | `{ stacksMaxed: bolt-charge }` — the player declares the buff at max | `StacksMaxed(status)` |
 | `{ finisher: {} }` — the player does a finisher on an enemy of the pack (it kills it) | `Finisher()` |
 | `{ criticalHealth: {} }` — the player declares they reached critical health (`health:critical`) | `CriticalHealth()` |
+| `{ hitAtCriticalHealth: {} }` — the player declares they are damaged while at critical health (`health:hit`) | `HitAtCriticalHealth()` |
 | `{ shieldBroken: {} }` / `{ shieldBroken: { via: weapon } }` — a combatant's shield broken by that source (`via` defaults to `any`); the player says which weapon step breaks one (`kinetic:kill:shield`) | `ShieldBroken(via)` |
 | `{ energyExpended: grenade }` (`grenade\|melee\|classAbility`) — the ability's energy fully expended: its last charge used (`grenade:last`) | `EnergyExpended(kind)` |
 | `{ reload: {} }` / `{ reload: { via: weapon:this } }` — a weapon reloaded: the player's Reload step (`energy:reload`) or a `reloadWeapon` outcome; `via` names a weapon (defaults to `any`) | `Reload(via)` |
@@ -630,8 +631,24 @@ counted (ADRs D33), so its rules read the count instead — Emergency Reinforcem
 
 A **critical health** step is the player's declaration (`health:critical`, "Critical health",
 [loop-format.md](loop-format.md#action-tokens), ADRs D3): no damage you take is modelled, so only the player can say
-your shields broke. `criticalHealth` takes no keys (`{ criticalHealth: {} }`); the designer offers the step only when an
-equipped rule has the trigger.
+your shields broke. It puts the `critical-health` status on you ("Critical health" among your buffs) until the player
+declares it ended (`end:critical-health`: your shields are full again), so a loop shows when it is at critical health
+and a step that needs it can't come before it. `criticalHealth` takes no keys (`{ criticalHealth: {} }`); the designer
+offers the step, while you aren't at critical health, only when an equipped rule reacts to it or to a hit at it.
+
+A **hit at critical health** is the player's declaration too (`health:hit`, "Hit at critical health", ADRs D3): while
+critical health is on you, you are damaged. It holds only then (a blocked step otherwise: `Not at critical health —
+declare Critical health (health:critical) first.`), and the designer offers it, as **hit** beside "Critical health"
+among the buffs on you, only when an equipped rule has `{ hitAtCriticalHealth: {} }` (it takes no keys). Spark of
+Instinct (`rules/all-classes/arc/fragments.yaml`) jolts the pack on it; its 46 [PvP 20] damage and its cooldown
+between bursts are facts in its description:
+
+<!-- RuleExampleTests reads the next yaml block as a rule -->
+```yaml
+  - id: spark-of-instinct-1
+    on: { hitAtCriticalHealth: {} }
+    then: [ { debuffTarget: jolt } ]
+```
 
 A **broken shield**, a **precision kill** and an ability's **last charge** are options of a step the player turns on (ADRs D36,
 [loop-format.md](loop-format.md#action-tokens)). A weapon step whose kills are precision ones (`energy:kill:precision`)
@@ -1003,8 +1020,12 @@ the ground.
   player ends it. `end:<status>` ("Amplified ends", "Jolt ends") removes the buff, with its
   declaration, or the debuff from the pack, and derives no event. `pack:new` ("New pack", ADRs D7) puts
   a new pack in front of you: none of the old pack's debuffs, the buffs on you and the pickups on the
-  ground unchanged; it always holds and derives no event. `health:critical` ("Critical health") emits
-  `CriticalHealth`, so the `criticalHealth` rules fire and cascade; it always holds and changes no state.
+  ground unchanged; it always holds and derives no event. `health:critical` ("Critical health") puts the
+  `critical-health` status on you (no rule applies it: the engine does, as the declaration's own effect) and emits
+  `CriticalHealth`, so the `criticalHealth` rules fire and cascade; it holds unless you are already at critical health.
+  The status stays until `end:critical-health` (your shields are full again). `health:hit` ("Hit at critical health")
+  emits `HitAtCriticalHealth`, so the `hitAtCriticalHealth` rules fire and cascade; it holds only while
+  `critical-health` is on you and changes no state.
 * **Abilities are always available** (ADRs D5). A step is blocked only when it can't happen at all —
   the pickup isn't on the ground (`No orb-of-power on the ground — nothing happens.`), no weapon in that
   slot, a `max:` on a buff that doesn't stack, isn't active or is already at max, an `end:` on a status

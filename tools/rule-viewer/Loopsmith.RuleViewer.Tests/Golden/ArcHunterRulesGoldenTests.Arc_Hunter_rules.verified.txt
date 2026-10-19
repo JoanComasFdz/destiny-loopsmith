@@ -60,6 +60,7 @@
   Stasis weapon: 2
   Strand weapon: 2
   Critical health: 1
+  Hit at critical health: 1
   Airborne Super heavy: 1
   Any: 9
   Bolt Charge: 4
@@ -191,6 +192,9 @@ arc-strand-siphon-combo#3 mods-helmet-arc-strand-siphon-combo-4: [Trigger] Stran
 
 ### Critical health (1)
 emergency-reinforcement#0 mods-chest-emergency-reinforcement-1: [Trigger] Critical health ➜ [Armor mod] Emergency Reinforcement (equipped) + [Buff] Armor Charge (3+ stacks) ➜ [Buff] Emergency Reinforcement (6s | 9s | 12s by stacks spent), [Buff] Armor Charge (ends)
+
+### Hit at critical health (1)
+spark-of-instinct#0 all-classes-arc-fragments-spark-of-instinct-1: [Trigger] Hit at critical health ➜ [Subclass fragment] Spark of Instinct (equipped) ➜ [Debuff] Jolt
 
 ### Airborne Super heavy (1)
 arc-staff#1 hunter-arc-supers-arc-staff-3: [Trigger] Airborne Super heavy hit ➜ [Subclass super] Arc Staff (equipped) ➜ [Debuff] Blind

@@ -43,21 +43,22 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
 
 - **The rest of the Arc Hunter** (`rules/hunter/` and `rules/all-classes/arc/`: every Arcstrider plug is authored, compendium/2026-10-13).
   What its elements couldn't express, so they are `inert` or fire on more than they should:
-  - steps that don't exist: taking damage at critical health (Spark of Instinct's jolting burst — the only one that
-    would change a loop: its Jolt feeds Spark of Ions and Lethal Current), being hit by a melee
-    attack (Spark of Feedback). Reaching critical health is a step the player declares
-    (`health:critical`, Emergency Reinforcement, #69); the next task builds on it:
-    **The critical-health Sparks react to "Critical health".** Both are `inert` today.
-    1. **Spark of Recharge** (Arc#22): on reaching critical health, grenade and melee regenerate 400% [PvP 200%] faster
-       until your shields are full. Its faster regeneration shows as an outcome on the "Critical health" step (the
-       owner: it belongs in the step even though it sets nothing else off), so it is no longer `inert`; check against
-       the Compendium that it is ability regeneration, not health. It is the first ability regeneration shown as a
-       fact (Facts, below).
-    2. **Spark of Instinct** (Arc#18): taking damage *while* at critical health sends out an Arc burst that jolts nearby
-       enemies (its Jolt feeds Spark of Ions and Lethal Current). Decide how the player declares "taking damage at
-       critical health" (D3): critical health leaves nothing in the state today.
-    Use the Compendium snapshot for every value (`"?"` where it has none), record disagreements in the build's
-    `discrepancies.md`, and look for other authored elements that react to critical health;
+  - steps that don't exist: being hit by a melee attack (Spark of Feedback). Critical health is a status on you, from
+    the step the player declares (`health:critical`, Emergency Reinforcement, #69) until `end:critical-health`, and
+    being damaged while at it is a step of its own (`health:hit`, "Hit at critical health": Spark of Instinct's jolting
+    burst; ADRs D3). The next task builds on them:
+    **Spark of Recharge reacts to "Critical health".** It is `inert` today.
+    Spark of Recharge (Arc#22): on reaching critical health, grenade and melee regenerate 400% [PvP 200%] faster until
+    your shields are full (the `critical-health` status's end). Its faster regeneration shows as an outcome on the
+    "Critical health" step (the owner: it belongs in the step even though it sets nothing else off), so it is no longer
+    `inert`; check against the Compendium that it is ability regeneration, not health. It is the first ability
+    regeneration shown as a fact (Facts, below). Use the Compendium snapshot for every value (`"?"` where it has none)
+    and record disagreements in the build's `discrepancies.md`.
+    Elements not authored yet that would use them (compendium/2026-10-19): on a hit at critical health, the Ascendant
+    Escape set bonus (Armor Perks#66: on reaching critical health or being damaged at it) and Frost Renewal (a Stasis
+    artifact perk, "taking critical damage"); while at critical health (`has: critical-health`), Thunderous Retort
+    (Artifact Perks#111), Vigilance (Void#28), Vigilant Watch (Armor Perks#49), Enhanced Operator Augment (Armor
+    Mods#30) and Mechaneer's Tricksleeves (Exotic Armors#52);
   - no longer gaps: a weapon's ammo type is its manifest item's (`weapon:special:arc`, `weapon:heavy:arc`): Spark of
     Beacons fires for sure on a Special or Heavy Arc weapon kill; precision kills are a weapon step's option
     (`energy:kill:precision`, `hit: precision`, D36): Spark of Brilliance, Hatchling and Veteran's Wisdom fire on them

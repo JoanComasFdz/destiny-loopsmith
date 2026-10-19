@@ -1964,6 +1964,18 @@ public sealed class RuleCatalogParsingTests
     }
 
     [Fact]
+    public void Parses_a_hit_at_critical_health_trigger_which_takes_no_keys()
+    {
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog(
+            [Glossary, ToProbeFile("{ id: probe-1, on: { hitAtCriticalHealth: {} }, then: [ { removeBuff: armor-charge } ] }")]));
+        var withKeys = ParseInvalidCatalog(Glossary, ToProbeFile("{ id: probe-1, on: { hitAtCriticalHealth: { via: any } }, then: [ { removeBuff: armor-charge } ] }"));
+
+        var rule = Assert.Single(catalog.Elements[ElementId.From("probe")].Rules);
+        Assert.Equal(new Trigger.HitAtCriticalHealth(), rule.On);
+        Assert.Contains("mods.yaml:7: hitAtCriticalHealth takes no keys: write { hitAtCriticalHealth: {} }", withKeys);
+    }
+
+    [Fact]
     public void Parses_a_shield_broken_trigger_from_any_source_or_one_and_a_grant_of_stacks_by_copies()
     {
         var catalog = AssertOk(RuleCatalogParsing.ParseCatalog(

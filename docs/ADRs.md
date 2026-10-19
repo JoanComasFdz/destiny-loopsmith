@@ -112,12 +112,17 @@ enemy's health (To Shreds' 6 weapon hits), which a hit step stands for (D34).
 * `end:<status>` — the buff on you or the debuff on the pack has ended ("Amplified ends").
 * `pack:new` — the next enemies are a new pack, with none of the old pack's debuffs ("New pack", D7).
 * `health:critical` — you reached critical health ("Critical health"): no damage you take is modelled, so the player
-  says when the shields broke. It raises `CriticalHealth`, so the `criticalHealth` rules fire (Emergency
-  Reinforcement), and leaves nothing in the state.
+  says when the shields broke. It puts the `critical-health` status on you until an `end:critical-health` (the
+  shields are full again: the player says when, like any buff's end), and raises `CriticalHealth`, so the
+  `criticalHealth` rules fire (Emergency Reinforcement).
+* `health:hit` — you are damaged while at critical health ("Hit at critical health"). It raises `HitAtCriticalHealth`,
+  so the `hitAtCriticalHealth` rules fire (Spark of Instinct's jolting burst), and changes no state. Critical health is
+  a status so that this step needs a step before it: a loop that is hit at critical health shows where it got there.
 
 A declaration that doesn't hold is a **blocked step**, like a pickup that isn't on the ground:
 `max:` needs an active buff that stacks (`maxStacks` in the glossary) and isn't declared at max yet,
-`end:` an active status; `pack:new` and `health:critical` always hold. Nothing else reaches a maximum: an `applyBuff` makes the buff present and
+`end:` an active status, `health:critical` you not at critical health already, `health:hit` you at it; `pack:new`
+always holds. Nothing else reaches a maximum: an `applyBuff` makes the buff present and
 shows its grant ("+1 Bolt Charge") — but a counted buff, whose sure stacks reaching the cap put it at max (D33). A status ends only through a rule's `removeBuff` or consumption,
 or an `end:`. **Consequence.** `stacksMaxed` fires only on a declaration;
 a rule that reacts to the next hit at the maximum uses the `atMax` condition (Bolt Charge discharges

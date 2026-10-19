@@ -155,9 +155,67 @@ public sealed class ArmorModMechanicsTests
         var chance = Assert.Single(below.Fired);
         Assert.Equal((Likelihood.Chance, (GameEvent)new GameEvent.CriticalHealth()), (chance.Likelihood, chance.Trigger));
         Assert.Equal(Likelihood.Always, Assert.Single(atMax.Fired).Likelihood);
-        Assert.Equal([Status("amplified")], below.State.Buffs.Select(buff => buff.Status));    // the Armor Charge is spent
-        Assert.Equal([Status("amplified")], atMax.State.Buffs.Select(buff => buff.Status));
+        Assert.Equal([Status("critical-health"), Status("amplified")], below.State.Buffs.Select(buff => buff.Status));    // the Armor Charge is spent
+        Assert.Equal([Status("critical-health"), Status("amplified")], atMax.State.Buffs.Select(buff => buff.Status));
         Assert.Equal("#2 Critical health\n  Critical health → consumes Armor Charge x1 and Amplified (10s) [Reinforcement] (chance)", DescribeTrace(build, below));
+    }
+
+    private static readonly PlayerAction HitAtCriticalHealth = new PlayerAction.Declare(new StateDeclaration.HitAtCriticalHealth());
+
+    private static readonly PlayerAction EndCriticalHealth = new PlayerAction.Declare(new StateDeclaration.EndStatus(Status("critical-health")));
+
+    /// <summary>Spark of Instinct's shape: a hit at critical health jolts the pack.</summary>
+    private static readonly BuildElement Instinct = Element("instinct", ElementKind.Fragment,
+        [On(new Trigger.HitAtCriticalHealth(), new Outcome.DebuffTarget(Status("jolt"), Optional.None<Seconds>()))]);
+
+    [Fact]
+    public void Hit_at_critical_health_is_a_token_a_label_and_a_trigger_named_Hit_at_critical_health()
+    {
+        var build = ValidateBuild([Instinct]);
+
+        Assert.Equal("health:hit", HitAtCriticalHealth.ToActionToken());
+        Assert.Equal(new Result<PlayerAction, string>.Ok(HitAtCriticalHealth), ActionTokenParsing.ParseActionToken("Health:Hit"));
+        Assert.IsType<Result<PlayerAction, string>.Error>(ActionTokenParsing.ParseActionToken("health:hit:2"));
+        Assert.Equal("Hit at critical health", build.DescribeAction(HitAtCriticalHealth));
+        Assert.Equal("Critical health ends", build.DescribeAction(EndCriticalHealth));
+        Assert.Equal("Hit at critical health", build.Catalog.Glossary.DescribeTrigger(new Trigger.HitAtCriticalHealth(), build.ReadSuperType()));
+    }
+
+    [Fact]
+    public void Critical_health_stays_on_you_until_declared_ended_and_offers_the_hit_while_it_lasts()
+    {
+        var build = ValidateBuild([Instinct]);
+        var initial = ActionResolution.CreateInitialState();
+        var steps = ResolveSteps(build, CriticalHealth, EndCriticalHealth);
+
+        Assert.Contains(CriticalHealth, ActionResolution.ListAvailableActions(build, initial));   // a rule reacts to a hit at it
+        Assert.DoesNotContain(HitAtCriticalHealth, ActionResolution.ListAvailableActions(build, initial));
+        Assert.Equal([Status("critical-health")], steps[0].State.Buffs.Select(buff => buff.Status));
+        Assert.Contains(HitAtCriticalHealth, steps[0].NowAvailable);
+        Assert.Contains(EndCriticalHealth, steps[0].NowAvailable);
+        Assert.DoesNotContain(CriticalHealth, steps[0].NowAvailable);
+        Assert.Empty(steps[1].State.Buffs);
+        Assert.Contains(CriticalHealth, steps[1].NowAvailable);
+        Assert.DoesNotContain(HitAtCriticalHealth, ActionResolution.ListAvailableActions(ValidateBuild([], mods: [Reinforcement]), steps[0].State));   // nothing reacts to a hit
+    }
+
+    [Fact]
+    public void A_hit_at_critical_health_fires_its_rules_only_after_a_step_reached_critical_health()
+    {
+        var build = ValidateBuild([Instinct]);
+
+        var alone = ResolveOnce(build, HitAtCriticalHealth);
+        var steps = ResolveSteps(build, CriticalHealth, HitAtCriticalHealth, HitAtCriticalHealth, CriticalHealth);
+
+        Assert.Equal("Not at critical health — declare Critical health (health:critical) first.", alone.Blocked.Match(some => some.Value, _ => ""));
+        Assert.Empty(alone.Fired);
+        Assert.Empty(steps[0].Fired);
+        var burst = Assert.Single(steps[1].Fired);
+        Assert.Equal((Likelihood.Always, (GameEvent)new GameEvent.HitAtCriticalHealth()), (burst.Likelihood, burst.Trigger));
+        Assert.Equal([Status("jolt")], steps[1].State.Target.Debuffs);
+        Assert.Single(steps[2].Fired);   // every hit while at it
+        Assert.Equal("Already at critical health — declare it ended first (end:critical-health).", steps[3].Blocked.Match(some => some.Value, _ => ""));
+        Assert.Equal("#2 Hit at critical health\n  Hit at critical health → Jolt target (4s) [Instinct]", DescribeTrace(build, steps[1]));
     }
 
     // ── Breaking a shield (ADRs D36) ─────────────────────────────────────────────────────
