@@ -12,7 +12,7 @@ public sealed class IronPanoply2pcTests : BaseE2E
     [TestDescription("""
         @desktop @mobile
         Scenario: Vigilant Watch's weapon kill at critical health heals you
-          # Rule armor-sets-iron-panoply-iron-panoply-2pc-1: Weapon kill ➜ Vigilant Watch equipped and Critical health on you ➜ Heal
+          # Rule armor-sets-iron-panoply-iron-panoply-2pc-1: Weapon kill ➜ Vigilant Watch equipped and Critical health on you ➜ Health (30 HP)
           Given the build "iron-panoply-2pc-festival-flight" is imported, with no steps
           When I tap "Critical health" under "On you" in the trigger panel
           Then card #1's heading is "#1 Critical health"
@@ -21,7 +21,7 @@ public sealed class IronPanoply2pcTests : BaseE2E
           When I tap "Festival Flight" in the trigger panel
           And I tap "💀 kill"
           Then card #2's heading is "#2 Festival Flight (💀 kill)"
-          And "Vigilant Watch" fires "restores ? health"
+          And "Vigilant Watch" fires "heals you 30 HP"
           And its BUFFS show only "Critical health"
         """)]
     public async Task VigilantWatchsWeaponKillAtCriticalHealthHealsYou(Screen screen)
@@ -50,7 +50,7 @@ public sealed class IronPanoply2pcTests : BaseE2E
         var killed = await Frontend.Designer.Loop.Step(2).ReadAsync();
         Asserting.That(killed)
             .HasHeading("#2 Festival Flight (💀 kill)")
-            .Fires(new ArmorSetBonus.VigilantWatch(), "restores ? health")
+            .Fires(new ArmorSetBonus.VigilantWatch(), "heals you 30 HP")
             .Shows(new StateGroup.Buffs(), "Critical health");
     }
 }

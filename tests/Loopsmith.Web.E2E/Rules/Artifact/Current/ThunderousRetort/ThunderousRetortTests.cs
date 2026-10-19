@@ -12,11 +12,12 @@ public sealed class ThunderousRetortTests : BaseE2E
     [TestDescription("""
         @desktop @mobile
         Scenario: Thunderous Retort's Super at critical health hits harder
-          # Rule artifact-current-thunderous-retort-1: Always ➜ Thunderous Retort equipped and Critical health on you ➜ +30% Super damage
+          # Rule artifact-current-thunderous-retort-1: Always ➜ Thunderous Retort equipped and Critical health on you ➜ Damage bonus (+30% vs super)
           Given the build "thunderous-retort-arc-staff" is imported, with no steps
           When I tap "Critical health" under "On you" in the trigger panel
           Then card #1's heading is "#1 Critical health"
-          And its BUFFS show only "Critical health"
+          # "1 effect": Thunderous Retort's bonus holds while critical health is on you.
+          And its BUFFS show only "Critical health · 1 effect"
           # keeping step #1: its critical health is what makes #2's Super harder
           When I tap "Arc Staff" in the trigger panel
           And I tap "🥊 hit"
@@ -36,10 +37,11 @@ public sealed class ThunderousRetortTests : BaseE2E
         await Frontend.Designer.Loop.WaitUntilStepShownAsync(1);
 
         // Then
+        // "1 effect": Thunderous Retort's bonus holds while critical health is on you.
         var critical = await Frontend.Designer.Loop.Step(1).ReadAsync();
         Asserting.That(critical)
             .HasHeading("#1 Critical health")
-            .Shows(new StateGroup.Buffs(), "Critical health");
+            .Shows(new StateGroup.Buffs(), "Critical health · 1 effect");
 
         // When
         await Frontend.Designer.TriggerPalette.ClickAbilityAsync(new Ability.ArcStaff());
@@ -61,12 +63,12 @@ public sealed class ThunderousRetortTests : BaseE2E
     [TestDescription("""
         @desktop @mobile
         Scenario: Thunderous Retort's Super while Amplified hits harder
-          # Rule artifact-current-thunderous-retort-2: Always ➜ Thunderous Retort equipped, Amplified on you and no Critical health ➜ +30% Super damage
+          # Rule artifact-current-thunderous-retort-2: Always ➜ Thunderous Retort equipped, Amplified on you and Critical health not on you ➜ Damage bonus (+30% vs super)
           Given the build "thunderous-retort-disorienting-blow-arc-staff" is imported, with no steps
           When I tap "Disorienting Blow" in the trigger panel
           And I tap "🥊 hit"
           Then card #1's heading is "#1 Melee (🥊 hit)"
-          And its BUFFS show only "Amplified" and "Bolt Charge"
+          And its BUFFS show only "Amplified · 1 effect" and "Bolt Charge"
           # keeping step #1: its Amplified is what makes #2's Super harder
           When I tap "Arc Staff" in the trigger panel
           And I tap "🥊 hit"
@@ -91,7 +93,7 @@ public sealed class ThunderousRetortTests : BaseE2E
         var amplified = await Frontend.Designer.Loop.Step(1).ReadAsync();
         Asserting.That(amplified)
             .HasHeading("#1 Melee (🥊 hit)")
-            .Shows(new StateGroup.Buffs(), "Amplified", "Bolt Charge");
+            .Shows(new StateGroup.Buffs(), "Amplified · 1 effect", "Bolt Charge");
 
         // When
         await Frontend.Designer.TriggerPalette.ClickAbilityAsync(new Ability.ArcStaff());

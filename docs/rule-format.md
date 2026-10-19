@@ -44,7 +44,7 @@ rules/
   mods/<armor slot>.yaml       armor mods by slot (helmet, arms, chest, legs, class-item); mods/armor.yaml the rest
   mods/weapons.yaml            weapon mods (Backup Mag, Synergy…): what a weapon's mod socket holds
   weapons/perks.yaml           weapon perks
-  artifact/current.yaml        the current artifact's perks
+  artifact/current.yaml        the current artifacts' perks (Tablet of Ruin's, Thunderous Retort)
   armor-sets/<set>.yaml        an armor set's bonuses
 builds/<build>/build.yaml
 ```
@@ -645,7 +645,8 @@ A **critical health** step is the player's declaration (`health:critical`, "Crit
 your shields broke. It puts the `critical-health` status on you ("Critical health" among your buffs) until the player
 declares it ended (`end:critical-health`: your shields are full again), so a loop shows when it is at critical health
 and a step that needs it can't come before it. `criticalHealth` takes no keys (`{ criticalHealth: {} }`); the designer
-offers the step, while you aren't at critical health, only when an equipped rule reacts to it or to a hit at it.
+offers the step, while you aren't at critical health, only when an equipped rule reacts to it or to a hit at it, or an
+equipped rule or passive needs it on you (`has: critical-health`: Thunderous Retort's bonus, Echo of Vigilance's kill).
 
 A **hit at critical health** is the player's declaration too (`health:hit`, "Hit at critical health", ADRs D3): while
 critical health is on you, you are damaged. It holds only then (a blocked step otherwise: `Not at critical health —

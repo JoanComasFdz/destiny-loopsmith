@@ -12,7 +12,7 @@ public sealed class EchoOfVigilanceTests : BaseE2E
     [TestDescription("""
         @desktop @mobile
         Scenario: Echo of Vigilance's kill at critical health gives a Void Overshield
-          # Rule all-classes-void-fragments-echo-of-vigilance-1: Kill ➜ Echo of Vigilance equipped and Critical health on you ➜ Void Overshield
+          # Rule all-classes-void-fragments-echo-of-vigilance-1: Any kill ➜ Echo of Vigilance equipped and Critical health on you ➜ Void Overshield
           Given the build "echo-of-vigilance-festival-flight" is imported, with no steps
           When I tap "Critical health" under "On you" in the trigger panel
           Then card #1's heading is "#1 Critical health"
