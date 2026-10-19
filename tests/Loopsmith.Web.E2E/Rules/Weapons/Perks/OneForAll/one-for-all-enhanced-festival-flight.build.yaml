@@ -1,0 +1,6 @@
+# One for All's enhanced trait (the buff lasts 11 s instead of 10 s) on Festival Flight, a Kinetic weapon that rolls it.
+name: "E2E - One for All (enhanced) on Festival Flight"
+class: hunter
+subclass: arc
+weapons:
+  - { hash: 4019651319, perks: [one-for-all-enhanced] } # Festival Flight

@@ -1,0 +1,6 @@
+# Attrition Orbs (hits kept up with this weapon drop an Orb of Power) on Festival Flight, a Kinetic weapon that rolls it.
+name: "E2E - Attrition Orbs on Festival Flight"
+class: hunter
+subclass: arc
+weapons:
+  - { hash: 4019651319, perks: [attrition-orbs] } # Festival Flight

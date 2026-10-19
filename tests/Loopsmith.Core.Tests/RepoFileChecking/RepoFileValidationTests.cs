@@ -41,6 +41,17 @@ public sealed class RepoFileValidationTests
         ["tests/Loopsmith.Web.E2E/Scenarios/Loop/Weapons/EnemyCount/speleologist-radiolaria-transposer.build.yaml"] = [412251536],
         ["tests/Loopsmith.Web.E2E/Rules/Weapons/Perks/AllStar/all-star-battle-scar.build.yaml"] = [1525080480],
         ["tests/Loopsmith.Web.E2E/Rules/Weapons/Perks/AdhesiveOrdnance/adhesive-ordnance-battle-scar.build.yaml"] = [1525080480],
+        ["tests/Loopsmith.Web.E2E/Rules/Weapons/Perks/AdhesiveOrdnance/adhesive-ordnance-enhanced-battle-scar.build.yaml"] = [1525080480],
+        ["tests/Loopsmith.Web.E2E/Rules/Weapons/Perks/AllStar/all-star-enhanced-battle-scar.build.yaml"] = [1525080480],
+        ["tests/Loopsmith.Web.E2E/Rules/Weapons/Perks/StatsForAll/stats-for-all-ogma-pr6.build.yaml"] = [2342054803],
+        ["tests/Loopsmith.Web.E2E/Rules/Weapons/Perks/StatsForAll/stats-for-all-enhanced-ogma-pr6.build.yaml"] = [2342054803],
+        ["tests/Loopsmith.Web.E2E/Rules/Weapons/Perks/Unrelenting/unrelenting-ogma-pr6.build.yaml"] = [2342054803],
+        ["tests/Loopsmith.Web.E2E/Rules/Weapons/Perks/Unrelenting/unrelenting-enhanced-ogma-pr6.build.yaml"] = [2342054803],
+        ["tests/Loopsmith.Web.E2E/Rules/Weapons/Perks/ReapersTithe/reapers-tithe-bellowing-giant.build.yaml"] = [412265080],
+        ["tests/Loopsmith.Web.E2E/Rules/Weapons/Perks/ReapersTithe/reapers-tithe-enhanced-bellowing-giant.build.yaml"] = [412265080],
+        ["tests/Loopsmith.Web.E2E/Rules/Weapons/Perks/RadiolariaTransposer/radiolaria-transposer-speleologist.build.yaml"] = [412251536],
+        ["tests/Loopsmith.Web.E2E/Rules/Weapons/Perks/RadiolariaTransposer/radiolaria-transposer-enhanced-speleologist.build.yaml"] = [412251536],
+        ["tests/Loopsmith.Web.E2E/Rules/Weapons/Perks/VeteransWisdom/veterans-wisdom-enhanced-scathelocke.build.yaml"] = [3332538050],
     }.ToImmutableDictionary();
 
     public static TheoryData<string> Opening

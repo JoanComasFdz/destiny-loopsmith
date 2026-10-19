@@ -1,0 +1,6 @@
+# Veteran's Wisdom's enhanced trait (a 9 m shockwave instead of 8 m) on Scathelocke, the weapon its kills need.
+name: "E2E - Veteran's Wisdom (enhanced) on Scathelocke"
+class: hunter
+subclass: arc
+weapons:
+  - { hash: 3332538050, perks: [veterans-wisdom-enhanced] } # Scathelocke

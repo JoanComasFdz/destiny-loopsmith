@@ -1,0 +1,6 @@
+# Radiolaria Transposer's enhanced trait (figures the Compendium doesn't give) on Speleologist, a Power weapon that rolls it.
+name: "E2E - Radiolaria Transposer (enhanced) on Speleologist"
+class: hunter
+subclass: arc
+weapons:
+  - { hash: 412251536, perks: [radiolaria-transposer-enhanced] } # Speleologist

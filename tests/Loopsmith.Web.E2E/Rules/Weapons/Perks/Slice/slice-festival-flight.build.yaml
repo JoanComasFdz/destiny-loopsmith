@@ -1,0 +1,7 @@
+# Slice (a dodge arms it; this weapon's hits then Sever) on Festival Flight, a Kinetic weapon that rolls it, with Marksman's Dodge (no rules of its own) to dodge.
+name: "E2E - Slice on Festival Flight with Marksman's Dodge"
+class: hunter
+subclass: arc
+classAbility: marksmans-dodge
+weapons:
+  - { hash: 4019651319, perks: [slice] } # Festival Flight
