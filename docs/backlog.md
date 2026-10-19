@@ -78,9 +78,7 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   readable): health in HP (`restoreHealth` reads as a percentage, so Combination Blow 100 → 40 HP,
   Defibrillating Blast ~55 HP, To Shreds 15 HP per pulse stay `?`); values by level (Combination Blow +133% / +266% /
   +400% melee damage: once it is counted, "Counting, next", its count picks the value); an orb's energy by what
-  spawned it; Flow State's faster class ability regeneration while Amplified (a `fasterRegeneration` passive now
-  shows one: Spark of Recharge's);
-  Amplified's other extras (+40 Handling: an "all weapons" archetype). One "described fact" value and passive would
+  spawned it; Amplified's other extras (+40 Handling: an "all weapons" archetype). One "described fact" value and passive would
   cover them. Amounts that scale with a stat are in "Stats, next".
   The ability profiles (`charges`, `chunkScalar`, `baseCooldown`) aren't shown in the build's explanation: show them there. `charges`
   is read (an ability with more than one charge offers "spend fully", D36); the other two change nothing (D5). The
