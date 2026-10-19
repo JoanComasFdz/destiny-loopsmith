@@ -47,7 +47,8 @@ public partial record Trigger
     }
     partial record Reload(DamageSource Via);                                   // a weapon reloaded: the player's Reload step, or an outcome that reloads it (ADRs D37)
     partial record HitAtCriticalHealth();                                      // the player declares they are damaged while at critical health (ADRs D3)
-    partial record PickUpAmmo(Optional<AmmoBrick> Brick, BrickNeed Needs);     // an ammo brick picked up: any, or that one; Needs Slide: only one slid over (Spark of Momentum, ADRs D43)
+    partial record PickUpAmmo(Optional<AmmoBrick> Brick, BrickNeed Needs);     // an ammo brick picked up: any, or that one; Needs Slide: only one slid over (Spark of Momentum, ADRs D43,
+    partial record ReadyWeapon(DamageSource Via);                              // the player readies (swaps to) that weapon (Mechaneer's Tricksleeves, ADRs D44)
 }
 
 /// <summary>
@@ -157,7 +158,7 @@ public partial record Outcome
     partial record Spawn(PickupId Pickup, int Count);
     partial record SpawnSummon(SummonId Summon, int Count);
     partial record StrikeTarget(StatusId Via, HitOutcome Hit);   // keyword damage: lightning strike, jolt chain…
-    partial record ModifyDamage(DamageSource Against, GameValue Change);
+    partial record ModifyDamage(DamageSource Against, GameValue Change, Optional<GameValue> Pvp);   // Pvp: the "[…]" of "+100% [10%]", when the source gives one
     partial record RestoreHealth(HealAmount Amount, bool IncludesAllies);
     partial record ResetCooldown(AbilityKind Which);
     partial record Collect(PickupId Pickup);   // picks it up from the ground when it is there (Powerful Attraction): a pickup event
@@ -203,7 +204,7 @@ public partial record Passive
 {
     partial record ExtraStacks(StatusId Status, StackCount Extra);           // Spark of Frequency: a caveat on each grant
     partial record ExtraCharges(AbilityKind Ability, ChargeCount Extra);            // a fact (ADRs D5)
-    partial record ModifyDamage(DamageSource Against, GameValue Change);     // Flashover, stat bonuses
+    partial record ModifyDamage(DamageSource Against, GameValue Change, Optional<GameValue> Pvp);   // Flashover, stat bonuses; Pvp as the outcome's
     partial record ResistDamage(PveAndPvp Amount);                           // Spark of Resistance: any damage, "25% [10%]"
     partial record ModifyWeaponStats(ChangedWeapons Weapons, ImmutableArray<WeaponStatChange> Changes);
     partial record RaiseMaxStacks(StatusId Status, GameValue Max);           // Charged Up: the cap with it equipped, per copy ("4 | 5 | 6"), a fact (ADRs D3)

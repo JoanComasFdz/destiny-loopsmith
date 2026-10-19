@@ -64,7 +64,7 @@ public sealed class AmmoBrickTests : BaseE2E
         Scenario: Weapons no longer offer a slide over ammo
           Given the build "ammo-brick-spark-of-momentum" is imported, with no steps
           When I tap "Festival Flight" in the trigger panel
-          Then its row shows only "🥊 hit", "💀 kill" and "🔄 reload"
+          Then its row shows only "🥊 hit", "💀 kill", "✋ ready" and "🔄 reload"
         """)]
     public async Task WeaponsNoLongerOfferASlideOverAmmo(Screen screen)
     {
@@ -78,6 +78,6 @@ public sealed class AmmoBrickTests : BaseE2E
 
         // Then
         var row = await Frontend.Designer.TriggerPalette.ReadAsync();
-        Asserting.That(row).ShowsTriggers(new StepTrigger.Hit(), new StepTrigger.Kill(), new StepTrigger.Reload());
+        Asserting.That(row).ShowsTriggers(new StepTrigger.Hit(), new StepTrigger.Kill(), new StepTrigger.Ready(), new StepTrigger.Reload());
     }
 }

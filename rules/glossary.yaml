@@ -52,6 +52,12 @@ statuses:
   # (compendium/2026-10-19/Armor Perks#50). No stacks are stated.
   - { id: iron-conviction, name: Iron Conviction, kind: buff, affinity: neutral, duration: 7s }
 
+  # Mechaneer's Tricksleeves's damage buff (Bungie's perk name; the Compendium calls it "Damage
+  # Buff", compendium/2026-10-19/Exotic Armors#52): no timer while at critical health, 5 s once
+  # shields recover, +3 s per Sidearm kill. No time is counted (ADRs D1): the player declares its
+  # end (`end:spring-loaded-mounting`).
+  - { id: spring-loaded-mounting, name: Spring-Loaded Mounting, kind: buff, affinity: neutral }
+
   # Base maximum 3: compendium/2026-10-09/Game Mechanics#94. Charged Up raises a build's cap to
   # 4|5|6 by copies (the `charged-up` mod's raiseMaxStacks passive; Clarity 2577472338 agrees). Its
   # decay (1 stack every 10 s while a passive mod is equipped, same row) is a fact of the game:

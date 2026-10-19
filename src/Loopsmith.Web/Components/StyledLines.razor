@@ -2,7 +2,7 @@
 <div class="slines @(Preformatted ? "pre" : "")">
     @foreach (var line in Lines)
     {
-        <div class="sline" style="--indent:@(Math.Max(line.Indent - IndentBase, 0))">@foreach (var span in line.Spans){<span class="@ToneStyling.ToToneClass(span.Tone)">@span.Text</span>}</div>
+        <div class="sline" data-testid="styled-line" style="--indent:@(Math.Max(line.Indent - IndentBase, 0))">@foreach (var span in line.Spans){<span class="@ToneStyling.ToToneClass(span.Tone)">@span.Text</span>}</div>
     }
 </div>
 

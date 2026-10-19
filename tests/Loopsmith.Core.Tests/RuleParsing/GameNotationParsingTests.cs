@@ -213,6 +213,14 @@ public sealed class GameNotationParsingTests
     }
 
     [Fact]
+    public void A_weapon_of_a_weapon_type_is_one_the_game_has()
+    {
+        Assert.Equal(new DamageSource.WeaponOfArchetype("sidearm"), AssertOk(GameNotationParsing.ParseDamageSource("weapon:sidearm")));
+        Assert.Equal(new DamageSource.WeaponOfArchetype("linear-fusion-rifle"), AssertOk(GameNotationParsing.ParseDamageSource("weapon:linear-fusion-rifle")));
+        Assert.Contains("a weapon type (auto-rifle, combat-bow", AssertError(GameNotationParsing.ParseDamageSource("weapon:sidarm")));
+    }
+
+    [Fact]
     public void Parses_a_compendium_provenance()
     {
         var provenance = AssertOk(GameNotationParsing.ParseProvenance("compendium/2026-10-09/Arc#54"));

@@ -200,7 +200,8 @@ public static class StepOutcomeShaping
             energyExpended: _ => Optional.None<WeaponSlot>(),
             reloaded: reloaded => FindOriginWeapon(reloaded.Origin),
             hitAtCriticalHealth: _ => Optional.None<WeaponSlot>(),
-            ammoPickedUp: _ => Optional.None<WeaponSlot>());
+            ammoPickedUp: _ => Optional.None<WeaponSlot>(),
+            weaponReadied: readied => FindOriginWeapon(readied.Origin));
 
     private static Optional<WeaponSlot> FindOriginWeapon(DamageOrigin origin) =>
         origin.Match(

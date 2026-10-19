@@ -10,10 +10,11 @@ namespace Loopsmith.Web.Presentation;
 /// <summary>
 /// One button of the palette: the action it appends (the option aimed at its row's target count), that action's token
 /// and label in the core's wording ("grenade:kill:3", "Grenade (💀 kill 3)"), and the button's short caption ("🥊 hit", "💀 kill").
-/// <see cref="StandsApart"/>: the row's target count and option don't apply to it (a weapon's reload, ADRs D37), so it stands
-/// at the row's right end, away from them.
+/// <see cref="StandsApart"/>: the row's target count and option don't apply to it (a weapon's reload, ADRs D37, and its
+/// Ready step, D44), so it stands at the row's right end, away from them. <see cref="IsEnabled"/>: false for a button shown
+/// though no rule of the build reacts to it (a Ready step without Mechaneer's Tricksleeves).
 /// </summary>
-public sealed record TriggerButton(PlayerAction Action, string Token, string Label, string Caption, bool IsNew, bool StandsApart);
+public sealed record TriggerButton(PlayerAction Action, string Token, string Label, string Caption, bool IsNew, bool StandsApart, bool IsEnabled = true);
 
 /// <summary>
 /// A row of the palette: one trigger, or the hit / kill pair of the same ability use or weapon (a weapon's reload too), or the
@@ -115,6 +116,7 @@ public static class TriggerPaletteShaping
         {
             (PlayerAction.ReloadWeapon, _) => DomainPhrasing.ReloadCaption,
             (PlayerAction.PickUpAmmo ammo, _) => ammo.Brick.ToString().ToLowerInvariant(),
+            (PlayerAction.ReadyWeapon, _) => DomainPhrasing.ReadyWeaponCaption,
             (_, 1) => option.Label,
             _ => ReadQualifier(option.Label),
         };
@@ -132,7 +134,7 @@ public static class TriggerPaletteShaping
     {
         var aimed = targets.Match(count => LoopDesigning.SetTargetCount(option.Action, count.Value), _ => option.Action);
         var action = toggles.Aggregate(aimed, (step, toggle) => LoopDesigning.SetStepOption(step, toggle.Option, toggle.IsOn));
-        return new TriggerButton(action, action.ToActionToken(), build.DescribeAction(action), caption, option.IsNew, action is PlayerAction.ReloadWeapon);
+        return new TriggerButton(action, action.ToActionToken(), build.DescribeAction(action), caption, option.IsNew, action is PlayerAction.ReloadWeapon or PlayerAction.ReadyWeapon, option.IsEnabled);
     }
 
     /// <summary>
@@ -155,7 +157,8 @@ public static class TriggerPaletteShaping
             declare => ((PlayerAction)declare).ToActionToken(),
             _ => "finisher",
             reload => $"fire:{reload.Slot}",
-            _ => AmmoBrickKey);
+            _ => AmmoBrickKey,
+            ready => $"fire:{ready.Slot}");
 
     private static int ReadHitOrder(PlayerAction action) =>
         action.Match(
@@ -166,7 +169,8 @@ public static class TriggerPaletteShaping
             _ => 0,
             _ => 0,
             _ => 3,   // a reload stays at the row's right end
-            ammo => ammo.Brick == AmmoBrick.Special ? 0 : 1);
+            ammo => ammo.Brick == AmmoBrick.Special ? 0 : 1,
+            _ => 2);   // a Ready step, before the reload
 
     /// <summary>"Grenade (💀 kill)" → "Grenade".</summary>
     private static string ReadTitle(string label)

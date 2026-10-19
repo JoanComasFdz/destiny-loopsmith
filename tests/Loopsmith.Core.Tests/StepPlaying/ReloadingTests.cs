@@ -60,7 +60,7 @@ public sealed class ReloadingTests
         Assert.Empty(steps[0].Fired);
         var fired = Assert.Single(steps[1].Fired);
         Assert.Equal(ElementId.From("reload-perk"), fired.Source);
-        Assert.Equal(new GameEvent.Reloaded(new DamageOrigin.Weapon(WeaponSlot.Energy, DamageType.Arc, Optional.None<AmmoType>())), fired.Trigger);
+        Assert.Equal(new GameEvent.Reloaded(new DamageOrigin.Weapon(WeaponSlot.Energy, DamageType.Arc, Optional.None<AmmoType>(), Optional.None<string>())), fired.Trigger);
         Assert.Equal("Reload Rifle", build.DescribeAction(ReloadEnergy));
         Assert.StartsWith("#2 Reload Rifle\n  Rifle reloaded → Amplified", DescribeTrace(build, steps[1]));
     }
@@ -85,7 +85,7 @@ public sealed class ReloadingTests
         var reload = Assert.Single(step.Fired, rule => rule.Source == ElementId.From("grenade-reloads"));
         Assert.Equal(new Outcome.ReloadWeapon(new DamageSource.WeaponInSlot(WeaponSlot.Energy)), Assert.Single(reload.Outcomes).Outcome);
         var followed = Assert.Single(step.Fired, rule => rule.Source == ElementId.From("reload-perk"));
-        Assert.Equal(new GameEvent.Reloaded(new DamageOrigin.Weapon(WeaponSlot.Energy, DamageType.Arc, Optional.None<AmmoType>())), followed.Trigger);   // the Rifle's copy, not the Pistol's
+        Assert.Equal(new GameEvent.Reloaded(new DamageOrigin.Weapon(WeaponSlot.Energy, DamageType.Arc, Optional.None<AmmoType>(), Optional.None<string>())), followed.Trigger);   // the Rifle's copy, not the Pistol's
         Assert.Equal(
             "#1 Grenade (🥊 hit)\n  Grenade thrown → reloads your energy weapon [Grenade Reloads]\n    ↳ Rifle reloaded → Amplified (10s) [Reload Perk]",
             DescribeTrace(build, step));

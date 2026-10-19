@@ -26,7 +26,7 @@ internal static class RuleBodyParsing
     private static readonly ImmutableArray<string> DamageKeys = ["via", "targetHas", "atLeast", "fewerThan", "within", "sustained"];
 
     private static readonly ImmutableArray<string> TriggerNames =
-        ["abilityCast", "kill", "damage", "pickUp", "buffGained", "stacksMaxed", "finisher", "criticalHealth", "shieldBroken", "energyExpended", "reload", "hitAtCriticalHealth", "ammoPickedUp"];
+        ["abilityCast", "kill", "damage", "pickUp", "buffGained", "stacksMaxed", "finisher", "criticalHealth", "shieldBroken", "energyExpended", "reload", "hitAtCriticalHealth", "ammoPickedUp", "ready"];
 
     private static readonly ImmutableArray<string> ConditionNames = ["has", "lacks", "targetHas", "atMax", "belowMax", "during", "holds"];
 
@@ -87,6 +87,7 @@ internal static class RuleBodyParsing
             "reload" => ReadReloadTrigger(scope, entry.Value),
             "hitAtCriticalHealth" => ReadHitAtCriticalHealthTrigger(entry.Value),
             "ammoPickedUp" => ReadAmmoPickedUpTrigger(entry.Value),
+            "ready" => ReadReadyTrigger(scope, entry.Value),
             _ => entry.Value.FailAt<Trigger>(DescribeUnknown("trigger", entry.Key, TriggerNames)),
         });
 
@@ -146,18 +147,32 @@ internal static class RuleBodyParsing
             map.ReadOrDefault("by", ReadSlide, BrickNeed.AnyPickup),
             (_, brick, by) => (Trigger)new Trigger.PickUpAmmo(brick, by)));
 
+    /// <summary>
+    /// <c>{ ready: {} }</c> or <c>{ ready: { via: weapon:sidearm } }</c>: the player readies (swaps to) that weapon
+    /// (<c>kinetic:ready</c>; Mechaneer's Tricksleeves, ADRs D44). <c>via</c> names a weapon (any, by default).
+    /// </summary>
+    private static Result<Trigger, Errors> ReadReadyTrigger(ReferenceScope scope, YamlValue value) =>
+        value.ToMap().Bind(map => Combine(
+                map.CheckKeys(["via"]),
+                map.ReadOrDefault("via", scope.ReadDamageSource, new DamageSource.AnySource()),
+                (_, via) => via)
+            .Bind(via => IsWeaponSource(via) || via is DamageSource.AnySource
+                ? Succeed<Trigger>(new Trigger.ReadyWeapon(via))
+                : map.FailAtKey<Trigger>("via", $"ready's via names a weapon: {WeaponSources}")));
+
     /// <summary><c>by: slide</c>, the one way of picking a brick up a trigger tells apart.</summary>
     private static Result<BrickNeed, Errors> ReadSlide(YamlValue value) =>
         value.ParseWith<BrickNeed>(text => text == "slide"
             ? new Result<BrickNeed, string>.Ok(BrickNeed.Slide)
             : new Result<BrickNeed, string>.Error($"'{text}' is not slide: ammoPickedUp's by names how the brick is picked up, and only a slide is told apart"));
 
-    /// <summary>The weapon sources a reload names: only a weapon reloads.</summary>
-    private const string WeaponSources = "any, weapon, weapon:<type>, weapon:<ammo>, weapon:<ammo>:<type>, weapon:harmonic, slot:<slot>, weapon:this or weapon:this:<type>";
+    /// <summary>The weapon sources a reload or a Ready step names: only a weapon reloads, or is readied.</summary>
+    private const string WeaponSources = "any, weapon, weapon:<type>, weapon:<ammo>, weapon:<ammo>:<type>, weapon:<weapon type>, weapon:harmonic, slot:<slot>, weapon:this or weapon:this:<type>";
 
     private static bool IsWeaponSource(DamageSource source) =>
         source is DamageSource.AnyWeapon or DamageSource.WeaponOfType or DamageSource.WeaponOfSuperType or DamageSource.WeaponInSlot
-            or DamageSource.ThisWeapon or DamageSource.ThisWeaponOfType or DamageSource.WeaponOfAmmo or DamageSource.WeaponOfAmmoAndType;
+            or DamageSource.ThisWeapon or DamageSource.ThisWeaponOfType or DamageSource.WeaponOfAmmo or DamageSource.WeaponOfAmmoAndType
+            or DamageSource.WeaponOfArchetype;
 
     /// <summary>
     /// <c>{ reloadWeapon: weapon:this }</c> or <c>{ reloadWeapon: slot:power }</c>: reloads that one weapon — the one holding
@@ -400,7 +415,7 @@ internal static class RuleBodyParsing
             "summon" => ReadSpawnSummon(scope, entry.Value),
             "strikeTarget" => ReadStrikeTarget(scope, entry.Value),
             "modifyDamage" => ReadDamageChange(scope, entry.Value)
-                .Map(Outcome (change) => new Outcome.ModifyDamage(change.Against, change.Change)),
+                .Map(Outcome (change) => new Outcome.ModifyDamage(change.Against, change.Change.Pve, change.Change.Pvp)),
             "restoreHealth" => ReadRestoreHealth(entry.Value),
             "resetCooldown" => ReadVocabularyWord<AbilityKind>(entry.Value).Map(Outcome (kind) => new Outcome.ResetCooldown(kind)),
             "collect" => scope.ReadPickup(entry.Value).Map(Outcome (pickup) => new Outcome.Collect(pickup)),
@@ -614,12 +629,15 @@ internal static class RuleBodyParsing
                     heal.allies)),
             }));
 
-    /// <summary><c>{ against: &lt;source&gt;, change: "+50%" }</c> — shared by the outcome and the passive.</summary>
-    private static Result<(DamageSource Against, GameValue Change), Errors> ReadDamageChange(ReferenceScope scope, YamlValue value) =>
+    /// <summary>
+    /// <c>{ against: &lt;source&gt;, change: "+50%" }</c> — shared by the outcome and the passive; <c>"+100% [10%]"</c> gives
+    /// its PvP value too, like a resistance's.
+    /// </summary>
+    private static Result<(DamageSource Against, PveAndPvp Change), Errors> ReadDamageChange(ReferenceScope scope, YamlValue value) =>
         value.ToMap().Bind(map => Combine(
             map.CheckKeys(["against", "change"]),
             map.ReadRequired("against", scope.ReadDamageSource),
-            map.ReadRequired("change", ReadGameValue),
+            map.ReadRequired("change", ReadPveAndPvp),
             (_, against, change) => (against, change)));
 
     // ── Passives (effect) ────────────────────────────────────────────────────────────────
@@ -630,7 +648,7 @@ internal static class RuleBodyParsing
             "extraStacks" => ReadExtraStacks(scope, entry.Value),
             "extraCharges" => ReadExtraCharges(entry.Value),
             "modifyDamage" => ReadDamageChange(scope, entry.Value)
-                .Map(Passive (change) => new Passive.ModifyDamage(change.Against, change.Change)),
+                .Map(Passive (change) => new Passive.ModifyDamage(change.Against, change.Change.Pve, change.Change.Pvp)),
             "resistDamage" => ReadPveAndPvp(entry.Value).Map(Passive (amount) => new Passive.ResistDamage(amount)),
             "resistCombatantDamage" => ReadResistCombatantDamage(entry.Value),
             "modifyWeaponStats" => ReadModifyWeaponStats(entry.Value),
