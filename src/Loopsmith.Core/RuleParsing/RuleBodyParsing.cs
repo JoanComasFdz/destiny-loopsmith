@@ -26,7 +26,7 @@ internal static class RuleBodyParsing
     private static readonly ImmutableArray<string> DamageKeys = ["via", "targetHas", "atLeast", "fewerThan", "within", "sustained"];
 
     private static readonly ImmutableArray<string> TriggerNames =
-        ["abilityCast", "kill", "damage", "pickUp", "buffGained", "stacksMaxed", "finisher", "criticalHealth", "shieldBroken", "energyExpended", "reload", "hitAtCriticalHealth"];
+        ["abilityCast", "kill", "damage", "pickUp", "buffGained", "stacksMaxed", "finisher", "criticalHealth", "shieldBroken", "energyExpended", "reload", "hitAtCriticalHealth", "slideOverAmmo"];
 
     private static readonly ImmutableArray<string> ConditionNames = ["has", "lacks", "targetHas", "atMax", "belowMax", "during", "holds"];
 
@@ -86,6 +86,7 @@ internal static class RuleBodyParsing
             "energyExpended" => ReadEnergyExpendedTrigger(entry.Value),
             "reload" => ReadReloadTrigger(scope, entry.Value),
             "hitAtCriticalHealth" => ReadHitAtCriticalHealthTrigger(entry.Value),
+            "slideOverAmmo" => ReadSlideOverAmmoTrigger(scope, entry.Value),
             _ => entry.Value.FailAt<Trigger>(DescribeUnknown("trigger", entry.Key, TriggerNames)),
         });
 
@@ -133,7 +134,20 @@ internal static class RuleBodyParsing
                 ? Succeed<Trigger>(new Trigger.Reload(via))
                 : map.FailAtKey<Trigger>("via", $"reload's via names a weapon: {WeaponSources}")));
 
-    /// <summary>The weapon sources a reload names: only a weapon reloads.</summary>
+    /// <summary>
+    /// <c>{ slideOverAmmo: {} }</c> or <c>{ slideOverAmmo: { via: weapon:arc } }</c>: the player slides over an ammo brick
+    /// with that weapon in hand (<c>kinetic:ammo</c>; Spark of Momentum). <c>via</c> names a weapon (any, by default).
+    /// </summary>
+    private static Result<Trigger, Errors> ReadSlideOverAmmoTrigger(ReferenceScope scope, YamlValue value) =>
+        value.ToMap().Bind(map => Combine(
+                map.CheckKeys(["via"]),
+                map.ReadOrDefault("via", scope.ReadDamageSource, new DamageSource.AnySource()),
+                (_, via) => via)
+            .Bind(via => IsWeaponSource(via) || via is DamageSource.AnySource
+                ? Succeed<Trigger>(new Trigger.SlideOverAmmo(via))
+                : map.FailAtKey<Trigger>("via", $"slideOverAmmo's via names a weapon: {WeaponSources}")));
+
+    /// <summary>The weapon sources a reload or a slide over an ammo brick names: only a weapon reloads, or is in hand.</summary>
     private const string WeaponSources = "any, weapon, weapon:<type>, weapon:<ammo>, weapon:<ammo>:<type>, weapon:harmonic, slot:<slot>, weapon:this or weapon:this:<type>";
 
     private static bool IsWeaponSource(DamageSource source) =>

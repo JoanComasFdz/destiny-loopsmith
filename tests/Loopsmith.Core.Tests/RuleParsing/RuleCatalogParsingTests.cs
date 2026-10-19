@@ -2251,6 +2251,18 @@ public sealed class RuleCatalogParsingTests
     }
 
     [Fact]
+    public void Parses_a_slide_over_an_ammo_brick_trigger_of_any_weapon_or_one_and_refuses_an_ability()
+    {
+        var any = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToProbeFile("{ id: probe-1, on: { slideOverAmmo: {} }, then: [ { applyBuff: amplified } ] }")]));
+        var arc = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToProbeFile("{ id: probe-1, on: { slideOverAmmo: { via: weapon:arc } }, then: [ { applyBuff: amplified } ] }")]));
+        var ability = ParseInvalidCatalog(Glossary, ToProbeFile("{ id: probe-1, on: { slideOverAmmo: { via: grenade } }, then: [ { applyBuff: amplified } ] }"));
+
+        Assert.Equal(new Trigger.SlideOverAmmo(new DamageSource.AnySource()), Assert.Single(any.Elements[ElementId.From("probe")].Rules).On);
+        Assert.Equal(new Trigger.SlideOverAmmo(new DamageSource.WeaponOfType(DamageType.Arc)), Assert.Single(arc.Elements[ElementId.From("probe")].Rules).On);
+        Assert.Contains("slideOverAmmo's via names a weapon", ability);
+    }
+
+    [Fact]
     public void Parses_a_reload_outcome_of_this_weapon_or_a_slot_and_refuses_any_weapon()
     {
         var own = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToPerkProbeFile("{ id: probe-1, on: { abilityCast: grenade }, then: [ { reloadWeapon: weapon:this } ] }")]));

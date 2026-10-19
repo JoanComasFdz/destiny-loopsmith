@@ -224,7 +224,8 @@ public static class BuildExplaining
             damageFewer: _ => 13,
             killBetween: _ => 23,
             reload: _ => 27,
-            hitAtCriticalHealth: _ => 61);
+            hitAtCriticalHealth: _ => 61,
+            slideOverAmmo: _ => 28);
 
     private static int RankAbility(AbilityKind kind) =>
         kind switch
@@ -259,7 +260,8 @@ public static class BuildExplaining
             damageFewer: _ => [],
             killBetween: _ => [],
             reload: _ => [],
-            hitAtCriticalHealth: _ => []);
+            hitAtCriticalHealth: _ => [],
+            slideOverAmmo: _ => []);
         var pickup = trigger is Trigger.PickUp pickUp && glossary.Pickups.TryGetValue(pickUp.Pickup, out var definition)
             ? definition.Affinity
             : Affinity.Neutral;
