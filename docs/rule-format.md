@@ -487,13 +487,17 @@ A **secondary ability use** is the ability used another way, which an aspect mak
 (ADRs D9): the melee while sliding (`slide`: Tempest Strike's uppercut, played as `melee:slide`) or in the
 air (`air`: Ballistic Slam), the class ability's air move (`air`: Ascension — the air move key while
 airborne spends the class ability charge, played as `class:air`), the grenade held (`hold`: Chaos
-Accelerant, Bleak Watcher, Mindspun Invocation, Unbreakable). A Super has none. It is still that
+Accelerant, Bleak Watcher, Mindspun Invocation, Unbreakable), and the Super's attacks a rule tells apart: its heavy
+attack in the air (`air`, `super:air`), its light-light-heavy combo (`combo`, `super:combo`: Arc Staff's Palm Strike)
+and its guard (`guard`, `super:guard`: each attack it reflects is one hit, so `super:guard:hit:3` is three reflected)
+— Arc Staff (Arc#44) blinds with the first two and gives x1 Bolt Charge per attack its guard reflects. The plain press
+is every other attack (Arc Staff's light attacks and grounded heavy attack). It is still that
 ability, so every plain rule on the ability fires on it too (the Compendium, Arc#48: the air move sets
 off the equipped class ability's effects; Arc#54: Tempest Strike's uppercut triggers Combination Blow);
 a trigger with an `input`, or a damage source `<ability>:<input>` (`via: melee:slide`), fires on that use
 only. `input: press` (or `via: melee:press`) is the plain press only. The map form without `input` is
 the plain trigger. An input the ability doesn't take is an error
-(`abilityCast: a grenade isn't used as 'slide' (it takes press, hold)`); the old `airborne` key is an
+(`abilityCast: a grenade isn't used as 'slide' (it takes press, hold)`; a Super takes press, air, combo, guard); the old `airborne` key is an
 unknown key (write `input: air`). [loop-format.md](loop-format.md#action-tokens) has the tokens.
 
 `via` defaults to `any`. `targetHas` lists one or more debuffs, and the target must have all of them.
@@ -554,7 +558,7 @@ rules "Max Bolt Charge". A `stacksMaxed` (or `atMax`) on a status without `maxSt
 | `weapon:this:arc` | `ThisWeaponOfType(Arc)` — the weapon holding the element, when it is of that type: a rule (or a passive, or a damage change) for "this weapon, when Arc" is part of the build only on an Arc weapon (Synergy's Ionic Trace) |
 | `ability` | `AnyAbility` |
 | `grenade` / `melee` / `classAbility` / `super` | `AbilityOf(kind)` — every use of it, its secondaries too |
-| `melee:slide` / `melee:air` / `classAbility:air` / `grenade:hold` (`<ability>:<input>`) | `AbilityUsedAs(kind, input)` — that use only: Tempest Strike's uppercut is `melee:slide` |
+| `melee:slide` / `melee:air` / `classAbility:air` / `grenade:hold` / `super:air` / `super:combo` / `super:guard` (`<ability>:<input>`) | `AbilityUsedAs(kind, input)` — that use only: Tempest Strike's uppercut is `melee:slide`, Arc Staff's Palm Strike `super:combo` |
 | `type:arc` | `OfType(Arc)` — any weapon, ability, keyword or summon of that type |
 | `keyword:bolt-charge` | `KeywordOf(status)` — keyword damage (lightning strike, jolt chain…); any glossary status |
 | `summon:threadling` | `SummonOf(summon)` |

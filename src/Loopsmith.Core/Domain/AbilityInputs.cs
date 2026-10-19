@@ -11,7 +11,9 @@ public sealed record SecondaryUse(AbilityKind Kind, AbilityInput Input, Immutabl
 /// <summary>
 /// Pure: which secondary input an ability can take — the Compendium's: a melee while sliding (Tempest Strike, Lightning
 /// Surge, Consecration, Howl of the Storm) or airborne (Ballistic Slam), the class ability's air move (Ascension: the air
-/// move spends its charge), a grenade held (Chaos Accelerant, Bleak Watcher, Mindspun Invocation, Unbreakable).
+/// move spends its charge), a grenade held (Chaos Accelerant, Bleak Watcher, Mindspun Invocation, Unbreakable), the
+/// Super's heavy attack in the air, its light-light-heavy combo and its guard (Arc Staff, Arc#44: the first two blind,
+/// each attack the guard reflects gives Bolt Charge).
 /// </summary>
 public static class AbilityInputs
 {
@@ -20,14 +22,14 @@ public static class AbilityInputs
         [AbilityKind.Grenade] = [AbilityInput.Hold],
         [AbilityKind.Melee] = [AbilityInput.Slide, AbilityInput.Air],
         [AbilityKind.ClassAbility] = [AbilityInput.Air],
-        [AbilityKind.Super] = [],
+        [AbilityKind.Super] = [AbilityInput.Air, AbilityInput.Combo, AbilityInput.Guard],
     }.ToImmutableDictionary();
 
     /// <summary>Whether <paramref name="kind"/> can be used with <paramref name="input"/>: every ability with a press; a secondary only where the game has one.</summary>
     public static bool CanTake(this AbilityKind kind, AbilityInput input) =>
         input == AbilityInput.Press || ListSecondaryInputs(kind).Contains(input);
 
-    /// <summary>The secondary inputs an ability can take (none for a Super).</summary>
+    /// <summary>The secondary inputs an ability can take.</summary>
     public static ImmutableArray<AbilityInput> ListSecondaryInputs(this AbilityKind kind) =>
         Secondaries.TryGetValue(kind, out var inputs) ? inputs : [];
 }

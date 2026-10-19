@@ -58,7 +58,7 @@ public static class GameNotationParsing
             : ToQualifiedDamageSource(trimmed[..colon], trimmed[(colon + 1)..]);
         return parsed.MapError(reason =>
             $"'{text}' is not a damage source ({reason}; expected any, weapon, weapon:<type>, weapon:harmonic, weapon:this, weapon:this:<type>, ability, "
-            + "grenade, melee, classAbility, super, <ability>:<input> (melee:slide, melee:air, classAbility:air, grenade:hold), "
+            + "grenade, melee, classAbility, super, <ability>:<input> (melee:slide, melee:air, classAbility:air, grenade:hold, super:air, super:combo, super:guard), "
             + "type:<type>, keyword:<status> or summon:<summon>)");
     }
 
@@ -227,9 +227,9 @@ public static class GameNotationParsing
         };
 
     /// <summary>
-    /// The input word of an ability's use — <c>press</c>, <c>slide</c>, <c>air</c>, <c>hold</c> — when that ability takes
-    /// it (<see cref="AbilityInputs.CanTake"/>: a melee slides or is airborne, a class ability is used in the air, a
-    /// grenade is held); why not otherwise.
+    /// The input word of an ability's use — <c>press</c>, <c>slide</c>, <c>air</c>, <c>hold</c>, <c>combo</c>, <c>guard</c> —
+    /// when that ability takes it (<see cref="AbilityInputs.CanTake"/>: a melee slides or is airborne, a class ability is
+    /// used in the air, a grenade is held, a Super attacks in the air, combos or guards); why not otherwise.
     /// </summary>
     public static Result<AbilityInput, string> ParseAbilityInput(AbilityKind kind, string word) =>
         ParseVocabularyWord<AbilityInput>(word).Bind(Result<AbilityInput, string> (input) => kind.CanTake(input)

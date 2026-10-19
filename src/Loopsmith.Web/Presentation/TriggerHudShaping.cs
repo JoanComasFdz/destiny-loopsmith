@@ -47,7 +47,7 @@ public sealed record HudStatus(string Name, Affinity Affinity, ImmutableArray<Tr
 
 /// <summary>
 /// The Next trigger section laid out like Destiny's HUD: the Super's diamond, then the grenade, melee and class ability
-/// squares in the subclass's colour, each with its secondary uses below it (and the finisher's: the game has no HUD
+/// squares in the subclass's colour, each (the diamond too: Arc Staff's heavy combo) with its secondary uses below it (and the finisher's: the game has no HUD
 /// square for it, so it shows the finisher's own icon — the player's equipped one after a Bungie login, else the
 /// class's), then the weapons, each in its damage type's colour; above them, where the game
 /// lists your buffs, the states to declare — the buffs on you (with critical health, when a rule reacts to it), on your
@@ -55,7 +55,7 @@ public sealed record HudStatus(string Name, Affinity Affinity, ImmutableArray<Tr
 /// </summary>
 public sealed record TriggerHud(
     Affinity Subclass,
-    Optional<HudSlot> Super,
+    Optional<HudAbility> Super,
     ImmutableArray<HudAbility> Abilities,
     Optional<HudSlot> Finisher,
     ImmutableArray<HudWeapon> Weapons,
@@ -85,7 +85,7 @@ public static class TriggerHudShaping
         var statuses = ShapeStatuses(build, declared);
         return new TriggerHud(
             subclass,
-            ShapeAbility(build, choices, AbilityKind.Super, "Super", abilities.Super, subclass).Map(super => super.Slot),
+            ShapeAbility(build, choices, AbilityKind.Super, "Super", abilities.Super, subclass),
             [
                 .. new[]
                 {

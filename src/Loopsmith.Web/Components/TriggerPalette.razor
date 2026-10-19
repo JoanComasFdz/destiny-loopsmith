@@ -1,6 +1,6 @@
 @* The next triggers the build offers (LoopDesigning.ListTriggerOptions), laid out like Destiny's HUD
    (TriggerHudShaping): the Super's diamond, the grenade, melee and class ability squares in the subclass's colour, each
-   with the secondary uses the build's rules name below it (Tempest Strike's sliding melee, Ascension's air move: a
+   with the secondary uses the build's rules name below it (Tempest Strike's sliding melee, Ascension's air move, Arc Staff's heavy combo: a
    different trigger from the press) (and the finisher's: the equipped finisher's icon after a Bungie login, else the
    class's own), the weapons in their damage type's colour; above them what is on the ground and the states to declare. Tapping the Super,
    an ability or a weapon picks it: its actions show below the HUD — hit or kill, and how many enemies that one action
@@ -48,28 +48,13 @@
         <div class="trig-bar" aria-hidden="true"></div>
         <div class="trig-main">
             <div class="trig-abilities">
-                @if (hud.Super is Optional<HudSlot>.Some super)
+                @if (hud.Super is Optional<HudAbility>.Some super)
                 {
-                    @RenderSlot(super.Value, "trig-super")
+                    @RenderAbility(super.Value, "trig-super")
                 }
                 @foreach (var ability in hud.Abilities)
                 {
-                    @if (ability.Secondaries.IsEmpty)
-                    {
-                        @RenderSlot(ability.Slot, "trig-ability")
-                    }
-                    else
-                    {
-                        <div class="trig-ability-col">
-                            @RenderSlot(ability.Slot, "trig-ability")
-                            <div class="trig-secondaries" aria-label="@($"{ability.Slot.Kind}: secondary uses")">
-                                @foreach (var secondary in ability.Secondaries)
-                                {
-                                    @RenderSecondary(secondary)
-                                }
-                            </div>
-                        </div>
-                    }
+                    @RenderAbility(ability, "trig-ability")
                 }
                 @if (hud.Finisher is Optional<HudSlot>.Some finisher)
                 {
@@ -355,11 +340,32 @@
         </button>
     };
 
+    /// <summary>An ability's square (the Super's diamond), with the secondary uses the build's rules name below it.</summary>
+    private RenderFragment RenderAbility(HudAbility ability, string shape) => __builder =>
+    {
+        @if (ability.Secondaries.IsEmpty)
+        {
+            @RenderSlot(ability.Slot, shape)
+        }
+        else
+        {
+            <div class="trig-ability-col">
+                @RenderSlot(ability.Slot, shape)
+                <div class="trig-secondaries" aria-label="@($"{ability.Slot.Kind}: secondary uses")">
+                    @foreach (var secondary in ability.Secondaries)
+                    {
+                        @RenderSecondary(secondary)
+                    }
+                </div>
+            </div>
+        }
+    };
+
     /// <summary>The slot whose actions show below the HUD, while the HUD still offers it.</summary>
     private Optional<HudSlot> FindPicked(TriggerHud hud) =>
         pickedKey.Bind(key => hud.Super.Match(found => new[] { found.Value }, _ => [])
-            .Concat(hud.Abilities.Select(ability => ability.Slot))
-            .Concat(hud.Abilities.SelectMany(ability => ability.Secondaries.Select(secondary => secondary.Slot)))
+            .Concat(hud.Abilities)
+            .SelectMany(ability => ability.Secondaries.Select(secondary => secondary.Slot).Prepend(ability.Slot))
             .Concat(hud.Weapons.Select(weapon => weapon.Slot))
             .Where(slot => slot.Choice.Key == key && !slot.AtOnce.IsSome())
             .Select(Optional.Some)

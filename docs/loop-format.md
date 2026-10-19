@@ -63,7 +63,7 @@ build: |                                # required — the build file's full tex
 Same tokens everywhere: loop files, web share links and a golden test's scenario file
 (`builds/skip-grenade-hunter/scenario.txt`: one token per line or comma-separated; `#` starts a comment):
 
-`grenade[:hold]|melee[:slide|air]|super[:hit|kill[:N]]` · `class[:air]` · `kinetic|energy|power[:hit|kill[:N]]` ·
+`grenade[:hold]|melee[:slide|air]|super[:air|combo|guard][:hit|kill[:N]]` · `class[:air]` · `kinetic|energy|power[:hit|kill[:N]]` ·
 `kinetic|energy|power:reload` · `finisher` · `pickup:<pickup-id>` · `max:<status-id>` · `end:<status-id>` · `pack:new` · `health:critical` — and last, an option:
 `:last` on a grenade, melee or class ability step, `:shield` on a weapon step
 
@@ -81,9 +81,11 @@ keeps shooting (ADRs D34). A count needs
 use** goes between the ability and its hit (ADRs D9): `melee:slide:kill` is the melee while sliding
 (Tempest Strike's uppercut), `melee:air` the melee in the air, `grenade:hold` the grenade held (Chaos
 Accelerant, Bleak Watcher), `class:air` the class ability's air move — the air move key while airborne
-spends its charge, like Ascension's. A secondary fires every rule of its ability plus the ones that name
+spends its charge, like Ascension's — and the Super's `super:air:hit` (its heavy attack in the air), `super:combo:kill`
+(its light-light-heavy combo: Arc Staff's Palm Strike) and `super:guard:hit:N` (its guard: N attacks reflected, each a
+hit on an enemy of the pack). A secondary fires every rule of its ability plus the ones that name
 the input ([rule-format.md](rule-format.md#rules)); an ability takes only the inputs the game has
-(`grenade:slide`, `class:hold` and `super:hold` are errors). `finisher` — "Finisher" — finishes one enemy of the pack: it fires the `finisher` rules, then
+(`grenade:slide`, `class:hold`, `super:hold` and `melee:combo` are errors). `finisher` — "Finisher" — finishes one enemy of the pack: it fires the `finisher` rules, then
 its hit and kill fire the `damage` and `kill` rules whose source is `any` (a finisher has no damage type
 and is no weapon or ability, so `kill: { via: any, targetHas: [jolt] }` fires on a finisher of a jolted
 enemy; [rule-format.md](rule-format.md#rules)); it takes no count and is never blocked. `pickup:<id>`
@@ -185,9 +187,9 @@ a kill from any source, it sets nothing off. Every token still reads anywhere
 (loop files, share links).
 
 The web designer's **Next trigger** is laid out like Destiny's HUD: the Super's diamond, then the grenade, melee and
-class ability squares with the build's own icons in the subclass's colour, each with the secondary uses the build's
-rules name below it — a different trigger from the press, captioned by its input ("slide", "air", "hold") with the
-icon of the element that names it (Tempest Strike, Ascension) — and a dashed **Finisher** square (the game has no HUD square for it; a finisher has no element and no damage
+class ability squares with the build's own icons in the subclass's colour, each (the Super's diamond too) with the
+secondary uses the build's rules name below it — a different trigger from the press, captioned by its input ("slide",
+"air", "hold", "combo", "guard") with the icon of the element that names it (Tempest Strike, Ascension, Arc Staff) — and a dashed **Finisher** square (the game has no HUD square for it; a finisher has no element and no damage
 type) with the finisher's own icon: after a Bungie login the one the player's character of the build's class has
 equipped (read from its Finishers slot; named from Bungie's full manifest when the excerpt doesn't have it), else the
 class's own, the one the game plays when none is equipped (Blade Carnival for a Hunter, the glossary's `finishers`) —

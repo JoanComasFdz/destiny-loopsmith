@@ -1,7 +1,7 @@
 # Hunter, Arc (Arcstrider): supers.
 #
-# Numbers from the Destiny Data Compendium snapshots of 2026-10-09 and 2026-10-13 (source:
-# compendium/<date>/<Tab>#<row>; the elements added with the 2026-10-13 snapshot cite it). Hashes are
+# Numbers from the Destiny Data Compendium snapshots of 2026-10-09, 2026-10-13 and 2026-10-19 (source:
+# compendium/<date>/<Tab>#<row>; the elements added or rechecked with a later snapshot cite it). Hashes are
 # Clarity 2.0625's for the elements of the 2026-10-09 snapshot unless a comment says they are the
 # manifest's (Clarity has no grenade, melee or super entries); the elements of the 2026-10-13
 # snapshot take the manifest's (244213.26.06.29.2000-1-bnet.65864: the Arcstrider's plugs).
@@ -13,8 +13,10 @@
 #  - an ability damage source cannot name a specific ability or its damage type ("Arc grenades",
 #    "Skip Grenade drones" -> `grenade`);
 #  - movement qualifiers are the abilities' secondary uses only (ADRs D9): the melee while sliding
-#    (`melee:slide`, Tempest Strike's uppercut) and the class ability's air move (`class:air`,
-#    Ascension). A rule on the plain ability fires for its secondary uses too.
+#    (`melee:slide`, Tempest Strike's uppercut), the class ability's air move (`class:air`,
+#    Ascension) and the Super's heavy attack in the air, light-light-heavy combo and guard
+#    (`super:air`, `super:combo`, `super:guard`; Arc Staff). A rule on the plain ability fires for
+#    its secondary uses too.
 #
 # Where a rule file sits, and each rule's id: docs/rule-format.md, "Files" (ADRs D40).
 elements:
@@ -28,17 +30,34 @@ elements:
     # Tier 2 super, 556 s. Supers have no chunk energy scalar (Game Mechanics#12), so chunkScalar
     # stays "?" rather than a made-up 1.
     ability: { kind: super, charges: 1, chunkScalar: "?", baseCooldown: 556 }
-    description: "Roaming Arc super: a staff of Arc Light with 90% [PvP 53%] damage resistance for 20 s base. Kills grant x1 Bolt Charge; guarding reflects attacks, each for x1 Bolt Charge."
-    source: compendium/2026-10-09/Arc#44
+    description: "Roaming Arc super: a staff of Arc Light with 90% [PvP 53%] damage resistance for 20 s base. Kills grant x1 Bolt Charge. Light attacks hit for 864 [?] up to 8 m; the grounded heavy attack deals 1,264 [?] in a ~45° cone up to 8 m; the heavy attack in the air deals 1,264 [?] and blinds within 7 m; Palm Strike (light-light-heavy) deals 2,950 [?] and blinds in a ~45° cone up to 8 m. Guarding blocks and reflects attacks in a 180?° arc, x1 Bolt Charge for each; reflected projectiles fly to the reticle with 100% more damage against combatants."
+    source: compendium/2026-10-19/Arc#44
     rules:
       - id: arc-staff-1
         on: { kill: { via: super } }
         then:
           - { applyBuff: { status: bolt-charge, stacks: 1 } }
         reason: "Every Arc Staff kill gives you a stack of Bolt Charge."
-      # Not expressible: x1 Bolt Charge per attack reflected while guarding (no block/reflect trigger),
-      # and the Blind from the airborne heavy attack and Palm Strike (a rule can't name one of the
-      # super's attacks; "super damage -> Blind" would blind on every light attack too).
+      # The Super's secondary uses (ADRs D9): `super:air` (the heavy attack in the air),
+      # `super:combo` (Palm Strike, light-light-heavy) and `super:guard` (guarding). The light
+      # attacks and the grounded heavy attack are the plain press and blind nothing.
+      - id: arc-staff-3
+        on: { damage: { via: super:air } }
+        then:
+          - { debuffTarget: blind }
+        reason: "Arc Staff's heavy attack in the air blinds what it hits."
+      - id: arc-staff-4
+        on: { damage: { via: super:combo } }
+        then:
+          - { debuffTarget: blind }
+        reason: "Palm Strike, Arc Staff's light-light-heavy combo, blinds what it hits."
+      # A guard step's count is the attacks reflected, each counted as a hit on an enemy of the
+      # pack (a reflected melee hits no one in the game; the player counts only what goes back).
+      - id: arc-staff-5
+        on: { damage: { via: super:guard } }
+        then:
+          - { applyBuff: { status: bolt-charge, stacks: 1 } }
+        reason: "Every attack Arc Staff's guard reflects gives you a stack of Bolt Charge."
     passives:
       - id: arc-staff-2
         effect: { resistDamage: "90% [53%]" }
@@ -59,9 +78,10 @@ elements:
     description: "Thrown Arc super with 90% [PvP 49%] damage resistance. The staff blows up and sticks in whatever it hits: 544 [300] impact damage that jolts, and an explosion of up to 608 [?] within 10 m. 2 s later lightning strikes it for up to 1350 [500] within 10 m; 1.2 s after that it pulses 446 [60] damage within 10 m every 0.7 s for 8 s."
     source: compendium/2026-10-09/Arc#45
     rules:
-      # The Jolt is the impact's. A rule can't name one part of the super, but every throw begins
-      # with that impact, so any super damage jolts the pack in front of you (ADRs D7) - unlike
-      # Arc Staff's Blind, which only some of its attacks apply. The explosion, the lightning strike
+      # The Jolt is the impact's. A thrown super has no use of its own for its impact, but every
+      # throw begins with it, so any super damage jolts the pack in front of you (ADRs D7) - unlike
+      # Arc Staff's Blind, which only its airborne heavy attack and Palm Strike apply (`super:air`,
+      # `super:combo`). The explosion, the lightning strike
       # and the field are the same super action (`super:hit` / `super:kill`): their damage and
       # timing are facts in the description. The Compendium states no Bolt Charge on its kills.
       - id: gathering-storm-1

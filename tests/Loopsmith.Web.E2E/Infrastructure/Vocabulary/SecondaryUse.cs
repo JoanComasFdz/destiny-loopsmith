@@ -11,6 +11,8 @@ public partial record SecondaryUse
 {
     public partial record Slide;
     public partial record Air;
+    public partial record Combo;
+    public partial record Guard;
 
     /// <summary>What the UI shows that no case names yet: a failing assertion names it as the UI shows it.</summary>
     public partial record Unlisted(string Shown);
@@ -24,5 +26,7 @@ public static class SecondaryUseShowing
         value.Match(
             slide => "SLIDE",
             air => "AIR",
+            combo => "COMBO",
+            guard => "GUARD",
             unlisted => unlisted.Shown);
 }
