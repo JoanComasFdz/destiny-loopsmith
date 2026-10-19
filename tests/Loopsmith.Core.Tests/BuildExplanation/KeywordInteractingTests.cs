@@ -23,6 +23,23 @@ public sealed class KeywordInteractingTests
     private static readonly RuleCatalog Catalog =
         RuleFiles.Bind(CatalogLoading.ParseCatalog).Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
 
+    /// <summary>
+    /// An Arc Hunter whose aspects, fragments, exotic, set bonuses, mods and artifact perks give, use up, change or react to
+    /// Armor Charge, Amplified, Bolt Charge, Ionic Traces and Orbs of Power; no weapon (none is one Ionic Overclock changes).
+    /// </summary>
+    private const string BuildFile = """
+        name: Keyword interactions
+        class: hunter
+        subclass: arc
+        grenade: skip-grenade
+        aspects: [flow-state, tempest-strike]
+        fragments: [spark-of-resistance, spark-of-frequency, spark-of-shock, spark-of-discharge]
+        exoticArmor: shinobus-vow
+        armorSetBonuses: [luminopotent-2pc, luminopotent-4pc]
+        armorMods: [harmonic-siphon, strand-siphon, grenade-kickstart, charged-up, elemental-charge, reaper]
+        artifactPerks: [defibrillating-blast, flashover]
+        """;
+
     [Fact]
     public void Armor_Charge_is_given_by_Elemental_Charge_and_the_orb_used_up_by_Grenade_Kickstart_and_raised_by_Charged_Up()
     {
@@ -83,17 +100,12 @@ public sealed class KeywordInteractingTests
     [InlineData("orb-of-power", "Pickup")]
     [InlineData("spark-of-shock", "Fragment")]
     public void An_element_is_named_by_what_it_is_in_the_game(string element, string type) =>
-        Assert.Equal(type, LoopDesigning.DescribeElementType(StartOwnersDimDesign().Build, ElementId.From(element)));
+        Assert.Equal(type, LoopDesigning.DescribeElementType(StartDesign().Build, ElementId.From(element)));
 
     private static ImmutableArray<InteractionGroup> Explain(KeywordRef keyword) =>
-        LoopDesigning.ExplainInteractions(StartOwnersDimDesign().Build, keyword);
+        LoopDesigning.ExplainInteractions(StartDesign().Build, keyword);
 
-    private static DesignSession StartOwnersDimDesign()
-    {
-        const string path = "builds/skip-grenade-hunter/dim-loadout.json";
-        var file = RepoFiles.ToPath(path);                                                       // pure
-        var json = File.ReadAllText(file);                                                       // impure
-        return LoopDesigning.StartSavedDimDesign(Catalog, new SourceText(path, json))
+    private static DesignSession StartDesign() =>
+        LoopDesigning.StartDesign(Catalog, new SourceText("build.yaml", BuildFile), "Test")
             .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
-    }
 }

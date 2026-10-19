@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Text.Json.Nodes;
 using Loopsmith.Core.BuildComposition;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
@@ -12,8 +11,8 @@ namespace Loopsmith.Core.Tests.Orchestration;
 
 /// <summary>
 /// Weapon mods, in the real rules: every one the Compendium lists is known (Synergy with rules, the rest inert, each
-/// saying why), named as Bungie's manifest names it; a weapon holds one in its mod socket — picked in the designer, read
-/// from a DIM link, written in the build file — and Synergy spawns its weapon's elemental pickup, for sure on the kills
+/// saying why), named as Bungie's manifest names it; a weapon holds one in its mod socket — picked in the designer or
+/// written in the build file — and Synergy spawns its weapon's elemental pickup, for sure on the kills
 /// that fill its counter and as a chance on fewer.
 /// </summary>
 public sealed class WeaponModsCatalogTests
@@ -23,7 +22,17 @@ public sealed class WeaponModsCatalogTests
     private const uint IcarusGrip = 941997506;
     private const uint AdeptRange = 299264772;   // a mod Crisis Inverted takes that the Compendium doesn't list
     private const int FestivalFlight = 0;        // kinetic, Strand
-    private const int CrisisInverted = 2;        // energy, Arc
+    private const int CrisisInverted = 1;        // energy, Arc
+
+    /// <summary>An Arc Hunter with nothing but a Strand kinetic and an Arc energy weapon, neither holding a mod.</summary>
+    private const string BuildFile = """
+        name: Weapon mods
+        class: hunter
+        subclass: arc
+        weapons:
+          - {hash: 4019651319, perks: []} # Festival Flight
+          - {hash: 2888266564, perks: []} # Crisis Inverted
+        """;
 
     private static readonly Result<ImmutableArray<SourceText>, string> RuleFiles = FileSourceFetching.ReadRuleFiles(RepoFiles.ToPath("rules"));   // impure
 
@@ -62,7 +71,7 @@ public sealed class WeaponModsCatalogTests
     [Fact]
     public void A_picked_mod_goes_into_the_weapons_entry_and_removing_it_writes_no_mod()
     {
-        var session = StartOwnersDimDesign();
+        var session = StartDesign();
 
         var picked = PickMod(session, FestivalFlight, Optional.Some(ItemHash.From(IcarusGrip)));
         var removed = PickMod(picked, FestivalFlight, Optional.None<ItemHash>());
@@ -79,7 +88,7 @@ public sealed class WeaponModsCatalogTests
     [Fact]
     public void A_mod_the_weapons_socket_doesnt_take_cant_be_picked_and_one_the_rules_dont_know_is_held_without_a_line_under_validation()
     {
-        var session = StartOwnersDimDesign();
+        var session = StartDesign();
 
         var refused = Assert.IsType<Result<DesignSession, string>.Error>(LoopDesigning.PickWeaponMod(session, FestivalFlight, Optional.Some(ItemHash.From(AdeptRange))));
         var unknown = PickMod(session, CrisisInverted, Optional.Some(ItemHash.From(AdeptRange)));
@@ -92,7 +101,7 @@ public sealed class WeaponModsCatalogTests
     [Fact]
     public void A_build_file_mod_its_socket_doesnt_take_is_a_warning()
     {
-        var build = StartOwnersDimDesign().Build.Build;
+        var build = StartDesign().Build.Build;
         var weapons = build.Weapons.SetItem(FestivalFlight, build.Weapons[FestivalFlight] with { Mod = Optional.Some(ItemHash.From(AdeptRange)) });
 
         var validated = BuildValidation.ValidateBuild(build with { Weapons = weapons }, Catalog).Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
@@ -104,7 +113,7 @@ public sealed class WeaponModsCatalogTests
     [Fact]
     public void Synergy_spawns_its_weapons_pickup_for_sure_on_twelve_kills_as_a_chance_on_fewer_and_never_for_another_weapon()
     {
-        var session = PickMod(StartOwnersDimDesign(), FestivalFlight, Optional.Some(ItemHash.From(Synergy)));
+        var session = PickMod(StartDesign(), FestivalFlight, Optional.Some(ItemHash.From(Synergy)));
 
         var played = new PlayerAction[]
             {
@@ -135,7 +144,7 @@ public sealed class WeaponModsCatalogTests
     [Fact]
     public void Synergy_on_two_weapons_is_each_weapons_own_with_its_elements_pickup()
     {
-        var session = PickMod(PickMod(StartOwnersDimDesign(), FestivalFlight, Optional.Some(ItemHash.From(Synergy))), CrisisInverted, Optional.Some(ItemHash.From(Synergy)));
+        var session = PickMod(PickMod(StartDesign(), FestivalFlight, Optional.Some(ItemHash.From(Synergy))), CrisisInverted, Optional.Some(ItemHash.From(Synergy)));
 
         var played = LoopDesigning.AppendStep(session, new PlayerAction.FireWeapon(WeaponSlot.Energy, HitOutcome.Kill, TargetCount.From(12)), Optional.None<string>());
 
@@ -148,7 +157,7 @@ public sealed class WeaponModsCatalogTests
     [Fact]
     public void An_enhanced_mod_fits_only_a_weapon_known_to_be_tier_4_or_5()
     {
-        var build = StartOwnersDimDesign().Build;
+        var build = StartDesign().Build;
         var flight = build.Build.Weapons[FestivalFlight];
 
         bool CanTake(Optional<GearTier> tier, uint mod) =>
@@ -162,25 +171,9 @@ public sealed class WeaponModsCatalogTests
     }
 
     [Fact]
-    public void A_dim_link_weapons_mod_is_the_weapons_mod_not_a_left_out_item()
-    {
-        const string path = "builds/skip-grenade-hunter/dim-loadout.json";
-        var json = File.ReadAllText(RepoFiles.ToPath(path));                                     // impure
-        var share = JsonNode.Parse(json)!;                                                       // pure
-        share["loadout"]!["equipped"]![0]!["socketOverrides"]!["4"] = Synergy;                   // Festival Flight with Synergy
-
-        var session = LoopDesigning.StartSavedDimDesign(Catalog, new SourceText(path, share.ToJsonString()))
-            .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
-
-        Assert.Equal(Optional.Some(ItemHash.From(Synergy)), session.Build.Build.Weapons[FestivalFlight].Mod);
-        Assert.DoesNotContain(session.Build.Build.LeftOut, item => item.Hash.Value == Synergy);
-        Assert.Contains(session.Build.Equipped, equipped => equipped.Element.Id.Value == "synergy");
-    }
-
-    [Fact]
     public void A_build_files_weapon_mod_is_read_back_as_it_is_written()
     {
-        var build = PickMod(StartOwnersDimDesign(), FestivalFlight, Optional.Some(ItemHash.From(Synergy))).Build.Build;
+        var build = PickMod(StartDesign(), FestivalFlight, Optional.Some(ItemHash.From(Synergy))).Build.Build;
 
         var written = BuildFileWriting.WriteBuildFile(build, []);
         var read = Loopsmith.Core.BuildParsing.BuildFileParsing.ParseBuildFile(new SourceText("written.yaml", written), Catalog.Manifest)
@@ -193,13 +186,9 @@ public sealed class WeaponModsCatalogTests
     private static (Likelihood, string) DescribeSpawn(FiredRule fired) =>
         (fired.Likelihood, string.Join(",", fired.Outcomes.Select(outcome => outcome.Outcome).OfType<Outcome.Spawn>().Select(spawn => spawn.Pickup.Value)));
 
-    private static DesignSession StartOwnersDimDesign()
-    {
-        const string path = "builds/skip-grenade-hunter/dim-loadout.json";
-        var json = File.ReadAllText(RepoFiles.ToPath(path));                                     // impure
-        return LoopDesigning.StartSavedDimDesign(Catalog, new SourceText(path, json))
+    private static DesignSession StartDesign() =>
+        LoopDesigning.StartDesign(Catalog, new SourceText("build.yaml", BuildFile), "Test")
             .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
-    }
 
     private static DesignSession PickMod(DesignSession session, int weapon, Optional<ItemHash> mod) =>
         LoopDesigning.PickWeaponMod(session, weapon, mod).Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
