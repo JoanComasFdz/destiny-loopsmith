@@ -25,7 +25,7 @@
 # before they end. The videos are converted one per core at a time. It prints each
 # scenario's startup time (page open → Home shown) and the requests that left for bungie.net, and writes
 # <out>/scenarios.json. Each rule a recorded scenario's Gherkin names ("# Rule <name>: …") is drawn by the rule viewer
-# (tools/rule-viewer, --rule) as <out>/<domain folder>/<rule name>.png, its "flow" in scenarios.json, which the post shows
+# (tools/rule-viewer, --rule, in its dark theme) as <out>/<domain folder>/<rule name>.png, its "flow" in scenarios.json, which the post shows
 # under the scenario's title; a rule it can't draw is its "flowError" and stops nothing. Exits non-zero when a scenario
 # failed (its GIF is still written).
 # --no-video: the same scenarios against the same locally served publish, unrecorded and unpaced (no E2E_VIDEO_DIR):
@@ -382,7 +382,7 @@ if [ -n "$flows" ]; then
   if dotnet build "$viewer" -c Release --nologo -v q > "$flow_errors/.build.log" 2>&1; then
     while read -r domain rule; do
       mkdir -p "$out/$domain"
-      if drawn="$(cd "$repo" && dotnet run --no-build -c Release --project "$viewer" -- --rule "$rule" --out "$out/$domain" 2>&1)"; then
+      if drawn="$(cd "$repo" && dotnet run --no-build -c Release --project "$viewer" -- --rule "$rule" --theme dark --out "$out/$domain" 2>&1)"; then
         echo "  $domain/$rule.png"
       else
         { printf '%s\n' "$drawn" | grep -v '^\s*$' || echo "the rule viewer failed with no message"; } | tail -1 > "$flow_errors/$rule.txt"

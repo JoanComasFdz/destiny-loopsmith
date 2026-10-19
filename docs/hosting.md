@@ -278,8 +278,8 @@ works the PR records them; CI doesn't run, record or build anything for them.
     one per rule and version, whichever scenarios and screens name it; a rule's name is well under 200 characters.
 - **The rules' flows:** a rule scenario names its rule on a `# Rule <name>: …` line under `Scenario:`
   ([rule scenarios](given-when-then-rule-scenarios.md), "The shape"). When `record.sh` records (not with `--no-video`),
-  it draws each rule a recorded scenario names with the rule viewer (`tools/rule-viewer`, `--rule <name>`, built once
-  per recording) as `out/<domain folder>/<rule name>.png`, next to that scenario's GIFs, so it goes to the same release.
+  it draws each rule a recorded scenario names with the rule viewer (`tools/rule-viewer`, `--rule <name> --theme dark`,
+  built once per recording) as `out/<domain folder>/<rule name>.png`, next to that scenario's GIFs, so it goes to the same release.
   `scenarios.json` gives each such run its `"rule"` and its `"flow"` (the PNG's path), or, when the rule viewer couldn't
   draw it (a name no rule has, rules that don't parse, or no Chromium), its `"flowError"`,
   the viewer's last line; a missing flow never stops the recording. A scenario with no `# Rule` line (the loop scenarios,
