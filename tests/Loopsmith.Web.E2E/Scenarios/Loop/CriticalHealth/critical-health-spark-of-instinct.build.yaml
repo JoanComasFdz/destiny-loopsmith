@@ -1,0 +1,5 @@
+# Spark of Instinct and nothing else: it reacts to a hit at critical health, so the designer offers "Critical health".
+name: "E2E - Critical health with Spark of Instinct"
+class: hunter
+subclass: arc
+fragments: [spark-of-instinct]

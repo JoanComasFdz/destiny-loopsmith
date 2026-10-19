@@ -57,6 +57,14 @@ public sealed class TriggerPalette(IPage page)
             .Locator("[data-action=trigger-at-once]")
             .Filter(new() { Has = page.Locator("[data-testid=trigger-caption]").GetByText(declaration, new() { Exact = true }) });
 
+    // The panel's "On you" group: the buffs on you, each a chip with its declarations, and the states to declare beside them.
+    private ILocator OnYou => Panel.Locator("[data-testid=trig-group][data-group=you]");
+
+    // A state to declare in the "On you" group, outside the status chips ("Critical health"), by its caption.
+    private ILocator State(Keyword state) =>
+        OnYou.Locator(":scope > [data-action=trigger-at-once]")
+            .Filter(new() { Has = page.Locator("[data-testid=trigger-caption]").GetByText(state.ToShownText(), new() { Exact = true }) });
+
     // A pickup's chip in the panel's "On the ground" group reads "Pick up <its name>".
     private ILocator Pickup(Keyword pickup) =>
         Panel.Locator("[data-testid=trig-group][data-group=ground] [data-action=trigger-at-once]")
@@ -91,6 +99,9 @@ public sealed class TriggerPalette(IPage page)
     /// loop gets a step that declares it.
     /// </summary>
     public Task ClickDeclarationAsync(Keyword status, string declaration) => OnScreen.PressAsync(Panel, Declaration(status, declaration));
+
+    /// <summary>Clicks <paramref name="state"/> ("Critical health") under "On you", outside the status chips: the loop gets a step that declares it.</summary>
+    public Task ClickStateAsync(Keyword state) => OnScreen.PressAsync(Panel, State(state));
 
     /// <summary>Clicks "Pick up <paramref name="pickup"/>" under "On the ground": the loop gets a step that picks it up.</summary>
     public Task ClickPickupAsync(Keyword pickup) => OnScreen.PressAsync(Panel, Pickup(pickup));
@@ -139,7 +150,24 @@ public sealed class TriggerPalette(IPage page)
             [.. (await ApartCaptions.AllInnerTextsAsync()).Select(shown => StepTriggerShowing.ReadStepTrigger(shown.Trim()))],
             [.. (await OptionCaptions.AllInnerTextsAsync()).Select(shown => RowOptionShowing.ReadRowOption(shown.Trim()))],
             await Panel.GetAttributeAsync("aria-disabled") == "true",
-            await DisabledNote.CountAsync() > 0 ? (await DisabledNote.InnerTextAsync()).Trim() : "");
+            await DisabledNote.CountAsync() > 0 ? (await DisabledNote.InnerTextAsync()).Trim() : "",
+            await ReadOnYouAsync());
+
+    private async Task<ImmutableArray<OnYouChip>> ReadOnYouAsync() =>
+        await OnYou.CountAsync() == 0
+            ? []
+            : [.. (await OnYou.EvaluateAsync<JsonElement>(OnYouScript)).Deserialize<ImmutableArray<OnYouChip>>(ShownJson.Options)];
+
+    // Each chip of the "On you" group, in order: a status's name with its buttons' captions, or a state to declare's caption
+    // with no buttons (it is a button itself).
+    private const string OnYouScript = """
+        group => [...group.children]
+          .filter(el => el.matches('[data-testid=status-chip], [data-action=trigger-at-once]'))
+          .map(el => el.matches('[data-testid=status-chip]')
+            ? { name: el.querySelector('[data-testid=status-name]').innerText.trim(), isButton: false,
+                buttons: [...el.querySelectorAll('[data-testid=trigger-caption]')].map(c => c.innerText.trim()) }
+            : { name: el.querySelector('[data-testid=trigger-caption]').innerText.trim(), isButton: true, buttons: [] })
+        """;
 
     // The row's box and its content's right edge (its right padding left out), each button's box with its caption, each
     // option's box with its caption, the "×" enemy count's box, the screen's width and the page's (wider when it scrolls
@@ -171,7 +199,7 @@ public sealed class TriggerPalette(IPage page)
 /// What the panel shows: the picked row's buttons the "×" enemy count goes with, whether that count shows, the counts it
 /// offers (as its options read, in order), the buttons at the row's right end, apart from it, and the boxes the player
 /// ticks (its options); whether the whole panel is greyed out (nothing in it can be tapped), and the line that says why
-/// (empty when it isn't).
+/// (empty when it isn't); and the chips of its "On you" group, in order.
 /// </summary>
 public sealed record TriggerPaletteSnapshot(
     ImmutableArray<StepTrigger> WithTheCount,
@@ -180,7 +208,14 @@ public sealed record TriggerPaletteSnapshot(
     ImmutableArray<StepTrigger> ApartFromTheCount,
     ImmutableArray<RowOption> Options,
     bool IsGreyedOut,
-    string DisabledNote);
+    string DisabledNote,
+    ImmutableArray<OnYouChip> OnYou);
+
+/// <summary>
+/// A chip of the "On you" group: a buff on you, by its name, with its buttons' captions ("at max (x10)", "ends"); or a
+/// state to declare, by its caption, which is a button itself (<see cref="IsButton"/>, no buttons of its own).
+/// </summary>
+public sealed record OnYouChip(string Name, bool IsButton, ImmutableArray<string> Buttons);
 
 /// <summary>
 /// Where the picked row is on the screen, in CSS pixels: the row's box and its content's right edge, each button's box
