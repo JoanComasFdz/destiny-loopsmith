@@ -237,8 +237,10 @@ goes for log lines you quote in the PR.
 about once a minute until it ends: one short line saying how many are done out of how many in all, how they went, how
 long it has run and, once something is done, about how long is left (the time so far per item, times the items left):
 "7 of 36 runs recorded, all passed · 6 min elapsed, about 25 min left"; "3 of 4 test projects done, 1 failed · 2 min
-elapsed, about 1 min left". It is read from the command's output (a Monitor
-on its log, for example), never guessed. Every line gives the total, whatever is counted (runs, tests, files, steps):
+elapsed, about 1 min left". It is read from the command's output by a Monitor on its log that prints that line every
+minute, never guessed; never wait for a long command with a silent loop (`until …; do sleep …; done`), which shows
+nothing until it ends. A command with several phases is followed through each of them, each with its own count:
+`tools/e2e/record.sh` publishes the app, plays the runs, then writes each run's GIF and MP4 ("31 of 48 GIFs written"). Every line gives the total, whatever is counted (runs, tests, files, steps):
 work it out before the command starts, from what it will run (a recording's runs are its selected scenarios times the
 screens each is played on), and when no total can be known, say so in the first line (and leave out the time left). When it
 ends, one line says how (passed, failed with what failed, or stopped) and how long it took.
