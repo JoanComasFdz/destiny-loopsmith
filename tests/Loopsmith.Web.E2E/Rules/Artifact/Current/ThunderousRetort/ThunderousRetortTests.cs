@@ -13,7 +13,7 @@ public sealed class ThunderousRetortTests : BaseE2E
         @desktop @mobile
         Scenario: Thunderous Retort's Super at critical health hits harder
           # Rule artifact-current-thunderous-retort-1: Always ➜ Thunderous Retort equipped and Critical health on you ➜ Damage bonus (+30% vs super)
-          Given the build "thunderous-retort-arc-staff" is imported, with no steps
+          Given the build "thunderous-retort-arc-staff-super" is imported, with no steps
           When I tap "Critical health" under "On you" in the trigger panel
           Then card #1's heading is "#1 Critical health"
           # "1 effect": Thunderous Retort's bonus holds while critical health is on you.
@@ -29,7 +29,7 @@ public sealed class ThunderousRetortTests : BaseE2E
     public async Task ThunderousRetortsSuperAtCriticalHealthHitsHarder(Screen screen)
     {
         // Given
-        await Frontend.Home.ImportBuildAsync("thunderous-retort-arc-staff.build.yaml");
+        await Frontend.Home.ImportBuildAsync("thunderous-retort-arc-staff-super.build.yaml");
         await Frontend.Designer.WaitUntilShownAsync();
 
         // When
