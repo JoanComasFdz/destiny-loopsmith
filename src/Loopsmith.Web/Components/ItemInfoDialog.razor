@@ -85,6 +85,15 @@
                             }
                         </div>
                         break;
+                    case InfoSection.RightThen rightThen:
+                        <div class="info-card switches" data-testid="info-right-then">
+                            <div class="info-source" data-testid="info-right-then-title">Right then, after #@rightThen.Step</div>
+                            @foreach (var line in rightThen.Lines)
+                            {
+                                <p class="info-rules-text" data-testid="info-right-then-line">@line</p>
+                            }
+                        </div>
+                        break;
                     case InfoSection.Catalyst catalyst:
                         @if (catalyst.Heading is Optional<SectionHeading>.Some heading)
                         {

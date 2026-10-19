@@ -105,8 +105,9 @@ Scenario: <what it proves, as a statement>
    WEAPONS show none" after another weapon's hit). The rest of the card is left out.
 4. **Say what must not be there** when it matters: `"Reaper's Tithe" fires nothing`, `no line says "(chance)"`, `its
    WEAPONS show none`, `the "×" enemy count offers only "1 enemy"`. The test checks it too.
-5. **A tooltip's text** is a check of its own ("the "Stats for All · 1 effect · Ogma PR6" chip's tooltip reads …"),
-   and makes the Gherkin desktop only.
+5. **A tooltip's text** is a check of its own and makes the Gherkin desktop only. A state chip's effects are read in its
+   details instead, on both screens: "When I tap the "Stats for All · 1 effect · Ogma PR6" chip in card #1's WEAPONS",
+   then "its "Right then, after #1" card reads only "10s" and …" (the same lines as its tooltip).
 6. **Explain anything that looks surprising** in a `#` line right above the check it explains: "# Two Threadlings: the
    one every Hatchling gives, and the extra one only the enhanced trait gives." Something that is expected but looks
    wrong gets a comment, never silence.

@@ -157,11 +157,10 @@ public sealed class EnemyCountTests : BaseE2E
             .ShowsNone(new StateGroup.Weapons());
     }
 
-    [Theory, PlayInDesktop]
+    [Theory, PlayInDesktop, PlayInMobile]
     [TestDescription("""
-        @desktop
+        @desktop @mobile
         Scenario: Stats for All shows its stats in one chip
-          # Desktop only: what it checks is the chip's tooltip, which shows on hover, and a phone has none.
           Given the build "ogma-pr6-stats-for-all" is imported, with no steps
           When I tap "Ogma PR6" in the trigger panel
           Then the "×" enemy count offers "1 enemy" and "3 in 3 s · Stats for All"
@@ -172,8 +171,11 @@ public sealed class EnemyCountTests : BaseE2E
           And it reads "Ogma PR6 🥊 hit 1 enemy"
           And "Stats for All" fires "Stats for All (10s) (chance)"
           And its WEAPONS show only "Stats for All · 1 effect · Ogma PR6"
-          And the "Stats for All · 1 effect · Ogma PR6" chip's tooltip reads "10s · Energy weapon: +10 Range, +10 Stability, +35 Handling, +35 Reload Speed"
-          When I remove step #1 with the "✕" on its card
+          When I tap the "Stats for All · 1 effect · Ogma PR6" chip in card #1's WEAPONS
+          Then the item details popup opens, titled "Stats for All"
+          And its "Right then, after #1" card reads only "10s" and "Energy weapon: +10 Range, +10 Stability, +35 Handling, +35 Reload Speed"
+          When I close the item details popup
+          And I remove step #1 with the "✕" on its card
           Then the loop has no steps
           When I tap "Ogma PR6" in the trigger panel
           And I select "3 in 3 s · Stats for All"
@@ -182,7 +184,9 @@ public sealed class EnemyCountTests : BaseE2E
           And it reads "Ogma PR6 🥊 hit 3 enemies in 3 s"
           And "Stats for All" fires "Stats for All (10s)"
           And its WEAPONS show only "Stats for All · 1 effect · Ogma PR6"
-          And the "Stats for All · 1 effect · Ogma PR6" chip's tooltip reads "10s · Energy weapon: +10 Range, +10 Stability, +35 Handling, +35 Reload Speed"
+          When I tap the "Stats for All · 1 effect · Ogma PR6" chip in card #1's WEAPONS
+          Then the item details popup opens, titled "Stats for All"
+          And its "Right then, after #1" card reads only "10s" and "Energy weapon: +10 Range, +10 Stability, +35 Handling, +35 Reload Speed"
         """)]
     public async Task StatsForAllShowsItsStatsInOneChip(Screen screen)
     {
@@ -211,10 +215,21 @@ public sealed class EnemyCountTests : BaseE2E
             .HasHeading("#1 Ogma PR6 (🥊 hit)")
             .Reads("Ogma PR6 🥊 hit 1 enemy")
             .Fires(new WeaponPerk.StatsForAll(), "Stats for All (10s) (chance)")
-            .Shows(new StateGroup.Weapons(), "Stats for All · 1 effect · Ogma PR6")
-            .HasTooltip(new StateGroup.Weapons(), "Stats for All · 1 effect · Ogma PR6", "10s · Energy weapon: +10 Range, +10 Stability, +35 Handling, +35 Reload Speed");
+            .Shows(new StateGroup.Weapons(), "Stats for All · 1 effect · Ogma PR6");
 
         // When
+        await Frontend.Designer.Loop.Step(1).ClickChipAsync(new StateGroup.Weapons(), "Stats for All · 1 effect · Ogma PR6");
+        await Frontend.Designer.ItemDetails.WaitUntilShownAsync();
+
+        // Then
+        var oneHitDetails = await Frontend.Designer.ItemDetails.ReadAsync();
+        Asserting.That(oneHitDetails)
+            .IsTitled(new WeaponPerk.StatsForAll())
+            .HasRightThen("Right then, after #1", "10s", "Energy weapon: +10 Range, +10 Stability, +35 Handling, +35 Reload Speed");
+
+        // When
+        await Frontend.Designer.ItemDetails.ClickCloseAsync();
+        await Frontend.Designer.ItemDetails.WaitUntilClosedAsync();
         await Frontend.Designer.Loop.ClickRemoveStepAsync(1);
         await Frontend.Designer.Loop.WaitUntilNoStepsAsync();
 
@@ -235,8 +250,17 @@ public sealed class EnemyCountTests : BaseE2E
             .HasHeading("#1 Ogma PR6 (🥊 hit 3)")
             .Reads("Ogma PR6 🥊 hit 3 enemies in 3 s")
             .Fires(new WeaponPerk.StatsForAll(), "Stats for All (10s)")
-            .Shows(new StateGroup.Weapons(), "Stats for All · 1 effect · Ogma PR6")
-            .HasTooltip(new StateGroup.Weapons(), "Stats for All · 1 effect · Ogma PR6", "10s · Energy weapon: +10 Range, +10 Stability, +35 Handling, +35 Reload Speed");
+            .Shows(new StateGroup.Weapons(), "Stats for All · 1 effect · Ogma PR6");
+
+        // When
+        await Frontend.Designer.Loop.Step(1).ClickChipAsync(new StateGroup.Weapons(), "Stats for All · 1 effect · Ogma PR6");
+        await Frontend.Designer.ItemDetails.WaitUntilShownAsync();
+
+        // Then
+        var threeHitsDetails = await Frontend.Designer.ItemDetails.ReadAsync();
+        Asserting.That(threeHitsDetails)
+            .IsTitled(new WeaponPerk.StatsForAll())
+            .HasRightThen("Right then, after #1", "10s", "Energy weapon: +10 Range, +10 Stability, +35 Handling, +35 Reload Speed");
     }
 
     [Theory, PlayInDesktop, PlayInMobile]

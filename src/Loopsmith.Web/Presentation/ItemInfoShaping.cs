@@ -38,7 +38,7 @@ public sealed record SectionHeading(string Name, Optional<string> Icon, string L
 /// an exotic's catalyst, with its switch (its heading when it is part of the weapon's details); an artifact, with the
 /// perks of it the build has (the artifact itself sets nothing off: its perks do); a status without an element of its own,
 /// with the glossary's facts; what in this build interacts with a keyword (gives it, reacts to it, uses it up, is
-/// switched on by it…).
+/// switched on by it…); what a status of a step's state does right then, after that step.
 /// </summary>
 [Union]
 public partial record InfoSection
@@ -51,6 +51,7 @@ public partial record InfoSection
     partial record Status(Optional<string> Facts);
     partial record InBuild(ImmutableArray<InBuildGroup> Groups);
     partial record Ignored(Optional<string> BungieText, string Why);   // a mod Loopsmith doesn't support (a raid's or an activity's, ADRs D35)
+    partial record RightThen(int Step, ImmutableArray<string> Lines);
 }
 
 /// <summary>One role of what interacts with a keyword in the build, under its heading ("Gives Armor Charge", "While Amplified").</summary>
@@ -85,7 +86,11 @@ public static class ItemInfoShaping
             item => ShapeItem(build, item.Hash),
             weapon => LoopDesigning.FindWeapon(build, weapon.Weapon).Map(found => ShapeWeapon(build, found, weapon.Weapon)),
             catalyst => LoopDesigning.FindWeapon(build, catalyst.Weapon).Bind(found => LoopDesigning.FindCatalyst(build, catalyst.Weapon)
-                .Map(plug => ShapeCatalyst(build, found, plug, catalyst.Weapon))));
+                .Map(plug => ShapeCatalyst(build, found, plug, catalyst.Weapon))),
+            entry => ShapeInfo(build, entry.Of).Map(info => info with
+            {
+                Sections = [new InfoSection.RightThen(entry.Step, entry.RightThen), .. info.Sections],
+            }));
 
     /// <summary>The short preview of what <see cref="ShapeInfo"/> details: the same name, type and icon, and its first text.</summary>
     public static Optional<ItemPreview> ShapePreview(ValidatedBuild build, ItemDetails details) =>
@@ -105,7 +110,8 @@ public static class ItemInfoShaping
             artifact => artifact.BungieText,
             status => status.Facts,
             _ => Optional.None<string>(),
-            ignored => ignored.BungieText);
+            ignored => ignored.BungieText,
+            _ => Optional.None<string>());
 
     private static Optional<ItemInfo> ShapeElement(ValidatedBuild build, ElementId id) =>
         build.Catalog.Elements.TryGetValue(id, out var element)

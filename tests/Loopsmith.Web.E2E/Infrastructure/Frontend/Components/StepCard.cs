@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Text.Json;
+using Loopsmith.Web.E2E.Infrastructure.Vocabulary;
 using Microsoft.Playwright;
 
 namespace Loopsmith.Web.E2E.Infrastructure.Frontend.Components;
@@ -26,6 +27,16 @@ public sealed class StepCard(IPage page, int number)
     private ILocator BonusToggle => Bonus.Locator("[data-action=damage-bonus-toggle]");
 
     private ILocator BonusSources => Bonus.Locator("[data-testid=damage-bonus-sources]");
+
+    private ILocator State => Card.Locator("[data-testid=step-state]");
+
+    // A chip is named by its first part, its name ("Stats for All" in "Stats for All · 1 effect · Ogma PR6").
+    private ILocator Chip(StateGroup group, string chip) =>
+        State.Locator($"[data-testid=state-group][data-group={group.ToShownText().ToLowerInvariant()}] [data-testid=state-chip]")
+            .Filter(new() { Has = page.Locator("[data-testid=state-chip-name]").GetByText(chip.Split(" · ")[0], new() { Exact = true }) });
+
+    /// <summary>Clicks the chip <paramref name="chip"/> of the card's state's <paramref name="group"/>: its item details popup opens.</summary>
+    public Task ClickChipAsync(StateGroup group, string chip) => OnScreen.PressAsync(State, Chip(group, chip));
 
     /// <summary>Waits until the card shows its "why:" reasons (after the "why" checkbox is ticked).</summary>
     public Task WaitUntilReasonsShownAsync() => Reasons.First.WaitForAsync(new() { State = WaitForSelectorState.Visible });
@@ -61,11 +72,11 @@ public sealed class StepCard(IPage page, int number)
                 [.. shown.BonusSources.Select(source => new DamageBonusSource(source.Name, source.Value))]));
     }
 
-    private static ImmutableArray<StateChip> ToChips(ShownChip[] chips) => [.. chips.Select(chip => new StateChip(chip.Text, chip.Tooltip))];
+    private static ImmutableArray<StateChip> ToChips(ShownChip[] chips) => [.. chips.Select(chip => new StateChip(chip.Text))];
 
     // The card's texts as the user reads them, white space collapsed. A chip reads as its parts (its name, how many
     // effects it switches on, its weapons) joined by " · " ("One for All · Festival Flight"), as the card draws them
-    // apart, and its tooltip is its title. The damage resistance reads as its rows ("All damage", PvE, PvP) and, once its
+    // apart. The damage resistance reads as its rows ("All damage", PvE, PvP) and, once its
     // title is clicked, the sources below them (each "<name>" and "<its values>"); the damage bonus the same way, its rows
     // ("Melee", "?") and, once its title is clicked, its sources ("Combination Blow", "?").
     private const string ReadScript = """
@@ -74,7 +85,6 @@ public sealed class StepCard(IPage page, int number)
           const chips = group => [...card.querySelectorAll(`[data-testid=step-state] [data-testid=state-group][data-group=${group}] [data-testid=state-chip]`)].map(chip => ({
             text: [chip.querySelector('[data-testid=state-chip-name]'), chip.querySelector('[data-testid=switches-on]'), ...chip.querySelectorAll('[data-testid=buff-weapon]')]
               .map(text).filter(part => part.length > 0).join(' · '),
-            tooltip: chip.getAttribute('title') || '',
           }));
           return {
             heading: `${text(card.querySelector('[data-testid=step-no]'))} ${text(card.querySelector('[data-testid=step-title]'))}`,
@@ -127,7 +137,7 @@ public sealed class StepCard(IPage page, int number)
 
     private sealed record ShownSource(string Name, string[] Lines, string[] Reasons, string[] Caveats);
 
-    private sealed record ShownChip(string Text, string Tooltip);
+    private sealed record ShownChip(string Text);
 }
 
 /// <summary>
@@ -148,8 +158,8 @@ public sealed record FiredSource(string Name, ImmutableArray<string> Lines, Immu
 /// <summary>The card's "State after #N": the chips of each group.</summary>
 public sealed record StepState(ImmutableArray<StateChip> Buffs, ImmutableArray<StateChip> Weapons, ImmutableArray<StateChip> Debuffs, ImmutableArray<StateChip> Ground);
 
-/// <summary>A chip of the state ("One for All · Festival Flight") and its tooltip ("10s").</summary>
-public sealed record StateChip(string Text, string Tooltip);
+/// <summary>A chip of the state ("One for All · Festival Flight").</summary>
+public sealed record StateChip(string Text);
 
 /// <summary>
 /// The card's damage resistance: its rows ("All damage" and each against some combatants only) and, once its title is

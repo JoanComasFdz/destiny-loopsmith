@@ -1,0 +1,5 @@
+# Spark of Recharge and nothing else: its details, from the Fragments box, say nothing about a step.
+name: "E2E - Spark of Recharge for its details"
+class: hunter
+subclass: arc
+fragments: [spark-of-recharge]

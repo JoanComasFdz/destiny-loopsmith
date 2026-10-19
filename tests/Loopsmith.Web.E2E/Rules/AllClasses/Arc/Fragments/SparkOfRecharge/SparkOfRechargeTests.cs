@@ -55,17 +55,18 @@ public sealed class SparkOfRechargeTests : BaseE2E
             .ShowsNone(new StateGroup.Buffs());
     }
 
-    [Theory, PlayInDesktop]
+    [Theory, PlayInDesktop, PlayInMobile]
     [TestDescription("""
-        @desktop
+        @desktop @mobile
         Scenario: Spark of Recharge speeds up grenade and melee regeneration while it is on you
           # Rule all-classes-arc-fragments-spark-of-recharge-2: Always ➜ Spark of Recharge equipped and Spark of Recharge on you ➜ Grenade energy (400% [PvP 200%] faster regeneration), Melee energy (400% [PvP 200%] faster regeneration)
-          # Desktop only: what it checks is the chip's tooltip, which shows on hover, and a phone has none.
           Given the build "spark-of-recharge-alone" is imported, with no steps
           When I tap "Critical health" under "On you" in the trigger panel
           Then card #1's heading is "#1 Critical health"
           And its BUFFS show only "Critical health" and "Spark of Recharge · 1 effect"
-          And the "Spark of Recharge · 1 effect" chip's tooltip reads "400% [PvP 200%] faster grenade and melee regeneration"
+          When I tap the "Spark of Recharge · 1 effect" chip in card #1's BUFFS
+          Then the item details popup opens, titled "Spark of Recharge"
+          And its "Right then, after #1" card reads only "400% [PvP 200%] faster grenade and melee regeneration"
         """)]
     public async Task SparkOfRechargeSpeedsUpGrenadeAndMeleeRegenerationWhileItIsOnYou(Screen screen)
     {
@@ -81,7 +82,16 @@ public sealed class SparkOfRechargeTests : BaseE2E
         var critical = await Frontend.Designer.Loop.Step(1).ReadAsync();
         Asserting.That(critical)
             .HasHeading("#1 Critical health")
-            .Shows(new StateGroup.Buffs(), "Critical health", "Spark of Recharge · 1 effect")
-            .HasTooltip(new StateGroup.Buffs(), "Spark of Recharge · 1 effect", "400% [PvP 200%] faster grenade and melee regeneration");
+            .Shows(new StateGroup.Buffs(), "Critical health", "Spark of Recharge · 1 effect");
+
+        // When
+        await Frontend.Designer.Loop.Step(1).ClickChipAsync(new StateGroup.Buffs(), "Spark of Recharge · 1 effect");
+        await Frontend.Designer.ItemDetails.WaitUntilShownAsync();
+
+        // Then
+        var details = await Frontend.Designer.ItemDetails.ReadAsync();
+        Asserting.That(details)
+            .IsTitled(new Fragment.SparkOfRecharge())
+            .HasRightThen("Right then, after #1", "400% [PvP 200%] faster grenade and melee regeneration");
     }
 }

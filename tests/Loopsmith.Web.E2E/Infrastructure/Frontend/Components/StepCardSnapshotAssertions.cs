@@ -214,15 +214,6 @@ public static class StepCardSnapshotAssertions
     public static AssertingThat<StepCardSnapshot> ShowsNone(this AssertingThat<StepCardSnapshot> that, StateGroup group) =>
         that.Shows(group);
 
-    /// <summary>The chip <paramref name="chip"/> of the state's <paramref name="group"/> has the tooltip <paramref name="tooltip"/>.</summary>
-    public static AssertingThat<StepCardSnapshot> HasTooltip(this AssertingThat<StepCardSnapshot> that, StateGroup group, string chip, string tooltip)
-    {
-        var shown = ReadGroup(that.InstanceToAssert.State, group).Where(found => found.Text == chip).Select(found => found.Tooltip).ToArray();
-        Assert.True(shown.Length > 0, $"The state's {group.ToShownText()} show no \"{chip}\" chip, but one with the tooltip \"{tooltip}\" was expected.");
-        Assert.True(shown.All(found => found == tooltip), $"The \"{chip}\" chip's tooltip is {Describe(shown)}, but \"{tooltip}\" was expected.");
-        return that;
-    }
-
     private static AssertingThat<StepCardSnapshot> FiresFrom(this AssertingThat<StepCardSnapshot> that, string name, string[] lines)
     {
         var fired = FindSources(that.InstanceToAssert, name);
