@@ -28,7 +28,6 @@ internal static class Slices
     public const string TraceRendering = "TraceRendering";
     public const string LoopFiles = "LoopFiles";
     public const string ReportComparison = "ReportComparison";
-    public const string LoadoutImporting = "LoadoutImporting";
     public const string ManifestJoining = "ManifestJoining";
     public const string StatLoading = "StatLoading";
     public const string CompendiumReading = "CompendiumReading";
@@ -41,7 +40,7 @@ internal static class Slices
     /// <summary>Pure feature slices.</summary>
     public static readonly ImmutableArray<string> Features =
         [RuleParsing, BuildParsing, BuildComposition, StepPlaying, LoopAnalyzing, BuildExplanation, TraceRendering, LoopFiles, ReportComparison,
-            LoadoutImporting, ManifestJoining, StatLoading, CompendiumReading];
+            ManifestJoining, StatLoading, CompendiumReading];
 
     /// <summary>Every known slice, kernel included.</summary>
     public static readonly ImmutableArray<string> All = [.. Kernel, SourceFetching, .. Features, Orchestration];
@@ -53,7 +52,7 @@ internal static class Slices
     public static readonly ImmutableArray<string> YamlParsers = [RuleParsing, BuildParsing, LoopFiles, CompendiumReading];
 
     /// <summary>
-    /// The only slice that emits YAML — loop files and the build files they embed (a build from a DIM link) — so it may
+    /// The only slice that emits YAML — loop files and the build files they embed (a build started from scratch or edited in the designer) — so it may
     /// build the text in memory with a <c>StringWriter</c>.
     /// </summary>
     public static readonly ImmutableArray<string> YamlWriters = [LoopFiles];

@@ -21,7 +21,7 @@ itself, under `src/Loopsmith.Core/Domain/`.
   files they embed), `BuildComposition`, `StepPlaying` (plays steps against the
   state, and a loop's passes until it repeats), `LoopAnalyzing` (judges a played loop
   by its order of triggers), `BuildExplanation`, `TraceRendering`,
-  `ReportComparison`, `LoadoutImporting` (a DIM link → a build), `ManifestJoining` (Bungie's full
+  `ReportComparison`, `ManifestJoining` (Bungie's full
   manifest → the excerpt some hashes need), `StatLoading` (a Bungie login's answers → the player's armor
   → the build's stats), `CompendiumReading` (a Compendium snapshot → the check of the rules' citations
   and numbers against it), `Orchestration`).
@@ -49,9 +49,8 @@ itself, under `src/Loopsmith.Core/Domain/`.
 - **The host owns no logic.** `Loopsmith.Web` (Blazor WebAssembly), the only host,
   holds UI state and calls the pure `Orchestration` API (`LoopDesigning`); its side
   effects live in `Hosting/`: the browser's (clipboard, downloads, confirm, picked files,
-  the URL) in `BrowserInterop` (and `wwwroot/js/loopsmith.js`), its HTTP requests (DIM
-  shares, the Bungie login and manifest) in `DimLoadoutFetching`, `BungieAccount` and
-  `BungieManifestJoining`. Any other host (an HTTP API, say) would do the same, and so does each developer tool under
+  the URL) in `BrowserInterop` (and `wwwroot/js/loopsmith.js`), its HTTP requests (the
+  Bungie login and manifest) in `BungieAccount` and `BungieManifestJoining`. Any other host (an HTTP API, say) would do the same, and so does each developer tool under
   `tools/` (the rule viewer, [ADRs D39](ADRs.md)): it reads its files and writes its output itself and calls
   only `Orchestration` and the kernel; its page's markup is its own presentation. A tool's logic that no player's host
   uses is a pure project of the tool's own (`tools/rule-viewer/Loopsmith.RuleViewer.Core`), not a Core slice: it follows

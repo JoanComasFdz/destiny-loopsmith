@@ -6,7 +6,7 @@
    weapon and armor slot shows, each with ⋯: the weapon or armor picker for it (every item of the game; after the
    player's Bungie login, theirs too); a slot that holds nothing (an ability of a build started from scratch, a weapon
    or armor slot) is a dashed square with its slot's name. After the login, the player's copies of its pieces and weapons
-   (the share's when theirs, else their own) show their marks as DIM does: the tier's diamonds, a masterwork's glow and
+   (the copy the build names when theirs, else their own) show their marks as DIM does: the tier's diamonds, a masterwork's glow and
    gold border. A weapon shows its breaker and element under its square. In the designer, once the listing of every
    piece and mod has been read, each armor piece shows its mod sockets (empty ones dashed, named for what they take)
    and its energy, and the General row every piece's general socket: tapping one opens the mod picker for it. *@
@@ -1020,7 +1020,7 @@
         (tile.Copies > 1 ? $"{tile.Name} ×{tile.Copies}" : tile.Name)
         + tile.Description.Match(description => $" — {description.Value}", _ => "");
 
-    private const string MissingPerk = "Perk not picked: a DIM link carries the weapon, not its roll. Pick it in the designer.";
+    private const string MissingPerk = "Perk not picked: the build names the weapon, not its roll. Pick it in the designer.";
 
     private const string PickPerk = "Perk not picked: pick what this column rolled with.";
 

@@ -16,12 +16,12 @@ namespace Loopsmith.Web.Hosting;
 /// copy is that version (or the index doesn't answer) it reads the components from there instead of downloading them,
 /// and the listing too when the same Loopsmith code made it (<c>codeVersion</c>); else it downloads them (a file whose
 /// download breaks starts again from its start, up to <see cref="Retries"/> more times) and lists them, and once the
-/// load is done saves them in place of the old copy. Then it answers the hashes the bundled excerpt lacks (a pasted DIM
-/// link's other items, a login's armor and weapons, an item picked from "Every item") from the components the tab holds:
+/// load is done saves them in place of the old copy. Then it answers the hashes the bundled excerpt lacks (an imported
+/// build's other items, a login's armor and weapons, an item picked from "Every item") from the components the tab holds:
 /// Core asks for their entries round by round (each round asks only what it hasn't asked, so the rounds end) and builds
 /// the excerpt. When the player went on without them (the startup load failed), the first read that needs them loads
-/// them, and they stay. One read runs at a time: another (the page answers taps meanwhile, so a login can come during a
-/// DIM link's read) waits for it. The page keeps answering taps: reading the files pauses every few megabytes, and the
+/// them, and they stay. One read runs at a time: another (the page answers taps meanwhile, so a login can come during an
+/// imported build's read) waits for it. The page keeps answering taps: reading the files pauses every few megabytes, and the
 /// join and the listing give the browser a turn before each round. <see cref="Reading"/> says how far a read got (the
 /// Bungie login section and the ⋯ pickers show it as a progress bar), <see cref="ReadingChanged"/> when it moved. The
 /// component URLs come from the manifest index (sent with <c>BungieApiKey</c> when set), else from the pinned content id

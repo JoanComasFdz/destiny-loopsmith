@@ -12,7 +12,7 @@
 }
 <section class="panel manifest-startup" data-testid="manifest-startup" aria-busy="@(view.Problem.IsSome() ? "false" : "true")">
     <h1>@view.Title</h1>
-    <p class="muted">Loopsmith reads it when it opens and keeps it while this tab is open: the weapon and armor pickers, DIM links and the Bungie login use it. It saves a copy in this browser, so the next visit reads it from there unless Bungie has published a new version.</p>
+    <p class="muted">Loopsmith reads it when it opens and keeps it while this tab is open: the weapon and armor pickers, imported builds and loops and the Bungie login use it. It saves a copy in this browser, so the next visit reads it from there unless Bungie has published a new version.</p>
     @foreach (var bar in view.Files)
     {
         @RenderBar(bar)
@@ -30,7 +30,7 @@
     @if (view.Problem is Optional<string>.Some problem)
     {
         <p class="manifest-startup-problem" role="alert" data-testid="startup-problem">@problem.Value</p>
-        <p class="muted">Without it, Loopsmith works with the data it comes with; a DIM link, the Bungie login or a picker's Every item loads the manifest when it needs it.</p>
+        <p class="muted">Without it, Loopsmith works with the data it comes with; an imported build, the Bungie login or a picker's Every item loads the manifest when it needs it.</p>
         <div class="manifest-startup-actions">
             <button type="button" class="btn primary" data-action="manifest-try-again" @onclick="TryAgainAsync">Try again</button>
             <button type="button" class="btn" data-action="manifest-continue" @onclick="Manifest.SkipStartup">Continue without it</button>

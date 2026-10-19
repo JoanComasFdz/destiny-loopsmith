@@ -27,7 +27,7 @@
                         break;
                     case InfoSection.Unpicked unpicked:
                         @RenderHeading(new SectionHeading(DomainPhrasing.Unknown, Optional.None<string>(), $"Trait · column {unpicked.Column + 1}"))
-                        <p class="muted info-note">Not picked: a DIM link carries the weapon, not its roll.</p>
+                        <p class="muted info-note">Not picked: the build names the weapon, not its roll.</p>
                         break;
                     case InfoSection.Artifact artifact:
                         @if (artifact.BungieText is Optional<string>.Some bungie)

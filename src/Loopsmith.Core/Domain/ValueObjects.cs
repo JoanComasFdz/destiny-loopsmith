@@ -63,16 +63,6 @@ public readonly partial struct ItemHash
         value > 0 ? Validation.Ok : Validation.Invalid("A manifest hash is never 0");
 }
 
-/// <summary>The id of a dim.gg share (<c>dim.gg/4j5nz4q</c>): 7 or more lowercase letters and digits, as DIM makes them.</summary>
-[ValueObject<string>]
-public readonly partial struct DimShareId
-{
-    private static Validation Validate(string value) =>
-        value.Length >= 7 && value.All(c => c is (>= 'a' and <= 'z') or (>= '0' and <= '9'))
-            ? Validation.Ok
-            : Validation.Invalid($"'{value}' is not a dim.gg share id");
-}
-
 /// <summary>A player's copy of an item, as Bungie's profile names it (<c>itemInstanceId</c>): a number, written as text.</summary>
 [ValueObject<string>]
 public readonly partial struct ItemInstanceId

@@ -68,20 +68,10 @@ The dev container also holds everything the repository builds, tests and records
 
 ## DIM links
 
-Home starts a loop from a DIM link ([loop-format.md](loop-format.md#starting-from-a-dim-link)). A link
-that carries its loadout (`…/loadouts?loadout=…`) needs nothing. A **dim.gg** share — what DIM's
-Share button copies — is on DIM's servers, and DIM's API hands it to any caller: `GET
-https://api.destinyitemmanager.com/loadout_share?shareId=…` needs no API key and answers any origin
-(dim-api's `api/server.ts` declares it before its API-key check, with CORS open to every origin; since
-2022). The web app asks with a plain GET and **no header**: a header such as `X-API-Key` would make the
-browser ask DIM first (a CORS preflight), which DIM answers only for the origins of apps registered
-with it. Nothing to set up, on the site, in a PR preview or in a local run.
-
-A DIM API key (an app registered with DIM: self-service `new_app` for local origins, from DIM's
-maintainers for a public site — dim-api's README) is only for DIM Sync, a player's own DIM data
-(loadouts, tags, notes, searches), which Loopsmith doesn't read. Loopsmith's **Bungie** API key
-(`BungieApiKey` in `wwwroot/appsettings.json`, an application at https://www.bungie.net/en/Application
-with **Origin header** `https://joancomasfdz.github.io`) is for Bungie's manifest and login, below.
+Removed: Home no longer reads DIM links or dim.gg shares ([example-loops.md](example-loops.md); the last commit with
+them is `d56905d`). Loopsmith's **Bungie** API key (`BungieApiKey` in `wwwroot/appsettings.json`, an application at
+https://www.bungie.net/en/Application with **Origin header** `https://joancomasfdz.github.io`) is for Bungie's manifest
+and login, below.
 
 ## Bungie login
 
@@ -115,7 +105,7 @@ allow them; a local run (`localhost`) needs an application registered for that o
 ## Bungie's manifest
 
 When the app opens, the browser loads Bungie's full manifest ([ADRs D14](ADRs.md)) and keeps it for as long as the
-tab is open, as DIM does, and saves a copy for the next visit (below): the weapon and armor pickers' **Every item**, a DIM link's items the bundled excerpt
+tab is open, as DIM does, and saves a copy for the next visit (below): the weapon and armor pickers' **Every item**, an imported build's or loop's items the bundled excerpt
 (`rules/manifest.yaml`) lacks, and a Bungie login's armor and weapons are all read from it, and no read downloads it
 again. It downloads eight English component files from bungie.net (~9 MB compressed, the item table most of it;
 public, cross-origin), indexes them in the page
@@ -159,7 +149,7 @@ moment later each time; the files already in stay, and the bar says so ("connect
 broken file isn't resumed where it stopped: bungie.net sends it compressed, and a browser can ask for the rest of a file
 only uncompressed (from the middle of the item table, ~99 MB instead of the whole file's 8.4 MB). When it still fails,
 the screen says why with **Try again** (the load runs again; the files already in stay) and **Continue without it**:
-the app opens with its bundled data, and the next read that needs the manifest (a DIM link, the login, Every item)
+the app opens with its bundled data, and the next read that needs the manifest (an import, the login, Every item)
 loads it then, with the read's progress bar, and keeps it.
 
 The pickers' **Every item** ([loop-format.md](loop-format.md#every-item)) lists every weapon and armor piece of the
@@ -176,9 +166,9 @@ The tab holds the files (~215 MB of JSON once unpacked, held once, never copied 
 long as it is open, as DIM holds its own copy. The page keeps answering taps while a read names items: the join gives
 the browser a turn before each of its rounds (five for a vault of ~600 items). After a Bungie login, the **Bungie login
 section** shows a progress bar — "Reading Bungie's manifest for 609 of your items", "naming them (step 2)" — and so does
-the ⋯ picker opened meanwhile (a DIM link's read says "of this build's items"; a pick "for the item you picked"). When
+the ⋯ picker opened meanwhile (an import's read says "of this build's items"; a pick "for the item you picked"). When
 the startup load was skipped, the first read also downloads the files ("reading its files… 84 MB"). One read runs at a
-time (a login during a DIM link's read waits for it).
+time (a login during an import's read waits for it).
 
 ## E2E videos on pull requests
 

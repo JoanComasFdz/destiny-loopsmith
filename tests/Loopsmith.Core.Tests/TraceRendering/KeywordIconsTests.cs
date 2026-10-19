@@ -23,6 +23,19 @@ public sealed class KeywordIconsTests
     private static readonly RuleCatalog Catalog =
         RuleFiles.Bind(CatalogLoading.ParseCatalog).Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
 
+    /// <summary>An Arc Hunter with a grenade, Tempest Strike (Bolt Charge on a jolted kill), Spark of Discharge (an Ionic Trace on an Arc kill), a Strand kinetic and an Arc energy weapon.</summary>
+    private const string BuildFile = """
+        name: Keyword icons
+        class: hunter
+        subclass: arc
+        grenade: skip-grenade
+        aspects: [tempest-strike]
+        fragments: [spark-of-shock, spark-of-discharge]
+        weapons:
+          - {hash: 4019651319, perks: []} # Festival Flight: Strand kinetic
+          - {hash: 2888266564, perks: []} # Crisis Inverted: Arc energy
+        """;
+
     private static readonly KeywordRef Jolt = new KeywordRef.Status(StatusId.From("jolt"));
 
     [Fact]
@@ -107,9 +120,7 @@ public sealed class KeywordIconsTests
 
     private static DesignSession Play(params PlayerAction[] actions)
     {
-        const string path = "builds/skip-grenade-hunter/dim-loadout.json";
-        var json = File.ReadAllText(RepoFiles.ToPath(path));                                     // impure
-        var session = LoopDesigning.StartSavedDimDesign(Catalog, new SourceText(path, json))
+        var session = LoopDesigning.StartDesign(Catalog, new SourceText("build.yaml", BuildFile), "Test")
             .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
         return actions.Aggregate(session, (played, action) => LoopDesigning.AppendStep(played, action, Optional.None<string>()));
     }

@@ -9,9 +9,9 @@ using YamlDotNet.Core.Events;
 namespace Loopsmith.Core.LoopFiles;
 
 /// <summary>
-/// <see cref="Build"/> → <c>build.yaml</c> text (docs/rule-format.md), for a build composed elsewhere than in a file (a
-/// DIM link): the loop file embeds it like any other build. Pure. Written through YamlDotNet's emitter, so it reads back
-/// as the same build. Each note becomes a comment line at the top (what a DIM link had that the build leaves out).
+/// <see cref="Build"/> → <c>build.yaml</c> text (docs/rule-format.md), for a build composed elsewhere than in a file (from
+/// scratch, or edited in the designer): the loop file embeds it like any other build. Pure. Written through YamlDotNet's emitter, so it reads back
+/// as the same build. Each note becomes a comment line at the top (where the build came from).
 /// </summary>
 public static class BuildFileWriting
 {

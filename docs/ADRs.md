@@ -242,6 +242,8 @@ user's notes come next and a creator's claim last. Every disagreement is recorde
 `discrepancies.md`. **Consequence.** Snapshots stay private (licensing); rules cite rows as
 `compendium/<date>/<Tab>#<row>` and paraphrase.
 
+Superseded (2026-10-19): the builds' `discrepancies.md` are removed with `builds/`; a disagreement is recorded next to the element in its rule file; see [docs/example-loops.md](example-loops.md).
+
 ### D12 — The Compendium is joined by name, scoped by kind and class
 
 **Decision.** The Compendium has no hashes, so its entries are joined to the manifest by name,
@@ -281,6 +283,8 @@ hash among its columns' perks (a build's `roll`). Opening the app the first time
 version) costs a ~9 MB download and some seconds behind a startup screen; a later visit checks the version and reads
 the saved copy (~9 MB gzipped on disk, a few seconds); after that a link, a login or a pick reads from the files the
 tab holds. The Core tests know only the excerpt.
+
+Superseded (2026-10-19): the bundled builds and the DIM link are removed, so the excerpt holds the rules' hashes and the Core tests' items (`tools/manifest/test-items.yaml`); see [docs/example-loops.md](example-loops.md).
 
 ### D15 — Builds and loops pin a catalog version
 
@@ -364,6 +368,8 @@ is that version (or the index doesn't answer); a browser that can't save downloa
 **Consequence.** No API or database; a saved library is open ([docs/backlog.md](backlog.md)). The first visit downloads the .NET runtime (≈ 3 MB, then
 cached).
 
+Superseded (2026-10-19): the embedded example builds and loops are removed (only the rules are embedded); see [docs/example-loops.md](example-loops.md).
+
 ### D26 — Verify.XunitV3 pinned to 32.0.1
 
 33.x requires xunit.v3 4.x and gates the build on a SponsorCheck licence property — a licensing
@@ -394,6 +400,8 @@ read from Bungie's full manifest first (D14), so the link's weapons, armor sets 
 names. **Consequence.** A Prismatic loadout can't start a build yet (the glossary has no Prismatic subclass:
 it waits on an element per ability); Loopsmith needs no registration with DIM ([docs/hosting.md](hosting.md), "DIM links").
 
+Superseded (2026-10-19): the DIM link, `LoadoutImporting` and the saved DIM share on Home are removed (last in commit `d56905d`); see [docs/example-loops.md](example-loops.md).
+
 ### D28 — A build's stats come from the player's own armor, added up like DIM, after a read-only Bungie login
 
 **Context.** Some cause and effect depends on a stat: a Gambler's Dodge gives back 1% of a melee charge per Melee
@@ -416,6 +424,8 @@ piece — and its set bonuses follow the pieces it wears (`ArmorSwapping`), so t
 loop that plays; a build wears one exotic. A piece whose roll the excerpt doesn't know (a newer manifest) leaves
 the stats as they were, never guessed (D12). The login's page is the site's
 `/login`, Bungie's one redirect URL ([docs/hosting.md](hosting.md), "Bungie login").
+
+Superseded (2026-10-19): the dim.gg share whose owner got its pieces at the login is removed with the DIM link; the login and its stats stay; see [docs/example-loops.md](example-loops.md).
 
 ### D29 — The step's state shows its damage resistance, its sources multiplied, PvE and PvP
 
@@ -564,6 +574,8 @@ mods. The Core tests, which read only the manifest excerpt, know such a mod when
 then holds it); otherwise it is a hash no rule knows. Supporting them later means declarations for an encounter's mechanics
 (D3), a decision of its own.
 
+Superseded (2026-10-19): the DIM link that kept such mods in `leftOut` is removed, and the excerpt no longer reads saved DIM shares; see [docs/example-loops.md](example-loops.md).
+
 ### D36 — The player says when a weapon step breaks a shield or lands precision kills, and when an ability step spends its last charge
 
 **Context.** Shield Break Charge gives Armor Charge when you break a combatant's shield with damage of its element, and
@@ -645,6 +657,8 @@ the file and the error of each one that doesn't (`dotnet test --filter RepoFileV
 loop is found by designing it (D2): the designer's analysis judges its order (FR-6); nothing discovers cycles any
 more (FR-8 dropped). The host boundary test checks the web host only, and the core's pure API is unchanged. D39 adds
 the developer tools under `tools/` as hosts: the web designer stays the only one a player uses.
+
+Superseded (2026-10-19): `builds/` is removed, so `RepoFileValidationTests` opens the e2e build and loop fixtures only; see [docs/example-loops.md](example-loops.md).
 
 ### D39 — Developer tools under `tools/` are hosts too
 
@@ -728,6 +742,8 @@ trace ("refills your energy weapon", or the caveat "no weapon to refill" when th
 (`builds/demolitionist-hunter/loops/grenade-refill-kill.loop.yaml`). The rule viewer draws a refill as its own
 effect, "Refill". No ammo is counted (D37). Marksman's Dodge and Dragon's Shadow, true reloads, aren't authored as
 reloads yet ([backlog.md](backlog.md)).
+
+Superseded (2026-10-19): the example loop `grenade-refill-kill.loop.yaml` is removed with `builds/`; see [docs/example-loops.md](example-loops.md).
 
 ### D43 — An ammo brick picked up is a step the player declares, Special or Heavy, slid over or not
 

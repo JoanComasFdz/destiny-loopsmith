@@ -10,16 +10,6 @@ public sealed record TraceOptions(bool ShowState, bool ShowReasons, bool ShowCav
 /// <summary>Renders played steps the way build notes read: event → outcome [source] + outcome [source].</summary>
 public static class TraceRenderer
 {
-    public static ImmutableArray<StyledLine> RenderSequence(
-        ValidatedBuild build, GameState initial, ImmutableArray<Resolution> resolutions, TraceOptions options)
-    {
-        var opening = options.ShowState
-            ? [StyledText.ToLine(0, "Fresh spawn".ToSpan(Tone.Strong)), .. RenderState(build, initial, [])]
-            : ImmutableArray<StyledLine>.Empty;
-        var steps = resolutions.SelectMany(resolution => RenderResolution(build, resolution, options));
-        return [.. opening, .. steps];
-    }
-
     public static ImmutableArray<StyledLine> RenderResolution(ValidatedBuild build, Resolution resolution, TraceOptions options)
     {
         var header = StyledText.ToLine(0,

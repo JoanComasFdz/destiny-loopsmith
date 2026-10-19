@@ -3,7 +3,7 @@
 # artifact entries; the Tablet of Ruin's numbers come from the Compendium snapshot of 2026-10-09
 # (Artifact Perks tab, Tablet of Ruin section: each perk's name sits in the row above the cited
 # description row), Thunderous Retort's from the snapshot of 2026-10-19 (same layout). Where the creator
-# or the note disagrees, see builds/skip-grenade-hunter/discrepancies.md.
+# or the note disagrees, see builds/skip-grenade-hunter/discrepancies.md at commit d56905d.
 # Hashes: the Bungie manifest (244213.26.06.29.2000-1-bnet.65864), joined by exact name among its
 # artifact perks (ADRs D12); two hashes are two copies with the same icon. Horde Shuttle's manifest has
 # two artifact perks of that name with different icons: its hash is the one the Tablet of Ruin artifact
@@ -131,7 +131,7 @@ elements:
     passives: []
 
   # The Compendium's trigger: a kill of a Severed (or Exhausted) enemy with Arc damage, jolted or
-  # not (the note puts it on a jolted kill; see discrepancies.md).
+  # not (the note puts it on a jolted kill; see builds/skip-grenade-hunter/discrepancies.md at commit d56905d).
   - id: photonic-flare
     name: Photonic Flare
     kind: artifactPerk

@@ -7,7 +7,7 @@ using Loopsmith.Core.Tests.Support;
 
 namespace Loopsmith.Core.Tests.LoopFiles;
 
-/// <summary>Writing build files (a build from a DIM link), and the round trip: the written file reads back as the same build.</summary>
+/// <summary>Writing build files, and the round trip: the written file reads back as the same build.</summary>
 public sealed class BuildFileWritingTests
 {
     private static readonly Build MinimalBuild = ParseBuild(new SourceText("minimal.yaml", """
@@ -19,18 +19,6 @@ public sealed class BuildFileWritingTests
         melee: "?"
         classAbility: "?"
         """));
-
-    [Theory]
-    [InlineData("builds/skip-grenade-hunter/build.yaml")]
-    [InlineData("builds/skip-grenade-hunter-ascension/build.yaml")]
-    public void A_bundled_build_written_out_reads_back_the_same(string path)
-    {
-        var build = ParseBuild(new SourceText(path, File.ReadAllText(RepoFiles.ToPath(path))));
-
-        var written = BuildFileWriting.WriteBuildFile(build, []);
-
-        Assert.Equal(written, BuildFileWriting.WriteBuildFile(ParseBuild(new SourceText("written.yaml", written)), []));
-    }
 
     [Fact]
     public void A_weapon_roll_is_written_with_a_question_mark_for_a_column_not_picked()
@@ -80,10 +68,10 @@ public sealed class BuildFileWritingTests
             [ItemHash.From(3008u)],
             Optional.None<ArtifactLoadout>());
 
-        var written = BuildFileWriting.WriteBuildFile(build, ["From a DIM link.\nSecond line."]);
+        var written = BuildFileWriting.WriteBuildFile(build, ["Started from scratch.\nSecond line."]);
         var read = ParseBuild(new SourceText("written.yaml", written));
 
-        Assert.StartsWith("# From a DIM link.\n# Second line.\n", written, StringComparison.Ordinal);
+        Assert.StartsWith("# Started from scratch.\n# Second line.\n", written, StringComparison.Ordinal);
         Assert.Contains("super: \"?\"\n", written, StringComparison.Ordinal);
         Assert.Contains("leftOut: {items: [2005, 2006], armorMods: [3007]}\n", written, StringComparison.Ordinal);
         Assert.Equal(build.Name, read.Name);

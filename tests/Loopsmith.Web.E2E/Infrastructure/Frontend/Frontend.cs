@@ -10,9 +10,15 @@ namespace Loopsmith.Web.E2E.Infrastructure.Frontend;
 /// </summary>
 public sealed class Frontend(IPage page)
 {
+    /// <summary>The header over every page (Layout/MainLayout.razor): the logo and the screen tabs.</summary>
+    public Layout.Header Header { get; } = new(page);
+
     /// <summary>The start screen (Pages/Home.razor).</summary>
     public Home Home { get; } = new(page);
 
     /// <summary>The loop designer (Pages/Designer.razor).</summary>
     public Designer Designer { get; } = new(page);
+
+    /// <summary>The Compare screen (Pages/Compare.razor).</summary>
+    public Compare Compare { get; } = new(page);
 }

@@ -6,7 +6,7 @@ namespace Loopsmith.Core.StatLoading;
 
 /// <summary>
 /// Pure: which of the player's copies a build wears, after their Bungie login, as DIM resolves a loadout's items: the
-/// copy the build names (a dim.gg share's, or picked) when it is in their account, else their own copy of that item.
+/// copy the build names (picked from their account) when it is in their account, else their own copy of that item.
 /// What the game draws on it (its tier, masterwork and breaker: <see cref="GearMarks"/>) is that copy's.
 /// </summary>
 public static class CopyFinding
@@ -25,7 +25,7 @@ public static class CopyFinding
             .Map(copy => copy.Armor);
 
     /// <summary>
-    /// The player's copy of a build's weapon: the one the build names (a dim.gg share's) when it is theirs, else their
+    /// The player's copy of a build's weapon: the one the build names (picked from their account) when it is theirs, else their
     /// copy of that weapon with the highest tier; none when they own none.
     /// </summary>
     public static Optional<OwnedWeapon> FindWornWeapon(BungieProfile profile, WeaponLoadout weapon)
@@ -64,7 +64,7 @@ public static class CopyFinding
         return new WeaponOptions(slot, options, notes);
     }
 
-    /// <summary>The build's weapons whose copy (the instance id they name: a dim.gg share's, or picked) is in the player's account, by weapon number, with the copy.</summary>
+    /// <summary>The build's weapons whose copy (the instance id they name: picked from their account) is in the player's account, by weapon number, with the copy.</summary>
     public static ImmutableArray<(int Weapon, OwnedWeapon Copy)> ListOwnedCopies(Build build, BungieProfile profile) =>
     [
         .. build.Weapons.SelectMany((weapon, index) => FindOwnCopy(profile, weapon).Match(copy => new[] { (index, copy.Value) }, _ => [])),
@@ -92,7 +92,7 @@ public static class CopyFinding
                     _ => (read.Columns.Add([]), read.Taken)))
             .Columns;
 
-    /// <summary>The copy a build's weapon names (its instance id: a dim.gg share's, or picked), when it is in the player's account; none for a weapon that names none.</summary>
+    /// <summary>The copy a build's weapon names (its instance id: picked from their account), when it is in the player's account; none for a weapon that names none.</summary>
     public static Optional<OwnedWeapon> FindOwnCopy(BungieProfile profile, WeaponLoadout weapon) =>
         weapon.Instance.Bind(instance => profile.Weapons.Where(owned => owned.InstanceId == instance).Select(Optional.Some).FindFirstSome());
 

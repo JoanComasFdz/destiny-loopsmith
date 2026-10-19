@@ -2,12 +2,11 @@ using System.Collections.Immutable;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 using Loopsmith.Core.Orchestration;
-using Loopsmith.Web.Hosting;
 
 namespace Loopsmith.Web.State;
 
 /// <summary>Where a loop offered for comparison comes from; the pickers group their options by it.</summary>
-public enum ChoiceOrigin { Current, Example, Imported }
+public enum ChoiceOrigin { Current, Imported }
 
 /// <summary>A loop imported on the Compare screen: held in memory for this tab only, never stored.</summary>
 public sealed record ImportedLoop(string Id, DesignSession Session);
@@ -25,22 +24,19 @@ public sealed record ComparedLoop(string Id, Result<DesignSession, string> Desig
 public sealed record ComparisonView(ComparedLoop Left, ComparedLoop Right, Optional<LoopComparison> Comparison);
 
 /// <summary>
-/// Pure: what each side of the comparison can show (the open design, the bundled example loops, loops imported
-/// this session), which two are shown, and the comparison itself (<see cref="LoopDesigning.CompareLoops"/>).
+/// Pure: what each side of the comparison can show (the open design, loops imported this session), which two are shown, and the comparison itself (<see cref="LoopDesigning.CompareLoops"/>).
 /// </summary>
 public static class ComparisonPicking
 {
     public const string CurrentDesignId = "current";
-    private const string ExamplePrefix = "example:";
     private const string ImportedPrefix = "imported:";
 
     public static ImmutableArray<ComparisonChoice> ListChoices(
-        LoopsmithBundle bundle, Optional<DesignSession> current, ImmutableArray<ImportedLoop> imported) =>
+        Optional<DesignSession> current, ImmutableArray<ImportedLoop> imported) =>
     [
         .. current.Match(
             open => [new ComparisonChoice(CurrentDesignId, $"{open.Value.Design.Name} (in the designer)", ChoiceOrigin.Current, ToOpened(open.Value))],
             _ => ImmutableArray<ComparisonChoice>.Empty),
-        .. bundle.Loops.Select(DescribeExample),
         .. imported.Select(loop => new ComparisonChoice(loop.Id, $"{loop.Session.Design.Name} (imported)", ChoiceOrigin.Imported, ToOpened(loop.Session))),
     ];
 
@@ -89,13 +85,6 @@ public static class ComparisonPicking
 
     private static Optional<ComparisonChoice> FindChoice(ImmutableArray<ComparisonChoice> choices, string id) =>
         Optional.FromNullable(choices.FirstOrDefault(choice => choice.Id == id));
-
-    private static ComparisonChoice DescribeExample(BundledLoop loop) =>
-        new(
-            ExamplePrefix + loop.File.Path,
-            loop.Opened.Match(ok => $"{ok.Value.Design.Name} (example)", _ => $"{loop.File.Path.Split('/')[^1]} (does not import)"),
-            ChoiceOrigin.Example,
-            loop.Opened);
 
     private static Result<DesignSession, string> ToOpened(DesignSession session) =>
         new Result<DesignSession, string>.Ok(session);

@@ -2,7 +2,7 @@
 # the Compendium snapshot of 2026-10-09 (Armor Perks tab).
 elements:
   # The Compendium names it Ionic Overclock and lists only Handling and Reload Speed, both "+?"; the
-  # note's vent is not encoded (see discrepancies.md).
+  # note's vent is not encoded (see builds/skip-grenade-hunter/discrepancies.md at commit d56905d).
   - id: luminopotent-2pc
     name: Ionic Overclock
     kind: armorSetBonus

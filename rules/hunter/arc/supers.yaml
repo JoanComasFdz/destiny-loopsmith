@@ -9,7 +9,7 @@
 # Ability energy amounts are base values: chunk energy scalars and stats are not applied, and
 # chunkScalar / baseCooldown are facts recorded from the Compendium that change nothing (ADRs D5).
 #
-# Format gaps that shape these rules (see builds/skip-grenade-hunter/discrepancies.md):
+# Format gaps that shape these rules (see builds/skip-grenade-hunter/discrepancies.md at commit d56905d):
 #  - an ability damage source cannot name a specific ability or its damage type ("Arc grenades",
 #    "Skip Grenade drones" -> `grenade`);
 #  - movement qualifiers are the abilities' secondary uses only (ADRs D9): the melee while sliding

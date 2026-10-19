@@ -16,7 +16,20 @@ namespace Loopsmith.Core.Tests.BuildComposition;
 /// </summary>
 public sealed class JumpSlotTests
 {
-    private const string BuildPath = "builds/skip-grenade-hunter/build.yaml";
+    private const string BuildPath = "build.yaml";
+
+    /// <summary>An Arcstrider with its abilities, an aspect and a fragment: something for a jump to set off, were it played.</summary>
+    private const string ArcstriderText = """
+        name: Arcstrider
+        class: hunter
+        subclass: arc
+        super: arc-staff
+        grenade: skip-grenade
+        melee: combination-blow
+        classAbility: gamblers-dodge
+        aspects: [tempest-strike]
+        fragments: [spark-of-shock]
+        """;
 
     private static readonly RuleCatalog Catalog =
         FileSourceFetching.ReadRuleFiles(RepoFiles.ToPath("rules"))
@@ -43,9 +56,8 @@ public sealed class JumpSlotTests
     [Fact]
     public void A_jump_is_equipped_without_a_warning_and_sets_nothing_off()
     {
-        var text = ReadBuildText();                                   // impure
-        var without = Validate(text);
-        var with = Validate($"{text}\njump: triple-jump\n");
+        var without = Validate(ArcstriderText);
+        var with = Validate($"{ArcstriderText}\njump: triple-jump\n");
 
         var built = Assert.IsType<Result<ValidatedBuild, string>.Ok>(with).Value;
         var plain = Assert.IsType<Result<ValidatedBuild, string>.Ok>(without).Value;
@@ -85,9 +97,6 @@ public sealed class JumpSlotTests
 
         Assert.Empty(build.Issues);
     }
-
-    private static string ReadBuildText() =>
-        File.ReadAllText(RepoFiles.ToPath(BuildPath));
 
     private static Result<ValidatedBuild, string> ValidateHunter(string line) =>
         Validate($"name: Hunter\nclass: hunter\nsubclass: arc\n{line}\n");

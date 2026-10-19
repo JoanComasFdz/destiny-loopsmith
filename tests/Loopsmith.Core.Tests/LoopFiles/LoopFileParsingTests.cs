@@ -8,7 +8,7 @@ namespace Loopsmith.Core.Tests.LoopFiles;
 
 public sealed class LoopFileParsingTests
 {
-    private const string LoopPath = "builds/x/loops/test.loop.yaml";
+    private const string LoopPath = "test.loop.yaml";
 
     private const string SpecPath = "docs/loop-format.md";
 

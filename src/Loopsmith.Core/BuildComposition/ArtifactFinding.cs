@@ -6,7 +6,7 @@ namespace Loopsmith.Core.BuildComposition;
 
 /// <summary>
 /// Pure: a build's artifact, by the manifest excerpt: the one it names (<c>artifact: { hash, slots }</c>, picked in the designer's
-/// artifact editor), else — a build that names artifact perks, not the artifact (a build file, a DIM link) — the one that unlocks
+/// artifact editor), else — a build that names artifact perks, not the artifact (a build file) — the one that unlocks
 /// the most of its perks. Artifacts share perks (Horde Shuttle is both the Tablet of Ruin's and the Implement of
 /// Curiosity's), so each perk counts once, by any of its hashes, and there is none when two unlock as many: no guess.
 /// </summary>
@@ -35,7 +35,7 @@ public static class ArtifactFinding
             : Optional.Some(candidates[0]);
     }
 
-    /// <summary>The build's artifact perks: its elements (each with its hashes), then what the DIM loadout had that the rules don't know.</summary>
+    /// <summary>The build's artifact perks: its elements (each with its hashes), then those it has that the rules don't know.</summary>
     private static ImmutableArray<(Optional<ElementId> Element, ImmutableArray<ItemHash> Hashes)> ListArtifactPerks(RuleCatalog catalog, Build build) =>
     [
         .. build.ArtifactPerks.Select(id => (Optional.Some(id), catalog.Elements.TryGetValue(id, out var element) ? element.Hashes : [])),

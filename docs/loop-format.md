@@ -1,10 +1,10 @@
-# Designed loops: file format (v1), starting from scratch or a DIM link, sharing, analysis, comparison
+# Designed loops: file format (v1), starting from scratch, sharing, analysis, comparison
 
 **The product of Loopsmith is a loop someone designs**
 ([ADRs D2](ADRs.md#d2--the-designed-loop-is-the-product)): an ordered list of steps, each a trigger
 ("dodge", "throw a grenade and kill three") or a state the player declares ("Bolt Charge at max",
 D3). You pick a build, choose a step, see everything it sets off and what is available next, choose
-again, and so on — the build can come from a DIM link, or start from scratch. Loopsmith describes cause and effect
+again, and so on — the build can start from scratch, or come from an imported build or loop file. Loopsmith describes cause and effect
 ([ADRs D1](ADRs.md#d1--loopsmith-describes-cause-and-effect-it-doesnt-simulate-the-game)), so a
 loop is judged by its **order of triggers**: whether each step gets what it needs from the steps
 before it, and whether the order repeats. The loop is data: it can be saved, shared, imported,
@@ -60,8 +60,7 @@ build: |                                # required — the build file's full tex
 
 ### Action tokens
 
-Same tokens everywhere: loop files, web share links and a golden test's scenario file
-(`builds/skip-grenade-hunter/scenario.txt`: one token per line or comma-separated; `#` starts a comment):
+Same tokens everywhere: loop files and web share links:
 
 `grenade[:hold]|melee[:slide|air]|super[:air|combo|guard][:hit|kill[:N]]` · `class[:air]` · `kinetic|energy|power[:hit|kill[:N]]` ·
 `kinetic|energy|power:reload` · `kinetic|energy|power:ready` · `ammo:special|heavy[:slide]` · `finisher` · `pickup:<pickup-id>` · `max:<status-id>` · `end:<status-id>` · `pack:new` · `health:critical` · `health:hit` — and last, an option:
@@ -340,11 +339,11 @@ replays in its new order.
 
 ## Starting from scratch
 
-Home's **Start from scratch** button, above the DIM link, opens the designer on a new loop, *Arc Hunter loop*, for a
+Home's **Start from scratch** button opens the designer on a new loop, *Arc Hunter loop*, for a
 build named *Arc Hunter* (class `hunter`, subclass `arc`: Arcstrider) with nothing equipped: no super, grenade, melee or
 class ability, no aspects, fragments, weapons, armor, mods, artifact perks or stats. Its build file names only that
 (`name`, `class`, `subclass`, and a comment saying where it came from): an ability left out is an empty slot, not `"?"`
-([rule-format.md](rule-format.md#build-file-buildsbuildbuildyaml)), so the export and the share link carry it as it
+([rule-format.md](rule-format.md#build-file-buildyaml)), so the export and the share link carry it as it
 is and it reopens empty.
 
 The Subclass box shows the Arcstrider icon and a dashed square named for each empty ability (Super, Class ability,
@@ -363,39 +362,11 @@ so it can still be cast — it sets off what reacts to any cast).
 
 ## Starting from a DIM link
 
-The web designer's Home starts a loop from a DIM link ([ADRs D27](ADRs.md#d27--a-dim-link-starts-a-build-of-what-the-catalog-knows-by-hash-the-rest-is-left-out)):
-paste it, press the button, and the designer opens with the loadout's build, named after the
-loadout, its link as the build's `source` (the designer shows both). It reads the two kinds of link
-DIM itself opens:
+Removed: Home no longer starts a loop from a DIM link, and ships no DIM builds ([example-loops.md](example-loops.md);
+the last commit with it is `d56905d`).
 
-* **A dim.gg share** — what DIM's Share button copies (`https://dim.gg/4j5nz4q/Skip-Grenade`, or just
-  the id). The loadout is on DIM's servers: the web app asks DIM's API for it
-  (`GET https://api.destinyitemmanager.com/loadout_share?shareId=…`, open to any caller: no key, no
-  header — [hosting.md](hosting.md#dim-links)). When DIM can't be reached or doesn't hand it over, the
-  message says how to get the other kind: the dim.gg page's "Open Loadout in DIM" link carries the whole
-  loadout (copy that link and paste it instead); a share DIM doesn't know is said so.
-* **A link that carries its loadout** — DIM's Loadouts page with the loadout as JSON in `?loadout=`
-  (D2ArmorPicker, guardian.report): read in the browser, nothing is fetched.
+## The build in the designer
 
-Anything else is `That isn't a DIM link …`. Items the manifest excerpt lacks are read from Bungie's full
-manifest first, which the tab loaded when the app opened (the button says so — [hosting.md](hosting.md#bungies-manifest)),
-and the same happens when a shared loop names them. The loadout's items are named only by manifest hash, so
-the build holds what the catalog recognises by hash, and nothing is guessed:
-
-| From the loadout | Becomes |
-|---|---|
-| the subclass item | `class` and `subclass` — the glossary's `subclasses` ([rule-format.md](rule-format.md#glossary-rulesglossaryyaml): the nine Light ones, whose hashes DIM's source lists, and the six Stasis and Strand ones); a Prismatic loadout, or one without a subclass, can't start a build yet |
-| the subclass's plugs, in socket order | the super, grenade, melee and class ability, the jump, aspects and fragments the catalog has a hash for, for the loadout's class and subclass (another class's, such as the Hunter's Spark of Shock on a Striker, is left out); an ability it has none for is `"?"`, a jump it has none for is left out (it has no part in a loop) |
-| the other equipped items (and the Loadout Optimizer's exotic) | `exoticArmor`; a weapon the manifest excerpt knows ([rule-format.md](rule-format.md#manifest-excerpt-rulesmanifestyaml)) becomes one of `weapons` — its `hash` (its slot, name, damage type, ammo type and archetype are the manifest's), and as its `roll` the perk each trait column rolls with among the item's `socketOverrides` (a loadout saved with its perks; most name the weapon only) |
-| the armor pieces, by their manifest set | `armorSetBonuses`: each set perk the pieces grant (2 or 4 of a set) that the catalog has a hash for; the pieces themselves (legendary armor) are left out |
-| `parameters.mods` (repeats are stacked copies) | `armorMods` |
-| `parameters.artifactUnlocks` | `artifactPerks` |
-| anything else — legendary armor, a jump the rules don't have (another subclass's), a weapon the excerpt doesn't know, a hash no element has | `leftOut`, by hash and where the loadout listed it |
-
-The loadout's name becomes the build's, without Destiny's icon glyphs (DIM draws them with its own
-font: "Arc  - Skipp grenade" reads "Arc - Skipp grenade"). The build is written as an ordinary build
-file (comments say where it came from), so the loop
-embeds, exports, shares and replays it like any other ([rule-format.md](rule-format.md#build-file-buildsbuildbuildyaml)).
 The designer shows the build the way DIM shows a loadout — the subclass with its super, abilities,
 aspects and fragments, the artifact (the one the build names, else the one that unlocks the most of the build's
 artifact perks — none on a tie — tappable for Bungie's text and which of its perks the build has) and its perks, the weapons (kinetic, energy, heavy) with their element and
@@ -416,31 +387,28 @@ have. An element the rules mark `inert` ([rule-format.md](rule-format.md#element
 ammo, weapon-handling and resistance mods, the Arcstrider's jumps) is known: its details say "No rules needed." and why, and the
 build check doesn't warn about it. A raid's, an activity's or a seasonal mod isn't supported: it is kept in `leftOut`
 but ignored, faded with a ✕ instead of ⊘, not listed under **Not in Loopsmith yet**, and Validation says once what it
-ignored ([Raid, activity and seasonal mods](#raid-activity-and-seasonal-mods)). A loadout for another class than its subclass's is an error, and so is text that
-isn't a loadout.
+ignored ([Raid, activity and seasonal mods](#raid-activity-and-seasonal-mods)).
 
-**Picking a weapon's perks.** A DIM link usually carries the weapon, not its roll, so the designer lets you pick
-it: click a perk square (a column that rolls) and choose among what the manifest says that column rolls
+**Picking a weapon's perks.** A weapon picked from [Every item](#every-item) comes without its roll, so the
+designer lets you pick it: click a perk square (a column that rolls) and choose among what the manifest says that column rolls
 with (enhanced versions included; the ones the rules know are marked), or **Clear** it back to "?". An
 enhanced trait is drawn as the game and DIM draw it — Bungie gives it the base perk's image — with a gold glow over
 the circle's lower half, a gold bar down its left side and a gold up-arrow, on the weapon's perk square, in the
 picker and in a step's text ("Slice (enhanced)"). The
-pick goes into the embedded build's weapon entry as `roll` ([rule-format.md](rule-format.md#build-file-buildsbuildbuildyaml)) —
+pick goes into the embedded build's weapon entry as `roll` ([rule-format.md](rule-format.md#build-file-buildyaml)) —
 only that entry is rewritten, so the build file's comments stay — and the steps replay with the new
 build: a perk the rules know now sets things off; one they don't is shown with its ⊘, and said so under
-Validation. Hand-written builds pick the same way; a perk they name in `perks` sits in its column and
-gives way to a pick there. The Home cards stay read-only. After a Bungie login, the perks the player's own copy doesn't
+Validation. A perk a build file names in `perks` sits in its column and gives way to a pick there. After a Bungie login, the perks the player's own copy doesn't
 have are marked, and picking one is warned about ([Weapons from your account](#weapons-from-your-account)).
 
 **A weapon's mod.** A weapon with a mod socket (a legendary; most exotics have none) shows its mod as a square after
-its perks — dashed with a + while the socket is empty. A DIM link gives it when the loadout saved it, and so does a
-weapon picked from the player's own. In the designer, clicking it opens the **weapon mod picker**, under the weapon: every mod Bungie's
+its perks — dashed with a + while the socket is empty. A weapon picked from the player's own
+gives it. In the designer, clicking it opens the **weapon mod picker**, under the weapon: every mod Bungie's
 manifest says that weapon's mod socket takes — not marked in green as perks are: the rules know every mod the
 Compendium lists, and one they don't (an old Adept mod) carries its ⊘ — the enhanced ones (framed in gold)
 listed too but dimmed and not clickable unless the weapon is known to be Tier 4 or 5 — after a Bungie login, the
-player's copy's tier says; without one, an enhanced mod can't be picked here (a DIM link or a build file can still name
-one). **Remove mod** empties the socket. The pick goes into the embedded build's weapon entry as `mod`
-([rule-format.md](rule-format.md#build-file-buildsbuildbuildyaml)), only that entry is rewritten, and the steps replay.
+player's copy's tier says; without one, an enhanced mod can't be picked here (a build file can still name one). **Remove mod** empties the socket. The pick goes into the embedded build's weapon entry as `mod`
+([rule-format.md](rule-format.md#build-file-buildyaml)), only that entry is rewritten, and the steps replay.
 Almost every mod is inert (stats, handling, ammo, radar: "No rules needed."); **Synergy** fills a counter with this
 weapon's kills and spawns a pickup of the weapon's element — Kinetic an Orb of Power, Arc an Ionic Trace, Solar a
 Firesprite, Void a Void Breach, Stasis a Stasis Shard, Strand a Tangle. Twelve kills in one step (eight with the
@@ -460,34 +428,17 @@ give it, Grenade Kickstart uses it up. Its own rules stay in the rules card.
 Every keyword in it (Bolt Charge, Jolted, Ionic Trace) is in its affinity's colour. The name links to the item's light.gg page, and so
 does a weapon's name in the loadout. An exotic armor shows its exotic perk; an exotic weapon its intrinsic,
 each perk its columns hold and its catalyst. Legendary armor and weapons open nothing: their perks and mods
-carry what there is to know. The **armor sets** sit under the armor: each set with the pieces worn (a DIM
-loadout's) and its 2- and 4-piece perks, dimmed when not active, each with its own details.
+carry what there is to know. The **armor sets** sit under the armor: each set with the pieces worn and its 2- and 4-piece perks, dimmed when not active, each with its own details.
 
 **An exotic's catalyst.** An exotic weapon with a catalyst shows it as a square after its perks, off until the
-build turns it on (a DIM link doesn't say). In the designer its details switch it on or off: the embedded
+build turns it on. In the designer its details switch it on or off: the embedded
 build's weapon entry gets `catalyst: true`, the catalyst's element is equipped, and the steps replay. Thunderlord's
 Return Stroke refills it on each lightning strike (a kill, or a hit step's 10th hit: ADRs D42). A catalyst outside the
 loop is shown, and its details say "No rules needed." and why; one the rules don't know yet carries the ⊘. Validation says nothing of either.
 
-**Shared DIM builds on Home.** A share can ship with the app as `builds/<slug>/dim-loadout.json` —
-its link and the loadout as DIM's API hands it over (the share page's "Open Loadout in DIM" link holds
-the same as `?loadout=` JSON, without the items' instance ids):
-
-```json
-{ "link": "https://dim.gg/2jguuoq/Arc-Skipp-grenade", "loadout": { "name": "…", "classType": 1, "equipped": [ … ], "parameters": { "mods": [ … ] } } }
-```
-
-Home shows each one as a card — DIM offers no embeddable preview (its share page has only a stock
-link image) — with the build's name, class and subclass, the same DIM-style loadout, and how much it
-left out; "Start designing" opens it like a pasted
-link, without asking DIM. The owner's own Skip Grenade build is the first
-([builds/skip-grenade-hunter/dim-loadout.json](../builds/skip-grenade-hunter/dim-loadout.json); how it
-differs from the hand-written `build.yaml` is in that build's discrepancies). The hand-written builds
-stay on Home as links, with "import a build.yaml" and "import a loop".
-
 ## Editing the subclass
 
-The designer's Subclass box has **⋯** next to its title, for every build (the Home cards stay read-only). It opens the
+The designer's Subclass box has **⋯** next to its title, for every build. It opens the
 subclass editor, laid out like the game's subclass screen: the subclass's icon, its name in capitals and "Hunter
 Subclass" as the header (the subclass's own name, Strand, and no icon when the manifest excerpt doesn't know its item);
 the super on the left; Abilities (class ability, jump, melee, grenade) and the two Aspects in one row beside it;
@@ -508,7 +459,7 @@ has no ✕: it is only swapped for another. The aspects open the fragment slots 
 and Flow State 4, Tempest Strike and Ascension 5); the count follows the aspects at once. An aspect whose count the rules
 don't give shows "?" slots and limits nothing. An aspect change that closes slots takes out the last fragments and names
 them; the fragments left keep their slots, or are packed from the first one when a closed slot held one. A build with more
-fragments than its aspects open (a build file or a DIM link: build validation only warns) shows them all, and a warning
+fragments than its aspects open (a build file: build validation only warns) shows them all, and a warning
 under Fragments says Save needs aspects that open enough slots, or fewer fragments. **Cancel**, ✕ or Escape throws the changes away.
 
 **Save** rewrites only the embedded build file's `super`, `grenade`, `melee`, `classAbility`, `jump`, `aspects`,
@@ -522,13 +473,12 @@ gone gives back its −10 Grenade); stats the player typed stay as typed. The ex
 subclass. What the subclass can hold comes from the manifest excerpt (`plugs` of the subclass item, written by
 `tools/manifest/` for each of the glossary's fifteen subclasses). A plug is the rules' element only when the rules know it
 for the build's class: the rules author Skip Grenade and the Sparks for the Hunter, so on a Striker or a Stormcaller
-they are left out (⊘), in the editor and from a DIM link alike.
+they are left out (⊘), in the editor and from a build file alike.
 
 ## Artifact
 
 In the designer the **Artifact** box has ⋯ (also on a loop from scratch, whose box shows an empty artifact): it opens
-the **artifact editor**, laid out like the game's artifact screen since Monument of Triumph (Artifacts 2.0). The Home
-cards stay read-only.
+the **artifact editor**, laid out like the game's artifact screen since Monument of Triumph (Artifacts 2.0).
 
 * **The artifact.** The header shows the artifact's icon, its name and "Artifact"; ⋯ beside the name opens a dropdown
   of the seven artifacts (NPA Repulsion Regulator, Queensfoil Censer, Hunter's Journal, Slayer Baron Apothecary Satchel,
@@ -554,15 +504,14 @@ cards stay read-only.
   each in slot order, so the perks come back in the slots they were put in; the build check runs again and the steps replay
   (take Flashover out and maxing Bolt Charge no longer makes you Amplified). The export and the share link carry them.
   **Cancel**, ✕ or Escape throws the changes away (Escape closes only the dropdown when it is open). A loop that
-  doesn't name its artifact (a build file, a DIM link) opens with the one that unlocks the most of its perks, each placed
+  doesn't name its artifact (a build file) opens with the one that unlocks the most of its perks, each placed
   in the free slot that takes the fewest tiers (the highest tiers first).
 
 ## Armor mods
 
 In the designer every armor piece shows its **mod sockets** next to it, and its energy under them ("Energy 7 / 10";
 "7 / ?" until the player's Bungie login gives the capacity of their copy of the piece, [Stats](#stats)); the
-**General mods** row under the armor holds every piece's general socket. The Home cards stay read-only: they show the
-mods as before, each piece with the mods of its slot and the general mods together ([ADRs D30](ADRs.md#d30--armor-mods-are-picked-in-the-pieces-sockets-the-energy-budget-holds-when-its-capacity-is-known)).
+**General mods** row under the armor holds every piece's general socket ([ADRs D30](ADRs.md#d30--armor-mods-are-picked-in-the-pieces-sockets-the-energy-budget-holds-when-its-capacity-is-known)).
 
 * **The sockets** are the game's, from Bungie's manifest (the listing read when the app opens, with every weapon and
   armor piece): a piece's general socket, the sockets of its slot's mods (three on an Armor 3.0 piece, two on an older
@@ -592,7 +541,7 @@ mods as before, each piece with the mods of its slot and the general mods togeth
   the socket. Picking the same mod again stacks its copies (Elemental Charge ×2). No picker offers a raid's, an
   activity's or a seasonal mod.
 * **What changes.** Only the embedded build file's mod entries: `armorMods` (the rules' mods), `armorModPlugs` (the
-  exact copy, for a mod with a cheaper one: [rule-format.md](rule-format.md#build-file-buildsbuildbuildyaml)) and the
+  exact copy, for a mod with a cheaper one: [rule-format.md](rule-format.md#build-file-buildyaml)) and the
   mods in `leftOut`; Bungie's manifest is read first for a mod the excerpt lacks (its name and icon). The build check
   runs again and the steps replay; stats added up from the player's armor are added up again (a stat mod changes
   them), typed ones stay. The export and the share link carry the mods.
@@ -608,10 +557,10 @@ category says which mods they are (`enhancements.raid_*`, `enhancements.season_*
 their names, so a new raid's are covered too.
 
 * **No picker offers them**: a piece's raid or activity socket isn't shown, and the mod picker lists none of their mods.
-* **A DIM link that has them** keeps them in the build's `leftOut`, as the loadout had them, so a shared loop still
-  shows them — but they are ignored: they set nothing off and take no socket. Their square is faded and grey, with a
-  small ✕ where ⊘ goes ("Not supported: raid, activity and seasonal mods are ignored."); on the Home card it sits with
-  the general mods, in the designer under **Not supported**; **About …** says the same. They aren't counted under
+* **A build that has them** in its `leftOut` (one a DIM link started, before it was removed) still shows them — but
+  they are ignored: they set nothing off and take no socket. Their square is faded and grey, with a
+  small ✕ where ⊘ goes ("Not supported: raid, activity and seasonal mods are ignored."), in the designer under
+  **Not supported**; **About …** says the same. They aren't counted under
   **Not in Loopsmith yet** (they aren't a gap), and the build check says once what it ignored, as info:
   `Ignored from the DIM loadout: Herd Thinner ×2, Taken Barrier — raid, activity and seasonal mods aren't supported.`
 
@@ -630,11 +579,11 @@ steps replay:
 
 * **Typed** — "Edit": six inputs, a whole number 0..200 each, or empty for "?".
 * **From the player's own armor** — "Log in with Bungie" ([hosting.md](hosting.md#bungie-login)). Loopsmith asks
-  Bungie for read-only access and reads the player's armor and weapons (worn, carried and in the vault). A dim.gg share names
-  the copy of each piece it wears (its instance id, kept as the build's `armorCopies`), so:
-  * **their own share** — every copy is in their account: the build wears those pieces, and its stats are set from
+  Bungie for read-only access and reads the player's armor and weapons (worn, carried and in the vault). A build can name
+  the copy of each piece it wears (its instance id, the build's `armorCopies`), so:
+  * **their own copies** — every copy is in their account: the build wears those pieces, and its stats are set from
     them at once;
-  * **anyone else's** (or a link that names no copies) — nothing changes yet: they pick their own pieces with ⋯.
+  * **anyone else's** (or a build that names no copies) — nothing changes yet: they pick their own pieces with ⋯.
 
   The Stats section then says only that, in one line ("Your armor is loaded…", or "You can now pick your armor: tap
   ⋯…"), with **Log out**; it shows no total of its own. Log out forgets the player's armor: the build keeps the
@@ -661,7 +610,7 @@ steps replay:
 and weapon the build wears shows its copy's **gear tier** (Bungie's diamonds down the square's left edge; tier 1 has
 none), and a **masterworked** copy has a gold border and the masterwork glow (an exotic's its own); the armor picker's
 pieces show theirs, and the piece shown says it ("Tier 5 · Masterworked"). The copy is the one the build names when
-it is the player's (their own share, or a piece picked; a weapon's `instance`), else their own copy of that item, as
+it is the player's (their own copies the build names, or a piece picked; a weapon's `instance`), else their own copy of that item, as
 DIM resolves a shared loadout's items: for armor the one the picker ticks (the most points), for a weapon its highest
 tier. Each square is drawn as DIM draws it: its **season watermark** over it (the season's or expansion's icon in
 the top-left corner), and in the top-right corner a legendary weapon's **frame** (Adaptive Frame; an exotic shows
@@ -679,14 +628,13 @@ dark-mode extension such as Dark Reader would otherwise repaint the light footer
 plugs in their sockets and, socket by socket, the perks each copy can switch to (Bungie's reusable plugs: a column that
 rolled two perks or more has each of them):
 
-* **The build's own copies** — a weapon whose `instance` (a dim.gg share's) is theirs takes that copy's perks: in each
-  trait column, the plug of its sockets the column rolls with (a share saves only the perks it was told to; the copy
-  has them all), `catalyst: true` when its catalyst socket holds the catalyst, and its mod. Only those entries of the embedded
+* **The build's own copies** — a weapon whose `instance` is theirs takes that copy's perks: in each
+  trait column, the plug of its sockets the column rolls with (the copy has them all), `catalyst: true` when its catalyst socket holds the catalyst, and its mod. Only those entries of the embedded
   build change, and the steps replay. The Stats section's line says so ("Its weapons are yours too, with their
   perks."), or, for weapons that aren't theirs, to pick their own with ⋯.
 * **⋯ next to each weapon slot** opens the **weapon picker** for it, after the login on **Yours**: the player's
   weapons for that slot, the copy the build names first (✓ when it is theirs; for someone
-  else's share none is ticked, so their own copy can be used to load its perks), then that weapon's other copies, then
+  else's loop none is ticked, so their own copy can be used to load its perks), then that weapon's other copies, then
   the rest by name; each with its tier, masterwork, breaker and element as in the loadout. Hovering one (or a
   first tap) shows its type, tier and its perks column by column, the columns side by side (a column that rolled two
   or more stacks them top to bottom, framed together, the one it holds on top on DIM's blue; on a phone the perks show
@@ -700,7 +648,7 @@ rolled two perks or more has each of them):
   (the Bungie login section shows its progress bar; the page keeps working meanwhile — [hosting.md](hosting.md#bungies-manifest));
   one it can't place is counted, not listed.
 * **Perks your copy doesn't have** — the perk picker still offers every perk a column rolls with. For a weapon whose
-  copy (its `instance`: picked from Yours, or the player's own dim.gg share's) is theirs, each perk the copy doesn't
+  copy (its `instance`: picked from Yours, or named by a build of theirs) is theirs, each perk the copy doesn't
   have in that column carries a small amber **!** in its square's upper-right corner (clear of the ⊘ in the lower
   right and of an enhanced trait's arrow on the left) and "Not on your copy" under its name. Picking one puts the same
   **!** on the weapon's perk square and a yellow warning under Validation, one line per perk, whether or not the rules
@@ -714,8 +662,7 @@ Nothing of the login is kept (the player's armor and weapons stay in the tab unt
 stats and the copies are, in the loop's build, so a shared loop carries its author's numbers and pieces.
 
 <a id="every-item"></a>**Every item.** In the designer every weapon slot (kinetic, energy, heavy) and every armor slot
-(helmet, arms, chest, legs, class item) shows, an empty one too, each with **⋯**, with or without a login (Home's
-cards stay read-only). Without a login ⋯ opens its picker on **Every item**; after one, a **Yours / Every item** switch
+(helmet, arms, chest, legs, class item) shows, an empty one too, each with **⋯**, with or without a login. Without a login ⋯ opens its picker on **Every item**; after one, a **Yours / Every item** switch
 picks between the player's own items (above) and these, starting on Yours:
 
 * **The list** — every legendary and exotic weapon of the game for that slot, or every legendary and exotic armor piece
@@ -856,8 +803,8 @@ First pass (from a fresh spawn, where it differs)
 
 ## Comparison
 
-Two loops' **orders** side by side (the web Compare page). The loops may use different
-builds; both replay with the same catalog. The comparison uses each loop's repeating pass:
+Two loops' **orders** side by side (the web Compare page, which offers the loop in the designer and the `.loop.yaml`
+files imported there). The loops may use different builds; both replay with the same catalog. The comparison uses each loop's repeating pass:
 
 * each loop's order on one line, with its verdict;
 * then trigger by trigger (a declared state counts as one), matched by occurrence of the same action —

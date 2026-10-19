@@ -6,7 +6,7 @@ namespace Loopsmith.Web.E2E.Scenarios.Build.Subclass;
 
 /// <summary>
 /// The subclass editor (docs/loop-format.md, "Editing the subclass"): it keeps the game's limit on fragments, and warns
-/// when the build holds more fragments than its aspects open (a build file or a DIM link: validation only warns).
+/// when the build holds more fragments than its aspects open (a build file: validation only warns).
 /// </summary>
 public sealed class SubclassEditorTests : BaseE2E
 {

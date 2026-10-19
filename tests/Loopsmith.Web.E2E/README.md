@@ -84,7 +84,7 @@ area, class = a topic in it (`<Topic>Tests.cs`) in a folder of its own with its 
 rule h), method = one scenario (one Gherkin), played once per screen attribute.
 
 ```
-Scenarios/Starting/          start from scratch, from a DIM link
+Scenarios/Starting/          start from scratch
 Scenarios/Build/Subclass/    picking aspects, fragments, abilities; what the build check says
 Scenarios/Build/Artifact/    the same for the artifact
 Scenarios/Build/Weapons/     the same for weapons and their perks
@@ -103,7 +103,7 @@ for a folder), and the "E2E videos" workflow keeps the latest recording of each 
 A folder exists once it has a scenario. A class has a folder of its own, named for it without `Tests`
 (`Rules/Hunter/Arc/Aspects/FlowState/FlowStateTests.cs`), and its namespace is its domain folder's
 (E2E-TEST-CODE-RULES.md, rule h). A scenario's fixture files (a minimal `.build.yaml` / `.loop.yaml`) sit next to
-its class and are copied to the test output; never under `builds/` (the web app would list them on Home).
+its class and are copied to the test output.
 
 ## Isolation and parallelism
 

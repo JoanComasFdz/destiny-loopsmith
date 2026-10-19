@@ -8,8 +8,7 @@ using Loopsmith.Core.Tests.Support;
 namespace Loopsmith.Core.Tests.RepoFileChecking;
 
 /// <summary>
-/// Every build and loop file of the repository opens against its rules, as the designer's import opens it: the
-/// builds (<c>builds/*/build.yaml</c>), their designed loops (<c>builds/*/loops/*.loop.yaml</c>) and the e2e
+/// Every build and loop file of the repository opens against its rules, as the designer's import opens it: the e2e
 /// scenarios' fixtures (<c>*.build.yaml</c>, <c>*.loop.yaml</c> under <c>tests/Loopsmith.Web.E2E/Scenarios</c> and <c>Rules</c>).
 /// A fixture meant to be refused is listed in <see cref="Refused"/> with the error it must give; one whose weapon the
 /// designer reads from Bungie's full manifest is listed in <see cref="FullManifestOnly"/> with the hashes the excerpt
@@ -115,9 +114,7 @@ public sealed class RepoFileValidationTests
     {
         var files = ListRepoFiles();   // impure
 
-        Assert.Contains(files, path => path.StartsWith("builds/", StringComparison.Ordinal) && path.EndsWith("/build.yaml", StringComparison.Ordinal));
-        Assert.Contains(files, path => path.StartsWith("builds/", StringComparison.Ordinal) && path.EndsWith(".loop.yaml", StringComparison.Ordinal));
-        Assert.Contains(files, path => path.StartsWith("tests/", StringComparison.Ordinal) && path.EndsWith(".build.yaml", StringComparison.Ordinal));
+        Assert.Contains(files, path => path.EndsWith(".build.yaml", StringComparison.Ordinal));
         Assert.All(Refused.Keys.Concat(FullManifestOnly.Keys), path => Assert.Contains(path, files));
     }
 
@@ -135,25 +132,17 @@ public sealed class RepoFileValidationTests
             ? LoopDesigning.ListUnknownLoopFileHashes(RepoCatalog.Catalog, file)
             : LoopDesigning.ListUnknownBuildFileHashes(RepoCatalog.Catalog, file);
 
-    /// <summary>The repository's build, loop and fixture files, relative to its root and sorted.</summary>
+    /// <summary>The repository's build and loop fixture files, relative to its root and sorted.</summary>
     private static ImmutableArray<string> ListRepoFiles()
     {
-        var buildsRoot = RepoFiles.ToPath("builds");                                                // pure
         var scenariosRoot = RepoFiles.ToPath("tests/Loopsmith.Web.E2E/Scenarios");                  // pure
         var rulesRoot = RepoFiles.ToPath("tests/Loopsmith.Web.E2E/Rules");                          // pure
-        var builds = Directory.EnumerateFiles(buildsRoot, "build.yaml", SearchOption.AllDirectories).ToImmutableArray();   // impure
-        var loops = Directory.EnumerateFiles(buildsRoot, "*.loop.yaml", SearchOption.AllDirectories).ToImmutableArray();   // impure
         var fixtures = Directory.EnumerateFiles(scenariosRoot, "*.yaml", SearchOption.AllDirectories).ToImmutableArray();  // impure
         var ruleFixtures = Directory.EnumerateFiles(rulesRoot, "*.yaml", SearchOption.AllDirectories).ToImmutableArray();  // impure
 
-        return [.. builds.Concat(loops)                                                              // pure
-            .Concat(fixtures.Concat(ruleFixtures).Where(file => file.EndsWith(".build.yaml", StringComparison.Ordinal) || file.EndsWith(".loop.yaml", StringComparison.Ordinal)))
+        return [.. fixtures.Concat(ruleFixtures)                                                      // pure
+            .Where(file => file.EndsWith(".build.yaml", StringComparison.Ordinal) || file.EndsWith(".loop.yaml", StringComparison.Ordinal))
             .Select(file => Path.GetRelativePath(RepoFiles.Root, file).Replace('\\', '/'))
-            .Where(path => IsBuildOrLoopOfBuilds(path) || path.StartsWith("tests/", StringComparison.Ordinal))
             .Order(StringComparer.Ordinal)];
     }
-
-    /// <summary><c>builds/&lt;slug&gt;/build.yaml</c> or <c>builds/&lt;slug&gt;/loops/&lt;name&gt;.loop.yaml</c>.</summary>
-    private static bool IsBuildOrLoopOfBuilds(string path) =>
-        path.Split('/') is ["builds", _, "build.yaml"] or ["builds", _, "loops", _];
 }
