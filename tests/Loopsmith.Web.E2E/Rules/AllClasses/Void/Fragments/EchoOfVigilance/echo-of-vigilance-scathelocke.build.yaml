@@ -1,7 +1,0 @@
-# Echo of Vigilance on a Void Hunter, with Scathelocke for the kill it needs at critical health.
-name: "E2E - Echo of Vigilance with Scathelocke"
-class: hunter
-subclass: void
-fragments: [echo-of-vigilance]
-weapons:
-  - { hash: 3332538050 } # Scathelocke

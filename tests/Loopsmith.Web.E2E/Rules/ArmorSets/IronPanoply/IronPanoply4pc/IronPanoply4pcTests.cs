@@ -13,7 +13,7 @@ public sealed class IronPanoply4pcTests : BaseE2E
         @desktop @mobile
         Scenario: Iron Conviction's critical health gives its buff
           # Rule armor-sets-iron-panoply-iron-panoply-4pc-1: Critical health ➜ Iron Conviction equipped ➜ Iron Conviction
-          Given the build "iron-panoply-4pc-scathelocke" is imported, with no steps
+          Given the build "iron-panoply-4pc-festival-flight" is imported, with no steps
           When I tap "Critical health" under "On you" in the trigger panel
           Then card #1's heading is "#1 Critical health"
           And "Iron Conviction" fires "Iron Conviction (7s)"
@@ -22,7 +22,7 @@ public sealed class IronPanoply4pcTests : BaseE2E
     public async Task IronConvictionsCriticalHealthGivesItsBuff(Screen screen)
     {
         // Given
-        await Frontend.Home.ImportBuildAsync("iron-panoply-4pc-scathelocke.build.yaml");
+        await Frontend.Home.ImportBuildAsync("iron-panoply-4pc-festival-flight.build.yaml");
         await Frontend.Designer.WaitUntilShownAsync();
 
         // When
@@ -42,7 +42,7 @@ public sealed class IronPanoply4pcTests : BaseE2E
         @desktop @mobile
         Scenario: Iron Conviction's buff resists close-range combatant damage
           # Rule armor-sets-iron-panoply-iron-panoply-4pc-3: Always ➜ Iron Conviction equipped and Iron Conviction on you ➜ Damage resistance (15% vs combatants within 10 m)
-          Given the build "iron-panoply-4pc-scathelocke" is imported, with no steps
+          Given the build "iron-panoply-4pc-festival-flight" is imported, with no steps
           When I tap "Critical health" under "On you" in the trigger panel
           And I tap "▸ DAMAGE RESISTANCE" on card #1
           Then card #1's heading is "#1 Critical health"
@@ -53,7 +53,7 @@ public sealed class IronPanoply4pcTests : BaseE2E
     public async Task IronConvictionsBuffResistsCloseRangeCombatantDamage(Screen screen)
     {
         // Given
-        await Frontend.Home.ImportBuildAsync("iron-panoply-4pc-scathelocke.build.yaml");
+        await Frontend.Home.ImportBuildAsync("iron-panoply-4pc-festival-flight.build.yaml");
         await Frontend.Designer.WaitUntilShownAsync();
 
         // When
@@ -76,21 +76,21 @@ public sealed class IronPanoply4pcTests : BaseE2E
         @desktop @mobile
         Scenario: Iron Conviction's kill refreshes its buff
           # Rule armor-sets-iron-panoply-iron-panoply-4pc-2: Kill ➜ Iron Conviction equipped and Iron Conviction on you ➜ Iron Conviction
-          Given the build "iron-panoply-4pc-scathelocke" is imported, with no steps
+          Given the build "iron-panoply-4pc-festival-flight" is imported, with no steps
           When I tap "Critical health" under "On you" in the trigger panel
           Then card #1's heading is "#1 Critical health"
           And its BUFFS show only "Critical health" and "Iron Conviction"
           # keeping step #1: its Iron Conviction is what #2's kill refreshes
-          When I tap "Scathelocke" in the trigger panel
+          When I tap "Festival Flight" in the trigger panel
           And I tap "💀 kill"
-          Then card #2's heading is "#2 Scathelocke (💀 kill)"
+          Then card #2's heading is "#2 Festival Flight (💀 kill)"
           And "Iron Conviction" fires "Iron Conviction (7s)"
           And its BUFFS show only "Critical health" and "Iron Conviction"
         """)]
     public async Task IronConvictionsKillRefreshesItsBuff(Screen screen)
     {
         // Given
-        await Frontend.Home.ImportBuildAsync("iron-panoply-4pc-scathelocke.build.yaml");
+        await Frontend.Home.ImportBuildAsync("iron-panoply-4pc-festival-flight.build.yaml");
         await Frontend.Designer.WaitUntilShownAsync();
 
         // When
@@ -104,15 +104,15 @@ public sealed class IronPanoply4pcTests : BaseE2E
             .Shows(new StateGroup.Buffs(), "Critical health", "Iron Conviction");
 
         // When
-        await Frontend.Designer.TriggerPalette.ClickWeaponAsync(new Weapon.Scathelocke());
-        await Frontend.Designer.TriggerPalette.WaitUntilRowShownAsync(new Weapon.Scathelocke());
+        await Frontend.Designer.TriggerPalette.ClickWeaponAsync(new Weapon.FestivalFlight());
+        await Frontend.Designer.TriggerPalette.WaitUntilRowShownAsync(new Weapon.FestivalFlight());
         await Frontend.Designer.TriggerPalette.ClickAsync(new StepTrigger.Kill());
         await Frontend.Designer.Loop.WaitUntilStepShownAsync(2);
 
         // Then
         var killed = await Frontend.Designer.Loop.Step(2).ReadAsync();
         Asserting.That(killed)
-            .HasHeading("#2 Scathelocke (💀 kill)")
+            .HasHeading("#2 Festival Flight (💀 kill)")
             .Fires(new ArmorSetBonus.IronConviction(), "Iron Conviction (7s)")
             .Shows(new StateGroup.Buffs(), "Critical health", "Iron Conviction");
     }
