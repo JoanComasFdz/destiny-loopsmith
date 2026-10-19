@@ -66,7 +66,7 @@ public static class OutcomeApplication
             weapon => new Application(
                 state,
                 ToApplied(outcome, Certainty.Known, Optional.None<string>()),
-                [new PendingEvent.Ready(new GameEvent.Reloaded(new DamageOrigin.Weapon(weapon.Value.Slot, weapon.Value.Type, weapon.Value.Ammo)))]),
+                [new PendingEvent.Ready(new GameEvent.Reloaded(new DamageOrigin.Weapon(weapon.Value.Slot, weapon.Value.Type, weapon.Value.Ammo, weapon.Value.Archetype)))]),
             _ => KeepUnchanged(state, outcome, "no weapon to reload"));
 
     /// <summary>

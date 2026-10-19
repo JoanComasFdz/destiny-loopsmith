@@ -332,7 +332,8 @@
     /// <summary>A button of the picked row: "🥊 hit", "💀 kill", "🔄 reload", an ammo brick's "special" and "heavy".</summary>
     private RenderFragment RenderTrigger(TriggerButton button) => __builder =>
     {
-        <button type="button" class="trigger" data-action="trigger" data-token="@button.Token" title="@($"{button.Label}  ({button.Token})")"
+        <button type="button" class="trigger" data-action="trigger" data-token="@button.Token" data-enabled="@(button.IsEnabled ? "true" : "false")" disabled="@(!button.IsEnabled)"
+                title="@(button.IsEnabled ? $"{button.Label}  ({button.Token})" : $"{button.Label}: no rule of this build reacts to it")"
                 @onclick="() => PickTrigger(button.Action)">
             <span class="trigger-caption" data-testid="trigger-caption">@button.Caption</span>
             @if (button.IsNew)

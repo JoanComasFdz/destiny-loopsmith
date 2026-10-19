@@ -50,12 +50,10 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
     `endsWith`), its faster regeneration a fact (`fasterRegeneration`).
     Elements that react to critical health and wait on something else (compendium/2026-10-19): the Ascendant Escape
     set bonus (Armor Perks#66: its buff comes from an Elite+ kill, which a loop's minor pack never gives, ADRs D7; the
-    follow-up "Make elite kills playable and author Ascendant Escape"), Mechaneer's Tricksleeves (Exotic Armors#52:
-    readying a sidearm is no step, and no damage source names a weapon type; the follow-up "Add a Ready a weapon step
-    for Mechaneer's Tricksleeves") and Frost Renewal (Artifact Perks#27: combatants breaking your shield while Frost Armor is
+    follow-up "Make elite kills playable and author Ascendant Escape"), and Frost Renewal (Artifact Perks#27: combatants breaking your shield while Frost Armor is
     on you; nothing gives Frost Armor yet, so it waits on a Stasis source such as Wind Chill, Artifact Perks#55).
     Enhanced Operator Augment (Armor Mods#30) is a raid mod, which Loopsmith doesn't support (ADRs D35). Authored:
-    Thunderous Retort, Echo of Vigilance and the Iron Panoply set (Vigilant Watch, Iron Conviction);
+    Mechaneer's Tricksleeves (readying a sidearm is a step, ADRs D44), Thunderous Retort, Echo of Vigilance and the Iron Panoply set (Vigilant Watch, Iron Conviction);
   - no longer gaps: a weapon's ammo type is its manifest item's (`weapon:special:arc`, `weapon:heavy:arc`): Spark of
     Beacons fires for sure on a Special or Heavy Arc weapon kill; precision kills are a weapon step's option
     (`energy:kill:precision`, `hit: precision`, D36): Spark of Brilliance, Hatchling and Veteran's Wisdom fire on them

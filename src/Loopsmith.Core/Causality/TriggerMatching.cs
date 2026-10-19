@@ -64,7 +64,8 @@ public static class TriggerMatching
             _ => gameEvent is GameEvent.HitAtCriticalHealth,
             pickUpAmmo => gameEvent is GameEvent.AmmoPickedUp picked
                 && pickUpAmmo.Brick.Match(brick => brick.Value == picked.Brick, _ => true)
-                && (pickUpAmmo.Needs == BrickNeed.AnyPickup || picked.Pickup == BrickPickup.Slide));
+                && (pickUpAmmo.Needs == BrickNeed.AnyPickup || picked.Pickup == BrickPickup.Slide),
+            readyWeapon => gameEvent is GameEvent.WeaponReadied readied && readyWeapon.Via.IsMatchedBy(readied.Origin, superType));
 
     /// <summary>
     /// Whether the pattern matches the origin. A finisher has no damage type and is no weapon or ability: only "any
@@ -72,7 +73,7 @@ public static class TriggerMatching
     /// ability matches however it was used (Tempest Strike's uppercut is melee damage), unless the pattern names the use.
     /// "This weapon" matches nothing until the build check binds it to the slot of the weapon holding the element
     /// (<c>WeaponBinding</c>): unbound, no weapon is known to hold it. A weapon of an ammo type needs the weapon's ammo
-    /// known (its manifest item's): unknown, it matches no ammo type.
+    /// known (its manifest item's): unknown, it matches no ammo type; so does a weapon of a weapon type (archetype).
     /// </summary>
     public static bool IsMatchedBy(this DamageSource source, DamageOrigin origin, Optional<DamageType> superType) =>
         source.Match(
@@ -92,7 +93,8 @@ public static class TriggerMatching
             ofAmmo => origin is DamageOrigin.Weapon weapon && weapon.Ammo.Match(ammo => ammo.Value == ofAmmo.Ammo, _ => false),
             ofAmmoAndType => origin is DamageOrigin.Weapon weapon
                 && weapon.Ammo.Match(ammo => ammo.Value == ofAmmoAndType.Ammo, _ => false)
-                && weapon.Type == ofAmmoAndType.Type);
+                && weapon.Type == ofAmmoAndType.Type,
+            ofArchetype => origin is DamageOrigin.Weapon weapon && weapon.Archetype.Match(archetype => archetype.Value == ofArchetype.Archetype, _ => false));
 
     /// <summary>
     /// Whether the trigger is a kill that needs a precision or a body kill (<c>hit:</c>, ADRs D36): where its kills land
@@ -121,7 +123,8 @@ public static class TriggerMatching
             killBetween: kill => kill.Needs is not ZoneNeed.AnyZone,
             reload: _ => false,
             hitAtCriticalHealth: _ => false,
-            pickUpAmmo: _ => false);
+            pickUpAmmo: _ => false,
+            readyWeapon: _ => false);
 
     /// <summary>The statuses a trigger needs on the target (empty when it doesn't care).</summary>
     public static ImmutableArray<StatusId> ListRequiredTargetStatuses(this Trigger trigger) =>
@@ -147,9 +150,10 @@ public static class TriggerMatching
             killBetween: _ => ImmutableArray<StatusId>.Empty,
             reload: _ => ImmutableArray<StatusId>.Empty,
             hitAtCriticalHealth: _ => ImmutableArray<StatusId>.Empty,
-            pickUpAmmo: _ => ImmutableArray<StatusId>.Empty);
+            pickUpAmmo: _ => ImmutableArray<StatusId>.Empty,
+            readyWeapon: _ => ImmutableArray<StatusId>.Empty);
 
-    /// <summary>The damage source a hit, kill, shield or reload trigger names (its <c>via</c>); none for the other triggers.</summary>
+    /// <summary>The damage source a hit, kill, shield, reload or ready trigger names (its <c>via</c>); none for the other triggers.</summary>
     public static Optional<DamageSource> FindVia(this Trigger trigger) =>
         trigger.Match(
             abilityCast: _ => Optional.None<DamageSource>(),
@@ -173,7 +177,8 @@ public static class TriggerMatching
             killBetween: killBetween => Optional.Some(killBetween.Via),
             reload: reload => Optional.Some(reload.Via),
             hitAtCriticalHealth: _ => Optional.None<DamageSource>(),
-            pickUpAmmo: _ => Optional.None<DamageSource>());
+            pickUpAmmo: _ => Optional.None<DamageSource>(),
+            readyWeapon: readyWeapon => Optional.Some(readyWeapon.Via));
 
     /// <summary>
     /// The ability use a trigger names, when it names one: a cast of that use (<c>abilityCast: { ability: classAbility,
