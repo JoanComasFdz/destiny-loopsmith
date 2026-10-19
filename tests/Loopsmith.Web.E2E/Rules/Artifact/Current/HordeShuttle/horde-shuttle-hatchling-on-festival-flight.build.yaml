@@ -1,0 +1,7 @@
+# Horde Shuttle, with Hatchling on Festival Flight, whose kills hatch the Threadling that hits.
+name: "E2E - Horde Shuttle with Hatchling on Festival Flight"
+class: hunter
+subclass: arc
+artifactPerks: [horde-shuttle]
+weapons:
+  - { hash: 4019651319, perks: [hatchling] } # Festival Flight

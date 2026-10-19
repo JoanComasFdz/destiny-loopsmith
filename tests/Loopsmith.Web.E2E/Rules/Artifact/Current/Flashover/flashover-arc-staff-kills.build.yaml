@@ -1,0 +1,6 @@
+# Flashover, with Arc Staff, whose kills give the Bolt Charge it declares at max (not Disorienting Blow: its hit makes you Amplified itself).
+name: "E2E - Flashover with Arc Staff"
+class: hunter
+subclass: arc
+super: arc-staff
+artifactPerks: [flashover]

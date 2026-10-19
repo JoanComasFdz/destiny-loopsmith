@@ -1,0 +1,9 @@
+# Photonic Flare, with Slice on Festival Flight to sever the target (armed by Marksman's Dodge, no rules of its own) and Skip Grenade for the Arc kill.
+name: "E2E - Photonic Flare with Marksman's Dodge, Slice and Skip Grenade"
+class: hunter
+subclass: arc
+grenade: skip-grenade
+classAbility: marksmans-dodge
+artifactPerks: [photonic-flare]
+weapons:
+  - { hash: 4019651319, perks: [slice] } # Festival Flight

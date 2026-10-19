@@ -71,6 +71,17 @@ public static class StepCardSnapshotAssertions
     public static AssertingThat<StepCardSnapshot> Fires(this AssertingThat<StepCardSnapshot> that, Ability ability, params string[] lines) =>
         that.FiresFrom(ability.ToShownText(), lines);
 
+    /// <summary><paramref name="perk"/> fired exactly <paramref name="lines"/>, in that order, each with its "(chance)" as shown.</summary>
+    public static AssertingThat<StepCardSnapshot> Fires(this AssertingThat<StepCardSnapshot> that, ArtifactPerk perk, params string[] lines) =>
+        that.FiresFrom(perk.ToShownText(), lines);
+
+    /// <summary>
+    /// Under the event that reads <paramref name="happened"/> ("↳ Threadling 🥊 hit"), <paramref name="perk"/> fired
+    /// exactly <paramref name="lines"/>, in that order, each with its "(chance)" as shown.
+    /// </summary>
+    public static AssertingThat<StepCardSnapshot> FiresOn(this AssertingThat<StepCardSnapshot> that, string happened, ArtifactPerk perk, params string[] lines) =>
+        that.FiresOn(happened, perk.ToShownText(), lines);
+
     /// <summary><paramref name="aspect"/> fired exactly <paramref name="lines"/>, in that order, each with its "(chance)" as shown.</summary>
     public static AssertingThat<StepCardSnapshot> Fires(this AssertingThat<StepCardSnapshot> that, Aspect aspect, params string[] lines) =>
         that.FiresFrom(aspect.ToShownText(), lines);
