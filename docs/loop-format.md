@@ -98,8 +98,10 @@ that weapon, as a step of its own. No ammo is counted (Loopsmith isn't a simulat
 needed: the player declares it when the loop reloads, and it raises `Reloaded` from that weapon, so the `reload` rules
 fire ([rule-format.md](rule-format.md#rules)). It takes no count and no option (`energy:reload:3`, `energy:reload:shield`
 and `grenade:reload` are errors); a slot with no weapon is a blocked step (`No weapon in the Kinetic slot — nothing
-happens.`). A rule can reload a weapon too (`reloadWeapon`: Demolitionist's grenade, Return Stroke's lightning strike):
-the trace shows `reloads your energy weapon`, and that weapon's `reload` rules fire as on a Reload step. In the designer,
+happens.`). A rule can reload a weapon too (`reloadWeapon`): the trace shows `reloads your energy weapon`, and that
+weapon's `reload` rules fire as on a Reload step. A refill is no reload (ADRs D42): Demolitionist's grenade and Return
+Stroke's lightning strike refill the weapon (`refillWeapon`), the trace shows `refills your energy weapon`, and no
+`reload` rule fires. In the designer,
 tapping a weapon in the step HUD shows **🔄 reload** next to its 🥊 hit and 💀 kill, in every build.
 
 **Slide over an ammo brick** (ADRs D41). `kinetic:ammo`, `energy:ammo`, `power:ammo` — "Slide over an ammo brick with

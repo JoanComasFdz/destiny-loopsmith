@@ -24,5 +24,6 @@ public static class OutcomePhasing
             grantLeastChargedEnergy: _ => Phase.Refund,
             spendStacks: _ => Phase.Empower,
             weaponStrike: _ => Phase.Damage,
-            reloadWeapon: _ => Phase.Refund);
+            reloadWeapon: _ => Phase.Refund,
+            refillWeapon: _ => Phase.Refund);
 }

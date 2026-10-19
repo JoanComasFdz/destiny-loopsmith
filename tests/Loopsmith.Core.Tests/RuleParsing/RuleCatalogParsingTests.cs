@@ -2343,6 +2343,18 @@ public sealed class RuleCatalogParsingTests
     }
 
     [Fact]
+    public void Parses_a_refill_outcome_of_this_weapon_or_a_slot_and_refuses_any_weapon()
+    {
+        var own = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToPerkProbeFile("{ id: probe-1, on: { abilityCast: grenade }, then: [ { refillWeapon: weapon:this } ] }")]));
+        var slot = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToProbeFile("{ id: probe-1, on: { abilityCast: grenade }, then: [ { refillWeapon: slot:power } ] }")]));
+        var anyWeapon = ParseInvalidCatalog(Glossary, ToPerkProbeFile("{ id: probe-1, on: { abilityCast: grenade }, then: [ { refillWeapon: weapon } ] }"));
+
+        Assert.Equal(new Outcome.RefillWeapon(new DamageSource.ThisWeapon()), Assert.Single(Assert.Single(own.Elements[ElementId.From("probe")].Rules).Then));
+        Assert.Equal(new Outcome.RefillWeapon(new DamageSource.WeaponInSlot(WeaponSlot.Power)), Assert.Single(Assert.Single(slot.Elements[ElementId.From("probe")].Rules).Then));
+        Assert.Contains("refills one weapon: weapon:this, weapon:this:<type> or slot:<slot>", anyWeapon);
+    }
+
+    [Fact]
     public void Parses_an_energy_grant_by_the_archetype_of_this_weapon_and_its_enhanced_figures()
     {
         var file = ToElementsFile("weapons/perks.yaml", """

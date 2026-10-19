@@ -41,7 +41,8 @@ public static class OutcomeApplication
             least => AnnotateFact(state, outcome, ReadGrantCertainty(least.Amount), "amount unknown"),
             spend => SpendStacks(build, state, outcome, spend, source),
             weapon => StrikeWithWeapon(build, state, outcome, weapon),
-            reload => ReloadWeapon(build, state, outcome, reload));
+            reload => ReloadWeapon(build, state, outcome, reload),
+            refill => RefillWeapon(build, state, outcome, refill));
 
     /// <summary>
     /// <c>full</c> is one whole charge (known); a fraction is as certain as its value; a fraction by archetype not bound to
@@ -67,6 +68,15 @@ public static class OutcomeApplication
                 ToApplied(outcome, Certainty.Known, Optional.None<string>()),
                 [new PendingEvent.Ready(new GameEvent.Reloaded(new DamageOrigin.Weapon(weapon.Value.Slot, weapon.Value.Type, weapon.Value.Ammo)))]),
             _ => KeepUnchanged(state, outcome, "no weapon to reload"));
+
+    /// <summary>
+    /// Refills the weapon "this weapon" was bound to, or that the rule names (ADRs D42): a fact, with no reload event, so
+    /// no reload rule fires. No ammo is counted. With no weapon there, nothing refills.
+    /// </summary>
+    private static Application RefillWeapon(ValidatedBuild build, GameState state, Outcome outcome, Outcome.RefillWeapon refill) =>
+        FindReloadedWeapon(build, refill.Weapon).Match(
+            _ => KeepUnchanged(state, outcome, ""),
+            _ => KeepUnchanged(state, outcome, "no weapon to refill"));
 
     private static Optional<WeaponLoadout> FindReloadedWeapon(ValidatedBuild build, DamageSource weapon) =>
         weapon is DamageSource.WeaponInSlot inSlot

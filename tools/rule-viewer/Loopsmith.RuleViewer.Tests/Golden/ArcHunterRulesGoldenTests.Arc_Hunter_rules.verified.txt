@@ -130,8 +130,8 @@ rule:bolt-charge#0.0 keywords-arc-bolt-charge-1: [Trigger] Grenade hit ➜ [Buff
 rule:jolt#1.0 keywords-arc-jolt-2: [Trigger] Grenade hit ➜ [Debuff] Jolt (on the target) ➜ [Strike] Jolt strike
 ashes-to-assets#0 mods-armor-ashes-to-assets-1: [Trigger] Grenade kill ➜ [Armor mod] Ashes to Assets (equipped) ➜ [Effect] Super energy (?)
 bolstering-detonation#0 mods-arms-bolstering-detonation-1: [Trigger] Grenade hit ➜ [Armor mod] Bolstering Detonation (equipped) ➜ [Effect] Class ability energy (12% | 17% | 20%)
-demolitionist#1 weapons-perks-demolitionist-2: [Trigger] Grenade cast ➜ [Weapon perk] Demolitionist (equipped) ➜ [Effect] Reload
-demolitionist-enhanced#1 weapons-perks-demolitionist-2: [Trigger] Grenade cast ➜ [Weapon perk] Demolitionist (enhanced) (equipped) ➜ [Effect] Reload
+demolitionist#1 weapons-perks-demolitionist-2: [Trigger] Grenade cast ➜ [Weapon perk] Demolitionist (equipped) ➜ [Effect] Refill
+demolitionist-enhanced#1 weapons-perks-demolitionist-2: [Trigger] Grenade cast ➜ [Weapon perk] Demolitionist (enhanced) (equipped) ➜ [Effect] Refill
 firepower#0 mods-arms-firepower-1: [Trigger] Grenade kill ➜ [Armor mod] Firepower (equipped) ➜ [Pickup] Orb of Power
 grenade-kickstart#0 mods-armor-grenade-kickstart-1: [Trigger] Grenade (last charge) ➜ [Armor mod] Grenade Kickstart (equipped) + [Buff] Armor Charge (on you) ➜ [Effect] Grenade energy (16.2% | 21.7% | 28.4% | 34.4% | 38.4% | 41.3% | 43.4% | 45% by charges from 2), [Buff] Armor Charge (ends · spends all)
 momentum-transfer#0 mods-arms-momentum-transfer-1: [Trigger] Grenade hit ➜ [Armor mod] Momentum Transfer (equipped) ➜ [Effect] Melee energy (12% | 17% | 20%)

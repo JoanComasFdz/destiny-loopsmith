@@ -686,11 +686,13 @@ A Super has no `energyExpended` (`energyExpended: a Super has no energyExpended 
 A **reload** (ADRs D37) is the player's Reload step (`kinetic:reload`, "Reload Festival Flight",
 [loop-format.md](loop-format.md#action-tokens)) or a `reloadWeapon` outcome: either raises `Reloaded` from that weapon,
 which the `reload` trigger matches. No ammo is counted, so a reload is never needed and never blocked (but for an empty
-slot), and what a weapon does to its magazine (Demolitionist's refill, Return Stroke's 5 rounds) is one reload, its
-numbers a fact. `reload` takes only `via`, and it names a weapon: `any`, `weapon`, `weapon:<type>`, `weapon:harmonic`,
+slot). A **refill** is no reload (ADRs D42): the Compendium's "Reload Perk Notes" (Weapon Perks#250) say a refill puts
+rounds back without the animation and sets off no on-reload perk, so what puts rounds back without a reload
+(Demolitionist's refill, Return Stroke's 5 rounds) is a `refillWeapon`, which raises no `Reloaded`; its numbers are a fact.
+`reload` takes only `via`, and it names a weapon: `any`, `weapon`, `weapon:<type>`, `weapon:harmonic`,
 `slot:<slot>`, `weapon:this` or `weapon:this:<type>` (`reload: { via: grenade }` is an error,
 `reload's via names a weapon: …`). Demolitionist (`rules/weapons/perks.yaml`, Compendium Weapon Perks#62) has both
-halves of its loop:
+halves of its loop, its grenade's refill no reload:
 
 <!-- RuleExampleTests reads the next yaml block as an element's keys -->
 ```yaml
@@ -702,16 +704,15 @@ halves of its loop:
       - id: demolitionist-2
         on: { abilityCast: grenade }
         then:
-          - { reloadWeapon: weapon:this }
+          - { refillWeapon: weapon:this }
 ```
 
 A **slide over an ammo brick** (ADRs D41) is the player's step with the weapon in hand (`kinetic:ammo`, "Slide over an
 ammo brick with Festival Flight", [loop-format.md](loop-format.md#action-tokens)): it raises `SlidOverAmmo` from that
 weapon, which the `slideOverAmmo` trigger matches. Like a reload it takes only `via`, which names a weapon
 (`slideOverAmmo's via names a weapon: …`), and no ammo is counted: whether the brick's ammo isn't full is the player's
-call when they declare the step. A **refill** is no reload: the Compendium's "Reload Perk Notes" (Weapon Perks#250) say a
-refill puts rounds back without the animation and sets off no on-reload perk, so Spark of Momentum's refill of the
-weapon in hand is a fact in its description, not a `reloadWeapon` (`rules/all-classes/arc/fragments.yaml`, Arc#21):
+call when they declare the step. Its refill is no reload (ADRs D42), and no `refillWeapon` names the weapon in hand, so
+Spark of Momentum's refill is a fact in its description (`rules/all-classes/arc/fragments.yaml`, Arc#21):
 
 <!-- RuleExampleTests reads the next yaml block as an element's keys -->
 ```yaml
@@ -747,6 +748,7 @@ weapon in hand is a fact in its description, not a `reloadWeapon` (`rules/all-cl
 | `{ resetCooldown: melee }` | `ResetCooldown` |
 | `{ collect: orb-of-power }` | `Collect` — picks the pickup up from the ground (Powerful Attraction) |
 | `{ reloadWeapon: weapon:this }` / `{ reloadWeapon: slot:power }` — reloads that one weapon: `weapon:this`, `weapon:this:<type>` or `slot:<slot>` | `ReloadWeapon` |
+| `{ refillWeapon: weapon:this }` / `{ refillWeapon: slot:power }` — refills that one weapon, no reload (Demolitionist, Return Stroke): the same weapons as `reloadWeapon` | `RefillWeapon` |
 
 Statuses in `applyBuff`/`removeBuff`/`convertStacksToEnergy.consumed`/`has`/`lacks`/`atMax`/`buffGained`/`stacksMaxed`/`extraStacks`
 must be glossary `buff`s; in `debuffTarget`/`targetHas` glossary `debuff`s
@@ -785,6 +787,8 @@ must be glossary `buff`s; in `debuffTarget`/`targetHas` glossary `debuff`s
   weapon`, and a `Reloaded` event from it follows, so its `reload` rules fire as on a Reload step (ADRs D37). With no
   weapon there, or "this weapon" not bound (the catalog's own text, `reloads this weapon`), it carries the caveat
   `no weapon to reload`.
+* **`refillWeapon`** refills the same weapon: `refills your energy weapon`, a fact with no event, so no `reload` rule
+  fires (ADRs D42). With no weapon there it carries the caveat `no weapon to refill`.
 
 What changes the state or sets off events: `applyBuff`, `removeBuff`, `debuffTarget`, `spawn`,
 `summon`, `strikeTarget`, `collect`, `spendStacks`, `reloadWeapon` (its reload event), and the consumption of
