@@ -1,5 +1,7 @@
 using System.Collections.Immutable;
 using System.Text.Json;
+using System.Text.RegularExpressions;
+using Loopsmith.Web.E2E.Infrastructure.Vocabulary;
 using Microsoft.Playwright;
 
 namespace Loopsmith.Web.E2E.Infrastructure.Frontend.Components;
@@ -14,6 +16,8 @@ public sealed class StepCard(IPage page, int number)
     private ILocator Card => page.Locator($"[data-testid=loop-timeline] [data-testid=step][data-step='{number}']");
 
     private ILocator Reasons => Card.Locator("[data-testid=outcome-reason]");
+
+    private ILocator State => Card.Locator("[data-testid=step-state]");
 
     private ILocator Resistance => Card.Locator("[data-testid=resistance]");
 
@@ -42,6 +46,12 @@ public sealed class StepCard(IPage page, int number)
     /// <summary>Waits until the card's damage bonus shows where each of its bonuses comes from.</summary>
     public Task WaitUntilDamageBonusSourcesShownAsync() => BonusSources.WaitForAsync(new() { State = WaitForSelectorState.Visible });
 
+    /// <summary>
+    /// Clicks the chip <paramref name="chip"/> ("Amplified · 1 effect", as the card reads it) of the state's
+    /// <paramref name="group"/>: its details open in the item details popup.
+    /// </summary>
+    public Task ClickStateChipAsync(StateGroup group, string chip) => OnScreen.PressAsync(State, FindStateChip(group, chip));
+
     /// <summary>What the card shows now.</summary>
     public Task<StepCardSnapshot> ReadAsync() => OnScreen.ReadAsync(Card, ReadShownAsync);
 
@@ -60,6 +70,19 @@ public sealed class StepCard(IPage page, int number)
                 [.. shown.Bonus.Select(row => new DamageBonusRow(row.Name, row.Value))],
                 [.. shown.BonusSources.Select(source => new DamageBonusSource(source.Name, source.Value))]));
     }
+
+    // A chip by its name, the part of its text before the first " · " (its effects and weapons come after).
+    private ILocator FindStateChip(StateGroup group, string chip) =>
+        State.Locator($"[data-testid=state-group][data-group={ToGroupKey(group)}] [data-testid=state-chip]")
+            .Filter(new() { Has = page.Locator("[data-testid=state-chip-name]").Filter(new() { HasTextRegex = new Regex($"^{Regex.Escape(chip.Split(" · ")[0])}$") }) });
+
+    private static string ToGroupKey(StateGroup group) =>
+        group.Match(
+            buffs => "buffs",
+            weapons => "weapons",
+            debuffs => "debuffs",
+            ground => "ground",
+            unlisted => unlisted.Shown);
 
     private static ImmutableArray<StateChip> ToChips(ShownChip[] chips) => [.. chips.Select(chip => new StateChip(chip.Text, chip.Tooltip))];
 

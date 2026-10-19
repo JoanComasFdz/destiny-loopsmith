@@ -68,13 +68,13 @@
                             <div class="info-source">In this build</div>
                             @foreach (var group in inBuild.Groups)
                             {
-                                <div class="info-role" data-role="@group.Heading">
-                                    <div class="info-role-head">@group.Heading</div>
+                                <div class="info-role" data-testid="in-build-role" data-role="@group.Heading">
+                                    <div class="info-role-head" data-testid="in-build-role-head">@group.Heading</div>
                                     @foreach (var item in group.Items)
                                     {
-                                        <div class="info-switched" data-source="@item.Heading.Name">
+                                        <div class="info-switched" data-testid="in-build-item" data-source="@item.Heading.Name">
                                             @RenderHeading(item.Heading)
-                                            <p class="info-rules-text">@item.Text</p>
+                                            <p class="info-rules-text" data-testid="in-build-text">@item.Text</p>
                                             @if (item.Note is Optional<string>.Some note)
                                             {
                                                 <p class="muted info-note">@note.Value</p>
