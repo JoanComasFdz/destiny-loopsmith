@@ -13,12 +13,13 @@ public static class ActionTokenParsing
     private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
 
     public const string Grammar =
-        "grenade[:hold]|melee[:slide|air]|super[:hit|kill[:N]] (grenade and melee [:last]), class[:air][:last], kinetic|energy|power[:hit|kill[:N]][:shield][:precision], kinetic|energy|power:reload, finisher, pickup:<id>, max:<status>, end:<status>, pack:new, health:critical";
+        "grenade[:hold]|melee[:slide|air]|super[:air|combo|guard][:hit|kill[:N]] (grenade and melee [:last]), class[:air][:last], kinetic|energy|power[:hit|kill[:N]][:shield][:precision], kinetic|energy|power:reload, finisher, pickup:<id>, max:<status>, end:<status>, pack:new, health:critical";
 
     /// <summary>
     /// <c>grenade</c>, <c>grenade:kill</c>, <c>grenade:kill:3</c>, <c>kinetic:hit:5</c>, <c>class</c>, <c>class:air</c> (an air move
     /// that spends the class ability, like Ascension), a secondary ability's own token — <c>melee:slide:kill</c> (Tempest
-    /// Strike's uppercut), <c>melee:air</c>, <c>grenade:hold</c> — <c>finisher</c> (a finisher on one enemy
+    /// Strike's uppercut), <c>melee:air</c>, <c>grenade:hold</c>, the Super's <c>super:air</c>, <c>super:combo</c> and
+    /// <c>super:guard</c> (Arc Staff's heavy attack in the air, Palm Strike, the guard) — <c>finisher</c> (a finisher on one enemy
     /// of the pack: it kills it),
     /// <c>pickup:orb-of-power</c>, and the states the player declares (ADRs D3): <c>max:bolt-charge</c>, <c>end:amplified</c>,
     /// <c>pack:new</c> (the next enemies are a new pack, ADRs D7), <c>health:critical</c> (you reached critical health).
@@ -91,7 +92,7 @@ public static class ActionTokenParsing
             input => ParseAimedAction(token, [parts[0], .. parts[2..]], (hit, targets) => new PlayerAction.CastAbility(kind, hit, targets, input.Value, charge)),
             _ => ParseAimedAction(token, parts, (hit, targets) => new PlayerAction.CastAbility(kind, hit, targets, AbilityInput.Press, charge)));
 
-    /// <summary>The secondary input a token part names (<c>slide</c>, <c>air</c>, <c>hold</c>), when the ability takes it.</summary>
+    /// <summary>The secondary input a token part names (<c>slide</c>, <c>air</c>, <c>hold</c>, <c>combo</c>, <c>guard</c>), when the ability takes it.</summary>
     private static Optional<AbilityInput> FindSecondaryInput(AbilityKind kind, string word) =>
         kind.ListSecondaryInputs().Where(input => input.ToInputWord() == word).Select(Optional.Some).FindFirstSome();
 

@@ -20,7 +20,7 @@ founding one: every other decision follows from it.
 | D6 | Rules that don't stack give way and show as wasted | Wasted potential is what the build crafter most needs to see |
 | D7 | One target: the pack in front of you, until the player declares a new one | Matches how add-clear builds are explained ("everything is jolted"); only play decides when the next group comes |
 | D8 | Chance rules always fire, marked *(chance)* | No probabilities without a simulation; the mark keeps the loop honest |
-| D9 | Secondary ability uses (`melee:slide`, `class:air`, `grenade:hold`) | An aspect makes a slide, an air move or a hold a different trigger from the ability's press, but every rule on the ability still fires for it |
+| D9 | Secondary ability uses (`melee:slide`, `class:air`, `grenade:hold`, `super:combo`) | An aspect makes a slide, an air move or a hold a different trigger from the ability's press, but every rule on the ability still fires for it |
 | D10 | Causality is authored as YAML; a human confirms every rule | 55% of Compendium descriptions state the trigger, so drafts can be generated, never trusted |
 | D11 | The Compendium is the primary mechanics source; Clarity the cross-check | The Compendium covers abilities, artifact perks and statuses; Clarity has hashes |
 | D12 | The Compendium is joined by name, scoped by kind + class, alias table in git | It has no hashes; unresolved names are reported, never guessed |
@@ -185,24 +185,28 @@ every view, and so are rules that depend on progress the game doesn't show as a 
 ("after 6 weapon hits"; D3).
 Probabilities would need a simulation (D1); marking them keeps the loop honest without hiding it.
 
-### D9 — Secondary ability uses (`melee:slide`, `class:air`, `grenade:hold`)
+### D9 — Secondary ability uses (`melee:slide`, `class:air`, `grenade:hold`, `super:combo`)
 
 **Context.** Some aspects give an ability a second use with its own effects. Tempest Strike (Compendium
 Arc#54): the melee while sliding is an uppercut that jolts; a plain press is a basic melee. Ascension
 (Arc#48): the air move key while airborne spends the class ability charge on a twirl that jolts and
 Amplifies, and sets off the equipped class ability's effects. Chaos Accelerant, Bleak Watcher, Mindspun
-Invocation and Unbreakable (Void, Stasis, Strand, Prismatic): the grenade held.
-**Decision.** An ability use carries an input (`AbilityInput`: press, slide, air, hold): tokens
-`melee:slide[:hit|kill[:N]]`, `melee:air`, `grenade:hold`, `class:air`; events
+Invocation and Unbreakable (Void, Stasis, Strand, Prismatic): the grenade held. Arc Staff (Arc#44): its heavy
+attack in the air and Palm Strike (light-light-heavy) blind, its other attacks don't; each attack its guard reflects
+gives x1 Bolt Charge.
+**Decision.** An ability use carries an input (`AbilityInput`: press, slide, air, hold, combo, guard): tokens
+`melee:slide[:hit|kill[:N]]`, `melee:air`, `grenade:hold`, `class:air`, `super:air`, `super:combo`, `super:guard`; events
 `AbilityCast(kind, input)` and `Ability(kind, type, input)` origins. An ability takes only the inputs the
 game has (`AbilityInputs`: a melee slides or is airborne, the class ability has its air move, a grenade
-is held; a Super has none) — any other is a parse error, in a token and in a rule. A secondary is still
+is held; a Super attacks in the air, combos and guards — 2026-10-19, before which a Super had none) — any other is
+a parse error, in a token and in a rule. A secondary is still
 that ability, so every rule on the ability fires for it too (a sliding melee is a melee for Combination
 Blow); only a rule that names the input tells them apart: `abilityCast: { ability: classAbility, input:
 air }` and `via: melee:slide`. Every token parses anywhere, but the palette and the HUD offer a
 secondary only when an equipped rule names it — without one it fires exactly what the press fires — and
 the HUD shows it below its ability's square, with the icon of the element that names it.
-**Consequence.** A new secondary from an aspect is an input on an existing ability, not a new action.
+**Consequence.** A new secondary from an aspect is an input on an existing ability, not a new action. A Super's
+attack is one too (`super:combo`), and a guard step counts the attacks it reflects as hits, one per enemy of the pack.
 Air moves that spend another ability's energy (Weavewalk's melee energy) are open
 ([docs/backlog.md](backlog.md)).
 

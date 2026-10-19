@@ -1180,7 +1180,7 @@ public sealed class RuleCatalogParsingTests
 
         Assert.Contains("a grenade isn't used as 'slide' (it takes press, hold)", grenade);
         Assert.StartsWith("hunter/arc.yaml:", grenade);
-        Assert.Contains("a super isn't used as 'hold' (it takes press)", super);
+        Assert.Contains("a super isn't used as 'hold' (it takes press, air, combo, guard)", super);
         Assert.Contains("a classAbility isn't used as 'hold' (it takes press, air)", held);
         Assert.Contains("airborne", old);   // the old key is no key any more: input: air
     }

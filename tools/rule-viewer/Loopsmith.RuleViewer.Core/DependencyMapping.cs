@@ -534,6 +534,9 @@ internal static class DependencyMapping
             (AbilityKind.ClassAbility, AbilityInput.Press) => "Class ability",
             (AbilityKind.ClassAbility, AbilityInput.Air) => "Air class ability",
             (AbilityKind.Super, AbilityInput.Press) => "Super",
+            (AbilityKind.Super, AbilityInput.Air) => "Airborne Super heavy",
+            (AbilityKind.Super, AbilityInput.Combo) => "Super heavy combo",
+            (AbilityKind.Super, AbilityInput.Guard) => "Super guard",
             _ => $"{kind} ({input.ToString().ToLowerInvariant()})",
         };
 
