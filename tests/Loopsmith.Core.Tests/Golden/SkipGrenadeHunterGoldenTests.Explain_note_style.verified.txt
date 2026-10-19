@@ -27,7 +27,7 @@ Kill 2+ with Strand weapon in 3s -> Orb of Power [Strand Siphon]
 Kill 1–2 with Arc weapon -> Ionic Trace [Spark of Discharge] (chance)
 Kill 1 with Arc weapon (your Super's element) -> Orb of Power [Harmonic Siphon] (chance)
 Kill 1 with Strand weapon -> Orb of Power [Strand Siphon] (chance)
-Pick up Ionic Trace -> +1 Bolt Charge [Spark of Discharge] + +1 Armor Charge [Elemental Charge] (chance) + +11.3% grenade and melee energy and +13.5% class ability energy [Ionic Trace]
+Pick up Ionic Trace -> +1 Bolt Charge [Spark of Discharge] + +1 Armor Charge [Elemental Charge] (chance) + +11.25% grenade and melee energy and +13.5% class ability energy [Ionic Trace]
 Pick up Orb of Power -> Unraveling Rounds (14s) [Unraveling Orbs] + +1 Armor Charge and +?% super energy [Orb of Power]
 Gain Bolt Charge -> +?% grenade energy [Shinobu's Vow] + +2.5% melee energy [Bolt Charge]
 Max Bolt Charge (x10) -> New Tricks and +~40% grenade energy and heals you and allies [Shinobu's Vow] + Amplified (15s) [Flashover]

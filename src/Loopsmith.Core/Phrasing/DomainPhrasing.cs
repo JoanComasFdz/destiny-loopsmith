@@ -33,7 +33,7 @@ public static class DomainPhrasing
         seconds.Value.ToString("0.#", Invariant) + "s";
 
     private static string FormatPercentNumber(decimal fraction) =>
-        (fraction * 100m).ToString("0.#", Invariant) + "%";
+        (fraction * 100m).ToString("0.##", Invariant) + "%";
 
     // ── names ──────────────────────────────────────────────────────────────────
 
