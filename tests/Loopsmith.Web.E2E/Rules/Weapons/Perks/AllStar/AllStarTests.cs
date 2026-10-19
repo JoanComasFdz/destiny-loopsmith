@@ -18,7 +18,7 @@ public sealed class AllStarTests : BaseE2E
           And I tap "heavy"
           Then card #1's heading is "#1 Pick up a Heavy ammo brick"
           And "All-Star" fires "All-Star (6s)" and "+35% kinetic weapon damage"
-          And its WEAPONS show only "All-Star · Battle Scar"
+          And its WEAPONS show only "All-Star · 1 effect · Battle Scar"
         """)]
     public async Task AllStarsAmmoBrickPickupGivesAllStar(Screen screen)
     {
@@ -37,6 +37,6 @@ public sealed class AllStarTests : BaseE2E
         Asserting.That(picked)
             .HasHeading("#1 Pick up a Heavy ammo brick")
             .Fires(new WeaponPerk.AllStar(), "All-Star (6s)", "+35% kinetic weapon damage")
-            .Shows(new StateGroup.Weapons(), "All-Star · Battle Scar");
+            .Shows(new StateGroup.Weapons(), "All-Star · 1 effect · Battle Scar");
     }
 }
