@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark" />
+    <!-- The page is dark already: Dark Reader (and any extension that honours this) leaves it alone, so the colours
+         that carry meaning stay as drawn (DIM's light and gold footers, the affinities, the tones). -->
+    <meta name="darkreader-lock" />
+    <meta name="theme-color" content="#0a0d13" />
+    <meta name="description" content="Loopsmith — design a Destiny 2 build's gameplay loop: pick a trigger, see everything it fires, pick the next." />
+    <title>Loopsmith</title>
+    <!-- Keep "/" here: the GitHub Pages deploy rewrites it to the site's sub-path. Every other URL is relative. -->
+    <base href="/destiny-loopsmith/pr-preview/pr-152/" />
+    <link href="_framework/dotnet.bfpsfrcy3n.js" rel="preload" as="script" fetchpriority="high" crossorigin="anonymous" integrity="sha256-SZWzKzSXOBOlR8I/dao4Zf+wu6BsJwMpusDF953ANBE=" />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="stylesheet" href="css/app.css?v=38d3b33162dd" />
+    <script type="importmap">{
+  "imports": {
+    "./_framework/blazor.webassembly.js": "./_framework/blazor.webassembly.w3qd1tpl0e.js",
+    "./_framework/dotnet.js": "./_framework/dotnet.bfpsfrcy3n.js",
+    "./_framework/dotnet.native.js": "./_framework/dotnet.native.q38003gvqi.js",
+    "./_framework/dotnet.runtime.js": "./_framework/dotnet.runtime.azrfhwb804.js"
+  },
+  "scopes": {},
+  "integrity": {
+    "./_framework/blazor.webassembly.js": "sha256-lDXsDYFgm62F+YUvxES7IOTCXYpiHpU3uR45YdC6mq4=",
+    "./_framework/blazor.webassembly.w3qd1tpl0e.js": "sha256-lDXsDYFgm62F+YUvxES7IOTCXYpiHpU3uR45YdC6mq4=",
+    "./_framework/dotnet.bfpsfrcy3n.js": "sha256-SZWzKzSXOBOlR8I/dao4Zf+wu6BsJwMpusDF953ANBE=",
+    "./_framework/dotnet.js": "sha256-SZWzKzSXOBOlR8I/dao4Zf+wu6BsJwMpusDF953ANBE=",
+    "./_framework/dotnet.native.js": "sha256-BtUMevCTTpUK4I5d68LtBZlJdGIQC7fk+oNnjyzuFR4=",
+    "./_framework/dotnet.native.q38003gvqi.js": "sha256-BtUMevCTTpUK4I5d68LtBZlJdGIQC7fk+oNnjyzuFR4=",
+    "./_framework/dotnet.runtime.azrfhwb804.js": "sha256-muN076HgyOCoAaid7zD7a2/GN7aQ7tmK/BzdnKgw78g=",
+    "./_framework/dotnet.runtime.js": "sha256-muN076HgyOCoAaid7zD7a2/GN7aQ7tmK/BzdnKgw78g="
+  }
+}</script>
+</head>
+
+<body>
+    <div id="app">
+        <div class="boot">
+            <div class="boot-mark">Loopsmith</div>
+            <svg class="loading-progress" viewBox="0 0 100 100" aria-hidden="true">
+                <circle r="40" cx="50" cy="50" />
+                <circle r="40" cx="50" cy="50" />
+            </svg>
+            <div class="loading-progress-text"></div>
+        </div>
+    </div>
+
+    <div id="blazor-error-ui">
+        Something went wrong in Loopsmith.
+        <a href="." class="reload">Reload</a>
+        <span class="dismiss" role="button" aria-label="Dismiss">✕</span>
+    </div>
+    <script src="js/loopsmith.js?v=ec0424d58003"></script>
+    <script src="js/manifest.js?v=659ecc5238b4"></script>
+    <script src="js/bungie-login.js?v=baeeac3e99b4"></script>
+    <script src="_framework/blazor.webassembly.w3qd1tpl0e.js"></script>
+</body>
+
+</html>
