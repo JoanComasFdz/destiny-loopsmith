@@ -114,6 +114,27 @@ downloads, holds and indexes the whole manifest (about 210 MB) behind the startu
 slows them all. There is no warm-up page: every scenario's video starts on the startup screen, and `record.sh` trims it
 off from when Home shows.
 
+### How long a recording takes
+
+Measured on a 4-core, 15 GB cloud session (2026-10-19), recording `Rules/AllClasses` (14 scenarios, 28 runs on desktop
+and mobile, publish skipped, manifest cache warm). Every run passed in every row.
+
+| Classes at once | Runs | Startup (page open → Home), median / max | Changed frames per run, vs. 4 at once |
+|---|---|---|---|
+| 4 (xunit's default, one per core) | 591 s and 639 s (two recordings) | 54 s / 84 s | 1.0× |
+| 6 | 650 s | 73 s / 152 s | 0.94× |
+| 8 | 820 s | 169 s / 244 s | 1.10× |
+
+More classes at once doesn't pay while recording either. A recorded run isn't mostly waiting: each one also has
+Playwright's video encoder (an `ffmpeg` of its own, about half a core) next to its browser. With 6 or 8 at once, the
+GIFs stay as smooth (as many changed frames; the long still stretches are on the startup screen, which is trimmed off),
+but each tab takes two to three times as long to reach Home, so the batch takes as long or longer. `xunit.runner.json`
+stays at `default`, recorded or not.
+
+Converting the videos to GIFs and MP4s took 542 s one after another and about 295 s with `record.sh` converting one per
+core at a time. That is not four times faster, because x264 already spreads one MP4 over several cores. A batch like
+this one now takes about 15 minutes instead of 19.
+
 ## The manifest cache
 
 No scenario reaches bungie.net except to fill a local cache once. BaseE2E routes every bungie.net request of a context:

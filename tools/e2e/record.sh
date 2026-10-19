@@ -22,7 +22,7 @@
 # shown (the startup screen left out) and turns it into a GIF under <out>/<domain folder>/<gif name>.gif (20 fps; a
 # desktop run 800 px wide, a phone run at its 390 CSS pixels; the GIF name ends in -desktop or -mobile) and an MP4 next to
 # it, <gif name>.mp4 (H.264 at the video's own size: 1280×800, a phone's 780×1688). Both hold their last frame 3 s
-# before they end. It prints each
+# before they end. The videos are converted one per core at a time. It prints each
 # scenario's startup time (page open → Home shown) and the requests that left for bungie.net, and writes
 # <out>/scenarios.json. Exits non-zero when a scenario failed (its GIF is still written).
 # --no-video: the same scenarios against the same locally served publish, unrecorded and unpaced (no E2E_VIDEO_DIR):
@@ -323,19 +323,37 @@ palette_at() {
 # The last run's GIFs go (only the folders named like the projects' Scenarios/ domain folders, and Rules/).
 for folder in "$web_project/Scenarios"/*/ "$vscode_project/Scenarios"/*/; do rm -rf "${out:?}/$(basename "$folder")"; done
 rm -rf "${out:?}/Rules"
-records=()
-while IFS= read -r record; do
-  records+=("$record")
-  video="${record%.json}.webm"
-  read -r domain gif screen noted < <(python3 -c 'import json,sys; r=json.load(open(sys.argv[1])); s=r["homeShownSeconds"]; print(r["domain"], r["gif"], r["screen"], 0 if s is None else s)' "$record")
-  width=800
+convert_run() {
+  local record="$1" video="${1%.json}.webm" domain gif screen noted width=800 offset
+  read -r domain gif screen noted < <(python3 -c 'import json,sys; r=json.load(open(sys.argv[1])); s=r["homeShownSeconds"]; print(r["domain"], r["gif"], r["screen"], 0 if s is None else s)' "$record") || return 1
   if [ "$screen" = mobile ]; then width=390; fi
-  offset="$(find_home_in_video "$video" "$noted")"
-  mkdir -p "$out/$domain"
-  ffmpeg -nostdin -loglevel error -y -ss "$offset" -i "$video" -vf "$(palette_at $width)" "$out/$domain/$gif.gif"
+  offset="$(find_home_in_video "$video" "$noted")" || return 1
+  mkdir -p "$out/$domain" || return 1
+  ffmpeg -nostdin -loglevel error -y -ss "$offset" -i "$video" -vf "$(palette_at $width)" "$out/$domain/$gif.gif" || return 1
   ffmpeg -nostdin -loglevel error -y -ss "$offset" -i "$video" -vf "$hold_end" -an \
     -c:v libx264 -preset slow -crf 18 -pix_fmt yuv420p -movflags +faststart "$out/$domain/$gif.mp4"
+}
+# One conversion per core at a time: 28 runs on a 4-core session in about 5 minutes instead of 9 one after another
+# (x264 already spreads one MP4 over the cores; tests/Loopsmith.Web.E2E/README.md, "How long a recording takes"). A
+# conversion that fails names its video and fails the recording.
+conversions="$(nproc)"
+failed_conversions="$out/.failed-conversions"
+: > "$failed_conversions"
+records=()
+# The conversions running (the servers run in the background too: never waited for).
+converting=()
+while IFS= read -r record; do
+  records+=("$record")
+  while [ ${#converting[@]} -ge "$conversions" ]; do
+    wait -n "${converting[@]}" || true
+    running=()
+    for pid in "${converting[@]}"; do if kill -0 "$pid" 2> /dev/null; then running+=("$pid"); fi; done
+    converting=("${running[@]}")
+  done
+  { convert_run "$record" || echo "${record%.json}.webm" >> "$failed_conversions"; } < /dev/null &
+  converting+=($!)
 done < <(find "$videos" -path "$videos/.raw" -prune -o -name '*.json' -print | sort)
+if [ ${#converting[@]} -gt 0 ]; then wait "${converting[@]}" || true; fi
 
 python3 - "$out" "$selection" "${records[@]}" <<'PY'
 import json, os, sys
@@ -388,6 +406,11 @@ else
 fi
 echo "GIFs, MP4s and scenarios.json in $out"
 
+if [ -s "$failed_conversions" ]; then
+  echo "Videos that couldn't be turned into a GIF and an MP4 ($(wc -l < "$failed_conversions")):" >&2
+  sed 's/^/  /' "$failed_conversions" >&2
+  status=1
+fi
 if [ $status -eq 0 ] && grep -q '"passed": false' "$out/scenarios.json"; then status=1; fi
 if [ $status -eq 0 ] && [ ${#records[@]} -eq 0 ]; then echo "No scenario ran." >&2; status=1; fi
 exit $status
