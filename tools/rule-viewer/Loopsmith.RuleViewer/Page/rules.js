@@ -53,4 +53,6 @@ addEventListener('load', wireFlows);
 document.fonts?.ready.then(wireFlows);
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', wireFlows);
 new MutationObserver(wireFlows).observe(document.documentElement, {attributes: true, attributeFilter: ['data-theme']});
-showScope(document.querySelector('[data-scope-chip]').dataset.scopeChip);
+// A page of one rule's flows (the PNG's) has no scopes to pick: its flows are all shown.
+const firstChip = document.querySelector('[data-scope-chip]');
+if (firstChip) showScope(firstChip.dataset.scopeChip); else requestAnimationFrame(wireFlows);
