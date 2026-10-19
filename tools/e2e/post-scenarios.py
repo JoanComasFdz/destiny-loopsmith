@@ -110,10 +110,10 @@ def post(args):
     add_comment(args, write_section(args.repo, version, scenarios, changed))
     for comment, body in plan_collapses(comments, version):
         edit_comment(args, comment, body)
-    hidden = read_hidden(args, comments)
-    if hidden is None:
+    hidden = read_hidden(args, plan_hides(comments, version, set()))
+    if hidden is None and not args.dry_run:
         return
-    for comment in plan_hides(comments, version, hidden):
+    for comment in plan_hides(comments, version, hidden or set()):
         hide_comment(args, comment)
 
 
@@ -523,18 +523,23 @@ def edit_comment(args, comment, body):
 
 
 def read_hidden(args, comments):
-    """The node ids of the workflow's posts already hidden (GraphQL's isMinimized: REST doesn't say); None, with a
-    warning, when GitHub refuses the read, so nothing is hidden this time."""
-    ids = [comment["node_id"] for comment in comments]
+    """The node ids of these posts already hidden (GraphQL's isMinimized: REST doesn't say), matched by the order they
+    were asked in; None, with a warning, when GitHub refuses the read or answers something else, so nothing is hidden
+    this time (a dry run prints them all)."""
+    ids = [comment["node_id"] for comment in comments][:100]
     if not ids:
         return set()
-    query = "query($ids: [ID!]!) { nodes(ids: $ids) { ... on IssueComment { id isMinimized } } }"
+    query = "query($ids: [ID!]!) { nodes(ids: $ids) { ... on IssueComment { isMinimized } } }"
     done = run_gh(["api", "graphql", "--input", "-"], {"query": query, "variables": {"ids": ids}})
-    if done.returncode != 0:
-        print(f"::warning::Couldn't read which posts on #{args.pr} are hidden, so none is hidden: {done.stderr.strip()}")
+    try:
+        nodes = json.loads(done.stdout)["data"]["nodes"] if done.returncode == 0 else None
+    except (ValueError, KeyError, TypeError):
+        nodes = None
+    if not isinstance(nodes, list):
+        print(f"::warning::Couldn't read which posts on #{args.pr} are hidden, so none is hidden: "
+              f"{done.stderr.strip() or done.stdout.strip()}")
         return None
-    nodes = json.loads(done.stdout)["data"]["nodes"]
-    return {node["id"] for node in nodes if node and node.get("isMinimized")}
+    return {id for id, node in zip(ids, nodes) if node and node.get("isMinimized")}
 
 
 def hide_comment(args, comment):

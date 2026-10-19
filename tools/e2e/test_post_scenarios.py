@@ -1,5 +1,5 @@
-"""Tests of post-scenarios.py's post (write_section), of how it collapses, hides and shrinks the earlier ones, of which release
-each run goes to and of what each release keeps when the PR closes:
+"""Tests of post-scenarios.py's post (write_section), of how it collapses, hides and shrinks the earlier ones, of which
+release each run goes to and of what each release keeps when the PR closes:
 python3 -m unittest tools/e2e/test_post_scenarios.py
 
 CI doesn't run them (it runs dotnet test): run them after changing the post.
@@ -273,7 +273,8 @@ class HideTests(unittest.TestCase):
         self.assertEqual([c["id"] for c in post_scenarios.plan_hides([v1, v2], 3, {"IC_1"})], [2])
 
     def test_the_newest_a_shrunk_post_and_another_comment_of_the_workflow_are_never_hidden(self):
-        shrunk = comment(1, post_scenarios.plan_shrinks([comment(1, post_of(1, "A")), comment(2, post_of(2, "A"))])[0][1])
+        [(_, line)] = post_scenarios.plan_shrinks([comment(1, post_of(1, "A")), comment(2, post_of(2, "A"))])
+        shrunk = comment(1, line)
         other = comment(9, f"Something else\n\n---\n{post_scenarios.FOOTER}\n")
         newest = comment(3, post_of(3, "A"))
         self.assertEqual(post_scenarios.plan_hides([shrunk, other, newest], 3, set()), [])
