@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Loopsmith.Web.E2E.Infrastructure.Frontend.Components;
 using Microsoft.Playwright;
 
@@ -6,19 +7,40 @@ namespace Loopsmith.Web.E2E.Infrastructure.Frontend.Pages;
 /// <summary>The start screen (Pages/Home.razor): start a loop from scratch, a build file or a loop file.</summary>
 public sealed class Home(IPage page)
 {
+    private ILocator Chooser => page.Locator("[data-testid=chooser]");
+
     private ILocator StartFromScratch => page.Locator("[data-action=scratch-start]");
 
-    private ILocator HandWritten => page.Locator("[data-testid=hand-written]");
+    private ILocator ImportBuildLink => ImportLinks.Locator("[data-testid=import-build-link]");
 
-    private ILocator ImportBuild => HandWritten.Locator("[data-action=import-build]");
+    private ILocator ImportLinks => page.Locator("[data-testid=import-links]");
+
+    private ILocator ImportBuild => ImportLinks.Locator("[data-action=import-build]");
 
     /// <summary>The banner floating over Home, under the header: an import that failed.</summary>
-    public NoticeBanner Notice { get; } = new(page, page.Locator("[data-testid=hand-written] [data-testid=import-build-link]"));
+    public NoticeBanner Notice { get; } = new(page, page.Locator("[data-testid=import-links] [data-testid=import-build-link]"));
 
-    /// <summary>Whether Home is the page shown now (its hand-written imports, where a build file is imported).</summary>
-    public Task<HomeSnapshot> ReadAsync() => OnScreen.ReadAsync(HandWritten, ReadShownAsync);
+    /// <summary>
+    /// What Home shows: whether it is the page shown now, what it offers to start from (each button's and link's first
+    /// line, and "import a build.yaml"), all its text and how many text fields it has.
+    /// </summary>
+    public Task<HomeSnapshot> ReadAsync() => OnScreen.ReadAsync(Chooser, ReadShownAsync);
 
-    private async Task<HomeSnapshot> ReadShownAsync() => new(await StartFromScratch.IsVisibleAsync());
+    private async Task<HomeSnapshot> ReadShownAsync()
+    {
+        var pressed = await Chooser.GetByRole(AriaRole.Button).AllInnerTextsAsync();
+        var links = await Chooser.GetByRole(AriaRole.Link).AllInnerTextsAsync();
+        var importBuild = await ImportBuildLink.AllInnerTextsAsync();
+        var starts = pressed.Concat(links).Concat(importBuild)
+            .Select(text => text.Split('\n')[0].Trim())
+            .Where(text => text.Length > 0)
+            .ToImmutableArray();
+        return new HomeSnapshot(
+            await StartFromScratch.IsVisibleAsync(),
+            starts,
+            (await Chooser.InnerTextAsync()).Trim(),
+            await Chooser.GetByRole(AriaRole.Textbox).CountAsync());
+    }
 
     /// <summary>Waits until Home is shown (after the manifest's startup screen).</summary>
     public Task WaitUntilShownAsync() => WaitUntilShownAsync(TimeSpan.FromSeconds(30));
@@ -32,7 +54,7 @@ public sealed class Home(IPage page)
 
     /// <summary>Imports the build.yaml fixture <paramref name="fixture"/> (a file next to a scenario class): a new loop for it.</summary>
     public Task ImportBuildAsync(string fixture) =>
-        OnScreen.ActAsync(HandWritten, ImportBuild, input => input.SetInputFilesAsync(FindFixture(fixture)));
+        OnScreen.ActAsync(ImportLinks, ImportBuild, input => input.SetInputFilesAsync(FindFixture(fixture)));
 
     private static string FindFixture(string fixture) =>
         new[] { "Scenarios", "Rules" }
@@ -40,5 +62,8 @@ public sealed class Home(IPage page)
             .Single();
 }
 
-/// <summary>What Home shows: whether it is the page shown.</summary>
-public sealed record HomeSnapshot(bool IsShown);
+/// <summary>
+/// What Home shows: whether it is the page shown, what it offers to start from (the first line of each button and link,
+/// as shown), all its text, and how many text fields it has.
+/// </summary>
+public sealed record HomeSnapshot(bool IsShown, ImmutableArray<string> Starts, string Text, int TextFields);

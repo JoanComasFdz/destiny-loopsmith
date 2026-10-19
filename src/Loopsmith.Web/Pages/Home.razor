@@ -13,7 +13,7 @@
 
 <NoticeBanner Floating="true" Notice="Workbench.Notice" OnDismiss="() => Workbench.Notice = Optional.None<string>()" />
 
-<section class="chooser">
+<section class="chooser" data-testid="chooser">
     <div class="chooser-intro">
         <h1>Design a build's gameplay loop</h1>
         <p class="muted">Start from scratch or import a build, then pick triggers — dodge, throw a grenade and kill, shoot, pick up an orb. Each step shows everything it fires, which element caused it, and what it unlocks next. The loop you design is the thing you export, share and compare.</p>
@@ -37,7 +37,7 @@
         <span class="scratch-start-sub">An Arc Hunter with nothing equipped: pick its super, abilities, aspects and fragments in the designer, and its weapons and armor from every item in the game (or your own, after logging in with Bungie).</span>
     </button>
 
-    <p class="chooser-more muted" data-testid="hand-written">
+    <p class="chooser-more muted" data-testid="import-links">
         Or
         <label class="btn link file-link" data-testid="import-build-link" title="Start from your own build.yaml (docs/rule-format.md)">
             import a build.yaml<InputFile OnChange="ImportBuildAsync" accept=".yaml,.yml" data-action="import-build" />
