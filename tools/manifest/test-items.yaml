@@ -1,0 +1,9 @@
+# The weapons, armor and mods the Core tests equip that no rule names (tools/manifest/README.md): the extractor writes
+# each into rules/manifest.yaml, the excerpt the tests read, and TestItemHashesTests checks that it is there.
+- { hash: 4019651319, name: "Festival Flight", why: "a Strand kinetic weapon with rolls (perk picking, weapon perks, step state)" }
+- { hash: 2888266564, name: "Crisis Inverted", why: "an Arc energy hand cannon (weapon kills, item picking, weapon mods)" }
+- { hash: 299264772, name: "Adept Range", why: "a weapon mod Festival Flight's socket takes (weapon mods)" }
+- { hash: 593554567, name: "Luminopotent Mask", why: "an armor set piece (set bonuses, item picking)" }
+- { hash: 2883433250, name: "Luminopotent Cuirass", why: "an armor set piece (set bonuses, item picking)" }
+- { hash: 1047792392, name: "Luminopotent Strides", why: "an armor set piece (set bonuses, item picking)" }
+- { hash: 2107326067, name: "Luminopotent Cloak", why: "an armor set piece (set bonuses, item picking)" }
