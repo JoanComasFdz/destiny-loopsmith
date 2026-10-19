@@ -79,7 +79,7 @@ public static class ActionResolution
 
     /// <summary>
     /// "Critical health" (<c>health:critical</c>) while you aren't at it, when an equipped rule reacts to it or to a hit
-    /// at it; "Hit at critical health" (<c>health:hit</c>) while you are, when an equipped rule reacts to it
+    /// at it, or a rule or passive needs it (<c>has: critical-health</c>: Mechaneer's Tricksleeves); "Hit at critical health" (<c>health:hit</c>) while you are, when an equipped rule reacts to it
     /// (<c>on: { hitAtCriticalHealth: {} }</c>). In a build where nothing reacts to them they set nothing off, so they
     /// aren't offered; ending critical health is an <c>end:</c> like any buff's.
     /// </summary>
@@ -88,8 +88,10 @@ public static class ActionResolution
         var rules = build.Equipped.SelectMany(equipped => equipped.Element.Rules).ToImmutableArray();
         var onReach = rules.Any(rule => rule.On is Trigger.CriticalHealth);
         var onHit = rules.Any(rule => rule.On is Trigger.HitAtCriticalHealth);
+        var guarded = rules.Any(rule => rule.When.Any(condition => condition.IsNaming(DeclaredStatuses.CriticalHealth)))
+            || build.Equipped.Any(equipped => equipped.Element.Passives.Any(passive => passive.IsSwitchedOnBy(DeclaredStatuses.CriticalHealth)));
         var atCritical = state.HasBuff(DeclaredStatuses.CriticalHealth);
-        return (atCritical, onReach || onHit, onHit) switch
+        return (atCritical, onReach || onHit || guarded, onHit) switch
         {
             (false, true, _) => [new StateDeclaration.CriticalHealth()],
             (true, _, true) => [new StateDeclaration.HitAtCriticalHealth()],

@@ -91,6 +91,18 @@ public sealed class ReadyWeaponTests
     }
 
     [Fact]
+    public void Critical_health_is_offered_when_a_rule_needs_it_without_reacting_to_it()
+    {
+        var guarded = Element("guarded-probe", ElementKind.Fragment, [OnWhen(new Trigger.ReadyWeapon(Sidearm), new Condition.HasBuff(StatusId.From("critical-health")), Buff("amplified"))]);
+
+        var offered = ActionResolution.ListCriticalHealthDeclarations(ValidateBuild([guarded]), ActionResolution.CreateInitialState());
+        var none = ActionResolution.ListCriticalHealthDeclarations(ValidateBuild([CreateFragment("ready-probe", Sidearm)]), ActionResolution.CreateInitialState());
+
+        Assert.Equal([new StateDeclaration.CriticalHealth()], offered);
+        Assert.Empty(none);
+    }
+
+    [Fact]
     public void A_ready_token_round_trips_and_takes_no_count_or_option()
     {
         Assert.Equal(ReadyEnergy, Assert.IsType<Result<PlayerAction, string>.Ok>(ActionTokenParsing.ParseActionToken("energy:ready")).Value);
