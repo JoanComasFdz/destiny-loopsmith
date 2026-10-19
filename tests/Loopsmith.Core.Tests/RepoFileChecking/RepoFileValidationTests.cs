@@ -35,6 +35,7 @@ public sealed class RepoFileValidationTests
         ["tests/Loopsmith.Web.E2E/Scenarios/Loop/Weapons/EnemyCount/ogma-pr6-stats-for-all.build.yaml"] = [2342054803],
         ["tests/Loopsmith.Web.E2E/Scenarios/Loop/Weapons/EnemyCount/ogma-pr6-unrelenting.build.yaml"] = [2342054803],
         ["tests/Loopsmith.Web.E2E/Scenarios/Loop/Weapons/EnemyCount/scathelocke-veterans-wisdom.build.yaml"] = [3332538050],
+        ["tests/Loopsmith.Web.E2E/Rules/Weapons/Perks/VeteransWisdom/veterans-wisdom-scathelocke.build.yaml"] = [3332538050],
         ["tests/Loopsmith.Web.E2E/Scenarios/Loop/Weapons/EnemyCount/speleologist-radiolaria-transposer.build.yaml"] = [412251536],
     }.ToImmutableDictionary();
 
