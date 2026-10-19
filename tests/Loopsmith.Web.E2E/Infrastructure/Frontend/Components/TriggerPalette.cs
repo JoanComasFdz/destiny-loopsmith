@@ -26,7 +26,7 @@ public sealed class TriggerPalette(IPage page)
 
     private ILocator ApartCaptions => Row.Locator("[data-testid=trigger-buttons-apart] [data-testid=trigger-caption]");
 
-    private ILocator DisabledCaptions => Row.Locator("[data-action=trigger]:disabled [data-testid=trigger-caption]");
+    private ILocator DisabledCaptions => Row.Locator("[data-action=trigger][data-enabled=false] [data-testid=trigger-caption]");
 
     private ILocator TargetCount => Row.Locator("[data-action=target-count]");
 
