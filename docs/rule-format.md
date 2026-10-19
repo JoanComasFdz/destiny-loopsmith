@@ -179,8 +179,8 @@ itemConstants:
 armorSets:
   - { hash: 499993704, name: "Luminopotent", perks: [{ pieces: 2, perk: 2769443639 }, { pieces: 4, perk: 2769443638 }] }
 items:
-  - { hash: 4019651319, name: "Festival Flight", kind: weapon, type: "Grenade Launcher", tier: legendary, slot: kinetic, damageType: strand, breaker: 2611060930, traits: [[1017229899, …, 923806249, …], [1546142478, …, 243981275, …]], intrinsic: 385138649, watermark: /common/…/50c3….png, icon: /common/…/e3d2….jpg }
-  - { hash: 3325463374, name: "Thunderlord", kind: weapon, type: "Machine Gun", tier: exotic, slot: power, damageType: arc, traits: [[1419069769], [2779035018]], intrinsic: 4148158229, catalyst: 1550063955, breaker: 2611060930, icon: … }
+  - { hash: 4019651319, name: "Festival Flight", kind: weapon, type: "Grenade Launcher", tier: legendary, slot: kinetic, damageType: strand, ammo: special, breaker: 2611060930, traits: [[1017229899, …, 923806249, …], [1546142478, …, 243981275, …]], intrinsic: 385138649, watermark: /common/…/50c3….png, icon: /common/…/e3d2….jpg }
+  - { hash: 3325463374, name: "Thunderlord", kind: weapon, type: "Machine Gun", tier: exotic, slot: power, damageType: arc, ammo: heavy, traits: [[1419069769], [2779035018]], intrinsic: 4148158229, catalyst: 1550063955, breaker: 2611060930, icon: … }
   - { hash: 1550063955, name: "Thunderlord Catalyst", kind: catalyst, tier: exotic, perks: [818260022], description: "Upgrades this weapon to a Masterwork. …", icon: … }
   - { hash: 818260022, name: "Return Stroke", kind: perk, description: "Causing a lightning strike with this weapon partially reloads the magazine from reserves.", icon: … }
   - { hash: 593554567, name: "Luminopotent Mask", kind: armor, type: "Helmet", tier: legendary, slot: helmet, set: 499993704, class: hunter, icon: … }
@@ -208,7 +208,9 @@ items:
   stat change such as `-10 Grenade ▼`), without the private-use glyphs of Destiny's icon font. It is shown
   in an item's details as Bungie's; it is never a rule.
 * `slot`: a weapon's `kinetic|energy|power` and armor's `helmet|arms|chest|legs|classItem` (both required);
-  an armor mod's armor slot (none: a general mod). `damageType` belongs to weapons, and so do `traits`: its
+  an armor mod's armor slot (none: a general mod). `damageType` belongs to weapons, and so do `ammo` (its ammo type,
+  `primary|special|heavy`: the manifest's `equippingBlock.ammoType`; a Special weapon sits in the kinetic or energy slot
+  as a Primary does, so the slot doesn't say it) and `traits`: its
   trait columns (the "frames" sockets of its perks), each the list of perk hashes it can roll with, enhanced
   versions included (the manifest's plug set). A column that doesn't roll (an exotic's) has its one perk.
   Every perk is written as an item too (`kind: weaponPerk`, `type: "Trait"` or `"Enhanced Trait"`); a column
@@ -553,6 +555,8 @@ rules "Max Bolt Charge". A `stacksMaxed` (or `atMax`) on a status without `maxSt
 | `any` | `AnySource` |
 | `weapon` | `AnyWeapon` |
 | `weapon:strand` | `WeaponOfType(Strand)` |
+| `weapon:special` (`primary\|special\|heavy`) | `WeaponOfAmmo(Special)` — a weapon of that ammo type, the manifest's: of its item's `ammo` ([manifest excerpt](#manifest-excerpt-rulesmanifestyaml)); a weapon whose ammo type the manifest doesn't say matches no ammo type |
+| `weapon:special:arc` (`<ammo>:<type>`) | `WeaponOfAmmoAndType(Special, Arc)` — a weapon of that ammo type and that damage type (Spark of Beacons's "Special or Heavy Arc weapon kills": a rule each) |
 | `weapon:harmonic` | `WeaponOfSuperType` — a weapon of your Super's element (the Harmonic mods): of the build's Super's `affinity` in the catalog; with the Super `?` (or one of no element) it matches nothing |
 | `slot:power` | `WeaponInSlot(Power)` — the build's weapon in that slot (`kinetic\|energy\|power`): an exotic weapon's "this weapon", since an exotic always sits in its own slot |
 | `weapon:this` | `ThisWeapon` — the weapon holding the element: only in a `weaponPerk`, `weaponMod`, `exoticWeapon` or `catalyst` (`weapon:this is the weapon holding the element: only a weaponPerk, weaponMod, exoticWeapon or catalyst has one, not a armorMod`) |
@@ -888,23 +892,21 @@ stats: { weapons: 47, class: 104, grenade: 145, super: 27, melee: 79 }   # any s
   fewest tiers); so are slots that no longer hold exactly the build's perks.
 * Optional: `author`, `source` (an absolute http(s) URL), `catalog`, `exoticArmor`, `artifact`, and the lists
   `aspects`, `fragments`, `armorSetBonuses`, `armorMods`, `artifactPerks`, `weapons` (default empty).
-* A weapon is given by its `hash` or named in full.
-  * By `hash`, its manifest item: its slot, name, damage type and archetype are read from Bungie's manifest when the
-    file is read, and so are its icon, its trait columns, its intrinsic and catalyst. The manifest is the source of
-    truth, so the file doesn't copy them: a `slot`, `name`, `type` or `archetype` given with a hash (a file written
-    before) is ignored. A hash the manifest doesn't know as a weapon with a damage type is refused ("weapon hash 1234567
-    isn't in the manifest, so the file can't be imported"). The Core tests read the excerpt (`rules/manifest.yaml`; rerun
-    [tools/manifest/](../tools/manifest/README.md) for a weapon it lacks); the designer reads Bungie's full manifest for
-    the hashes the excerpt lacks before it imports a build or loop file, or opens a shared loop. The file writer writes
-    a weapon given by hash as its hash and what the build chooses for it, with its name in a comment after it on its
-    line (`- {hash: 4019651319, perks: [slice]} # Festival Flight`; not in a flow list, which has no room for one).
-  * Named in full, without a hash: `slot` (`kinetic|energy|power`), `name`, `type`
-    (`kinetic|arc|solar|void|stasis|strand`) and `archetype` are required: a weapon without an archetype is refused
-    ("weapon 'Any Arc weapon' needs an \`archetype\` or a \`hash\`"), since a perk that goes by its archetype would show
-    both amounts. `archetype` is a kebab-case word, the manifest's type (`hand-cannon`); it picks a perk's energy grant
-    `byArchetype` (Demolitionist's).
-  * `perks` (element ids), `roll`, `catalyst`, `instance` and `mod` are optional either way. The name labels its
-    actions ("Festival Flight (🥊 hit 5)").
+* A weapon is given by its `hash`, its manifest item: its slot, name, damage type, ammo type and archetype are read from
+  Bungie's manifest when the file is read, and so are its icon, its trait columns, its intrinsic and catalyst. The
+  manifest is the source of truth, so the file doesn't copy them: a `slot`, `name`, `type` or `archetype` given with a
+  hash (a file written before) is ignored, but for an `archetype` the manifest's type doesn't name. A weapon without a
+  hash is refused ("weapon 'Any Arc weapon' needs a \`hash\`"): only the manifest says what it is, and the designer
+  always gives one (a picked weapon, a DIM link's, the player's own). A hash the manifest doesn't know as a weapon with a
+  damage type is refused ("weapon hash 1234567 isn't in the manifest, so the file can't be imported"). The Core tests read
+  the excerpt (`rules/manifest.yaml`; rerun [tools/manifest/](../tools/manifest/README.md) for a weapon it lacks); the
+  designer reads Bungie's full manifest for the hashes the excerpt lacks before it imports a build or loop file, or opens
+  a shared loop. The file writer writes a weapon as its hash and what the build chooses for it, with its name in a
+  comment after it on its line (`- {hash: 4019651319, perks: [slice]} # Festival Flight`; not in a flow list, which has
+  no room for one). Its archetype (the manifest's type, kebab-case: `hand-cannon`) picks a perk's energy grant
+  `byArchetype` (Demolitionist's).
+  * `perks` (element ids), `roll`, `catalyst`, `instance` and `mod` are optional. The name labels its actions
+    ("Festival Flight (🥊 hit 5)").
 * `instance`: the copy the build wears, by Bungie's instance id (a dim.gg share's, or one picked from the player's
   weapons; quoted: `instance: "6917529810172542011"`); after the player's Bungie login its tier and masterwork show on
   the weapon's square when it is theirs, and it holds that copy's perks
@@ -1031,6 +1033,9 @@ the ground.
   of `grenade:kill:3` — each fire.
 * **Stacked mods:** an element equipped N times fires its rules once; `PerModCount` picks the
   N-th value (last value if N is larger), in its outcomes and in its passives.
+* **`weapon:special`** (and `weapon:primary`, `weapon:heavy`, each with an optional `:<type>`) matches a weapon whose
+  ammo type, its manifest item's, is that one (and whose damage type is that one, when named). It reads "Special Arc
+  weapon" ("Kill target with Special Arc weapon"). No ammo is counted (ADRs D37): the ammo type only says which weapon.
 * **`weapon:harmonic`** matches a weapon whose type is the damage type of the build's Super (its element's
   `affinity`); with the Super `?`, or one the catalog doesn't have, it matches nothing.
 * **Rules that don't stack** (`doesNotStackWith`, ADRs D6): of the rules one event fires, a rule

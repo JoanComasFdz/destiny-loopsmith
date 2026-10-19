@@ -20,7 +20,8 @@ public partial record DamageSource
     partial record AbilityUsedAs(AbilityKind Kind, AbilityInput Input);   // only that use of the ability: melee:slide, Tempest Strike's uppercut
     partial record ThisWeapon();                     // the weapon holding the element (a weapon mod's, a perk's): the build check binds it to that weapon's slot
     partial record ThisWeaponOfType(DamageType Type);   // the weapon holding the element, when it is of that type (Synergy's pickup by the weapon's element)
-    partial record WeaponOfAmmo(AmmoType Ammo, Optional<DamageType> Type);   // a weapon of that ammo type (and of that damage type, when given): Spark of Beacons's Special Arc weapon; its ammo unknown: nothing
+    partial record WeaponOfAmmo(AmmoType Ammo);      // a weapon of that ammo type (its manifest item's; unknown: nothing)
+    partial record WeaponOfAmmoAndType(AmmoType Ammo, DamageType Type);   // a weapon of that ammo and damage type: Spark of Beacons's Special Arc weapon
 }
 
 /// <summary>The <em>concrete</em> origin of damage in an event. Patterns (<see cref="DamageSource"/>) match origins.</summary>

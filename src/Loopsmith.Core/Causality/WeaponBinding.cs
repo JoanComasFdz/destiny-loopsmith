@@ -146,7 +146,8 @@ public static class WeaponBinding
             thisWeaponOfType: ofType => ofType.Type == type
                 ? Optional.Some<DamageSource>(new DamageSource.WeaponInSlot(slot))
                 : Optional.None<DamageSource>(),
-            weaponOfAmmo: _ => Optional.Some(source));
+            weaponOfAmmo: _ => Optional.Some(source),
+            weaponOfAmmoAndType: _ => Optional.Some(source));
 
     private static IEnumerable<T> ToSequence<T>(Optional<T> optional) =>
         optional.Match(some => new[] { some.Value }, _ => []);

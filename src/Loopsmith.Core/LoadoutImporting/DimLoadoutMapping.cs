@@ -138,7 +138,7 @@ public static class DimLoadoutMapping
     ];
 
     /// <summary>
-    /// A weapon the manifest excerpt knows — its slot, name, damage type and archetype ("Grenade Launcher" →
+    /// A weapon the manifest excerpt knows — its slot, name, damage type, ammo type and archetype ("Grenade Launcher" →
     /// <c>grenade-launcher</c>) — and its roll: in each trait column, the loadout's socket override for it that the
     /// column rolls with — its mod (the override its mod socket takes), and the copy it is (<paramref name="instance"/>, a
     /// dim.gg share's item id). A DIM loadout names the weapon; its perks and mod only when they were saved with it (none: "?").

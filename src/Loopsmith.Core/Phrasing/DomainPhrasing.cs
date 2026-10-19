@@ -337,7 +337,8 @@ public static class DomainPhrasing
             usedAs => usedAs.Kind.DescribeAbilityUse(usedAs.Input),
             _ => "this weapon",
             thisOfType => $"this weapon ({thisOfType.Type})",
-            ofAmmo => ofAmmo.Type.Match(type => $"{ofAmmo.Ammo} {type.Value} weapon", _ => $"{ofAmmo.Ammo} weapon"));
+            ofAmmo => $"{ofAmmo.Ammo} weapon",
+            ofAmmoAndType => $"{ofAmmoAndType.Ammo} {ofAmmoAndType.Type} weapon");
 
     public static string DescribeOrigin(this KeywordGlossary glossary, DamageOrigin origin, Build build) =>
         origin.Match(

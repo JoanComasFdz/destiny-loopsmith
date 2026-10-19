@@ -128,7 +128,7 @@ internal static class RuleBodyParsing
 
     private static bool IsWeaponSource(DamageSource source) =>
         source is DamageSource.AnyWeapon or DamageSource.WeaponOfType or DamageSource.WeaponOfSuperType or DamageSource.WeaponInSlot
-            or DamageSource.ThisWeapon or DamageSource.ThisWeaponOfType or DamageSource.WeaponOfAmmo;
+            or DamageSource.ThisWeapon or DamageSource.ThisWeaponOfType or DamageSource.WeaponOfAmmo or DamageSource.WeaponOfAmmoAndType;
 
     /// <summary>
     /// <c>{ reloadWeapon: weapon:this }</c> or <c>{ reloadWeapon: slot:power }</c>: reloads that one weapon — the one holding

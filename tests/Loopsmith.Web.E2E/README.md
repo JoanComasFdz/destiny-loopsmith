@@ -91,7 +91,7 @@ Scenarios/Build/Weapons/     the same for weapons and their perks
 Scenarios/Build/Armor/       the same for armor, sets, mods
 Scenarios/ImportExport/      build.yaml and loop import, loop export, share links
 Scenarios/Loop/Arc/          each Arc interaction with a minimal build (then Solar/, Void/, Strand/, Stasis/, Prismatic/)
-Scenarios/Loop/Weapons/      a weapon's steps: reload, the "×" enemy count, its row in the trigger panel
+Scenarios/Loop/Weapons/      a weapon's steps: reload, the "×" enemy count, its row in the trigger panel, its ammo type
 ```
 
 `Rules/` holds one scenario per rule claim, mirroring `rules/` ([docs/given-when-then-rule-scenarios.md](../../docs/given-when-then-rule-scenarios.md)): `rules/hunter/arc/melees.yaml` →

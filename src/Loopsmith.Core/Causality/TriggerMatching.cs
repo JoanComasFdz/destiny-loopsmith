@@ -85,9 +85,10 @@ public static class TriggerMatching
             usedAs => origin is DamageOrigin.Ability ability && ability.Kind == usedAs.Kind && ability.Input == usedAs.Input,
             _ => false,
             _ => false,
-            ofAmmo => origin is DamageOrigin.Weapon weapon
-                && weapon.Ammo.Match(ammo => ammo.Value == ofAmmo.Ammo, _ => false)
-                && ofAmmo.Type.Match(type => type.Value == weapon.Type, _ => true));
+            ofAmmo => origin is DamageOrigin.Weapon weapon && weapon.Ammo.Match(ammo => ammo.Value == ofAmmo.Ammo, _ => false),
+            ofAmmoAndType => origin is DamageOrigin.Weapon weapon
+                && weapon.Ammo.Match(ammo => ammo.Value == ofAmmoAndType.Ammo, _ => false)
+                && weapon.Type == ofAmmoAndType.Type);
 
     /// <summary>Whether the trigger is a kill that needs a precision kill (<c>precision: true</c>, ADRs D36).</summary>
     public static bool NeedsPrecisionKill(this Trigger trigger) =>

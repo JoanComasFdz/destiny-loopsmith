@@ -14,8 +14,8 @@ The excerpt holds every hash Loopsmith names: each `hash:` in rules/ (elements, 
 armor set perks), every hash in the saved DIM shares (builds/*/dim-loadout.json) and every hash a weapon of the repo's
 builds and loops gives (its `hash`, its `roll` picks and its `mod`, in builds/*/build.yaml and in the build each
 builds/*/loops/*.loop.yaml embeds), so the Core tests, which read only the excerpt, know each of those weapons. For each: its name,
-kind, type, icon, tier, Bungie's description and, for weapons, armor and armor mods, its slot and damage
-type, and a weapon's or armor piece's season watermark (`watermark`: the overlay with its season's or expansion's
+kind, type, icon, tier, Bungie's description and, for weapons, armor and armor mods, its slot, damage
+type (a weapon's ammo type too: `ammo`), and a weapon's or armor piece's season watermark (`watermark`: the overlay with its season's or expansion's
 icon in its top-left corner). A weapon also gets its breaker (`breaker`: the champion it breaks of its own, an
 exotic's, else the one its intrinsic frame gives it — a frame's perk named with the breaker, "[Shield-Piercing]
 Barrier" on Adaptive Frame, as DIM reads it), its trait

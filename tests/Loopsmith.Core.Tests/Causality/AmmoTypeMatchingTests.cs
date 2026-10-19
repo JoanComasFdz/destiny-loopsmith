@@ -13,8 +13,8 @@ namespace Loopsmith.Core.Tests.Causality;
 /// </summary>
 public sealed class AmmoTypeMatchingTests
 {
-    private static readonly DamageSource Special = new DamageSource.WeaponOfAmmo(AmmoType.Special, Optional.None<DamageType>());
-    private static readonly DamageSource SpecialArc = new DamageSource.WeaponOfAmmo(AmmoType.Special, Optional.Some(DamageType.Arc));
+    private static readonly DamageSource Special = new DamageSource.WeaponOfAmmo(AmmoType.Special);
+    private static readonly DamageSource SpecialArc = new DamageSource.WeaponOfAmmoAndType(AmmoType.Special, DamageType.Arc);
 
     [Theory]
     [InlineData(AmmoType.Special, DamageType.Arc, true, true)]

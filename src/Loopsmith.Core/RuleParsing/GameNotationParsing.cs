@@ -235,10 +235,10 @@ public static class GameNotationParsing
         argument.IndexOf(':', StringComparison.Ordinal) switch
         {
             < 0 => ParseVocabularyWord<AmmoType>(argument)
-                .Map(DamageSource (ammo) => new DamageSource.WeaponOfAmmo(ammo, Optional.None<DamageType>())),
+                .Map(DamageSource (ammo) => new DamageSource.WeaponOfAmmo(ammo)),
             var colon => ParseVocabularyWord<AmmoType>(argument[..colon])
                 .Bind(ammo => ParseVocabularyWord<DamageType>(argument[(colon + 1)..])
-                    .Map(DamageSource (type) => new DamageSource.WeaponOfAmmo(ammo, Optional.Some(type)))),
+                    .Map(DamageSource (type) => new DamageSource.WeaponOfAmmoAndType(ammo, type))),
         };
 
     /// <summary>
