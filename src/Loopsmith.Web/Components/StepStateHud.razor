@@ -7,7 +7,8 @@
    Below them, each counted buff's stacks (Armor Charge: "x1 · +1 (chance)"); tapping its row lists each step that gained
    or spent some, and how it decays (never applied, ADRs D33). Then the damage resistance right then: PvE and PvP for all
    damage, and a PvE line for each resistance against some combatants only; tapping its title shows where each comes
-   from and how they multiply. *@
+   from and how they multiply. Then the damage bonuses holding right then: a row for each damage source they make harder
+   ("Melee  ?"), each source's own value, never added up; tapping its title shows where each comes from. *@
 <div class="step-hud" data-testid="step-state">
     <div class="hud-title">State after #@Number</div>
     <div class="hud-columns">
@@ -78,6 +79,31 @@
                     @foreach (var line in resistance.Value.AgainstSome)
                     {
                         @RenderResistanceSources($"{DomainPhrasing.Capitalize(line.Against)}: all damage ×", line.Sources, [$"PvE: {line.PveFormula}"])
+                    }
+                </div>
+            }
+        </div>
+    }
+    @if (!State.DamageBonus.IsEmpty)
+    {
+        <div class="hud-resistance" data-testid="damage-bonus">
+            <button type="button" class="hud-resistance-row hud-bonus-row hud-resistance-head" data-action="damage-bonus-toggle" aria-expanded="@(showDamageBonus ? "true" : "false")"
+                    @onclick="ToggleDamageBonus" @onclick:stopPropagation="true">
+                <span class="hud-label">@(showDamageBonus ? "▾" : "▸") Damage bonus</span>
+            </button>
+            @foreach (var line in State.DamageBonus)
+            {
+                <div class="hud-resistance-row hud-bonus-row" data-testid="damage-bonus-line">
+                    <span class="hud-resistance-name" data-testid="damage-bonus-line-name">@line.Against</span>
+                    <span class="hud-resistance-value hud-bonus-value" data-testid="damage-bonus-line-value">@StateHudShaping.DescribeDamageBonusLine(line)</span>
+                </div>
+            }
+            @if (showDamageBonus)
+            {
+                <div class="hud-resistance-sources" data-testid="damage-bonus-sources">
+                    @foreach (var line in State.DamageBonus)
+                    {
+                        @RenderDamageBonusSources(line)
                     }
                 </div>
             }
@@ -193,6 +219,33 @@
 
     private void ToggleResistance() =>
         showResistance = !showResistance;
+
+    private bool showDamageBonus;
+
+    private void ToggleDamageBonus() =>
+        showDamageBonus = !showDamageBonus;
+
+    /// <summary>A damage bonus row's sources, each with its icon (when Bungie's data has one) and value, opening its details on a tap.</summary>
+    private RenderFragment RenderDamageBonusSources(DamageBonusLine line) => __builder =>
+    {
+        <div class="hud-resistance-source-line">
+            <span class="hud-label">@line.Against</span>
+            <span class="chips">
+                @foreach (var source in line.Sources)
+                {
+                    <button type="button" class="chip hud-chip @ToneStyling.ToAffinityClass(source.Affinity)" data-testid="damage-bonus-source" data-effect="@source.Element.Value"
+                            @onclick="() => ShowElementAsync(source.Element)" @onclick:stopPropagation="true">
+                        @if (LoadoutShaping.FindElementIcon(Build.Catalog, source.Element) is Optional<string>.Some icon)
+                        {
+                            <img class="inline-icon hud-keyword-icon" src="@icon.Value" alt="" loading="lazy" />
+                        }
+                        <span data-testid="damage-bonus-source-name">@source.Name</span>
+                        <span class="hud-switches" data-testid="damage-bonus-source-value">@StateHudShaping.DescribeDamageBonus(source.Change)</span>
+                    </button>
+                }
+            </span>
+        </div>
+    };
 
     /// <summary>The counted buffs whose changes are shown, by status (each step's state keeps its own).</summary>
     private ImmutableHashSet<StatusId> openCounts = [];

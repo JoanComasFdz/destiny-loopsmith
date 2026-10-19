@@ -62,4 +62,12 @@ public static class StateHudShaping
     /// <summary>"45% · PvP 25%"; a source against combatants only: "34.5% · PvP 0%" (it does nothing in PvP).</summary>
     public static string DescribeResistanceSource(ResistanceSource source) =>
         source.Pve.FormatPercent() + source.Pvp.Map(pvp => $" · PvP {pvp.FormatPercent()}").UnwrapOr(" · PvP 0%");
+
+    /// <summary>"+10%", "+10%|+17%"; a bonus whose amount isn't known: "?" (never 0).</summary>
+    public static string DescribeDamageBonus(GameValue change) =>
+        change is GameValue.Unknown ? "?" : "+" + change.FormatPercent().Replace("|", "|+", StringComparison.Ordinal);
+
+    /// <summary>A damage bonus row's values, each source's own, never added up: "?", "+50% · +10%".</summary>
+    public static string DescribeDamageBonusLine(DamageBonusLine line) =>
+        string.Join(" · ", line.Sources.Select(source => DescribeDamageBonus(source.Change)));
 }

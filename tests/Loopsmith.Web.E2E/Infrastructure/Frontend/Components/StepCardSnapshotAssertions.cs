@@ -129,6 +129,26 @@ public static class StepCardSnapshotAssertions
         return that;
     }
 
+    /// <summary>The card's damage bonus row <paramref name="row"/> ("Melee") reads <paramref name="value"/> ("?").</summary>
+    public static AssertingThat<StepCardSnapshot> HasDamageBonus(this AssertingThat<StepCardSnapshot> that, string row, string value)
+    {
+        var shown = that.InstanceToAssert.Bonus.Rows.Where(found => found.Name == row).ToArray();
+        Assert.True(shown.Length == 1, $"The card's damage bonus shows the rows {Describe(that.InstanceToAssert.Bonus.Rows.Select(found => found.Name))}, but one \"{row}\" row was expected.");
+        Assert.True(shown[0].Value == value, $"The card's \"{row}\" damage bonus reads \"{shown[0].Value}\", but \"{value}\" was expected.");
+        return that;
+    }
+
+    /// <summary><paramref name="ability"/> is a source of the card's damage bonus, with the value <paramref name="value"/> ("?").</summary>
+    public static AssertingThat<StepCardSnapshot> HasDamageBonusFrom(this AssertingThat<StepCardSnapshot> that, Ability ability, string value)
+    {
+        var name = ability.ToShownText();
+        var sources = that.InstanceToAssert.Bonus.Sources;
+        Assert.True(
+            sources.Any(source => source.Name == name && source.Value == value),
+            $"The card's damage bonus comes from {Describe(sources.Select(source => $"{source.Name} {source.Value}"))}, but \"{name} {value}\" was expected among them.");
+        return that;
+    }
+
     /// <summary>The card has no line from <paramref name="perk"/>.</summary>
     public static AssertingThat<StepCardSnapshot> DoesNotFire(this AssertingThat<StepCardSnapshot> that, WeaponPerk perk)
     {

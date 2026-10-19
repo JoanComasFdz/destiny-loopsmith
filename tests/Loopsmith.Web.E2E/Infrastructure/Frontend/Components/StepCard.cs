@@ -21,6 +21,12 @@ public sealed class StepCard(IPage page, int number)
 
     private ILocator ResistanceSources => Resistance.Locator("[data-testid=resistance-sources]");
 
+    private ILocator Bonus => Card.Locator("[data-testid=damage-bonus]");
+
+    private ILocator BonusToggle => Bonus.Locator("[data-action=damage-bonus-toggle]");
+
+    private ILocator BonusSources => Bonus.Locator("[data-testid=damage-bonus-sources]");
+
     /// <summary>Waits until the card shows its "why:" reasons (after the "why" checkbox is ticked).</summary>
     public Task WaitUntilReasonsShownAsync() => Reasons.First.WaitForAsync(new() { State = WaitForSelectorState.Visible });
 
@@ -29,6 +35,12 @@ public sealed class StepCard(IPage page, int number)
 
     /// <summary>Waits until the card's damage resistance shows where each of its resistances comes from.</summary>
     public Task WaitUntilResistanceSourcesShownAsync() => ResistanceSources.WaitForAsync(new() { State = WaitForSelectorState.Visible });
+
+    /// <summary>Clicks the "▸ DAMAGE BONUS" title of the card's state: where each damage bonus comes from shows below its rows.</summary>
+    public Task ClickDamageBonusAsync() => OnScreen.PressAsync(Bonus, BonusToggle);
+
+    /// <summary>Waits until the card's damage bonus shows where each of its bonuses comes from.</summary>
+    public Task WaitUntilDamageBonusSourcesShownAsync() => BonusSources.WaitForAsync(new() { State = WaitForSelectorState.Visible });
 
     /// <summary>What the card shows now.</summary>
     public Task<StepCardSnapshot> ReadAsync() => OnScreen.ReadAsync(Card, ReadShownAsync);
@@ -43,7 +55,10 @@ public sealed class StepCard(IPage page, int number)
             new StepState(ToChips(shown.Buffs), ToChips(shown.Weapons), ToChips(shown.Debuffs), ToChips(shown.Ground)),
             new DamageResistance(
                 [.. shown.Resistance.Select(row => new ResistanceRow(row.Name, row.Pve, row.Pvp))],
-                [.. shown.ResistanceSources.Select(source => new ResistanceSource(source.Name, source.Value))]));
+                [.. shown.ResistanceSources.Select(source => new ResistanceSource(source.Name, source.Value))]),
+            new DamageBonus(
+                [.. shown.Bonus.Select(row => new DamageBonusRow(row.Name, row.Value))],
+                [.. shown.BonusSources.Select(source => new DamageBonusSource(source.Name, source.Value))]));
     }
 
     private static ImmutableArray<StateChip> ToChips(ShownChip[] chips) => [.. chips.Select(chip => new StateChip(chip.Text, chip.Tooltip))];
@@ -51,7 +66,8 @@ public sealed class StepCard(IPage page, int number)
     // The card's texts as the user reads them, white space collapsed. A chip reads as its parts (its name, how many
     // effects it switches on, its weapons) joined by " · " ("One for All · Festival Flight"), as the card draws them
     // apart, and its tooltip is its title. The damage resistance reads as its rows ("All damage", PvE, PvP) and, once its
-    // title is clicked, the sources below them (each "<name>" and "<its values>").
+    // title is clicked, the sources below them (each "<name>" and "<its values>"); the damage bonus the same way, its rows
+    // ("Melee", "?") and, once its title is clicked, its sources ("Combination Blow", "?").
     private const string ReadScript = """
         card => {
           const text = el => (el ? el.innerText : '').replace(/\s+/g, ' ').trim();
@@ -85,13 +101,23 @@ public sealed class StepCard(IPage page, int number)
               name: text(source.querySelector('[data-testid=resistance-source-name]')),
               value: text(source.querySelector('[data-testid=resistance-source-value]')),
             })),
+            bonus: [...card.querySelectorAll('[data-testid=damage-bonus] [data-testid=damage-bonus-line]')].map(row => ({
+              name: text(row.querySelector('[data-testid=damage-bonus-line-name]')),
+              value: text(row.querySelector('[data-testid=damage-bonus-line-value]')),
+            })),
+            bonusSources: [...card.querySelectorAll('[data-testid=damage-bonus-sources] [data-testid=damage-bonus-source]')].map(source => ({
+              name: text(source.querySelector('[data-testid=damage-bonus-source-name]')),
+              value: text(source.querySelector('[data-testid=damage-bonus-source-value]')),
+            })),
           };
         }
         """;
 
     private sealed record ShownCard(
         string Heading, ShownEvent[] Events, bool NothingTriggers, ShownChip[] Buffs, ShownChip[] Weapons, ShownChip[] Debuffs, ShownChip[] Ground,
-        ShownResistanceRow[] Resistance, ShownResistanceSource[] ResistanceSources);
+        ShownResistanceRow[] Resistance, ShownResistanceSource[] ResistanceSources, ShownBonus[] Bonus, ShownBonus[] BonusSources);
+
+    private sealed record ShownBonus(string Name, string Value);
 
     private sealed record ShownResistanceRow(string Name, string Pve, string Pvp);
 
@@ -106,9 +132,9 @@ public sealed class StepCard(IPage page, int number)
 
 /// <summary>
 /// What a step card shows: its heading ("#1 Festival Flight (🥊 hit)"), the events it fired with what fired from each,
-/// whether it reads "nothing triggers", its "State after #N" and its damage resistance.
+/// whether it reads "nothing triggers", its "State after #N", its damage resistance and its damage bonus.
 /// </summary>
-public sealed record StepCardSnapshot(string Heading, ImmutableArray<FiredEvent> Events, bool NothingTriggers, StepState State, DamageResistance Resistance);
+public sealed record StepCardSnapshot(string Heading, ImmutableArray<FiredEvent> Events, bool NothingTriggers, StepState State, DamageResistance Resistance, DamageBonus Bonus);
 
 /// <summary>An event the step fired ("Festival Flight 🥊 hit 1 enemy") and the elements that fired from it.</summary>
 public sealed record FiredEvent(string Text, ImmutableArray<FiredSource> Sources);
@@ -136,3 +162,15 @@ public sealed record ResistanceRow(string Name, string Pve, string Pvp);
 
 /// <summary>A source of the damage resistance: its name ("Arc Staff") and its values ("90% · PvP 53%").</summary>
 public sealed record ResistanceSource(string Name, string Value);
+
+/// <summary>
+/// The card's damage bonus: its rows (one per damage source a bonus makes harder) and, once its title is clicked, the
+/// sources of each ("Combination Blow" "?"); none until then.
+/// </summary>
+public sealed record DamageBonus(ImmutableArray<DamageBonusRow> Rows, ImmutableArray<DamageBonusSource> Sources);
+
+/// <summary>A row of the damage bonus: what it makes harder ("Melee") and each source's own value ("?", "+50% · +10%").</summary>
+public sealed record DamageBonusRow(string Name, string Value);
+
+/// <summary>A source of the damage bonus: its name ("Combination Blow") and its value ("?").</summary>
+public sealed record DamageBonusSource(string Name, string Value);

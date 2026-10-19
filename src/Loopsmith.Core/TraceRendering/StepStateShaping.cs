@@ -42,8 +42,9 @@ public sealed record StackCountEntry(StatusId Status, string Name, Affinity Affi
 /// <summary>
 /// What is present at the end of a step, laid out like the game's HUD: the buffs on you, the buffs on your weapons
 /// (Slice, Unraveling Rounds) and the passives changing those weapons' stats, the debuffs on the pack, the pickups on
-/// the ground — the stacks of each counted buff and where they came from (<see cref="StackCountEntry"/>), and your damage
-/// resistance right then, PvE and PvP (<see cref="ResistanceShaping"/>; none without a source).
+/// the ground — the stacks of each counted buff and where they came from (<see cref="StackCountEntry"/>), your damage
+/// resistance right then, PvE and PvP (<see cref="ResistanceShaping"/>; none without a source), and the damage bonuses
+/// holding right then, each source with its own value (<see cref="DamageBonusShaping"/>; none without a source).
 /// </summary>
 public sealed record StepState(
     ImmutableArray<StateEntry> Buffs,
@@ -52,7 +53,8 @@ public sealed record StepState(
     ImmutableArray<StateEntry> Debuffs,
     ImmutableArray<StateEntry> Ground,
     ImmutableArray<StackCountEntry> Counts,
-    Optional<DamageResistance> Resistance);
+    Optional<DamageResistance> Resistance,
+    ImmutableArray<DamageBonusLine> DamageBonus);
 
 /// <summary>Pure: a <see cref="GameState"/> → what the state shows, in the glossary's words (the trace's state lines, the designer's step state).</summary>
 public static class StepStateShaping
@@ -81,7 +83,8 @@ public static class StepStateShaping
             [.. state.Target.Debuffs.Select(debuff => ShapeDebuff(build, reaching, debuff))],
             [.. state.Pickups.Select(ground => ShapePickup(glossary, catalog, ground))],
             [.. state.Buffs.SelectMany(buff => buff.Tally.Match(tally => new[] { ShapeCount(glossary, buff.Status, tally.Value) }, _ => []))],
-            ResistanceShaping.ShapeResistance(build, passives));
+            ResistanceShaping.ShapeResistance(build, passives),
+            DamageBonusShaping.ShapeDamageBonus(build, passives));
     }
 
     private static StackCountEntry ShapeCount(KeywordGlossary glossary, StatusId status, StackTally tally) =>
