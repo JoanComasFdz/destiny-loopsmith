@@ -1024,6 +1024,27 @@ public static class DomainPhrasing
             _ => HitAtCriticalHealth);
 
     /// <summary>
+    /// The status a declaration is about, beside whose name the designer shows its button: a <c>max:</c>'s or an
+    /// <c>end:</c>'s own, critical health for a hit at it; none for a new pack or reaching critical health.
+    /// </summary>
+    public static Optional<StatusId> FindDeclaredStatus(this StateDeclaration declaration) =>
+        declaration.Match(
+            max => Optional.Some(max.Status),
+            end => Optional.Some(end.Status),
+            _ => Optional.None<StatusId>(),
+            _ => Optional.None<StatusId>(),
+            _ => Optional.Some(DeclaredStatuses.CriticalHealth));
+
+    /// <summary>
+    /// A declaration's caption beside its status's name: its label without the name ("Bolt Charge at max (x10)" → "at max
+    /// (x10)", "Amplified ends" → "ends"), "hit" for a hit at critical health.
+    /// </summary>
+    public static string DescribeStatusCaption(this StateDeclaration declaration, string label, string statusName) =>
+        declaration is StateDeclaration.HitAtCriticalHealth
+            ? HitAtCriticalHealthCaption
+            : label.StartsWith(statusName + " ", StringComparison.Ordinal) ? label[(statusName.Length + 1)..] : label;
+
+    /// <summary>
     /// "💀 kill", "🥊 hit", and with more than one target "💀 kill 3", "🥊 hit 5": the mark tells a kill step from a hit
     /// step at a glance (a hit step is damage kept up, a kill step's hit the killing blow, ADRs D34).
     /// </summary>
