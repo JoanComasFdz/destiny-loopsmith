@@ -142,7 +142,7 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
   `tests/Loopsmith.Web.E2E/Rules/<…>/`, to its rule file's `rules-<…>-resources`, created on its first upload and keeping
   each rule's latest recording; any other to `prs-resources`), posts them on the PR as
   one comment per version (V1, V2…; each GIF with a "▶ Play MP4" link to the site's `e2e-player.html`; a new one collapses
-  the earlier ones into a closed `<details>` each) and deletes the
+  the earlier ones into a closed `<details>` each and hides them as Outdated) and deletes the
   branch; when the PR closes, keeps its newest version's GIFs and MP4s in `prs-resources`,
   deletes the older ones, keeps each rule's latest recording in the rule releases (a merged PR's replace closed PRs'; one
   closed without merging loses its own) and shrinks the posts whose recordings went to one line; [docs/hosting.md](docs/hosting.md) "E2E videos on pull requests"); `tools/web/prepare-pages.sh` readies a published site for Pages.
