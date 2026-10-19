@@ -120,9 +120,9 @@ class WriteSectionTests(unittest.TestCase):
 
     def test_a_rule_the_viewer_couldnt_draw_says_why_where_its_flow_would_be(self):
         run = self.run_of("SparkOfShockTests", "Jolts", "desktop", rule="all-classes-arc-fragments-spark-of-shock-1",
-                          flowError="No Arc Hunter rule is named 'all-classes-arc-fragments-spark-of-shock-1'.")
+                          flowError="No rule is named 'all-classes-arc-fragments-spark-of-shock-1'.")
         post = post_scenarios.write_section(REPO, 1, [run], "Text.")
-        line = ("_No flow drawn for `all-classes-arc-fragments-spark-of-shock-1`: No Arc Hunter rule is named "
+        line = ("_No flow drawn for `all-classes-arc-fragments-spark-of-shock-1`: No rule is named "
                 "'all-classes-arc-fragments-spark-of-shock-1'._")
         self.assertIn(line, post)
         self.assertLess(post.index("### Jolts title"), post.index(line))

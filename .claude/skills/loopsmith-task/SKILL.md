@@ -57,8 +57,8 @@ In one message:
   (`SendUserFile`, `display: render`) right after the message that shows the Gherkin, captioned with the Gherkin's
   title: the owner reads the flow (trigger ➜ what must be in place ➜ what it gives) next to the claim it plays. Several
   rule Gherkins: one PNG each, in the Gherkins' order, in one call. Do the same in any later round that adds a rule
-  Gherkin or changes one's `# Rule` line. When the viewer can't draw a rule (it says why: today it only finds the Arc
-  Hunter's rules and what builds on them), say so under that Gherkin in one line, with its words.
+  Gherkin or changes one's `# Rule` line. When the viewer can't draw a rule (it says why: a name no rule has, rules
+  that don't parse), say so under that Gherkin in one line, with its words.
   Ask the owner to agree, or to say what to add, drop or change.
 - Anything you'd suggest adding, as a suggestion, not as a criterion, written the same way.
 

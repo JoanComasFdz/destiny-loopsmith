@@ -281,7 +281,7 @@ works the PR records them; CI doesn't run, record or build anything for them.
   it draws each rule a recorded scenario names with the rule viewer (`tools/rule-viewer`, `--rule <name>`, built once
   per recording) as `out/<domain folder>/<rule name>.png`, next to that scenario's GIFs, so it goes to the same release.
   `scenarios.json` gives each such run its `"rule"` and its `"flow"` (the PNG's path), or, when the rule viewer couldn't
-  draw it (a rule it doesn't find yet, outside the Arc Hunter and what builds on it, or no Chromium), its `"flowError"`,
+  draw it (a name no rule has, rules that don't parse, or no Chromium), its `"flowError"`,
   the viewer's last line; a missing flow never stops the recording. A scenario with no `# Rule` line (the loop scenarios,
   the extension's) has none of them.
 - **The posts:** every version, V1 included, is a new comment on the PR, `## Scenarios (V<N>)`, that starts with
