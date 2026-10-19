@@ -100,7 +100,8 @@ The trigger's round checks:
 - every line the claim's element fires, exactly (`"Lethal Current" fires …`);
 - the state its results change: a buff it gives or ends, a debuff it puts on the target;
 - for a passive, the damage resistance it gives: the row's PvE and PvP, and the element among its sources once
-  "▸ DAMAGE RESISTANCE" is open.
+  "▸ DAMAGE RESISTANCE" is open; or the damage bonus it gives: the row's value, and the element among its sources once
+  "▸ DAMAGE BONUS" is open.
 
 Other elements' lines on the same card are left out ([How to write a Gherkin](given-when-then-test-rules.md), section 5,
 "Check only what the subject changes").

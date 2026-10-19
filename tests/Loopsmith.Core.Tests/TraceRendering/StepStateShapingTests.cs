@@ -157,6 +157,35 @@ public sealed class StepStateShapingTests
     }
 
     [Fact]
+    public void A_damage_bonus_shows_each_source_with_its_own_value_and_one_whose_amount_is_unknown_stays_unknown()
+    {
+        var played = Play(
+            new PlayerAction.UseClassAbility(),
+            new PlayerAction.CastAbility(OffensiveAbility.Melee, HitOutcome.Kill, TargetCount.One));   // Combination Blow on you
+
+        var before = LoopDesigning.ShapeStepState(played, played.Resolutions[0]).DamageBonus;
+        var after = LoopDesigning.ShapeStepState(played, played.Resolutions[1]).DamageBonus;
+
+        Assert.Equal(["Bolt Charge"], before.Select(line => line.Against));                                 // Flashover holds always
+        Assert.Equal(new GameValue.Known(0.5m), Assert.Single(before[0].Sources).Change);
+        var melee = Assert.Single(after, line => line.Against == "Melee");
+        var combination = Assert.Single(melee.Sources);
+        Assert.Equal(("Combination Blow", (GameValue)new GameValue.Unknown()), (combination.Name, combination.Change));
+        Assert.Equal(("+50%", "?"), (before[0].Sources[0].Change.FormatSignedPercent(), combination.Change.FormatSignedPercent()));   // "?", never 0
+    }
+
+    [Fact]
+    public void A_step_with_no_damage_bonus_holding_has_none()
+    {
+        var owners = Play().Build;
+        var build = Validate(owners.Build with { ArtifactPerks = [] });
+
+        var played = PlayOn(build, new PlayerAction.UseClassAbility());
+
+        Assert.Empty(LoopDesigning.ShapeStepState(played, played.Resolutions[0]).DamageBonus);
+    }
+
+    [Fact]
     public void The_damage_resistance_drops_back_when_a_buff_that_gives_it_ends()
     {
         var played = Play(
