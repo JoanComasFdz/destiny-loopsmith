@@ -148,6 +148,7 @@ public sealed class LoopFileWritingTests
         [
             new(new PlayerAction.ReloadWeapon(WeaponSlot.Kinetic), Optional.None<string>()),
             new(new PlayerAction.SlideOverAmmo(WeaponSlot.Energy), Optional.Some("Spark of Momentum")),
+            new(new PlayerAction.ReadyWeapon(WeaponSlot.Kinetic), Optional.Some("Mechaneer's Tricksleeves")),
         ]));
 
     /// <summary>Property-style: many random designs from an alphabet of YAML-significant characters (fixed seed).</summary>

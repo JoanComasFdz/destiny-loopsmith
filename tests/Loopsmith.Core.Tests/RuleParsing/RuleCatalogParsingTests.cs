@@ -2331,6 +2331,30 @@ public sealed class RuleCatalogParsingTests
     }
 
     [Fact]
+    public void Parses_a_ready_trigger_of_any_weapon_or_a_weapon_type_and_refuses_an_ability()
+    {
+        var any = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToProbeFile("{ id: probe-1, on: { ready: {} }, then: [ { applyBuff: amplified } ] }")]));
+        var sidearm = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToProbeFile("{ id: probe-1, on: { ready: { via: weapon:sidearm } }, then: [ { applyBuff: amplified } ] }")]));
+        var ability = ParseInvalidCatalog(Glossary, ToProbeFile("{ id: probe-1, on: { ready: { via: melee } }, then: [ { applyBuff: amplified } ] }"));
+
+        Assert.Equal(new Trigger.ReadyWeapon(new DamageSource.AnySource()), Assert.Single(any.Elements[ElementId.From("probe")].Rules).On);
+        Assert.Equal(new Trigger.ReadyWeapon(new DamageSource.WeaponOfArchetype("sidearm")), Assert.Single(sidearm.Elements[ElementId.From("probe")].Rules).On);
+        Assert.Contains("ready's via names a weapon", ability);
+    }
+
+    [Fact]
+    public void Parses_a_damage_change_with_its_PvP_value_or_without()
+    {
+        var both = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToProbeFile("{ id: probe-1, on: { finisher: {} }, then: [ { modifyDamage: { against: weapon:sidearm, change: \"+100% [10%]\" } } ] }")]));
+        var pve = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToProbeFile("{ id: probe-1, on: { finisher: {} }, then: [ { modifyDamage: { against: weapon, change: \"+50%\" } } ] }")]));
+
+        Assert.Equal(new Outcome.ModifyDamage(new DamageSource.WeaponOfArchetype("sidearm"), new GameValue.Known(1m), Optional.Some<GameValue>(new GameValue.Known(0.1m))),
+            Assert.Single(Assert.Single(both.Elements[ElementId.From("probe")].Rules).Then));
+        Assert.Equal(new Outcome.ModifyDamage(new DamageSource.AnyWeapon(), new GameValue.Known(0.5m), Optional.None<GameValue>()),
+            Assert.Single(Assert.Single(pve.Elements[ElementId.From("probe")].Rules).Then));
+    }
+
+    [Fact]
     public void Parses_a_reload_outcome_of_this_weapon_or_a_slot_and_refuses_any_weapon()
     {
         var own = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToPerkProbeFile("{ id: probe-1, on: { abilityCast: grenade }, then: [ { reloadWeapon: weapon:this } ] }")]));

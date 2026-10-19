@@ -64,7 +64,7 @@ Same tokens everywhere: loop files, web share links and a golden test's scenario
 (`builds/skip-grenade-hunter/scenario.txt`: one token per line or comma-separated; `#` starts a comment):
 
 `grenade[:hold]|melee[:slide|air]|super[:air|combo|guard][:hit|kill[:N]]` · `class[:air]` · `kinetic|energy|power[:hit|kill[:N]]` ·
-`kinetic|energy|power:reload` · `kinetic|energy|power:ammo` · `finisher` · `pickup:<pickup-id>` · `max:<status-id>` · `end:<status-id>` · `pack:new` · `health:critical` · `health:hit` — and last, an option:
+`kinetic|energy|power:reload` · `kinetic|energy|power:ammo` · `kinetic|energy|power:ready` · `finisher` · `pickup:<pickup-id>` · `max:<status-id>` · `end:<status-id>` · `pack:new` · `health:critical` · `health:hit` — and last, an option:
 `:last` on a grenade, melee or class ability step, `:shield` and `:precision` on a weapon step
 
 Tokens are read case-insensitively. Errors read `Unknown action '<token>'. Use …` or
@@ -111,6 +111,13 @@ that weapon, so the `slideOverAmmo` rules fire (Spark of Momentum: +3 Bolt Charg
 no reload: no `reload` rule fires). Like a reload it takes no count and no option (`energy:ammo:3`, `energy:ammo:shield`
 are errors), and a slot with no weapon is a blocked step. In the designer, tapping a weapon shows **📦 slide over ammo**
 before 🔄 reload, in every build, enabled only when a rule of the build reacts to a slide with that weapon.
+
+**Ready a weapon** (ADRs D42). `kinetic:ready`, `energy:ready`, `power:ready` — "Ready Buzzard": the player readies
+(swaps to) that weapon, as a step of its own. Which weapon is in hand isn't kept; it raises `WeaponReadied` from that
+weapon, so the `ready` rules fire (Mechaneer's Tricksleeves: Spring-Loaded Mounting on a sidearm at critical health).
+Like a reload it takes no count and no option (`energy:ready:3`, `energy:ready:shield` are errors), and a slot with no
+weapon is a blocked step. In the designer, tapping a weapon shows **✋ ready** before 📦 slide over ammo and 🔄 reload,
+in every build, enabled only when a rule of the build reacts to readying that weapon.
 
 **Options of a step** (ADRs D36). What only play decides about a step itself goes last in its token:
 
