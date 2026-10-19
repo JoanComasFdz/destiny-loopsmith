@@ -3,7 +3,7 @@ using Microsoft.Playwright;
 
 namespace Loopsmith.Web.E2E.Infrastructure.Frontend.Pages;
 
-/// <summary>The start screen (Pages/Home.razor): start a loop from scratch, from a DIM link, a build or a loop file.</summary>
+/// <summary>The start screen (Pages/Home.razor): start a loop from scratch, a build file or a loop file.</summary>
 public sealed class Home(IPage page)
 {
     private ILocator StartFromScratch => page.Locator("[data-action=scratch-start]");
