@@ -63,8 +63,8 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
 - **Triggers:** champion stun (Defibrillating Blast's "stun → max Bolt Charge"; an outcome that puts a counted buff at
   its max already works, so once Bolt Charge is counted ("Counting, next") only the stun is missing); an air move that
   spends another ability's energy (Weavewalk's 20% melee energy; secondary uses are the abilities' own — `melee:slide`,
-  `melee:air`, `class:air`, `grenade:hold`, D9); blocking / reflecting attacks (Arc Staff's guard grants Bolt Charge
-  per reflected attack); "while holding the trigger".
+  `melee:air`, `class:air`, `grenade:hold`, and the Super's `super:air`, `super:combo`, `super:guard`, D9; Arc Staff's
+  Blind and its guard's Bolt Charge are those Super uses since 2026-10-19); "while holding the trigger".
 - **Damage sources:** a specific ability or an ability's element (Skip Grenade vs any grenade, "Arc
   grenades"; Momentum Transfer doesn't work with Grapple). ("A weapon of your Super's element" is `weapon:harmonic`.)
 - **Conditions:** "target lacks a debuff"; "target has any of" (Dielectric counts Jolt only, Photonic

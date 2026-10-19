@@ -187,6 +187,9 @@ public static class DomainPhrasing
             (AbilityKind.Melee, AbilityInput.Slide) => "sliding melee",
             (AbilityKind.Melee, AbilityInput.Air) => "airborne melee",
             (AbilityKind.ClassAbility, AbilityInput.Air) => "class ability in the air",
+            (AbilityKind.Super, AbilityInput.Air) => "airborne Super heavy",
+            (AbilityKind.Super, AbilityInput.Combo) => "Super heavy combo",
+            (AbilityKind.Super, AbilityInput.Guard) => "Super guard",
             (_, AbilityInput.Hold) => $"held {kind.DescribeAbility()}",
             _ => $"{kind.DescribeAbility()} ({ToInputWord(input)})",
         };
@@ -200,6 +203,9 @@ public static class DomainPhrasing
         {
             (_, AbilityInput.Slide) => $"slide + {kind.DescribeAbility()}",
             (AbilityKind.ClassAbility, AbilityInput.Air) => "air move",
+            (AbilityKind.Super, AbilityInput.Air) => "heavy attack in the air",
+            (AbilityKind.Super, AbilityInput.Combo) => "light, light, heavy",
+            (AbilityKind.Super, AbilityInput.Guard) => "hold guard",
             (_, AbilityInput.Air) => $"{kind.DescribeAbility()} in the air",
             (_, AbilityInput.Hold) => $"hold {kind.DescribeAbility()}",
             _ => kind.DescribeAbility(),
@@ -215,6 +221,8 @@ public static class DomainPhrasing
             AbilityInput.Slide => "slide",
             AbilityInput.Air => "air",
             AbilityInput.Hold => "hold",
+            AbilityInput.Combo => "combo",
+            AbilityInput.Guard => "guard",
             _ => "press",
         };
 
@@ -491,6 +499,9 @@ public static class DomainPhrasing
             (AbilityKind.Melee, AbilityInput.Slide) => "Melee swung while sliding",
             (AbilityKind.Melee, AbilityInput.Air) => "Melee swung in the air",
             (AbilityKind.Grenade, AbilityInput.Hold) => "Grenade held",
+            (AbilityKind.Super, AbilityInput.Air) => "Super heavy attack in the air",
+            (AbilityKind.Super, AbilityInput.Combo) => "Super heavy combo",
+            (AbilityKind.Super, AbilityInput.Guard) => "Super guard",
             _ => $"{Capitalize(kind.DescribeAbilityUse(input))} used",
         };
 

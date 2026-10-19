@@ -694,6 +694,9 @@ textarea { resize: vertical; }
 /* an ability's secondary uses (Tempest Strike's sliding melee, Ascension's air move) below its square: a different trigger */
 .trig-ability-col { display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .trig-secondaries { display: flex; flex-direction: column; gap: 3px; width: 100%; }
+/* the Super's diamond overhangs its box when turned: its secondary uses (Arc Staff's heavy combo) start below the tip */
+.trig-ability-col > .trig-super { margin-bottom: 12px; }
+.trig-ability-col:has(> .trig-super) > .trig-secondaries { width: auto; align-self: stretch; margin: 0 4px 0 0; }
 .trig-secondary {
     position: relative;
     display: flex;

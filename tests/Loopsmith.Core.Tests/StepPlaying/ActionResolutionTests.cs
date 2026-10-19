@@ -115,17 +115,55 @@ public class ActionResolutionTests
         Assert.Equal(["class", "class:air"], tokens([AirOnly]).Where(token => token.StartsWith("class", StringComparison.Ordinal)));
     }
 
+    private static readonly BuildElement AirStaff = Element("air-staff", ElementKind.Fragment,
+        [On(new Trigger.Damage(new DamageSource.AbilityUsedAs(AbilityKind.Super, AbilityInput.Air)), Debuff("jolt"))]);
+
+    private static readonly BuildElement AnySuper = Element("any-super", ElementKind.Fragment,
+        [On(new Trigger.Damage(new DamageSource.AbilityOf(AbilityKind.Super)), Energy(AbilityKind.Grenade, new GameValue.Known(0.12m)))]);
+
+    [Fact]
+    public void A_supers_heavy_attack_in_the_air_is_the_super_too_but_a_plain_super_hit_isnt_it()
+    {
+        var build = ValidateBuild([AirStaff, AnySuper]);
+
+        var air = ResolveOnce(build, new PlayerAction.CastAbility(OffensiveAbility.Super, HitOutcome.Damage, TargetCount.One, AbilityInput.Air));
+        var plain = ResolveOnce(build, new PlayerAction.CastAbility(OffensiveAbility.Super, HitOutcome.Damage, TargetCount.One));
+
+        Assert.Equal(["air-staff", "any-super"], air.Fired.Select(f => f.Source.Value).Distinct().Order());
+        Assert.Equal(["any-super"], plain.Fired.Select(f => f.Source.Value).Distinct());
+        Assert.Contains("Airborne Super heavy 🥊 hit", DescribeTrace(build, air));
+    }
+
+    [Fact]
+    public void A_supers_secondary_is_offered_only_when_an_equipped_rule_names_it()
+    {
+        var initial = ActionResolution.CreateInitialState();
+        var tokens = (ImmutableArray<BuildElement> elements) =>
+            ActionResolution.ListAvailableActions(ValidateBuild(elements), initial).Select(action => action.ToActionToken()).Where(token => token.StartsWith("super", StringComparison.Ordinal)).Order().ToImmutableArray();
+
+        Assert.Equal(["super", "super:air", "super:air:kill", "super:kill"], tokens([AirStaff]));
+        Assert.Equal(["super", "super:kill"], tokens([AnySuper]));
+    }
+
     [Theory]
     [InlineData("melee:slide", "melee:slide")]
     [InlineData("melee:slide:kill:3", "melee:slide:kill:3")]
     [InlineData("MELEE:AIR:hit", "melee:air")]
     [InlineData("grenade:hold:kill", "grenade:hold:kill")]
     [InlineData("class:air", "class:air")]
+    [InlineData("super:air:hit", "super:air")]
+    [InlineData("super:combo:kill:3", "super:combo:kill:3")]
+    [InlineData("super:guard:hit:2", "super:guard:hit:2")]
     public void A_secondary_abilitys_token_reads_and_writes_back(string token, string written) =>
         Assert.Equal(written, Assert.IsType<Result<PlayerAction, string>.Ok>(ActionTokenParsing.ParseActionToken(token)).Value.ToActionToken());
 
     [Theory]
     [InlineData("super:hold")]
+    [InlineData("super:slide")]
+    [InlineData("melee:combo")]
+    [InlineData("grenade:guard")]
+    [InlineData("class:combo")]
+    [InlineData("super:combo:last")]
     [InlineData("grenade:slide")]
     [InlineData("melee:hold")]
     [InlineData("class:slide")]

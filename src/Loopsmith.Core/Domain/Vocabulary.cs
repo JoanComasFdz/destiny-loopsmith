@@ -21,11 +21,12 @@ public enum OffensiveAbility { Grenade, Melee, Super }
 /// How an ability is used: its plain press, or the input that makes it a secondary ability an aspect enables — the
 /// melee while sliding (Tempest Strike's uppercut, Lightning Surge) or in the air (Ballistic Slam), the class ability's
 /// air move (Ascension: the air move key in the air spends the class ability's charge), the grenade held (Chaos
-/// Accelerant, Bleak Watcher, Unbreakable). A secondary is still
+/// Accelerant, Bleak Watcher, Unbreakable), the Super's attacks a rule tells apart (Arc Staff: the heavy attack in the
+/// air and the light-light-heavy combo, Palm Strike, blind; guarding reflects attacks). A secondary is still
 /// that ability: every rule on the ability fires for it too, and only rules that name the input tell them apart
 /// (<see cref="AbilityInputs.CanTake"/> says which ability takes which input).
 /// </summary>
-public enum AbilityInput { Press, Slide, Air, Hold }
+public enum AbilityInput { Press, Slide, Air, Hold, Combo, Guard }
 
 public enum ElementKind
 {
