@@ -157,12 +157,12 @@ the part is a fact in the description.
   energy weapon") under "WEAPON PERK · ASTRAL HORIZON"; Crisis Inverted's copy gets no heading of its own. Each weapon's
   copy of a perk is its own element (D31), so each should show under its own weapon: "WEAPON PERK · CRISIS INVERTED" /
   "Demolitionist (enhanced)" / "refills your energy weapon".
-- **Marksman's Dodge reloads every weapon** (PR #155's follow-up; ADRs D42): the Compendium's "Reload Perk Notes"
+- **Marksman's Dodge reloads every weapon** (a follow-up of ADRs D42): the Compendium's "Reload Perk Notes"
   (Weapon Perks#250) name Marksman's Dodge, Dragon's Shadow and a manual reload as true reloads, which set off
   on-reload perks. Marksman's Dodge (`rules/hunter/class-abilities.yaml`) is `inert` today: it would get a
   `reloadWeapon` of each slot, so every weapon's `reload` rules fire on the dodge (Dragon's Shadow, an exotic, when it is
   authored). Nothing reacts to a reload yet, so no loop changes until an on-reload perk (Heal Clip, Voltshot) is.
-- **Spark of Momentum's refill as a `refillWeapon`** (PR #155's follow-up; ADRs D41, D42): its refill of the weapon in
+- **Spark of Momentum's refill as a `refillWeapon`** (a follow-up of ADRs D42; D41): its refill of the weapon in
   hand is only a fact in its description (`rules/all-classes/arc/fragments.yaml`). As a `refillWeapon` it would show in
   the trace like Demolitionist's ("refills your energy weapon"), but the outcome needs a new target, the weapon of the
   step that set it off (a slide over an ammo brick with it), which no `DamageSource` names yet.
