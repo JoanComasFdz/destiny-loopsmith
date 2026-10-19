@@ -67,8 +67,8 @@ elements:
     # The dodge's resistance holds at the end of a class ability step (`class`, and Ascension's
     # `class:air`, which sets off the dodge's effects: Arc#48) while you're Amplified. The faster
     # class ability regeneration is a fact (no ability energy is tracked, ADRs D5); the Compendium
-    # gives no PvP value, so it is `?`. Not expressible: the reload benefits (modifyWeaponStats has
-    # no "all weapons" archetype).
+    # gives no PvP value, so its PvP value is `?` and its text names none. Not expressible: the
+    # reload benefits (modifyWeaponStats has no "all weapons" archetype).
     passives:
       - id: flow-state-2
         effect: { resistDamage: "66% [32%]" }
