@@ -23,6 +23,10 @@ public static class RuleViewing
     public static Result<SubclassRules, string> DrawRules(ImmutableArray<SourceText> ruleFiles, GuardianClass guardianClass, Subclass subclass) =>
         CatalogLoading.ParseCatalog(ruleFiles).Map(catalog => RuleFlowDrawing.DrawRules(catalog, guardianClass, subclass));
 
+    /// <summary>One rule's flows, by its full name (<c>hunter-arc-aspects-lethal-current-2</c>); the error when none of the flows is its.</summary>
+    public static Result<ImmutableArray<RuleFlow>, string> PickRuleFlows(SubclassRules rules, string ruleName) =>
+        RuleFlowPicking.PickRuleFlows(rules, ruleName);
+
     public static string RenderRulesText(SubclassRules rules) => RuleFlowRendering.RenderText(rules);
 
     public static string RenderRulesJson(SubclassRules rules) => RuleFlowRendering.RenderJson(rules);

@@ -17,6 +17,8 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Loopsmith.Core\Loopsmith.Core.csproj" />
     <ProjectReference Include="..\Loopsmith.RuleViewer.Core\Loopsmith.RuleViewer.Core.csproj" />
+    <!-- The host, for its options (RuleViewerOptionsTests). -->
+    <ProjectReference Include="..\Loopsmith.RuleViewer\Loopsmith.RuleViewer.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Using Include="Xunit" />

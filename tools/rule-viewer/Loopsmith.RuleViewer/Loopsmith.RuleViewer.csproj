@@ -6,6 +6,10 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>
+    <!-- Takes a rule's PNG (the rule option) in the Chromium the e2e tests use. -->
+    <PackageReference Include="Microsoft.Playwright" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\..\..\src\Loopsmith.Core\Loopsmith.Core.csproj" />
     <ProjectReference Include="..\Loopsmith.RuleViewer.Core\Loopsmith.RuleViewer.Core.csproj" />
   </ItemGroup>

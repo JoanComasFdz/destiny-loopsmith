@@ -11,14 +11,14 @@ public sealed record PageAssets(string Style, string Script);
 /// </summary>
 public static class RulePage
 {
-    private const string Fonts =
+    internal const string Fonts =
         "https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap";
 
     /// <summary>
     /// The one notched arrowhead every wire ends in. A flow's own SVG can't hold it: a scope that is hidden would hide the
     /// marker the shown scopes' wires point to.
     /// </summary>
-    private const string ArrowheadDefinition =
+    internal const string ArrowheadDefinition =
         "<svg class=\"defs\" aria-hidden=\"true\" width=\"0\" height=\"0\"><defs><marker id=\"rhead\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" "
         + "markerWidth=\"9\" markerHeight=\"9\" markerUnits=\"userSpaceOnUse\" orient=\"auto\"><path d=\"M0,0 L10,5 L0,10 L3,5 z\"/></marker></defs></svg>\n";
 
