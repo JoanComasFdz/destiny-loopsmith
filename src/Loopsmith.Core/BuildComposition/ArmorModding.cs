@@ -8,7 +8,7 @@ namespace Loopsmith.Core.BuildComposition;
 /// <summary>
 /// Pure: a build's armor mods laid out in its pieces' mod sockets, and a mod picked into a socket or taken out of one
 /// (docs/loop-format.md "Armor mods", ADRs D30). The build holds its mods as a list (its <c>armorMods</c>, the copies
-/// <c>armorModPlugs</c> names and the mods it leaves out), as a DIM loadout does; the sockets come from the listing of
+/// <c>armorModPlugs</c> names and the mods it leaves out); the sockets come from the listing of
 /// every armor piece (Bungie's manifest): each piece's slot mods and own socket (artifice) in its row, every piece's
 /// general socket in the General row; a raid's, an activity's or a retired season's mod is ignored, in no socket
 /// (ADRs D35). A slot with no piece whose sockets Loopsmith can read holds what the build

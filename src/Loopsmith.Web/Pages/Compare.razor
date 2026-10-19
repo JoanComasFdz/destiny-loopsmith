@@ -4,12 +4,12 @@
 <PageTitle>Compare · Loopsmith</PageTitle>
 
 @{
-    var choices = ComparisonPicking.ListChoices(Bundle, Workbench.Session, Workbench.ImportedLoops);
+    var choices = ComparisonPicking.ListChoices(Workbench.Session, Workbench.ImportedLoops);
 }
 <section class="page-head">
     <div>
         <h1>Compare loops</h1>
-        <p class="muted">Pick a loop for each side — the one in the designer, an example, or a <code>.loop.yaml</code> you import. Each loop is played from a fresh spawn and then again from where it ends; the comparison lines their triggers up, so you see how each one's place in the order changes what it needs and sets off. The loops may use different builds.</p>
+        <p class="muted">Pick a loop for each side — the one in the designer or a <code>.loop.yaml</code> you import. Each loop is played from a fresh spawn and then again from where it ends; the comparison lines their triggers up, so you see how each one's place in the order changes what it needs and sets off. The loops may use different builds.</p>
     </div>
 </section>
 
@@ -25,7 +25,7 @@
         <p class="muted">Import a <code>.loop.yaml</code>, or design a loop first.</p>
         <div class="toolbar-group">
             <button class="btn primary" @onclick="() => OpenImportDialog(CompareSide.Left)" data-action="import-left">Import a .loop.yaml</button>
-            <a class="btn" href="">Pick a build or a loop</a>
+            <a class="btn" href="">Start a loop</a>
         </div>
     </section>
 }
@@ -143,7 +143,7 @@ else
     /// <summary>Keeps the picks that are still offered (see <see cref="ComparisonPicking.PickIds"/>) and compares them.</summary>
     private void CompareLoops(Optional<ComparisonPicks> wanted)
     {
-        var choices = ComparisonPicking.ListChoices(Bundle, Workbench.Session, Workbench.ImportedLoops); // pure
+        var choices = ComparisonPicking.ListChoices(Workbench.Session, Workbench.ImportedLoops);        // pure
         var picks = ComparisonPicking.PickIds(choices, wanted);                                       // pure
         Workbench.ComparePicks = picks;
         view = picks.Map(picked => ComparisonPicking.CompareChoices(choices, picked));                // pure
@@ -197,7 +197,6 @@ else
         origin switch
         {
             ChoiceOrigin.Current => "In the designer",
-            ChoiceOrigin.Example => "Example loops",
             _ => "Imported this session",
         };
 

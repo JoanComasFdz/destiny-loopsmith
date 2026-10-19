@@ -7,9 +7,8 @@ using Loopsmith.Core.Functional;
 namespace Loopsmith.Web.Hosting;
 
 /// <summary>
-/// Impure boundary of the web host: the rule, build, saved DIM share and loop files embedded in this assembly (see the csproj),
-/// read once at startup. Each becomes a <see cref="SourceText"/> named by its forward-slash logical name
-/// (<c>rules/glossary.yaml</c>, <c>builds/skip-grenade-hunter/build.yaml</c>).
+/// Impure boundary of the web host: the rule files embedded in this assembly (see the csproj), read once at startup. Each
+/// becomes a <see cref="SourceText"/> named by its forward-slash logical name (<c>rules/glossary.yaml</c>).
 /// </summary>
 public static class EmbeddedDataReading
 {
@@ -18,7 +17,7 @@ public static class EmbeddedDataReading
         try
         {
             return assembly.GetManifestResourceNames()
-                .Where(name => name.EndsWith(".yaml", StringComparison.OrdinalIgnoreCase) || name.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+                .Where(name => name.EndsWith(".yaml", StringComparison.OrdinalIgnoreCase))
                 .Order(StringComparer.Ordinal)
                 .Select(name => ReadEmbeddedFile(assembly, name))
                 .CombineAll()

@@ -20,8 +20,8 @@ internal sealed record ReferenceScope(Optional<KeywordGlossary> Glossary);
 internal static class ReferenceChecking
 {
     /// <summary>
-    /// A manifest hash names one element: a hash on two elements (or twice on one) is an error at the repeat, so a
-    /// DIM link's item is recognised as one element or none.
+    /// A manifest hash names one element: a hash on two elements (or twice on one) is an error at the repeat, so an
+    /// item picked by hash is recognised as one element or none.
     /// </summary>
     internal static Result<Unit, Errors> CheckUniqueHashes(ImmutableArray<Located<BuildElement>> elements)
     {

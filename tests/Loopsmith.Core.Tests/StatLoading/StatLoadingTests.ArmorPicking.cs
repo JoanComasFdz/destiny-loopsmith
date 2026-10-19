@@ -7,15 +7,15 @@ using Loopsmith.Core.Tests.Support;
 namespace Loopsmith.Core.Tests.StatLoading;
 
 /// <summary>
-/// The player's own armor in the build, after a Bungie login (docs/loop-format.md, "Stats"): a dim.gg share names the
-/// copy of each piece, so the share's owner gets its stats at once; anyone else picks their own pieces with ⋯, and a
-/// piece picked swaps into the build — its set bonuses follow the pieces it wears.
+/// The player's own armor in the build, after a Bungie login (docs/loop-format.md, "Stats"): a build whose pieces were
+/// picked from an account names the copy of each, so that account gets its stats at once; anyone else picks their own
+/// pieces with ⋯, and a piece picked swaps into the build — its set bonuses follow the pieces it wears.
 /// </summary>
 public sealed partial class StatLoadingTests
 {
-    // The owner's share's own copies (equipped[].id), and a second set no rule knows (two pieces, its 2- and 4-piece perks).
+    // The owner's build's own copies (its armorCopies), and a second set no rule knows (two pieces, its 2- and 4-piece perks).
     // Properties, not fields: they read StatLoadingTests.cs's fields, and static fields of a partial class initialise in no set order.
-    private static ImmutableDictionary<ItemHash, string> ShareCopies => ImmutableDictionary.CreateRange(
+    private static ImmutableDictionary<ItemHash, string> WornCopies => ImmutableDictionary.CreateRange(
     [
         KeyValuePair.Create(Mask, "6917530185805135602"),
         KeyValuePair.Create(ItemHash.From(2883433250u), "6917530186678878648"),
@@ -48,30 +48,19 @@ public sealed partial class StatLoadingTests
         ImmutableDictionary<StatKind, ArmorStatIcon>.Empty);
 
     [Fact]
-    public void A_dim_gg_share_names_the_copy_of_each_armor_piece_and_the_build_file_keeps_them()
-    {
-        var build = OpenOwnersBuild();
-        var file = WriteOwnersBuildFile();
-
-        Assert.Equal(ShareCopies.OrderBy(copy => copy.Value, StringComparer.Ordinal).Select(copy => new ArmorCopy(copy.Key, ItemInstanceId.From(copy.Value))),
-            build.Build.ArmorCopies.OrderBy(copy => copy.Instance.Value, StringComparer.Ordinal));
-        Assert.Contains("armorCopies: [{hash: 593554567, instance: \"6917530185805135602\"}, {hash: 2883433250, instance: \"6917530186678878648\"}", file.Text, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public void Logging_in_with_the_shares_own_account_sets_the_stats_from_its_pieces()
+    public void Logging_in_with_the_account_whose_copies_the_build_wears_sets_the_stats_from_its_pieces()
     {
         var session = OpenOwnersSession(Catalog);
 
         var login = LoopDesigning.ApplyBungieLogin(session, ReadProfile([.. OwnShare(tuningSockets: 3)]));
 
-        Assert.StartsWith("Your armor is loaded: the build wears this loadout's own pieces, and its stats are theirs.", login.Message, StringComparison.Ordinal);
+        Assert.StartsWith("Your armor is loaded: the build wears your own pieces, and its stats are theirs.", login.Message, StringComparison.Ordinal);
         Assert.Equal(new StatLine(ToKnownStat(27), ToKnownStat(27), ToKnownStat(100), ToKnownStat(190), ToKnownStat(125), ToKnownStat(27)), login.Session.Build.Build.Stats);
         Assert.Contains("stats: {health: 27, melee: 27, grenade: 190, super: 125, class: 100, weapons: 27}", login.Session.Design.Build.Text, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void Someone_elses_share_asks_the_player_to_pick_their_own_pieces_and_sets_nothing()
+    public void Another_account_is_asked_to_pick_its_own_pieces_and_nothing_is_set()
     {
         var session = OpenOwnersSession(Catalog);
         var partly = OwnShare(tuningSockets: 0).Select(item => item.Hash == Mask ? item with { Instance = "1001" } : item).ToImmutableArray();
@@ -81,7 +70,7 @@ public sealed partial class StatLoadingTests
 
         Assert.StartsWith("You can now pick your armor: tap ⋯ next to each armor piece in the build", other.Message, StringComparison.Ordinal);
         Assert.Equal(session.Design.Build.Text, other.Session.Design.Build.Text);
-        Assert.Equal("This loadout's pieces are in your account, but for Luminopotent Mask: tap ⋯ next to it in the build to pick one of yours. Tap ⋯ next to a weapon to pick one of yours.", some.Message);
+        Assert.Equal("The build's pieces are in your account, but for Luminopotent Mask: tap ⋯ next to it in the build to pick one of yours. Tap ⋯ next to a weapon to pick one of yours.", some.Message);
         Assert.Equal(session.Design.Build.Text, some.Session.Design.Build.Text);
     }
 
@@ -165,9 +154,9 @@ public sealed partial class StatLoadingTests
         Assert.EndsWith("leftOut: {items: [593554567]}\narmorCopies: [{hash: 593554567, instance: \"6917530185805135602\"}]\n", worn.Design.Build.Text, StringComparison.Ordinal);
     }
 
-    /// <summary>Every piece of the owner's share as its own copy (its id), each a Grenade 30 · Super 25 · Class 20 roll, masterworked.</summary>
+    /// <summary>Every piece of the owner's build as the copy it wears (its id), each a Grenade 30 · Super 25 · Class 20 roll, masterworked.</summary>
     private static IEnumerable<FakeItem> OwnShare(int tuningSockets) =>
-        OwnAll(tuningSockets).Select(item => item with { Instance = ShareCopies[item.Hash] });
+        OwnAll(tuningSockets).Select(item => item with { Instance = WornCopies[item.Hash] });
 
     private static FakeItem ToRolledItem(ItemHash hash, string instance) =>
         new(hash, instance, "vault", [FindRollPlug(StatKind.Grenade, 30), FindRollPlug(StatKind.Super, 25), FindRollPlug(StatKind.Class, 20), FullMasterwork], 11);
@@ -176,11 +165,7 @@ public sealed partial class StatLoadingTests
         KeyValuePair.Create(hash, new ManifestItem(hash, name, new ManifestKind.Armor(slot, Optional.None<ItemHash>(), set, Optional.Some(wornBy)),
             Optional.None<string>(), Optional.Some(tier), Optional.None<string>(), Optional.None<string>(), Optional.None<string>()));
 
-    private static DesignSession OpenOwnersSession(RuleCatalog catalog)
-    {
-        const string path = "builds/skip-grenade-hunter/dim-loadout.json";
-        var json = File.ReadAllText(RepoFiles.ToPath(path));                                     // impure
-        return LoopDesigning.StartSavedDimDesign(catalog, new SourceText(path, json))
+    private static DesignSession OpenOwnersSession(RuleCatalog catalog) =>
+        LoopDesigning.StartDesign(catalog, WriteOwnersBuildFile(), "Owner's loop")
             .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
-    }
 }

@@ -1020,7 +1020,7 @@
         (tile.Copies > 1 ? $"{tile.Name} ×{tile.Copies}" : tile.Name)
         + tile.Description.Match(description => $" — {description.Value}", _ => "");
 
-    private const string MissingPerk = "Perk not picked: a DIM link carries the weapon, not its roll. Pick it in the designer.";
+    private const string MissingPerk = "Perk not picked: the build names the weapon, not its roll. Pick it in the designer.";
 
     private const string PickPerk = "Perk not picked: pick what this column rolled with.";
 

@@ -5,7 +5,6 @@ using Loopsmith.Core.BuildParsing;
 using Loopsmith.Core.Causality;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
-using Loopsmith.Core.LoadoutImporting;
 using Loopsmith.Core.LoopAnalyzing;
 using Loopsmith.Core.ManifestJoining;
 using Loopsmith.Core.LoopFiles;
@@ -142,49 +141,7 @@ public static class LoopDesigning
         || !build.ArmorModPlugs.IsEmpty
         || build.Artifact.IsSome();
 
-    /// <summary>The comment a build from a DIM link starts with: where it came from and what <c>leftOut</c> means.</summary>
-    public const string DimBuildNote =
-        "Composed by Loopsmith from the DIM loadout at source. leftOut: what the loadout has that the rule catalog\n"
-        + "doesn't know yet, by manifest hash.";
-
-    /// <summary>Pasted text → the DIM link it is: a dim.gg share (DIM's Share button) or a link that carries its loadout.</summary>
-    public static Result<DimLink, string> ReadDimLink(string text) =>
-        DimLinkReading.ReadDimLink(text);
-
-    /// <summary>Where a host asks DIM for a dim.gg share's loadout: a plain HTTP GET, no key and no header (DIM hands shares to anyone).</summary>
-    public static string ToDimShareRequestUrl(DimLink.Shared share) =>
-        DimLinkReading.ToShareRequestUrl(share.ShareId);
-
-    /// <summary>DIM's answer to a share request (its status and text): the loadout's JSON, or why there is none.</summary>
-    public static Result<string, string> ReadDimShareAnswer(int status, string text) =>
-        DimLinkReading.ReadShareAnswer(status, text);
-
-    /// <summary>What to say when the browser couldn't reach DIM (<paramref name="why"/>: what it said).</summary>
-    public static string DescribeDimUnreachable(string why) =>
-        DimLinkReading.DescribeUnreachable(why);
-
-    /// <summary>
-    /// A new design for a DIM loadout: <paramref name="loadoutJson"/> is the link's own loadout, or DIM's answer for a
-    /// dim.gg share. What the catalog recognises by hash becomes the build (the rest is its <c>leftOut</c>); the build is
-    /// written as a build file, so the loop embeds it — and exports, shares and replays it — like any other.
-    /// </summary>
-    public static Result<DesignSession, string> StartDimDesign(RuleCatalog catalog, DimLink link, string loadoutJson) =>
-        DimLoadoutMapping.MapLoadout(catalog, ReadLink(link), loadoutJson)
-            .Map(build => new SourceText("dim-loadout.build.yaml", BuildFileWriting.WriteBuildFile(build, [DimBuildNote])))
-            .Bind(file => StartDesign(catalog, file, "New loop"))
-            .Map(session => RenameDesign(session, $"{session.Build.Build.Name} loop", session.Design.Author, session.Design.Description));
-
-    /// <summary>A new design for a saved DIM share (<c>{ "link": …, "loadout": … }</c>): the same as pasting its link.</summary>
-    public static Result<DesignSession, string> StartSavedDimDesign(RuleCatalog catalog, SourceText savedShare) =>
-        DimLinkReading.ReadSavedLink(savedShare.Text)
-            .MapError(error => $"{savedShare.Path}: {error}")
-            .Bind(link => StartDimDesign(catalog, link, savedShare.Text));
-
     // ── Bungie's full manifest, for what the excerpt lacks (ManifestJoining) ──────────
-
-    /// <summary>The hashes a DIM loadout wears that the catalog's manifest excerpt lacks (what the full manifest is read for).</summary>
-    public static Result<ImmutableArray<ItemHash>, string> ListUnknownLoadoutHashes(RuleCatalog catalog, string loadoutJson) =>
-        DimLoadoutMapping.ListLoadoutHashes(loadoutJson).Map(hashes => ManifestJoin.ListUnknown(catalog.Manifest, hashes));
 
     /// <summary>The hashes an open design's build names that the excerpt lacks (its weapons, picks, what it left out).</summary>
     public static ImmutableArray<ItemHash> ListUnknownHashes(DesignSession session) =>
@@ -324,13 +281,6 @@ public static class LoopDesigning
         BuildFileParsing.ParseBuildFile(session.Design.Build, catalog.Manifest)
             .Bind(build => BuildValidation.ValidateBuild(build, catalog))
             .Map(validated => CreateSession(validated, session.Design));
-
-    /// <summary>True when a build's source is a DIM link (the designer calls it one).</summary>
-    public static bool IsDimLink(string url) =>
-        DimLinkReading.ReadDimLink(url) is Result<DimLink, string>.Ok;
-
-    private static string ReadLink(DimLink link) =>
-        link.Match(shared => shared.Link, inline => inline.Link);
 
     /// <summary>
     /// The design with a weapon's perk picked in one of its trait columns (or that column back to "?"): weapon
@@ -624,8 +574,8 @@ public static class LoopDesigning
     // ── The player's own armor in the build (docs/loop-format.md, "Stats") ──────────────────────────────────
 
     /// <summary>
-    /// The design once the player has logged in, and what to tell them: each weapon whose copy is theirs (their own
-    /// dim.gg share) holds that copy's perks and catalyst; when the build's armor copies are all theirs, its stats are set
+    /// The design once the player has logged in, and what to tell them: each weapon whose copy is theirs (one picked
+    /// from their account) holds that copy's perks and catalyst; when the build's armor copies are all theirs, its stats are set
     /// from them; else they're told to pick their own pieces and weapons.
     /// </summary>
     public static BungieLogin ApplyBungieLogin(DesignSession session, BungieProfile profile)
@@ -786,7 +736,7 @@ public static class LoopDesigning
 
     /// <summary>
     /// The energy each armor slot's copy holds, after the player's Bungie login: the copy the build wears there (the
-    /// share's when theirs, else their own); a slot without one isn't in it ("?").
+    /// one it names when theirs, else their own); a slot without one isn't in it ("?").
     /// </summary>
     public static ImmutableDictionary<ArmorSlot, ArmorEnergy> ListArmorCapacities(ValidatedBuild build, Optional<BungieProfile> profile) =>
         profile.Match(
@@ -832,7 +782,7 @@ public static class LoopDesigning
     }
 
     /// <summary>
-    /// What the game draws on the player's copy the build wears in a slot (its tier, masterwork): the share's copy when it
+    /// What the game draws on the player's copy the build wears in a slot (its tier, masterwork): the copy it names when it
     /// is theirs, else their own (the one the picker ticks); none when they own no copy of the piece.
     /// </summary>
     public static Optional<GearMarks> FindArmorMarks(ValidatedBuild build, BungieProfile profile, ArmorSlot slot) =>
@@ -849,7 +799,7 @@ public static class LoopDesigning
     public static Optional<ArmorStatIcon> FindStatFocus(ValidatedBuild build, BungieProfile profile, ArmorSlot slot) =>
         CopyFinding.FindWornArmor(build.Catalog, build.Build, profile, slot).Bind(armor => FindStatFocus(build, armor));
 
-    /// <summary>What the game draws on the player's copy of a build's weapon (its tier, masterwork, breaker): the share's copy when it is theirs, else their own.</summary>
+    /// <summary>What the game draws on the player's copy of a build's weapon (its tier, masterwork, breaker): the copy it names when it is theirs, else their own.</summary>
     public static Optional<GearMarks> FindWeaponMarks(BungieProfile profile, WeaponLoadout weapon) =>
         CopyFinding.FindWornWeapon(profile, weapon).Map(owned => owned.Marks);
 
@@ -1144,7 +1094,7 @@ public static class LoopDesigning
 
     /// <summary>
     /// The perks a build's weapon's columns that roll offer that the player's copy doesn't have there (the perk picker
-    /// marks them), when the weapon's copy (its instance: picked from theirs, or their own dim.gg share's) is in their
+    /// marks them), when the weapon's copy (its instance: picked from theirs) is in their
     /// account; none for any other weapon. A copy has each perk of a column that rolled two or more, and the base perk of
     /// an enhanced one (CopyPerkChecking).
     /// </summary>

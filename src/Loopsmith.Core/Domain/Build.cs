@@ -18,7 +18,7 @@ public sealed record AbilityLoadout(
 
 /// <summary>
 /// What an ability slot holds: an element of the rules; an ability the build has but Loopsmith can't name (<c>"?"</c> in
-/// the build file: a DIM link's super that isn't in the catalog yet; unknown is data, so the slot shows "?" and sets
+/// the build file: a super that isn't in the catalog yet; unknown is data, so the slot shows "?" and sets
 /// nothing off); or nothing yet (a build started from scratch: the build file leaves its key out, the slot shows empty).
 /// </summary>
 [Union]
@@ -31,11 +31,11 @@ public partial record AbilityPlug
 
 /// <summary>
 /// An equipped weapon. <see cref="Ammo"/> is its ammo type, its manifest item's (none: the manifest doesn't say);
-/// <see cref="Perks"/> are named by catalog id; <see cref="Hash"/> is its manifest item when known (a
-/// DIM loadout's, or written in the build file); <see cref="Roll"/> is the perk picked in each of its trait columns, by
+/// <see cref="Perks"/> are named by catalog id; <see cref="Hash"/> is its manifest item when known (picked,
+/// or written in the build file); <see cref="Roll"/> is the perk picked in each of its trait columns, by
 /// manifest hash, in column order (none: not picked, "?" in the build file); <see cref="Catalyst"/> says the build turns
-/// an exotic's catalyst on (a DIM loadout doesn't say, so it starts off); <see cref="Instance"/> is the copy it is, by
-/// instance id (a dim.gg share's): after the player's Bungie login its tier, masterwork and breaker show when the copy
+/// an exotic's catalyst on (off unless it says); <see cref="Instance"/> is the copy it is, by
+/// instance id (picked from their account): after the player's Bungie login its tier, masterwork and breaker show when the copy
 /// is theirs, else their own copy's. <see cref="Mod"/> is the weapon mod in its mod socket, by manifest hash (none: no
 /// mod, or the build doesn't say).
 /// </summary>
@@ -90,7 +90,7 @@ public sealed record WeaponModOption(ManifestItem Mod, bool InRules, bool Enhanc
 /// <summary>A perk in one of a weapon's trait columns (<see cref="Column"/> 0-based, in column order).</summary>
 public sealed record ColumnPerk(int Column, ItemHash Perk);
 
-/// <summary>How many pieces of an armor set some items are (a DIM loadout's armor).</summary>
+/// <summary>How many pieces of an armor set some items are (a build's armor).</summary>
 public sealed record WornSet(ArmorSet Set, PieceCount Pieces);
 
 /// <summary>
@@ -130,16 +130,16 @@ public sealed record StatLine(
     Optional<StatValue> Melee);
 
 /// <summary>
-/// Which copy of one of the build's armor pieces it wears: the piece's item hash and the copy's instance id (a dim.gg
-/// share names each item's; picking a piece from the player's own armor records theirs). Unknown to the rules; the
+/// Which copy of one of the build's armor pieces it wears: the piece's item hash and the copy's instance id (picking a piece
+/// from the player's own armor records theirs). Unknown to the rules; the
 /// Stats section adds the build's stats up from these copies when the logged-in player owns them.
 /// </summary>
 public sealed record ArmorCopy(ItemHash Piece, ItemInstanceId Instance);
 
 /// <summary>
-/// A build as authored (DIM-like composition), not yet validated against the catalog. <see cref="LeftOut"/> is what the
-/// DIM loadout it came from had that the catalog doesn't know yet (empty for a build written by hand);
-/// <see cref="ArmorCopies"/> which copy of its armor pieces it wears, when it says (a dim.gg share's, or picked);
+/// A build as authored (DIM-like composition), not yet validated against the catalog. <see cref="LeftOut"/> is what it
+/// has that the catalog doesn't place (a legendary armor piece, a mod or perk the rules don't know yet);
+/// <see cref="ArmorCopies"/> which copy of its armor pieces it wears, when it says (picked);
 /// <see cref="ArmorModPlugs"/> which copy of an armor mod the rules know it holds, for an element one of whose copies
 /// isn't its first hash (the cheaper copy the seasonal artifact allows): each of the element's mods, in order, holds the
 /// next of these that is one of its element's hashes, else the element's first hash; <see cref="Artifact"/> the artifact

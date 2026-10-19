@@ -7,7 +7,7 @@ namespace Loopsmith.Core.RuleParsing;
 /// Pure: a weapon perk's enhanced trait is one perk with several plugs — the one its <c>enhanced:</c> block names, and
 /// others of the same name that Bungie's manifest types "Enhanced Trait" (or "Enhanced Origin Trait"): a weapon's
 /// enhanced copy, a crafted one. Every such plug the excerpt has (the bundled one, or with what a Bungie login read)
-/// is the enhanced trait's element's, so a DIM link or an account's weapon that rolls it equips it. A plug no element
+/// is the enhanced trait's element's, so an account's weapon that rolls it equips it. A plug no element
 /// owns goes to one enhanced trait only: one two of them would take (their perks share a name) goes to neither.
 /// </summary>
 public static class EnhancedPerkRecognition

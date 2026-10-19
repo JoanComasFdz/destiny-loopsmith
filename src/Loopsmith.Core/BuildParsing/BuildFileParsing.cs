@@ -10,7 +10,7 @@ using Errors = System.Collections.Immutable.ImmutableArray<Loopsmith.Core.BuildP
 namespace Loopsmith.Core.BuildParsing;
 
 /// <summary>
-/// <c>builds/&lt;build&gt;/build.yaml</c> (see <c>docs/rule-format.md</c>) → <see cref="Build"/>. Pure. Only the
+/// A <c>build.yaml</c> (see <c>docs/rule-format.md</c>) → <see cref="Build"/>. Pure. Only the
 /// file's own shape is checked here; whether the ids exist in the catalog is BuildComposition's job. The one thing read
 /// from elsewhere is what Bungie's manifest says of a weapon, which the file gives by <c>hash</c>: its slot, name, damage
 /// type, ammo type and archetype (the manifest is the source of truth, so the file doesn't copy them).
@@ -196,7 +196,7 @@ public static class BuildFileParsing
 
     /// <summary>
     /// A weapon without a hash is refused: its slot, damage type, archetype and ammo type are Bungie's manifest's, which only
-    /// its hash names (the designer always gives one: a picked weapon, a DIM link's, the player's own).
+    /// its hash names (the designer always gives one: a picked weapon, the player's own).
     /// </summary>
     private static Result<WeaponLoadout, Errors> RefuseUnhashedWeapon(YamlValue value, YamlMap map) =>
         Combine(map.CheckKeys(WeaponKeys), map.ReadOptional("name", ReadName), (_, name) => name)
@@ -232,7 +232,7 @@ public static class BuildFileParsing
 
     /// <summary>
     /// <c>leftOut: { items: [2531963421], subclassPlugs: […], armorMods: […], artifactPerks: […] }</c> — the manifest
-    /// hashes of what the DIM loadout had that the catalog doesn't know yet, by where the loadout listed them.
+    /// hashes of what the build has that the catalog doesn't place (a legendary armor piece, a mod the rules don't know yet), by where the build holds them.
     /// </summary>
     private static Result<ImmutableArray<LeftOutItem>, Errors> ReadLeftOut(YamlValue value) =>
         value.ToMap().Bind(map => Combine(

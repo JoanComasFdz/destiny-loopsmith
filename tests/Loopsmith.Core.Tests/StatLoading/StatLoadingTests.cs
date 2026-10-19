@@ -22,7 +22,7 @@ public sealed partial class StatLoadingTests
     private static readonly RuleCatalog Catalog =
         RuleFiles.Bind(CatalogLoading.ParseCatalog).Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
 
-    // The owner's DIM loadout's armor (builds/skip-grenade-hunter/dim-loadout.json) and the plugs every copy here has.
+    // The owner's build's armor (OwnersBuildFile) and the plugs every copy here has.
     private static readonly ItemHash Mask = ItemHash.From(593554567u);
     private static readonly ItemHash Vow = ItemHash.From(1611241895u);
     private static readonly ImmutableArray<ItemHash> Legendary = [Mask, ItemHash.From(2883433250u), ItemHash.From(1047792392u), ItemHash.From(2107326067u)];
@@ -334,30 +334,90 @@ public sealed partial class StatLoadingTests
 
     private static Result<string, string> Error(string why) => new Result<string, string>.Error(why);
 
-    private static ValidatedBuild OpenOwnersBuild()
-    {
-        const string path = "builds/skip-grenade-hunter/dim-loadout.json";
-        var json = File.ReadAllText(RepoFiles.ToPath(path));                                     // impure
-        return LoopDesigning.StartSavedDimDesign(Catalog, new SourceText(path, json))
-            .Match(ok => ok.Value.Build, error => throw new InvalidOperationException(error.Failure));
-    }
+    /// <summary>
+    /// The owner's Arc Hunter, its armor and weapons picked from their account: the copy of each piece and weapon it wears
+    /// (<c>armorCopies</c>, a weapon's <c>instance</c>), its legendary pieces, Grenade Mods and Balanced Tuning left out (no
+    /// rule places them), and no stats yet.
+    /// </summary>
+    private const string OwnersBuildFile = """
+        name: Arc - Skipp grenade
+        class: hunter
+        subclass: arc
+        super: gathering-storm
+        grenade: skip-grenade
+        melee: combination-blow
+        classAbility: gamblers-dodge
+        jump: triple-jump
+        aspects: [flow-state, tempest-strike]
+        fragments: [spark-of-resistance, spark-of-frequency, spark-of-shock, spark-of-discharge]
+        exoticArmor: shinobus-vow
+        armorSetBonuses: [luminopotent-2pc, luminopotent-4pc]
+        armorMods: [harmonic-siphon, strand-siphon, ashes-to-assets, grenade-kickstart, grenade-kickstart, impact-induction, charged-up, harmonic-resistance, concussive-dampener, elemental-charge, elemental-charge, recuperation, bomber, reaper, powerful-attraction]
+        artifactPerks: [defibrillating-blast, flashover, dielectric, to-shreds, horde-shuttle, unraveling-orbs, photonic-flare]
+        weapons:
+          - {hash: 4019651319, perks: [], roll: [923806249, "?"], instance: "6917530186321554819"} # Festival Flight
+          - {hash: 3325463374, perks: [], instance: "6917529810172542011"} # Thunderlord
+          - {hash: 2888266564, perks: [], instance: "6917529816091863651"} # Crisis Inverted
+        leftOut: {items: [593554567, 2883433250, 1047792392, 2107326067], armorMods: [1435557120, 1435557120, 1435557120, 1435557120, 1435557120, 3122197216, 3122197216]}
+        armorCopies: [{hash: 593554567, instance: "6917530185805135602"}, {hash: 2883433250, instance: "6917530186678878648"}, {hash: 1047792392, instance: "6917530186076125866"}, {hash: 2107326067, instance: "6917530187450929950"}, {hash: 1611241895, instance: "6917530187134607359"}]
 
-    private static SourceText WriteOwnersBuildFile()
-    {
-        const string path = "builds/skip-grenade-hunter/dim-loadout.json";
-        var json = File.ReadAllText(RepoFiles.ToPath(path));                                     // impure
-        return LoopDesigning.StartSavedDimDesign(Catalog, new SourceText(path, json))
-            .Match(ok => ok.Value.Design.Build, error => throw new InvalidOperationException(error.Failure));
-    }
+        """;
 
-    private static SourceText ReadBuildFile()
-    {
-        const string path = "builds/skip-grenade-hunter/build.yaml";
-        return new SourceText(path, File.ReadAllText(RepoFiles.ToPath(path)));                  // impure
-    }
+    /// <summary>A build written by hand (the Skip Grenade Hunter): it names its exotic and set bonuses, but no legendary piece and no copy.</summary>
+    private const string HandWrittenBuildFile = """
+        # Skip Grenade Hunter, written by hand.
+        name: Skip Grenade Hunter
+        author: Plunderthabooty
+        class: hunter
+        subclass: arc
+        super: arc-staff
+        grenade: skip-grenade
+        melee: combination-blow
+        classAbility: gamblers-dodge
+        aspects: [tempest-strike, flow-state]
+        fragments: [spark-of-resistance, spark-of-frequency, spark-of-shock, spark-of-discharge]
+        exoticArmor: shinobus-vow
+        armorSetBonuses: [luminopotent-2pc, luminopotent-4pc]
+        armorMods:
+          - elemental-charge
+          - elemental-charge
+          - grenade-kickstart
+          - grenade-kickstart
+          - bomber
+          - reaper
+          - harmonic-siphon
+          - strand-siphon
+          - impact-induction
+          - emergency-reinforcement
+        artifactPerks:
+          - defibrillating-blast
+          - flashover
+          - dielectric
+          - to-shreds
+          - horde-shuttle
+          - unraveling-orbs
+          - photonic-flare
+        weapons:
+          - { hash: 4019651319, perks: [slice, attrition-orbs] } # Festival Flight
+          - { hash: 2888266564, perks: [] } # Crisis Inverted
+        stats: { weapons: 47, class: 104, grenade: 145, super: 27, melee: 79 }
+
+        """;
+
+    private static ValidatedBuild OpenOwnersBuild() =>
+        OpenBuild(WriteOwnersBuildFile());
+
+    private static SourceText WriteOwnersBuildFile() =>
+        new("owners.build.yaml", OwnersBuildFile);
+
+    private static SourceText ReadBuildFile() =>
+        new("skip-grenade-hunter.build.yaml", HandWrittenBuildFile);
 
     private static ValidatedBuild OpenHandWrittenBuild() =>
-        BuildFileParsing.ParseBuildFile(ReadBuildFile(), Catalog.Manifest)
+        OpenBuild(ReadBuildFile());
+
+    private static ValidatedBuild OpenBuild(SourceText file) =>
+        BuildFileParsing.ParseBuildFile(file, Catalog.Manifest)
             .Bind(build => BuildValidation.ValidateBuild(build, Catalog))
             .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
 }

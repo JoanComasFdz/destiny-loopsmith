@@ -29,7 +29,7 @@ public static class ArtifactEditing
     /// <summary>
     /// The build's artifact (<see cref="ArtifactFinding.FindArtifact"/>) and the perk in each of its slots: the slots the
     /// build names when they hold its perks, each in a slot that takes it; else its perks placed (<see cref="PlacePerks"/>:
-    /// a build file or a DIM link names its perks, not their slots). No artifact: no slots.
+    /// a build file names its perks, not their slots). No artifact: no slots.
     /// </summary>
     public static ArtifactChoice ReadChoice(RuleCatalog catalog, Build build) =>
         ArtifactFinding.FindArtifact(catalog, build).Match(

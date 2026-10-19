@@ -9,15 +9,13 @@ using Loopsmith.Core.Tests.Support;
 namespace Loopsmith.Core.Tests.Orchestration;
 
 /// <summary>
-/// A raid's, an activity's or a retired season's armor mod isn't supported (ADRs D35): a DIM loadout that has one keeps
-/// it in the build's <c>leftOut</c>, but it is ignored — not a gap ("Not in Loopsmith yet" doesn't count it), in no mod
+/// A raid's, an activity's or a retired season's armor mod isn't supported (ADRs D35): a build that has one keeps
+/// it in its <c>leftOut</c>, but it is ignored — not a gap ("Not in Loopsmith yet" doesn't count it), in no mod
 /// socket, and the build check says so in one info line. What it is comes from Bungie's manifest (the join gives it as an
 /// <see cref="ManifestKind.ActivityMod"/>).
 /// </summary>
 public sealed class ActivityModsTests
 {
-    private const string Link = "https://dim.gg/4j5nz4q";
-
     private static readonly ItemHash HerdThinner = ItemHash.From(2142852459u);
     private static readonly ItemHash TakenBarrier = ItemHash.From(3570105787u);
     private static readonly ItemHash ArcSiphon = ItemHash.From(2724068510u);
@@ -44,17 +42,18 @@ public sealed class ActivityModsTests
         ],
         ImmutableDictionary<ItemHash, ImmutableArray<PlugCategoryId>>.Empty);
 
-    /// <summary>The Arc Hunter subclass with its super, and the mods: Herd Thinner twice, Taken Barrier, Arc Siphon and a mod no rule knows.</summary>
-    private const string Loadout = """
-        {
-          "id": "abc", "name": "Raid Hunter", "classType": 1, "clearSpace": false,
-          "equipped": [ { "id": "1", "hash": 2328211300, "socketOverrides": { "0": 2816982785 } } ],
-          "parameters": { "mods": [2142852459, 2142852459, 3570105787, 2724068510, 9501] }
-        }
+    /// <summary>The Arc Hunter with Gambler's Dodge and the mods: Arc Siphon, then left out Herd Thinner twice, Taken Barrier and a mod no rule knows.</summary>
+    private const string BuildFile = """
+        name: Raid Hunter
+        class: hunter
+        subclass: arc
+        classAbility: gamblers-dodge
+        armorMods: [arc-siphon]
+        leftOut: { armorMods: [2142852459, 2142852459, 3570105787, 9501] }
         """;
 
     [Fact]
-    public void A_DIM_loadouts_raid_mods_are_kept_in_the_build_but_ignored_and_the_build_check_says_so()
+    public void A_builds_raid_mods_are_kept_in_the_build_but_ignored_and_the_build_check_says_so()
     {
         var session = StartDesign();
         var build = session.Build;
@@ -68,12 +67,12 @@ public sealed class ActivityModsTests
         Assert.Equal("1 armor mod", LoopDesigning.ListMissing(build).DescribeLeftOut());
         Assert.Equal(["arc-siphon"], build.Build.ArmorMods.Select(id => id.Value));
         Assert.Contains(
-            new BuildIssue(Severity.Info, "Ignored from the DIM loadout: Herd Thinner ×2, Taken Barrier — raid, activity and seasonal mods aren't supported."),
+            new BuildIssue(Severity.Info, "Ignored from the build: Herd Thinner ×2, Taken Barrier — raid, activity and seasonal mods aren't supported."),
             build.Issues);
         Assert.Equal(
             [HerdThinner, HerdThinner, TakenBarrier, UnknownHelmetMod],
-            reopened.Build.Build.LeftOut.Where(item => item.Part == LoadoutPart.ArmorMod).Select(item => item.Hash));   // kept, so a shared loop still says what the loadout had
-        Assert.Contains(reopened.Build.Issues, issue => issue.Message.StartsWith("Ignored from the DIM loadout: Herd Thinner ×2, Taken Barrier", StringComparison.Ordinal));
+            reopened.Build.Build.LeftOut.Where(item => item.Part == LoadoutPart.ArmorMod).Select(item => item.Hash));   // kept, so a shared loop still says what the build has
+        Assert.Contains(reopened.Build.Issues, issue => issue.Message.StartsWith("Ignored from the build: Herd Thinner ×2, Taken Barrier", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -105,7 +104,7 @@ public sealed class ActivityModsTests
     }
 
     private static DesignSession StartDesign() =>
-        LoopDesigning.StartDimDesign(Catalog, new DimLink.Shared(DimShareId.From("4j5nz4q"), Link), Loadout)
+        LoopDesigning.StartDesign(Catalog, new SourceText("raid-hunter.build.yaml", BuildFile), "Raid Hunter loop")
             .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
 
     private static RuleCatalog AddActivityMods(RuleCatalog catalog) =>

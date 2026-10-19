@@ -28,7 +28,7 @@ public partial record ItemDetails
 
 /// <summary>
 /// One square of the DIM-style loadout: the item's icon (a bungie.net address) or none, its name, colour and rarity,
-/// whether the rules know it (an item the DIM loadout had but the build leaves out is shown, marked ⊘; one Loopsmith
+/// whether the rules know it (an item the build has but its rules leave out is shown, marked ⊘; one Loopsmith
 /// ignores, faded and marked ✕: <see cref="Ignored"/>), and what tapping
 /// it opens (none: nothing to show). <see cref="Enhanced"/>: a weapon perk's enhanced trait, drawn as the game draws it.
 /// <see cref="GameText"/>: Bungie's description of the item (the manifest's), when the excerpt has it: a subclass plug's
@@ -207,7 +207,7 @@ public sealed record ArmorView(ArmorSlot Slot, Optional<IconTile> Piece, TileMar
 
 /// <summary>
 /// The artifact block: the season's artifact the perks are from (when the manifest excerpt has it: tapping it shows
-/// Bungie's text) and the artifact perks the build has, then those the DIM loadout had that the rules don't know.
+/// Bungie's text) and the artifact perks the build has, then those it has that the rules don't know.
 /// </summary>
 public sealed record ArtifactView(Optional<IconTile> Item, ImmutableArray<IconTile> Perks);
 
@@ -228,7 +228,7 @@ public sealed record LoadoutView(
 /// Pure: a validated build (and the player's profile, after their Bungie login: the marks of their copies) → its
 /// DIM-style view: where each tile goes. What an element, a hash or a subclass is comes from
 /// the kernel (<see cref="ManifestReading"/>, over the manifest excerpt <c>rules/manifest.yaml</c>); what the excerpt
-/// doesn't know has no icon and keeps its catalog name (or "?"). Left-out items (a DIM loadout's,
+/// doesn't know has no icon and keeps its catalog name (or "?"). Left-out items (a legendary armor piece, a mod the rules don't know,
 /// <see cref="Build.LeftOut"/>) sit where DIM would show them, marked as not in the rules: a mod under the armor piece of
 /// the slot the manifest gives it, every other mod general; an unknown ability as the left-out subclass plug of its kind.
 /// </summary>
@@ -374,7 +374,7 @@ public static class LoadoutShaping
         catalog.FindSubclassItem(guardianClass, subclass).Bind(item => item.Icon).Map(ToIconUrl);
 
     /// <summary>
-    /// The build's armor piece in a slot, as the build panel shows it: a piece the DIM loadout wore, else the build's
+    /// The build's armor piece in a slot, as the build panel shows it: a legendary piece it wears, else the build's
     /// exotic; none when the excerpt knows neither.
     /// </summary>
     public static Optional<ManifestItem> FindArmorPiece(ValidatedBuild build, ArmorSlot slot)

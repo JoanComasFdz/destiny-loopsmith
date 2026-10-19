@@ -82,7 +82,7 @@ public sealed record KeywordGlossary(
     ImmutableArray<FinisherDefinition> Finishers);
 
 /// <summary>
-/// A subclass item of the manifest (Arcstrider: the Arc Hunter subclass), so a DIM loadout's subclass is recognised by
+/// A subclass item of the manifest (Arcstrider: the Arc Hunter subclass), so a subclass is recognised by
 /// its hash (ADRs D27). Only the subclasses whose hashes a source gives are listed.
 /// </summary>
 public sealed record SubclassDefinition(GuardianClass Class, Subclass Subclass, string Name, ImmutableArray<ItemHash> Hashes);
