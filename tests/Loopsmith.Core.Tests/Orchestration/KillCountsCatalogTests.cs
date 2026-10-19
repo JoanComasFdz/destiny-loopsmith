@@ -21,10 +21,28 @@ public sealed class KillCountsCatalogTests
     private static readonly RuleCatalog Catalog =
         RuleFiles.Bind(CatalogLoading.ParseCatalog).Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
 
+    private const string BuildText = """
+        name: Kill Counts Hunter
+        class: hunter
+        subclass: arc
+        super: gathering-storm
+        grenade: skip-grenade
+        melee: combination-blow
+        classAbility: gamblers-dodge
+        aspects: [flow-state]
+        fragments: [spark-of-shock, spark-of-discharge, spark-of-amplitude]
+        exoticArmor: shinobus-vow
+        armorSetBonuses: [luminopotent-4pc]
+        armorMods: [harmonic-siphon, charged-up, elemental-charge]
+        artifactPerks: [dielectric]
+        weapons:
+          - {hash: 3325463374} # Thunderlord
+        """;
+
     [Fact]
     public void Three_Arc_weapon_kills_at_once_drop_Spark_of_Discharges_trace_for_sure_and_fewer_as_a_chance()
     {
-        var session = StartOwnersDesign();
+        var session = StartDesign();
         var arc = FindArcWeapon(session.Build);
 
         var three = LoopDesigning.AppendStep(session, new PlayerAction.FireWeapon(arc, HitOutcome.Kill, TargetCount.From(3)), Optional.None<string>()).Resolutions[^1];
@@ -38,7 +56,7 @@ public sealed class KillCountsCatalogTests
     [Fact]
     public void The_count_selector_goes_up_to_what_fills_and_names_the_rules_that_need_a_count()
     {
-        var session = StartOwnersDesign();
+        var session = StartDesign();
         var build = session.Build;
         var glossary = build.Catalog.Glossary;
         var arc = LoopDesigning.ListTargetCountChoices(build, session.Current, new PlayerAction.FireWeapon(FindArcWeapon(build), HitOutcome.Kill, TargetCount.One));
@@ -59,7 +77,7 @@ public sealed class KillCountsCatalogTests
     [Fact]
     public void Two_kills_at_once_while_Amplified_drop_Spark_of_Amplitudes_orb_for_sure_and_one_as_a_chance()
     {
-        var amplified = LoopDesigning.AppendStep(StartOwnersDesign(), new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Kill, TargetCount.One), Optional.None<string>());
+        var amplified = LoopDesigning.AppendStep(StartDesign(), new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Kill, TargetCount.One), Optional.None<string>());
 
         var two = LoopDesigning.AppendStep(amplified, new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Kill, TargetCount.From(2)), Optional.None<string>()).Resolutions[^1];
         var one = LoopDesigning.AppendStep(amplified, new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Kill, TargetCount.One), Optional.None<string>()).Resolutions[^1];
@@ -73,18 +91,12 @@ public sealed class KillCountsCatalogTests
         build.Build.Weapons.First(weapon => weapon.Type == DamageType.Arc).Slot;
 
     /// <summary>
-    /// The owner's DIM build with Spark of Shock (a grenade jolts, and Flow State makes a jolted kill Amplified), Spark of
-    /// Discharge and Spark of Amplitude as its fragments.
+    /// An Arc Hunter with Spark of Shock (a grenade jolts, and Flow State makes a jolted kill Amplified), Spark of
+    /// Discharge and Spark of Amplitude as its fragments, Thunderlord its Arc weapon, and what fills on a step's kills:
+    /// Harmonic Siphon (two Arc weapon kills in 3 s), Elemental Charge's Armor Charge on an Ionic Trace (Charged Up's cap),
+    /// the Luminopotent 4-piece bonus's Ionic Trace and Dielectric's Bolt Charge on a Jolted kill, and Shinobu's Vow.
     /// </summary>
-    private static DesignSession StartOwnersDesign()
-    {
-        const string path = "builds/skip-grenade-hunter/dim-loadout.json";
-        var json = File.ReadAllText(RepoFiles.ToPath(path));                                     // impure
-        var session = LoopDesigning.StartSavedDimDesign(Catalog, new SourceText(path, json))
+    private static DesignSession StartDesign() =>
+        LoopDesigning.StartDesign(Catalog, new SourceText("kill-counts.build.yaml", BuildText), "Kill counts loop")
             .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
-        ImmutableArray<ElementId> fragments = [ElementId.From("spark-of-shock"), ElementId.From("spark-of-discharge"), ElementId.From("spark-of-amplitude")];
-        var build = session.Build.Build with { Fragments = fragments };
-        var wearing = BuildValidation.ValidateBuild(build, Catalog).Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
-        return LoopDesigning.CreateSession(wearing, session.Design);
-    }
 }
