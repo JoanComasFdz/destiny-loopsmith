@@ -47,7 +47,7 @@ public static class TargetCountListing
             _ => Optional.None<DamageOrigin>(),
             fire => build.Build.Weapons
                 .Where(weapon => weapon.Slot == fire.Slot)
-                .Select(weapon => Optional.Some<DamageOrigin>(new DamageOrigin.Weapon(fire.Slot, weapon.Type)))
+                .Select(weapon => Optional.Some<DamageOrigin>(new DamageOrigin.Weapon(fire.Slot, weapon.Type, weapon.Ammo)))
                 .FindFirstSome(),
             _ => Optional.None<DamageOrigin>(),
             _ => Optional.None<DamageOrigin>(),

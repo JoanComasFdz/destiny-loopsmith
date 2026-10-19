@@ -22,7 +22,7 @@ public sealed class BuildFileEditingTests
         """;
 
     private static readonly WeaponLoadout Picked = new(
-        WeaponSlot.Kinetic, "Festival Flight", DamageType.Strand, Optional.None<string>(), [], Optional.Some(ItemHash.From(4019651319u)),
+        WeaponSlot.Kinetic, "Festival Flight", DamageType.Strand, Optional.Some(AmmoType.Special), Optional.None<string>(), [], Optional.Some(ItemHash.From(4019651319u)),
         [Optional.Some(ItemHash.From(923806249u))], false, Optional.None<ItemInstanceId>(), Optional.None<ItemHash>());
 
     [Fact]

@@ -1,0 +1,7 @@
+# Crisis Inverted named in full but without its hash: its slot, damage type, archetype and ammo type are the manifest's,
+# which only the hash names, so the file is refused.
+name: "E2E - Crisis Inverted without hash"
+class: hunter
+subclass: arc
+weapons:
+  - { slot: energy, name: Crisis Inverted, type: arc, archetype: hand-cannon }

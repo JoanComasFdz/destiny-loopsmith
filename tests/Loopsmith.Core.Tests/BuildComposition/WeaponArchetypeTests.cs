@@ -9,8 +9,9 @@ using Loopsmith.Core.Tests.Support;
 namespace Loopsmith.Core.Tests.BuildComposition;
 
 /// <summary>
-/// A weapon's archetype (docs/rule-format.md, "Build file"): a weapon with a <c>hash</c> takes it from Bungie's manifest
-/// (the source of truth), one without names it in <c>archetype</c>, and a weapon with neither is refused when the file is read.
+/// A weapon's archetype (docs/rule-format.md, "Build file"): a weapon takes it from Bungie's manifest by its <c>hash</c>
+/// (the source of truth; the file's <c>archetype</c> only when the manifest's type names none), and a weapon without a
+/// hash is refused when the file is read.
 /// </summary>
 public sealed class WeaponArchetypeTests
 {
@@ -33,7 +34,7 @@ public sealed class WeaponArchetypeTests
             weapons:
               - { slot: kinetic, name: Festival Flight, type: strand, hash: 4019651319 }
               - { slot: energy, name: Crisis Inverted, type: arc, archetype: shotgun, hash: 2888266564 }
-              - { slot: power, name: Speleologist, type: solar, archetype: machine-gun }
+              - { hash: 3325463374 }
             """);
 
         Assert.Equal(
@@ -56,7 +57,7 @@ public sealed class WeaponArchetypeTests
     }
 
     [Fact]
-    public void A_weapon_with_neither_an_archetype_nor_a_hash_is_refused_in_a_loop_files_build_too()
+    public void A_weapon_without_a_hash_is_refused_in_a_loop_files_build_too()
     {
         const string loop = """
             loop: Unknown weapon
@@ -73,7 +74,7 @@ public sealed class WeaponArchetypeTests
         var imported = LoopDesigning.ImportLoop(Catalog, new SourceText("unknown.loop.yaml", loop));
 
         var error = Assert.IsType<Result<DesignSession, string>.Error>(imported);
-        Assert.Contains("weapon 'Any Arc weapon' needs an `archetype` or a `hash`", error.Failure);
+        Assert.Contains("weapon 'Any Arc weapon' needs a `hash`", error.Failure);
     }
 
     private static ValidatedBuild Validate(string text) =>

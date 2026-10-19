@@ -6,7 +6,7 @@ namespace Loopsmith.Core.Domain;
 
 /// <summary>
 /// What an item of the Bungie manifest is, as Loopsmith shows it (the manifest's own item types, grouped). A weapon has
-/// its slot, damage type, trait columns (the perks a roll selects; none when the excerpt doesn't say), intrinsic perk
+/// its slot, damage type, ammo type, trait columns (the perks a roll selects; none when the excerpt doesn't say), intrinsic perk
 /// (its frame, or an exotic's own perk), the weapon mods its mod socket takes and, for an exotic, its catalyst; armor its slot, intrinsic perk (an exotic's),
 /// the armor set it belongs to and the class that wears it (none: any class); an armor mod the slot it only fits (none: a general mod); a catalyst the perks it
 /// grants; an <see cref="ActivityMod"/> is a mod of a raid's, an activity's or a retired season's socket, which Loopsmith
@@ -26,6 +26,7 @@ public partial record ManifestKind
     partial record Weapon(
         WeaponSlot Slot,
         Optional<DamageType> DamageType,
+        Optional<AmmoType> Ammo,       // its ammo type (none: the excerpt doesn't say)
         ImmutableArray<TraitColumn> Traits,
         Optional<ItemHash> Intrinsic,
         Optional<ItemHash> Catalyst,

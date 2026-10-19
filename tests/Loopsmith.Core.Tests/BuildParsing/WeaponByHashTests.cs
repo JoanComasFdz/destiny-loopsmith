@@ -70,7 +70,7 @@ public sealed class WeaponByHashTests
             weapons:
               - { hash: 4019651319 }
               - { hash: 1234567, perks: [slice] }
-              - { slot: power, name: Speleologist, type: solar, archetype: machine-gun }
+              - { hash: 3325463374 }
             """);
         var loop = new SourceText("by-hash.loop.yaml", "loop: By hash\nsteps: []\nbuild: |\n" + string.Concat(file.Text.Split('\n').Select(line => $"  {line}\n")));
 

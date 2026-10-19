@@ -114,6 +114,7 @@ public static class WeaponSwapping
                     kind.Slot,
                     item.Value.Name,
                     type.Value,
+                    kind.Ammo,
                     item.Value.Type.Bind(ManifestReading.ToArchetype),
                     [],
                     Optional.Some(hash),

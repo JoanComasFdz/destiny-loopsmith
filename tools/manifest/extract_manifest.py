@@ -64,6 +64,7 @@ MOD_SLOTS = {"Helmet Armor Mod": "helmet", "Arms Armor Mod": "arms", "Chest Armo
              "Leg Armor Mod": "legs", "Class Item Armor Mod": "classItem", "General Armor Mod": "general"}
 TIERS = {2: "basic", 3: "common", 4: "rare", 5: "legendary", 6: "exotic"}
 DAMAGE_TYPES = {1: "kinetic", 2: "arc", 3: "solar", 4: "void", 6: "stasis", 7: "strand"}
+AMMO_TYPES = {1: "primary", 2: "special", 3: "heavy"}   # equippingBlock.ammoType; 0 is none
 EMPTY_CATALYST = "v400.empty.exotic.masterwork"  # the plug category of an exotic's empty catalyst socket
 MOD_SOCKET_CATEGORIES = {"v400.weapon.mod_guns", "v400.weapon.mod_damage", "v400.weapon.mod_magazine"}  # only a weapon's mod socket takes them
 EMPTY_MOD = "v400.weapon.mod_empty"  # the plug category of a mod socket's empty plugs ("Empty Mod Socket", "Random Masterwork")
@@ -355,6 +356,9 @@ def to_entry(item_hash, item, context):
     damage = DAMAGE_TYPES.get(item.get("defaultDamageType"))
     if kind == "weapon" and damage:
         fields.append(("damageType", damage))
+    ammo = AMMO_TYPES.get(item.get("equippingBlock", {}).get("ammoType"))
+    if kind == "weapon" and ammo:
+        fields.append(("ammo", ammo))
     breaker = item.get("breakerTypeHash") or (
         read_frame_breaker(context["items"].get(str(context["intrinsics"].get(item_hash))), context["perks"], context["breaker_types"])
         if item_hash in context["intrinsics"] else None)

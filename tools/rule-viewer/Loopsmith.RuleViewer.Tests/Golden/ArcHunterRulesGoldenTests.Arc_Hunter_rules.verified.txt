@@ -1,6 +1,6 @@
 ﻿# Arc Hunter rules
 
-## Arc subclass (subclass): 50 rules
+## Arc subclass (subclass): 51 rules
   Class ability: 2
   Air class ability: 1
   Melee: 6
@@ -9,7 +9,9 @@
   Finisher: 1
   Super: 5
   Weapon: 1
-  Arc weapon: 3
+  Arc weapon: 2
+  Heavy Arc weapon: 1
+  Special Arc weapon: 1
   Airborne Super heavy: 1
   Any: 6
   Bolt Charge: 1
@@ -20,7 +22,7 @@
   Super heavy combo: 1
   Always on: 8
 
-## + what it needs from outside (withNeeds): 50 rules
+## + what it needs from outside (withNeeds): 51 rules
   Class ability: 2
   Air class ability: 1
   Melee: 6
@@ -29,7 +31,9 @@
   Finisher: 1
   Super: 5
   Weapon: 1
-  Arc weapon: 3
+  Arc weapon: 2
+  Heavy Arc weapon: 1
+  Special Arc weapon: 1
   Airborne Super heavy: 1
   Any: 6
   Bolt Charge: 1
@@ -40,7 +44,7 @@
   Super heavy combo: 1
   Always on: 8
 
-## + what builds on it (withDependents): 147 rules
+## + what builds on it (withDependents): 148 rules
   Class ability: 11
   Air class ability: 1
   Melee: 11
@@ -49,8 +53,10 @@
   Finisher: 11
   Super: 6
   Weapon: 4
-  Arc weapon: 13
+  Arc weapon: 12
+  Heavy Arc weapon: 1
   Kinetic weapon: 2
+  Special Arc weapon: 1
   Stasis weapon: 2
   Strand weapon: 2
   Critical health: 1
@@ -151,8 +157,7 @@ horde-shuttle#0 artifact-current-horde-shuttle-1: [Trigger] Weapon sustained hit
 reaper#1 mods-armor-reaper-2: [Trigger] Weapon kill ➜ [Armor mod] Reaper (equipped) + [Buff] Reaper (on you) ➜ [Pickup] Orb of Power, [Buff] Reaper (ends)
 to-shreds#0 artifact-current-to-shreds-1: [Trigger] Weapon sustained hit ➜ [Artifact perk] To Shreds (equipped) + [Debuff] Sever (on the target) ➜ [Debuff] Unravel
 
-### Arc weapon (13)
-spark-of-beacons#0 all-classes-arc-fragments-spark-of-beacons-1: [Trigger] Arc weapon kill ➜ [Subclass fragment] Spark of Beacons (equipped) + [Buff] Amplified (on you) ➜ [Debuff] Blind (chance)
+### Arc weapon (12)
 spark-of-discharge#1 all-classes-arc-fragments-spark-of-discharge-2: [Trigger] Arc weapon 3+ kills ➜ [Subclass fragment] Spark of Discharge (equipped) ➜ [Pickup] Ionic Trace
 spark-of-discharge#2 all-classes-arc-fragments-spark-of-discharge-3: [Trigger] Arc weapon fewer than 3 kills ➜ [Subclass fragment] Spark of Discharge (equipped) ➜ [Pickup] Ionic Trace (chance)
 arc-siphon#0 mods-helmet-arc-siphon-1: [Trigger] Arc weapon 2+ kills within 3s ➜ [Armor mod] Arc Siphon (equipped) ➜ [Pickup] Orb of Power
@@ -166,9 +171,15 @@ harmonic-siphon#1 mods-armor-harmonic-siphon-2: [Trigger] Arc weapon fewer than 
 kinetic-charge-siphon#2 mods-helmet-kinetic-charge-siphon-3: [Trigger] Arc weapon 2+ kills within 3s ➜ [Armor mod] Kinetic Charge Siphon (equipped) ➜ [Pickup] Orb of Power
 kinetic-charge-siphon#3 mods-helmet-kinetic-charge-siphon-4: [Trigger] Arc weapon fewer than 2 kills ➜ [Armor mod] Kinetic Charge Siphon (equipped) ➜ [Pickup] Orb of Power (chance)
 
+### Heavy Arc weapon (1)
+spark-of-beacons#1 all-classes-arc-fragments-spark-of-beacons-2: [Trigger] Heavy Arc weapon kill ➜ [Subclass fragment] Spark of Beacons (equipped) + [Buff] Amplified (on you) ➜ [Debuff] Blind
+
 ### Kinetic weapon (2)
 kinetic-charge-siphon#0 mods-helmet-kinetic-charge-siphon-1: [Trigger] Kinetic weapon 2+ kills within 3s ➜ [Armor mod] Kinetic Charge Siphon (equipped) ➜ [Pickup] Orb of Power
 kinetic-charge-siphon#1 mods-helmet-kinetic-charge-siphon-2: [Trigger] Kinetic weapon fewer than 2 kills ➜ [Armor mod] Kinetic Charge Siphon (equipped) ➜ [Pickup] Orb of Power (chance)
+
+### Special Arc weapon (1)
+spark-of-beacons#0 all-classes-arc-fragments-spark-of-beacons-1: [Trigger] Special Arc weapon kill ➜ [Subclass fragment] Spark of Beacons (equipped) + [Buff] Amplified (on you) ➜ [Debuff] Blind
 
 ### Stasis weapon (2)
 arc-stasis-dual-siphon#2 mods-helmet-arc-stasis-dual-siphon-3: [Trigger] Stasis weapon 2+ kills within 3s ➜ [Armor mod] Arc/Stasis Dual Siphon (equipped) ➜ [Pickup] Orb of Power

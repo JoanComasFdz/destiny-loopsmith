@@ -214,9 +214,10 @@ public static class GameNotationParsing
             "weapon" when argument == "this" => new Result<DamageSource, string>.Ok(new DamageSource.ThisWeapon()),
             "weapon" when argument.StartsWith("this:", StringComparison.Ordinal) => ParseVocabularyWord<DamageType>(argument["this:".Length..])
                 .Map(DamageSource (type) => new DamageSource.ThisWeaponOfType(type)),
+            "weapon" when ParseVocabularyWord<AmmoType>(argument.Split(':')[0]).IsOk() => ToAmmoDamageSource(argument),
             "weapon" => ParseVocabularyWord<DamageType>(argument)
                 .Map(DamageSource (type) => new DamageSource.WeaponOfType(type))
-                .MapError(message => $"{message}, harmonic or this"),
+                .MapError(message => $"{message}, primary, special, heavy, harmonic or this"),
             "slot" => ParseVocabularyWord<WeaponSlot>(argument).Map(DamageSource (slot) => new DamageSource.WeaponInSlot(slot)),
             "type" => ParseVocabularyWord<DamageType>(argument).Map(DamageSource (type) => new DamageSource.OfType(type)),
             "keyword" => StatusId.TryFrom(argument).ToResult().Map(DamageSource (status) => new DamageSource.KeywordOf(status)),
@@ -224,6 +225,20 @@ public static class GameNotationParsing
             _ => ParseVocabularyWord<AbilityKind>(prefix)
                 .MapError(_ => $"unknown qualifier '{prefix}:'")
                 .Bind(kind => ParseAbilityInput(kind, argument).Map(DamageSource (input) => new DamageSource.AbilityUsedAs(kind, input))),
+        };
+
+    /// <summary>
+    /// <c>special</c> (after <c>weapon:</c>): a weapon of that ammo type; <c>special:arc</c>, one of that ammo and damage
+    /// type (Spark of Beacons's Special Arc weapon).
+    /// </summary>
+    private static Result<DamageSource, string> ToAmmoDamageSource(string argument) =>
+        argument.IndexOf(':', StringComparison.Ordinal) switch
+        {
+            < 0 => ParseVocabularyWord<AmmoType>(argument)
+                .Map(DamageSource (ammo) => new DamageSource.WeaponOfAmmo(ammo, Optional.None<DamageType>())),
+            var colon => ParseVocabularyWord<AmmoType>(argument[..colon])
+                .Bind(ammo => ParseVocabularyWord<DamageType>(argument[(colon + 1)..])
+                    .Map(DamageSource (type) => new DamageSource.WeaponOfAmmo(ammo, Optional.Some(type)))),
         };
 
     /// <summary>

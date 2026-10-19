@@ -119,6 +119,7 @@ public static class KeywordInteracting
             _ => false,
             _ => false,
             _ => false,
+            _ => false,
             _ => false);
 
     private static bool IsUsingUp(KeywordRef keyword, Outcome outcome) =>

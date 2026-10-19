@@ -102,19 +102,17 @@ public sealed class PerkPickingTests
         var wrongColumn = PickError(session, 0, 0, Optional.Some(ItemHash.From(AttritionOrbs)));
         var noColumn = PickError(session, 0, 2, Optional.None<ItemHash>());
         var noWeapon = PickError(session, 3, 0, Optional.None<ItemHash>());
-        var noHash = PickError(ImportExampleLoop("builds/demolitionist-hunter/loops/grenade-reload-kill.loop.yaml"), 0, 0, Optional.None<ItemHash>());
 
         Assert.Equal("Thunderlord's column 1 doesn't roll: it is always Lightning Rounds.", fixedColumn);
         Assert.Equal("Attrition Orbs (Trait) isn't a perk of Festival Flight's column 1.", wrongColumn);
         Assert.Equal("Festival Flight has no perk column 3 in the manifest excerpt.", noColumn);
         Assert.Equal("The build has no weapon 4.", noWeapon);
-        Assert.Equal("Any Arc Hand Cannon has no perk column 1 in the manifest excerpt.", noHash);
     }
 
     [Fact]
     public void A_roll_pick_outside_its_column_is_a_warning()
     {
-        var build = new WeaponLoadout(WeaponSlot.Kinetic, "Festival Flight", DamageType.Strand, Optional.None<string>(), [], Optional.Some(ItemHash.From(4019651319u)),
+        var build = new WeaponLoadout(WeaponSlot.Kinetic, "Festival Flight", DamageType.Strand, Optional.None<AmmoType>(), Optional.None<string>(), [], Optional.Some(ItemHash.From(4019651319u)),
             [Optional.Some(ItemHash.From(AttritionOrbs)), Optional.None<ItemHash>(), Optional.Some(ItemHash.From(Slice))], false, Optional.None<ItemInstanceId>(), Optional.None<ItemHash>());
         var session = StartOwnersDimDesign();
 

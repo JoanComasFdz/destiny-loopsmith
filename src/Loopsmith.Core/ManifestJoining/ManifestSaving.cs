@@ -134,6 +134,7 @@ public static class ManifestSaving
         [
             KeyValuePair.Create("slot", Optional.Some<JsonNode>(weapon.Slot.ToString())),
             KeyValuePair.Create("damage", weapon.DamageType.Map(type => (JsonNode)type.ToString())),
+            KeyValuePair.Create("ammo", weapon.Ammo.Map(ammo => (JsonNode)ammo.ToString())),
             KeyValuePair.Create("traits", Optional.Some<JsonNode>(new JsonArray([.. weapon.Traits.Select(column => (JsonNode)ToHashArray(column.Options))]))),
             KeyValuePair.Create("intrinsic", weapon.Intrinsic.Map(ToHashNode)),
             KeyValuePair.Create("catalyst", weapon.Catalyst.Map(ToHashNode)),
@@ -209,6 +210,7 @@ public static class ManifestSaving
         weapon.ReadString("slot").Bind(ReadEnum<WeaponSlot>).Map(slot => (ManifestKind)new ManifestKind.Weapon(
             slot,
             weapon.ReadString("damage").Bind(ReadEnum<DamageType>),
+            weapon.ReadString("ammo").Bind(ReadEnum<AmmoType>),
             [.. weapon.ReadArray("traits").Select(ReadTraitColumn)],
             weapon.ReadHash("intrinsic"),
             weapon.ReadHash("catalyst"),

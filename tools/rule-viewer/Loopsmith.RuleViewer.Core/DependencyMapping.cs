@@ -203,7 +203,10 @@ internal static class DependencyMapping
                 : ToWeaponNode($"{context.Subclass.ToDamageType()} weapon", FindDamageTypeIcon(context, context.Subclass.ToDamageType()))],
             abilityUsedAs: used => [ToTriggerNode(context, used.Kind, used.Input)],
             thisWeapon: _ => [],
-            thisWeaponOfType: _ => []);
+            thisWeaponOfType: _ => [],
+            weaponOfAmmo: weapon => [weapon.Type.Match(
+                type => ToWeaponNode($"{weapon.Ammo} {type.Value} weapon", FindDamageTypeIcon(context, type.Value)),
+                _ => ToWeaponNode($"{weapon.Ammo} weapon", FindStatIcon(context, StatKind.Weapons)))]);
 
     /// <summary>
     /// The uses of one ability a hit or kill "by that ability" matches, however it's used (Causality matches any input):

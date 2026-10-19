@@ -145,7 +145,7 @@ public static class DimLoadoutMapping
     /// </summary>
     private static Optional<WeaponLoadout> ReadWeapon(ManifestExcerpt manifest, ItemHash hash, ImmutableArray<ItemHash> overrides, Optional<ItemInstanceId> instance) =>
         manifest.FindItem(hash).Bind(item => item.Kind is ManifestKind.Weapon { DamageType: Optional<DamageType>.Some type } weapon
-            ? Optional.Some(new WeaponLoadout(weapon.Slot, item.Name, type.Value, item.Type.Bind(ManifestReading.ToArchetype), [], Optional.Some(hash), weapon.Traits.ReadRoll(overrides), false, instance, weapon.ReadMod(overrides)))
+            ? Optional.Some(new WeaponLoadout(weapon.Slot, item.Name, type.Value, weapon.Ammo, item.Type.Bind(ManifestReading.ToArchetype), [], Optional.Some(hash), weapon.Traits.ReadRoll(overrides), false, instance, weapon.ReadMod(overrides)))
             : Optional.None<WeaponLoadout>());
 
     private sealed record Recognition(LoadoutPart Part, ItemHash Hash, Optional<BuildElement> Element);

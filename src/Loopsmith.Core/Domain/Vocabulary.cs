@@ -91,6 +91,13 @@ public enum DamageSpan { Blow, Sustained }
 
 public enum WeaponSlot { Kinetic, Energy, Power }
 
+/// <summary>
+/// A weapon's ammo type, Bungie's manifest's (<c>equippingBlock.ammoType</c>: 1, 2, 3): Special weapons sit in the kinetic and
+/// energy slots too, so a slot doesn't say it. No ammo is counted (ADRs D37): it only says which weapon's damage a rule names
+/// (Spark of Beacons's Special or Heavy Arc kills).
+/// </summary>
+public enum AmmoType { Primary, Special, Heavy }
+
 public enum StatKind { Weapons, Health, Class, Grenade, Super, Melee }
 
 /// <summary>Deterministic v1: a <see cref="Chance"/> rule still fires, but the trace marks it as "chance".</summary>

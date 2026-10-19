@@ -616,7 +616,7 @@ public class ActionResolutionTests
 
         Assert.DoesNotContain(two.Fired, f => f.Source.Value == "one-for-all");
         var fired = Assert.Single(three.Fired, f => f.Source.Value == "one-for-all");
-        Assert.Equal(new GameEvent.TargetsHit(new DamageOrigin.Weapon(WeaponSlot.Energy, DamageType.Arc), TargetCount.From(3), HitOutcome.Damage), fired.Trigger);
+        Assert.Equal(new GameEvent.TargetsHit(new DamageOrigin.Weapon(WeaponSlot.Energy, DamageType.Arc, Optional.None<AmmoType>()), TargetCount.From(3), HitOutcome.Damage), fired.Trigger);
         Assert.Single(fiveKills.Fired, f => f.Source.Value == "one-for-all");   // a kill hits too
         Assert.DoesNotContain(grenade.Fired, f => f.Source.Value == "one-for-all");   // not a weapon
         Assert.Equal("Hit 3+ enemies with weapon", build.Catalog.Glossary.DescribeTrigger(OneForAll.Rules[0].On, build.ReadSuperType()));

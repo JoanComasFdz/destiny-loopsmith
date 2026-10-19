@@ -35,7 +35,7 @@ public sealed class BuildFileWritingTests
     [Fact]
     public void A_weapon_roll_is_written_with_a_question_mark_for_a_column_not_picked()
     {
-        var weapon = new WeaponLoadout(WeaponSlot.Kinetic, "Festival Flight", DamageType.Strand, Optional.None<string>(), [], Optional.Some(ItemHash.From(4019651319u)),
+        var weapon = new WeaponLoadout(WeaponSlot.Kinetic, "Festival Flight", DamageType.Strand, Optional.None<AmmoType>(), Optional.None<string>(), [], Optional.Some(ItemHash.From(4019651319u)),
             [Optional.None<ItemHash>(), Optional.Some(ItemHash.From(243981275u))], false, Optional.None<ItemInstanceId>(), Optional.None<ItemHash>());
 
         var written = BuildFileWriting.WriteBuildFile(MinimalBuild with { Weapons = [weapon] }, []);
@@ -47,7 +47,7 @@ public sealed class BuildFileWritingTests
     [Fact]
     public void A_weapons_copy_is_written_as_its_instance_id_and_read_back()
     {
-        var weapon = new WeaponLoadout(WeaponSlot.Power, "Thunderlord", DamageType.Arc, Optional.None<string>(), [], Optional.Some(ItemHash.From(3325463374u)),
+        var weapon = new WeaponLoadout(WeaponSlot.Power, "Thunderlord", DamageType.Arc, Optional.None<AmmoType>(), Optional.None<string>(), [], Optional.Some(ItemHash.From(3325463374u)),
             [], false, Optional.Some(ItemInstanceId.From("6917529810172542011")), Optional.None<ItemHash>());
 
         var written = BuildFileWriting.WriteBuildFile(MinimalBuild with { Weapons = [weapon] }, []);

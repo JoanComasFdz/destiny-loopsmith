@@ -124,11 +124,11 @@ internal static class RuleBodyParsing
                 : map.FailAtKey<Trigger>("via", $"reload's via names a weapon: {WeaponSources}")));
 
     /// <summary>The weapon sources a reload names: only a weapon reloads.</summary>
-    private const string WeaponSources = "any, weapon, weapon:<type>, weapon:harmonic, slot:<slot>, weapon:this or weapon:this:<type>";
+    private const string WeaponSources = "any, weapon, weapon:<type>, weapon:<ammo>, weapon:<ammo>:<type>, weapon:harmonic, slot:<slot>, weapon:this or weapon:this:<type>";
 
     private static bool IsWeaponSource(DamageSource source) =>
         source is DamageSource.AnyWeapon or DamageSource.WeaponOfType or DamageSource.WeaponOfSuperType or DamageSource.WeaponInSlot
-            or DamageSource.ThisWeapon or DamageSource.ThisWeaponOfType;
+            or DamageSource.ThisWeapon or DamageSource.ThisWeaponOfType or DamageSource.WeaponOfAmmo;
 
     /// <summary>
     /// <c>{ reloadWeapon: weapon:this }</c> or <c>{ reloadWeapon: slot:power }</c>: reloads that one weapon — the one holding

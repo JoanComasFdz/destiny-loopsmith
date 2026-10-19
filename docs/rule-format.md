@@ -863,7 +863,7 @@ armorMods: [elemental-charge, elemental-charge, grenade-kickstart, grenade-kicks
 artifact: { hash: 3821685388, slots: [3585856470, 3585856464, 2596646298, "?", "?", 1319563986, "?"] }   # optional
 artifactPerks: [defibrillating-blast, flashover]
 weapons:
-  - { slot: kinetic, name: Festival Flight, type: strand, archetype: grenade-launcher, perks: [slice] }
+  - { hash: 4019651319, perks: [slice] }                   # Festival Flight, Slice its perk
   - { hash: 3325463374, catalyst: true }                   # Thunderlord, its catalyst on
   - { hash: 4019651319, mod: 3820243349 }                  # Festival Flight, Synergy in its mod socket
   - { hash: 2888266564, roll: ["?", 2209918983] }          # Crisis Inverted, a perk per trait column
