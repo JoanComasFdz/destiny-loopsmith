@@ -56,6 +56,17 @@ public static class StepCardSnapshotAssertions
     public static AssertingThat<StepCardSnapshot> Fires(this AssertingThat<StepCardSnapshot> that, ArmorPiece armor, params string[] lines) =>
         that.FiresFrom(armor.ToShownText(), lines);
 
+    /// <summary>
+    /// Under the event that reads <paramref name="happened"/> ("Grenade thrown"), <paramref name="armor"/> fired exactly
+    /// <paramref name="lines"/>, in that order, each with its "(chance)" as shown.
+    /// </summary>
+    public static AssertingThat<StepCardSnapshot> FiresOn(this AssertingThat<StepCardSnapshot> that, string happened, ArmorPiece armor, params string[] lines) =>
+        that.FiresOn(happened, armor.ToShownText(), lines);
+
+    /// <summary><paramref name="perk"/> fired exactly <paramref name="lines"/>, in that order, each with its "(chance)" as shown.</summary>
+    public static AssertingThat<StepCardSnapshot> Fires(this AssertingThat<StepCardSnapshot> that, ExoticWeaponPerk perk, params string[] lines) =>
+        that.FiresFrom(perk.ToShownText(), lines);
+
     /// <summary><paramref name="ability"/> fired exactly <paramref name="lines"/>, in that order, each with its "(chance)" as shown.</summary>
     public static AssertingThat<StepCardSnapshot> Fires(this AssertingThat<StepCardSnapshot> that, Ability ability, params string[] lines) =>
         that.FiresFrom(ability.ToShownText(), lines);

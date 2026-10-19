@@ -1,0 +1,6 @@
+# Thunderlord, whose trait Lightning Rounds strikes on sustained hits, with no catalyst.
+name: "E2E - Lightning Rounds on Thunderlord"
+class: hunter
+subclass: arc
+weapons:
+  - { hash: 3325463374, perks: [] } # Thunderlord

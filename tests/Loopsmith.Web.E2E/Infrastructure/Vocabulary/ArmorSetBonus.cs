@@ -10,6 +10,7 @@ public partial record ArmorSetBonus
     public partial record IronConviction;
     public partial record IronSharpensIron;
     public partial record AscendantEscape;
+    public partial record ShockAndClear;
 
     /// <summary>What the UI shows that no case names yet: a failing assertion names it as the UI shows it.</summary>
     public partial record Unlisted(string Shown);
@@ -25,5 +26,6 @@ public static class ArmorSetBonusShowing
             ironConviction => "Iron Conviction",
             ironSharpensIron => "Iron Sharpens Iron",
             ascendantEscape => "Ascendant Escape",
+            shockAndClear => "Shock and Clear",
             unlisted => unlisted.Shown);
 }

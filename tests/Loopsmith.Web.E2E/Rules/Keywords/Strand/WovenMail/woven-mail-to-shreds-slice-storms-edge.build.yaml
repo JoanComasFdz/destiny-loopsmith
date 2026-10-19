@@ -1,0 +1,9 @@
+# Woven Mail, with To Shreds (a severed target's kill gives it), Festival Flight with Slice and Marksman's Dodge to arm it (its hits sever), and Storm's Edge to cast a Super.
+name: "E2E - Woven Mail with To Shreds, Slice and Storm's Edge"
+class: hunter
+subclass: arc
+super: storms-edge
+classAbility: marksmans-dodge
+artifactPerks: [to-shreds]
+weapons:
+  - { hash: 4019651319, perks: [slice] } # Festival Flight
