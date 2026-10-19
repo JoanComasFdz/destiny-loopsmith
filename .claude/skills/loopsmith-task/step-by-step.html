@@ -128,10 +128,10 @@ button:focus-visible{outline:3px solid var(--main);outline-offset:2px}
       <div class="tag">§1<b>Understand</b></div>
       <div class="body">
         <div class="node main">Read your text, open every file you pasted, read CLAUDE.md's Agent workflow</div>
-        <div class="node main">Search the open PRs and the code, rules and builds the request names<small>For a narrow request the session does this itself.</small></div>
+        <div class="node main">Search the open PRs and the code and rules the request names<small>For a narrow request the session does this itself.</small></div>
         <div class="fork" data-label="for a wide request: in parallel">
           <div class="node read">Explore: open PRs<small>Does one already cover this? Which ones touch the same files?</small></div>
-          <div class="node read">Explore: where it lives<small>The files, rule ids, builds and screens the request names, and whether they exist.</small></div>
+          <div class="node read">Explore: where it lives<small>The files, rule ids and screens the request names, and whether they exist.</small></div>
           <div class="node cmd">Compendium download<small>Only when rules are involved, about a minute.</small></div>
         </div>
         <div class="why"><b>Why in parallel:</b> the searches and the download don't depend on each other, and each answers its own question. <b>Why subagents:</b> a wide sweep reads dozens of files the session never needs again; a subagent reads them and hands back only the answer, so the session's context stays free for the conversation with you. <b>Why your files stay in the session:</b> your screenshots and files exist only on its disk.</div>
@@ -148,7 +148,7 @@ button:focus-visible{outline:3px solid var(--main);outline-offset:2px}
       <div class="tag">§3<b>Round 1</b></div>
       <div class="body">
         <div class="seq">
-          <div class="node main">What I understood, proposed criteria, and questions only if needed<small>Each criterion about the app is a Gherkin (its screens, its title, its rounds), and becomes one e2e scenario; one checked in a file stays a plain line, and so does one that needs a Bungie login or a DIM link (no e2e scenario reaches either yet). A question only where a point has two readings that lead to different changes. None is fine. Each question and suggestion stands on its own: the problem with a concrete example, the choices with what each changes and costs, a marked default, and a numbered list of the answers needed.</small></div>
+          <div class="node main">What I understood, proposed criteria, and questions only if needed<small>Each criterion about the app is a Gherkin (its screens, its title, its rounds), and becomes one e2e scenario; one checked in a file stays a plain line, and so does one that needs a Bungie login (no e2e scenario reaches it yet). A question only where a point has two readings that lead to different changes. None is fine. Each question and suggestion stands on its own: the problem with a concrete example, the choices with what each changes and costs, a marked default, and a numbered list of the answers needed.</small></div>
           <div class="node cmd"><code>RuleViewer -- --rule &lt;name&gt; --theme dark</code>, one PNG per rule Gherkin<small>Only for a Gherkin for a rule: its <code># Rule &lt;name&gt;:</code> line names the rule, and the rule viewer draws that rule's flow (trigger ➜ what must be in place ➜ what it gives), sent to you as a picture right after the Gherkins. Again in any later round that adds one or changes its rule. A rule that doesn't exist yet is drafted first, under <code>rules/</code> where its name says and uncommitted, and its flow is drawn from the draft, captioned as one; the draft follows the Gherkin's changes, is deleted with it, and is where the rule work starts once you say go. A rule the viewer still can't draw is one line saying why.</small></div>
           <div class="node gate">You answer</div>
         </div>
@@ -171,11 +171,10 @@ button:focus-visible{outline:3px solid var(--main);outline-offset:2px}
         <div class="node main">Branch <code>claude/&lt;slug&gt;</code>; when splitting, write the contract first<small>Domain types or a short doc each subagent builds against.</small></div>
         <div class="fork" data-label="as the spec splits it, in parallel">
           <div class="node write">rule-author × N<small>One per build element. Each writes only its own <code>rules/…</code> files.</small></div>
-          <div class="node write">build-extractor<small>A new or changed build note → <code>build.yaml</code>, <code>note-map.md</code>.</small></div>
           <div class="node write">Other writing subagent<small>Only for a part the spec's "How the work splits" names.</small></div>
         </div>
-        <div class="node main">Merge the worktrees, then everything shared, once<small><code>tools/manifest/</code>, <code>discrepancies.md</code>, docs, CLAUDE.md. Then <code>dotnet build Loopsmith.slnx</code> + <code>dotnet test</code>.</small></div>
-        <div class="why"><b>Why in parallel:</b> build elements are independent by design: each rule file describes one element, with its own provenance. Several rule-authors can run side by side. <b>Why each prompt names its binding rules:</b> a subagent starts without the conversation, so it only follows the rules it is told. <b>Why worktrees and disjoint folders:</b> two agents never write the same file, so the merge is mechanical. <b>Why the contract first:</b> without it, two writing subagents drift apart and the merge costs more than the split saved. <b>Why the shared files wait:</b> <code>rules/manifest.yaml</code> is generated from every rule, and <code>discrepancies.md</code> collects every agent's findings, so each is written once, after all of them.</div>
+        <div class="node main">Merge the worktrees, then everything shared, once<small><code>tools/manifest/</code>, docs, CLAUDE.md. Then <code>dotnet build Loopsmith.slnx</code> + <code>dotnet test</code>.</small></div>
+        <div class="why"><b>Why in parallel:</b> build elements are independent by design: each rule file describes one element, with its own provenance. Several rule-authors can run side by side. <b>Why each prompt names its binding rules:</b> a subagent starts without the conversation, so it only follows the rules it is told. <b>Why worktrees and disjoint folders:</b> two agents never write the same file, so the merge is mechanical. <b>Why the contract first:</b> without it, two writing subagents drift apart and the merge costs more than the split saved. <b>Why the shared files wait:</b> <code>rules/manifest.yaml</code> is generated from every rule, so it is written once, after all of them.</div>
       </div>
     </div>
     <div class="stage" role="listitem">

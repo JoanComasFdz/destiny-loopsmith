@@ -23,6 +23,30 @@ public sealed class StepStateShapingTests
     private static readonly RuleCatalog Catalog =
         RuleFiles.Bind(CatalogLoading.ParseCatalog).Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
 
+    /// <summary>
+    /// An Arc Hunter with what these steps need: Flow State and the Sparks (Amplified, Jolt, the resistance), Luminopotent
+    /// (Ionic Overclock), the resistance and orb mods, Flashover, To Shreds and Unraveling Orbs, and a Strand kinetic that
+    /// rolls Slice beside an Arc energy weapon (index 1).
+    /// </summary>
+    private const string BuildFile = """
+        name: Step state
+        class: hunter
+        subclass: arc
+        super: gathering-storm
+        grenade: skip-grenade
+        melee: combination-blow
+        classAbility: gamblers-dodge
+        jump: triple-jump
+        aspects: [flow-state]
+        fragments: [spark-of-resistance, spark-of-frequency, spark-of-shock]
+        armorSetBonuses: [luminopotent-2pc, luminopotent-4pc]
+        armorMods: [harmonic-resistance, concussive-dampener, elemental-charge, reaper]
+        artifactPerks: [flashover, to-shreds, unraveling-orbs]
+        weapons:
+          - {hash: 4019651319, perks: [], roll: [923806249, "?"]} # Festival Flight: Strand kinetic, Slice
+          - {hash: 2888266564, perks: []} # Crisis Inverted: Arc energy
+        """;
+
     [Fact]
     public void A_weapon_buff_sits_with_the_weapons_and_names_the_weapon_whose_perk_gives_it()
     {
@@ -82,9 +106,9 @@ public sealed class StepStateShapingTests
     [Fact]
     public void A_weapon_of_its_types_shows_Ionic_Overclock_with_that_weapon_while_Amplified()
     {
-        var owners = Play().Build;
-        var fusion = owners.Build.Weapons[2] with { Archetype = Optional.Some("fusion-rifle"), Hash = Optional.None<ItemHash>() };   // no hash: its manifest archetype would win
-        var build = BuildValidation.ValidateBuild(owners.Build with { Weapons = owners.Build.Weapons.SetItem(2, fusion) }, Catalog)
+        var start = Play().Build;
+        var fusion = start.Build.Weapons[1] with { Archetype = Optional.Some("fusion-rifle"), Hash = Optional.None<ItemHash>() };   // no hash: its manifest archetype would win
+        var build = BuildValidation.ValidateBuild(start.Build with { Weapons = start.Build.Weapons.SetItem(1, fusion) }, Catalog)
             .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
         var played = PlayOn(build,
             new PlayerAction.UseClassAbility(),
@@ -94,7 +118,7 @@ public sealed class StepStateShapingTests
 
         var effect = Assert.Single(state.WeaponEffects);
         Assert.Equal("Ionic Overclock", effect.SourceName);
-        Assert.Equal([2], effect.Weapons);
+        Assert.Equal([1], effect.Weapons);
         Assert.Contains(state.Buffs.Single(buff => buff.Text == "Amplified").SwitchesOn, switched => switched.SourceName == "Ionic Overclock");
         var whileAmplified = Assert.Single(LoopDesigning.ExplainInteractions(build, new KeywordRef.Status(StatusId.From("amplified"))), group => group.Heading == "While Amplified");
         Assert.Equal(Optional.Some($"On {fusion.Name}."), whileAmplified.Interactions[3].Note);
@@ -177,8 +201,8 @@ public sealed class StepStateShapingTests
     [Fact]
     public void A_step_with_no_damage_bonus_holding_has_none()
     {
-        var owners = Play().Build;
-        var build = Validate(owners.Build with { ArtifactPerks = [] });
+        var start = Play().Build;
+        var build = Validate(start.Build with { ArtifactPerks = [] });
 
         var played = PlayOn(build, new PlayerAction.UseClassAbility());
 
@@ -205,8 +229,8 @@ public sealed class StepStateShapingTests
     [InlineData("storms-edge", "Storm's Edge", 0.45)]
     public void Casting_the_Super_puts_you_in_it_and_its_resistance_counts_until_the_player_ends_it(string super, string name, decimal pvp)
     {
-        var owners = Play().Build;
-        var build = Validate(owners.Build with { Abilities = owners.Build.Abilities with { Super = new AbilityPlug.Known(ElementId.From(super)) } });
+        var start = Play().Build;
+        var build = Validate(start.Build with { Abilities = start.Build.Abilities with { Super = new AbilityPlug.Known(ElementId.From(super)) } });
         var played = PlayOn(build,
             new PlayerAction.CastAbility(OffensiveAbility.Super, HitOutcome.Kill, TargetCount.One),
             new PlayerAction.FireWeapon(WeaponSlot.Energy, HitOutcome.Kill, TargetCount.One),
@@ -244,8 +268,8 @@ public sealed class StepStateShapingTests
     [Fact]
     public void Ascensions_air_move_is_a_dodge_for_Flow_State()
     {
-        var owners = Play().Build;
-        var build = Validate(owners.Build with { Aspects = [ElementId.From("flow-state"), ElementId.From("ascension")] });
+        var start = Play().Build;
+        var build = Validate(start.Build with { Aspects = [ElementId.From("flow-state"), ElementId.From("ascension")] });
         var played = PlayOn(build, new PlayerAction.UseClassAbility(AbilityInput.Air));            // Ascension: Amplified
 
         Assert.Contains(ReadAllDamage(played, 0).Sources, source => source.Name == "Flow State");
@@ -267,8 +291,8 @@ public sealed class StepStateShapingTests
     [Fact]
     public void Emergency_Reinforcement_resists_10_percent_with_no_PvP_value_from_critical_health_until_it_ends()
     {
-        var owners = Play().Build;
-        var build = Validate(owners.Build with { ArmorMods = owners.Build.ArmorMods.Add(ElementId.From("emergency-reinforcement")) });
+        var start = Play().Build;
+        var build = Validate(start.Build with { ArmorMods = start.Build.ArmorMods.Add(ElementId.From("emergency-reinforcement")) });
         var played = PlayOn(build,
             new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Kill, TargetCount.One),   // Elemental Charge: Armor Charge
             new PlayerAction.Declare(new StateDeclaration.ReachMax(StatusId.From("armor-charge"))),
@@ -311,10 +335,7 @@ public sealed class StepStateShapingTests
 
     private static DesignSession Play(params PlayerAction[] actions)
     {
-        const string path = "builds/skip-grenade-hunter/dim-loadout.json";
-        var file = RepoFiles.ToPath(path);                                                       // pure
-        var json = File.ReadAllText(file);                                                       // impure
-        var session = LoopDesigning.StartSavedDimDesign(Catalog, new SourceText(path, json))
+        var session = LoopDesigning.StartDesign(Catalog, new SourceText("build.yaml", BuildFile), "Test")
             .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
         return actions.Aggregate(session, (played, action) => LoopDesigning.AppendStep(played, action, Optional.None<string>()));
     }

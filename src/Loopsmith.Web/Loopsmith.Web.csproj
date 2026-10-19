@@ -26,16 +26,11 @@
     <TrimmableAssembly Include="Loopsmith.Core" />
   </ItemGroup>
 
-  <!-- Bundled data, read at startup as SourceTexts. Logical names always use forward slashes:
-       rules/<path>, builds/<slug>/build.yaml, builds/<slug>/dim-loadout.json (a saved DIM share),
-       builds/<slug>/loops/<name>.loop.yaml (folder optional). -->
+  <!-- Bundled data, read at startup as SourceTexts: the rules. Logical names always use forward slashes: rules/<path>. -->
   <ItemGroup>
     <EmbeddedResource Include="$(LoopsmithRoot)rules/**/*.yaml"
                       LogicalName="$([System.String]::Copy('rules/%(RecursiveDir)%(Filename)%(Extension)').Replace('\', '/'))"
                       Link="data/rules/%(RecursiveDir)%(Filename)%(Extension)" />
-    <EmbeddedResource Include="$(LoopsmithRoot)builds/*/build.yaml;$(LoopsmithRoot)builds/*/dim-loadout.json;$(LoopsmithRoot)builds/*/loops/*.loop.yaml"
-                      LogicalName="$([System.String]::Copy('builds/%(RecursiveDir)%(Filename)%(Extension)').Replace('\', '/'))"
-                      Link="data/builds/%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 
   <!-- The VS Code extension (src/Loopsmith.VsCodeExtension), published with the site as the .vsix in vscode-extension/ for

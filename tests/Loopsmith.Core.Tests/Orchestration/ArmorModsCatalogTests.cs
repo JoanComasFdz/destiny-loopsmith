@@ -11,7 +11,7 @@ namespace Loopsmith.Core.Tests.Orchestration;
 
 /// <summary>
 /// The rest of the armor mods, in the real rules: every one is known (rules, passives or why it changes no loop), named
-/// as Bungie's manifest names it under each of its hashes, and a few of them played in the owner's DIM build —
+/// as Bungie's manifest names it under each of its hashes, and a few of them played in an Arc Hunter that wears them —
 /// Firepower and Heavy Handed drop orbs, a Siphon answers its element's weapon, Grenade Font shows while Armor Charge
 /// holds, Utility Finisher spends Armor Charge on a finisher.
 /// </summary>
@@ -74,7 +74,7 @@ public sealed class ArmorModsCatalogTests
     [Fact]
     public void Grenade_Font_shows_with_Armor_Charge_while_it_holds()
     {
-        var played = Play(["grenade-font"],
+        var played = Play(["reaper", "powerful-attraction", "grenade-font"],
             new PlayerAction.UseClassAbility(),                                                    // arms Reaper
             new PlayerAction.FireWeapon(WeaponSlot.Kinetic, HitOutcome.Kill, TargetCount.One),     // Reaper's orb
             new PlayerAction.UseClassAbility());                                                   // Powerful Attraction: the orb's Armor Charge
@@ -92,9 +92,9 @@ public sealed class ArmorModsCatalogTests
     [Fact]
     public void Utility_Finisher_is_offered_and_spends_Armor_Charge_on_a_finisher()
     {
-        var charged = Play(["utility-finisher"],
-            new PlayerAction.UseClassAbility(),
-            new PlayerAction.FireWeapon(WeaponSlot.Kinetic, HitOutcome.Kill, TargetCount.One),
+        var charged = Play(["reaper", "charged-up", "utility-finisher"],
+            new PlayerAction.UseClassAbility(),                                                    // arms Reaper
+            new PlayerAction.FireWeapon(WeaponSlot.Kinetic, HitOutcome.Kill, TargetCount.One),     // Reaper's orb
             new PlayerAction.CollectPickups(PickupId.From("orb-of-power")),
             new PlayerAction.Declare(new StateDeclaration.ReachMax(ArmorCharge)));
 
@@ -112,7 +112,7 @@ public sealed class ArmorModsCatalogTests
     [Fact]
     public void Utility_Finisher_short_of_three_Armor_Charge_doesnt_fire_and_says_so()
     {
-        var charged = Play(["utility-finisher"],
+        var charged = Play(["reaper", "utility-finisher"],
             new PlayerAction.UseClassAbility(),
             new PlayerAction.FireWeapon(WeaponSlot.Kinetic, HitOutcome.Kill, TargetCount.One),
             new PlayerAction.CollectPickups(PickupId.From("orb-of-power")));
@@ -129,7 +129,6 @@ public sealed class ArmorModsCatalogTests
         Assert.Contains(LoopDesigning.ListTriggerOptions(Play([])), option => option.Token == "finisher");
     }
 
-    /// <summary>The owner's DIM build wearing <paramref name="mods"/> too, played through <paramref name="actions"/>.</summary>
     [Fact]
     public void Shield_Break_Charge_gives_Armor_Charge_by_copies_on_a_weapon_step_that_breaks_a_shield()
     {
@@ -152,8 +151,8 @@ public sealed class ArmorModsCatalogTests
         var orb = new PlayerAction.CollectPickups(PickupId.From("orb-of-power"));
         PlayerAction[] reaped = [new PlayerAction.UseClassAbility(), new PlayerAction.FireWeapon(WeaponSlot.Kinetic, HitOutcome.Kill, TargetCount.One), orb];
 
-        var first = Play([], [.. reaped.Append(new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Damage, TargetCount.One))]);
-        var last = Play([], [.. reaped.Append(new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Damage, TargetCount.One, AbilityInput.Press, ChargeUse.Last))]);
+        var first = Play(["reaper", "grenade-kickstart", "grenade-kickstart"], [.. reaped.Append(new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Damage, TargetCount.One))]);
+        var last = Play(["reaper", "grenade-kickstart", "grenade-kickstart"], [.. reaped.Append(new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Damage, TargetCount.One, AbilityInput.Press, ChargeUse.Last))]);
 
         Assert.Equal(2, first.Build.CountCharges(AbilityKind.Grenade).Value);
         Assert.DoesNotContain(first.Resolutions[^1].Fired, fired => fired.Source.Value == "grenade-kickstart");
@@ -165,15 +164,31 @@ public sealed class ArmorModsCatalogTests
     private static int ReadSure(GameState state) =>
         state.ReadTally(ArmorCharge).Match(tally => tally.Value.Sure.Value, _ => 0);
 
+    /// <summary>
+    /// An Arc Hunter wearing Shinobu's Vow (two grenade charges) and <paramref name="mods"/>, with a Strand Special (Festival
+    /// Flight) and an Arc Primary (Crisis Inverted), played through <paramref name="actions"/>.
+    /// </summary>
     private static DesignSession Play(ImmutableArray<string> mods, params PlayerAction[] actions)
     {
-        const string path = "builds/skip-grenade-hunter/dim-loadout.json";
-        var json = File.ReadAllText(RepoFiles.ToPath(path));                                     // impure
-        var session = LoopDesigning.StartSavedDimDesign(Catalog, new SourceText(path, json))
+        var text = WriteBuildText(mods);
+        var start = LoopDesigning.StartDesign(Catalog, new SourceText("armor-mods.build.yaml", text), "Armor mods loop")
             .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
-        var build = session.Build.Build with { ArmorMods = session.Build.Build.ArmorMods.AddRange(mods.Select(ElementId.From)) };
-        var wearing = BuildValidation.ValidateBuild(build, Catalog).Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
-        var start = LoopDesigning.CreateSession(wearing, session.Design);
         return actions.Aggregate(start, (played, action) => LoopDesigning.AppendStep(played, action, Optional.None<string>()));
     }
+
+    private static string WriteBuildText(ImmutableArray<string> mods) =>
+        $$"""
+        name: Armor Mods Hunter
+        class: hunter
+        subclass: arc
+        super: gathering-storm
+        grenade: skip-grenade
+        melee: combination-blow
+        classAbility: gamblers-dodge
+        exoticArmor: shinobus-vow
+        armorMods: [{{string.Join(", ", mods)}}]
+        weapons:
+          - {hash: 4019651319} # Festival Flight
+          - {hash: 2888266564} # Crisis Inverted
+        """;
 }

@@ -139,7 +139,7 @@ public static class ManifestReading
         };
 
     /// <summary>
-    /// A weapon's roll from the plugs it holds (a DIM loadout's socket overrides, or a copy's sockets): each trait column's
+    /// A weapon's roll from the plugs it holds (a copy's sockets): each trait column's
     /// pick is the first of them it rolls with that an earlier column didn't take (a plug fills one column); none at all:
     /// no roll.
     /// </summary>

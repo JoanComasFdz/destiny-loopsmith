@@ -75,28 +75,6 @@ public static class LoopReportRendering
     private static ImmutableArray<StyledSpan> JoinSpans(IEnumerable<StyledSpan> spans) =>
         [.. spans.SelectMany((span, index) => index == 0 ? new[] { span } : [" · ".ToSpan(Tone.Muted), span])];
 
-    /// <summary>The design itself: author, description and the numbered steps with their notes.</summary>
-    public static ImmutableArray<StyledLine> RenderLoopDesign(LoopDesign design)
-    {
-        var author = design.Author.Match(a => $"  by {a.Value}", _ => "");
-        var description = design.Description.Match(
-            d => d.Value.TrimEnd('\n').Split('\n').Select(line => StyledText.ToLine(1, line.ToSpan(Tone.Muted))).ToImmutableArray(),
-            _ => []);
-        var numberWidth = design.Steps.Length.ToString(Invariant).Length;
-        var tokenWidth = design.Steps.Select(step => step.Action.ToActionToken().Length).DefaultIfEmpty(0).Max() + 2;
-        var steps = design.Steps.Select((step, index) => StyledText.ToLine(1,
-            $"{(index + 1).ToString(Invariant).PadLeft(numberWidth)}. ".ToSpan(Tone.Muted),
-            (step.Note.IsSome() ? Pad(step.Action.ToActionToken(), tokenWidth) : step.Action.ToActionToken()).ToSpan(Tone.Strong),
-            step.Note.Match(note => note.Value, _ => "").ToSpan(Tone.Plain)));
-        return
-        [
-            StyledText.ToLine(0, "Steps".ToSpan(Tone.Strong), author.ToSpan(Tone.Muted)),
-            .. description,
-            .. design.Steps.IsEmpty ? [StyledText.ToLine(1, "none yet".ToSpan(Tone.Muted))] : steps.ToImmutableArray(),
-        ];
-    }
-
     private static string DescribeCount(int count, string noun) => count == 1 ? $"1 {noun}" : $"{count} {noun}s";
 
-    private static string Pad(string text, int width) => text.PadRight(width);
 }

@@ -5,8 +5,8 @@ using Loopsmith.Core.Functional;
 namespace Loopsmith.Web.Presentation;
 
 /// <summary>
-/// What a read of Bungie's manifest is for: the player's items (after their Bungie login), the open build's (a DIM
-/// link's), every weapon and armor piece in the game (the pickers' "Every item"), or the item picked there (its perks,
+/// What a read of Bungie's manifest is for: the player's items (after their Bungie login), the open build's (an
+/// imported build's or loop's), every weapon and armor piece in the game (the pickers' "Every item"), or the item picked there (its perks,
 /// catalyst or set, before it goes into the build).
 /// </summary>
 public enum ManifestReadFor { YourItems, BuildItems, EveryItem, PickedItem }

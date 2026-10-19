@@ -7,7 +7,7 @@ namespace Loopsmith.Core.StatLoading;
 
 /// <summary>
 /// Pure: a build's stats from the player's own armor, added up the way DIM adds up a loadout's (docs/loop-format.md,
-/// "Stats"). The build's pieces (a DIM loadout's: its exotic and the legendary pieces it left out) are matched with the
+/// "Stats"). The build's pieces (its exotic and the legendary pieces it leaves out) are matched with the
 /// player's copies of them; each copy gives its roll (its armor-stat plugs) and its masterwork (Armor 3.0's adds only to
 /// its stats at 0; Armor 2.0's +2 to each at full energy). Then the build's stat mods and tuning (Balanced Tuning, like
 /// the masterwork, only to a piece's stats at 0, one per tuning socket) and its fragments' stats are added. The numbers
@@ -26,7 +26,7 @@ public static class StatAdding
     private sealed record PieceRoll(StatPoints Rolled, StatPoints Worn, bool HasTuningSocket);
 
     /// <summary>
-    /// The pieces the build wears: its exotic (by its element's hashes) and the armor its DIM loadout left out (the
+    /// The pieces the build wears: its exotic (by its element's hashes) and the armor it leaves out (the
     /// legendary pieces), each with its slot and name from the manifest excerpt; in slot order.
     /// </summary>
     public static ImmutableArray<ArmorPiece> ListArmorPieces(RuleCatalog catalog, Build build) =>
@@ -59,7 +59,7 @@ public static class StatAdding
         var rolls = copies.Select(chosen => (chosen.Piece, Roll: ReadRoll(plugs, chosen.Copy.Armor))).ToImmutableArray();
         var unread = rolls.Where(chosen => !chosen.Roll.IsSome()).Select(chosen => chosen.Piece.Name).ToImmutableArray();
         return !unnamed.IsEmpty
-            ? Fail($"The build names no armor piece for {JoinWithAnd(unnamed.Select(DescribeSlot))} (a DIM loadout's pieces), so Loopsmith can't add up its stats from your armor. Pick a piece for it with ⋯, or type the stats.")
+            ? Fail($"The build names no armor piece for {JoinWithAnd(unnamed.Select(DescribeSlot))}, so Loopsmith can't add up its stats from your armor. Pick a piece for it with ⋯, or type the stats.")
             : !unowned.IsEmpty
                 ? Fail($"Your account has no {JoinWithAnd(unowned)}, so Loopsmith can't add up the build's stats from your armor.")
                 : !unread.IsEmpty
@@ -68,7 +68,7 @@ public static class StatAdding
     }
 
     /// <summary>
-    /// The copy of a piece the build wears, when the player owns it (by instance id: a dim.gg share's, or picked); else
+    /// The copy of a piece the build wears, when the player owns it (by instance id: picked from their account); else
     /// their first (the most points); none when they own no copy.
     /// </summary>
     public static Optional<PieceCopy> FindWornCopy(PieceChoice choice, ImmutableArray<ArmorCopy> worn)
@@ -81,7 +81,7 @@ public static class StatAdding
     }
 
     /// <summary>
-    /// Whether the copies the build wears are the player's: every piece's copy in their account (the share is theirs),
+    /// Whether the copies the build wears are the player's: every piece's copy in their account (picked from their armor),
     /// some, or none (the build names no copy, or none of them is theirs).
     /// </summary>
     public static LoadoutOwnership ReadOwnership(RuleCatalog catalog, Build build, BungieProfile profile)
@@ -101,8 +101,8 @@ public static class StatAdding
     /// <summary>What the Stats section says after the login, for whose the build's copies are.</summary>
     public static string DescribeOwnership(LoadoutOwnership ownership) =>
         ownership.Match(
-            _ => "Your armor is loaded: the build wears this loadout's own pieces, and its stats are theirs. Tap ⋯ next to a piece to wear another.",
-            partly => $"This loadout's pieces are in your account, but for {JoinWithAnd(partly.Missing)}: tap ⋯ next to {(partly.Missing.Length == 1 ? "it" : "each")} in the build to pick one of yours.",
+            _ => "Your armor is loaded: the build wears your own pieces, and its stats are theirs. Tap ⋯ next to a piece to wear another.",
+            partly => $"The build's pieces are in your account, but for {JoinWithAnd(partly.Missing)}: tap ⋯ next to {(partly.Missing.Length == 1 ? "it" : "each")} in the build to pick one of yours.",
             _ => "You can now pick your armor: tap ⋯ next to each armor piece in the build. Its stats follow the pieces it wears.");
 
     /// <summary>
@@ -185,7 +185,7 @@ public static class StatAdding
     /// <summary>A mod or fragment of the build that changes a stat: its name, its stat plug and its copies.</summary>
     private sealed record NamedPlug(string Name, StatPlug Plug, int Copies);
 
-    /// <summary>The build's mods with a stat plug (a stat mod, a tuning mod): its armor mods' and its DIM loadout's left-out mods, by copies.</summary>
+    /// <summary>The build's mods with a stat plug (a stat mod, a tuning mod): its armor mods' and its left-out mods, by copies.</summary>
     private static ImmutableArray<NamedPlug> ListModPlugs(RuleCatalog catalog, Build build) =>
     [
         .. build.ArmorMods.SelectMany(mod => ToSequence(FindElementPlug(catalog, mod)))

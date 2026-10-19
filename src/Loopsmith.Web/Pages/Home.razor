@@ -3,21 +3,20 @@
 @inject Workbench Workbench
 @inject BrowserInterop Browser
 @inject NavigationManager Navigation
-@inject DimLoadoutFetching DimLoadouts
 @inject BungieManifestJoining Manifest
 
 @* The start screen (the logo leads here): continue the open loop, start one from scratch (an Arc Hunter with nothing
-   equipped), from a DIM link or a bundled build, open an example or import a loop. Opening anything goes to the designer. A share link (…/#loop=) lands here and opens its loop
-   the same way. *@
+   equipped) or from a build.yaml, or import a loop. Opening anything goes to the designer. A share link (…/#loop=) lands
+   here and opens its loop the same way. *@
 
 <PageTitle>Loopsmith</PageTitle>
 
 <NoticeBanner Floating="true" Notice="Workbench.Notice" OnDismiss="() => Workbench.Notice = Optional.None<string>()" />
 
-<section class="chooser">
+<section class="chooser" data-testid="chooser">
     <div class="chooser-intro">
         <h1>Design a build's gameplay loop</h1>
-        <p class="muted">Start from scratch, paste a DIM link or pick a build, then pick triggers — dodge, throw a grenade and kill, shoot, pick up an orb. Each step shows everything it fires, which element caused it, and what it unlocks next. The loop you design is the thing you export, share and compare.</p>
+        <p class="muted">Start from scratch or import a build, then pick triggers — dodge, throw a grenade and kill, shoot, pick up an orb. Each step shows everything it fires, which element caused it, and what it unlocks next. The loop you design is the thing you export, share and compare.</p>
     </div>
 
     @if (Workbench.Session is Optional<DesignSession>.Some { Value: var open })
@@ -38,77 +37,8 @@
         <span class="scratch-start-sub">An Arc Hunter with nothing equipped: pick its super, abilities, aspects and fragments in the designer, and its weapons and armor from every item in the game (or your own, after logging in with Bungie).</span>
     </button>
 
-    <form class="dim-start" @onsubmit="StartFromDimLinkAsync" aria-labelledby="dim-start-label">
-        <div class="dim-field">
-            <img class="dim-logo" src="images/dim-logo.svg" alt="DIM" width="64" height="64" />
-            <div class="dim-input">
-                <label id="dim-start-label" class="dim-label" for="dim-link">Paste a DIM link here to start</label>
-                <input id="dim-link" class="dim-link" type="url" inputmode="url" autocomplete="off" spellcheck="false"
-                       placeholder="https://dim.gg/…" @bind="dimLink" @bind:event="oninput" data-testid="dim-link" />
-                <p class="dim-help muted">In DIM, open your loadout, choose <strong>Share</strong> and copy the link. Loopsmith reads the build from it — subclass, aspects, fragments, exotic, mods — and opens it in the designer.</p>
-            </div>
-        </div>
-        <button type="submit" class="btn dim-go" disabled="@(readingDimLink || dimLink.Trim().Length == 0)" data-action="dim-start">
-            @(readingDimLink ? readingStep : "Start designing from this link →")
-        </button>
-        @if (dimProblem is Optional<string>.Some problem)
-        {
-            <p class="dim-problem" role="alert" data-testid="dim-problem">@problem.Value</p>
-        }
-    </form>
-
-    @if (!Bundle.DimBuilds.IsEmpty)
-    {
-        <h2 class="chooser-heading">Or start from a shared DIM build</h2>
-        <div class="dim-cards">
-            @foreach (var shared in Bundle.DimBuilds)
-            {
-                @if (shared.Fresh is Result<DesignSession, string>.Ok fresh)
-                {
-                    <DimBuildCard Session="fresh.Value" OnStart="OpenDimBuildAsync" />
-                }
-                else
-                {
-                    <p class="notice tone-warning">The bundled DIM build “@shared.Slug” does not open.</p>
-                }
-            }
-        </div>
-    }
-
-    @if (!Bundle.Loops.IsEmpty)
-    {
-        <h2 class="chooser-heading">Example loops</h2>
-        <div class="build-cards">
-            @foreach (var example in Bundle.Loops)
-            {
-                <button class="build-card example" data-example="@example.File.Path" @onclick="() => OpenExampleLoopAsync(example)">
-                    @if (example.Opened is Result<DesignSession, string>.Ok loop)
-                    {
-                        var design = loop.Value.Design;
-                        <span class="build-card-name">@design.Name</span>
-                        <span class="build-card-sub">@loop.Value.Build.Build.Name · @design.Steps.Length steps</span>
-                        @if (design.Description is Optional<string>.Some description)
-                        {
-                            <span class="build-card-text">@description.Value</span>
-                        }
-                        <span class="build-card-go">Open loop →</span>
-                    }
-                    else
-                    {
-                        <span class="build-card-name">@example.File.Path.Split('/')[^1]</span>
-                        <span class="build-card-sub tone-warning">This example loop does not import.</span>
-                    }
-                </button>
-            }
-        </div>
-    }
-    <p class="chooser-more muted" data-testid="hand-written">
-        Or start from a build written by hand:
-        @foreach (var build in Bundle.Builds)
-        {
-            <button class="btn link" data-slug="@build.Slug" @onclick="() => OpenFreshDesignAsync(build.Fresh)">@DescribeBuildName(build)</button>
-            <span class="chooser-sep"> · </span>
-        }
+    <p class="chooser-more muted" data-testid="import-links">
+        Or
         <label class="btn link file-link" data-testid="import-build-link" title="Start from your own build.yaml (docs/rule-format.md)">
             import a build.yaml<InputFile OnChange="ImportBuildAsync" accept=".yaml,.yml" data-action="import-build" />
         </label>
@@ -125,11 +55,6 @@
 
 @code {
     private bool importing;
-    private string dimLink = "";
-    private bool readingDimLink;
-    private string readingStep = ReadingLink;
-    private const string ReadingLink = "Reading the DIM link…";
-    private Optional<string> dimProblem = Optional.None<string>();
     private Optional<string> importProblem = Optional.None<string>();
 
     [CascadingParameter]
@@ -143,28 +68,6 @@
 
     public void Dispose() =>
         Navigation.LocationChanged -= OpenSharedLoopOnNavigation;
-
-    private async Task OpenFreshDesignAsync(Result<DesignSession, string> fresh)
-    {
-        var proceed = await DiscardConfirming.ConfirmDiscardAsync(Workbench, Browser, "Start a new loop?"); // impure
-        if (proceed)
-        {
-            fresh.Match(                                                                         // impure
-                ok => OpenDesign(ok.Value, $"New loop for {ok.Value.Build.Build.Name}."),
-                error => ShowNotice(error.Failure));
-        }
-    }
-
-    private async Task OpenExampleLoopAsync(BundledLoop example)
-    {
-        var proceed = await DiscardConfirming.ConfirmDiscardAsync(Workbench, Browser, "Open this example?"); // impure
-        if (proceed)
-        {
-            example.Opened.Match(                                                                // impure
-                ok => OpenDesign(ok.Value, $"Opened the example “{ok.Value.Design.Name}”."),
-                error => ShowNotice(error.Failure));
-        }
-    }
 
     private async Task ImportBuildAsync(InputFileChangeEventArgs e)
     {
@@ -202,38 +105,6 @@
             error => ShowNotice(error.Failure));
     }
 
-    /// <summary>Reads the pasted DIM link (asking DIM for a dim.gg share's loadout), builds what it can and opens the designer.</summary>
-    private async Task StartFromDimLinkAsync()
-    {
-        var read = LoopDesigning.ReadDimLink(dimLink);                                           // pure
-        if (read is not Result<DimLink, string>.Ok { Value: var link })
-        {
-            dimProblem = Optional.Some(read.Match(_ => "", error => error.Failure));               // pure
-            return;
-        }
-
-        var proceed = await DiscardConfirming.ConfirmDiscardAsync(Workbench, Browser, "Start a new loop from this DIM link?"); // impure
-        if (!proceed)
-        {
-            return;
-        }
-
-        readingDimLink = true;                                                                   // impure (UI state)
-        readingStep = ReadingLink;                                                               // impure (UI state)
-        dimProblem = Optional.None<string>();                                                    // impure (UI state)
-        var loadout = await ReadLoadoutAsync(link);                                              // impure
-        var unknown = loadout.Bind(json => LoopDesigning.ListUnknownLoadoutHashes(Bundle.Catalog, json)); // pure
-        var unknownHashes = unknown.Match(ok => ok.Value, _ => []);                              // pure
-        var catalog = await JoinManifestAsync(Bundle.Catalog, unknownHashes);                    // impure
-        readingDimLink = false;                                                                  // impure (UI state)
-
-        var started = loadout.Bind(json => LoopDesigning.StartDimDesign(catalog.Catalog, link, json)); // pure
-        var note = catalog.Note.Match(problem => $" {problem.Value}", _ => "");                  // pure
-        started.Match(                                                                           // impure
-            ok => OpenDesign(ok.Value, $"New loop for {ok.Value.Build.Build.Name}, from the DIM link.{note}"),
-            error => ShowDimProblem(error.Failure));
-    }
-
     /// <summary>The catalog with what Bungie's full manifest says of these hashes (none: as it is); a note when it couldn't be read.</summary>
     private async Task<JoinedCatalog> JoinManifestAsync(RuleCatalog catalog, ImmutableArray<ItemHash> unknown)
     {
@@ -242,39 +113,8 @@
             return new JoinedCatalog(catalog, Optional.None<string>());
         }
 
-        var reading = LoopDesigning.DescribeManifestReading(unknown.Length);                     // pure
-        readingStep = reading;                                                                   // impure (UI state)
-        StateHasChanged();                                                                       // impure
         var joined = await Manifest.JoinAsync(unknown, ManifestReadFor.BuildItems);              // impure
         return LoopDesigning.AddJoinedManifest(catalog, joined);                                 // pure
-    }
-
-    /// <summary>The link's loadout: DIM's answer for a dim.gg share, or the JSON a link carries.</summary>
-    private Task<Result<string, string>> ReadLoadoutAsync(DimLink link) =>
-        link.Match(FetchSharedLoadoutAsync, ReadCarriedLoadoutAsync);
-
-    private Task<Result<string, string>> FetchSharedLoadoutAsync(DimLink.Shared shared)
-    {
-        var url = LoopDesigning.ToDimShareRequestUrl(shared);                                    // pure
-        return DimLoadouts.FetchSharedLoadoutAsync(url);                                         // impure
-    }
-
-    private static Task<Result<string, string>> ReadCarriedLoadoutAsync(DimLink.Inline inline) =>
-        Task.FromResult<Result<string, string>>(new Result<string, string>.Ok(inline.Loadout));  // pure
-
-    private async Task OpenDimBuildAsync(DesignSession session)
-    {
-        var proceed = await DiscardConfirming.ConfirmDiscardAsync(Workbench, Browser, "Start a new loop from this DIM build?"); // impure
-        if (proceed)
-        {
-            OpenDesign(session, $"New loop for {session.Build.Build.Name}, from the DIM build.");          // impure
-        }
-    }
-
-    private Unit ShowDimProblem(string problem)
-    {
-        dimProblem = Optional.Some(problem);
-        return new Unit.Value();
     }
 
     private void OpenImportDialog()
@@ -359,7 +199,4 @@
     /// <summary>" (Loop designed against catalog …; replaying with ….)" when the loop came from another catalog.</summary>
     private static string DescribeCatalogMismatch(DesignSession session) =>
         LoopDesigning.FindCatalogMismatch(session).Match(issue => $" {issue.Value.Message}", _ => "");
-
-    private static string DescribeBuildName(BundledBuild build) =>
-        build.Fresh.Match(ok => ok.Value.Build.Build.Name, _ => $"{build.Slug} (does not validate)");
 }

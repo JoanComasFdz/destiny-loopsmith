@@ -7,7 +7,7 @@ namespace Loopsmith.Core.BuildComposition;
 
 /// <summary>
 /// Pure: a build's weapons from the player's own copies (docs/loop-format.md, "Weapons from your account") or from every
-/// weapon in the game ("Every item"), and a weapon slot emptied. A copy becomes a build weapon as a DIM loadout's does —
+/// weapon in the game ("Every item"), and a weapon slot emptied. A copy becomes a build weapon —
 /// its slot, name, damage type, ammo type and archetype from the manifest excerpt — with the perks it holds: in each trait column,
 /// the plug of its sockets that column rolls with; its catalyst on when its socket holds it; and the copy it is (its
 /// instance id). A weapon of the game is one with no copy: no roll (its perks are picked column by column) and its

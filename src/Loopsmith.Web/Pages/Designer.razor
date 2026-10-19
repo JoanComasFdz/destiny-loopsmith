@@ -22,12 +22,12 @@
                     {
                         <a class="build-identity-link" href="@source.Value" target="_blank" rel="noopener noreferrer"
                            title="@source.Value" data-testid="build-source">
-                            <span class="build-identity-kind">@(LoopDesigning.IsDimLink(source.Value) ? "DIM link" : "Source")</span>
+                            <span class="build-identity-kind">Source</span>
                             <span class="build-identity-url">@source.Value</span>
                         </a>
                     }
                 </div>
-                <a class="btn" href="" title="Start from another DIM link or build" data-action="change-build">Change build</a>
+                <a class="btn" href="" title="Start from scratch or from another build" data-action="change-build">Change build</a>
             </div>
             <div class="loop-fields">
                 <label class="field grow">
@@ -136,7 +136,7 @@
     }
 
     /// <summary>
-    /// What the open build names that the bundled excerpt lacks (a shared loop's DIM build), read from Bungie's full
+    /// What the open build names that the bundled excerpt lacks (a shared loop's weapons and armor), read from Bungie's full
     /// manifest (once per tab: what Home already asked for isn't read again): the design as it is when the manifest
     /// answers (an edit made meanwhile stays) is validated again with it and its steps replay.
     /// </summary>
@@ -314,7 +314,7 @@
 
     /// <summary>
     /// A piece picked from the player's armor: swapped into the embedded build (its set bonuses follow), the stats set
-    /// from its armor. The login's note (whose the loadout's pieces are) no longer applies.
+    /// from its armor. The login's note (whose the build's pieces are) no longer applies.
     /// </summary>
     private void PickArmor(ArmorPick pick)
     {

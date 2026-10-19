@@ -6,7 +6,7 @@ namespace Loopsmith.Core.BuildComposition;
 
 /// <summary>
 /// Pure: a build's armor sets, by the manifest excerpt (ADRs D14). A set perk is active when the build has it as a set
-/// bonus, or wears enough of the set's pieces (a DIM loadout's armor, which the build leaves out as items).
+/// bonus, or wears enough of the set's pieces (legendary armor, which the build leaves out as items).
 /// </summary>
 public static class ArmorSetting
 {

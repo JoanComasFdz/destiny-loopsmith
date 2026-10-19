@@ -111,7 +111,7 @@ public sealed record EquippedFinisher(GuardianClass Class, ItemHash Hash);
 /// </summary>
 public sealed record BungieProfile(ImmutableArray<OwnedArmor> Armor, ImmutableArray<OwnedWeapon> Weapons, ImmutableArray<EquippedFinisher> Finishers);
 
-/// <summary>A piece the build wears (a DIM loadout's): its slot, name and the hashes that are it (an exotic's copies).</summary>
+/// <summary>A piece the build wears: its slot, name and the hashes that are it (an exotic's copies).</summary>
 public sealed record ArmorPiece(ArmorSlot Slot, string Name, ImmutableArray<ItemHash> Hashes);
 
 /// <summary>A copy of a piece the player owns, and the points it gives (its roll and masterwork); none when Loopsmith can't read its roll.</summary>
@@ -159,8 +159,8 @@ public sealed record ArmorItemOption(ManifestItem Item, Optional<ArmorSet> Set, 
 public sealed record ArmorItemOptions(ArmorSlot Slot, ImmutableArray<ArmorItemOption> Options, ImmutableArray<string> Notes);
 
 /// <summary>
-/// Whether the copies a build wears (a dim.gg share's, by instance id) are the logged-in player's: all of them, some
-/// (the pieces whose copy isn't in their account), or none — someone else's loadout, or one that doesn't say.
+/// Whether the copies a build wears (picked from an account, by instance id) are the logged-in player's: all of them, some
+/// (the pieces whose copy isn't in their account), or none — someone else's, or a build that doesn't say.
 /// </summary>
 [Union]
 public partial record LoadoutOwnership

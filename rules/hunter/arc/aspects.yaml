@@ -6,7 +6,7 @@
 # manifest's (Clarity has no grenade, melee or super entries); the elements of the 2026-10-13
 # snapshot take the manifest's (244213.26.06.29.2000-1-bnet.65864: the Arcstrider's plugs).
 #
-# Format gaps that shape these rules (see builds/skip-grenade-hunter/discrepancies.md):
+# Format gaps that shape these rules (see builds/skip-grenade-hunter/discrepancies.md at commit d56905d):
 #  - an ability damage source cannot name a specific ability or its damage type ("Arc grenades",
 #    "Skip Grenade drones" -> `grenade`);
 #  - movement qualifiers are the abilities' secondary uses only (ADRs D9): the melee while sliding

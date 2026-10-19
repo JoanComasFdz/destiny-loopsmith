@@ -128,19 +128,6 @@ public sealed class ManifestJoinTests
         Assert.IsType<Result<ManifestAnswer, string>.Error>(ManifestTransport.ReadAnswer(query, "{}", "[]"));
     }
 
-    [Fact]
-    public void A_dim_loadouts_unknown_hashes_are_what_the_excerpt_lacks()
-    {
-        var catalog = FileSourceFetching.ReadRuleFiles(RepoFiles.ToPath("rules"))
-            .Bind(CatalogLoading.ParseCatalog)
-            .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
-        const string loadout = """{ "name": "x", "classType": 1, "equipped": [ { "hash": 3325463374 }, { "hash": 1363886209 } ], "parameters": { "mods": [ 99999 ] } }""";
-
-        var unknown = LoopDesigning.ListUnknownLoadoutHashes(catalog, loadout).Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
-
-        Assert.Equal([1363886209u, 99999u], unknown.Select(hash => hash.Value));                // Thunderlord is in the excerpt
-    }
-
     /// <summary>The C# join and the Python extractor read Bungie's manifest the same way: every bundled item, joined anew, is the same.</summary>
     [Fact]
     public void The_real_manifest_joins_to_the_bundled_excerpt()

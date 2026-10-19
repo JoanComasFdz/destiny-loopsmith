@@ -10,7 +10,7 @@ namespace Loopsmith.Core.Tests.Orchestration;
 
 /// <summary>
 /// The Arc Hunter in the real rules: every plug the Arcstrider holds is an element (rules, passives or why it changes no
-/// loop), named as Bungie's manifest names it, and the new ones played in the owner's DIM build with their subclass
+/// loop), named as Bungie's manifest names it, and the new ones played in an Arc Hunter with their subclass
 /// swapped in — Disorienting Blow, Flashbang, Lethal Current and the Sparks set off what the Compendium says.
 /// </summary>
 public sealed class ArcHunterCatalogTests
@@ -19,6 +19,20 @@ public sealed class ArcHunterCatalogTests
 
     private static readonly RuleCatalog Catalog =
         RuleFiles.Bind(CatalogLoading.ParseCatalog).Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
+
+    /// <summary>An Arcstrider with its abilities, a Strand Special, an Arc Primary and an Arc Heavy weapon: each test equips its aspects and fragments.</summary>
+    private const string BuildText = """
+        name: Arc Hunter
+        class: hunter
+        subclass: arc
+        grenade: skip-grenade
+        melee: combination-blow
+        classAbility: gamblers-dodge
+        weapons:
+          - {hash: 4019651319} # Festival Flight
+          - {hash: 2888266564} # Crisis Inverted
+          - {hash: 3325463374} # Thunderlord
+        """;
 
     private static readonly StatusId Blind = StatusId.From("blind");
     private static readonly StatusId Jolt = StatusId.From("jolt");
@@ -203,12 +217,10 @@ public sealed class ArcHunterCatalogTests
             Fragments = [.. fragments.Select(ElementId.From)],
         };
 
-    /// <summary>The owner's DIM build with its subclass changed by <paramref name="equip"/>, played through <paramref name="actions"/>.</summary>
+    /// <summary>The Arc Hunter of <see cref="BuildText"/> with its subclass changed by <paramref name="equip"/>, played through <paramref name="actions"/>.</summary>
     private static DesignSession Play(Func<Build, Build> equip, params PlayerAction[] actions)
     {
-        const string path = "builds/skip-grenade-hunter/dim-loadout.json";
-        var json = File.ReadAllText(RepoFiles.ToPath(path));                                     // impure
-        var session = LoopDesigning.StartSavedDimDesign(Catalog, new SourceText(path, json))
+        var session = LoopDesigning.StartDesign(Catalog, new SourceText("arc-hunter.build.yaml", BuildText), "Arc Hunter loop")
             .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
         var build = equip(session.Build.Build);
         var wearing = BuildValidation.ValidateBuild(build, Catalog).Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));

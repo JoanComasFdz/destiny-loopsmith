@@ -34,7 +34,7 @@ public sealed class LoopFileWritingTests
             author is null ? Optional.None<string>() : Optional.Some(author),
             description is null ? Optional.None<string>() : Optional.Some(description),
             Optional.Some(CatalogVersion.From("authored-e4426d03166b")),
-            new SourceText("builds/x/build.yaml", build),
+            new SourceText("build.yaml", build),
             steps.IsDefault ? SomeSteps : steps);
 
     [Fact]

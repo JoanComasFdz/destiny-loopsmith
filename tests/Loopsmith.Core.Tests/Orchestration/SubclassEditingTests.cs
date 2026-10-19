@@ -32,7 +32,7 @@ public sealed class SubclassEditingTests
     [Fact]
     public void Arcstrider_lists_everything_it_can_hold_by_slot_from_the_manifest()
     {
-        var build = OpenLoop("helicopter-skip-grenades").Build;
+        var build = StartAscensionLoop().Build;
 
         Assert.True(LoopDesigning.CanEditSubclass(build));
         Assert.Equal(3, LoopDesigning.ListSubclassOptions(build, SubclassSlot.Super).Length);
@@ -47,7 +47,7 @@ public sealed class SubclassEditingTests
     [Fact]
     public void The_editor_warns_when_the_fragments_outnumber_the_slots_the_aspects_open()
     {
-        var build = OpenLoop("helicopter-skip-grenades").Build;
+        var build = StartAscensionLoop().Build;
         var plugs = LoopDesigning.ReadSubclassPlugs(build);
 
         var none = LoopDesigning.DescribeFragmentOverflow(build, plugs with { Aspects = [], Fragments = [SparkOfShock] });
@@ -60,7 +60,7 @@ public sealed class SubclassEditingTests
     [Fact]
     public void The_builds_plugs_are_read_by_hash_whether_the_rules_know_them_or_not()
     {
-        var plugs = LoopDesigning.ReadSubclassPlugs(OpenLoop("helicopter-skip-grenades").Build);
+        var plugs = LoopDesigning.ReadSubclassPlugs(StartAscensionLoop().Build);
 
         Assert.Equal(Optional.Some(ItemHash.From(3769507633u)), plugs.Super);                       // Arc Staff
         Assert.Equal(Optional.Some(ItemHash.From(426473317u)), plugs.ClassAbility);                 // Gambler's Dodge: this subclass's copy
@@ -72,7 +72,7 @@ public sealed class SubclassEditingTests
     [Fact]
     public void The_aspects_open_the_fragment_slots_and_an_unknown_count_is_not_a_number()
     {
-        var build = OpenLoop("helicopter-skip-grenades").Build;
+        var build = StartAscensionLoop().Build;
 
         Assert.Equal(Optional.Some(FragmentSlots.From(4)), LoopDesigning.CountFragmentSlots(build, [TempestStrike, FlowState]).Slots);
         Assert.Equal(Optional.Some(FragmentSlots.From(5)), LoopDesigning.CountFragmentSlots(build, [TempestStrike, Ascension]).Slots);
@@ -85,7 +85,7 @@ public sealed class SubclassEditingTests
     [Fact]
     public void An_aspect_change_that_closes_slots_removes_the_last_fragments_and_names_them()
     {
-        var build = OpenLoop("helicopter-skip-grenades").Build;
+        var build = StartAscensionLoop().Build;
         var plugs = LoopDesigning.ReadSubclassPlugs(build);
 
         var trimmed = LoopDesigning.SetSubclassAspects(build, plugs, [TempestStrike]);
@@ -102,7 +102,7 @@ public sealed class SubclassEditingTests
     [Fact]
     public void Saving_swaps_the_aspect_keeps_the_steps_and_the_file_and_replays_without_Ascensions_jolt()
     {
-        var session = OpenLoop("helicopter-skip-grenades");
+        var session = StartAscensionLoop();
         var plugs = LoopDesigning.ReadSubclassPlugs(session.Build);
         var swapped = plugs with { Aspects = [TempestStrike, FlowState] };
 
@@ -122,7 +122,7 @@ public sealed class SubclassEditingTests
     [Fact]
     public void Every_Arcstrider_plug_is_the_builds_a_jump_too_and_survives_the_file()
     {
-        var session = OpenLoop("helicopter-skip-grenades");
+        var session = StartAscensionLoop();
         var plugs = LoopDesigning.ReadSubclassPlugs(session.Build);
 
         var saved = Edit(session, plugs with { Aspects = [TempestStrike, LethalCurrent], Jump = Optional.Some(BlinkJump), Fragments = [SparkOfShock, SparkOfVolts] });
@@ -193,7 +193,7 @@ public sealed class SubclassEditingTests
     [Fact]
     public void An_empty_slot_is_written_and_read_back_as_empty()
     {
-        var session = OpenLoop("helicopter-skip-grenades");
+        var session = StartAscensionLoop();
         var plugs = LoopDesigning.ReadSubclassPlugs(session.Build);
 
         var saved = Edit(session, plugs with { Aspects = [TempestStrike], Fragments = ImmutableArray<ItemHash>.Empty, Super = Optional.None<ItemHash>() });
@@ -211,7 +211,7 @@ public sealed class SubclassEditingTests
     [Fact]
     public void A_plug_twice_a_plug_the_subclass_lacks_and_too_many_fragments_are_refused()
     {
-        var session = OpenLoop("helicopter-skip-grenades");
+        var session = StartAscensionLoop();
         var plugs = LoopDesigning.ReadSubclassPlugs(session.Build);
 
         var twice = LoopDesigning.EditSubclass(session, Optional.None<BungieProfile>(), plugs with { Fragments = [SparkOfShock, SparkOfShock] });
@@ -291,12 +291,28 @@ public sealed class SubclassEditingTests
         LoopDesigning.EditSubclass(session, Optional.None<BungieProfile>(), plugs)
             .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
 
-    private static DesignSession OpenLoop(string name)
+    /// <summary>
+    /// An Arcstrider with every ability, Tempest Strike and Ascension, four fragments and a comment of its own, and three
+    /// steps: a new pack, the class ability's air move (Ascension jolts the pack) and a grenade kill.
+    /// </summary>
+    private static DesignSession StartAscensionLoop()
     {
-        var path = name == "helicopter-skip-grenades"
-            ? "builds/skip-grenade-hunter-ascension/loops/helicopter-skip-grenades.loop.yaml"
-            : $"builds/skip-grenade-hunter/loops/{name}.loop.yaml";
-        return LoopDesigning.ImportLoop(Catalog, new SourceText(path, File.ReadAllText(RepoFiles.ToPath(path))))
+        const string text = """
+            name: Ascension Arcstrider
+            class: hunter
+            subclass: arc
+            super: arc-staff
+            grenade: skip-grenade
+            melee: combination-blow
+            classAbility: gamblers-dodge
+            # Ascension replaces Flow State: the air move jolts the pack.
+            aspects: [tempest-strike, ascension]
+            fragments: [spark-of-resistance, spark-of-frequency, spark-of-shock, spark-of-discharge]
+            """;
+        var started = LoopDesigning.StartDesign(Catalog, new SourceText("build.yaml", text), "Helicopter")
             .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
+        var pack = LoopDesigning.AppendStep(started, new PlayerAction.Declare(new StateDeclaration.NewPack()), Optional.None<string>());
+        var air = LoopDesigning.AppendStep(pack, new PlayerAction.UseClassAbility(AbilityInput.Air), Optional.None<string>());
+        return LoopDesigning.AppendStep(air, new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Kill, TargetCount.One), Optional.None<string>());
     }
 }

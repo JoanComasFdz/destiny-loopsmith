@@ -11,24 +11,44 @@ using Loopsmith.Core.Tests.Support;
 namespace Loopsmith.Core.Tests.Orchestration;
 
 /// <summary>
-/// The owner's DIM build, item by item: what has no part in a loop says so (its legendary armor pieces, Triple Jump
-/// (an inert element of the rules; a jump they don't have, left out), Feeding Frenzy), the resistance mods show in the
-/// step's damage resistance, Powerful Attraction collects the orbs on the ground when you dodge, Ashes to Assets answers a
-/// grenade kill, and Charged Up raises the Armor Charge cap the player declares reached.
+/// An Arc Hunter, item by item: what has no part in a loop says so (a legendary armor piece, Triple Jump (an inert element
+/// of the rules; a jump they don't have, left out), the stat mods, Feeding Frenzy), Powerful Attraction collects the orbs
+/// on the ground when you dodge, Ashes to Assets answers a grenade kill, and Charged Up raises the Armor Charge cap the
+/// player declares reached.
 /// </summary>
-public sealed class OwnersBuildModsTests
+public sealed class InertItemsAndArmorChargeModsTests
 {
     private static readonly Result<ImmutableArray<SourceText>, string> RuleFiles = FileSourceFetching.ReadRuleFiles(RepoFiles.ToPath("rules"));   // impure
 
     private static readonly RuleCatalog Catalog =
         RuleFiles.Bind(CatalogLoading.ParseCatalog).Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
 
+    /// <summary>
+    /// What the rules don't know is kept as <c>leftOut</c>: a legendary helmet (Luminopotent Mask), a Grenade Mod (+10
+    /// Grenade) and a Balanced Tuning.
+    /// </summary>
+    private const string BuildText = """
+        name: Armor Charge Hunter
+        class: hunter
+        subclass: arc
+        super: gathering-storm
+        grenade: skip-grenade
+        melee: combination-blow
+        classAbility: gamblers-dodge
+        jump: triple-jump
+        armorMods: [reaper, powerful-attraction, recuperation, ashes-to-assets, charged-up]
+        weapons:
+          - {hash: 4019651319} # Festival Flight
+          - {hash: 3325463374} # Thunderlord
+        leftOut: {items: [593554567], armorMods: [1435557120, 3122197216]}
+        """;
+
     private static readonly StatusId ArmorCharge = StatusId.From("armor-charge");
 
     private static readonly PickupId Orb = PickupId.From("orb-of-power");
 
     [Fact]
-    public void Legendary_armor_pieces_Triple_Jump_and_the_stat_mods_have_no_part_in_a_loop_so_nothing_is_missing()
+    public void A_legendary_armor_piece_Triple_Jump_and_the_stat_mods_have_no_part_in_a_loop_so_nothing_is_missing()
     {
         var build = Play().Build;
         var mask = new LeftOutItem(LoadoutPart.Item, ItemHash.From(593554567u));                // Luminopotent Mask
@@ -45,7 +65,7 @@ public sealed class OwnersBuildModsTests
             new LeftOutReason.NoLoopEffect("A stat mod (+10 Grenade): it changes only stats, and the build's stats count it when they add up from your armor (after the Bungie login). It sets nothing off."),
             LoopDesigning.ClassifyLeftOut(build, grenadeMod));
         Assert.StartsWith("Balanced Tuning (+1 to each stat where its piece has 0, one piece per tuning socket): it changes only stats", Assert.IsType<LeftOutReason.NoLoopEffect>(LoopDesigning.ClassifyLeftOut(build, balancedTuning)).Why, StringComparison.Ordinal);
-        Assert.Equal((5, 2), (leftOut.Count(item => item == grenadeMod), leftOut.Count(item => item == balancedTuning)));
+        Assert.Equal([mask, grenadeMod, balancedTuning], leftOut);
         Assert.Empty(missing);
         Assert.Equal<AbilityPlug>(new AbilityPlug.Known(ElementId.From("triple-jump")), build.Build.Abilities.Jump);
         Assert.DoesNotContain(tripleJump, leftOut);
@@ -151,9 +171,7 @@ public sealed class OwnersBuildModsTests
 
     private static DesignSession Play(params PlayerAction[] actions)
     {
-        const string path = "builds/skip-grenade-hunter/dim-loadout.json";
-        var json = File.ReadAllText(RepoFiles.ToPath(path));                                     // impure
-        var session = LoopDesigning.StartSavedDimDesign(Catalog, new SourceText(path, json))
+        var session = LoopDesigning.StartDesign(Catalog, new SourceText("armor-charge.build.yaml", BuildText), "Armor Charge loop")
             .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
         return actions.Aggregate(session, (played, action) => LoopDesigning.AppendStep(played, action, Optional.None<string>()));
     }

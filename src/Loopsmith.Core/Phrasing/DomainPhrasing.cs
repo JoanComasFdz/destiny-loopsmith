@@ -160,7 +160,7 @@ public static class DomainPhrasing
             _ => "Artifact perks",
         };
 
-    /// <summary>"3 items, 1 subclass plug, 2 armor mods": what a DIM loadout had that its build leaves out.</summary>
+    /// <summary>"3 items, 1 subclass plug, 2 armor mods": what a build has that its rules leave out.</summary>
     public static string DescribeLeftOut(this ImmutableArray<LeftOutItem> leftOut) =>
         string.Join(", ", leftOut
             .GroupBy(item => item.Part)

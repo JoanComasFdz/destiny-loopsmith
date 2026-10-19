@@ -93,7 +93,7 @@ public static class SubclassEditing
     }
 
     /// <summary>
-    /// What the editor warns when the plugs hold more fragments than their aspects open (a build file or a DIM link: build
+    /// What the editor warns when the plugs hold more fragments than their aspects open (a build file: build
     /// validation only warns, but Save keeps the game's limit); none when they fit or the count isn't known.
     /// </summary>
     public static Optional<string> DescribeFragmentOverflow(RuleCatalog catalog, SubclassPlugs plugs) =>

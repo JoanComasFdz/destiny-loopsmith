@@ -30,6 +30,22 @@ public sealed class ItemPickingTests
     private static readonly ItemHash ExoticMask = ItemHash.From(9313u);
     private static readonly ItemHash ExoticCloak = ItemHash.From(9314u);
     private static readonly ItemHash TestingSet = ItemHash.From(9400u);
+    private static readonly ItemHash LuminopotentMask = ItemHash.From(593554567u);
+    private static readonly ItemHash LuminopotentCuirass = ItemHash.From(2883433250u);
+    private static readonly ItemHash LuminopotentStrides = ItemHash.From(1047792392u);
+    private static readonly ItemHash LuminopotentCloak = ItemHash.From(2107326067u);
+
+    /// <summary>A hand-written build: Festival Flight (Kinetic) and Crisis Inverted (Energy), Shinobu's Vow, a stat.</summary>
+    private const string HandWrittenBuild = """
+        name: Test
+        class: hunter
+        subclass: arc
+        exoticArmor: shinobus-vow
+        weapons:
+          - { hash: 4019651319, perks: [] } # Festival Flight
+          - { hash: 2888266564, perks: [] } # Crisis Inverted
+        stats: { grenade: 100 }
+        """;
 
     /// <summary>What "Every item" reads from Bungie's lite item table: no perks.</summary>
     private static readonly ItemListing Listing = new(
@@ -68,7 +84,7 @@ public sealed class ItemPickingTests
     [Fact]
     public void Every_item_lists_the_slots_weapons_the_one_the_build_wears_first()
     {
-        var session = OpenHandWrittenLoop(Catalog);
+        var session = StartHandWrittenLoop(Catalog);
 
         var kinetic = LoopDesigning.ListWeaponItems(session.Build, Listing, new WeaponTarget.InPlaceOf(0));
         var power = LoopDesigning.ListWeaponItems(session.Build, Listing, new WeaponTarget.IntoEmpty(WeaponSlot.Power));
@@ -84,7 +100,7 @@ public sealed class ItemPickingTests
     [Fact]
     public void Every_item_marks_an_exotic_the_rules_dont_know_and_never_a_legendary()
     {
-        var session = OpenHandWrittenLoop(Catalog);
+        var session = StartHandWrittenLoop(Catalog);
         var thunderlord = ToWeapon(ItemHash.From(3325463374u), "Thunderlord", WeaponSlot.Power, DamageType.Arc, ItemTier.Exotic, []) with
         {
             Kind = new ManifestKind.Weapon(WeaponSlot.Power, Optional.Some(DamageType.Arc), Optional.None<AmmoType>(), [], Optional.Some(ItemHash.From(4148158229u)), Optional.None<ItemHash>(), Optional.None<ItemHash>(), []),
@@ -107,7 +123,7 @@ public sealed class ItemPickingTests
     [Fact]
     public void A_weapon_of_the_game_fills_an_empty_slot_with_no_roll_and_its_catalyst_off()
     {
-        var session = OpenHandWrittenLoop(Catalog with { Manifest = Catalog.Manifest.AddExcerpt(Joined) });
+        var session = StartHandWrittenLoop(Catalog with { Manifest = Catalog.Manifest.AddExcerpt(Joined) });
 
         var picked = Assert.IsType<Result<DesignSession, string>.Ok>(LoopDesigning.PickWeaponItem(session, new WeaponTarget.IntoEmpty(WeaponSlot.Power), PowerExotic)).Value;
         var gun = picked.Build.Build.Weapons[^1];
@@ -124,21 +140,21 @@ public sealed class ItemPickingTests
     [Fact]
     public void A_weapon_of_the_game_replaces_a_hand_written_one()
     {
-        var session = OpenHandWrittenLoop(Catalog with { Manifest = Catalog.Manifest.AddExcerpt(Joined) });
+        var session = StartHandWrittenLoop(Catalog with { Manifest = Catalog.Manifest.AddExcerpt(Joined) });
 
         var picked = Assert.IsType<Result<DesignSession, string>.Ok>(LoopDesigning.PickWeaponItem(session, new WeaponTarget.InPlaceOf(1), EnergyRifle)).Value;
 
         Assert.Equal(["Festival Flight", "Lightning Rifle"], picked.Build.Build.Weapons.Select(weapon => weapon.Name));
-        Assert.DoesNotContain("name: Crisis Inverted", picked.Design.Build.Text, StringComparison.Ordinal);
+        Assert.DoesNotContain("2888266564", picked.Design.Build.Text, StringComparison.Ordinal);   // Crisis Inverted
         Assert.Contains("Loopsmith doesn't know that weapon yet",
-            Assert.IsType<Result<DesignSession, string>.Error>(LoopDesigning.PickWeaponItem(OpenHandWrittenLoop(Catalog), new WeaponTarget.InPlaceOf(1), EnergyRifle)).Failure,
+            Assert.IsType<Result<DesignSession, string>.Error>(LoopDesigning.PickWeaponItem(StartHandWrittenLoop(Catalog), new WeaponTarget.InPlaceOf(1), EnergyRifle)).Failure,
             StringComparison.Ordinal);                                                           // not joined yet: the build doesn't change
     }
 
     [Fact]
     public void A_pick_whose_manifest_read_failed_says_so_and_one_that_read_adds_the_item()
     {
-        var session = OpenHandWrittenLoop(Catalog);
+        var session = StartHandWrittenLoop(Catalog);
 
         var failed = LoopDesigning.UsePickedItemManifest(session, new Result<ManifestExcerpt, string>.Error("Failed to fetch"));
         var read = Assert.IsType<Result<DesignSession, string>.Ok>(LoopDesigning.UsePickedItemManifest(session, new Result<ManifestExcerpt, string>.Ok(Joined))).Value;
@@ -152,7 +168,7 @@ public sealed class ItemPickingTests
     [Fact]
     public void Emptying_a_weapon_slot_takes_the_weapon_off_and_blocks_the_steps_that_use_it()
     {
-        var session = OpenHandWrittenLoop(Catalog);
+        var session = StartHandWrittenLoop(Catalog);
         var energyStep = session.Design.Steps.IndexOf(session.Design.Steps.First(step => step.Action is PlayerAction.FireWeapon { Slot: WeaponSlot.Energy }));
 
         var emptied = Assert.IsType<Result<DesignSession, string>.Ok>(LoopDesigning.EmptyWeaponSlot(session, 1)).Value;
@@ -166,7 +182,7 @@ public sealed class ItemPickingTests
     [Fact]
     public void Every_item_lists_the_builds_class_pieces_for_the_slot_with_their_set()
     {
-        var session = OpenHandWrittenLoop(Catalog);
+        var session = StartHandWrittenLoop(Catalog);
 
         var helmets = LoopDesigning.ListArmorItems(session.Build, Listing, ArmorSlot.Helmet);
 
@@ -178,7 +194,7 @@ public sealed class ItemPickingTests
     [Fact]
     public void A_piece_of_the_game_goes_in_its_slot_and_the_stats_stay()
     {
-        var session = OpenHandWrittenLoop(Catalog with { Manifest = Catalog.Manifest.AddExcerpt(Joined) });
+        var session = StartHandWrittenLoop(Catalog with { Manifest = Catalog.Manifest.AddExcerpt(Joined) });
 
         var picked = Assert.IsType<Result<DesignSession, string>.Ok>(LoopDesigning.PickArmorItem(session, ArmorSlot.Helmet, HunterMask)).Value;
 
@@ -192,7 +208,7 @@ public sealed class ItemPickingTests
     [Fact]
     public void Emptying_the_exotics_slot_takes_the_exotic_off_and_an_exotic_class_item_says_its_spirits_cant_be_picked()
     {
-        var session = OpenHandWrittenLoop(Catalog);
+        var session = StartHandWrittenLoop(Catalog);
 
         var emptied = Assert.IsType<Result<DesignSession, string>.Ok>(LoopDesigning.EmptyArmorSlot(session, ArmorSlot.Arms)).Value;
         var cloaks = LoopDesigning.ListArmorItems(emptied.Build, Listing, ArmorSlot.ClassItem);
@@ -208,23 +224,35 @@ public sealed class ItemPickingTests
     [Fact]
     public void Emptying_a_set_pieces_slot_drops_the_bonus_its_pieces_no_longer_grant()
     {
-        const string path = "builds/skip-grenade-hunter/dim-loadout.json";
-        var session = LoopDesigning.StartSavedDimDesign(Catalog, new SourceText(path, File.ReadAllText(RepoFiles.ToPath(path))))
-            .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
+        var session = WearLuminopotent(LoopDesigning.StartScratchDesign(Catalog).Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure)));
 
         var emptied = Assert.IsType<Result<DesignSession, string>.Ok>(LoopDesigning.EmptyArmorSlot(session, ArmorSlot.Helmet)).Value;
 
         Assert.Equal(["luminopotent-2pc", "luminopotent-4pc"], session.Build.Build.ArmorSetBonuses.Select(id => id.Value).Order());
         Assert.Equal(["luminopotent-2pc"], emptied.Build.Build.ArmorSetBonuses.Select(id => id.Value));
-        Assert.DoesNotContain(emptied.Build.Build.LeftOut, item => item.Hash == ItemHash.From(593554567u));   // the Luminopotent Mask
+        Assert.DoesNotContain(emptied.Build.Build.LeftOut, item => item.Hash == LuminopotentMask);
     }
 
-    private static DesignSession OpenHandWrittenLoop(RuleCatalog catalog)
+    /// <summary>The hand-written build with two steps: a kill with each of its weapons.</summary>
+    private static DesignSession StartHandWrittenLoop(RuleCatalog catalog)
     {
-        const string path = "builds/skip-grenade-hunter/loops/infinite-skip-grenades.loop.yaml";
-        return LoopDesigning.ImportLoop(catalog, new SourceText(path, File.ReadAllText(RepoFiles.ToPath(path))))
+        var started = LoopDesigning.StartDesign(catalog, new SourceText("build.yaml", HandWrittenBuild), "Test")
             .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
+        var kinetic = LoopDesigning.AppendStep(started, new PlayerAction.FireWeapon(WeaponSlot.Kinetic, HitOutcome.Kill, TargetCount.One), Optional.None<string>());
+        return LoopDesigning.AppendStep(kinetic, new PlayerAction.FireWeapon(WeaponSlot.Energy, HitOutcome.Kill, TargetCount.One), Optional.None<string>());
     }
+
+    /// <summary>The design wearing the four Luminopotent pieces (helmet, chest, legs, class item), picked in the designer.</summary>
+    private static DesignSession WearLuminopotent(DesignSession session)
+    {
+        var mask = Wear(session, ArmorSlot.Helmet, LuminopotentMask);
+        var cuirass = Wear(mask, ArmorSlot.Chest, LuminopotentCuirass);
+        var strides = Wear(cuirass, ArmorSlot.Legs, LuminopotentStrides);
+        return Wear(strides, ArmorSlot.ClassItem, LuminopotentCloak);
+    }
+
+    private static DesignSession Wear(DesignSession session, ArmorSlot slot, ItemHash piece) =>
+        LoopDesigning.PickArmorItem(session, slot, piece).Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
 
     private static ManifestItem ToWeapon(ItemHash hash, string name, WeaponSlot slot, DamageType type, ItemTier tier, uint[][] traits) =>
         new(hash, name,

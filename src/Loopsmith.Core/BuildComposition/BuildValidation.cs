@@ -10,7 +10,7 @@ namespace Loopsmith.Core.BuildComposition;
 /// <summary>
 /// The sole constructor of <see cref="ValidatedBuild"/> (architecture test). Blocking issues put the
 /// build on the failure track; warnings and info ride along on the validated build. What the rules don't know yet (a
-/// "?" ability, a perk, mod or catalyst, what a DIM link left out) is no issue: its square carries the ⊘. An element
+/// "?" ability, a perk, mod or catalyst, what the build leaves out) is no issue: its square carries the ⊘. An element
 /// the rules mark <c>inert</c> is outside the loop on purpose, and every other element has rules or passives (a test
 /// over <c>rules/</c> holds the catalog to it).
 /// </summary>
@@ -273,7 +273,7 @@ public static class BuildValidation
     }
 
     /// <summary>
-    /// The DIM loadout's raid, activity and retired seasonal mods the build ignores (ADRs D35): one info line naming
+    /// The raid, activity and retired seasonal mods the build holds and ignores (ADRs D35): one info line naming
     /// them, each once ("Herd Thinner ×2").
     /// </summary>
     private static IEnumerable<BuildIssue> CheckIgnoredMods(Build build, RuleCatalog catalog)
@@ -284,7 +284,7 @@ public static class BuildValidation
             .ToImmutableArray();
         return ignored.IsEmpty
             ? []
-            : [new BuildIssue(Severity.Info, $"Ignored from the DIM loadout: {string.Join(", ", ignored)} — {LeftOutClassifying.ActivityModsIgnored}.")];
+            : [new BuildIssue(Severity.Info, $"Ignored from the build: {string.Join(", ", ignored)} — {LeftOutClassifying.ActivityModsIgnored}.")];
     }
 
     private static IEnumerable<BuildIssue> CheckFragmentSlots(Build build, RuleCatalog catalog)

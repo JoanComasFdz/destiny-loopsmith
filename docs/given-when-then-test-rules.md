@@ -39,7 +39,7 @@ for a loop scenario ([its document](given-when-then-loop-scenarios.md)), and
 2. **Layout is a Gherkin too**, checked from where things are on the screen: a row wraps, two parts don't overlap, a
    button sits at a row's right end, a row fits inside the screen with no sideways scroll, a text isn't cut off. "Looks right",
    colours and spacing are never a Gherkin: nothing checks them but an eye.
-3. **Not yet:** what needs a Bungie login or a DIM link (no e2e scenario can reach either yet). Such a criterion stays
+3. **Not yet:** what needs a Bungie login (no e2e scenario can reach it yet). Such a criterion stays
    a plain line, checked by hand on the preview, and says why.
 
 ## 2. Scope
