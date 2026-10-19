@@ -1,0 +1,7 @@
+# Iron Panoply's 2-piece bonus (Vigilant Watch), with Scathelocke for the weapon kill it needs at critical health.
+name: "E2E - Vigilant Watch with Scathelocke"
+class: hunter
+subclass: arc
+armorSetBonuses: [iron-panoply-2pc]
+weapons:
+  - { hash: 3332538050 } # Scathelocke

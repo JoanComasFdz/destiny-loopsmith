@@ -1,0 +1,7 @@
+# Iron Panoply's 4-piece bonus (Iron Conviction), with Scathelocke for the kill that refreshes it.
+name: "E2E - Iron Conviction with Scathelocke"
+class: hunter
+subclass: arc
+armorSetBonuses: [iron-panoply-4pc]
+weapons:
+  - { hash: 3332538050 } # Scathelocke
