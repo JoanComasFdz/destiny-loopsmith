@@ -52,7 +52,7 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
     set bonus (Armor Perks#66: its buff comes from an Elite+ kill, which a loop's minor pack never gives, ADRs D7; the
     follow-up "Make elite kills playable and author Ascendant Escape"), Mechaneer's Tricksleeves (Exotic Armors#52:
     readying a sidearm is no step, and no damage source names a weapon type; the follow-up "Add a Ready a weapon step
-    for Mechaneer's Tricksleeves") and Frost Renewal (Artifact Perks#27: reaching critical health while Frost Armor is
+    for Mechaneer's Tricksleeves") and Frost Renewal (Artifact Perks#27: combatants breaking your shield while Frost Armor is
     on you; nothing gives Frost Armor yet, so it waits on a Stasis source such as Wind Chill, Artifact Perks#55).
     Enhanced Operator Augment (Armor Mods#30) is a raid mod, which Loopsmith doesn't support (ADRs D35). Authored:
     Thunderous Retort, Echo of Vigilance and the Iron Panoply set (Vigilant Watch, Iron Conviction);
