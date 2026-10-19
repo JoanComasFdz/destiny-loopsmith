@@ -17,7 +17,7 @@ public sealed class ReturnStrokeTests : BaseE2E
           When I tap "Thunderlord" in the trigger panel
           And I tap "💀 kill"
           Then card #1's heading is "#1 Thunderlord (💀 kill)"
-          And "Return Stroke" fires "refills your power weapon"
+          And "Return Stroke" fires "refills your heavy weapon"
         """)]
     public async Task ReturnStrokesKillStrikeRefillsThunderlord(Screen screen)
     {
@@ -35,7 +35,7 @@ public sealed class ReturnStrokeTests : BaseE2E
         var kill = await Frontend.Designer.Loop.Step(1).ReadAsync();
         Asserting.That(kill)
             .HasHeading("#1 Thunderlord (💀 kill)")
-            .Fires(new Catalyst.ReturnStroke(), "refills your power weapon");
+            .Fires(new Catalyst.ReturnStroke(), "refills your heavy weapon");
     }
 
     [Theory, PlayInDesktop, PlayInMobile]
@@ -47,7 +47,7 @@ public sealed class ReturnStrokeTests : BaseE2E
           When I tap "Thunderlord" in the trigger panel
           And I tap "🥊 hit"
           Then card #1's heading is "#1 Thunderlord (🥊 hit)"
-          And "Return Stroke" fires "refills your power weapon"
+          And "Return Stroke" fires "refills your heavy weapon"
         """)]
     public async Task ReturnStrokes10thHitStrikeRefillsThunderlord(Screen screen)
     {
@@ -65,6 +65,6 @@ public sealed class ReturnStrokeTests : BaseE2E
         var hit = await Frontend.Designer.Loop.Step(1).ReadAsync();
         Asserting.That(hit)
             .HasHeading("#1 Thunderlord (🥊 hit)")
-            .Fires(new Catalyst.ReturnStroke(), "refills your power weapon");
+            .Fires(new Catalyst.ReturnStroke(), "refills your heavy weapon");
     }
 }
