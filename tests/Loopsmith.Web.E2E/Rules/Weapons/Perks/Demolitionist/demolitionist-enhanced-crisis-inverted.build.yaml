@@ -1,0 +1,7 @@
+# Demolitionist's enhanced trait (11% grenade energy per kill) on Crisis Inverted (an Arc Hand Cannon in the Energy slot), with Skip Grenade to throw.
+name: "E2E - Demolitionist (enhanced) on Crisis Inverted"
+class: hunter
+subclass: arc
+grenade: skip-grenade
+weapons:
+  - { hash: 2888266564, perks: [demolitionist-enhanced] } # Crisis Inverted

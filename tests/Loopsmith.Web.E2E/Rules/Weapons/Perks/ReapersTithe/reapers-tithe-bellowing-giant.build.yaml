@@ -1,0 +1,6 @@
+# Reaper's Tithe (2, 3 or 4+ enemies killed at once) on Bellowing Giant, a Power weapon that rolls it.
+name: "E2E - Reaper's Tithe on Bellowing Giant"
+class: hunter
+subclass: arc
+weapons:
+  - { hash: 412265080, perks: [reapers-tithe] } # Bellowing Giant

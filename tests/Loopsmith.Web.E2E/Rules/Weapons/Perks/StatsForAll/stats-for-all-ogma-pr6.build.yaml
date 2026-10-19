@@ -1,0 +1,6 @@
+# Stats for All (3 enemies hit within 3 s) on Ogma PR6, an Energy weapon that rolls it.
+name: "E2E - Stats for All on Ogma PR6"
+class: hunter
+subclass: arc
+weapons:
+  - { hash: 2342054803, perks: [stats-for-all] } # Ogma PR6

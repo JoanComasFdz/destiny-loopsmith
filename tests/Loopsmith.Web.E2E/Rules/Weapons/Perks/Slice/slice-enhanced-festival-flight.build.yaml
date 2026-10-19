@@ -1,0 +1,7 @@
+# Slice's enhanced trait (a 9 s window instead of 8 s) on Festival Flight, a Kinetic weapon that rolls it, with Marksman's Dodge (no rules of its own) to dodge.
+name: "E2E - Slice (enhanced) on Festival Flight with Marksman's Dodge"
+class: hunter
+subclass: arc
+classAbility: marksmans-dodge
+weapons:
+  - { hash: 4019651319, perks: [slice-enhanced] } # Festival Flight
