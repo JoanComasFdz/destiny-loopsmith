@@ -184,7 +184,7 @@ button:focus-visible{outline:3px solid var(--main);outline-offset:2px}
           <div class="node read">conventions-reviewer<small>The diff against docs/CODING_RULES.md.</small></div>
           <div class="node read">Criteria check<small>Each acceptance criterion against the diff; each Gherkin is one scenario, word for word.</small></div>
           <div class="node read">Browser check<small>Only for a web change: publishes the app, checks it at desktop and 390 px and the console.</small></div>
-          <div class="node cmd"><code>tools/e2e/record.sh --no-video --changed-since origin/main</code> / <code>dotnet test</code><small>Long runs in the background meanwhile, its progress reported in the session about once a minute, as done out of the total ("7 of 36 runs recorded"). Unrecorded, so fast: every scenario the branch adds or changes passes on each screen it is played on.</small></div>
+          <div class="node cmd"><code>tools/e2e/record.sh --no-video --changed-since origin/main</code> / <code>dotnet test</code><small>Long runs in the background meanwhile, its progress reported in the session about once a minute, as done out of the total, time elapsed and time left ("7 of 36 runs recorded · 6 min elapsed, about 25 min left"). Unrecorded, so fast: every scenario the branch adds or changes passes on each screen it is played on.</small></div>
         </div>
         <div class="node main">Fix what they found</div>
         <div class="node main">Rebase onto <code>origin/main</code>, build + test again<small>The branch stays local until now. Only before the first push: after it, a rebase would need a force-push.</small></div>
