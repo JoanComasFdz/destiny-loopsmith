@@ -13,7 +13,7 @@ internal static class GlossaryParsing
     internal const string GlossaryPath = "glossary.yaml";
 
     private static readonly ImmutableArray<string> GlossaryKeys = ["statuses", "pickups", "summons", "subclasses", "finishers"];
-    private static readonly ImmutableArray<string> StatusKeys = ["id", "name", "kind", "affinity", "maxStacks", "duration", "trait", "drawnIcon", "counted", "decay", "adjective"];
+    private static readonly ImmutableArray<string> StatusKeys = ["id", "name", "kind", "affinity", "maxStacks", "duration", "trait", "drawnIcon", "counted", "decay", "adjective", "endsWith"];
     private static readonly ImmutableArray<string> PickupKeys = ["id", "name", "affinity", "collectsAutomatically", "trait"];
     private static readonly ImmutableArray<string> SummonKeys = ["id", "name", "damageType", "trait"];
     private static readonly ImmutableArray<string> SubclassKeys = ["class", "subclass", "name", "hash"];
@@ -30,6 +30,7 @@ internal static class GlossaryParsing
             map.ReadOrDefault(
                 "statuses",
                 statuses => statuses.ReadEach("status", ReadStatus)
+                    .Bind(CheckEndsWithBuffs)
                     .Bind(items => LocatedCollections.ToUniqueDictionary(items, status => status.Id, "status")),
                 ImmutableDictionary<StatusId, StatusDefinition>.Empty),
             map.ReadOrDefault(
@@ -60,12 +61,41 @@ internal static class GlossaryParsing
             map.ReadOrDefault("counted", ReadBoolean, false),
             map.ReadOptional("decay", YamlReading.ToText),
             map.ReadOptional("adjective", ReadName),
-            (_, id, name, kind, affinity, maxStacks, duration, trait, drawnIcon, counted, decay, adjective) =>
-                new StatusDefinition(id, name, kind, affinity, maxStacks, duration, trait, drawnIcon, counted, decay, adjective))
+            map.ReadOptional("endsWith", ReadStatusId),
+            (_, id, name, kind, affinity, maxStacks, duration, trait, drawnIcon, counted, decay, adjective, endsWith) =>
+                new StatusDefinition(id, name, kind, affinity, maxStacks, duration, trait, drawnIcon, counted, decay, adjective, endsWith))
             .Bind(status => CheckDrawnIcon(map, status))
             .Bind(status => CheckAdjective(map, status))
             .Bind(status => CheckCounted(map, status))
+            .Bind(status => CheckEndsWith(map, status))
             .Map(map.ToLocated));
+
+    /// <summary>A buff that ends with another one is on you: a debuff is on the pack, and a status can't end with itself.</summary>
+    private static Result<StatusDefinition, Errors> CheckEndsWith(YamlMap map, StatusDefinition status) =>
+        status.EndsWith.Match(
+            other => !status.Kind.IsBuff()
+                ? map.FailAtKey<StatusDefinition>("endsWith", $"the status '{status.Id.Value}' isn't a buff, so it doesn't end with a buff on you: endsWith is for a buff")
+                : other.Value == status.Id
+                    ? map.FailAtKey<StatusDefinition>("endsWith", $"the status '{status.Id.Value}' can't end with itself")
+                    : Succeed(status),
+            _ => Succeed(status));
+
+    /// <summary>The buff a status ends with is a buff of the glossary: an error at the status that names another.</summary>
+    private static Result<ImmutableArray<Located<StatusDefinition>>, Errors> CheckEndsWithBuffs(ImmutableArray<Located<StatusDefinition>> statuses)
+    {
+        var buffs = statuses.Where(status => status.Value.Kind.IsBuff()).Select(status => status.Value.Id).ToImmutableHashSet();
+        var errors = statuses
+            .SelectMany(status => status.Value.EndsWith.Match(
+                other => buffs.Contains(other.Value)
+                    ? []
+                    : ImmutableArray.Create(new ParseError(
+                        status.Path,
+                        Optional.Some(status.Line),
+                        $"the status '{status.Value.Id.Value}' ends with '{other.Value.Value}', which isn't a buff of the glossary")),
+                _ => ImmutableArray<ParseError>.Empty))
+            .ToImmutableArray();
+        return errors.IsEmpty ? Succeed(statuses) : Fail<ImmutableArray<Located<StatusDefinition>>>(errors);
+    }
 
     /// <summary>Only a buff that stacks is counted (ADRs D33): its stacks go up to its <c>maxStacks</c>.</summary>
     private static Result<StatusDefinition, Errors> CheckCounted(YamlMap map, StatusDefinition status) =>

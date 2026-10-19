@@ -337,16 +337,19 @@ public static class ActionResolution
             _ => Optional.None<string>(),
         };
 
-    /// <summary>"Amplified ends", "Jolt ends": the buff (with its declaration) or the debuff is removed; no event.</summary>
+    /// <summary>
+    /// "Amplified ends", "Jolt ends": the buff (with its declaration, and the buffs that end with it) or the debuff is
+    /// removed; no event.
+    /// </summary>
     private static Opening DeclareEnd(KeywordGlossary glossary, GameState state, StatusId status) =>
         glossary.FindStatus(status).Match(
-            some => EndStatus(state, some.Value),
+            some => EndStatus(glossary, state, some.Value),
             _ => BlockAction(state, $"No buff or debuff '{status}' in the rules — nothing ends."));
 
-    private static Opening EndStatus(GameState state, StatusDefinition definition) =>
+    private static Opening EndStatus(KeywordGlossary glossary, GameState state, StatusDefinition definition) =>
         (definition.Kind, state.HasBuff(definition.Id), state.TargetHas(definition.Id)) switch
         {
-            (var kind, true, _) when kind.IsBuff() => new Opening(state.DropBuff(definition.Id), [], []),
+            (var kind, true, _) when kind.IsBuff() => new Opening(state.EndBuff(glossary, definition.Id), [], []),
             (KeywordKind.Debuff, _, true) => new Opening(state.DropDebuff(definition.Id), [], []),
             _ => BlockAction(state, $"{definition.Name} isn't active — nothing ends."),
         };

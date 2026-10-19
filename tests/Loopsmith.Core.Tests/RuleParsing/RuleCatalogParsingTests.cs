@@ -147,10 +147,10 @@ public sealed class RuleCatalogParsingTests
 
         Assert.Equal(5, glossary.Statuses.Count);
         Assert.Equal(
-            new StatusDefinition(ToStatus("bolt-charge"), "Bolt Charge", KeywordKind.Buff, Affinity.Arc, Optional.Some(StackCount.From(10)), Optional.None<Seconds>(), Optional.None<ItemHash>(), Optional.None<DrawnIcon>(), false, Optional.None<string>(), Optional.None<string>()),
+            new StatusDefinition(ToStatus("bolt-charge"), "Bolt Charge", KeywordKind.Buff, Affinity.Arc, Optional.Some(StackCount.From(10)), Optional.None<Seconds>(), Optional.None<ItemHash>(), Optional.None<DrawnIcon>(), false, Optional.None<string>(), Optional.None<string>(), Optional.None<StatusId>()),
             glossary.Statuses[ToStatus("bolt-charge")]);
         Assert.Equal(
-            new StatusDefinition(ToStatus("jolt"), "Jolt", KeywordKind.Debuff, Affinity.Arc, Optional.None<StackCount>(), Optional.Some(Seconds.From(4m)), Optional.None<ItemHash>(), Optional.None<DrawnIcon>(), false, Optional.None<string>(), Optional.None<string>()),
+            new StatusDefinition(ToStatus("jolt"), "Jolt", KeywordKind.Debuff, Affinity.Arc, Optional.None<StackCount>(), Optional.Some(Seconds.From(4m)), Optional.None<ItemHash>(), Optional.None<DrawnIcon>(), false, Optional.None<string>(), Optional.None<string>(), Optional.None<StatusId>()),
             glossary.Statuses[ToStatus("jolt")]);
         Assert.Equal(Optional.None<Seconds>(), glossary.Statuses[ToStatus("sever")].Duration);
         Assert.Equal(
@@ -874,6 +874,74 @@ public sealed class RuleCatalogParsingTests
         Assert.Contains(
             "the status 'frost-armor' isn't a debuff, so no target has it",
             ParseInvalidCatalog(new SourceText("glossary.yaml", "statuses:\n  - { id: frost-armor, name: Frost Armor, kind: buff, affinity: stasis, adjective: Frosted }\n")));
+    }
+
+    [Fact]
+    public void A_buff_ends_with_another_buff_of_the_glossary_and_never_with_itself()
+    {
+        var glossary = new SourceText("glossary.yaml", """
+            statuses:
+              - { id: critical-health, name: Critical health, kind: buff, affinity: neutral }
+              - { id: spark-of-recharge, name: Spark of Recharge, kind: buff, affinity: arc, endsWith: critical-health }
+            """);
+
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([glossary]));
+
+        Assert.Equal(Optional.Some(ToStatus("critical-health")), catalog.Glossary.Statuses[ToStatus("spark-of-recharge")].EndsWith);
+        Assert.Equal(Optional.None<StatusId>(), catalog.Glossary.Statuses[ToStatus("critical-health")].EndsWith);
+        Assert.Contains(
+            "the status 'spark-of-recharge' ends with 'shields', which isn't a buff of the glossary",
+            ParseInvalidCatalog(new SourceText("glossary.yaml", "statuses:\n  - { id: spark-of-recharge, name: Spark of Recharge, kind: buff, affinity: arc, endsWith: shields }\n")));
+        Assert.Contains(
+            "the status 'spark-of-recharge' ends with 'jolt', which isn't a buff of the glossary",
+            ParseInvalidCatalog(new SourceText("glossary.yaml", "statuses:\n  - { id: jolt, name: Jolt, kind: debuff, affinity: arc }\n  - { id: spark-of-recharge, name: Spark of Recharge, kind: buff, affinity: arc, endsWith: jolt }\n")));
+        Assert.Contains(
+            "the status 'spark-of-recharge' can't end with itself",
+            ParseInvalidCatalog(new SourceText("glossary.yaml", "statuses:\n  - { id: spark-of-recharge, name: Spark of Recharge, kind: buff, affinity: arc, endsWith: spark-of-recharge }\n")));
+        Assert.Contains(
+            "the status 'jolt' isn't a buff, so it doesn't end with a buff on you: endsWith is for a buff",
+            ParseInvalidCatalog(new SourceText("glossary.yaml", "statuses:\n  - { id: critical-health, name: Critical health, kind: buff, affinity: neutral }\n  - { id: jolt, name: Jolt, kind: debuff, affinity: arc, endsWith: critical-health }\n")));
+    }
+
+    [Fact]
+    public void A_faster_regeneration_names_its_abilities_once_each_and_keeps_its_PvP_value()
+    {
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToElementsFile("fragments.yaml", """
+            elements:
+              - id: spark-of-recharge
+                name: Spark of Recharge
+                kind: fragment
+                affinity: arc
+                passives:
+                  - id: spark-of-recharge-1
+                    effect: { fasterRegeneration: { abilities: [grenade, melee], rate: "400% [200%]" } }
+            """)]));
+        var none = ParseInvalidCatalog(Glossary, ToElementsFile("fragments.yaml", """
+            elements:
+              - id: spark-of-recharge
+                name: Spark of Recharge
+                kind: fragment
+                affinity: arc
+                passives:
+                  - id: spark-of-recharge-1
+                    effect: { fasterRegeneration: { abilities: [], rate: "400%" } }
+            """));
+        var twice = ParseInvalidCatalog(Glossary, ToElementsFile("fragments.yaml", """
+            elements:
+              - id: spark-of-recharge
+                name: Spark of Recharge
+                kind: fragment
+                affinity: arc
+                passives:
+                  - id: spark-of-recharge-1
+                    effect: { fasterRegeneration: { abilities: [grenade, grenade], rate: "400%" } }
+            """));
+
+        var regeneration = Assert.IsType<Passive.FasterRegeneration>(Assert.Single(catalog.Elements[ElementId.From("spark-of-recharge")].Passives).Modifier);
+        Assert.Equal([AbilityKind.Grenade, AbilityKind.Melee], regeneration.Abilities);
+        Assert.Equal(new PveAndPvp(new GameValue.Known(4m), Optional.Some<GameValue>(new GameValue.Known(2m))), regeneration.Rate);
+        Assert.Contains("fasterRegeneration.abilities must list at least one ability", none);
+        Assert.Contains("fasterRegeneration.abilities names an ability twice", twice);
     }
 
     [Fact]

@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Loopsmith.Core.Causality;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 
@@ -31,6 +32,15 @@ public static class StateReading
 
     public static GameState DropBuff(this GameState state, StatusId status) =>
         state with { Buffs = state.Buffs.RemoveAll(buff => buff.Status == status) };
+
+    /// <summary>
+    /// Ends the buff, and every buff on you that ends with it (the glossary's <c>endsWith</c>: Spark of Recharge's buff
+    /// ends with Critical health), and those that end with them.
+    /// </summary>
+    public static GameState EndBuff(this GameState state, KeywordGlossary glossary, StatusId status) =>
+        state.Buffs
+            .Where(buff => glossary.FindStatus(buff.Status).Bind(definition => definition.EndsWith).Map(ends => ends == status).UnwrapOr(false))
+            .Aggregate(state.DropBuff(status), (ended, follower) => ended.EndBuff(glossary, follower.Status));
 
     public static GameState PutDebuff(this GameState state, StatusId status) =>
         state.TargetHas(status) ? state : state with { Target = state.Target with { Debuffs = state.Target.Debuffs.Add(status) } };

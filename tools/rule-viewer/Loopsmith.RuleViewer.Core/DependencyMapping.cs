@@ -264,7 +264,10 @@ internal static class DependencyMapping
             modifyStat: stat => [Give(ToEffectNode($"stat-{ToKebab(stat.Stat.ToString())}", $"{stat.Stat} stat", FindStatIcon(context, stat.Stat)), FormatSigned(stat.Change))],
             resistCombatantDamage: resist => [Give(
                 ToEffectNode("damage-resistance", "Damage resistance"),
-                $"{resist.Amount.ToPercentText()} vs {resist.Against.DescribeCombatantDamage(Optional.None<DamageType>())}")]);
+                $"{resist.Amount.ToPercentText()} vs {resist.Against.DescribeCombatantDamage(Optional.None<DamageType>())}")],
+            fasterRegeneration: regeneration => [.. regeneration.Abilities.Select(ability => Give(
+                ToEnergyNode(context, ability),
+                regeneration.Rate.Pve.ToPercentText() + regeneration.Rate.Pvp.Map(pvp => $" [PvP {pvp.ToPercentText()}]").UnwrapOr("") + " faster regeneration"))]);
 
     private static Effect Give(GraphNode node, string label) => new(node, EdgeKind.Gives, label);
 

@@ -53,6 +53,7 @@ public static class PassiveReaching
             weapons => ToWeaponReach(ListWeaponsReached(build, weapons.Weapons)),
             _ => new PassiveReach.Player(),
             _ => new PassiveReach.Player(),
+            _ => new PassiveReach.Player(),
             _ => new PassiveReach.Player());
 
     /// <summary>Whether every weapon's archetype is known, so "no weapon is one of them" is a fact, not a guess.</summary>

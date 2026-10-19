@@ -29,7 +29,7 @@ public static class OutcomeApplication
             grantEnergy => AnnotateFact(state, outcome, ReadGrantCertainty(grantEnergy.Amount), "amount unknown"),
             convert => ConvertStacksToEnergy(build, state, outcome, convert, source),
             applyBuff => ApplyBuff(build, state, outcome, applyBuff, source),
-            removeBuff => RemoveBuff(state, outcome, removeBuff),
+            removeBuff => RemoveBuff(build, state, outcome, removeBuff),
             debuffTarget => new Application(state.PutDebuff(debuffTarget.Status), ToApplied(outcome, Certainty.Known, Optional.None<string>()), []),
             spawn => Spawn(build, state, outcome, spawn, source.Likelihood),
             spawnSummon => SpawnSummon(build, state, outcome, spawnSummon),
@@ -88,7 +88,7 @@ public static class OutcomeApplication
 
         return state.ReadTally(convert.Consumed).Match(
             tally => SpendAllForEnergy(build, state, outcome, convert, tally.Value, source),
-            _ => AnnotateFact(state.DropBuff(convert.Consumed), outcome, ReadStackEnergyCertainty(convert.Energy), "amount unknown"));
+            _ => AnnotateFact(state.EndBuff(build.Catalog.Glossary, convert.Consumed), outcome, ReadStackEnergyCertainty(convert.Energy), "amount unknown"));
     }
 
     private static Application SpendAllForEnergy(
@@ -103,7 +103,7 @@ public static class OutcomeApplication
             ? perStackEnergy.Amount.ReadCertainty()
             : values.AtSure.IsSome() || values.WithChance.IsSome() ? Certainty.Known : Certainty.Unknown;
         var caveat = certainty == Certainty.Unknown ? "amount unknown" : "";
-        return new Application(state.DropBuff(convert.Consumed), new AppliedOutcome(outcome, certainty, JoinCaveats(caveat), Optional.Some(spend)), []);
+        return new Application(state.EndBuff(build.Catalog.Glossary, convert.Consumed), new AppliedOutcome(outcome, certainty, JoinCaveats(caveat), Optional.Some(spend)), []);
     }
 
     private static Certainty ReadStackEnergyCertainty(StackEnergy energy) =>
@@ -216,9 +216,9 @@ public static class OutcomeApplication
     /// <summary>
     /// Removes the buff and its declaration; a counted buff spends every stack, sure and chance ones (ADRs D33).
     /// </summary>
-    private static Application RemoveBuff(GameState state, Outcome outcome, Outcome.RemoveBuff remove) =>
+    private static Application RemoveBuff(ValidatedBuild build, GameState state, Outcome outcome, Outcome.RemoveBuff remove) =>
         state.HasBuff(remove.Status)
-            ? new Application(state.DropBuff(remove.Status), new AppliedOutcome(outcome, Certainty.Known, Optional.None<string>(), ReadWholeSpend(state, remove.Status)), [])
+            ? new Application(state.EndBuff(build.Catalog.Glossary, remove.Status), new AppliedOutcome(outcome, Certainty.Known, Optional.None<string>(), ReadWholeSpend(state, remove.Status)), [])
             : KeepUnchanged(state, outcome, "was not active");
 
     private static Optional<StackSpend> ReadWholeSpend(GameState state, StatusId status) =>
@@ -244,7 +244,7 @@ public static class OutcomeApplication
         var applied = new AppliedOutcome(outcome, Certainty.Known, Optional.None<string>(), Optional.Some(spent));
         if (sure + chance == 0)
         {
-            return new Application(state.DropBuff(spend.Status), applied, []);
+            return new Application(state.EndBuff(build.Catalog.Glossary, spend.Status), applied, []);
         }
 
         var change = new StackChange(

@@ -1,0 +1,5 @@
+# Spark of Recharge and nothing else: its trigger is a declared step, so it needs no ability.
+name: "E2E - Spark of Recharge alone"
+class: hunter
+subclass: arc
+fragments: [spark-of-recharge]

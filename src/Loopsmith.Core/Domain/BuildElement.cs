@@ -51,7 +51,8 @@ public enum StatCheckSeverity { Warning, Info }
 /// it when Bungie's data has no icon for it (Unraveling Rounds); <see cref="Counted"/>: the engine counts its stacks
 /// (Armor Charge, ADRs D33), where any other stacking status is only declared at its maximum (ADRs D3); <see cref="Decay"/>
 /// how it loses stacks over time, as the source says it — a fact a loop never applies; <see cref="Adjective"/> the word for
-/// a target that has a debuff, when the suffix rule doesn't give it (Freeze → Frozen).
+/// a target that has a debuff, when the suffix rule doesn't give it (Freeze → Frozen); <see cref="EndsWith"/> the buff whose
+/// end ends it too (Spark of Recharge's buff ends with Critical health).
 /// </summary>
 public sealed record StatusDefinition(
     StatusId Id,
@@ -64,7 +65,8 @@ public sealed record StatusDefinition(
     Optional<DrawnIcon> DrawnIcon,
     bool Counted,
     Optional<string> Decay,
-    Optional<string> Adjective);
+    Optional<string> Adjective,
+    Optional<StatusId> EndsWith);
 
 /// <summary>A pickup of the glossary (Ionic Trace, Orb of Power); <see cref="Trait"/> as for a status.</summary>
 public sealed record PickupDefinition(PickupId Id, string Name, Affinity Affinity, bool CollectsAutomatically, Optional<ItemHash> Trait);

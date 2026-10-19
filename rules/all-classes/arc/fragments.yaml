@@ -185,10 +185,20 @@ elements:
     affinity: arc
     hash: 1727069375
     description: "On reaching critical health, your grenade and melee regenerate 400% [PvP 200%] faster until your shields are full again."
-    source: compendium/2026-10-13/Arc#22
-    inert: "A faster regeneration is a rate, which Loopsmith doesn't show yet, so reaching critical health shows nothing for it."
-    rules: []
-    passives: []
+    source: compendium/2026-10-19/Arc#22
+    # Ability regeneration, not health (Arc#22: "Additional Base Grenade and Melee Ability Regeneration
+    # Rate"). Its buff ends with Critical health (the glossary's endsWith): your shields are full again.
+    rules:
+      - id: spark-of-recharge-1
+        on: { criticalHealth: {} }
+        then:
+          - { applyBuff: spark-of-recharge }
+        reason: "Reaching critical health gives you Spark of Recharge until your shields are full again."
+    passives:
+      - id: spark-of-recharge-2
+        effect: { fasterRegeneration: { abilities: [grenade, melee], rate: "400% [200%]" } }
+        when: [ { has: spark-of-recharge } ]
+        reason: "While you have Spark of Recharge your grenade and melee regenerate 400% faster."
 
   - id: spark-of-volts
     name: Spark of Volts
