@@ -64,7 +64,7 @@ Same tokens everywhere: loop files, web share links and a golden test's scenario
 (`builds/skip-grenade-hunter/scenario.txt`: one token per line or comma-separated; `#` starts a comment):
 
 `grenade[:hold]|melee[:slide|air]|super[:air|combo|guard][:hit|kill[:N]]` · `class[:air]` · `kinetic|energy|power[:hit|kill[:N]]` ·
-`kinetic|energy|power:reload` · `finisher` · `pickup:<pickup-id>` · `max:<status-id>` · `end:<status-id>` · `pack:new` · `health:critical` — and last, an option:
+`kinetic|energy|power:reload` · `finisher` · `pickup:<pickup-id>` · `max:<status-id>` · `end:<status-id>` · `pack:new` · `health:critical` · `health:hit` — and last, an option:
 `:last` on a grenade, melee or class ability step, `:shield` and `:precision` on a weapon step
 
 Tokens are read case-insensitively. Errors read `Unknown action '<token>'. Use …` or
@@ -160,11 +160,19 @@ has ended, that the next enemies are a new pack — the player declares as a ste
   first hit isn't credited with debuffs the new group doesn't have; a loop against one boss leaves it
   out.
 * `health:critical` — "Critical health": you reached critical health (your shields broke). Loopsmith models no
-  damage you take (ADRs D1), so the player declares it. It raises `CriticalHealth`, so every `criticalHealth` rule
-  fires and cascades, and it always holds; it leaves nothing in the state. Emergency Reinforcement reacts to it: it
+  damage you take (ADRs D1), so the player declares it. It puts **Critical health** on you (among your buffs) until
+  `end:critical-health` ("Critical health ends": your shields are full again), and raises `CriticalHealth`, so every
+  `criticalHealth` rule fires and cascades. It holds unless you are already at critical health
+  (`Already at critical health — declare it ended first (end:critical-health).`): a loop that repeats ends it before
+  it reaches it again. Emergency Reinforcement reacts to it: it
   spends your Armor Charge for its buff, whose 10% damage resistance (PvP `?`) counts in the step's damage
   resistance until `end:emergency-reinforcement` — for sure with x3 or more sure Armor Charge, as a *(chance)* when
   only chance stacks make it x3, not at all below (ADRs D33); its 6 | 9 | 12 s go by the stacks it spent.
+* `health:hit` — "Hit at critical health": while at critical health, you are damaged. The player declares it (ADRs D1,
+  D3), as often as the loop needs. It raises `HitAtCriticalHealth`, so every `hitAtCriticalHealth` rule fires and
+  cascades, and changes no state. It holds only while Critical health is on you, so a step before it must reach it
+  (`Not at critical health — declare Critical health (health:critical) first.`). Spark of Instinct reacts to it: its
+  burst jolts the pack (its damage and the time between bursts are facts in its description).
 
 **Armor Charge is counted** (ADRs D33). Its stacks are part of the state: the **sure** ones, from rules that always
 fire, and the **chance** ones, from chance rules and from what they set off (an orb only a chance rule dropped — a
@@ -179,17 +187,20 @@ x1) takes sure stacks first. The decay (one stack every 10 s, slower with Time D
 isn't modelled. The next pass starts from what the last one ended with.
 
 **Written form.** Written tokens are lower-case and carry the count only when it is more than one
-(`grenade:kill`, `kinetic`, `grenade:kill:3`, `finisher`, `max:bolt-charge`, `end:amplified`, `pack:new`, `health:critical`). Every token written
+(`grenade:kill`, `kinetic`, `grenade:kill:3`, `finisher`, `max:bolt-charge`, `end:amplified`, `pack:new`, `health:critical`, `health:hit`). Every token written
 reads back as the same action (`grenade:hit` is written `grenade`). Labels read "Grenade (💀 kill 3)",
 "Festival Flight (🥊 hit 5)" (a weapon by its build name), "Sliding melee (💀 kill)" — 💀 marks a kill step and 🥊 a
 hit step, in the steps' titles and the HUD's buttons alike — "Festival Flight (💀 kill · 🛡 shield)", "Festival Flight (💀 kill ·
 🎯 precision)", "Festival Flight (💀 kill · 🛡 shield · 🎯 precision)", "Grenade (💀 kill ·
 ⬜ spend fully)", "Class ability (⬜ spend fully)", "Class ability (in the air)",
-"Finisher", "Pick up Orb of Power", "Bolt Charge at max (x10)", "Amplified ends", "New pack", "Critical health".
+"Finisher", "Pick up Orb of Power", "Bolt Charge at max (x10)", "Amplified ends", "New pack", "Critical health",
+"Hit at critical health", "Critical health ends".
 
 **What the web designer offers.** Only steps that can happen: the abilities, the equipped
-weapons, the pickups on the ground and the **states you declare** — `pack:new` always, `health:critical` when an
-equipped rule reacts to it (the designer shows it with the buffs **On you**), `max:` for
+weapons, the pickups on the ground and the **states you declare** — `pack:new` always, `health:critical` while you
+aren't at critical health, when an equipped rule reacts to it or to a hit at it (the designer shows it with the buffs
+**On you**), `health:hit` while you are, when an equipped rule reacts to it (its **hit** button sits beside
+"Critical health" **On you**, with **ends**), `max:` for
 each active buff that stacks and isn't at max yet, `end:` for each active status. A secondary (`melee:slide`, `class:air`)
 is offered only when an equipped rule names it (without one it fires exactly what the press fires); `finisher` (with
 the abilities) always, as the game always allows one — in a build where no rule reacts to a finisher and none fires on

@@ -31,6 +31,7 @@ public static class IconFinding
                 max => catalog.FindKeywordIcon(new KeywordRef.Status(max.Status)),
                 end => catalog.FindKeywordIcon(new KeywordRef.Status(end.Status)),
                 _ => Optional.None<IconRef>(),
+                _ => Optional.None<IconRef>(),
                 _ => Optional.None<IconRef>()),
             _ => catalog.FindClassFinisher(build.Class).Bind(item => item.Icon).Map(ToManifestIcon),
             reload => FindWeaponIcon(catalog, build, reload.Slot).Map(ToManifestIcon));

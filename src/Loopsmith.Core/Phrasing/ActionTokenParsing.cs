@@ -13,7 +13,7 @@ public static class ActionTokenParsing
     private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
 
     public const string Grammar =
-        "grenade[:hold]|melee[:slide|air]|super[:air|combo|guard][:hit|kill[:N]] (grenade and melee [:last]), class[:air][:last], kinetic|energy|power[:hit|kill[:N]][:shield][:precision], kinetic|energy|power:reload, finisher, pickup:<id>, max:<status>, end:<status>, pack:new, health:critical";
+        "grenade[:hold]|melee[:slide|air]|super[:air|combo|guard][:hit|kill[:N]] (grenade and melee [:last]), class[:air][:last], kinetic|energy|power[:hit|kill[:N]][:shield][:precision], kinetic|energy|power:reload, finisher, pickup:<id>, max:<status>, end:<status>, pack:new, health:critical, health:hit";
 
     /// <summary>
     /// <c>grenade</c>, <c>grenade:kill</c>, <c>grenade:kill:3</c>, <c>kinetic:hit:5</c>, <c>class</c>, <c>class:air</c> (an air move
@@ -22,7 +22,8 @@ public static class ActionTokenParsing
     /// <c>super:guard</c> (Arc Staff's heavy attack in the air, Palm Strike, the guard) — <c>finisher</c> (a finisher on one enemy
     /// of the pack: it kills it),
     /// <c>pickup:orb-of-power</c>, and the states the player declares (ADRs D3): <c>max:bolt-charge</c>, <c>end:amplified</c>,
-    /// <c>pack:new</c> (the next enemies are a new pack, ADRs D7), <c>health:critical</c> (you reached critical health).
+    /// <c>pack:new</c> (the next enemies are a new pack, ADRs D7), <c>health:critical</c> (you reached critical health),
+    /// <c>health:hit</c> (you are damaged while at critical health).
     /// Without <c>:kill</c> the hit only damages; without a count it hits one enemy. The count is validated here, at the
     /// boundary (<see cref="TargetCount"/>: 1..20); whether a declaration holds is the engine's (a blocked step).
     /// An option goes last (ADRs D36): <c>:last</c>, the use that spends the grenade's, melee's or class ability's last
@@ -63,6 +64,7 @@ public static class ActionTokenParsing
                 Ok(new PlayerAction.Declare(new StateDeclaration.EndStatus(ended))),
             ("pack", _) when parts.Length == 2 && parts[1] == "new" => Ok(new PlayerAction.Declare(new StateDeclaration.NewPack())),
             ("health", _) when parts.Length == 2 && parts[1] == "critical" => Ok(new PlayerAction.Declare(new StateDeclaration.CriticalHealth())),
+            ("health", _) when parts.Length == 2 && parts[1] == "hit" => Ok(new PlayerAction.Declare(new StateDeclaration.HitAtCriticalHealth())),
             _ => FailUnknown(token),
         };
     }

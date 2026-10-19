@@ -60,7 +60,8 @@ public static class TriggerMatching
                 && struck.Targets.Value >= killBetween.AtLeast.Value
                 && struck.Targets.Value < killBetween.FewerThan.Value
                 && IsZoneMet(killBetween.Needs, struck.Zone),
-            reload => gameEvent is GameEvent.Reloaded reloaded && reload.Via.IsMatchedBy(reloaded.Origin, superType));
+            reload => gameEvent is GameEvent.Reloaded reloaded && reload.Via.IsMatchedBy(reloaded.Origin, superType),
+            _ => gameEvent is GameEvent.HitAtCriticalHealth);
 
     /// <summary>
     /// Whether the pattern matches the origin. A finisher has no damage type and is no weapon or ability: only "any
@@ -115,7 +116,8 @@ public static class TriggerMatching
             energyExpended: _ => false,
             damageFewer: _ => false,
             killBetween: kill => kill.Needs is not ZoneNeed.AnyZone,
-            reload: _ => false);
+            reload: _ => false,
+            hitAtCriticalHealth: _ => false);
 
     /// <summary>The statuses a trigger needs on the target (empty when it doesn't care).</summary>
     public static ImmutableArray<StatusId> ListRequiredTargetStatuses(this Trigger trigger) =>
@@ -139,7 +141,8 @@ public static class TriggerMatching
             energyExpended: _ => ImmutableArray<StatusId>.Empty,
             damageFewer: _ => ImmutableArray<StatusId>.Empty,
             killBetween: _ => ImmutableArray<StatusId>.Empty,
-            reload: _ => ImmutableArray<StatusId>.Empty);
+            reload: _ => ImmutableArray<StatusId>.Empty,
+            hitAtCriticalHealth: _ => ImmutableArray<StatusId>.Empty);
 
     /// <summary>The damage source a hit, kill, shield or reload trigger names (its <c>via</c>); none for the other triggers.</summary>
     public static Optional<DamageSource> FindVia(this Trigger trigger) =>
@@ -163,7 +166,8 @@ public static class TriggerMatching
             energyExpended: _ => Optional.None<DamageSource>(),
             damageFewer: damageFewer => Optional.Some(damageFewer.Via),
             killBetween: killBetween => Optional.Some(killBetween.Via),
-            reload: reload => Optional.Some(reload.Via));
+            reload: reload => Optional.Some(reload.Via),
+            hitAtCriticalHealth: _ => Optional.None<DamageSource>());
 
     /// <summary>
     /// The ability use a trigger names, when it names one: a cast of that use (<c>abilityCast: { ability: classAbility,

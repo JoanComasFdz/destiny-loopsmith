@@ -1,0 +1,5 @@
+# Spark of Instinct and nothing else: its trigger is a declared step, so it needs no ability.
+name: "E2E - Spark of Instinct alone"
+class: hunter
+subclass: arc
+fragments: [spark-of-instinct]

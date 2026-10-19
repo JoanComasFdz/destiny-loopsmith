@@ -77,7 +77,7 @@ public partial record PlayerAction
 
 /// <summary>
 /// What the player declares as a step of its own (ADRs D3): <c>max:&lt;status&gt;</c>, <c>end:&lt;status&gt;</c>,
-/// <c>pack:new</c>, <c>health:critical</c>.
+/// <c>pack:new</c>, <c>health:critical</c>, <c>health:hit</c>.
 /// </summary>
 [Union]
 public partial record StateDeclaration
@@ -85,7 +85,18 @@ public partial record StateDeclaration
     partial record ReachMax(StatusId Status);    // a stacking buff on you is at its maximum
     partial record EndStatus(StatusId Status);   // a buff on you, or a debuff on the pack, has ended
     partial record NewPack();                    // the next enemies are a new pack, with no debuffs (ADRs D7)
-    partial record CriticalHealth();             // your shields broke: you are at critical health (no damage is modelled, ADRs D1)
+    partial record CriticalHealth();             // your shields broke: you are at critical health until you declare it ended (no damage is modelled, ADRs D1)
+    partial record HitAtCriticalHealth();        // you are damaged while at critical health (no damage is modelled, ADRs D1)
+}
+
+/// <summary>
+/// The statuses the engine itself puts on you (ADRs D3): reaching critical health (<c>health:critical</c>) puts
+/// <see cref="CriticalHealth"/> on you, until the player declares it ended (<c>end:critical-health</c>: your shields are
+/// full again); being damaged at critical health (<c>health:hit</c>) needs it. The glossary names it.
+/// </summary>
+public static class DeclaredStatuses
+{
+    public static readonly StatusId CriticalHealth = StatusId.From("critical-health");
 }
 
 /// <summary>A concrete thing that happened — matched against <see cref="Trigger"/> patterns.</summary>
@@ -104,6 +115,7 @@ public partial record GameEvent
     partial record ShieldBroken(DamageOrigin Origin);   // a weapon step the player says breaks a combatant's shield (kinetic:kill:shield), after its first hit
     partial record EnergyExpended(AbilityKind Kind);    // a use that spends the ability's last charge: every use with one charge, a grenade:last with more (ADRs D36)
     partial record Reloaded(DamageOrigin Origin);       // a weapon reloaded: a Reload step, or an outcome that reloads it (ADRs D37)
+    partial record HitAtCriticalHealth();         // only from a declared health:hit step, while at critical health
 }
 
 /// <summary>

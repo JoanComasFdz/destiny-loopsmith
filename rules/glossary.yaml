@@ -35,6 +35,13 @@ statuses:
   # its last cast; while it lasts, the Super's damage resistance counts (ADRs D29).
   - { id: super, name: Super, kind: buff, affinity: neutral }
 
+  # You are at critical health: your shields are broken (0 Shield HP, which the Compendium calls
+  # Critical Health: compendium/2026-10-19/Weapon Perks#91, Eye of the Storm; the Game Mechanics tab
+  # uses the term but defines it in no row). The player declares reaching it (`health:critical`) and
+  # its end, shields full again (`end:critical-health`, ADRs D3); the engine puts it on you, no rule
+  # does. Being damaged while at it is the `health:hit` step. No duration: it lasts until you heal.
+  - { id: critical-health, name: Critical health, kind: buff, affinity: neutral }
+
   # Base maximum 3: compendium/2026-10-09/Game Mechanics#94. Charged Up raises a build's cap to
   # 4|5|6 by copies (the `charged-up` mod's raiseMaxStacks passive; Clarity 2577472338 agrees). Its
   # decay (1 stack every 10 s while a passive mod is equipped, same row) is a fact of the game:

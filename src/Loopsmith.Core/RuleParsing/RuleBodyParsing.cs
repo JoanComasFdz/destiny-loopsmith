@@ -26,7 +26,7 @@ internal static class RuleBodyParsing
     private static readonly ImmutableArray<string> DamageKeys = ["via", "targetHas", "atLeast", "fewerThan", "within", "sustained"];
 
     private static readonly ImmutableArray<string> TriggerNames =
-        ["abilityCast", "kill", "damage", "pickUp", "buffGained", "stacksMaxed", "finisher", "criticalHealth", "shieldBroken", "energyExpended", "reload"];
+        ["abilityCast", "kill", "damage", "pickUp", "buffGained", "stacksMaxed", "finisher", "criticalHealth", "shieldBroken", "energyExpended", "reload", "hitAtCriticalHealth"];
 
     private static readonly ImmutableArray<string> ConditionNames = ["has", "lacks", "targetHas", "atMax", "belowMax", "during", "holds"];
 
@@ -85,6 +85,7 @@ internal static class RuleBodyParsing
             "shieldBroken" => ReadShieldBrokenTrigger(scope, entry.Value),
             "energyExpended" => ReadEnergyExpendedTrigger(entry.Value),
             "reload" => ReadReloadTrigger(scope, entry.Value),
+            "hitAtCriticalHealth" => ReadHitAtCriticalHealthTrigger(entry.Value),
             _ => entry.Value.FailAt<Trigger>(DescribeUnknown("trigger", entry.Key, TriggerNames)),
         });
 
@@ -99,6 +100,15 @@ internal static class RuleBodyParsing
         value.ToMap().Bind(map => map.Node.Children.Count == 0
             ? Succeed<Trigger>(new Trigger.CriticalHealth())
             : map.FailAt<Trigger>($"{map.Label} takes no keys: write {{ criticalHealth: {{}} }}"));
+
+    /// <summary>
+    /// <c>{ hitAtCriticalHealth: {} }</c>: the player declares they are damaged while at critical health (<c>health:hit</c>,
+    /// only while critical health is on you). It takes no keys.
+    /// </summary>
+    private static Result<Trigger, Errors> ReadHitAtCriticalHealthTrigger(YamlValue value) =>
+        value.ToMap().Bind(map => map.Node.Children.Count == 0
+            ? Succeed<Trigger>(new Trigger.HitAtCriticalHealth())
+            : map.FailAt<Trigger>($"{map.Label} takes no keys: write {{ hitAtCriticalHealth: {{}} }}"));
 
     /// <summary>
     /// <c>{ shieldBroken: {} }</c> or <c>{ shieldBroken: { via: weapon } }</c>: a combatant's shield broken by that source

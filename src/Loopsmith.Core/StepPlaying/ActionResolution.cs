@@ -59,13 +59,13 @@ public static class ActionResolution
     }
 
     /// <summary>
-    /// The declarations that hold now (ADRs D3): a new pack (always, ADRs D7), critical health when an equipped rule reacts
-    /// to it (<see cref="ListCriticalHealthDeclarations"/>), <c>max:</c> for each active buff that stacks and isn't at max
+    /// The declarations that hold now (ADRs D3): a new pack (always, ADRs D7), critical health or a hit at it when an
+    /// equipped rule reacts to them (<see cref="ListCriticalHealthDeclarations"/>), <c>max:</c> for each active buff that stacks and isn't at max
     /// yet, <c>end:</c> for each active buff and each debuff on the pack.
     /// </summary>
     public static ImmutableArray<StateDeclaration> ListDeclarations(ValidatedBuild build, GameState state)
     {
-        var criticalHealth = ListCriticalHealthDeclarations(build);
+        var criticalHealth = ListCriticalHealthDeclarations(build, state);
         var glossary = build.Catalog.Glossary;
         var maxes = state.Buffs
             .Where(buff => glossary.IsStacking(buff.Status) && !buff.AtMax)
@@ -76,13 +76,24 @@ public static class ActionResolution
     }
 
     /// <summary>
-    /// "Critical health" (<c>health:critical</c>), when an equipped rule reacts to it (<c>on: { criticalHealth: {} }</c>):
-    /// it always holds, but in a build where nothing reacts to it, it sets nothing off, so it isn't offered.
+    /// "Critical health" (<c>health:critical</c>) while you aren't at it, when an equipped rule reacts to it or to a hit
+    /// at it; "Hit at critical health" (<c>health:hit</c>) while you are, when an equipped rule reacts to it
+    /// (<c>on: { hitAtCriticalHealth: {} }</c>). In a build where nothing reacts to them they set nothing off, so they
+    /// aren't offered; ending critical health is an <c>end:</c> like any buff's.
     /// </summary>
-    public static ImmutableArray<StateDeclaration> ListCriticalHealthDeclarations(ValidatedBuild build) =>
-        build.Equipped.Any(equipped => equipped.Element.Rules.Any(rule => rule.On is Trigger.CriticalHealth))
-            ? [new StateDeclaration.CriticalHealth()]
-            : [];
+    public static ImmutableArray<StateDeclaration> ListCriticalHealthDeclarations(ValidatedBuild build, GameState state)
+    {
+        var rules = build.Equipped.SelectMany(equipped => equipped.Element.Rules).ToImmutableArray();
+        var onReach = rules.Any(rule => rule.On is Trigger.CriticalHealth);
+        var onHit = rules.Any(rule => rule.On is Trigger.HitAtCriticalHealth);
+        var atCritical = state.HasBuff(DeclaredStatuses.CriticalHealth);
+        return (atCritical, onReach || onHit, onHit) switch
+        {
+            (false, true, _) => [new StateDeclaration.CriticalHealth()],
+            (true, _, true) => [new StateDeclaration.HitAtCriticalHealth()],
+            _ => [],
+        };
+    }
 
     /// <summary>The ability a step casts (an offensive ability, the class ability), under way for the whole step; none for any other step.</summary>
     public static Optional<AbilityKind> ReadCast(PlayerAction action) =>
@@ -266,7 +277,27 @@ public static class ActionResolution
             max => DeclareMax(build, state, max.Status),
             end => DeclareEnd(build.Catalog.Glossary, state, end.Status),
             _ => new Opening(state.ReplacePack(), [], []),   // always holds: the next enemies are a new pack
-            _ => new Opening(state, [new PendingEvent.Ready(new GameEvent.CriticalHealth())], []));   // always holds: no damage is modelled (ADRs D1)
+            _ => DeclareCriticalHealth(state),
+            _ => DeclareHitAtCriticalHealth(state));
+
+    /// <summary>
+    /// "Critical health" (ADRs D3): no damage is modelled (ADRs D1), so the player says their shields broke. It puts
+    /// <see cref="DeclaredStatuses.CriticalHealth"/> on you, until the player declares it ended (their shields are full
+    /// again), and <see cref="GameEvent.CriticalHealth"/> cascades. Blocked while already at critical health.
+    /// </summary>
+    private static Opening DeclareCriticalHealth(GameState state) =>
+        state.HasBuff(DeclaredStatuses.CriticalHealth)
+            ? BlockAction(state, $"Already at critical health — declare it ended first (end:{DeclaredStatuses.CriticalHealth}).")
+            : new Opening(state.PutBuff(DeclaredStatuses.CriticalHealth), [new PendingEvent.Ready(new GameEvent.CriticalHealth())], []);
+
+    /// <summary>
+    /// "Hit at critical health" (ADRs D3): the player says they are damaged while at critical health, and
+    /// <see cref="GameEvent.HitAtCriticalHealth"/> cascades. Blocked unless a step before it reached critical health.
+    /// </summary>
+    private static Opening DeclareHitAtCriticalHealth(GameState state) =>
+        state.HasBuff(DeclaredStatuses.CriticalHealth)
+            ? new Opening(state, [new PendingEvent.Ready(new GameEvent.HitAtCriticalHealth())], [])
+            : BlockAction(state, "Not at critical health — declare Critical health (health:critical) first.");
 
     /// <summary>
     /// "Bolt Charge at max" (ADRs D3): the buff is declared at its maximum and <see cref="GameEvent.StacksMaxed"/>

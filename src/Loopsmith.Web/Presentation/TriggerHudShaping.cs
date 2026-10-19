@@ -198,17 +198,13 @@ public static class TriggerHudShaping
     private static ImmutableArray<HudStatus> ListStatuses(ImmutableArray<(KeywordKind Kind, HudStatus Status)> statuses, KeywordKind kind) =>
         [.. statuses.Where(entry => entry.Kind == kind).Select(entry => entry.Status)];
 
-    /// <summary>The status a declaration is about (none: a new pack, critical health, or not a declaration).</summary>
+    /// <summary>The status a declaration is about, whose chip its button sits beside (none: not a declaration, or about no status).</summary>
     private static Optional<StatusId> ReadStatus(PlayerAction action) =>
-        action is PlayerAction.Declare declare
-            ? declare.Declaration.Match(
-                max => Optional.Some(max.Status),
-                end => Optional.Some(end.Status),
-                _ => Optional.None<StatusId>(),
-                _ => Optional.None<StatusId>())
-            : Optional.None<StatusId>();
+        action is PlayerAction.Declare declare ? declare.Declaration.FindDeclaredStatus() : Optional.None<StatusId>();
 
-    /// <summary>"Bolt Charge at max (x10)" → "at max (x10)": the button beside its status's name.</summary>
+    /// <summary>"Bolt Charge at max (x10)" → "at max (x10)", "Hit at critical health" → "hit": the button beside its status's name.</summary>
     private static TriggerButton ToStatusButton(TriggerButton button, string name) =>
-        button with { Caption = button.Label.StartsWith(name + " ", StringComparison.Ordinal) ? button.Label[(name.Length + 1)..] : button.Label };
+        button.Action is PlayerAction.Declare declare
+            ? button with { Caption = declare.Declaration.DescribeStatusCaption(button.Label, name) }
+            : button;
 }
