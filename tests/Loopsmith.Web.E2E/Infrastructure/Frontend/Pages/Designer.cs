@@ -27,6 +27,9 @@ public sealed class Designer(IPage page)
     /// <summary>The Armor box: one piece per armor slot.</summary>
     public ArmorBox Armor { get; } = new(page);
 
+    /// <summary>The item details popup, opened by an item's square.</summary>
+    public ItemInfoDialog ItemDetails { get; } = new(page);
+
     /// <summary>The subclass editor, opened by ⋯ on the Subclass box.</summary>
     public SubclassEditor SubclassEditor { get; } = new(page);
 

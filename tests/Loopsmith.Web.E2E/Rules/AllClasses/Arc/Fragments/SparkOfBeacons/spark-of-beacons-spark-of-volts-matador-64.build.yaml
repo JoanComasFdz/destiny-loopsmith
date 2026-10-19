@@ -1,0 +1,7 @@
+# Spark of Beacons, with Spark of Volts (its finisher makes you Amplified) and Matador 64 (a Special Arc shotgun with no rules of its own) to kill with.
+name: "E2E - Spark of Beacons with Spark of Volts and Matador 64"
+class: hunter
+subclass: arc
+fragments: [spark-of-beacons, spark-of-volts]
+weapons:
+  - { hash: 1518956169, perks: [] } # Matador 64

@@ -203,6 +203,16 @@ public sealed class GameNotationParsingTests
     }
 
     [Fact]
+    public void A_weapon_of_an_ammo_type_may_name_its_element_too()
+    {
+        Assert.Equal(new DamageSource.WeaponOfAmmo(AmmoType.Special, Optional.None<DamageType>()), AssertOk(GameNotationParsing.ParseDamageSource("weapon:special")));
+        Assert.Equal(new DamageSource.WeaponOfAmmo(AmmoType.Heavy, Optional.Some(DamageType.Arc)), AssertOk(GameNotationParsing.ParseDamageSource("weapon:heavy:arc")));
+        Assert.Equal(new DamageSource.WeaponOfAmmo(AmmoType.Primary, Optional.None<DamageType>()), AssertOk(GameNotationParsing.ParseDamageSource("weapon:primary")));
+        Assert.Contains("'prismatic' is not one of", AssertError(GameNotationParsing.ParseDamageSource("weapon:special:prismatic")));
+        Assert.Contains("primary, special, heavy", AssertError(GameNotationParsing.ParseDamageSource("weapon:power")));
+    }
+
+    [Fact]
     public void Parses_a_compendium_provenance()
     {
         var provenance = AssertOk(GameNotationParsing.ParseProvenance("compendium/2026-10-09/Arc#54"));

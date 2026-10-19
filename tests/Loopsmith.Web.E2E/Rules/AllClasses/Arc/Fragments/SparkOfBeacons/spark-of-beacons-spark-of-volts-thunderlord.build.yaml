@@ -1,0 +1,7 @@
+# Spark of Beacons, with Spark of Volts (its finisher makes you Amplified) and Thunderlord (a Heavy Arc machine gun) to kill with.
+name: "E2E - Spark of Beacons with Spark of Volts and Thunderlord"
+class: hunter
+subclass: arc
+fragments: [spark-of-beacons, spark-of-volts]
+weapons:
+  - { hash: 3325463374, perks: [] } # Thunderlord

@@ -92,7 +92,7 @@ public sealed class ManifestSavingTests
         var weapon = new ManifestItem(
             ItemHash.From(100u),
             "Zeta Rifle",
-            new ManifestKind.Weapon(WeaponSlot.Energy, Optional.Some(DamageType.Arc), Optional.None<AmmoType>(), [new TraitColumn([ItemHash.From(7u), ItemHash.From(8u)])], Optional.Some(ItemHash.From(20u)), Optional.None<ItemHash>(), Optional.Some(ItemHash.From(485622768u)), []),
+            new ManifestKind.Weapon(WeaponSlot.Energy, Optional.Some(DamageType.Arc), Optional.Some(AmmoType.Special), [new TraitColumn([ItemHash.From(7u), ItemHash.From(8u)])], Optional.Some(ItemHash.From(20u)), Optional.None<ItemHash>(), Optional.Some(ItemHash.From(485622768u)), []),
             Optional.Some("Pulse Rifle"),
             Optional.Some(ItemTier.Legendary),
             Optional.None<string>(),

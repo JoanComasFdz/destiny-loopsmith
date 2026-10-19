@@ -29,6 +29,7 @@ public sealed class RepoFileValidationTests
     private static readonly ImmutableDictionary<string, ImmutableArray<uint>> FullManifestOnly = new Dictionary<string, ImmutableArray<uint>>
     {
         ["tests/Loopsmith.Web.E2E/Scenarios/ImportExport/WeaponByHash/ogma-pr6-by-hash.build.yaml"] = [2342054803],
+        ["tests/Loopsmith.Web.E2E/Rules/AllClasses/Arc/Fragments/SparkOfBeacons/spark-of-beacons-spark-of-volts-matador-64.build.yaml"] = [1518956169],
         ["tests/Loopsmith.Web.E2E/Scenarios/Loop/Weapons/EnemyCount/bellowing-giant-reapers-tithe.build.yaml"] = [412265080],
         ["tests/Loopsmith.Web.E2E/Scenarios/Loop/Weapons/EnemyCount/crux-celeritas-reapers-tithe-strand-siphon.build.yaml"] = [391069235],
         ["tests/Loopsmith.Web.E2E/Scenarios/Loop/Weapons/EnemyCount/festival-flight-one-for-all-ogma-pr6.build.yaml"] = [2342054803],

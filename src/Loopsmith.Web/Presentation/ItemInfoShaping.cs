@@ -213,7 +213,10 @@ public static class ItemInfoShaping
             catalog.Manifest.FindItem(perk.Hash).Bind(ToIcon),
             perk.Element.IsSome() ? "Artifact perk" : "Artifact perk · not in Loopsmith's rules yet");
 
-    /// <summary>An exotic weapon: its intrinsic perk, each perk its columns hold (or "?"), the perks the build names, its catalyst.</summary>
+    /// <summary>
+    /// A weapon, its ammo type in its type line: its intrinsic perk, each perk its columns hold (or "?"), the perks the
+    /// build names, its catalyst.
+    /// </summary>
     private static ItemInfo ShapeWeapon(ValidatedBuild build, WeaponLoadout weapon, int index)
     {
         var catalog = build.Catalog;
@@ -228,7 +231,7 @@ public static class ItemInfoShaping
             catalyst => DescribeCatalystSection(build, catalyst, index, true)));
         return new ItemInfo(
             weapon.Name,
-            item.Match(known => DescribeType(catalog, known.Value), _ => weapon.Slot.DescribeWeaponSlot()),
+            AddAmmo(item.Match(known => DescribeType(catalog, known.Value), _ => weapon.Slot.DescribeWeaponSlot()), weapon.Ammo),
             item.Bind(ToIcon),
             item.Bind(known => known.Tier),
             weapon.Type.ToAffinity(),
@@ -313,6 +316,10 @@ public static class ItemInfoShaping
                     ? $"{tier.Value} {type.Value}"
                     : type.Value,
                 _ => item.Name);
+
+    /// <summary>A weapon's type line with its ammo type after it, "Exotic Machine Gun · Heavy" (as it was when the manifest doesn't say).</summary>
+    private static string AddAmmo(string typeLine, Optional<AmmoType> ammo) =>
+        ammo.Match(known => $"{typeLine} · {known.Value}", _ => typeLine);
 
     private static Optional<string> ToIcon(ManifestItem item) =>
         item.Icon.Map(LoadoutShaping.ToIconUrl);

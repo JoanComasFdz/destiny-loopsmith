@@ -24,7 +24,7 @@ public sealed class ManifestJoinTests
         var weapon = Assert.IsType<ManifestKind.Weapon>(excerpt.Items[ItemHash.From(100u)].Kind);
         var armor = Assert.IsType<ManifestKind.Armor>(excerpt.Items[ItemHash.From(200u)].Kind);
 
-        Assert.Equal((WeaponSlot.Power, Optional.Some(DamageType.Arc)), (weapon.Slot, weapon.DamageType));
+        Assert.Equal((WeaponSlot.Power, Optional.Some(DamageType.Arc), Optional.Some(AmmoType.Heavy)), (weapon.Slot, weapon.DamageType, weapon.Ammo));
         Assert.Equal([[10u, 11u], [12u]], weapon.Traits.Select(column => column.Options.Select(hash => hash.Value)));
         Assert.Equal((Optional.Some(ItemHash.From(20u)), Optional.Some(ItemHash.From(30u))), (weapon.Intrinsic, weapon.Catalyst));
         Assert.Equal(Optional.Some(ItemHash.From(2611060930u)), weapon.Breaker);   // none of its own: its frame's perk is "[Disruption] Overload"
@@ -169,7 +169,7 @@ public sealed class ManifestJoinTests
     private static string DescribeKind(ManifestKind kind) =>
         kind switch
         {
-            ManifestKind.Weapon weapon => $"weapon {weapon.Slot} {weapon.DamageType.Match(type => type.Value.ToString(), _ => "-")} "
+            ManifestKind.Weapon weapon => $"weapon {weapon.Slot} {weapon.DamageType.Match(type => type.Value.ToString(), _ => "-")} {weapon.Ammo.Match(ammo => ammo.Value.ToString(), _ => "-")} "
                 + $"[{string.Join(" / ", weapon.Traits.Select(column => string.Join(",", column.Options.Select(hash => hash.Value))))}] "
                 + $"intrinsic {weapon.Intrinsic.Match(hash => hash.Value.Value.ToString(), _ => "-")} catalyst {weapon.Catalyst.Match(hash => hash.Value.Value.ToString(), _ => "-")} "
                 + $"mods [{string.Join(",", weapon.Mods.Select(hash => hash.Value))}]",
@@ -197,7 +197,7 @@ public sealed class ManifestJoinTests
 
         private const string Items = """
             {
-              "100": { "displayProperties": { "name": "Test Thunder", "icon": "/w.jpg" }, "iconWatermark": "/season.png", "itemTypeDisplayName": "Machine Gun", "inventory": { "bucketTypeHash": 1, "tierType": 6 }, "defaultDamageType": 2,
+              "100": { "displayProperties": { "name": "Test Thunder", "icon": "/w.jpg" }, "iconWatermark": "/season.png", "itemTypeDisplayName": "Machine Gun", "inventory": { "bucketTypeHash": 1, "tierType": 6 }, "defaultDamageType": 2, "equippingBlock": { "ammoType": 3 },
                        "sockets": { "socketEntries": [ { "socketTypeHash": 71, "singleInitialItemHash": 20 }, { "socketTypeHash": 70, "randomizedPlugSetHash": 80 }, { "socketTypeHash": 70, "singleInitialItemHash": 12 }, { "socketTypeHash": 72, "singleInitialItemHash": 31 } ],
                                     "socketCategories": [ { "socketCategoryHash": 8, "socketIndexes": [0] }, { "socketCategoryHash": 7, "socketIndexes": [1, 2, 3] } ] } },
               "10": { "displayProperties": { "name": "Lightning", "description": "Fires  faster." }, "itemTypeDisplayName": "Trait", "plug": { "plugCategoryIdentifier": "frames" } },
