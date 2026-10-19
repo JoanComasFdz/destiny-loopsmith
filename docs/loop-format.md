@@ -268,6 +268,11 @@ its own, PvE only (PvP 0%): *Arc combatants* (Arc Resistance, or Harmonic Resist
 within 5 m*, *Combatants beyond 30 m*, *Combatants' area, blast and explosive damage*, all damage's sources and its own
 together. A source whose value is "?" makes its total "?". Tapping the title (*▸ Damage resistance*) lists each row's
 sources with their PvE and PvP values (each opens its details on a tap) and the formula; tapping it again hides them.
+Under it, when any holds, the **damage bonus** right then: a row for each damage source a bonus makes harder (*Melee*:
+Combination Blow while it is on you; *Bolt Charge*: Flashover, always; *Arc weapon*: Arc Weapon Surge while you hold
+Armor Charge), with each source's own value, never added up ("+50%"; one the rules don't know, "?", never 0). Tapping
+its title (*▸ Damage bonus*) lists each row's sources with their values, each opening its details on a tap; a status's own
+bonus (Combination Blow's) shows here, not in its chip. The trace as text doesn't print it.
 The totals are facts, never read to decide what a step fires; like every percentage the designer shows, they keep up to two decimals (72.98%, 11.25%). The trace as text with its state prints the same four lines, a
 `Resistance` line (`PvE 72.98% · PvP 32.5%  (Guardian 34.5% × Spark of Resistance 25% [PvP 10%] × Woven Mail 45% [PvP
 25%])`) and an `against …` line for each row of its own, then one `While <status>` line for each status that switches
