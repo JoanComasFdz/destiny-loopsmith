@@ -314,6 +314,16 @@ works the PR records them; CI doesn't run, record or build anything for them.
   posts (`github-actions[bot]`, with its footer) are edited. An edit GitHub refuses (a body past 65,536 characters) is
   a warning in the run's log: the new post is up all the same. The `## Scenarios (V<N>)` heading stays inside the
   block, so the versions count on.
+- **And are hidden as Outdated:** after collapsing them, `post-scenarios.py` hides every earlier post as Outdated
+  (GraphQL's `minimizeComment` with `classifier: OUTDATED`, on the comment's REST `node_id`): the timeline shows "This
+  comment was marked as outdated" with "Show comment", and the post is collapsed inside. GitHub streams a new post into
+  an open PR page but doesn't redraw an edited one until a reload, so on PR #155 V1 still looked open next to V2; a
+  hidden post doesn't, and the timeline is shorter. Which posts are already hidden is GraphQL's `isMinimized` (REST
+  doesn't say): a post already hidden is left as it is, and one collapsed but never hidden (before this, or its hide
+  failed) is hidden on the next post. A shrunk post (the PR closed) is never hidden. A hide GitHub refuses, or a failed
+  read of `isMinimized`, is a warning in the run's log, never a red run: the collapse stays, which is why both are done.
+  Only the workflow can do it: a session gets 403 from GraphQL, the workflow's own token doesn't (`pull-requests: write`).
+  `--dry-run` prints each post it would hide.
 - **Failures:** a failing scenario still gets its GIF and its ❌ (the session fixes it before pushing, so it shouldn't
   happen), and never turns the run red. The run is red only when the workflow itself failed: a push that isn't a PR's
   GIFs, or GitHub refused an upload or a post.
