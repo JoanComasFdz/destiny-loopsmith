@@ -11,7 +11,8 @@ Reads <out>/scenarios.json (tools/e2e/record.sh: one entry per run, a scenario p
   rules-hunter-arc-melees-resources, one per rule file: rules/hunter/arc/melees.yaml), created as a pre-release when it
   doesn't exist yet; any other run's is `prs-resources`. The post then shows <out>/what-changed.md as it is (push-gifs.sh --message), or else
   the body of --commit's message without its trailers, or its subject. Each scenario
-  shows once: its title, its Gherkin, then a "🖥️ Desktop" and/or "📱 Mobile" subtitle with that screen's GIF and, below
+  shows once: its title, the flow PNG of the rule its Gherkin names (record.sh's "flow", uploaded once per rule as
+  pr-<n>-v<version>-<rule name>.png next to its GIFs, or a line saying why none was drawn), its Gherkin, then a "🖥️ Desktop" and/or "📱 Mobile" subtitle with that screen's GIF and, below
   it, "▶ Play MP4": both link to the site's player page (e2e-player.html?v=<the MP4's name>, and &r=<its release> for a
   rule release), since GitHub shows no
   player for a video it didn't store itself (a tap on a bare GIF would only download it). It never touches the PR's description. The version is one more than the highest
@@ -98,6 +99,7 @@ def post(args):
         scenario["release"] = find_release(scenario["gif"])
         scenario["asset"] = name_asset(args.pr, version, scenario, ".gif")
         scenario["mp4_asset"] = name_asset(args.pr, version, scenario, ".mp4")
+        scenario["flow_asset"] = name_flow(args.pr, version, scenario)
     upload(args, scenarios)
     changed = read_what_changed(args.out) or describe_commit(read_commit_message(args.commit))
     add_comment(args, write_section(args.repo, version, scenarios, changed))
@@ -125,6 +127,7 @@ def read_scenarios(out):
     for entry in entries:
         entry["file"] = os.path.join(out, entry["gif"])
         entry["mp4_file"] = os.path.join(out, entry["mp4"]) if entry.get("mp4") else None
+        entry["flow_file"] = os.path.join(out, entry["flow"]) if entry.get("flow") else None
     return entries
 
 
@@ -307,11 +310,20 @@ def name_asset(pr, version, scenario, extension):
     return f"{stem[:keep].rstrip('-')}-{digest}{extension}"
 
 
+def name_flow(pr, version, scenario):
+    """pr-<n>-v<version>-<rule name>.png, the flow of the rule a scenario names; None without one. A rule's scenarios and
+    screens share it, and the cleanup keeps each rule's newest like a run's."""
+    return f"pr-{pr}-v{version}-{os.path.basename(scenario['flow'])}" if scenario.get("flow") else None
+
+
 def upload(args, scenarios):
-    """Each run's GIF and MP4 to its release, one upload per release, a rule release created first when it is missing."""
+    """Each run's GIF and MP4, and each rule's flow once, to its release, one upload per release, a rule release created
+    first when it is missing."""
     present = {}
     for scenario in scenarios:
         files = present.setdefault(scenario["release"], [])
+        if has_flow(scenario) and (scenario["flow_file"], scenario["flow_asset"]) not in files:
+            files.append((scenario["flow_file"], scenario["flow_asset"]))
         if os.path.exists(scenario["file"]):
             files.append((scenario["file"], scenario["asset"]))
         else:
@@ -355,6 +367,10 @@ def ensure_release(args, release, gif):
 
 def has_mp4(scenario):
     return scenario["mp4_file"] is not None and os.path.exists(scenario["mp4_file"])
+
+
+def has_flow(scenario):
+    return scenario.get("flow_file") is not None and os.path.exists(scenario["flow_file"])
 
 
 def find_player(repo):
@@ -408,12 +424,14 @@ def is_rerecorded(scenario):
 
 
 def write_scenario(repo, runs, level, why=""):
-    """A scenario's title at <level>, why it is there, its Gherkin, then each screen one level down with its GIF."""
+    """A scenario's title at <level>, why it is there, the flow of the rule it names (or why there is none), its Gherkin,
+    then each screen one level down with its GIF."""
     first = runs[0]
     mark = "❌ " if any(not run["passed"] for run in runs) else ""
     lines = [f"{level} {mark}{first['title']}", ""]
     if why:
         lines += [why, ""]
+    lines += write_flow(repo, first)
     if first.get("gherkin"):
         lines += ["```gherkin", first["gherkin"], "```", ""]
     for run in runs:
@@ -431,6 +449,17 @@ def write_scenario(repo, runs, level, why=""):
         else:
             lines += ["_No recording._", ""]
     return lines
+
+
+def write_flow(repo, scenario):
+    """The flow PNG of the rule a scenario's Gherkin names, from its release; a line saying why when the rule viewer
+    couldn't draw it; nothing for a scenario that names no rule."""
+    if not scenario.get("rule"):
+        return []
+    if has_flow(scenario):
+        url = f"https://github.com/{repo}/releases/download/{scenario.get('release', RELEASE)}/{scenario['flow_asset']}"
+        return [f"![Flow of {scenario['rule']}]({url})", ""]
+    return [f"_No flow drawn for `{scenario['rule']}`: {scenario.get('flowError') or 'not drawn'}_", ""]
 
 
 def read_what_changed(out):

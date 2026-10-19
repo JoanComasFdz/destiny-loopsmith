@@ -2,7 +2,7 @@
 # Pushes the GIFs and MP4s record.sh made to GitHub, for .github/workflows/e2e-videos.yml to post them on the pull request.
 #   tools/e2e/push-gifs.sh [<PR number>] [--out <dir>] [--message <what changed>] [--dry-run]
 # A session can't upload a file to GitHub, but it can push: this pushes e2e-gifs/pr-<n>-<short sha>, the branch's head
-# (already pushed) plus one commit that adds <out>/scenarios.json and its GIFs and MP4s under e2e-gifs/ (and, with
+# (already pushed) plus one commit that adds <out>/scenarios.json and its GIFs, MP4s and rules' flow PNGs under e2e-gifs/ (and, with
 # --message, e2e-gifs/what-changed.md holding it as it is). The workflow
 # uploads them to their release (a rule scenario's, under Rules/<…>/, to its rule group's rules-<…>-resources; any other
 # to prs-resources), posts them on the PR as "## Scenarios (V<N>)" (each GIF with a link to its MP4 in the site's player
@@ -36,8 +36,9 @@ if [ ! -f "$scenarios" ]; then
   echo "$scenarios is missing: run tools/e2e/record.sh first." >&2
   exit 2
 fi
-# Each run's GIF, then its MP4 (a scenarios.json from before the MP4s has none).
-files="$(python3 -c 'import json,sys; [print(e[k]) for e in json.load(open(sys.argv[1])) for k in ("gif", "mp4") if e.get(k)]' "$scenarios")"
+# Each run's GIF, then its MP4 (a scenarios.json from before the MP4s has none), and each rule's flow once (a rule
+# scenario's two screens share it).
+files="$(python3 -c 'import json,sys; [print(f) for f in dict.fromkeys(e[k] for e in json.load(open(sys.argv[1])) for k in ("gif", "mp4", "flow") if e.get(k))]' "$scenarios")"
 if [ -z "$files" ]; then
   echo "No scenario recorded ($scenarios is empty): nothing to push."
   exit 0
@@ -99,12 +100,15 @@ if [ -n "$message" ]; then
 fi
 gifs=0
 mp4s=0
+pngs=0
 while IFS= read -r file; do
   if [ -f "$out/$file" ]; then
     add_file "$out/$file" "$file"
-    case "$file" in *.mp4) mp4s=$((mp4s + 1)) ;; *) gifs=$((gifs + 1)) ;; esac
+    case "$file" in *.mp4) mp4s=$((mp4s + 1)) ;; *.png) pngs=$((pngs + 1)) ;; *) gifs=$((gifs + 1)) ;; esac
   elif [[ $file == *.mp4 ]]; then
     echo "No MP4 at $out/$file: its GIF has no player link."
+  elif [[ $file == *.png ]]; then
+    echo "No flow at $out/$file: its scenario shows none."
   else
     echo "No GIF at $out/$file: its post says \"No recording\"."
   fi
@@ -119,7 +123,7 @@ else
 fi
 commit="$(git commit-tree "$tree" -p HEAD -F "$work/message")"
 
-echo "$gifs GIF(s) and $mp4s MP4(s) of PR #$pr in $(git rev-parse --short "$commit") on $head."
+echo "$gifs GIF(s), $mp4s MP4(s) and $pngs flow PNG(s) of PR #$pr in $(git rev-parse --short "$commit") on $head."
 if [ $dry_run -eq 1 ]; then
   git diff --stat "$head" "$commit"
   echo "Dry run: would push it to $target."

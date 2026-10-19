@@ -2,10 +2,10 @@ name: E2E videos
 
 # The session that works a PR records its added or changed end-to-end scenarios itself (tools/e2e/record.sh) and pushes
 # their GIFs and MP4s with tools/e2e/push-gifs.sh to a throwaway branch e2e-gifs/pr-<n>-<short sha>: the PR's head
-# commit plus one commit that adds e2e-gifs/scenarios.json, the GIFs and the MP4s (and e2e-gifs/what-changed.md, the
-# post's "What changed", when the session gave one). A session can't upload a file to
+# commit plus one commit that adds e2e-gifs/scenarios.json, the GIFs, the MP4s and the flow PNG of each rule a scenario
+# names (and e2e-gifs/what-changed.md, the post's "What changed", when the session gave one). A session can't upload a file to
 # GitHub, so this workflow does only that part: it checks the push, uploads them as pr-<n>-v<version>-<scenario>.gif
-# and .mp4 to their release (a rule scenario's, under Rules/<…>/, to its rule group's rules-<…>-resources pre-release,
+# and .mp4 (a flow as pr-<n>-v<version>-<rule name>.png, shown under its scenario's title) to their release (a rule scenario's, under Rules/<…>/, to its rule group's rules-<…>-resources pre-release,
 # created on its first upload; any other to `prs-resources`), posts them on the PR as a new comment (each GIF with a "▶ Play MP4" link to
 # the site's player page; it never touches the PR's description) and deletes the branch. It builds, tests and records
 # nothing. A push runs the workflow file inside the pushed commit, so the branch carries the PR's own version of this file.
@@ -64,12 +64,12 @@ jobs:
           relation=$(gh api "repos/$GITHUB_REPOSITORY/compare/$parent...$head_sha" --jq .status)
           [ "$relation" = identical ] || [ "$relation" = ahead ] ||
             { echo "::error::The GIFs' commit sits on $parent, which isn't in the history of PR #$PR."; exit 1; }
-      - name: Check the commit only adds scenarios.json, what-changed.md, GIFs and MP4s
+      - name: Check the commit only adds scenarios.json, what-changed.md, GIFs, MP4s and PNGs
         run: |
           bad=0
           while IFS=$'\t' read -r status path; do
-            if [ "$status" != A ] || [[ ! $path =~ ^e2e-gifs/(scenarios\.json|what-changed\.md|[A-Za-z0-9_/-]+\.(gif|mp4))$ ]]; then
-              echo "::error::Not a GIF, an MP4, scenarios.json or what-changed.md added under e2e-gifs/: $status $path"
+            if [ "$status" != A ] || [[ ! $path =~ ^e2e-gifs/(scenarios\.json|what-changed\.md|[A-Za-z0-9_/-]+\.(gif|mp4|png))$ ]]; then
+              echo "::error::Not a GIF, an MP4, a PNG, scenarios.json or what-changed.md added under e2e-gifs/: $status $path"
               bad=1
             elif [[ $path == *.gif ]] && [ "$(head -c 4 "$path")" != GIF8 ]; then
               echo "::error::Not a GIF: $path"
@@ -77,6 +77,10 @@ jobs:
             elif [[ $path == *.mp4 ]] && [ "$(head -c 8 "$path" | tail -c 4)" != ftyp ]; then
               # An MP4 starts with its ftyp box: a 4-byte size, then "ftyp".
               echo "::error::Not an MP4: $path"
+              bad=1
+            elif [[ $path == *.png ]] && [ "$(head -c 8 "$path" | od -An -tx1 | tr -d ' \n')" != 89504e470d0a1a0a ]; then
+              # A PNG starts with its 8-byte signature: \x89 "PNG" \r \n \x1a \n.
+              echo "::error::Not a PNG: $path"
               bad=1
             fi
           done < <(git diff --name-status --no-renames HEAD^ HEAD)

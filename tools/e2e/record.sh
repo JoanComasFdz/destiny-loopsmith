@@ -24,7 +24,10 @@
 # it, <gif name>.mp4 (H.264 at the video's own size: 1280×800, a phone's 780×1688). Both hold their last frame 3 s
 # before they end. The videos are converted one per core at a time. It prints each
 # scenario's startup time (page open → Home shown) and the requests that left for bungie.net, and writes
-# <out>/scenarios.json. Exits non-zero when a scenario failed (its GIF is still written).
+# <out>/scenarios.json. Each rule a recorded scenario's Gherkin names ("# Rule <name>: …") is drawn by the rule viewer
+# (tools/rule-viewer, --rule) as <out>/<domain folder>/<rule name>.png, its "flow" in scenarios.json, which the post shows
+# under the scenario's title; a rule it can't draw is its "flowError" and stops nothing. Exits non-zero when a scenario
+# failed (its GIF is still written).
 # --no-video: the same scenarios against the same locally served publish, unrecorded and unpaced (no E2E_VIDEO_DIR):
 # the fast run while developing. It prints each run's result and time and the requests that left for bungie.net, exits
 # non-zero when a run failed, and leaves the last recording's GIFs, MP4s and scenarios.json in <out> as they are. With
@@ -56,7 +59,7 @@ while [ $# -gt 0 ]; do
     --out) out="$2"; shift 2 ;;
     --no-publish) publish=0; shift ;;
     --no-video) video=0; shift ;;
-    -h|--help) sed -n '2,35p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,38p' "$0"; exit 0 ;;
     *) chosen+=("$1"); shift ;;
   esac
 done
@@ -356,8 +359,44 @@ while IFS= read -r record; do
 done < <(find "$videos" -path "$videos/.raw" -prune -o -name '*.json' -print | sort)
 if [ ${#converting[@]} -gt 0 ]; then wait "${converting[@]}" || true; fi
 
+# Each rule a recorded scenario names (its Gherkin's "# Rule <name>:" line) drawn as its flow, by the rule viewer, next to
+# the scenario's GIFs: <out>/<domain folder>/<rule name>.png, which the post shows under the scenario's title. A rule the
+# viewer can't draw keeps its error for scenarios.json ("flowError") and the recording carries on (docs/hosting.md, "E2E
+# videos on pull requests").
+flow_errors="$out/.flow-errors"
+rm -rf "$flow_errors"
+mkdir -p "$flow_errors"
+flows="$(python3 -c '
+import json, re, sys
+seen = set()
+for path in sys.argv[1:]:
+    r = json.load(open(path))
+    for rule in re.findall(r"^\s*# Rule ([a-z0-9-]+):", r.get("gherkin") or "", re.M):
+        if (r["domain"], rule) not in seen:
+            seen.add((r["domain"], rule))
+            print(r["domain"], rule)
+' "${records[@]}")"
+if [ -n "$flows" ]; then
+  echo "Drawing the rules' flows ($(wc -l <<< "$flows"))…"
+  viewer="$repo/tools/rule-viewer/Loopsmith.RuleViewer"
+  if dotnet build "$viewer" -c Release --nologo -v q > "$flow_errors/.build.log" 2>&1; then
+    while read -r domain rule; do
+      mkdir -p "$out/$domain"
+      if drawn="$(cd "$repo" && dotnet run --no-build -c Release --project "$viewer" -- --rule "$rule" --out "$out/$domain" 2>&1)"; then
+        echo "  $domain/$rule.png"
+      else
+        printf '%s\n' "$drawn" | grep -v '^\s*$' | tail -1 > "$flow_errors/$rule.txt"
+        echo "  no flow for $rule: $(cat "$flow_errors/$rule.txt")"
+      fi
+    done <<< "$flows"
+  else
+    echo "  the rule viewer didn't build ($flow_errors/.build.log): no flow drawn."
+    while read -r domain rule; do echo "the rule viewer didn't build" > "$flow_errors/$rule.txt"; done <<< "$flows"
+  fi
+fi
+
 python3 - "$out" "$selection" "${records[@]}" <<'PY'
-import json, os, sys
+import json, os, re, sys
 out, selection, records = sys.argv[1], sys.argv[2], sys.argv[3:]
 # A class changed itself, or only a fixture it uses changed (and which ones); changed wins over fixtures.
 fixtures, changed = {}, set()
@@ -374,10 +413,23 @@ def select(entry, cls):
     else:
         entry["selected"] = "changed"
     return entry
+# The flow of the rule its Gherkin names, drawn above: its PNG, or why there is none.
+def add_flow(entry):
+    found = re.search(r"^\s*# Rule ([a-z0-9-]+):", entry["gherkin"] or "", re.M)
+    if not found:
+        return entry
+    rule = entry["rule"] = found.group(1)
+    png = f'{entry["domain"]}/{rule}.png'
+    error = os.path.join(out, ".flow-errors", f"{rule}.txt")
+    if os.path.exists(os.path.join(out, png)):
+        entry["flow"] = png
+    else:
+        entry["flowError"] = open(error, encoding="utf-8").read().strip() if os.path.exists(error) else "not drawn"
+    return entry
 entries = []
 for path in records:
     r = json.load(open(path))
-    entries.append(select({
+    entries.append(add_flow(select({
         "domain": r["domain"],
         "class": r["class"],
         "method": r["method"],
@@ -388,7 +440,7 @@ for path in records:
         "mp4": f'{r["domain"]}/{r["gif"]}.mp4',
         "startupSeconds": None if r["homeShownSeconds"] is None else round(r["homeShownSeconds"], 1),
         "passed": r["passed"],
-    }, r["class"]))
+    }, r["class"])))
 json.dump(entries, open(os.path.join(out, "scenarios.json"), "w"), indent=2)
 print()
 print("Scenarios:")

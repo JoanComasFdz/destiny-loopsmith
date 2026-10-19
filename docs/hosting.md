@@ -213,7 +213,8 @@ works the PR records them; CI doesn't run, record or build anything for them.
   through: a release upload answers 415), but it can push. Right after the push (the first one once the PR is open),
   `tools/e2e/push-gifs.sh` pushes a throwaway branch **`e2e-gifs/pr-<n>-<short sha>`**: the branch's head, already on
   GitHub, plus one commit that adds `e2e-gifs/scenarios.json`, the GIFs and the MP4s
-  (`e2e-gifs/<domain folder>/<gif name>.gif` and `.mp4`; the branch keeps its `e2e-gifs/` name), and with `--message`
+  (`e2e-gifs/<domain folder>/<gif name>.gif` and `.mp4`; the branch keeps its `e2e-gifs/` name), the rules' flows
+  (`e2e-gifs/<domain folder>/<rule name>.png`, once per rule, below), and with `--message`
   `e2e-gifs/what-changed.md`, the post's "What changed".
   It finds the PR from the branch (or takes its number), stops when the head isn't pushed yet or that branch already
   exists, and never touches the working tree. The branch sits on the PR's head, not on an empty history, because a push
@@ -225,8 +226,9 @@ works the PR records them; CI doesn't run, record or build anything for them.
   permitted through this proxy"). So the GIFs travel on a branch, and the banner is the accepted cost: ignore it.
 - **What the workflow does** (`.github/workflows/e2e-videos.yml`, on a push to `e2e-gifs/**`): it checks the push
   (the name is `e2e-gifs/pr-<n>-<hex>`; PR #n is open and from this repository; the commit sits on a commit of the PR
-  and only adds `e2e-gifs/scenarios.json`, `e2e-gifs/what-changed.md`, real GIFs (they start with `GIF8`) and real MP4s (an `ftyp` box first)), then
-  `tools/e2e/post-scenarios.py --out e2e-gifs` uploads the GIFs and MP4s, each to its release (below), and posts them, and the branch is deleted whatever happened (the run's log says why one failed). A push that fails
+  and only adds `e2e-gifs/scenarios.json`, `e2e-gifs/what-changed.md`, real GIFs (they start with `GIF8`), real MP4s (an
+  `ftyp` box first) and real PNGs (the 8-byte PNG signature first)), then
+  `tools/e2e/post-scenarios.py --out e2e-gifs` uploads the GIFs, MP4s and PNGs, each to its release (below), and posts them, and the branch is deleted whatever happened (the run's log says why one failed). A push that fails
   the checks uploads and posts nothing. No `dotnet`, no Chromium, no ffmpeg: a run takes seconds.
 - **Where the GIFs and MP4s go:** assets of a pre-release, never committed anywhere. Which one is the run's GIF's folder
   (its scenario's domain folder):
@@ -272,6 +274,16 @@ works the PR records them; CI doesn't run, record or build anything for them.
     keeps as they are). Only when the whole name would pass 200 characters does it keep its start and end with
     `-<8 hex>`, the start of the SHA-256 of the GIF's path (`<domain folder>/<GIF name>.gif`), so it stays unique (a scenario's two screens apart) and the
     same on every push.
+  - A rule's flow: `pr-<PR number>-v<version>-<rule name>.png`, e.g. `pr-150-v1-hunter-arc-aspects-lethal-current-2.png`,
+    one per rule and version, whichever scenarios and screens name it; a rule's name is well under 200 characters.
+- **The rules' flows:** a rule scenario names its rule on a `# Rule <name>: …` line under `Scenario:`
+  ([rule scenarios](given-when-then-rule-scenarios.md), "The shape"). When `record.sh` records (not with `--no-video`),
+  it draws each rule a recorded scenario names with the rule viewer (`tools/rule-viewer`, `--rule <name>`, built once
+  per recording) as `out/<domain folder>/<rule name>.png`, next to that scenario's GIFs, so it goes to the same release.
+  `scenarios.json` gives each such run its `"rule"` and its `"flow"` (the PNG's path), or, when the rule viewer couldn't
+  draw it (a rule it doesn't find yet, outside the Arc Hunter and what builds on it, or no Chromium), its `"flowError"`,
+  the viewer's last line; a missing flow never stops the recording. A scenario with no `# Rule` line (the loop scenarios,
+  the extension's) has none of them.
 - **The posts:** every version, V1 included, is a new comment on the PR, `## Scenarios (V<N>)`, that starts with
   **What changed**: `push-gifs.sh --message "<text>"`'s text, word for word, or else the body of the PR head's commit
   message without its trailers (a session writes a short plain description of the round in its body), or its subject
@@ -279,7 +291,8 @@ works the PR records them; CI doesn't run, record or build anything for them.
   there a one-paragraph text like `AFTER: …` looks like a trailer (`Key: value`) and was dropped, so the post fell back
   to the subject (PR #106's V2). Each post reads only its own push's commit, so two posts from the same head commit,
   or posts on several PRs at once, each show their own text. Each scenario shows once: its Gherkin's title as a small
-  heading, its Gherkin in a `gherkin` block, then a `🖥️ Desktop` and/or `📱 Mobile` subtitle (the screens it was played
+  heading; for a rule scenario, its rule's flow PNG (from its release), or *No flow drawn for `<rule>`: <why>* when
+  there was none; its Gherkin in a `gherkin` block; then a `🖥️ Desktop` and/or `📱 Mobile` subtitle (the screens it was played
   on, desktop first) with that run's GIF below, and below it **▶ Play MP4**. The GIF and that line both link to the
   player page with that run's MP4 (`https://<owner, lowercase>.github.io/<repo>/e2e-player.html?v=<MP4 name>`), so a tap
   on the GIF opens the video instead of downloading the GIF (GitHub can't make a link open a new tab, so a long-press
@@ -312,7 +325,8 @@ works the PR records them; CI doesn't run, record or build anything for them.
   - **`prs-resources`:** it keeps every GIF and MP4 of the PR's newest version and
   deletes its older versions' (`pr-<n>-v1-…` to `pr-<n>-v<N-1>-…`), so the PR's last `## Scenarios (V<N>)` post keeps
   showing its GIFs and playing its MP4s for good.
-  - **Each rule release** keeps the latest recording of every rule, so the extension and the player always have one per
+  - **Each rule release** keeps the latest recording of every rule (a flow PNG counts as a recording of its rule, by its
+    name: each rule keeps its latest flow), so the extension and the player always have one per
     rule. Names keep the form `pr-<n>-v<k>-<run>`, so a PR's posts and versions work as above while it is open. A
     **merged** PR keeps, for each run it recorded there, its newest recording of it (per run, not per version: a rule its
     V2 didn't re-record keeps its V1); its older ones go, and so do other PRs' recordings of those runs, unless that PR
