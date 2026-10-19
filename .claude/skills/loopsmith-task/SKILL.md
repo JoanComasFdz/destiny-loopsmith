@@ -49,6 +49,16 @@ In one message:
   app behaves is a Gherkin, written by [docs/given-when-then-test-rules.md](../../../docs/given-when-then-test-rules.md)
   (its screens, its title, its rounds of When and Then), layout included (no overlap, at the right end,
   inside the screen); each one becomes one e2e scenario. A criterion checked in a file stays a plain line.
+- **Each rule's flow, with its Gherkin.** A Gherkin for a rule (a rule scenario, under
+  `tests/Loopsmith.Web.E2E/Rules/`) names its rule on its `# Rule <name>: …` line
+  ([docs/given-when-then-rule-scenarios.md](../../../docs/given-when-then-rule-scenarios.md), "The shape"). Draw that
+  rule's flow with the rule viewer, `dotnet run --project tools/rule-viewer/Loopsmith.RuleViewer -- --rule <name>`
+  (→ `out/rule-viewer/<name>.png`; build once, then `--no-build` for the others), and send it to the owner as a file
+  (`SendUserFile`, `display: render`) right after the message that shows the Gherkin, captioned with the Gherkin's
+  title: the owner reads the flow (trigger ➜ what must be in place ➜ what it gives) next to the claim it plays. Several
+  rule Gherkins: one PNG each, in the Gherkins' order, in one call. Do the same in any later round that adds a rule
+  Gherkin or changes one's `# Rule` line. When the viewer can't draw a rule (it says why: a name no rule has, rules
+  that don't parse), say so under that Gherkin in one line, with its words.
   Ask the owner to agree, or to say what to add, drop or change.
 - Anything you'd suggest adding, as a suggestion, not as a criterion, written the same way.
 
@@ -177,15 +187,18 @@ right before a push is posted. Right before its first push:
    `tools/e2e/record.sh --changed-since origin/main`. Every scenario passes on every screen it is
    played on before the push; a failing one is fixed first. Look at its GIFs under
    `out/<domain folder>/` (one per screen, `…-desktop.gif`, `…-mobile.gif`): each should show what
-   its Gherkin says.
+   its Gherkin says. The recording also draws the flow of each rule a recorded scenario names, next to
+   its GIFs (`out/<domain folder>/<rule name>.png`); a rule the viewer couldn't draw is a line in its
+   output ("no flow for …"), and the post says why in its place.
 4. Push and open the pull request.
 5. With scenarios recorded, push their GIFs: `tools/e2e/push-gifs.sh` (it finds the PR from the
    branch). It pushes a throwaway branch `e2e-gifs/pr-<n>-<short sha>`; the "E2E videos" workflow
-   uploads the GIFs, posts them on the PR as `## Scenarios (V<N>)` (each scenario's title and Gherkin,
-   then its `🖥️ Desktop` and/or `📱 Mobile` GIF; the scenarios only re-recorded because a fixture file
+   uploads the GIFs and the flows, posts them on the PR as `## Scenarios (V<N>)` (each scenario's
+   title, then the flow PNG of the rule a rule scenario names, its Gherkin, then its `🖥️ Desktop`
+   and/or `📱 Mobile` GIF; the scenarios only re-recorded because a fixture file
    they use changed come last, under "Re-recorded: their fixtures changed") and deletes the branch. "What
    changed" in that post is the body of the head commit's message, or `--message "<text>"`. Check
-   the post appears with its GIFs (the PR's comments, a minute or so later); if the run failed, its
+   the post appears with its flows and GIFs (the PR's comments, a minute or so later); if the run failed, its
    log says why.
 
 Every later push that changes scenarios does the same: develop with `--no-video`, record right

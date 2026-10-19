@@ -44,7 +44,7 @@ The files:
 - `out/rule-viewer/<rule name>.png`, with `--rule <rule name>` instead of the two above: one rule's flows, by the rule's full
   name (`hunter-arc-aspects-lethal-current-2`, the name its e2e scenarios quote), stacked when the rule is split by its
   trigger (`keywords-arc-jolt-2` is four flows), each under the name; no title, lede or scope chips, in the light
-  theme, at twice the pixels. The host renders a page of just those flows (`Page/RuleFlowPage`, with the same components,
+  theme (`--theme dark` for the dark one, as the PRs' e2e posts show it: `tools/e2e/record.sh`), at twice the pixels. The host renders a page of just those flows (`Page/RuleFlowPage`, with the same components,
   style and script) and takes its picture with Playwright's headless Chromium (`Hosting/RuleFlowShot`): the
   `Microsoft.Playwright` the e2e tests pin (`Directory.Packages.props`), which finds the Chromium in `/opt/pw-browsers`
   in a cloud session and in the dev container. Any rule or passive in `rules/` has its PNG, wherever its file sits (a
@@ -55,12 +55,12 @@ The files:
 ```bash
 dotnet run --project tools/rule-viewer/Loopsmith.RuleViewer               # rules/ → out/rule-viewer/
 dotnet run --project tools/rule-viewer/Loopsmith.RuleViewer -- --rules <dir> --out <dir>
-dotnet run --project tools/rule-viewer/Loopsmith.RuleViewer -- --rule hunter-arc-aspects-lethal-current-2 [--out <dir>]   # → <dir>/<rule name>.png
+dotnet run --project tools/rule-viewer/Loopsmith.RuleViewer -- --rule hunter-arc-aspects-lethal-current-2 [--theme light|dark] [--out <dir>]   # → <dir>/<rule name>.png
 dotnet test tools/rule-viewer/Loopsmith.RuleViewer.Tests                  # also part of `dotnet test`
 ```
 
 It exits with 1 and the error text when the rules don't parse, when no rule has the `--rule` name ("No rule is named
-'…'.") or when the PNG can't be taken, and with 2 on an unknown option. `out/` is gitignored.
+'…'.") or when the PNG can't be taken, and with 2 on an unknown option or a `--theme` other than `light` or `dark`. `out/` is gitignored.
 The icons load from bungie.net. `ArcHunterRulesGoldenTests` keeps the flows as text, so a rules change shows its flows
 in the PR diff.
 

@@ -99,6 +99,46 @@ class WriteSectionTests(unittest.TestCase):
         self.assertIn("/releases/download/prs-resources/pr-1-v1-Reloads-desktop.gif", post)
         self.assertIn("(https://owner.github.io/repo/e2e-player.html?v=pr-1-v1-Reloads-desktop.mp4)", post)
 
+    def flow_of(self, run, rule):
+        png = os.path.join(self.folder.name, f"{rule}.png")
+        open(png, "wb").close()
+        run.update(rule=rule, flow=f"Rules/Hunter/Arc/Aspects/{rule}.png", flow_file=png,
+                   flow_asset=f"pr-1-v1-{rule}.png", release="rules-hunter-arc-aspects-resources")
+        return run
+
+    def test_a_rule_scenario_reads_title_then_its_flow_then_its_gherkin_then_its_screens(self):
+        runs = [self.flow_of(self.run_of("LethalCurrentTests", "Arms", screen), "hunter-arc-aspects-lethal-current-2")
+                for screen in ("desktop", "mobile")]
+        post = post_scenarios.write_section(REPO, 1, runs, "Text.")
+        flow = ("![Flow of hunter-arc-aspects-lethal-current-2](https://github.com/Owner/repo/releases/download/"
+                "rules-hunter-arc-aspects-resources/pr-1-v1-hunter-arc-aspects-lethal-current-2.png)")
+        self.assertEqual(post.count(flow), 1)
+        self.assertLess(post.index("### Arms title"), post.index(flow))
+        self.assertLess(post.index(flow), post.index("```gherkin"))
+        self.assertLess(post.index("```gherkin"), post.index("#### 🖥️ Desktop"))
+        self.assertLess(post.index("#### 🖥️ Desktop"), post.index("#### 📱 Mobile"))
+
+    def test_a_rule_the_viewer_couldnt_draw_says_why_where_its_flow_would_be(self):
+        run = self.run_of("SparkOfShockTests", "Jolts", "desktop", rule="all-classes-arc-fragments-spark-of-shock-1",
+                          flowError="No rule is named 'all-classes-arc-fragments-spark-of-shock-1'.")
+        post = post_scenarios.write_section(REPO, 1, [run], "Text.")
+        line = ("_No flow drawn for `all-classes-arc-fragments-spark-of-shock-1`: No rule is named "
+                "'all-classes-arc-fragments-spark-of-shock-1'._")
+        self.assertIn(line, post)
+        self.assertLess(post.index("### Jolts title"), post.index(line))
+        self.assertLess(post.index(line), post.index("```gherkin"))
+        self.assertNotIn("![Flow", post)
+
+    def test_a_scenario_that_names_no_rule_shows_no_flow(self):
+        post = post_scenarios.write_section(REPO, 1, [self.run_of("ReloadTests", "Reloads", "desktop")], "Text.")
+        self.assertNotIn("Flow", post)
+        self.assertNotIn("No flow drawn", post)
+
+    def test_a_flow_is_named_by_its_rule_once_for_all_its_runs(self):
+        run = {"flow": "Rules/Hunter/Arc/Aspects/hunter-arc-aspects-lethal-current-2.png"}
+        self.assertEqual(post_scenarios.name_flow(7, 3, run), "pr-7-v3-hunter-arc-aspects-lethal-current-2.png")
+        self.assertIsNone(post_scenarios.name_flow(7, 3, {"flow": None}))
+
 
 class FindReleaseTests(unittest.TestCase):
     def test_a_rule_scenarios_release_is_its_folders_under_rules_kebab_cased(self):
@@ -155,6 +195,12 @@ class CleanTests(unittest.TestCase):
         self.assertEqual(len({post_scenarios.read_asset(asset["name"])[2] for asset in held[:3]}), 1)
         deleted = post_scenarios.plan_rule_deletions(held, 140, merged=True, open_prs=set())
         self.assertEqual(names(deleted), sorted([long(5, 1), long(140, 9)]))
+
+    def test_a_merged_pr_keeps_its_newest_flow_of_each_rule_like_a_recording(self):
+        held = assets("pr-5-v1-hunter-arc-aspects-lethal-current-2.png", "pr-7-v1-hunter-arc-aspects-lethal-current-2.png",
+                      "pr-7-v2-hunter-arc-aspects-lethal-current-2.png", "pr-7-v1-arms-desktop.gif")
+        self.assertEqual(names(post_scenarios.plan_rule_deletions(held, 7, True, set())),
+                         ["pr-5-v1-hunter-arc-aspects-lethal-current-2.png", "pr-7-v1-hunter-arc-aspects-lethal-current-2.png"])
 
     def test_a_pr_closed_without_merging_deletes_all_its_rule_recordings(self):
         held = assets("pr-7-v1-hits-desktop.gif", "pr-7-v2-hits-desktop.mp4", "pr-5-v1-hits-desktop.gif", "pr-70-v1-x.gif")

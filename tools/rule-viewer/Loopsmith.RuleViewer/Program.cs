@@ -21,7 +21,7 @@ var assets = RuleViewerFiles.ReadPageAssets(typeof(RuleViewerFiles).Assembly);  
 if (paths.Rule is Optional<string>.Some rule)
 {
     // One rule's flows, wherever its file sits under the rules → its page → its PNG, named by the rule.
-    var flowPage = ruleFiles.Bind(files => RuleViewing.PickRuleFlows(files, rule.Value)).Bind(flows => assets.Map(page => RuleFlowPage.RenderPage(rule.Value, flows, page)));   // pure
+    var flowPage = ruleFiles.Bind(files => RuleViewing.PickRuleFlows(files, rule.Value)).Bind(flows => assets.Map(page => RuleFlowPage.RenderPage(rule.Value, flows, page, paths.Theme)));   // pure
     if (flowPage is Result<string, string>.Error noFlows)
     {
         RuleViewerFiles.ReportError(noFlows.Failure);   // impure
@@ -30,7 +30,7 @@ if (paths.Rule is Optional<string>.Some rule)
 
     var pngPath = Path.Combine(paths.OutDirectory, $"{rule.Value}.png");   // pure
     var html = ((Result<string, string>.Ok)flowPage).Value;
-    var shot = await RuleFlowShot.SaveShotAsync(html, RuleFlowPage.ShotSelector, pngPath);   // impure
+    var shot = await RuleFlowShot.SaveShotAsync(html, RuleFlowPage.ShotSelector, pngPath, paths.Theme);   // impure
     return shot.Match(
         _ =>
         {
