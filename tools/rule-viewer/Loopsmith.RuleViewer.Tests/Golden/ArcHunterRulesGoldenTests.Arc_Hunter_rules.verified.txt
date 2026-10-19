@@ -1,6 +1,6 @@
 ﻿# Arc Hunter rules
 
-## Arc subclass (subclass): 51 rules
+## Arc subclass (subclass): 52 rules
   Class ability: 2
   Air class ability: 1
   Melee: 6
@@ -12,6 +12,7 @@
   Arc weapon: 2
   Heavy Arc weapon: 1
   Special Arc weapon: 1
+  Hit at critical health: 1
   Airborne Super heavy: 1
   Any: 6
   Bolt Charge: 1
@@ -22,7 +23,7 @@
   Super heavy combo: 1
   Always on: 8
 
-## + what it needs from outside (withNeeds): 51 rules
+## + what it needs from outside (withNeeds): 52 rules
   Class ability: 2
   Air class ability: 1
   Melee: 6
@@ -34,6 +35,7 @@
   Arc weapon: 2
   Heavy Arc weapon: 1
   Special Arc weapon: 1
+  Hit at critical health: 1
   Airborne Super heavy: 1
   Any: 6
   Bolt Charge: 1
@@ -44,7 +46,7 @@
   Super heavy combo: 1
   Always on: 8
 
-## + what builds on it (withDependents): 148 rules
+## + what builds on it (withDependents): 149 rules
   Class ability: 11
   Air class ability: 1
   Melee: 11
