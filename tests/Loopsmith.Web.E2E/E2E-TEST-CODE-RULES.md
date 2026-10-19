@@ -231,7 +231,6 @@ are separate contexts too.
    own (`Reload/festival-flight-one-for-all.build.yaml`, `WeaponRowLayout/festival-flight-one-for-all-row-layout.build.yaml`):
    a scenario finds its fixture by its file name, which must be unique in the project and not part of another's
    (`tools/e2e/record.sh --changed-since` finds the classes a fixture selects by its name).
-   Never under `builds/`: the web app embeds `builds/` and would list them on Home.
 5. Grow `Infrastructure/` only by what this scenario needs: the page-object members, vocabulary cases and assertions it
    calls. Missing `data-action` / `data-testid` attributes are added to the app in the same PR.
 6. Run it unrecorded while you work: `tools/e2e/record.sh --no-video <its class>` (fast; `--no-publish` when the web

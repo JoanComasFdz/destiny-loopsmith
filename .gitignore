@@ -13,7 +13,7 @@ TestResults/
 snapshots/
 
 # Creator video transcripts are third-party content — keep them local, link the video instead
-builds/*/transcript.txt
+**/transcript.txt
 
 # Compendium downloads made by tools/compendium/get-compendium.* (private — never commit)
 tools/compendium/compendium-*

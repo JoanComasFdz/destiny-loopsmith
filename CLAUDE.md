@@ -38,7 +38,7 @@ dotnet test                          # unit, golden and architecture tests (the 
 node --test src/Loopsmith.VsCodeExtension/test/*.test.js   # the VS Code extension's unit tests
 tools/e2e/record.sh --no-video Starting   # e2e scenarios in Chromium, unrecorded: the fast run while developing (Recordings: the extension's)
 tools/e2e/record.sh --changed-since origin/main   # recorded → out/<domain>/<scenario>-<screen>.gif + .mp4 + out/scenarios.json (right before a push)
-dotnet test --filter RepoFileValidationTests   # every build, loop and e2e fixture file opens against the rules (names the file and the error)
+dotnet test --filter RepoFileValidationTests   # every e2e build and loop fixture file opens against the rules (names the file and the error)
 LOOPSMITH_COMPENDIUM_DIR=$PWD/snapshots/compendium/<date> dotnet test --filter CompendiumCheckTests   # the rules' citations and numbers against a Compendium snapshot (skipped without it)
 dotnet run --project src/Loopsmith.Web          # the loop designer in the browser
 ```
@@ -52,8 +52,8 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
   slices (`SourceFetching`, `RuleParsing`, `BuildParsing`, `LoopFiles`, `BuildComposition`,
   `StepPlaying` (plays steps, and a loop's passes until it repeats), `LoopAnalyzing` (judges a played loop by its
   order of triggers), `BuildExplanation`, `TraceRendering`, `ReportComparison`,
-  `LoadoutImporting` (a DIM link → a build, by manifest hash), `ManifestJoining` (Bungie's full manifest,
-  read in the browser, → the excerpt of what a DIM link's other items need, and the list of every weapon, armor
+  `ManifestJoining` (Bungie's full manifest,
+  read in the browser, → the excerpt of what an imported build's or loop's other items need, and the list of every weapon, armor
   piece and armor mod the pickers offer, with each piece's mod sockets; the browser saves the manifest and that list between visits, by the manifest's version), `StatLoading` (a Bungie login's
   answers → the player's armor → the build's stats, added up like DIM), `CompendiumReading` (a Compendium snapshot's tabs → the
   check of the rules' citations and numbers against it, with `tools/compendium/aliases.yaml`; run by a test only),
@@ -61,8 +61,9 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
 - `src/Loopsmith.Web/` — Blazor WebAssembly loop designer (host only; calls
   `Orchestration.LoopDesigning`). Deployed to GitHub Pages by `.github/workflows/pages.yml`;
   every PR that can change the site (not only docs, tooling or tests) gets a preview at `…/pr-preview/pr-<n>/` (`pr-preview.yml`)
-  ([docs/hosting.md](docs/hosting.md)). Home starts a loop from scratch (an Arc Hunter with nothing equipped) or from a DIM link; a dim.gg share is read from
-  DIM's open share API with a plain GET, no key and no header (hosting.md "DIM links").
+  ([docs/hosting.md](docs/hosting.md)). Home offers: continue designing, start from scratch (an Arc Hunter
+  with nothing equipped), import a `build.yaml`, import a loop. No example builds or loops, and no DIM link (both removed:
+  [docs/example-loops.md](docs/example-loops.md)).
 - **The product is the designed loop**: `*.loop.yaml`, self-contained (embeds its build) —
   format, share links, analysis and comparison in [docs/loop-format.md](docs/loop-format.md).
 - `rules/` — authored causality YAML; format + engine semantics in
@@ -72,17 +73,13 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
   and passive has an `id` (`combination-blow-2`); its full name is its file's path then that id
   (`hunter-arc-melees-combination-blow-2`), what the rule viewer, the e2e rule tests and their recordings are named by
   (ADRs D40). `rules/manifest.yaml` is generated (the Bungie manifest's
-  names, descriptions, icons, slots, perks and armor sets for every hash in the rules, the saved DIM shares and the weapons of
-  the builds and their loops, and the seven artifacts with all their perks): rerun `tools/manifest/` after adding a hash, or
-  a weapon to a build or loop ([tools/manifest/README.md](tools/manifest/README.md)), never edit it.
-- `builds/<slug>/` — `build.yaml`, `discrepancies.md`, `loops/*.loop.yaml` (designed loops), optionally `dim-loadout.json` (a saved DIM share:
-  its link + the loadout, shown as a card on Home; what it adds to the share, e.g. artifact unlocks
-  from the loadout's notes, is a row in `discrepancies.md`), optionally `scenario.txt` (the step sequence
-  the `Scenario_trace` golden test plays), and — only when the user wrote a note — `note.txt` and `note-map.md` (golden-test
-  mapping). A derived build (`skip-grenade-hunter-ascension`: one aspect swapped) has no note of its
-  own; its header and `discrepancies.md` point to the parent's.
-  Creator transcripts are third-party content: keep them local as `transcript.txt` (gitignored),
-  never commit them.
+  names, descriptions, icons, slots, perks and armor sets for every hash in the rules and in `tools/manifest/test-items.yaml`
+  (the weapons, armor and mods the Core tests equip that no rule names), and the seven artifacts with all their perks): rerun
+  `tools/manifest/` after adding a hash to either ([tools/manifest/README.md](tools/manifest/README.md)), never edit it.
+- [docs/example-loops.md](docs/example-loops.md) — the example builds and loops (`builds/`), the DIM link and the
+  `build-extractor` agent, all removed: what they were, how their tests looked, how example loops could come back, the
+  agent's definition verbatim; the last commit holding them is `d56905d`. Creator transcripts are third-party content:
+  keep them local (`transcript.txt`, gitignored), never commit them.
 - `tools/rule-viewer/` — the rule viewer (ADRs D39): `dotnet run --project tools/rule-viewer/Loopsmith.RuleViewer`
   writes `out/rule-viewer/arc-hunter-rules.html` and `.json`, every Arc Hunter rule as one flow, the list of the atomic e2e
   scenarios to write; `-- --rule <rule name>` writes that one rule's flows (any rule in `rules/`, whatever its folder) as `out/rule-viewer/<rule name>.png` instead
@@ -316,9 +313,9 @@ keeps its extension: `01-perk-picker-phone.png`, `02-designer-console.log`,
 
 ## Project subagents (`.claude/agents/`)
 - `rule-author` — Compendium/Clarity/guide text → rules YAML (provenance, no invented numbers).
-- `build-extractor` — video transcript / note → `builds/<slug>/build.yaml` + `note-map.md`.
 - `conventions-reviewer` — reviews a diff against docs/CODING_RULES.md.
 
 ## Source priority for mechanics
 Compendium snapshot / Clarity (game data) > the user's notes > a creator's claim.
-Record every disagreement in the build's `discrepancies.md`.
+Record every disagreement in a comment next to the element in its rule file, citing each source in a `source` form
+([docs/rule-format.md](docs/rule-format.md), Provenance).

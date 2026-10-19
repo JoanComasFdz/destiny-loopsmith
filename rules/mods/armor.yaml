@@ -1,6 +1,6 @@
 # Armor mods. Values are PvE values from the Compendium snapshot of 2026-10-09 (Armor Mods tab),
 # which agrees with Clarity 2.0625 except where noted here or in
-# builds/skip-grenade-hunter/discrepancies.md; "a|b|c" per-copy values are PerModCount.
+# builds/skip-grenade-hunter/discrepancies.md at commit d56905d; "a|b|c" per-copy values are PerModCount.
 # Hashes are Clarity's. Several mods have two Clarity hashes with identical text (original + newer
 # plug copy); the most recently updated one is used and the other is noted. Resolve against the
 # manifest later.

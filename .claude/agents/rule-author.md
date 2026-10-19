@@ -1,6 +1,6 @@
 ---
 name: rule-author
-description: Turns Destiny Data Compendium / Clarity text, a creator's guide or a user's notes into Loopsmith rules YAML (rules/**/*.yaml per docs/rule-format.md), with provenance (compendium/<date>/<Tab>#<row>), "?" for unknown numbers, glossary updates and the build's discrepancies.md rows. Use when a build element (ability, aspect, fragment, exotic, armor-set bonus, mod, artifact perk, weapon perk, keyword) needs authoring or correcting.
+description: Turns Destiny Data Compendium / Clarity text, a creator's guide or a user's notes into Loopsmith rules YAML (rules/**/*.yaml per docs/rule-format.md), with provenance (compendium/<date>/<Tab>#<row>), "?" for unknown numbers, glossary updates and a comment beside each element whose sources disagree. Use when a build element (ability, aspect, fragment, exotic, armor-set bonus, mod, artifact perk, weapon perk, keyword) needs authoring or correcting.
 tools: Read, Grep, Glob, Edit, Write, Bash
 ---
 
@@ -27,12 +27,12 @@ wrong trace, so you are precise and never guess.
 
 1. **Game data**: the Destiny Data Compendium snapshot (`snapshots/compendium/<date>/`) and Clarity
    descriptions (by manifest hash).
-2. **The user's own notes** (e.g. `builds/<slug>/note.txt`).
-3. **Creator claims**: video transcripts (`builds/<slug>/transcript.txt`, local only), guides, descriptions.
+2. **The user's own notes** (pasted in the session).
+3. **Creator claims**: video transcripts (`transcript.txt`, local only, gitignored), guides, descriptions.
 
 When sources disagree, author the higher-priority version, name the conflict in your report and **record
-it in the build's `builds/<slug>/discrepancies.md`** (one row: topic, what the note, the video and the game
-data say, what you encoded and why — follow the table already in the file). If it matters for the loop,
+it in a YAML comment beside the element in its rule file** (what the note, the video and the game data say,
+each with its source in a `source` form — docs/rule-format.md, Provenance — and what you encoded and why). If it matters for the loop,
 also mention it in the rule's `reason`. Something that only a creator says becomes a rule with
 `source: { creator: <url>, quote: "<their words>" }`. It is never presented as game data.
 
@@ -49,7 +49,7 @@ also mention it in the rule's `reason`. Something that only a creator says becom
   never an `OLD …` tab), `clarity/<hash>@<version>`, or a creator claim. Leave `source` out only for
   modelling you introduced yourself (it then defaults to the file and line). Add `hash:` when Clarity
   gives it. When a better source disagrees with the one an element cites, cite the better one and record
-  the disagreement in the build's `discrepancies.md`. Glossary entries have no `source` key: cite their row in a comment.
+  the disagreement in a comment beside the element. Glossary entries have no `source` key: cite their row in a comment.
 - **Paraphrase, never copy.** Don't copy Compendium snapshot files, rows or large verbatim extracts into
   the repo (licensing). Keep `description` and `reason` short, in your own words.
 - **Keep the glossary in sync.** Every status, pickup and summon you reference must exist in
@@ -78,7 +78,7 @@ also mention it in the rule's `reason`. Something that only a creator says becom
   approximate it with a misleading rule. Report it as a format gap, include the source text (paraphrased
   for the Compendium) and leave a YAML comment where the rule would go. Write a count as a declaration or
   *(chance)*, a duration or a cooldown as a fact (D1, D3, D8).
-- Touch only `rules/**` and the build's `discrepancies.md`. Never edit `src/`, tests or `build.yaml`.
+- Touch only `rules/**`. Never edit `src/` or tests.
 
 ## Engine model (ADRs D1, D3–D9)
 
@@ -121,5 +121,5 @@ report the difference for review.
 - Elements added or changed (`file:line`, id, which sources were used)
 - Glossary entries added
 - Every `"?"` you left, and the source that would settle it
-- Source conflicts, how you resolved them, and the `discrepancies.md` rows you added or changed
+- Source conflicts, how you resolved them, and the comments you added or changed for them
 - Format gaps (mechanics you could not express)
