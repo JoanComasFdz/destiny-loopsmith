@@ -8,6 +8,20 @@ public partial record ArtifactPerk
 {
     public partial record ThunderousRetort;
 
+    public partial record DefibrillatingBlast;
+
+    public partial record Flashover;
+
+    public partial record Dielectric;
+
+    public partial record ToShreds;
+
+    public partial record HordeShuttle;
+
+    public partial record UnravelingOrbs;
+
+    public partial record PhotonicFlare;
+
     /// <summary>What the UI shows that no case names yet: a failing assertion names it as the UI shows it.</summary>
     public partial record Unlisted(string Shown);
 }
@@ -19,5 +33,12 @@ public static class ArtifactPerkShowing
     public static string ToShownText(this ArtifactPerk value) =>
         value.Match(
             thunderousRetort => "Thunderous Retort",
+            defibrillatingBlast => "Defibrillating Blast",
+            flashover => "Flashover",
+            dielectric => "Dielectric",
+            toShreds => "To Shreds",
+            hordeShuttle => "Horde Shuttle",
+            unravelingOrbs => "Unraveling Orbs",
+            photonicFlare => "Photonic Flare",
             unlisted => unlisted.Shown);
 }

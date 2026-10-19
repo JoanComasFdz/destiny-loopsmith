@@ -1,0 +1,7 @@
+# Horde Shuttle, with Attrition Orbs on Festival Flight (a Strand weapon) to drop an orb and Unraveling Orbs to turn it into Unraveling Rounds, which unravel the target.
+name: "E2E - Horde Shuttle with Unraveling Orbs and Attrition Orbs"
+class: hunter
+subclass: arc
+artifactPerks: [unraveling-orbs, horde-shuttle]
+weapons:
+  - { hash: 4019651319, perks: [attrition-orbs] } # Festival Flight
