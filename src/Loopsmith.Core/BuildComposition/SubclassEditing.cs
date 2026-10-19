@@ -92,6 +92,18 @@ public static class SubclassEditing
         return new SubclassTrim(plugs with { Aspects = aspects, Fragments = kept }, [.. plugs.Fragments.Skip(kept.Length)]);
     }
 
+    /// <summary>
+    /// What the editor warns when the plugs hold more fragments than their aspects open (a build file or a DIM link: build
+    /// validation only warns, but Save keeps the game's limit); none when they fit or the count isn't known.
+    /// </summary>
+    public static Optional<string> DescribeFragmentOverflow(RuleCatalog catalog, SubclassPlugs plugs) =>
+        CountFragmentSlots(catalog, plugs.Aspects).Slots.Bind(count => plugs.Fragments.Length > count.Value
+            ? Optional.Some($"{DescribeCount(plugs.Fragments.Length, "fragment")} equipped; the aspects open {DescribeCount(count.Value, "slot")}. Save needs aspects that open enough slots, or fewer fragments.")
+            : Optional.None<string>());
+
+    private static string DescribeCount(int count, string noun) =>
+        $"{count} {noun}{(count == 1 ? "" : "s")}";
+
     /// <summary>The build with these plugs, or why it can't hold them (a plug the subclass doesn't list, one twice, too many aspects or fragments).</summary>
     public static Result<Build, string> ApplyPlugs(RuleCatalog catalog, Build build, SubclassPlugs plugs)
     {

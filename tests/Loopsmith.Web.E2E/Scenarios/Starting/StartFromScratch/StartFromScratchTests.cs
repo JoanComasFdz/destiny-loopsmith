@@ -65,7 +65,7 @@ public sealed class StartFromScratchTests : BaseE2E
         await Frontend.Designer.WaitUntilShownAsync();
 
         // Then
-        var panel = await Frontend.Designer.TriggerPalette.ReadStateAsync();
+        var panel = await Frontend.Designer.TriggerPalette.ReadAsync();
         Asserting.That(panel)
             .IsGreyedOut()
             .Reads("Equip something first: ⋯ on the Subclass box picks its abilities.");

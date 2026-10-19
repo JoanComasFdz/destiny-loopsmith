@@ -18,8 +18,6 @@ public sealed class TriggerPalette(IPage page)
 
     private ILocator DisabledNote => Panel.Locator("[data-testid=palette-disabled]");
 
-    private ILocator Finisher => Panel.Locator("[data-action=trigger-ability][data-hud-slot=finisher]");
-
     private ILocator RowTitle => Row.Locator("[data-testid=trig-actions-title]");
 
     private ILocator CountedButtons => Row.Locator("[data-testid=trigger-buttons]");
@@ -66,17 +64,6 @@ public sealed class TriggerPalette(IPage page)
     /// </summary>
     public Task ClickSecondaryAsync(SecondaryUse use) => OnScreen.PressAsync(Panel, SecondaryButton(use));
 
-    /// <summary>Clicks the finisher's square in the step HUD: one tap does it, so the loop gets a step.</summary>
-    public Task ClickFinisherAsync() => OnScreen.PressAsync(Panel, Finisher);
-
-    /// <summary>Whether the whole panel is greyed out, and the line that says why (empty when it isn't).</summary>
-    public Task<TriggerPanelStateSnapshot> ReadStateAsync() => OnScreen.ReadAsync(Panel, ReadStateShownAsync);
-
-    private async Task<TriggerPanelStateSnapshot> ReadStateShownAsync() =>
-        new(
-            await Panel.GetAttributeAsync("aria-disabled") == "true",
-            await DisabledNote.CountAsync() > 0 ? (await DisabledNote.InnerTextAsync()).Trim() : "");
-
     /// <summary>Selects the "×" enemy count whose text is <paramref name="shown"/> ("3 in 3 s · One for All").</summary>
     public Task SelectTargetCountAsync(string shown) =>
         OnScreen.ActAsync(Panel, TargetCount, count => count.SelectOptionAsync(new SelectOptionValue { Label = shown }));
@@ -107,7 +94,7 @@ public sealed class TriggerPalette(IPage page)
     private async Task<TriggerRowLayout> ReadLayoutShownAsync() =>
         (await Row.EvaluateAsync<JsonElement>(LayoutScript)).Deserialize<TriggerRowLayout>(ShownJson.Options)!;
 
-    /// <summary>What the picked row shows now.</summary>
+    /// <summary>What the panel shows now: the picked row, and whether the panel is greyed out.</summary>
     public Task<TriggerPaletteSnapshot> ReadAsync() => OnScreen.ReadAsync(Panel, ReadShownAsync);
 
     private async Task<TriggerPaletteSnapshot> ReadShownAsync() =>
@@ -115,7 +102,9 @@ public sealed class TriggerPalette(IPage page)
             [.. (await CountedCaptions.AllInnerTextsAsync()).Select(shown => StepTriggerShowing.ReadStepTrigger(shown.Trim()))],
             await TargetCount.CountAsync() > 0,
             [.. (await TargetCountOptions.AllInnerTextsAsync()).Select(shown => shown.Trim())],
-            [.. (await ApartCaptions.AllInnerTextsAsync()).Select(shown => StepTriggerShowing.ReadStepTrigger(shown.Trim()))]);
+            [.. (await ApartCaptions.AllInnerTextsAsync()).Select(shown => StepTriggerShowing.ReadStepTrigger(shown.Trim()))],
+            await Panel.GetAttributeAsync("aria-disabled") == "true",
+            await DisabledNote.CountAsync() > 0 ? (await DisabledNote.InnerTextAsync()).Trim() : "");
 
     // The row's box and its content's right edge (its right padding left out), each button's box with its caption, the
     // "×" enemy count's box, the screen's width and the page's (wider when it scrolls sideways).
@@ -139,14 +128,17 @@ public sealed class TriggerPalette(IPage page)
 }
 
 /// <summary>
-/// What the picked row shows: the buttons the "×" enemy count goes with, whether that count shows, the counts it offers
-/// (as its options read, in order), and the buttons at the row's right end, apart from it.
+/// What the panel shows: the picked row's buttons the "×" enemy count goes with, whether that count shows, the counts it
+/// offers (as its options read, in order), and the buttons at the row's right end, apart from it; whether the whole panel
+/// is greyed out (nothing in it can be tapped), and the line that says why (empty when it isn't).
 /// </summary>
 public sealed record TriggerPaletteSnapshot(
     ImmutableArray<StepTrigger> WithTheCount,
     bool ShowsTheCount,
     ImmutableArray<string> TargetCounts,
-    ImmutableArray<StepTrigger> ApartFromTheCount);
+    ImmutableArray<StepTrigger> ApartFromTheCount,
+    bool IsGreyedOut,
+    string DisabledNote);
 
 /// <summary>
 /// Where the picked row is on the screen, in CSS pixels: the row's box and its content's right edge, each button's box
@@ -156,9 +148,6 @@ public sealed record TriggerRowLayout(ScreenBox Row, double ContentRight, Immuta
 
 /// <summary>A button of the row and its box.</summary>
 public sealed record TriggerButtonBox(string Caption, ScreenBox Box);
-
-/// <summary>Whether the trigger panel is greyed out (nothing in it can be tapped), and the line that says why.</summary>
-public sealed record TriggerPanelStateSnapshot(bool IsGreyedOut, string Note);
 
 /// <summary>A box on the screen, in CSS pixels from the window's top left.</summary>
 public sealed record ScreenBox(double Left, double Top, double Right, double Bottom);

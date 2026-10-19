@@ -515,6 +515,10 @@ public static class LoopDesigning
     public static FragmentSlotCount CountFragmentSlots(ValidatedBuild build, ImmutableArray<ItemHash> aspects) =>
         SubclassEditing.CountFragmentSlots(build.Catalog, aspects);
 
+    /// <summary>What the subclass editor warns when the plugs hold more fragments than their aspects open; none when they fit.</summary>
+    public static Optional<string> DescribeFragmentOverflow(ValidatedBuild build, SubclassPlugs plugs) =>
+        SubclassEditing.DescribeFragmentOverflow(build.Catalog, plugs);
+
     /// <summary>The plugs with other aspects: the fragments the new slot count closes are taken out, the last ones first, and named.</summary>
     public static SubclassTrim SetSubclassAspects(ValidatedBuild build, SubclassPlugs plugs, ImmutableArray<ItemHash> aspects) =>
         SubclassEditing.SetAspects(build.Catalog, plugs, aspects);

@@ -16,12 +16,7 @@
     var slots = LoopDesigning.CountFragmentSlots(Build, draft.Aspects).Slots;
     var fragmentCapacity = slots.Match(count => count.Value.Value, _ => fragmentSlots.Count(slot => slot.IsSome()) + 1);
     var slotText = slots.Match(count => count.Value.Value.ToString(CultureInfo.InvariantCulture), _ => DomainPhrasing.Unknown);
-    var fragmentCount = fragmentSlots.Count(slot => slot.IsSome());
-    var overflowNote = slots.Match(
-        count => fragmentCount > count.Value.Value
-            ? $"{fragmentCount} fragment{(fragmentCount == 1 ? "" : "s")} equipped; the aspects open {slotText} slot{(slotText == "1" ? "" : "s")}. Save needs aspects that open enough slots, or fewer fragments."
-            : "",
-        _ => "");
+    var overflowNote = LoopDesigning.DescribeFragmentOverflow(Build, ReadPlugs());
 }
 <Modal Title="@($"{heading.Name}, {heading.Kind}")" Size="snug" OnClose="OnClose">
     <Heading>
@@ -69,9 +64,9 @@
                         {
                             <p class="muted sub-note" data-testid="fragment-unknown">Loopsmith doesn't know how many fragment slots these aspects open, so it doesn't limit the fragments.</p>
                         }
-                        @if (overflowNote.Length > 0)
+                        @if (overflowNote is Optional<string>.Some overflow)
                         {
-                            <p class="tone-warning sub-note" role="status" data-testid="fragment-overflow">@overflowNote</p>
+                            <p class="tone-warning sub-note" role="status" data-testid="fragment-overflow">@overflow.Value</p>
                         }
                         @if (trimNote.Length > 0)
                         {

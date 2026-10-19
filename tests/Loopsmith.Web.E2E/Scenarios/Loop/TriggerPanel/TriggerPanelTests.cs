@@ -27,7 +27,7 @@ public sealed class TriggerPanelTests : BaseE2E
         await Frontend.Designer.WaitUntilShownAsync();
 
         // When
-        await Frontend.Designer.TriggerPalette.ClickFinisherAsync();
+        await Frontend.Designer.TriggerPalette.ClickAbilityAsync(new Ability.Finisher());
         await Frontend.Designer.Loop.WaitUntilStepShownAsync(1);
 
         // Then
