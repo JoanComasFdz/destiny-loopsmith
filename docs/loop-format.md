@@ -110,8 +110,9 @@ tapping a weapon in the step HUD shows **🔄 reload** next to its 🥊 hit and 
   copies). An ability step takes no `:shield` (`grenade:kill:shield` is an error).
 * `:precision` — a weapon step's hits and kills land on the enemies' weak spot: precision kills (`energy:kill:precision`,
   `kinetic:kill:3:precision`: all three are). Its kills raise `Killed` as precision kills, so the kill rules with
-  `precision: true` fire on them and on no other kill (Spark of Brilliance: a precision kill of a blinded enemy blinds
-  the enemies around it); every other kill rule fires as on any kill. A hit step takes it too (`energy:hit:precision`):
+  `hit: precision` fire on them and on no other kill (Spark of Brilliance: a precision kill of a blinded enemy blinds
+  the enemies around it), the ones with `hit: body` never do (Hatchling's chance on fewer than 3 body kills); every
+  other kill rule fires as on any kill. A hit step takes it too (`energy:hit:precision`):
   the game has precision hits, though no rule reacts to one yet. It goes with `:shield`, written after it
   (`energy:kill:shield:precision`, read in either order): a shield takes no precision damage while it holds, but the step
   breaks it with its first hit and its killing blow can then be a headshot. An ability step, a Super and a reload take no

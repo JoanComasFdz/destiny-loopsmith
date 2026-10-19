@@ -191,8 +191,9 @@ elements:
       values: { 15s: 17s }
       description: "The enhanced Reaper's Tithe: as Reaper's Tithe, lasting up to 17 s instead of 15 s."
 
-  # "A Precision Kill OR 3 kills within 3 seconds of each": Loopsmith has no precision hits, so a step with fewer than
-  # 3 kills spawns the Threadling as a chance (one of them may be a precision kill, or earlier kills count).
+  # "A Precision Kill OR 3 kills within 3 seconds of each": 3 kills hatch it, and so does a step with fewer kills when the
+  # player says they are precision ones (ADRs D36); with fewer body kills, the kills of the steps before may still count,
+  # so it hatches as a chance.
   - id: hatchling
     name: Hatchling
     kind: weaponPerk
@@ -207,11 +208,16 @@ elements:
           - { summon: threadling }
         reason: "Three quick kills with this weapon hatch a Threadling."
       - id: hatchling-2
-        on: { kill: { via: "weapon:this", fewerThan: 3 } }
+        on: { kill: { via: "weapon:this", fewerThan: 3, hit: body } }
         then:
           - { summon: threadling }
         chance: true
-        reason: "Fewer than three kills in this step: a precision kill, or the kills of the steps before, may hatch it."
+        reason: "Fewer than three body kills in this step: the kills of the steps before may hatch it."
+      - id: hatchling-5
+        on: { kill: { via: "weapon:this", fewerThan: 3, hit: precision } }
+        then:
+          - { summon: threadling }
+        reason: "A precision kill with this weapon hatches a Threadling."
     passives: []
     # The enhanced trait's second Threadling comes at a chance the Compendium marks uncertain (10?%): one more Threadling
     # as a chance, on the same kills as the first.
@@ -232,7 +238,8 @@ elements:
           reason: "When it hatches one, the enhanced trait may hatch a second."
       description: "The enhanced Hatchling: as Hatchling, and a second Threadling may hatch with the first (a ?% chance)."
 
-  # An origin trait (EDZ weapons). "A Precision Kill OR 3 Weapon Kills within 3 seconds of each", as Hatchling. The
+  # An origin trait (EDZ weapons). "A Precision Kill OR 3 Weapon Kills within 3 seconds of each", as Hatchling: 3 kills
+  # or a precision kill set it off, fewer body kills as a chance. The
   # Kinetic shockwave is this weapon's damage (a strike by this weapon, of Kinetic damage); its size (8 m, 9 m enhanced)
   # and damage (20 for Auto and Pulse Rifles, 23 for Snipers) are in the description.
   - id: veterans-wisdom
@@ -250,12 +257,18 @@ elements:
           - { debuffTarget: { status: exhaust, duration: 10s } }
         reason: "Three quick kills with this weapon set off a shockwave that exhausts the enemies around."
       - id: veterans-wisdom-2
-        on: { kill: { via: "weapon:this", fewerThan: 3 } }
+        on: { kill: { via: "weapon:this", fewerThan: 3, hit: body } }
         then:
           - { strikeTarget: { via: "weapon:this", type: kinetic, hit: damage } }
           - { debuffTarget: { status: exhaust, duration: 10s } }
         chance: true
-        reason: "Fewer than three kills in this step: a precision kill, or the kills of the steps before, may set it off."
+        reason: "Fewer than three body kills in this step: the kills of the steps before may set it off."
+      - id: veterans-wisdom-3
+        on: { kill: { via: "weapon:this", fewerThan: 3, hit: precision } }
+        then:
+          - { strikeTarget: { via: "weapon:this", type: kinetic, hit: damage } }
+          - { debuffTarget: { status: exhaust, duration: 10s } }
+        reason: "A precision kill with this weapon sets off a shockwave that exhausts the enemies around."
     passives: []
     enhanced:
       hash: 4225294165

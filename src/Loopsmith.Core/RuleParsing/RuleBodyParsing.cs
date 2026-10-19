@@ -22,7 +22,7 @@ internal static class RuleBodyParsing
 {
     private static readonly ImmutableArray<string> RuleKeys = ["id", "on", "when", "then", "chance", "reason", "doesNotStackWith"];
     private static readonly ImmutableArray<string> PassiveRuleKeys = ["id", "effect", "when", "reason"];
-    private static readonly ImmutableArray<string> KillKeys = ["via", "tier", "targetHas", "atLeast", "fewerThan", "within", "precision"];
+    private static readonly ImmutableArray<string> KillKeys = ["via", "tier", "targetHas", "atLeast", "fewerThan", "within", "hit"];
     private static readonly ImmutableArray<string> DamageKeys = ["via", "targetHas", "atLeast", "fewerThan", "within", "sustained"];
 
     private static readonly ImmutableArray<string> TriggerNames =
@@ -176,9 +176,9 @@ internal static class RuleBodyParsing
                 map.ReadOptional("atLeast", ReadTargetCount),
                 map.ReadOptional("fewerThan", ReadFewerThan),
                 map.ReadOrDefault("within", ReadDuration, Optional.None<Seconds>()),
-                map.ReadOrDefault("precision", ReadBoolean, false),
-                (_, via, tier, targetHas, atLeast, fewerThan, within, precision) =>
-                    (via, tier, targetHas, atLeast, fewerThan, within, needs: precision ? HitZone.Precision : HitZone.Body))
+                map.ReadOrDefault("hit", ReadZoneNeed, new ZoneNeed.AnyZone()),
+                (_, via, tier, targetHas, atLeast, fewerThan, within, needs) =>
+                    (via, tier, targetHas, atLeast, fewerThan, within, needs))
             .Bind(kill => Combine(
                 CheckAtLeastStandsAlone(map, kill.atLeast, ("tier", kill.tier.IsSome()), ("targetHas", kill.targetHas.IsSome())),
                 CheckFewerThanStandsAlone(map, kill.fewerThan, ("tier", kill.tier.IsSome()), ("targetHas", kill.targetHas.IsSome()), ("within", kill.within.IsSome() && kill.atLeast.IsSome())),
@@ -186,6 +186,10 @@ internal static class RuleBodyParsing
                 CheckFewerThanAboveAtLeast(map, kill.atLeast, kill.fewerThan),
                 ToKillTrigger(map, kill.via, kill.tier, kill.targetHas, kill.atLeast, kill.fewerThan, kill.within, kill.needs),
                 (_, _, _, _, trigger) => trigger)));
+
+    /// <summary><c>hit: precision</c> or <c>hit: body</c>: where a kill must land (ADRs D36); without it, any kill.</summary>
+    private static Result<ZoneNeed, Errors> ReadZoneNeed(YamlValue value) =>
+        ReadVocabularyWord<HitZone>(value).Map(ZoneNeed (zone) => zone == HitZone.Precision ? new ZoneNeed.PrecisionOnly() : new ZoneNeed.BodyOnly());
 
     /// <summary><c>within</c> is the window a source gives its kills or hits ("2 kills within 3 s"): only a count has one.</summary>
     private static Result<Unit, Errors> CheckWithinNeedsAtLeast(YamlMap map, Optional<Seconds> within, Optional<TargetCount> atLeast, string what) =>
@@ -208,7 +212,7 @@ internal static class RuleBodyParsing
 
     /// <summary>
     /// A kill is "of a tier", "of a debuffed target", "of at least N in one action" (and fewer than M) or "of fewer than N in
-    /// one action" — never two others (not representable). Any of them can need a precision kill (<c>precision: true</c>, ADRs D36).
+    /// one action" — never two others (not representable). Any of them can need a precision or a body kill (<c>hit:</c>, ADRs D36).
     /// </summary>
     private static Result<Trigger, Errors> ToKillTrigger(
         YamlMap map,
@@ -218,7 +222,7 @@ internal static class RuleBodyParsing
         Optional<TargetCount> atLeast,
         Optional<TargetCount> fewerThan,
         Optional<Seconds> within,
-        HitZone needs) =>
+        ZoneNeed needs) =>
         atLeast.Match(
             someCount => Succeed(fewerThan.Match<Trigger>(
                 someLimit => new Trigger.KillBetween(via, someCount.Value, someLimit.Value, needs),

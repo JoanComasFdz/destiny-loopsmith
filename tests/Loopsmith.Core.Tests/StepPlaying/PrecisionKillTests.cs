@@ -10,7 +10,8 @@ namespace Loopsmith.Core.Tests.StepPlaying;
 
 /// <summary>
 /// A weapon step's precision kills (ADRs D36): the player says them with <c>:precision</c>, and a kill trigger that needs
-/// one (<c>precision: true</c>, Spark of Brilliance's) fires on them and on no other kill.
+/// one (<c>hit: precision</c>, Spark of Brilliance's) fires on them and on no other kill, one that needs a body kill
+/// (<c>hit: body</c>, Hatchling's chance) on every other kill only.
 /// </summary>
 public sealed class PrecisionKillTests
 {
@@ -21,7 +22,7 @@ public sealed class PrecisionKillTests
 
     /// <summary>Spark of Brilliance's shape: a precision kill of a jolted enemy jolts the enemies around it.</summary>
     private static readonly BuildElement Brilliance = Element("brilliance", ElementKind.Fragment,
-        [On(new Trigger.KillDebuffed(new DamageSource.AnySource(), [Status("jolt")], HitZone.Precision), Debuff("jolt"))]);
+        [On(new Trigger.KillDebuffed(new DamageSource.AnySource(), [Status("jolt")], new ZoneNeed.PrecisionOnly()), Debuff("jolt"))]);
 
     /// <summary>A grenade that jolts what it hits, so the next kill is of a jolted enemy.</summary>
     private static readonly BuildElement JoltGrenade = Element("jolt-grenade", ElementKind.Grenade,
@@ -81,6 +82,40 @@ public sealed class PrecisionKillTests
         Assert.Equal(2, resolution.Fired.Count(rule => rule.Source.Value == "any-kill"));
     }
 
+    /// <summary>Hatchling's shape: fewer than 3 kills hatch a Threadling for sure on a precision kill, by chance on a body kill.</summary>
+    private static readonly BuildElement Hatchling = Element("hatchling", ElementKind.Fragment,
+    [
+        On(new Trigger.KillFewer(new DamageSource.AnyWeapon(), TargetCount.From(3), new ZoneNeed.PrecisionOnly()), Buff("amplified")),
+        On(new Trigger.KillFewer(new DamageSource.AnyWeapon(), TargetCount.From(3), new ZoneNeed.BodyOnly()), Buff("amplified")) with { Likelihood = Likelihood.Chance },
+    ]);
+
+    [Fact]
+    public void A_body_kill_rule_fires_on_a_body_kill_step_and_never_on_a_precision_kill_step()
+    {
+        var build = ValidateBuild([Hatchling]);
+        var body = ActionResolution.ResolveAction(build, ActionResolution.CreateInitialState(), BodyKill);
+        var precise = ActionResolution.ResolveAction(build, ActionResolution.CreateInitialState(), PrecisionKill);
+
+        Assert.Equal([Likelihood.Chance], body.Fired.Where(rule => rule.Source.Value == "hatchling").Select(rule => rule.Likelihood));
+        Assert.Equal([Likelihood.Always], precise.Fired.Where(rule => rule.Source.Value == "hatchling").Select(rule => rule.Likelihood));
+    }
+
+    [Fact]
+    public void The_designer_offers_precision_on_a_weapon_when_a_rule_needs_a_body_kill()
+    {
+        var bodyOnly = Element("body-only", ElementKind.Fragment, [On(new Trigger.KillAny(new DamageSource.AnyWeapon(), new ZoneNeed.BodyOnly()), Buff("amplified"))]);
+
+        Assert.Equal([StepOption.Precision], LoopDesigning.ListStepOptions(ValidateBuild([bodyOnly]), BodyKill));
+    }
+
+    [Fact]
+    public void A_body_kill_trigger_reads_as_one()
+    {
+        var trigger = new Trigger.KillFewer(new DamageSource.AnySource(), TargetCount.From(3), new ZoneNeed.BodyOnly());
+
+        Assert.EndsWith(" (body)", Glossary.DescribeTrigger(trigger, Optional.None<DamageType>()));
+    }
+
     [Fact]
     public void The_designer_offers_precision_on_a_weapon_only_when_a_rule_needs_a_precision_kill()
     {
@@ -95,7 +130,7 @@ public sealed class PrecisionKillTests
     [Fact]
     public void A_precision_kill_trigger_reads_as_one()
     {
-        var trigger = new Trigger.KillDebuffed(new DamageSource.AnySource(), [Status("jolt")], HitZone.Precision);
+        var trigger = new Trigger.KillDebuffed(new DamageSource.AnySource(), [Status("jolt")], new ZoneNeed.PrecisionOnly());
 
         Assert.Equal("Kill Jolted target (precision)", Glossary.DescribeTrigger(trigger, Optional.None<DamageType>()));
     }
