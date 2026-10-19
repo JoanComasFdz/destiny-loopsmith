@@ -10,7 +10,9 @@ public static class RepoCatalog
 {
     public static readonly string Root = FindRoot();
 
-    public static readonly RuleCatalog Catalog = CatalogLoading.ParseCatalog(ReadRuleFiles(Path.Combine(Root, "rules")))
+    public static readonly ImmutableArray<SourceText> Files = ReadRuleFiles(Path.Combine(Root, "rules"));
+
+    public static readonly RuleCatalog Catalog = CatalogLoading.ParseCatalog(Files)
         .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
 
     private static ImmutableArray<SourceText> ReadRuleFiles(string root) =>

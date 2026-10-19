@@ -14,7 +14,7 @@ public static class DependencyGraphDrawing
 {
     public static DependencyGraph DrawGraph(RuleCatalog catalog, GuardianClass guardianClass, Subclass subclass)
     {
-        var context = new GraphContext(catalog, guardianClass, subclass);
+        var context = new GraphContext(catalog, Optional.Some(guardianClass), subclass);
         var drawn = catalog.Elements.Values
             .Where(element => DependencyMapping.IsDrawn(context, element))
             .OrderBy(element => element.Id.Value, StringComparer.Ordinal)
