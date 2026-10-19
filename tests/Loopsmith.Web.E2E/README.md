@@ -132,8 +132,24 @@ but each tab takes two to three times as long to reach Home, so the batch takes 
 stays at `default`, recorded or not.
 
 Converting the videos to GIFs and MP4s took 542 s one after another and about 295 s with `record.sh` converting one per
-core at a time. That is not four times faster, because x264 already spreads one MP4 over several cores. A batch like
-this one now takes about 15 minutes instead of 19.
+core at a time, with x264's `slow` preset. That is not four times faster, because x264 already spreads one MP4 over
+several cores. With the `veryfast` preset `record.sh` uses now, it takes 126 s, and a batch like this one about 10½
+minutes (8 of them playing the runs) instead of 15.
+
+How the preset was picked: the same 28 videos (untrimmed, so longer than `record.sh`'s) converted with each, one per
+core at a time. SSIM compares an MP4 with its source video (1.0 is the same picture), on a phone run and a desktop run.
+
+| x264 preset, crf | GIF and MP4 | MP4 only | The 28 MP4s | SSIM, phone / desktop |
+|---|---|---|---|---|
+| `slow`, 18 (before) | 369 s | 266 s | 110 MiB | 0.9986 / 0.9992 |
+| `medium`, 18 | 312 s | 202 s | 109 MiB | 0.9986 / 0.9992 |
+| `fast`, 18 | 314 s | 204 s | 105 MiB | 0.9984 / 0.9991 |
+| `veryfast`, 18 (now) | 231 s | 126 s | 90 MiB | 0.9976 / 0.9986 |
+| `fast`, 20 | 316 s | 193 s | 86 MiB | 0.9979 / 0.9988 |
+
+`medium` and `fast` save little, and crf 20 only makes the files smaller. Decoding the videos isn't what takes the time
+(14 s for all 28). Side by side at a phone's 780×1688, even on the frame where `veryfast` scored lowest, its text is as
+sharp as `slow`'s and nothing is blocky; only at 3× zoom does its dark background show slightly more speckle.
 
 ## The manifest cache
 
