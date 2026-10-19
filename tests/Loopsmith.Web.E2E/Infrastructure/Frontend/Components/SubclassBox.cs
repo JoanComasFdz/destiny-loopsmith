@@ -15,6 +15,13 @@ public sealed class SubclassBox(IPage page)
 
     private ILocator Fragments => Box.Locator("[data-testid=subclass-fragment]");
 
+    // A plug's square is named for its plug.
+    private ILocator FragmentSquare(Fragment fragment) =>
+        Fragments.And(Box.Page.GetByRole(AriaRole.Button, new() { Name = fragment.ToShownText(), Exact = true }));
+
+    /// <summary>Clicks <paramref name="fragment"/>'s square: its item details popup opens.</summary>
+    public Task ClickFragmentAsync(Fragment fragment) => OnScreen.PressAsync(Box, FragmentSquare(fragment));
+
     /// <summary>Clicks ⋯ on the Subclass box: the subclass editor opens.</summary>
     public Task ClickEditAsync() => OnScreen.PressAsync(Box, Edit);
 

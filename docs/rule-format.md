@@ -925,8 +925,8 @@ It is never added to the build's stats: the build's stat line and the `statCheck
 `fasterRegeneration` is how much faster those abilities' energy regenerates, as the source gives it, with its PvP value
 in `[…]` like `resistDamage` (its PvP value is `?` without one). It is a fact: no ability energy is tracked (ADRs D5), so
 it changes nothing in the loop. It is shown in the build's explanation and, while its `when` holds, in the step's state:
-with the status of its own element (`Spark of Recharge · 1 effect`, its tooltip
-`400% [PvP 200%] faster grenade and melee regeneration`), like a status's own changes to the weapons (Stats for All), or
+with the status of its own element (`Spark of Recharge · 1 effect`, its tooltip and the "Right then, after #N" card of
+its details `400% [PvP 200%] faster grenade and melee regeneration`), like a status's own changes to the weapons (Stats for All), or
 under the status that switches it on. Spark of Recharge (`rules/all-classes/arc/fragments.yaml`, Arc#22) gives its buff
 on reaching critical health, and the regeneration holds while the buff is on you:
 

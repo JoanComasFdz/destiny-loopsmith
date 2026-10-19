@@ -1,0 +1,5 @@
+# Spark of Frequency, with Spark of Volts (its finisher makes you Amplified): Amplified switches Spark of Frequency on.
+name: "E2E - Amplified switching on Spark of Frequency"
+class: hunter
+subclass: arc
+fragments: [spark-of-frequency, spark-of-volts]
