@@ -331,11 +331,12 @@ convert_run() {
   mkdir -p "$out/$domain" || return 1
   ffmpeg -nostdin -loglevel error -y -ss "$offset" -i "$video" -vf "$(palette_at $width)" "$out/$domain/$gif.gif" || return 1
   ffmpeg -nostdin -loglevel error -y -ss "$offset" -i "$video" -vf "$hold_end" -an \
-    -c:v libx264 -preset slow -crf 18 -pix_fmt yuv420p -movflags +faststart "$out/$domain/$gif.mp4"
+    -c:v libx264 -preset veryfast -crf 18 -pix_fmt yuv420p -movflags +faststart "$out/$domain/$gif.mp4"
 }
-# One conversion per core at a time: 28 runs on a 4-core session in about 5 minutes instead of 9 one after another
-# (x264 already spreads one MP4 over the cores; tests/Loopsmith.Web.E2E/README.md, "How long a recording takes"). A
-# conversion that fails names its video and fails the recording.
+# One conversion per core at a time, the MP4 with x264's veryfast preset: 28 runs on a 4-core session in about 2 minutes
+# (9 one after another with the slow preset, 5 converting in parallel with it; veryfast's MP4s look the same on the
+# player page and are smaller: tests/Loopsmith.Web.E2E/README.md, "How long a recording takes"). A conversion that
+# fails names its video and fails the recording.
 conversions="$(nproc)"
 failed_conversions="$out/.failed-conversions"
 : > "$failed_conversions"
