@@ -385,7 +385,7 @@ if [ -n "$flows" ]; then
       if drawn="$(cd "$repo" && dotnet run --no-build -c Release --project "$viewer" -- --rule "$rule" --out "$out/$domain" 2>&1)"; then
         echo "  $domain/$rule.png"
       else
-        printf '%s\n' "$drawn" | grep -v '^\s*$' | tail -1 > "$flow_errors/$rule.txt"
+        { printf '%s\n' "$drawn" | grep -v '^\s*$' || echo "the rule viewer failed with no message"; } | tail -1 > "$flow_errors/$rule.txt"
         echo "  no flow for $rule: $(cat "$flow_errors/$rule.txt")"
       fi
     done <<< "$flows"
