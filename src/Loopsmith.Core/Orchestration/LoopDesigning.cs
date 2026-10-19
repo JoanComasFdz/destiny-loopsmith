@@ -1071,6 +1071,30 @@ public static class LoopDesigning
             _ => action,
         };
 
+    /// <summary>
+    /// True when an equipped rule reacts to the rank of the enemy a kill kills (<c>kill: { tier: elite+ }</c>: Ascendant Escape):
+    /// the designer's rank picker on a kill row then sets something off, and the finisher takes a rank too (ADRs D45).
+    /// </summary>
+    public static bool ReactsToRank(ValidatedBuild build) =>
+        HasRule(build, rule => rule.On is Trigger.KillOfTier);
+
+    /// <summary>The ranks a kill step can say it kills, weakest first: the pack's minors, then elite, miniboss, champion, boss.</summary>
+    public static ImmutableArray<EnemyTier> ListRanks() =>
+        [.. Enum.GetValues<EnemyTier>()];
+
+    /// <summary>
+    /// The same step killing an enemy of that rank (ADRs D45): an ability's or weapon's kill, or a finisher. A hit, or any
+    /// other step, comes back unchanged: only a kill has a rank.
+    /// </summary>
+    public static PlayerAction SetKillRank(PlayerAction action, EnemyTier rank) =>
+        action switch
+        {
+            PlayerAction.CastAbility { Hit: HitOutcome.Kill } cast => cast with { Rank = rank },
+            PlayerAction.FireWeapon { Hit: HitOutcome.Kill } fire => fire with { Rank = rank },
+            PlayerAction.PerformFinisher finisher => finisher with { Rank = rank },
+            _ => action,
+        };
+
     // ── export, import, analyse, compare (LoopFiles, StepPlaying.LoopPlaying, LoopAnalyzing, ReportComparison) ──
 
     /// <summary>The design as a <c>.loop.yaml</c> file (docs/loop-format.md).</summary>

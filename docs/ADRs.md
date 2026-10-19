@@ -8,7 +8,7 @@ step's damage resistance (D29), armor mods in their sockets (D30), the artifact 
 (D33), what a hit step stands for (D34), the raid and activity mods left out of the sockets (D35), what the player
 says about a step besides its hit and count — a broken shield, precision kills, the last charge (D36), a reload (D37), the web designer as the only host (D38), the
 developer tools as hosts too (D39), the rules grouped by class, subclass and area, each rule with its own id (D40), a
-slide over an ammo brick (D41), a refill that is no reload (D42), an ammo brick picked up, slid over or not (D43), and readying a weapon (D44). D1 is the
+slide over an ammo brick (D41), a refill that is no reload (D42), an ammo brick picked up, slid over or not (D43), readying a weapon (D44) and the rank of the enemy a kill kills (D45). D1 is the
 founding one: every other decision follows from it.
 
 | # | Decision | Why |
@@ -54,6 +54,7 @@ founding one: every other decision follows from it.
 | D42 | A rule can refill a weapon (`refillWeapon`): a fact, no reload, so no `reload` rule fires; `reloadWeapon` is only for true reloads | The Compendium tells a refill from a reload: Demolitionist's and Return Stroke's refills set off no on-reload perk |
 | D43 | An ammo brick picked up is a step the player declares, Special or Heavy, slid over or not; it names no weapon and is always available | The perks that react to a brick (All-Star, Adhesive Ordnance, Overflow, Lead from Gold) need a trigger; bricks drop from enemies, which only play decides, and a slide is one way of picking a brick up |
 | D44 | Readying (swapping to) a weapon is a step the player declares; which weapon is in hand isn't kept | Mechaneer's Tricksleeves's damage buff comes from readying a sidearm at critical health; a weapon in hand would be state no other rule reads |
+| D45 | A kill step or a finisher says the rank of the enemy it kills (`energy:kill:elite`); a rule needs one rank or that rank and stronger (`tier: elite+`) | Ascendant Escape and Iron Sharpens Iron react to an Elite+ kill; the pack is minor (D7), and which enemy dies is play |
 
 ## What the product is
 
@@ -187,8 +188,8 @@ debuffs; the buffs on you and the pickups on the ground stay. A loop that meets 
 starts with `pack:new`; a loop against one boss leaves it out. **Consequence.** It matches how add-clear
 builds are explained ("everything is jolted"), and a debuff the next group doesn't have isn't
 credited to the next pass's first hit. The tier is
-`minor`: a kill rule for a higher tier shows in the build's explanation but doesn't fire in a loop
-until the player can declare the tier ([docs/backlog.md](backlog.md)).
+`minor`: a kill of a stronger enemy is a kill step the player says is of one (`energy:kill:elite`, D45), not a pack of
+its own, so the pack keeps its debuffs and the next minors are still in front of you.
 
 ### D8 — Chance rules always fire, marked *(chance)*
 
@@ -764,3 +765,24 @@ whose type the manifest doesn't say matches none), and a damage bonus can give i
 value (`"+100% [10%]"`), as a resistance does. **Consequence.** Which weapon is in hand isn't kept: no step before or after
 needs it, and the player declares a Ready step where the loop swaps. Nothing makes a weapon step ready its weapon. A weapon
 type with a damage type (`weapon:sidearm:arc`) waits until a rule needs it.
+
+### D45 — A kill step or a finisher says the rank of the enemy it kills
+
+**Context.** The pack is minor (D7), so a rule on the kill of a stronger enemy never fired in a loop. Oryx's Memory's two
+bonuses react to one (compendium/2026-10-19/Armor Perks#65–66, "On Elite+ Kill"; Bungie: "a final blow on a powerful
+combatant"). The Compendium ranks enemies (Game Mechanics#176–179): rank-and-file, elite, then miniboss and champion
+(one tier, with Tormentors), then boss. Which enemy a kill kills is play (D1). **Decision (product owner, 2026-10-19).**
+Like a broken shield or precision kills (D36), a kill step carries the rank of the enemy it kills, last in its token:
+`:elite`, `:miniboss`, `:champion` or `:boss` (none: a minor, the pack's). Every kill step takes one — a weapon's, the
+grenade's, the melee's, the Super's — and so does the finisher (`finisher:elite`): Bungie and the Compendium name no
+source, and Loopsmith's finisher already sets off the kill rules of any source (no source says whether the game counts a
+finisher as a final blow here; noted, not verified). A hit, a class ability, a reload or a declaration takes none. With
+a count, one kill is of that rank and the others are the pack's minors (`energy:kill:3:elite`: one elite and two
+minors), so a rank rule fires once. A rule's `tier:` takes the Compendium's ranks — `minor`, `elite`, `miniboss`,
+`champion`, `boss` — or a rank and every stronger one, `elite+` (the Compendium's "Elite+") and `miniboss+`
+(miniboss, champion or boss); `champion+` isn't one (champions share their tier with minibosses), and the old `major`
+is an error naming `elite`. In the designer, every row with a kill shows a **Rank** picker (Minor, Elite, Miniboss,
+Champion, Boss), enabled only when an equipped rule reacts to a rank; it stays picked for the next steps. Only then does
+the finisher show it too, and picks like a weapon instead of acting at one tap. **Consequence.** The pack stays minor
+and keeps its debuffs: a stronger enemy is one kill, not a new pack. Damage still has no rank (no rule reads one). The
+counters that count a kill of each rank differently (Synergy, Spark of Discharge) keep their per-rank figures as facts.

@@ -165,19 +165,20 @@ public static class ActionResolution
             fire => FireWeapon(build, state, fire),
             collect => CollectPickups(state, collect),
             declare => Declare(build, state, declare.Declaration),
-            _ => PerformFinisher(state),
+            finisher => PerformFinisher(state, finisher),
             reload => ReloadWeapon(build, state, reload),
             ammo => PickUpAmmo(state, ammo),
             ready => ReadyWeapon(build, state, ready));
 
     /// <summary>
     /// Never blocked: the finisher, then its hit and kill on one enemy of the pack. A finisher has no damage type and is
-    /// no weapon or ability, so only "any source" kills and hits react to it.
+    /// no weapon or ability, so only "any source" kills and hits react to it. Its kill is of the rank the player says
+    /// (<c>finisher:elite</c>, ADRs D45).
     /// </summary>
-    private static Opening PerformFinisher(GameState state)
+    private static Opening PerformFinisher(GameState state, PlayerAction.PerformFinisher finisher)
     {
         var origin = new DamageOrigin.Finisher();
-        return new Opening(state, [new PendingEvent.Ready(new GameEvent.Finisher()), new PendingEvent.HitTarget(origin, DamageSpan.Blow), new PendingEvent.KillTarget(origin)], []);
+        return new Opening(state, [new PendingEvent.Ready(new GameEvent.Finisher()), new PendingEvent.HitTarget(origin, DamageSpan.Blow), new PendingEvent.KillTarget(origin, HitZone.Body, finisher.Rank)], []);
     }
 
     /// <summary>
@@ -188,7 +189,7 @@ public static class ActionResolution
     {
         var kind = cast.Kind.ToAbilityKind();
         var origin = new DamageOrigin.Ability(kind, build.Build.Subclass.ToDamageType(), cast.Input);
-        var strike = ListStrikeEvents(origin, cast.Hit, cast.Targets, ShieldBreak.None, HitZone.Body);
+        var strike = ListStrikeEvents(origin, cast.Hit, cast.Targets, ShieldBreak.None, HitZone.Body, cast.Rank);
         return new Opening(state, [new PendingEvent.Ready(new GameEvent.AbilityCast(kind, cast.Input)), .. ListExpendedEvents(build, kind, cast.Charge), .. strike], []);
     }
 
@@ -263,7 +264,7 @@ public static class ActionResolution
     {
         var weapon = build.Build.Weapons.Select(w => w.Slot == fire.Slot ? Optional.Some(w) : Optional.None<WeaponLoadout>()).FindFirstSome();
         return weapon.Match(
-            some => new Opening(state, ListStrikeEvents(new DamageOrigin.Weapon(fire.Slot, some.Value.Type, some.Value.Ammo, some.Value.Archetype), fire.Hit, fire.Targets, fire.Shield, fire.Zone), []),
+            some => new Opening(state, ListStrikeEvents(new DamageOrigin.Weapon(fire.Slot, some.Value.Type, some.Value.Ammo, some.Value.Archetype), fire.Hit, fire.Targets, fire.Shield, fire.Zone, fire.Rank), []),
             _ => BlockAction(state, $"No weapon in the {fire.Slot} slot — nothing happens."));
     }
 
@@ -304,14 +305,15 @@ public static class ActionResolution
     /// later hits see the debuffs earlier ones applied — then one <see cref="GameEvent.TargetsHit"/> for the
     /// multi-target triggers ("hit 3+ enemies"). A hit step's hits are sustained damage, a kill step's its killing blows
     /// (ADRs D34). A step the player says breaks a shield breaks one, with its first hit; a precision step's kills are all
-    /// precision kills (ADRs D36).
+    /// precision kills; a step the player says kills a stronger enemy (an elite…) kills one of that rank, its first, and the
+    /// pack's minors after it (ADRs D36).
     /// </summary>
-    private static ImmutableArray<PendingEvent> ListStrikeEvents(DamageOrigin origin, HitOutcome hit, TargetCount targets, ShieldBreak shield, HitZone zone)
+    private static ImmutableArray<PendingEvent> ListStrikeEvents(DamageOrigin origin, HitOutcome hit, TargetCount targets, ShieldBreak shield, HitZone zone, EnemyTier rank)
     {
         var hits = Enumerable.Repeat<PendingEvent>(new PendingEvent.HitTarget(origin, hit == HitOutcome.Kill ? DamageSpan.Blow : DamageSpan.Sustained), targets.Value).ToImmutableArray();
         var broken = shield == ShieldBreak.Breaks ? new PendingEvent[] { new PendingEvent.Ready(new GameEvent.ShieldBroken(origin)) } : [];
         var kills = hit == HitOutcome.Kill
-            ? Enumerable.Repeat<PendingEvent>(new PendingEvent.KillTarget(origin, zone), targets.Value)
+            ? Enumerable.Repeat<PendingEvent>(new PendingEvent.KillTarget(origin, zone), targets.Value - 1).Prepend(new PendingEvent.KillTarget(origin, zone, rank))
             : [];
         return [hits[0], .. broken, .. hits[1..], .. kills, new PendingEvent.Ready(new GameEvent.TargetsHit(origin, targets, hit, zone))];
     }

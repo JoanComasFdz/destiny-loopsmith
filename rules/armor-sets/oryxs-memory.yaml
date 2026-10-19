@@ -1,0 +1,56 @@
+# Oryx's Memory armor set (King's Fall raid). Clarity has no armor-set entries; both bonuses are in the
+# Compendium snapshot of 2026-10-19 (Armor Perks tab, the set's name in the first column of row 65).
+# "Elite+" is an elite or stronger enemy (Game Mechanics#179: elite, then miniboss and champion, then boss):
+# `tier: elite+`, which a kill step the player says is of an elite, miniboss, champion or boss meets
+# (`energy:kill:elite`, `finisher:boss`, ADRs D45).
+elements:
+  # The Guardian kills are PvP (Loopsmith plays PvE packs, ADRs D7). Ammo isn't counted (ADRs D37):
+  # the progress is a fact shown with the outcome.
+  - id: oryxs-memory-2pc
+    name: Iron Sharpens Iron
+    kind: armorSetBonus
+    affinity: neutral
+    hash: 846599599           # the set's 2-piece perk (a manifest sandbox perk)
+    description: "Oryx's Memory 2-piece bonus: an Elite+ or Guardian kill gives +12% Special and +7.5% Heavy ammo progress."
+    source: "compendium/2026-10-19/Armor Perks#65"
+    rules:
+      - id: oryxs-memory-2pc-1
+        on: { kill: { via: any, tier: elite+ } }
+        then:
+          - { ammoProgress: { special: "12%", heavy: "7.5%" } }
+        reason: "Killing an elite or stronger enemy brings your next Special and Heavy ammo closer."
+    passives: []
+
+  # The Compendium doesn't say whether turning invisible uses the buff up; Bungie's text does: "the next
+  # time your shields are broken, you become invisible", once, so the invisibility removes Ascendant
+  # Escape (discrepancy with the Compendium's silence: owner's decision, 2026-10-19). Its "6+?" s is
+  # 6 s on the outcome, the "+?" in the description. No duration for Ascendant Escape is stated: it
+  # lasts until used or declared ended.
+  - id: oryxs-memory-4pc
+    name: Ascendant Escape
+    kind: armorSetBonus
+    affinity: neutral
+    hash: 846599598           # the set's 4-piece perk
+    description: "Oryx's Memory 4-piece bonus: an Elite+ kill grants Ascendant Escape. Reaching critical health, or being damaged at it, while you have it makes you invisible for 6+? s and uses it up."
+    source: "compendium/2026-10-19/Armor Perks#66"
+    rules:
+      - id: oryxs-memory-4pc-1
+        on: { kill: { via: any, tier: elite+ } }
+        then:
+          - { applyBuff: ascendant-escape }
+        reason: "Killing an elite or stronger enemy readies Ascendant Escape."
+      - id: oryxs-memory-4pc-2
+        on: { criticalHealth: {} }
+        when: [ { has: ascendant-escape } ]
+        then:
+          - { removeBuff: ascendant-escape }
+          - { applyBuff: { status: invisible, duration: 6s } }
+        reason: "When your shields break with Ascendant Escape ready, it turns you invisible."
+      - id: oryxs-memory-4pc-3
+        on: { hitAtCriticalHealth: {} }
+        when: [ { has: ascendant-escape } ]
+        then:
+          - { removeBuff: ascendant-escape }
+          - { applyBuff: { status: invisible, duration: 6s } }
+        reason: "Taking damage at critical health with Ascendant Escape ready turns you invisible."
+    passives: []

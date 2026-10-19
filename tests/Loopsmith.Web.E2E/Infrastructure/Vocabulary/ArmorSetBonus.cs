@@ -8,6 +8,8 @@ public partial record ArmorSetBonus
 {
     public partial record VigilantWatch;
     public partial record IronConviction;
+    public partial record IronSharpensIron;
+    public partial record AscendantEscape;
 
     /// <summary>What the UI shows that no case names yet: a failing assertion names it as the UI shows it.</summary>
     public partial record Unlisted(string Shown);
@@ -21,5 +23,7 @@ public static class ArmorSetBonusShowing
         value.Match(
             vigilantWatch => "Vigilant Watch",
             ironConviction => "Iron Conviction",
+            ironSharpensIron => "Iron Sharpens Iron",
+            ascendantEscape => "Ascendant Escape",
             unlisted => unlisted.Shown);
 }

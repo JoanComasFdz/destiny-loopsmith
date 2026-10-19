@@ -50,7 +50,7 @@
   Super heavy combo: 1
   Always on: 10
 
-## + what builds on it (withDependents): 159 rules
+## + what builds on it (withDependents): 162 rules
   Class ability: 11
   Air class ability: 1
   Melee: 11
@@ -65,10 +65,10 @@
   Special Arc weapon: 1
   Stasis weapon: 2
   Strand weapon: 2
-  Critical health: 3
-  Hit at critical health: 1
+  Critical health: 4
+  Hit at critical health: 2
   Airborne Super heavy: 1
-  Any: 10
+  Any: 11
   Bolt Charge: 4
   Bolt Charge strike: 2
   Ionic Trace: 3
@@ -198,24 +198,27 @@ arc-stasis-dual-siphon#3 mods-helmet-arc-stasis-dual-siphon-4: [Trigger] Stasis 
 arc-strand-siphon-combo#2 mods-helmet-arc-strand-siphon-combo-3: [Trigger] Strand weapon 2+ kills within 3s ➜ [Armor mod] Arc/Strand Siphon Combo (equipped) ➜ [Pickup] Orb of Power
 arc-strand-siphon-combo#3 mods-helmet-arc-strand-siphon-combo-4: [Trigger] Strand weapon fewer than 2 kills ➜ [Armor mod] Arc/Strand Siphon Combo (equipped) ➜ [Pickup] Orb of Power (chance)
 
-### Critical health (3)
+### Critical health (4)
 spark-of-recharge#0 all-classes-arc-fragments-spark-of-recharge-1: [Trigger] Critical health ➜ [Subclass fragment] Spark of Recharge (equipped) ➜ [Buff] Spark of Recharge
+oryxs-memory-4pc#1 armor-sets-oryxs-memory-oryxs-memory-4pc-2: [Trigger] Critical health ➜ [Armor set bonus] Ascendant Escape (equipped) + [Buff] Ascendant Escape (on you) ➜ [Buff] Invisible (6s), [Buff] Ascendant Escape (ends)
 emergency-reinforcement#0 mods-chest-emergency-reinforcement-1: [Trigger] Critical health ➜ [Armor mod] Emergency Reinforcement (equipped) + [Buff] Armor Charge (3+ stacks) ➜ [Buff] Emergency Reinforcement (6s | 9s | 12s by stacks spent), [Buff] Armor Charge (ends)
 iron-panoply-4pc#0 armor-sets-iron-panoply-iron-panoply-4pc-1: [Trigger] Critical health ➜ [Armor set bonus] Iron Conviction (equipped) ➜ [Buff] Iron Conviction (7s)
 
-### Hit at critical health (1)
+### Hit at critical health (2)
 spark-of-instinct#0 all-classes-arc-fragments-spark-of-instinct-1: [Trigger] Hit at critical health ➜ [Subclass fragment] Spark of Instinct (equipped) ➜ [Debuff] Jolt
+oryxs-memory-4pc#2 armor-sets-oryxs-memory-oryxs-memory-4pc-3: [Trigger] Hit at critical health ➜ [Armor set bonus] Ascendant Escape (equipped) + [Buff] Ascendant Escape (on you) ➜ [Buff] Invisible (6s), [Buff] Ascendant Escape (ends)
 
 ### Airborne Super heavy (1)
 arc-staff#1 hunter-arc-supers-arc-staff-3: [Trigger] Airborne Super heavy hit ➜ [Subclass super] Arc Staff (equipped) ➜ [Debuff] Blind
 
-### Any (10)
+### Any (11)
 flow-state#0 hunter-arc-aspects-flow-state-1: [Trigger] Any kill ➜ [Subclass aspect] Flow State (equipped) + [Debuff] Jolt (on the target) ➜ [Buff] Amplified
 tempest-strike#0 hunter-arc-aspects-tempest-strike-1: [Trigger] Any kill ➜ [Subclass aspect] Tempest Strike (equipped) + [Debuff] Jolt (on the target) ➜ [Buff] Bolt Charge
 spark-of-amplitude#0 all-classes-arc-fragments-spark-of-amplitude-1: [Trigger] Any 2+ kills within 4s ➜ [Subclass fragment] Spark of Amplitude (equipped) + [Buff] Amplified (on you) ➜ [Pickup] Orb of Power
 spark-of-amplitude#1 all-classes-arc-fragments-spark-of-amplitude-2: [Trigger] Any fewer than 2 kills ➜ [Subclass fragment] Spark of Amplitude (equipped) + [Buff] Amplified (on you) ➜ [Pickup] Orb of Power (chance)
 spark-of-brilliance#0 all-classes-arc-fragments-spark-of-brilliance-1: [Trigger] Any precision kill ➜ [Subclass fragment] Spark of Brilliance (equipped) + [Debuff] Blind (on the target) ➜ [Debuff] Blind
 spark-of-ions#0 all-classes-arc-fragments-spark-of-ions-1: [Trigger] Any kill ➜ [Subclass fragment] Spark of Ions (equipped) + [Debuff] Jolt (on the target) ➜ [Pickup] Ionic Trace
+oryxs-memory-4pc#0 armor-sets-oryxs-memory-oryxs-memory-4pc-1: [Trigger] Any kill (elite+) ➜ [Armor set bonus] Ascendant Escape (equipped) ➜ [Buff] Ascendant Escape
 dielectric#0 artifact-current-dielectric-1: [Trigger] Any kill ➜ [Artifact perk] Dielectric (equipped) + [Debuff] Jolt (on the target) ➜ [Buff] Bolt Charge
 iron-panoply-4pc#1 armor-sets-iron-panoply-iron-panoply-4pc-2: [Trigger] Any kill ➜ [Armor set bonus] Iron Conviction (equipped) + [Buff] Iron Conviction (on you) ➜ [Buff] Iron Conviction (7s)
 luminopotent-4pc#0 armor-sets-luminopotent-luminopotent-4pc-1: [Trigger] Any kill ➜ [Armor set bonus] Shock and Clear (equipped) + [Debuff] Jolt (on the target) ➜ [Pickup] Ionic Trace

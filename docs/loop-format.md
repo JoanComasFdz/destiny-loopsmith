@@ -65,7 +65,8 @@ Same tokens everywhere: loop files, web share links and a golden test's scenario
 
 `grenade[:hold]|melee[:slide|air]|super[:air|combo|guard][:hit|kill[:N]]` · `class[:air]` · `kinetic|energy|power[:hit|kill[:N]]` ·
 `kinetic|energy|power:reload` · `kinetic|energy|power:ready` · `ammo:special|heavy[:slide]` · `finisher` · `pickup:<pickup-id>` · `max:<status-id>` · `end:<status-id>` · `pack:new` · `health:critical` · `health:hit` — and last, an option:
-`:last` on a grenade, melee or class ability step, `:shield` and `:precision` on a weapon step
+`:last` on a grenade, melee or class ability step, `:shield` and `:precision` on a weapon step, and
+`:elite|miniboss|champion|boss` on a kill step or a finisher
 
 Tokens are read case-insensitively. Errors read `Unknown action '<token>'. Use …` or
 `Invalid target count in '<token>': use a whole number from 1 to 20 …`.
@@ -142,6 +143,14 @@ in every build, enabled only when a rule of the build reacts to readying that we
   rules fire (the Kickstarts spend your Armor Charge). With one charge in the build every use is the last one, so a
   plain `grenade` raises it too; with more (Shinobu's Vow's second grenade) only the use marked `:last` does. A Super
   and a weapon take no `:last` (`super:last`, `kinetic:last` are errors).
+* `:elite`, `:miniboss`, `:champion`, `:boss` — the rank of the enemy a kill step or a finisher kills, when it is stronger
+  than the pack's minors (ADRs D45): `energy:kill:elite`, `grenade:kill:last:boss`, `super:kill:2:champion`,
+  `finisher:elite`. With a count, one kill is of that rank and the others are minors (`kinetic:kill:3:elite`: an elite and
+  two minors). Its kill raises `Killed` of that rank, so the kill rules with a `tier:` it meets fire (`tier: elite+`:
+  Oryx's Memory's Ascendant Escape and Iron Sharpens Iron), and every other kill rule fires as on any kill. One rank per
+  step, with the other options in any order (`energy:kill:boss:precision:shield`); a hit, a class ability, a reload and a
+  declaration take none (`energy:hit:elite`, `class:elite`, `energy:reload:boss` are errors), and a minor is said by no
+  option (`energy:kill:minor` is an error).
 
 **States you declare** (ADRs D3). What only play decides — that a threshold is reached, that a status
 has ended, that the next enemies are a new pack — the player declares as a step of its own:
@@ -211,9 +220,9 @@ isn't modelled. The next pass starts from what the last one ended with.
 reads back as the same action (`grenade:hit` is written `grenade`). Labels read "Grenade (💀 kill 3)",
 "Festival Flight (🥊 hit 5)" (a weapon by its build name), "Sliding melee (💀 kill)" — 💀 marks a kill step and 🥊 a
 hit step, in the steps' titles and the HUD's buttons alike — "Festival Flight (💀 kill · 🛡 shield)", "Festival Flight (💀 kill ·
-🎯 precision)", "Festival Flight (💀 kill · 🛡 shield · 🎯 precision)", "Grenade (💀 kill ·
-⬜ spend fully)", "Class ability (⬜ spend fully)", "Class ability (in the air)",
-"Finisher", "Pick up Orb of Power", "Bolt Charge at max (x10)", "Amplified ends", "New pack", "Critical health",
+🎯 precision)", "Festival Flight (💀 kill · 🛡 shield · 🎯 precision)", "Festival Flight (💀 kill · Elite)",
+"Grenade (💀 kill · ⬜ spend fully)", "Class ability (⬜ spend fully)", "Class ability (in the air)",
+"Finisher", "Finisher (Boss)", "Pick up Orb of Power", "Bolt Charge at max (x10)", "Amplified ends", "New pack", "Critical health",
 "Hit at critical health", "Critical health ends".
 
 **What the web designer offers.** Only steps that can happen: the abilities, the equipped
@@ -252,7 +261,12 @@ precision** on each weapon when an equipped rule reacts to a precision kill (Spa
 **⬜ Spend fully** (its last charge) on the grenade, melee or class ability when the build gives it more than one charge and an equipped
 rule reacts to its energy fully expended (Shinobu's Vow and Grenade Kickstart). Ticked, it goes with the row's hit and
 kill (`energy:kill:shield`, `energy:kill:precision`, `grenade:kill:last`) and stays ticked for the next steps; a class ability with the option
-shows its button under the HUD instead of acting at one tap. Above the HUD, where the game lists your buffs, the states to declare are grouped by
+shows its button under the HUD instead of acting at one tap. Every row with a kill (a weapon's, the grenade's, the melee's,
+a secondary's, the Super's) also has a **Rank** picker — Minor, Elite, Miniboss, Champion, Boss: the enemy its kill kills
+(ADRs D45) — always shown and enabled only when an equipped rule reacts to a rank (Oryx's Memory's "Elite+"); greyed out,
+it stays at Minor. Picked, it goes with the row's kill (`energy:kill:elite`) and stays picked for the next steps. When a
+rule reacts to a rank, the finisher takes one too: its square then shows its button and the picker under the HUD
+("Finisher (Elite)") instead of acting at one tap. Above the HUD, where the game lists your buffs, the states to declare are grouped by
 status — on you, on your weapons, on the pack (with **New pack**) — each with its own buttons ("Bolt Charge: at max
 (x10) · ends"), and what is on the ground to pick up.
 

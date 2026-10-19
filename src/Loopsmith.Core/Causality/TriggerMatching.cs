@@ -20,7 +20,7 @@ public static class TriggerMatching
             killAny => gameEvent is GameEvent.Killed killed && killAny.Via.IsMatchedBy(killed.Origin, superType) && IsZoneMet(killAny.Needs, killed.Zone),
             killOfTier => gameEvent is GameEvent.Killed killed
                 && killOfTier.Via.IsMatchedBy(killed.Origin, superType)
-                && killed.Tier == killOfTier.Tier
+                && IsTierMet(killOfTier.Tier, killed.Tier)
                 && IsZoneMet(killOfTier.Needs, killed.Zone),
             killDebuffed => gameEvent is GameEvent.Killed killed
                 && killDebuffed.Via.IsMatchedBy(killed.Origin, superType)
@@ -206,6 +206,22 @@ public static class TriggerMatching
     /// <summary>A source that needs sustained damage fires on a hit step's hits only; any other on every hit (ADRs D34).</summary>
     private static bool IsSpanMet(DamageSpan needs, DamageSpan span) =>
         needs == DamageSpan.Blow || span == DamageSpan.Sustained;
+
+    /// <summary><c>tier: boss</c> is that rank only; <c>tier: elite+</c> that rank or stronger (minibosses and champions are one tier, ADRs D45).</summary>
+    private static bool IsTierMet(TierNeed needs, EnemyTier tier) =>
+        needs.Match(
+            exactly => tier == exactly.Tier,
+            atLeast => ReadStrength(tier) >= ReadStrength(atLeast.Tier));
+
+    /// <summary>How strong a rank is (compendium/2026-10-19/Game Mechanics#179): minibosses and champions share a tier.</summary>
+    private static int ReadStrength(EnemyTier tier) =>
+        tier switch
+        {
+            EnemyTier.Minor => 0,
+            EnemyTier.Elite => 1,
+            EnemyTier.Miniboss or EnemyTier.Champion => 2,
+            _ => 3,
+        };
 
     /// <summary>
     /// A source that needs a precision kill fires on the kills the player says are precision ones only, one that needs a body

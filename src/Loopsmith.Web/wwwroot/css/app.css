@@ -632,6 +632,9 @@ textarea { resize: vertical; }
 .target-count { min-width: 0; max-width: 100%; }
 /* a count says what it is for ("2 in 3 s · Arc Siphon"): it may be long, so it shrinks with an ellipsis on a phone */
 .target-count select { padding: 4px 4px 4px 6px; min-height: 34px; min-width: 0; max-width: 100%; text-overflow: ellipsis; font-family: var(--mono); font-size: 13px; }
+/* the rank of the enemy a kill kills (ADRs D45): always there on a kill row, greyed out while no rule reacts to it */
+.rank-pick select { font-family: inherit; }
+.rank-pick.disabled { opacity: .55; }
 .trigger {
     display: inline-flex;
     align-items: center;

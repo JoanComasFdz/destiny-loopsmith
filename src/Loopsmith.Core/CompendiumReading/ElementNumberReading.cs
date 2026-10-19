@@ -56,7 +56,8 @@ public static class ElementNumberReading
             _ => [],
             _ => [],
             _ => [],
-            _ => []);
+            _ => [],
+            ammo => [.. ReadValue("ammoProgress.special", ammo.Special), .. ReadValue("ammoProgress.heavy", ammo.Heavy)]);
 
     private static IEnumerable<StatedNumber> ReadPassive(Passive passive) =>
         passive.Match<IEnumerable<StatedNumber>>(

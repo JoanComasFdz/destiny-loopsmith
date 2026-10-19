@@ -5,11 +5,13 @@
    class's own), the weapons in their damage type's colour; above them what is on the ground and the states to declare. Tapping the Super,
    an ability or a weapon picks it: its actions show below the HUD — hit or kill, and how many enemies that one action
    catches — and stay there for the next step. One that only has one action (the class ability, its air move, the
-   finisher, a pickup, a declared state) acts at once. Every trigger is pickable — except while the build equips nothing
+   finisher, a pickup, a declared state) acts at once. A row with a kill has a Rank picker (the enemy it kills: the pack's
+   minors, or an elite, miniboss, champion or boss, ADRs D45), enabled only when an equipped rule reacts to a rank; then the
+   finisher takes one too, and picks like a weapon instead of acting at once. Every trigger is pickable — except while the build equips nothing
    (a build started from scratch, LoopDesigning.HasTriggerSource): then the panel is greyed out, nothing in it
    can be tapped, and a line says why. *@
 @{
-    var hud = TriggerHudShaping.ShapeHud(Options, counts, optionsOn, Build, Profile);
+    var hud = TriggerHudShaping.ShapeHud(Options, counts, optionsOn, ranks, Build, Profile);
     var disabled = !LoopDesigning.HasTriggerSource(Build);
     var picked = disabled ? Optional.None<HudSlot>() : FindPicked(hud);
 }
@@ -145,6 +147,20 @@
                     <span class="trig-option-caption" data-testid="trigger-option-caption">@toggle.Caption</span>
                 </button>
             }
+            @if (choice.Rank is Optional<RankPick>.Some rank)
+            {
+                <label class="target-count rank-pick @(rank.Value.IsEnabled ? "" : "disabled")" data-testid="rank-pick"
+                       title="@(rank.Value.IsEnabled ? "The enemy this kill kills: the pack's minors, or a stronger one" : "No rule of this build reacts to the rank of the enemy a kill kills")">
+                    <span class="rank-pick-caption">@DomainPhrasing.RankPicker</span>
+                    <select value="@rank.Value.Picked" data-action="rank" disabled="@(!rank.Value.IsEnabled)" @onchange="e => PickRank(choice.Key, e)"
+                            aria-label="@($"{choice.Title}: {DomainPhrasing.RankPicker}")">
+                        @foreach (var each in LoopDesigning.ListRanks())
+                        {
+                            <option value="@each">@each.DescribeRank()</option>
+                        }
+                    </select>
+                </label>
+            }
             @if (choice.Buttons.Any(button => button.StandsApart))
             {
                 @* A reload takes no enemy count and no option (ADRs D37): it stands at the row's right end, away from them. *@
@@ -166,6 +182,7 @@
 @code {
     private ImmutableDictionary<string, TargetCount> counts = ImmutableDictionary<string, TargetCount>.Empty;
     private ImmutableHashSet<string> optionsOn = ImmutableHashSet<string>.Empty;
+    private ImmutableDictionary<string, EnemyTier> ranks = ImmutableDictionary<string, EnemyTier>.Empty;
     private Optional<string> pickedKey = Optional.None<string>();
 
     [Parameter, EditorRequired]
@@ -388,6 +405,7 @@
             .SelectMany(ability => ability.Secondaries.Select(secondary => secondary.Slot).Prepend(ability.Slot))
             .Concat(hud.Weapons.Select(weapon => weapon.Slot))
             .Concat(hud.AmmoBrick.Match(found => new[] { found.Value }, _ => []))
+            .Concat(hud.Finisher.Match(found => new[] { found.Value }, _ => []))
             .Where(slot => slot.Choice.Key == key && !slot.AtOnce.IsSome())
             .Select(Optional.Some)
             .FindFirstSome());
@@ -407,6 +425,14 @@
         var key = TriggerPaletteShaping.ToOptionKey(rowKey, option);                              // pure
         var updated = optionsOn.Contains(key) ? optionsOn.Remove(key) : optionsOn.Add(key);     // pure
         optionsOn = updated;                                                                     // impure (component state)
+    }
+
+    /// <summary>Picks the rank of the enemy a row's kill kills, for its next steps.</summary>
+    private void PickRank(string key, ChangeEventArgs e)
+    {
+        var picked = TriggerPaletteShaping.ParseRank(e.Value?.ToString());                      // pure
+        var updated = picked.Match(rank => ranks.SetItem(key, rank.Value), _ => ranks.Remove(key)); // pure
+        ranks = updated;                                                                         // impure (component state)
     }
 
     private void PickTargetCount(string key, ChangeEventArgs e)

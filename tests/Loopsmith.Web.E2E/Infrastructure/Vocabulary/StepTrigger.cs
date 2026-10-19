@@ -12,6 +12,9 @@ public partial record StepTrigger
     public partial record PickUp(Brick Ammo);   // an ammo brick's button: "special", "heavy" (ADRs D43)
     public partial record Ready;
 
+    /// <summary>The finisher's one button when it takes a rank: "Finisher (Elite)" (ADRs D45).</summary>
+    public partial record FinisherOf(EnemyRank Rank);
+
     /// <summary>What the UI shows that no case names yet: a failing assertion names it as the UI shows it.</summary>
     public partial record Unlisted(string Shown);
 }
@@ -29,6 +32,7 @@ public static class StepTriggerShowing
             reload => "🔄 reload",
             pickUp => pickUp.Ammo.ToShownText(),
             ready => "✋ ready",
+            finisherOf => $"Finisher ({finisherOf.Rank.ToShownText()})",
             unlisted => unlisted.Shown);
 
     /// <summary>The case the UI's <paramref name="shown"/> text names, or <see cref="StepTrigger.Unlisted"/>.</summary>

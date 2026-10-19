@@ -279,7 +279,7 @@ public sealed class RuleCatalogParsingTests
     {
         var rule = ParseValidCatalog().Elements[ElementId.From("flow-state")].Rules[1];
 
-        Assert.Equal(new Trigger.KillOfTier(new DamageSource.WeaponOfType(DamageType.Strand), EnemyTier.Champion), rule.On);
+        Assert.Equal(new Trigger.KillOfTier(new DamageSource.WeaponOfType(DamageType.Strand), new TierNeed.Exactly(EnemyTier.Champion)), rule.On);
         Assert.Equal<Outcome>(
             [
                 new Outcome.Spawn(PickupId.From("orb-of-power"), 1),
@@ -2050,7 +2050,7 @@ public sealed class RuleCatalogParsingTests
             [Glossary, ToProbeFile("{ id: probe-1, on: { shieldBroken: {} }, then: [ { applyBuff: { status: armor-charge, stacks: \"1 | 2\" } } ] }")]));
         var byWeapon = AssertOk(RuleCatalogParsing.ParseCatalog(
             [Glossary, ToProbeFile("{ id: probe-1, on: { shieldBroken: { via: weapon } }, then: [ { applyBuff: armor-charge } ] }")]));
-        var withTier = ParseInvalidCatalog(Glossary, ToProbeFile("{ id: probe-1, on: { shieldBroken: { tier: major } }, then: [ { applyBuff: armor-charge } ] }"));
+        var withTier = ParseInvalidCatalog(Glossary, ToProbeFile("{ id: probe-1, on: { shieldBroken: { tier: elite } }, then: [ { applyBuff: armor-charge } ] }"));
         var zeroStacks = ParseInvalidCatalog(Glossary, ToProbeFile("{ id: probe-1, on: { shieldBroken: {} }, then: [ { applyBuff: { status: armor-charge, stacks: \"1 | 0\" } } ] }"));
 
         var rule = Assert.Single(catalog.Elements[ElementId.From("probe")].Rules);
@@ -2382,6 +2382,34 @@ public sealed class RuleCatalogParsingTests
         Assert.Equal(new Outcome.RefillWeapon(new DamageSource.ThisWeapon()), Assert.Single(Assert.Single(own.Elements[ElementId.From("probe")].Rules).Then));
         Assert.Equal(new Outcome.RefillWeapon(new DamageSource.WeaponInSlot(WeaponSlot.Power)), Assert.Single(Assert.Single(slot.Elements[ElementId.From("probe")].Rules).Then));
         Assert.Contains("refills one weapon: weapon:this, weapon:this:<type> or slot:<slot>", anyWeapon);
+    }
+
+    [Fact]
+    public void Parses_a_kill_of_one_rank_or_of_a_rank_and_stronger_and_refuses_the_old_major()
+    {
+        var elitePlus = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToProbeFile("{ id: probe-1, on: { kill: { tier: elite+ } }, then: [ { applyBuff: amplified } ] }")]));
+        var miniboss = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToProbeFile("{ id: probe-1, on: { kill: { tier: miniboss+ } }, then: [ { applyBuff: amplified } ] }")]));
+        var boss = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToProbeFile("{ id: probe-1, on: { kill: { tier: boss } }, then: [ { applyBuff: amplified } ] }")]));
+        var major = ParseInvalidCatalog(Glossary, ToProbeFile("{ id: probe-1, on: { kill: { tier: major } }, then: [ { applyBuff: amplified } ] }"));
+        var championPlus = ParseInvalidCatalog(Glossary, ToProbeFile("{ id: probe-1, on: { kill: { tier: champion+ } }, then: [ { applyBuff: amplified } ] }"));
+
+        Assert.Equal(new Trigger.KillOfTier(new DamageSource.AnySource(), new TierNeed.AtLeast(EnemyTier.Elite)), Assert.Single(elitePlus.Elements[ElementId.From("probe")].Rules).On);
+        Assert.Equal(new Trigger.KillOfTier(new DamageSource.AnySource(), new TierNeed.AtLeast(EnemyTier.Miniboss)), Assert.Single(miniboss.Elements[ElementId.From("probe")].Rules).On);
+        Assert.Equal(new Trigger.KillOfTier(new DamageSource.AnySource(), new TierNeed.Exactly(EnemyTier.Boss)), Assert.Single(boss.Elements[ElementId.From("probe")].Rules).On);
+        Assert.Contains("'major' is no tier: an elite is 'elite'", major);
+        Assert.Contains("'champion+' is not one of: minor, elite, miniboss, champion, boss, elite+, miniboss+", championPlus);
+    }
+
+    [Fact]
+    public void Parses_an_ammo_progress_outcome_as_a_fact()
+    {
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToProbeFile("{ id: probe-1, on: { kill: {} }, then: [ { ammoProgress: { special: \"12%\", heavy: \"?\" } } ] }")]));
+        var missing = ParseInvalidCatalog(Glossary, ToProbeFile("{ id: probe-1, on: { kill: {} }, then: [ { ammoProgress: { special: \"12%\" } } ] }"));
+
+        var progress = Assert.IsType<Outcome.GainAmmoProgress>(Assert.Single(Assert.Single(catalog.Elements[ElementId.From("probe")].Rules).Then));
+        Assert.Equal("12%", progress.Special.FormatPercent());
+        Assert.Equal("?%", progress.Heavy.FormatPercent());
+        Assert.Contains("heavy", missing);
     }
 
     [Fact]

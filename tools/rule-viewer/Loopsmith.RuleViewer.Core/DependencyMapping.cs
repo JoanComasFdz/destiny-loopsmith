@@ -133,7 +133,7 @@ internal static class DependencyMapping
         trigger.Match(
             abilityCast: _ => "cast",
             killAny: kill => DescribeKillLabel(kill.Needs, "kill"),
-            killOfTier: kill => DescribeKillLabel(kill.Needs, $"{kill.Tier.ToString().ToLowerInvariant()} kill"),
+            killOfTier: kill => DescribeKillLabel(kill.Needs, $"{DomainPhrasing.DescribeTierNeed(kill.Tier)} kill"),
             killDebuffed: kill => DescribeKillLabel(kill.Needs, "kill"),
             killMultiple: kill => DescribeKillLabel(kill.Needs, $"{kill.AtLeast.Value.ToString(CultureInfo.InvariantCulture)}+ kills"),
             damage: damage => DescribeHitLabel(damage.Needs),
@@ -250,7 +250,8 @@ internal static class DependencyMapping
             spendStacks: spend => [new Effect(ToStatusNode(context, spend.Status), EdgeKind.Ends, $"spends {spend.Count.Value.ToString(CultureInfo.InvariantCulture)}")],
             weaponStrike: strike => [Give(ToEffectNode("extra-strike", "Extra strike"), strike.Hit == HitOutcome.Kill ? "kill" : "hit")],
             reloadWeapon: _ => [Give(ToEffectNode("reload", "Reload"), "")],
-            refillWeapon: _ => [Give(ToEffectNode("refill", "Refill"), "")]);
+            refillWeapon: _ => [Give(ToEffectNode("refill", "Refill"), "")],
+            gainAmmoProgress: ammo => [Give(ToEffectNode("ammo-progress", "Ammo progress"), $"Special {ammo.Special.FormatPercent()}, Heavy {ammo.Heavy.FormatPercent()}")]);
 
     /// <summary>What a passive does while it holds: an effect it gives (resistance, a damage bonus, stats, a charge), or the status it boosts.</summary>
     internal static ImmutableArray<Effect> ListPassiveEffects(GraphContext context, Passive passive) =>

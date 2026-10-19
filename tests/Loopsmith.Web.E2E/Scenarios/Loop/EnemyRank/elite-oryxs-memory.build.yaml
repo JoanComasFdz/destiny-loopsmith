@@ -1,0 +1,9 @@
+# Oryx's Memory's 4-piece bonus (Ascendant Escape reacts to an Elite+ kill), with Flashbang Grenade and Crisis Inverted
+# (no rules of its own) for their kill rows.
+name: "E2E - Rank with Ascendant Escape"
+class: hunter
+subclass: arc
+grenade: flashbang-grenade
+armorSetBonuses: [oryxs-memory-4pc]
+weapons:
+  - { hash: 2888266564, perks: [] } # Crisis Inverted

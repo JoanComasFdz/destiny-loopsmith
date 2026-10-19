@@ -476,7 +476,7 @@ What the format can't count is written in one of three ways, and needs no new fo
 | `{ abilityCast: grenade }` (`grenade\|melee\|classAbility\|super`) | `AbilityCast(kind)` |
 | `{ abilityCast: { ability: classAbility, input: air } }` — only that use of the ability (a secondary; `input` is `press\|slide\|air\|hold`) | `AbilityCastAs(classAbility, air)` |
 | `{ kill: { via: <source> } }` | `KillAny(via)` |
-| `{ kill: { via: <source>, tier: champion } }` (`minor\|major\|boss\|champion`) | `KillOfTier(via, tier)` |
+| `{ kill: { via: <source>, tier: boss } }` (`minor\|elite\|miniboss\|champion\|boss`) — the kill of an enemy of that rank; `tier: elite+`, of an elite or stronger (the Compendium's "Elite+": elite, miniboss, champion or boss), `tier: miniboss+` of a miniboss, champion or boss (ADRs D45) | `KillOfTier(via, Exactly(rank) \| AtLeast(rank))` |
 | `{ kill: { via: <source>, targetHas: [jolt, sever] } }` | `KillDebuffed(via, statuses)` |
 | `{ damage: { via: <source> } }` | `Damage(via)` |
 | `{ damage: { via: <source>, targetHas: [sever] } }` | `DamageDebuffed(via, statuses)` |
@@ -520,8 +520,10 @@ unknown key (write `input: air`). [loop-format.md](loop-format.md#action-tokens)
 `tier` and `targetHas` together is an error (`kill cannot combine 'tier' and 'targetHas'`), and so is
 `atLeast` with either of them, or with `sustained` (`damage cannot combine 'atLeast' and 'sustained'`); `damage` has no
 `tier`. `sustained` (default `false`) is for a count the game doesn't show of hits or damage on one enemy: write it
-instead of `chance: true` (ADRs D34). The pack in front of you is `minor` (ADRs D7),
-so a `major|boss|champion` kill shows in the build's explanation but doesn't fire in a loop.
+instead of `chance: true` (ADRs D34). The pack in front of you is `minor` (ADRs D7): a kill of a stronger enemy is a
+kill step or finisher the player says is of one (`energy:kill:elite`, `finisher:boss`; ADRs D45), so a `tier:` rule fires
+on it and on no minor's kill. `champion+` isn't a tier (champions share their tier with minibosses), and `major`, the old
+word for an elite, is an error (`'major' is no tier: an elite is 'elite'`).
 `atLeast` is a whole number 1..20 (`TargetCount`, ADRs D4): the player says how many enemies an
 action hits ("One For All: hitting three separate targets…" → `{ damage: { via: weapon, atLeast: 3 } }`).
 `fewerThan` is 2..20 and stands alone like `atLeast` (`damage cannot combine 'atLeast' and 'fewerThan'`), but on a kill
@@ -777,6 +779,7 @@ sidearm is a fact in its description, as Spark of Momentum's is:
 | `{ collect: orb-of-power }` | `Collect` — picks the pickup up from the ground (Powerful Attraction) |
 | `{ reloadWeapon: weapon:this }` / `{ reloadWeapon: slot:power }` — reloads that one weapon: `weapon:this`, `weapon:this:<type>` or `slot:<slot>` | `ReloadWeapon` |
 | `{ refillWeapon: weapon:this }` / `{ refillWeapon: slot:power }` — refills that one weapon, no reload (Demolitionist, Return Stroke): the same weapons as `reloadWeapon` | `RefillWeapon` |
+| `{ ammoProgress: { special: "12%", heavy: "7.5%" } }` — progress toward your next Special and Heavy ammo (Iron Sharpens Iron); `"?"` when the source doesn't say | `GainAmmoProgress` |
 
 Statuses in `applyBuff`/`removeBuff`/`convertStacksToEnergy.consumed`/`has`/`lacks`/`atMax`/`buffGained`/`stacksMaxed`/`extraStacks`
 must be glossary `buff`s; in `debuffTarget`/`targetHas` glossary `debuff`s
@@ -817,6 +820,8 @@ must be glossary `buff`s; in `debuffTarget`/`targetHas` glossary `debuff`s
   `no weapon to reload`.
 * **`refillWeapon`** refills the same weapon: `refills your energy weapon`, a fact with no event, so no `reload` rule
   fires (ADRs D42). With no weapon there it carries the caveat `no weapon to refill`.
+* **`ammoProgress`** is a fact: `+12% Special, +7.5% Heavy ammo progress`. No ammo is counted (ADRs D37), so it changes
+  nothing and sets nothing off.
 
 What changes the state or sets off events: `applyBuff`, `removeBuff`, `debuffTarget`, `spawn`,
 `summon`, `strikeTarget`, `collect`, `spendStacks`, `reloadWeapon` (its reload event), and the consumption of

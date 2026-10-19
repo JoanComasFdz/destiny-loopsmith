@@ -408,6 +408,23 @@ public static class DomainPhrasing
     /// <summary>The same option on its box in the designer: "⬜ Spend fully".</summary>
     public const string LastChargeBox = "⬜ Spend fully";
 
+    /// <summary>The designer's picker of the rank of the enemy a kill step kills (ADRs D45): "Rank".</summary>
+    public const string RankPicker = "Rank";
+
+    /// <summary>An enemy's rank as the designer and a step's label say it: "Minor", "Elite", "Miniboss", "Champion", "Boss".</summary>
+    public static string DescribeRank(this EnemyTier rank) =>
+        rank.ToString();
+
+    /// <summary>A kill trigger's rank: "boss", or "elite+" for an elite or stronger.</summary>
+    public static string DescribeTierNeed(TierNeed tier) =>
+        tier.Match(
+            exactly => exactly.Tier.ToString().ToLowerInvariant(),
+            atLeast => atLeast.Tier.ToString().ToLowerInvariant() + "+");
+
+    /// <summary>" · Elite" in a kill step's label when the player says it kills a stronger enemy than the pack's minors; nothing for a minor.</summary>
+    private static string DescribeRankOption(EnemyTier rank) =>
+        rank == EnemyTier.Minor ? "" : $" · {rank.DescribeRank()}";
+
     // ── triggers, conditions, outcomes, passives ───────────────────────────────
 
     /// <summary>A rule's trigger as a player says it; <paramref name="superType"/>: see <see cref="DescribeDamageSource"/>.</summary>
@@ -415,7 +432,7 @@ public static class DomainPhrasing
         trigger.Match(
             cast => DescribeCast(cast.Kind),
             killAny => DescribeKill(glossary, killAny.Via, [], superType) + DescribeZone(killAny.Needs),
-            killOfTier => $"{DescribeKill(glossary, killOfTier.Via, [], superType)} ({killOfTier.Tier})" + DescribeZone(killOfTier.Needs),
+            killOfTier => $"{DescribeKill(glossary, killOfTier.Via, [], superType)} ({DescribeTierNeed(killOfTier.Tier)})" + DescribeZone(killOfTier.Needs),
             killDebuffed => DescribeKill(glossary, killDebuffed.Via, killDebuffed.TargetHas, superType) + DescribeZone(killDebuffed.Needs),
             killMultiple => DescribeMultiKill(glossary, killMultiple.Via, $"{killMultiple.AtLeast.Value.ToString(Invariant)}+", superType)
                 + DescribeWithin(killMultiple.Within) + DescribeZone(killMultiple.Needs),
@@ -626,7 +643,8 @@ public static class DomainPhrasing
                 + weapon.Type.Match(type => $", {type.Value} damage", _ => "")
                 + (weapon.Hit == HitOutcome.Kill ? " (kills)" : ""),
             reload => DescribeWeaponAction("reloads", glossary, reload.Weapon, superType),
-            refill => DescribeWeaponAction("refills", glossary, refill.Weapon, superType));
+            refill => DescribeWeaponAction("refills", glossary, refill.Weapon, superType),
+            ammo => $"+{ammo.Special.FormatPercent()} Special, +{ammo.Heavy.FormatPercent()} Heavy ammo progress");
 
     /// <summary>
     /// "reloads this weapon" (the catalog's text), "reloads your energy weapon" (bound to its slot), and "refills" the same
@@ -1056,7 +1074,7 @@ public static class DomainPhrasing
     /// </summary>
     public static string DescribeAction(this ValidatedBuild build, PlayerAction action) =>
         action.Match(
-            cast => $"{Capitalize(cast.Kind.ToAbilityKind().DescribeAbilityUse(cast.Input))} ({DescribeHit(cast.Hit, cast.Targets)}{DescribeChargeOption(cast.Charge)})",
+            cast => $"{Capitalize(cast.Kind.ToAbilityKind().DescribeAbilityUse(cast.Input))} ({DescribeHit(cast.Hit, cast.Targets)}{DescribeChargeOption(cast.Charge)}{DescribeRankOption(cast.Rank)})",
             use => (use.Input, use.Charge) switch
             {
                 (AbilityInput.Air, ChargeUse.Last) => $"Class ability (in the air · {LastChargeOption})",
@@ -1064,10 +1082,10 @@ public static class DomainPhrasing
                 (_, ChargeUse.Last) => $"Class ability ({LastChargeOption})",
                 _ => "Class ability",
             },
-            fire => $"{DescribeWeapon(build.Build, fire.Slot, fire.Slot.ToString())} ({DescribeHit(fire.Hit, fire.Targets)}{(fire.Shield == ShieldBreak.Breaks ? $" · {ShieldOption}" : "")}{(fire.Zone == HitZone.Precision ? $" · {PrecisionOption}" : "")})",
+            fire => $"{DescribeWeapon(build.Build, fire.Slot, fire.Slot.ToString())} ({DescribeHit(fire.Hit, fire.Targets)}{(fire.Shield == ShieldBreak.Breaks ? $" · {ShieldOption}" : "")}{(fire.Zone == HitZone.Precision ? $" · {PrecisionOption}" : "")}{DescribeRankOption(fire.Rank)})",
             collect => $"Pick up {build.Catalog.Glossary.DescribePickup(collect.Pickup)}",
             declare => build.DescribeDeclaration(declare.Declaration),
-            _ => Finisher,
+            finisher => finisher.Rank == EnemyTier.Minor ? Finisher : $"{Finisher} ({finisher.Rank.DescribeRank()})",
             reload => $"{Reload} {DescribeWeapon(build.Build, reload.Slot, reload.Slot.ToString())}",
             ammo => DescribeAmmoPickup(Optional.Some(ammo.Brick), ammo.Pickup),
             ready => $"{ReadyWeapon} {DescribeWeapon(build.Build, ready.Slot, ready.Slot.ToString())}");
@@ -1124,13 +1142,15 @@ public static class DomainPhrasing
     /// <c>ammo:heavy</c>, <c>ammo:special:slide</c>, <c>kinetic:ready</c>. The target count is written only when it is more than one; every
     /// token round-trips. An option goes last: <c>:last</c> on an ability's last charge (<c>grenade:kill:last</c>),
     /// <c>:shield</c> on a weapon step that breaks a shield (<c>kinetic:kill:3:shield</c>), then <c>:precision</c> on one whose
-    /// hits and kills are precision ones (<c>energy:kill:precision</c>, <c>energy:kill:shield:precision</c>) (ADRs D36).
+    /// hits and kills are precision ones (<c>energy:kill:precision</c>, <c>energy:kill:shield:precision</c>), and last the rank
+    /// of a stronger enemy a kill step or a finisher kills (<c>energy:kill:elite</c>, <c>grenade:kill:last:boss</c>,
+    /// <c>finisher:elite</c>) (ADRs D45).
     /// </summary>
     public static string ToActionToken(this PlayerAction action) =>
         action.Match(
-            cast => cast.Kind.ToString().ToLowerInvariant() + ToInputSuffix(cast.Input) + ToHitSuffix(cast.Hit, cast.Targets) + ToChargeSuffix(cast.Charge),
+            cast => cast.Kind.ToString().ToLowerInvariant() + ToInputSuffix(cast.Input) + ToHitSuffix(cast.Hit, cast.Targets) + ToChargeSuffix(cast.Charge) + ToRankSuffix(cast.Rank),
             use => "class" + ToInputSuffix(use.Input) + ToChargeSuffix(use.Charge),
-            fire => fire.Slot.ToString().ToLowerInvariant() + ToHitSuffix(fire.Hit, fire.Targets) + (fire.Shield == ShieldBreak.Breaks ? ":shield" : "") + (fire.Zone == HitZone.Precision ? ":precision" : ""),
+            fire => fire.Slot.ToString().ToLowerInvariant() + ToHitSuffix(fire.Hit, fire.Targets) + (fire.Shield == ShieldBreak.Breaks ? ":shield" : "") + (fire.Zone == HitZone.Precision ? ":precision" : "") + ToRankSuffix(fire.Rank),
             collect => $"pickup:{collect.Pickup}",
             declare => declare.Declaration.Match(
                 max => $"max:{max.Status}",
@@ -1138,10 +1158,14 @@ public static class DomainPhrasing
                 _ => "pack:new",
                 _ => "health:critical",
                 _ => "health:hit"),
-            _ => "finisher",
+            finisher => "finisher" + ToRankSuffix(finisher.Rank),
             reload => reload.Slot.ToString().ToLowerInvariant() + ":reload",
             ammo => $"ammo:{ammo.Brick.ToString().ToLowerInvariant()}" + (ammo.Pickup == BrickPickup.Slide ? ":slide" : ""),
             ready => ready.Slot.ToString().ToLowerInvariant() + ":ready");
+
+    /// <summary>":elite", ":miniboss", ":champion", ":boss" for a kill of a stronger enemy than the pack's minors; nothing for a minor.</summary>
+    private static string ToRankSuffix(EnemyTier rank) =>
+        rank == EnemyTier.Minor ? "" : ":" + rank.ToString().ToLowerInvariant();
 
     /// <summary>":last" for the use that spends an ability's last charge; nothing for a plain use.</summary>
     private static string ToChargeSuffix(ChargeUse charge) =>
