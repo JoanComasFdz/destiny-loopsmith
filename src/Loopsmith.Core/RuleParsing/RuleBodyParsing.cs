@@ -38,7 +38,7 @@ internal static class RuleBodyParsing
     ];
 
     private static readonly ImmutableArray<string> PassiveNames =
-        ["extraStacks", "extraCharges", "modifyDamage", "resistDamage", "modifyWeaponStats", "raiseMaxStacks", "modifyStat", "resistCombatantDamage"];
+        ["extraStacks", "extraCharges", "modifyDamage", "resistDamage", "modifyWeaponStats", "raiseMaxStacks", "modifyStat", "resistCombatantDamage", "fasterRegeneration"];
 
     internal static Result<Rule, Errors> ReadRule(ReferenceScope scope, YamlValue value) =>
         value.ToMap().Bind(map => Combine(
@@ -621,6 +621,7 @@ internal static class RuleBodyParsing
             "modifyWeaponStats" => ReadModifyWeaponStats(entry.Value),
             "raiseMaxStacks" => ReadRaiseMaxStacks(scope, entry.Value),
             "modifyStat" => ReadModifyStat(entry.Value),
+            "fasterRegeneration" => ReadFasterRegeneration(entry.Value),
             _ => entry.Value.FailAt<Passive>(DescribeUnknown("passive effect", entry.Key, PassiveNames)),
         });
 
@@ -634,6 +635,26 @@ internal static class RuleBodyParsing
             map.ReadRequired("stat", ReadVocabularyWord<StatKind>),
             map.ReadRequired("change", ReadStatPoints),
             Passive (_, stat, change) => new Passive.ModifyStat(stat, change)));
+
+    /// <summary>
+    /// <c>fasterRegeneration: { abilities: [grenade, melee], rate: "400% [200%]" }</c> (Spark of Recharge): how much faster
+    /// those abilities' energy regenerates, with its PvP value — a fact shown, no energy is tracked (ADRs D5).
+    /// </summary>
+    private static Result<Passive, Errors> ReadFasterRegeneration(YamlValue value) =>
+        value.ToMap().Bind(map => Combine(
+            map.CheckKeys(["abilities", "rate"]),
+            map.ReadRequired("abilities", ReadRegeneratingAbilities),
+            map.ReadRequired("rate", ReadPveAndPvp),
+            Passive (_, abilities, rate) => new Passive.FasterRegeneration(abilities, rate)));
+
+    /// <summary>The abilities a regeneration speeds up: at least one, each once.</summary>
+    private static Result<ImmutableArray<AbilityKind>, Errors> ReadRegeneratingAbilities(YamlValue value) =>
+        value.ReadEach("ability", ReadVocabularyWord<AbilityKind>)
+            .Bind(abilities => abilities.IsEmpty
+                ? value.FailAt<ImmutableArray<AbilityKind>>("fasterRegeneration.abilities must list at least one ability")
+                : abilities.Distinct().Count() < abilities.Length
+                    ? value.FailAt<ImmutableArray<AbilityKind>>("fasterRegeneration.abilities names an ability twice")
+                    : Succeed(abilities));
 
     /// <summary>A number of stat points ("+20", "+20 | +40 | +50", "?"); a percent is refused (it would read as a fraction).</summary>
     private static Result<GameValue, Errors> ReadStatPoints(YamlValue value) =>

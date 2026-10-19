@@ -42,6 +42,12 @@ statuses:
   # does. Being damaged while at it is the `health:hit` step. No duration: it lasts until you heal.
   - { id: critical-health, name: Critical health, kind: buff, affinity: neutral }
 
+  # Spark of Recharge's buff: on reaching critical health your grenade and melee regenerate faster,
+  # and the buff lasts until your shields are full again (compendium/2026-10-19/Arc#22; Bungie,
+  # Update 8.0.0.1: "persists until the player returns to full shields"), so it ends with Critical
+  # health (`endsWith`). Bungie's manifest has it as a perk of its own (sandbox perk 111808813).
+  - { id: spark-of-recharge, name: Spark of Recharge, kind: buff, affinity: arc, endsWith: critical-health }
+
   # Base maximum 3: compendium/2026-10-09/Game Mechanics#94. Charged Up raises a build's cap to
   # 4|5|6 by copies (the `charged-up` mod's raiseMaxStacks passive; Clarity 2577472338 agrees). Its
   # decay (1 stack every 10 s while a passive mod is equipped, same row) is a fact of the game:

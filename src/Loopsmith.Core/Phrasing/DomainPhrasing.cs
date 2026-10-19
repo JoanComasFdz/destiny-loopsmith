@@ -895,7 +895,14 @@ public static class DomainPhrasing
                 + string.Join(", ", weapons.Changes.Select(change => DescribeStatChange(change))),
             raise => $"{glossary.DescribeStatus(raise.Status)} up to x{raise.Max.FormatNumber()}",
             stat => $"{FormatSignedNumber(stat.Change)} {stat.Stat}",
-            combatant => $"{combatant.Amount.FormatPercent()} damage resistance against {combatant.Against.DescribeCombatantDamage(superType)}");
+            combatant => $"{combatant.Amount.FormatPercent()} damage resistance against {combatant.Against.DescribeCombatantDamage(superType)}",
+            regeneration => DescribeRegeneration(regeneration));
+
+    /// <summary>"400% [PvP 200%] faster grenade and melee regeneration": with its PvP value when the source gives one.</summary>
+    private static string DescribeRegeneration(Passive.FasterRegeneration regeneration) =>
+        regeneration.Rate.Pve.FormatPercent()
+        + regeneration.Rate.Pvp.Map(pvp => $" [PvP {pvp.FormatPercent()}]").UnwrapOr("")
+        + $" faster {JoinWithAnd(regeneration.Abilities.Select(ability => ability.DescribeAbility()).ToImmutableArray())} regeneration";
 
     /// <summary>"45% [PvP 25%] damage resistance": against any damage, with its PvP value when the source gives one.</summary>
     private static string DescribeResistance(Passive.ResistDamage resist) =>
@@ -934,6 +941,10 @@ public static class DomainPhrasing
             Passive.RaiseMaxStacks raise => raise with { Max = raise.Max.NarrowToCopies(copies) },
             Passive.ModifyStat stat => stat with { Change = stat.Change.NarrowToCopies(copies) },
             Passive.ResistCombatantDamage combatant => combatant with { Amount = combatant.Amount.NarrowToCopies(copies) },
+            Passive.FasterRegeneration regeneration => regeneration with
+            {
+                Rate = new PveAndPvp(regeneration.Rate.Pve.NarrowToCopies(copies), regeneration.Rate.Pvp.Map(pvp => pvp.NarrowToCopies(copies))),
+            },
             _ => passive,
         };
 

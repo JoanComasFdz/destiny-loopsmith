@@ -10,7 +10,8 @@ namespace Loopsmith.Core.TraceRendering;
 /// Something present at the end of a step: the keyword it is (a status, a pickup), its name as the state says it
 /// ("Bolt Charge (at max)"), its affinity, the element it is when the catalog has one (its details), the glossary's
 /// facts about it ("up to x10 · 15s": shown, never counted down — ADRs D1), what it switches on right then, and what its
-/// own element changes on the build's weapons while it is there (Stats for All's stats on its weapon: one chip, not two).
+/// own element does while it is there (Stats for All's stats on its weapon: one chip, not two; Spark of Recharge's faster
+/// regeneration).
 /// </summary>
 public sealed record StateEntry(
     KeywordRef Keyword,
@@ -19,17 +20,18 @@ public sealed record StateEntry(
     Optional<ElementId> Element,
     Optional<string> Facts,
     ImmutableArray<SwitchedOnEffect> SwitchesOn,
-    ImmutableArray<string> OwnWeaponEffects);
+    ImmutableArray<string> OwnEffects);
 
 /// <summary>
 /// Another element's passive that a status switches on right then ("+1 Bolt Charge per gain" from Spark of Frequency,
-/// while Amplified). A status's own effect (Woven Mail's damage resistance) is in its details, not here.
+/// while Amplified). A status's own effect is with it (<see cref="StateEntry.OwnEffects"/>), or, for a resistance or a
+/// damage bonus (Woven Mail's), in that section of the step.
 /// </summary>
 public sealed record SwitchedOnEffect(string Text, ElementId Source, string SourceName, Affinity Affinity);
 
 /// <summary>
 /// A passive changing the stats of some of the build's weapons right then (by index): shown with those weapons. A status's
-/// own (Stats for All's, while Stats for All is there) is shown with the status instead (<see cref="StateEntry.OwnWeaponEffects"/>).
+/// own (Stats for All's, while Stats for All is there) is shown with the status instead (<see cref="StateEntry.OwnEffects"/>).
 /// </summary>
 public sealed record WeaponEffect(string Text, ElementId Source, string SourceName, Affinity Affinity, ImmutableArray<int> Weapons);
 
@@ -120,14 +122,21 @@ public static class StepStateShaping
             build.Catalog.FindKeywordElement(keyword),
             facts,
             [.. ListSwitchedOn(reaching, status)],
-            [.. ListOwnWeaponEffects(reaching, status)]);
+            [.. ListOwnEffects(reaching, status)]);
     }
 
-    /// <summary>What the status's own element changes on the build's weapons while it is there (Stats for All's stats).</summary>
-    private static IEnumerable<string> ListOwnWeaponEffects(ImmutableArray<ReachingPassive> reaching, StatusId status) =>
+    /// <summary>
+    /// What the status's own element does while it is there that no other part of the step shows: its changes to the
+    /// build's weapons (Stats for All's stats) and its faster regeneration (Spark of Recharge's). Its damage resistance and
+    /// damage bonuses are in their own sections (Woven Mail's).
+    /// </summary>
+    private static IEnumerable<string> ListOwnEffects(ImmutableArray<ReachingPassive> reaching, StatusId status) =>
         reaching
-            .Where(passive => passive.Passive.Source.IsStatusElement(status) && passive.Reach is PassiveReach.Weapons)
+            .Where(passive => passive.Passive.Source.IsStatusElement(status) && IsOwnEffect(passive))
             .Select(passive => passive.Text + (passive.Passive.Likelihood == Likelihood.Chance ? " (chance)" : ""));
+
+    private static bool IsOwnEffect(ReachingPassive passive) =>
+        passive.Reach is PassiveReach.Weapons || passive.Passive.Passive.Modifier is Passive.FasterRegeneration;
 
     /// <summary>A pickup on the ground; one only chance rules dropped says so ("Orb of Power (chance)", ADRs D8).</summary>
     private static StateEntry ShapePickup(KeywordGlossary glossary, RuleCatalog catalog, GroundPickup ground)

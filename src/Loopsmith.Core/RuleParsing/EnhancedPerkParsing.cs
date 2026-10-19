@@ -207,7 +207,8 @@ internal static class EnhancedPerkParsing
             stats => stats.Changes.Select(change => change.Change),
             raise => [raise.Max],
             stat => [stat.Change],
-            combatant => [combatant.Amount]);
+            combatant => [combatant.Amount],
+            regeneration => [regeneration.Rate.Pve, .. regeneration.Rate.Pvp.Map(pvp => new[] { pvp }).UnwrapOr([])]);
 
     private static Outcome ReplaceValues(Outcome outcome, EnhancedValues values) =>
         outcome.Match<Outcome>(
@@ -259,7 +260,11 @@ internal static class EnhancedPerkParsing
             stats => stats with { Changes = [.. stats.Changes.Select(change => change with { Change = Replace(change.Change, values) })] },
             raise => raise with { Max = Replace(raise.Max, values) },
             stat => stat with { Change = Replace(stat.Change, values) },
-            combatant => combatant with { Amount = Replace(combatant.Amount, values) });
+            combatant => combatant with { Amount = Replace(combatant.Amount, values) },
+            regeneration => regeneration with
+            {
+                Rate = new PveAndPvp(Replace(regeneration.Rate.Pve, values), regeneration.Rate.Pvp.Map(pvp => Replace(pvp, values))),
+            });
 
     private static Seconds Replace(Seconds seconds, EnhancedValues values) =>
         values.Durations.TryGetValue(seconds, out var enhanced) ? enhanced : seconds;

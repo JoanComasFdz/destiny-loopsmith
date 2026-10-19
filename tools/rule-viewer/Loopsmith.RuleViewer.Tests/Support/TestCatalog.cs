@@ -17,10 +17,10 @@ public static class TestCatalog
     public static readonly KeywordGlossary Glossary = new(
         new[]
         {
-            new StatusDefinition(Status("bolt-charge"), "Bolt Charge", KeywordKind.Buff, Affinity.Arc, Optional.Some(StackCount.From(3)), Optional.None<Seconds>(), Optional.None<ItemHash>(), Optional.None<DrawnIcon>(), false, Optional.None<string>(), Optional.None<string>()),
-            new StatusDefinition(Status("amplified"), "Amplified", KeywordKind.Buff, Affinity.Arc, Optional.None<StackCount>(), Optional.Some(Seconds.From(10m)), Optional.None<ItemHash>(), Optional.None<DrawnIcon>(), false, Optional.None<string>(), Optional.None<string>()),
-            new StatusDefinition(Status("jolt"), "Jolt", KeywordKind.Debuff, Affinity.Arc, Optional.None<StackCount>(), Optional.Some(Seconds.From(4m)), Optional.None<ItemHash>(), Optional.None<DrawnIcon>(), false, Optional.None<string>(), Optional.None<string>()),
-            new StatusDefinition(Status("armor-charge"), "Armor Charge", KeywordKind.Buff, Affinity.Neutral, Optional.Some(StackCount.From(3)), Optional.None<Seconds>(), Optional.None<ItemHash>(), Optional.None<DrawnIcon>(), true, Optional.Some("1 stack every 10 s"), Optional.None<string>()),   // counted (ADRs D33)
+            new StatusDefinition(Status("bolt-charge"), "Bolt Charge", KeywordKind.Buff, Affinity.Arc, Optional.Some(StackCount.From(3)), Optional.None<Seconds>(), Optional.None<ItemHash>(), Optional.None<DrawnIcon>(), false, Optional.None<string>(), Optional.None<string>(), Optional.None<StatusId>()),
+            new StatusDefinition(Status("amplified"), "Amplified", KeywordKind.Buff, Affinity.Arc, Optional.None<StackCount>(), Optional.Some(Seconds.From(10m)), Optional.None<ItemHash>(), Optional.None<DrawnIcon>(), false, Optional.None<string>(), Optional.None<string>(), Optional.None<StatusId>()),
+            new StatusDefinition(Status("jolt"), "Jolt", KeywordKind.Debuff, Affinity.Arc, Optional.None<StackCount>(), Optional.Some(Seconds.From(4m)), Optional.None<ItemHash>(), Optional.None<DrawnIcon>(), false, Optional.None<string>(), Optional.None<string>(), Optional.None<StatusId>()),
+            new StatusDefinition(Status("armor-charge"), "Armor Charge", KeywordKind.Buff, Affinity.Neutral, Optional.Some(StackCount.From(3)), Optional.None<Seconds>(), Optional.None<ItemHash>(), Optional.None<DrawnIcon>(), true, Optional.Some("1 stack every 10 s"), Optional.None<string>(), Optional.None<StatusId>()),   // counted (ADRs D33)
         }.ToImmutableDictionary(s => s.Id),
         new[]
         {

@@ -229,6 +229,42 @@ public sealed class ArmorModMechanicsTests
             new Outcome.ApplyBuff(Status("armor-charge"), new BuffDuration.Unstated(), new StackGrant.PerModCount([StackCount.From(1), StackCount.From(2)]))),
     ]);
 
+    /// <summary>Spark of Recharge's shape: critical health gives its buff, and while it lasts the abilities regenerate faster.</summary>
+    private static readonly BuildElement Recharge = Element("recharge", ElementKind.Fragment,
+        [On(new Trigger.CriticalHealth(), Buff("recharge"))],
+        [new PassiveRule(
+            RuleId.From("test-rule-2"),
+            new Passive.FasterRegeneration([AbilityKind.Grenade, AbilityKind.Melee], new PveAndPvp(new GameValue.Known(4m), Optional.Some<GameValue>(new GameValue.Known(2m)))),
+            [new Condition.HasBuff(Status("recharge"))],
+            Optional.None<string>())]);
+
+    [Fact]
+    public void A_buff_that_ends_with_critical_health_ends_when_it_is_declared_ended()
+    {
+        var build = ValidateBuild([Recharge]);
+
+        var steps = ResolveSteps(build, CriticalHealth, EndCriticalHealth);
+
+        Assert.Equal([Status("critical-health"), Status("recharge")], steps[0].State.Buffs.Select(buff => buff.Status));
+        Assert.Empty(steps[1].State.Buffs);
+        Assert.Empty(steps[1].ActivePassives);
+    }
+
+    [Fact]
+    public void A_faster_regeneration_holds_while_its_buff_does_and_shows_as_the_buffs_own_effect()
+    {
+        var build = ValidateBuild([Recharge]);
+
+        var critical = ResolveOnce(build, CriticalHealth);
+        var state = StepStateShaping.ShapeStepState(build, critical.State, critical.ActivePassives);
+
+        Assert.Equal(["recharge"], critical.ActivePassives.Select(passive => passive.Source.Value));
+        var recharge = state.Buffs.Single(buff => buff.Text == "Recharge");
+        Assert.Equal(["400% [PvP 200%] faster grenade and melee regeneration"], recharge.OwnEffects);
+        Assert.Empty(recharge.SwitchesOn);
+        Assert.Contains("While Recharge -> 400% [PvP 200%] faster grenade and melee regeneration [Recharge]", DescribeExplanation(build));
+    }
+
     [Fact]
     public void Breaking_a_shield_is_a_weapon_steps_option_with_its_token_label_and_trigger()
     {

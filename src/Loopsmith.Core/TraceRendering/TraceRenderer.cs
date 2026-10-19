@@ -73,7 +73,7 @@ public static class TraceRenderer
     /// <summary>What a status does right then: its own weapon changes (Stats for All's stats), then what it switches on.</summary>
     private static ImmutableArray<(string Text, string SourceName, Affinity Affinity)> ListEntryEffects(StateEntry entry) =>
     [
-        .. entry.OwnWeaponEffects.Select(text => (text, entry.Text, entry.Affinity)),
+        .. entry.OwnEffects.Select(text => (text, entry.Text, entry.Affinity)),
         .. entry.SwitchesOn.Select(effect => (effect.Text, effect.SourceName, effect.Affinity)),
     ];
 

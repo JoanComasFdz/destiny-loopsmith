@@ -210,6 +210,7 @@ public static class KeywordInteracting
             _ => false,
             raise => IsStatus(keyword, raise.Status),
             _ => false,
+            _ => false,
             _ => false);
 
     private static bool IsAnyStatus(KeywordRef keyword, ImmutableArray<StatusId> statuses) =>

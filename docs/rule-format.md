@@ -90,6 +90,8 @@ The catalog version is `authored-<first 12 hex chars of SHA-256 over the (path, 
 statuses:
   - { id: bolt-charge, name: Bolt Charge, kind: buff,   affinity: arc, maxStacks: 10, trait: 2935077680 }
   - { id: jolt,        name: Jolt,        kind: debuff, affinity: arc, duration: 10s, trait: 3221118171 }
+  - { id: critical-health,   name: Critical health,   kind: buff, affinity: neutral }
+  - { id: spark-of-recharge, name: Spark of Recharge, kind: buff, affinity: arc, endsWith: critical-health }
 pickups:
   - { id: ionic-trace,  name: Ionic Trace,  affinity: arc,     collectsAutomatically: true, trait: 3824458961 }
   - { id: orb-of-power, name: Orb of Power, affinity: neutral, collectsAutomatically: false }
@@ -102,13 +104,21 @@ finishers:
 ```
 
 Each section is optional; ids are unique within a section. All keys shown are required except a
-status's `maxStacks` (a whole number ≥ 2), `duration` and `drawnIcon`, `counted` and `decay`, `adjective`, and `trait`.
+status's `maxStacks` (a whole number ≥ 2), `duration` and `drawnIcon`, `counted` and `decay`, `adjective`, `endsWith`, and `trait`.
 
 * `counted: true` (a buff with `maxStacks` only; `the status 'x' is counted, so it must be a buff with maxStacks`
   otherwise): the engine counts its stacks, sure and chance ones, and they decide what fires (ADRs D33). Armor Charge is
   the one counted status; `holds`, `spendStacks` and a table by stacks (below) need it. `decay` is how it loses stacks
   over time, as text from the source ("1 stack every 10 s while a passive Armor Charge mod is equipped …"): shown with
   the count, never applied.
+
+* `endsWith` (a buff): the buff whose end ends it too. Spark of Recharge's buff lasts until your shields are full
+  again (compendium/2026-10-19/Arc#22), which is when Critical health ends, so it is
+  `{ id: spark-of-recharge, name: Spark of Recharge, kind: buff, affinity: arc, endsWith: critical-health }`: declaring
+  `end:critical-health`, or a rule removing Critical health, removes Spark of Recharge as well (and any buff that ends
+  with it), with no second declaration. It names a buff of the glossary, not the status itself (`the status
+  'spark-of-recharge' ends with 'x', which isn't a buff of the glossary`, `the status 'x' can't end with itself`), and
+  only a buff takes it (`the status 'jolt' isn't a buff, so it doesn't end with a buff on you: endsWith is for a buff`).
 
 * `trait`: Bungie's trait for the keyword (the manifest's `DestinyTraitDefinition`: the game's own keyword, as
   its tooltips name it — Jolted for Jolt), by hash. The manifest excerpt's `keywordTraits` give its name and icon
@@ -412,11 +422,11 @@ tier. The Compendium check (tools/compendium/README.md) checks each citation and
 | `"+20 \| +40 \| +50"` | `PerModCount([20, 40, 50])` | plain numbers by copies (stat points: `modifyStat`) |
 | `"~25%"`, `"25%?"` | `Approximate(0.25)` | shown `~25%` |
 | `"?"`, `"?%"` | `Unknown()` | **never 0** |
-| `"300% [20%]"` | PvE part `Known(3.0)` | `[…]` is the PvP value: checked, then dropped (kept by `resistDamage`; refused by `resistCombatantDamage`) |
+| `"300% [20%]"` | PvE part `Known(3.0)` | `[…]` is the PvP value: checked, then dropped (kept by `resistDamage` and `fasterRegeneration`; refused by `resistCombatantDamage`) |
 | `2`, `"2"` | `Known(2)` | plain number |
 
 Game values appear in `grantEnergy.amount` (or `full`), `convertStacksToEnergy.perStack`, `modifyDamage.change`,
-`restoreHealth.amount`, `resistDamage`, `resistCombatantDamage.amount`, a weapon-stat `change`, `modifyStat.change` (stat points: a percent there is an
+`restoreHealth.amount`, `resistDamage`, `resistCombatantDamage.amount`, `fasterRegeneration.rate`, a weapon-stat `change`, `modifyStat.change` (stat points: a percent there is an
 error), and `ability.chunkScalar` / `baseCooldown`.
 Decimals use `.`; quote the value as the examples do (a bare `?` or `~` means something else to YAML).
 Every one is shown with its outcome, with its certainty (ADRs D13); an `Unknown` reads `?`.
@@ -850,6 +860,7 @@ passives:                               # Spark of Frequency (rules/all-classes/
 | `{ modifyWeaponStats: { archetypes: [fusion-rifle], changes: [ { stat: handling, change: "?" } ] } }` — the build's weapons of those archetypes; `weapon: this` instead of `archetypes`: the weapon holding the element (Stats for All), bound like `weapon:this` | `ModifyWeaponStats(OfArchetypes \| ThisWeapon, changes)` (non-empty lists; archetypes and stats are kebab-case words; a change is stat points, `"+35"`) |
 | `{ raiseMaxStacks: { status: armor-charge, max: "4 \| 5 \| 6" } }` (a status with `maxStacks`; no `when`) | `RaiseMaxStacks` — the cap with it equipped, by copies |
 | `{ modifyStat: { stat: grenade, change: "+20 \| +40 \| +50" } }` (`health\|melee\|grenade\|super\|class\|weapons`; stat points, not a percent) | `ModifyStat(stat, change)` — "+20 Grenade" |
+| `{ fasterRegeneration: { abilities: [grenade, melee], rate: "400% [200%]" } }` (`grenade\|melee\|classAbility\|super`, each once; `[…]` the PvP value) | `FasterRegeneration(abilities, rate)` — "400% [PvP 200%] faster grenade and melee regeneration" |
 
 Passives are facts and change no state. Each is shown with the value for the copies equipped (Weapon Surge
 `"+10% | +17% | +22% | +25%"` with two copies: `+17% Arc weapon damage`; Charged Up with one: `Armor Charge up to x4`).
@@ -878,6 +889,27 @@ through, 1 − (1 − a) × (1 − b) × … (compendium Armor Mods#7), never ad
 `modifyStat` (the Font mods: `+20 | +40 | +50` Grenade while Armor Charge, `when: [ { has: armor-charge } ]`) is a fact
 shown in the build's explanation and, while its `when` holds, in the step's state (`+20 Grenade [Grenade Font]` under Armor Charge).
 It is never added to the build's stats: the build's stat line and the `statChecks` that read it don't count it (ADRs D1, D28).
+
+`fasterRegeneration` is how much faster those abilities' energy regenerates, as the source gives it, with its PvP value
+in `[…]` like `resistDamage` (its PvP value is `?` without one). It is a fact: no ability energy is tracked (ADRs D5), so
+it changes nothing in the loop. It is shown in the build's explanation and, while its `when` holds, in the step's state:
+with the status of its own element (`Spark of Recharge · 1 effect`, its tooltip
+`400% [PvP 200%] faster grenade and melee regeneration`), like a status's own changes to the weapons (Stats for All), or
+under the status that switches it on. Spark of Recharge (`rules/all-classes/arc/fragments.yaml`, Arc#22) gives its buff
+on reaching critical health, and the regeneration holds while the buff is on you:
+
+<!-- RuleExampleTests reads the next yaml block as an element's keys -->
+```yaml
+    rules:
+      - id: spark-of-recharge-1
+        on: { criticalHealth: {} }
+        then:
+          - { applyBuff: spark-of-recharge }
+    passives:
+      - id: spark-of-recharge-2
+        effect: { fasterRegeneration: { abilities: [grenade, melee], rate: "400% [200%]" } }
+        when: [ { has: spark-of-recharge } ]
+```
 
 ## Build file (`builds/<build>/build.yaml`)
 
@@ -1041,7 +1073,8 @@ the ground.
   ground unchanged; it always holds and derives no event. `health:critical` ("Critical health") puts the
   `critical-health` status on you (no rule applies it: the engine does, as the declaration's own effect) and emits
   `CriticalHealth`, so the `criticalHealth` rules fire and cascade; it holds unless you are already at critical health.
-  The status stays until `end:critical-health` (your shields are full again). `health:hit` ("Hit at critical health")
+  The status stays until `end:critical-health` (your shields are full again), and its end ends every buff that ends
+  with it (the glossary's `endsWith`: Spark of Recharge's). `health:hit` ("Hit at critical health")
   emits `HitAtCriticalHealth`, so the `hitAtCriticalHealth` rules fire and cascade; it holds only while
   `critical-health` is on you and changes no state.
 * **Abilities are always available** (ADRs D5). A step is blocked only when it can't happen at all —

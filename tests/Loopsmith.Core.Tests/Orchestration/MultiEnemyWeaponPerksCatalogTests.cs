@@ -73,7 +73,7 @@ public sealed class MultiEnemyWeaponPerksCatalogTests
             Catalog.Glossary.DescribePassive(passive.Passive.Modifier, CopyCount.One, Optional.None<DamageType>()));
         var shown = StepStateShaping.ShapeStepState(session.Build, three.State, three.ActivePassives);
         var buff = Assert.Single(shown.Weapons);                                                     // one chip: the buff, with its stats
-        Assert.Equal(["Kinetic weapon: +10 Range, +10 Stability, +35 Handling, +35 Reload Speed"], buff.OwnWeaponEffects);
+        Assert.Equal(["Kinetic weapon: +10 Range, +10 Stability, +35 Handling, +35 Reload Speed"], buff.OwnEffects);
         Assert.Empty(shown.WeaponEffects);
     }
 

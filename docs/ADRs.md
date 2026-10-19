@@ -117,7 +117,8 @@ enemy's health (To Shreds' 6 weapon hits), which a hit step stands for (D34).
 * `health:critical` — you reached critical health ("Critical health"): no damage you take is modelled, so the player
   says when the shields broke. It puts the `critical-health` status on you until an `end:critical-health` (the
   shields are full again: the player says when, like any buff's end), and raises `CriticalHealth`, so the
-  `criticalHealth` rules fire (Emergency Reinforcement).
+  `criticalHealth` rules fire (Emergency Reinforcement). A buff that lasts until your shields are full ends with it, by
+  the same declaration (the glossary's `endsWith`: Spark of Recharge's buff), so the player declares one end, not two.
 * `health:hit` — you are damaged while at critical health ("Hit at critical health"). It raises `HitAtCriticalHealth`,
   so the `hitAtCriticalHealth` rules fire (Spark of Instinct's jolting burst), and changes no state. Critical health is
   a status so that this step needs a step before it: a loop that is hit at critical health shows where it got there.

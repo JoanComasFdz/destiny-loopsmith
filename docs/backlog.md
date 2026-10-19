@@ -46,14 +46,8 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   - steps that don't exist: being hit by a melee attack (Spark of Feedback). Critical health is a status on you, from
     the step the player declares (`health:critical`, Emergency Reinforcement, #69) until `end:critical-health`, and
     being damaged while at it is a step of its own (`health:hit`, "Hit at critical health": Spark of Instinct's jolting
-    burst; ADRs D3). The next task builds on them:
-    **Spark of Recharge reacts to "Critical health".** It is `inert` today.
-    Spark of Recharge (Arc#22): on reaching critical health, grenade and melee regenerate 400% [PvP 200%] faster until
-    your shields are full (the `critical-health` status's end). Its faster regeneration shows as an outcome on the
-    "Critical health" step (the owner: it belongs in the step even though it sets nothing else off), so it is no longer
-    `inert`; check against the Compendium that it is ability regeneration, not health. It is the first ability
-    regeneration shown as a fact (Facts, below). Use the Compendium snapshot for every value (`"?"` where it has none)
-    and record disagreements in the build's `discrepancies.md`.
+    burst; ADRs D3). Spark of Recharge gives its buff on "Critical health", and the buff ends with it (the glossary's
+    `endsWith`), its faster regeneration a fact (`fasterRegeneration`).
     Elements not authored yet that would use them (compendium/2026-10-19): on a hit at critical health, the Ascendant
     Escape set bonus (Armor Perks#66: on reaching critical health or being damaged at it) and Frost Renewal (a Stasis
     artifact perk, "taking critical damage"); while at critical health (`has: critical-health`), Thunderous Retort
@@ -83,7 +77,8 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   readable): health in HP (`restoreHealth` reads as a percentage, so Combination Blow 100 → 40 HP,
   Defibrillating Blast ~55 HP, To Shreds 15 HP per pulse stay `?`); values by level (Combination Blow +133% / +266% /
   +400% melee damage: once it is counted, "Counting, next", its count picks the value); an orb's energy by what
-  spawned it; ability regeneration (Flow State's, and Spark of Recharge's, whose task above is the first);
+  spawned it; Flow State's faster class ability regeneration while Amplified (a `fasterRegeneration` passive now
+  shows one: Spark of Recharge's);
   Amplified's other extras (+40 Handling: an "all weapons" archetype). One "described fact" value and passive would
   cover them. Amounts that scale with a stat are in "Stats, next".
   The ability profiles (`charges`, `chunkScalar`, `baseCooldown`) aren't shown in the build's explanation: show them there. `charges`

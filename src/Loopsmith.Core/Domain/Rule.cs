@@ -208,6 +208,7 @@ public partial record Passive
     partial record RaiseMaxStacks(StatusId Status, GameValue Max);           // Charged Up: the cap with it equipped, per copy ("4 | 5 | 6"), a fact (ADRs D3)
     partial record ModifyStat(StatKind Stat, GameValue Change);              // Grenade Font: "+20 Grenade" while it holds, a fact never added to the stats (ADRs D1)
     partial record ResistCombatantDamage(CombatantDamage Against, GameValue Amount);   // Arc Resistance: combatants only, nothing in PvP
+    partial record FasterRegeneration(ImmutableArray<AbilityKind> Abilities, PveAndPvp Rate);   // Spark of Recharge: "400% [200%]" faster, a fact (ADRs D5)
 }
 
 /// <summary>

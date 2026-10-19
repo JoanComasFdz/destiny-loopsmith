@@ -66,7 +66,9 @@ public static class ElementNumberReading
             weapons => weapons.Changes.SelectMany(change => ReadValue($"weapon stat {change.Stat}", change.Change)),
             raise => ReadValue("raiseMaxStacks", raise.Max),
             stat => ReadValue("modifyStat", stat.Change),
-            resist => [.. ReadValue("resistCombatantDamage", resist.Amount), .. ReadRange(resist.Against)]);
+            resist => [.. ReadValue("resistCombatantDamage", resist.Amount), .. ReadRange(resist.Against)],
+            regeneration => [.. ReadValue("fasterRegeneration", regeneration.Rate.Pve),
+                .. regeneration.Rate.Pvp.Match(pvp => ReadValue("fasterRegeneration (PvP)", pvp.Value).Select(number => number with { IsPvp = true }), _ => [])]);
 
     private static IEnumerable<StatedNumber> ReadRange(CombatantDamage against) =>
         against switch
