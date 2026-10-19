@@ -57,8 +57,14 @@ In one message:
   (`SendUserFile`, `display: render`) right after the message that shows the Gherkin, captioned with the Gherkin's
   title: the owner reads the flow (trigger ➜ what must be in place ➜ what it gives) next to the claim it plays. Several
   rule Gherkins: one PNG each, in the Gherkins' order, in one call. Do the same in any later round that adds a rule
-  Gherkin or changes one's `# Rule` line. When the viewer can't draw a rule (it says why: a name no rule has, rules
-  that don't parse), say so under that Gherkin in one line, with its words.
+  Gherkin or changes one's `# Rule` line.
+  **A rule that doesn't exist yet** (the viewer says "No rule is named '…'", and the task is to author it) is drafted
+  first, so the owner still gets its flow: write it under `rules/` where its name says (its file's path then its `id`,
+  CLAUDE.md, "Where things live"), by [docs/rule-format.md](../../../docs/rule-format.md), with its source cited and
+  `"?"` for any number you can't find (never invent); leave it uncommitted, draw its flow from the draft, and add
+  `(draft rule)` to the PNG's caption. A later round that changes that Gherkin's claim or `# Rule` line changes the
+  draft and draws it again; one that drops the Gherkin deletes the draft. When the viewer still can't draw a rule (it
+  says why: rules that don't parse, even with the draft), say so under that Gherkin in one line, with its words.
   Ask the owner to agree, or to say what to add, drop or change.
 - Anything you'd suggest adding, as a suggestion, not as a criterion, written the same way.
 
@@ -166,6 +172,9 @@ for; suggest it to them instead.
 
 When they say go, follow CLAUDE.md's "Agent workflow" from step 1. The spec becomes the PR's title and
 description when the work is ready for review.
+
+A rule drafted in round 1 (section 3) comes along, uncommitted, onto the work branch: the rule work starts from it
+and commits it, reviewed like any other rule.
 
 The work branch is always `claude/<slug>`, named from the agreed title (CLAUDE.md, "Naming (agent
 work)"), even when this session was handed a generated branch name such as
