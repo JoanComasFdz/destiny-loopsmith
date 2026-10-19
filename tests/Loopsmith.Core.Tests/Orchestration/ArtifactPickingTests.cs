@@ -20,7 +20,13 @@ public sealed class ArtifactPickingTests
             .Bind(CatalogLoading.ParseCatalog)
             .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
 
-    private const string SkipGrenadesPath = "builds/skip-grenade-hunter/loops/infinite-skip-grenades.loop.yaml";
+    /// <summary>A build that names seven of Tablet of Ruin's perks and not its artifact.</summary>
+    private const string SevenPerksBuild = """
+        name: Test
+        class: hunter
+        subclass: arc
+        artifactPerks: [defibrillating-blast, flashover, dielectric, to-shreds, horde-shuttle, unraveling-orbs, photonic-flare]
+        """;
 
     private static readonly ItemHash TabletOfRuin = ItemHash.From(3821685388u);
     private static readonly ItemHash HuntersJournal = ItemHash.From(2180638678u);
@@ -57,7 +63,7 @@ public sealed class ArtifactPickingTests
     [Fact]
     public void A_loop_that_doesnt_name_its_artifact_shows_the_one_its_perks_are_from_each_perk_in_the_slot_that_takes_the_fewest_tiers()
     {
-        var session = ImportLoop(SkipGrenadesPath);
+        var session = StartSevenPerkLoop();
 
         var choice = LoopDesigning.ReadArtifactChoice(session.Build);
 
@@ -65,12 +71,18 @@ public sealed class ArtifactPickingTests
         Assert.Equal<Optional<ItemHash>>(
             [Optional.Some(Dielectric), Optional.Some(UnravelingOrbs), Optional.Some(Flashover), Optional.Some(HordeShuttle), Optional.Some(PhotonicFlare), Optional.Some(DefibrillatingBlast), Optional.Some(ToShreds)],
             choice.Slots);
+        var artifact = Assert.IsType<Optional<BuildArtifact>.Some>(LoopDesigning.FindArtifact(session.Build)).Value;   // other artifacts share some of the seven
+        Assert.Equal("Tablet of Ruin", artifact.Item.Name);
+        Assert.Equal(
+            [DefibrillatingBlast, Flashover, Dielectric, ToShreds, HordeShuttle, UnravelingOrbs, PhotonicFlare],
+            artifact.Perks.Select(perk => perk.Hash));                                               // in the build's order
+        Assert.All(artifact.Perks, perk => Assert.True(perk.Element.IsSome()));
     }
 
     [Fact]
     public void A_slot_lists_the_perks_of_the_tiers_it_takes_tier_1_first()
     {
-        var tablet = FindTablet(ImportLoop(SkipGrenadesPath));
+        var tablet = FindTablet(StartSevenPerkLoop());
 
         Assert.Equal(7, LoopDesigning.ListArtifactSlotOptions(tablet, 0).Length);
         Assert.Equal(14, LoopDesigning.ListArtifactSlotOptions(tablet, 2).Length);
@@ -83,7 +95,7 @@ public sealed class ArtifactPickingTests
     [Fact]
     public void Each_perk_is_read_back_into_the_slot_it_was_put_in_and_the_loop_replays_without_the_one_taken_out()
     {
-        var session = ImportLoop(SkipGrenadesPath);
+        var session = StartSevenPerkLoop();
         var flashover = ElementId.From("flashover");
         Assert.True(LoopDesigning.IsEquipped(session.Build, flashover));
         ImmutableArray<Optional<ItemHash>> slots =
@@ -103,7 +115,7 @@ public sealed class ArtifactPickingTests
     [Fact]
     public void Another_artifact_with_empty_slots_and_no_artifact_at_all_can_be_picked()
     {
-        var session = ImportLoop(SkipGrenadesPath);
+        var session = StartSevenPerkLoop();
 
         var journal = Edit(session, new ArtifactChoice(Optional.Some(HuntersJournal), [.. Enumerable.Repeat(Empty, 7)]));
         var none = Edit(journal, new ArtifactChoice(Optional.None<ItemHash>(), []));
@@ -120,7 +132,7 @@ public sealed class ArtifactPickingTests
     [Fact]
     public void A_perk_in_a_slot_that_doesnt_take_its_tier_or_that_isnt_the_artifacts_is_refused()
     {
-        var session = ImportLoop(SkipGrenadesPath);
+        var session = StartSevenPerkLoop();
 
         Assert.Equal("Defibrillating Blast is a Tier 3 perk: slot 1 takes up to Tier 1.",
             Refusal(session, Slots(TabletOfRuin, (0, DefibrillatingBlast))));
@@ -135,7 +147,7 @@ public sealed class ArtifactPickingTests
     [Fact]
     public void Placing_perks_leaves_out_one_no_free_slot_takes()
     {
-        var tablet = FindTablet(ImportLoop(SkipGrenadesPath));
+        var tablet = FindTablet(StartSevenPerkLoop());
 
         var placed = ArtifactEditing.PlacePerks(tablet, [DefibrillatingBlast, ToShreds, TierThreeUnknown, Dielectric]);
 
@@ -145,7 +157,7 @@ public sealed class ArtifactPickingTests
     [Fact]
     public void An_artifact_shows_the_last_slots_picked_for_it_else_the_builds_else_empty_ones()
     {
-        var build = ImportLoop(SkipGrenadesPath).Build;
+        var build = StartSevenPerkLoop().Build;
         ImmutableArray<Optional<ItemHash>> journalSlots = [Optional.Some(ItemHash.From(3116632771u)), Empty, Empty, Empty, Empty, Empty, Empty];
         var remembered = ImmutableDictionary<ItemHash, ImmutableArray<Optional<ItemHash>>>.Empty.Add(HuntersJournal, journalSlots);
 
@@ -167,10 +179,13 @@ public sealed class ArtifactPickingTests
     private static string Refusal(DesignSession session, ArtifactChoice choice) =>
         Assert.IsType<Result<DesignSession, string>.Error>(LoopDesigning.EditArtifact(session, choice)).Failure;
 
-    private static DesignSession ImportLoop(string path) =>
-        FileSourceFetching.ReadTextFile(RepoFiles.ToPath(path))
-            .Bind(file => LoopDesigning.ImportLoop(Catalog, file))
+    /// <summary>The seven-perk build with one step (a new pack), so an edit has steps to keep.</summary>
+    private static DesignSession StartSevenPerkLoop()
+    {
+        var started = LoopDesigning.StartDesign(Catalog, new SourceText("build.yaml", SevenPerksBuild), "Test")
             .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
+        return LoopDesigning.AppendStep(started, new PlayerAction.Declare(new StateDeclaration.NewPack()), Optional.None<string>());
+    }
 
     private static DesignSession StartScratch() =>
         LoopDesigning.StartScratchDesign(Catalog).Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));

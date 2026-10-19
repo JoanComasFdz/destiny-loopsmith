@@ -16,11 +16,7 @@ namespace Loopsmith.Core.Tests.Orchestration;
 /// </summary>
 public sealed class MultiEnemyWeaponPerksCatalogTests
 {
-    private const string BuildPath = "builds/skip-grenade-hunter/build.yaml";
-
     private static readonly Result<ImmutableArray<SourceText>, string> RuleFiles = FileSourceFetching.ReadRuleFiles(RepoFiles.ToPath("rules"));   // impure
-
-    private static readonly string BuildText = File.ReadAllText(RepoFiles.ToPath(BuildPath));                                                    // impure
 
     private static readonly RuleCatalog Catalog =
         RuleFiles.Bind(CatalogLoading.ParseCatalog).Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
@@ -196,11 +192,23 @@ public sealed class MultiEnemyWeaponPerksCatalogTests
         return [.. choices.Select(choice => Catalog.Glossary.DescribeTargetCountChoice(choice))];
     }
 
-    /// <summary>The creator's build with only <paramref name="perk"/> (one perk id, or several comma-separated) on its Kinetic weapon (Festival Flight).</summary>
+    /// <summary>
+    /// An Arc Hunter with <paramref name="perk"/> (one perk id, or several comma-separated) on its Kinetic weapon (Festival
+    /// Flight, Strand), an Arc Energy weapon (Crisis Inverted) with none, Gambler's Dodge (it arms Slice) and Strand Siphon.
+    /// </summary>
     private static DesignSession StartWithKineticPerk(string perk)
     {
-        var text = BuildText.Replace("perks: [slice, attrition-orbs]", $"perks: [{perk}]", StringComparison.Ordinal);
-        return LoopDesigning.StartDesign(Catalog, new SourceText(BuildPath, text), "Test")
+        var text = $$"""
+            name: Test
+            class: hunter
+            subclass: arc
+            classAbility: gamblers-dodge
+            armorMods: [strand-siphon]
+            weapons:
+              - { hash: 4019651319, perks: [{{perk}}] } # Festival Flight
+              - { hash: 2888266564, perks: [] } # Crisis Inverted
+            """;
+        return LoopDesigning.StartDesign(Catalog, new SourceText("build.yaml", text), "Test")
             .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
     }
 }
