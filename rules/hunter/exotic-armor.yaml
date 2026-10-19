@@ -64,7 +64,8 @@ elements:
     rules:
       # The ammo refill on readying and the magazine refill on a kill are facts in the description:
       # a refill is no reload, and sets off no on-reload perk (compendium/2026-10-19/Weapon Perks#250,
-      # "Reload Perk Notes"; ADRs D41). Bungie's perk text says the swap "reloads" the Sidearm.
+      # "Reload Perk Notes"; ADRs D42), and `refillWeapon` names this weapon or a slot, not "the
+      # sidearm readied". Bungie's perk text says the swap "reloads" the Sidearm.
       # The buff outlasts critical health by 5 s and no time is counted (ADRs D1): it doesn't end
       # with critical health, the player declares its end (`end:spring-loaded-mounting`).
       - id: mechaneers-tricksleeves-2

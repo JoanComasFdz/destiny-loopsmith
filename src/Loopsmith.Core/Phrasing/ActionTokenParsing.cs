@@ -31,7 +31,7 @@ public static class ActionTokenParsing
     /// (<c>kinetic:kill:3:shield</c>); <c>:precision</c>, a weapon step whose hits and kills are precision ones
     /// (<c>energy:kill:precision</c>), with <c>:shield</c> too (<c>energy:kill:shield:precision</c>, in either order).
     /// <c>kinetic:reload</c> reloads that weapon (ADRs D37), and <c>kinetic:ammo</c> slides over an ammo brick with it in
-    /// hand (Spark of Momentum), and <c>kinetic:ready</c> readies it (ADRs D42): none takes a count or an option.
+    /// hand (Spark of Momentum), and <c>kinetic:ready</c> readies it (ADRs D43): none takes a count or an option.
     /// </summary>
     public static Result<PlayerAction, string> ParseActionToken(string token)
     {

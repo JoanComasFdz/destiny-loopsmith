@@ -5,7 +5,7 @@ using Loopsmith.Web.E2E.Infrastructure.Vocabulary;
 
 namespace Loopsmith.Web.E2E.Scenarios.Loop.Weapons;
 
-/// <summary>Readying (swapping to) a weapon as a step of its own (ADRs D42): it takes no enemy count.</summary>
+/// <summary>Readying (swapping to) a weapon as a step of its own (ADRs D43): it takes no enemy count.</summary>
 public sealed class ReadyWeaponTests : BaseE2E
 {
     [Theory, PlayInDesktop, PlayInMobile]

@@ -83,7 +83,7 @@ how many, how often, how long or when.
 a rule consumes or removes it, or when the player declares it ended. A source's "after 6 hits" or "for 10 s" is a fact in the
 description, never a mechanism. No damage or health model either: damage and healing outcomes are
 facts too. Movement (jumps, sprinting, slides) is outside the loop, but for a slide over an ammo brick, a step the
-player declares (D41), and for readying a weapon (D42).
+player declares (D41), and for readying a weapon (D43).
 
 ### D2 — The designed loop is the product
 

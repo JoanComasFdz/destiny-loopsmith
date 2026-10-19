@@ -111,7 +111,7 @@ public static class ActionResolution
     }
 
     /// <summary>
-    /// Whether an equipped rule reacts to readying this weapon (Mechaneer's Tricksleeves on a sidearm, ADRs D42): the step
+    /// Whether an equipped rule reacts to readying this weapon (Mechaneer's Tricksleeves on a sidearm, ADRs D43): the step
     /// always holds, but with nothing reacting to it, it sets nothing off. A rule's guard isn't read: what it needs may come
     /// from the steps before (critical health).
     /// </summary>
@@ -292,7 +292,7 @@ public static class ActionResolution
 
     /// <summary>
     /// The player readies (swaps to) a weapon: one event from that weapon, so the rules on it fire (Mechaneer's
-    /// Tricksleeves). Which weapon is in hand isn't kept (ADRs D42); never blocked but for an empty slot.
+    /// Tricksleeves). Which weapon is in hand isn't kept (ADRs D43); never blocked but for an empty slot.
     /// </summary>
     private static Opening ReadyWeapon(ValidatedBuild build, GameState state, PlayerAction.ReadyWeapon ready)
     {

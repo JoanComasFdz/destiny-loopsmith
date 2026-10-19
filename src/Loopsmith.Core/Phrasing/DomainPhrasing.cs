@@ -373,7 +373,7 @@ public static class DomainPhrasing
     /// <summary>A slide over an ammo brick's button, next to a weapon's hit, kill and reload: "📦 slide over ammo".</summary>
     public const string SlideOverAmmoCaption = "📦 slide over ammo";
 
-    /// <summary>What readying (swapping to) a weapon is called: the step ("Ready Buzzard") and its trigger (ADRs D42).</summary>
+    /// <summary>What readying (swapping to) a weapon is called: the step ("Ready Buzzard") and its trigger (ADRs D43).</summary>
     public const string ReadyWeapon = "Ready";
 
     /// <summary>A Ready step's button, next to a weapon's hit and kill: "✋ ready".</summary>

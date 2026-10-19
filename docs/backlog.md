@@ -52,7 +52,7 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
     Escape set bonus (Armor Perks#66: on reaching critical health or being damaged at it) and Frost Renewal (a Stasis
     artifact perk, "taking critical damage"); while at critical health (`has: critical-health`), Thunderous Retort
     (Artifact Perks#111), Vigilance (Void#28), Vigilant Watch (Armor Perks#49) and Enhanced Operator Augment (Armor
-    Mods#30) (Mechaneer's Tricksleeves is authored: readying a sidearm is a step, ADRs D42);
+    Mods#30) (Mechaneer's Tricksleeves is authored: readying a sidearm is a step, ADRs D43);
   - no longer gaps: a weapon's ammo type is its manifest item's (`weapon:special:arc`, `weapon:heavy:arc`): Spark of
     Beacons fires for sure on a Special or Heavy Arc weapon kill; precision kills are a weapon step's option
     (`energy:kill:precision`, `hit: precision`, D36): Spark of Brilliance, Hatchling and Veteran's Wisdom fire on them

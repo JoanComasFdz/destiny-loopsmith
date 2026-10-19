@@ -725,7 +725,7 @@ Spark of Momentum's refill is a fact in its description (`rules/all-classes/arc/
           - { applyBuff: { status: bolt-charge, stacks: 3 } }
 ```
 
-**Readying a weapon** (ADRs D42) is the player's step (`kinetic:ready`, "Ready Buzzard",
+**Readying a weapon** (ADRs D43) is the player's step (`kinetic:ready`, "Ready Buzzard",
 [loop-format.md](loop-format.md#action-tokens)): it raises `WeaponReadied` from that weapon, which the `ready` trigger
 matches. Like a reload it takes only `via`, which names a weapon (`ready's via names a weapon: …`); which weapon is in
 hand isn't kept. Mechaneer's Tricksleeves (`rules/hunter/exotic-armor.yaml`, Exotic Armors#52) readies a sidearm at

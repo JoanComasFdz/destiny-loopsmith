@@ -112,7 +112,7 @@ no reload: no `reload` rule fires). Like a reload it takes no count and no optio
 are errors), and a slot with no weapon is a blocked step. In the designer, tapping a weapon shows **📦 slide over ammo**
 before 🔄 reload, in every build, enabled only when a rule of the build reacts to a slide with that weapon.
 
-**Ready a weapon** (ADRs D42). `kinetic:ready`, `energy:ready`, `power:ready` — "Ready Buzzard": the player readies
+**Ready a weapon** (ADRs D43). `kinetic:ready`, `energy:ready`, `power:ready` — "Ready Buzzard": the player readies
 (swaps to) that weapon, as a step of its own. Which weapon is in hand isn't kept; it raises `WeaponReadied` from that
 weapon, so the `ready` rules fire (Mechaneer's Tricksleeves: Spring-Loaded Mounting on a sidearm at critical health).
 Like a reload it takes no count and no option (`energy:ready:3`, `energy:ready:shield` are errors), and a slot with no

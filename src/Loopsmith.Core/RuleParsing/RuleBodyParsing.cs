@@ -150,7 +150,7 @@ internal static class RuleBodyParsing
 
     /// <summary>
     /// <c>{ ready: {} }</c> or <c>{ ready: { via: weapon:sidearm } }</c>: the player readies (swaps to) that weapon
-    /// (<c>kinetic:ready</c>; Mechaneer's Tricksleeves, ADRs D42). <c>via</c> names a weapon (any, by default).
+    /// (<c>kinetic:ready</c>; Mechaneer's Tricksleeves, ADRs D43). <c>via</c> names a weapon (any, by default).
     /// </summary>
     private static Result<Trigger, Errors> ReadReadyTrigger(ReferenceScope scope, YamlValue value) =>
         value.ToMap().Bind(map => Combine(
