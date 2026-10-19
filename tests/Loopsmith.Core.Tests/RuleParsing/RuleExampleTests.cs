@@ -65,7 +65,7 @@ public sealed partial class RuleExampleTests
     /// <summary>A marker misspelt would leave its block unread: the count says how many the spec marks for this class.</summary>
     [Fact]
     public void Reads_every_example_the_spec_marks_for_it() =>
-        Assert.Equal(12, ReadExamples().Count);
+        Assert.Equal(13, ReadExamples().Count);
 
     private static IEnumerable<TheoryDataRow<int, string>> ToCase(DocExample example)
     {

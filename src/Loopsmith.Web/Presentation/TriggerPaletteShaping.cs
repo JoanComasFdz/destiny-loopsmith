@@ -10,13 +10,14 @@ namespace Loopsmith.Web.Presentation;
 /// <summary>
 /// One button of the palette: the action it appends (the option aimed at its row's target count), that action's token
 /// and label in the core's wording ("grenade:kill:3", "Grenade (💀 kill 3)"), and the button's short caption ("🥊 hit", "💀 kill").
-/// <see cref="StandsApart"/>: the row's target count and option don't apply to it (a weapon's reload, ADRs D37), so it stands
-/// at the row's right end, away from them.
+/// <see cref="StandsApart"/>: the row's target count and option don't apply to it (a weapon's reload, ADRs D37, and its slide
+/// over an ammo brick), so it stands at the row's right end, away from them. <see cref="IsEnabled"/>: false for a button shown
+/// though no rule of the build reacts to it (a slide over an ammo brick without Spark of Momentum).
 /// </summary>
-public sealed record TriggerButton(PlayerAction Action, string Token, string Label, string Caption, bool IsNew, bool StandsApart);
+public sealed record TriggerButton(PlayerAction Action, string Token, string Label, string Caption, bool IsNew, bool StandsApart, bool IsEnabled = true);
 
 /// <summary>
-/// A row of the palette: one trigger, or the hit / kill pair of the same ability use or weapon (a weapon's reload too). <see cref="Key"/> names
+/// A row of the palette: one trigger, or the hit / kill pair of the same ability use or weapon (a weapon's reload and slide over an ammo brick too). <see cref="Key"/> names
 /// the row ("cast:Grenade", "cast:Melee:Slide", "fire:Kinetic", "class", "class:Air", …) and stays the same from one step
 /// to the next.
 /// <see cref="Targets"/> is how many enemies the row's actions hit or kill — none for a row without targets (class
@@ -105,11 +106,12 @@ public static class TriggerPaletteShaping
     /// <summary>An option of a row, as the player turns it on: "fire:Energy:Precision".</summary>
     public static string ToOptionKey(string rowKey, StepOption option) => $"{rowKey}:{option}";
 
-    /// <summary>A button's caption: "🥊 hit", "💀 kill", "🔄 reload" in a row of several; its whole label alone.</summary>
+    /// <summary>A button's caption: "🥊 hit", "💀 kill", "🔄 reload", "📦 slide over ammo" in a row of several; its whole label alone.</summary>
     private static string ReadCaption(TriggerOption option, int buttons) =>
         (option.Action, buttons) switch
         {
             (PlayerAction.ReloadWeapon, _) => DomainPhrasing.ReloadCaption,
+            (PlayerAction.SlideOverAmmo, _) => DomainPhrasing.SlideOverAmmoCaption,
             (_, 1) => option.Label,
             _ => ReadQualifier(option.Label),
         };
@@ -126,7 +128,7 @@ public static class TriggerPaletteShaping
     {
         var aimed = targets.Match(count => LoopDesigning.SetTargetCount(option.Action, count.Value), _ => option.Action);
         var action = toggles.Aggregate(aimed, (step, toggle) => LoopDesigning.SetStepOption(step, toggle.Option, toggle.IsOn));
-        return new TriggerButton(action, action.ToActionToken(), build.DescribeAction(action), caption, option.IsNew, action is PlayerAction.ReloadWeapon);
+        return new TriggerButton(action, action.ToActionToken(), build.DescribeAction(action), caption, option.IsNew, action is PlayerAction.ReloadWeapon or PlayerAction.SlideOverAmmo, option.IsEnabled);
     }
 
     /// <summary>
@@ -139,7 +141,7 @@ public static class TriggerPaletteShaping
         return input == AbilityInput.Press ? press : $"{press}:{input}";
     }
 
-    /// <summary>Hit and kill of the same ability use or weapon share a key, and a weapon's reload its; everything else stands alone.</summary>
+    /// <summary>Hit and kill of the same ability use or weapon share a key, and a weapon's reload and slide over an ammo brick its; everything else stands alone.</summary>
     private static string ToPairKey(PlayerAction action) =>
         action.Match(
             cast => ToAbilityKey(cast.Kind.ToAbilityKind(), cast.Input),
@@ -148,7 +150,8 @@ public static class TriggerPaletteShaping
             collect => $"pickup:{collect.Pickup}",
             declare => ((PlayerAction)declare).ToActionToken(),
             _ => "finisher",
-            reload => $"fire:{reload.Slot}");
+            reload => $"fire:{reload.Slot}",
+            slide => $"fire:{slide.Slot}");
 
     private static int ReadHitOrder(PlayerAction action) =>
         action.Match(
@@ -158,6 +161,7 @@ public static class TriggerPaletteShaping
             _ => 0,
             _ => 0,
             _ => 0,
+            _ => 3,   // a reload stays at the row's right end
             _ => 2);
 
     /// <summary>"Grenade (💀 kill)" → "Grenade".</summary>

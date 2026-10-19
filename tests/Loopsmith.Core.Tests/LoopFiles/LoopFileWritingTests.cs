@@ -142,6 +142,14 @@ public sealed class LoopFileWritingTests
     public void Any_build_text_round_trips_byte_identical(string text) =>
         AssertRoundTrips(CreateDesign(build: text));
 
+    [Fact]
+    public void A_reload_and_a_slide_over_an_ammo_brick_round_trip() =>
+        AssertRoundTrips(CreateDesign(steps:
+        [
+            new(new PlayerAction.ReloadWeapon(WeaponSlot.Kinetic), Optional.None<string>()),
+            new(new PlayerAction.SlideOverAmmo(WeaponSlot.Energy), Optional.Some("Spark of Momentum")),
+        ]));
+
     /// <summary>Property-style: many random designs from an alphabet of YAML-significant characters (fixed seed).</summary>
     [Fact]
     public void Random_designs_round_trip()

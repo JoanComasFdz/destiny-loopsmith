@@ -61,7 +61,8 @@ public static class TriggerMatching
                 && struck.Targets.Value < killBetween.FewerThan.Value
                 && IsZoneMet(killBetween.Needs, struck.Zone),
             reload => gameEvent is GameEvent.Reloaded reloaded && reload.Via.IsMatchedBy(reloaded.Origin, superType),
-            _ => gameEvent is GameEvent.HitAtCriticalHealth);
+            _ => gameEvent is GameEvent.HitAtCriticalHealth,
+            slideOverAmmo => gameEvent is GameEvent.SlidOverAmmo slid && slideOverAmmo.Via.IsMatchedBy(slid.Origin, superType));
 
     /// <summary>
     /// Whether the pattern matches the origin. A finisher has no damage type and is no weapon or ability: only "any
@@ -117,7 +118,8 @@ public static class TriggerMatching
             damageFewer: _ => false,
             killBetween: kill => kill.Needs is not ZoneNeed.AnyZone,
             reload: _ => false,
-            hitAtCriticalHealth: _ => false);
+            hitAtCriticalHealth: _ => false,
+            slideOverAmmo: _ => false);
 
     /// <summary>The statuses a trigger needs on the target (empty when it doesn't care).</summary>
     public static ImmutableArray<StatusId> ListRequiredTargetStatuses(this Trigger trigger) =>
@@ -142,9 +144,10 @@ public static class TriggerMatching
             damageFewer: _ => ImmutableArray<StatusId>.Empty,
             killBetween: _ => ImmutableArray<StatusId>.Empty,
             reload: _ => ImmutableArray<StatusId>.Empty,
-            hitAtCriticalHealth: _ => ImmutableArray<StatusId>.Empty);
+            hitAtCriticalHealth: _ => ImmutableArray<StatusId>.Empty,
+            slideOverAmmo: _ => ImmutableArray<StatusId>.Empty);
 
-    /// <summary>The damage source a hit, kill, shield or reload trigger names (its <c>via</c>); none for the other triggers.</summary>
+    /// <summary>The damage source a hit, kill, shield, reload or ammo-brick trigger names (its <c>via</c>); none for the other triggers.</summary>
     public static Optional<DamageSource> FindVia(this Trigger trigger) =>
         trigger.Match(
             abilityCast: _ => Optional.None<DamageSource>(),
@@ -167,7 +170,8 @@ public static class TriggerMatching
             damageFewer: damageFewer => Optional.Some(damageFewer.Via),
             killBetween: killBetween => Optional.Some(killBetween.Via),
             reload: reload => Optional.Some(reload.Via),
-            hitAtCriticalHealth: _ => Optional.None<DamageSource>());
+            hitAtCriticalHealth: _ => Optional.None<DamageSource>(),
+            slideOverAmmo: slideOverAmmo => Optional.Some(slideOverAmmo.Via));
 
     /// <summary>
     /// The ability use a trigger names, when it names one: a cast of that use (<c>abilityCast: { ability: classAbility,

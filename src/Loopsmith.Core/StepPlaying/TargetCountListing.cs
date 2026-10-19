@@ -52,6 +52,7 @@ public static class TargetCountListing
             _ => Optional.None<DamageOrigin>(),
             _ => Optional.None<DamageOrigin>(),
             _ => Optional.None<DamageOrigin>(),
+            _ => Optional.None<DamageOrigin>(),
             _ => Optional.None<DamageOrigin>());
 
     private sealed record NamedCount(string Name, DamageSource Via, TargetCount AtLeast, Optional<Seconds> Within);

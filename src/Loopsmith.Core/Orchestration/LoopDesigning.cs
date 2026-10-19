@@ -24,14 +24,17 @@ public enum TriggerGroup { Ability, Weapon, Pickup, Declare }
 /// A step the designer can pick next — every option listed can happen (abilities are always available, ADRs D5;
 /// a declaration is offered only when it holds, ADRs D3). <see cref="IsNew"/> marks what the last step unlocked (a
 /// pickup that just landed, a buff that can now be declared at max). Abilities and weapons are listed
-/// against one enemy; <see cref="LoopDesigning.SetTargetCount"/> aims them at more.
+/// against one enemy; <see cref="LoopDesigning.SetTargetCount"/> aims them at more. <see cref="IsEnabled"/>: false for a
+/// step that always shows but that no rule of the build reacts to (a weapon's slide over an ammo brick without Spark of
+/// Momentum), so it is there to see but sets nothing off.
 /// </summary>
 public sealed record TriggerOption(
     PlayerAction Action,
     string Token,
     string Label,
     TriggerGroup Group,
-    bool IsNew);
+    bool IsNew,
+    bool IsEnabled = true);
 
 /// <summary>
 /// A loop being designed: the validated build, the design so far, one resolution per step (same order as
@@ -400,7 +403,8 @@ public static class LoopDesigning
                 damageFewer: _ => [],   // fewer than N: the counts below already reach it
                 killBetween: kill => [kill.AtLeast],
                 reload: _ => [],
-                hitAtCriticalHealth: _ => []))
+                hitAtCriticalHealth: _ => [],
+                slideOverAmmo: _ => []))
             .Distinct(),
     ];
 
@@ -964,11 +968,12 @@ public static class LoopDesigning
                 candidate.Action.ToActionToken(),
                 build.DescribeAction(candidate.Action),
                 candidate.Group,
-                !previous.Contains(candidate.Action) && !session.Resolutions.IsEmpty))
+                !previous.Contains(candidate.Action) && !session.Resolutions.IsEmpty,
+                candidate.IsEnabled))
             .ToImmutableArray();
     }
 
-    private static ImmutableArray<(PlayerAction Action, TriggerGroup Group)> ListCandidateActions(ValidatedBuild build, GameState state)
+    private static ImmutableArray<(PlayerAction Action, TriggerGroup Group, bool IsEnabled)> ListCandidateActions(ValidatedBuild build, GameState state)
     {
         var hits = new[] { HitOutcome.Kill, HitOutcome.Damage };
         var abilities = new[] { OffensiveAbility.Grenade, OffensiveAbility.Melee }
@@ -976,16 +981,17 @@ public static class LoopDesigning
             .Concat(ActionResolution.ListClassAbilityActions(build))
             .Concat(ActionResolution.ListCastActions(build, OffensiveAbility.Super))
             .Concat(ActionResolution.ListFinisherActions())
-            .Select(action => (action, TriggerGroup.Ability));
+            .Select(action => (action, TriggerGroup.Ability, true));
         var weapons = build.Build.Weapons
             .SelectMany(weapon => hits
                 .Select(hit => (PlayerAction)new PlayerAction.FireWeapon(weapon.Slot, hit, TargetCount.One))
                 .Append(new PlayerAction.ReloadWeapon(weapon.Slot))   // a reload, the player's to declare (ADRs D37)
-                .Select(action => (action, TriggerGroup.Weapon)));
+                .Select(action => (action, TriggerGroup.Weapon, true))
+                .Append((new PlayerAction.SlideOverAmmo(weapon.Slot), TriggerGroup.Weapon, ActionResolution.IsAmmoSlideReactedTo(build, weapon))));   // always shown, enabled when a rule reacts
         var pickups = state.ListPickups()
-            .Select(pickup => ((PlayerAction)new PlayerAction.CollectPickups(pickup), TriggerGroup.Pickup));
+            .Select(pickup => ((PlayerAction)new PlayerAction.CollectPickups(pickup), TriggerGroup.Pickup, true));
         var declarations = ActionResolution.ListDeclarations(build, state)
-            .Select(declaration => ((PlayerAction)new PlayerAction.Declare(declaration), TriggerGroup.Declare));
+            .Select(declaration => ((PlayerAction)new PlayerAction.Declare(declaration), TriggerGroup.Declare, true));
         return [.. abilities, .. weapons, .. pickups, .. declarations];
     }
 

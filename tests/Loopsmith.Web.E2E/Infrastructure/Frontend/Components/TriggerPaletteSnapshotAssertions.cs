@@ -55,6 +55,24 @@ public static class TriggerPaletteSnapshotAssertions
     private static string DescribeCaptions(IEnumerable<string> captions) =>
         captions.Any() ? string.Join(" and ", captions.Select(caption => $"\"{caption}\"")) : "no buttons";
 
+    /// <summary>The picked row shows exactly <paramref name="triggers"/>, in that order: those with the "×" enemy count, then those apart from it.</summary>
+    public static AssertingThat<TriggerPaletteSnapshot> ShowsTriggers(this AssertingThat<TriggerPaletteSnapshot> that, params StepTrigger[] triggers)
+    {
+        var shown = that.InstanceToAssert.WithTheCount.Concat(that.InstanceToAssert.ApartFromTheCount).ToArray();
+        Assert.True(shown.SequenceEqual(triggers), $"The picked row shows {Describe(shown)}, but {Describe(triggers)} was expected.");
+        return that;
+    }
+
+    /// <summary><paramref name="trigger"/> shows in the picked row but is disabled: it can't be tapped.</summary>
+    public static AssertingThat<TriggerPaletteSnapshot> IsDisabled(this AssertingThat<TriggerPaletteSnapshot> that, StepTrigger trigger)
+    {
+        var shown = that.InstanceToAssert;
+        Assert.True(
+            shown.Disabled.Contains(trigger),
+            $"The picked row shows {Describe(shown.Disabled)} disabled, but \"{trigger.ToShownText()}\" was expected disabled.");
+        return that;
+    }
+
     /// <summary>The "×" enemy count offers exactly <paramref name="counts"/>, in that order ("1 enemy", "3 in 3 s · One for All").</summary>
     public static AssertingThat<TriggerPaletteSnapshot> OffersCounts(this AssertingThat<TriggerPaletteSnapshot> that, params string[] counts)
     {

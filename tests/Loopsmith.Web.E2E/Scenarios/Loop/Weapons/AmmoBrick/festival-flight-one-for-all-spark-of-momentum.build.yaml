@@ -1,0 +1,7 @@
+# Spark of Momentum reacts to a slide over an ammo brick; One for All gives Festival Flight's row an enemy count to choose.
+name: "E2E - Festival Flight with One for All and Spark of Momentum"
+class: hunter
+subclass: arc
+fragments: [spark-of-momentum]
+weapons:
+  - { hash: 4019651319, perks: [one-for-all] } # Festival Flight

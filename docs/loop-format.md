@@ -64,7 +64,7 @@ Same tokens everywhere: loop files, web share links and a golden test's scenario
 (`builds/skip-grenade-hunter/scenario.txt`: one token per line or comma-separated; `#` starts a comment):
 
 `grenade[:hold]|melee[:slide|air]|super[:air|combo|guard][:hit|kill[:N]]` · `class[:air]` · `kinetic|energy|power[:hit|kill[:N]]` ·
-`kinetic|energy|power:reload` · `finisher` · `pickup:<pickup-id>` · `max:<status-id>` · `end:<status-id>` · `pack:new` · `health:critical` · `health:hit` — and last, an option:
+`kinetic|energy|power:reload` · `kinetic|energy|power:ammo` · `finisher` · `pickup:<pickup-id>` · `max:<status-id>` · `end:<status-id>` · `pack:new` · `health:critical` · `health:hit` — and last, an option:
 `:last` on a grenade, melee or class ability step, `:shield` and `:precision` on a weapon step
 
 Tokens are read case-insensitively. Errors read `Unknown action '<token>'. Use …` or
@@ -101,6 +101,14 @@ and `grenade:reload` are errors); a slot with no weapon is a blocked step (`No w
 happens.`). A rule can reload a weapon too (`reloadWeapon`: Demolitionist's grenade, Return Stroke's lightning strike):
 the trace shows `reloads your energy weapon`, and that weapon's `reload` rules fire as on a Reload step. In the designer,
 tapping a weapon in the step HUD shows **🔄 reload** next to its 🥊 hit and 💀 kill, in every build.
+
+**Slide over an ammo brick** (ADRs D41). `kinetic:ammo`, `energy:ammo`, `power:ammo` — "Slide over an ammo brick with
+Festival Flight": the player slides over an ammo brick with that weapon in hand, as a step of its own. No ammo is
+counted, so the player declares it when the loop slides over a brick they aren't full on; it raises `SlidOverAmmo` from
+that weapon, so the `slideOverAmmo` rules fire (Spark of Momentum: +3 Bolt Charge; its refill of the weapon is a fact,
+no reload: no `reload` rule fires). Like a reload it takes no count and no option (`energy:ammo:3`, `energy:ammo:shield`
+are errors), and a slot with no weapon is a blocked step. In the designer, tapping a weapon shows **📦 slide over ammo**
+before 🔄 reload, in every build, enabled only when a rule of the build reacts to a slide with that weapon.
 
 **Options of a step** (ADRs D36). What only play decides about a step itself goes last in its token:
 

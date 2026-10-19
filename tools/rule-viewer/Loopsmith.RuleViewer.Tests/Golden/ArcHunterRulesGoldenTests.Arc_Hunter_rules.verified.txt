@@ -1,6 +1,6 @@
 ﻿# Arc Hunter rules
 
-## Arc subclass (subclass): 52 rules
+## Arc subclass (subclass): 53 rules
   Class ability: 2
   Air class ability: 1
   Melee: 6
@@ -19,11 +19,12 @@
   Bolt Charge strike: 1
   Ionic Trace: 2
   Orb of Power: 1
+  Slide over an ammo brick: 1
   Super guard: 1
   Super heavy combo: 1
   Always on: 8
 
-## + what it needs from outside (withNeeds): 52 rules
+## + what it needs from outside (withNeeds): 53 rules
   Class ability: 2
   Air class ability: 1
   Melee: 6
@@ -42,11 +43,12 @@
   Bolt Charge strike: 1
   Ionic Trace: 2
   Orb of Power: 1
+  Slide over an ammo brick: 1
   Super guard: 1
   Super heavy combo: 1
   Always on: 8
 
-## + what builds on it (withDependents): 149 rules
+## + what builds on it (withDependents): 150 rules
   Class ability: 11
   Air class ability: 1
   Melee: 11
@@ -70,6 +72,7 @@
   Ionic Trace: 3
   Orb of Power: 9
   Slice: 2
+  Slide over an ammo brick: 1
   Super guard: 1
   Super heavy combo: 1
   This weapon: 4
@@ -241,6 +244,9 @@ unraveling-orbs#0 artifact-current-unraveling-orbs-1: [Trigger] Pick up Orb of P
 ### Slice (2)
 slice#2 weapons-perks-slice-3: [Trigger] Slice at max ➜ [Weapon perk] Slice (equipped) ➜ [Buff] Slice (ends)
 slice-enhanced#2 weapons-perks-slice-3: [Trigger] Slice at max ➜ [Weapon perk] Slice (enhanced) (equipped) ➜ [Buff] Slice (ends)
+
+### Slide over an ammo brick (1)
+spark-of-momentum#0 all-classes-arc-fragments-spark-of-momentum-1: [Trigger] Slide over an ammo brick ➜ [Subclass fragment] Spark of Momentum (equipped) ➜ [Buff] Bolt Charge (×3)
 
 ### Super guard (1)
 arc-staff#3 hunter-arc-supers-arc-staff-5: [Trigger] Super guard hit ➜ [Subclass super] Arc Staff (equipped) ➜ [Buff] Bolt Charge
