@@ -12,7 +12,7 @@ public sealed class ReadyWeaponTests : BaseE2E
     [TestDescription("""
         @desktop @mobile
         Scenario: Ready shows on every weapon but is disabled when no rule reacts to it
-          Given the build "festival-flight-one-for-all-ammo-brick" is imported, with no steps
+          Given the build "festival-flight-one-for-all-ready" is imported, with no steps
           When I tap "Festival Flight" in the trigger panel
           Then its row shows "🥊 hit", "💀 kill", "✋ ready", "📦 slide over ammo" and "🔄 reload"
           And "✋ ready" stands apart from the count
@@ -21,7 +21,7 @@ public sealed class ReadyWeaponTests : BaseE2E
     public async Task ReadyShowsOnEveryWeaponButIsDisabledWhenNoRuleReactsToIt(Screen screen)
     {
         // Given
-        await Frontend.Home.ImportBuildAsync("festival-flight-one-for-all-ammo-brick.build.yaml");
+        await Frontend.Home.ImportBuildAsync("festival-flight-one-for-all-ready.build.yaml");
         await Frontend.Designer.WaitUntilShownAsync();
 
         // When

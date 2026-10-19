@@ -171,11 +171,11 @@ public sealed class MechaneersTricksleevesTests : BaseE2E
         await Frontend.Designer.WaitUntilShownAsync();
 
         // When
-        await Frontend.Designer.BuildExplanation.ClickOpenAsync();
-        await Frontend.Designer.BuildExplanation.WaitUntilOpenAsync();
+        await Frontend.Designer.ExplainPanel.ClickOpenAsync();
+        await Frontend.Designer.ExplainPanel.WaitUntilOpenAsync();
 
         // Then
-        var explained = await Frontend.Designer.BuildExplanation.ReadAsync();
+        var explained = await Frontend.Designer.ExplainPanel.ReadAsync();
         Asserting.That(explained).Shows("Always", "Sidearms: +50 Airborne Effectiveness, +100 Handling, +100 Reload Speed [Mechaneer's Tricksleeves]");
     }
 }

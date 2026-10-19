@@ -518,8 +518,10 @@ public static class DomainPhrasing
             ? $"Hit {atLeast.Value}+ enemies"
             : $"Hit {atLeast.Value}+ enemies with {glossary.DescribeDamageSource(via, superType)}";
 
-    /// <summary>"+20% Arc weapon damage"; a weapon of your Super's element reads "+20% damage with Arc weapon (your Super's element)".</summary>
-    /// <summary>"+20% Arc weapon damage", "+100% [PvP 10%] Sidearm damage": with its PvP value when the source gives one.</summary>
+    /// <summary>
+    /// "+20% Arc weapon damage", "+100% [PvP 10%] Sidearm damage": with its PvP value when the source gives one; a weapon of
+    /// your Super's element reads "+20% damage with Arc weapon (your Super's element)".
+    /// </summary>
     private static string DescribeDamageChange(KeywordGlossary glossary, DamageSource against, GameValue change, Optional<GameValue> pvp, Optional<DamageType> superType) =>
         against is DamageSource.WeaponOfSuperType
             ? $"+{change.FormatPercent()}{DescribePvp(pvp)} damage with {glossary.DescribeDamageSource(against, superType)}"

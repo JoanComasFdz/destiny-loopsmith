@@ -3,7 +3,7 @@ using JoanComasFdz.AssertingThat;
 namespace Loopsmith.Web.E2E.Infrastructure.Frontend.Components;
 
 /// <summary>What a test checks on the "What this build does" panel.</summary>
-public static class BuildExplanationSnapshotAssertions
+public static class ExplainPanelSnapshotAssertions
 {
     private const string Arrow = " -> ";
 
@@ -11,7 +11,7 @@ public static class BuildExplanationSnapshotAssertions
     /// The panel's <paramref name="trigger"/> line ("Always") shows <paramref name="effect"/> among what it sets off, each
     /// effect with its source in brackets ("Sidearms: +50 Airborne Effectiveness … [Mechaneer's Tricksleeves]").
     /// </summary>
-    public static AssertingThat<BuildExplanationSnapshot> Shows(this AssertingThat<BuildExplanationSnapshot> that, string trigger, string effect)
+    public static AssertingThat<ExplainPanelSnapshot> Shows(this AssertingThat<ExplainPanelSnapshot> that, string trigger, string effect)
     {
         var lines = that.InstanceToAssert.Lines.Where(line => line.StartsWith(trigger + Arrow, StringComparison.Ordinal)).ToArray();
         Assert.True(lines.Length == 1, $"The panel shows the lines {Describe(that.InstanceToAssert.Lines)}, but one \"{trigger}\" line was expected.");

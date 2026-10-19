@@ -7,7 +7,7 @@ namespace Loopsmith.Web.E2E.Infrastructure.Frontend.Components;
 /// The "What this build does" panel above the loop (Components/ExplainPanel.razor): one line per trigger, "Always -> … [source]
 /// + … [source]", closed until its title is tapped.
 /// </summary>
-public sealed class BuildExplanation(IPage page)
+public sealed class ExplainPanel(IPage page)
 {
     private ILocator Box => page.Locator("[data-testid=build-explanation]");
 
@@ -22,11 +22,11 @@ public sealed class BuildExplanation(IPage page)
     public Task WaitUntilOpenAsync() => Lines.First.WaitForAsync(new() { State = WaitForSelectorState.Visible });
 
     /// <summary>What the panel shows now: its lines, in order.</summary>
-    public Task<BuildExplanationSnapshot> ReadAsync() => OnScreen.ReadAsync(Box, ReadShownAsync);
+    public Task<ExplainPanelSnapshot> ReadAsync() => OnScreen.ReadAsync(Box, ReadShownAsync);
 
-    private async Task<BuildExplanationSnapshot> ReadShownAsync() =>
+    private async Task<ExplainPanelSnapshot> ReadShownAsync() =>
         new([.. (await Lines.AllInnerTextsAsync()).Select(line => line.Trim())]);
 }
 
 /// <summary>What the "What this build does" panel shows: its lines, in order ("Always -> 25% … [Spark of Resistance] + …").</summary>
-public sealed record BuildExplanationSnapshot(ImmutableArray<string> Lines);
+public sealed record ExplainPanelSnapshot(ImmutableArray<string> Lines);

@@ -37,7 +37,7 @@ public sealed class Designer(IPage page)
     public ValidationList Validation { get; } = new(page);
 
     /// <summary>The "What this build does" panel above the loop (Components/ExplainPanel.razor): every trigger and what it sets off.</summary>
-    public BuildExplanation BuildExplanation { get; } = new(page);
+    public ExplainPanel ExplainPanel { get; } = new(page);
 
     /// <summary>The trigger panel: the step HUD and the picked one's buttons (Components/TriggerPalette.razor).</summary>
     public TriggerPalette TriggerPalette { get; } = new(page);
