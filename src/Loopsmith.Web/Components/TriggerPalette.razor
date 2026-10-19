@@ -309,8 +309,8 @@
                 <span class="trig-group-label">@label</span>
                 @foreach (var status in statuses)
                 {
-                    <span class="trig-status-chip aff-@status.Affinity.ToString().ToLowerInvariant()">
-                        <span class="trig-status-name">@status.Name</span>
+                    <span class="trig-status-chip aff-@status.Affinity.ToString().ToLowerInvariant()" data-testid="status-chip">
+                        <span class="trig-status-name" data-testid="status-name">@status.Name</span>
                         @foreach (var button in status.Buttons)
                         {
                             @RenderButton(button, "trig-mini", "")
@@ -341,13 +341,13 @@
     /// <summary>A trigger that acts at one tap: a declaration, a new pack, a pickup.</summary>
     private RenderFragment RenderButton(TriggerButton button, string kind, string glyph) => __builder =>
     {
-        <button type="button" class="trigger @kind" data-token="@button.Token" title="@($"{button.Label}  ({button.Token})")"
+        <button type="button" class="trigger @kind" data-action="trigger-at-once" data-token="@button.Token" title="@($"{button.Label}  ({button.Token})")"
                 @onclick="() => PickTrigger(button.Action)">
             @if (glyph.Length > 0)
             {
                 <span class="trig-chip-glyph" aria-hidden="true">@glyph</span>
             }
-            <span class="trigger-caption">@button.Caption</span>
+            <span class="trigger-caption" data-testid="trigger-caption">@button.Caption</span>
             @if (button.IsNew)
             {
                 <span class="badge new" title="Unlocked by the last step">new</span>

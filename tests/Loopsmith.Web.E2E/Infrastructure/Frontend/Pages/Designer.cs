@@ -13,6 +13,8 @@ public sealed class Designer(IPage page)
 
     private ILocator ShowReasons => page.Locator("[data-action=show-reasons]");
 
+    private ILocator ShowCaveats => page.Locator("[data-action=show-caveats]");
+
     /// <summary>The Subclass box: the class, the subclass, its super, abilities, aspects and fragments.</summary>
     public SubclassBox Subclass { get; } = new(page);
 
@@ -39,6 +41,12 @@ public sealed class Designer(IPage page)
 
     /// <summary>Ticks the "why" checkbox above the loop (it stays ticked when it already is): each step card shows its "why:" reasons.</summary>
     public Task TickWhyAsync() => OnScreen.ActAsync(ShowReasons, ShowReasons, box => box.SetCheckedAsync(true));
+
+    /// <summary>
+    /// Ticks the "caveats" checkbox above the loop (it stays ticked when it already is): each step card shows its outcomes'
+    /// caveats ("+1 Bolt Charge: +1 from Spark of Frequency").
+    /// </summary>
+    public Task TickCaveatsAsync() => OnScreen.ActAsync(ShowCaveats, ShowCaveats, box => box.SetCheckedAsync(true));
 
     /// <summary>Waits until the designer shows an open loop.</summary>
     public Task WaitUntilShownAsync() => BuildIdentity.WaitForAsync(new() { State = WaitForSelectorState.Visible });

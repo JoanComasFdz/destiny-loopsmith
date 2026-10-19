@@ -43,6 +43,14 @@ public sealed class TriggerPalette(IPage page)
             : Panel.Locator("[data-action=trigger-ability]")
                 .And(page.GetByRole(AriaRole.Button, new() { NameRegex = new Regex($"^[^:]+: {Regex.Escape(ability.ToShownText())}$") }));
 
+    // A status's chip in the panel's "On you" group ("Bolt Charge", with its "at max (x10)" and "ends"), and one of its
+    // declarations by its caption.
+    private ILocator Declaration(Status status, string declaration) =>
+        Panel.Locator("[data-testid=status-chip]")
+            .Filter(new() { Has = page.Locator("[data-testid=status-name]").GetByText(status.ToShownText(), new() { Exact = true }) })
+            .Locator("[data-action=trigger-at-once]")
+            .Filter(new() { Has = page.Locator("[data-testid=trigger-caption]").GetByText(declaration, new() { Exact = true }) });
+
     // A secondary use's caption is drawn in capitals ("SLIDE"); its text may not be.
     private ILocator SecondaryButton(SecondaryUse use) =>
         Panel.Locator("[data-action=trigger-secondary]")
@@ -66,6 +74,12 @@ public sealed class TriggerPalette(IPage page)
     /// with one action (the air move), the loop gets a step.
     /// </summary>
     public Task ClickSecondaryAsync(SecondaryUse use) => OnScreen.PressAsync(Panel, SecondaryButton(use));
+
+    /// <summary>
+    /// Clicks <paramref name="declaration"/> ("at max (x10)", "ends") on <paramref name="status"/>'s chip under "On you": the
+    /// loop gets a step that declares it.
+    /// </summary>
+    public Task ClickDeclarationAsync(Status status, string declaration) => OnScreen.PressAsync(Panel, Declaration(status, declaration));
 
     /// <summary>Selects the "×" enemy count whose text is <paramref name="shown"/> ("3 in 3 s · One for All").</summary>
     public Task SelectTargetCountAsync(string shown) =>

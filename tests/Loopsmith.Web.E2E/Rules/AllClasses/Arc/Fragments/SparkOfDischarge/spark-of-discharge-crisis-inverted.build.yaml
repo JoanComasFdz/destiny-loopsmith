@@ -1,0 +1,7 @@
+# Spark of Discharge, with Crisis Inverted (an Arc weapon with no rules of its own) to kill with.
+name: "E2E - Spark of Discharge with Crisis Inverted"
+class: hunter
+subclass: arc
+fragments: [spark-of-discharge]
+weapons:
+  - { hash: 2888266564, perks: [] } # Crisis Inverted

@@ -56,6 +56,29 @@ public static class StepCardSnapshotAssertions
     public static AssertingThat<StepCardSnapshot> Fires(this AssertingThat<StepCardSnapshot> that, Fragment fragment, params string[] lines) =>
         that.FiresFrom(fragment.ToShownText(), lines);
 
+    /// <summary>
+    /// Under the event that reads <paramref name="happened"/> ("📍 Picked up Ionic Trace"), <paramref name="fragment"/> fired
+    /// exactly <paramref name="lines"/>, in that order, each with its "(chance)" as shown.
+    /// </summary>
+    public static AssertingThat<StepCardSnapshot> FiresOn(this AssertingThat<StepCardSnapshot> that, string happened, Fragment fragment, params string[] lines)
+    {
+        var name = fragment.ToShownText();
+        var events = that.InstanceToAssert.Events.Where(e => e.Text == happened).ToArray();
+        Assert.True(events.Length == 1, $"The card reads {Describe(that.InstanceToAssert.Events)}, but one \"{happened}\" event was expected.");
+        var shown = events[0].Sources.Where(source => source.Name == name).SelectMany(source => source.Lines).ToArray();
+        Assert.True(shown.SequenceEqual(lines), $"On \"{happened}\", under {name} the card shows {Describe(shown)}, but {Describe(lines)} was expected.");
+        return that;
+    }
+
+    /// <summary><paramref name="fragment"/>'s caveats are exactly <paramref name="caveats"/>, in that order ("· " left out).</summary>
+    public static AssertingThat<StepCardSnapshot> HasCaveats(this AssertingThat<StepCardSnapshot> that, Fragment fragment, params string[] caveats)
+    {
+        var name = fragment.ToShownText();
+        var shown = FindSources(that.InstanceToAssert, name).SelectMany(source => source.Caveats).Select(caveat => caveat.TrimStart('·', ' ')).ToArray();
+        Assert.True(shown.SequenceEqual(caveats), $"Under {name} the card shows the caveats {Describe(shown)}, but {Describe(caveats)} was expected.");
+        return that;
+    }
+
     /// <summary>The card's damage resistance row <paramref name="row"/> ("All damage") reads <paramref name="pve"/> PvE and <paramref name="pvp"/> PvP.</summary>
     public static AssertingThat<StepCardSnapshot> HasResistance(this AssertingThat<StepCardSnapshot> that, string row, string pve, string pvp)
     {
@@ -74,6 +97,10 @@ public static class StepCardSnapshotAssertions
     /// <summary><paramref name="aspect"/> is a source of the card's damage resistance, with the values <paramref name="values"/> ("66% · PvP 32%").</summary>
     public static AssertingThat<StepCardSnapshot> HasResistanceFrom(this AssertingThat<StepCardSnapshot> that, Aspect aspect, string values) =>
         that.HasResistanceFrom(aspect.ToShownText(), values);
+
+    /// <summary><paramref name="fragment"/> is a source of the card's damage resistance, with the values <paramref name="values"/> ("25% · PvP 10%").</summary>
+    public static AssertingThat<StepCardSnapshot> HasResistanceFrom(this AssertingThat<StepCardSnapshot> that, Fragment fragment, string values) =>
+        that.HasResistanceFrom(fragment.ToShownText(), values);
 
     private static AssertingThat<StepCardSnapshot> HasResistanceFrom(this AssertingThat<StepCardSnapshot> that, string name, string values)
     {

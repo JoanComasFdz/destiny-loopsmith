@@ -12,6 +12,7 @@ public partial record Weapon
     public partial record CruxCeleritasIv;
     public partial record Scathelocke;
     public partial record Speleologist;
+    public partial record CrisisInverted;
 
     /// <summary>What the UI shows that no case names yet: a failing assertion names it as the UI shows it.</summary>
     public partial record Unlisted(string Shown);
@@ -21,7 +22,10 @@ public partial record Weapon
 public static class WeaponShowing
 {
     private static readonly Weapon[] Listed =
-        [new Weapon.FestivalFlight(), new Weapon.OgmaPr6(), new Weapon.BellowingGiant(), new Weapon.CruxCeleritasIv(), new Weapon.Scathelocke(), new Weapon.Speleologist()];
+        [
+            new Weapon.FestivalFlight(), new Weapon.OgmaPr6(), new Weapon.BellowingGiant(), new Weapon.CruxCeleritasIv(), new Weapon.Scathelocke(),
+            new Weapon.Speleologist(), new Weapon.CrisisInverted(),
+        ];
 
     /// <summary>What the UI shows for <paramref name="value"/>.</summary>
     public static string ToShownText(this Weapon value) =>
@@ -32,6 +36,7 @@ public static class WeaponShowing
             cruxCeleritasIv => "Crux Celeritas IV",
             scathelocke => "Scathelocke",
             speleologist => "Speleologist",
+            crisisInverted => "Crisis Inverted",
             unlisted => unlisted.Shown);
 
     /// <summary>The case the UI's <paramref name="shown"/> text names, or <see cref="Weapon.Unlisted"/>.</summary>

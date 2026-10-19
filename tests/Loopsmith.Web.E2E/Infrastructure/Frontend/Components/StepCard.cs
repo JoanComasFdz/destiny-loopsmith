@@ -7,7 +7,7 @@ namespace Loopsmith.Web.E2E.Infrastructure.Frontend.Components;
 /// <summary>
 /// One step's card in the loop (Components/LoopTimeline.razor): its heading, what it fired (Components/OutcomeTree.razor:
 /// each event, the elements that fired from it and their lines, with "(chance)"; the "why:" reasons when the "why"
-/// checkbox is ticked) and its "State after #N" (Components/StepStateHud.razor).
+/// checkbox is ticked, the caveats when the "caveats" one is) and its "State after #N" (Components/StepStateHud.razor).
 /// </summary>
 public sealed class StepCard(IPage page, int number)
 {
@@ -38,7 +38,7 @@ public sealed class StepCard(IPage page, int number)
         var shown = (await Card.EvaluateAsync<JsonElement>(ReadScript)).Deserialize<ShownCard>(ShownJson.Options)!;
         return new StepCardSnapshot(
             shown.Heading,
-            [.. shown.Events.Select(e => new FiredEvent(e.Text, [.. e.Sources.Select(s => new FiredSource(s.Name, [.. s.Lines], [.. s.Reasons]))]))],
+            [.. shown.Events.Select(e => new FiredEvent(e.Text, [.. e.Sources.Select(s => new FiredSource(s.Name, [.. s.Lines], [.. s.Reasons], [.. s.Caveats]))]))],
             shown.NothingTriggers,
             new StepState(ToChips(shown.Buffs), ToChips(shown.Weapons), ToChips(shown.Debuffs), ToChips(shown.Ground)),
             new DamageResistance(
@@ -68,6 +68,7 @@ public sealed class StepCard(IPage page, int number)
                 name: text(source.querySelector('[data-testid=outcome-element-name]')),
                 lines: [...source.querySelectorAll('[data-testid=outcome-line]')].map(text),
                 reasons: [...source.querySelectorAll('[data-testid=outcome-reason]')].map(text),
+                caveats: [...source.querySelectorAll('[data-testid=outcome-caveat]')].map(text),
               })),
             })),
             nothingTriggers: card.querySelector('[data-testid=outcome-none]') !== null,
@@ -98,7 +99,7 @@ public sealed class StepCard(IPage page, int number)
 
     private sealed record ShownEvent(string Text, ShownSource[] Sources);
 
-    private sealed record ShownSource(string Name, string[] Lines, string[] Reasons);
+    private sealed record ShownSource(string Name, string[] Lines, string[] Reasons, string[] Caveats);
 
     private sealed record ShownChip(string Text, string Tooltip);
 }
@@ -112,8 +113,11 @@ public sealed record StepCardSnapshot(string Heading, ImmutableArray<FiredEvent>
 /// <summary>An event the step fired ("Festival Flight 🥊 hit 1 enemy") and the elements that fired from it.</summary>
 public sealed record FiredEvent(string Text, ImmutableArray<FiredSource> Sources);
 
-/// <summary>An element that fired ("One for All"), its lines ("One for All (10s) (chance)") and its "why:" reasons.</summary>
-public sealed record FiredSource(string Name, ImmutableArray<string> Lines, ImmutableArray<string> Reasons);
+/// <summary>
+/// An element that fired ("One for All"), its lines ("One for All (10s) (chance)"), its "why:" reasons and its caveats
+/// ("· +1 Bolt Charge: +1 from Spark of Frequency", when the "caveats" checkbox is ticked).
+/// </summary>
+public sealed record FiredSource(string Name, ImmutableArray<string> Lines, ImmutableArray<string> Reasons, ImmutableArray<string> Caveats);
 
 /// <summary>The card's "State after #N": the chips of each group.</summary>
 public sealed record StepState(ImmutableArray<StateChip> Buffs, ImmutableArray<StateChip> Weapons, ImmutableArray<StateChip> Debuffs, ImmutableArray<StateChip> Ground);
