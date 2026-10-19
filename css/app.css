@@ -793,6 +793,9 @@ button.hud-chip:hover, button.hud-chip:focus-visible { background: color-mix(in 
 .hud-resistance-sources { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
 .hud-resistance-source-line { display: flex; flex-direction: column; gap: 4px; }
 .hud-resistance-formula { color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+/* the damage bonuses holding right then: one value column, each source's own value, never added up */
+.hud-bonus-row { grid-template-columns: minmax(0, 1fr) auto; }
+.hud-bonus-value { font-weight: 650; overflow-wrap: anywhere; }
 /* a counted buff's stacks (Armor Charge), and on a tap where they came from */
 .hud-count-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; gap: 8px; }
 .hud-count-value { text-align: right; font-weight: 650; font-variant-numeric: tabular-nums; }
