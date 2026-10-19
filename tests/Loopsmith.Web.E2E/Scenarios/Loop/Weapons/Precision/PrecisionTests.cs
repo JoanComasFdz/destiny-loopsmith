@@ -92,8 +92,8 @@ public sealed class PrecisionTests : BaseE2E
           When I tap "Crisis Inverted" in the trigger panel
           And I tap "💀 kill"
           Then card #2's heading is "#2 Crisis Inverted (💀 kill)"
-          And it reads "Crisis Inverted 💀 kill on Blinded target"
           # only a precision kill sets it off
+          And it reads "nothing triggers"
           And "Spark of Brilliance" fires nothing
         """)]
     public async Task ABodyKillOnABlindedTargetSetsOffNoSparkOfBrilliance(Screen screen)
@@ -125,7 +125,7 @@ public sealed class PrecisionTests : BaseE2E
         var killed = await Frontend.Designer.Loop.Step(2).ReadAsync();
         Asserting.That(killed)
             .HasHeading("#2 Crisis Inverted (💀 kill)")
-            .Reads("Crisis Inverted 💀 kill on Blinded target")
+            .ReadsNothingTriggers()
             .DoesNotFire(new Fragment.SparkOfBrilliance());
     }
 }
