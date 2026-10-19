@@ -52,8 +52,8 @@ In one message:
 - **Each rule's flow, with its Gherkin.** A Gherkin for a rule (a rule scenario, under
   `tests/Loopsmith.Web.E2E/Rules/`) names its rule on its `# Rule <name>: …` line
   ([docs/given-when-then-rule-scenarios.md](../../../docs/given-when-then-rule-scenarios.md), "The shape"). Draw that
-  rule's flow with the rule viewer, `dotnet run --project tools/rule-viewer/Loopsmith.RuleViewer -- --rule <name>`
-  (→ `out/rule-viewer/<name>.png`; build once, then `--no-build` for the others), and send it to the owner as a file
+  rule's flow with the rule viewer, `dotnet run --project tools/rule-viewer/Loopsmith.RuleViewer -- --rule <name> --theme dark`
+  (→ `out/rule-viewer/<name>.png`, dark like the PR's e2e post; build once, then `--no-build` for the others), and send it to the owner as a file
   (`SendUserFile`, `display: render`) right after the message that shows the Gherkin, captioned with the Gherkin's
   title: the owner reads the flow (trigger ➜ what must be in place ➜ what it gives) next to the claim it plays. Several
   rule Gherkins: one PNG each, in the Gherkins' order, in one call. Do the same in any later round that adds a rule
