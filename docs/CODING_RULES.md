@@ -21,7 +21,7 @@ itself, under `src/Loopsmith.Core/Domain/`.
   files they embed), `BuildComposition`, `StepPlaying` (plays steps against the
   state, and a loop's passes until it repeats), `LoopAnalyzing` (judges a played loop
   by its order of triggers), `BuildExplanation`, `TraceRendering`,
-  `ReportComparison`, `ManifestJoining` (Bungie's full
+  `ManifestJoining` (Bungie's full
   manifest → the excerpt some hashes need), `StatLoading` (a Bungie login's answers → the player's armor
   → the build's stats), `CompendiumReading` (a Compendium snapshot → the check of the rules' citations
   and numbers against it), `Orchestration`).

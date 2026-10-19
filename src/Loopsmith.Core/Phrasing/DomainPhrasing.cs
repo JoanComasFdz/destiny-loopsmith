@@ -1244,10 +1244,6 @@ public static class DomainPhrasing
         return !elements.IsEmpty && elements.All(element => element.Likelihood == Likelihood.Chance);
     }
 
-    /// <summary>"Reaper ← #1": a need and where it comes from, without the elements (comparisons).</summary>
-    public static string DescribeNeedBriefly(this StepNeed need) =>
-        $"{need.What} {need.Provider.DescribeProvider()}";
-
     /// <summary>The verdict on a loop's order (docs/loop-format.md, "Analysis").</summary>
     public static string DescribeVerdict(this LoopVerdict verdict) =>
         verdict.Match(
@@ -1257,7 +1253,7 @@ public static class DomainPhrasing
                 _ => "✓ Repeats — each pass ends with what the next one needs"),
             breaks => $"✗ Breaks at #{breaks.Blocked.StepIndex + 1} ({breaks.Blocked.Label}): {breaks.Blocked.Reason}");
 
-    /// <summary>"✓ Repeats", "✗ Breaks at #3", "No steps" — the verdict in a word or two (comparison rows, badges).</summary>
+    /// <summary>"✓ Repeats", "✗ Breaks at #3", "No steps" — the verdict in a word or two (the analysis badge).</summary>
     public static string DescribeShortVerdict(this LoopVerdict verdict) =>
         verdict.Match(
             _ => "No steps",

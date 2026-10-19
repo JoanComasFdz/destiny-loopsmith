@@ -25,8 +25,8 @@ edit files.
    - Kernel: `Domain`, `Functional`, `Phrasing`, `Causality`. `Functional` depends on nothing, `Domain`
      on `Functional`, and `Phrasing`/`Causality` on `Domain` + `Functional` (not on each other).
    - `SourceFetching` (impure boundary) and the feature slices (`RuleParsing`, `BuildParsing`, `LoopFiles`,
-     `BuildComposition`, `StepPlaying`, `LoopAnalyzing`, `BuildExplanation`, `TraceRendering`,
-     `ReportComparison`) depend only on the kernel and themselves. They never depend on each other or on
+     `BuildComposition`, `StepPlaying`, `LoopAnalyzing`, `BuildExplanation`, `TraceRendering`)
+     depend only on the kernel and themselves. They never depend on each other or on
      `Orchestration`. Only `Orchestration` may depend on every slice.
    - Only `SourceFetching` does file or network I/O (`System.IO`, `System.Net.Http`); the YAML slices may
      wrap a string in a `StringReader`/`TextReader`, and `LoopFiles` (which also writes loop files) may

@@ -103,38 +103,3 @@ public sealed record LoopReport(
     ImmutableArray<StepAnalysis> Steps,
     ImmutableArray<StepLink> Links,
     ImmutableArray<PassDifference> FirstPassDifferences);
-
-/// <summary>A trigger's step in one loop, and whether that loop's first pass does something else there.</summary>
-public sealed record PlacedStep(StepAnalysis Step, bool DiffersOnFirstPass);
-
-/// <summary>Where a trigger sits in the two loops of a comparison.</summary>
-[Union]
-public partial record TriggerPlacement
-{
-    /// <summary>Both loops have it; <c>OnlyLeft</c> and <c>OnlyRight</c> are the elements it sets off in only one of them.</summary>
-    partial record InBoth(PlacedStep Left, PlacedStep Right, ImmutableArray<ElementMention> OnlyLeft, ImmutableArray<ElementMention> OnlyRight);
-
-    partial record OnlyInLeft(PlacedStep Step);
-
-    partial record OnlyInRight(PlacedStep Step);
-}
-
-/// <summary>
-/// One trigger of two loops, matched by occurrence (A's first grenade kill with B's first grenade kill), and where it
-/// sits in each.
-/// </summary>
-public sealed record TriggerComparison(string Label, TriggerPlacement Placement);
-
-/// <summary>
-/// A link of one loop's chain, and whether the other loop lacks it: no link between the same two triggers, the same
-/// way round the loop (within a pass, or from the pass before).
-/// </summary>
-public sealed record ComparedLink(StepLink Link, bool OnlyHere);
-
-/// <summary>Two loops' orders side by side (they may use different builds), trigger by trigger and as chains; nothing is scored.</summary>
-public sealed record LoopComparison(
-    LoopReport Left,
-    LoopReport Right,
-    ImmutableArray<TriggerComparison> Triggers,
-    ImmutableArray<ComparedLink> LeftLinks,
-    ImmutableArray<ComparedLink> RightLinks);

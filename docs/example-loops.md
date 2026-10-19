@@ -12,8 +12,7 @@ is in the repository at commit `d56905d` (`git show d56905d:builds/…`, `git ch
 
 From the top: "Start from scratch", the "Paste a DIM link here to start" field, "Or start from a shared DIM build" (the
 owner's own Arc Hunter, *Arc - Skipp grenade*, read from its saved dim.gg share), "Example loops" (four cards), and
-"Or start from a build written by hand" (the three bundled builds) with "import a build.yaml" and "import a loop". The
-Compare screen offered the example loops on each side too.
+"Or start from a build written by hand" (the three bundled builds) with "import a build.yaml" and "import a loop".
 
 `builds/<slug>/` held each build: `build.yaml`, `discrepancies.md` (where the sources disagreed and what was encoded),
 `loops/*.loop.yaml` (its designed loops), and for the Skip Grenade Hunter the owner's own build note (`note.txt`), its
@@ -66,8 +65,8 @@ public void Line1_class_ability() =>
 ```
 
 **Each example loop** (`ExampleLoopsGoldenTests`, 15 tests): it imports and exports back byte for byte, has a
-description and a note on every step, repeats (each pass ends with what the next one needs), and its loop report and
-the comparison of two loops are snapshots:
+description and a note on every step, repeats (each pass ends with what the next one needs), and its loop report is a
+snapshot:
 
 ```text
 Infinite skip grenades — Skip Grenade Hunter · 8 steps

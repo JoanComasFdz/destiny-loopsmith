@@ -1,4 +1,4 @@
-# Designed loops: file format (v1), starting from scratch, sharing, analysis, comparison
+# Designed loops: file format (v1), starting from scratch, sharing, analysis
 
 **The product of Loopsmith is a loop someone designs**
 ([ADRs D2](ADRs.md#d2--the-designed-loop-is-the-product)): an ordered list of steps, each a trigger
@@ -7,8 +7,8 @@ D3). You pick a build, choose a step, see everything it sets off and what is ava
 again, and so on — the build can start from scratch, or come from an imported build or loop file. Loopsmith describes cause and effect
 ([ADRs D1](ADRs.md#d1--loopsmith-describes-cause-and-effect-it-doesnt-simulate-the-game)), so a
 loop is judged by its **order of triggers**: whether each step gets what it needs from the steps
-before it, and whether the order repeats. The loop is data: it can be saved, shared, imported,
-replayed and compared with another order.
+before it, and whether the order repeats. The loop is data: it can be saved, shared, imported
+and replayed.
 
 ## File: `*.loop.yaml`
 
@@ -800,45 +800,3 @@ First pass (from a fresh spawn, where it differs)
 #3 Festival Flight (💀 kill)
    doesn't set off  Unraveling Rounds
 ```
-
-## Comparison
-
-Two loops' **orders** side by side (the web Compare page, which offers the loop in the designer and the `.loop.yaml`
-files imported there). The loops may use different builds; both replay with the same catalog. The comparison uses each loop's repeating pass:
-
-* each loop's order on one line, with its verdict;
-* then trigger by trigger (a declared state counts as one), matched by occurrence of the same action —
-  A's first `grenade:kill` with B's first `grenade:kill` — its step number in each loop, where its
-  needs come from there (marked when that loop's first pass differs there), and the elements that
-  fire in only one of them;
-* the triggers only one loop has, listed as such;
-* the links of each loop's chain the other loop lacks — no link between the same two triggers, the
-  same way round the loop — listed (`Links only in A`); the web draws each loop's chain with only
-  those links.
-
-Here the same steps in another order: the shot after the dodge gets Slice and Reaper from #2; the shot
-before it gets them from the previous pass, so on B's first pass it sets off neither. The chains say it
-in one line each.
-
-```
-A  Dodge, then shoot   New pack → Class ability → Festival Flight (💀 kill) → Pick up Orb of Power   ✓ Repeats   (Skip Grenade Hunter)
-B  Shoot, then dodge   New pack → Festival Flight (💀 kill) → Class ability → Pick up Orb of Power   ✓ Repeats   (Skip Grenade Hunter)
-
-New pack                A #1 · B #1: sets off the same
-Class ability           A #2 · B #3: sets off the same
-Festival Flight (💀 kill)  A #3 · B #2: sets off the same
-   A needs     Slice ← #2 · Unraveling Rounds ← previous pass #4 · Reaper ← #2 (differs on A's first pass)
-   B needs     Slice ← previous pass #3 · Unraveling Rounds ← previous pass #4 · Reaper ← previous pass #3 (differs on B's first pass)
-Pick up Orb of Power    A #4 · B #4: sets off the same
-   A needs     Orb of Power ← #3
-   B needs     Orb of Power ← #2
-
-Links only in A
-   #2 Class ability → #3 Festival Flight (💀 kill): Slice · Reaper
-
-Links only in B
-   previous pass #3 Class ability → #2 Festival Flight (💀 kill): Slice · Reaper
-```
-
-A trigger that sets off different elements in the two loops lists them as `only in A` / `only in B`;
-one only a loop has reads `only in A (#7)`.

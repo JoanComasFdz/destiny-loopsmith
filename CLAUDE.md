@@ -6,8 +6,8 @@ then step through its gameplay loop and see every outcome each trigger fires, wh
 it, what it unlocks next and what doesn't work together. Numbers are facts shown with their outcome;
 the player declares what only play decides: a threshold reached ("Bolt Charge at max",
 "Combination Blow at max"), a buff ended, how many enemies an action hits.
-**The product is the loop the user designs** (`*.loop.yaml`: save, share, replay, analyse,
-compare), judged by its order of triggers: does each step get what it needs from the steps before
+**The product is the loop the user designs** (`*.loop.yaml`: save, share, replay,
+analyse), judged by its order of triggers: does each step get what it needs from the steps before
 it, and does the order repeat.
 .NET 10 / C# 14. The main UI is the Blazor WebAssembly designer, live at
 https://joancomasfdz.github.io/destiny-loopsmith/, and the only host a player uses (ADRs D38; the developer tools under
@@ -51,7 +51,7 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
 - `src/Loopsmith.Core/` — kernel (`Domain`, `Functional`, `Phrasing`, `Causality`) and
   slices (`SourceFetching`, `RuleParsing`, `BuildParsing`, `LoopFiles`, `BuildComposition`,
   `StepPlaying` (plays steps, and a loop's passes until it repeats), `LoopAnalyzing` (judges a played loop by its
-  order of triggers), `BuildExplanation`, `TraceRendering`, `ReportComparison`,
+  order of triggers), `BuildExplanation`, `TraceRendering`,
   `ManifestJoining` (Bungie's full manifest,
   read in the browser, → the excerpt of what an imported build's or loop's other items need, and the list of every weapon, armor
   piece and armor mod the pickers offer, with each piece's mod sockets; the browser saves the manifest and that list between visits, by the manifest's version), `StatLoading` (a Bungie login's
@@ -65,7 +65,7 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
   with nothing equipped), import a `build.yaml`, import a loop. No example builds or loops, and no DIM link (both removed:
   [docs/example-loops.md](docs/example-loops.md)).
 - **The product is the designed loop**: `*.loop.yaml`, self-contained (embeds its build) —
-  format, share links, analysis and comparison in [docs/loop-format.md](docs/loop-format.md).
+  format, share links and analysis in [docs/loop-format.md](docs/loop-format.md).
 - `rules/` — authored causality YAML; format + engine semantics in
   [docs/rule-format.md](docs/rule-format.md). Grouped by class, then subclass, then area (`hunter/arc/melees.yaml`), with
   what every class gets on a subclass in `all-classes/<subclass>/` and the rest by where it comes from (`mods/`, `weapons/`,

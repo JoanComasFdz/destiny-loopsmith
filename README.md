@@ -16,8 +16,7 @@ fragments, exotic, armor set, mods, artifact perks, weapons and perks) and expla
 
 **The product is the loop you design**: pick triggers one by one (dodge, grenade kill, pick up an
 orb, Bolt Charge at max) under the last step, move or remove any step (the loop replays in its new
-order), and the result is a `*.loop.yaml` you can save, share as a link, replay and compare with
-another loop. A loop is judged by its **order of triggers**: does each step get what it
+order), and the result is a `*.loop.yaml` you can save, share as a link and replay. A loop is judged by its **order of triggers**: does each step get what it
 needs from the steps before it, does the order repeat, and what is wasted where ("Tempest Strike's
 Bolt Charge doesn't stack with Dielectric's").
 
@@ -42,7 +41,7 @@ Open the web loop designer on GitHub Pages: https://joancomasfdz.github.io/desti
 ```
 rules/*.yaml ─┐                         ┌─ explain            (static: trigger → outcomes)
 build.yaml ───┼─ parse → validate ──────┼─ play a step       (pure state machine: (state, step) → (state, fired))
-*.loop.yaml ──┘   (railway, typestate)  └─ analyse / compare (a designed loop's order: needs, sets off, wasted)
+*.loop.yaml ──┘   (railway, typestate)  └─ analyse           (a designed loop's order: needs, sets off, wasted)
 ```
 
 * Every build element is "an element with rules": `on` trigger → `then` outcomes (+ always-on
@@ -60,7 +59,7 @@ build.yaml ───┼─ parse → validate ──────┼─ play a st
 What Loopsmith is and must do, starting with the level of abstraction:
 [docs/requirements.md](docs/requirements.md). Rule and build file format and the exact engine
 semantics: [docs/rule-format.md](docs/rule-format.md). Designed loops — the `.loop.yaml` format,
-share links, analysis and comparison: [docs/loop-format.md](docs/loop-format.md). The example builds and loops, and
+share links and analysis: [docs/loop-format.md](docs/loop-format.md). The example builds and loops, and
 the DIM link, are removed: [docs/example-loops.md](docs/example-loops.md).
 Coding rules (binding): [docs/CODING_RULES.md](docs/CODING_RULES.md) · decisions: [docs/ADRs.md](docs/ADRs.md).
 
@@ -68,7 +67,7 @@ Coding rules (binding): [docs/CODING_RULES.md](docs/CODING_RULES.md) · decision
 
 ```
 src/Loopsmith.Core/      one project, slices = folders (kernel: Domain, Functional, Phrasing, Causality)
-src/Loopsmith.Web/       host: Blazor WebAssembly loop designer (Home, Designer, Compare)
+src/Loopsmith.Web/       host: Blazor WebAssembly loop designer (Home, Designer)
 tests/Loopsmith.Core.Tests/   unit, golden and architecture tests
 rules/                   authored causality (glossary, keywords, hunter, exotics, armor sets, mods, artifact, weapon perks)
 docs/                    requirements, rule format, loop format, hosting, backlog

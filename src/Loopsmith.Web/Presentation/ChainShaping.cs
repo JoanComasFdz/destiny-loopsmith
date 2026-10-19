@@ -16,7 +16,7 @@ public sealed record ChainCard(int Step, string Edge);
 /// One link drawn: from inside the source card's slot, left along the source's first stroke, down its own lane, right
 /// into the target card's notch. <see cref="Junction"/> marks where it splits off the source's stroke (none for the outermost).
 /// </summary>
-public sealed record ChainLine(StepLink Link, int Lane, string Path, Optional<ChainPoint> Junction, bool OnlyHere, string Title);
+public sealed record ChainLine(StepLink Link, int Lane, string Path, Optional<ChainPoint> Junction, string Title);
 
 /// <summary>The arrowhead in a fed step's notch: every line into that step ends, merged, in this one arrowhead.</summary>
 public sealed record ChainArrowhead(int Step, string Points);
@@ -79,30 +79,26 @@ public static class ChainShaping
     private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
 
     /// <summary>The links of one loop to draw: those within a pass.</summary>
-    public static ImmutableArray<ComparedLink> ListDrawnLinks(ImmutableArray<StepLink> links) =>
-        [.. links.Where(link => !link.FromPreviousPass).Select(link => new ComparedLink(link, false))];
+    public static ImmutableArray<StepLink> ListDrawnLinks(ImmutableArray<StepLink> links) =>
+        [.. links.Where(link => !link.FromPreviousPass)];
 
-    /// <summary>The links of a compared loop to draw: those within a pass that the other loop lacks.</summary>
-    public static ImmutableArray<ComparedLink> ListDifferingLinks(ImmutableArray<ComparedLink> links) =>
-        [.. links.Where(compared => compared.OnlyHere && !compared.Link.FromPreviousPass)];
-
-    public static ChainLayout ShapeChain(int steps, ImmutableArray<ComparedLink> links)
+    public static ChainLayout ShapeChain(int steps, ImmutableArray<StepLink> links)
     {
         var lanes = AssignLanes(links);
         var laneCount = lanes.DefaultIfEmpty(-1).Max() + 1;
         var edge = Margin + Math.Max(laneCount - 1, 0) * LaneWidth + Inset;   // x of the cards' left edge
         var outermost = links
-            .Select((compared, index) => (compared.Link.From, Lane: lanes[index]))
+            .Select((link, index) => (link.From, Lane: lanes[index]))
             .GroupBy(x => x.From)
             .ToImmutableDictionary(group => group.Key, group => group.Max(x => x.Lane));
         var verticals = links
-            .Select((compared, index) => new Vertical(ReadLaneX(edge, lanes[index]), ReadEgress(compared.Link.From), ReadIngress(compared.Link.To)))
+            .Select((link, index) => new Vertical(ReadLaneX(edge, lanes[index]), ReadEgress(link.From), ReadIngress(link.To)))
             .ToImmutableArray();
         var lines = links
-            .Select((compared, index) => ShapeLine(compared, lanes[index], lanes[index] == outermost[compared.Link.From], edge, verticals))
+            .Select((link, index) => ShapeLine(link, lanes[index], lanes[index] == outermost[link.From], edge, verticals))
             .ToImmutableArray();
         var arrowheads = links
-            .Select(compared => compared.Link.To)
+            .Select(link => link.To)
             .Distinct()
             .Order()
             .Select(step => new ChainArrowhead(step, ShapeArrowhead(edge, ReadIngress(step))))
@@ -123,16 +119,16 @@ public static class ChainShaping
     /// A lane per link, shortest first and nearest the cards (so of one step's lines the nearest target splits off first);
     /// two links share a lane only when their lines don't overlap.
     /// </summary>
-    private static ImmutableArray<int> AssignLanes(ImmutableArray<ComparedLink> links)
+    private static ImmutableArray<int> AssignLanes(ImmutableArray<StepLink> links)
     {
         var order = Enumerable.Range(0, links.Length)
-            .OrderBy(index => links[index].Link.To - links[index].Link.From)
-            .ThenBy(index => links[index].Link.From)
-            .ThenBy(index => links[index].Link.To);
+            .OrderBy(index => links[index].To - links[index].From)
+            .ThenBy(index => links[index].From)
+            .ThenBy(index => links[index].To);
         var assigned = order.Aggregate(ImmutableDictionary<int, int>.Empty, (lanes, index) =>
             lanes.Add(index, Enumerable.Range(0, lanes.Count + 1).First(lane => !lanes
                 .Where(other => other.Value == lane)
-                .Any(other => Overlaps(links[other.Key].Link, links[index].Link)))));
+                .Any(other => Overlaps(links[other.Key], links[index])))));
         return [.. Enumerable.Range(0, links.Length).Select(index => assigned[index])];
     }
 
@@ -149,11 +145,11 @@ public static class ChainShaping
     /// crosses another link's vertical, the stroke hops over it: the vertical — a line from an earlier step passing by —
     /// stays straight, and the hop sits by the step whose stroke it is.
     /// </summary>
-    private static ChainLine ShapeLine(ComparedLink compared, int lane, bool isOutermost, int edge, ImmutableArray<Vertical> verticals)
+    private static ChainLine ShapeLine(StepLink link, int lane, bool isOutermost, int edge, ImmutableArray<Vertical> verticals)
     {
         var x = ReadLaneX(edge, lane);
-        var egress = ReadEgress(compared.Link.From);
-        var ingress = ReadIngress(compared.Link.To);
+        var egress = ReadEgress(link.From);
+        var ingress = ReadIngress(link.To);
         var start = edge + Depth;
         var end = edge + Depth - 1 - ArrowLength;
         var outward = ListCrossings(verticals, x, start, egress).OrderDescending()
@@ -163,7 +159,7 @@ public static class ChainShaping
         var path = string.Create(Invariant, $"M {start} {egress} {string.Concat(outward)}H {x + Radius} Q {x} {egress} {x} {egress + Radius} ")
             + string.Create(Invariant, $"V {ingress - Radius} Q {x} {ingress} {x + Radius} {ingress} {string.Concat(inward)}H {end}");
         var junction = isOutermost ? Optional.None<ChainPoint>() : Optional.Some(new ChainPoint(x, egress));
-        return new ChainLine(compared.Link, lane, path, junction, compared.OnlyHere, compared.Link.DescribeLink());
+        return new ChainLine(link, lane, path, junction, link.DescribeLink());
     }
 
     /// <summary>
