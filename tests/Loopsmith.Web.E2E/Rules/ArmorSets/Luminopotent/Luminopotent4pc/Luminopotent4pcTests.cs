@@ -23,6 +23,8 @@ public sealed class Luminopotent4pcTests : BaseE2E
           And I tap "💀 kill"
           Then card #2's heading is "#2 Grenade (💀 kill)"
           And "Shock and Clear" fires "Ionic Trace"
+          # The trace homes in on you: the same step picks it up.
+          And its GROUND shows none
         """)]
     public async Task ShockAndClearsKillOfAJoltedTargetCreatesAnIonicTrace(Screen screen)
     {
@@ -49,9 +51,11 @@ public sealed class Luminopotent4pcTests : BaseE2E
         await Frontend.Designer.Loop.WaitUntilStepShownAsync(2);
 
         // Then
+        // The trace homes in on you: the same step picks it up.
         var killed = await Frontend.Designer.Loop.Step(2).ReadAsync();
         Asserting.That(killed)
             .HasHeading("#2 Grenade (💀 kill)")
-            .Fires(new ArmorSetBonus.ShockAndClear(), "Ionic Trace");
+            .Fires(new ArmorSetBonus.ShockAndClear(), "Ionic Trace")
+            .ShowsNone(new StateGroup.Ground());
     }
 }

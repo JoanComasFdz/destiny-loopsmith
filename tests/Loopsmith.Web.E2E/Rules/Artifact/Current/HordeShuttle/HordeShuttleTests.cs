@@ -13,7 +13,7 @@ public sealed class HordeShuttleTests : BaseE2E
         @desktop @mobile
         Scenario: Horde Shuttle spawns a Threadling from an unraveled target kept under fire
           # Rule artifact-current-horde-shuttle-1: Weapon sustained hit ➜ Horde Shuttle equipped and Unravel on the target ➜ Threadling
-          Given the build "horde-shuttle-unraveling-orbs-attrition-orbs" is imported, with no steps
+          Given the build "horde-shuttle-with-unraveling-orbs-and-attrition-orbs" is imported, with no steps
           When I tap "Festival Flight" in the trigger panel
           And I tap "🥊 hit"
           Then card #1's heading is "#1 Festival Flight (🥊 hit)"
@@ -37,7 +37,7 @@ public sealed class HordeShuttleTests : BaseE2E
     public async Task HordeShuttleSpawnsAThreadlingFromAnUnraveledTargetKeptUnderFire(Screen screen)
     {
         // Given
-        await Frontend.Home.ImportBuildAsync("horde-shuttle-unraveling-orbs-attrition-orbs.build.yaml");
+        await Frontend.Home.ImportBuildAsync("horde-shuttle-with-unraveling-orbs-and-attrition-orbs.build.yaml");
         await Frontend.Designer.WaitUntilShownAsync();
 
         // When

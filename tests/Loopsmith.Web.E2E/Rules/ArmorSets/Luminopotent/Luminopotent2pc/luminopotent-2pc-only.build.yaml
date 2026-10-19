@@ -1,5 +1,0 @@
-# Luminopotent's 2-piece bonus (Ionic Overclock) alone: its weapon stats are read on "What this build does".
-name: "E2E - Ionic Overclock only"
-class: hunter
-subclass: arc
-armorSetBonuses: [luminopotent-2pc]

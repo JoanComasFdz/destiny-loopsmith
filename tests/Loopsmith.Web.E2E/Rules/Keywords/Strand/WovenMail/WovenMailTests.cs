@@ -13,7 +13,7 @@ public sealed class WovenMailTests : BaseE2E
         @desktop @mobile
         Scenario: Woven Mail gives damage resistance
           # Rule keywords-strand-woven-mail-2: Always ➜ Woven Mail on you ➜ Damage resistance (45% [PvP 25%])
-          Given the build "woven-mail-to-shreds-slice-storms-edge" is imported, with no steps
+          Given the build "woven-mail-to-shreds-slice-storms-edge-super" is imported, with no steps
           When I tap "Marksman's Dodge" in the trigger panel
           Then card #1's heading is "#1 Class ability"
           And its WEAPONS show only "Slice · Festival Flight"
@@ -35,7 +35,7 @@ public sealed class WovenMailTests : BaseE2E
     public async Task WovenMailGivesDamageResistance(Screen screen)
     {
         // Given
-        await Frontend.Home.ImportBuildAsync("woven-mail-to-shreds-slice-storms-edge.build.yaml");
+        await Frontend.Home.ImportBuildAsync("woven-mail-to-shreds-slice-storms-edge-super.build.yaml");
         await Frontend.Designer.WaitUntilShownAsync();
 
         // When
@@ -83,7 +83,7 @@ public sealed class WovenMailTests : BaseE2E
         @desktop @mobile
         Scenario: Woven Mail ends when a Super is cast
           # Rule keywords-strand-woven-mail-1: Super cast ➜ Woven Mail on you ➜ ends Woven Mail
-          Given the build "woven-mail-to-shreds-slice-storms-edge" is imported, with no steps
+          Given the build "woven-mail-to-shreds-slice-storms-edge-super" is imported, with no steps
           When I tap "Marksman's Dodge" in the trigger panel
           Then card #1's heading is "#1 Class ability"
           And its WEAPONS show only "Slice · Festival Flight"
@@ -109,7 +109,7 @@ public sealed class WovenMailTests : BaseE2E
     public async Task WovenMailEndsWhenASuperIsCast(Screen screen)
     {
         // Given
-        await Frontend.Home.ImportBuildAsync("woven-mail-to-shreds-slice-storms-edge.build.yaml");
+        await Frontend.Home.ImportBuildAsync("woven-mail-to-shreds-slice-storms-edge-super.build.yaml");
         await Frontend.Designer.WaitUntilShownAsync();
 
         // When

@@ -141,6 +141,7 @@ public sealed class StatsForAllTests : BaseE2E
           Then card #1's heading is "#1 Ogma PR6 (🥊 hit 3)"
           And it reads "Ogma PR6 🥊 hit 3 enemies in 3 s"
           And "Stats for All (enhanced)" fires "Stats for All (11s)"
+          # WEAPONS isn't checked: the enhanced buff shows as two chips (the summary's Leaves out line).
         """)]
     public async Task EnhancedStatsForAlls3QuickHitsGiveStatsForAll(Screen screen)
     {
@@ -156,6 +157,7 @@ public sealed class StatsForAllTests : BaseE2E
         await Frontend.Designer.Loop.WaitUntilStepShownAsync(1);
 
         // Then
+        // WEAPONS isn't checked: the enhanced buff shows as two chips (the summary's Leaves out line).
         var hit = await Frontend.Designer.Loop.Step(1).ReadAsync();
         Asserting.That(hit)
             .HasHeading("#1 Ogma PR6 (🥊 hit 3)")
@@ -175,6 +177,7 @@ public sealed class StatsForAllTests : BaseE2E
           Then card #1's heading is "#1 Ogma PR6 (🥊 hit)"
           And it reads "Ogma PR6 🥊 hit 1 enemy"
           And "Stats for All (enhanced)" fires "Stats for All (11s) (chance)"
+          # WEAPONS isn't checked: the enhanced buff shows as two chips (the summary's Leaves out line).
         """)]
     public async Task EnhancedStatsForAllsFewerHitsMayGiveStatsForAll(Screen screen)
     {
@@ -190,6 +193,7 @@ public sealed class StatsForAllTests : BaseE2E
         await Frontend.Designer.Loop.WaitUntilStepShownAsync(1);
 
         // Then
+        // WEAPONS isn't checked: the enhanced buff shows as two chips (the summary's Leaves out line).
         var hit = await Frontend.Designer.Loop.Step(1).ReadAsync();
         Asserting.That(hit)
             .HasHeading("#1 Ogma PR6 (🥊 hit)")

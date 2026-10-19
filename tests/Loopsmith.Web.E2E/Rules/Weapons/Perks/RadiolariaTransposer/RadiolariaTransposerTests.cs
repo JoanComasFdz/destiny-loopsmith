@@ -36,6 +36,7 @@ public sealed class RadiolariaTransposerTests : BaseE2E
         await Frontend.Designer.Loop.WaitUntilStepShownAsync(1);
 
         // Then
+        // Two strikes: the explosion, then the pool.
         var killed = await Frontend.Designer.Loop.Step(1).ReadAsync();
         Asserting.That(killed)
             .HasHeading("#1 Speleologist (💀 kill 3)")
@@ -71,6 +72,7 @@ public sealed class RadiolariaTransposerTests : BaseE2E
         await Frontend.Designer.Loop.WaitUntilStepShownAsync(1);
 
         // Then
+        // Two strikes: the explosion, then the pool.
         var killed = await Frontend.Designer.Loop.Step(1).ReadAsync();
         Asserting.That(killed)
             .HasHeading("#1 Speleologist (💀 kill)")
@@ -106,6 +108,7 @@ public sealed class RadiolariaTransposerTests : BaseE2E
         await Frontend.Designer.Loop.WaitUntilStepShownAsync(1);
 
         // Then
+        // Two strikes: the explosion, then the pool.
         var killed = await Frontend.Designer.Loop.Step(1).ReadAsync();
         Asserting.That(killed)
             .HasHeading("#1 Speleologist (💀 kill 3)")
@@ -141,6 +144,7 @@ public sealed class RadiolariaTransposerTests : BaseE2E
         await Frontend.Designer.Loop.WaitUntilStepShownAsync(1);
 
         // Then
+        // Two strikes: the explosion, then the pool.
         var killed = await Frontend.Designer.Loop.Step(1).ReadAsync();
         Asserting.That(killed)
             .HasHeading("#1 Speleologist (💀 kill)")

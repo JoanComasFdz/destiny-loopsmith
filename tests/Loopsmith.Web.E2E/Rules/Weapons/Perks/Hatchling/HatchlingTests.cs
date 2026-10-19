@@ -210,6 +210,7 @@ public sealed class HatchlingTests : BaseE2E
         await Frontend.Designer.Loop.WaitUntilStepShownAsync(1);
 
         // Then
+        // Two Threadlings: the one every Hatchling gives, and the extra one only the enhanced trait may give.
         var killed = await Frontend.Designer.Loop.Step(1).ReadAsync();
         Asserting.That(killed)
             .HasHeading("#1 Festival Flight (💀 kill 3)")
@@ -247,6 +248,7 @@ public sealed class HatchlingTests : BaseE2E
         await Frontend.Designer.Loop.WaitUntilStepShownAsync(1);
 
         // Then
+        // Two Threadlings: the one every Hatchling gives, and the extra one only the enhanced trait may give.
         var killed = await Frontend.Designer.Loop.Step(1).ReadAsync();
         Asserting.That(killed)
             .HasHeading("#1 Festival Flight (💀 kill · 🎯 precision)")
@@ -282,6 +284,7 @@ public sealed class HatchlingTests : BaseE2E
         await Frontend.Designer.Loop.WaitUntilStepShownAsync(1);
 
         // Then
+        // Two Threadlings: the one every Hatchling gives, and the extra one only the enhanced trait may give.
         var killed = await Frontend.Designer.Loop.Step(1).ReadAsync();
         Asserting.That(killed)
             .HasHeading("#1 Festival Flight (💀 kill)")

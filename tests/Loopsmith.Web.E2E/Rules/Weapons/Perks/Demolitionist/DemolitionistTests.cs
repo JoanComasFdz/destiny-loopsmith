@@ -66,6 +66,7 @@ public sealed class DemolitionistTests : BaseE2E
         await Frontend.Designer.Loop.WaitUntilStepShownAsync(1);
 
         // Then
+        // Crisis Inverted is a Hand Cannon: 10%, not the Fusion Rifles', Glaives', Shotguns' and Sniper Rifles' 20%.
         var killed = await Frontend.Designer.Loop.Step(1).ReadAsync();
         Asserting.That(killed)
             .HasHeading("#1 Crisis Inverted (💀 kill)")
@@ -101,6 +102,7 @@ public sealed class DemolitionistTests : BaseE2E
         await Frontend.Designer.Loop.WaitUntilStepShownAsync(1);
 
         // Then
+        // Crisis Inverted is a Hand Cannon: 11%, not the Fusion Rifles', Glaives', Shotguns' and Sniper Rifles' 22%.
         var killed = await Frontend.Designer.Loop.Step(1).ReadAsync();
         Asserting.That(killed)
             .HasHeading("#1 Crisis Inverted (💀 kill)")

@@ -53,6 +53,7 @@ public sealed class AllStarTests : BaseE2E
           And I tap "heavy"
           Then card #1's heading is "#1 Pick up a Heavy ammo brick"
           And "All-Star (enhanced)" fires "All-Star (7s)" and "+35% [PvP 15%] kinetic weapon damage"
+          # WEAPONS isn't checked: the enhanced buff shows as two chips (the summary's Leaves out line).
         """)]
     public async Task EnhancedAllStarsAmmoBrickPickupGivesAllStarFor7S(Screen screen)
     {
@@ -67,6 +68,7 @@ public sealed class AllStarTests : BaseE2E
         await Frontend.Designer.Loop.WaitUntilStepShownAsync(1);
 
         // Then
+        // WEAPONS isn't checked: the enhanced buff shows as two chips (the summary's Leaves out line).
         var picked = await Frontend.Designer.Loop.Step(1).ReadAsync();
         Asserting.That(picked)
             .HasHeading("#1 Pick up a Heavy ammo brick")

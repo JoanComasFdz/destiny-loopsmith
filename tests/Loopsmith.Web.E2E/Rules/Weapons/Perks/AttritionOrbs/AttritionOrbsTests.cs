@@ -20,7 +20,7 @@ public sealed class AttritionOrbsTests : BaseE2E
           Then card #1's heading is "#1 Festival Flight (🥊 hit)"
           And it reads "Festival Flight 🥊 hit"
           And "Attrition Orbs" fires "Orb of Power"
-          And its GROUND show only "Orb of Power"
+          And its GROUND shows only "Orb of Power"
         """)]
     public async Task AttritionOrbsKeptUpHitsDropAnOrbOfPower(Screen screen)
     {
@@ -56,7 +56,7 @@ public sealed class AttritionOrbsTests : BaseE2E
           Then card #1's heading is "#1 Festival Flight (🥊 hit)"
           And it reads "Festival Flight 🥊 hit"
           And "Attrition Orbs (enhanced)" fires "Orb of Power"
-          And its GROUND show only "Orb of Power"
+          And its GROUND shows only "Orb of Power"
         """)]
     public async Task EnhancedAttritionOrbsKeptUpHitsDropAnOrbOfPower(Screen screen)
     {
