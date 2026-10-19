@@ -44,7 +44,7 @@ The files:
 - `out/rule-viewer/<rule name>.png`, with `--rule <rule name>` instead of the two above: one rule's flows, by the rule's full
   name (`hunter-arc-aspects-lethal-current-2`, the name its e2e scenarios quote), stacked when the rule is split by its
   trigger (`keywords-arc-jolt-2` is four flows), each under the name; no title, lede or scope chips, in the light
-  theme (`--theme dark` for the dark one, as the PRs' e2e posts show it: `tools/e2e/record.sh`), at twice the pixels. The host renders a page of just those flows (`Page/RuleFlowPage`, with the same components,
+  theme (`--theme dark` for the dark one, as the PRs' e2e posts (`tools/e2e/record.sh`) and the `loopsmith-task` session show it), at twice the pixels. The host renders a page of just those flows (`Page/RuleFlowPage`, with the same components,
   style and script) and takes its picture with Playwright's headless Chromium (`Hosting/RuleFlowShot`): the
   `Microsoft.Playwright` the e2e tests pin (`Directory.Packages.props`), which finds the Chromium in `/opt/pw-browsers`
   in a cloud session and in the dev container. Any rule or passive in `rules/` has its PNG, wherever its file sits (a

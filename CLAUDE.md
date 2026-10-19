@@ -86,7 +86,7 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
 - `tools/rule-viewer/` — the rule viewer (ADRs D39): `dotnet run --project tools/rule-viewer/Loopsmith.RuleViewer`
   writes `out/rule-viewer/arc-hunter-rules.html` and `.json`, every Arc Hunter rule as one flow, the list of the atomic e2e
   scenarios to write; `-- --rule <rule name>` writes that one rule's flows (any rule in `rules/`, whatever its folder) as `out/rule-viewer/<rule name>.png` instead
-  (Playwright's Chromium; `--theme dark` draws it dark, as the PRs' e2e posts show it). `Loopsmith.RuleViewer` is the host (its page's parts are components in `Page/`);
+  (Playwright's Chromium; `--theme dark` draws it dark, as the PRs' e2e posts and the `loopsmith-task` session show it). `Loopsmith.RuleViewer` is the host (its page's parts are components in `Page/`);
   `Loopsmith.RuleViewer.Core` its pure logic (the rules → a subclass's dependency graph, with three scopes: the subclass,
   + what it needs from outside, + what builds on it → its rules: every rule and passive as one flow, trigger ➜ what must
   be in place ➜ what it gives, one per trigger when a rule names several), using only Core's kernel and `Orchestration`;
