@@ -21,13 +21,14 @@ public sealed record TriggerButton(PlayerAction Action, string Token, string Lab
 /// to the next.
 /// <see cref="Targets"/> is how many enemies the row's actions hit or kill — none for a row without targets (class
 /// ability, pickups, declared states); <see cref="ListTargetCountOptions"/> says which counts it offers.
-/// <see cref="Option"/> is the option its actions can carry in this build, and whether it is on (ADRs D36).
+/// <see cref="Options"/> are the options its actions can carry in this build, and whether each is on (ADRs D36).
 /// </summary>
-public sealed record TriggerChoice(string Key, string Title, Optional<TargetCount> Targets, ImmutableArray<TriggerButton> Buttons, Optional<TriggerOptionToggle> Option);
+public sealed record TriggerChoice(string Key, string Title, Optional<TargetCount> Targets, ImmutableArray<TriggerButton> Buttons, ImmutableArray<TriggerOptionToggle> Options);
 
 /// <summary>
 /// An option the player turns on or off for a row's actions (ADRs D36): a weapon's "🛡 shield" (the step breaks a
-/// combatant's shield), an ability's "⬜ Spend fully" (the use spends its last charge); <see cref="Hint"/> says what it is for.
+/// combatant's shield) and "🎯 precision" (its hits and kills are precision ones), an ability's "⬜ Spend fully" (the use
+/// spends its last charge); <see cref="Hint"/> says what it is for.
 /// </summary>
 public sealed record TriggerOptionToggle(StepOption Option, string Caption, string Hint, bool IsOn);
 
@@ -62,7 +63,7 @@ public static class TriggerPaletteShaping
             .First();
 
     /// <param name="counts">The target count picked per row <see cref="TriggerChoice.Key"/>; a row not in it aims at one enemy.</param>
-    /// <param name="optionsOn">The rows (<see cref="TriggerChoice.Key"/>) whose option the player turned on.</param>
+    /// <param name="optionsOn">The options the player turned on, each as its row's <see cref="TriggerChoice.Key"/> and the option (<see cref="ToOptionKey"/>).</param>
     public static ImmutableArray<TriggerSection> ShapePalette(
         ImmutableArray<TriggerOption> options, ImmutableDictionary<string, TargetCount> counts, ImmutableHashSet<string> optionsOn, ValidatedBuild build) =>
     [
@@ -91,14 +92,18 @@ public static class TriggerPaletteShaping
     {
         var targets = LoopDesigning.ReadTargetCount(pair[0].Action)
             .Map(one => counts.TryGetValue(key, out var picked) ? picked : one);
-        var toggle = LoopDesigning.FindStepOption(build, pair[0].Action)
-            .Map(option => ShapeToggle(option, optionsOn.Contains(key)));
+        var toggles = LoopDesigning.ListStepOptions(build, pair[0].Action)
+            .Select(option => ShapeToggle(option, optionsOn.Contains(ToOptionKey(key, option))))
+            .ToImmutableArray();
         var title = pair.Length == 1 ? pair[0].Label : ReadTitle(pair[0].Label);
         var buttons = pair
-            .Select(option => ShapeButton(option, targets, toggle, ReadCaption(option, pair.Length), build))
+            .Select(option => ShapeButton(option, targets, toggles, ReadCaption(option, pair.Length), build))
             .ToImmutableArray();
-        return new TriggerChoice(key, title, targets, buttons, toggle);
+        return new TriggerChoice(key, title, targets, buttons, toggles);
     }
+
+    /// <summary>An option of a row, as the player turns it on: "fire:Energy:Precision".</summary>
+    public static string ToOptionKey(string rowKey, StepOption option) => $"{rowKey}:{option}";
 
     /// <summary>A button's caption: "🥊 hit", "💀 kill", "🔄 reload" in a row of several; its whole label alone.</summary>
     private static string ReadCaption(TriggerOption option, int buttons) =>
@@ -110,14 +115,17 @@ public static class TriggerPaletteShaping
         };
 
     private static TriggerOptionToggle ShapeToggle(StepOption option, bool isOn) =>
-        option == StepOption.BreaksShield
-            ? new TriggerOptionToggle(option, DomainPhrasing.ShieldOption, "This hit or kill breaks a combatant's shield, with damage of its element", isOn)
-            : new TriggerOptionToggle(option, DomainPhrasing.LastChargeBox, "This use spends the ability's last charge: its energy is fully expended", isOn);
+        option switch
+        {
+            StepOption.BreaksShield => new TriggerOptionToggle(option, DomainPhrasing.ShieldOption, "This hit or kill breaks a combatant's shield, with damage of its element", isOn),
+            StepOption.Precision => new TriggerOptionToggle(option, DomainPhrasing.PrecisionOption, "This hit or kill lands on the enemy's weak spot: a precision hit or kill", isOn),
+            _ => new TriggerOptionToggle(option, DomainPhrasing.LastChargeBox, "This use spends the ability's last charge: its energy is fully expended", isOn),
+        };
 
-    private static TriggerButton ShapeButton(TriggerOption option, Optional<TargetCount> targets, Optional<TriggerOptionToggle> toggle, string caption, ValidatedBuild build)
+    private static TriggerButton ShapeButton(TriggerOption option, Optional<TargetCount> targets, ImmutableArray<TriggerOptionToggle> toggles, string caption, ValidatedBuild build)
     {
         var aimed = targets.Match(count => LoopDesigning.SetTargetCount(option.Action, count.Value), _ => option.Action);
-        var action = toggle.Match(on => LoopDesigning.SetStepOption(aimed, on.Value.Option, on.Value.IsOn), _ => aimed);
+        var action = toggles.Aggregate(aimed, (step, toggle) => LoopDesigning.SetStepOption(step, toggle.Option, toggle.IsOn));
         return new TriggerButton(action, action.ToActionToken(), build.DescribeAction(action), caption, option.IsNew, action is PlayerAction.ReloadWeapon);
     }
 

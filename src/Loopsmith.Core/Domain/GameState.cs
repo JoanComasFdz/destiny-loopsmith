@@ -68,7 +68,7 @@ public partial record PlayerAction
 {
     partial record CastAbility(OffensiveAbility Kind, HitOutcome Hit, TargetCount Targets, AbilityInput Input = AbilityInput.Press, ChargeUse Charge = ChargeUse.Plain);   // a secondary: melee:slide, grenade:hold; its last charge: grenade:last
     partial record UseClassAbility(AbilityInput Input = AbilityInput.Press, ChargeUse Charge = ChargeUse.Plain);   // a secondary: the air move that spends the charge (Ascension)
-    partial record FireWeapon(WeaponSlot Slot, HitOutcome Hit, TargetCount Targets, ShieldBreak Shield = ShieldBreak.None);   // breaking a combatant's shield: kinetic:kill:shield
+    partial record FireWeapon(WeaponSlot Slot, HitOutcome Hit, TargetCount Targets, ShieldBreak Shield = ShieldBreak.None, HitZone Zone = HitZone.Body);   // breaking a combatant's shield: kinetic:kill:shield; precision kills: kinetic:kill:precision
     partial record CollectPickups(PickupId Pickup);
     partial record Declare(StateDeclaration Declaration);   // a state only play decides (ADRs D3)
     partial record PerformFinisher();                       // a finisher on one enemy of the pack: it kills it
@@ -94,8 +94,8 @@ public partial record GameEvent
 {
     partial record AbilityCast(AbilityKind Kind, AbilityInput Input = AbilityInput.Press);
     partial record Damaged(DamageOrigin Origin, EnemyTier Tier, ImmutableArray<StatusId> TargetHas, DamageSpan Span = DamageSpan.Blow);   // Span: a hit step's is sustained (ADRs D34)
-    partial record Killed(DamageOrigin Origin, EnemyTier Tier, ImmutableArray<StatusId> TargetHas);
-    partial record TargetsHit(DamageOrigin Origin, TargetCount Targets, HitOutcome Hit);   // once per action, after its per-enemy events
+    partial record Killed(DamageOrigin Origin, EnemyTier Tier, ImmutableArray<StatusId> TargetHas, HitZone Zone = HitZone.Body);   // Zone: a precision kill the player says (ADRs D36)
+    partial record TargetsHit(DamageOrigin Origin, TargetCount Targets, HitOutcome Hit, HitZone Zone = HitZone.Body);   // once per action, after its per-enemy events
     partial record PickedUp(PickupId Pickup);
     partial record BuffGained(StatusId Status);   // a grant of the buff (every grant, for a status that stacks)
     partial record StacksMaxed(StatusId Status);  // only from a declared max: step

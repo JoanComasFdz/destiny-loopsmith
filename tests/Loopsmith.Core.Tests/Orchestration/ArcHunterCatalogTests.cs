@@ -152,12 +152,12 @@ public sealed class ArcHunterCatalogTests
     }
 
     [Fact]
-    public void While_Amplified_kills_may_drop_an_orb_and_blind_and_a_kill_on_a_blinded_enemy_may_blind_again()
+    public void While_Amplified_kills_may_drop_an_orb_and_blind_and_a_precision_kill_on_a_blinded_enemy_blinds_again()
     {
         var played = Play(build => Equip(build, aspects: ["lethal-current", "flow-state"], fragments: ["spark-of-volts", "spark-of-amplitude", "spark-of-beacons", "spark-of-brilliance"]),
             new PlayerAction.PerformFinisher(),                                                  // Spark of Volts: Amplified
             new PlayerAction.FireWeapon(WeaponSlot.Energy, HitOutcome.Kill, TargetCount.One),    // Crisis Inverted: Arc
-            new PlayerAction.FireWeapon(WeaponSlot.Energy, HitOutcome.Kill, TargetCount.One));
+            new PlayerAction.FireWeapon(WeaponSlot.Energy, HitOutcome.Kill, TargetCount.One, Zone: HitZone.Precision));
 
         var kill = played.Resolutions[1].Fired;
         var amplitude = Assert.Single(kill, fired => fired.Source.Value == "spark-of-amplitude");
@@ -166,7 +166,19 @@ public sealed class ArcHunterCatalogTests
         Assert.Contains(amplitude.Outcomes, outcome => outcome.Outcome is Outcome.Spawn { Pickup: var pickup } && pickup == OrbOfPower);
         Assert.Contains(beacons.Outcomes, outcome => outcome.Outcome is Outcome.DebuffTarget { Status: var status } && status == Blind);
         Assert.Contains(brilliance.Outcomes, outcome => outcome.Outcome is Outcome.DebuffTarget { Status: var status } && status == Blind);
-        Assert.All([amplitude, beacons, brilliance], fired => Assert.Equal(Likelihood.Chance, fired.Likelihood));
+        Assert.All([amplitude, beacons], fired => Assert.Equal(Likelihood.Chance, fired.Likelihood));
+        Assert.Equal(Likelihood.Always, brilliance.Likelihood);
+    }
+
+    [Fact]
+    public void A_body_kill_on_a_blinded_enemy_sets_off_no_Spark_of_Brilliance()
+    {
+        var played = Play(build => Equip(build, aspects: ["lethal-current", "flow-state"], fragments: ["spark-of-volts", "spark-of-beacons", "spark-of-brilliance"]),
+            new PlayerAction.PerformFinisher(),                                                  // Spark of Volts: Amplified
+            new PlayerAction.FireWeapon(WeaponSlot.Energy, HitOutcome.Kill, TargetCount.One),    // Spark of Beacons may blind
+            new PlayerAction.FireWeapon(WeaponSlot.Energy, HitOutcome.Kill, TargetCount.One));
+
+        Assert.DoesNotContain(played.Resolutions[2].Fired, fired => fired.Source.Value == "spark-of-brilliance");
     }
 
     private static Build Equip(Build build, ImmutableArray<string> aspects, ImmutableArray<string> fragments, string? grenade = null, string? melee = null) =>

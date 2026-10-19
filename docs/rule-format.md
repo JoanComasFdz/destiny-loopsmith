@@ -474,6 +474,7 @@ What the format can't count is written in one of three ways, and needs no new fo
 | `{ kill: { via: grenade, atLeast: 2 } }` — kill at least N enemies with `via` in one action; `within: 3s`: the window the source gives them (a Siphon's "2 kills within 3 s"), which one action meets | `KillMultiple(via, atLeast, within)` |
 | `{ kill: { via: "weapon:this", atLeast: 2, fewerThan: 3 } }` — kill at least N and fewer than M enemies in one action (Reaper's Tithe's x2 on exactly 2); no `within` | `KillBetween(via, atLeast, fewerThan)` |
 | `{ kill: { via: "weapon:this", fewerThan: 12 } }` — kill fewer than N enemies (at least one) with `via` in one action | `KillFewer(via, fewerThan)` |
+| `{ kill: { via: any, targetHas: [blind], precision: true } }` — `precision: true` on any kill above: only a precision kill, which the player says (`energy:kill:precision`, ADRs D36); it fires for sure on such a kill and never on a body kill (Spark of Brilliance) | the same case, needing `Precision` |
 | `{ pickUp: ionic-trace }` | `PickUp(pickup)` |
 | `{ buffGained: bolt-charge }` | `BuffGained(status)` |
 | `{ stacksMaxed: bolt-charge }` — the player declares the buff at max | `StacksMaxed(status)` |
@@ -624,9 +625,10 @@ A **critical health** step is the player's declaration (`health:critical`, "Crit
 your shields broke. `criticalHealth` takes no keys (`{ criticalHealth: {} }`); the designer offers the step only when an
 equipped rule has the trigger.
 
-A **broken shield** and an ability's **last charge** are options of a step the player turns on (ADRs D36,
-[loop-format.md](loop-format.md#action-tokens)). A weapon step that breaks a shield (`energy:kill:shield`) raises
-`ShieldBroken` from that weapon after its first hit: `shieldBroken` takes only `via`, matched as a hit's (Shield Break
+A **broken shield**, a **precision kill** and an ability's **last charge** are options of a step the player turns on (ADRs D36,
+[loop-format.md](loop-format.md#action-tokens)). A weapon step whose kills are precision ones (`energy:kill:precision`)
+raises them as precision kills: a kill trigger with `precision: true` fires on them and on no other kill. A weapon step
+that breaks a shield (`energy:kill:shield`) raises `ShieldBroken` from that weapon after its first hit: `shieldBroken` takes only `via`, matched as a hit's (Shield Break
 Charge says `{ shieldBroken: {} }`: the player breaks a shield only with a weapon of its element). A grenade, melee or
 class ability step raises `EnergyExpended` right after its cast when it spends the last charge: on every use when the
 build gives the ability one charge (its profile's `charges` plus every equipped `extraCharges`), on a use marked `:last`
@@ -981,7 +983,7 @@ the ground.
   `Damaged(Ability(k, subclass damage type))` — one per enemy — then N `Killed(…)` if `hit = kill`,
   then one `TargetsHit(origin, N, hit)` for the `atLeast` triggers. `FireWeapon(slot, hit, N)` emits
   N `Damaged(Weapon(slot, type))` — with `ShieldBroken(Weapon(slot, type))` after the first when the step breaks a
-  shield (`:shield`) — N `Killed` if a kill, then `TargetsHit`. `UseClassAbility` emits `EnergyExpended(classAbility)`
+  shield (`:shield`) — N `Killed` if a kill (precision kills with `:precision`), then `TargetsHit`. `UseClassAbility` emits `EnergyExpended(classAbility)`
   after its cast the same way. N (the target count, 1..20)
   is the player's: the engine can't know how many enemies a hit catches (ADRs D4).
   `pickup:<id>` picks one pickup up: one `PickedUp(p)`, and that pickup is no longer on the ground.

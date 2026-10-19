@@ -59,7 +59,8 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
     Use the Compendium snapshot for every value (`"?"` where it has none), record disagreements in the build's
     `discrepancies.md`, and look for other authored elements that react to critical health;
   - a weapon's ammo type (Spark of Beacons: Special and Heavy Arc kills only — a `chance` rule on every Arc weapon
-    kill) and precision kills (Spark of Brilliance — `chance`).
+    kill). Precision kills are a weapon step's option (`energy:kill:precision`, `precision: true`, D36):
+    Spark of Brilliance fires on them for sure.
 - **Triggers:** champion stun (Defibrillating Blast's "stun → max Bolt Charge"; an outcome that puts a counted buff at
   its max already works, so once Bolt Charge is counted ("Counting, next") only the stun is missing); an air move that
   spends another ability's energy (Weavewalk's 20% melee energy; secondary uses are the abilities' own — `melee:slide`,
@@ -268,9 +269,11 @@ the part is a fact in the description.
   Amplitude, Spark of Discharge, Synergy, and the weapon perks One for All, Stats for All, Reaper's Tithe, Hatchling,
   Veteran's Wisdom, Unrelenting and Radiolaria Transposer). Not authored yet: Multikill Clip and Desperado (their kills
   count at a reload; the Reload step and the reload trigger exist since #80, D37, so they're unblocked), and the perks
-  that need enemies nearby rather than in one action (Surrounded, Cornered, Danger Zone, Threat Detector, Extrovert). A
-  precision hit isn't a step, so Hatchling's and Veteran's Wisdom's "or a precision kill" is the chance on fewer than 3
-  kills; a strike by this weapon (Veteran's Wisdom's shockwave, Radiolaria Transposer's explosion and pool) hits one
+  that need enemies nearby rather than in one action (Surrounded, Cornered, Danger Zone, Threat Detector, Extrovert).
+  Hatchling's and Veteran's Wisdom's "or a precision kill" is still the chance on fewer than 3 kills: the precision
+  option (D36) lets them fire for sure on a precision kill, but their chance rule would then need to fire on body kills
+  only (a value of the key for that: `precision: false` reads as any kill today) — the next task for them:
+  **Give Hatchling and Veteran's Wisdom a sure rule on a precision kill.** a strike by this weapon (Veteran's Wisdom's shockwave, Radiolaria Transposer's explosion and pool) hits one
   enemy, and its damage is a fact in the perk's description.
   The next task (#79 follow-up; its count joins the step bar's others, design note under Engine):
   **Add the weapon perks that need enemies nearby (Surrounded, Cornered, Danger Zone, Threat Detector, Extrovert).**

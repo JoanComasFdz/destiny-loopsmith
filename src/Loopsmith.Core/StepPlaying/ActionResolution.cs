@@ -144,7 +144,7 @@ public static class ActionResolution
     {
         var kind = cast.Kind.ToAbilityKind();
         var origin = new DamageOrigin.Ability(kind, build.Build.Subclass.ToDamageType(), cast.Input);
-        var strike = ListStrikeEvents(origin, cast.Hit, cast.Targets, ShieldBreak.None);
+        var strike = ListStrikeEvents(origin, cast.Hit, cast.Targets, ShieldBreak.None, HitZone.Body);
         return new Opening(state, [new PendingEvent.Ready(new GameEvent.AbilityCast(kind, cast.Input)), .. ListExpendedEvents(build, kind, cast.Charge), .. strike], []);
     }
 
@@ -219,7 +219,7 @@ public static class ActionResolution
     {
         var weapon = build.Build.Weapons.Select(w => w.Slot == fire.Slot ? Optional.Some(w) : Optional.None<WeaponLoadout>()).FindFirstSome();
         return weapon.Match(
-            some => new Opening(state, ListStrikeEvents(new DamageOrigin.Weapon(fire.Slot, some.Value.Type), fire.Hit, fire.Targets, fire.Shield), []),
+            some => new Opening(state, ListStrikeEvents(new DamageOrigin.Weapon(fire.Slot, some.Value.Type), fire.Hit, fire.Targets, fire.Shield, fire.Zone), []),
             _ => BlockAction(state, $"No weapon in the {fire.Slot} slot — nothing happens."));
     }
 
@@ -239,16 +239,17 @@ public static class ActionResolution
     /// One action against N enemies (ADRs D4): N per-enemy hits, then N kills for a kill — each cascades fully, so
     /// later hits see the debuffs earlier ones applied — then one <see cref="GameEvent.TargetsHit"/> for the
     /// multi-target triggers ("hit 3+ enemies"). A hit step's hits are sustained damage, a kill step's its killing blows
-    /// (ADRs D34). A step the player says breaks a shield breaks one, with its first hit (ADRs D36).
+    /// (ADRs D34). A step the player says breaks a shield breaks one, with its first hit; a precision step's kills are all
+    /// precision kills (ADRs D36).
     /// </summary>
-    private static ImmutableArray<PendingEvent> ListStrikeEvents(DamageOrigin origin, HitOutcome hit, TargetCount targets, ShieldBreak shield)
+    private static ImmutableArray<PendingEvent> ListStrikeEvents(DamageOrigin origin, HitOutcome hit, TargetCount targets, ShieldBreak shield, HitZone zone)
     {
         var hits = Enumerable.Repeat<PendingEvent>(new PendingEvent.HitTarget(origin, hit == HitOutcome.Kill ? DamageSpan.Blow : DamageSpan.Sustained), targets.Value).ToImmutableArray();
         var broken = shield == ShieldBreak.Breaks ? new PendingEvent[] { new PendingEvent.Ready(new GameEvent.ShieldBroken(origin)) } : [];
         var kills = hit == HitOutcome.Kill
-            ? Enumerable.Repeat<PendingEvent>(new PendingEvent.KillTarget(origin), targets.Value)
+            ? Enumerable.Repeat<PendingEvent>(new PendingEvent.KillTarget(origin, zone), targets.Value)
             : [];
-        return [hits[0], .. broken, .. hits[1..], .. kills, new PendingEvent.Ready(new GameEvent.TargetsHit(origin, targets, hit))];
+        return [hits[0], .. broken, .. hits[1..], .. kills, new PendingEvent.Ready(new GameEvent.TargetsHit(origin, targets, hit, zone))];
     }
 
     /// <summary>

@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Security.Cryptography;
 using System.Text;
+using Loopsmith.Core.Causality;
 using Loopsmith.Core.Domain;
 using Loopsmith.Core.Functional;
 using Loopsmith.Core.Orchestration;
@@ -1342,6 +1343,66 @@ public sealed class RuleCatalogParsingTests
         Assert.Equal(new Trigger.Damage(new DamageSource.AnyWeapon(), DamageSpan.Sustained), rules[0].On);
         Assert.Equal(DamageSpan.Sustained, Assert.IsType<Trigger.DamageDebuffed>(rules[1].On).Needs);
         Assert.Equal(new Trigger.Damage(new DamageSource.AnyWeapon(), DamageSpan.Blow), rules[2].On);
+    }
+
+    [Fact]
+    public void Parses_a_precision_kill_on_every_kind_of_kill()
+    {
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToElementsFile("all-classes/arc/fragments.yaml", """
+            elements:
+              - id: brilliance
+                name: Brilliance
+                kind: fragment
+                affinity: arc
+                rules:
+                  - id: brilliance-1
+                    on: { kill: { via: any, targetHas: [jolt], precision: true } }
+                    then: [ { debuffTarget: jolt } ]
+                  - id: brilliance-2
+                    on: { kill: { via: weapon, precision: true } }
+                    then: [ { debuffTarget: jolt } ]
+                  - id: brilliance-3
+                    on: { kill: { via: weapon, tier: champion, precision: true } }
+                    then: [ { debuffTarget: jolt } ]
+                  - id: brilliance-4
+                    on: { kill: { via: weapon, atLeast: 3, precision: true } }
+                    then: [ { debuffTarget: jolt } ]
+                  - id: brilliance-5
+                    on: { kill: { via: weapon, fewerThan: 3, precision: true } }
+                    then: [ { debuffTarget: jolt } ]
+                  - id: brilliance-6
+                    on: { kill: { via: weapon, atLeast: 2, fewerThan: 3, precision: true } }
+                    then: [ { debuffTarget: jolt } ]
+                  - id: brilliance-7
+                    on: { kill: { via: weapon, precision: false } }
+                    then: [ { debuffTarget: jolt } ]
+            """)]));
+
+        var rules = catalog.Elements[ElementId.From("brilliance")].Rules;
+        var debuffed = Assert.IsType<Trigger.KillDebuffed>(rules[0].On);
+        Assert.Equal([StatusId.From("jolt")], debuffed.TargetHas);
+        Assert.Equal(HitZone.Precision, debuffed.Needs);
+        Assert.Equal(new Trigger.KillAny(new DamageSource.AnyWeapon(), HitZone.Precision), rules[1].On);
+        Assert.All(rules[..6], rule => Assert.True(rule.On.NeedsPrecisionKill()));
+        Assert.Equal(new Trigger.KillAny(new DamageSource.AnyWeapon(), HitZone.Body), rules[6].On);
+    }
+
+    [Fact]
+    public void A_precision_key_that_is_not_true_or_false_is_an_error_at_its_line()
+    {
+        var message = ParseInvalidCatalog(Glossary, ToElementsFile("hunter/arc.yaml", """
+            elements:
+              - id: brilliance
+                name: Brilliance
+                kind: fragment
+                affinity: arc
+                rules:
+                  - id: brilliance-1
+                    on: { kill: { via: any, precision: headshot } }
+                    then: [ { debuffTarget: jolt } ]
+            """));
+
+        Assert.Contains("hunter/arc.yaml:8: kill.precision: 'headshot' is not true or false", message);
     }
 
     // ── Multi-target triggers: "hit / kill at least N enemies in one action" (ADRs D4) ──────

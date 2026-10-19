@@ -59,7 +59,7 @@ public static class EventCascading
         pending.Match(
             ready => ready.Event,
             hit => (GameEvent)new GameEvent.Damaged(hit.Origin, state.Target.Tier, state.ListTargetStatuses(), hit.Span),
-            kill => new GameEvent.Killed(kill.Origin, state.Target.Tier, state.ListTargetStatuses()));
+            kill => new GameEvent.Killed(kill.Origin, state.Target.Tier, state.ListTargetStatuses(), kill.Zone));
 
     public static ImmutableArray<RuleMatch> FindMatchingRules(
         ValidatedBuild build, GameState state, GameEvent gameEvent, ImmutableHashSet<string> ancestry, bool byChance)

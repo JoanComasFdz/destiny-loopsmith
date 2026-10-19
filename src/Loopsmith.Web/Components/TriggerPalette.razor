@@ -132,13 +132,13 @@
                     </select>
                 </label>
             }
-            @if (choice.Option is Optional<TriggerOptionToggle>.Some toggle)
+            @foreach (var toggle in choice.Options)
             {
-                <button type="button" class="trig-option @(toggle.Value.IsOn ? "on" : "")" data-option="@toggle.Value.Option"
-                        aria-pressed="@(toggle.Value.IsOn ? "true" : "false")" title="@toggle.Value.Hint"
-                        @onclick="() => ToggleOption(choice.Key)">
-                    <span class="trig-option-box" aria-hidden="true">@(toggle.Value.IsOn ? "✓" : "")</span>
-                    <span class="trig-option-caption">@toggle.Value.Caption</span>
+                <button type="button" class="trig-option @(toggle.IsOn ? "on" : "")" data-option="@toggle.Option"
+                        aria-pressed="@(toggle.IsOn ? "true" : "false")" title="@toggle.Hint"
+                        @onclick="() => ToggleOption(TriggerPaletteShaping.ToOptionKey(choice.Key, toggle.Option))">
+                    <span class="trig-option-box" aria-hidden="true">@(toggle.IsOn ? "✓" : "")</span>
+                    <span class="trig-option-caption">@toggle.Caption</span>
                 </button>
             }
             @if (choice.Buttons.Any(button => button.StandsApart))
@@ -374,7 +374,7 @@
     private Task PickTrigger(PlayerAction action) =>
         OnPick.InvokeAsync(action);                                                              // impure
 
-    /// <summary>Turns a row's option (a weapon's shield, an ability's last charge) on or off for its next steps.</summary>
+    /// <summary>Turns an option of a row (a weapon's shield or precision, an ability's last charge) on or off for its next steps.</summary>
     private void ToggleOption(string key)
     {
         var updated = optionsOn.Contains(key) ? optionsOn.Remove(key) : optionsOn.Add(key);     // pure

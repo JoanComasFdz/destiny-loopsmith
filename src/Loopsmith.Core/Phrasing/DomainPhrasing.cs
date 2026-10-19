@@ -356,6 +356,9 @@ public static class DomainPhrasing
     /// <summary>A weapon step's option that it breaks a shield, in its label and its button: "🛡 shield".</summary>
     public const string ShieldOption = "🛡 shield";
 
+    /// <summary>A weapon step's option that its hits and kills are precision ones (headshots), in its label and its button: "🎯 precision".</summary>
+    public const string PrecisionOption = "🎯 precision";
+
     /// <summary>An ability step's option that it spends the last charge (its energy fully expended), in its label: "⬜ spend fully".</summary>
     public const string LastChargeOption = "⬜ spend fully";
 
@@ -368,11 +371,11 @@ public static class DomainPhrasing
     public static string DescribeTrigger(this KeywordGlossary glossary, Trigger trigger, Optional<DamageType> superType) =>
         trigger.Match(
             cast => DescribeCast(cast.Kind),
-            killAny => DescribeKill(glossary, killAny.Via, [], superType),
-            killOfTier => $"{DescribeKill(glossary, killOfTier.Via, [], superType)} ({killOfTier.Tier})",
-            killDebuffed => DescribeKill(glossary, killDebuffed.Via, killDebuffed.TargetHas, superType),
+            killAny => DescribeKill(glossary, killAny.Via, [], superType) + DescribeZone(killAny.Needs),
+            killOfTier => $"{DescribeKill(glossary, killOfTier.Via, [], superType)} ({killOfTier.Tier})" + DescribeZone(killOfTier.Needs),
+            killDebuffed => DescribeKill(glossary, killDebuffed.Via, killDebuffed.TargetHas, superType) + DescribeZone(killDebuffed.Needs),
             killMultiple => DescribeMultiKill(glossary, killMultiple.Via, $"{killMultiple.AtLeast.Value.ToString(Invariant)}+", superType)
-                + DescribeWithin(killMultiple.Within),
+                + DescribeWithin(killMultiple.Within) + DescribeZone(killMultiple.Needs),
             damage => DescribeDamage(glossary, damage.Via, [], superType) + DescribeSpan(damage.Needs),
             damageDebuffed => DescribeDamage(glossary, damageDebuffed.Via, damageDebuffed.TargetHas, superType) + DescribeSpan(damageDebuffed.Needs),
             damageMultiple => DescribeMultiHit(glossary, damageMultiple.Via, damageMultiple.AtLeast, superType) + DescribeWithin(damageMultiple.Within),
@@ -381,14 +384,15 @@ public static class DomainPhrasing
             stacksMaxed => $"Max {glossary.DescribeStatus(stacksMaxed.Status)}",
             _ => Finisher,
             castAs => DescribeCast(castAs.Kind, castAs.Input),
-            killFewer => DescribeFewKills(glossary, killFewer.Via, killFewer.FewerThan, superType),
+            killFewer => DescribeFewKills(glossary, killFewer.Via, killFewer.FewerThan, superType) + DescribeZone(killFewer.Needs),
             _ => CriticalHealth,
             shieldBroken => shieldBroken.Via is DamageSource.AnySource
                 ? BreakShield
                 : $"{BreakShield} with {glossary.DescribeDamageSource(shieldBroken.Via, superType)}",
             energyExpended => DescribeEnergyExpended(energyExpended.Kind),
             damageFewer => DescribeFewHits(glossary, damageFewer.Via, damageFewer.FewerThan, superType),
-            killBetween => DescribeMultiKill(glossary, killBetween.Via, DescribeKillRange(killBetween.AtLeast, killBetween.FewerThan), superType),
+            killBetween => DescribeMultiKill(glossary, killBetween.Via, DescribeKillRange(killBetween.AtLeast, killBetween.FewerThan), superType)
+                + DescribeZone(killBetween.Needs),
             reload => reload.Via is DamageSource.AnySource or DamageSource.AnyWeapon
                 ? Reload
                 : $"{Reload} {glossary.DescribeDamageSource(reload.Via, superType)}");
@@ -414,6 +418,10 @@ public static class DomainPhrasing
             _ => $"Kill {target} with {glossary.DescribeDamageSource(via, superType)}",
         };
     }
+
+    /// <summary>" (precision)": a kill a source needs on the enemy's weak spot, which the player says (ADRs D36).</summary>
+    private static string DescribeZone(HitZone needs) =>
+        needs == HitZone.Precision ? " (precision)" : "";
 
     /// <summary>" kept up (a hit step)": damage a source needs over several hits, which a hit step stands for (ADRs D34).</summary>
     private static string DescribeSpan(DamageSpan needs) =>
@@ -963,7 +971,7 @@ public static class DomainPhrasing
 
     /// <summary>
     /// "Grenade (💀 kill)", "Grenade (💀 kill 3)", "Grenade (💀 kill · ⬜ spend fully)", "Festival Flight (🥊 hit 5)",
-    /// "Festival Flight (💀 kill · 🛡 shield)", "Class ability", "Class ability (⬜ spend fully)", "Pick up Orb of Power",
+    /// "Festival Flight (💀 kill · 🛡 shield)", "Festival Flight (💀 kill · 🎯 precision)", "Class ability", "Class ability (⬜ spend fully)", "Pick up Orb of Power",
     /// "Bolt Charge at max (x10)", "Amplified ends", "New pack", "Critical health", "Finisher", "Reload Festival Flight".
     /// </summary>
     public static string DescribeAction(this ValidatedBuild build, PlayerAction action) =>
@@ -976,7 +984,7 @@ public static class DomainPhrasing
                 (_, ChargeUse.Last) => $"Class ability ({LastChargeOption})",
                 _ => "Class ability",
             },
-            fire => $"{DescribeWeapon(build.Build, fire.Slot, fire.Slot.ToString())} ({DescribeHit(fire.Hit, fire.Targets)}{(fire.Shield == ShieldBreak.Breaks ? $" · {ShieldOption}" : "")})",
+            fire => $"{DescribeWeapon(build.Build, fire.Slot, fire.Slot.ToString())} ({DescribeHit(fire.Hit, fire.Targets)}{(fire.Shield == ShieldBreak.Breaks ? $" · {ShieldOption}" : "")}{(fire.Zone == HitZone.Precision ? $" · {PrecisionOption}" : "")})",
             collect => $"Pick up {build.Catalog.Glossary.DescribePickup(collect.Pickup)}",
             declare => build.DescribeDeclaration(declare.Declaration),
             _ => Finisher,
@@ -1010,13 +1018,14 @@ public static class DomainPhrasing
     /// <c>class</c>, <c>kinetic</c>, <c>kinetic:hit:5</c>, <c>pickup:orb-of-power</c>, <c>max:bolt-charge</c>,
     /// <c>end:amplified</c>, <c>pack:new</c>, <c>health:critical</c>, <c>finisher</c>, <c>kinetic:reload</c>. The target count is written only when it is more than one; every
     /// token round-trips. An option goes last: <c>:last</c> on an ability's last charge (<c>grenade:kill:last</c>),
-    /// <c>:shield</c> on a weapon step that breaks a shield (<c>kinetic:kill:3:shield</c>) (ADRs D36).
+    /// <c>:shield</c> on a weapon step that breaks a shield (<c>kinetic:kill:3:shield</c>), then <c>:precision</c> on one whose
+    /// hits and kills are precision ones (<c>energy:kill:precision</c>, <c>energy:kill:shield:precision</c>) (ADRs D36).
     /// </summary>
     public static string ToActionToken(this PlayerAction action) =>
         action.Match(
             cast => cast.Kind.ToString().ToLowerInvariant() + ToInputSuffix(cast.Input) + ToHitSuffix(cast.Hit, cast.Targets) + ToChargeSuffix(cast.Charge),
             use => "class" + ToInputSuffix(use.Input) + ToChargeSuffix(use.Charge),
-            fire => fire.Slot.ToString().ToLowerInvariant() + ToHitSuffix(fire.Hit, fire.Targets) + (fire.Shield == ShieldBreak.Breaks ? ":shield" : ""),
+            fire => fire.Slot.ToString().ToLowerInvariant() + ToHitSuffix(fire.Hit, fire.Targets) + (fire.Shield == ShieldBreak.Breaks ? ":shield" : "") + (fire.Zone == HitZone.Precision ? ":precision" : ""),
             collect => $"pickup:{collect.Pickup}",
             declare => declare.Declaration.Match(
                 max => $"max:{max.Status}",

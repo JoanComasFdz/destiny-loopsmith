@@ -179,7 +179,7 @@ public static class TriggerHudShaping
 
     /// <summary>A row's one action, when it has one, no target count and no option: a tap on its slot acts at once.</summary>
     private static Optional<TriggerButton> FindAtOnce(TriggerChoice choice) =>
-        choice.Buttons.Length == 1 && !choice.Targets.IsSome() && !choice.Option.IsSome() ? Optional.Some(choice.Buttons[0]) : Optional.None<TriggerButton>();
+        choice.Buttons.Length == 1 && !choice.Targets.IsSome() && choice.Options.IsEmpty ? Optional.Some(choice.Buttons[0]) : Optional.None<TriggerButton>();
 
     private static ImmutableArray<TriggerButton> ListButtons(ImmutableArray<TriggerSection> sections, TriggerGroup group) =>
         [.. sections.Where(section => section.Group == group).SelectMany(section => section.Choices).SelectMany(choice => choice.Buttons)];

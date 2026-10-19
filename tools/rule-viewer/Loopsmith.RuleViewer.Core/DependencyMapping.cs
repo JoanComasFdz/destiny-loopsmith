@@ -128,10 +128,10 @@ internal static class DependencyMapping
     internal static string DescribeTriggerLabel(Trigger trigger) =>
         trigger.Match(
             abilityCast: _ => "cast",
-            killAny: _ => "kill",
-            killOfTier: kill => $"{kill.Tier.ToString().ToLowerInvariant()} kill",
-            killDebuffed: _ => "kill",
-            killMultiple: kill => $"{kill.AtLeast.Value.ToString(CultureInfo.InvariantCulture)}+ kills",
+            killAny: kill => DescribeKillLabel(kill.Needs, "kill"),
+            killOfTier: kill => DescribeKillLabel(kill.Needs, $"{kill.Tier.ToString().ToLowerInvariant()} kill"),
+            killDebuffed: kill => DescribeKillLabel(kill.Needs, "kill"),
+            killMultiple: kill => DescribeKillLabel(kill.Needs, $"{kill.AtLeast.Value.ToString(CultureInfo.InvariantCulture)}+ kills"),
             damage: damage => DescribeHitLabel(damage.Needs),
             damageDebuffed: damage => DescribeHitLabel(damage.Needs),
             damageMultiple: damage => $"{damage.AtLeast.Value.ToString(CultureInfo.InvariantCulture)}+ hits",
@@ -140,13 +140,17 @@ internal static class DependencyMapping
             stacksMaxed: _ => "at max",
             finisher: _ => "finisher",
             abilityCastAs: _ => "cast",
-            killFewer: _ => "kill",
+            killFewer: kill => DescribeKillLabel(kill.Needs, "kill"),
             criticalHealth: _ => "critical health",
             shieldBroken: _ => "shield broken",
             energyExpended: _ => "last charge",
             damageFewer: _ => "hit",
-            killBetween: kill => $"{kill.AtLeast.Value.ToString(CultureInfo.InvariantCulture)}+ kills",
+            killBetween: kill => DescribeKillLabel(kill.Needs, $"{kill.AtLeast.Value.ToString(CultureInfo.InvariantCulture)}+ kills"),
             reload: _ => "reload");
+
+    /// <summary>"precision kill", "precision 3+ kills": a kill a source needs on the enemy's weak spot (ADRs D36).</summary>
+    internal static string DescribeKillLabel(HitZone needs, string kill) =>
+        needs == HitZone.Precision ? $"precision {kill}" : kill;
 
     private static string DescribeHitLabel(DamageSpan span) =>
         span == DamageSpan.Sustained ? "sustained hit" : "hit";

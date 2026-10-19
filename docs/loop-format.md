@@ -65,7 +65,7 @@ Same tokens everywhere: loop files, web share links and a golden test's scenario
 
 `grenade[:hold]|melee[:slide|air]|super[:hit|kill[:N]]` · `class[:air]` · `kinetic|energy|power[:hit|kill[:N]]` ·
 `kinetic|energy|power:reload` · `finisher` · `pickup:<pickup-id>` · `max:<status-id>` · `end:<status-id>` · `pack:new` · `health:critical` — and last, an option:
-`:last` on a grenade, melee or class ability step, `:shield` on a weapon step
+`:last` on a grenade, melee or class ability step, `:shield` and `:precision` on a weapon step
 
 Tokens are read case-insensitively. Errors read `Unknown action '<token>'. Use …` or
 `Invalid target count in '<token>': use a whole number from 1 to 20 …`.
@@ -106,6 +106,14 @@ tapping a weapon in the step HUD shows **🔄 reload** next to its 🥊 hit and 
   its element: say it only when the weapon's element matches the shield's. It breaks one, with the step's first hit,
   and raises `ShieldBroken`, so the `shieldBroken` rules fire (Shield Break Charge: x1 Armor Charge, x2 with two
   copies). An ability step takes no `:shield` (`grenade:kill:shield` is an error).
+* `:precision` — a weapon step's hits and kills land on the enemies' weak spot: precision kills (`energy:kill:precision`,
+  `kinetic:kill:3:precision`: all three are). Its kills raise `Killed` as precision kills, so the kill rules with
+  `precision: true` fire on them and on no other kill (Spark of Brilliance: a precision kill of a blinded enemy blinds
+  the enemies around it); every other kill rule fires as on any kill. A hit step takes it too (`energy:hit:precision`):
+  the game has precision hits, though no rule reacts to one yet. It goes with `:shield`, written after it
+  (`energy:kill:shield:precision`, read in either order): a shield takes no precision damage while it holds, but the step
+  breaks it with its first hit and its killing blow can then be a headshot. An ability step, a Super and a reload take no
+  `:precision` (`grenade:kill:precision`, `super:kill:precision`, `energy:reload:precision` are errors).
 * `:last` — a grenade, melee or class ability step spends the ability's last charge, its energy fully expended
   (`grenade:kill:last`, `melee:slide:kill:last`, `class:last`), and raises `EnergyExpended`, so the `energyExpended`
   rules fire (the Kickstarts spend your Armor Charge). With one charge in the build every use is the last one, so a
@@ -171,7 +179,8 @@ isn't modelled. The next pass starts from what the last one ended with.
 (`grenade:kill`, `kinetic`, `grenade:kill:3`, `finisher`, `max:bolt-charge`, `end:amplified`, `pack:new`, `health:critical`). Every token written
 reads back as the same action (`grenade:hit` is written `grenade`). Labels read "Grenade (💀 kill 3)",
 "Festival Flight (🥊 hit 5)" (a weapon by its build name), "Sliding melee (💀 kill)" — 💀 marks a kill step and 🥊 a
-hit step, in the steps' titles and the HUD's buttons alike — "Festival Flight (💀 kill · 🛡 shield)", "Grenade (💀 kill ·
+hit step, in the steps' titles and the HUD's buttons alike — "Festival Flight (💀 kill · 🛡 shield)", "Festival Flight (💀 kill ·
+🎯 precision)", "Festival Flight (💀 kill · 🛡 shield · 🎯 precision)", "Grenade (💀 kill ·
 ⬜ spend fully)", "Class ability (⬜ spend fully)", "Class ability (in the air)",
 "Finisher", "Pick up Orb of Power", "Bolt Charge at max (x10)", "Amplified ends", "New pack", "Critical health".
 
@@ -204,10 +213,11 @@ is offered too, and so is a step's own count (a loop file's `grenade:kill:15`). 
 never game state and decide nothing (ADRs D1, D5) — and it stays picked
 for the next step; a secondary's own hit and kill show the same way ("Sliding melee · Tempest Strike"); the class
 ability, its air move and the finisher act at one tap. A row's option (ADRs D36) shows beside its count, a box the
-player ticks: **🛡 shield** on each weapon when an equipped rule reacts to a broken shield (Shield Break Charge), and
+player ticks: **🛡 shield** on each weapon when an equipped rule reacts to a broken shield (Shield Break Charge), **🎯
+precision** on each weapon when an equipped rule reacts to a precision kill (Spark of Brilliance), and
 **⬜ Spend fully** (its last charge) on the grenade, melee or class ability when the build gives it more than one charge and an equipped
 rule reacts to its energy fully expended (Shinobu's Vow and Grenade Kickstart). Ticked, it goes with the row's hit and
-kill (`energy:kill:shield`, `grenade:kill:last`) and stays ticked for the next steps; a class ability with the option
+kill (`energy:kill:shield`, `energy:kill:precision`, `grenade:kill:last`) and stays ticked for the next steps; a class ability with the option
 shows its button under the HUD instead of acting at one tap. Above the HUD, where the game lists your buffs, the states to declare are grouped by
 status — on you, on your weapons, on the pack (with **New pack**) — each with its own buttons ("Bolt Charge: at max
 (x10) · ends"), and what is on the ground to pick up.

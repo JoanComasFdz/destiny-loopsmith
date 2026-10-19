@@ -13,7 +13,7 @@ public static class ActionTokenParsing
     private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
 
     public const string Grammar =
-        "grenade[:hold]|melee[:slide|air]|super[:hit|kill[:N]] (grenade and melee [:last]), class[:air][:last], kinetic|energy|power[:hit|kill[:N]][:shield], kinetic|energy|power:reload, finisher, pickup:<id>, max:<status>, end:<status>, pack:new, health:critical";
+        "grenade[:hold]|melee[:slide|air]|super[:hit|kill[:N]] (grenade and melee [:last]), class[:air][:last], kinetic|energy|power[:hit|kill[:N]][:shield][:precision], kinetic|energy|power:reload, finisher, pickup:<id>, max:<status>, end:<status>, pack:new, health:critical";
 
     /// <summary>
     /// <c>grenade</c>, <c>grenade:kill</c>, <c>grenade:kill:3</c>, <c>kinetic:hit:5</c>, <c>class</c>, <c>class:air</c> (an air move
@@ -26,29 +26,34 @@ public static class ActionTokenParsing
     /// boundary (<see cref="TargetCount"/>: 1..20); whether a declaration holds is the engine's (a blocked step).
     /// An option goes last (ADRs D36): <c>:last</c>, the use that spends the grenade's, melee's or class ability's last
     /// charge (<c>grenade:kill:last</c>, <c>class:last</c>); <c>:shield</c>, a weapon step that breaks a combatant's shield
-    /// (<c>kinetic:kill:3:shield</c>). <c>kinetic:reload</c> reloads that weapon (ADRs D37): it takes no count and no option.
+    /// (<c>kinetic:kill:3:shield</c>); <c>:precision</c>, a weapon step whose hits and kills are precision ones
+    /// (<c>energy:kill:precision</c>), with <c>:shield</c> too (<c>energy:kill:shield:precision</c>, in either order).
+    /// <c>kinetic:reload</c> reloads that weapon (ADRs D37): it takes no count and no option.
     /// </summary>
     public static Result<PlayerAction, string> ParseActionToken(string token)
     {
         var all = token.Trim().ToLowerInvariant().Split(':');
-        var option = all.Length > 1 && all[0] is "grenade" or "melee" or "super" or "class" or "kinetic" or "energy" or "power" ? all[^1] : "";
-        var charge = option == "last" ? ChargeUse.Last : ChargeUse.Plain;
-        var shield = option == "shield" ? ShieldBreak.Breaks : ShieldBreak.None;
-        var parts = option is "last" or "shield" ? all[..^1] : all;
-        return (parts[0], option) switch
+        var options = ReadOptions(all);
+        var kind = ClassifyOptions(options);
+        var charge = options.Contains("last") ? ChargeUse.Last : ChargeUse.Plain;
+        var shield = options.Contains("shield") ? ShieldBreak.Breaks : ShieldBreak.None;
+        var zone = options.Contains("precision") ? HitZone.Precision : HitZone.Body;
+        var parts = all[..^options.Length];
+        return (parts[0], kind) switch
         {
-            ("grenade", not "shield") => ParseCast(token, parts, OffensiveAbility.Grenade, charge),
-            ("melee", not "shield") => ParseCast(token, parts, OffensiveAbility.Melee, charge),
-            ("super", not ("last" or "shield")) => ParseCast(token, parts, OffensiveAbility.Super, charge),
-            ("class", not "shield") when parts.Length == 1 => Ok(new PlayerAction.UseClassAbility(AbilityInput.Press, charge)),
-            ("class", not "shield") when parts.Length == 2 && FindSecondaryInput(AbilityKind.ClassAbility, parts[1]) is Optional<AbilityInput>.Some input =>
+            (_, OptionKind.Invalid) => FailUnknown(token),
+            ("grenade", not OptionKind.Weapon) => ParseCast(token, parts, OffensiveAbility.Grenade, charge),
+            ("melee", not OptionKind.Weapon) => ParseCast(token, parts, OffensiveAbility.Melee, charge),
+            ("super", OptionKind.None) => ParseCast(token, parts, OffensiveAbility.Super, charge),
+            ("class", not OptionKind.Weapon) when parts.Length == 1 => Ok(new PlayerAction.UseClassAbility(AbilityInput.Press, charge)),
+            ("class", not OptionKind.Weapon) when parts.Length == 2 && FindSecondaryInput(AbilityKind.ClassAbility, parts[1]) is Optional<AbilityInput>.Some input =>
                 Ok(new PlayerAction.UseClassAbility(input.Value, charge)),
-            (_, "reload") when all.Length == 2 && FindWeaponSlot(all[0]) is Optional<WeaponSlot>.Some slot =>
+            (_, OptionKind.None) when parts.Length == 2 && parts[1] == "reload" && FindWeaponSlot(parts[0]) is Optional<WeaponSlot>.Some slot =>
                 Ok(new PlayerAction.ReloadWeapon(slot.Value)),
-            ("kinetic", not "last") => ParseAimedAction(token, parts, (hit, targets) => new PlayerAction.FireWeapon(WeaponSlot.Kinetic, hit, targets, shield)),
-            ("energy", not "last") => ParseAimedAction(token, parts, (hit, targets) => new PlayerAction.FireWeapon(WeaponSlot.Energy, hit, targets, shield)),
-            ("power", not "last") => ParseAimedAction(token, parts, (hit, targets) => new PlayerAction.FireWeapon(WeaponSlot.Power, hit, targets, shield)),
-            (_, "last" or "shield") => FailUnknown(token),
+            ("kinetic", not OptionKind.Charge) => ParseAimedAction(token, parts, (hit, targets) => new PlayerAction.FireWeapon(WeaponSlot.Kinetic, hit, targets, shield, zone)),
+            ("energy", not OptionKind.Charge) => ParseAimedAction(token, parts, (hit, targets) => new PlayerAction.FireWeapon(WeaponSlot.Energy, hit, targets, shield, zone)),
+            ("power", not OptionKind.Charge) => ParseAimedAction(token, parts, (hit, targets) => new PlayerAction.FireWeapon(WeaponSlot.Power, hit, targets, shield, zone)),
+            (_, not OptionKind.None) => FailUnknown(token),
             ("finisher", _) when parts.Length == 1 => Ok(new PlayerAction.PerformFinisher()),
             ("pickup", _) when parts.Length == 2 && PickupId.TryFrom(parts[1], out var pickup) => Ok(new PlayerAction.CollectPickups(pickup)),
             ("max", _) when parts.Length == 2 && StatusId.TryFrom(parts[1], out var maxed) =>
@@ -60,6 +65,25 @@ public static class ActionTokenParsing
             _ => FailUnknown(token),
         };
     }
+
+    /// <summary>What a token's options are for: none, an ability's charge (<c>:last</c>), a weapon's (<c>:shield</c>, <c>:precision</c>), or no step's.</summary>
+    private enum OptionKind { None, Charge, Weapon, Invalid }
+
+    /// <summary>The option words at the end of an ability's or weapon's token (ADRs D36); none for any other token.</summary>
+    private static string[] ReadOptions(string[] all) =>
+        all.Length > 1 && all[0] is "grenade" or "melee" or "super" or "class" or "kinetic" or "energy" or "power"
+            ? [.. all.Skip(1).Reverse().TakeWhile(word => word is "last" or "shield" or "precision").Reverse()]
+            : [];
+
+    /// <summary><c>:last</c> stands alone; <c>:shield</c> and <c>:precision</c> go together, each once.</summary>
+    private static OptionKind ClassifyOptions(string[] options) =>
+        options switch
+        {
+            [] => OptionKind.None,
+            ["last"] => OptionKind.Charge,
+            _ when options.All(word => word is "shield" or "precision") && options.Distinct().Count() == options.Length => OptionKind.Weapon,
+            _ => OptionKind.Invalid,
+        };
 
     /// <summary>An ability's token: its secondary input first when it has one (<c>melee:slide</c>), then <c>[:hit|kill[:N]]</c>.</summary>
     private static Result<PlayerAction, string> ParseCast(string token, string[] parts, OffensiveAbility kind, ChargeUse charge) =>
