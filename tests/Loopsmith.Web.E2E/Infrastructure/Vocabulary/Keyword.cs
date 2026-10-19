@@ -3,8 +3,9 @@ using Dunet;
 namespace Loopsmith.Web.E2E.Infrastructure.Vocabulary;
 
 /// <summary>
-/// A keyword (a status or a pickup every build has: rules/keywords/), as the trigger panel and a step card name it. A
-/// case is added when a test needs it.
+/// A keyword (a status or a pickup every build has: rules/keywords/), as the trigger panel names it (a status to declare
+/// under "On you", a pickup under "On the ground") and a step card names what it fired. A case is added when a test
+/// needs it.
 /// </summary>
 [Union]
 public partial record Keyword

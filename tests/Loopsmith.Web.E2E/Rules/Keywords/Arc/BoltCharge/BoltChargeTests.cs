@@ -80,7 +80,7 @@ public sealed class BoltChargeTests : BaseE2E
             .Shows(new StateGroup.Buffs(), "Amplified", "Bolt Charge");
 
         // When
-        await Frontend.Designer.TriggerPalette.ClickDeclarationAsync(new Status.BoltCharge(), "at max (x10)");
+        await Frontend.Designer.TriggerPalette.ClickDeclarationAsync(new Keyword.BoltCharge(), "at max (x10)");
         await Frontend.Designer.Loop.WaitUntilStepShownAsync(2);
 
         // Then
@@ -145,7 +145,7 @@ public sealed class BoltChargeTests : BaseE2E
             .Shows(new StateGroup.Buffs(), "Super · 1 effect", "Bolt Charge");
 
         // When
-        await Frontend.Designer.TriggerPalette.ClickDeclarationAsync(new Status.BoltCharge(), "at max (x10)");
+        await Frontend.Designer.TriggerPalette.ClickDeclarationAsync(new Keyword.BoltCharge(), "at max (x10)");
         await Frontend.Designer.Loop.WaitUntilStepShownAsync(2);
 
         // Then
@@ -210,7 +210,7 @@ public sealed class BoltChargeTests : BaseE2E
             .Shows(new StateGroup.Buffs(), "Amplified", "Bolt Charge");
 
         // When
-        await Frontend.Designer.TriggerPalette.ClickDeclarationAsync(new Status.BoltCharge(), "at max (x10)");
+        await Frontend.Designer.TriggerPalette.ClickDeclarationAsync(new Keyword.BoltCharge(), "at max (x10)");
         await Frontend.Designer.Loop.WaitUntilStepShownAsync(2);
 
         // Then
@@ -276,7 +276,7 @@ public sealed class BoltChargeTests : BaseE2E
             .Shows(new StateGroup.Buffs(), "Amplified", "Bolt Charge");
 
         // When
-        await Frontend.Designer.TriggerPalette.ClickDeclarationAsync(new Status.BoltCharge(), "at max (x10)");
+        await Frontend.Designer.TriggerPalette.ClickDeclarationAsync(new Keyword.BoltCharge(), "at max (x10)");
         await Frontend.Designer.Loop.WaitUntilStepShownAsync(2);
 
         // Then

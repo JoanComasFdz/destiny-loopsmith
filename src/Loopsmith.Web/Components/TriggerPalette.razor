@@ -35,7 +35,7 @@
                 @RenderStatuses("pack", "The pack", hud.OnPack, hud.NewPack)
                 @if (!hud.Ground.IsEmpty)
                 {
-                    <div class="trig-group" data-group="ground">
+                    <div class="trig-group" data-testid="trig-group" data-group="ground">
                         <span class="trig-group-label">On the ground</span>
                         @foreach (var button in hud.Ground)
                         {
@@ -305,7 +305,7 @@
     {
         @if (!statuses.IsEmpty || !more.IsEmpty)
         {
-            <div class="trig-group" data-group="@group">
+            <div class="trig-group" data-testid="trig-group" data-group="@group">
                 <span class="trig-group-label">@label</span>
                 @foreach (var status in statuses)
                 {
