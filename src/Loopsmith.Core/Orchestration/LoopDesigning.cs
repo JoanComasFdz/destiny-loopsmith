@@ -116,12 +116,28 @@ public static class LoopDesigning
     }
 
     /// <summary>
-    /// True when the build has something to set things off: a super, grenade, melee or class ability (named or "?"), or a
-    /// weapon. A build started from scratch has none until the subclass editor or a weapon gives it one, and the designer
+    /// True when the build equips anything: an ability (named or "?"), an aspect, a fragment, a weapon, an armor piece, a
+    /// mod, an artifact or one of its perks, or something the rules don't know yet. The finisher, a new pack and the
+    /// declared states need nothing equipped, so a build with only a fragment can set things off. A build started from
+    /// scratch equips nothing until the subclass editor, a weapon or an armor piece gives it something, and the designer
     /// offers no trigger until then.
     /// </summary>
     public static bool HasTriggerSource(ValidatedBuild build) =>
-        build.Build.Abilities.ListPlugs().Any(plug => !plug.IsEmpty()) || !build.Build.Weapons.IsEmpty;
+        IsEquippingAnything(build.Build);
+
+    private static bool IsEquippingAnything(Build build) =>
+        build.Abilities.ListPlugs().Append(build.Abilities.Jump).Any(plug => !plug.IsEmpty())
+        || !build.Aspects.IsEmpty
+        || !build.Fragments.IsEmpty
+        || build.ExoticArmor.IsSome()
+        || !build.ArmorSetBonuses.IsEmpty
+        || !build.ArmorMods.IsEmpty
+        || !build.ArtifactPerks.IsEmpty
+        || !build.Weapons.IsEmpty
+        || !build.LeftOut.IsEmpty
+        || !build.ArmorCopies.IsEmpty
+        || !build.ArmorModPlugs.IsEmpty
+        || build.Artifact.IsSome();
 
     /// <summary>The comment a build from a DIM link starts with: where it came from and what <c>leftOut</c> means.</summary>
     public const string DimBuildNote =

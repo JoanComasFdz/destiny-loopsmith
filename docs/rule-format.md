@@ -951,7 +951,8 @@ nothing either. What Loopsmith doesn't support — a DIM link's raid, activity o
 | `'<name>' (<Kind>) can't go in the <slot> slot.` — each slot takes its own kind; a weapon's perks take `weaponPerk` or `exoticWeapon`, its catalyst `catalyst`, its mod `weaponMod`; a `keyword` element goes in no slot | Blocking |
 | `'<name>' belongs to another class, not <Class>.` — the element's `class` isn't the build's | Blocking |
 | `'<name>' (<Affinity>) does not fit the <Subclass> subclass.` — a super, grenade, melee, jump, aspect or fragment of another affinity; neutral and kinetic ones fit any, and Prismatic takes any | Blocking |
-| `<n> aspects equipped; at most 2.` · `'<name>' is equipped <n> times; aspects and fragments are unique.` · `<n> fragments equipped; the aspects grant <m> slots.` | Blocking |
+| `<n> aspects equipped; at most 2.` · `'<name>' is equipped <n> times; aspects and fragments are unique.` | Blocking |
+| `<n> fragments equipped; the aspects grant <m> slots.` — the game wouldn't hold them, but a fragment's rules fire whatever the aspects, so the build plays (a rule scenario's build can be just the fragment it tests); the subclass editor still won't save it until the aspects open enough slots | Warning |
 | `Fragment slots unknown for <aspects> — fragment count not checked.` | Info |
 | `<weapon>'s roll: <perk> isn't a perk of its column <n> in the manifest excerpt.` — only when the excerpt has the weapon's columns | Warning |
 | `<weapon>: '<perk>' gives way to the other perk of its column — a column holds one perk.` — a perk `perks` names in a column the roll (or another named perk) already fills; it doesn't count | Warning |
