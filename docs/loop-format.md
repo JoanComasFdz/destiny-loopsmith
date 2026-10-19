@@ -442,7 +442,7 @@ loadout's) and its 2- and 4-piece perks, dimmed when not active, each with its o
 **An exotic's catalyst.** An exotic weapon with a catalyst shows it as a square after its perks, off until the
 build turns it on (a DIM link doesn't say). In the designer its details switch it on or off: the embedded
 build's weapon entry gets `catalyst: true`, the catalyst's element is equipped, and the steps replay. Thunderlord's
-Return Stroke reloads it on each lightning strike (a kill, or a hit step's 10th hit: ADRs D37). A catalyst outside the
+Return Stroke refills it on each lightning strike (a kill, or a hit step's 10th hit: ADRs D42). A catalyst outside the
 loop is shown, and its details say "No rules needed." and why; one the rules don't know yet carries the ⊘. Validation says nothing of either.
 
 **Shared DIM builds on Home.** A share can ship with the app as `builds/<slug>/dim-loadout.json` —

@@ -1,0 +1,6 @@
+# Thunderlord with its catalyst, Return Stroke, turned on.
+name: "E2E - Return Stroke on Thunderlord"
+class: hunter
+subclass: arc
+weapons:
+  - { hash: 3325463374, perks: [], catalyst: true } # Thunderlord
