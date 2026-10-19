@@ -325,7 +325,7 @@ public sealed class RuleCatalogParsingTests
 
         Assert.Equal(new Trigger.BuffGained(ToStatus("bolt-charge")), rules[5].On);
         Assert.Equal<Outcome>(
-            [new Outcome.ModifyDamage(new DamageSource.KeywordOf(ToStatus("bolt-charge")), new GameValue.Known(0.5m))],
+            [new Outcome.ModifyDamage(new DamageSource.KeywordOf(ToStatus("bolt-charge")), new GameValue.Known(0.5m), Optional.None<GameValue>())],
             rules[5].Then);
 
         Assert.Equal(new Trigger.StacksMaxed(ToStatus("bolt-charge")), rules[6].On);

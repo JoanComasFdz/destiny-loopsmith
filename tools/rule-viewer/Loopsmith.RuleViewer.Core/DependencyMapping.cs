@@ -152,7 +152,8 @@ internal static class DependencyMapping
             killBetween: kill => DescribeKillLabel(kill.Needs, $"{kill.AtLeast.Value.ToString(CultureInfo.InvariantCulture)}+ kills"),
             reload: _ => "reload",
             hitAtCriticalHealth: _ => "hit at critical health",
-            slideOverAmmo: _ => "slide over ammo");
+            slideOverAmmo: _ => "slide over ammo",
+            readyWeapon: _ => "ready");
 
     /// <summary>"precision kill", "body kill": where a source needs its kill to land (ADRs D36).</summary>
     internal static string DescribeKillLabel(ZoneNeed needs, string kill) =>
@@ -188,7 +189,8 @@ internal static class DependencyMapping
             killBetween: _ => [],
             reload: _ => [ToTriggerNode("Reload", Optional.None<string>())],
             hitAtCriticalHealth: _ => [ToTriggerNode("Hit at critical health", FindStatIcon(context, StatKind.Health))],
-            slideOverAmmo: _ => [ToTriggerNode(DomainPhrasing.SlideOverAmmo, Optional.None<string>())]);
+            slideOverAmmo: _ => [ToTriggerNode(DomainPhrasing.SlideOverAmmo, Optional.None<string>())],
+            readyWeapon: _ => [ToTriggerNode(DomainPhrasing.ReadyWeapon, Optional.None<string>())]);
 
     /// <summary>
     /// The nodes a damage source needs: the weapon or ability trigger, the strike or summon dealing it; any ability is one
@@ -212,7 +214,8 @@ internal static class DependencyMapping
             thisWeapon: _ => [],
             thisWeaponOfType: _ => [],
             weaponOfAmmo: weapon => [ToWeaponNode($"{weapon.Ammo} weapon", FindStatIcon(context, StatKind.Weapons))],
-            weaponOfAmmoAndType: weapon => [ToWeaponNode($"{weapon.Ammo} {weapon.Type} weapon", FindDamageTypeIcon(context, weapon.Type))]);
+            weaponOfAmmoAndType: weapon => [ToWeaponNode($"{weapon.Ammo} {weapon.Type} weapon", FindDamageTypeIcon(context, weapon.Type))],
+            weaponOfArchetype: weapon => [ToWeaponNode(DomainPhrasing.DescribeArchetype(weapon.Archetype), FindStatIcon(context, StatKind.Weapons))]);
 
     /// <summary>
     /// The uses of one ability a hit or kill "by that ability" matches, however it's used (Causality matches any input):
@@ -239,7 +242,7 @@ internal static class DependencyMapping
             spawn: spawn => [Give(ToPickupNode(context, spawn.Pickup), DescribeCount(spawn.Count))],
             spawnSummon: summon => [Give(ToSummonNode(context, summon.Summon), DescribeCount(summon.Count))],
             strikeTarget: strike => [Give(ToStrikeNode(context, strike.Via), "")],
-            modifyDamage: modify => [Give(ToEffectNode("damage-bonus", "Damage bonus"), DescribeDamageChange(context, modify.Against, modify.Change))],
+            modifyDamage: modify => [Give(ToEffectNode("damage-bonus", "Damage bonus"), DescribeDamageChange(context, modify.Against, modify.Change, modify.Pvp))],
             restoreHealth: heal => [Give(ToEffectNode("health", "Health", FindStatIcon(context, StatKind.Health)), DescribeHeal(heal))],
             resetCooldown: reset => [Give(ToEnergyNode(context, reset.Which), "full")],
             collect: collect => [new Effect(ToPickupNode(context, collect.Pickup), EdgeKind.Collects, "")],
@@ -256,7 +259,7 @@ internal static class DependencyMapping
             extraCharges: charges => [Give(
                 ToEffectNode($"extra-charge-{ToKebab(charges.Ability.DescribeAbility())}", $"Extra {charges.Ability.DescribeAbility()} charge"),
                 $"+{charges.Extra.Value.ToString(CultureInfo.InvariantCulture)}")],
-            modifyDamage: modify => [Give(ToEffectNode("damage-bonus", "Damage bonus"), DescribeDamageChange(context, modify.Against, modify.Change))],
+            modifyDamage: modify => [Give(ToEffectNode("damage-bonus", "Damage bonus"), DescribeDamageChange(context, modify.Against, modify.Change, modify.Pvp))],
             resistDamage: resist => [Give(
                 ToEffectNode("damage-resistance", "Damage resistance"),
                 resist.Amount.Pve.ToPercentText() + resist.Amount.Pvp.Map(pvp => $" [PvP {pvp.ToPercentText()}]").UnwrapOr(""))],
@@ -307,8 +310,8 @@ internal static class DependencyMapping
     private static string DescribeTable(StackTable table) =>
         string.Join(" | ", table.Values.Select(value => new GameValue.Known(value).ToPercentText()));
 
-    private static string DescribeDamageChange(GraphContext context, DamageSource against, GameValue change) =>
-        $"{FormatSigned(change, percent: true)} vs {context.Catalog.Glossary.DescribeDamageSource(against, Optional.None<DamageType>())}";
+    private static string DescribeDamageChange(GraphContext context, DamageSource against, GameValue change, Optional<GameValue> pvp) =>
+        $"{FormatSigned(change, percent: true)}{pvp.Map(value => $" [PvP {value.ToPercentText()}]").UnwrapOr("")} vs {context.Catalog.Glossary.DescribeDamageSource(against, Optional.None<DamageType>())}";
 
     private static string DescribeHeal(Outcome.RestoreHealth heal) =>
         heal.Amount.Match(share => share.Value.ToPercentText(), points => $"{points.Value.ToNumberText()} HP")

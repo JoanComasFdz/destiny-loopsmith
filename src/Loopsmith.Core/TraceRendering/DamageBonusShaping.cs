@@ -1,11 +1,12 @@
 using System.Collections.Immutable;
 using Loopsmith.Core.Domain;
+using Loopsmith.Core.Functional;
 using Loopsmith.Core.Phrasing;
 
 namespace Loopsmith.Core.TraceRendering;
 
-/// <summary>An element's damage bonus holding right then, for the copies equipped (<c>?</c> when the source gives none).</summary>
-public sealed record DamageBonusSource(ElementId Element, string Name, Affinity Affinity, GameValue Change);
+/// <summary>An element's damage bonus holding right then, for the copies equipped (<c>?</c> when the source gives none), and its PvP value when the source gives one.</summary>
+public sealed record DamageBonusSource(ElementId Element, string Name, Affinity Affinity, GameValue Change, Optional<GameValue> Pvp);
 
 /// <summary>
 /// The damage bonuses against one damage source ("Melee", "Arc weapon"): each source with its own value, never added up
@@ -38,6 +39,6 @@ public static class DamageBonusShaping
 
     private static IEnumerable<ScopedBonus> ToBonus(ValidatedBuild build, ActivePassive passive) =>
         passive.Passive.Modifier is Passive.ModifyDamage modify
-            ? [new ScopedBonus(modify.Against, new DamageBonusSource(passive.Source, passive.SourceName, passive.Affinity, modify.Change.NarrowToCopies(build.CountCopies(passive.Source))))]
+            ? [new ScopedBonus(modify.Against, new DamageBonusSource(passive.Source, passive.SourceName, passive.Affinity, modify.Change.NarrowToCopies(build.CountCopies(passive.Source)), modify.Pvp.Map(pvp => pvp.NarrowToCopies(build.CountCopies(passive.Source)))))]
             : [];
 }

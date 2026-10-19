@@ -42,7 +42,7 @@ public sealed class AmmoSlideTests
 
         var fired = Assert.Single(step.Fired);   // not the Solar weapon's, and no reload: a refill is no reload
         Assert.Equal(ElementId.From("momentum-probe"), fired.Source);
-        Assert.Equal(new GameEvent.SlidOverAmmo(new DamageOrigin.Weapon(WeaponSlot.Energy, DamageType.Arc, Optional.None<AmmoType>())), fired.Trigger);
+        Assert.Equal(new GameEvent.SlidOverAmmo(new DamageOrigin.Weapon(WeaponSlot.Energy, DamageType.Arc, Optional.None<AmmoType>(), Optional.None<string>())), fired.Trigger);
         Assert.Equal("Slide over an ammo brick with Test Rifle", build.DescribeAction(SlideEnergy));
         Assert.StartsWith("#1 Slide over an ammo brick with Test Rifle\n  Slid over an ammo brick with Test Rifle → Amplified", DescribeTrace(build, step));
     }

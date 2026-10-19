@@ -289,7 +289,7 @@ public sealed class ArmorModMechanicsTests
         var plain = ResolveOnce(ValidateBuild([], mods: [ShieldBreaker]), RifleKill);
 
         var fired = Assert.Single(one.Fired);
-        Assert.Equal(new GameEvent.ShieldBroken(new DamageOrigin.Weapon(WeaponSlot.Energy, DamageType.Arc, Optional.None<AmmoType>())), fired.Trigger);
+        Assert.Equal(new GameEvent.ShieldBroken(new DamageOrigin.Weapon(WeaponSlot.Energy, DamageType.Arc, Optional.None<AmmoType>(), Optional.None<string>())), fired.Trigger);
         Assert.Equal(1, one.State.ReadTally(Status("armor-charge")).Match(tally => tally.Value.Sure.Value, _ => 0));
         Assert.Equal(2, two.State.ReadTally(Status("armor-charge")).Match(tally => tally.Value.Sure.Value, _ => 0));
         Assert.Empty(plain.Fired);
@@ -387,7 +387,7 @@ public sealed class ArmorModMechanicsTests
     public void A_passive_shows_the_value_for_the_copies_equipped()
     {
         var surge = Mod("weapon-surge", [],
-            [new PassiveRule(RuleId.From("test-rule-1"), new Passive.ModifyDamage(new DamageSource.WeaponOfType(DamageType.Arc), new GameValue.PerModCount([0.10m, 0.17m, 0.22m, 0.25m])), [], Optional.None<string>())]);
+            [new PassiveRule(RuleId.From("test-rule-1"), new Passive.ModifyDamage(new DamageSource.WeaponOfType(DamageType.Arc), new GameValue.PerModCount([0.10m, 0.17m, 0.22m, 0.25m]), Optional.None<GameValue>()), [], Optional.None<string>())]);
         var build = ValidateBuild([Charger], mods: [GrenadeFont, surge],
             modOrder: [ElementId.From("grenade-font"), ElementId.From("grenade-font"), ElementId.From("weapon-surge"), ElementId.From("weapon-surge")]);
 
@@ -463,8 +463,8 @@ public sealed class ArmorModMechanicsTests
     {
         var source = new DamageSource.WeaponOfSuperType();
 
-        Assert.Equal(matches, source.IsMatchedBy(new DamageOrigin.Weapon(WeaponSlot.Kinetic, weapon, Optional.None<AmmoType>()), Optional.Some(super)));
-        Assert.False(source.IsMatchedBy(new DamageOrigin.Weapon(WeaponSlot.Kinetic, weapon, Optional.None<AmmoType>()), Optional.None<DamageType>()));
+        Assert.Equal(matches, source.IsMatchedBy(new DamageOrigin.Weapon(WeaponSlot.Kinetic, weapon, Optional.None<AmmoType>(), Optional.None<string>()), Optional.Some(super)));
+        Assert.False(source.IsMatchedBy(new DamageOrigin.Weapon(WeaponSlot.Kinetic, weapon, Optional.None<AmmoType>(), Optional.None<string>()), Optional.None<DamageType>()));
         Assert.False(source.IsMatchedBy(new DamageOrigin.Ability(AbilityKind.Grenade, super), Optional.Some(super)));
         Assert.False(source.IsMatchedBy(new DamageOrigin.Finisher(), Optional.Some(super)));
     }
@@ -476,7 +476,7 @@ public sealed class ArmorModMechanicsTests
         var unknown = ValidateBuild([], mods: [HarmonicSiphon], super: Optional.None<Affinity>());
         var glossary = arc.Catalog.Glossary;
         var damage = new Trigger.Damage(new DamageSource.WeaponOfSuperType());
-        var boost = new Passive.ModifyDamage(new DamageSource.WeaponOfSuperType(), new GameValue.Known(0.2m));
+        var boost = new Passive.ModifyDamage(new DamageSource.WeaponOfSuperType(), new GameValue.Known(0.2m), Optional.None<GameValue>());
 
         Assert.Contains("Kill target with Arc weapon (your Super's element) -> Orb of Power [Harmonic Siphon]", DescribeExplanation(arc));
         Assert.Contains("Kill target with weapon of your Super's element -> Orb of Power [Harmonic Siphon]", DescribeExplanation(unknown));

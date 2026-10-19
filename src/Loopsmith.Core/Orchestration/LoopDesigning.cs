@@ -26,7 +26,7 @@ public enum TriggerGroup { Ability, Weapon, Pickup, Declare }
 /// pickup that just landed, a buff that can now be declared at max). Abilities and weapons are listed
 /// against one enemy; <see cref="LoopDesigning.SetTargetCount"/> aims them at more. <see cref="IsEnabled"/>: false for a
 /// step that always shows but that no rule of the build reacts to (a weapon's slide over an ammo brick without Spark of
-/// Momentum), so it is there to see but sets nothing off.
+/// Momentum, its Ready step without Mechaneer's Tricksleeves), so it is there to see but sets nothing off.
 /// </summary>
 public sealed record TriggerOption(
     PlayerAction Action,
@@ -404,7 +404,8 @@ public static class LoopDesigning
                 killBetween: kill => [kill.AtLeast],
                 reload: _ => [],
                 hitAtCriticalHealth: _ => [],
-                slideOverAmmo: _ => []))
+                slideOverAmmo: _ => [],
+                readyWeapon: _ => []))
             .Distinct(),
     ];
 
@@ -987,6 +988,7 @@ public static class LoopDesigning
                 .Select(hit => (PlayerAction)new PlayerAction.FireWeapon(weapon.Slot, hit, TargetCount.One))
                 .Append(new PlayerAction.ReloadWeapon(weapon.Slot))   // a reload, the player's to declare (ADRs D37)
                 .Select(action => (action, TriggerGroup.Weapon, true))
+                .Append((new PlayerAction.ReadyWeapon(weapon.Slot), TriggerGroup.Weapon, ActionResolution.IsReadyReactedTo(build, weapon)))   // always shown, enabled when a rule reacts
                 .Append((new PlayerAction.SlideOverAmmo(weapon.Slot), TriggerGroup.Weapon, ActionResolution.IsAmmoSlideReactedTo(build, weapon))));   // always shown, enabled when a rule reacts
         var pickups = state.ListPickups()
             .Select(pickup => ((PlayerAction)new PlayerAction.CollectPickups(pickup), TriggerGroup.Pickup, true));

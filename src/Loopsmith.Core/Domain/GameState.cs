@@ -74,6 +74,7 @@ public partial record PlayerAction
     partial record PerformFinisher();                       // a finisher on one enemy of the pack: it kills it
     partial record ReloadWeapon(WeaponSlot Slot);           // the player reloads that weapon: no ammo is counted (ADRs D37)
     partial record SlideOverAmmo(WeaponSlot Slot);          // the player slides over an ammo brick with that weapon in hand: no ammo is counted (ADRs D37)
+    partial record ReadyWeapon(WeaponSlot Slot);            // the player readies (swaps to) that weapon: which weapon is in hand isn't kept (ADRs D42)
 }
 
 /// <summary>
@@ -118,6 +119,7 @@ public partial record GameEvent
     partial record Reloaded(DamageOrigin Origin);       // a weapon reloaded: a Reload step, or an outcome that reloads it (ADRs D37)
     partial record HitAtCriticalHealth();         // only from a declared health:hit step, while at critical health
     partial record SlidOverAmmo(DamageOrigin Origin);   // only from a declared slide over an ammo brick, with the weapon in hand
+    partial record WeaponReadied(DamageOrigin Origin);  // only from a declared Ready step (ADRs D42)
 }
 
 /// <summary>

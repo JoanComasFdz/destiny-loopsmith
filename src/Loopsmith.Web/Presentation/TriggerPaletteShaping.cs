@@ -112,6 +112,7 @@ public static class TriggerPaletteShaping
         {
             (PlayerAction.ReloadWeapon, _) => DomainPhrasing.ReloadCaption,
             (PlayerAction.SlideOverAmmo, _) => DomainPhrasing.SlideOverAmmoCaption,
+            (PlayerAction.ReadyWeapon, _) => DomainPhrasing.ReadyWeaponCaption,
             (_, 1) => option.Label,
             _ => ReadQualifier(option.Label),
         };
@@ -128,7 +129,7 @@ public static class TriggerPaletteShaping
     {
         var aimed = targets.Match(count => LoopDesigning.SetTargetCount(option.Action, count.Value), _ => option.Action);
         var action = toggles.Aggregate(aimed, (step, toggle) => LoopDesigning.SetStepOption(step, toggle.Option, toggle.IsOn));
-        return new TriggerButton(action, action.ToActionToken(), build.DescribeAction(action), caption, option.IsNew, action is PlayerAction.ReloadWeapon or PlayerAction.SlideOverAmmo, option.IsEnabled);
+        return new TriggerButton(action, action.ToActionToken(), build.DescribeAction(action), caption, option.IsNew, action is PlayerAction.ReloadWeapon or PlayerAction.SlideOverAmmo or PlayerAction.ReadyWeapon, option.IsEnabled);
     }
 
     /// <summary>
@@ -151,7 +152,8 @@ public static class TriggerPaletteShaping
             declare => ((PlayerAction)declare).ToActionToken(),
             _ => "finisher",
             reload => $"fire:{reload.Slot}",
-            slide => $"fire:{slide.Slot}");
+            slide => $"fire:{slide.Slot}",
+            ready => $"fire:{ready.Slot}");
 
     private static int ReadHitOrder(PlayerAction action) =>
         action.Match(
@@ -161,7 +163,8 @@ public static class TriggerPaletteShaping
             _ => 0,
             _ => 0,
             _ => 0,
-            _ => 3,   // a reload stays at the row's right end
+            _ => 4,   // a reload stays at the row's right end
+            _ => 3,
             _ => 2);
 
     /// <summary>"Grenade (💀 kill)" → "Grenade".</summary>

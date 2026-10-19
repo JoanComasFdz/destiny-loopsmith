@@ -338,7 +338,8 @@ public static class DomainPhrasing
             _ => "this weapon",
             thisOfType => $"this weapon ({thisOfType.Type})",
             ofAmmo => $"{ofAmmo.Ammo} weapon",
-            ofAmmoAndType => $"{ofAmmoAndType.Ammo} {ofAmmoAndType.Type} weapon");
+            ofAmmoAndType => $"{ofAmmoAndType.Ammo} {ofAmmoAndType.Type} weapon",
+            ofArchetype => DescribeArchetype(ofArchetype.Archetype));
 
     public static string DescribeOrigin(this KeywordGlossary glossary, DamageOrigin origin, Build build) =>
         origin.Match(
@@ -371,6 +372,12 @@ public static class DomainPhrasing
 
     /// <summary>A slide over an ammo brick's button, next to a weapon's hit, kill and reload: "📦 slide over ammo".</summary>
     public const string SlideOverAmmoCaption = "📦 slide over ammo";
+
+    /// <summary>What readying (swapping to) a weapon is called: the step ("Ready Buzzard") and its trigger (ADRs D42).</summary>
+    public const string ReadyWeapon = "Ready";
+
+    /// <summary>A Ready step's button, next to a weapon's hit and kill: "✋ ready".</summary>
+    public const string ReadyWeaponCaption = "✋ ready";
 
     /// <summary>What breaking a combatant's shield is called as a trigger (ADRs D36).</summary>
     public const string BreakShield = "Break a shield";
@@ -421,7 +428,10 @@ public static class DomainPhrasing
             _ => HitAtCriticalHealth,
             slide => slide.Via is DamageSource.AnySource or DamageSource.AnyWeapon
                 ? SlideOverAmmo
-                : $"{SlideOverAmmo} with {glossary.DescribeDamageSource(slide.Via, superType)}");
+                : $"{SlideOverAmmo} with {glossary.DescribeDamageSource(slide.Via, superType)}",
+            ready => ready.Via is DamageSource.AnySource or DamageSource.AnyWeapon
+                ? $"{ReadyWeapon} a weapon"
+                : $"{ReadyWeapon} {glossary.DescribeDamageSource(ready.Via, superType)}");
 
     /// <summary>" in 3s": the window a source gives the kills or hits it counts; nothing without one.</summary>
     private static string DescribeWithin(Optional<Seconds> within) =>
@@ -509,10 +519,15 @@ public static class DomainPhrasing
             : $"Hit {atLeast.Value}+ enemies with {glossary.DescribeDamageSource(via, superType)}";
 
     /// <summary>"+20% Arc weapon damage"; a weapon of your Super's element reads "+20% damage with Arc weapon (your Super's element)".</summary>
-    private static string DescribeDamageChange(KeywordGlossary glossary, DamageSource against, GameValue change, Optional<DamageType> superType) =>
+    /// <summary>"+20% Arc weapon damage", "+100% [PvP 10%] Sidearm damage": with its PvP value when the source gives one.</summary>
+    private static string DescribeDamageChange(KeywordGlossary glossary, DamageSource against, GameValue change, Optional<GameValue> pvp, Optional<DamageType> superType) =>
         against is DamageSource.WeaponOfSuperType
-            ? $"+{change.FormatPercent()} damage with {glossary.DescribeDamageSource(against, superType)}"
-            : $"+{change.FormatPercent()} {glossary.DescribeDamageSource(against, superType)} damage";
+            ? $"+{change.FormatPercent()}{DescribePvp(pvp)} damage with {glossary.DescribeDamageSource(against, superType)}"
+            : $"+{change.FormatPercent()}{DescribePvp(pvp)} {glossary.DescribeDamageSource(against, superType)} damage";
+
+    /// <summary>" [PvP 10%]": a value's PvP part, when the source gives one; nothing without.</summary>
+    public static string DescribePvp(Optional<GameValue> pvp) =>
+        pvp.Map(value => $" [PvP {value.FormatPercent()}]").UnwrapOr("");
 
     private static string DescribeTargetPhrase(KeywordGlossary glossary, ImmutableArray<StatusId> targetHas) =>
         targetHas.IsEmpty
@@ -580,7 +595,7 @@ public static class DomainPhrasing
             spawn => (spawn.Count > 1 ? $"{spawn.Count}× " : "") + glossary.DescribePickup(spawn.Pickup),
             summon => (summon.Count > 1 ? $"{summon.Count}× " : "") + glossary.DescribeSummon(summon.Summon),
             strike => $"{glossary.DescribeStatus(strike.Via)} strike" + (strike.Hit == HitOutcome.Kill ? " (kills)" : ""),
-            modify => DescribeDamageChange(glossary, modify.Against, modify.Change, superType),
+            modify => DescribeDamageChange(glossary, modify.Against, modify.Change, modify.Pvp, superType),
             heal => (heal.IncludesAllies ? "heals you and allies" : "heals you")
                 + heal.Amount.Match(
                     share => share.Value is GameValue.Unknown ? "" : $" {share.Value.FormatPercent()}",
@@ -793,7 +808,7 @@ public static class DomainPhrasing
                 least with { Amount = new EnergyGrant.Fraction(fraction.Amount.NarrowToCopies(copies)) },
             Outcome.ConvertStacksToEnergy { Energy: StackEnergy.PerStack perStack } convert =>
                 convert with { Energy = new StackEnergy.PerStack(perStack.Amount.NarrowToCopies(copies)) },
-            Outcome.ModifyDamage modify => modify with { Change = modify.Change.NarrowToCopies(copies) },
+            Outcome.ModifyDamage modify => modify with { Change = modify.Change.NarrowToCopies(copies), Pvp = modify.Pvp.Map(pvp => pvp.NarrowToCopies(copies)) },
             Outcome.RestoreHealth heal => heal with
             {
                 Amount = heal.Amount.Match<HealAmount>(
@@ -893,7 +908,7 @@ public static class DomainPhrasing
         NarrowPassiveToCopies(passive, copies).Match(
             extra => $"+{extra.Extra.Value} {glossary.DescribeStatus(extra.Status)} per gain",
             charges => $"+{charges.Extra} {charges.Ability.DescribeAbility()} charge",
-            modify => DescribeDamageChange(glossary, modify.Against, modify.Change, superType),
+            modify => DescribeDamageChange(glossary, modify.Against, modify.Change, modify.Pvp, superType),
             resist => DescribeResistance(resist),
             weapons => $"{DescribeChangedWeapons(glossary, weapons.Weapons, superType)}: "
                 + string.Join(", ", weapons.Changes.Select(change => DescribeStatChange(change))),
@@ -933,7 +948,7 @@ public static class DomainPhrasing
     private static Passive NarrowPassiveToCopies(Passive passive, CopyCount copies) =>
         passive switch
         {
-            Passive.ModifyDamage modify => modify with { Change = modify.Change.NarrowToCopies(copies) },
+            Passive.ModifyDamage modify => modify with { Change = modify.Change.NarrowToCopies(copies), Pvp = modify.Pvp.Map(pvp => pvp.NarrowToCopies(copies)) },
             Passive.ResistDamage resist => resist with
             {
                 Amount = new PveAndPvp(resist.Amount.Pve.NarrowToCopies(copies), resist.Amount.Pvp.Map(pvp => pvp.NarrowToCopies(copies))),
@@ -1016,14 +1031,15 @@ public static class DomainPhrasing
             expended => expended.Kind.DescribeEnergyExpended(),
             reloaded => $"{glossary.DescribeOrigin(reloaded.Origin, build)} reloaded",
             _ => HitAtCriticalHealth,
-            slid => $"Slid over an ammo brick with {glossary.DescribeOrigin(slid.Origin, build)}");
+            slid => $"Slid over an ammo brick with {glossary.DescribeOrigin(slid.Origin, build)}",
+            readied => $"Readied {glossary.DescribeOrigin(readied.Origin, build)}");
 
     /// <summary>
     /// "Grenade (💀 kill)", "Grenade (💀 kill 3)", "Grenade (💀 kill · ⬜ spend fully)", "Festival Flight (🥊 hit 5)",
     /// "Festival Flight (💀 kill · 🛡 shield)", "Festival Flight (💀 kill · 🎯 precision)", "Class ability", "Class ability (⬜ spend fully)", "Pick up Orb of Power",
     /// "Bolt Charge at max (x10)", "Amplified ends", "New pack", "Critical health", "Hit at critical health", "Finisher", "Reload Festival Flight".
     /// "Bolt Charge at max (x10)", "Amplified ends", "New pack", "Critical health", "Finisher", "Reload Festival Flight",
-    /// "Slide over an ammo brick with Festival Flight".
+    /// "Slide over an ammo brick with Festival Flight", "Ready Buzzard".
     /// </summary>
     public static string DescribeAction(this ValidatedBuild build, PlayerAction action) =>
         action.Match(
@@ -1040,7 +1056,8 @@ public static class DomainPhrasing
             declare => build.DescribeDeclaration(declare.Declaration),
             _ => Finisher,
             reload => $"{Reload} {DescribeWeapon(build.Build, reload.Slot, reload.Slot.ToString())}",
-            slide => $"{SlideOverAmmo} with {DescribeWeapon(build.Build, slide.Slot, slide.Slot.ToString())}");
+            slide => $"{SlideOverAmmo} with {DescribeWeapon(build.Build, slide.Slot, slide.Slot.ToString())}",
+            ready => $"{ReadyWeapon} {DescribeWeapon(build.Build, ready.Slot, ready.Slot.ToString())}");
 
     /// <summary>"Armor Charge at max (x4)": the max names the build's cap (Charged Up raises it), a fact the player declares reached.</summary>
     private static string DescribeDeclaration(this ValidatedBuild build, StateDeclaration declaration) =>
@@ -1091,7 +1108,7 @@ public static class DomainPhrasing
     /// The action's token, the same everywhere (loop files, share links, the web): <c>grenade:kill</c>, <c>grenade:kill:3</c>,
     /// <c>class</c>, <c>kinetic</c>, <c>kinetic:hit:5</c>, <c>pickup:orb-of-power</c>, <c>max:bolt-charge</c>,
     /// <c>end:amplified</c>, <c>pack:new</c>, <c>health:critical</c>, <c>health:hit</c>, <c>finisher</c>, <c>kinetic:reload</c>. The target count is written only when it is more than one; every
-    /// <c>end:amplified</c>, <c>pack:new</c>, <c>health:critical</c>, <c>finisher</c>, <c>kinetic:reload</c>, <c>kinetic:ammo</c>. The target count is written only when it is more than one; every
+    /// <c>end:amplified</c>, <c>pack:new</c>, <c>health:critical</c>, <c>finisher</c>, <c>kinetic:reload</c>, <c>kinetic:ammo</c>, <c>kinetic:ready</c>. The target count is written only when it is more than one; every
     /// token round-trips. An option goes last: <c>:last</c> on an ability's last charge (<c>grenade:kill:last</c>),
     /// <c>:shield</c> on a weapon step that breaks a shield (<c>kinetic:kill:3:shield</c>), then <c>:precision</c> on one whose
     /// hits and kills are precision ones (<c>energy:kill:precision</c>, <c>energy:kill:shield:precision</c>) (ADRs D36).
@@ -1110,7 +1127,8 @@ public static class DomainPhrasing
                 _ => "health:hit"),
             _ => "finisher",
             reload => reload.Slot.ToString().ToLowerInvariant() + ":reload",
-            slide => slide.Slot.ToString().ToLowerInvariant() + ":ammo");
+            slide => slide.Slot.ToString().ToLowerInvariant() + ":ammo",
+            ready => ready.Slot.ToString().ToLowerInvariant() + ":ready");
 
     /// <summary>":last" for the use that spends an ability's last charge; nothing for a plain use.</summary>
     private static string ToChargeSuffix(ChargeUse charge) =>
