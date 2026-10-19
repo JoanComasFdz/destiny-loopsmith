@@ -1,0 +1,7 @@
+# Echo of Vigilance on a Void Hunter, with Festival Flight for the kill it needs at critical health.
+name: "E2E - Echo of Vigilance with Festival Flight"
+class: hunter
+subclass: void
+fragments: [echo-of-vigilance]
+weapons:
+  - { hash: 4019651319 } # Festival Flight

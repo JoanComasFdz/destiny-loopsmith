@@ -1,0 +1,7 @@
+# Iron Panoply's 2-piece bonus (Vigilant Watch), with Festival Flight for the weapon kill it needs at critical health.
+name: "E2E - Vigilant Watch with Festival Flight"
+class: hunter
+subclass: arc
+armorSetBonuses: [iron-panoply-2pc]
+weapons:
+  - { hash: 4019651319 } # Festival Flight
