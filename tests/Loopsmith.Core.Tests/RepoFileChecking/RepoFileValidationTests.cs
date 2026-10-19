@@ -21,21 +21,21 @@ public sealed class RepoFileValidationTests
     /// <summary>The fixtures an e2e scenario imports to see them refused, each with a part of the error it shows.</summary>
     private static readonly ImmutableDictionary<string, string> Refused = new Dictionary<string, string>
     {
-        ["tests/Loopsmith.Web.E2E/Scenarios/ImportExport/crisis-inverted-without-archetype-or-hash.build.yaml"] = "weapon 'Crisis Inverted' needs an `archetype` or a `hash`",
-        ["tests/Loopsmith.Web.E2E/Scenarios/ImportExport/unknown-weapon-hash.build.yaml"] = "1234567",
+        ["tests/Loopsmith.Web.E2E/Scenarios/ImportExport/BuildImport/crisis-inverted-without-archetype-or-hash.build.yaml"] = "weapon 'Crisis Inverted' needs an `archetype` or a `hash`",
+        ["tests/Loopsmith.Web.E2E/Scenarios/ImportExport/WeaponByHash/unknown-weapon-hash.build.yaml"] = "1234567",
     }.ToImmutableDictionary();
 
     /// <summary>The fixtures whose weapons are read from Bungie's full manifest, each with the hashes the excerpt doesn't know.</summary>
     private static readonly ImmutableDictionary<string, ImmutableArray<uint>> FullManifestOnly = new Dictionary<string, ImmutableArray<uint>>
     {
-        ["tests/Loopsmith.Web.E2E/Scenarios/ImportExport/ogma-pr6-by-hash.build.yaml"] = [2342054803],
-        ["tests/Loopsmith.Web.E2E/Scenarios/Loop/Weapons/bellowing-giant-reapers-tithe.build.yaml"] = [412265080],
-        ["tests/Loopsmith.Web.E2E/Scenarios/Loop/Weapons/crux-celeritas-reapers-tithe-strand-siphon.build.yaml"] = [391069235],
-        ["tests/Loopsmith.Web.E2E/Scenarios/Loop/Weapons/festival-flight-one-for-all-ogma-pr6.build.yaml"] = [2342054803],
-        ["tests/Loopsmith.Web.E2E/Scenarios/Loop/Weapons/ogma-pr6-stats-for-all.build.yaml"] = [2342054803],
-        ["tests/Loopsmith.Web.E2E/Scenarios/Loop/Weapons/ogma-pr6-unrelenting.build.yaml"] = [2342054803],
-        ["tests/Loopsmith.Web.E2E/Scenarios/Loop/Weapons/scathelocke-veterans-wisdom.build.yaml"] = [3332538050],
-        ["tests/Loopsmith.Web.E2E/Scenarios/Loop/Weapons/speleologist-radiolaria-transposer.build.yaml"] = [412251536],
+        ["tests/Loopsmith.Web.E2E/Scenarios/ImportExport/WeaponByHash/ogma-pr6-by-hash.build.yaml"] = [2342054803],
+        ["tests/Loopsmith.Web.E2E/Scenarios/Loop/Weapons/EnemyCount/bellowing-giant-reapers-tithe.build.yaml"] = [412265080],
+        ["tests/Loopsmith.Web.E2E/Scenarios/Loop/Weapons/EnemyCount/crux-celeritas-reapers-tithe-strand-siphon.build.yaml"] = [391069235],
+        ["tests/Loopsmith.Web.E2E/Scenarios/Loop/Weapons/EnemyCount/festival-flight-one-for-all-ogma-pr6.build.yaml"] = [2342054803],
+        ["tests/Loopsmith.Web.E2E/Scenarios/Loop/Weapons/EnemyCount/ogma-pr6-stats-for-all.build.yaml"] = [2342054803],
+        ["tests/Loopsmith.Web.E2E/Scenarios/Loop/Weapons/EnemyCount/ogma-pr6-unrelenting.build.yaml"] = [2342054803],
+        ["tests/Loopsmith.Web.E2E/Scenarios/Loop/Weapons/EnemyCount/scathelocke-veterans-wisdom.build.yaml"] = [3332538050],
+        ["tests/Loopsmith.Web.E2E/Scenarios/Loop/Weapons/EnemyCount/speleologist-radiolaria-transposer.build.yaml"] = [412251536],
     }.ToImmutableDictionary();
 
     public static TheoryData<string> Opening

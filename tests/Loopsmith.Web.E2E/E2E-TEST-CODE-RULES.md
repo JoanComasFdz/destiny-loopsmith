@@ -223,9 +223,14 @@ are separate contexts too.
    `.loop.yaml`, named for what they hold: `ogma-pr6-unrelenting.build.yaml`, its build named
    `"E2E - Ogma PR6 with Unrelenting"`) sit next to the class, committed; the project copies them to the test output.
    **The class and its fixture files have a folder of their own,** named for the class without `Tests`
-   (`Rules/Hunter/Arc/Aspects/FlowState/FlowStateTests.cs` and its `.build.yaml` files), so a folder reads as one class
-   and what it imports. The class's namespace stays its domain folder's (`Loopsmith.Web.E2E.Rules.Hunter.Arc.Aspects`):
-   the recordings' folder, a rule scenario's release and the VS Code extension's lookup are named by it.
+   (`Rules/Hunter/Arc/Aspects/FlowState/FlowStateTests.cs` and its `.build.yaml` files,
+   `Scenarios/Loop/Weapons/EnemyCount/EnemyCountTests.cs` and its), so a folder reads as one class and what it imports.
+   The class's namespace stays its domain folder's (`Loopsmith.Web.E2E.Rules.Hunter.Arc.Aspects`,
+   `Loopsmith.Web.E2E.Scenarios.Loop.Weapons`): the recordings' folder, a rule scenario's release and the VS Code
+   extension's lookup are named by it. A fixture two classes use is copied into each class's folder under a name of its
+   own (`Reload/festival-flight-one-for-all.build.yaml`, `WeaponRowLayout/festival-flight-one-for-all-row-layout.build.yaml`):
+   a scenario finds its fixture by its file name, which must be unique in the project and not part of another's
+   (`tools/e2e/record.sh --changed-since` finds the classes a fixture selects by its name).
    Never under `builds/`: the web app embeds `builds/` and would list them on Home.
 5. Grow `Infrastructure/` only by what this scenario needs: the page-object members, vocabulary cases and assertions it
    calls. Missing `data-action` / `data-testid` attributes are added to the app in the same PR.

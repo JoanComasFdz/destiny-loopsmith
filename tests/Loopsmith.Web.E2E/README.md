@@ -79,7 +79,9 @@ Against a site you serve yourself: `E2E_URL=http://127.0.0.1:8000/destiny-loopsm
 
 `Infrastructure/` holds everything that isn't a scenario: `BaseE2E`, the `Frontend` page objects, the `Vocabulary`
 unions, the Bungie routing, the assertions. `Scenarios/` is organized by domain, never by PR or task: folder = domain
-area, class = a topic in it (`<Topic>Tests.cs`), method = one scenario (one Gherkin), played once per screen attribute.
+area, class = a topic in it (`<Topic>Tests.cs`) in a folder of its own with its fixture files
+(`Scenarios/Loop/Weapons/EnemyCount/`; its namespace stays the domain folder's, [E2E-TEST-CODE-RULES.md](E2E-TEST-CODE-RULES.md)
+rule h), method = one scenario (one Gherkin), played once per screen attribute.
 
 ```
 Scenarios/Starting/          start from scratch, from a DIM link

@@ -10,7 +10,7 @@ differently: its scope and the order of its rounds. Its sibling is [rule scenari
 
 ## Example
 
-The worked example is [EnemyCountTests.cs](../tests/Loopsmith.Web.E2E/Scenarios/Loop/Weapons/EnemyCountTests.cs):
+The worked example is [EnemyCountTests.cs](../tests/Loopsmith.Web.E2E/Scenarios/Loop/Weapons/EnemyCount/EnemyCountTests.cs):
 the nine tests of [PR #79](https://github.com/JoanComasFdz/destiny-loopsmith/pull/79)'s enemy counts (the weapon perks
 that need several enemies in one action), each a Gherkin and its C#, with the minimal build each one imports next to
 it. A short one:
