@@ -1,0 +1,6 @@
+# Hatchling's enhanced trait (a second Threadling, at a chance) on Festival Flight, the weapon its kills need.
+name: "E2E - Hatchling (enhanced) on Festival Flight"
+class: hunter
+subclass: arc
+weapons:
+  - { hash: 4019651319, perks: [hatchling-enhanced] } # Festival Flight

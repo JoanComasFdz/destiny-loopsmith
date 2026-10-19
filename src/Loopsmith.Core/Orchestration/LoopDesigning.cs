@@ -1019,8 +1019,8 @@ public static class LoopDesigning
 
     /// <summary>
     /// The options a step can carry in this build (ADRs D36), each when it sets something off: "breaks a shield" on a weapon
-    /// step when an equipped rule reacts to a broken shield, and "precision" when one reacts to a precision kill (Spark of
-    /// Brilliance); "spend fully" (its last charge) on a grenade, melee or class ability step when the build gives that
+    /// step when an equipped rule reacts to a broken shield, and "precision" when one reacts to a precision or a body kill (Spark
+    /// of Brilliance, Hatchling); "spend fully" (its last charge) on a grenade, melee or class ability step when the build gives that
     /// ability more than one charge (Shinobu's Vow) and an equipped rule reacts to its energy fully expended — with one
     /// charge, every use is the last. None for any other step.
     /// </summary>
@@ -1030,7 +1030,7 @@ public static class LoopDesigning
             PlayerAction.FireWeapon =>
             [
                 .. HasRule(build, rule => rule.On is Trigger.ShieldBroken) ? [StepOption.BreaksShield] : Array.Empty<StepOption>(),
-                .. HasRule(build, rule => rule.On.NeedsPrecisionKill()) ? [StepOption.Precision] : Array.Empty<StepOption>(),
+                .. HasRule(build, rule => rule.On.NeedsKillZone()) ? [StepOption.Precision] : Array.Empty<StepOption>(),
             ],
             PlayerAction.CastAbility cast when CanSpendLastCharge(build, cast.Kind.ToAbilityKind()) => [StepOption.LastCharge],
             PlayerAction.UseClassAbility when CanSpendLastCharge(build, AbilityKind.ClassAbility) => [StepOption.LastCharge],

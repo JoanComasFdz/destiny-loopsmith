@@ -71,8 +71,7 @@ public enum ShieldBreak { None, Breaks }
 
 /// <summary>
 /// Where a weapon's hits and kills land (ADRs D36): <see cref="Body"/>, anywhere; <see cref="Precision"/>, the enemy's weak
-/// spot (a headshot) — the player says it. As a kill trigger's need, <see cref="Body"/> is any kill and
-/// <see cref="Precision"/> only a precision kill (Spark of Brilliance).
+/// spot (a headshot) — the player says it. A kill trigger's <c>hit:</c> names one (<see cref="ZoneNeed"/>).
 /// </summary>
 public enum HitZone { Body, Precision }
 

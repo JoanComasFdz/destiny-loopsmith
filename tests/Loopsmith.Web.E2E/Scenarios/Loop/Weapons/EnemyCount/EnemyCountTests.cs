@@ -666,7 +666,7 @@ public sealed class EnemyCountTests : BaseE2E
           # Two Threadlings: the one every Hatchling gives, and the extra one only the enhanced trait gives.
           And "Hatchling (enhanced)" fires "Threadling (chance)" and "Threadling (chance)"
           When I tick "why" above the loop
-          Then "Hatchling (enhanced)" gives the reasons "why: Fewer than three kills in this step: a precision kill, or the kills of the steps before, may hatch it." and "why: When it hatches one, the enhanced trait may hatch a second."
+          Then "Hatchling (enhanced)" gives the reasons "why: Fewer than three body kills in this step: the kills of the steps before may hatch it." and "why: When it hatches one, the enhanced trait may hatch a second."
           When I remove step #1 with the "✕" on its card
           Then the loop has no steps
           When I tap "Festival Flight" in the trigger panel
@@ -714,7 +714,7 @@ public sealed class EnemyCountTests : BaseE2E
         // Then
         var oneKillWhy = await Frontend.Designer.Loop.Step(1).ReadAsync();
         Asserting.That(oneKillWhy)
-            .GivesReasons(new WeaponPerk.HatchlingEnhanced(), "why: Fewer than three kills in this step: a precision kill, or the kills of the steps before, may hatch it.", "why: When it hatches one, the enhanced trait may hatch a second.");
+            .GivesReasons(new WeaponPerk.HatchlingEnhanced(), "why: Fewer than three body kills in this step: the kills of the steps before may hatch it.", "why: When it hatches one, the enhanced trait may hatch a second.");
 
         // When
         await Frontend.Designer.Loop.ClickRemoveStepAsync(1);

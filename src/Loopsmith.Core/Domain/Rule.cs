@@ -9,10 +9,22 @@ namespace Loopsmith.Core.Domain;
 public partial record Trigger
 {
     partial record AbilityCast(AbilityKind Kind);                          // any use of the ability, its secondary ones too
-    partial record KillAny(DamageSource Via, HitZone Needs = HitZone.Body);   // Needs: Precision for a precision kill only (ADRs D36)
-    partial record KillOfTier(DamageSource Via, EnemyTier Tier, HitZone Needs = HitZone.Body);
-    partial record KillDebuffed(DamageSource Via, ImmutableArray<StatusId> TargetHas, HitZone Needs = HitZone.Body);
-    partial record KillMultiple(DamageSource Via, TargetCount AtLeast, Optional<Seconds> Within, HitZone Needs = HitZone.Body);   // kill at least N enemies in one action (within: the source's window, "2 in 3 s", a fact one action meets)
+    partial record KillAny(DamageSource Via, ZoneNeed Needs)                  // Needs: where the kill lands, `hit:` (ADRs D36)
+    {
+        public KillAny(DamageSource via) : this(via, new ZoneNeed.AnyZone()) { }
+    }
+    partial record KillOfTier(DamageSource Via, EnemyTier Tier, ZoneNeed Needs)
+    {
+        public KillOfTier(DamageSource via, EnemyTier tier) : this(via, tier, new ZoneNeed.AnyZone()) { }
+    }
+    partial record KillDebuffed(DamageSource Via, ImmutableArray<StatusId> TargetHas, ZoneNeed Needs)
+    {
+        public KillDebuffed(DamageSource via, ImmutableArray<StatusId> targetHas) : this(via, targetHas, new ZoneNeed.AnyZone()) { }
+    }
+    partial record KillMultiple(DamageSource Via, TargetCount AtLeast, Optional<Seconds> Within, ZoneNeed Needs)   // kill at least N enemies in one action (within: the source's window, "2 in 3 s", a fact one action meets)
+    {
+        public KillMultiple(DamageSource via, TargetCount atLeast, Optional<Seconds> within) : this(via, atLeast, within, new ZoneNeed.AnyZone()) { }
+    }
     partial record Damage(DamageSource Via, DamageSpan Needs = DamageSpan.Blow);   // Needs: Sustained for a source that needs several hits or a share of the enemy's health (ADRs D34)
     partial record DamageDebuffed(DamageSource Via, ImmutableArray<StatusId> TargetHas, DamageSpan Needs = DamageSpan.Blow);
     partial record DamageMultiple(DamageSource Via, TargetCount AtLeast, Optional<Seconds> Within);   // hit at least N enemies in one action (within: the source's window, "3 in 3 s")
@@ -21,13 +33,33 @@ public partial record Trigger
     partial record StacksMaxed(StatusId Status);
     partial record Finisher();                                                 // the player does a finisher on an enemy of the pack
     partial record AbilityCastAs(AbilityKind Kind, AbilityInput Input);        // only that use of the ability: the melee while sliding, the class ability's air move
-    partial record KillFewer(DamageSource Via, TargetCount FewerThan, HitZone Needs = HitZone.Body);       // kill fewer than N enemies in one action (at least one)
+    partial record KillFewer(DamageSource Via, TargetCount FewerThan, ZoneNeed Needs)   // kill fewer than N enemies in one action (at least one)
+    {
+        public KillFewer(DamageSource via, TargetCount fewerThan) : this(via, fewerThan, new ZoneNeed.AnyZone()) { }
+    }
     partial record CriticalHealth();                                           // the player declares they reached critical health (ADRs D3)
     partial record ShieldBroken(DamageSource Via);                             // a combatant's shield broken by that source (the player says which hit breaks it, ADRs D36)
     partial record EnergyExpended(AbilityKind Kind);                           // the ability's energy fully expended: its last charge used (ADRs D36)
     partial record DamageFewer(DamageSource Via, TargetCount FewerThan);       // hit fewer than N enemies in one action (at least one)
-    partial record KillBetween(DamageSource Via, TargetCount AtLeast, TargetCount FewerThan, HitZone Needs = HitZone.Body);   // kill at least N and fewer than M enemies in one action (Reaper's Tithe's x2 on exactly 2)
+    partial record KillBetween(DamageSource Via, TargetCount AtLeast, TargetCount FewerThan, ZoneNeed Needs)   // kill at least N and fewer than M enemies in one action (Reaper's Tithe's x2 on exactly 2)
+    {
+        public KillBetween(DamageSource via, TargetCount atLeast, TargetCount fewerThan) : this(via, atLeast, fewerThan, new ZoneNeed.AnyZone()) { }
+    }
     partial record Reload(DamageSource Via);                                   // a weapon reloaded: the player's Reload step, or an outcome that reloads it (ADRs D37)
+}
+
+/// <summary>
+/// Where a kill trigger needs its kills to land (ADRs D36), its <c>hit:</c>: <see cref="AnyZone"/>, any kill (no <c>hit:</c>);
+/// <see cref="BodyOnly"/>, only kills the player doesn't say are precision ones (<c>hit: body</c>: Hatchling's chance on fewer
+/// than 3 kills); <see cref="PrecisionOnly"/>, only the kills the player says are precision ones (<c>hit: precision</c>: Spark
+/// of Brilliance).
+/// </summary>
+[Union]
+public partial record ZoneNeed
+{
+    partial record AnyZone();
+    partial record BodyOnly();
+    partial record PrecisionOnly();
 }
 
 /// <summary>A guard on the current state, checked after the trigger matched.</summary>
