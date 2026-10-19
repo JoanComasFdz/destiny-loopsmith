@@ -1,0 +1,5 @@
+# Flashbang Grenade alone: its own hit blinds the target.
+name: "E2E - Flashbang Grenade only"
+class: hunter
+subclass: arc
+grenade: flashbang-grenade

@@ -1,0 +1,6 @@
+# Spark of Ions, with Skip Grenade (no rules of its own) and Spark of Shock to jolt the target and kill it.
+name: "E2E - Spark of Ions with Spark of Shock and Skip Grenade"
+class: hunter
+subclass: arc
+grenade: skip-grenade
+fragments: [spark-of-ions, spark-of-shock]

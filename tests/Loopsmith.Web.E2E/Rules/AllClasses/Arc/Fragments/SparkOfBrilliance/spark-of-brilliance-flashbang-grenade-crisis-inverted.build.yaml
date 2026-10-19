@@ -1,0 +1,8 @@
+# Spark of Brilliance, with Flashbang Grenade to blind the target and Crisis Inverted (no rules of its own) to kill it.
+name: "E2E - Spark of Brilliance with Flashbang Grenade and Crisis Inverted"
+class: hunter
+subclass: arc
+grenade: flashbang-grenade
+fragments: [spark-of-brilliance]
+weapons:
+  - { hash: 2888266564, perks: [] } # Crisis Inverted

@@ -1,0 +1,6 @@
+# Spark of Ions, with Spark of Volts (its finisher's Bolt Charge, declared at max) and Skip Grenade (no rules of its own) to hit with.
+name: "E2E - Spark of Ions with Spark of Volts and Skip Grenade"
+class: hunter
+subclass: arc
+grenade: skip-grenade
+fragments: [spark-of-ions, spark-of-volts]

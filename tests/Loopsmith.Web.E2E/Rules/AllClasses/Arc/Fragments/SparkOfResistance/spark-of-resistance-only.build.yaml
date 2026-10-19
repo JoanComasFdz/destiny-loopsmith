@@ -1,0 +1,5 @@
+# Spark of Resistance alone: a Finisher (nothing reacts to it) is its first step.
+name: "E2E - Spark of Resistance only"
+class: hunter
+subclass: arc
+fragments: [spark-of-resistance]

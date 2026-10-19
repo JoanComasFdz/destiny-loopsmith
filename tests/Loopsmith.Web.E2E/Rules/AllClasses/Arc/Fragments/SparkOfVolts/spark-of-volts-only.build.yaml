@@ -1,0 +1,5 @@
+# Spark of Volts alone: the Finisher needs nothing equipped.
+name: "E2E - Spark of Volts only"
+class: hunter
+subclass: arc
+fragments: [spark-of-volts]

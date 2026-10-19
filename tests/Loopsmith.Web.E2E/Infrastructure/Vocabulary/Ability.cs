@@ -13,6 +13,7 @@ public partial record Ability
     public partial record GatheringStorm;
     public partial record StormsEdge;
     public partial record SkipGrenade;
+    public partial record FlashbangGrenade;
     public partial record CombinationBlow;
     public partial record DisorientingBlow;
     public partial record GamblersDodge;
@@ -33,6 +34,7 @@ public static class AbilityShowing
             gatheringStorm => "Gathering Storm",
             stormsEdge => "Storm's Edge",
             skipGrenade => "Skip Grenade",
+            flashbangGrenade => "Flashbang Grenade",
             combinationBlow => "Combination Blow",
             disorientingBlow => "Disorienting Blow",
             gamblersDodge => "Gambler's Dodge",

@@ -1,0 +1,5 @@
+# Spark of Frequency, with Spark of Volts (its finisher makes you Amplified and gives a Bolt Charge).
+name: "E2E - Spark of Frequency with Spark of Volts"
+class: hunter
+subclass: arc
+fragments: [spark-of-frequency, spark-of-volts]

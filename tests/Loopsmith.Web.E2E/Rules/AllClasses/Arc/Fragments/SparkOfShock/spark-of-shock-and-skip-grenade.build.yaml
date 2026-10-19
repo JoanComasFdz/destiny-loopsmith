@@ -1,0 +1,6 @@
+# Spark of Shock, with Skip Grenade (no rules of its own) to hit with.
+name: "E2E - Spark of Shock with Skip Grenade"
+class: hunter
+subclass: arc
+grenade: skip-grenade
+fragments: [spark-of-shock]
