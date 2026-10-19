@@ -143,11 +143,11 @@ public sealed class LoopFileWritingTests
         AssertRoundTrips(CreateDesign(build: text));
 
     [Fact]
-    public void A_reload_and_a_slide_over_an_ammo_brick_round_trip() =>
+    public void A_reload_and_an_ammo_brick_round_trip() =>
         AssertRoundTrips(CreateDesign(steps:
         [
             new(new PlayerAction.ReloadWeapon(WeaponSlot.Kinetic), Optional.None<string>()),
-            new(new PlayerAction.SlideOverAmmo(WeaponSlot.Energy), Optional.Some("Spark of Momentum")),
+            new(new PlayerAction.PickUpAmmo(AmmoBrick.Heavy, BrickPickup.Slide), Optional.Some("Spark of Momentum")),
             new(new PlayerAction.ReadyWeapon(WeaponSlot.Kinetic), Optional.Some("Mechaneer's Tricksleeves")),
         ]));
 

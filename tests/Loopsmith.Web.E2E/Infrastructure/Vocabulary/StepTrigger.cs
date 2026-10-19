@@ -9,7 +9,7 @@ public partial record StepTrigger
     public partial record Hit;
     public partial record Kill;
     public partial record Reload;
-    public partial record SlideOverAmmo;
+    public partial record PickUp(Brick Ammo);   // an ammo brick's button: "special", "heavy" (ADRs D43)
     public partial record Ready;
 
     /// <summary>What the UI shows that no case names yet: a failing assertion names it as the UI shows it.</summary>
@@ -19,7 +19,7 @@ public partial record StepTrigger
 /// <summary>What the UI shows for each <see cref="StepTrigger"/>: the only place those strings live.</summary>
 public static class StepTriggerShowing
 {
-    private static readonly StepTrigger[] Listed = [new StepTrigger.Hit(), new StepTrigger.Kill(), new StepTrigger.Reload(), new StepTrigger.SlideOverAmmo(), new StepTrigger.Ready()];
+    private static readonly StepTrigger[] Listed = [new StepTrigger.Hit(), new StepTrigger.Kill(), new StepTrigger.Reload(), new StepTrigger.PickUp(new Brick.Special()), new StepTrigger.PickUp(new Brick.Heavy()), new StepTrigger.Ready()];
 
     /// <summary>What the UI shows for <paramref name="value"/>.</summary>
     public static string ToShownText(this StepTrigger value) =>
@@ -27,7 +27,7 @@ public static class StepTriggerShowing
             hit => "🥊 hit",
             kill => "💀 kill",
             reload => "🔄 reload",
-            slideOverAmmo => "📦 slide over ammo",
+            pickUp => pickUp.Ammo.ToShownText(),
             ready => "✋ ready",
             unlisted => unlisted.Shown);
 

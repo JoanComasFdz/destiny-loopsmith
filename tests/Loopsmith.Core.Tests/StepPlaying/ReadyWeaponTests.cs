@@ -11,7 +11,7 @@ using static Loopsmith.Core.Tests.Support.TestCatalog;
 namespace Loopsmith.Core.Tests.StepPlaying;
 
 /// <summary>
-/// Readying a weapon (Mechaneer's Tricksleeves, ADRs D43): a step the player declares for a weapon, a <c>ready</c> trigger
+/// Readying a weapon (Mechaneer's Tricksleeves, ADRs D44): a step the player declares for a weapon, a <c>ready</c> trigger
 /// that names a weapon like a reload's, and a damage source by weapon type (<c>weapon:sidearm</c>). Which weapon is in hand
 /// isn't kept.
 /// </summary>

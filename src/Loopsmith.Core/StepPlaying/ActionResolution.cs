@@ -38,7 +38,8 @@ public static class ActionResolution
     /// <summary>
     /// Every ability (always, ADRs D5) and each of its secondary uses a rule reacts to (<see cref="ListSecondaryInputs"/>:
     /// Tempest Strike's sliding melee, Ascension's air move), a finisher (always, <see cref="ListFinisherActions"/>), every
-    /// equipped weapon's hit, kill, reload, slide over an ammo brick and Ready step (always, as a finisher: ADRs D37), the pickups on the ground and the states the player can declare now (<see cref="ListDeclarations"/>).
+    /// equipped weapon's hit, kill, reload and Ready step (always, as a finisher: ADRs D37), a Special and a Heavy ammo brick picked up (always:
+    /// bricks drop from enemies, ADRs D43), the pickups on the ground and the states the player can declare now (<see cref="ListDeclarations"/>).
     /// Abilities and weapons are listed against one enemy; a host may set any <see cref="TargetCount"/>.
     /// </summary>
     public static ImmutableArray<PlayerAction> ListAvailableActions(ValidatedBuild build, GameState state)
@@ -52,13 +53,20 @@ public static class ActionResolution
             new PlayerAction.FireWeapon(weapon.Slot, HitOutcome.Kill, TargetCount.One),
             new PlayerAction.FireWeapon(weapon.Slot, HitOutcome.Damage, TargetCount.One),
             new PlayerAction.ReloadWeapon(weapon.Slot),
-            new PlayerAction.SlideOverAmmo(weapon.Slot),
             new PlayerAction.ReadyWeapon(weapon.Slot),
         });
+        var bricks = ListAmmoBrickActions();
         var pickups = state.ListPickups().Select(pickup => (PlayerAction)new PlayerAction.CollectPickups(pickup));
         var declarations = ListDeclarations(build, state).Select(declaration => (PlayerAction)new PlayerAction.Declare(declaration));
-        return [.. offensive, .. classAbility, .. finisher, .. weapons, .. pickups, .. declarations];
+        return [.. offensive, .. classAbility, .. finisher, .. weapons, .. bricks, .. pickups, .. declarations];
     }
+
+    /// <summary>
+    /// An ammo brick picked up, a Special and a Heavy one (ADRs D43): always available, as a finisher, since bricks drop from
+    /// enemies, which only play decides. Sliding over it is the step's option (<c>ammo:heavy:slide</c>).
+    /// </summary>
+    public static ImmutableArray<PlayerAction> ListAmmoBrickActions() =>
+        [new PlayerAction.PickUpAmmo(AmmoBrick.Special), new PlayerAction.PickUpAmmo(AmmoBrick.Heavy)];
 
     /// <summary>
     /// The declarations that hold now (ADRs D3): a new pack (always, ADRs D7), critical health or a hit at it when an
@@ -79,19 +87,20 @@ public static class ActionResolution
 
     /// <summary>
     /// "Critical health" (<c>health:critical</c>) while you aren't at it, when an equipped rule reacts to it or to a hit
-    /// at it, or a rule or passive needs it (<c>has: critical-health</c>: Mechaneer's Tricksleeves); "Hit at critical health" (<c>health:hit</c>) while you are, when an equipped rule reacts to it
+    /// at it, or an equipped rule or passive needs it on you (<c>has: critical-health</c>: Thunderous Retort's bonus);
+    /// "Hit at critical health" (<c>health:hit</c>) while you are, when an equipped rule reacts to it
     /// (<c>on: { hitAtCriticalHealth: {} }</c>). In a build where nothing reacts to them they set nothing off, so they
     /// aren't offered; ending critical health is an <c>end:</c> like any buff's.
     /// </summary>
     public static ImmutableArray<StateDeclaration> ListCriticalHealthDeclarations(ValidatedBuild build, GameState state)
     {
         var rules = build.Equipped.SelectMany(equipped => equipped.Element.Rules).ToImmutableArray();
+        var passives = build.Equipped.SelectMany(equipped => equipped.Element.Passives).ToImmutableArray();
         var onReach = rules.Any(rule => rule.On is Trigger.CriticalHealth);
         var onHit = rules.Any(rule => rule.On is Trigger.HitAtCriticalHealth);
-        var guarded = rules.Any(rule => rule.When.Any(condition => condition.IsNaming(DeclaredStatuses.CriticalHealth)))
-            || build.Equipped.Any(equipped => equipped.Element.Passives.Any(passive => passive.IsSwitchedOnBy(DeclaredStatuses.CriticalHealth)));
+        var needed = rules.Any(rule => NeedsCriticalHealth(rule.When)) || passives.Any(passive => NeedsCriticalHealth(passive.When));
         var atCritical = state.HasBuff(DeclaredStatuses.CriticalHealth);
-        return (atCritical, onReach || onHit || guarded, onHit) switch
+        return (atCritical, onReach || onHit || needed, onHit) switch
         {
             (false, true, _) => [new StateDeclaration.CriticalHealth()],
             (true, _, true) => [new StateDeclaration.HitAtCriticalHealth()],
@@ -99,19 +108,12 @@ public static class ActionResolution
         };
     }
 
-    /// <summary>
-    /// Whether an equipped rule reacts to sliding over an ammo brick with this weapon in hand (Spark of Momentum): the step
-    /// always holds, but with nothing reacting to it, it sets nothing off.
-    /// </summary>
-    public static bool IsAmmoSlideReactedTo(ValidatedBuild build, WeaponLoadout weapon)
-    {
-        var slid = new GameEvent.SlidOverAmmo(new DamageOrigin.Weapon(weapon.Slot, weapon.Type, weapon.Ammo, weapon.Archetype));
-        var superType = build.ReadSuperType();
-        return build.Equipped.Any(equipped => equipped.Element.Rules.Any(rule => rule.On.IsTriggeredBy(slid, superType)));
-    }
+    /// <summary>A guard that holds only while critical health is on you (<c>has: critical-health</c>).</summary>
+    private static bool NeedsCriticalHealth(ImmutableArray<Condition> when) =>
+        when.Any(condition => condition is Condition.HasBuff { Status: var status } && status == DeclaredStatuses.CriticalHealth);
 
     /// <summary>
-    /// Whether an equipped rule reacts to readying this weapon (Mechaneer's Tricksleeves on a sidearm, ADRs D43): the step
+    /// Whether an equipped rule reacts to readying this weapon (Mechaneer's Tricksleeves on a sidearm, ADRs D44): the step
     /// always holds, but with nothing reacting to it, it sets nothing off. A rule's guard isn't read: what it needs may come
     /// from the steps before (critical health).
     /// </summary>
@@ -165,7 +167,7 @@ public static class ActionResolution
             declare => Declare(build, state, declare.Declaration),
             _ => PerformFinisher(state),
             reload => ReloadWeapon(build, state, reload),
-            slide => SlideOverAmmo(build, state, slide),
+            ammo => PickUpAmmo(state, ammo),
             ready => ReadyWeapon(build, state, ready));
 
     /// <summary>
@@ -278,17 +280,12 @@ public static class ActionResolution
     }
 
     /// <summary>
-    /// The player slides over an ammo brick with the weapon in hand: one event from that weapon, so the rules on it fire
-    /// (Spark of Momentum). No ammo is counted, so whether the brick is of an ammo you aren't full on is the player's call;
-    /// never blocked but for an empty slot.
+    /// The player picks up an ammo brick, or slides over it (ADRs D43): one event, so the rules on a pickup fire (All-Star),
+    /// and on a slide those on a slide too (Spark of Momentum). Never blocked: bricks drop from enemies, which only play decides,
+    /// and no ammo is counted (ADRs D37), so whether you aren't full on that ammo is the player's call.
     /// </summary>
-    private static Opening SlideOverAmmo(ValidatedBuild build, GameState state, PlayerAction.SlideOverAmmo slide)
-    {
-        var weapon = build.Build.Weapons.Select(w => w.Slot == slide.Slot ? Optional.Some(w) : Optional.None<WeaponLoadout>()).FindFirstSome();
-        return weapon.Match(
-            some => new Opening(state, [new PendingEvent.Ready(new GameEvent.SlidOverAmmo(new DamageOrigin.Weapon(slide.Slot, some.Value.Type, some.Value.Ammo, some.Value.Archetype)))], []),
-            _ => BlockAction(state, $"No weapon in the {slide.Slot} slot — nothing happens."));
-    }
+    private static Opening PickUpAmmo(GameState state, PlayerAction.PickUpAmmo ammo) =>
+        new(state, [new PendingEvent.Ready(new GameEvent.AmmoPickedUp(ammo.Brick, ammo.Pickup))], []);
 
     /// <summary>
     /// The player readies (swaps to) a weapon: one event from that weapon, so the rules on it fire (Mechaneer's

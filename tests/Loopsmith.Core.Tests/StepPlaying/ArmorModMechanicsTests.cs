@@ -142,6 +142,22 @@ public sealed class ArmorModMechanicsTests
         Assert.Empty(nothing.Fired);
     }
 
+    /// <summary>Thunderous Retort's shape: a rule and a passive that need critical health on you, none that react to reaching it.</summary>
+    private static readonly BuildElement WhileCritical = Mod("while-critical",
+        [OnWhen(new Trigger.KillAny(new DamageSource.AnyWeapon()), new Condition.HasBuff(Status("critical-health")), Buff("amplified"))]);
+
+    private static readonly BuildElement BonusWhileCritical = Mod("bonus-while-critical", [],
+        [new PassiveRule(RuleId.From("test-rule-1"), new Passive.ExtraStacks(Status("bolt-charge"), StackCount.From(1)), [new Condition.HasBuff(Status("critical-health"))], Optional.None<string>())]);
+
+    [Fact]
+    public void Critical_health_is_offered_when_a_rule_or_a_passive_needs_it_on_you()
+    {
+        var initial = ActionResolution.CreateInitialState();
+
+        Assert.Contains(CriticalHealth, ActionResolution.ListAvailableActions(ValidateBuild([], mods: [WhileCritical]), initial));
+        Assert.Contains(CriticalHealth, ActionResolution.ListAvailableActions(ValidateBuild([], mods: [BonusWhileCritical]), initial));
+    }
+
     [Fact]
     public void Critical_health_spends_the_buff_for_sure_at_its_declared_max_as_a_chance_below_it_and_does_nothing_without_it()
     {

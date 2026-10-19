@@ -24,6 +24,11 @@ The scenarios the PR added or changed come first; those only re-recorded because
 Nothing recorded (an empty scenarios.json) posts nothing.
 Once the new post is up, every earlier post still open is collapsed into a closed <details> block, unchanged inside, whose
   summary reads "Scenarios (V1) · 12 scenarios · replaced by V2"; a post already collapsed or shrunk is left as it is.
+  Every earlier post not shrunk is then hidden as Outdated (GraphQL's minimizeComment, classifier OUTDATED: "This comment
+  was marked as outdated", with "Show comment"), so the timeline doesn't show it open while GitHub hasn't redrawn its
+  collapsed body (PR #155). A post already hidden is left as it is; one collapsed earlier but never hidden (before this,
+  or its hide failed) is hidden now. A hide GitHub refuses, or a failed read of which posts are hidden, is a warning,
+  never a failure: the post is collapsed all the same.
 --closed (the workflow, when the PR closes) cleans the releases, then shrinks every post but the newest to that line plus
   "· recordings deleted when the PR closed". In `prs-resources` it keeps the PR's newest version and deletes its older
   ones. In each rule release it keeps the latest recording of every rule: with --merged (the PR was merged), for each run
@@ -105,6 +110,11 @@ def post(args):
     add_comment(args, write_section(args.repo, version, scenarios, changed))
     for comment, body in plan_collapses(comments, version):
         edit_comment(args, comment, body)
+    hidden = read_hidden(args, plan_hides(comments, version, set()))
+    if hidden is None and not args.dry_run:
+        return
+    for comment in plan_hides(comments, version, hidden or set()):
+        hide_comment(args, comment)
 
 
 def shrink(args, newest_too=False):
@@ -133,7 +143,7 @@ def read_scenarios(out):
 
 def read_workflow_comments(repo, number):
     pages = gh_json(["api", "--paginate", "--slurp", f"repos/{repo}/issues/{number}/comments?per_page=100"])
-    return [{"id": c["id"], "body": c["body"] or ""} for page in pages for c in page
+    return [{"id": c["id"], "node_id": c["node_id"], "body": c["body"] or ""} for page in pages for c in page
             if c["user"]["login"] == BOT and FOOTER in (c["body"] or "")]
 
 
@@ -183,6 +193,14 @@ def plan_collapses(comments, newest):
         summary = summary.replace(f"Scenarios (V{version})", f"<b>Scenarios (V{version})</b>", 1)
         edits.append((comment, f"{COLLAPSED}<summary>{summary}</summary>\n\n{comment['body'].rstrip()}\n\n</details>\n"))
     return edits
+
+
+def plan_hides(comments, newest, hidden):
+    """Each earlier post, open or collapsed, not hidden yet (its node id not in hidden) and not shrunk: to hide as
+    Outdated."""
+    return [comment for comment in comments
+            if (version := read_version(comment)) is not None and version < newest
+            and not is_shrunk(comment) and comment["node_id"] not in hidden]
 
 
 def plan_shrinks(comments, newest_too=False):
@@ -502,6 +520,38 @@ def edit_comment(args, comment, body):
                   {"body": body})
     if done.returncode != 0:
         print(f"::warning::Couldn't edit comment {comment['id']} on #{args.pr}: {done.stderr.strip()}")
+
+
+def read_hidden(args, comments):
+    """The node ids of these posts already hidden (GraphQL's isMinimized: REST doesn't say), matched by the order they
+    were asked in; None, with a warning, when GitHub refuses the read or answers something else, so nothing is hidden
+    this time (a dry run prints them all)."""
+    ids = [comment["node_id"] for comment in comments][:100]
+    if not ids:
+        return set()
+    query = "query($ids: [ID!]!) { nodes(ids: $ids) { ... on IssueComment { isMinimized } } }"
+    done = run_gh(["api", "graphql", "--input", "-"], {"query": query, "variables": {"ids": ids}})
+    try:
+        nodes = json.loads(done.stdout)["data"]["nodes"] if done.returncode == 0 else None
+    except (ValueError, KeyError, TypeError):
+        nodes = None
+    if not isinstance(nodes, list):
+        print(f"::warning::Couldn't read which posts on #{args.pr} are hidden, so none is hidden: "
+              f"{done.stderr.strip() or done.stdout.strip()}")
+        return None
+    return {id for id, node in zip(ids, nodes) if node and node.get("isMinimized")}
+
+
+def hide_comment(args, comment):
+    """Hides a post as Outdated; a refusal is a warning: the post is collapsed all the same."""
+    print(f"Hiding comment {comment['id']} as outdated: {comment['body'].splitlines()[0]}")
+    if args.dry_run:
+        return
+    mutation = ("mutation($id: ID!) { minimizeComment(input: {subjectId: $id, classifier: OUTDATED}) "
+                "{ minimizedComment { isMinimized } } }")
+    done = run_gh(["api", "graphql", "--input", "-"], {"query": mutation, "variables": {"id": comment["node_id"]}})
+    if done.returncode != 0:
+        print(f"::warning::Couldn't hide comment {comment['id']} on #{args.pr} as outdated: {done.stderr.strip()}")
 
 
 def run_gh(arguments, payload=None):

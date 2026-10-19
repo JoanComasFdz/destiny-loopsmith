@@ -39,6 +39,8 @@ public sealed class RepoFileValidationTests
         ["tests/Loopsmith.Web.E2E/Scenarios/Loop/Weapons/EnemyCount/scathelocke-veterans-wisdom.build.yaml"] = [3332538050],
         ["tests/Loopsmith.Web.E2E/Rules/Weapons/Perks/VeteransWisdom/veterans-wisdom-scathelocke.build.yaml"] = [3332538050],
         ["tests/Loopsmith.Web.E2E/Scenarios/Loop/Weapons/EnemyCount/speleologist-radiolaria-transposer.build.yaml"] = [412251536],
+        ["tests/Loopsmith.Web.E2E/Rules/Weapons/Perks/AllStar/all-star-battle-scar.build.yaml"] = [1525080480],
+        ["tests/Loopsmith.Web.E2E/Rules/Weapons/Perks/AdhesiveOrdnance/adhesive-ordnance-battle-scar.build.yaml"] = [1525080480],
     }.ToImmutableDictionary();
 
     public static TheoryData<string> Opening

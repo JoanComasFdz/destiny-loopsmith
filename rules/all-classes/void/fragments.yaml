@@ -1,0 +1,29 @@
+# Void fragments: every class's. Each has the same manifest hash on Nightstalker, Sentinel and Voidwalker
+# (rules/manifest.yaml, the subclasses' plugs), so no class is named.
+#
+# Numbers from the Destiny Data Compendium snapshot of 2026-10-19 (source: compendium/<date>/<Tab>#<row>).
+# The Void tab names its fragments without the "Echo of" prefix (tools/compendium/aliases.yaml). Hashes are
+# the manifest's (244213.26.06.29.2000-1-bnet.65864: the Void subclasses' plugs).
+#
+# Where a rule file sits, and each rule's id: docs/rule-format.md, "Files" (ADRs D40).
+elements:
+  - id: echo-of-vigilance
+    name: Echo of Vigilance
+    kind: fragment
+    affinity: void
+    hash: 3854948621
+    description: "A kill while at critical health gives you a Void Overshield for 5+2.5 s, then 8 s of cooldown before it can again."
+    source: compendium/2026-10-19/Void#28
+    rules:
+      # Critical health is the player's declaration (`health:critical`, until `end:critical-health`).
+      # The overshield's "5+2.5 seconds" is two figures the duration format can't hold as one (and the
+      # source doesn't say what the +2.5 is), so it is left out here and kept in the description. The 8 s
+      # cooldown is a fact in the description too: a loop's steps don't measure time, so the rule fires
+      # on every kill at critical health.
+      - id: echo-of-vigilance-1
+        on: { kill: { via: any } }
+        when: [ { has: critical-health } ]
+        then:
+          - { applyBuff: void-overshield }
+        reason: "Killing an enemy while your shields are broken gives you a Void Overshield (8 s before the next)."
+    passives: []

@@ -11,7 +11,9 @@ name: E2E videos
 # nothing. A push runs the workflow file inside the pushed commit, so the branch carries the PR's own version of this file.
 # A failing scenario is marked ❌ in the post and never turns this check red; only the workflow's own failures do (a push
 # that isn't a PR's GIFs, an upload or a post that GitHub refused). A new post collapses the PR's earlier posts into a
-# closed <details> each ("Scenarios (V1) · 12 scenarios · replaced by V2"). Closing the PR deletes any e2e-gifs/pr-<n>-…
+# closed <details> each ("Scenarios (V1) · 12 scenarios · replaced by V2") and hides each as Outdated (GraphQL's
+# minimizeComment, with this run's token; a refused hide is a warning, the post stays collapsed).
+# Closing the PR deletes any e2e-gifs/pr-<n>-…
 # branch left behind; in prs-resources it keeps its newest version's GIFs and MP4s, so its last post keeps showing and
 # playing them, and deletes its older versions'; in each rule release it keeps the latest recording of every rule (a
 # merged PR's replace those of closed PRs; a PR closed without merging loses its own). Then it shrinks each post whose

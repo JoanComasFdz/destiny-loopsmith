@@ -367,13 +367,27 @@ public static class DomainPhrasing
     /// <summary>A Reload step's button, next to a weapon's hit and kill: "🔄 reload".</summary>
     public const string ReloadCaption = "🔄 reload";
 
-    /// <summary>What sliding over an ammo brick is called: the step ("Slide over an ammo brick with Festival Flight") and its trigger.</summary>
-    public const string SlideOverAmmo = "Slide over an ammo brick";
+    /// <summary>The designer's square for picking up an ammo brick (ADRs D43), its row's title: "Ammo brick", after its icon, "📦".</summary>
+    public const string AmmoBrick = "Ammo brick";
 
-    /// <summary>A slide over an ammo brick's button, next to a weapon's hit, kill and reload: "📦 slide over ammo".</summary>
-    public const string SlideOverAmmoCaption = "📦 slide over ammo";
+    /// <summary>The ammo brick square's icon: "📦".</summary>
+    public const string AmmoBrickIcon = "📦";
 
-    /// <summary>What readying (swapping to) a weapon is called: the step ("Ready Buzzard") and its trigger (ADRs D43).</summary>
+    /// <summary>The ammo brick step's option that the player slides over it, in its row: "🛝 by sliding".</summary>
+    public const string SlideOption = "🛝 by sliding";
+
+    /// <summary>
+    /// An ammo brick picked up, as a step and as a trigger (ADRs D43): "Pick up a Heavy ammo brick", "Slide over a Special ammo
+    /// brick"; with no brick named (a trigger on any), "Pick up an ammo brick", "Slide over an ammo brick".
+    /// </summary>
+    public static string DescribeAmmoPickup(Optional<AmmoBrick> brick, BrickPickup pickup)
+    {
+        var verb = pickup == BrickPickup.Slide ? "Slide over" : "Pick up";
+        var what = brick.Match(some => $"a {some.Value} ammo brick", _ => "an ammo brick");
+        return $"{verb} {what}";
+    }
+
+    /// <summary>What readying (swapping to) a weapon is called: the step ("Ready Buzzard") and its trigger (ADRs D44).</summary>
     public const string ReadyWeapon = "Ready";
 
     /// <summary>A Ready step's button, next to a weapon's hit and kill: "✋ ready".</summary>
@@ -426,9 +440,7 @@ public static class DomainPhrasing
                 ? Reload
                 : $"{Reload} {glossary.DescribeDamageSource(reload.Via, superType)}",
             _ => HitAtCriticalHealth,
-            slide => slide.Via is DamageSource.AnySource or DamageSource.AnyWeapon
-                ? SlideOverAmmo
-                : $"{SlideOverAmmo} with {glossary.DescribeDamageSource(slide.Via, superType)}",
+            ammo => DescribeAmmoPickup(ammo.Brick, ammo.Needs == BrickNeed.Slide ? BrickPickup.Slide : BrickPickup.Plain),
             ready => ready.Via is DamageSource.AnySource or DamageSource.AnyWeapon
                 ? $"{ReadyWeapon} a weapon"
                 : $"{ReadyWeapon} {glossary.DescribeDamageSource(ready.Via, superType)}");
@@ -1033,15 +1045,14 @@ public static class DomainPhrasing
             expended => expended.Kind.DescribeEnergyExpended(),
             reloaded => $"{glossary.DescribeOrigin(reloaded.Origin, build)} reloaded",
             _ => HitAtCriticalHealth,
-            slid => $"Slid over an ammo brick with {glossary.DescribeOrigin(slid.Origin, build)}",
+            ammo => $"{(ammo.Pickup == BrickPickup.Slide ? "Slid over" : "Picked up")} a {ammo.Brick} ammo brick",
             readied => $"Readied {glossary.DescribeOrigin(readied.Origin, build)}");
 
     /// <summary>
     /// "Grenade (💀 kill)", "Grenade (💀 kill 3)", "Grenade (💀 kill · ⬜ spend fully)", "Festival Flight (🥊 hit 5)",
     /// "Festival Flight (💀 kill · 🛡 shield)", "Festival Flight (💀 kill · 🎯 precision)", "Class ability", "Class ability (⬜ spend fully)", "Pick up Orb of Power",
-    /// "Bolt Charge at max (x10)", "Amplified ends", "New pack", "Critical health", "Hit at critical health", "Finisher", "Reload Festival Flight".
-    /// "Bolt Charge at max (x10)", "Amplified ends", "New pack", "Critical health", "Finisher", "Reload Festival Flight",
-    /// "Slide over an ammo brick with Festival Flight", "Ready Buzzard".
+    /// "Bolt Charge at max (x10)", "Amplified ends", "New pack", "Critical health", "Hit at critical health", "Finisher", "Reload Festival Flight",
+    /// "Pick up a Heavy ammo brick", "Slide over a Special ammo brick", "Ready Buzzard".
     /// </summary>
     public static string DescribeAction(this ValidatedBuild build, PlayerAction action) =>
         action.Match(
@@ -1058,7 +1069,7 @@ public static class DomainPhrasing
             declare => build.DescribeDeclaration(declare.Declaration),
             _ => Finisher,
             reload => $"{Reload} {DescribeWeapon(build.Build, reload.Slot, reload.Slot.ToString())}",
-            slide => $"{SlideOverAmmo} with {DescribeWeapon(build.Build, slide.Slot, slide.Slot.ToString())}",
+            ammo => DescribeAmmoPickup(Optional.Some(ammo.Brick), ammo.Pickup),
             ready => $"{ReadyWeapon} {DescribeWeapon(build.Build, ready.Slot, ready.Slot.ToString())}");
 
     /// <summary>"Armor Charge at max (x4)": the max names the build's cap (Charged Up raises it), a fact the player declares reached.</summary>
@@ -1109,8 +1120,8 @@ public static class DomainPhrasing
     /// <summary>
     /// The action's token, the same everywhere (loop files, share links, the web): <c>grenade:kill</c>, <c>grenade:kill:3</c>,
     /// <c>class</c>, <c>kinetic</c>, <c>kinetic:hit:5</c>, <c>pickup:orb-of-power</c>, <c>max:bolt-charge</c>,
-    /// <c>end:amplified</c>, <c>pack:new</c>, <c>health:critical</c>, <c>health:hit</c>, <c>finisher</c>, <c>kinetic:reload</c>. The target count is written only when it is more than one; every
-    /// <c>end:amplified</c>, <c>pack:new</c>, <c>health:critical</c>, <c>finisher</c>, <c>kinetic:reload</c>, <c>kinetic:ammo</c>, <c>kinetic:ready</c>. The target count is written only when it is more than one; every
+    /// <c>end:amplified</c>, <c>pack:new</c>, <c>health:critical</c>, <c>health:hit</c>, <c>finisher</c>, <c>kinetic:reload</c>,
+    /// <c>ammo:heavy</c>, <c>ammo:special:slide</c>, <c>kinetic:ready</c>. The target count is written only when it is more than one; every
     /// token round-trips. An option goes last: <c>:last</c> on an ability's last charge (<c>grenade:kill:last</c>),
     /// <c>:shield</c> on a weapon step that breaks a shield (<c>kinetic:kill:3:shield</c>), then <c>:precision</c> on one whose
     /// hits and kills are precision ones (<c>energy:kill:precision</c>, <c>energy:kill:shield:precision</c>) (ADRs D36).
@@ -1129,7 +1140,7 @@ public static class DomainPhrasing
                 _ => "health:hit"),
             _ => "finisher",
             reload => reload.Slot.ToString().ToLowerInvariant() + ":reload",
-            slide => slide.Slot.ToString().ToLowerInvariant() + ":ammo",
+            ammo => $"ammo:{ammo.Brick.ToString().ToLowerInvariant()}" + (ammo.Pickup == BrickPickup.Slide ? ":slide" : ""),
             ready => ready.Slot.ToString().ToLowerInvariant() + ":ready");
 
     /// <summary>":last" for the use that spends an ability's last charge; nothing for a plain use.</summary>

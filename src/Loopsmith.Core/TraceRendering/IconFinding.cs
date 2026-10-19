@@ -35,7 +35,7 @@ public static class IconFinding
                 _ => Optional.None<IconRef>()),
             _ => catalog.FindClassFinisher(build.Class).Bind(item => item.Icon).Map(ToManifestIcon),
             reload => FindWeaponIcon(catalog, build, reload.Slot).Map(ToManifestIcon),
-            slide => FindWeaponIcon(catalog, build, slide.Slot).Map(ToManifestIcon),
+            _ => Optional.None<IconRef>(),
             ready => FindWeaponIcon(catalog, build, ready.Slot).Map(ToManifestIcon));
 
     /// <summary>The icon of the build's weapon in a slot (its manifest item's), when the build gives its hash.</summary>

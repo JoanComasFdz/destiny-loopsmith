@@ -62,7 +62,9 @@ public static class TriggerMatching
                 && IsZoneMet(killBetween.Needs, struck.Zone),
             reload => gameEvent is GameEvent.Reloaded reloaded && reload.Via.IsMatchedBy(reloaded.Origin, superType),
             _ => gameEvent is GameEvent.HitAtCriticalHealth,
-            slideOverAmmo => gameEvent is GameEvent.SlidOverAmmo slid && slideOverAmmo.Via.IsMatchedBy(slid.Origin, superType),
+            pickUpAmmo => gameEvent is GameEvent.AmmoPickedUp picked
+                && pickUpAmmo.Brick.Match(brick => brick.Value == picked.Brick, _ => true)
+                && (pickUpAmmo.Needs == BrickNeed.AnyPickup || picked.Pickup == BrickPickup.Slide),
             readyWeapon => gameEvent is GameEvent.WeaponReadied readied && readyWeapon.Via.IsMatchedBy(readied.Origin, superType));
 
     /// <summary>
@@ -121,7 +123,7 @@ public static class TriggerMatching
             killBetween: kill => kill.Needs is not ZoneNeed.AnyZone,
             reload: _ => false,
             hitAtCriticalHealth: _ => false,
-            slideOverAmmo: _ => false,
+            pickUpAmmo: _ => false,
             readyWeapon: _ => false);
 
     /// <summary>The statuses a trigger needs on the target (empty when it doesn't care).</summary>
@@ -148,10 +150,10 @@ public static class TriggerMatching
             killBetween: _ => ImmutableArray<StatusId>.Empty,
             reload: _ => ImmutableArray<StatusId>.Empty,
             hitAtCriticalHealth: _ => ImmutableArray<StatusId>.Empty,
-            slideOverAmmo: _ => ImmutableArray<StatusId>.Empty,
+            pickUpAmmo: _ => ImmutableArray<StatusId>.Empty,
             readyWeapon: _ => ImmutableArray<StatusId>.Empty);
 
-    /// <summary>The damage source a hit, kill, shield, reload, ammo-brick or ready trigger names (its <c>via</c>); none for the other triggers.</summary>
+    /// <summary>The damage source a hit, kill, shield, reload or ready trigger names (its <c>via</c>); none for the other triggers.</summary>
     public static Optional<DamageSource> FindVia(this Trigger trigger) =>
         trigger.Match(
             abilityCast: _ => Optional.None<DamageSource>(),
@@ -175,7 +177,7 @@ public static class TriggerMatching
             killBetween: killBetween => Optional.Some(killBetween.Via),
             reload: reload => Optional.Some(reload.Via),
             hitAtCriticalHealth: _ => Optional.None<DamageSource>(),
-            slideOverAmmo: slideOverAmmo => Optional.Some(slideOverAmmo.Via),
+            pickUpAmmo: _ => Optional.None<DamageSource>(),
             readyWeapon: readyWeapon => Optional.Some(readyWeapon.Via));
 
     /// <summary>

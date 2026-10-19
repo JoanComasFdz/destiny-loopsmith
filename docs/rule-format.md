@@ -44,7 +44,7 @@ rules/
   mods/<armor slot>.yaml       armor mods by slot (helmet, arms, chest, legs, class-item); mods/armor.yaml the rest
   mods/weapons.yaml            weapon mods (Backup Mag, Synergy…): what a weapon's mod socket holds
   weapons/perks.yaml           weapon perks
-  artifact/current.yaml        the current artifact's perks
+  artifact/current.yaml        the current artifacts' perks (Tablet of Ruin's, Thunderous Retort)
   armor-sets/<set>.yaml        an armor set's bonuses
 builds/<build>/build.yaml
 ```
@@ -496,7 +496,7 @@ What the format can't count is written in one of three ways, and needs no new fo
 | `{ shieldBroken: {} }` / `{ shieldBroken: { via: weapon } }` — a combatant's shield broken by that source (`via` defaults to `any`); the player says which weapon step breaks one (`kinetic:kill:shield`) | `ShieldBroken(via)` |
 | `{ energyExpended: grenade }` (`grenade\|melee\|classAbility`) — the ability's energy fully expended: its last charge used (`grenade:last`) | `EnergyExpended(kind)` |
 | `{ reload: {} }` / `{ reload: { via: weapon:this } }` — a weapon reloaded: the player's Reload step (`energy:reload`) or a `reloadWeapon` outcome; `via` names a weapon (defaults to `any`) | `Reload(via)` |
-| `{ slideOverAmmo: {} }` / `{ slideOverAmmo: { via: weapon:arc } }` — the player slides over an ammo brick with that weapon in hand (`energy:ammo`); `via` names a weapon (defaults to `any`) | `SlideOverAmmo(via)` |
+| `{ ammoPickedUp: {} }` / `{ ammoPickedUp: { brick: heavy } }` / `{ ammoPickedUp: { by: slide } }` — an ammo brick the player picks up (`ammo:heavy`, ADRs D43): any, or only that brick (`special\|heavy`); with `by: slide`, only one they slide over (`ammo:heavy:slide`) | `PickUpAmmo(brick, needs)` |
 | `{ ready: {} }` / `{ ready: { via: weapon:sidearm } }` — the player readies (swaps to) that weapon (`kinetic:ready`); `via` names a weapon (defaults to `any`) | `ReadyWeapon(via)` |
 
 A **secondary ability use** is the ability used another way, which an aspect makes do something else
@@ -647,7 +647,8 @@ A **critical health** step is the player's declaration (`health:critical`, "Crit
 your shields broke. It puts the `critical-health` status on you ("Critical health" among your buffs) until the player
 declares it ended (`end:critical-health`: your shields are full again), so a loop shows when it is at critical health
 and a step that needs it can't come before it. `criticalHealth` takes no keys (`{ criticalHealth: {} }`); the designer
-offers the step, while you aren't at critical health, only when an equipped rule reacts to it or to a hit at it.
+offers the step, while you aren't at critical health, only when an equipped rule reacts to it or to a hit at it, or an
+equipped rule or passive needs it on you (`has: critical-health`: Thunderous Retort's bonus, Echo of Vigilance's kill).
 
 A **hit at critical health** is the player's declaration too (`health:hit`, "Hit at critical health", ADRs D3): while
 critical health is on you, you are damaged. It holds only then (a blocked step otherwise: `Not at critical health —
@@ -709,23 +710,27 @@ halves of its loop, its grenade's refill no reload:
           - { refillWeapon: weapon:this }
 ```
 
-A **slide over an ammo brick** (ADRs D41) is the player's step with the weapon in hand (`kinetic:ammo`, "Slide over an
-ammo brick with Festival Flight", [loop-format.md](loop-format.md#action-tokens)): it raises `SlidOverAmmo` from that
-weapon, which the `slideOverAmmo` trigger matches. Like a reload it takes only `via`, which names a weapon
-(`slideOverAmmo's via names a weapon: …`), and no ammo is counted: whether the brick's ammo isn't full is the player's
-call when they declare the step. Its refill is no reload (ADRs D42), and no `refillWeapon` names the weapon in hand, so
-Spark of Momentum's refill is a fact in its description (`rules/all-classes/arc/fragments.yaml`, Arc#21):
+An **ammo brick picked up** (ADRs D43) is the player's step, a Special or a Heavy brick, walked over or slid over
+(`ammo:heavy`, `ammo:special:slide`, "Slide over a Special ammo brick", [loop-format.md](loop-format.md#action-tokens)):
+it raises `AmmoPickedUp`, which the `ammoPickedUp` trigger matches. It names no weapon: bricks drop from enemies, and
+which weapon is in your hands is a fact in a description. `brick:` (`special`, `heavy`) says which brick a rule needs
+(`'primary' is not one of: special, heavy`): Lead from Gold reacts to a Heavy one; without it, any. `by: slide` says it
+needs the slide (Spark of Momentum); a slide is a pickup too, so every rule without `by:` fires for it as well, and only
+a slide is told apart (`'walk' is not slide: …`). No ammo is counted: whether you aren't full on that ammo is the
+player's call when they declare the step. Its refill is no reload (ADRs D42), and no `refillWeapon` names the weapon in
+hand, so Spark of Momentum's and All-Star's refills are facts in their descriptions (`rules/all-classes/arc/fragments.yaml`,
+Arc#21):
 
 <!-- RuleExampleTests reads the next yaml block as an element's keys -->
 ```yaml
     rules:
       - id: spark-of-momentum-1
-        on: { slideOverAmmo: {} }
+        on: { ammoPickedUp: { by: slide } }
         then:
           - { applyBuff: { status: bolt-charge, stacks: 3 } }
 ```
 
-**Readying a weapon** (ADRs D43) is the player's step (`kinetic:ready`, "Ready Buzzard",
+**Readying a weapon** (ADRs D44) is the player's step (`kinetic:ready`, "Ready Buzzard",
 [loop-format.md](loop-format.md#action-tokens)): it raises `WeaponReadied` from that weapon, which the `ready` trigger
 matches. Like a reload it takes only `via`, which names a weapon (`ready's via names a weapon: …`); which weapon is in
 hand isn't kept. Mechaneer's Tricksleeves (`rules/hunter/exotic-armor.yaml`, Exotic Armors#52) readies a sidearm at

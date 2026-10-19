@@ -130,7 +130,7 @@ public static class WeaponBinding
             killBetween => BindSource(killBetween.Via, slot, type).Map(Trigger (via) => killBetween with { Via = via }),
             reload => BindSource(reload.Via, slot, type).Map(Trigger (via) => reload with { Via = via }),
             hitAtCriticalHealth => Optional.Some<Trigger>(hitAtCriticalHealth),
-            slideOverAmmo => BindSource(slideOverAmmo.Via, slot, type).Map(Trigger (via) => slideOverAmmo with { Via = via }),
+            pickUpAmmo => Optional.Some<Trigger>(pickUpAmmo),
             readyWeapon => BindSource(readyWeapon.Via, slot, type).Map(Trigger (via) => readyWeapon with { Via = via }));
 
     /// <summary>"This weapon" is the slot's weapon; "this weapon, when it is X" is it when its type is X, else nothing.</summary>

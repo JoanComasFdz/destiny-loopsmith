@@ -48,6 +48,10 @@ public static class StepCardSnapshotAssertions
     public static AssertingThat<StepCardSnapshot> Fires(this AssertingThat<StepCardSnapshot> that, ArmorMod mod, params string[] lines) =>
         that.FiresFrom(mod.ToShownText(), lines);
 
+    /// <summary><paramref name="bonus"/> fired exactly <paramref name="lines"/>, in that order, each with its "(chance)" as shown.</summary>
+    public static AssertingThat<StepCardSnapshot> Fires(this AssertingThat<StepCardSnapshot> that, ArmorSetBonus bonus, params string[] lines) =>
+        that.FiresFrom(bonus.ToShownText(), lines);
+
     /// <summary><paramref name="armor"/> fired exactly <paramref name="lines"/>, in that order, each with its "(chance)" as shown.</summary>
     public static AssertingThat<StepCardSnapshot> Fires(this AssertingThat<StepCardSnapshot> that, ArmorPiece armor, params string[] lines) =>
         that.FiresFrom(armor.ToShownText(), lines);
@@ -123,6 +127,10 @@ public static class StepCardSnapshotAssertions
     public static AssertingThat<StepCardSnapshot> HasResistanceFrom(this AssertingThat<StepCardSnapshot> that, Fragment fragment, string values) =>
         that.HasResistanceFrom(fragment.ToShownText(), values);
 
+    /// <summary><paramref name="bonus"/> is a source of the card's damage resistance, with the values <paramref name="values"/> ("15% · PvP 0%").</summary>
+    public static AssertingThat<StepCardSnapshot> HasResistanceFrom(this AssertingThat<StepCardSnapshot> that, ArmorSetBonus bonus, string values) =>
+        that.HasResistanceFrom(bonus.ToShownText(), values);
+
     /// <summary><paramref name="keyword"/> is a source of the card's damage resistance, with the values <paramref name="values"/> ("15% · PvP 0%").</summary>
     public static AssertingThat<StepCardSnapshot> HasResistanceFrom(this AssertingThat<StepCardSnapshot> that, Keyword keyword, string values) =>
         that.HasResistanceFrom(keyword.ToShownText(), values);
@@ -149,6 +157,10 @@ public static class StepCardSnapshotAssertions
     /// <summary><paramref name="ability"/> is a source of the card's damage bonus, with the value <paramref name="value"/> ("?").</summary>
     public static AssertingThat<StepCardSnapshot> HasDamageBonusFrom(this AssertingThat<StepCardSnapshot> that, Ability ability, string value) =>
         that.HasDamageBonusFrom(ability.ToShownText(), value);
+
+    /// <summary><paramref name="perk"/> is a source of the card's damage bonus, with the value <paramref name="value"/> ("+30%").</summary>
+    public static AssertingThat<StepCardSnapshot> HasDamageBonusFrom(this AssertingThat<StepCardSnapshot> that, ArtifactPerk perk, string value) =>
+        that.HasDamageBonusFrom(perk.ToShownText(), value);
 
     /// <summary><paramref name="armor"/> is a source of the card's damage bonus, with the value <paramref name="value"/> ("+100% [PvP 10%]").</summary>
     public static AssertingThat<StepCardSnapshot> HasDamageBonusFrom(this AssertingThat<StepCardSnapshot> that, ArmorPiece armor, string value) =>

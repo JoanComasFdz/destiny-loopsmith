@@ -18,15 +18,15 @@ using Loopsmith.Core.TraceRendering;
 
 namespace Loopsmith.Core.Orchestration;
 
-public enum TriggerGroup { Ability, Weapon, Pickup, Declare }
+public enum TriggerGroup { Ability, Weapon, AmmoBrick, Pickup, Declare }
 
 /// <summary>
 /// A step the designer can pick next — every option listed can happen (abilities are always available, ADRs D5;
 /// a declaration is offered only when it holds, ADRs D3). <see cref="IsNew"/> marks what the last step unlocked (a
 /// pickup that just landed, a buff that can now be declared at max). Abilities and weapons are listed
 /// against one enemy; <see cref="LoopDesigning.SetTargetCount"/> aims them at more. <see cref="IsEnabled"/>: false for a
-/// step that always shows but that no rule of the build reacts to (a weapon's slide over an ammo brick without Spark of
-/// Momentum, its Ready step without Mechaneer's Tricksleeves), so it is there to see but sets nothing off.
+/// step that always shows but that no rule of the build reacts to (a weapon's Ready step without Mechaneer's
+/// Tricksleeves), so it is there to see but sets nothing off.
 /// </summary>
 public sealed record TriggerOption(
     PlayerAction Action,
@@ -404,7 +404,7 @@ public static class LoopDesigning
                 killBetween: kill => [kill.AtLeast],
                 reload: _ => [],
                 hitAtCriticalHealth: _ => [],
-                slideOverAmmo: _ => [],
+                pickUpAmmo: _ => [],
                 readyWeapon: _ => []))
             .Distinct(),
     ];
@@ -988,13 +988,14 @@ public static class LoopDesigning
                 .Select(hit => (PlayerAction)new PlayerAction.FireWeapon(weapon.Slot, hit, TargetCount.One))
                 .Append(new PlayerAction.ReloadWeapon(weapon.Slot))   // a reload, the player's to declare (ADRs D37)
                 .Select(action => (action, TriggerGroup.Weapon, true))
-                .Append((new PlayerAction.ReadyWeapon(weapon.Slot), TriggerGroup.Weapon, ActionResolution.IsReadyReactedTo(build, weapon)))   // always shown, enabled when a rule reacts
-                .Append((new PlayerAction.SlideOverAmmo(weapon.Slot), TriggerGroup.Weapon, ActionResolution.IsAmmoSlideReactedTo(build, weapon))));   // always shown, enabled when a rule reacts
+                .Append((new PlayerAction.ReadyWeapon(weapon.Slot), TriggerGroup.Weapon, ActionResolution.IsReadyReactedTo(build, weapon))));   // always shown, enabled when a rule reacts
+        var bricks = ActionResolution.ListAmmoBrickActions()
+            .Select(action => (action, TriggerGroup.AmmoBrick, true));   // always: bricks drop from enemies (ADRs D43)
         var pickups = state.ListPickups()
             .Select(pickup => ((PlayerAction)new PlayerAction.CollectPickups(pickup), TriggerGroup.Pickup, true));
         var declarations = ActionResolution.ListDeclarations(build, state)
             .Select(declaration => ((PlayerAction)new PlayerAction.Declare(declaration), TriggerGroup.Declare, true));
-        return [.. abilities, .. weapons, .. pickups, .. declarations];
+        return [.. abilities, .. weapons, .. bricks, .. pickups, .. declarations];
     }
 
     /// <summary>
@@ -1043,6 +1044,7 @@ public static class LoopDesigning
             ],
             PlayerAction.CastAbility cast when CanSpendLastCharge(build, cast.Kind.ToAbilityKind()) => [StepOption.LastCharge],
             PlayerAction.UseClassAbility when CanSpendLastCharge(build, AbilityKind.ClassAbility) => [StepOption.LastCharge],
+            PlayerAction.PickUpAmmo when HasRule(build, rule => rule.On is Trigger.PickUpAmmo { Needs: BrickNeed.Slide }) => [StepOption.Slide],
             _ => [],
         };
 
@@ -1065,6 +1067,7 @@ public static class LoopDesigning
             (PlayerAction.FireWeapon fire, StepOption.Precision) => fire with { Zone = isOn ? HitZone.Precision : HitZone.Body },
             (PlayerAction.CastAbility cast, StepOption.LastCharge) => cast with { Charge = isOn ? ChargeUse.Last : ChargeUse.Plain },
             (PlayerAction.UseClassAbility use, StepOption.LastCharge) => use with { Charge = isOn ? ChargeUse.Last : ChargeUse.Plain },
+            (PlayerAction.PickUpAmmo ammo, StepOption.Slide) => ammo with { Pickup = isOn ? BrickPickup.Slide : BrickPickup.Plain },
             _ => action,
         };
 

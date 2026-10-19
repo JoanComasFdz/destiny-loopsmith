@@ -1,0 +1,54 @@
+# Iron Panoply armor set (Iron Banner). Clarity has no armor-set entries; both bonuses are in the
+# Compendium snapshot of 2026-10-19 (Armor Perks tab, the set's name in the first column of row 49).
+elements:
+  # The stability and handling ramp isn't encoded: no condition says "as your shields drop", and the
+  # Compendium gives none of its numbers (where it starts, where it peaks, how much, whether linearly).
+  # It stays a fact in the description, with no passive.
+  - id: iron-panoply-2pc
+    name: Vigilant Watch
+    kind: armorSetBonus
+    affinity: neutral
+    hash: 3157066724          # the set's 2-piece perk (a manifest sandbox perk)
+    description: "Iron Panoply 2-piece bonus: the lower your shields, the more Stability and Handling your weapons get (up to +? each; where it starts and peaks is ?). At critical health, a weapon kill restores 30 HP, with a 5 s cooldown between heals."
+    source: "compendium/2026-10-19/Armor Perks#49"
+    rules:
+      # The heal is 30 HP (`hp:`, as Unrelenting's). The 5 s cooldown between heals is a fact (ADRs D1).
+      - id: iron-panoply-2pc-1
+        on: { kill: { via: weapon } }
+        when: [ { has: critical-health } ]
+        then:
+          - { restoreHealth: { hp: 30 } }
+        reason: "While your shields are broken, weapon kills heal you, at most once every 5 seconds."
+    passives: []
+
+  # The +35 Ammo Generation and the ?% flinch resistance are facts in the description: ammo is outside
+  # the loop (ADRs D1) and modifyStat takes no ammo generation, and no effect holds flinch resistance.
+  # "Can't trigger again until some Shield HP comes back": critical health holds until the player
+  # declares `end:critical-health`, and `health:critical` is blocked while you are already at it, so
+  # rule 1 can't fire twice in one stay at critical health.
+  - id: iron-panoply-4pc
+    name: Iron Conviction
+    kind: armorSetBonus
+    affinity: neutral
+    hash: 3157066725          # the set's 4-piece perk
+    description: "Iron Panoply 4-piece bonus: reaching critical health gives Iron Conviction for 7 s: +35 Ammo Generation, ?% flinch resistance and 15% damage resistance against combatants within 10 m. Kills while it lasts refresh it. It can't trigger again until your shields recover some HP."
+    source: "compendium/2026-10-19/Armor Perks#50"
+    rules:
+      - id: iron-panoply-4pc-1
+        on: { criticalHealth: {} }
+        then:
+          - { applyBuff: { status: iron-conviction, duration: 7s } }
+        reason: "Breaking your shields gives you Iron Conviction for 7 seconds."
+      # Iron Conviction doesn't stack, so the engine shows this grant with the caveat "already active":
+      # the buff stays, and the 7 s on the outcome is the refreshed duration.
+      - id: iron-panoply-4pc-2
+        on: { kill: { via: any } }
+        when: [ { has: iron-conviction } ]
+        then:
+          - { applyBuff: { status: iron-conviction, duration: 7s } }
+        reason: "More kills while Iron Conviction is on you restart its duration."
+    passives:
+      - id: iron-panoply-4pc-3
+        effect: { resistCombatantDamage: { against: "within:10", amount: "15%" } }
+        when: [ { has: iron-conviction } ]
+        reason: "While Iron Conviction is on you, combatants within 10 m deal you 15% less damage."
