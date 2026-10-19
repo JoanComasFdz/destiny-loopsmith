@@ -6,11 +6,12 @@ using CoreWeaponSlot = Loopsmith.Core.Domain.WeaponSlot;
 
 namespace Loopsmith.Web.E2E.Infrastructure.Vocabulary;
 
-/// <summary>A step of the loop, as its card's token names it ("kinetic:reload"). A case is added when a test needs it.</summary>
+/// <summary>A step of the loop, as its card's token names it ("kinetic:reload", "kinetic:ammo"). A case is added when a test needs it.</summary>
 [Union]
 public partial record LoopStep
 {
     public partial record Reload(WeaponSlot Slot);
+    public partial record SlideOverAmmo(WeaponSlot Slot);
     public partial record Hit(WeaponSlot Slot, int Enemies);
 
     /// <summary>What the UI shows that no case names yet: a failing assertion names it as the UI shows it.</summary>
@@ -20,10 +21,11 @@ public partial record LoopStep
 /// <summary>What the UI shows for each <see cref="LoopStep"/>: the only place those strings live.</summary>
 public static class LoopStepShowing
 {
-    /// <summary>What the UI shows for <paramref name="value"/>: "kinetic:reload", "kinetic:hit:3".</summary>
+    /// <summary>What the UI shows for <paramref name="value"/>: "kinetic:reload", "kinetic:ammo", "kinetic:hit:3".</summary>
     public static string ToShownText(this LoopStep value) =>
         value.Match(
             reload => $"{ToTokenSlot(reload.Slot)}:reload",
+            slide => $"{ToTokenSlot(slide.Slot)}:ammo",
             hit => hit.Enemies == 1 ? $"{ToTokenSlot(hit.Slot)}:hit" : $"{ToTokenSlot(hit.Slot)}:hit:{hit.Enemies}",
             unlisted => unlisted.Shown);
 
@@ -41,6 +43,7 @@ public static class LoopStepShowing
         action switch
         {
             PlayerAction.ReloadWeapon reload => new LoopStep.Reload(ToSlot(reload.Slot)),
+            PlayerAction.SlideOverAmmo slide => new LoopStep.SlideOverAmmo(ToSlot(slide.Slot)),
             PlayerAction.FireWeapon { Hit: HitOutcome.Damage, Shield: ShieldBreak.None } hit => new LoopStep.Hit(ToSlot(hit.Slot), hit.Targets.Value),
             _ => null,
         };

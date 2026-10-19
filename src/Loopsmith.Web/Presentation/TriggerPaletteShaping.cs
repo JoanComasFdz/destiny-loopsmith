@@ -161,8 +161,8 @@ public static class TriggerPaletteShaping
             _ => 0,
             _ => 0,
             _ => 0,
-            _ => 2,
-            _ => 3);
+            _ => 3,   // a reload stays at the row's right end
+            _ => 2);
 
     /// <summary>"Grenade (💀 kill)" → "Grenade".</summary>
     private static string ReadTitle(string label)

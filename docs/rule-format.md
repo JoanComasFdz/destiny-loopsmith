@@ -486,6 +486,7 @@ What the format can't count is written in one of three ways, and needs no new fo
 | `{ shieldBroken: {} }` / `{ shieldBroken: { via: weapon } }` — a combatant's shield broken by that source (`via` defaults to `any`); the player says which weapon step breaks one (`kinetic:kill:shield`) | `ShieldBroken(via)` |
 | `{ energyExpended: grenade }` (`grenade\|melee\|classAbility`) — the ability's energy fully expended: its last charge used (`grenade:last`) | `EnergyExpended(kind)` |
 | `{ reload: {} }` / `{ reload: { via: weapon:this } }` — a weapon reloaded: the player's Reload step (`energy:reload`) or a `reloadWeapon` outcome; `via` names a weapon (defaults to `any`) | `Reload(via)` |
+| `{ slideOverAmmo: {} }` / `{ slideOverAmmo: { via: weapon:arc } }` — the player slides over an ammo brick with that weapon in hand (`energy:ammo`); `via` names a weapon (defaults to `any`) | `SlideOverAmmo(via)` |
 
 A **secondary ability use** is the ability used another way, which an aspect makes do something else
 (ADRs D9): the melee while sliding (`slide`: Tempest Strike's uppercut, played as `melee:slide`) or in the
@@ -692,6 +693,23 @@ halves of its loop:
         on: { abilityCast: grenade }
         then:
           - { reloadWeapon: weapon:this }
+```
+
+A **slide over an ammo brick** (ADRs D41) is the player's step with the weapon in hand (`kinetic:ammo`, "Slide over an
+ammo brick with Festival Flight", [loop-format.md](loop-format.md#action-tokens)): it raises `SlidOverAmmo` from that
+weapon, which the `slideOverAmmo` trigger matches. Like a reload it takes only `via`, which names a weapon
+(`slideOverAmmo's via names a weapon: …`), and no ammo is counted: whether the brick's ammo isn't full is the player's
+call when they declare the step. A **refill** is no reload: the Compendium's "Reload Perk Notes" (Weapon Perks#250) say a
+refill puts rounds back without the animation and sets off no on-reload perk, so Spark of Momentum's refill of the
+weapon in hand is a fact in its description, not a `reloadWeapon` (`rules/all-classes/arc/fragments.yaml`, Arc#21):
+
+<!-- RuleExampleTests reads the next yaml block as an element's keys -->
+```yaml
+    rules:
+      - id: spark-of-momentum-1
+        on: { slideOverAmmo: {} }
+        then:
+          - { applyBuff: { status: bolt-charge, stacks: 3 } }
 ```
 
 **Outcomes (`then`)** — exactly one key each:

@@ -117,13 +117,17 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   so they show with their ⊘ and set nothing off. Synergy's cooldowns (the pickups' 0–12 s, its own) and the counter's
   other enemy tiers (elite 16.7%, boss 50%: the pack is rank-and-file, ADRs D7) are facts in its description. What
   picking up a Firesprite, Void Breach, Stasis Shard or Tangle gives has no keyword element yet.
+- **Picking up an ammo brick**: the weapon and armor perks that react to any ammo brick picked up (All-Star, Overflow,
+  Lead from Gold, Adhesive Ordnance…) aren't authored. A brick isn't a pickup a rule drops, so they have no trigger; only
+  a slide over one is a step (ADRs D41), for Spark of Momentum.
 
 ## Outside the loop by design (D1)
 
 Not planned: Loopsmith isn't a simulator, and these change no loop's order of triggers. Their elements are `inert`, or
 the part is a fact in the description.
-- Movement: jumps, sprinting (Spark of Haste and Spark of Focus), sliding over an ammo brick (Spark of Momentum's x3
-  Bolt Charge), Storm's Edge's teleport to its knife and Lethal Current's longer lunge.
+- Movement: jumps, sprinting (Spark of Haste and Spark of Focus), Storm's Edge's teleport to its knife and Lethal
+  Current's longer lunge. A slide over an ammo brick is a step the player declares (Spark of Momentum's x3 Bolt Charge,
+  ADRs D41); a plain slide isn't, until a rule needs one.
 - Ammo, reload speed, weapon handling and a weapon's own lightning strike (Feeding Frenzy is `inert`; Return Stroke's
   strike is Thunderlord's kill or hit step). A reload is a step the player declares, and an outcome (D37).
 - Mods that give to allies only (Benevolent Finisher).

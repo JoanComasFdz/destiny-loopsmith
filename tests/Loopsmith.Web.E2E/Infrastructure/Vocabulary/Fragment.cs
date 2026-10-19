@@ -16,6 +16,7 @@ public partial record Fragment
     public partial record SparkOfIons;
     public partial record SparkOfResistance;
     public partial record SparkOfInstinct;
+    public partial record SparkOfMomentum;
 
     /// <summary>What the UI shows that no case names yet: a failing assertion names it as the UI shows it.</summary>
     public partial record Unlisted(string Shown);
@@ -28,7 +29,7 @@ public static class FragmentShowing
         [
             new Fragment.SparkOfShock(), new Fragment.SparkOfVolts(), new Fragment.SparkOfAmplitude(), new Fragment.SparkOfBeacons(),
             new Fragment.SparkOfBrilliance(), new Fragment.SparkOfDischarge(), new Fragment.SparkOfFrequency(), new Fragment.SparkOfIons(),
-            new Fragment.SparkOfResistance(), new Fragment.SparkOfInstinct(),
+            new Fragment.SparkOfResistance(), new Fragment.SparkOfInstinct(), new Fragment.SparkOfMomentum(),
         ];
 
     /// <summary>What the UI shows for <paramref name="value"/>.</summary>
@@ -44,6 +45,7 @@ public static class FragmentShowing
             sparkOfIons => "Spark of Ions",
             sparkOfResistance => "Spark of Resistance",
             sparkOfInstinct => "Spark of Instinct",
+            sparkOfMomentum => "Spark of Momentum",
             unlisted => unlisted.Shown);
 
     /// <summary>The case the UI's <paramref name="shown"/> text names, or <see cref="Fragment.Unlisted"/>.</summary>
