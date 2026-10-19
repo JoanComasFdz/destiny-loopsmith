@@ -101,6 +101,7 @@ public static class ManifestListing
         ["inventory", "tierType"],
         ["inventory", BucketKey],
         ["equippingBlock", "equipableItemSetHash"],
+        ["equippingBlock", "ammoType"],
     ];
 
     /// <summary>…and the plugs its sockets start with and which sockets are which (a weapon's intrinsic frame, armor's mods).</summary>
@@ -311,6 +312,7 @@ public static class ManifestListing
             ? weaponSlot.Map(slot => (ManifestKind)new ManifestKind.Weapon(
                 slot,
                 parts.ReadInteger("defaultDamageType").Bind(type => ManifestJoin.DamageTypes.TryGetValue(type, out var found) ? Optional.Some(found) : Optional.None<DamageType>()),
+                parts.ReadInteger("equippingBlock", "ammoType").Bind(ManifestJoin.ToAmmoType),
                 [],
                 Optional.None<ItemHash>(),
                 Optional.None<ItemHash>(),

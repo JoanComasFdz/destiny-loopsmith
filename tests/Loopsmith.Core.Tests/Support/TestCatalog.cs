@@ -124,7 +124,7 @@ public static class TestCatalog
             [],
             modOrder.IsDefault ? allMods.Select(m => m.Id).ToImmutableArray() : modOrder,
             [],
-            [new WeaponLoadout(WeaponSlot.Energy, "Test Rifle", DamageType.Arc, Optional.None<string>(), [], Optional.None<ItemHash>(), [], false, Optional.None<ItemInstanceId>(), Optional.None<ItemHash>())],
+            [new WeaponLoadout(WeaponSlot.Energy, "Test Rifle", DamageType.Arc, Optional.None<AmmoType>(), Optional.None<string>(), [], Optional.None<ItemHash>(), [], false, Optional.None<ItemInstanceId>(), Optional.None<ItemHash>())],
             new StatLine(Optional.None<StatValue>(), Optional.None<StatValue>(), Optional.None<StatValue>(),
                 Optional.None<StatValue>(), Optional.None<StatValue>(), Optional.None<StatValue>()),
             [],

@@ -219,7 +219,7 @@ public static class ActionResolution
     {
         var weapon = build.Build.Weapons.Select(w => w.Slot == fire.Slot ? Optional.Some(w) : Optional.None<WeaponLoadout>()).FindFirstSome();
         return weapon.Match(
-            some => new Opening(state, ListStrikeEvents(new DamageOrigin.Weapon(fire.Slot, some.Value.Type), fire.Hit, fire.Targets, fire.Shield, fire.Zone), []),
+            some => new Opening(state, ListStrikeEvents(new DamageOrigin.Weapon(fire.Slot, some.Value.Type, some.Value.Ammo), fire.Hit, fire.Targets, fire.Shield, fire.Zone), []),
             _ => BlockAction(state, $"No weapon in the {fire.Slot} slot — nothing happens."));
     }
 
@@ -231,7 +231,7 @@ public static class ActionResolution
     {
         var weapon = build.Build.Weapons.Select(w => w.Slot == reload.Slot ? Optional.Some(w) : Optional.None<WeaponLoadout>()).FindFirstSome();
         return weapon.Match(
-            some => new Opening(state, [new PendingEvent.Ready(new GameEvent.Reloaded(new DamageOrigin.Weapon(reload.Slot, some.Value.Type)))], []),
+            some => new Opening(state, [new PendingEvent.Ready(new GameEvent.Reloaded(new DamageOrigin.Weapon(reload.Slot, some.Value.Type, some.Value.Ammo)))], []),
             _ => BlockAction(state, $"No weapon in the {reload.Slot} slot — nothing happens."));
     }
 

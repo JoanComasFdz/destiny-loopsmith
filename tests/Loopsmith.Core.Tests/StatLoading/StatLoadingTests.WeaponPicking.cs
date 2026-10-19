@@ -177,7 +177,7 @@ public sealed partial class StatLoadingTests
         var withExotic = build.Build with
         {
             Weapons = [.. build.Build.Weapons.Where(weapon => weapon.Slot != WeaponSlot.Energy),
-                new WeaponLoadout(WeaponSlot.Energy, "Some exotic", DamageType.Arc, Optional.None<string>(), [ElementId.From("reign-havoc")], Optional.None<ItemHash>(), [], false, Optional.None<ItemInstanceId>(), Optional.None<ItemHash>())],
+                new WeaponLoadout(WeaponSlot.Energy, "Some exotic", DamageType.Arc, Optional.None<AmmoType>(), Optional.None<string>(), [ElementId.From("reign-havoc")], Optional.None<ItemHash>(), [], false, Optional.None<ItemInstanceId>(), Optional.None<ItemHash>())],
         };
 
         var refused = Assert.IsType<Result<Unit, string>.Error>(Loopsmith.Core.BuildComposition.WeaponSwapping.CheckWeapon(Catalog, withExotic, new WeaponTarget.IntoEmpty(WeaponSlot.Power), Thunderlord));
@@ -198,7 +198,7 @@ public sealed partial class StatLoadingTests
 
     private static KeyValuePair<ItemHash, ManifestItem> ToWeaponItem(ItemHash hash, string name, WeaponSlot slot, DamageType type, ItemTier tier, uint[][] traits) =>
         KeyValuePair.Create(hash, new ManifestItem(hash, name,
-            new ManifestKind.Weapon(slot, Optional.Some(type), [.. traits.Select(column => new TraitColumn([.. column.Select(ItemHash.From)]))],
+            new ManifestKind.Weapon(slot, Optional.Some(type), Optional.None<AmmoType>(), [.. traits.Select(column => new TraitColumn([.. column.Select(ItemHash.From)]))],
                 Optional.None<ItemHash>(), Optional.None<ItemHash>(), Optional.None<ItemHash>(), []),
             Optional.Some("Auto Rifle"), Optional.Some(tier), Optional.None<string>(), Optional.None<string>(), Optional.None<string>()));
 }

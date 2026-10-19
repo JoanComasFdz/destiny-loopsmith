@@ -4,7 +4,7 @@ description: |-
   The Demolitionist loop: throw the grenade, which reloads the hand cannon (Demolitionist), then
   kill with the hand cannon, each kill giving grenade energy back (Demolitionist, 10% on a hand
   cannon) toward the next grenade.
-catalog: authored-d7ccc1719cf9
+catalog: authored-612ad3a2b1d1
 steps:
   - do: pack:new
     note: 'The next group of enemies: a new pack'
@@ -23,6 +23,7 @@ build: |
   super: "?"
   grenade: skip-grenade
   weapons:
-    # Placeholder: no source names the hand cannon. Its archetype picks Demolitionist's amount (10%; 20% only
-    # on Fusion Rifles, Glaives, Shotguns and Sniper Rifles).
-    - { slot: energy, name: Any Arc Hand Cannon, type: arc, archetype: hand-cannon, perks: [demolitionist] }
+    # No source names the hand cannon: Crisis Inverted stands in for it, an Arc Hand Cannon that rolls Demolitionist
+    # (Bungie's manifest). Its archetype picks Demolitionist's amount (10%; 20% only on Fusion Rifles, Glaives,
+    # Shotguns and Sniper Rifles).
+    - { hash: 2888266564, perks: [demolitionist] } # Crisis Inverted

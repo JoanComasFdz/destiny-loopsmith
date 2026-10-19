@@ -87,7 +87,7 @@ public sealed class ItemPickingTests
         var session = OpenHandWrittenLoop(Catalog);
         var thunderlord = ToWeapon(ItemHash.From(3325463374u), "Thunderlord", WeaponSlot.Power, DamageType.Arc, ItemTier.Exotic, []) with
         {
-            Kind = new ManifestKind.Weapon(WeaponSlot.Power, Optional.Some(DamageType.Arc), [], Optional.Some(ItemHash.From(4148158229u)), Optional.None<ItemHash>(), Optional.None<ItemHash>(), []),
+            Kind = new ManifestKind.Weapon(WeaponSlot.Power, Optional.Some(DamageType.Arc), Optional.None<AmmoType>(), [], Optional.Some(ItemHash.From(4148158229u)), Optional.None<ItemHash>(), Optional.None<ItemHash>(), []),
         };                                                                                       // the rules name it by its intrinsic, Reign Havoc
         var shinobu = ToArmor(ItemHash.From(1053737370u), "Shinobu's Vow", ArmorSlot.Arms, ItemTier.Exotic, Optional.None<ItemHash>(), GuardianClass.Hunter);
         var unknownArms = ToArmor(ItemHash.From(9315u), "Unknown Grips", ArmorSlot.Arms, ItemTier.Exotic, Optional.None<ItemHash>(), GuardianClass.Hunter);
@@ -228,7 +228,7 @@ public sealed class ItemPickingTests
 
     private static ManifestItem ToWeapon(ItemHash hash, string name, WeaponSlot slot, DamageType type, ItemTier tier, uint[][] traits) =>
         new(hash, name,
-            new ManifestKind.Weapon(slot, Optional.Some(type), [.. traits.Select(column => new TraitColumn([.. column.Select(ItemHash.From)]))],
+            new ManifestKind.Weapon(slot, Optional.Some(type), Optional.None<AmmoType>(), [.. traits.Select(column => new TraitColumn([.. column.Select(ItemHash.From)]))],
                 Optional.None<ItemHash>(), Optional.None<ItemHash>(), Optional.None<ItemHash>(), []),
             Optional.Some("Auto Rifle"), Optional.Some(tier), Optional.None<string>(), Optional.None<string>(), Optional.None<string>());
 

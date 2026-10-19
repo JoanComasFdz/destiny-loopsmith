@@ -11,6 +11,12 @@ public sealed class WeaponsBox(IPage page)
 
     private ILocator Slots => Box.Locator("[data-testid=weapon-slot]");
 
+    private ILocator Square(Weapon weapon) =>
+        Box.Locator("[data-testid=weapon-anchor]").GetByRole(AriaRole.Button, new() { Name = weapon.ToShownText(), Exact = true });
+
+    /// <summary>Clicks <paramref name="weapon"/>'s square: its item details popup opens.</summary>
+    public Task ClickSquareAsync(Weapon weapon) => OnScreen.PressAsync(Box, Square(weapon));
+
     /// <summary>What the Weapons box shows now.</summary>
     public Task<WeaponsBoxSnapshot> ReadAsync() => OnScreen.ReadAsync(Box, ReadShownAsync);
 

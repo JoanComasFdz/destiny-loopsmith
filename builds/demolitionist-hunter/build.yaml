@@ -8,6 +8,7 @@ subclass: arc
 super: "?"
 grenade: skip-grenade
 weapons:
-  # Placeholder: no source names the hand cannon. Its archetype picks Demolitionist's amount (10%; 20% only
-  # on Fusion Rifles, Glaives, Shotguns and Sniper Rifles).
-  - { slot: energy, name: Any Arc Hand Cannon, type: arc, archetype: hand-cannon, perks: [demolitionist] }
+  # No source names the hand cannon: Crisis Inverted stands in for it, an Arc Hand Cannon that rolls Demolitionist
+  # (Bungie's manifest). Its archetype picks Demolitionist's amount (10%; 20% only on Fusion Rifles, Glaives,
+  # Shotguns and Sniper Rifles).
+  - { hash: 2888266564, perks: [demolitionist] } # Crisis Inverted

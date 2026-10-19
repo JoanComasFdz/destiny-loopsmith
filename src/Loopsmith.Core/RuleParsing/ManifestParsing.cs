@@ -37,13 +37,14 @@ internal static class ManifestParsing
     private static readonly ImmutableArray<string> ArmorSetKeys = ["hash", "name", "perks"];
     private static readonly ImmutableArray<string> SetPerkKeys = ["pieces", "perk"];
     private static readonly ImmutableArray<string> ItemKeys =
-        ["hash", "name", "kind", "type", "tier", "slot", "damageType", "breaker", "traits", "intrinsic", "catalyst", "mods", "set", "class", "perks", "tiers", "slots", "flavor", "plugs", "description", "watermark", "icon"];
+        ["hash", "name", "kind", "type", "tier", "slot", "damageType", "ammo", "breaker", "traits", "intrinsic", "catalyst", "mods", "set", "class", "perks", "tiers", "slots", "flavor", "plugs", "description", "watermark", "icon"];
 
     /// <summary>The keys only some kinds have, each with the kinds it belongs to (and how an error names them).</summary>
     private static readonly ImmutableArray<(string Key, ImmutableArray<KindWord> Kinds, string Where)> KindKeys =
     [
         ("slot", [KindWord.Weapon, KindWord.Armor, KindWord.ArmorMod], "a weapon, armor or an armor mod"),
         ("damageType", [KindWord.Weapon], "a weapon"),
+        ("ammo", [KindWord.Weapon], "a weapon"),
         ("breaker", [KindWord.Weapon], "a weapon"),
         ("traits", [KindWord.Weapon], "a weapon"),
         ("catalyst", [KindWord.Weapon], "a weapon"),
@@ -233,12 +234,13 @@ internal static class ManifestParsing
             KindWord.Weapon => Combine(
                 map.ReadRequired("slot", ReadVocabularyWord<WeaponSlot>),
                 map.ReadOptional("damageType", ReadVocabularyWord<DamageType>),
+                map.ReadOptional("ammo", ReadVocabularyWord<AmmoType>),
                 map.ReadOrDefault("traits", columns => columns.ReadEach("trait column", ReadTraitColumn), []),
                 map.ReadOptional("intrinsic", ReadItemHash),
                 map.ReadOptional("catalyst", ReadItemHash),
                 map.ReadOptional("breaker", ReadItemHash),
                 map.ReadOrDefault("mods", mods => mods.ReadEach("mod", ReadItemHash), []),
-                (slot, damageType, traits, intrinsic, catalyst, breaker, mods) => (ManifestKind)new ManifestKind.Weapon(slot, damageType, traits, intrinsic, catalyst, breaker, mods)),
+                (slot, damageType, ammo, traits, intrinsic, catalyst, breaker, mods) => (ManifestKind)new ManifestKind.Weapon(slot, damageType, ammo, traits, intrinsic, catalyst, breaker, mods)),
             KindWord.WeaponMod => map.ReadOptional("type", ReadName)
                 .Map(type => (ManifestKind)new ManifestKind.WeaponMod(type == Optional.Some(ManifestReading.EnhancedWeaponModType))),
             KindWord.Armor => Combine(

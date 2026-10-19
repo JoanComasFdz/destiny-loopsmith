@@ -8,7 +8,7 @@
             {
                 <img class="item-info-icon @DescribeTier(Info.Tier)" src="@icon.Value" alt="" />
             }
-            <span class="item-info-type">@Info.TypeLine</span>
+            <span class="item-info-type" data-testid="item-info-type">@Info.TypeLine</span>
         </header>
         @foreach (var section in Info.Sections)
         {

@@ -341,7 +341,7 @@ the build holds what the catalog recognises by hash, and nothing is guessed:
 |---|---|
 | the subclass item | `class` and `subclass` — the glossary's `subclasses` ([rule-format.md](rule-format.md#glossary-rulesglossaryyaml): the nine Light ones, whose hashes DIM's source lists, and the six Stasis and Strand ones); a Prismatic loadout, or one without a subclass, can't start a build yet |
 | the subclass's plugs, in socket order | the super, grenade, melee and class ability, the jump, aspects and fragments the catalog has a hash for, for the loadout's class and subclass (another class's, such as the Hunter's Spark of Shock on a Striker, is left out); an ability it has none for is `"?"`, a jump it has none for is left out (it has no part in a loop) |
-| the other equipped items (and the Loadout Optimizer's exotic) | `exoticArmor`; a weapon the manifest excerpt knows ([rule-format.md](rule-format.md#manifest-excerpt-rulesmanifestyaml)) becomes one of `weapons` — its `hash` (its slot, name, damage type and archetype are the manifest's), and as its `roll` the perk each trait column rolls with among the item's `socketOverrides` (a loadout saved with its perks; most name the weapon only) |
+| the other equipped items (and the Loadout Optimizer's exotic) | `exoticArmor`; a weapon the manifest excerpt knows ([rule-format.md](rule-format.md#manifest-excerpt-rulesmanifestyaml)) becomes one of `weapons` — its `hash` (its slot, name, damage type, ammo type and archetype are the manifest's), and as its `roll` the perk each trait column rolls with among the item's `socketOverrides` (a loadout saved with its perks; most name the weapon only) |
 | the armor pieces, by their manifest set | `armorSetBonuses`: each set perk the pieces grant (2 or 4 of a set) that the catalog has a hash for; the pieces themselves (legendary armor) are left out |
 | `parameters.mods` (repeats are stacked copies) | `armorMods` |
 | `parameters.artifactUnlocks` | `artifactPerks` |
@@ -402,7 +402,8 @@ Firesprite, Void a Void Breach, Stasis a Stasis Shard, Strand a Tangle. Twelve k
 enhanced mod) fill it for sure; fewer spawn the pickup as *(chance)*, since earlier steps' kills count too. The trigger
 palette's enemy count offers 12 · Synergy on that weapon (and any count an equipped rule needs from it) beside 1 to 9.
 
-**An item's details.** Tapping a square opens its details, one card each: Bungie's text (from the manifest
+**An item's details.** Tapping a square opens its details, under its name and type line (a weapon's names its ammo
+type, the manifest's: "Exotic Machine Gun · Heavy"), one card each: Bungie's text (from the manifest
 excerpt); where the rules' facts come from — for a Compendium row, Loopsmith's words for it (written from the row,
 never copied), its tab and row ("Exotic Weapons tab, row 144 · snapshot of 2026-10-09") and a link to the sheet;
 Clarity's entry, a creator's claim (their words and link) or Loopsmith's own rule (its file and line) otherwise;

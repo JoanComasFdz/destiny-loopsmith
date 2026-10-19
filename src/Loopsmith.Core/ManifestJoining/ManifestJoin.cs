@@ -59,6 +59,16 @@ public static partial class ManifestJoin
         [2] = ItemTier.Basic, [3] = ItemTier.Common, [4] = ItemTier.Rare, [5] = ItemTier.Legendary, [6] = ItemTier.Exotic,
     }.ToImmutableDictionary();
 
+    /// <summary>A weapon's ammo type by the manifest's number (<c>equippingBlock.ammoType</c>: 1, 2, 3); none for another (0: none).</summary>
+    internal static Optional<AmmoType> ToAmmoType(int ammo) =>
+        ammo switch
+        {
+            1 => Optional.Some(AmmoType.Primary),
+            2 => Optional.Some(AmmoType.Special),
+            3 => Optional.Some(AmmoType.Heavy),
+            _ => Optional.None<AmmoType>(),
+        };
+
     internal static readonly ImmutableDictionary<int, DamageType> DamageTypes = new Dictionary<int, DamageType>
     {
         [1] = DamageType.Kinetic, [2] = DamageType.Arc, [3] = DamageType.Solar, [4] = DamageType.Void,
@@ -333,6 +343,7 @@ public static partial class ManifestJoin
                 .Map(slot => (ManifestKind)new ManifestKind.Weapon(
                     slot,
                     item.ReadInteger("defaultDamageType").Bind(type => DamageTypes.TryGetValue(type, out var found) ? Optional.Some(found) : Optional.None<DamageType>()),
+                    item.ReadInteger("equippingBlock", "ammoType").Bind(ToAmmoType),
                     ReadTraitColumns(reading, item).Match(
                         columns => [.. columns.Value.Select(column => new TraitColumn(column))],
                         _ => ImmutableArray<TraitColumn>.Empty),

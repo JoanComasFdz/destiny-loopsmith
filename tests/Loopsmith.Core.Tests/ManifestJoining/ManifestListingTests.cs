@@ -28,7 +28,7 @@ public sealed class ManifestListingTests
             listing.Items.Select(item => $"{item.Name} {item.Hash.Value}"));
         var exotic = listing.Items.Single(item => item.Hash.Value == 102u);
         var weapon = Assert.IsType<ManifestKind.Weapon>(exotic.Kind);
-        Assert.Equal((WeaponSlot.Kinetic, Optional.Some(DamageType.Solar), Optional.Some(ItemTier.Exotic)), (weapon.Slot, weapon.DamageType, exotic.Tier));
+        Assert.Equal((WeaponSlot.Kinetic, Optional.Some(DamageType.Solar), Optional.Some(AmmoType.Primary), Optional.Some(ItemTier.Exotic)), (weapon.Slot, weapon.DamageType, weapon.Ammo, exotic.Tier));
         Assert.Equal((Optional.Some("Hand Cannon"), Optional.Some("/cannon.jpg"), Optional.Some("/season-2.png")), (exotic.Type, exotic.Icon, exotic.Watermark));
         Assert.Empty(weapon.Traits);                                                             // a pick reads its perks with the join
         var mask = Assert.IsType<ManifestKind.Armor>(listing.Items.Single(item => item.Hash.Value == 200u).Kind);
@@ -159,7 +159,7 @@ public sealed class ManifestListingTests
         $"{item.Hash.Value}: {item.Name} | {item.Type.UnwrapOr("-")} | {item.Tier.Match(tier => tier.Value.ToString(), _ => "-")} | {item.Icon.UnwrapOr("-")} | "
             + item.Kind switch
             {
-                ManifestKind.Weapon weapon => $"weapon {weapon.Slot} {weapon.DamageType.Match(type => type.Value.ToString(), _ => "-")} breaker {weapon.Breaker.Match(hash => hash.Value.Value.ToString(), _ => "-")} intrinsic {weapon.Intrinsic.Match(hash => hash.Value.Value.ToString(), _ => "-")}",
+                ManifestKind.Weapon weapon => $"weapon {weapon.Slot} {weapon.DamageType.Match(type => type.Value.ToString(), _ => "-")} {weapon.Ammo.Match(ammo => ammo.Value.ToString(), _ => "-")} breaker {weapon.Breaker.Match(hash => hash.Value.Value.ToString(), _ => "-")} intrinsic {weapon.Intrinsic.Match(hash => hash.Value.Value.ToString(), _ => "-")}",
                 ManifestKind.Armor armor => $"armor {armor.Slot} set {armor.Set.Match(hash => hash.Value.Value.ToString(), _ => "-")} class {armor.Class.Match(found => found.Value.ToString(), _ => "any")}",
                 _ => item.Kind.GetType().Name,
             };
@@ -179,7 +179,7 @@ public sealed class ManifestListingTests
             {
               "101": { "displayProperties": { "name": "Zeta Rifle", "icon": "/z2.jpg" }, "iconWatermark": "/season-2.png", "itemTypeDisplayName": "Scout Rifle", "itemType": 3, "equippable": true, "defaultDamageType": 1, "inventory": { "bucketTypeHash": 1, "tierType": 5 }, SOCKETS21 },
               "100": { "displayProperties": { "name": "Zeta Rifle", "icon": "/z1.jpg" }, "iconWatermark": "/season-1.png", "itemTypeDisplayName": "Scout Rifle", "itemType": 3, "equippable": true, "defaultDamageType": 1, "inventory": { "bucketTypeHash": 1, "tierType": 5 }, SOCKETS20 },
-              "102": { "displayProperties": { "name": "Alpha Cannon", "icon": "/cannon.jpg" }, "iconWatermark": "/season-2.png", "itemTypeDisplayName": "Hand Cannon", "itemType": 3, "equippable": true, "defaultDamageType": 3, "breakerTypeHash": 2611060930, "inventory": { "bucketTypeHash": 1, "tierType": 6 }, SOCKETS22 },
+              "102": { "displayProperties": { "name": "Alpha Cannon", "icon": "/cannon.jpg" }, "iconWatermark": "/season-2.png", "itemTypeDisplayName": "Hand Cannon", "itemType": 3, "equippable": true, "defaultDamageType": 3, "equippingBlock": { "ammoType": 1 }, "breakerTypeHash": 2611060930, "inventory": { "bucketTypeHash": 1, "tierType": 6 }, SOCKETS22 },
               "103": { "displayProperties": { "name": "Blue Rifle" }, "itemTypeDisplayName": "Auto Rifle", "itemType": 3, "equippable": true, "defaultDamageType": 1, "inventory": { "bucketTypeHash": 1, "tierType": 4 } },
               "104": { "displayProperties": { "name": "Preview Rifle" }, "itemTypeDisplayName": "Auto Rifle", "itemType": 3, "equippable": false, "defaultDamageType": 1, "inventory": { "bucketTypeHash": 1, "tierType": 5 } },
               "105": { "displayProperties": { "name": "Rifle Ornament" }, "itemTypeDisplayName": "Ornament", "itemType": 19, "equippable": true, "inventory": { "bucketTypeHash": 1, "tierType": 5 } },

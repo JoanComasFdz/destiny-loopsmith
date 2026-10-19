@@ -336,7 +336,9 @@ public static class DomainPhrasing
             _ => superType.Match(type => $"{type.Value} weapon (your Super's element)", _ => "weapon of your Super's element"),
             usedAs => usedAs.Kind.DescribeAbilityUse(usedAs.Input),
             _ => "this weapon",
-            thisOfType => $"this weapon ({thisOfType.Type})");
+            thisOfType => $"this weapon ({thisOfType.Type})",
+            ofAmmo => $"{ofAmmo.Ammo} weapon",
+            ofAmmoAndType => $"{ofAmmoAndType.Ammo} {ofAmmoAndType.Type} weapon");
 
     public static string DescribeOrigin(this KeywordGlossary glossary, DamageOrigin origin, Build build) =>
         origin.Match(

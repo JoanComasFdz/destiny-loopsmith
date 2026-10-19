@@ -1,0 +1,6 @@
+# Thunderlord alone: its square opens its item details.
+name: "E2E - Thunderlord's details"
+class: hunter
+subclass: arc
+weapons:
+  - { hash: 3325463374, perks: [] } # Thunderlord

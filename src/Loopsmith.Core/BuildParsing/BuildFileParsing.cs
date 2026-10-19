@@ -12,8 +12,8 @@ namespace Loopsmith.Core.BuildParsing;
 /// <summary>
 /// <c>builds/&lt;build&gt;/build.yaml</c> (see <c>docs/rule-format.md</c>) → <see cref="Build"/>. Pure. Only the
 /// file's own shape is checked here; whether the ids exist in the catalog is BuildComposition's job. The one thing read
-/// from elsewhere is what Bungie's manifest says of a weapon the file gives by <c>hash</c>: its slot, name, damage type
-/// and archetype (the manifest is the source of truth, so the file doesn't copy them).
+/// from elsewhere is what Bungie's manifest says of a weapon, which the file gives by <c>hash</c>: its slot, name, damage
+/// type, ammo type and archetype (the manifest is the source of truth, so the file doesn't copy them).
 /// </summary>
 public static class BuildFileParsing
 {
@@ -27,7 +27,7 @@ public static class BuildFileParsing
         Optional<ItemHash> Mod);
 
     /// <summary>A weapon of the manifest: its item (name, type), its slot and its damage type.</summary>
-    private sealed record ManifestWeapon(ManifestItem Item, WeaponSlot Slot, DamageType Type);
+    private sealed record ManifestWeapon(ManifestItem Item, WeaponSlot Slot, DamageType Type, Optional<AmmoType> Ammo);
 
     private static readonly ImmutableArray<string> BuildKeys =
     [
@@ -144,20 +144,19 @@ public static class BuildFileParsing
             : ElementId.TryFrom(text).ToResult().Map(id => (AbilityPlug)new AbilityPlug.Known(id)));
 
     /// <summary>
-    /// A weapon given by <c>hash</c> (<see cref="ReadManifestWeapon"/>), or named: <c>{ slot, name, type, archetype, perks?,
-    /// roll?, catalyst?, instance?, mod? }</c>. <c>roll: ["?", 243981275]</c> is the perk picked in each trait column, by
-    /// manifest hash, in column order ("?": not picked); <c>catalyst: true</c> turns an exotic's catalyst on (default
+    /// A weapon, given by <c>hash</c> (<see cref="ReadManifestWeapon"/>): one without is refused. <c>roll: ["?",
+    /// 243981275]</c> is the perk picked in each trait column, by manifest hash, in column order ("?": not picked); <c>catalyst: true</c> turns an exotic's catalyst on (default
     /// false); <c>instance: "6917…"</c> is the copy it is (a quoted instance id); <c>mod: 3820243349</c> is the weapon mod
     /// in its mod socket, by manifest hash.
     /// </summary>
     private static Result<WeaponLoadout, Errors> ReadWeapon(ManifestExcerpt manifest, YamlValue value) =>
         value.ToMap().Bind(map => map.ReadOptional("hash", ReadItemHash).Bind(hash => hash.Match(
             some => ReadManifestWeapon(manifest, value, map, some.Value),
-            _ => ReadNamedWeapon(value, map))));
+            _ => RefuseUnhashedWeapon(value, map))));
 
     /// <summary>
-    /// <c>{ hash, perks?, roll?, catalyst?, instance?, mod? }</c>: its slot, name, damage type and archetype are the
-    /// manifest's. A <c>slot</c>, <c>name</c>, <c>type</c> or <c>archetype</c> the file gives too (a file written before
+    /// <c>{ hash, perks?, roll?, catalyst?, instance?, mod? }</c>: its slot, name, damage type, ammo type and archetype are
+    /// the manifest's. A <c>slot</c>, <c>name</c>, <c>type</c> or <c>archetype</c> the file gives too (a file written before
     /// the manifest gave them) is checked for its shape and otherwise ignored: the manifest wins. A hash the manifest
     /// doesn't know as a weapon with a damage type is refused.
     /// </summary>
@@ -179,6 +178,7 @@ public static class BuildFileParsing
                     found.Value.Slot,
                     found.Value.Item.Name,
                     found.Value.Type,
+                    found.Value.Ammo,
                     new[] { found.Value.Item.Type.Bind(ManifestReading.ToArchetype), read.Archetype }.FindFirstSome(),
                     read.Perks,
                     Optional.Some(hash),
@@ -191,29 +191,18 @@ public static class BuildFileParsing
     /// <summary>A weapon of the manifest with its damage type, by its hash.</summary>
     private static Optional<ManifestWeapon> FindManifestWeapon(ManifestExcerpt manifest, ItemHash hash) =>
         manifest.FindItem(hash).Bind(item => item.Kind is ManifestKind.Weapon { DamageType: Optional<DamageType>.Some type } kind
-            ? Optional.Some(new ManifestWeapon(item, kind.Slot, type.Value))
+            ? Optional.Some(new ManifestWeapon(item, kind.Slot, type.Value, kind.Ammo))
             : Optional.None<ManifestWeapon>());
 
     /// <summary>
-    /// A weapon without a hash: its <c>slot</c>, <c>name</c>, <c>type</c> and <c>archetype</c> are required. A weapon whose
-    /// archetype no one knows is refused: a perk that goes by the archetype (Demolitionist's) would show both amounts.
+    /// A weapon without a hash is refused: its slot, damage type, archetype and ammo type are Bungie's manifest's, which only
+    /// its hash names (the designer always gives one: a picked weapon, a DIM link's, the player's own).
     /// </summary>
-    private static Result<WeaponLoadout, Errors> ReadNamedWeapon(YamlValue value, YamlMap map) =>
-        Combine(
-            map.CheckKeys(WeaponKeys),
-            map.ReadRequired("slot", ReadVocabularyWord<WeaponSlot>),
-            map.ReadRequired("name", ReadName),
-            map.ReadRequired("type", ReadVocabularyWord<DamageType>),
-            map.ReadOptional("archetype", ReadSlug),
-            map.ReadOrDefault("perks", ReadElementIds, []),
-            map.ReadOrDefault("roll", roll => roll.ReadEach(roll.Label, ReadRollPerk), []),
-            map.ReadOrDefault("catalyst", ReadBoolean, false),
-            map.ReadOptional("instance", instance => instance.ParseWith(text => ItemInstanceId.TryFrom(text).ToResult())),
-            map.ReadOptional("mod", ReadItemHash),
-            (_, slot, name, type, archetype, perks, roll, catalyst, instance, mod) => new WeaponLoadout(slot, name, type, archetype, perks, Optional.None<ItemHash>(), roll, catalyst, instance, mod))
-            .Bind(weapon => weapon.Archetype.IsSome()
-                ? Succeed(weapon)
-                : value.FailAt<WeaponLoadout>($"weapon '{weapon.Name}' needs an `archetype` or a `hash`"));
+    private static Result<WeaponLoadout, Errors> RefuseUnhashedWeapon(YamlValue value, YamlMap map) =>
+        Combine(map.CheckKeys(WeaponKeys), map.ReadOptional("name", ReadName), (_, name) => name)
+            .Bind(name => value.FailAt<WeaponLoadout>(name.Match(
+                some => $"weapon '{some.Value}' needs a `hash`",
+                _ => "a weapon needs a `hash`")));
 
     private static Result<bool, Errors> ReadBoolean(YamlValue value) =>
         value.ParseWith<bool>(text => text switch

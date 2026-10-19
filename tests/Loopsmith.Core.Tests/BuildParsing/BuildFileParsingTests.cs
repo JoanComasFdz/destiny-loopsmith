@@ -80,13 +80,14 @@ public sealed class BuildFileParsingTests
 
         Assert.Equal(4, build.Weapons.Length);
 
-        var byArchetype = build.Weapons[0];
-        Assert.Equal(WeaponSlot.Kinetic, byArchetype.Slot);
-        Assert.Equal("Festival Flight", byArchetype.Name);
-        Assert.Equal(DamageType.Strand, byArchetype.Type);
-        Assert.Equal(Optional.Some("grenade-launcher"), byArchetype.Archetype);
-        Assert.Equal(["slice"], ToNames(byArchetype.Perks));
-        Assert.Equal(Optional.None<ItemHash>(), byArchetype.Hash);
+        var withPerk = build.Weapons[0];
+        Assert.Equal(ToHash(4019651319), withPerk.Hash);
+        Assert.Equal(WeaponSlot.Kinetic, withPerk.Slot);
+        Assert.Equal("Festival Flight", withPerk.Name);
+        Assert.Equal(DamageType.Strand, withPerk.Type);
+        Assert.Equal(Optional.Some(AmmoType.Special), withPerk.Ammo);
+        Assert.Equal(Optional.Some("grenade-launcher"), withPerk.Archetype);
+        Assert.Equal(["slice"], ToNames(withPerk.Perks));
 
         var thunderlord = build.Weapons[1];
         Assert.Equal(ToHash(3325463374), thunderlord.Hash);
@@ -203,22 +204,38 @@ public sealed class BuildFileParsingTests
     }
 
     [Fact]
-    public void A_weapon_needs_an_archetype_or_a_hash()
+    public void A_weapon_needs_a_hash()
     {
         var message = ParseInvalidBuild(MinimalYaml + """
 
             weapons:
-              - { slot: energy, name: Any Arc weapon, type: arc }
+              - { slot: energy, name: Any Arc weapon, type: arc, archetype: hand-cannon }
+              - { slot: power, perks: [] }
             """);
         var build = ParseValidBuild(MinimalYaml + """
 
             weapons:
               - { slot: kinetic, name: Festival Flight, type: strand, hash: 4019651319 }
-              - { slot: power, name: Speleologist, type: solar, archetype: machine-gun }
             """);
 
-        Assert.Equal($"{BuildPath}:9: weapon 'Any Arc weapon' needs an `archetype` or a `hash`", message);
-        Assert.Equal(["Festival Flight", "Speleologist"], build.Weapons.Select(weapon => weapon.Name));
+        Assert.Equal($"{BuildPath}:9: weapon 'Any Arc weapon' needs a `hash`\n{BuildPath}:10: a weapon needs a `hash`", message);
+        Assert.Equal(["Festival Flight"], build.Weapons.Select(weapon => weapon.Name));
+    }
+
+    [Fact]
+    public void A_weapon_given_by_its_hash_takes_its_ammo_type_from_the_manifest()
+    {
+        var build = ParseValidBuild(MinimalYaml + """
+
+            weapons:
+              - { hash: 4019651319 }
+              - { hash: 2888266564 }
+              - { hash: 3325463374 }
+            """);
+
+        Assert.Equal(
+            [Optional.Some(AmmoType.Special), Optional.Some(AmmoType.Primary), Optional.Some(AmmoType.Heavy)],
+            build.Weapons.Select(weapon => weapon.Ammo));
     }
 
     [Fact]
@@ -255,7 +272,7 @@ public sealed class BuildFileParsingTests
         var message = ParseInvalidBuild(MinimalYaml + """
 
             weapons:
-              - { slot: kinetic, name: Festival Flight, type: strand, roll: [slice] }
+              - { hash: 4019651319, roll: [slice] }
             """);
 
         Assert.Equal([Optional.None<ItemHash>(), Optional.Some(ItemHash.From(243981275u))], Assert.Single(build.Weapons).Roll);
@@ -274,7 +291,7 @@ public sealed class BuildFileParsingTests
         var message = ParseInvalidBuild(MinimalYaml + """
 
             weapons:
-              - { slot: power, name: Thunderlord, type: arc, catalyst: yes }
+              - { hash: 3325463374, catalyst: yes }
             """);
 
         Assert.True(Assert.Single(build.Weapons).Catalyst);
@@ -360,7 +377,7 @@ public sealed class BuildFileParsingTests
             classAbility: gamblers-dodge
             aspects: tempest-strike
             weapons:
-              - { slot: heavy, name: Festival Flight, type: strand }
+              - { slot: heavy, name: Festival Flight, type: strand, hash: 4019651319 }
             stats: { grenade: lots }
             """);
 

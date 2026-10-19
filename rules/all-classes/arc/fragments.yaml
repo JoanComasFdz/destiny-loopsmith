@@ -50,15 +50,19 @@ elements:
     description: "While Amplified, kills with Special or Heavy ammo Arc weapons set off a blinding blast: Blind on enemies within 7.5 m."
     source: compendium/2026-10-13/Arc#11
     rules:
-      # A damage source can't name a weapon's ammo type, so this fires on every Arc weapon kill and
-      # is marked chance: a Primary weapon's kill doesn't set it off in the game.
+      # One rule per ammo type: a damage source names one, and a Primary weapon's kill doesn't set it off.
       - id: spark-of-beacons-1
-        on: { kill: { via: weapon:arc } }
+        on: { kill: { via: weapon:special:arc } }
         when: [ { has: amplified } ]
         then:
           - { debuffTarget: blind }
-        chance: true
-        reason: "While you're Amplified, a Special or Heavy Arc weapon kill blinds the enemies around it."
+        reason: "While you're Amplified, a Special Arc weapon kill blinds the enemies around it."
+      - id: spark-of-beacons-2
+        on: { kill: { via: weapon:heavy:arc } }
+        when: [ { has: amplified } ]
+        then:
+          - { debuffTarget: blind }
+        reason: "While you're Amplified, a Heavy Arc weapon kill blinds the enemies around it."
     passives: []
 
   - id: spark-of-brilliance

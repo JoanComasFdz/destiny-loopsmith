@@ -21,7 +21,7 @@ public sealed class RepoFileValidationTests
     /// <summary>The fixtures an e2e scenario imports to see them refused, each with a part of the error it shows.</summary>
     private static readonly ImmutableDictionary<string, string> Refused = new Dictionary<string, string>
     {
-        ["tests/Loopsmith.Web.E2E/Scenarios/ImportExport/BuildImport/crisis-inverted-without-archetype-or-hash.build.yaml"] = "weapon 'Crisis Inverted' needs an `archetype` or a `hash`",
+        ["tests/Loopsmith.Web.E2E/Scenarios/ImportExport/BuildImport/crisis-inverted-without-hash.build.yaml"] = "weapon 'Crisis Inverted' needs a `hash`",
         ["tests/Loopsmith.Web.E2E/Scenarios/ImportExport/WeaponByHash/unknown-weapon-hash.build.yaml"] = "1234567",
     }.ToImmutableDictionary();
 
@@ -29,6 +29,7 @@ public sealed class RepoFileValidationTests
     private static readonly ImmutableDictionary<string, ImmutableArray<uint>> FullManifestOnly = new Dictionary<string, ImmutableArray<uint>>
     {
         ["tests/Loopsmith.Web.E2E/Scenarios/ImportExport/WeaponByHash/ogma-pr6-by-hash.build.yaml"] = [2342054803],
+        ["tests/Loopsmith.Web.E2E/Rules/AllClasses/Arc/Fragments/SparkOfBeacons/spark-of-beacons-spark-of-volts-matador-64.build.yaml"] = [1518956169],
         ["tests/Loopsmith.Web.E2E/Scenarios/Loop/Weapons/EnemyCount/bellowing-giant-reapers-tithe.build.yaml"] = [412265080],
         ["tests/Loopsmith.Web.E2E/Scenarios/Loop/Weapons/EnemyCount/crux-celeritas-reapers-tithe-strand-siphon.build.yaml"] = [391069235],
         ["tests/Loopsmith.Web.E2E/Scenarios/Loop/Weapons/EnemyCount/festival-flight-one-for-all-ogma-pr6.build.yaml"] = [2342054803],

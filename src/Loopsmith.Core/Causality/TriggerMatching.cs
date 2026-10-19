@@ -67,7 +67,8 @@ public static class TriggerMatching
     /// source" matches it. A weapon of your Super's element needs the Super's type (<paramref name="superType"/>). An
     /// ability matches however it was used (Tempest Strike's uppercut is melee damage), unless the pattern names the use.
     /// "This weapon" matches nothing until the build check binds it to the slot of the weapon holding the element
-    /// (<c>WeaponBinding</c>): unbound, no weapon is known to hold it.
+    /// (<c>WeaponBinding</c>): unbound, no weapon is known to hold it. A weapon of an ammo type needs the weapon's ammo
+    /// known (its manifest item's): unknown, it matches no ammo type.
     /// </summary>
     public static bool IsMatchedBy(this DamageSource source, DamageOrigin origin, Optional<DamageType> superType) =>
         source.Match(
@@ -83,7 +84,11 @@ public static class TriggerMatching
             _ => origin is DamageOrigin.Weapon weapon && superType.Match(type => type.Value == weapon.Type, _ => false),
             usedAs => origin is DamageOrigin.Ability ability && ability.Kind == usedAs.Kind && ability.Input == usedAs.Input,
             _ => false,
-            _ => false);
+            _ => false,
+            ofAmmo => origin is DamageOrigin.Weapon weapon && weapon.Ammo.Match(ammo => ammo.Value == ofAmmo.Ammo, _ => false),
+            ofAmmoAndType => origin is DamageOrigin.Weapon weapon
+                && weapon.Ammo.Match(ammo => ammo.Value == ofAmmoAndType.Ammo, _ => false)
+                && weapon.Type == ofAmmoAndType.Type);
 
     /// <summary>
     /// Whether the trigger is a kill that needs a precision or a body kill (<c>hit:</c>, ADRs D36): where its kills land

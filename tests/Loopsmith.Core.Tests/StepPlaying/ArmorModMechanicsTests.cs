@@ -195,7 +195,7 @@ public sealed class ArmorModMechanicsTests
         var plain = ResolveOnce(ValidateBuild([], mods: [ShieldBreaker]), RifleKill);
 
         var fired = Assert.Single(one.Fired);
-        Assert.Equal(new GameEvent.ShieldBroken(new DamageOrigin.Weapon(WeaponSlot.Energy, DamageType.Arc)), fired.Trigger);
+        Assert.Equal(new GameEvent.ShieldBroken(new DamageOrigin.Weapon(WeaponSlot.Energy, DamageType.Arc, Optional.None<AmmoType>())), fired.Trigger);
         Assert.Equal(1, one.State.ReadTally(Status("armor-charge")).Match(tally => tally.Value.Sure.Value, _ => 0));
         Assert.Equal(2, two.State.ReadTally(Status("armor-charge")).Match(tally => tally.Value.Sure.Value, _ => 0));
         Assert.Empty(plain.Fired);
@@ -369,8 +369,8 @@ public sealed class ArmorModMechanicsTests
     {
         var source = new DamageSource.WeaponOfSuperType();
 
-        Assert.Equal(matches, source.IsMatchedBy(new DamageOrigin.Weapon(WeaponSlot.Kinetic, weapon), Optional.Some(super)));
-        Assert.False(source.IsMatchedBy(new DamageOrigin.Weapon(WeaponSlot.Kinetic, weapon), Optional.None<DamageType>()));
+        Assert.Equal(matches, source.IsMatchedBy(new DamageOrigin.Weapon(WeaponSlot.Kinetic, weapon, Optional.None<AmmoType>()), Optional.Some(super)));
+        Assert.False(source.IsMatchedBy(new DamageOrigin.Weapon(WeaponSlot.Kinetic, weapon, Optional.None<AmmoType>()), Optional.None<DamageType>()));
         Assert.False(source.IsMatchedBy(new DamageOrigin.Ability(AbilityKind.Grenade, super), Optional.Some(super)));
         Assert.False(source.IsMatchedBy(new DamageOrigin.Finisher(), Optional.Some(super)));
     }

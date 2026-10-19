@@ -48,7 +48,7 @@ public static class WeaponBinding
         strike.Weapon is DamageSource.WeaponInSlot inSlot
             ? build.Weapons
                 .Where(weapon => weapon.Slot == inSlot.Slot)
-                .Select(weapon => Optional.Some<DamageOrigin>(new DamageOrigin.Weapon(inSlot.Slot, strike.Type.Match(type => type.Value, _ => weapon.Type))))
+                .Select(weapon => Optional.Some<DamageOrigin>(new DamageOrigin.Weapon(inSlot.Slot, strike.Type.Match(type => type.Value, _ => weapon.Type), weapon.Ammo)))
                 .FindFirstSome()
             : Optional.None<DamageOrigin>();
 
@@ -145,7 +145,9 @@ public static class WeaponBinding
             thisWeapon: _ => Optional.Some<DamageSource>(new DamageSource.WeaponInSlot(slot)),
             thisWeaponOfType: ofType => ofType.Type == type
                 ? Optional.Some<DamageSource>(new DamageSource.WeaponInSlot(slot))
-                : Optional.None<DamageSource>());
+                : Optional.None<DamageSource>(),
+            weaponOfAmmo: _ => Optional.Some(source),
+            weaponOfAmmoAndType: _ => Optional.Some(source));
 
     private static IEnumerable<T> ToSequence<T>(Optional<T> optional) =>
         optional.Match(some => new[] { some.Value }, _ => []);

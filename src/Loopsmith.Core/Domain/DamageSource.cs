@@ -1,4 +1,5 @@
 using Dunet;
+using Loopsmith.Core.Functional;
 
 namespace Loopsmith.Core.Domain;
 
@@ -19,13 +20,15 @@ public partial record DamageSource
     partial record AbilityUsedAs(AbilityKind Kind, AbilityInput Input);   // only that use of the ability: melee:slide, Tempest Strike's uppercut
     partial record ThisWeapon();                     // the weapon holding the element (a weapon mod's, a perk's): the build check binds it to that weapon's slot
     partial record ThisWeaponOfType(DamageType Type);   // the weapon holding the element, when it is of that type (Synergy's pickup by the weapon's element)
+    partial record WeaponOfAmmo(AmmoType Ammo);      // a weapon of that ammo type (its manifest item's; unknown: nothing)
+    partial record WeaponOfAmmoAndType(AmmoType Ammo, DamageType Type);   // a weapon of that ammo and damage type: Spark of Beacons's Special Arc weapon
 }
 
 /// <summary>The <em>concrete</em> origin of damage in an event. Patterns (<see cref="DamageSource"/>) match origins.</summary>
 [Union]
 public partial record DamageOrigin
 {
-    partial record Weapon(WeaponSlot Slot, DamageType Type);
+    partial record Weapon(WeaponSlot Slot, DamageType Type, Optional<AmmoType> Ammo);   // Ammo: none when the manifest doesn't say
     partial record Ability(AbilityKind Kind, DamageType Type, AbilityInput Input = AbilityInput.Press);
     partial record Keyword(StatusId Status, DamageType Type);
     partial record Summoned(SummonId Summon, DamageType Type);

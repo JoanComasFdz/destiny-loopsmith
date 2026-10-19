@@ -58,9 +58,10 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
        critical health" (D3): critical health leaves nothing in the state today.
     Use the Compendium snapshot for every value (`"?"` where it has none), record disagreements in the build's
     `discrepancies.md`, and look for other authored elements that react to critical health;
-  - a weapon's ammo type (Spark of Beacons: Special and Heavy Arc kills only — a `chance` rule on every Arc weapon
-    kill). Precision kills are a weapon step's option (`energy:kill:precision`, `hit: precision`, D36):
-    Spark of Brilliance, Hatchling and Veteran's Wisdom fire on them for sure.
+  - no longer gaps: a weapon's ammo type is its manifest item's (`weapon:special:arc`, `weapon:heavy:arc`): Spark of
+    Beacons fires for sure on a Special or Heavy Arc weapon kill; precision kills are a weapon step's option
+    (`energy:kill:precision`, `hit: precision`, D36): Spark of Brilliance, Hatchling and Veteran's Wisdom fire on them
+    for sure.
 - **Triggers:** champion stun (Defibrillating Blast's "stun → max Bolt Charge"; an outcome that puts a counted buff at
   its max already works, so once Bolt Charge is counted ("Counting, next") only the stun is missing); an air move that
   spends another ability's energy (Weavewalk's 20% melee energy; secondary uses are the abilities' own — `melee:slide`,

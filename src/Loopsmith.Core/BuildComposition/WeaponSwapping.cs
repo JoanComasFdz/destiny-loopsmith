@@ -8,7 +8,7 @@ namespace Loopsmith.Core.BuildComposition;
 /// <summary>
 /// Pure: a build's weapons from the player's own copies (docs/loop-format.md, "Weapons from your account") or from every
 /// weapon in the game ("Every item"), and a weapon slot emptied. A copy becomes a build weapon as a DIM loadout's does —
-/// its slot, name, damage type and archetype from the manifest excerpt — with the perks it holds: in each trait column,
+/// its slot, name, damage type, ammo type and archetype from the manifest excerpt — with the perks it holds: in each trait column,
 /// the plug of its sockets that column rolls with; its catalyst on when its socket holds it; and the copy it is (its
 /// instance id). A weapon of the game is one with no copy: no roll (its perks are picked column by column) and its
 /// catalyst off. A build wears one exotic weapon, and one weapon per slot. Which copies are the player's is
@@ -100,7 +100,7 @@ public static class WeaponSwapping
         FindExoticElsewhere(catalog, build, target).Map(name => $"A build wears one exotic weapon: swap {name} for a legendary weapon to pick an exotic here.");
 
     /// <summary>
-    /// A copy as a build weapon: the excerpt's slot, name, damage type and archetype; its perks (each trait column's plug
+    /// A copy as a build weapon: the excerpt's slot, name, damage type, ammo type and archetype; its perks (each trait column's plug
     /// of its sockets); its catalyst on when its socket holds the catalyst; its mod; and its instance id. Or why it can't be one.
     /// </summary>
     public static Result<WeaponLoadout, string> ToWeapon(RuleCatalog catalog, OwnedWeapon copy) =>
@@ -114,6 +114,7 @@ public static class WeaponSwapping
                     kind.Slot,
                     item.Value.Name,
                     type.Value,
+                    kind.Ammo,
                     item.Value.Type.Bind(ManifestReading.ToArchetype),
                     [],
                     Optional.Some(hash),

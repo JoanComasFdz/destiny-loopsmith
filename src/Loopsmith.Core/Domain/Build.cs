@@ -30,7 +30,8 @@ public partial record AbilityPlug
 }
 
 /// <summary>
-/// An equipped weapon. <see cref="Perks"/> are named by catalog id; <see cref="Hash"/> is its manifest item when known (a
+/// An equipped weapon. <see cref="Ammo"/> is its ammo type, its manifest item's (none: the manifest doesn't say);
+/// <see cref="Perks"/> are named by catalog id; <see cref="Hash"/> is its manifest item when known (a
 /// DIM loadout's, or written in the build file); <see cref="Roll"/> is the perk picked in each of its trait columns, by
 /// manifest hash, in column order (none: not picked, "?" in the build file); <see cref="Catalyst"/> says the build turns
 /// an exotic's catalyst on (a DIM loadout doesn't say, so it starts off); <see cref="Instance"/> is the copy it is, by
@@ -42,6 +43,7 @@ public sealed record WeaponLoadout(
     WeaponSlot Slot,
     string Name,
     DamageType Type,
+    Optional<AmmoType> Ammo,
     Optional<string> Archetype,
     ImmutableArray<ElementId> Perks,
     Optional<ItemHash> Hash,
