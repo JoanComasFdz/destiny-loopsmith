@@ -290,11 +290,13 @@ without a weapon or a piece is a dashed square named for it). The player fills i
 box opens the subclass editor ([Editing the subclass](#editing-the-subclass)), and ⋯ next to each weapon and armor
 slot picks one from every item of the game, or after a Bungie login one of their own ([Every item](#every-item)).
 
-While the build has no super, grenade, melee or class ability (named or "?") and no weapon, it has nothing to set things
-off, so the **Next trigger** panel is greyed out, nothing in it can be tapped, and a line says why ("Give the build a
-super, an ability or a weapon first"); this holds for any build in that state. Once the editor gives it an ability, the
-panel offers it; an ability slot still empty is a dashed square named for its kind in the HUD too (an ability is always
-possible in the game, ADRs D5, so it can still be cast — it sets off what reacts to any cast).
+While the build equips nothing at all (no ability, named or "?", no aspect, fragment, weapon, armor piece, mod,
+artifact or artifact perk, nothing left out), the **Next trigger** panel is greyed out, nothing in it can be tapped, and
+a line says why ("Equip something first"); this holds for any build in that state. Anything equipped turns it on: the
+finisher, a new pack and the declared states need nothing equipped, so a build with only a fragment (a rule scenario's
+build, Spark of Volts) can tap the Finisher. Once the editor gives it an ability, the panel offers it; an ability slot
+still empty is a dashed square named for its kind in the HUD too (an ability is always possible in the game, ADRs D5,
+so it can still be cast — it sets off what reacts to any cast).
 
 ## Starting from a DIM link
 
@@ -441,7 +443,9 @@ or a fragment can't be equipped twice; ✕ leaves a fragment's slot empty and th
 has no ✕: it is only swapped for another. The aspects open the fragment slots (`fragmentSlots` in the rules: Tempest Strike
 and Flow State 4, Tempest Strike and Ascension 5); the count follows the aspects at once. An aspect whose count the rules
 don't give shows "?" slots and limits nothing. An aspect change that closes slots takes out the last fragments and names
-them; the fragments left keep their slots, or are packed from the first one when a closed slot held one. **Cancel**, ✕ or Escape throws the changes away.
+them; the fragments left keep their slots, or are packed from the first one when a closed slot held one. A build with more
+fragments than its aspects open (a build file or a DIM link: build validation only warns) shows them all, and a warning
+under Fragments says Save needs aspects that open enough slots, or fewer fragments. **Cancel**, ✕ or Escape throws the changes away.
 
 **Save** rewrites only the embedded build file's `super`, `grenade`, `melee`, `classAbility`, `jump`, `aspects`,
 `fragments` and `leftOut` (a plug the rules don't know is in `leftOut.subclassPlugs`, shown ⊘ and listed under "Not in

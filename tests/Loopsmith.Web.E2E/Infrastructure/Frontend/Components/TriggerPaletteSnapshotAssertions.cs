@@ -3,7 +3,7 @@ using Loopsmith.Web.E2E.Infrastructure.Vocabulary;
 
 namespace Loopsmith.Web.E2E.Infrastructure.Frontend.Components;
 
-/// <summary>What a test checks on the trigger panel's picked row.</summary>
+/// <summary>What a test checks on the trigger panel: its picked row, and whether it is greyed out.</summary>
 public static class TriggerPaletteSnapshotAssertions
 {
     /// <summary>The "×" enemy count shows, with exactly <paramref name="triggers"/>, in that order.</summary>
@@ -42,5 +42,20 @@ public static class TriggerPaletteSnapshotAssertions
     {
         var listed = string.Join(", ", triggers.Select(trigger => $"\"{trigger.ToShownText()}\""));
         return listed.Length == 0 ? "nothing" : listed;
+    }
+
+    /// <summary>The panel is greyed out: nothing in it can be tapped.</summary>
+    public static AssertingThat<TriggerPaletteSnapshot> IsGreyedOut(this AssertingThat<TriggerPaletteSnapshot> that)
+    {
+        Assert.True(that.InstanceToAssert.IsGreyedOut, "The trigger panel can be tapped, but it was expected greyed out.");
+        return that;
+    }
+
+    /// <summary>The greyed-out panel's line reads <paramref name="expected"/>.</summary>
+    public static AssertingThat<TriggerPaletteSnapshot> Reads(this AssertingThat<TriggerPaletteSnapshot> that, string expected)
+    {
+        var shown = that.InstanceToAssert.DisabledNote;
+        Assert.True(shown == expected, $"The trigger panel reads \"{shown}\", but \"{expected}\" was expected.");
+        return that;
     }
 }

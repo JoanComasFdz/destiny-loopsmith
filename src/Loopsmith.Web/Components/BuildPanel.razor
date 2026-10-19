@@ -62,12 +62,12 @@
     @if (!sheet.Issues.IsEmpty)
     {
         <h3 class="section-label">Validation</h3>
-        <ul class="issues">
+        <ul class="issues" aria-label="Validation" data-testid="validation">
             @foreach (var issue in sheet.Issues)
             {
-                <li class="issue @(issue.Severity == Severity.Warning ? "warning" : "info")">
+                <li class="issue @(issue.Severity == Severity.Warning ? "warning" : "info")" data-testid="issue" data-severity="@(issue.Severity == Severity.Warning ? "warning" : "info")">
                     <span class="issue-mark">@(issue.Severity == Severity.Warning ? "!" : "i")</span>
-                    <span>@issue.Message</span>
+                    <span data-testid="issue-message">@issue.Message</span>
                 </li>
             }
         </ul>

@@ -5,8 +5,8 @@
    class's own), the weapons in their damage type's colour; above them what is on the ground and the states to declare. Tapping the Super,
    an ability or a weapon picks it: its actions show below the HUD — hit or kill, and how many enemies that one action
    catches — and stay there for the next step. One that only has one action (the class ability, its air move, the
-   finisher, a pickup, a declared state) acts at once. Every trigger is pickable — except while the build has nothing to set
-   things off (a build started from scratch, LoopDesigning.HasTriggerSource): then the panel is greyed out, nothing in it
+   finisher, a pickup, a declared state) acts at once. Every trigger is pickable — except while the build equips nothing
+   (a build started from scratch, LoopDesigning.HasTriggerSource): then the panel is greyed out, nothing in it
    can be tapped, and a line says why. *@
 @{
     var hud = TriggerHudShaping.ShapeHud(Options, counts, optionsOn, Build, Profile);
@@ -20,7 +20,7 @@
     </header>
     @if (disabled)
     {
-        <p class="palette-disabled" role="status" data-testid="palette-disabled">Give the build a super, an ability or a weapon first: ⋯ on the Subclass box picks its abilities.</p>
+        <p class="palette-disabled" role="status" data-testid="palette-disabled">Equip something first: ⋯ on the Subclass box picks its abilities.</p>
     }
     else if (Hint.Length > 0)
     {

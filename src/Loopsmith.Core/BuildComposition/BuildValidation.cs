@@ -307,9 +307,16 @@ public static class BuildValidation
         var slots = aspects.Sum(a => a.FragmentSlots.UnwrapOr(FragmentSlots.Zero).Value);
         if (build.Fragments.Length > slots)
         {
-            yield return new BuildIssue(Severity.Blocking, $"{build.Fragments.Length} fragments equipped; the aspects grant {slots} slots.");
+            yield return new BuildIssue(Severity.Warning, DescribeFragmentOverflow(build.Fragments.Length, slots));
         }
     }
+
+    /// <summary>
+    /// More fragments than the aspects open: the game wouldn't hold them, but each fragment's rules fire whatever the aspects,
+    /// so the build still plays (a rule scenario's build can be just the fragment it tests).
+    /// </summary>
+    public static string DescribeFragmentOverflow(int fragments, int slots) =>
+        $"{fragments} fragment{(fragments == 1 ? "" : "s")} equipped; the aspects grant {slots} slot{(slots == 1 ? "" : "s")}.";
 
     /// <summary>
     /// What an equipped element's stat checks say at the build's stats (Gambler's Dodge below 50 Melee): each check

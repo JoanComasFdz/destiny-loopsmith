@@ -45,6 +45,19 @@ public sealed class SubclassEditingTests
     }
 
     [Fact]
+    public void The_editor_warns_when_the_fragments_outnumber_the_slots_the_aspects_open()
+    {
+        var build = OpenLoop("helicopter-skip-grenades").Build;
+        var plugs = LoopDesigning.ReadSubclassPlugs(build);
+
+        var none = LoopDesigning.DescribeFragmentOverflow(build, plugs with { Aspects = [], Fragments = [SparkOfShock] });
+        var fits = LoopDesigning.DescribeFragmentOverflow(build, plugs with { Aspects = [TempestStrike], Fragments = [SparkOfShock, SparkOfVolts] });
+
+        Assert.Equal(Optional.Some("1 fragment equipped; the aspects open 0 slots. Save needs aspects that open enough slots, or fewer fragments."), none);
+        Assert.Equal(Optional.None<string>(), fits);
+    }
+
+    [Fact]
     public void The_builds_plugs_are_read_by_hash_whether_the_rules_know_them_or_not()
     {
         var plugs = LoopDesigning.ReadSubclassPlugs(OpenLoop("helicopter-skip-grenades").Build);

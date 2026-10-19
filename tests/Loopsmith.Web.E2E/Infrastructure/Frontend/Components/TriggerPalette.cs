@@ -16,6 +16,8 @@ public sealed class TriggerPalette(IPage page)
 
     private ILocator Row => Panel.Locator("[data-testid=trig-actions]");
 
+    private ILocator DisabledNote => Panel.Locator("[data-testid=palette-disabled]");
+
     private ILocator RowTitle => Row.Locator("[data-testid=trig-actions-title]");
 
     private ILocator CountedButtons => Row.Locator("[data-testid=trigger-buttons]");
@@ -33,10 +35,13 @@ public sealed class TriggerPalette(IPage page)
         Panel.Locator("[data-action=trigger-weapon]")
             .And(page.GetByRole(AriaRole.Button, new() { NameRegex = new Regex($"^{Regex.Escape(weapon.ToShownText())} \\(") }));
 
-    // An ability's square is named "<its kind>: <its name>" ("Melee: Combination Blow").
+    // An ability's square is named "<its kind>: <its name>" ("Melee: Combination Blow"); the finisher's is named for the
+    // equipped finisher (after a Bungie login), so it is found by its HUD slot.
     private ILocator AbilityButton(Ability ability) =>
-        Panel.Locator("[data-action=trigger-ability]")
-            .And(page.GetByRole(AriaRole.Button, new() { NameRegex = new Regex($"^[^:]+: {Regex.Escape(ability.ToShownText())}$") }));
+        ability is Ability.Finisher
+            ? Panel.Locator("[data-action=trigger-ability][data-hud-slot=finisher]")
+            : Panel.Locator("[data-action=trigger-ability]")
+                .And(page.GetByRole(AriaRole.Button, new() { NameRegex = new Regex($"^[^:]+: {Regex.Escape(ability.ToShownText())}$") }));
 
     // A secondary use's caption is drawn in capitals ("SLIDE"); its text may not be.
     private ILocator SecondaryButton(SecondaryUse use) =>
@@ -92,7 +97,7 @@ public sealed class TriggerPalette(IPage page)
     private async Task<TriggerRowLayout> ReadLayoutShownAsync() =>
         (await Row.EvaluateAsync<JsonElement>(LayoutScript)).Deserialize<TriggerRowLayout>(ShownJson.Options)!;
 
-    /// <summary>What the picked row shows now.</summary>
+    /// <summary>What the panel shows now: the picked row, and whether the panel is greyed out.</summary>
     public Task<TriggerPaletteSnapshot> ReadAsync() => OnScreen.ReadAsync(Panel, ReadShownAsync);
 
     private async Task<TriggerPaletteSnapshot> ReadShownAsync() =>
@@ -100,7 +105,9 @@ public sealed class TriggerPalette(IPage page)
             [.. (await CountedCaptions.AllInnerTextsAsync()).Select(shown => StepTriggerShowing.ReadStepTrigger(shown.Trim()))],
             await TargetCount.CountAsync() > 0,
             [.. (await TargetCountOptions.AllInnerTextsAsync()).Select(shown => shown.Trim())],
-            [.. (await ApartCaptions.AllInnerTextsAsync()).Select(shown => StepTriggerShowing.ReadStepTrigger(shown.Trim()))]);
+            [.. (await ApartCaptions.AllInnerTextsAsync()).Select(shown => StepTriggerShowing.ReadStepTrigger(shown.Trim()))],
+            await Panel.GetAttributeAsync("aria-disabled") == "true",
+            await DisabledNote.CountAsync() > 0 ? (await DisabledNote.InnerTextAsync()).Trim() : "");
 
     // The row's box and its content's right edge (its right padding left out), each button's box with its caption, the
     // "×" enemy count's box, the screen's width and the page's (wider when it scrolls sideways).
@@ -124,14 +131,17 @@ public sealed class TriggerPalette(IPage page)
 }
 
 /// <summary>
-/// What the picked row shows: the buttons the "×" enemy count goes with, whether that count shows, the counts it offers
-/// (as its options read, in order), and the buttons at the row's right end, apart from it.
+/// What the panel shows: the picked row's buttons the "×" enemy count goes with, whether that count shows, the counts it
+/// offers (as its options read, in order), and the buttons at the row's right end, apart from it; whether the whole panel
+/// is greyed out (nothing in it can be tapped), and the line that says why (empty when it isn't).
 /// </summary>
 public sealed record TriggerPaletteSnapshot(
     ImmutableArray<StepTrigger> WithTheCount,
     bool ShowsTheCount,
     ImmutableArray<string> TargetCounts,
-    ImmutableArray<StepTrigger> ApartFromTheCount);
+    ImmutableArray<StepTrigger> ApartFromTheCount,
+    bool IsGreyedOut,
+    string DisabledNote);
 
 /// <summary>
 /// Where the picked row is on the screen, in CSS pixels: the row's box and its content's right edge, each button's box

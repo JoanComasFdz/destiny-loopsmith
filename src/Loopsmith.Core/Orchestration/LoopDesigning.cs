@@ -116,12 +116,28 @@ public static class LoopDesigning
     }
 
     /// <summary>
-    /// True when the build has something to set things off: a super, grenade, melee or class ability (named or "?"), or a
-    /// weapon. A build started from scratch has none until the subclass editor or a weapon gives it one, and the designer
+    /// True when the build equips anything: an ability (named or "?"), an aspect, a fragment, a weapon, an armor piece, a
+    /// mod, an artifact or one of its perks, or something the rules don't know yet. The finisher, a new pack and the
+    /// declared states need nothing equipped, so a build with only a fragment can set things off. A build started from
+    /// scratch equips nothing until the subclass editor, a weapon or an armor piece gives it something, and the designer
     /// offers no trigger until then.
     /// </summary>
     public static bool HasTriggerSource(ValidatedBuild build) =>
-        build.Build.Abilities.ListPlugs().Any(plug => !plug.IsEmpty()) || !build.Build.Weapons.IsEmpty;
+        IsEquippingAnything(build.Build);
+
+    private static bool IsEquippingAnything(Build build) =>
+        build.Abilities.ListPlugs().Append(build.Abilities.Jump).Any(plug => !plug.IsEmpty())
+        || !build.Aspects.IsEmpty
+        || !build.Fragments.IsEmpty
+        || build.ExoticArmor.IsSome()
+        || !build.ArmorSetBonuses.IsEmpty
+        || !build.ArmorMods.IsEmpty
+        || !build.ArtifactPerks.IsEmpty
+        || !build.Weapons.IsEmpty
+        || !build.LeftOut.IsEmpty
+        || !build.ArmorCopies.IsEmpty
+        || !build.ArmorModPlugs.IsEmpty
+        || build.Artifact.IsSome();
 
     /// <summary>The comment a build from a DIM link starts with: where it came from and what <c>leftOut</c> means.</summary>
     public const string DimBuildNote =
@@ -498,6 +514,10 @@ public static class LoopDesigning
     /// <summary>How many fragment slots these aspects open; not known when an aspect's count isn't.</summary>
     public static FragmentSlotCount CountFragmentSlots(ValidatedBuild build, ImmutableArray<ItemHash> aspects) =>
         SubclassEditing.CountFragmentSlots(build.Catalog, aspects);
+
+    /// <summary>What the subclass editor warns when the plugs hold more fragments than their aspects open; none when they fit.</summary>
+    public static Optional<string> DescribeFragmentOverflow(ValidatedBuild build, SubclassPlugs plugs) =>
+        SubclassEditing.DescribeFragmentOverflow(build.Catalog, plugs);
 
     /// <summary>The plugs with other aspects: the fragments the new slot count closes are taken out, the last ones first, and named.</summary>
     public static SubclassTrim SetSubclassAspects(ValidatedBuild build, SubclassPlugs plugs, ImmutableArray<ItemHash> aspects) =>

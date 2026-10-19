@@ -7,7 +7,8 @@
    dropdown floats over the slots after it, so none of them moves; ⋯ again, a tap outside it or Escape closes it (Escape
    doesn't close the editor while a dropdown is open). A fragment's ✕ empties its slot; an aspect has none, it is only
    swapped for another. The aspects open the fragment slots; an aspect change that closes slots takes the last fragments
-   out and names them. Save hands the plugs to the designer (LoopDesigning.EditSubclass); Cancel, ✕ or Escape throws the
+   out and names them; a build with more fragments than its aspects open (a build file, a DIM link) shows them all and a
+   warning that Save needs room for them. Save hands the plugs to the designer (LoopDesigning.EditSubclass); Cancel, ✕ or Escape throws the
    changes away. *@
 @using System.Globalization
 @inject BrowserInterop Browser
@@ -15,6 +16,7 @@
     var slots = LoopDesigning.CountFragmentSlots(Build, draft.Aspects).Slots;
     var fragmentCapacity = slots.Match(count => count.Value.Value, _ => fragmentSlots.Count(slot => slot.IsSome()) + 1);
     var slotText = slots.Match(count => count.Value.Value.ToString(CultureInfo.InvariantCulture), _ => DomainPhrasing.Unknown);
+    var overflowNote = LoopDesigning.DescribeFragmentOverflow(Build, ReadPlugs());
 }
 <Modal Title="@($"{heading.Name}, {heading.Kind}")" Size="snug" OnClose="OnClose">
     <Heading>
@@ -61,6 +63,10 @@
                         @if (!slots.IsSome())
                         {
                             <p class="muted sub-note" data-testid="fragment-unknown">Loopsmith doesn't know how many fragment slots these aspects open, so it doesn't limit the fragments.</p>
+                        }
+                        @if (overflowNote is Optional<string>.Some overflow)
+                        {
+                            <p class="tone-warning sub-note" role="status" data-testid="fragment-overflow">@overflow.Value</p>
                         }
                         @if (trimNote.Length > 0)
                         {

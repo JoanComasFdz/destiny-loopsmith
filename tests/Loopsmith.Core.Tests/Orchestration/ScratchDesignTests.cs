@@ -10,7 +10,7 @@ namespace Loopsmith.Core.Tests.Orchestration;
 
 /// <summary>
 /// A loop started from scratch: an Arc Hunter with nothing equipped, whose empty slots stay empty (not "?") through the
-/// subclass editor, export and import; it has nothing to trigger until the editor or a weapon gives it something.
+/// subclass editor, export and import; it has nothing to trigger until anything is equipped (a fragment is enough).
 /// </summary>
 public sealed class ScratchDesignTests
 {
@@ -87,6 +87,36 @@ public sealed class ScratchDesignTests
 
         Assert.True(LoopDesigning.HasTriggerSource(armed));
         Assert.True(LoopDesigning.HasTriggerSource(unknown));
+    }
+
+    [Theory]
+    [InlineData("fragment")]
+    [InlineData("aspect")]
+    [InlineData("armor mod")]
+    public void A_build_with_only_a_fragment_an_aspect_or_a_mod_has_something_to_trigger(string slot)
+    {
+        var scratch = StartScratch().Build.Build;
+        var build = slot switch
+        {
+            "fragment" => scratch with { Fragments = [ElementId.From("spark-of-volts")] },
+            "aspect" => scratch with { Aspects = [ElementId.From("tempest-strike")] },
+            _ => scratch with { ArmorMods = [ElementId.From("elemental-charge")] },
+        };
+
+        Assert.True(LoopDesigning.HasTriggerSource(Validate(build)));
+    }
+
+    [Fact]
+    public void A_build_with_more_fragments_than_its_aspects_open_validates_with_a_warning()
+    {
+        var scratch = StartScratch().Build.Build;
+
+        var one = Validate(scratch with { Fragments = [ElementId.From("spark-of-shock")] });
+        var two = Validate(scratch with { Fragments = [ElementId.From("spark-of-shock"), ElementId.From("spark-of-volts")] });
+
+        Assert.Contains(new BuildIssue(Severity.Warning, "1 fragment equipped; the aspects grant 0 slots."), one.Issues);
+        Assert.Contains(new BuildIssue(Severity.Warning, "2 fragments equipped; the aspects grant 0 slots."), two.Issues);
+        Assert.DoesNotContain(one.Issues, issue => issue.Severity == Severity.Blocking);
     }
 
     [Fact]

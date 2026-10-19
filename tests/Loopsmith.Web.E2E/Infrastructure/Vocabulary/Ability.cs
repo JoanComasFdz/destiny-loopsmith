@@ -3,8 +3,8 @@ using Dunet;
 namespace Loopsmith.Web.E2E.Infrastructure.Vocabulary;
 
 /// <summary>
-/// A subclass's ability (its super, grenade, melee or class ability), as the trigger panel's square and a step card name
-/// it. A case is added when a test needs it.
+/// A subclass's ability (its super, grenade, melee or class ability) or the finisher, as the trigger panel's square and a
+/// step card name it. A case is added when a test needs it.
 /// </summary>
 [Union]
 public partial record Ability
@@ -17,6 +17,7 @@ public partial record Ability
     public partial record DisorientingBlow;
     public partial record GamblersDodge;
     public partial record MarksmansDodge;
+    public partial record Finisher;
 
     /// <summary>What the UI shows that no case names yet: a failing assertion names it as the UI shows it.</summary>
     public partial record Unlisted(string Shown);
@@ -36,5 +37,6 @@ public static class AbilityShowing
             disorientingBlow => "Disorienting Blow",
             gamblersDodge => "Gambler's Dodge",
             marksmansDodge => "Marksman's Dodge",
+            finisher => "Finisher",
             unlisted => unlisted.Shown);
 }
