@@ -134,11 +134,11 @@
             }
             @foreach (var toggle in choice.Options)
             {
-                <button type="button" class="trig-option @(toggle.IsOn ? "on" : "")" data-option="@toggle.Option"
+                <button type="button" class="trig-option @(toggle.IsOn ? "on" : "")" data-action="trigger-option" data-option="@toggle.Option"
                         aria-pressed="@(toggle.IsOn ? "true" : "false")" title="@toggle.Hint"
                         @onclick="() => ToggleOption(TriggerPaletteShaping.ToOptionKey(choice.Key, toggle.Option))">
                     <span class="trig-option-box" aria-hidden="true">@(toggle.IsOn ? "✓" : "")</span>
-                    <span class="trig-option-caption">@toggle.Caption</span>
+                    <span class="trig-option-caption" data-testid="trigger-option-caption">@toggle.Caption</span>
                 </button>
             }
             @if (choice.Buttons.Any(button => button.StandsApart))
