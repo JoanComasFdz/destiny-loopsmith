@@ -9,10 +9,10 @@ namespace Loopsmith.Core.Domain;
 public partial record Trigger
 {
     partial record AbilityCast(AbilityKind Kind);                          // any use of the ability, its secondary ones too
-    partial record KillAny(DamageSource Via);
-    partial record KillOfTier(DamageSource Via, EnemyTier Tier);
-    partial record KillDebuffed(DamageSource Via, ImmutableArray<StatusId> TargetHas);
-    partial record KillMultiple(DamageSource Via, TargetCount AtLeast, Optional<Seconds> Within);   // kill at least N enemies in one action (within: the source's window, "2 in 3 s", a fact one action meets)
+    partial record KillAny(DamageSource Via, HitZone Needs = HitZone.Body);   // Needs: Precision for a precision kill only (ADRs D36)
+    partial record KillOfTier(DamageSource Via, EnemyTier Tier, HitZone Needs = HitZone.Body);
+    partial record KillDebuffed(DamageSource Via, ImmutableArray<StatusId> TargetHas, HitZone Needs = HitZone.Body);
+    partial record KillMultiple(DamageSource Via, TargetCount AtLeast, Optional<Seconds> Within, HitZone Needs = HitZone.Body);   // kill at least N enemies in one action (within: the source's window, "2 in 3 s", a fact one action meets)
     partial record Damage(DamageSource Via, DamageSpan Needs = DamageSpan.Blow);   // Needs: Sustained for a source that needs several hits or a share of the enemy's health (ADRs D34)
     partial record DamageDebuffed(DamageSource Via, ImmutableArray<StatusId> TargetHas, DamageSpan Needs = DamageSpan.Blow);
     partial record DamageMultiple(DamageSource Via, TargetCount AtLeast, Optional<Seconds> Within);   // hit at least N enemies in one action (within: the source's window, "3 in 3 s")
@@ -21,12 +21,12 @@ public partial record Trigger
     partial record StacksMaxed(StatusId Status);
     partial record Finisher();                                                 // the player does a finisher on an enemy of the pack
     partial record AbilityCastAs(AbilityKind Kind, AbilityInput Input);        // only that use of the ability: the melee while sliding, the class ability's air move
-    partial record KillFewer(DamageSource Via, TargetCount FewerThan);         // kill fewer than N enemies in one action (at least one)
+    partial record KillFewer(DamageSource Via, TargetCount FewerThan, HitZone Needs = HitZone.Body);       // kill fewer than N enemies in one action (at least one)
     partial record CriticalHealth();                                           // the player declares they reached critical health (ADRs D3)
     partial record ShieldBroken(DamageSource Via);                             // a combatant's shield broken by that source (the player says which hit breaks it, ADRs D36)
     partial record EnergyExpended(AbilityKind Kind);                           // the ability's energy fully expended: its last charge used (ADRs D36)
     partial record DamageFewer(DamageSource Via, TargetCount FewerThan);       // hit fewer than N enemies in one action (at least one)
-    partial record KillBetween(DamageSource Via, TargetCount AtLeast, TargetCount FewerThan);   // kill at least N and fewer than M enemies in one action (Reaper's Tithe's x2 on exactly 2)
+    partial record KillBetween(DamageSource Via, TargetCount AtLeast, TargetCount FewerThan, HitZone Needs = HitZone.Body);   // kill at least N and fewer than M enemies in one action (Reaper's Tithe's x2 on exactly 2)
     partial record Reload(DamageSource Via);                                   // a weapon reloaded: the player's Reload step, or an outcome that reloads it (ADRs D37)
 }
 

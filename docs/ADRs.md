@@ -6,7 +6,7 @@ current set of decisions, in four groups: what the product is (D1–D9), sources
 architecture (D16–D23), hosts and tooling (D24–D26), starting from a DIM link (D27), the build's stats (D28), the
 step's damage resistance (D29), armor mods in their sockets (D30), the artifact (D32), the count of Armor Charge
 (D33), what a hit step stands for (D34), the raid and activity mods left out of the sockets (D35), what the player
-says about a step besides its hit and count (D36), a reload (D37), the web designer as the only host (D38), the
+says about a step besides its hit and count — a broken shield, precision kills, the last charge (D36), a reload (D37), the web designer as the only host (D38), the
 developer tools as hosts too (D39) and the rules grouped by class, subclass and area, each rule with its own id (D40). D1 is the
 founding one: every other decision follows from it.
 
@@ -44,7 +44,7 @@ founding one: every other decision follows from it.
 | D32 | A build names its artifact and the perk in each of its slots (Artifacts 2.0) | Since Monument of Triumph one of seven artifacts is equipped with up to seven perks, one per slot; the tiers and slots are Bungie's, read from the artifact's sockets |
 | D33 | Armor Charge is counted: sure stacks and chance stacks, and the count decides | Gaining, keeping and spending Armor Charge is a pillar of build crafting; most of its gains and spends are known steps of the loop, so the loop can say how many it surely holds |
 | D35 | Raid, activity and seasonal armor mods aren't supported: a DIM link's are kept but ignored, and no picker offers them | They act on an encounter's mechanics (a relic, a plate, an enemy race), which a loop of triggers doesn't hold, or no longer work at all; what a loadout had stays visible |
-| D36 | The player says when a weapon step breaks a shield and when an ability step spends its last charge | Shield Break Charge and the Kickstarts react to them; play decides both, and neither is counted |
+| D36 | The player says when a weapon step breaks a shield or lands precision kills, and when an ability step spends its last charge | Shield Break Charge, Spark of Brilliance and the Kickstarts react to them; play decides all three, and none is counted |
 | D37 | A reload is a step the player declares, and a rule can reload a weapon; no ammo is counted | Demolitionist's loop needs a reload and the perks that react to one; a magazine is time and ammo, which only play decides |
 | D38 | The web designer is the only host; the CLI and the loop graph are removed | Nobody used the CLI: the web app, recorded on every PR, is how Loopsmith is iterated on; what the CLI checked is a Core test |
 | D39 | Developer tools under `tools/` are hosts too: they call only `Orchestration` and the kernel, their own logic is a pure project of their own, and nothing ships them | The rule viewer draws every rule as one claim, the list of e2e scenarios to write; a tool is a host like the web app, so it keeps the same boundary, and Core keeps only what a player's host uses |
@@ -551,7 +551,7 @@ mods. The Core tests, which read only the manifest excerpt, know such a mod when
 then holds it); otherwise it is a hash no rule knows. Supporting them later means declarations for an encounter's mechanics
 (D3), a decision of its own.
 
-### D36 — The player says when a weapon step breaks a shield and when an ability step spends its last charge
+### D36 — The player says when a weapon step breaks a shield or lands precision kills, and when an ability step spends its last charge
 
 **Context.** Shield Break Charge gives Armor Charge when you break a combatant's shield with damage of its element, and
 the Kickstarts (Grenade, Melee, Utility) spend it when the ability's energy is "fully expended", as Bungie's text says
@@ -578,6 +578,18 @@ only where the loop says the last charge goes. The option is part of the step's 
 carry it, and the analysis and comparison tell `grenade:kill` from `grenade:kill:last`. An ability's energy is still not
 counted: a later decision may track it (a use empties it, each energy grant fills it), and the last charge would then
 follow from the loop instead of the player.
+**Precision kills (product owner, 2026-10).** Spark of Brilliance blinds the enemies around a blinded enemy on a
+**precision** kill (Compendium Arc#12); Loopsmith couldn't tell a precision kill from a body kill, so its rule fired as a
+chance on any kill. Where a hit lands is play too, so a weapon step takes a third option, **precision**
+(`energy:kill:precision`, "Festival Flight (💀 kill · 🎯 precision)"): its kills are precision kills, every one of them,
+and a kill trigger may need one (`precision: true`), matched on those kills only — the rule then fires for sure on a
+precision kill step and not on a body kill. A hit step takes it too, since the game has precision hits, though no
+trigger reads one yet. It goes with `:shield` (`energy:kill:shield:precision`): a shield takes no precision damage while
+it holds (Destiny's guides and wikis say so; no Bungie note does), but the step breaks it with its first hit and its
+killing blow can then be a headshot. Abilities and Supers take no precision option: no authored rule needs one (Golden
+Gun's precision hits would). The designer shows "🎯 precision" next to a weapon's hit and kill when an equipped rule needs
+a precision kill, beside "🛡 shield" when both apply. Hatchling's and Veteran's Wisdom's "a precision kill, or 3 kills
+within 3 s" stay a chance on fewer than 3 kills until a follow-up moves them (docs/backlog.md).
 
 ### D37 — A reload is a step the player declares, and a rule can reload a weapon; no ammo is counted
 

@@ -69,12 +69,11 @@ elements:
     description: "Precision kills on blinded enemies set off a blinding blast: Blind on enemies within 7.5 m."
     source: compendium/2026-10-13/Arc#12
     rules:
-      # Loopsmith doesn't tell precision kills from body kills, so the rule is marked chance.
+      # Only a precision kill sets it off: the player says which kill step is one (energy:kill:precision).
       - id: spark-of-brilliance-1
-        on: { kill: { via: any, targetHas: [blind] } }
+        on: { kill: { via: any, targetHas: [blind], precision: true } }
         then:
           - { debuffTarget: blind }
-        chance: true
         reason: "A precision kill on a blinded enemy blinds the enemies around it."
     passives: []
 

@@ -1018,18 +1018,23 @@ public static class LoopDesigning
         };
 
     /// <summary>
-    /// The option a step can carry in this build (ADRs D36), when one sets something off: "breaks a shield" on a weapon step
-    /// when an equipped rule reacts to a broken shield; "spend fully" (its last charge) on a grenade, melee or class ability step when the
-    /// build gives that ability more than one charge (Shinobu's Vow) and an equipped rule reacts to its energy fully
-    /// expended — with one charge, every use is the last. None for any other step.
+    /// The options a step can carry in this build (ADRs D36), each when it sets something off: "breaks a shield" on a weapon
+    /// step when an equipped rule reacts to a broken shield, and "precision" when one reacts to a precision kill (Spark of
+    /// Brilliance); "spend fully" (its last charge) on a grenade, melee or class ability step when the build gives that
+    /// ability more than one charge (Shinobu's Vow) and an equipped rule reacts to its energy fully expended — with one
+    /// charge, every use is the last. None for any other step.
     /// </summary>
-    public static Optional<StepOption> FindStepOption(ValidatedBuild build, PlayerAction action) =>
+    public static ImmutableArray<StepOption> ListStepOptions(ValidatedBuild build, PlayerAction action) =>
         action switch
         {
-            PlayerAction.FireWeapon when HasRule(build, rule => rule.On is Trigger.ShieldBroken) => Optional.Some(StepOption.BreaksShield),
-            PlayerAction.CastAbility cast when CanSpendLastCharge(build, cast.Kind.ToAbilityKind()) => Optional.Some(StepOption.LastCharge),
-            PlayerAction.UseClassAbility when CanSpendLastCharge(build, AbilityKind.ClassAbility) => Optional.Some(StepOption.LastCharge),
-            _ => Optional.None<StepOption>(),
+            PlayerAction.FireWeapon =>
+            [
+                .. HasRule(build, rule => rule.On is Trigger.ShieldBroken) ? [StepOption.BreaksShield] : Array.Empty<StepOption>(),
+                .. HasRule(build, rule => rule.On.NeedsPrecisionKill()) ? [StepOption.Precision] : Array.Empty<StepOption>(),
+            ],
+            PlayerAction.CastAbility cast when CanSpendLastCharge(build, cast.Kind.ToAbilityKind()) => [StepOption.LastCharge],
+            PlayerAction.UseClassAbility when CanSpendLastCharge(build, AbilityKind.ClassAbility) => [StepOption.LastCharge],
+            _ => [],
         };
 
     /// <summary>True when the build gives the ability more than one charge and an equipped rule reacts to its last one.</summary>
@@ -1040,13 +1045,15 @@ public static class LoopDesigning
         build.Equipped.Any(equipped => equipped.Element.Rules.Any(matches));
 
     /// <summary>
-    /// The same step with the option on or off (ADRs D36): a weapon step that breaks a shield or not, an ability step that
+    /// The same step with the option on or off (ADRs D36): a weapon step that breaks a shield or not, whose kills are precision
+    /// ones or not, an ability step that
     /// spends the last charge or a plain one. A step the option isn't for comes back unchanged.
     /// </summary>
     public static PlayerAction SetStepOption(PlayerAction action, StepOption option, bool isOn) =>
         (action, option) switch
         {
             (PlayerAction.FireWeapon fire, StepOption.BreaksShield) => fire with { Shield = isOn ? ShieldBreak.Breaks : ShieldBreak.None },
+            (PlayerAction.FireWeapon fire, StepOption.Precision) => fire with { Zone = isOn ? HitZone.Precision : HitZone.Body },
             (PlayerAction.CastAbility cast, StepOption.LastCharge) => cast with { Charge = isOn ? ChargeUse.Last : ChargeUse.Plain },
             (PlayerAction.UseClassAbility use, StepOption.LastCharge) => use with { Charge = isOn ? ChargeUse.Last : ChargeUse.Plain },
             _ => action,

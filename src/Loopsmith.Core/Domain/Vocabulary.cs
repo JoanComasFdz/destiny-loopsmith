@@ -70,10 +70,17 @@ public enum ChargeUse { Plain, Last }
 public enum ShieldBreak { None, Breaks }
 
 /// <summary>
-/// What the player can say about a step besides its hit and its count (ADRs D36): a weapon step <see cref="BreaksShield"/>,
-/// an ability step spends the <see cref="LastCharge"/>.
+/// Where a weapon's hits and kills land (ADRs D36): <see cref="Body"/>, anywhere; <see cref="Precision"/>, the enemy's weak
+/// spot (a headshot) — the player says it. As a kill trigger's need, <see cref="Body"/> is any kill and
+/// <see cref="Precision"/> only a precision kill (Spark of Brilliance).
 /// </summary>
-public enum StepOption { BreaksShield, LastCharge }
+public enum HitZone { Body, Precision }
+
+/// <summary>
+/// What the player can say about a step besides its hit and its count (ADRs D36): a weapon step <see cref="BreaksShield"/>
+/// or lands <see cref="Precision"/> hits and kills, an ability step spends the <see cref="LastCharge"/>.
+/// </summary>
+public enum StepOption { BreaksShield, LastCharge, Precision }
 
 /// <summary>
 /// How much damage one hit stands for (ADRs D34): <see cref="Blow"/>, one blow (a kill step's killing blow, a strike, a

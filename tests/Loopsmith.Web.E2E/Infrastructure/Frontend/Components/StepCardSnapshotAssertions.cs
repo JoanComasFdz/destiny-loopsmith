@@ -158,6 +158,15 @@ public static class StepCardSnapshotAssertions
         return that;
     }
 
+    /// <summary>The card has no line from <paramref name="fragment"/>.</summary>
+    public static AssertingThat<StepCardSnapshot> DoesNotFire(this AssertingThat<StepCardSnapshot> that, Fragment fragment)
+    {
+        var name = fragment.ToShownText();
+        var fired = FindSources(that.InstanceToAssert, name);
+        Assert.True(fired.IsEmpty, $"The card shows {name} with {Describe(fired.SelectMany(source => source.Lines))}, but no {name} line was expected.");
+        return that;
+    }
+
     /// <summary>No line of the card says "(chance)": everything it fired happens for sure.</summary>
     public static AssertingThat<StepCardSnapshot> HasNoChance(this AssertingThat<StepCardSnapshot> that)
     {

@@ -91,10 +91,10 @@ internal static class RuleFlowMapping
     private static ImmutableArray<TriggerPart> ListTriggerParts(GraphContext context, Trigger trigger) =>
         trigger.Match(
             abilityCast: cast => ListCastParts(context, trigger, cast.Kind),
-            killAny: kill => ListHitParts(context, kill.Via, "kill"),
-            killOfTier: kill => ListHitParts(context, kill.Via, $"kill ({kill.Tier.ToString().ToLowerInvariant()})"),
-            killDebuffed: kill => ListHitParts(context, kill.Via, "kill"),
-            killMultiple: kill => ListHitParts(context, kill.Via, $"{FormatCount(kill.AtLeast)}+ kills{DescribeWithin(kill.Within)}"),
+            killAny: kill => ListHitParts(context, kill.Via, DependencyMapping.DescribeKillLabel(kill.Needs, "kill")),
+            killOfTier: kill => ListHitParts(context, kill.Via, DependencyMapping.DescribeKillLabel(kill.Needs, $"kill ({kill.Tier.ToString().ToLowerInvariant()})")),
+            killDebuffed: kill => ListHitParts(context, kill.Via, DependencyMapping.DescribeKillLabel(kill.Needs, "kill")),
+            killMultiple: kill => ListHitParts(context, kill.Via, DependencyMapping.DescribeKillLabel(kill.Needs, $"{FormatCount(kill.AtLeast)}+ kills{DescribeWithin(kill.Within)}")),
             damage: damage => ListHitParts(context, damage.Via, DescribeHit(damage.Needs)),
             damageDebuffed: damage => ListHitParts(context, damage.Via, DescribeHit(damage.Needs)),
             damageMultiple: damage => ListHitParts(context, damage.Via, $"{FormatCount(damage.AtLeast)}+ hits{DescribeWithin(damage.Within)}"),
@@ -103,12 +103,12 @@ internal static class RuleFlowMapping
             stacksMaxed: _ => ListActionParts(context, trigger, name => $"{name} at max"),
             finisher: _ => ListActionParts(context, trigger, name => name),
             abilityCastAs: cast => ListCastParts(context, trigger, cast.Kind),
-            killFewer: kill => ListHitParts(context, kill.Via, $"fewer than {FormatCount(kill.FewerThan)} kills"),
+            killFewer: kill => ListHitParts(context, kill.Via, DependencyMapping.DescribeKillLabel(kill.Needs, $"fewer than {FormatCount(kill.FewerThan)} kills")),
             criticalHealth: _ => ListActionParts(context, trigger, name => name),
             shieldBroken: _ => ListActionParts(context, trigger, name => name),
             energyExpended: _ => ListActionParts(context, trigger, name => $"{name} (last charge)"),
             damageFewer: damage => ListHitParts(context, damage.Via, $"fewer than {FormatCount(damage.FewerThan)} hits"),
-            killBetween: kill => ListHitParts(context, kill.Via, $"{FormatCount(kill.AtLeast)}+ kills, fewer than {FormatCount(kill.FewerThan)}"),
+            killBetween: kill => ListHitParts(context, kill.Via, DependencyMapping.DescribeKillLabel(kill.Needs, $"{FormatCount(kill.AtLeast)}+ kills, fewer than {FormatCount(kill.FewerThan)}")),
             reload: _ => ListActionParts(context, trigger, name => name));
 
     /// <summary>A cast: "Grenade cast", "Super cast"; the class ability is the cast itself ("Class ability", "Air class ability").</summary>

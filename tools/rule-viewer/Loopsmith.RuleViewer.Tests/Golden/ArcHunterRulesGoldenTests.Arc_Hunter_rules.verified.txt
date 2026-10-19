@@ -189,7 +189,7 @@ flow-state#0 hunter-arc-aspects-flow-state-1: [Trigger] Any kill ➜ [Subclass a
 tempest-strike#0 hunter-arc-aspects-tempest-strike-1: [Trigger] Any kill ➜ [Subclass aspect] Tempest Strike (equipped) + [Debuff] Jolt (on the target) ➜ [Buff] Bolt Charge
 spark-of-amplitude#0 all-classes-arc-fragments-spark-of-amplitude-1: [Trigger] Any 2+ kills within 4s ➜ [Subclass fragment] Spark of Amplitude (equipped) + [Buff] Amplified (on you) ➜ [Pickup] Orb of Power
 spark-of-amplitude#1 all-classes-arc-fragments-spark-of-amplitude-2: [Trigger] Any fewer than 2 kills ➜ [Subclass fragment] Spark of Amplitude (equipped) + [Buff] Amplified (on you) ➜ [Pickup] Orb of Power (chance)
-spark-of-brilliance#0 all-classes-arc-fragments-spark-of-brilliance-1: [Trigger] Any kill ➜ [Subclass fragment] Spark of Brilliance (equipped) + [Debuff] Blind (on the target) ➜ [Debuff] Blind (chance)
+spark-of-brilliance#0 all-classes-arc-fragments-spark-of-brilliance-1: [Trigger] Any precision kill ➜ [Subclass fragment] Spark of Brilliance (equipped) + [Debuff] Blind (on the target) ➜ [Debuff] Blind
 spark-of-ions#0 all-classes-arc-fragments-spark-of-ions-1: [Trigger] Any kill ➜ [Subclass fragment] Spark of Ions (equipped) + [Debuff] Jolt (on the target) ➜ [Pickup] Ionic Trace
 dielectric#0 artifact-current-dielectric-1: [Trigger] Any kill ➜ [Artifact perk] Dielectric (equipped) + [Debuff] Jolt (on the target) ➜ [Buff] Bolt Charge
 luminopotent-4pc#0 armor-sets-luminopotent-luminopotent-4pc-1: [Trigger] Any kill ➜ [Armor set bonus] Shock and Clear (equipped) + [Debuff] Jolt (on the target) ➜ [Pickup] Ionic Trace
