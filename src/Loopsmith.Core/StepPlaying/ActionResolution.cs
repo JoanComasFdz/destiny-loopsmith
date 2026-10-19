@@ -86,23 +86,30 @@ public static class ActionResolution
 
     /// <summary>
     /// "Critical health" (<c>health:critical</c>) while you aren't at it, when an equipped rule reacts to it or to a hit
-    /// at it; "Hit at critical health" (<c>health:hit</c>) while you are, when an equipped rule reacts to it
+    /// at it, or an equipped rule or passive needs it on you (<c>has: critical-health</c>: Thunderous Retort's bonus);
+    /// "Hit at critical health" (<c>health:hit</c>) while you are, when an equipped rule reacts to it
     /// (<c>on: { hitAtCriticalHealth: {} }</c>). In a build where nothing reacts to them they set nothing off, so they
     /// aren't offered; ending critical health is an <c>end:</c> like any buff's.
     /// </summary>
     public static ImmutableArray<StateDeclaration> ListCriticalHealthDeclarations(ValidatedBuild build, GameState state)
     {
         var rules = build.Equipped.SelectMany(equipped => equipped.Element.Rules).ToImmutableArray();
+        var passives = build.Equipped.SelectMany(equipped => equipped.Element.Passives).ToImmutableArray();
         var onReach = rules.Any(rule => rule.On is Trigger.CriticalHealth);
         var onHit = rules.Any(rule => rule.On is Trigger.HitAtCriticalHealth);
+        var needed = rules.Any(rule => NeedsCriticalHealth(rule.When)) || passives.Any(passive => NeedsCriticalHealth(passive.When));
         var atCritical = state.HasBuff(DeclaredStatuses.CriticalHealth);
-        return (atCritical, onReach || onHit, onHit) switch
+        return (atCritical, onReach || onHit || needed, onHit) switch
         {
             (false, true, _) => [new StateDeclaration.CriticalHealth()],
             (true, _, true) => [new StateDeclaration.HitAtCriticalHealth()],
             _ => [],
         };
     }
+
+    /// <summary>A guard that holds only while critical health is on you (<c>has: critical-health</c>).</summary>
+    private static bool NeedsCriticalHealth(ImmutableArray<Condition> when) =>
+        when.Any(condition => condition is Condition.HasBuff { Status: var status } && status == DeclaredStatuses.CriticalHealth);
 
     /// <summary>The ability a step casts (an offensive ability, the class ability), under way for the whole step; none for any other step.</summary>
     public static Optional<AbilityKind> ReadCast(PlayerAction action) =>

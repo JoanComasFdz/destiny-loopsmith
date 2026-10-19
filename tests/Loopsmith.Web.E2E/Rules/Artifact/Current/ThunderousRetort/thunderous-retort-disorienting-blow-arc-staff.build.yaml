@@ -1,0 +1,7 @@
+# Thunderous Retort, with Arc Staff (the Super whose damage it raises) and Disorienting Blow, whose hit makes you Amplified.
+name: "E2E - Thunderous Retort with Disorienting Blow and Arc Staff"
+class: hunter
+subclass: arc
+super: arc-staff
+melee: disorienting-blow
+artifactPerks: [thunderous-retort]

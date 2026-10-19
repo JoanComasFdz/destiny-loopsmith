@@ -48,6 +48,10 @@ statuses:
   # health (`endsWith`). Bungie's manifest has it as a perk of its own (sandbox perk 111808813).
   - { id: spark-of-recharge, name: Spark of Recharge, kind: buff, affinity: arc, endsWith: critical-health }
 
+  # Iron Panoply's 4-piece buff: 7 s on reaching critical health, kills while it lasts refresh it
+  # (compendium/2026-10-19/Armor Perks#50). No stacks are stated.
+  - { id: iron-conviction, name: Iron Conviction, kind: buff, affinity: neutral, duration: 7s }
+
   # Base maximum 3: compendium/2026-10-09/Game Mechanics#94. Charged Up raises a build's cap to
   # 4|5|6 by copies (the `charged-up` mod's raiseMaxStacks passive; Clarity 2577472338 agrees). Its
   # decay (1 stack every 10 s while a passive mod is equipped, same row) is a fact of the game:

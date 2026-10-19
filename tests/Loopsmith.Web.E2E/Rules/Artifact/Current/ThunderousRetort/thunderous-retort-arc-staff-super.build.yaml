@@ -1,0 +1,6 @@
+# Thunderous Retort, with Arc Staff: the Super whose damage it raises at critical health.
+name: "E2E - Thunderous Retort with Arc Staff"
+class: hunter
+subclass: arc
+super: arc-staff
+artifactPerks: [thunderous-retort]
