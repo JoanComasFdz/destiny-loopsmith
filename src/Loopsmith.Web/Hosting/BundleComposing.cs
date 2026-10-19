@@ -29,6 +29,6 @@ public static class BundleComposing
         LoopDesigning.StartDesign(catalog, buildFile, "New loop").Map(NameFreshDesign);
 
     /// <summary>The name a new design starts with: "&lt;build name&gt; loop".</summary>
-    public static DesignSession NameFreshDesign(DesignSession session) =>
+    private static DesignSession NameFreshDesign(DesignSession session) =>
         LoopDesigning.RenameDesign(session, $"{session.Build.Build.Name} loop", session.Design.Author, session.Design.Description);
 }

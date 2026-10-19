@@ -197,7 +197,7 @@ public sealed partial class StatLoadingTests
     [Fact]
     public void Setting_the_stats_rewrites_only_the_build_files_stats_and_the_stat_checks_speak()
     {
-        var session = LoopDesigning.CreateSession(OpenHandWrittenBuild(), new LoopDesign("Test", Optional.None<string>(), Optional.None<string>(), Optional.None<CatalogVersion>(), ReadBuildFile(), []));
+        var session = LoopDesigning.CreateSession(OpenHandWrittenBuild(), new LoopDesign("Test", Optional.None<string>(), Optional.None<string>(), Optional.None<CatalogVersion>(), ToHandWrittenBuildFile(), []));
         var stats = new StatLine(ToKnownStat(47), Optional.None<StatValue>(), ToKnownStat(60), ToKnownStat(145), ToKnownStat(27), ToKnownStat(40));
 
         var changed = Assert.IsType<Result<DesignSession, string>.Ok>(LoopDesigning.SetStats(session, stats)).Value;
@@ -212,7 +212,7 @@ public sealed partial class StatLoadingTests
     [Fact]
     public void A_build_file_without_stats_gets_them_added_at_its_end()
     {
-        var session = LoopDesigning.CreateSession(OpenOwnersBuild(), new LoopDesign("Test", Optional.None<string>(), Optional.None<string>(), Optional.None<CatalogVersion>(), WriteOwnersBuildFile(), []));
+        var session = LoopDesigning.CreateSession(OpenOwnersBuild(), new LoopDesign("Test", Optional.None<string>(), Optional.None<string>(), Optional.None<CatalogVersion>(), ToOwnersBuildFile(), []));
 
         var changed = Assert.IsType<Result<DesignSession, string>.Ok>(LoopDesigning.SetStats(session, new StatLine(ToKnownStat(10), ToKnownStat(20), ToKnownStat(70), ToKnownStat(150), ToKnownStat(30), ToKnownStat(79)))).Value;
 
@@ -405,16 +405,16 @@ public sealed partial class StatLoadingTests
         """;
 
     private static ValidatedBuild OpenOwnersBuild() =>
-        OpenBuild(WriteOwnersBuildFile());
+        OpenBuild(ToOwnersBuildFile());
 
-    private static SourceText WriteOwnersBuildFile() =>
+    private static SourceText ToOwnersBuildFile() =>
         new("owners.build.yaml", OwnersBuildFile);
 
-    private static SourceText ReadBuildFile() =>
+    private static SourceText ToHandWrittenBuildFile() =>
         new("skip-grenade-hunter.build.yaml", HandWrittenBuildFile);
 
     private static ValidatedBuild OpenHandWrittenBuild() =>
-        OpenBuild(ReadBuildFile());
+        OpenBuild(ToHandWrittenBuildFile());
 
     private static ValidatedBuild OpenBuild(SourceText file) =>
         BuildFileParsing.ParseBuildFile(file, Catalog.Manifest)

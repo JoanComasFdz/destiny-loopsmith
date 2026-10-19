@@ -68,10 +68,10 @@ public sealed class BuildFileWritingTests
             [ItemHash.From(3008u)],
             Optional.None<ArtifactLoadout>());
 
-        var written = BuildFileWriting.WriteBuildFile(build, ["From a DIM link.\nSecond line."]);
+        var written = BuildFileWriting.WriteBuildFile(build, ["Started from scratch.\nSecond line."]);
         var read = ParseBuild(new SourceText("written.yaml", written));
 
-        Assert.StartsWith("# From a DIM link.\n# Second line.\n", written, StringComparison.Ordinal);
+        Assert.StartsWith("# Started from scratch.\n# Second line.\n", written, StringComparison.Ordinal);
         Assert.Contains("super: \"?\"\n", written, StringComparison.Ordinal);
         Assert.Contains("leftOut: {items: [2005, 2006], armorMods: [3007]}\n", written, StringComparison.Ordinal);
         Assert.Equal(build.Name, read.Name);

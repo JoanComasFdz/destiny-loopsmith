@@ -138,7 +138,7 @@ public sealed partial class StatLoadingTests
     [Fact]
     public void A_hand_written_build_wears_a_picked_piece_and_its_declared_set_bonuses_then_follow_the_pieces()
     {
-        var session = LoopDesigning.CreateSession(OpenHandWrittenBuild(), new LoopDesign("Test", Optional.None<string>(), Optional.None<string>(), Optional.None<CatalogVersion>(), ReadBuildFile(), []));
+        var session = LoopDesigning.CreateSession(OpenHandWrittenBuild(), new LoopDesign("Test", Optional.None<string>(), Optional.None<string>(), Optional.None<CatalogVersion>(), ToHandWrittenBuildFile(), []));
         var profile = ReadProfile([.. OwnShare(tuningSockets: 0)]);
 
         var options = LoopDesigning.ListArmorOptions(session.Build, profile, ArmorSlot.Helmet);
@@ -166,6 +166,6 @@ public sealed partial class StatLoadingTests
             Optional.None<string>(), Optional.Some(tier), Optional.None<string>(), Optional.None<string>(), Optional.None<string>()));
 
     private static DesignSession OpenOwnersSession(RuleCatalog catalog) =>
-        LoopDesigning.StartDesign(catalog, WriteOwnersBuildFile(), "Owner's loop")
+        LoopDesigning.StartDesign(catalog, ToOwnersBuildFile(), "Owner's loop")
             .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
 }

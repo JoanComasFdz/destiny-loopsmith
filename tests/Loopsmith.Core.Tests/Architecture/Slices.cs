@@ -52,7 +52,7 @@ internal static class Slices
     public static readonly ImmutableArray<string> YamlParsers = [RuleParsing, BuildParsing, LoopFiles, CompendiumReading];
 
     /// <summary>
-    /// The only slice that emits YAML — loop files and the build files they embed (a build from a DIM link) — so it may
+    /// The only slice that emits YAML — loop files and the build files they embed (a build started from scratch or edited in the designer) — so it may
     /// build the text in memory with a <c>StringWriter</c>.
     /// </summary>
     public static readonly ImmutableArray<string> YamlWriters = [LoopFiles];

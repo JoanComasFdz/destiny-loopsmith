@@ -126,7 +126,7 @@ public sealed partial class StatLoadingTests
     {
         var owners = OpenOwnersSession(Catalog with { Manifest = Catalog.Manifest.AddExcerpt(OtherWeapons) });
         var crisis = owners.Build.Build.Weapons.IndexOf(owners.Build.Build.Weapons.Single(weapon => weapon.Hash == Optional.Some(Crisis)));
-        var handWritten = LoopDesigning.CreateSession(OpenHandWrittenBuild(), new LoopDesign("Test", Optional.None<string>(), Optional.None<string>(), Optional.None<CatalogVersion>(), ReadBuildFile(), []));
+        var handWritten = LoopDesigning.CreateSession(OpenHandWrittenBuild(), new LoopDesign("Test", Optional.None<string>(), Optional.None<string>(), Optional.None<CatalogVersion>(), ToHandWrittenBuildFile(), []));
         var profile = ReadProfile([.. OwnShareWeapons(), new FakeItem(ExoticRifle, "4003", "vault", [], null, DamageType: 2)]);
 
         var refused = Assert.IsType<Result<DesignSession, string>.Error>(LoopDesigning.PickWeapon(owners, profile, new WeaponTarget.InPlaceOf(crisis), ItemInstanceId.From("4003")));
@@ -135,7 +135,7 @@ public sealed partial class StatLoadingTests
         Assert.Equal("A build wears one exotic weapon: swap Thunderlord for a legendary weapon first.", refused.Failure);
         Assert.Equal(handWritten.Build.Build.Weapons.Length + 1, added.Build.Build.Weapons.Length);
         Assert.Equal((WeaponSlot.Power, "Thunderlord", true), (added.Build.Build.Weapons[^1].Slot, added.Build.Build.Weapons[^1].Name, added.Build.Build.Weapons[^1].Catalyst));
-        Assert.StartsWith(ReadBuildFile().Text.Split("weapons:")[0], added.Design.Build.Text, StringComparison.Ordinal);   // the rest of the file as it was
+        Assert.StartsWith(ToHandWrittenBuildFile().Text.Split("weapons:")[0], added.Design.Build.Text, StringComparison.Ordinal);   // the rest of the file as it was
     }
 
     [Fact]

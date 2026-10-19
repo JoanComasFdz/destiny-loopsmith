@@ -17,7 +17,7 @@ public sealed partial class TestItemHashesTests
         {
             var text = File.ReadAllText(RepoFiles.ToPath("tools/manifest/test-items.yaml"));   // impure
 
-            return [.. HashPattern().Matches(text).Select(match => uint.Parse(match.Groups[1].Value))];
+            return [.. HashPattern().Matches(text).Select(match => uint.Parse(match.Groups[1].Value))];   // pure
         }
     }
 
