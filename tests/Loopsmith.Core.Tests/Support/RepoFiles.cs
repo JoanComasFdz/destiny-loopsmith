@@ -6,7 +6,7 @@ using Loopsmith.Core.SourceFetching;
 
 namespace Loopsmith.Core.Tests.Support;
 
-/// <summary>Locates the repository (rules/, builds/) from the test binaries and loads real builds.</summary>
+/// <summary>Locates the repository (rules/, the e2e fixtures) from the test binaries and loads its build files.</summary>
 public static class RepoFiles
 {
     public static readonly string Root = FindRoot();

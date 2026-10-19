@@ -9,7 +9,7 @@ namespace Loopsmith.Core.Tests.BuildParsing;
 
 public sealed class BuildFileParsingTests
 {
-    private const string BuildPath = "builds/skip-grenade-hunter/build.yaml";
+    private const string BuildPath = "build.yaml";
 
     private const string SpecPath = "docs/rule-format.md";
 
