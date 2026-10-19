@@ -97,7 +97,7 @@ rule catalog and travels as a file or a share link. Its analysis follows that or
 fresh spawn and then repeated from where it ended, it says whether the order **repeats** or where it
 **breaks** (a step that can't happen: nothing to pick up, an empty weapon slot, a declared state
 that doesn't hold), and for each step what it needs and which earlier step provided it, what it sets
-off and what is wasted there. `Orchestration.LoopDesigning` is the API behind both hosts. **Consequence.**
+off and what is wasted there. `Orchestration.LoopDesigning` is the API behind the host. **Consequence.**
 The `LoopFiles` slice; the analysis reports, step by step, what each step needs and sets off. A loop designed against another catalog version replays with an Info note
 (D15). Format and analysis: [docs/loop-format.md](loop-format.md).
 
