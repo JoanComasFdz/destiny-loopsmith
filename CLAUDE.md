@@ -137,7 +137,7 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
 - `.github/workflows/` — `ci.yml` (build + test on every PR that changes what `dotnet` reads, and every
   push to `main`; on a PR that changes the site it also publishes the web app and hands it to `pr-preview.yml`, so a
   PR is built once), `pages.yml`, `pr-preview.yml` (deploys that site; removes it when the PR closes), `e2e-videos.yml` (records nothing: the session
-  records the PR's added or changed e2e scenarios and pushes their GIFs and MP4s to a throwaway `e2e-gifs/pr-<n>-<sha>` branch
+  records the PR's added or changed e2e scenarios and pushes their GIFs, MP4s and rules' flow PNGs to a throwaway `e2e-gifs/pr-<n>-<sha>` branch
   with `tools/e2e/push-gifs.sh`; the workflow uploads them to their pre-release (a rule scenario's, under
   `tests/Loopsmith.Web.E2E/Rules/<…>/`, to its rule file's `rules-<…>-resources`, created on its first upload and keeping
   each rule's latest recording; any other to `prs-resources`), posts them on the PR as

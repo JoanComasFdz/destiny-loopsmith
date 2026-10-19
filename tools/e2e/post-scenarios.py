@@ -358,7 +358,7 @@ def ensure_release(args, release, gif):
     if args.dry_run:
         return
     rule_file = "/".join(to_kebab_case(folder) for folder in gif.split("/")[1:-1])
-    notes = (f"The latest e2e recordings (GIFs and MP4s) of the rules of rules/{rule_file}.yaml, "
+    notes = (f"The latest e2e recordings (GIFs and MP4s) and flows (PNGs) of the rules of rules/{rule_file}.yaml, "
              "kept by the E2E videos workflow (docs/hosting.md, \"E2E videos on pull requests\"). Created by it: don't edit.")
     made = run_gh(["release", "create", release, "--prerelease", "--title", release, "--notes", notes, "--repo", args.repo])
     if made.returncode != 0 and run_gh(["release", "view", release, "--repo", args.repo, "--json", "tagName"]).returncode != 0:

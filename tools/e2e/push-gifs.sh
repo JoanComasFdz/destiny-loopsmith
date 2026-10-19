@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Pushes the GIFs and MP4s record.sh made to GitHub, for .github/workflows/e2e-videos.yml to post them on the pull request.
+# Pushes the GIFs, MP4s and flow PNGs record.sh made to GitHub, for .github/workflows/e2e-videos.yml to post them on the pull request.
 #   tools/e2e/push-gifs.sh [<PR number>] [--out <dir>] [--message <what changed>] [--dry-run]
 # A session can't upload a file to GitHub, but it can push: this pushes e2e-gifs/pr-<n>-<short sha>, the branch's head
 # (already pushed) plus one commit that adds <out>/scenarios.json and its GIFs, MP4s and rules' flow PNGs under e2e-gifs/ (and, with
