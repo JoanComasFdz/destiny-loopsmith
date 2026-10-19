@@ -18,12 +18,6 @@ public sealed record ExplanationItem(
 /// <summary>A trigger ("Kill Jolted target") and everything in the build it sets off.</summary>
 public sealed record ExplanationGroup(string Heading, Affinity Affinity, ImmutableArray<ExplanationItem> Items);
 
-public enum ExplanationStyle
-{
-    Note,   // one line per trigger, like a build note: "Trigger -> outcome [source] + outcome [source]"
-    Tree,   // one line per bullet, sources aligned
-}
-
 /// <summary>The static view of a build: what each trigger sets off, without simulating.</summary>
 public static class BuildExplaining
 {
@@ -107,11 +101,12 @@ public static class BuildExplaining
             .ToImmutableArray();
     }
 
-    /// <summary>A build's explanation as a build note or an aligned tree; every keyword it names in its affinity's tone.</summary>
-    public static ImmutableArray<StyledLine> RenderExplanation(KeywordGlossary glossary, ImmutableArray<ExplanationGroup> groups, ExplanationStyle style) =>
-        style == ExplanationStyle.Note
-            ? groups.Select(group => RenderNoteLine(glossary, group)).ToImmutableArray()
-            : groups.SelectMany(group => RenderTree(glossary, group)).ToImmutableArray();
+    /// <summary>
+    /// A build's explanation as a tree: each trigger, then one line per outcome with its source, the sources aligned; every
+    /// keyword it names in its affinity's tone.
+    /// </summary>
+    public static ImmutableArray<StyledLine> RenderExplanation(KeywordGlossary glossary, ImmutableArray<ExplanationGroup> groups) =>
+        [.. groups.SelectMany(group => RenderTree(glossary, group))];
 
     /// <summary>DIM-like header: what is equipped, plus validation warnings.</summary>
     public static ImmutableArray<StyledLine> RenderBuildSummary(ValidatedBuild build)
@@ -166,21 +161,6 @@ public static class BuildExplaining
             .Select(equipped => $"doesn't stack with {equipped.Element.Name}");
         var parts = guards.Concat(partners).ToImmutableArray();
         return parts.IsEmpty ? Optional.None<string>() : Optional.Some(string.Join("; ", parts));
-    }
-
-    private static StyledLine RenderNoteLine(KeywordGlossary glossary, ExplanationGroup group)
-    {
-        var bullets = group.Items.SelectMany((item, index) => (ImmutableArray<StyledSpan>)
-            [
-                .. index > 0 ? [" + ".ToSpan(Tone.Muted)] : ImmutableArray<StyledSpan>.Empty,
-                .. SplitKeywords(glossary, item.Outcomes, Tone.Plain),
-                .. item.Condition.Match(c => SplitKeywords(glossary, $" ({c.Value})", Tone.Muted), _ => ImmutableArray<StyledSpan>.Empty),
-                " [".ToSpan(Tone.Muted),
-                item.SourceName.ToSpan(item.Affinity.ToTone()),
-                "]".ToSpan(Tone.Muted),
-                .. item.Likelihood == Likelihood.Chance ? [" (chance)".ToSpan(Tone.Muted)] : ImmutableArray<StyledSpan>.Empty,
-            ]);
-        return new StyledLine(0, [group.Heading.ToSpan(Tone.Strong), " -> ".ToSpan(Tone.Muted), .. bullets]);
     }
 
     private static IEnumerable<StyledLine> RenderTree(KeywordGlossary glossary, ExplanationGroup group)

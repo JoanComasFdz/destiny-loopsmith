@@ -162,7 +162,7 @@ public sealed class MechaneersTricksleevesTests : BaseE2E
           # Rule hunter-exotic-armor-mechaneers-tricksleeves-1: Always ➜ Mechaneer's Tricksleeves equipped ➜ Weapon stats (airborne-effectiveness +50, handling +100, reload-speed +100)
           Given the build "mechaneers-tricksleeves-buzzard" is imported, with no steps
           When I tap "What this build does" above the loop
-          Then its "Always" line shows "Sidearms: +50 Airborne Effectiveness, +100 Handling, +100 Reload Speed [Mechaneer's Tricksleeves]"
+          Then under its "Always" heading it shows "Sidearms: +50 Airborne Effectiveness, +100 Handling, +100 Reload Speed [Mechaneer's Tricksleeves]"
         """)]
     public async Task MechaneersTricksleevesGivesSidearms50AirborneEffectiveness100HandlingAnd100ReloadSpeed(Screen screen)
     {

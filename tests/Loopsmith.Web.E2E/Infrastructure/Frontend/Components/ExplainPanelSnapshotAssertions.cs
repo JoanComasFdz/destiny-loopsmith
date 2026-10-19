@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using JoanComasFdz.AssertingThat;
 
 namespace Loopsmith.Web.E2E.Infrastructure.Frontend.Components;
@@ -5,27 +6,50 @@ namespace Loopsmith.Web.E2E.Infrastructure.Frontend.Components;
 /// <summary>What a test checks on the "What this build does" panel.</summary>
 public static class ExplainPanelSnapshotAssertions
 {
-    private const string Arrow = " -> ";
-
     /// <summary>
-    /// The panel's <paramref name="trigger"/> line ("Always") shows <paramref name="effect"/> among what it sets off, each
-    /// effect with its source in brackets ("Sidearms: +50 Airborne Effectiveness … [Mechaneer's Tricksleeves]").
+    /// The panel's <paramref name="trigger"/> heading ("Always") is followed by <paramref name="row"/>, exactly as shown, among
+    /// its rows ("├ Sidearms: … Reload Speed  [Mechaneer's Tricksleeves]", the branch and the alignment included).
     /// </summary>
-    public static AssertingThat<ExplainPanelSnapshot> Shows(this AssertingThat<ExplainPanelSnapshot> that, string trigger, string effect)
+    public static AssertingThat<ExplainPanelSnapshot> HasRowUnder(this AssertingThat<ExplainPanelSnapshot> that, string trigger, string row)
     {
-        var lines = that.InstanceToAssert.Lines.Where(line => line.StartsWith(trigger + Arrow, StringComparison.Ordinal)).ToArray();
-        Assert.True(lines.Length == 1, $"The panel shows the lines {Describe(that.InstanceToAssert.Lines)}, but one \"{trigger}\" line was expected.");
-        var effects = ReadEffects(lines[0][(trigger.Length + Arrow.Length)..]);
-        Assert.True(effects.Contains(effect), $"The \"{trigger}\" line shows {Describe(effects)}, but \"{effect}\" was expected among them.");
+        var rows = ReadRows(that.InstanceToAssert, trigger);
+        Assert.True(rows.Contains(row), $"Under \"{trigger}\" the panel shows {Describe(rows)}, but \"{row}\" was expected among them.");
         return that;
     }
 
-    /// <summary>"A [x] + +1 B [y]" → "A [x]", "+1 B [y]": a line's effects, each ending with its source.</summary>
-    private static string[] ReadEffects(string effects)
+    /// <summary>
+    /// The panel's <paramref name="trigger"/> heading ("Always") is followed by a row reading <paramref name="effect"/> with its
+    /// source ("Sidearms: … Reload Speed [Mechaneer's Tricksleeves]"), the row's branch and alignment left out.
+    /// </summary>
+    public static AssertingThat<ExplainPanelSnapshot> Shows(this AssertingThat<ExplainPanelSnapshot> that, string trigger, string effect)
     {
-        var parts = effects.Split("] + ");
-        return [.. parts.Select((effect, index) => index < parts.Length - 1 ? effect + "]" : effect)];
+        var effects = ReadRows(that.InstanceToAssert, trigger).Select(ReadEffect).ToArray();
+        Assert.True(effects.Contains(effect), $"Under \"{trigger}\" the panel shows {Describe(effects)}, but \"{effect}\" was expected among them.");
+        return that;
     }
+
+    /// <summary>The panel offers no choice of how it is laid out ("Note", "Tree"): it is always a tree.</summary>
+    public static AssertingThat<ExplainPanelSnapshot> OffersNoStyleChoice(this AssertingThat<ExplainPanelSnapshot> that)
+    {
+        Assert.True(that.InstanceToAssert.Choices.IsEmpty, $"The panel offers {Describe(that.InstanceToAssert.Choices)}, but no choice was expected.");
+        return that;
+    }
+
+    // The rows under a trigger's heading: the lines after it that start with a branch ("├ ", "└ "), until the next heading.
+    private static string[] ReadRows(ExplainPanelSnapshot shown, string trigger)
+    {
+        var lines = shown.Lines;
+        var heading = lines.IndexOf(trigger);
+        Assert.True(heading >= 0, $"The panel shows the lines {Describe(lines)}, but a \"{trigger}\" heading was expected.");
+        return [.. lines.Skip(heading + 1).TakeWhile(IsRow)];
+    }
+
+    private static bool IsRow(string line) =>
+        line.StartsWith("├ ", StringComparison.Ordinal) || line.StartsWith("└ ", StringComparison.Ordinal);
+
+    // "└ Sidearms: …  [Mechaneer's Tricksleeves]" → "Sidearms: … [Mechaneer's Tricksleeves]".
+    private static string ReadEffect(string row) =>
+        Regex.Replace(row[2..], " {2,}", " ");
 
     private static string Describe(IEnumerable<string> texts)
     {

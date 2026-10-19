@@ -1204,9 +1204,9 @@ public static class LoopDesigning
     public static ImmutableArray<int> ListWeaponsGiving(ValidatedBuild build, StatusId buff) =>
         BuildValidation.ListWeaponsGiving(build.Catalog, build.Build, buff);
 
-    /// <summary>The static view of a build: every trigger and what it sets off, as a build note or an aligned tree.</summary>
-    public static ImmutableArray<StyledLine> ExplainBuild(ValidatedBuild build, ExplanationStyle style) =>
-        BuildExplaining.RenderExplanation(build.Catalog.Glossary, BuildExplaining.ExplainBuild(build), style);
+    /// <summary>The static view of a build: every trigger and what it sets off, as a tree, the sources aligned.</summary>
+    public static ImmutableArray<StyledLine> ExplainBuild(ValidatedBuild build) =>
+        BuildExplaining.RenderExplanation(build.Catalog.Glossary, BuildExplaining.ExplainBuild(build));
 
     /// <summary>The report as styled lines: the order, the verdict, each step's needs, what it sets off, what is wasted.</summary>
     public static ImmutableArray<StyledLine> RenderLoopReport(LoopReport report) =>
