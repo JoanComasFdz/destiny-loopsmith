@@ -52,6 +52,10 @@ public static class StepCardSnapshotAssertions
     public static AssertingThat<StepCardSnapshot> Fires(this AssertingThat<StepCardSnapshot> that, Aspect aspect, params string[] lines) =>
         that.FiresFrom(aspect.ToShownText(), lines);
 
+    /// <summary><paramref name="fragment"/> fired exactly <paramref name="lines"/>, in that order, each with its "(chance)" as shown.</summary>
+    public static AssertingThat<StepCardSnapshot> Fires(this AssertingThat<StepCardSnapshot> that, Fragment fragment, params string[] lines) =>
+        that.FiresFrom(fragment.ToShownText(), lines);
+
     /// <summary>The card's damage resistance row <paramref name="row"/> ("All damage") reads <paramref name="pve"/> PvE and <paramref name="pvp"/> PvP.</summary>
     public static AssertingThat<StepCardSnapshot> HasResistance(this AssertingThat<StepCardSnapshot> that, string row, string pve, string pvp)
     {

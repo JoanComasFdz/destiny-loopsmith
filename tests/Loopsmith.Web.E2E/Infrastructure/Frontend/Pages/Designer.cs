@@ -25,6 +25,12 @@ public sealed class Designer(IPage page)
     /// <summary>The Armor box: one piece per armor slot.</summary>
     public ArmorBox Armor { get; } = new(page);
 
+    /// <summary>The subclass editor, opened by ⋯ on the Subclass box.</summary>
+    public SubclassEditor SubclassEditor { get; } = new(page);
+
+    /// <summary>The Validation list under the build: its warnings and notes.</summary>
+    public ValidationList Validation { get; } = new(page);
+
     /// <summary>The trigger panel: the step HUD and the picked one's buttons (Components/TriggerPalette.razor).</summary>
     public TriggerPalette TriggerPalette { get; } = new(page);
 

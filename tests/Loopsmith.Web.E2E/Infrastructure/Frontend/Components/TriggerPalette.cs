@@ -16,6 +16,10 @@ public sealed class TriggerPalette(IPage page)
 
     private ILocator Row => Panel.Locator("[data-testid=trig-actions]");
 
+    private ILocator DisabledNote => Panel.Locator("[data-testid=palette-disabled]");
+
+    private ILocator Finisher => Panel.Locator("[data-action=trigger-ability][data-hud-slot=finisher]");
+
     private ILocator RowTitle => Row.Locator("[data-testid=trig-actions-title]");
 
     private ILocator CountedButtons => Row.Locator("[data-testid=trigger-buttons]");
@@ -61,6 +65,17 @@ public sealed class TriggerPalette(IPage page)
     /// with one action (the air move), the loop gets a step.
     /// </summary>
     public Task ClickSecondaryAsync(SecondaryUse use) => OnScreen.PressAsync(Panel, SecondaryButton(use));
+
+    /// <summary>Clicks the finisher's square in the step HUD: one tap does it, so the loop gets a step.</summary>
+    public Task ClickFinisherAsync() => OnScreen.PressAsync(Panel, Finisher);
+
+    /// <summary>Whether the whole panel is greyed out, and the line that says why (empty when it isn't).</summary>
+    public Task<TriggerPanelStateSnapshot> ReadStateAsync() => OnScreen.ReadAsync(Panel, ReadStateShownAsync);
+
+    private async Task<TriggerPanelStateSnapshot> ReadStateShownAsync() =>
+        new(
+            await Panel.GetAttributeAsync("aria-disabled") == "true",
+            await DisabledNote.CountAsync() > 0 ? (await DisabledNote.InnerTextAsync()).Trim() : "");
 
     /// <summary>Selects the "×" enemy count whose text is <paramref name="shown"/> ("3 in 3 s · One for All").</summary>
     public Task SelectTargetCountAsync(string shown) =>
@@ -141,6 +156,9 @@ public sealed record TriggerRowLayout(ScreenBox Row, double ContentRight, Immuta
 
 /// <summary>A button of the row and its box.</summary>
 public sealed record TriggerButtonBox(string Caption, ScreenBox Box);
+
+/// <summary>Whether the trigger panel is greyed out (nothing in it can be tapped), and the line that says why.</summary>
+public sealed record TriggerPanelStateSnapshot(bool IsGreyedOut, string Note);
 
 /// <summary>A box on the screen, in CSS pixels from the window's top left.</summary>
 public sealed record ScreenBox(double Left, double Top, double Right, double Bottom);

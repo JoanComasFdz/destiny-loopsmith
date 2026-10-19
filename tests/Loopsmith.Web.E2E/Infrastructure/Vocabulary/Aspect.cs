@@ -18,6 +18,8 @@ public partial record Aspect
 /// <summary>What the UI shows for each <see cref="Aspect"/>: the only place those strings live.</summary>
 public static class AspectShowing
 {
+    private static readonly Aspect[] Listed = [new Aspect.LethalCurrent(), new Aspect.Ascension(), new Aspect.TempestStrike(), new Aspect.FlowState()];
+
     /// <summary>What the UI shows for <paramref name="value"/>.</summary>
     public static string ToShownText(this Aspect value) =>
         value.Match(
@@ -26,4 +28,8 @@ public static class AspectShowing
             tempestStrike => "Tempest Strike",
             flowState => "Flow State",
             unlisted => unlisted.Shown);
+
+    /// <summary>The case the UI's <paramref name="shown"/> text names, or <see cref="Aspect.Unlisted"/>.</summary>
+    public static Aspect ReadAspect(string shown) =>
+        Listed.FirstOrDefault(value => value.ToShownText() == shown) ?? new Aspect.Unlisted(shown);
 }

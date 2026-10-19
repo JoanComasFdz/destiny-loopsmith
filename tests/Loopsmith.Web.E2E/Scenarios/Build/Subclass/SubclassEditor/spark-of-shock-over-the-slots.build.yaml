@@ -1,0 +1,5 @@
+# Spark of Shock with no aspect: one fragment more than the aspects open.
+name: "E2E - Spark of Shock over the slots"
+class: hunter
+subclass: arc
+fragments: [spark-of-shock]

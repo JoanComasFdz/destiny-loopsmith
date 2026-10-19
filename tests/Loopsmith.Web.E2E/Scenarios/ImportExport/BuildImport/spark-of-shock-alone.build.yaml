@@ -1,0 +1,5 @@
+# Spark of Shock and nothing else: no aspect opens a fragment slot.
+name: "E2E - Spark of Shock alone"
+class: hunter
+subclass: arc
+fragments: [spark-of-shock]

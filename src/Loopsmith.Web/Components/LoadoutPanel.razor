@@ -952,7 +952,7 @@
         }
     };
 
-    /// <summary><paramref name="gameText"/>: a subclass plug, whose tooltip is Bungie's description.</summary>
+    /// <summary><paramref name="gameText"/>: a subclass plug, whose tooltip is Bungie's description (its square is <c>subclass-&lt;kind&gt;</c>: an aspect, a fragment).</summary>
     private RenderFragment RenderTile(IconTile tile, string kind, bool tappable = true, bool gameText = false) =>
         RenderMarkedTile(tile, kind, LoadoutShaping.NoMarks, tappable, gameText);
 
@@ -960,10 +960,11 @@
     private RenderFragment RenderMarkedTile(IconTile tile, string kind, TileMarks marks, bool tappable = true, bool gameText = false) => __builder =>
     {
         var tooltip = gameText ? LoadoutShaping.DescribePlugTooltip(tile) : LoadoutShaping.AddMarks(DescribeTooltip(tile), marks);
+        var testId = gameText ? $"subclass-{kind}" : null;
         @if (tappable && tile.Details is Optional<ItemDetails>.Some tileDetails)
         {
             <button type="button" class="icon-tile tappable @kind @ToneStyling.ToAffinityClass(tile.Affinity) @DescribeTier(tile) @(tile.InRules ? "" : "out") @(tile.Ignored ? "ignored" : "") @(tile.Enhanced ? "enhanced" : "") @LoadoutShaping.ToMasterworkClass(marks)"
-                    data-tier="@LoadoutShaping.ToTierText(marks)" data-masterwork="@LoadoutShaping.ToMasterworkText(marks)"
+                    data-tier="@LoadoutShaping.ToTierText(marks)" data-masterwork="@LoadoutShaping.ToMasterworkText(marks)" data-testid="@testId"
                     title="@tooltip" aria-label="@tile.Name" aria-haspopup="dialog" @onclick="() => OpenDetails(tileDetails.Value)">
                 @RenderTileFace(tile)
                 <TileOverlays Marks="marks" />
@@ -980,7 +981,7 @@
         else
         {
             <span class="icon-tile @kind @ToneStyling.ToAffinityClass(tile.Affinity) @DescribeTier(tile) @(tile.InRules ? "" : "out") @(tile.Ignored ? "ignored" : "") @(tile.Enhanced ? "enhanced" : "") @LoadoutShaping.ToMasterworkClass(marks)"
-                  data-tier="@LoadoutShaping.ToTierText(marks)" data-masterwork="@LoadoutShaping.ToMasterworkText(marks)"
+                  data-tier="@LoadoutShaping.ToTierText(marks)" data-masterwork="@LoadoutShaping.ToMasterworkText(marks)" data-testid="@testId"
                   title="@tooltip" aria-label="@tile.Name">
                 @RenderTileFace(tile)
                 <TileOverlays Marks="marks" />
