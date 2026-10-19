@@ -26,7 +26,7 @@ internal static class RuleBodyParsing
     private static readonly ImmutableArray<string> DamageKeys = ["via", "targetHas", "atLeast", "fewerThan", "within", "sustained"];
 
     private static readonly ImmutableArray<string> TriggerNames =
-        ["abilityCast", "kill", "damage", "pickUp", "buffGained", "stacksMaxed", "finisher", "criticalHealth", "shieldBroken", "energyExpended", "reload", "hitAtCriticalHealth", "slideOverAmmo"];
+        ["abilityCast", "kill", "damage", "pickUp", "buffGained", "stacksMaxed", "finisher", "criticalHealth", "shieldBroken", "energyExpended", "reload", "hitAtCriticalHealth", "ammoPickedUp"];
 
     private static readonly ImmutableArray<string> ConditionNames = ["has", "lacks", "targetHas", "atMax", "belowMax", "during", "holds"];
 
@@ -86,7 +86,7 @@ internal static class RuleBodyParsing
             "energyExpended" => ReadEnergyExpendedTrigger(entry.Value),
             "reload" => ReadReloadTrigger(scope, entry.Value),
             "hitAtCriticalHealth" => ReadHitAtCriticalHealthTrigger(entry.Value),
-            "slideOverAmmo" => ReadSlideOverAmmoTrigger(scope, entry.Value),
+            "ammoPickedUp" => ReadAmmoPickedUpTrigger(entry.Value),
             _ => entry.Value.FailAt<Trigger>(DescribeUnknown("trigger", entry.Key, TriggerNames)),
         });
 
@@ -135,19 +135,24 @@ internal static class RuleBodyParsing
                 : map.FailAtKey<Trigger>("via", $"reload's via names a weapon: {WeaponSources}")));
 
     /// <summary>
-    /// <c>{ slideOverAmmo: {} }</c> or <c>{ slideOverAmmo: { via: weapon:arc } }</c>: the player slides over an ammo brick
-    /// with that weapon in hand (<c>kinetic:ammo</c>; Spark of Momentum). <c>via</c> names a weapon (any, by default).
+    /// <c>{ ammoPickedUp: {} }</c>, <c>{ ammoPickedUp: { brick: heavy } }</c>, <c>{ ammoPickedUp: { by: slide } }</c>: an ammo
+    /// brick the player picks up (<c>ammo:heavy</c>, ADRs D43) — any, or only that one (<c>special</c>, <c>heavy</c>); with
+    /// <c>by: slide</c> only one they slide over (<c>ammo:heavy:slide</c>; Spark of Momentum).
     /// </summary>
-    private static Result<Trigger, Errors> ReadSlideOverAmmoTrigger(ReferenceScope scope, YamlValue value) =>
+    private static Result<Trigger, Errors> ReadAmmoPickedUpTrigger(YamlValue value) =>
         value.ToMap().Bind(map => Combine(
-                map.CheckKeys(["via"]),
-                map.ReadOrDefault("via", scope.ReadDamageSource, new DamageSource.AnySource()),
-                (_, via) => via)
-            .Bind(via => IsWeaponSource(via) || via is DamageSource.AnySource
-                ? Succeed<Trigger>(new Trigger.SlideOverAmmo(via))
-                : map.FailAtKey<Trigger>("via", $"slideOverAmmo's via names a weapon: {WeaponSources}")));
+            map.CheckKeys(["brick", "by"]),
+            map.ReadOptional("brick", ReadVocabularyWord<AmmoBrick>),
+            map.ReadOrDefault("by", ReadSlide, BrickNeed.AnyPickup),
+            (_, brick, by) => (Trigger)new Trigger.PickUpAmmo(brick, by)));
 
-    /// <summary>The weapon sources a reload or a slide over an ammo brick names: only a weapon reloads, or is in hand.</summary>
+    /// <summary><c>by: slide</c>, the one way of picking a brick up a trigger tells apart.</summary>
+    private static Result<BrickNeed, Errors> ReadSlide(YamlValue value) =>
+        value.ParseWith<BrickNeed>(text => text == "slide"
+            ? new Result<BrickNeed, string>.Ok(BrickNeed.Slide)
+            : new Result<BrickNeed, string>.Error($"'{text}' is not slide: ammoPickedUp's by names how the brick is picked up, and only a slide is told apart"));
+
+    /// <summary>The weapon sources a reload names: only a weapon reloads.</summary>
     private const string WeaponSources = "any, weapon, weapon:<type>, weapon:<ammo>, weapon:<ammo>:<type>, weapon:harmonic, slot:<slot>, weapon:this or weapon:this:<type>";
 
     private static bool IsWeaponSource(DamageSource source) =>

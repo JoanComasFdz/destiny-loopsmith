@@ -111,7 +111,7 @@ internal static class RuleFlowMapping
             killBetween: kill => ListHitParts(context, kill.Via, DependencyMapping.DescribeKillLabel(kill.Needs, $"{FormatCount(kill.AtLeast)}+ kills, fewer than {FormatCount(kill.FewerThan)}")),
             reload: _ => ListActionParts(context, trigger, name => name),
             hitAtCriticalHealth: _ => ListActionParts(context, trigger, name => name),
-            slideOverAmmo: _ => ListActionParts(context, trigger, name => name));
+            pickUpAmmo: _ => ListActionParts(context, trigger, name => name));
 
     /// <summary>A cast: "Grenade cast", "Super cast"; the class ability is the cast itself ("Class ability", "Air class ability").</summary>
     private static ImmutableArray<TriggerPart> ListCastParts(GraphContext context, Trigger trigger, AbilityKind kind) =>

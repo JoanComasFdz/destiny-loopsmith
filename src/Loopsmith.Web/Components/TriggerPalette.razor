@@ -90,6 +90,25 @@
                         }
                     </button>
                 }
+                @if (hud.AmmoBrick is Optional<HudSlot>.Some ammo)
+                {
+                    @* Bricks drop from enemies, which only play decides: the player picks one up when the loop does (ADRs D43). *@
+                    var isAmmoPicked = pickedKey == Optional.Some(ammo.Value.Choice.Key);
+                    <button type="button" class="trig-weapon trig-ammo aff-neutral @(isAmmoPicked ? "picked" : "")"
+                            data-action="trigger-ammo-brick" data-hud-slot="@ammo.Value.Choice.Key" aria-pressed="@(isAmmoPicked ? "true" : "false")"
+                            aria-label="@ammo.Value.Name" title="@ammo.Value.Name"
+                            @onclick="() => Pick(ammo.Value)">
+                        <span class="trig-weapon-icon trig-ammo-icon" aria-hidden="true">@DomainPhrasing.AmmoBrickIcon</span>
+                        <span class="trig-weapon-text">
+                            <span class="trig-weapon-name">@ammo.Value.Name</span>
+                            <span class="trig-weapon-kind">@string.Join(" · ", Enum.GetNames<AmmoBrick>())</span>
+                        </span>
+                        @if (ammo.Value.IsNew)
+                        {
+                            <span class="trig-new" title="Unlocked by the last step"></span>
+                        }
+                    </button>
+                }
             </div>
         </div>
     </div>
@@ -128,7 +147,7 @@
             }
             @if (choice.Buttons.Any(button => button.StandsApart))
             {
-                @* A reload and a slide over an ammo brick take no enemy count and no option (ADRs D37): they stand at the row's right end, away from them. *@
+                @* A reload takes no enemy count and no option (ADRs D37): it stands at the row's right end, away from them. *@
                 <div class="trigger-buttons apart" data-testid="trigger-buttons-apart">
                     @foreach (var button in choice.Buttons.Where(button => button.StandsApart))
                     {
@@ -139,7 +158,7 @@
         }
         else
         {
-            <span class="muted">Tap your Super, an ability or a weapon.</span>
+            <span class="muted">Tap your Super, an ability, a weapon or an ammo brick.</span>
         }
     </div>
 </section>
@@ -310,14 +329,10 @@
         }
     };
 
-    /// <summary>
-    /// A button of the picked row: "🥊 hit", "💀 kill", "🔄 reload", "📦 slide over ammo"; disabled when no rule of the build
-    /// reacts to it (a slide over an ammo brick without Spark of Momentum), and its title says so.
-    /// </summary>
+    /// <summary>A button of the picked row: "🥊 hit", "💀 kill", "🔄 reload", an ammo brick's "special" and "heavy".</summary>
     private RenderFragment RenderTrigger(TriggerButton button) => __builder =>
     {
-        <button type="button" class="trigger" data-action="trigger" data-token="@button.Token" data-enabled="@(button.IsEnabled ? "true" : "false")" disabled="@(!button.IsEnabled)"
-                title="@(button.IsEnabled ? $"{button.Label}  ({button.Token})" : $"{button.Label}: no rule of this build reacts to it")"
+        <button type="button" class="trigger" data-action="trigger" data-token="@button.Token" title="@($"{button.Label}  ({button.Token})")"
                 @onclick="() => PickTrigger(button.Action)">
             <span class="trigger-caption" data-testid="trigger-caption">@button.Caption</span>
             @if (button.IsNew)
@@ -371,6 +386,7 @@
             .Concat(hud.Abilities)
             .SelectMany(ability => ability.Secondaries.Select(secondary => secondary.Slot).Prepend(ability.Slot))
             .Concat(hud.Weapons.Select(weapon => weapon.Slot))
+            .Concat(hud.AmmoBrick.Match(found => new[] { found.Value }, _ => []))
             .Where(slot => slot.Choice.Key == key && !slot.AtOnce.IsSome())
             .Select(Optional.Some)
             .FindFirstSome());
