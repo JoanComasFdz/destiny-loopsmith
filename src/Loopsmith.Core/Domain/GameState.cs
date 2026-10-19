@@ -66,12 +66,12 @@ public sealed record GroundPickup(PickupId Pickup, Likelihood Likelihood);
 [Union]
 public partial record PlayerAction
 {
-    partial record CastAbility(OffensiveAbility Kind, HitOutcome Hit, TargetCount Targets, AbilityInput Input = AbilityInput.Press, ChargeUse Charge = ChargeUse.Plain);   // a secondary: melee:slide, grenade:hold; its last charge: grenade:last
+    partial record CastAbility(OffensiveAbility Kind, HitOutcome Hit, TargetCount Targets, AbilityInput Input = AbilityInput.Press, ChargeUse Charge = ChargeUse.Plain, EnemyTier Rank = EnemyTier.Minor);   // a secondary: melee:slide, grenade:hold; its last charge: grenade:last; a kill of a stronger enemy: grenade:kill:elite
     partial record UseClassAbility(AbilityInput Input = AbilityInput.Press, ChargeUse Charge = ChargeUse.Plain);   // a secondary: the air move that spends the charge (Ascension)
-    partial record FireWeapon(WeaponSlot Slot, HitOutcome Hit, TargetCount Targets, ShieldBreak Shield = ShieldBreak.None, HitZone Zone = HitZone.Body);   // breaking a combatant's shield: kinetic:kill:shield; precision kills: kinetic:kill:precision
+    partial record FireWeapon(WeaponSlot Slot, HitOutcome Hit, TargetCount Targets, ShieldBreak Shield = ShieldBreak.None, HitZone Zone = HitZone.Body, EnemyTier Rank = EnemyTier.Minor);   // breaking a combatant's shield: kinetic:kill:shield; precision kills: kinetic:kill:precision; a kill of a stronger enemy: kinetic:kill:elite
     partial record CollectPickups(PickupId Pickup);
     partial record Declare(StateDeclaration Declaration);   // a state only play decides (ADRs D3)
-    partial record PerformFinisher();                       // a finisher on one enemy of the pack: it kills it
+    partial record PerformFinisher(EnemyTier Rank = EnemyTier.Minor);   // a finisher on one enemy of the pack: it kills it; of a stronger one: finisher:elite
     partial record ReloadWeapon(WeaponSlot Slot);           // the player reloads that weapon: no ammo is counted (ADRs D37)
     partial record PickUpAmmo(AmmoBrick Brick, BrickPickup Pickup = BrickPickup.Plain);   // the player picks up an ammo brick, or slides over it (ammo:heavy:slide): no ammo is counted (ADRs D37, D43)
 }

@@ -42,7 +42,8 @@ public static class OutcomeApplication
             spend => SpendStacks(build, state, outcome, spend, source),
             weapon => StrikeWithWeapon(build, state, outcome, weapon),
             reload => ReloadWeapon(build, state, outcome, reload),
-            refill => RefillWeapon(build, state, outcome, refill));
+            refill => RefillWeapon(build, state, outcome, refill),
+            ammo => AnnotateFact(state, outcome, ammo.Special.ReadCertainty() == Certainty.Known && ammo.Heavy.ReadCertainty() == Certainty.Known ? Certainty.Known : Certainty.Unknown, "progress unknown"));
 
     /// <summary>
     /// <c>full</c> is one whole charge (known); a fraction is as certain as its value; a fraction by archetype not bound to

@@ -44,6 +44,7 @@ keywordTraits:
   - { hash: 4043161234, name: "Stasis Shard", icon: /common/destiny2_content/icons/61e76efa20781304ec9496432ac599c8.png }
   - { hash: 4239423954, name: "Slow", icon: /common/destiny2_content/icons/4b192aa4a9e52cde43286829fd809bca.png }
 armorSets:
+  - { hash: 305091568, name: "Oryx's Memory", perks: [{ pieces: 2, perk: 846599599 }, { pieces: 4, perk: 846599598 }] }
   - { hash: 305966751, name: "Iron Panoply Set", perks: [{ pieces: 2, perk: 3157066724 }, { pieces: 4, perk: 3157066725 }] }
   - { hash: 499993704, name: "Luminopotent", perks: [{ pieces: 2, perk: 2769443639 }, { pieces: 4, perk: 2769443638 }] }
 items:
@@ -202,6 +203,8 @@ items:
   - { hash: 830369300, name: "Lucent Blades", kind: armorMod, type: "Chest Armor Mod", tier: basic, slot: chest, description: "Increases the energy recharge rate of your equipped Swords. Your equipped Glaives gain more energy from dealing damage with their ranged attacks.", icon: /common/destiny2_content/icons/7ced3173fb475d8ad0a02390b0823be1.png }
   - { hash: 831391274, name: "Hatchling", kind: weaponPerk, type: "Trait", tier: basic, description: "Precision final blows or rapidly defeating targets with this weapon spawns a Threadling at the target's location.", icon: /common/destiny2_content/icons/2f7e898e2231900ac968ffb2080fc02b.png }
   - { hash: 837201397, name: "Stasis Siphon", kind: armorMod, type: "Helmet Armor Mod", tier: basic, slot: helmet, description: "Rapid Stasis weapon final blows create an Orb of Power.", icon: /common/destiny2_content/icons/9b05666556bcb7ce07d269904d03f5af.png }
+  - { hash: 846599598, name: "Ascendant Escape", kind: perk, description: "After a final blow on a powerful combatant, the next time your shields are broken, you become invisible.", icon: /common/destiny2_content/icons/e1e76d3824a761cf038e1f9d9be7c84f.png }
+  - { hash: 846599599, name: "Iron Sharpens Iron", kind: perk, description: "Final blows on Guardians and powerful combatants generate additional ammo progress.", icon: /common/destiny2_content/icons/c4d21817ea6e205ff95639019a38e7e2.png }
   - { hash: 852252788, name: "Hammer Strike", kind: melee, type: "Solar Melee", description: "After sprinting for a short time, use this melee ability to swing a blazing hammer that scorches your target and deals damage in a cone behind them.\n\nIf your target is defeated by Hammer Strike, they ignite.", icon: /common/destiny2_content/icons/c05584046992239cbbd0d319228058b8.jpg }
   - { hash: 852252789, name: "Throwing Hammer", kind: melee, type: "Solar Melee", description: "Throw a hammer from a distance. Picking up a thrown hammer grants melee energy. Energy generated is scaled by your Melee stat. If the hammer struck a target, picking it up grants cure.", icon: /common/destiny2_content/icons/2db60293ac428ae066a5bb2fed04f6e7.jpg }
   - { hash: 855168139, name: "Unrelenting", kind: weaponPerk, type: "Enhanced Trait", tier: common, description: "Rapidly defeating targets triggers improved health regeneration. Guardians and powerful combatants count as more than one target.", icon: /common/destiny2_content/icons/1e5843177c71ae3f2a4770d01a2f3813.png }

@@ -1,0 +1,7 @@
+# Oryx's Memory's 2-piece bonus (Iron Sharpens Iron), with Crisis Inverted (no rules of its own) for the Elite+ kill.
+name: "E2E - Iron Sharpens Iron with Crisis Inverted"
+class: hunter
+subclass: arc
+armorSetBonuses: [oryxs-memory-2pc]
+weapons:
+  - { hash: 2888266564, perks: [] } # Crisis Inverted

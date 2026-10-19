@@ -92,7 +92,7 @@ internal static class RuleFlowMapping
         trigger.Match(
             abilityCast: cast => ListCastParts(context, trigger, cast.Kind),
             killAny: kill => ListHitParts(context, kill.Via, DependencyMapping.DescribeKillLabel(kill.Needs, "kill")),
-            killOfTier: kill => ListHitParts(context, kill.Via, DependencyMapping.DescribeKillLabel(kill.Needs, $"kill ({kill.Tier.ToString().ToLowerInvariant()})")),
+            killOfTier: kill => ListHitParts(context, kill.Via, DependencyMapping.DescribeKillLabel(kill.Needs, $"kill ({DomainPhrasing.DescribeTierNeed(kill.Tier)})")),
             killDebuffed: kill => ListHitParts(context, kill.Via, DependencyMapping.DescribeKillLabel(kill.Needs, "kill")),
             killMultiple: kill => ListHitParts(context, kill.Via, DependencyMapping.DescribeKillLabel(kill.Needs, $"{FormatCount(kill.AtLeast)}+ kills{DescribeWithin(kill.Within)}")),
             damage: damage => ListHitParts(context, damage.Via, DescribeHit(damage.Needs)),

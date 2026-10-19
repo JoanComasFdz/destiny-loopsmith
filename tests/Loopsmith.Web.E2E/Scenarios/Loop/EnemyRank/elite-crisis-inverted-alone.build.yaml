@@ -1,0 +1,6 @@
+# Crisis Inverted alone: no rule reacts to the rank of the enemy a kill kills.
+name: "E2E - Rank with nothing that reacts to it"
+class: hunter
+subclass: arc
+weapons:
+  - { hash: 2888266564, perks: [] } # Crisis Inverted

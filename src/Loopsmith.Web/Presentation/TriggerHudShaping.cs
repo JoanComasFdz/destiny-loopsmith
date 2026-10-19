@@ -75,9 +75,14 @@ public sealed record TriggerHud(
 public static class TriggerHudShaping
 {
     public static TriggerHud ShapeHud(
-        ImmutableArray<TriggerOption> options, ImmutableDictionary<string, TargetCount> counts, ImmutableHashSet<string> optionsOn, ValidatedBuild build, Optional<BungieProfile> profile)
+        ImmutableArray<TriggerOption> options,
+        ImmutableDictionary<string, TargetCount> counts,
+        ImmutableHashSet<string> optionsOn,
+        ImmutableDictionary<string, EnemyTier> ranks,
+        ValidatedBuild build,
+        Optional<BungieProfile> profile)
     {
-        var sections = TriggerPaletteShaping.ShapePalette(options, counts, optionsOn, build);
+        var sections = TriggerPaletteShaping.ShapePalette(options, counts, optionsOn, ranks, build);
         var choices = sections.SelectMany(section => section.Choices).ToImmutableDictionary(choice => choice.Key);
         var abilities = build.Build.Abilities;
         var subclass = build.Build.Subclass.ToAffinity();
@@ -153,7 +158,7 @@ public static class TriggerHudShaping
 
     /// <summary>
     /// The finisher's square, when the palette offers one: the finisher's name and icon (none known: "Finisher" and no
-    /// icon), no element and no damage type (neutral); one tap does it.
+    /// icon), no element and no damage type (neutral); one tap does it, unless it takes a rank to pick (ADRs D44).
     /// </summary>
     private static Optional<HudSlot> ShapeFinisher(ImmutableDictionary<string, TriggerChoice> choices, Optional<ManifestItem> finisher) =>
         choices.TryGetValue("finisher", out var choice)
@@ -185,9 +190,11 @@ public static class TriggerHudShaping
     private static HudFace ToFace(Optional<string> icon) =>
         icon.Match<HudFace>(found => new HudFace.Pictured(found.Value), _ => new HudFace.Blank());
 
-    /// <summary>A row's one action, when it has one, no target count and no option: a tap on its slot acts at once.</summary>
+    /// <summary>A row's one action, when it has one, no target count, no option and no rank to pick: a tap on its slot acts at once.</summary>
     private static Optional<TriggerButton> FindAtOnce(TriggerChoice choice) =>
-        choice.Buttons.Length == 1 && !choice.Targets.IsSome() && choice.Options.IsEmpty ? Optional.Some(choice.Buttons[0]) : Optional.None<TriggerButton>();
+        choice.Buttons.Length == 1 && !choice.Targets.IsSome() && choice.Options.IsEmpty && !choice.Rank.IsSome()
+            ? Optional.Some(choice.Buttons[0])
+            : Optional.None<TriggerButton>();
 
     private static ImmutableArray<TriggerButton> ListButtons(ImmutableArray<TriggerSection> sections, TriggerGroup group) =>
         [.. sections.Where(section => section.Group == group).SelectMany(section => section.Choices).SelectMany(choice => choice.Buttons)];

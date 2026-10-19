@@ -13,7 +13,7 @@ public static class ActionTokenParsing
     private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
 
     public const string Grammar =
-        "grenade[:hold]|melee[:slide|air]|super[:air|combo|guard][:hit|kill[:N]] (grenade and melee [:last]), class[:air][:last], kinetic|energy|power[:hit|kill[:N]][:shield][:precision], kinetic|energy|power:reload, ammo:special|heavy[:slide], finisher, pickup:<id>, max:<status>, end:<status>, pack:new, health:critical, health:hit";
+        "grenade[:hold]|melee[:slide|air]|super[:air|combo|guard][:hit|kill[:N]] (grenade and melee [:last]), class[:air][:last], kinetic|energy|power[:hit|kill[:N]][:shield][:precision], a kill or a finisher [:elite|miniboss|champion|boss], kinetic|energy|power:reload, ammo:special|heavy[:slide], finisher, pickup:<id>, max:<status>, end:<status>, pack:new, health:critical, health:hit";
 
     /// <summary>
     /// <c>grenade</c>, <c>grenade:kill</c>, <c>grenade:kill:3</c>, <c>kinetic:hit:5</c>, <c>class</c>, <c>class:air</c> (an air move
@@ -29,7 +29,9 @@ public static class ActionTokenParsing
     /// An option goes last (ADRs D36): <c>:last</c>, the use that spends the grenade's, melee's or class ability's last
     /// charge (<c>grenade:kill:last</c>, <c>class:last</c>); <c>:shield</c>, a weapon step that breaks a combatant's shield
     /// (<c>kinetic:kill:3:shield</c>); <c>:precision</c>, a weapon step whose hits and kills are precision ones
-    /// (<c>energy:kill:precision</c>), with <c>:shield</c> too (<c>energy:kill:shield:precision</c>, in either order).
+    /// (<c>energy:kill:precision</c>), with <c>:shield</c> too (<c>energy:kill:shield:precision</c>, in either order); and the rank
+    /// of a stronger enemy than the pack's minors that a kill step or a finisher kills (<c>energy:kill:elite</c>,
+    /// <c>grenade:kill:3:last:boss</c>, <c>finisher:champion</c>), with the other options, in any order.
     /// <c>kinetic:reload</c> reloads that weapon (ADRs D37): it takes no count or option. <c>ammo:special</c> and
     /// <c>ammo:heavy</c> pick up an ammo brick of that ammo, <c>ammo:heavy:slide</c> by sliding over it (Spark of Momentum,
     /// ADRs D42).
@@ -38,12 +40,14 @@ public static class ActionTokenParsing
     {
         var all = token.Trim().ToLowerInvariant().Split(':');
         var options = ReadOptions(all);
-        var kind = ClassifyOptions(options);
+        var ranks = options.Where(IsRankWord).ToArray();
+        var kind = ranks.Length > 1 ? OptionKind.Invalid : ClassifyOptions([.. options.Where(word => !IsRankWord(word))]);
+        var rank = ranks.Length == 1 ? ToRank(ranks[0]) : EnemyTier.Minor;
         var charge = options.Contains("last") ? ChargeUse.Last : ChargeUse.Plain;
         var shield = options.Contains("shield") ? ShieldBreak.Breaks : ShieldBreak.None;
         var zone = options.Contains("precision") ? HitZone.Precision : HitZone.Body;
         var parts = all[..^options.Length];
-        return (parts[0], kind) switch
+        var action = (parts[0], kind) switch
         {
             (_, OptionKind.Invalid) => FailUnknown(token),
             ("grenade", not OptionKind.Weapon) => ParseCast(token, parts, OffensiveAbility.Grenade, charge),
@@ -71,15 +75,43 @@ public static class ActionTokenParsing
             ("health", _) when parts.Length == 2 && parts[1] == "hit" => Ok(new PlayerAction.Declare(new StateDeclaration.HitAtCriticalHealth())),
             _ => FailUnknown(token),
         };
+        return action.Bind(read => SetRank(token, read, rank));
     }
+
+    /// <summary>
+    /// The rank goes with a kill: an ability's or weapon's kill step, or a finisher (it kills); a hit, a class ability, a
+    /// reload or a declaration takes none (<c>energy:hit:elite</c> is an error).
+    /// </summary>
+    private static Result<PlayerAction, string> SetRank(string token, PlayerAction action, EnemyTier rank) =>
+        (action, rank) switch
+        {
+            (_, EnemyTier.Minor) => Ok(action),
+            (PlayerAction.CastAbility { Hit: HitOutcome.Kill } cast, _) => Ok(cast with { Rank = rank }),
+            (PlayerAction.FireWeapon { Hit: HitOutcome.Kill } fire, _) => Ok(fire with { Rank = rank }),
+            (PlayerAction.PerformFinisher finisher, _) => Ok(finisher with { Rank = rank }),
+            _ => FailUnknown(token),
+        };
+
+    /// <summary>The rank words of a kill (ADRs D44): <c>elite</c>, <c>miniboss</c>, <c>champion</c>, <c>boss</c>; a minor is said by none.</summary>
+    private static bool IsRankWord(string word) =>
+        word is "elite" or "miniboss" or "champion" or "boss";
+
+    private static EnemyTier ToRank(string word) =>
+        word switch
+        {
+            "elite" => EnemyTier.Elite,
+            "miniboss" => EnemyTier.Miniboss,
+            "champion" => EnemyTier.Champion,
+            _ => EnemyTier.Boss,
+        };
 
     /// <summary>What a token's options are for: none, an ability's charge (<c>:last</c>), a weapon's (<c>:shield</c>, <c>:precision</c>), or no step's.</summary>
     private enum OptionKind { None, Charge, Weapon, Invalid }
 
-    /// <summary>The option words at the end of an ability's or weapon's token (ADRs D36); none for any other token.</summary>
+    /// <summary>The option words at the end of an ability's, weapon's or finisher's token (ADRs D36); none for any other token.</summary>
     private static string[] ReadOptions(string[] all) =>
-        all.Length > 1 && all[0] is "grenade" or "melee" or "super" or "class" or "kinetic" or "energy" or "power"
-            ? [.. all.Skip(1).Reverse().TakeWhile(word => word is "last" or "shield" or "precision").Reverse()]
+        all.Length > 1 && all[0] is "grenade" or "melee" or "super" or "class" or "kinetic" or "energy" or "power" or "finisher"
+            ? [.. all.Skip(1).Reverse().TakeWhile(word => word is "last" or "shield" or "precision" || IsRankWord(word)).Reverse()]
             : [];
 
     /// <summary><c>:last</c> stands alone; <c>:shield</c> and <c>:precision</c> go together, each once.</summary>

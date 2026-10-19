@@ -104,6 +104,20 @@ public static class GameNotationParsing
             _ => new Result<Provenance, string>.Ok(new Provenance.CreatorClaim(url, quote)),
         };
 
+    /// <summary>
+    /// A kill trigger's <c>tier:</c>: one rank (<c>minor</c>, <c>elite</c>, <c>miniboss</c>, <c>champion</c>, <c>boss</c>), or a rank
+    /// and every stronger one (<c>elite+</c>, <c>miniboss+</c>; compendium/2026-10-19/Game Mechanics#179). <c>major</c> was the
+    /// old word for an elite.
+    /// </summary>
+    internal static Result<TierNeed, string> ParseTierNeed(string text) =>
+        (text, text.EndsWith('+') ? ParseVocabularyWord<EnemyTier>(text[..^1]) : ParseVocabularyWord<EnemyTier>(text)) switch
+        {
+            ("major" or "major+", _) => new Result<TierNeed, string>.Error($"'{text}' is no tier: an elite is '{text.Replace("major", "elite")}'"),
+            ("elite+" or "miniboss+", Result<EnemyTier, string>.Ok rank) => new Result<TierNeed, string>.Ok(new TierNeed.AtLeast(rank.Value)),
+            (_, Result<EnemyTier, string>.Ok rank) when !text.EndsWith('+') => new Result<TierNeed, string>.Ok(new TierNeed.Exactly(rank.Value)),
+            _ => new Result<TierNeed, string>.Error($"'{text}' is not one of: minor, elite, miniboss, champion, boss, elite+, miniboss+"),
+        };
+
     /// <summary>A closed vocabulary word: the camelCase name of an enum member (<c>classAbility</c>).</summary>
     internal static Result<TEnum, string> ParseVocabularyWord<TEnum>(string text)
         where TEnum : struct, Enum

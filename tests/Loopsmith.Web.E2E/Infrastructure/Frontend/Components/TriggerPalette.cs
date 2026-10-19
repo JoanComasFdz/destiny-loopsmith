@@ -31,6 +31,10 @@ public sealed class TriggerPalette(IPage page)
 
     private ILocator TargetCountOptions => TargetCount.GetByRole(AriaRole.Option);
 
+    private ILocator RankPicker => Row.Locator("[data-action=rank]");
+
+    private ILocator RankBox => Row.Locator("[data-testid=rank-pick]");
+
     private ILocator OptionCaptions => Row.Locator("[data-action=trigger-option] [data-testid=trigger-option-caption]");
 
     private ILocator RowOptionBox(RowOption option) =>
@@ -116,6 +120,10 @@ public sealed class TriggerPalette(IPage page)
     public Task SelectTargetCountAsync(string shown) =>
         OnScreen.ActAsync(Panel, TargetCount, count => count.SelectOptionAsync(new SelectOptionValue { Label = shown }));
 
+    /// <summary>Picks <paramref name="rank"/> in the picked row's "Rank" picker ("Elite"): its next kills are of that rank.</summary>
+    public Task SelectRankAsync(EnemyRank rank) =>
+        OnScreen.ActAsync(Panel, RankPicker, picker => picker.SelectOptionAsync(new SelectOptionValue { Label = rank.ToShownText() }));
+
     /// <summary>Ticks <paramref name="option"/>'s box in the picked row ("🎯 precision"): its next steps carry it.</summary>
     public Task TickOptionAsync(RowOption option) => OnScreen.PressAsync(Panel, RowOptionBox(option));
 
@@ -132,8 +140,21 @@ public sealed class TriggerPalette(IPage page)
     /// <summary>Waits until the picked row is the ammo bricks': its title says "Ammo brick", its "special" and "heavy" show.</summary>
     public Task WaitUntilAmmoBrickRowShownAsync() => WaitUntilRowShownAsync("Ammo brick");
 
-    /// <summary>Waits until the picked row is <paramref name="ability"/>'s: its title names it, its buttons show.</summary>
-    public Task WaitUntilRowShownAsync(Ability ability) => WaitUntilRowShownAsync(ability.ToShownText());
+    /// <summary>
+    /// Waits until the picked row is <paramref name="ability"/>'s: its title names it, its buttons show. The finisher's row is
+    /// titled for the finisher the class plays (Blade Carnival for a Hunter), so it is found by its square, picked.
+    /// </summary>
+    public async Task WaitUntilRowShownAsync(Ability ability)
+    {
+        if (ability is not Ability.Finisher)
+        {
+            await WaitUntilRowShownAsync(ability.ToShownText());
+            return;
+        }
+
+        await AbilityButton(ability).And(page.GetByRole(AriaRole.Button, new() { Pressed = true })).WaitForAsync(new() { State = WaitForSelectorState.Visible });
+        await CountedButtons.WaitForAsync(new() { State = WaitForSelectorState.Visible });
+    }
 
     /// <summary>Waits until the picked row is the one titled <paramref name="title"/> ("Combination Blow", "Sliding melee · Tempest Strike"): its buttons show.</summary>
     public async Task WaitUntilRowShownAsync(string title)
@@ -160,7 +181,15 @@ public sealed class TriggerPalette(IPage page)
             [.. (await OptionCaptions.AllInnerTextsAsync()).Select(shown => RowOptionShowing.ReadRowOption(shown.Trim()))],
             await Panel.GetAttributeAsync("aria-disabled") == "true",
             await DisabledNote.CountAsync() > 0 ? (await DisabledNote.InnerTextAsync()).Trim() : "",
-            await ReadOnYouAsync());
+            await ReadOnYouAsync(),
+            await ReadRankAsync());
+
+    private async Task<RankPickerShown?> ReadRankAsync() =>
+        await RankPicker.CountAsync() == 0
+            ? null
+            : new RankPickerShown(
+                EnemyRankShowing.ReadEnemyRank((await RankPicker.EvaluateAsync<string>("select => select.selectedOptions[0].text")).Trim()),
+                await RankPicker.IsEnabledAsync());
 
     private async Task<ImmutableArray<OnYouChip>> ReadOnYouAsync() =>
         await OnYou.CountAsync() == 0
@@ -197,6 +226,7 @@ public sealed class TriggerPalette(IPage page)
               box: box(option),
             })),
             count: row.querySelector('[data-testid=target-count]') ? box(row.querySelector('[data-testid=target-count]')) : null,
+            rank: row.querySelector('[data-testid=rank-pick]') ? box(row.querySelector('[data-testid=rank-pick]')) : null,
             screenWidth: window.innerWidth,
             pageWidth: document.documentElement.scrollWidth,
           };
@@ -208,8 +238,8 @@ public sealed class TriggerPalette(IPage page)
 /// What the panel shows: the picked row's buttons the "×" enemy count goes with, whether that count shows, the counts it
 /// offers (as its options read, in order), the buttons at the row's right end, apart from it, and the boxes the player
 /// ticks (its options); whether the whole panel
-/// is greyed out (nothing in it can be tapped), and the line that says why (empty when it isn't); and the chips of its
-/// "On you" group, in order.
+/// is greyed out (nothing in it can be tapped), and the line that says why (empty when it isn't); the chips of its
+/// "On you" group, in order; and the row's "Rank" picker (none when the row has no kill).
 /// </summary>
 public sealed record TriggerPaletteSnapshot(
     ImmutableArray<StepTrigger> WithTheCount,
@@ -219,7 +249,11 @@ public sealed record TriggerPaletteSnapshot(
     ImmutableArray<RowOption> Options,
     bool IsGreyedOut,
     string DisabledNote,
-    ImmutableArray<OnYouChip> OnYou);
+    ImmutableArray<OnYouChip> OnYou,
+    RankPickerShown? Rank);
+
+/// <summary>The picked row's "Rank" picker (ADRs D44): the rank it is at, and whether it can be changed (greyed out when no rule reacts to a rank).</summary>
+public sealed record RankPickerShown(EnemyRank Picked, bool IsEnabled);
 
 /// <summary>
 /// A chip of the "On you" group: a buff on you, by its name, with its buttons' captions ("at max (x10)", "ends"); or a
@@ -230,9 +264,10 @@ public sealed record OnYouChip(string Name, bool IsButton, ImmutableArray<string
 /// <summary>
 /// Where the picked row is on the screen, in CSS pixels: the row's box and its content's right edge, each button's box
 /// with its caption, each option's box with its caption, the "×" enemy count's box (none when the row has no count), the
-/// screen's width and the page's.
+/// "Rank" picker's box (none when the row has no kill), the screen's width and the page's.
 /// </summary>
-public sealed record TriggerRowLayout(ScreenBox Row, double ContentRight, ImmutableArray<TriggerButtonBox> Buttons, ImmutableArray<TriggerButtonBox> Options, ScreenBox? Count, double ScreenWidth, double PageWidth);
+public sealed record TriggerRowLayout(
+    ScreenBox Row, double ContentRight, ImmutableArray<TriggerButtonBox> Buttons, ImmutableArray<TriggerButtonBox> Options, ScreenBox? Count, ScreenBox? Rank, double ScreenWidth, double PageWidth);
 
 /// <summary>A button or option box of the row, and its box.</summary>
 public sealed record TriggerButtonBox(string Caption, ScreenBox Box);

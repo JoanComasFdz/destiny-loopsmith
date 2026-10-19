@@ -48,14 +48,13 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
     being damaged while at it is a step of its own (`health:hit`, "Hit at critical health": Spark of Instinct's jolting
     burst; ADRs D3). Spark of Recharge gives its buff on "Critical health", and the buff ends with it (the glossary's
     `endsWith`), its faster regeneration a fact (`fasterRegeneration`).
-    Elements that react to critical health and wait on something else (compendium/2026-10-19): the Ascendant Escape
-    set bonus (Armor Perks#66: its buff comes from an Elite+ kill, which a loop's minor pack never gives, ADRs D7; the
-    follow-up "Make elite kills playable and author Ascendant Escape"), Mechaneer's Tricksleeves (Exotic Armors#52:
+    Elements that react to critical health and wait on something else (compendium/2026-10-19): Mechaneer's Tricksleeves (Exotic Armors#52:
     readying a sidearm is no step, and no damage source names a weapon type; the follow-up "Add a Ready a weapon step
     for Mechaneer's Tricksleeves") and Frost Renewal (Artifact Perks#27: combatants breaking your shield while Frost Armor is
     on you; nothing gives Frost Armor yet, so it waits on a Stasis source such as Wind Chill, Artifact Perks#55).
     Enhanced Operator Augment (Armor Mods#30) is a raid mod, which Loopsmith doesn't support (ADRs D35). Authored:
-    Thunderous Retort, Echo of Vigilance and the Iron Panoply set (Vigilant Watch, Iron Conviction);
+    Thunderous Retort, Echo of Vigilance, the Iron Panoply set (Vigilant Watch, Iron Conviction) and the Oryx's Memory set
+    (Iron Sharpens Iron, Ascendant Escape: an Elite+ kill is a kill step's rank, ADRs D44);
   - no longer gaps: a weapon's ammo type is its manifest item's (`weapon:special:arc`, `weapon:heavy:arc`): Spark of
     Beacons fires for sure on a Special or Heavy Arc weapon kill; precision kills are a weapon step's option
     (`energy:kill:precision`, `hit: precision`, D36): Spark of Brilliance, Hatchling and Veteran's Wisdom fire on them
@@ -71,8 +70,7 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   Flare Sever only); "while a kind of mod is equipped" (an Orb of Power gives Armor Charge only with an
   Armor Charge mod equipped).
 - **Declared states:** a level below the max (`stacks:<status>:<n>`, for "Combination Blow ×2"; counting Combination
-  Blow, "Counting, next", would give it without a declaration); the target's tier (D7: the pack is `minor`, so a kill
-  rule for a higher tier never fires in a loop — "punch the big enemy"); "repeat until <state>" as a marker on a step.
+  Blow, "Counting, next", would give it without a declaration); "repeat until <state>" as a marker on a step.
 - **Progress the game doesn't show:** Amplified's intrinsic kill counter (25% a minor kill, kills within 6 s of each
   other, `rules/keywords/arc.yaml`) isn't encoded: it could only be a chance rule, and a keyword applies to every
   build, not just Arc.

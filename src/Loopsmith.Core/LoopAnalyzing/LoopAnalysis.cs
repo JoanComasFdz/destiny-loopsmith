@@ -227,6 +227,7 @@ public static partial class LoopAnalysis
             spend => [new Need.Buff(spend.Status)],
             _ => [],
             _ => [],
+            _ => [],
             _ => []);
 
     private static bool IsPresent(GameState state, Need need) =>

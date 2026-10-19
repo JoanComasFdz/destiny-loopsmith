@@ -118,6 +118,9 @@ internal static class ValueReading
     internal static Result<CombatantDamage, Errors> ReadCombatantDamage(YamlValue value) =>
         value.ParseWith(GameNotationParsing.ParseCombatantDamage);
 
+    internal static Result<TierNeed, Errors> ReadTierNeed(YamlValue value) =>
+        value.ParseWith(GameNotationParsing.ParseTierNeed);
+
     internal static Result<TEnum, Errors> ReadVocabularyWord<TEnum>(YamlValue value)
         where TEnum : struct, Enum =>
         value.ParseWith(GameNotationParsing.ParseVocabularyWord<TEnum>);

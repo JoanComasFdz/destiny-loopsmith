@@ -52,6 +52,15 @@ statuses:
   # (compendium/2026-10-19/Armor Perks#50). No stacks are stated.
   - { id: iron-conviction, name: Iron Conviction, kind: buff, affinity: neutral, duration: 7s }
 
+  # Oryx's Memory's 4-piece buff (compendium/2026-10-19/Armor Perks#66): from an Elite+ kill, used up by
+  # the invisibility it gives at critical health. No duration is stated. Bungie's manifest shows it as the
+  # set's perk (846599598).
+  - { id: ascendant-escape, name: Ascendant Escape, kind: buff, affinity: neutral }
+
+  # Invisibility: enemies lose track of you. Each source gives its own duration (Ascendant Escape's 6+? s,
+  # Armor Perks#66), so the glossary gives none.
+  - { id: invisible, name: Invisible, kind: buff, affinity: neutral }
+
   # Base maximum 3: compendium/2026-10-09/Game Mechanics#94. Charged Up raises a build's cap to
   # 4|5|6 by copies (the `charged-up` mod's raiseMaxStacks passive; Clarity 2577472338 agrees). Its
   # decay (1 stack every 10 s while a passive mod is equipped, same row) is a fact of the game:

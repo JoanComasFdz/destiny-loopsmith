@@ -13,9 +13,9 @@ public partial record Trigger
     {
         public KillAny(DamageSource via) : this(via, new ZoneNeed.AnyZone()) { }
     }
-    partial record KillOfTier(DamageSource Via, EnemyTier Tier, ZoneNeed Needs)
+    partial record KillOfTier(DamageSource Via, TierNeed Tier, ZoneNeed Needs)   // the kill of an enemy of that rank, or stronger (`elite+`)
     {
-        public KillOfTier(DamageSource via, EnemyTier tier) : this(via, tier, new ZoneNeed.AnyZone()) { }
+        public KillOfTier(DamageSource via, TierNeed tier) : this(via, tier, new ZoneNeed.AnyZone()) { }
     }
     partial record KillDebuffed(DamageSource Via, ImmutableArray<StatusId> TargetHas, ZoneNeed Needs)
     {
@@ -62,6 +62,18 @@ public partial record ZoneNeed
     partial record AnyZone();
     partial record BodyOnly();
     partial record PrecisionOnly();
+}
+
+/// <summary>
+/// The rank a kill trigger's <c>tier:</c> needs: <see cref="Exactly"/> that one (<c>tier: boss</c>), or <see cref="AtLeast"/>
+/// that one or stronger (<c>tier: elite+</c>, the Compendium's "Elite+": elite, miniboss, champion or boss;
+/// <c>tier: miniboss+</c>: miniboss, champion or boss). Minibosses and champions are one tier (Game Mechanics#179).
+/// </summary>
+[Union]
+public partial record TierNeed
+{
+    partial record Exactly(EnemyTier Tier);
+    partial record AtLeast(EnemyTier Tier);
 }
 
 /// <summary>A guard on the current state, checked after the trigger matched.</summary>
@@ -166,6 +178,7 @@ public partial record Outcome
     partial record WeaponStrike(DamageSource Weapon, Optional<DamageType> Type, HitOutcome Hit);   // this weapon's damage dealt by an effect (Veteran's Wisdom's shockwave): Weapon is "this weapon" until bound to its slot; Type none: the weapon's own
     partial record ReloadWeapon(DamageSource Weapon);   // reloads that weapon (weapon:this, slot:power): a reload, as if the player had reloaded it (ADRs D37)
     partial record RefillWeapon(DamageSource Weapon);   // refills that weapon's magazine: no reload, so no reload rule fires (ADRs D42)
+    partial record GainAmmoProgress(GameValue Special, GameValue Heavy);   // progress toward your next Special and Heavy ammo: a fact, no ammo is counted (ADRs D37)
 }
 
 /// <summary>

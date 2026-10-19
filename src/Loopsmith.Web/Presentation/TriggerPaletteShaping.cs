@@ -23,8 +23,17 @@ public sealed record TriggerButton(PlayerAction Action, string Token, string Lab
 /// <see cref="Targets"/> is how many enemies the row's actions hit or kill — none for a row without targets (class
 /// ability, pickups, declared states); <see cref="ListTargetCountOptions"/> says which counts it offers.
 /// <see cref="Options"/> are the options its actions can carry in this build, and whether each is on (ADRs D36).
+/// <see cref="Rank"/>: the rank of the enemy its kill kills, on every row with a kill (and the finisher's, when it can set
+/// something off); none for a row without a kill.
 /// </summary>
-public sealed record TriggerChoice(string Key, string Title, Optional<TargetCount> Targets, ImmutableArray<TriggerButton> Buttons, ImmutableArray<TriggerOptionToggle> Options);
+public sealed record TriggerChoice(
+    string Key, string Title, Optional<TargetCount> Targets, ImmutableArray<TriggerButton> Buttons, ImmutableArray<TriggerOptionToggle> Options, Optional<RankPick> Rank);
+
+/// <summary>
+/// The rank a row's kill kills (ADRs D44): <see cref="Picked"/>, the one the player picked (the pack's minors until then);
+/// <see cref="IsEnabled"/>, false while no equipped rule reacts to a rank — the picker shows, at Minor, and can't change.
+/// </summary>
+public sealed record RankPick(EnemyTier Picked, bool IsEnabled);
 
 /// <summary>
 /// An option the player turns on or off for a row's actions (ADRs D36): a weapon's "🛡 shield" (the step breaks a
@@ -65,14 +74,21 @@ public static class TriggerPaletteShaping
 
     /// <param name="counts">The target count picked per row <see cref="TriggerChoice.Key"/>; a row not in it aims at one enemy.</param>
     /// <param name="optionsOn">The options the player turned on, each as its row's <see cref="TriggerChoice.Key"/> and the option (<see cref="ToOptionKey"/>).</param>
+    /// <param name="ranks">The rank picked per row <see cref="TriggerChoice.Key"/>; a row not in it kills a minor.</param>
     public static ImmutableArray<TriggerSection> ShapePalette(
-        ImmutableArray<TriggerOption> options, ImmutableDictionary<string, TargetCount> counts, ImmutableHashSet<string> optionsOn, ValidatedBuild build) =>
+        ImmutableArray<TriggerOption> options, ImmutableDictionary<string, TargetCount> counts, ImmutableHashSet<string> optionsOn, ImmutableDictionary<string, EnemyTier> ranks, ValidatedBuild build) =>
     [
         .. options
             .GroupBy(option => option.Group)
             .OrderBy(group => group.Key)
-            .Select(group => new TriggerSection(group.Key, ShapeChoices([.. group], counts, optionsOn, build))),
+            .Select(group => new TriggerSection(group.Key, ShapeChoices([.. group], counts, optionsOn, ranks, build))),
     ];
+
+    /// <summary>A picked rank ("Elite") as an <see cref="EnemyTier"/>; none when it names no rank.</summary>
+    public static Optional<EnemyTier> ParseRank(string? text) =>
+        Enum.TryParse<EnemyTier>(text, out var rank) && Enum.IsDefined(rank)
+            ? Optional.Some(rank)
+            : Optional.None<EnemyTier>();
 
     /// <summary>A picked count ("3") as a <see cref="TargetCount"/>; none when it is not a whole number in range.</summary>
     public static Optional<TargetCount> ParseTargetCount(string? text) =>
@@ -81,26 +97,39 @@ public static class TriggerPaletteShaping
             : Optional.None<TargetCount>();
 
     private static ImmutableArray<TriggerChoice> ShapeChoices(
-        ImmutableArray<TriggerOption> options, ImmutableDictionary<string, TargetCount> counts, ImmutableHashSet<string> optionsOn, ValidatedBuild build) =>
+        ImmutableArray<TriggerOption> options, ImmutableDictionary<string, TargetCount> counts, ImmutableHashSet<string> optionsOn, ImmutableDictionary<string, EnemyTier> ranks, ValidatedBuild build) =>
     [
         .. options
             .GroupBy(option => ToPairKey(option.Action))
-            .Select(pair => ShapeChoice(pair.Key, [.. pair.OrderBy(option => ReadHitOrder(option.Action))], counts, optionsOn, build)),
+            .Select(pair => ShapeChoice(pair.Key, [.. pair.OrderBy(option => ReadHitOrder(option.Action))], counts, optionsOn, ranks, build)),
     ];
 
     private static TriggerChoice ShapeChoice(
-        string key, ImmutableArray<TriggerOption> pair, ImmutableDictionary<string, TargetCount> counts, ImmutableHashSet<string> optionsOn, ValidatedBuild build)
+        string key, ImmutableArray<TriggerOption> pair, ImmutableDictionary<string, TargetCount> counts, ImmutableHashSet<string> optionsOn, ImmutableDictionary<string, EnemyTier> ranks, ValidatedBuild build)
     {
         var targets = LoopDesigning.ReadTargetCount(pair[0].Action)
             .Map(one => counts.TryGetValue(key, out var picked) ? picked : one);
         var toggles = LoopDesigning.ListStepOptions(build, pair[0].Action)
             .Select(option => ShapeToggle(option, optionsOn.Contains(ToOptionKey(key, option))))
             .ToImmutableArray();
-        var title = pair[0].Action is PlayerAction.PickUpAmmo ? DomainPhrasing.AmmoBrick : pair.Length == 1 ? pair[0].Label : ReadTitle(pair[0].Label);
+        var rank = ShapeRank(key, pair, ranks, LoopDesigning.ReactsToRank(build));
+        var title = pair[0].Action is PlayerAction.PickUpAmmo ? DomainPhrasing.AmmoBrick : pair.Length == 1 && !rank.IsSome() ? pair[0].Label : ReadTitle(pair[0].Label);
         var buttons = pair
-            .Select(option => ShapeButton(option, targets, toggles, ReadCaption(option, pair.Length), build))
+            .Select(option => ShapeButton(option, targets, toggles, rank, pair.Length, build))
             .ToImmutableArray();
-        return new TriggerChoice(key, title, targets, buttons, toggles);
+        return new TriggerChoice(key, title, targets, buttons, toggles, rank);
+    }
+
+    /// <summary>
+    /// A row's rank picker (ADRs D44): on every row with a kill, enabled only when an equipped rule reacts to a rank; on the
+    /// finisher only then, so that otherwise it still acts at one tap. None on any other row.
+    /// </summary>
+    private static Optional<RankPick> ShapeRank(string key, ImmutableArray<TriggerOption> pair, ImmutableDictionary<string, EnemyTier> ranks, bool reacts)
+    {
+        var picked = reacts && ranks.TryGetValue(key, out var rank) ? rank : EnemyTier.Minor;
+        var kills = pair.Any(option => option.Action is PlayerAction.CastAbility { Hit: HitOutcome.Kill } or PlayerAction.FireWeapon { Hit: HitOutcome.Kill });
+        var finisher = reacts && pair.Any(option => option.Action is PlayerAction.PerformFinisher);
+        return kills || finisher ? Optional.Some(new RankPick(picked, reacts)) : Optional.None<RankPick>();
     }
 
     /// <summary>The ammo bricks' row (ADRs D43): its key and its title.</summary>
@@ -110,13 +139,13 @@ public static class TriggerPaletteShaping
     public static string ToOptionKey(string rowKey, StepOption option) => $"{rowKey}:{option}";
 
     /// <summary>A button's caption: "🥊 hit", "💀 kill", "🔄 reload", an ammo brick's "special" or "heavy" in a row of several; its whole label alone.</summary>
-    private static string ReadCaption(TriggerOption option, int buttons) =>
-        (option.Action, buttons) switch
+    private static string ReadCaption(PlayerAction action, string label, int buttons) =>
+        (action, buttons) switch
         {
             (PlayerAction.ReloadWeapon, _) => DomainPhrasing.ReloadCaption,
             (PlayerAction.PickUpAmmo ammo, _) => ammo.Brick.ToString().ToLowerInvariant(),
-            (_, 1) => option.Label,
-            _ => ReadQualifier(option.Label),
+            (_, 1) => label,
+            _ => ReadQualifier(label),
         };
 
     private static TriggerOptionToggle ShapeToggle(StepOption option, bool isOn) =>
@@ -128,11 +157,15 @@ public static class TriggerPaletteShaping
             _ => new TriggerOptionToggle(option, DomainPhrasing.LastChargeBox, "This use spends the ability's last charge: its energy is fully expended", isOn),
         };
 
-    private static TriggerButton ShapeButton(TriggerOption option, Optional<TargetCount> targets, ImmutableArray<TriggerOptionToggle> toggles, string caption, ValidatedBuild build)
+    private static TriggerButton ShapeButton(
+        TriggerOption option, Optional<TargetCount> targets, ImmutableArray<TriggerOptionToggle> toggles, Optional<RankPick> rank, int buttons, ValidatedBuild build)
     {
         var aimed = targets.Match(count => LoopDesigning.SetTargetCount(option.Action, count.Value), _ => option.Action);
-        var action = toggles.Aggregate(aimed, (step, toggle) => LoopDesigning.SetStepOption(step, toggle.Option, toggle.IsOn));
-        return new TriggerButton(action, action.ToActionToken(), build.DescribeAction(action), caption, option.IsNew, action is PlayerAction.ReloadWeapon);
+        var toggled = toggles.Aggregate(aimed, (step, toggle) => LoopDesigning.SetStepOption(step, toggle.Option, toggle.IsOn));
+        var action = rank.Match(pick => LoopDesigning.SetKillRank(toggled, pick.Value.Picked), _ => toggled);
+        var label = build.DescribeAction(action);
+        var caption = ReadCaption(action, buttons == 1 ? label : option.Label, buttons);   // a row's only button says its whole step ("Finisher (Elite)"); a pair's, only its hit or kill
+        return new TriggerButton(action, action.ToActionToken(), label, caption, option.IsNew, action is PlayerAction.ReloadWeapon);
     }
 
     /// <summary>

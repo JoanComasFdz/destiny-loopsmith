@@ -34,7 +34,7 @@ internal static class RuleBodyParsing
     [
         "grantEnergy", "convertStacksToEnergy", "applyBuff", "removeBuff", "debuffTarget", "spawn",
         "summon", "strikeTarget", "modifyDamage", "restoreHealth", "resetCooldown", "collect", "spendStacks",
-        "reloadWeapon", "refillWeapon",
+        "reloadWeapon", "refillWeapon", "ammoProgress",
     ];
 
     private static readonly ImmutableArray<string> PassiveNames =
@@ -209,7 +209,7 @@ internal static class RuleBodyParsing
         value.ToMap().Bind(map => Combine(
                 map.CheckKeys(KillKeys),
                 map.ReadOrDefault("via", scope.ReadDamageSource, new DamageSource.AnySource()),
-                map.ReadOptional("tier", ReadVocabularyWord<EnemyTier>),
+                map.ReadOptional("tier", ReadTierNeed),
                 map.ReadOptional("targetHas", targetHas => ReadDebuffList(scope, targetHas)),
                 map.ReadOptional("atLeast", ReadTargetCount),
                 map.ReadOptional("fewerThan", ReadFewerThan),
@@ -255,7 +255,7 @@ internal static class RuleBodyParsing
     private static Result<Trigger, Errors> ToKillTrigger(
         YamlMap map,
         DamageSource via,
-        Optional<EnemyTier> tier,
+        Optional<TierNeed> tier,
         Optional<ImmutableArray<StatusId>> targetHas,
         Optional<TargetCount> atLeast,
         Optional<TargetCount> fewerThan,
@@ -407,8 +407,20 @@ internal static class RuleBodyParsing
             "spendStacks" => ReadSpendStacks(scope, entry.Value),
             "reloadWeapon" => ReadReloadWeapon(scope, entry.Value),
             "refillWeapon" => ReadRefillWeapon(scope, entry.Value),
+            "ammoProgress" => ReadAmmoProgress(entry.Value),
             _ => entry.Value.FailAt<Outcome>(DescribeUnknown("outcome", entry.Key, OutcomeNames)),
         });
+
+    /// <summary>
+    /// <c>{ special: "12%", heavy: "7.5%" }</c>: progress toward your next Special and Heavy ammo, a fact (no ammo is counted,
+    /// ADRs D37); an ammo the source doesn't name is <c>"?"</c>.
+    /// </summary>
+    private static Result<Outcome, Errors> ReadAmmoProgress(YamlValue value) =>
+        value.ToMap().Bind(map => Combine(
+            map.CheckKeys(["special", "heavy"]),
+            map.ReadRequired("special", ReadGameValue),
+            map.ReadRequired("heavy", ReadGameValue),
+            Outcome (_, special, heavy) => new Outcome.GainAmmoProgress(special, heavy)));
 
     /// <summary>
     /// <c>{ to: grenade, amount: "15%" }</c>, or <c>to: leastCharged</c> for the ability with the least energy (the game picks

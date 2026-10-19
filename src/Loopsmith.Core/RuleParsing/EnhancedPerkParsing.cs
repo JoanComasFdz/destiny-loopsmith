@@ -191,7 +191,8 @@ internal static class EnhancedPerkParsing
             _ => [],
             _ => [],
             _ => [],
-            _ => []);
+            _ => [],
+            ammo => [ammo.Special, ammo.Heavy]);
 
     private static IEnumerable<GameValue> ListValues(EnergyGrant grant) =>
         grant.Match(
@@ -238,7 +239,8 @@ internal static class EnhancedPerkParsing
             spend => spend,
             weapon => weapon,
             reload => reload,
-            refill => refill);
+            refill => refill,
+            ammo => ammo with { Special = Replace(ammo.Special, values), Heavy = Replace(ammo.Heavy, values) });
 
     private static EnergyGrant ReplaceValues(EnergyGrant grant, EnhancedValues values) =>
         grant.Match<EnergyGrant>(

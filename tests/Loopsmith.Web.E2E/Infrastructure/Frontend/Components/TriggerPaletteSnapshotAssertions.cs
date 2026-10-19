@@ -27,6 +27,25 @@ public static class TriggerPaletteSnapshotAssertions
         return that;
     }
 
+    /// <summary>The picked row's "Rank" picker shows, at <paramref name="rank"/>, and can be changed.</summary>
+    public static AssertingThat<TriggerPaletteSnapshot> HasTheRankPickerEnabledAt(this AssertingThat<TriggerPaletteSnapshot> that, EnemyRank rank) =>
+        that.HasTheRankPicker(rank, isEnabled: true);
+
+    /// <summary>The picked row's "Rank" picker shows, at <paramref name="rank"/>, greyed out: it can't be changed.</summary>
+    public static AssertingThat<TriggerPaletteSnapshot> HasTheRankPickerGreyedOutAt(this AssertingThat<TriggerPaletteSnapshot> that, EnemyRank rank) =>
+        that.HasTheRankPicker(rank, isEnabled: false);
+
+    private static AssertingThat<TriggerPaletteSnapshot> HasTheRankPicker(this AssertingThat<TriggerPaletteSnapshot> that, EnemyRank rank, bool isEnabled)
+    {
+        var shown = that.InstanceToAssert.Rank;
+        var expected = $"\"{rank.ToShownText()}\", {(isEnabled ? "enabled" : "greyed out")}";
+        Assert.True(shown is not null, $"The picked row shows no \"Rank\" picker, but one at {expected} was expected.");
+        Assert.True(
+            shown.Picked == rank && shown.IsEnabled == isEnabled,
+            $"The picked row's \"Rank\" picker is at \"{shown.Picked.ToShownText()}\", {(shown.IsEnabled ? "enabled" : "greyed out")}, but {expected} was expected.");
+        return that;
+    }
+
     /// <summary>"On you" shows <paramref name="status"/> on you, with exactly <paramref name="buttons"/> beside it, in that order ("hit", "ends").</summary>
     public static AssertingThat<TriggerPaletteSnapshot> ShowsOnYouWith(this AssertingThat<TriggerPaletteSnapshot> that, Keyword status, params string[] buttons)
     {
