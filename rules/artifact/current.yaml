@@ -1,8 +1,9 @@
-# Artifact perks used by the skip-grenade build: the Tablet of Ruin's, as the creator says (one of the
-# seven artifacts of Artifacts 2.0). Clarity has no artifact entries; the numbers come from the
-# Compendium snapshot of 2026-10-09 (Artifact Perks tab, Tablet of Ruin section: each perk's name sits in the row above
-# the cited description row). Where the creator or the note disagrees, see
-# builds/skip-grenade-hunter/discrepancies.md.
+# Artifact perks: the Tablet of Ruin's, used by the skip-grenade build as the creator says (one of the
+# seven artifacts of Artifacts 2.0), and Thunderous Retort (NPA Repulsion Regulator). Clarity has no
+# artifact entries; the Tablet of Ruin's numbers come from the Compendium snapshot of 2026-10-09
+# (Artifact Perks tab, Tablet of Ruin section: each perk's name sits in the row above the cited
+# description row), Thunderous Retort's from the snapshot of 2026-10-19 (same layout). Where the creator
+# or the note disagrees, see builds/skip-grenade-hunter/discrepancies.md.
 # Hashes: the Bungie manifest (244213.26.06.29.2000-1-bnet.65864), joined by exact name among its
 # artifact perks (ADRs D12); two hashes are two copies with the same icon. Horde Shuttle's manifest has
 # two artifact perks of that name with different icons: its hash is the one the Tablet of Ruin artifact
@@ -148,3 +149,31 @@ elements:
           - { debuffTarget: blind }
         reason: "Killing a severed enemy with Arc damage blinds the enemies around it."
     passives: []
+
+  # NPA Repulsion Regulator artifact. Bungie's manifest text says the bonus applies if the Super is
+  # *cast* while critically wounded or Amplified and lasts to the end of the Super; the Compendium
+  # (game data, which wins) says it applies *while* at Critical Health or Amplified, and only to damage
+  # dealt during the Super's animation (so Thundercrash and Gathering Storm get less of it). The
+  # passives follow the Compendium: they hold while the status is on you.
+  - id: thunderous-retort
+    name: Thunderous Retort
+    kind: artifactPerk
+    affinity: arc
+    hash: 255237656
+    description: "While at Critical Health or Amplified, Arc Super damage is 30% higher. Only damage dealt during the Super's animation counts, so Thundercrash and Gathering Storm gain less."
+    source: "compendium/2026-10-19/Artifact Perks#111"
+    rules: []
+    passives:
+      # "Arc Super damage": the format's `super` source is AbilityOf(super), whatever its element, and
+      # no source says "a Super of this type" (`super:<input>` takes only air, combo, guard), so these
+      # passives match the build's Super of any element. A Super deals its subclass's type, so on an
+      # Arc subclass it is the Arc Super.
+      # Two passives so the +30% shows once when you are both critically wounded and Amplified.
+      - id: thunderous-retort-1
+        when: [ { has: critical-health } ]
+        effect: { modifyDamage: { against: super, change: "+30%" } }
+        reason: "At Critical Health, your Arc Super deals 30% more damage."
+      - id: thunderous-retort-2
+        when: [ { has: amplified }, { lacks: critical-health } ]
+        effect: { modifyDamage: { against: super, change: "+30%" } }
+        reason: "While Amplified, your Arc Super deals 30% more damage."

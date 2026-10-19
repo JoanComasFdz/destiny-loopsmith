@@ -1,0 +1,7 @@
+# Iron Panoply's 4-piece bonus (Iron Conviction), with Festival Flight for the kill that refreshes it.
+name: "E2E - Iron Conviction with Festival Flight"
+class: hunter
+subclass: arc
+armorSetBonuses: [iron-panoply-4pc]
+weapons:
+  - { hash: 4019651319 } # Festival Flight
