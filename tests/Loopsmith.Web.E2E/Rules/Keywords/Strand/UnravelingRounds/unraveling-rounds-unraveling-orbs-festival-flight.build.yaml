@@ -1,0 +1,9 @@
+# Unraveling Rounds, with Unraveling Orbs (an orb pickup gives them), Disorienting Blow and Spark of Amplitude to drop the orb on two kills at once, and Festival Flight (a Strand weapon) to hit with them.
+name: "E2E - Unraveling Rounds with Unraveling Orbs and Festival Flight"
+class: hunter
+subclass: arc
+melee: disorienting-blow
+fragments: [spark-of-amplitude]
+artifactPerks: [unraveling-orbs]
+weapons:
+  - { hash: 4019651319, perks: [] } # Festival Flight

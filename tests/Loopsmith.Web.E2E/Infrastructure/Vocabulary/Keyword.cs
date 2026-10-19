@@ -17,6 +17,9 @@ public partial record Keyword
     public partial record Super;
     public partial record OrbOfPower;
     public partial record CriticalHealth;
+    public partial record UnravelingRounds;
+    public partial record WovenMail;
+    public partial record Guardian;
 
     /// <summary>What the UI shows that no case names yet: a failing assertion names it as the UI shows it.</summary>
     public partial record Unlisted(string Shown);
@@ -35,5 +38,8 @@ public static class KeywordShowing
             super => "Super",
             orbOfPower => "Orb of Power",
             criticalHealth => "Critical health",
+            unravelingRounds => "Unraveling Rounds",
+            wovenMail => "Woven Mail",
+            guardian => "Guardian",
             unlisted => unlisted.Shown);
 }

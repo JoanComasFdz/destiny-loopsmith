@@ -1,0 +1,6 @@
+# Shinobu's Vow, with Skip Grenade, the grenade whose hits and casts it reacts to.
+name: "E2E - Shinobu's Vow with Skip Grenade"
+class: hunter
+subclass: arc
+grenade: skip-grenade
+exoticArmor: shinobus-vow

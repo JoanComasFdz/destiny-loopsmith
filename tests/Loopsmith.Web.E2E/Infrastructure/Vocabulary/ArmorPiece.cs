@@ -7,6 +7,7 @@ namespace Loopsmith.Web.E2E.Infrastructure.Vocabulary;
 public partial record ArmorPiece
 {
     public partial record MechaneersTricksleeves;
+    public partial record ShinobusVow;
 
     /// <summary>What the UI shows that no case names yet: a failing assertion names it as the UI shows it.</summary>
     public partial record Unlisted(string Shown);
@@ -19,5 +20,6 @@ public static class ArmorPieceShowing
     public static string ToShownText(this ArmorPiece value) =>
         value.Match(
             mechaneersTricksleeves => "Mechaneer's Tricksleeves",
+            shinobusVow => "Shinobu's Vow",
             unlisted => unlisted.Shown);
 }

@@ -1,0 +1,7 @@
+# Luminopotent's 4-piece bonus (Shock and Clear), with Skip Grenade and Spark of Shock to jolt the target and kill it.
+name: "E2E - Shock and Clear with Spark of Shock"
+class: hunter
+subclass: arc
+grenade: skip-grenade
+fragments: [spark-of-shock]
+armorSetBonuses: [luminopotent-4pc]
