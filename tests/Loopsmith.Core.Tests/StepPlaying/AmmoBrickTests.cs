@@ -10,7 +10,7 @@ using static Loopsmith.Core.Tests.Support.TestCatalog;
 namespace Loopsmith.Core.Tests.StepPlaying;
 
 /// <summary>
-/// An ammo brick picked up (ADRs D42): a step the player declares, a Special or a Heavy brick, walked or slid over
+/// An ammo brick picked up (ADRs D43): a step the player declares, a Special or a Heavy brick, walked or slid over
 /// (<c>ammo:heavy:slide</c>), always available since bricks drop from enemies; an <c>ammoPickedUp</c> trigger on any brick, one
 /// brick, or only a slide (Spark of Momentum). No ammo is counted, and the refill some perks give is no reload.
 /// </summary>

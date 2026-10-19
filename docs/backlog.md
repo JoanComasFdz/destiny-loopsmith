@@ -112,7 +112,7 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   so they show with their ⊘ and set nothing off. Synergy's cooldowns (the pickups' 0–12 s, its own) and the counter's
   other enemy tiers (elite 16.7%, boss 50%: the pack is rank-and-file, ADRs D7) are facts in its description. What
   picking up a Firesprite, Void Breach, Stasis Shard or Tangle gives has no keyword element yet.
-- **Picking up an ammo brick** (ADRs D42): the step and the `ammoPickedUp` trigger exist; All-Star, Adhesive Ordnance,
+- **Picking up an ammo brick** (ADRs D43): the step and the `ammoPickedUp` trigger exist; All-Star, Adhesive Ordnance,
   Spark of Momentum (a slide only) have rules, Overflow and Lead from Gold are inert (ammo). Still to author, each with the
   Compendium 2026-10-19 row that says what a brick gives:
   - Armor set bonuses: **Pantheos Resplendent's Well Prepared** (Armor Charge per brick: the one most likely to change an
@@ -124,7 +124,7 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   - Exotic weapons that refill on a pickup (Sweet Business, The Wardcliff Coil: a refill, a fact) and the weapon perks that
     pick bricks up or react after one (Shoot to Loot, Gravity Well, Disaster Plan).
   - What picks bricks up for you: Marksman's Dodge, Dragon's Shadow and Speedloader Slacks ("picks up ammo bricks within
-    15 m") and Exodus Down's Emergency Electromagnet. A brick isn't on the ground in a loop (ADRs D42), so they need a rule
+    15 m") and Exodus Down's Emergency Electromagnet. A brick isn't on the ground in a loop (ADRs D43), so they need a rule
     that picks one up, or the player's own brick step after them.
   - The Scavenger mods stay inert: they add ammo.
 
@@ -134,9 +134,10 @@ Not planned: Loopsmith isn't a simulator, and these change no loop's order of tr
 the part is a fact in the description.
 - Movement: jumps, sprinting (Spark of Haste and Spark of Focus), Storm's Edge's teleport to its knife and Lethal
   Current's longer lunge. Picking up an ammo brick, by sliding over it or not, is a step the player declares (Spark of
-  Momentum's x3 Bolt Charge on a slide, ADRs D42); a plain slide isn't, until a rule needs one.
+  Momentum's x3 Bolt Charge on a slide, ADRs D43); a plain slide isn't, until a rule needs one.
 - Ammo, reload speed, weapon handling and a weapon's own lightning strike (Feeding Frenzy is `inert`; Return Stroke's
-  strike is Thunderlord's kill or hit step). A reload is a step the player declares, and an outcome (D37).
+  strike is Thunderlord's kill or hit step). A reload is a step the player declares, and an outcome (D37); a refill is an
+  outcome and no reload (D42).
 - Mods that give to allies only (Benevolent Finisher).
 
 ## Engine
@@ -158,16 +159,25 @@ the part is a fact in the description.
   (design note below).
 - **Count the hits a source needs** (PR #80's test plan, T12; revisits D34): a hit step stands for damage kept up, so a
   `sustained` source fires on any hit step, even of one enemy (Thunderlord's Lightning Rounds strikes, and Return
-  Stroke reloads, on "Thunderlord (🥊 hit)"). The owner wants the count: a source that needs N hits fires for sure on a
+  Stroke refills, on "Thunderlord (🥊 hit)"). The owner wants the count: a source that needs N hits fires for sure on a
   hit step of at least N (the enemy-count selector's number, up to 20), and not below; a kill still strikes
   (Reign Havoc). The sources: Lightning Rounds every 10th hit (and Return Stroke with it), Attrition Orbs (a
   magazine-based count, 3 for a Grenade Launcher), To Shreds' 6 hits, Horde Shuttle's 10% of the enemy's health (`?`
   hits). ADRs D34 and the rules' `sustained` change with it. Its count joins the step bar's others (design note below).
 - **One heading per weapon for a perk on two weapons** (PR #80's test plan, T3): with the enhanced Demolitionist on
-  Astral Horizon and Crisis Inverted, a grenade step shows both reloads ("reloads your kinetic weapon", "reloads your
+  Astral Horizon and Crisis Inverted, a grenade step shows both refills ("refills your kinetic weapon", "refills your
   energy weapon") under "WEAPON PERK · ASTRAL HORIZON"; Crisis Inverted's copy gets no heading of its own. Each weapon's
   copy of a perk is its own element (D31), so each should show under its own weapon: "WEAPON PERK · CRISIS INVERTED" /
-  "Demolitionist (enhanced)" / "reloads your energy weapon".
+  "Demolitionist (enhanced)" / "refills your energy weapon".
+- **Marksman's Dodge reloads every weapon** (a follow-up of ADRs D42): the Compendium's "Reload Perk Notes"
+  (Weapon Perks#250) name Marksman's Dodge, Dragon's Shadow and a manual reload as true reloads, which set off
+  on-reload perks. Marksman's Dodge (`rules/hunter/class-abilities.yaml`) is `inert` today: it would get a
+  `reloadWeapon` of each slot, so every weapon's `reload` rules fire on the dodge (Dragon's Shadow, an exotic, when it is
+  authored). Nothing reacts to a reload yet, so no loop changes until an on-reload perk (Heal Clip, Voltshot) is.
+- **Spark of Momentum's refill as a `refillWeapon`** (a follow-up of ADRs D42; D41): its refill of the weapon in
+  hand is only a fact in its description (`rules/all-classes/arc/fragments.yaml`). As a `refillWeapon` it would show in
+  the trace like Demolitionist's ("refills your energy weapon"), but the outcome needs a target: the weapon in hand, which
+  the ammo brick step doesn't name (ADRs D43), and no `DamageSource` names yet. All-Star's refill is the same.
 
 ### Design notes
 

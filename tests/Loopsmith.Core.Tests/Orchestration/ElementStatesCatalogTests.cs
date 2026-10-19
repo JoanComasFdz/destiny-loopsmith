@@ -31,11 +31,11 @@ public sealed class ElementStatesCatalogTests
     }
 
     [Fact]
-    public void Return_Stroke_reloads_Thunderlord_on_each_lightning_strike()
+    public void Return_Stroke_refills_Thunderlord_on_each_lightning_strike()
     {
         var returnStroke = Catalog.Elements[ElementId.From("thunderlord-catalyst")];
 
         Assert.False(returnStroke.Inert.IsSome());
-        Assert.Equal(2, returnStroke.Rules.Count(rule => rule.Then.Any(outcome => outcome is Outcome.ReloadWeapon)));
+        Assert.Equal(2, returnStroke.Rules.Count(rule => rule.Then.Any(outcome => outcome is Outcome.RefillWeapon)));
     }
 }

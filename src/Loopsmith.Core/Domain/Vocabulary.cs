@@ -78,7 +78,7 @@ public enum HitZone { Body, Precision }
 /// <summary>
 /// What the player can say about a step besides its hit and its count (ADRs D36): a weapon step <see cref="BreaksShield"/>
 /// or lands <see cref="Precision"/> hits and kills, an ability step spends the <see cref="LastCharge"/>, an ammo brick is picked up
-/// by sliding over it (<see cref="Slide"/>, ADRs D42).
+/// by sliding over it (<see cref="Slide"/>, ADRs D43).
 /// </summary>
 public enum StepOption { BreaksShield, LastCharge, Precision, Slide }
 
@@ -99,19 +99,19 @@ public enum WeaponSlot { Kinetic, Energy, Power }
 public enum AmmoType { Primary, Special, Heavy }
 
 /// <summary>
-/// The ammo brick the player picks up (ADRs D42): a Special or a Heavy one. Bricks drop from enemies, which only play decides,
+/// The ammo brick the player picks up (ADRs D43): a Special or a Heavy one. Bricks drop from enemies, which only play decides,
 /// so the player declares the pickup; no ammo is counted (ADRs D37). Overflow reacts to both, Lead from Gold to a Heavy one.
 /// </summary>
 public enum AmmoBrick { Special, Heavy }
 
 /// <summary>
-/// How the player picks an ammo brick up (ADRs D42): <see cref="Plain"/>, walking over it; <see cref="Slide"/>, sliding over it
+/// How the player picks an ammo brick up (ADRs D43): <see cref="Plain"/>, walking over it; <see cref="Slide"/>, sliding over it
 /// (Spark of Momentum reacts to that only). A slide is still a pickup: every rule on a pickup fires for it too.
 /// </summary>
 public enum BrickPickup { Plain, Slide }
 
 /// <summary>
-/// How a brick must be picked up for a trigger to match (ADRs D42), its <c>by:</c>: <see cref="AnyPickup"/>, walked or slid
+/// How a brick must be picked up for a trigger to match (ADRs D43), its <c>by:</c>: <see cref="AnyPickup"/>, walked or slid
 /// over (no <c>by:</c>); <see cref="Slide"/>, only slid over (<c>by: slide</c>: Spark of Momentum).
 /// </summary>
 public enum BrickNeed { AnyPickup, Slide }

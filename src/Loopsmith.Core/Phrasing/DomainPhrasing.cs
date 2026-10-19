@@ -366,7 +366,7 @@ public static class DomainPhrasing
     /// <summary>A Reload step's button, next to a weapon's hit and kill: "🔄 reload".</summary>
     public const string ReloadCaption = "🔄 reload";
 
-    /// <summary>The designer's square for picking up an ammo brick (ADRs D42), its row's title: "Ammo brick", after its icon, "📦".</summary>
+    /// <summary>The designer's square for picking up an ammo brick (ADRs D43), its row's title: "Ammo brick", after its icon, "📦".</summary>
     public const string AmmoBrick = "Ammo brick";
 
     /// <summary>The ammo brick square's icon: "📦".</summary>
@@ -376,7 +376,7 @@ public static class DomainPhrasing
     public const string SlideOption = "🛝 by sliding";
 
     /// <summary>
-    /// An ammo brick picked up, as a step and as a trigger (ADRs D42): "Pick up a Heavy ammo brick", "Slide over a Special ammo
+    /// An ammo brick picked up, as a step and as a trigger (ADRs D43): "Pick up a Heavy ammo brick", "Slide over a Special ammo
     /// brick"; with no brick named (a trigger on any), "Pick up an ammo brick", "Slide over an ammo brick".
     /// </summary>
     public static string DescribeAmmoPickup(Optional<AmmoBrick> brick, BrickPickup pickup)
@@ -608,13 +608,17 @@ public static class DomainPhrasing
             weapon => $"{glossary.DescribeDamageSource(weapon.Weapon, superType)} strike"
                 + weapon.Type.Match(type => $", {type.Value} damage", _ => "")
                 + (weapon.Hit == HitOutcome.Kill ? " (kills)" : ""),
-            reload => DescribeReload(glossary, reload.Weapon, superType));
+            reload => DescribeWeaponAction("reloads", glossary, reload.Weapon, superType),
+            refill => DescribeWeaponAction("refills", glossary, refill.Weapon, superType));
 
-    /// <summary>"reloads this weapon" (the catalog's text), "reloads your energy weapon" (bound to its slot): no ammo is counted (ADRs D37).</summary>
-    private static string DescribeReload(KeywordGlossary glossary, DamageSource weapon, Optional<DamageType> superType) =>
+    /// <summary>
+    /// "reloads this weapon" (the catalog's text), "reloads your energy weapon" (bound to its slot), and "refills" the same
+    /// way: no ammo is counted (ADRs D37, D42).
+    /// </summary>
+    private static string DescribeWeaponAction(string verb, KeywordGlossary glossary, DamageSource weapon, Optional<DamageType> superType) =>
         weapon is DamageSource.WeaponInSlot
-            ? $"reloads your {glossary.DescribeDamageSource(weapon, superType)}"
-            : $"reloads {glossary.DescribeDamageSource(weapon, superType)}";
+            ? $"{verb} your {glossary.DescribeDamageSource(weapon, superType)}"
+            : $"{verb} {glossary.DescribeDamageSource(weapon, superType)}";
 
     /// <summary>
     /// An outcome as it was applied: one that spent a counted buff's stacks says how many, and what they gave

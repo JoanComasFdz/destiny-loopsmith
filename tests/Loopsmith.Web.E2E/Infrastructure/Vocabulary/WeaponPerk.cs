@@ -14,6 +14,7 @@ public partial record WeaponPerk
     public partial record Unrelenting;
     public partial record VeteransWisdom;
     public partial record RadiolariaTransposer;
+    public partial record Demolitionist;
     public partial record AllStar;
     public partial record AdhesiveOrdnance;
 
@@ -35,6 +36,7 @@ public static class WeaponPerkShowing
             unrelenting => "Unrelenting",
             veteransWisdom => "Veteran's Wisdom",
             radiolariaTransposer => "Radiolaria Transposer",
+            demolitionist => "Demolitionist",
             allStar => "All-Star",
             adhesiveOrdnance => "Adhesive Ordnance",
             unlisted => unlisted.Shown);

@@ -39,7 +39,7 @@ public static class ActionResolution
     /// Every ability (always, ADRs D5) and each of its secondary uses a rule reacts to (<see cref="ListSecondaryInputs"/>:
     /// Tempest Strike's sliding melee, Ascension's air move), a finisher (always, <see cref="ListFinisherActions"/>), every
     /// equipped weapon's hit, kill and reload (always, as a finisher: ADRs D37), a Special and a Heavy ammo brick picked up (always:
-    /// bricks drop from enemies, ADRs D42), the pickups on the ground and the states the player can declare now (<see cref="ListDeclarations"/>).
+    /// bricks drop from enemies, ADRs D43), the pickups on the ground and the states the player can declare now (<see cref="ListDeclarations"/>).
     /// Abilities and weapons are listed against one enemy; a host may set any <see cref="TargetCount"/>.
     /// </summary>
     public static ImmutableArray<PlayerAction> ListAvailableActions(ValidatedBuild build, GameState state)
@@ -61,7 +61,7 @@ public static class ActionResolution
     }
 
     /// <summary>
-    /// An ammo brick picked up, a Special and a Heavy one (ADRs D42): always available, as a finisher, since bricks drop from
+    /// An ammo brick picked up, a Special and a Heavy one (ADRs D43): always available, as a finisher, since bricks drop from
     /// enemies, which only play decides. Sliding over it is the step's option (<c>ammo:heavy:slide</c>).
     /// </summary>
     public static ImmutableArray<PlayerAction> ListAmmoBrickActions() =>
@@ -258,7 +258,7 @@ public static class ActionResolution
     }
 
     /// <summary>
-    /// The player picks up an ammo brick, or slides over it (ADRs D42): one event, so the rules on a pickup fire (All-Star),
+    /// The player picks up an ammo brick, or slides over it (ADRs D43): one event, so the rules on a pickup fire (All-Star),
     /// and on a slide those on a slide too (Spark of Momentum). Never blocked: bricks drop from enemies, which only play decides,
     /// and no ammo is counted (ADRs D37), so whether you aren't full on that ammo is the player's call.
     /// </summary>

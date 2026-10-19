@@ -246,7 +246,8 @@ internal static class DependencyMapping
             grantLeastChargedEnergy: least => [Give(ToEffectNode("energy-least-charged", "Least-charged ability energy"), DescribeEnergy(least.Amount))],
             spendStacks: spend => [new Effect(ToStatusNode(context, spend.Status), EdgeKind.Ends, $"spends {spend.Count.Value.ToString(CultureInfo.InvariantCulture)}")],
             weaponStrike: strike => [Give(ToEffectNode("extra-strike", "Extra strike"), strike.Hit == HitOutcome.Kill ? "kill" : "hit")],
-            reloadWeapon: _ => [Give(ToEffectNode("reload", "Reload"), "")]);
+            reloadWeapon: _ => [Give(ToEffectNode("reload", "Reload"), "")],
+            refillWeapon: _ => [Give(ToEffectNode("refill", "Refill"), "")]);
 
     /// <summary>What a passive does while it holds: an effect it gives (resistance, a damage bonus, stats, a charge), or the status it boosts.</summary>
     internal static ImmutableArray<Effect> ListPassiveEffects(GraphContext context, Passive passive) =>

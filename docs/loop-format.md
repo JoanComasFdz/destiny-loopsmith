@@ -98,11 +98,13 @@ that weapon, as a step of its own. No ammo is counted (Loopsmith isn't a simulat
 needed: the player declares it when the loop reloads, and it raises `Reloaded` from that weapon, so the `reload` rules
 fire ([rule-format.md](rule-format.md#rules)). It takes no count and no option (`energy:reload:3`, `energy:reload:shield`
 and `grenade:reload` are errors); a slot with no weapon is a blocked step (`No weapon in the Kinetic slot — nothing
-happens.`). A rule can reload a weapon too (`reloadWeapon`: Demolitionist's grenade, Return Stroke's lightning strike):
-the trace shows `reloads your energy weapon`, and that weapon's `reload` rules fire as on a Reload step. In the designer,
+happens.`). A rule can reload a weapon too (`reloadWeapon`): the trace shows `reloads your energy weapon`, and that
+weapon's `reload` rules fire as on a Reload step. A refill is no reload (ADRs D42): Demolitionist's grenade and Return
+Stroke's lightning strike refill the weapon (`refillWeapon`), the trace shows `refills your energy weapon`, and no
+`reload` rule fires. In the designer,
 tapping a weapon in the step HUD shows **🔄 reload** next to its 🥊 hit and 💀 kill, in every build.
 
-**Pick up an ammo brick** (ADRs D42). `ammo:special`, `ammo:heavy` — "Pick up a Heavy ammo brick"; with `:slide`
+**Pick up an ammo brick** (ADRs D43). `ammo:special`, `ammo:heavy` — "Pick up a Heavy ammo brick"; with `:slide`
 (`ammo:special:slide`), "Slide over a Special ammo brick": the player picks up a brick of that ammo, walking or sliding
 over it, as a step of its own. Bricks drop from enemies, which only play decides, so the step is always available and
 never blocked, and it names no weapon. No ammo is counted, so the player declares it when the loop picks up a brick
@@ -443,7 +445,7 @@ loadout's) and its 2- and 4-piece perks, dimmed when not active, each with its o
 **An exotic's catalyst.** An exotic weapon with a catalyst shows it as a square after its perks, off until the
 build turns it on (a DIM link doesn't say). In the designer its details switch it on or off: the embedded
 build's weapon entry gets `catalyst: true`, the catalyst's element is equipped, and the steps replay. Thunderlord's
-Return Stroke reloads it on each lightning strike (a kill, or a hit step's 10th hit: ADRs D37). A catalyst outside the
+Return Stroke refills it on each lightning strike (a kill, or a hit step's 10th hit: ADRs D42). A catalyst outside the
 loop is shown, and its details say "No rules needed." and why; one the rules don't know yet carries the ⊘. Validation says nothing of either.
 
 **Shared DIM builds on Home.** A share can ship with the app as `builds/<slug>/dim-loadout.json` —

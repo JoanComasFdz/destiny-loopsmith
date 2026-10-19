@@ -984,7 +984,7 @@ public static class LoopDesigning
                 .Append(new PlayerAction.ReloadWeapon(weapon.Slot))   // a reload, the player's to declare (ADRs D37)
                 .Select(action => (action, TriggerGroup.Weapon)));
         var bricks = ActionResolution.ListAmmoBrickActions()
-            .Select(action => (action, TriggerGroup.AmmoBrick));   // always: bricks drop from enemies (ADRs D42)
+            .Select(action => (action, TriggerGroup.AmmoBrick));   // always: bricks drop from enemies (ADRs D43)
         var pickups = state.ListPickups()
             .Select(pickup => ((PlayerAction)new PlayerAction.CollectPickups(pickup), TriggerGroup.Pickup));
         var declarations = ActionResolution.ListDeclarations(build, state)

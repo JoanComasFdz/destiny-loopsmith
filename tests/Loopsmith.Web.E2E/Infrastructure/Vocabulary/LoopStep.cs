@@ -11,7 +11,7 @@ namespace Loopsmith.Web.E2E.Infrastructure.Vocabulary;
 public partial record LoopStep
 {
     public partial record Reload(WeaponSlot Slot);
-    public partial record PickUpAmmo(Brick Ammo);      // ammo:heavy (ADRs D42)
+    public partial record PickUpAmmo(Brick Ammo);      // ammo:heavy (ADRs D43)
     public partial record SlideOverAmmo(Brick Ammo);   // ammo:heavy:slide
     public partial record Hit(WeaponSlot Slot, int Enemies);
 

@@ -346,12 +346,13 @@ elements:
         then:
           - { grantEnergy: { to: grenade, amount: "10%", byArchetype: { archetypes: [fusion-rifle, glaive, shotgun, sniper-rifle], amount: "20%" } } }
         reason: "Every kill with this weapon gives you some grenade energy back."
-      # A reload, as if the player had reloaded (ADRs D37): this weapon's reload rules fire too. No ammo is
-      # counted; the 3 s between refills is a fact in the description.
+      # A refill, not a reload (ADRs D42): it sets off no on-reload perk, so this weapon's reload rules don't
+      # fire (compendium/2026-10-19/Weapon Perks#250). No ammo is counted; the 3 s between refills is a fact in
+      # the description.
       - id: demolitionist-2
         on: { abilityCast: grenade }
         then:
-          - { reloadWeapon: "weapon:this" }
+          - { refillWeapon: "weapon:this" }
         reason: "Throwing your grenade refills this weapon's magazine."
     passives: []
     # The enhanced trait: the row's ↑ figures, 11% instead of 10%, and 22% instead of 20%.

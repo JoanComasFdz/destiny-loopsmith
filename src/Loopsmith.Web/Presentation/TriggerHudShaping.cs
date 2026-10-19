@@ -49,7 +49,7 @@ public sealed record HudStatus(string Name, Affinity Affinity, ImmutableArray<Tr
 /// The Next trigger section laid out like Destiny's HUD: the Super's diamond, then the grenade, melee and class ability
 /// squares in the subclass's colour, each (the diamond too: Arc Staff's heavy combo) with its secondary uses below it (and the finisher's: the game has no HUD
 /// square for it, so it shows the finisher's own icon — the player's equipped one after a Bungie login, else the
-/// class's), then the weapons, each in its damage type's colour, and the ammo bricks' square below them (ADRs D42); above them, where the game
+/// class's), then the weapons, each in its damage type's colour, and the ammo bricks' square below them (ADRs D43); above them, where the game
 /// lists your buffs, the states to declare — the buffs on you (with critical health, when a rule reacts to it), on your
 /// weapons and the debuffs on the pack (with a new pack) — and what is on the ground to pick up.
 /// </summary>
@@ -167,7 +167,7 @@ public static class TriggerHudShaping
                 choice.Buttons.Any(button => button.IsNew)))
             : Optional.None<HudSlot>();
 
-    /// <summary>The ammo bricks' square, below the weapons (ADRs D42): a tap shows its Special and Heavy buttons and, when a rule reacts to a slide, "🛝 by sliding".</summary>
+    /// <summary>The ammo bricks' square, below the weapons (ADRs D43): a tap shows its Special and Heavy buttons and, when a rule reacts to a slide, "🛝 by sliding".</summary>
     private static Optional<HudSlot> ShapeAmmoBrick(ImmutableDictionary<string, TriggerChoice> choices) =>
         choices.TryGetValue(TriggerPaletteShaping.AmmoBrickKey, out var choice)
             ? Optional.Some(new HudSlot(choice, DomainPhrasing.AmmoBrick, choice.Title, new HudFace.Blank(), Affinity.Neutral, Optional.None<TriggerButton>(), choice.Buttons.Any(button => button.IsNew)))

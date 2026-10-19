@@ -56,13 +56,14 @@ public static class WeaponBinding
         rule.On.FindVia().Match(via => IsThisWeapon(via.Value), _ => false)
         || rule.Then.Any(IsNamingThisWeapon);
 
-    /// <summary>An outcome that acts on "this weapon": a damage change for it, its strike, a reload of it, an energy grant by its archetype.</summary>
+    /// <summary>An outcome that acts on "this weapon": a damage change for it, its strike, a reload or refill of it, an energy grant by its archetype.</summary>
     private static bool IsNamingThisWeapon(Outcome outcome) =>
         outcome switch
         {
             Outcome.ModifyDamage modify => IsThisWeapon(modify.Against),
             Outcome.WeaponStrike strike => IsThisWeapon(strike.Weapon),
             Outcome.ReloadWeapon reload => IsThisWeapon(reload.Weapon),
+            Outcome.RefillWeapon refill => IsThisWeapon(refill.Weapon),
             Outcome.GrantEnergy { Amount: EnergyGrant.ByArchetype } => true,
             _ => false,
         };
@@ -94,6 +95,7 @@ public static class WeaponBinding
             Outcome.ModifyDamage modify => BindSource(modify.Against, weapon.Slot, weapon.Type).Map(Outcome (against) => modify with { Against = against }),
             Outcome.WeaponStrike strike => BindSource(strike.Weapon, weapon.Slot, weapon.Type).Map(Outcome (bound) => strike with { Weapon = bound }),
             Outcome.ReloadWeapon reload => BindSource(reload.Weapon, weapon.Slot, weapon.Type).Map(Outcome (bound) => reload with { Weapon = bound }),
+            Outcome.RefillWeapon refill => BindSource(refill.Weapon, weapon.Slot, weapon.Type).Map(Outcome (bound) => refill with { Weapon = bound }),
             Outcome.GrantEnergy { Amount: EnergyGrant.ByArchetype byArchetype } grant =>
                 Optional.Some<Outcome>(grant with { Amount = BindArchetype(byArchetype, weapon.Archetype) }),
             _ => Optional.Some(outcome),

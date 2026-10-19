@@ -5,7 +5,7 @@ using Loopsmith.Web.E2E.Infrastructure.Vocabulary;
 
 namespace Loopsmith.Web.E2E.Scenarios.Loop.Weapons;
 
-/// <summary>Picking up an ammo brick as a step of its own (ADRs D42): a Special or a Heavy one, by sliding over it or not; no weapon offers a slide over ammo any more.</summary>
+/// <summary>Picking up an ammo brick as a step of its own (ADRs D43): a Special or a Heavy one, by sliding over it or not; no weapon offers a slide over ammo any more.</summary>
 public sealed class AmmoBrickTests : BaseE2E
 {
     [Theory, PlayInDesktop, PlayInMobile]

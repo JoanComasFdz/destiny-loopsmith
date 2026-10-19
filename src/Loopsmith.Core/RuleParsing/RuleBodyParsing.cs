@@ -34,7 +34,7 @@ internal static class RuleBodyParsing
     [
         "grantEnergy", "convertStacksToEnergy", "applyBuff", "removeBuff", "debuffTarget", "spawn",
         "summon", "strikeTarget", "modifyDamage", "restoreHealth", "resetCooldown", "collect", "spendStacks",
-        "reloadWeapon",
+        "reloadWeapon", "refillWeapon",
     ];
 
     private static readonly ImmutableArray<string> PassiveNames =
@@ -136,7 +136,7 @@ internal static class RuleBodyParsing
 
     /// <summary>
     /// <c>{ ammoPickedUp: {} }</c>, <c>{ ammoPickedUp: { brick: heavy } }</c>, <c>{ ammoPickedUp: { by: slide } }</c>: an ammo
-    /// brick the player picks up (<c>ammo:heavy</c>, ADRs D42) — any, or only that one (<c>special</c>, <c>heavy</c>); with
+    /// brick the player picks up (<c>ammo:heavy</c>, ADRs D43) — any, or only that one (<c>special</c>, <c>heavy</c>); with
     /// <c>by: slide</c> only one they slide over (<c>ammo:heavy:slide</c>; Spark of Momentum).
     /// </summary>
     private static Result<Trigger, Errors> ReadAmmoPickedUpTrigger(YamlValue value) =>
@@ -167,6 +167,15 @@ internal static class RuleBodyParsing
         scope.ReadDamageSource(value).Bind(weapon => weapon is DamageSource.ThisWeapon or DamageSource.ThisWeaponOfType or DamageSource.WeaponInSlot
             ? Succeed<Outcome>(new Outcome.ReloadWeapon(weapon))
             : value.FailAt<Outcome>($"{value.Label} reloads one weapon: weapon:this, weapon:this:<type> or slot:<slot>"));
+
+    /// <summary>
+    /// <c>{ refillWeapon: weapon:this }</c> or <c>{ refillWeapon: slot:power }</c>: refills that one weapon's magazine, like
+    /// <c>reloadWeapon</c>, but a refill is no reload: no reload rule fires (ADRs D42). No ammo is counted.
+    /// </summary>
+    private static Result<Outcome, Errors> ReadRefillWeapon(ReferenceScope scope, YamlValue value) =>
+        scope.ReadDamageSource(value).Bind(weapon => weapon is DamageSource.ThisWeapon or DamageSource.ThisWeaponOfType or DamageSource.WeaponInSlot
+            ? Succeed<Outcome>(new Outcome.RefillWeapon(weapon))
+            : value.FailAt<Outcome>($"{value.Label} refills one weapon: weapon:this, weapon:this:<type> or slot:<slot>"));
 
     /// <summary>
     /// <c>{ energyExpended: grenade }</c> (<c>grenade|melee|classAbility</c>): the ability's last charge used, its energy
@@ -397,6 +406,7 @@ internal static class RuleBodyParsing
             "collect" => scope.ReadPickup(entry.Value).Map(Outcome (pickup) => new Outcome.Collect(pickup)),
             "spendStacks" => ReadSpendStacks(scope, entry.Value),
             "reloadWeapon" => ReadReloadWeapon(scope, entry.Value),
+            "refillWeapon" => ReadRefillWeapon(scope, entry.Value),
             _ => entry.Value.FailAt<Outcome>(DescribeUnknown("outcome", entry.Key, OutcomeNames)),
         });
 

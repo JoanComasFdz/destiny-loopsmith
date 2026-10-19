@@ -2,7 +2,7 @@ using Dunet;
 
 namespace Loopsmith.Web.E2E.Infrastructure.Vocabulary;
 
-/// <summary>An ammo brick the player picks up (ADRs D42), as its button in the trigger panel's row names it. A case is added when a test needs it.</summary>
+/// <summary>An ammo brick the player picks up (ADRs D43), as its button in the trigger panel's row names it. A case is added when a test needs it.</summary>
 [Union]
 public partial record Brick
 {

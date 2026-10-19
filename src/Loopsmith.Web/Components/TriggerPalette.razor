@@ -92,7 +92,7 @@
                 }
                 @if (hud.AmmoBrick is Optional<HudSlot>.Some ammo)
                 {
-                    @* Bricks drop from enemies, which only play decides: the player picks one up when the loop does (ADRs D42). *@
+                    @* Bricks drop from enemies, which only play decides: the player picks one up when the loop does (ADRs D43). *@
                     var isAmmoPicked = pickedKey == Optional.Some(ammo.Value.Choice.Key);
                     <button type="button" class="trig-weapon trig-ammo aff-neutral @(isAmmoPicked ? "picked" : "")"
                             data-action="trigger-ammo-brick" data-hud-slot="@ammo.Value.Choice.Key" aria-pressed="@(isAmmoPicked ? "true" : "false")"

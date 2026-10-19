@@ -174,7 +174,7 @@ elements:
     description: "Sliding over an ammo brick (when not full of that ammo) refills your equipped weapon (a refill, not a reload) and gives you x3 Bolt Charge."
     source: compendium/2026-10-13/Arc#21
     rules:
-      # A brick picked up by sliding over it, a step the player declares (ADRs D42); ammo isn't counted
+      # A brick picked up by sliding over it, a step the player declares (ADRs D43); ammo isn't counted
       # (ADRs D37), so "not on full ammo of that type" is the player's call. The refill is no reload: it
       # sets off no on-reload perk (compendium/2026-10-19/Weapon Perks#250), so it stays a fact in the description.
       - id: spark-of-momentum-1

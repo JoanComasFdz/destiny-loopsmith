@@ -190,6 +190,7 @@ internal static class EnhancedPerkParsing
             least => ListValues(least.Amount),
             _ => [],
             _ => [],
+            _ => [],
             _ => []);
 
     private static IEnumerable<GameValue> ListValues(EnergyGrant grant) =>
@@ -236,7 +237,8 @@ internal static class EnhancedPerkParsing
             least => least with { Amount = ReplaceValues(least.Amount, values) },
             spend => spend,
             weapon => weapon,
-            reload => reload);
+            reload => reload,
+            refill => refill);
 
     private static EnergyGrant ReplaceValues(EnergyGrant grant, EnhancedValues values) =>
         grant.Match<EnergyGrant>(

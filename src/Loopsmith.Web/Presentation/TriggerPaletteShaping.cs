@@ -17,7 +17,7 @@ public sealed record TriggerButton(PlayerAction Action, string Token, string Lab
 
 /// <summary>
 /// A row of the palette: one trigger, or the hit / kill pair of the same ability use or weapon (a weapon's reload too), or the
-/// Special and Heavy ammo bricks ("ammo", ADRs D42). <see cref="Key"/> names
+/// Special and Heavy ammo bricks ("ammo", ADRs D43). <see cref="Key"/> names
 /// the row ("cast:Grenade", "cast:Melee:Slide", "fire:Kinetic", "class", "class:Air", …) and stays the same from one step
 /// to the next.
 /// <see cref="Targets"/> is how many enemies the row's actions hit or kill — none for a row without targets (class
@@ -29,7 +29,7 @@ public sealed record TriggerChoice(string Key, string Title, Optional<TargetCoun
 /// <summary>
 /// An option the player turns on or off for a row's actions (ADRs D36): a weapon's "🛡 shield" (the step breaks a
 /// combatant's shield) and "🎯 precision" (its hits and kills are precision ones), an ability's "⬜ Spend fully" (the use
-/// spends its last charge), an ammo brick's "🛝 by sliding" (picked up by sliding over it, ADRs D42); <see cref="Hint"/> says what it is for.
+/// spends its last charge), an ammo brick's "🛝 by sliding" (picked up by sliding over it, ADRs D43); <see cref="Hint"/> says what it is for.
 /// </summary>
 public sealed record TriggerOptionToggle(StepOption Option, string Caption, string Hint, bool IsOn);
 
@@ -103,7 +103,7 @@ public static class TriggerPaletteShaping
         return new TriggerChoice(key, title, targets, buttons, toggles);
     }
 
-    /// <summary>The ammo bricks' row (ADRs D42): its key and its title.</summary>
+    /// <summary>The ammo bricks' row (ADRs D43): its key and its title.</summary>
     public const string AmmoBrickKey = "ammo";
 
     /// <summary>An option of a row, as the player turns it on: "fire:Energy:Precision".</summary>

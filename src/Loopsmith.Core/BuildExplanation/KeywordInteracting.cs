@@ -142,6 +142,7 @@ public static class KeywordInteracting
             _ => false,
             spend => IsStatus(keyword, spend.Status),
             _ => false,
+            _ => false,
             _ => false);
 
     private static bool IsGiving(KeywordRef keyword, Outcome outcome) =>
@@ -153,6 +154,7 @@ public static class KeywordInteracting
             debuff => IsStatus(keyword, debuff.Status),
             spawn => keyword is KeywordRef.Pickup pickup && pickup.Id == spawn.Pickup,
             spawn => keyword is KeywordRef.Summon summon && summon.Id == spawn.Summon,
+            _ => false,
             _ => false,
             _ => false,
             _ => false,
@@ -180,6 +182,7 @@ public static class KeywordInteracting
             _ => false,
             _ => false,
             _ => false,
+            _ => false,
             _ => false);
 
     private static bool IsStriking(KeywordRef keyword, Outcome outcome) =>
@@ -192,6 +195,7 @@ public static class KeywordInteracting
             _ => false,
             _ => false,
             strike => IsStatus(keyword, strike.Via),
+            _ => false,
             _ => false,
             _ => false,
             _ => false,

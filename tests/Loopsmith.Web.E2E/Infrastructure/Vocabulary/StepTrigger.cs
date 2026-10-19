@@ -9,7 +9,7 @@ public partial record StepTrigger
     public partial record Hit;
     public partial record Kill;
     public partial record Reload;
-    public partial record PickUp(Brick Ammo);   // an ammo brick's button: "special", "heavy" (ADRs D42)
+    public partial record PickUp(Brick Ammo);   // an ammo brick's button: "special", "heavy" (ADRs D43)
 
     /// <summary>What the UI shows that no case names yet: a failing assertion names it as the UI shows it.</summary>
     public partial record Unlisted(string Shown);

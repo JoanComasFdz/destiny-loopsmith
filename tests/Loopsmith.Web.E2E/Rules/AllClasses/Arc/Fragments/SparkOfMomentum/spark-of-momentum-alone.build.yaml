@@ -1,4 +1,4 @@
-# Spark of Momentum alone: an ammo brick slid over gives x3 Bolt Charge, one picked up without sliding nothing (ADRs D42).
+# Spark of Momentum alone: an ammo brick slid over gives x3 Bolt Charge, one picked up without sliding nothing (ADRs D43).
 name: "E2E - Spark of Momentum alone"
 class: hunter
 subclass: arc

@@ -8,7 +8,7 @@ step's damage resistance (D29), armor mods in their sockets (D30), the artifact 
 (D33), what a hit step stands for (D34), the raid and activity mods left out of the sockets (D35), what the player
 says about a step besides its hit and count — a broken shield, precision kills, the last charge (D36), a reload (D37), the web designer as the only host (D38), the
 developer tools as hosts too (D39), the rules grouped by class, subclass and area, each rule with its own id (D40), a
-slide over an ammo brick (D41) and an ammo brick picked up, slid over or not (D42). D1 is the
+slide over an ammo brick (D41), a refill that is no reload (D42) and an ammo brick picked up, slid over or not (D43). D1 is the
 founding one: every other decision follows from it.
 
 | # | Decision | Why |
@@ -46,12 +46,13 @@ founding one: every other decision follows from it.
 | D33 | Armor Charge is counted: sure stacks and chance stacks, and the count decides | Gaining, keeping and spending Armor Charge is a pillar of build crafting; most of its gains and spends are known steps of the loop, so the loop can say how many it surely holds |
 | D35 | Raid, activity and seasonal armor mods aren't supported: a DIM link's are kept but ignored, and no picker offers them | They act on an encounter's mechanics (a relic, a plate, an enemy race), which a loop of triggers doesn't hold, or no longer work at all; what a loadout had stays visible |
 | D36 | The player says when a weapon step breaks a shield or lands precision kills, and when an ability step spends its last charge | Shield Break Charge, Spark of Brilliance and the Kickstarts react to them; play decides all three, and none is counted |
-| D37 | A reload is a step the player declares, and a rule can reload a weapon; no ammo is counted | Demolitionist's loop needs a reload and the perks that react to one; a magazine is time and ammo, which only play decides |
+| D37 | A reload is a step the player declares, and a rule can reload a weapon; no ammo is counted | Perks react to a reload (Heal Clip, Voltshot); a refill is no reload (D42); a magazine is time and ammo, which only play decides |
 | D38 | The web designer is the only host; the CLI and the loop graph are removed | Nobody used the CLI: the web app, recorded on every PR, is how Loopsmith is iterated on; what the CLI checked is a Core test |
 | D39 | Developer tools under `tools/` are hosts too: they call only `Orchestration` and the kernel, their own logic is a pure project of their own, and nothing ships them | The rule viewer draws every rule as one claim, the list of e2e scenarios to write; a tool is a host like the web app, so it keeps the same boundary, and Core keeps only what a player's host uses |
 | D40 | The rules are grouped by class, then subclass, then area, with what every class shares in `all-classes/`; every rule has an id, and its full name is its file's path and that id | It is how the game presents a build, a shared element is written once, and the e2e rule tests and their recordings are named by it; the trigger is a view, not a folder |
-| D41 | ~~A slide over an ammo brick is a step the player declares, with the weapon in hand~~ Its step superseded by D42; its refill is no reload | Spark of Momentum's x3 Bolt Charge is part of an Arc loop; a refill sets off no on-reload perk (Compendium) |
-| D42 | An ammo brick picked up is a step the player declares, Special or Heavy, slid over or not; it names no weapon and is always available | The perks that react to a brick (All-Star, Adhesive Ordnance, Overflow, Lead from Gold) need a trigger; bricks drop from enemies, which only play decides, and a slide is one way of picking a brick up |
+| D41 | ~~A slide over an ammo brick is a step the player declares, with the weapon in hand~~ Its step superseded by D43; its refill is no reload | Spark of Momentum's x3 Bolt Charge is part of an Arc loop; a refill sets off no on-reload perk (Compendium) |
+| D42 | A rule can refill a weapon (`refillWeapon`): a fact, no reload, so no `reload` rule fires; `reloadWeapon` is only for true reloads | The Compendium tells a refill from a reload: Demolitionist's and Return Stroke's refills set off no on-reload perk |
+| D43 | An ammo brick picked up is a step the player declares, Special or Heavy, slid over or not; it names no weapon and is always available | The perks that react to a brick (All-Star, Adhesive Ordnance, Overflow, Lead from Gold) need a trigger; bricks drop from enemies, which only play decides, and a slide is one way of picking a brick up |
 
 ## What the product is
 
@@ -617,14 +618,15 @@ magazine nor its reserves (D1).
 Festival Flight"), offered for every weapon next to its hit and kill ("🔄 reload"): it takes no count and no option, and
 it raises `Reloaded` from that weapon, which the `reload` trigger matches (`via` names a weapon, `weapon:this` the one
 holding the element). An outcome reloads a weapon too (`reloadWeapon: weapon:this`, or a slot): it is a reload, so that
-weapon's `reload` rules fire as on the step (the owner: a reload that has an effect, like Heal Clip's heal, fires it),
-and a partial refill (Return Stroke's 5 rounds) is one reload, its rounds a fact. An energy grant may go by the archetype
+weapon's `reload` rules fire as on the step (the owner: a reload that has an effect, like Heal Clip's heal, fires it).
+*(Amended by D42: a refill — Demolitionist's magazine, Return Stroke's 5 rounds — is no reload; it is a `refillWeapon`,
+and no `reload` rule fires on it.)* An energy grant may go by the archetype
 of the weapon holding the element (`byArchetype`: Demolitionist's 10%, 20% on Fusion Rifles, Glaives, Shotguns and
 Sniper Rifles): the build check picks the weapon's amount when its archetype is known, and shows both when it isn't.
 **Consequence.** A reload is never needed and never blocked (but for an empty slot): a loop shows a Reload step where
-the player reloads, and nothing checks the magazine. A `reloadWeapon` outcome fires the weapon's `reload` rules, and
-the weapon shoots again in the next step, which closes Demolitionist's loop (grenade → reload → kills → grenade energy
-→ grenade). Cooldowns between refills (Demolitionist's
+the player reloads, and nothing checks the magazine. A `reloadWeapon` outcome fires the weapon's `reload` rules.
+Demolitionist's loop (grenade → refill → kills → grenade energy → grenade) is closed by its refill (D42), since a
+weapon shoots in any step. Cooldowns between refills (Demolitionist's
 3 s) and the rounds put back are facts in the description. Reload speed stays outside the loop (Feeding Frenzy is inert).
 
 ### D38 — The web designer is the only host; the CLI and the loop graph are removed
@@ -690,7 +692,7 @@ Moving a file changes the catalog version (D15), as any edit does. Prismatic's g
 `all-classes/prismatic/` or under a class, by whether each class's Prismatic item has the same hash; that is checked when
 Prismatic is authored.
 
-### D41 — A slide over an ammo brick is a step the player declares; its refill is no reload (its step superseded by D42)
+### D41 — A slide over an ammo brick is a step the player declares; its refill is no reload (its step superseded by D43)
 
 **Context.** Spark of Momentum (Compendium Arc#21) gives x3 Bolt Charge and refills the equipped weapon when you slide
 over an ammo brick you aren't full on. Movement and ammo were outside the loop (D1), so the fragment was inert, though
@@ -707,10 +709,25 @@ that weapon. The refill is a fact in Spark of Momentum's description, not a `rel
 ammo (D37). The other movement (jumps, sprinting, a slide over nothing) stays outside the loop: when a rule needs a plain
 slide, the step becomes a slide with an "over an ammo brick" option, and `slideOverAmmo` a slide trigger that says so.
 What picking up an ammo brick gives other elements (All-Star, Overflow, the Scavenger mods) has no trigger yet: a brick
-isn't a pickup a rule drops. D37 treats Demolitionist's and Return Stroke's refills as reloads, which the same Compendium
-note contradicts; that is its own change.
+isn't a pickup a rule drops. Demolitionist's and Return Stroke's refills, which D37 treated as reloads, are refills too
+(D42).
 
-### D42 — An ammo brick picked up is a step the player declares, Special or Heavy, slid over or not
+### D42 — A rule can refill a weapon; a refill is no reload
+
+**Context.** D37 made every outcome that puts rounds back a reload, so Demolitionist's grenade (Weapon Perks#62,
+"refills Magazine") and Return Stroke's lightning strike (Exotic Weapons#144, "refill 5 Ammo") fired the weapon's
+`reload` rules. The Compendium's "Reload Perk Notes" (Weapon Perks#250, 2026-10-19) say a **refill** is a reload with no
+animation that sets off no on-reload perk, and that only a manual reload, Marksman's Dodge and Dragon's Shadow are
+**reloads**. D41 already kept Spark of Momentum's refill out of `reloadWeapon`. **Decision (product owner).** An outcome
+`refillWeapon` (`weapon:this`, `weapon:this:<type>` or `slot:<slot>`, as `reloadWeapon`) refills that weapon: a fact in the
+trace ("refills your energy weapon", or the caveat "no weapon to refill" when the slot is empty) that raises no
+`Reloaded`, so no `reload` rule fires on it. Demolitionist and Return Stroke use it; `reloadWeapon` stays for true reloads.
+**Consequence.** Demolitionist's loop keeps its order and still repeats; it is named "Grenade, refill, kill"
+(`builds/demolitionist-hunter/loops/grenade-refill-kill.loop.yaml`). The rule viewer draws a refill as its own
+effect, "Refill". No ammo is counted (D37). Marksman's Dodge and Dragon's Shadow, true reloads, aren't authored as
+reloads yet ([backlog.md](backlog.md)).
+
+### D43 — An ammo brick picked up is a step the player declares, Special or Heavy, slid over or not
 
 **Context.** D41 made a slide over an ammo brick a step of its own, bound to the weapon in hand, for Spark of Momentum.
 Picking up a brick sets off other elements too: All-Star, Adhesive Ordnance, Overflow and Lead from Gold among the
