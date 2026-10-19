@@ -50,7 +50,7 @@
   Super heavy combo: 1
   Always on: 9
 
-## + what builds on it (withDependents): 152 rules
+## + what builds on it (withDependents): 158 rules
   Class ability: 11
   Air class ability: 1
   Melee: 11
@@ -58,17 +58,17 @@
   Grenade: 13
   Finisher: 11
   Super: 6
-  Weapon: 4
+  Weapon: 5
   Arc weapon: 12
   Heavy Arc weapon: 1
   Kinetic weapon: 2
   Special Arc weapon: 1
   Stasis weapon: 2
   Strand weapon: 2
-  Critical health: 2
+  Critical health: 3
   Hit at critical health: 1
   Airborne Super heavy: 1
-  Any: 9
+  Any: 10
   Bolt Charge: 4
   Bolt Charge strike: 2
   Ionic Trace: 3
@@ -79,7 +79,7 @@
   Super heavy combo: 1
   This weapon: 4
   Threadling: 1
-  Always on: 25
+  Always on: 28
 
 ## Every rule of + what builds on it
 
@@ -159,11 +159,12 @@ rule:jolt#1.3 keywords-arc-jolt-2: [Trigger] Super hit ➜ [Debuff] Jolt (on the
 rule:super#0 keywords-super-super-1: [Trigger] Super cast ➜ always ➜ [Buff] Super
 radiant-light#0 mods-helmet-radiant-light-1: [Trigger] Super cast ➜ [Armor mod] Radiant Light (equipped) + [Buff] Armor Charge (on you) ➜ [Buff] Armor Charge
 
-### Weapon (4)
+### Weapon (5)
 rule:jolt#0 keywords-arc-jolt-1: [Trigger] Weapon hit ➜ [Debuff] Jolt (on the target) ➜ [Strike] Jolt strike
 horde-shuttle#0 artifact-current-horde-shuttle-1: [Trigger] Weapon sustained hit ➜ [Artifact perk] Horde Shuttle (equipped) + [Debuff] Unravel (on the target) ➜ [Summon] Threadling
 reaper#1 mods-armor-reaper-2: [Trigger] Weapon kill ➜ [Armor mod] Reaper (equipped) + [Buff] Reaper (on you) ➜ [Pickup] Orb of Power, [Buff] Reaper (ends)
 to-shreds#0 artifact-current-to-shreds-1: [Trigger] Weapon sustained hit ➜ [Artifact perk] To Shreds (equipped) + [Debuff] Sever (on the target) ➜ [Debuff] Unravel
+iron-panoply-2pc#0 armor-sets-iron-panoply-iron-panoply-2pc-1: [Trigger] Weapon kill ➜ [Armor set bonus] Vigilant Watch (equipped) + [Buff] Critical health (on you) ➜ [Effect] Health (30 HP)
 
 ### Arc weapon (12)
 spark-of-discharge#1 all-classes-arc-fragments-spark-of-discharge-2: [Trigger] Arc weapon 3+ kills ➜ [Subclass fragment] Spark of Discharge (equipped) ➜ [Pickup] Ionic Trace
@@ -197,9 +198,10 @@ arc-stasis-dual-siphon#3 mods-helmet-arc-stasis-dual-siphon-4: [Trigger] Stasis 
 arc-strand-siphon-combo#2 mods-helmet-arc-strand-siphon-combo-3: [Trigger] Strand weapon 2+ kills within 3s ➜ [Armor mod] Arc/Strand Siphon Combo (equipped) ➜ [Pickup] Orb of Power
 arc-strand-siphon-combo#3 mods-helmet-arc-strand-siphon-combo-4: [Trigger] Strand weapon fewer than 2 kills ➜ [Armor mod] Arc/Strand Siphon Combo (equipped) ➜ [Pickup] Orb of Power (chance)
 
-### Critical health (2)
+### Critical health (3)
 spark-of-recharge#0 all-classes-arc-fragments-spark-of-recharge-1: [Trigger] Critical health ➜ [Subclass fragment] Spark of Recharge (equipped) ➜ [Buff] Spark of Recharge
 emergency-reinforcement#0 mods-chest-emergency-reinforcement-1: [Trigger] Critical health ➜ [Armor mod] Emergency Reinforcement (equipped) + [Buff] Armor Charge (3+ stacks) ➜ [Buff] Emergency Reinforcement (6s | 9s | 12s by stacks spent), [Buff] Armor Charge (ends)
+iron-panoply-4pc#0 armor-sets-iron-panoply-iron-panoply-4pc-1: [Trigger] Critical health ➜ [Armor set bonus] Iron Conviction (equipped) ➜ [Buff] Iron Conviction (7s)
 
 ### Hit at critical health (1)
 spark-of-instinct#0 all-classes-arc-fragments-spark-of-instinct-1: [Trigger] Hit at critical health ➜ [Subclass fragment] Spark of Instinct (equipped) ➜ [Debuff] Jolt
@@ -207,7 +209,7 @@ spark-of-instinct#0 all-classes-arc-fragments-spark-of-instinct-1: [Trigger] Hit
 ### Airborne Super heavy (1)
 arc-staff#1 hunter-arc-supers-arc-staff-3: [Trigger] Airborne Super heavy hit ➜ [Subclass super] Arc Staff (equipped) ➜ [Debuff] Blind
 
-### Any (9)
+### Any (10)
 flow-state#0 hunter-arc-aspects-flow-state-1: [Trigger] Any kill ➜ [Subclass aspect] Flow State (equipped) + [Debuff] Jolt (on the target) ➜ [Buff] Amplified
 tempest-strike#0 hunter-arc-aspects-tempest-strike-1: [Trigger] Any kill ➜ [Subclass aspect] Tempest Strike (equipped) + [Debuff] Jolt (on the target) ➜ [Buff] Bolt Charge
 spark-of-amplitude#0 all-classes-arc-fragments-spark-of-amplitude-1: [Trigger] Any 2+ kills within 4s ➜ [Subclass fragment] Spark of Amplitude (equipped) + [Buff] Amplified (on you) ➜ [Pickup] Orb of Power
@@ -215,6 +217,7 @@ spark-of-amplitude#1 all-classes-arc-fragments-spark-of-amplitude-2: [Trigger] A
 spark-of-brilliance#0 all-classes-arc-fragments-spark-of-brilliance-1: [Trigger] Any precision kill ➜ [Subclass fragment] Spark of Brilliance (equipped) + [Debuff] Blind (on the target) ➜ [Debuff] Blind
 spark-of-ions#0 all-classes-arc-fragments-spark-of-ions-1: [Trigger] Any kill ➜ [Subclass fragment] Spark of Ions (equipped) + [Debuff] Jolt (on the target) ➜ [Pickup] Ionic Trace
 dielectric#0 artifact-current-dielectric-1: [Trigger] Any kill ➜ [Artifact perk] Dielectric (equipped) + [Debuff] Jolt (on the target) ➜ [Buff] Bolt Charge
+iron-panoply-4pc#1 armor-sets-iron-panoply-iron-panoply-4pc-2: [Trigger] Any kill ➜ [Armor set bonus] Iron Conviction (equipped) + [Buff] Iron Conviction (on you) ➜ [Buff] Iron Conviction (7s)
 luminopotent-4pc#0 armor-sets-luminopotent-luminopotent-4pc-1: [Trigger] Any kill ➜ [Armor set bonus] Shock and Clear (equipped) + [Debuff] Jolt (on the target) ➜ [Pickup] Ionic Trace
 to-shreds#1 artifact-current-to-shreds-2: [Trigger] Any kill ➜ [Artifact perk] To Shreds (equipped) + [Debuff] Sever (on the target) ➜ [Effect] Health (? + allies), [Buff] Woven Mail (10s)
 
@@ -266,7 +269,7 @@ slice-enhanced#1 weapons-perks-slice-2: [Trigger] This weapon hit ➜ [Weapon pe
 ### Threadling (1)
 horde-shuttle#1 artifact-current-horde-shuttle-2: [Trigger] Threadling hit ➜ [Artifact perk] Horde Shuttle (equipped) ➜ [Debuff] Sever
 
-### Always on (25)
+### Always on (28)
 combination-blow#p0 hunter-arc-melees-combination-blow-2: [Trigger] Always ➜ [Subclass ability · Melee] Combination Blow (equipped) + [Buff] Combination Blow (on you) ➜ [Effect] Damage bonus (? vs melee)
 arc-staff#p0 hunter-arc-supers-arc-staff-2: [Trigger] Always ➜ [Subclass super] Arc Staff (equipped) + [Buff] Super (on you) ➜ [Effect] Damage resistance (90% [PvP 53%])
 gathering-storm#p0 hunter-arc-supers-gathering-storm-2: [Trigger] Always ➜ [Subclass super] Gathering Storm (equipped) + [Buff] Super (on you) ➜ [Effect] Damage resistance (90% [PvP 49%])
@@ -283,6 +286,7 @@ flashover#p0 artifact-current-flashover-2: [Trigger] Always ➜ [Artifact perk] 
 grenade-font#p0 mods-arms-grenade-font-1: [Trigger] Always ➜ [Armor mod] Grenade Font (equipped) + [Buff] Armor Charge (on you) ➜ [Effect] Grenade stat (+20 | +40 | +50)
 health-font#p0 mods-chest-health-font-1: [Trigger] Always ➜ [Armor mod] Health Font (equipped) + [Buff] Armor Charge (on you) ➜ [Effect] Health stat (+20 | +40 | +50)
 luminopotent-2pc#p0 armor-sets-luminopotent-luminopotent-2pc-1: [Trigger] Always ➜ [Armor set bonus] Ionic Overclock (equipped) + [Buff] Amplified (on you) ➜ [Effect] Weapon stats (handling ?, reload ?)
+iron-panoply-4pc#p0 armor-sets-iron-panoply-iron-panoply-4pc-3: [Trigger] Always ➜ [Armor set bonus] Iron Conviction (equipped) + [Buff] Iron Conviction (on you) ➜ [Effect] Damage resistance (15% vs combatants within 10 m)
 kinetic-weapon-surge#p0 mods-legs-kinetic-weapon-surge-1: [Trigger] Always ➜ [Armor mod] Kinetic Weapon Surge (equipped) + [Buff] Armor Charge (on you) ➜ [Effect] Damage bonus (+10% | +17% | +22% | +25% vs Kinetic weapon)
 melee-font#p0 mods-arms-melee-font-1: [Trigger] Always ➜ [Armor mod] Melee Font (equipped) + [Buff] Armor Charge (on you) ➜ [Effect] Melee stat (+20 | +40 | +50)
 shinobus-vow#p0 hunter-exotic-armor-shinobus-vow-5: [Trigger] Always ➜ [Exotic armor] Shinobu's Vow (equipped) ➜ [Effect] Extra grenade charge (+1)
@@ -290,5 +294,7 @@ solar-weapon-surge#p0 mods-legs-solar-weapon-surge-1: [Trigger] Always ➜ [Armo
 stasis-weapon-surge#p0 mods-legs-stasis-weapon-surge-1: [Trigger] Always ➜ [Armor mod] Stasis Weapon Surge (equipped) + [Buff] Armor Charge (on you) ➜ [Effect] Damage bonus (+10% | +17% | +22% | +25% vs Stasis weapon)
 strand-weapon-surge#p0 mods-legs-strand-weapon-surge-1: [Trigger] Always ➜ [Armor mod] Strand Weapon Surge (equipped) + [Buff] Armor Charge (on you) ➜ [Effect] Damage bonus (+10% | +17% | +22% | +25% vs Strand weapon)
 super-font#p0 mods-helmet-super-font-1: [Trigger] Always ➜ [Armor mod] Super Font (equipped) + [Buff] Armor Charge (on you) ➜ [Effect] Super stat (+20 | +40 | +50)
+thunderous-retort#p0 artifact-current-thunderous-retort-1: [Trigger] Always ➜ [Artifact perk] Thunderous Retort (equipped) + [Buff] Critical health (on you) ➜ [Effect] Damage bonus (+30% vs super)
+thunderous-retort#p1 artifact-current-thunderous-retort-2: [Trigger] Always ➜ [Artifact perk] Thunderous Retort (equipped) + [Buff] Amplified (on you) + [Buff] Critical health (not on you) ➜ [Effect] Damage bonus (+30% vs super)
 void-weapon-surge#p0 mods-legs-void-weapon-surge-1: [Trigger] Always ➜ [Armor mod] Void Weapon Surge (equipped) + [Buff] Armor Charge (on you) ➜ [Effect] Damage bonus (+10% | +17% | +22% | +25% vs Void weapon)
 weapons-font#p0 mods-legs-weapons-font-1: [Trigger] Always ➜ [Armor mod] Weapons Font (equipped) + [Buff] Armor Charge (on you) ➜ [Effect] Weapons stat (+20 | +40 | +50)
