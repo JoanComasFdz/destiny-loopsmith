@@ -18,7 +18,7 @@ public sealed class TriggerPanelTests : BaseE2E
           Given the build "spark-of-volts-alone" is imported, with no steps
           When I tap "Finisher" in the trigger panel
           Then card #1's heading is "#1 Finisher"
-          And "Spark of Volts" fires "Amplified" and "Bolt Charge"
+          And "Spark of Volts" fires "Amplified (15s)" and "+1 Bolt Charge"
         """)]
     public async Task ABuildWithOnlyAFragmentCanTapTheFinisher(Screen screen)
     {
@@ -34,6 +34,6 @@ public sealed class TriggerPanelTests : BaseE2E
         var finisher = await Frontend.Designer.Loop.Step(1).ReadAsync();
         Asserting.That(finisher)
             .HasHeading("#1 Finisher")
-            .Fires(new Fragment.SparkOfVolts(), "Amplified", "Bolt Charge");
+            .Fires(new Fragment.SparkOfVolts(), "Amplified (15s)", "+1 Bolt Charge");
     }
 }
