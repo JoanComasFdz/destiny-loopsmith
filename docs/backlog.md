@@ -112,17 +112,29 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   so they show with their ⊘ and set nothing off. Synergy's cooldowns (the pickups' 0–12 s, its own) and the counter's
   other enemy tiers (elite 16.7%, boss 50%: the pack is rank-and-file, ADRs D7) are facts in its description. What
   picking up a Firesprite, Void Breach, Stasis Shard or Tangle gives has no keyword element yet.
-- **Picking up an ammo brick**: the weapon and armor perks that react to any ammo brick picked up (All-Star, Overflow,
-  Lead from Gold, Adhesive Ordnance…) aren't authored. A brick isn't a pickup a rule drops, so they have no trigger; only
-  a slide over one is a step (ADRs D41), for Spark of Momentum.
+- **Picking up an ammo brick** (ADRs D42): the step and the `ammoPickedUp` trigger exist; All-Star, Adhesive Ordnance,
+  Spark of Momentum (a slide only) have rules, Overflow and Lead from Gold are inert (ammo). Still to author, each with the
+  Compendium 2026-10-19 row that says what a brick gives:
+  - Armor set bonuses: **Pantheos Resplendent's Well Prepared** (Armor Charge per brick: the one most likely to change an
+    Arc loop, Armor Perks#67), Collective Psyche's Accretion, Twofold Crown's Crook and Flail (heals), Uncaged Deviants'
+    Special Relativity (refills stowed Special weapons), Yearning Echo's Untold Greed (a counted stack).
+  - Artifact perks that react to a brick (Kinetic Weapon Surge on a pickup; Heavy ammo after 5–6 Special bricks), and the
+    **Kinetic Ammo Brick** an artifact perk spawns, which "counts for Ammo Pickup effects": a third brick, or one a rule
+    spawns.
+  - Exotic weapons that refill on a pickup (Sweet Business, The Wardcliff Coil: a refill, a fact) and the weapon perks that
+    pick bricks up or react after one (Shoot to Loot, Gravity Well, Disaster Plan).
+  - What picks bricks up for you: Marksman's Dodge, Dragon's Shadow and Speedloader Slacks ("picks up ammo bricks within
+    15 m") and Exodus Down's Emergency Electromagnet. A brick isn't on the ground in a loop (ADRs D42), so they need a rule
+    that picks one up, or the player's own brick step after them.
+  - The Scavenger mods stay inert: they add ammo.
 
 ## Outside the loop by design (D1)
 
 Not planned: Loopsmith isn't a simulator, and these change no loop's order of triggers. Their elements are `inert`, or
 the part is a fact in the description.
 - Movement: jumps, sprinting (Spark of Haste and Spark of Focus), Storm's Edge's teleport to its knife and Lethal
-  Current's longer lunge. A slide over an ammo brick is a step the player declares (Spark of Momentum's x3 Bolt Charge,
-  ADRs D41); a plain slide isn't, until a rule needs one.
+  Current's longer lunge. Picking up an ammo brick, by sliding over it or not, is a step the player declares (Spark of
+  Momentum's x3 Bolt Charge on a slide, ADRs D42); a plain slide isn't, until a rule needs one.
 - Ammo, reload speed, weapon handling and a weapon's own lightning strike (Feeding Frenzy is `inert`; Return Stroke's
   strike is Thunderlord's kill or hit step). A reload is a step the player declares, and an outcome (D37).
 - Mods that give to allies only (Benevolent Finisher).

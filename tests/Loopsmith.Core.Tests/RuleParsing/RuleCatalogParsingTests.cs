@@ -2319,15 +2319,21 @@ public sealed class RuleCatalogParsingTests
     }
 
     [Fact]
-    public void Parses_a_slide_over_an_ammo_brick_trigger_of_any_weapon_or_one_and_refuses_an_ability()
+    public void Parses_an_ammo_brick_trigger_of_any_brick_one_brick_or_a_slide_and_refuses_anything_else()
     {
-        var any = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToProbeFile("{ id: probe-1, on: { slideOverAmmo: {} }, then: [ { applyBuff: amplified } ] }")]));
-        var arc = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToProbeFile("{ id: probe-1, on: { slideOverAmmo: { via: weapon:arc } }, then: [ { applyBuff: amplified } ] }")]));
-        var ability = ParseInvalidCatalog(Glossary, ToProbeFile("{ id: probe-1, on: { slideOverAmmo: { via: grenade } }, then: [ { applyBuff: amplified } ] }"));
+        var any = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToProbeFile("{ id: probe-1, on: { ammoPickedUp: {} }, then: [ { applyBuff: amplified } ] }")]));
+        var heavy = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToProbeFile("{ id: probe-1, on: { ammoPickedUp: { brick: heavy } }, then: [ { applyBuff: amplified } ] }")]));
+        var slide = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToProbeFile("{ id: probe-1, on: { ammoPickedUp: { by: slide } }, then: [ { applyBuff: amplified } ] }")]));
+        var primary = ParseInvalidCatalog(Glossary, ToProbeFile("{ id: probe-1, on: { ammoPickedUp: { brick: primary } }, then: [ { applyBuff: amplified } ] }"));
+        var walk = ParseInvalidCatalog(Glossary, ToProbeFile("{ id: probe-1, on: { ammoPickedUp: { by: walk } }, then: [ { applyBuff: amplified } ] }"));
+        var via = ParseInvalidCatalog(Glossary, ToProbeFile("{ id: probe-1, on: { ammoPickedUp: { via: weapon } }, then: [ { applyBuff: amplified } ] }"));
 
-        Assert.Equal(new Trigger.SlideOverAmmo(new DamageSource.AnySource()), Assert.Single(any.Elements[ElementId.From("probe")].Rules).On);
-        Assert.Equal(new Trigger.SlideOverAmmo(new DamageSource.WeaponOfType(DamageType.Arc)), Assert.Single(arc.Elements[ElementId.From("probe")].Rules).On);
-        Assert.Contains("slideOverAmmo's via names a weapon", ability);
+        Assert.Equal(new Trigger.PickUpAmmo(Optional.None<AmmoBrick>(), BrickPickup.Plain), Assert.Single(any.Elements[ElementId.From("probe")].Rules).On);
+        Assert.Equal(new Trigger.PickUpAmmo(Optional.Some(AmmoBrick.Heavy), BrickPickup.Plain), Assert.Single(heavy.Elements[ElementId.From("probe")].Rules).On);
+        Assert.Equal(new Trigger.PickUpAmmo(Optional.None<AmmoBrick>(), BrickPickup.Slide), Assert.Single(slide.Elements[ElementId.From("probe")].Rules).On);
+        Assert.Contains("'primary' is not one of", primary);
+        Assert.Contains("only a slide is told apart", walk);
+        Assert.Contains("via", via);
     }
 
     [Fact]

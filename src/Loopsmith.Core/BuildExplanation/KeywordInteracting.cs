@@ -101,7 +101,7 @@ public static class KeywordInteracting
             between => IsVia(keyword, between.Via),
             reload => IsVia(keyword, reload.Via),
             _ => false,
-            slide => IsVia(keyword, slide.Via));
+            _ => false);
 
     /// <summary>A guard the keyword meets by being there (the kernel's: a "without it" guard doesn't need it).</summary>
     private static bool IsNamedBy(KeywordRef keyword, Condition condition) =>

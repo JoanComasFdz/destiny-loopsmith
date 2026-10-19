@@ -1,0 +1,8 @@
+# Spark of Momentum reacts to an ammo brick slid over, so the ammo bricks' row offers "🛝 by sliding"; Festival Flight is
+# the weapon whose row no longer offers a slide over ammo (ADRs D42).
+name: "E2E - Ammo bricks with Spark of Momentum and Festival Flight"
+class: hunter
+subclass: arc
+fragments: [spark-of-momentum]
+weapons:
+  - { hash: 4019651319, perks: [] } # Festival Flight

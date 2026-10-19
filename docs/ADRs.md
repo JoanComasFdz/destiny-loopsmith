@@ -7,8 +7,8 @@ architecture (D16–D23), hosts and tooling (D24–D26), starting from a DIM lin
 step's damage resistance (D29), armor mods in their sockets (D30), the artifact (D32), the count of Armor Charge
 (D33), what a hit step stands for (D34), the raid and activity mods left out of the sockets (D35), what the player
 says about a step besides its hit and count — a broken shield, precision kills, the last charge (D36), a reload (D37), the web designer as the only host (D38), the
-developer tools as hosts too (D39), the rules grouped by class, subclass and area, each rule with its own id (D40) and a
-slide over an ammo brick (D41). D1 is the
+developer tools as hosts too (D39), the rules grouped by class, subclass and area, each rule with its own id (D40), a
+slide over an ammo brick (D41) and an ammo brick picked up, slid over or not (D42). D1 is the
 founding one: every other decision follows from it.
 
 | # | Decision | Why |
@@ -50,7 +50,8 @@ founding one: every other decision follows from it.
 | D38 | The web designer is the only host; the CLI and the loop graph are removed | Nobody used the CLI: the web app, recorded on every PR, is how Loopsmith is iterated on; what the CLI checked is a Core test |
 | D39 | Developer tools under `tools/` are hosts too: they call only `Orchestration` and the kernel, their own logic is a pure project of their own, and nothing ships them | The rule viewer draws every rule as one claim, the list of e2e scenarios to write; a tool is a host like the web app, so it keeps the same boundary, and Core keeps only what a player's host uses |
 | D40 | The rules are grouped by class, then subclass, then area, with what every class shares in `all-classes/`; every rule has an id, and its full name is its file's path and that id | It is how the game presents a build, a shared element is written once, and the e2e rule tests and their recordings are named by it; the trigger is a view, not a folder |
-| D41 | A slide over an ammo brick is a step the player declares, with the weapon in hand; its refill is no reload | Spark of Momentum's x3 Bolt Charge is part of an Arc loop; a refill sets off no on-reload perk (Compendium) |
+| D41 | ~~A slide over an ammo brick is a step the player declares, with the weapon in hand~~ Its step superseded by D42; its refill is no reload | Spark of Momentum's x3 Bolt Charge is part of an Arc loop; a refill sets off no on-reload perk (Compendium) |
+| D42 | An ammo brick picked up is a step the player declares, Special or Heavy, slid over or not; it names no weapon and is always available | The perks that react to a brick (All-Star, Adhesive Ordnance, Overflow, Lead from Gold) need a trigger; bricks drop from enemies, which only play decides, and a slide is one way of picking a brick up |
 
 ## What the product is
 
@@ -80,8 +81,8 @@ how many, how often, how long or when.
 **Consequence.** Abilities are always available (D5); a status ends when
 a rule consumes or removes it, or when the player declares it ended. A source's "after 6 hits" or "for 10 s" is a fact in the
 description, never a mechanism. No damage or health model either: damage and healing outcomes are
-facts too. Movement (jumps, sprinting, slides) is outside the loop, but for a slide over an ammo brick, a step the
-player declares (D41).
+facts too. Movement (jumps, sprinting, slides) is outside the loop, but for picking up an ammo brick by sliding over it, a
+step the player declares (D42).
 
 ### D2 — The designed loop is the product
 
@@ -689,7 +690,7 @@ Moving a file changes the catalog version (D15), as any edit does. Prismatic's g
 `all-classes/prismatic/` or under a class, by whether each class's Prismatic item has the same hash; that is checked when
 Prismatic is authored.
 
-### D41 — A slide over an ammo brick is a step the player declares; its refill is no reload
+### D41 — A slide over an ammo brick is a step the player declares; its refill is no reload (its step superseded by D42)
 
 **Context.** Spark of Momentum (Compendium Arc#21) gives x3 Bolt Charge and refills the equipped weapon when you slide
 over an ammo brick you aren't full on. Movement and ammo were outside the loop (D1), so the fragment was inert, though
@@ -708,3 +709,25 @@ slide, the step becomes a slide with an "over an ammo brick" option, and `slideO
 What picking up an ammo brick gives other elements (All-Star, Overflow, the Scavenger mods) has no trigger yet: a brick
 isn't a pickup a rule drops. D37 treats Demolitionist's and Return Stroke's refills as reloads, which the same Compendium
 note contradicts; that is its own change.
+
+### D42 — An ammo brick picked up is a step the player declares, Special or Heavy, slid over or not
+
+**Context.** D41 made a slide over an ammo brick a step of its own, bound to the weapon in hand, for Spark of Momentum.
+Picking up a brick sets off other elements too: All-Star, Adhesive Ordnance, Overflow and Lead from Gold among the
+weapon perks (Compendium Weapon Perks#9, #14, #137, #160 on 2026-10-19), armor set bonuses (Well Prepared, Accretion) and
+artifact perks. They had no trigger: a brick isn't a pickup a rule drops. Some tell the bricks apart (Overflow: Special or
+Heavy; Lead from Gold: Heavy), and none cares which weapon is in your hands, while a slide is just one way of picking a
+brick up, and a plain slide may set something off one day. **Decision (product owner).** Picking up an ammo brick is the
+player's step, `ammo:special` or `ammo:heavy` ("Pick up a Heavy ammo brick"), with an option for picking it up by sliding
+over it, `ammo:special:slide` ("Slide over a Special ammo brick"). It is always available, like a new pack (D7): bricks
+drop from enemies, which only play decides, so nothing puts one on the ground first. It names no weapon: the refill of
+the weapon in hand (Spark of Momentum, All-Star) is a fact in the description, and no reload (D41). It raises
+`AmmoPickedUp`, which the `ammoPickedUp` trigger matches: any brick, or one (`brick: heavy`), and only a slide with
+`by: slide`. Spark of Momentum's rule is `ammoPickedUp: { by: slide }`: a plain pickup doesn't fire it, a slide fires it
+and every pickup rule. The designer shows a **📦 Ammo brick** square below the weapons, in every build, with **Special**
+and **Heavy**, and **🛝 by sliding** beside them when a rule of the build reacts to a slide; a weapon's row no longer has
+a slide. `kinetic|energy|power:ammo` is no longer read: only test fixtures used it. **Consequence.** All-Star and
+Adhesive Ordnance have rules, Overflow and Lead from Gold are inert (ammo only, D37). A plain slide, when a rule needs
+one, is a step of its own beside this one. The Kinetic Ammo Brick an artifact perk spawns, the Scavenger mods (ammo
+only), the armor sets and artifact perks that react to a brick, and what picks bricks up for you (Marksman's Dodge,
+Dragon's Shadow, Speedloader Slacks, Shoot to Loot, Gravity Well) wait in the backlog.

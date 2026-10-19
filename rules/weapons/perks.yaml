@@ -359,3 +359,100 @@ elements:
       hash: 1906147653
       values: { "10%": "11%", "20%": "22%" }
       description: "The enhanced Demolitionist: as Demolitionist, with 11% grenade energy per kill (22% on Fusion Rifles, Glaives, Shotguns and Sniper Rifles) instead of 10% (20%)."
+
+  # ── the perks an ammo brick sets off (`ammoPickedUp`: any brick picked up, walked or slid over) ──
+  # No ammo is counted (ADRs D37): what a brick puts in the magazine is a fact in the description. A refill is no reload
+  # (the Compendium's "Reload Perk Notes", Weapon Perks#250; ADRs D41), so these perks fire no `reload` rule.
+
+  # The buff's damage is a fact of the step that gives it, as One for All's; its reload speed is a stat change while it is
+  # up, as Stats for All's. The Heavy brick's longer buff (9 s, 10 s enhanced), the extension by more Kinetic Synthesis or
+  # Special bricks (+7 s, up to 10 s) and the timer that only runs with the weapon readied are in the description.
+  - id: all-star
+    name: All-Star
+    kind: weaponPerk
+    affinity: neutral
+    hash: 1226351311
+    description: "Picking up an ammo brick refills this weapon's magazine (a refill, not a reload) and gives All-Star for 6 s (7 s enhanced): 35% more damage (15% in PvP) and about +100 Reload Speed. A Heavy brick gives 9 s (10 s enhanced) instead; more Kinetic Synthesis or Special bricks add 7 s, up to 10 s. The timer only runs while the weapon is readied."
+    source: "compendium/2026-10-19/Weapon Perks#14"
+    rules:
+      - id: all-star-1
+        on: { ammoPickedUp: {} }
+        then:
+          - { applyBuff: { status: all-star, duration: 6s } }
+          - { modifyDamage: { against: "weapon:this", change: "+35% [15%]" } }
+        reason: "Picking up ammo refills this weapon and powers up its damage and reload speed for a while."
+    passives:
+      # The Compendium marks the figure uncertain (+100?).
+      - id: all-star-2
+        effect:
+          modifyWeaponStats:
+            weapon: this
+            changes:
+              - { stat: reload-speed, change: "+100?" }
+        when: [ { has: all-star } ]
+        reason: "While All-Star is up, this weapon reloads faster."
+    enhanced:
+      hash: 3251326479
+      values: { 6s: 7s }
+      description: "The enhanced All-Star: as All-Star, with the buff lasting 7 s instead of 6 s (10 s instead of 9 s from a Heavy brick)."
+
+  # The brick arms the next shot: it sticks a Sticky Bomb that goes off as this weapon's Kinetic damage (a strike by this
+  # weapon, as Veteran's Wisdom's shockwave) and exhausts the enemies around, and the shot spends it. The bomb's damage
+  # (766, 843 enhanced, on Hand Cannons and Scout Rifles; 1,044, 1,149 enhanced, on Sniper Rifles; 70, 77 enhanced, in
+  # PvP), its 0.8 s fuse and its 6 m radius are in the description. The row gives no Exhaust duration for this perk, so
+  # the outcome gives none.
+  - id: adhesive-ordnance
+    name: Adhesive Ordnance
+    kind: weaponPerk
+    affinity: kinetic
+    hash: 3252937884
+    description: "Picking up an ammo brick (Kinetic Synthesis bricks too) gives this weapon +1 round and arms its next shot: it sticks a Sticky Bomb that goes off after 0.8 s for Kinetic weapon damage over 6 m (down to 50% at the edge) and Exhausts the enemies it hits. The bomb deals 766 (843 enhanced) on Hand Cannons and Scout Rifles, 1,044 (1,149) on Sniper Rifles, scaled by the combatant's rank; 70 (77) in PvP."
+    source: "compendium/2026-10-19/Weapon Perks#9"
+    rules:
+      - id: adhesive-ordnance-1
+        on: { ammoPickedUp: {} }
+        then:
+          - { applyBuff: sticky-bomb }
+        reason: "Picking up ammo loads a Sticky Bomb into this weapon's next shot."
+      # "The next shot fired": its hit spends the bomb, as Reaper's next kill spends Reaper (rules/mods/armor.yaml).
+      - id: adhesive-ordnance-2
+        on: { damage: { via: "weapon:this" } }
+        when: [ { has: sticky-bomb } ]
+        then:
+          - { removeBuff: sticky-bomb }
+          - { strikeTarget: { via: "weapon:this", type: kinetic, hit: damage } }
+          - { debuffTarget: exhaust }
+        reason: "The loaded shot sticks a bomb that blows up around the enemy and exhausts the enemies nearby."
+    passives: []
+    # The enhanced trait: a stronger bomb (the row's ↑ figures), which no rule writes.
+    enhanced:
+      hash: 122204356
+      description: "The enhanced Adhesive Ordnance: as Adhesive Ordnance, with a stronger Sticky Bomb (843 instead of 766 on Hand Cannons and Scout Rifles, 1,149 instead of 1,044 on Sniper Rifles)."
+
+  - id: overflow
+    name: Overflow
+    kind: weaponPerk
+    affinity: neutral
+    hash: 3643424744
+    description: "Picking up a Special or Heavy ammo brick, even with this weapon stowed, refills its magazine and loads it past its size: 100% more magazine (120% enhanced)."
+    source: "compendium/2026-10-19/Weapon Perks#160"
+    inert: "Ammo: Loopsmith doesn't count ammo (ADRs D37), so a refill and a bigger magazine change no step."
+    rules: []
+    passives: []
+    enhanced:
+      hash: 2682205016
+      description: "The enhanced Overflow: as Overflow, with 120% more magazine instead of 100%."
+
+  - id: lead-from-gold
+    name: Lead from Gold
+    kind: weaponPerk
+    affinity: neutral
+    hash: 1556840489
+    description: "Picking up a Heavy ammo brick, even with this weapon stowed, also gives this weapon 25% of its Special ammo reserves (35% enhanced); with two Special weapons equipped each gets half (12.5%, 17.5% enhanced)."
+    source: "compendium/2026-10-19/Weapon Perks#137"
+    inert: "Ammo: Loopsmith doesn't count ammo (ADRs D37), so the Special ammo a Heavy brick gives changes no step."
+    rules: []
+    passives: []
+    enhanced:
+      hash: 3442762221
+      description: "The enhanced Lead from Gold: as Lead from Gold, with 35% of the Special ammo reserves instead of 25% (17.5% instead of 12.5% with two Special weapons)."

@@ -7,8 +7,9 @@ using Microsoft.Playwright;
 namespace Loopsmith.Web.E2E.Infrastructure.Frontend.Components;
 
 /// <summary>
-/// The trigger panel (Components/TriggerPalette.razor): the step HUD (Super, abilities with their secondary uses, weapons)
-/// and the picked one's row of buttons ("🥊 hit", "💀 kill", "🔄 reload") with its "×" enemy count.
+/// The trigger panel (Components/TriggerPalette.razor): the step HUD (Super, abilities with their secondary uses, weapons,
+/// the ammo bricks) and the picked one's row of buttons ("🥊 hit", "💀 kill", "🔄 reload"; "Special", "Heavy") with its "×"
+/// enemy count and its options.
 /// </summary>
 public sealed class TriggerPalette(IPage page)
 {
@@ -26,8 +27,6 @@ public sealed class TriggerPalette(IPage page)
 
     private ILocator ApartCaptions => Row.Locator("[data-testid=trigger-buttons-apart] [data-testid=trigger-caption]");
 
-    private ILocator DisabledCaptions => Row.Locator("[data-action=trigger][data-enabled=false] [data-testid=trigger-caption]");
-
     private ILocator TargetCount => Row.Locator("[data-action=target-count]");
 
     private ILocator TargetCountOptions => TargetCount.GetByRole(AriaRole.Option);
@@ -42,6 +41,8 @@ public sealed class TriggerPalette(IPage page)
     private ILocator WeaponButton(Weapon weapon) =>
         Panel.Locator("[data-action=trigger-weapon]")
             .And(page.GetByRole(AriaRole.Button, new() { NameRegex = new Regex($"^{Regex.Escape(weapon.ToShownText())} \\(") }));
+
+    private ILocator AmmoBrickButton => Panel.Locator("[data-action=trigger-ammo-brick]");
 
     // An ability's square is named "<its kind>: <its name>" ("Melee: Combination Blow"); the finisher's is named for the
     // equipped finisher (after a Bungie login), so it is found by its HUD slot.
@@ -83,6 +84,9 @@ public sealed class TriggerPalette(IPage page)
 
     /// <summary>Clicks <paramref name="weapon"/> in the step HUD: its row of buttons shows.</summary>
     public Task ClickWeaponAsync(Weapon weapon) => OnScreen.PressAsync(Panel, WeaponButton(weapon));
+
+    /// <summary>Clicks "📦 Ammo brick" in the step HUD, below the weapons: its row of buttons ("Special", "Heavy") shows.</summary>
+    public Task ClickAmmoBrickAsync() => OnScreen.PressAsync(Panel, AmmoBrickButton);
 
     /// <summary>
     /// Clicks <paramref name="ability"/>'s square in the step HUD: its row of buttons shows, or, for an ability with one
@@ -150,7 +154,6 @@ public sealed class TriggerPalette(IPage page)
             await TargetCount.CountAsync() > 0,
             [.. (await TargetCountOptions.AllInnerTextsAsync()).Select(shown => shown.Trim())],
             [.. (await ApartCaptions.AllInnerTextsAsync()).Select(shown => StepTriggerShowing.ReadStepTrigger(shown.Trim()))],
-            [.. (await DisabledCaptions.AllInnerTextsAsync()).Select(shown => StepTriggerShowing.ReadStepTrigger(shown.Trim()))],
             [.. (await OptionCaptions.AllInnerTextsAsync()).Select(shown => RowOptionShowing.ReadRowOption(shown.Trim()))],
             await Panel.GetAttributeAsync("aria-disabled") == "true",
             await DisabledNote.CountAsync() > 0 ? (await DisabledNote.InnerTextAsync()).Trim() : "",
@@ -200,8 +203,8 @@ public sealed class TriggerPalette(IPage page)
 
 /// <summary>
 /// What the panel shows: the picked row's buttons the "×" enemy count goes with, whether that count shows, the counts it
-/// offers (as its options read, in order), the buttons at the row's right end, apart from it, the buttons shown but
-/// disabled (no rule of the build reacts to them), and the boxes the player ticks (its options); whether the whole panel
+/// offers (as its options read, in order), the buttons at the row's right end, apart from it, and the boxes the player
+/// ticks (its options); whether the whole panel
 /// is greyed out (nothing in it can be tapped), and the line that says why (empty when it isn't); and the chips of its
 /// "On you" group, in order.
 /// </summary>
@@ -210,7 +213,6 @@ public sealed record TriggerPaletteSnapshot(
     bool ShowsTheCount,
     ImmutableArray<string> TargetCounts,
     ImmutableArray<StepTrigger> ApartFromTheCount,
-    ImmutableArray<StepTrigger> Disabled,
     ImmutableArray<RowOption> Options,
     bool IsGreyedOut,
     string DisabledNote,

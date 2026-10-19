@@ -649,9 +649,8 @@ textarea { resize: vertical; }
     cursor: pointer;
     text-transform: none;
 }
-.trigger:hover:not(:disabled) { border-color: var(--arc); background: #1b2740; }
-.trigger:active:not(:disabled) { transform: translateY(1px); }
-.trigger:disabled { opacity: .45; cursor: not-allowed; }
+.trigger:hover { border-color: var(--arc); background: #1b2740; }
+.trigger:active { transform: translateY(1px); }
 .trigger .badge.new { font-size: 9px; padding: 0 4px; }
 
 .trig-hud { display: flex; flex-direction: column; gap: 8px; padding-top: 6px; }
@@ -748,6 +747,8 @@ textarea { resize: vertical; }
 .trig-weapon-icon { width: 42px; height: 42px; border-radius: 2px; background: var(--panel-2); overflow: hidden; }
 .trig-weapon-icon img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .trig-damage-icon { width: 18px; height: 18px; }
+.trig-ammo { grid-template-columns: 42px minmax(0, 1fr); }   /* no damage type: the ammo bricks' square (ADRs D42) */
+.trig-ammo-icon { display: grid; place-items: center; font-size: 22px; }
 .trig-weapon-text { display: flex; flex-direction: column; min-width: 0; }
 .trig-weapon-name { overflow: hidden; color: var(--aff); font-size: 14px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
 .trig-weapon-kind { overflow: hidden; color: var(--muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
