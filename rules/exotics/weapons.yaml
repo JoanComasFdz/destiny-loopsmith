@@ -73,16 +73,17 @@ elements:
     source: "compendium/2026-10-09/Exotic Weapons#144"
     # No lightning-strike event exists to attach it to: the strikes are part of Reign Havoc's (a kill)
     # and Lightning Rounds' (every 10th hit, a hit step) rules, so these are the same two triggers.
-    # The 5 rounds are a fact: no ammo is counted, and a refill is a reload (ADRs D37).
+    # The 5 rounds are a fact: no ammo is counted. A refill is no reload (ADRs D42): it sets off no on-reload
+    # perk (compendium/2026-10-19/Weapon Perks#250).
     rules:
       - id: thunderlord-catalyst-1
         on: { kill: { via: slot:power } }
         then:
-          - { reloadWeapon: slot:power }
+          - { refillWeapon: slot:power }
         reason: "Every Thunderlord kill calls down a lightning strike, and the strike puts 5 rounds back in the magazine."
       - id: thunderlord-catalyst-2
         on: { damage: { via: slot:power, sustained: true } }
         then:
-          - { reloadWeapon: slot:power }
+          - { refillWeapon: slot:power }
         reason: "Keep hitting with Thunderlord: every 10th hit's lightning strike puts 5 rounds back in the magazine."
     passives: []

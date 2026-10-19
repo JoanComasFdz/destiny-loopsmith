@@ -20,7 +20,7 @@ public class ExampleLoopsGoldenTests
     private const string SkipGrenadesPath = "builds/skip-grenade-hunter/loops/infinite-skip-grenades.loop.yaml";
     private const string MeleeFirstPath = "builds/skip-grenade-hunter/loops/melee-first.loop.yaml";
     private const string HelicopterPath = "builds/skip-grenade-hunter-ascension/loops/helicopter-skip-grenades.loop.yaml";
-    private const string DemolitionistPath = "builds/demolitionist-hunter/loops/grenade-reload-kill.loop.yaml";
+    private const string DemolitionistPath = "builds/demolitionist-hunter/loops/grenade-refill-kill.loop.yaml";
     private const string BuildPath = "builds/skip-grenade-hunter/build.yaml";
 
     private static readonly RuleCatalog Catalog = LoadCatalog();
@@ -92,14 +92,14 @@ public class ExampleLoopsGoldenTests
     }
 
     [Fact]
-    public void The_demolitionist_loop_repeats_the_grenade_reloads_the_hand_cannon_and_its_kills_give_grenade_energy()
+    public void The_demolitionist_loop_repeats_the_grenade_refills_the_hand_cannon_and_its_kills_give_grenade_energy()
     {
         var session = ImportLoop(DemolitionistPath);
         var report = LoopDesigning.AnalyzeDesign(session);
 
         Assert.IsType<LoopVerdict.Repeats>(report.Verdict);
         var grenade = Assert.Single(session.Resolutions[1].Fired, rule => rule.Source.Value == "demolitionist");
-        Assert.Equal(new Outcome.ReloadWeapon(new DamageSource.WeaponInSlot(WeaponSlot.Energy)), Assert.Single(grenade.Outcomes).Outcome);
+        Assert.Equal(new Outcome.RefillWeapon(new DamageSource.WeaponInSlot(WeaponSlot.Energy)), Assert.Single(grenade.Outcomes).Outcome);
         var kills = session.Resolutions[2].Fired.Where(rule => rule.Source.Value == "demolitionist").ToImmutableArray();
         Assert.Equal(3, kills.Length);   // one grant per kill
         Assert.All(kills, kill => Assert.Equal(
@@ -195,7 +195,7 @@ public class ExampleLoopsGoldenTests
     public Task Loop_report_melee_first() => VerifyLoopReport(MeleeFirstPath);
 
     [Fact]
-    public Task Loop_report_grenade_reload_kill() => VerifyLoopReport(DemolitionistPath);
+    public Task Loop_report_grenade_refill_kill() => VerifyLoopReport(DemolitionistPath);
 
     [Fact]
     public Task Compare_example_loops()

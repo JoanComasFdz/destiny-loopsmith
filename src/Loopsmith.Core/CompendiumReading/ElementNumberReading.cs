@@ -54,6 +54,7 @@ public static class ElementNumberReading
             least => ReadEnergy("grantLeastChargedEnergy", least.Amount),
             _ => [],
             _ => [],
+            _ => [],
             _ => []);
 
     private static IEnumerable<StatedNumber> ReadPassive(Passive passive) =>

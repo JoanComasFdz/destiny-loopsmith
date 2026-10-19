@@ -12,8 +12,8 @@ namespace Loopsmith.Core.Tests.StepPlaying;
 
 /// <summary>
 /// A reload (ADRs D37): the player's Reload step, a <c>reload</c> trigger for one weapon, and an outcome that reloads a
-/// weapon as the step would, so that weapon's reload rules fire too. No ammo is counted. And an energy grant by the
-/// archetype of the weapon holding the element (Demolitionist).
+/// weapon as the step would, so that weapon's reload rules fire too. A refill is no reload (ADRs D42): it fires none of
+/// them. No ammo is counted. And an energy grant by the archetype of the weapon holding the element (Demolitionist).
 /// </summary>
 public sealed class ReloadingTests
 {
@@ -45,6 +45,8 @@ public sealed class ReloadingTests
     private static readonly BuildElement ReloadPerk = CreatePerk("reload-perk", On(new Trigger.Reload(new DamageSource.ThisWeapon()), Buff("amplified")));
 
     private static readonly BuildElement GrenadeReloads = CreatePerk("grenade-reloads", On(new Trigger.AbilityCast(AbilityKind.Grenade), new Outcome.ReloadWeapon(new DamageSource.ThisWeapon())));
+
+    private static readonly BuildElement GrenadeRefills = CreatePerk("grenade-refills", On(new Trigger.AbilityCast(AbilityKind.Grenade), new Outcome.RefillWeapon(new DamageSource.ThisWeapon())));
 
     [Fact]
     public void A_reload_step_fires_the_reload_rules_of_its_weapon_and_not_of_another()
@@ -90,6 +92,35 @@ public sealed class ReloadingTests
     }
 
     [Fact]
+    public void A_refill_outcome_refills_the_weapon_holding_the_element_and_fires_none_of_its_reload_rules()
+    {
+        var build = ValidateWithWeapons(ValidateBuild([]), [ReloadPerk, GrenadeRefills],
+            CreateWeapon(WeaponSlot.Energy, "Rifle", DamageType.Arc, Optional.None<string>(), "grenade-refills", "reload-perk"));
+
+        var step = Assert.Single(ResolveSteps(build, GrenadeHit));
+
+        var refill = Assert.Single(step.Fired, rule => rule.Source == ElementId.From("grenade-refills"));
+        var applied = Assert.Single(refill.Outcomes);
+        Assert.Equal(new Outcome.RefillWeapon(new DamageSource.WeaponInSlot(WeaponSlot.Energy)), applied.Outcome);
+        Assert.False(applied.Caveat.IsSome());
+        Assert.DoesNotContain(step.Fired, rule => rule.Source == ElementId.From("reload-perk"));
+        Assert.Equal("#1 Grenade (🥊 hit)\n  Grenade thrown → refills your energy weapon [Grenade Refills]", DescribeTrace(build, step));
+    }
+
+    [Fact]
+    public void A_refill_with_no_weapon_to_refill_carries_its_caveat()
+    {
+        var refill = CreatePerk("refills-power", On(new Trigger.AbilityCast(AbilityKind.Grenade), new Outcome.RefillWeapon(new DamageSource.WeaponInSlot(WeaponSlot.Power))));
+        var build = ValidateWithWeapons(ValidateBuild([]), [refill],
+            CreateWeapon(WeaponSlot.Energy, "Rifle", DamageType.Arc, Optional.None<string>(), "refills-power"));
+
+        var step = Assert.Single(ResolveSteps(build, GrenadeHit));
+
+        var fired = Assert.Single(step.Fired, rule => rule.Source == ElementId.From("refills-power"));
+        Assert.Equal(Optional.Some("no weapon to refill"), Assert.Single(fired.Outcomes).Caveat);
+    }
+
+    [Fact]
     public void This_weapons_reload_trigger_and_outcome_bind_to_the_weapon_holding_it()
     {
         var weapon = CreateWeapon(WeaponSlot.Power, "Machine Gun", DamageType.Arc, Optional.None<string>());
@@ -101,6 +132,8 @@ public sealed class ReloadingTests
         Assert.Equal(new Outcome.ReloadWeapon(new DamageSource.WeaponInSlot(WeaponSlot.Power)), outcome);
         Assert.Equal("Reload this weapon", Glossary.DescribeTrigger(ReloadPerk.Rules[0].On, Optional.None<DamageType>()));
         Assert.Equal("reloads this weapon", Glossary.DescribeOutcome(GrenadeReloads.Rules[0].Then[0], Optional.None<DamageType>()));
+        Assert.Equal(new Outcome.RefillWeapon(new DamageSource.WeaponInSlot(WeaponSlot.Power)), Assert.Single(Assert.Single(GrenadeRefills.BindToWeapon(weapon).Rules).Then));
+        Assert.Equal("refills this weapon", Glossary.DescribeOutcome(GrenadeRefills.Rules[0].Then[0], Optional.None<DamageType>()));
     }
 
     [Fact]

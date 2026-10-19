@@ -40,6 +40,10 @@ public static class StepCardSnapshotAssertions
     public static AssertingThat<StepCardSnapshot> Fires(this AssertingThat<StepCardSnapshot> that, WeaponPerk perk, params string[] lines) =>
         that.FiresFrom(perk.ToShownText(), lines);
 
+    /// <summary><paramref name="catalyst"/> fired exactly <paramref name="lines"/>, in that order, each with its "(chance)" as shown.</summary>
+    public static AssertingThat<StepCardSnapshot> Fires(this AssertingThat<StepCardSnapshot> that, Catalyst catalyst, params string[] lines) =>
+        that.FiresFrom(catalyst.ToShownText(), lines);
+
     /// <summary><paramref name="mod"/> fired exactly <paramref name="lines"/>, in that order, each with its "(chance)" as shown.</summary>
     public static AssertingThat<StepCardSnapshot> Fires(this AssertingThat<StepCardSnapshot> that, ArmorMod mod, params string[] lines) =>
         that.FiresFrom(mod.ToShownText(), lines);

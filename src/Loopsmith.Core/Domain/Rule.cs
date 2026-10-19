@@ -165,6 +165,7 @@ public partial record Outcome
     partial record SpendStacks(StatusId Status, StackCount Count);   // a fixed number of a counted buff's stacks (Healthy Finisher's x1, ADRs D33)
     partial record WeaponStrike(DamageSource Weapon, Optional<DamageType> Type, HitOutcome Hit);   // this weapon's damage dealt by an effect (Veteran's Wisdom's shockwave): Weapon is "this weapon" until bound to its slot; Type none: the weapon's own
     partial record ReloadWeapon(DamageSource Weapon);   // reloads that weapon (weapon:this, slot:power): a reload, as if the player had reloaded it (ADRs D37)
+    partial record RefillWeapon(DamageSource Weapon);   // refills that weapon's magazine: no reload, so no reload rule fires (ADRs D42)
 }
 
 /// <summary>
