@@ -1,0 +1,5 @@
+# Bolt Charge, with Disorienting Blow, whose hit gives it.
+name: "E2E - Bolt Charge with Disorienting Blow"
+class: hunter
+subclass: arc
+melee: disorienting-blow

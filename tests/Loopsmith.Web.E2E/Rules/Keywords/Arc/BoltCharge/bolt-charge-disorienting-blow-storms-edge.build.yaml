@@ -1,0 +1,6 @@
+# Bolt Charge, with Disorienting Blow, whose hit gives it, and Storm's Edge (no rules on a hit) to discharge it.
+name: "E2E - Bolt Charge with Disorienting Blow and Storm's Edge"
+class: hunter
+subclass: arc
+super: storms-edge
+melee: disorienting-blow

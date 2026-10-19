@@ -1,0 +1,6 @@
+# Bolt Charge, with Disorienting Blow, whose hit gives it, and Tempest Strike for the sliding melee that discharges it.
+name: "E2E - Bolt Charge with Disorienting Blow and Tempest Strike"
+class: hunter
+subclass: arc
+melee: disorienting-blow
+aspects: [tempest-strike]

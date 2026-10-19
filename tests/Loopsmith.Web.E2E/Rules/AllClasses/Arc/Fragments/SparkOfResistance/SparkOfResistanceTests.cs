@@ -18,7 +18,7 @@ public sealed class SparkOfResistanceTests : BaseE2E
           And I tap "▸ DAMAGE RESISTANCE" on card #1
           Then card #1's heading is "#1 Finisher"
           # 34.5% is every Guardian's own against combatants; Spark of Resistance's 25% adds to it, 1 − (1 − 34.5%) × (1 − 25%).
-          And its "All damage" resistance reads "50.9%" PvE and "10%" PvP
+          And its "All damage" resistance reads "50.88%" PvE and "10%" PvP
           And "Spark of Resistance" gives "25% · PvP 10%" of it
         """)]
     public async Task SparkOfResistanceGivesDamageResistance(Screen screen)
@@ -38,7 +38,7 @@ public sealed class SparkOfResistanceTests : BaseE2E
         var finished = await Frontend.Designer.Loop.Step(1).ReadAsync();
         Asserting.That(finished)
             .HasHeading("#1 Finisher")
-            .HasResistance("All damage", "50.9%", "10%")
+            .HasResistance("All damage", "50.88%", "10%")
             .HasResistanceFrom(new Fragment.SparkOfResistance(), "25% · PvP 10%");
     }
 }

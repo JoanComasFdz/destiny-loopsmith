@@ -1,0 +1,6 @@
+# Bolt Charge, with Arc Staff, whose kill gives it, and Combination Blow (rules on kills only) to discharge it.
+name: "E2E - Bolt Charge with Arc Staff and Combination Blow"
+class: hunter
+subclass: arc
+super: arc-staff
+melee: combination-blow

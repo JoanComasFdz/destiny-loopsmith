@@ -56,7 +56,7 @@ public sealed class FlowStateTests : BaseE2E
           When I tap "Marksman's Dodge" in the trigger panel
           And I tap "▸ DAMAGE RESISTANCE" on card #2
           Then card #2's heading is "#2 Class ability"
-          And its "All damage" resistance reads "81.1%" PvE and "32%" PvP
+          And its "All damage" resistance reads "81.07%" PvE and "32%" PvP
           And "Flow State" gives "66% · PvP 32%" of it
         """)]
     public async Task FlowStateGivesDamageResistanceWhileYouDodgeAmplified(Screen screen)
@@ -87,7 +87,7 @@ public sealed class FlowStateTests : BaseE2E
         var dodged = await Frontend.Designer.Loop.Step(2).ReadAsync();
         Asserting.That(dodged)
             .HasHeading("#2 Class ability")
-            .HasResistance("All damage", "81.1%", "32%")
+            .HasResistance("All damage", "81.07%", "32%")
             .HasResistanceFrom(new Aspect.FlowState(), "66% · PvP 32%");
     }
 }

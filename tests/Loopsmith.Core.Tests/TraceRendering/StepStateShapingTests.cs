@@ -126,9 +126,9 @@ public sealed class StepStateShapingTests
         Assert.Equal(
             [
                 "Buffs         Reaper", "Weapons       Slice", "Debuffs       none", "Ground        none",
-                "Resistance    PvE 50.9% · PvP 10%  (Guardian 34.5% × Spark of Resistance 25% [PvP 10%])",
-                "against Arc combatants  PvE 58.2%  (× Harmonic Resistance 15%)",
-                "against combatants' area, blast and explosive damage  PvE 58.2%  (× Concussive Dampener 15%)",
+                "Resistance    PvE 50.88% · PvP 10%  (Guardian 34.5% × Spark of Resistance 25% [PvP 10%])",
+                "against Arc combatants  PvE 58.24%  (× Harmonic Resistance 15%)",
+                "against combatants' area, blast and explosive damage  PvE 58.24%  (× Concussive Dampener 15%)",
             ],
             lines);
     }
@@ -144,10 +144,10 @@ public sealed class StepStateShapingTests
 
         var all = resistance.AllDamage;
         Assert.Equal(["Guardian", "Spark of Resistance", "Woven Mail"], all.Sources.Select(source => source.Name));
-        Assert.Equal(new GameValue.Known(1m - (0.655m * 0.75m * 0.55m)), all.Pve);                       // 73%
+        Assert.Equal(new GameValue.Known(1m - (0.655m * 0.75m * 0.55m)), all.Pve);                       // 72.98%
         Assert.Equal(new GameValue.Known(1m - (0.9m * 0.75m)), all.Pvp);                                 // 32.5%: the base is against combatants only
         Assert.Equal(Optional.None<GameValue>(), all.Sources[0].Pvp);
-        Assert.Equal("1 − (1 − 34.5%) × (1 − 25%) × (1 − 45%) = 73%", all.PveFormula);
+        Assert.Equal("1 − (1 − 34.5%) × (1 − 25%) × (1 − 45%) = 72.98%", all.PveFormula);
         Assert.Equal("1 − (1 − 10%) × (1 − 25%) = 32.5%", all.PvpFormula);
         var arc = resistance.AgainstSome[0];
         Assert.Equal("Arc combatants", arc.Against);                                                     // Harmonic: the Super is Arc

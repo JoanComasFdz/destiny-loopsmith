@@ -258,6 +258,8 @@ Line for line, in the Gherkin's order:
 | `I tap "💀 kill"` | `TriggerPalette.ClickAsync(new StepTrigger.Kill())`, `Loop.WaitUntilStepShownAsync(1)` |
 | `I remove step #1 with the "✕" on its card` | `Loop.ClickRemoveStepAsync(1)`, `Loop.WaitUntilNoStepsAsync()` |
 | `I tick "why" above the loop` | `Designer.TickWhyAsync()`, `Loop.Step(1).WaitUntilReasonsShownAsync()` |
+| `I tap "at max (x10)" on "Bolt Charge" under "On you" in the trigger panel` | `TriggerPalette.ClickDeclarationAsync(new Keyword.BoltCharge(), "at max (x10)")`, `Loop.WaitUntilStepShownAsync(2)` |
+| `I tap "Pick up Orb of Power" under "On the ground" in the trigger panel` | `TriggerPalette.ClickPickupAsync(new Keyword.OrbOfPower())`, `Loop.WaitUntilStepShownAsync(2)` |
 | A `Then`, and the `And` lines after it | One `// Then` block: one read per part it checks, then one assertion per line, chained |
 | `card #1's heading is "#1 Ogma PR6 (💀 kill)"` | `HasHeading("#1 Ogma PR6 (💀 kill)")` |
 | `it reads "Ogma PR6 💀 killed 1 enemy"` / `it reads "nothing triggers"` | `Reads("Ogma PR6 💀 killed 1 enemy")` / `ReadsNothingTriggers()` |

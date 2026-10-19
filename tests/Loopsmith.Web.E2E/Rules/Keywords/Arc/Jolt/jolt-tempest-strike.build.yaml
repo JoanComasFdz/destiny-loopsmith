@@ -1,0 +1,6 @@
+# Jolt, with Tempest Strike, whose sliding melee hit jolts the target, and Combination Blow (rules on kills only) to slide with.
+name: "E2E - Jolt with Tempest Strike"
+class: hunter
+subclass: arc
+melee: combination-blow
+aspects: [tempest-strike]

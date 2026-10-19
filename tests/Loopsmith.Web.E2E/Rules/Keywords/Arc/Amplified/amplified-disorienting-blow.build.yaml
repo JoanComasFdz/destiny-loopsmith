@@ -1,0 +1,5 @@
+# Amplified, with Disorienting Blow, whose hit gives it.
+name: "E2E - Amplified with Disorienting Blow"
+class: hunter
+subclass: arc
+melee: disorienting-blow

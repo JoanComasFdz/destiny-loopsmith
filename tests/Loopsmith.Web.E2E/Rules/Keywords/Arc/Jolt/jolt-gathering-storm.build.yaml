@@ -1,0 +1,5 @@
+# Jolt, with Gathering Storm, whose hit jolts the target.
+name: "E2E - Jolt with Gathering Storm"
+class: hunter
+subclass: arc
+super: gathering-storm

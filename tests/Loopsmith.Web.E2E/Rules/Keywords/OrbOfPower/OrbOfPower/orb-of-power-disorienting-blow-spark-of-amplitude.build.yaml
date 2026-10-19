@@ -1,0 +1,6 @@
+# Orb of Power, with Disorienting Blow, whose hit makes you Amplified, and Spark of Amplitude to drop the orb on two kills at once.
+name: "E2E - Orb of Power with Disorienting Blow and Spark of Amplitude"
+class: hunter
+subclass: arc
+melee: disorienting-blow
+fragments: [spark-of-amplitude]

@@ -1,0 +1,6 @@
+# Jolt, with Skip Grenade and Spark of Shock to jolt the target and hit it again.
+name: "E2E - Jolt with Spark of Shock"
+class: hunter
+subclass: arc
+grenade: skip-grenade
+fragments: [spark-of-shock]
