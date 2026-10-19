@@ -13,7 +13,7 @@ public static class ActionTokenParsing
     private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
 
     public const string Grammar =
-        "grenade[:hold]|melee[:slide|air]|super[:air|combo|guard][:hit|kill[:N]] (grenade and melee [:last]), class[:air][:last], kinetic|energy|power[:hit|kill[:N]][:shield][:precision], kinetic|energy|power:reload, finisher, pickup:<id>, max:<status>, end:<status>, pack:new, health:critical, health:hit";
+        "grenade[:hold]|melee[:slide|air]|super[:air|combo|guard][:hit|kill[:N]] (grenade and melee [:last]), class[:air][:last], kinetic|energy|power[:hit|kill[:N]][:shield][:precision], kinetic|energy|power:reload, kinetic|energy|power:ammo, finisher, pickup:<id>, max:<status>, end:<status>, pack:new, health:critical, health:hit";
 
     /// <summary>
     /// <c>grenade</c>, <c>grenade:kill</c>, <c>grenade:kill:3</c>, <c>kinetic:hit:5</c>, <c>class</c>, <c>class:air</c> (an air move
@@ -30,7 +30,8 @@ public static class ActionTokenParsing
     /// charge (<c>grenade:kill:last</c>, <c>class:last</c>); <c>:shield</c>, a weapon step that breaks a combatant's shield
     /// (<c>kinetic:kill:3:shield</c>); <c>:precision</c>, a weapon step whose hits and kills are precision ones
     /// (<c>energy:kill:precision</c>), with <c>:shield</c> too (<c>energy:kill:shield:precision</c>, in either order).
-    /// <c>kinetic:reload</c> reloads that weapon (ADRs D37): it takes no count and no option.
+    /// <c>kinetic:reload</c> reloads that weapon (ADRs D37), and <c>kinetic:ammo</c> slides over an ammo brick with it in
+    /// hand (Spark of Momentum): neither takes a count or an option.
     /// </summary>
     public static Result<PlayerAction, string> ParseActionToken(string token)
     {
@@ -52,6 +53,8 @@ public static class ActionTokenParsing
                 Ok(new PlayerAction.UseClassAbility(input.Value, charge)),
             (_, OptionKind.None) when parts.Length == 2 && parts[1] == "reload" && FindWeaponSlot(parts[0]) is Optional<WeaponSlot>.Some slot =>
                 Ok(new PlayerAction.ReloadWeapon(slot.Value)),
+            (_, OptionKind.None) when parts.Length == 2 && parts[1] == "ammo" && FindWeaponSlot(parts[0]) is Optional<WeaponSlot>.Some held =>
+                Ok(new PlayerAction.SlideOverAmmo(held.Value)),
             ("kinetic", not OptionKind.Charge) => ParseAimedAction(token, parts, (hit, targets) => new PlayerAction.FireWeapon(WeaponSlot.Kinetic, hit, targets, shield, zone)),
             ("energy", not OptionKind.Charge) => ParseAimedAction(token, parts, (hit, targets) => new PlayerAction.FireWeapon(WeaponSlot.Energy, hit, targets, shield, zone)),
             ("power", not OptionKind.Charge) => ParseAimedAction(token, parts, (hit, targets) => new PlayerAction.FireWeapon(WeaponSlot.Power, hit, targets, shield, zone)),

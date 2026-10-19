@@ -7,7 +7,8 @@ architecture (D16–D23), hosts and tooling (D24–D26), starting from a DIM lin
 step's damage resistance (D29), armor mods in their sockets (D30), the artifact (D32), the count of Armor Charge
 (D33), what a hit step stands for (D34), the raid and activity mods left out of the sockets (D35), what the player
 says about a step besides its hit and count — a broken shield, precision kills, the last charge (D36), a reload (D37), the web designer as the only host (D38), the
-developer tools as hosts too (D39) and the rules grouped by class, subclass and area, each rule with its own id (D40). D1 is the
+developer tools as hosts too (D39), the rules grouped by class, subclass and area, each rule with its own id (D40) and a
+slide over an ammo brick (D41). D1 is the
 founding one: every other decision follows from it.
 
 | # | Decision | Why |
@@ -49,6 +50,7 @@ founding one: every other decision follows from it.
 | D38 | The web designer is the only host; the CLI and the loop graph are removed | Nobody used the CLI: the web app, recorded on every PR, is how Loopsmith is iterated on; what the CLI checked is a Core test |
 | D39 | Developer tools under `tools/` are hosts too: they call only `Orchestration` and the kernel, their own logic is a pure project of their own, and nothing ships them | The rule viewer draws every rule as one claim, the list of e2e scenarios to write; a tool is a host like the web app, so it keeps the same boundary, and Core keeps only what a player's host uses |
 | D40 | The rules are grouped by class, then subclass, then area, with what every class shares in `all-classes/`; every rule has an id, and its full name is its file's path and that id | It is how the game presents a build, a shared element is written once, and the e2e rule tests and their recordings are named by it; the trigger is a view, not a folder |
+| D41 | A slide over an ammo brick is a step the player declares, with the weapon in hand; its refill is no reload | Spark of Momentum's x3 Bolt Charge is part of an Arc loop; a refill sets off no on-reload perk (Compendium) |
 
 ## What the product is
 
@@ -78,7 +80,8 @@ how many, how often, how long or when.
 **Consequence.** Abilities are always available (D5); a status ends when
 a rule consumes or removes it, or when the player declares it ended. A source's "after 6 hits" or "for 10 s" is a fact in the
 description, never a mechanism. No damage or health model either: damage and healing outcomes are
-facts too.
+facts too. Movement (jumps, sprinting, slides) is outside the loop, but for a slide over an ammo brick, a step the
+player declares (D41).
 
 ### D2 — The designed loop is the product
 
@@ -685,3 +688,23 @@ class any more, so a Titan's or a Warlock's Arc build holds them (a Striker's DI
 Moving a file changes the catalog version (D15), as any edit does. Prismatic's grenades and fragments go in
 `all-classes/prismatic/` or under a class, by whether each class's Prismatic item has the same hash; that is checked when
 Prismatic is authored.
+
+### D41 — A slide over an ammo brick is a step the player declares; its refill is no reload
+
+**Context.** Spark of Momentum (Compendium Arc#21) gives x3 Bolt Charge and refills the equipped weapon when you slide
+over an ammo brick you aren't full on. Movement and ammo were outside the loop (D1), so the fragment was inert, though
+its Bolt Charge feeds an Arc loop like any other. Whether you are full on that ammo is play, and so is which weapon is in
+your hands. The Compendium's Weapon Perks tab (its "Reload Perk Notes", row 250 on 2026-10-19) tells a **refill** from a
+**reload**: a refill puts rounds back without the animation and sets off no on-reload perk; a manual reload, Marksman's
+Dodge and Dragon's Shadow are reloads. **Decision (product owner).** A slide over an ammo brick is a step of its own the
+player declares with the weapon in hand, `kinetic|energy|power:ammo` ("Slide over an ammo brick with Festival Flight"),
+like a reload (D37): it takes no count and no option, an empty slot is a blocked step, and it raises `SlidOverAmmo` from
+that weapon, which the `slideOverAmmo` trigger matches (`via` names a weapon, any by default). The designer shows its
+"📦 slide over ammo" button on every weapon, next to 🔄 reload, enabled only when a rule of the build reacts to a slide with
+that weapon. The refill is a fact in Spark of Momentum's description, not a `reloadWeapon`: no `reload` rule fires on it.
+**Consequence.** Spark of Momentum has a rule; the player declares the slide where the loop slides, and nothing checks the
+ammo (D37). The other movement (jumps, sprinting, a slide over nothing) stays outside the loop: when a rule needs a plain
+slide, the step becomes a slide with an "over an ammo brick" option, and `slideOverAmmo` a slide trigger that says so.
+What picking up an ammo brick gives other elements (All-Star, Overflow, the Scavenger mods) has no trigger yet: a brick
+isn't a pickup a rule drops. D37 treats Demolitionist's and Return Stroke's refills as reloads, which the same Compendium
+note contradicts; that is its own change.

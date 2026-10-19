@@ -366,6 +366,12 @@ public static class DomainPhrasing
     /// <summary>A Reload step's button, next to a weapon's hit and kill: "🔄 reload".</summary>
     public const string ReloadCaption = "🔄 reload";
 
+    /// <summary>What sliding over an ammo brick is called: the step ("Slide over an ammo brick with Festival Flight") and its trigger.</summary>
+    public const string SlideOverAmmo = "Slide over an ammo brick";
+
+    /// <summary>A slide over an ammo brick's button, next to a weapon's hit, kill and reload: "📦 slide over ammo".</summary>
+    public const string SlideOverAmmoCaption = "📦 slide over ammo";
+
     /// <summary>What breaking a combatant's shield is called as a trigger (ADRs D36).</summary>
     public const string BreakShield = "Break a shield";
 
@@ -412,7 +418,10 @@ public static class DomainPhrasing
             reload => reload.Via is DamageSource.AnySource or DamageSource.AnyWeapon
                 ? Reload
                 : $"{Reload} {glossary.DescribeDamageSource(reload.Via, superType)}",
-            _ => HitAtCriticalHealth);
+            _ => HitAtCriticalHealth,
+            slide => slide.Via is DamageSource.AnySource or DamageSource.AnyWeapon
+                ? SlideOverAmmo
+                : $"{SlideOverAmmo} with {glossary.DescribeDamageSource(slide.Via, superType)}");
 
     /// <summary>" in 3s": the window a source gives the kills or hits it counts; nothing without one.</summary>
     private static string DescribeWithin(Optional<Seconds> within) =>
@@ -1002,12 +1011,15 @@ public static class DomainPhrasing
             broken => $"{glossary.DescribeOrigin(broken.Origin, build)} 🛡 broke a shield",
             expended => expended.Kind.DescribeEnergyExpended(),
             reloaded => $"{glossary.DescribeOrigin(reloaded.Origin, build)} reloaded",
-            _ => HitAtCriticalHealth);
+            _ => HitAtCriticalHealth,
+            slid => $"Slid over an ammo brick with {glossary.DescribeOrigin(slid.Origin, build)}");
 
     /// <summary>
     /// "Grenade (💀 kill)", "Grenade (💀 kill 3)", "Grenade (💀 kill · ⬜ spend fully)", "Festival Flight (🥊 hit 5)",
     /// "Festival Flight (💀 kill · 🛡 shield)", "Festival Flight (💀 kill · 🎯 precision)", "Class ability", "Class ability (⬜ spend fully)", "Pick up Orb of Power",
     /// "Bolt Charge at max (x10)", "Amplified ends", "New pack", "Critical health", "Hit at critical health", "Finisher", "Reload Festival Flight".
+    /// "Bolt Charge at max (x10)", "Amplified ends", "New pack", "Critical health", "Finisher", "Reload Festival Flight",
+    /// "Slide over an ammo brick with Festival Flight".
     /// </summary>
     public static string DescribeAction(this ValidatedBuild build, PlayerAction action) =>
         action.Match(
@@ -1023,7 +1035,8 @@ public static class DomainPhrasing
             collect => $"Pick up {build.Catalog.Glossary.DescribePickup(collect.Pickup)}",
             declare => build.DescribeDeclaration(declare.Declaration),
             _ => Finisher,
-            reload => $"{Reload} {DescribeWeapon(build.Build, reload.Slot, reload.Slot.ToString())}");
+            reload => $"{Reload} {DescribeWeapon(build.Build, reload.Slot, reload.Slot.ToString())}",
+            slide => $"{SlideOverAmmo} with {DescribeWeapon(build.Build, slide.Slot, slide.Slot.ToString())}");
 
     /// <summary>"Armor Charge at max (x4)": the max names the build's cap (Charged Up raises it), a fact the player declares reached.</summary>
     private static string DescribeDeclaration(this ValidatedBuild build, StateDeclaration declaration) =>
@@ -1074,6 +1087,7 @@ public static class DomainPhrasing
     /// The action's token, the same everywhere (loop files, share links, the web): <c>grenade:kill</c>, <c>grenade:kill:3</c>,
     /// <c>class</c>, <c>kinetic</c>, <c>kinetic:hit:5</c>, <c>pickup:orb-of-power</c>, <c>max:bolt-charge</c>,
     /// <c>end:amplified</c>, <c>pack:new</c>, <c>health:critical</c>, <c>health:hit</c>, <c>finisher</c>, <c>kinetic:reload</c>. The target count is written only when it is more than one; every
+    /// <c>end:amplified</c>, <c>pack:new</c>, <c>health:critical</c>, <c>finisher</c>, <c>kinetic:reload</c>, <c>kinetic:ammo</c>. The target count is written only when it is more than one; every
     /// token round-trips. An option goes last: <c>:last</c> on an ability's last charge (<c>grenade:kill:last</c>),
     /// <c>:shield</c> on a weapon step that breaks a shield (<c>kinetic:kill:3:shield</c>), then <c>:precision</c> on one whose
     /// hits and kills are precision ones (<c>energy:kill:precision</c>, <c>energy:kill:shield:precision</c>) (ADRs D36).
@@ -1091,7 +1105,8 @@ public static class DomainPhrasing
                 _ => "health:critical",
                 _ => "health:hit"),
             _ => "finisher",
-            reload => reload.Slot.ToString().ToLowerInvariant() + ":reload");
+            reload => reload.Slot.ToString().ToLowerInvariant() + ":reload",
+            slide => slide.Slot.ToString().ToLowerInvariant() + ":ammo");
 
     /// <summary>":last" for the use that spends an ability's last charge; nothing for a plain use.</summary>
     private static string ToChargeSuffix(ChargeUse charge) =>

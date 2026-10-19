@@ -128,7 +128,7 @@
             }
             @if (choice.Buttons.Any(button => button.StandsApart))
             {
-                @* A reload takes no enemy count and no option (ADRs D37): it stands at the row's right end, away from them. *@
+                @* A reload and a slide over an ammo brick take no enemy count and no option (ADRs D37): they stand at the row's right end, away from them. *@
                 <div class="trigger-buttons apart" data-testid="trigger-buttons-apart">
                     @foreach (var button in choice.Buttons.Where(button => button.StandsApart))
                     {
@@ -310,10 +310,14 @@
         }
     };
 
-    /// <summary>A button of the picked row: "🥊 hit", "💀 kill", "🔄 reload".</summary>
+    /// <summary>
+    /// A button of the picked row: "🥊 hit", "💀 kill", "🔄 reload", "📦 slide over ammo"; disabled when no rule of the build
+    /// reacts to it (a slide over an ammo brick without Spark of Momentum), and its title says so.
+    /// </summary>
     private RenderFragment RenderTrigger(TriggerButton button) => __builder =>
     {
-        <button type="button" class="trigger" data-action="trigger" data-token="@button.Token" title="@($"{button.Label}  ({button.Token})")"
+        <button type="button" class="trigger" data-action="trigger" data-token="@button.Token" data-enabled="@(button.IsEnabled ? "true" : "false")" disabled="@(!button.IsEnabled)"
+                title="@(button.IsEnabled ? $"{button.Label}  ({button.Token})" : $"{button.Label}: no rule of this build reacts to it")"
                 @onclick="() => PickTrigger(button.Action)">
             <span class="trigger-caption" data-testid="trigger-caption">@button.Caption</span>
             @if (button.IsNew)
