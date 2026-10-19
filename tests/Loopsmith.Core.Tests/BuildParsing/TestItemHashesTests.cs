@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using Loopsmith.Core.Domain;
+using Loopsmith.Core.Functional;
 using Loopsmith.Core.Tests.Support;
 
 namespace Loopsmith.Core.Tests.BuildParsing;
