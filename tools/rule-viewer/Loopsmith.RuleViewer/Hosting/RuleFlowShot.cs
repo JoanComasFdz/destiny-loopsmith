@@ -16,7 +16,8 @@ public static class RuleFlowShot
     {
         try
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
+            var folder = Path.GetDirectoryName(Path.GetFullPath(path))!;
+            Directory.CreateDirectory(folder);
             using var playwright = await Playwright.CreateAsync();
             await using var browser = await playwright.Chromium.LaunchAsync(new() { Headless = true });
             var page = await browser.NewPageAsync(new() { ViewportSize = new() { Width = 1600, Height = 900 }, DeviceScaleFactor = 2, ColorScheme = ColorScheme.Light });

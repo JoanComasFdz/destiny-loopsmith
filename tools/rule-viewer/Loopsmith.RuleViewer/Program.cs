@@ -30,7 +30,8 @@ if (paths.Rule is Optional<string>.Some rule)
     }
 
     var pngPath = Path.Combine(paths.OutDirectory, $"{rule.Value}.png");   // pure
-    var shot = await RuleFlowShot.SaveShotAsync(((Result<string, string>.Ok)flowPage).Value, RuleFlowPage.ShotSelector, pngPath);   // impure
+    var html = ((Result<string, string>.Ok)flowPage).Value;
+    var shot = await RuleFlowShot.SaveShotAsync(html, RuleFlowPage.ShotSelector, pngPath);   // impure
     return shot.Match(
         _ =>
         {
