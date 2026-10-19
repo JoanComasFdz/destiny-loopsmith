@@ -240,7 +240,7 @@
                             <img class="inline-icon hud-keyword-icon" src="@icon.Value" alt="" loading="lazy" />
                         }
                         <span data-testid="damage-bonus-source-name">@source.Name</span>
-                        <span class="hud-switches" data-testid="damage-bonus-source-value">@StateHudShaping.DescribeDamageBonus(source.Change)</span>
+                        <span class="hud-switches" data-testid="damage-bonus-source-value">@source.Change.FormatSignedPercent()</span>
                     </button>
                 }
             </span>

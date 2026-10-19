@@ -108,7 +108,6 @@ public sealed class CombinationBlowTests : BaseE2E
             .Shows(new StateGroup.Buffs(), "Combination Blow");
 
         // When
-        // keeping step #1: its Combination Blow on you is what makes the melee harder
         await Frontend.Designer.Loop.Step(1).ClickDamageBonusAsync();
         await Frontend.Designer.Loop.Step(1).WaitUntilDamageBonusSourcesShownAsync();
 

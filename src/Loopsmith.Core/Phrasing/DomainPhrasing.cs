@@ -22,6 +22,14 @@ public static class DomainPhrasing
             approximate => "~" + FormatPercentNumber(approximate.Value),
             _ => "?%");
 
+    /// <summary>A bonus: "+50%", "+10%|+17%", "~+25%"; one whose amount isn't known, "?" (never 0).</summary>
+    public static string FormatSignedPercent(this GameValue value) =>
+        value.Match(
+            known => "+" + FormatPercentNumber(known.Value),
+            perModCount => string.Join("|", perModCount.Values.Select(fraction => "+" + FormatPercentNumber(fraction))),
+            approximate => "~+" + FormatPercentNumber(approximate.Value),
+            _ => Unknown);
+
     public static string FormatNumber(this GameValue value) =>
         value.Match(
             known => known.Value.ToString("0.##", Invariant),

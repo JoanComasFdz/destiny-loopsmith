@@ -170,7 +170,8 @@ public sealed class StepStateShapingTests
         Assert.Equal(new GameValue.Known(0.5m), Assert.Single(before[0].Sources).Change);
         var melee = Assert.Single(after, line => line.Against == "Melee");
         var combination = Assert.Single(melee.Sources);
-        Assert.Equal(("Combination Blow", (GameValue)new GameValue.Unknown()), (combination.Name, combination.Change));   // "?", never 0
+        Assert.Equal(("Combination Blow", (GameValue)new GameValue.Unknown()), (combination.Name, combination.Change));
+        Assert.Equal(("+50%", "?"), (before[0].Sources[0].Change.FormatSignedPercent(), combination.Change.FormatSignedPercent()));   // "?", never 0
     }
 
     [Fact]
