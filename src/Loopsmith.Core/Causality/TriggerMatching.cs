@@ -87,16 +87,27 @@ public static class TriggerMatching
 
     /// <summary>Whether the trigger is a kill that needs a precision kill (<c>precision: true</c>, ADRs D36).</summary>
     public static bool NeedsPrecisionKill(this Trigger trigger) =>
-        trigger switch
-        {
-            Trigger.KillAny kill => kill.Needs == HitZone.Precision,
-            Trigger.KillOfTier kill => kill.Needs == HitZone.Precision,
-            Trigger.KillDebuffed kill => kill.Needs == HitZone.Precision,
-            Trigger.KillMultiple kill => kill.Needs == HitZone.Precision,
-            Trigger.KillFewer kill => kill.Needs == HitZone.Precision,
-            Trigger.KillBetween kill => kill.Needs == HitZone.Precision,
-            _ => false,
-        };
+        trigger.Match(
+            abilityCast: _ => false,
+            killAny: kill => kill.Needs == HitZone.Precision,
+            killOfTier: kill => kill.Needs == HitZone.Precision,
+            killDebuffed: kill => kill.Needs == HitZone.Precision,
+            killMultiple: kill => kill.Needs == HitZone.Precision,
+            damage: _ => false,
+            damageDebuffed: _ => false,
+            damageMultiple: _ => false,
+            pickUp: _ => false,
+            buffGained: _ => false,
+            stacksMaxed: _ => false,
+            finisher: _ => false,
+            abilityCastAs: _ => false,
+            killFewer: kill => kill.Needs == HitZone.Precision,
+            criticalHealth: _ => false,
+            shieldBroken: _ => false,
+            energyExpended: _ => false,
+            damageFewer: _ => false,
+            killBetween: kill => kill.Needs == HitZone.Precision,
+            reload: _ => false);
 
     /// <summary>The statuses a trigger needs on the target (empty when it doesn't care).</summary>
     public static ImmutableArray<StatusId> ListRequiredTargetStatuses(this Trigger trigger) =>

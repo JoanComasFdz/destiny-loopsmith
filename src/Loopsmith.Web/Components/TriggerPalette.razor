@@ -136,7 +136,7 @@
             {
                 <button type="button" class="trig-option @(toggle.IsOn ? "on" : "")" data-action="trigger-option" data-option="@toggle.Option"
                         aria-pressed="@(toggle.IsOn ? "true" : "false")" title="@toggle.Hint"
-                        @onclick="() => ToggleOption(TriggerPaletteShaping.ToOptionKey(choice.Key, toggle.Option))">
+                        @onclick="() => ToggleOption(choice.Key, toggle.Option)">
                     <span class="trig-option-box" aria-hidden="true">@(toggle.IsOn ? "✓" : "")</span>
                     <span class="trig-option-caption" data-testid="trigger-option-caption">@toggle.Caption</span>
                 </button>
@@ -375,8 +375,9 @@
         OnPick.InvokeAsync(action);                                                              // impure
 
     /// <summary>Turns an option of a row (a weapon's shield or precision, an ability's last charge) on or off for its next steps.</summary>
-    private void ToggleOption(string key)
+    private void ToggleOption(string rowKey, StepOption option)
     {
+        var key = TriggerPaletteShaping.ToOptionKey(rowKey, option);                              // pure
         var updated = optionsOn.Contains(key) ? optionsOn.Remove(key) : optionsOn.Add(key);     // pure
         optionsOn = updated;                                                                     // impure (component state)
     }

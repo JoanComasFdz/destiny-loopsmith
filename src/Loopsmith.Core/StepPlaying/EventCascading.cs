@@ -186,8 +186,8 @@ public static class EventCascading
         gameEvent.Match(
             cast => $"cast:{cast.Kind}" + (cast.Input == AbilityInput.Press ? "" : $":{cast.Input}"),
             damaged => $"damage:{ToOriginKey(damaged.Origin)}:{damaged.Tier}:{string.Join(",", damaged.TargetHas.Order())}",
-            killed => $"kill:{ToOriginKey(killed.Origin)}:{killed.Tier}:{string.Join(",", killed.TargetHas.Order())}",
-            struck => $"targets:{ToOriginKey(struck.Origin)}:{struck.Targets.Value}:{struck.Hit}",
+            killed => $"kill:{ToOriginKey(killed.Origin)}:{killed.Tier}:{string.Join(",", killed.TargetHas.Order())}" + (killed.Zone == HitZone.Precision ? ":precision" : ""),
+            struck => $"targets:{ToOriginKey(struck.Origin)}:{struck.Targets.Value}:{struck.Hit}" + (struck.Zone == HitZone.Precision ? ":precision" : ""),
             pickedUp => $"pickup:{pickedUp.Pickup}",
             gained => $"gain:{gained.Status}",
             maxed => $"max:{maxed.Status}",
