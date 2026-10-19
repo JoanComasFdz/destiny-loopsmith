@@ -48,6 +48,10 @@ public static class StepCardSnapshotAssertions
     public static AssertingThat<StepCardSnapshot> Fires(this AssertingThat<StepCardSnapshot> that, ArmorMod mod, params string[] lines) =>
         that.FiresFrom(mod.ToShownText(), lines);
 
+    /// <summary><paramref name="armor"/> fired exactly <paramref name="lines"/>, in that order, each with its "(chance)" as shown.</summary>
+    public static AssertingThat<StepCardSnapshot> Fires(this AssertingThat<StepCardSnapshot> that, ArmorPiece armor, params string[] lines) =>
+        that.FiresFrom(armor.ToShownText(), lines);
+
     /// <summary><paramref name="ability"/> fired exactly <paramref name="lines"/>, in that order, each with its "(chance)" as shown.</summary>
     public static AssertingThat<StepCardSnapshot> Fires(this AssertingThat<StepCardSnapshot> that, Ability ability, params string[] lines) =>
         that.FiresFrom(ability.ToShownText(), lines);
@@ -143,9 +147,15 @@ public static class StepCardSnapshotAssertions
     }
 
     /// <summary><paramref name="ability"/> is a source of the card's damage bonus, with the value <paramref name="value"/> ("?").</summary>
-    public static AssertingThat<StepCardSnapshot> HasDamageBonusFrom(this AssertingThat<StepCardSnapshot> that, Ability ability, string value)
+    public static AssertingThat<StepCardSnapshot> HasDamageBonusFrom(this AssertingThat<StepCardSnapshot> that, Ability ability, string value) =>
+        that.HasDamageBonusFrom(ability.ToShownText(), value);
+
+    /// <summary><paramref name="armor"/> is a source of the card's damage bonus, with the value <paramref name="value"/> ("+100% [PvP 10%]").</summary>
+    public static AssertingThat<StepCardSnapshot> HasDamageBonusFrom(this AssertingThat<StepCardSnapshot> that, ArmorPiece armor, string value) =>
+        that.HasDamageBonusFrom(armor.ToShownText(), value);
+
+    private static AssertingThat<StepCardSnapshot> HasDamageBonusFrom(this AssertingThat<StepCardSnapshot> that, string name, string value)
     {
-        var name = ability.ToShownText();
         var sources = that.InstanceToAssert.Bonus.Sources;
         Assert.True(
             sources.Any(source => source.Name == name && source.Value == value),
@@ -157,6 +167,15 @@ public static class StepCardSnapshotAssertions
     public static AssertingThat<StepCardSnapshot> DoesNotFire(this AssertingThat<StepCardSnapshot> that, WeaponPerk perk)
     {
         var name = perk.ToShownText();
+        var fired = FindSources(that.InstanceToAssert, name);
+        Assert.True(fired.IsEmpty, $"The card shows {name} with {Describe(fired.SelectMany(source => source.Lines))}, but no {name} line was expected.");
+        return that;
+    }
+
+    /// <summary>The card has no line from <paramref name="armor"/>.</summary>
+    public static AssertingThat<StepCardSnapshot> DoesNotFire(this AssertingThat<StepCardSnapshot> that, ArmorPiece armor)
+    {
+        var name = armor.ToShownText();
         var fired = FindSources(that.InstanceToAssert, name);
         Assert.True(fired.IsEmpty, $"The card shows {name} with {Describe(fired.SelectMany(source => source.Lines))}, but no {name} line was expected.");
         return that;

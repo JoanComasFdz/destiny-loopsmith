@@ -190,7 +190,7 @@ internal static class DependencyMapping
             reload: _ => [ToTriggerNode("Reload", Optional.None<string>())],
             hitAtCriticalHealth: _ => [ToTriggerNode("Hit at critical health", FindStatIcon(context, StatKind.Health))],
             slideOverAmmo: _ => [ToTriggerNode(DomainPhrasing.SlideOverAmmo, Optional.None<string>())],
-            readyWeapon: _ => [ToTriggerNode(DomainPhrasing.ReadyWeapon, Optional.None<string>())]);
+            readyWeapon: ready => [ToTriggerNode(context.Catalog.Glossary.DescribeTrigger(ready, Optional.None<DamageType>()), Optional.None<string>())]);   // "Ready Sidearm": the weapon it names
 
     /// <summary>
     /// The nodes a damage source needs: the weapon or ability trigger, the strike or summon dealing it; any ability is one

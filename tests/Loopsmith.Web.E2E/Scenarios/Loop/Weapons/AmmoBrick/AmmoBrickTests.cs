@@ -52,7 +52,7 @@ public sealed class AmmoBrickTests : BaseE2E
         Scenario: Slide over an ammo brick shows on every weapon but is disabled when no rule reacts to it
           Given the build "festival-flight-one-for-all-ammo-brick" is imported, with no steps
           When I tap "Festival Flight" in the trigger panel
-          Then its row shows "🥊 hit", "💀 kill", "📦 slide over ammo" and "🔄 reload"
+          Then its row shows "🥊 hit", "💀 kill", "✋ ready", "📦 slide over ammo" and "🔄 reload"
           And "📦 slide over ammo" is disabled
         """)]
     public async Task SlideOverAnAmmoBrickShowsOnEveryWeaponButIsDisabledWhenNoRuleReactsToIt(Screen screen)
@@ -68,7 +68,7 @@ public sealed class AmmoBrickTests : BaseE2E
         // Then
         var row = await Frontend.Designer.TriggerPalette.ReadAsync();
         Asserting.That(row)
-            .ShowsTriggers(new StepTrigger.Hit(), new StepTrigger.Kill(), new StepTrigger.SlideOverAmmo(), new StepTrigger.Reload())
+            .ShowsTriggers(new StepTrigger.Hit(), new StepTrigger.Kill(), new StepTrigger.Ready(), new StepTrigger.SlideOverAmmo(), new StepTrigger.Reload())
             .IsDisabled(new StepTrigger.SlideOverAmmo());
     }
 }
