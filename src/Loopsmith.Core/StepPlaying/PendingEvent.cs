@@ -13,5 +13,5 @@ public partial record PendingEvent
 {
     partial record Ready(GameEvent Event);
     partial record HitTarget(DamageOrigin Origin, DamageSpan Span);
-    partial record KillTarget(DamageOrigin Origin);
+    partial record KillTarget(DamageOrigin Origin, HitZone Zone = HitZone.Body);   // Zone: a precision kill the player says (ADRs D36)
 }

@@ -11,11 +11,11 @@ public static class TriggerRowLayoutAssertions
 
     private const string CountName = "the \"×\" enemy count";
 
-    /// <summary>No two of the row's buttons and its "×" enemy count overlap.</summary>
+    /// <summary>No two of the row's buttons, its option boxes and its "×" enemy count overlap.</summary>
     public static AssertingThat<TriggerRowLayout> HasNoOverlap(this AssertingThat<TriggerRowLayout> that)
     {
         var shown = that.InstanceToAssert;
-        var parts = shown.Buttons.Select(button => (Name: $"\"{button.Caption}\"", button.Box))
+        var parts = shown.Buttons.Concat(shown.Options).Select(button => (Name: $"\"{button.Caption}\"", button.Box))
             .Concat(shown.Count is { } count ? [(Name: CountName, Box: count)] : [])
             .ToArray();
         var overlapping = parts

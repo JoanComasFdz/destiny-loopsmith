@@ -30,6 +30,12 @@ public sealed class TriggerPalette(IPage page)
 
     private ILocator TargetCountOptions => TargetCount.GetByRole(AriaRole.Option);
 
+    private ILocator OptionCaptions => Row.Locator("[data-action=trigger-option] [data-testid=trigger-option-caption]");
+
+    private ILocator RowOptionBox(RowOption option) =>
+        Row.Locator("[data-action=trigger-option]")
+            .Filter(new() { Has = page.Locator("[data-testid=trigger-option-caption]").GetByText(option.ToShownText(), new() { Exact = true }) });
+
     // A weapon's button is named "<its name> (<its slot>)".
     private ILocator WeaponButton(Weapon weapon) =>
         Panel.Locator("[data-action=trigger-weapon]")
@@ -93,6 +99,9 @@ public sealed class TriggerPalette(IPage page)
     public Task SelectTargetCountAsync(string shown) =>
         OnScreen.ActAsync(Panel, TargetCount, count => count.SelectOptionAsync(new SelectOptionValue { Label = shown }));
 
+    /// <summary>Ticks <paramref name="option"/>'s box in the picked row ("🎯 precision"): its next steps carry it.</summary>
+    public Task TickOptionAsync(RowOption option) => OnScreen.PressAsync(Panel, RowOptionBox(option));
+
     /// <summary>Clicks <paramref name="trigger"/> in the picked row: the loop gets a step.</summary>
     public Task ClickAsync(StepTrigger trigger) => OnScreen.PressAsync(Panel, Trigger(trigger));
 
@@ -128,11 +137,13 @@ public sealed class TriggerPalette(IPage page)
             await TargetCount.CountAsync() > 0,
             [.. (await TargetCountOptions.AllInnerTextsAsync()).Select(shown => shown.Trim())],
             [.. (await ApartCaptions.AllInnerTextsAsync()).Select(shown => StepTriggerShowing.ReadStepTrigger(shown.Trim()))],
+            [.. (await OptionCaptions.AllInnerTextsAsync()).Select(shown => RowOptionShowing.ReadRowOption(shown.Trim()))],
             await Panel.GetAttributeAsync("aria-disabled") == "true",
             await DisabledNote.CountAsync() > 0 ? (await DisabledNote.InnerTextAsync()).Trim() : "");
 
-    // The row's box and its content's right edge (its right padding left out), each button's box with its caption, the
-    // "×" enemy count's box, the screen's width and the page's (wider when it scrolls sideways).
+    // The row's box and its content's right edge (its right padding left out), each button's box with its caption, each
+    // option's box with its caption, the "×" enemy count's box, the screen's width and the page's (wider when it scrolls
+    // sideways).
     private const string LayoutScript = """
         row => {
           const box = el => { const r = el.getBoundingClientRect(); return { left: r.left, top: r.top, right: r.right, bottom: r.bottom }; };
@@ -144,6 +155,10 @@ public sealed class TriggerPalette(IPage page)
               caption: button.querySelector('[data-testid=trigger-caption]').innerText.trim(),
               box: box(button),
             })),
+            options: [...row.querySelectorAll('[data-action=trigger-option]')].map(option => ({
+              caption: option.querySelector('[data-testid=trigger-option-caption]').innerText.trim(),
+              box: box(option),
+            })),
             count: row.querySelector('[data-testid=target-count]') ? box(row.querySelector('[data-testid=target-count]')) : null,
             screenWidth: window.innerWidth,
             pageWidth: document.documentElement.scrollWidth,
@@ -154,24 +169,27 @@ public sealed class TriggerPalette(IPage page)
 
 /// <summary>
 /// What the panel shows: the picked row's buttons the "×" enemy count goes with, whether that count shows, the counts it
-/// offers (as its options read, in order), and the buttons at the row's right end, apart from it; whether the whole panel
-/// is greyed out (nothing in it can be tapped), and the line that says why (empty when it isn't).
+/// offers (as its options read, in order), the buttons at the row's right end, apart from it, and the boxes the player
+/// ticks (its options); whether the whole panel is greyed out (nothing in it can be tapped), and the line that says why
+/// (empty when it isn't).
 /// </summary>
 public sealed record TriggerPaletteSnapshot(
     ImmutableArray<StepTrigger> WithTheCount,
     bool ShowsTheCount,
     ImmutableArray<string> TargetCounts,
     ImmutableArray<StepTrigger> ApartFromTheCount,
+    ImmutableArray<RowOption> Options,
     bool IsGreyedOut,
     string DisabledNote);
 
 /// <summary>
 /// Where the picked row is on the screen, in CSS pixels: the row's box and its content's right edge, each button's box
-/// with its caption, the "×" enemy count's box (none when the row has no count), the screen's width and the page's.
+/// with its caption, each option's box with its caption, the "×" enemy count's box (none when the row has no count), the
+/// screen's width and the page's.
 /// </summary>
-public sealed record TriggerRowLayout(ScreenBox Row, double ContentRight, ImmutableArray<TriggerButtonBox> Buttons, ScreenBox? Count, double ScreenWidth, double PageWidth);
+public sealed record TriggerRowLayout(ScreenBox Row, double ContentRight, ImmutableArray<TriggerButtonBox> Buttons, ImmutableArray<TriggerButtonBox> Options, ScreenBox? Count, double ScreenWidth, double PageWidth);
 
-/// <summary>A button of the row and its box.</summary>
+/// <summary>A button or option box of the row, and its box.</summary>
 public sealed record TriggerButtonBox(string Caption, ScreenBox Box);
 
 /// <summary>A box on the screen, in CSS pixels from the window's top left.</summary>

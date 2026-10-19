@@ -38,6 +38,28 @@ public static class TriggerPaletteSnapshotAssertions
         return that;
     }
 
+    /// <summary>The picked row shows <paramref name="option"/>'s box ("🎯 precision").</summary>
+    public static AssertingThat<TriggerPaletteSnapshot> ShowsTheOption(this AssertingThat<TriggerPaletteSnapshot> that, RowOption option)
+    {
+        var shown = that.InstanceToAssert.Options;
+        Assert.True(shown.Contains(option), $"The picked row shows {Describe(shown)}, but \"{option.ToShownText()}\" was expected among its boxes.");
+        return that;
+    }
+
+    /// <summary>The picked row shows no <paramref name="option"/> box.</summary>
+    public static AssertingThat<TriggerPaletteSnapshot> ShowsNoOption(this AssertingThat<TriggerPaletteSnapshot> that, RowOption option)
+    {
+        var shown = that.InstanceToAssert.Options;
+        Assert.False(shown.Contains(option), $"The picked row shows \"{option.ToShownText()}\", but no such box was expected.");
+        return that;
+    }
+
+    private static string Describe(IEnumerable<RowOption> options)
+    {
+        var listed = string.Join(", ", options.Select(option => $"\"{option.ToShownText()}\""));
+        return listed.Length == 0 ? "no box to tick" : listed;
+    }
+
     private static string Describe(IEnumerable<StepTrigger> triggers)
     {
         var listed = string.Join(", ", triggers.Select(trigger => $"\"{trigger.ToShownText()}\""));

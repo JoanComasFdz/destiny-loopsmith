@@ -1,0 +1,9 @@
+# Spark of Brilliance, the one rule that needs a precision kill, with Flashbang Grenade to blind the target and Crisis
+# Inverted (no rules of its own) to kill it.
+name: "E2E - Precision kills with Spark of Brilliance"
+class: hunter
+subclass: arc
+grenade: flashbang-grenade
+fragments: [spark-of-brilliance]
+weapons:
+  - { hash: 2888266564, perks: [] } # Crisis Inverted

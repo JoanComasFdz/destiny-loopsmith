@@ -17,16 +17,19 @@ public static class TriggerMatching
     public static bool IsTriggeredBy(this Trigger trigger, GameEvent gameEvent, Optional<DamageType> superType) =>
         trigger.Match(
             abilityCast => gameEvent is GameEvent.AbilityCast cast && cast.Kind == abilityCast.Kind,
-            killAny => gameEvent is GameEvent.Killed killed && killAny.Via.IsMatchedBy(killed.Origin, superType),
+            killAny => gameEvent is GameEvent.Killed killed && killAny.Via.IsMatchedBy(killed.Origin, superType) && IsZoneMet(killAny.Needs, killed.Zone),
             killOfTier => gameEvent is GameEvent.Killed killed
                 && killOfTier.Via.IsMatchedBy(killed.Origin, superType)
-                && killed.Tier == killOfTier.Tier,
+                && killed.Tier == killOfTier.Tier
+                && IsZoneMet(killOfTier.Needs, killed.Zone),
             killDebuffed => gameEvent is GameEvent.Killed killed
                 && killDebuffed.Via.IsMatchedBy(killed.Origin, superType)
-                && HasEveryStatus(killed.TargetHas, killDebuffed.TargetHas),
+                && HasEveryStatus(killed.TargetHas, killDebuffed.TargetHas)
+                && IsZoneMet(killDebuffed.Needs, killed.Zone),
             killMultiple => gameEvent is GameEvent.TargetsHit { Hit: HitOutcome.Kill } struck
                 && killMultiple.Via.IsMatchedBy(struck.Origin, superType)
-                && struck.Targets.Value >= killMultiple.AtLeast.Value,
+                && struck.Targets.Value >= killMultiple.AtLeast.Value
+                && IsZoneMet(killMultiple.Needs, struck.Zone),
             damage => gameEvent is GameEvent.Damaged damaged
                 && damage.Via.IsMatchedBy(damaged.Origin, superType)
                 && IsSpanMet(damage.Needs, damaged.Span),
@@ -44,7 +47,8 @@ public static class TriggerMatching
             castAs => gameEvent is GameEvent.AbilityCast cast && cast.Kind == castAs.Kind && cast.Input == castAs.Input,
             killFewer => gameEvent is GameEvent.TargetsHit { Hit: HitOutcome.Kill } struck
                 && killFewer.Via.IsMatchedBy(struck.Origin, superType)
-                && struck.Targets.Value < killFewer.FewerThan.Value,
+                && struck.Targets.Value < killFewer.FewerThan.Value
+                && IsZoneMet(killFewer.Needs, struck.Zone),
             _ => gameEvent is GameEvent.CriticalHealth,
             shieldBroken => gameEvent is GameEvent.ShieldBroken broken && shieldBroken.Via.IsMatchedBy(broken.Origin, superType),
             energyExpended => gameEvent is GameEvent.EnergyExpended expended && expended.Kind == energyExpended.Kind,
@@ -54,7 +58,8 @@ public static class TriggerMatching
             killBetween => gameEvent is GameEvent.TargetsHit { Hit: HitOutcome.Kill } struck
                 && killBetween.Via.IsMatchedBy(struck.Origin, superType)
                 && struck.Targets.Value >= killBetween.AtLeast.Value
-                && struck.Targets.Value < killBetween.FewerThan.Value,
+                && struck.Targets.Value < killBetween.FewerThan.Value
+                && IsZoneMet(killBetween.Needs, struck.Zone),
             reload => gameEvent is GameEvent.Reloaded reloaded && reload.Via.IsMatchedBy(reloaded.Origin, superType));
 
     /// <summary>
@@ -79,6 +84,30 @@ public static class TriggerMatching
             usedAs => origin is DamageOrigin.Ability ability && ability.Kind == usedAs.Kind && ability.Input == usedAs.Input,
             _ => false,
             _ => false);
+
+    /// <summary>Whether the trigger is a kill that needs a precision kill (<c>precision: true</c>, ADRs D36).</summary>
+    public static bool NeedsPrecisionKill(this Trigger trigger) =>
+        trigger.Match(
+            abilityCast: _ => false,
+            killAny: kill => kill.Needs == HitZone.Precision,
+            killOfTier: kill => kill.Needs == HitZone.Precision,
+            killDebuffed: kill => kill.Needs == HitZone.Precision,
+            killMultiple: kill => kill.Needs == HitZone.Precision,
+            damage: _ => false,
+            damageDebuffed: _ => false,
+            damageMultiple: _ => false,
+            pickUp: _ => false,
+            buffGained: _ => false,
+            stacksMaxed: _ => false,
+            finisher: _ => false,
+            abilityCastAs: _ => false,
+            killFewer: kill => kill.Needs == HitZone.Precision,
+            criticalHealth: _ => false,
+            shieldBroken: _ => false,
+            energyExpended: _ => false,
+            damageFewer: _ => false,
+            killBetween: kill => kill.Needs == HitZone.Precision,
+            reload: _ => false);
 
     /// <summary>The statuses a trigger needs on the target (empty when it doesn't care).</summary>
     public static ImmutableArray<StatusId> ListRequiredTargetStatuses(this Trigger trigger) =>
@@ -154,4 +183,8 @@ public static class TriggerMatching
     /// <summary>A source that needs sustained damage fires on a hit step's hits only; any other on every hit (ADRs D34).</summary>
     private static bool IsSpanMet(DamageSpan needs, DamageSpan span) =>
         needs == DamageSpan.Blow || span == DamageSpan.Sustained;
+
+    /// <summary>A source that needs a precision kill fires on the kills the player says are precision ones only; any other on every kill (ADRs D36).</summary>
+    private static bool IsZoneMet(HitZone needs, HitZone zone) =>
+        needs == HitZone.Body || zone == HitZone.Precision;
 }

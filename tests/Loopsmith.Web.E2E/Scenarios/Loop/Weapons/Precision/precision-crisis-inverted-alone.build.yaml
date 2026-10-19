@@ -1,0 +1,6 @@
+# Crisis Inverted alone: no equipped rule needs a precision kill.
+name: "E2E - Crisis Inverted with no precision rule"
+class: hunter
+subclass: arc
+weapons:
+  - { hash: 2888266564, perks: [] } # Crisis Inverted
