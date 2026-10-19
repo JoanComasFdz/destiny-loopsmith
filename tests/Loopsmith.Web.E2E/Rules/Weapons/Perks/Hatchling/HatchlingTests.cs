@@ -21,7 +21,7 @@ public sealed class HatchlingTests : BaseE2E
           And it reads "Festival Flight 💀 killed 3 enemies in 3 s"
           And "Hatchling" fires "Threadling"
         """)]
-    public async Task HatchlingsThreeQuickKillsHatchAThreadling(Screen screen)
+    public async Task Hatchlings3QuickKillsHatchAThreadling(Screen screen)
     {
         // Given
         await Frontend.Home.ImportBuildAsync("hatchling-festival-flight.build.yaml");
@@ -125,7 +125,7 @@ public sealed class HatchlingTests : BaseE2E
           And it reads "Festival Flight 💀 killed 3 enemies in 3 s"
           And "Hatchling (enhanced)" fires "Threadling" and "Threadling (chance)"
         """)]
-    public async Task EnhancedHatchlingMayHatchASecondThreadlingOnThreeQuickKills(Screen screen)
+    public async Task EnhancedHatchlingMayHatchASecondThreadlingOn3QuickKills(Screen screen)
     {
         // Given
         await Frontend.Home.ImportBuildAsync("hatchling-enhanced-festival-flight.build.yaml");

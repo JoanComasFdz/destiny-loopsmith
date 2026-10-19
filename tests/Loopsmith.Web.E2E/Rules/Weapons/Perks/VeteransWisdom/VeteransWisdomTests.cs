@@ -22,7 +22,7 @@ public sealed class VeteransWisdomTests : BaseE2E
           And "Veteran's Wisdom" fires "Exhaust target (10s)" and "kinetic weapon strike, Kinetic damage"
           And its DEBUFFS show only "Exhaust"
         """)]
-    public async Task VeteransWisdomsThreeQuickKillsSetOffAShockwave(Screen screen)
+    public async Task VeteransWisdoms3QuickKillsSetOffAShockwave(Screen screen)
     {
         // Given
         await Frontend.Home.ImportBuildAsync("veterans-wisdom-scathelocke.build.yaml");
