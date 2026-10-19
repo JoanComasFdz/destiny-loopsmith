@@ -2,7 +2,7 @@ using Dunet;
 
 namespace Loopsmith.Web.E2E.Infrastructure.Vocabulary;
 
-/// <summary>An ammo brick the player picks up (ADRs D42), as its button in the trigger panel names it. A case is added when a test needs it.</summary>
+/// <summary>An ammo brick the player picks up (ADRs D42), as its button in the trigger panel's row names it. A case is added when a test needs it.</summary>
 [Union]
 public partial record Brick
 {
@@ -16,10 +16,10 @@ public partial record Brick
 /// <summary>What the UI shows for each <see cref="Brick"/>: the only place those strings live.</summary>
 public static class BrickShowing
 {
-    /// <summary>What the UI shows for <paramref name="value"/>: "Special", "Heavy".</summary>
+    /// <summary>What the UI shows for <paramref name="value"/>: "special", "heavy" (the row's buttons are lowercase, as "hit" and "kill").</summary>
     public static string ToShownText(this Brick value) =>
         value.Match(
-            special => "Special",
-            heavy => "Heavy",
+            special => "special",
+            heavy => "heavy",
             unlisted => unlisted.Shown);
 }

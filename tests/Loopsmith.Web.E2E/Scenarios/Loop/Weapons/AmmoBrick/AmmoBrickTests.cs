@@ -14,12 +14,12 @@ public sealed class AmmoBrickTests : BaseE2E
         Scenario: Pick up an ammo brick takes its type and can be a slide
           Given the build "ammo-brick-spark-of-momentum" is imported, with no steps
           When I tap "📦 Ammo brick" in the trigger panel
-          Then its row shows "Special", "Heavy" and "🛝 by sliding"
-          When I tap "Heavy"
+          Then its row shows "special", "heavy" and "🛝 by sliding"
+          When I tap "heavy"
           Then step #1 is "ammo:heavy"
-          When I tap "📦 Ammo brick"
+          When I tap "📦 Ammo brick" in the trigger panel
           And I tick "🛝 by sliding"
-          And I tap "Special"
+          And I tap "special"
           Then step #2 is "ammo:special:slide"
         """)]
     public async Task PickUpAnAmmoBrickTakesItsTypeAndCanBeASlide(Screen screen)
@@ -30,7 +30,7 @@ public sealed class AmmoBrickTests : BaseE2E
 
         // When
         await Frontend.Designer.TriggerPalette.ClickAmmoBrickAsync();
-        await Frontend.Designer.TriggerPalette.WaitUntilRowShownAsync("Ammo brick");
+        await Frontend.Designer.TriggerPalette.WaitUntilAmmoBrickRowShownAsync();
 
         // Then
         var row = await Frontend.Designer.TriggerPalette.ReadAsync();
@@ -48,6 +48,7 @@ public sealed class AmmoBrickTests : BaseE2E
 
         // When
         await Frontend.Designer.TriggerPalette.ClickAmmoBrickAsync();
+        await Frontend.Designer.TriggerPalette.WaitUntilAmmoBrickRowShownAsync();
         await Frontend.Designer.TriggerPalette.TickOptionAsync(new RowOption.BySliding());
         await Frontend.Designer.TriggerPalette.ClickAsync(new StepTrigger.PickUp(new Brick.Special()));
         await Frontend.Designer.Loop.WaitUntilStepShownAsync(2);

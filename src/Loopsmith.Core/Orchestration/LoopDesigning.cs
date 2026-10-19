@@ -1038,7 +1038,7 @@ public static class LoopDesigning
             ],
             PlayerAction.CastAbility cast when CanSpendLastCharge(build, cast.Kind.ToAbilityKind()) => [StepOption.LastCharge],
             PlayerAction.UseClassAbility when CanSpendLastCharge(build, AbilityKind.ClassAbility) => [StepOption.LastCharge],
-            PlayerAction.PickUpAmmo when HasRule(build, rule => rule.On is Trigger.PickUpAmmo { Needs: BrickPickup.Slide }) => [StepOption.Slide],
+            PlayerAction.PickUpAmmo when HasRule(build, rule => rule.On is Trigger.PickUpAmmo { Needs: BrickNeed.Slide }) => [StepOption.Slide],
             _ => [],
         };
 

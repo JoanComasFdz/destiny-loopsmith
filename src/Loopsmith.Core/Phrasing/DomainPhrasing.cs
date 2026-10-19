@@ -366,8 +366,11 @@ public static class DomainPhrasing
     /// <summary>A Reload step's button, next to a weapon's hit and kill: "🔄 reload".</summary>
     public const string ReloadCaption = "🔄 reload";
 
-    /// <summary>The designer's square for picking up an ammo brick (ADRs D42): "📦 Ammo brick".</summary>
-    public const string AmmoBrickCaption = "📦 Ammo brick";
+    /// <summary>The designer's square for picking up an ammo brick (ADRs D42), its row's title: "Ammo brick", after its icon, "📦".</summary>
+    public const string AmmoBrick = "Ammo brick";
+
+    /// <summary>The ammo brick square's icon: "📦".</summary>
+    public const string AmmoBrickIcon = "📦";
 
     /// <summary>The ammo brick step's option that the player slides over it, in its row: "🛝 by sliding".</summary>
     public const string SlideOption = "🛝 by sliding";
@@ -430,7 +433,7 @@ public static class DomainPhrasing
                 ? Reload
                 : $"{Reload} {glossary.DescribeDamageSource(reload.Via, superType)}",
             _ => HitAtCriticalHealth,
-            ammo => DescribeAmmoPickup(ammo.Brick, ammo.Needs));
+            ammo => DescribeAmmoPickup(ammo.Brick, ammo.Needs == BrickNeed.Slide ? BrickPickup.Slide : BrickPickup.Plain));
 
     /// <summary>" in 3s": the window a source gives the kills or hits it counts; nothing without one.</summary>
     private static string DescribeWithin(Optional<Seconds> within) =>
@@ -1026,9 +1029,8 @@ public static class DomainPhrasing
     /// <summary>
     /// "Grenade (💀 kill)", "Grenade (💀 kill 3)", "Grenade (💀 kill · ⬜ spend fully)", "Festival Flight (🥊 hit 5)",
     /// "Festival Flight (💀 kill · 🛡 shield)", "Festival Flight (💀 kill · 🎯 precision)", "Class ability", "Class ability (⬜ spend fully)", "Pick up Orb of Power",
-    /// "Bolt Charge at max (x10)", "Amplified ends", "New pack", "Critical health", "Hit at critical health", "Finisher", "Reload Festival Flight".
-    /// "Bolt Charge at max (x10)", "Amplified ends", "New pack", "Critical health", "Finisher", "Reload Festival Flight",
-    /// "Slide over an ammo brick with Festival Flight".
+    /// "Bolt Charge at max (x10)", "Amplified ends", "New pack", "Critical health", "Hit at critical health", "Finisher", "Reload Festival Flight",
+    /// "Pick up a Heavy ammo brick", "Slide over a Special ammo brick".
     /// </summary>
     public static string DescribeAction(this ValidatedBuild build, PlayerAction action) =>
         action.Match(

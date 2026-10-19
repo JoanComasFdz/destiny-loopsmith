@@ -23,9 +23,9 @@ public sealed class AmmoBrickTests
     private static BuildElement CreateProbe(string id, Trigger.PickUpAmmo on) =>
         Element(id, ElementKind.Fragment, [On(on, Buff("amplified"))]);
 
-    private static readonly BuildElement AnyBrick = CreateProbe("any-brick", new Trigger.PickUpAmmo(Optional.None<AmmoBrick>(), BrickPickup.Plain));
-    private static readonly BuildElement HeavyBrick = CreateProbe("heavy-brick", new Trigger.PickUpAmmo(Optional.Some(AmmoBrick.Heavy), BrickPickup.Plain));
-    private static readonly BuildElement SlideOnly = CreateProbe("slide-only", new Trigger.PickUpAmmo(Optional.None<AmmoBrick>(), BrickPickup.Slide));
+    private static readonly BuildElement AnyBrick = CreateProbe("any-brick", new Trigger.PickUpAmmo(Optional.None<AmmoBrick>(), BrickNeed.AnyPickup));
+    private static readonly BuildElement HeavyBrick = CreateProbe("heavy-brick", new Trigger.PickUpAmmo(Optional.Some(AmmoBrick.Heavy), BrickNeed.AnyPickup));
+    private static readonly BuildElement SlideOnly = CreateProbe("slide-only", new Trigger.PickUpAmmo(Optional.None<AmmoBrick>(), BrickNeed.Slide));
 
     private static DesignSession StartDesign(ValidatedBuild build) =>
         LoopDesigning.CreateSession(build, new LoopDesign(
@@ -108,8 +108,8 @@ public sealed class AmmoBrickTests
     [Fact]
     public void An_ammo_brick_trigger_reads_as_the_player_says_it()
     {
-        Assert.Equal("Pick up an ammo brick", Glossary.DescribeTrigger(new Trigger.PickUpAmmo(Optional.None<AmmoBrick>(), BrickPickup.Plain), Optional.None<DamageType>()));
-        Assert.Equal("Pick up a Heavy ammo brick", Glossary.DescribeTrigger(new Trigger.PickUpAmmo(Optional.Some(AmmoBrick.Heavy), BrickPickup.Plain), Optional.None<DamageType>()));
-        Assert.Equal("Slide over an ammo brick", Glossary.DescribeTrigger(new Trigger.PickUpAmmo(Optional.None<AmmoBrick>(), BrickPickup.Slide), Optional.None<DamageType>()));
+        Assert.Equal("Pick up an ammo brick", Glossary.DescribeTrigger(new Trigger.PickUpAmmo(Optional.None<AmmoBrick>(), BrickNeed.AnyPickup), Optional.None<DamageType>()));
+        Assert.Equal("Pick up a Heavy ammo brick", Glossary.DescribeTrigger(new Trigger.PickUpAmmo(Optional.Some(AmmoBrick.Heavy), BrickNeed.AnyPickup), Optional.None<DamageType>()));
+        Assert.Equal("Slide over an ammo brick", Glossary.DescribeTrigger(new Trigger.PickUpAmmo(Optional.None<AmmoBrick>(), BrickNeed.Slide), Optional.None<DamageType>()));
     }
 }

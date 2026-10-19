@@ -15,7 +15,7 @@ public sealed class AdhesiveOrdnanceTests : BaseE2E
           # Rule weapons-perks-adhesive-ordnance-1: Pick up an ammo brick ➜ Adhesive Ordnance equipped ➜ Sticky Bomb
           Given the build "adhesive-ordnance-battle-scar" is imported, with no steps
           When I tap "📦 Ammo brick" in the trigger panel
-          And I tap "Special"
+          And I tap "special"
           Then card #1's heading is "#1 Pick up a Special ammo brick"
           And "Adhesive Ordnance" fires "Sticky Bomb"
           And its WEAPONS show only "Sticky Bomb · Battle Scar"
@@ -28,7 +28,7 @@ public sealed class AdhesiveOrdnanceTests : BaseE2E
 
         // When
         await Frontend.Designer.TriggerPalette.ClickAmmoBrickAsync();
-        await Frontend.Designer.TriggerPalette.WaitUntilRowShownAsync("Ammo brick");
+        await Frontend.Designer.TriggerPalette.WaitUntilAmmoBrickRowShownAsync();
         await Frontend.Designer.TriggerPalette.ClickAsync(new StepTrigger.PickUp(new Brick.Special()));
         await Frontend.Designer.Loop.WaitUntilStepShownAsync(1);
 
@@ -47,11 +47,11 @@ public sealed class AdhesiveOrdnanceTests : BaseE2E
           # Rule weapons-perks-adhesive-ordnance-2: This weapon hit ➜ Adhesive Ordnance equipped and Sticky Bomb on you ➜ Extra strike, Exhaust and Sticky Bomb ends
           Given the build "adhesive-ordnance-battle-scar" is imported, with no steps
           When I tap "📦 Ammo brick" in the trigger panel
-          And I tap "Special"
+          And I tap "special"
           And I tap "Battle Scar" in the trigger panel
           And I tap "🥊 hit"
           Then card #2's heading is "#2 Battle Scar (🥊 hit)"
-          And "Adhesive Ordnance" fires "kinetic weapon strike, Kinetic damage" and "Exhaust target"
+          And "Adhesive Ordnance" fires "Exhaust target", "consumes Sticky Bomb" and "kinetic weapon strike, Kinetic damage"
           And its DEBUFFS show only "Exhaust"
           And its WEAPONS show none
         """)]
@@ -63,7 +63,7 @@ public sealed class AdhesiveOrdnanceTests : BaseE2E
 
         // When
         await Frontend.Designer.TriggerPalette.ClickAmmoBrickAsync();
-        await Frontend.Designer.TriggerPalette.WaitUntilRowShownAsync("Ammo brick");
+        await Frontend.Designer.TriggerPalette.WaitUntilAmmoBrickRowShownAsync();
         await Frontend.Designer.TriggerPalette.ClickAsync(new StepTrigger.PickUp(new Brick.Special()));
         await Frontend.Designer.Loop.WaitUntilStepShownAsync(1);
         await Frontend.Designer.TriggerPalette.ClickWeaponAsync(new Weapon.BattleScar());
@@ -75,7 +75,7 @@ public sealed class AdhesiveOrdnanceTests : BaseE2E
         var hit = await Frontend.Designer.Loop.Step(2).ReadAsync();
         Asserting.That(hit)
             .HasHeading("#2 Battle Scar (🥊 hit)")
-            .Fires(new WeaponPerk.AdhesiveOrdnance(), "kinetic weapon strike, Kinetic damage", "Exhaust target")
+            .Fires(new WeaponPerk.AdhesiveOrdnance(), "Exhaust target", "consumes Sticky Bomb", "kinetic weapon strike, Kinetic damage")
             .Shows(new StateGroup.Debuffs(), "Exhaust")
             .ShowsNone(new StateGroup.Weapons());
     }

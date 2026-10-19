@@ -110,7 +110,7 @@ they aren't full on; it raises `AmmoPickedUp`, so the `ammoPickedUp` rules fire:
 Ordnance), on that brick, and on a slide only those without `by:` and those with `by: slide` (Spark of Momentum: +3
 Bolt Charge). A refill a perk gives is a fact, no reload: no `reload` rule fires. It takes no count and no option but
 the slide (`ammo:heavy:3`, `ammo:primary`, `energy:ammo` are errors). In the designer, **📦 Ammo brick** sits below the
-weapons in every build; tapping it shows **Special** and **Heavy**, and **🛝 by sliding** next to them when a rule of
+weapons in every build; tapping it shows **special** and **heavy**, and **🛝 by sliding** next to them when a rule of
 the build reacts to a slide.
 
 **Options of a step** (ADRs D36). What only play decides about a step itself goes last in its token:

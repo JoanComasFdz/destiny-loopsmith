@@ -98,10 +98,10 @@
                             data-action="trigger-ammo-brick" data-hud-slot="@ammo.Value.Choice.Key" aria-pressed="@(isAmmoPicked ? "true" : "false")"
                             aria-label="@ammo.Value.Name" title="@ammo.Value.Name"
                             @onclick="() => Pick(ammo.Value)">
-                        <span class="trig-weapon-icon trig-ammo-icon" aria-hidden="true">📦</span>
+                        <span class="trig-weapon-icon trig-ammo-icon" aria-hidden="true">@DomainPhrasing.AmmoBrickIcon</span>
                         <span class="trig-weapon-text">
                             <span class="trig-weapon-name">@ammo.Value.Name</span>
-                            <span class="trig-weapon-kind">Special · Heavy</span>
+                            <span class="trig-weapon-kind">@string.Join(" · ", Enum.GetNames<AmmoBrick>())</span>
                         </span>
                         @if (ammo.Value.IsNew)
                         {
@@ -329,7 +329,7 @@
         }
     };
 
-    /// <summary>A button of the picked row: "🥊 hit", "💀 kill", "🔄 reload", an ammo brick's "Special" and "Heavy".</summary>
+    /// <summary>A button of the picked row: "🥊 hit", "💀 kill", "🔄 reload", an ammo brick's "special" and "heavy".</summary>
     private RenderFragment RenderTrigger(TriggerButton button) => __builder =>
     {
         <button type="button" class="trigger" data-action="trigger" data-token="@button.Token" title="@($"{button.Label}  ({button.Token})")"

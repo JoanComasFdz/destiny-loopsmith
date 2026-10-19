@@ -16,7 +16,7 @@ public sealed class SparkOfMomentumTests : BaseE2E
           Given the build "spark-of-momentum-alone" is imported, with no steps
           When I tap "📦 Ammo brick" in the trigger panel
           And I tick "🛝 by sliding"
-          And I tap "Special"
+          And I tap "special"
           Then card #1's heading is "#1 Slide over a Special ammo brick"
           And "Spark of Momentum" fires "+3 Bolt Charge"
           And its BUFFS show only "Bolt Charge"
@@ -29,7 +29,7 @@ public sealed class SparkOfMomentumTests : BaseE2E
 
         // When
         await Frontend.Designer.TriggerPalette.ClickAmmoBrickAsync();
-        await Frontend.Designer.TriggerPalette.WaitUntilRowShownAsync("Ammo brick");
+        await Frontend.Designer.TriggerPalette.WaitUntilAmmoBrickRowShownAsync();
         await Frontend.Designer.TriggerPalette.TickOptionAsync(new RowOption.BySliding());
         await Frontend.Designer.TriggerPalette.ClickAsync(new StepTrigger.PickUp(new Brick.Special()));
         await Frontend.Designer.Loop.WaitUntilStepShownAsync(1);
@@ -49,7 +49,7 @@ public sealed class SparkOfMomentumTests : BaseE2E
           # Rule all-classes-arc-fragments-spark-of-momentum-1: Slide over an ammo brick ➜ Spark of Momentum equipped ➜ +3 Bolt Charge
           Given the build "spark-of-momentum-alone" is imported, with no steps
           When I tap "📦 Ammo brick" in the trigger panel
-          And I tap "Special"
+          And I tap "special"
           Then card #1's heading is "#1 Pick up a Special ammo brick"
           And "Spark of Momentum" fires nothing
           And its BUFFS show none
@@ -62,7 +62,7 @@ public sealed class SparkOfMomentumTests : BaseE2E
 
         // When
         await Frontend.Designer.TriggerPalette.ClickAmmoBrickAsync();
-        await Frontend.Designer.TriggerPalette.WaitUntilRowShownAsync("Ammo brick");
+        await Frontend.Designer.TriggerPalette.WaitUntilAmmoBrickRowShownAsync();
         await Frontend.Designer.TriggerPalette.ClickAsync(new StepTrigger.PickUp(new Brick.Special()));
         await Frontend.Designer.Loop.WaitUntilStepShownAsync(1);
 

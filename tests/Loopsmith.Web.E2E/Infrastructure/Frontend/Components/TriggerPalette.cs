@@ -129,6 +129,9 @@ public sealed class TriggerPalette(IPage page)
         await CountedButtons.WaitForAsync(new() { State = WaitForSelectorState.Visible });
     }
 
+    /// <summary>Waits until the picked row is the ammo bricks': its title says "Ammo brick", its "special" and "heavy" show.</summary>
+    public Task WaitUntilAmmoBrickRowShownAsync() => WaitUntilRowShownAsync("Ammo brick");
+
     /// <summary>Waits until the picked row is <paramref name="ability"/>'s: its title names it, its buttons show.</summary>
     public Task WaitUntilRowShownAsync(Ability ability) => WaitUntilRowShownAsync(ability.ToShownText());
 

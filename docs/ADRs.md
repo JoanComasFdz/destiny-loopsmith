@@ -724,8 +724,8 @@ drop from enemies, which only play decides, so nothing puts one on the ground fi
 the weapon in hand (Spark of Momentum, All-Star) is a fact in the description, and no reload (D41). It raises
 `AmmoPickedUp`, which the `ammoPickedUp` trigger matches: any brick, or one (`brick: heavy`), and only a slide with
 `by: slide`. Spark of Momentum's rule is `ammoPickedUp: { by: slide }`: a plain pickup doesn't fire it, a slide fires it
-and every pickup rule. The designer shows a **📦 Ammo brick** square below the weapons, in every build, with **Special**
-and **Heavy**, and **🛝 by sliding** beside them when a rule of the build reacts to a slide; a weapon's row no longer has
+and every pickup rule. The designer shows a **📦 Ammo brick** square below the weapons, in every build, with **special**
+and **heavy**, and **🛝 by sliding** beside them when a rule of the build reacts to a slide; a weapon's row no longer has
 a slide. `kinetic|energy|power:ammo` is no longer read: only test fixtures used it. **Consequence.** All-Star and
 Adhesive Ordnance have rules, Overflow and Lead from Gold are inert (ammo only, D37). A plain slide, when a rule needs
 one, is a step of its own beside this one. The Kinetic Ammo Brick an artifact perk spawns, the Scavenger mods (ammo

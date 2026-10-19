@@ -64,7 +64,7 @@ public static class TriggerMatching
             _ => gameEvent is GameEvent.HitAtCriticalHealth,
             pickUpAmmo => gameEvent is GameEvent.AmmoPickedUp picked
                 && pickUpAmmo.Brick.Match(brick => brick.Value == picked.Brick, _ => true)
-                && (pickUpAmmo.Needs == BrickPickup.Plain || picked.Pickup == BrickPickup.Slide));
+                && (pickUpAmmo.Needs == BrickNeed.AnyPickup || picked.Pickup == BrickPickup.Slide));
 
     /// <summary>
     /// Whether the pattern matches the origin. A finisher has no damage type and is no weapon or ability: only "any

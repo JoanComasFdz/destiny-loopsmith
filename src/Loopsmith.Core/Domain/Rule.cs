@@ -47,7 +47,7 @@ public partial record Trigger
     }
     partial record Reload(DamageSource Via);                                   // a weapon reloaded: the player's Reload step, or an outcome that reloads it (ADRs D37)
     partial record HitAtCriticalHealth();                                      // the player declares they are damaged while at critical health (ADRs D3)
-    partial record PickUpAmmo(Optional<AmmoBrick> Brick, BrickPickup Needs);  // an ammo brick picked up: any, or that one; Needs Slide: only one slid over (Spark of Momentum, ADRs D42)
+    partial record PickUpAmmo(Optional<AmmoBrick> Brick, BrickNeed Needs);     // an ammo brick picked up: any, or that one; Needs Slide: only one slid over (Spark of Momentum, ADRs D42)
 }
 
 /// <summary>

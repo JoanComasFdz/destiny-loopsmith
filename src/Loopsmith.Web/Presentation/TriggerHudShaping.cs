@@ -170,7 +170,7 @@ public static class TriggerHudShaping
     /// <summary>The ammo bricks' square, below the weapons (ADRs D42): a tap shows its Special and Heavy buttons and, when a rule reacts to a slide, "🛝 by sliding".</summary>
     private static Optional<HudSlot> ShapeAmmoBrick(ImmutableDictionary<string, TriggerChoice> choices) =>
         choices.TryGetValue(TriggerPaletteShaping.AmmoBrickKey, out var choice)
-            ? Optional.Some(new HudSlot(choice, "Ammo brick", choice.Title, new HudFace.Blank(), Affinity.Neutral, Optional.None<TriggerButton>(), choice.Buttons.Any(button => button.IsNew)))
+            ? Optional.Some(new HudSlot(choice, DomainPhrasing.AmmoBrick, choice.Title, new HudFace.Blank(), Affinity.Neutral, Optional.None<TriggerButton>(), choice.Buttons.Any(button => button.IsNew)))
             : Optional.None<HudSlot>();
 
     private static Optional<HudWeapon> ShapeWeapon(ImmutableDictionary<string, TriggerChoice> choices, WeaponView weapon) =>

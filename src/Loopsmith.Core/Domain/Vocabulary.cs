@@ -106,10 +106,15 @@ public enum AmmoBrick { Special, Heavy }
 
 /// <summary>
 /// How the player picks an ammo brick up (ADRs D42): <see cref="Plain"/>, walking over it; <see cref="Slide"/>, sliding over it
-/// (Spark of Momentum reacts to that only). A slide is still a pickup: every rule on a pickup fires for it too. In a
-/// trigger, <see cref="Plain"/> is any pickup and <see cref="Slide"/> only a slide.
+/// (Spark of Momentum reacts to that only). A slide is still a pickup: every rule on a pickup fires for it too.
 /// </summary>
 public enum BrickPickup { Plain, Slide }
+
+/// <summary>
+/// How a brick must be picked up for a trigger to match (ADRs D42), its <c>by:</c>: <see cref="AnyPickup"/>, walked or slid
+/// over (no <c>by:</c>); <see cref="Slide"/>, only slid over (<c>by: slide</c>: Spark of Momentum).
+/// </summary>
+public enum BrickNeed { AnyPickup, Slide }
 
 public enum StatKind { Weapons, Health, Class, Grenade, Super, Melee }
 

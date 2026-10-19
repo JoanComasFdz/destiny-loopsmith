@@ -26,8 +26,8 @@ public static class LoopStepShowing
     public static string ToShownText(this LoopStep value) =>
         value.Match(
             reload => $"{ToTokenSlot(reload.Slot)}:reload",
-            pickUp => $"ammo:{pickUp.Ammo.ToShownText().ToLowerInvariant()}",
-            slide => $"ammo:{slide.Ammo.ToShownText().ToLowerInvariant()}:slide",
+            pickUp => $"ammo:{pickUp.Ammo.ToShownText()}",
+            slide => $"ammo:{slide.Ammo.ToShownText()}:slide",
             hit => hit.Enemies == 1 ? $"{ToTokenSlot(hit.Slot)}:hit" : $"{ToTokenSlot(hit.Slot)}:hit:{hit.Enemies}",
             unlisted => unlisted.Shown);
 

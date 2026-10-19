@@ -143,14 +143,14 @@ internal static class RuleBodyParsing
         value.ToMap().Bind(map => Combine(
             map.CheckKeys(["brick", "by"]),
             map.ReadOptional("brick", ReadVocabularyWord<AmmoBrick>),
-            map.ReadOrDefault("by", ReadSlide, BrickPickup.Plain),
+            map.ReadOrDefault("by", ReadSlide, BrickNeed.AnyPickup),
             (_, brick, by) => (Trigger)new Trigger.PickUpAmmo(brick, by)));
 
     /// <summary><c>by: slide</c>, the one way of picking a brick up a trigger tells apart.</summary>
-    private static Result<BrickPickup, Errors> ReadSlide(YamlValue value) =>
-        value.ParseWith<BrickPickup>(text => text == "slide"
-            ? new Result<BrickPickup, string>.Ok(BrickPickup.Slide)
-            : new Result<BrickPickup, string>.Error($"'{text}' is not slide: ammoPickedUp's by names how the brick is picked up, and only a slide is told apart"));
+    private static Result<BrickNeed, Errors> ReadSlide(YamlValue value) =>
+        value.ParseWith<BrickNeed>(text => text == "slide"
+            ? new Result<BrickNeed, string>.Ok(BrickNeed.Slide)
+            : new Result<BrickNeed, string>.Error($"'{text}' is not slide: ammoPickedUp's by names how the brick is picked up, and only a slide is told apart"));
 
     /// <summary>The weapon sources a reload names: only a weapon reloads.</summary>
     private const string WeaponSources = "any, weapon, weapon:<type>, weapon:<ammo>, weapon:<ammo>:<type>, weapon:harmonic, slot:<slot>, weapon:this or weapon:this:<type>";

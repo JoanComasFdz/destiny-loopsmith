@@ -2328,9 +2328,9 @@ public sealed class RuleCatalogParsingTests
         var walk = ParseInvalidCatalog(Glossary, ToProbeFile("{ id: probe-1, on: { ammoPickedUp: { by: walk } }, then: [ { applyBuff: amplified } ] }"));
         var via = ParseInvalidCatalog(Glossary, ToProbeFile("{ id: probe-1, on: { ammoPickedUp: { via: weapon } }, then: [ { applyBuff: amplified } ] }"));
 
-        Assert.Equal(new Trigger.PickUpAmmo(Optional.None<AmmoBrick>(), BrickPickup.Plain), Assert.Single(any.Elements[ElementId.From("probe")].Rules).On);
-        Assert.Equal(new Trigger.PickUpAmmo(Optional.Some(AmmoBrick.Heavy), BrickPickup.Plain), Assert.Single(heavy.Elements[ElementId.From("probe")].Rules).On);
-        Assert.Equal(new Trigger.PickUpAmmo(Optional.None<AmmoBrick>(), BrickPickup.Slide), Assert.Single(slide.Elements[ElementId.From("probe")].Rules).On);
+        Assert.Equal(new Trigger.PickUpAmmo(Optional.None<AmmoBrick>(), BrickNeed.AnyPickup), Assert.Single(any.Elements[ElementId.From("probe")].Rules).On);
+        Assert.Equal(new Trigger.PickUpAmmo(Optional.Some(AmmoBrick.Heavy), BrickNeed.AnyPickup), Assert.Single(heavy.Elements[ElementId.From("probe")].Rules).On);
+        Assert.Equal(new Trigger.PickUpAmmo(Optional.None<AmmoBrick>(), BrickNeed.Slide), Assert.Single(slide.Elements[ElementId.From("probe")].Rules).On);
         Assert.Contains("'primary' is not one of", primary);
         Assert.Contains("only a slide is told apart", walk);
         Assert.Contains("via", via);

@@ -96,7 +96,7 @@ public static class TriggerPaletteShaping
         var toggles = LoopDesigning.ListStepOptions(build, pair[0].Action)
             .Select(option => ShapeToggle(option, optionsOn.Contains(ToOptionKey(key, option))))
             .ToImmutableArray();
-        var title = pair[0].Action is PlayerAction.PickUpAmmo ? AmmoBrickTitle : pair.Length == 1 ? pair[0].Label : ReadTitle(pair[0].Label);
+        var title = pair[0].Action is PlayerAction.PickUpAmmo ? DomainPhrasing.AmmoBrick : pair.Length == 1 ? pair[0].Label : ReadTitle(pair[0].Label);
         var buttons = pair
             .Select(option => ShapeButton(option, targets, toggles, ReadCaption(option, pair.Length), build))
             .ToImmutableArray();
@@ -106,17 +106,15 @@ public static class TriggerPaletteShaping
     /// <summary>The ammo bricks' row (ADRs D42): its key and its title.</summary>
     public const string AmmoBrickKey = "ammo";
 
-    private const string AmmoBrickTitle = "Ammo brick";
-
     /// <summary>An option of a row, as the player turns it on: "fire:Energy:Precision".</summary>
     public static string ToOptionKey(string rowKey, StepOption option) => $"{rowKey}:{option}";
 
-    /// <summary>A button's caption: "🥊 hit", "💀 kill", "🔄 reload", an ammo brick's "Special" or "Heavy" in a row of several; its whole label alone.</summary>
+    /// <summary>A button's caption: "🥊 hit", "💀 kill", "🔄 reload", an ammo brick's "special" or "heavy" in a row of several; its whole label alone.</summary>
     private static string ReadCaption(TriggerOption option, int buttons) =>
         (option.Action, buttons) switch
         {
             (PlayerAction.ReloadWeapon, _) => DomainPhrasing.ReloadCaption,
-            (PlayerAction.PickUpAmmo ammo, _) => ammo.Brick.ToString(),
+            (PlayerAction.PickUpAmmo ammo, _) => ammo.Brick.ToString().ToLowerInvariant(),
             (_, 1) => option.Label,
             _ => ReadQualifier(option.Label),
         };
