@@ -62,7 +62,7 @@ public static class OutcomeApplication
     /// bound to one (the catalog's own text), nothing reloads.
     /// </summary>
     private static Application ReloadWeapon(ValidatedBuild build, GameState state, Outcome outcome, Outcome.ReloadWeapon reload) =>
-        FindReloadedWeapon(build, reload.Weapon).Match(
+        FindSlotWeapon(build, reload.Weapon).Match(
             weapon => new Application(
                 state,
                 ToApplied(outcome, Certainty.Known, Optional.None<string>()),
@@ -74,11 +74,11 @@ public static class OutcomeApplication
     /// no reload rule fires. No ammo is counted. With no weapon there, nothing refills.
     /// </summary>
     private static Application RefillWeapon(ValidatedBuild build, GameState state, Outcome outcome, Outcome.RefillWeapon refill) =>
-        FindReloadedWeapon(build, refill.Weapon).Match(
+        FindSlotWeapon(build, refill.Weapon).Match(
             _ => KeepUnchanged(state, outcome, ""),
             _ => KeepUnchanged(state, outcome, "no weapon to refill"));
 
-    private static Optional<WeaponLoadout> FindReloadedWeapon(ValidatedBuild build, DamageSource weapon) =>
+    private static Optional<WeaponLoadout> FindSlotWeapon(ValidatedBuild build, DamageSource weapon) =>
         weapon is DamageSource.WeaponInSlot inSlot
             ? build.Build.Weapons.Select(w => w.Slot == inSlot.Slot ? Optional.Some(w) : Optional.None<WeaponLoadout>()).FindFirstSome()
             : Optional.None<WeaponLoadout>();
