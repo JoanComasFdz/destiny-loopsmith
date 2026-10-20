@@ -1,0 +1,7 @@
+# Recuperation, with Strand Siphon and Crux Celeritas IV (a Strand weapon with no rules of its own), whose two kills drop the Orb of Power it picks up.
+name: "E2E - Recuperation with Strand Siphon and Crux Celeritas IV"
+class: hunter
+subclass: arc
+armorMods: [recuperation, strand-siphon]
+weapons:
+  - { hash: 391069235, perks: [] } # Crux Celeritas IV

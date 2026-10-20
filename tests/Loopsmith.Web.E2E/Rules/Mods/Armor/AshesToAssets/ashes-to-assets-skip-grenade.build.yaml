@@ -1,0 +1,6 @@
+# Ashes to Assets, with Skip Grenade (no rules on its kill) to kill with.
+name: "E2E - Ashes to Assets with Skip Grenade"
+class: hunter
+subclass: arc
+grenade: skip-grenade
+armorMods: [ashes-to-assets]

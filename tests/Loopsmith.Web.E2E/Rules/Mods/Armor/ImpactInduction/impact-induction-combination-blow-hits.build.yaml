@@ -1,0 +1,6 @@
+# Impact Induction, with Combination Blow (rules on kills only) to hit with.
+name: "E2E - Impact Induction with Combination Blow"
+class: hunter
+subclass: arc
+melee: combination-blow
+armorMods: [impact-induction]

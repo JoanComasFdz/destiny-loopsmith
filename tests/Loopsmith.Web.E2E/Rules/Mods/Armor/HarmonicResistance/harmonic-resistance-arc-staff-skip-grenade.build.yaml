@@ -1,0 +1,7 @@
+# Harmonic Resistance, with Arc Staff (the Super whose element it matches) and Skip Grenade to play a step whose state shows it.
+name: "E2E - Harmonic Resistance with Arc Staff and Skip Grenade"
+class: hunter
+subclass: arc
+super: arc-staff
+grenade: skip-grenade
+armorMods: [harmonic-resistance]
