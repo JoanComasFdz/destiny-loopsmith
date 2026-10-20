@@ -1,0 +1,9 @@
+# Radiant Light, with Arc Siphon and Crisis Inverted to drop the Orb of Power whose pickup gives Armor Charge, and Storm's
+# Edge (no rules on its cast) to cast.
+name: "E2E - Radiant Light with Arc Siphon, Crisis Inverted and Storm's Edge"
+class: hunter
+subclass: arc
+super: storms-edge
+armorMods: [radiant-light, arc-siphon]
+weapons:
+  - { hash: 2888266564 } # Crisis Inverted

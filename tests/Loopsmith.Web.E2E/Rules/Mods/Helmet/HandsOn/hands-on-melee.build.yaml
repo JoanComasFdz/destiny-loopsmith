@@ -1,0 +1,6 @@
+# Hands-On, with Combination Blow to punch.
+name: "E2E - Hands-On with Combination Blow"
+class: hunter
+subclass: arc
+melee: combination-blow
+armorMods: [hands-on]

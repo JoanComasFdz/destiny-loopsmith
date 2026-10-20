@@ -1,0 +1,8 @@
+# Kinetic Charge Siphon, with Scathelocke (a Kinetic weapon) and Crisis Inverted (an Arc weapon) for its two elements.
+name: "E2E - Kinetic Charge Siphon with Scathelocke and Crisis Inverted"
+class: hunter
+subclass: arc
+armorMods: [kinetic-charge-siphon]
+weapons:
+  - { hash: 3332538050 } # Scathelocke
+  - { hash: 2888266564 } # Crisis Inverted

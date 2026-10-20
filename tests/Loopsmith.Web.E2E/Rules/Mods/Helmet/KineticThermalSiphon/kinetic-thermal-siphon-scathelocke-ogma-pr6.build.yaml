@@ -1,0 +1,8 @@
+# Kinetic Thermal Siphon, with Scathelocke (a Kinetic weapon) and Ogma PR6 (a Solar weapon) for its two elements.
+name: "E2E - Kinetic Thermal Siphon with Scathelocke and Ogma PR6"
+class: hunter
+subclass: arc
+armorMods: [kinetic-thermal-siphon]
+weapons:
+  - { hash: 3332538050 } # Scathelocke
+  - { hash: 2342054803 } # Ogma PR6
