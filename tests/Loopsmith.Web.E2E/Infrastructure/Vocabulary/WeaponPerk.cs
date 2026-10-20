@@ -17,6 +17,19 @@ public partial record WeaponPerk
     public partial record Demolitionist;
     public partial record AllStar;
     public partial record AdhesiveOrdnance;
+    public partial record AdhesiveOrdnanceEnhanced;
+    public partial record AllStarEnhanced;
+    public partial record AttritionOrbs;
+    public partial record AttritionOrbsEnhanced;
+    public partial record DemolitionistEnhanced;
+    public partial record OneForAllEnhanced;
+    public partial record RadiolariaTransposerEnhanced;
+    public partial record ReapersTitheEnhanced;
+    public partial record Slice;
+    public partial record SliceEnhanced;
+    public partial record StatsForAllEnhanced;
+    public partial record UnrelentingEnhanced;
+    public partial record VeteransWisdomEnhanced;
 
     /// <summary>What the UI shows that no case names yet: a failing assertion names it as the UI shows it.</summary>
     public partial record Unlisted(string Shown);
@@ -39,5 +52,18 @@ public static class WeaponPerkShowing
             demolitionist => "Demolitionist",
             allStar => "All-Star",
             adhesiveOrdnance => "Adhesive Ordnance",
+            adhesiveOrdnanceEnhanced => "Adhesive Ordnance (enhanced)",
+            allStarEnhanced => "All-Star (enhanced)",
+            attritionOrbs => "Attrition Orbs",
+            attritionOrbsEnhanced => "Attrition Orbs (enhanced)",
+            demolitionistEnhanced => "Demolitionist (enhanced)",
+            oneForAllEnhanced => "One for All (enhanced)",
+            radiolariaTransposerEnhanced => "Radiolaria Transposer (enhanced)",
+            reapersTitheEnhanced => "Reaper's Tithe (enhanced)",
+            slice => "Slice",
+            sliceEnhanced => "Slice (enhanced)",
+            statsForAllEnhanced => "Stats for All (enhanced)",
+            unrelentingEnhanced => "Unrelenting (enhanced)",
+            veteransWisdomEnhanced => "Veteran's Wisdom (enhanced)",
             unlisted => unlisted.Shown);
 }

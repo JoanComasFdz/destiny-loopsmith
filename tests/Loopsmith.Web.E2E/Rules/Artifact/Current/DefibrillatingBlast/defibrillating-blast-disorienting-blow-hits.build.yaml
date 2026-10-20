@@ -1,0 +1,6 @@
+# Defibrillating Blast, with Disorienting Blow, whose hit gives Bolt Charge and, at max, sets off its strike.
+name: "E2E - Defibrillating Blast with Disorienting Blow"
+class: hunter
+subclass: arc
+melee: disorienting-blow
+artifactPerks: [defibrillating-blast]

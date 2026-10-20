@@ -1,0 +1,6 @@
+# Reaper's Tithe's enhanced trait (lasting up to 17 s instead of 15 s) on Bellowing Giant, a Power weapon that rolls it.
+name: "E2E - Reaper's Tithe (enhanced) on Bellowing Giant"
+class: hunter
+subclass: arc
+weapons:
+  - { hash: 412265080, perks: [reapers-tithe-enhanced] } # Bellowing Giant

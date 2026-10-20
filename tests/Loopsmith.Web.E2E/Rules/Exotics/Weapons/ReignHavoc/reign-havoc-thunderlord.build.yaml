@@ -1,0 +1,6 @@
+# Thunderlord, whose intrinsic Reign Havoc strikes on a kill, with no catalyst.
+name: "E2E - Reign Havoc on Thunderlord"
+class: hunter
+subclass: arc
+weapons:
+  - { hash: 3325463374, perks: [] } # Thunderlord

@@ -58,11 +58,16 @@ public sealed class TriggerPalette(IPage page)
             : Panel.Locator("[data-action=trigger-ability]")
                 .And(page.GetByRole(AriaRole.Button, new() { NameRegex = new Regex($"^[^:]+: {Regex.Escape(ability.ToShownText())}$") }));
 
-    // A status's chip in the panel's "On you" group ("Bolt Charge", with its "at max (x10)" and "ends"), and one of its
-    // declarations by its caption.
-    private ILocator Declaration(Keyword status, string declaration) =>
+    // A status's chip in the panel's "On you" group ("Bolt Charge", with its "at max (x10)" and "ends") or its "Your
+    // weapons" group ("Slice", with its "at max (x5)"), and one of its declarations by its caption.
+    private ILocator Declaration(Keyword status, string declaration) => Declaration(status.ToShownText(), declaration);
+
+    // A weapon perk's buff is named for its perk ("Slice").
+    private ILocator Declaration(WeaponPerk perk, string declaration) => Declaration(perk.ToShownText(), declaration);
+
+    private ILocator Declaration(string status, string declaration) =>
         Panel.Locator("[data-testid=status-chip]")
-            .Filter(new() { Has = page.Locator("[data-testid=status-name]").GetByText(status.ToShownText(), new() { Exact = true }) })
+            .Filter(new() { Has = page.Locator("[data-testid=status-name]").GetByText(status, new() { Exact = true }) })
             .Locator("[data-action=trigger-at-once]")
             .Filter(new() { Has = page.Locator("[data-testid=trigger-caption]").GetByText(declaration, new() { Exact = true }) });
 
@@ -111,6 +116,12 @@ public sealed class TriggerPalette(IPage page)
     /// loop gets a step that declares it.
     /// </summary>
     public Task ClickDeclarationAsync(Keyword status, string declaration) => OnScreen.PressAsync(Panel, Declaration(status, declaration));
+
+    /// <summary>
+    /// Clicks <paramref name="declaration"/> ("at max (x5)") on the chip of <paramref name="perk"/>'s buff under "Your
+    /// weapons" (a weapon buff named for its perk: "Slice"): the loop gets a step that declares it.
+    /// </summary>
+    public Task ClickDeclarationAsync(WeaponPerk perk, string declaration) => OnScreen.PressAsync(Panel, Declaration(perk, declaration));
 
     /// <summary>Clicks <paramref name="state"/> ("Critical health") under "On you", outside the status chips: the loop gets a step that declares it.</summary>
     public Task ClickStateAsync(Keyword state) => OnScreen.PressAsync(Panel, State(state));

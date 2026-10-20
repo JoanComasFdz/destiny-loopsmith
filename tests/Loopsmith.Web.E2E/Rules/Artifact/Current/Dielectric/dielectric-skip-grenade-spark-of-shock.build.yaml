@@ -1,0 +1,7 @@
+# Dielectric, with Skip Grenade and Spark of Shock to jolt the target and kill it.
+name: "E2E - Dielectric with Skip Grenade and Spark of Shock"
+class: hunter
+subclass: arc
+grenade: skip-grenade
+fragments: [spark-of-shock]
+artifactPerks: [dielectric]

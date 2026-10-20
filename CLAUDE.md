@@ -105,7 +105,8 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
 - `tests/Loopsmith.Web.E2E/` — end-to-end scenarios of the web app (Playwright), one per Gherkin, one GIF per screen via `tools/e2e/record.sh`;
   `Infrastructure/` (BaseE2E, page objects, vocabulary, assertions), `Scenarios/<domain>/<Topic>Tests.cs` and
   `Rules/<Class>/<Subclass>/<Area>/<Rule>/<Rule>Tests.cs` (one scenario per rule claim, mirroring `rules/`; each class in a
-  folder of its own with its fixtures, its namespace the domain folder's); what it
+  folder of its own with its fixtures, its namespace the domain folder's; `RuleScenarioCoverageTests` fails a rule file that has
+  rule scenarios but lacks one for a claim); what it
   shares with the extension's e2e project (Gherkin, `[TestDescription]`, screens, naming) is `tests/Loopsmith.E2E.Shared`. Binding
   rules: its [E2E-TEST-CODE-RULES.md](tests/Loopsmith.Web.E2E/E2E-TEST-CODE-RULES.md), not
   [docs/CODING_RULES.md](docs/CODING_RULES.md); how to run, isolation and the cache: its [README](tests/Loopsmith.Web.E2E/README.md). Playwright is pinned

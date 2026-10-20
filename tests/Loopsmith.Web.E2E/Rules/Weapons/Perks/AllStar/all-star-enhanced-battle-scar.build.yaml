@@ -1,0 +1,6 @@
+# All-Star's enhanced trait (All-Star for 7 s instead of 6 s) on Battle Scar, a Kinetic Pulse Rifle that rolls it.
+name: "E2E - All-Star (enhanced) on Battle Scar"
+class: hunter
+subclass: arc
+weapons:
+  - { hash: 1525080480, perks: [all-star-enhanced] } # Battle Scar

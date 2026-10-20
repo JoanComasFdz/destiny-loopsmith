@@ -45,7 +45,16 @@ Scenario: Lethal Current's armed melee hit jolts, strikes and is consumed
    trigger or its state: those can't all be tested.
 4. **What the designer can't show is a finding.** A claim whose result the designer doesn't show, or shows differently
    from the rule viewer, gets no scenario that papers over it: the PR lists it as a finding, and the class's summary
-   names the claim it leaves out.
+   names the claim it leaves out, one line each: `Leaves out <its rule's full name>: <why, in one sentence>`.
+
+## Coverage
+
+A rule file is covered one pull request at a time, and once it has a rule scenario it stays complete:
+`RuleScenarioCoverageTests` (`tools/rule-viewer/Loopsmith.RuleViewer.Tests`, run by `dotnet test`) fails when a rule file
+that has any rule scenario lacks one for a claim, and names the rule and how many of its claims are missing. It counts
+the `# Rule <name>:` lines that name each rule against the flows the rule viewer draws for it, and a `Leaves out <name>:`
+line counts as one. A file with no rule scenario yet is listed in the test's output, not failed. A weapon perk's
+enhanced trait is a flow of its own (`<Perk> (enhanced) equipped`), so its claims need their own scenarios.
 
 ## Where it goes
 

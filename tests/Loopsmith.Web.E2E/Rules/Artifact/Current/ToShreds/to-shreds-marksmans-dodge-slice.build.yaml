@@ -1,0 +1,8 @@
+# To Shreds, with Slice on Festival Flight to sever the target, armed by Marksman's Dodge (no rules of its own).
+name: "E2E - To Shreds with Marksman's Dodge and Slice"
+class: hunter
+subclass: arc
+classAbility: marksmans-dodge
+artifactPerks: [to-shreds]
+weapons:
+  - { hash: 4019651319, perks: [slice] } # Festival Flight
