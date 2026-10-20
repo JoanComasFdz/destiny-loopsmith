@@ -1,0 +1,7 @@
+# Solar Siphon on Ogma PR6, a Solar weapon.
+name: "E2E - Solar Siphon with Ogma PR6"
+class: hunter
+subclass: arc
+armorMods: [solar-siphon]
+weapons:
+  - { hash: 2342054803 } # Ogma PR6

@@ -1,0 +1,7 @@
+# Void Siphon on Bellowing Giant, a Void weapon.
+name: "E2E - Void Siphon with Bellowing Giant"
+class: hunter
+subclass: arc
+armorMods: [void-siphon]
+weapons:
+  - { hash: 412265080 } # Bellowing Giant

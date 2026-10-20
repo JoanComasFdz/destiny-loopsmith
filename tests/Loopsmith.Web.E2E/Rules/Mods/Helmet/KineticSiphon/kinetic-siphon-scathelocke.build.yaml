@@ -1,0 +1,7 @@
+# Kinetic Siphon on Scathelocke, a Kinetic weapon.
+name: "E2E - Kinetic Siphon with Scathelocke"
+class: hunter
+subclass: arc
+armorMods: [kinetic-siphon]
+weapons:
+  - { hash: 3332538050 } # Scathelocke

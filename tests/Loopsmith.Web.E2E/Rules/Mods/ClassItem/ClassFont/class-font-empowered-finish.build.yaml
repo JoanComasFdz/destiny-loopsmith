@@ -1,0 +1,5 @@
+# Class Font, with Empowered Finish to give Armor Charge on a finisher.
+name: "E2E - Class Font with Empowered Finish"
+class: hunter
+subclass: arc
+armorMods: [class-font, empowered-finish]

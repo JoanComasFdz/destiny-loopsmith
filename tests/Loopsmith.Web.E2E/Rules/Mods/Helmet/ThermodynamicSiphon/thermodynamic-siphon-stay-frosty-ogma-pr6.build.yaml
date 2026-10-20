@@ -1,0 +1,8 @@
+# Thermodynamic Siphon, with Stay Frosty (a Stasis weapon) and Ogma PR6 (a Solar weapon) for its two elements.
+name: "E2E - Thermodynamic Siphon with Stay Frosty and Ogma PR6"
+class: hunter
+subclass: arc
+armorMods: [thermodynamic-siphon]
+weapons:
+  - { hash: 2812100428 } # Stay Frosty
+  - { hash: 2342054803 } # Ogma PR6

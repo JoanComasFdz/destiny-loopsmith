@@ -1,0 +1,8 @@
+# Void/Strand Dual Siphon, with Bellowing Giant (a Void weapon) and Festival Flight (a Strand weapon) for its two elements.
+name: "E2E - Void/Strand Dual Siphon with Bellowing Giant and Festival Flight"
+class: hunter
+subclass: arc
+armorMods: [void-strand-dual-siphon]
+weapons:
+  - { hash: 412265080 } # Bellowing Giant
+  - { hash: 4019651319 } # Festival Flight

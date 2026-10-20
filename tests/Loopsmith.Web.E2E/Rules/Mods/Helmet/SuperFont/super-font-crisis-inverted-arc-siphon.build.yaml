@@ -1,0 +1,7 @@
+# Super Font, with Arc Siphon and Crisis Inverted to drop the Orb of Power whose pickup gives Armor Charge.
+name: "E2E - Super Font with Arc Siphon and Crisis Inverted"
+class: hunter
+subclass: arc
+armorMods: [super-font, arc-siphon]
+weapons:
+  - { hash: 2888266564 } # Crisis Inverted
