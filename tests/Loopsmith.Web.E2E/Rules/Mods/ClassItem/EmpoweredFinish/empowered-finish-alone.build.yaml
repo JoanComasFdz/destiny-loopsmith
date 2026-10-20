@@ -1,0 +1,5 @@
+# Empowered Finish alone: the finisher is always in the trigger panel.
+name: "E2E - Empowered Finish"
+class: hunter
+subclass: arc
+armorMods: [empowered-finish]

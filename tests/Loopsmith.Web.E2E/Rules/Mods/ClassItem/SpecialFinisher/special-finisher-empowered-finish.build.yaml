@@ -1,0 +1,5 @@
+# Special Finisher, with Empowered Finish to give the first Armor Charge on a finisher.
+name: "E2E - Special Finisher with Empowered Finish"
+class: hunter
+subclass: arc
+armorMods: [special-finisher, empowered-finish]

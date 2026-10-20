@@ -1,0 +1,7 @@
+# Utility Kickstart, with Empowered Finish to give Armor Charge on a finisher and Marksman's Dodge (no rules of its own,
+# one charge) for the class ability.
+name: "E2E - Utility Kickstart with Empowered Finish and Marksman's Dodge"
+class: hunter
+subclass: arc
+classAbility: marksmans-dodge
+armorMods: [utility-kickstart, empowered-finish]
