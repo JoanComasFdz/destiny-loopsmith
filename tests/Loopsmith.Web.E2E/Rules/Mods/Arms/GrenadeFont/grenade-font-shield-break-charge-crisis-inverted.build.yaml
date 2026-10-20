@@ -1,0 +1,7 @@
+# Grenade Font, with Shield Break Charge and Crisis Inverted (no rules of its own) for the Armor Charge it needs.
+name: "E2E - Grenade Font with Shield Break Charge and Crisis Inverted"
+class: hunter
+subclass: arc
+armorMods: [grenade-font, shield-break-charge]
+weapons:
+  - { hash: 2888266564, perks: [] } # Crisis Inverted

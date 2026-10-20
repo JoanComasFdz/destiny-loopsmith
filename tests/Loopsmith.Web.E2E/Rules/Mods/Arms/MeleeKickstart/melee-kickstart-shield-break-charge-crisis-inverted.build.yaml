@@ -1,0 +1,9 @@
+# Melee Kickstart, with Shield Break Charge and Crisis Inverted (no rules of its own) for the Armor Charge it spends,
+# and Combination Blow (rules on kills only) to spend the melee with.
+name: "E2E - Melee Kickstart with Shield Break Charge, Crisis Inverted and Combination Blow"
+class: hunter
+subclass: arc
+melee: combination-blow
+armorMods: [melee-kickstart, shield-break-charge]
+weapons:
+  - { hash: 2888266564, perks: [] } # Crisis Inverted

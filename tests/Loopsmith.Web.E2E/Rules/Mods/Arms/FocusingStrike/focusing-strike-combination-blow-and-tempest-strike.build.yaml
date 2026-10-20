@@ -1,0 +1,7 @@
+# Focusing Strike, with Combination Blow (rules on kills only) to hit with, and Tempest Strike for the sliding melee.
+name: "E2E - Focusing Strike with Combination Blow and Tempest Strike"
+class: hunter
+subclass: arc
+melee: combination-blow
+aspects: [tempest-strike]
+armorMods: [focusing-strike]
