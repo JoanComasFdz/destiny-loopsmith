@@ -1,0 +1,5 @@
+# Stasis Resistance alone: a Finisher (nothing reacts to it) is its first step.
+name: "E2E - Stasis Resistance only"
+class: hunter
+subclass: arc
+armorMods: [stasis-resistance]

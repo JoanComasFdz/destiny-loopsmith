@@ -20,6 +20,7 @@ public partial record Keyword
     public partial record UnravelingRounds;
     public partial record WovenMail;
     public partial record Guardian;
+    public partial record ArmorCharge;
 
     /// <summary>What the UI shows that no case names yet: a failing assertion names it as the UI shows it.</summary>
     public partial record Unlisted(string Shown);
@@ -41,5 +42,6 @@ public static class KeywordShowing
             unravelingRounds => "Unraveling Rounds",
             wovenMail => "Woven Mail",
             guardian => "Guardian",
+            armorCharge => "Armor Charge",
             unlisted => unlisted.Shown);
 }

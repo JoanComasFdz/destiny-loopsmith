@@ -7,6 +7,15 @@ namespace Loopsmith.Web.E2E.Infrastructure.Vocabulary;
 public partial record ArmorMod
 {
     public partial record StrandSiphon;
+    public partial record EmergencyReinforcement;
+    public partial record HealthFont;
+    public partial record ArcResistance;
+    public partial record SolarResistance;
+    public partial record VoidResistance;
+    public partial record StasisResistance;
+    public partial record StrandResistance;
+    public partial record MeleeDamageResistance;
+    public partial record SniperDamageResistance;
 
     /// <summary>What the UI shows that no case names yet: a failing assertion names it as the UI shows it.</summary>
     public partial record Unlisted(string Shown);
@@ -19,5 +28,14 @@ public static class ArmorModShowing
     public static string ToShownText(this ArmorMod value) =>
         value.Match(
             strandSiphon => "Strand Siphon",
+            emergencyReinforcement => "Emergency Reinforcement",
+            healthFont => "Health Font",
+            arcResistance => "Arc Resistance",
+            solarResistance => "Solar Resistance",
+            voidResistance => "Void Resistance",
+            stasisResistance => "Stasis Resistance",
+            strandResistance => "Strand Resistance",
+            meleeDamageResistance => "Melee Damage Resistance",
+            sniperDamageResistance => "Sniper Damage Resistance",
             unlisted => unlisted.Shown);
 }
