@@ -1,0 +1,8 @@
+# Emergency Reinforcement, with Disorienting Blow and Spark of Amplitude: two melee kills at once drop an Orb of Power,
+# whose pickup gives the Armor Charge the mod spends.
+name: "E2E - Emergency Reinforcement with orbs from Disorienting Blow and Spark of Amplitude"
+class: hunter
+subclass: arc
+melee: disorienting-blow
+fragments: [spark-of-amplitude]
+armorMods: [emergency-reinforcement]

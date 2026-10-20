@@ -1,0 +1,5 @@
+# Sniper Damage Resistance alone: a Finisher (nothing reacts to it) is its first step.
+name: "E2E - Sniper Damage Resistance only"
+class: hunter
+subclass: arc
+armorMods: [sniper-damage-resistance]

@@ -1,0 +1,5 @@
+# Solar Resistance alone: a Finisher (nothing reacts to it) is its first step.
+name: "E2E - Solar Resistance only"
+class: hunter
+subclass: arc
+armorMods: [solar-resistance]

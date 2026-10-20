@@ -1,0 +1,5 @@
+# Void Resistance alone: a Finisher (nothing reacts to it) is its first step.
+name: "E2E - Void Resistance only"
+class: hunter
+subclass: arc
+armorMods: [void-resistance]

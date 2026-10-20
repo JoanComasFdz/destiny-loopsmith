@@ -153,6 +153,10 @@ public static class StepCardSnapshotAssertions
     public static AssertingThat<StepCardSnapshot> HasResistanceFrom(this AssertingThat<StepCardSnapshot> that, ArmorSetBonus bonus, string values) =>
         that.HasResistanceFrom(bonus.ToShownText(), values);
 
+    /// <summary><paramref name="mod"/> is a source of the card's damage resistance, with the values <paramref name="values"/> ("15%").</summary>
+    public static AssertingThat<StepCardSnapshot> HasResistanceFrom(this AssertingThat<StepCardSnapshot> that, ArmorMod mod, string values) =>
+        that.HasResistanceFrom(mod.ToShownText(), values);
+
     /// <summary><paramref name="keyword"/> is a source of the card's damage resistance, with the values <paramref name="values"/> ("15% · PvP 0%").</summary>
     public static AssertingThat<StepCardSnapshot> HasResistanceFrom(this AssertingThat<StepCardSnapshot> that, Keyword keyword, string values) =>
         that.HasResistanceFrom(keyword.ToShownText(), values);

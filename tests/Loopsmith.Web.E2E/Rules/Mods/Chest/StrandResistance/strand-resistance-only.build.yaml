@@ -1,0 +1,5 @@
+# Strand Resistance alone: a Finisher (nothing reacts to it) is its first step.
+name: "E2E - Strand Resistance only"
+class: hunter
+subclass: arc
+armorMods: [strand-resistance]

@@ -1,0 +1,5 @@
+# Arc Resistance alone: a Finisher (nothing reacts to it) is its first step.
+name: "E2E - Arc Resistance only"
+class: hunter
+subclass: arc
+armorMods: [arc-resistance]

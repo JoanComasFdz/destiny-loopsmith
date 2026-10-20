@@ -1,0 +1,5 @@
+# Melee Damage Resistance alone: a Finisher (nothing reacts to it) is its first step.
+name: "E2E - Melee Damage Resistance only"
+class: hunter
+subclass: arc
+armorMods: [melee-damage-resistance]
