@@ -1,0 +1,8 @@
+# Void Weapon Surge, with Disorienting Blow and Spark of Amplitude: two melee kills at once while Amplified (the blow's hit makes
+# you Amplified) drop an Orb of Power, whose pickup gives the Armor Charge the mod needs.
+name: "E2E - Void Weapon Surge with an orb from Disorienting Blow and Spark of Amplitude"
+class: hunter
+subclass: arc
+melee: disorienting-blow
+fragments: [spark-of-amplitude]
+armorMods: [void-weapon-surge]
