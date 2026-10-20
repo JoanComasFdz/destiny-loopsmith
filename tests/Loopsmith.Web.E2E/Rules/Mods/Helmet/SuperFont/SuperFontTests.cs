@@ -13,7 +13,7 @@ public sealed class SuperFontTests : BaseE2E
         @desktop @mobile
         Scenario: Super Font raises your Super stat while you hold Armor Charge
           # Rule mods-helmet-super-font-1: Always ➜ Super Font equipped and Armor Charge on you ➜ Super stat (+20 | +40 | +50)
-          Given the build "super-font-arc-siphon-crisis-inverted" is imported, with no steps
+          Given the build "super-font-crisis-inverted-arc-siphon" is imported, with no steps
           When I tap "Crisis Inverted" in the trigger panel
           And I select "2 in 3 s · Arc Siphon"
           And I tap "💀 kill"
@@ -31,7 +31,7 @@ public sealed class SuperFontTests : BaseE2E
     public async Task SuperFontRaisesYourSuperStatWhileYouHoldArmorCharge(Screen screen)
     {
         // Given
-        await Frontend.Home.ImportBuildAsync("super-font-arc-siphon-crisis-inverted.build.yaml");
+        await Frontend.Home.ImportBuildAsync("super-font-crisis-inverted-arc-siphon.build.yaml");
         await Frontend.Designer.WaitUntilShownAsync();
 
         // When

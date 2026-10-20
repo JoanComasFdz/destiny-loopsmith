@@ -13,7 +13,7 @@ public sealed class RadiantLightTests : BaseE2E
         @desktop @mobile
         Scenario: Radiant Light's Super cast with Armor Charge gives one more
           # Rule mods-helmet-radiant-light-1: Super cast ➜ Radiant Light equipped and Armor Charge on you ➜ Armor Charge
-          Given the build "radiant-light-arc-siphon-crisis-inverted-storms-edge" is imported, with no steps
+          Given the build "radiant-light-crisis-inverted-arc-siphon-super" is imported, with no steps
           When I tap "Crisis Inverted" in the trigger panel
           And I select "2 in 3 s · Arc Siphon"
           And I tap "💀 kill"
@@ -33,7 +33,7 @@ public sealed class RadiantLightTests : BaseE2E
     public async Task RadiantLightsSuperCastWithArmorChargeGivesOneMore(Screen screen)
     {
         // Given
-        await Frontend.Home.ImportBuildAsync("radiant-light-arc-siphon-crisis-inverted-storms-edge.build.yaml");
+        await Frontend.Home.ImportBuildAsync("radiant-light-crisis-inverted-arc-siphon-super.build.yaml");
         await Frontend.Designer.WaitUntilShownAsync();
 
         // When

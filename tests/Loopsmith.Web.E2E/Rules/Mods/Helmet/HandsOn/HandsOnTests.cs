@@ -13,7 +13,7 @@ public sealed class HandsOnTests : BaseE2E
         @desktop @mobile
         Scenario: Hands-On's melee kill gives Super energy
           # Rule mods-helmet-hands-on-1: Melee kill ➜ Hands-On equipped ➜ Super energy (?)
-          Given the build "hands-on-combination-blow" is imported, with no steps
+          Given the build "hands-on-melee" is imported, with no steps
           When I tap "Combination Blow" in the trigger panel
           And I tap "💀 kill"
           Then card #1's heading is "#1 Melee (💀 kill)"
@@ -24,7 +24,7 @@ public sealed class HandsOnTests : BaseE2E
     public async Task HandsOnsMeleeKillGivesSuperEnergy(Screen screen)
     {
         // Given
-        await Frontend.Home.ImportBuildAsync("hands-on-combination-blow.build.yaml");
+        await Frontend.Home.ImportBuildAsync("hands-on-melee.build.yaml");
         await Frontend.Designer.WaitUntilShownAsync();
 
         // When
@@ -47,7 +47,7 @@ public sealed class HandsOnTests : BaseE2E
         @desktop @mobile
         Scenario: Hands-On's sliding melee kill gives Super energy
           # Rule mods-helmet-hands-on-1: Sliding melee kill ➜ Hands-On equipped ➜ Super energy (?)
-          Given the build "hands-on-combination-blow" is imported, with no steps
+          Given the build "hands-on-sliding-melee" is imported, with no steps
           When I tap "SLIDE" in the trigger panel
           And I tap "💀 kill"
           Then card #1's heading is "#1 Sliding melee (💀 kill)"
@@ -59,7 +59,7 @@ public sealed class HandsOnTests : BaseE2E
     public async Task HandsOnsSlidingMeleeKillGivesSuperEnergy(Screen screen)
     {
         // Given
-        await Frontend.Home.ImportBuildAsync("hands-on-combination-blow.build.yaml");
+        await Frontend.Home.ImportBuildAsync("hands-on-sliding-melee.build.yaml");
         await Frontend.Designer.WaitUntilShownAsync();
 
         // When

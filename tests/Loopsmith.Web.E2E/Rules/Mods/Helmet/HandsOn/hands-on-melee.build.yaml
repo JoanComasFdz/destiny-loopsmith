@@ -1,7 +1,6 @@
-# Hands-On, with Combination Blow to punch and Tempest Strike for the sliding melee.
+# Hands-On, with Combination Blow to punch.
 name: "E2E - Hands-On with Combination Blow"
 class: hunter
 subclass: arc
 melee: combination-blow
-aspects: [tempest-strike]
 armorMods: [hands-on]
