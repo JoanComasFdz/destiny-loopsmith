@@ -1,0 +1,7 @@
+# Stasis Siphon on Stay Frosty, a Stasis weapon.
+name: "E2E - Stasis Siphon with Stay Frosty"
+class: hunter
+subclass: arc
+armorMods: [stasis-siphon]
+weapons:
+  - { hash: 2812100428 } # Stay Frosty

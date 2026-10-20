@@ -23,6 +23,24 @@ public partial record ArmorMod
     public partial record Firepower;
     public partial record HeavyHanded;
     public partial record ShieldBreakCharge;
+    public partial record ArcSiphon;
+    public partial record SolarSiphon;
+    public partial record VoidSiphon;
+    public partial record StasisSiphon;
+    public partial record KineticSiphon;
+    public partial record ArcStasisDualSiphon;
+    public partial record ArcStrandSiphonCombo;
+    public partial record KineticChargeSiphon;
+    public partial record KineticEntropySiphon;
+    public partial record KineticThermalSiphon;
+    public partial record SolarStrandDualSiphon;
+    public partial record ThermodynamicSiphon;
+    public partial record VoidStasisDualSiphon;
+    public partial record VoidStrandDualSiphon;
+    public partial record Dynamo;
+    public partial record HandsOn;
+    public partial record RadiantLight;
+    public partial record SuperFont;
 
     /// <summary>What the UI shows that no case names yet: a failing assertion names it as the UI shows it.</summary>
     public partial record Unlisted(string Shown);
@@ -51,5 +69,23 @@ public static class ArmorModShowing
             firepower => "Firepower",
             heavyHanded => "Heavy Handed",
             shieldBreakCharge => "Shield Break Charge",
+            arcSiphon => "Arc Siphon",
+            solarSiphon => "Solar Siphon",
+            voidSiphon => "Void Siphon",
+            stasisSiphon => "Stasis Siphon",
+            kineticSiphon => "Kinetic Siphon",
+            arcStasisDualSiphon => "Arc/Stasis Dual Siphon",
+            arcStrandSiphonCombo => "Arc/Strand Siphon Combo",
+            kineticChargeSiphon => "Kinetic Charge Siphon",
+            kineticEntropySiphon => "Kinetic Entropy Siphon",
+            kineticThermalSiphon => "Kinetic Thermal Siphon",
+            solarStrandDualSiphon => "Solar/Strand Dual Siphon",
+            thermodynamicSiphon => "Thermodynamic Siphon",
+            voidStasisDualSiphon => "Void/Stasis Dual Siphon",
+            voidStrandDualSiphon => "Void/Strand Dual Siphon",
+            dynamo => "Dynamo",
+            handsOn => "Hands-On",
+            radiantLight => "Radiant Light",
+            superFont => "Super Font",
             unlisted => unlisted.Shown);
 }
