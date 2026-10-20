@@ -9,7 +9,6 @@ using Loopsmith.Core.LoopAnalyzing;
 using Loopsmith.Core.ManifestJoining;
 using Loopsmith.Core.LoopFiles;
 using Loopsmith.Core.Phrasing;
-using Loopsmith.Core.ReportComparison;
 using Loopsmith.Core.RuleParsing;
 using Loopsmith.Core.StepPlaying;
 using Loopsmith.Core.StatLoading;
@@ -56,7 +55,7 @@ public sealed record BungieLogin(DesignSession Session, string Message);
 /// <summary>A catalog with what Bungie's full manifest said added; <see cref="Note"/> says when it couldn't be read.</summary>
 public sealed record JoinedCatalog(RuleCatalog Catalog, Optional<string> Note);
 
-/// <summary>Pure API the host (the web designer) uses to design, export, import, analyse and compare loops.</summary>
+/// <summary>Pure API the host (the web designer) uses to design, export, import and analyse loops.</summary>
 public static class LoopDesigning
 {
     public static Result<DesignSession, string> StartDesign(RuleCatalog catalog, SourceText buildFile, string name) =>
@@ -1045,7 +1044,7 @@ public static class LoopDesigning
             _ => action,
         };
 
-    // ── export, import, analyse, compare (LoopFiles, StepPlaying.LoopPlaying, LoopAnalyzing, ReportComparison) ──
+    // ── export, import, analyse (LoopFiles, StepPlaying.LoopPlaying, LoopAnalyzing) ──
 
     /// <summary>The design as a <c>.loop.yaml</c> file (docs/loop-format.md).</summary>
     public static string ExportLoop(DesignSession session) =>
@@ -1071,9 +1070,6 @@ public static class LoopDesigning
         var played = LoopPlaying.PlayLoop(session.Build, session.Design.Steps);
         return LoopAnalysis.AnalyzeLoop(session.Build, session.Design, played);
     }
-
-    public static LoopComparison CompareLoops(LoopReport left, LoopReport right) =>
-        LoopComparing.CompareLoops(left, right);
 
     /// <summary>
     /// The build's own validation issues (warnings, info) plus, as Info, a loop designed against a catalog other
@@ -1211,10 +1207,6 @@ public static class LoopDesigning
     /// <summary>The report as styled lines: the order, the verdict, each step's needs, what it sets off, what is wasted.</summary>
     public static ImmutableArray<StyledLine> RenderLoopReport(LoopReport report) =>
         LoopReportRendering.RenderLoopReport(report);
-
-    /// <summary>The comparison as styled lines: both orders and their verdicts, then trigger by trigger.</summary>
-    public static ImmutableArray<StyledLine> RenderLoopComparison(LoopComparison comparison) =>
-        ComparisonRendering.RenderComparison(comparison);
 }
 
 /// <summary>Parse the rule catalog once (the web host reads the rule files from embedded resources).</summary>

@@ -27,7 +27,6 @@ internal static class Slices
     public const string BuildExplanation = "BuildExplanation";
     public const string TraceRendering = "TraceRendering";
     public const string LoopFiles = "LoopFiles";
-    public const string ReportComparison = "ReportComparison";
     public const string ManifestJoining = "ManifestJoining";
     public const string StatLoading = "StatLoading";
     public const string CompendiumReading = "CompendiumReading";
@@ -39,7 +38,7 @@ internal static class Slices
 
     /// <summary>Pure feature slices.</summary>
     public static readonly ImmutableArray<string> Features =
-        [RuleParsing, BuildParsing, BuildComposition, StepPlaying, LoopAnalyzing, BuildExplanation, TraceRendering, LoopFiles, ReportComparison,
+        [RuleParsing, BuildParsing, BuildComposition, StepPlaying, LoopAnalyzing, BuildExplanation, TraceRendering, LoopFiles,
             ManifestJoining, StatLoading, CompendiumReading];
 
     /// <summary>Every known slice, kernel included.</summary>

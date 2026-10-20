@@ -14,7 +14,7 @@ founding one: every other decision follows from it.
 | # | Decision | Why |
 |---|---|---|
 | D1 | **Loopsmith describes cause and effect; it doesn't simulate the game** | Combat has too many variables and runs on time; exact numbers are impossible, and the build crafter needs to know what triggers what |
-| D2 | The designed loop — an ordered list of triggers — is the product | A build is played as a loop; the order of its triggers is what the player designs, saves, shares and compares |
+| D2 | The designed loop — an ordered list of triggers — is the product | A build is played as a loop; the order of its triggers is what the player designs, saves and shares |
 | D3 | The player declares thresholds and endings (`max:`, `end:`) | The engine can't know when Bolt Charge reaches x10 or a buff ends; the player can |
 | D4 | The player declares how many enemies an action hits | The engine can't know how many enemies a grenade catches; perks depend on it |
 | D5 | Abilities are always available; energy outcomes are facts | Energy is time; tracking it would be a simulation |
@@ -97,12 +97,9 @@ rule catalog and travels as a file or a share link. Its analysis follows that or
 fresh spawn and then repeated from where it ended, it says whether the order **repeats** or where it
 **breaks** (a step that can't happen: nothing to pick up, an empty weapon slot, a declared state
 that doesn't hold), and for each step what it needs and which earlier step provided it, what it sets
-off and what is wasted there. Comparing two loops compares their orders — "dodge → grenade → pick up
-orb" against "grenade → dodge → pick up orb" — trigger by trigger: what each sets off in its place
-and why it differs. `Orchestration.LoopDesigning` is the API behind both hosts. **Consequence.**
-Two slices, `LoopFiles` and `ReportComparison`; the analysis and the comparison report, step by
-step, what each step needs and sets off. A loop designed against another catalog version replays with an Info note
-(D15). Format, analysis and comparison: [docs/loop-format.md](loop-format.md).
+off and what is wasted there. `Orchestration.LoopDesigning` is the API behind the host. **Consequence.**
+The `LoopFiles` slice; the analysis reports, step by step, what each step needs and sets off. A loop designed against another catalog version replays with an Info note
+(D15). Format and analysis: [docs/loop-format.md](loop-format.md).
 
 ### D3 — The player declares thresholds and endings
 
@@ -600,7 +597,7 @@ compared with one to decide what a step fires: docs/CODING_RULES.md names it as 
 (the owner's decision). It is never counted down: a use doesn't take a charge off. Shield Break Charge feeds the Armor
 Charge count (D33), and a Kickstart in a two-charge build spends it
 only where the loop says the last charge goes. The option is part of the step's token, so loop files and share links
-carry it, and the analysis and comparison tell `grenade:kill` from `grenade:kill:last`. An ability's energy is still not
+carry it, and the analysis tells `grenade:kill` from `grenade:kill:last`. An ability's energy is still not
 counted: a later decision may track it (a use empties it, each energy grant fills it), and the last charge would then
 follow from the loop instead of the player.
 **Precision kills (product owner, 2026-10).** Spark of Brilliance blinds the enemies around a blinded enemy on a
@@ -645,7 +642,7 @@ weapon shoots in any step. Cooldowns between refills (Demolitionist's
 
 ### D38 — The web designer is the only host; the CLI and the loop graph are removed
 
-**Context.** The CLI (`loopsmith`: `explain`, `validate`, `trace`, `play`, `loop`, `compare`, `graph`, `loops`) was the
+**Context.** The CLI (`loopsmith`: `explain`, `validate`, `trace`, `play`, `loop`, `graph`, `loops`) was the
 scripting and golden-test host of D24. The owner doesn't use it: the web designer (D25), with each PR's e2e scenarios
 recorded as GIFs and MP4s, is how Loopsmith is iterated on, and the golden tests call the core directly.
 **Decision (product owner).** `Loopsmith.Web` is the only host. The CLI goes, with the core code only it used: the

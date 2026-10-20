@@ -1,8 +1,7 @@
 @* The step chain (docs/loop-format.md, "Analysis"): a card per step. Its left edge has a notch at the top, where the
    lines into the step land, and a square slot at the bottom, where the lines out of it start. A step's lines leave its
    slot as one stroke and split along it (a junction dot), one lane per step they feed; lines into the same step merge
-   on its notch. A line whose needs came only from chance rules is faded; in a comparison only the links the other loop lacks
-   are drawn. Tap a step: its lines stand out and what it needs and feeds is listed below. *@
+   on its notch. A line whose needs came only from chance rules is faded. Tap a step: its lines stand out and what it needs and feeds is listed below. *@
 @{
     var chain = ChainShaping.ShapeChain(Report.Steps.Length, Links);
 }
@@ -48,8 +47,8 @@
     @if (selected >= 0 && selected < Report.Steps.Length)
     {
         var step = Report.Steps[selected];
-        var incoming = Links.Where(compared => compared.Link.To == selected).ToImmutableArray();
-        var outgoing = Links.Where(compared => compared.Link.From == selected).ToImmutableArray();
+        var incoming = Links.Where(link => link.To == selected).ToImmutableArray();
+        var outgoing = Links.Where(link => link.From == selected).ToImmutableArray();
         <div class="chain-caption" data-testid="chain-caption">
             <strong>#@(selected + 1) @step.Label</strong>
             @if (step.Blocked is Optional<string>.Some blocked)
@@ -63,9 +62,9 @@
                     {
                         <span class="muted">@DomainPhrasing.NoNeedsFromEarlierSteps</span>
                     }
-                    @foreach (var compared in incoming)
+                    @foreach (var link in incoming)
                     {
-                        <span class="chain-item @(compared.OnlyHere ? "only-here" : "")">@compared.Link.DescribeIncomingLink()</span>
+                        <span class="chain-item">@link.DescribeIncomingLink()</span>
                     }
                 </span>
             </div>
@@ -76,9 +75,9 @@
                     {
                         <span class="muted">@DomainPhrasing.FeedsNoLaterStep</span>
                     }
-                    @foreach (var compared in outgoing)
+                    @foreach (var link in outgoing)
                     {
-                        <span class="chain-item @(compared.OnlyHere ? "only-here" : "")">@compared.Link.DescribeOutgoingLink()</span>
+                        <span class="chain-item">@link.DescribeOutgoingLink()</span>
                     }
                 </span>
             </div>
@@ -90,9 +89,9 @@
     [Parameter, EditorRequired]
     public LoopReport Report { get; set; } = null!;
 
-    /// <summary>The links to draw, each marked when a comparison's other loop lacks it.</summary>
+    /// <summary>The links to draw.</summary>
     [Parameter, EditorRequired]
-    public ImmutableArray<ComparedLink> Links { get; set; } = [];
+    public ImmutableArray<StepLink> Links { get; set; } = [];
 
     private int selected = -1;
 
@@ -107,15 +106,13 @@
     private string ToLineClass(ChainLine line) =>
         JoinClasses(
             "line",
-            line.OnlyHere ? "only-here" : "",
             line.Link.Likelihood == Likelihood.Chance ? "chance" : "",
             selected < 0 ? "" : line.Link.From == selected || line.Link.To == selected ? "active" : "dim");
 
     private string ToArrowheadClass(ChainArrowhead arrowhead) =>
         JoinClasses(
             "arrowhead",
-            Links.Any(compared => compared.OnlyHere && compared.Link.To == arrowhead.Step) ? "only-here" : "",
-            selected < 0 ? "" : arrowhead.Step == selected || Links.Any(compared => compared.Link.To == arrowhead.Step && compared.Link.From == selected) ? "active" : "dim");
+            selected < 0 ? "" : arrowhead.Step == selected || Links.Any(link => link.To == arrowhead.Step && link.From == selected) ? "active" : "dim");
 
     private static string JoinClasses(params string[] names) => string.Join(' ', names.Where(name => name.Length > 0));
 }

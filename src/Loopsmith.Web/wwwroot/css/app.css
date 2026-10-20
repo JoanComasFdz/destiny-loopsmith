@@ -288,7 +288,7 @@ textarea { resize: vertical; }
 
 .failure { max-width: 860px; margin: 24px auto; }
 .failure h1 { margin-bottom: 8px; }
-.failure-text, .entry-problem {
+.failure-text {
     margin-top: 10px;
     padding: 10px 12px;
     border-radius: 6px;
@@ -1379,9 +1379,6 @@ a.weapon-line-name:hover { color: var(--arc); text-decoration: underline; }
 .analysis-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
 .analysis-name { font-size: 17px; font-weight: 750; }
 .analysis-order { margin: 10px 0 0; font-size: 13px; color: var(--text); }
-.compare-orders { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
-.compare-order { margin: 0; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 13px; }
-.compare-cell { display: flex; flex-direction: column; gap: 4px; font-size: 12px; }
 .analysis-steps { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .analysis-step { padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel-2); display: flex; flex-direction: column; gap: 5px; }
 .analysis-step.blocked { border-color: rgba(255, 207, 90, .5); }
@@ -1389,28 +1386,6 @@ a.weapon-line-name:hover { color: var(--arc); text-decoration: underline; }
 .analysis-field { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 8px; align-items: baseline; font-size: 12px; }
 .analysis-field.warn { color: var(--warn); }
 @media (max-width: 560px) { .analysis-field { grid-template-columns: minmax(0, 1fr); gap: 2px; } }
-
-.table-wrap { overflow-x: auto; }
-.data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.data-table th, .data-table td { padding: 6px 10px; border-bottom: 1px solid var(--line); text-align: left; }
-.data-table th { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
-
-/* compare */
-.page-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
-.page-head p { margin: 6px 0 0; }
-.compare-pickers { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; margin-bottom: 12px; }
-.compare-picker { flex: 1 1 300px; min-width: 0; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 6px; }
-.compare-picker .field { flex: 1 1 200px; }
-.compare-picker select { width: 100%; }
-.versus { color: var(--dim); font-weight: 800; text-transform: uppercase; letter-spacing: .1em; padding-bottom: 8px; }
-.comparison { margin-bottom: 12px; }
-.compare-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-.compare-side h2 { text-transform: none; letter-spacing: 0; font-size: 16px; }
-.compare-side > p { margin: 0 0 8px; }
-.step-list { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 5px; }
-.step-list li::marker { color: var(--dim); font-family: var(--mono); font-size: 12px; }
-.step-list-title { font-weight: 600; margin-right: 6px; }
-.step-list-note { display: block; color: var(--muted); font-size: 12px; }
 
 /* boot screen and Blazor's error bar */
 .boot { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
@@ -1448,8 +1423,6 @@ a.weapon-line-name:hover { color: var(--arc); text-decoration: underline; }
     .loop-fields { grid-template-columns: minmax(0, 1fr); }
     .toolbar, .toolbar-group { width: 100%; }
     .toolbar-group .btn { flex: 1 1 auto; }
-    .compare-columns { grid-template-columns: minmax(0, 1fr); }
-    .versus { display: none; }
     .sline { padding-left: calc(var(--indent, 0) * .75em + 1em); text-indent: -1em; }
     .slines { font-size: 13px; }
     .step-card { padding: 9px 10px 7px; }
@@ -1462,8 +1435,6 @@ a.weapon-line-name:hover { color: var(--arc); text-decoration: underline; }
 .chain-arcs { pointer-events: none; }
 .chain-arcs .line path { fill: none; stroke: var(--arc); stroke-width: 1.6; }
 .chain-arcs .arrowhead, .chain-arcs .junction { fill: var(--arc); }
-.chain-arcs .only-here path { stroke: var(--warn); }
-.chain-arcs .only-here .junction, .chain-arcs .arrowhead.only-here { fill: var(--warn); }
 .chain-arcs .chance { opacity: .5; }
 .chain-arcs .active path { stroke-width: 2.6; }
 .chain-arcs .dim, .chain-arcs .arrowhead.dim { opacity: .15; }
@@ -1478,10 +1449,7 @@ a.weapon-line-name:hover { color: var(--arc); text-decoration: underline; }
 .chain-label { overflow: hidden; text-overflow: ellipsis; }
 .chain-caption { margin-top: 8px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel-2); display: flex; flex-direction: column; gap: 5px; font-size: 12px; }
 .chain-item { display: inline-block; margin-right: 12px; }
-.chain-item.only-here { color: var(--warn); }
 .analysis-steps-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
-.compare-chains { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 6px 0 4px; }
-@media (max-width: 760px) { .compare-chains { grid-template-columns: minmax(0, 1fr); } }
 .chain-legend { font-size: 12px; margin: 0 0 12px; }
 
 /* the game's own icons next to a name in text: a keyword (Jolted, Woven Mail), an event's weapon, a step's action */

@@ -27,7 +27,7 @@ whether a grenade lands — and almost everything runs on time (cooldowns, durat
 
 The product is the **loop the player designs** (D2): an ordered list of triggers and declared states
 ("dodge → grenade kill → pick up orb → Bolt Charge at max → grenade kill"), saved as a `*.loop.yaml`,
-shared as a link, replayed, analysed and compared with another order.
+shared as a link, replayed and analysed.
 
 ## 2. Functional requirements
 
@@ -39,7 +39,6 @@ shared as a link, replayed, analysed and compared with another order.
 | FR-4 | **Play one step** against the current state — a trigger (dodge, grenade kill on 3 enemies, a sliding melee, pick up an orb, an air move) or a declared state (D3) — and get every rule it fires, cascades included, which element fired it and why, and what is available next (in the web designer one line per element and per outcome, each name tappable for its details, then what is present after the step: buffs on you, on your weapons, debuffs on the pack, the ground, and what each status switches on). | Done (web designer) |
 | FR-5 | **Design a loop** step by step, with notes and a description; undo, branch from an earlier step, remove or move any step (the loop replays in its new order); save it as a self-contained `*.loop.yaml` and share it as a link. | Done (web designer) |
 | FR-6 | **Analyse a loop's order**: played from a fresh spawn and repeated from where it ends — does it repeat or where does it break, what each step needs and which earlier step provides it (drawn as a chain of which step feeds which), what it sets off because of the order and on its own, what is wasted. | Done (web Analysis) |
-| FR-7 | **Compare two loops' orders** trigger by trigger: where each trigger's needs come from in its place in each loop, and what it sets off in only one of them; and as two chains, the links only one loop has marked. | Done (web Compare) |
 | FR-8 | **Discover loops** in the cause → effect graph (cycles), and draw the graph. | Dropped ([D38](ADRs.md#d38--the-web-designer-is-the-only-host-the-cli-and-the-loop-graph-are-removed)): the loop graph went with the CLI; a loop is designed and its order analysed in the web designer (FR-5, FR-6) |
 | FR-9 | Every fired rule carries its **source element, trigger, outcomes and reason**; every element its **provenance**, every number its **certainty** (known, approximate `~`, unknown `?`). | Done |
 | FR-10 | Builds and loops **pin a catalog version**, so a rules change never silently changes them (D15). | Done |

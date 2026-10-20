@@ -8,8 +8,8 @@ namespace Loopsmith.Web.State;
 
 /// <summary>
 /// UI state shared by the pages (one per browser tab, in memory only — nothing is stored in the browser): the
-/// startup bundle, the loop being designed, what is selected, and what the Compare screen shows. It holds
-/// immutable values only; every edit goes through the pure Orchestration API and the result is stored back here.
+/// startup bundle, the loop being designed and what is selected. It holds immutable
+/// values only; every edit goes through the pure Orchestration API and the result is stored back here.
 /// </summary>
 public sealed class Workbench(Result<LoopsmithBundle, string> startup, bool shareLinksWork)
 {
@@ -37,12 +37,6 @@ public sealed class Workbench(Result<LoopsmithBundle, string> startup, bool shar
 
     /// <summary>What the Stats section says after the login (whose the build's armor and weapons are, how to pick yours).</summary>
     public Optional<string> LoginNote { get; set; } = Optional.None<string>();
-
-    /// <summary>Loops imported on the Compare screen (kept until the tab closes).</summary>
-    public ImmutableArray<ImportedLoop> ImportedLoops { get; set; } = [];
-
-    /// <summary>The loops the Compare screen showed last (None until it first opens).</summary>
-    public Optional<ComparisonPicks> ComparePicks { get; set; } = Optional.None<ComparisonPicks>();
 
     /// <summary>
     /// The slots last picked for each artifact in the artifact editor while this loop is open: switching to an artifact

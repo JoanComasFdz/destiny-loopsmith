@@ -18,7 +18,4 @@ public sealed class Frontend(IPage page)
 
     /// <summary>The loop designer (Pages/Designer.razor).</summary>
     public Designer Designer { get; } = new(page);
-
-    /// <summary>The Compare screen (Pages/Compare.razor).</summary>
-    public Compare Compare { get; } = new(page);
 }

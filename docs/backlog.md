@@ -212,7 +212,7 @@ the part is a fact in the description.
   the rows in view would lighten them.
 - **No saved library.** The app stores nothing in the browser but Bungie's manifest and the listing of every item made
   from it (D25): a loop is kept by exporting its `.loop.yaml` or copying its share link, and loops last until the tab
-  closes or reloads (the Compare screen's imports too). A library would need per-browser storage, or a backend to sync
+  closes or reloads. A library would need per-browser storage, or a backend to sync
   it across devices.
 - **Editing the rest of a build in the designer**: a weapon's perks can be picked (column by column, from
   the manifest excerpt's trait columns), the subclass edited (abilities, aspects and fragments, from the excerpt's

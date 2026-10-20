@@ -27,7 +27,7 @@ without it a fresh deploy's markup could meet the last deploy's cached `app.css`
 already). For the main site only it adds `.nojekyll` (Pages
 would otherwise hide `_framework/`; it reads the file only at the site root, so previews don't get
 one) and a `404.html` deep-link fallback that also sends deep links inside a preview
-(`…/pr-preview/pr-7/compare`) back to that preview's start page. The main deploy
+(`…/pr-preview/pr-7/designer`) back to that preview's start page. The main deploy
 never touches `pr-preview/`; previews never touch the root. The preview workflow comments the
 link on the pull request. Pull requests from forks get no preview (no write access).
 
@@ -128,7 +128,7 @@ A browser that can't save (storage blocked or full, no IndexedDB) downloads at e
 that doesn't read is downloaded again.
 
 **The startup screen.** Until the load is done, a screen stands in for every page (Home, the designer opened from a
-share link, Compare) and the screen tabs are hidden: "Checking Bungie's manifest" while it asks for the version, then
+share link) and the screen tabs are hidden: "Checking Bungie's manifest" while it asks for the version, then
 "Downloading Bungie's manifest". Its first bar is the files' alone ("40 MB", unpacked: the bar can't know their size,
 bungie.net sends them compressed, so it fills ever more slowly towards the size they had in 2026), full once they're
 all in ("213 MB · done"). Under **Listing every weapon and armor piece**, each of the listing's four steps has its own
