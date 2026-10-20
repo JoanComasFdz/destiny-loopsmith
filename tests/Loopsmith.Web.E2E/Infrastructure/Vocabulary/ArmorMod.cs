@@ -23,6 +23,20 @@ public partial record ArmorMod
     public partial record Firepower;
     public partial record HeavyHanded;
     public partial record ShieldBreakCharge;
+    public partial record Absolution;
+    public partial record BetterAlready;
+    public partial record Innervation;
+    public partial record Insulation;
+    public partial record Invigoration;
+    public partial record OrbsOfRestoration;
+    public partial record StacksOnStacks;
+    public partial record WeaponsFont;
+    public partial record ArcWeaponSurge;
+    public partial record SolarWeaponSurge;
+    public partial record VoidWeaponSurge;
+    public partial record StasisWeaponSurge;
+    public partial record StrandWeaponSurge;
+    public partial record KineticWeaponSurge;
 
     /// <summary>What the UI shows that no case names yet: a failing assertion names it as the UI shows it.</summary>
     public partial record Unlisted(string Shown);
@@ -51,5 +65,19 @@ public static class ArmorModShowing
             firepower => "Firepower",
             heavyHanded => "Heavy Handed",
             shieldBreakCharge => "Shield Break Charge",
+            absolution => "Absolution",
+            betterAlready => "Better Already",
+            innervation => "Innervation",
+            insulation => "Insulation",
+            invigoration => "Invigoration",
+            orbsOfRestoration => "Orbs of Restoration",
+            stacksOnStacks => "Stacks on Stacks",
+            weaponsFont => "Weapons Font",
+            arcWeaponSurge => "Arc Weapon Surge",
+            solarWeaponSurge => "Solar Weapon Surge",
+            voidWeaponSurge => "Void Weapon Surge",
+            stasisWeaponSurge => "Stasis Weapon Surge",
+            strandWeaponSurge => "Strand Weapon Surge",
+            kineticWeaponSurge => "Kinetic Weapon Surge",
             unlisted => unlisted.Shown);
 }

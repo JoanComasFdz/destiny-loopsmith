@@ -1,0 +1,8 @@
+# Better Already, with Disorienting Blow and Spark of Amplitude: two melee kills at once while Amplified (the blow's hit makes
+# you Amplified) drop an Orb of Power, whose pickup sets the mod off.
+name: "E2E - Better Already with an orb from Disorienting Blow and Spark of Amplitude"
+class: hunter
+subclass: arc
+melee: disorienting-blow
+fragments: [spark-of-amplitude]
+armorMods: [better-already]
