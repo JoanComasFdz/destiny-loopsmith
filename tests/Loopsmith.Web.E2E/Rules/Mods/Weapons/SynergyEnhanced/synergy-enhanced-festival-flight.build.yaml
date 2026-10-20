@@ -1,0 +1,6 @@
+# Synergy (enhanced) (kills with this weapon fill its counter: a Tangle) on Festival Flight, a Strand weapon with no perks picked.
+name: "E2E - Synergy (enhanced) on Festival Flight"
+class: hunter
+subclass: arc
+weapons:
+  - { hash: 4019651319, perks: [], mod: 3634656993 } # Festival Flight, Synergy (enhanced)
