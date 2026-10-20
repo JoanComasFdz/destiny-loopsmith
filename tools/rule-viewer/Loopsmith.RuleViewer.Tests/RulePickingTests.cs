@@ -63,6 +63,18 @@ public sealed class RulePickingTests
         Assert.Equal(["Orb of Power"], flow.Results.Select(result => result.Name));
     }
 
+    [Theory]
+    [InlineData("mods-weapons-synergy-1", "This weapon (Kinetic) 12+ kills")]
+    [InlineData("mods-weapons-synergy-4", "This weapon (Arc) fewer than 12 kills")]
+    [InlineData("mods-weapons-synergy-12", "This weapon (Strand) fewer than 12 kills")]
+    [InlineData("mods-weapons-synergy-enhanced-5", "This weapon (Solar) 8+ kills")]
+    public void A_trigger_by_this_weapon_of_a_damage_type_names_the_type(string ruleName, string trigger) =>
+        Assert.Equal(trigger, Assert.Single(PickFlows(ruleName)).Trigger.Name);
+
+    [Fact]
+    public void A_trigger_by_this_weapon_of_any_type_names_no_type() =>
+        Assert.All(PickFlows("weapons-perks-demolitionist-1"), flow => Assert.Equal("This weapon kill", flow.Trigger.Name));
+
     [Fact]
     public void A_rule_of_another_element_has_its_flows()
     {

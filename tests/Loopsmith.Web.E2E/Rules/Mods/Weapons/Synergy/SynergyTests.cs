@@ -16,7 +16,7 @@ public sealed class SynergyTests : BaseE2E
     [TestDescription("""
         @desktop @mobile
         Scenario: Synergy's twelve kills with a Kinetic weapon spawn an Orb of Power
-          # Rule mods-weapons-synergy-1: This weapon 12+ kills ➜ Synergy equipped ➜ Orb of Power
+          # Rule mods-weapons-synergy-1: This weapon (Kinetic) 12+ kills ➜ Synergy equipped ➜ Orb of Power
           Given the build "synergy-battle-scar" is imported, with no steps
           When I tap "Battle Scar" in the trigger panel
           And I select "12 · Synergy"
@@ -52,7 +52,7 @@ public sealed class SynergyTests : BaseE2E
     [TestDescription("""
         @desktop @mobile
         Scenario: Synergy's single kill with a Kinetic weapon may spawn an Orb of Power
-          # Rule mods-weapons-synergy-2: This weapon fewer than 12 kills ➜ Synergy equipped ➜ Orb of Power
+          # Rule mods-weapons-synergy-2: This weapon (Kinetic) fewer than 12 kills ➜ Synergy equipped ➜ Orb of Power
           Given the build "synergy-battle-scar" is imported, with no steps
           When I tap "Battle Scar" in the trigger panel
           And I select "1 enemy"
@@ -89,7 +89,7 @@ public sealed class SynergyTests : BaseE2E
     [TestDescription("""
         @desktop @mobile
         Scenario: Synergy's twelve kills with an Arc weapon spawn an Ionic Trace
-          # Rule mods-weapons-synergy-3: This weapon 12+ kills ➜ Synergy equipped ➜ Ionic Trace
+          # Rule mods-weapons-synergy-3: This weapon (Arc) 12+ kills ➜ Synergy equipped ➜ Ionic Trace
           Given the build "synergy-matador-64" is imported, with no steps
           When I tap "Matador 64" in the trigger panel
           And I select "12 · Synergy"
@@ -124,7 +124,7 @@ public sealed class SynergyTests : BaseE2E
     [TestDescription("""
         @desktop @mobile
         Scenario: Synergy's single kill with an Arc weapon may spawn an Ionic Trace
-          # Rule mods-weapons-synergy-4: This weapon fewer than 12 kills ➜ Synergy equipped ➜ Ionic Trace
+          # Rule mods-weapons-synergy-4: This weapon (Arc) fewer than 12 kills ➜ Synergy equipped ➜ Ionic Trace
           Given the build "synergy-matador-64" is imported, with no steps
           When I tap "Matador 64" in the trigger panel
           And I select "1 enemy"
@@ -160,7 +160,7 @@ public sealed class SynergyTests : BaseE2E
     [TestDescription("""
         @desktop @mobile
         Scenario: Synergy's twelve kills with a Solar weapon spawn a Firesprite
-          # Rule mods-weapons-synergy-5: This weapon 12+ kills ➜ Synergy equipped ➜ Firesprite
+          # Rule mods-weapons-synergy-5: This weapon (Solar) 12+ kills ➜ Synergy equipped ➜ Firesprite
           Given the build "synergy-speleologist" is imported, with no steps
           When I tap "Speleologist" in the trigger panel
           And I select "12 · Synergy"
@@ -196,7 +196,7 @@ public sealed class SynergyTests : BaseE2E
     [TestDescription("""
         @desktop @mobile
         Scenario: Synergy's single kill with a Solar weapon may spawn a Firesprite
-          # Rule mods-weapons-synergy-6: This weapon fewer than 12 kills ➜ Synergy equipped ➜ Firesprite
+          # Rule mods-weapons-synergy-6: This weapon (Solar) fewer than 12 kills ➜ Synergy equipped ➜ Firesprite
           Given the build "synergy-speleologist" is imported, with no steps
           When I tap "Speleologist" in the trigger panel
           And I select "1 enemy"
@@ -233,7 +233,7 @@ public sealed class SynergyTests : BaseE2E
     [TestDescription("""
         @desktop @mobile
         Scenario: Synergy's twelve kills with a Void weapon spawn a Void Breach
-          # Rule mods-weapons-synergy-7: This weapon 12+ kills ➜ Synergy equipped ➜ Void Breach
+          # Rule mods-weapons-synergy-7: This weapon (Void) 12+ kills ➜ Synergy equipped ➜ Void Breach
           Given the build "synergy-bellowing-giant" is imported, with no steps
           When I tap "Bellowing Giant" in the trigger panel
           And I select "12 · Synergy"
@@ -269,7 +269,7 @@ public sealed class SynergyTests : BaseE2E
     [TestDescription("""
         @desktop @mobile
         Scenario: Synergy's single kill with a Void weapon may spawn a Void Breach
-          # Rule mods-weapons-synergy-8: This weapon fewer than 12 kills ➜ Synergy equipped ➜ Void Breach
+          # Rule mods-weapons-synergy-8: This weapon (Void) fewer than 12 kills ➜ Synergy equipped ➜ Void Breach
           Given the build "synergy-bellowing-giant" is imported, with no steps
           When I tap "Bellowing Giant" in the trigger panel
           And I select "1 enemy"
@@ -306,7 +306,7 @@ public sealed class SynergyTests : BaseE2E
     [TestDescription("""
         @desktop @mobile
         Scenario: Synergy's twelve kills with a Stasis weapon spawn a Stasis Shard
-          # Rule mods-weapons-synergy-9: This weapon 12+ kills ➜ Synergy equipped ➜ Stasis Shard
+          # Rule mods-weapons-synergy-9: This weapon (Stasis) 12+ kills ➜ Synergy equipped ➜ Stasis Shard
           Given the build "synergy-forensic-nightmare" is imported, with no steps
           When I tap "Forensic Nightmare" in the trigger panel
           And I select "12 · Synergy"
@@ -342,7 +342,7 @@ public sealed class SynergyTests : BaseE2E
     [TestDescription("""
         @desktop @mobile
         Scenario: Synergy's single kill with a Stasis weapon may spawn a Stasis Shard
-          # Rule mods-weapons-synergy-10: This weapon fewer than 12 kills ➜ Synergy equipped ➜ Stasis Shard
+          # Rule mods-weapons-synergy-10: This weapon (Stasis) fewer than 12 kills ➜ Synergy equipped ➜ Stasis Shard
           Given the build "synergy-forensic-nightmare" is imported, with no steps
           When I tap "Forensic Nightmare" in the trigger panel
           And I select "1 enemy"
@@ -379,7 +379,7 @@ public sealed class SynergyTests : BaseE2E
     [TestDescription("""
         @desktop @mobile
         Scenario: Synergy's twelve kills with a Strand weapon spawn a Tangle
-          # Rule mods-weapons-synergy-11: This weapon 12+ kills ➜ Synergy equipped ➜ Tangle
+          # Rule mods-weapons-synergy-11: This weapon (Strand) 12+ kills ➜ Synergy equipped ➜ Tangle
           Given the build "synergy-festival-flight" is imported, with no steps
           When I tap "Festival Flight" in the trigger panel
           And I select "12 · Synergy"
@@ -415,7 +415,7 @@ public sealed class SynergyTests : BaseE2E
     [TestDescription("""
         @desktop @mobile
         Scenario: Synergy's single kill with a Strand weapon may spawn a Tangle
-          # Rule mods-weapons-synergy-12: This weapon fewer than 12 kills ➜ Synergy equipped ➜ Tangle
+          # Rule mods-weapons-synergy-12: This weapon (Strand) fewer than 12 kills ➜ Synergy equipped ➜ Tangle
           Given the build "synergy-festival-flight" is imported, with no steps
           When I tap "Festival Flight" in the trigger panel
           And I select "1 enemy"

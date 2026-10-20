@@ -123,16 +123,25 @@ internal static class RuleFlowMapping
 
     /// <summary>
     /// A hit or kill by a source: one part per node the source stands for (any ability: each ability that deals damage;
-    /// any melee: the punch and the sliding melee); a source with no node is "Any" or "This weapon".
+    /// any melee: the punch and the sliding melee); a source with no node is "Any", "This weapon" or, of one damage type,
+    /// "This weapon (Arc)".
     /// </summary>
     private static ImmutableArray<TriggerPart> ListHitParts(GraphContext context, DamageSource via, string word)
     {
         var nodes = DependencyMapping.ListSourceNodes(context, via);
-        var unnamed = via is DamageSource.AnySource ? "Any" : "This weapon";
+        var unnamed = NameUnnamedSource(via);
         return nodes.IsEmpty
             ? [new TriggerPart(Optional.None<GraphNode>(), $"{unnamed} {word}", unnamed)]
             : [.. nodes.Select(node => new TriggerPart(Optional.Some(node), $"{node.Name} {word}", node.Name))];
     }
+
+    private static string NameUnnamedSource(DamageSource via) =>
+        via switch
+        {
+            DamageSource.AnySource => "Any",
+            DamageSource.ThisWeaponOfType ofType => $"This weapon ({ofType.Type})",
+            _ => "This weapon",
+        };
 
     private static string DescribeHit(DamageSpan span) => span == DamageSpan.Sustained ? "sustained hit" : "hit";
 
