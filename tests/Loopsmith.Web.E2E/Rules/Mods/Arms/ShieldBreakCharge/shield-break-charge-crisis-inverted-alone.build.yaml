@@ -1,0 +1,7 @@
+# Shield Break Charge, with Crisis Inverted (no rules of its own) to break a shield with.
+name: "E2E - Shield Break Charge with Crisis Inverted"
+class: hunter
+subclass: arc
+armorMods: [shield-break-charge]
+weapons:
+  - { hash: 2888266564, perks: [] } # Crisis Inverted

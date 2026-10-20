@@ -30,6 +30,13 @@ public partial record ArmorMod
     public partial record SpecialFinisher;
     public partial record UtilityFinisher;
     public partial record UtilityKickstart;
+    public partial record BolsteringDetonation;
+    public partial record FocusingStrike;
+    public partial record MomentumTransfer;
+    public partial record MeleeKickstart;
+    public partial record Firepower;
+    public partial record HeavyHanded;
+    public partial record ShieldBreakCharge;
 
     /// <summary>What the UI shows that no case names yet: a failing assertion names it as the UI shows it.</summary>
     public partial record Unlisted(string Shown);
@@ -65,5 +72,12 @@ public static class ArmorModShowing
             specialFinisher => "Special Finisher",
             utilityFinisher => "Utility Finisher",
             utilityKickstart => "Utility Kickstart",
+            bolsteringDetonation => "Bolstering Detonation",
+            focusingStrike => "Focusing Strike",
+            momentumTransfer => "Momentum Transfer",
+            meleeKickstart => "Melee Kickstart",
+            firepower => "Firepower",
+            heavyHanded => "Heavy Handed",
+            shieldBreakCharge => "Shield Break Charge",
             unlisted => unlisted.Shown);
 }

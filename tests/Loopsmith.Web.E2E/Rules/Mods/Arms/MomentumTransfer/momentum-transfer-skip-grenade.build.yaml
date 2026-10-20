@@ -1,0 +1,6 @@
+# Momentum Transfer, with Skip Grenade (no rules of its own) to hit with.
+name: "E2E - Momentum Transfer with Skip Grenade"
+class: hunter
+subclass: arc
+grenade: skip-grenade
+armorMods: [momentum-transfer]

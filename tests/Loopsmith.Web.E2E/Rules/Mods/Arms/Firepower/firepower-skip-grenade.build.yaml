@@ -1,0 +1,6 @@
+# Firepower, with Skip Grenade (no rules of its own) to kill with.
+name: "E2E - Firepower with Skip Grenade"
+class: hunter
+subclass: arc
+grenade: skip-grenade
+armorMods: [firepower]
