@@ -63,6 +63,16 @@ public sealed class RepoFileValidationTests
         ["tests/Loopsmith.Web.E2E/Rules/Mods/Helmet/VoidSiphon/void-siphon-bellowing-giant.build.yaml"] = [412265080],
         ["tests/Loopsmith.Web.E2E/Rules/Mods/Helmet/VoidStasisDualSiphon/void-stasis-dual-siphon-bellowing-giant-stay-frosty.build.yaml"] = [412265080, 2812100428],
         ["tests/Loopsmith.Web.E2E/Rules/Mods/Helmet/VoidStrandDualSiphon/void-strand-dual-siphon-bellowing-giant-festival-flight.build.yaml"] = [412265080],
+        ["tests/Loopsmith.Web.E2E/Rules/Mods/Weapons/Synergy/synergy-battle-scar.build.yaml"] = [1525080480],
+        ["tests/Loopsmith.Web.E2E/Rules/Mods/Weapons/Synergy/synergy-matador-64.build.yaml"] = [1518956169],
+        ["tests/Loopsmith.Web.E2E/Rules/Mods/Weapons/Synergy/synergy-speleologist.build.yaml"] = [412251536],
+        ["tests/Loopsmith.Web.E2E/Rules/Mods/Weapons/Synergy/synergy-bellowing-giant.build.yaml"] = [412265080],
+        ["tests/Loopsmith.Web.E2E/Rules/Mods/Weapons/Synergy/synergy-forensic-nightmare.build.yaml"] = [1526296434],
+        ["tests/Loopsmith.Web.E2E/Rules/Mods/Weapons/SynergyEnhanced/synergy-enhanced-battle-scar.build.yaml"] = [1525080480],
+        ["tests/Loopsmith.Web.E2E/Rules/Mods/Weapons/SynergyEnhanced/synergy-enhanced-matador-64.build.yaml"] = [1518956169],
+        ["tests/Loopsmith.Web.E2E/Rules/Mods/Weapons/SynergyEnhanced/synergy-enhanced-speleologist.build.yaml"] = [412251536],
+        ["tests/Loopsmith.Web.E2E/Rules/Mods/Weapons/SynergyEnhanced/synergy-enhanced-bellowing-giant.build.yaml"] = [412265080],
+        ["tests/Loopsmith.Web.E2E/Rules/Mods/Weapons/SynergyEnhanced/synergy-enhanced-forensic-nightmare.build.yaml"] = [1526296434],
     }.ToImmutableDictionary();
 
     public static TheoryData<string> Opening
