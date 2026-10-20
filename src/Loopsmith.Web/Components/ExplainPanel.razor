@@ -1,45 +1,28 @@
-@* "What this build does": every trigger and what it sets off, without simulating (LoopDesigning.ExplainBuild). *@
+@* "What this build does": every trigger and what it sets off, as a tree, without simulating (LoopDesigning.ExplainBuild). *@
 <details class="panel explain-panel" data-testid="build-explanation">
     <summary data-action="build-explanation-toggle">
         <span class="explain-title">What this build does</span>
         <span class="muted">every trigger → outcome [source]</span>
     </summary>
-    <div class="explain-tools">
-        <label class="toggle"><input type="radio" name="explain-style" checked="@(style == ExplanationStyle.Note)" @onchange="() => SwitchStyle(ExplanationStyle.Note)" /> Note</label>
-        <label class="toggle"><input type="radio" name="explain-style" checked="@(style == ExplanationStyle.Tree)" @onchange="() => SwitchStyle(ExplanationStyle.Tree)" /> Tree</label>
-    </div>
-    <StyledLines Lines="@RenderLines()" Preformatted="@(style == ExplanationStyle.Tree)" />
+    <StyledLines Lines="@RenderLines()" Preformatted="true" />
 </details>
 
 @code {
-    private readonly Dictionary<ExplanationStyle, ImmutableArray<StyledLine>> rendered = [];
+    private ImmutableArray<StyledLine> rendered = [];
     private object explained = new();
-    private ExplanationStyle style = ExplanationStyle.Note;
 
     [Parameter, EditorRequired]
     public ValidatedBuild Build { get; set; } = null!;
 
-    protected override void OnParametersSet()
+    /// <summary>The explanation, computed once per build.</summary>
+    private ImmutableArray<StyledLine> RenderLines()
     {
         if (!ReferenceEquals(explained, Build))
         {
-            rendered.Clear();
+            rendered = LoopDesigning.ExplainBuild(Build);
             explained = Build;
         }
+
+        return rendered;
     }
-
-    /// <summary>The explanation in the chosen style, computed once per build and style.</summary>
-    private ImmutableArray<StyledLine> RenderLines()
-    {
-        if (!rendered.TryGetValue(style, out var lines))
-        {
-            lines = LoopDesigning.ExplainBuild(Build, style);
-            rendered[style] = lines;
-        }
-
-        return lines;
-    }
-
-    private void SwitchStyle(ExplanationStyle next) =>
-        style = next;
 }

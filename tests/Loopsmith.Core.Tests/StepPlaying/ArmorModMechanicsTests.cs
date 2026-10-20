@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Text.RegularExpressions;
 using Loopsmith.Core.BuildExplanation;
 using Loopsmith.Core.Causality;
 using Loopsmith.Core.Domain;
@@ -31,8 +32,11 @@ public sealed class ArmorModMechanicsTests
     private static string DescribeTrace(ValidatedBuild build, Resolution resolution) =>
         string.Join("\n", TraceRenderer.RenderResolution(build, resolution, new TraceOptions(false, false, false)).Select(line => line.ToPlainText()));
 
+    // The build's explanation, one "<trigger> -> <outcome> [<source>]" line per row of its tree (the branch and the alignment left out).
     private static string DescribeExplanation(ValidatedBuild build) =>
-        BuildExplaining.RenderExplanation(build.Catalog.Glossary, BuildExplaining.ExplainBuild(build), ExplanationStyle.Note).ToPlainText();
+        string.Join("\n", BuildExplaining.ExplainBuild(build).SelectMany(group =>
+            BuildExplaining.RenderExplanation(build.Catalog.Glossary, [group]).Skip(1)
+                .Select(row => $"{group.Heading} -> {Regex.Replace(row.ToPlainText().Trim()[2..], " {2,}", " ")}")));
 
     private static BuildElement Mod(string id, ImmutableArray<Rule> rules, ImmutableArray<PassiveRule> passives = default) =>
         Element(id, ElementKind.ArmorMod, rules, passives) with { Affinity = Affinity.Neutral };

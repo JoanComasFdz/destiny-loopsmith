@@ -462,8 +462,16 @@ textarea { resize: vertical; }
 .explain-panel[open] summary::before { transform: rotate(90deg); }
 .explain-title { font-weight: 700; }
 .explain-panel summary .muted { font-size: 12px; }
-.explain-tools { display: flex; gap: 12px; padding: 0 14px 6px; }
 .explain-panel .slines { padding: 0 14px 12px; max-height: 420px; overflow: auto; }
+/* On a phone a long row wraps, its continuation under the outcome, so its [source] stays in view without scrolling sideways. */
+@media (max-width: 640px) {
+    .explain-panel .slines.pre .sline {
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        padding-left: calc(var(--indent, 0) * 2ch + 2ch);
+        text-indent: -2ch;
+    }
+}
 
 /* timeline */
 .timeline-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 2px 2px 0; }

@@ -9,7 +9,7 @@ namespace Loopsmith.Core.Tests.BuildExplanation;
 public class BuildExplainingTests
 {
     [Fact]
-    public void Rules_sharing_a_trigger_become_one_note_line_with_sources()
+    public void Rules_sharing_a_trigger_are_one_heading_with_a_line_per_outcome_and_its_source_aligned()
     {
         var shock = Element("spark-of-shock", ElementKind.Fragment,
             [On(new Trigger.Damage(new DamageSource.AbilityOf(AbilityKind.Grenade)), new Outcome.DebuffTarget(Status("jolt"), Optional.None<Seconds>()))]);
@@ -18,24 +18,26 @@ public class BuildExplainingTests
         var build = ValidateBuild([shock, vow]);
 
         var groups = BuildExplaining.ExplainBuild(build);
-        var lines = BuildExplaining.RenderExplanation(build.Catalog.Glossary, groups, ExplanationStyle.Note).ToPlainText();
+        var lines = BuildExplaining.RenderExplanation(build.Catalog.Glossary, groups).ToPlainText();
 
-        Assert.Equal("Grenade damage -> Jolt target (4s) [Spark Of Shock] + +1 Bolt Charge [Shinobus Vow]", lines);
+        Assert.Equal("""
+            Grenade damage
+              ├ Jolt target (4s)  [Spark Of Shock]
+              └ +1 Bolt Charge    [Shinobus Vow]
+            """, lines);
     }
 
     [Fact]
-    public void Every_keyword_an_explanation_names_is_in_its_affinitys_tone_in_a_note_a_tree_and_an_items_details()
+    public void Every_keyword_an_explanation_names_is_in_its_affinitys_tone_in_a_build_and_an_items_details()
     {
         var vow = Element("shinobus-vow", ElementKind.Fragment,
             [On(new Trigger.Damage(new DamageSource.AbilityOf(AbilityKind.Grenade)), Buff("bolt-charge")) with { Reason = Optional.Some("Grenade hits give you Bolt Charge.") }]);
         var build = ValidateBuild([vow]);
         var groups = BuildExplaining.ExplainBuild(build);
 
-        var note = Assert.Single(BuildExplaining.RenderExplanation(build.Catalog.Glossary, groups, ExplanationStyle.Note));
-        var tree = BuildExplaining.RenderExplanation(build.Catalog.Glossary, groups, ExplanationStyle.Tree);
+        var tree = BuildExplaining.RenderExplanation(build.Catalog.Glossary, groups);
         var details = BuildExplaining.RenderElementExplanation(build.Catalog.Glossary, groups);
 
-        Assert.Contains(note.Spans, span => span == new StyledSpan("Bolt Charge", Tone.Arc));
         Assert.Contains(tree[1].Spans, span => span == new StyledSpan("Bolt Charge", Tone.Arc));
         Assert.Equal(
             [new StyledSpan("Grenade hits give you ", Tone.Muted), new StyledSpan("Bolt Charge", Tone.Arc), new StyledSpan(".", Tone.Muted)],

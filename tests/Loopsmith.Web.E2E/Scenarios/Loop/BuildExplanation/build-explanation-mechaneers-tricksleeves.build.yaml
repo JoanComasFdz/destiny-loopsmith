@@ -1,0 +1,5 @@
+# Mechaneer's Tricksleeves, whose "Always" row in "What this build does" is long enough to wrap on a phone.
+name: "E2E - What this build does, Mechaneer's Tricksleeves"
+class: hunter
+subclass: arc
+exoticArmor: mechaneers-tricksleeves
