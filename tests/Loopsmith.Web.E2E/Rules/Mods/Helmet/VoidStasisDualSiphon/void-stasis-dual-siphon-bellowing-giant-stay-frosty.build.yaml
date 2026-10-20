@@ -1,0 +1,8 @@
+# Void/Stasis Dual Siphon, with Bellowing Giant (a Void weapon) and Stay Frosty (a Stasis weapon) for its two elements.
+name: "E2E - Void/Stasis Dual Siphon with Bellowing Giant and Stay Frosty"
+class: hunter
+subclass: arc
+armorMods: [void-stasis-dual-siphon]
+weapons:
+  - { hash: 412265080 } # Bellowing Giant
+  - { hash: 2812100428 } # Stay Frosty

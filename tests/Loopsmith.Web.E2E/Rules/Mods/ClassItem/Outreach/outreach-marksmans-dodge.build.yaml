@@ -1,0 +1,6 @@
+# Outreach, with Marksman's Dodge (no rules of its own) for the class ability.
+name: "E2E - Outreach with Marksman's Dodge"
+class: hunter
+subclass: arc
+classAbility: marksmans-dodge
+armorMods: [outreach]

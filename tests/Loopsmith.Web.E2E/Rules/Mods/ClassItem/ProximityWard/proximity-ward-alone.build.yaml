@@ -1,0 +1,5 @@
+# Proximity Ward alone: the finisher is always in the trigger panel.
+name: "E2E - Proximity Ward"
+class: hunter
+subclass: arc
+armorMods: [proximity-ward]

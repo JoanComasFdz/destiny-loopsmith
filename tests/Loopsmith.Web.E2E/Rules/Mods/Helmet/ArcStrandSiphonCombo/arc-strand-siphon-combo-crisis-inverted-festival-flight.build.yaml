@@ -1,0 +1,8 @@
+# Arc/Strand Siphon Combo, with Crisis Inverted (an Arc weapon) and Festival Flight (a Strand weapon) for its two elements.
+name: "E2E - Arc/Strand Siphon Combo with Crisis Inverted and Festival Flight"
+class: hunter
+subclass: arc
+armorMods: [arc-strand-siphon-combo]
+weapons:
+  - { hash: 2888266564 } # Crisis Inverted
+  - { hash: 4019651319 } # Festival Flight

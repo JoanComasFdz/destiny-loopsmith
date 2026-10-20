@@ -1,0 +1,7 @@
+# Hands-On, with Tempest Strike for the sliding melee and Combination Blow to slide with.
+name: "E2E - Hands-On with Tempest Strike"
+class: hunter
+subclass: arc
+melee: combination-blow
+aspects: [tempest-strike]
+armorMods: [hands-on]

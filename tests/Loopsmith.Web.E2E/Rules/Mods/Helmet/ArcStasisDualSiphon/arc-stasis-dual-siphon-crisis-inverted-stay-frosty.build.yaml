@@ -1,0 +1,8 @@
+# Arc/Stasis Dual Siphon, with Crisis Inverted (an Arc weapon) and Stay Frosty (a Stasis weapon) for its two elements.
+name: "E2E - Arc/Stasis Dual Siphon with Crisis Inverted and Stay Frosty"
+class: hunter
+subclass: arc
+armorMods: [arc-stasis-dual-siphon]
+weapons:
+  - { hash: 2888266564 } # Crisis Inverted
+  - { hash: 2812100428 } # Stay Frosty

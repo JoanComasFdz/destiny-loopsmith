@@ -56,6 +56,18 @@ public sealed class RepoFileValidationTests
         ["tests/Loopsmith.Web.E2E/Rules/Mods/Armor/Recuperation/recuperation-crux-celeritas-strand-siphon.build.yaml"] = [391069235],
         ["tests/Loopsmith.Web.E2E/Rules/Mods/Armor/PowerfulAttraction/powerful-attraction-marksmans-dodge-crux-celeritas-strand-siphon.build.yaml"] = [391069235],
         ["tests/Loopsmith.Web.E2E/Rules/Mods/Armor/ChargedUp/charged-up-crux-celeritas-strand-siphon.build.yaml"] = [391069235],
+        ["tests/Loopsmith.Web.E2E/Rules/Mods/Helmet/ArcStasisDualSiphon/arc-stasis-dual-siphon-crisis-inverted-stay-frosty.build.yaml"] = [2812100428],
+        ["tests/Loopsmith.Web.E2E/Rules/Mods/Helmet/KineticChargeSiphon/kinetic-charge-siphon-scathelocke-crisis-inverted.build.yaml"] = [3332538050],
+        ["tests/Loopsmith.Web.E2E/Rules/Mods/Helmet/KineticEntropySiphon/kinetic-entropy-siphon-scathelocke-bellowing-giant.build.yaml"] = [3332538050, 412265080],
+        ["tests/Loopsmith.Web.E2E/Rules/Mods/Helmet/KineticSiphon/kinetic-siphon-scathelocke.build.yaml"] = [3332538050],
+        ["tests/Loopsmith.Web.E2E/Rules/Mods/Helmet/KineticThermalSiphon/kinetic-thermal-siphon-scathelocke-ogma-pr6.build.yaml"] = [3332538050, 2342054803],
+        ["tests/Loopsmith.Web.E2E/Rules/Mods/Helmet/SolarSiphon/solar-siphon-ogma-pr6.build.yaml"] = [2342054803],
+        ["tests/Loopsmith.Web.E2E/Rules/Mods/Helmet/SolarStrandDualSiphon/solar-strand-dual-siphon-ogma-pr6-festival-flight.build.yaml"] = [2342054803],
+        ["tests/Loopsmith.Web.E2E/Rules/Mods/Helmet/StasisSiphon/stasis-siphon-stay-frosty.build.yaml"] = [2812100428],
+        ["tests/Loopsmith.Web.E2E/Rules/Mods/Helmet/ThermodynamicSiphon/thermodynamic-siphon-stay-frosty-ogma-pr6.build.yaml"] = [2812100428, 2342054803],
+        ["tests/Loopsmith.Web.E2E/Rules/Mods/Helmet/VoidSiphon/void-siphon-bellowing-giant.build.yaml"] = [412265080],
+        ["tests/Loopsmith.Web.E2E/Rules/Mods/Helmet/VoidStasisDualSiphon/void-stasis-dual-siphon-bellowing-giant-stay-frosty.build.yaml"] = [412265080, 2812100428],
+        ["tests/Loopsmith.Web.E2E/Rules/Mods/Helmet/VoidStrandDualSiphon/void-strand-dual-siphon-bellowing-giant-festival-flight.build.yaml"] = [412265080],
     }.ToImmutableDictionary();
 
     public static TheoryData<string> Opening

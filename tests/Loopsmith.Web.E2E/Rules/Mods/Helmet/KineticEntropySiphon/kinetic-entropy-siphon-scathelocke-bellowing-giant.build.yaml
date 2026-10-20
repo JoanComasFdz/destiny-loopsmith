@@ -1,0 +1,8 @@
+# Kinetic Entropy Siphon, with Scathelocke (a Kinetic weapon) and Bellowing Giant (a Void weapon) for its two elements.
+name: "E2E - Kinetic Entropy Siphon with Scathelocke and Bellowing Giant"
+class: hunter
+subclass: arc
+armorMods: [kinetic-entropy-siphon]
+weapons:
+  - { hash: 3332538050 } # Scathelocke
+  - { hash: 412265080 } # Bellowing Giant

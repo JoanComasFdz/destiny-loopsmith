@@ -1,0 +1,8 @@
+# Solar/Strand Dual Siphon, with Ogma PR6 (a Solar weapon) and Festival Flight (a Strand weapon) for its two elements.
+name: "E2E - Solar/Strand Dual Siphon with Ogma PR6 and Festival Flight"
+class: hunter
+subclass: arc
+armorMods: [solar-strand-dual-siphon]
+weapons:
+  - { hash: 2342054803 } # Ogma PR6
+  - { hash: 4019651319 } # Festival Flight
