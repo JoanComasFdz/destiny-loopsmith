@@ -1,0 +1,8 @@
+# Harmonic Siphon, with Arc Staff (the Super whose element it matches) and Crisis Inverted (an Arc weapon with no rules of its own) to kill with.
+name: "E2E - Harmonic Siphon with Arc Staff and Crisis Inverted"
+class: hunter
+subclass: arc
+super: arc-staff
+armorMods: [harmonic-siphon]
+weapons:
+  - { hash: 2888266564, perks: [] } # Crisis Inverted

@@ -1,0 +1,6 @@
+# Concussive Dampener, with Skip Grenade to play a step whose state shows it.
+name: "E2E - Concussive Dampener with Skip Grenade"
+class: hunter
+subclass: arc
+grenade: skip-grenade
+armorMods: [concussive-dampener]

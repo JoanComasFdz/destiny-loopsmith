@@ -1,0 +1,7 @@
+# Strand Siphon, with Crux Celeritas IV (a Strand weapon with no rules of its own) to kill with.
+name: "E2E - Strand Siphon with Crux Celeritas IV"
+class: hunter
+subclass: arc
+armorMods: [strand-siphon]
+weapons:
+  - { hash: 391069235, perks: [] } # Crux Celeritas IV

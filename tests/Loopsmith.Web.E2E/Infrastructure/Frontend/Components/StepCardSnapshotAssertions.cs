@@ -52,6 +52,13 @@ public static class StepCardSnapshotAssertions
     public static AssertingThat<StepCardSnapshot> Fires(this AssertingThat<StepCardSnapshot> that, WeaponMod mod, params string[] lines) =>
         that.FiresFrom(mod.ToShownText(), lines);
 
+    /// <summary>
+    /// Under the event that reads <paramref name="happened"/> ("📍 Picked up Ionic Trace"), <paramref name="mod"/> fired exactly
+    /// <paramref name="lines"/>, in that order, each with its "(chance)" as shown.
+    /// </summary>
+    public static AssertingThat<StepCardSnapshot> FiresOn(this AssertingThat<StepCardSnapshot> that, string happened, ArmorMod mod, params string[] lines) =>
+        that.FiresOn(happened, mod.ToShownText(), lines);
+
     /// <summary><paramref name="bonus"/> fired exactly <paramref name="lines"/>, in that order, each with its "(chance)" as shown.</summary>
     public static AssertingThat<StepCardSnapshot> Fires(this AssertingThat<StepCardSnapshot> that, ArmorSetBonus bonus, params string[] lines) =>
         that.FiresFrom(bonus.ToShownText(), lines);
@@ -130,6 +137,15 @@ public static class StepCardSnapshotAssertions
         return that;
     }
 
+    /// <summary><paramref name="keyword"/>'s caveats are exactly <paramref name="caveats"/>, in that order ("· " left out).</summary>
+    public static AssertingThat<StepCardSnapshot> HasCaveats(this AssertingThat<StepCardSnapshot> that, Keyword keyword, params string[] caveats)
+    {
+        var name = keyword.ToShownText();
+        var shown = FindSources(that.InstanceToAssert, name).SelectMany(source => source.Caveats).Select(caveat => caveat.TrimStart('·', ' ')).ToArray();
+        Assert.True(shown.SequenceEqual(caveats), $"Under {name} the card shows the caveats {Describe(shown)}, but {Describe(caveats)} was expected.");
+        return that;
+    }
+
     /// <summary>The card's damage resistance row <paramref name="row"/> ("All damage") reads <paramref name="pve"/> PvE and <paramref name="pvp"/> PvP.</summary>
     public static AssertingThat<StepCardSnapshot> HasResistance(this AssertingThat<StepCardSnapshot> that, string row, string pve, string pvp)
     {
@@ -195,6 +211,10 @@ public static class StepCardSnapshotAssertions
     /// <summary><paramref name="armor"/> is a source of the card's damage bonus, with the value <paramref name="value"/> ("+100% [PvP 10%]").</summary>
     public static AssertingThat<StepCardSnapshot> HasDamageBonusFrom(this AssertingThat<StepCardSnapshot> that, ArmorPiece armor, string value) =>
         that.HasDamageBonusFrom(armor.ToShownText(), value);
+
+    /// <summary><paramref name="mod"/> is a source of the card's damage bonus, with the value <paramref name="value"/> ("+10%").</summary>
+    public static AssertingThat<StepCardSnapshot> HasDamageBonusFrom(this AssertingThat<StepCardSnapshot> that, ArmorMod mod, string value) =>
+        that.HasDamageBonusFrom(mod.ToShownText(), value);
 
     private static AssertingThat<StepCardSnapshot> HasDamageBonusFrom(this AssertingThat<StepCardSnapshot> that, string name, string value)
     {

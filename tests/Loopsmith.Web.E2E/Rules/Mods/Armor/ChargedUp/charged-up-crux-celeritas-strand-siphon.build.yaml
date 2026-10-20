@@ -1,0 +1,7 @@
+# Charged Up, with Strand Siphon and Crux Celeritas IV (a Strand weapon with no rules of its own), whose two kills drop the Orb of Power that gives the Armor Charge it raises the most of.
+name: "E2E - Charged Up with Strand Siphon and Crux Celeritas IV"
+class: hunter
+subclass: arc
+armorMods: [charged-up, strand-siphon]
+weapons:
+  - { hash: 391069235, perks: [] } # Crux Celeritas IV
