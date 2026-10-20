@@ -28,7 +28,7 @@ public sealed class RadiantLightTests : BaseE2E
           And I tap "🥊 hit"
           Then card #3's heading is "#3 Super (🥊 hit)"
           And "Radiant Light" fires "+1 Armor Charge"
-          And its BUFFS show only "Super · 1 effect" and "Armor Charge x2"
+          And its BUFFS show only "Armor Charge x2" and "Super · 1 effect"
         """)]
     public async Task RadiantLightsSuperCastWithArmorChargeGivesOneMore(Screen screen)
     {
@@ -70,6 +70,6 @@ public sealed class RadiantLightTests : BaseE2E
         Asserting.That(cast)
             .HasHeading("#3 Super (🥊 hit)")
             .Fires(new ArmorMod.RadiantLight(), "+1 Armor Charge")
-            .Shows(new StateGroup.Buffs(), "Super · 1 effect", "Armor Charge x2");
+            .Shows(new StateGroup.Buffs(), "Armor Charge x2", "Super · 1 effect");
     }
 }

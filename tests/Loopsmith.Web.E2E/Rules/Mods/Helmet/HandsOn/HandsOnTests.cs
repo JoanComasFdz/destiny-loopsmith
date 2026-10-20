@@ -51,7 +51,8 @@ public sealed class HandsOnTests : BaseE2E
           When I tap "SLIDE" in the trigger panel
           And I tap "💀 kill"
           Then card #1's heading is "#1 Sliding melee (💀 kill)"
-          And it reads "Sliding melee 💀 kill"
+          # The kill hits first, which Tempest Strike reacts to: the card reads the hit first.
+          And it reads "Sliding melee 🥊 hit"
           # The amount per enemy is unknown, so "?".
           And "Hands-On" fires "+?% super energy"
         """)]
@@ -68,11 +69,12 @@ public sealed class HandsOnTests : BaseE2E
         await Frontend.Designer.Loop.WaitUntilStepShownAsync(1);
 
         // Then
+        // The kill hits first, which Tempest Strike reacts to: the card reads the hit first.
         // The amount per enemy is unknown, so "?".
         var slid = await Frontend.Designer.Loop.Step(1).ReadAsync();
         Asserting.That(slid)
             .HasHeading("#1 Sliding melee (💀 kill)")
-            .Reads("Sliding melee 💀 kill")
+            .Reads("Sliding melee 🥊 hit")
             .Fires(new ArmorMod.HandsOn(), "+?% super energy");
     }
 }
