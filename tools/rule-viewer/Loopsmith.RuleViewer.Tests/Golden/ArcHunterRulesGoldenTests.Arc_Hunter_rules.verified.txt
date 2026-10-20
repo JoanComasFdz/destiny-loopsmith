@@ -232,7 +232,7 @@ shinobus-vow#2 hunter-exotic-armor-shinobus-vow-3: [Trigger] Bolt Charge at max 
 
 ### Bolt Charge strike (2)
 spark-of-ions#1 all-classes-arc-fragments-spark-of-ions-2: [Trigger] Bolt Charge strike kill ➜ [Subclass fragment] Spark of Ions (equipped) ➜ [Pickup] Ionic Trace
-defibrillating-blast#0 artifact-current-defibrillating-blast-1: [Trigger] Bolt Charge strike hit ➜ [Artifact perk] Defibrillating Blast (equipped) ➜ [Effect] Health (?), [Debuff] Jolt
+defibrillating-blast#0 artifact-current-defibrillating-blast-1: [Trigger] Bolt Charge strike hit ➜ [Artifact perk] Defibrillating Blast (equipped) ➜ [Effect] Health (~55 HP), [Debuff] Jolt
 
 ### Ionic Trace (3)
 spark-of-discharge#0 all-classes-arc-fragments-spark-of-discharge-1: [Trigger] Pick up Ionic Trace ➜ [Subclass fragment] Spark of Discharge (equipped) ➜ [Buff] Bolt Charge
@@ -247,7 +247,7 @@ innervation#0 mods-legs-innervation-1: [Trigger] Pick up Orb of Power ➜ [Armor
 insulation#0 mods-legs-insulation-1: [Trigger] Pick up Orb of Power ➜ [Armor mod] Insulation (equipped) ➜ [Effect] Class ability energy (4% | 5% | 6%)
 invigoration#0 mods-legs-invigoration-1: [Trigger] Pick up Orb of Power ➜ [Armor mod] Invigoration (equipped) ➜ [Effect] Melee energy (10% | 13% | 15%)
 orbs-of-restoration#0 mods-legs-orbs-of-restoration-1: [Trigger] Pick up Orb of Power ➜ [Armor mod] Orbs of Restoration (equipped) ➜ [Effect] Least-charged ability energy (10% | 13% | 15%)
-recuperation#0 mods-armor-recuperation-1: [Trigger] Pick up Orb of Power ➜ [Armor mod] Recuperation (equipped) ➜ [Effect] Health (?)
+recuperation#0 mods-armor-recuperation-1: [Trigger] Pick up Orb of Power ➜ [Armor mod] Recuperation (equipped) ➜ [Effect] Health (16 | 21 | 21 HP)
 unraveling-orbs#0 artifact-current-unraveling-orbs-1: [Trigger] Pick up Orb of Power ➜ [Artifact perk] Unraveling Orbs (equipped) ➜ [Buff] Unraveling Rounds (14s)
 
 ### Slice (2)

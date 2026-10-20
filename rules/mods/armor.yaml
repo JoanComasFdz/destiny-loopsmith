@@ -175,11 +175,12 @@ elements:
     description: "Picking up an Orb of Power restores health: 16 | 21 | 21 HP with 1|2|3 mods."
     source: "compendium/2026-10-09/Armor Mods#11"
     rules:
-      # The HP amounts are a fact in the description: restoreHealth amounts are percentages.
+      # Clarity gives 15|21|21 HP (1 mod: 15): the Compendium's 16 wins (source priority, CLAUDE.md).
+      # source: "compendium/2026-10-09/Armor Mods#11" (16 | 21 | 21); source: clarity/4087056174@2.0625 (15|21|21).
       - id: recuperation-1
         on: { pickUp: orb-of-power }
         then:
-          - { restoreHealth: { amount: "?" } }
+          - { restoreHealth: { hp: "16 | 21 | 21" } }
         reason: "Every Orb of Power you pick up heals you a little."
     passives: []
 

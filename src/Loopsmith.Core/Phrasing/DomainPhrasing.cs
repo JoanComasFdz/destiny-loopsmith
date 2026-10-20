@@ -629,7 +629,7 @@ public static class DomainPhrasing
             modify => DescribeDamageChange(glossary, modify.Against, modify.Change, modify.Pvp, superType),
             heal => (heal.IncludesAllies ? "heals you and allies" : "heals you")
                 + heal.Amount.Match(
-                    share => share.Value is GameValue.Unknown ? "" : $" {share.Value.FormatPercent()}",
+                    share => share.Value is GameValue.Unknown ? $" {Unknown}" : $" {share.Value.FormatPercent()}",
                     points => $" {points.Value.FormatNumber()} HP"),
             reset => $"refills {reset.Which.DescribeAbility()}",
             collect => $"collects {glossary.DescribePickup(collect.Pickup)} from the ground",

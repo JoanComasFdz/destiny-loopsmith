@@ -18,12 +18,11 @@ elements:
     source: "compendium/2026-10-09/Artifact Perks#45"
     rules:
       # Not expressible: "Stunning a Champion grants x10 Bolt Charge" (no stun trigger).
-      # The heal is ~55 HP: restoreHealth amounts are percentages, so it stays "?".
       - id: defibrillating-blast-1
         on: { damage: { via: keyword:bolt-charge } }
         then:
           - { debuffTarget: jolt }
-          - { restoreHealth: { amount: "?" } }
+          - { restoreHealth: { hp: "~55" } }
         reason: "Every Bolt Charge lightning strike jolts what it hits and heals you."
     passives: []
 

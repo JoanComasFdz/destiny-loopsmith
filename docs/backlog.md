@@ -74,8 +74,8 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   other, `rules/keywords/arc.yaml`) isn't encoded: it could only be a chance rule, and a keyword applies to every
   build, not just Arc.
 - **Facts the format can't show yet** (shown, never applied — most of this build's `?` would become
-  readable): health in HP (`restoreHealth` reads as a percentage, so Combination Blow 100 → 40 HP,
-  Defibrillating Blast ~55 HP, To Shreds 15 HP per pulse stay `?`); values by level (Combination Blow +133% / +266% /
+  readable): health in HP that varies (`restoreHealth: { hp: … }` takes one value, or one per mod count, so Combination
+  Blow 100 → 40 HP and To Shreds 15 HP per pulse stay `?`); values by level (Combination Blow +133% / +266% /
   +400% melee damage: once it is counted, "Counting, next", its count picks the value); an orb's energy by what
   spawned it; Amplified's other extras (+40 Handling: an "all weapons" archetype). One "described fact" value and passive would
   cover them. Amounts that scale with a stat are in "Stats, next".

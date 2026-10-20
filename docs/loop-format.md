@@ -165,7 +165,7 @@ has ended, that the next enemies are a new pack — the player declares as a ste
 
   ```
   #5 Bolt Charge at max (x10)
-    Max Bolt Charge → New Tricks and +~40% grenade energy and heals you and allies [Shinobu's Vow] + Amplified (15s) [Flashover]
+    Max Bolt Charge → New Tricks and +~40% grenade energy and heals you and allies ? [Shinobu's Vow] + Amplified (15s) [Flashover]
   ```
 
   and the next ability hit discharges it (Bolt Charge's `atMax` rule, Compendium Arc#5). The cap
