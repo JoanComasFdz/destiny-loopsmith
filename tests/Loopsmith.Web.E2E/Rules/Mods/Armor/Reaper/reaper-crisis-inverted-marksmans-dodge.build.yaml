@@ -1,0 +1,8 @@
+# Reaper, armed by Marksman's Dodge (no rules of its own), with Crisis Inverted (a weapon with no rules of its own) to kill with.
+name: "E2E - Reaper with Crisis Inverted and Marksman's Dodge"
+class: hunter
+subclass: arc
+classAbility: marksmans-dodge
+armorMods: [reaper]
+weapons:
+  - { hash: 2888266564, perks: [] } # Crisis Inverted

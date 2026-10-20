@@ -48,6 +48,13 @@ public static class StepCardSnapshotAssertions
     public static AssertingThat<StepCardSnapshot> Fires(this AssertingThat<StepCardSnapshot> that, ArmorMod mod, params string[] lines) =>
         that.FiresFrom(mod.ToShownText(), lines);
 
+    /// <summary>
+    /// Under the event that reads <paramref name="happened"/> ("📍 Picked up Ionic Trace"), <paramref name="mod"/> fired exactly
+    /// <paramref name="lines"/>, in that order, each with its "(chance)" as shown.
+    /// </summary>
+    public static AssertingThat<StepCardSnapshot> FiresOn(this AssertingThat<StepCardSnapshot> that, string happened, ArmorMod mod, params string[] lines) =>
+        that.FiresOn(happened, mod.ToShownText(), lines);
+
     /// <summary><paramref name="bonus"/> fired exactly <paramref name="lines"/>, in that order, each with its "(chance)" as shown.</summary>
     public static AssertingThat<StepCardSnapshot> Fires(this AssertingThat<StepCardSnapshot> that, ArmorSetBonus bonus, params string[] lines) =>
         that.FiresFrom(bonus.ToShownText(), lines);

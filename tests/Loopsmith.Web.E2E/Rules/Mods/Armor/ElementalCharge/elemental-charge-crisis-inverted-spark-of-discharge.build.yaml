@@ -1,0 +1,8 @@
+# Elemental Charge, with Spark of Discharge and Crisis Inverted (an Arc weapon with no rules of its own), whose three kills drop the Ionic Trace it picks up.
+name: "E2E - Elemental Charge with Crisis Inverted and Spark of Discharge"
+class: hunter
+subclass: arc
+fragments: [spark-of-discharge]
+armorMods: [elemental-charge]
+weapons:
+  - { hash: 2888266564, perks: [] } # Crisis Inverted

@@ -51,6 +51,11 @@ public sealed class RepoFileValidationTests
         ["tests/Loopsmith.Web.E2E/Rules/Weapons/Perks/RadiolariaTransposer/radiolaria-transposer-speleologist.build.yaml"] = [412251536],
         ["tests/Loopsmith.Web.E2E/Rules/Weapons/Perks/RadiolariaTransposer/radiolaria-transposer-enhanced-speleologist.build.yaml"] = [412251536],
         ["tests/Loopsmith.Web.E2E/Rules/Weapons/Perks/VeteransWisdom/veterans-wisdom-enhanced-scathelocke.build.yaml"] = [3332538050],
+        ["tests/Loopsmith.Web.E2E/Rules/Mods/Armor/StrandSiphon/strand-siphon-crux-celeritas.build.yaml"] = [391069235],
+        ["tests/Loopsmith.Web.E2E/Rules/Mods/Armor/GrenadeKickstart/grenade-kickstart-skip-grenade-crux-celeritas-strand-siphon.build.yaml"] = [391069235],
+        ["tests/Loopsmith.Web.E2E/Rules/Mods/Armor/Recuperation/recuperation-crux-celeritas-strand-siphon.build.yaml"] = [391069235],
+        ["tests/Loopsmith.Web.E2E/Rules/Mods/Armor/PowerfulAttraction/powerful-attraction-marksmans-dodge-crux-celeritas-strand-siphon.build.yaml"] = [391069235],
+        ["tests/Loopsmith.Web.E2E/Rules/Mods/Armor/ChargedUp/charged-up-crux-celeritas-strand-siphon.build.yaml"] = [391069235],
     }.ToImmutableDictionary();
 
     public static TheoryData<string> Opening

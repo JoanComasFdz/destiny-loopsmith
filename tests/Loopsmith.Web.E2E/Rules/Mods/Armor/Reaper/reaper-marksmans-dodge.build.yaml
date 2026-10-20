@@ -1,0 +1,6 @@
+# Reaper, with Marksman's Dodge (no rules of its own) to arm it.
+name: "E2E - Reaper with Marksman's Dodge"
+class: hunter
+subclass: arc
+classAbility: marksmans-dodge
+armorMods: [reaper]

@@ -1,0 +1,8 @@
+# Powerful Attraction, with Marksman's Dodge (no rules of its own) to dodge with, and Strand Siphon and Crux Celeritas IV (a Strand weapon with no rules of its own), whose two kills drop the Orb of Power it pulls in.
+name: "E2E - Powerful Attraction with Marksman's Dodge, Strand Siphon and Crux Celeritas IV"
+class: hunter
+subclass: arc
+classAbility: marksmans-dodge
+armorMods: [powerful-attraction, strand-siphon]
+weapons:
+  - { hash: 391069235, perks: [] } # Crux Celeritas IV
