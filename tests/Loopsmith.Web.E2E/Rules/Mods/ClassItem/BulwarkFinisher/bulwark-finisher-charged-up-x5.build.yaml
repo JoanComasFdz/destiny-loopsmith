@@ -1,0 +1,6 @@
+# Bulwark Finisher with Empowered Finish to give the first Armor Charge on a finisher, and two Charged Up
+# to raise the Armor Charge cap to x5.
+name: "E2E - Bulwark Finisher with Empowered Finish and two Charged Up"
+class: hunter
+subclass: arc
+armorMods: [bulwark-finisher, empowered-finish, charged-up, charged-up]

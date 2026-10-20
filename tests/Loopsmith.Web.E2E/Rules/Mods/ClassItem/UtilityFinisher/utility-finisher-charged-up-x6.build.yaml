@@ -1,0 +1,6 @@
+# Utility Finisher with Empowered Finish to give the first Armor Charge on a finisher, and three Charged Up
+# to raise the Armor Charge cap to x6.
+name: "E2E - Utility Finisher with Empowered Finish and three Charged Up"
+class: hunter
+subclass: arc
+armorMods: [utility-finisher, empowered-finish, charged-up, charged-up, charged-up]
