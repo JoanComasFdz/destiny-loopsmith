@@ -16,6 +16,20 @@ public partial record ArmorMod
     public partial record StrandResistance;
     public partial record MeleeDamageResistance;
     public partial record SniperDamageResistance;
+    public partial record BulwarkFinisher;
+    public partial record ClassFont;
+    public partial record Distribution;
+    public partial record EmpoweredFinish;
+    public partial record ExplosiveFinisher;
+    public partial record HealthyFinisher;
+    public partial record OneTwoFinisher;
+    public partial record Outreach;
+    public partial record ProximityWard;
+    public partial record RestorativeFinisher;
+    public partial record SnaploadFinisher;
+    public partial record SpecialFinisher;
+    public partial record UtilityFinisher;
+    public partial record UtilityKickstart;
 
     /// <summary>What the UI shows that no case names yet: a failing assertion names it as the UI shows it.</summary>
     public partial record Unlisted(string Shown);
@@ -37,5 +51,19 @@ public static class ArmorModShowing
             strandResistance => "Strand Resistance",
             meleeDamageResistance => "Melee Damage Resistance",
             sniperDamageResistance => "Sniper Damage Resistance",
+            bulwarkFinisher => "Bulwark Finisher",
+            classFont => "Class Font",
+            distribution => "Distribution",
+            empoweredFinish => "Empowered Finish",
+            explosiveFinisher => "Explosive Finisher",
+            healthyFinisher => "Healthy Finisher",
+            oneTwoFinisher => "One-Two Finisher",
+            outreach => "Outreach",
+            proximityWard => "Proximity Ward",
+            restorativeFinisher => "Restorative Finisher",
+            snaploadFinisher => "Snapload Finisher",
+            specialFinisher => "Special Finisher",
+            utilityFinisher => "Utility Finisher",
+            utilityKickstart => "Utility Kickstart",
             unlisted => unlisted.Shown);
 }

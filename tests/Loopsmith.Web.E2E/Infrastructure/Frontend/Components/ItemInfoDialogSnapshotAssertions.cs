@@ -57,13 +57,20 @@ public static class ItemInfoDialogSnapshotAssertions
     }
 
     /// <summary>Under the "In this build" role <paramref name="role"/> ("While Amplified"), <paramref name="source"/>'s items read exactly <paramref name="texts"/>, in order.</summary>
-    public static AssertingThat<ItemInfoDialogSnapshot> ReadsUnder(this AssertingThat<ItemInfoDialogSnapshot> that, string role, Aspect source, params string[] texts)
+    public static AssertingThat<ItemInfoDialogSnapshot> ReadsUnder(this AssertingThat<ItemInfoDialogSnapshot> that, string role, Aspect source, params string[] texts) =>
+        that.ReadsUnderFrom(role, source.ToShownText(), texts);
+
+    /// <summary>Under the "In this build" role <paramref name="role"/> ("While Armor Charge"), <paramref name="source"/>'s items read exactly <paramref name="texts"/>, in order.</summary>
+    public static AssertingThat<ItemInfoDialogSnapshot> ReadsUnder(this AssertingThat<ItemInfoDialogSnapshot> that, string role, ArmorMod source, params string[] texts) =>
+        that.ReadsUnderFrom(role, source.ToShownText(), texts);
+
+    private static AssertingThat<ItemInfoDialogSnapshot> ReadsUnderFrom(this AssertingThat<ItemInfoDialogSnapshot> that, string role, string source, params string[] texts)
     {
         var roles = that.InstanceToAssert.InBuild;
         var found = roles.Where(shown => shown.Heading == role).ToArray();
         Assert.True(found.Length > 0, $"The item details popup shows no \"{role}\" in this build (it shows {Describe(roles.Select(shown => shown.Heading))}), but one was expected.");
-        var shownTexts = found.SelectMany(shown => shown.Items).Where(item => item.Source == source.ToShownText()).Select(item => item.Text).ToArray();
-        Assert.True(shownTexts.SequenceEqual(texts), $"Under \"{role}\" {source.ToShownText()} reads {Describe(shownTexts)}, but {Describe(texts)} was expected.");
+        var shownTexts = found.SelectMany(shown => shown.Items).Where(item => item.Source == source).Select(item => item.Text).ToArray();
+        Assert.True(shownTexts.SequenceEqual(texts), $"Under \"{role}\" {source} reads {Describe(shownTexts)}, but {Describe(texts)} was expected.");
         return that;
     }
 
