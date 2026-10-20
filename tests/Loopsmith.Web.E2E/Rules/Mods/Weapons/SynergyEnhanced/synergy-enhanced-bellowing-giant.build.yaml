@@ -1,0 +1,6 @@
+# Synergy (enhanced) (kills with this weapon fill its counter: a Void Breach) on Bellowing Giant, a Void weapon with no perks picked.
+name: "E2E - Synergy (enhanced) on Bellowing Giant"
+class: hunter
+subclass: arc
+weapons:
+  - { hash: 412265080, perks: [], mod: 3634656993 } # Bellowing Giant, Synergy (enhanced)

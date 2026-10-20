@@ -1,0 +1,6 @@
+# Synergy (enhanced) (kills with this weapon fill its counter: a Stasis Shard) on Forensic Nightmare, a Stasis weapon with no perks picked.
+name: "E2E - Synergy (enhanced) on Forensic Nightmare"
+class: hunter
+subclass: arc
+weapons:
+  - { hash: 1526296434, perks: [], mod: 3634656993 } # Forensic Nightmare, Synergy (enhanced)

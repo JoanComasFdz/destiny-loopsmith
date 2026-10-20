@@ -1,0 +1,6 @@
+# Synergy (enhanced) (kills with this weapon fill its counter: an Ionic Trace) on Matador 64, an Arc weapon with no perks picked.
+name: "E2E - Synergy (enhanced) on Matador 64"
+class: hunter
+subclass: arc
+weapons:
+  - { hash: 1518956169, perks: [], mod: 3634656993 } # Matador 64, Synergy (enhanced)

@@ -1,0 +1,6 @@
+# Synergy (kills with this weapon fill its counter: an Orb of Power) on Battle Scar, a Kinetic weapon with no perks picked.
+name: "E2E - Synergy on Battle Scar"
+class: hunter
+subclass: arc
+weapons:
+  - { hash: 1525080480, perks: [], mod: 3820243349 } # Battle Scar, Synergy

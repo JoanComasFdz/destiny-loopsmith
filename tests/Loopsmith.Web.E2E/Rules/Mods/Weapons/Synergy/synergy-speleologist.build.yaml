@@ -1,0 +1,6 @@
+# Synergy (kills with this weapon fill its counter: a Firesprite) on Speleologist, a Solar weapon with no perks picked.
+name: "E2E - Synergy on Speleologist"
+class: hunter
+subclass: arc
+weapons:
+  - { hash: 412251536, perks: [], mod: 3820243349 } # Speleologist, Synergy
