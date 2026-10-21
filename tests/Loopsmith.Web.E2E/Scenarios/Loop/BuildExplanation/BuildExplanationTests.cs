@@ -92,7 +92,7 @@ public sealed class BuildExplanationTests : BaseE2E
         Scenario: "What this build does" lists a keyword the build gives
           Given the build "build-explanation-shinobus-vow" is imported, with no steps
           When I tap "What this build does" above the loop
-          Then the panel has a row whose source is "[Bolt Charge]" under "HEADING"
+          Then the panel has a row whose source is "[Bolt Charge]" under "Gain Bolt Charge"
           And it shows no row whose source is "[Jolt]" or "[Woven Mail]"
         """)]
     public async Task WhatThisBuildDoesListsAKeywordTheBuildGives(Screen screen)
@@ -108,7 +108,7 @@ public sealed class BuildExplanationTests : BaseE2E
         // Then
         var explained = await Frontend.Designer.ExplainPanel.ReadAsync();
         Asserting.That(explained)
-            .HasRowFromUnder("HEADING", "[Bolt Charge]")
+            .HasRowFromUnder("Gain Bolt Charge", "[Bolt Charge]")
             .HasNoRowFrom("[Jolt]", "[Woven Mail]");
     }
 }
