@@ -1213,6 +1213,10 @@ public static class LoopDesigning
     public static ImmutableArray<StyledLine> ExplainBuild(ValidatedBuild build) =>
         BuildExplaining.RenderExplanation(build.Catalog.Glossary, BuildExplaining.ExplainBuild(build));
 
+    /// <summary>The build by outcome: everything it can get you, each with every way the build gets it, ends it or changes it.</summary>
+    public static ImmutableArray<StyledLine> ExplainOutcomes(ValidatedBuild build) =>
+        OutcomeExplaining.RenderOutcomes(build.Catalog.Glossary, OutcomeExplaining.ExplainOutcomes(build));
+
     /// <summary>The report as styled lines: the order, the verdict, each step's needs, what it sets off, what is wasted.</summary>
     public static ImmutableArray<StyledLine> RenderLoopReport(LoopReport report) =>
         LoopReportRendering.RenderLoopReport(report);

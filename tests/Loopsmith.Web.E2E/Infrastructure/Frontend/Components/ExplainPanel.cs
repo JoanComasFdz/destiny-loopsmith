@@ -5,8 +5,10 @@ using Microsoft.Playwright;
 namespace Loopsmith.Web.E2E.Infrastructure.Frontend.Components;
 
 /// <summary>
-/// The "What this build does" panel above the loop (Components/ExplainPanel.razor): a tree, each trigger's heading followed
-/// by one row per outcome ("└ Sidearms: … [Mechaneer's Tricksleeves]"), closed until its title is tapped.
+/// The "What this build does" panel above the loop (Components/ExplainPanel.razor), closed until its title is tapped. Its
+/// "Triggers" tab is a tree, each trigger's heading followed by one row per outcome ("└ Sidearms: … [Mechaneer's
+/// Tricksleeves]"); its "Outcomes" tab lists each outcome ("Jolt · Arc debuff"), each block of ways to it ("Is given by")
+/// and their rows ("├ Class ability in the air → Jolt target (10s)  [Ascension]").
 /// </summary>
 public sealed class ExplainPanel(IPage page)
 {
@@ -18,13 +20,30 @@ public sealed class ExplainPanel(IPage page)
 
     private ILocator Choices => Box.GetByRole(AriaRole.Radio);
 
+    private ILocator Tabs => Box.GetByRole(AriaRole.Tab);
+
+    private ILocator OutcomesTab => Box.Locator("[data-action=build-explanation-outcomes]");
+
     /// <summary>Clicks the panel's title, "What this build does", which opens it when it is closed.</summary>
     public Task ClickOpenAsync() => OnScreen.PressAsync(Box, Toggle);
+
+    /// <summary>Clicks the panel's title, "What this build does", which closes it when it is open.</summary>
+    public Task ClickCloseAsync() => OnScreen.PressAsync(Box, Toggle);
+
+    /// <summary>Clicks the panel's "Outcomes" tab.</summary>
+    public Task ClickOutcomesTabAsync() => OnScreen.PressAsync(Box, OutcomesTab);
+
+    /// <summary>Waits until the panel's "Outcomes" tab is selected.</summary>
+    public Task WaitUntilOutcomesShownAsync() =>
+        Box.GetByRole(AriaRole.Tab, new() { Name = "Outcomes", Selected = true }).WaitForAsync(new() { State = WaitForSelectorState.Visible });
+
+    /// <summary>Waits until the panel is closed: its lines are hidden.</summary>
+    public Task WaitUntilClosedAsync() => Lines.First.WaitForAsync(new() { State = WaitForSelectorState.Hidden });
 
     /// <summary>Waits until the panel shows its lines.</summary>
     public Task WaitUntilOpenAsync() => Lines.First.WaitForAsync(new() { State = WaitForSelectorState.Visible });
 
-    /// <summary>What the panel shows now: its lines, in order, and the choices it offers.</summary>
+    /// <summary>What the panel shows now: its lines, in order, the choices it offers and its tabs.</summary>
     public Task<ExplainPanelSnapshot> ReadAsync() => OnScreen.ReadAsync(Box, ReadShownAsync);
 
     /// <summary>Where the panel's rows are on the screen, how many lines each takes, and how wide the screen and the page are.</summary>
@@ -33,12 +52,18 @@ public sealed class ExplainPanel(IPage page)
     private async Task<ExplainPanelSnapshot> ReadShownAsync() =>
         new(
             [.. (await Lines.AllInnerTextsAsync()).Select(line => line.Trim())],
-            [.. await Choices.EvaluateAllAsync<string[]>("choices => choices.map(choice => (choice.labels[0]?.innerText ?? '').trim())")]);
+            [.. await Choices.EvaluateAllAsync<string[]>("choices => choices.map(choice => (choice.labels[0]?.innerText ?? '').trim())")],
+            [.. (await Tabs.EvaluateAllAsync<JsonElement>(TabsScript)).Deserialize<ShownTab[]>(ShownJson.Options)!]);
 
     private async Task<ExplainPanelLayout> ReadLayoutShownAsync() =>
         (await Box.EvaluateAsync<JsonElement>(LayoutScript)).Deserialize<ExplainPanelLayout>(ShownJson.Options)!;
 
-    // The panel's box; each line's text (as shown), the box of its text (what is seen of it), how many lines it is drawn on, and whether its last
+    // Each tab's name and whether it is selected.
+    private const string TabsScript = """
+        tabs => tabs.map(tab => ({ name: tab.innerText.trim(), selected: tab.getAttribute('aria-selected') === 'true' }))
+        """;
+
+    // The panel's box; each tab's name and box; each line's text (as shown), the box of its text (what is seen of it), how many lines it is drawn on, and whether its last
     // part (a row's "]" after its source) is on its last line; whether the lines scroll sideways inside the panel; the
     // screen's width and the page's (wider when it scrolls sideways).
     private const string LayoutScript = """
@@ -48,6 +73,7 @@ public sealed class ExplainPanel(IPage page)
           const scroller = lines.length > 0 ? lines[0].parentElement : panel;
           return {
             panel: box(panel.getBoundingClientRect()),
+            tabs: [...panel.querySelectorAll('[role=tab]')].map(tab => ({ name: tab.innerText.trim(), box: box(tab.getBoundingClientRect()) })),
             lines: lines.map(line => {
               // Only the parts with text: the spaces that align the sources hang past a wrapped line's end, unseen.
               const rects = [...line.children].flatMap(part => [...part.childNodes]).flatMap(text => {
@@ -80,12 +106,18 @@ public sealed class ExplainPanel(IPage page)
 
 /// <summary>
 /// What the "What this build does" panel shows: its lines, in order (a trigger's heading, "Always", then its rows, "└ Sidearms:
-/// … [Mechaneer's Tricksleeves]"), and the captions of the choices it offers (none).
+/// … [Mechaneer's Tricksleeves]"), the captions of the choices it offers (none), and its tabs.
 /// </summary>
-public sealed record ExplainPanelSnapshot(ImmutableArray<string> Lines, ImmutableArray<string> Choices);
+public sealed record ExplainPanelSnapshot(ImmutableArray<string> Lines, ImmutableArray<string> Choices, ImmutableArray<ShownTab> Tabs);
 
-/// <summary>Where the panel and its lines are on the screen, whether its lines scroll sideways, and the screen's and the page's width.</summary>
-public sealed record ExplainPanelLayout(ScreenBox Panel, ImmutableArray<ExplainLineBox> Lines, bool ScrollsSideways, double ScreenWidth, double PageWidth);
+/// <summary>A tab of the panel ("Triggers") and whether it is selected.</summary>
+public sealed record ShownTab(string Name, bool Selected);
+
+/// <summary>Where the panel, its tabs and its lines are on the screen, whether its lines scroll sideways, and the screen's and the page's width.</summary>
+public sealed record ExplainPanelLayout(ScreenBox Panel, ImmutableArray<ExplainTabBox> Tabs, ImmutableArray<ExplainLineBox> Lines, bool ScrollsSideways, double ScreenWidth, double PageWidth);
+
+/// <summary>A tab of the panel ("Outcomes") and its box.</summary>
+public sealed record ExplainTabBox(string Name, ScreenBox Box);
 
 /// <summary>A line of the panel as shown, the box of its text, how many lines it is drawn on, and whether its end is on its last one.</summary>
 public sealed record ExplainLineBox(string Text, ScreenBox TextBox, int LineCount, bool EndsOnLastLine);
